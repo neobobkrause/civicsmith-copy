@@ -1,0 +1,52 @@
+{
+  "id": "standards",
+  "title": "Standards: standardsBinding, R65",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/standards/",
+    "build/requirements/standards.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/standards/"
+  ],
+  "requirements": "build/requirements/standards.md",
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "jurisdictions",
+    "civil-time",
+    "connection-grammar",
+    "id-spaces",
+    "record-core",
+    "membership",
+    "promotion",
+    "acquisition",
+    "extraction",
+    "content",
+    "events",
+    "law-relations",
+    "entities",
+    "calc-grammar",
+    "capture",
+    "provenance",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/standards.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet R65 only (standardsBinding and its op standardsbinding, with its DECLARED_OPS row in bio-plane/src/standards/). BOB's decisions for it: a limit outside 1 to 200 is refused with STANDARD_LIMIT_INVALID; R65's owed line is the requirement as written. The test.todo for R65 in bio-plane/test/m/standards/r65.test.mjs becomes real tests, and you clear R65's '(not yet met: T53)' mark yourself when it is met (REQ-4). If wiring the op needs a row in bio-plane/src/op-declarations/ or bio-plane/src/op-grades/, do not edit those: say so to your coordinator in your receipt's not-verified list. Where build/situations/job.md names the old tool (proc), follow this START's commands instead. No earlier unmerged work touches this module.",
+  "status": {
+    "state": "OPEN"
+  }
+}
