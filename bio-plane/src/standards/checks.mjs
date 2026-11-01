@@ -8,7 +8,7 @@
  * names a place (R13, `layers.md` rule 1), and none speaks of a standard's merit (R12). Since T46 (R55), a row whose code
  * `words.json` holds as `refusal.<CODE>` reads its translation from there by key (`REFUSAL_WORDS`). */
 
-import { word } from "../setup-words/index.mjs";
+import { word, localize } from "../setup-words/index.mjs";
 
 const at = (fn, region, file = "index.mjs") => `src/standards/${file} ${fn} > ${region}`;
 
@@ -241,6 +241,11 @@ export const STANDARDS_CHECKS = Object.freeze({
   COMMITMENT_OWN_LETTER: {
     check: 'C-112.64', where: at("#commitmentRefusal", "is-commitment-not-own-letter"),
     translation: REFUSAL_WORDS['refusal.COMMITMENT_OWN_LETTER'],
+  },
+  /* T53 (R65; N1260, DEC-447): `standardsBinding`'s page size outside 1 to 200, the code BOB named; awaiting its stamp. */
+  STANDARD_LIMIT_INVALID: {
+    check: 'C-112.65', where: at("standardsBinding", "is-binding-limit"),
+    translation: localize('refusal.STANDARD_LIMIT_INVALID', "A page of the standards that bind a body holds 1 to 200 records."),
   },
 });
 
