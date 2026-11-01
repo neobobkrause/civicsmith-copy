@@ -1,0 +1,24 @@
+{
+  "tranche": "tranche",
+  "records": [
+    "process/"
+  ],
+  "transient": [],
+  "max_file_bytes": 1048576,
+  "lockfiles": [
+    "agent-runner/package-lock.json",
+    "bio-plane/package-lock.json",
+    "bio-plane/src/journey-check/package-lock.json",
+    "file-scanner/package-lock.json",
+    "newgroup/package-lock.json",
+    "ocr-worker/package-lock.json",
+    "pdf-worker/package-lock.json",
+    "reader-container/package-lock.json",
+    "sheet-worker/package-lock.json",
+    "site/package-lock.json"
+  ],
+  "node": "26.10.0",
+  "suite_timeout_minutes": 20,
+  "coordinator": "session_01RAN5en7h2dvT2s6sKQm3Su",
+  "process_repo": "https://github.com/neobobkrause/process3"
+}
