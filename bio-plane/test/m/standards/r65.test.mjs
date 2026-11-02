@@ -25,14 +25,16 @@ function scene(w) {
 
 function bound(w) {
   const s = scene(w);
+  /* the imposition first and the adoption later, so newest first puts the adoption first, which no sort by kind
+     descending, by id or by insertion order would (attempt 1's review, B) */
   later(w, "2026-09-28T02:00:00.000Z");
-  const a = w.s.adoptionRecord({ standard: s.adopted, act: s.ordinance, edition: "2020", from: "2021-07-01", mode: "by_reference",
-                                 citation: s.adoptingPassage, reason: REASON, author: V("bob"), viewer: V("bob") });
-  assert.equal(a.ok, true, JSON.stringify(a).slice(0, 300));
-  later(w, "2026-09-28T03:00:00.000Z");
   const i = w.s.impositionRecord({ standard: s.imposed, body: s.board, law: s.law, citation: s.lawPassage, reason: REASON,
                                    author: V("alice"), viewer: V("alice") });
   assert.equal(i.ok, true, JSON.stringify(i).slice(0, 300));
+  later(w, "2026-09-28T03:00:00.000Z");
+  const a = w.s.adoptionRecord({ standard: s.adopted, act: s.ordinance, edition: "2020", from: "2021-07-01", mode: "by_reference",
+                                 citation: s.adoptingPassage, reason: REASON, author: V("bob"), viewer: V("bob") });
+  assert.equal(a.ok, true, JSON.stringify(a).slice(0, 300));
   later(w, "2026-09-28T04:00:00.000Z");
   const b = w.s.benchmarkDeclare({ standard: s.compared, body: s.board, reason: REASON, author: V("bob"), viewer: V("bob") });
   assert.equal(b.ok, true, JSON.stringify(b).slice(0, 300));
@@ -45,12 +47,13 @@ test("R65 standardsBinding answers a body's adoption and imposition with their s
   const before = w.snapshot();
   const r = w.s.standardsBinding({ body: s.board, viewer: V("carol") });
   const says = WORD("standard.binding.binds", { body: "Port Ellery Selectboard" });
+  assert.ok(s.a.adoption.at > s.i.imposition.at, "the adoption is the newer record");
   assert.deepEqual(r, { ok: true, body: s.board, limit: 50, truncated: false, bindings: [
-    { kind: "imposition", id: s.i.imposition.id, body: s.board, law: s.law, citation: s.lawPassage, by: V("alice"),
-      at: s.i.imposition.at, says, standard: s.imposed, title: "NFPA 1-2021" },
     { kind: "adoption", id: s.a.adoption.id, body: s.board, act: s.ordinance, edition: "2020", from: { date: "2021-07-01" },
       mode: "by_reference", citation: s.adoptingPassage, by: V("bob"), at: s.a.adoption.at, says,
       standard: s.adopted, title: "MHS 101-2020 edition" },
+    { kind: "imposition", id: s.i.imposition.id, body: s.board, law: s.law, citation: s.lawPassage, by: V("alice"),
+      at: s.i.imposition.at, says, standard: s.imposed, title: "NFPA 1-2021" },
   ] });
   assert.equal(JSON.stringify(r).includes(s.b.benchmark.id), false, "the benchmark is no binding");
   assert.deepEqual(w.snapshot(), before, "it writes nothing and records no one");
@@ -63,17 +66,42 @@ test("R65 limit: 1 answers one record with truncated: true and a next that conti
   const w = seeded();
   const s = bound(w);
   const p1 = w.s.standardsBinding({ body: s.board, limit: 1, viewer: V("carol") });
-  assert.deepEqual([p1.limit, p1.truncated, p1.next, p1.bindings.map((x) => x.id)], [1, true, s.i.imposition.id, [s.i.imposition.id]]);
+  assert.deepEqual([p1.limit, p1.truncated, p1.next, p1.bindings.map((x) => x.id)], [1, true, s.a.adoption.id, [s.a.adoption.id]]);
   const p2 = w.s.standardsBinding({ body: s.board, limit: 1, after: p1.next, viewer: V("carol") });
-  assert.deepEqual([p2.truncated, p2.next, p2.bindings.map((x) => x.id)], [false, undefined, [s.a.adoption.id]]);
+  assert.deepEqual([p2.truncated, p2.next, p2.bindings.map((x) => x.id)], [false, undefined, [s.i.imposition.id]]);
   /* through the door, as strings */
   const door = standardsOps(w.s, new URL(`http://x/?body=${s.board}&limit=1&after=${p1.next}&viewer=${encodeURIComponent(V("carol"))}`), {}).standardsbinding();
-  assert.deepEqual(door.bindings.map((x) => x.id), [s.a.adoption.id]);
+  assert.deepEqual(door.bindings.map((x) => x.id), [s.i.imposition.id]);
   for (const limit of [0, 201, -1, 1.5, "abc", "0", "201"])
     assert.equal(codeOf(w.s.standardsBinding({ body: s.board, limit, viewer: V("carol") })), "STANDARD_LIMIT_INVALID", String(limit));
   for (const limit of [1, 200, "200", null, ""])
     assert.equal(codeOf(w.s.standardsBinding({ body: s.board, limit, viewer: V("carol") })), "ok", String(limit));
   assert.equal(w.s.standardsBinding({ body: s.board, limit: 200, viewer: V("carol") }).bindings.length, 2);
+});
+
+test("R65 newest first by when each was recorded, whatever its kind: a later imposition comes before the adoption, which comes before the earlier imposition", () => {
+  const w = seeded();
+  const s = bound(w);
+  const third = w.declare({ cite: "ICC IFC-2024", kind: "standard", issuer: "ICC", period: { from: "2024-01-01", to: null } }).id;
+  const thirdPassage = w.passage().contentId;
+  const thirdLaw = w.declare({ cite: "PEBL § 82", text: [thirdPassage], issuer: "Port Ellery Selectboard" }).id;
+  later(w, "2026-09-28T05:00:00.000Z");
+  const i2 = w.s.impositionRecord({ standard: third, body: s.board, law: thirdLaw, citation: thirdPassage, reason: REASON,
+                                    author: V("alice"), viewer: V("alice") });
+  assert.equal(i2.ok, true, JSON.stringify(i2).slice(0, 300));
+  const r = w.s.standardsBinding({ body: s.board, viewer: V("carol") });
+  assert.deepEqual(r.bindings.map((x) => [x.kind, x.id, x.standard]),
+                   [["imposition", i2.imposition.id, third], ["adoption", s.a.adoption.id, s.adopted], ["imposition", s.i.imposition.id, s.imposed]]);
+  /* paging walks the same order */
+  const ids = [];
+  let after = null;
+  for (let k = 0; k < 4; k++) {
+    const p = w.s.standardsBinding({ body: s.board, limit: 1, after, viewer: V("carol") });
+    ids.push(...p.bindings.map((x) => x.id));
+    if (!p.truncated) { assert.equal(p.next, undefined); break; }
+    after = p.next;
+  }
+  assert.deepEqual(ids, r.bindings.map((x) => x.id));
 });
 
 test("R65 R37 a standard the viewer may not see contributes no record and is not counted: the answer is the same as for a body with none", () => {
@@ -91,13 +119,36 @@ test("R65 R37 a standard the viewer may not see contributes no record and is not
   const i = w.s.impositionRecord({ standard: policy.id, body: board, law, citation: lawPassage, reason: REASON,
                                    author: V("alice"), viewer: V("alice") });
   assert.equal(i.ok, true, JSON.stringify(i).slice(0, 300));
+  /* a second hidden record, so that a read counting hidden records would answer truncated at limit 1 (attempt 1's review, A) */
+  const policy2 = w.declare({ cite: "HSO 5/21 para 1", kind: "policy", issuer: "Harbour Master", text: [hidden.contentId],
+                              author: V("alice"), viewer: V("alice") });
+  assert.equal(policy2.ok, true, JSON.stringify(policy2).slice(0, 300));
+  const lawPassage2 = w.passage().contentId;
+  const law2 = w.declare({ cite: "PEBL § 83", text: [lawPassage2], issuer: "Port Ellery Selectboard" }).id;
+  const i2 = w.s.impositionRecord({ standard: policy2.id, body: board, law: law2, citation: lawPassage2, reason: REASON,
+                                    author: V("alice"), viewer: V("alice") });
+  assert.equal(i2.ok, true, JSON.stringify(i2).slice(0, 300));
   const seen = w.s.standardsBinding({ body: board, viewer: V("alice") });
-  assert.deepEqual(seen.bindings.map((x) => [x.id, x.standard]), [[i.imposition.id, policy.id]], "who may see it is told it");
+  assert.deepEqual(seen.bindings.map((x) => x.standard).sort(), [policy.id, policy2.id].sort(), "who may see them is told them");
+  /* control: for who may see them, limit 1 is truncated */
+  const seen1 = w.s.standardsBinding({ body: board, limit: 1, viewer: V("alice") });
+  assert.deepEqual([seen1.truncated, seen1.bindings.length, typeof seen1.next], [true, 1, "string"]);
   const other = w.s.standardsBinding({ body: board, limit: 1, viewer: V("carol") });
   const none = w.s.standardsBinding({ body: w.entity("Marlow Schools Board"), limit: 1, viewer: V("carol") });
   assert.deepEqual(other, { ...none, body: board });
   assert.deepEqual(other.bindings, []);
-  assert.equal(JSON.stringify(other).includes(policy.id), false);
+  assert.equal(other.truncated, false);
+  assert.equal("next" in other, false);
+  assert.equal(JSON.stringify(other).includes(policy.id) || JSON.stringify(other).includes(policy2.id), false);
+  /* one visible record beside the two hidden: at limit 1 the viewer who may not see them gets it alone, untruncated */
+  const open = w.declare({ cite: "NFPA 101-2021", kind: "standard", issuer: "NFPA", period: { from: "2021-01-01", to: null } }).id;
+  const lawPassage3 = w.passage().contentId;
+  const law3 = w.declare({ cite: "PEBL § 84", text: [lawPassage3], issuer: "Port Ellery Selectboard" }).id;
+  const i3 = w.s.impositionRecord({ standard: open, body: board, law: law3, citation: lawPassage3, reason: REASON,
+                                    author: V("alice"), viewer: V("alice") });
+  assert.equal(i3.ok, true, JSON.stringify(i3).slice(0, 300));
+  const mixed = w.s.standardsBinding({ body: board, limit: 1, viewer: V("carol") });
+  assert.deepEqual([mixed.truncated, "next" in mixed, mixed.bindings.map((x) => x.id)], [false, false, [i3.imposition.id]]);
 });
 
 test("R65 an empty body is NO_ENTITY, a body the record lacks NO_SUCH_ENTITY, and a body bound by nothing answers bindings: []; standardRead's bindings (R63) answer as before", () => {
