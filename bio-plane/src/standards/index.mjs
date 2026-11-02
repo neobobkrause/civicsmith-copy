@@ -70,7 +70,7 @@ import { contentOf, contentIdFor, canonicalExtent, describeExtent, extentRelatio
          CONTENT_EXTENT_KINDS } from "../content/index.mjs";
 import { noSha } from "../extraction/index.mjs";
 import { combine as combineProfiles, governingZone, STANDARD_SOURCE_KINDS } from "../../../jurisdictions/index.mjs";
-import { entitiesOf, noSuchEntity } from "../entities/index.mjs";
+import { entitiesOf, noSuchEntity, noEntity } from "../entities/index.mjs";
 import { captureOf } from "../capture/index.mjs";
 import { parseFigure } from "../calc-grammar/index.mjs";
 import { validAt, localDay, isCalendarDate } from "../civil-time/index.mjs";
@@ -101,6 +101,7 @@ export const STANDARD_KINDS = STANDARD_SOURCE_KINDS;
 export const IN_FORCE_STATES = Object.freeze(["in_force", "not_in_force", "undetermined", "overridden"]);
 /** R1: a citation's bound; R9: a proposal's `why`; R8: a page; R2: the passages one standard's text names; the bound on
  *  a proposal's named act; R1: the declarer's reason, in characters (DEC-88). */
+export const BINDING_LIMIT_DEFAULT = 50;
 export const CITE_MAX = 200, WHY_MAX = 240, PAGE_MAX = 200, TEXTS_MAX = 50, ACT_MAX = 200, REASON_MAX = 2000;
 /** R12: the fields each act takes. Anything else is refused by name, never ignored: a field silently dropped is a view
  *  the caller believes was recorded. */
@@ -1171,27 +1172,71 @@ export class Standards {
      R59). Called only for a standard the viewer may read (R37), so a record takes its standard's sight; the act or law of
      a record that is itself a standard the viewer may not read is not named, nor is its passage. */
   #bindingsOf(sid, viewer) {
+    return this.#bindingRecords(viewer, { standard: sid });
+  }
+
+  /* R63, R65: the standing binding records of one standard (`standard`) or of one body (`body`, adoptions and impositions
+     only: a benchmark is no binding, R43), each in R63's shape, newest first (`at`, then the kinds in that order, then
+     insertion order within a table). For a body, a record whose standard the viewer may not read (R37) is dropped
+     before anything is counted, and each answers the standard it concerns. */
+  #bindingRecords(viewer, { standard = null, body = null }) {
     const kinds = ["adoption", "imposition", "benchmark"];
     const readable = (id) => { const r = this.#row(id); return !r || this.#readable(id, viewer); };
-    const label = (body) => { const e = body ? this.#entity(body, viewer) : null; return e ? e.label : body; };
+    const label = (b) => { const e = b ? this.#entity(b, viewer) : null; return e ? e.label : b; };
+    const where = standard !== null ? "standard_id=?" : "body=?", key = standard !== null ? standard : body;
+    const concerns = (r) => {
+      if (standard !== null) return {};
+      const own = this.#row(r.standard_id);
+      return { standard: r.standard_id, title: own ? titleOf(own.cite) : null };
+    };
     const of = (kind, r, fields, ref) => {
       const hidden = ref !== null && !readable(ref);
-      return { kind, ...fields(hidden), at: r.at, order: [r.at, kinds.indexOf(kind), r.rowid] };
+      return { kind, ...fields(hidden), ...concerns(r), at: r.at, order: [r.at, kinds.indexOf(kind), r.rowid] };
     };
+    const keep = (r) => standard !== null || (this.#row(r.standard_id) && this.#readable(r.standard_id, viewer));
     const out = [
-      ...this.#rows(`SELECT rowid, * FROM standard_body_adoptions WHERE standard_id=?`, sid).map((r) => of("adoption", r, (h) => ({
+      ...this.#rows(`SELECT rowid, * FROM standard_body_adoptions WHERE ${where}`, key).filter(keep).map((r) => of("adoption", r, (h) => ({
         id: r.adoption_id, body: r.body ?? null, act: h ? null : r.act, edition: r.edition, from: safeJson(r.from_json), mode: r.mode,
         citation: h ? null : r.citation, by: r.author, at: r.at,
         says: bindingWords("binds", label(r.body)) }), r.act)),
-      ...this.#rows(`SELECT rowid, * FROM standard_impositions WHERE standard_id=?`, sid).map((r) => of("imposition", r, (h) => ({
+      ...this.#rows(`SELECT rowid, * FROM standard_impositions WHERE ${where}`, key).filter(keep).map((r) => of("imposition", r, (h) => ({
         id: r.imposition_id, body: r.body, law: h ? null : r.law, citation: h ? null : r.citation, by: r.author, at: r.at,
         says: bindingWords("binds", label(r.body)) }), r.law)),
-      ...this.#rows(`SELECT rowid, * FROM standard_benchmarks WHERE standard_id=?`, sid).map((r) => of("benchmark", r, () => ({
+      ...(standard === null ? [] : this.#rows(`SELECT rowid, * FROM standard_benchmarks WHERE ${where}`, key).map((r) => of("benchmark", r, () => ({
         id: r.benchmark_id, body: r.body, by: r.author, at: r.at,
-        says: bindingWords("benchmark", label(r.body)) }), null)),
+        says: bindingWords("benchmark", label(r.body)) }), null))),
     ];
     out.sort((x, y) => cmp(y.order[0], x.order[0]) || x.order[1] - y.order[1] || y.order[2] - x.order[2]);
     return out.map(({ order, ...rest }) => rest);
+  }
+
+  /** R65 (T53; N1260, DEC-447): `standardsBinding({body, limit?, after?, viewer})` (`op=standardsbinding`): the standards
+   *  that bind a body, read from the body: its adoptions (R40) and impositions (R43), each as R63 gives it with the
+   *  standard it concerns, newest first, at most `limit` (1 to 200, default 50), `after` the id of the last record a page
+   *  answered. A benchmark declaration is never answered (R43); a standard the viewer may not see (R37) contributes no
+   *  record and is not counted. Writes nothing and records no one. */
+  standardsBinding({ body = null, limit = null, after = null, viewer = null } = {}) {
+    const b = str(body);
+    if (!b) return noEntity();
+    if (!this.#entity(b, viewer)) return noSuchEntity(b, { field: "body" });
+    let n = BINDING_LIMIT_DEFAULT;
+    if (limit !== null && limit !== undefined && limit !== "") {
+      const v = typeof limit === "number" ? limit : typeof limit === "string" && /^\s*-?\d+\s*$/.test(limit) ? Number(limit) : NaN;
+      /* DEC-49 REGION is-binding-limit */
+      if (!Number.isInteger(v) || v < 1 || v > PAGE_MAX)
+        return refusal("STANDARD_LIMIT_INVALID", localize("standards.index.binding_limit", "a page of bindings holds 1 to {max} records. Nothing was answered.", { max: String(PAGE_MAX) }),
+                       { field: "limit", min: 1, max: PAGE_MAX });
+      /* END DEC-49 REGION is-binding-limit */
+      n = v;
+    }
+    let all = this.#bindingRecords(viewer, { body: b });
+    if (after !== null && after !== undefined && after !== "") {
+      const i = typeof after === "string" ? all.findIndex((x) => x.id === after.trim()) : -1;
+      if (i < 0) return refuseFieldInvalid("after", "is the id of a binding record this read answered for the body");
+      all = all.slice(i + 1);
+    }
+    const bindings = all.slice(0, n), truncated = all.length > n;
+    return { ok: true, body: b, bindings, limit: n, truncated, ...(truncated ? { next: bindings[bindings.length - 1].id } : {}) };
   }
 
   /* R5: what a viewer may read. A standard is a bundle outside any project, so membership R43 lets every member, machine
@@ -2862,6 +2907,8 @@ export function standardsOps(s, url, body) {
                                                                      author: b.author ?? null, viewer: qp("viewer") }),
     inforcethroughof: () => s.inForceThroughOf({ standard: qp("id"), viewer: qp("viewer") }),
     /* T48-21: R57 (declared by op-declarations and routed by control-plane at their L11 jobs) */
+    /* T53: R65 */
+    standardsbinding: () => s.standardsBinding({ body: qp("body"), limit: qp("limit"), after: qp("after"), viewer: qp("viewer") }),
     standardproposals: () => s.proposalsFor({ project: qp("project"), state: qp("state"), after: qp("after"), limit: qp("limit"),
                                               viewer: qp("viewer") }),
   };
@@ -2880,6 +2927,8 @@ export const DECLARED_OPS = Object.freeze({
     fields: { accepts: ["type","from","to","citation","effective","edition","reason","proposal"], requires: [["type","proposal"],["from","proposal"],["to","proposal"],["citation","proposal"],["reason","proposal"]] } },
   courtlink: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reasoned", description: localize("standards.declared.courtlink", "standard-directed: keyed by a court standard and a portion; writes standards' rows and moves no bundle"),
     fields: { accepts: ["type","from","to","citation","reason","proposal"], requires: [["type","proposal"],["from","proposal"],["to","proposal"],["citation","proposal"],["reason","proposal"]] } },
+  standardsbinding: { classes: ["admin","member","probe"], mutating: false, weight: "read", description: localize("standards.declared.standardsbinding", "read: the standards that bind a body, its adoptions and impositions with the standard each concerns, newest first (standards R65); writes nothing"),
+    fields: { accepts: ["body","limit","after"], requires: ["body"] } },
 });
 
 const instances = new WeakMap();
