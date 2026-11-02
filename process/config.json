@@ -21,5 +21,19 @@
   "node": "26.10.0",
   "suite_timeout_minutes": 20,
   "coordinator": "session_01RAN5en7h2dvT2s6sKQm3Su",
-  "process_repo": "https://github.com/neobobkrause/process3"
+  "process_repo": "https://github.com/neobobkrause/process3",
+  "cloudflare_account": "20b533579290b9b93168345edd3b7f72",
+  "environment": [
+    "CLOUDFLARE_API_TOKEN",
+    "CLOUDFLARE_ACCOUNT_ID",
+    "BIO_INSTANCE",
+    "BIO_ADMIN_TOKEN",
+    "BIO_MEMBER_TOKEN",
+    "BIO_RATIFY_SEED",
+    "BIO_RELEASE_SEED",
+    "JOURNEY_ADMIN_HANDLE",
+    "JOURNEY_ADMIN_PASSWORD",
+    "JOURNEY_MEMBER_HANDLE",
+    "JOURNEY_MEMBER_PASSWORD"
+  ]
 }
