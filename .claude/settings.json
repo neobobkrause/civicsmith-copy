@@ -17,7 +17,16 @@
       "Bash(git rebase *)",
       "Bash(git commit --amend *)",
       "Bash(git tag *)",
-      "Bash(git branch -D *)"
+      "Bash(git branch -D *)",
+      "Bash(gh api *contents/*)",
+      "Bash(gh api *git/blobs*)",
+      "Bash(gh api *git/trees*)",
+      "Bash(gh api *git/commits*)",
+      "Bash(gh api *git/refs*)",
+      "Bash(curl *api.github.com*)",
+      "mcp__github__create_or_update_file",
+      "mcp__github__push_files",
+      "mcp__github__delete_file"
     ]
   },
   "hooks": {
