@@ -27,3 +27,4 @@
 {"at":"2026-11-03T22:50:46Z","row":"outcome","n":16,"outcome":"delivered"}
 {"at":"2026-11-03T23:01:03Z","row":"sent","n":17,"to":"root","text":"Sweep answer: runtime-limits BLOCKED on unrecorded measure M-R7 (needs Bob or a recorded figure; not pursuing, throwaway copy); its session archived, PR 38 open. Merged 36, 37, 39. Waiting on jurisdictions PR 40, the last job running. Start check ok at 2d3514f."}
 {"at":"2026-11-03T23:01:14Z","row":"outcome","n":17,"outcome":"delivered"}
+{"at":"2026-11-03T23:27:18Z","row":"sent","n":18,"to":"root","text":"Tranche open passed (12 of 12 acts, probe PR 49 and my PR 48 merged into p3/grants-tranche-1, probe archived, task created and deleted). Jurisdictions had sat idle 0.9h at a WIP commit waiting for a go after my tranche-merge message; told it to resume and complete. Runtime-limits stays BLOCKED, PR 38 open (status lists no close act yet). Deploy and walk held."}
