@@ -28,13 +28,13 @@ export const slugged = (name, slug) => `${name}-${slug}`;
 /** A container application's name, as the installer names it. */
 export const appName = (member, cls, multi, slug) => (multi ? `${member}-${String(cls).toLowerCase()}-${slug}` : `${member}-${slug}`);
 
-/* Config keys that name a resource this route does not slug. A config that declares one is refused, never passed on:
-   it would bind or create a resource under a name the guard has not seen. */
-const UNSLUGGED_KEYS = ["routes", "route", "kv_namespaces", "d1_databases", "queues", "workflows", "tail_consumers",
-  "dispatch_namespaces", "analytics_engine_datasets", "vectorize", "hyperdrive", "mtls_certificates", "send_email",
-  "pipelines", "secrets_store_secrets", "unsafe"];
-
-const present = (cfg, k) => cfg[k] !== undefined && cfg[k] !== null && (!Array.isArray(cfg[k]) || cfg[k].length > 0);
+/* The config keys this route knows: each either names nothing, or names something this file slugs and the guard sees.
+   Any other key is refused, never passed on: it could bind or create a resource under a name the guard has not seen. */
+const KNOWN_KEYS = new Set(["$schema", "name", "account_id", "main", "compatibility_date", "compatibility_flags", "vars",
+  "workers_dev", "preview_urls", "observability", "limits", "triggers", "rules", "placement", "upload_source_maps", "keep_vars",
+  "minify", "no_bundle", "find_additional_modules", "base_dir", "build",
+  "services", "r2_buckets", "durable_objects", "migrations", "containers", "browser"]);
+const unknownKeys = (cfg) => Object.keys(cfg || {}).filter((k) => !KNOWN_KEYS.has(k));
 
 /** A member's config with every name slugged (pure; the input is not changed). */
 export function slugMember(cfg, { member, slug, multi = false }) {
@@ -65,7 +65,7 @@ export function memberPlan(cfg, { slug, images = [] }) {
     doScripts: ((cfg.durable_objects && cfg.durable_objects.bindings) || []).filter((d) => d.script_name).map((d) => d.script_name),
     apps: (cfg.containers || []).map((c) => c && c.name),
     images,
-    uncarried: UNSLUGGED_KEYS.filter((k) => present(cfg, k)),
+    uncarried: unknownKeys(cfg),
   };
 }
 
@@ -79,7 +79,7 @@ export function planePlan(bindings, { slug, cfg = {} }) {
     doScripts: bindings.filter((b) => b.type === "durable_object_namespace" && b.script_name).map((b) => b.script_name),
     apps: [],
     images: [],
-    uncarried: UNSLUGGED_KEYS.filter((k) => present(cfg, k)),
+    uncarried: unknownKeys(cfg),
   };
 }
 
@@ -95,7 +95,7 @@ export function p3devFindings(plan) {
       const name = k === "images" ? String(n).split(":")[0] : n;
       if (!isP3devName(name)) out.push(`${what} ${JSON.stringify(n)} neither begins with ${P3DEV} nor contains -${P3DEV}`);
     }
-  for (const k of (plan && plan.uncarried) || []) out.push(`the config declares \`${k}\`, which this route does not slug`);
+  for (const k of (plan && plan.uncarried) || []) out.push(`the config declares \`${k}\`, which this route does not know`);
   return out;
 }
 

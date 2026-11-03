@@ -136,6 +136,8 @@ async function main(argv) {
   if (exists.status === 404) throw new Refused("NO_COPY", `${slug} is not deployed in ${ACCOUNT}; install it first (deploy-test.yml).`);
   if (!exists.ok) throw new Refused("UNREADABLE", `could not read ${slug}'s settings (HTTP ${exists.status}).`);
   let address = flag("--address");
+  if (address && !new RegExp(`^https://${slug}\\.[a-z0-9-]+\\.workers\\.dev/?$`).test(address))
+    throw new Refused("NOT_THE_COPY", `--address must be the copy's own https://${slug}.<subdomain>.workers.dev; the credentials go nowhere else.`);
   if (!address) {
     const sub = await cf(token, "/workers/subdomain");
     if (!sub.ok || !sub.j?.result?.subdomain) throw new Refused("NO_ADDRESS", "could not learn the workers.dev subdomain; pass --address.");

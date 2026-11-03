@@ -70,6 +70,10 @@ globalThis.fetch = async (input, init = {}) => {
     if (!s) return json(404, { success: false });
     return json(200, { success: true, result: s.settings ?? {} });
   }
+  if ((m = path.match(/\/workers\/scripts\/([^/]+)\/subdomain$/))) {
+    log(entry);
+    return S.scripts[m[1]] ? json(200, { success: true, result: { enabled: true } }) : json(404, { success: false });
+  }
   if ((m = path.match(/\/workers\/scripts\/([^/]+)\/schedules$/))) {
     const s = S.scripts[m[1]];
     if (method === "PUT") {

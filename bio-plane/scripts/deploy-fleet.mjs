@@ -52,7 +52,8 @@
  * account the test account; anything else is refused before a request is made. It reads no signed release. It logs the
  * artifact deployed and the target it can return to (the bytes now deployed under the member's name).
  * A test deploy names every resource by the copy's slug, as the installer does (`p3dev.mjs`): the Worker `<member>-<slug>`,
- * its buckets `<bucket>-<slug>`, its container applications and registry images `<member>[-<class>]-<slug>`, its service
+ * its buckets `<bucket>-<slug>`, its container applications `<member>[-<class>]-<slug>` (each deploying the Docker Hub
+ * image its marker names, by digest, with nothing pushed to a registry), its service
  * targets and Durable Object scripts `<target>-<slug>` (the phantom is the plane, `<slug>`). The copy must begin with
  * `p3dev-` and every one of those names must pass the p3dev guard, checked before any request; missing buckets are
  * created. In a dry run a missing service target the route deploys earlier is said, not refused.
@@ -68,7 +69,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseJsonc } from "./jsonc.mjs";   /* R11: one parser, shared with release-assemble.mjs */
 import { imageReference, markerIsContainer, containerClasses } from "./fleet-bundle.mjs";   /* R24–R26: one reading of a container */
-import { slugMember, memberPlan, refuseUnlessP3dev, ensureBuckets, appName } from "./p3dev.mjs";   /* a test deploy's names and guard */
+import { slugMember, memberPlan, refuseUnlessP3dev, ensureBuckets } from "./p3dev.mjs";   /* a test deploy's names and guard */
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const argv = process.argv.slice(2);
@@ -169,12 +170,8 @@ if (TEST && cfg.account_id !== TEST_ACCOUNT)
   die("WRONG_ACCOUNT", `a test deploy goes to account ${TEST_ACCOUNT} only; ${member}/wrangler.jsonc pins ${cfg.account_id}.`,
     "Nothing was requested or deployed.");
 
-/* The registry tag an image is pushed under: the member's (and class's) name, and in a test deploy the copy's slug too. */
-const tagOf = (cls, multi, digest) => {
-  const short = digest.slice("sha256:".length, "sha256:".length + 12);
-  if (TEST) return `${appName(member, cls, multi, instance)}:${short}`;
-  return `${multi ? `${member}-${String(cls).toLowerCase()}` : member}:${short}`;
-};
+/* The registry tag an image is pushed under (not by a test deploy, which names the Docker Hub image by digest). */
+const tagOf = (cls, multi, digest) => `${multi ? `${member}-${String(cls).toLowerCase()}` : member}:${digest.slice("sha256:".length, "sha256:".length + 12)}`;
 
 /* R26: what a container member deploys is stated by its own files before any request: the image by digest in its
    marker, and the container in its own config. Neither is defaulted. */
@@ -217,7 +214,7 @@ if (CONTAINER) {
 }
 
 /* THE P3DEV GUARD (CLAUDE.md, the Cloudflare paragraph): every name this test deploy creates or binds, before any request. */
-if (TEST) refuseUnlessP3dev(memberPlan(cfg, { slug: instance, images: images.map((i) => tagOf(i.class_name, MULTI, i.digest)) }));
+if (TEST) refuseUnlessP3dev(memberPlan(cfg, { slug: instance }));
 
 /* PRE-FLIGHT: every service target must EXIST, checked before the upload rather
    than discovered as Cloudflare's 10143. This is D-292 turned from a note into a
@@ -323,7 +320,15 @@ const cfEnv = { ...process.env, CLOUDFLARE_API_TOKEN: TOKEN, CLOUDFLARE_ACCOUNT_
 /* R26: THE PROJECT'S OWN COPY OF THE IMAGE, pushed to Cloudflare's registry. The image is pulled BY DIGEST and tagged
    by its digest, so what is pushed is exactly the image the marker names and a re-run pushes the same tag. A failed
    step exits with its own status, and nothing is deployed after it. */
-if (CONTAINER) {
+/* A TEST DEPLOY names the image the product published on Docker Hub, by digest (CLAUDE.md, the Cloudflare paragraph), and
+   pushes nothing to any registry. */
+if (CONTAINER && TEST) {
+  const refOf = new Map(images.map((i) => [i.class_name, i.reference]));
+  const only = images.length === 1 ? images[0].reference : null;
+  cfg.containers = cfg.containers.map((c) => ({ ...c, image: MULTI ? refOf.get(c.class_name) : only }));
+  for (const c of cfg.containers) console.log(`container: the generated config deploys ${c.name} from ${c.image} (Docker Hub, by digest; nothing pushed)`);
+}
+if (CONTAINER && !TEST) {
   const pushedOf = new Map();
   for (const img of images) {
     /* One class keeps the member's own name; several are told apart by class (a tag is lower case); a test deploy adds the slug. */

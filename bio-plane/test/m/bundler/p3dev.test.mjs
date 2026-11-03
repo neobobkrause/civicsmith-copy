@@ -10,7 +10,7 @@ import { slugMember, slugPlane, memberPlan, planePlan, p3devFindings, isP3devNam
 import { deriveBindings } from "../../../scripts/derive-bindings.mjs";
 import { parseJsonc } from "../../../scripts/jsonc.mjs";
 import { containerClasses, markerIsContainer } from "../../../scripts/fleet-bundle.mjs";
-import { makeRepo, run, rm, VERSION, PLANE } from "./repo.mjs";
+import { makeRepo, run, rm, VERSION, PLANE, addContainerMember } from "./repo.mjs";
 
 const ROOT = join(PLANE, "..");
 const SLUG = "p3dev-l1";
@@ -83,6 +83,8 @@ test("p3dev: each forbidden name in CLAUDE.md's list is refused by name in every
   for (const n of ["biosmoke8", "pdf-worker", "agent-worker", "ocr-worker", "sheet-worker", "file-scanner", "bio-captures", "bio-published"]) assert.ok(found.includes(`"${n}"`), n);
   /* a config key this route does not slug */
   assert.ok(p3devFindings(memberPlan({ name: `x-${SLUG}`, kv_namespaces: [{ binding: "K", id: "1" }] }, { slug: SLUG })).some((x) => x.includes("kv_namespaces")));
+  for (const k of ["vpc_services", "streaming_tail_consumers", "ratelimits", "ai", "images", "worker_loaders", "logfwdr"])
+    assert.ok(p3devFindings(memberPlan({ name: `x-${SLUG}`, [k]: [{}] }, { slug: SLUG })).some((x) => x.includes(`\`${k}\``)), `${k} is a key the route does not know`);
   assert.equal(isP3devName("p3dev-x"), true);
   assert.equal(isP3devName("a-p3dev-x"), true);
   assert.equal(isP3devName("ap3dev-x"), false);
@@ -157,7 +159,9 @@ test("p3dev: a fresh copy's plane is installed first with STORE, its migration a
     assert.deepEqual(put.metadata.bindings.filter((b) => b.type === "durable_object_namespace"), [{ type: "durable_object_namespace", name: "STORE", class_name: "Store" }]);
     assert.deepEqual(put.metadata.migrations, { new_tag: "v1", new_sqlite_classes: ["Store"] }, "the store's migration is sent");
     assert.deepEqual(put.metadata.bindings.filter((b) => b.type === "r2_bucket").map((b) => b.bucket_name).sort(), [`c-${SLUG}`, `p-${SLUG}`]);
-    assert.deepEqual(first.calls.filter((c) => c.method === "POST").map((c) => c.bucket).sort(), [`c-${SLUG}`, `p-${SLUG}`]);
+    assert.deepEqual(first.calls.filter((c) => c.method === "POST" && c.bucket).map((c) => c.bucket).sort(), [`c-${SLUG}`, `p-${SLUG}`]);
+    assert.ok(first.calls.some((c) => c.method === "POST" && c.url.endsWith(`/workers/scripts/${SLUG}/subdomain`)), "the copy's workers.dev address is turned on");
+    assert.match(first.stdout, /address: p3dev-l1's workers.dev address is on/);
     /* on a copy that exists the step does nothing */
     const again = plane(root, SLUG, ["--first-install"], { subdomain: "sub", put: "accept", scripts: { [SLUG]: { body: "x", settings: {} } } });
     assert.equal(again.status, 0, again.stdout + again.stderr);
@@ -221,4 +225,24 @@ test("p3dev walk setup: claims, invites and joins against a copy, writes the cre
   await assert.rejects(claimAndJoin({ address: "https://x", creds: { ...c, P3DEV_STAGE: "bootstrap" }, save: () => {}, fetchOf: refusing, log: () => {}, wait: async () => {} }),
     (e) => e.code === "CLAIM_FAILED" && /BOOTSTRAP_CREDENTIAL_MISMATCH/.test(e.message) && !e.message.includes(c.JOURNEY_ADMIN_PASSWORD));
   rm(dir);
+});
+
+test("p3dev: a container member's test deploy names its application by the slug and deploys the Docker Hub image by digest, pushing nothing", async () => {
+  const root = await repo();
+  try {
+    addContainerMember(root, "runner-worker");
+    const p = join(root, "runner-worker", "wrangler.jsonc");
+    const cfg = parseJsonc(readFileSync(p, "utf8"), p);
+    cfg.account_id = ACCT;
+    writeFileSync(p, JSON.stringify(cfg));
+    const marker = JSON.parse(readFileSync(join(root, "runner-worker", "fleet-member.json"), "utf8"));
+    const r = run(root, ".", ["bio-plane/scripts/deploy-fleet.mjs", "runner-worker", "--instance", SLUG, "--test-instance"],
+      { env: env(SLUG), stub: { subdomain: "sub", containers: 200, scripts: { [SLUG]: { settings: {} } } } });
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.deepEqual(r.docker, [], "nothing pulled or pushed");
+    assert.equal(r.wrangler.length, 1, "one deploy, no containers push");
+    const gen = JSON.parse(r.wrangler[0].config);
+    assert.equal(gen.name, `runner-worker-${SLUG}`);
+    assert.deepEqual(gen.containers.map((c) => [c.name, c.image]), [[`runner-worker-${SLUG}`, `${marker.image.repository}@${marker.image.digest}`]]);
+  } finally { rm(root); }
 });

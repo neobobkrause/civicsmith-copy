@@ -579,6 +579,7 @@ if (DRY) {
   console.log(crons.length
     ? `schedules: after the upload PUT .../schedules sets ${cronText(crons)} and reads it back; a failure or a difference refuses success`
     : "schedules: wrangler.jsonc declares no cron; after the upload PUT .../schedules sets none and reads it back; a failure or a difference refuses success");
+  if (TEST) console.log(`address: after the upload POST .../subdomain turns on ${slug}'s workers.dev address`);
   console.log(`observability: the upload carries ${JSON.stringify(meta.observability)} and reads it back; a difference or an unreadable answer refuses success`);
   console.log(`observability now: ${!onScript.settings ? "the script is not deployed, so Workers Logs are off" : obsMatch ? "on" : "off (" + obsNow.why + ")"}`);
   if (schedNow.unreadable !== undefined) {
@@ -613,6 +614,19 @@ for (let attempt = 1; attempt <= 4; attempt++) {
   const now = await deployed();
   if (now === want) {
     console.log(`verified: deployed bytes are hash-identical to the signed asset`);
+    /* A test deploy's copy is reached at its workers.dev address (CLAUDE.md allows one for a development deployment); a
+       script uploaded by the API has none until it is turned on, as the installer does (newgroup steps/probes.mjs). */
+    if (TEST) {
+      let ok = false;
+      try {
+        const r = await fetch(`${api}/subdomain`, { method: "POST", headers: { authorization: `Bearer ${TOKEN}`, "content-type": "application/json" },
+          body: JSON.stringify({ enabled: true }) });
+        ok = r.ok;
+        if (!ok) console.error(`REFUSING TO REPORT SUCCESS [ADDRESS_NOT_ON]: turning on ${slug}'s workers.dev address answered HTTP ${r.status}.`);
+      } catch (e) { console.error(`REFUSING TO REPORT SUCCESS [ADDRESS_NOT_ON]: the request failed (${(e && e.message) || e}).`); }
+      if (!ok) process.exit(1);
+      console.log(`address: ${slug}'s workers.dev address is on`);
+    }
     /* R42: Cloudflare's start-up figure, printed from the upload's answer. It is only printed, never believed for state
        (this file's header), and never fails a deploy. Like R40's other lines it belongs to a test deploy: without
        --test-instance a deploy prints no `test deploy:` line (R40's control). */
