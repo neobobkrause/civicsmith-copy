@@ -11,3 +11,4 @@
 {"at":"2026-11-03T08:17:21Z","row":"sent","n":7,"to":"root","text":"BOB session_01RAN5emYLab1pPsNztMwZY2 running. start check ok at tranche f9cb35a14312f3960bde2f7fe8d706982fd3f338; handoff read: 3 merged, nothing in flight, bob-4 to root not recorded delivered."}
 {"at":"2026-11-03T08:17:32Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-03T11:15:46Z","row":"sent","n":8,"to":"root","text":"BOB session_01RAN5emYLab1pPsNztMwZY2 ready: no workers, nothing in flight, nothing received to forward. Handoff for session_01RAN5ekFKrsEYmanVb3Uwx9 at process-state 6cd5ddc7bc."}
+{"at":"2026-11-03T11:16:42Z","row":"sent","n":9,"to":"root","text":"BOB running: session_01RAN5ekFKrsEYmanVb3Uwx9 replaces session_01RAN5emYLab1pPsNztMwZY2. start check ok at tranche f9cb35a1 (process 1b55b08d). Ledger: explore, review, standards COMPLETE and merged; nothing in flight. Handoff read. Awaiting instructions on next jobs."}
