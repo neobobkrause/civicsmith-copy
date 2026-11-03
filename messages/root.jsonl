@@ -3,3 +3,4 @@
 {"at":"2026-11-03T21:14:07Z","row":"sent","n":2,"to":"bob","text":"ROOT, Bob's word: Decision 1 no; the word files are on the tranche, your checkout left them out because of the slim-clone limit, now corrected; no max_file_bytes change, no PRs A/B. Decision 2 yes, walk-through 38: run all five layer-1 jobs without routine reviews. Keep holding the jobs until the coordinator's status fix moves the pin, then start all five."}
 {"at":"2026-11-03T21:14:48Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-03T23:00:31Z","row":"sent","n":3,"to":"bob","text":"Sweep: runtime-limits: BLOCKED."}
+{"at":"2026-11-03T23:00:40Z","row":"outcome","n":3,"outcome":"delivered"}
