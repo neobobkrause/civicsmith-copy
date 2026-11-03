@@ -486,7 +486,8 @@ test("R56 the first profile's sourced rule set: each rule with its primary sourc
   assert.deepEqual(dates(lists.city), dates(f.holidays.find((h) => h.basis === "M-190")), "the City list is M-190's days");
   /* records_response's five counterparties, re-based on their primary sources; the records venues sourced */
   /* each on its primary source; T34 adds the Legistar read its identifiers rest on (R61) */
-  for (const c of f.counterparties) assert.match(c.basis, /^2026-10-05 time-law(, 2026-10-05 legistar-events)?$/, c.role);
+  /* (the federal layer's records offices are the dated read of the government's list, R119) */
+  for (const c of f.counterparties.filter((x) => x.level !== "federal")) assert.match(c.basis, /^2026-10-05 time-law(, 2026-10-05 legistar-events)?$/, c.role);
   for (const k of ["records_request", "records_petition"]) assert.equal(f.action_kinds.find((x) => x.kind === k).venue.basis, "2026-10-05 time-law", k);
   assert.equal(venue(f).receipt.rule, "next_business_day");
   /* nothing in a deadline or calendar fact rests on UNMEASURED (R44) */

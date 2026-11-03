@@ -71,6 +71,8 @@ test("R114 the split changes no answer: the view of oakland-alameda after equals
   const ADDED = new Set(["oakland.opendata", "calaccess.cdn", "fec.bulk"]);
   after.systems = after.systems.filter((s) => !ADDED.has(s.origin));
   delete after.registers; delete after.use_limits;
+  /* and the federal records offices of the government's own list (R119), which the unsplit profile never held */
+  after.counterparties = after.counterparties.filter((c) => c.level !== "federal");
   delete after.records_help; delete before.records_help;
   after.weekend = { ...after.weekend, citation: undefined }; before.weekend = { ...before.weekend, citation: undefined };
   const rr = after.action_kinds.find((k) => k.kind === "records_request");

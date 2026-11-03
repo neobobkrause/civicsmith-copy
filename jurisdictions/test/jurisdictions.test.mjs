@@ -743,7 +743,8 @@ test("R30 the first profile's action sections: the snapshot's action kinds renam
   for (const x of [...f.deadlines, ...f.counterparties]) assert.notEqual(x.basis, "UNMEASURED", x.rule || x.role);
   for (const x of f.deadlines) assert.equal(x.status, "researched", x.rule);
   assert.ok(f.counterparties.length >= 3);
-  for (const c of f.counterparties) assert.ok(!/\b[A-Z][a-z]+ [A-Z][a-z]+\b/.test(c.role) || /Controller|Council|Grand Jury|Auditor/.test(c.role), `role names an office: ${c.role}`);
+  /* the offices the kinds are addressed to; the federal records offices of the government's list are R119's, read below */
+  for (const c of f.counterparties.filter((x) => x.level !== "federal")) assert.ok(!/\b[A-Z][a-z]+ [A-Z][a-z]+\b/.test(c.role) || /Controller|Council|Grand Jury|Auditor/.test(c.role), `role names an office: ${c.role}`);
   const bodies = f.counterparties.map((c) => c.body).join(" | ");
   for (const office of ["Grand Jury", "State Controller", "City Council", "Finance"]) assert.ok(bodies.includes(office), office);
   /* the test profile supplies every action section too */
