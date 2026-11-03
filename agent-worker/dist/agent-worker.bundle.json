@@ -624,8 +624,8 @@
     },
     {
       "path": "../bio-plane/src/query.mjs",
-      "bytes": 195075,
-      "sha256": "762aafa5f0b6e5dc1ad11455580ed934fe7a1dada286559f931d6009b853e999"
+      "bytes": 195301,
+      "sha256": "995b72b8a525a0934f1ab2ef85b293551800bda929700d0ab7bb7c3b2d797e28"
     },
     {
       "path": "../bio-plane/src/read-bounds.mjs",

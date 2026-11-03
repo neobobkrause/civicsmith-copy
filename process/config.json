@@ -1,6 +1,6 @@
 {
   "tranche": "tranche",
-    "record_since": "4250e8860a482bcbebab243e6627ba0cd690e9d7",
+  "record_since": "4250e8860a482bcbebab243e6627ba0cd690e9d7",
   "records": [
     "process/"
   ],
@@ -35,5 +35,44 @@
     "JOURNEY_ADMIN_PASSWORD",
     "JOURNEY_MEMBER_HANDLE",
     "JOURNEY_MEMBER_PASSWORD"
+  ],
+  "modules_file": "build/modules.json",
+  "generated": [
+    {
+      "paths": [
+        "bio-plane/src/setup-words/rows.mjs",
+        "bio-plane/src/setup-words/words-unreviewed.json"
+      ],
+      "regenerate": [
+        "node",
+        "bio-plane/src/setup-words/build.mjs"
+      ],
+      "verify": [
+        "node",
+        "bio-plane/src/setup-words/build.mjs",
+        "--check"
+      ]
+    },
+    {
+      "paths": [
+        "bio-plane/dist",
+        "pdf-worker/dist",
+        "ocr-worker/dist",
+        "agent-runner/dist",
+        "agent-worker/dist",
+        "sheet-worker/dist",
+        "file-scanner/dist"
+      ],
+      "regenerate": [
+        "node",
+        "bio-plane/scripts/bundles.mjs"
+      ],
+      "verify": [
+        "node",
+        "--test",
+        "--test-force-exit",
+        "bio-plane/test/system/fleetbundles.test.mjs"
+      ]
+    }
   ]
 }
