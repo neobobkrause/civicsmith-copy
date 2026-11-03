@@ -4,3 +4,4 @@
 {"row":"grant","at":"2026-11-03T23:24:13.956Z","tranche":"tranche","act":"pr-merge","depth":1,"outcome":"ok","session":"session_01RAN5encoEVihASNRBVBYKE"}
 {"row":"grant","at":"2026-11-03T23:24:23.700Z","tranche":"tranche","act":"session-start","depth":1,"outcome":"ok","session":"session_01RAN5encoEVihASNRBVBYKE"}
 {"row":"grant","at":"2026-11-03T23:24:32.451Z","tranche":"tranche","act":"task-create","depth":1,"outcome":"ok","session":"session_01RAN5encoEVihASNRBVBYKE"}
+{"row":"grant","at":"2026-11-03T23:24:40.361Z","tranche":"tranche","act":"task-delete","depth":1,"outcome":"ok","session":"session_01RAN5encoEVihASNRBVBYKE"}
