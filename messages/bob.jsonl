@@ -14,3 +14,4 @@
 {"at":"2026-11-03T11:16:42Z","row":"sent","n":9,"to":"root","text":"BOB running: session_01RAN5ekFKrsEYmanVb3Uwx9 replaces session_01RAN5emYLab1pPsNztMwZY2. start check ok at tranche f9cb35a1 (process 1b55b08d). Ledger: explore, review, standards COMPLETE and merged; nothing in flight. Handoff read. Awaiting instructions on next jobs."}
 {"at":"2026-11-03T11:16:55Z","row":"outcome","n":9,"outcome":"delivered"}
 {"at":"2026-11-03T13:24:39Z","row":"sent","n":10,"to":"root","text":"BOB running: replacement session_01RAN5ejqoVHe6homL2SRLK7 for session_01RAN5ekFKrsEYmanVb3Uwx9. start check ok, HEAD=tranche f9cb35a. Handoff read: 3 merged, nothing in flight. Awaiting queued messages."}
+{"at":"2026-11-03T13:24:48Z","row":"outcome","n":10,"outcome":"delivered"}
