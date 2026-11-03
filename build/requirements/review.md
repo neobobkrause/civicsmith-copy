@@ -82,7 +82,7 @@ Terms. A **draft** is `{draft_id, project_id, case_id, params, created_by, creat
 
 #### T53 additions
 
-- **R46** (T53; JOURNEYS R-98, owner half; changes R4) *(not yet met: T53)* A reader grant's acknowledgement keeps the reader's name (the grant's recipient) as its author, distinct from a member's. Test: acknowledge through a grant: the stored author names the recipient. (T52-26 carries the owner's own acknowledgement.)
+- **R46** (T53; JOURNEYS R-98, owner half; changes R4) A reader grant's acknowledgement keeps the reader's name (the grant's recipient) as its author, distinct from a member's: each row of the copy's acknowledgement list (R15) answers `author`, the recipient's name for a reader grant's (never its grant id) and the member's id for a member's, and `author_kind`, `recipient` or `member`, at both doors. Test: acknowledge through a grant: the stored author names the recipient. (T52-26 carries the owner's own acknowledgement.)
 
 ## Private
 

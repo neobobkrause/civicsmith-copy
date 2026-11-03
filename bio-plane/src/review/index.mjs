@@ -863,7 +863,14 @@ export class Review {
     const acks = this.caseInputs.statementAcknowledgements(d.project_id, ident.caseId, ident.edition,
                                                            params.statement ?? "", null, writer, d.draft_id);
     const withheld = acks.byWriter + acks.withheldWriterUndetermined;
-    const statementAcks = { statement_sha: acks.statementSha, acknowledgements: acks.rows,
+    /* R46 (T53; JOURNEYS R-98): each acknowledgement names its AUTHOR: a reader grant's is the reader's name (the
+       grant's recipient, as the issuer typed it), never the grant id case-inputs keys it by; a member's is the member.
+       `author_kind` says which, so a screen never reads a reader's row as a member of the team. */
+    const ackRows = acks.rows.map((a) => {
+      const reader = a.kind === "recipient";
+      return { ...a, author: reader ? a.recipient ?? null : a.by ?? null, author_kind: reader ? "recipient" : "member" };
+    });
+    const statementAcks = { statement_sha: acks.statementSha, acknowledgements: ackRows,
                             truncated: acks.truncated,
                             withheld,
                             ...(acks.byWriter ? { acknowledgements_by_statement_writer_not_listed: acks.byWriter } : {}),
