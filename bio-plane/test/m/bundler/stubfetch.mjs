@@ -21,7 +21,8 @@
  * A script with no entry does not exist (404). A PUT the scenario accepts stores the uploaded module as
  * the script's body, the metadata's limits as its settings (unless `settingsAfterPut` says otherwise),
  * and, unless `servingAfterPut` is "never", the metadata's VERSION as what the instance serves. The account's
- * Containers applications (R26) answer `containers` (403 when the scenario names none: a token without the scope). */
+ * Containers applications (R26) answer `containers` (403 when the scenario names none: a token without the scope).
+ * Its R2 buckets are `buckets` (names); a POST creates one. */
 import { readFileSync, appendFileSync } from "node:fs";
 
 const file = process.env.BUNDLER_STUB;
@@ -108,6 +109,17 @@ globalThis.fetch = async (input, init = {}) => {
     if (s && s.scriptStatus) return new Response("<html>gateway</html>", { status: s.scriptStatus, headers: { "content-type": "text/html" } });
     if (!s || s.body == null) return json(404, { success: false });
     return new Response(s.body, { status: 200, headers: { "content-type": "application/javascript+module" } });
+  }
+  /* R2 buckets (a test deploy's, p3dev.mjs): `buckets` lists the account's; GET answers 200 or 404, POST creates one. */
+  if ((m = path.match(/\/r2\/buckets\/([^/]+)$/))) {
+    log(entry);
+    return (S.buckets || []).includes(m[1]) ? json(200, { success: true, result: { name: m[1] } }) : json(404, { success: false });
+  }
+  if (/\/r2\/buckets$/.test(path) && method === "POST") {
+    const { name } = JSON.parse(String(init.body));
+    log({ ...entry, bucket: name });
+    (S.buckets ||= []).push(name);
+    return json(200, { success: true, result: { name } });
   }
   log({ ...entry, unrouted: true });
   return json(404, { success: false });

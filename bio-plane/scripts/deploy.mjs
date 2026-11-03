@@ -39,8 +39,16 @@
  * keeps the ones held is unconfirmed). Needs the token scope the upload already uses (Workers Scripts Write). The first add
  * can take up to 15 minutes to propagate to the cron runner; the smoke waits.
  *
+ * A TEST DEPLOY'S NAMES (p3dev.mjs): the plane binds the copy's own resources only, named as the installer names them:
+ * buckets `<bucket>-<slug>` and member targets `<member>-<slug>`, with SELF (`<slug>`) and BROWSER. The copy must begin
+ * with `p3dev-` and every name it binds, sent or kept, must pass the p3dev guard before any request. Missing buckets are
+ * created. A copy whose script does not exist yet is a first install: the upload sends the config's Durable Object
+ * bindings (STORE) with its migrations. `--first-install` deploys only that, with SELF as its one service binding, and
+ * only when the script does not exist yet (the members bind the plane, and the plane binds the members, so on a fresh
+ * copy the plane is installed first and deployed again after them); on a copy that exists it does nothing.
+ *
  * usage (bundler R17, R18, R34, R40, R41), from bio-plane/:
- *   CF_TOKEN=... CF_ACCT=... node scripts/deploy.mjs <slug> <version> <asset> [--test-instance] [--dry-run]
+ *   CF_TOKEN=... CF_ACCT=... node scripts/deploy.mjs <slug> <version> <asset> [--test-instance [--first-install]] [--dry-run]
  *     [--store-location <hint>] [--store-generation <n>]
  */
 import { readFileSync } from "node:fs";
@@ -59,6 +67,7 @@ for (const flag of ["--store-location", "--store-generation"]) {
 }
 const [slug, version, assetPath] = ARGS.filter((a, i) => !a.startsWith("--") && !VALUE_AT.has(i));
 const TEST = process.argv.includes("--test-instance"), DRY = process.argv.includes("--dry-run");
+const FIRST = process.argv.includes("--first-install");
 const TOKEN = process.env.CF_TOKEN, ACCT = process.env.CF_ACCT;
 if (!slug || !version || !assetPath || !TOKEN || !ACCT) {
   console.error("usage: CF_TOKEN=... CF_ACCT=... node scripts/deploy.mjs <slug> <version> <asset> [--test-instance] [--dry-run] [--store-location <hint>] [--store-generation <n>]");
@@ -80,6 +89,10 @@ if (TEST) {
     console.error("Nothing was requested or deployed.");
     process.exit(1);
   }
+}
+if (FIRST && !TEST) {
+  console.error("REFUSED [FIRST_INSTALL_NOT_A_TEST]: --first-install is a test deploy's step; give --test-instance with it.");
+  process.exit(1);
 }
 
 /* DS-2 / D-116: THE VERSION AUTHORITY SPANS THE FLEET, CHECKED BEFORE ANYTHING
@@ -262,8 +275,11 @@ const api = `https://api.cloudflare.com/client/v4/accounts/${ACCT}/workers/scrip
    pre-flighted below so a missing worker is OUR refusal, not code 10143. */
 import { deriveStorePlace, deriveBindings, serviceTargets, deriveLimits, limitsReadBack, deriveCrons, schedulesReadBack, deriveObservability, observabilityReadBack } from "./derive-bindings.mjs";
 import { parseJsonc } from "./jsonc.mjs";   /* R11: the module's one reader */
+import { slugPlane, planePlan, refuseUnlessP3dev, ensureBuckets } from "./p3dev.mjs";   /* a test deploy's names and guard */
 const wranglerCfg = parseJsonc(
   readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"), "bio-plane/wrangler.jsonc");
+/* A test deploy binds the copy's own buckets and members, never the fixed names (p3dev.mjs). */
+const bindingCfg = TEST ? slugPlane(wranglerCfg, { slug }) : wranglerCfg;
 /* G83 (R41): where the team's room runs, from the flags, validated before anything is requested. The hint list is
    runtime-limits' (`STORE_HINTS`), read only when a hint is given. */
 const storePlace = deriveStorePlace(
@@ -275,7 +291,7 @@ const meta = {
   compatibility_flags: wranglerCfg.compatibility_flags || [],
   /* The organisation `ai` credential rides the environment, never printed; no
      Claude credential is ever derived (K1502). */
-  bindings: deriveBindings(wranglerCfg, {
+  bindings: deriveBindings(bindingCfg, {
     slug, version,
     instanceAiToken: process.env.INSTANCE_AI_TOKEN || undefined,
   }),
@@ -403,6 +419,15 @@ function bindingDifferences(derived, deployedBindings) {
   return out;
 }
 
+/* A first install binds SELF alone: the members it binds are deployed after it, and bind it. */
+if (FIRST) {
+  const left = meta.bindings.filter((b) => b.type === "service" && b.service !== slug).map((b) => `${b.name} -> ${b.service}`);
+  meta.bindings = meta.bindings.filter((b) => b.type !== "service" || b.service === slug);
+  console.log(`first install: SELF only; bound when the plane is deployed again after the members: ${left.join(", ") || "none"}`);
+}
+/* THE P3DEV GUARD (CLAUDE.md, the Cloudflare paragraph): every name the upload sends, before any request. */
+if (TEST) refuseUnlessP3dev(planePlan(meta.bindings, { slug, cfg: wranglerCfg }));
+
 /* Pre-flight every derived service target (except the self-reference, which
    this very PUT creates) so the refusal names the missing worker. */
 for (const target of serviceTargets(meta.bindings, slug)) {
@@ -415,6 +440,10 @@ for (const target of serviceTargets(meta.bindings, slug)) {
     /* A request that never answered establishes nothing either (R17). */
     console.error(`REFUSED [PREFLIGHT_UNREADABLE]: could not establish whether service target "${target}" exists (${(e && e.message) || e}); an unverified target is not a verified one.`);
     process.exit(1);
+  }
+  if (r.status === 404 && TEST && DRY) {
+    console.log(`preflight: ${target} is not deployed yet; on a real run the route deploys it before this step`);
+    continue;
   }
   if (r.status === 404) {
     console.error(`REFUSED [BINDING_TARGET_MISSING]: the derived bindings target worker "${target}",`);
@@ -456,6 +485,31 @@ if (onScript.unreadable !== undefined) {
   console.error(`REFUSED [BINDINGS_UNREADABLE]: could not read the bindings now on "${slug}" (${onScript.unreadable}); `
     + "a deploy that cannot see them could delete the plain_text bindings this one does not derive.");
   process.exit(1);
+}
+/* A test deploy's first install, and the guard over what the upload keeps. */
+if (TEST) {
+  const exists = onScript.settings !== null;
+  if (FIRST && exists) { console.log(`first install: ${slug} exists already; nothing to do (the plane step deploys it)`); process.exit(0); }
+  if (!exists) {
+    const dos = ((wranglerCfg.durable_objects && wranglerCfg.durable_objects.bindings) || []).filter((d) => !d.script_name);
+    for (const d of dos) meta.bindings.push({ type: "durable_object_namespace", name: d.name, class_name: d.class_name });
+    const steps = (wranglerCfg.migrations || []).map((m) => Object.fromEntries(
+      ["new_classes", "new_sqlite_classes", "renamed_classes", "deleted_classes"].filter((k) => m[k]).map((k) => [k, m[k]])));
+    const last = (wranglerCfg.migrations || []).at(-1);
+    if (last) meta.migrations = steps.length === 1 ? { new_tag: last.tag, ...steps[0] } : { new_tag: last.tag, steps };
+    console.log(`first install: ${slug} does not exist yet; the upload sends ${dos.map((d) => `${d.name} (class ${d.class_name})`).join(", ") || "no Durable Object"}`
+      + ` with migrations ${last ? `to ${last.tag}` : "none"}`);
+  }
+  /* What keep_bindings keeps on a script that exists is bound too: it must pass the guard as what is sent does. */
+  const keptByClass = onScript.bindings.filter((b) => b && meta.keep_bindings.includes(b.type)
+    && !meta.bindings.some((m) => m.name === b.name && m.type === b.type));
+  refuseUnlessP3dev(planePlan([...meta.bindings, ...keptByClass], { slug, cfg: wranglerCfg }));
+  try {
+    await ensureBuckets(meta.bindings.filter((b) => b.type === "r2_bucket").map((b) => b.bucket_name), { acct: ACCT, token: TOKEN, dry: DRY });
+  } catch (e) {
+    console.error(`REFUSED [BUCKETS_NOT_READY]: ${(e && e.message) || e}. Nothing was deployed.`);
+    process.exit(1);
+  }
 }
 const derivedNames = new Set(meta.bindings.map((b) => b.name));
 const kept = onScript.bindings.filter((b) => b && b.type === "plain_text" && !derivedNames.has(b.name) && !storePlace.remove.includes(b.name))
