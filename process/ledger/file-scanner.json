@@ -30,6 +30,7 @@
   ],
   "prior_work": "Meet R37 only, each marked '(not yet met: T53)' in build/requirements/file-scanner.md. Turn each into real tests under file-scanner/test/ (a test.todo for it becomes real tests), make them pass inside file-scanner/, and when a requirement is met clear its mark yourself (REQ-4); the requirements already met answer as before. If meeting one needs a change in another module, or rests on something not yet recorded, do not edit it: say so to your coordinator in your receipt's not-verified list and leave that requirement's mark. Commit no generated file (bio-plane/src/setup-words/rows.mjs, words-unreviewed.json, any dist): the gate refuses it. Where build/situations/job.md names the old tool (proc), follow this START's commands instead. No earlier unmerged work touches this module.",
   "status": {
-    "state": "OPEN"
+    "state": "COMPLETE",
+    "at": "2026-11-03T22:23:50Z"
   }
 }
