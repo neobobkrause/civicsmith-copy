@@ -1,0 +1,43 @@
+{
+  "id": "explore",
+  "title": "Explore: the five money connection kinds, R36",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/explore/",
+    "build/requirements/explore.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/explore/"
+  ],
+  "requirements": "build/requirements/explore.md",
+  "uses": [
+    "civil-time",
+    "connection-grammar",
+    "events",
+    "observation-log",
+    "money",
+    "duties",
+    "connections",
+    "entities",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/explore.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet R36 only: the connection kinds are five money families (money_transfer, money_payment, money_contribution, money_revenue, money_other) in place of money_flow. The kinds are registered by the money module (bio-plane/src/money/vocab.mjs and index.mjs); this module's flowsFrom preset (bio-plane/src/explore/presets.mjs) reads them by owner money. The test.todo for R36 in bio-plane/test/m/explore/chains.test.mjs becomes real tests (each of the five kinds is walked by flowsFrom and money_flow is no longer a kind; control: R16, R17 and R35 answer as before), make them pass inside bio-plane/src/explore/, and when R36 is met clear its '(not yet met: T53)' mark yourself (REQ-4). If meeting it needs a change in bio-plane/src/money/, bio-plane/src/op-declarations/ or any other module, do not edit it: say so to your coordinator in your receipt's not-verified list. Where build/situations/job.md names the old tool (proc), follow this START's commands instead. No earlier unmerged work touches this module.",
+  "status": {
+    "state": "OPEN"
+  }
+}
