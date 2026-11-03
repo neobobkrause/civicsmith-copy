@@ -6,6 +6,8 @@ import { exploreOf } from "../../../src/explore/index.mjs";
 import { exploreOps, DECLARED_OPS } from "../../../src/explore/ops.mjs";
 import { declaredOpHolds } from "../../declared-ops.mjs";
 import { BOUNDS, CHAIN_LIMITS } from "../../../src/connection-grammar/index.mjs";
+import { defaultRegistry } from "../../../src/connection-grammar/index.mjs";
+import { seeded, ANN, ZONE as MZONE } from "../money/fixture.mjs";
 import { AT, ZONE, valid, ent, conn, world, byOwner, makeStore, makeOwner, OWNER_KINDS } from "./fixtures/owners.mjs";
 
 const V = "alice";
@@ -440,4 +442,56 @@ test("R35 control: the rows declared before are unchanged", () => {
   void words; void ZONE; void makeStore; void makeOwner;
 });
 
-test.todo("R36 the five money family kinds replace money_flow: the money module's, which registers the kinds; this module's flowsFrom preset reads them by owner");
+/* R36 over money's real owner (money's own test world): each of the five families is walked by flowsFrom, money_flow is no kind */
+const FAMILIES = ["money_transfer", "money_payment", "money_contribution", "money_revenue", "money_other"];
+const moneyWorld = () => {
+  const s = seeded();
+  const ids = {
+    money_transfer: s.rec({ kind: "transfer", from: { entity: s.city, fund: s.general }, to: { entity: s.vendor }, amount: "90", as_read: "$90" }),
+    money_payment: s.rec({}),
+    money_contribution: s.rec({ kind: "gift", amount: "50", as_read: "$50" }),
+    money_revenue: s.rec({ kind: "revenue", stage: "collected", amount: "80", as_read: "$80" }),
+    money_other: s.rec({ kind: "debt", stage: "incurred", amount: "70", as_read: "$70" }),
+  };
+  return { s, ids, at: { value: "2014-03-01", precision: "day", zone: MZONE }, x: exploreOf(s.host) };
+};
+
+test("R36 flowsFrom walks each of the five money families, payer to payee, and its kind set is the five", () => {
+  const { s, ids, at, x } = moneyWorld();
+  assert.deepEqual([...x.presets().find((p) => p.name === "flowsFrom").kinds].sort(), [...FAMILIES].sort());
+  const f = x.flowsFrom({ from: s.city, at, viewer: ANN });
+  assert.equal(f.ok, true, JSON.stringify(f).slice(0, 400));
+  const one = Object.fromEntries(f.paths.filter((p) => p.hops.length === 1).map((p) => [p.hops[0].id, p.hops[0]]));
+  for (const k of FAMILIES) {
+    const h = one[ids[k]];
+    assert.ok(h, `${k}: the fact is walked by flowsFrom`);
+    assert.deepEqual([h.kind, h.owner, h.from, h.to], [k, "money", s.city, s.vendor]);
+  }
+  for (const k of FAMILIES) {
+    const r = x.explore({ from: s.city, at, viewer: ANN, depth: 1, kinds: [k] });
+    assert.equal(r.ok, true);
+    assert.deepEqual(r.paths.map((p) => p.hops[0].id), [ids[k]], `${k} alone answers its own fact only`);
+  }
+  assert.equal(x.flowsFrom({ from: s.vendor, at, viewer: ANN }).paths.length, 0, "nothing flows out of the payee");
+});
+
+test("R36 money_flow is no longer a kind: explore with it is refused UNKNOWN_KIND and no preset names it", () => {
+  const { s, at, x } = moneyWorld();
+  assert.equal(defaultRegistry.kindOf("money_flow"), null);
+  assert.equal(x.explore({ from: s.city, at, viewer: ANN, kinds: ["money_flow"] }).refused, "UNKNOWN_KIND");
+  assert.ok(x.presets().every((p) => !p.kinds.includes("money_flow")));
+});
+
+test("R36 control: R16, R17 and R35 answer as before over the five families", () => {
+  const { s, at, x } = moneyWorld();
+  const f = x.flowsFrom({ from: s.city, at, viewer: ANN });
+  /* R16: no answer asserts a connection beyond the cited hops, and no outward word of the five says what R16 forbids */
+  assert.equal(f.note, x.explore({ from: s.city, at, viewer: ANN }).note);
+  for (const k of FAMILIES) for (const bad of ["knows", "network", "conflict", "suspicious", "most connected"]) assert.equal(String(defaultRegistry.kindOf(k).word).toLowerCase().includes(bad), false, `${k}: ${bad}`);
+  for (const k of FAMILIES) assert.equal(defaultRegistry.kindOf(k).class, "evidentiary", `${k} is evidentiary, never a declared relation (R17)`);
+  assert.ok(f.paths.length >= 5 && f.paths.every((p) => p.label === "evidenced" && !p.lead && p.grade), "each money path is evidenced and graded, never a lead (R17)");
+  /* R35: the declared rows are unchanged */
+  assert.deepEqual(DECLARED_OPS.explorepreset.fields, { accepts: ["preset", "from", "to", "event", "at", "period", "depth", "a", "b", "kinds"], requires: ["preset"] });
+  assert.deepEqual(Object.keys(DECLARED_OPS), ["explore", "explorepreset", "exploreverify", ...Object.keys(DECLARED_OPS).slice(3)]);
+  for (const op of ["exploreall", "explorepath", "exploreshorter", "explorecontinue"]) assert.equal(DECLARED_OPS[op].mutating, false);
+});
