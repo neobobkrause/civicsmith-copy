@@ -228,5 +228,5 @@ test("T53-502 the federal layer holds the street suffixes as data: each with its
 
 /* Not yet met: named here, never red and never a pin of today's behaviour (build/situations/job.md). */
 test.todo("R109 the federal layer's records_help block for FOIA: the statute's figures and the ten citations, read on the text [owed: a reading of 5 U.S.C. § 552 and which kind of day its twenty are shown as]");
-test.todo("R119 the federal layer holds one counterparties entry per office of the government's own FOIA list [waits: measure F4, the list's size, and the makers' key]");
-test.todo("R120 the snapshot script writes the layer's data file and the diff against the last snapshot; a release is blocked when as_of is too old [waits: the makers' key and the measured bound]");
+/* R119 and R120's script: t53-federal-offices.test.mjs */
+test.todo("R120 a release is blocked by the process tool when the federal snapshot's as_of is older than a stated bound [waits: the measured bound, and the process tool's own check]");
