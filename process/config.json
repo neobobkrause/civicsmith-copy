@@ -61,7 +61,8 @@
         "agent-runner/dist",
         "agent-worker/dist",
         "sheet-worker/dist",
-        "file-scanner/dist"
+        "file-scanner/dist",
+        "reader-container/dist"
       ],
       "regenerate": [
         "node",
