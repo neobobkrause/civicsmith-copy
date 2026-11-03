@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { registerFormat, unregisterFormat, getFormat, listFormats, detectFormat } from "../../../src/formats.mjs";
 import { localize } from "../../../src/setup-words/index.mjs";
 
-const BUILT_IN = ["jpeg", "png", "gif", "tiff", "webp", "bmp", "jp2", "heic", "heif", "avif", "html", "pdf", "rtf", "docx", "xlsx", "pptx", "odt", "ods", "odp", "csv", "doc", "xls", "ppt", "json", "ndjson", "xml", "svg", "kml", "kmz", "geojson", "ics", "vcf", "srt", "vtt", "eml", "msg", "mbox", "tar", "gz", "7z", "zip", "text"];
+const BUILT_IN = ["jpeg", "png", "gif", "tiff", "webp", "bmp", "jp2", "heic", "heif", "avif", "html", "mhtml", "pdf", "rtf", "docx", "xlsx", "pptx", "odt", "ods", "odp", "csv", "doc", "xls", "ppt", "json", "ndjson", "xml", "svg", "kml", "kmz", "geojson", "ics", "vcf", "srt", "vtt", "eml", "msg", "mbox", "tar", "gz", "7z", "zip", "text"];
 const enc = (s) => new TextEncoder().encode(s);
 const PDF = enc("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n");
 const HTML = enc("<!DOCTYPE html><html><body>x</body></html>");

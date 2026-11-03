@@ -24,7 +24,7 @@ const isHit = (r, format, confidence) => {
 };
 
 test("R23: at module load the registry holds exactly the built-in roster (R33 as built so far), in order, the readers' own objects unmodified", () => {
-  assert.deepEqual(listFormats(), ["jpeg", "png", "gif", "tiff", "webp", "bmp", "jp2", "heic", "heif", "avif", "html", "pdf", "rtf", "docx", "xlsx", "pptx", "odt", "ods", "odp", "csv", "doc", "xls", "ppt", "json", "ndjson", "xml", "svg", "kml", "kmz", "geojson", "ics", "vcf", "srt", "vtt", "eml", "msg", "mbox", "tar", "gz", "7z", "zip", "text"]);
+  assert.deepEqual(listFormats(), ["jpeg", "png", "gif", "tiff", "webp", "bmp", "jp2", "heic", "heif", "avif", "html", "mhtml", "pdf", "rtf", "docx", "xlsx", "pptx", "odt", "ods", "odp", "csv", "doc", "xls", "ppt", "json", "ndjson", "xml", "svg", "kml", "kmz", "geojson", "ics", "vcf", "srt", "vtt", "eml", "msg", "mbox", "tar", "gz", "7z", "zip", "text"]);
   for (const [f, e] of [["docx", docxEntry], ["xlsx", xlsxEntry], ["pptx", pptxEntry], ["odt", odtEntry],
     ["ods", odsEntry], ["odp", odpEntry], ["csv", csvEntry]]) {
     assert.equal(getFormat(f), e, `${f} is the reader's own entry object`);

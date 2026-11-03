@@ -57,7 +57,7 @@ const onePage = () => {
 
 test("R23: the roster, jpeg and png first; a picture is read as a picture whatever its first KiB carries (G130a; S14)", () => {
   const order = listFormats();
-  assert.deepEqual(order, ["jpeg", "png", "gif", "tiff", "webp", "bmp", "jp2", "heic", "heif", "avif", "html", "pdf", "rtf", "docx", "xlsx", "pptx", "odt", "ods", "odp", "csv", "doc", "xls", "ppt", "json", "ndjson", "xml", "svg", "kml", "kmz", "geojson", "ics", "vcf", "srt", "vtt", "eml", "msg", "mbox", "tar", "gz", "7z", "zip", "text"]);
+  assert.deepEqual(order, ["jpeg", "png", "gif", "tiff", "webp", "bmp", "jp2", "heic", "heif", "avif", "html", "mhtml", "pdf", "rtf", "docx", "xlsx", "pptx", "odt", "ods", "odp", "csv", "doc", "xls", "ppt", "json", "ndjson", "xml", "svg", "kml", "kmz", "geojson", "ics", "vcf", "srt", "vtt", "eml", "msg", "mbox", "tar", "gz", "7z", "zip", "text"]);
   assert.equal(order.indexOf("jpeg"), 0);
   assert.equal(order.indexOf("png"), 1);
   assert.equal(order.indexOf("zip"), order.length - 2, "zip last of the signature entries, `text` (a fallback) after it");
