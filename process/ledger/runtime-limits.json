@@ -32,7 +32,8 @@
   ],
   "prior_work": "Meet R47 only, each marked '(not yet met: T53)' in build/requirements/runtime-limits.md. Turn each into real tests under bio-plane/test/m/runtime-limits/ (a test.todo for it becomes real tests), make them pass inside bio-plane/src/cpu.mjs, bio-plane/src/tokens.mjs, bio-plane/src/store-place.mjs, bio-plane/src/read-bounds.mjs, bio-plane/src/byte-ledger.mjs, and when a requirement is met clear its mark yourself (REQ-4); the requirements already met answer as before. If meeting one needs a change in another module, or rests on something not yet recorded, do not edit it: say so to your coordinator in your receipt's not-verified list and leave that requirement's mark. Commit no generated file (bio-plane/src/setup-words/rows.mjs, words-unreviewed.json, any dist): the gate refuses it. Where build/situations/job.md names the old tool (proc), follow this START's commands instead. No earlier unmerged work touches this module.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-03T22:16:29Z"
+    "state": "BLOCKED",
+    "reason": "R47 rests on measure M-R7, which is not recorded: R47 sets stream_max and segment_max 'at START from ... M-R7, each with source naming the measure; until it is recorded the rows do not exist'. No M-R7 figure is in build/rulings.md, PLATFORM.md, build/plan/T53-completion.md (T53-581 'once M-R7 records them') or on tranche (checked through 52e6d639). This START hands no figures. Adding the rows would mean inventing figures, so nothing was changed and R47's mark stays. To unblock: record M-R7 (REGISTER_STREAM_MAX above 5.46 GiB, REGISTER_SEGMENT_MAX at most CAPTURE_MAX = 524,288,000) with its source id, then restart this job.",
+    "at": "2026-11-03T22:26:24Z"
   }
 }
