@@ -3,7 +3,8 @@
   "title": "doc-clean: an email's own metadata removed from its published copy, R13",
   "layer": 1,
   "paths": [
-    "bio-plane/src/doc-clean/"
+    "bio-plane/src/doc-clean/",
+    "build/requirements/doc-clean.md"
   ],
   "tests": [
     "bio-plane/test/m/doc-clean/"
