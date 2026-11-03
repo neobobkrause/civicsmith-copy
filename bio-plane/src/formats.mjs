@@ -665,6 +665,57 @@ registerFormat({
   text: null,
 });
 
+/* `mhtml` (R33; T53): a web page saved whole as one MIME archive. Its header block, unfolded, declares `multipart/related`
+   with an HTML root (the `type` parameter, or the first part's own Content-Type), and it is a saved page, not a mailed
+   message: the archive names where the page was (Snapshot-Content-Location, or a Content-Location on its HTML part) and
+   carries none of a message's transport fields (Received, To, Message-ID). Registered after `html` and before
+   mail-reader's `eml`, which would otherwise take any header block for a message. Detection only, as `html` (R19). */
+const MHTML_HEAD_BYTES = 16384;
+const MHTML_CONTENT_TYPES = ["multipart/related", "application/x-mimearchive", "message/x-mhtml"];
+function headerBlock(text) {
+  const end = text.search(/\r?\n\r?\n/);
+  if (end < 0) return null;
+  const fields = new Map();
+  for (const line of text.slice(0, end).replace(/\r?\n[ \t]+/g, " ").split(/\r?\n/)) {
+    const m = /^([!-9;-~]+):[ \t]*(.*)$/.exec(line);
+    if (!m) return null;
+    fields.set(m[1].toLowerCase(), m[2]);
+  }
+  return { fields, rest: text.slice(end).replace(/^\r?\n\r?\n/, "") };
+}
+function startsAsMhtml(bytes) {
+  const top = headerBlock(LATIN1.decode(bytes.subarray(0, MHTML_HEAD_BYTES)));
+  if (!top) return false;
+  const ctype = top.fields.get("content-type") ?? "";
+  if (!/^multipart\/related\s*(;|$)/i.test(ctype)) return false;
+  if (["received", "to", "message-id"].some((f) => top.fields.has(f))) return false;
+  const boundary = /;\s*boundary\s*=\s*(?:"([^"]+)"|([^\s;]+))/i.exec(ctype);
+  if (!boundary) return false;
+  const delim = `--${boundary[1] ?? boundary[2]}`;
+  const at = top.rest.indexOf(delim);
+  const first = at < 0 ? null : headerBlock(top.rest.slice(at + delim.length).replace(/^[ \t]*\r?\n/, ""));
+  const rootType = /;\s*type\s*=\s*"?text\/html"?/i.test(ctype);
+  const firstHtml = !!first && /^text\/html\s*(;|$)/i.test(first.fields.get("content-type") ?? "");
+  if (!rootType && !firstHtml) return false;
+  return top.fields.has("snapshot-content-location") || (!!first && first.fields.has("content-location"));
+}
+registerFormat({
+  format: "mhtml",
+  detect(bytes, contentType) {
+    if (bytes) {
+      return startsAsMhtml(bytes)
+        ? certain("mhtml", localize("format-registry.formats.mhtml_saved_page", "a saved web page: multipart/related with an HTML root and the page's location"))
+        : null;
+    }
+    return contentType && MHTML_CONTENT_TYPES.includes(contentType.toLowerCase().split(";")[0].trim())
+      ? { format: "mhtml", confidence: "likely", signals: [`content type "${contentType}"`] }
+      : null;
+  },
+  parts: null,
+  structure: null,
+  text: null,
+});
+
 registerFormat({
   format: "pdf",
   detect(bytes, contentType) {
@@ -936,8 +987,9 @@ const TABLE_ROWS = [
   ["read", "document", ["pdf", "docx", "doc", "docm", "dotx", "pptx", "ppt", "pptm", "potx", "odt", "odp", "rtf"]],
   ["read", "spreadsheet", ["xlsx", "xlsm", "xltx", "ods", "csv", "tsv"]],
   ["read", "xls", ["xls"]],
-  ["read", "text", ["text", "html", "mhtml", "xml", "svg", "kml", "kmz", "geojson", "vcf", "srt", "vtt"]],
-  ["read", "json", ["json", "ndjson"]],
+  ["read", "text", ["text", "vcf", "srt", "vtt"]],
+  /* R42: JSON, XML, HTML, SVG and map data are 100 MB with nesting 1,000 (runtime-limits R37's text rows) */
+  ["read", "json", ["json", "ndjson", "html", "mhtml", "xml", "svg", "kml", "kmz", "geojson"]],
   ["read", "calendar", ["ics"]],
   ["read", "picture", ["jpeg", "png", "gif", "webp", "bmp", "avif", "heic", "heif", "jp2"]],
   ["read", "tiff", ["tiff"]],
