@@ -7,7 +7,8 @@
     "bio-plane/src/tokens.mjs",
     "bio-plane/src/store-place.mjs",
     "bio-plane/src/read-bounds.mjs",
-    "bio-plane/src/byte-ledger.mjs"
+    "bio-plane/src/byte-ledger.mjs",
+    "build/requirements/runtime-limits.md"
   ],
   "tests": [
     "bio-plane/test/m/runtime-limits/"

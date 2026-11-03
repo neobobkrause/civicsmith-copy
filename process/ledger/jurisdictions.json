@@ -3,7 +3,8 @@
   "title": "jurisdictions: the federal layer, reviewed texts, fiscal year and the first profile, R109 R119 R120 R124 R133 R137",
   "layer": 1,
   "paths": [
-    "jurisdictions/"
+    "jurisdictions/",
+    "build/requirements/jurisdictions.md"
   ],
   "tests": [
     "jurisdictions/test/"

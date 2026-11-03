@@ -3,7 +3,8 @@
   "title": "format-registry: the beta roster, content detection and the kind table, R23 R33 R35 R42",
   "layer": 1,
   "paths": [
-    "bio-plane/src/formats.mjs"
+    "bio-plane/src/formats.mjs",
+    "build/requirements/format-registry.md"
   ],
   "tests": [
     "bio-plane/test/m/format-registry/"
