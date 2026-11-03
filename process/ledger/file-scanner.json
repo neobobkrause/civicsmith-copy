@@ -3,7 +3,8 @@
   "title": "file-scanner: a render fetches nothing, R37",
   "layer": 1,
   "paths": [
-    "file-scanner/"
+    "file-scanner/",
+    "build/requirements/file-scanner.md"
   ],
   "tests": [
     "file-scanner/test/"
