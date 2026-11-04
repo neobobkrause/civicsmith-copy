@@ -17,7 +17,8 @@ const withCode = (code, legs, over = {}) => findingsOf(fm({ legs, ...over })).fi
 test("R13: a lead leg names its place in plain words, never basis_version_legs (C-54.1, through leadLegFindings)", () => {
   const found = withCode("LEAD_NOT_EVIDENCE", [{ version: "first", target: "LEAD-2026-0001-x", role: "supports", ground: "main" }]);
   assert.equal(found.length, 1, "control: the lead refusal is still raised");
-  assert.ok(found[0].message.startsWith(place(1, "first")), found[0].message);
+  /* the sentence is inquiry-grammar's, which places the label inside it: R13 asks that it name the leg, not where */
+  assert.ok(found[0].message.includes(place(1, "first")), found[0].message);
   assert.doesNotMatch(found[0].message, /basis_version_legs/);
 });
 
