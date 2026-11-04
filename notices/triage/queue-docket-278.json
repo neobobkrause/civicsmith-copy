@@ -1,0 +1,1 @@
+{"row":"triage","user":"queue","verdict":"not affected","evidence":"build/modules.json:164 queue (bio-plane/src/queuestate.mjs, bio-plane/src/queue/) holds no file that imports docket, every code file under its paths read at 84656e73ab","at":"2026-11-04T19:13:52.121Z","key":"docket:278","worker":"merge: imports check","cost":"0"}
