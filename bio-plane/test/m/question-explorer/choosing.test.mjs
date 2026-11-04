@@ -37,9 +37,14 @@ test("R1: a refusal from exploreAllowed opens nothing and the next owner is aske
   assert.equal(asks.length, 1, "one Ask per owner per tick");
   assert.equal(asks[0].owner, `project:${PROJ}`);
   assert.deepEqual(asks[0].what, [Q], "the questions worth exploring");
-  /* R12: the Ask item its owners read carries ai-use R10's estimate (here, no run measured yet). */
+  /* R12: the Ask item its owners read carries ai-use R10's estimate, as ai-use itself answers it for that account (here, no
+     run measured yet); this module's own answer says "not known yet". */
   const [item] = w.realAiUse.exploreAsksPending({ viewer: "member:alice", at: w.clock.now }).asks;
-  assert.deepEqual([item.owner, item.what, item.estimate], [`project:${PROJ}`, [Q], word("question-explorer.known")]);
+  const r10 = w.realAiUse.estimate({ owner: `project:${PROJ}`, use: "explore", mode: "explore", count: 1, viewer: "member:alice" }).estimate;
+  assert.deepEqual([item.owner, item.what, item.estimate], [`project:${PROJ}`, [Q], r10]);
+  /* The Ask names the account ai-use decides on (ai-use R9 as T53 states it). */
+  assert.equal(asks[0].account_id, w.aiAccounts.accountUsesOf({ owner: `project:${PROJ}` }).account_id);
+  assert.equal(typeof asks[0].account_id, "string");
   assert.equal(t.asked[0].estimate, word("question-explorer.known"));
   /* The Ask waits an hour before it is looked at again (Q2, refused by every owner, not again that day); then,
      approved, the run opens that day. */
@@ -169,7 +174,9 @@ test("R3: a member's account's explore switch is read through ai-accounts' in-pl
   await w.setExplore("member:alice", "yes");
   stand.unreadable = true;
   const t = await w.p.exploreTick(w.clock.now);
-  assert.deepEqual(asked, [["accountUsesOf", { owner: "member:alice" }]], "the in-plane read, with no viewer");
+  assert.deepEqual(asked.filter(([, a]) => a.owner === "member:alice"), [["accountUsesOf", { owner: "member:alice" }]],
+                   "the in-plane read, with no viewer, once a tick");
+  assert.ok(asked.every(([k, a]) => k === "accountUsesOf" && Object.keys(a).join() === "owner"), "every read in-plane, by owner");
   assert.equal(w.calledAs("exploreAllowed").some((a) => a.owner === "member:alice"), false, "refused here, ai-use not asked");
   assert.equal(t.refused, 2, "the group (its switch at no, by ai-use) and her unreadable account");
   /* Negative control: read, at yes, she is passed to ai-use to decide (ai-use R6). */
