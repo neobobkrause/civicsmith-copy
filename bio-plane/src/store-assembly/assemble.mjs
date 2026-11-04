@@ -99,7 +99,8 @@ import { actionProducersOf } from "../action-producers/index.mjs";
 import { tasksOf } from "../tasks/index.mjs";
 import { wizardScriptsOf, wizardScriptsOps, SCREEN_REGISTRY } from "../wizard-scripts/index.mjs";
 import { translationsOf, translationsOps } from "../translations/index.mjs";
-import { instanceSetupOf, instanceSetupOps, disclosureReadOf, DISCLOSURE_READER } from "../setup.mjs";
+import { instanceSetupOf, instanceSetupOps, disclosureReadOf, DISCLOSURE_READER, testInstanceOf } from "../setup.mjs";
+import { aiCatalogueOf } from "../ai-catalogue/index.mjs";
 import { dispatch, controlPlaneRoutes } from "../store-door/dispatch.mjs";   /* K1907, K2041: the store's door */
 import { promotionStep } from "../store-door/step.mjs";
 import { registerOwnersCounts, registerStats, withDeepStats } from "./stats.mjs";
@@ -195,12 +196,13 @@ const captureClockOf = (ctx, env) => {
 
 /** R1: every module of the record store built on `ctx`'s storage, migrated and started; answers the assembled store
  *  `{routes, dispatch, namespace, nowMs, read}`. `deliver`, optional, is `control-plane`'s owed-render delivery
- *  (`deliverOwedRender`), handed to the owed-work ledger: absent, a ledger row that needs it stays owed (R67). `releaseKeys`,
+ *  (`deliverOwedRender`), handed to the owed-work ledger: absent, a ledger row that needs it stays owed (R67). `catalogueKeys`,
+ *  optional, a test plane's keys for ai-catalogue, honoured on a test instance only (see below; the class hands none). `releaseKeys`,
  *  optional and a test's own, is the list of keys instance-setup verifies a release notice against in place of the
  *  product's (`RELEASE_KEYS`): the Durable Object class hands none. The
  *  migration and the starts are work handed to `ctx.blockConcurrencyWhile`, so they run before any request; a module that
  *  fails to build throws here, and the class that called it answers nothing. */
-export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } = {}) {
+export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, catalogueKeys = null } = {}) {
   env = env || {};
   const sql = ctx.storage.sql;
   const namespace = () => namespaceOf(ctx, env) || "bio";
@@ -215,7 +217,17 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
   /* R21 (K1541; credentials R23, R29): credentials holds the Worker secret its seal is derived from, built here before
      any module reaches it (its instance is one per storage, its deps read on the first call only). Unbound, setting a
      member's reference is refused ACCOUNT_SEAL_UNAVAILABLE. */
-  credentialsOf(ctx, { sealSecret: env.ACCOUNT_SEAL_SECRET ?? null, now: () => nowMs(null) });   /* K5168: the first construction takes the store's clock */
+  /* R1 (ai-accounts R40, R63; the coordinator, 4 Nov): ai-catalogue's one instance on this storage, over record-core, at the
+     store's clock, is ai-accounts' catalogue, handed through credentials' first construction (credentials R32 passes it on), so
+     an account act reads the signed list the copy holds and fails closed only when it holds none. Its keys are the product's
+     (`CATALOGUE_KEYS`) unless a test plane hands `catalogueKeys`, which are honoured on a test instance alone
+     (`testInstanceOf`: CIVICSMITH_TEST_INSTANCE equal to INSTANCE_NAME); anywhere else they are refused, the product's keys
+     kept and the refusal logged, so no other key can sign a list a real copy reads. */
+  const testKeys = catalogueKeys !== null && catalogueKeys !== undefined && testInstanceOf(env) ? catalogueKeys : null;
+  if (catalogueKeys !== null && catalogueKeys !== undefined && testKeys === null)
+    console.warn(JSON.stringify({ event: "CATALOGUE_TEST_KEYS_REFUSED", detail: "catalogueKeys are honoured on a test instance only; the product's keys are kept" }));
+  const catalogue = aiCatalogueOf(ctx, { record: recordOf(ctx), env, clock: () => nowMs(null), ...(testKeys ? { keys: testKeys } : {}) });
+  credentialsOf(ctx, { sealSecret: env.ACCOUNT_SEAL_SECRET ?? null, now: () => nowMs(null), catalogue });   /* K5168: the first construction takes the store's clock */
   /* R22 (T33-12; docprofile R36): the content types registered into docprofile's registry, once, generic last. */
   registerReaders();
   /* R10 (K861): the stats figures, each owner's registered under its own name (record-core R63), and the plane's own

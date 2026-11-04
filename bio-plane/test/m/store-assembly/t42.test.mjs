@@ -303,7 +303,8 @@ test("R57 (was plane R36) (agent-worker R6, R63, R72; ai-use R1, R11): the AI pa
   for (const t of x.rows(`SELECT name FROM sqlite_master WHERE type='table'`).map((t) => t.name))
     assert.ok(!JSON.stringify(x.rows(`SELECT * FROM "${t}"`)).includes(SENTINEL), `the secret stored in ${t}`);
   const actual = aiUseOf(x.ctx).actualOf({ act: tx.act, viewer: "member:ann" });
-  assert.deepEqual([actual.found, actual.use, actual.cost && actual.cost.usd], [true, "transcribe", 0.25]);
+  /* ai-use T53 (its R5): the reported total is `cost_reported` {amount, unit} (a `total_cost_usd` read as reported, in usd) */
+  assert.deepEqual([actual.found, actual.use, actual.cost_reported], [true, "transcribe", { amount: 0.25, unit: "usd" }]);
 });
 
 test("R57 (was plane R36): a project's account is counted under `project:<id>` and named in the wire; an ending that carries usage is counted and answered ok:false with its reason; a binding that throws or answers no JSON is AGENT_WORKER_SILENT, nothing counted", async () => {

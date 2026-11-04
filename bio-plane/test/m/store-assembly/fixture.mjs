@@ -94,12 +94,18 @@ export async function store({ db, env: extra, before = null, deliver = null } = 
   return { s, ctx: st.ctx, db: st.db, env, routes, call, fetch };
 }
 
-/** The coordinator's CATALOGUE ruling (ai-accounts R40, R63): ai-accounts' catalogue is ai-catalogue's real service over the
- *  object's storage, seeded from ai-catalogue's published fixture as ai-accounts' own `catalogueFor` seeds it. The assembly
- *  composes no catalogue yet, so without this every account act fails closed CATALOGUE_UNAVAILABLE. Idempotent. */
+/** The coordinator's CATALOGUE ruling (ai-accounts R40, R63): ai-accounts reads ai-catalogue's published fixture, seeded as
+ *  ai-accounts' own `catalogueFor` seeds it. The assembly hands ai-accounts the object's own catalogue (R1), which holds the
+ *  product's keys unless the store is a test instance handed `catalogueKeys` (`catalogue.test.mjs` drives that seam). These
+ *  module worlds are not test instances (the ai-runs gate would then admit every part untested), so the fixture's catalogue is
+ *  a second ai-catalogue instance over the same database, under the fixture's key, handed to ai-accounts in its place.
+ *  Idempotent. */
 export async function withCatalogue(ctx) {
   const acc = aiAccountsOf(ctx);
-  if (!acc.catalogue) acc.catalogue = catalogueFor(ctx, { record: recordOf(ctx) });
+  if (!acc.catalogue || acc.catalogue.doc === undefined) {
+    const shadow = { storage: { sql: ctx.storage.sql, transactionSync: ctx.storage.transactionSync } };
+    acc.catalogue = catalogueFor(shadow, { record: recordOf(ctx) });
+  }
   await acc.catalogue.seeded;
   return acc.catalogue;
 }
