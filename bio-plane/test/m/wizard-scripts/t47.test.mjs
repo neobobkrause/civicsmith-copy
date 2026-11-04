@@ -6,15 +6,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { world, seeded, registration, step, V } from "./fixture.mjs";
+import { world, seeded, registration, step, V, currentRegistry, currentLibrary } from "./fixture.mjs";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
 const F = V("frank"), E = V("erin");
 const src = (f) => readFileSync(new URL(`./source/${f}`, import.meta.url), "utf8");
-const REG_FILE = JSON.parse(src("registry.json"));
-const LIB_T47A = JSON.parse(src("library-a0fab7abf0.json")), LIB_T47 = JSON.parse(src("library-f90b187c7b.json"));
-const LIB_T50 = JSON.parse(src("library-7be06eb4cb.json"));   /* the design commit named at T50's START (R41, R42) */
+const REG_FILE = currentRegistry(JSON.parse(src("registry.json")));
+const LIB_T47A = currentLibrary(JSON.parse(src("library-a0fab7abf0.json"))), LIB_T47 = currentLibrary(JSON.parse(src("library-f90b187c7b.json")));
+const LIB_T50 = currentLibrary(JSON.parse(src("library-7be06eb4cb.json")));   /* the design commit named at T50's START (R41, R42) */
 const OWED = /^owed:([a-z][a-z0-9]*)(?:\s+(DEC-\d+|K\d+))?$/;
 /* every op the registry names, owed ones as their op: the member op table once each owed op is declared */
 const ALL_OPS = [...new Set(REG_FILE.screens.flatMap((s) => s.acts.map((a) => (a.status === "owed" ? OWED.exec(a.op)[1] : a.op))))];
@@ -43,8 +43,9 @@ const entry = (id, steps) => ({ id, name: id, required: false, version: 1, autho
 test("R31 (T47; N992; DEC-198 (1), DEC-199 (6)) the registry carries DEC-198's and DEC-199's acts: capture lists captureupload; connect lists subscriptionsignin and subscriptiondisconnect beside accountreferenceset and accountreferenceremove; answers lists ask and ruleanswer; matter lists escalationreopen; itemtakeup, actionscope, filingsecondapprove, escalationstoppursuing, infolevelset and subscriptionsignin are declared acts under their own names; control: op=wizardcheck admits captureupload on capture and refuses capture there (WIZARD_ACT_UNKNOWN)", () => {
   const acts = (id) => wz.SCREEN_REGISTRY.find((s) => s.id === id).acts;
   assert.ok(acts("capture").includes("captureupload") && !acts("capture").includes("capture"));
-  for (const op of ["subscriptionsignin", "subscriptiondisconnect", "accountreferenceset", "accountreferenceremove"]) assert.ok(acts("connect").includes(op), op);
-  assert.ok(acts("connect").indexOf("subscriptiondisconnect") > acts("connect").indexOf("accountreferenceset"), "beside the API key's acts, in the file's order");
+  /* ai-accounts R35 (T53): accountreferenceset is carried as aiownadd, subscriptiondisconnect and accountreferenceremove as aiaccountremove */
+  for (const op of ["subscriptionsignin", "aiownadd", "aiaccountremove"]) assert.ok(acts("connect").includes(op), op);
+  assert.ok(acts("connect").indexOf("aiaccountremove") > acts("connect").indexOf("aiownadd"), "beside the API key's acts, in the file's order");
   assert.ok(acts("answers").includes("ask") && acts("answers").includes("ruleanswer"));
   assert.ok(acts("matter").includes("escalationreopen"));
   for (const [screen, op] of [["plan", "itemtakeup"], ["action", "actionscope"], ["start-send", "filingsecondapprove"], ["matter", "escalationstoppursuing"],
@@ -99,9 +100,9 @@ test("R32 (T47; N992; DEC-198 (2); K2241) Connect your Claude account's version 
   const code = v3.steps.findIndex((t) => /code/i.test(t.what) && t.act === "subscriptionsignin");
   assert.ok(code > 0, "the code step, sent by subscriptionsignin");
   assert.deepEqual(v3.steps[code].what, fileStep(LIB_T47A, c.name, code).what, "as the file words it");
-  assert.equal(v3.steps[code + 1].act, "accountreferenceset", "a step for an API key follows");
+  assert.equal(v3.steps[code + 1].act, "aiownadd", "a step for an API key follows (accountreferenceset's T53 op, ai-accounts R35)");
   assert.match(v3.steps[code + 1].what, /API key/);
-  assert.equal(v3.steps[v3.steps.length - 1].act, "subscriptiondisconnect", "the last step disconnects");
+  assert.equal(v3.steps[v3.steps.length - 1].act, "aiaccountremove", "the last step disconnects (subscriptiondisconnect's T53 op)");
   assert.deepEqual(v3.steps.map((t) => [t.screen, t.act, t.what, t.why]), file.versions[0].steps.map((t) => [t.screen, t.act, t.what, t.why]), "the file's steps, step by step");
   const w = real();
   assert.deepEqual(w.wz.wizardsAt({ screen: "connect", viewer: F }).scripts.filter((s) => s.id === c.id).map((s) => s.version), [`${c.id}@${c.version}`]);
@@ -110,11 +111,11 @@ test("R32 (T47; N992; DEC-198 (2); K2241) Connect your Claude account's version 
   assert.deepEqual([three.version.state, three.version.updated_by, three.offered], ["updated", `${c.id}@4`, false]);
   const two = w.wz.wizardRead({ script: c.id, version: `${c.id}@2`, viewer: F });
   assert.deepEqual([two.version.state, two.version.updated_by, two.offered], ["updated", `${c.id}@3`, false]);
-  assert.equal(two.version.steps[two.version.steps.length - 1].act, "accountreferenceremove", "control: version 2 ended on accountreferenceremove");
-  /* no offered version, anywhere, ends on accountreferenceremove */
+  assert.equal(two.version.steps[two.version.steps.length - 1].act, "aiaccountremove", "control: version 2 ended on accountreferenceremove, carried as its T53 op");
+  /* no offered version, anywhere, names an op ai-accounts R35 retired */
   const offered = w.wz.wizardRegistry({ viewer: F }).screens.flatMap((s) => s.scripts);
   assert.ok(offered.length >= 20);
-  for (const x of offered) assert.notEqual(x.steps[x.steps.length - 1].act, "accountreferenceremove", x.name);
+  for (const x of offered) for (const t of x.steps) assert.ok(!["accountreferenceremove", "accountreferenceset", "subscriptiondisconnect"].includes(t.act), x.name);
 });
 
 test("R33 (T47; N992; DEC-198 (4); R41) FRONT_DOORS are library.json's doors at the design commit named at T50's START (7be06eb4cb; the same five as at a0fab7abf0), frozen: five, problem, person, money, read and tip, each {door, scripts} naming the file's script ids in its order; with every named script offered startFrom answers the five in that order; with Follow the money withdrawn, money names only Get a record; with Get a record withheld too (no @records-request template offered), money is left out", () => {
