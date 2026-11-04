@@ -14,17 +14,19 @@ const ANSWER_KEYS = [
   "refusal.AGENT_WORKER_SILENT", "refusal.ASK_NOT_A_MEMBER", "refusal.NO_SUCH_NOTE", "refusal.PASSAGE_TOO_LONG",
   "translate.undetermined.language",
 ];
-/* K3381 (DEC-267): `AGENT_WORKER_UNBOUND` has its own word; words-reads.json still lists its interim key, so it is named here until the list is re-cut */
-const RULED = ["refusal.AGENT_WORKER_UNBOUND"];
+/* R95: the `reads` list for `store-assembly` in words-reads.json, a generated file (`words-reads.src.mjs . --build`, after
+   setup-words' build; plain PR 192 gave this module its row) */
 const READS = JSON.parse(readFileSync(new URL("../../../../docs/development/ux-substrate/screens/words-reads.json", import.meta.url), "utf8"))
-  .modules.plane.reads;
+  .modules["store-assembly"].reads;
 
-test("R95 (T49; K3366): every key the plane reads is one the words list holds (`hasWord`), and each is one of the keys `words-reads.json` lists for plane; control: a key no list holds is not", () => {
+test("R95 (T49; K3366): every key the assembly reads is one the words list holds (`hasWord`), and each is one of the keys `words-reads.json` lists for store-assembly, which lists no other; control: a key no list holds is not", () => {
   const keys = [...ANSWER_KEYS];
   for (const k of keys) {
     assert.equal(hasWord(k), true, `${k} is held by the words list`);
-    assert.ok(READS.includes(k) || RULED.includes(k), `${k} is a key words-reads.json lists for plane, or one BOB ruled (K3381)`);
+    assert.ok(READS.includes(k), `${k} is a key words-reads.json lists for store-assembly`);
   }
+  assert.deepEqual([...READS].sort(), [...keys].sort(), "and the list holds no key the assembly does not read");
+  for (const k of READS) assert.equal(hasWord(k), true, `${k} is held by the words list`);
   assert.equal(hasWord("zz.no.such.key"), false, "negative control: an unknown key is not held");
 });
 

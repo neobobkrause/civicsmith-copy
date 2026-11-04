@@ -4,10 +4,12 @@
    (The Store's `dispatchMemberRun` RPC, plane R46, the plane's global scope against bundler R31's budget, R43, and the composed page, R48, stay with plane.) R52 is t46.test.mjs' (the sign-in's held token on the wire). Each test
    drives the assembled store at its interface (construction over a storage, the object's door) and
    carries a negative control (K874). */
+import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { store } from "./fixture.mjs";
+import { PLANS } from "../ai-accounts/catalogue.mjs";
 import { MODULE_MAPS, ownMaps, servedThroughDoor } from "./maps.mjs";
 import { credentialsOf } from "../../../src/credentials/index.mjs";
 import { instanceSetupOf, ASSISTANT_DISCLOSURE } from "../../../src/setup.mjs";
@@ -30,19 +32,21 @@ const member = (x, id, role = "member") => x.ctx.storage.sql.exec(`INSERT INTO m
 test("R35 (T47; N981; credentials R64, R22; instance-setup R54): at start the plane registers instance-setup's disclosureOf with credentials once, so through the door a member with no disclosure recorded is refused DISCLOSURE_DUE at accountreferenceset and admitted once disclosureshown records it; a second registration is refused LISTENER_DECLARED", async () => {
   const x = await store({ env: { ACCOUNT_SEAL_SECRET: "a-long-seal-secret-for-the-t47-test" } });
   member(x, "ann");
-  const set = async () => JSON.parse(await (await x.fetch("/accountreferenceset?by=member:ann&viewer=member:ann",
-    { method: "POST", body: JSON.stringify({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann" }) })).text());
+  /* ai-accounts T53 (its R1, R40): a member's own account is `aiownadd` (the old `accountreferenceset` op is gone), the member
+     the door's bare stamp; the plan is the catalogue fixture's members' API plan (the coordinator's CATALOGUE ruling) */
+  const set = async () => JSON.parse(await (await x.fetch("/aiownadd?by=ann&viewer=member:ann",
+    { method: "POST", body: JSON.stringify({ provider: "anthropic", plan: PLANS.memberApi, means: "sealed", secret: "sk-ant-zz-ann-0123456789" }) })).text());
   const refused = await set();
   assert.equal(refused.result.ok, false, JSON.stringify(refused));
   assert.equal(refused.result.reason, "DISCLOSURE_DUE", JSON.stringify(refused));
-  assert.equal(credentialsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).reference ?? null, null,
+  assert.equal(aiAccountsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).held, false,
                "nothing was set");
   /* the read is instance-setup's, on this object's one instance */
   assert.equal(credentialsOf(x.ctx).disclosureDue({ member: "member:ann" }).reason, "DISCLOSURE_DUE");
-  const shown = JSON.parse(await (await x.fetch("/disclosureshown?by=member:ann&viewer=member:ann",
-    { method: "POST", body: JSON.stringify({ member: "member:ann", version: ASSISTANT_DISCLOSURE.version }) })).text());
+  const shown = JSON.parse(await (await x.fetch("/disclosureshown?by=ann&viewer=member:ann",
+    { method: "POST", body: JSON.stringify({ member: "ann", version: ASSISTANT_DISCLOSURE.version }) })).text());
   assert.equal(shown.result.ok, true, JSON.stringify(shown));
-  assert.equal(instanceSetupOf(x.ctx).disclosureOf({ member: "member:ann" }).shown, true);
+  assert.equal(instanceSetupOf(x.ctx).disclosureOf({ member: "ann" }).shown, true);
   const admitted = await set();
   assert.equal(admitted.result.ok, true, JSON.stringify(admitted));
   /* the plane's registration is held: a second, whoever makes it, is refused */
@@ -125,7 +129,7 @@ test("R49 (T47; K3089; answers R35, R30): a grant the draft path minted whose fi
   x.ctx.storage.sql.exec(`INSERT INTO sessions (token_sha, role, expires, created) VALUES (?, 'member:ann', ?, 'x')`,
                          createHash("sha256").update(SESSION).digest("hex"), Date.now() + 3600e3);
   assert.equal(instanceSetupOf(x.ctx).disclosureShown({ member: "member:ann", version: ASSISTANT_DISCLOSURE.version, by: "member:ann" }).ok, true);
-  assert.equal((await c.accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" })).ok, true);
+  assert.equal((await aiAccountsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" })).ok, true);
   assert.equal((await c.accountUsesSet({ owner: "member:ann", switch: "suggestions", on: true, by: "member:ann" })).ok, true);
   assert.equal(answersOf(x.ctx).ruleServicesSwitch({ on: true, by: "member:ada" }).ok, true);
   const d = await (await draftOnObject(x.ctx, x.env, { op: "writinghelp", member: "ann", session: SESSION, told: "t", act: "conclude", field: "reason" })).json();
@@ -168,7 +172,7 @@ test("R37 (T47; K3143; signin-door R2, R4, R5): signin-door's store-internal map
   const u = new URL("http://do/");
   const x = await store({ env: { ACCOUNT_SEAL_SECRET: "a-long-seal-secret-for-the-t47-test" } });
   member(x, "ann");
-  const own = Object.keys(signinDoorOps(credentialsOf(x.ctx), u, null, x.env));
+  const own = Object.keys(signinDoorOps(aiAccountsOf(x.ctx), u, null, x.env));
   assert.deepEqual([...own].sort(), ["signindisclosuredue", "signintokenhold", "signintokenrefused", "signintracekeep", "signintraceread"]);
   const keys = Object.keys(x.s.routes(u, null));
   const cred = Object.keys(MODULE_MAPS.find(([m]) => m === "credentials")[1](x.ctx, u, null, x.env));
@@ -176,16 +180,18 @@ test("R37 (T47; K3143; signin-door R2, R4, R5): signin-door's store-internal map
   assert.deepEqual(keys.slice(at, at + own.length), own, "directly after credentials' map");
   for (const op of own) assert.equal(Object.hasOwn(OPS, op), false, `${op} has no op spec: never served to a caller`);
   const via = async (path, body = {}) => JSON.parse(await (await x.fetch(`/${path}`, { method: "POST", body: JSON.stringify(body) })).text());
-  const due = await via("signindisclosuredue?by=member:ann");
+  const due = await via("signindisclosuredue?by=ann");
   assert.equal(due.result.reason, "DISCLOSURE_DUE", JSON.stringify(due));
-  assert.equal(instanceSetupOf(x.ctx).disclosureShown({ member: "member:ann", version: ASSISTANT_DISCLOSURE.version, by: "member:ann" }).ok, true);
-  assert.deepEqual((await via("signindisclosuredue?by=member:ann")).result, { ok: true });
+  assert.equal(instanceSetupOf(x.ctx).disclosureShown({ member: "ann", version: ASSISTANT_DISCLOSURE.version, by: "ann" }).ok, true);
+  assert.deepEqual((await via("signindisclosuredue?by=ann")).result, { ok: true });
   const TOKEN = "sk-ant-oat01-SENTINEL-r49-held-token";
-  const held = await via("signintokenhold?by=member:ann", { token: TOKEN });
+  const held = await via("signintokenhold?by=ann", { token: TOKEN });
   assert.equal(held.result.ok, true, JSON.stringify(held));
   assert.equal(JSON.stringify(held).includes(TOKEN), false, "the token is never answered");
-  assert.equal(credentialsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).subscription.held, true);
-  assert.equal((await via("signintokenrefused?by=member:ann")).result.dropped, true);
+  assert.equal(aiAccountsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).subscription.held, true);
+  /* signin-door R4 (fixed by its notice ai-accounts:124): a refused token is dropped through ai-accounts' issuedTokenRefused */
+  assert.equal((await via("signintokenrefused?by=ann")).result.dropped, true);
+  assert.equal(aiAccountsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).subscription.held, false);
   /* negative control */
   assert.equal(keys.includes("signinzz"), false);
 });

@@ -646,8 +646,11 @@ export async function signIn(world, handle, { admin = false, capabilities = null
     member = handle;
   } else member = handle;
   const signed = await login(isFounder ? (founderHandle || "admin") : handle, isFounder ? world.password : passwords.get(handle));
+  /* F1: the record the shell keeps carries no expiry (`e` 0, interface-shell R32's none). The login's `expires` is on the world's fixed clock,
+     and the shell compares a record's expiry with the real clock, so that instant would lapse once the real date passed it. The plane's own
+     expiry still holds: admission judges the token by the world's clock on every request, unchanged. */
   const me = { handle, member, token: signed.token, password: isFounder ? world.password : passwords.get(handle),
-               session: { t: signed.token, e: typeof signed.expires === "number" ? signed.expires : Date.parse(signed.expires) || 0, d: device === "own" ? "own" : "shared", w: handle } };
+               session: { t: signed.token, e: 0, d: device === "own" ? "own" : "shared", w: handle } };
   me.act = (op, { query = {}, body = {} } = {}) => call(op, me, { query, body });
   me.read = (op, { query = {} } = {}) => call(op, me, { query });
   return me;
