@@ -109,3 +109,4 @@
 {"at":"2026-11-04T11:44:07Z","row":"outcome","n":57,"outcome":"delivered"}
 {"at":"2026-11-04T11:49:44Z","row":"sent","n":58,"to":"job-plan-work","text":"BOB: your session's cost so far, read from get_session after your turn ended: 1.45068012. Rerun job complete with your prepared flags plus --cost-usd 1.45068012. Wake me."}
 {"at":"2026-11-04T11:49:56Z","row":"outcome","n":58,"outcome":"delivered"}
+{"at":"2026-11-04T11:50:16Z","row":"sent","n":59,"to":"job-intent","text":"BOB: your session's cost so far, read from get_session after your turn ended: 1.24837228. Rerun job complete with your prepared flags plus --cost-usd 1.24837228. Wake me."}
