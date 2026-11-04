@@ -3,13 +3,14 @@
    the owner map (R86). Each module's own behaviour is its own tests'; these check the composition through the assembled store's interface:
    construction over a storage, the route map, the transcriber the assembly registers. The Worker's hooks (`publicOp`, `gatedOp`: plane R112, R113, R6) and the
    Worker under Miniflare stay with plane. Each test carries a negative control (K874). */
+import { ENTRIES } from "../ai-accounts/catalogue.mjs";
 import "../../../src/store-assembly/register.mjs";   /* R83: the start's registration before any op table is read */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { store, storage, assembleStore, disclosed } from "./fixture.mjs";
+import { store, storage, assembleStore, disclosed, withCatalogue, admitPart } from "./fixture.mjs";
 import { doorbellOf, doorbellOps } from "../../../src/doorbell/index.mjs";
 import { captureOf } from "../../../src/capture/index.mjs";
 import { caseAccountOf } from "../../../src/case-account/index.mjs";
@@ -65,7 +66,7 @@ function agentWorker(answer = (b) => ({ ok: true, engine: "claude-test", version
 
 /* An assembled store built by hand over a fresh storage, so a test may hand the transcriber its set before construction (K61: a
    factory reads its deps on the first call only). `ann` holds an API-key account; the group's keep-away is off. */
-async function plane({ testSet = null, worker = null, evidence = bucket(), account = true } = {}) {
+async function plane({ testSet = null, worker = null, evidence = bucket(), account = true, admit = true } = {}) {
   const st = storage();
   const env = { STORE: { idFromName: (n) => n }, ACCOUNT_SEAL_SECRET: "a-long-seal-secret-for-the-t42-test", CAPTURES: evidence,
                 ...(worker ? { AGENT_WORKER: worker } : {}) };
@@ -73,6 +74,9 @@ async function plane({ testSet = null, worker = null, evidence = bucket(), accou
   if (testSet) assistantGateOf(st.ctx, { testSet });
   const s = assembleStore(st.ctx, env);
   for (const p of st.blocked) await p;
+  await withCatalogue(st.ctx);   /* the coordinator's CATALOGUE ruling: ai-accounts reads ai-catalogue's published fixture */
+  /* ai-runs R78: transcription admitted on the fixture's entries (a passing Gate 1 verdict), unless a test asks for none */
+  if (admit) await admitPart(st.ctx, "transcribe");
   const ctx = st.ctx, sql = ctx.storage.sql;
   sql.exec(`INSERT INTO members (member_id, cover, handle, role, status, capabilities, created, updated)
             VALUES ('ada', 'Cover ada', 'h_ada', 'admin', 'active', '["contribute"]', 't', 't')`);
@@ -81,7 +85,7 @@ async function plane({ testSet = null, worker = null, evidence = bucket(), accou
             VALUES ('ann', 'Cover ann', 'h_ann', 'member', 'active', '["contribute"]', 't', 't')`);
   if (account) {
     await disclosed(ctx);   /* R44 (T47): the disclosure first, as the assembled plane asks */
-    const r = await credentialsOf(ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: SENTINEL, by: "member:ann" });
+    const r = await aiAccountsOf(ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: SENTINEL, by: "member:ann" });
     assert.equal(r.ok, true, JSON.stringify(r));
   }
   const routes = (path, body = null) => s.routes(new URL("http://do" + path), body);
@@ -105,26 +109,26 @@ function declarers(ctx) {
 
 /* ===== R37 ===== */
 
-const DOORBELL_METHODS = { knock: "knock", inboxlist: "inboxList", inboxget: "inboxGet", inboxresolve: "inboxResolve",
-  doorbellrefused: "doorbellRefused", doorbelltally: "doorbellTally", inboxpull: "pullKnock", knocksof: "knocksOf",
-  pulledknocks: "pulledKnocksOf" };
+/* K3268: doorbell's routes are taken from its own map, never hand-listed; every method of the instance (and of capture's copy)
+   is stubbed, so whichever method a route calls, the answer names whose it was. */
+const methodsOf = (o) => { const out = new Set(); for (let p = Object.getPrototypeOf(o); p && p !== Object.prototype; p = Object.getPrototypeOf(p))
+  for (const n of Object.getOwnPropertyNames(p)) if (n !== "constructor" && typeof o[n] === "function") out.add(n); return [...out]; };
 
-test("R32 (was plane R37; N826; K2630): doorbell is the plane's one instance per host, built at boot; each of its nine routes in the route map is answered by that instance, never by capture's doorbell copy", async () => {
+test("R32 (was plane R37; N826; K2630): doorbell is the plane's one instance per host, built at boot; each of its routes in the route map is answered by that instance, never by capture's doorbell copy", async () => {
   const x = await store();
   const d = doorbellOf(x.ctx);
   assert.equal(doorbellOf(x.ctx, { capture: { env: {} } }), d, "one instance per host");
-  assert.deepEqual(Object.keys(doorbellOps(d, new URL("http://do/"), null)).sort(), Object.keys(DOORBELL_METHODS).sort());
+  const ops = Object.keys(doorbellOps(d, new URL("http://do/"), null));
+  assert.ok(ops.includes("knock") && ops.length >= 9, "doorbell's own map");
   const reached = [], copy = [];
   const cap = captureOf(x.ctx);
-  for (const [op, m] of Object.entries(DOORBELL_METHODS)) {
-    d[m] = () => { reached.push(op); return { ok: true, by: "doorbell" }; };
-    if (typeof cap[m] === "function") cap[m] = () => { copy.push(op); return { ok: true, by: "capture" }; };
-  }
-  for (const op of Object.keys(DOORBELL_METHODS)) {
+  for (const m of methodsOf(d)) d[m] = () => { reached.push(m); return { ok: true, by: "doorbell" }; };
+  for (const m of methodsOf(d)) if (typeof cap[m] === "function") cap[m] = () => { copy.push(m); return { ok: true, by: "capture" }; };
+  for (const op of ops) {
     const r = await x.routes(`/${op}?id=k&capture=${"a".repeat(64)}`, { knockId: "k", contentText: "x" })[op]();
     assert.deepEqual(r, { ok: true, by: "doorbell" }, op);
   }
-  assert.deepEqual(reached, Object.keys(DOORBELL_METHODS));
+  assert.ok(reached.length >= ops.length, "every route reached the instance");
   assert.deepEqual(copy, [], "capture's copy is never reached through the route map");
   /* negative control: on a storage no plane was built on, doorbell is a different instance */
   assert.notEqual(doorbellOf(storage().ctx), d);
@@ -192,27 +196,25 @@ test("R57 (was plane R36) (K2611; extraction R72): at start the plane registers 
   assert.deepEqual(extractionOf(bare.ctx).registerTranscriber("plane", transcriberOf(bare.ctx, {})), { ok: true, module: "plane" });
 });
 
-test("R57 (was plane R36) (run-rules R19; ai-runs R75): deployable() is run-rules' bar for `transcribe` on ai-runs' records, on Civicsmith's set unless the composition is handed another; a failed record, another set's, and a throw answer false", async () => {
-  /* Civicsmith's set holds no matter: false whatever is recorded */
-  const civic = await plane();
-  assert.equal(aiRunsOf(civic.ctx).testBarRecord({ ...PASSED, set: CIVICSMITH_TEST_SET.id, set_version: CIVICSMITH_TEST_SET.version }).ok, true);
-  assert.equal(transcriberOf(civic.ctx, civic.env).deployable(), false);
-  /* a test's one-matter set, handed before construction */
-  const x = await plane({ testSet: ONE_MATTER });
+test("R57, R40 (ai-runs R78; the coordinator's ruling, 4 Nov): transcription's gate is `partAdmitted(\"transcribe\", entry)` on the entry of the account the act is handed, asked first in the act: with no Gate 1 verdict for that entry the act is refused AI_PART_NOT_DEPLOYED naming the entry, nothing read or posted, whatever bars are recorded; with a passing verdict it is posted. `deployable()`, asked with no member and so no entry, answers true", async () => {
+  const worker = agentWorker();
+  const x = await plane({ testSet: ONE_MATTER, worker, admit: false });
   const t = transcriberOf(x.ctx, x.env);
-  assert.equal(t.deployable(), false, "no record yet");
-  assert.equal(aiRunsOf(x.ctx).testBarRecord({ ...PASSED, passed: false }).ok, true);
-  assert.equal(t.deployable(), false, "a failed record");
-  assert.equal(aiRunsOf(x.ctx).testBarRecord({ ...PASSED, set_version: 2 }).ok, true);
-  assert.equal(t.deployable(), false, "an earlier version's record");
-  assert.equal(aiRunsOf(x.ctx).testBarRecord({ ...PASSED, part: "read" }).ok, true);
-  assert.equal(t.deployable(), false, "another part's record");
+  assert.equal(t.deployable(), true, "no entry to judge before the act");
+  const d = await hold(x.evidence, SCAN);
+  const account = await aiAccountsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
+  assert.equal(typeof account.entry_id, "string", JSON.stringify(account));
+  const act = () => t.transcription({ member: "member:ann", project: null, at: "2026-10-11T06:00:00Z" })
+    .transcribe({ account, capture_sha: d, store: "bio", pages: [0], use: "transcribe" });
   assert.equal(aiRunsOf(x.ctx).testBarRecord(PASSED).ok, true);
-  assert.equal(t.deployable(), true, "a passed record on the set at its version");
-  /* a set that throws when read answers false */
-  const thrower = await plane({ testSet: { id: "t42-set", version: 3, get matters() { throw new Error("boom"); } } });
-  assert.equal(aiRunsOf(thrower.ctx).testBarRecord(PASSED).ok, true);
-  assert.equal(transcriberOf(thrower.ctx, thrower.env).deployable(), false);
+  const refused = await act();
+  assert.deepEqual([refused.code, refused.part, refused.entry_id], ["AI_PART_NOT_DEPLOYED", "transcribe", account.entry_id], JSON.stringify(refused));
+  assert.equal(worker.seen.length, 0, "nothing posted on a passed bar alone");
+  assert.equal(x.evidence.reads ?? 0, 0, "nothing read");
+  await admitPart(x.ctx, "transcribe");
+  const r = await act();
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(worker.seen.length, 1, "posted once the entry's verdict passes");
 });
 
 test("R57 (was plane R36) (credentials R57): keptAway({project, use}) is credentials.aiKeptAway relayed as given: the refusal while the group keeps material away, null once it does not", async () => {
@@ -237,7 +239,7 @@ test("R57 (was plane R36): transcription({member, project, at}) answers the obje
   assert.deepEqual(tx.useCheck(q), aiUseOf(x.ctx).useCheck(q));
   assert.equal(tx.useCheck({ ...q, owner: "nobody" }).ok, false, "ai-use's own refusal, relayed");
   const d = await hold(x.evidence, SCAN);
-  const r = await tx.transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, store: "bio", pages: [0], use: "transcribe" });
+  const r = await tx.transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, store: "bio", pages: [0], use: "transcribe" });
   // fixtures-run: extraction transcribe-not-sent
   assert.deepEqual(r, { ok: false, reason: "AGENT_WORKER_UNBOUND" });
   assert.equal(x.evidence.calls.length, 0, "nothing read");
@@ -246,7 +248,7 @@ test("R57 (was plane R36): transcription({member, project, at}) answers the obje
   const y = await plane({ worker: agentWorker() });
   const dy = await hold(y.evidence, SCAN);
   const ty = transcriberOf(y.ctx, y.env).transcription({ member: "member:ann", project: null, at: "2026-10-11T06:00:00Z" });
-  await ty.transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: dy, pages: [0] });
+  await ty.transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: dy, pages: [0] });
   assert.equal(ty.act, `transcribe:${dy.slice(0, 16)}:2026-10-11T06:00:00Z`);
   assert.match(tx.act, /^[A-Za-z0-9._:-]{1,128}$/, "an act's id ai-use counts under");
   /* negative control: another act's transcription mints its own id */
@@ -262,7 +264,7 @@ test("R57 R106 transcribe-answer: the answer a user module (extraction's t48) ha
   const x = await plane({ worker });
   const d = await hold(x.evidence, SCAN);
   const tx = transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", project: null, at: "2026-10-11T06:00:00Z" });
-  const account = await credentialsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
+  const account = await aiAccountsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
   const real = await tx.transcribe({ account, capture_sha: d, store: "bio", pages: [0], use: "transcribe" });
   // fixtures-run: extraction transcribe-answer
   // fixtures-run: reading-pipeline transcribe-answer   (text-units.test.mjs:531-542 and transcribe.test.mjs:323-327 hand the same success value, {ok, engine, version, pages, asked, sent, owed}; their refusal `{ok: false, reason}` is agent-worker's relayed shape)
@@ -274,7 +276,7 @@ test("R57 (was plane R36) (agent-worker R6, R63, R72; ai-use R1, R11): the AI pa
   const x = await plane({ worker });
   const d = await hold(x.evidence, SCAN);
   const tx = transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", project: null, at: "2026-10-11T06:00:00Z" });
-  const account = await credentialsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
+  const account = await aiAccountsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
   assert.equal(account.ok, true, JSON.stringify(account));
   /* page 1 does not exist in a one-page scan: refused by the renderer, not sent */
   const r = await tx.transcribe({ account, capture_sha: d, store: "bio", pages: [1, 0, 0], use: "transcribe" });
@@ -302,7 +304,8 @@ test("R57 (was plane R36) (agent-worker R6, R63, R72; ai-use R1, R11): the AI pa
   for (const t of x.rows(`SELECT name FROM sqlite_master WHERE type='table'`).map((t) => t.name))
     assert.ok(!JSON.stringify(x.rows(`SELECT * FROM "${t}"`)).includes(SENTINEL), `the secret stored in ${t}`);
   const actual = aiUseOf(x.ctx).actualOf({ act: tx.act, viewer: "member:ann" });
-  assert.deepEqual([actual.found, actual.use, actual.cost && actual.cost.usd], [true, "transcribe", 0.25]);
+  /* ai-use T53 (its R5): the reported total is `cost_reported` {amount, unit} (a `total_cost_usd` read as reported, in usd) */
+  assert.deepEqual([actual.found, actual.use, actual.cost_reported], [true, "transcribe", { amount: 0.25, unit: "usd" }]);
 });
 
 test("R57 (was plane R36): a project's account is counted under `project:<id>` and named in the wire; an ending that carries usage is counted and answered ok:false with its reason; a binding that throws or answers no JSON is AGENT_WORKER_SILENT, nothing counted", async () => {
@@ -310,7 +313,7 @@ test("R57 (was plane R36): a project's account is counted under `project:<id>` a
   const x = await plane({ worker: ending });
   const d = await hold(x.evidence, SCAN);
   const tx = transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", project: "PROJ-9", at: "2026-10-11T06:00:00Z" });
-  const r = await tx.transcribe({ account: { ok: true, kind: "apikey", level: "project", project: "PROJ-9", key: SENTINEL }, capture_sha: d, pages: [0] });
+  const r = await tx.transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "project", project: "PROJ-9", key: SENTINEL }, capture_sha: d, pages: [0] });
   assert.deepEqual([r.ok, r.reason], [false, "MODEL_SILENT"]);
   assert.deepEqual(ending.seen[0][1].account, { kind: "apikey", level: "project", project: "PROJ-9", secret: SENTINEL, member: "member:ann", suggestions: false });
   assert.deepEqual(x.rows(`SELECT owner, use FROM ai_usage`).map((r) => [r.owner, r.use]), [["project:PROJ-9", "transcribe"]]);
@@ -318,7 +321,7 @@ test("R57 (was plane R36): a project's account is counted under `project:<id>` a
   const coded = await plane({ worker: agentWorker(() => ({ ok: false, code: "BAD_PAGES" })) });
   const dc = await hold(coded.evidence, SCAN);
   const rc = await transcriberOf(coded.ctx, coded.env).transcription({ member: "member:ann", at: "2026-10-11T06:00:00Z" })
-    .transcribe({ account: { ok: true, kind: "apikey", level: "group", key: SENTINEL }, capture_sha: dc, pages: [0] });
+    .transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "group", key: SENTINEL }, capture_sha: dc, pages: [0] });
   assert.deepEqual([rc.ok, rc.reason], [false, "BAD_PAGES"]);
   assert.equal(coded.rows(`SELECT * FROM ai_usage`).length, 0);
   /* silent: a throw, and an answer that is not JSON */
@@ -326,7 +329,7 @@ test("R57 (was plane R36): a project's account is counted under `project:<id>` a
     const y = await plane({ worker: w });
     const dy = await hold(y.evidence, SCAN);
     const ry = await transcriberOf(y.ctx, y.env).transcription({ member: "member:ann", at: "2026-10-11T06:00:00Z" })
-      .transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: dy, pages: [0] });
+      .transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: dy, pages: [0] });
     assert.deepEqual(ry, { ok: false, reason: "AGENT_WORKER_SILENT" });
     assert.equal(y.rows(`SELECT * FROM ai_usage`).length, 0);
   }
@@ -353,7 +356,7 @@ test("R57 (was plane R36) (K2611): the pages are rendered one at a time in ascen
   const x = await plane({ worker });
   const d = await hold(x.evidence, SCAN);
   const r = await transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", at: "2026-10-11T06:00:00Z" })
-    .transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, pages: [5, 6] });
+    .transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, pages: [5, 6] });
   // fixtures-run: extraction transcribe-not-sent
   assert.deepEqual(r, { ok: false, reason: "NO_PAGE_RENDERED", refused: [{ page: 5, reason: "NO_SUCH_PAGE" },
                                                                      { page: 6, reason: "NO_SUCH_PAGE" }],
@@ -361,13 +364,13 @@ test("R57 (was plane R36) (K2611): the pages are rendered one at a time in ascen
   assert.equal(worker.seen.length, 0);
   /* K2684 (2): the capture's bytes absent from the evidence store: EVIDENCE_ABSENT, nothing posted */
   const gone = await transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", at: "2026-10-11T06:00:00Z" })
-    .transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: "e".repeat(64), pages: [0] });
+    .transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: "e".repeat(64), pages: [0] });
   // fixtures-run: extraction transcribe-not-sent
   assert.deepEqual(gone, { ok: false, reason: "EVIDENCE_ABSENT" });
   assert.equal(worker.seen.length, 0);
   /* negative control: the same act on the held capture's page 0 is posted */
   await transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", at: "2026-10-11T06:00:00Z" })
-    .transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, pages: [0] });
+    .transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, pages: [0] });
   assert.equal(worker.seen.length, 1);
 });
 
@@ -395,10 +398,9 @@ async function stored(x, bundleId = "B-T42") {
 const stamps = (d) => `/pagetranscribe?sha256=${d}&cls=member&session=1&caps=contribute&viewer=member:ann&author=member:ann&store=bio`;
 
 
-test("R57 (was plane R36) (N832; D21, D12): end to end on the object, a member's pagetranscribe of a stored scan reaches the registered transcriber: the page is rendered and sent, the AI's words written into the reading under the act, and its usage counted for that act; on Civicsmith's empty set it is refused TRANSCRIBE_NOT_DEPLOYED and nothing is sent", async () => {
+test("R57 (was plane R36) (N832; D21, D12): end to end on the object, a member's pagetranscribe of a stored scan reaches the registered transcriber: the page is rendered and sent, the AI's words written into the reading under the act, and its usage counted for that act; with no Gate 1 verdict for the serving account's entry it is refused AI_PART_NOT_DEPLOYED (ai-runs R78) and nothing is sent", async () => {
   const worker = agentWorker();
   const x = await plane({ testSet: ONE_MATTER, worker });
-  assert.equal(aiRunsOf(x.ctx).testBarRecord(PASSED).ok, true);
   const d = await stored(x);
   const r = await x.call(stamps(d));
   assert.equal(r.status, 200, JSON.stringify(r));
@@ -412,20 +414,19 @@ test("R57 (was plane R36) (N832; D21, D12): end to end on the object, a member's
   assert.deepEqual(worker.seen[0][1].pages.map((p) => p.page), [0]);
   const actual = aiUseOf(x.ctx).actualOf({ act: t.act, viewer: "member:ann" });
   assert.deepEqual([actual.found, actual.use, actual.owner], [true, "transcribe", "member:ann"]);
-  /* negative control: Civicsmith's set (no matter), the same record and request */
+  /* negative control: no Gate 1 verdict for the entry (a passed bar alone admits nothing under R78), the same record and request */
   const off = agentWorker();
-  const y = await plane({ worker: off });
+  const y = await plane({ worker: off, admit: false });
   assert.equal(aiRunsOf(y.ctx).testBarRecord(PASSED).ok, true);
   const dy = await stored(y);
   const ry = await y.call(stamps(dy));
-  assert.deepEqual([ry.status, ry.body.reason], [501, "TRANSCRIBE_NOT_DEPLOYED"]);
+  assert.deepEqual([ry.status, ry.body.code], [403, "AI_PART_NOT_DEPLOYED"], JSON.stringify(ry));
   assert.equal(off.seen.length, 0);
   assert.equal(y.rows(`SELECT * FROM ai_usage`).length, 0);
 });
 
 test("R57 (was plane R36): with no AGENT_WORKER bound, the act answers 200 with performed: false and why naming the unbound assistant; nothing is counted or written", async () => {
   const x = await plane({ testSet: ONE_MATTER });
-  assert.equal(aiRunsOf(x.ctx).testBarRecord(PASSED).ok, true);
   const d = await stored(x);
   const r = await x.call(stamps(d));
   assert.equal(r.status, 200, JSON.stringify(r));
@@ -434,7 +435,6 @@ test("R57 (was plane R36): with no AGENT_WORKER bound, the act answers 200 with 
   assert.equal(x.rows(`SELECT * FROM ai_usage`).length, 0);
   /* negative control: with the binding, the same act is performed */
   const y = await plane({ testSet: ONE_MATTER, worker: agentWorker() });
-  assert.equal(aiRunsOf(y.ctx).testBarRecord(PASSED).ok, true);
   assert.equal((await y.call(stamps(await stored(y)))).body.transcription.performed, true);
 });
 
@@ -447,7 +447,7 @@ test("R58 (was plane R106) G126e: on a 24 MiB PDF and a 300-page scan the press 
     assert.ok(big.length > TRANSCRIBE_LOAD_MAX, `${what} is over the inline ceiling`);
     const gets = x.evidence.calls.filter((c) => c[0] === "get").length;
     const r = await transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", at: "2026-10-24T06:00:00Z" })
-      .transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, pages });
+      .transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, pages });
     assert.equal(x.evidence.calls.filter((c) => c[0] === "get").length, gets, `${what}: the object is not loaded in the request`);
     assert.deepEqual([r.ok, r.reason, r.asked, r.sent, r.owed, r.size, r.limit], [false, "NO_PAGE_RENDERED", pages, [], pages, big.length, TRANSCRIBE_LOAD_MAX], what);
     assert.deepEqual(r.refused, pages.map((page) => ({ page, reason: OWED })), `${what}: each page named`);
@@ -465,7 +465,7 @@ test("R58 (was plane R106) (control): a 3-page file under the ceiling is read in
   const d = await hold(x.evidence, SCAN);
   const pages = Array.from({ length: TRANSCRIBE_PAGES_MAX + 2 }, (_, i) => i);
   const r = await transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", at: "2026-10-24T06:00:00Z" })
-    .transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, pages });
+    .transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, pages });
   assert.equal(r.ok, true, JSON.stringify(r).slice(0, 300));
   assert.deepEqual(r.asked, pages);
   assert.deepEqual(r.sent, worker.seen[0][1].pages.map((p) => p.page), "the pages filled are the pages sent, stated");

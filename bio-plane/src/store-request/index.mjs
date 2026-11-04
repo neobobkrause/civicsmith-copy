@@ -32,7 +32,6 @@ export const BODY_STAMPS = Object.freeze(["actorIdentity", "actorViewer", "actor
                                           "migrationReplay"]);
 /** R3: what an op takes from its body alone leaves the address. */
 export const BODY_ONLY = Object.freeze({ securitytooladd: Object.freeze(["credentials", "config"]),
-                                         projectkeyset: Object.freeze(["key"]),
                                          setpassword: Object.freeze(["current", "password", "role"]) });
 /** R9: the body keys an op drops. */
 export const BODY_DROPPED = Object.freeze({ setpassword: Object.freeze(["role"]) });

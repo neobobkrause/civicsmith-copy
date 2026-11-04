@@ -31,9 +31,11 @@ test("R83 the assembly started over the real modules holds, for every module who
   assert.deepEqual(duplicates, [], "no op is declared by two modules");
   assert.ok(Object.keys(ops).length > 0);
   const missing = [...new Set(Object.values(owners))].filter((id) => !Object.hasOwn(OWNERS, id));
-  /* the copy window (K5052 (4)): control-plane still exports DECLARED_OPS (the owner map's four rows) beside store-assembly's copy of them, which is exported as OWNER_MAP_DECLARED_OPS until control-plane's Wave B; plane's are deleted (K5201) and store-assembly's own are DECLARED_OPS */
-  const COPIED_FROM = ["control-plane"];
-  assert.deepEqual(missing.sort(), [...COPIED_FROM].sort(), "modules that export DECLARED_OPS and are not in the assembly (declarations.mjs): exactly control-plane, whose rows are the assembly's own under `store-assembly`");
+  /* the copy window (K5052 (4)) is closed: control-plane's Wave B deleted its copy of the owner map's four rows, so OWNERS names
+     store-assembly for them and no longer control-plane (R83). No module that exports DECLARED_OPS is outside the assembly. */
+  const COPIED_FROM = [];
+  assert.deepEqual(missing.sort(), [...COPIED_FROM].sort(), "modules that export DECLARED_OPS and are not in the assembly (declarations.mjs): none");
+  assert.ok(!Object.values(owners).includes("control-plane"), "control-plane declares none of the owner map's rows");
   const stray = Object.keys(OWNERS).filter((id) => !Object.values(owners).includes(id));
   assert.deepEqual(stray, [], "every module in the assembly exports DECLARED_OPS, store-assembly's (declared.mjs) among them");
   /* the copied rows: every op control-plane declares is in store-assembly's row, the same row save its description's wording (the descriptions name store-assembly's ids) */
