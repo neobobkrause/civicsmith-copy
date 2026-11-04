@@ -1,3 +1,4 @@
 {"at":"2026-11-04T12:45:46Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job agent-drafts BLOCKED: run status"}
 {"at":"2026-11-04T12:46:00Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T13:00:57Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job agent-drafts complete, PR #235 ready, session session_01RAN5eoXdxVauy4tEyMshhh: run status"}
+{"at":"2026-11-04T13:01:09Z","row":"outcome","n":2,"outcome":"delivered"}
