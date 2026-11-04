@@ -204,3 +204,4 @@
 {"at":"2026-11-04T15:59:03Z","row":"sent","n":105,"to":"job-case-import","text":"bob-105: ruling: R18 stands; docket reopened (PR 278) to sign edition entries per R24. Answer docket:266 by a test that an unsigned edition entry is refused with check 'signature', never a move; job complete with --exempt-revert (no code change); wake BOB."}
 {"at":"2026-11-04T15:59:08Z","row":"outcome","n":105,"outcome":"delivered"}
 {"at":"2026-11-04T16:22:50Z","row":"sent","n":106,"to":"job-docket","text":"bob-106: gate red on e256047f7c: revert check, notice-case-tensions-262 inert; rerun job complete with --exempt-revert naming it; do not push to kick CI (Actions outage)."}
+{"at":"2026-11-04T16:22:54Z","row":"outcome","n":106,"outcome":"delivered"}
