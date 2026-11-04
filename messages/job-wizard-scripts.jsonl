@@ -4,3 +4,4 @@
 {"at":"2026-11-04T04:39:57Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-04T06:47:56Z","row":"sent","n":3,"to":"bob","text":"job wizard-scripts complete, PR #163 ready: run status"}
 {"at":"2026-11-04T06:48:07Z","row":"outcome","n":3,"outcome":"delivered"}
+{"at":"2026-11-04T14:06:52Z","row":"sent","n":4,"to":"bob","text":"job wizard-scripts complete, PR #253 ready, session session_01RAN5en8Cnd1vDw7r352Hur: run status"}
