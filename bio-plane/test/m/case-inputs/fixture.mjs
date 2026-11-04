@@ -104,12 +104,13 @@ function reviewProvider(w) {
 /** The case document's runs this module reads and re-authors, as `case-authoring`'s `caseDocumentText` writes them
  *  (`format`, `case_project`, the `completeness:` block with `author`, `statement_by` and the draft link above `statement_sha`,
  *  the list's two runs through this module's renderers, and `## What Was Searched` after the list's prose), the rest of
- *  a real document left out. `outcomes` is case-grammar R29's block;
+ *  a real document left out. `outcomes` is case-grammar R29's block; `format` the format the document declares (the
+ *  one in force unless given) and `blocks` further front-matter lines a test writes with case-grammar's own writers;
  *  `withAckRuns` false leaves out the list's prose run, as a document authored before it was. */
 export function caseDocText({ caseId, edition, project, statement, author, writer = null, acks, link = null,
-                              outcomes = [], withAckRuns = true }) {
-  return ["---", `format: ${CASE_DOCUMENT_FORMAT}`, `case_id: ${caseId}`, `case_edition: ${edition}`, `case_project: ${project}`,
-    ...outcomesLines(outcomes),
+                              outcomes = [], withAckRuns = true, format = CASE_DOCUMENT_FORMAT, blocks = [] }) {
+  return ["---", `format: ${format}`, `case_id: ${caseId}`, `case_edition: ${edition}`, `case_project: ${project}`,
+    ...outcomesLines(outcomes), ...blocks,
     "completeness:",
     `  statement: "${fmSafe(statement)}"`,
     `  author: ${author}`,
@@ -208,13 +209,14 @@ export function world({ provider = true, now = null, publicReads = true } = {}) 
      *  R29's block of `outcomes` (each `{outcome, kind, text, cites, on, carried_by, carried_at}`). A new case takes the
      *  next fixture id. Answers `{caseId, edition, writer, acks, doc_sha}`. */
     prepare(project, author, { caseId = null, edition = 1, statement = STATEMENT, draft = null, outcomes = [],
-                                withAckRuns = true } = {}) {
+                                withAckRuns = true, format, blocks } = {}) {
       const id = caseId || `CASE-2026-${String(++cases).padStart(4, "0")}`;
       const named = draft ? w.row(`SELECT * FROM case_drafts WHERE draft_id=?`, draft) : null;
       const writer = w.ci.statementWriter(project, id, edition, statement, author, named);
       const link = draft ? { draft, by: author, at: NOW } : null;
       const acks = w.ci.statementAcknowledgements(project, id, edition, statement, author, writer, null, link);
-      const text = caseDocText({ caseId: id, edition, project, statement, author, writer, acks, link, outcomes, withAckRuns });
+      const text = caseDocText({ caseId: id, edition, project, statement, author, writer, acks, link, outcomes, withAckRuns,
+                                 format, blocks });
       const stored = publication.storeCaseDocument({ caseId: id, edition, text, author, at: NOW, draft });
       if (!stored.ok) throw new Error(`fixture prepare refused: ${JSON.stringify(stored).slice(0, 300)}`);
       return { caseId: id, edition, writer, acks, doc_sha: stored.doc_sha };

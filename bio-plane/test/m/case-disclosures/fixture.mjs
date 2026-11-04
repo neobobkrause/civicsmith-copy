@@ -143,7 +143,7 @@ export function world({ group = "test-group", deps = {}, realImports = false, re
   promotion.registerFact("producingGroup", "instance-setup", () => group);
   inquiry.connections.migrate();
   const strength = strengthOf(host, { record, membership,
-    inquiry: { basisFor: (id, o) => inquiry.basisFor(id, o), earned: (e, t) => inquiry.earned(e, t), legCapped,
+    inquiry: { basisFor: (id, o) => inquiry.basisFor(id, o), earned: (e, t, c) => inquiry.earned(e, t, c), legCapped,
                subjectEntityOf: (id) => inquiry.subjectEntityOf(id) },
     producingGroup: () => group, now: () => clock.now });
   /* basis-versions (layer 6) is not a module case-disclosures uses: strength and contradiction each reach its one
