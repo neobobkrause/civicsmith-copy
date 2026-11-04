@@ -1,40 +1,8 @@
-# Handoff for bob, 2026-11-04T02:10:50Z
-tranche 6ca372f021604917df9ab67ca752fe4405bc3ced Merge job PR 61
+# Handoff for bob, 2026-11-04T08:12:50Z
+tranche efaf53b3007fea1449fc68bf6d49ef988126edf2 Merge job PR 185
 
-ledger on origin/tranche: 15 entries
-addresses: ROOT session_01RAN5eoLwXYE4bHDP3xJr9G (2026-11-03T20:52:43Z); BOB session_01RAN5empMj9PkapKweHR6dU (2026-11-04T02:07:15Z)
+ledger on origin/tranche: 64 entries
+addresses: ROOT session_01RAN5ejatoMxXYS7DSiFHuj (2026-11-04T04:11:51Z); BOB session_01RAN5empMj9PkapKweHR6dU (2026-11-04T02:07:15Z)
 blocked:
-- runtime-limits: BLOCKED (R47 rests on measure M-R7, which is not recorded: R47 sets stream_max and segment_max 'at START from ... M-R7, each with source naming the measure; until it is recorded the rows do not exist'. No M-R7 figure is in build/rulings.md, PLATFORM.md, build/plan/T53-completion.md (T53-581 'once M-R7 records them') or on tranche (checked through 52e6d639). This START hands no figures. Adding the rows would mean inventing figures, so nothing was changed and R47's mark stays. To unblock: record M-R7 (REGISTER_STREAM_MAX above 5.46 GiB, REGISTER_SEGMENT_MAX at most CAPTURE_MAX = 524,288,000) with its source id, then restart this job.); BLOCKED
-owed:
-- action-clocks: COMPLETE; PR #60 ready, last activity 0h ago; gate success; merge owed
-open:
-- bundler: COMPLETE; PR #57 ready, last activity 0.1h ago; gate in_progress
-- filings: COMPLETE; PR #64 ready, last activity 0h ago; gate in_progress
-merged: 11
-to take in:
-- #66 bob/walk-findings: no single module; leave it as a plain pull request, or BOB splits it, last activity 0h ago
-- #47 p3dev/deploy-route: no single module; leave it as a plain pull request, or BOB splits it, last activity 2.7h ago
-undelivered messages:
-- bob-4 to root: not recorded delivered
-- bob-6 to root: not recorded delivered
-- bob-8 to root: not recorded delivered
-- bob-11 to root: not recorded delivered
-- bob-12 to root: not recorded delivered
-reading set for bob: 6558 bytes; CLAUDE.md 5253, process-state:handoff/bob.md 1305
-provider notices (not layer work; triage first, then a job per affected module):
-- triage owed: jurisdictions:40 (1 modules): node .process/tool/p3.mjs notice triage jurisdictions:40
-- triage owed: mail-door:55 (3 modules): node .process/tool/p3.mjs notice triage mail-door:55
-- triage owed: entities:63 (1 modules): node .process/tool/p3.mjs notice triage entities:63
-- instance-setup: provider notice: jurisdictions R119 (PR 40); affected: bio-plane/src/setup.mjs:1788 officesSeed (also run at boot, line 1099) walks eve
-layer 2 closed: no unmet marks
-layer 4 closed: no unmet marks
-layer 10 closed: no unmet marks
-deferred at layer close (not work):
-- jurisdictions (layer 1): 5
-- runtime-limits (layer 1): 1
-layer 3 ready to close: node .process/tool/p3.mjs layer close 3
-split or consolidate before its job: build/requirements/instance-setup.md 103340 over 70000
-cap debt: 29 requirement files over the cap from layer 3 on, 2781155 bytes; each is split or consolidated before its job
-next work, layer 3 (4 jobs open; BOB chooses from these, unmet requirements each): all 2 listed; pass --live <the live sessions list_sessions shows> to list at most live_cap (24) less them
-- build/requirements/connections.md: 4 (layer 5)
-- build/requirements/run-rules.md: 5 (layer 6)
+- agent-worker: BLOCKED (For BOB. Done and pushed (e41816871). answers:103 (your addition): ASK_OPS already equalled answers' ASK_SCOPE; ops.mjs now exports GRANT_ONLY_OPS = ['aicredential'] and R55's check reads ASK_OPS = AI_GRANT_OPS less GRANT_ONLY_OPS. notice-answers-103.test.mjs (3 pass; fails with ops.mjs reverted) covers both equalities and admitRead refusing aicredential ASK_OP_REFUSED; t45.test.mjs adds two R55 (answers:103) tests for draft.mjs grantReader: the draft's read tool never offers aicredential, and a draft's read of it is refused before any plane call while the draft still answers 200 (t45 209/0). R55's requirement line still says 'equals AI_GRANT_OPS both ways'; I left it verbatim (the consolidation test pins every line); please restate it. Earlier work stands (cap 69,209 bytes, R59/R68-R70/R76/R77/R86 retired to agent-drafts, run-rules:72 and credentials:74 confirmed). Suite after job sync: 29/32 files; ask.test now passes (64/0; its failure in the suite run was my edit landing mid-run). STILL RED, neither mine to fix: (1) requirements.test.mjs dies at line 1038 in ai-runs' published fixture tickStateTooLarge (bio-plane/test/m/ai-runs/fixtures.mjs:106 -> world.mjs:174): 'account second: CATALOGUE_UNAVAILABLE (C-156.7)', because ai-runs' world on tranche builds ai-accounts with no catalogue. ai-runs' open PR #96 fixes that world (catalogueFor), but its world needs ai-runs' own src (runs.registerGateVerdicts), so it cannot be tried here before #96 merges. (2) harness.test.mjs, the same 7 failures: REC100-0, REC100-1b, REC100-2, REC100-2b, REC100-2c, REC100-3 (R92), REC100-3b (R92) (256 pass). Cause, printed from the real plane: op=accountreferenceset answers 'unknown op: accountreferenceset' (the PR 124 seam restored the JS names, not the plane route), and airunopen answers AI_RUN_MODE_NOT_DEPLOYED (C-109.1). The replacement op aiaccountadd needs a catalogue, and store-assembly's assemble.mjs builds no ai-catalogue, so the assembled real plane cannot hold any account; my test/plane-world.mjs cannot change how the assembly builds ai-accounts. The not-deployed half I can fix in my own world (set CIVICSMITH_TEST_INSTANCE = INSTANCE_NAME so the bar path admits under run-rules PR 72), but the run still has no account. TO UNBLOCK: ai-runs PR #96 merges; store-assembly composes ai-catalogue into the plane, with a way for a test plane to seed a test-key catalogue (or you rule the 7 REC100 tests an accepted red for this job); then rerun job complete with --test notice:run-rules:72=agent-worker/test/notice-run-rules-72.test.mjs, --test notice:credentials:74=agent-worker/test/notice-credentials-74.test.mjs (--exempt-revert), and --not-verified naming answers:103 (covered by agent-worker/test/notice-answers-103.test.mjs).); PR #97 draft, last activity 2.2h ago; gate success; BLOCKED
+(145 more status lines: status --role bob lists them all)
