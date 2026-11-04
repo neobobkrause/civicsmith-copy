@@ -294,3 +294,4 @@ test("R7 control: an output of a run the plane did not mark untested carries no 
   assert.equal(panel(p).querySelector('[data-label="untested"]'), null);
   assert.ok(!says(panel(p), "ai.label.untested"));
 });
+// measure: gate-chromium (not to merge)
