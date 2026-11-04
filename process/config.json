@@ -264,10 +264,9 @@
       ]
     ],
     "walk": [
-      "node",
-      "bio-plane/scripts/p3dev-walk-setup.mjs",
-      "{slug}",
-      "--walk"
+      "sh",
+      "-c",
+      "(cd bio-plane/src/journey-check && npm ci --no-audit --no-fund --loglevel=error) && node bio-plane/scripts/p3dev-walk-setup.mjs {slug} --walk"
     ],
     "guard_line": "p3dev guard: passed",
     "timeout_minutes": 60
