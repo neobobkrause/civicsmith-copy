@@ -1,0 +1,1 @@
+{"row":"triage","user":"journey-check","verdict":"not affected","evidence":"build/modules.json:202 journey-check (bio-plane/src/journey-check/) holds no file that imports interface-assets, every code file under its paths read at ce1fe87d4c","at":"2026-11-04T11:53:53.993Z","key":"interface-assets:207","worker":"merge: imports check","cost":"0"}
