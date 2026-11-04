@@ -89,7 +89,6 @@ async function buildScenes(full, served = false) {
       await act(world, admin, "courtnoticeset", { body: { choice: "tell" } });
       await act(world, admin, "hostingaccessset", { body: { holders: "Someone", note: null } });
       await act(world, admin, "reauth", { body: { password: world.password } });
-      await act(world, admin, "groupkeyset", { body: { key: "sk-held-key-1234567890" } });
       const cat = (await act(world, admin, "securitytoolcatalogue", {})).offered[0];
       await act(world, admin, "securitytooladd", { body: { providerId: cat.provider_id, config: { region: "eu1" }, credentials: { api_key: "k", api_secret: "s" }, handlingDigest: cat.handling_digest, confirmRetention: true, use: "on_request" } });
     }
