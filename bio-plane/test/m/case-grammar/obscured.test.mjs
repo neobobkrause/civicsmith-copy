@@ -230,7 +230,7 @@ test("R12 (T38) an unmarked photo is stated obscured too: its row written includ
   /* no format change: an absent label line reads null, as a written null does */
   const absent = doc(CG.CASE_DOCUMENT_FORMAT, lines.filter((l) => !l.includes("obscured_label")));
   assert.deepEqual(CG.materialsOf(fmOf(absent)).materials[0].obscured, { copy: PLAIN_COPY, label: null, marked: false, kind: null });
-  assert.equal(CG.CASE_DOCUMENT_FORMAT, "bio-case-document/8");
+  assert.equal(CG.CASE_DOCUMENT_FORMAT, "bio-case-document/10");
   assert.equal(CG.CASE_FILE_FORMAT, "bio-case-file/3");
 });
 
@@ -301,8 +301,8 @@ test("R12 (T39) a member document's cleaned copy row: written flat as obscured_c
     assert.deepEqual(row, { ...MEMBER_DOC_ROW, included: false, title: null, obscured: { copy: DOC_COPY, label: COPY_CLEANED_LABEL, marked: true, kind: null } }, format);
     assert.equal(row.sha, sha(MEMBER_DOC_BYTES), "the original's fingerprint is kept");
   }
-  /* no new block or field: the case file is still /3 (the format written is /8, R33, which changes words only) */
-  assert.equal(CG.CASE_DOCUMENT_FORMAT, "bio-case-document/8");
+  /* no new block or field: the case file is still /3 (the format written is /10, R35, whose new blocks are carried inside the document) */
+  assert.equal(CG.CASE_DOCUMENT_FORMAT, "bio-case-document/10");
   assert.equal(CG.CASE_FILE_FORMAT, "bio-case-file/3");
   /* beside a marked and an unmarked photo, each read back as written, in the document's order */
   const { files } = caseFileFixture({ photo: true, plainPhoto: true, memberDoc: true, fileFormat: CG.CASE_FILE_FORMAT });

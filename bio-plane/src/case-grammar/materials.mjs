@@ -39,8 +39,10 @@
  * A `group` row's signature is the literal `case`: the case document's own signature covers it. A `project` row's is
  * null. Pure; the readers never throw. */
 
+import { createSha256, canonicalJson } from "../record-grammar/index.mjs";
 import { caseDocumentRequiresMaterials, attestationShaOf } from "./formats.mjs";
 import { fmSafe } from "./blocks.mjs";
+import { exact, unexact } from "./facts.mjs";
 
 const val = (v) => (v === undefined || v === null || v === "null" ? null : v);
 const bool = (v) => (v === true || v === "true" ? true : v === false || v === "false" ? false : null);
@@ -144,10 +146,11 @@ const titled = (r) => { try { return r.title !== undefined; } catch { return fal
 const materialRow = (r) => {
   const kind = oneOf(r.kind, MATERIAL_KINDS);
   const obscured = kind === "document" ? obscuredOf(r.obscured) : null;
+  const extract = kind === "document" && !obscured ? extractFieldsOf(r.extract) : null;
   return { ref: r.ref ?? null, kind, sha: r.sha ?? null, text_sha: r.text_sha ?? null, origin: r.origin ?? null,
-           archived_copy: r.archived_copy ?? null, included: !obscured && r.included === true,
+           archived_copy: extract ? null : r.archived_copy ?? null, included: !obscured && !extract && r.included === true,
            rests_under: oneOf(r.rests_under, MATERIAL_RESTS_UNDER),
-           ...(titled(r) ? { [MATERIAL_TITLE_FIELD]: titleOf(r) } : {}), ...obscured };
+           ...(titled(r) ? { [MATERIAL_TITLE_FIELD]: titleOf(r) } : {}), ...obscured, ...extract };
 };
 /* An attestation row as written, each kind's rule applied whatever it is handed. */
 const attestationRow = (r) => {
@@ -173,8 +176,9 @@ export function materialsLines(rows) {
   return ["materials:", ...written.flatMap((r) => [...MATERIAL_FIELDS, ...(MATERIAL_TITLE_FIELD in r ? [MATERIAL_TITLE_FIELD] : []),
     ...("obscured_copy" in r ? MATERIAL_OBSCURED_FIELDS : []),
     ...(MATERIAL_OBSCURED_MARKED_FIELD in r ? [MATERIAL_OBSCURED_MARKED_FIELD] : []),
-    ...(MATERIAL_OBSCURED_KIND_FIELD in r ? [MATERIAL_OBSCURED_KIND_FIELD] : [])]
-    .map((f, i) => `${i ? "   " : "  -"} ${f}: ${scalar(r[f])}`))];
+    ...(MATERIAL_OBSCURED_KIND_FIELD in r ? [MATERIAL_OBSCURED_KIND_FIELD] : []),
+    ...EXTRACT_ALL_FIELDS.filter((f) => f in r)]
+    .map((f, i) => `${i ? "   " : "  -"} ${f}: ${EXTRACT_ALL_FIELDS.includes(f) ? exact(r[f]) : scalar(r[f])}`))];
 }
 
 /** R12 (K1317): the `material_attestations:` block's lines, from `[{ref, by_kind, by, level, at, signature,
@@ -211,7 +215,8 @@ export function materialsOf(fm) {
     return {
       materials: has("materials")
         ? objects(d.materials).map((r) => ({ ...read(r, MATERIAL_FIELDS), included: bool(r.included) === true,
-                                             title: str(r[MATERIAL_TITLE_FIELD]), obscured: obscuredRead(r) })) : null,
+                                             title: str(r[MATERIAL_TITLE_FIELD]), obscured: obscuredRead(r),
+                                             ...(EXTRACT_ALL_FIELDS.some((f) => Object.hasOwn(r, f)) ? { extract: extractRead(r) } : {}) })) : null,
       attestations: has("material_attestations")
         ? objects(d.material_attestations).map((r) => ({ ...read(r, MATERIAL_ATTESTATION_FIELDS), sha: str(r[MATERIAL_ATTESTATION_SHA_FIELD]) })) : null,
     };
@@ -230,6 +235,108 @@ function obscuredRead(r) {
   return { copy: str(r.obscured_copy), label, marked: bool(r[MATERIAL_OBSCURED_MARKED_FIELD]) ?? label !== null,
            /* T47 (R31): the stored marker as written, null on a row that states none or a value outside its two words */
            kind: oneOf(val(r[MATERIAL_OBSCURED_KIND_FIELD]), MATERIAL_OBSCURED_KINDS) };
+}
+
+/* ===== R38, R39 — A CITED REGISTER ROW TRAVELS AS A LABELLED EXTRACT (T53; N1259; K4403 (3)(4); K1483 (a)) =====
+   A `document` row for a register row a member cites states, after `title`, the extract's flat fields: which register
+   and file, the reduced segment's and the original piece's SHA-256, what the original covers, its source date and when
+   it was imported, the row's number in the original piece, the kept columns with their roles and the dropped ones, the
+   kept columns' names and the cited row's kept cells verbatim, the label's key and, for a limited register, its limit.
+   The file is not carried: the row states `included: false` and `archived_copy` null, its `sha` the reduced segment's and
+   its `text_sha` the SHA-256 of `extractTextOf(header, row)`. Each field is written as R17 writes a value (`exact`: its
+   canonical JSON in one quoted value), so a cell holding a comma, a quote or a line break reads back verbatim, where the
+   grammar's inline list would cut it. A document stating any extract field is `/10` (R35). */
+
+/** R38: the extract's fields on a material row, in the order they are written (after `title`); R39's three after them,
+ *  for a limited register only; the label's key. The names are BOB's. */
+export const MATERIAL_EXTRACT_FIELDS = Object.freeze(["extract_register", "extract_file", "extract_reduced_sha256",
+  "extract_original_sha256", "extract_original_covers", "extract_source_date", "extract_imported_at", "extract_src_row",
+  "extract_kept_columns", "extract_roles", "extract_dropped_columns", "extract_header", "extract_row", "extract_label_key"]);
+export const MATERIAL_EXTRACT_USE_LIMIT_FIELDS = Object.freeze(["extract_use_limit_key", "extract_use_limit_citation",
+  "extract_use_limit_text_key"]);
+const EXTRACT_ALL_FIELDS = Object.freeze([...MATERIAL_EXTRACT_FIELDS, ...MATERIAL_EXTRACT_USE_LIMIT_FIELDS]);
+export const EXTRACT_LABEL_KEY = "register.extract";
+/** R38: the refusal of a malformed extract. */
+export const EXTRACT_INVALID = "EXTRACT_INVALID";
+
+/* The extract's keys as `registerExtractRow` takes them and `materialsOf` answers them, beside the row's field names. */
+const EXTRACT_KEYS = Object.freeze(["register", "file", "reduced_sha256", "original_sha256", "original_covers", "source_date",
+  "imported_at", "src_row", "kept_columns", "roles", "dropped_columns", "header", "row", "label_key"]);
+const USE_LIMIT_KEYS = Object.freeze(["key", "citation", "text_key"]);
+const DATE = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2}))?$/;
+const isDate = (v) => typeof v === "string" && DATE.test(v) && !Number.isNaN(Date.parse(v.length === 10 ? `${v}T00:00:00Z` : v))
+  && (v.length !== 10 || new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v);
+const isSentence = (v) => typeof v === "string" && v.trim() !== "";
+const isNames = (v) => Array.isArray(v) && v.every((x) => typeof x === "string");
+const isCells = (v) => Array.isArray(v) && v.every((x) => x === null || typeof x === "string" || (typeof x === "number" && Number.isFinite(x)));
+
+/** R38: the extract text `text_sha` is the SHA-256 of: the canonical JSON of `[header, row]`, one spelling for the
+ *  writer and every checker. Null for input that is not two lists. Pure; never throws. */
+export function extractTextOf(header, row) {
+  try { return Array.isArray(header) && Array.isArray(row) ? canonicalJson([header, row]) : null; } catch { return null; }
+}
+const sha256Of = (text) => createSha256().update(new TextEncoder().encode(text)).hex();
+
+/* The first field an extract breaks, by its row field name, or null when it is whole. */
+function extractInvalidField(x) {
+  if (!x || typeof x !== "object" || Array.isArray(x)) return "extract";
+  const checks = {
+    register: isSentence, file: isSentence, reduced_sha256: (v) => typeof v === "string" && HEX64.test(v),
+    original_sha256: (v) => typeof v === "string" && HEX64.test(v), original_covers: isSentence, source_date: isDate,
+    imported_at: isDate, src_row: (v) => Number.isSafeInteger(v) && v >= 1,
+    kept_columns: (v) => isNames(v) && v.length > 0, roles: (v) => isNames(v) && v.length === x.kept_columns.length,
+    dropped_columns: isNames, header: (v) => isNames(v) && v.length === x.kept_columns.length,
+    row: (v) => isCells(v) && v.length === x.kept_columns.length,
+  };
+  for (const k of Object.keys(checks)) if (!checks[k](x[k])) return `extract_${k}`;
+  if (x.use_limit !== undefined && x.use_limit !== null) {
+    const u = x.use_limit;
+    if (!u || typeof u !== "object" || Array.isArray(u)) return "extract_use_limit_key";
+    for (const k of USE_LIMIT_KEYS) if (!isSentence(u[k])) return `extract_use_limit_${k}`;
+  }
+  return null;
+}
+/* An extract as its flat fields; null when there is none to write (absent, or not an object). */
+const extractFieldsOf = (x) => {
+  try {
+    if (!x || typeof x !== "object" || Array.isArray(x)) return null;
+    const out = Object.fromEntries(EXTRACT_KEYS.map((k) => [`extract_${k}`, k === "label_key" ? EXTRACT_LABEL_KEY : x[k] ?? null]));
+    const u = x.use_limit;
+    return u && typeof u === "object" && !Array.isArray(u)
+      ? { ...out, ...Object.fromEntries(USE_LIMIT_KEYS.map((k) => [`extract_use_limit_${k}`, u[k] ?? null])) } : out;
+  } catch {
+    return null;
+  }
+};
+/* A row's extract read back: every key, each null when not stated; `use_limit` `{key, citation, text_key}` when any of
+   R39's fields is stated, else null. */
+function extractRead(r) {
+  const out = Object.fromEntries(EXTRACT_KEYS.map((k) => [k, unexact(r[`extract_${k}`])]));
+  const limited = MATERIAL_EXTRACT_USE_LIMIT_FIELDS.some((f) => Object.hasOwn(r, f));
+  return { ...out, use_limit: limited ? Object.fromEntries(USE_LIMIT_KEYS.map((k) => [k, unexact(r[`extract_use_limit_${k}`])])) : null };
+}
+
+/** R38, R39: the `materials:` row for a cited register row, from `{ref, origin?, rests_under, title?, register, file,
+ *  reduced_sha256, original_sha256, original_covers, source_date, imported_at, src_row, kept_columns, roles,
+ *  dropped_columns, header, row, use_limit?: {key, citation, text_key}}`. Answers `{ok: true, row}`, the row
+ *  `materialsLines` writes (`kind` `document`, `sha` the reduced segment's, `text_sha` the extract text's, `archived_copy`
+ *  null, `included` false whatever is handed, `extract` with `label_key` `register.extract`), or `{ok: false, code:
+ *  "EXTRACT_INVALID", field}` naming the first field that is absent or malformed (`ref` too). Pure; never throws. */
+export function registerExtractRow(args) {
+  try {
+    const a = args && typeof args === "object" && !Array.isArray(args) ? args : {};
+    if (!isSentence(a.ref)) return { ok: false, code: EXTRACT_INVALID, field: "ref" };
+    const bad = extractInvalidField(a);
+    if (bad) return { ok: false, code: EXTRACT_INVALID, field: bad };
+    const extract = { ...Object.fromEntries(EXTRACT_KEYS.filter((k) => k !== "label_key").map((k) => [k, a[k]])),
+                      label_key: EXTRACT_LABEL_KEY,
+                      ...(a.use_limit ? { use_limit: Object.fromEntries(USE_LIMIT_KEYS.map((k) => [k, a.use_limit[k]])) } : {}) };
+    return { ok: true, row: { ref: a.ref, kind: "document", sha: a.reduced_sha256, text_sha: sha256Of(extractTextOf(a.header, a.row)),
+      origin: a.origin ?? null, archived_copy: null, included: false, rests_under: oneOf(a.rests_under, MATERIAL_RESTS_UNDER),
+      ...(a.title !== undefined ? { title: a.title } : {}), extract } };
+  } catch {
+    return { ok: false, code: EXTRACT_INVALID, field: "extract" };
+  }
 }
 
 /* ===== R16 — ANOTHER GROUP'S WORK THE CASE RESTS ON (DEC-96 item 4; N522) ===== */
