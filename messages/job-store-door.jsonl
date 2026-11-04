@@ -2,3 +2,4 @@
 {"at":"2026-11-04T05:55:38Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T09:20:58Z","row":"sent","n":2,"to":"bob","text":"job store-door complete, PR #200 ready: run status"}
 {"at":"2026-11-04T09:21:10Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-04T11:52:37Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job store-door complete, PR #220 ready: run status"}
