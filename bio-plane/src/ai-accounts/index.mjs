@@ -82,12 +82,17 @@ export function aiAccountsOps(a, url, body, env) {
   const q = (k) => url.searchParams.get(k);
   /* a body field, only when it is a string; the arms below name what each reads */
   const s = (k) => (typeof b[k] === "string" ? b[k] : null);
-  const ownerOf = (who) => (who === "group" || who === "team" ? "group" : who === "member" ? `member:${by()}` : null);
+  /* F2: the member a member's own act names, from the stamped `by`. The plane door stamps a session's `by` already as
+     `member:<id>` (admission's resolveSession, through store-request's innerRequest), so a stamp that starts `member:` is
+     the owner as it stands; a bare id (the founder's `admin`, a caller stamping the id alone) gains the prefix. Never
+     `member:member:<id>`. */
+  const me = () => { const v = by(); return typeof v === "string" && v.startsWith("member:") ? v : `member:${v}`; };
+  const ownerOf = (who) => (who === "group" || who === "team" ? "group" : who === "member" ? me() : null);
   return {
     /* R38, R40: the team's and a project's account by the owner named in the body; a member's own from the stamp alone */
     aiaccountadd: () => (typeof b.owner === "string" && b.owner.startsWith("member:")
       ? a.accountSet({ ...b, owner: null, by: by() }) : a.accountSet({ ...b, by: by() })),
-    aiownadd: () => a.accountSet({ ...b, owner: `member:${by()}`, by: by() }),
+    aiownadd: () => a.accountSet({ ...b, owner: me(), by: by() }),
     aiaccountremove: () => a.accountRemove({ account_id: s("account_id"), by: by() }),
     aiaccountswitch: () => a.accountSwitch({ account_id: s("account_id"), on: b.on, by: by() }),
     /* R70: the team's list or the member's own; `owner` `group` or `member`, the member from the stamp */
@@ -98,11 +103,11 @@ export function aiAccountsOps(a, url, body, env) {
     aiprojectuse: () => (s("account_id") !== null ? a.accountEntriesSet({ account_id: s("account_id"), entries: b.entries, by: by() })
       : a.offeredSet({ owner: s("project") === null ? null : `project:${s("project")}`, entries: b.entries ?? null, by: by() })),
     aimineuse: () => (s("account_id") !== null ? a.accountEntriesSet({ account_id: s("account_id"), entries: b.entries, by: by() })
-      : a.offeredSet({ owner: `member:${by()}`, entries: b.entries ?? null, by: by() })),
+      : a.offeredSet({ owner: me(), entries: b.entries ?? null, by: by() })),
     /* R52, R53: the checks of the team, of a project, and of the member herself */
     aicheckset: () => a.checksSet({ level: "group", check: s("check"), ticked: b.ticked, by: by() }),
     aiprojectcheckset: () => a.checksSet({ level: s("project") === null ? null : `project:${s("project")}`, check: s("check"), ticked: b.ticked, by: by() }),
-    aimycheckset: () => a.checksSet({ level: `member:${by()}`, check: s("check"), ticked: b.ticked, by: by() }),
+    aimycheckset: () => a.checksSet({ level: me(), check: s("check"), ticked: b.ticked, by: by() }),
     /* R44, R69: a gateway key entered (never echoed), confirmed in the dashboard, or kept sealed (R69) */
     aikeyenter: () => a.gatewayKeyEnter({ account_id: s("account_id"), key: b.key, by: by() }),
     aikeycloudflare: () => a.gatewayKeyAttest({ account_id: s("account_id"), by: by() }),
@@ -110,7 +115,7 @@ export function aiAccountsOps(a, url, body, env) {
     /* R56, R47: the free tier's warning, a personal subscription chosen */
     aitermsaccept: () => a.freeTierAccept({ account_id: s("account_id"), by: by() }),
     aitermswithdraw: () => a.freeTierWithdraw({ account_id: s("account_id"), by: by() }),
-    aipersonalchoose: () => a.accountSet({ ...b, owner: `member:${by()}`, by: by() }),
+    aipersonalchoose: () => a.accountSet({ ...b, owner: me(), by: by() }),
     /* R68, R49, R51: the credits stop cleared, a share flag, a recipient's notice seen */
     aicreditsclear: () => a.aiCreditsClear({ account_id: s("account_id"), by: by() }),
     aioptinset: () => a.crossOwnerOptInSet({ account_id: s("account_id"), on: b.on, by: by() }),
