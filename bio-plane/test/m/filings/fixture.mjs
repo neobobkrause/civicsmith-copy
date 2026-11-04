@@ -12,6 +12,7 @@ import { consequencesModule } from "../../../src/consequences/index.mjs";
 import { standardsOf } from "../../../src/standards/index.mjs";
 import { conformanceOf } from "../../../src/conformance/index.mjs";
 import { actionsOf } from "../../../src/actions/index.mjs";
+import { actionClocksOf } from "../../../src/action-clocks/index.mjs";
 import { publicReadOf } from "../../../src/public-read/index.mjs";
 import { attestationOf } from "../../../src/attestation/index.mjs";
 import { LocalFacts } from "../../../src/local-facts/index.mjs";
@@ -152,6 +153,9 @@ export function world({ profiles = undefined, group = "test-group", signing = fa
      entry's path name what they hold. */
   const filingTemplates = templatesOver(w, profiles);
   const localFacts = profiles === undefined ? undefined : localFactsOver(w, profiles, now);
+  /* R7 (action-clocks R2, R28): the host's action-clocks, which filings asks for the clock entries it offers, reads the
+     same profiles filings is handed (a test layer it names, say), through the same real local-facts */
+  if (localFacts) actionClocksOf(w.host, { localFacts, actions });
   /* attestation (layer 3, after provenance), the real one: every attestation a capture holds (its R7), R9's exhibits. */
   const attestation = attestationOf(w.host, { record: w.record, provenance: w.prov });
   /* R64: with `signing`, the host's own case-inputs is handed in, as the composition root's environment would have filings find it */
