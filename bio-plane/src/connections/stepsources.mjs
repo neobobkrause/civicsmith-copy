@@ -131,12 +131,20 @@ export class StepSources {
   /** R69: `neighbours` for an entity node: each standing source of a standing relation the node is an end of, whose
    *  capture the viewer may see, as one `step_source` connection. Synchronous; writes nothing. */
   neighbours(args) {
+    const s = this.set(args);
+    if (s.refused) return s;
+    if (s.hub) return { items: [], hub: s.hub };
+    return pageOf(s.items, isObj(args) ? args.page : null);
+  }
+
+  /** R69, R74: every `step_source` hop of the node, unpaged and sorted by id: `{items, hub?, extra}`, or a refusal. */
+  set(args) {
     const a = isObj(args) ? args : {};
-    const { node, kinds, page, viewer } = a;
+    const { node, kinds, viewer } = a;
     if (viewer === undefined || viewer === null || viewer === "")
       return { refused: "VIEWER_MISSING", why: word("duties.why.read_names_member") };
-    if (Array.isArray(kinds) && !kinds.includes(STEP_SOURCE_KIND)) return { items: [] };
-    if (typeof node !== "string" || !node) return { items: [] };
+    if (Array.isArray(kinds) && !kinds.includes(STEP_SOURCE_KIND)) return { items: [], extra: {} };
+    if (typeof node !== "string" || !node) return { items: [], extra: {} };
     const keep = this.k.redactor(viewer);
     const relations = new Map(), grades = new Map();
     const relationOf = (id) => { if (!relations.has(id)) relations.set(id, this.#relation(id)); return relations.get(id); };
@@ -146,31 +154,13 @@ export class StepSources {
       .map((r) => this.#item(r, grades))
       .sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
     if (items.length > BOUNDS.hub)
-      return { items: [], hub: { set_size: items.length,
+      return { items: [], extra: {}, hub: { set_size: items.length,
                why: word("connections.why.sources_back_declared", { items: String(items.length), hub: String(BOUNDS.hub) }) } };
-    const after = isObj(page) && typeof page.after === "string" ? page.after : null;
-    const rest = after ? items.filter((i) => i.id > after) : items;
-    const shown = rest.slice(0, BOUNDS.fanout);
-    return { items: shown, ...(rest.length > shown.length ? { next: { after: shown[shown.length - 1].id } } : {}) };
-  }
-
-  /* R69: the cited capture's grade, never above it: `provenance.captureGrade` through `content`; a capture whose grade
-     is not determined answers the lowest grade, and says so (J1 (3)). */
-  #captureGrade(sha, memo) {
-    if (memo.has(sha)) return memo.get(sha);
-    const p = this.k.content && this.k.content.provenance;
-    let g = null;
-    try { g = p && typeof p.captureGrade === "function" ? p.captureGrade(sha) : null; } catch { g = null; }
-    const letter = g && BASIS_GRADES.includes(g.grade) ? g.grade : null;
-    const out = letter
-      ? { grade: letter, says: word("connections.says.cited_capture_grade", { letter: String(letter) }) }
-      : { grade: LOWEST_GRADE, says: word("connections.says.cited_capture_grade_determined", { why: String(g && g.why ? ` (${String(g.why).slice(0, 200)})` : ``), lowest_grade: String(LOWEST_GRADE) }) };
-    memo.set(sha, out);
-    return out;
+    return { items, extra: {} };
   }
 
   #item(r, memo) {
-    const g = this.#captureGrade(r.capture_sha, memo);
+    const g = capturedGrade(this.k, r.capture_sha, memo);
     return {
       id: idOf(r.source_id), from: r.from_entity, to: r.to_entity, kind: STEP_SOURCE_KIND, owner: "connections",
       valid: { ...VALID },
@@ -181,4 +171,27 @@ export class StepSources {
       undetermined: { why: { ...STEP_SOURCE_UNDATED } },
     };
   }
+}
+
+/** R69, R74: the cited capture's grade, never above it: `provenance.captureGrade` through `content`; a capture whose
+ *  grade is not determined answers the lowest grade, and says so (J1 (3)). `memo` keeps one read per capture. */
+export function capturedGrade(k, sha, memo) {
+  if (memo.has(sha)) return memo.get(sha);
+  const p = k.content && k.content.provenance;
+  let g = null;
+  try { g = p && typeof p.captureGrade === "function" ? p.captureGrade(sha) : null; } catch { g = null; }
+  const letter = g && BASIS_GRADES.includes(g.grade) ? g.grade : null;
+  const out = letter
+    ? { grade: letter, says: word("connections.says.cited_capture_grade", { letter: String(letter) }) }
+    : { grade: LOWEST_GRADE, says: word("connections.says.cited_capture_grade_determined", { why: String(g && g.why ? ` (${String(g.why).slice(0, 200)})` : ``), lowest_grade: String(LOWEST_GRADE) }) };
+  memo.set(sha, out);
+  return out;
+}
+
+/** R69, R74: one page of a set sorted by id, at most `BOUNDS.fanout` items after `page.after`, with `next` when more. */
+export function pageOf(items, page) {
+  const after = isObj(page) && typeof page.after === "string" ? page.after : null;
+  const rest = after ? items.filter((i) => i.id > after) : items;
+  const shown = rest.slice(0, BOUNDS.fanout);
+  return { items: shown, ...(rest.length > shown.length ? { next: { after: shown[shown.length - 1].id } } : {}) };
 }

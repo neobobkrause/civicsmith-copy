@@ -9,7 +9,7 @@
  * DEC-149 (T34-86; K1784): a translation a member reads names the group's Civicsmith as "your group's Civicsmith", never
  * "this instance", "the copy" or "the plane" (C-33.29, C-109.1; C-109.9 until its retirement, R20). */
 
-import { word, localize } from "../setup-words/index.mjs";
+import { word, localize, hasWord } from "../setup-words/index.mjs";
 
 /* R31 (T46; DEC-194; N913): the words of `words.json` (`docs/development/ux-substrate/screens/words.json`) this module's
  * rows answer, each read by key through `setup-words`' `word(key)` (plan rule 6; K3632) as `membership`'s `HANDLE_WORDS` and
@@ -299,7 +299,7 @@ export const AI_RUN_OWN_CHECKS = {
     check: 'C-22.29',
     where: 'src/run-rules/test-bar.mjs partRefusal, called from the doors partAdmittedOn does not admit (plane R40\'s ask '
       + 'and drafts)',
-    translation: word('refusal.AI_PART_NOT_DEPLOYED'),
+    translation: hasWord('ai.refused.aipartnotdeployed') ? word('ai.refused.aipartnotdeployed') : word('refusal.AI_PART_NOT_DEPLOYED'),
   },
   /* R32 (T46; K2947; `ai-runs` R18): A MEMBER'S OWN SIGN-IN RUN IN A MODE IT DOES NOT SERVE. On her own Claude sign-in
      a member's run is dispatched for her only in `check` or `plan` (Bob's K2892); any other mode is refused by `ai-runs`
@@ -320,6 +320,16 @@ export const AI_RUN_OWN_CHECKS = {
     check: 'C-22.31',
     where: 'src/run-rules/rules.mjs levelEmptyHolds, called from agent-harness before it composes a level-empty candidate',
     translation: RUN_RULES_WORDS['refusal.LEVEL_EMPTY_NO_DOCUMENT_IN_SCOPE'],
+  },
+  /* R37 (T53; N1258, AD13, K5475): A PART WITHDRAWN FOR ONE AI by the standing measure (R19 as amended): its latest R75
+     record for that entry on Civicsmith's current set did not pass. Minted only by `partRefusal`, read by key
+     `ai.refused.partwithdrawn` (`PART_REFUSAL_WORDS`). C-22.34, the next free number after observation-log's C-22.33;
+     the number is BOB's to confirm. Its translation is that key's word once the word table holds it, until then
+     C-22.29's (the part has not passed Civicsmith's tests on the AI chosen). */
+  PART_WITHDRAWN: {
+    check: 'C-22.34',
+    where: 'src/run-rules/test-bar.mjs partRefusal, when partWithdrawnOn names the part withdrawn for the entry',
+    translation: hasWord('ai.refused.partwithdrawn') ? word('ai.refused.partwithdrawn') : word('refusal.AI_PART_NOT_DEPLOYED'),
   },
 };
 
