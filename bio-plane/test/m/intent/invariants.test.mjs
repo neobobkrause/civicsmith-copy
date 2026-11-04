@@ -26,7 +26,7 @@ test("R18 workObjective is a member's act only (MACHINE_CANNOT_CHOOSE_THE_QUESTI
   assert.equal(w.calls.open.length, 0);
   assert.equal((await w.i.workObjective({ reason: "Work the gaps.", project: w.P, author: V("dave"), run: { run: "R-1" } })).reason, "NO_SUCH_PROJECT");
   const r = await w.i.workObjective({ reason: "Work the gaps.", project: w.P, author: V("bob"), viewer: V("bob"),
-    run: { run: "R-1", principalPlane: "member:bob/tok", principalClaude: "acct", skillVersion: "bio-pack@3",
+    run: { run: "R-1", principalPlane: "member:bob/tok", principalAi: "member:bob", skillVersion: "bio-pack@3",
            bounds: [{ bound: "fetches", allowed: 10 }], contextType: "inquiry", contextId: "INQ-X" } });
   assert.equal(r.started, true);
   const call = w.calls.open.at(-1);

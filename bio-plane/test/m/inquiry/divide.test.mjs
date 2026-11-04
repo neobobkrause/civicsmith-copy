@@ -69,7 +69,7 @@ test("R23 the producing group undetermined, and CHILD_REFUSED when a child's doc
     null, { replay: true }).ok, true, "a replayed creation is held verbatim");
   const er = w4.k.divide({ target: P, reason: "two", children: kids(), viewer: "admin", author: V("alice") });
   assert.equal(er.reason, "CHILD_REFUSED", JSON.stringify(er).slice(0, 300));
-  assert.ok(er.findings.some((x) => x.check === "C-2.8" && /surfaced_by 'robot'/.test(x.detail)));
+  assert.ok(er.findings.some((x) => x.check === "C-2.8" && /who surfaced this inquiry is 'robot'/.test(x.detail)));
   assert.deepEqual([w4.record.head(C1), w4.fm(P).current_state], [null, "open"], "nothing moved");
 });
 
