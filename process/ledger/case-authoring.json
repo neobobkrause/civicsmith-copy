@@ -76,8 +76,7 @@
   ],
   "prior_work": "Found work (case-grammar PR 202, R35): CASE_DOCUMENT_FORMAT is now bio-case-document/10; 4 of this module's tests pin /8 as the format in force and are red. Restate them (and any code naming the format in force) against case-grammar as merged, with a test that fails with the change reverted. Any unmet mark in build/requirements/case-authoring.md is yours too. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-04T21:50:11Z",
-    "reason": "reopened: Release path (coordinator 22:55, A3): meet F2 in build/requirements/case-authoring.md. The case document the real op=publish prepares lacks the ungraded_passages (and typed_passages) block that case-catalogue's C-41.18/C-41.19 check, so caseratify's gate finds UNGRADED_PASSAGES_MISMATCH on every real publish; 17 store-request tests are base-red because of it. Cause at bio-plane/src/case-authoring/document.mjs:183-184. Write the block from case-grammar's ungradedPassagesOf/typedPassagesOf rules (R35-R39) when preparing a /10 document, with a test through the real publish path that caseratify's gate passes, failing with the change reverted. Then name in not-verified which of store-request's base-red tests now pass (run its suite; do not edit it). Only F2: leave other open marks."
+    "state": "COMPLETE",
+    "at": "2026-11-04T22:12:32Z"
   }
 }
