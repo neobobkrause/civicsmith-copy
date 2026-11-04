@@ -6,6 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { O, call, opCalls, FORGED } from "./harness.mjs";
 import { ok, callers, routesForSessions } from "./door-routes.mjs";
+import { world as accountsWorld } from "../ai-accounts/fixture.mjs";
 
 /* instance-setup's translation ops (R66), as op-declarations declares them for it; `translationdraft` is R57's */
 const TRANSLATION_OPS = Object.keys(O.OP_FAMILIES["instance-setup"].kinds)
@@ -93,11 +94,19 @@ test("R68 (N776; DEC-182 (4); op-declarations R39; credentials R3): `setpassword
 /* signin-door R1–R5 (were this module's R65, R78, R85–R87) are tested in that module; here the door's half: each op
    reaches signin-door's handler with the member the session names, the request's body and the store addressed, and its
    answer is signin-door's. The store answers signin-door's store-internal routes as its `ops.mjs` would. */
+/* (notice signin-door:153, :168) `state` reads ai-accounts' T53 `accountsof` (signin-door F1; the retired `accountreference`
+   has no alias, ai-accounts R35): ann's own accounts once her sign-in token is held, as ai-accounts' own code answers them
+   when the test runs (never written by hand). */
+const ANN_ACCOUNTS = await (async () => {
+  const w = await accountsWorld().group("ann");
+  const held = await w.a.subscriptionTokenHold({ member: "member:ann", token: "sk-ant-oat01-" + "s".repeat(40) });
+  if (!held.ok) throw new Error(`ANN_ACCOUNTS: ${held.reason}`);
+  return w.a.accountsOf({ owner: "member:ann", viewer: "member:ann" });
+})();
 function signinWorld({ reply, testInstance = false } = {}) {
   const c = callers({ answer: (q) => (q.route === "aikeptaway" ? ok({ ok: true })
                                       : q.route === "signindisclosuredue" ? ok({ ok: true, due: null })
-                                      : q.route === "accountreference" ? ok({ ok: true, subscription: { connected: true, since: "2026-10-01", held: true } })
-                                      : q.route === "subscriptiondisconnect" ? ok({ ok: true, disconnected: true })
+                                      : q.route === "accountsof" ? ok(ANN_ACCOUNTS)
                                       : q.route === "signintraceread" ? ok({ ok: true, lines: [{ event: "signin.door" }] })
                                       : q.route === "memberset" ? ok({ ok: true, memberId: "bea", status: "revoked" }) : null) });
   const aw = agentWorker(reply ?? ((path, body) => runner(200, body.step === "start" ? { ok: true, address: "https://claude.ai/oauth/x" }
@@ -120,18 +129,19 @@ test("R2, R17, R29 (T47; K3167; signin-door R1–R3): `subscriptionsignin` is an
   assert.deepEqual([x.aw.sent[0].path, x.aw.sent[0].body.member, x.aw.sent[0].body.step], ["/signin", "member:ann", "start"]);
   assert.equal(x.aw.sent[0].headers["x-civicsmith-trace"], r.json.trace);
   assert.equal(JSON.stringify([opCalls(x.w.env), x.aw.sent]).includes(FORGED), false, "nothing of the caller's statement of who");
-  /* control: `state` is answered from credentials' read, nothing sent to the runner */
+  /* control: `state` is answered from ai-accounts' `accountsof` for the session's member, nothing sent to the runner */
   const s = await call(x.w.env, { op: "subscriptionsignin", token: x.w.S.ann, method: "POST", body: { step: "state" } });
   assert.deepEqual([s.status, s.json.connected, s.json.held, x.aw.sent.length], [200, true, true, 1]);
+  assert.deepEqual(opCalls(x.w.env).filter((c) => c.route === "accountsof").map((c) => c.params.owner), ["member:ann"]);
+  assert.equal(opCalls(x.w.env).some((c) => c.route === "accountreference"), false, "the retired read is never asked");
 });
 
-test("R2 (T47; K3167; signin-door R1, R4): `subscriptiondisconnect` reaches credentials' act through signin-door with `by` the session's member, then `signout` is sent for that member; a member's revocation (`memberset` to `revoked`) signs that member out through signin-door, the act's answer unchanged (control: an act that is not a leaving sends nothing)", async () => {
+test("R2 (T47; K3167; signin-door R4; notice op-declarations:95, ai-accounts R35): the retired `subscriptiondisconnect` is refused as an op with no spec (400 UNKNOWN_OP), nothing asked of the store or sent to the runner; a member's revocation (`memberset` to `revoked`) signs that member out", async () => {
   const x = signinWorld();
   const d = await call(x.w.env, { op: "subscriptiondisconnect", token: x.w.S.ann, method: "POST", params: { by: FORGED }, body: { by: FORGED } });
-  assert.equal(d.status, 200, d.text.slice(0, 300));
-  assert.equal(d.json.result?.disconnected, true, "the store's answer, relayed as the forward relays one");
-  assert.equal(opCalls(x.w.env).find((c) => c.route === "subscriptiondisconnect").params.by, "member:ann");
-  assert.deepEqual(x.aw.sent.map((s) => [s.body.member, s.body.step]), [["member:ann", "signout"]]);
+  assert.deepEqual([d.status, d.json.code], [400, "UNKNOWN_OP"], d.text.slice(0, 300));
+  assert.equal(opCalls(x.w.env).some((c) => c.route === "subscriptiondisconnect"), false, "no store route asked");
+  assert.equal(x.aw.sent.length, 0, "nothing sent to the runner");
   const m = await call(x.w.env, { op: "memberset", token: x.w.S.founder, method: "POST", body: { memberId: "bea", status: "revoked" } });
   assert.equal(m.status, 200, m.text.slice(0, 300));
   assert.deepEqual(x.aw.sent.at(-1).body, { member: "member:bea", step: "signout" });

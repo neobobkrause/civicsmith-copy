@@ -65,7 +65,7 @@ const APP_SCREENS = Object.freeze([...ENTRY_SCREENS, ...SETTINGS_SCREENS, ...INT
 const APP_OPTIONS = Object.freeze({ guide: WIZARD_GUIDE });
 /* (T47; K3167) a member's own Claude sign-in, its disconnection, the revocation's sign-out, a refused held token and the
    test instance's trace are signin-door's (its R1–R5, were this module's R65, R78, R85–R87): the door routes to them. */
-import { subscriptionSignin, subscriptionDisconnect, leaverOf, signoutLeaver, tokenRefusedSeen, signintrace, mintTrace,
+import { subscriptionSignin, leaverOf, signoutLeaver, tokenRefusedSeen, signintrace, mintTrace,
          memberRefOf } from "../signin-door/index.mjs";
 /* R95 (T48; K3254; walk C2 (a)): whether this is a test instance is `ai-runs`' own fact (its R78, as `bootstrap` answers
    it), asked of the Worker environment alone. */
@@ -1403,12 +1403,9 @@ export function makeFetch(hooks = {}) {
       const traced = await signintrace({ env, store: stored });
       return json(traced.body, traced.status);
     }
-    if (op === "subscriptiondisconnect") {
-      const out = await subscriptionDisconnect({ env, member: stampOf.by, store: stored });
-      if (out.refused) return storeRefusal(out, { store: storeName, tokenClass: cls });
-      if (!out.answered) return storeSilent(op, out.correlation);
-      return json({ ...out.reply.body, store: storeName, tokenClass: cls }, out.reply.status);
-    }
+    /* The member's own `subscriptiondisconnect` is retired with no alias (notice op-declarations:95, its R30; ai-accounts
+       R35; signin-door's RETIRED_DISCONNECT): the door routes it to nothing, so it is an op no registration declares and
+       admission refuses it as any undeclared op. A member disconnects by removing the issued account (`aiaccountremove`). */
     /* R57 (T46; N917; plane R40, R41; agent-worker R76): `textcheck` has no owner before the draft: the door asks the
        plane's draft door with the body's `text` alone (no told, grant or firsthand, no `checkDraft`), which gates it and
        answers it labelled; nothing is recorded or handed to `filings` here. Only a member's session reaches the op (its
