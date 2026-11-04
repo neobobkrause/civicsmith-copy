@@ -241,9 +241,11 @@ test("R12: a run waiting on a request that reaches expired is woken on the alarm
   assert.equal(filed.ok, true, JSON.stringify(filed).slice(0, 300));
   const T0 = Date.now();
   const RUN = "RUN-2026-0928-sched-expiry";
+  /* ai-runs R9 (T53; notice ai-runs:96): the run names its paying principal `principalAi` and its member `principalAiRef`;
+     the old `principalClaude` arguments are refused AI_RUN_CAPABILITY_UNAVAILABLE */
   const opened = await POST(`op=airunopen&token=${RUTH}`, { run: RUN, contextType: "inquiry", contextId: INQ,
-    label: "a run waiting on a request that will expire", mode: "check", principalClaude: "project",
-    principalClaudeRef: "a-group/claude", skillVersion: "investigative-session@1", biasManifest: null,
+    label: "a run waiting on a request that will expire", mode: "check", principalAi: "member:ruth",
+    principalAiRef: "ruth", skillVersion: "investigative-session@1", biasManifest: null,
     bounds: [{ bound: "fetches", allowed: 5, unit: "requests" }], at: new Date(T0).toISOString(), leaseMs: 3 * 86400000 });
   assert.equal(opened.started, true, JSON.stringify(opened));
   /* The one request is at a host the governor holds for longer than the request lives: held on every tick, so

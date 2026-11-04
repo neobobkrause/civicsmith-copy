@@ -8,7 +8,7 @@
 
 ### Purpose
 
-The visual language every member screen uses (DEC-138), as frozen data copied from the design stream's files at a named commit: the stylesheet with its faces, the typefaces with their licences, and the icons. Pure data: it imports nothing, reads nothing and writes nothing; `interface-shell` names its files and `control-plane` serves them.
+The visual language every member screen uses (DEC-138), as frozen data copied from the design stream's files at a named commit: the stylesheet with its faces, the typefaces with their licences, and the icons. Pure data: it imports nothing but its own face modules (R4), reads nothing and writes nothing; `interface-shell` names its files and `control-plane` serves them.
 
 ### Provides
 
@@ -17,7 +17,7 @@ The visual language every member screen uses (DEC-138), as frozen data copied fr
 - **R2** No file of `ASSET_FILES` names a resource on another origin in any `url()`, `@import`, `href` or `src`: every resource it names is `/app/assets/…` on the page's own origin (an XML namespace declaration, as `icons.svg`'s, names no resource). A test scans every entry.
 - **R3** `ASSET_FILES` and each of its entries are frozen: no write changes the map, an entry or a field.
 - **R5** (T48; N1048, N1028; DEC-224, DEC-215 (3); K3166; amends R1) `ASSETS_COMMIT` is `4664e8efd4` (`main` at PR #34's merge, whose visual language is PR #33's, `371af128a6`), or the later `main` commit named at the job's START if the visual language changed after. `ASSET_FILES` is read there by R1's rule. By it `civicsmith.css` holds no `cursor: help` anywhere; its `.cs-card` rule carries no `cursor` (DEC-224: the cursor changes only over a control); and it holds `--c-kind-money`, `--c-kind-part` and `--c-kind-mention`, light and dark. Test: R1's byte equality; a scan finds no `cursor: help` and no `cursor` in `.cs-card`; control: `.cs-btn` keeps `cursor: pointer`.
-- **R6** (T48; N1039; K3147; `plane` R43, R54; `bundler` R31) The faces (`fonts/<f>`, the bulk of `ASSET_FILES`) are not evaluated as module code at the plane's start: `ASSET_FILES` holds each face so that the bundle carries its bytes as an upload part (a data module the Worker loads as bytes) or builds it on first read, never as a base64 string literal parsed in the global scope. Every name and every body answered is byte-identical to R1's. Test: R1's equality holds; a fresh import evaluates no face until one is read.
+- **R6** (T48; N1039; K3147; `plane` R43, R54; `bundler` R31) The faces (`fonts/<f>`, the bulk of `ASSET_FILES`) are not evaluated as module code at the plane's start: `ASSET_FILES` holds each face so that the bundle carries its bytes as an upload part (a data module the Worker loads as bytes) or builds it on first read, never as a base64 string literal parsed in the global scope. Every name and every body answered is byte-identical to R1's. (BOB #45, T51) Each face's base64 is carried in a face module beside `index.mjs` (`faces-<n>.mjs`, written by `generate.mjs`, each face its own function), so every file the generator writes is under the process's `max_file_bytes` (1,048,576 bytes); `index.mjs` keeps its two exports for callers. Test: R1's equality holds; a fresh import builds no face string until one is read (beyond the face modules' own source text, which Node holds on the heap below about 1 MiB); a module holding the faces as strings at import, in one file or split, is refused; every generated file is under 1,048,576 bytes.
 
 **The design walk folded** (T48; WALK-084 #2; K3250, K3254)
 - **R7** (T48; K3250, K3254 (2); walk C1; amends R1's "no other name", R5) `ASSET_FILES` also holds `shell.css`, of type `text/css`. It holds every product rule of the design's page stylesheet: the `<style>` of `docs/development/ux-substrate/screens/page.src.html` at `ASSETS_COMMIT` (`interface-shell` R56 enforces the emitted side, K3254 (2)). Inside the 760 px query the design's `.mk-device[data-device="phone"] ` prefix becomes `:root:root `, keeping its weight; the rules naming the design's unprefixed product classes that carried `mk-` components draw (the graph's `.e`, `.e-*` and `.gchip` rules, `.cell` and its children, `.st`, `.row`, and `.tw`, the table twelve screens draw, DEC-359) are carried too, listed by name (K3295). `generate.mjs` writes it beside `civicsmith.css`; it is never copied or edited by hand and is regenerated whenever the visual language is.
@@ -55,11 +55,11 @@ The visual language every member screen uses (DEC-138), as frozen data copied fr
 
 ### Uses
 
-None. It imports nothing. For its tests only: the design stream's files at `ASSETS_COMMIT`, read from git (no module).
+None. It imports only its own face modules (R4, R6). For its tests only: the design stream's files at `ASSETS_COMMIT`, read from git (no module).
 
 ### Invariants
 
-- **R4** The module imports nothing and does nothing when loaded beyond defining its two exports: no I/O, no store, no registration, no time or randomness; every read of it answers the same.
+- **R4** The module imports nothing but its own generated face modules (R6, BOB #45), which import nothing, and does nothing when loaded beyond defining its two exports: no I/O, no store, no registration, no time or randomness; every read of it answers the same.
 
 ### Satisfies
 

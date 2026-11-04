@@ -79,7 +79,9 @@ test("R18 R6 negative controls: no block, an older format and odd input answer a
 });
 
 test("R1 R18 R20 R33 the blocks joined /7 and /8 states them as /7 does: every predicate as before, and a /7 or /8 document without them reads none", () => {
-  assert.equal(CG.CASE_DOCUMENT_FORMAT, "bio-case-document/8");
+  /* R35 (T53): the format in force is /10; /8 and /7 stay accepted */
+  assert.equal(CG.CASE_DOCUMENT_FORMAT, "bio-case-document/10");
+  assert.equal(CG.CASE_DOCUMENT_FORMATS_ACCEPTED.includes("bio-case-document/8"), true);
   assert.equal(CG.CASE_DOCUMENT_FORMATS_ACCEPTED.includes("bio-case-document/7"), true);
   const text = doc(V7, [...CG.calculationsLines(CALCS), ...CG.timelineLines([]), ...CG.methodBlockLines({ grading: "bio-grading/1" })]);
   const fm = fmOf(text);
