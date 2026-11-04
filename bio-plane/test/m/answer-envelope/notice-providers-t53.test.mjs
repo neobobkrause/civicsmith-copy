@@ -80,4 +80,16 @@ test("notice strength:176 (R2, R7): strength's families decorate with their own 
   await confirm("strength", "src/strength/checks.mjs", { shadowed: { BAD_GRADE: "src/citation/checks.mjs" } });
 });
 
-test.todo("R7 (strength:176's family): strength's BAD_GRADE decorates with its own C-107.2, as R7 pins it; citation's C-33.61 (DEC-441, K5303) holds the same code earlier in the order, so it is the code's owners' to re-code");
+test("R7 (strength:176's family; BOB's ruling, MSG bob-76 (b)): BAD_GRADE's pin moved to citation's C-33.61 (DEC-441, K5303), the first family holding it, and the snapshot's changed.note names the move; strength's own C-107.2 row is still in its family (negative control: the old pin no longer matches)", async () => {
+  const { createHash } = await import("node:crypto");
+  const digest = (s) => createHash("sha256").update(s).digest("hex").slice(0, 16);
+  const SNAP = JSON.parse(readFileSync(new URL("./rows-before-r43.json", import.meta.url), "utf8"));
+  const CI = (await import("../../../src/citation/checks.mjs")).CITE_LEG_GRADE_CHECKS.BAD_GRADE;
+  const ST = (await import("../../../src/strength/checks.mjs")).STRENGTH_BAR_CHECKS.BAD_GRADE;
+  assert.equal(CI.check, "C-33.61");
+  assert.equal(ST.check, "C-107.2");
+  assert.deepEqual(M.dec49Row("BAD_GRADE"), { check: "C-33.61", translation: CI.translation });
+  assert.deepEqual(SNAP.rows.BAD_GRADE, ["C-33.61", digest(CI.translation)]);
+  assert.match(SNAP.changed.note, /BAD_GRADE moved from strength's C-107\.2 to citation's C-33\.61 \(citation R24; DEC-441, K5303\)/);
+  assert.notDeepEqual(SNAP.rows.BAD_GRADE, ["C-107.2", "32f14b8fb9d67a75"]);
+});
