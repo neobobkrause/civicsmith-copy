@@ -90,3 +90,4 @@ test("R53: at work the progress is the stream's rows with no Stop; every state's
     "ai.progress.checked.all.means", "ai.progress.check.failed", "screen.answers.failed.next", "refusal.ASSISTANT_REMOTE_NOT_READY"]) assert.ok(words.has(k), k);
   assert.ok(!screen("answers").acts.some((a) => /stop/i.test(a.op)), "no Stop");
 });
+// measure: gate-chromium (not to merge)

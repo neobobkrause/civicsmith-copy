@@ -355,3 +355,4 @@ test("R11 (K3011) a read (an op OPS declares not mutating) carries no weight mar
   const q = await boot({ screens: [c], path: "/app/document/x" });
   assert.equal(btn(q, "release").querySelector(".w").textContent, word("weight.reasoned.name"), "control: a mutating act keeps its weight");
 });
+// measure: gate-chromium (not to merge)
