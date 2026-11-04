@@ -61,7 +61,7 @@ test("R31 (T47; N992; DEC-198 (1), DEC-199 (6)) the registry carries DEC-198's a
 
 test("R35 (K3062, K3127, K3137; DEC-200–DEC-217; amended by R38, R41) the registry as PR #33's head held it, re-taken at the design commit named at T50's START (7be06eb4cb), named as the source: 71 screens, the two remaining dash-* treatments registered (dash-home is gone, R38); the owed acts passwordreset, passwordresetlink, grouplanguagesset, grouplogoset and signrequest registered as those ops once declared, projectaikeepaway as today; wizardsAt(\"group\") and op=wizardcheck admit grouplogoset; control: hostingaccess on setup is refused", () => {
   /* R44 moved the pin on to 8c5e692e19 and its 77 screens; this test's own claim is the registry the file then held, now the carried one */
-  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "b1adf4236d", path: "docs/development/ux-substrate/screens/registry.json",
+  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "30af4350f2", path: "docs/development/ux-substrate/screens/registry.json",
                                                 sha256: createHash("sha256").update(src("registry.json"), "utf8").digest("hex") });
   assert.equal(wz.SCREEN_REGISTRY.length, 91);
   assert.deepEqual(wz.SCREEN_REGISTRY.map((s) => s.id), REG_FILE.screens.map((f) => f.id));

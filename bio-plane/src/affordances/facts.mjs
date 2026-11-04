@@ -488,7 +488,12 @@ class AffordanceFacts {
     }
     let governing = null;
     try { governing = this.actions().governingView(); } catch { governing = null; }
-    if (governing && typeof governing === "object") {
+    /* (T53; `actions` R68, K5292) `actions.governingView` now answers a view where the profiles cannot be combined (an empty
+       view, or one holding only the team's time zone), so a view is read for the labels only where it carries its `action_kinds`
+       list or names a profile it combined (R68: an unreadable view leaves the key out) */
+    const combined = governing && typeof governing === "object"
+      && (Array.isArray(governing.action_kinds) || (Array.isArray(governing.profiles) && governing.profiles.length > 0));
+    if (combined) {
       out.action_kind_labels = {};
       for (const k of Array.isArray(governing.action_kinds) ? governing.action_kinds : [])
         if (k && typeof k.kind === "string" && !PRODUCT_KINDS.includes(k.kind) && typeof k.label === "string" && k.label.trim()

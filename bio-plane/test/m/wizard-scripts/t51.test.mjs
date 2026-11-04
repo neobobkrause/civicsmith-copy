@@ -34,12 +34,12 @@ test("R44 (T51; N1184, N858, N1046; DEC-340, U366; K3935; amends R41) the regist
 });
 
 test("R45 (T51 fix round; K4196, K4197; DEC-374 to DEC-384; K2241; amends R44) the registry is re-taken at 1cc4a957f0 (and at aa8bdcd0b4 by FR-49, its pin moved on there): SCREEN_REGISTRY_SOURCE names the pin, with 83 screens and 556 acts (427 declared, 83 function, 46 owed); bias, contradiction, objective, about-knocker, leads and watching are in SCREEN_REGISTRY with their names and acts, each owed act registered by R13 and never as a served op; the library is re-taken by R42's rule (only the welcome wizard changed: its next version, DEC-384's step 4) and the front doors with it; build-data.mjs --check passes on the committed files and a one-byte change fails it", () => {
-  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "b1adf4236d", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha("registry.json") });
-  assert.equal(SOURCES.registry.commit, "b1adf4236d");
+  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "30af4350f2", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha("registry.json") });
+  assert.equal(SOURCES.registry.commit, "30af4350f2");
   const file = JSON.parse(readFileSync(join(SOURCE_DIR, "registry.json"), "utf8"));
   const acts = file.screens.flatMap((s) => s.acts);
   const count = (status) => acts.filter((a) => a.status === status).length;
-  assert.deepEqual([wz.SCREEN_REGISTRY.length, acts.length, count("declared"), count("function"), count("owed")], [91, 656, 452, 83, 121]);
+  assert.deepEqual([wz.SCREEN_REGISTRY.length, acts.length, count("declared"), count("function"), count("owed")], [91, 678, 461, 82, 135]);
   assert.equal(wz.SCREEN_REGISTRY.reduce((n, s) => n + s.acts.length, 0), file.screens.reduce((n, s) => n + new Set(s.acts.filter((a) => a.status !== "owed").map((a) => a.op)).size, 0),
     "registered acts are the declared and function acts, an op two acts of a screen share counted once (members: expertiseconfirm); the owed ones wait for their ops");
   assert.equal(new Set(file.screens.find((s) => s.id === "members").acts.map((a) => a.op)).size, file.screens.find((s) => s.id === "members").acts.length, "FR-49: the file at aa8bdcd0b4 lists expertiseconfirm once on members (the duplicate B9 reported is gone)");
@@ -76,7 +76,7 @@ test("R45 (T51 fix round; K4196, K4197; DEC-374 to DEC-384; K2241; amends R44) t
   const scratch = mkdtempSync(join(tmpdir(), "wz-r45-"));
   try {
     for (const name of GENERATED) copyFileSync(join(GEN_DIR, name), join(scratch, name));
-    const flipped = readFileSync(join(GEN_DIR, "screen-registry.mjs"), "utf8").replace("b1adf4236d", "840099da7d");
+    const flipped = readFileSync(join(GEN_DIR, "screen-registry.mjs"), "utf8").replace("30af4350f2", "840099da7d");
     writeFileSync(join(scratch, "screen-registry.mjs"), flipped);
     const control = run("--check", "--out", scratch);
     assert.equal(control.status, 1, "control: a changed generated file fails --check");
@@ -89,7 +89,7 @@ test("R45 (T51 fix round; K4196, K4197; DEC-374 to DEC-384; K2241; amends R44) t
 });
 
 test("R45 amended (T51 FR-49; K4204; DEC-386; amends R45) the registry is re-taken at aa8bdcd0b4, and 'Withdraw an expertise' is an owed act of members, registered as its op once op-declarations declares it: SCREEN_REGISTRY names the commit; members' owed list carries expertisewithdraw; control: the earlier pin 1cc4a957f0 is no longer what the module carries", () => {
-  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "b1adf4236d", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha("registry.json") });
+  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "30af4350f2", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha("registry.json") });
   assert.notEqual(wz.SCREEN_REGISTRY_SOURCE.commit, "1cc4a957f0", "control: the previous pin is replaced");
   const members = wz.SCREEN_REGISTRY.find((s) => s.id === "members");
   assert.ok(members.owed.some((o) => o.op === "expertisewithdraw"), "members owes expertisewithdraw (DEC-386)");
@@ -116,13 +116,13 @@ test("R47 (T51 fix round 2; K4311; DEC-394; amends R45; amended by R48) the regi
 });
 
 test("R48 (T51 fix round 2; U431, DEC-396; amends R47) the registry is re-taken at 654a735535: SCREEN_REGISTRY_SOURCE names the pin, with 83 screens and 563 acts (434 declared, 83 function, 46 owed, 42 owed ops); contradictionflag is a declared act on document, registered in its acts and no longer carried as owed; the earlier file is kept whole at 0310c4953d (563 acts, 47 owed); build-data.mjs --check passes on the committed files and a one-byte change fails it", () => {
-  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "b1adf4236d", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha("registry.json") });
-  assert.equal(SOURCES.registry.commit, "b1adf4236d");
+  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "30af4350f2", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha("registry.json") });
+  assert.equal(SOURCES.registry.commit, "30af4350f2");
   const file = JSON.parse(readFileSync(join(SOURCE_DIR, "registry.json"), "utf8"));
   const acts = file.screens.flatMap((s) => s.acts);
   const count = (status) => acts.filter((a) => a.status === status).length;
-  assert.deepEqual([wz.SCREEN_REGISTRY.length, acts.length, count("declared"), count("function"), count("owed")], [91, 656, 452, 83, 121]);
-  assert.equal(new Set(acts.filter((a) => a.status === "owed").map((a) => a.op)).size, 105, "105 owed ops at b1adf4236d");
+  assert.deepEqual([wz.SCREEN_REGISTRY.length, acts.length, count("declared"), count("function"), count("owed")], [91, 678, 461, 82, 135]);
+  assert.equal(new Set(acts.filter((a) => a.status === "owed").map((a) => a.op)).size, 118, "118 owed ops at 30af4350f2");
   const screen = (id) => wz.SCREEN_REGISTRY.find((s) => s.id === id);
   assert.ok(screen("document").acts.includes("contradictionflag"), "document: contradictionflag is a registered act (DEC-396)");
   assert.ok(!screen("document").owed.some((o) => o.op === "contradictionflag"), "document: contradictionflag is no longer carried as owed");
@@ -138,7 +138,7 @@ test("R48 (T51 fix round 2; U431, DEC-396; amends R47) the registry is re-taken 
   const scratch = mkdtempSync(join(tmpdir(), "wz-r48-"));
   try {
     for (const name of GENERATED) copyFileSync(join(GEN_DIR, name), join(scratch, name));
-    const flipped = readFileSync(join(GEN_DIR, "screen-registry.mjs"), "utf8").replace("b1adf4236d", "0310c4953d");
+    const flipped = readFileSync(join(GEN_DIR, "screen-registry.mjs"), "utf8").replace("30af4350f2", "0310c4953d");
     writeFileSync(join(scratch, "screen-registry.mjs"), flipped);
     const control = run("--check", "--out", scratch);
     assert.equal(control.status, 1, "control: a changed generated file fails --check");

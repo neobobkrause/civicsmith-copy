@@ -8,7 +8,7 @@
  *   --out <dir>   where the generated files are written or checked (default: beside this file; the tests' fixtures)
  *
  * The sources are `SOURCES`, below, each at its own commit: the registry at the design commit the job's START names
- * (R41, R45; `7be06eb4cb` at T50, the design branch's last merge into `tranche/T50`, K3750; `958d998ccb`, then `1cc4a957f0` in T51's fix round, K4196, K4197, `aa8bdcd0b4` at FR-49, K4204, and `0310c4953d` in T51's fix round 2, K4311, and `654a735535` at DEC-396, R48; `43379a1a44` at DEC-402, R49, `f72b2f8a4c` at DEC-419, R50, `c752a602da` at R52 and `b1adf4236d` at DEC-438, R53); the library's version 1 kept at
+ * (R41, R45; `7be06eb4cb` at T50, the design branch's last merge into `tranche/T50`, K3750; `958d998ccb`, then `1cc4a957f0` in T51's fix round, K4196, K4197, `aa8bdcd0b4` at FR-49, K4204, and `0310c4953d` in T51's fix round 2, K4311, and `654a735535` at DEC-396, R48; `43379a1a44` at DEC-402, R49, `f72b2f8a4c` at DEC-419, R50, `c752a602da` at R52, `b1adf4236d` at DEC-438, R53, and `30af4350f2`, the tranche's design commit at T53, R54); the library's version 1 kept at
  * `d129238bf3` (DEC-148's, R22, K1790); with the newer libraries, the versions BOB adopts from each (`LIBRARY_ADOPTED`)
  * and the scripts he adds (`LIBRARY_ADDED`), K2241, R30, R32, R36, and the whole library re-taken from the file at the
  * design commit (`LIBRARY_RETAKEN`, R42); the front doors from the library at `DOORS_SOURCE` (R33, R41). It writes
@@ -26,7 +26,7 @@ const lines = (list) => `[\n${list.map((x) => `  ${JSON.stringify(x)},`).join("\
 
 /** R41, R42: the files the carried data is generated from, each by its commit and the name it has in `--from`'s directory. */
 export const SOURCES = Object.freeze({
-  registry: Object.freeze({ commit: "b1adf4236d", file: "registry.json" }),
+  registry: Object.freeze({ commit: "30af4350f2", file: "registry.json" }),
   library: Object.freeze({ commit: "d129238bf3", file: "library.json" }),
   newer: Object.freeze(["e08cd35ecb", "3660c18803", "3f40899950", "a0fab7abf0", "f90b187c7b", "4664e8efd4", "7be06eb4cb", "20c8001300", "2a64c5ae77", "1cc4a957f0"]
     .map((commit) => Object.freeze({ commit, file: `library-${commit}.json` }))),

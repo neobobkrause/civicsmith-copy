@@ -72,15 +72,19 @@ export function outsideRepo(file, root = ROOT) {
   return rel.startsWith("..") || isAbsolute(rel);
 }
 
-/** One op on the copy: POST /api/?op=<op> with a JSON body, an optional bearer. Answers the parsed JSON (or {}) and status. */
-async function op(fetchOf, address, name, body, token = null) {
+/** One op on the copy: POST /api/?op=<op> with a JSON body, an optional bearer. Answers the status and the store's own
+ *  answer: the door relays an answer as `{ok: true, result}` (answer-envelope's relayAnswer), so `j` is that `result`,
+ *  as the screens read it (R46); a door refusal (`ok` not true) is `j` as it came; an `ok: true` with no `result` is {}. */
+export async function op(fetchOf, address, name, body, token = null) {
   const r = await fetchOf(`${address.replace(/\/+$/, "")}/api/?op=${name}`, { method: "POST",
     headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
   let j = {};
   try { j = await r.json(); } catch { /* said by the caller, by status */ }
-  return { status: r.status, j: j && typeof j === "object" ? j : {} };
+  if (!j || typeof j !== "object") j = {};
+  if (j.ok === true) j = j.result && typeof j.result === "object" ? j.result : {};
+  return { status: r.status, j };
 }
-const said = (a) => `HTTP ${a.status}${a.j.reason ? ` ${a.j.reason}` : ""}`;   /* reason codes only, never a body */
+const said = (a) => { const code = a.j.code || a.j.reason; return `HTTP ${a.status}${typeof code === "string" && code ? ` ${code}` : ""}`; };   /* codes only, never a body */
 
 /** Claim, sign in, invite and join. `save(creds)` is called after each stage, so a stop can resume. Prints no secret. */
 export async function claimAndJoin({ address, creds, save, fetchOf = fetch, log = console.log, wait = (ms) => new Promise((s) => setTimeout(s, ms)) }) {
@@ -89,7 +93,7 @@ export async function claimAndJoin({ address, creds, save, fetchOf = fetch, log 
     let a;
     for (let i = 1; i <= 10; i++) {
       a = await op(fetchOf, address, "claim", { bootstrapToken: c.P3DEV_BOOTSTRAP_TOKEN, handle: c.JOURNEY_ADMIN_HANDLE, password: c.JOURNEY_ADMIN_PASSWORD });
-      if (a.j.ok === true || a.j.reason !== "BOOTSTRAP_CREDENTIAL_UNSET") break;
+      if (a.j.ok === true || (a.j.code || a.j.reason) !== "BOOTSTRAP_CREDENTIAL_UNSET") break;
       await wait(3000);   /* the secret reaches every isolate within seconds */
     }
     if (a.j.ok !== true) throw new Refused("CLAIM_FAILED", `the founder's claim was refused (${said(a)}); nothing else was done.`);

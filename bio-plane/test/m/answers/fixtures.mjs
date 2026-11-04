@@ -5,12 +5,13 @@
 import { answersOps } from "../../../src/answers/index.mjs";
 import { answersWorld, V } from "./fixture.mjs";
 
-/* `askAccount` for a member served by an account whose paying limits cannot be judged (no `useCheck`): the refusal
+/* `askAccount` for a member served by an account of her own whose paying limits cannot be judged (no `useCheck`): the refusal
    `{ok: false, reason: "LIMITS_UNREADABLE", detail}`, writing nothing (R30). */
 export async function limitsUnreadable({ member = "bob" } = {}) {
   const w = answersWorld();
-  const set = await w.accounts.accountReferenceSet({ member, kind: "apikey", secret: "sk-fixture-limits", by: V(member) });
-  if (!set.ok) throw new Error(`limitsUnreadable: ${set.reason}`);
+  /* (T53) the member's own account, set and switched on by her own acts (ai-accounts R1, R40; the account model that
+     replaced `accountReferenceSet`), so an account serves her ask and only its limits are left to judge */
+  await w.ownAccount(member, { secret: "sk-fixture-limits" });
   w.a.deps.useCheck = null;
   return w.a.askAccount({ member: V(member) });
 }
