@@ -8,3 +8,4 @@
 {"at":"2026-11-04T04:21:04Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-04T05:06:30Z","row":"sent","n":5,"to":"bob","text":"job site complete, PR #79 ready: run status. Receipt: https://github.com/neobobkrause/civicsmith-copy/pull/79#issuecomment-6623076595"}
 {"at":"2026-11-04T05:06:38Z","row":"outcome","n":5,"outcome":"delivered"}
+{"at":"2026-11-04T09:14:21Z","row":"sent","n":6,"to":"bob","text":"job site BLOCKED: run status"}
