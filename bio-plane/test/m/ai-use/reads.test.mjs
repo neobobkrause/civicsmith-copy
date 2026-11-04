@@ -2,7 +2,7 @@
    words by key), at the interface, each with a negative control (K874). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { standard, WORDS } from "./fixture.mjs";
+import { standard, WORDS, PLANS, ENTRIES } from "./fixture.mjs";
 import { AI_USE_WORDS, LIMIT_WORD_BY_SCOPE, WHOSE_WORD, aiUseOps } from "../../../src/ai-use/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
@@ -20,7 +20,7 @@ test("R4 aiUsage answers an account's owners its month of use per kind of use, s
   const before = w.snapshot();
   const r = w.u.aiUsage({ owner: "project:P", viewer: "ann", at: AT });
   assert.deepEqual(r.uses.map((u) => [u.use, u.tokens, u.calls]), [["ask", 15, 2], ["run", 7, 1]]);
-  assert.ok(Math.abs(r.uses[0].total_cost_usd - 0.3) < 1e-9, "the account's owners see its cost");
+  assert.ok(Math.abs(r.uses[0].cost_estimated_sum.usd - 0.3) < 1e-9, "the account's owners see its cost");
   assert.doesNotMatch(JSON.stringify(r), /"(ann|bob)"|member/);
   assert.deepEqual(w.u.aiUsage({ owner: "project:P", viewer: "ann", month: "2026-09" }).uses.map((u) => u.tokens), [1000]);
   for (const viewer of ["bob", "admin", null]) assert.equal(w.u.aiUsage({ owner: "project:P", viewer }).ok, false, String(viewer));
@@ -40,13 +40,13 @@ test("R4 aiUsageMine answers a member their own use per payer and per use, with 
   const bob = w.u.aiUsageMine({ viewer: "bob", at: AT });
   assert.deepEqual(bob.payers.map((p) => [p.owner, p.whose, p.uses.map((u) => [u.use, u.tokens])]),
     [["group", "group", [["ask", 3]]], ["project:P", "project", [["ask", 4]]]]);
-  assert.equal(JSON.stringify(bob).includes("cost"), false, "bob owns neither account: no cost");
+  assert.equal(/cost|not_measurable/.test(JSON.stringify(bob)), false, "bob owns neither account: no cost");
   assert.deepEqual(bob.payers[0].limits.map((l) => [l.scope, l.reached]), [["per_member", true]]);
   assert.deepEqual(bob.payers[1].limits.map((l) => [l.scope, l.reached]), [["ask", false]]);
   assert.equal(JSON.stringify(bob).includes("400"), false, "ann's use is not shown to bob");
   /* control: ann owns P, so its cost is hers to see */
   const ann = w.u.aiUsageMine({ viewer: "ann", at: AT });
-  assert.equal(ann.payers[0].uses[0].total_cost_usd, 9);
+  assert.deepEqual(ann.payers[0].uses[0].cost_estimated_sum, { usd: 9 });
   assert.equal(w.u.aiUsageMine({ viewer: "bob", month: "2026-10", at: AT }).payers.length, 2);
   assert.equal(w.u.aiUsageMine({ viewer: null }).code, "NOT_YOUR_CEILING");
   assert.equal(w.u.aiUsageMine({ viewer: "machine:agent" }).code, "NOT_YOUR_CEILING");
@@ -64,6 +64,36 @@ test("R4 the ops: aiusage with owner is R4's account read, without it the viewer
   assert.equal(ops("owner=member:ann&viewer=ann").ailimits().limits.length, 1);
 });
 
+test("R4 R21 (T53) a none plan's month answers tokens and calls and not_measurable, no cost field equal to 0; a priced plan answers both cost sums apart; a non-owner is refused as R2 refuses (control: an owner of a reported plan sees cost_reported_sum)", async () => {
+  const w = await standard();
+  await w.account("member:cy", "cy", PLANS.none);
+  await w.account("member:bob", "bob", PLANS.reported);
+  w.count("member:cy", "cy", "ask", { input: 10, cost: 0.4 });
+  const cy = w.u.aiUsage({ owner: "member:cy", viewer: "cy", at: AT }).uses[0];
+  assert.deepEqual([cy.tokens, cy.calls, cy.cost, cy.not_measurable, cy.word], [10, 1, null, true, "ai.use.notmeasurable"]);
+  assert.equal(cy.cost_estimated_sum, undefined, "a none plan never shows an estimate as spend");
+  const zero = (o) => Object.entries(o).some(([k, v]) => /cost/.test(k) && (v === 0 || (v && typeof v === "object" && Object.values(v).includes(0))));
+  assert.equal(zero(cy), false);
+  w.count("member:ann", "ann", "ask", { cost: 0.1, reported: 0.3 });
+  const ann = w.u.aiUsage({ owner: "member:ann", viewer: "ann", at: AT }).uses[0];
+  assert.deepEqual([ann.cost_reported_sum, ann.cost_estimated_sum], [{ usd: 0.3 }, { usd: 0.1 }]);
+  w.count("member:ann", "ann", "draft", { cost: null, entry_id: ENTRIES.unpriced });
+  const d = w.u.aiUsage({ owner: "member:ann", viewer: "ann", at: AT }).uses.find((u) => u.use === "draft");
+  assert.deepEqual([d.cost, d.not_measurable, d.unpriced_calls], [null, true, 1], "unpriced entries are not measurable, never 0");
+  assert.equal(w.u.aiUsage({ owner: "member:cy", viewer: "ann" }).code, "NOT_YOUR_CEILING");
+  w.count("member:bob", "bob", "ask", { reported: 0.7 });
+  assert.deepEqual(w.u.aiUsage({ owner: "member:bob", viewer: "bob", at: AT }).uses[0].cost_reported_sum, { usd: 0.7 });
+});
+
+test("R21 (T53) a unit other than usd is summed only with its own unit: a euro cost is kept apart and not added into the usd sum (control: two usd costs add)", async () => {
+  const w = await standard();
+  w.count("member:ann", "ann", "ask", { reported: 0.5 });
+  w.count("member:ann", "ann", "ask", { usage: { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0,
+    reasoning_tokens: 0, cost_reported: { amount: 2, unit: "eur", source: "provider" }, cost_estimated: null, unstated: [] } });
+  w.count("member:ann", "ann", "ask", { reported: 0.25 });
+  assert.deepEqual(w.u.aiUsage({ owner: "member:ann", viewer: "ann", at: AT }).uses[0].cost_reported_sum, { eur: 2, usd: 0.75 });
+});
+
 /* ===== R5 ===== */
 
 test("R5 limitsReached answers, for each account the viewer owns, each limit first reached in its current period with a stable key; not before it is reached, not to anyone else, not in the next period; it writes nothing", async () => {
@@ -79,9 +109,9 @@ test("R5 limitsReached answers, for each account the viewer owns, each limit fir
   const r = w.u.limitsReached({ viewer: "ann", at: AT }).reached;
   assert.deepEqual(r, [
     { key: "ai-limit:project:P:overall:calls:day:2026-10-09", owner: "project:P", scope: "overall", unit: "calls", period: "day",
-      period_start: "2026-10-09", reached_at: "2026-10-09T11:00:00Z" },
+      period_start: "2026-10-09", reached_at: "2026-10-09T11:00:00Z", source: "own" },
     { key: "ai-limit:member:ann:ask:calls:month:2026-10-01", owner: "member:ann", scope: "ask", unit: "calls", period: "month",
-      period_start: "2026-10-01", reached_at: "2026-10-09T11:45:00Z" }]);
+      period_start: "2026-10-01", reached_at: "2026-10-09T11:45:00Z", source: "own" }]);
   assert.deepEqual(w.u.limitsReached({ viewer: "ann", at: AT }).reached, r, "the same keys again");
   assert.equal(w.snapshot(), before);
   assert.deepEqual(w.u.limitsReached({ viewer: "bob", at: AT }).reached, [], "bob owns neither account");
@@ -96,6 +126,23 @@ test("R5 a limit set below what is already used is reached when set; the group's
   w.u.aiLimitSet({ owner: "group", scope: "ask", unit: "calls", period: "day", amount: 2, by: "admin", at: AT });
   assert.equal(w.u.limitsReached({ viewer: "second", at: AT }).reached[0].reached_at, AT);
   assert.deepEqual(w.u.limitsReached({ viewer: "ann", at: AT }).reached, []);
+});
+
+test("R5 (T53) a recorded provider limit appears once with its key per owner, kind and resets_at; a second read mints no new key; to the account's owners alone (control: past resets_at it no longer appears)", async () => {
+  const w = await standard();
+  const rec = () => w.u.recordProviderLimit({ owner: "project:P", account_id: w.acct.P, entry_id: ENTRIES.priced, kind: "quota", scope: "entry",
+    resets_at: "2026-10-09T20:00:00Z", at: "2026-10-09T11:00:00Z" });
+  rec();
+  w.u.aiLimitSet({ owner: "project:P", scope: "overall", unit: "calls", period: "day", amount: 1, by: "ann" });
+  w.count("project:P", "bob", "run", { at: "2026-10-09T11:30:00Z" });
+  const r = w.u.limitsReached({ viewer: "ann", at: AT }).reached;
+  assert.deepEqual(r.map((x) => [x.source, x.key]), [["own", "ai-limit:project:P:overall:calls:day:2026-10-09"],
+    ["provider", "ai-provider-limit:project:P:quota:2026-10-09T20:00:00Z"]]);
+  assert.deepEqual(r[1].resets_at, "2026-10-09T20:00:00Z");
+  rec();
+  assert.deepEqual(w.u.limitsReached({ viewer: "ann", at: AT }).reached, r, "the same keys again");
+  assert.deepEqual(w.u.limitsReached({ viewer: "bob", at: AT }).reached, []);
+  assert.deepEqual(w.u.limitsReached({ viewer: "ann", at: "2026-10-09T21:00:00Z" }).reached.map((x) => x.source), ["own"]);
 });
 
 /* ===== R12 ===== */
@@ -130,7 +177,7 @@ test("R12 anyone but the account's owners is refused as ai-accounts R15 refuses 
   for (const [owner, viewer] of [["member:ann", "bob"], ["member:ann", "admin"], ["project:P", "bob"], ["project:P", "cy"],
                                  ["group", "ann"], ["group", null], ["group", "machine:agent"]]) {
     const r = w.u.aiLimits({ owner, viewer });
-    const own = w.a.accountUses({ owner, viewer });
+    const own = w.a.accountActBar({ owner, by: viewer });
     assert.equal(r.ok, false, `${owner} ${viewer}`);
     assert.deepEqual([r.code, r.check], [own.code, own.check], `${owner} ${viewer}`);
   }
@@ -177,8 +224,8 @@ test("R13 (K2514) every refusal's sentence reaches its caller whole, no placehol
     .replace("{when}", when);
   const w = await standard();
   const owners = [["group", "admin", "bob", "group"], ["project:P", "ann", "bob", "project"], ["member:ann", "ann", "ann", "own"]];
-  for (const [owner, by, member] of owners)
-    assert.equal(w.a.accountUsesSet({ owner, switch: "explore", on: "yes", by }).ok, true, owner);
+  const acct = { group: w.acct.group, "project:P": w.acct.P, "member:ann": w.acct.ann };
+  for (const [owner, by] of owners) assert.equal(w.explore(acct[owner], "yes", by).ok, true, owner);
   let seen = 0;
   /* the month's {when} read from ai.when.month with the next month's date.month.* (T44, DEC-192 (4); DEC-333: "on {month} 1") */
   const onThe1st = (month) => WORDS["ai.when.month"].replace("{month}", WORDS[`date.month.${month}`]);
@@ -190,7 +237,7 @@ test("R13 (K2514) every refusal's sentence reaches its caller whole, no placehol
       for (const scope of scopes) for (const period of ["day", "month"]) {
         assert.equal(w.u.aiLimitSet({ owner, scope, unit: "calls", period, amount: 1, by, at }).ok, true);
         for (const use of scope in USE_WORD ? [scope] : Object.keys(USE_WORD)) {
-          const r = w.u.useCheck({ owner, member, use, at });
+          const r = w.u.useCheck({ owner, member, use, at, account_id: acct[owner] });
           assert.deepEqual([r.code, r.scope, r.period, r.whose], ["AI_LIMIT_REACHED", scope, period, whose], `${owner} ${scope} ${period} ${use}`);
           assert.equal(r.translation, expected(scope, whose, use, period, period === "day" ? "tomorrow" : monthWhen), `${owner} ${scope} ${period} ${use}`);
           assert.doesNotMatch(r.translation, PLACEHOLDER);
