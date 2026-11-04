@@ -1,0 +1,58 @@
+{
+  "id": "publication",
+  "title": "publication: restate its test for case-grammar's format /10",
+  "layer": 8,
+  "paths": [
+    "bio-plane/src/deliverer.mjs",
+    "bio-plane/src/publication/",
+    "build/requirements/publication.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/publication/"
+  ],
+  "requirements": "build/requirements/publication.md",
+  "uses": [
+    "retrieval",
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "connections",
+    "inquiry",
+    "basis-versions",
+    "reevaluation",
+    "sources",
+    "case-grammar",
+    "credentials",
+    "corpus-export",
+    "accepted-work",
+    "case-carriage",
+    "case-tensions",
+    "entities",
+    "standards",
+    "content",
+    "project-roster",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/publication.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Found work (case-grammar PR 202, R35): CASE_DOCUMENT_FORMAT is now bio-case-document/10; 1 of this module's tests pins /8 as the format in force and is red. Restate it (and any code naming the format in force) against case-grammar as merged. Any unmet mark in build/requirements/publication.md is yours too. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T11:42:27Z"
+  }
+}
