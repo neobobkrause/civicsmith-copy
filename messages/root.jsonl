@@ -60,3 +60,4 @@
 {"at":"2026-11-04T15:18:48Z","row":"outcome","n":30,"outcome":"delivered"}
 {"at":"2026-11-04T16:17:22Z","row":"sent","n":31,"to":"bob","text":"Sweep: docket: BLOCKED; plane: BLOCKED; reading-pipeline: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-04T16:17:33Z","row":"outcome","n":31,"outcome":"delivered"}
+{"at":"2026-11-04T17:18:33Z","row":"sent","n":32,"to":"bob","text":"Sweep: plane: BLOCKED; runtime-limits: BLOCKED; store-assembly: BLOCKED."}
