@@ -47,8 +47,8 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: ai-runs:96 (test/m/intent/reasons.test.mjs:145 opens a real ai-runs run with principalClaude, now refused). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-04T11:38:03Z",
-    "reason": "reopened: answer the provider notice ai-runs:213"
+    "state": "BLOCKED",
+    "reason": "For BOB. Work done and pushed: notice ai-runs:213 confirmed, no code change in intent. R18 hands ai-runs' open answer back whole, so a provider limit on the serving account now holds workObjective back with AI_LIMIT_REACHED (source provider), with the project named and no run opened. A limit on the member's other account still lets it open. Test: bio-plane/test/m/intent/notice-ai-runs-213.test.mjs (1 test, passes; needs --exempt-revert because no code changed). Suite: p3 test intent passes 103 of 103 after job sync. STOPPED ONLY ON COST: job complete requires --cost-usd from get_session's external_metadata.usage.cost_usd, and get_session for this session (session_01RAN5enYdTZwThZc4B6kKxd) has no usage field, so there is no figure to give and I did not make one up. TO UNBLOCK: give the cost figure, or rule that job complete may run without one (or with --no cost), and I will rerun: job complete intent --test notice:ai-runs:213=bio-plane/test/m/intent/notice-ai-runs-213.test.mjs::'notice ai-runs:213 R18 workObjective is held back by a provider limit on the account serving the run (AI_LIMIT_REACHED, source provider), relayed with the project and no run opened; control: a limit on the member's other account leaves it opening' --exempt-revert 'confirmation only, no intent code changed'.",
+    "at": "2026-11-04T11:49:11Z"
   }
 }
