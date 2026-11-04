@@ -1,3 +1,4 @@
 {"at":"2026-11-04T13:06:14Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job case-check complete, PR #241 ready, session session_01RAN5enr9ALchJiCZ6ZmEq3: run status"}
 {"at":"2026-11-04T13:06:26Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T22:38:21Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job case-check complete, PR #326 ready, session session_01RAN5ekmBTkEBr4HwhLBvw1: run status"}
+{"at":"2026-11-04T22:38:34Z","row":"outcome","n":2,"outcome":"delivered"}
