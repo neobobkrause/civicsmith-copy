@@ -3,7 +3,8 @@
    changed" text (R33; JOURNEYS R-96; K5559, J6 = A; was `publication` R83, K5571). At the module's interface. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seeded, file, prepare, post, sign, V, CASE, SUBJECT, OUTCOME } from "./fixture.mjs";
+import { seeded, file, prepare, post, sign, keyFor, V, MACHINE, CASE, SUBJECT, OUTCOME } from "./fixture.mjs";
+import { docketStatement, verifySshsig, NS_DOCKET, NS_RATIFY } from "../../../src/sshsig.mjs";
 import { DOCKET_CHECKS, FILE_KIND_FIELDS, PLACE_KIND_FIELDS, OUTCOME_FIELDS, RECORD_KINDS } from "../../../src/docket/index.mjs";
 
 const WHAT = "Corrected the totals in the second table.";
@@ -98,17 +99,31 @@ test("R32 each kind the manager places (a correction, a withdrawal and a court o
   }
 });
 
-test("R33 docketRecordEdition files edition 2's entry with its What changed text, and edition 1's without one; a second call files none; the entry is public, answered unsigned, and the chain goes on from it", async () => {
+/* R33 (BOB 4 Nov, PR 278, option (a)): the ratification ceremony signs the edition's entry; here the manager's key does. */
+async function recordEdition(w, edition, who = "alice") {
+  const p = await w.docket.docketRecordEdition({ case: CASE, edition });
+  if (!p.ok || !p.prepared) return p;
+  return w.docket.docketRecordEdition({ case: CASE, edition, digest: p.digest, signature: sign(p, who), by: V(who) });
+}
+
+test("R33 docketRecordEdition prepares edition 2's entry with its What changed text and edition 1's without one, writing nothing, then files each once signed; a second call files none; the entry is public, signed, and the chain goes on from it", async () => {
   const w = seeded();
   w.publish(w.P, CASE, 2, [{ id: w.F1, role: "load_bearing" }], { whatChanged: WHAT });
-  const signers = w.docket.docketSigners();
-  const two = w.docket.docketRecordEdition({ case: CASE, edition: 2 });
+  const before0 = w.snapshot();
+  const p2 = await w.docket.docketRecordEdition({ case: CASE, edition: 2 });
+  assert.deepEqual([p2.ok, p2.filed, p2.prepared, p2.seq], [true, false, true, 1], JSON.stringify(p2).slice(0, 300));
+  assert.equal(JSON.parse(p2.entry).what_changed, WHAT);
+  assert.deepEqual(w.snapshot(), before0, "the prepare writes nothing");
+  const two = await recordEdition(w, 2);
   assert.deepEqual([two.ok, two.filed, two.edition, two.seq], [true, true, 2, 1], JSON.stringify(two).slice(0, 300));
-  const one = w.docket.docketRecordEdition({ case: CASE, edition: 1 });
+  assert.equal(two.digest, p2.digest);
+  const one = await recordEdition(w, 1);
   assert.deepEqual([one.ok, one.filed, one.edition, one.seq], [true, true, 1, 2]);
   const before = w.snapshot();
-  const again = w.docket.docketRecordEdition({ case: CASE, edition: 2 });
+  const again = await w.docket.docketRecordEdition({ case: CASE, edition: 2 });
   assert.deepEqual([again.ok, again.filed, again.seq], [true, false, 1], "a repeated call files no second entry");
+  const againSigned = await w.docket.docketRecordEdition({ case: CASE, edition: 2, signature: sign(p2), by: V("alice") });
+  assert.deepEqual([againSigned.ok, againSigned.filed, againSigned.seq], [true, false, 1]);
   assert.deepEqual(w.snapshot(), before, "and writes nothing");
   const pub = await w.docket.docketPublic({ case: CASE, captures: "omit" });
   const ed = (n) => pub.entries.find((e) => e.fields.kind === "edition" && e.fields.edition === n);
@@ -116,39 +131,68 @@ test("R33 docketRecordEdition files edition 2's entry with its What changed text
   assert.equal(ed(1).fields.what_changed, null, "edition 1's carries no change text");
   assert.equal(pub.entries.filter((e) => e.fields.kind === "edition").length, 2);
   for (const e of [ed(1), ed(2)]) {
-    assert.equal(e.signature, null, "no member signed it");
     assert.deepEqual(Object.keys(e.fields).sort(), ["case", "date", "edition", "format", "group", "kind", "previous", "seq", "shelf", "what_changed"]);
     assert.equal(e.fields.shelf, "listed");
   }
   assert.equal(ed(1).fields.previous, ed(2).digest, "the chain");
-  assert.deepEqual(w.docket.docketSigners(), signers, "it is no signer's");
-  /* the owner's docket lists it, and coreDue owes it no more */
+  assert.deepEqual(w.docket.docketSigners(), [{ keyB64: keyFor("alice").b64, first_signed: two.published_at }], "the manager's key signed it");
   assert.ok(w.docket.docketOf({ case: CASE, viewer: V("alice") }).entries.some((e) => e.fields && e.fields.kind === "edition" && e.fields.edition === 2));
   assert.equal(w.docket.coreDue({ case: CASE, viewer: V("alice") }).items.some((i) => i.kind === "edition"), false);
-  /* a signed entry goes on from it */
   const g = await post(w, { kind: "standing-granted", edition: 2, holder: "A neighbour", reason: "r" });
   assert.equal(g.seq, 3);
   assert.equal(JSON.parse(g.prepared.entry).previous, ed(1).digest);
-  /* the feed and the last entry read it */
   assert.ok((await w.docket.docketFeed({ case: CASE })).includes(`${CASE}:1`));
 });
 
-test("R33 controls: an edition no one has recorded stays on coreDue (R9 (b)); an edition not ratified is refused DOCKET_NO_EDITION and an absent case NO_SUCH_CASE, each filing nothing", () => {
+test("R33, R24: a recorded edition entry's served signature verifies over docketStatement in NS_DOCKET against the manager's key", async () => {
+  const w = seeded();
+  w.publish(w.P, CASE, 2, [{ id: w.F1, role: "load_bearing" }], { whatChanged: WHAT });
+  const r = await recordEdition(w, 2);
+  assert.equal(r.filed, true, JSON.stringify(r).slice(0, 300));
+  const e = (await w.docket.docketPublic({ case: CASE, captures: "omit" })).entries.find((x) => x.seq === r.seq);
+  assert.equal(typeof e.signature, "string");
+  const v = await verifySshsig(e.signature, docketStatement(CASE, e.seq, e.digest), NS_DOCKET, [keyFor("alice").b64]);
+  assert.equal(v.ok, true, `the served signature verifies: ${v.reason}`);
+});
+
+test("R33 refusals on the filing step: an unsigned entry is only prepared; a signature in another namespace, by another key, over another statement, or garbled is DOCKET_SIGNATURE_REFUSED; a non-manager DOCKET_NOT_THE_MANAGER; a machine MACHINE_CANNOT_PLACE_DOCKET; a moved docket DOCKET_STALE; each files nothing", async () => {
+  const w = seeded();
+  w.publish(w.P, CASE, 2, [{ id: w.F1, role: "load_bearing" }], { whatChanged: WHAT });
+  const p = await w.docket.docketRecordEdition({ case: CASE, edition: 2 });
+  const before = w.snapshot();
+  const at = (x) => w.docket.docketRecordEdition({ case: CASE, edition: 2, digest: p.digest, by: V("alice"), ...x });
+  assert.equal((await at({ signature: "" })).prepared, true, "no signature: prepared, nothing filed");
+  for (const [label, signature] of [["namespace", sign(p, "alice", NS_RATIFY)], ["another key", sign(p, "bob")],
+                                    ["another statement", sign({ statement: `${p.statement}x` })], ["garbled", "not a signature"]]) {
+    const r = await at({ signature });
+    assert.equal(r.reason, "DOCKET_SIGNATURE_REFUSED", label);
+    assert.equal(r.check, DOCKET_CHECKS.DOCKET_SIGNATURE_REFUSED.check, label);
+  }
+  assert.equal((await at({ signature: sign(p, "bob"), by: V("bob") })).reason, "DOCKET_NOT_THE_MANAGER");
+  assert.equal((await at({ signature: sign(p), by: MACHINE })).reason, "MACHINE_CANNOT_PLACE_DOCKET");
+  assert.equal((await at({ signature: sign(p), by: null })).reason, "MACHINE_CANNOT_PLACE_DOCKET");
+  assert.equal((await at({ signature: sign(p), digest: "0".repeat(64) })).reason, "DOCKET_STALE");
+  assert.deepEqual(w.snapshot(), before, "nothing filed");
+  /* control: the same entry, rightly signed, files */
+  assert.equal((await at({ signature: sign(p) })).filed, true);
+});
+
+test("R33 controls: an edition no one has recorded stays on coreDue (R9 (b)); an edition not ratified is refused DOCKET_NO_EDITION and an absent case NO_SUCH_CASE, each filing nothing", async () => {
   const w = seeded();
   w.publish(w.P, CASE, 2, [{ id: w.F1, role: "load_bearing" }], { whatChanged: WHAT });
   const due = w.docket.coreDue({ case: CASE, viewer: V("alice") }).items.find((i) => i.kind === "edition");
   assert.deepEqual([due.edition, due.what_changed], [2, WHAT]);
   const before = w.snapshot();
   for (const edition of [3, 0, null, "two"]) {
-    const r = w.docket.docketRecordEdition({ case: CASE, edition });
+    const r = await w.docket.docketRecordEdition({ case: CASE, edition });
     assert.equal(r.reason, "DOCKET_NO_EDITION", String(edition));
     assert.equal(r.check, DOCKET_CHECKS.DOCKET_NO_EDITION.check);
     assert.deepEqual(r.fields, ["edition"]);
   }
-  assert.equal(w.docket.docketRecordEdition({ case: "CASE-2026-9999", edition: 1 }).reason, "NO_SUCH_CASE");
+  assert.equal((await w.docket.docketRecordEdition({ case: "CASE-2026-9999", edition: 1 })).reason, "NO_SUCH_CASE");
   assert.deepEqual(w.snapshot(), before, "nothing filed");
   /* a counsel matter's case files nothing (R28) */
   w.roster.scopes.set(w.P, "counsel_matter");
-  assert.equal(w.docket.docketRecordEdition({ case: CASE, edition: 2 }).reason, "COUNSEL_MATTER_NOT_PUBLISHED");
+  assert.equal((await w.docket.docketRecordEdition({ case: CASE, edition: 2 })).reason, "COUNSEL_MATTER_NOT_PUBLISHED");
   assert.deepEqual(w.snapshot(), before);
 });
