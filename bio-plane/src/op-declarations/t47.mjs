@@ -56,8 +56,13 @@ const REAUTH_ACTS = Object.freeze({
   memberset: Object.freeze({ field: "role", values: null }),
   memberadd: Object.freeze({ field: "role", values: Object.freeze(["admin"]) }),
   subscriptionsignin: Object.freeze({ field: "step", values: Object.freeze(["start"]) }),
-  /* T53 (ai-accounts R35, BOB 4 Nov): `accountreferenceset`, `groupkeyset`, `projectkeyset` and `projectsigninset` left
-     with their retired ops; which of ai-accounts' T53 credential acts ask the password again is not yet decided */
+  /* T53 (ai-accounts R35): `accountreferenceset`, `groupkeyset`, `projectkeyset` and `projectsigninset` left with their
+     retired ops. Their replacements ask the password again as they did, every call (BOB 4 Nov, coordinator audit):
+     every ai-accounts T53 act that sets, replaces, switches or removes a credential or a sign-in (ai-accounts R61,
+     R69). `aikeycloudflare` (`gatewayKeyAttest`, R44) is added under that ruling's "any further R61 act": it records a
+     gateway account's key as held, which sets the account's credential. */
+  aiaccountadd: null, aiownadd: null, aiaccountremove: null, aiaccountswitch: null,
+  aikeyenter: null, aikeyseal: null, aikeycloudflare: null,
 });
 
 export { T47_SHARES, T47_FAMILIES, REAUTH_ACTS };

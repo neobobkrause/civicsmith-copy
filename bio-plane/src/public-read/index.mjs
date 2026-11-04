@@ -48,6 +48,7 @@ import { caseTensionsOf, caseDocumentBlocks, whatChangedOf, lensOf, LENS_HEAD,
          lensClosingSentencesOf, workingOnOf, methodOf, materialsOf, standingOf, gradingFactsOf, passagesOf,
          caseDocumentRequiresMaterials, caseDocumentStatesMemberBlocks } from "../case-grammar/index.mjs";
 import { caseFilePath, caseFileEntryOf, calculationsOf, timelineOf, signedCitations } from "../case-grammar/index.mjs";
+import { ungradedPassagesOf, memberBasisVersionOf, memberSubjectOf, EXTRACT_LABEL_KEY } from "../case-grammar/index.mjs";
 import { parseFrontmatter } from "../record-grammar/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { rowOf } from "./checks.mjs";
@@ -89,8 +90,21 @@ const labelKeyOf = (obscured) => (obscured.kind === "document" ? LABEL_KEY_CLEAN
 const keyedMaterialsOf = (fm) => {
   const read = materialsOf(fm);
   if (!read || !Array.isArray(read.materials)) return read;
-  return { ...read, materials: read.materials.map((r) => (r.obscured != null ? { ...r, label_key: labelKeyOf(r.obscured) } : r)) };
+  return { ...read, materials: read.materials.map((r) => {
+    const keyed = r.obscured != null ? { ...r, label_key: labelKeyOf(r.obscured) }
+      /* R50 (T53; N1259; DEC-408): a row stating extract fields answers, beside the extract as signed, the key its label is
+         drawn by and, for a limited register, the key of the limit's notice; the page draws the words by key. */
+      : r.extract != null ? { ...r, label_key: str(r.extract.label_key) || EXTRACT_LABEL_KEY,
+                              notice_key: (r.extract.use_limit && str(r.extract.use_limit.key)) || null }
+      : r;
+    /* R53 (T53; JOURNEYS R-108, R-122): each evidence row's entry as the screen draws it, from the signed row only: its
+       name (R41's: `title`, else `origin`, else `ref`), its locator (`origin`, null when unstated) and its fingerprint (the
+       capture's SHA-256, null when the row states none of 64 hex digits). */
+    return { ...keyed, entry: entryOf(r) };
+  }) };
 };
+const entryOf = (r) => ({ name: str(r.title) || str(r.origin) || str(r.ref) || null, locator: str(r.origin) || null,
+                          fingerprint: /^[0-9a-fA-F]{64}$/.test(String(r.sha ?? "")) ? String(r.sha).toLowerCase() : null });
 /* R3 (DEC-103): the lens section of a signed body, from its head to the next `## ` heading, whole and as signed. */
 const lensSection = (body) => {
   const lines = String(body ?? "").split(/\r\n|\n/);
@@ -242,6 +256,63 @@ export const GROUP_IDENTITY_UNDETERMINED_SENTENCE = word("public-read.group_publ
 export const STAKE_NONE_SENTENCE = word("public-read.group_declared_stake");
 export const STAKE_UNDETERMINED_SENTENCE = word("public-read.group_declared_stake_read");
 export const GROUP_FIELDS_CURRENT_SENTENCE = word("public-read.group_public_identity_declared");
+
+/* R46 (T53; DEC-461; `case-grammar` R36): the edition's statement of the passages it was published without grading, from
+   its signed document's block: `{stated: true, count, rows, sentence_key}` for a `/10` document (rows `{finding, ord,
+   content_id, title}` in block order, `title` the signed `materials:` row's `title`, else `origin`, else null, found
+   through the passage's capture), `sentence_key` the key of the sentence the signed body prints (none when none is
+   listed); an earlier format, or an unreadable block, `null` with `case-grammar`'s sentence as `ungraded_note` (not stated,
+   never none, R13); a document an order withholds, or none served, null with that stated. */
+/* R46: the count `publication` recorded (its R80): the rows' length for a `stated` edition, else null. */
+const ungradedCountOf = (rows, state) => {
+  if (state !== "stated") return null;
+  const r = safeJson(rows);
+  return Array.isArray(r) ? r.length : null;
+};
+export const UNGRADED_HEAD_KEY = "case.ungraded.head";
+function ungradedStatementOf(signed, docWithheld) {
+  if (!signed) return { answer: null, note: docWithheld ? WITHHELD_SENTENCE : null };
+  const read = ungradedPassagesOf(signed.fm);
+  if (read.state !== "stated" || !Array.isArray(read.rows)) return { answer: null, note: read.detail ?? null };
+  const passages = passagesOf(signed.fm) || {};
+  const mats = (materialsOf(signed.fm) || {}).materials;
+  const materials = Array.isArray(mats) ? mats.filter((m) => m && typeof m === "object") : [];
+  const titleOf = (r) => {
+    const p = (Array.isArray(passages[r.finding]) ? passages[r.finding] : [])
+      .find((x) => x && x.ord === r.ord && (r.content_id == null || x.content_id === r.content_id));
+    const cap = p ? String(p.capture_sha ?? "").toLowerCase() : "";
+    const m = cap ? materials.find((x) => String(x.sha ?? "").toLowerCase() === cap) : null;
+    return m ? str(m.title) || str(m.origin) || null : null;
+  };
+  const rows = read.rows.map((r) => ({ finding: r.finding ?? null, ord: r.ord ?? null, content_id: r.content_id ?? null,
+                                       title: titleOf(r) }));
+  return { answer: { stated: true, count: rows.length, rows, sentence_key: rows.length ? UNGRADED_HEAD_KEY : null }, note: null };
+}
+
+/* R52 (T53; DEC-457, DEC-481; K5540; K5571 (2)): the dated line beside a member whose question's live document states a
+   subject other than the one its edition's pinned bytes state, from what the caller hands in for it, `{subject,
+   changed_at, naming}`: `subject` the entity the live document states now (null when it names none), `changed_at` the
+   date of the change, `naming` `case-disclosures` R46's answer (`{named: true, name}` or `{named: false}`), which this
+   module neither asks for nor judges. Answers `{key, date, name}`, `key` one of `screen.published.subjectchanged.*`
+   (`named` only with a name handed in, `removed` when the question names no subject now, else `unnamed`), `name` null but
+   for `named`; null when nothing is handed in, the subject is unchanged, or no date is given. Nothing else of the change
+   (its reason, who made it, a strength) is carried. Pure; never throws. */
+export const SUBJECT_CHANGED_KEYS = Object.freeze({ named: "screen.published.subjectchanged.named",
+  unnamed: "screen.published.subjectchanged.unnamed", removed: "screen.published.subjectchanged.removed" });
+export function subjectChangedLine(editionSubject, given) {
+  try {
+    if (!given || typeof given !== "object" || Array.isArray(given)) return null;
+    const now = str(given.subject) || null, was = str(editionSubject) || null;
+    const date = str(given.changed_at) || null;
+    if (now === was || !date) return null;
+    const n = given.naming;
+    const name = now && n && typeof n === "object" && n.named === true ? str(n.name) || null : null;
+    return { key: !now ? SUBJECT_CHANGED_KEYS.removed : name ? SUBJECT_CHANGED_KEYS.named : SUBJECT_CHANGED_KEYS.unnamed,
+             date, name };
+  } catch {
+    return null;
+  }
+}
 
 export class PublicRead {
   #evidenceBlock = null; // R8: {module, name, fn}, filled once
@@ -793,11 +864,14 @@ export class PublicRead {
       cases: this.#rows(
       /* R29 (DEC-147 (5); `publication` R70, K1826): each case edition's `signed_at` and `published_at`, as publication
          holds them on the row, read in this one query. */
-      `SELECT case_id, edition, scope, ratified_at, signed_at, published_at, manifest_sha FROM published_cases
-       ORDER BY case_id, edition`)
-      .map((c) => withheldCase({ ...c, findings: this.#rows(
+      `SELECT case_id, edition, scope, ratified_at, signed_at, published_at, manifest_sha, ungraded_passages, ungraded_state
+       FROM published_cases ORDER BY case_id, edition`)
+      .map(({ ungraded_passages: ungRows, ungraded_state: ungState, ...c }) => withheldCase({ ...c,
+        /* R46 (T53): the count of passages the edition was published without grading, from `publication`'s recorded
+           statement (its R80); null for an earlier format. */
+        ungraded_count: ungradedCountOf(ungRows, ungState), findings: this.#rows(
         `SELECT bundle_id FROM published_case_members WHERE case_id=? AND edition=? ORDER BY ord`,
-        c.case_id, c.edition).map((m) => m.bundle_id) }, index, [])) };
+        c.case_id, c.edition).map((m) => m.bundle_id) }, index, ["ungraded_count"])) };
   }
 
   /* One case, every edition it has ever had, each with its OWN signature,
@@ -835,8 +909,8 @@ export class PublicRead {
       const cm = this.publication.soleCase(cms);
       const cid = cm ? cm.case_id : null;
       const c = cm ? this.#one(
-        `SELECT scope, completeness, bias_acknowledgement, bar, manifest_sha, signed_at, published_at
-         FROM published_cases WHERE case_id=? AND edition=?`,
+        `SELECT scope, completeness, bias_acknowledgement, bar, manifest_sha, signed_at, published_at, ungraded_passages,
+                ungraded_state FROM published_cases WHERE case_id=? AND edition=?`,
         cm.case_id, cm.edition) : null;
       /* R28: an edition an order withholds whole states no case content here; a finding whose bytes are withheld
          states no title. */
@@ -849,6 +923,9 @@ export class PublicRead {
                   reported from there — one manifest per case per edition,
                   naming every member finding's parts. */
                manifest_sha: c ? (c.manifest_sha ?? null) : null,
+               /* R46 (T53): the sole case edition's count of passages published ungraded (`publication` R80); null for an
+                  earlier format, and where the finding serves several cases or none. */
+               ungraded_count: c ? ungradedCountOf(c.ungraded_passages, c.ungraded_state) : null,
                /* R29: when the sole case edition was signed and when it was published (`publication` R70); null where
                   the finding serves several cases, as the case fields above; a finding in no case is unchanged. */
                ...(cms.length ? { signed_at: c ? (c.signed_at ?? null) : null, published_at: c ? (c.published_at ?? null) : null }
@@ -988,7 +1065,7 @@ export class PublicRead {
      forbidden composition arriving at case altitude, and its ABSENCE from this
      answer is asserted by `published.test.mjs`' R3 and R11 arms rather than
      left to review. */
-  publishedCase({ id = null, edition = null, sha256 = null, caseId = null } = {}) {
+  publishedCase({ id = null, edition = null, sha256 = null, caseId = null, subjects = null } = {}) {
     let theCase = caseId ? String(caseId).trim() : null, ed = null, asked = null;
     /* CASE-5: the FINDING's own edition, kept apart from `ed` (the CASE's) from
        here on. The two used to be one variable on this method as well, and the
@@ -1254,6 +1331,16 @@ export class PublicRead {
        `body.falsifies` to carry before the finding's own bytes' words; null where the document states none. */
     const stated = signed ? caseWordsOf(signed.fm) : null;
     for (const f of findings) f.case_words = stated ? (stated.get(f.bundle_id) ?? null) : null;
+    /* R45 (T51 fix round 10; K5186; `case-grammar` R34): the basis version each member's project stood on, its name and
+       identity, read from the signed document only (`recorded: false` where it states none, never filled); null where no
+       signed document is served. */
+    for (const f of findings) f.basis_version = signed ? memberBasisVersionOf(signed.fm, f.bundle_id) : null;
+    /* R52 (T53; DEC-457, DEC-481; K5571 (2)): a member whose question now states another subject than the edition's pinned
+       bytes, as the caller hands it in (`subjects`), answers one dated line by key; nothing else of the change is read. */
+    for (const f of findings) f.subject_changed = signed ? subjectChangedLine(memberSubjectOf(signed.fm, f.bundle_id),
+      subjects && typeof subjects === "object" ? subjects[f.bundle_id] : null) : null;
+    /* R46 (T53; DEC-461): whether the edition was published with passages ungraded, from the signed document's block. */
+    const ungraded = ungradedStatementOf(signed, docWithheld);
     /* R3 (DEC-112): a `/6` document's `method` and `materials` blocks, as signed, each copy's row with its `label_key`
        (T41; DEC-185 (1)); null for any other document. */
     const six = !!(signed && caseDocumentRequiresMaterials(signed.fm));
@@ -1381,6 +1468,11 @@ export class PublicRead {
                 timeline, its two lanes apart. Both null where an order withholds the document they are read from. */
              calculations, timeline,
              method: six ? methodOf(signed.fm) : null, materials: six ? keyedMaterialsOf(signed.fm) : null,
+             /* R46: `{stated: true, count, rows, sentence_key}` for a `/10` document, null with `ungraded_note` before it,
+                or where an order withholds the document. */
+             ungraded_passages: ungraded.answer, ungraded_note: ungraded.note,
+             /* R45 (DEC-34): the case's header list of the basis version each member stood on, in roster order. */
+             basis_versions: signed ? findings.map((f) => ({ finding: f.bundle_id, ...f.basis_version })) : null,
              blocks_detail: blocks.detail
                ?? word("public-read.capture_member_rests"),
              tensions_detail: disclosed.detail
@@ -1506,7 +1598,10 @@ export class PublicRead {
     /* R23 (T37; N757; DEC-180 (4)): a row stating `obscured` (`case-grammar` R12) travels as its copy and never whole,
        whatever its `included` says: it is no included material here, and its original is carried for no row. */
     const copied = rows.filter((m) => m && m.obscured != null);
-    const included = rows.filter((m) => m && m.obscured == null && (m.included === true || m.included === "true"));
+    /* R51 (T53; N1259; K4403 (4); `case-grammar` R38): a row stating extract fields travels in the signed document only,
+       whatever its `included` says: no segment, original, row index or capture of it is carried or named in `unheld`. */
+    const included = rows.filter((m) => m && m.obscured == null && m.extract == null
+                                         && (m.included === true || m.included === "true"));
     /* R32 with R23 (K2223): the pool keeps only what this edition's commit held (`publication.heldMaterialsOf`, its R57),
        so no other edition's registration under a shared ref lends this one an archive or a record. */
     const heldList = this.publication.heldMaterialsOf(c, ed);
