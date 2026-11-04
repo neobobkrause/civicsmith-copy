@@ -25,6 +25,11 @@ export const GRADING_FACT_FIELDS = Object.freeze(["finding", "ord", "target", "k
   /* K1608 (strength R35): a calculation, standard or occurrence leg's reason its capture grade is undetermined. Last, so
      a row written before it reads it null, undetermined. */
   "undetermined"]);
+/** R17 (T53; `strength` R47, PR 176): the optional flat field after them, what `strength.gradingFacts` answers for a leg
+ *  on a typed passage, `{checked}`: it is typed, and whether a second member checked it (no names). Written only on a row
+ *  handed a non-null `typed`, so every other row, and every row signed before it, is written and read exactly as before
+ *  (absent reads null). `GRADING_FACT_FIELDS` is unchanged. */
+export const GRADING_FACT_TYPED_FIELD = "typed";
 /** R17: the fields of a `passages:` row, in order. */
 export const PASSAGE_FIELDS = Object.freeze(["finding", "ord", "content_id", "capture_sha", "extent", "chain", "quoted"]);
 
@@ -56,18 +61,24 @@ const byFinding = (rows) => {
     .map(([r]) => r);
   return out;
 };
-const readBlock = (fm, key, fields) => {
+/* `optional` fields are read only on a row that states them, so a row signed before them reads exactly as it did. */
+const readBlock = (fm, key, fields, optional = []) => {
   const d = fm && typeof fm === "object" ? fm : null;
   if (!caseDocumentRequiresMaterials(d) || !Array.isArray(d[key])) return null;
-  return byFinding(objects(d[key]).map((r) => Object.fromEntries(fields.map((f) => [f, unexact(r[f])]))));
+  return byFinding(objects(d[key]).map((r) => Object.fromEntries([...fields, ...optional.filter((f) => Object.hasOwn(r, f))]
+    .map((f) => [f, unexact(r[f])]))));
 };
 
 /** R17: the `grading_facts:` block's lines, from rows `{finding, ord, target, kind, role, grade, grade_axis,
- *  grade_source, ground, target_edition, answer, origins, origins_complete, captures, author_key, undetermined}`, in the
- *  order given;
+ *  grade_source, ground, target_edition, answer, origins, origins_complete, captures, author_key, undetermined, typed?}`, in
+ *  the order given (`typed` written only when handed, `strength` R47);
  *  a field not handed is written null. `grading_facts: []` when there are none. */
 export function gradingFactsLines(rows) {
-  return exactRowsBlock("grading_facts", objects(rows), GRADING_FACT_FIELDS);
+  const given = objects(rows);
+  const typedOf = (r) => { try { return r[GRADING_FACT_TYPED_FIELD] ?? null; } catch { return null; } };
+  if (!given.length) return ["grading_facts: []"];
+  return ["grading_facts:", ...given.flatMap((r) => [...GRADING_FACT_FIELDS, ...(typedOf(r) === null ? [] : [GRADING_FACT_TYPED_FIELD])]
+    .map((f, i) => `${i ? "   " : "  -"} ${f}: ${exact(f === GRADING_FACT_TYPED_FIELD ? typedOf(r) : r[f])}`))];
 }
 
 /** R17: the `passages:` block's lines, from rows `{finding, ord, content_id, capture_sha, extent, chain, quoted}`, in the
@@ -77,10 +88,11 @@ export function passagesLines(rows) {
 }
 
 /** R17: the `grading_facts:` block read back from a `/6` document's front matter: `{[finding]: [row, …]}`, findings in
- *  the order they first appear, each finding's rows in `ord` order, every value as written. Null when the block is
+ *  the order they first appear, each finding's rows in `ord` order, every value as written; a row stating `typed`
+ *  (`strength` R47) reads it as `typed: {checked}`, a row stating none has no `typed`. Null when the block is
  *  absent, and for any other format. Pure; never throws. */
 export function gradingFactsOf(fm) {
-  try { return readBlock(fm, "grading_facts", GRADING_FACT_FIELDS); } catch { return null; }
+  try { return readBlock(fm, "grading_facts", GRADING_FACT_FIELDS, [GRADING_FACT_TYPED_FIELD]); } catch { return null; }
 }
 
 /** R17: the `passages:` block read back, as `gradingFactsOf` reads its block. Pure; never throws. */
