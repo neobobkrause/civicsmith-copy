@@ -36,8 +36,7 @@
   ],
   "prior_work": "Meet every unmet mark in build/requirements/bias.md, each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "BLOCKED",
-    "reason": "For BOB. Nothing to build without your ruling; nothing changed on job/bias. The only unmet mark in build/requirements/bias.md is R26 (a project statement that loosens a group statement is an override; the strictest applies where statements conflict). Its mark says it was put off by K102 until evaluation findings exist to apply a lens to, in strength and review. That has not happened: no file under bio-plane/src/strength or bio-plane/src/review reads biasManifest, statementInForce or statements_sha. So meeting R26 now would mean me deciding what 'loosens' and 'strictest' mean, with no reader of the result. The same thing happened at T53 (K5773: bias merged, nothing struck). Suite: p3 test bias 79 pass, 0 fail, 1 todo (R26). Separately, job complete would also stop: get_session on this session has no external_metadata.usage.cost_usd, so I have no --cost-usd figure. TO UNBLOCK: either (a) rule that R26 stays put off (so this job has nothing to do and can be closed), or (b) lift K102's deferral and say what loosening means and what 'strictest' compares, then restart the job; and say what to pass as --cost-usd when the session record has none.",
-    "at": "2026-11-04T11:50:41Z"
+    "state": "COMPLETE",
+    "at": "2026-11-04T14:33:10Z"
   }
 }
