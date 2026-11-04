@@ -54,7 +54,7 @@ test("R59 control: it reads nothing and calls no op, draws no act, and is regist
   const { w, founder } = await sessions();
   const a = await open("glossary", { world: w, as: founder });
   // nothing but the frame's own reads (the assistant's state, interface-shell R20) is sent
-  assert.deepEqual(a.p.requests.map((r) => r.op).filter((op) => !["assistantstate", "accountreference", "subscriptionsignin", "groupkeystate"].includes(op)), [], "no request is sent");
+  assert.deepEqual(a.p.requests.map((r) => r.op).filter((op) => !["assistantstate", "aipathready"].includes(op)), [], "no request is sent");
   assert.deepEqual(acts(a.tree), []);
   assert.deepEqual(a.s.acts, []);
   assert.deepEqual(a.s.reads({ me: founder }), {});

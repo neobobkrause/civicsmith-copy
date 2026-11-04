@@ -1,7 +1,7 @@
 /* The world of the `group`, `group-identity` and `translations` tests (store-request's `storeWorld`, K5054): a team made by the real acts
    of its founder, and the few rows no act can make (a record's size the platform states, a recorder the installer or a machine is, a
    correction the door strips its source from). Each seed says what it replaces. */
-import { storeWorld } from "./kit.mjs";
+import { storeWorld, teamAccountOn } from "./kit.mjs";
 
 /** The sealing secret a deployment sets so that a key can be kept (ai-accounts R22; a platform binding, so a double of the environment). */
 export const SEAL = "a-long-seal-secret-for-screens-settings";
@@ -103,11 +103,11 @@ export function sized(w, bytes) {
   return w;
 }
 
-/** The team's own account, held (T53, R95: by `aiaccountadd`, the alpha's group key retired), by the real acts (the password asked again first, as an administrator's page does): the
+/** The team's own account, held (T53, R95: the alpha's group key retired) by the real acts on the store's own catalogue: the password asked again,
+ *  `aiaccountadd` (owner `group`, the catalogue's team API plan), then `aiaccountswitch` on (ai-accounts R61; store-assembly R1's path). The
  *  assistant is then reachable. The world holds `ACCOUNT_SEAL_SECRET` (`team({ env: { ACCOUNT_SEAL_SECRET: SEAL } })`). */
 export async function holdKey(as, w, key = "sk-ant-api03-SENTINELKEY") {
-  await as.act("reauth", { body: { password: w.password } });
-  await as.act("aiaccountadd", { body: { owner: "group", provider: "anthropic", plan: "api-team", means: "sealed", secret: key } });
+  await teamAccountOn(as, w, key);
   return key;
 }
 

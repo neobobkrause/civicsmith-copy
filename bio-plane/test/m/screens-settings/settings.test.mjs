@@ -13,7 +13,7 @@ const links = (o) => all(o.tree, (e) => e.tag === "a" && e.attrs["data-screen"])
 test("R17 settings: \"Yours\" then, to a session that administers, \"The group's\", each a reference to its screen; a member is drawn only their own", async () => {
   const { w, founder, dev } = await team();
   const a = await open("settings", { world: w, as: founder });
-  assert.deepEqual(links(a), ["account", "aimine", "ties", "notes", "recovery", "group", "group-identity", "members", "aiproviders", "places", "security", "updates", "translations", "wizards", "bias", "grouprules", "watching", "leads"]);
+  assert.deepEqual(links(a), ["account", "ties", "notes", "recovery", "group", "group-identity", "members", "places", "security", "updates", "translations", "wizards", "bias", "grouprules", "watching", "leads"]);
   for (const id of links(a)) {
     const l = all(a.tree, (e) => e.tag === "a" && e.attrs["data-screen"] === id)[0];
     assert.equal(l.attrs.href, "/app/" + id);
@@ -24,7 +24,7 @@ test("R17 settings: \"Yours\" then, to a session that administers, \"The group's
   assert.ok(t.indexOf(said("screen.settings.groups")) < t.indexOf(said("screen.settings.everyone")), "then the section for every member");
   // control: a member who does not administer is drawn no group section
   const m = await open("settings", { world: w, as: dev });
-  assert.deepEqual(links(m), ["account", "aimine", "ties", "notes", "recovery", "bias", "grouprules", "watching", "leads"]);
+  assert.deepEqual(links(m), ["account", "ties", "notes", "recovery", "bias", "grouprules", "watching", "leads"]);
   lacks(m, "screen.settings.groups"); has(m, "screen.settings.everyone");
   assert.ok(!a.html.includes('href="/"'), "no link opens the setup page");
 });
