@@ -1,0 +1,39 @@
+{
+  "id": "case-grammar",
+  "title": "case-grammar: its unmet T53 requirements, R1, R35, R36, R37, R38, R39",
+  "layer": 8,
+  "paths": [
+    "bio-plane/src/case-grammar/",
+    "build/requirements/case-grammar.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-grammar/"
+  ],
+  "requirements": "build/requirements/case-grammar.md",
+  "uses": [
+    "record-grammar",
+    "calc-grammar",
+    "strength",
+    "setup-words",
+    "text-chain"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/case-grammar.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet every unmet mark in build/requirements/case-grammar.md (R1, R35-R39: bio-case-document/10 with the ungraded-passages and typed-passages blocks, a cited register row as a labelled extract, and a limited register row carrying its limit), each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T09:04:20Z"
+  }
+}

@@ -143,7 +143,7 @@ export function sqlOver(db) {
 
 /** A copy over a fresh store: record-core and the catalogue, the throwaway key its list, the made-up adapter type
  *  registered unless `adapters` is false. `db` reopens an existing database (a restart). */
-export async function world({ keys = [KEY.line], supported, env = {}, adapters = true, db = null } = {}) {
+export async function world({ keys = [KEY.line], supported, env = {}, adapters = true, db = null, seed } = {}) {
   const fresh = !db;
   db = db ?? new DatabaseSync(":memory:");
   const sql = sqlOver(db);
@@ -158,7 +158,7 @@ export async function world({ keys = [KEY.line], supported, env = {}, adapters =
   const ctx = { storage };
   const record = recordOf(ctx);
   if (typeof record.migrate === "function") record.migrate();
-  const cat = aiCatalogueOf(ctx, { record, keys, env, ...(supported ? { supported } : {}) });
+  const cat = aiCatalogueOf(ctx, { record, keys, env, ...(supported ? { supported } : {}), ...(seed !== undefined ? { seed } : {}) });
   await cat.ready;
   if (adapters) cat.registerAdapterTypes([{ type: "generic_chat", profiles: { "fakeco-profile": 1 } }]);
   return { db, sql, record, cat };
