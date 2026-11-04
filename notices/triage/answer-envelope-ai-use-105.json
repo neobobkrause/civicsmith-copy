@@ -1,0 +1,1 @@
+{"row":"triage","user":"answer-envelope","verdict":"affected","evidence":"bio-plane/src/answer-envelope/families.mjs:228 registers ai-use/checks.mjs (import :89) whose check rows changed (R8: AI_LIMIT_REACHED carries source/resets_at/walkable, new AI_THRESHOLD_INVALID)","at":"2026-11-04T07:01:48.031Z","key":"ai-use:105","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

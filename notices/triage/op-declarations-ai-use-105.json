@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-declarations","verdict":"affected","evidence":"bio-plane/src/op-declarations/t48.mjs:41 declares ai-use's ops (aiusebymember, airetestset, aihealthset, aihealthpreview at :42) which ai-use R27, R28, R32, R33 now implement; no import of ai-use","at":"2026-11-04T07:01:48.031Z","key":"ai-use:105","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

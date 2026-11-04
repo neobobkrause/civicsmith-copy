@@ -1,0 +1,1 @@
+{"row":"triage","user":"plane","verdict":"not affected","evidence":"bio-plane/src/plane/door.mjs:5 import block has no ai-use import and no use of its functions (module row build/modules.json:196)","at":"2026-11-04T07:01:48.031Z","key":"ai-use:105","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

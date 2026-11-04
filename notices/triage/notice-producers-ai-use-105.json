@@ -1,0 +1,1 @@
+{"row":"triage","user":"notice-producers","verdict":"affected","evidence":"bio-plane/src/notice-producers/index.mjs:1077 reads ai-use limitsReached (R5 amended: provider limits, source/resets_at keys) and :1044 exploreAsksPending (R9 restated by account id); import :81","at":"2026-11-04T07:01:48.031Z","key":"ai-use:105","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

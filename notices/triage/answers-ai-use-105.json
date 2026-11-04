@@ -1,0 +1,1 @@
+{"row":"triage","user":"answers","verdict":"affected","evidence":"bio-plane/src/answers/index.mjs:404 calls aiUseOf(...).useCheck(x) (import :39) and standing.mjs:366 judges its AI_LIMIT_REACHED refusal; useCheck's signature and refusal fields changed (R3)","at":"2026-11-04T07:01:48.031Z","key":"ai-use:105","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

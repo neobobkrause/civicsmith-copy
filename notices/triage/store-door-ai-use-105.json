@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-door","verdict":"affected","evidence":"bio-plane/src/store-door/dispatch.mjs:494 calls aiUseOf(ctx).countAskUsage({member, mode, usage, calls, owner}) (import :24); countAskUsage's argument list changed (entry_id, label)","at":"2026-11-04T07:01:48.031Z","key":"ai-use:105","worker":"triage-a8ac876e3c208abec","cost":"0.05"}
