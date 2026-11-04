@@ -39,7 +39,6 @@ function providers(calls = []) {
           const start = new Date(f + i * 3600e3).toISOString().replace(/\.\d+Z$/, "Z");
           const n = start >= "2026-10-06T11:00:00Z" ? 40 : 0;
           return { start, counts: { through: 0, total: n }, usual: { through: 0, total: 0 } }; }) }; }, },
-    aiAccounts: { projectAccountsSuspended: () => [{ project: P, member: "alice", since: "2026-10-02T00:00:00Z", key: `${P}|alice|2026-10-02T00:00:00Z` }] },
     following: { policyChanges: () => ({ ok: true, cursor: null, changes: [{ watch: 7, standard: "STD-1", address: "https://example.org/p",
       before: { capture: "a".repeat(64), at: "2026-09-01T00:00:00Z" }, after: { capture: "b".repeat(64), at: "2026-10-01T00:00:00Z" }, amendment_held: false }] }) },
     standards: { standardRead: ({ id }) => ({ ok: true, id, cite: "a policy", declared_by: "member:alice" }) },
@@ -93,7 +92,6 @@ test("R1: every item R2–R6, R12–R17 and R24 derive for this member and viewe
     `FINDING::policy-changed-noticed::7::${"b".repeat(64)}`, `FINDING::scan-found::${"c".repeat(64)}::FSN-1`,
     "FINDING::security-tool-off::scanii-1::2026-10-05T00:00:00Z",
     `FINDING::explore-ask::explore-ask:project:${P}:2026-10-06`, "FINDING::ai-limit-reached::ai-limit:group:ask:usd:day:2026-10-06",
-    `FINDING::project-account-suspended::${P}|alice|2026-10-02T00:00:00Z`,
     "FINDING::question-find::explore-find:F1:INQ-1", "FINDING::step-later-found::k-later", "OBLIGATION::step-date-due::k-date",
     "OBLIGATION::step-reminder::k-rem", "FINDING::step-cost-shared::k-share", "FINDING::step-cost-message::4",
     "FINDING::milestone-overdue::k-ms", "OBLIGATION::milestone-reminder::k-msr", "FINDING::project-quiet::k-quiet",
@@ -112,7 +110,6 @@ test("R1: every item R2–R6, R12–R17 and R24 derive for this member and viewe
     security_level: { days: SECURITY_DAYS, truncated: false }, policy_change: { bound: POLICY_CHANGES_MAX, days: POLICY_CHANGE_DAYS, truncated: false },
     scan_found: { bound: SCAN_FINDINGS_MAX, days: SCAN_FINDINGS_DAYS, truncated: false }, security_tool_off: { bound: TOOL_EVENTS_MAX, truncated: false },
     explore_ask: { bound: ACCOUNT_ITEMS_MAX, truncated: false }, ai_limit: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
-    signin_suspended: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
     question_find: { bound: INVESTIGATION_ITEMS_MAX, truncated: false }, step_later_found: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
     step_due: { bound: INVESTIGATION_ITEMS_MAX, truncated: false }, step_cost_shared: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
     step_cost_message: { bound: INVESTIGATION_ITEMS_MAX, truncated: false }, milestone: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
@@ -123,7 +120,7 @@ test("R1: every item R2–R6, R12–R17 and R24 derive for this member and viewe
     reading_ended: { bound: READING_ENDED_MAX, days: READING_ENDED_DAYS, truncated: false }, failed: [] });
   /* R16's and R17's items each carry the class queue R1 takes for its kind */
   assert.deepEqual(Object.fromEntries(r.items.filter((i) => !/::(interest|money|standing|temporal|inquiry|security|policy|scan)/.test(i.id))
-    .map((i) => [i.kind, i.class])), { "explore-ask": "FINDING", "ai-limit-reached": "FINDING", "project-account-suspended": "FINDING",
+    .map((i) => [i.kind, i.class])), { "explore-ask": "FINDING", "ai-limit-reached": "FINDING",
     "question-find": "FINDING", "step-later-found": "FINDING", "step-date-due": "OBLIGATION", "step-reminder": "OBLIGATION",
     "step-cost-shared": "FINDING", "step-cost-message": "FINDING", "milestone-overdue": "FINDING", "milestone-reminder": "OBLIGATION",
     "project-quiet": "FINDING", "review-comment-left-out": "FINDING" });
@@ -146,7 +143,7 @@ test("R1: writes nothing and never throws; a provider that throws contributes no
   const r = read("alice", { now: NOW });
   assert.deepEqual(snapshot((q) => w.st.sql.exec(q)), before);
   assert.deepEqual(r.facts.failed, ["people", "inquiry", "following", "file-safety", "ai-use", "question-explorer", "steps", "investigation", "review"]);
-  assert.deepEqual(r.items.map((i) => i.kind).sort(), ["money-detector-noticed", "project-account-suspended", "standing-answer", "temporal-expectation-due"]);
+  assert.deepEqual(r.items.map((i) => i.kind).sort(), ["money-detector-noticed", "standing-answer", "temporal-expectation-due"]);
   /* a provider throwing part-way contributes nothing at all */
   let calls = 0;
   const part = setup({ duties: { dutiesOf: ({ entity }) => ({ ok: true, entity, truncated: false, duties: [{ duty_id: "DUT-1", adoption: { by: "member:alice" } },
