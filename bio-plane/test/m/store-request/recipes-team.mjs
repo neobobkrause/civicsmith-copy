@@ -55,6 +55,10 @@ export async function deepChain(world, as, projectId, { depth = 9 } = {}) {
 export async function connectedSignIn(world, as, { code = "abc#def" } = {}) {
   world.env.AGENT_WORKER = { fetch: async (_url, init) => { const b = JSON.parse(init.body);
     return Response.json({ ok: true, member: b.member, step: b.step, connected: true, token: "sk-ant-oat01-" + "r".repeat(40), valid_for: 86400 }); } };
+  /* notice signin-door:153: the sign-in's `code` holds the token on her own issued account through ai-accounts, which asks the
+     disclosure first (ai-accounts R23): she is shown it by the real acts before she signs in */
+  const d = await as.read("disclosureof", { query: { member: `member:${as.member}` } });
+  await as.act("disclosureshown", { body: { member: `member:${as.member}`, version: d.version } });
   await as.act("subscriptionsignin", { body: { step: "code", code } });
   return { connected: (await as.act("subscriptionsignin", { body: { step: "state" } })).connected,
            reference: await issuedHeld(as) };
