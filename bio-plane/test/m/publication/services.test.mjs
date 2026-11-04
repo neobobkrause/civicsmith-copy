@@ -9,7 +9,8 @@ const F = "INQ-2026-0001", G = "INQ-2026-0002", DOC = "INFO-2026-0001-minutes";
 const CASE = "CASE-2026-0001";
 const roster = (roles) => roles.map((r) => ({ bundle_id: r.target, version_sha: r.version_sha, role: r.role ?? "load_bearing" }));
 const STATE_KEYS = ["awaiting", "bar", "bias_acknowledgement", "caseId", "complete", "completeness", "criteria", "detail", "document",
-                    "edition", "findings", "group", "manifest_sha", "opened", "project", "ratified_at", "scope", "timeline"].sort();
+                    "edition", "findings", "group", "manifest_sha", "opened", "project", "ratified_at", "scope", "timeline",
+                    /* R81, R82 (T53; amends R53) */ "ungraded_passages", "typed_passages"].sort();
 
 /* CASE edition 1 over F (load-bearing, B/C in the document) and G (supporting, stated nothing), signed; nothing published. */
 function signed({ format = null, strength = [{ target: F, axis: "capture", grade: "B" }, { target: F, axis: "connection", grade: "C" }] } = {}) {
