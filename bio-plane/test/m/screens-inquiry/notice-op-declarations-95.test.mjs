@@ -2,8 +2,8 @@
  * R30, R41 restated). The dock read who serves the member from `accountreference`, `groupkeystate` and (on a project)
  * `projectaccountstate`, which no table declares now; it reads T53's `accountsof` (ai-accounts R2) for her own, the team's and
  * the project's lists, an owner serving when an account on its list is switched on (R4, R42's "whose account serves"). The
- * answers are ai-accounts' real service's (fixtures.mjs' `aiAccounts`). The shell's own reachability reads (interface-shell
- * R20) still ask the retired ops; they are answered here only so the dock can open, and are that module's to move. */
+ * answers are ai-accounts' real service's (fixtures.mjs' `aiAccounts`). The shell's reachability reads (interface-shell
+ * R20: `assistantstate` and `aipathready`) are answered ready only so the dock can open. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ok } from "../interface-shell/harness.mjs";
@@ -15,7 +15,7 @@ const { ACCOUNTS, accountsOf } = await aiAccounts();
 const RETIRED = ["accountreference", "groupkeystate", "projectaccountstate"];
 /* ai-accounts' real keep-away answer, off, where the dock reads `aikeepawaystate` */
 const { off: OFF } = await keepAwayState({ reason: "court order" });
-const FRAME = { assistantstate: ok({ on: true }), aikeepawaystate: ok(OFF), accountreference: ok({ held: true }), groupkeystate: ok({ held: true, on: true }),
+const FRAME = { assistantstate: ok({ on: true }), aikeepawaystate: ok(OFF), aipathready: ok({ state: "ready" }),
   aiusage: ok({ ok: true }), agentpack: ok({ ok: true, pack: { version: "civicsmith@3+ab12cd" } }),
   airuns: (r) => ok({ ok: true, context: { type: r.query.contextType, id: r.query.contextId }, runs: [], count: 0 }) };
 async function dock(path, accountsof) {

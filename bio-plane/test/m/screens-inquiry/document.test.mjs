@@ -24,7 +24,7 @@ const TESTIMONY_MD = ["---", `id: ${D}`, "object_type: information", "title: \"T
   "source:", "  locator: \"a member's firsthand observation, authored in this record\"", "  authority: the observing member", "  retrieved: 2026-10-04T09:00:00Z",
   "---", "", "## Summary", "", "## Provenance Notes", "", "Authored through op=testify. Observed 2026-10-04.", ""].join("\n");
 /* the assistant reachable for this member (interface-shell R20) */
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 /* R111: `heldcaptures` as the plane answers it, `{held: rows}` (capture R77): this copy, the viewer's own, not yet vouched for */
 const HELD = ok({ ok: true, held: [{ bundle_id: D, capture: { sha256: SHA } }] });
 /* a document that is watched (R118): its `monitoring.enabled` */

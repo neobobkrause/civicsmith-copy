@@ -40,7 +40,7 @@ const stamp = (iso) => {
 };
 const text = (el) => String(el && el.textContent || "");
 /** The requests that wrote: the page's own frame read (`subscriptionsignin`) is a POST that writes nothing. */
-const writes = (p) => p.requests.filter((r) => r.method === "POST" && r.op !== "subscriptionsignin");
+const writes = (p) => p.requests.filter((r) => r.method === "POST" && r.op !== "subscriptionsignin" && r.op !== "aipathready");
 
 /* ---- the record of a copy: three revisions of one document (promotion R58, record-core R15) ---- */
 const SHA_SET = "7".repeat(64);

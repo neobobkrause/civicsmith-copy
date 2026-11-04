@@ -33,9 +33,8 @@ function stub({ untested = UNTESTED, dispatch = null, open: opened = null, runs 
     held,
     ops: {
       assistantstate: ok({ on: true }),
-      /* the shell's reachability reads (interface-shell R20), which the frame makes */
-      accountreference: ok({ held: true }),
-      groupkeystate: ok({ held: true, on: true }),
+      /* the shell's reachability read (interface-shell R20, PR 172): a ready path */
+      aipathready: ok({ state: "ready" }),
       accountsof: accountsOf(),
       aiusage: ok({ ok: true, today: { used: "$0.42", limit: "$2.00" } }),
       agentpack: ok({ ok: true, pack: { version: "civicsmith@3+ab12cd" } }),

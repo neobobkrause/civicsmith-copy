@@ -11,7 +11,7 @@ import { open, plane, button, inquiryMd, P, Q } from "./fixtures.mjs";
 
 /* ai-accounts' real keep-away answer, off, where the dock reads `aikeepawaystate` */
 const { off: OFF } = await keepAwayState({ reason: "court order" });
-const FRAME = { assistantstate: ok({ on: true }), aikeepawaystate: ok(OFF), accountreference: ok({ held: true }), groupkeystate: ok({ held: true, on: true }),
+const FRAME = { assistantstate: ok({ on: true }), aikeepawaystate: ok(OFF), aipathready: ok({ state: "ready" }),
   aiusage: ok({ ok: true }), agentpack: ok({ ok: true, pack: { version: "civicsmith@3+ab12cd" } }),
   airuns: (r) => ok({ ok: true, context: { type: r.query.contextType, id: r.query.contextId }, runs: [], count: 0 }),
   airunopen: (r) => ok({ run: r.body.run, started: true, status: "running", ticks: 1 }),

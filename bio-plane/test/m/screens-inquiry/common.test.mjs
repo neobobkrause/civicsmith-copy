@@ -96,7 +96,7 @@ for (const [id, path] of Object.entries(PATHS)) {
 
 test("R5 the dock in every state of its reads draws no key bare", async () => {
   for (const op of ["accountsof", "aiusage", "agentpack"]) for (const answer of Object.values(VARIANTS)) {
-    const p = await open(PATHS.question, { boot: { plane: { ...plane(), assistantstate: ok({ on: true }), accountreference: ok({ held: true }), [op]: answer } } });
+    const p = await open(PATHS.question, { boot: { plane: { ...plane(), assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }), [op]: answer } } });
     const b = p.root().querySelector('.cs-mast [data-shell="dock"]');
     if (b) { await p.click(b); await p.settle(); }
     assert.deepEqual(rawKeys(p.root()), [], op);

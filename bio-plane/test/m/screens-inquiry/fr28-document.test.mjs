@@ -20,7 +20,7 @@ process.env.TZ = "UTC";
 const at = "/app/document/" + D;
 const text = (el) => String(el && el.textContent || "");
 /** The requests that wrote: the page's own frame read (`subscriptionsignin`) is a POST that writes nothing. */
-const writes = (p) => p.requests.filter((r) => r.method === "POST" && r.op !== "subscriptionsignin");
+const writes = (p) => p.requests.filter((r) => r.method === "POST" && r.op !== "subscriptionsignin" && r.op !== "aipathready");
 /** The page with the `person` screen standing by (it is another module's: a reference to it is a link only where the page serves it). */
 const PERSON = Object.freeze({ id: "person", reads: () => ({}), render: () => "", acts: [] });
 async function openWith(path, o = {}) {

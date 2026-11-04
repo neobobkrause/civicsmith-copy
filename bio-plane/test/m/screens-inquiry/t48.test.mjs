@@ -24,8 +24,8 @@ const KEY = "sk-ant-api03-" + "7".repeat(40);
  *  on a held passage and a document held in it. Answers `{world, admin, ann, project, doc, id, ai}`. Who serves her is not made by acts of the world: T53 retired
  *  the door ops that set the team's, her own and a project's key (ai-accounts R35; op-declarations PR 95), and the assembled store holds ai-accounts with no
  *  catalogue, so `aiaccountadd` answers CATALOGUE_UNAVAILABLE (store-request's report). `ai` answers `accountsof` from ai-accounts' real service (fixtures.mjs'
- *  `aiAccounts`): the team's key on, and with `own` her own key, with `key` the project's; and the shell's reachability reads (interface-shell R20 still asks the
- *  retired `accountreference` and `groupkeystate`) as the assistant on with an account held. */
+ *  `aiAccounts`): the team's key on, and with `own` her own key, with `key` the project's; and the shell's reachability reads (interface-shell R20: `assistantstate`
+ *  and `aipathready`) as the assistant on with a ready path. */
 const worldOf = async ({ own = false, key = false } = {}) => {
   const world = await storeWorld({ ai: true });
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
@@ -34,7 +34,7 @@ const worldOf = async ({ own = false, key = false } = {}) => {
   const doc = (await world.recipes.hold(ann, "Policy memo", "The Director shall repair each reported pothole within seven days.", project)).bundle;
   const id = (await world.recipes.question(ann, project, { title: "Seven days", text: "Do crews repair each pothole within seven days?", legs: [{ target: doc, role: "supports" }], draw: true })).id;
   const { ACCOUNTS, accountsOf } = await aiAccounts();
-  const ai = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }), groupkeystate: ok({ held: true, on: true }),
+  const ai = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }),
     accountsof: accountsOf({ own: own ? ACCOUNTS.own : ACCOUNTS.none, group: ACCOUNTS.group, project: key ? ACCOUNTS.project : ACCOUNTS.none }) };
   return { world, admin, ann, project, doc, id, ai };
 };

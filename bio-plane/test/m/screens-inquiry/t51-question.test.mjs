@@ -16,7 +16,7 @@ const at = "/app/question/" + Q;
 const GROUNDS = [{ ground: "part 1", asserted_by: "member:dev", at: "2026-10-05T09:00:00Z" }];
 const grouped = (o = {}) => inquiryMd(P, INQUIRY_REFS, { legs: LEGS.map((l) => (l.target === D ? { ...l, ground: "part 1" } : l)), grounds: GROUNDS, ...o });
 const A = { images: { [Q]: { "bundle.md": grouped() } } };
-/** the assistant's reads (`assistantstate`, `accountreference`, `groupkeystate`, `agentpack`, `airuns`) as the team's Claude account answers them: a world whose team has set it up and switched it on, and a member
+/** the assistant's reads (`assistantstate`, `aipathready`, `agentpack`, `airuns`) as the team's Claude account answers them: a world whose team has set it up and switched it on, and a member
  *  who has read its notice (the world's recipe), the world's door answering each request as she does */
 const ASSISTANT = await (async () => {
   const world = await storeWorld({ ai: true });
@@ -25,7 +25,7 @@ const ASSISTANT = await (async () => {
   await world.recipes.assistant(admin, { readers: [member] });
   return { world, member };
 })();
-const REACH = Object.fromEntries(["assistantstate", "accountreference", "groupkeystate", "agentpack", "airuns"].map((op) => [op, counted((req) => {
+const REACH = Object.fromEntries(["assistantstate", "aipathready", "agentpack", "airuns"].map((op) => [op, counted((req) => {
   const headers = Object.fromEntries(Object.entries({ ...(req.init && req.init.headers), ...req.headers }).filter(([k]) => k.toLowerCase() !== "authorization"));
   return ASSISTANT.world.door({ ...req, headers, init: { ...req.init, headers } }, ASSISTANT.member);
 })]));
