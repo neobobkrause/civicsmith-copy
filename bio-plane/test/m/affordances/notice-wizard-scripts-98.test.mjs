@@ -32,7 +32,8 @@ test("notice wizard-scripts:98 (R37): the untargeted answer's screens are wizard
   /* the acts R54 registers, each on its screen */
   for (const [screen, op] of [["setup", "factconfirm"], ["queue", "signerknown"], ["capture", "captureuploadabort"], ["document", "resolve"],
     ["question", "leggrade"], ["ceremony", "leggrade"], ["counsel", "counselpacketread"], ["counsel", "counselpacketexport"],
-    ["connect", "accountreferenceset"], ["connect", "accountreferenceremove"], ["document", "contradictionflag"]])
+    ["connect", "aiownadd"] /* accountreferenceset, carried as its T53 op since wizard-scripts PR 163 */,
+    ["connect", "aiaccountremove"] /* accountreferenceremove, likewise */, ["document", "contradictionflag"]])
     assert.ok(at.get(screen)?.includes(op), `${screen} carries ${op}`);
   assert.ok(!at.get("registers")?.includes("registerimport"), "registerimport is gone from registers");
 });
