@@ -157,7 +157,7 @@ test("R11 the entry grammar judged with the grammars registered with record-core
   const bad = good.replace("surfaced_by: human", "surfaced_by: robot");
   /* with nothing registered, inquiry-grammar's own arms (C-2.8, C-6.1, C-15.1) */
   assert.deepEqual(await w.k.checkEntry(good), await checkInquiryEntry(good));
-  assert.ok((await w.k.checkEntry(bad)).some((x) => x.check === "C-2.8" && /surfaced_by/.test(x.message)));
+  assert.ok((await w.k.checkEntry(bad)).some((x) => x.check === "C-2.8" && /who surfaced this inquiry/.test(x.message)));
   /* a grammar claiming C-2.8 runs in inquiry-grammar's arm's place, over the same document */
   const seen = [];
   assert.equal(w.record.registerGrammar("inquiry-arm-under-test", { ids: ["C-2.8"], arm: (ctx, found) => {
@@ -166,9 +166,9 @@ test("R11 the entry grammar judged with the grammars registered with record-core
   const f = await w.k.checkEntry(bad);
   assert.deepEqual(seen, ["INQ-2026-0009-z"]);
   assert.ok(f.some((x) => x.message === "judged by the registered grammar"));
-  assert.ok(!f.some((x) => /surfaced_by/.test(x.message)), "inquiry-grammar's C-2.8 arm is not also run");
+  assert.ok(!f.some((x) => /who surfaced this inquiry/.test(x.message)), "inquiry-grammar's C-2.8 arm is not also run");
   assert.ok(f.some((x) => x.check === "C-15.1"), "the slots no registration claims are still filled by inquiry-grammar's arms");
-  assert.ok((await checkInquiryEntry(bad)).some((x) => /surfaced_by/.test(x.message)),
+  assert.ok((await checkInquiryEntry(bad)).some((x) => /who surfaced this inquiry/.test(x.message)),
     "the module-level face with no grammars named runs inquiry-grammar's own");
   assert.deepEqual(await checkInquiryEntry(bad, { grammars: [...w.record.grammars(), ...INQUIRY_GRAMMARS.filter((g) => !g.ids.includes("C-2.8"))] }),
     f, "the face passes the grammars it is given");
