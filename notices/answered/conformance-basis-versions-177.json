@@ -1,0 +1,1 @@
+{"row":"answered","user":"conformance","by":"triage","evidence":"bio-plane/src/conformance/index.mjs:64-73 imports no basis-versions (grep of bio-plane/src/conformance/ finds none), so it uses none of the changed leg-grading behaviour","at":"2026-11-04T09:11:08.074Z","key":"basis-versions:177","worker":"a40afee7a8343ae86","cost":"0.2"}

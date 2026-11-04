@@ -1,0 +1,1 @@
+{"row":"answered","user":"agent-worker","by":"triage","evidence":"agent-worker/test/wire-vocabulary.test.mjs:73 imports only VERSION_NAME_RE and isBoilerplate (used at :102,:105), which PR 177 did not change","at":"2026-11-04T09:11:08.074Z","key":"basis-versions:177","worker":"afb3a21a0d271bc91","cost":"0.2"}
