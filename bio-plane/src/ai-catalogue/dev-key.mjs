@@ -37,6 +37,10 @@ export const DEVELOPMENT_SIGNING_SECRET = "AI_CATALOGUE_DEVELOPMENT_SIGNING_KEY"
 /** The comment of a development catalogue key's public line. */
 export const DEVELOPMENT_KEY_COMMENT = `bio-ai-catalogue${DEVELOPMENT_KEY_MARK}`;
 
+/** The line printed alone, once the p3dev- name, the account, the test-instance mark and the Worker's presence have all
+ *  been checked and passed, in a dry run and a real one alike; never when any of them fails (F1). */
+export const GUARD_LINE = "p3dev guard: passed";
+
 const WORKER_RE = /^p3dev-[a-z0-9][a-z0-9-]*$/;
 
 /* ------------------------------------------------------------------ an SSHSIG signer (PROTOCOL.sshsig), in memory */
@@ -152,7 +156,15 @@ export async function main(argv, env = process.env, { log = console.log, err = c
     err(`REFUSED [NOT_A_TEST_INSTANCE]: \`${slug}\` is not marked as a test instance (CIVICSMITH_TEST_INSTANCE). Nothing was set.`);
     return 1;
   }
-  if (!dry && !env.CF_TOKEN) { err("REFUSED [NO_TOKEN]: CF_TOKEN is not set. Nothing was set."); return 1; }
+  if (!env.CF_TOKEN) { err("REFUSED [NO_TOKEN]: CF_TOKEN is not set. Nothing was set."); return 1; }
+  /* the Worker is looked up in a dry run too (a read only): the guard line means every check passed */
+  const auth = { token: env.CF_TOKEN, account: env.CF_ACCT };
+  const found = await wrangler({ args: ["deployments", "list", "--name", worker], ...auth });
+  if (found.code !== 0) {
+    err(`REFUSED [NO_SUCH_WORKER]: ${worker} is not deployed in ${DEVELOPMENT_ACCOUNT} (wrangler deployments list exited ${found.code}); a secret is never what creates a Worker. Nothing was set.`);
+    return 1;
+  }
+  log(GUARD_LINE);
 
   const vars = variablesFor(await makeDevelopmentKey({ seed }));
   const check = await selfCheck(vars, seed);
@@ -163,14 +175,8 @@ export async function main(argv, env = process.env, { log = console.log, err = c
   const names = Object.keys(vars).join(", ");
   log(`dev-key: generated a development catalogue key (${DEVELOPMENT_KEY_COMMENT}); the seed (seq ${seed.statement.seq}) signed with it verifies in a development build and is refused by a release build`);
   if (dry) {
-    log(`dev-key: dry run: would set on ${worker} in ${DEVELOPMENT_ACCOUNT}, as Worker secrets through wrangler's stdin: ${names}. Nothing was sent; the key is discarded.`);
+    log(`dev-key: dry run: would set on ${worker} in ${DEVELOPMENT_ACCOUNT}, as Worker secrets through wrangler's stdin: ${names}. No secret was sent; the key is discarded.`);
     return 0;
-  }
-  const auth = { token: env.CF_TOKEN, account: env.CF_ACCT };
-  const found = await wrangler({ args: ["deployments", "list", "--name", worker], ...auth });
-  if (found.code !== 0) {
-    err(`REFUSED [NO_SUCH_WORKER]: ${worker} is not deployed in ${DEVELOPMENT_ACCOUNT} (wrangler deployments list exited ${found.code}); a secret is never what creates a Worker. Nothing was set; the key is discarded.`);
-    return 1;
   }
   log(`dev-key: setting on ${worker}: ${names} …`);
   const r = await wrangler({ args: ["secret", "bulk", "--name", worker], stdin: JSON.stringify(vars), ...auth });
