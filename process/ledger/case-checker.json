@@ -41,7 +41,8 @@
   ],
   "prior_work": "Answer provider notice case-catalogue:224, judged affected by a read-only triage: check.mjs:517 calls checkCaseDocument and carries every finding into publication_checks.findings, and lines 522-523 add error-severity findings to caseLevel.differs, so the new C-41.18 UNGRADED_PASSAGES_MISMATCH and C-41.19 TYPED_PASSAGES_MISMATCH findings now change what the checker reports. Decide from your own requirements what this module must do, adapt or confirm, and add a test of your own (failing with the change reverted where code changes); where your requirements decide nothing, name the gap in not-verified. Edit no other module and commit no generated file.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-04T12:54:59Z"
+    "state": "WORKING",
+    "at": "2026-11-04T19:12:44Z",
+    "reason": "reopened: program.mjs is built where needed and not committed (BOB 4 Nov, PR 294; .gitignore lists it). On this fresh branch: git rm --cached bio-plane/src/case-checker/program.mjs if the tranche still tracks it (it is 6.99 MB, over max_file_bytes), and reapply your earlier program.test.mjs change (git diff 554e2b52..916062e3 -- bio-plane/test/m/case-checker/program.test.mjs on origin/job/case-checker): the R13/R32 test compares programData() from the built program.mjs with buildProgram(), failing with a stale file. program.test.mjs 6/6 (or 7/7). --not-verified: R32's committed-artifact wording superseded by BOB 4 Nov; R29-R32 stay not yet met; deploy and release paths of PR 294 not checked."
   }
 }
