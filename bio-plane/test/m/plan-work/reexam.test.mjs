@@ -137,8 +137,8 @@ test("R10: one re-examination run per plan, mode plan, origin reexamination, the
   const ord = await receive(w, s.action);
   assert.equal(w.runs.length, 1);
   const a = w.runs[0];
-  assert.deepEqual([a.mode, a.origin, a.response, a.plan, a.contextType, a.contextId, a.actor, a.principalClaude, a.skillVersion],
-    ["plan", "reexamination", `${s.action}#${ord}`, w.PL, "project", w.P, V("bob"), V("bob"), REEXAM_SKILL],
+  assert.deepEqual([a.mode, a.origin, a.response, a.plan, a.contextType, a.contextId, a.actor, a.principalAi, a.principalAiRef, a.skillVersion],
+    ["plan", "reexamination", `${s.action}#${ord}`, w.PL, "project", w.P, V("bob"), V("bob"), V("bob"), REEXAM_SKILL],
     "the recording member's act: ai-runs R52 picks the project's own account where it holds one, else hers");
   assert.equal(a.bounds.some((b) => (b.bound === "fetches" || b.bound === "subsessions") && b.allowed > 0), false, "no search");
   assert.equal(w.reexamined(s.action, ord)[0].run.opened, true);

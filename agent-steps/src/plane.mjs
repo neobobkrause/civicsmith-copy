@@ -1,7 +1,6 @@
 /* agent-steps — the readers the shell shares with the steps: how a plane answer is read (R44), the published pack (R5), the
  * loadable layers (R46) and the model half (R47). Pure. */
 /* Requirement ids in the comments below are `agent-worker`'s, as they stood when this code moved (T51, K3850); `build/requirements/agent-steps.md` maps them to this module's. */
-import { MODEL_FOR_MODE } from "../../agent-model/src/model.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
 
@@ -105,16 +104,15 @@ export function modelHalf({ reference, runner, meter, suggestions, traced = {} }
   const pending = [];
   return {
     reference, runner, meter, suggestions: suggestions === true, traced, pack: null, layers: [], messages: [],
-    /* R26 (N588; K1621): one entry per conversation that reached the provider, `{mode, model, usage, calls}` (ai-runs
-       R48's entry), `usage` and `calls` exactly as `agent-model` R6 answers them: `calls` the model calls that sum
-       covers, so the plane counts each model call, never a conversation as one. A `calls` it did not state is passed
-       as `null` (which the plane counts as one call), never invented here. */
+    /* R14, R26, R47 (T53; BR22, BR29; ai-runs R72's list): one entry `{mode, entry_id, label, usage, calls}` per
+       conversation that states `usage`, `usage` and `calls` exactly as `converse` answers them (`calls` null where it
+       states none, which the plane counts as one call), so the plane counts each model call. `entry_id` and `label` are
+       those `converse` answered, else null, never invented: no mode's model is filled in here, and the `model` and
+       `effort` a pre-T53 `converse` answers are not carried (ai-runs R72 refuses an entry naming no `entry_id`). */
     spent(got, mode) {
-      /* R98: the model `converse` answers for that conversation (agent-model R21), the mode's only when it states none.
-         R112 (N1168): and the `effort` its requests carried (the same answer), as requested; `usage` and `calls` as the
-         end states them, `null` where it states none, never invented here. */
-      if (got && got.usage) pending.push({ mode, model: got.model ?? MODEL_FOR_MODE[mode] ?? null, effort: got.effort ?? null,
-                                           usage: got.usage, calls: got.calls === undefined ? null : got.calls });
+      if (!got || !got.usage) return;
+      pending.push({ mode, entry_id: got.entry_id ?? null, label: got.label ?? null, usage: got.usage,
+                     calls: got.calls === undefined ? null : got.calls });
     },
     drain() { return pending.splice(0, pending.length); },
   };
