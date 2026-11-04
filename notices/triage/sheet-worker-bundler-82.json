@@ -1,0 +1,1 @@
+{"row":"triage","user":"sheet-worker","verdict":"not affected","evidence":"sheet-worker/scripts/build.mjs:2 builds its bundle through bundler's one recipe; no sheet-worker code reads the printed guard line","at":"2026-11-04T03:22:42.697Z","key":"bundler:82","worker":"a5d75d29eb18b6685","cost":"0.1"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"plane","by":"triage","evidence":"bio-plane/package.json:9 \"deploy\" runs scripts/deploy.mjs, the script that prints the line; bio-plane/src/plane has no reference to the bundler or its output","at":"2026-11-04T03:22:42.697Z","key":"bundler:82","worker":"a5d75d29eb18b6685","cost":"0.1"}
