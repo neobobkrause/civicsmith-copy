@@ -2,3 +2,4 @@
 {"at":"2026-11-04T07:32:47Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T07:51:29Z","row":"sent","n":2,"to":"bob","text":"job scheduler BLOCKED: run status"}
 {"at":"2026-11-04T07:51:39Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-04T08:38:08Z","row":"sent","n":3,"to":"bob","text":"job scheduler BLOCKED: run status"}
