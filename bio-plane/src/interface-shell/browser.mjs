@@ -2757,8 +2757,8 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     assistantstate: { req: {}, min: (v) => ({ on: v.on === true }) },
     /* R20 (T53): the one combined read of whether some act of the member's has a ready AI path on an account the cascade can choose
        (her own, a joined project's, the team's); it replaces the alpha's three (`accountreference`, `subscriptionsignin`'s state,
-       `groupkeystate`), which ai-accounts R35 retired. Ready is the answer `state: "ready"`; any other state, or none, is not ready. */
-    aipathready: { req: { read: true }, min: (v) => ({ ready: v.state === "ready" }) },
+       `groupkeystate`), which ai-accounts R35 retired. Ready is the answer `state: "ready"`; any other state, or none, is not ready (kept in the same shape, as `min` reads the tab's copy too). */
+    aipathready: { req: { read: true }, min: (v) => ({ state: v.state === "ready" ? "ready" : "not_ready" }) },
   };
   const FRAME_NAMES = Object.keys(FRAME_READS), FRAME_REACH = ["assistantstate", "aipathready"];
   /* FRAME_VAL: what the frame holds of each (kept or answered); FRAME_DONE: settled (held, answered, or answered with nothing of use); FRAME_KEPT: those
@@ -2832,7 +2832,7 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
       /* R20: reachable when the assistant is on and some act of the member's has a ready path; a read that did not answer is "not reachable" */
       if (!FRAME_REACH.every((n) => FRAME_DONE.has(n))) return;
       const v = FRAME_VAL, was = REACHABLE;
-      REACHABLE = !!(v.assistantstate && v.assistantstate.on && v.aipathready && v.aipathready.ready);
+      REACHABLE = !!(v.assistantstate && v.assistantstate.on && v.aipathready && v.aipathready.state === "ready");
       if (REACHABLE !== was) {
         DOCKI = REACHABLE && screenOf("assistant") && ROUTE && (!MAIN || frameOf(MAIN.spec.id) === "working") ? instance(screenOf("assistant"), ROUTE.subject, "d", { screen: ROUTE.screen, subject: ROUTE.subject }) : null;
         if (!REACHABLE) DOCK = false;
