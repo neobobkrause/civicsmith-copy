@@ -109,16 +109,17 @@ test("R1 R20 the count bound fires on a workbook of one-character cells that is 
   lifecycleOk(await inChild(t, large, "lifecycle"), "2,300 cells of 9,000 characters");
 });
 
-test("R1 a file whose text is over the reader's whole-read bound (26.2 MB declared) is refused as WORKBOOK_FILE_TOO_LARGE with the declared size and the bound as MB, never NOT_A_WORKBOOK, and the object lives; a capture stored above the size gate is refused with its size", async (t) => {
+test("R1 F1 a file whose text is over the xlsx declared-text row (26.2 MB declared) is refused as WORKBOOK_FILE_TOO_LARGE with the declared size and the bound as MB, never NOT_A_WORKBOOK, and the object lives; a capture stored above the size gate is refused with its size", async (t) => {
   const f = S.constants(180300);
   assert.ok(f.declared > 26_000_000 && f.declared < 26_600_000, `declares ${f.declared}`);
   const r = await inChild(t, f, "add");
   assert.equal(r.alive, true, "the refusal must fit the real-shape cap");
   assert.equal(r.add.reason, "WORKBOOK_FILE_TOO_LARGE");
   assert.equal(r.add.size, (f.declared / MB).toFixed(1));
-  assert.equal(r.add.bound, (boundOf("office", "text_bytes") / MB).toFixed(1));
+  assert.ok(f.declared > boundOf("xlsx", "declared_text"), "over the xlsx row");
+  assert.equal(r.add.bound, (boundOf("xlsx", "declared_text") / MB).toFixed(1));
   assert.equal(r.add.condition, "declared_text");
-  assert.equal(r.add.limit.key, "limit.office.text_bytes");
+  assert.equal(r.add.limit.key, "limit.xlsx.declared_text");
   assert.equal(r.changed, false);
   /* in this process: a 41 MB capture that is not a workbook is told "file", from the store's head, before any byte loads */
   const w = world();
