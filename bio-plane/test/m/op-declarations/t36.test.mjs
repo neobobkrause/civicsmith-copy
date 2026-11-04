@@ -8,7 +8,7 @@ import "./register-owners.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as O from "../../../src/op-declarations/index.mjs";
-import { explained } from "./help.mjs";
+import { explained, RETIRED_T53 } from "./help.mjs";
 import * as AFF from "../../../src/affordances.mjs";
 import { T51_DESIGN_OPS } from "../../../src/affordances/act-help.mjs";
 import { AI_GRANT_OPS, credentialsOps } from "../../../src/credentials/index.mjs";
@@ -261,9 +261,11 @@ test("R21, R17 (T36; K2130): this module holds no screen name — no table here 
   assert.ok(Object.hasOwn(OP_ALIASES, "createevent"));
 });
 
-test("R27 (T37: its T36 sentence retired): subscriptionsignin and translationconfirm, served in T37, each have a spec, a row, both session sets and stamps (R36, R37), beside subscriptiondisconnect", () => {
-  for (const op of ["subscriptionsignin", "translationconfirm", "subscriptiondisconnect"])
+test("R27 (T37: its T36 sentence retired): subscriptionsignin and translationconfirm, served in T37, each have a spec, a row, both session sets and stamps (R36, R37); subscriptiondisconnect beside them until T53 retired it (ai-accounts R35, BOB 4 Nov), none of them now", () => {
+  for (const op of ["subscriptionsignin", "translationconfirm"])
     assert.ok(Object.hasOwn(OPS, op) && Object.hasOwn(NEEDS, op) && both(op) && Object.hasOwn(OP_STAMPS, op), op);
+  assert.ok(RETIRED_T53.includes("subscriptiondisconnect") && !Object.hasOwn(OPS, "subscriptiondisconnect")
+    && !Object.hasOwn(NEEDS, "subscriptiondisconnect") && neither("subscriptiondisconnect") && !Object.hasOwn(OP_STAMPS, "subscriptiondisconnect"));
   /* negative control: an op no owner serves has none of them (infolevelset, the control until T46, is R50's now) */
   assert.ok(!Object.hasOwn(OPS, "nosuchowedact") && neither("nosuchowedact") && !Object.hasOwn(OP_STAMPS, "nosuchowedact"));
 });

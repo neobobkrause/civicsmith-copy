@@ -1,4 +1,4 @@
-/* site's generator (R9, R11, R12, R14; tests: site/test/site.test.mjs, "R9", "R11", "R12"). Run from the repository root:
+/* site's generator (R9, R11, R12, R14, R18; tests: site/test/site.test.mjs, "R9", "R11", "R12"). Run from the repository root:
  *   node site/build.mjs            writes site/src/pages.mjs
  *   node site/build.mjs --check    exits non-zero, naming the first difference, when site/src/pages.mjs is stale
  * It is not imported by the Worker, so it is not bundled. It reads the design's `SCR.site` at SITE_COMMIT from git
@@ -12,7 +12,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { word } from "../bio-plane/src/setup-words/index.mjs";
 
-export const SITE_COMMIT = "2a64c5ae77";
+export const SITE_COMMIT = "1b6f2bc383";
 const ROOT = new URL("../", import.meta.url);
 const SCREENS = "docs/development/ux-substrate/screens/";
 const OUT = new URL("src/pages.mjs", import.meta.url);
@@ -31,7 +31,7 @@ export const KEYS = Object.freeze({
   "screen.site.member.head": [], "screen.site.member.where": [],
   "screen.site.questions.head": [], "screen.site.questions.write": ["address"], "screen.site.questions.unset": [],
   "screen.site.start.lede": [], "screen.site.fit.head": [], "screen.site.fit.what": [],
-  "screen.site.need.head": [], "screen.site.need.cloudflare": [], "screen.site.need.time": [], "screen.site.need.nothing": [],
+  "screen.site.need.head": [], "screen.site.need.cloudflare": [], "screen.site.need.time": [], "screen.site.need.nothing": [], "screen.site.start.noaccount": [],
   "screen.site.hold.head": [], "screen.site.hold.what": [],
   "screen.site.steps.head": [], "screen.site.steps.name": ["places"], "screen.site.steps.name.noplace": [], "screen.site.steps.permission": [], "screen.site.steps.install": [],
   "screen.site.steps.claim": [], "screen.site.steps.setup": [], "screen.site.steps.invite": [],
@@ -218,6 +218,9 @@ export function generate({ commit = SITE_COMMIT, places = placesReady() } = {}) 
     if (cl.includes("mk-mockctl")) return "";
     const extra = {};
     if (n.tag === "a") extra.href = hrefOf(n);
+    /* R18: "Create your team" is /start's one clear action, the front page's primary button's control kind, never an
+       inline link beside a button. */
+    if (n.tag === "a" && n.attrs["data-goto"] === "install") Object.assign(extra, { class: "cs-btn", "data-tone": "primary" });
     if (n.tag === "use") extra.href = `/app/assets/icons.svg${n.attrs.href}`;
     const open = `<${n.tag}${attrsOf(n, extra)}${VOID.has(n.tag) ? "/" : ""}>`;
     if (VOID.has(n.tag)) return open;

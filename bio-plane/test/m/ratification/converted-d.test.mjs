@@ -486,10 +486,9 @@ test("R4, R9 (multifinding): a finding whose own bytes name a case — its id, e
   revise(w, FIND_A, lie);
   const r = await ratifyAs(FIND_A);
   assert.deepEqual([r.status, r.body.reason], [409, "GATE_REFUSED"]);
-  const named = r.body.findings.filter((x) => x.check === "C-2.8" && /a finding's bytes name a case/.test(x.detail));
-  assert.deepEqual(named.map((x) => /name a case \((\w+)\)/.exec(x.detail)[1]).sort(),
-    ["bias_acknowledgement", "case_edition", "case_findings", "case_id", "case_scope"]);
-  assert.match(named[0].detail, /CASE DOCUMENT a member reviews and ratifies/);
+  /* one finding for each of the five keys, each saying (by its word, K3810) that the case document states them */
+  const named = r.body.findings.filter((x) => x.check === "C-2.8" && x.detail === word("inquiry-grammar.grammar.a_finding_s_bytes_name_p"));
+  assert.equal(named.length, 5, JSON.stringify(r.body.findings).slice(0, 600));
   assert.equal(w.count("published_bundles"), 0);
   assert.deepEqual(w.publication.pinnedCaseEditionsOf(FIND_A, members[0].pin).map((x) => x.case_id), [CASE],
     "the case still pins the version it froze");

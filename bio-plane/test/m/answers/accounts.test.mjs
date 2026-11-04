@@ -21,13 +21,14 @@ test("R30 an ask calls accountFor with kind ask and its project, and is judged b
   /* no account serves bob yet: NO_ACCOUNT, no limit asked */
   assert.equal((await w.a.askAccount({ member: BOB })).code, "NO_ACCOUNT");
   assert.equal(w.limit.asked.length, 0, "no limit asked for an ask no account serves");
-  await real.accountReferenceSet({ member: "bob", kind: "apikey", secret: "sk-bob", by: BOB });
+  const own = await w.ownAccount("bob", { secret: "sk-bob" });
   const before = w.snapshot();
   const r = await w.a.askAccount({ member: BOB, at: "2026-10-05T16:00:00Z" });
   assert.equal(r.ok, true, JSON.stringify(r));
   assert.equal(r.owner, "member:bob"); assert.equal(r.account.level, "member");
   assert.deepEqual(seen.at(-1), { member: BOB, act: { kind: "ask", member: BOB } }, "kind ask, no project named");
-  assert.deepEqual(w.limit.asked.at(-1), { owner: "member:bob", member: "bob", use: "ask", at: "2026-10-05T16:00:00Z" });
+  assert.deepEqual(w.limit.asked.at(-1), { owner: "member:bob", member: "bob", use: "ask", at: "2026-10-05T16:00:00Z",
+                                            account_id: own, entry_id: r.account.entry_id });
   assert.deepEqual(w.snapshot(), before, "writes nothing");
   /* the limit reached: ai-use's refusal, unchanged */
   const reached = w.reach("member:bob", "ask");
@@ -35,9 +36,9 @@ test("R30 an ask calls accountFor with kind ask and its project, and is judged b
   w.unreach("member:bob", "ask");
   assert.equal((await w.a.askAccount({ member: BOB })).ok, true, "under its limit again");
   /* the account chosen is the one used: its ask use off is ai-accounts R11's refusal, never the next account */
-  assert.equal(real.accountUsesSet({ owner: "member:bob", switch: "ask", on: false, by: BOB }).ok, true);
+  assert.equal(w.uses(own, "ask", false, BOB).ok, true);
   assert.equal((await w.a.askAccount({ member: BOB })).code, "AI_USE_SWITCHED_OFF");
-  assert.equal(real.accountUsesSet({ owner: "member:bob", switch: "ask", on: true, by: BOB }).ok, true);
+  assert.equal(w.uses(own, "ask", true, BOB).ok, true);
   /* fail closed: no useCheck to judge it, or one that throws, refuses (the negative control of the judgement) */
   for (const useCheck of [null, () => { throw new Error("down"); }]) {
     w.a.deps.useCheck = useCheck;
@@ -47,9 +48,7 @@ test("R30 an ask calls accountFor with kind ask and its project, and is judged b
   w.a.deps.useCheck = (a) => w.useCheck(a);
   /* a project the member has joined: its account pays, judged by the project's limits */
   const P = w.project("Carol's work", "carol");
-  assert.equal((await real.projectKeySet({ project: P, key: "sk-p", by: CAROL })).ok, true);
-  assert.equal(real.projectAccountSwitch({ project: P, on: true, by: CAROL }).ok, true);
-  assert.equal((await real.projectKeyNoticeSeen({ member: "carol", project: P, by: CAROL })).ok, true);
+  await w.projectAccount(P, "carol", { secret: "sk-p" });
   const p = await w.a.askAccount({ member: CAROL, project: P });
   assert.equal(p.ok, true, JSON.stringify(p));
   assert.equal(p.owner, `project:${P}`); assert.equal(p.account.level, "project");
@@ -122,8 +121,8 @@ test("R30 R19 a standing run's grant reads under its own use: a project kept awa
   const w = answersWorld();
   const P = w.project("Carol's work", "carol");
   assert.equal(w.a.standingAiSwitch({ on: true, by: ALICE }).ok, true);
-  await w.accounts.accountReferenceSet({ member: "carol", kind: "apikey", secret: "sk-c", by: CAROL });
-  assert.equal(w.accounts.accountUsesSet({ owner: "member:carol", switch: "standing", on: true, by: CAROL }).ok, true);
+  const own = await w.ownAccount("carol", { secret: "sk-c" });
+  assert.equal(w.uses(own, "standing", true, CAROL).ok, true);
   assert.equal((await w.accounts.projectAiKeepAwaySet({ project: P, on: true, uses: ["standing"], reason: "Private.", by: CAROL })).ok, true);
   const got = [];
   w.a.registerStandingAnswerer("agent-worker", async (x) => {
@@ -145,7 +144,7 @@ test("R30 R19 a standing run's grant reads under its own use: a project kept awa
 
 test("R30 with no useCheck handed in, answers judges by ai-use's useCheck on its own host (the negative control: an account under its limits is served)", async () => {
   const w = answersWorld({ deps: { useCheck: undefined } });
-  await w.accounts.accountReferenceSet({ member: "bob", kind: "apikey", secret: "sk-bob", by: BOB });
+  await w.ownAccount("bob", { secret: "sk-bob" });
   assert.equal((await w.a.askAccount({ member: BOB })).ok, true);
   const reached = w.reach("member:bob", "ask");
   const r = await w.a.askAccount({ member: BOB });
@@ -161,7 +160,7 @@ test("R30 (K2508) askAccount takes kind: ask when absent, or draft, the account 
   w.a.deps.accounts = new Proxy(real, { get: (t, k) => { const v = t[k]; return typeof v === "function"
     ? (...a) => { if (k === "accountFor") seen.push(a[0]); return v.apply(t, a); } : v; } });
   w.a.resolved.delete("accounts");
-  await real.accountReferenceSet({ member: "bob", kind: "apikey", secret: "sk-bob", by: BOB });
+  const own = await w.ownAccount("bob", { secret: "sk-bob" });
   const d = await w.a.askAccount({ member: BOB, kind: "draft" });
   assert.equal(d.ok, true, JSON.stringify(d)); assert.equal(d.owner, "member:bob");
   assert.deepEqual(seen.at(-1).act, { kind: "draft", member: BOB });
@@ -170,10 +169,10 @@ test("R30 (K2508) askAccount takes kind: ask when absent, or draft, the account 
   assert.deepEqual(seen.at(-1).act, { kind: "ask", member: BOB }, "ask when absent");
   assert.equal(w.limit.asked.at(-1).use, "ask");
   /* judged for that kind: the draft use off, or its limit reached, refuses a draft and leaves an ask served */
-  assert.equal(real.accountUsesSet({ owner: "member:bob", switch: "draft", on: false, by: BOB }).ok, true);
+  assert.equal(w.uses(own, "draft", false, BOB).ok, true);
   assert.equal((await w.a.askAccount({ member: BOB, kind: "draft" })).code, "AI_USE_SWITCHED_OFF");
   assert.equal((await w.a.askAccount({ member: BOB, kind: "ask" })).ok, true);
-  assert.equal(real.accountUsesSet({ owner: "member:bob", switch: "draft", on: true, by: BOB }).ok, true);
+  assert.equal(w.uses(own, "draft", true, BOB).ok, true);
   const reached = w.reach("member:bob", "draft");
   assert.deepEqual(await w.a.askAccount({ member: BOB, kind: "draft" }), reached);
   assert.equal((await w.a.askAccount({ member: BOB, kind: "ask" })).ok, true, "the ask's own limit is not the draft's");

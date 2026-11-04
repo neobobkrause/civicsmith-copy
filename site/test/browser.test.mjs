@@ -3,7 +3,7 @@
  * prints for BOB. Each served page is checked: no wider than the viewport, every class it draws defined by a stylesheet
  * it loads, every face and icon loaded from the site itself. Needs `npm ci` in site/ (playwright-core) and Chromium
  * (CHROMIUM, or /opt/pw-browsers/chromium). */
-import test from "node:test";
+import base from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { execFileSync } from "node:child_process";
@@ -13,8 +13,12 @@ import { join } from "node:path";
 import worker from "../src/index.mjs";
 import { SITE_COMMIT, STATES, designMain } from "../build.mjs";
 
-const { chromium } = await import("playwright-core");
 const EXE = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
+/* Where no browser is installed (CI's gate), these tests are skipped, saying why, never left to fail or wait. */
+const chromium = await import("playwright-core").then((m) => m.chromium, () => null);
+const NO_BROWSER = !chromium ? "playwright-core is not installed (npm ci in site/)" : !existsSync(EXE) ? `no Chromium at ${EXE} (set CHROMIUM)` : false;
+const test = (name, fn) => base(name, { skip: NO_BROWSER, timeout: 120_000 }, fn);
+test.todo = base.todo;
 const ENV = {
   INSTALLER_ADDRESS: "https://install.example/",
   FEATURED_CASE: { case: "case-x", title: "Case X", edition: 2, group: "Group X", place: "Place X", signer: "Signer X", date: "Date X", address: "https://x.example" },
@@ -80,7 +84,7 @@ test("R9: each page beside the design's drawing at 1280 and 390 px; control: no 
       assert.deepEqual(violations, [], `at ${width}`);
       await page.close();
     }
-  } finally { await browser.close(); server.close(); }
+  } finally { await browser.close(); server.closeAllConnections(); server.close(); }
   t.diagnostic(`pairs at ${out}`);
 });
 
@@ -93,3 +97,46 @@ test("R9 control: a page wider than the viewport is caught by the same measure",
     assert.ok(m.scroll > m.inner);
   } finally { await browser.close(); }
 });
+
+/* R18 (JOURNEYS R-44): "Create your team" was a 130x23 px inline link beside a button. It is now the front page's primary
+   button, the same control kind, measured here at 1280 and 390 px. The visual language (interface-assets' civicsmith.css at
+   ASSETS_COMMIT, the design stream's PR 191) draws every cs-btn min-height var(--tap), 44 px at every width. */
+test("R18: /start's Create your team is the front page's primary button's control kind, at least 44 px high at 1280 and 390 px; control: the front page's button is unchanged", async () => {
+  const { word } = await import("../../bio-plane/src/setup-words/index.mjs");
+  const server = http.createServer(async (q, s) => {
+    const r = await worker.fetch(new Request(`http://127.0.0.1${q.url}`), ENV);
+    s.writeHead(r.status, Object.fromEntries(r.headers));
+    s.end(Buffer.from(await r.arrayBuffer()));
+  });
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const browser = await chromium.launch({ executablePath: EXE });
+  /* a control's kind: its element, its class, its tone, and the box the stylesheet gives it */
+  const kind = (page, text) => page.evaluate((text) => {
+    const a = [...document.querySelectorAll("main a")].find((e) => e.textContent.replace(/\s+/g, " ").trim() === text);
+    if (!a) return null;
+    const cs = getComputedStyle(a), box = a.getBoundingClientRect();
+    return { tag: a.tagName, cls: a.className, tone: a.dataset.tone ?? null, display: cs.display, background: cs.backgroundColor,
+      color: cs.color, border: cs.borderTopColor, radius: cs.borderTopLeftRadius, decoration: cs.textDecorationLine,
+      minHeight: cs.minHeight, height: box.height };
+  }, text);
+  try {
+    for (const width of [1280, 390]) {
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      await page.goto(`${base}/`, { waitUntil: "networkidle" });
+      const primary = await kind(page, word("screen.site.start"));
+      await page.goto(`${base}/start`, { waitUntil: "networkidle" });
+      const create = await kind(page, word("screen.site.create"));
+      assert.ok(create, `at ${width}: no Create your team`);
+      const { height: h1, ...k1 } = create, { height: h2, ...k2 } = primary;
+      assert.deepEqual(k1, k2, `at ${width}`);
+      assert.ok(h1 >= h2, `at ${width}: ${h1} px high, the front page's button ${h2}`);
+      assert.ok(h1 >= 44, `at ${width}: ${h1} px high`);
+      /* control: the front page's primary button is the button it was */
+      assert.equal(primary.cls, "cs-btn");
+      assert.equal(primary.tone, "primary");
+      await page.close();
+    }
+  } finally { await browser.close(); server.closeAllConnections(); server.close(); }
+});
+

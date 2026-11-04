@@ -20,7 +20,7 @@
   ],
   "node": "26.10.0",
   "suite_timeout_minutes": 20,
-  "coordinator": "session_01RAN5eniJPZwnDgHRYfWFQb",
+  "coordinator": "session_01RAN5enDCAZZfNxRd85MZ9T",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
     {
@@ -61,14 +61,38 @@
     },
     {
       "paths": [
-        "bio-plane/dist",
-        "pdf-worker/dist",
-        "ocr-worker/dist",
-        "agent-runner/dist",
-        "agent-worker/dist",
-        "sheet-worker/dist",
-        "file-scanner/dist",
-        "reader-container/dist"
+        "docs/development/ux-substrate/screens/words-reads.json"
+      ],
+      "regenerate": [
+        "node",
+        "docs/development/ux-substrate/screens/words-reads.src.mjs",
+        ".",
+        "--build"
+      ],
+      "verify": [
+        "node",
+        "docs/development/ux-substrate/screens/words-reads.src.mjs",
+        "."
+      ]
+    },
+    {
+      "paths": [
+        "bio-plane/dist/bio-plane.bundle.json",
+        "bio-plane/dist/bio-plane.bundled.mjs",
+        "pdf-worker/dist/pdf-worker.bundle.json",
+        "pdf-worker/dist/pdf-worker.bundled.mjs",
+        "ocr-worker/dist/ocr-worker.bundle.json",
+        "ocr-worker/dist/ocr-worker.bundled.mjs",
+        "agent-runner/dist/agent-runner.bundle.json",
+        "agent-runner/dist/agent-runner.bundled.mjs",
+        "agent-worker/dist/agent-worker.bundle.json",
+        "agent-worker/dist/agent-worker.bundled.mjs",
+        "sheet-worker/dist/sheet-worker.bundle.json",
+        "sheet-worker/dist/sheet-worker.bundled.mjs",
+        "file-scanner/dist/file-scanner.bundle.json",
+        "file-scanner/dist/file-scanner.bundled.mjs",
+        "reader-container/dist/reader-container.bundle.json",
+        "reader-container/dist/reader-container.bundled.mjs"
       ],
       "regenerate": [
         "node",
@@ -256,10 +280,9 @@
       ]
     ],
     "walk": [
-      "node",
-      "bio-plane/scripts/p3dev-walk-setup.mjs",
-      "{slug}",
-      "--walk"
+      "sh",
+      "-c",
+      "(cd bio-plane/src/journey-check && npm ci --no-audit --no-fund --loglevel=error) && node bio-plane/scripts/p3dev-walk-setup.mjs {slug} --walk"
     ],
     "guard_line": "p3dev guard: passed",
     "timeout_minutes": 60

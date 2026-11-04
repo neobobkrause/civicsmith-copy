@@ -358,10 +358,12 @@ test("R7, R2 (K1961, K1974; red 26): the list reads law-relations' rows (`LAW_RE
 test("R7, R2 (T36; K2130, K2103; red 11; T43: R12, N851): the list reads file-safety's rows (`FILE_SAFETY_CHECKS`, C-140) from its own file, directly after doorbell's (since T43; capture's before it) and before sources' (its place in `build/modules.json`), every one of them decorates with its own check and words, and no row of an earlier family moves: no file-safety code is held by any other listed family, so `FILE_NOT_HELD` decorates with C-140.1 while `NO_SUCH_CAPTURE` keeps sources' row and `MACHINE_CANNOT_RELEASE` ratification's (negative control: the list without file-safety's file misses its family)", async () => {
   const paths = M.CHECK_FAMILY_FILES.map(([p]) => p);
   const path = "src/file-safety/checks.mjs";
-  assert.equal(paths.indexOf("src/doorbell/checks.mjs") + 1, paths.indexOf(path), paths.join(", "));
-  assert.equal(paths.indexOf(path) + 1, paths.indexOf("src/sources/checks.mjs"), paths.join(", "));
+  /* since T53 (K5448) `build/modules.json` puts file-safety directly after capture and before doorbell */
+  assert.equal(paths.indexOf("src/capture/checks.mjs") + 1, paths.indexOf(path), paths.join(", "));
+  assert.equal(paths.indexOf(path) + 1, paths.indexOf("src/doorbell/checks.mjs"), paths.join(", "));
   const order = MODULES.map((m) => m.id);
-  assert.ok(order.indexOf("doorbell") < order.indexOf("file-safety") && order.indexOf("file-safety") < order.indexOf("sources"), order.join(", "));
+  assert.ok(order.indexOf("capture") < order.indexOf("file-safety") && order.indexOf("file-safety") < order.indexOf("doorbell")
+            && order.indexOf("doorbell") < order.indexOf("sources"), order.join(", "));
   const table = (await import(`../../../${path}`)).FILE_SAFETY_CHECKS;
   assert.ok(Object.keys(table).length >= 39, String(Object.keys(table).length));
   for (const [code, row] of Object.entries(table)) {
@@ -541,11 +543,11 @@ test("R11 (T42; N843, K238, K2566, K2651, K2656; R7, R10): N843's re-codings dec
   assert.equal(holders(withIntruder, "NO_SUCH_STEP_PROPOSAL")[0][2].check, "C-0.1");
 });
 
-/* R12's rows (N851): the nine codes doorbell's family holds, `[family, code, check]`. */
+/* R12's rows (N851): the codes doorbell's family holds (nine at T43; C-85.6 since T53, doorbell R31), `[family, code, check]`. */
 const DOORBELL_ROWS = [
   ["KNOCK_CHECKS", "RATE_IP", "C-85.1"], ["KNOCK_CHECKS", "RATE_GLOBAL", "C-85.2"],
   ["KNOCK_CHECKS", "KNOCK_ENVELOPE_TOO_LARGE", "C-85.3"], ["KNOCK_CHECKS", "KNOCK_PAYLOAD_TOO_LARGE", "C-85.4"],
-  ["KNOCK_CHECKS", "KNOCK_EMPTY", "C-85.5"],
+  ["KNOCK_CHECKS", "KNOCK_EMPTY", "C-85.5"], ["KNOCK_CHECKS", "KNOCK_BYTES_CHANGED", "C-85.6"],
   ["DOORBELL_CHECKS", "NO_SUCH_KNOCK", "C-118.2"], ["DOORBELL_CHECKS", "KNOCKER_SECRET_WEAK", "C-118.3"],
   ["DOORBELL_CHECKS", "KNOCK_DISCARDED", "C-118.4"], ["DOORBELL_CHECKS", "RESOLVE_NO_REASON", "C-118.7"],
 ];
@@ -553,6 +555,9 @@ const DOORBELL_ROWS = [
 /* C-118.7 `RESOLVE_NO_REASON` (DEC-88) came after the snapshot: its check and the digest of the translation capture's
    table held for it on `main` at T43's opening (0b28d3b32d), which doorbell's row keeps. */
 const AFTER_SNAPSHOT = { RESOLVE_NO_REASON: ["C-118.7", "f109af9836597e65"] };
+/* C-85.6 `KNOCK_BYTES_CHANGED` (doorbell R31, T53; DEC-479, K5693) was minted after the snapshot and after T43's opening:
+   no earlier decoration to pin, so it is held to doorbell's own row alone. */
+const UNPINNED = new Set(["KNOCK_BYTES_CHANGED"]);
 
 test("R12, R7, R2 (T43; N851, K2609, K2697): CHECK_FAMILY_FILES lists doorbell's file (`DOORBELL_CHECKS`, `KNOCK_CHECKS`) directly after capture's and before file-safety's, its place in `build/modules.json`, so the catalogue is total again; C-85.1–C-85.5 and C-118.2, .3, .4, .7 are held by doorbell's family alone and each decorates with the code, check and translation R7 pins, read from doorbell's family; no other code moves (negative controls: the list without doorbell's file misses its two families and leaves the nine codes bare, and a code of capture's family still decorates from capture's)", async () => {
   const { createHash } = await import("node:crypto");
@@ -560,18 +565,18 @@ test("R12, R7, R2 (T43; N851, K2609, K2697): CHECK_FAMILY_FILES lists doorbell's
   const digest = (s) => createHash("sha256").update(s).digest("hex").slice(0, 16);
   const paths = M.CHECK_FAMILY_FILES.map(([p]) => p);
   const path = "src/doorbell/checks.mjs";
-  /* its place: directly between capture's and file-safety's, as doorbell stands between them in `modules.json` */
-  assert.equal(paths.indexOf("src/capture/checks.mjs") + 1, paths.indexOf(path), paths.join(", "));
-  assert.equal(paths.indexOf(path) + 1, paths.indexOf("src/file-safety/checks.mjs"), paths.join(", "));
+  /* its place in `modules.json`: since T53 (K5448) directly after file-safety's, which follows capture's */
+  assert.equal(paths.indexOf("src/file-safety/checks.mjs") + 1, paths.indexOf(path), paths.join(", "));
+  assert.ok(paths.indexOf("src/capture/checks.mjs") < paths.indexOf(path) && paths.indexOf(path) < paths.indexOf("src/sources/checks.mjs"), paths.join(", "));
   const order = MODULES.map((m) => m.id);
-  assert.equal(order.indexOf("capture") + 1, order.indexOf("doorbell"), order.join(", "));
-  assert.equal(order.indexOf("doorbell") + 1, order.indexOf("file-safety"), order.join(", "));
+  assert.equal(order.indexOf("capture") + 1, order.indexOf("file-safety"), order.join(", "));
+  assert.equal(order.indexOf("file-safety") + 1, order.indexOf("doorbell"), order.join(", "));
   assert.ok(MODULES.find((m) => m.id === "answer-envelope").uses.includes("doorbell"), "answer-envelope uses doorbell");
   /* the catalogue is total with it */
   assert.deepEqual(await unreached(M.CHECK_FAMILY_FILES), []);
   const DB = M.CHECK_FAMILY_FILES[paths.indexOf(path)][1];
   assert.equal(DB, await import(`../../../${path}`));
-  /* exactly the nine rows, in their two families */
+  /* exactly its rows, in their two families */
   const own = Object.entries(DB).filter(([k, v]) => isFamily(k, v)).flatMap(([k, v]) => Object.entries(v).map(([c, r]) => [k, c, r.check]));
   assert.deepEqual(own.map((x) => x.join(" ")).sort(), DOORBELL_ROWS.map((x) => x.join(" ")).sort());
   const holders = (files, code) => files.flatMap(([p, ns]) => Object.entries(ns).filter(([k, v]) => isFamily(k, v) && Object.hasOwn(v, code))
@@ -585,9 +590,9 @@ test("R12, R7, R2 (T43; N851, K2609, K2697): CHECK_FAMILY_FILES lists doorbell's
     /* R7's pin: the same check and translation the door decorated before (the snapshot's, or for C-118.7, minted after
        it under DEC-88, the row capture's table held at T43's opening) */
     const pin = SNAP.rows[code] ?? AFTER_SNAPSHOT[code];
-    assert.ok(pin, `${code} is pinned`);
+    assert.ok(pin || UNPINNED.has(code), `${code} is pinned`);
     assert.deepEqual(M.dec49Row(code), { check, translation: row.translation }, code);
-    assert.deepEqual([M.dec49Row(code).check, digest(M.dec49Row(code).translation)], pin, code);
+    if (pin) assert.deepEqual([M.dec49Row(code).check, digest(M.dec49Row(code).translation)], pin, code);
     /* and what the door puts on the wire */
     assert.deepEqual(M.dec49Attach({ ok: false, reason: code }), { ok: false, reason: code, code, check, translation: row.translation }, code);
   }

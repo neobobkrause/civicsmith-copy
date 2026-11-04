@@ -24,6 +24,8 @@ import { captureRequestsOf } from "../../../src/capture-requests/index.mjs";
 import { questionExplorerOf } from "../../../src/question-explorer/index.mjs";
 import * as runRules from "../../../src/run-rules/index.mjs";
 import { contentContextFor } from "../content/fixtures.mjs";
+import { catalogueFor } from "../ai-accounts/catalogue.mjs";
+import { gateOf } from "../ai-catalogue/fixture.mjs";
 import { LAYER } from "../content/fixture.mjs";
 
 export const sha = (s) => createHash("sha256").update(String(s)).digest("hex");
@@ -101,8 +103,9 @@ export function questionMd(id, { subject = null, surfacedBy = "human", state = "
    `w.tablesBefore` then names the explore tables the storage held just before the factory ran. */
 /* `aiAccounts` hands question-explorer a stand-in for ai-accounts in place of the real one (the rest of the world
    keeps the real one). */
-export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiAccounts: standIn = null } = {}) {
-  const over = { aiAccounts: standIn };
+/* `basisVersions` hands it basis-versions' own answer in place of the stand-in below (a test's real `currentOf`). */
+export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiAccounts: standIn = null, basisVersions: bvIn = null } = {}) {
+  const over = { aiAccounts: standIn, basisVersions: bvIn };
   const st = storage();
   const host = { storage: st };
   for (const t of RECORD_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n").split(";"))
@@ -115,22 +118,30 @@ export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiA
   membership.migrate();
   /* ai-accounts holds the accounts, their uses and the material limits (T48, N996 §5); credentials, which the other
      modules built here still take, reaches the same instance over the same storage (ai-accounts R32). */
-  const aiAccounts = aiAccountsOf(host, { record, membership, sealSecret: "test-seal-secret-0123456789" });
+  /* (T53) ai-accounts' accounts are of ai-catalogue's plans: the real catalogue, seeded from ai-catalogue's published
+     fixture through ai-accounts' `catalogueFor` (as answers' and credentials' worlds take it); without it every account act
+     fails closed CATALOGUE_UNAVAILABLE (ai-accounts R40, R63). `w.standard` awaits its seeding. */
+  const catalogue = catalogueFor(host, { record });
+  const aiAccounts = aiAccountsOf(host, { record, membership, sealSecret: "test-seal-secret-0123456789", catalogue });
   aiAccounts.migrate();
-  const credentials = credentialsOf(host, { record, membership, sealSecret: "test-seal-secret-0123456789" });
+  const credentials = credentialsOf(host, { record, membership, sealSecret: "test-seal-secret-0123456789", catalogue });
   credentials.migrate();
 
   const calls = [];
   const note = (name, a) => calls.push({ name, a });
   const w = {
-    st, host, record, membership, aiAccounts, credentials, clock, calls,
+    st, host, record, membership, aiAccounts, credentials, catalogue, clock, calls,
     subjects: {}, units: {}, asserted: {}, conns: [], captures: {}, held: new Set(),
     runs: new Map(), bounds: new Map(),
     /* What the record holds for the deploy gate (run-rules R19, R75's records) over a test set with one matter. */
     testBars: [bar("investigate"), bar("explore")], verifications: [VERIFIED_CHECK],
     groupResults: [], openRefuse: null, closeRefuse: null, closeThrows: false, openDelay: 0,
-    /* ai-runs R78's `testInstance()`: the deployment's fact, false unless a test sets it. */
-    testInstance: false,
+    /* ai-runs R78's `testInstance()`: the deployment's fact. (run-rules PR 72, T53) R19 now admits a part only on a Gate 1
+       record for an entry, and ai-runs' `partAdmitted(part)` names none, so off a test instance nothing opens the gate
+       (run-rules R29: no `entry_id` admits nothing outside a test instance). An open world is therefore a test instance,
+       the gate open on R16's exception; a test sets it false to see the gate shut. */
+    testInstance: gateOpen,
+    servedOn: null, gateRecords: [],
     row: (q, ...a) => [...st.sql.exec(q, ...a)][0] ?? null,
     rows: (q, ...a) => [...st.sql.exec(q, ...a)],
     count: (t) => [...st.sql.exec(`SELECT COUNT(*) AS n FROM ${t}`)][0].n,
@@ -143,6 +154,15 @@ export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiA
     },
   };
   if (!gateOpen) w.testBars = [];
+  /* Gate 1 held for `entry` (ai-gate R37's record, in ai-catalogue's published `gateOf` form) for the gate part of
+     `investigate` and `explore` (run-rules R36: both `run`), off a test instance: the gate then opens unlabelled on R7's
+     bar alone. `verdict` other than passes shows Gate 1 not passed. */
+  w.gate1 = (entry = "claude-a", verdict = "passes") => {
+    w.servedOn = entry;
+    w.gateRecords = [{ ...gateOf(verdict), part: "run", entry_id: entry, grade: "MEASURED" }];
+    w.testInstance = false;
+    return w;
+  };
 
   const aiRuns = {
     /* R73 (K2490): the run opens first, then its system step is created through the real steps' stepCreate with `run`
@@ -185,7 +205,7 @@ export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiA
       const r = typeof run === "string" ? w.runs.get(run.trim()) : null;
       if (!r || !membership.inSight(r.contextId, viewer)) return null;
       return { run: r.run, status: r.status === "running" ? "running" : "stopped", mode: r.mode, context_type: r.contextType,
-               context_id: r.contextId, principal_plane: r.principalPlane, principal_claude: r.principalClaude };
+               context_id: r.contextId, principal_plane: r.principalPlane, principal_ai: r.principalAi };
     },
     boundOf(run, bound) { const b = w.bounds.get(`${run}|${bound}`); return b ? { ...b } : null; },
     consumeBound(run, bound, n) {
@@ -196,10 +216,15 @@ export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiA
       return null;
     },
     groupTestResults(a) { note("groupTestResults", a); return { ok: true, part: a.part, results: w.groupResults }; },
-    /* R78: `partAdmitted(part)`, run-rules R29 on what the record holds, with the deployment's test-instance fact. */
+    /* R78: `partAdmitted(part)`, run-rules R29 on what the record holds, with the deployment's test-instance fact.
+       (T53) run-rules judges Gate 1 per entry (its R19), and this module asks with no entry, so on tranche's ai-runs
+       nothing is admitted unlabelled. `w.servedOn` stands for the entry ai-runs would judge if it named one (its
+       `partAdmitted(part, entry)`, ai-runs PR 96), with `w.gateRecords` the Gate 1 records held for it (`w.gate1`), so
+       that the bar path R7 and R16 state can be driven at all; null (the default) is tranche's answer. */
     partAdmitted(part) {
       note("partAdmitted", { part });
-      return runRules.partAdmittedOn(testSet, part, { verifications: w.verifications, testBars: w.testBars }, { testInstance: w.testInstance });
+      return runRules.partAdmittedOn(testSet, part, { verifications: w.verifications, testBars: w.testBars, gateRecords: w.gateRecords },
+        { testInstance: w.testInstance, ...(w.servedOn !== null ? { entry_id: w.servedOn } : {}) });
     },
   };
   const connections = {
@@ -227,7 +252,7 @@ export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiA
      the stand-in's `edgeSevered` (R22) answering every edge live; its R4 `basisFor` over its own `inquiry_basis`. */
   const legEarning = legEarningOf(host, { record, membership, connections,
                                           promotion: { fact: () => ({ ok: false }) }, content: {} });
-  const basisVersions = { currentOf: (p) => ({ current: `reading of ${p}` }) };
+  const basisVersions = over.basisVersions || { currentOf: (p) => ({ current: `reading of ${p}` }) };
   /* steps is the real module (merged, K2491): R17 `findRecipients` over leg-earning's drawing projects and its own
      follows. Its registrations with promotion and observation-log are answered by stand-ins (neither is read here). */
   const realSteps = stepsOf(host, { record, membership, legEarning,
@@ -351,6 +376,7 @@ export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiA
   w.standard = async () => {
     for (const m of ["alice", "bob", "carol"]) w.member(m);
     w.member("dana", "admin");
+    await catalogue.seeded;
     const k = await aiAccounts.groupKeySet({ key: "sk-ant-group-test", by: "member:dana" });
     if (!k || k.ok === false) throw new Error(`group key: ${JSON.stringify(k)}`);
     w.doc(DOC, CAP);

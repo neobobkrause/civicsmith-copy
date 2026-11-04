@@ -1,6 +1,6 @@
 /* signin-door: THE SUBSCRIPTION SIGN-IN DOOR (R1–R6; T47-91; N1001; connect §3), split by copy from `control-plane`
    (its R65, R78, R85–R87; K617, K624). This file is the door's Worker half: what `control-plane` calls when it routes
-   `subscriptionsignin`, `subscriptiondisconnect`, `signintrace`, a member's revocation and an ask's or draft's answer.
+   `subscriptionsignin`, `signintrace`, a member's revocation and an ask's or draft's answer.
    The store's half (the in-plane `credentials` calls and the bounded trace) is `ops.mjs`, a store-internal map.
 
    R1 (was control-plane R65; N708, DEC-156): A MEMBER'S OWN CLAUDE SIGN-IN, RELAYED TO THEIR OWN RUNNER. A step reaches
@@ -10,8 +10,8 @@
    group keeps its material away (`ai-accounts.aiKeptAway()`, its R7, asked through the store-internal `aikeptaway`), nothing
    sent. The runner's answer is relayed as given, status and body; a `code` answer carrying `connected: true` for that
    member and no token is recorded through `ai-accounts.subscriptionConnected` (its R18; `subscriptionconnected`), and only then.
-   The member's own `subscriptiondisconnect` and their revocation send `step: "signout"` for that member, and a runner
-   that cannot be reached changes neither act's answer. The code is never logged, stored, echoed or answered here.
+   A member's revocation sends `step: "signout"` for that member, and a runner that cannot be reached changes nothing of
+   the act's answer (the member's own `subscriptiondisconnect` is retired, notice op-declarations:95). The code is never logged, stored, echoed or answered here.
    `agent-worker`'s `RUNNER_NOT_CONFIGURED` is relayed unchanged, with a `translation` read by key.
    R2 (was R78; N981, K231): `start` is refused `DISCLOSURE_DUE` as `ai-accounts.disclosureDue({member})` answers it (its R23),
    relayed as given, after the keep-away refusal and before anything is sent; this module holds no row for the code.
@@ -20,7 +20,7 @@
    R4 (was R86; K3060 D10): on `code` the door sends `hold: true`; a `token` answered is handed to
    `ai-accounts.subscriptionTokenHold` (its R19) and its result read; `token` and `valid_for` never leave this module; the answer
    says `held: true`, or `held: false` with the fact's code. `state` is answered from
-   `ai-accounts.accountReferenceState`'s `subscription` (nothing sent to the runner). Disconnect and revocation drop the
+   `ai-accounts.accountsOf`' member's own issued account (the store's `accountsof`, F1; nothing sent to the runner). Disconnect and revocation drop the
    token through `ai-accounts` (its own acts, R18, R27, R19) and send `signout`. An ask or draft answered
    `SIGNIN_TOKEN_REFUSED` calls `ai-accounts.subscriptionTokenRefused`.
    R5 (was R87): on a test instance only, a bounded trace answers `op=signintrace`; elsewhere `SIGNINTRACE_NOT_TEST`.
@@ -59,11 +59,17 @@ export const SIGNIN_TRACE_MAX = 200;
 /* R5: the fields a trace line may hold, and no other (no token, secret or code can be one of them). */
 export const TRACE_FIELDS = Object.freeze(["event", "at", "trace", "step", "member_ref", "outcome", "code", "status",
   "ms_total", "ms_agent_worker", "held"]);
-/* The store-internal routes of `ops.mjs` this half asks, and `credentials`' own `accountreference`. */
+/* The store-internal routes of `ops.mjs` this half asks, and `ai-accounts`' own T53 read `accountsof` (its R2; F1: the
+   retired `accountreference` has no alias, ai-accounts R35, R10). Notice op-declarations:95 (its R30, R20, R24, R41 restated
+   for T53): the member's own `subscriptiondisconnect` is retired with no alias (ai-accounts R35), so no route asks it. */
 export const STORE_ROUTES = Object.freeze({ keptAway: "aikeptaway", connected: "subscriptionconnected",
   disclosureDue: "signindisclosuredue", hold: "signintokenhold", refused: "signintokenrefused",
-  traceKeep: "signintracekeep", traceRead: "signintraceread", state: "accountreference",
-  disconnect: "subscriptiondisconnect" });
+  traceKeep: "signintracekeep", traceRead: "signintraceread", state: "accountsof" });
+/* Notice op-declarations:95: the op this door served and op-declarations R30 retired (ai-accounts R35); the store's own
+   envelope for an op it does not serve (answer-envelope's `unknown op: <op>`, 400) is what it answers. */
+export const RETIRED_DISCONNECT = "subscriptiondisconnect";
+/* F1: the means of a member's subscription account (ai-accounts R19, R42: an issued account of the subscription plan). */
+const SUBSCRIPTION_MEANS = "issued";
 /* agent-worker R66's refusal when it holds no runner, relayed in member words. */
 const RUNNER_ABSENT = "RUNNER_NOT_CONFIGURED";
 /* R4: Anthropic's refusal of a held token, as agent-worker relays it (`SIGNIN_CODES`). */
@@ -179,13 +185,19 @@ export async function subscriptionSignin({ env, member, asked, store, log = defa
     if (!isObject(d) || d.ok !== true) return done({ status: 409, body: { ok: false, ...(isObject(d) ? d : {}) } }, "refused_local");
   }
   if (step === "state") {
-    /* R4: answered from credentials, nothing sent to the runner; a failed read is said, never "not connected" */
-    const q = encodeURIComponent(member);
-    const st = await ask(store, `${STORE_ROUTES.state}?member=${q}&viewer=${q}`, { method: "GET" });
+    /* R4, F1: answered from ai-accounts' T53 read of the member's own accounts (`accountsof`, owner `member:<id>`, viewer
+       the stamp), nothing sent to the runner; the subscription is her own first issued account, connected while its
+       token is held. A failed read is said, never "not connected". */
+    const owner = typeof member === "string" && member.startsWith("member:") ? member : `member:${member}`;
+    const st = await ask(store, `${STORE_ROUTES.state}?owner=${encodeURIComponent(owner)}&viewer=${encodeURIComponent(member)}`,
+                         { method: "GET" });
     if (st.refused || !st.answered) return done(await unreadAnswer("subscriptionsignin", st, trace), "refused_local");
     const r = st.result;
     if (!isObject(r) || r.ok !== true) return done({ status: 403, body: { ok: false, ...(isObject(r) ? r : {}) } }, "refused_local");
-    const sub = isObject(r.subscription) ? r.subscription : { connected: false, since: null, held: false };
+    const own = (Array.isArray(r.accounts) ? r.accounts : [])
+      .find((x) => isObject(x) && x.means === SUBSCRIPTION_MEANS && x.owner === owner) ?? null;
+    const held = !!(own && own.held === true);
+    const sub = { connected: held, since: held ? own.set_at ?? null : null, held, account_id: own ? own.account_id ?? null : null };
     return done({ status: 200, body: { ok: true, step: "state", member, ...sub } }, "answered");
   }
 
@@ -224,21 +236,21 @@ export async function subscriptionSignin({ env, member, asked, store, log = defa
   return done(out, out.body.reason === "AGENT_WORKER_UNBOUND" || out.body.reason === "AGENT_WORKER_SILENT" ? "refused_local" : "relayed");
 }
 
-/** The member a store answer of the door's forward signs out (R1, R4): the session's own member on its own
- *  `subscriptiondisconnect`, the revoked member on `memberset` to `revoked` and on a carried `adminremove`; else null.
+/** The member a store answer of the door's forward signs out (R1, R4): the revoked member on `memberset` to `revoked`
+ *  and on a carried `adminremove`; else null. The retired `subscriptiondisconnect` (notice op-declarations:95) names nobody:
+ *  removing an issued account drops its token in `ai-accounts` itself (its R19).
  *  `asked` is the request's body, `result` the store's answered result, `by` the door's stamp for the caller. */
 export function leaverOf(op, asked, result, by) {
   if (!isObject(result) || result.ok !== true) return null;
   const a = isObject(asked) ? asked : {};
   const memberOf = (id) => (typeof id === "string" && id.trim() !== "" ? (id.startsWith("member:") ? id : `member:${id}`) : null);
-  if (op === "subscriptiondisconnect") return typeof by === "string" && by ? by : null;
   if (op === "memberset" && a.status === "revoked") return memberOf(result.memberId ?? a.memberId);
   if (op === "adminremove" && result.removed === true) return memberOf(result.memberId ?? a.memberId);
   return null;
 }
 
 /** R1, R4: `step: "signout"` for a member who left (`leaverOf`), best effort: nothing it answers reaches the act's
- *  caller. The token was dropped by `ai-accounts`' own act (disconnection R18, revocation R27; its R19). */
+ *  caller. The token was dropped by `ai-accounts`' own act (revocation R27; its R19). */
 export async function signoutLeaver(env, member) {
   if (!member) return;
   try {
@@ -247,14 +259,14 @@ export async function signoutLeaver(env, member) {
   } catch { /* never changes the act's answer */ }
 }
 
-/** `op=subscriptiondisconnect` (R1, R4): the member's own act, reaching `ai-accounts.subscriptionDisconnect` (which
- *  drops the held token, its R19) through the store's `subscriptiondisconnect` with `by` the door's stamp; when it
- *  succeeds, `signout` is sent for that member. Answers the store's answer as `doAnswer` read it, for the door to relay
- *  as every store answer is. */
-export async function subscriptionDisconnect({ env, member, store }) {
-  const out = await ask(store, `${STORE_ROUTES.disconnect}?by=${encodeURIComponent(member)}`);
-  if (out.answered && leaverOf("subscriptiondisconnect", {}, out.result, member)) await signoutLeaver(env, member);
-  return out;
+/** `op=subscriptiondisconnect`, retired (notice op-declarations:95; its R30; ai-accounts R35, no alias): kept as a name
+ *  only because the door still routes it, it asks no store route and sends nothing to the runner. It answers in
+ *  `doAnswer`'s shape the store's own refusal of an op it does not serve (`unknown op: subscriptiondisconnect`, 400),
+ *  which the door relays as every store refusal is. A member disconnects their subscription by removing the issued
+ *  account (`aiaccountremove`, ai-accounts R61), which drops its token (R19). Never throws. */
+export async function subscriptionDisconnect() {
+  const body = { ok: false, error: `unknown op: ${RETIRED_DISCONNECT}` };
+  return { answered: false, refused: true, result: undefined, reply: { status: 400, body } };
 }
 
 /** R4: an ask's or a draft's answer naming `SIGNIN_TOKEN_REFUSED` (at the top level or in `result`) for `member`'s

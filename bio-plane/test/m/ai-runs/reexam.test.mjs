@@ -129,7 +129,7 @@ test("R46 (T45 exception), R77: a re-examination run is started only at a member
   assert.equal(w.dump(), before);
   const r = await reexam(w, { run: "X1" });
   assert.equal(r.started, true);
-  assert.equal(w.row(`SELECT principal_claude_ref FROM ai_runs WHERE run = 'X1'`).principal_claude_ref, "member:bob");
+  assert.equal(w.row(`SELECT principal_ai_ref FROM ai_runs WHERE run = 'X1'`).principal_ai_ref, "member:bob");
 });
 
 test("R77, R52: a re-examination run is paid as the recording member's act with the run's project — the project's own account where it holds one and it is on, else the member's; within the paying account's limits (ai-use) and the keep-away settings (ai-accounts), each refusal relayed as it came with nothing written", async () => {
@@ -137,15 +137,13 @@ test("R77, R52: a re-examination run is paid as the recording member's act with 
   const C = w.aiAccounts;
   /* control: no project account, the recording member's own pays, and the act is that member's */
   assert.equal((await reexam(w, { run: "X0", response: "COR-0" })).started, true);
-  assert.deepEqual({ ...w.row(`SELECT principal_claude, principal_claude_ref FROM ai_runs WHERE run = 'X0'`) },
-                   { principal_claude: "member:bob", principal_claude_ref: "member:bob" });
+  assert.deepEqual({ ...w.row(`SELECT principal_ai, principal_ai_ref FROM ai_runs WHERE run = 'X0'`) },
+                   { principal_ai: "member:bob", principal_ai_ref: "member:bob" });
   /* the project's own account, held and on, pays (its key notice read first) */
-  assert.equal((await C.projectKeySet({ project: PROJ, key: "project-key-secret", by: "member:ann" })).ok, true);
-  assert.equal(C.projectAccountSwitch({ project: PROJ, on: true, by: "member:ann" }).ok, true);
-  assert.equal(C.projectKeyNoticeSeen({ member: "member:bob", project: PROJ, by: "member:bob" }).ok, true);
+  await w.projectAccount(PROJ, "ann", { members: ["bob"] });
   assert.equal((await reexam(w, { run: "X1", response: "COR-1" })).started, true);
-  assert.deepEqual({ ...w.row(`SELECT principal_claude, principal_claude_ref FROM ai_runs WHERE run = 'X1'`) },
-                   { principal_claude: `project:${PROJ}`, principal_claude_ref: "member:bob" });
+  assert.deepEqual({ ...w.row(`SELECT principal_ai, principal_ai_ref FROM ai_runs WHERE run = 'X1'`) },
+                   { principal_ai: `project:${PROJ}`, principal_ai_ref: "member:bob" });
   /* the project keeps its material away from the assistant: refused as ai-accounts answers it, nothing written */
   assert.equal(C.projectAiKeepAwaySet({ project: PROJ, on: true, reason: "a source's papers", by: "member:ann" }).ok, true);
   const before = w.dump();

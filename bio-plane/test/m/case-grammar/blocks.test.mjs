@@ -13,7 +13,7 @@ const F = "INQ-2026-0001";
 const b64 = (s) => Buffer.from(s, "utf8").toString("base64");
 const FROM5 = ["bio-case-document/5", "bio-case-document/6", "bio-case-document/7", CG.CASE_DOCUMENT_FORMAT, CG.CASE_DOCUMENT_FORMAT_V9];
 const BEFORE5 = ["bio-case-document/4", "bio-case-document/3", "bio-case-document/2", "bio-case-document/1", null,
-                 "bio-case-document/10", "Bio-case-document/7"];
+                 "bio-case-document/11x", "Bio-case-document/7"];
 
 /* ===== R27 ===== */
 

@@ -138,8 +138,10 @@ export function pinnedNamespaceGate(url, op, spec) {
        as its door's (`membership` R105). The key or link and the cover are the body's; one sent in the query is gone,
        and the call answers as `membership` answers a missing key or link. The daily cap is `membership`'s (its R101,
        R104), relayed by the door; admission's one limit is R21's per-source window, over every public op alike.
-     - `groupkeyset` (R19): the group's API key is the body's; one sent in the query is gone, and the call answers as
-       `credentials` answers an empty key (`NO_SECRET`). The session's `token` stays: the act is a session's own.
+     - (T53; op-declarations R24, PR 95) `groupkeyset` and the group key's other ops are retired with no alias, so no
+       row names them. The team's account acts that replace them (`aiaccountadd` and the rest, ai-accounts R40) carry
+       their credential as the body's `secret`, which R20's address gate already refuses in a query
+       (`CREDENTIAL_IN_ADDRESS`) for every op, so they need no row here.
      - `handlecheck` (R20, T41; K2576, op-declarations R42): its invitation and handle are the body's, so an invitation
        is never kept in an address; one sent in the query is gone, and the call answers as `membership` answers a
        missing invitation (`NO_SUCH_INVITATION`, its R123), as the doors answer a missing key. A member asking without
@@ -149,7 +151,6 @@ export const PUBLIC_DOORS = Object.freeze(["joinlinkinvite", "websiteinvite"]);
 export const BODY_ONLY_FIELDS = Object.freeze({
   websiteinvite: Object.freeze(["cover", "key"]),
   joinlinkinvite: Object.freeze(["cover", "link"]),
-  groupkeyset: Object.freeze(["key"]),
   handlecheck: Object.freeze(["handle", "invite"]),
 });
 /* R20 (T36) — and a query `token` or `secret` is removed whatever the op: no credential is read from the address

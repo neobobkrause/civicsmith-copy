@@ -6,33 +6,33 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { seeded, approved, draft, world, registration, V, MACHINE, STEPS, step, SCREENS, OPS, MACHINE_REFUSED, MACHINE_DRAFTS, LIBRARY } from "./fixture.mjs";
+import { seeded, approved, draft, world, registration, V, MACHINE, STEPS, step, SCREENS, OPS, MACHINE_REFUSED, MACHINE_DRAFTS, LIBRARY, currentRegistry, currentLibrary } from "./fixture.mjs";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
 const A = V("alice"), F = V("frank"), E = V("erin"), D = V("dave");
 const src = (f) => readFileSync(new URL(`./source/${f}`, import.meta.url), "utf8");
-const REG_FILE = JSON.parse(src("registry.json")), LIB_FILE = JSON.parse(src("library.json"));
+const REG_FILE = currentRegistry(JSON.parse(src("registry.json"))), LIB_FILE = currentLibrary(JSON.parse(src("library.json")));
 /* PR #14's library, from which BOB adopted version 2 of four scripts (T37), and PR #19's, of two more (T41) (R22; K2241). */
-const LIB_NEW = JSON.parse(src("library-e08cd35ecb.json"));
-const LIB_T41 = JSON.parse(src("library-3660c18803.json"));
+const LIB_NEW = currentLibrary(JSON.parse(src("library-e08cd35ecb.json")));
+const LIB_T41 = currentLibrary(JSON.parse(src("library-3660c18803.json")));
 /* PR #28's library (`3f40899950`, on main at T46's L11 START), from which BOB adopted Start and send's version 2 and
    added DEC-194 (5)'s five scripts (R30; K2241). */
-const LIB_T46 = JSON.parse(src("library-3f40899950.json"));
+const LIB_T46 = currentLibrary(JSON.parse(src("library-3f40899950.json")));
 /* T47: PR #31's library (`a0fab7abf0`, DEC-198, DEC-199), from which BOB adopted Connect's version 3 (R32) and whose doors
    are the front doors (R33); and PR #33's head as merged into tranche/T47 at L11's START (`f90b187c7b`), from which BOB
    adopted the newest Set up and claim and Publication ceremony (R36), its registry the snapshot's source (R35). */
-const LIB_T47A = JSON.parse(src("library-a0fab7abf0.json"));
-const LIB_T47 = JSON.parse(src("library-f90b187c7b.json"));
+const LIB_T47A = currentLibrary(JSON.parse(src("library-a0fab7abf0.json")));
+const LIB_T47 = currentLibrary(JSON.parse(src("library-f90b187c7b.json")));
 /* T48: PR #34's merge (`4664e8efd4`, K3190), from which BOB adopted Set up and claim's version 4 and Start and send's version 3
    and added Update your group's Civicsmith (R38); the registry here is PR #34's, the snapshot's source */
-const LIB_T48 = JSON.parse(src("library-4664e8efd4.json"));
+const LIB_T48 = currentLibrary(JSON.parse(src("library-4664e8efd4.json")));
 const ADDED_T48 = ["Update your group's Civicsmith"];
 /* T50 (R41, R42; DEC-266, DEC-279, DEC-281): the design commit named at START (`7be06eb4cb`), the registry here and the library
    BOB re-takes whole (K2241): 23 scripts, one version in the file each; DEC-281's team pass renamed four. */
-const LIB_T50 = JSON.parse(src("library-7be06eb4cb.json"));
+const LIB_T50 = currentLibrary(JSON.parse(src("library-7be06eb4cb.json")));
 const T50 = { by: "BOB", at: "2026-10-17", ruling: "K2241" };
-const LIB_R45 = JSON.parse(src("library-1cc4a957f0.json"));   /* R45: the fix round re-takes the library again */
+const LIB_R45 = currentLibrary(JSON.parse(src("library-1cc4a957f0.json")));   /* R45: the fix round re-takes the library again */
 const R45 = { by: "BOB", at: "2026-10-20", ruling: "K2241" };
 const RENAMED = { "Say who your group is": word("wizard.WIZ-4d42b0233d48913f.name"), "Update your group's Civicsmith": word("wizard.WIZ-7de505135a9ecd4f.name"),
                   "Use another group's case": word("wizard.WIZ-4cdbd26939d4cc6d.name"), "Comment for the group": word("wizard.WIZ-f06504b9133b8d61.name") };
@@ -66,7 +66,11 @@ const OWED = /^owed:([a-z][a-z0-9]*)(?:\s+(DEC-\d+|K\d+))?$/;   /* a ruling owes
 const ALL_OPS = [...new Set(REG_FILE.screens.flatMap((s) => s.acts.map((a) => (a.status === "owed" ? OWED.exec(a.op)[1] : a.op))))];
 const OWED_OPS = [...new Set(REG_FILE.screens.flatMap((s) => s.acts.filter((a) => a.status === "owed").map((a) => OWED.exec(a.op)[1])))];
 /* A screen's acts in the registry file's order, owed ones as their op: what the registry names, read from the file (K3268: other modules' ops are not hand-listed). */
-const fileOps = (id) => REG_FILE.screens.find((f) => f.id === id).acts.map((a) => (a.status === "owed" ? OWED.exec(a.op)[1] : a.op));
+const fileOps = (id) => [...new Set(REG_FILE.screens.find((f) => f.id === id).acts.map((a) => (a.status === "owed" ? OWED.exec(a.op)[1] : a.op)))];
+/* an op still owed: owed on some screen and no screen's declared or function act (ai-accounts' T53 ops are owed on the new
+   assistant screens and carried on the old ones in place of the ops ai-accounts R35 retired) */
+const FILE_ACTS = new Set(REG_FILE.screens.flatMap((s) => s.acts.filter((a) => a.status !== "owed").map((a) => a.op)));
+const STILL_OWED = OWED_OPS.filter((op) => !FILE_ACTS.has(op));
 const REFUSED = ["release", "conclude", "withdrawconclusion", "reopen", "publish"];
 /* R30: the acts PR #28 owes (K2780) that the added scripts walk, and the script walking each */
 const OWED_T46 = { escalationstoppursuing: word("wizard.WIZ-33cece8a68e76f58.name"), actionscope: word("wizard.WIZ-d0cdcee9437b213b.name"), itemtakeup: word("wizard.WIZ-a17835c4d8235f65.name") };
@@ -80,9 +84,9 @@ const refused = (r, c, why = "") => {
 
 test("R13 SCREEN_REGISTRY is DEC-139's registry as the file holds it, screen by screen and act by act: [{id, name, purpose, acts}], acts the declared and function ops in the file's order, owed acts apart; frozen; its source the vendored file", () => {
   const sha = createHash("sha256").update(src("registry.json"), "utf8").digest("hex");
-  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "b1adf4236d", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha });
+  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "30af4350f2", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha });
   assert.equal(wz.SCREEN_REGISTRY.length, REG_FILE.screens.length);
-  assert.equal(wz.SCREEN_REGISTRY.length, 91, "R50: the file at b1adf4236d, the design commit of DEC-419 (G53)");
+  assert.equal(wz.SCREEN_REGISTRY.length, 91, "R54: the file at 30af4350f2, the tranche's design commit at T53");
   REG_FILE.screens.forEach((f, i) => {
     const s = wz.SCREEN_REGISTRY[i];
     assert.deepEqual([s.id, s.name, s.purpose], [f.id, f.name, f.purpose], f.id);
@@ -113,7 +117,7 @@ test("R13 (T41; DEC-188; K2484) the registry keeps PR #19's screen projectai (re
   const by = Object.fromEntries(declared.wz.registeredScreens().map((s) => [s.id, s.acts]));
   assert.deepEqual(by.projectai, [...projectai.acts]);
   assert.deepEqual(by.connect, fileOps("connect"));
-  assert.deepEqual(by.setup.slice(9, 12), ["groupkeyset", "groupkeyswitch", "ailimitset"], "in aicopyceilingset's old place");
+  assert.deepEqual(by.setup.slice(9, 12), ["aiaccountadd", "aiaccountswitch", "ailimitset"], "in aicopyceilingset's old place (groupkeyset and groupkeyswitch, carried as their T53 ops)");
   assert.ok(by.teamai.includes("accountusesset") && by.teamai.includes("ailimitset"), "the team's assistant (teamai) holds them since DEC-281's pass");
   for (const op of RETIRED_ACTS) assert.ok(!Object.values(by).some((acts) => acts.includes(op)), op);
   const undeclared = seeded({ register: false });
@@ -146,7 +150,7 @@ test("R13 (T37; K2171) the registry is re-taken from PR #14's merge onward: conn
 test("R13 a registration without screens registers SCREEN_REGISTRY; an owed act is registered as its op, in the file's order, only once the member op table declares it; with no op table none is", () => {
   /* the acts the file still owes (R35, R38, R41): the installer's four routes, `founderhandleset`, members' `passwordresetlink` after
      memberadd, DEC-226's three update acts and the six T50 adds (K3674 among them); fifteen ops, `updatelater` on two screens */
-  assert.equal(OWED_OPS.length, 105, "R50: 105 owed ops at b1adf4236d (42 at R48's 654a735535, and T52's owed acts since)");
+  assert.equal(OWED_OPS.length, 118, "R54: 118 owed ops at 30af4350f2 (105 at R53's b1adf4236d, 42 at R48's 654a735535)");
   for (const op of ["installupdate", "installalongside", "installremove", "installremoveconfirm", "founderhandleset", "passwordresetlink", "updatestart", "updatelater", "updateskip"])
     assert.ok(OWED_OPS.includes(op), op);
   const w = seeded({ register: false });
@@ -207,13 +211,13 @@ test("R29 (T46; N897 (1); DEC-139 (5), DEC-197) Your account (account) lists no 
 });
 
 test("R13 (T37; N776) with an op table registered, a declared or function act whose op the table lacks is not registered, as an owed act whose op is undeclared is not: registeredScreens, the registry form, wizardsAt and op=wizardcheck answer one registry, every listed act passing R12 and every unlisted one refused; with no op table every declared and function act stays registered", () => {
-  const lacking = ["groupkeyswitch", "knock", "calculationcreate"];   /* declared on setup, function on doorbell, declared on finder */
+  const lacking = ["aiaccountswitch", "knock", "calculationcreate"];   /* groupkeyswitch's T53 op (ai-accounts R35) */   /* declared on setup, function on doorbell, declared on finder */
   const ops = ALL_OPS.filter((o) => !lacking.includes(o));
   const w = world({ register: false });
   w.member("frank");
   w.wz.wizardRegister({ ops, library: [] });
   const by = Object.fromEntries(w.wz.registeredScreens().map((s) => [s.id, s.acts]));
-  assert.ok(!by.setup.includes("groupkeyswitch") && by.setup.includes("groupkeyset"), "the declared act the table lacks, gone; its neighbour kept");
+  assert.ok(!by.setup.includes("aiaccountswitch") && by.setup.includes("aiaccountadd"), "the declared act the table lacks, gone; its neighbour kept");
   assert.ok(!by.doorbell.includes("knock"), "a function act the table lacks");
   assert.ok(!by.finder.includes("calculationcreate"));
   for (const f of REG_FILE.screens) {
@@ -225,7 +229,7 @@ test("R13 (T37; N776) with an op table registered, a declared or function act wh
   const check = (screen, act) => wz.wizardScriptsOps(w.wz, new URL(`https://x/?viewer=${encodeURIComponent(F)}`), { steps: [step(screen, act), step(screen, null)] })
     .wizardcheck().refusals.map((x) => x.code);
   for (const sc of w.wz.registeredScreens()) for (const act of sc.acts) assert.deepEqual(check(sc.id, act), [], `${sc.id}/${act}`);
-  for (const [screen, act] of [["setup", "groupkeyswitch"], ["doorbell", "knock"], ["finder", "calculationcreate"]])
+  for (const [screen, act] of [["setup", "aiaccountswitch"], ["doorbell", "knock"], ["finder", "calculationcreate"]])
     assert.deepEqual(check(screen, act), ["WIZARD_ACT_UNKNOWN"], `${screen}/${act}`);
   /* wizardsAt offers no script on an act the registry does not list: a group's draft naming one is refused at submit */
   assert.deepEqual(w.wz.wizardsAt({ screen: "doorbell", viewer: F }).scripts, []);
@@ -233,7 +237,7 @@ test("R13 (T37; N776) with an op table registered, a declared or function act wh
   const w0 = world({ register: false });
   w0.wz.wizardRegister({ library: [] });
   const by0 = Object.fromEntries(w0.wz.registeredScreens().map((s) => [s.id, s.acts]));
-  assert.ok(by0.setup.includes("groupkeyswitch") && by0.doorbell.includes("knock") && by0.finder.includes("calculationcreate"));
+  assert.ok(by0.setup.includes("aiaccountswitch") && by0.doorbell.includes("knock") && by0.finder.includes("calculationcreate"));
   /* the test registry too: an op table lacking an act a screen lists */
   const t = seeded({ register: false });
   t.wz.wizardRegister(registration({ ops: OPS.filter((o) => o !== "casejoin") }));
@@ -340,7 +344,7 @@ test("R22, R30, R32, R36, R42 CIVICSMITH_LIBRARY is the 23 scripts of library.js
   /* the acts a ruling owed when each version was written, carried as their ops; PR #33's head serves each by name */
   const OWED_ONCE = ["actionscope", "escalationstoppursuing", "itemtakeup", "subscriptionsignin"];
   assert.deepEqual([...new Set(lib.flatMap((e) => e.steps.map((s) => s.act)).filter((a) => OWED_ONCE.includes(a)))].sort(), OWED_ONCE);
-  assert.deepEqual(lib.flatMap((e) => e.steps.map((s) => s.act)).filter((a) => OWED_OPS.includes(a)), ["updatestart"], "the only act still owed that an offered version walks is the update script's (R38, R42)");
+  assert.deepEqual(lib.flatMap((e) => e.steps.map((s) => s.act)).filter((a) => STILL_OWED.includes(a)), ["updatestart"], "the only act still owed that an offered version walks is the update script's (R38, R42)");
   /* the offered versions name no act PR #19 removed (DEC-188 (8)); Connect's version 1, kept readable, still does */
   for (const op of RETIRED_ACTS) assert.ok(!lib.some((e) => e.steps.some((s) => s.act === op)), `${op}: no offered version`);
   const connect = lib.find((e) => e.name === word("wizard.WIZ-74328804ddae3503.name"));
@@ -463,7 +467,7 @@ test("R22 (T37, T41; K2241), R30 the seven adopted scripts carry version 2 in pl
   assert.deepEqual(invite.steps.map((t) => t.act), invite.earlier[0].steps.map((t) => t.act), "Invite's acts unchanged: its words only");
   for (const steps of [by(word("wizard.WIZ-c887066cc553dd41.name")).steps, by(word("wizard.WIZ-c887066cc553dd41.name")).earlier[1].steps]) {   /* version 2's change, kept in version 3 */
     const setup = steps.map((t) => t.act);
-    assert.ok(!setup.includes("assistantset") && setup.indexOf("aikeepaway") >= 0 && setup.indexOf("groupkeyset") === setup.indexOf("aikeepaway") + 1, setup.join());
+    assert.ok(!setup.includes("assistantset") && setup.indexOf("aikeepaway") >= 0 && setup.indexOf("aiaccountadd") === setup.indexOf("aikeepaway") + 1, setup.join());
   }
   assert.ok(acts(word("wizard.WIZ-426b9c2e8b128b6b.name")).includes("obscuremark") && by(word("wizard.WIZ-426b9c2e8b128b6b.name")).earlier[1].steps.some((t) => t.act === "obscuremark"));
   assert.ok(acts(word("wizard.WIZ-a15d174f7a2c1dc5.name")).includes("entitycreate") && !acts(word("wizard.WIZ-a15d174f7a2c1dc5.name")).includes("registerproceeding"));

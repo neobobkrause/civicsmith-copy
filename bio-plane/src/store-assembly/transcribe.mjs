@@ -9,8 +9,7 @@
 import { recordOf } from "../record-core/index.mjs";
 import { aiAccountsOf } from "../ai-accounts/index.mjs";
 import { aiUseOf } from "../ai-use/index.mjs";
-import { aiRunsOf } from "../ai-runs/index.mjs";
-import { tokenRefusal, doorHeaders } from "./ask.mjs";
+import { tokenRefusal, doorHeaders, admitOn } from "./ask.mjs";
 import { renderPageToPixels } from "../../../pdf-worker/src/pagepixels.mjs";
 import { renderPictureToPixels } from "../../../pdf-worker/src/picturepixels.mjs";
 import { readRange } from "../acquisition/index.mjs";
@@ -98,8 +97,13 @@ export async function renderPages(bytes, pages, render = renderPageToPixels, pic
 
 /** R36's AI path for one act of `member`, on this object: `transcribe({account, capture_sha, store, pages, use})`.
  *  `onSha` hears the capture's digest, so the act's id can carry it. */
-function aiPath(ctx, env, { member, at, act, onSha, trace = null, memberRef = null }) {
+function aiPath(ctx, env, { member, at, act, onSha, onAdmit = () => {}, trace = null, memberRef = null }) {
   return async function transcribe({ account = null, capture_sha = null, pages = [] } = {}) {
+    /* ai-runs R78: the part admitted on the serving account's entry, first, before anything is read, rendered or sent */
+    const entry = account && typeof account === "object" && typeof account.entry_id === "string" ? account.entry_id : null;
+    const gate = admitOn(ctx, env, USE, entry);
+    if (gate.refusal) return gate.refusal;
+    onAdmit(gate.untested);
     const w = env && env.AGENT_WORKER;
     if (!w || typeof w.fetch !== "function") return { ok: false, reason: "AGENT_WORKER_UNBOUND" };
     const sha = typeof capture_sha === "string" ? capture_sha : "";
@@ -182,16 +186,12 @@ class Transcriber {
   #ctx; #env;
   constructor(ctx, env) { this.#ctx = ctx; this.#env = env; }
 
-  /* R40 (T46; N897 (2)): `ai-runs.partAdmitted("transcribe")`, the one gate, read at each call; anything that throws is
-     not admitted. */
-  #admitted() {
-    try {
-      const said = aiRunsOf(this.#ctx, this.#env).partAdmitted(USE);
-      return said && said.admitted === true ? { admitted: true, untested: said.untested ?? null } : { admitted: false, untested: null };
-    } catch { return { admitted: false, untested: null }; }
-  }
-
-  deployable() { return this.#admitted().admitted === true; }
+  /* R40 (T46; N897 (2)), ai-runs R78 (T53; the coordinator's ruling, 4 Nov): the one gate is
+     `ai-runs.partAdmitted("transcribe", entry)`, on the catalogue entry of the account that serves the act, so it is asked
+     in the act (`aiPath`), on the account it is handed, before any byte is read, any page rendered or anything posted.
+     `deployable()` is asked by extraction with no member and so no entry: transcription has no deploy flag of its own
+     (run-rules R19), so it answers as ai-runs admits a part no account is judged for yet, true, and the act's gate refuses. */
+  deployable() { return true; }
 
   keptAway({ project = null, use = null } = {}) { return aiAccountsOf(this.#ctx).aiKeptAway({ project, use }); }
 
@@ -202,10 +202,11 @@ class Transcriber {
     const act = () => `${USE}:${prefix}:${instant}`;
     const ctx = this.#ctx, aiUse = aiUseOf(ctx);
     /* R40 (T46; extraction R74): `untested`, the test-instance label when the part runs on the exception, else null */
-    const tx = { member, project, at: instant, accounts: aiAccountsOf(ctx), untested: this.#admitted().untested,
+    const tx = { member, project, at: instant, accounts: aiAccountsOf(ctx), untested: null,
       useCheck: (q) => aiUse.useCheck(q),
       transcribe: aiPath(ctx, this.#env, { member, at: instant, act, trace, memberRef,
-                          onSha: (sha) => { prefix = sha.slice(0, 16); } }) };
+                          onSha: (sha) => { prefix = sha.slice(0, 16); },
+                          onAdmit: (untested) => { tx.untested = untested ?? null; } }) };
     Object.defineProperty(tx, "act", { get: act, enumerable: true });
     return tx;
   }

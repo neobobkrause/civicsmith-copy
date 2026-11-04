@@ -1,0 +1,24 @@
+{
+ "ai-catalogue": {
+  "reads": [
+   "ai.catalogue.state.current",
+   "ai.catalogue.state.needs_newer_release",
+   "ai.catalogue.state.stale",
+   "ai.catalogue.state.unavailable",
+   "ai.refused.advisorybadmove",
+   "ai.refused.advisoryreasonunknown",
+   "ai.refused.catalogueentryinvalid",
+   "ai.refused.catalogueevidencemissing",
+   "ai.refused.cataloguepathinvalid",
+   "ai.refused.cataloguepayloadinvalid",
+   "ai.refused.catalogueplaninvalid",
+   "ai.refused.cataloguerollbackunknown",
+   "ai.refused.catalogueunavailable",
+   "ai.refused.checkunknown",
+   "ai.refused.digestmismatch",
+   "ai.refused.notnewer",
+   "ai.refused.partunknown"
+  ],
+  "note": "K5681: added by BOB for keys already in words.json (DEC-488)."
+ }
+}
