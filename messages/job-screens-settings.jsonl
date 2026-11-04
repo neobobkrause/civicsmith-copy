@@ -1,2 +1,3 @@
 {"at":"2026-11-04T07:35:46Z","row":"sent","n":1,"to":"bob","text":"job screens-settings BLOCKED: run status"}
 {"at":"2026-11-04T07:35:57Z","row":"outcome","n":1,"outcome":"delivered"}
+{"at":"2026-11-04T14:04:07Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job screens-settings complete, PR #174 ready, session session_01RAN5ek7nBRzPbjHnh7AhXw: run status"}
