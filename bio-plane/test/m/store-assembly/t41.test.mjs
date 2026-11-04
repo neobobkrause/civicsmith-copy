@@ -162,7 +162,7 @@ test("R28 (K2525; investigation R20): ai-runs' run holder is registered with inv
   const x = await store();
   const sql = x.ctx.storage.sql;
   const cols = [...sql.exec(`PRAGMA table_info(ai_runs)`)];
-  const row = { run: "RUN-t41-held", status: "running", principal_plane: "member:ann", principal_claude: "member:ann" };
+  const row = { run: "RUN-t41-held", status: "running", principal_plane: "member:ann", principal_ai: "member:ann" };
   for (const c of cols) if (c.notnull && c.dflt_value === null && !(c.name in row)) row[c.name] = c.type.toUpperCase().includes("INT") ? 0 : "x";
   sql.exec(`INSERT INTO ai_runs (${Object.keys(row).join(", ")}) VALUES (${Object.keys(row).map(() => "?").join(", ")})`, ...Object.values(row));
   const propose = (inv, run) => inv.planPropose({ project: "PROJ-none", kind: "question", text: "Who signed it?", run,
