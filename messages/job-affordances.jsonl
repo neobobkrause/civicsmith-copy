@@ -4,3 +4,4 @@
 {"at":"2026-11-04T04:18:37Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-04T05:41:12Z","row":"sent","n":3,"to":"bob","text":"job affordances complete, PR #139 ready: run status"}
 {"at":"2026-11-04T05:41:28Z","row":"outcome","n":3,"outcome":"delivered"}
+{"at":"2026-11-04T13:20:13Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job affordances complete, PR #244 ready, session session_01RAN5eokLSZCSRWfnBUAhUs: run status"}
