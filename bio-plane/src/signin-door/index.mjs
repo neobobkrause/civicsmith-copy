@@ -20,7 +20,7 @@
    R4 (was R86; K3060 D10): on `code` the door sends `hold: true`; a `token` answered is handed to
    `ai-accounts.subscriptionTokenHold` (its R19) and its result read; `token` and `valid_for` never leave this module; the answer
    says `held: true`, or `held: false` with the fact's code. `state` is answered from
-   `ai-accounts.accountReferenceState`'s `subscription` (nothing sent to the runner). Disconnect and revocation drop the
+   `ai-accounts.accountsOf`' member's own issued account (the store's `accountsof`, F1; nothing sent to the runner). Disconnect and revocation drop the
    token through `ai-accounts` (its own acts, R18, R27, R19) and send `signout`. An ask or draft answered
    `SIGNIN_TOKEN_REFUSED` calls `ai-accounts.subscriptionTokenRefused`.
    R5 (was R87): on a test instance only, a bounded trace answers `op=signintrace`; elsewhere `SIGNINTRACE_NOT_TEST`.
@@ -59,11 +59,14 @@ export const SIGNIN_TRACE_MAX = 200;
 /* R5: the fields a trace line may hold, and no other (no token, secret or code can be one of them). */
 export const TRACE_FIELDS = Object.freeze(["event", "at", "trace", "step", "member_ref", "outcome", "code", "status",
   "ms_total", "ms_agent_worker", "held"]);
-/* The store-internal routes of `ops.mjs` this half asks, and `credentials`' own `accountreference`. */
+/* The store-internal routes of `ops.mjs` this half asks, and `ai-accounts`' own T53 read `accountsof` (its R2; F1: the
+   retired `accountreference` has no alias, ai-accounts R35, R10). */
 export const STORE_ROUTES = Object.freeze({ keptAway: "aikeptaway", connected: "subscriptionconnected",
   disclosureDue: "signindisclosuredue", hold: "signintokenhold", refused: "signintokenrefused",
-  traceKeep: "signintracekeep", traceRead: "signintraceread", state: "accountreference",
+  traceKeep: "signintracekeep", traceRead: "signintraceread", state: "accountsof",
   disconnect: "subscriptiondisconnect" });
+/* F1: the means of a member's subscription account (ai-accounts R19, R42: an issued account of the subscription plan). */
+const SUBSCRIPTION_MEANS = "issued";
 /* agent-worker R66's refusal when it holds no runner, relayed in member words. */
 const RUNNER_ABSENT = "RUNNER_NOT_CONFIGURED";
 /* R4: Anthropic's refusal of a held token, as agent-worker relays it (`SIGNIN_CODES`). */
@@ -179,13 +182,19 @@ export async function subscriptionSignin({ env, member, asked, store, log = defa
     if (!isObject(d) || d.ok !== true) return done({ status: 409, body: { ok: false, ...(isObject(d) ? d : {}) } }, "refused_local");
   }
   if (step === "state") {
-    /* R4: answered from credentials, nothing sent to the runner; a failed read is said, never "not connected" */
-    const q = encodeURIComponent(member);
-    const st = await ask(store, `${STORE_ROUTES.state}?member=${q}&viewer=${q}`, { method: "GET" });
+    /* R4, F1: answered from ai-accounts' T53 read of the member's own accounts (`accountsof`, owner `member:<id>`, viewer
+       the stamp), nothing sent to the runner; the subscription is her own first issued account, connected while its
+       token is held. A failed read is said, never "not connected". */
+    const owner = typeof member === "string" && member.startsWith("member:") ? member : `member:${member}`;
+    const st = await ask(store, `${STORE_ROUTES.state}?owner=${encodeURIComponent(owner)}&viewer=${encodeURIComponent(member)}`,
+                         { method: "GET" });
     if (st.refused || !st.answered) return done(await unreadAnswer("subscriptionsignin", st, trace), "refused_local");
     const r = st.result;
     if (!isObject(r) || r.ok !== true) return done({ status: 403, body: { ok: false, ...(isObject(r) ? r : {}) } }, "refused_local");
-    const sub = isObject(r.subscription) ? r.subscription : { connected: false, since: null, held: false };
+    const own = (Array.isArray(r.accounts) ? r.accounts : [])
+      .find((x) => isObject(x) && x.means === SUBSCRIPTION_MEANS && x.owner === owner) ?? null;
+    const held = !!(own && own.held === true);
+    const sub = { connected: held, since: held ? own.set_at ?? null : null, held, account_id: own ? own.account_id ?? null : null };
     return done({ status: 200, body: { ok: true, step: "state", member, ...sub } }, "answered");
   }
 

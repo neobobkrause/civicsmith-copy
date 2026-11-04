@@ -82,12 +82,12 @@ test("R40 with no layer and nothing stated the list is empty with the none-known
   assert.equal(PROFILE.length > 0, true);
 });
 
-test("R40 the op arm and its declaration: fiscalyears is a read declared by its owner", async () => {
+test("R40 the op arm and its declaration: moneyfiscalyears is a read declared by its owner under the name it is served by", async () => {
   const { moneyOps, DECLARED_OPS } = await import("../../../src/money/index.mjs");
   const s = seeded();
   const url = new URL(`https://do.invalid/?${new URLSearchParams({ body: "Port Ellery Harbour District", viewer: ANN })}`);
   assert.equal(moneyOps(s.m, url, null).moneyfiscalyears().known, true);
-  const d = DECLARED_OPS.fiscalyears;
+  const d = DECLARED_OPS.moneyfiscalyears;
   assert.deepEqual([d.classes, d.mutating, d.weight, d.fields.requires], [["admin", "member", "probe"], false, "read", []]);
 });
 
