@@ -1,0 +1,1 @@
+{"row":"answered","user":"file-scanner","by":"triage","evidence":"file-scanner/dist/file-scanner.bundle.json:2 only a bundle built by bio-plane/scripts/fleet-bundle.mjs; no reference to p3dev-walk-setup.mjs","at":"2026-11-04T05:08:24.610Z","key":"bundler:88","worker":"triage-b88-subagent","cost":"0.05"}

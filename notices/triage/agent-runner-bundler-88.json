@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-runner","verdict":"not affected","evidence":"agent-runner/dist/agent-runner.bundle.json:2 only a bundle built by bio-plane/scripts/fleet-bundle.mjs; no reference to bio-plane/scripts/p3dev-walk-setup.mjs (its op() is at line 78 there, outside the module)","at":"2026-11-04T05:08:24.610Z","key":"bundler:88","worker":"triage-b88-subagent","cost":"0.05"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-checker","verdict":"not affected","evidence":"bio-plane/src/case-checker/build-program.mjs:22 imports buildMember from ../../scripts/fleet-bundle.mjs, not p3dev-walk-setup.mjs","at":"2026-11-04T05:08:24.610Z","key":"bundler:88","worker":"triage-b88-subagent","cost":"0.05"}

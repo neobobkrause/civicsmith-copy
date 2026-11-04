@@ -1,0 +1,1 @@
+{"row":"answered","user":"reader-container","by":"triage","evidence":"reader-container/dist/reader-container.bundle.json:2 only a bundle built by bio-plane/scripts/fleet-bundle.mjs; reader-container/packages.json:64 cites bundler R27 (image packages), not the walk","at":"2026-11-04T05:08:24.610Z","key":"bundler:88","worker":"triage-b88-subagent","cost":"0.05"}

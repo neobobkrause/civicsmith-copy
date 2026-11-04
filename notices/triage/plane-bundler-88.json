@@ -1,0 +1,1 @@
+{"row":"triage","user":"plane","verdict":"not affected","evidence":"bio-plane/src/plane/door.mjs:1 the door module has no reference to p3dev-walk-setup.mjs; the only reader of op() answers is bio-plane/scripts/p3dev-walk-setup.mjs:78, outside the plane module","at":"2026-11-04T05:08:24.610Z","key":"bundler:88","worker":"triage-b88-subagent","cost":"0.05"}
