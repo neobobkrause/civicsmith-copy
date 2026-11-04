@@ -12,7 +12,7 @@ const MODS = ["screens-settings", "screens-intake", "screens-daily", "screens-in
 const REAL = []; let GUIDE = null;
 for (const m of MODS) { const x = await import(`../../../src/${m}/index.mjs`); REAL.push(...x.SCREENS); if (x.GUIDE) GUIDE = x.GUIDE; }
 /* the frame's six reads, as the frame groups them (the team and the level; the four that decide whether the assistant is reachable) */
-const TEAM = ["groupidentity", "infolevel"], REACH = ["assistantstate", "accountreference", "subscriptionsignin", "groupkeystate"];
+const TEAM = ["groupidentity", "infolevel"], REACH = ["assistantstate", "aipathready"];
 /* the team, its founder and three open obligations of hers are the world's: the sign-in the page makes is the real `login`, the queue the real `queue` */
 const WHOLE = 3;
 const founderWorld = async () => {

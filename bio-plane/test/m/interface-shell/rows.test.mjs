@@ -79,7 +79,7 @@ test("R19 R62 sorting keeps each open panel with its row; at the phone width eac
 
 test("R22 every control of every screen has an accessible name, every field a label, every icon is beside a word, colour is never the only signal, and motion stops under reduced motion", async () => {
   for (const path of ["/app", "/app/held", "/app/document/c1", "/app/members", "/app/settings", "/app/people", "/app/more"]) for (const phone of [false, true]) {
-    const p = await boot({ screens: ALL, path, phone, plane: { ...PLANE, whoami: ok(ADMIN), assistantstate: ok({ on: true }), accountreference: ok({ held: true }) } });
+    const p = await boot({ screens: ALL, path, phone, plane: { ...PLANE, whoami: ok(ADMIN), assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
     await p.click('[data-shell="dock"]');
     await p.click('[data-shell="menu"]');
     const reasonAct = p.root().querySelector('button[data-act="release"]');

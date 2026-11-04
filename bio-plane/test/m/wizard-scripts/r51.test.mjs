@@ -12,14 +12,22 @@ import { word } from "../../../src/setup-words/index.mjs";
 const REQUIREMENTS = readFileSync(new URL("../../../../build/requirements/wizard-scripts.md", import.meta.url), "utf8");
 const R51_LINE = REQUIREMENTS.split("\n").find((l) => l.startsWith("- **R51**"));
 const R51_LIST = R51_LINE.slice(R51_LINE.indexOf("on the team:"), R51_LINE.indexOf("(45 names)"));
-const ACTS = [...R51_LIST.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
+const R51_ACTS = [...R51_LIST.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
+/* F1 (T53; amends R51; corrected by attempt 4): the three names F1 drops, read from F1's line (the backquoted names after
+   "does not declare:" and before "(`ai-accounts`") */
+const F1_LINE = REQUIREMENTS.split("\n").find((l) => l.startsWith("- **F1**"));
+const F1_LIST = F1_LINE.slice(F1_LINE.indexOf("does not declare:"), F1_LINE.indexOf("(`ai-accounts`"));
+const F1_DROPPED = [...F1_LIST.matchAll(/`([^`]+)`/g)].map((m) => m[1]).filter((n) => R51_ACTS.includes(n));
+const ACTS = R51_ACTS.filter((n) => !F1_DROPPED.includes(n));
 /* the control: an act a member does without administering, the first act of the join screen as the registry gives it */
 const REGISTRY = JSON.parse(readFileSync(new URL("./source/registry.json", import.meta.url), "utf8"));
 const MEMBER_ACT = REGISTRY.screens.find((s) => s.id === "join").acts[0].op;
 
-test("R51 ADMIN_ACTS holds exactly the 45 administrator acts R51 names and ADMIN_SCREENS exactly `updates`, both frozen", () => {
+test("R51 ADMIN_ACTS holds exactly the administrator acts R51 names less F1's three (42) and ADMIN_SCREENS exactly `updates`, both frozen", () => {
   assert.ok(R51_LINE, "R51 is in the requirement");
-  assert.equal(ACTS.length, 45);
+  assert.equal(R51_ACTS.length, 45);
+  assert.deepEqual(F1_DROPPED, ["groupkeyset", "groupkeyremove", "groupkeyswitch"]);
+  assert.equal(ACTS.length, 42);
   assert.ok(ADMIN_ACTS instanceof Set && Object.isFrozen(ADMIN_ACTS));
   assert.deepEqual([...ADMIN_ACTS], ACTS, "the members and their order");
   assert.ok(!ADMIN_ACTS.has(MEMBER_ACT), "a member's own act is not an administrator's");

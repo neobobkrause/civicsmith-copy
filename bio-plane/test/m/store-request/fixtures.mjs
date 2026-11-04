@@ -8,6 +8,9 @@ import { readings, machineReading, graded, sharedOrigin } from "./recipes-states
 import { holdAt, newerCapture, connection, partialPdf, unmatchedPerson, attested, paperFile, unretirable } from "./recipes-docs.mjs";
 import { unnamedFounder, timeline, titlelessProject, deepChain, connectedSignIn, investigating, mentionedTogether } from "./recipes-team.mjs";
 import { makeRenderer, rendered, renderPending, unfinished, partedAddress, followed } from "./recipes-capture.mjs";
+import { catalogueFor } from "../ai-accounts/catalogue.mjs";
+import { KEY as CATALOGUE_KEY } from "../ai-catalogue/fixture.mjs";
+import { recordOf } from "../../../src/record-core/index.mjs";
 import { page, pdf, question, questions, contradiction, conflict, setAside, finding, signer, published, imported, cited, rerun, assistant, writingHelp, grantAdmit, parted, largeSheet, credential, projects, draftOnly, register } from "./recipes.mjs";
 
 export { WORLD_RELEASE_KEY } from "./recipes-r10.mjs";
@@ -39,7 +42,12 @@ export async function storeWorld({ env = {}, ai = false, deliver = null, release
   // fixtures-own: harness the world's delivery, made of earlier modules' real acts (the alarm's filing of an owed fetch)
   const world = await assemblyWorld({ ...opts, ...(deliver === true ? { deliver: (a) => worldDelivery(holder.world)(a) } : deliver ? { deliver } : {}),
     ...(releaseKeys === true ? { releaseKeys: WORLD_RELEASE_KEYS } : releaseKeys ? { releaseKeys } : {}),
+    ...(ai ? { catalogueKeys: [CATALOGUE_KEY.line] } : {}),
     env: { ...(releaseKeys === true ? { VERSION: WORLD_RUNNING_VERSION } : {}), ...WORLD_TOKENS, ...(ai ? { ACCOUNT_SEAL_SECRET: WORLD_AI_SECRET, INSTANCE_NAME: name, CIVICSMITH_TEST_INSTANCE: name } : {}), ...(browser ? { RENDERER: browser } : {}), ...env } });
+  /* notice store-assembly:93 (its R1, R90; ai-accounts R40, R63): the assembled ai-accounts reads the object's own ai-catalogue, which
+     holds no list until one is seeded, so every account act answered CATALOGUE_UNAVAILABLE. A test-instance world (`ai: true`) is
+     handed ai-catalogue's fixture key and seeds ai-accounts' published catalogue through the catalogue's own channel (`loadSeed`). */
+  if (ai) await catalogueFor(world.ctx, { record: recordOf(world.ctx) }).seeded;
   const door = doorOf(world);
   const make = () => storeWorld();
   holder.world = world;
