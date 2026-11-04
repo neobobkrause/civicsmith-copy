@@ -21,3 +21,4 @@
 {"at":"2026-11-04T11:56:38Z","row":"sent","n":11,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job store-assembly complete, PR #93 ready: run status"}
 {"at":"2026-11-04T11:56:46Z","row":"outcome","n":11,"outcome":"delivered"}
 {"at":"2026-11-04T12:34:45Z","row":"sent","n":12,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job store-assembly complete, PR #93 ready, session session_01RAN5ejzkWGzHVBiU9fqGcy: run status"}
+{"at":"2026-11-04T12:34:53Z","row":"outcome","n":12,"outcome":"delivered"}
