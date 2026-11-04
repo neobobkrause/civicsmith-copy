@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as O from "../../../src/op-declarations/index.mjs";
 import { REGISTERED } from "./register-owners.mjs";
-import { explained } from "./help.mjs";
+import { explained, RETIRED_T53 } from "./help.mjs";
 import { browserActs, OWED_BY_FIX_ROUND_AT_43379A1A44, OWED_SERVED_BY_OWNERS } from "./browser.mjs";
 import { AI_GRANT_OPS } from "../../../src/credentials/index.mjs";
 import { credentialsOps } from "../../../src/credentials/index.mjs";
@@ -65,7 +65,10 @@ const actsOf = (status) => [...new Set(registry.screens.flatMap((s) => s.acts).f
 /* R21 (T37; DEC-182 (1), (4)): the registry as PR #14 left it names no function no op serves. The five T34 named back
    to BOB are gone from its functions: four withdrawn, their buttons re-pointed to declared ops, and `setpassword` an
    owed act declared under its own name (R39). */
-const UNSERVED = [];
+/* Restated for T53 (R21, R24, R41; ai-accounts R35, BOB 4 Nov): the account seam's old door ops the registry still names
+   as functions are retired with no aliases, so each is a function its owner serves through no op, with no spec, and the
+   job names it back to BOB. */
+const UNSERVED = [...actsOf("function")].filter((f) => RETIRED_T53.includes(f));
 const WITHDRAWN = { projectcreated: "promote", countask: "calculationcreate", registerproceeding: "entitycreate",
                     deadlinecompute: "clockpropose" };
 
@@ -253,7 +256,10 @@ test("R21, R27 (K1901; T36, K2084; T37, K2159, K2171; T38, K2300): an act the re
   assert.ok(Object.hasOwn(OP_FAMILIES.membership.kinds, "founderhandleset") && SESSION_OPS.admin.has("founderhandleset")
             && !SESSION_OPS.member.has("founderhandleset"), "founderhandleset: not membership's founder-only op");
   for (const op of OWED_T48) assert.ok(both(op) && OP_FAMILIES["instance-setup"].kinds[op] === "admin", `${op}: not an instance-setup admin act`);
-  for (const op of [...DECLARED, ...STILL_OWED, ...SERVED_T44, ...OWED_T46, ...OWED_T47, ...OWED_T48, ...OWED_T49, ...OWED_T50]) {
+  /* restated for T53 (ai-accounts R35, BOB 4 Nov): R41's project-account acts the registry re-pointed are retired, no spec */
+  for (const op of DECLARED.filter((o) => RETIRED_T53.includes(o))) assert.ok(inNoTable(op), `${op}: retired and declared`);
+  for (const op of [...DECLARED, ...STILL_OWED, ...SERVED_T44, ...OWED_T46, ...OWED_T47, ...OWED_T48, ...OWED_T49, ...OWED_T50]
+    .filter((o) => !RETIRED_T53.includes(o))) {
     assert.ok(Object.hasOwn(OPS, op), `${op} is owed or re-pointed and declared: no spec`);
     assert.ok(!Object.hasOwn(OP_ALIASES, op) && !Object.values(OP_ALIASES).includes(op), `${op} is aliased`);
   }
@@ -317,50 +323,42 @@ test("R23 (K1873): tasks' checkrequest, checktake and checkrecord mutating, cont
   assert.deepEqual(machineAdmits("timeline"), ["admin", "member", "probe"]);
 });
 
-test("R24, R20 (T41, DEC-188 (8): groupswitchset retired to R41's accountusesset): the group's API key — groupkeyset, groupkeyremove and groupkeyswitch an administrator's acts, groupkeystate and groupkeynotice reads, groupkeynoticeseen the member's own act — each a session's only (admin, member; machineClasses []), a present null row, both sets, by or viewer stamped as the owner reads them, in neither bearer fence and not on AI_GRANT_OPS; groupswitchset has no spec and is in no table; no other op names the key (negative control: credentials' map no longer serves the retired act)", async () => {
+test("R24, R20 (T41, DEC-188 (8): groupswitchset retired to R41's accountusesset; restated for T53, ai-accounts R35, BOB 4 Nov): the group's API key ops — groupkeyset, groupkeyremove, groupkeyswitch, groupkeystate, groupkeynotice, groupkeynoticeseen — are retired with no aliases: no spec, no row, no stamp, no session set, no family, no map serves them; the team's account is ai-accounts' declared aiaccountadd (owner group), aiaccountremove and aiaccountswitch, each a session's only (admin, member; machineClasses []), in neither bearer fence and not on AI_GRANT_OPS, aiaccountadd's secret a body field the query's copy does not reach; groupswitchset has no spec; subscriptiondisconnect is retired and subscriptionsignin stays credentials' (negative control: a declared op is not in no table)", async () => {
   const KEY = ["groupkeyset", "groupkeyremove", "groupkeyswitch", "groupkeystate", "groupkeynotice", "groupkeynoticeseen"];
-  for (const op of KEY) {
-    assert.deepEqual(plain(OPS[op]), { classes: ["admin", "member"], machineClasses: [],
-      mutating: !["groupkeystate", "groupkeynotice"].includes(op) }, op);
+  for (const op of [...KEY, "subscriptiondisconnect"]) {
+    assert.ok(inNoTable(op), `${op}: retired and still in a table`);
+    assert.ok(!Object.hasOwn(OP_FAMILIES["ai-accounts"].kinds, op) && !Object.hasOwn(OP_FAMILIES.credentials.kinds, op), `${op}: in a family`);
+    assert.equal(JSON.stringify(await drive(aiAccountsOps, op, { query: { by: SENT } })).includes(SENT), false, `${op}: served`);
+  }
+  /* the team's account (ai-accounts R5, R40, R61): its declared acts, each a session's own, by stamped from the query */
+  const TEAM = ["aiaccountadd", "aiaccountremove", "aiaccountswitch"];
+  for (const op of TEAM) {
+    assert.deepEqual(plain(OPS[op]), { classes: ["admin", "member"], machineClasses: [], mutating: true }, op);
     assert.ok(Object.hasOwn(NEEDS, op) && NEEDS[op] === null, op);
     assert.ok(both(op) && unfenced(op) && !AI_GRANT_OPS.includes(op), op);
-  }
-  for (const op of ["groupkeyset", "groupkeyremove", "groupkeyswitch", "groupkeynoticeseen"]) {
-    assert.deepEqual(stamps(op), ["by", "viewer"], op);
+    assert.ok(stamps(op).includes("by"), op);
     assert.ok(JSON.stringify(await drive(aiAccountsOps, op, { query: { by: SENT } })).includes(SENT), op);
   }
-  for (const op of ["groupkeystate", "groupkeynotice"]) {
-    assert.deepEqual(stamps(op), ["viewer"], op);
-    assert.ok(JSON.stringify(await drive(aiAccountsOps, op, { query: { viewer: SENT } })).includes(SENT), op);
-  }
-  /* T48 (R68): the group's key ops are ai-accounts' family and map now, `groupkeyset`'s key a body field: the query's copy
-     does not reach it */
-  for (const op of KEY) {
-    assert.ok(Object.hasOwn(OP_FAMILIES["ai-accounts"].kinds, op), `${op}: not in ai-accounts' family`);
-    assert.ok(!Object.hasOwn(OP_FAMILIES.credentials.kinds, op), `${op}: still in credentials' family`);
-  }
-  assert.ok(!JSON.stringify(await drive(aiAccountsOps, "groupkeyset", { query: { key: SENT } })).includes(SENT));
-  assert.ok(JSON.stringify(await drive(aiAccountsOps, "groupkeyset", { body: { key: SENT } })).includes(SENT));
+  /* the secret is the body's alone: the query's copy does not reach the owner */
+  assert.ok(!JSON.stringify(await drive(aiAccountsOps, "aiaccountadd", { query: { secret: SENT } })).includes(SENT));
+  assert.ok(JSON.stringify(await drive(aiAccountsOps, "aiaccountadd", { body: { owner: "group", secret: SENT } })).includes(SENT));
   /* T41 (DEC-188 (8); K2484): the group's switches are set only by R41's accountusesset (`owner` group) */
   assert.ok(inNoTable("groupswitchset"), "groupswitchset is declared");
   assert.ok(!Object.keys(credentialsOps({}, new URL("http://plane/"), {}, {}, {})).includes("groupswitchset"));
   assert.ok(!Object.keys(aiAccountsOps({}, new URL("http://plane/"), {}, {})).includes("groupswitchset"));
   assert.ok(Object.hasOwn(OPS, "accountusesset"));
-  /* R20: the key is reached through R24's acts only — no other op names it (network-notices' public read of the
-     group's signing keys, `groupkeyspublic`, is no API key), and ask carries no key field */
-  assert.deepEqual(Object.keys(OPS).filter((op) => /^group(key|switch)/.test(op) && op !== "groupkeyspublic").sort(), [...KEY].sort());
+  /* R20: no op names the group's key any longer (network-notices' public read of the group's signing keys,
+     `groupkeyspublic`, is no API key), and ask carries no key field */
+  assert.deepEqual(Object.keys(OPS).filter((op) => /^group(key|switch)/.test(op) && op !== "groupkeyspublic"), []);
   assert.deepEqual(stamps("ask"), ["member", "viewer"]);
   assert.deepEqual(plain(OPS.ask), { classes: ["admin", "member"], machineClasses: [], mutating: true });
-  /* no op names a group- or project-level subscription; a project's account (R41) is an API key or one owner's sign-in */
+  /* no op names a group- or project-level subscription */
   for (const op of Object.keys(OPS)) assert.doesNotMatch(op, /^(group|project|instance)subscription|^project(claude|credential)/, op);
-  /* T35 (R27, R30): the member's own disconnection (credentials R43); T37 (R36): and their own sign-in — the two
-     subscription ops, each a member's own act, neither a group's or a project's */
-  assert.deepEqual(Object.keys(OPS).filter((op) => /subscription/.test(op)).sort(), ["subscriptiondisconnect", "subscriptionsignin"]);
-  /* T48 (R68): the disconnection is ai-accounts' with the other account ops; the sign-in stays credentials' */
-  assert.equal(OP_FAMILIES["ai-accounts"].kinds.subscriptiondisconnect, "own");
+  /* T37 (R36): the member's own sign-in stays credentials'; the disconnection is retired (T53) */
+  assert.deepEqual(Object.keys(OPS).filter((op) => /subscription/.test(op)).sort(), ["subscriptionsignin"]);
   assert.equal(OP_FAMILIES.credentials.kinds.subscriptionsignin, "own");
-  /* negative control: a retired name added back would be seen */
-  assert.ok(!inNoTable("groupkeyswitch"));
+  /* negative control: a declared op is seen as in a table */
+  assert.ok(!inNoTable("aiaccountadd"));
 });
 
 test("R25 (T41; N823, K2438: served by ratification and publish-schedule): publishat with caseratify's gate — admin, member, probe, a member session's only (machineClasses []), NEEDS publish, both sets, caseratify's act lists and stamps, served by ratification's map; publishatmove and publishatcancel mutating, NEEDS publish, by stamped (query); publishschedule a read, viewer stamped, a present null — the three in publish-schedule's family and served by its map (publish-schedule R3, R4); none in a bearer fence (negative control)", async () => {

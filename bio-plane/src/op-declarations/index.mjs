@@ -232,13 +232,15 @@ const OP_FAMILIES = Object.freeze({
      read opt-in is an administrator's (R4, K1505 (9)); the machine's following imports write as `class:daemon` (R22).
      T35 (R43–R46): a use of a power and an assessment recorded by a member (MEMBER_ACT_ONLY: the machine proposes), a
      use withdrawn with a reason (no machine refusal, as a relation's withdrawal), and the uses read. */
-  events: family({ owner: "events", cite: "events R36, R43–R46", actor: QUERY("by"), ops: {
+  /* T53 (events R61; K5786; T53-603): an event withdrawn with a reason, `usewithdraw`'s posture (no machine refusal). */
+  events: family({ owner: "events", cite: "events R36, R43–R46, R61", actor: QUERY("by"), ops: {
     datedfact: "open", editacts: "open", readoptin: "admin", eventcreate: "open", eventattest: "open", eventgovern: "open",
     participantadd: "open", participantcorrect: "open", eventmerge: "member", eventsplit: "member", eventrelate: "open",
     eventrelationwithdraw: "open", actalias: "open", eventimport: "open", registerimport: "open",
     event: "read", eventforact: "read", datedfacts: "read", eventsfor: "read", timeline: "read", sequence: "read",
     whowassent: "read", statementsof: "read", proceedingstatus: "read",
-    discretionrecord: "member", assessmentrecord: "member", usewithdraw: "open", usesof: "read" } }),
+    discretionrecord: "member", assessmentrecord: "member", usewithdraw: "open", usesof: "read",
+    eventwithdraw: "open" } }),
   /* lines R16 (A ORG; R18 here): a line recorded, withdrawn or held current through by a member or, on a system rule's
      basis, the machine (MACHINE_NEEDS_IDENTIFIERS otherwise, R4, R21); `structureat` and `holderat` its one home. */
   lines: family({ owner: "lines", cite: "lines R16, R21; R18", actor: BODY("by"), ops: {
@@ -246,11 +248,13 @@ const OP_FAMILIES = Object.freeze({
     line: "read", linesof: "read", structureat: "read", holderat: "read", partiesof: "read", proceedinglinks: "read" } }),
   /* money R18 (K1573): a fact recorded by a member or a member-bound machine method (R3, R4); a set's inclusion and
      exclusion a member's (MEMBER_ACT_ONLY, R12); its proposal any credential's (R13). */
-  money: family({ owner: "money", cite: "money R18", actor: BODY("by"), proposer: BODY("by"), ops: {
+  /* T53 (money R39, R40; K5786; T53-603): the fiscal years a body's money is kept in, a read. */
+  money: family({ owner: "money", cite: "money R18, R39, R40", actor: BODY("by"), proposer: BODY("by"), ops: {
     moneyrecord: "open", moneywithdraw: "open", moneysetcreate: "open", moneysetinclude: "member",
     moneysetexclude: "member", moneysetpropose: "proposal", moneyfundtype: "open",
     money: "read", moneyof: "read", moneysummable: "read", moneyreconcile: "read", moneyset: "read",
-    committedagainstpaid: "read", authoritychain: "read", moneysets: "read" } }),
+    committedagainstpaid: "read", authoritychain: "read", moneysets: "read",
+    moneyfiscalyears: "read" } }),
   /* money-checks R11 (K1566): parameters and detectors a member's (MEMBER_ACT_ONLY, R3–R5), the display gate an
      administrator's (R8); the run itself is the scheduler's (R6), declared apart below. */
   "money-checks": family({ owner: "money-checks", cite: "money-checks R11", actor: BODY("by"), ops: {
@@ -295,9 +299,11 @@ const OP_FAMILIES = Object.freeze({
      R21, R23); a calculation and a recorded draw any author's (R4, R18); the pattern gate an administrator's (R23).
      T35 (R32, R33): freezing the held uses a member's (MEMBER_ACT_ONLY), the recipes of application a read. T36 (R31;
      its R38, R39): a spot-check's visit a member's (MEMBER_ACT_ONLY), `by` stamped as R31 names it beside the viewer
-     calculations reads as its actor; the spot-check's data a read. */
-  calculations: family({ owner: "calculations", cite: "calculations R24, R32, R33, R38, R39; R31", actor: QUERY("viewer"),
-    extra: { spotcheckvisit: ["by"] }, ops: {
+     calculations reads as its actor; the spot-check's data a read. T53 (calculations R53; K5786; T53-603): a calculation
+     made or evaluated reads the selection's `owner` stamp, the session's identity as `select` stamps it, so a member's
+     own selection resolves for her. */
+  calculations: family({ owner: "calculations", cite: "calculations R24, R32, R33, R38, R39, R53; R31", actor: QUERY("viewer"),
+    extra: { spotcheckvisit: ["by"], calculationcreate: ["owner"], calculationevaluate: ["owner"] }, ops: {
     tabledeclare: "member", bindingadopt: "member", moneyingest: "member", calculationcreate: "open",
     calculationaccept: "member", calculationdraw: "open", recordset: "member", patterngate: "admin",
     patternswitch: "member",
@@ -381,8 +387,9 @@ const OP_FAMILIES = Object.freeze({
   sources: family({ owner: "sources", cite: "sources R16, R18; K1550", actor: QUERY("by"), ops: { sourcekeyed: "member" } }),
   /* entities (K1572; R18): a scheme identifier, `resolutiondefect`'s stamp; a machine on a system rule's basis (R43).
      T35 (R30; its R51, N699): the registry's entities of a kind, the offices among them, a read. */
-  entities: family({ owner: "entities", cite: "entities R43, R51; K1572; R18, R30", actor: BODY("by"), ops: {
-    entityidentify: "open", entitieskind: "read" } }),
+  /* T53 (entities R68; N1256, DEC-401): a federal office chosen from the built-in list, a read for a member's session. */
+  entities: family({ owner: "entities", cite: "entities R43, R51, R68; K1572; R18, R30", actor: BODY("by"), ops: {
+    entityidentify: "open", entitieskind: "read", federaloffices: "sessionread" } }),
   /* ai-runs (K1601, K1610, K1612; R20): a run's verification refused to a machine (AI_RUN_VERIFICATION_UNFIT, run-rules
      R19). T41 (R41; K2514): the ceilings are retired to ai-use's `ailimitset` and the usage read is ai-use's `aiusage`.
      T41 (R43; its R74, R75; K2514, K2569): a run opened over the steps a member may see (`stepsrunai`, `openMany`, the
@@ -2649,7 +2656,16 @@ const UNATTENDED_BY_DECISION = Object.freeze({
    T51 fix round 4b (R34, plane R77; K4524): `owedwork` (plane's read of what a document still owes, admin and member) is named
    under the read ground, as a read a screen draws from, until `affordances`' `ACT_HELP` holds a text.
    T51 fix round 6 (G55; calculations): `moneyingestread`, the member's read of a background money ingest, joins the same read
-   ground, as a read a screen draws from (`moneyingest` itself stays under `unexplained`, an act). */
+   ground, as a read a screen draws from (`moneyingest` itself stays under `unexplained`, an act).
+   T53 (R34; BOB's ruling, 4 Nov): the member ops that owners declare on tranche with no text yet (the founder's two of
+   `member-roster`, the assistant's `ai*` acts, the mail door's, the layer entries' and reports', `events`' `eventwithdraw`,
+   and the reads beside them) are named here, each read under the read ground and each act under the unexplained one,
+   until `affordances`' `ACT_HELP` holds a text; the lines that give them words are listed in
+   `docs/requirements-notes/op-declarations.md`.
+   T53 (R20, R24, R30, R41 restated; ai-accounts R35, BOB 4 Nov): the retired account-seam reads leave the read ground with
+   their ops; ai-accounts' new reads (`accountstate`, `accountsof`, `aichecks`, `aioffered`, `personalchoice`) and the
+   Worker's credential read (`aicredential`) take it, and the Worker's two recording calls (`aigatewayserved`,
+   `aicredentialfailed`), steps of a run that no control offers, the nocontrol ground. */
 const ACT_HELP_ABSENT = Object.freeze({
   alias: Object.freeze({ ground: localize("op-declarations.index.an_alias_of_a_declared", "An alias of a declared op (R21): its op's explanation serves it."),
     ops: frozenList([
@@ -2659,81 +2675,92 @@ const ACT_HELP_ABSENT = Object.freeze({
       "standingquestionend", "standingquestionset", "withdrawidentityclaim", "withdrawtie"]) }),
   read: Object.freeze({ ground: "A read a screen draws from: no control on a screen offers it as an act.",
     ops: frozenList([
-      "acceptancecounts", "accounthistory", "accountreference", "accountuses", "actionholdpreview", "actionquotes",
-      "adminrecoverystep", "adminremovalsopen", "advocacychecks", "aiactual", "aiestimate", "aikeepawaystate",
-      "ailimits", "aiusage", "applicationrecipes", "approvedunsent", "asktallies", "assistantstate", "audit",
+      "acceptancecounts", "accounthistory", "accountsof", "accountstate", "accountuses", "actionholdpreview",
+      "actionquotes", "adminrecoverystep", "adminremovals", "adminremovalsopen", "advocacychecks", "aiactual",
+      "aichecks", "aicredential", "aiestimate", "aihealthpreview", "aikeepawaystate", "ailimits", "aioffered",
+      "aiusage", "aiusebymember", "applicationrecipes", "approvedunsent", "asktallies", "assistantstate", "audit",
       "baseupdates", "bearingnotes", "bindsat", "browse", "bundlehistory", "calculation", "calculationevaluate",
       "capturegrade", "capturerequestplatformhosts", "career", "checkpointsdue", "checkrequests", "checksof",
       "citationresolve", "claims", "clocklateness", "clocksics", "clocksrunning", "coarchivestate", "concerns",
-      "connections", "contradictionpairs", "costmessages", "courtnotice", "cures", "datedfacts",
-      "directorysubmission", "disclosureof", "docket", "docketinvitation", "docketprepare", "doorbelltally",
-      "dutiesof", "duty", "dutyoccurrences", "dutysetagainst", "dutytransitions", "editioninforce", "entitieskind",
-      "entity", "entitybyalias", "entityidonly", "entitysimilar", "escalationreasondraft", "escalationstatus",
-      "event", "eventforact", "eventsfor", "exceptions", "exploretimeline", "extractproposals", "factsdue",
-      "factstatus", "finddoors", "findingkind", "follows", "forcesof", "governorstate", "groupkeynotice",
-      "groupkeystate", "grouprules", "grouptestresults", "guide", "guidefor", "guideproposals", "guides", "heldat",
-      "holderat", "holdsdue", "holdsplaced", "hypotheses", "identity", "importedcase", "importedcases", "inbox", "inboxget",
-      "infolevel", "inforceat", "inforcethroughof", "inquirypartition", "instances", "interestchecks",
-      "interfacewords", "interview", "interviewform", "investigationproposals", "keyedservices", "lawaddresses",
-      "lawrelations", "line", "linesof", "lookedat", "matterpromiseduties", "matters", "meaningrows",
-      "memberlanguage", "memberties", "milestones", "money", "moneyamountchecks", "moneycheckparams",
-      "moneydetectors", "moneyingestread", "moneyjunction", "moneynoticed", "moneyof", "moneyset", "moneysummable", "narrowcandidates",
-      "notes", "notices", "opencaptures", "originalstate", "overridesof", "owedwork", "partiesof", "patterns",
-      "personcredentials", "personinterests", "personstatements", "photomarks", "placewantedstate", "plancomments",
-      "planreviewopen", "planreviews", "plantimeline", "powersof", "poweruses", "prepitems", "proceedinglinks",
-      "proceedingstatus", "projectaccountstate", "projectaikeepawaystate", "projectholds", "projectinvitations",
-      "projectkeynotice", "projectownersgone", "projectownervotes", "projectsshownon", "projectstake",
+      "connections", "contradictionpairs", "costmessages", "courtnotice", "cures", "datedfacts", "directorysubmission",
+      "disclosureof", "docket", "docketinvitation", "docketprepare", "doorbelltally", "dutiesof", "duty",
+      "dutyoccurrences", "dutysetagainst", "dutytransitions", "editioninforce", "entitieskind", "entity",
+      "entitybyalias", "entityidonly", "entitysimilar", "escalationreasondraft", "escalationstatus", "event",
+      "eventforact", "eventsfor", "exceptions", "exploreall", "explorecontinue", "explorepath", "exploreshorter",
+      "exploretimeline", "extractproposals", "factsdue", "factstatus", "federaloffices", "finddoors", "findingkind",
+      "fiscalyears", "follows", "forcesof", "governorstate", "grouprules", "grouptestresults", "guide", "guidefor",
+      "guideproposals", "guides", "heldat", "holderat", "holdsdue", "holdsplaced", "hypotheses", "identity",
+      "importedcase", "importedcases", "inbox", "inboxget", "inboxview", "infolevel", "inforceat", "inforcethroughof",
+      "inquirypartition", "instances", "interestchecks", "interfacewords", "interview", "interviewform",
+      "investigationproposals", "keyedservices", "lawaddresses", "lawrelations", "layerentries", "layerreports", "line",
+      "linesof", "lookedat", "mailread", "mailtally", "mailwaiting", "matterpromiseduties", "matters", "meaningrows",
+      "memberlanguage", "memberties", "milestones", "money", "moneyamountchecks", "moneyby", "moneycheckparams",
+      "moneydetectors", "moneyfiscalyears", "moneyingestread", "moneyjunction", "moneynoticed", "moneyof", "moneyset",
+      "moneysummable", "narrowcandidates", "notes", "notices", "opencaptures", "originalstate", "overridesof",
+      "owedwork", "partiesof", "patterns", "personalchoice", "personcredentials", "personinterests", "personstatements",
+      "photomarks", "placewantedstate", "plancomments", "planreviewopen", "planreviews", "plantimeline", "powersof",
+      "poweruses", "prepitems", "previewmore", "proceedinglinks", "proceedingstatus", "projectaikeepawaystate",
+      "projectholds", "projectinvitations", "projectownersgone", "projectownervotes", "projectsshownon", "projectstake",
       "projectstanding", "proposals", "publishschedule", "questionfollowstate", "questionwaits", "quietstate",
-      "reading", "readingname", "readingref", "recordsrequests", "recordsteps", "recoverycodesstate", "relation",
-      "reportdraft", "reports", "resolutions", "reviewcomments", "rulefields", "safecopy", "samepersoncandidates",
-      "scanfindings", "scanstatus", "searchfields", "searchindexcheck", "securitytoolcatalogue", "securitytoolevents",
-      "securitytools", "selection", "selectionlist", "sequence", "shares", "signintrace", "snapshotdiff", "snapshots",
-      "sourceof", "sourcepersonlinks", "sourcerung", "spotcheck", "staffing", "stakeatpreparation", "standardsfor",
-      "standing", "standinganswers", "statementsof", "statusreportdraft", "statusreports", "stepproducts",
-      "stepproposals", "steps", "stepslike", "stillstanding", "structureat", "subjectsnamed", "successread",
-      "successrecords", "table", "tablesat", "templatebyhandle", "templatecomments", "templateread", "templates",
-      "templatesforaction", "textattest", "textprovenance", "threatof", "timeline", "translations", "usesof",
-      "verdictnotes", "versioncompare", "watchquestions", "whatchangeddrafts", "whereitstands", "whowassent",
+      "reading", "readingname", "readingref", "recordsrequests", "recordsteps", "recoverycodesstate", "registercompare",
+      "registerdelta", "registerfilter", "registerimportstatus", "registerinterests", "registerlist",
+      "registerofficers", "registerproposals", "registerrow", "registersearch", "relation", "reportdraft", "reports",
+      "resolutions", "reviewcomments", "rulefields", "ruleresolve", "safecopy", "samepersoncandidates", "scanfindings",
+      "scanstatus", "searchfields", "searchindexcheck", "securitytoolcatalogue", "securitytoolevents", "securitytools",
+      "selection", "selectionlist", "sequence", "shares", "signintrace", "snapshotdiff", "snapshots", "sourceof",
+      "sourcepersonlinks", "sourcerung", "spotcheck", "staffing", "stakeatpreparation", "standardsbinding",
+      "standardsfor", "standing", "standinganswers", "statementsof", "statusreportdraft", "statusreports",
+      "stepproducts", "stepproposals", "steps", "stepslike", "stillstanding", "structureat", "subjectsnamed",
+      "successread", "successrecords", "table", "tablesat", "templatebyhandle", "templatecomments", "templateread",
+      "templates", "templatesforaction", "textattest", "textprovenance", "threatof", "timeline", "translations",
+      "usesof", "verdictnotes", "versioncompare", "watchquestions", "whatchangeddrafts", "whereitstands", "whowassent",
       "wizardcandidates", "wizardcheck", "wizardread", "wizardsat", "wizarduse", "workbook", "workbookexport",
       "workbookinputs", "workbooklint"]) }),
   nocontrol: Object.freeze({ ground: "A step another act takes, which no control on a screen offers: a promotion's lease and identifier, a run's tick, the count of a check, a wizard's progress, a capture a tool files (the screen's upload is captureupload), or the mark a screen records of itself when it opens (Home's lookedsince).",
     ops: frozenList([
-      "airuntick", "allocid", "answercheck", "capture", "lease", "wizardprogress"]) }),
+      "aicredentialfailed", "aigatewayserved", "airuntick", "allocid", "answercheck", "capture", "lease",
+      "wizardprogress"]) }),
   unexplained: Object.freeze({ ground: localize("op-declarations.index.an_act_or_a_draft", "An act, or a draft made for a member at their request, that the design has not yet explained; named back to the design stream (DEC-174 (3))."),
     ops: frozenList([
-      "actalias", "actionriskpropose", "actionseekspropose", "addressfrequencyset", "adminresign", "aicredentialmint",
-      "aicredentialrevoke", "aigrantmint", "airunverify", "approvalruleset", "assessmentrecord", "attesttext",
-      "bearingnote", "bindingadopt", "calibrate", "calibrationsignal", "calibrationsubject",
-      "capturerequestplatformmark", "capturerequestplatformunmark", "caseapprove", "caseimportdocument",
-      "checkrecord", "checktake", "claimfindstep", "claimfound", "clockstate", "coarchiveset", "comparisonpropose",
-      "contentmint", "contradictionpropose", "contradictionrecommend", "costmessage", "counselpacketexport",
-      "courttreat", "cureunlink", "discretionrecord", "dispose", "docketdecline", "docketpressure", "dutyadopt",
-      "dutymatch", "dutypropose", "dutyrevise", "dutytransition", "dutywithdraw", "editacts", "entityidentify",
-      "eventattest", "eventgovern", "eventimport", "eventmerge", "eventrelationwithdraw", "eventsplit",
-      "exportrender", "extractpropose", "filemembershipjudge", "filemembershipstore", "findaccept", "findmute",
-      "followbody", "followpersonquery", "followportal", "grouptestset", "guideadopt", "guidedraft", "guideoffer",
-      "guidepropose", "guideproposetocivicsmith", "guideretire", "guidereview", "hypothesissetaside",
-      "hypothesistakeup", "importflagclear", "importunwatch", "interestcheckdefine", "interestcheckgate",
-      "interestcheckswitch", "interviewkeep", "joinlinkoff", "joinlinkreplace", "joinlinkset", "keyedserviceset",
-      "keyedserviceswitch", "lawpropose", "lawwithdraw", "linecurrentthrough", "linkproject", "milestoneitemremove",
-      "milestonereminder", "milestoneremove", "milestonerevise", "milestoneset", "moneycheckparam",
-      "moneydetectordefine", "moneydetectorgate", "moneydetectorswitch", "moneyfundtype", "moneyingest",
-      "moneysetpropose", "moneywithdraw", "narrativeclaim", "noteshare", "noteunshare", "optionrevise",
-      "participantcorrect", "patterngate", "patternswitch", "permeetingbody", "personfactwithdraw", "planaccept",
-      "plancomment", "planreviewrecord", "planreviewrhythm", "plansubjectremove", "prepitemadd", "prepitemdone",
-      "prepitemtakeup", "projectclosewithgaps", "projectwatch", "proposalaccept", "provenancechain", "questionfollow",
-      "ratify", "readoptin", "readpages", "recordset", "recordsrequestanswer", "recordsrequestopen",
-      "refreshregister", "registerimport", "relationwithdraw", "reportkeep", "reviewpropose", "ruleservicesswitch",
-      "safecopyrequest", "seatsseed", "sourcekeyed", "standardforce",
-      "standardforcepropose", "standardforcewithdraw", "standardpropose", "standardrelease", "standingaiswitch", "statusreportsave",
-      "stepaccept", "stepbywhen", "stepcostadd", "stepcostremove", "stepcreate", "stepdelete", "stepend", "steplearn",
-      "stepoutcome", "stepproduct", "steprefer", "stepreminder", "stepsrunai", "stepstart", "stepwait",
-      "stepwaitremove", "strengthbar", "successrevise", "templateapprove", "templatecomment", "templatedraft", "templategrantrevoke",
-      "templatepropose", "templateretire", "templatereview", "templatereviewgrant", "templaterevise",
-      "templatesubmit", "theorypropose", "translationmark", "unfollow", "unpack", "uselink", "usesfreeze",
-      "useunlink", "usewithdraw", "waitlook", "websitekeyrevoke", "websitekeyset", "wizardeditorgrant",
-      "wizardeditorrevoke", "wizardpropose", "workbooklintexplain", "workbookmethodnote", "workbookrecompute",
-      "workbookunbind", "workobjective"]) }),
+      "actalias", "actionriskpropose", "actionseekspropose", "addressfrequencyset", "adminproposalcancel",
+      "adminresign", "aiaccountadd", "aiaccountremove", "aiaccountswitch", "aicheckset", "aicredentialmint",
+      "aicredentialrevoke", "aicreditsclear", "aigrantmint", "aihealthset", "aikeycloudflare", "aikeyenter",
+      "aikeyseal", "aimemberallow", "aimineuse", "aimycheckset", "aioptinset", "aiorderset", "aiownadd",
+      "aipersonalchoose", "aiprojectcheckset", "aiprojectorder", "aiprojectuse", "airetestset", "airunverify", "aisend",
+      "aitermsaccept", "aitermswithdraw", "approvalruleset", "assessmentrecord", "attesttext", "bearingnote",
+      "bindingadopt", "calibrate", "calibrationsignal", "calibrationsubject", "capturerequestplatformmark",
+      "capturerequestplatformunmark", "caseapprove", "caseimportdocument", "checkrecord", "checktake", "claimfindstep",
+      "claimfound", "clockstate", "coarchiveset", "comparisonpropose", "contentmint", "contradictionpropose",
+      "contradictionrecommend", "costmessage", "courttreat", "cureunlink", "discretionrecord", "dispose",
+      "docketdecline", "docketpressure", "dutyadopt", "dutymatch", "dutypropose", "dutyrevise", "dutytransition",
+      "dutywithdraw", "editacts", "entityidentify", "eventattest", "eventgovern", "eventimport", "eventmerge",
+      "eventrelationwithdraw", "eventsplit", "eventwithdraw", "exportrender", "extractpropose", "filemembershipjudge",
+      "filemembershipstore", "findaccept", "findmute", "followbody", "followpersonquery", "followportal",
+      "grouptestset", "guideadopt", "guidedraft", "guideoffer", "guidepropose", "guideproposetocivicsmith",
+      "guideretire", "guidereview", "hypothesissetaside", "hypothesistakeup", "importflagclear", "importunwatch",
+      "interestcheckdefine", "interestcheckgate", "interestcheckswitch", "interviewkeep", "joinlinkoff",
+      "joinlinkreplace", "joinlinkset", "keyedserviceset", "keyedserviceswitch", "lawpropose", "lawwithdraw",
+      "layerentryconfirm", "layerentrydraft", "layerentrywithdraw", "layerreport", "layerreportcarry", "linkproject",
+      "mailaddress", "mailbringin", "maildelete", "milestoneitemremove", "milestonereminder", "milestoneremove",
+      "milestonerevise", "milestoneset", "moneycheckparam", "moneydetectordefine", "moneydetectorgate",
+      "moneydetectorswitch", "moneyfundtype", "moneyingest", "moneysetpropose", "moneywithdraw", "narrativeclaim",
+      "noteshare", "noteunshare", "optionrevise", "participantcorrect", "patterngate", "patternswitch",
+      "permeetingbody", "personfactwithdraw", "planaccept", "plancomment", "planreviewrecord", "planreviewrhythm",
+      "plansubjectremove", "prepitemadd", "prepitemdone", "prepitemtakeup", "projectclosewithgaps", "projectwatch",
+      "proposalaccept", "provenancechain", "questionfollow", "ratify", "readoptin", "readpages", "recordset",
+      "recordsrequestanswer", "recordsrequestopen", "refreshregister", "registerdefine", "registerfileimport",
+      "registerimport", "registerimportset", "registerinterest", "registerpreread", "registerpropose",
+      "registerrefresh", "registerrowcite", "registerwatch", "registerwatchstop", "relationwithdraw", "reportkeep",
+      "reviewpropose", "rowexpunge", "ruleservicesswitch", "safecopyrequest", "seatsseed", "sourcekeyed",
+      "standardforce", "standardforcepropose", "standardforcewithdraw", "standardpropose", "standardrelease",
+      "standingaiswitch", "statusreportsave", "stepaccept", "stepbywhen", "stepcostadd", "stepcostremove", "stepcreate",
+      "stepdelete", "stepend", "steplearn", "stepoutcome", "stepproduct", "steprefer", "stepreminder", "stepsrunai",
+      "stepstart", "stepwait", "stepwaitremove", "strengthbar", "successrevise", "templateapprove", "templatecomment",
+      "templatedraft", "templategrantrevoke", "templatepropose", "templateretire", "templatereview",
+      "templatereviewgrant", "templaterevise", "templatesubmit", "theorypropose", "translationmark", "unfollow",
+      "unpack", "uselink", "usesfreeze", "useunlink", "usewithdraw", "waitlook", "websitekeyrevoke", "websitekeyset",
+      "wizardeditorgrant", "wizardeditorrevoke", "wizardpropose", "workbooklintexplain", "workbookmethodnote",
+      "workbookrecompute", "workbookunbind", "workobjective"]) }),
 });
 
 /* R76 (T51; DEC-330 owed; U348; K3810): THE BROWSER ACTS, a class of their own, `{screen, census, registry}` each. They
