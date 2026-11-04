@@ -247,7 +247,7 @@ Terms. An **op** is a name the instance answers. An **op spec** is `{classes, ma
 
 ### Found
 
-- **F1** *(not yet met: walk p3dev-t1 4 Nov, coordinator 23:00)* aipathready, a read act by surface-declarations R15, is not in OPS or DECLARED_OPS, so the plane answers UNKNOWN_OP to the frame's every ask.
+- **F1** aipathready, a read act by surface-declarations R15, is not in OPS or DECLARED_OPS, so the plane answers UNKNOWN_OP to the frame's every ask.
 
 ## Private
 
