@@ -1007,7 +1007,8 @@ export class AiUse {
   }
 
   /** R4, R21: one group's sums as a read answers them: tokens and calls always; money apart (reported, estimated) only where
-   *  `money` allows it and something was measured, else `cost: null, not_measurable: true`, never 0. */
+   *  `money` allows it and something was measured, else `cost: null, not_measurable: true`, never 0; `money` false (a
+   *  viewer who does not own the account) answers no money field at all. */
   #figures(r, w, money) {
     const unstated = (() => { try { return JSON.parse(r.unstated || "[]"); } catch { return []; } })();
     const base = { calls: Number(r.calls), input_tokens: Number(r.input_tokens), output_tokens: Number(r.output_tokens),
@@ -1039,7 +1040,7 @@ export class AiUse {
     if (bar) return bar;
     const { day, zone } = this.#dayOf(at);
     const m = typeof month === "string" && /^\d{4}-\d{2}$/.test(month.trim()) ? month.trim() : day.slice(0, 7);
-    const money = this.#ownerMoney(p, viewer).allows;
+    const money = this.#ownerMoney(p, viewer).allows || null;
     const rows = this.#rows(`SELECT use, ${AiUse.#SUMS} FROM ai_usage WHERE owner = ? AND substr(day, 1, 7) = ?
                              GROUP BY use ORDER BY use`, p.owner, m).map(AiUse.#unstatedOf);
     return { ok: true, owner: p.owner, month: m, zone, uses: rows.map((r) => ({ use: r.use,
@@ -1063,7 +1064,7 @@ export class AiUse {
     const payers = owners.map((o) => {
       const p = parseOwner(o);
       const mine = p ? this.#owns(p, `member:${id}`) : false;
-      const money = mine ? this.#ownerMoney(p, `member:${id}`).allows : false;
+      const money = mine ? this.#ownerMoney(p, `member:${id}`).allows || null : false;
       const limits = p ? this.#limits(o).filter((l) => l.scope === "overall" || l.scope === "per_member"
         || rows.some((r) => r.owner === o && r.use === l.scope)).map((l) => {
         const hit = this.#reachedFor(p, l.scope === "overall" || l.scope === "per_member" ? null : l.scope, id, this.#ms(at));
