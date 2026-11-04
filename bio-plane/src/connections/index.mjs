@@ -50,8 +50,9 @@ import { CONNECTIONS_TABLES, CONNECTIONS_TABLE_NAMES, migrateConnections } from 
 import { checkConnectionPairCovers, checkConnectionMentionUnchosen } from "./pair.mjs";
 import { Themes } from "./themes.mjs";
 import { registerOwner } from "../connection-grammar/index.mjs";
-import { MENTIONED_KINDS, MENTIONED_OWNER, mentionedNeighbours } from "./mentioned.mjs";
-import { StepSources, STEP_SOURCE_KINDS } from "./stepsources.mjs";
+import { MENTIONED_KINDS, MENTIONED_OWNER, mentionedSet } from "./mentioned.mjs";
+import { StepSources, STEP_SOURCE_KINDS, pageOf } from "./stepsources.mjs";
+import { NAMED_IN_KINDS, namedInSet } from "./namedin.mjs";
 import { localize, word } from "../setup-words/index.mjs";
 
 export { CONNECTIONS_SCHEMA, CONNECTIONS_TABLES, CONNECTIONS_TABLE_NAMES } from "./schema.mjs";
@@ -59,6 +60,7 @@ export { checkConnectionPairCovers, checkConnectionMentionUnchosen } from "./pai
 export { THEME_READ_LIMIT_DEFAULT, THEME_READ_LIMIT_MAX, THEME_WITHDRAW_CHECKS } from "./themes.mjs";
 export { MENTIONED_KIND, MENTIONED_KINDS, MENTIONED_OWNER, MENTIONED_DECLARES, CO_MENTION_HUB, WARN_BAND, mentionedMethod }
   from "./mentioned.mjs";
+export { NAMED_IN_KIND, NAMED_IN_KINDS, NAMED_IN_DECLARES, NAMED_IN_HUB, NAMED_IN_READ_LIMIT, namedInId } from "./namedin.mjs";
 export { STEP_SOURCE_KIND, STEP_SOURCE_KINDS, STEP_SOURCE_DECLARES, STEP_SOURCE_BASIS_MAX, STEP_SOURCE_ID_PREFIX }
   from "./stepsources.mjs";
 /* R35, R46: C-49, C-74 and C-81 and the leg check are this module's own (`./checks.mjs`; C-74 T18, the rest copied
@@ -1309,14 +1311,28 @@ export class Connections {
 
   /** R63–R65: the documents connected to `node` by R1's derived connections, in `connection-grammar`'s shape, as the
    *  kind `mentioned_together`. Reads; never derives. R69: for an entity node, the sources attached to the declared
-   *  steps it is an end of, as the kind `step_source` (`./stepsources.mjs`). A node is an entity or a document, never
-   *  both, so the read is the one its node names. */
+   *  steps it is an end of, as the kind `step_source` (`./stepsources.mjs`). R74: either node also answers its
+   *  `named_in` hops (`./namedin.mjs`): an entity node the union of `step_source` and `named_in`, a document node the
+   *  union of `mentioned_together` and `named_in`; `kinds` limits which are consulted. The union is ordered by hop id
+   *  and paged at `BOUNDS.fanout`; each kind judges its own hub, and a node that is a hub for any kind consulted is
+   *  answered by that set's size, with no items (connection-grammar R6). */
   neighbours(args) {
     const node = args && typeof args === "object" ? args.node : null;
-    if (typeof node === "string" && node && this.entities && typeof this.entities.has === "function" && this.entities.has(node))
-      return this.stepSources.neighbours(args);
-    return mentionedNeighbours(this, args, { positionOf: (r, side) =>
-      readingSourceFromColumns(r[`${side}_pos_kind`], r[`${side}_pos`], r[`${side}_pos_ref`]) });
+    const isEntity = typeof node === "string" && !!node && !!this.entities && typeof this.entities.has === "function" && this.entities.has(node);
+    const own = isEntity ? this.stepSources.set(args)
+      : mentionedSet(this, args, { positionOf: (r, side) =>
+          readingSourceFromColumns(r[`${side}_pos_kind`], r[`${side}_pos`], r[`${side}_pos_ref`]) });
+    if (own.refused) return own;
+    const named = namedInSet(this, args, isEntity);
+    if (named.refused) return named;
+    const sets = [own, named];
+    const extra = {};
+    for (const s of sets) for (const [key, v] of Object.entries(s.extra || {}))
+      extra[key] = key === "bounds" && Array.isArray(extra.bounds) ? [...extra.bounds, ...v] : v;
+    const hub = sets.find((s) => s.hub);
+    if (hub) return { items: [], hub: hub.hub, ...extra };
+    const items = [...own.items, ...named.items].sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
+    return { ...pageOf(items, args.page), ...extra };
   }
 
   /** R65: how many captures resolving to `entityId` sit in a bundle the viewer may see. */
@@ -1425,9 +1441,9 @@ export function registeredNeighbours(args) {
   return k.neighbours(rest);
 }
 
-/** R62, R69: registered once, at load, into the plane's default registry (`connection-grammar` R5): the owner's two
- *  kinds, `mentioned_together` and `step_source`, with the one read that answers each by its node. */
-export const CONNECTIONS_KINDS = Object.freeze([...MENTIONED_KINDS, ...STEP_SOURCE_KINDS]);
+/** R62, R69, R74: registered once, at load, into the plane's default registry (`connection-grammar` R5): the owner's
+ *  three kinds, `mentioned_together`, `step_source` and `named_in`, with the one read that answers each by its node. */
+export const CONNECTIONS_KINDS = Object.freeze([...MENTIONED_KINDS, ...STEP_SOURCE_KINDS, ...NAMED_IN_KINDS]);
 export const MENTIONED_REGISTRATION = registerOwner({ owner: MENTIONED_OWNER, kinds: CONNECTIONS_KINDS.map((x) => ({ ...x })),
                                                       neighbours: registeredNeighbours });
 
