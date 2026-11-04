@@ -7,6 +7,7 @@
    comparison has a negative control. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { RETIRED_T53 } from "./help.mjs";
 import { readFileSync } from "node:fs";
 import * as O from "../../../src/op-declarations/index.mjs";
 import { browserActs, OWED_BY_FIX_ROUND_AT_43379A1A44 } from "./browser.mjs";
@@ -180,7 +181,8 @@ test("R39 (N776; DEC-182 (4); K2175; credentials R3): setpassword — the caller
 
 test("R21 (T37; N776, DEC-180, DEC-182; K2159, K2171): on PR #14's registry every function is an op or an alias, the four withdrawn functions and claimidentity are gone, and the eight owed acts T37 declares are each declared once under its own name, read as served with no alias; the comment naming setpassword a function served in process is gone; (T43, DEC-189 (3)) seven of the eight re-pointed to their declared ops, subscriptionsignin still owed; (R52, T46) no owed act is left without a spec, infolevelset R50's; (R54, R60, T47) at PR #33's head subscriptionsignin a declared act too (negative control: an undeclared owed act is seen)", () => {
   const fns = actsOf("function");
-  for (const f of fns) assert.ok(Object.hasOwn(OPS, f), `${f}: no spec`);
+  /* T53 (R21; ai-accounts R35, BOB 4 Nov): a retired account-seam function is served through no op and has no spec */
+  for (const f of fns) assert.equal(Object.hasOwn(OPS, f), !RETIRED_T53.includes(f), `${f}: no spec, or retired and declared`);
   for (const f of ["projectcreated", "countask", "registerproceeding", "deadlinecompute", "setpassword", "claimidentity"])
     assert.ok(!fns.includes(f), f);
   for (const f of ["projectcreated", "countask", "registerproceeding", "deadlinecompute", "claimidentity"]) assert.ok(inNoTable(f), f);
