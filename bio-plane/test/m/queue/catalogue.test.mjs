@@ -29,7 +29,9 @@ const OBLIGATION = ["authority-undetermined", "bias-debt", "endorsement-owed", "
   /* T48 (R54; N1047, DEC-226 (1)) */
   "update-ready",
   /* T50 (R57; N1091, N1204; queue-producers R41, R42) */
-  "project-invitation", "project-request", "project-leave"];
+  "project-invitation", "project-request", "project-leave",
+  /* T53 (R1; K5480, K5478): re-testing turned off, and an AI account stopped for an unpaid gateway call */
+  "retesting-off", "ai-credits-stop"];
 /* R1's twenty-nine, `cardinality_exceeded` (N107, K209), `newer-capture-affects-reference` (N172), N345's five, the two
    docket kinds (queue-producers R31, DEC-116 items 3, 7) and the released hold (queue-producers R29, DEC-113) among
    them. */
@@ -61,7 +63,9 @@ const FINDING = ["missing_predecessor", "overdue_successor", "temporal-expectati
   "fetch-done", "ingest-done", "ingest-stopped", "edition-published-as-scheduled", "scheduled-edition-stopped",
   "wizard-base-updated",
   /* T51 fix round 9 (G135f; K4933; notice-producers R29): a reading of a supplied document ended */
-  "reading-ended"];
+  "reading-ended",
+  /* T53 (R98; N1259; notice-producers R30, R31): a register watch's change, and an import's end */
+  "register-changed-noticed", "register-import-done", "register-import-stopped", "register-import-failed"];
 /* observation-log's twenty (R5): its twelve, the five sweep kinds (link-sweep R11, queue-producers R26) and the three
    notice kinds (network-notices R12, R13, queue-producers R27) its R33 added in T23 (K1099); and the overdue action
    clock (K611). */

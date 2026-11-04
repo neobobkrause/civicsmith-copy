@@ -129,7 +129,8 @@ test("R55: every kind a member may mute has the plain name the muted list's sent
      (T52) and the screen draws its own fallback for a kind with none. This list is exactly the kinds without a row: a row
      arriving for one of them makes this assertion fail until the kind leaves the list. */
   const OWED = ["edition-published-as-scheduled", "edition-scheduled",
-    "place-profile-arrived", "reading-ended", "request-unsent", "scheduled-edition-stopped", "wizard-base-updated"];
+    "place-profile-arrived", "register-changed-noticed", "register-import-done", "register-import-failed",
+    "register-import-stopped", "request-unsent", "scheduled-edition-stopped", "wizard-base-updated"];
   assert.deepEqual(mutable.filter((k) => !hasWord(`queue.kind.${k}`)).sort(), OWED);
   assert.ok(mutable.includes("watched-changed") && hasWord("queue.kind.watched-changed"), "DEC-328 (3)");
   assert.ok(hasWord("queue.muted.title"), "the list's title");

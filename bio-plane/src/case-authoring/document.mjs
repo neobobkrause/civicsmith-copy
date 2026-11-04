@@ -52,8 +52,8 @@ export const CASE_CITATION_WORDS = Object.freeze({
  *  R7, R13, R14), imported above and never copied (N529, K1333). */
 export const CEREMONY_HIGHLIGHT_SENTENCE = word("case-authoring.ceremony_highlight_sentence");
 
-/** R14: THE CASE DOCUMENT, in `case-grammar`'s `CASE_DOCUMENT_FORMAT` through `publication`'s re-export (`bio-case-document/8`
- *  from T31, identical in fields to `/6`; DEC-124, K1365 (1)). Everything it asserts arrived as an argument (R22): the authored
+/** R14: THE CASE DOCUMENT, in `case-grammar`'s `CASE_DOCUMENT_FORMAT` through `publication`'s re-export (`bio-case-document/10`
+ *  from T53, `case-grammar` R35; `/8` from T31, identical in fields to `/6`; DEC-124, K1365 (1)). Everything it asserts arrived as an argument (R22): the authored
  *  sentences as the publisher typed them, and every fact the caller read from the record at the act (`searched`,
  *  `conclusions`, `frozen`, `manifest`, `acks`, `citations`, `attributions`, the writer). Nothing here is composed,
  *  summarised or inferred, and no case-level strength has anywhere to be written (R24).
@@ -98,8 +98,8 @@ export function caseDocumentText({ caseId, edition, project, workingOn = null, s
     : localize("case-authoring.document.each_row_is_an_adoption", "each row is an adoption in this scope whose pinned revision the team had proposed and not accepted when this case was signed; that revision was not in force at signing");
   const frozenOf = (m) => (frozen && frozen.get(m)) || null;
   const concOf = new Map((conclusions || []).map((c) => [c.target, c]));
-  /* R14 (G47; K4672): the format the document declares, through case-grammar's helper (`/9` only when an attestation row
-     carries a `sha`, else `/8`). */
+  /* R14 (G47; K4672): the format the document declares, through case-grammar's helper (since its R35, `/10` always; it
+     answered `/9` for an attestation `sha`, else `/8`, before). */
   const format = caseDocumentFormatFor((materials && materials.attestations) || []);
   const fm = [
     "---",

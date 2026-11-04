@@ -20,7 +20,7 @@ import { publicationOf, publicationOps, captureBlockLines, sourceBlockLines } fr
 import { acceptedWorkOf } from "../../../src/accepted-work/index.mjs";
 import { caseTensionsOf, caseTensionsOps } from "../../../src/case-tensions/index.mjs";
 import { materialsLines, materialAttestationLines, acceptedWorkBlockLines, calculationsLines,
-         timelineLines } from "../../../src/case-grammar/index.mjs";
+         timelineLines, ungradedPassagesLines, typedPassagesLines } from "../../../src/case-grammar/index.mjs";
 import { parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 import { noSelection } from "../retrieval/fixtures.mjs";
@@ -318,9 +318,10 @@ export function caseDoc(caseId, edition, { project = "PROJ-1", roles = [], findi
                                            excludes = "Nothing else.", ack = false, blocks = null,
                                            method = { grading: "grading/1", checks: "1.0.0" }, materials = [],
                                            attestations = [], acceptedWork = null, acceptedWorkFlags = null,
-                                           calculations = null, timeline = null } = {}) {
+                                           calculations = null, timeline = null, ungraded = null, typed = null } = {}) {
   format ??= "bio-case-document/6";
-  const v6 = format === "bio-case-document/6" || format === "bio-case-document/7";
+  /* /6 and every later format (case-grammar R35: /7 to /10 are /6 in these fields) state the method and materials. */
+  const v6 = Number((/^bio-case-document\/(\d+)$/.exec(format) || [])[1]) >= 6;
   const scalar = (v) => (v === null || v === undefined ? "null" : typeof v === "string" ? `"${v}"` : String(v));
   const rowsOf = (key, list) => (list.length ? [`${key}:`, ...list.flatMap((r) => Object.entries(r)
     .map(([k, v], i) => `${i ? "   " : "  -"} ${k}: ${scalar(v)}`))] : [`${key}: []`]);
@@ -357,6 +358,9 @@ export function caseDoc(caseId, edition, { project = "PROJ-1", roles = [], findi
     ...(acceptedWork || acceptedWorkFlags ? acceptedWorkBlockLines({ rows: acceptedWork || [], flags: acceptedWorkFlags || [] }) : []),
     ...(calculations ? calculationsLines(calculations) : []),
     ...(timeline ? timelineLines(timeline) : []),
+    /* case-grammar R36, R37 (T53): /10's two passage blocks, written with its own line builders when given. */
+    ...(ungraded ? ungradedPassagesLines(ungraded) : []),
+    ...(typed ? typedPassagesLines(typed) : []),
     "---"];
   const body = ["", "## Scope", "", "The question.", "",
     ...(ack ? ["**Who else read this statement.** Nobody yet.", ""] : []),

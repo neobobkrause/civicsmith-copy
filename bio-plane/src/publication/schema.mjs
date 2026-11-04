@@ -565,6 +565,14 @@ const ADDITIVE_COLUMNS = [
   ["published_cases", "casefile_attempts", "INTEGER"],
   ["published_cases", "casefile_attempted_at", "TEXT"],
   ["published_cases", "casefile_why", "TEXT"],
+  /* R80, R82 (T53; DEC-461, DEC-464): THE PASSAGES AN EDITION PUBLISHED WITHOUT A GRADE, AND ITS TYPED PASSAGES with who
+     typed and who checked them at the credit each chose, read at the commit from the signed bytes (`case-grammar` R36,
+     R37): a JSON list for a `stated` document, NULL with `predates` or `unreadable` otherwise. No member id, handle or
+     key is held. NULL in all four on every row written before T53; never back-filled. */
+  ["published_cases", "ungraded_passages", "TEXT"],
+  ["published_cases", "ungraded_state", "TEXT"],
+  ["published_cases", "typed_passages", "TEXT"],
+  ["published_cases", "typed_state", "TEXT"],
 ];
 
 /** G47t (K4677): the registration of a kind `attestation` token: a stored capture that differs from the new one is cleared
