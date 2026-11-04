@@ -234,3 +234,4 @@
 {"at":"2026-11-04T17:44:36Z","row":"sent","n":120,"to":"job-plane","text":"bob-120: no flaky-accept or skip; make r8-heal-door R102 deterministic (controlled clock/alarm hook, assert after the alarm ran), 5 consecutive passes, then job complete."}
 {"at":"2026-11-04T17:44:40Z","row":"outcome","n":120,"outcome":"delivered"}
 {"at":"2026-11-04T17:48:43Z","row":"sent","n":121,"to":"job-case-checker","text":"bob-121: PR 294 merged; proceed: job sync, git rm --cached program.mjs, fresh-build test, job complete."}
+{"at":"2026-11-04T17:48:47Z","row":"outcome","n":121,"outcome":"delivered"}
