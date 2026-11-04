@@ -1,0 +1,68 @@
+{
+  "id": "queue-producers",
+  "title": "queue-producers: answer its provider notices",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/queue-producers/",
+    "build/requirements/queue-producers.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/queue-producers/"
+  ],
+  "requirements": "build/requirements/queue-producers.md",
+  "uses": [
+    "escalation",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "provenance",
+    "connections",
+    "progressions",
+    "bias",
+    "inquiry",
+    "basis-versions",
+    "contradiction",
+    "ai-runs",
+    "capture-requests",
+    "intent",
+    "reevaluation",
+    "publication",
+    "monitoring",
+    "credentials",
+    "corpus-export",
+    "docket",
+    "wizard-scripts",
+    "case-import",
+    "civil-time",
+    "machinery-producers",
+    "case-tensions",
+    "publish-schedule",
+    "action-producers",
+    "setup-words",
+    "project-roster",
+    "member-roster",
+    "content",
+    "test-support",
+    "ai-accounts",
+    "ai-use"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/queue-producers.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: capture-requests:182 (index.mjs:710 calls capture-requests leads() and acts on each row's attribution.ok, which now reads the request's principal filled from the run's principal_ai). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T11:42:27Z"
+  }
+}
