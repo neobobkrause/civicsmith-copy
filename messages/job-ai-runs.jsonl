@@ -6,3 +6,4 @@
 {"at":"2026-11-04T05:08:17Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-04T05:52:49Z","row":"sent","n":4,"to":"bob","text":"job ai-runs complete, PR #96 ready: run status"}
 {"at":"2026-11-04T05:53:02Z","row":"outcome","n":4,"outcome":"delivered"}
+{"at":"2026-11-04T06:13:24Z","row":"sent","n":5,"to":"bob","text":"job ai-runs: suite red after job sync, from ai-use PR 105; block refused (ledger COMPLETE); details by message"}
