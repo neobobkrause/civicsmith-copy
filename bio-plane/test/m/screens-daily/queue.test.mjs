@@ -217,7 +217,7 @@ test("R3: each act sends its op's body for the item it was drawn on; an act aski
   assert.ok(keep);
 });
 
-test("R3: forwarding, a project key and a question from a hint, each with its own field, and nothing sent without it", timeout, async () => {
+test("R3, F2: forwarding and a question from a hint, each with its own field, and nothing sent without it; a retired project key option is drawn as Open, never its act", timeout, async () => {
   const { w, rosa, mai, p1 } = await team();
   await todo(w, rosa, mai, p1, "Forward");
   await todo(w, rosa, mai, p1, "Keys");
@@ -225,7 +225,7 @@ test("R3: forwarding, a project key and a question from a hint, each with its ow
   const [fwdItem, keyItem] = [todoOf(real, "Forward"), todoOf(real, "Keys")];
   // The store's check to-do offers none of these three acts (taskforward and promote are doors of a set act or a wizard, a project key the owner's): the two real to-dos
   // are shown with the options the page draws these fields by.
-  await mai.act("reauth", { body: { password: mai.password } });   // a project's key asks for the password again
+  await mai.act("reauth", { body: { password: mai.password } });   // as before T53, when the item also offered a project key (now retired, F2)
   const offered = (items) => items.map((i) => (i.id === fwdItem.id ? { ...i, options: [{ id: "taskforward" }], disposition: {} } : i.id === keyItem.id ? { ...i, options: [{ id: "projectkeyset" }, { id: "promote" }], disposition: {} } : i));
   const p = await openW(w, mai, "/app/queue", { queue: queueAs(w, mai, offered) });
   const fwd = await press(p, "taskforward");
@@ -233,9 +233,9 @@ test("R3: forwarding, a project key and a question from a hint, each with its ow
   assert.equal(beside(p, fwd), word("screen.queue.fieldfirst"));
   await press(p, "taskforward", { values: { [button(p, "taskforward").dataset.f + "-to"]: "@ana" } });
   assert.deepEqual(last(p, "taskforward").body, { id: fwdItem.id, to: "ana" });
-  await press(p, "projectkeyset", { values: { [button(p, "projectkeyset").dataset.f + "-key"]: "sk-ant-x" } });
-  assert.deepEqual(last(p, "projectkeyset").body, { project: p1, key: "sk-ant-x" });
-  assert.equal(last(p, "projectkeyset").url.includes("sk-ant"), false, "the key travels in the body only");
+  // F2: `projectkeyset` left the door in T53 (op-declarations R41): an item still offering it draws no such act and sends nothing for it (R3: any other option is "Open").
+  assert.equal(button(p, "projectkeyset"), null, "the retired act is not drawn");
+  assert.equal(p.byOp("projectkeyset").length, 0);
   await press(p, "promote", { values: { [button(p, "promote").dataset.f + "-question"]: "Did the council vote?" } });
   const r = last(p, "promote");
   // R81: the guard (the owner's declaration) takes the package fields only; the project is the file's own line.

@@ -20,6 +20,8 @@ import { recordOf, RECORD_SCHEMA } from "../../../src/record-core/index.mjs";
 import { membershipOf } from "../../../src/membership/index.mjs";
 import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
 import { accountForRefused } from "../ai-accounts/fixtures.mjs";
+import { world } from "../ai-accounts/fixture.mjs";
+import { PLANS, HOSTS } from "../ai-accounts/catalogue.mjs";
 import { derivationCap, captureBound, checkChain, describeChain } from "../../../src/textchain.mjs";
 import * as rp from "../../../src/reading-pipeline/index.mjs";
 import { bucket, evidenceStore, hold, doc, withEntry, i2, noText, folio, member, ocrAnswer } from "./fixture.mjs";
@@ -38,37 +40,23 @@ const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 
 
 /* A group: the founder, a second administrator; `ann` holds her own API key; `dee` holds none and the group holds no
    key; project P1 (owned by ann, `bob` joined) holds its own key; P2 (owned by ann) holds none. `acc` is ai-accounts'
-   instance on the group's storage. */
+   instance on the group's storage. (notice ai-accounts:124) The world is ai-accounts' own (`test/m/ai-accounts/fixture.mjs`:
+   its real membership and record-core over SQLite, and ai-catalogue's published fixture), and the accounts are set by
+   T53's acts (`accountSet` as its `own` and `projectAccount` call it, switched on by `accountSwitch`, each recipient's notice
+   seen by ann and bob, not dee), since PR 124 left the old key acts no catalogue to serve from. */
 async function group() {
-  const db = new DatabaseSync(":memory:");
-  const sql = { exec(q, ...args) { const st = db.prepare(q);
-    return st.columns().length ? st.all(...args.map(bind)).map((r) => ({ ...r })) : (st.run(...args.map(bind)), []); } };
-  let n = 0;
-  const storage = { sql, transactionSync(fn) { const sp = `sp${n++}`; db.exec(`SAVEPOINT ${sp}`);
-    try { const r = fn(); db.exec(`RELEASE ${sp}`); return r; } catch (e) { db.exec(`ROLLBACK TO ${sp}`); db.exec(`RELEASE ${sp}`); throw e; } } };
-  for (const st of RECORD_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n").split(";")) if (st.trim()) db.exec(st);
-  const ctx = { storage };
-  const rc = recordOf(ctx); rc.migrate();
-  const m = membershipOf(ctx); m.migrate();
-  /* membership's two credentials seams (its R94, R95) as test facts: the founder has claimed the instance */
-  m.registerClaimed("test-claim", () => true);
-  m.registerPasswordSetter(() => ({ ok: true }), "test-password");
-  const acc = aiAccountsOf(ctx, { record: rc, membership: m, sealSecret: SEAL }); acc.migrate();
-  const enrol = async (id, role = "member") => {
-    const a = await m.memberAdd({ memberId: id, cover: `cover of ${id}`, role, by: "admin" });
-    await m.enroll({ invite: a.invite, handle: id, password: `${id}-passphrase-x` });
-  };
-  await enrol("second", "admin");
-  for (const id of ["ann", "bob", "dee"]) await enrol(id);
-  const bundle = (id) => rc.commit({ bundleId: id, type: "project", title: id, project: null, snapKey: `s-${id}`, state: "forming", group: "g",
-    files: [{ path: "bundle.md", text: `# ${id}`, sha256: createHash("sha256").update(`# ${id}`).digest("hex") }] });
-  for (const p of ["P1", "P2"]) { bundle(p); m.projectCreated({ projectId: p, ownerId: "ann", by: "ann" }); }
-  m.projectInvite({ projectId: "P1", handle: "bob", by: "ann", viewer: "member:ann" });
-  m.projectJoin({ projectId: "P1", by: "bob", viewer: "member:bob" });
-  assert.equal((await acc.accountReferenceSet({ member: "ann", kind: "apikey", secret: ANN_KEY, by: "ann" })).ok, true);
-  assert.equal((await acc.projectKeySet({ project: "P1", key: P1_KEY, by: "ann" })).ok, true);
-  assert.equal(acc.projectAccountSwitch({ project: "P1", on: true, by: "ann" }).ok, true, "a project's key is off when first set (ai-accounts)");
-  return { acc, m };
+  const w = await world().group("ann", "bob", "dee");
+  const acc = w.a, m = w.m;
+  for (const id of ["ann", "bob"]) acc.recipientNoticeSeen({ member: id, provider: PLANS.provider, host: HOSTS.main, by: id });
+  for (const p of ["P1", "P2"]) w.project(p, "ann");
+  assert.equal(w.join("P1", "ann", "bob").ok, true);
+  const own = await w.own("ann", { secret: ANN_KEY });
+  assert.equal(own.ok, true);
+  assert.equal(acc.accountSwitch({ account_id: own.account_id, on: true, by: "ann" }).ok, true);
+  const p1 = await w.projectAccount("P1", "ann", { secret: P1_KEY });
+  assert.equal(p1.ok, true);
+  assert.equal(acc.accountSwitch({ account_id: p1.account_id, on: true, by: "ann" }).ok, true, "a project's account is off when first set (ai-accounts)");
+  return { acc, m, w };
 }
 
 /* The caller's limits (`ai-use.useCheck`, its R3) and AI, scripted and recorded. */
@@ -287,13 +275,15 @@ test("R29 (N853a): an accountFor answering NO_ACCOUNT and a useCheck answering A
   assert.equal((await t4On({ member: "ann", accounts: acc, useCheck: async () => unjudged, transcribe: a2.transcribe })).aiRefusal, unjudged);
 });
 
-test("R29 (N853a): every refusal the real ai-accounts.accountFor answers for the act is aiRefusal exactly as accountFor answers it: NO_ACCOUNT, AI_USE_SWITCHED_OFF, GROUP_KEY_NOTICE_DUE, AI_KEPT_AWAY, PROJECT_AI_KEPT_AWAY, a project the member cannot see; and read passes none of it into the reading", async () => {
+test("R29 (N853a): every refusal the real ai-accounts.accountFor answers for the act is aiRefusal exactly as accountFor answers it: NO_ACCOUNT, AI_USE_SWITCHED_OFF, RECIPIENT_NOTICE_DUE, AI_KEPT_AWAY, PROJECT_AI_KEPT_AWAY, a project the member cannot see; and read passes none of it into the reading", async () => {
   const cases = [
     ["NO_ACCOUNT", async () => ({ member: "dee" })],
     ["AI_USE_SWITCHED_OFF", async (w) => { assert.equal(w.acc.accountUsesSet({ owner: "member:ann", switch: "transcribe", on: false, by: "ann" }).ok, true);
                                           return { member: "ann" }; }],
-    ["GROUP_KEY_NOTICE_DUE", async (w) => { assert.equal((await w.acc.groupKeySet({ key: "sk-group-key-never-shown", by: "admin" })).ok, true);
-                                            assert.equal(w.acc.groupKeySwitch({ on: true, by: "admin" }).ok, true);
+    /* (notice ai-accounts:124) T53's per-recipient notice (ai-accounts R51) in place of the group key's */
+    ["RECIPIENT_NOTICE_DUE", async (w) => { const t = await w.w.team({ secret: "sk-group-key-never-shown" });
+                                            assert.equal(t.ok, true);
+                                            assert.equal(w.acc.accountSwitch({ account_id: t.account_id, on: true, by: "admin" }).ok, true);
                                             return { member: "dee" }; }],
     ["AI_KEPT_AWAY", async (w) => { w.acc.aiKeepAwaySet({ on: true, uses: ["transcribe"], reason: "no AI on our records", by: "admin" }); return { member: "ann" }; }],
     ["PROJECT_AI_KEPT_AWAY", async (w) => { w.acc.projectAiKeepAwaySet({ project: "P1", on: true, uses: ["transcribe"], reason: "not this matter", by: "ann" });

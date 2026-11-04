@@ -21,7 +21,7 @@ async function team({ rules = false } = {}) {
 }
 const openIn = ({ w, rosa }, path, plane = {}) => open(path, plane, w.boot(rosa));
 
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };   // T53: the shell reads reachability from `aipathready` (interface-shell R20); `accountreference` is retired (op-declarations R20)
 const EVENT = {
   event: "answer", ok: true,
   answer: {
