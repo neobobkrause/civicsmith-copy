@@ -28,3 +28,4 @@
 {"at":"2026-11-04T16:29:09Z","row":"outcome","n":14,"outcome":"delivered"}
 {"at":"2026-11-04T19:23:58Z","row":"sent","n":15,"to":"bob","text":"job store-assembly complete, PR #280 ready, session session_01RAN5ekxDEHqaXN3LvnBh4J: run status"}
 {"at":"2026-11-04T19:24:07Z","row":"outcome","n":15,"outcome":"delivered"}
+{"at":"2026-11-04T22:26:54Z","row":"sent","n":16,"to":"bob","text":"job store-assembly complete, PR #325 ready, session session_01RAN5epA8BDGdYhgZ82U7Um: run status"}
