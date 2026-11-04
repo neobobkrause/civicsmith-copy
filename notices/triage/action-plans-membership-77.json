@@ -1,0 +1,1 @@
+{"row":"triage","user":"action-plans","verdict":"not affected","evidence":"bio-plane/src/action-plans/index.mjs:58 imports membershipOf, noSuchProject and listenerRefusal and calls projectAuthority, inSight and existenceAct, none of R154's delegates","at":"2026-11-04T03:22:18.017Z","key":"membership:77","worker":"ac10e910b9f877d8b","cost":"0.3"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"queue-producers","verdict":"not affected","evidence":"bio-plane/src/queue-producers/index.mjs:3259 and :3366 call endorsementsOwed and expertiseAwaitingConfirmation, the T51 delegates, unchanged","at":"2026-11-04T03:22:18.017Z","key":"membership:77","worker":"ac10e910b9f877d8b","cost":"0.3"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"action-clocks","verdict":"not affected","evidence":"bio-plane/src/action-clocks/index.mjs:53 imports membershipOf and viewerPredicate only","at":"2026-11-04T03:22:18.017Z","key":"membership:77","worker":"ac10e910b9f877d8b","cost":"0.3"}
