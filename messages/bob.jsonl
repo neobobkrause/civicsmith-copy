@@ -210,3 +210,4 @@
 {"at":"2026-11-04T16:34:41Z","row":"sent","n":108,"to":"job-store-assembly","text":"bob-108: correction: order.mjs fix comes via reopened member-roster job (PR 283 refused); wait for BOB's word after it merges."}
 {"at":"2026-11-04T16:34:45Z","row":"outcome","n":108,"outcome":"delivered"}
 {"at":"2026-11-04T16:41:53Z","row":"sent","n":109,"to":"job-plane","text":"bob-109: hold blocked; job complete's base-red budget is a tool limit (asked coordinator to raise suite_timeout_minutes); remaining reds owned by 281, 173, 285, 280; BOB will say when to sync and complete."}
+{"at":"2026-11-04T16:41:57Z","row":"outcome","n":109,"outcome":"delivered"}
