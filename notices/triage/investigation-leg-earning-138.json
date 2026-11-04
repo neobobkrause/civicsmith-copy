@@ -1,0 +1,1 @@
+{"row":"triage","user":"investigation","verdict":"not affected","evidence":"bio-plane/src/investigation/index.mjs:619 uses only legEarning.basisFor (also :1298; import :34), a plain read of inquiry_basis rows that R18-R20 do not touch","at":"2026-11-04T07:01:56.175Z","key":"leg-earning:138","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

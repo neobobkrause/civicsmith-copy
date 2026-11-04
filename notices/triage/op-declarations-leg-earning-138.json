@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-declarations","verdict":"not affected","evidence":"bio-plane/src/op-declarations/index.mjs:876 only declares the earnedbasis op's classes; no import of leg-earning (import block from :18) and no call to earned/earnedForDoc/legCapped","at":"2026-11-04T07:01:56.175Z","key":"leg-earning:138","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

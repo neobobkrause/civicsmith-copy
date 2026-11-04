@@ -1,0 +1,1 @@
+{"row":"triage","user":"run-productions","verdict":"affected","evidence":"bio-plane/src/run-productions/index.mjs:680 calls legEarning.earned(null, [bundleId]) and reads .earned.capture[bundleId].grade (import :31), the capture ceiling R18 changes for a typed passage","at":"2026-11-04T07:01:56.175Z","key":"leg-earning:138","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

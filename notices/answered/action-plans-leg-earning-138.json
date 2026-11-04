@@ -1,0 +1,1 @@
+{"row":"answered","user":"action-plans","by":"triage","evidence":"bio-plane/src/action-plans/index.mjs:231 uses only legEarning.projectsDrawingOn (import :60); it never calls earned, earnedForDoc, earnedBasis or legCapped, where R18-R20 change","at":"2026-11-04T07:01:56.175Z","key":"leg-earning:138","worker":"triage-a8ac876e3c208abec","cost":"0.05"}
