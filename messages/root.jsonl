@@ -38,3 +38,4 @@
 {"at":"2026-11-04T02:39:39Z","row":"outcome","n":19,"outcome":"delivered"}
 {"at":"2026-11-04T05:16:07Z","row":"sent","n":20,"to":"bob","text":"Sweep: 30 live sessions, over the cap of 24: archive finished ones before starting more; agent-worker: BLOCKED; ai-catalogue: BLOCKED; instance-setup: BLOCKED; op-declarations: BLOCKED; question-explorer: BLOCKED; runtime-limits: BLOCKED; screens-action: BLOCKED; store-assembly: BLOCKED; wizard-scripts: BLOCKED."}
 {"at":"2026-11-04T05:16:25Z","row":"outcome","n":20,"outcome":"delivered"}
+{"at":"2026-11-04T06:15:00Z","row":"sent","n":21,"to":"bob","text":"Sweep: agent-worker: BLOCKED; ai-catalogue: BLOCKED; bundler: BLOCKED; instance-setup: BLOCKED; runtime-limits: BLOCKED; screens-action: BLOCKED; store-assembly: BLOCKED; store-request: BLOCKED; wizard-scripts: BLOCKED."}
