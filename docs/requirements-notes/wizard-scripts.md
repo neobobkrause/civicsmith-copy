@@ -34,3 +34,15 @@ Non-requirement text moved out of `build/requirements/wizard-scripts.md` to brin
 - **The check family** takes the next free C-number, BOB's at the job's opening; each row is stamped by the next promotion job.
 - **T34-90–T34-92 (open technical details, BOB's).** R24's mechanical reading (the two registered sets plus the named list), R25's check (a figure, a date, a name or a quotation, matched against `told` and `readLog`), the `firsthand` acts and R26's recipients are BOB's readings (P17), confirmed at the job's START. `baseupdates` is declared by `op-declarations` R15 and graded a read by `op-grades` R11. Tests: R3 a copy of a required Civicsmith script that leaves the original required and offered, and a copy never a version of its base; R4 `adopt: {base}` accepted without a grant and an older or unrelated version refused; R24 each refusal with a negative control (a `note` offered, a `reason` refused, `publishat` refused, a held draft refused); R25 a sentence naming a figure not told withheld, a read with the switch off and a read on `testify` refused; R27 every path past the refusals answering `ASSISTANT_DRAFT_UNAVAILABLE` and writing nothing.
 - Tests: every refusal with a negative control; R3 a recording carrying a typed value refused; R4 a reorder accepted and an added pair refused without a grant and accepted with one; R7 the sole author refused and a co-contributor's author accepted, the earlier version `updated` and not offered; R9 every write on a `civicsmith` script refused; R11 with no AI credential; R12 each refusal and warning, and a `{text}` draft on an act in `machineRefused` refused; R13 a script broken by a registry without its screen, withheld, and returned when the screen comes back; R14 a failing required script named; R15 no member, project or finer instant stored, and no abandon event accepted; R20 a hidden project's script absent from every read and count.
+
+## Retired ai-accounts ops (4 Nov 2026, attempt 2; op-declarations PR 95)
+
+ai-accounts R35 and R36 (T53, K5457) retired twelve door ops with no aliases. The design files still name them, so `data.mjs`'
+`RETIRED_ACTS` reads each, in the registry's acts and in every library version's steps, as the T53 op that does its act
+(ai-accounts R61) or as no act: `groupkeyset` and `projectkeyset`/`projectsigninset` as `aiaccountadd`, `accountreferenceset` as
+`aiownadd`, `groupkeyswitch`/`projectaccountswitch` as `aiaccountswitch`, `groupkeyremove`/`accountreferenceremove`/
+`subscriptiondisconnect`/`projectaccountremove` as `aiaccountremove`, and `groupkeynoticeseen`/`projectkeynoticeseen` as no act
+(a recipient's notice is marked seen by `aisend`'s `recipientNoticeSeen`). For BOB: R51's `ADMIN_ACTS` list still names
+`groupkeyset`, `groupkeyremove` and `groupkeyswitch`, and R54 says `connect`'s `accountreferenceset` and
+`accountreferenceremove` stay registered; both texts predate the retirement. `ADMIN_ACTS` is left as R51 pins it (no T53
+account op is administrator-only: `aiaccountadd` serves projects too), and R54's test now names the two T53 ops.

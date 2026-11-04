@@ -355,12 +355,17 @@ export class QuestionExplorer {
    *  on; whichever of her accounts serves, a switch at `no` is refused here as `ai-use` refuses it. Read through
    *  `ai-accounts.accountUsesOf` (its R17), the in-plane read for an account this module does not own, never
    *  `accountUses` as that member; an account that cannot be read is refused (fail closed: no switch reads as on). */
-  #switchedOff(owner) {
+  #switchedOff(owner, u) {
     if (!owner.startsWith("member:")) return false;
-    let u;
-    try { u = this.aiAccounts.accountUsesOf({ owner }); } catch { return true; }
     if (!u || u.unreadable === true) return true;
     return !!(u.uses && u.uses.explore === "no");
+  }
+
+  /** R1, R3 (T53): the owner's account as `ai-accounts` answers it in-plane (`accountUsesOf({owner})`: the owner's head
+   *  account, `{account_id, held, uses}`), read once an owner a tick; `ai-use` R6 and R9 now decide on that `account_id`.
+   *  A read that throws answers unreadable (fail closed). */
+  #accountOf(owner) {
+    try { return this.aiAccounts.accountUsesOf({ owner }) || { unreadable: true }; } catch { return { unreadable: true }; }
   }
 
   #considered(question, owner, day) {
@@ -427,14 +432,17 @@ export class QuestionExplorer {
     if (!g.open) return { ...out, gate: "closed" };
     const day = this.#day(at);
     const asks = new Map();
+    const accounts = new Map();
+    const accountOf = (owner) => { if (!accounts.has(owner)) accounts.set(owner, this.#accountOf(owner)); return accounts.get(owner); };
+    const idOf = (owner) => { const u = accountOf(owner); return u && typeof u.account_id === "string" && u.account_id ? u.account_id : null; };
     for (const w of this.#due(at)) {
       out.considered += 1;
       for (const owner of this.#ownersFor(w)) {
         const prior = this.#considered(w.question, owner, day);
         if (prior && prior.outcome === "refused") continue;
-        if (this.#switchedOff(owner)) { this.#consider(w.question, owner, day, "refused", at); out.refused += 1; continue; }
+        if (this.#switchedOff(owner, accountOf(owner))) { this.#consider(w.question, owner, day, "refused", at); out.refused += 1; continue; }
         let a;
-        try { a = this.aiUse.exploreAllowed({ owner, question: w.question, at }); }
+        try { a = this.aiUse.exploreAllowed({ owner, account_id: idOf(owner), question: w.question, at }); }
         catch { a = { ok: false, code: "EXPLORE_ALLOWED_UNREADABLE" }; }
         if (a && a.ask === true) {
           this.#consider(w.question, owner, day, "ask", at);
@@ -459,7 +467,7 @@ export class QuestionExplorer {
          answers its owners (`exploreAsksPending`). The estimate for the lot is kept here too. */
       const estimate = this.#estimate(owner, questions.length, at);
       let r = null;
-      try { r = this.aiUse.exploreAsk({ owner, at, what: questions }); } catch { r = null; }
+      try { r = this.aiUse.exploreAsk({ owner, account_id: idOf(owner), at, what: questions }); } catch { r = null; }
       out.asked.push({ owner, questions, estimate, ask: r });
     }
     return out;
@@ -479,7 +487,12 @@ export class QuestionExplorer {
     const viewer = as.startsWith("member:") || as === "admin" ? as : `member:${as}`;
     try {
       const e = this.aiUse.estimate({ owner, use: EXPLORE_USE, mode: EXPLORE_MODE, count, viewer, at });
-      return e && e.ok !== false && e.estimate !== undefined ? e.estimate : say("question-explorer.known");
+      if (!e || e.ok === false || e.estimate === undefined || e.estimate === null) return say("question-explorer.known");
+      /* (T53) ai-use R10 answers a range `{low, high, unit, basis}`; its `not_known` basis (or a range with no figure) is
+         R12's "not known yet". */
+      const r = e.estimate;
+      if (typeof r === "object" && (r.basis === "not_known" || r.low === null || r.high === null)) return say("question-explorer.known");
+      return r;
     } catch { return say("question-explorer.known"); }
   }
 

@@ -598,6 +598,7 @@ test("R19 (fix round 9, G127f; K4928; capture R113, control-plane R72): every op
 test("R11 (K1674, K1685, K1798, K1986; T41: K2400, K2500, K2514; credentials R28; answers R30, R4; ai-use R1): the ask's store-internal routes, each its owner's with the member the stamped viewer — `aigrantadmit` answers credentials' own words; `askceiling` answers `answers.askAccount({member, kind: \"ask\"})`'s refusal as given (NO_ACCOUNT, AI_KEPT_AWAY, AI_USE_SWITCHED_OFF, AI_LIMIT_REACHED) and `{ok: true}` when an account serves under its limits; `askusage` counts through ai-use's `countAskUsage` with the mode it is given (`ask` when none; ai-use refuses one that is neither `ask` nor `draft`) and the ask's `calls`, to the paying account `credentials.accountFor` answers for that mode (\"not recorded\" when none serves); `askcheck` answers' check over the grant's read log (negative control: a name no module serves is R1's refusal)", async () => {
   const r = await record({ sealSecret: "store-door-test-seal-secret-00005" });
   const { credentialsOf } = await import("../../../src/credentials/index.mjs");
+  const { aiAccountsOf } = await import("../../../src/ai-accounts/index.mjs");
   const { membershipOf } = await import("../../../src/membership/index.mjs");
   const { answersOf } = await import("../../../src/answers/index.mjs");
   const { aiUseOf } = await import("../../../src/ai-use/index.mjs");
@@ -619,7 +620,7 @@ test("R11 (K1674, K1685, K1798, K1986; T41: K2400, K2500, K2514; credentials R28
   const none = await ceiling();
   assert.deepEqual([none.ok, none.reason], [false, "NO_ACCOUNT"]);
   assert.deepEqual(asked, [{ member: "member:ann", kind: "ask" }]);
-  assert.equal((await C.accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ann-own", by: "member:ann" })).ok, true);
+  assert.equal((await aiAccountsOf(r.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ann-own", by: "member:ann" })).ok, true);
   assert.deepEqual(await ceiling(), { ok: true }, "an account serves under its limits: {ok: true}");
   assert.equal(C.accountUsesSet({ owner: "member:ann", switch: "ask", on: false, by: "member:ann" }).ok, true);
   assert.equal((await ceiling()).code, "AI_USE_SWITCHED_OFF");

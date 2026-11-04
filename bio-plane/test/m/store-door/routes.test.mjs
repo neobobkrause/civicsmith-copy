@@ -179,7 +179,7 @@ test("R10 (N765, N812; K2373, K2500; credentials R35, R56, R57; answers R30; ai-
   assert.deepEqual(asked, [{ member: "member:ann", kind: "draft" }, { member: "member:bea", kind: "draft" }]);
   assert.equal(reads.use, 0);
   /* the member's own account: its draft switch off refuses before its limit, which is not judged */
-  assert.equal((await C.accountReferenceSet({ member: "member:bea", kind: "apikey", secret: "sk-bea-own", by: "member:bea" })).ok, true);
+  assert.equal((await aiAccountsOf(r.ctx).accountReferenceSet({ member: "member:bea", kind: "apikey", secret: "sk-bea-own", by: "member:bea" })).ok, true);
   assert.equal((await spend("bea", 2)).json.result.ok, true);
   assert.equal(U.aiLimitSet(DAY_CALLS("member:bea", 2, "member:bea")).ok, true);
   assert.equal(C.accountUsesSet({ owner: "member:bea", switch: "draft", on: false, by: "member:bea" }).ok, true);
@@ -199,14 +199,15 @@ test("R10 (N765, N812; K2373, K2500; credentials R35, R56, R57; answers R30; ai-
   assert.equal(code(await help("member:bea")), "LIMITS_UNREADABLE");
   delete U.useCheck;
   /* the group's key held and on, its notice unread by ann: credentials' own refusal, relayed with its row */
-  assert.equal((await C.groupKeySet({ key: "sk-group-key", by: "admin" })).ok, true);
-  assert.equal(C.groupKeySwitch({ on: true, by: "admin" }).ok, true);
+  assert.equal((await aiAccountsOf(r.ctx).groupKeySet({ key: "sk-group-key", by: "admin" })).ok, true);
+  assert.equal(aiAccountsOf(r.ctx).groupKeySwitch({ on: true, by: "admin" }).ok, true);
   const due = await gdd("member:ann");
-  assert.equal(code(due), "GROUP_KEY_NOTICE_DUE");
+  /* (T53; ai-accounts R51) the notice is now per recipient: ai-accounts' own refusal for the team key's host */
+  assert.equal(code(due), "RECIPIENT_NOTICE_DUE");
   assert.equal(typeof due.json.result.translation, "string");
   assert.deepEqual(seen, [], "no handler was asked");
   /* every refusal cleared: the handlers are reached */
-  assert.equal(C.groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" }).ok, true);
+  assert.equal(aiAccountsOf(r.ctx).groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" }).ok, true);
   assert.equal(code(await gdd("member:ann")), "ASSISTANT_DRAFT_UNAVAILABLE");
   assert.equal(code(await help("member:bea")), "ASSISTANT_DRAFT_UNAVAILABLE");
   assert.deepEqual(seen.map(([op]) => op), ["groupdescriptiondraft", "writinghelp"]);
@@ -244,7 +245,7 @@ test("R10 (N669, N765, N812; K2200, K2201, K2238, K2500; instance-setup R67; ans
   assert.equal(code(await draft("ann", TO_EN)), "NO_ACCOUNT");
   assert.deepEqual(asked, [{ member: "ann", kind: "draft" }]);
   for (const m of ["ann", "bea"])
-    assert.equal((await C.accountReferenceSet({ member: `member:${m}`, kind: "apikey", secret: `sk-${m}-own-secret`, by: `member:${m}` })).ok, true);
+    assert.equal((await aiAccountsOf(r.ctx).accountReferenceSet({ member: `member:${m}`, kind: "apikey", secret: `sk-${m}-own-secret`, by: `member:${m}` })).ok, true);
   assert.equal((await spend("bea", 2)).json.result.ok, true);
   assert.equal(U.aiLimitSet(DAY_CALLS("member:bea", 2, "member:bea")).ok, true);
   assert.equal(code(await draft("bea", TO_LANG2)), "AI_LIMIT_REACHED");
@@ -267,10 +268,10 @@ test("R10 (N669, N765, N812; K2200, K2201, K2238, K2500; instance-setup R67; ans
 test("R10 (K1755; control-plane R29, R30): a draft's handler receives `assistant` as the door resolved it — `{on: true, account: {kind, level}}`, the member's own account or the group's key, never the key — its own arguments from the body and `by` and `viewer` as stamped; a caller's `assistant` is never read (negative control: no secret appears in anything handed over or answered)", async () => {
   const { r, C, seen } = await drafts();
   assistant(r, true);
-  assert.equal((await C.accountReferenceSet({ member: "member:bea", kind: "apikey", secret: "sk-bea-own-secret", by: "member:bea" })).ok, true);
-  assert.equal((await C.groupKeySet({ key: "sk-group-key-secret", by: "admin" })).ok, true);
-  assert.equal(C.groupKeySwitch({ on: true, by: "admin" }).ok, true);
-  assert.equal(C.groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" }).ok, true);
+  assert.equal((await aiAccountsOf(r.ctx).accountReferenceSet({ member: "member:bea", kind: "apikey", secret: "sk-bea-own-secret", by: "member:bea" })).ok, true);
+  assert.equal((await aiAccountsOf(r.ctx).groupKeySet({ key: "sk-group-key-secret", by: "admin" })).ok, true);
+  assert.equal(aiAccountsOf(r.ctx).groupKeySwitch({ on: true, by: "admin" }).ok, true);
+  assert.equal(aiAccountsOf(r.ctx).groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" }).ok, true);
   const forged = { on: true, account: { kind: "apikey", level: "member", key: "sk-forged" } };
   const a = await r.go("groupdescriptiondraft?by=member:ann&viewer=member:ann", "POST",
                        { answers: [{ question: "Who are you?", text: "Tenants" }], assistant: forged });
@@ -302,13 +303,15 @@ test("R10 (K2238; control-plane R65; credentials R35, R43): the store-internal r
   const no = await r.go("subscriptionconnected?by=member:nobody", "POST", {});
   assert.equal(no.json.result.reason, "ACCOUNT_MEMBER_NOT_ACTIVE");
   assert.deepEqual(asked, [{ member: "member:bea" }, { member: "member:nobody" }]);
-  assert.deepEqual(r.db.prepare("SELECT member_id FROM subscription_connections").all().map((x) => x.member_id), ["bea"]);
+  /* (T53; ai-accounts R59) the old form records nothing now: the door's answer is ai-accounts' own, asked again here */
+  assert.deepEqual(ok.json.result, orig({ member: "member:bea" }));
+  assert.equal(ok.json.result.held, false);
 });
 
 test("R16 (T48; N996; K3101; amends R10, R11): the door reads `aiKeptAway`, `accountFor` and `subscriptionConnected` from `ai-accounts`, never through `credentials`' delegates — with those three delegates made to throw, `aikeptaway` and `subscriptionconnected` answer as before, a draft under keep-away is refused AI_KEPT_AWAY with its row, and `askusage` counts to the paying account (the door's `accountFor` read is ai-accounts'); `credentials` is kept for `aigrantadmit`, `signerregister` and `signerrevoke` (negative control: the same routes with ai-accounts' reads made to throw do not answer as before)", async () => {
   const { r, C } = await drafts();
   const AA = aiAccountsOf(r.ctx);
-  assert.equal((await C.accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ann-own", by: "member:ann" })).ok, true);
+  assert.equal((await aiAccountsOf(r.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ann-own", by: "member:ann" })).ok, true);
   assistant(r, false);
   const keptBefore = (await r.go("aikeptaway", "POST", {})).json.result;
   const draftBefore = (await r.go("groupdescriptiondraft?by=member:ann&viewer=member:ann", "POST", { text: "x" })).json.result;

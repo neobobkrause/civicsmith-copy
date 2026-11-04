@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as O from "../../../src/op-declarations/index.mjs";
 import { REGISTERED } from "./register-owners.mjs";
-import { explained } from "./help.mjs";
+import { explained, RETIRED_T53 } from "./help.mjs";
 import { browserActs, OWED_BY_FIX_ROUND_AT_43379A1A44 } from "./browser.mjs";
 import { T46_SHARES } from "../../../src/op-declarations/t46.mjs";
 import * as AFF from "../../../src/affordances.mjs";
@@ -308,13 +308,15 @@ test("R52 (N937; DEC-194, DEC-197; wizard-scripts R29): R21 read against the reg
      T49 (K3321 (B), K3393; R21): the count is read from the registry, never pinned (K3268): every function act the file
      names is an op or an alias, below */
   assert.ok(fnActs.length > 0, `${fnActs.length} function acts`);
-  for (const a of fnActs) assert.ok(Object.hasOwn(OPS, a.op), `${a.op}: no spec`);
+  /* T53 (R21; ai-accounts R35, BOB 4 Nov): a retired account-seam function is served through no op and has no spec */
+  for (const a of fnActs) assert.equal(Object.hasOwn(OPS, a.op), !RETIRED_T53.includes(a.op), `${a.op}: no spec, or retired and declared`);
   for (const al of Object.keys(OP_ALIASES)) assert.ok(fnActs.some((a) => a.op === al), `${al}: an alias of no registry function`);
   const NEW = ["ailimitset", "archivelist", "exploreapprove", "projectaccountremove", "projectaccountswitch",
                "projectkeynoticeseen", "projectkeyset", "projectsigninset", "startfrom"];
   for (const op of NEW) {
     assert.ok(fnActs.some((a) => a.op === op), `${op} is no function act`);
-    assert.ok(Object.hasOwn(OPS, op) && !Object.hasOwn(OP_ALIASES, op) && !Object.values(OP_ALIASES).includes(op), op);
+    assert.equal(Object.hasOwn(OPS, op), !RETIRED_T53.includes(op), op);
+    assert.ok(!Object.hasOwn(OP_ALIASES, op) && !Object.values(OP_ALIASES).includes(op), op);
   }
   assert.ok(!fnActs.some((a) => a.op === "knock"));
   const OWED = ["itemtakeup", "actionscope", "filingsecondapprove", "subscriptionsignin", "projectaikeepaway", "infolevelset",

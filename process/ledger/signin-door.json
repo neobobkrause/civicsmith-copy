@@ -1,0 +1,42 @@
+{
+  "id": "signin-door",
+  "title": "signin-door: found mark F1 (ai-accounts T53 op fallout)",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/signin-door/",
+    "build/requirements/signin-door.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/signin-door/"
+  ],
+  "requirements": "build/requirements/signin-door.md",
+  "uses": [
+    "agent-worker",
+    "credentials",
+    "admission",
+    "answer-envelope",
+    "setup-words",
+    "test-support",
+    "op-declarations",
+    "ai-accounts"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/signin-door.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Found work F1 at the end of the requirements file, with priority: it keeps store-request red. Meet it with the test it names, failing with the change reverted, and strike F1 with --test F1=.... Other unmet marks in the file are not this job's unless trivially met. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T07:13:30Z"
+  }
+}

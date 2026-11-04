@@ -22,7 +22,7 @@
 import { parseFrontmatter, normalizeType, OBJECT_TYPES, BASIS_GRADES, EARNED_CAPTURE_CEILING, UNREACHABLE_CAPTURE_GRADE,
          TESTIMONY_GRADE } from "../record-grammar/index.mjs";
 import { parseImportedFindingRef, parseOccurrenceRef } from "../inquiry-grammar/index.mjs";
-import { captureBound, isTranscribed, stepCovers, describeExtent } from "../textchain.mjs";
+import { captureBound, isTranscribed, stepCovers, describeExtent, typedStepOf, TYPED_CHECKED_GRADE } from "../textchain.mjs";
 import { recordOf, stampInstant } from "../record-core/index.mjs";
 import { membershipOf } from "../membership/index.mjs";
 import { promotionOf } from "../promotion/index.mjs";
@@ -94,6 +94,10 @@ const targetTypeOf = (t) => normalizeType(OBJECT_TYPES[String(t).split("-")[0]])
  *  record cannot determine answers a null grade with the reason. */
 export function legCapped(stated, earned, targetId) {
   if (!earned || earned.mode !== "ceiling") return null;
+  /* R19, R10 (DEC-464): a leg on a typed passage is graded by the record. Stating no letter, it counts at R18's grade,
+     which follows a second member's check with no member re-stating it; a weaker stated letter stands; none above. */
+  if (earned.record_graded === true && earned.grade != null && !Object.hasOwn(GRADE_RANK, stated))
+    return { grade: earned.grade, graded_by: "record", why: earned.why };
   if (earned.grade == null)
     return { grade: null,
              why: earned.why
@@ -789,6 +793,15 @@ export class LegEarning {
     for (const [id, axis] of Object.entries(this.connections.portionAxes(contentIds, { entityId: subjectEntity }))) if (out.earned.content?.[id]?.connection?.grain === "portion") out.earned.content[id].connection = axis;
     /* R15 (D21; D4): a passage of an AI transcription earns its capture ceiling at the passage's own grain. */
     if (out.earned.content) for (const st of Object.values(out.earned.content)) this.#aiPassageCeiling(st);
+    /* R18 (DEC-464): a typed passage earns its capture ceiling at its own grain too. */
+    if (out.earned.content) for (const st of Object.values(out.earned.content)) this.#typedPassageCeiling(st);
+    /* R20 (DEC-457): with no subject named, each document's connection is answered as before (no entry) and its why
+       says that no subject is named, in a map of its own; no other case answers this reason. */
+    if (!subjectEntity) {
+      out.earned.connection_why = {};
+      for (const id of ids) out.earned.connection_why[id] = { grade: null, reason: "NO_SUBJECT_NAMED",
+        why: localize("leg-earning.index.no_subject_named", "no subject is named for this question, so {id} earns no connection grade against one. Naming the question's subject lets the record say how this document connects to it.", { id: String(id) }) };
+    }
     return this.#earnHeld(out, standardIds, occurrenceIds);
   }
 
@@ -844,6 +857,34 @@ export class LegEarning {
       ...(l.authoredRoute ? { stated_as: "authored", route_basis: [l.authoredRoute] } : {}),
       why: word("leg-earning.why.read_off_page_ai", { passage: String(ref), capture: String(st.bundle_id), attestor: String(by.join(", ") || "a member"), grade: String(l.byteGrade), rest: String(l.authoredRoute ? ` — the letter its author may give under the ceiling, stated as authored and never `
                             + `as measured (${authoredRouteWords([l.authoredVia])}).` : ".") }) };
+  }
+
+  /* R18 (DEC-464; content R63, R64; text-chain R107): a content row cited as text whose chain's derivation step is a
+     member's typing earns its capture ceiling at the passage's own grain, replacing content's pointer to the document:
+     the weaker of the capture's own letter (R1's route rule, with no text chain, so no machine reading of the page binds
+     a typing) and the typing's grade (`gradeCeiling`'s typed answer: the typist's alone, or one stronger once a second
+     member has checked). An undetermined capture letter makes it undetermined, with the route's reason. Never the
+     machine chain's bound, never stronger than `TYPED_CHECKED_GRADE`. `record_graded`: a leg on it is graded by the
+     record (R19, through `legCapped`). */
+  #typedPassageCeiling(st) {
+    if (!st || st.cited_as === "bytes" || !Array.isArray(st.chain)) return;
+    if (!typedStepOf(st.chain, null)) return;
+    const tx = st.transcription || {};
+    const typed = st.typed ?? null;
+    const ref = st.ref || describeExtent(st.extent);
+    const base = { grain: "passage", mode: "ceiling", capture_sha: st.capture_sha, record_graded: true,
+                   determinant: tx.determinant ?? null, by: Array.isArray(tx.by) ? tx.by : [], typed };
+    const l = this.#captureLetter(st.capture_sha, null);
+    if (l.byteGrade == null || tx.ceiling == null) {
+      st.capture = { ...base, grade: null, determined: false, undetermined_because: "CAPTURE_GRADE_VIA_UNRULED",
+        why: localize("leg-earning.index.typed_passage_route_unruled", "{ref} of {bundle_id} was typed by a member from a capture served by a route no ruling grades, so what a leg resting on this passage may claim about how it was captured is undetermined.", { ref: String(ref), bundle_id: String(st.bundle_id) }) };
+      return;
+    }
+    let grade = GRADE_RANK[l.byteGrade] < GRADE_RANK[tx.ceiling] ? l.byteGrade : tx.ceiling;
+    if (GRADE_RANK[grade] > GRADE_RANK[TYPED_CHECKED_GRADE]) grade = TYPED_CHECKED_GRADE;
+    st.capture = { ...base, grade, determined: true,
+      ...(l.authoredRoute ? { stated_as: "authored", route_basis: [l.authoredRoute] } : {}),
+      why: localize("leg-earning.index.typed_passage_ceiling", "{ref} of {bundle_id} is a member's typing: {typed}. A typing counts at {grade}, the weaker of the capture's own letter ({byte}) and what the typing stands on ({typing}); the record grades a leg on it without anyone stating a letter, and a second member's check raises it with no one re-stating it.", { ref: String(ref), bundle_id: String(st.bundle_id), typed: String(typed?.label ?? tx.why ?? ""), grade: String(grade), byte: String(l.byteGrade), typing: String(tx.ceiling) }) };
   }
 
   /* R8, R9: the entries a held standard and a duty occurrence earn, added to `out` (an `occurrence` map only when an
@@ -1142,12 +1183,14 @@ export class LegEarning {
      * no id and no count — op=backlinks' posture, which this op already takes
      * for `asked`. */
     const legRows = this.#rows(
-      `SELECT ord, target_id, target_type, content_id FROM inquiry_basis
+      `SELECT ord, target_id, target_type, content_id, grade, grade_axis FROM inquiry_basis
         WHERE bundle_id=? ORDER BY ord`, id);
     const legsVisible = legRows.filter((l) => sees(l.target_id));
     const legsWithheld = legsVisible.length !== legRows.length;
     const legs = legsVisible.map((l) => ({ ord: l.ord, target: l.target_id,
                                            target_type: l.target_type, content_id: l.content_id }));
+    const statedOf = new Map(legsVisible.map((l) => [l.ord,
+      l.grade_axis === "capture" || l.grade_axis == null ? l.grade ?? null : null]));
     /* IC-84 (4): THE BACKFILL, WIRED HERE AND NOWHERE ELSE.
      *
      * A READ THAT WRITES, DELIBERATELY AND DECLARED. `op=earnedbasis` is
@@ -1182,6 +1225,17 @@ export class LegEarning {
        is carried here rather than re-derived. A leg still NULL with no case
        named is one the bound above did not reach, and that is said too. */
     this.#legVersions(id, legs);
+    /* R19, R10 (DEC-464): a leg on a typed passage counts on the capture axis at the grade the record gives it, or at
+       its stated letter when weaker; it needs no stated letter. Only that kind is graded here. */
+    for (const l of legs) {
+      const c = l.content_id ? reg.earned.content?.[l.content_id]?.capture : null;
+      if (!c || c.record_graded !== true) continue;
+      const stated = statedOf.get(l.ord) ?? null;
+      const res = legCapped(stated, c, l.target);
+      l.capture = { axis: "capture", stated, grade: res ? res.grade : stated,
+                    graded_by: res && res.graded_by === "record" ? "record" : res ? "record_cap" : "stated",
+                    why: res ? res.why : c.why };
+    }
     for (const l of legs) {
       if (l.content_id) continue;
       if (!l.null_case && !l.why_no_content) {

@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
+import { currentAct } from "../../../src/wizard-scripts/data.mjs";
 import { GENERATED, SOURCES } from "../../../src/wizard-scripts/build-data.mjs";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
@@ -48,7 +49,8 @@ test("R50 (T51 fix round 6; G53; DEC-419; amends R49) the registry re-taken at f
     assert.ok(now, `${s.id}: still carried`);
     for (const a of s.acts.filter((x) => x.status !== "owed")) {
       if (s.id === "dash-action" && a.op === "taskresolve") continue;   /* DEC-437 (R53) */
-      assert.ok(now.acts.includes(a.op), `${s.id}: ${a.op} still registered`);
+      if (currentAct(a.op) === null) continue;   /* ai-accounts R35, R36: a retired op with no T53 act */
+      assert.ok(now.acts.includes(currentAct(a.op)), `${s.id}: ${a.op} still registered`);
     }
   }
   assert.equal(acts.length - 564, 114, "control: the diff adds acts (564 to 678 at R54's 30af4350f2), but for dash-action's taskresolve (R53) and registers' owed registerimport (R54)");
@@ -92,7 +94,8 @@ test("R53 (T51 fix round 10; DEC-438; SCREENS-INVESTIGATE #25 J45; K5302; amends
     assert.ok(now, `${s.id}: still carried`);
     for (const a of s.acts.filter((x) => x.status !== "owed")) {
       if (s.id === "dash-action" && a.op === "taskresolve") continue;   /* DEC-437 (B527) took it off the Action dashboard on purpose; home and queue still list it */
-      assert.ok(now.acts.includes(a.op), `${s.id}: ${a.op} still registered`);
+      if (currentAct(a.op) === null) continue;   /* ai-accounts R35, R36: a retired op with no T53 act */
+      assert.ok(now.acts.includes(currentAct(a.op)), `${s.id}: ${a.op} still registered`);
     }
   }
   assert.ok(!wz.SCREEN_REGISTRY.find((s) => s.id === "dash-action").acts.includes("taskresolve"), "DEC-437: dash-action no longer lists taskresolve");

@@ -1692,7 +1692,7 @@ export const DECLARED_OPS = Object.freeze({
     fields: { accepts: ["setId","factId","reason"], requires: ["setId","factId","reason"] } },
   reconcile: { classes: ["admin","member","probe"], mutating: false, weight: "read", description: localize("money.declared.reconcile", "read: whether two money facts are consistent, or each dimension that differs; writes nothing"),
     fields: { accepts: ["a","b"], requires: ["a","b"] } },
-  fiscalyears: { classes: ["admin","member","probe"], mutating: false, weight: "read", description: localize("money.declared.fiscalyears", "read: the governments whose fiscal year is known, each with its year and whether the place's records or a member gave it; writes nothing"),
+  moneyfiscalyears: { classes: ["admin","member","probe"], mutating: false, weight: "read", description: localize("money.declared.moneyfiscalyears", "read: the governments whose fiscal year is known, each with its year and whether the place's records or a member gave it; writes nothing"),
     fields: { accepts: ["body"], requires: [] } },
   moneyby: { classes: ["admin","member","probe"], mutating: false, weight: "read", description: localize("money.declared.moneyby", "read: the money facts an entity paid or received, by role, kind, period and phase, paged, never a total; writes nothing"),
     fields: { accepts: ["entity","role","kinds","period","phases","limit","after"], requires: ["entity"] } },

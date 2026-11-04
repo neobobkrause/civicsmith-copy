@@ -40,13 +40,34 @@ export function keptLine(line) {
   return Object.keys(out).length ? out : null;
 }
 
+/* notice ai-accounts:124 (PR 124, ai-accounts' T53 rewrite): `credentials` no longer delegates the sign-in token's names
+   (its R72 list keeps `disclosureDue` alone), so the in-plane calls go to `ai-accounts` itself, the instance `credentials`
+   holds as `accounts` (`c` itself when the caller hands `ai-accounts`). The hold is its `subscriptionTokenHold` (kept by PR
+   124 over `issuedTokenHold`); a refused token drops through `issuedTokenRefused` on the member's own first issued account,
+   as `accountsOf` lists it (R19, R2). */
+const accountsOf = (c) => (c && isObject(c.accounts) ? c.accounts : c);
+const NOT_HELD = Object.freeze({ ok: true, dropped: false });
+
+function tokenRefused(a, member) {
+  try {
+    if (typeof member !== "string" || member === "") return NOT_HELD;
+    if (typeof a.subscriptionTokenRefused === "function") return a.subscriptionTokenRefused({ member });
+    const owner = member.startsWith("member:") ? member : `member:${member}`;
+    const list = a.accountsOf({ owner, viewer: member });
+    const own = isObject(list) && Array.isArray(list.accounts)
+      ? list.accounts.find((x) => isObject(x) && x.means === "issued" && x.owner === owner) : null;
+    return own ? a.issuedTokenRefused({ account_id: own.account_id }) : NOT_HELD;
+  } catch { return { ok: false, dropped: false, unreadable: true }; }
+}
+
 export function signinDoorOps(c, url, body, env) {
   const by = () => url.searchParams.get("by");
   const b = isObject(body) ? body : {};
+  const a = accountsOf(c);
   return {
-    signindisclosuredue: () => c.disclosureDue({ member: by() }) ?? { ok: true },
-    signintokenhold: () => c.subscriptionTokenHold({ member: by(), token: b.token ?? null, validFor: b.validFor ?? null }),
-    signintokenrefused: () => c.subscriptionTokenRefused({ member: by() }),
+    signindisclosuredue: () => a.disclosureDue({ member: by() }) ?? { ok: true },
+    signintokenhold: () => a.subscriptionTokenHold({ member: by(), token: b.token ?? null, validFor: b.validFor ?? null }),
+    signintokenrefused: () => tokenRefused(a, by()),
     signintracekeep: () => {
       if (!testInstanceOf(env)) return { ok: true, kept: false };
       const line = keptLine(b.line);

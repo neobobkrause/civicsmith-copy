@@ -1,5 +1,6 @@
 /* ai-runs R15–R18, R41: the reaper, the wake through the registered wait source, and the woken run's resume. */
 import test from "node:test";
+import { word } from "../../../src/setup-words/index.mjs";
 import assert from "node:assert/strict";
 import { world, OPEN, INQ, ORG, sha, agentWorker, SIGNIN_TOKEN } from "./world.mjs";
 import { aiRunsOf } from "../../../src/ai-runs/index.mjs";
@@ -134,11 +135,7 @@ test("R18, R52, R79 (K1514, K1615, K1755; T47, K3068): a woken run is dispatched
        reference */
     if (signin) await w.signin("ann");
     /* K1755: the group's API key, set and switched on by an administrator, its notice read by ann (ai-accounts R5, R8) */
-    if (groupKey) {
-      assert.equal((await w.aiAccounts.groupKeySet({ key: "group-key-secret", by: "admin" })).ok, true);
-      assert.equal(w.aiAccounts.groupKeySwitch({ on: true, by: "admin" }).ok, true);
-      assert.equal(w.aiAccounts.groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" }).ok, true);
-    }
+    if (groupKey) await w.team({ members: ["ann"] });
     w.bundle(INQ);
     if (mint) {
       const m = w.credentials.aiCredentialMint({ who: mint === "member" ? "ann" : "admin", tokenId: "tok-org", secretSha: sha(TOKEN),
@@ -164,9 +161,9 @@ test("R18, R52, R79 (K1514, K1615, K1755; T47, K3068): a woken run is dispatched
   assert.equal(aw.calls.length, 1);
   /* the run member's own reference (ai-accounts R7, level member), and no instance Claude account, whatever the copy's
      bindings hold */
-  assert.deepEqual(aw.calls[0].body, { run_id: "R1", store: "bio", credential: TOKEN,
-                                       account: { kind: "apikey", level: "member", secret: "secret-of-ann", member: "member:ann",
-                                                  suggestions: false } });
+  /* (T53; agent-worker R6) the account as ai-accounts.accountFor answers it, never a secret */
+  assert.deepEqual(aw.calls[0].body, { run_id: "R1", store: "bio", credential: TOKEN, account: await w1.served("ann") });
+  assert.equal(JSON.stringify(aw.calls[0].body.account).includes("secret"), false);
   for (const secret of [TOKEN, "secret-of-ann", "claude-account-x"]) {
     assert.equal(JSON.stringify(w1.rows(`SELECT * FROM observation_log`)).includes(secret), false, "no secret enters the record");
     assert.equal(JSON.stringify(w1.rows(`SELECT * FROM ai_runs`)).includes(secret), false);
@@ -177,12 +174,12 @@ test("R18, R52, R79 (K1514, K1615, K1755; T47, K3068): a woken run is dispatched
      (K1553); (T47; R79, ai-accounts R19) its held token carried as `secret`, as an API key's is */
   const sub = await setup(env(aw), { principal: stamp, signin: true });
   assert.equal((await decision(sub)).dispatch.state, "DISPATCHED");
-  assert.deepEqual(aw.calls[1].body.account, { kind: "signin", level: "member", secret: SIGNIN_TOKEN("ann"), member: "member:ann",
-                                               suggestions: false });
+  assert.deepEqual(aw.calls[1].body.account, await sub.served("ann"));
+  assert.deepEqual([aw.calls[1].body.account.personal, aw.calls[1].body.account.suggestions], [true, false]);
   /* K1615 (agent-worker R56): the member's own suggestions switch rides with the reference — on when they turned it on */
   const on = await setup(env(aw), { principal: stamp });
   /* (K2437, K2445) set by ai-accounts' one act, `accountUsesSet` (its R14), `accountSwitchSet` retired */
-  assert.equal(on.aiAccounts.accountUsesSet({ owner: "member:ann", switch: "suggestions", on: true, by: "member:ann" }).ok, true);
+  on.uses("member:ann", "suggestions", true, "ann");
   assert.equal((await decision(on)).dispatch.state, "DISPATCHED");
   assert.equal(aw.calls[2].body.account.suggestions, true);
   /* K1755: a member with no account of their own is served by the group's API key while it is held and on; the run is
@@ -191,35 +188,35 @@ test("R18, R52, R79 (K1514, K1615, K1755; T47, K3068): a woken run is dispatched
      (control), on when set */
   const grpOff = await setup(env(aw), { principal: stamp, groupKey: true });
   assert.equal((await decision(grpOff)).dispatch.state, "DISPATCHED");
-  assert.deepEqual(aw.calls[3].body.account, { kind: "apikey", level: "group", secret: "group-key-secret", member: "member:ann",
-                                               suggestions: false });
+  assert.deepEqual(aw.calls[3].body.account, await grpOff.served("ann"));
+  assert.deepEqual([aw.calls[3].body.account.level, aw.calls[3].body.account.suggestions], ["group", false]);
   const grp = await setup(env(aw), { principal: stamp, groupKey: true });
-  assert.equal(grp.aiAccounts.accountUsesSet({ owner: "group", switch: "suggestions", on: true, by: "admin" }).ok, true);
+  grp.uses("group", "suggestions", true, "admin");
   assert.equal((await decision(grp)).dispatch.state, "DISPATCHED");
-  assert.deepEqual(aw.calls[4].body.account, { kind: "apikey", level: "group", secret: "group-key-secret", member: "member:ann",
-                                               suggestions: true });
+  assert.deepEqual(aw.calls[4].body.account, await grp.served("ann"));
+  assert.deepEqual([aw.calls[4].body.account.level, aw.calls[4].body.account.suggestions], ["group", true]);
   /* and a sign-in's own switch (ai-accounts R14 closes K2275's gap): on when ann sets it */
   const subOn = await setup(env(aw), { principal: stamp, signin: true });
-  assert.equal(subOn.aiAccounts.accountUsesSet({ owner: "member:ann", switch: "suggestions", on: true, by: "member:ann" }).ok, true);
+  subOn.uses("member:ann", "suggestions", true, "ann");
   assert.equal((await decision(subOn)).dispatch.state, "DISPATCHED");
-  assert.deepEqual(aw.calls[5].body.account, { kind: "signin", level: "member", secret: SIGNIN_TOKEN("ann"), member: "member:ann",
-                                               suggestions: true });
+  assert.deepEqual(aw.calls[5].body.account, await subOn.served("ann"));
+  assert.equal(aw.calls[5].body.account.suggestions, true);
   for (const t of ["observation_log", "ai_runs"])
     assert.equal(JSON.stringify(subOn.rows(`SELECT * FROM ${t}`)).includes(SIGNIN_TOKEN("ann")), false, "the sign-in's token enters no record");
   for (const t of ["observation_log", "ai_runs"])
-    assert.equal(JSON.stringify(grp.rows(`SELECT * FROM ${t}`)).includes("group-key-secret"), false, "the group key enters no record");
+    assert.equal(JSON.stringify(grp.rows(`SELECT * FROM ${t}`)).includes("team-key-secret-0123456789"), false, "the team's key enters no record");
   /* and switched off, nothing serves her: withheld NO_ACCOUNT, the binding not called */
   const off = await setup(env(aw), { principal: stamp, groupKey: true });
-  assert.equal(off.aiAccounts.groupKeySwitch({ on: false, by: "admin" }).ok, true);
+  off.switchAll("group", false, "admin");
   assert.equal((await decision(off)).resume, "NO_ACCOUNT");
   assert.equal(aw.calls.length, 6);
   /* every withheld ground, each named, none calling the binding */
   const calls = aw.calls.length;
   const gone = await setup(env(aw), { principal: stamp });
-  assert.equal((await gone.aiAccounts.accountReferenceRemove({ member: "member:ann", by: "member:ann" })).ok, true);
+  await gone.removeAll("member:ann", "ann");
   const noAcct = await decision(gone);
   assert.equal(noAcct.resume, "NO_ACCOUNT");
-  assert.match(logOf(gone)[0].detail, /Resumption: NOT dispatched — no Claude account serves the member whose act started this run/);
+  assert.ok(logOf(gone)[0].detail.includes(word("ai-runs.index.resumption_not_dispatched_no_ai_account")), logOf(gone)[0].detail);
   assert.equal((await decision(await setup(env(aw), { principal: "member:ann/tok-m" }))).resume, "MEMBER_PRINCIPAL_RUN");
   assert.equal((await decision(await setup(env(aw), { principal: "class:ai/other" }))).resume, "NOT_THE_INSTANCE_CREDENTIALS_RUN");
   assert.equal((await decision(await setup(env(null), { principal: stamp }))).resume, "AGENT_WORKER_UNBOUND");

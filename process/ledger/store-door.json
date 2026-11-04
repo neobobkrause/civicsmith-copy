@@ -1,0 +1,76 @@
+{
+  "id": "store-door",
+  "title": "store-door: answer provider notice answers:103 (ASK_SCOPE) and its open requirements",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/store-door/",
+    "build/requirements/store-door.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/store-door/"
+  ],
+  "requirements": "build/requirements/store-door.md",
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "provenance",
+    "capture",
+    "sources",
+    "answers",
+    "wizard-scripts",
+    "affordances",
+    "tasks",
+    "queue",
+    "instance-setup",
+    "answer-envelope",
+    "attestation",
+    "provenance-routes",
+    "calibration",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "progressions",
+    "bias",
+    "observation-log",
+    "retrieval",
+    "inquiry-grammar",
+    "inquiry",
+    "basis-versions",
+    "contradiction",
+    "run-productions",
+    "capture-requests",
+    "intent",
+    "file-safety",
+    "ai-use",
+    "ai-runs",
+    "doorbell",
+    "ai-accounts",
+    "translations",
+    "test-support",
+    "admission"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/store-door.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Provider notice answers:103 (answers R1: ASK_SCOPE is now AI_GRANT_OPS minus aicredential), judged affected by triage. Adapt or confirm this module's code, with a test of its own that fails with the change reverted. Meet the module's open requirements as far as they are real now; name any you cannot in --not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T05:55:12Z"
+  }
+}
