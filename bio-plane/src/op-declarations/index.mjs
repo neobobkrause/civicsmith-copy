@@ -295,9 +295,11 @@ const OP_FAMILIES = Object.freeze({
      R21, R23); a calculation and a recorded draw any author's (R4, R18); the pattern gate an administrator's (R23).
      T35 (R32, R33): freezing the held uses a member's (MEMBER_ACT_ONLY), the recipes of application a read. T36 (R31;
      its R38, R39): a spot-check's visit a member's (MEMBER_ACT_ONLY), `by` stamped as R31 names it beside the viewer
-     calculations reads as its actor; the spot-check's data a read. */
-  calculations: family({ owner: "calculations", cite: "calculations R24, R32, R33, R38, R39; R31", actor: QUERY("viewer"),
-    extra: { spotcheckvisit: ["by"] }, ops: {
+     calculations reads as its actor; the spot-check's data a read. T53 (calculations R53; K5786; T53-603): a calculation
+     made or evaluated reads the selection's `owner` stamp, the session's identity as `select` stamps it, so a member's
+     own selection resolves for her. */
+  calculations: family({ owner: "calculations", cite: "calculations R24, R32, R33, R38, R39, R53; R31", actor: QUERY("viewer"),
+    extra: { spotcheckvisit: ["by"], calculationcreate: ["owner"], calculationevaluate: ["owner"] }, ops: {
     tabledeclare: "member", bindingadopt: "member", moneyingest: "member", calculationcreate: "open",
     calculationaccept: "member", calculationdraw: "open", recordset: "member", patterngate: "admin",
     patternswitch: "member",
@@ -2706,7 +2708,7 @@ const ACT_HELP_ABSENT = Object.freeze({
       "bearingnote", "bindingadopt", "calibrate", "calibrationsignal", "calibrationsubject",
       "capturerequestplatformmark", "capturerequestplatformunmark", "caseapprove", "caseimportdocument",
       "checkrecord", "checktake", "claimfindstep", "claimfound", "clockstate", "coarchiveset", "comparisonpropose",
-      "contentmint", "contradictionpropose", "contradictionrecommend", "costmessage", "counselpacketexport",
+      "contentmint", "contradictionpropose", "contradictionrecommend", "costmessage",
       "courttreat", "cureunlink", "discretionrecord", "dispose", "docketdecline", "docketpressure", "dutyadopt",
       "dutymatch", "dutypropose", "dutyrevise", "dutytransition", "dutywithdraw", "editacts", "entityidentify",
       "eventattest", "eventgovern", "eventimport", "eventmerge", "eventrelationwithdraw", "eventsplit",
@@ -2715,7 +2717,7 @@ const ACT_HELP_ABSENT = Object.freeze({
       "guidepropose", "guideproposetocivicsmith", "guideretire", "guidereview", "hypothesissetaside",
       "hypothesistakeup", "importflagclear", "importunwatch", "interestcheckdefine", "interestcheckgate",
       "interestcheckswitch", "interviewkeep", "joinlinkoff", "joinlinkreplace", "joinlinkset", "keyedserviceset",
-      "keyedserviceswitch", "lawpropose", "lawwithdraw", "linecurrentthrough", "linkproject", "milestoneitemremove",
+      "keyedserviceswitch", "lawpropose", "lawwithdraw", "linkproject", "milestoneitemremove",
       "milestonereminder", "milestoneremove", "milestonerevise", "milestoneset", "moneycheckparam",
       "moneydetectordefine", "moneydetectorgate", "moneydetectorswitch", "moneyfundtype", "moneyingest",
       "moneysetpropose", "moneywithdraw", "narrativeclaim", "noteshare", "noteunshare", "optionrevise",
