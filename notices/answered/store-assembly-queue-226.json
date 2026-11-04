@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-assembly","by":"triage","evidence":"bio-plane/src/store-assembly/assemble.mjs:609 only builds and migrates queue (imported at :94), and declarations.mjs:172 only lists queue's DECLARED_OPS (imported at :90); neither depends on the class of any kind","at":"2026-11-04T12:39:53.123Z","key":"queue:226","worker":"af72811d9da62bb68","cost":"0.40"}

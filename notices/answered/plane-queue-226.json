@@ -1,0 +1,1 @@
+{"row":"answered","user":"plane","by":"triage","evidence":"bio-plane/src/plane/door.mjs:95 only routes QUEUE_DOOR_OPS to queueOp (imported at :11), passing them through without reading any kind's class or catalogue entry","at":"2026-11-04T12:39:53.123Z","key":"queue:226","worker":"af72811d9da62bb68","cost":"0.40"}

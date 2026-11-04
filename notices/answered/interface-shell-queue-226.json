@@ -1,0 +1,1 @@
+{"row":"answered","user":"interface-shell","by":"triage","evidence":"bio-plane/src/interface-shell/browser.mjs:438 reaches queue only through the queue op for a generic count, with no kind-specific handling and no import of queue (build/modules.json:181)","at":"2026-11-04T12:39:53.123Z","key":"queue:226","worker":"af72811d9da62bb68","cost":"0.40"}

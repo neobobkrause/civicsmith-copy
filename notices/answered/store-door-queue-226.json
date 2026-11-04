@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-door","by":"triage","evidence":"bio-plane/src/store-door/dispatch.mjs:455 only spreads queue's route map lazily (imported at :18), without classifying any kind","at":"2026-11-04T12:39:53.123Z","key":"queue:226","worker":"af72811d9da62bb68","cost":"0.40"}

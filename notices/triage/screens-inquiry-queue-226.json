@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-inquiry","verdict":"not affected","evidence":"bio-plane/src/screens-inquiry/dashproject.mjs:183 reads the queue op's items and keeps only kind newer-capture-affects-reference, none of the changed kinds; nothing in it imports queue (build/modules.json:188)","at":"2026-11-04T12:39:53.123Z","key":"queue:226","worker":"af72811d9da62bb68","cost":"0.40"}

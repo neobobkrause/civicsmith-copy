@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-request","verdict":"not affected","evidence":"bio-plane/src/store-request/index.mjs:44 names queue only as op strings (queuemute, queuesnooze in ACT_CLOCK_OPS) for clock stamping; no import of queue and no use of classOfKind (build/modules.json:179)","at":"2026-11-04T12:39:53.123Z","key":"queue:226","worker":"af72811d9da62bb68","cost":"0.40"}
