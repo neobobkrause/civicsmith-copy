@@ -62,7 +62,7 @@ async function doors({ gate = null, parts = [], env: extra = {}, account = "apik
   }
   /* R47 (T47; credentials R70): a sign-in serves only while its token is held */
   if (account === "signin") {
-    await disclosed(x.ctx, "ann");   /* ai-accounts T53: a sign-in's hold asks the disclosure under the member's bare id */
+    await disclosed(x.ctx, "member:ann");   /* ai-accounts F4 (notice ai-accounts:316): a sign-in's hold asks the disclosure under member:ann, the door's stamp */
     assert.equal((await c.subscriptionTokenHold({ member: "member:ann", token: SIGNIN_TOKEN })).ok, true);
   }
   const grants = () => [...sql.exec(`SELECT count(*) c FROM ai_grants`)][0].c;
