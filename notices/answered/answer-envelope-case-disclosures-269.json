@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:131 imports only ../case-disclosures/checks.mjs (the C-120 CASE_DISCLOSURE_CHECKS family rows); does not use findingFacts, the ungraded writers or subjectNaming","at":"2026-11-04T15:53:18.801Z","key":"case-disclosures:269","worker":"ad883b1d03043708c","cost":"0.30"}

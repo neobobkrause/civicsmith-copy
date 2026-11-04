@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-assembly","by":"triage","evidence":"bio-plane/src/store-assembly/assemble.mjs:76 imports only caseDisclosuresOf, used once at line 435 to build the instance; reads no findingFacts, ungraded output or subjectNaming","at":"2026-11-04T15:53:18.801Z","key":"case-disclosures:269","worker":"ad883b1d03043708c","cost":"0.30"}
