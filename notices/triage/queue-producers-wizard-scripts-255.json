@@ -1,0 +1,1 @@
+{"row":"triage","user":"queue-producers","verdict":"not affected","evidence":"bio-plane/src/queue-producers/index.mjs:137 calls only brokenScripts (:2667), submittedFor (:2730) and baseUpdates (:2993) on wizardScriptsOf, none of which reads ADMIN_ACTS","at":"2026-11-04T14:38:38.657Z","key":"wizard-scripts:255","worker":"a32573373156aebdb","cost":"0.77"}

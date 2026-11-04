@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-inquiry","verdict":"not affected","evidence":"bio-plane/src/screens-inquiry/admit.mjs:7 imports only SCREEN_REGISTRY; admitted() (:11-13) checks registry rows and RE_POINTS, neither built from ADMIN_ACTS","at":"2026-11-04T14:38:38.657Z","key":"wizard-scripts:255","worker":"a32573373156aebdb","cost":"0.77"}

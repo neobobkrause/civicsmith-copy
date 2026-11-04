@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:279 uses the wizard-scripts import (:167, checks.mjs) only as a refusal-row family; checks.mjs imports only setup-words and never reads ADMIN_ACTS","at":"2026-11-04T14:38:38.657Z","key":"wizard-scripts:255","worker":"a0b98a2ac7a3a097d","cost":"0.79"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-matter","verdict":"not affected","evidence":"build/modules.json:194 gives it no paths, so nothing reads ADMIN_ACTS","at":"2026-11-04T14:38:38.657Z","key":"wizard-scripts:255","worker":"a32573373156aebdb","cost":"0.77"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-setup","by":"triage","evidence":"bio-plane/src/setup.mjs:37 imports only checkDraft (used :2509) and WIZARD_SCRIPTS_CHECKS (used :410), neither of which reads ADMIN_ACTS; setup.mjs, setup-fleet.mjs and livefire.mjs never mention ADMIN_ACTS","at":"2026-11-04T14:38:38.657Z","key":"wizard-scripts:255","worker":"a5edda1e39c8bb204","cost":"0.63"}
