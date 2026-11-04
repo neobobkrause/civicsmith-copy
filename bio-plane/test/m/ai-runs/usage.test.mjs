@@ -431,13 +431,13 @@ test("R53: the module's tables are declared explicitly through record-core's dec
   const w = await useWorld();
   const decl = Object.fromEntries(w.record.declaredTables().filter((t) => t.module === "ai-runs").map((t) => [t.name, t]));
   assert.deepEqual(Object.keys(decl).sort(), ["ai_group_tests", "ai_mode_verifications", "ai_run_bounds", "ai_run_looks",
-                                               "ai_runs", "ai_test_bar", "inquiry_run_surfacings"]);
+                                               "ai_run_segments", "ai_runs", "ai_test_bar", "inquiry_run_surfacings"]);
   for (const t of Object.values(decl))
     assert.deepEqual([t.purge, t.expunge, t.export, t.derive, t.version_chain], ["clear", "none", "admin-only", "stored", false], t.name);
   /* T41: R73's step looks and R75's test bar and group test matters, group-wide, as the verifications are */
   const groupWide = ["ai_mode_verifications", "ai_run_looks", "ai_test_bar", "ai_group_tests"];
   assert.deepEqual(groupWide.map((n) => [decl[n].sight, decl[n].keys]), groupWide.map(() => ["group", []]));
-  assert.deepEqual(["ai_runs", "ai_run_bounds", "inquiry_run_surfacings"].map((n) => decl[n].sight), ["bundle", "bundle", "bundle"]);
+  assert.deepEqual(["ai_runs", "ai_run_bounds", "inquiry_run_surfacings", "ai_run_segments"].map((n) => decl[n].sight), ["bundle", "bundle", "bundle", "bundle"]);
   assert.deepEqual([decl.ai_runs.keys, decl.ai_run_bounds.keys, decl.inquiry_run_surfacings.keys], [[], [], undefined]);
   /* ai_usage is declared, by ai-use */
   assert.equal(w.record.declaredTables().find((t) => t.name === "ai_usage").module, "ai-use");

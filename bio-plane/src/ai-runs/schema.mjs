@@ -2,7 +2,7 @@
  * module's extraction (T40-8, K624: the use counter and the ceilings moved to `ai-use`, which declares and migrates them, its R7). `lens_at_open`, `rerun_of` and `plan` (R46) are additive columns of the store's migration; they are part of the
  * table here, and `migrate` adds them to a table created before them. */
 export const AI_RUNS_TABLES = Object.freeze(["ai_runs", "ai_run_bounds", "inquiry_run_surfacings",
-  "ai_mode_verifications", "ai_run_looks", "ai_test_bar", "ai_group_tests"]);
+  "ai_mode_verifications", "ai_run_looks", "ai_test_bar", "ai_group_tests", "ai_run_segments"]);
 /* T41 (T41-23): `step` and `origin` (R73), and `own_step` ('1' when `step` is the run's own system step, made by this
    module after the open, R73, R74) are additive columns, added by `migrate` to a table created before them. A run's
    cost is not kept here: its figures are `ai-use`'s, one store (R76, K2482). */
@@ -12,7 +12,12 @@ export const AI_RUNS_ADDED_COLUMNS = Object.freeze(["lens_at_open", "rerun_of", 
   /* R78 (T46): the test-instance exception's label a run was admitted under, JSON; NULL for a run the bar admitted */
   "untested",
   /* R89 (T50): the project a run was opened in, recorded at the open and never changed; NULL for a run opened with none */
-  "project"]);
+  "project",
+  /* R93-R96, R105 (T53): what holds a run that is not failed (a pause, a hop offered to its member, a recipient's notice,
+     a wait), JSON; NULL while nothing holds it */
+  "hold",
+  /* R105 (T53): the member's "wait a set time, then switch" choice, {run, member, wait, from, at}, JSON; NULL when none */
+  "wait_choice"]);
 
 /* R75 (T53): additive columns of other tables, `{table: [column]}`, added by `migrate` to a table created before them. */
 export const AI_RUNS_ADDED_TABLE_COLUMNS = Object.freeze({ ai_test_bar: Object.freeze(["entry_id"]) });
@@ -154,6 +159,34 @@ CREATE TABLE IF NOT EXISTS ai_group_tests (
   by       TEXT NOT NULL,
   at       TEXT NOT NULL,
   PRIMARY KEY (part, matter)
+);
+-- R91, R92, R101, R102 (T53; AIR25, BR19, DEC-466 U2): A RUN'S SEGMENTS, one row per segment dispatched, numbered from 1:
+-- the account it ran on (never a secret: its id, level, owner, provider, plan and means), the entry it was served on, the
+-- entries and labels its conversations used (from the ticks' usage), the first conversation's label, the paying owner and
+-- the member, its instants, how it ended (segment_end, as end_state), the hop that began it (hop_in, null for the first and
+-- for a resume on the same account) and the member's refusal to go on from it (end_refusal). Purged with the run (R38).
+CREATE TABLE IF NOT EXISTS ai_run_segments (
+  run           TEXT NOT NULL,
+  n             INTEGER NOT NULL,
+  account_id    TEXT,
+  account       TEXT,
+  level         TEXT,
+  owner         TEXT,
+  provider      TEXT,
+  plan          TEXT,
+  means         TEXT,
+  entry_id      TEXT,
+  entries_used  TEXT NOT NULL DEFAULT '[]',
+  labels        TEXT NOT NULL DEFAULT '[]',
+  label         TEXT,
+  payer_owner   TEXT,
+  member        TEXT,
+  started       TEXT NOT NULL,
+  ended         TEXT,
+  end_state     TEXT,
+  hop_in        TEXT,
+  end_refusal   TEXT,
+  PRIMARY KEY (run, n)
 );
 CREATE TABLE IF NOT EXISTS ai_mode_verifications (
   mode         TEXT NOT NULL,
