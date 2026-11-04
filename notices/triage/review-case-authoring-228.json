@@ -1,0 +1,1 @@
+{"row":"triage","user":"review","verdict":"affected","evidence":"bio-plane/src/review/index.mjs:784 #gates runs caseAuthoring.publishCase and at :795-796 returns its refusal (field kept) as missing: [refused], so a reviewer sees which field was unchanged","at":"2026-11-04T12:45:40.554Z","key":"case-authoring:228","worker":"a014d9c60e7ba9294","cost":"0.35"}

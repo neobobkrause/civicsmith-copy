@@ -1,0 +1,1 @@
+{"row":"answered","user":"affordances","by":"triage","evidence":"bio-plane/src/affordances.mjs:99 imports only SELF_ATTESTED_SENTENCE (re-exported at :372) and never calls publishCase or reads its refusal field","at":"2026-11-04T12:45:40.554Z","key":"case-authoring:228","worker":"a014d9c60e7ba9294","cost":"0.35"}

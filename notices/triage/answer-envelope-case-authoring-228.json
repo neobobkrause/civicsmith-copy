@@ -1,0 +1,1 @@
+{"row":"triage","user":"answer-envelope","verdict":"not affected","evidence":"bio-plane/src/answer-envelope/families.mjs:133 imports case-authoring/checks.mjs only as a check-family table entry (:250); it never reads the publish refusal or its field","at":"2026-11-04T12:45:40.554Z","key":"case-authoring:228","worker":"a014d9c60e7ba9294","cost":"0.35"}
