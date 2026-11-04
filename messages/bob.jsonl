@@ -222,3 +222,4 @@
 {"at":"2026-11-04T17:27:30Z","row":"sent","n":114,"to":"job-op-declarations","text":"bob-114: scope change (coordinator 17:28): skip consolidation this attempt; fixes only; job complete with --not-verified naming the deferral."}
 {"at":"2026-11-04T17:27:35Z","row":"outcome","n":114,"outcome":"delivered"}
 {"at":"2026-11-04T17:27:40Z","row":"sent","n":115,"to":"job-control-plane","text":"bob-115: scope change (coordinator 17:28): skip consolidation this attempt; fixes only; job complete with --not-verified naming the deferral."}
+{"at":"2026-11-04T17:27:44Z","row":"outcome","n":115,"outcome":"delivered"}
