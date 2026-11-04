@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-investigate","verdict":"not affected","evidence":"bio-plane/src/screens-investigate/index.mjs:6 import block has no op-declarations import and no retired or new op named in the module","at":"2026-11-04T07:01:39.928Z","key":"op-declarations:95","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

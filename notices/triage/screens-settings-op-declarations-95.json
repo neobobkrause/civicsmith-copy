@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-settings","verdict":"affected","evidence":"bio-plane/src/screens-settings/teamai.mjs:18 reads the retired op groupkeystate (and :2 documents groupkeyset, groupkeyswitch, groupkeyremove, all retired by R24); no import of op-declarations","at":"2026-11-04T07:01:39.928Z","key":"op-declarations:95","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"control-plane","verdict":"affected","evidence":"bio-plane/src/control-plane/index.mjs:1406 serves op subscriptiondisconnect, which R30 retires with no spec and no table; it reads OPS, OP_STAMPS, OP_ALIASES (imports :87, :90)","at":"2026-11-04T07:01:39.928Z","key":"op-declarations:95","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

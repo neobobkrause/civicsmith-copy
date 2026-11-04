@@ -1,0 +1,1 @@
+{"row":"triage","user":"signin-door","verdict":"affected","evidence":"bio-plane/src/signin-door/index.mjs:67 and :243-265 serve and map op subscriptiondisconnect, the seventh credentials T35 route that R30 retires with no spec and no table; no import of op-declarations","at":"2026-11-04T07:01:39.928Z","key":"op-declarations:95","worker":"triage-a8ac876e3c208abec","cost":"0.05"}
