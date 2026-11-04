@@ -26,10 +26,10 @@ const acts = file.screens.flatMap((s) => s.acts);
 const count = (status) => acts.filter((a) => a.status === status).length;
 
 test("R49 (T51 fix round 3; C64; DEC-401, DEC-402; K4356; amends R47, R48) the registry is re-taken at 43379a1a44: SCREEN_REGISTRY_SOURCE names that commit and the file's sha256, with 83 screens and 564 acts (435 declared, 83 function, 46 owed; 42 owed ops); request registers entitycreate; build-data.mjs --check passes on the committed files", () => {
-  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "b1adf4236d", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha("registry.json") });
-  assert.equal(SOURCES.registry.commit, "b1adf4236d");
-  assert.deepEqual([wz.SCREEN_REGISTRY.length, acts.length, count("declared"), count("function"), count("owed")], [91, 656, 452, 83, 121]);
-  assert.equal(new Set(acts.filter((a) => a.status === "owed").map((a) => a.op)).size, 105, "the owed ops at b1adf4236d (42 at 43379a1a44)");
+  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "30af4350f2", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha("registry.json") });
+  assert.equal(SOURCES.registry.commit, "30af4350f2");
+  assert.deepEqual([wz.SCREEN_REGISTRY.length, acts.length, count("declared"), count("function"), count("owed")], [91, 678, 461, 82, 135]);
+  assert.equal(new Set(acts.filter((a) => a.status === "owed").map((a) => a.op)).size, 118, "the owed ops at 30af4350f2 (42 at 43379a1a44)");
   const request = wz.SCREEN_REGISTRY.find((s) => s.id === "request");
   assert.ok(request.acts.includes("entitycreate"), "DEC-402: a member names a federal office from the records request");
   assert.equal(run("--check").status, 0, "the carried generated files are what their sources give");
@@ -49,7 +49,7 @@ test("R49 control: the earlier registry, kept whole beside the carried one at 65
     for (const f of GENERATED) copyFileSync(join(GEN_DIR, f), join(dir, f));
     assert.equal(run("--check", "--out", dir).status, 0, "the copies of the carried files pass");
     const path = join(dir, "screen-registry.mjs");
-    writeFileSync(path, readFileSync(path, "utf8").replace("b1adf4236d", "43379a1a45"));
+    writeFileSync(path, readFileSync(path, "utf8").replace("30af4350f2", "43379a1a45"));
     const r = run("--check", "--out", dir);
     assert.equal(r.status, 1, "a one-byte change to the generated registry fails --check");
     assert.match(r.stderr, /screen-registry\.mjs is stale/);

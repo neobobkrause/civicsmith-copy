@@ -4,7 +4,7 @@
    is in the test profile's zone, so "today" is a local day. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { answersWorld, answer, V } from "./fixture.mjs";
+import { answersWorld, answer, V, PLANS } from "./fixture.mjs";
 import { ANSWERS_CHECKS, STANDING_LABEL, STANDING_TICK_MAX, nextDueDay } from "../../../src/answers/index.mjs";
 import { KEPT_AWAY_UNREADABLE } from "../../../src/ai-accounts/index.mjs";
 import { accountsServing, keptAwayGroup, noAccount, switchedOff, keptAwayUnreadable } from "../ai-accounts/fixtures.mjs";
@@ -151,10 +151,10 @@ test("R19 R30 the AI half answers new finds only when the copy's switch, keep-aw
   }).ok, true);
   assert.equal(w.a.registerStandingAnswerer("other", async () => ({})).reason, "LISTENER_DECLARED");
   assert.deepEqual(await step(), { condition: "no_account" }, "no reference of bob's own and no group key");
-  await w.accounts.accountReferenceSet({ member: "bob", kind: "apikey", secret: "sk-test", by: BOB });
-  /* his account's standing use is off (credentials R55's default): the account chosen is the one used (R56) */
+  const own = await w.ownAccount("bob", { secret: "sk-test" });
+  /* his account's standing use is off (ai-accounts R14's default): the account chosen is the one used (its R11) */
   assert.deepEqual(await step(), { condition: "switch_off", switch: "member" });
-  assert.equal(w.accounts.accountUsesSet({ owner: "member:bob", switch: "standing", on: true, by: BOB }).ok, true);
+  assert.equal(w.uses(own, "standing", true, BOB).ok, true);
   /* R30: the paying account's limits, ai-use.useCheck, in place of the ceiling */
   const reached = w.reach("member:bob", "standing");
   assert.deepEqual(await step(), { condition: "limit", code: "AI_LIMIT_REACHED", translation: reached.translation });
@@ -179,17 +179,21 @@ test("R19 R30 the AI half answers new finds only when the copy's switch, keep-aw
   assert.equal(last.answer.sentences[1], null);
   assert.deepEqual(last.withheld.filter((x) => x.sentence).map((x) => x.code), ["ANSWER_CITES_UNREAD"]);
   assert.ok(w.rows(`SELECT * FROM answers_tallies WHERE mode='standing'`).length > 0, "counted within the tallies (R13)");
-  /* the group's API key serves a member with no reference of their own, while it is held and on (K1755) */
+  /* the team's account serves a member with no account of their own, while it is held and on (K1755; ai-accounts R5,
+     R11 (T53)) */
   w.carolQ = set(w, { author: CAROL }).id;
   await w.a.standingTick(w.clock.now);
-  assert.equal((await w.accounts.groupKeySet({ key: "sk-group", by: ALICE })).ok, true);
-  assert.deepEqual(await step(CAROL), { condition: "no_account" }, "held but off");
-  assert.equal((await w.accounts.groupKeySwitch({ on: true, by: ALICE })).ok, true);
-  assert.deepEqual(await step(CAROL), { condition: "switch_off", switch: "group" }, "the group key's own standing use");
-  assert.equal(w.accounts.accountUsesSet({ owner: "group", switch: "standing", on: true, by: ALICE }).ok, true);
+  const team = await w.accounts.accountSet({ owner: "group", provider: PLANS.provider, plan: PLANS.teamApi, means: "sealed",
+                                             secret: "sk-group", by: ALICE });
+  assert.equal(team.ok, true, JSON.stringify(team));
+  assert.deepEqual(await step(CAROL), { condition: "no_account" }, "held but off: no usable account");
+  assert.equal(w.accounts.accountSwitch({ account_id: team.account_id, on: true, by: ALICE }).ok, true);
+  assert.deepEqual(await step(CAROL), { condition: "switch_off", switch: "group" }, "the team account's own standing use");
+  assert.equal(w.uses(team.account_id, "standing", true, ALICE).ok, true);
+  /* (T53) the notice owed before an account pays is per provider and host (ai-accounts R51), in place of the group key's */
   const due = await step(CAROL);
-  assert.equal(due.condition, "no_account"); assert.equal(due.code, "GROUP_KEY_NOTICE_DUE"); assert.ok(due.translation);
-  assert.equal((await w.accounts.groupKeyNoticeSeen({ member: "carol", by: CAROL })).ok, true);
+  assert.equal(due.condition, "no_account"); assert.equal(due.code, "RECIPIENT_NOTICE_DUE"); assert.ok(due.translation);
+  w.seen("carol");
   assert.equal(await step(CAROL), null);
   assert.equal(calls.at(-1).author, CAROL); assert.equal(calls.at(-1).held.member, "carol");
   assert.deepEqual([w.limit.asked.at(-1).owner, w.limit.asked.at(-1).member], ["group", "carol"], "the group's limits judge the group key");
@@ -250,8 +254,8 @@ test("R19 keep-away (ai-accounts R7's aiKeptAway, never credentials', read after
   /* every other condition would let it run: the copy's switch, the answerer, bob's own reference and its standing use */
   assert.equal(w.a.standingAiSwitch({ on: true, by: ALICE }).ok, true);
   w.a.registerStandingAnswerer("agent-worker", async (x) => { calls.push(x); return answer(); });
-  await accts.accountReferenceSet({ member: "bob", kind: "apikey", secret: "sk-test", by: BOB });
-  assert.equal(accts.accountUsesSet({ owner: "member:bob", switch: "standing", on: true, by: BOB }).ok, true);
+  const own = await w.ownAccount("bob", { secret: "sk-test" });
+  assert.equal(w.uses(own, "standing", true, BOB).ok, true);
   /* the copy's switch is read first: off, keep-away is not read at all */
   assert.equal((await accts.aiKeepAwaySet({ on: true, reason: "We are reviewing what the assistant may read.", by: ALICE })).ok, true);
   w.record.setSetting("answers_standing_ai", false, "admin");
@@ -353,13 +357,20 @@ test("R19 the sign-in arm (N796, Bob K2425; credentials R32; ai-accounts R7, R14
     return answer({ holdings: [{ address: x.finds.ids[0], quote: "Budget" }],
                     sentences: [{ text: "A new budget document is held.", kind: "quote", support: ["h1"] }] });
   });
-  /* carol holds no reference of her own and the group no key: her sign-in is what serves her (credentials R35, R43),
-     and only while its token is held (credentials R70, T47): the connected fact alone serves no one */
-  assert.equal((await accts.subscriptionConnected({ member: "carol" })).ok, true);
-  assert.equal((await accts.accountFor({ member: "carol", act: { kind: "standing", member: CAROL } })).code, "NO_ACCOUNT",
-               "a sign-in with no token held is not connected");
+  /* carol holds no API account of her own and the team none: her sign-in is what serves her, since T53 an account of her
+     own of the personal subscription plan, means `issued` (ai-accounts R19, R40, R42, R48), and only while its token is
+     held: an issued account with no token held serves nothing */
+  await w.ready;
   const TOKEN = "sk-ant-oat01-sentinel-carol-0123456789";
-  assert.equal((await accts.subscriptionTokenHold({ member: "carol", token: TOKEN })).ok, true);
+  const sub = await accts.accountSet({ owner: "member:carol", provider: PLANS.provider, plan: PLANS.subscription, means: "issued",
+                                       secret: TOKEN, by: CAROL });
+  assert.equal(sub.ok, true, JSON.stringify(sub));
+  assert.equal(accts.accountSwitch({ account_id: sub.account_id, on: true, by: CAROL }).ok, true);
+  w.seen("carol");
+  assert.equal(accts.issuedTokenRefused({ account_id: sub.account_id }).ok, true);
+  const none = await accts.accountFor({ member: "carol", act: { kind: "standing", member: CAROL } });
+  assert.equal(none.code, "NO_ACCOUNT", "a sign-in with no token held serves nothing");
+  assert.equal((await accts.issuedTokenHold({ account_id: sub.account_id, token: TOKEN })).ok, true);
   const q = set(w, { author: CAROL });
   await w.a.standingTick(w.clock.now);
   let n = 0;
@@ -391,7 +402,7 @@ test("R19 the sign-in arm (N796, Bob K2425; credentials R32; ai-accounts R7, R14
   for (const e of entries) { assert.equal(e.answer, null); assert.equal(e.finds.ids.length, 1); assert.deepEqual(e.held_back, held); }
   assert.doesNotMatch(JSON.stringify(w.rows(`SELECT * FROM standing_runs`)), /signin|no_account|kept_away/);
   /* on, by her own act: the grant is minted for her sign-in and the model stub is called once */
-  assert.equal(accts.accountUsesSet({ owner: "member:carol", switch: "standing", on: true, by: CAROL }).ok, true);
+  assert.equal(w.uses(sub.account_id, "standing", true, CAROL).ok, true);
   const reached = w.reach("member:carol", "standing");
   assert.deepEqual(await step(), { condition: "limit", code: "AI_LIMIT_REACHED", translation: reached.translation }, "its limits read as for any account");
   assert.equal(w.limit.asked.at(-1).owner, "member:carol");
