@@ -49,3 +49,4 @@
 {"at":"2026-11-04T10:39:08Z","row":"sent","n":25,"to":"bob","text":"Sweep: agent-worker: BLOCKED; interface-assets: BLOCKED; interface-shell: BLOCKED; plane: BLOCKED; runtime-limits: BLOCKED; screens-action: BLOCKED; screens-inquiry: BLOCKED; screens-settings: BLOCKED; site: BLOCKED; store-assembly: BLOCKED."}
 {"at":"2026-11-04T10:40:58Z","row":"outcome","n":25,"outcome":"delivered"}
 {"at":"2026-11-04T11:19:50Z","row":"sent","n":26,"to":"bob","text":"Sweep: agent-worker: BLOCKED; interface-assets: BLOCKED; interface-shell: BLOCKED; plane: BLOCKED; runtime-limits: BLOCKED; screens-action: BLOCKED; screens-inquiry: BLOCKED; screens-settings: BLOCKED; site: BLOCKED; store-assembly: BLOCKED."}
+{"at":"2026-11-04T11:21:15Z","row":"outcome","n":26,"outcome":"delivered"}
