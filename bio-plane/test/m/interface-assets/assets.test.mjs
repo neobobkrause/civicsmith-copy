@@ -328,14 +328,18 @@ test("R6: a fresh import evaluates no face; each face's base64 is built on its f
   const m = faceHeap(MODULE);
   console.log(`interface-assets R6: import ${m.importMs.toFixed(1)} ms (bundler R31 budget 500 ms), heap at import ${(m.atImport / 1024) | 0} KB, on reading the faces ${(m.onRead / 1024) | 0} KB of ${(m.chars / 1024) | 0} KB base64`);
   assert.equal(m.faces, 15);
-  assert.ok(m.atImport < m.chars / 2, `the import holds ${m.atImport} bytes, not under half the faces' ${m.chars}`);
+  /* Node keeps a module's source text on the heap when it is under about 1 MiB (each face module is, by the size rule),
+     and off it above; that text is not a face built. So the import holds the face modules' source and under half the
+     faces beyond it; an eager module builds every face's string at import (the control below). */
+  const source = faceModules().reduce((a, f) => a + statSync(join(HERE_SRC, f)).size, 0);
+  assert.ok(m.atImport - source < m.chars / 2, `the import holds ${m.atImport} bytes, ${m.atImport - source} beyond the face modules' ${source}, not under half the faces' ${m.chars}`);
   assert.ok(m.onRead > m.chars * 0.75, `reading the faces built ${m.onRead} bytes of their ${m.chars}`);
   // Every read answers the same text, equal to R1's bytes (R1's test checks each against git).
   for (const [n, e] of Object.entries(ASSET_FILES)) if (n.endsWith(".woff2")) assert.equal(e.body, ASSET_FILES[n].body);
   assert.deepEqual(r1Failures(ASSET_FILES, ASSETS_COMMIT), []);
 });
 
-test("R6 control: a module holding its faces as base64 literals in the global scope is refused", () => {
+test("R6 control: a module holding its faces as base64 literals in the global scope is refused, also when split under 1 MiB", () => {
   const dir = mkdtempSync(join(tmpdir(), "interface-assets-r6-"));
   try {
     const eager = join(dir, "eager.mjs");
@@ -344,6 +348,15 @@ test("R6 control: a module holding its faces as base64 literals in the global sc
     writeFileSync(eager, `export const ASSETS_COMMIT = "x";\nexport const ASSET_FILES = Object.freeze({\n${faces.join("\n")}\n});\n`);
     const m = faceHeap(eager);
     assert.ok(!(m.atImport < m.chars / 2), `an eager module held only ${m.atImport} bytes at import`);
+    // Split eager: the faces as top-level strings in two face modules; beyond their source the import still holds every face.
+    const entries = Object.entries(ASSET_FILES).filter(([n]) => n.endsWith(".woff2"));
+    const half = Math.ceil(entries.length / 2);
+    const parts = [entries.slice(0, half), entries.slice(half)];
+    parts.forEach((p, k) => writeFileSync(join(dir, `faces-${k + 1}.mjs`), p.map(([, e], i) => `export const f${k * half + i} = ${JSON.stringify(e.body)}.split("").join("");\n`).join("")));
+    writeFileSync(join(dir, "split.mjs"), `import * as a from "./faces-1.mjs"; import * as b from "./faces-2.mjs";\nconst all = { ...a, ...b };\nexport const ASSETS_COMMIT = "x";\nexport const ASSET_FILES = Object.freeze(Object.fromEntries(Object.keys(all).map((k) => ["fonts/" + k + ".woff2", Object.freeze({ type: "font/woff2", encoding: "base64", body: all[k] })])));\n`);
+    const sm = faceHeap(join(dir, "split.mjs"));
+    const src = [1, 2].reduce((a, k) => a + statSync(join(dir, `faces-${k}.mjs`)).size, 0);
+    assert.ok(!(sm.atImport - src < sm.chars / 2), `a split eager module held only ${sm.atImport - src} bytes beyond its source`);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
