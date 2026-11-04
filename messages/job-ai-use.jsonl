@@ -1,3 +1,4 @@
 {"at":"2026-11-04T04:18:28Z","row":"sent","n":1,"to":"bob","text":"job ai-use complete, PR #105 ready: run status"}
 {"at":"2026-11-04T04:18:45Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T04:41:02Z","row":"sent","n":2,"to":"bob","text":"job ai-use: merged origin/tranche (e81b3da846, gate green), suite 117/117, job complete rerun (receipt commit 0b03e0648c pushed); its ready-for-review step failed on GraphQL (403) but PR #105 is already ready. No ai-accounts old names needed. Run status."}
+{"at":"2026-11-04T04:41:12Z","row":"outcome","n":2,"outcome":"delivered"}
