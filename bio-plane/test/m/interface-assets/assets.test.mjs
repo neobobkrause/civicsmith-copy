@@ -17,8 +17,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const MODULE = join(ROOT, "bio-plane/src/interface-assets/index.mjs");
 const DIR = "docs/development/ux-substrate/visual-language";
 const PAGE = "docs/development/ux-substrate/screens/page.src.html";
-const COMMIT = "2a64c5ae77"; // R10 (T51): the design commit the START names; R9 named 7be06eb4cb and R8 f498560a37 before it
+const COMMIT = "1b6f2bc383"; // R10 (T51): the design commit the START names (tranche head holding PR 191, DEC-412); 2a64c5ae77 before it, R9 named 7be06eb4cb and R8 f498560a37 before it
 const R9_COMMIT = "7be06eb4cb";
+const R10_COMMIT = "2a64c5ae77"; // the commit R10 was met at, before PR 191
 const git = (args) => execFileSync("git", args, { cwd: ROOT, maxBuffer: 1 << 26 });
 const atCommit = (path) => git(["show", `${ASSETS_COMMIT}:${DIR}/${path}`]);
 const bytesOf = (e) => (e.encoding === "base64" ? Buffer.from(e.body, "base64") : Buffer.from(e.body, "utf8"));
@@ -140,7 +141,7 @@ function r4Failures(loaded) {
   return out;
 }
 
-test("R1, R5, R8, R9, R10: ASSETS_COMMIT is 2a64c5ae77 and ASSET_FILES holds exactly R1's 20 files and R7's shell.css, each equal byte for byte to git at the commit", () => {
+test("R1, R5, R8, R9, R10: ASSETS_COMMIT is 1b6f2bc383 and ASSET_FILES holds exactly R1's 20 files and R7's shell.css, each equal byte for byte to git at the commit", () => {
   const { faces } = expected();
   assert.equal(faces.length, 15);
   assert.equal(Object.keys(ASSET_FILES).length, 21);
@@ -267,7 +268,7 @@ function r5Failures(css) {
   return out;
 }
 
-test("R5, R8, R9, R10: civicsmith.css at 2a64c5ae77 holds no cursor: help, no cursor in .cs-card, and the three kind tokens light and dark", () => {
+test("R5, R8, R9, R10: civicsmith.css at 1b6f2bc383 holds no cursor: help, no cursor in .cs-card, and the three kind tokens light and dark", () => {
   assert.equal(ASSETS_COMMIT, COMMIT);
   const css = ASSET_FILES["civicsmith.css"].body;
   assert.deepEqual(r5Failures(css), []);
@@ -444,7 +445,7 @@ function r9Failures(civicsmith) {
   return R9_CLASSES.filter((c) => !namedBy(named, c)).map((c) => `civicsmith.css: no rule for ${c}`);
 }
 
-test("R9, R10: ASSETS_COMMIT is 2a64c5ae77, the design commit the START names; civicsmith.css names each class DEC-280, DEC-249 and DEC-279 added; each served file is R1's bytes and R7's transform", () => {
+test("R9, R10: ASSETS_COMMIT is 1b6f2bc383, the design commit the START names; civicsmith.css names each class DEC-280, DEC-249 and DEC-279 added; each served file is R1's bytes and R7's transform", () => {
   assert.equal(ASSETS_COMMIT, COMMIT);
   const civ = ASSET_FILES["civicsmith.css"].body;
   assert.deepEqual(r9Failures(civ), []);
@@ -468,6 +469,10 @@ test("R9 control: another commit, a hand edit of a served file, and a stylesheet
    except the markers and mock-only classes R10 lists. */
 const SCREENS = "docs/development/ux-substrate/screens/";
 const DRAWINGS = ["mock-screens.js", "mock-shell.js", "mock-kit.js", "mock-acts.js", "mock-refs.js"];
+/* Found at 1b6f2bc383 by R10's scan (its control's purpose): drawn, in neither stylesheet and not in R10's marker list.
+   mk-det (mock-screens.js cdPart's <div>) and mk-widen (a hook mock-screens.js's querySelector toggles with hidden).
+   Whether each is a marker or owes a style is UX-DESIGN's, reported to BOB; the scan stays exact, so any other new class fails. */
+const R10_FOUND = ["mk-det", "mk-widen"];
 const R10_NO_STYLE = ["mk-data", "mk-codes", "mk-cv", "mk-unpick", "mk-updband", "mk-lvlbtn", "mk-front", "mk-held", "mk-used", "mk-page", "mk-mockctl", "mk-osprompt"];
 const classesIn = (css) => new Set([...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)].map((m) => m[1]));
 function drawnClasses(readDrawing) {
@@ -486,10 +491,11 @@ const drawing = (f) => git(["show", `${ASSETS_COMMIT}:${SCREENS}${f}`]).toString
 test("R10: ASSETS_COMMIT is the START's design commit; the visual files are R9's, shell.css holds the 32 px sort buttons and the further st- states, icons.svg holds the three icons, and every class the drawings write is defined", () => {
   assert.equal(ASSETS_COMMIT, COMMIT);
   assert.deepEqual(r1Failures(ASSET_FILES, ASSETS_COMMIT), []);
-  // civicsmith.css, the 15 faces and the three licences are byte-identical to R9's commit.
+  // At R10's own commit, civicsmith.css was byte-identical to R9's (read from git); the served one is R1's bytes at the
+  // pin (above), which since PR 191 (DEC-412) also carries .cs-btn's var(--tap). The 15 faces and three licences are R9's.
   const at9 = (p) => git(["show", `${R9_COMMIT}:${DIR}/${p}`]);
-  assert.ok(Buffer.from(ASSET_FILES["civicsmith.css"].body, "utf8").equals(Buffer.concat([at9("civicsmith.css"),
-    Buffer.from(at9("faces.css").toString("utf8").split('url("fonts/').join('url("/app/assets/fonts/'), "utf8")])), "civicsmith.css is R9's");
+  const at10 = (p) => git(["show", `${R10_COMMIT}:${DIR}/${p}`]);
+  assert.ok(at10("civicsmith.css").equals(at9("civicsmith.css")) && at10("faces.css").equals(at9("faces.css")), "civicsmith.css at R10's commit is R9's");
   for (const n of Object.keys(ASSET_FILES).filter((k) => k.startsWith("fonts/")))
     assert.ok(bytesOf(ASSET_FILES[n]).equals(at9(n)), `${n} is R9's`);
   // DEC-330: the sort buttons are 32 px tall; the state-switching rule carries .st-j, .st-k and .st-l.
@@ -504,15 +510,17 @@ test("R10: ASSETS_COMMIT is the START's design commit; the visual files are R9's
   for (const id of ["i-group", "i-document", "i-due", "i-sever"]) assert.ok(new RegExp(`<symbol id="${id}"`).test(icons), id);
   // No class the drawings write is left without a style, and the scan reads real class attributes.
   assert.ok(drawnClasses(drawing).size > 100, "the scan finds the drawings' classes");
-  assert.deepEqual(r10Undefined(ASSET_FILES, drawing), []);
+  assert.deepEqual(r10Undefined(ASSET_FILES, drawing), R10_FOUND);
   // No print rule is written by hand: every @media print rule of shell.css is the transform's (R7's equality above).
   assert.equal(ASSET_FILES["shell.css"].body, shellCss(git(["show", `${ASSETS_COMMIT}:${PAGE}`]).toString("utf8")));
 });
 
+test.todo("R10 at 1b6f2bc383: mk-det and mk-widen, drawn since 2a64c5ae77, are styled or named markers (UX-DESIGN, reported to BOB)");
+
 test("R10 control: a drawn class with no style fails the scan, so a later design commit's new class is found; a hand edit of a served file or R9's commit is refused", () => {
   const files = ASSET_FILES;
-  assert.deepEqual(r10Undefined(files, (f) => drawing(f) + '\n<div class="mk-newthing cs-another">'), ["cs-another", "mk-newthing"]);
-  for (const c of R10_NO_STYLE) assert.deepEqual(r10Undefined(files, (f) => drawing(f) + `\n<i class="${c}">`), [], `${c} is a marker`);
+  assert.deepEqual(r10Undefined(files, (f) => drawing(f) + '\n<div class="mk-newthing cs-another">'), ["cs-another", ...R10_FOUND, "mk-newthing"].sort());
+  for (const c of R10_NO_STYLE) assert.deepEqual(r10Undefined(files, (f) => drawing(f) + `\n<i class="${c}">`), R10_FOUND, `${c} is a marker`);
   assert.ok(r10Undefined({ "civicsmith.css": { body: "" }, "shell.css": { body: "" } }, drawing).length > 0);
   assert.ok(r1Failures(ASSET_FILES, R9_COMMIT).length > 0, "R9's commit is refused");
   const copy = Object.fromEntries(Object.entries(ASSET_FILES).map(([n, e]) => [n, { ...e }]));
@@ -543,4 +551,27 @@ test("R11 control: an ellipsis, a nowrap or a hidden overflow on the name or its
     assert.ok(r11Failures(withCss(extra)).length > 0, extra);
   const noWrap = { ...ASSET_FILES, "shell.css": { ...ASSET_FILES["shell.css"], body: ASSET_FILES["shell.css"].body.split("overflow-wrap: anywhere").join("overflow-wrap: normal") } };
   assert.ok(r11Failures(noWrap).some((f) => f.includes("wrap")));
+});
+
+/* DEC-412 (PR 191; site R18): .cs-btn is min-height var(--tap), 44 px at every width, not 40 px with only the phone
+   query raising it. Read from the served stylesheet, so a pin before PR 191 fails here. */
+function tapFailures(css) {
+  const out = [];
+  const all = rules(css);
+  const btn = all.filter((r) => !r.media && sels(r).includes(".cs-btn") && /min-height\s*:/.test(r.body));
+  if (btn.length === 0) out.push(".cs-btn: no min-height outside a media query");
+  for (const r of btn) { const m = /min-height\s*:\s*([^;]+)/.exec(r.body)[1].trim(); if (m !== "var(--tap)") out.push(`.cs-btn: min-height ${m}`); }
+  const tap = all.filter((r) => !r.media && /--tap\s*:/.test(r.body)).map((r) => /--tap\s*:\s*([^;]+)/.exec(r.body)[1].trim());
+  if (!tap.includes("44px")) out.push(`--tap: ${tap.join(",") || "undefined"}, not 44px`);
+  return out;
+}
+
+test("DEC-412 (site R18): .cs-btn's min-height is var(--tap), and --tap is 44px, at every width", () => {
+  assert.deepEqual(tapFailures(ASSET_FILES["civicsmith.css"].body), []);
+});
+
+test("DEC-412 control: a .cs-btn at 40px, or a --tap other than 44px, is refused", () => {
+  const css = ASSET_FILES["civicsmith.css"].body;
+  assert.ok(tapFailures(css.replace(/(\.cs-btn \{[^}]*?)min-height: var\(--tap\)/, "$1min-height: 40px")).some((f) => f.includes("40px")));
+  assert.ok(tapFailures(css.split("--tap: 44px").join("--tap: 40px")).some((f) => f.startsWith("--tap")));
 });

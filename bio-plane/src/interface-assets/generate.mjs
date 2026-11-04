@@ -9,7 +9,7 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 
-const COMMIT = "2a64c5ae77"; // R10 (T51): the design branch's last merge into tranche/T51 (DEC-359), the commit `site` takes
+const COMMIT = "1b6f2bc383"; // R10 (T51): the design commit the START names (tranche head holding PR 191, .cs-btn var(--tap)), the commit `site` takes
 const DIR = "docs/development/ux-substrate/visual-language";
 const PAGE = "docs/development/ux-substrate/screens/page.src.html";
 
