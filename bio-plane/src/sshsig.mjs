@@ -570,15 +570,16 @@ export const NS_AI_CATALOGUE = "bio-ai-catalogue";
 export const NS_AI_ADVISORY = "bio-ai-advisory";
 export const NS_AI_RUN = "bio-ai-run";
 
-/* R50: THE ONE PLACE THE KEYS THAT SIGN THE AI CATALOGUE ARE HELD, a list of its
+/* R50, R58: THE ONE PLACE THE KEYS THAT SIGN THE AI CATALOGUE ARE HELD, a list of its
    own and never RELEASE_KEYS, so a release key cannot sign the catalogue nor a
-   catalogue key a release. The lines below are TEST FIXTURES (BOB's ruling K5577
-   (5)): throwaway public keys whose private halves were discarded. Bob makes the
-   catalogue signing and recovery keys at the signer page during layer 1, and the
-   lines of those two replace these as a requirement change, from BOB. */
+   catalogue key a release. The lines are Bob's two catalogue keys, made at the
+   catalogue key ceremony's sitting 1 (K5751, 2026-10-28): the signing key
+   (SHA256:RpBqiKYcBfY0ZXvLJVJIazLH8TCAgUMTSwbLF6x0qLM), then the recovery key
+   (SHA256:34muQ7LZW9VVCrllKQqOfhHpTkTKJUSugGbQ67J3Klg). No test key is held here:
+   a test signs with its own throwaway key and passes it as allowedKeys. */
 export const CATALOGUE_KEYS = Object.freeze([
-  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJB7MsDnHlK8xE6LYP17DKcjD/dg+1Q5Ao9krVNnUaN0 bio-ai-catalogue-test-fixture",
-  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJV3JkW3PRnHj5TY4aWn399MUyQ1z4JKUtfWZKbt3qJI bio-ai-catalogue-recovery-test-fixture",
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICzjuXnpqLaVYtDu31PbDKjswFWytmmhkU2SsgdkY50J bio-ai-catalogue",
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMcDvL37Gr543+bDycYk53h83ZVfCxmIquuIlV+Ptn9c bio-ai-catalogue-recovery",
 ]);
 
 const AI_TOKEN_RE = /^[a-z0-9._:-]+$/;
