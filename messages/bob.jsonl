@@ -239,3 +239,4 @@
 {"at":"2026-11-04T18:04:38Z","row":"outcome","n":122,"outcome":"delivered"}
 {"at":"2026-11-04T18:04:48Z","row":"sent","n":123,"to":"job-workbooks","text":"bob-123: revert pin a607cb6 landed; job sync workbooks once for a fresh gate (screens-daily also reruns job complete without Chromium)."}
 {"at":"2026-11-04T18:04:52Z","row":"outcome","n":123,"outcome":"delivered"}
+{"at":"2026-11-04T18:04:59Z","row":"sent","n":124,"to":"job-member-roster","text":"bob-124: revert pin a607cb6 landed; job sync member-roster once for a fresh gate (screens-daily also reruns job complete without Chromium)."}
