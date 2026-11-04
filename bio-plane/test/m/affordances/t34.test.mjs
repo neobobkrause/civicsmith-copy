@@ -153,6 +153,7 @@ test("R44 R17 R21: the door passes the screens route's writing_help_refused into
 /* ---- the ops T34 declares (op-grades R17; K1864) ------------------------------------------------------------------- */
 import { membershipOps } from "../../../src/membership/index.mjs";
 import { credentialsOps } from "../../../src/credentials/index.mjs";
+import { aiAccountsOps } from "../../../src/ai-accounts/index.mjs";
 import { T34_RUNGS, T34_RUNG_ABSENT, T34_NON_ACTS, OP_ALIASES } from "../../../src/op-grades/t34.mjs";
 /* Each op op-grades R17 grades is derived from op-grades' own T34 tables (its grade pinned in op-grades' tests): a write is a
    key of its rungs or stated absences, a read a further key of its NON_ACTS; an op with no NON_ACTS row is public (op-declarations
@@ -166,6 +167,10 @@ const ownerOf = (op) => /\((membership|credentials) R\d+/.exec(T34_RUNG_ABSENT[o
 /* op-grades R30 (DEC-188 (8); K2437, K2445): `groupswitchset`, graded `substrate` here since T34, is retired to
    credentials' `accountusesset` (graded in op-grades' t41.mjs): no grade, no reason, and no owner serves it. */
 const T34_RETIRED = ["groupswitchset"];
+/* (T53; notice credentials:74; K5457, `ai-accounts` R35) the group key's six ops, which T34 graded for credentials and which moved
+   to `ai-accounts` in T48, leave the door with no alias (`ai-accounts` R61 declares their replacements): no owner serves them.
+   op-grades' T34 table still grades them, which is op-grades' to retire (`op-grades` R57). */
+const T34_LEFT_THE_DOOR = ["groupkeyset", "groupkeyremove", "groupkeyswitch", "groupkeynoticeseen", "groupkeystate", "groupkeynotice"];
 /* ungated plain reads of membership (op-declarations R22; `courtnotice` a plain read, K1883 (1)): graded nowhere, named in no NON_ACTS (R12) */
 const UNGATED_READS = ["groupdescription", "courtnotice"];
 test("R1 R12: every op T34 declares in op-declarations R22–R24, R26, R28 and R15 that membership and credentials serve "
@@ -173,17 +178,17 @@ test("R1 R12: every op T34 declares in op-declarations R22–R24, R26, R28 and R
    + "unaccounted; an ungated read carried gated is seen", () => {
   const maps = { membership: keysOf(membershipOps), credentials: keysOf(credentialsOps) };
   assert.ok(T34_WRITES.length > 0 && T34_READS.length > 0 && T34_PUBLIC.length > 0);
+  const aiAccounts = keysOf(aiAccountsOps);
   for (const op of T34_WRITES) {
     const o = ownerOf(op);
-    if (o) assert.ok(maps[o].includes(op), `${o} serves ${op}`);
+    if (o && !T34_LEFT_THE_DOOR.includes(op)) assert.ok(maps[o].includes(op), `${o} serves ${op}`);
   }
   assert.ok(T34_WRITES.some((op) => ownerOf(op) === "membership") && T34_WRITES.some((op) => ownerOf(op) === "credentials"));
+  for (const op of T34_LEFT_THE_DOOR)
+    assert.ok(!maps.credentials.includes(op) && !aiAccounts.includes(op) && !maps.membership.includes(op), `${op} is served by no owner`);
   for (const op of UNGATED_READS) assert.ok(maps.membership.includes(op), `membership serves ${op}`);
-  /* the credentials reads T34 grades are in its map (no further owner is named for a read) */
-  for (const op of ["groupkeystate", "groupkeynotice"]) {
-    assert.ok(T34_READS.includes(op), op);
-    assert.ok(maps.credentials.includes(op), `credentials serves ${op}`);
-  }
+  /* the credentials reads T34 grades are still graded as reads; since K5457 no owner serves them (above) */
+  for (const op of ["groupkeystate", "groupkeynotice"]) assert.ok(T34_READS.includes(op), op);
   for (const op of T34_RETIRED) {
     assert.ok(!maps.credentials.includes(op), `credentials no longer serves ${op}`);
     /* op-grades' content its own tests do not yet pin (N877; reported to BOB): T34's table names it no longer */

@@ -12,15 +12,20 @@ import { credentialsOf } from "../../../src/credentials/index.mjs";
 import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
 import { answersOf } from "../../../src/answers/index.mjs";
 import { aiUseOf } from "../../../src/ai-use/index.mjs";
+import { catalogueFor, PLANS, HOSTS } from "../ai-accounts/catalogue.mjs";
 
-export { V, NOW, PROFILE, saved, R };
+export { V, NOW, PROFILE, saved, R, PLANS };
 export const SEAL = "answers-test-seal-secret-0123456789abcdef";
 
 /** bob and carol members, alice an administrator; answers built with every owner; the rule services on unless `off`. */
 export function answersWorld({ rules = true, deps: more = {}, ...opts } = {}) {
   const w = seeded(opts);
   w.lines = linesOf(w.host, { record: w.record });
-  w.credentials = credentialsOf(w.host, { record: w.record, membership: w.membership, sealSecret: SEAL });
+  /* (T53) ai-accounts' accounts are of ai-catalogue's plans: the real catalogue, seeded from ai-catalogue's published
+     fixture (through ai-accounts' `catalogueFor`, as credentials' world takes it), handed on through credentials' factory */
+  w.catalogue = catalogueFor(w.host, { record: w.record });
+  w.ready = w.catalogue.seeded;
+  w.credentials = credentialsOf(w.host, { record: w.record, membership: w.membership, sealSecret: SEAL, catalogue: w.catalogue });
   w.credentials.migrate();
   w.accounts = aiAccountsOf(w.host);
   if (w.accounts !== w.credentials.accounts) throw new Error("fixture: ai-accounts is not the one instance on this host");
@@ -47,6 +52,36 @@ export function answersWorld({ rules = true, deps: more = {}, ...opts } = {}) {
      so it is read once now, before any test takes its snapshot */
   w.retrieval.zone();
   if (rules) w.record.setSetting("answers_rule_services", true, "admin");
+  /* (T53) accounts through ai-accounts' own acts (its R40, R5, R10, R51): a member's own API account, the team's, or a
+     project's, its key sealed, switched on, the member's recipient notice for its host seen; answers its `account_id`.
+     `uses(account_id, switch, on, by)` sets one of its R14 switches. */
+  const on = async (set, by, member) => {
+    if (!set.ok) throw new Error(`fixture account refused: ${JSON.stringify(set)}`);
+    const sw = w.accounts.accountSwitch({ account_id: set.account_id, on: true, by });
+    if (!sw.ok) throw new Error(`fixture account switch refused: ${JSON.stringify(sw)}`);
+    if (member) w.seen(member);
+    return set.account_id;
+  };
+  w.seen = (member) => {
+    const r = w.accounts.recipientNoticeSeen({ member, provider: PLANS.provider, host: HOSTS.main, by: member });
+    if (!r.ok) throw new Error(`fixture notice refused: ${JSON.stringify(r)}`);
+  };
+  w.ownAccount = async (member, { secret = `sk-${member}` } = {}) => {
+    await w.ready;
+    return on(await w.accounts.accountSet({ owner: `member:${member}`, provider: PLANS.provider, plan: PLANS.memberApi,
+                                           means: "sealed", secret, by: member }), member, member);
+  };
+  w.teamAccount = async ({ secret = "sk-team", by = "alice" } = {}) => {
+    await w.ready;
+    return on(await w.accounts.accountSet({ owner: "group", provider: PLANS.provider, plan: PLANS.teamApi, means: "sealed",
+                                           secret, by }), by, null);
+  };
+  w.projectAccount = async (project, owner, { secret = "sk-project" } = {}) => {
+    await w.ready;
+    return on(await w.accounts.accountSet({ owner: `project:${project}`, provider: PLANS.provider, plan: PLANS.teamApi,
+                                           means: "sealed", secret, by: owner }), owner, owner);
+  };
+  w.uses = (account_id, name, value, by) => w.accounts.accountUsesSet({ account_id, switch: name, on: value, by });
   w.at = (iso) => { w.clock.now = iso; w.clock.ms = Date.parse(iso); };
   return w;
 }

@@ -107,7 +107,8 @@ test("R48 R53 R54 R56 R57 R61 R62: ACT_HELP is a frozen module constant holding 
   for (const t of Object.values(ACT_HELP)) assert.ok(typeof t === "string" && t.trim().length > 0);
   /* the arithmetic: every `does` word of the reads list is read once, but the seven named (R62) */
   const does = READS.reads.filter(readsHeld);
-  assert.equal(new Set(Object.values(ACT_HELP_KEYS)).size, does.length + B14_KEYS.length);
+  /* (T53) the reads list now gives some of B14's keys itself, so each key is counted once */
+  assert.equal(new Set(Object.values(ACT_HELP_KEYS)).size, new Set([...does, ...B14_KEYS]).size);
   /* R61, R65: no held key starts owed_; the owed texts are held under their ops, read from the `owed_` words the list holds */
   assert.deepEqual(Object.keys(ACT_HELP).filter((k) => k.startsWith("owed_")), []);
   for (const op of [...OWED_NOW, ...OWED_NOW_T50, "aliaswithdraw"]) {
@@ -332,7 +333,9 @@ test("R48 R53 R61 R65: no key is an alias or a retired op; every alias the list 
   /* the T51 design ops (K4248) are declared by op-declarations and graded when op-grades registers them at the plane's start (R49), not in these tables */
   /* T51 (B14, K4376): the owed and stand-in ops are declared by op-declarations and graded at the plane's registration likewise (R49) */
   const NOT_YET_GRADED = ["founderhandleset", ...OWED_NOW_T50, "secondlookclear", ...T51_DESIGN_OPS, ...T51_OWED_OPS,
-    ...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS];
+    ...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS,
+    /* T53: filings' read, declared by op-declarations and graded at the plane's registration (R49), not in these tables */
+    "counselpacketread"];
   /* R69: the browser acts are no ops, so op-grades neither grades nor names them */
   for (const k of keys.filter((k) => !NOT_YET_GRADED.includes(k) && !R69_ACTS.includes(k)))
     assert.ok(gradedOrPublished(k) || UNGATED.includes(k), `${k} is an op op-grades grades or names`);
