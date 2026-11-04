@@ -53,3 +53,4 @@
 {"at":"2026-11-04T12:20:36Z","row":"sent","n":27,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: Sweep: agent-worker: BLOCKED; answer-envelope: WORKING, nothing pushed for 2.4h; bias: BLOCKED; case-authoring: BLOCKED; interface-shell: BLOCKED; plane: BLOCKED; runtime-limits: BLOCKED; screens-action: BLOCKED; screens-inquiry: BLOCKED; screens-settings: BLOCKED."}
 {"at":"2026-11-04T12:20:44Z","row":"outcome","n":27,"outcome":"delivered"}
 {"at":"2026-11-04T13:22:00Z","row":"sent","n":28,"to":"bob","text":"Sweep: agent-worker: BLOCKED; bias: BLOCKED; plane: BLOCKED; runtime-limits: BLOCKED; screens-action: BLOCKED; screens-inquiry: BLOCKED; screens-settings: BLOCKED."}
+{"at":"2026-11-04T13:22:10Z","row":"outcome","n":28,"outcome":"delivered"}
