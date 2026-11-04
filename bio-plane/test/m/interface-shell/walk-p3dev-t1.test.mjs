@@ -3,7 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { OPS } from "../../../src/op-declarations/index.mjs";
 import { ASSET_FILES } from "../../../src/interface-assets/index.mjs";
-import { classLiterals, stylesheetClasses, interfacePage, HOOK_CLASSES } from "../../../src/interface-shell/index.mjs";
+import { stylesheetClasses, interfacePage, HOOK_CLASSES } from "../../../src/interface-shell/index.mjs";
 import { shellProgram } from "../../../src/interface-shell/browser.mjs";
 import { boot, ok } from "./harness.mjs";
 import { ALL } from "./screens.fixture.mjs";
@@ -43,25 +43,26 @@ test("F1 a screen's read or call of an op OPS does not declare sends nothing and
   assert.equal(p.byOp("queue").length >= 1, true, "control: the declared read is sent");
 });
 
-/* ---------- F2: every class the shell draws is defined by a loaded stylesheet ---------- */
+/* ---------- F2: every hook class the shell draws sits beside its design partner, and every page loads the sheet that defines it ---------- */
 
-const LOADED = () => {
-  const style = /<style>([\s\S]*?)<\/style>/.exec(interfacePage([]));
-  return stylesheetClasses(ASSET_FILES["civicsmith.css"].body, ASSET_FILES["shell.css"].body, style ? style[1] : "");
-};
+/* each class attribute of the shell's own program, as its list of words (a literal cut by the program's own quoting keeps its closed words) */
+const classAttrs = (src) => [...String(src).matchAll(/\bclass=\\?["']([^"'`$\\<>{}]*)/g)].map((m) => m[1].split(/\s+/).filter(Boolean));
+const DESIGN = () => stylesheetClasses(ASSET_FILES["civicsmith.css"].body, ASSET_FILES["shell.css"].body);
 
-test("F2 every class literal of the shell's own program is defined by a stylesheet the page loads (civicsmith.css, shell.css, the page's own style), the walk's five and the newer-version band among them, with no hook exemption", () => {
-  const defined = LOADED();
-  const drawn = [...classLiterals(shellProgram.toString())];
-  for (const c of ["cs-crumbs", "mk-lvlbtn", "cs-rows", "cs-r", "cs-panel", "mk-updband"]) assert.ok(drawn.includes(c), c + " is drawn by the shell");
-  assert.deepEqual(drawn.filter((c) => !defined.has(c)), [], "classes the shell draws that no loaded stylesheet defines");
+test("F2 R56 every hook class the shell draws sits beside a design partner a served stylesheet defines: the walk's cs-crumbs, cs-rows, cs-r and cs-panel and the newer-version band among them", () => {
+  const defined = DESIGN();
+  const withHooks = classAttrs(shellProgram.toString()).filter((ws) => ws.some((c) => Object.hasOwn(HOOK_CLASSES, c)));
+  const drawn = new Set(withHooks.flat());
+  for (const c of ["cs-crumbs", "cs-rows", "cs-r", "cs-panel", "mk-lvlbtn", "mk-updband"]) assert.ok(drawn.has(c), c + " is drawn by the shell");
+  for (const ws of withHooks) assert.ok(ws.some((c) => !Object.hasOwn(HOOK_CLASSES, c) && defined.has(c)), "a design partner beside " + ws.join(" "));
+  /* control: a hook class drawn alone has no partner */
+  assert.equal(["cs-crumbs"].some((c) => !Object.hasOwn(HOOK_CLASSES, c) && defined.has(c)), false);
 });
 
-test("F2 the walk's classes are each defined in the page as served; control: a hook class still needs no rule from a screen (R56), while the shell's own program has none to lean on", () => {
-  const defined = LOADED();
-  for (const c of ["cs-crumbs", "mk-lvlbtn", "cs-rows", "cs-r", "cs-panel"]) {
-    assert.ok(Object.hasOwn(HOOK_CLASSES, c), c + " stays a hook class (its readers keep it)");
-    assert.ok(defined.has(c), c + " is defined by a loaded stylesheet");
+test("F2 R56 every page the shell serves loads civicsmith.css and then shell.css, the sheets that define the hook classes' partners", () => {
+  for (const screens of [[], ALL]) {
+    const links = [...interfacePage(screens).matchAll(/<link rel="stylesheet" href="([^"]+)">/g)].map((m) => m[1]);
+    assert.deepEqual(links, ["/app/assets/civicsmith.css", "/app/assets/shell.css"]);
   }
 });
 

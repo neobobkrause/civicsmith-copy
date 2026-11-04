@@ -331,14 +331,11 @@ function dataOf(screens, guide) {
    `cs.row` whose first part is empty (`data-lead="none"`: the design's grid is lead, text, act, and a row with no lead would give
    the text the first column and the act what is left of the row). Every element the shell draws is a design
    class (R65), so nothing else is carried; no rule gives `cursor: help`, nor a pointer to an element that only explains
-   itself (R52). F2 (walk p3dev-t1, 4 Nov): the classes the shell draws as hooks beside a design class (`HOOK_CLASSES`: the path, the kit's table, its rows
-   and panels, the explanation-level control, the newer-version band) are each defined by a loaded stylesheet, by one rule that keeps them inside their
-   column (the value the design's own `.cs-btn` and `.mk-table` already give, so no look changes; the look stays the design classes'). */
+   itself (R52). */
 const STYLE = `html,body.cs{height:100%}body.cs{margin:0;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 #cs-root{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}#cs-root>.cs-frame{flex:1 1 auto;min-height:0;height:auto;overflow:hidden}
 #cs-root>.cs-frame>.cs-main{overflow:auto;min-height:0}#cs-root>.cs-frame:not(.cs-shell){display:grid;grid-template-rows:minmax(0,1fr)}
 .cs-main .cs-row[data-lead=none]{grid-template-columns:minmax(0,1fr) auto}.cs-main .cs-row[data-lead=none]>.meta{grid-column:1/-1}
-.cs-crumbs,.cs-rows,.cs-r,.cs-panel,.mk-lvlbtn,.mk-updband{max-width:100%}
 @media (max-width:${PHONE_WIDTH}px){
 :root:root .cs-main .cs-row[data-lead=none]{grid-template-columns:minmax(0,1fr)}:root:root .cs-main .cs-row[data-lead=none]>*{grid-column:1}
 .cs-main{overflow-x:hidden;overflow-wrap:anywhere}.cs-main .cs-row,.cs-main .mk-rowname{grid-template-columns:auto minmax(0,1fr);min-width:0}.cs-main .cs-row>*{min-width:0}
@@ -404,11 +401,10 @@ export function classLiterals(src) {
    that is neither a hook class nor one of `civicsmith.css`' own. */
 export function checkClasses(screens, guide, program) {
   const defined = definedClasses();
-  /* F2 (walk p3dev-t1, 4 Nov): the shell's own program has no hook exemption: every class it draws is defined by a loaded stylesheet */
-  const check = (who, src, hooks = true) => {
-    for (const c of classLiterals(src)) if (!defined.has(c) && !(hooks && Object.hasOwn(HOOK_CLASSES, c))) throw new Error(`interface-shell: ${who} draws the class ${c}, which no served stylesheet defines`);
+  const check = (who, src) => {
+    for (const c of classLiterals(src)) if (!defined.has(c) && !Object.hasOwn(HOOK_CLASSES, c)) throw new Error(`interface-shell: ${who} draws the class ${c}, which no served stylesheet defines`);
   };
-  check("the shell", program, false);
+  check("the shell", program);
   for (const s of screens) check(`screen ${s.id}`, toSource(s));
   if (guide) check("the guide", toSource(guide));
   return true;
