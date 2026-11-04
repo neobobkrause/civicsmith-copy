@@ -99,11 +99,9 @@ test("R9 control: a page wider than the viewport is caught by the same measure",
 });
 
 /* R18 (JOURNEYS R-44): "Create your team" was a 130x23 px inline link beside a button. It is now the front page's primary
-   button, the same control kind, measured here at 1280 and 390 px. The visual language (interface-assets' civicsmith.css)
-   draws every cs-btn at least 40 px high, and 44 px only below 760 px (shell.css); so at 390 px it is at least 44 px, and at
-   1280 px it is the front page's own height, 40 px. The 1280 px figure of 44 is the todo below, owed by the visual language
-   (a BOB question: it is not this module's file, and R9 keeps the look interface-assets'). */
-test("R18: /start's Create your team is the front page's primary button's control kind at 1280 and 390 px, at least 44 px high at 390 px; control: the front page's button is unchanged", async () => {
+   button, the same control kind, measured here at 1280 and 390 px. The visual language (interface-assets' civicsmith.css at
+   ASSETS_COMMIT, the design stream's PR 191) draws every cs-btn min-height var(--tap), 44 px at every width. */
+test("R18: /start's Create your team is the front page's primary button's control kind, at least 44 px high at 1280 and 390 px; control: the front page's button is unchanged", async () => {
   const { word } = await import("../../bio-plane/src/setup-words/index.mjs");
   const server = http.createServer(async (q, s) => {
     const r = await worker.fetch(new Request(`http://127.0.0.1${q.url}`), ENV);
@@ -133,7 +131,7 @@ test("R18: /start's Create your team is the front page's primary button's contro
       const { height: h1, ...k1 } = create, { height: h2, ...k2 } = primary;
       assert.deepEqual(k1, k2, `at ${width}`);
       assert.ok(h1 >= h2, `at ${width}: ${h1} px high, the front page's button ${h2}`);
-      if (width === 390) assert.ok(h1 >= 44, `at ${width}: ${h1} px high`);
+      assert.ok(h1 >= 44, `at ${width}: ${h1} px high`);
       /* control: the front page's primary button is the button it was */
       assert.equal(primary.cls, "cs-btn");
       assert.equal(primary.tone, "primary");
@@ -142,4 +140,3 @@ test("R18: /start's Create your team is the front page's primary button's contro
   } finally { await browser.close(); server.closeAllConnections(); server.close(); }
 });
 
-test.todo("R18: at 1280 px Create your team is at least 44 px high (the visual language draws cs-btn 40 px there; interface-assets' stylesheet, a BOB question)");

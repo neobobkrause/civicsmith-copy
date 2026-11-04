@@ -18,33 +18,33 @@ const PREDICATES = [caseDocumentStatesMemberBlocks, caseDocumentRequiresDisclosu
 const ODD = [null, undefined, 7, "x", {}, [], { format: null }, { format: "bio-case-document/5 " },
              { get format() { throw new Error("boom"); } }];
 
-test("R1 R33 the formats: /8 is written, /8–/1 accepted as written, /8 and /7 identical in fields to /6 under every predicate, pure and never throwing", () => {
-  assert.equal(CASE_DOCUMENT_FORMAT, "bio-case-document/8");
+test("R1 R33 R35 the formats: /10 is written (R35), /10–/1 accepted as written, /8 and /7 identical in fields to /6 under every predicate, pure and never throwing", () => {
+  assert.equal(CASE_DOCUMENT_FORMAT, "bio-case-document/10");
   assert.equal(CASE_DOCUMENT_FORMAT_V7, "bio-case-document/7");
   assert.deepEqual([CASE_DOCUMENT_FORMAT_V6, CASE_DOCUMENT_FORMAT_V5, CASE_DOCUMENT_FORMAT_V4, CASE_DOCUMENT_FORMAT_V3,
                     CASE_DOCUMENT_FORMAT_V2, CASE_DOCUMENT_FORMAT_LEGACY],
                    ["bio-case-document/6", "bio-case-document/5", "bio-case-document/4", "bio-case-document/3",
                     "bio-case-document/2", "bio-case-document/1"]);
   assert.equal(CASE_DOCUMENT_FORMAT_V9, "bio-case-document/9");
-  assert.deepEqual([...CASE_DOCUMENT_FORMATS_ACCEPTED], ["bio-case-document/9", "bio-case-document/8", "bio-case-document/7", "bio-case-document/6",
+  assert.deepEqual([...CASE_DOCUMENT_FORMATS_ACCEPTED], ["bio-case-document/10", "bio-case-document/9", "bio-case-document/8", "bio-case-document/7", "bio-case-document/6",
     "bio-case-document/5", "bio-case-document/4", "bio-case-document/3", "bio-case-document/2", "bio-case-document/1"]);
   assert.equal(Object.isFrozen(CASE_DOCUMENT_FORMATS_ACCEPTED), true);
   const f = (v) => ({ format: `bio-case-document/${v}` });
-  const vs = [9, 8, 7, 6, 5, 4, 3, 2, 1, 10, 0];
-  assert.deepEqual(vs.map((v) => caseDocumentStatesMemberBlocks(f(v))), [true, true, true, true, true, true, true, true, false, false, false]);
-  assert.deepEqual(vs.map((v) => caseDocumentRequiresDisclosures(f(v))), [true, true, true, true, true, true, true, false, false, false, false]);
-  assert.deepEqual(vs.map((v) => caseDocumentRequiresV4Disclosures(f(v))), [true, true, true, true, true, true, false, false, false, false, false]);
-  assert.deepEqual(vs.map((v) => caseDocumentRequiresTensionSection(f(v))), [true, true, true, true, true, false, false, false, false, false, false],
-                   "the other predicates hold for /6, /7, /8 and /9 as they hold for /5");
-  assert.deepEqual(vs.map((v) => caseDocumentRequiresMaterials(f(v))), [true, true, true, true, false, false, false, false, false, false, false],
-                   "the method and materials blocks are required of /6, /7, /8 and /9 only");
+  const vs = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 11, 0];
+  assert.deepEqual(vs.map((v) => caseDocumentStatesMemberBlocks(f(v))), [true, true, true, true, true, true, true, true, true, false, false, false]);
+  assert.deepEqual(vs.map((v) => caseDocumentRequiresDisclosures(f(v))), [true, true, true, true, true, true, true, true, false, false, false, false]);
+  assert.deepEqual(vs.map((v) => caseDocumentRequiresV4Disclosures(f(v))), [true, true, true, true, true, true, true, false, false, false, false, false]);
+  assert.deepEqual(vs.map((v) => caseDocumentRequiresTensionSection(f(v))), [true, true, true, true, true, true, false, false, false, false, false, false],
+                   "the other predicates hold for /6 to /10 as they hold for /5");
+  assert.deepEqual(vs.map((v) => caseDocumentRequiresMaterials(f(v))), [true, true, true, true, true, false, false, false, false, false, false, false],
+                   "the method and materials blocks are required of /6 to /10 only");
   /* DEC-124, R33: /7 and /8 are identical in fields to /6: every predicate answers the same for all three */
-  for (const pred of PREDICATES) { assert.equal(pred(f(7)), pred(f(6)), pred.name); assert.equal(pred(f(8)), pred(f(6)), pred.name); assert.equal(pred(f(9)), pred(f(6)), pred.name); }
-  for (const odd of [...ODD, { format: "bio-case-document/6 " }, { format: "bio-case-document/7 " }, { format: "bio-case-document/8 " }, { format: "bio-case-document/9 " },
+  for (const pred of PREDICATES) { assert.equal(pred(f(7)), pred(f(6)), pred.name); assert.equal(pred(f(8)), pred(f(6)), pred.name); assert.equal(pred(f(9)), pred(f(6)), pred.name); assert.equal(pred(f(10)), pred(f(6)), pred.name); }
+  for (const odd of [...ODD, { format: "bio-case-document/6 " }, { format: "bio-case-document/7 " }, { format: "bio-case-document/8 " }, { format: "bio-case-document/9 " }, { format: "bio-case-document/10 " },
                      { format: "Bio-case-document/8" }])
     for (const pred of PREDICATES) assert.equal(pred(odd), false);
   /* pure: the same answer twice, and the argument untouched */
-  for (const v of [9, 8, 7, 6, 5]) {
+  for (const v of [10, 9, 8, 7, 6, 5]) {
     const fm = f(v);
     for (const pred of PREDICATES) assert.equal(pred(fm), pred(fm));
     assert.deepEqual(fm, { format: `bio-case-document/${v}` });

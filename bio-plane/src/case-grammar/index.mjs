@@ -12,7 +12,8 @@
  * (R20, `./timeline.mjs`), the people a case names with its signers' ties (R21, `./people.mjs`) and a member's subject
  * (R22, `./subject.mjs`), the basis version a finding stood on (R34, `./basisversion.mjs`), the account, bias
  * applications, review comments and approvals a case carries (R23–R26, `./account.mjs`), the two blocks read as one and the sources that still hold (R27, R28, `./blocks.mjs`), and the
- * outcomes carried into an edition (R29, `./outcomes.mjs`). It reads no table,
+ * outcomes carried into an edition (R29, `./outcomes.mjs`), and a `/10` document's ungraded and typed passages (R35-R37,
+ * `./passages.mjs`) and register extracts (R38, R39, `./materials.mjs`). It reads no table,
  * holds no store and never throws.
  *
  * Split from `publication` by copy (K651, K624 (1)): the format block of `publication/checks.mjs`, and `fmSafe`,
@@ -27,10 +28,14 @@ import { WHAT_CHANGED_HEAD } from "./edition.mjs";
 import { wordsOfFormat } from "./words.mjs";
 import { SENTENCES } from "./sentences.mjs";
 
-export { CASE_DOCUMENT_FORMAT, CASE_DOCUMENT_FORMAT_V9, CASE_DOCUMENT_FORMAT_V7, CASE_DOCUMENT_FORMAT_V6, CASE_DOCUMENT_FORMAT_V5, CASE_DOCUMENT_FORMAT_V4, CASE_DOCUMENT_FORMAT_V3,
+export { CASE_DOCUMENT_FORMAT, CASE_DOCUMENT_FORMAT_V9, CASE_DOCUMENT_FORMAT_V8, CASE_DOCUMENT_FORMAT_V7, CASE_DOCUMENT_FORMAT_V6, CASE_DOCUMENT_FORMAT_V5, CASE_DOCUMENT_FORMAT_V4, CASE_DOCUMENT_FORMAT_V3,
          CASE_DOCUMENT_FORMAT_V2, CASE_DOCUMENT_FORMAT_LEGACY, CASE_DOCUMENT_FORMATS_ACCEPTED,
          caseDocumentStatesMemberBlocks, caseDocumentRequiresDisclosures, caseDocumentRequiresV4Disclosures,
-         caseDocumentRequiresTensionSection, caseDocumentRequiresMaterials, caseDocumentFormatFor } from "./formats.mjs";
+         caseDocumentRequiresTensionSection, caseDocumentRequiresMaterials, caseDocumentFormatFor,
+         caseDocumentStatesUngradedAndTyped } from "./formats.mjs";
+export { UNGRADED_PASSAGE_FIELDS, TYPED_PASSAGE_FIELDS, TYPED_CHECKER_FIELDS, UNGRADED_PREDATE_SENTENCE,
+         UNGRADED_UNREADABLE_SENTENCE, TYPED_PREDATE_SENTENCE, TYPED_UNREADABLE_SENTENCE, ungradedPassagesLines,
+         ungradedPassagesFrom, ungradedPassagesOf, typedPassagesLines, typedPassagesOf } from "./passages.mjs";
 export { caseDocumentBlocks, captureBlockLines, sourceBlockLines, sourceStatement, unnamedSourceStatement,
          withheldSourceStatement, sourceRowWithheld, WITHHELD_SOURCE_LABEL, WITHHELD_SOURCE_REASON,
          sourceRowsStanding, CAPTURE_FIELDS, ACKNOWLEDGEMENT_FIELDS, SOURCE_FIELDS, SOURCE_BASES,
@@ -47,13 +52,14 @@ export { WORKING_ON_KEY, NOTICE_REFERENCE_PATTERN, isNoticeReference, workingOnL
 export { METHOD_FIELDS, methodBlockLines, methodOf, MATERIAL_FIELDS, MATERIAL_TITLE_FIELD, MATERIAL_OBSCURED_FIELDS, MATERIAL_OBSCURED_MARKED_FIELD, MATERIAL_OBSCURED_KIND_FIELD,
          MATERIAL_OBSCURED_KINDS, MATERIAL_ATTESTATION_FIELDS, MATERIAL_ATTESTATION_SHA_FIELD, MATERIAL_KINDS,
          MATERIAL_RESTS_UNDER, ATTESTATION_BY_KINDS, ATTESTATION_LEVELS, ANONYMOUS_ATTESTATION_LEVELS,
-         GROUP_ATTESTATION_SIGNATURE, materialsLines, materialAttestationLines, materialBlockLines, materialsOf, ACCEPTED_WORK_FIELDS, ACCEPTED_WORK_FLAG_FIELDS,
+         GROUP_ATTESTATION_SIGNATURE, MATERIAL_EXTRACT_FIELDS, MATERIAL_EXTRACT_USE_LIMIT_FIELDS, EXTRACT_LABEL_KEY,
+         EXTRACT_INVALID, extractTextOf, registerExtractRow, materialsLines, materialAttestationLines, materialBlockLines, materialsOf, ACCEPTED_WORK_FIELDS, ACCEPTED_WORK_FLAG_FIELDS,
          PAIR_AXES, pairLine, pairOf, acceptedWorkBlockLines, acceptedWorkOf } from "./materials.mjs";
 export { CASE_FILE_FORMAT, CASE_FILE_FORMAT_V4, CASE_FILE_FORMAT_V2, CASE_FILE_FORMAT_V1, CASE_FILE_FORMATS_ACCEPTED, CASE_FILE_MANIFEST_PATH, CASE_FILE_PROV_PATH,
          CASE_FILE_KINDS, CASE_FILE_V2_KINDS, CASE_FILE_V3_KINDS, CASE_FILE_ORIGINAL_KINDS, CASE_FILE_SINGLE_KINDS, CASE_FILE_OPTIONAL_SINGLE_KINDS, CASE_FILE_MANIFEST_FIELDS,
          CASE_FILE_KEY_FIELDS, CASE_FILE_PART_FIELDS, CASE_FILE_FILE_FIELDS, caseFilePath, caseFileEntryOf,
          caseFileFormatFor, refsOnSeveralRows, materialFileKey, casePartDigest, caseFileManifestCheck } from "./casefile.mjs";
-export { GRADING_FACT_FIELDS, PASSAGE_FIELDS, gradingFactsLines, passagesLines, gradingFactsOf, passagesOf,
+export { GRADING_FACT_FIELDS, GRADING_FACT_TYPED_FIELD, PASSAGE_FIELDS, gradingFactsLines, passagesLines, gradingFactsOf, passagesOf,
          extractedTextOf } from "./facts.mjs";
 export { BAR_AXES, STANDING_ROLE_WORDS, standingOf } from "./standing.mjs";
 export { CALCULATION_FIELDS, RECOMPUTE_STATUSES, calculationsLines, calculationsOf, PROV_NAMESPACE, provIds, provOf,
@@ -70,7 +76,7 @@ export { ACCOUNT_FIELDS, ACCOUNT_KINDS, ACCOUNT_ORIGINS, ACCOUNT_CITE_KINDS, ACC
 export { OUTCOME_FIELDS, OUTCOME_KINDS, OUTCOMES_HEAD, OUTCOME_KIND_WORDS, outcomesLines, outcomesOf, outcomeCitesWords,
          outcomeWords, outcomesSectionLines } from "./outcomes.mjs";
 export { COMPLETE_EDITION_HEADINGS, TIMELINE_HEADING, CALCULATIONS_HEADING, ACCOUNT_HEADING, REVIEW_COMMENTS_HEADING, APPROVALS_HEADING, OUTCOMES_HEADING, TIMELINE_LANE_WORDS, RECOMPUTE_WORDS, TWO_STRENGTHS_SENTENCE, GRADE_MEANINGS, PRODUCT_NAMES, editionProductOf,
-         madeWithLine, CHECKER_READS, OBSCURED_WORDS, completeEditionOf } from "./complete.mjs";
+         madeWithLine, CHECKER_READS, OBSCURED_WORDS, PASSAGE_WORDS_V10, completeEditionOf } from "./complete.mjs";
 
 
 /** MK-7 — THE ATTRIBUTION LEVELS (MEMBER-KNOWLEDGE-DESIGN.md §4, §4.6), MOST PROTECTIVE FIRST (R2).
