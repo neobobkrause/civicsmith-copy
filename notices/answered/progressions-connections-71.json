@@ -1,0 +1,1 @@
+{"row":"answered","user":"progressions","by":"triage","evidence":"bio-plane/src/progressions/index.mjs:851 calls entities.strongestByCapture; no named_in, hubs or connections call","at":"2026-11-04T03:22:12.889Z","key":"connections:71","worker":"a3dc7708d3ea12dee","cost":"0.3"}

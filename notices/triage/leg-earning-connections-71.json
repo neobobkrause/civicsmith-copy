@@ -1,0 +1,1 @@
+{"row":"triage","user":"leg-earning","verdict":"not affected","evidence":"bio-plane/src/leg-earning/index.mjs:194 uses connections.edgeSevered and :789 portionAxes, neither changed","at":"2026-11-04T03:22:12.889Z","key":"connections:71","worker":"a3dc7708d3ea12dee","cost":"0.3"}

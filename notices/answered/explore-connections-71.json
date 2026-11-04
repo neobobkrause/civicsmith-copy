@@ -1,0 +1,1 @@
+{"row":"answered","user":"explore","by":"triage","evidence":"bio-plane/src/explore/reader.mjs:69 and :106 read only `a.hub` from registry.neighbours, and walk.mjs:55 uses only the unchanged step_source kind; nothing reads `hubs` (R65/R75) or names `named_in`","at":"2026-11-04T03:22:12.889Z","key":"connections:71","worker":"a3dc7708d3ea12dee","cost":"0.3"}
