@@ -24,7 +24,7 @@ import { serialiseContainer, containerEntries } from "../container.mjs";
 import { buildCaseFile, isCaseFileManifest, caseFilePartLayout, caseFileParts, sha256Hex, inWindow, CASEFILE_CODES, CASEFILE_BLIND_PUT_MAX } from "../public-read/casefile.mjs";
 import { inbandQuartet } from "../inband.mjs";
 import { caseDocumentStatesMemberBlocks } from "../case-grammar/index.mjs";
-import { legReaderOf } from "../public-read/legs.mjs";
+import { legReaderOf, passageMarksOf } from "../public-read/legs.mjs";
 import { rowOf } from "../public-read/checks.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
@@ -805,6 +805,8 @@ export async function publishedRoutes({ op, url, env, stub }) {
      withheld or states none, and every entry then states `document: null`. */
   const signedFm = c.document && typeof c.document.text === "string" ? parseFrontmatter(c.document.text).data || null : null;
   const legReader = signedFm ? legReaderOf(signedFm) : null;
+  /* R47, R49 (T53): the `/10` passage statements of the same signed bytes; with no document served every mark is null. */
+  const passageMarks = signedFm ? passageMarksOf(signedFm, c.signed_at ?? null) : null;
   const renderFinding = async (fnd) => {
     /* D-1: THE BODY COMES FROM THE SAME BYTES AS THE FROZEN STRENGTH. The
        document is fetched from the published bucket by the finding's own
@@ -817,7 +819,7 @@ export async function publishedRoutes({ op, url, env, stub }) {
     /* R28: a finding whose bytes a court order withholds is not fetched; its body states the withholding and its
        orders, and no basis is read from bytes that are not served. */
     if (fnd.withheld)
-      return { ...fnd, object_type: null, basis: [], falsifier: null,
+      return { ...fnd, object_type: null, basis: [], falsifier: null, ungraded_count: null,
                body: { state: "withheld", from_sha: fnd.bundle_sha, ...fnd.withheld },
                bytes: `op=publishedbytes&sha256=${fnd.bundle_sha}` };
     const md = await pubBytes(fnd.bundle_sha);
@@ -907,7 +909,10 @@ export async function publishedRoutes({ op, url, env, stub }) {
       registry = (rt && rt.registry) || {};
     }
     const ofLeg = legReader ? legReader.forFinding(fnd.bundle_id) : null;
+    const marksOf = passageMarks ? passageMarks.forFinding(fnd.bundle_id) : null;
     const basis = legs.map((l) => {
+      const paired = ofLeg ? ofLeg.at(l) : { ord: null, document: null };
+      const marks = marksOf ? marksOf.marks(paired.ord) : { ungraded: null, typed: null };
       const reg = registry[l.target] || null;
       const named = l.target_edition != null ? String(l.target_edition) : null;
       const cited = reg ? (named ? reg.editions[named] : reg.editions[String(reg.latest)]) : null;
@@ -918,7 +923,11 @@ export async function publishedRoutes({ op, url, env, stub }) {
         served: !!cited,
         /* R41 (1): the document this leg rests on, named and placed as the signed case states them, never its bytes; null
            for a leg resting on working material (or on a finding), and where the case states no legs. */
-        document: ofLeg ? ofLeg.of(l) : null,
+        document: paired.document,
+        /* R47 (T53; DEC-461): whether the edition was published without grading this leg's passage, as signed; null
+           before `/10`. R49 (DEC-464): a typed passage's label, typist and checkers as the signed row states them. */
+        ungraded: marks.ungraded,
+        ...(marks.typed ? { typed: marks.typed } : {}),
         cited_edition: cited
           ? { edition: cited.edition, title: cited.title, bundle_sha: cited.bundle_sha,
               ratified_at: cited.ratified_at, case_id: cited.case_id ?? null,
@@ -934,6 +943,8 @@ export async function publishedRoutes({ op, url, env, stub }) {
     /* R41 (2): "What would change it", the text the finding's published bytes state (R39's `authored.falsifier`), beside the
        case document's own words for it (`case_words`); null when the bytes state none or cannot be read. */
     return { ...fnd, object_type: normalizeType(fm?.object_type) ?? null, body, basis, falsifier: wordsOf(fm?.falsifier),
+             /* R47: the finding's count of passages published ungraded, as signed; null before `/10`. */
+             ungraded_count: marksOf ? marksOf.ungraded_count : null,
              bytes: `op=publishedbytes&sha256=${fnd.bundle_sha}` };
   };
   const findings = [];
