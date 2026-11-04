@@ -1,0 +1,1 @@
+{"row":"answered","user":"agent-runner","by":"triage","evidence":"build/modules.json:112 agent-runner (agent-runner/) holds no file that imports run-rules, every code file under its paths read at 143b251a55","at":"2026-11-04T23:08:45.221Z","key":"run-rules:330","worker":"merge: imports check","cost":"0"}
