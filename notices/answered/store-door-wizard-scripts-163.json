@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-door","by":"triage","evidence":"bio-plane/src/store-door/dispatch.mjs:462 uses wizardScriptsOf only for tallyRefusal and writingHelp (523), neither changed by PR 163","at":"2026-11-04T07:13:29.508Z","key":"wizard-scripts:163","worker":"triage-a126dd48e59c94080","cost":"0.07"}
