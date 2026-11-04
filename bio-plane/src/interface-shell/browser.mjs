@@ -2300,44 +2300,42 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
   }
   /* R103 (R84; T-10), R145, F3 (walk p3dev-t1, 4 Nov): below what it explains, else above it, the first place that covers no control (the one it
      explains included, and any control holding it, so the rail's next place, a list's next row) and stays inside the page. Where neither is
-     clear at the explained thing's own left edge, it is slid along each row to the nearest place clear of every control and inside the page;
-     failing every place, the one inside the page that covers the least, never the explained thing where another place spares it. Never beside it. */
+     clear at the explained thing's own left edge, it is slid along the row just below, then the row just above, to the nearest place clear of
+     every control and inside the page, so long as it still spans part of what it explains (below or above it, never beside it). Where no place
+     qualifies, R103's first choice stands: below at its left edge (above, where below runs out of the page), though it covers a control. The
+     rail's width grip, a thin separator the height of the rail, is no control an explanation must spare. */
   function placeTip(el, t) {
     /* measured where nothing narrows it: a tip measured at the page's right edge shrinks to what is left, and then runs taller (F3) */
     t.style.left = "0px"; t.style.top = "0px";
     const r = el.getBoundingClientRect();
-    const tw = Number(t.offsetWidth) || 0, th = Number(t.offsetHeight) || 0, vw = Number(win.innerWidth) || 0, vh = Number(win.innerHeight) || 0, gap = 6, edge = 8;
+    const de = doc.documentElement;
+    /* the page's width without its scroll bar, which the tip must not run under */
+    const vw = (de && Number(de.clientWidth)) || Number(win.innerWidth) || 0, vh = (de && Number(de.clientHeight)) || Number(win.innerHeight) || 0;
+    const tw = Number(t.offsetWidth) || 0, th = Number(t.offsetHeight) || 0, gap = 6, edge = 8;
     const own = [], others = [];
     for (const c of doc.getElementById("cs-root").querySelectorAll(["a[href]", "button", "input", "select", "textarea", "summary", "[role=button]", "[tabindex]:not([tabindex='-1'])"].join(","))) {
       if (typeof c.getBoundingClientRect !== "function" || c === t || (t.contains && t.contains(c)) || (el.contains && el.contains(c) && c !== el)) continue;
+      const mine = c === el || (c.contains && c.contains(el));
+      if (!mine && c.getAttribute && c.getAttribute("data-shell") === "grip") continue;
       const b = c.getBoundingClientRect();
       if (!b || !(b.right > b.left && b.bottom > b.top)) continue;
       if (vh && (b.bottom < 0 || b.top > vh)) continue;
-      (c === el || (c.contains && c.contains(el)) ? own : others).push(b);
+      (mine ? own : others).push(b);
     }
     own.push(r);
     const area = (c, list) => list.reduce((n, b) => n + Math.max(0, Math.min(c.left + tw, b.right) - Math.max(c.left, b.left)) * Math.max(0, Math.min(c.top + th, b.bottom) - Math.max(c.top, b.top)), 0);
     const hi = vw ? Math.max(edge, vw - tw - edge) : Infinity;
     const clampX = (x) => Math.round(Math.min(hi, Math.max(edge, x)));
-    const xs = [...new Set([r.left, r.right - tw, ...own.map((b) => b.right + gap), ...others.flatMap((b) => [b.right + gap, b.left - gap - tw]), edge, hi].map(clampX))]
-      .sort((a, b) => Math.abs(a - r.left) - Math.abs(b - r.left)).slice(0, 32);
-    /* below it, then above it; and, where the row beneath or above is full, just past the controls there (the nearest first, below before above) */
-    const below = [r.bottom + gap, ...own.concat(others).map((b) => b.bottom + gap).filter((y) => y > r.bottom)].map(Math.round);
-    const above = [r.top - gap - th, ...own.concat(others).map((b) => b.top - gap - th).filter((y) => y < r.top - th)].map(Math.round);
-    const ys = [...new Set([below[0], above[0], ...below.slice(1).concat(above.slice(1)).sort((a, b) => (a > r.bottom ? a - r.bottom : r.top - a - th) - (b > r.bottom ? b - r.bottom : r.top - b - th))])].slice(0, 16);
-    const inside = (c) => c.left >= 0 && c.top >= 0 && (!vw || c.left + tw <= vw) && (!vh || c.top + th <= vh);
-    /* R103's order first: below, then above, each at its own left edge; then the places slid along each row */
     const x0 = clampX(r.left);
-    const tries = [{ left: x0, top: ys[0] }, { left: x0, top: ys[1] }, ...ys.flatMap((top) => xs.map((left) => ({ left, top })))];
-    let pick = null, best = null;
-    for (const c of tries) {
-      if (!inside(c)) continue;
-      const mine = area(c, own), theirs = area(c, others);
-      if (!mine && !theirs) { pick = c; break; }
-      const cost = mine * 1e6 + theirs;
-      if (!best || cost < best.cost) best = { c, cost };
-    }
-    pick = pick || (best && best.c) || { left: clampX(r.left), top: ys[0] };
+    /* a slid place still spans part of what it explains */
+    const spans = (left) => left < r.right && left + tw > r.left;
+    const xs = [...new Set([r.left, r.right - tw, ...others.flatMap((b) => [b.right + gap, b.left - gap - tw])].map(clampX))]
+      .filter(spans).sort((a, b) => Math.abs(a - r.left) - Math.abs(b - r.left));
+    const below = Math.round(r.bottom + gap), above = Math.round(r.top - gap - th);
+    const inside = (c) => c.left >= 0 && c.top >= 0 && (!vw || c.left + tw <= vw) && (!vh || c.top + th <= vh);
+    const clear = (c) => inside(c) && !area(c, own) && !area(c, others);
+    const tries = [{ left: x0, top: below }, { left: x0, top: above }, ...[below, above].flatMap((top) => xs.map((left) => ({ left, top })))];
+    const pick = tries.find(clear) || [{ left: x0, top: below }, { left: x0, top: above }].find(inside) || { left: x0, top: below };
     t.style.left = pick.left + "px";
     t.style.top = pick.top + "px";
   }

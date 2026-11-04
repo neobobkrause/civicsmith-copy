@@ -191,12 +191,22 @@ test("the consolidation keeps the set of requirement ids: every R id at the star
   assert.deepEqual([...blocks(REQ).keys()].filter(isR).sort(), Object.keys(START_BLOCKS).sort());
 });
 
-test("found marks are admitted: each F id is held once, numbered from F1 with no gap, and an unmet one carries a mark of the form `*(not yet met: <where>)*`", () => {
+/* this branch's found marks (attempt 4, walk p3dev-t1), pinned as the R ids are: each held, in this order, and the unmet ones exactly these,
+   each with its mark; a later found mark is admitted after them (F4 on), numbered on with no gap */
+const BRANCH_F = ["F1", "F2", "F3"];
+const BRANCH_F_UNMET = { F2: "*(not yet met: walk p3dev-t1 4 Nov)*" };
+
+test("this branch's found marks F1-F3 are each held, in order, and only F2 is unmet, with its mark; a later F id is admitted after them, numbered on from F4 with no gap, and an unmet one carries a mark of the form `*(not yet met: <where>)*`", () => {
   const fs = [...blocks(REQ)].filter(([id]) => !isR(id));
-  assert.deepEqual(fs.map(([id]) => id), fs.map((_, i) => "F" + (i + 1)));
+  const ids = fs.map(([id]) => id);
+  assert.deepEqual(ids.slice(0, BRANCH_F.length), BRANCH_F, "F1-F3 held, in order");
+  assert.deepEqual(ids, ids.map((_, i) => "F" + (i + 1)), "numbered on with no gap");
   for (const [id, text] of fs) {
     const first = text.split("\n")[0];
-    if (first.includes(MARK)) assert.match(first, /\*\(not yet met: [^)]+\)\*/, id + "'s mark");
+    if (BRANCH_F.includes(id)) {
+      if (Object.hasOwn(BRANCH_F_UNMET, id)) assert.ok(first.includes(BRANCH_F_UNMET[id]), id + " keeps its mark");
+      else assert.equal(first.includes(MARK), false, id + " is met");
+    } else if (first.includes(MARK)) assert.match(first, /\*\(not yet met: [^)]+\)\*/, id + "'s mark");
   }
 });
 
