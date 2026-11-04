@@ -350,6 +350,7 @@ node_modules
 # deploy dev and release run build them from their `generated` rows (Process3, pin e44b5a0).
 /bio-plane/src/setup-words/rows.mjs
 /bio-plane/src/setup-words/words-unreviewed.json
+/docs/development/ux-substrate/screens/words-reads.json
 /bio-plane/dist/bio-plane.bundled.mjs
 /pdf-worker/dist/pdf-worker.bundled.mjs
 /agent-worker/dist/agent-worker.bundled.mjs

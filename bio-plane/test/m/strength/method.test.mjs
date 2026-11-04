@@ -17,11 +17,13 @@ const V1 = "bio-grading/1";
 const V2 = "bio-grading/2";
 /* The version T51-54 published, with the word "team" for the group that holds the case. */
 const V3 = "bio-grading/3";
+/* The version T51 published (K4213), with a cutting leg kept out of the parts (R42). */
+const V4 = "bio-grading/4";
 const axesOf = (p) => STRENGTH_AXES.map((a) => [a, p[a].state, p[a].grade, p[a].weakest ? p[a].weakest.target_id : null]);
 
 test("R31: GRADING_METHOD_VERSION names the method; gradingMethodText answers it in plain words, null for an unknown version, and never throws", () => {
-  assert.equal(V, "bio-grading/4", "K4213's cutting-leg rule changed the arithmetic, so its version moved");
-  assert.deepEqual([...GRADING_METHOD_VERSIONS], [V1, V2, V3, V]);
+  assert.equal(V, "bio-grading/5", "T53's typed-passage rule (R47) changed the method, so its version moved");
+  assert.deepEqual([...GRADING_METHOD_VERSIONS], [V1, V2, V3, V4, V]);
   assert.ok(Object.isFrozen(GRADING_METHOD_VERSIONS));
   const text = gradingMethodText(V);
   assert.equal(typeof text, "string");
@@ -55,11 +57,13 @@ test("R31: GRADING_METHOD_VERSION names the method; gradingMethodText answers it
     ["no text: undetermined (R37)", /holds no text at that version, the strength is undetermined/],
     ["an occurrence: the weaker of the rule's text and the trigger's record (R38)", /weaker of the text of the\s+rule in force and the record of the date that started it/],
     ["the occurrence's state never grades it (R38)", /met, late or overdue is stated beside\s+the grade and never changes it/],
+    ["the cutting leg (R42)", /never counted toward its strength/],
+    ["a typed passage: the typist's word, one step more once checked (R46, R47)", /the typist's word, D, or one step more, C, once a second member\s+has checked/],
   ]) assert.match(text, re, rule);
-  assert.equal(text.split("\n").at(-1).slice(0, 4), "12. ", "what is named stays last");
+  assert.equal(text.split("\n").at(-1).slice(0, 4), "13. ", "what is named stays last");
   /* Version 1's words do not state the new legs: they are version 2's. */
   assert.doesNotMatch(gradingMethodText(V1), /calculation|held standard|obligation/);
-  for (const bad of [undefined, null, "", "bio-grading/0", "bio-grading/5", 1, {}, [V], "toString", "__proto__"])
+  for (const bad of [undefined, null, "", "bio-grading/0", "bio-grading/6", 1, {}, [V], "toString", "__proto__"])
     assert.equal(gradingMethodText(bad), null, String(bad));
   assert.equal(gradingMethodText(V), text, "the same version always the same words");
 });
@@ -89,7 +93,7 @@ test("R31: with \"CivicOS\" gradingMethodText answers byte for byte the text ver
   assert.equal(gradingMethodText(V1, "Civicsmith").split("\n").slice(1).join("\n"), old.split("\n").slice(1).join("\n"));
   assert.notEqual(sha(now), PRE_T31_SHA256);
   /* An unknown version answers null whatever name is given. */
-  for (const bad of [undefined, "bio-grading/5", "toString"]) {
+  for (const bad of [undefined, "bio-grading/6", "toString"]) {
     assert.equal(gradingMethodText(bad, "CivicOS"), null);
     assert.equal(gradingMethodText(bad, "Civicsmith"), null);
   }
@@ -101,6 +105,9 @@ const PINNED_WORDS = [
   [V1, "CivicOS", "85cac7dd2794e8d0970f7f9aa6846b61523775bb6a258597132d5b86c9e77c08"],
   [V2, "CivicOS", "6b6dc9ce150a8056e64bb1e7d9a5613ce96649a7ea85278a4ab2dd3764e8a5e4"],
   [V2, "Civicsmith", "1890017737cf2b4e5455771894238bab3ada1a84eeb3b11775e09a2b8dd25420"],
+  /* Version 4's words, measured on `job/strength` before version 5 was added (T53, R47). */
+  [V4, "CivicOS", "4b7f2fa4acc803cb2c8f262363ce451efe97ac25d1e214ac04b48ea1ac183f49"],
+  [V4, "Civicsmith", "cf146d07359a94c580a5526e8530976f6369e44762f7f0c64a9a9e36b5e05609"],
 ];
 test("R31 (T51-54): versions 1 and 2 keep their words byte for byte; version 3 is version 2 with the team named \"team\" and nothing else changed", () => {
   for (const [version, product, hash] of PINNED_WORDS)
@@ -117,23 +124,23 @@ test("R31 (T51-54): versions 1 and 2 keep their words byte for byte; version 3 i
 });
 
 test("R31 (T51; K4213): version 4 is version 3's words with the cutting-leg rule added as 11, and what is named is 12", () => {
-  const words4 = gradingMethodText(V, "CivicOS");
-  assert.equal(words4.split("\n")[0], `How CivicOS grades a finding (method ${V}).`);
+  const words4 = gradingMethodText(V4, "CivicOS");
+  assert.equal(words4.split("\n")[0], `How CivicOS grades a finding (method ${V4}).`);
   const rule = words4.match(/^11\. Legs that cut against the finding\..*$/m);
   assert.ok(rule, "rule 11 states the cutting-leg rule");
   assert.match(rule[0], /never counted toward its strength/);
   /* Take version 4's new rule out, renumber what is named back to 11, and version 3's words stand. */
-  const asV3 = words4.replace(`(method ${V})`, `(method ${V3})`).replace(`${rule[0]}\n`, "").replace(/^12\. /m, "11. ");
+  const asV3 = words4.replace(`(method ${V4})`, `(method ${V3})`).replace(`${rule[0]}\n`, "").replace(/^12\. /m, "11. ");
   assert.equal(asV3, gradingMethodText(V3, "CivicOS"));
   assert.notEqual(words4, gradingMethodText(V3, "CivicOS"), "negative control: the words did change");
 });
 
 test("R32: any version this module has not published is UNKNOWN_METHOD_VERSION, naming the versions it holds; it never throws on any input", () => {
-  for (const version of [undefined, null, "", "bio-grading/5", 1, {}]) {
+  for (const version of [undefined, null, "", "bio-grading/6", 1, {}]) {
     const r = recomputePair({ legs: [], version });
     assert.equal(r.ok, false);
     assert.equal(r.reason, "UNKNOWN_METHOD_VERSION", String(version));
-    assert.deepEqual(r.versions, [V1, V2, V3, V]);
+    assert.deepEqual(r.versions, [V1, V2, V3, V4, V]);
   }
   assert.equal(recomputePair().reason, "UNKNOWN_METHOD_VERSION");
   for (const legs of [null, "x", [null, 1, "a", {}, { target: 5, grade: "Z", grade_axis: "nowhere" }], [{ kind: "inquiry", target: "INQ-1" }]]) {

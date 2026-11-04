@@ -2,13 +2,14 @@
    `{page, reason, process?}` per asked page not sent (R57); the gated hook's `by` for an `ai` caller (plane R6) stays with plane. Each is checked at the interface
    (the transcriber's AI path, its page rendering) with a negative control (K874). The pictures are pdf-pixels' own fixtures (`picture-variants.json`,
    made with Pillow) or a JPEG header written here; the vector-only PDF page is written here. */
+import { ENTRIES } from "../ai-accounts/catalogue.mjs";
 import "../../../src/store-assembly/register.mjs";   /* R83: the start's registration before any op table is read */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { store } from "./fixture.mjs";
+import { store, admitPart } from "./fixture.mjs";
 import { transcriberOf, renderAsked, renderPages, TRANSCRIBE_IMAGE_MAX_BYTES } from "../../../src/store-assembly/transcribe.mjs";
 import { renderPageToPixels } from "../../../../pdf-worker/src/pagepixels.mjs";
 import { renderPictureToPixels, PICTURE_SOURCE_MAX } from "../../../../pdf-worker/src/picturepixels.mjs";
@@ -21,7 +22,7 @@ const BASELINE = variant("orient-none");
 const SCAN = new Uint8Array(readFileSync(here("../../../../pdf-worker/test/fixtures/scan-dct-page.pdf")));
 const shaOf = (b) => createHash("sha256").update(b).digest("hex");
 const SENTINEL = "sk-ant-SENTINEL-T44-0000";
-const ACCOUNT = { ok: true, kind: "apikey", level: "member", key: SENTINEL };
+const ACCOUNT = { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: SENTINEL };
 
 /* A baseline JPEG whose frame header says `w` × `h` (its SOF0 rewritten), so the picture renderer judges the frame
    before any decode. */
@@ -73,6 +74,7 @@ async function pathFor(bytes) {
   const env = { STORE: { idFromName: (n) => n }, ACCOUNT_SEAL_SECRET: "a-long-seal-secret-for-the-t44-test", CAPTURES: evidence,
                 AGENT_WORKER: worker };
   const st = await store({ env });
+  await admitPart(st.ctx, "transcribe");   /* ai-runs R78: admitted on the fixture's entries */
   const d = shaOf(bytes);
   await evidence.put(`bio/captures/${d}`, bytes);
   const tx = transcriberOf(st.ctx, env).transcription({ member: "member:ann", at: "2026-10-11T06:00:00Z" });

@@ -1346,7 +1346,7 @@ export class AiRuns {
       return { run, started: false, ...(account ? account.refusal : this.#noAccount(accountMember, "A run")) };
     /* R52 (B5): the paying account's limits, judged by `ai-use.useCheck` (its R3) for this member's use `run`, its
        refusal relayed in the open's shape. */
-    const overLimit = this.#useCheck(account.owner, accountMember, nowMs);
+    const overLimit = this.#useCheck(account.owner, accountMember, nowMs, { account_id: account.account_id, entry_id: account.entry_id });
     if (overLimit) return { run, started: false, ...AiRuns.#shed(overLimit) };
     /* R73, R74: a system step of its own needs steps, asked before anything is written. */
     if (ownStep && !this.#steps())
@@ -1676,7 +1676,7 @@ export class AiRuns {
        reports were made and paid for, so they are counted whatever the answer (the counter stays true, J5 (13)); over a
        limit the refusal is then answered and nothing else of the tick is written: no entry, no figure, no lease, no tick. */
     /* (T53; R52, R92) the paying owner now: after a hop, the next account's own limits apply, never the first's */
-    const overLimit = payer ? this.#useCheck(this.#payerNow(row), payer, nowMs) : null;
+    const overLimit = payer ? this.#useCheck(this.#payerNow(row), payer, nowMs, this.#lastSegment(row.run)) : null;
     if (overLimit) {
       const counted = calls.length ? this.#countTick(row, payer, calls, nowMs) : 0;
       if (counted && typeof counted === "object")
@@ -3349,10 +3349,14 @@ export class AiRuns {
   #aiAccounts() { return this.#deps.aiAccounts || aiAccountsOf(this.ctx); }
 
   /** R52 (B5): `ai-use.useCheck` for the paying `owner` and `member`'s use `run` at `ms`: null, or its refusal relayed as
-   *  it came. A check that cannot be asked refuses (fail closed, as ai-use R3 fails closed). */
-  #useCheck(owner, member, ms) {
+   *  it came. A check that cannot be asked refuses (fail closed, as ai-use R3 fails closed). (T53; R52, R92; ai-use R3,
+   *  R18, PR 105) `served` names the account and entry the act is served on (the open's account, a tick's last segment),
+   *  so a provider limit standing on that account or entry holds it back and one on another account does not. */
+  #useCheck(owner, member, ms, served = null) {
+    const on = served && typeof served.account_id === "string" && served.account_id
+      ? { account_id: served.account_id, entry_id: typeof served.entry_id === "string" ? served.entry_id : null } : {};
     try {
-      return this.#aiUse().useCheck({ owner, member: `member:${member}`, use: "run", at: AiRuns.#aiIso(ms) }) ?? null;
+      return this.#aiUse().useCheck({ owner, member: `member:${member}`, use: "run", at: AiRuns.#aiIso(ms), ...on }) ?? null;
     } catch {
       return this.#refuse("AI_NO_ACCOUNT", localize("ai-runs.index.the_use_of_the_account", "The use of the account that would serve this run cannot be judged now. Nothing was started."));
     }

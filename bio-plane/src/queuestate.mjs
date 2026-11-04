@@ -207,6 +207,14 @@ export const QUEUE_OBLIGATION_KINDS = {
   /* Fix round 10 (R57; queue-producers R54; K5157): a participant asks to leave a project; only an owner removes her. */
   "project-leave":               "a participant asks to leave a project you own; remove them from it (op=projectremove) "
                               + "— LIVE: queue-producers R54",
+  /* T53 (R1; K5480, K5478; ai-use R29, ai-accounts R75): an administrator of a paying account turned re-testing of the AIs
+     off, and an AI account stopped because a gateway call was not paid by the team's own key. Each is undismissable and
+     closed only by its own act (re-testing turned on again; the stop cleared or the account removed), so an OBLIGATION,
+     never muted (R19, R31). The words members see are the design stream's. */
+  "retesting-off":               "an administrator of a paying account turned re-testing of the AIs off; it stays here "
+                              + "while it is off and closes when it is turned on again",
+  "ai-credits-stop":             "an AI account was stopped because a gateway call was not paid by the team's own key; "
+                              + "clear it or remove the account",
 };
 
 export const QUEUE_FINDING_KINDS = {
@@ -422,6 +430,15 @@ export const QUEUE_FINDING_KINDS = {
      opener's whole Queue refused `NO_SUCH_KIND` as soon as one reading ended (as G61 did for the fetch and ingest notices). */
   "reading-ended":              "a reading of a document you supplied finished, ended in part or was refused "
                               + "— LIVE: notice-producers R29",
+  /* T53 (R98; N1259, K4403 (7); notice-producers R30, R31): a register watch's change, told once to its owner with a count,
+     and an import that finished, stopped or failed, told to the member who began it. Each is disposed of by its recipient,
+     as `watched-changed` is (R57); the words members see are the design stream's. */
+  "register-changed-noticed":   "a register you watch changed; open it to see how many rows were added, changed or "
+                              + "removed — notice-producers R30",
+  "register-import-done":       "an import into a register you began has finished — notice-producers R31",
+  "register-import-stopped":    "an import into a register you began was stopped before it finished "
+                              + "— notice-producers R31",
+  "register-import-failed":     "an import into a register you began failed — notice-producers R31",
 };
 
 /* THE N-NUMBERS — the catalogue's STABLE IDS, allocated when a generator is built and not before

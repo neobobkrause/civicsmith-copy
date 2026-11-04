@@ -8,7 +8,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as R from "../../../src/case-catalogue/checks.mjs";
 import * as RG from "../../../src/record-grammar/index.mjs";
-import { isNoticeReference, CASE_DOCUMENT_FORMAT, CASE_DOCUMENT_FORMAT_V6, CASE_DOCUMENT_FORMAT_V7, CASE_DOCUMENT_FORMATS_ACCEPTED } from "../../../src/case-grammar/index.mjs";
+import { isNoticeReference, CASE_DOCUMENT_FORMAT, CASE_DOCUMENT_FORMAT_V6, CASE_DOCUMENT_FORMAT_V7, CASE_DOCUMENT_FORMAT_V8, CASE_DOCUMENT_FORMAT_V9, CASE_DOCUMENT_FORMATS_ACCEPTED,
+         passagesLines, gradingFactsLines, ungradedPassagesLines, typedPassagesLines } from "../../../src/case-grammar/index.mjs";
+import { parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 import { word, localize } from "../../../src/setup-words/index.mjs";
 
 
@@ -49,9 +51,10 @@ const NO_WC = "# Case\n\n## What This Excludes\n\nthe 2019 permits\n";
 const checks = (fm, ctx = CTX) => R.checkCaseDocument(fm, ctx).map((x) => x.check);
 const fires = (mutate, check, ctx = CTX) => R.checkCaseDocument(mutate(doc()), ctx).some((x) => x.check === check);
 
-/* The seventeen arms of C-41, each with the one mutation that fires it (casesign's list, extended to every arm). */
+/* The nineteen arms of C-41, each with the one mutation that fires it (casesign's list, extended to every arm). The
+   format token no longer accepted is /11, since case-grammar PR 202 (R35) made /10 the format in force. */
 const ARMS = [
-  ["FORMAT", "C-41.1", (d) => { d.format = "bio-case-document/10"; return d; }],
+  ["FORMAT", "C-41.1", (d) => { d.format = "bio-case-document/11"; return d; }],
   ["IDENTITY", "C-41.2", (d) => { d.case_id = "CASE-2026-9999"; return d; }],
   ["EDITION", "C-41.3", (d) => { d.case_edition = 7; return d; }],
   ["PROJECT", "C-41.4", (d) => { d.case_project = "null"; return d; }],
@@ -69,7 +72,13 @@ const ARMS = [
   /* asked only over a body: edition 2 with no "What changed" section */
   ["WHAT_CHANGED", "C-41.16", (d) => d, [], { ...CTX, body: NO_WC }],
   ["WORKING_ON", "C-41.17", (d) => { d.working_on = "not a notice"; return d; }],
+  /* R7: a format before /10 carrying the key states what no reader would read */
+  ["UNGRADED_PASSAGES_MISMATCH", "C-41.18", (d) => { d.ungraded_passages = []; return d; }],
+  /* R8: a /10 document whose typed_passages block is a scalar */
+  ["TYPED_PASSAGES_MISMATCH", "C-41.19", (d) => { d.format = CASE_DOCUMENT_FORMAT; d.typed_passages = '"x"'; return d; }],
 ];
+/* The two arms whose question depends on the format the document declares (R7, R8): driven over their own formats. */
+const FORMAT_BOUND = ["C-41.18", "C-41.19"];
 
 test("R1: the baseline /5 case document draws no finding, with its body, member basis and a fresh prior edition; a /4 one, read as written, neither but C-41.16 (its format carries no What-changed statement)", () => {
   assert.deepEqual(checks(doc(), { ...CTX, body: BODY, memberBasis: { [M1]: [], [M2]: [] },
@@ -80,7 +89,7 @@ test("R1: the baseline /5 case document draws no finding, with its body, member 
   assert.deepEqual(checks({ ...v4, case_edition: 1 }, { ...CTX, edition: 1, body: BODY }), [], "edition 1 is not asked");
 });
 
-test("R1, R3, R4: each of C-41.1–C-41.17 is declared in CASE_DOCUMENT_FAMILY and fires on its own mutation, and the arms cover the family exactly", () => {
+test("R1, R3, R4, R7, R8: each of C-41.1–C-41.19 is declared in CASE_DOCUMENT_FAMILY and fires on its own mutation, and the arms cover the family exactly", () => {
   for (const [key, num, mutate, also = [], ctx = CTX] of ARMS) {
     assert.equal(R.CASE_DOCUMENT_FAMILY[key].check, num);
     assert.equal(fires(mutate, num, ctx), true, `${num} fires`);
@@ -89,7 +98,7 @@ test("R1, R3, R4: each of C-41.1–C-41.17 is declared in CASE_DOCUMENT_FAMILY a
   }
   assert.deepEqual(ARMS.map(([k]) => k).sort(), Object.keys(R.CASE_DOCUMENT_FAMILY).sort());
   assert.deepEqual(Object.values(R.CASE_DOCUMENT_FAMILY).map((v) => v.check),
-    Array.from({ length: 17 }, (_, i) => `C-41.${i + 1}`));
+    Array.from({ length: 19 }, (_, i) => `C-41.${i + 1}`));
 });
 
 test("R1: the case arms of C-2.8 (each member's frozen blocks, as the document states them), C-3.1 (the section) and C-21.1 (a statement or acknowledgement reprinted from the previous edition)", () => {
@@ -264,25 +273,25 @@ test("R2, N69: isCaseMemberBytes and the copy record-grammar keeps for C-3.1's h
 /* N538 (DEC-124; K1365 (1), K1367): `bio-case-document/7` is `/6` in every field (case-grammar R1), and the catalogue reads
    it as `/6`: the same findings by the same arms, each message naming the format the document declares. A `/6`
    document's messages are byte for byte those before T31, which named the then-current `/6` (the deployed copy may hold
-   one). `bio-case-document/8` (the format in force, T51-136) states what `/7` states, so it is read as `/7` the same way
-   (case-grammar R1). Every arm of the family is driven over `/6` and both newer formats, pinned by name, with the one
-   mutation that fires it. */
-test("R1, R4 (N538): a /7 case document is read as /6 and a /8 one as /7: each draws no finding, each of C-41.1–C-41.17 fires on it as on the /6 twin, and every message names the format the document declares, a /6 one's unchanged", () => {
+   one). `bio-case-document/8` (T51-136) states what `/7` states, `/9` what `/8` states, and `/10` (the format in force,
+   case-grammar PR 202, R35) what `/9` states with two blocks beside, so each is read as `/7` the same way (case-grammar
+   R1). Every arm of the family but the two bound to the format (C-41.18, C-41.19; their own tests below) is driven over
+   `/6` and every newer format, pinned by name, with the one mutation that fires it. */
+test("R1, R4 (N538): a /7 case document is read as /6 and a /8, /9 or /10 one as /7: each draws no finding, each of C-41.1–C-41.17 fires on it as on the /6 twin, and every message names the format the document declares, a /6 one's unchanged", () => {
   const as = (fmt, d = doc()) => ({ ...d, format: fmt });
   const run = (d, ctx) => R.checkCaseDocument(d, ctx);
-  const NEWER = [CASE_DOCUMENT_FORMAT_V7, CASE_DOCUMENT_FORMAT];
+  const NEWER = [CASE_DOCUMENT_FORMAT_V7, CASE_DOCUMENT_FORMAT_V8, CASE_DOCUMENT_FORMAT_V9, CASE_DOCUMENT_FORMAT];
   for (const fmt of [CASE_DOCUMENT_FORMAT_V6, ...NEWER])
     assert.deepEqual(checks(as(fmt), { ...CTX, body: BODY, memberBasis: { [M1]: [], [M2]: [] } }), [], `${fmt}: the baseline`);
   for (const [key, num, mutate, also = [], ctx = { ...CTX, body: BODY }] of ARMS) {
-    if (key === "FORMAT") continue;
+    if (key === "FORMAT" || FORMAT_BOUND.includes(num)) continue;
     const six = run(mutate(as(CASE_DOCUMENT_FORMAT_V6)), ctx);
     assert.deepEqual([...new Set(six.map((x) => x.check))].sort(), [num, ...also].sort(), `${num} (and only what it drags) on the /6 document`);
     for (const fmt of NEWER) {
       assert.deepEqual(run(mutate(as(fmt)), ctx), six.map((x) => ({ ...x, message: x.message.replaceAll(CASE_DOCUMENT_FORMAT_V6, fmt) })),
         `${num}: the ${fmt} document draws the /6 document's findings, the token aside`);
     }
-    assert.ok(!six.some((x) => x.message.includes(CASE_DOCUMENT_FORMAT_V7)), `${num}: a /6 document is never told /7`);
-    assert.ok(!six.some((x) => x.message.includes(CASE_DOCUMENT_FORMAT)), `${num}: a /6 document is never told /8`);
+    for (const fmt of NEWER) assert.ok(!six.some((x) => x.message.includes(fmt)), `${num}: a /6 document is never told ${fmt}`);
   }
   /* byte identity for /6 with the messages as written before T31 (`a ${CASE_DOCUMENT_FORMAT} case document …`, /6 then) */
   const before = {
@@ -303,11 +312,11 @@ test("R1, R4 (N538): a /7 case document is read as /6 and a /8 one as /7: each d
       { declared: fmt, v1: "null", v2: "" }));
   }
   /* C-41.1 names the current format (CASE_DOCUMENT_FORMAT, in force) and every format accepted as written */
-  const [bad] = run(as("bio-case-document/10"), CTX).filter((x) => x.check === "C-41.1");
-  for (const fmt of ["/8", "/7", "/6", "/5", "/4", "/3", "/2", "/1"]) assert.ok(bad.message.includes(`'bio-case-document${fmt}'`), fmt);
+  const [bad] = run(as("bio-case-document/11"), CTX).filter((x) => x.check === "C-41.1");
+  for (const fmt of ["/10", "/9", "/8", "/7", "/6", "/5", "/4", "/3", "/2", "/1"]) assert.ok(bad.message.includes(`'bio-case-document${fmt}'`), fmt);
   assert.equal(bad.message, localize("case-catalogue.checks.a_case_document_declares_format",
     "a case document declares format '{CASE_DOCUMENT_FORMAT}', or one of the earlier formats accepted as written ({map}) (got '{format}'): the format token is what lets a stranger holding these bytes know what they are reading and what rules they were made under, which is the same reason the container manifest carries one",
-    { CASE_DOCUMENT_FORMAT, map: CASE_DOCUMENT_FORMATS_ACCEPTED.filter((x) => x !== CASE_DOCUMENT_FORMAT).map((x) => `'${x}'`).join(", "), format: "bio-case-document/10" }));
+    { CASE_DOCUMENT_FORMAT, map: CASE_DOCUMENT_FORMATS_ACCEPTED.filter((x) => x !== CASE_DOCUMENT_FORMAT).map((x) => `'${x}'`).join(", "), format: "bio-case-document/11" }));
 });
 
 test("R4: the family is declared gate findings, not refusal rows: no export is named *_CHECKS, no row carries a where or a code, and each row names its check and what it asks", () => {
@@ -374,4 +383,112 @@ test("R6: the case document's member arm reads a member's references beside its 
   const first = asked(["part 1"], { basis, references: [cite("INFO-2026-0002-b", "confirmed"), cite("INFO-2026-0002-b", "severed")] });
   assert.deepEqual(codes(first), ["C-2.8"], "the first entry for a target decides, as strength reads it");
   assert.deepEqual(codes(R.checkCaseDocument(doc(), { ...CTX, memberBasis: { [M2]: { references: severed } } })), [], "an entry with no basis asks the basis arms of nothing");
+});
+
+/* ===== R7, R8 (T53): C-41.18 and C-41.19 over a /10 document's passage blocks =====
+   Each block is written by case-grammar's own writers (its R17, R36, R37) and read back by the grammar's parser, as
+   op=publish would sign it; only the malformed rows a writer would never produce are written out by hand. */
+const V10 = CASE_DOCUMENT_FORMAT;
+const TYPING = [{ step: "typed", member: "m2" }];
+const blocks = (lines) => {
+  const p = parseFrontmatter(["---", ...lines, "---", ""].join("\n"));
+  assert.deepEqual(p.findings, [], "the grammar reads every line");
+  return p.data;
+};
+const P1 = { finding: M1, ord: 1, content_id: "c".repeat(64), capture_sha: "d".repeat(64), extent: null, chain: null, quoted: null };
+const P2 = { ...P1, ord: 2, content_id: "e".repeat(64) };
+const keyOf = (p) => ({ finding: p.finding, ord: p.ord, content_id: p.content_id });
+/* A /10 document stating `passages`, their grading facts and the given extra lines. */
+const doc10 = (passages, facts, lines = [], format = V10) =>
+  ({ ...doc(), format, ...blocks([...passagesLines(passages), ...gradingFactsLines(facts), ...lines]) });
+const only = (d, check) => checks(d).filter((c) => c === check);
+
+test("R7: C-41.18 — one ungraded passage with its row passes; without the row, a row for a graded passage, a duplicate, a row naming no passage, and a scalar block each give the finding with R7's translation", () => {
+  const facts = [{ finding: M1, ord: 1, grade: null }, { finding: M1, ord: 2, grade: "B" }];
+  assert.deepEqual(checks(doc10([P1, P2], facts, ungradedPassagesLines([keyOf(P1)]))), [], "the one ungraded passage, listed");
+  const bad = {
+    "no row": [],
+    "a graded passage listed": ungradedPassagesLines([keyOf(P1), keyOf(P2)]),
+    "a duplicate": ungradedPassagesLines([keyOf(P1), keyOf(P1)]),
+    "a row naming no passage": ungradedPassagesLines([keyOf(P1), { finding: M2, ord: 9, content_id: "f".repeat(64) }]),
+    "a scalar block": ["ungraded_passages: 3"],
+  };
+  for (const [what, lines] of Object.entries(bad)) {
+    const found = R.checkCaseDocument(doc10([P1, P2], facts, lines), CTX);
+    assert.deepEqual(found.map((x) => x.check), ["C-41.18"], what);
+    assert.equal(found[0].message, localize("case-catalogue.checks.the_list_of_passages_this",
+      "The list of passages this case was published without a grade for does not match the passages that have none. Prepare the case again, and sign it. Nothing was signed."), what);
+  }
+});
+
+test("R7 controls: all graded with no block passes; a /9 document without the key is not asked, with it is found; a typed leg graded by the record and not listed passes", () => {
+  assert.deepEqual(checks(doc10([P1, P2], [{ finding: M1, ord: 1, grade: "C" }, { finding: M1, ord: 2, grade: "B" }])), []);
+  const ungradedFacts = [{ finding: M1, ord: 1, grade: null }];
+  assert.deepEqual(checks(doc10([P1], ungradedFacts, [], CASE_DOCUMENT_FORMAT_V9)), [], "a /9 document is not asked");
+  assert.deepEqual(only(doc10([P1], ungradedFacts, ungradedPassagesLines([keyOf(P1)]), CASE_DOCUMENT_FORMAT_V9), "C-41.18"),
+    ["C-41.18"], "a /9 document carrying the key states what no reader would read");
+  /* a typed passage: its grading-facts row says typed (strength R47) and the record grades it (leg-earning R19) */
+  const T = { ...P1, chain: TYPING };
+  assert.equal(R.legUngraded({ finding: M1, ord: 1, grade: null, typed: { checked: false } }), false);
+  assert.equal(R.legUngraded({ finding: M1, ord: 1, grade: null }), true);
+  assert.deepEqual(checks(doc10([T], [{ finding: M1, ord: 1, grade: null, typed: { checked: false } }],
+    typedPassagesLines([{ ...keyOf(T), typed_at: "2026-10-02T10:00:00Z", typist_level: "group", checkers: [] }]))), []);
+});
+
+test("R8: C-41.19 — a typed passage with no row, checked true with no checker, checked false with one, a name shown at group, a blank one at cover and a level outside R2's each give the finding with R8's translation", () => {
+  const T = { ...P1, chain: TYPING };
+  const facts = [{ finding: M1, ord: 1, grade: "D", typed: { checked: false } }];
+  const good = typedPassagesLines([{ ...keyOf(T), typed_at: "2026-10-02T10:00:00Z", typist_level: "group", checkers: [] }]);
+  const checkedOne = typedPassagesLines([{ ...keyOf(T), typed_at: "2026-10-02T10:00:00Z", typist_level: "cover", typist_shown: "Heron",
+    checkers: [{ level: "name", shown: "Birch Ames", at: "2026-10-03T09:00:00Z" }] }]);
+  assert.deepEqual(checks(doc10([T], facts, good)), [], "listed correctly");
+  assert.deepEqual(checks(doc10([T], [{ ...facts[0], grade: "C", typed: { checked: true } }], checkedOne)), [], "checked, credits within levels");
+  const swap = (lines, from, to) => { const i = lines.findIndex((l) => l.trim() === from || l.trim().endsWith(from));
+    assert.ok(i >= 0, from); return lines.map((l, j) => (j === i ? l.replace(from, to) : l)); };
+  const bad = {
+    "no row": [],
+    "checked true with no checker": swap(good, "checked: false", "checked: true"),
+    "checked false with a checker": swap(checkedOne, "checked: true", "checked: false"),
+    "a name shown at group": swap(good, "typist_shown: null", `typist_shown: '"Alder Quill"'`),
+    "a blank name at cover": swap(checkedOne, `typist_shown: '"Heron"'`, `typist_shown: '" "'`),
+    "a level outside R2's": swap(good, `typist_level: '"group"'`, `typist_level: '"boss"'`),
+    "a checker at project showing a name": swap(checkedOne, `'[{"at":"2026-10-03T09:00:00Z","level":"name","shown":"Birch Ames"}]'`,
+      `'[{"at":"2026-10-03T09:00:00Z","level":"project","shown":"Birch Ames"}]'`),
+  };
+  for (const [what, lines] of Object.entries(bad)) {
+    const found = R.checkCaseDocument(doc10([T], facts, lines), CTX);
+    assert.deepEqual(found.map((x) => x.check), ["C-41.19"], what);
+    assert.equal(found[0].message, localize("case-catalogue.checks.a_page_a_member_typed",
+      "A page a member typed is not listed, or is listed with a credit the member's choice does not allow. Prepare the case again. Nothing was signed."), what);
+  }
+});
+
+test("R8 controls: a document without typed passages and without the block passes; a /9 document with a typed passage and no block is not asked", () => {
+  assert.deepEqual(checks(doc10([P1, P2], [{ finding: M1, ord: 1, grade: "B" }, { finding: M1, ord: 2, grade: "B" }])), []);
+  assert.deepEqual(checks(doc10([{ ...P1, chain: TYPING }], [{ finding: M1, ord: 1, grade: "D", typed: { checked: false } }], [], CASE_DOCUMENT_FORMAT_V9)), []);
+  for (const odd of [{ format: V10, passages: 7, typed_passages: [null, 3], ungraded_passages: [{}] },
+                     { format: V10, get typed_passages() { throw new Error("boom"); } }])
+    assert.doesNotThrow(() => R.checkCaseDocument(odd, CTX));
+});
+
+/* ===== provider notices ===== */
+
+test("notice strength:176 (R46, R47): a grading-facts row stating typed, as strength now writes it for a leg on a typed passage, is graded by the record and never ungraded, whatever its grade; a row without typed and no grade is ungraded", () => {
+  const fm = doc10([{ ...P1, chain: TYPING }, P2],
+    [{ finding: M1, ord: 1, grade: null, typed: { checked: true } }, { finding: M1, ord: 2, grade: null }],
+    [...ungradedPassagesLines([keyOf(P2)]),
+     ...typedPassagesLines([{ ...keyOf(P1), typed_at: "2026-10-02T10:00:00Z", typist_level: "name", typist_shown: "Ivy",
+                              checkers: [{ level: "group", shown: null, at: "2026-10-03T00:00:00Z" }] }])]);
+  assert.deepEqual(checks(fm), [], "the typed leg is not listed as ungraded; the untyped one is");
+  for (const typed of [{ checked: false }, { checked: true }]) assert.equal(R.legUngraded({ grade: null, typed }), false);
+  assert.equal(R.legUngraded({ grade: "D", typed: { checked: false } }), false);
+  assert.equal(R.legUngraded({ grade: null, typed: null }), true, "typed null is a row stating none (case-grammar R17)");
+  for (const odd of [null, undefined, 7, "x", { get grade() { throw new Error("boom"); } }]) assert.equal(R.legUngraded(odd), false);
+});
+
+test("notice case-grammar:202 (R1, R35-R37): /10 is accepted as written and asked C-41.18 and C-41.19; /11 is not a format and C-41.1 alone answers it", () => {
+  assert.ok(CASE_DOCUMENT_FORMATS_ACCEPTED.includes(V10));
+  assert.deepEqual(checks({ ...doc(), format: V10 }, { ...CTX, body: BODY, memberBasis: { [M1]: [], [M2]: [] } }), []);
+  assert.deepEqual(checks({ ...doc(), format: V10, typed_passages: '"x"', ungraded_passages: 3 }), ["C-41.18", "C-41.19"]);
+  assert.deepEqual(checks({ ...doc(), format: "bio-case-document/11", typed_passages: '"x"', ungraded_passages: 3 }), ["C-41.1"]);
 });

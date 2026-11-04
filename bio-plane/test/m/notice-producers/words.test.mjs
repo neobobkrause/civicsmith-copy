@@ -16,7 +16,7 @@ const MONTHS = ["january", "february", "march", "april", "may", "june", "july", 
 /* DEC-189's owed line, (5)–(7), for notice-producers (draft-T43-words §N856 (c)); the nine uses and `ai.use.suggestions` (DEC-191
    (2)); DEC-191 (3)'s and DEC-192 (3), (5)'s keys (T44): the date formats and `{when}` after "until" */
 const OWED = ["ai.queue.limitreached", "ai.queue.limitreached.overall", "ai.queue.limitreached.member", "ai.queue.exploreask",
-  "ai.queue.suspended", ...["group", "project", "own"].flatMap((k) => [`ai.account.${k}`, `ai.account.${k}.inline`]),
+  ...["group", "project", "own"].flatMap((k) => [`ai.account.${k}`, `ai.account.${k}.inline`]),
   ...["ask", "draft", "run", "standing", "transcribe", "explore", "enquire", "read", "account", "suggestions"].map((u) => `ai.use.${u}.inline`),
   "ai.scope.group", "ai.scope.own", "ai.period.day", "ai.period.month", "ai.until.day", "ai.until.month", "date.daymonth", "date.daymonthyear",
   ...MONTHS.map((m) => `date.month.${m}`), "ai.label.explored", "ai.label.explored.member",
@@ -34,7 +34,7 @@ test("R16 R17 R23 every key this module reads is held by setup-words and in word
   assert.equal(hasWord("ai.queue.nosuchword"), false);
   assert.equal(hasWords("ai.queue.nosuchword"), false);
   assert.throws(() => wordsOf("ai.queue.nosuchword", {}), /no words for ai\.queue\.nosuchword/);
-  assert.equal(wordsOf("ai.queue.suspended", { project: "S" }), word("ai.queue.suspended", { project: "S" }));
+  assert.equal(wordsOf("ai.queue.exploreask", { scope: "S", what: "Q?", account: "A" }), word("ai.queue.exploreask", { scope: "S", what: "Q?", account: "A" }));
 });
 
 test("R16 the Ask's act reads act.exploreapprove.label.queue; the retired act.owed_exploreapprove.label.queue and the pre-DEC-189 fills ({for_use}, {Uses}) are gone", () => {
