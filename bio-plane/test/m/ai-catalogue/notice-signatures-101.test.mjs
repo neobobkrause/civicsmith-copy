@@ -14,10 +14,13 @@ import { newKey, sign, world, AT } from "./fixture.mjs";
 const signSeed = (key) => sign(key, NS_AI_CATALOGUE, aiCatalogueStatement(RELEASE_SEED.statement));
 const DEV_ENV = (armored) => ({ [DEVELOPMENT_VAR]: "1", [SEED_SIGNATURE_VAR]: armored });
 
-test("notice signatures:101: the build trusts CATALOGUE_KEYS whole in a public and a development build; none of its lines is a development line", () => {
+/* Amended for signatures R59: CATALOGUE_KEYS now ends with development lines, so a public build trusts Bob's lines
+ * alone and a development build trusts the list whole. */
+test("notice signatures:101 (as R59 amends it): a public build trusts CATALOGUE_KEYS less its development lines, a development build the list whole", () => {
   assert.ok(CATALOGUE_KEYS.length > 0);
-  assert.deepEqual(CATALOGUE_KEYS.filter(isDevelopmentKey), []);
-  assert.deepEqual(catalogueKeysFor(CATALOGUE_KEYS, {}), [...CATALOGUE_KEYS]);
+  const bob = CATALOGUE_KEYS.filter((l) => !isDevelopmentKey(l));
+  assert.ok(bob.length > 0);
+  assert.deepEqual(catalogueKeysFor(CATALOGUE_KEYS, {}), bob);
   assert.deepEqual(catalogueKeysFor(CATALOGUE_KEYS, { [DEVELOPMENT_VAR]: "1" }), [...CATALOGUE_KEYS]);
   for (const line of CATALOGUE_KEYS) assert.equal(RELEASE_KEYS.includes(line), false);
 });

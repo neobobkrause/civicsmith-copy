@@ -1,0 +1,139 @@
+/* ai-catalogue: a development deployment's own catalogue key (dev-key.mjs) and the keys a build trusts (catalogueKeysFor,
+ * signatures R59). The seed is the one this release carries (R39); the copy is the fixture's real one (keys: null, so it
+ * takes signatures' CATALOGUE_KEYS as the plane does). Wrangler is never run: the command is handed a recorder, or the
+ * stand-in fake-wrangler.mjs for the spawn path. No network. */
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { webcrypto } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { CATALOGUE_KEYS, NS_AI_CATALOGUE, aiCatalogueStatement, verifyAiCatalogue } from "../../../src/sshsig.mjs";
+import { RELEASE_SEED, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_VAR, catalogueKeysFor, isDevelopmentKey }
+  from "../../../src/ai-catalogue/index.mjs";
+import { main, makeDevelopmentKey, runWrangler, DEVELOPMENT_ACCOUNT, DEVELOPMENT_SIGNING_SECRET }
+  from "../../../src/ai-catalogue/dev-key.mjs";
+import { newKey, sign, world, AT } from "./fixture.mjs";
+
+const ENV = { CIVICSMITH_TEST_INSTANCE: "t1", CF_TOKEN: "token-for-test", CF_ACCT: DEVELOPMENT_ACCOUNT };
+const BOB = CATALOGUE_KEYS.filter((l) => !isDevelopmentKey(l));
+const FAKE = fileURLToPath(new URL("./fake-wrangler.mjs", import.meta.url));
+
+/** Runs the command with a recorder for wrangler; answers {code, out, calls, vars}. */
+async function run(argv, env = ENV, wranglerCode = 0) {
+  const lines = [], calls = [];
+  const code = await main(argv, env, { log: (l) => lines.push(String(l)), err: (l) => lines.push(String(l)),
+    wrangler: async (a) => { calls.push(a); return { code: wranglerCode, stdout: "ok\n", stderr: "" }; } });
+  return { code, out: lines.join("\n"), calls, vars: calls[0] ? JSON.parse(calls[0].json) : null };
+}
+const publicOnly = (vars) => Object.fromEntries(Object.entries(vars).filter(([k]) => k !== DEVELOPMENT_SIGNING_SECRET));
+const releaseEnv = (vars) => Object.fromEntries(Object.entries(publicOnly(vars)).filter(([k]) => k !== DEVELOPMENT_VAR));
+
+test("dev-key: a seed signed by a generated development key verifies on a development deployment, and the copy is current from it", async () => {
+  const r = await run(["t1"]);
+  assert.equal(r.code, 0, r.out);
+  assert.equal(r.calls.length, 1);
+  assert.equal(r.calls[0].worker, "p3dev-t1");
+  assert.equal(r.calls[0].account, DEVELOPMENT_ACCOUNT);
+  assert.deepEqual(Object.keys(r.vars).sort(),
+    [DEVELOPMENT_VAR, DEVELOPMENT_KEY_VAR, SEED_SIGNATURE_VAR, DEVELOPMENT_SIGNING_SECRET].sort());
+  assert.equal(r.vars[DEVELOPMENT_VAR], "1");
+  assert.ok(isDevelopmentKey(r.vars[DEVELOPMENT_KEY_VAR]));
+  assert.equal(CATALOGUE_KEYS.includes(r.vars[DEVELOPMENT_KEY_VAR]), false);
+  const { cat } = await world({ keys: null, env: publicOnly(r.vars) });
+  assert.equal(cat.seedAtStart.outcome, "found");
+  const s = cat.catalogueState({ at: AT });
+  assert.deepEqual([s.state, s.source], ["current", "seed"]);
+});
+
+test("dev-key: the same signed seed is refused UNKNOWN_KEY on a release environment, the copy unavailable", async () => {
+  const r = await run(["t1"]);
+  for (const env of [releaseEnv(r.vars), { [SEED_SIGNATURE_VAR]: r.vars[SEED_SIGNATURE_VAR] },
+    { ...releaseEnv(r.vars), [DEVELOPMENT_VAR]: "true" }]) {
+    const { cat } = await world({ keys: null, env });
+    assert.equal(cat.seedAtStart.code, "UNKNOWN_KEY", JSON.stringify(Object.keys(env)));
+    assert.equal(cat.catalogueState({ at: AT }).state, "unavailable");
+    assert.equal(cat.entriesFor({ part: "ask", at: AT }).code, "CATALOGUE_UNAVAILABLE");
+  }
+  assert.deepEqual(await verifyAiCatalogue(RELEASE_SEED.statement, r.vars[SEED_SIGNATURE_VAR], 0),
+    await verifyAiCatalogue(RELEASE_SEED.statement, r.vars[SEED_SIGNATURE_VAR], 0, BOB));
+  assert.equal((await verifyAiCatalogue(RELEASE_SEED.statement, r.vars[SEED_SIGNATURE_VAR], 0)).ok, false);
+});
+
+test("dev-key: the private half goes to wrangler's stdin only and appears in no output, the run's or wrangler's", async () => {
+  const lines = [];
+  let seen = null;
+  const code = await main(["t1"], ENV, { log: (l) => lines.push(String(l)), err: (l) => lines.push(String(l)),
+    wrangler: async (a) => { seen = JSON.parse(a.json); return { code: 0, stdout: `echo ${a.json}\n`, stderr: `secret ${seen[DEVELOPMENT_SIGNING_SECRET]}\n` }; } });
+  assert.equal(code, 0);
+  const secret = seen[DEVELOPMENT_SIGNING_SECRET];
+  assert.ok(secret.length > 40);
+  /* it is a real ed25519 private key: it signs, and the public line verifies what it signs */
+  const priv = await webcrypto.subtle.importKey("pkcs8", Buffer.from(secret, "base64"), { name: "Ed25519" }, false, ["sign"]);
+  const raw = Buffer.from(seen[DEVELOPMENT_KEY_VAR].split(" ")[1], "base64").subarray(19);
+  const sig = await sign({ priv, raw }, NS_AI_CATALOGUE, aiCatalogueStatement(RELEASE_SEED.statement));
+  assert.equal((await verifyAiCatalogue(RELEASE_SEED.statement, sig, 0, [seen[DEVELOPMENT_KEY_VAR]])).ok, true);
+  const out = lines.join("\n");
+  assert.equal(out.includes(secret), false);
+  for (let i = 0; i + 24 <= secret.length; i += 8) assert.equal(out.includes(secret.slice(i, i + 24)), false);
+  assert.match(out, new RegExp(DEVELOPMENT_SIGNING_SECRET));
+});
+
+test("dev-key: through the spawn path, a wrangler that echoes its stdin still shows no private key; its disk log is off", async () => {
+  const lines = [];
+  let seen = null;
+  const code = await main(["t1"], ENV, { log: (l) => lines.push(String(l)), err: (l) => lines.push(String(l)),
+    wrangler: (a) => { seen = JSON.parse(a.json); return runWrangler({ ...a, bin: FAKE }); } });
+  assert.equal(code, 0);
+  const out = lines.join("\n");
+  assert.match(out, /args secret bulk --name p3dev-t1/);
+  assert.match(out, new RegExp(`WRANGLER_WRITE_LOGS=false account=${DEVELOPMENT_ACCOUNT}`));
+  assert.match(out, /\[masked\]/);
+  const secret = seen[DEVELOPMENT_SIGNING_SECRET];
+  for (let i = 0; i + 24 <= secret.length; i += 8) assert.equal(out.includes(secret.slice(i, i + 24)), false);
+});
+
+test("dev-key: a dry run sends nothing and prints no key material", async () => {
+  const r = await run(["t1", "--dry-run"], { ...ENV, CF_TOKEN: undefined });
+  assert.equal(r.code, 0, r.out);
+  assert.equal(r.calls.length, 0);
+  assert.match(r.out, /dry run/);
+  assert.doesNotMatch(r.out.split(DEVELOPMENT_ACCOUNT).join(""), /[A-Za-z0-9+/]{32,}/);
+});
+
+test("dev-key: refuses any account but the development one, any name that is not p3dev-, and an unmarked copy; nothing is sent", async () => {
+  for (const [argv, env, code] of [
+    [["t1"], { ...ENV, CF_ACCT: "0123456789abcdef0123456789abcdef" }, "WRONG_ACCOUNT"],
+    [["t1"], { ...ENV, CF_ACCT: undefined }, "WRONG_ACCOUNT"],
+    [["../x"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "../x" }, "NOT_A_DEVELOPMENT_NAME"],
+    [["T1"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "T1" }, "NOT_A_DEVELOPMENT_NAME"],
+    [["t1 x"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "t1 x" }, "NOT_A_DEVELOPMENT_NAME"],
+    [["t1"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "t2" }, "NOT_A_TEST_INSTANCE"],
+  ]) {
+    const r = await run(argv, env);
+    assert.equal(r.code, 1, `${argv} ${code}`);
+    assert.match(r.out, new RegExp(`REFUSED \\[${code}\\]`));
+    assert.equal(r.calls.length, 0);
+  }
+  const failed = await run(["t1"], ENV, 1);
+  assert.equal(failed.code, 1);
+  assert.match(failed.out, /REFUSED \[SECRETS_NOT_SET\]/);
+});
+
+test("catalogueKeysFor: a caller passing no list trusts Bob's lines alone, in any environment", async () => {
+  const { line } = await makeDevelopmentKey();
+  const dev = { [DEVELOPMENT_VAR]: "1", [DEVELOPMENT_KEY_VAR]: line };
+  assert.deepEqual([...catalogueKeysFor(undefined, dev)], BOB);
+  assert.deepEqual([...catalogueKeysFor(undefined, {})], BOB);
+  assert.deepEqual([...catalogueKeysFor(null)], BOB);
+});
+
+test("catalogueKeysFor: the deployment's line is added only in a development build, and only a well-formed marked line", async () => {
+  const { line } = await makeDevelopmentKey();
+  assert.deepEqual([...catalogueKeysFor([...CATALOGUE_KEYS], { [DEVELOPMENT_VAR]: "1", [DEVELOPMENT_KEY_VAR]: line })],
+    [...CATALOGUE_KEYS, line]);
+  assert.deepEqual([...catalogueKeysFor([...CATALOGUE_KEYS], { [DEVELOPMENT_KEY_VAR]: line })], BOB);
+  const plain = (await newKey()).line;                                 /* "throwaway": not marked development */
+  const bad = [plain, `${line}\nssh-ed25519 AAAA x-development`, "ssh-rsa AAAAB3Nza x-development", BOB[0], 7, null];
+  for (const v of bad)
+    assert.deepEqual([...catalogueKeysFor([...CATALOGUE_KEYS], { [DEVELOPMENT_VAR]: "1", [DEVELOPMENT_KEY_VAR]: v })],
+      [...CATALOGUE_KEYS], String(v));
+});
