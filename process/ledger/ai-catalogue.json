@@ -1,0 +1,39 @@
+{
+  "id": "ai-catalogue",
+  "title": "ai-catalogue: its unmet T53 requirements, R39",
+  "layer": 2,
+  "paths": [
+    "bio-plane/src/ai-catalogue/",
+    "build/requirements/ai-catalogue.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/ai-catalogue/"
+  ],
+  "requirements": "build/requirements/ai-catalogue.md",
+  "uses": [
+    "signatures",
+    "record-grammar",
+    "record-core",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/ai-catalogue.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet every unmet mark in build/requirements/ai-catalogue.md (R39), each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T02:40:00Z"
+  }
+}
