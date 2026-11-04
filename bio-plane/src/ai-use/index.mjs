@@ -26,11 +26,11 @@ import { connectionsOf } from "../connections/index.mjs";
 import { retrievalOf } from "../retrieval/index.mjs";
 import { AI_RUNS_CHECKS } from "../run-rules/index.mjs";
 import { AI_USE_SCHEMA, AI_USE_TABLES, AI_USE_ADDED_COLUMNS } from "./schema.mjs";
-import { AI_USE_CHECKS, AI_USE_WORDS, LIMIT_WORD_BY_SCOPE, UNJUDGED_WORD, WHOSE_WORD, PERIOD_WORD, WHEN_WORD, MONTH_WORD,
+import { AI_USE_CHECKS, AI_USE_WORDS, AI_USE_NEW_WORDS, LIMIT_WORD_BY_SCOPE, UNJUDGED_WORD, WHOSE_WORD, PERIOD_WORD, WHEN_WORD, MONTH_WORD,
   LIMIT_FIELD_WORD, useInlineWord, useNameWord, fillWords } from "./checks.mjs";
 import { localize } from "../setup-words/index.mjs";
 export { AI_USE_SCHEMA, AI_USE_TABLES, AI_USE_ADDED_COLUMNS } from "./schema.mjs";
-export { AI_USE_CHECKS, AI_USE_WORDS, LIMIT_WORD_BY_SCOPE, UNJUDGED_WORD, WHOSE_WORD, PERIOD_WORD, WHEN_WORD, MONTH_WORD,
+export { AI_USE_CHECKS, AI_USE_WORDS, AI_USE_NEW_WORDS, LIMIT_WORD_BY_SCOPE, UNJUDGED_WORD, WHOSE_WORD, PERIOD_WORD, WHEN_WORD, MONTH_WORD,
   LIMIT_FIELD_WORD, useInlineWord, useNameWord, fillWords } from "./checks.mjs";
 
 /** R1 (was ai-runs R48; T53, `agent-model` R5): the token figures of one conversation's neutral `usage` record, each a
