@@ -165,3 +165,4 @@
 {"at":"2026-11-04T13:25:26Z","row":"outcome","n":85,"outcome":"delivered"}
 {"at":"2026-11-04T13:37:40Z","row":"sent","n":86,"to":"job-agent-worker","text":"BOB: the gate's imports check refused your plane-world.mjs:21-22 imports of ai-catalogue's and ai-accounts' fixtures (not in agent-worker's uses). PR 250 adds both uses edges; I will message you when it merges. Then job sync agent-worker so the gate judges with them; keep the imports."}
 {"at":"2026-11-04T13:37:50Z","row":"outcome","n":86,"outcome":"delivered"}
+{"at":"2026-11-04T13:38:57Z","row":"sent","n":87,"to":"job-agent-worker","text":"BOB: PR 250 merged (tranche b8a5e14f04): agent-worker now uses ai-catalogue and ai-accounts. Run job sync agent-worker, then carry on to job complete."}
