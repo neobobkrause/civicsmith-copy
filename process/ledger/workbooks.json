@@ -1,0 +1,48 @@
+{
+  "id": "workbooks",
+  "title": "workbooks: meet its found mark (an xlsx over xlsx.declared_text is refused) and any unmet mark",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/workbooks/",
+    "build/requirements/workbooks.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/workbooks/"
+  ],
+  "requirements": "build/requirements/workbooks.md",
+  "uses": [
+    "record-grammar",
+    "calc-grammar",
+    "office-readers",
+    "sheet-worker",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "calculations",
+    "setup-words",
+    "test-support",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/workbooks.md",
+    "build/requirements/runtime-limits.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the found mark in build/requirements/workbooks.md (an xlsx whose declared text exceeds runtime-limits' xlsx.declared_text row, read-bounds.mjs:195, is refused as FILE_TOO_LARGE with condition declared_text) and any other unmet mark, each with a test failing with the change reverted. Coordinator priority: plane green (plane's g124f-bounds and g41 R84/R116 wait on this). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T16:44:29Z"
+  }
+}
