@@ -84,6 +84,14 @@ function gatesOf(ctx, runs) {
   if (!g) { g = []; GATES.set(k, g); runs.registerGateVerdicts("ai-gate", ({ entry_id }) => g.filter((r) => r.entry_id === entry_id)); }
   return g;
 }
+/** ai-runs R78: `part` admitted on both catalogue fixture entries by a passing Gate 1 verdict (the throwaway records above), as
+ *  store-assembly's fixture admits it. */
+export async function admitPart(ctx, part) {
+  const { aiRunsOf } = await import("../../../src/ai-runs/index.mjs");
+  const gates = gatesOf(ctx, aiRunsOf(ctx));
+  for (const e of [ENTRIES.a, ENTRIES.b]) gates.push(gateRecord(part, e));
+  return { ok: true };
+}
 export async function deployed(ctx, parts = GATE_PARTS) {
   const { aiRunsOf } = await import("../../../src/ai-runs/index.mjs");
   const runs = aiRunsOf(ctx), gates = gatesOf(ctx, runs);
