@@ -1,0 +1,37 @@
+{
+  "id": "agent-drafts",
+  "title": "agent-drafts: meet its unmet T53 requirements (R1, R4, R7: the draft answer carries label.ai) on the draft code it owns",
+  "layer": 6,
+  "paths": [
+    "agent-worker/src/draft.mjs",
+    "agent-worker/src/action-drafts.mjs",
+    "agent-worker/src/untested.mjs",
+    "build/requirements/agent-drafts.md"
+  ],
+  "tests": [
+    "agent-worker/test/agent-drafts/"
+  ],
+  "requirements": "build/requirements/agent-drafts.md",
+  "uses": [
+    "run-rules",
+    "agent-model",
+    "agent-harness",
+    "agent-steps",
+    "skills",
+    "answers",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "agent-worker",
+    "command": [
+      "node",
+      "--test",
+      "--test-concurrency=1"
+    ]
+  },
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T12:12:46.196Z"
+  }
+}
