@@ -4,6 +4,7 @@
    account and limit from `answers.askAccount`. Each module's own behaviour is its own tests'; these check only the
    composition, through the plane's interface: construction over a storage, the route map, the object's door, `op=stats`,
    the alarm's scheduler and the object's `ask`/`draft`. Each test carries a negative control (K874). */
+import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
 import { test } from "node:test";
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
@@ -195,7 +196,7 @@ async function world() {
   sql.exec(`INSERT INTO sessions (token_sha, role, expires, created) VALUES (?, 'member:ann', ?, 'x')`,
            createHash("sha256").update(SESSION).digest("hex"), Date.now() + 3600e3);
   await disclosed(x.ctx);   /* R35 (T47): the disclosure first, as the assembled plane asks */
-  const r = await credentialsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" });
+  const r = await aiAccountsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" });
   assert.equal(r.ok, true, JSON.stringify(r));
   return { ...x, asks };
 }

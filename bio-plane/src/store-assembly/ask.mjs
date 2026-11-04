@@ -229,15 +229,21 @@ export function wireAccount(c, ref, who) {
 export const SIGNIN_TOKEN_REFUSED = "SIGNIN_TOKEN_REFUSED";
 const refusesToken = (a) => !!a && typeof a === "object" && (a.code === SIGNIN_TOKEN_REFUSED || a.reason === SIGNIN_TOKEN_REFUSED);
 
-/** R47: what an answer refusing a sign-in's token sets off: for a `signin` account, `credentials` drops the token it
- *  holds for the member whose sign-in served (`subscriptionTokenRefused`, its R70), once; for any other account, or
+/** R47: what an answer refusing a sign-in's token sets off: for a `signin` account, `ai-accounts` drops the token it
+ *  holds for the member whose sign-in served (`issuedTokenRefused`, its R19), once; for any other account, or
  *  an answer refusing nothing, nothing. Never throws. */
 export function tokenRefusal(c, ref) {
   let done = false;
   return (answer) => {
     if (done || !ref || ref.kind !== "signin" || !refusesToken(answer)) return false;
     done = true;
-    try { c.subscriptionTokenRefused({ member: ref.member }); } catch { /* credentials' own; the answer stands */ }
+    /* ai-accounts T53 (its R19): the token is dropped on the account that served, `issuedTokenRefused({account_id})`; the
+       account is the one the reference names, else the member's sign-in as the seam reads it (its first issued account) */
+    try {
+      const id = (typeof ref.account_id === "string" && ref.account_id)
+        || c.accountReferenceState({ member: ref.member, viewer: ref.member })?.subscription?.account_id || null;
+      if (id) c.issuedTokenRefused({ account_id: id });
+    } catch { /* ai-accounts' own; the answer stands */ }
     return true;
   };
 }

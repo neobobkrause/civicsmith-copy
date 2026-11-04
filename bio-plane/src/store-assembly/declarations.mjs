@@ -19,6 +19,7 @@ import { DECLARED_OPS as attestation } from "../attestation/ops.mjs";
 import { DECLARED_OPS as provenanceRoutes } from "../provenance-routes/ops.mjs";
 import { DECLARED_OPS as capture } from "../capture/index.mjs";
 import { DECLARED_OPS as doorbell } from "../doorbell/index.mjs";
+import { DECLARED_OPS as mailDoor } from "../mail-door/index.mjs";   /* R83: mail-door, after doorbell (its R12) */
 import { DECLARED_OPS as sources } from "../sources/index.mjs";
 import { DECLARED_OPS as extraction } from "../extraction/index.mjs";
 import { DECLARED_OPS as content } from "../content/ops.mjs";
@@ -37,6 +38,7 @@ import { DECLARED_OPS as bias } from "../bias/index.mjs";
 import { DECLARED_OPS as retrieval } from "../retrieval/index.mjs";
 import { DECLARED_OPS as calculations } from "../calculations/index.mjs";
 import { DECLARED_OPS as workbooks } from "../workbooks/ops.mjs";
+import { DECLARED_OPS as registers } from "../registers/index.mjs";   /* R101 */
 import { DECLARED_OPS as hypotheses } from "../hypotheses/index.mjs";
 import { DECLARED_OPS as basisVersions } from "../basis-versions/index.mjs";
 import { DECLARED_OPS as strength } from "../strength/index.mjs";
@@ -107,6 +109,7 @@ export const OWNERS = Object.freeze({
   "capture-sources": captureSources,
   capture: capture,
   doorbell: doorbell,
+  "mail-door": mailDoor,
   "file-safety": fileSafety,
   sources: sources,
   extraction: extraction,
@@ -127,6 +130,7 @@ export const OWNERS = Object.freeze({
   retrieval: retrieval,
   calculations: calculations,
   workbooks: workbooks,
+  registers: registers,
   inquiry: inquiry,
   hypotheses: hypotheses,
   citation: citation,

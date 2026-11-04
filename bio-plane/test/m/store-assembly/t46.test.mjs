@@ -54,13 +54,16 @@ async function doors({ gate = null, parts = [], env: extra = {}, account = "apik
             VALUES ('ann', 'Cover ann', 'h_ann', 'member', 'active', '["contribute"]', 't', 't')`);
   sql.exec(`INSERT INTO sessions (token_sha, role, expires, created) VALUES (?, 'member:ann', ?, 'x')`,
            createHash("sha256").update(SESSION).digest("hex"), Date.now() + 3600e3);
-  const c = credentialsOf(x.ctx);
+  const c = aiAccountsOf(x.ctx);
   if (account === "apikey") {
     await disclosed(x.ctx);   /* R44 (T47): the disclosure first, as the assembled plane asks */
     assert.equal((await c.accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" })).ok, true);
   }
   /* R47 (T47; credentials R70): a sign-in serves only while its token is held */
-  if (account === "signin") assert.equal((await c.subscriptionTokenHold({ member: "member:ann", token: SIGNIN_TOKEN })).ok, true);
+  if (account === "signin") {
+    await disclosed(x.ctx, "ann");   /* ai-accounts T53: a sign-in's hold asks the disclosure under the member's bare id */
+    assert.equal((await c.subscriptionTokenHold({ member: "member:ann", token: SIGNIN_TOKEN })).ok, true);
+  }
   const grants = () => [...sql.exec(`SELECT count(*) c FROM ai_grants`)][0].c;
   const ask = async () => { const r = await x.s.ask({ member: "member:ann", session: SESSION, question: "q" }); return { status: r.status, r }; };
   const draft = async (a) => { const r = await x.s.draft({ member: "ann", session: SESSION, pack: { layers: [] }, ...a }); return { status: r.status, body: await r.json() }; };
@@ -211,7 +214,7 @@ test("R50 (was plane R40; T46; N920): a status-report draft is refused AI_PART_N
 
 test("R49, R52 (was plane R33, R47; T47; K3084; credentials R55, R70; agent-worker R6, R82): a member served by her own sign-in is sent as {kind: signin, level: member, secret, member, suggestions}, `secret` the token credentials holds for her, on the ask and the draft path alike, the token reaching only the binding's request; its suggestions the sign-in's own switch, with it on a draft gets a grant; control: off, false; an API-key reference's switch and key are read as before", async () => {
   const w = await doors({ gate: { flags: GATE_FLAGS, testSet: GATE_SET }, parts: GATE_PARTS, account: "signin" });
-  const c = credentialsOf(w.ctx);
+  const c = aiAccountsOf(w.ctx);
   assert.equal((await c.accountUsesSet({ owner: "member:ann", switch: "suggestions", on: true, by: "member:ann" })).ok, true);
   assert.equal(c.accountReferenceState({ member: "member:ann", viewer: "member:ann" }).subscription.uses.suggestions, true);
   const asked = await w.ask();
@@ -248,7 +251,7 @@ const refusing = () => ({ asks: [], async fetch(u, init) {
   if (u === "https://agent-worker/ask")
     return new Response(`{"event":"thinking"}\n${JSON.stringify({ event: "refused", ...REFUSED })}\n`, { status: 200, headers: { "content-type": "application/x-ndjson" } });
   return new Response(JSON.stringify(REFUSED), { status: 401, headers: { "content-type": "application/json" } }); } });
-const held = (x) => credentialsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).subscription.held;
+const held = (x) => aiAccountsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).subscription.held;
 
 test("R52 (was plane R47; T47; K3084; credentials R70): an answer SIGNIN_TOKEN_REFUSED to an ask, a draft or a transcription served by a sign-in has credentials drop the held token (subscriptionTokenRefused): the answer is relayed unchanged, and her next act finds no sign-in; control: the same refusal to an API-key reference drops nothing", async () => {
   for (const path of ["ask", "draft", "transcribe"]) {
@@ -263,7 +266,7 @@ test("R52 (was plane R47; T47; K3084; credentials R70): an answer SIGNIN_TOKEN_R
       const d = await w.draft(WRITING);
       assert.deepEqual([d.status, d.body.code], [401, "SIGNIN_TOKEN_REFUSED"]);
     } else {
-      const account = await credentialsOf(w.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
+      const account = await aiAccountsOf(w.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
       assert.equal(account.kind, "signin", JSON.stringify(account));
       const got = await transcriberOf(w.ctx, w.env).transcription({ member: "member:ann", at: "2026-10-14T00:00:00Z" })
         .transcribe({ account, capture_sha: "0".repeat(64), pages: [0] });
@@ -278,15 +281,15 @@ test("R52 (was plane R47; T47; K3084; credentials R70): an answer SIGNIN_TOKEN_R
     }
     assert.equal(bw.asks.at(-1)[1].account.secret, SIGNIN_TOKEN);
     assert.equal(held(w), false, `${path}: dropped`);
-    const next = await credentialsOf(w.ctx).accountFor({ member: "member:ann", act: { kind: "ask", member: "member:ann" } });
+    const next = await aiAccountsOf(w.ctx).accountFor({ member: "member:ann", act: { kind: "ask", member: "member:ann" } });
     assert.notEqual(next.kind, "signin", `${path}: ${JSON.stringify(next)}`);
   }
   /* control: an API-key reference answered the same refusal keeps everything */
   const kw = refusing();
   const k = await doors({ gate: { flags: GATE_FLAGS, testSet: GATE_SET }, parts: GATE_PARTS, worker: kw });
-  const kc = credentialsOf(k.ctx), was = kc.subscriptionTokenRefused.bind(kc);
+  const kc = aiAccountsOf(k.ctx), was = kc.issuedTokenRefused.bind(kc);   /* ai-accounts T53 (its R19) */
   let called = 0;
-  kc.subscriptionTokenRefused = (q) => { called++; return was(q); };
+  kc.issuedTokenRefused = (q) => { called++; return was(q); };
   await (await k.ask()).r.text();
   await k.draft(WRITING);
   assert.equal(kw.asks.length, 2);

@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { store, storage, assembleStore, disclosed } from "./fixture.mjs";
+import { store, storage, assembleStore, disclosed, withCatalogue } from "./fixture.mjs";
 import { doorbellOf, doorbellOps } from "../../../src/doorbell/index.mjs";
 import { captureOf } from "../../../src/capture/index.mjs";
 import { caseAccountOf } from "../../../src/case-account/index.mjs";
@@ -73,6 +73,7 @@ async function plane({ testSet = null, worker = null, evidence = bucket(), accou
   if (testSet) assistantGateOf(st.ctx, { testSet });
   const s = assembleStore(st.ctx, env);
   for (const p of st.blocked) await p;
+  await withCatalogue(st.ctx);   /* the coordinator's CATALOGUE ruling: ai-accounts reads ai-catalogue's published fixture */
   const ctx = st.ctx, sql = ctx.storage.sql;
   sql.exec(`INSERT INTO members (member_id, cover, handle, role, status, capabilities, created, updated)
             VALUES ('ada', 'Cover ada', 'h_ada', 'admin', 'active', '["contribute"]', 't', 't')`);
@@ -81,7 +82,7 @@ async function plane({ testSet = null, worker = null, evidence = bucket(), accou
             VALUES ('ann', 'Cover ann', 'h_ann', 'member', 'active', '["contribute"]', 't', 't')`);
   if (account) {
     await disclosed(ctx);   /* R44 (T47): the disclosure first, as the assembled plane asks */
-    const r = await credentialsOf(ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: SENTINEL, by: "member:ann" });
+    const r = await aiAccountsOf(ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: SENTINEL, by: "member:ann" });
     assert.equal(r.ok, true, JSON.stringify(r));
   }
   const routes = (path, body = null) => s.routes(new URL("http://do" + path), body);
@@ -105,26 +106,26 @@ function declarers(ctx) {
 
 /* ===== R37 ===== */
 
-const DOORBELL_METHODS = { knock: "knock", inboxlist: "inboxList", inboxget: "inboxGet", inboxresolve: "inboxResolve",
-  doorbellrefused: "doorbellRefused", doorbelltally: "doorbellTally", inboxpull: "pullKnock", knocksof: "knocksOf",
-  pulledknocks: "pulledKnocksOf" };
+/* K3268: doorbell's routes are taken from its own map, never hand-listed; every method of the instance (and of capture's copy)
+   is stubbed, so whichever method a route calls, the answer names whose it was. */
+const methodsOf = (o) => { const out = new Set(); for (let p = Object.getPrototypeOf(o); p && p !== Object.prototype; p = Object.getPrototypeOf(p))
+  for (const n of Object.getOwnPropertyNames(p)) if (n !== "constructor" && typeof o[n] === "function") out.add(n); return [...out]; };
 
-test("R32 (was plane R37; N826; K2630): doorbell is the plane's one instance per host, built at boot; each of its nine routes in the route map is answered by that instance, never by capture's doorbell copy", async () => {
+test("R32 (was plane R37; N826; K2630): doorbell is the plane's one instance per host, built at boot; each of its routes in the route map is answered by that instance, never by capture's doorbell copy", async () => {
   const x = await store();
   const d = doorbellOf(x.ctx);
   assert.equal(doorbellOf(x.ctx, { capture: { env: {} } }), d, "one instance per host");
-  assert.deepEqual(Object.keys(doorbellOps(d, new URL("http://do/"), null)).sort(), Object.keys(DOORBELL_METHODS).sort());
+  const ops = Object.keys(doorbellOps(d, new URL("http://do/"), null));
+  assert.ok(ops.includes("knock") && ops.length >= 9, "doorbell's own map");
   const reached = [], copy = [];
   const cap = captureOf(x.ctx);
-  for (const [op, m] of Object.entries(DOORBELL_METHODS)) {
-    d[m] = () => { reached.push(op); return { ok: true, by: "doorbell" }; };
-    if (typeof cap[m] === "function") cap[m] = () => { copy.push(op); return { ok: true, by: "capture" }; };
-  }
-  for (const op of Object.keys(DOORBELL_METHODS)) {
+  for (const m of methodsOf(d)) d[m] = () => { reached.push(m); return { ok: true, by: "doorbell" }; };
+  for (const m of methodsOf(d)) if (typeof cap[m] === "function") cap[m] = () => { copy.push(m); return { ok: true, by: "capture" }; };
+  for (const op of ops) {
     const r = await x.routes(`/${op}?id=k&capture=${"a".repeat(64)}`, { knockId: "k", contentText: "x" })[op]();
     assert.deepEqual(r, { ok: true, by: "doorbell" }, op);
   }
-  assert.deepEqual(reached, Object.keys(DOORBELL_METHODS));
+  assert.ok(reached.length >= ops.length, "every route reached the instance");
   assert.deepEqual(copy, [], "capture's copy is never reached through the route map");
   /* negative control: on a storage no plane was built on, doorbell is a different instance */
   assert.notEqual(doorbellOf(storage().ctx), d);
@@ -262,7 +263,7 @@ test("R57 R106 transcribe-answer: the answer a user module (extraction's t48) ha
   const x = await plane({ worker });
   const d = await hold(x.evidence, SCAN);
   const tx = transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", project: null, at: "2026-10-11T06:00:00Z" });
-  const account = await credentialsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
+  const account = await aiAccountsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
   const real = await tx.transcribe({ account, capture_sha: d, store: "bio", pages: [0], use: "transcribe" });
   // fixtures-run: extraction transcribe-answer
   // fixtures-run: reading-pipeline transcribe-answer   (text-units.test.mjs:531-542 and transcribe.test.mjs:323-327 hand the same success value, {ok, engine, version, pages, asked, sent, owed}; their refusal `{ok: false, reason}` is agent-worker's relayed shape)
@@ -274,7 +275,7 @@ test("R57 (was plane R36) (agent-worker R6, R63, R72; ai-use R1, R11): the AI pa
   const x = await plane({ worker });
   const d = await hold(x.evidence, SCAN);
   const tx = transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", project: null, at: "2026-10-11T06:00:00Z" });
-  const account = await credentialsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
+  const account = await aiAccountsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
   assert.equal(account.ok, true, JSON.stringify(account));
   /* page 1 does not exist in a one-page scan: refused by the renderer, not sent */
   const r = await tx.transcribe({ account, capture_sha: d, store: "bio", pages: [1, 0, 0], use: "transcribe" });

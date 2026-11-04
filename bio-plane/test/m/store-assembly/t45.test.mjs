@@ -3,6 +3,7 @@
    one held once before the first request; and `action-holds`' `purgeHeld` the reader the door is handed (hold.test.mjs).
    Each module's own behaviour is its own tests'; these check the composition through the plane's interface:
    construction over a storage, the route map and the object's door. Each test carries a negative control (K874). */
+import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
 import "../../../src/store-assembly/register.mjs";   /* R83: the start's registration before any op table is read */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -177,7 +178,7 @@ async function doors({ gate = null, parts = [] } = {}) {
   sql.exec(`INSERT INTO sessions (token_sha, role, expires, created) VALUES (?, 'member:ann', ?, 'x')`,
            createHash("sha256").update(SESSION).digest("hex"), Date.now() + 3600e3);
   await disclosed(x.ctx);   /* R35 (T47): the disclosure first, as the assembled plane asks */
-  assert.equal((await credentialsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann",
+  assert.equal((await aiAccountsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann",
                                                                  by: "member:ann" })).ok, true);
   const grants = () => [...sql.exec(`SELECT count(*) c FROM ai_grants`)][0].c;
   const ask = async () => { const r = await x.s.ask({ member: "member:ann", session: SESSION, question: "q" }); return { status: r.status, r }; };

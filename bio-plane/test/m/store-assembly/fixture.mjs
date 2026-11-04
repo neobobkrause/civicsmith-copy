@@ -8,6 +8,9 @@
    (`world.mjs`, R90), not this. */
 import { DatabaseSync } from "node:sqlite";
 import { assembleStore, askOnObject, draftOnObject, traceStamped } from "../../../src/store-assembly/index.mjs";
+import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
+import { recordOf } from "../../../src/record-core/index.mjs";
+import { catalogueFor } from "../ai-accounts/catalogue.mjs";
 
 export { assembleStore, STEP_ORDER, stepOrderFrom, FIRST_LAYER_11, namespaceOf } from "../../../src/store-assembly/index.mjs";
 
@@ -33,7 +36,7 @@ export function storage(db = new DatabaseSync(":memory:")) {
     get databaseSize() { return 0; },
   };
   let alarm = null, n = 0;
-  const blocked = [];
+  const blocked = [], waited = [];
   const ctx = {
     storage: { sql, transactionSync: (fn) => {   /* as workerd's: a savepoint, rolled back and rethrown when the callback throws; nests */
       const sp = `sp${n++}`;
@@ -44,9 +47,9 @@ export function storage(db = new DatabaseSync(":memory:")) {
                deleteAlarm: async () => { alarm = null; } },
     id: { equals: () => false, toString: () => "do" },
     blockConcurrencyWhile(fn) { const p = fn(); blocked.push(p); return p; },
-    waitUntil() {},
+    waitUntil(p) { waited.push(p); },   /* the background work a module hands the runtime, kept so a test may settle it */
   };
-  return { db, ctx, blocked };
+  return { db, ctx, blocked, waited };
 }
 
 /** R50 (K2853): the doors' deploy flags all on and a one-matter test set, for a module test (`assistantGateOf`); the
@@ -73,6 +76,7 @@ export async function store({ db, env: extra, before = null, deliver = null } = 
   if (typeof before === "function") before(st.ctx, env);
   const a = assembleStore(st.ctx, env, { deliver });
   for (const p of st.blocked) await p;
+  await withCatalogue(st.ctx);
   const s = {
     ...a,
     routes: (url, body = null, grant = null) => a.routes(url, body, grant),
@@ -88,6 +92,16 @@ export async function store({ db, env: extra, before = null, deliver = null } = 
   };
   const fetch = async (path, init) => s.fetch(new Request("http://do" + path, init));
   return { s, ctx: st.ctx, db: st.db, env, routes, call, fetch };
+}
+
+/** The coordinator's CATALOGUE ruling (ai-accounts R40, R63): ai-accounts' catalogue is ai-catalogue's real service over the
+ *  object's storage, seeded from ai-catalogue's published fixture as ai-accounts' own `catalogueFor` seeds it. The assembly
+ *  composes no catalogue yet, so without this every account act fails closed CATALOGUE_UNAVAILABLE. Idempotent. */
+export async function withCatalogue(ctx) {
+  const acc = aiAccountsOf(ctx);
+  if (!acc.catalogue) acc.catalogue = catalogueFor(ctx, { record: recordOf(ctx) });
+  await acc.catalogue.seeded;
+  return acc.catalogue;
 }
 
 /** R35 (credentials R64): the assistant's disclosure recorded as shown to `member`, by that member, as the assembled store

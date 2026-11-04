@@ -13,12 +13,12 @@ import { localize } from "../setup-words/index.mjs";
 import { byteLedger } from "../byte-ledger.mjs";
 
 /* store-assembly R85 (was control-plane R112; K4206, K4210; op-declarations R80, op-grades R49): the ops this map serves and no
-   owner declares, declared here beside the map. THE COPY WINDOW (K5052 (4)): while `control-plane` still declares them, they are
-   exported under this name and not as `DECLARED_OPS`, so no op is declared twice; `declarations.mjs` registers them under
-   `store-assembly`, and Wave B, which deletes control-plane's copy, names this export `DECLARED_OPS`. Each row's classes,
+   owner declares, declared here beside the map. THE COPY WINDOW (K5052 (4)) is closed: control-plane's Wave B deleted its copy,
+   so this export is `DECLARED_OPS` (R85), found under `store-assembly` by the collector, and `declarations.mjs` registers it
+   there; `OWNER_MAP_DECLARED_OPS` stays the same object under its old name for the tests that import it. Each row's classes,
    machineClasses, mutating, stamps and needs are the hand rows' (`op-declarations` and `control-plane`'s stamps); its weight is the grade's ground or rung, its description the grade's
    sentence as a word key; its fields are what the arm reads (accepts) and what a refusal names when absent (requires). */
-export const OWNER_MAP_DECLARED_OPS = Object.freeze({
+export const DECLARED_OPS = Object.freeze({
   captureupload: { classes: ["admin", "member"], machineClasses: [], mutating: true, stamps: ["viewer", "by"], needs: "contribute",
     weight: "undetermined", description: localize("control-plane.declared.captureupload", "upload-directed: a member's bytes held as a capture under their digest, in her own name, with its receipt; reached from the upload, never beside a bundle"),
     fields: { accepts: ["statement", "name", "type", "step"], requires: ["statement"] } },
@@ -32,6 +32,8 @@ export const OWNER_MAP_DECLARED_OPS = Object.freeze({
     weight: "reversible", description: localize("control-plane.declared.clockpropose", "action-directed: keyed by (action, rule, proposer); a proposal stored apart, never a clock entry until a member adopts it"),
     fields: { accepts: ["target", "rule", "layer"], requires: ["target", "rule"] } },
 });
+/* the same object under the copy window's name (control-plane's and this module's tests import it) */
+export const OWNER_MAP_DECLARED_OPS = DECLARED_OPS;
 
 /* The `by` stamp is the actor in the viewer's form (`member:<id>`, the founder's `admin`, a machine `class:<cls>`); the
    owners that compare a bare member id with their roster are handed the bare id, and a machine stamp unchanged, so the
