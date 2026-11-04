@@ -287,3 +287,4 @@
 {"at":"2026-11-04T19:05:59Z","row":"outcome","n":146,"outcome":"delivered"}
 {"at":"2026-11-04T19:08:25Z","row":"sent","n":147,"to":"job-store-assembly","text":"member-roster PR 286 merged (8e8654c79a): order.mjs has 200 ids. Run job sync store-assembly; store.test R2/R100/R10 should pass. Also confirm notice workbooks:285 (workbookadd now refuses an xlsx over xlsx.declared_text as WORKBOOK_FILE_TOO_LARGE; you relay it through workbooksOps at assemble.mjs:855) with a relay test. Then job complete with --exempt-revert for notice-case-tensions-262."}
 {"at":"2026-11-04T19:08:32Z","row":"outcome","n":147,"outcome":"delivered"}
+{"at":"2026-11-04T19:11:05Z","row":"sent","n":148,"to":"job-control-plane","text":"No blanket acceptance of base reds. 272, 281 and 173 are reviewed and merging now; I will wake you when all three are in. Then job sync control-plane and rerun complete.sh; if still over tolerance, block again with the remaining reds by name."}
