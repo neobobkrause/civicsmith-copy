@@ -141,3 +141,4 @@
 {"at":"2026-11-04T12:30:52Z","row":"outcome","n":73,"outcome":"delivered"}
 {"at":"2026-11-04T12:30:55Z","row":"sent","n":74,"to":"job-case-authoring","text":"BOB: correction to bob-71: the pin moved to 8f472b4; job complete no longer takes a cost. If your job complete refuses --cost-usd, run job sync case-authoring and rerun it without that flag."}
 {"at":"2026-11-04T12:31:05Z","row":"outcome","n":74,"outcome":"delivered"}
+{"at":"2026-11-04T12:41:13Z","row":"sent","n":75,"to":"job-ratification","text":"BOB, data for your notice case-catalogue:224: store-request reports 8 tests red at tranche 2cd5fa6227 on caseratify's gate C-41.18 UNGRADED_PASSAGES_MISMATCH: the case document the real op=publish prepares lacks the ungraded_passages block case-catalogue now checks. Find which module's preparation omits it, and fix it if it is yours; if it is another module's, name the module and file:line in your receipt's --not-verified or a block, so BOB starts that work."}
