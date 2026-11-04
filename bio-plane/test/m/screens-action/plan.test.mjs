@@ -9,7 +9,7 @@ import { actionWorld, openIn, planOn, untitledQuestion } from "./world-D.mjs";
 import { open, main, text, ops, press, last, ok, button, fill, refusedIn, beside, W, D, PAGE, hasWord, DATA_PLANE, ROUTES, PLAN, PLAN_ID, PROPOSALS, ESC, DET, PROJECT,
   QUESTION, QUESTION_TITLE, PROJECT_QUESTIONS, DETERMINATIONS } from "./page.mjs";
 
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 // each row's name, without the row's own panel control the kit may draw beside it (interface-shell R27)
 const rowsOrder = (p) => main(p).querySelectorAll("table.cs-rows tbody tr.cs-r").map((tr) => {
   const td = tr.querySelectorAll("td")[1];

@@ -139,7 +139,7 @@ test("R12: the marks are paged by `after`: the next page is read from the cursor
 
 /* ---------- R16 (T49; N1093; DEC-239 (1); actions R18, R25; action-records R1): the law it goes under ---------- */
 
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 const section = (p, titleKey) => main(p).querySelectorAll("section.cs-section").find((s) => (s.querySelector("h2") || { textContent: "" }).textContent.trim() === W(titleKey));
 
 test("R16: the law chosen is drawn by level and citation with its window and who stated it, and when; a proposal is drawn apart, never as the law", async () => {
