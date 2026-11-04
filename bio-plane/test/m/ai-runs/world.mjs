@@ -152,13 +152,23 @@ export function world({ env = {}, inquiry = undefined, deployedModes = undefined
     limits: verdict === "passes_with_limits" ? ["throwaway limit"] : [], grade: "throwaway", at: T0, ...more });
   for (const part of bars) for (const e of [ENTRIES.a, ENTRIES.b]) gates.push(gate(part, e));
   runs.registerGateVerdicts("ai-gate", ({ entry_id }) => gates.filter((g) => g.entry_id === entry_id));
-  /* R97, F1: the path source (the plane's `op=aipathready`), which no module registers yet (R97/R98's server side, a known
-     gap). With none the path reads not ready (F1, fail closed), so a world stands one in answering `pathReady` (`ok`),
-     which a test changes through `w.setPath(fn)`; `pathReady: null` registers none. */
+  /* R97, F1: the path source, which no module registers yet (R97/R98's server side, a known gap). With none the path reads
+     not ready (F1, fail closed), so a world stands one in answering `pathReady` (`ok`); `pathReady: null` registers none.
+     The stand-in is replaceable: a test's own first `runs.registerPathReady(module, fn)` takes its place (answered as a
+     first registration is), and a later one is refused as the module refuses a second; `w.setPath(fn)` swaps it too. */
   let pathFn = () => ({ state: pathReady });
-  // fixtures-own: harness - the plane's op=aipathready source, which no module registers yet (R97/R98's server side)
-  if (pathReady !== null) runs.registerPathReady("plane", (a) => pathFn(a));
   const setPath = (fn) => { pathFn = fn; };
+  if (pathReady !== null) {
+    // fixtures-own: harness - the plane's path source, which no module registers yet (R97/R98's server side)
+    runs.registerPathReady("plane", (a) => pathFn(a));
+    const real = runs.registerPathReady.bind(runs);
+    let standIn = true;
+    runs.registerPathReady = (module, fn) => {
+      if (!standIn || typeof module !== "string" || !module || typeof fn !== "function") return real(module, fn);
+      standIn = false; setPath(fn);
+      return { ok: true, module };
+    };
+  }
   let k = 0;
   /* the accounts this world's acts set, by owner, as `accountSet` answered their ids */
   const held = new Map();

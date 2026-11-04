@@ -3716,43 +3716,42 @@ export class AiRuns {
     return { ok: true, module };
   }
 
+  /** R95, R97, F1: the states a path's `reason` may name, a closed set: `agent-model` R35's health states, and this
+   *  module's own `unregistered` (no source) and `unknown` (a source that fails, is silent or names anything else). */
+  static PATH_REASONS = Object.freeze(["ok", "degraded", "open", "half_open", "auth_failed", "payer_unverified", "retired",
+                                       "unknown", "unregistered"]);
+
   /** R95, R97, F1: whether the path of `account_id` and `entry_id` is ready: `{asked, ready, state, reset_at}`. With no
    *  source registered nothing stands behind the path, so it reads not ready (F1, fail closed: `asked: false`, state
-   *  `unregistered`); a source that throws or answers nothing reads `unknown`, not ready. */
+   *  `unregistered`); a source that throws, answers nothing or names a state outside `PATH_REASONS` reads `unknown`, not
+   *  ready. `reset_at` is passed out only as an instant (at most 40 characters that parse as a date). */
   async #pathReady(account_id, entry_id) {
     if (!this.#pathSource) return { asked: false, ready: false, state: "unregistered", reset_at: null };
     let said = null;
     try { said = await this.#pathSource.fn({ account_id, entry_id }); } catch { said = null; }
-    const state = said && typeof said.state === "string" ? said.state : "unknown";
-    return { asked: true, ready: AiRuns.READY_STATES.includes(state), state,
-             reset_at: said && typeof said.reset_at === "string" ? said.reset_at : null };
+    const raw = said && typeof said.state === "string" ? said.state : "unknown";
+    const state = AiRuns.PATH_REASONS.includes(raw) && raw !== "unregistered" ? raw : "unknown";
+    const r = said && typeof said.reset_at === "string" && said.reset_at.length <= 40 && Number.isFinite(Date.parse(said.reset_at))
+      ? said.reset_at : null;
+    return { asked: true, ready: AiRuns.READY_STATES.includes(state), state, reset_at: r };
   }
 
-  /** F1, R95, R97: the path's state for (account, entry), the read `op=aipathready` routes to: `{state: "ready" |
-   *  "not_ready", reason}`, `reason` the source's state (`unregistered` with no source, `unknown` when it fails or is
-   *  silent). The same fail-closed rule as the dispatch: only a registered source answering a ready state reads ready.
-   *  Never throws; writes nothing. */
-  async pathState({ account_id, entry_id } = {}) {
-    if (typeof account_id !== "string" || !account_id || typeof entry_id !== "string" || !entry_id)
-      return { state: "not_ready", reason: "unknown" };
-    const p = await this.#pathReady(account_id, entry_id);
-    return { state: p.ready ? "ready" : "not_ready", reason: p.state };
-  }
-
-  /** F1 (BOB 23:30; `op=aipathready`): the frame's read of the AI path, a declared read answer `{ok: true, state: "ready" |
-   *  "not_ready", ready, reason, reset_at}` by `pathState`'s fail-closed rule (no source, a silent source or a viewer the
-   *  door did not stamp reads not ready). Never throws; writes nothing. */
+  /** F1 (coordinator 23:20; BOB 23:30): `op=aipathready`, the one read of the AI path, which this module owns. Answers a
+   *  declared read answer `{ok: true, state: "ready" | "not_ready", ready, reason, reset_at}` by `#pathReady`'s fail-closed
+   *  rule, the same rule the dispatch reads (R97). Not ready, and the source never asked, when: the door stamped no
+   *  viewer (`reason` `no_viewer`); no pair is named (`no_pair`); or the viewer cannot see the account (`ai-accounts`'
+   *  `accountState` refuses her: `reason` null, nothing about the account answered). Never throws; writes nothing. */
   async pathReadyRead({ viewer, account_id, entry_id } = {}) {
-    if (typeof viewer !== "string" || !viewer) return { ok: true, state: "not_ready", ready: false, reason: "no_viewer", reset_at: null };
+    const closed = (reason) => ({ ok: true, state: "not_ready", ready: false, reason, reset_at: null });
+    if (typeof viewer !== "string" || !viewer) return closed("no_viewer");
+    if (typeof account_id !== "string" || !account_id || typeof entry_id !== "string" || !entry_id) return closed("no_pair");
+    let seen = null;
+    try { seen = this.#aiAccounts().accountState({ account_id, viewer }); } catch { seen = null; }
+    if (!seen || seen.ok !== true) return closed(null);
     let p = null;
-    if (typeof account_id === "string" && account_id && typeof entry_id === "string" && entry_id) {
-      try { p = await this.#pathReady(account_id, entry_id); } catch { p = null; }
-    } else if (this.#pathSource) {
-      /* no pair named: the source is asked for the path as a whole (the frame's question) */
-      try { p = await this.#pathReady(account_id || "", entry_id || ""); } catch { p = null; }
-    } else p = { ready: false, state: "unregistered", reset_at: null };
-    if (!p) return { ok: true, state: "not_ready", ready: false, reason: "unknown", reset_at: null };
-    return { ok: true, state: p.ready ? "ready" : "not_ready", ready: !!p.ready, reason: p.state, reset_at: p.reset_at || null };
+    try { p = await this.#pathReady(account_id, entry_id); } catch { p = null; }
+    if (!p) return closed("unknown");
+    return { ok: true, state: p.ready ? "ready" : "not_ready", ready: !!p.ready, reason: p.state, reset_at: p.reset_at };
   }
 
   /** R91: a run's segments, oldest first; `[]` when none. */
