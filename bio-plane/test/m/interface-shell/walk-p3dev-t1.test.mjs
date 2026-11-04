@@ -117,8 +117,10 @@ async function coverings(page) {
     if (!hit) { out.push(name + " opens no explanation"); continue; }
     const bad = [];
     if (hit.place === "level" || !hit.spans) bad.push("is beside it (" + hit.place + (hit.spans ? "" : ", clear of its width") + ")");
-    /* where no place below or above spans it and covers nothing (the rail's places stand closer than an explanation is tall), R103's first
-       choice stands though it covers; in the screen's own column there is room, and nothing is covered */
+    /* F3: never over what it explains. F4 (unmet): where no place below or above spans it and covers nothing (the rail's places stand closer
+       than an explanation is tall), R103's first choice stands though it covers the next control; in the screen's own column there is room,
+       and nothing is covered */
+    if (hit.over.includes("itself")) bad.push("covers what it explains");
     if (hit.over.length && (!hit.first || hit.main)) bad.push("covers " + hit.over.join(", ") + (hit.first ? "" : ", away from R103's first place"));
     if (hit.outside) bad.push("runs outside the page");
     if (bad.length) out.push(name + ": " + bad.join("; "));
