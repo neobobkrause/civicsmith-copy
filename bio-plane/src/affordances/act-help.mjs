@@ -220,6 +220,8 @@ export const ACT_HELP_OPS = Object.freeze([
   "importflag", "importwatch", "docketfile", "docketpost", "inboxpull", "inboxresolve", "sourcelink", "knock",
   "secondlookclear", "reauth", "aliaswithdraw", "factconfirm", "projectrequest", "projectrequestwithdraw", "projectrequestanswer",
   "holdnoticeprepare", "counselpacket", "noticeprepare", "noticepost", "signeradd", "versionnotice", "actionholdrelease",
+  /* T53 (R48, R62): the design's reads list now gives this module these three `does` words */
+  "counselpacketexport", "counselpacketread", "linecurrentthrough",
   ...T51_DESIGN_OPS,
   ...T51_OWED_OPS,
   ...T51_STANDARD_OPS,
