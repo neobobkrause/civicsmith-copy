@@ -1,0 +1,9 @@
+{
+ "note": "R35 (T53): the v7 golden's case file (complete-v7-golden.json), its case document's format line made /8, then /9, nothing else changed, and the complete edition case-grammar rendered from each BEFORE R35 added /10, from the code at tranche 66c283828a. Each must re-render to its SHA-256 for ever. Never regenerate.",
+ "v8": {
+  "sha256": "ffe2d75471d9018f6f5133e45a4a404418df97d4f916a442e2cb65533cbe81ac"
+ },
+ "v9": {
+  "sha256": "c0816eaaf3fe80226aea41d183fb2fa013ef082dbf92c3f7e80421652eff0dfe"
+ }
+}
