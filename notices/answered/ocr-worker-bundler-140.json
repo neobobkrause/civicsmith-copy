@@ -1,0 +1,1 @@
+{"row":"answered","user":"ocr-worker","by":"triage","evidence":"ocr-worker/scripts/build.mjs:24 imports only discoverMembers, writeMember from fleet-bundle.mjs (test :51 verifyStatic); no deriveBindings use","at":"2026-11-04T07:02:04.938Z","key":"bundler:140","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

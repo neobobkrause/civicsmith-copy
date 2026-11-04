@@ -1,0 +1,1 @@
+{"row":"triage","user":"reader-container","verdict":"not affected","evidence":"reader-container/scripts/build.mjs:8 imports only discoverMembers, writeMember (test member.test.mjs:8 jsonc.mjs); no deriveBindings use","at":"2026-11-04T07:02:04.938Z","key":"bundler:140","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

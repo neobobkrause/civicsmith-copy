@@ -1,0 +1,1 @@
+{"row":"answered","user":"pdf-worker","by":"triage","evidence":"pdf-worker/scripts/build.mjs:30 imports only discoverMembers, writeMember (test subject.mjs:8 buildMember); no deriveBindings use","at":"2026-11-04T07:02:04.938Z","key":"bundler:140","worker":"triage-a8ac876e3c208abec","cost":"0.05"}
