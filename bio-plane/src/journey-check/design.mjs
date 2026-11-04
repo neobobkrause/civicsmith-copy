@@ -45,23 +45,26 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /* The developer words in `text`: `[{what, word}]`, each word once. A hyphenated lowercase word is a slug when it holds a
    letter and a digit, or three or more parts; English compounds of two parts ("sign-in"), those of `COMPOUNDS` and dates
-   are words. */
-export function developerWords(text, { slugs = [] } = {}) {
+   are words. F2: `handles` are the handles the store returned as content (a member's own, the roster's; walker.mjs
+   `handlesIn`): a person's handle may hold digits and hyphens, and drawn it is her name, not a slug. The instance's own
+   `slugs` are still caught when one is also given as a handle. */
+export function developerWords(text, { slugs = [], handles = [] } = {}) {
+  const content = new Set([...handles].filter((h) => typeof h === "string" && h && !slugs.includes(h)));
   const t = String(text);
   const found = new Map();
   const add = (what, word) => { if (!found.has(word)) found.set(word, { what, word }); };
   /* a word inside an address (a host, a path, an e-mail) is the address, shown as one */
   const inAddress = (m) => /[\w-][./@:]$|[/@]$/.test(t.slice(Math.max(0, m.index - 2), m.index)) || /^[./@:][\w-]/.test(t.slice(m.index + m[0].length, m.index + m[0].length + 2));
-  for (const [what, re] of WORDS) for (const m of t.matchAll(re)) if (!inAddress(m)) add(what, m[0]);
+  for (const [what, re] of WORDS) for (const m of t.matchAll(re)) if (!inAddress(m) && !(what === "a slug" && content.has(m[0]))) add(what, m[0]);
   const within = (m) => [...found.values()].some((f) => f.word.includes(m[0]));
   for (const m of t.matchAll(SLUG))
-    if (/[a-z]/.test(m[0]) && (/\d/.test(m[0]) || (m[0].split("-").length >= 3 && !COMPOUNDS.includes(m[0]))) && !inAddress(m) && !within(m)) add("a slug", m[0]);
+    if (/[a-z]/.test(m[0]) && (/\d/.test(m[0]) || (m[0].split("-").length >= 3 && !COMPOUNDS.includes(m[0]))) && !inAddress(m) && !within(m) && !content.has(m[0])) add("a slug", m[0]);
   for (const s of slugs.filter(Boolean)) for (const m of t.matchAll(new RegExp(`(?<![\\w-])${esc(s)}(?![\\w-])`, "g"))) if (!inAddress(m)) add("a slug", m[0]);
   return [...found.values()];
 }
 
 /* The limits page `page` breaks, measured as it stands at viewport width `width`: `[{kind, detail}]`. */
-export async function pageLimits(page, { width, slugs = [] }) {
+export async function pageLimits(page, { width, slugs = [], handles = [] }) {
   const m = await page.evaluate((phone) => {
     const vw = window.innerWidth, vh = window.innerHeight;
     const wide = Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0);
@@ -99,7 +102,7 @@ export async function pageLimits(page, { width, slugs = [] }) {
   }
   if (m.bandW && m.bandW.band < m.bandW.frame - 1) out.push({ kind: LIMIT.BAND, detail: `the test band is ${m.bandW.band}px wide in a ${m.bandW.frame}px frame` });
   for (const [c, tag] of m.undefinedClasses) out.push({ kind: LIMIT.CLASS, detail: `${tag}.${c}: no loaded stylesheet defines the class` });
-  for (const w of developerWords(m.text, { slugs })) out.push({ kind: LIMIT.WORDS, detail: `the page shows ${w.what}: ${w.word}` });
+  for (const w of developerWords(m.text, { slugs, handles })) out.push({ kind: LIMIT.WORDS, detail: `the page shows ${w.what}: ${w.word}` });
   return out;
 }
 

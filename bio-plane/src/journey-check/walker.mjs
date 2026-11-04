@@ -82,6 +82,25 @@ export function refusalsIn(body) {
   return out;
 }
 
+/* F2: the handles an answer of the store holds as content, at any depth: each string under a `handle` key, and each string of a
+   `handles` list. A handle the page then draws is a person's name, not a developer's slug (design.mjs `developerWords`). */
+export function handlesIn(body) {
+  const out = new Set();
+  const seen = new Set();
+  const visit = (v, depth) => {
+    if (!v || typeof v !== "object" || depth > 64 || seen.has(v)) return;
+    seen.add(v);
+    if (Array.isArray(v)) { for (const x of v) visit(x, depth + 1); return; }
+    for (const [k, x] of Object.entries(v)) {
+      if (k === "handle" && typeof x === "string" && x) out.add(x);
+      else if (k === "handles" && Array.isArray(x)) for (const h of x) if (typeof h === "string" && h) out.add(h);
+      visit(x, depth + 1);
+    }
+  };
+  visit(body, 0);
+  return [...out];
+}
+
 export class Walk {
   /* `out` the output directory; `arm` "local" or "live"; `copyHost` the instance's host (set once known); `ownHosts` the
      other hosts the walk itself serves (the installer, the consent page); `secrets` values never to be written. */
@@ -91,6 +110,8 @@ export class Walk {
     this.journey = "walk";
     /* R5: the latest member session `whoami` answered the browser, as the plane said it (`administer` and the rest) */
     this.whoami = null;
+    /* F2: the handles the copy's own answers held as content (`handlesIn`), so a drawn handle is not read as a slug */
+    this.handles = new Set();
     /* R6: the LIVE and DESIGN pairs written, relative to `out`, put to BOB before a release is called ready */
     this.pairs = [];
     /* what the walk could not walk here and says so, never a failure (R7 with no handle, K3380) */
@@ -143,6 +164,7 @@ export class Walk {
       const text = await res.text().catch(() => "");
       body = text.split("\n").filter((l) => l.trim()).map((l) => { try { return JSON.parse(l); } catch { return { unreadable_line: l.slice(0, 200) }; } });
     } else if (/json/.test(type)) { try { body = JSON.parse(await res.text()); } catch { body = null; } }
+    if (url.host === this.copyHost && body) for (const h of handlesIn(body)) this.handles.add(h);
     if (url.searchParams.get("op") === "whoami" && body && body.ok === true && body.result && body.result.session) this.whoami = body.result;
     /* R8: every refusal the answer carries, at any depth, whatever its status. One the step expects is excused by its
        code wherever it sits, and excuses the answer's status; each other is one failure, naming where it sits. */
