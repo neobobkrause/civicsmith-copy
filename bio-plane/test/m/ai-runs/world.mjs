@@ -15,6 +15,9 @@ import { observationLogOf } from "../../../src/observation-log/index.mjs";
 import { connectionsOf } from "../../../src/connections/index.mjs";
 import { retrievalOf } from "../../../src/retrieval/index.mjs";
 import { aiRunsOf, aiRunsOps } from "../../../src/ai-runs/index.mjs";
+import { catalogueFor, baseDoc, PLANS, ENTRIES, HOSTS } from "../ai-accounts/catalogue.mjs";
+import { gatePartOf } from "../../../src/run-rules/index.mjs";
+export { PLANS, ENTRIES, HOSTS };
 
 export const sha = (s) => createHash("sha256").update(Buffer.from(String(s), "utf8")).digest("hex");
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
@@ -110,7 +113,10 @@ export function world({ env = {}, inquiry = undefined, deployedModes = undefined
   const record = recordOf(ctx); record.migrate();
   const membership = membershipOf(ctx, { record }); membership.migrate();
   /* credentials (K789): the founder's claim, members' passwords and the AI credentials R18 reads are its (its R1–R15). */
-  const credentials = credentialsOf(ctx, { record, membership, sealSecret: SEAL }); credentials.migrate();
+  /* (T53) ai-catalogue as ITS published fixture gives it (K4990): every account `ai-accounts` holds is of one of the
+     catalogue's plans, and the entry an act is served on is one of its entries. */
+  const catalogue = catalogueFor(ctx, { record });
+  const credentials = credentialsOf(ctx, { record, membership, sealSecret: SEAL, catalogue }); credentials.migrate();
   /* ai-accounts (T48; N996 §5): the accounts an act is served by, their switches and keep-away, which ai-runs reads (its
      R18, R52, R79); made by credentials' factory with the seal secret (ai-accounts R32), the one instance on this storage.
      The world sets accounts up through its own acts, never credentials' transitional delegates (credentials R72). */
@@ -135,12 +141,23 @@ export function world({ env = {}, inquiry = undefined, deployedModes = undefined
   const runs = aiRunsOf(ctx, env, { inquiry, ...(deployedModes ? { deployedModes } : {}), ...(steps ? { steps } : {}),
                                     ...(aiUse ? { aiUse } : {}), testSet });
   runs.migrate();
-  for (const part of bars)
-    runs.testBarRecord({ part, set: testSet.id, set_version: testSet.version, false_alarm_rate: 0, passed: true,
-                         graded_by: "harness", at: T0 });
+  /* R78 (T53; BOB's ruling on Gate 1): THROWAWAY GATE 1 RECORDS, in `ai-gate` R37's shape, read through this module's one
+     seam (`registerGateVerdicts`) as `ai-gate` will register its own. `ai-gate`'s code does not exist yet, so no fixture of
+     its own can make them; these stand in for it here alone, and a test that changes them changes `w.gates`. Each part of
+     `bars` passes on both of the catalogue's Anthropic entries. */
+  const gates = [];
+  // fixtures-own: harness - throwaway Gate 1 records standing in for ai-gate, which has no code yet (BOB's ruling on Gate 1)
+  const gate = (part, entry_id, verdict = "passes", more = {}) => ({ part: gatePartOf(part) ?? part, entry_id,
+    suiteVersions: { bank: 1, scorer: 1, thresholds: 1, image: 1 }, verdict,
+    limits: verdict === "passes_with_limits" ? ["throwaway limit"] : [], grade: "throwaway", at: T0, ...more });
+  for (const part of bars) for (const e of [ENTRIES.a, ENTRIES.b]) gates.push(gate(part, e));
+  runs.registerGateVerdicts("ai-gate", ({ entry_id }) => gates.filter((g) => g.entry_id === entry_id));
   let k = 0;
+  /* the accounts this world's acts set, by owner, as `accountSet` answered their ids */
+  const held = new Map();
+  const hold = (owner, id) => held.set(owner, [...(held.get(owner) || []), id]);
   const w = {
-    db, sql, ctx, record, membership, credentials, aiAccounts, promotion, bias, runs,
+    db, sql, ctx, record, membership, credentials, aiAccounts, promotion, bias, runs, catalogue, gates, gate,
     row: (q, ...a) => [...sql.exec(q, ...a)][0] ?? null, rows: (q, ...a) => [...sql.exec(q, ...a)],
     count: (t) => [...sql.exec(`SELECT count(*) AS n FROM ${t}`)][0].n,
     /** Every row of this module's tables and of the observation log, for "nothing was written". */
@@ -159,6 +176,7 @@ export function world({ env = {}, inquiry = undefined, deployedModes = undefined
        connecting their own account by their own act (ai-accounts R1), unless listed in `noAccount`. */
     async group(...members) {
       const opts = members.length && typeof members[members.length - 1] === "object" ? members.pop() : {};
+      await catalogue.seeded;
       await credentials.claim({ password: "founder-passphrase-1", tokenFp: "fp-1" });
       for (const [id, role] of [["second", "admin"], ...members.map((m) => [m, "member"])]) {
         const a = await membership.memberAdd({ memberId: id, cover: `cover of ${id}`, role, capabilities: null, by: "admin" });
@@ -168,19 +186,85 @@ export function world({ env = {}, inquiry = undefined, deployedModes = undefined
       }
       return w;
     },
-    /** A member connects their own account (ai-accounts R1): an API key unless `kind` says otherwise. */
-    async account(id, kind = "apikey", secret = `secret-of-${id}`) {
-      const r = await aiAccounts.accountReferenceSet({ member: `member:${id}`, kind, secret, by: `member:${id}` });
+    /** A member connects their own account (ai-accounts R1, T53): an account of the catalogue's API plan for members, its
+     *  key sealed, switched on, and its recipient's notice read, all by her own acts. `kind` `apikey` is that account;
+     *  any other kind is the same account with its key named so (the kinds of the old reference are gone, T53). */
+    async account(id, kind = "apikey", secret = `secret-of-${id}-0123456789`, { entries = undefined } = {}) {
+      const r = await aiAccounts.accountSet({ owner: `member:${id}`, provider: PLANS.provider, plan: PLANS.memberApi,
+        means: "sealed", secret: String(secret).padEnd(20, "x"), entries, by: id });
       if (!r.ok) throw new Error(`account ${id}: ${JSON.stringify(r)}`);
+      hold(`member:${id}`, r.account_id);
+      const on = aiAccounts.accountSwitch({ account_id: r.account_id, on: true, by: id });
+      if (!on.ok) throw new Error(`account ${id} on: ${JSON.stringify(on)}`);
+      aiAccounts.recipientNoticeSeen({ member: id, provider: PLANS.provider, host: HOSTS.main, by: id });
       return r;
     },
-    /** (ai-accounts R18, R19; T47) A member's own sign-in, connected and its token held (sealed, `subscriptionTokenHold`). */
+    /** (ai-accounts R48, T53) A member's personal subscription (the plan `subscription`, means `issued`), its token held,
+     *  switched on, its recipient's notice read: hers alone. */
     async signin(id, token = SIGNIN_TOKEN(id)) {
-      const c = aiAccounts.subscriptionConnected({ member: `member:${id}` });
-      if (!c.ok) throw new Error(`signin ${id}: ${JSON.stringify(c)}`);
-      const h = await aiAccounts.subscriptionTokenHold({ member: `member:${id}`, token });
-      if (!h.ok) throw new Error(`signin hold ${id}: ${JSON.stringify(h)}`);
+      const r = await aiAccounts.accountSet({ owner: `member:${id}`, provider: PLANS.provider, plan: PLANS.subscription,
+        means: "issued", secret: token, by: id });
+      if (!r.ok) throw new Error(`signin ${id}: ${JSON.stringify(r)}`);
+      hold(`member:${id}`, r.account_id);
+      const on = aiAccounts.accountSwitch({ account_id: r.account_id, on: true, by: id });
+      if (!on.ok) throw new Error(`signin ${id} on: ${JSON.stringify(on)}`);
+      aiAccounts.recipientNoticeSeen({ member: id, provider: PLANS.provider, host: HOSTS.main, by: id });
       return token;
+    },
+    /** (ai-accounts R7, T53) The team's account of the catalogue's team API plan, its key sealed, switched on by an
+     *  administrator; each member named has read its recipient's notice. Answers its `account_id`. */
+    async team({ on = true, members = [], entries = undefined } = {}) {
+      const r = await aiAccounts.accountSet({ owner: "group", provider: PLANS.provider, plan: PLANS.teamApi, means: "sealed",
+        secret: "team-key-secret-0123456789", entries, by: "admin" });
+      if (!r.ok) throw new Error(`team: ${JSON.stringify(r)}`);
+      hold("group", r.account_id);
+      if (on && !aiAccounts.accountSwitch({ account_id: r.account_id, on: true, by: "admin" }).ok) throw new Error("team on");
+      for (const m of members) aiAccounts.recipientNoticeSeen({ member: m, provider: PLANS.provider, host: HOSTS.main, by: m });
+      return r.account_id;
+    },
+    /** (ai-accounts R10, R41, T53) A project's own account of the team API plan, its key sealed, switched on by `owner`
+     *  (one of the project's owners); each member named has read its recipient's notice. Answers its `account_id`. */
+    async projectAccount(project, owner, { members = [] } = {}) {
+      const r = await aiAccounts.accountSet({ owner: `project:${project}`, provider: PLANS.provider, plan: PLANS.teamApi,
+        means: "sealed", secret: `project-key-secret-of-${project}`, by: owner });
+      if (!r.ok) throw new Error(`projectAccount ${project}: ${JSON.stringify(r)}`);
+      hold(`project:${project}`, r.account_id);
+      if (!aiAccounts.accountSwitch({ account_id: r.account_id, on: true, by: owner }).ok) throw new Error("project account on");
+      for (const m of members) aiAccounts.recipientNoticeSeen({ member: m, provider: PLANS.provider, host: HOSTS.main, by: m });
+      return r.account_id;
+    },
+    /** (ai-accounts R7, T53) What `accountFor` really answers for `member`'s act of `kind` (in `project`), as a dispatch
+     *  carries it: every secret part (`secret`, `reference`, `gateway_id`) and `ok` left out, `member` spelled `member:<id>`.
+     *  The provider's own answer, never one built here. */
+    async served(member, { kind = "run", project = null } = {}) {
+      const a = await aiAccounts.accountFor({ member: `member:${member}`, act: { kind, member: `member:${member}`, ...(project ? { project } : {}) } });
+      if (!a || a.ok !== true) throw new Error(`served ${member}: ${JSON.stringify(a)}`);
+      const { ok: _ok, secret: _s, reference: _r, gateway_id: _g, ...rest } = a;
+      return { ...rest, member: `member:${member}` };
+    },
+    /** The account ids `owner` holds, in list order (ai-accounts' own read). */
+    accountsOf(owner) { return [...(held.get(owner) || [])]; },
+    /** One switch of every account `owner` holds, by `by` (ai-accounts R14's act). */
+    uses(owner, name, on, by) {
+      for (const account_id of w.accountsOf(owner)) {
+        const r = aiAccounts.accountUsesSet({ account_id, switch: name, on, by });
+        if (!r.ok) throw new Error(`uses ${owner}: ${JSON.stringify(r)}`);
+      }
+    },
+    /** Every account `owner` holds switched on or off, by `by`. */
+    switchAll(owner, on, by) {
+      for (const account_id of w.accountsOf(owner)) {
+        const r = aiAccounts.accountSwitch({ account_id, on, by });
+        if (!r.ok) throw new Error(`switch ${owner}: ${JSON.stringify(r)}`);
+      }
+    },
+    /** Every account `owner` holds removed, by `by`. */
+    async removeAll(owner, by) {
+      for (const account_id of w.accountsOf(owner)) {
+        const r = await aiAccounts.accountRemove({ account_id, by });
+        if (!r.ok) throw new Error(`remove ${owner}: ${JSON.stringify(r)}`);
+      }
+      held.delete(owner);
     },
     /** A project owned by `owner`, with `joined` members joined and `invited` ones only invited. */
     project(id, owner, { joined = [], invited = [], discoverable = false } = {}) {
@@ -244,11 +328,25 @@ export function world({ env = {}, inquiry = undefined, deployedModes = undefined
 /** An open's arguments, well formed unless overridden: an organisation credential's run over `INQ`, started by ann's
  *  act and carried by her account (R52). */
 export const OPEN = (over = {}) => ({ run: "R1", contextType: "inquiry", contextId: INQ, principalPlane: ORG,
-  principalClaude: ANN, skillVersion: "bio@1", viewer: "admin", at: T0, ...over });
+  principalAi: ANN, skillVersion: "bio@1", viewer: "admin", at: T0, ...over });
 
 /** One model call's figures, as `agent-model` R5 states them. */
 export const USAGE = (over = {}) => ({ input_tokens: 1000, output_tokens: 200, cache_read_input_tokens: 0,
   cache_creation_input_tokens: 0, total_cost_usd: 0.012, ...over });
+
+/** (T53; R72, R104) A conversation's label as `agent-model` composes it (its R26: the served identity, the effort, the
+ *  account's level and owner) with the AI's display name, each identity field read from the catalogue fixture's own
+ *  payload for `entry_id` (ai-catalogue's published data); `agent-model` has no published fixture of a label yet.
+ *  // fixtures-own: harness - agent-model's label has no published fixture until its T53 job lands */
+const CATALOGUED = new Map(baseDoc().entries.map((e) => [e.entry_id, e]));
+export const LABEL = (entry_id = ENTRIES.a, over = {}) => {
+  const e = CATALOGUED.get(entry_id) || {};
+  return { display_name: e.display_name ?? null, provider: e.provider ?? null, host: e.host ?? null,
+           model_version: e.model ?? null, effort: null, account_level: "member", owner: "member:ann", ...over };
+};
+/** (T53; R72) One `usage` entry of a tick as `agent-worker` passes it (its R112): `{mode, entry_id, label, usage, calls}`. */
+export const ENTRY = (mode = "check", over = {}, calls = 1, { entry_id = ENTRIES.a, label = {} } = {}) =>
+  ({ mode, entry_id, label: LABEL(entry_id, label), usage: USAGE(over), calls });
 
 /** An `agent-worker` binding that counts its calls and answers as told. */
 export function agentWorker(answer = { status: 200, body: { ok: true } }) {

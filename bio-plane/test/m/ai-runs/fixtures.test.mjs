@@ -28,7 +28,7 @@ test("R52 R78: airunOpenRefusal gives each open refusal by its code — the mode
   const none = await airunOpenRefusal("AI_NO_ACCOUNT");
   assert.deepEqual([none.started, none.code, none.check], [false, "AI_NO_ACCOUNT", "C-109.10"]);
   const limit = await airunOpenRefusal("AI_LIMIT_REACHED");
-  assert.deepEqual([limit.ok, limit.code, limit.check], [false, "AI_LIMIT_REACHED", "C-143.1"]);
+  assert.deepEqual([limit.started, limit.code, limit.check], [false, "AI_LIMIT_REACHED", "C-143.1"]);
   for (const k of ["whose", "period", "use"]) assert.equal(typeof limit[k], "string", k);
   await assert.rejects(() => airunOpenRefusal("AI_RUN_NO_SUCH_THING"), /no open refusal/);
 });
