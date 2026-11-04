@@ -3739,6 +3739,22 @@ export class AiRuns {
     return { state: p.ready ? "ready" : "not_ready", reason: p.state };
   }
 
+  /** F1 (BOB 23:30; `op=aipathready`): the frame's read of the AI path, a declared read answer `{ok: true, state: "ready" |
+   *  "not_ready", ready, reason, reset_at}` by `pathState`'s fail-closed rule (no source, a silent source or a viewer the
+   *  door did not stamp reads not ready). Never throws; writes nothing. */
+  async pathReadyRead({ viewer, account_id, entry_id } = {}) {
+    if (typeof viewer !== "string" || !viewer) return { ok: true, state: "not_ready", ready: false, reason: "no_viewer", reset_at: null };
+    let p = null;
+    if (typeof account_id === "string" && account_id && typeof entry_id === "string" && entry_id) {
+      try { p = await this.#pathReady(account_id, entry_id); } catch { p = null; }
+    } else if (this.#pathSource) {
+      /* no pair named: the source is asked for the path as a whole (the frame's question) */
+      try { p = await this.#pathReady(account_id || "", entry_id || ""); } catch { p = null; }
+    } else p = { ready: false, state: "unregistered", reset_at: null };
+    if (!p) return { ok: true, state: "not_ready", ready: false, reason: "unknown", reset_at: null };
+    return { ok: true, state: p.ready ? "ready" : "not_ready", ready: !!p.ready, reason: p.state, reset_at: p.reset_at || null };
+  }
+
   /** R91: a run's segments, oldest first; `[]` when none. */
   #segmentRows(run) {
     return this.#rows(`SELECT * FROM ai_run_segments WHERE run = ? ORDER BY n`, String(run));
@@ -4411,6 +4427,8 @@ export function aiRunsOps(runs, url, body) {
     aisendrefuse: () => runs.aiSendRefuse({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
     aiwaitswitch: () => runs.waitThenSwitch({ run: (body || {}).run ?? q("run"), wait: (body || {}).wait ?? q("wait"), by: memberStamp() }),
     airunparts: () => runs.runParts({ run: (body || {}).run ?? q("run"), viewer: q("viewer") }),
+    /* F1 (BOB 23:30): the frame's read of the AI path, fail closed; the viewer the door's stamp, never the body's */
+    aipathready: () => runs.pathReadyRead({ viewer: q("viewer"), account_id: q("account_id"), entry_id: q("entry_id") }),
   };
 }
 
@@ -4438,6 +4456,8 @@ export const DECLARED_OPS = Object.freeze({
     fields: { accepts: ["run"], requires: ["run"] } },
   airunparts: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-runs.declared.airunparts", "read: how a run went, part by part, each with its AI, its account's level and its instants; writes nothing (R103)"),
     fields: { accepts: ["run"], requires: ["run"] } },
+  aipathready: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-runs.declared.aipathready", "read: whether the AI path is ready for an account and entry; with nothing to ask it reads not ready; writes nothing (F1, R97)"),
+    fields: { accepts: ["account_id","entry_id"], requires: [] } },
   aiwaitswitch: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aiwaitswitch", "the run's member waits a set time, then switches to her next account if her AI is still down (R105)"),
     fields: { accepts: ["run","wait"], requires: ["run","wait"] } },
 });
