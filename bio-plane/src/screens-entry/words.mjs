@@ -88,8 +88,10 @@ export const READS = Object.freeze({
     "file-safety.index.no_signatures", "file-safety.index.no_signatures_since", "file-safety.index.signatures_refused",
     "file-safety.index.signatures_failed", "file-safety.index.signatures_not_fetched",
     ...labels("setup", ["recoverycodesissue", "groupnameset", "groupdomainset", "profilesset", "placewanted", "officesseed", "entitycreate",
-      "aikeepaway", "groupkeyset", "ailimitset", "courtnoticeset", "hostingaccessset"]),
-    ...["claim", "groupkeyswitch", "memberadd", "securitytooladd"].map((op) => `act.${op}.does`)]),
+      "aikeepaway", "ailimitset", "courtnoticeset", "hostingaccessset"]),
+    /* T53: the team's key is sent as `aiaccountadd` (ai-accounts R5, R40), its button still labelled by the setup's own word */
+    "act.groupkeyset.label.setup",
+    ...["claim", "memberadd", "securitytooladd"].map((op) => `act.${op}.does`)]),
   join: Object.freeze([...STATES, "screen.join.name", "screen.join.purpose",
     ...["invited", "invited.as", "link", "link.what", "cover", "cover.help", "cover.empty", "dead", "dead.what", "language",
       "language.help", "handle", "handle.help", "handle.taken", "handle.empty", "codes.after", "joined", "joined.nosignin", "home",
