@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-ai","by":"triage","evidence":"build/modules.json:185 gives empty paths and tests, and no file imports interface-shell","at":"2026-11-04T14:45:48.231Z","key":"interface-shell:172","worker":"a54e32c6d0227407e","cost":"0.89"}

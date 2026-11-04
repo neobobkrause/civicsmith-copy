@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-plan","verdict":"not affected","evidence":"build/modules.json:193 gives it no paths, so no code uses R20 or Routes","at":"2026-11-04T14:45:48.231Z","key":"interface-shell:172","worker":"a08ec83f0b6e80af2","cost":"0.83"}
