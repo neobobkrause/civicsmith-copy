@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-document","verdict":"not affected","evidence":"build/layers.md:103 names the module and the modules file gives it no paths, so no file imports ai-runs; the aipathready read is used by bio-plane/src/interface-shell/browser.mjs:2761, not here","at":"2026-11-04T23:57:23.593Z","key":"ai-runs:323","worker":"read-only-explore-x5","cost":"1.20"}

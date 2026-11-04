@@ -1,0 +1,1 @@
+{"row":"answered","user":"plan-work","by":"triage","evidence":"bio-plane/src/plan-work/index.mjs:890 its only use of ai-runs is ai.open({mode: \"plan\", origin: \"reexamination\"}) in #openRun, which opens and does not dispatch; no path source, pathReadyRead or aipathready","at":"2026-11-04T23:57:23.593Z","key":"ai-runs:323","worker":"read-only-explore-x5","cost":"1.20"}

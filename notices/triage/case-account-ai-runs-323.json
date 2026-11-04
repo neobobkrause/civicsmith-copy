@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-account","verdict":"not affected","evidence":"bio-plane/src/case-account/index.mjs:715 is its only use of ai-runs, this.runs.runFor(r, viewer), not the path check, registerPathReady, an op or the fixture","at":"2026-11-04T23:57:23.593Z","key":"ai-runs:323","worker":"read-only-explore-x5","cost":"1.20"}

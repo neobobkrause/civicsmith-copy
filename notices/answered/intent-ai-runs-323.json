@@ -1,0 +1,1 @@
+{"row":"answered","user":"intent","by":"triage","evidence":"bio-plane/src/intent/index.mjs:1523 its only use of ai-runs is aiRuns.open(...) for R18, which opens a run and does not dispatch it; it never calls #pathReady, registerPathReady, pathReadyRead or aipathready","at":"2026-11-04T23:57:23.593Z","key":"ai-runs:323","worker":"read-only-explore-x5","cost":"1.20"}

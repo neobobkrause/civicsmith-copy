@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-specs-late","by":"triage","evidence":"build/modules.json:171 gives op-specs-late \"paths\": [], so it has no code that reaches dispatch, the tick, registerPathReady or DECLARED_OPS","at":"2026-11-04T23:57:23.593Z","key":"ai-runs:323","worker":"read-only-explore-x5","cost":"1.20"}
