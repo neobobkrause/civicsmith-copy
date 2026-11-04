@@ -249,3 +249,4 @@
 {"at":"2026-11-04T18:05:42Z","row":"outcome","n":127,"outcome":"delivered"}
 {"at":"2026-11-04T18:05:50Z","row":"sent","n":128,"to":"job-case-import","text":"bob-128: revert pin a607cb6 landed; job sync case-import once for a fresh gate (screens-daily also reruns job complete without Chromium)."}
 {"at":"2026-11-04T18:05:55Z","row":"outcome","n":128,"outcome":"delivered"}
+{"at":"2026-11-04T18:06:03Z","row":"sent","n":129,"to":"job-public-read","text":"bob-129: revert pin a607cb6 landed; job sync public-read once for a fresh gate (screens-daily also reruns job complete without Chromium)."}
