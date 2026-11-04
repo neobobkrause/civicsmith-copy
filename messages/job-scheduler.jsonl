@@ -8,3 +8,4 @@
 {"at":"2026-11-04T09:01:51Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-04T10:20:50Z","row":"sent","n":5,"to":"bob","text":"job scheduler complete, PR #180 ready: run status"}
 {"at":"2026-11-04T10:21:19Z","row":"outcome","n":5,"outcome":"delivered"}
+{"at":"2026-11-04T11:51:35Z","row":"sent","n":6,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job scheduler BLOCKED: run status"}
