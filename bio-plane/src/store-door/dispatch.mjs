@@ -491,7 +491,12 @@ export function controlPlaneRoutes(ctx, url, body, grant = null) {
        refuses any other (its R1). */
     askusage: async () => {
       const member = q("viewer"), mode = b.mode ?? "ask";
+      /* Provider notice ai-use:105 (ai-use R1, T53): the call's catalogue entry and label (`agent-model` R26's; `model`
+         and `effort` the label's fallbacks) are the body's, handed on as sent so ai-use counts the entry's use and judges
+         the label; the instant is ai-use's own clock, never a caller's. */
       return aiUseOf(ctx).countAskUsage({ member, mode, usage: b.usage ?? null, calls: b.calls ?? null,
+                                          entry_id: b.entry_id ?? null, label: b.label ?? null,
+                                          model: b.model ?? null, effort: b.effort ?? null,
                                           owner: await usageOwner(ctx, member, mode) });
     },
     askcheck: () => answersOf(ctx).check({ answer: b.answer ?? null, grant, viewer: q("viewer"), mode: "ask" }),

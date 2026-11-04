@@ -149,7 +149,17 @@ test("R2 R8 R19 (G50 control, R-OLD): the verdicts recorded at the G50 base over
     const parts = golden[g].parts_b64.map((b) => new Uint8Array(Buffer.from(b, "base64")));
     assert.equal(golden[g].format, "bio-case-file/3", g);
     const now = await CC.checkCaseFile({ parts });
-    assert.equal(canonicalJson(now), canonicalJson(golden[g].verdict), g);
+    /* The checker's own versions are not the verdict: they move with every catalogue or grading-method change (R4's rule
+       17; notices strength:176 and case-catalogue:224 moved them past the G50 base), so the answer is compared with the
+       recorded verdict under today's versions, and the versions are asserted on their own. */
+    assert.deepEqual(now.checker, { ...CC.CHECKER_VERSIONS, grading_versions: [...CC.CHECKER_VERSIONS.grading_versions], calc_versions: [...CC.CHECKER_VERSIONS.calc_versions] }, g);
+    const stated = golden[g].verdict.publication_checks.stated_version;
+    assert.equal(now.publication_checks.stated_version, stated, g);
+    assert.equal(now.publication_checks.statement === null, stated === now.publication_checks.checker_version, g);
+    const recorded = { ...golden[g].verdict, checker: now.checker,
+      publication_checks: { ...golden[g].verdict.publication_checks, checker_version: now.publication_checks.checker_version,
+                            statement: now.publication_checks.statement } };
+    assert.equal(canonicalJson(now), canonicalJson(recorded), g);
     assert.equal(now.format, "bio-case-file/3");
   }
   /* g1 departs for the included row's document beside the copy (the departure is judged by ref in /3), g2 does not */

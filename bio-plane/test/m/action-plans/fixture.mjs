@@ -172,7 +172,7 @@ export function world({ profiles = ["test-port-ellery"], omit = [], duties, on }
     registerOpenCheck: (module, mode, fn) => { reg.checks.push({ module, mode, fn }); return { ok: true }; },
     onRunOpened: (module, fn) => { reg.listeners.push({ module, fn }); return { ok: true }; },
     runFor: (run, viewer) => { const r = runs.get(run); return r && (viewer !== V("outsider")) ? { run: r.run, status: r.status, mode: r.mode,
-      context_type: r.context_type, context_id: r.context_id, principal_plane: r.principal_plane, principal_claude: "acct",
+      context_type: r.context_type, context_id: r.context_id, principal_plane: r.principal_plane, principal_ai: "acct",
       ...(r.mode === "plan" ? { plan: r.plan } : {}) } : null; },
     read: async ({ run }) => { const r = runs.get(run); return r ? { found: true, session: { id: run, principal: { plane: r.principal_plane, skill: r.skill } } } : { found: false }; },
     boundOf: (run, bound) => { const r = runs.get(run); return r && r.bounds[bound] ? { ...r.bounds[bound] } : null; },

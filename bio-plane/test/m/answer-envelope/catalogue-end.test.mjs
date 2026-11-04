@@ -109,9 +109,10 @@ test("R13 (T46; DEC-194, N913; K2953, K2959, K2960): C-124.30 SCENARIO_OUT_OF_RA
   /* CHECK_FAMILY_FILES unchanged: T46 adds no family, so no file of a module new in T46 is listed */
   for (const id of ["interface-assets", "interface-shell", "screens-settings", "screens-intake", "screens-daily", "screens-inquiry"])
     assert.equal(M.CHECK_FAMILY_FILES.some(([p]) => p.startsWith(`src/${id}/`)), false, id);
-  /* T46 added none; T47 adds case-inputs' file alone (R15) and T48 ai-accounts' alone (R17), so 87, then 88, now 89, and T50 translations' file makes 90 (answer-envelope J2/B3) */
-  assert.equal(M.CHECK_FAMILY_FILES.length, 90);
-  assert.equal(M.CHECK_FAMILY_FILES.filter(([p]) => p !== "src/case-inputs/checks.mjs" && p !== "src/ai-accounts/checks.mjs" && p !== "src/translations/checks.mjs").length, 87);
+  /* T46 added none; T47 adds case-inputs' file alone (R15) and T48 ai-accounts' alone (R17), so 87, then 88, now 89, and T50 translations' file makes 90 (answer-envelope J2/B3); T53 adds ai-catalogue's and mail-door's (R7, R19), so 92 */
+  assert.equal(M.CHECK_FAMILY_FILES.length, 92);
+  assert.equal(M.CHECK_FAMILY_FILES.filter(([p]) => p !== "src/case-inputs/checks.mjs" && p !== "src/ai-accounts/checks.mjs" && p !== "src/translations/checks.mjs"
+    && p !== "src/ai-catalogue/checks.mjs" && p !== "src/mail-door/checks.mjs").length, 87);
   /* control: every other pinned code decorates exactly as pinned */
   for (const [code, pin] of Object.entries(SNAP.rows)) if (code !== "SCENARIO_OUT_OF_RANGE") {
     const got = M.dec49Row(code);

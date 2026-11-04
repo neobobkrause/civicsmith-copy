@@ -1,7 +1,7 @@
 /* R16 (B7; K2353, K2376, K2488; DEC-188 (6), (7)): the AI accounts' items, over the real `ai-use` (its R5
-   `limitsReached`, R9 `exploreAsksPending`) and the real `ai-accounts` (its R13 `projectAccountsSuspended`; T48, N996 §5) and
-   `membership`, on ai-use's own test world: ann owns P (bob joined) and her own key; cy's project S runs on cy's
-   sign-in; second is an administrator. Each item's sentence and every fill are read by key from the design stream's
+   `limitsReached`, R9 `exploreAsksPending`) and the real `ai-accounts` and `membership`, on ai-use's own test world: ann
+   owns P (bob joined) and her own key; cy owns project S; second is an administrator. (T53, K5571 (2); F1) ai-accounts R13
+   and its `projectAccountsSuspended` are retired, and with them the `project-account-suspended` item. Each item's sentence and every fill are read by key from the design stream's
    `words.json` (DEC-189 (5), (6); N856), the expected words built here from that file, never from this module; every
    test has its negative control (K874). */
 import { test } from "node:test";
@@ -9,7 +9,6 @@ import assert from "node:assert/strict";
 import { standard, WORDS } from "../ai-use/fixture.mjs";
 import { fresh, reader, ofKind, sentences, texts, byId, dayOn } from "./fixture.mjs";
 import { NOTICE_KINDS, NOTICED_LABEL, ASK_LABEL, EXPLORE_APPROVE, ACCOUNT_ITEMS_MAX } from "../../../src/notice-producers/index.mjs";
-import { word } from "../../../src/setup-words/index.mjs";
 
 const AT = "2026-10-09T12:00:00Z";
 const UTC = () => ({ time_zone: { value: "UTC" } });
@@ -24,10 +23,6 @@ async function setup() {
   const w = await standard();
   w.sql.exec(`CREATE TABLE IF NOT EXISTS duties (duty_id TEXT, obligor TEXT)`);   /* duties' table, empty (R5) */
   w.project("S", "cy");
-  w.c.subscriptionConnected({ member: "cy" });
-  /* (T47; K3084) credentials R70: a sign-in serves only while its token is held, sealed under its member */
-  assert.equal((await w.c.subscriptionTokenHold({ member: "cy", token: `sk-ant-oat01-${"c".repeat(40)}` })).ok, true);
-  assert.equal(w.c.projectSigninSet({ project: "S", by: "cy" }).ok, true);
   const n = fresh(w.ctx, { membership: w.m, aiUse: w.u, aiAccounts: w.a, view: UTC });
   const { read } = reader(n);
   const items = (member, kind, at = AT) => ofKind(read(member, { now: at }), kind);
@@ -147,9 +142,10 @@ test("R16 one Ask item per entry of ai-use.exploreAsksPending, keyed by its own 
   const { w, items } = await setup();
   w.bundle("INQ-1", "inquiry");
   w.cite("P", "INQ-1");
-  w.c.accountUsesSet({ owner: "project:P", switch: "explore", on: "ask", by: "ann" });
+  /* (ai-use:105, T53) the explore switch and the ask are the account's, named by its id */
+  assert.equal(w.explore(w.acct.P, "ask", "ann").ok, true);
   assert.deepEqual(items("ann", "explore-ask"), [], "negative control: nothing asked");
-  w.u.exploreAsk({ owner: "project:P", at: AT, what: ["What did the council vote?"] });
+  assert.equal(w.u.exploreAsk({ owner: "project:P", account_id: w.acct.P, at: AT, what: ["What did the council vote?"] }).minted, true);
   const [it] = items("ann", "explore-ask");
   assert.equal(it.id, "FINDING::explore-ask::explore-ask:project:P:2026-10-09");
   assert.equal(it.class, "FINDING");
@@ -159,7 +155,10 @@ test("R16 one Ask item per entry of ai-use.exploreAsksPending, keyed by its own 
   assert.notEqual(it.detail, say("ai.queue.exploreask", { scope: say("ai.scope.group"), what: "What did the council vote?", account: say("ai.account.group.inline") }),
     "negative control: not the group's words");
   assert.deepEqual(it.subject.questions, ["What did the council vote?"]);
-  assert.equal(it.basis.estimate, word("question-explorer.known"), "R10's rough cost, as ai-use states it");
+  /* (ai-use:105, its R10) the rough cost is now `{low, high, unit, basis}`, carried as ai-use answers it, never restated */
+  const [pending] = w.u.exploreAsksPending({ viewer: "ann", at: AT }).asks;
+  assert.deepEqual(it.basis.estimate, pending.estimate, "R10's rough cost, as ai-use states it");
+  assert.deepEqual(Object.keys(it.basis.estimate).sort(), ["basis", "high", "low", "unit"]);
   assert.deepEqual(it.options[0], EXPLORE_APPROVE);
   assert.equal(EXPLORE_APPROVE.label, WORDS["act.exploreapprove.label.queue"]);
   assert.deepEqual(it.recipients, ["ann"]);
@@ -176,26 +175,24 @@ test("R16 one Ask item per entry of ai-use.exploreAsksPending, keyed by its own 
   assert.deepEqual(namesNoMember(asks("member:ann")), [], "a member's own account names no member");
 });
 
-test("R16 one Noticed project-account-suspended item per entry of ai-accounts.projectAccountsSuspended (T48: R16 reads it there, never from credentials), keyed by its own key, in ai.queue.suspended's words naming the project and no member; to the project's owner alone, and none while the sign-in serves", async () => {
-  const { w, items } = await setup();
-  assert.deepEqual(items("cy", "project-account-suspended"), [], "negative control: serving, nothing");
-  assert.equal(w.join("S", "cy", "bob").ok, true);
-  const [s] = w.a.projectAccountsSuspended({ viewer: "cy" });
-  const [it] = items("cy", "project-account-suspended");
-  assert.equal(it.id, `FINDING::project-account-suspended::${s.key}`);
-  assert.equal(it.class, "FINDING");
-  assert.equal(it.label, NOTICED_LABEL);
-  assert.equal(it.detail, WORDS["ai.queue.suspended"].replace("{project}", "Project S"));
-  assert.deepEqual(it.subject, { kind: "project", id: "S", since: s.since });
-  assert.deepEqual(it.recipients, ["cy"]);
-  assert.deepEqual(namesNoMember(it), []);
-  assert.ok(!texts(it).includes("bob") && !texts(it.basis).some((t) => t === "cy"), "no member anywhere in the item");
-  for (const m of ["bob", "ann", "second"]) assert.deepEqual(items(m, "project-account-suspended"), [], m);
-  /* T48 (N996 §5) control: a credentials answering a suspension of its own adds no item, nor does it remove ai-accounts' */
-  const viaCredentials = reader(fresh(w.ctx, { membership: w.m, aiUse: w.u, aiAccounts: w.a, view: UTC,
-    credentials: { securityLevel: () => ({ level: "Ordinary" }), projectAccountsSuspended: () => [{ project: "S", member: "cy", since: "2026-01-01T00:00:00Z", key: "S|cy|stale" }] } }))
-    .read("cy", { now: AT });
-  assert.deepEqual(ofKind(viaCredentials, "project-account-suspended").map((i) => i.id), [it.id], "only ai-accounts' entry is read");
+test("F1 (T53; K5571 (2)) project-account-suspended is retired: ai-accounts R13's projectAccountsSuspended is gone, so the read neither calls it nor fails on it, and no such item is raised, even where a provider still offers the read", async () => {
+  const { w, read } = await setup();
+  assert.equal(typeof w.a.projectAccountsSuspended, "undefined", "the T53 ai-accounts has no such read");
+  assert.equal(w.join("S", "cy", "bob").ok, true);   /* what once suspended a project's sign-in */
+  for (const m of ["cy", "ann", "bob", "second"]) {
+    const r = read(m, { now: AT });
+    assert.deepEqual(r.facts.failed, [], `${m}: no provider failed`);
+    assert.equal("signin_suspended" in r.facts, false, `${m}: no bound stated for a producer that is gone`);
+    assert.deepEqual(ofKind(r, "project-account-suspended"), [], m);
+  }
+  assert.equal("project-account-suspended" in NOTICE_KINDS, false, "the kind is no longer raised here");
+  /* control: an ai-accounts that still answered the retired read is not read */
+  let asked = 0;
+  const old = reader(fresh(w.ctx, { membership: w.m, aiUse: w.u, view: UTC, aiAccounts: { projectAccountsSuspended: () => {
+    asked += 1; return [{ project: "S", since: "2026-10-01T00:00:00Z", key: "S|cy|2026-10-01T00:00:00Z" }]; } } })).read("cy", { now: AT });
+  assert.equal(asked, 0);
+  assert.deepEqual(ofKind(old, "project-account-suspended"), []);
+  assert.deepEqual(old.facts.failed, []);
 });
 
 test("R16 R1 a read that does not answer is its provider's failure, named in facts.failed, never read as no item; the bound and truncated stated", async () => {
@@ -203,9 +200,7 @@ test("R16 R1 a read that does not answer is its provider's failure, named in fac
   const run = (deps) => reader(fresh(w.ctx, { membership: w.m, aiUse: w.u, aiAccounts: w.a, view: UTC, ...deps })).read("ann", { now: AT });
   const boom = () => { throw new Error("down"); };
   for (const [deps, name] of [[{ aiUse: { exploreAsksPending: () => ({ ok: true, asks: [], unreadable: true }), limitsReached: () => ({ ok: true, reached: [] }) } }, "ai-use"],
-                              [{ aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: boom } }, "ai-use"],
-                              [{ aiAccounts: { projectAccountsSuspended: () => null } }, "ai-accounts"],
-                              [{ aiAccounts: { projectAccountsSuspended: () => { throw new Error("down"); } } }, "ai-accounts"]])
+                              [{ aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: boom } }, "ai-use"]])
     assert.deepEqual(run(deps).facts.failed, [name], name);
   const many = Array.from({ length: ACCOUNT_ITEMS_MAX + 1 }, (_, i) => ({ key: `ai-limit:member:ann:ask:calls:day:k${i}`, owner: "member:ann",
     scope: "ask", unit: "calls", period: "day", period_start: "2026-10-09", reached_at: AT }));

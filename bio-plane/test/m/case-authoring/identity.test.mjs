@@ -230,3 +230,14 @@ test("R10: the statement, subject justification, exclusion list or bias acknowle
   const ok = w.publish(A, "alice", [Q2], { ...FRESH, caseId: x.caseId, scope: x.scope });
   assert.deepEqual([ok.ok, ok.edition, ok.scope], [true, 2, x.scope], "the same scope is not a carried-forward claim");
 });
+
+test("R91 (T53; JOURNEYS R-100): a refusal for an unchanged statement, subject justification, exclusion list or bias acknowledgement names which one in the answer's field; with the other three changed and the bias acknowledgement left, the field is the bias acknowledgement, and the subject position is never named", () => {
+  const { w, A } = setup();
+  const x = w.publish(A, "alice", [Q], { excluded: [{ description: "the side letter", reason: "not in hand" }] });
+  w.ratify(x);
+  const r = w.publish(A, "alice", [Q2], { ...FRESH, caseId: x.caseId, biasAcknowledgement: x.bias_acknowledgement });
+  assert.deepEqual([r.ok, r.reason, r.field], [false, "BIAS_ACKNOWLEDGEMENT_CARRIED_FORWARD", "bias_acknowledgement"]);
+  /* control: the subject position, the same as edition 1's, with all four fresh, is no carried-forward claim and is named nowhere */
+  const ok = w.publish(A, "alice", [Q2], { ...FRESH, caseId: x.caseId });
+  assert.deepEqual([ok.ok, ok.edition], [true, 2], JSON.stringify(ok).slice(0, 200));
+});

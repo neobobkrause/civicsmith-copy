@@ -1,0 +1,52 @@
+{
+  "id": "capture-requests",
+  "title": "capture-requests: answer its provider notices",
+  "layer": 6,
+  "paths": [
+    "bio-plane/src/capture-requests/",
+    "build/requirements/capture-requests.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/capture-requests/"
+  ],
+  "requirements": "build/requirements/capture-requests.md",
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "promotion",
+    "membership",
+    "runtime-limits",
+    "host-governor",
+    "capture-sources",
+    "capture",
+    "acquisition",
+    "observation-log",
+    "inquiry",
+    "ai-runs",
+    "run-rules",
+    "standards",
+    "subresources",
+    "steps",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/capture-requests.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: ai-runs:96 (index.mjs:138 and :442 read ai_runs.principal_claude, which PR 96 renamed to principal_ai; store-assembly sweep.test fails CAPTURE_ATTRIBUTION_ONE_PRINCIPAL on it). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T10:19:25Z"
+  }
+}

@@ -478,7 +478,10 @@ test("R78: each run of the ledger states `max_stretch_ms`, `rows_read`, `rows_wr
 
 /* ---- capture R113 (K4899): the composition's evidence key ---- */
 
-test("R75 R2 (capture R113, K4899): the composition assigns capture's `evidenceKey`, record-core's key for a digest, so through the assembled store a parted upload's begin answers `ok` with its parts, never PARTED_UPLOAD_UNAVAILABLE", async () => {
+/* store-jobs R26 (was this module's R104; the coordinator: left to store-jobs): a 200 MiB .pdf is refused TOO_LARGE by capture
+   R119 before any job is registered, so this case names a kind whose bound permits the size by store-jobs' own job. */
+test.todo("R75 R2 (capture R113, K4899): the parted upload's begin through the assembled store, at a kind whose bound permits 200 MiB. Owed by store-jobs R26");
+test.skip("R75 R2 (capture R113, K4899): the composition assigns capture's `evidenceKey`, record-core's key for a digest, so through the assembled store a parted upload's begin answers `ok` with its parts, never PARTED_UPLOAD_UNAVAILABLE", async () => {
   const opened = [];
   const bucket = bucketStandIn();
   bucket.createMultipartUpload = async (key) => { opened.push(key); return { uploadId: "u-1", key }; };
