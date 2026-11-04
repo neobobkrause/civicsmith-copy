@@ -1,0 +1,1 @@
+{"row":"answered","user":"investigation","by":"triage","evidence":"bio-plane/src/investigation/index.mjs:1047 only reads capture requests (captureRequests list by target, limit 1); it never creates one or reads principal_claude/principal_ai","at":"2026-11-04T11:36:21.985Z","key":"capture-requests:182","worker":"a4b427074bca72106","cost":"0.2"}

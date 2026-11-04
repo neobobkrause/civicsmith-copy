@@ -1,0 +1,1 @@
+{"row":"triage","user":"link-sweep","verdict":"not affected","evidence":"bio-plane/src/link-sweep/index.mjs:59 and :67 only obtain captureRequests and register the sweep scope check (R12); it creates no request from a run and reads no principal_claude/principal_ai","at":"2026-11-04T11:36:21.985Z","key":"capture-requests:182","worker":"a4b427074bca72106","cost":"0.2"}

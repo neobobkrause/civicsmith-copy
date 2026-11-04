@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:230 only lists capture-requests/checks.mjs as a check family (imported at :91); that file has no principal_claude/principal_ai text and PR 182 did not touch it","at":"2026-11-04T11:36:21.985Z","key":"capture-requests:182","worker":"a4b427074bca72106","cost":"0.2"}
