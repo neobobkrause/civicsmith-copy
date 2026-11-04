@@ -77,20 +77,6 @@
     },
     {
       "paths": [
-        "bio-plane/src/case-checker/program.mjs"
-      ],
-      "regenerate": [
-        "node",
-        "bio-plane/src/case-checker/build-program.mjs"
-      ],
-      "verify": [
-        "node",
-        "--test",
-        "bio-plane/test/m/case-checker/program.test.mjs"
-      ]
-    },
-    {
-      "paths": [
         "bio-plane/dist/bio-plane.bundle.json",
         "bio-plane/dist/bio-plane.bundled.mjs",
         "pdf-worker/dist/pdf-worker.bundle.json",
@@ -336,5 +322,12 @@
     ],
     "out": "build/dev-release",
     "full_history": false
+  },
+  "smoke": {
+    "files": [
+      "bio-plane/test/m/control-plane/t46-app.test.mjs",
+      "bio-plane/test/m/store-assembly/declarations.test.mjs"
+    ],
+    "seconds": 120
   }
 }
