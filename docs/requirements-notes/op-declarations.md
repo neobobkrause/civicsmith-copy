@@ -106,3 +106,14 @@ None: the split is BOB's (K617, K624).
 ## Decided by BOB (for rulings)
 
 - The seam (K624 (2)): what each op is (`ops.mjs`) here; who may call it (`admission`); the door (`control-plane`). The Rs that state a gate's refusal go with the gate (`admission`), and this module's tables are what those gates read.
+
+## T53 member ops named under ACT_HELP_ABSENT (BOB's ruling, 4 Nov 2026)
+
+On BOB's ruling of 4 Nov, this job named under R34's grounds the 48 member ops that owners declare on tranche with no `ACT_HELP` text yet. Each read is under the read ground and each act under the unexplained ground. The three that had no spec now have rows (`t53-rows.test.mjs`): `eventwithdraw` (events R61, an open act), `moneyfiscalyears` (money R39, R40, a read) and `federaloffices` (entities R68, a read for a member's session). Each leaves its ground once `affordances`' `ACT_HELP` holds its text. These are the lines that should later give the ops their words:
+
+- `adminproposalcancel` (act) and `adminremovals` (read): `surface-declarations` R14 (an `ACT_HELP` text for the act), `member-roster` R89, R91; `screens-settings` R92, R93.
+- The assistant's acts (`aiaccountadd`, `aiownadd`, `aiaccountremove`, `aiaccountswitch`, `aiorderset`, `aiprojectorder`, `aimemberallow`, `aiprojectuse`, `aimineuse`, `aicheckset`, `aiprojectcheckset`, `aimycheckset`, `aikeyenter`, `aikeycloudflare`, `aikeyseal`, `aitermsaccept`, `aitermswithdraw`, `aipersonalchoose`, `aicreditsclear`, `aisend`, `aioptinset`): `surface-declarations` R15, R18; `ai-accounts`' T53 lines; `affordances`.
+- The mail door's ops (`mailaddress`, `mailbringin`, `maildelete` acts; `mailwaiting`, `mailread`, `mailtally` reads): `surface-declarations` R17 (1); `mail-door`.
+- The layer entries and reports (`layerentrydraft`, `layerentryconfirm`, `layerentrywithdraw`, `layerreport`, `layerreportcarry` acts; `layerentries`, `layerreports` reads): `surface-declarations` R17; their owner's T53 lines.
+- `eventwithdraw` (act): events R61; grades T53-604.
+- Reads: `previewmore`, `inboxview`, `ruleresolve`, `standardsbinding`, `fiscalyears`, `moneyby`, `moneyfiscalyears` (T53-604 grades), `federaloffices` (entities R68), `exploreall`, `explorepath`, `exploreshorter`, `explorecontinue` (`surface-declarations` R16, the explore class): `surface-declarations` R17 for the other lanes' ops; `affordances` for the texts.
