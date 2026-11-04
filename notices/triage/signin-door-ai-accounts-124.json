@@ -1,0 +1,1 @@
+{"row":"triage","user":"signin-door","verdict":"affected","evidence":"bio-plane/src/signin-door/ops.mjs:48 c.subscriptionTokenHold({ member, token, validFor }) (restored name)","at":"2026-11-04T05:33:55.155Z","key":"ai-accounts:124","worker":"triage-aa124-subagent","cost":"0.04"}

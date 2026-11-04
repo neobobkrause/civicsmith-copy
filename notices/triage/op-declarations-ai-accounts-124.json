@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-declarations","verdict":"not affected","evidence":"bio-plane/src/op-declarations/t48.mjs:70 declares ai-accounts' op family as data only; no call to a restored or changed name","at":"2026-11-04T05:33:55.155Z","key":"ai-accounts:124","worker":"triage-aa124-subagent","cost":"0.04"}

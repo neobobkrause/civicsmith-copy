@@ -1,0 +1,1 @@
+{"row":"triage","user":"affordances","verdict":"not affected","evidence":"bio-plane/src/affordances.mjs:58 import block imports no ai-accounts; no call to a restored or changed name in its paths","at":"2026-11-04T05:33:55.155Z","key":"ai-accounts:124","worker":"triage-aa124-subagent","cost":"0.04"}

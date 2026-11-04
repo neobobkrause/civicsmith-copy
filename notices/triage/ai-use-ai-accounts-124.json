@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-use","verdict":"affected","evidence":"bio-plane/src/ai-use/index.mjs:514 this.#accounts().accountUses({ owner, viewer }) (also accountUsesOf({ owner }) at :540)","at":"2026-11-04T05:33:55.155Z","key":"ai-accounts:124","worker":"triage-aa124-subagent","cost":"0.04"}

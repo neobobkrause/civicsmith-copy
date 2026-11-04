@@ -1,0 +1,1 @@
+{"row":"triage","user":"reading-pipeline","verdict":"affected","evidence":"bio-plane/src/reading-pipeline/index.mjs:935 payer.accountFor({ member, act }) (changed export accountFor)","at":"2026-11-04T05:33:55.155Z","key":"ai-accounts:124","worker":"triage-aa124-subagent","cost":"0.04"}

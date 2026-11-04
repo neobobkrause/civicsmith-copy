@@ -1,0 +1,1 @@
+{"row":"answered","user":"agent-model","by":"triage","evidence":"agent-model/src/model.mjs:43 import block has no ai-accounts import; line 5 only mentions credentials.accountFor in a comment","at":"2026-11-04T05:33:55.155Z","key":"ai-accounts:124","worker":"triage-aa124-subagent","cost":"0.04"}
