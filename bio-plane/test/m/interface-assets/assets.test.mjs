@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
@@ -135,9 +135,19 @@ function loadWatched(path) {
     return JSON.parse(r.stdout);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
+/* R4: index.mjs imports only its own face modules (./faces-<n>.mjs, R6's carriers), and a face module imports nothing. */
+const FACE_MODULE = /^\.\/faces-\d+\.mjs$/;
 function r4Failures(loaded) {
-  const out = loaded.seen.map((s) => `does ${s} when loaded`);
+  const out = loaded.seen.filter((s) => !FACE_MODULE.test(s.replace(/^import /, ""))).map((s) => `does ${s} when loaded`);
   if (loaded.exports.join(",") !== "ASSETS_COMMIT,ASSET_FILES") out.push(`exports ${loaded.exports.join(",")}`);
+  return out;
+}
+const HERE_SRC = dirname(MODULE);
+const faceModules = () => readdirSync(HERE_SRC).filter((f) => FACE_MODULE.test(`./${f}`)).sort();
+function faceModuleFailures(path) {
+  const loaded = loadWatched(path);
+  const out = loaded.seen.map((s) => `${path}: does ${s} when loaded`);
+  if (!loaded.exports.every((e) => /^f\d+$/.test(e))) out.push(`${path}: exports ${loaded.exports.join(",")}`);
   return out;
 }
 
@@ -199,7 +209,11 @@ test("R3 control: an unfrozen map or entry is refused", () => {
 });
 
 test("R4: loading the module imports nothing, does no I/O, timing or randomness, and defines only its two exports; every read answers the same", async () => {
-  assert.deepEqual(r4Failures(loadWatched(MODULE)), []);
+  const loaded = loadWatched(MODULE);
+  assert.deepEqual(r4Failures(loaded), []);
+  assert.ok(faceModules().length > 0, "the faces live in face modules");
+  assert.deepEqual(loaded.seen.map((s) => s.replace(/^import /, "")).sort(), faceModules().map((f) => `./${f}`), "imports exactly its face modules");
+  for (const f of faceModules()) assert.deepEqual(faceModuleFailures(join(HERE_SRC, f)), []);
   assert.deepEqual(Object.keys(assets).sort(), ["ASSETS_COMMIT", "ASSET_FILES"]);
   const again = await import(`${pathToFileURL(MODULE).href}?again`);
   assert.equal(again.ASSETS_COMMIT, ASSETS_COMMIT);
@@ -222,6 +236,13 @@ test("R4 control: a module that imports, reads a file, reads the clock or draws 
       writeFileSync(join(dir, f), body);
       assert.ok(r4Failures(loadWatched(join(dir, f))).length > 0, f);
     }
+    // A face module that imports or reads the clock is refused; one that only defines its faces passes.
+    writeFileSync(join(dir, "faces-1.mjs"), 'import "./dep.mjs"; export const f0 = () => "";');
+    assert.ok(faceModuleFailures(join(dir, "faces-1.mjs")).length > 0, "a face module that imports");
+    writeFileSync(join(dir, "faces-2.mjs"), 'export const f0 = () => String(Date.now());\nexport const t = Date.now();');
+    assert.ok(faceModuleFailures(join(dir, "faces-2.mjs")).length > 0, "a face module that reads the clock");
+    writeFileSync(join(dir, "faces-3.mjs"), 'export const f0 = () => "AA==";');
+    assert.deepEqual(faceModuleFailures(join(dir, "faces-3.mjs")), []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -574,4 +595,20 @@ test("DEC-412 control: a .cs-btn at 40px, or a --tap other than 44px, is refused
   const css = ASSET_FILES["civicsmith.css"].body;
   assert.ok(tapFailures(css.replace(/(\.cs-btn \{[^}]*?)min-height: var\(--tap\)/, "$1min-height: 40px")).some((f) => f.includes("40px")));
   assert.ok(tapFailures(css.split("--tap: 44px").join("--tap: 40px")).some((f) => f.startsWith("--tap")));
+});
+
+/* R4, R6 (BOB #45): every file the generator writes is under the process's max_file_bytes, so it can be committed. */
+const MAX_FILE_BYTES = 1048576;
+const generatedFiles = () => ["index.mjs", ...faceModules()].map((f) => join(HERE_SRC, f));
+const oversize = (paths, size = (p) => statSync(p).size) => paths.filter((p) => size(p) > MAX_FILE_BYTES).map((p) => `${p}: ${size(p)} bytes`);
+
+test("R4, R6: index.mjs and each face module are under 1,048,576 bytes, and together carry all 15 faces", () => {
+  assert.deepEqual(oversize(generatedFiles()), []);
+  const exported = faceModules().map((f) => readFileSync(join(HERE_SRC, f), "utf8").match(/^export const f\d+ = /gm).length).reduce((a, b) => a + b, 0);
+  assert.equal(exported, 15);
+});
+
+test("R4, R6 control: a file over the cap is refused", () => {
+  assert.equal(oversize([MODULE], () => MAX_FILE_BYTES + 1).length, 1);
+  assert.deepEqual(oversize([MODULE], () => MAX_FILE_BYTES), []);
 });
