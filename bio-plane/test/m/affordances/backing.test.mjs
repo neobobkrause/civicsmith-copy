@@ -539,31 +539,34 @@ test("R19: every op DEC-88 bands `reasoned` and T22's four, called well-formed w
 
 /* K3152 (T47): `adminremove` is one of `REAUTH_ACTS` since op-declarations R58, so the plane asks for the password again
    (credentials R66, admission R25) before it routes the act, and that question is not routed to the store until the
-   plane's L11 job; its reason refusal is driven here at membership's own interface (its R7), as the other owners' are. */
+   plane's L11 job; its reason refusal is driven here at membership's own interface (its R7), as the other owners' are.
+   (T53; membership R154, notice membership:77; member-roster R84, R87) The founder's endorsement alone now issues an
+   administrator's invitation and her removal now carries alone, so the third administrator is proposed by `second` and
+   issued by the founder, and the removal that carries is the founder's; a vote by `second` is still refused without its
+   reason. */
 import { world as memWorld } from "../membership/fixture.mjs";
 test("R19: membership's adminremove, graded `reasoned`, is refused without the administrator's reason with NO_REASON "
-   + "(membership R7), in JUSTIFICATION_REFUSALS, writing nothing, and the vote is accepted with it", async () => {
+   + "(membership R7), in JUSTIFICATION_REFUSALS, writing nothing, whoever removes, and the founder's removal is accepted with it", async () => {
   assert.equal(RUNGS.adminremove, "reasoned");
-  /* three administrators (admin, second, third); admin's vote stands, so second's is the one that carries */
+  /* three administrators (admin, second, third) */
   const scene = async () => {
     const w = await memWorld().group();
-    assert.equal((await w.m.memberAdd({ memberId: "third", cover: "c3", role: "admin", by: "admin" })).reason, "CONSENSUS_REQUIRED");
-    const e = await w.m.adminEndorse({ memberId: "third", by: "second" });
+    assert.equal((await w.m.memberAdd({ memberId: "third", cover: "c3", role: "admin", by: "second" })).reason, "CONSENSUS_REQUIRED");
+    const e = await w.m.adminEndorse({ memberId: "third", by: "admin" });
     assert.equal((await w.m.enroll({ invite: e.invite, handle: "third", password: "third-passphrase-x" })).ok, true);
-    assert.equal(w.m.adminRemove({ memberId: "third", by: "admin", reason: "the first vote" }).reason, "VOTES_SHORT");
     return w;
   };
-  for (const why of WHYLESS) {
+  for (const by of ["admin", "second"]) for (const why of WHYLESS) {
     const w = await scene();
     const before = dump(w.sql);
-    const r = w.m.adminRemove({ memberId: "third", by: "second", ...(why === undefined ? {} : { reason: why }) });
-    assert.equal(r.ok, false, JSON.stringify(why));
+    const r = w.m.adminRemove({ memberId: "third", by, ...(why === undefined ? {} : { reason: why }) });
+    assert.equal(r.ok, false, `${by} ${JSON.stringify(why)}`);
     assert.equal(r.reason, "NO_REASON", JSON.stringify(r).slice(0, 200));
     assert.ok(JUSTIFICATION_REFUSALS.includes(r.reason));
-    assert.equal(dump(w.sql), before, `${JSON.stringify(why)}: refused, but wrote`);
+    assert.equal(dump(w.sql), before, `${by} ${JSON.stringify(why)}: refused, but wrote`);
   }
   const w = await scene();
-  const ok = w.m.adminRemove({ memberId: "third", by: "second", reason: GIVEN });
+  const ok = w.m.adminRemove({ memberId: "third", by: "admin", reason: GIVEN });
   assert.equal(ok.ok, true, JSON.stringify(ok).slice(0, 300));
 });
 
