@@ -17,7 +17,7 @@ async function memberRun(aw, env = {}) {
   await w.account("bob");
   w.ctx.id = { equals: (x) => x === "id:bio" };
   w.bundle(INQ);
-  const o = await w.runs.open(OPEN({ principalPlane: "member:ann", principalClaude: "member:ann", actor: "member:ann", viewer: "member:ann" }));
+  const o = await w.runs.open(OPEN({ principalPlane: "member:ann", principalAi: "member:ann", actor: "member:ann", viewer: "member:ann" }));
   assert.equal(o.started, true, JSON.stringify(o));
   return w;
 }

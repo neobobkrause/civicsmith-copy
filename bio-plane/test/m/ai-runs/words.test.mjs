@@ -24,7 +24,7 @@ async function runWorld(opts = {}) {
   await w.group("ann"); w.bundle(INQ);
   return w;
 }
-const mine = { actor: "member:ann", viewer: "member:ann", principalClaude: "member:ann", principalPlane: "member:ann" };
+const mine = { actor: "member:ann", viewer: "member:ann", principalAi: "member:ann", principalPlane: "member:ann" };
 
 test("R9, R13, R14 (words): the open's, tick's and close's notes are words.json's sentences by key — the refusals the open mints (no context, kind, already open, re-run self, unknown, other context), the tick's (not its principal, ended, figures, state, usage) and the close's (not its principal, already ended)", async () => {
   const w = await runWorld();

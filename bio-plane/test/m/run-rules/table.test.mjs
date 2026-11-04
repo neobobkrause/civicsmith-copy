@@ -31,6 +31,7 @@ const MINTED_HERE = {
   AI_RUN_EXPLORE_NOT_DEPLOYABLE: ["C-22.27", "src/run-rules/rules.mjs originAllowed"],
   AI_PART_NOT_DEPLOYED: ["C-22.29", "src/run-rules/test-bar.mjs partRefusal"],
   LEVEL_EMPTY_NO_DOCUMENT_IN_SCOPE: ["C-22.31", "src/run-rules/rules.mjs levelEmptyHolds"],
+  PART_WITHDRAWN: ["C-22.34", "src/run-rules/test-bar.mjs partRefusal"],
 };
 /** The C-22 rows of ai-runs' T41 acts (B3, B4; K2482, K2485), minted by ai-runs (its R73, R75) and read here by key. */
 const AI_RUNS_C22 = { AI_GROUP_TEST_INVALID: "C-22.24", AI_RUN_EXPLORE_NEEDS_STEP: "C-22.26", AI_RUN_STEP_UNKNOWN: "C-22.28",
@@ -59,7 +60,8 @@ const PLANNING = {
   AI_RUN_REEXAM_NEEDS_RESPONSE: "C-109.13", AI_RUN_REEXAM_OPEN: "C-109.14",
 };
 const REGION = { AI_RUN_MODE_UNCHECKED: "check", AI_RUN_REEXAM_NEEDS_RESPONSE: "reexam", AI_RUN_REEXAM_OPEN: "reexam" };
-const OBSERVATION_LOG_C22 = ["C-22.1", "C-22.2", "C-22.3", "C-22.4", "C-22.6", "C-22.9", "C-22.10", "C-22.17"];
+const OBSERVATION_LOG_C22 = ["C-22.1", "C-22.2", "C-22.3", "C-22.4", "C-22.6", "C-22.9", "C-22.10", "C-22.17",
+  /* T53-601 (observation-log R40, R41): its two field rows */ "C-22.32", "C-22.33"];
 
 function wellFormed(code, row) {
   assert.deepEqual(Object.keys(row).sort(), ["check", "translation", "where"], code);
@@ -94,7 +96,9 @@ test("R11: the table holds exactly the rows the pure rules mint (each where nami
     RR.checkConsume([{ bound: "fetches" }], { list: true }), RR.checkRunState("x".repeat(262144)),
     RR.startAllowed({}), RR.checkVerification(null), RR.checkAskBounds({ turns: 13, bytes: 1, wall_ms: 1, reads: 1 }),
     RR.checkTestBarRecord(null), RR.checkPagesRead({ limits: [{ on: true }] }), RR.originAllowed({}),
-    RR.originAllowed({ origin: "explore" }), RR.partRefusal("ask"), RR.levelEmptyHolds({ scope: { documents: 0 } })];
+    RR.originAllowed({ origin: "explore" }), RR.partRefusal("ask"), RR.levelEmptyHolds({ scope: { documents: 0 } }),
+    RR.partRefusal("check", "A", { set: { id: "s", version: 1, matters: [{ id: "M1" }] }, held: { testBars: [{ part: "check",
+      entry_id: "A", set: "s", set_version: 1, false_alarm_rate: 0, passed: false, graded_by: "harness", at: "t" }] } })];
   assert.deepEqual(minted.map((r) => r.code), Object.keys(MINTED_HERE));
   /* R35's answer is a verdict, not a refusal: `holds: false` where the others say `ok: false` */
   for (const r of minted) assert.deepEqual([r.ok ?? r.holds, r.check, r.translation], [false, AI_RUNS_CHECKS[r.code].check, AI_RUNS_CHECKS[r.code].translation]);

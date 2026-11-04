@@ -20,7 +20,7 @@
   ],
   "node": "26.10.0",
   "suite_timeout_minutes": 20,
-  "coordinator": "session_01RAN5eniJPZwnDgHRYfWFQb",
+  "coordinator": "session_01RAN5enDCAZZfNxRd85MZ9T",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
     {
@@ -61,14 +61,22 @@
     },
     {
       "paths": [
-        "bio-plane/dist",
-        "pdf-worker/dist",
-        "ocr-worker/dist",
-        "agent-runner/dist",
-        "agent-worker/dist",
-        "sheet-worker/dist",
-        "file-scanner/dist",
-        "reader-container/dist"
+        "bio-plane/dist/bio-plane.bundle.json",
+        "bio-plane/dist/bio-plane.bundled.mjs",
+        "pdf-worker/dist/pdf-worker.bundle.json",
+        "pdf-worker/dist/pdf-worker.bundled.mjs",
+        "ocr-worker/dist/ocr-worker.bundle.json",
+        "ocr-worker/dist/ocr-worker.bundled.mjs",
+        "agent-runner/dist/agent-runner.bundle.json",
+        "agent-runner/dist/agent-runner.bundled.mjs",
+        "agent-worker/dist/agent-worker.bundle.json",
+        "agent-worker/dist/agent-worker.bundled.mjs",
+        "sheet-worker/dist/sheet-worker.bundle.json",
+        "sheet-worker/dist/sheet-worker.bundled.mjs",
+        "file-scanner/dist/file-scanner.bundle.json",
+        "file-scanner/dist/file-scanner.bundled.mjs",
+        "reader-container/dist/reader-container.bundle.json",
+        "reader-container/dist/reader-container.bundled.mjs"
       ],
       "regenerate": [
         "node",
@@ -81,5 +89,222 @@
         "bio-plane/test/system/fleetbundles.test.mjs"
       ]
     }
-  ]
+  ],
+  "deploy": {
+    "slug_prefix": "p3dev-",
+    "dry_run": [
+      [
+        "sh",
+        "-c",
+        "(cd bio-plane && npm ci --no-audit --no-fund --loglevel=error) && for d in $(node bio-plane/scripts/bundles.mjs --install-dirs); do [ \"$d\" = bio-plane ] || (cd \"$d\" && npm ci --no-audit --no-fund --loglevel=error) || exit 1; done && node bio-plane/src/setup-words/build.mjs && node bio-plane/scripts/bundles.mjs && cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance --first-install --dry-run"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "agent-runner",
+        "--instance",
+        "{slug}",
+        "--test-instance",
+        "--dry-run"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "agent-worker",
+        "--instance",
+        "{slug}",
+        "--test-instance",
+        "--dry-run"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "file-scanner",
+        "--instance",
+        "{slug}",
+        "--test-instance",
+        "--dry-run"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "ocr-worker",
+        "--instance",
+        "{slug}",
+        "--test-instance",
+        "--dry-run"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "pdf-worker",
+        "--instance",
+        "{slug}",
+        "--test-instance",
+        "--dry-run"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "reader-container",
+        "--instance",
+        "{slug}",
+        "--test-instance",
+        "--dry-run"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "sheet-worker",
+        "--instance",
+        "{slug}",
+        "--test-instance",
+        "--dry-run"
+      ],
+      [
+        "sh",
+        "-c",
+        "cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance --dry-run"
+      ]
+    ],
+    "deploy": [
+      [
+        "sh",
+        "-c",
+        "(cd bio-plane && npm ci --no-audit --no-fund --loglevel=error) && for d in $(node bio-plane/scripts/bundles.mjs --install-dirs); do [ \"$d\" = bio-plane ] || (cd \"$d\" && npm ci --no-audit --no-fund --loglevel=error) || exit 1; done && node bio-plane/src/setup-words/build.mjs && node bio-plane/scripts/bundles.mjs && cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance --first-install"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "agent-runner",
+        "--instance",
+        "{slug}",
+        "--test-instance"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "agent-worker",
+        "--instance",
+        "{slug}",
+        "--test-instance"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "file-scanner",
+        "--instance",
+        "{slug}",
+        "--test-instance"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "ocr-worker",
+        "--instance",
+        "{slug}",
+        "--test-instance"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "pdf-worker",
+        "--instance",
+        "{slug}",
+        "--test-instance"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "reader-container",
+        "--instance",
+        "{slug}",
+        "--test-instance"
+      ],
+      [
+        "env",
+        "CIVICSMITH_TEST_INSTANCE={slug}",
+        "node",
+        "bio-plane/scripts/deploy-fleet.mjs",
+        "sheet-worker",
+        "--instance",
+        "{slug}",
+        "--test-instance"
+      ],
+      [
+        "sh",
+        "-c",
+        "cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance"
+      ]
+    ],
+    "walk": [
+      "sh",
+      "-c",
+      "(cd bio-plane/src/journey-check && npm ci --no-audit --no-fund --loglevel=error) && node bio-plane/scripts/p3dev-walk-setup.mjs {slug} --walk"
+    ],
+    "guard_line": "p3dev guard: passed",
+    "timeout_minutes": 60
+  },
+  "release": {
+    "checks": [
+      {
+        "name": "setup-words fresh",
+        "argv": [
+          "node",
+          "bio-plane/src/setup-words/build.mjs",
+          "--check"
+        ]
+      },
+      {
+        "name": "bundles fresh",
+        "argv": [
+          "node",
+          "bio-plane/scripts/bundles.mjs",
+          "--check"
+        ]
+      },
+      {
+        "name": "fleet bundles",
+        "argv": [
+          "node",
+          "--test",
+          "--test-force-exit",
+          "bio-plane/test/system/fleetbundles.test.mjs"
+        ]
+      }
+    ],
+    "assemble": [
+      "sh",
+      "-c",
+      "node bio-plane/src/setup-words/build.mjs && node bio-plane/scripts/bundles.mjs && node bio-plane/scripts/release-gather.mjs build/dev-release"
+    ],
+    "out": "build/dev-release",
+    "full_history": false
+  }
 }

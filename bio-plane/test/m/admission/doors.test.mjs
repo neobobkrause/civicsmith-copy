@@ -9,15 +9,18 @@ import { A, O, world, gate, urlOf, refused, opCalls, hex64, aik, cred } from "./
 const { OPS, SESSION_OPS, NEEDS, GOVERNANCE_ACTIONS, IDENTITY_ACTIONS } = O;
 const DOORS = ["joinlinkinvite", "websiteinvite"];
 /* (N1073) read from the owners' declarations, never hand-listed: the administrator's acts are membership's session-only
-   mutating ops (those carrying a machineClasses list) that every session reaches and that are neither governance nor identity acts, and the group
-   key's ops are credentials' `groupkey*` ops that op-declarations declares for a session alone (R24) */
+   mutating ops (those carrying a machineClasses list) that every session reaches and that are neither governance nor identity acts, and (T53;
+   op-declarations R24, PR 95) the team's account ops that replaced the group key's are the ops ai-accounts serves that op-declarations
+   declares for a session alone (`machineClasses: []`) */
 const { membershipOps } = await import("../../../src/membership/index.mjs");
-const { credentialsOps } = await import("../../../src/credentials/index.mjs");
+const { aiAccountsOps } = await import("../../../src/ai-accounts/index.mjs");
 const declared = (ops) => Object.keys(ops({}, new URL("http://do/"), {}, {}));
 const ADMIN_ACTS = declared(membershipOps).filter((op) => OPS[op]?.mutating && Array.isArray(OPS[op].machineClasses)
   && SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op)
   && !GOVERNANCE_ACTIONS.includes(op) && !IDENTITY_ACTIONS.includes(op));
-const GROUP_KEY_OPS = declared(credentialsOps).filter((op) => /^groupkey/.test(op) && OPS[op]?.classes !== null);
+const ACCOUNT_OPS = declared(aiAccountsOps).filter((op) => Array.isArray(OPS[op]?.machineClasses) && OPS[op].machineClasses.length === 0);
+/* the group key's ops R19 names, retired with no alias (op-declarations R24, ai-accounts R35) */
+const RETIRED_GROUP_KEY_OPS = ["groupkeyset", "groupkeyremove", "groupkeyswitch", "groupkeystate", "groupkeynotice", "groupkeynoticeseen"];
 const SECRET = "wk_" + hex64(), LINK = "jl_" + hex64(), COVER = "Rosa from the tenants' union", APIKEY = "sk-ant-api03-" + hex64();
 
 test("R17: websiteinvite and joinlinkinvite are public ops admitted with no credential; a credential or session presented (by header or body) is neither required nor used, nothing about the caller reaches the act, the key, link and cover are read from the body only, the one limit admission adds is R21's per-source window (the daily caps are membership's), and no key, link or invitation appears in a refusal", async () => {
@@ -119,48 +122,54 @@ test("R18 (T49; op-declarations R71, control-plane R97): founderhandleset is the
   }
 });
 
-test("R19: the group key's ops are admitted only from a session — a bearer, a machine credential and an operator token are refused CLASS_FORBIDDEN naming the class, an ai credential is refused before any store call, none is on AI_GRANT_OPS; a member's session reaches credentials, which answers NOT_AN_ADMIN; groupkeyset's key is read from the body only and appears in no refusal", async () => {
+test("R19 (T53; op-declarations R24, PR 95): the group key's ops are retired, and the team's account ops that replace them are admitted only from a session — a bearer, a machine credential and an operator token are refused CLASS_FORBIDDEN naming the class, an ai credential is refused before any store call, none is on AI_GRANT_OPS; every session reaches ai-accounts, whose own refusal answers a caller who is not an administrator; aiaccountadd's secret is read from the body only and appears in no refusal", async () => {
   const { AI_GRANT_OPS } = await import("../../../src/credentials/index.mjs");
+  for (const op of RETIRED_GROUP_KEY_OPS) {
+    assert.equal(Object.hasOwn(OPS, op), false, `${op} is retired: no spec`);
+    refused(A.aiScopeDeclaration([op]), 403, "AI_SCOPE_UNKNOWN_OP", "C-29.8");
+  }
+  for (const op of ["aiaccountadd", "aiaccountremove", "aiaccountswitch", "accountstate", "accountsof"])
+    assert.ok(ACCOUNT_OPS.includes(op), `${op}, an act or read of the team's account, is a session's only`);
   const { env, S } = world();
   const wide = aik();
-  const w2 = world({ creds: { [wide]: cred({ tokenId: "wide", writes: GROUP_KEY_OPS }) } });
-  for (const op of GROUP_KEY_OPS) {
+  const w2 = world({ creds: { [wide]: cred({ tokenId: "wide", writes: ACCOUNT_OPS }) } });
+  for (const op of ACCOUNT_OPS) {
     const spec = OPS[op];
-    assert.ok(spec, `${op} declared (op-declarations R24)`);
     assert.deepEqual([[...spec.classes].sort(), spec.machineClasses], [["admin", "member"], []], op);
     assert.equal(AI_GRANT_OPS.includes(op), false, `${op} is on no ask's grant`);
     assert.equal(NEEDS[op] ?? null, null, op);
     assert.ok(SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op), op);
     for (const [cls, t] of [["admin", env.ADMIN_TOKEN], ["probe", env.PROBE_TOKEN], ["daemon", env.DAEMON_TOKEN]]) {
       env.calls.length = 0;
-      const body = refused(await gate(env, { op, token: t, params: { key: APIKEY, ...(cls === "probe" ? { store: "scratch" } : {}) } }),
+      const body = refused(await gate(env, { op, token: t, params: cls === "probe" ? { store: "scratch" } : {}, extraBody: { secret: APIKEY } }),
                            403, "CLASS_FORBIDDEN", "C-38.2", [t, APIKEY]);
       assert.deepEqual([body.op, body.cls], [op, cls]);
       assert.equal(env.calls.length, 0, "before any store call");
     }
     w2.env.calls.length = 0;
-    refused(await gate(w2.env, { op, token: wide, params: { key: APIKEY } }), 403, "AI_BEYOND_TASK_SCOPE", "C-29.6", [wide, APIKEY]);
+    refused(await gate(w2.env, { op, token: wide, extraBody: { secret: APIKEY } }), 403, "AI_BEYOND_TASK_SCOPE", "C-29.6", [wide, APIKEY]);
     assert.equal(opCalls(w2.env).length, 0, "before any store call");
     refused(A.aiScopeDeclaration([op]), 403, "AI_SCOPE_BEYOND_MEMBER_REACH", "C-29.9");
-    /* every session reaches credentials (an administrator's or not: NOT_AN_ADMIN is credentials'); no fence here, except
-       the one R29 puts before the password for an act REAUTH_ACTS names (groupkeyset): a member who is not an
-       administrator is refused membership's NOT_AN_ADMIN there, the answer credentials would give, asked first */
+    /* every session reaches ai-accounts (an administrator's or not: NOT_AN_ADMIN is its owner's); no fence here, and
+       R29's question first only for an act REAUTH_ACTS names */
     for (const t of [S.founder, S.admin, S.ann, S.bare]) {
-      const r = await gate(env, { op, token: t, params: { key: APIKEY } });
+      const r = await gate(env, { op, token: t, extraBody: { secret: APIKEY } });
       if (Object.hasOwn(O.REAUTH_ACTS, op) && ![S.founder, S.admin].includes(t)) {
         assert.equal(r.refusal?.body.reason, "NOT_AN_ADMIN", `${op}: R29 asks the roster first`);
         continue;
       }
       assert.equal(r.caller?.viaSession, true, `${op}: a session is admitted`);
       assert.equal(r.url.searchParams.has("token"), false, "the session's own token travels in the header, never the address");
-      assert.equal(r.url.searchParams.has("key"), op !== "groupkeyset", `${op}: only groupkeyset's key is the body's`);
+      assert.equal(JSON.stringify([...r.url.searchParams]).includes(APIKEY), false, `${op}: the secret is the body's`);
     }
     assert.equal(A.bearerFence(op, { cls: "admin", viaSession: false }), null);
   }
-  /* the key in the query is gone before any reader: the call then carries no key and credentials answers NO_SECRET */
-  const r = await gate(env, { op: "groupkeyset", token: S.founder, params: { key: APIKEY } });
-  assert.equal(JSON.stringify([...r.url.searchParams]).includes(APIKEY), false);
-  /* negative control: the same request with no key in its query keeps its URL whole */
-  const n = await gate(env, { op: "groupkeyset", token: S.founder, params: { on: "true" } });
-  assert.deepEqual(Object.fromEntries(n.url.searchParams), { on: "true" });
+  /* aiaccountadd's secret sent in the query is not read: refused CREDENTIAL_IN_ADDRESS before any store call, the
+     secret in no refusal */
+  env.calls.length = 0;
+  refused(await gate(env, { op: "aiaccountadd", token: S.founder, params: { secret: APIKEY } }), 400, "CREDENTIAL_IN_ADDRESS", "C-38.10", [APIKEY]);
+  assert.equal(env.calls.length, 0, "before any store call");
+  /* negative control: the same request with no secret in its query keeps its URL whole */
+  const n = await gate(env, { op: "aiaccountadd", token: S.founder, params: { owner: "group" } });
+  assert.deepEqual(Object.fromEntries(n.url.searchParams), { owner: "group" });
 });

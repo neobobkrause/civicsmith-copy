@@ -273,7 +273,7 @@ const api = `https://api.cloudflare.com/client/v4/accounts/${ACCT}/workers/scrip
    monitor cadence and CAP-3's archive fallback on the deployed instance, and
    the fleet bindings arm the plane's Tier-3 paths. The targets are
    pre-flighted below so a missing worker is OUR refusal, not code 10143. */
-import { deriveStorePlace, deriveBindings, serviceTargets, deriveLimits, limitsReadBack, deriveCrons, schedulesReadBack, deriveObservability, observabilityReadBack } from "./derive-bindings.mjs";
+import { deriveStorePlace, deriveBindings, keptPlainText, TEST_INSTANCE_BINDING, serviceTargets, deriveLimits, limitsReadBack, deriveCrons, schedulesReadBack, deriveObservability, observabilityReadBack } from "./derive-bindings.mjs";
 import { parseJsonc } from "./jsonc.mjs";   /* R11: the module's one reader */
 import { slugPlane, planePlan, refuseUnlessP3dev, ensureBuckets } from "./p3dev.mjs";   /* a test deploy's names and guard */
 const wranglerCfg = parseJsonc(
@@ -292,7 +292,7 @@ const meta = {
   /* The organisation `ai` credential rides the environment, never printed; no
      Claude credential is ever derived (K1502). */
   bindings: deriveBindings(bindingCfg, {
-    slug, version,
+    slug, version, testInstance: TEST,   /* F1: a test deploy marks the copy a test instance on the plane itself */
     instanceAiToken: process.env.INSTANCE_AI_TOKEN || undefined,
   }),
   keep_bindings: ["secret_text", "durable_object_namespace", "service"],
@@ -511,9 +511,10 @@ if (TEST) {
     process.exit(1);
   }
 }
-const derivedNames = new Set(meta.bindings.map((b) => b.name));
-const kept = onScript.bindings.filter((b) => b && b.type === "plain_text" && !derivedNames.has(b.name) && !storePlace.remove.includes(b.name))
-  .map((b) => ({ type: "plain_text", name: b.name, text: b.text }));
+const kept = keptPlainText(onScript.bindings, meta.bindings, storePlace.remove);
+if (TEST) console.log(`test instance: ${TEST_INSTANCE_BINDING}=${slug} is bound on the plane`);
+else if (onScript.bindings.some((b) => b && b.type === "plain_text" && b.name === TEST_INSTANCE_BINDING))
+  console.log(`test instance: ${TEST_INSTANCE_BINDING} is held on ${slug} and is removed (not a test deploy)`);
 meta.bindings.push(...kept);
 if (kept.length) console.log(`kept: ${kept.length} plain_text binding(s) on the script that this deploy does not derive, sent unchanged — ${kept.map((b) => b.name).join(", ")}`);
 const differences = bindingDifferences(meta.bindings, onScript.bindings);

@@ -14,6 +14,8 @@
     // opens it (R7). Set here, so every deploy from this directory carries it (K5175).
     "INSTALLER_ADDRESS": "https://newgroup.believeinoakland.workers.dev",
     // FEATURED_CASE is unset (null: R5's section is not drawn) until the stewards name a real published edition.
+    // WITHDRAWAL_REGISTER is unset (nothing withdrawn) until the stewards publish a register: when set, it is their
+    // `GET /steward/withdrawals` answer, whole, and `npm run deploy` checks it first (R17, site/check.mjs).
     "LISTED_GROUPS": []
   }
 }

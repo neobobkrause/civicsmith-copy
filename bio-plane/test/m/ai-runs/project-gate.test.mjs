@@ -25,7 +25,7 @@ let n = 0;
 const ask = (w, actor, over = {}) => {
   const m = actor.replace(/^member:/, "").split("/")[0];
   return w.runs.open(OPEN({ run: `RP${n++}`, contextType: "project", contextId: PROJ, mode: "plan", plan: PLN,
-    label: word("action-plans.label.asking_assistant_options"), principalPlane: `member:${m}`, principalClaude: `member:${m}`,
+    label: word("action-plans.label.asking_assistant_options"), principalPlane: `member:${m}`, principalAi: `member:${m}`,
     bounds: [{ bound: "proposals", allowed: 5 }], actor, viewer: `member:${m}`, ...over }));
 };
 const refusedNotMember = (r, what) => {
@@ -58,12 +58,12 @@ test("R81 (control): an actor that names no member over a project is judged as b
   const w = await gateWorld();
   const before = w.dump();
   for (const actor of ["class:ai/tok-org", "class:ai", "token:abc", "member:", "member:/tok"])
-    refusedNotMember(await w.runs.open(OPEN({ run: "RM", contextType: "project", contextId: PROJ, mode: "check", principalClaude: "member:owner",
+    refusedNotMember(await w.runs.open(OPEN({ run: "RM", contextType: "project", contextId: PROJ, mode: "check", principalAi: "member:owner",
       actor, viewer: MACHINE })), `actor ${actor}`);
   assert.equal(w.dump(), before);
   for (const actor of [null, "", "   "]) {
     const r = await w.runs.open(OPEN({ run: `RE${n++}`, contextType: "project", contextId: PROJ, mode: "check",
-      principalClaude: "member:owner", actor, viewer: MACHINE }));
+      principalAi: "member:owner", actor, viewer: MACHINE }));
     assert.deepEqual([r.started, r.projectGate.applied, r.projectGate.ground], [true, false, "NO_MEMBER_BEHIND_CALLER"], String(actor));
   }
 });
@@ -87,7 +87,7 @@ test("R81: a tick and a close with the actor member:<id> (and member:<id>/<token
   }
   assert.equal(w.row(`SELECT status FROM ai_runs WHERE run='RT'`).status, "running");
   /* a machine class stamp ticking over the project is refused as today, not passed unapplied (its caller is the run's principal) */
-  const m = await w.runs.open(OPEN({ run: "RC", contextType: "project", contextId: PROJ, mode: "check", principalClaude: "member:owner",
+  const m = await w.runs.open(OPEN({ run: "RC", contextType: "project", contextId: PROJ, mode: "check", principalAi: "member:owner",
     actor: "owner", viewer: MACHINE }));
   assert.equal(m.started, true);
   const machine = await w.runs.tick({ run: "RC", actor: "class:ai/tok-org", viewer: MACHINE, caller: ORG });

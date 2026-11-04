@@ -1,0 +1,48 @@
+{
+  "id": "leg-earning",
+  "title": "leg-earning: T53 typed-passage capture ceiling and no-subject reason (R10, R18, R19, R20)",
+  "layer": 6,
+  "paths": [
+    "bio-plane/src/leg-earning/",
+    "build/requirements/leg-earning.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/leg-earning/"
+  ],
+  "requirements": "build/requirements/leg-earning.md",
+  "uses": [
+    "record-grammar",
+    "text-chain",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "standards",
+    "duties",
+    "inquiry-grammar",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/leg-earning.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the open T53 requirements in build/requirements/leg-earning.md (R10, R18, R19, R20: the typed passage's own capture ceiling, its record-graded leg, and 'no subject named' as its own reason), each with a test at the module's interface that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T05:52:29Z"
+  }
+}

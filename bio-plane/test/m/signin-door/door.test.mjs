@@ -6,7 +6,8 @@ import assert from "node:assert/strict";
 import { subscriptionSignin, subscriptionDisconnect, signoutLeaver, leaverOf, tokenRefusedSeen, signintrace,
          memberRefOf, testInstanceOf, SIGNIN_WORDS, TRACE_HEADER, MEMBER_REF_HEADER } from "../../../src/signin-door/index.mjs";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
-import { accountReference, tokenMalformedHold, subscriptionDisconnect as accountDisconnect } from "../ai-accounts/fixtures.mjs";
+import { issuedTokenMalformed } from "../ai-accounts/fixtures.mjs";
+import { world as accountsWorld } from "../ai-accounts/fixture.mjs";
 import { refusedAnswer } from "../answer-envelope/fixtures.mjs";
 
 const ANN = "member:ann";
@@ -15,8 +16,17 @@ const PROD_ENV = { INSTANCE_NAME: "oakland" };
 const keptAway = { ok: false, reason: "AI_KEPT_AWAY", code: "AI_KEPT_AWAY", detail: "kept away", keep_away: { reason: "a case" } };
 const disclosureDue = { ok: false, reason: "DISCLOSURE_DUE", code: "DISCLOSURE_DUE", check: "C-29.40",
                         translation: "Read what connecting means first.", detail: "not yet shown", member: "ann" };
-/* ai-accounts' published state of a member whose subscription is connected and its token held */
-const ACCOUNT = await accountReference();
+/* F1: ai-accounts' T53 read of a member's own accounts (`accountsOf`, its R2), by its real code over its own test world:
+   `with` after her sign-in token is held (`subscriptionTokenHold`, an issued account of the subscription plan), `without`
+   when she holds no account. */
+async function accountsRead() {
+  const w = await accountsWorld().group("ann");
+  const without = w.a.accountsOf({ owner: ANN, viewer: ANN });
+  const held = await w.a.subscriptionTokenHold({ member: ANN, token: "sk-ant-oat01-" + "s".repeat(40) });
+  if (!held.ok) throw new Error(`accountsRead: ${held.reason}`);
+  return { with: w.a.accountsOf({ owner: ANN, viewer: ANN }), without, held };
+}
+const ACCOUNT = await accountsRead();
 
 /* The stand-in store: `routes[name]` is a result (answered), `"refused"`, `"silent"` or a function of the call. */
 function storeOf(routes = {}) {
@@ -51,7 +61,7 @@ function world({ env = PROD_ENV, routes = {}, reply } = {}) {
   const aw = agentWorker(reply);
   const lines = [];
   const store = storeOf({ aikeptaway: { ok: true }, signindisclosuredue: { ok: true },
-                          accountreference: ACCOUNT.with, ...routes });
+                          accountsof: ACCOUNT.with, ...routes });
   const e = { ...env, AGENT_WORKER: aw };
   const go = (asked, member = ANN) => subscriptionSignin({ env: e, member, asked, store, log: (l) => lines.push(l) });
   return { aw, lines, store, env: e, go };
@@ -140,8 +150,8 @@ test("R1: with no `AGENT_WORKER` binding the door answers 503 AGENT_WORKER_UNBOU
   assert.equal(kept.body.translation, "theirs");
 });
 
-test("R1 (ai-accounts R18, R27): `leaverOf` names the member a successful `subscriptiondisconnect` (the caller), `memberset` to revoked and a carried `adminremove` leave; `signoutLeaver` sends `step: \"signout\"` for that member and a runner that cannot be reached throws nothing; acts that did not succeed or did not revoke name nobody", async () => {
-  assert.equal(leaverOf("subscriptiondisconnect", {}, { ok: true, disconnected: true }, ANN), ANN);
+test("R1 (ai-accounts R27): `leaverOf` names the member a `memberset` to revoked and a carried `adminremove` leave; `signoutLeaver` sends `step: \"signout\"` for that member and a runner that cannot be reached throws nothing; acts that did not succeed or did not revoke, and the retired `subscriptiondisconnect` (notice op-declarations:95), name nobody", async () => {
+  assert.equal(leaverOf("subscriptiondisconnect", {}, { ok: true, disconnected: true }, ANN), null);
   assert.equal(leaverOf("memberset", { memberId: "bea", status: "revoked" }, { ok: true, memberId: "bea" }, "admin"), "member:bea");
   assert.equal(leaverOf("adminremove", { memberId: "bea" }, { ok: true, memberId: "bea", removed: true }, "admin"), "member:bea");
   for (const [op, asked, result] of [["subscriptiondisconnect", {}, { ok: false, reason: "NOT_YOUR_ACCOUNT" }],
@@ -207,7 +217,7 @@ test("R3 (N1001; agent-worker R83): each request gets a fresh `trace`, sent with
     [{ routes: { aikeptaway: keptAway } }, { step: "start" }],
     [{ routes: { aikeptaway: "silent" } }, { step: "start" }],
     [{ routes: { signindisclosuredue: disclosureDue } }, { step: "start" }],
-    [{ routes: { accountreference: "silent" } }, { step: "state" }],
+    [{ routes: { accountsof: "silent" } }, { step: "state" }],
     [{ routes: {} }, { step: "state" }],
     [{ reply: () => json(409, { ok: false, reason: "BAD_STEP" }) }, { step: "nonsense" }],
     [{ reply: () => { throw new Error("x"); } }, { step: "signout" }],
@@ -245,8 +255,8 @@ test("R4 (K3060 D10; ai-accounts R19; agent-worker R81): on `code` the door send
   assert.equal(JSON.stringify(w.aw.sent).includes(TOKEN), false, "no request to agent-worker");
   assert.equal(w.lines[0].held, true);
   /* the hold refused, or not answered: held false with the fact's code, and still no token */
-  const malformed = await tokenMalformedHold();
-  for (const [hold, code] of [[malformed.tooShort, "SUBSCRIPTION_TOKEN_MALFORMED"], ["silent", "STORE_DID_NOT_ANSWER"]]) {
+  const malformed = await issuedTokenMalformed();
+  for (const [hold, code] of [[malformed.tooShort, "ISSUED_TOKEN_MALFORMED"], ["silent", "STORE_DID_NOT_ANSWER"]]) {
     const x = world({ routes: { signintokenhold: hold }, reply: (b) => json(200, { ok: true, member: b.member, token: TOKEN, valid_for: "1 year" }) });
     const a = await x.go({ step: "code", code: "c" });
     assert.deepEqual([a.body.held, a.body.fact], [false, { code }], code);
@@ -269,34 +279,56 @@ test("R4 (K3060 D10; ai-accounts R19; agent-worker R81): on `code` the door send
   assert.equal("attempt" in ctl.aw.sent[1].body, false);
 });
 
-test("R4 (ai-accounts R19, R23): `state` is answered from `accountReferenceState`'s `subscription` (the store's `accountreference`, member and viewer the stamp), nothing sent to the runner; a read that fails is answered as a failure, never as not connected", async () => {
+test("F1, R4 (ai-accounts R2, R19): `state` is answered from ai-accounts' T53 read `accountsof` (owner `member:<id>`, viewer the stamp), never the retired `accountreference`: a connected subscription reads connected, held, since and its account; nothing sent to the runner; a read that fails is answered as a failure, never as not connected", async () => {
   const w = world();
   const r = await w.go({ step: "state" });
   assert.deepEqual(w.aw.sent, []);
-  assert.deepEqual(w.store.of("accountreference")[0].params, { member: ANN, viewer: ANN });
+  assert.deepEqual(w.store.of("accountreference"), [], "the retired route is never asked");
+  assert.deepEqual(w.store.of("accountsof")[0].params, { owner: ANN, viewer: ANN });
   assert.equal(r.status, 200);
-  for (const [k, v] of Object.entries(ACCOUNT.with.subscription)) assert.deepEqual(r.body[k], v, k);
-  assert.deepEqual([r.body.ok, r.body.step], [true, "state"]);
-  const silent = await world({ routes: { accountreference: "silent" } }).go({ step: "state" });
+  const sub = ACCOUNT.with.accounts.find((a) => a.means === "issued");
+  assert.deepEqual([r.body.ok, r.body.step, r.body.connected, r.body.held, r.body.account_id, r.body.since],
+                   [true, "state", true, true, ACCOUNT.held.account_id, sub.set_at]);
+  /* control: a member who holds no subscription reads not connected */
+  const none = await world({ routes: { accountsof: ACCOUNT.without } }).go({ step: "state" });
+  assert.deepEqual([none.status, none.body.connected, none.body.held, none.body.since, none.body.account_id], [200, false, false, null, null]);
+  const silent = await world({ routes: { accountsof: "silent" } }).go({ step: "state" });
   assert.deepEqual([silent.status, silent.body.ok, silent.body.reason, "connected" in silent.body], [502, false, "STORE_DID_NOT_ANSWER", false]);
-  const refused = await world({ routes: { accountreference: { ok: false, reason: "NOT_YOUR_ACCOUNT" } } }).go({ step: "state" });
+  const refused = await world({ routes: { accountsof: { ok: false, reason: "NOT_YOUR_ACCOUNT" } } }).go({ step: "state" });
   assert.deepEqual([refused.status, refused.body.reason, "connected" in refused.body], [403, "NOT_YOUR_ACCOUNT", false]);
 });
 
-test("R4 (ai-accounts R18, R19): `subscriptionDisconnect` reaches the store's `subscriptiondisconnect` (ai-accounts drops the token there) with `by` the stamp, then sends `signout` for that member; a runner that cannot be reached changes nothing of the answer; a refused disconnect sends nothing", async () => {
-  for (const throws of [false, true]) {
-    const store = storeOf({ subscriptiondisconnect: await accountDisconnect() });
-    const aw = agentWorker(() => { if (throws) throw new Error("down"); return json(200, { ok: true }); });
-    const out = await subscriptionDisconnect({ env: { AGENT_WORKER: aw }, member: ANN, store });
-    assert.deepEqual([out.answered, out.result], [true, { ok: true, disconnected: true }]);
-    assert.deepEqual(store.of("subscriptiondisconnect")[0].params, { by: ANN });
-    assert.deepEqual(aw.sent.map((s) => s.body), [{ member: ANN, step: "signout" }]);
-  }
-  const store = storeOf({ subscriptiondisconnect: { ok: false, reason: "NOT_YOUR_ACCOUNT" } });
-  const aw = agentWorker();
+test("F1 (ai-accounts R2): a connected subscription sign-in reads its state through ai-accounts' own T53 route map: the door's `state` request, answered by `aiAccountsOps` over the real module, reads connected after the token is held and not connected before; control: the retired `accountreference` is no route there", async () => {
+  const w = await accountsWorld().group("ann");
+  const routed = [];
+  const store = async (path, init = {}) => {
+    const url = new URL(`http://do/${path}`);
+    const route = url.pathname.slice(1);
+    routed.push(route);
+    const arm = w.ops(url.searchParams.toString(), init.body ? JSON.parse(init.body) : null)[route];
+    if (typeof arm !== "function") return { answered: false };
+    return { answered: true, result: await arm() };
+  };
+  const go = () => subscriptionSignin({ env: { AGENT_WORKER: agentWorker() }, member: ANN, asked: { step: "state" }, store, log: () => {} });
+  const before = await go();
+  assert.deepEqual([before.status, before.body.connected, before.body.held], [200, false, false]);
+  const held = await w.a.subscriptionTokenHold({ member: ANN, token: "sk-ant-oat01-" + "t".repeat(40) });
+  assert.equal(held.ok, true);
+  const after = await go();
+  assert.deepEqual([after.status, after.body.ok, after.body.connected, after.body.held, after.body.account_id],
+                   [200, true, true, true, held.account_id]);
+  assert.deepEqual([...new Set(routed)], ["accountsof"]);
+  assert.equal(typeof w.ops("", null).accountreference, "undefined", "control: ai-accounts serves no accountreference");
+});
+
+test("notice op-declarations:95 (its R30; ai-accounts R35): `subscriptionDisconnect` is retired: it asks no store route, sends nothing to the runner and answers the store's own refusal of an op it does not serve", async () => {
+  const store = storeOf({ subscriptiondisconnect: { ok: true, disconnected: true } });
+  const aw = agentWorker(() => json(200, { ok: true }));
   const out = await subscriptionDisconnect({ env: { AGENT_WORKER: aw }, member: ANN, store });
-  assert.equal(out.result.reason, "NOT_YOUR_ACCOUNT");
-  assert.deepEqual(aw.sent, [], "control: refused, nothing sent");
+  assert.deepEqual([out.answered, out.refused, out.reply.status, out.reply.body],
+                   [false, true, 400, { ok: false, error: "unknown op: subscriptiondisconnect" }]);
+  assert.deepEqual(store.of("subscriptiondisconnect"), [], "the retired route is never asked");
+  assert.deepEqual(aw.sent, [], "nothing sent to the runner");
 });
 
 test("R4 (ai-accounts R19): an ask or draft answered SIGNIN_TOKEN_REFUSED, at the top level or in `result`, calls `subscriptionTokenRefused` for that member (the store's `signintokenrefused`); any other answer calls nothing", async () => {

@@ -1,4 +1,4 @@
-/* civicsmith.org: Civicsmith's own website, a static Worker (site R1–R12). It serves the three generated pages
+/* civicsmith.org: Civicsmith's own website, a static Worker (site R1–R18). It serves the three generated pages
  * (`pages.mjs`, site/build.mjs; R9, R12) with the four deploy values put in place (R4–R7), and interface-assets' files
  * at their own paths (R8). It holds no accounts, reads no group's record, sends nothing anywhere and stores nothing
  * (R10). Every response carries the same headers (R6, R7, R8); a deploy value that is malformed answers 500, never a
@@ -53,7 +53,7 @@ function https(v, name, { bare = false } = {}) {
   return u;
 }
 
-/* The four deploy values (R4–R7), read and checked on every request; nothing about them is kept. */
+/* The four deploy values (R4–R7), read and checked on every request, with R17's register (withdrawn); nothing about them is kept. */
 export function config(env = {}) {
   const c = {};
   c.installer = unset(env.INSTALLER_ADDRESS) ? null : https(env.INSTALLER_ADDRESS, "INSTALLER_ADDRESS", { bare: true }).href;
@@ -81,11 +81,56 @@ export function config(env = {}) {
     if (editions < cases) bad(`${n}.editions is fewer than its cases`);
     return {
       name: text(x.name, `${n}.name`), place: text(x.place, `${n}.place`), focus: text(x.focus, `${n}.focus`),
-      href: https(x.address, `${n}.address`).href, cases, editions,
+      address: x.address, href: https(x.address, `${n}.address`).href, cases, editions,
       latest: editions > cases ? text(x.latest, `${n}.latest`) : null,
     };
   });
   return c;
+}
+
+/* R17: the stewards' withdrawal register (`stewards` R13's `GET /steward/withdrawals`: `{register, sha256}`, the register's
+   canonical JSON and its SHA-256), one more plain-text deploy value. Unset, nothing is withdrawn. Present, it must be the
+   stewards' answer exactly: an object of those two keys, each entry `{service, item, since}` (with `ref` and `kind` as the
+   stewards keep them), no entry twice, and the digest the register's own; anything else is malformed, so the deploy check
+   (site/check.mjs) refuses it and a request answers 500, never the listing drawn whole. Answers the addresses whose
+   `public_listing` withdrawal stands. */
+const canonical = (v) => (Array.isArray(v) ? `[${v.map(canonical).join(",")}]`
+  : v && typeof v === "object" ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}`
+    : JSON.stringify(v));
+const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+export async function withdrawn(env = {}) {
+  if (unset(env.WITHDRAWAL_REGISTER)) return new Set();
+  const n = "WITHDRAWAL_REGISTER";
+  const v = json(env.WITHDRAWAL_REGISTER, n);
+  if (!v || typeof v !== "object" || Array.isArray(v) || Object.keys(v).sort().join() !== "register,sha256") bad(`${n} is not {register, sha256}`);
+  if (!Array.isArray(v.register)) bad(`${n}.register is not a list`);
+  if (typeof v.sha256 !== "string" || !/^[0-9a-f]{64}$/.test(v.sha256)) bad(`${n}.sha256 is not a SHA-256 digest`);
+  const seen = new Set(), items = new Set();
+  v.register.forEach((x, i) => {
+    const at = `${n}.register[${i}]`;
+    if (!x || typeof x !== "object" || Array.isArray(x)) bad(`${at} is not a withdrawal`);
+    if (Object.keys(x).some((k) => !["service", "item", "since", "ref", "kind"].includes(k))) bad(`${at} has a field the register does not`);
+    if (typeof x.service !== "string" || !/^[a-z_]{1,64}$/.test(x.service)) bad(`${at}.service is not a service`);
+    if (typeof x.item !== "string" || x.item.length < 1 || x.item.length > 512) bad(`${at}.item is not an identifier`);
+    if (!Number.isInteger(x.since) || x.since < 0) bad(`${at}.since is not a time`);
+    for (const k of ["ref", "kind"]) if (k in x && (typeof x[k] !== "string" || !x[k])) bad(`${at}.${k} is not a text`);
+    const key = `${x.service}\u0000${x.item}`;
+    if (seen.has(key)) bad(`${at} stands twice`);
+    seen.add(key);
+    if (x.service === "public_listing") items.add(x.item);
+  });
+  const digest = hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical(v.register))));
+  if (digest !== v.sha256) bad(`${n}.sha256 is not the register's digest`);
+  return items;
+}
+/* A listed group stands withdrawn when its address, as listed or as the site reads it, is a `public_listing` item. */
+const standsWithdrawn = (items, g) => items.has(g.address) || items.has(g.href);
+
+/* The deploy check (R17, K5571 (4)): every deploy value read as a request reads them; throws ConfigError on the first fault. */
+export async function check(env = {}) {
+  const c = config(env);
+  const items = await withdrawn(env);
+  return { config: c, withdrawn: items.size, listed: c.groups.filter((g) => !standsWithdrawn(items, g)).length };
 }
 
 function casesOf(g) {
@@ -124,7 +169,12 @@ export default {
   async fetch(request, env) {
     const method = request.method;
     let c = null;
-    try { c = config(env); } catch (e) {
+    try {
+      c = config(env);
+      const items = await withdrawn(env);
+      /* R17: a standing withdrawal draws no row and no trace of one; with every row withdrawn, R13's empty state. */
+      c.groups = c.groups.filter((g) => !standsWithdrawn(items, g));
+    } catch (e) {
       if (!(e instanceof ConfigError)) throw e;
       return new Response(null, { status: 500, headers: headers(null, "text/plain") });
     }

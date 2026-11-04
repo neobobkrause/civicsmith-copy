@@ -1,0 +1,42 @@
+{
+  "id": "basis-version-grammar",
+  "title": "basis-version-grammar: R3, leg grammar per version",
+  "layer": 6,
+  "paths": [
+    "bio-plane/src/basis-version-grammar/",
+    "build/requirements/basis-version-grammar.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/basis-version-grammar/"
+  ],
+  "requirements": "build/requirements/basis-version-grammar.md",
+  "uses": [
+    "record-grammar",
+    "text-chain",
+    "record-core",
+    "content",
+    "connections",
+    "inquiry-grammar",
+    "connection-grammar",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/basis-version-grammar.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the open requirement in build/requirements/basis-version-grammar.md (R3), with a test of it at the module's interface that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T05:35:10Z"
+  }
+}
