@@ -24,3 +24,4 @@
 {"at":"2026-11-04T12:34:53Z","row":"outcome","n":12,"outcome":"delivered"}
 {"at":"2026-11-04T13:26:14Z","row":"sent","n":13,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job store-assembly complete, PR #242 ready, session session_01RAN5en7NS24skwHT8FPFUS: run status"}
 {"at":"2026-11-04T13:26:24Z","row":"outcome","n":13,"outcome":"delivered"}
+{"at":"2026-11-04T16:28:56Z","row":"sent","n":14,"to":"bob","text":"job store-assembly BLOCKED: run status"}
