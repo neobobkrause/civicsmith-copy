@@ -297,3 +297,4 @@
 {"at":"2026-11-04T20:42:11Z","row":"outcome","n":151,"outcome":"delivered"}
 {"at":"2026-11-04T20:42:38Z","row":"sent","n":152,"to":"job-case-checker","text":"Coordinator 20:49: program.mjs stays tracked until after the first dev release. On job/case-checker-2: git checkout origin/tranche -- bio-plane/src/case-checker/program.mjs (restore the tranche's exact bytes), drop any .gitignore change, commit, push, job sync, job complete again, so PR 301 is only the program.test strengthening."}
 {"at":"2026-11-04T20:42:51Z","row":"outcome","n":152,"outcome":"delivered"}
+{"at":"2026-11-04T20:52:40Z","row":"sent","n":153,"to":"job-case-checker","text":"Your diagnosis of PR 301 is clear; options (a) regenerate tracked generated paths, (b) untrack once the gate accepts it, (c) todo are with the coordinator; BOB recommends holding until after the first dev release, then (b). Don't push or restart; wait."}
