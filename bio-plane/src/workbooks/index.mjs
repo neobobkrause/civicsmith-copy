@@ -43,6 +43,9 @@ export const NOT_RECOMPUTED = word("workbooks.recomputed");
 export const WORKBOOK_FILE_MAX_BYTES = boundOf("workbook", "bytes");
 export const WORKBOOK_CELLS_MAX_BYTES = boundOf("workbook", "cells_json_bytes");
 export const WORKBOOK_CELLS_MAX = boundOf("workbook", "cells");
+/** F1 (T53; runtime-limits R37): an xlsx whose declared text (its sheets and shared strings, summed from the central
+ *  directory) is over this row is refused as WORKBOOK_FILE_TOO_LARGE with condition `declared_text`, stated on this row. */
+export const WORKBOOK_DECLARED_TEXT_MAX = boundOf("xlsx", "declared_text");
 /** R6: how many cells each recorded list keeps; the counts are always whole, and a cut list says how many it left. */
 export const LIST_MAX = 2000;
 /** R8: the meaning every recompute statement carries. */
@@ -67,12 +70,15 @@ const json = (v) => JSON.stringify(v ?? null);
 const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
 const refusal = (reason, detail, extra = {}) => ({ ok: false, reason, detail, ...extra });
 const megabytes = (n) => (n / 1e6).toFixed(1);
-/* R1: a capture or a file over its bound: `condition` says which bound fired, `stored_size` or `declared_text`. */
-const fileTooLarge = (size, bound, condition) => refusal("WORKBOOK_FILE_TOO_LARGE",
+/* R1: a capture or a file over its bound: `condition` says which bound fired, `stored_size` or `declared_text`; `row` is the
+   `READ_BOUNDS` row the bound is (F1: a declared text over `xlsx.declared_text` is stated on that row; one under it that the
+   reader will not hold whole is stated on the reader's own, `office.text_bytes`). */
+const LIMIT_ROWS = Object.freeze({ stored_size: ["workbook", "bytes"], declared_text: ["office", "text_bytes"], xlsx_declared_text: ["xlsx", "declared_text"] });
+const fileTooLarge = (size, bound, condition, row = condition) => refusal("WORKBOOK_FILE_TOO_LARGE",
   localize("refusal.WORKBOOK_FILE_TOO_LARGE", "This file is {size} MB, more than the {bound} MB that can be added as a workbook. The original is unchanged.",
            { size: megabytes(size), bound: megabytes(bound) }),
   { size: megabytes(size), bound: megabytes(bound), size_bytes: size, bound_bytes: bound, condition,
-    limit: condition === "declared_text" ? statement("office", "text_bytes", size) : statement("workbook", "bytes", size) });
+    limit: statement(...LIMIT_ROWS[row], size) });
 /* R1, R2: a workbook of more cells than can be held and read; `condition` is `cell_count` or `cell_bytes`. */
 const cellsTooLarge = (cells, condition, bound = WORKBOOK_CELLS_MAX) => refusal("WORKBOOK_TOO_LARGE",
   localize("refusal.WORKBOOK_TOO_LARGE", "This workbook has {cells} cells, more than the {bound_cells} that can be held and read here.",
@@ -279,8 +285,12 @@ export class Workbooks {
     const sheets = text && text.ok && Array.isArray(text.sheets) ? text.sheets : null;
     const marks = (sheets || []).flatMap((s) => s.undetermined || []).concat(text && Array.isArray(text.undetermined) ? text.undetermined : []);
     const guard = marks.find((m) => m && typeof m === "object" && m.why === "over_size_bound" && Number.isFinite(Number(m.size)) && Number.isFinite(Number(m.bound)));
-    if (guard) return fileTooLarge(Number(guard.size), Number(guard.bound), "declared_text");
+    /* F1: the declared text the reader judged (over the streamed ceiling, or read in pieces), against the xlsx row first */
     const pieces = text && text.piecewise;
+    const declaredMark = marks.find((m) => m && typeof m === "object" && m.why === "over_size_bound" && m.metric === "declared_uncompressed_text_part_bytes" && Number.isFinite(Number(m.size)));
+    const declared = declaredMark ? Number(declaredMark.size) : pieces && Number.isFinite(Number(pieces.declared)) ? Number(pieces.declared) : null;
+    if (declared !== null && declared > WORKBOOK_DECLARED_TEXT_MAX) return fileTooLarge(declared, WORKBOOK_DECLARED_TEXT_MAX, "declared_text", "xlsx_declared_text");
+    if (guard) return fileTooLarge(Number(guard.size), Number(guard.bound), "declared_text");
     if (pieces && Number.isFinite(Number(pieces.declared)) && Number.isFinite(Number(pieces.bound)))
       return fileTooLarge(Number(pieces.declared), Number(pieces.bound), "declared_text");
     /* the reader counts the cells it would hold and refuses a sheet past its own bound (`TOO_MANY_OBJECTS` {n, bound}):
