@@ -508,7 +508,7 @@ export class QuestionExplorer {
                                         label: say("question-explorer.label.exploring_question"),
                                         mode: EXPLORE_MODE, origin: EXPLORE_ORIGIN, use: EXPLORE_USE,
                                         place: { questions: [w.question] }, work: EXPLORE_WORK,
-                                        principalPlane: this.principal, principalClaude: owner, principalClaudeRef: null,
+                                        principalPlane: this.principal, principalAi: owner, principalAiRef: null,
                                         enabledBy: label, skillVersion: EXPLORE_SKILL, bounds: EXPLORE_BOUNDS.map((b) => ({ ...b })),
                                         at, actor: null, viewer: this.principal });
     } catch { opened = null; }

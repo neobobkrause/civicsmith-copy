@@ -19,10 +19,11 @@
  *    keys).
  * This module holds no secret and signs nothing (R52); it only verifies.
  *
- * THE KEYS. `CATALOGUE_KEYS` (`signatures` R50) may hold development key lines beside Bob's, each marked by the comment
- * ending `DEVELOPMENT_KEY_MARK`. `catalogueKeysFor` keeps a development line only in a build whose environment sets
- * `DEVELOPMENT_VAR` to "1", so a public release, which never sets it, refuses a development-signed seed or payload
- * (`UNKNOWN_KEY`) while trusting Bob's lines. */
+ * THE KEYS. `CATALOGUE_KEYS` (`signatures` R50, R58) holds exactly Bob's two catalogue keys and no test or development
+ * line; a key this copy should trust beside them is handed as `keys` (as a test does). `catalogueKeysFor` keeps a line
+ * marked by the comment ending `DEVELOPMENT_KEY_MARK` only in a build whose environment sets `DEVELOPMENT_VAR` to "1", so
+ * a public release, which never sets it, refuses a development-signed seed or payload (`UNKNOWN_KEY`) while trusting
+ * Bob's lines; over signatures' list alone it drops nothing. */
 import { createSha256 } from "../record-grammar/index.mjs";
 
 /** The variable a development deployment sets to the seed's armored signature (public; not a secret). */
