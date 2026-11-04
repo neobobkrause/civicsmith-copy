@@ -2,3 +2,4 @@
 {"at":"2026-11-04T12:52:18Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T13:01:47Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job ratification complete, PR #234 ready, session session_01RAN5emuZmHbAjiW1p2gw7G: run status. Re bob-75: the missing ungraded_passages block is case-authoring's (document.mjs:183-184, its R89 unmet); details in the receipt. Re bob-78: publication:229 confirmed, test named in the receipt's not-verified (the tool refuses a notice the START did not name)."}
 {"at":"2026-11-04T13:01:58Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-04T13:25:09Z","row":"sent","n":3,"to":"bob","text":"job ratification complete, PR #247 ready, session session_01RAN5ekFPpty3UuXmrcJbMM: run status"}
