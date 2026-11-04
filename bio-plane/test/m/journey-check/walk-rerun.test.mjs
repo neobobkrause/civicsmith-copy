@@ -19,7 +19,7 @@ import { roleProblems, selfActs, liveCity, CITY_ENV } from "../../../src/journey
 import { walkAdministrator, NO_TESTPAGE, PROJECT_BASE, PROJECT_TITLE, projectTitle } from "../../../src/journey-check/investigation.mjs";
 import { NOTICE_PATH, NOTICE_HTML, HEAT_PATH, HEAT_HTML } from "../../../src/journey-check/city.mjs";
 import { testpageName, testpageSource } from "../../../src/journey-check/testpage/page.mjs";
-import { plan, deploy, ACCOUNT, Refused } from "../../../src/journey-check/testpage/deploy.mjs";
+import { plan, deploy, ACCOUNT, Refused, GUARD_LINE } from "../../../src/journey-check/testpage/deploy.mjs";
 import { testpageAddress, walkEnv } from "../../../scripts/p3dev-walk-setup.mjs";
 
 const SRC = fileURLToPath(new URL("../../../src/journey-check/", import.meta.url));
@@ -161,4 +161,27 @@ test("F6: R5 does not fail an act that is the member's own on her own roster row
   assert.deepEqual(roleProblems(founderAndMember, { own: [] }), ["account: the member is drawn memberpairingset, the administrator is not"]);
   /* control: an administrator drawn nothing the member is not still fails */
   assert.equal(roleProblems(acts({ account: ["signout"] }, { account: ["signout"] })).length, 1);
+});
+
+test("F5: the test page's deploy prints `p3dev guard: passed`, alone on its line, once its checks pass, in a dry run and a real one; control: never when a check fails", async () => {
+  const DEPLOY = fileURLToPath(new URL("../../../src/journey-check/testpage/deploy.mjs", import.meta.url));
+  const run = (env, args = ["--dry-run"]) => { try { return { code: 0, out: execFileSync(process.execPath, [DEPLOY, "p3dev-t1", ...args], { env: { PATH: process.env.PATH, ...env }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }) }; }
+    catch (e) { return { code: e.status, out: String(e.stdout) + String(e.stderr) }; } };
+  const ok = run({ CF_ACCT: ACCOUNT, CIVICSMITH_TEST_INSTANCE: "p3dev-t1" });
+  assert.equal(ok.code, 0, ok.out);
+  assert.equal(ok.out.split("\n").filter((l) => l === GUARD_LINE).length, 1, ok.out);
+  assert.equal(GUARD_LINE, "p3dev guard: passed");
+  for (const env of [{ CF_ACCT: "0123456789abcdef0123456789abcdef", CIVICSMITH_TEST_INSTANCE: "p3dev-t1" }, { CF_ACCT: ACCOUNT, CIVICSMITH_TEST_INSTANCE: "p3dev-t2" }, { CF_ACCT: ACCOUNT }]) {
+    const r = run(env);
+    assert.notEqual(r.code, 0, r.out);
+    assert.ok(!r.out.includes(GUARD_LINE), r.out);
+  }
+  /* the real run prints it too, before its first call */
+  const said = [];
+  const fetchOf = async () => new Response(JSON.stringify({ success: true }), { status: 200 });
+  await deploy("p3dev-t1", { env: { CF_ACCT: ACCOUNT, CIVICSMITH_TEST_INSTANCE: "p3dev-t1", CF_TOKEN: "t".repeat(32) }, fetchOf, log: (l) => said.push(l) });
+  assert.equal(said.filter((l) => l === GUARD_LINE).length, 1, said.join("\n"));
+  const refused = [];
+  await assert.rejects(deploy("p3dev-t1", { env: { CF_ACCT: ACCOUNT, CIVICSMITH_TEST_INSTANCE: "p3dev-t9", CF_TOKEN: "t".repeat(32) }, fetchOf, log: (l) => refused.push(l) }));
+  assert.ok(!refused.includes(GUARD_LINE));
 });

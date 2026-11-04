@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { testpageName, testpageSource } from "./page.mjs";
 
 export const ACCOUNT = "20b533579290b9b93168345edd3b7f72";
+export const GUARD_LINE = "p3dev guard: passed";
 export const COMPATIBILITY_DATE = "2026-10-01";
 
 export class Refused extends Error { constructor(code, msg) { super(`REFUSED [${code}]: ${msg}`); this.code = code; } }
@@ -34,6 +35,8 @@ export function plan(slug, env = process.env) {
 /** The deploy: upload the module, turn on its workers.dev address. `fetchOf` is the network. Answers the Worker's name. */
 export async function deploy(slug, { env = process.env, dryRun = false, fetchOf = fetch, log = console.log } = {}) {
   const p = plan(slug, env);
+  /* deploy dev accepts the step only on this exact line, printed once the checks above pass, dry run or not */
+  log(GUARD_LINE);
   const api = `https://api.cloudflare.com/client/v4/accounts/${p.account}/workers/scripts/${p.name}`;
   log(`testpage : ${p.name} in account ${p.account}, ${p.source.length} bytes, no binding, no secret, no route${dryRun ? " (dry run: nothing sent)" : ""}`);
   if (dryRun) return p.name;
