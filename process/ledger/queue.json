@@ -1,0 +1,64 @@
+{
+  "id": "queue",
+  "title": "queue: answer its provider notices",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/queuestate.mjs",
+    "bio-plane/src/queue/",
+    "build/requirements/queue.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/queue/",
+    "bio-plane/test/conclude-project.test.mjs",
+    "bio-plane/test/docdates.mjs"
+  ],
+  "requirements": "build/requirements/queue.md",
+  "uses": [
+    "duties",
+    "answers",
+    "provenance",
+    "money-checks",
+    "people",
+    "docket",
+    "monitoring",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "connections",
+    "progressions",
+    "bias",
+    "observation-log",
+    "inquiry",
+    "actions",
+    "scheduler",
+    "affordances",
+    "tasks",
+    "queue-producers",
+    "credentials",
+    "test-support",
+    "civil-time",
+    "notice-producers",
+    "investigation",
+    "setup-words",
+    "project-roster"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/queue.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: notice-producers:211 (index.mjs:824 ACCOUNT_DOORS still maps the retired notice kind project-account-suspended to queuemute; bio-plane/src/queuestate.mjs:372 still catalogues it; PR 211 retired that kind and made provider-limit items skip ai-limit-reached). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. notice-producers also reports that its R33, R34, R35 and R36 item kinds are not in queue's catalogue (queue R1, R98), and queue refuses a member's whole feed NO_SUCH_KIND on an unknown kind; meet queue's own unmet marks for them where its requirements say so. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T12:30:28Z"
+  }
+}

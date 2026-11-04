@@ -7,6 +7,8 @@
  * Run, from this folder, on T49's source:
  *     git archive origin/tranche/T49 bio-plane/src | tar -x -C <dir>
  *     node words-reads.src.mjs <dir>          (or <dir>/bio-plane/src)
+ * On the tranche it is a `generated` row (process/config.json), built from the repository root, never committed
+ * (2.6 MB, over max_file_bytes): node docs/development/ux-substrate/screens/words-reads.src.mjs . --build
  * after words.json is built (node build_words.mjs). It writes words-reads.json and exits 1, naming each, if any listed key
  * is not in words.json, any inline string is left untriaged, or any decision below no longer finds its string.
  *
@@ -23,15 +25,15 @@
  * literals into one text (`${…}` for each expression), drops comments, imports, comparisons, throws and logging, and
  * keeps text that reads as English. */
 import fs from "node:fs";
-import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARG = process.argv[2];
+const BUILD = process.argv.includes("--build"); // the gate's and deploy's build: write the file, report problems, exit 0
+const ARG = process.argv.slice(2).find((a) => a !== "--build");
 if (!ARG) { console.error("usage: node words-reads.src.mjs <T49 extract dir, or its bio-plane/src>"); process.exit(2); }
 const SRC = fs.existsSync(path.join(ARG, "bio-plane", "src")) ? path.resolve(ARG, "bio-plane", "src") : path.resolve(ARG);
 const WORDS = path.join(HERE, "words.json");
-const MODULES = ["op-capabilities","op-grades","affordances","setup-words","op-declarations","admission","interface-assets","interface-shell","screens-action","screens-daily","screens-entry","screens-inquiry","screens-intake","screens-investigate","screens-publish","screens-settings","control-plane","plane","site","journey-check"];
+const MODULES = ["op-capabilities","op-grades","affordances","setup-words","op-declarations","admission","interface-assets","interface-shell","screens-action","screens-daily","screens-entry","screens-inquiry","screens-intake","screens-investigate","screens-publish","screens-settings","control-plane","plane","store-assembly","site","journey-check"];
 
 // ---------- tokenizer ----------
 const KW_BEFORE_REGEX = new Set(["return","typeof","case","do","else","in","of","new","delete","void","throw","yield","await","instanceof"]);
@@ -308,31 +310,31 @@ const DECISIONS = [
   ["control-plane", "control-plane/index.mjs", "~Give it to the recipient: it lets them READ this one draft", "screen.review-copy.link.once"],
   ["control-plane", "control-plane/index.mjs", "~Give it to the reviewer: it lets them READ this one template version", "template.review.secret.once"],
   ["control-plane", "control-plane/index.mjs", "^a POST to op=", dev("apiuse")],
-  // plane: the ask's refusals, by code; the legacy screen registry read as the design's screens
-  ["plane", "plane/ask.mjs", "~is a member's own act, from their own session", "refusal.ASK_NOT_A_MEMBER"],
-  ["plane", "plane/ask.mjs", "~is a POST", dev("badtask")],
-  ["plane", "plane/ask.mjs", "~body is not JSON", dev("badtask")],
-  ["plane", "plane/ask.mjs", "=the draft did not come back. Nothing was kept.", "refusal.AGENT_WORKER_SILENT"],
-  ["plane", "plane/ask.mjs", "=the assistant member did not answer. Nothing was kept.", "refusal.AGENT_WORKER_SILENT"],
-  ["plane", "plane/ask.mjs", "=the assistant member's answer was not JSON. Nothing was kept.", "refusal.AGENT_WORKER_SILENT"],
-  ["plane", "plane/ask.mjs", "^your group's Civicsmith has no assistant bound to it", "refusal.AGENT_WORKER_UNBOUND"],
-  ["plane", "plane/ask.mjs", "^the language this passage is read in could not be read", "translate.undetermined.language"],
-  ["plane", "plane/ask.mjs", "^a passage of more than", "refusal.PASSAGE_TOO_LONG"],
-  ["plane", "plane/ask.mjs", "~project keeps its material away could not be read", "ai.keepaway.unread"],
-  ["plane", "plane/ask.mjs", "=the plan could not be read. Nothing was drafted.", "ai.draft.planunread"],
-  ["plane", "plane/ask.mjs", "^the records this draft is about could not be read", "ai.draft.recordsunread"],
-  ["plane", "plane/ask.mjs", "=no note of yours is held by that number", "refusal.NO_SUCH_NOTE"],
-  ["plane", "plane/ask.mjs", "=a reading is a member's own act", dev("badtask")],
-  ["plane", "plane/ask.mjs", "^a status report's draft names its plan", dev("badtask")],
-  ["plane", "plane/ask.mjs", "=the plan this draft is about cannot be read here", dev("badtask")],
-  ["plane", "plane/ask.mjs", "^a reading names its subject", dev("badtask")],
-  ["plane", "plane/ask.mjs", "=${…}. Nothing was drafted.", dev("badtask")],
-  ["plane", "plane/ask.mjs", "=the records this draft is about cannot be read here", dev("badtask")],
-  ["plane", "plane/ask.mjs", "=a draft that reads records is a member's own act", dev("badtask")],
-  ["plane", "plane/ask.mjs", "^a bearing draft names", dev("badtask")],
-  ["plane", "plane/ask.mjs", "^the reply named is not an entry", dev("badtask")],
-  ["plane", "plane/ask.mjs", "^an infraction draft names", dev("badtask")],
-  ["plane", "plane/ask.mjs", "^the reply's text is not held", dev("assistantinput")],
+  // store-assembly: the ask's refusals, by code (moved from plane/ask.mjs); the legacy screen registry read as the design's screens
+  ["store-assembly", "store-assembly/ask.mjs", "~is a member's own act, from their own session", "refusal.ASK_NOT_A_MEMBER"],
+  ["store-assembly", "store-assembly/ask.mjs", "~is a POST", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "~body is not JSON", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "=the draft did not come back. Nothing was kept.", "refusal.AGENT_WORKER_SILENT"],
+  ["store-assembly", "store-assembly/ask.mjs", "=the assistant member did not answer. Nothing was kept.", "refusal.AGENT_WORKER_SILENT"],
+  ["store-assembly", "store-assembly/ask.mjs", "=the assistant member's answer was not JSON. Nothing was kept.", "refusal.AGENT_WORKER_SILENT"],
+  ["store-assembly", "store-assembly/ask.mjs", "^your group's Civicsmith has no assistant bound to it", "refusal.AGENT_WORKER_UNBOUND"],
+  ["store-assembly", "store-assembly/ask.mjs", "^the language this passage is read in could not be read", "translate.undetermined.language"],
+  ["store-assembly", "store-assembly/ask.mjs", "^a passage of more than", "refusal.PASSAGE_TOO_LONG"],
+  ["store-assembly", "store-assembly/ask.mjs", "~project keeps its material away could not be read", "ai.keepaway.unread"],
+  ["store-assembly", "store-assembly/ask.mjs", "=the plan could not be read. Nothing was drafted.", "ai.draft.planunread"],
+  ["store-assembly", "store-assembly/ask.mjs", "^the records this draft is about could not be read", "ai.draft.recordsunread"],
+  ["store-assembly", "store-assembly/ask.mjs", "=no note of yours is held by that number", "refusal.NO_SUCH_NOTE"],
+  ["store-assembly", "store-assembly/ask.mjs", "=a reading is a member's own act", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "^a status report's draft names its plan", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "=the plan this draft is about cannot be read here", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "^a reading names its subject", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "={detail}. Nothing was drafted.", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "=the records this draft is about cannot be read here", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "=a draft that reads records is a member's own act", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "^a bearing draft names", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "^the reply named is not an entry", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "^an infraction draft names", dev("badtask")],
+  ["store-assembly", "store-assembly/ask.mjs", "^the reply's text is not held", dev("assistantinput")],
   // DEC-431: capture R113's begin act, its default saying "group" (DEC-281: team): the design's word is the key's
   ["affordances", "affordances/act-help.mjs", "^Starts sending a large document to the group's store", "act.captureuploadbegin.does"],
   /* DEC-444: T51's stand-ins for the two ops DEC-443 worded (K5303); the design's sentences are ACT_HELP's leggrade and signerknown */
@@ -361,19 +363,19 @@ for (const [key, was] of Object.entries(JSON.parse(fs.readFileSync(path.join(HER
 /* DEC-413 (B473, K4458): on T51 after fix round 3, the declared ops' own descriptions (control-plane's owner ops, the plane's
    ask), builders' grading text like op-grades' (their member sentences are act.<op>.does rows), and a bias file's section label. */
 for (const pre of ["upload-directed: ", "read: a case's drafts of its account", "case-directed: ", "action-directed: ", "credential: a member's own sign-in", "read: every interface word"])
-  DECISIONS.push(["control-plane", "control-plane/owner-ops.mjs", "^" + pre, dev("grade")]);
-DECISIONS.push(["plane", "plane/declared.mjs", "^member-directed: a member's own question", dev("grade")]);
+  DECISIONS.push(["store-assembly", "store-assembly/owner-ops.mjs", "^" + pre, dev("grade")]);
+DECISIONS.push(["store-assembly", "store-assembly/declared.mjs", "^member-directed: a member's own question", dev("grade")]);
 /* DEC-424 (B495): on T51 after fix round 6, the plane's owedwork op description is builders' grading text like the other declared ops'; the
    interrupted reading's reason is the design's own word (DEC-417 plane.pending.interrupted, whose English the code's stand-in no longer matches). */
-DECISIONS.push(["plane", "plane/declared.mjs", "^what the object still owes one document", dev("grade")]);
-DECISIONS.push(["plane", "plane/pending.mjs", "=the reading did not finish; the object stopped", "plane.pending.interrupted"]);
+DECISIONS.push(["store-assembly", "store-assembly/declared.mjs", "^what the object still owes one document", dev("grade")]);
+DECISIONS.push(["store-assembly", "store-assembly/pending.mjs", "=the reading did not finish; the object stopped", "plane.pending.interrupted"]);
 DECISIONS.push(["screens-settings", "screens-settings/bias.mjs", "=## What This Does Not Enforce", dev("filegrammar")]);
 /* What a module's remaining inline strings are, when no decision or word names them. */
 const DEFAULTS = {
   "op-grades": "grade", "journey-check": "harness", "interface-assets": "generated", "interface-shell": "elementnote",
   "op-declarations": "provenance", "admission": "wire", "plane": null,
 };
-const DEFAULT_BY_FILE = { "plane/screens.mjs": "legacy", "plane/unpack.mjs": "diag", "plane/wiring.mjs": "diag", "plane/wizards.mjs": "diag" };
+const DEFAULT_BY_FILE = { "plane/screens.mjs": "legacy", "store-assembly/unpack.mjs": "diag", "store-assembly/wiring.mjs": "diag", "store-assembly/wizards.mjs": "diag" };
 /* A key a module names that the design holds under another name: the design's governs. */
 /* DEC-271 (B228): AGENT_WORKER_UNBOUND's details read refusal.AGENT_WORKER_UNBOUND (DEC-267), not the interim ai.refused.notdeployed;
    admission reads DEC-262's session limit. DEC-265 (B226 (5)): reads a module's requirements name ahead of its source: screens-settings R32 draws each section's
@@ -566,9 +568,9 @@ for (const f of fs.readdirSync(HERE).filter((f) => /^words-reads-mod-\d+\.json$/
 {
   let owners = new Map();
   try {
-    const mj = JSON.parse(execFileSync("git", ["-C", path.resolve(HERE, "../../../.."), "show", "origin/main:build/modules.json"], { encoding: "utf8", maxBuffer: 1 << 26 }));
+    const mj = JSON.parse(fs.readFileSync(path.resolve(HERE, "../../../../build/modules.json"), "utf8")); // the tree's own, as the gate builds it
     for (const mod of mj.modules || mj) for (const p of mod.paths || []) if (/\.mjs$/.test(p)) owners.set(p.replace(/^bio-plane\/src\//, ""), mod.id);
-  } catch (e) { problems.push(`build/modules.json on origin/main could not be read (${e.message}): file-named entries keep their names`); }
+  } catch (e) { problems.push(`build/modules.json could not be read (${e.message}): file-named entries keep their names`); }
   for (const name of Object.keys(out.modules).filter((k) => k.endsWith(".mjs"))) {
     const id = owners.get(name);
     if (!id || id === name) continue;
@@ -593,5 +595,7 @@ fs.writeFileSync(path.join(HERE, "words-reads.json"), JSON.stringify(out, null, 
 const tot = Object.values(out.modules).reduce((a, v) => ({ reads: a.reads + (Array.isArray(v.reads) && v.reads[0] !== "*" ? v.reads.length : 0), unkeyed: a.unkeyed + v.unkeyed.length }), { reads: 0, unkeyed: 0 });
 for (const [m, v] of Object.entries(out.modules)) console.log(m.padEnd(20), JSON.stringify(v.counts), v.retired ? "retired " + v.retired.length : "", v.renamed ? "renamed " + Object.keys(v.renamed).length : "");
 console.log(`words-reads.json: ${Object.keys(out.modules).length} modules, ${tot.reads} keys read (setup-words "*"), ${tot.unkeyed} inline strings unkeyed, ${MINTED.size} keys minted (DEC-258)`);
-if (problems.length) { console.error(problems.length + " problem(s):\n" + problems.join("\n")); process.exit(1); }
+/* A problem is design-stream triage drift (an untriaged string, a word not yet keyed): the design lane's own run fails on it;
+   the `generated` row's build (--build) writes the file and reports it, so a job's gate is never red for the design stream's work. */
+if (problems.length) { console.error(problems.length + " problem(s):\n" + problems.join("\n")); process.exit(BUILD ? 0 : 1); }
 console.log("All keys read are words; every inline string is keyed or stated unkeyed.");

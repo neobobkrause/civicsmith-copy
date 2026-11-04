@@ -129,7 +129,7 @@ export async function renderRefusal(code) {
 /** A world: the record's modules, the capture stand-in, a table of runs, and capture-requests over them. `group` is
  *  the instance's recorded producing group (promotion R13; null: none recorded). `steps` (R55) is the real `steps` on
  *  this storage, over the same record, membership, promotion and log, unless a test passes its own (K61). */
-export function world({ env = ENV, configured, credentials = true, group = "test-group", order, standards, steps } = {}) {
+export function world({ env = ENV, configured, credentials = true, group = "test-group", order, standards, steps, runs: runsGiven } = {}) {
   const st = storage();
   const host = { storage: st };
   const bare = RECORD_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
@@ -173,7 +173,7 @@ export function world({ env = ENV, configured, credentials = true, group = "test
     const r = runs.get(run);
     if (!r || typeof viewer !== "string" || !/^(member:.+|class:\w+)$/.test(viewer)) return null;
     if (r.hiddenFrom && r.hiddenFrom.includes(viewer)) return null;
-    return { run: r.run, status: r.status, principal_plane: r.principal_plane, principal_claude: r.principal_claude,
+    return { run: r.run, status: r.status, principal_plane: r.principal_plane, principal_ai: r.principal_claude,
              context_type: "inquiry", context_id: r.context };
   } };
   /* inquiry R44 as a stand-in: the agent it recorded for an inquiry, or null, and every id the drain asked it about. */
@@ -182,7 +182,7 @@ export function world({ env = ENV, configured, credentials = true, group = "test
   const waitRegs = [];
   const aiRuns = { registerWaitSource: (module, source) => { waitRegs.push({ module, source }); return { ok: true }; } };
   const stepsOf_ = steps !== undefined ? steps : stepsOf(host, { record, membership, promotion, observationLog: obs });
-  const cr = captureRequestsOf(host, { record, observations: obs, governor, capture, credentials: creds, runs: runSight,
+  const cr = captureRequestsOf(host, { record, observations: obs, governor, capture, credentials: creds, runs: runsGiven ?? runSight,
                                        env, now, storeName: "bio", aiRuns, promotion, inquiry,
                                        ...(configured !== undefined ? { configured } : {}),
                                        ...(order !== undefined ? { order } : {}),

@@ -183,8 +183,7 @@ test("R19 recipes.assistant sets up the team's Claude account by an administrato
   assert.equal(before.reason, "NO_ACCOUNT");
   const set = await w.recipes.assistant(admin, { readers: [ann] });
   assert.equal(set.assistant.on, true);
-  assert.equal(set.key.on, true);
-  assert.equal(set.key.held, true);
+  assert.equal(set.account.on, true, "the team's account is listed and on");
   const help = await w.recipes.writingHelp(ann, { op: "contradictionclarify", field: "explanation", told: "The notice is later." });
   assert.equal(help.reason, "ASSISTANT_DRAFT_UNAVAILABLE");
   assert.equal(help.text, undefined, "the draft is asked of the Worker's assistant object, which the world does not hold");
