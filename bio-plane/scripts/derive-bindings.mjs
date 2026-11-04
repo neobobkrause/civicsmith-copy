@@ -49,7 +49,11 @@ const KNOWN_BINDING_KEYS = [
  * generated here: a member mints it on the instance, so a deploy only carries
  * the value the operator's environment holds.
  */
-export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
+/** bundler F1: the plane's mark that it is a test instance (ai-runs R78 reads it equal to INSTANCE_NAME). Only a
+ *  `--test-instance` deploy binds it, to the slug; a production deploy never sends it nor keeps one held on the script. */
+export const TEST_INSTANCE_BINDING = "CIVICSMITH_TEST_INSTANCE";
+
+export function deriveBindings(cfg, { slug, version, instanceAiToken, testInstance = false } = {}) {
   if (!slug) throw new Error("REFUSED [NO_SLUG]: the binding derivation needs the instance slug — a default would be the hardcoded name D-292 exists to forbid.");
   if (!version) throw new Error("REFUSED [NO_VERSION]: the binding derivation needs the version the rollout gate will wait for.");
 
@@ -72,6 +76,7 @@ export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
 
   for (const [k, v] of Object.entries(cfg.vars || {})) {
     if (k === "VERSION") continue; /* the argument's, see above */
+    if (k === TEST_INSTANCE_BINDING) continue; /* F1: the deploy's flag decides it, never the config */
     bindings.push({ type: "plain_text", name: k, text: String(v) });
   }
   for (const b of cfg.r2_buckets || []) {
@@ -89,6 +94,7 @@ export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
       throw new Error("REFUSED [BROWSER_BINDING_UNNAMED]: wrangler.jsonc declares `browser` without a `binding` name.");
     bindings.push({ type: "browser", name: cfg.browser.binding });
   }
+  if (testInstance === true) bindings.push({ type: "plain_text", name: TEST_INSTANCE_BINDING, text: String(slug) });
   if (instanceAiToken) {
     bindings.push({ type: "secret_text", name: "INSTANCE_AI_TOKEN", text: instanceAiToken });
   }
@@ -100,6 +106,14 @@ export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
     }
   }
   return bindings;
+}
+
+/** R34 with F1: the `plain_text` bindings held on the script that this deploy sends again unchanged: those it does not
+ *  derive and does not remove, never the test-instance mark (a test deploy derives its own; a production deploy drops it). */
+export function keptPlainText(held, derived, remove = []) {
+  const names = new Set(derived.map((b) => b.name));
+  return (held || []).filter((b) => b && b.type === "plain_text" && !names.has(b.name) && !remove.includes(b.name)
+    && b.name !== TEST_INSTANCE_BINDING).map((b) => ({ type: "plain_text", name: b.name, text: b.text }));
 }
 
 /** The service targets a deploy must pre-flight (deploy-fleet's pattern: the
