@@ -52,8 +52,7 @@
   ],
   "prior_work": "Found work (case-grammar PR 202, R35): CASE_DOCUMENT_FORMAT is now bio-case-document/10; 1 of this module's tests pins /8 as the format in force and is red. Restate it (and any code naming the format in force) against case-grammar as merged. Any unmet mark in build/requirements/publication.md is yours too. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "BLOCKED",
-    "reason": "For BOB. Done and pushed (46c181fe); suite 192 pass, 0 fail, 1 todo (R30, D-246) via p3 test publication. (1) The red test: casedoc.test K651 now pins bio-case-document/10, case-grammar's format in force (PR 202). (2) R58 met and struck: /8, /9, /10 sign and /5 is still CASE_FORMAT_SUPERSEDED, through case-grammar's predicate, so no code change was needed (needs --exempt-revert). (3) R80, R81, R82 met and struck: the commit records ungradedPassagesOf and typedPassagesOf from the signed bytes into four new published_cases columns (ungraded_passages, ungraded_state, typed_passages, typed_state; never back-filled). caseEditionState answers ungraded_passages and typed_passages as {state, rows, detail}: null until ratified, case-grammar's sentence for predates or unreadable, and a pre-T53 row answered from its signed bytes. The R53 key lists in services.test and t47.test gain both keys. New tests in t53.test.mjs: the R80-R82 tests fail with src reverted (checked). Notice case-grammar:202 is covered by the same file. ONLY BLOCKER: get_session on this session has no external_metadata.usage.cost_usd, so job complete refuses ('needs --cost-usd'); every other argument is ready. TO UNBLOCK: send the figure, then rerun the job complete in this session's transcript with --cost-usd <figure> (--test R58/R80/R81/R82 and notice:case-grammar:202 on bio-plane/test/m/publication/t53.test.mjs, --exempt-revert for R58).",
-    "at": "2026-11-04T12:27:29Z"
+    "state": "COMPLETE",
+    "at": "2026-11-04T12:36:44Z"
   }
 }
