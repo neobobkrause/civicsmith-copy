@@ -2,7 +2,7 @@
  * K5530 G, K5534). Mail sent to a member's private address under the team's mail domain waits privately, seen by its
  * owner alone, until she brings it into the record with her statement (`capture.emailCapture`, capture R116) or it is
  * removed after 14 days. It is the mail twin of the doorbell and the upload, and files nothing itself. Nothing here is
- * AI, and the product sends no mail. Requirements: build/requirements/mail-door.md (R1-R14).
+ * AI, and the product sends no mail. Requirements: build/requirements/mail-door.md (R1-R15).
  *
  * SHAPE. `mailDoorOf(ctx, deps)` answers the one instance for a Durable Object's storage. It reaches `capture`'s
  * instance for the same storage (`captureOf(ctx)`, or `deps.capture`), from which it reads `env` at each use (the
@@ -61,6 +61,8 @@ export const LOCAL_PART = Object.freeze({ prefix: "m-", chars: 12 });
 export const WAITING_PAGE_MAX = 200;
 /* R6: a clearing's batch, default 200, clamped 1 to 1000. */
 export const CLEAR_LIMIT = Object.freeze({ default: 200, max: 1000 });
+/* R15: how many days a clearing's kept owners are answered. */
+export const CLEARED_KEEP_DAYS = 30;
 /* R9: how many UTC days the tally keeps. */
 export const TALLY_DAYS = 30;
 
@@ -571,15 +573,51 @@ export class MailDoor {
     const found = this.#rows(`SELECT mail_id, owner, sha256, received FROM mail_waiting WHERE status = 'waiting' AND received_ms <= ?
                               ORDER BY received_ms, mail_id LIMIT ?`, this.#dueBefore(this.nowMs(now)), cap + 1);
     const due = found.slice(0, cap);
-    this.#tx(() => { for (const r of due) this.#sql.exec(`DELETE FROM mail_waiting WHERE mail_id = ? AND status = 'waiting'`, r.mail_id); });
-    for (const sha of new Set(due.map((r) => r.sha256))) await this.#dropBytes(sha);
     const owners = new Map();
     for (const r of due) {
       const o = owners.get(r.owner) || { owner: r.owner, count: 0, received: [] };
       o.count += 1; o.received.push(r.received);
       owners.set(r.owner, o);
     }
+    const nowMs = this.nowMs(now), clearedAt = new Date(nowMs).toISOString();
+    this.#tx(() => {
+      for (const r of due) this.#sql.exec(`DELETE FROM mail_waiting WHERE mail_id = ? AND status = 'waiting'`, r.mail_id);
+      /* R15: each owner's count kept for notice-producers, in the same act; entries past CLEARED_KEEP_DAYS dropped */
+      for (const o of owners.values())
+        this.#sql.exec(`INSERT INTO mail_cleared (owner, count, received_dates, cleared_at, cleared_ms) VALUES (?, ?, ?, ?, ?)`,
+          o.owner, o.count, JSON.stringify(o.received), clearedAt, nowMs);
+      this.#sql.exec(`DELETE FROM mail_cleared WHERE cleared_ms < ?`, nowMs - CLEARED_KEEP_DAYS * DAY);
+    });
+    for (const sha of new Set(due.map((r) => r.sha256))) await this.#dropBytes(sha);
     return { ok: true, cleared: due.length, truncated: found.length > cap, owners: [...owners.values()] };
+  }
+
+  /** R15: the clearing's kept owners, in order of `cleared_at`, to the producer's stamp (a machine identity) alone; a
+   *  member, or no viewer, is answered nothing. `after` is the `cursor` of an earlier page; `limit` clamped 1 to 1000
+   *  (default 200). `{ok, entries: [{owner, count, received_dates, cleared_at}], cursor, truncated}`; an entry made more
+   *  than 30 days before `now` is not answered. Writes nothing; never throws. */
+  clearedOwners({ after = null, limit = null, viewer = null, now = null } = {}) {
+    const none = { ok: true, entries: [], cursor: null, truncated: false };
+    try {
+      if (typeof viewer !== "string" || !isMachineIdentity(viewer)) return none;
+      const n = Math.floor(Number(limit));
+      const cap = limit != null && limit !== "" && Number.isFinite(n) ? Math.min(CLEAR_LIMIT.max, Math.max(1, n)) : CLEAR_LIMIT.default;
+      let fromMs = -1, fromSeq = -1;
+      if (after != null && after !== "") {
+        const m = /^(\d+)\.(\d+)$/.exec(String(after));
+        if (!m) return none;
+        fromMs = Number(m[1]); fromSeq = Number(m[2]);
+      }
+      const oldest = this.nowMs(now) - CLEARED_KEEP_DAYS * DAY;
+      const found = this.#rows(`SELECT seq, owner, count, received_dates, cleared_at, cleared_ms FROM mail_cleared
+                                WHERE cleared_ms >= ? AND (cleared_ms > ? OR (cleared_ms = ? AND seq > ?))
+                                ORDER BY cleared_ms, seq LIMIT ?`, oldest, fromMs, fromMs, fromSeq, cap + 1);
+      const page = found.slice(0, cap);
+      const last = page[page.length - 1];
+      return { ok: true,
+               entries: page.map((r) => ({ owner: r.owner, count: Number(r.count), received_dates: JSON.parse(r.received_dates), cleared_at: r.cleared_at })),
+               cursor: last ? `${Number(last.cleared_ms)}.${Number(last.seq)}` : (after ?? null), truncated: found.length > cap };
+    } catch { return none; }
   }
 
   /* ==================================================================== *
