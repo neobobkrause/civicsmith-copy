@@ -235,3 +235,4 @@
 {"at":"2026-11-04T17:44:40Z","row":"outcome","n":120,"outcome":"delivered"}
 {"at":"2026-11-04T17:48:43Z","row":"sent","n":121,"to":"job-case-checker","text":"bob-121: PR 294 merged; proceed: job sync, git rm --cached program.mjs, fresh-build test, job complete."}
 {"at":"2026-11-04T17:48:47Z","row":"outcome","n":121,"outcome":"delivered"}
+{"at":"2026-11-04T18:04:35Z","row":"sent","n":122,"to":"job-screens-inquiry","text":"bob-122: revert pin a607cb6 landed; job sync screens-inquiry once for a fresh gate (screens-daily also reruns job complete without Chromium)."}
