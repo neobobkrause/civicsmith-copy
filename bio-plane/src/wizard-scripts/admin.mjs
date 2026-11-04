@@ -6,12 +6,16 @@
 export const ADMIN_SCREENS = Object.freeze(["updates"]);
 
 /* R12: the acts their owners refuse to a member who does not administer: `membership`'s administrator acts (its R84's
-   one answer), `credentials`' group-key acts (its R33) and `aikeepaway` (its R51). */
+   one answer) and `aikeepaway` (`ai-accounts` R51). F1 (T53): `credentials`' group-key acts (`groupkeyset`, `groupkeyremove`,
+   `groupkeyswitch`) are retired (`ai-accounts` R35, R36) and their T53 acts are a member's as much as an administrator's, so
+   none is here. `scanmirror` and `officeconfirm` stay: their owners declare them (`file-safety` R49, `entities` R64), each an
+   administrator's act, and `interface-shell` builds its administrator-only gate from this set. Every name here is an op the
+   assembled registration declares (`op-declarations`' `OPS` or an owner's `DECLARED_OPS`, `store-assembly` R83). */
 export const ADMIN_ACTS = Object.freeze(new Set([
   "memberadd", "membercaps", "memberset", "adminendorse", "adminremove", "expertiseconfirm", "hostingaccessset", "invitewithdraw",
   "websitekeycreate", "websitekeyset", "websitekeyrevoke", "joinlinkenable", "joinlinkset", "joinlinkreplace", "joinlinkoff",
   "courtnoticeset", "groupdescriptionset", "joindoors", "projectownerrescue",
-  "groupkeyset", "groupkeyremove", "groupkeyswitch", "aikeepaway",
+  "aikeepaway",
   /* R47: `people`' expunging of a person (its R12) */
   "personexpunge",
   /* R50: the reset link, a member's key set by an administrator, the group's settings, its places and offices, its
@@ -22,7 +26,6 @@ export const ADMIN_ACTS = Object.freeze(new Set([
   /* R101 (T51): a member's signing key added by an administrator (`credentials` R6), and the root of trust's seeding of the
      team (`instance-setup` R4) */
   "signeradd", "instancegroupseed",
-  /* fix round 3 (C64; `file-safety` R49, `entities` R64): an administrator starts a signature run; an administrator confirms an
-     office a member named */
+  /* F1 (attempt 4): the file scanner's check for new signatures (`file-safety` R49) and an office's confirm (`entities` R64) */
   "scanmirror", "officeconfirm",
 ]));

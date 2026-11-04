@@ -46,3 +46,13 @@ ai-accounts R35 and R36 (T53, K5457) retired twelve door ops with no aliases. Th
 `groupkeyset`, `groupkeyremove` and `groupkeyswitch`, and R54 says `connect`'s `accountreferenceset` and
 `accountreferenceremove` stay registered; both texts predate the retirement. `ADMIN_ACTS` is left as R51 pins it (no T53
 account op is administrator-only: `aiaccountadd` serves projects too), and R54's test now names the two T53 ops.
+
+## F1 corrected (4 Nov 2026, attempt 4; PR 253 reopened)
+
+PR 253 met F1 by dropping five names from `ADMIN_ACTS`, `scanmirror` and `officeconfirm` among them, on the claim that
+`op-declarations`' `OPS` does not hold them. Both are owner-declared ops (`file-safety`'s `DECLARED_OPS`, its R49; `entities`',
+its R64), each an administrator's act, which the assembled registration declares; `interface-shell` builds the page's
+administrator-only gate from `ADMIN_ACTS`, so dropping them offered both to a member who does not administer. Attempt 4 puts
+them back (42 names), keeps the three retired group-key acts out, and F1's test now checks every name against the ops the
+assembled registration declares (`OPS` and every owner's `DECLARED_OPS` in `store-assembly`'s `OWNERS`), failing if either is
+missing. F1's line was reworded to say so (three names dropped, not five); its id and mark are unchanged.

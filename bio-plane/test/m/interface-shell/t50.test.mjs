@@ -33,7 +33,8 @@ const audio = (p) => {
 
 test("R73 the registry is the design's: RE_POINTS holds only the named exception and none the registry lists; every act of the nine screen modules' real SCREENS composes; a stand-in naming an op neither lists throws; RE_POINTS is not consulted for an op the registry lists", async () => {
   /* R117 (fix round 3) named two more re-points, which G53 (fix round 6) removed: the registry lists both now */
-  assert.deepEqual(RE_POINTS, { explore: ["stepsourcewithdraw"], document: ["readheld", "resolve"], person: ["linecurrentthrough"], setup: ["factconfirm"], question: ["leggrade"], queue: ["signerknown"] });
+  /* R134's four left when wizard-scripts R54 re-took the registry, which lists each */
+  assert.deepEqual(RE_POINTS, { explore: ["stepsourcewithdraw"], document: ["readheld"], person: ["linecurrentthrough"] });
   for (const [id, ops] of Object.entries(RE_POINTS)) for (const op of ops) {
     const reg = SCREEN_REGISTRY.find((r) => r.id === id);
     assert.ok(reg, id + " is a registry screen");
@@ -225,7 +226,7 @@ test("R76 the masthead's explanations button names itself and its setting (shell
   const LONG = "The Neighbourhood Association of the River Town Flats";
   const { world, me } = await inWorld();
   await me.act("groupnameset", { body: { name: LONG } });
-  const p = await bootAs(world, me, { screens: ALL, phone: true, plane: { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) } });
+  const p = await bootAs(world, me, { screens: ALL, phone: true, plane: { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
   const mast = p.root().querySelector(".cs-mast");
   assert.equal(mast.querySelector(".mk-grp").textContent, LONG, "the name complete, never cut");
   const lvl = mast.querySelector('[data-shell="level"]');
@@ -526,7 +527,7 @@ test("R86 a first load settles quickly: the working frame is drawn before the fi
   assert.equal(times.bootstrap, 500, "bootstrap goes with the screen's reads, after the first of them");
   /* everything else sent: the frame's own reads (the module's SHELL_OPS) and the screen's, all in flight on whoami's answer */
   const rest = Object.keys(times).filter((op) => op !== "whoami" && op !== "bootstrap");
-  assert.equal(rest.filter((op) => SHELL_OPS.includes(op)).length, 8, "the frame's eight reads");
+  assert.equal(rest.filter((op) => SHELL_OPS.includes(op)).length, 6, "the frame's six reads (R20, T53: aipathready in place of the alpha's three)");
   for (const op of rest) assert.equal(times[op], 500, op + ": in flight on whoami's answer, with the others and the screen's reads");
   assert.ok(times.projectdirectory < 1000, "the screen's first read leaves after one round trip, not two");
   await p.clock.tick(500);
