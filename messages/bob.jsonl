@@ -252,3 +252,4 @@
 {"at":"2026-11-04T18:06:03Z","row":"sent","n":129,"to":"job-public-read","text":"bob-129: revert pin a607cb6 landed; job sync public-read once for a fresh gate (screens-daily also reruns job complete without Chromium)."}
 {"at":"2026-11-04T18:06:08Z","row":"outcome","n":129,"outcome":"delivered"}
 {"at":"2026-11-04T18:16:14Z","row":"sent","n":130,"to":"job-public-read","text":"PR 297 removed the program.mjs generated row that turned every gate red on the bundles verify; run job sync public-read once more for a fresh gate; no code change."}
+{"at":"2026-11-04T18:16:17Z","row":"sent","n":131,"to":"job-case-import","text":"PR 297 removed the program.mjs generated row that turned every gate red on the bundles verify; run job sync case-import once more for a fresh gate; no code change."}
