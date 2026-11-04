@@ -40,10 +40,10 @@ test("R40 (K1606): an open refuses `ask` (deployed apart, and no run) by C-109.1
 test("R9, R52 (K1606): a run starts only at a member's act — a machine credential naming no member is refused AI_RUN_NOT_A_MEMBER_ACT (C-22.19, run-rules' row, relayed) before anything is written; a member's act passes to the account check", async () => {
   const w = await vWorld(undefined);
   const before = w.dump();
-  for (const o of [{ principalClaude: "instance" }, { principalPlane: "class:admin", principalClaude: "project" }, { principalPlane: ORG, principalClaude: "" + "class:ai/x" }])
+  for (const o of [{ principalAi: "instance" }, { principalPlane: "class:admin", principalAi: "project" }, { principalPlane: ORG, principalAi: "" + "class:ai/x" }])
     refused(await w.runs.open(OPEN(o)), "AI_RUN_NOT_A_MEMBER_ACT");
   assert.equal(w.dump(), before);
-  assert.equal((await w.runs.open(OPEN({ principalClaude: "member:bob" }))).started, true);
+  assert.equal((await w.runs.open(OPEN({ principalAi: "member:bob" }))).started, true);
 });
 
 test("R40 (K1606; run-rules R19): verificationRecord writes verification_recorded — refused by checkVerification (C-22.20) for a mode outside the order, no run, a machine verifier or no evidence, and for a run this record does not hold in that mode; append-only; the op stamps `by`", async () => {

@@ -25,7 +25,7 @@ async function memberRun(mode = "check") {
     await w.runs.open(OPEN({ run: "V" }));
     must(w.runs.verificationRecord({ mode: "check", run: "V", evidence: ["seen live"], by: "member:ann", at: T0 }), "verification");
   }
-  must(await w.runs.open(OPEN({ mode, principalPlane: "member:ann", principalClaude: "member:ann", actor: "member:ann",
+  must(await w.runs.open(OPEN({ mode, principalPlane: "member:ann", principalAi: "member:ann", actor: "member:ann",
                                 viewer: "member:ann" })), `open ${mode}`);
   return w;
 }
@@ -70,7 +70,7 @@ export async function airunOpenRefusal(code) {
     const w = world();
     await w.group("dan", { noAccount: ["dan"] });
     w.bundle(INQ);
-    return w.runs.open(OPEN({ principalClaude: "member:dan" }));
+    return w.runs.open(OPEN({ principalAi: "member:dan" }));
   }
   if (code === "AI_LIMIT_REACHED") {
     /* ai-use's own refusal (its R3), relayed by the open: ann's own account holds a limit of one call a day, spent. */
@@ -95,7 +95,7 @@ export async function airunRefusal() {
   await w.group("ann", "bob");
   w.project(PROJ, "ann");
   w.bundle(INQ);
-  const ann = { principalPlane: "member:ann", principalClaude: "member:ann", actor: "member:ann", viewer: "member:ann" };
+  const ann = { principalPlane: "member:ann", principalAi: "member:ann", actor: "member:ann", viewer: "member:ann" };
   must(await w.runs.open(OPEN({ run: "R1", ...ann })), "open on a question");
   must(await w.runs.open(OPEN({ run: "R2", contextType: "project", contextId: PROJ, ...ann })), "open in a project");
   const bob = { principal: "member:bob", actor: "member:bob", viewer: "member:bob" };

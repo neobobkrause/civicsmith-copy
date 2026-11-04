@@ -148,7 +148,7 @@ test("R74 (B4 (5); J5 (8), (9), (11)): openMany, a member's batch — no member'
     [[`RUN-${A}-1`, SYS(`RUN-${A}-1`), "AI run on " + A + ": Ask the clerk for the agenda", JSON.stringify({ questions: [Q] })],
      [`RUN-${C}-1`, SYS(`RUN-${C}-1`), "AI run on " + C + ": Ask the clerk for the minutes", JSON.stringify({ questions: [Q] })]]);
   const a = (await w.runs.read({ run: `RUN-${A}-1`, viewer: ANN })).session;
-  assert.deepEqual([a.step, a.context.id, a.principal.claude, a.principal.ref], [r.runs[0].system_step, Q, "member:ann", "member:ann"]);
+  assert.deepEqual([a.step, a.context.id, a.principal.ai, a.principal.ref], [r.runs[0].system_step, Q, "member:ann", "member:ann"]);
   /* the bound ends RUN-<A>-1 alone, setting its own step aside; RUN-<C>-1 runs on */
   const t = await w.runs.tick({ run: `RUN-${A}-1`, viewer: ANN, caller: ANN_CRED, consume: { fetches: 1 } });
   assert.equal(t.ended.step_end.end, "set_aside");

@@ -18,7 +18,7 @@ async function readWorld() {
   w.project(PROJ, "ann", { joined: ["bob"] });
   w.project(HIDDEN, "ann");
   w.cites(PROJ, INQ); w.cites(PROJ, INQ2); w.cites(PROJ, INFO);
-  await w.runs.open(OPEN({ label: "L", principalClaudeRef: "acct-1", bounds: [{ bound: "fetches", allowed: 4 }] }));
+  await w.runs.open(OPEN({ label: "L", principalAiRef: "acct-1", bounds: [{ bound: "fetches", allowed: 4 }] }));
   await w.runs.open(OPEN({ run: "RP", contextType: "project", contextId: PROJ, actor: "bob", viewer: "member:bob", principalPlane: "member:bob" }));
   await w.runs.open(OPEN({ run: "RH", contextType: "project", contextId: HIDDEN, actor: "ann", viewer: "member:ann", principalPlane: "member:ann" }));
   return w;
@@ -40,7 +40,7 @@ test("R19: absent or invisible {found: false, session: null}; otherwise the sess
                    ["R1", "L", "check", "running", 1, T0, T0, "2026-07-01T00:10:00Z"]);
   assert.deepEqual(s.context, { type: "inquiry", id: INQ });
   /* R52 (T41): `ref` is the member whose act the run is, never the opener's own word ("acct-1" was offered) */
-  assert.deepEqual(s.principal, { plane: ORG, claude: "member:ann", ref: "member:ann", skill: "bio@1" });
+  assert.deepEqual(s.principal, { plane: ORG, ai: "member:ann", ref: "member:ann", skill: "bio@1" });
   assert.deepEqual(s.budget, [{ bound: "fetches", allowed: 4, consumed: 0, unit: null }]);
   assert.equal(s.condition, null);
   await w.runs.tick({ run: "R1", viewer: "admin", caller: ORG, state: { todo: ["a", "b"], page: 3 } });

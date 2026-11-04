@@ -36,12 +36,11 @@ export const AI_RUNS_SCHEMA = `
 -- TWO PRINCIPALS, NEVER ONE (§14a, DEC-27(b), DEC-55.4). 'principal_plane' is
 -- the plane credential as the control plane stamps it ('member:<id>' for a
 -- member, '/<tokenId>' added for a member's AI credential; 'class:<cls>' for a
--- machine, '/<tokenId>' added for an AI credential); 'principal_claude' is
--- the member whose own Claude account carries the run, 'member:<id>' (R52, K1502,
--- K1503: there is no group, project or instance account). They are two different
--- principals and an act must say both. NEITHER IS EVER A TOKEN VALUE:
--- 'principal_claude_ref' is a label, not a secret, and nothing in the plane writes
--- a credential here.
+-- machine, '/<tokenId>' added for an AI credential); 'principal_ai' is
+-- the owner of the AI account that pays ('member:<id>', 'project:<id>' or 'group'), and
+-- 'principal_ai_ref' the member whose act the run is (R9, R52, T53). They are two different
+-- principals and an act must say both. NEITHER IS EVER A TOKEN VALUE, and nothing in the
+-- plane writes a credential here.
 --
 -- NO TRANSCRIPT COLUMN, AND THAT IS DEC-61 (Bob, 2026-08-06). The model's
 -- reasoning is DEVICE-LOCAL, TTL'd and deleted at publication, and never in the
@@ -57,8 +56,8 @@ CREATE TABLE IF NOT EXISTS ai_runs (
   context_type          TEXT NOT NULL,
   context_id            TEXT NOT NULL,
   principal_plane       TEXT NOT NULL,
-  principal_claude      TEXT NOT NULL,
-  principal_claude_ref  TEXT,
+  principal_ai          TEXT NOT NULL,
+  principal_ai_ref      TEXT,
   skill_version         TEXT,
   bias_manifest         TEXT,
   standard_pair         TEXT,

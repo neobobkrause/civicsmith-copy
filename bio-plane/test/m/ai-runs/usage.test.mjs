@@ -7,6 +7,7 @@
    `aiUseOf` on the world's storage, as ai-runs reaches them. */
 import test from "node:test";
 import assert from "node:assert/strict";
+import { word } from "../../../src/setup-words/index.mjs";
 import { world, OPEN, INQ, PROJ, ANN, ORG, T0, USAGE, sha, agentWorker, PLANS, HOSTS } from "./world.mjs";
 import { aiUseOf, AI_USE_TABLES } from "../../../src/ai-use/index.mjs";
 import { AI_RUNS_CHECKS } from "../../../src/run-rules/index.mjs";
@@ -77,7 +78,7 @@ test("R72, R52: tick takes usage, one entry per conversation {mode, model, usage
   assert.equal(out.reason, "CALLER_REFUSED");
   assert.equal(all(w), before);
   /* a member-kind credential's run is counted to that member, on that member's own account */
-  await w.runs.open(OPEN({ run: "RB", principalPlane: "member:bob/t1", principalClaude: ANN }));
+  await w.runs.open(OPEN({ run: "RB", principalPlane: "member:bob/t1", principalAi: ANN }));
   await w.runs.tick({ run: "RB", viewer: "admin", caller: "member:bob/t1", at: at("00:07:00"), usage: [call("check")] });
   assert.deepEqual(w.row(`SELECT owner, use, calls FROM ai_usage WHERE member='bob'`), { owner: "member:bob", use: "run", calls: 1 });
   /* no usage, or an empty list: nothing counted and no `counted` key */
@@ -128,7 +129,7 @@ test("R72: a usage entry not of that shape refuses the whole tick AI_RUN_CONSUME
   assert.equal((await w.runs.tick({ run: "R404", viewer: "admin", caller: ORG, usage: "x" })).found, false);
   assert.equal((await w.runs.tick({ run: "R1", viewer: "admin", caller: "class:ai/other", usage: "x" })).code, "AI_RUN_NOT_PRINCIPAL");
   /* R52: a run carrying no member (opened before T33-50) cannot have calls counted: refused by name, nothing written */
-  w.sql.exec(`UPDATE ai_runs SET principal_claude = 'instance', principal_claude_ref = NULL WHERE run = 'R1'`);
+  w.sql.exec(`UPDATE ai_runs SET principal_ai = 'instance', principal_ai_ref = NULL WHERE run = 'R1'`);
   const was = all(w);
   const legacy = await w.runs.tick({ run: "R1", viewer: "admin", caller: ORG, at: at("00:09:00"), usage: [call()], log: [look] });
   assert.equal(legacy.ticked, false);
@@ -276,36 +277,36 @@ test("R76: read and close answer the run's cost (ai-use.actualOf for the run) to
   assert.equal((await w.runs.read({ run: "R2", viewer: ANN })).session.cost.final, true, "the owner still reads it");
 });
 
-test("R52, R19: a run carries the account of the member whose act started it — the session member, else the member a member-kind key acts for, else the member a machine credential names — recorded as principal_claude (the paying owner) and principal_claude_ref (the member), both answered by R19's principal; with no member's act AI_RUN_NOT_A_MEMBER_ACT (run-rules R18, K1606), with none held AI_NO_ACCOUNT, before anything is written", async () => {
+test("R52, R19: a run carries the account of the member whose act started it — the session member, else the member a member-kind key acts for, else the member a machine credential names — recorded as principal_ai (the paying owner) and principal_ai_ref (the member), both answered by R19's principal; with no member's act AI_RUN_NOT_A_MEMBER_ACT (run-rules R18, K1606), with none held AI_NO_ACCOUNT, before anything is written", async () => {
   const w = await useWorld();
   const before = all(w);
   /* a machine credential naming no member, or a level word: no member's act at all (run-rules R18, relayed, K1606) */
-  for (const principalClaude of ["instance", "project", "member", "class:ai/x"])
-    refused(await w.runs.open(OPEN({ principalClaude })), "AI_RUN_NOT_A_MEMBER_ACT");
+  for (const principalAi of ["instance", "project", "member", "class:ai/x"])
+    refused(await w.runs.open(OPEN({ principalAi })), "AI_RUN_NOT_A_MEMBER_ACT");
   /* a member who holds no account: by session, by their own key, or named by a machine credential */
   refused(await w.runs.open(OPEN({ contextType: "project", contextId: PROJ, actor: "dan", viewer: "member:dan", principalPlane: "member:dan" })), "AI_NO_ACCOUNT");
   refused(await w.runs.open(OPEN({ principalPlane: "member:dan/t1" })), "AI_NO_ACCOUNT");
-  const named = await w.runs.open(OPEN({ principalClaude: "member:dan" }));
+  const named = await w.runs.open(OPEN({ principalAi: "member:dan" }));
   assert.equal(named.started, false);
   refused(named, "AI_NO_ACCOUNT");
   assert.equal(COST.test(named.translation + named.detail), false);
   assert.equal(all(w), before, "nothing written");
   /* after the earlier refusals: a malformed request is still its own refusal */
-  assert.equal((await w.runs.open(OPEN({ principalClaude: "instance", skillVersion: "" }))).code, "AI_RUN_SKILL_VERSION_UNNAMED");
-  assert.equal((await w.runs.open(OPEN({ principalClaude: "instance", rerunOf: "R404" }))).code, "AI_RUN_RERUN_UNKNOWN");
+  assert.equal((await w.runs.open(OPEN({ principalAi: "instance", skillVersion: "" }))).code, "AI_RUN_SKILL_VERSION_UNNAMED");
+  assert.equal((await w.runs.open(OPEN({ principalAi: "instance", rerunOf: "R404" }))).code, "AI_RUN_RERUN_UNKNOWN");
   /* the account member, in each case */
   const opened = async (run, o) => { const r = await w.runs.open(OPEN({ run, ...o })); assert.equal(r.started, true, JSON.stringify(r));
-    return w.row(`SELECT principal_claude, principal_claude_ref FROM ai_runs WHERE run=?`, run); };
-  const bob = { principal_claude: "member:bob", principal_claude_ref: "member:bob" };
+    return w.row(`SELECT principal_ai, principal_ai_ref FROM ai_runs WHERE run=?`, run); };
+  const bob = { principal_ai: "member:bob", principal_ai_ref: "member:bob" };
   assert.deepEqual(await opened("S1", { contextType: "project", contextId: PROJ, actor: "bob", viewer: "member:bob", principalPlane: "member:bob",
-                                         principalClaude: "member:ann" }), bob, "a session's own account, whatever the body names");
-  assert.deepEqual(await opened("K1", { principalPlane: "member:bob/t1", principalClaude: "member:ann" }), bob, "a member key's member");
-  assert.deepEqual(await opened("M1", { principalClaude: "member:bob" }), bob, "the member a machine credential names");
+                                         principalAi: "member:ann" }), bob, "a session's own account, whatever the body names");
+  assert.deepEqual(await opened("K1", { principalPlane: "member:bob/t1", principalAi: "member:ann" }), bob, "a member key's member");
+  assert.deepEqual(await opened("M1", { principalAi: "member:bob" }), bob, "the member a machine credential names");
   const p = (await w.runs.read({ run: "M1", viewer: "admin" })).session.principal;
-  assert.deepEqual([p.claude, p.ref], ["member:bob", "member:bob"]);
+  assert.deepEqual([p.ai, p.ref], ["member:bob", "member:bob"]);
 });
 
-test("R52 (K1755): a member with no account of their own is served by the group's API key while it is held and on — the run opens as that member's act (principal_claude the group's key, principal_claude_ref the member), its use counted to the group's account and that member, held by the group account's limits; the key off or removed, AI_NO_ACCOUNT; ai-accounts' other refusals (the key's notice unread) relayed as given; nothing written on any refusal", async () => {
+test("R52 (K1755): a member with no account of their own is served by the group's API key while it is held and on — the run opens as that member's act (principal_ai the group's key, principal_ai_ref the member), its use counted to the group's account and that member, held by the group account's limits; the key off or removed, AI_NO_ACCOUNT; ai-accounts' other refusals (the key's notice unread) relayed as given; nothing written on any refusal", async () => {
   const w = await useWorld();
   const C = w.aiAccounts;
   const danOpen = (run, over = {}) => w.runs.open(OPEN({ run, contextType: "project", contextId: PROJ, actor: "dan", viewer: "member:dan",
@@ -328,10 +329,10 @@ test("R52 (K1755): a member with no account of their own is served by the group'
   const o = await danOpen("D1");
   assert.equal(o.started, true, JSON.stringify(o).slice(0, 300));
   /* R52 (T41): the paying owner is the group's key, and the act is dan's */
-  assert.deepEqual(w.row(`SELECT principal_claude, principal_claude_ref FROM ai_runs WHERE run='D1'`),
-    { principal_claude: "group", principal_claude_ref: "member:dan" });
+  assert.deepEqual(w.row(`SELECT principal_ai, principal_ai_ref FROM ai_runs WHERE run='D1'`),
+    { principal_ai: "group", principal_ai_ref: "member:dan" });
   const p = (await w.runs.read({ run: "D1", viewer: "member:dan" })).session.principal;
-  assert.deepEqual([p.claude, p.ref], ["group", "member:dan"]);
+  assert.deepEqual([p.ai, p.ref], ["group", "member:dan"]);
   assert.equal(JSON.stringify(w.rows(`SELECT * FROM ai_runs`)).includes("team-key-secret"), false, "the key enters no record");
   assert.equal(JSON.stringify(o).includes("team-key-secret"), false);
   /* its use is the group account's, and dan's within it */
@@ -353,15 +354,15 @@ test("R52 (K1755): a member with no account of their own is served by the group'
   assert.equal(all(w), was);
 });
 
-test("R52 (T41; ai-accounts R11): a run over a project whose own account is held and on is paid by the project (principal_claude project:<id>, principal_claude_ref the member), its use counted to the project's account and that member, its cost answered to the project's owner and not to the member whose act it is; without the project's account the member's own pays", async () => {
+test("R52 (T41; ai-accounts R11): a run over a project whose own account is held and on is paid by the project (principal_ai project:<id>, principal_ai_ref the member), its use counted to the project's account and that member, its cost answered to the project's owner and not to the member whose act it is; without the project's account the member's own pays", async () => {
   const w = await useWorld();
   const C = w.aiAccounts;
   const bobOpen = (run, over = {}) => w.runs.open(OPEN({ run, contextType: "project", contextId: PROJ, actor: "bob", viewer: "member:bob",
                                                           principalPlane: "member:bob", ...over }));
   /* the control: no project account, bob's own pays */
   assert.equal((await bobOpen("P0")).started, true);
-  assert.deepEqual(w.row(`SELECT principal_claude, principal_claude_ref FROM ai_runs WHERE run='P0'`),
-    { principal_claude: "member:bob", principal_claude_ref: "member:bob" });
+  assert.deepEqual(w.row(`SELECT principal_ai, principal_ai_ref FROM ai_runs WHERE run='P0'`),
+    { principal_ai: "member:bob", principal_ai_ref: "member:bob" });
   /* ann, the project's owner, holds a key for it and switches it on */
   await w.projectAccount(PROJ, "ann");
   /* (T53) the project's account serves bob on the recipient bob has already seen (his own account's, ai-accounts R51) */
@@ -369,8 +370,8 @@ test("R52 (T41; ai-accounts R11): a run over a project whose own account is held
   void before;
   const o = await bobOpen("P1");
   assert.equal(o.started, true, JSON.stringify(o).slice(0, 300));
-  assert.deepEqual(w.row(`SELECT principal_claude, principal_claude_ref FROM ai_runs WHERE run='P1'`),
-    { principal_claude: `project:${PROJ}`, principal_claude_ref: "member:bob" });
+  assert.deepEqual(w.row(`SELECT principal_ai, principal_ai_ref FROM ai_runs WHERE run='P1'`),
+    { principal_ai: `project:${PROJ}`, principal_ai_ref: "member:bob" });
   assert.equal(JSON.stringify(w.rows(`SELECT * FROM ai_runs`)).includes("project-key-secret"), false, "the key enters no record");
   await w.runs.tick({ run: "P1", viewer: "member:bob", actor: "bob", caller: "member:bob", at: at("00:05:00"), usage: [call("check", {}, 2)] });
   assert.deepEqual(w.rows(`SELECT owner, member, use, calls FROM ai_usage WHERE owner LIKE 'project:%'`),
@@ -405,7 +406,7 @@ test("R72, R18: a provider's refusal for a spent limit (429 enforced_spend_limit
   assert.equal(aw.calls.length, 1, "the dispatch was made, carrying ann's account");
   assert.equal(aw.calls[0].body.account.member, "member:ann");
   const last = x.rows(`SELECT detail FROM observation_log WHERE authority='R1' ORDER BY seq`).pop().detail;
-  assert.match(last, /^Resumption: not continued now — The Claude account that serves this run has reached the spending limit/);
+  assert.ok(last.includes(word("ai-runs.index.the_ai_account_that_serves")), last);
   assert.equal(/did not complete|REFUSED|429/.test(last), false);
   assert.equal(COST.test(last), false, last);
   /* the control: any other refusal is REFUSED, said as the dispatch not completing */

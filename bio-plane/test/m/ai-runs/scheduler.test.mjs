@@ -1,5 +1,6 @@
 /* ai-runs R15–R18, R41: the reaper, the wake through the registered wait source, and the woken run's resume. */
 import test from "node:test";
+import { word } from "../../../src/setup-words/index.mjs";
 import assert from "node:assert/strict";
 import { world, OPEN, INQ, ORG, sha, agentWorker, SIGNIN_TOKEN } from "./world.mjs";
 import { aiRunsOf } from "../../../src/ai-runs/index.mjs";
@@ -215,7 +216,7 @@ test("R18, R52, R79 (K1514, K1615, K1755; T47, K3068): a woken run is dispatched
   await gone.removeAll("member:ann", "ann");
   const noAcct = await decision(gone);
   assert.equal(noAcct.resume, "NO_ACCOUNT");
-  assert.match(logOf(gone)[0].detail, /Resumption: NOT dispatched — no Claude account serves the member whose act started this run/);
+  assert.ok(logOf(gone)[0].detail.includes(word("ai-runs.index.resumption_not_dispatched_no_ai_account")), logOf(gone)[0].detail);
   assert.equal((await decision(await setup(env(aw), { principal: "member:ann/tok-m" }))).resume, "MEMBER_PRINCIPAL_RUN");
   assert.equal((await decision(await setup(env(aw), { principal: "class:ai/other" }))).resume, "NOT_THE_INSTANCE_CREDENTIALS_RUN");
   assert.equal((await decision(await setup(env(null), { principal: stamp }))).resume, "AGENT_WORKER_UNBOUND");

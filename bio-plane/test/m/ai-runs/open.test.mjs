@@ -37,10 +37,10 @@ test("R9: the open's refusals in order, nothing written on any — no context, e
   for (const o of [{ run: "" }, { contextType: null }, { contextId: "" }, { run: null, contextType: "nonsense", principalPlane: null }])
     refused(await w.runs.open(OPEN(o)), "AI_RUN_NO_CONTEXT");
   /* a discoverable project the viewer is outside: membership's existence refusal (C-70.1), before the kind */
-  const seen = await w.runs.open(OPEN({ ...dan, contextType: "project", contextId: OPENP, principalClaude: null }));
+  const seen = await w.runs.open(OPEN({ ...dan, contextType: "project", contextId: OPENP, principalAi: null }));
   assert.deepEqual([seen.started, seen.code, seen.check, seen.project], [false, "PROJECT_SEEN_NOT_A_PARTICIPANT", "C-70.1", OPENP]);
   /* R7: an unknown kind, a mismatched kind, an absent id and a hidden one — one answer each, before the gate */
-  refused(await w.runs.open(OPEN({ ...dan, contextType: "information", principalClaude: null })), "AI_RUN_NO_SUCH_CONTEXT");
+  refused(await w.runs.open(OPEN({ ...dan, contextType: "information", principalAi: null })), "AI_RUN_NO_SUCH_CONTEXT");
   refused(await w.runs.open(OPEN({ ...bob, contextType: "inquiry", contextId: PROJ })), "AI_RUN_NO_SUCH_CONTEXT");
   const absent = await w.runs.open(OPEN({ ...dan, contextType: "project", contextId: "PROJ-2026-0404" }));
   const hidden = await w.runs.open(OPEN({ ...dan, contextType: "project", contextId: HIDDEN }));
@@ -51,7 +51,7 @@ test("R9: the open's refusals in order, nothing written on any — no context, e
     "AI_RUN_NOT_PROJECT_MEMBER");
   /* either principal absent: C-33.29, before the skill version */
   refused(await w.runs.open(OPEN({ principalPlane: null, skillVersion: null })), "AI_RUN_CAPABILITY_UNAVAILABLE");
-  refused(await w.runs.open(OPEN({ principalClaude: "", skillVersion: null })), "AI_RUN_CAPABILITY_UNAVAILABLE");
+  refused(await w.runs.open(OPEN({ principalAi: "", skillVersion: null })), "AI_RUN_CAPABILITY_UNAVAILABLE");
   /* R8, then R3 over the bounds */
   refused(await w.runs.open(OPEN({ skillVersion: "3", bounds: { fetches: 1 } })), "AI_RUN_SKILL_VERSION_UNNAMED");
   refused(await w.runs.open(OPEN({ bounds: { fetches: 1 } })), "AI_RUN_BOUND_UNKNOWN");
@@ -93,7 +93,7 @@ test("R10: success writes the run, its bounds, the handed manifest and bar verba
   assert.deepEqual(r.projectGate, { applied: false, ground: "INQUIRY", why: r.projectGate.why, projects: 1 });
   const row = w.row(`SELECT * FROM ai_runs WHERE run='R1'`);
   assert.deepEqual([row.status, row.ticks, row.label, row.bias_manifest, row.standard_pair, row.state, row.context_type, row.context_id,
-                    row.principal_plane, row.principal_claude, row.skill_version, row.expires],
+                    row.principal_plane, row.principal_ai, row.skill_version, row.expires],
                    ["running", 1, "fees", handed, bar, '{"todo":[1]}', "inquiry", INQ, "member:bob/t1", "member:bob", "bio@1", "2026-07-01T00:10:00Z"]);
   assert.deepEqual(w.rows(`SELECT bound, allowed, consumed, unit FROM ai_run_bounds WHERE run='R1' ORDER BY bound`),
     [{ bound: "fetches", allowed: 5, consumed: 0, unit: "fetch" }, { bound: "surfaces", allowed: 2, consumed: 0, unit: null }]);

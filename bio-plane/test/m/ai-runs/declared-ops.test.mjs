@@ -31,7 +31,7 @@ const mk = (op, stamps = {}, setup = null, invoke = null, adapt = null) => async
 
 test("R90 ai-runs declares airunopen: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
   await declaredOpHolds({ op: "airunopen", declaration: DECLARED_OPS["airunopen"], call: mk("airunopen", {"principal":"class:ai/tok-org","viewer":"admin"}),
-    refusedNaming: named({"run":["AI_RUN_NO_CONTEXT"],"contextType":["AI_RUN_NO_CONTEXT"],"contextId":["AI_RUN_NO_CONTEXT"],"principalClaude":["AI_RUN_CAPABILITY_UNAVAILABLE"],"skillVersion":["AI_RUN_SKILL_VERSION_UNNAMED"]}, true), values: { run: "R1", contextType: "inquiry", contextId: INQ, principalClaude: "member:ann", skillVersion: "bio@1" }, same: sameCode });
+    refusedNaming: named({"run":["AI_RUN_NO_CONTEXT"],"contextType":["AI_RUN_NO_CONTEXT"],"contextId":["AI_RUN_NO_CONTEXT"],"principalAi":["AI_RUN_CAPABILITY_UNAVAILABLE"],"skillVersion":["AI_RUN_SKILL_VERSION_UNNAMED"]}, true), values: { run: "R1", contextType: "inquiry", contextId: INQ, principalAi: "member:ann", skillVersion: "bio@1" }, same: sameCode });
 });
 
 test("R90 ai-runs declares airunclose: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {

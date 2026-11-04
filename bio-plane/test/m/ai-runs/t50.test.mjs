@@ -27,7 +27,7 @@ async function projectWorld(aw, { project, open = true, env = {}, ...opts } = {}
   w.project(PB, "ann", { joined: ["second"] });
   w.cites(PA, INQ); w.cites(PB, INQ);
   for (const [id, p] of [["recA", PA], ["recB", PB], ["recNone", null]]) w.bundle(id, "finding", null, p);
-  const mine = { principalPlane: "member:second", principalClaude: "member:second", actor: "member:second", viewer: "member:second" };
+  const mine = { principalPlane: "member:second", principalAi: "member:second", actor: "member:second", viewer: "member:second" };
   if (open) {
     const o = await w.runs.open(OPEN({ ...mine, ...(project === undefined ? {} : { project }) }));
     assert.equal(o.started, true, JSON.stringify(o));
@@ -199,8 +199,8 @@ test("R89 (controls): a project the member has not joined, one that does not dra
   w.project(PD, "ann", { joined: ["second"] });                                     // joined, but draws on nothing here
   const before = w.dump();
   for (const [what, project, over] of [["not joined", PC, {}], ["not drawn on", PD, {}], ["absent", "PROJ-2099-0001", {}],
-                                       ["a machine's", PA, { actor: "", principalPlane: ORG, principalClaude: undefined, viewer: "admin" }],
-                                       ["a member who never joined", PA, { actor: "member:bob", principalPlane: "member:bob", principalClaude: "member:bob", viewer: "member:bob" }]]) {
+                                       ["a machine's", PA, { actor: "", principalPlane: ORG, principalAi: undefined, viewer: "admin" }],
+                                       ["a member who never joined", PA, { actor: "member:bob", principalPlane: "member:bob", principalAi: "member:bob", viewer: "member:bob" }]]) {
     const r = await w.runs.open(OPEN({ ...mine, project, ...over }));
     assert.deepEqual([what, r.started, r.code], [what, false, "AI_RUN_NOT_PROJECT_MEMBER"], JSON.stringify(r).slice(0, 200));
     assert.equal(typeof r.translation, "string");

@@ -201,17 +201,17 @@ export class AiRuns {
 
   /** B2 (K2480): whether `by` holds `run`, for steps' machine arm: `{enabled_by, principal}` for a running run whose
    *  principal `by` is (run-rules R5), or whose own system identity it is (`systemOf`); `enabled_by` the paying owner the
-   *  run records (`principal_claude`, R52; ai-use R6's label) and `principal` the viewer the run's opener acts as (steps
+   *  run records (`principal_ai`, R52; ai-use R6's label) and `principal` the viewer the run's opener acts as (steps
    *  judges the step's place in that sight); null for a blank, unknown or ended run, or one another principal holds.
    *  Writes nothing and never throws. */
   runHolder(by, run) {
     try {
       const id = run == null ? "" : String(run).trim();
       if (!id || typeof by !== "string" || !by.trim()) return null;
-      const r = this.#one(`SELECT status, principal_plane, principal_claude FROM ai_runs WHERE run = ?`, id);
+      const r = this.#one(`SELECT status, principal_plane, principal_ai FROM ai_runs WHERE run = ?`, id);
       if (!r || r.status !== "running") return null;
       if (by !== AiRuns.systemOf(id) && runPrincipalGate({ caller: by, principal: r.principal_plane })) return null;
-      return { enabled_by: r.principal_claude ?? null, principal: AiRuns.#viewerOf(r.principal_plane) };
+      return { enabled_by: r.principal_ai ?? null, principal: AiRuns.#viewerOf(r.principal_plane) };
     } catch { return null; }
   }
 
@@ -490,9 +490,9 @@ export class AiRuns {
          HERE, and the change of shape is a finding rather than a preference.
          §4.4 says `actor` is *"the run's credential"*; `ai_runs` HAS NO SUCH
          COLUMN — measured, not assumed — and the column that actually carries
-         the machine identity is `principal_claude`, IS-6's Claude principal.
+         the machine identity is `principal_ai`, IS-6's Claude principal.
          Reported as a DESIGN GAP against §4.4.
-         THE FIRST DRAFT READ IT HERE, with `SELECT principal_claude FROM
+         THE FIRST DRAFT READ IT HERE, with `SELECT principal_ai FROM
          ai_runs`, and `run-conditions.test.mjs` ARM W3 caught it BY NAME: that
          made this method a THIRTEENTH reader of `ai_runs`, and ARM W9 then
          refused the only role that could have fitted, because an ATTRIBUTES
@@ -890,11 +890,11 @@ export class AiRuns {
    *  (R52's `#accountMember`). The refusal is `run-rules` R6's `projectGate`, relayed over that project, so a project that
    *  is absent, hidden, not drawn on or not joined is refused alike; with no member behind the caller it is refused too
    *  (a project is a member's to name). Reads only; writes nothing. */
-  #runProjectGate({ actor, principalPlane, principalClaude, contextType, contextId, project }) {
+  #runProjectGate({ actor, principalPlane, principalAi, contextType, contextId, project }) {
     if (String(contextType) === "project") return { project: String(contextId), refusal: null };
     const named = typeof project === "string" ? project.trim() : project == null ? "" : String(project).trim();
     if (!named) return { project: null, refusal: null };
-    const member = AiRuns.#accountMember({ actor, principalPlane, principalClaude });
+    const member = AiRuns.#accountMember({ actor, principalPlane, principalAi });
     const drawn = this.#runContextProjects(contextType, contextId).includes(named);
     const part = member && drawn ? this.#membership().participation(named, member) : null;
     const said = projectGate({ actor: member || "no-member", contextType: "project", contextId: named, projects: [named],
@@ -968,7 +968,7 @@ export class AiRuns {
    *  DEC-27(b), DEC-55.4). The Claude account a run carries is the one
    *  `ai-accounts.accountFor` answers for the act of the member who started it
    *  (R52; K1755: their own, else the group's API key), and the run is that
-   *  member's act, recorded as `principal_claude`, `member:<id>`, whichever
+   *  member's act, recorded as `principal_ai`, `member:<id>`, whichever
    *  account serves it; the plane refuses to open a run that names no member, or
    *  one no account serves.
    *
@@ -980,7 +980,9 @@ export class AiRuns {
    *  is still never derived: the plane refuses, it does not fill in. The
    *  refusal is C-22.7, built in `run-rules checkSkillVersion`. */
   async open({ run, contextType, contextId, label = null, mode = null,
-              principalPlane = null, principalClaude = null, principalClaudeRef = null,
+              principalPlane = null, principalAi = null, principalAiRef = null,
+              /* R9 (T53; K3472): the arguments' names before the rename, refused whenever sent (never read as the new) */
+              principalClaude = undefined, principalClaudeRef = undefined,
               skillVersion = null, biasManifest = null, standardPair = null,
               bounds = null, state = null, leaseMs = null, at = null,
               /* REC-207 (BOB #32, 2026-09-23 23:42Z): WHICH RUN THIS ONE RE-RUNS, the opener's own word
@@ -1095,7 +1097,7 @@ export class AiRuns {
        recorded at the open. A run over a project is in that project, whatever `project` carries; a run over a question names
        one explicitly: a project the opening member has joined that draws on the question (`run-rules` R6's refusal,
        relayed, so a project that is absent, hidden, not drawn on or not joined answers alike). */
-    const inProject = this.#runProjectGate({ actor, principalPlane, principalClaude, contextType, contextId, project });
+    const inProject = this.#runProjectGate({ actor, principalPlane, principalAi, contextType, contextId, project });
     if (inProject.refusal)
       return { run, started: false, code: inProject.refusal.code, check: inProject.refusal.check,
                translation: inProject.refusal.translation, detail: inProject.refusal.detail, note: word("consequences.nothing") };
@@ -1123,9 +1125,11 @@ export class AiRuns {
        stays the refusal of a request that names no principal at all.] */
     /* DEC-49 REGION is-airun-open-capability — C-33.29. No account to run under: the
        two principals are not both named. See REC-64's note above for why one code and not two. */
-    if (!principalPlane || !principalClaude)
+    if (!principalPlane || !principalAi || principalClaude !== undefined || principalClaudeRef !== undefined)
       return refusal("AI_RUN_CAPABILITY_UNAVAILABLE", {
-               note: localize("ai-runs.index.a_run_names_two_principals", "a run names TWO principals — the plane credential acting and the member whose own Claude account carries it (K1502, K1503). They are different principals and an act must say both (DEC-27(b), DEC-55.4)") });
+               note: principalClaude !== undefined || principalClaudeRef !== undefined
+                 ? localize("ai-runs.index.a_run_names_its_principals_renamed", "a run names its paying principal as principalAi and its member as principalAiRef (R9, T53); the arguments of their old names are no longer read")
+                 : localize("ai-runs.index.a_run_names_two_principals_ai", "a run names TWO principals — the plane credential acting and the owner of the AI account that pays for it (R9, R52). They are different principals and an act must say both (DEC-27(b), DEC-55.4)") });
     /* END DEC-49 REGION is-airun-open-capability */
     /* SK-1 — THE THIRD CONDITION, AND IT IS REFUSED WHERE THE PRINCIPALS ARE.
        §11 records what a run was FORMED under, and the skill version is one of
@@ -1152,7 +1156,7 @@ export class AiRuns {
        `DEPLOYED_MODES` is asked first; then Gate 1's verdict for that entry and part (`ai-gate`'s, through this module's
        seam), the test-instance exception lifting the bar alone, never a flag. With no account serving, only the flag and
        the chain are asked here, and R52's refusal names what is missing. */
-    const accountMember = AiRuns.#accountMember({ actor, principalPlane, principalClaude });
+    const accountMember = AiRuns.#accountMember({ actor, principalPlane, principalAi });
     const account = accountMember ? await this.#accountFor(accountMember, "run", inProject.project) : null;
     const servedOn = account && !account.refusal ? account.entry_id : null;
     const admissions = new Map(this.#deployedModes().filter((m) => RUN_MODES.includes(m))
@@ -1364,7 +1368,7 @@ export class AiRuns {
     try { this.#transact(() => {
       this.sql.exec(
         `INSERT INTO ai_runs (run, status, label, mode, context_type, context_id,
-           principal_plane, principal_claude, principal_claude_ref, skill_version,
+           principal_plane, principal_ai, principal_ai_ref, skill_version,
            bias_manifest, standard_pair, created, updated, expires, ticks, state, lens_at_open,
            rerun_of, plan, step, origin, response, untested, project)
          VALUES (?, 'running', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -1373,9 +1377,9 @@ export class AiRuns {
            a value that survives a falsiness guard while naming nothing reads as
            present and travels. `checkSkillVersion` judged the trimmed value, so
            storing the untrimmed one would store something the guard never saw. */
-        /* R52: `principal_claude` is the member whose account carries the run (agent-worker R10 reads it so). */
-        /* R52 (T41): `principal_claude` the paying owner the account answered (`member:<id>`, `project:<id>`, `group`),
-           `principal_claude_ref` the member whose act it is, whichever account paid */
+        /* R52: `principal_ai` is the member whose account carries the run (agent-worker R10 reads it so). */
+        /* R52 (T41): `principal_ai` the paying owner the account answered (`member:<id>`, `project:<id>`, `group`),
+           `principal_ai_ref` the member whose act it is, whichever account paid */
         String(principalPlane), account.owner, `member:${accountMember}`,
         String(skillVersion).trim(),
         biasManifest, standardPair, now, now, AiRuns.#aiIso(nowMs + lease),
@@ -1502,7 +1506,7 @@ export class AiRuns {
       while (this.#one(`SELECT run FROM ai_runs WHERE run = ?`, `RUN-${stepId}-${k}`)) k += 1;
       const run = `RUN-${stepId}-${k}`;
       const opened = await this.open({ run, contextType: context.type, contextId: context.id, label, mode: runMode,
-        principalPlane, principalClaude: `member:${member}`, skillVersion, bounds, at, actor, viewer, origin: "member",
+        principalPlane, principalAi: `member:${member}`, skillVersion, bounds, at, actor, viewer, origin: "member",
         place: context.place, work: localize("ai-runs.index.ai_run_on_stepid_string", "AI run on {stepId}: {String}", { stepId: String(stepId), String: String(String(seen.work ?? "")) }).slice(0, WORK_MAX) });
       if (opened && opened.started === true) runs.push({ step: stepId, run, system_step: opened.step ?? null });
       else { const { run: _r, started: _s, ...refusal } = opened || {}; runs.push({ step: stepId, refusal }); }
@@ -1651,8 +1655,8 @@ export class AiRuns {
       return { run, ticked: false, found: true, status: row.status,
                ...AiRuns.#shed(this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.usage_is_a_list", "`usage` is a list with one entry per conversation that reached the model since the last tick, each {mode, model, usage, calls}."))),
                note: word("ai-runs.note.appended_budget_spent") };
-    /* R52: the calls are counted to the account the run recorded as paying (`principal_claude`) and the member whose act
-       the run is (`principal_claude_ref`); a run that names no member (one opened before T33-50) cannot have its calls
+    /* R52: the calls are counted to the account the run recorded as paying (`principal_ai`) and the member whose act
+       the run is (`principal_ai_ref`); a run that names no member (one opened before T33-50) cannot have its calls
        counted, and a tick reporting calls for it is refused by name. */
     const payer = AiRuns.#memberOfRun(row);
     if (calls.length && !payer)
@@ -1660,7 +1664,7 @@ export class AiRuns {
     /* R52 (B5) — THE PAYING ACCOUNT'S LIMITS (`ai-use.useCheck`, its R3), on the use before this tick. The calls this tick
        reports were made and paid for, so they are counted whatever the answer (the counter stays true, J5 (13)); over a
        limit the refusal is then answered and nothing else of the tick is written: no entry, no figure, no lease, no tick. */
-    const overLimit = payer ? this.#useCheck(row.principal_claude, payer, nowMs) : null;
+    const overLimit = payer ? this.#useCheck(row.principal_ai, payer, nowMs) : null;
     if (overLimit) {
       const counted = calls.length ? this.#countTick(row, payer, calls, nowMs) : 0;
       if (counted && typeof counted === "object")
@@ -1683,10 +1687,10 @@ export class AiRuns {
         if (bad) { usageRefusal = bad; throw USAGE_REFUSED; }
       }
       for (const e of Array.isArray(log) ? log : []) {
-        /* `row.principal_claude` is the run's machine identity and this method
+        /* `row.principal_ai` is the run's machine identity and this method
            already holds the row — see #aiRunAppend's note on why it is passed
            rather than looked up. */
-        const bad = this.#aiRunAppend(run, e, now, 0, row.principal_claude || null, row.step || null);
+        const bad = this.#aiRunAppend(run, e, now, 0, row.principal_ai || null, row.step || null);
         if (bad) refused.push(bad); else appended += 1;
       }
       /* R84: the segment's end, at level `meaning`, after the entries the segment sent with it */
@@ -1694,7 +1698,7 @@ export class AiRuns {
         const bad = this.#aiRunAppend(run, {
           level: "meaning", subject: "segment -> end", ...this.#aiRunRestatedState(run), governed: false,
           detail: localize("ai-runs.index.the_segment_ended_by_v1", "the segment ended (by: {v1}; {v2}{v3}). Refusals it met: {v4}", { v1: String(seg.by ?? "its own segment bound"), v2: String(seg.done ? localize("ai-runs.index.the_runs_work_is_done", "the run's work is done") : localize("ai-runs.index.the_runs_work_is_not_done", "the run's work is not done")), v3: String(seg.error ? `; in error ${seg.error}` : ""), v4: String(seg.refusals.length ? seg.refusals.join(", ") : "none") }),
-        }, now, 0, row.principal_claude || null, row.step || null);
+        }, now, 0, row.principal_ai || null, row.step || null);
         if (bad) refused.push(bad); else appended += 1;
       }
       for (const [k, v] of Object.entries(consume && typeof consume === "object" ? consume : {})) {
@@ -1759,8 +1763,8 @@ export class AiRuns {
   async tickAndContinue(args = {}) {
     const out = this.tick(args);
     if (!out || out.ticked !== true || !out.segment_end || out.segment_end.next !== "continue") return out;
-    const row = this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_claude,
-                                  principal_claude_ref, step, project FROM ai_runs WHERE run = ?`, out.run);
+    const row = this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_ai,
+                                  principal_ai_ref, step, project FROM ai_runs WHERE run = ?`, out.run);
     if (!row || row.status !== "running") return out;
     const iso = AiRuns.#aiIso(args.at ? Date.parse(args.at) : Date.now());
     let dispatch;
@@ -1775,7 +1779,7 @@ export class AiRuns {
         const decision = this.#aiRunResumeDecision(row, resumer);
         if (decision.dispatch) {
           const o = await this.#aiRunDispatch({ run: row.run, context_id: row.context_id, payer: AiRuns.#memberOfRun(row),
-            step: row.step || null, project: row.project ?? (row.context_type === "project" ? row.context_id : null), owner: row.principal_claude },
+            step: row.step || null, project: row.project ?? (row.context_type === "project" ? row.context_id : null), owner: row.principal_ai },
             resumer, iso);
           dispatch = { dispatched: o.state === "DISPATCHED" || o.state === "RUNNING", state: o.state };
         } else dispatch = { dispatched: false, state: "WITHHELD", reason: decision.withheld, says: decision.says };
@@ -1786,7 +1790,7 @@ export class AiRuns {
       this.#transact(() => this.#aiRunAppend(row.run, {
         level: "meaning", subject: "segment -> end", ...this.#aiRunRestatedState(row.run), governed: false,
         detail: localize("ai-runs.index.the_next_segment_was_not", "the next segment was not dispatched ({reason}). The run is still resumable by its own principal; nothing it established is lost", { reason: String(dispatch.reason) }),
-      }, iso, 0, row.principal_claude || null, row.step || null));
+      }, iso, 0, row.principal_ai || null, row.step || null));
     }
     return { ...out, segment_end: { ...out.segment_end, dispatch } };
   }
@@ -1997,7 +2001,7 @@ export class AiRuns {
     if (!w) return [];
     const ids = w.woken(AiRuns.AI_RUN_WAKE_TICK_BATCH);
     return (Array.isArray(ids) ? ids : []).slice(0, AiRuns.AI_RUN_WAKE_TICK_BATCH)
-      .map((run) => this.#one(`SELECT run, context_type, context_id, principal_plane, principal_claude, principal_claude_ref, step, project FROM ai_runs
+      .map((run) => this.#one(`SELECT run, context_type, context_id, principal_plane, principal_ai, principal_ai_ref, step, project FROM ai_runs
                                 WHERE run = ? AND status = 'running'`, String(run)))
       .filter(Boolean);
   }
@@ -2096,7 +2100,7 @@ export class AiRuns {
                    woken: !bad, ...(bad ? { unwritable: bad } : { expires: until }),
                    resume: decision.dispatch ? "DISPATCH" : decision.withheld });
       if (!bad && decision.dispatch) dispatches.push({ run: r.run, context_id: r.context_id, payer: AiRuns.#memberOfRun(r), step: r.step || null, project: r.project ?? (r.context_type === "project" ? r.context_id : null),
-                                       owner: r.principal_claude });
+                                       owner: r.principal_ai });
     }
 
     /* D-260 — THE DISPATCH, AFTER EVERY WAKE IS WRITTEN AND OUTSIDE ANY TRANSACTION: a network call inside
@@ -2205,10 +2209,10 @@ export class AiRuns {
        own, their own sign-in (T38; K2299), or the group's key); with none, it is withheld by name and waits, and the binding is not called. */
     const payer = AiRuns.#memberOfRun(run);
     /* (T41) a run a project's account pays for is judged by that account at the dispatch itself (ai-accounts R11) */
-    const projectPaid = typeof (run && run.principal_claude) === "string" && run.principal_claude.startsWith("project:");
+    const projectPaid = typeof (run && run.principal_ai) === "string" && run.principal_ai.startsWith("project:");
     if (resumer && resumer.ready && principal === resumer.stamp && !(payer && (projectPaid || this.#accountServing(payer, "run", run.project ?? null))))
       return { dispatch: false, withheld: "NO_ACCOUNT",
-               says: localize("ai-runs.index.resumption_not_dispatched_no_claude", "Resumption: NOT dispatched — no Claude account serves the member whose act started this run (none of their own is connected, and the team's key is not set or not on), and a run continues only on the account that serves that member's act (K1503, K1755). It waits.") };
+               says: localize("ai-runs.index.resumption_not_dispatched_no_ai_account", "Resumption: NOT dispatched — no AI account serves the member whose act started this run (none of their own is connected, and the team's key is not set or not on), and a run continues only on the account that serves that member's act (K1503, K1755). It waits.") };
     if (resumer && resumer.ready && principal === resumer.stamp)
       return { dispatch: true, withheld: null,
                says: word("ai-runs.says.resumption_handed_agent", { token_id: resumer.tokenId }) };
@@ -2329,8 +2333,8 @@ export class AiRuns {
     const iso = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
     const id = run == null ? "" : String(run).trim();
     const sight = viewer == null || viewer === "" ? by : viewer;
-    const row = id ? this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_claude,
-                                       principal_claude_ref, step, project FROM ai_runs WHERE run = ?`, id) : null;
+    const row = id ? this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_ai,
+                                       principal_ai_ref, step, project FROM ai_runs WHERE run = ?`, id) : null;
     if (!row || !this.#aiRunInSight(id, sight))
       return { run: run || null, found: false, note: word("ai-runs.note.run_either_existed") };
     /* run-rules R5's comparison, relayed: `by` must be the member the run's principal names. A run whose principal is no
@@ -2362,7 +2366,7 @@ export class AiRuns {
     const store = this.#ownNamespace();
     if (!store) return withheld("NAMESPACE_UNDETERMINED");
     const d = { run: row.run, context_id: row.context_id, payer: AiRuns.#memberOfRun(row), step: row.step || null,
-                project: row.project ?? (row.context_type === "project" ? row.context_id : null), owner: row.principal_claude,
+                project: row.project ?? (row.context_type === "project" ? row.context_id : null), owner: row.principal_ai,
                 /* R87: the door's trace and member ref, for the one call's headers; kept nowhere (no row, log or answer) */
                 headers: AiRuns.#doorHeaders(trace, memberRef) };
     /* R18 (T53; AIR41; K2892's "check and plan only" now "deployed and passed for the account"): ON ANY ACCOUNT
@@ -2503,11 +2507,11 @@ export class AiRuns {
         ? { type: row.context_type, id: row.context_id,
             questions: this.#runContextQuestions(row.context_id, viewer) }
         : { type: row.context_type, id: row.context_id },
-      /* §14a: the record names WHOSE Claude account carried the run (`member:<id>`, R52), BESIDE the
+      /* §14a: the record names WHOSE AI account paid for the run (R9, R52), BESIDE the
          plane-credential principal — two principals, never one, and never a
          token value. `ref` is the opener's own label for the account. */
-      principal: { plane: row.principal_plane, claude: row.principal_claude,
-                   ref: row.principal_claude_ref, skill: row.skill_version },
+      principal: { plane: row.principal_plane, ai: row.principal_ai,
+                   ref: row.principal_ai_ref, skill: row.skill_version },
       budget: bounds.map((b) => ({ bound: b.bound, allowed: b.allowed,
                                    consumed: b.consumed, unit: b.unit })),
       condition: cond,
@@ -3170,17 +3174,17 @@ export class AiRuns {
 
   /** R28: the run's facts a producer gates on, for a held run the viewer can see; null for a blank id, an absent
    *  run and an invisible one alike. Never throws, writes nothing. Whether the caller holds it is R5 over
-   *  `principal_plane`; `principal_claude` is the level that pays, which a production under the run records
+   *  `principal_plane`; `principal_ai` is the level that pays, which a production under the run records
    *  (capture-requests' request row). */
   runFor(run, viewer) {
     try {
       const id = run == null ? "" : String(run).trim();
       if (!id) return null;
       const seen = this.#bundleGate("r.context_id", viewer);
-      const r = this.#one(`SELECT r.run, r.status, r.mode, r.context_type, r.context_id, r.principal_plane, r.principal_claude,
+      const r = this.#one(`SELECT r.run, r.status, r.mode, r.context_type, r.context_id, r.principal_plane, r.principal_ai,
                                   r.plan, r.origin, r.response, r.untested, r.project FROM ai_runs r WHERE r.run = ? AND ${seen.sql}`, id, ...seen.args);
       return r ? { run: r.run, status: r.status, mode: r.mode, context_type: r.context_type,
-                   context_id: r.context_id, principal_plane: r.principal_plane, principal_claude: r.principal_claude,
+                   context_id: r.context_id, principal_plane: r.principal_plane, principal_ai: r.principal_ai,
                    /* R78: the label recorded at the open */
                    untested: AiRuns.#untestedOf(r),
                    /* R89: the project the run was opened in */
@@ -3277,7 +3281,7 @@ export class AiRuns {
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i];
       const said = e && typeof e === "object" && !Array.isArray(e)
-        ? use.countUsage({ owner: row.principal_claude, member: `member:${payer}`, use: "run", mode: e.mode, model: e.model ?? null,
+        ? use.countUsage({ owner: row.principal_ai, member: `member:${payer}`, use: "run", mode: e.mode, model: e.model ?? null,
                            /* R88: the conversation's effort beside its model, ai-use R15's to judge; null where none is stated */
                            effort: e.effort ?? null, usage: e.usage, calls: e.calls, at: AiRuns.#aiIso(ms), act: String(row.run) })
         : this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.the_entry_is_not", "the entry is not an object {mode, model, usage, calls}."));
@@ -3313,7 +3317,7 @@ export class AiRuns {
 
   /** R72: a provider's refusal for a spent limit, answered in plain words at the wake's dispatch, never as an error. */
   #providerLimit() {
-    return { provider_limit: true, detail: localize("ai-runs.index.the_claude_account_that_serves", "The Claude account that serves this run has reached the spending limit set on it, so the assistant cannot continue for now. Nothing was lost.") };
+    return { provider_limit: true, detail: localize("ai-runs.index.the_ai_account_that_serves", "The AI account that serves this run has reached the spending limit set on it, so the assistant cannot continue for now. Nothing was lost.") };
   }
 
   /** R52 (T53): which account serves `member`'s act of `kind` now, read without unsealing (`ai-accounts`'
@@ -3361,31 +3365,31 @@ export class AiRuns {
   #noAccount(member, what) {
     /* DEC-49 REGION is-ai-no-account */
     return this.#refuse("AI_NO_ACCOUNT", member
-      ? localize("ai-runs.index.what_needs_a_claude_account", "{what} needs a Claude account to serve the member whose act started it, and none serves that member: they have connected none of their own, and the team's key is not set or not on. Nothing was started.", { what: String(what) })
-      : localize("ai-runs.index.what_names_no_member_whose", "{what} names no member whose Claude account carries it. Nothing was started.", { what: String(what) }));
+      ? localize("ai-runs.index.what_needs_an_ai_account", "{what} needs an AI account to serve the member whose act started it, and none serves that member: they have connected none of their own, and the team's key is not set or not on. Nothing was started.", { what: String(what) })
+      : localize("ai-runs.index.what_names_no_member_whose_ai", "{what} names no member whose AI account carries it. Nothing was started.", { what: String(what) }));
     /* END DEC-49 REGION is-ai-no-account */
   }
 
   /** R52 (K1503): the member whose account a run carries — a member's session (`actor`), else the member a member-kind
    *  credential acts for (`principal_plane`), else, for a machine credential, the member the opener names
-   *  (`principalClaude`, `member:<id>`). Null when there is none. */
-  static #accountMember({ actor, principalPlane, principalClaude }) {
+   *  (`principalAi`, `member:<id>`). Null when there is none. */
+  static #accountMember({ actor, principalPlane, principalAi }) {
     return memberIdOf(actor) || memberIdOf(principalPlane)
-      || (typeof principalClaude === "string" && principalClaude.trim().startsWith("member:") ? memberIdOf(principalClaude) : null);
+      || (typeof principalAi === "string" && principalAi.trim().startsWith("member:") ? memberIdOf(principalAi) : null);
   }
 
-  /** R52: the member a stored run is carried by: its `principal_claude` when that is `member:<id>`; null for a run
+  /** R52: the member a stored run is carried by: its `principal_ai` when that is `member:<id>`; null for a run
    *  opened before T33-50, which recorded a level word there. */
-  static #payerOf(principalClaude) {
-    return typeof principalClaude === "string" && principalClaude.startsWith("member:") ? memberIdOf(principalClaude) : null;
+  static #payerOf(principalAi) {
+    return typeof principalAi === "string" && principalAi.startsWith("member:") ? memberIdOf(principalAi) : null;
   }
 
-  /** R52 (T41): the member whose act a stored run is: its `principal_claude_ref` (`member:<id>`), else, for a run opened
-   *  before T41, its `principal_claude` when that names a member. */
+  /** R52 (T41): the member whose act a stored run is: its `principal_ai_ref` (`member:<id>`), else, for a run opened
+   *  before T41, its `principal_ai` when that names a member. */
   static #memberOfRun(row) {
-    const ref = row && typeof row.principal_claude_ref === "string" && row.principal_claude_ref.startsWith("member:")
-      ? memberIdOf(row.principal_claude_ref) : null;
-    return ref || AiRuns.#payerOf(row && row.principal_claude);
+    const ref = row && typeof row.principal_ai_ref === "string" && row.principal_ai_ref.startsWith("member:")
+      ? memberIdOf(row.principal_ai_ref) : null;
+    return ref || AiRuns.#payerOf(row && row.principal_ai);
   }
 
   /* ---- K1606 (run-rules R19; VF-4): THE ACT THAT RECORDS A MODE'S FIRST LIVE RUN VERIFIED, written here, where runs
@@ -3616,8 +3620,16 @@ export class AiRuns {
   /** The tables and their two additive columns (R38), and D-85's `ai_run_log` fold: the pre-fold run log's rows are
    *  copied into the observation log under `authority_kind = run` and the old table dropped, once. Idempotent;
    *  called by the store's migration after observation-log's. */
+  /** R9 (T53): the principal columns renamed at the migration, old name then new. */
+  static #RENAMED = Object.freeze([["principal_" + "claude", "principal_ai"], ["principal_" + "claude_ref", "principal_ai_ref"]]);
+
   migrate() {
     const bare = AI_RUNS_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+    /* R9 (T53; K3472, BR29): the two principal columns of a table made before T53 are renamed in place, every row kept and
+       no meaning changed, before anything else reads them. */
+    const before = new Set(this.#rows(`PRAGMA table_info(ai_runs)`).map((c) => c.name));
+    for (const [from, to] of AiRuns.#RENAMED)
+      if (before.has(from) && !before.has(to)) this.sql.exec(`ALTER TABLE ai_runs RENAME COLUMN ${from} TO ${to}`);
     for (const st of bare.split(";")) if (st.trim()) this.sql.exec(st);
     const cols = new Set(this.#rows(`PRAGMA table_info(ai_runs)`).map((c) => c.name));
     for (const col of AI_RUNS_ADDED_COLUMNS)
@@ -3631,7 +3643,7 @@ export class AiRuns {
         `INSERT INTO observation_log
            (at, actor_class, actor, authority_kind, authority, level, subject_kind, subject,
             state, governed, condition, bound, terminal, result_kind, result_ref, detail)
-         SELECT l.at, 'machine', r.principal_claude, 'run', l.run, l.level, 'unstated', l.subject,
+         SELECT l.at, 'machine', r.principal_ai, 'run', l.run, l.level, 'unstated', l.subject,
                 l.state, l.governed, l.condition, l.bound, l.terminal, NULL, NULL, l.detail
            FROM ai_run_log l LEFT JOIN ai_runs r ON r.run = l.run
           ORDER BY l.run, l.seq`);
@@ -3681,7 +3693,7 @@ export function aiRunsOps(runs, url, body) {
    the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
 export const DECLARED_OPS = Object.freeze({
   airunopen: { classes: ["admin","member","probe"], mutating: true, weight: "reversible", description: localize("ai-runs.declared.airunopen", "investigative run lifecycle, keyed by run id: starts a background session in the context of an inquiry or a project and changes NOTHING about that object (§14a)"),
-    fields: { accepts: ["run","contextType","contextId","label","mode","principalClaude","principalClaudeRef","skillVersion","biasManifest","standardPair","bounds","state","leaseMs","at","rerunOf","plan","step","origin","place","work","response","project"], requires: ["run","contextType","contextId","principalClaude","skillVersion"] } },
+    fields: { accepts: ["run","contextType","contextId","label","mode","principalAi","principalAiRef","skillVersion","biasManifest","standardPair","bounds","state","leaseMs","at","rerunOf","plan","step","origin","place","work","response","project"], requires: ["run","contextType","contextId","principalAi","skillVersion"] } },
   airunclose: { classes: ["admin","member","probe"], mutating: true, weight: "reversible", description: localize("ai-runs.declared.airunclose", "investigative run lifecycle, keyed by run id: ends a run and names the bound that stopped it (§14b.6); what the run PROPOSED is a separate act with its own author"),
     fields: { accepts: ["run","bound","condition","at"], requires: ["run","bound"] } },
 });

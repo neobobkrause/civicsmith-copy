@@ -47,12 +47,12 @@ test("R52 (T48; N996 §5): the open asks ai-accounts.accountFor for the act of t
   const asked = silenceDelegates(w);
   const own = await w.runs.open(OPEN());
   assert.equal(own.started, true, JSON.stringify(own).slice(0, 300));
-  assert.deepEqual({ ...w.row(`SELECT principal_claude, principal_claude_ref FROM ai_runs WHERE run='R1'`) },
-                   { principal_claude: "member:ann", principal_claude_ref: "member:ann" });
-  assert.equal((await w.runs.open(OPEN({ run: "D0", principalClaude: "member:dan" }))).code, "AI_NO_ACCOUNT");
+  assert.deepEqual({ ...w.row(`SELECT principal_ai, principal_ai_ref FROM ai_runs WHERE run='R1'`) },
+                   { principal_ai: "member:ann", principal_ai_ref: "member:ann" });
+  assert.equal((await w.runs.open(OPEN({ run: "D0", principalAi: "member:dan" }))).code, "AI_NO_ACCOUNT");
   await w.team({ members: ["dan"] });
-  assert.equal((await w.runs.open(OPEN({ run: "D1", principalClaude: "member:dan" }))).started, true);
-  assert.equal(w.row(`SELECT principal_claude FROM ai_runs WHERE run='D1'`).principal_claude, "group");
+  assert.equal((await w.runs.open(OPEN({ run: "D1", principalAi: "member:dan" }))).started, true);
+  assert.equal(w.row(`SELECT principal_ai FROM ai_runs WHERE run='D1'`).principal_ai, "group");
   assert.deepEqual(asked, [], "no credentials account delegate was asked");
   /* control: the read is ai-accounts' — made to fail there, ann's open is refused by name and nothing is written */
   w.aiAccounts.accountFor = async () => { throw new Error("ai-accounts unreadable"); };
@@ -92,7 +92,7 @@ test("R18, R14 (T48; T53): a member's run dispatched at her act reads her person
   await w.signin("ann");
   w.ctx.id = { equals: (x) => x === "id:bio" };
   w.bundle(INQ);
-  assert.equal((await w.runs.open(OPEN({ principalPlane: "member:ann", principalClaude: "member:ann", actor: "member:ann",
+  assert.equal((await w.runs.open(OPEN({ principalPlane: "member:ann", principalAi: "member:ann", actor: "member:ann",
                                          viewer: "member:ann" }))).started, true);
   const asked = silenceDelegates(w);
   const d = await w.runs.dispatchMemberRun({ run: "R1", by: "member:ann" });

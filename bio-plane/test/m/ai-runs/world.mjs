@@ -328,7 +328,7 @@ export function world({ env = {}, inquiry = undefined, deployedModes = undefined
 /** An open's arguments, well formed unless overridden: an organisation credential's run over `INQ`, started by ann's
  *  act and carried by her account (R52). */
 export const OPEN = (over = {}) => ({ run: "R1", contextType: "inquiry", contextId: INQ, principalPlane: ORG,
-  principalClaude: ANN, skillVersion: "bio@1", viewer: "admin", at: T0, ...over });
+  principalAi: ANN, skillVersion: "bio@1", viewer: "admin", at: T0, ...over });
 
 /** One model call's figures, as `agent-model` R5 states them. */
 export const USAGE = (over = {}) => ({ input_tokens: 1000, output_tokens: 200, cache_read_input_tokens: 0,

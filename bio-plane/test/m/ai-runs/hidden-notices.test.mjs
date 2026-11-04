@@ -30,7 +30,7 @@ async function hiddenWorld() {
     await w.runs.tick({ run, viewer: o.viewer ?? "admin", caller: p, actor: o.actor ?? "", log: [look] });
   }
   /* a run stored before REC-153, over a context bundle this record does not hold, and a row naming no run at all */
-  w.sql.exec(`INSERT INTO ai_runs (run, status, context_type, context_id, principal_plane, principal_claude, created, updated,
+  w.sql.exec(`INSERT INTO ai_runs (run, status, context_type, context_id, principal_plane, principal_ai, created, updated,
               expires, state) VALUES ('RX', 'running', 'inquiry', 'INQ-2026-0404', ?, 'instance', ?, ?, ?, '{}')`, ORG, T0, T0, T0);
   const copy = (authorityKind, authority) => w.sql.exec(
     `INSERT INTO observation_log (at, actor_class, actor, authority_kind, authority, level, subject_kind, subject, state,

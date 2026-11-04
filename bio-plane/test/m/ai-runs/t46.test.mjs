@@ -158,10 +158,10 @@ async function memberWorld(aw, { account = "signin", mode = "check", principal =
     w.project(PROJ, "ann");
     assert.equal(w.runs.registerOpenCheck("action-plans", "plan", () => null).ok, true);
     const o = await w.runs.open(OPEN({ mode: "plan", plan: "PLN-2026-0001", contextType: "project", contextId: PROJ,
-      principalPlane: stamp, principalClaude: "member:ann", actor: "ann", viewer: "member:ann" }));
+      principalPlane: stamp, principalAi: "member:ann", actor: "ann", viewer: "member:ann" }));
     assert.equal(o.started, true, JSON.stringify(o));
   } else {
-    const o = await w.runs.open(OPEN({ mode, principalPlane: stamp, principalClaude: "member:ann", actor: "member:ann", viewer: "member:ann" }));
+    const o = await w.runs.open(OPEN({ mode, principalPlane: stamp, principalAi: "member:ann", actor: "member:ann", viewer: "member:ann" }));
     assert.equal(o.started, true, JSON.stringify(o));
   }
   return { w, stamp };
@@ -336,7 +336,7 @@ test("R18 (T46; K2920): a run of a mode other than check or plan on her own sign
   w.bundle(INQ);
   await w.runs.open(OPEN({ run: "V" }));
   assert.equal(w.runs.verificationRecord({ mode: "check", run: "V", evidence: ["seen live"], by: "member:ann", at: T0 }).ok, true);
-  const o = await w.runs.open(OPEN({ mode: "investigate", principalPlane: "member:ann", principalClaude: "member:ann",
+  const o = await w.runs.open(OPEN({ mode: "investigate", principalPlane: "member:ann", principalAi: "member:ann",
                                      actor: "member:ann", viewer: "member:ann" }));
   assert.equal(o.started, true, JSON.stringify(o));
   const before = w.dump();
@@ -379,7 +379,7 @@ test("R14 (T47; N955; credentials R63): after the exit commits a run's ending, e
   const aw = agentWorker();
   const { w, stamp } = await memberWorld(aw);
   await w.runs.dispatchMemberRun({ run: "R1", by: "member:ann" });
-  const o2 = await w.runs.open(OPEN({ run: "R2", principalPlane: stamp, principalClaude: "member:ann", actor: "member:ann", viewer: "member:ann" }));
+  const o2 = await w.runs.open(OPEN({ run: "R2", principalPlane: stamp, principalAi: "member:ann", actor: "member:ann", viewer: "member:ann" }));
   assert.equal(o2.started, true);
   await w.runs.dispatchMemberRun({ run: "R2", by: "member:ann" });
   assert.deepEqual([runCreds(w, "R1")[0].revoked_at, runCreds(w, "R2")[0].revoked_at], [null, null]);
@@ -393,7 +393,7 @@ test("R14 (T47; N955; credentials R63): after the exit commits a run's ending, e
   assert.notEqual(runCreds(w, "R2")[0].revoked_at, null);
   /* a tick that exhausts a bound */
   const t = await memberWorld(agentWorker());
-  const o3 = await t.w.runs.open(OPEN({ run: "R3", principalPlane: t.stamp, principalClaude: "member:ann", actor: "member:ann",
+  const o3 = await t.w.runs.open(OPEN({ run: "R3", principalPlane: t.stamp, principalAi: "member:ann", actor: "member:ann",
                                          viewer: "member:ann", bounds: [{ bound: "fetches", allowed: 1 }] }));
   assert.equal(o3.started, true);
   await t.w.runs.dispatchMemberRun({ run: "R3", by: "member:ann" });
