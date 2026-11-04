@@ -1,0 +1,1 @@
+{"row":"owed","user":"control-plane","key":"interface-shell:172","at":"2026-11-04T14:43:13.515Z","by":"merge","why":"bio-plane/src/control-plane/app.mjs imports interface-shell","next":"node .process/tool/p3.mjs notice triage interface-shell:172"}

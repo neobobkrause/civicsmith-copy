@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-action","verdict":"not affected","evidence":"build/modules.json:192 screens-action (bio-plane/src/screens-action/) holds no file that imports interface-shell, every code file under its paths read at 3e0702234f","at":"2026-11-04T14:43:13.515Z","key":"interface-shell:172","worker":"merge: imports check","cost":"0"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-daily","by":"triage","evidence":"build/modules.json:187 screens-daily (bio-plane/src/screens-daily/) holds no file that imports interface-shell, every code file under its paths read at 3e0702234f","at":"2026-11-04T14:43:13.515Z","key":"interface-shell:172","worker":"merge: imports check","cost":"0"}
