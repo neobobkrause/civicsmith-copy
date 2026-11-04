@@ -8,3 +8,4 @@
 {"at":"2026-11-04T05:08:09Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-04T05:42:04Z","row":"sent","n":5,"to":"bob","text":"job op-declarations BLOCKED: run status"}
 {"at":"2026-11-04T05:42:15Z","row":"outcome","n":5,"outcome":"delivered"}
+{"at":"2026-11-04T06:09:08Z","row":"sent","n":6,"to":"bob","text":"job op-declarations complete, PR #95 ready: run status"}
