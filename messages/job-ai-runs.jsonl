@@ -15,3 +15,4 @@
 {"at":"2026-11-04T10:23:29Z","row":"sent","n":8,"to":"bob","text":"job ai-runs complete, PR #213 ready: run status"}
 {"at":"2026-11-04T10:24:14Z","row":"sent","n":9,"to":"bob","text":"job ai-runs complete, PR #213 ready: run status"}
 {"at":"2026-11-04T10:24:26Z","row":"sent","n":10,"to":"bob","text":"job ai-runs complete, PR #213 ready: run status"}
+{"at":"2026-11-04T10:25:02Z","row":"outcome","n":10,"outcome":"delivered"}
