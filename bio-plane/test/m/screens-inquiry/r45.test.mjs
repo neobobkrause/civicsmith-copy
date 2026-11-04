@@ -28,7 +28,7 @@ const stateWorld = async ({ n = 0 } = {}) => {
 /** a run of `who` (default: ann) over the question, opened by her real act (`airunopen`: running); `end(bound)` closes it by hers (`airunclose`) and `tick()` counts one of the run's ticks (`airuntick`) */
 let runs = 0;
 const openRun = async (w, { who = w.ann, run = "RUN-" + String(++runs).padStart(4, "0") + "d".repeat(12) } = {}) => {
-  await who.act("airunopen", { body: { run, contextType: "inquiry", contextId: w.id, skillVersion: "investigative-session@1", principalClaude: `member:${who.member}`, mode: "check" } });
+  await who.act("airunopen", { body: { run, contextType: "inquiry", contextId: w.id, skillVersion: "investigative-session@1", principalAi: `member:${who.member}`, mode: "check" } });
   return { run, tick: () => who.act("airuntick", { body: { run } }), end: (bound) => who.act("airunclose", { body: { run, bound } }) };
 };
 /** a member besides ann, joined to her project, who can then open a run of her own over the question */

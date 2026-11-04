@@ -40,7 +40,7 @@ const stamp = (iso) => {
 };
 const text = (el) => String(el && el.textContent || "");
 /** The requests that wrote: the page's own frame read (`subscriptionsignin`) is a POST that writes nothing. */
-const writes = (p) => p.requests.filter((r) => r.method === "POST" && r.op !== "subscriptionsignin");
+const writes = (p) => p.requests.filter((r) => r.method === "POST" && r.op !== "subscriptionsignin" && r.op !== "aipathready");
 
 /* ---- the record of a copy: three revisions of one document (promotion R58, record-core R15) ---- */
 const SHA_SET = "7".repeat(64);
@@ -329,7 +329,10 @@ test("R68 control: a name whose grade or basis the read does not hold draws neit
   const w = await member({ kind: "page" });
   const none = await pageOn(w.world, w.ann, w.at, { plane: { connections: CONNS } });
   assert.equal(none.byOp("resolutions").length, 1, "the world's own answer: the document names no one");
-  assert.equal(section(none, "document.names.title"), undefined, "R20: no names, no section");
+  { /* wizard-scripts R54 (PR 98): the registry admits `resolve` on document, so a document naming no one draws the section with that act alone (R139), no row (R20) */
+    const sec = section(none, "document.names.title");
+    assert.ok(!sec || (sec.querySelectorAll(".cs-row").length === 0 && sec.querySelectorAll('button[data-act="resolve"]').length === 1), "no names: no row, only the act that finds them");
+  }
   const failed = await open(at, { plane: { resolutions: refusedIn("NO_SHA", "The names could not be read just now.") } });
   assert.ok(section(failed, "document.names.title").textContent.includes("The names could not be read just now."));
 });

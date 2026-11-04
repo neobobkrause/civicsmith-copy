@@ -84,7 +84,7 @@ test("R55 R111 C27 control: another member's held copy draws no box, with a proj
 });
 
 /* ---- C17 ---- */
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 const PICTURE = (o = {}) => READING({ reading: { content_type: "image/jpeg", found: true, text_chars: 0 }, text_units: [], unread_pages: [0], ...o });
 const acts = (p, op) => main(p).querySelectorAll(`button[data-act="${op}"]`).length;
 test("R96 R3 C17 a photograph offers no PDF re-read: its re-read sends the picture's op once, and the PDF reader is never asked", async () => {
