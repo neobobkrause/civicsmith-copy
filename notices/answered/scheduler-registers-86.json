@@ -1,0 +1,1 @@
+{"row":"answered","user":"scheduler","by":"triage","evidence":"bio-plane/src/scheduler/index.mjs:65 its imports (lines 65-92) are retrieval, connections, ai-runs, following etc.; none from registers/, and no use of DECLARED_OPS, REGISTERS_OPS or REGISTERS_SCHEMA in scheduler/","at":"2026-11-04T05:34:32.686Z","key":"registers:86","worker":"triage-r86-subagent","cost":"0.05"}

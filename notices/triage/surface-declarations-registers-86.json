@@ -1,0 +1,1 @@
+{"row":"triage","user":"surface-declarations","verdict":"not affected","evidence":"build/modules.json:169 row has paths [] and tests [], so it has no code yet to use registers (its uses list names registers but nothing imports it)","at":"2026-11-04T05:34:32.686Z","key":"registers:86","worker":"triage-r86-subagent","cost":"0.05"}
