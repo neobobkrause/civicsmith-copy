@@ -1,0 +1,1 @@
+{"row":"triage","user":"membership","verdict":"not affected","evidence":"build/modules.json:46 membership (bio-plane/src/membership/) holds no file that imports signatures, every code file under its paths read at c048fe53f4","at":"2026-11-04T10:28:26.969Z","key":"signatures:208","worker":"merge: imports check","cost":"0"}
