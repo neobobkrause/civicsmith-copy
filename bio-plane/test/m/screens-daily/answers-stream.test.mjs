@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { SCREENS, open, ok, refused, text, press, beside, last, main, screen, word, button } from "./page.mjs";
 import { ndjson } from "../interface-shell/harness.mjs";
 
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };   // T53: the shell reads reachability from `aipathready` (interface-shell R20); `accountreference` is retired (op-declarations R20)
 const ANSWER = { event: "answer", ok: true, answer: { question_as_read: "How many?", summary: { text: "812 of 903 were closed." }, sentences: [{ text: "The work orders record 812.", support: ["h1"] }],
   holdings: [{ address: "INF-1#p3", quote: "903 rows" }], looks: [], label: "machine work" }, withheld: [] };
 const STREAM = [{ event: "step", step: "interpreting" }, { event: "read", op: "retrieve", record: "INF-1" }, { event: "composing", found: true, count: 2 },

@@ -895,16 +895,22 @@ export class Docket {
 
   /* ================================================================ R33: each new edition recorded automatically */
 
-  /** R33 (T53; K5559, K5571; was `publication` R83): files the `edition` entry of R9 (b) for a ratified edition of the
-   *  case, in-plane, carrying the "What changed" statement `case-grammar.whatChangedOf` (its R8) answers; edition 1 files
-   *  one without a change text. Called by the module that ratifies an edition (a later module; this one calls nothing of
-   *  it). An edition already holding a live `edition` entry files none, so a repeated call is harmless and answers
-   *  `filed: false` with the entry it holds. The entry is a public entry on `listed` with R6's fields; no member signs
-   *  it (the edition it records is the signed act), so it is stored with no signature and no signing key and every read
-   *  answers its `signature` null. Refusals, each writing nothing: an absent case or one with no ratified edition
-   *  `NO_SUCH_CASE`; an edition not ratified `DOCKET_NO_EDITION`; a counsel matter (R28); no group slug
-   *  `DOCKET_NO_GROUP_SLUG` (there are no anonymous entries). */
-  docketRecordEdition({ case: caseId = null, edition = null } = {}) {
+  /** R33 (T53; K5559, K5571; was `publication` R83; amended BOB 4 Nov, PR 278, option (a)): the `edition` entry of R9 (b)
+   *  for a ratified edition of the case, carrying the "What changed" statement `case-grammar.whatChangedOf` (its R8)
+   *  answers; edition 1's carries none. Two steps, as R4 and R5, because R24's signature is the manager's registered key,
+   *  which the plane never holds: the ratification ceremony signs it.
+   *  - Without `signature`: answers the entry that would be filed (R6's fields, canonical JSON), its `digest` and
+   *    `statement` = `signatures.docketStatement(case, seq, digest)`, writing nothing (as `docketPrepare`).
+   *  - With `signature` and `by`: files it only when `signatures.verifySshsig` accepts `signature` over exactly that
+   *    statement in `NS_DOCKET` against `credentials.attestingKeys()` restricted to keys registered to `by` (R5's verify);
+   *    the entry is stored with its armored signature and signing key, as every public entry is (R24).
+   *  An edition already holding a live `edition` entry files none: either step answers `filed: false` with the entry it
+   *  holds. Refusals, each writing nothing: an absent case or one with no ratified edition `NO_SUCH_CASE`; an edition not
+   *  ratified `DOCKET_NO_EDITION`; a counsel matter (R28); no group slug `DOCKET_NO_GROUP_SLUG`; and on the filing step,
+   *  `by` no member `MACHINE_CANNOT_PLACE_DOCKET`, not the manager `DOCKET_NOT_THE_MANAGER`, a `digest` given that is not
+   *  the entry's at this instant (the docket moved, or the day turned) `DOCKET_STALE`, a signature the verifier rejects
+   *  `DOCKET_SIGNATURE_REFUSED` with its reason. */
+  async docketRecordEdition({ case: caseId = null, edition = null, signature = null, by = null, digest = null } = {}) {
     const c = this.#case(caseId);
     if (!c) return noSuchCase(caseId);
     const ed = int(edition);
@@ -920,7 +926,6 @@ export class Docket {
     if (!slug) return refuse("DOCKET_NO_GROUP_SLUG",
       localize("docket.index.no_team_slug_recorded", "no team slug is recorded, and there are no anonymous entries"));
     /* END DEC-49 REGION is-docket-manager */
-    const at = this.#stamp();
     let what = null;
     if (ed > 1) {
       const doc = this.#call(() => this.#one(`SELECT text FROM case_documents WHERE case_id=? AND edition=? AND sig_armored IS NOT NULL`,
@@ -928,24 +933,50 @@ export class Docket {
       const p = doc ? this.#call(() => parseFrontmatter(doc.text)) : null;
       what = p ? (this.#call(() => whatChangedOf(p.data, p.body)) || {}).statement ?? null : null;
     }
-    const out = this.record.transact(() => {
+    /* the edition's live entry, if one is held; else the entry that would be filed now (R6's fields; no member's name) */
+    const build = (at) => {
       const backs = this.#takenBack(c.case);
       const held = this.#rows(`SELECT * FROM docket_entries WHERE case_id=? AND kind='edition' ORDER BY seq`, c.case)
         .find((e) => !backs.has(Number(e.seq)) && (parse(e.json) || {}).edition === ed);
-      if (held) return { ok: true, filed: false, case: c.case, edition: ed, seq: Number(held.seq), entry: publicId(c.case, held.seq) };
+      if (held) return { held: { ok: true, filed: false, case: c.case, edition: ed, seq: Number(held.seq), entry: publicId(c.case, held.seq) } };
       const prior = this.#one(`SELECT seq, digest FROM docket_entries WHERE case_id=? ORDER BY seq DESC LIMIT 1`, c.case);
       const seq = prior ? Number(prior.seq) + 1 : 1;
-      /* R6: exactly these fields; no member's name, handle or id. */
       const json = { format: ENTRY_FORMAT, group: slug, case: c.case, seq, previous: prior ? prior.digest : null,
                      shelf: "listed", kind: "edition", edition: ed, date: dayOf(at), what_changed: what };
       const text = canonicalJson(json);
-      const digest = sha256HexSync(text);
+      const d = sha256HexSync(text);
+      return { seq, text, digest: d, statement: docketStatement(c.case, seq, d) };
+    };
+    const at = this.#stamp();
+    const e = build(at);
+    if (e.held) return e.held;
+    if (signature === null || signature === undefined || signature === "")
+      return { ok: true, filed: false, prepared: true, case: c.case, edition: ed, seq: e.seq, entry: e.text, digest: e.digest,
+               statement: td.decode(e.statement) };
+    const member = this.#member(by);
+    /* DEC-49 REGION is-docket-manager */
+    if (!member) return refuse("MACHINE_CANNOT_PLACE_DOCKET", str(by)
+      ? "an edition's docket entry is signed by the case's manager signed in as themselves, and this caller is not one"
+      : "no member is named as the one signing: this call carries nobody");
+    if (!this.#isManager(c.project, member))
+      return refuse("DOCKET_NOT_THE_MANAGER", "only an owner of the case's project signs its public docket", { case: c.case });
+    /* END DEC-49 REGION is-docket-manager */
+    /* DEC-49 REGION is-docket-post */
+    if (str(digest) && str(digest) !== e.digest)
+      return refuse("DOCKET_STALE", "the docket moved since this was prepared: prepare again", { seq: e.seq });
+    const keys = (this.#call(() => this.credentials.attestingKeys(), []) || []).filter((k) => k.member_id === member).map((k) => k.key_b64);
+    const v = await verifySshsig(String(signature), e.statement, NS_DOCKET, keys);
+    if (!v.ok) return refuse("DOCKET_SIGNATURE_REFUSED", `the signature was refused: ${v.reason}`, { verifier: v.reason });
+    /* END DEC-49 REGION is-docket-post */
+    return this.record.transact(() => {
+      const again = build(at);
+      if (again.held) return again.held;
+      if (again.digest !== e.digest) return refuse("DOCKET_STALE", "the docket moved since this was prepared: prepare again", { seq: again.seq });
       this.sql.exec(`INSERT INTO docket_entries (case_id, seq, digest, json, kind, shelf, edition, record_entry, editions, signature,
                                                  signer_key, published_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-                    c.case, seq, digest, text, "edition", "listed", String(ed), null, null, "", "", at);
-      return { ok: true, filed: true, case: c.case, edition: ed, seq, entry: publicId(c.case, seq), digest, published_at: at };
+                    c.case, e.seq, e.digest, e.text, "edition", "listed", String(ed), null, null, String(signature), v.keyB64, at);
+      return { ok: true, filed: true, case: c.case, edition: ed, seq: e.seq, entry: publicId(c.case, e.seq), digest: e.digest, published_at: at };
     });
-    return out;
   }
 
   /* ================================================================ R7, R8: declining, and the receipt's invitation */
@@ -1310,8 +1341,7 @@ export class Docket {
 
   /** R5: each key that has signed a public entry, with the instant it first did; viewer-free, names no member. */
   docketSigners() {
-    /* R33: an edition recorded automatically carries no signing key, and is no signer's */
-    return this.#rows(`SELECT signer_key AS k, MIN(published_at) AS first FROM docket_entries WHERE signer_key <> '' GROUP BY signer_key
+    return this.#rows(`SELECT signer_key AS k, MIN(published_at) AS first FROM docket_entries GROUP BY signer_key
                        ORDER BY first, k`)
       .map((r) => ({ keyB64: r.k, first_signed: r.first }));
   }
@@ -1367,13 +1397,13 @@ export class Docket {
 }
 
 /* The member acts and reads answer their own refusals with code, check and translation (DEC-49). */
-for (const m of ["docketFile", "docketPressure", "docketPrepare", "docketDecline", "docketInvitation", "docketOf", "docketRecordEdition"]) {
+for (const m of ["docketFile", "docketPressure", "docketPrepare", "docketDecline", "docketInvitation", "docketOf"]) {
   const fn = Docket.prototype[m];
   Docket.prototype[m] = function (...a) { return withRow(fn.apply(this, a)); };
 }
-{
-  const fn = Docket.prototype.docketPost;
-  Docket.prototype.docketPost = async function (...a) { return withRow(await fn.apply(this, a)); };
+for (const m of ["docketPost", "docketRecordEdition"]) {
+  const fn = Docket.prototype[m];
+  Docket.prototype[m] = async function (...a) { return withRow(await fn.apply(this, a)); };
 }
 
 const instances = new WeakMap();

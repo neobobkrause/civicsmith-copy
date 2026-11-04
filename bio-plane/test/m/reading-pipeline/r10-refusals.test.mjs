@@ -17,7 +17,6 @@ const NOT_THIS = /non-textual|too large|multipart/i;
 /* every kind named in the plan (G135a, G135e; SCAN A2-A8, DOCS R1-R3): bytes, the type it is declared as, the kind it is named by */
 const KINDS = [
   ["rtf", "{\\rtf1\\ansi\\deff0 {\\fonttbl{\\f0 Times;}} Hello world.}", "text/rtf", true, /RTF/],
-  ["email", "Received: from a.example by b.example; Tue, 1 Sep 2026 10:00:00 +0000\nFrom: a@a.example\nTo: b@b.example\nSubject: Hello\nMIME-Version: 1.0\nContent-Type: text/plain\n\nBody of the message.\n", "message/rfc822", true, /mail/i],
   ["legacy_word", pad(u8([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])), "application/msword", false, /Word/],
   ["legacy_excel", pad(u8([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])), "application/vnd.ms-excel", false, /Excel/],
   ["legacy_powerpoint", pad(u8([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])), "application/vnd.ms-powerpoint", false, /PowerPoint/],
@@ -46,6 +45,20 @@ for (const [kind, content, ct, fromText, sentence] of KINDS) {
     assert.equal(out.text_units, undefined, "nothing was drawn from the bytes");
   });
 }
+
+/* BOB 4 Nov, PR 272 (a): R54's unsupported list no longer names email, since mail-reader reads message/rfc822 */
+const EMAIL = "Received: from a.example by b.example; Tue, 1 Sep 2026 10:00:00 +0000\nFrom: a@a.example\nTo: b@b.example\nSubject: Hello\nMIME-Version: 1.0\nContent-Type: text/plain\n\nBody of the message.\n";
+test("R54 (BOB 4 Nov, PR 272 (a)): an email (message/rfc822) is read as mail text, never refused UNSUPPORTED_FORMAT nor final", async () => {
+  const b = bucket();
+  const bytes = new TextEncoder().encode(EMAIL);
+  const d = await hold(b, bytes);
+  const r = (await readOf(b, doc({ digest: d, bytes: bytes.length, ct: "message/rfc822", format: "undetermined", fromText: true }))).reading;
+  assert.notEqual(r.reason, "UNSUPPORTED_FORMAT");
+  assert.notEqual(r.kind, "email");
+  assert.notEqual(r.failure, "final", "an email can be read");
+  assert.equal(r.text_container, "eml", "its text layer is read through the mail container");
+  assert.doesNotMatch(String(r.basis), /not read yet/);
+});
 
 test("R54 (G135e): the same kind in ranges and pieces is the same statement; a plain text that merely mentions RTF or From: is read as text", async () => {
   const b = bucket();

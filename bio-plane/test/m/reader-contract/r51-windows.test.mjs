@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { visibleTextOfHtml, visibleTextOfHtmlStream } from "../../../src/reading-pipeline/html.mjs";
+import { visibleTextOfHtml, visibleTextOfHtmlStream } from "../../../src/reader-contract/html.mjs";
 
 async function* windows(s, w) { for (let at = 0; at < s.length; at += w) yield s.slice(at, at + w); }
 const streamed = (s, w) => visibleTextOfHtmlStream(windows(s, w));
@@ -45,7 +45,7 @@ const SHAPES = {
   cdataEdge: "<p>a</p><![CDATA[]]><p>b</p><![CDATA[x]]]><p>c</p><![CDATA[",
 };
 for (const f of ["acgov-org-home.html", "justice-gov-home.html", "nps-gov-grca-index.htm", "nps-gov-yose-index.htm"])
-  SHAPES[f] = readFileSync(new URL(`./fixtures/${f}`, import.meta.url), "utf8");
+  SHAPES[f] = readFileSync(new URL(`../reading-pipeline/fixtures/${f}`, import.meta.url), "utf8");
 
 test("R51: the visible text of a page that arrives in windows of any size is the text of the page read whole: every shape that straddles a window's end, at every window size from one character", async () => {
   for (const [name, page] of Object.entries(SHAPES)) {
