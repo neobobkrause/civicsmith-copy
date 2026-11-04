@@ -1553,7 +1553,7 @@ function spliceClock(text, e) {
   if (lines[0] !== "---") return null;
   const end = lines.indexOf("---", 1);
   if (end === -1) return null;
-  const order = ["text", "description", "date", "basis", "status", "basis_kind", "owed_by", "due_at", "due_zone", "standard",
+  const order = ["text", "description", "date", "basis", "status", "basis_kind", "layer", "owed_by", "due_at", "due_zone", "standard",
                  "committed_by", "precedes", "lead", "why", "stated_by", "held_in", "trace", "proposal", "proposed_by",
                  "adopted_by", "adopted_at", "amended", "adopted_why", "entered_by", "entered_at"];
   const kv = order.filter((k) => e[k] !== undefined && e[k] !== null && e[k] !== "")
