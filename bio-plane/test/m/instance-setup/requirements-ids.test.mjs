@@ -1,6 +1,7 @@
-/* The consolidation of build/requirements/instance-setup.md (4 Nov 2026) and the instance-updates split (accepted by BOB
-   4 Nov 2026): the ids, their order and their unmet marks are those of the start commit 7e9de4af, every R line not moved is
-   kept byte for byte, and each moved id is retired here naming its new id, which instance-updates' file holds. */
+/* The consolidation of build/requirements/instance-setup.md (4 Nov 2026) and its two splits, instance-updates and
+   instance-reports (both accepted by BOB 4 Nov 2026): the ids, their order and their unmet marks are those of the start
+   commit 7e9de4af, every R line not moved is kept byte for byte, and each moved id is retired here naming its new id,
+   which the new module's file holds, moved from it. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -20,17 +21,22 @@ const START_IDS = ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R77
   "R94","R95","R96","R97","R98","R99","R100","R101","R102","R103","R104","R106","R107","R108","R109","R110","R111","R112","R113",
   "R114","R115","R26","R27","R28","R29","R30","R31","R41","R42","R75","R43","R105"];
 const START_UNMET = { R107: "T53", R108: "T53", R109: "T53", R110: "T53", R111: "T53", R112: "T53", R113: "T53", R114: "T53", R115: "T53" };
-/* The moved ids and their new ids in instance-updates (its R1-R7). */
-const MOVED = { R88: "R1", R89: "R2", R90: "R3", R91: "R4", R92: "R5", R106: "R6", R110: "R7" };
+/* The moved ids and their new ids: instance-updates R1-R7 and instance-reports R1-R21, each in the order of the old ids. */
+const MOVED = {
+  R88: "instance-updates:R1", R89: "instance-updates:R2", R90: "instance-updates:R3", R91: "instance-updates:R4",
+  R92: "instance-updates:R5", R106: "instance-updates:R6", R110: "instance-updates:R7",
+  ...Object.fromEntries(["R17", "R18", "R19", "R33", "R34", "R35", "R36", "R37", "R38", "R39", "R40", "R41", "R42", "R80", "R81",
+    "R82", "R95", "R102", "R103", "R104", "R105"].map((old, i) => [old, `instance-reports:R${i + 1}`])),
+};
 /* SHA-256 of the start commit's R lines not moved, joined by newlines, in order. */
-const KEPT_SHA = "4b2a0e8e4f8584e7c59b17a0629632dbdd13f2fc7d9c85fded2dee5545b3777b";
+const KEPT_SHA = "9b1d0e5d0daddc0763a8c42ff7fc389acc6db57101adc8ec333be7863d257c21";
 const unmetOf = (l) => (/\*\(not yet met:? ?([^)]*)\)\*/.exec(l) || [])[1] ?? null;
 
 test("instance-setup's requirement ids and their order are the start commit's, nothing added or dropped by the consolidation", () => {
   assert.deepEqual(idLines(FILE).map(idOf), START_IDS);
 });
 
-test("every R line not moved is kept byte for byte, and the unmet marks are the start commit's less the moved R110's, which instance-updates now carries", () => {
+test("every R line not moved is kept byte for byte, and the unmet marks are the start commit's less the moved ones', which their new modules now carry (R110's)", () => {
   const kept = idLines(FILE).filter((l) => !MOVED[idOf(l)]);
   assert.equal(createHash("sha256").update(kept.join("\n")).digest("hex"), KEPT_SHA);
   const unmet = Object.fromEntries(idLines(FILE).filter((l) => unmetOf(l)).map((l) => [idOf(l), unmetOf(l)]));
@@ -38,16 +44,18 @@ test("every R line not moved is kept byte for byte, and the unmet marks are the 
   assert.deepEqual(unmet, expected);
 });
 
-test("each moved id is retired here in one line naming its new id (instance-updates:R<n>), and instance-updates holds that id, moved from it, with the mark it had", () => {
-  const upd = idLines(read("instance-updates"));
-  for (const [old, now] of Object.entries(MOVED)) {
+test("each moved id is retired here in one line naming its new id (<module>:R<n>), and the new module holds that id, moved from it, with the mark it had", () => {
+  const files = {};
+  for (const [old, to] of Object.entries(MOVED)) {
+    const [mod, now] = to.split(":");
+    files[mod] ??= idLines(read(mod));
     const here = idLines(FILE).filter((l) => idOf(l) === old);
     assert.equal(here.length, 1, old);
-    assert.equal(here[0], `- **${old}** *(retired: moved to instance-updates:${now}, 4 Nov 2026)*`);
-    const there = upd.filter((l) => idOf(l) === now);
-    assert.equal(there.length, 1, now);
-    assert.ok(there[0].startsWith(`- **${now}** (moved from instance-setup:${old}) `), `${now} names instance-setup:${old}`);
-    assert.equal(unmetOf(there[0]), START_UNMET[old] ?? null, `${now} carries ${old}'s mark`);
+    assert.equal(here[0], `- **${old}** *(retired: moved to ${to})*`);
+    const there = files[mod].filter((l) => idOf(l) === now);
+    assert.equal(there.length, 1, to);
+    assert.ok(there[0].startsWith(`- **${now}** (moved from instance-setup:${old}) `), `${to} names instance-setup:${old}`);
+    assert.equal(unmetOf(there[0]), START_UNMET[old] ?? null, `${to} carries ${old}'s mark`);
   }
   /* the retired lines carry no indented text left behind */
   const L = FILE.split("\n");
