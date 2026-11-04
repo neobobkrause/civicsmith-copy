@@ -140,14 +140,13 @@ t("R25 (control): a target naming no subject is no subject",
 t("R25: the keys are R6's with subjects and arms after scope",
   Object.keys(contracts[0]).slice(Object.keys(contracts[0]).indexOf("scope")).slice(0, 3), ["scope", "subjects", "arms"]);
 
-console.log("\n--- R26 · each usage entry names the model its conversation ran on ---");
+console.log("\n--- R26 (T53) · each usage entry names the entry and label its conversation answered ---");
 const entries = rec.calls.filter((c) => c.op === "airuntick").flatMap((c) => c.body.usage || []);
-const subs = entries.filter((e) => e.model === SUBSESSION_MODEL);
-t("R26: the four sub-sessions' entries name the sub-session model", [subs.length, SUBSESSION_MODEL], [LEVELS.length, "claude-sonnet-5-5"]);
-t("R26 (control): every other entry names the coordinating model of its mode",
-  entries.filter((e) => e.model !== SUBSESSION_MODEL).filter((e) => e.model !== MODEL_FOR_MODE[e.mode]), []);
-t("R26: the two differ, so the test tells them apart", SUBSESSION_MODEL !== MODEL_FOR_MODE.check
-  && entries.some((e) => e.model === MODEL_FOR_MODE.check), true);
+t("R26: every entry has exactly ai-runs' tick shape {mode, entry_id, label, usage, calls}",
+  [entries.length > LEVELS.length, [...new Set(entries.map((e) => Object.keys(e).join(",")))]], [true, ["mode,entry_id,label,usage,calls"]]);
+t("R26 (control): converse answers no entry or label yet (agent-model's T53), so each states null, never a model named here",
+  entries.filter((e) => e.entry_id !== null || e.label !== null), []);
+t("R26 (control): no entry names the model of its mode", entries.filter((e) => JSON.stringify(e).includes(MODEL_FOR_MODE.check) || JSON.stringify(e).includes(SUBSESSION_MODEL)), []);
 
 console.log("\n--- R27 · each tick carries the milliseconds since the previous one ---");
 let now = 1_000_000;

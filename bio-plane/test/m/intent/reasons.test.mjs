@@ -142,7 +142,7 @@ test("R18 a reasoned run is opened through ai-runs with the reason recorded on i
   i.migrate();
   const why = "  The contracts list is the gap; find who holds the award records.  ";
   const opened = await i.workObjective({ project: proj, reason: why, author: "member:bob", viewer: "member:bob",
-    run: { run: "R-OBJ", label: "a caller's own label", principalPlane: "member:bob/t1", principalClaude: "member",
+    run: { run: "R-OBJ", label: "a caller's own label", principalPlane: "member:bob/t1", principalAi: "member:bob",
            skillVersion: "bio@1", bounds: [{ bound: "fetches", allowed: 10 }, { bound: "wallclock", allowed: 600000 }],
            at: T0 } });
   assert.equal(opened.started, true, JSON.stringify(opened));

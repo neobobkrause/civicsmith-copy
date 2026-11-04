@@ -5,7 +5,6 @@ import "../../bio-plane/test/sandbox.mjs";
 import { driveHarness, planeAnswer, textOnly, toolContent, droppedNote, loadableLayers, loadLayer, modelHalf,
          MEANING_ARM, RESPONSE_ID, SEGMENT_END_BY } from "../src/index.mjs";
 import { MEANING } from "../../bio-plane/src/query.mjs";
-import { MODEL_FOR_MODE } from "../../agent-model/src/model.mjs";
 import { ACCOUNT } from "./account.mjs";
 import { HOST, askPlane } from "./shell.mjs";
 import { world, CHECK, AIK, PACK } from "./world.mjs";
@@ -84,19 +83,22 @@ section("R47 · the model half keeps the usage of each conversation until it is 
   t("R47: the half's shape: reference, runner, meter, suggestions, traced, pack null, layers and messages empty",
     [half.reference, half.runner, half.meter === meter, half.suggestions, half.traced, half.pack, half.layers, half.messages], [{ kind: "apikey", key: "k" }, null, true, true, { trace: "t" }, null, [], []]);
   t("R47: suggestions is true only when === true", [modelHalf({ suggestions: "yes" }).suggestions, modelHalf({}).suggestions, modelHalf({ suggestions: false }).suggestions], [false, false, false]);
-  half.spent({ usage: { in: 1 }, model: "m-own", effort: "low", calls: 3 }, "check");
-  half.spent({ usage: { in: 2 } }, "check");
+  const label = { provider: "p", host: "h", model_version: "m-own", effort: "low", account_level: "member", owner: "member:ann" };
+  half.spent({ usage: { in: 1 }, entry_id: "E1", label, model: "m-own", effort: "low", calls: 3 }, "check");
+  half.spent({ usage: { in: 2 }, model: "m-old", effort: "high" }, "check");
   half.spent({ usage: { in: 3 } }, "plan");
   half.spent({}, "check");
   half.spent(null, "check");
   const drained = half.drain();
-  t("R47: one entry per conversation that states usage: its own model/effort/calls, else the mode's model, null effort, null calls; none for one that states none",
-    drained, [{ mode: "check", model: "m-own", effort: "low", usage: { in: 1 }, calls: 3 }, { mode: "check", model: MODEL_FOR_MODE.check, effort: null, usage: { in: 2 }, calls: null },
-              { mode: "plan", model: MODEL_FOR_MODE.plan, effort: null, usage: { in: 3 }, calls: null }]);
+  t("R47 (T53): one entry {mode, entry_id, label, usage, calls} per conversation that states usage, its entry and label as answered; none for one that states none",
+    drained, [{ mode: "check", entry_id: "E1", label, usage: { in: 1 }, calls: 3 },
+              { mode: "check", entry_id: null, label: null, usage: { in: 2 }, calls: null },
+              { mode: "plan", entry_id: null, label: null, usage: { in: 3 }, calls: null }]);
   t("R47: drain empties the list, and nothing outlives the half", [half.drain(), modelHalf({}).drain()], [[], []]);
   t("R47 (control): `calls` absent is null, never invented", drained[1].calls, null);
-  half.spent({ usage: { in: 4 }, model: undefined }, "unknown-mode");
-  t("R47: a mode with no model and no stated one leaves model null", half.drain()[0].model, null);
+  t("R47 (control): a missing label and entry are null, never invented from the mode or a pre-T53 model and effort",
+    [drained[1].entry_id, drained[1].label, drained[2].label], [null, null, null]);
+  t("R47 (control): no entry carries the pre-T53 model or effort keys", drained.flatMap((e) => Object.keys(e)).filter((k) => k === "model" || k === "effort"), []);
 }
 
 section("R48 · the names the module and its shell share are declared here once");
