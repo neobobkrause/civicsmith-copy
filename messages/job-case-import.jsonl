@@ -3,3 +3,4 @@
 {"at":"2026-11-04T15:52:54Z","row":"sent","n":2,"to":"bob","text":"job case-import BLOCKED: run status"}
 {"at":"2026-11-04T15:53:03Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-04T16:04:23Z","row":"sent","n":3,"to":"bob","text":"job case-import complete, PR #275 ready, session session_01RAN5emBTiBMBw8DzUJXmUM: run status"}
+{"at":"2026-11-04T16:04:34Z","row":"outcome","n":3,"outcome":"delivered"}
