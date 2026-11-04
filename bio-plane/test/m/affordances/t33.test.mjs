@@ -2,7 +2,9 @@
    publish and the ops T33 adds to earlier modules, held to their owners' op maps with R12's totality holding over them
    (their grades are `op-grades`' R13, pinned in its tests), and R41 (a refusal explained from its translation and a dry
    run), each at the module's exports. Each reasoned op's backing (R19) is driven at its owner's interface in
-   t33-backing.test.mjs. */
+   t33-backing.test.mjs. The owners' declarations are registered first, as the plane does at start-up (op-grades R49), so an
+   op an owner declares after T33 (explore's and money's reads of T53) is graded as its owner declares it. */
+import "./register-owners.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as A from "../../../src/affordances.mjs";
@@ -33,6 +35,7 @@ import { corpusExportOps } from "../../../src/corpus-export/index.mjs";
 import { actionsOps } from "../../../src/actions/index.mjs";
 import { actionClocksOps } from "../../../src/action-clocks/index.mjs";
 import { aiRunsOps } from "../../../src/ai-runs/index.mjs";
+import { aiAccountsOps } from "../../../src/ai-accounts/index.mjs";
 import { world as eventsWorld } from "../events/fixture.mjs";
 
 const { ACTS, CAPTURE_ACTS, PER_ITEM_ACTS } = A;
@@ -76,8 +79,7 @@ const T33 = {
       followpersonquery: "reversible", followportal: "reversible", permeetingbody: "reversible", refreshregister: "substrate" } },
   standards: { map: standardsOps, part: true, writes: { lawrelate: "reasoned", lawwithdraw: "reasoned",
       lawpropose: "undetermined", courtlink: "reasoned", courttreat: "reasoned" } },
-  credentials: { map: credentialsOps, part: true, writes: { accountreferenceset: "credential",
-      accountreferenceremove: "credential", aigrantmint: "credential",
+  credentials: { map: credentialsOps, part: true, writes: { aigrantmint: "credential",
       keyedserviceset: "credential", keyedserviceswitch: "substrate" } },
   sources: { map: sourcesOps, part: true, writes: { sourcekeyed: "undetermined" } },
   entities: { map: entitiesOps, part: true, writes: { entityidentify: "reasoned" } },
@@ -96,7 +98,14 @@ const UNROUTED = { clockpropose: "reversible", capturerequestplatformmark: "reve
    and NON_ACTS, so R12 reads no stale row for it. (op-grades R30; DEC-188 (8); K2437, K2514) So are credentials'
    `accountswitchset` (to `accountusesset`) and ai-runs' `aiceilingset` and `aicopyceilingset` (to ai-use's `ailimitset`),
    each graded in op-grades' t41.mjs under the op that replaces it. */
-const RETIRED = ["assistantset", "accountswitchset", "aiceilingset", "aicopyceilingset"];
+const RETIRED = ["assistantset", "accountswitchset", "aiceilingset", "aicopyceilingset",
+  /* (T53; K5457; `ai-accounts` R35, notice credentials:74) T33's `accountreferenceset` and `accountreferenceremove` leave the door
+     with no alias; `ai-accounts` R61 declares their replacements, graded as their owner declares them */
+  "accountreferenceset", "accountreferenceremove"];
+/* (T53) Two ops their owners serve that neither op-grades nor the owner's declaration grades yet (events' `eventwithdraw`,
+   money's `moneyfiscalyears`): R12's totality is the control plane's to hold over them (Suggestions); this module's T33 table
+   leaves them out, and the report names them to BOB. */
+const UNGRADED_SINCE = ["eventwithdraw", "moneyfiscalyears"];
 /* A write op-declarations gives no NEEDS row (UNATTENDED_BY_DECISION): ranked, never named in NON_ACTS (R12). */
 const UNGATED_WRITES = ["askusage"];
 /* op-grades R3's `reversible`: the published act of the owner that takes each result back. */
@@ -144,7 +153,7 @@ const LATER_ADDS = new Set([...Object.values(T35_ADDS).flat(), ...Object.values(
   ...Object.values(T41_ADDS).flatMap((o) => Object.keys(o)), ...Object.values(T45_ADDS).flat(), ...Object.values(T47_ADDS).flat(),
   ...Object.values(T48_ADDS).flat(), ...Object.values(T50_ADDS).flat()]);
 for (const m of Object.values(T33))
-  m.reads = keysOf(m.map).filter((op) => !isMutating(op) && !LATER_ADDS.has(op) && (!m.part || Object.hasOwn(T33_NON_ACTS, op)));
+  m.reads = keysOf(m.map).filter((op) => !isMutating(op) && !LATER_ADDS.has(op) && !UNGRADED_SINCE.includes(op) && (!m.part || Object.hasOwn(T33_NON_ACTS, op)));
 /* The reads T33 grades whose owners are not among the maps above (capture-requests, instance-setup, standards' layer 9, ai-use's
    usage read, K1689, K2514): the reads of op-grades' T33 table that no listed owner's map serves. */
 const UNROUTED_READS = Object.keys(T33_NON_ACTS).filter((op) => !isMutating(op)
@@ -154,7 +163,7 @@ const ALL_READS = [...Object.values(T33).flatMap((m) => m.reads), ...UNROUTED_RE
 test("R12: each new module's op map holds exactly the ops graded for it — T33's, and the ops T35, T36, T41, T45, T47, T48 and T50 add — "
    + "each earlier module's map holds the ops T33 adds to it, and no owner serves a retired op", () => {
   for (const [name, m] of Object.entries(T33)) {
-    const keys = keysOf(m.map);
+    const keys = keysOf(m.map).filter((op) => !UNGRADED_SINCE.includes(op));
     const mine = [...Object.keys(m.writes), ...m.reads, ...(T35_ADDS[name] ?? []), ...Object.keys(T36_ADDS[name] ?? {}),
       ...Object.keys(T41_ADDS[name] ?? {}), ...(T45_ADDS[name] ?? []), ...(T47_ADDS[name] ?? []), ...(T48_ADDS[name] ?? []),
       ...(T50_ADDS[name] ?? [])];
@@ -169,7 +178,8 @@ test("R12: each new module's op map holds exactly the ops graded for it — T33'
                     ...Object.values(T47_ADDS).flat(), ...Object.values(T48_ADDS).flat(), ...Object.values(T50_ADDS).flat()])
     assert.ok(Object.hasOwn(NON_ACTS, op) && !published().has(op), op);
   /* retired: served by no owner's map (op-grades' tests hold them graded and named nowhere) */
-  for (const op of RETIRED) assert.ok(!keysOf(credentialsOps).includes(op) && !keysOf(aiRunsOps).includes(op), op);
+  for (const op of RETIRED) assert.ok(!keysOf(credentialsOps).includes(op) && !keysOf(aiRunsOps).includes(op)
+    && !keysOf(aiAccountsOps).includes(op), op);
 });
 
 test("R19: each `reversible` T33 op is taken back by a published act of its own owner — an op its owner's map serves", () => {

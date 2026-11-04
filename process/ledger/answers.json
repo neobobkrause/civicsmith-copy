@@ -51,7 +51,7 @@
   ],
   "prior_work": "Found work (wizard-scripts' job, 4 Nov): answers' published test fixture limitsUnreadable (bio-plane/test/m/answers/fixtures.mjs) calls ai-accounts.accountReferenceSet, which ai-accounts' T53 rewrite removed from tranche, so every user of that fixture fails (wizard-scripts' writing-help.test.mjs:219, R27). Bring the fixture to the current ai-accounts API (read build/requirements/ai-accounts.md and bio-plane/src/ai-accounts/ for what replaced accountReferenceSet), keeping what limitsUnreadable stands for; check answers' own code for the same removed calls and adapt it; fixtures.test.mjs must pass. Any unmet mark in build/requirements/answers.md is yours too. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-04T03:44:00Z"
+    "state": "COMPLETE",
+    "at": "2026-11-04T03:55:25Z"
   }
 }

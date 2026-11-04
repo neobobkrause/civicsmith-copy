@@ -169,15 +169,17 @@ test("R54 (T47; T48, N996) disclosureReadOf(m) is the one read ai-accounts asks:
   assert.equal(DISCLOSURE_READER, "instance-setup");
   assert.equal(c.a.disclosureDue({ member: "ann" }), null, "nothing registered: this module registered nothing itself");
   assert.deepEqual(c.a.registerDisclosureRead(DISCLOSURE_READER, disclosureReadOf(m)), { ok: true, module: "instance-setup" });
-  const set = () => c.a.accountReferenceSet({ member: "ann", kind: "apikey", secret: "sk-ant-T47-IS", by: "ann" });
+  /* the member's own account, set through ai-accounts' own act as its published world sets it (T53: accountSet, R40) */
+  const set = () => c.own("ann", { secret: "sk-ant-T47-IS-0123456789" });
+  const before = c.snapshot();
   const due = await set();
   assert.deepEqual([due.ok, due.code], [false, "DISCLOSURE_DUE"]);
-  assert.equal(c.a.accountReferenceState({ member: "ann", viewer: "member:ann" }).held, false);
+  assert.equal(c.snapshot(), before, "refused: no account held, nothing written");
   /* control: once shown at the current version, the key is held */
   assert.equal(m.disclosureShown({ member: "ann", version: ASSISTANT_DISCLOSURE.version, by: "ann" }).ok, true);
   assert.equal(disclosureReadOf(m)({ member: "ann" }).shown, true);
   const ok = await set();
-  assert.deepEqual([ok.ok, ok.kind], [true, "apikey"]);
+  assert.deepEqual([ok.ok, ok.owner, ok.means], [true, "member:ann", "sealed"]);
   /* an earlier version shown is not the current one */
   const n = new InstanceSetup((await aiAccountsWorld().group("bea")).ctx, {}, {});
   n.migrate();
