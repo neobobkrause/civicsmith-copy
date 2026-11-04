@@ -32,7 +32,7 @@ test("R15 security: an administrator's screen; any other member is told only tha
   const OWN = Object.values(SCREENS.find((s) => s.id === "security").reads({ me: await founder.read("whoami") })).map((r) => r.op);
   assert.ok(OWN.length >= 6 && OWN.includes("securitymap"), "the reads the screen asks an administrator");
   assert.deepEqual(m.p.requests.filter((r) => OWN.includes(r.op)), [], "nothing of the screen's own is read");
-  assert.deepEqual(m.p.requests.map((r) => r.op).filter((op) => !["assistantstate", "accountreference", "subscriptionsignin", "groupkeystate"].includes(op)), ["memberlist"], "only the roster, for who the administrators are");
+  assert.deepEqual(m.p.requests.map((r) => r.op).filter((op) => !["assistantstate", "aipathready"].includes(op)), ["memberlist"], "only the roster, for who the administrators are");
   assert.deepEqual(ops(m), []);
 });
 

@@ -5,8 +5,11 @@
 
    `html(s)` reads an HTML string into a small tree (elements, attributes, text), so the tests can find what a screen
    drew: its text nodes, its acts (`[data-act]`), its fields and its links. `w`/`said` give a word's expected text. */
-import { storeWorld } from "../store-request/fixtures.mjs";   // the world registers every owner's declarations once, as the plane does at start-up (store-assembly R83)
-export { storeWorld };
+import { storeWorld as world0 } from "../store-request/fixtures.mjs";   // the world registers every owner's declarations once, as the plane does at start-up (store-assembly R83)
+/** store-request's world. One that holds the sealing secret (`env.ACCOUNT_SEAL_SECRET`) is one whose team will hold its own T53 account: it
+ *  carries the store's own ai-catalogue, seeded through the catalogue's own channel (store-request's `ai`; the path store-assembly R1, R40 proved),
+ *  without which `aiaccountadd` answers CATALOGUE_UNAVAILABLE. */
+export const storeWorld = (o = {}) => world0({ ...o, ai: o.ai ?? !!(o.env && o.env.ACCOUNT_SEAL_SECRET) });
 import { wordsOf } from "../../../src/interface-shell/index.mjs";
 import { boot, ok, pending, silent, counted } from "../interface-shell/harness.mjs";
 import { decode } from "../interface-shell/dom.mjs";
@@ -100,6 +103,19 @@ function toResponse(a) {
 
 export const screen = (id) => SCREENS.find((s) => s.id === id);
 
+/** The mark the seeds leave on a world once the team's own T53 account is held and switched on by the real acts (ai-accounts R61:
+ *  `aiaccountadd`, then `aiaccountswitch`), each answering ok. */
+const TEAM_ACCOUNT_ON = Symbol("team account on");
+export async function teamAccountOn(as, w, key) {
+  await as.act("reauth", { body: { password: w.password } });
+  const set = await as.act("aiaccountadd", { body: { owner: "group", provider: "anthropic", plan: "api-team", means: "sealed", secret: key } });
+  if (!set || set.ok !== true || !set.account_id) throw new Error("aiaccountadd: " + JSON.stringify(set));
+  const on = await as.act("aiaccountswitch", { body: { account_id: set.account_id, on: true } });
+  if (!on || on.ok !== true) throw new Error("aiaccountswitch: " + JSON.stringify(on));
+  w[TEAM_ACCOUNT_ON] = true;
+  return set.account_id;
+}
+
 /** Boots the page at `/app/<id>[/<subject>]` as `me`, over `table` (op → answer or `(query, body) => answer`).
  *  `reachable` answers the frame's reads so the assistant is reachable (interface-shell R20). `words` answers
  *  `interfacewords` (the member's shown words). */
@@ -109,10 +125,15 @@ export async function open(id, { me, table = {}, subject = null, reachable = fal
   /* over a world (store-request R18): the real store answers every op the table does not hold, `as` is the session that asks, and the frame's
      reads (`whoami`, `groupidentity`, the queue, the words, the assistant's state) are the world's own */
   const door = world ? world.boot(as) : null;
+  /* notice interface-shell:172 (its R20): the frame reaches the assistant on `assistantstate` and `op=aipathready` (the plane's one combined
+     read; `groupkeystate` and the alpha's other reads are no longer asked). WORLD GAP: `aipathready` is the plane's, read over the agent Worker
+     (agent-model's `health`), and no store answers it (the world's door says UNKNOWN_OP), so in a world it answers `ready` once the team's own
+     account is held and switched on by the real acts (`holdKey`, `teamAccountOn`), and `no_account` before. */
+  if (world && !table.aipathready) plane.aipathready = async () => ok({ state: world[TEAM_ACCOUNT_ON] === true ? "ready" : "no_account" });
   if (!world) {
     if (reachable) {
       if (!table.assistantstate) plane.assistantstate = ok({ ok: true, on: true });
-      if (!table.groupkeystate) plane.groupkeystate = ok({ ok: true, on: true });
+      if (!table.aipathready) plane.aipathready = ok({ state: "ready" });
     }
     plane.whoami = ok({ ...me, session: true });
     if (words) plane.interfacewords = ok({ ok: true, language: "en", words });

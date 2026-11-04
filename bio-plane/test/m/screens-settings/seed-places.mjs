@@ -1,7 +1,7 @@
 /* The world for places, grouprules and bias (screens-settings R19, R25, R46, R60, R61 ...): the team's state made by the real acts of
    the owners, over store-request's world. A table is kept only to script a fault (`"none"`, a read made to fail) or an answer
    the owner gives that the page cannot be made to ask for, which is built here from the owner's own answer. */
-import { storeWorld } from "./kit.mjs";
+import { storeWorld, teamAccountOn } from "./kit.mjs";
 import { env } from "./fixtures.mjs";
 
 export const PROFILE = "oakland-alameda";
@@ -103,8 +103,7 @@ export async function rulesTeam() {
 /** The team's own account, held (T53, R95: by `aiaccountadd`, the alpha's group key retired) by the real acts (the password asked again first, as an administrator's page does): the assistant is reachable. */
 export const SEAL = { ACCOUNT_SEAL_SECRET: "a-long-seal-secret-for-the-settings-test-only" };
 export async function holdKey(w, founder, key = "sk-ant-api03-TEAM-KEY-0123456789abcdef") {
-  await founder.act("reauth", { body: { password: w.password } });
-  await founder.act("aiaccountadd", { body: { owner: "group", provider: "anthropic", plan: "api-team", means: "sealed", secret: key } });
+  await teamAccountOn(founder, w, key);   // aiaccountadd, then aiaccountswitch on, on the store's own catalogue (seed-group's `holdKey`)
 }
 
 /** `as` vouches for the held document `bundle` (the selection and its release, as Home's "Vouch" does). */

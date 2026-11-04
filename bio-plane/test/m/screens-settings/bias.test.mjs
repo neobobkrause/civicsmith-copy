@@ -32,7 +32,7 @@ test("R65 bias lists exactly its registry acts (the red contract test holds it),
   assert.deepEqual(s.acts.map((a) => a.op).sort(), ["biasadopt", "biasdebt", "biasdebtresolve", "biasinhale", "biasmanifest", "promote", "writinghelp"]);
   const t = await biasTeam();
   const a = await open("bias", { world: t.w, as: t.founder });
-  assert.deepEqual(a.p.requests.map((r) => r.op).filter((op) => !["accountreference", "assistantstate", "groupkeystate", "subscriptionsignin"].includes(op)).sort(), ["biasmanifest", "list", "projectlist"]);
+  assert.deepEqual(a.p.requests.map((r) => r.op).filter((op) => !["assistantstate", "aipathready"].includes(op)).sort(), ["biasmanifest", "list", "projectlist"]);
   assert.deepEqual(req(a, "list")[0].query, { type: "bias", state: "proposed", limit: "50" }, "only the bias sets, as `list` declares");
   assert.deepEqual(req(a, "biasmanifest")[0].query, { scope: "instance" });
 });

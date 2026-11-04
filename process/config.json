@@ -77,6 +77,20 @@
     },
     {
       "paths": [
+        "bio-plane/src/case-checker/program.mjs"
+      ],
+      "regenerate": [
+        "node",
+        "bio-plane/src/case-checker/build-program.mjs"
+      ],
+      "verify": [
+        "node",
+        "--test",
+        "bio-plane/test/m/case-checker/program.test.mjs"
+      ]
+    },
+    {
+      "paths": [
         "bio-plane/dist/bio-plane.bundle.json",
         "bio-plane/dist/bio-plane.bundled.mjs",
         "pdf-worker/dist/pdf-worker.bundle.json",
