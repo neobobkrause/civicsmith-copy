@@ -1,7 +1,12 @@
 /* plane G91 (fix round 9; K4807 (2), K4811 (4)), the platform check L: the plane's own Worker and `Store` booted on workerd by `r8-headofline.test.mjs` under Miniflare, with the REAL alarm.
    `Headline` is the plane's `Store` plus two debug routes and one wrapper, and nothing else: `readHeld` (the reading owner the ledger's `pending-work` consumer calls) is wrapped to COUNT its
    completed passes (`/r8/state` answers the count, so the scanner stub in the test can state how many passes had completed when it ended: an ORDER by count, never a time, R-CLOCK); `/r8/rows`
-   answers the ledger's rows and the scheduler's health. Every other request is the plane's own door. */
+   answers the ledger's rows and the scheduler's health. Every other request is the plane's own door.
+   For r8-heal-door's R102 tests (BOB, bob-120: deterministic, no wall time), three test hooks, each off unless a test turns it on:
+   `/r8/hold?on=1` makes the reading owner answer `NO_HOME` without reading (the ledger's uncounted wait, re-tried after its back-off), so a
+   row stays owed by construction, never by how fast a reading runs; `/r8/clock?freeze=1` / `?advance=<ms>` hands the frame's `heal` a
+   test clock instead of `Date.now()`, so its once-in-five-seconds window is passed by the test's own step, never by a sleep; and
+   `alarm()` counts the firings it started and ended (`/r8/counters` `fired`), so a test reads that the alarm demonstrably ran. */
 import { Store } from "../../../src/plane/store.mjs";
 import { pendingOf } from "../../../src/store-assembly/pending.mjs";
 import { extractionOf } from "../../../src/extraction/index.mjs";
@@ -19,10 +24,14 @@ export class Headline extends Store {
   #results = [];   /* what each completed `readHeld` answered (a ring of the last ten, trimmed): a pass is a call that read, not one that found no home */
   #wrapped = false;
   #counted = null;   /* the platform's alarm calls the object made, counted (G93: "storage reads counted") */
+  #hold = false;     /* R102 test hook: the reading owner answers NO_HOME, reading nothing */
+  #clock = null;     /* R102 test hook: the `now` handed to the frame's heal, or null for the wall clock */
+  #fired = { started: 0, ended: 0 };   /* the firings `alarm()` ran */
+  async alarm(...a) { this.#fired.started++; try { return await super.alarm(...a); } finally { this.#fired.ended++; } }
   #wrap() {
     if (this.#wrapped) return;
     const ex = extractionOf(this.ctx), real = ex.readHeld.bind(ex);
-    ex.readHeld = async (...a) => { const r = await real(...a); this.#results.push(JSON.stringify(r).slice(0, 160)); if (this.#results.length > 10) this.#results.shift(); if (r && r.ok !== false && r.reason !== "NO_HOME") this.#passes++; return r; };
+    ex.readHeld = async (...a) => { if (this.#hold) return { ok: true, read: false, why: "NO_HOME" }; const r = await real(...a); this.#results.push(JSON.stringify(r).slice(0, 160)); if (this.#results.length > 10) this.#results.shift(); if (r && r.ok !== false && r.reason !== "NO_HOME") this.#passes++; return r; };
     this.#wrapped = true;
   }
   /* counts the object's calls on the platform's alarm: `getAlarm` (a look), `setAlarm` (an arm), `deleteAlarm` */
@@ -44,7 +53,7 @@ export class Headline extends Store {
     sch.heal = async (...a) => {
       h.calls++;
       const g = c.getAlarm, s = c.setAlarm;
-      const r = await real(...a);
+      const r = await real(...(this.#clock === null ? a : [this.#clock]));
       if (c.getAlarm > g) h.looks++;
       if (c.setAlarm > s) h.arms++;
       return r;
@@ -59,7 +68,14 @@ export class Headline extends Store {
     this.#wrap();
     const step = url.pathname.slice(4);
     if (step === "state") return json({ passes: this.#passes, results: this.#results });
-    if (step === "counters") { const alarm = await this.ctx.storage.getAlarm(); this.#counted.getAlarm--; return json({ ...this.#counted, alarm, heals: { ...this.#heals } }); }   /* this read is not counted */
+    if (step === "counters") { const alarm = await this.ctx.storage.getAlarm(); this.#counted.getAlarm--; return json({ ...this.#counted, alarm, heals: { ...this.#heals }, fired: { ...this.#fired } }); }   /* this read is not counted */
+    if (step === "hold") { this.#hold = url.searchParams.get("on") === "1"; return json({ hold: this.#hold }); }
+    if (step === "clock") {
+      if (url.searchParams.get("freeze") === "1") this.#clock = Date.now();
+      const by = Number(url.searchParams.get("advance") || 0);
+      if (this.#clock !== null && Number.isFinite(by)) this.#clock += by;
+      return json({ clock: this.#clock });
+    }
     if (step === "rows") {
       let health = null; try { health = await schedulerOf(this.ctx, this.env).health(Date.now()); } catch (e) { health = { error: String(e && e.message || e) }; }
       return json({ passes: this.#passes, pending: pendingOf(this.ctx).list(), health, alarm: await this.ctx.storage.getAlarm() });
