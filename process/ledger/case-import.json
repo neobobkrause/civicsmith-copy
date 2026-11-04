@@ -1,0 +1,53 @@
+{
+  "id": "case-import",
+  "title": "case-import: answer its provider notice strength:176 (R46, R47) and meet any unmet mark",
+  "layer": 8,
+  "paths": [
+    "bio-plane/src/case-import/",
+    "build/requirements/case-import.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-import/"
+  ],
+  "requirements": "build/requirements/case-import.md",
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "strength",
+    "case-grammar",
+    "case-checker",
+    "inquiry-grammar",
+    "accepted-work",
+    "reevaluation",
+    "signatures",
+    "docket",
+    "calc-grammar",
+    "bias",
+    "setup-words",
+    "test-support",
+    "basis-versions",
+    "public-read",
+    "runtime-limits",
+    "citation"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/case-import.md",
+    "build/requirements/strength.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/case-import.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "OPEN"
+  }
+}

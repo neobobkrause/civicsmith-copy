@@ -1,0 +1,55 @@
+{
+  "id": "reevaluation",
+  "title": "reevaluation: answer its provider notice strength:176 (R46, R47) and meet any unmet mark",
+  "layer": 7,
+  "paths": [
+    "bio-plane/src/reevaluation/",
+    "build/requirements/reevaluation.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/reevaluation/"
+  ],
+  "requirements": "build/requirements/reevaluation.md",
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "text-chain",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "sources",
+    "content",
+    "events",
+    "connections",
+    "standards",
+    "retrieval",
+    "calculations",
+    "inquiry-grammar",
+    "accepted-work",
+    "inquiry",
+    "basis-versions",
+    "strength",
+    "contradiction",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/reevaluation.md",
+    "build/requirements/strength.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/reevaluation.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "OPEN"
+  }
+}
