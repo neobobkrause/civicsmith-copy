@@ -188,6 +188,144 @@ export class AiAccountsLegacy extends AiAccountsLifecycle {
     return { ok: true, since: row?.held_since ?? set.set_at, account_id: set.account_id };
   }
 
+  /* ===== the names BOB's ruling of 05:02 (4 Nov) added to F1 ===== */
+
+  /* The owner's head account, as an old name keyed by owner reads it: its first held account in list order, else its first. */
+  _legacyHead(owner) {
+    const rows = this._legacyRows(owner);
+    return rows.find((r) => r.held) ?? rows[0] ?? null;
+  }
+
+  /* An owner holding none of what an old act names: the owner's authority's refusal first, else NO_ACCOUNT for the owner. */
+  _legacyNone(owner, by, what) { return this._ownerAuthority(owner, by, what) ?? this._noAccount(null, "owner"); }
+
+  /** @deprecated F1: use `accountUsesSet({account_id, switch, on, by})` (R14). The old form `{owner, switch, on, by}`,
+   *  answered when the call names an `owner` and no `account_id`: sets the switch on the owner's head account, with R14's
+   *  refusals unchanged. An owner holding no account is refused by its authority, else NO_ACCOUNT, writing nothing. */
+  accountUsesSet(args = {}) {
+    const a = args && typeof args === "object" ? args : {};
+    if (a.account_id !== undefined || a.owner === undefined) return super.accountUsesSet(a);
+    const { owner, ...rest } = a;
+    const head = ownerSpelled(owner) ? this._legacyHead(owner) : null;
+    if (!head) return this._legacyNone(owner, a.by ?? null, "setting an AI account's settings");
+    return super.accountUsesSet({ ...rest, account_id: head.account_id });
+  }
+
+  /** @deprecated F1: use `accountUses({account_id, viewer})` (R15). The old form `{owner, viewer}`: the owner's head account
+   *  as R15 answers it, plus `kind` (`apikey` sealed, `signin` issued, else null) and, for a member, `accounts: {reference,
+   *  signin}`, each `{held, uses}`, as `ai-use` (#isSignin) and `ai-runs` (the dispatch's `suggestions`) read them; an owner
+   *  holding none answers its owners `held: false` (the team its defaults); anyone else R15's refusal. Never a secret; writes
+   *  nothing; never throws (unreadable: `held: null, uses: null, unreadable: true`). */
+  accountUses(args = {}) {
+    const a = args && typeof args === "object" ? args : {};
+    if (a.account_id !== undefined || a.owner === undefined) return super.accountUses(a);
+    const { owner, viewer = null } = a;
+    try {
+      const bar = this._ownerAuthority(owner, viewer, "reading an AI account's settings");
+      if (bar) return bar;
+      const head = this._legacyHead(owner);
+      const kindOf = (r) => (r ? (r.means === "sealed" ? "apikey" : r.means === "issued" ? "signin" : null) : null);
+      const one = (r) => ({ held: !!(r && r.held), uses: r && r.held ? M._usesOf(r) : null });
+      const base = head ? super.accountUses({ account_id: head.account_id, viewer })
+        : { ok: true, account_id: null, owner, held: false, uses: owner === "group" ? { ...USE_DEFAULTS } : null, keptAway: this._limitsFor(owner) };
+      if (!base.ok || base.unreadable) return base;
+      return { ...base, kind: kindOf(head),
+               ...(owner.startsWith("member:") ? { accounts: { reference: one(this._legacyKey(owner)), signin: one(this._legacySignin(owner)) } } : {}) };
+    } catch {
+      return { ok: true, account_id: null, owner: typeof owner === "string" ? owner : null, held: null, uses: null, keptAway: null, unreadable: true };
+    }
+  }
+
+  /** @deprecated F1: use `accountSwitch({account_id, on, by})` (R5). Was R5's `groupKeySwitch`: the team's key on or off, by
+   *  an active administrator. Here: the master switch of the team's key account (its first sealed account). Answers `{ok,
+   *  account_id, on}`; with no key held, NOT_AN_ADMIN for a non-administrator, else NO_ACCOUNT, writing nothing. */
+  groupKeySwitch({ on = undefined, by = null } = {}) {
+    const key = this._legacyKey("group");
+    if (!key) return this._legacyNone("group", by, "switching the team's AI account");
+    return this.accountSwitch({ account_id: key.account_id, on, by });
+  }
+
+  /** @deprecated F1: use `accountSwitch({account_id, on, by})` (R10). Was R10's `projectAccountSwitch`: a project's account
+   *  on or off, by one of its owners. Here: the master switch of the project's head account. Answers `{ok, account_id, on}`;
+   *  with none held, R10's refusal for a non-owner, else NO_ACCOUNT, writing nothing. */
+  projectAccountSwitch({ project = null, on = undefined, by = null } = {}) {
+    const owner = AiAccountsLegacy._owner("project", project);
+    const head = owner ? this._legacyHead(owner) : null;
+    if (!head) return this._legacyNone(owner, by, "switching a project's AI account");
+    return this.accountSwitch({ account_id: head.account_id, on, by });
+  }
+
+  /** @deprecated F1: use `accountsOf({owner: "project:<id>", viewer})` and `accountState` (R2, R10). Was R10's
+   *  `projectAccountState`: a project's owners read `{ok, project, account_id, held, on, kind, set_at}` of its head account
+   *  (`held: false` with none); its joined participants `{ok, project, account_id, on}`; anyone else `accountsOf`'s refusal
+   *  (an invisible project as absent). Never a secret; writes nothing. */
+  projectAccountState({ project = null, viewer = null } = {}) {
+    const owner = AiAccountsLegacy._owner("project", project);
+    const list = this.accountsOf({ owner, viewer });
+    if (!list || list.ok !== true) return list;
+    const head = this._legacyHead(owner);
+    const on = !!(head && head.held && head.is_on);
+    if (this._ownerAuthority(owner, viewer, "reading a project's AI account") !== null)
+      return { ok: true, project, account_id: head ? head.account_id : null, on };
+    return { ok: true, project, account_id: head ? head.account_id : null, held: !!(head && head.held), on,
+             kind: head ? (head.means === "sealed" ? "apikey" : head.means === "issued" ? "signin" : null) : null,
+             set_at: head ? head.set_at : null };
+  }
+
+  /** @deprecated F1: use `accountRemove({account_id, by})` (R1). Was R1's `accountReferenceRemove`: the member's own API key
+   *  removed, by her own act. Here: her key account (her first sealed account) removed by `accountRemove`, with its
+   *  refusals; with none held, R1's refusal for anyone else, else NO_ACCOUNT, writing nothing. */
+  accountReferenceRemove({ member = null, by = null } = {}) {
+    const owner = AiAccountsLegacy._owner("member", member);
+    const key = owner ? this._legacyKey(owner) : null;
+    if (!key) return this._accountBar(owner, by) ?? this._noAccount(M._memberOf(member), "owner");
+    return this.accountRemove({ account_id: key.account_id, by });
+  }
+
+  /* R51 for the old key notices: the recipients (provider and host) of the catalogue's Anthropic API plan's entries, the plan
+     every pre-T53 key converts to (R59), each recorded seen by `recipientNoticeSeen`, the member's own act. */
+  _legacyNoticeSeen(member, by) {
+    const bar = this._accountBar(member, by);
+    if (bar) return bar;
+    const plan = this._migrationPlan("api");
+    if (!plan) return this._catalogueUnavailable();
+    const recipients = new Map();
+    for (const e of plan.entries) {
+      const f = this._entry(e);
+      if (!f.entry) continue;
+      const r = M._recipientOf(f.entry);
+      if (r.provider !== "" && r.host !== "") recipients.set(`${r.provider}|${r.host}`, r);
+    }
+    for (const r of recipients.values()) {
+      const s = this.recipientNoticeSeen({ member, provider: r.provider, host: r.host, by });
+      if (!s.ok) return s;
+    }
+    return { ok: true, seen: true, recipients: [...recipients.values()].map((r) => ({ ...r })) };
+  }
+
+  /** @deprecated F1: use `recipientNoticeSeen({member, provider, host, by})` (R51). Was R8's `groupKeyNoticeSeen`: the
+   *  member has seen the notice that the team's key sends her material to Anthropic. Here: every recipient of the
+   *  catalogue's Anthropic API plan recorded seen, as `migrate` carries a seen key notice (R59). The member's own act (R1's
+   *  refusals); an unreadable catalogue CATALOGUE_UNAVAILABLE (R63). Answers `{ok, seen, recipients}`. */
+  groupKeyNoticeSeen({ member = null, by = null } = {}) { return this._legacyNoticeSeen(member, by); }
+
+  /** @deprecated F1: use `recipientNoticeSeen` (R51). Was R12's `projectKeyNoticeSeen`: as `groupKeyNoticeSeen`, for a
+   *  project's key. A notice is now per recipient, never per project, so `project` changes nothing of the act. */
+  projectKeyNoticeSeen({ member = null, project = null, by = null } = {}) { void project; return this._legacyNoticeSeen(member, by); }
+
+  /** @deprecated F1: use `accountSet({owner: "member:<id>", plan, means: "issued", secret: token, by})` and `issuedTokenHold`
+   *  (R19, R40). Was R18's `subscriptionConnected`: an in-plane fact that a member's sign-in is connected, which served
+   *  nothing until its token was held (`subscriptionTokenHold`). R59 gives that fact alone, with no token, `held: false`:
+   *  it serves nothing. So nothing is written: the member is checked active (the claimed founder counts), and the answer
+   *  says whether a token is held on her first issued account. Answers `{ok, connected, held, account_id}`. */
+  subscriptionConnected({ member = null } = {}) {
+    const id = M._memberOf(member);
+    if (id === null || isMachineIdentity(member) || isMachineIdentity(id) || !this._holderActive(id))
+      return this.accountMemberNotActive(localize("ai-accounts.index.only_an_active_member_or", "only an active member, or the founder, holds a sign-in. Nothing was recorded."));
+    const s = this._legacySignin(`member:${id}`);
+    return { ok: true, connected: true, held: !!(s && s.held), account_id: s ? s.account_id : null };
+  }
+
   /* ===== the old forms of two T53 reads ===== */
 
   /** R17, and (deprecated, F1) its old form `accountUsesOf({owner})`, answered when the call names an `owner` and no

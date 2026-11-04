@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, SECRET } from "./fixture.mjs";
 import { PLANS as P, HOSTS, emptyCatalogue } from "./catalogue.mjs";
-import { shape, refusal, ask, act, projectWorld } from "./helpers.mjs";
+import { shape, refusal, ask, act, projectWorld, leaks } from "./helpers.mjs";
 import { AiAccounts } from "../../../src/ai-accounts/index.mjs";
 import { notAnAdmin } from "../../../src/membership/index.mjs";
 
@@ -172,4 +172,157 @@ test("F1 fail closed (R63): with the catalogue unreadable, every old act that se
   assert.equal(code(await w.a.subscriptionTokenHold({ member: "bob", token: TOKEN("bob") })), "CATALOGUE_UNAVAILABLE");
   assert.equal(code(await w.a.groupKeySet({ key: "sk-team", by: "bob" })), "NOT_AN_ADMIN");
   assert.equal(w.snapshot(), before);
+});
+
+/* ===== the names BOB's ruling of 05:02 (4 Nov) added to F1 ===== */
+
+test("F1 accountUsesSet({owner}) (deprecated old form, beside R14's {account_id}): sets the switch on the owner's head account, as its callers set it: ai-use t42.test.mjs:60-62, t44.test.mjs:19, explore.test.mjs:11, reads.test.mjs:181, limits.test.mjs:205,210, t43.test.mjs:81 (explore on group, project:P and member); answers accounts.test.mjs:38,126,173, standing.test.mjs:157,189,254,394; ai-runs t48.test.mjs:31,33, scheduler.test.mjs:185,197,203; question-explorer fixture.mjs:378, choosing.test.mjs:129; reading-pipeline transcribe.test.mjs:170,293; store-door dispatch.test.mjs:624, routes.test.mjs:185; notice-producers accounts.test.mjs:150; store-assembly's through credentials ({ok}); control: R14's refusals unchanged, an owner holding none NO_ACCOUNT after its authority, nothing written", async () => {
+  const w = await projectWorld();
+  const own = await w.a.accountReferenceSet({ member: "bob", kind: "apikey", secret: SECRET("bob"), by: "bob" });
+  const team = await w.a.groupKeySet({ key: SECRET("team"), by: "admin" });
+  const proj = await w.a.projectKeySet({ project: "P", key: SECRET("P"), by: "ann" });
+  for (const [owner, sw, on, by, id] of [["member:bob", "ask", false, "member:bob", own.account_id], ["group", "explore", "yes", "admin", team.account_id],
+                                         ["project:P", "explore", "ask", "ann", proj.account_id], ["group", "standing", true, "admin", team.account_id],
+                                         ["member:bob", "suggestions", true, "bob", own.account_id]]) {
+    const r = w.a.accountUsesSet({ owner, switch: sw, on, by });
+    assert.deepEqual([r.ok, r.account_id, r.switch, r.on], [true, id, sw, on], `${owner} ${sw}`);
+    assert.equal(w.a.accountUsesOf({ account_id: id }).uses[sw], on, "read back through R17's T53 form");
+  }
+  const before = w.snapshot();
+  assert.deepEqual(shape(w.a.accountUsesSet({ owner: "member:bob", switch: "ask", on: true, by: "ann" })), refusal("NOT_YOUR_ACCOUNT"));
+  assert.equal(w.a.accountUsesSet({ owner: "project:P", switch: "ask", on: true, by: "bob" }).reason, "PROJECT_ACT_NOT_THE_OWNER");
+  assert.deepEqual(shape(w.a.accountUsesSet({ owner: "group", switch: "ask", on: true, by: "bob" })), shape(notAnAdmin("bob", "x")));
+  assert.deepEqual(shape(w.a.accountUsesSet({ owner: "group", switch: "nope", on: true, by: "admin" })), refusal("UNKNOWN_SWITCH"));
+  assert.deepEqual(shape(w.a.accountUsesSet({ owner: "group", switch: "explore", on: "maybe", by: "admin" })), refusal("SWITCH_VALUE_INVALID"));
+  assert.deepEqual(shape(w.a.accountUsesSet({ owner: "member:cy", switch: "ask", on: false, by: "cy" })), refusal("NO_ACCOUNT"), "she holds none");
+  assert.deepEqual(shape(w.a.accountUsesSet({ owner: "member:cy", switch: "ask", on: false, by: "ann" })), refusal("NOT_YOUR_ACCOUNT"), "authority first");
+  assert.equal(w.snapshot(), before, "no refusal writes");
+  assert.deepEqual(shape(w.a.accountUsesSet({ switch: "ask", on: true, by: "admin" })), refusal("NOT_YOUR_ACCOUNT"), "R37's form, unchanged");
+});
+
+test("F1 accountUses({owner}) (deprecated old form, beside R15's {account_id}): the owner's head account as R15 answers it, with `kind` and a member's `accounts: {reference, signin}`, as ai-use's #accountsBar and #isSignin (src/ai-use/index.mjs:514,571) and ai-runs' dispatch (src/ai-runs/index.mjs:2215) read it, and ai-use reads.test.mjs:133, t48.test.mjs:123, limits.test.mjs:73 and question-explorer choosing.test.mjs:153 compare refusals with it; control: its refusals are R15's owners' refusals, the team with none answers its owners its defaults, and an unreadable store answers `unreadable`", async () => {
+  const w = await projectWorld();
+  const g0 = w.a.accountUses({ owner: "group", viewer: "admin" });
+  assert.deepEqual([g0.ok, g0.held, g0.uses.ask, g0.kind, Array.isArray(g0.keptAway)], [true, false, true, null, true]);
+  const own = await w.a.accountReferenceSet({ member: "bob", kind: "apikey", secret: SECRET("bob"), by: "bob" });
+  w.a.accountUsesSet({ owner: "member:bob", switch: "suggestions", on: true, by: "bob" });
+  const b = w.a.accountUses({ owner: "member:bob", viewer: "member:bob" });
+  const t53 = w.a.accountUses({ account_id: own.account_id, viewer: "bob" });
+  assert.deepEqual([b.ok, b.account_id, b.held, b.kind, b.uses, b.keptAway], [true, own.account_id, true, "apikey", t53.uses, t53.keptAway]);
+  assert.deepEqual([b.accounts.reference.held, b.accounts.reference.uses.suggestions, b.accounts.signin.held], [true, true, false],
+    "ai-runs reads accounts.reference.uses.suggestions");
+  assert.equal("kind" in t53 || "accounts" in t53, false, "the T53 form is unchanged");
+  assert.equal((await w.a.subscriptionTokenHold({ member: "cy", token: TOKEN("cy") })).ok, true);
+  const c = w.a.accountUses({ owner: "member:cy", viewer: "cy" });
+  assert.deepEqual([c.kind, c.accounts.signin.held, c.accounts.reference.held], ["signin", true, false], "ai-use's #isSignin");
+  for (const [owner, viewer, code] of [["member:ann", "bob", "NOT_YOUR_ACCOUNT"], ["member:ann", "admin", "NOT_YOUR_ACCOUNT"],
+                                       ["project:P", "bob", "PROJECT_ACT_NOT_THE_OWNER"], ["group", "ann", "NOT_AN_ADMIN"],
+                                       ["group", null, null], ["group", "machine:agent", null]]) {
+    const r = w.a.accountUses({ owner, viewer });
+    assert.equal(r.ok, false, `${owner} ${viewer}`);
+    if (code) assert.equal(r.code, code, `${owner} ${viewer}`);
+  }
+  for (const [owner, viewer] of [["member:ann", "ann"], ["project:P", "ann"], ["group", "admin"]])
+    assert.equal(w.a.accountUses({ owner, viewer }).ok, true, `${owner} ${viewer}: an owner reads`);
+  const broken = new AiAccounts({ sql: { exec() { throw new Error("down"); } }, membership: w.m });
+  const u = broken.accountUses({ owner: "group", viewer: "admin" });
+  assert.equal(u.ok === false || u.unreadable === true, true, "never defaults from a store that cannot be read");
+});
+
+test("F1 groupKeySwitch and projectAccountSwitch (deprecated; were R5's and R10's switches): the master switch of the team's key account and of a project's head account, by `accountSwitch`, as ai-runs t48.test.mjs:29,57, t46.test.mjs:144, usage.test.mjs:320,350,367, scheduler.test.mjs:139,213, reexam.test.mjs:144, answers standing.test.mjs:187, accounts.test.mjs:51, reading-pipeline transcribe.test.mjs:70,296, store-assembly ask.test.mjs:194,296, store-door routes.test.mjs:203,272, declared-ops.test.mjs:28 and control-plane t34-routes.test.mjs:251,268 switch them ({ok}, sync or awaited), after which the account serves; control: a non-administrator and a non-owner are refused, an owner holding none NO_ACCOUNT, nothing written", async () => {
+  const w = await projectWorld();
+  const before = w.snapshot();
+  assert.deepEqual(shape(w.a.groupKeySwitch({ on: true, by: "admin" })), refusal("NO_ACCOUNT"));
+  assert.deepEqual(shape(w.a.groupKeySwitch({ on: true, by: "bob" })), shape(notAnAdmin("bob", "x")));
+  assert.deepEqual(shape(w.a.projectAccountSwitch({ project: "P", on: true, by: "ann" })), refusal("NO_ACCOUNT"));
+  assert.equal(w.a.projectAccountSwitch({ project: "P", on: true, by: "bob" }).reason, "PROJECT_ACT_NOT_THE_OWNER");
+  assert.equal(w.snapshot(), before);
+  const team = await w.a.groupKeySet({ key: SECRET("team"), by: "admin" });
+  seen(w, "eve", "bob");
+  assert.deepEqual(shape(await w.a.accountFor({ member: "eve", act: ask("eve") })), refusal("NO_ACCOUNT"), "held but off");
+  const s = w.a.groupKeySwitch({ on: true, by: "admin" });
+  assert.deepEqual([s.ok, s.account_id, s.on], [true, team.account_id, true]);
+  assert.equal((await w.a.accountFor({ member: "eve", act: ask("eve") })).key, SECRET("team"));
+  assert.deepEqual(shape(w.a.groupKeySwitch({ on: true, by: "bob" })), shape(notAnAdmin("bob", "x")));
+  assert.equal(w.a.groupKeySwitch({ on: false, by: "admin" }).on, false);
+  assert.deepEqual(shape(await w.a.accountFor({ member: "eve", act: ask("eve") })), refusal("NO_ACCOUNT"), "off again: scheduler.test.mjs:213");
+  const proj = await w.a.projectKeySet({ project: "P", key: SECRET("P"), by: "ann" });
+  assert.equal(w.a.projectAccountSwitch({ project: "P", on: true, by: "bob" }).reason, "PROJECT_ACT_NOT_THE_OWNER");
+  const p = w.a.projectAccountSwitch({ project: "P", on: true, by: "member:ann" });
+  assert.deepEqual([p.ok, p.account_id, p.on], [true, proj.account_id, true]);
+  const r = await w.a.accountFor({ member: "bob", act: ask("bob", "P") });
+  assert.deepEqual([r.level, r.key], ["project", SECRET("P")]);
+});
+
+test("F1 groupKeyNoticeSeen and projectKeyNoticeSeen (deprecated; were R8's and R12's): the member's own act recording seen the recipients of the catalogue's Anthropic API plan (R51), as `migrate` carries a seen key notice (R59), so the team's or a project's key then serves her act, as ai-runs t48.test.mjs:30,58, t46.test.mjs:145, usage.test.mjs:327,373, scheduler.test.mjs:140, reexam.test.mjs:145, answers standing.test.mjs:192, accounts.test.mjs:52, reading-pipeline transcribe.test.mjs:149,453, store-assembly ask.test.mjs:199,297, store-door routes.test.mjs:209,273, declared-ops.test.mjs:29 and control-plane t34-routes.test.mjs:257,269 expect ({ok}); control: before it the head is refused RECIPIENT_NOTICE_DUE; another member's act, a machine, and an unreadable catalogue are refused, nothing written", async () => {
+  const w = await projectWorld();
+  const team = await w.a.groupKeySet({ key: SECRET("team"), by: "admin" });
+  w.a.accountSwitch({ account_id: team.account_id, on: true, by: "admin" });
+  assert.equal((await w.a.accountFor({ member: "eve", act: ask("eve") })).code, "RECIPIENT_NOTICE_DUE");
+  const before = w.snapshot();
+  assert.deepEqual(shape(w.a.groupKeyNoticeSeen({ member: "member:eve", by: "member:ann" })), refusal("NOT_YOUR_ACCOUNT"));
+  assert.deepEqual(shape(w.a.groupKeyNoticeSeen({ member: "eve", by: "class:ai" })), refusal("MACHINE_CANNOT_HOLD_ACCOUNT"));
+  assert.equal(w.snapshot(), before);
+  const s = w.a.groupKeyNoticeSeen({ member: "member:eve", by: "member:eve" });
+  assert.equal(s.ok, true, JSON.stringify(s));
+  assert.ok(s.recipients.some((r) => r.provider === P.provider && r.host === HOSTS.main));
+  assert.equal(w.a.recipientNoticeDue({ member: "eve", entry_id: (await w.a.accountFor({ member: "eve", act: ask("eve") })).entry_id }), null);
+  assert.equal((await w.a.accountFor({ member: "eve", act: ask("eve") })).key, SECRET("team"));
+  const proj = await w.a.projectKeySet({ project: "P", key: SECRET("P"), by: "ann" });
+  w.a.accountSwitch({ account_id: proj.account_id, on: true, by: "ann" });
+  assert.equal((await w.a.accountFor({ member: "bob", act: ask("bob", "P") })).code, "RECIPIENT_NOTICE_DUE");
+  assert.equal(w.a.projectKeyNoticeSeen({ member: "bob", project: "P", by: "bob" }).ok, true, "sync, as transcribe.test.mjs:149 calls it");
+  assert.equal((await w.a.accountFor({ member: "bob", act: ask("bob", "P") })).key, SECRET("P"));
+  const x = await world({ catalogue: await emptyCatalogue() }).group("ann");
+  assert.equal(x.a.groupKeyNoticeSeen({ member: "ann", by: "ann" }).code, "CATALOGUE_UNAVAILABLE", "fail closed (R63)");
+});
+
+test("F1 accountReferenceRemove (deprecated; was R1's remove): the member's own key account removed by `accountRemove`, by her own act, after which nothing serves her (ai-runs scheduler.test.mjs:219 then expects NO_ACCOUNT); control: another member and a machine are refused, a member holding none NO_ACCOUNT, nothing written, and her other account stands (R31)", async () => {
+  const w = await projectWorld();
+  const own = await w.a.accountReferenceSet({ member: "member:ann", kind: "apikey", secret: SECRET("ann"), by: "member:ann" });
+  seen(w, "ann");
+  assert.equal((await w.a.accountFor({ member: "ann", act: ask("ann") })).key, SECRET("ann"));
+  const before = w.snapshot();
+  assert.deepEqual(shape(w.a.accountReferenceRemove({ member: "member:ann", by: "member:bob" })), refusal("NOT_YOUR_ACCOUNT"));
+  assert.deepEqual(shape(w.a.accountReferenceRemove({ member: "member:ann", by: "class:ai" })), refusal("MACHINE_CANNOT_HOLD_ACCOUNT"));
+  assert.deepEqual(shape(w.a.accountReferenceRemove({ member: "member:bob", by: "member:bob" })), refusal("NO_ACCOUNT"));
+  assert.equal(w.snapshot(), before);
+  const r = await w.a.accountReferenceRemove({ member: "member:ann", by: "member:ann" });
+  assert.deepEqual([r.ok, r.account_id, r.removed], [true, own.account_id, true]);
+  assert.deepEqual(shape(await w.a.accountFor({ member: "ann", act: ask("ann") })), refusal("NO_ACCOUNT"));
+  assert.deepEqual(leaks(w, SECRET("ann")), [], "no secret left anywhere");
+  assert.equal((await w.a.subscriptionTokenHold({ member: "cy", token: TOKEN("cy") })).ok, true);
+  assert.deepEqual(shape(w.a.accountReferenceRemove({ member: "cy", by: "cy" })), refusal("NO_ACCOUNT"), "a sign-in is no key");
+  assert.equal(w.a.accountReferenceState({ member: "cy", viewer: "cy" }).subscription.held, true, "her sign-in stands");
+});
+
+test("F1 projectAccountState (deprecated; was R10's state): a project's owners read whether its account is held, as question-explorer's fixture.mjs:373 reads `.held` before setting one; its joined participants `{on}`; control: a stranger is refused as `accountsOf` refuses, and the answer carries no secret", async () => {
+  const w = await projectWorld();
+  const none = w.a.projectAccountState({ project: "P", viewer: "member:ann" });
+  assert.deepEqual([none.ok, none.held, none.on, none.account_id], [true, false, false, null]);
+  const set = await w.a.projectKeySet({ project: "P", key: SECRET("P"), by: "member:ann" });
+  const s = w.a.projectAccountState({ project: "P", viewer: "member:ann" });
+  assert.deepEqual([s.ok, s.held, s.on, s.kind, s.account_id, s.set_at], [true, true, false, "apikey", set.account_id, set.set_at]);
+  w.a.accountSwitch({ account_id: set.account_id, on: true, by: "ann" });
+  assert.deepEqual(w.a.projectAccountState({ project: "P", viewer: "bob" }), { ok: true, project: "P", account_id: set.account_id, on: true });
+  const stranger = w.a.projectAccountState({ project: "P", viewer: "eve" });
+  assert.deepEqual([stranger.ok, stranger.code], [false, w.a.accountsOf({ owner: "project:P", viewer: "eve" }).code]);
+  assert.equal(JSON.stringify(s).includes(SECRET("P")), false);
+});
+
+test("F1 subscriptionConnected (deprecated; was R18's connected fact): an active member's sign-in reported connected, which with no token serves nothing (R59: a connected fact with no held token is held false), as answers standing.test.mjs:358 expects (ok, then accountFor NO_ACCOUNT, then subscriptionTokenHold serves her) and ai-runs world.mjs:179 and notice-producers accounts.test.mjs:27 call it before the hold; control: it writes nothing, and a member not active, or a machine, is refused ACCOUNT_MEMBER_NOT_ACTIVE", async () => {
+  const w = await projectWorld();
+  const before = w.snapshot();
+  const c = w.a.subscriptionConnected({ member: "member:cy" });
+  assert.deepEqual([c.ok, c.connected, c.held, c.account_id], [true, true, false, null]);
+  assert.equal(w.snapshot(), before, "nothing written");
+  assert.deepEqual(shape(await w.a.accountFor({ member: "cy", act: act("standing", "cy") })), refusal("NO_ACCOUNT"), "the connected fact alone serves no one");
+  assert.deepEqual(shape(w.a.subscriptionConnected({ member: "nobody" })), refusal("ACCOUNT_MEMBER_NOT_ACTIVE"));
+  assert.deepEqual(shape(w.a.subscriptionConnected({ member: "class:ai" })), refusal("ACCOUNT_MEMBER_NOT_ACTIVE"));
+  const h = await w.a.subscriptionTokenHold({ member: "cy", token: TOKEN("cy") });
+  assert.equal(h.ok, true);
+  const again = w.a.subscriptionConnected({ member: "cy" });
+  assert.deepEqual([again.held, again.account_id], [true, h.account_id]);
+  const r = await w.a.accountFor({ member: "cy", act: act("run", "cy") });
+  assert.deepEqual([r.ok, r.kind, r.key], [true, "signin", TOKEN("cy")]);
 });
