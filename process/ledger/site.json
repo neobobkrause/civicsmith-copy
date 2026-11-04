@@ -28,7 +28,8 @@
   ],
   "prior_work": "Meet every unmet mark in build/requirements/site.md (R17, R18), each with a test that fails with the change reverted. Deploying the site is not yours or BOB's: the worker civicsmith-site is not a development deployment; test locally only. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-04T05:06:11Z"
+    "state": "WORKING",
+    "at": "2026-11-04T09:01:22Z",
+    "reason": "reopened: R18: .cs-btn is now min-height var(--tap), 44 px at every width, in the design stream (PR 191, 12d6a810). Bring /start's 'Create your team' to it (its stylesheet's source; if that is interface-assets' pinned copy, report exactly what interface-assets must regenerate), measure at 1280 and 390 px, strike R18"
   }
 }
