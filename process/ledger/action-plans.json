@@ -51,8 +51,8 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: ai-runs:96 (index.mjs:2068 opens its planning run with principalClaude, which ai-runs now refuses AI_RUN_CAPABILITY_UNAVAILABLE; the field is principal_ai). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-04T11:39:06Z",
-    "reason": "reopened: answer the provider notices strength:176, ai-runs:213"
+    "state": "BLOCKED",
+    "reason": "For BOB. Work done and pushed (aa9915ad9): both notices confirmed with no code change in action-plans, a test of each; suite 117/117. strength:176: action-plans reads only strength.projectBar (unchanged) and each finding's frozen pair; notice-strength-176.test.mjs. ai-runs:213: planAsk names no account, so ai-runs' real open (its world, real ai-use limits) holds the run back only for a provider limit on the serving account; notice-ai-runs-213.test.mjs. job complete stops before running: it requires --cost-usd > 0 read from get_session's external_metadata.usage.cost_usd, and my session record has no usage field at all, so I have no figure and will not invent one. TO UNBLOCK: give me the cost figure (or rule that --cost-usd may be omitted for this attempt), then I run: job complete action-plans --test notice:strength:176=bio-plane/test/m/action-plans/notice-strength-176.test.mjs --test notice:ai-runs:213=bio-plane/test/m/action-plans/notice-ai-runs-213.test.mjs --exempt-revert (no code change to revert) --session session_01RAN5eoLS1jbU5tzdWXkPkG --cost-usd <figure>.",
+    "at": "2026-11-04T11:52:58Z"
   }
 }
