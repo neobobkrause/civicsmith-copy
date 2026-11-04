@@ -711,13 +711,30 @@ export function askBoundReached(bounds, used) {
  *  no member's act a draft is refused whatever `standing` holds, whatever its kind (R22's, R25's and R27's kinds
  *  alike: the detail names no kind); so is the mode `enquire` (R24; T41-21), the interview
  *  and planning, which starts only at the act of the member whose matter it is. Anything else — a token class, the scheduler, a blank
- *  or unrecognised stamp — is `AI_RUN_NOT_A_MEMBER_ACT` (C-22.19): fail closed. Never throws. */
+ *  or unrecognised stamp — is `AI_RUN_NOT_A_MEMBER_ACT` (C-22.19): fail closed. An exploring run (`origin: "explore"`;
+ *  F1, K5821) is judged on `enabledBy`, the member who turned exploring on, with `enablerAllowed` (the caller's reading
+ *  of that member now): `{ok: true, origin: "explore", accountable}`, else the same code with `exploring: "off"`.
+ *  Never throws. */
 export function startAllowed(asked) {
-  const { startedBy = null, mode = null, standing = null } = asked && typeof asked === "object" ? asked : {};
+  const { startedBy = null, mode = null, standing = null, origin = null, enabledBy = null, enablerAllowed = false } =
+    asked && typeof asked === "object" ? asked : {};
   const memberOf = (who) => {
     const p = runPrincipalOf(who);
     return /^member:\S/.test(p) ? p : "";
   };
+  /* F1 (K5821, Bob's REC-11): an exploring run (origin `explore`, a team's or a project's) is judged on the member who
+     turned exploring on, `enabledBy`, at each run, whoever stamped it: that member is its accountable member, so K1606
+     holds (every run traces to a member's act). Whether that member is still a member and still allowed is the
+     caller's to read and hand in as `enablerAllowed`, exactly `true`; anything else, or no enabling member, refuses
+     with a sentence the screen shows and `exploring: "off"`, which stays so until a member turns it on again. */
+  if ((origin == null ? "" : String(origin).trim()) === "explore") {
+    const enabler = memberOf(enabledBy);
+    if (enabler && enablerAllowed === true) return { ok: true, origin: "explore", accountable: enabler };
+    return refusal("AI_RUN_NOT_A_MEMBER_ACT", enabler
+      ? localize("run-rules.rules.explore_enabler_gone", "the member who turned exploring on is no longer a member here or may no longer start runs, so this exploring run was not started and exploring is off until a member turns it on again (K5821). Nothing was started")
+      : localize("run-rules.rules.explore_no_enabler", "no member is recorded as having turned exploring on, so this exploring run has no member accountable for it and exploring is off until a member turns it on again (K5821). Nothing was started"),
+      { exploring: "off" });
+  }
   if (memberOf(startedBy)) return { ok: true };
   const author = standing && typeof standing === "object" ? memberOf(standing.author) : "";
   const m = mode == null ? "" : String(mode).trim();

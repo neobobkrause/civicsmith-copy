@@ -7,19 +7,39 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CATALOGUE_KEYS, RELEASE_KEYS, NS_AI_CATALOGUE, aiCatalogueStatement } from "../../../src/sshsig.mjs";
-import { RELEASE_SEED, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, catalogueKeysFor, isDevelopmentKey }
-  from "../../../src/ai-catalogue/index.mjs";
+import * as catalogue from "../../../src/ai-catalogue/index.mjs";
 import { newKey, sign, world, AT } from "./fixture.mjs";
+
+const { RELEASE_SEED, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_MARK, catalogueKeysFor, isDevelopmentKey } = catalogue;
+/* written out, so the file loads without R59's change and the test that needs it fails */
+const DEVELOPMENT_KEY_VAR = "AI_CATALOGUE_DEVELOPMENT_KEY";
 
 const signSeed = (key) => sign(key, NS_AI_CATALOGUE, aiCatalogueStatement(RELEASE_SEED.statement));
 const DEV_ENV = (armored) => ({ [DEVELOPMENT_VAR]: "1", [SEED_SIGNATURE_VAR]: armored });
 
-test("notice signatures:101: the build trusts CATALOGUE_KEYS whole in a public and a development build; none of its lines is a development line", () => {
+/* Amended for signatures R59: CATALOGUE_KEYS now ends with development lines, so a public build trusts Bob's lines
+ * alone and a development build trusts the list whole. */
+test("notice signatures:101 (as R59 amends it): a public build trusts CATALOGUE_KEYS less its development lines, a development build the list whole", () => {
   assert.ok(CATALOGUE_KEYS.length > 0);
-  assert.deepEqual(CATALOGUE_KEYS.filter(isDevelopmentKey), []);
-  assert.deepEqual(catalogueKeysFor(CATALOGUE_KEYS, {}), [...CATALOGUE_KEYS]);
+  const bob = CATALOGUE_KEYS.filter((l) => !isDevelopmentKey(l));
+  assert.ok(bob.length > 0);
+  assert.deepEqual(catalogueKeysFor(CATALOGUE_KEYS, {}), bob);
   assert.deepEqual(catalogueKeysFor(CATALOGUE_KEYS, { [DEVELOPMENT_VAR]: "1" }), [...CATALOGUE_KEYS]);
   for (const line of CATALOGUE_KEYS) assert.equal(RELEASE_KEYS.includes(line), false);
+});
+
+test("notice signatures:101 (as R59 amends it): a development build adds the deployment's own line after the list; a public build never does", async () => {
+  const own = (await newKey()).line.replace(/ throwaway$/, ` bio-ai-catalogue${DEVELOPMENT_KEY_MARK}`);
+  const bob = CATALOGUE_KEYS.filter((l) => !isDevelopmentKey(l));
+  assert.deepEqual([...catalogueKeysFor(CATALOGUE_KEYS, { [DEVELOPMENT_VAR]: "1", [DEVELOPMENT_KEY_VAR]: own })],
+    [...CATALOGUE_KEYS, own]);
+  assert.deepEqual([...catalogueKeysFor(CATALOGUE_KEYS, { [DEVELOPMENT_KEY_VAR]: own })], bob);
+  /* end to end: the seed signed by that line's key verifies in a development build of the product's list */
+  const key = await newKey();
+  const line = key.line.replace(/ throwaway$/, ` bio-ai-catalogue${DEVELOPMENT_KEY_MARK}`);
+  const { cat } = await world({ keys: null,
+    env: { ...DEV_ENV(await signSeed(key)), [DEVELOPMENT_KEY_VAR]: line } });
+  assert.equal(cat.seedAtStart.outcome, "found");
 });
 
 test("notice signatures:101: a copy built with no keys of its own refuses a throwaway-signed seed UNKNOWN_KEY, even in a development build", async () => {
