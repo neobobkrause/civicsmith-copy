@@ -3,17 +3,19 @@
    failing closed with `KEPT_AWAY_UNREADABLE` (ai-accounts R34). At the interface, each with a negative control (K874). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { standard } from "./fixture.mjs";
+import { standard, PLANS } from "./fixture.mjs";
 import { AiUse, aiUseOps } from "../../../src/ai-use/index.mjs";
 import { KEPT_AWAY_UNREADABLE } from "../../../src/ai-accounts/index.mjs";
 
 const AT = "2026-10-20T12:00:00Z";
 const over = (w, owner, viewer = "ann", at = AT) => w.u.accountUseOverTime({ owner, viewer, at });
 const near = (a, b) => Math.abs(a - b) < 1e-9;
+/* (T53) a day's money: its estimate in usd (the fixture's calls carry an estimate), 0 where nothing was measured */
+const dollars = (d) => (d.cost && d.cost.estimated ? d.cost.estimated.usd : 0);
 
 /* ===== R14: days ===== */
 
-test("R14 two members' uses on three days are answered as day totals of calls and dollars, naming neither member", async () => {
+test("R14 (T53) two members' uses on three days are answered as day totals of calls, tokens and cost, naming neither member", async () => {
   const w = await standard();
   w.count("project:P", "ann", "ask", { calls: 1, cost: 0.1, at: "2026-10-18T09:00:00Z" });
   w.count("project:P", "bob", "run", { calls: 2, cost: 0.25, at: "2026-10-18T15:00:00Z" });
@@ -25,8 +27,9 @@ test("R14 two members' uses on three days are answered as day totals of calls an
   assert.equal(r.ok, true);
   const last3 = r.days.slice(-3);
   assert.deepEqual(last3.map((d) => [d.day, d.calls]), [["2026-10-18", 3], ["2026-10-19", 3], ["2026-10-20", 5]]);
-  assert.ok(near(last3[0].dollars, 0.35) && near(last3[1].dollars, 0.5) && near(last3[2].dollars, 1), JSON.stringify(last3));
-  assert.doesNotMatch(JSON.stringify(r), /ann|bob|member/, "names no member");
+  assert.ok(near(dollars(last3[0]), 0.35) && near(dollars(last3[1]), 0.5) && near(dollars(last3[2]), 1), JSON.stringify(last3));
+  assert.deepEqual(last3.map((d) => d.tokens), [200, 100, 200]);
+  assert.doesNotMatch(JSON.stringify(r).replace(/"member:[a-z]+"/g, ""), /"ann"|"bob"/, "names no member");
   /* negative control: the group's use is the group account's, not the project's */
   assert.equal(over(w, "group", "admin").days.find((d) => d.day === "2026-10-19").calls, 9);
 });
@@ -41,15 +44,15 @@ test("R14 days are the thirty local days ending with the day of at, oldest first
   assert.equal(r.days[0].day, "2026-09-21");
   assert.equal(r.days[29].day, "2026-10-20", "the day of at in Los Angeles");
   for (let i = 1; i < 30; i++) assert.ok(r.days[i - 1].day < r.days[i].day, "oldest first, each day once");
-  assert.deepEqual(r.days[29], { day: "2026-10-20", calls: 2, dollars: 0.2 }, "03:00Z is the 20th in Los Angeles");
-  assert.deepEqual(r.days[10], { day: "2026-10-01", calls: 0, dollars: 0 }, "a day with no use: zeros");
+  assert.deepEqual([r.days[29].day, r.days[29].calls, dollars(r.days[29])], ["2026-10-20", 2, 0.2], "03:00Z is the 20th in Los Angeles");
+  assert.deepEqual(r.days[10], { day: "2026-10-01", calls: 0, tokens: 0, cost: null, not_measurable: true }, "a day with no use: zeros, its cost null, never 0");
   assert.equal(r.days.reduce((s, d) => s + d.calls, 0), 2, "the 20th of September and the 22nd of October lie outside");
   /* the thirty days cross a clock change (1 November in Los Angeles) without skipping or repeating one */
   const dst = over(w, "member:ann", "ann", "2026-11-15T12:00:00Z").days.map((d) => d.day);
   assert.deepEqual([dst[0], dst[29], new Set(dst).size], ["2026-10-17", "2026-11-15", 30]);
 });
 
-test("R14 the days of a month sum to that month's total as R4's aiUsage answers it, in calls and dollars", async () => {
+test("R14 the days of a month sum to that month's total as R4's aiUsage answers it, in calls, tokens and money", async () => {
   const w = await standard();
   const uses = [["ann", "ask", 1, 0.13, "2026-10-01"], ["bob", "run", 2, 0.27, "2026-10-05"], ["bob", "ask", 3, 1.11, "2026-10-12"],
     ["ann", "draft", 4, 0.05, "2026-10-20"], ["bob", "explore", 1, null, "2026-10-20"], ["ann", "ask", 5, 0.4, "2026-09-25"]];
@@ -58,7 +61,8 @@ test("R14 the days of a month sum to that month's total as R4's aiUsage answers 
   const month = w.u.aiUsage({ owner: "project:P", viewer: "ann", month: "2026-10", at: AT });
   const sum = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
   assert.equal(sum(days, (d) => d.calls), sum(month.uses, (u) => u.calls));
-  assert.ok(near(sum(days, (d) => d.dollars), sum(month.uses, (u) => u.total_cost_usd)));
+  assert.ok(near(sum(days, dollars), sum(month.uses, (u) => (u.cost_estimated_sum ? u.cost_estimated_sum.usd : 0))));
+  assert.equal(sum(days, (d) => d.tokens), sum(month.uses, (u) => u.tokens));
   assert.equal(sum(days, (d) => d.calls), 11, "September's use is September's");
 });
 
@@ -110,6 +114,16 @@ test("R14 with no limit set, periods is one entry for the month with limit null,
   assert.deepEqual(over(w, "member:ann").periods.map((p) => [p.unit, p.used, p.limit]), [["calls", 3, 50]]);
 });
 
+test("R14 (T53) a none plan's days answer cost: null with not_measurable, never zero, its tokens and calls shown; with no limit set its one period is in tokens (control: a priced plan's is in usd)", async () => {
+  const w = await standard();
+  await w.account("member:cy", "cy", PLANS.none);
+  w.count("member:cy", "cy", "ask", { calls: 2, input: 50, cost: 0.3, at: AT });
+  const r = over(w, "member:cy", "cy");
+  assert.deepEqual(r.days[29], { day: "2026-10-20", calls: 2, tokens: 50, cost: null, not_measurable: true });
+  assert.deepEqual(r.periods.map((p) => [p.scope, p.unit, p.period, p.used, p.limit]), [["overall", "tokens", "month", 50, null]]);
+  assert.equal(over(w, "member:ann").periods[0].unit, "usd");
+});
+
 /* ===== R14: who reads it ===== */
 
 test("R14 anyone but the account's owners is refused as R12 refuses them (ai-accounts R15's refusals), writing nothing; each owner reads it (control)", async () => {
@@ -120,7 +134,7 @@ test("R14 anyone but the account's owners is refused as R12 refuses them (ai-acc
                                  ["project:P", "admin"], ["group", "ann"], ["group", null], ["group", "machine:agent"]]) {
     const r = over(w, owner, viewer);
     const r12 = w.u.aiLimits({ owner, viewer });
-    const own = w.a.accountUses({ owner, viewer });
+    const own = w.a.accountActBar({ owner, by: viewer });
     assert.equal(r.ok, false, `${owner} ${viewer}`);
     assert.deepEqual([r.code, r.check], [r12.code, r12.check], `${owner} ${viewer}: as R12`);
     assert.deepEqual([r.code, r.check], [own.code, own.check], `${owner} ${viewer}: as ai-accounts R15`);
@@ -166,8 +180,9 @@ test("R6 (T48) the keep-away is read from ai-accounts: when its aiKeptAway or pr
   const w = await standard();
   w.bundle("INQ-1", "inquiry");
   w.cite("P", "INQ-1");
-  w.a.accountUsesSet({ owner: "group", switch: "explore", on: "yes", by: "admin" });
-  w.a.accountUsesSet({ owner: "project:P", switch: "explore", on: "yes", by: "ann" });
+  w.explore(w.acct.group, "yes", "admin");
+  w.explore(w.acct.P, "yes", "ann");
+  const ids = { group: w.acct.group, "project:P": w.acct.P };
   const make = (broken) => new AiUse(w.ctx, { record: w.rc, membership: w.m, zone: "UTC",
     connections: { citesInto: (id) => ({ confirmed: id === "INQ-1" ? ["P"] : [], severed: [] }) },
     accounts: new Proxy(w.a, { get(t, name) {
@@ -176,10 +191,10 @@ test("R6 (T48) the keep-away is read from ai-accounts: when its aiKeptAway or pr
       return typeof v === "function" ? v.bind(t) : v;
     } }) });
   for (const [broken, owner] of [["aiKeptAway", "group"], ["aiKeptAway", "project:P"], ["projectsKeptAway", "group"]]) {
-    const r = make(broken).exploreAllowed({ owner, question: "INQ-1", at: AT });
+    const r = make(broken).exploreAllowed({ owner, account_id: ids[owner], question: "INQ-1", at: AT });
     assert.deepEqual(r, KEPT_AWAY_UNREADABLE, `${broken} ${owner}`);
     assert.equal(r.code, "AI_KEPT_AWAY");
   }
   for (const owner of ["group", "project:P"])
-    assert.equal(make(null).exploreAllowed({ owner, question: "INQ-1", at: AT }).ask, false, `control: ${owner}`);
+    assert.equal(make(null).exploreAllowed({ owner, account_id: ids[owner], question: "INQ-1", at: AT }).ask, false, `control: ${owner}`);
 });
