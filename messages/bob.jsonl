@@ -230,3 +230,4 @@
 {"at":"2026-11-04T17:42:35Z","row":"sent","n":118,"to":"job-case-checker","text":"bob-118: program.mjs built where needed, not committed (PR 294); after it merges: job sync, git rm --cached program.mjs, test from fresh build, job complete; wait for BOB's word."}
 {"at":"2026-11-04T17:42:40Z","row":"outcome","n":118,"outcome":"delivered"}
 {"at":"2026-11-04T17:43:03Z","row":"sent","n":119,"to":"job-screens-daily","text":"bob-119: after revert-pin word: job sync, job complete with Chromium unavailable so the 6 browser tests fail at base as on the runner; name them in --not-verified."}
+{"at":"2026-11-04T17:43:07Z","row":"outcome","n":119,"outcome":"delivered"}
