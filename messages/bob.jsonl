@@ -279,3 +279,4 @@
 {"at":"2026-11-04T19:00:38Z","row":"outcome","n":141,"outcome":"delivered"}
 {"at":"2026-11-04T19:00:42Z","row":"outcome","n":142,"outcome":"delivered"}
 {"at":"2026-11-04T19:00:46Z","row":"outcome","n":143,"outcome":"delivered"}
+{"at":"2026-11-04T19:01:07Z","row":"sent","n":144,"to":"job-screens-settings","text":"Pin 9f74398 gives the smoke's base build the full suite budget. Run job sync screens-settings once onto the tranche tip for a fresh gate; no code change."}
