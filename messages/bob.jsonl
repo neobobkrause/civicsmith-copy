@@ -225,3 +225,4 @@
 {"at":"2026-11-04T17:27:44Z","row":"outcome","n":115,"outcome":"delivered"}
 {"at":"2026-11-04T17:27:50Z","row":"sent","n":116,"to":"job-screens-settings","text":"bob-116: scope change (coordinator 17:28): skip consolidation this attempt; fixes only; job complete with --not-verified naming the deferral."}
 {"at":"2026-11-04T17:27:56Z","row":"outcome","n":116,"outcome":"delivered"}
+{"at":"2026-11-04T17:36:57Z","row":"sent","n":117,"to":"job-screens-daily","text":"bob-117: gate red: receipt disagrees + control-plane dependant; investigate locally; on BOB's word after the revert pin, job sync and rerun job complete."}
