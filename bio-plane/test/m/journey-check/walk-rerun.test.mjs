@@ -2,7 +2,7 @@
    pages we control, and fails only what is wrong.
    F2: a handle the store returned as content is a person's name, not a developer slug; a real instance or storage slug is still caught.
    F4: R9's project is titled for its run, so a second walk on one instance is not refused NAME_TAKEN.
-   F5: capture by address walks against the Worker p3dev-<slug>-testpage, whose deploy is held to the product's development account,
+   F5: capture by address walks against the Worker <slug>-testpage, whose deploy is held to the product's development account,
        a p3dev- name, no binding, no secret, no route, and no printed token; the walk setup hands its address to the walk, and with
        none the capture is noted as not walked, never passed.
    F6: R5's roles check excuses an act that is a person's own act on her own roster row, as op-declarations declares them. */
@@ -76,7 +76,7 @@ test("F5: the test page serves the walk's two notices at their paths and 404 els
     const f = join(dir, "worker.mjs");
     writeFileSync(f, src);
     const w = (await import(pathToFileURL(f).href)).default;
-    const get = (p, method = "GET") => w.fetch(new Request(`https://p3dev-p3dev-t1-testpage.sub.workers.dev${p}`, { method }));
+    const get = (p, method = "GET") => w.fetch(new Request(`https://p3dev-t1-testpage.sub.workers.dev${p}`, { method }));
     const a = await get(NOTICE_PATH);
     assert.equal(a.status, 200);
     assert.match(a.headers.get("content-type"), /^text\/html/);
@@ -88,42 +88,45 @@ test("F5: the test page serves the walk's two notices at their paths and 404 els
 });
 
 test("F5: the test page's deploy acts in the product's account only, under a p3dev- name, with no binding, and prints no token; --dry-run calls nothing", async () => {
-  assert.equal(testpageName("p3dev-t1"), "p3dev-p3dev-t1-testpage");
+  assert.equal(testpageName("p3dev-t1"), "p3dev-t1-testpage");
   const p = plan("p3dev-t1", { CF_ACCT: ACCOUNT, CIVICSMITH_TEST_INSTANCE: "p3dev-t1" });
   assert.equal(p.account, ACCOUNT);
   assert.ok(p.name.startsWith("p3dev-"));
   assert.deepEqual(p.metadata.bindings, []);
   assert.deepEqual(Object.keys(p.metadata).sort(), ["bindings", "compatibility_date", "main_module"]);
-  assert.throws(() => plan("p3dev-t1", { CF_ACCT: "0123456789abcdef0123456789abcdef" }), (e) => e instanceof Refused && e.code === "WRONG_ACCOUNT");
-  assert.throws(() => plan("p3dev-t1", { CLOUDFLARE_ACCOUNT_ID: "0123456789abcdef0123456789abcdef" }), (e) => e.code === "WRONG_ACCOUNT");
+  assert.throws(() => plan("p3dev-t1", { CIVICSMITH_TEST_INSTANCE: "p3dev-t1", CF_ACCT: "0123456789abcdef0123456789abcdef" }), (e) => e instanceof Refused && e.code === "WRONG_ACCOUNT");
+  assert.throws(() => plan("p3dev-t1", { CIVICSMITH_TEST_INSTANCE: "p3dev-t1", CF_ACCT: ACCOUNT, CLOUDFLARE_ACCOUNT_ID: "0123456789abcdef0123456789abcdef" }), (e) => e.code === "WRONG_ACCOUNT");
   assert.throws(() => plan("p3dev-t1", { CIVICSMITH_TEST_INSTANCE: "p3dev-t2" }), (e) => e.code === "NOT_THE_COPY");
-  assert.throws(() => plan("Bad Name", {}), (e) => e.code === "NO_SLUG");
+  assert.throws(() => plan("t1", { CF_ACCT: ACCOUNT, CIVICSMITH_TEST_INSTANCE: "t1" }), (e) => e.code === "NOT_A_P3DEV_NAME");
+  assert.throws(() => plan("Bad Name", {}), (e) => e.code === "NOT_A_P3DEV_NAME");
+  assert.throws(() => plan("p3dev-t1", { CF_ACCT: ACCOUNT }), (e) => e.code === "NOT_THE_COPY");
+  assert.throws(() => plan("p3dev-t1", { CIVICSMITH_TEST_INSTANCE: "p3dev-t1" }), (e) => e.code === "WRONG_ACCOUNT");
   const calls = [], said = [];
   const token = "tok-" + "x".repeat(30);
   const fetchOf = async (url, init) => { calls.push({ url, method: init.method, body: init.body }); return new Response(JSON.stringify({ success: true }), { status: 200 }); };
-  await deploy("p3dev-t1", { env: { CF_ACCT: ACCOUNT, CF_TOKEN: token }, dryRun: true, fetchOf, log: (l) => said.push(l) });
+  await deploy("p3dev-t1", { env: { CF_ACCT: ACCOUNT, CIVICSMITH_TEST_INSTANCE: "p3dev-t1", CF_TOKEN: token }, dryRun: true, fetchOf, log: (l) => said.push(l) });
   assert.equal(calls.length, 0, "a dry run calls nothing");
-  await deploy("p3dev-t1", { env: { CF_ACCT: ACCOUNT, CF_TOKEN: token }, fetchOf, log: (l) => said.push(l) });
+  await deploy("p3dev-t1", { env: { CF_ACCT: ACCOUNT, CIVICSMITH_TEST_INSTANCE: "p3dev-t1", CF_TOKEN: token }, fetchOf, log: (l) => said.push(l) });
   assert.deepEqual(calls.map((c) => `${c.method} ${c.url}`), [
-    `PUT https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/scripts/p3dev-p3dev-t1-testpage`,
-    `POST https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/scripts/p3dev-p3dev-t1-testpage/subdomain`]);
+    `PUT https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/scripts/p3dev-t1-testpage`,
+    `POST https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/scripts/p3dev-t1-testpage/subdomain`]);
   const meta = JSON.parse(await calls[0].body.get("metadata").text());
   assert.deepEqual(meta.bindings, []);
   assert.ok(!said.join("\n").includes(token), "no token printed");
-  await assert.rejects(deploy("p3dev-t1", { env: { CF_ACCT: ACCOUNT }, fetchOf }), (e) => e.code === "NO_TOKEN");
+  await assert.rejects(deploy("p3dev-t1", { env: { CF_ACCT: ACCOUNT, CIVICSMITH_TEST_INSTANCE: "p3dev-t1" }, fetchOf }), (e) => e.code === "NO_TOKEN");
 });
 
 test("F5: the walk setup hands the test page's address to the walk when it is deployed, and none when it is not", async () => {
   const asked = [];
   const deployed = async (name) => { asked.push(name); return { status: 200 }; };
-  assert.equal(await testpageAddress("p3dev-t1", "civic7", deployed), "https://p3dev-p3dev-t1-testpage.civic7.workers.dev");
-  assert.deepEqual(asked, ["p3dev-p3dev-t1-testpage"]);
+  assert.equal(await testpageAddress("p3dev-t1", "civic7", deployed), "https://p3dev-t1-testpage.civic7.workers.dev");
+  assert.deepEqual(asked, ["p3dev-t1-testpage"]);
   assert.equal(await testpageAddress("p3dev-t1", "civic7", async () => ({ status: 404 })), null);
   const creds = { P3DEV_BOOTSTRAP_TOKEN: "b", JOURNEY_ADMIN_HANDLE: "a", JOURNEY_ADMIN_PASSWORD: "p", JOURNEY_MEMBER_HANDLE: "m", JOURNEY_MEMBER_PASSWORD: "q" };
-  assert.equal(walkEnv({}, creds, "https://p3dev-p3dev-t1-testpage.civic7.workers.dev")[CITY_ENV], "https://p3dev-p3dev-t1-testpage.civic7.workers.dev");
+  assert.equal(walkEnv({}, creds, "https://p3dev-t1-testpage.civic7.workers.dev")[CITY_ENV], "https://p3dev-t1-testpage.civic7.workers.dev");
   assert.equal(walkEnv({ [CITY_ENV]: "https://stale.example" }, creds, null)[CITY_ENV], undefined);
   /* and the walk takes it, and only a page we control */
-  assert.deepEqual(liveCity({ [CITY_ENV]: "https://p3dev-p3dev-t1-testpage.civic7.workers.dev" }), { city: "https://p3dev-p3dev-t1-testpage.civic7.workers.dev" });
+  assert.deepEqual(liveCity({ [CITY_ENV]: "https://p3dev-t1-testpage.civic7.workers.dev" }), { city: "https://p3dev-t1-testpage.civic7.workers.dev" });
   assert.deepEqual(liveCity({}), { city: null });
   for (const outside of ["https://www.oaklandca.gov", "http://p3dev-x-testpage.civic7.workers.dev", "https://p3dev-x-testpage.evil.example", "https://p3dev-t1.civic7.workers.dev/x"])
     assert.ok(liveCity({ [CITY_ENV]: outside }).problem, outside);
@@ -140,7 +143,7 @@ test("F5: with no test page, R9's capture by address and the steps resting on it
   assert.ok(!none.labels.some((l) => /^5 · capture by address/.test(l)), none.labels.join("\n"));
   assert.ok(!none.labels.some((l) => /^(?:6|7|8|12) · /.test(l)), none.labels.join("\n"));
   const some = stub();
-  await walkAdministrator(some, null, { base: "https://p3dev-t1.civic7.workers.dev", founder: { password: "pw" }, city: "https://p3dev-p3dev-t1-testpage.civic7.workers.dev" }).catch(() => {});
+  await walkAdministrator(some, null, { base: "https://p3dev-t1.civic7.workers.dev", founder: { password: "pw" }, city: "https://p3dev-t1-testpage.civic7.workers.dev" }).catch(() => {});
   assert.ok(some.labels.some((l) => /^5 · capture by address/.test(l)), some.labels.join("\n"));
   assert.ok(!some.notes.includes(NO_TESTPAGE));
 });

@@ -14,7 +14,7 @@
  * usage, from the repository root, with CLOUDFLARE_API_TOKEN (or CF_TOKEN) for account 20b533579290b9b93168345edd3b7f72:
  *   node bio-plane/scripts/p3dev-walk-setup.mjs <p3dev-slug> [--address https://<slug>.<sub>.workers.dev] [--out <file>] [--walk]
  * `--walk` then runs the live walk with those credentials in its environment (never on its command line), and, where the
- * Worker p3dev-<slug>-testpage is deployed (journey-check F5), its workers.dev address as JOURNEY_CITY_ORIGIN. Otherwise:
+ * Worker <slug>-testpage is deployed (journey-check F5), its workers.dev address as JOURNEY_CITY_ORIGIN. Otherwise:
  *   set -a; . ~/.p3dev/<slug>.env; set +a; (cd bio-plane/src/journey-check && npm run journey -- --live <address>)
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, chmodSync, realpathSync } from "node:fs";
@@ -119,7 +119,7 @@ export async function claimAndJoin({ address, creds, save, fetchOf = fetch, log 
   return c;
 }
 
-/* F5: the walk's fixed test page, `p3dev-<slug>-testpage` (journey-check/testpage, deployed by `deploy dev`), on the account's
+/* F5: the walk's fixed test page, `<slug>-testpage` (journey-check/testpage, deployed by `deploy dev`), on the account's
    workers.dev subdomain: its address when the Worker is deployed, else null, and the walk then reports capture by address as
    not walked. `settings` reads the script's settings (`{status}`). */
 export async function testpageAddress(slug, subdomain, settings) {

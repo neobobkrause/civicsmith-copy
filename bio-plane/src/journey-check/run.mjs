@@ -40,7 +40,7 @@ export function selfActs(file = DECLARATIONS_FILE) {
 }
 
 /* F5: the test page the live arm captures by address, from `JOURNEY_CITY_ORIGIN` (the walk setup hands it over): only a
-   development Worker's own workers.dev address, `https://p3dev-<slug>-testpage.<subdomain>.workers.dev`, never an outside site.
+   development Worker's own workers.dev address, `https://<slug>-testpage.<subdomain>.workers.dev` (`p3dev-t1-testpage`), never an outside site.
    Answers `{city}` (null with none given, and the capture is then noted as not walked) or `{problem}`. */
 export const CITY_ENV = "JOURNEY_CITY_ORIGIN";
 export function liveCity(env = process.env) {

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-/* journey-check F5: deploy the walk's fixed test page, the Worker `p3dev-<slug>-testpage`, to the product's development account.
+/* journey-check F5: deploy the walk's fixed test page, the Worker `<slug>-testpage` (`p3dev-t1-testpage`), to the product's development account.
  *
  *   node bio-plane/src/journey-check/testpage/deploy.mjs <slug> [--dry-run]
  *
  * `deploy dev` runs it (process/config.json) with CIVICSMITH_TEST_INSTANCE, CF_TOKEN and CF_ACCT set. Its limits, each checked
- * before any call: account 20b533579290b9b93168345edd3b7f72 only (CF_ACCT and CLOUDFLARE_ACCOUNT_ID, where set, must name it); a
- * Worker name that begins with p3dev-; one module, with no binding, no secret, no route and no custom domain; its workers.dev
+ * before any call: a slug matching /^p3dev-[a-z0-9][a-z0-9-]*$/ and equal to CIVICSMITH_TEST_INSTANCE; CF_ACCT equal to account
+ * 20b533579290b9b93168345edd3b7f72 (and CLOUDFLARE_ACCOUNT_ID, where set); one module, with no binding, no secret, no route and no custom domain; its workers.dev
  * address turned on. The token is read from the environment and never printed. `--dry-run` says what it would do and calls
  * nothing. */
 import { resolve } from "node:path";
@@ -19,13 +19,14 @@ export class Refused extends Error { constructor(code, msg) { super(`REFUSED [${
 
 /** What the deploy would do, checked: `{name, account, metadata, source}`. Throws Refused before any call. */
 export function plan(slug, env = process.env) {
-  if (typeof slug !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(slug)) throw new Refused("NO_SLUG", `the copy's slug ${JSON.stringify(slug ?? null)} is not a Worker name.`);
+  if (typeof slug !== "string" || !/^p3dev-[a-z0-9][a-z0-9-]*$/.test(slug)) throw new Refused("NOT_A_P3DEV_NAME", `the copy's slug ${JSON.stringify(slug ?? null)} is not a p3dev- Worker name.`);
   const name = testpageName(slug);
-  if (!name.startsWith("p3dev-") || name.length > 63) throw new Refused("NOT_A_P3DEV_NAME", `${name} is not a development deployment's name.`);
-  if (env.CIVICSMITH_TEST_INSTANCE && env.CIVICSMITH_TEST_INSTANCE !== slug)
-    throw new Refused("NOT_THE_COPY", `CIVICSMITH_TEST_INSTANCE names ${env.CIVICSMITH_TEST_INSTANCE}, not ${slug}.`);
-  for (const k of ["CF_ACCT", "CLOUDFLARE_ACCOUNT_ID"]) if (env[k] && env[k] !== ACCOUNT)
-    throw new Refused("WRONG_ACCOUNT", `this deploy acts in account ${ACCOUNT} only; ${k} names ${env[k]}.`);
+  if (name.length > 63) throw new Refused("NOT_A_P3DEV_NAME", `${name} is longer than a Worker name may be.`);
+  if (env.CIVICSMITH_TEST_INSTANCE !== slug)
+    throw new Refused("NOT_THE_COPY", `CIVICSMITH_TEST_INSTANCE names ${JSON.stringify(env.CIVICSMITH_TEST_INSTANCE ?? null)}, not ${slug}.`);
+  if (env.CF_ACCT !== ACCOUNT) throw new Refused("WRONG_ACCOUNT", `this deploy acts in account ${ACCOUNT} only; CF_ACCT names ${JSON.stringify(env.CF_ACCT ?? null)}.`);
+  if (env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_ACCOUNT_ID !== ACCOUNT)
+    throw new Refused("WRONG_ACCOUNT", `this deploy acts in account ${ACCOUNT} only; CLOUDFLARE_ACCOUNT_ID names ${env.CLOUDFLARE_ACCOUNT_ID}.`);
   const metadata = { main_module: "worker.mjs", compatibility_date: COMPATIBILITY_DATE, bindings: [] };
   return { name, account: ACCOUNT, metadata, source: testpageSource() };
 }
