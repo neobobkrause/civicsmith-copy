@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-gate","verdict":"not affected","evidence":"build/modules.json:114 ai-gate has empty paths and tests, so no file of it imports agent-steps (it only lists agent-steps in uses, with no code yet to use the changed behaviour)","at":"2026-11-04T08:58:42.641Z","key":"agent-steps:185","worker":"aabbd983c646d6736","cost":"0.2"}
