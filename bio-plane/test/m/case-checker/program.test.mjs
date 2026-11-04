@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,6 +27,12 @@ test("R13: the build gives the same bytes every time, and the committed program.
   assert.ok(P.text === one.text);
   assert.equal(P.body_sha256, one.body_sha256);
   assert.equal(programModule(one), programModule(two));
+});
+
+test("R13 R32: the committed program.mjs is, byte for byte, the module a fresh generation writes (regenerate: node bio-plane/src/case-checker/build-program.mjs)", async () => {
+  const committed = readFileSync(new URL("../../../src/case-checker/program.mjs", import.meta.url), "utf8");
+  const fresh = programModule(await buildProgram());
+  assert.ok(committed === fresh, `program.mjs is stale (committed ${sha(committed)}, fresh ${sha(fresh)}): run node bio-plane/src/case-checker/build-program.mjs`);
 });
 
 test("R13: the program file carries its own SHA-256: its first line names the SHA-256 of everything after it, and the served SHA-256 is the whole file's", () => {
