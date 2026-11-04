@@ -45,15 +45,32 @@ export function mentionedMethod(pairRule, entityId) {
  * instance; `positionOf(row, side)` reads an end's recorded position. `at` and `scope` change nothing: the kind is
  * undated and holds no hunch. Synchronous; writes nothing.
  */
-export function mentionedNeighbours(k, args, { positionOf = () => null } = {}) {
+export function mentionedNeighbours(k, args, opts = {}) {
+  const s = mentionedSet(k, args, opts);
+  if (s.refused) return s;
+  if (s.hub) return { items: [], hub: s.hub, ...s.extra };
+  const page = isObj(args) ? args.page : null;
+  const after = isObj(page) && typeof page.after === "string" ? page.after : null;
+  const rest = after ? s.items.filter((i) => i.id > after) : s.items;
+  const shown = rest.slice(0, BOUNDS.fanout);
+  const more = rest.length > shown.length;
+  return { items: shown, ...(more ? { next: { after: shown[shown.length - 1].id } } : {}), ...s.extra };
+}
+
+/**
+ * R63–R65, R74, R75: every `mentioned_together` item of `node`, unpaged and sorted by id: `{items, hub?, extra}`, or a
+ * refusal; `extra` the answer's own fields (`hubs`, the co-mention hub judged on this kind alone, R75; `truncated` and
+ * `bounds`, R64; the warn band's `set_size` and `says`).
+ */
+export function mentionedSet(k, args, { positionOf = () => null } = {}) {
   const a = isObj(args) ? args : {};
-  const { node, kinds, page, viewer } = a;
+  const { node, kinds, viewer } = a;
   /* connection-grammar R7: a read names its viewer; an absent one is neither an administrator nor the public. */
   if (viewer === undefined || viewer === null || viewer === "")
     return { refused: "VIEWER_MISSING", why: word("duties.why.read_names_member") };
-  if (Array.isArray(kinds) && !kinds.includes(MENTIONED_KIND)) return { items: [] };
+  if (Array.isArray(kinds) && !kinds.includes(MENTIONED_KIND)) return { items: [], extra: {} };
   /* R33: a node the viewer may not see answers as one the record does not hold. */
-  if (typeof node !== "string" || !node || !k.sees(node, viewer)) return { items: [] };
+  if (typeof node !== "string" || !node || !k.sees(node, viewer)) return { items: [], extra: {} };
   const keep = k.redactor(viewer);
   const rows = [...k.sql.exec(
     `SELECT * FROM connections WHERE (a_bundle_id = ? OR b_bundle_id = ?) AND a_bundle_id <> b_bundle_id
@@ -97,17 +114,13 @@ export function mentionedNeighbours(k, args, { positionOf = () => null } = {}) {
   /* connection-grammar R6: a node whose set exceeds the hub bound is answered by its size, with no items. */
   if (items.length > BOUNDS.hub)
     return { items: [], hub: { set_size: items.length,
-             why: word("connections.why.document_mentioned_together", { items: String(items.length), hub: String(BOUNDS.hub) }) }, ...extra };
+             why: word("connections.why.document_mentioned_together", { items: String(items.length), hub: String(BOUNDS.hub) }) }, extra };
 
-  const after = isObj(page) && typeof page.after === "string" ? page.after : null;
-  const rest = after ? items.filter((i) => i.id > after) : items;
-  const shown = rest.slice(0, BOUNDS.fanout);
-  const more = rest.length > shown.length;
-  return { items: shown, ...(more ? { next: { after: shown[shown.length - 1].id } } : {}), ...extra,
+  return { items, extra: { ...extra,
            ...(items.length >= WARN_BAND
              ? { set_size: items.length,
                  says: word("connections.says.document_mentioned_together", { items: String(items.length) }) }
-             : {}) };
+             : {}) } };
 }
 
 function cappedWhy(e, d) {
