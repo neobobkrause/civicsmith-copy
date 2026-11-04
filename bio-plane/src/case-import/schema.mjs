@@ -177,6 +177,18 @@ CREATE TABLE IF NOT EXISTS case_import_group_fields (
 );
 -- R17: a watch of the publisher's docket. The latest watch of an import is in force unless it has ended; a later one
 -- replaces an earlier.
+-- R34 (T53; DEC-461): the source's statement of the passages it published without a grade, as the edition's case
+-- document states it (case-grammar R36), recorded once with the edition: stated 1 with its rows (a list, empty when the
+-- document carries no block), or stated 0 for a format that predates the statement (unreadable 1 when the key is
+-- present and not a list). Never recomputed or filled; append-only (R12).
+CREATE TABLE IF NOT EXISTS case_import_ungraded (
+  import_id TEXT NOT NULL,
+  edition INTEGER NOT NULL,
+  stated INTEGER NOT NULL,
+  unreadable INTEGER NOT NULL DEFAULT 0,
+  rows TEXT,
+  PRIMARY KEY (import_id, edition)
+);
 CREATE TABLE IF NOT EXISTS case_import_watches (
   rn            INTEGER PRIMARY KEY AUTOINCREMENT,
   import_id     TEXT NOT NULL,
@@ -261,7 +273,7 @@ export const CASE_IMPORT_TABLES = Object.freeze(["case_imports", "case_import_ed
   "case_import_documents",
   "case_import_acceptances", "case_import_withdrawals", "case_import_flags", "case_import_clears",
   "case_import_edition_keys", "case_import_group_fields", "case_import_watches", "case_import_watch_ends", "case_import_docket_reads",
-  "case_import_docket_entries", "case_import_reruns", "case_import_rerun_pairs"]);
+  "case_import_docket_entries", "case_import_reruns", "case_import_rerun_pairs", "case_import_ungraded"]);
 
 /** Creates the tables; idempotent. */
 export function migrateCaseImport(sql) {
