@@ -1,0 +1,1 @@
+{"row":"triage","user":"journey-check","verdict":"not affected","evidence":"build/modules.json:202 journey-check (bio-plane/src/journey-check/) holds no file that imports screens-settings, every code file under its paths read at 2489c75064","at":"2026-11-04T15:42:21.013Z","key":"screens-settings:174","worker":"merge: imports check","cost":"0"}
