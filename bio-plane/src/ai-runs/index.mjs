@@ -3857,6 +3857,7 @@ export class AiRuns {
   static #heldFor(row) {
     const h = AiRuns.#holdOf(row);
     if (!h) return null;
+    /* R96: `aisend` is ai-accounts' act (its R51); once it records the notice the next dispatch goes on */
     const choices = h.kind === "hop_offer" ? ["aicontinue", "aistop"] : h.kind === "disclosure" ? ["aisend", "aisendrefuse", "aiswitchaccount", "aiwithout"]
       : ["ai.choice.wait", "ai.choice.switch", "ai.choice.without_ai"];
     return { kind: h.kind, reason: h.reason ?? null, since: h.since ?? null, until: h.until ?? null,
@@ -4102,24 +4103,6 @@ export class AiRuns {
       if (kind === "wait_switch") this.sql.exec(`UPDATE ai_runs SET wait_choice = ? WHERE run = ?`, JSON.stringify(choice), c.row.run);
     });
     return { run: c.row.run, acted: true, ...(kind === "wait_switch" ? { wait_choice: choice } : { wait: minutes }), until };
-  }
-
-  /** R96 (T53; `op=aisend`): the member accepts what the new recipient receives: `ai-accounts` records it seen (its R51,
-   *  her act alone, never on anyone's behalf), the hold is cleared and the run dispatched (on the offered account when the
-   *  notice stood in a hop's way). */
-  async aiSend({ run = null, by = null, at = null } = {}) {
-    const c = this.#memberChoice(run, by, word("ai-runs.act.continuing_run"));
-    if (c.answer) return c.answer;
-    const iso = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
-    const hold = AiRuns.#holdOf(c.row);
-    if (!hold || hold.kind !== "disclosure") return { run: c.row.run, acted: false, held: hold ? hold.kind : null };
-    const r = hold.recipient || {};
-    let seen = null;
-    try { seen = this.#aiAccounts().recipientNoticeSeen({ member: c.member, provider: r.provider, host: r.host, by: c.member }); } catch { seen = null; }
-    if (!seen || seen.ok !== true) { const { ok: _ok, ...rest } = seen || { code: "RECIPIENT_NOTICE_DUE" }; return { run: c.row.run, acted: false, ...rest }; }
-    this.#transact(() => this.#clearHold(c.row.run));
-    const out = await this.#redispatch(c.row, iso, hold.offer ? { account: this.#hopAccount(c.row, hold.offer), hop: { reason: hold.offer.reason || hold.reason } } : {});
-    return { run: c.row.run, acted: true, ...out };
   }
 
   /** R96 (T53; `op=aisendrefuse`): the member refuses the new recipient: nothing is sent to it, the run stays held (she may
@@ -4403,7 +4386,6 @@ export function aiRunsOps(runs, url, body) {
     aiwait: () => runs.aiWait({ run: (body || {}).run ?? q("run"), wait: (body || {}).wait ?? q("wait"), by: memberStamp() }),
     aiswitchaccount: () => runs.aiSwitchAccount({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
     aiwithout: () => runs.aiWithout({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
-    aisend: () => runs.aiSend({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
     aisendrefuse: () => runs.aiSendRefuse({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
     aiwaitswitch: () => runs.waitThenSwitch({ run: (body || {}).run ?? q("run"), wait: (body || {}).wait ?? q("wait"), by: memberStamp() }),
     airunparts: () => runs.runParts({ run: (body || {}).run ?? q("run"), viewer: q("viewer") }),
@@ -4418,23 +4400,22 @@ export const DECLARED_OPS = Object.freeze({
   airunclose: { classes: ["admin","member","probe"], mutating: true, weight: "reversible", description: localize("ai-runs.declared.airunclose", "investigative run lifecycle, keyed by run id: ends a run and names the bound that stopped it (§14b.6); what the run PROPOSED is a separate act with its own author"),
     fields: { accepts: ["run","bound","condition","at"], requires: ["run","bound"] } },
   /* R90 (T53; DEC-420's spellings, `draft-assistant-screens.md` §4): the member's choices over her held run (R94–R96, R105)
-     and "How this run went" (R103), each read from its arm whole */
-  aicontinue: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-runs.declared.aicontinue", "the run's member continues her run on the next account, which changes who pays (R94)"),
+     and "How this run went" (R103), each read from its arm whole; each a member's act over her own run, with no
+     capability rung (`needs: null`, op-declarations R80), as ai-accounts' own acts are declared */
+  aicontinue: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aicontinue", "the run's member continues her run on the next account, which changes who pays (R94)"),
     fields: { accepts: ["run"], requires: ["run"] } },
-  aistop: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-runs.declared.aistop", "the run's member declines the next account or stops her held run; it ends cancelled with what it found kept (R94, R102)"),
+  aistop: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aistop", "the run's member declines the next account or stops her held run; it ends cancelled with what it found kept (R94, R102)"),
     fields: { accepts: ["run"], requires: ["run"] } },
-  aiwait: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-runs.declared.aiwait", "the run's member waits a set time for her AI to come back (R95, R105)"),
+  aiwait: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aiwait", "the run's member waits a set time for her AI to come back (R95, R105)"),
     fields: { accepts: ["run","wait"], requires: ["run","wait"] } },
-  aiswitchaccount: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-runs.declared.aiswitchaccount", "the run's member moves her held run to the next account on her list (R95, R93)"),
+  aiswitchaccount: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aiswitchaccount", "the run's member moves her held run to the next account on her list (R95, R93)"),
     fields: { accepts: ["run"], requires: ["run"] } },
-  aiwithout: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-runs.declared.aiwithout", "the run's member continues without AI; the run ends with what it found kept (R95)"),
+  aiwithout: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aiwithout", "the run's member continues without AI; the run ends with what it found kept (R95)"),
     fields: { accepts: ["run"], requires: ["run"] } },
-  aisend: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-runs.declared.aisend", "the run's member accepts what a new recipient receives, and her held run goes on (R96)"),
-    fields: { accepts: ["run"], requires: ["run"] } },
-  aisendrefuse: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-runs.declared.aisendrefuse", "the run's member refuses a new recipient; nothing is sent and the run stays held (R96)"),
+  aisendrefuse: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aisendrefuse", "the run's member refuses a new recipient; nothing is sent and the run stays held (R96)"),
     fields: { accepts: ["run"], requires: ["run"] } },
   airunparts: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-runs.declared.airunparts", "read: how a run went, part by part, each with its AI, its account's level and its instants; writes nothing (R103)"),
     fields: { accepts: ["run"], requires: ["run"] } },
-  aiwaitswitch: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-runs.declared.aiwaitswitch", "the run's member waits a set time, then switches to her next account if her AI is still down (R105)"),
+  aiwaitswitch: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aiwaitswitch", "the run's member waits a set time, then switches to her next account if her AI is still down (R105)"),
     fields: { accepts: ["run","wait"], requires: ["run","wait"] } },
 });

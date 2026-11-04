@@ -221,7 +221,7 @@ test("R98 (T53; scheduler R8): the consumer is ai-health-probe under the answer 
   assert.equal(AiRuns.PROBE_BATCH, 10);
 });
 
-test("R96 (T53; AD14, AD37): a notice before a new recipient holds the run — an ai_stop disclosure holds it; a dispatch is withheld RECIPIENT_NOTICE_DUE while ai-accounts records the notice unread, nothing sent; control: after her aisend it is dispatched once", async () => {
+test("R96 (T53; AD14, AD37): a notice before a new recipient holds the run — an ai_stop disclosure holds it; a dispatch is withheld RECIPIENT_NOTICE_DUE while ai-accounts records the notice unread, nothing sent; control: after her aisend (ai-accounts' act) it is dispatched once", async () => {
   const { w, aw } = await segWorld({ own: 1 });
   const t = await stop(w, "disclosure", { recipient: { provider: "anthropic", host: "anthropic" } });
   assert.deepEqual([t.segment_end.stop.decision, t.segment_end.stop.hold], ["held", "disclosure"]);
@@ -232,9 +232,12 @@ test("R96 (T53; AD14, AD37): a notice before a new recipient holds the run — a
   assert.deepEqual([withheld.dispatched, withheld.dispatch.state, withheld.dispatch.withheld], [false, "WITHHELD", "RECIPIENT_NOTICE_DUE"]);
   assert.equal(aw.calls.length, 1, "nothing sent");
   w.aiAccounts.recipientNoticeDue = real;
-  const sent = await w.op("aisend", { actor: "member:ann" }, { run: "R1" });
+  /* her aisend is ai-accounts' act (its R51), recording the notice read; the next dispatch then goes on */
+  assert.equal(w.aiAccounts.recipientNoticeSeen({ member: "ann", provider: "anthropic", host: "anthropic", by: "ann" }).ok, true);
+  const sent = await w.runs.dispatchMemberRun({ run: "R1", by: "member:ann", at: at(3) });
   assert.equal(sent.dispatched, true, JSON.stringify(sent));
   assert.equal(aw.calls.length, 2, "one dispatch");
+  assert.equal((await w.runs.read({ run: "R1", viewer: "member:ann" })).session.held, null, "the hold is cleared");
 });
 
 test("R97 (T53; AIR28): an AI path not ready withholds the dispatch — a stub aipathready answering auth_failed appends the resumable entry and the run is not dispatched, named AI_PATH_NOT_READY; control: ready dispatches", async () => {
@@ -324,7 +327,9 @@ test("R52 (T53; AIR26, BR19): after a hop the next account's own limits apply, n
 });
 
 test("R90 (T53; T51, K4168): the module declares the assistant ops it serves — each held true against its arm by declaredOpHolds: with only its requires, without each, and with a field outside its accepts", async () => {
-  for (const op of ["aicontinue", "aistop", "aiwait", "aiswitchaccount", "aiwithout", "aisend", "aisendrefuse", "airunparts", "aiwaitswitch"]) {
+  /* aisend is ai-accounts' op (its R51, R61), so it is not declared twice */
+  assert.equal("aisend" in DECLARED_OPS, false);
+  for (const op of ["aicontinue", "aistop", "aiwait", "aiswitchaccount", "aiwithout", "aisendrefuse", "airunparts", "aiwaitswitch"]) {
     assert.ok(DECLARED_OPS[op], op);
     await declaredOpHolds({ op, declaration: DECLARED_OPS[op],
       call: async (fields) => { const { w } = await segWorld({ own: 1 });
