@@ -168,3 +168,4 @@
 {"at":"2026-11-04T13:38:57Z","row":"sent","n":87,"to":"job-agent-worker","text":"BOB: PR 250 merged (tranche b8a5e14f04): agent-worker now uses ai-catalogue and ai-accounts. Run job sync agent-worker, then carry on to job complete."}
 {"at":"2026-11-04T13:39:09Z","row":"outcome","n":87,"outcome":"delivered"}
 {"at":"2026-11-04T13:49:12Z","row":"sent","n":88,"to":"job-interface-shell","text":"BOB: PR 172's gate (bec779187a, base ca57d3bc) is red on 'receipt disagrees': it measured 358 pass / 30 fail on the newer tranche, all 30 base-red, while your receipt holds the older count. Run job sync interface-shell, then rerun job complete with the same flags, naming the base-red tests as they now stand, so the receipt matches. No cost flag."}
+{"at":"2026-11-04T13:49:21Z","row":"outcome","n":88,"outcome":"delivered"}
