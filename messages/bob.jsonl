@@ -300,3 +300,4 @@
 {"at":"2026-11-04T20:52:40Z","row":"sent","n":153,"to":"job-case-checker","text":"Your diagnosis of PR 301 is clear; options (a) regenerate tracked generated paths, (b) untrack once the gate accepts it, (c) todo are with the coordinator; BOB recommends holding until after the first dev release, then (b). Don't push or restart; wait."}
 {"at":"2026-11-04T20:52:43Z","row":"outcome","n":153,"outcome":"delivered"}
 {"at":"2026-11-04T21:10:45Z","row":"sent","n":154,"to":"job-control-plane","text":"Add notice screens-settings:291 to the ones you answer (the app script now carries Settings without aimine/aiproviders and accountusesset sending account_id); same sync, same t46-app confirmation."}
+{"at":"2026-11-04T21:10:55Z","row":"outcome","n":154,"outcome":"delivered"}
