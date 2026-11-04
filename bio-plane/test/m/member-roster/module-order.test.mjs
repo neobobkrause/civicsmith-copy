@@ -153,3 +153,28 @@ test("R61 R25 three listeners registered in an order other than the file's are c
   assert.equal(w.m.memberSet({ memberId: "ann", status: "revoked", by: "admin" }).ok, true);
   assert.deepEqual(heard, [MODULE_ORDER[3], MODULE_ORDER[40], MODULE_ORDER[120], "not-in-the-file"]);
 });
+
+/* F1 (4 Nov; attempt 3 after reader-contract made modules.json 200): the generator's own `--check`, run as BOB and
+   store-assembly run it from the repository root, passes on the committed order.mjs, so store.test's R2/R10 read the
+   file's order. Control: the same check over a copy of the file with one module more exits 1 naming the stale file. */
+test("F1 order-build.mjs --check exits 0 on the committed order.mjs for the current build/modules.json, and 1 when the file holds a module the list lacks", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const root = fileURLToPath(new URL("../../../../", import.meta.url));
+  const tool = "bio-plane/src/member-roster/order-build.mjs";
+  const ok = spawnSync(process.execPath, [tool, "--check"], { cwd: root, encoding: "utf8" });
+  assert.equal(ok.status, 0, `order.mjs is stale: ${ok.stderr}`);
+  const dir = mkdtempSync(join(tmpdir(), "mr-f1-"));
+  try {
+    const file = JSON.parse(await readFile(new URL("../../../../build/modules.json", import.meta.url), "utf8"));
+    file.modules.push({ ...file.modules.at(-1), id: "f1-control-module" });
+    const copy = join(dir, "modules.json");
+    writeFileSync(copy, JSON.stringify(file));
+    const stale = spawnSync(process.execPath, [tool, "--check", "--modules", copy], { cwd: root, encoding: "utf8" });
+    assert.equal(stale.status, 1, "a file with one module more stales order.mjs");
+    assert.match(stale.stderr, /order\.mjs is stale/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
