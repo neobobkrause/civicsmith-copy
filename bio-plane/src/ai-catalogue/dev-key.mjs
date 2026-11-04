@@ -4,7 +4,10 @@
  *   CIVICSMITH_TEST_INSTANCE=<slug> CF_TOKEN=... CF_ACCT=20b533579290b9b93168345edd3b7f72 \
  *     node bio-plane/src/ai-catalogue/dev-key.mjs <slug> [--dry-run]
  *
- * Run by the process's `deploy dev` after the plane `p3dev-<slug>` is deployed. It:
+ * Run by the process's `deploy dev` after the plane is deployed. `<slug>` is the plane Worker's own name, as
+ * `scripts/deploy.mjs <slug>` names it (`p3dev-t1`), and must begin `p3dev-`. Before anything is set the Worker is
+ * looked up (`wrangler deployments list --name <slug>`); a Worker that is not there is refused, so the secrets are
+ * never what creates one. It:
  *  1. generates an ed25519 key pair in memory, its public line commented `bio-ai-catalogue` + `DEVELOPMENT_KEY_MARK`;
  *  2. signs the seed this release carries (`RELEASE_SEED`, R39) in `NS_AI_CATALOGUE` with it, and checks that the
  *     signature verifies against the keys a development build trusts and is refused by a release build's;
@@ -34,7 +37,6 @@ export const DEVELOPMENT_SIGNING_SECRET = "AI_CATALOGUE_DEVELOPMENT_SIGNING_KEY"
 /** The comment of a development catalogue key's public line. */
 export const DEVELOPMENT_KEY_COMMENT = `bio-ai-catalogue${DEVELOPMENT_KEY_MARK}`;
 
-const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,40}$/;
 const WORKER_RE = /^p3dev-[a-z0-9][a-z0-9-]*$/;
 
 /* ------------------------------------------------------------------ an SSHSIG signer (PROTOCOL.sshsig), in memory */
@@ -93,23 +95,23 @@ const IS_CLI = SELF.endsWith(`${sep}ai-catalogue${sep}dev-key.mjs`);
 /* bio-plane's own wrangler, beside this file's package */
 const WRANGLER = IS_CLI ? resolve(dirname(SELF), "..", "..", "node_modules", "wrangler", "bin", "wrangler.js") : "wrangler.js";
 
-/** Runs `wrangler secret bulk --name <worker>` with `json` on stdin; answers `{code, stdout, stderr}`. The child's
+/** Runs wrangler with `args`, `stdin` written to it (empty when none); answers `{code, stdout, stderr}`. The child's
  *  environment is built here: the token and account by wrangler's names, its disk log off, no inherited log level. */
-export function runWrangler({ worker, json, token, account, bin = WRANGLER }) {
+export function runWrangler({ args, stdin = "", token, account, bin = WRANGLER }) {
   return new Promise((resolve) => {
     const env = { PATH: process.env.PATH ?? "", HOME: process.env.HOME ?? tmpdir(),
       CLOUDFLARE_API_TOKEN: token, CLOUDFLARE_ACCOUNT_ID: account,
       WRANGLER_WRITE_LOGS: "false", WRANGLER_LOG: "log", WRANGLER_SEND_METRICS: "false", CI: "1" };
     for (const k of ["HTTPS_PROXY", "HTTP_PROXY", "NO_PROXY", "https_proxy", "http_proxy", "no_proxy",
       "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE"]) if (process.env[k] !== undefined) env[k] = process.env[k];
-    const child = spawn(process.execPath, [bin, "secret", "bulk", "--name", worker], { cwd: tmpdir(), env,
+    const child = spawn(process.execPath, [bin, ...args], { cwd: tmpdir(), env,
       stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "", stderr = "";
     child.stdout.on("data", (d) => { stdout += d; });
     child.stderr.on("data", (d) => { stderr += d; });
     child.on("error", () => resolve({ code: 127, stdout, stderr: `${stderr}wrangler could not be started\n` }));
     child.on("close", (code) => resolve({ code: code ?? 1, stdout, stderr }));
-    child.stdin.end(json);
+    child.stdin.end(stdin);
   });
 }
 
@@ -137,9 +139,9 @@ export async function main(argv, env = process.env, { log = console.log, err = c
     err("usage: CIVICSMITH_TEST_INSTANCE=<slug> CF_TOKEN=... CF_ACCT=... node bio-plane/src/ai-catalogue/dev-key.mjs <slug> [--dry-run]");
     return 2;
   }
-  const worker = `p3dev-${slug}`;
-  if (!SLUG_RE.test(slug) || !WORKER_RE.test(worker)) {
-    err(`REFUSED [NOT_A_DEVELOPMENT_NAME]: the plane named for \`${slug}\` is not a p3dev- name. Nothing was set.`);
+  const worker = slug;
+  if (!WORKER_RE.test(worker) || worker.length > 63) {
+    err(`REFUSED [NOT_A_DEVELOPMENT_NAME]: \`${slug}\` is not a p3dev- Worker name. Nothing was set.`);
     return 1;
   }
   if (env.CF_ACCT !== DEVELOPMENT_ACCOUNT) {
@@ -164,8 +166,14 @@ export async function main(argv, env = process.env, { log = console.log, err = c
     log(`dev-key: dry run: would set on ${worker} in ${DEVELOPMENT_ACCOUNT}, as Worker secrets through wrangler's stdin: ${names}. Nothing was sent; the key is discarded.`);
     return 0;
   }
+  const auth = { token: env.CF_TOKEN, account: env.CF_ACCT };
+  const found = await wrangler({ args: ["deployments", "list", "--name", worker], ...auth });
+  if (found.code !== 0) {
+    err(`REFUSED [NO_SUCH_WORKER]: ${worker} is not deployed in ${DEVELOPMENT_ACCOUNT} (wrangler deployments list exited ${found.code}); a secret is never what creates a Worker. Nothing was set; the key is discarded.`);
+    return 1;
+  }
   log(`dev-key: setting on ${worker}: ${names} …`);
-  const r = await wrangler({ worker, json: JSON.stringify(vars), token: env.CF_TOKEN, account: env.CF_ACCT });
+  const r = await wrangler({ args: ["secret", "bulk", "--name", worker], stdin: JSON.stringify(vars), ...auth });
   const said = mask(`${r.stdout ?? ""}${r.stderr ?? ""}`, vars).trim();
   if (said) for (const l of said.split("\n")) log(`  wrangler: ${l}`);
   if (r.code !== 0) {

@@ -13,26 +13,32 @@ import { main, makeDevelopmentKey, runWrangler, DEVELOPMENT_ACCOUNT, DEVELOPMENT
   from "../../../src/ai-catalogue/dev-key.mjs";
 import { newKey, sign, world, AT } from "./fixture.mjs";
 
-const ENV = { CIVICSMITH_TEST_INSTANCE: "t1", CF_TOKEN: "token-for-test", CF_ACCT: DEVELOPMENT_ACCOUNT };
+const ENV = { CIVICSMITH_TEST_INSTANCE: "p3dev-t1", CF_TOKEN: "token-for-test", CF_ACCT: DEVELOPMENT_ACCOUNT };
 const BOB = CATALOGUE_KEYS.filter((l) => !isDevelopmentKey(l));
 const FAKE = fileURLToPath(new URL("./fake-wrangler.mjs", import.meta.url));
 
-/** Runs the command with a recorder for wrangler; answers {code, out, calls, vars}. */
-async function run(argv, env = ENV, wranglerCode = 0) {
+/** Runs the command with a recorder for wrangler; answers {code, out, calls, sets, vars}. `listCode` is the lookup's
+ *  exit (0: the Worker is there), `bulkCode` the secrets'. */
+async function run(argv, env = ENV, { listCode = 0, bulkCode = 0 } = {}) {
   const lines = [], calls = [];
   const code = await main(argv, env, { log: (l) => lines.push(String(l)), err: (l) => lines.push(String(l)),
-    wrangler: async (a) => { calls.push(a); return { code: wranglerCode, stdout: "ok\n", stderr: "" }; } });
-  return { code, out: lines.join("\n"), calls, vars: calls[0] ? JSON.parse(calls[0].json) : null };
+    wrangler: async (a) => { calls.push(a);
+      return { code: a.args[0] === "deployments" ? listCode : bulkCode, stdout: "ok\n", stderr: "" }; } });
+  const sets = calls.filter((c) => c.args[0] === "secret");
+  return { code, out: lines.join("\n"), calls, sets, vars: sets[0] ? JSON.parse(sets[0].stdin) : null };
 }
+const bulkOf = (a) => (a.args[0] === "secret" ? JSON.parse(a.stdin) : null);
 const publicOnly = (vars) => Object.fromEntries(Object.entries(vars).filter(([k]) => k !== DEVELOPMENT_SIGNING_SECRET));
 const releaseEnv = (vars) => Object.fromEntries(Object.entries(publicOnly(vars)).filter(([k]) => k !== DEVELOPMENT_VAR));
 
 test("dev-key: a seed signed by a generated development key verifies on a development deployment, and the copy is current from it", async () => {
-  const r = await run(["t1"]);
+  const r = await run(["p3dev-t1"]);
   assert.equal(r.code, 0, r.out);
-  assert.equal(r.calls.length, 1);
-  assert.equal(r.calls[0].worker, "p3dev-t1");
-  assert.equal(r.calls[0].account, DEVELOPMENT_ACCOUNT);
+  /* the slug is the plane Worker's own name: it is looked up, then its secrets are set, both on p3dev-t1 */
+  assert.deepEqual(r.calls.map((c) => c.args), [["deployments", "list", "--name", "p3dev-t1"],
+    ["secret", "bulk", "--name", "p3dev-t1"]]);
+  assert.equal(r.calls[0].stdin ?? "", "");
+  for (const c of r.calls) assert.equal(c.account, DEVELOPMENT_ACCOUNT);
   assert.deepEqual(Object.keys(r.vars).sort(),
     [DEVELOPMENT_VAR, DEVELOPMENT_KEY_VAR, SEED_SIGNATURE_VAR, DEVELOPMENT_SIGNING_SECRET].sort());
   assert.equal(r.vars[DEVELOPMENT_VAR], "1");
@@ -45,7 +51,7 @@ test("dev-key: a seed signed by a generated development key verifies on a develo
 });
 
 test("dev-key: the same signed seed is refused UNKNOWN_KEY on a release environment, the copy unavailable", async () => {
-  const r = await run(["t1"]);
+  const r = await run(["p3dev-t1"]);
   for (const env of [releaseEnv(r.vars), { [SEED_SIGNATURE_VAR]: r.vars[SEED_SIGNATURE_VAR] },
     { ...releaseEnv(r.vars), [DEVELOPMENT_VAR]: "true" }]) {
     const { cat } = await world({ keys: null, env });
@@ -61,8 +67,9 @@ test("dev-key: the same signed seed is refused UNKNOWN_KEY on a release environm
 test("dev-key: the private half goes to wrangler's stdin only and appears in no output, the run's or wrangler's", async () => {
   const lines = [];
   let seen = null;
-  const code = await main(["t1"], ENV, { log: (l) => lines.push(String(l)), err: (l) => lines.push(String(l)),
-    wrangler: async (a) => { seen = JSON.parse(a.json); return { code: 0, stdout: `echo ${a.json}\n`, stderr: `secret ${seen[DEVELOPMENT_SIGNING_SECRET]}\n` }; } });
+  const code = await main(["p3dev-t1"], ENV, { log: (l) => lines.push(String(l)), err: (l) => lines.push(String(l)),
+    wrangler: async (a) => { const v = bulkOf(a); if (!v) return { code: 0, stdout: "", stderr: "" };
+      seen = v; return { code: 0, stdout: `echo ${a.stdin}\n`, stderr: `secret ${v[DEVELOPMENT_SIGNING_SECRET]}\n` }; } });
   assert.equal(code, 0);
   const secret = seen[DEVELOPMENT_SIGNING_SECRET];
   assert.ok(secret.length > 40);
@@ -80,9 +87,11 @@ test("dev-key: the private half goes to wrangler's stdin only and appears in no 
 test("dev-key: through the spawn path, a wrangler that echoes its stdin still shows no private key; its disk log is off", async () => {
   const lines = [];
   let seen = null;
-  const code = await main(["t1"], ENV, { log: (l) => lines.push(String(l)), err: (l) => lines.push(String(l)),
-    wrangler: (a) => { seen = JSON.parse(a.json); return runWrangler({ ...a, bin: FAKE }); } });
+  const called = [];
+  const code = await main(["p3dev-t1"], ENV, { log: (l) => lines.push(String(l)), err: (l) => lines.push(String(l)),
+    wrangler: (a) => { called.push(a.args); seen = bulkOf(a) ?? seen; return runWrangler({ ...a, bin: FAKE }); } });
   assert.equal(code, 0);
+  assert.deepEqual(called, [["deployments", "list", "--name", "p3dev-t1"], ["secret", "bulk", "--name", "p3dev-t1"]]);
   const out = lines.join("\n");
   assert.match(out, /args secret bulk --name p3dev-t1/);
   assert.match(out, new RegExp(`WRANGLER_WRITE_LOGS=false account=${DEVELOPMENT_ACCOUNT}`));
@@ -92,7 +101,7 @@ test("dev-key: through the spawn path, a wrangler that echoes its stdin still sh
 });
 
 test("dev-key: a dry run sends nothing and prints no key material", async () => {
-  const r = await run(["t1", "--dry-run"], { ...ENV, CF_TOKEN: undefined });
+  const r = await run(["p3dev-t1", "--dry-run"], { ...ENV, CF_TOKEN: undefined });
   assert.equal(r.code, 0, r.out);
   assert.equal(r.calls.length, 0);
   assert.match(r.out, /dry run/);
@@ -101,21 +110,39 @@ test("dev-key: a dry run sends nothing and prints no key material", async () => 
 
 test("dev-key: refuses any account but the development one, any name that is not p3dev-, and an unmarked copy; nothing is sent", async () => {
   for (const [argv, env, code] of [
-    [["t1"], { ...ENV, CF_ACCT: "0123456789abcdef0123456789abcdef" }, "WRONG_ACCOUNT"],
-    [["t1"], { ...ENV, CF_ACCT: undefined }, "WRONG_ACCOUNT"],
+    [["p3dev-t1"], { ...ENV, CF_ACCT: "0123456789abcdef0123456789abcdef" }, "WRONG_ACCOUNT"],
+    [["p3dev-t1"], { ...ENV, CF_ACCT: undefined }, "WRONG_ACCOUNT"],
+    [["t1"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "t1" }, "NOT_A_DEVELOPMENT_NAME"],
+    [["p3dev-"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "p3dev-" }, "NOT_A_DEVELOPMENT_NAME"],
+    [["biosmoke8"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "biosmoke8" }, "NOT_A_DEVELOPMENT_NAME"],
     [["../x"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "../x" }, "NOT_A_DEVELOPMENT_NAME"],
     [["T1"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "T1" }, "NOT_A_DEVELOPMENT_NAME"],
     [["t1 x"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "t1 x" }, "NOT_A_DEVELOPMENT_NAME"],
-    [["t1"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "t2" }, "NOT_A_TEST_INSTANCE"],
+    [["p3dev-t1"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "p3dev-t2" }, "NOT_A_TEST_INSTANCE"],
   ]) {
     const r = await run(argv, env);
     assert.equal(r.code, 1, `${argv} ${code}`);
     assert.match(r.out, new RegExp(`REFUSED \\[${code}\\]`));
     assert.equal(r.calls.length, 0);
   }
-  const failed = await run(["t1"], ENV, 1);
+  const failed = await run(["p3dev-t1"], ENV, { bulkCode: 1 });
   assert.equal(failed.code, 1);
   assert.match(failed.out, /REFUSED \[SECRETS_NOT_SET\]/);
+});
+
+test("dev-key: a Worker that is not deployed is refused NO_SUCH_WORKER and no secret is sent (a secret never creates a Worker)", async () => {
+  const r = await run(["p3dev-t1"], ENV, { listCode: 1 });
+  assert.equal(r.code, 1);
+  assert.match(r.out, /REFUSED \[NO_SUCH_WORKER\]/);
+  assert.deepEqual(r.calls.map((c) => c.args), [["deployments", "list", "--name", "p3dev-t1"]]);
+  assert.equal(r.sets.length, 0);
+  /* through the spawn path: the stand-in answers a missing Worker as wrangler does */
+  const lines = [], args = [];
+  const code = await main(["p3dev-missing"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "p3dev-missing" },
+    { log: (l) => lines.push(String(l)), err: (l) => lines.push(String(l)),
+      wrangler: (a) => { args.push(a.args); return runWrangler({ ...a, bin: FAKE }); } });
+  assert.equal(code, 1);
+  assert.deepEqual(args, [["deployments", "list", "--name", "p3dev-missing"]]);
 });
 
 test("catalogueKeysFor: a caller passing no list trusts Bob's lines alone, in any environment", async () => {

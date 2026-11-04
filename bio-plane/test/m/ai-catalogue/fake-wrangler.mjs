@@ -8,5 +8,7 @@ process.stdin.on("end", () => {
   process.stdout.write(`WRANGLER_WRITE_LOGS=${process.env.WRANGLER_WRITE_LOGS} account=${process.env.CLOUDFLARE_ACCOUNT_ID}\n`);
   process.stdout.write(`echo ${input}\n`);
   process.stderr.write(`echo ${input}\n`);
-  process.exitCode = Number(process.env.FAKE_WRANGLER_EXIT ?? 0);
+  /* `deployments list --name p3dev-missing` answers as wrangler does for a Worker that is not there */
+  const args = process.argv.slice(2);
+  process.exitCode = args[0] === "deployments" && args.includes("p3dev-missing") ? 1 : 0;
 });
