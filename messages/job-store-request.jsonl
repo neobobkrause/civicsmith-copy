@@ -8,3 +8,4 @@
 {"at":"2026-11-04T10:29:27Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-04T11:21:37Z","row":"sent","n":5,"to":"bob","text":"job store-request complete, PR #133 ready: run status"}
 {"at":"2026-11-04T11:22:39Z","row":"outcome","n":5,"outcome":"delivered"}
+{"at":"2026-11-04T12:40:45Z","row":"sent","n":6,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job store-request complete, PR #133 ready, session session_01RAN5eo3XXV7o8m6DHR2f9R: run status"}
