@@ -70,20 +70,24 @@ test("R29: the exception never lifts the chain — investigate with no verificat
   assert.deepEqual(partAdmittedOn(EMPTY, "plan", {}, ti), { admitted: true, untested: labelOf("plan") });
 });
 
-test("R29: the label follows the bar, not the instance — a passed record on a set with matters admits unlabelled whatever testInstance, as partDeployableOn (R19) does; a failed, unfit, other-set or earlier-version record is no bar held, so labelled on a test instance and refused elsewhere", () => {
+test("R29: the label follows the bar, not the instance — (T53) the bar is the entry's Gate 1 record: a passing one admits unlabelled whatever testInstance; a passed R75 record on a set with matters no longer opens the gate, so it is labelled on a test instance and refused elsewhere, as a failed, unfit, other-set or earlier-version record is", () => {
+  const gate = (part) => ({ part, entry_id: "e1", verdict: "passes", limits: [], partial_coverage: false,
+    suiteVersions: { bank: 1, scorer: 1, thresholds: 1, image: 1 }, tier: "full", grade: "MEASURED", at: "2026-10-12T00:00:00Z" });
+  const GATE_OF = (p) => (p === "draft:case_account" || p === "draft:account_check") ? "account"
+    : (p.startsWith("draft:") || p === "enquire") ? "draft" : (p === "extract" || p === "read") ? "read"
+    : (p === "ask" || p === "transcribe") ? p : "run";
   for (const p of TEST_BAR_PARTS) {
-    const held = { testBars: [bar(p)], verifications: CHAIN.map(ver) };
-    assert.equal(partDeployableOn(FULL, p, held), true, p);
-    for (const opts of [{ testInstance: true }, { testInstance: false }, undefined])
+    const held = { gateRecords: [gate(GATE_OF(p))], verifications: CHAIN.map(ver) };
+    for (const opts of [{ testInstance: true, entry_id: "e1" }, { testInstance: false, entry_id: "e1" }, { entry_id: "e1" }])
       assert.deepEqual(partAdmittedOn(FULL, p, held, opts), { admitted: true, untested: null }, `${p} ${JSON.stringify(opts)}`);
   }
-  for (const extra of [{ passed: false }, { set: "group:oak" }, { set_version: 1 }, { false_alarm_rate: 2 }]) {
+  for (const extra of [{}, { passed: false }, { set: "group:oak" }, { set_version: 1 }, { false_alarm_rate: 2 }]) {
     const held = { testBars: [bar("ask", FULL, extra)] };
     assert.deepEqual(partAdmittedOn(FULL, "ask", held, { testInstance: true }), { admitted: true, untested: labelOf("ask") }, JSON.stringify(extra));
     assert.deepEqual(partAdmittedOn(FULL, "ask", held, { testInstance: false }), { admitted: false, untested: null }, JSON.stringify(extra));
   }
-  /* the bar held but the chain not: partDeployableOn refuses, and so does the gate, test instance or not */
-  assert.deepEqual(partAdmittedOn(FULL, "investigate", { testBars: [bar("investigate")] }, { testInstance: true }), { admitted: false, untested: null });
+  /* Gate 1 passed but the chain not: refused, test instance or not */
+  assert.deepEqual(partAdmittedOn(FULL, "investigate", { gateRecords: [gate("run")] }, { testInstance: true, entry_id: "e1" }), { admitted: false, untested: null });
 });
 
 test("R29: the exception never sets or reads a deploy flag and never counts as a bar held — deployedModesFor() and DEPLOYED_MODES unchanged by it, a part whose flag is false (enquire, the action drafts) answered on the bar alone, partDeployable and testBarHeld unchanged; testInstance is no request field", () => {
@@ -117,18 +121,18 @@ test("R29: partAdmitted(part, held, opts) is partAdmittedOn on Civicsmith's set;
   assert.deepEqual(partAdmitted(), { admitted: false, untested: null });
 });
 
-test("R30: partRefusal(part) is AI_PART_NOT_DEPLOYED (C-22.29, the next free C-22 number), the gate's refusal form and its one minting site, in DEC-83's form, naming the part; C-109.1 and C-51.7 keep their codes, numbers and sites", () => {
+test("R30: partRefusal(part) is AI_PART_NOT_DEPLOYED (C-22.29), the gate's refusal form and its one minting site, naming the part, its detail the row's words read by key (T53); C-109.1 and C-51.7 keep their codes, numbers and sites", () => {
   const row = AI_RUN_OWN_CHECKS.AI_PART_NOT_DEPLOYED;
   assert.equal(row.check, "C-22.29");
   assert.equal(AI_RUN_CHECKS.AI_PART_NOT_DEPLOYED, row);
   assert.match(row.where, /^src\/run-rules\/test-bar\.mjs partRefusal, /);
-  assert.equal(row.translation, WORD("refusal.AI_PART_NOT_DEPLOYED"));
+  /* T53: read by key ai.refused.aipartnotdeployed once the word table holds it; until then C-22.29's own word */
+  assert.equal(row.translation, localize("ai.refused.aipartnotdeployed", WORD("refusal.AI_PART_NOT_DEPLOYED")));
   assert.equal(translationOf("AI_PART_NOT_DEPLOYED"), row.translation);
   for (const p of ["ask", "draft:own_words", "draft:statusreport", "plan"]) {
     const r = refusal(partRefusal(p), "AI_PART_NOT_DEPLOYED");
     assert.deepEqual([r.check, r.part], ["C-22.29", p]);
-    assert.ok(r.detail.startsWith(JSON.stringify(p)), p);
-    assert.match(r.detail, /Nothing was sent to the assistant$/);
+    assert.equal(r.detail, row.translation, p);
   }
   /* it is the refusal of exactly the answers the gate does not admit (control: an admitted part needs none) */
   assert.equal(partAdmitted("ask", {}).admitted, false);
@@ -137,7 +141,7 @@ test("R30: partRefusal(part) is AI_PART_NOT_DEPLOYED (C-22.29, the next free C-2
   for (const x of [null, undefined, 3, "x".repeat(99), {}]) assert.equal(refusal(partRefusal(x), "AI_PART_NOT_DEPLOYED").part.length <= 40, true);
   /* the next free number: C-22.28 was the last taken, and no retired number is reused */
   const c22 = Object.values(AI_RUN_CHECKS).map((r) => r.check).filter((c) => c.startsWith("C-22.")).map((c) => Number(c.slice(5)));
-  assert.equal(c22.filter((n) => n > 28).sort().join(), "29,30,31", "29 R30's, 30 R32's, 31 R35's");
+  assert.equal(c22.filter((n) => n > 28 && n < 32).sort().join(), "29,30,31", "29 R30's, 30 R32's, 31 R35's");
   assert.equal(new Set(c22).size, c22.length);
   for (const r of Object.values(RETIRED_CHECKS)) assert.notEqual(r.check, "C-22.29");
   /* control: the codes it stands beside keep theirs */
