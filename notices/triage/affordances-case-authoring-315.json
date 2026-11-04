@@ -1,0 +1,1 @@
+{"row":"triage","user":"affordances","verdict":"not affected","evidence":"bio-plane/src/affordances.mjs:99 imports only SELF_ATTESTED_SENTENCE (re-exported unchanged at :372); it does not use caseDocumentText or CaseAuthoring.content","at":"2026-11-04T22:25:45.536Z","key":"case-authoring:315","worker":"read-only-explore-x2","cost":"0.40"}

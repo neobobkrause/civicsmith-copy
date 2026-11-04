@@ -1,0 +1,1 @@
+{"row":"triage","user":"answer-envelope","verdict":"not affected","evidence":"bio-plane/src/answer-envelope/families.mjs:143 imports only ../case-authoring/checks.mjs as a check-family table (registered :262); PR 315 left checks.mjs untouched","at":"2026-11-04T22:25:45.536Z","key":"case-authoring:315","worker":"read-only-explore-x2","cost":"0.40"}
