@@ -213,3 +213,4 @@
 {"at":"2026-11-04T16:41:57Z","row":"outcome","n":109,"outcome":"delivered"}
 {"at":"2026-11-04T16:46:29Z","row":"sent","n":110,"to":"job-plane","text":"bob-110: suite_timeout_minutes 45 (PR 287); job sync plane, rerun job complete per complete.sh, wake BOB."}
 {"at":"2026-11-04T16:46:33Z","row":"outcome","n":110,"outcome":"delivered"}
+{"at":"2026-11-04T17:19:17Z","row":"sent","n":111,"to":"job-screens-inquiry","text":"bob-111: gate fail on 5ebc643700 is control-plane dependant suite with null totals (~29 min, timeout); own suite base-red only. job sync once onto pin c887429; no code change."}
