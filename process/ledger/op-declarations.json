@@ -110,7 +110,8 @@
   ],
   "prior_work": "First, consolidate build/requirements/op-declarations.md (126484 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/op-declarations.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/op-declarations.md is unchanged by the move (compare against the ids at the start commit). Then do the provider-notice work this START lists: for each notice, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal (new module ids, build/modules.json rows, build/layers.md). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-04T03:32:15Z"
+    "state": "BLOCKED",
+    "reason": "The requirements file can't get under the cap by moving text out. Its 92 requirement lines (R1-R93), kept word for word, are 71,521 bytes on their own, over the 70,000 cap before any heading. Split proposal on branch job/op-declarations in docs/requirements-notes/op-declarations.md: a new layer-11 module surface-declarations takes R76-R93 (T51 browser acts and reads, T53 screen reads, budget classes, assistant ops; 24,077 bytes) renumbered R1-R18, and op-declarations composes its rows as it does op-capabilities' needsRows(). The file also gives the modules.json row (between op-capabilities and op-declarations) and the layers.md row. Nothing was moved and the notices calculations:70, connections:71 and membership:77 are not answered; restart this job once the split is decided.",
+    "at": "2026-11-04T03:37:45Z"
   }
 }
