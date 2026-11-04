@@ -22,7 +22,7 @@ function administratorsOwn() {
   return own;
 }
 
-test("R29: an administrator's own act REAUTH_ACTS names, asked by a member session that is not an administrator whose password window is old, is refused 403 NOT_AN_ADMIN (membership's one answer) with the password never asked; by an administrator whose window is old, REAUTH_DUE; the acts are read from the declarations, five today", async () => {
+test("R29: an administrator's own act REAUTH_ACTS names, asked by a member session that is not an administrator whose password window is old, is refused 403 NOT_AN_ADMIN (membership's one answer) with the password never asked; by an administrator whose window is old, REAUTH_DUE; the acts are read from the declarations, four today (T53: groupkeyset retired, op-declarations R24)", async () => {
   const old = hex64(), oldAdmin = hex64(), oldFounder = hex64(), open = hex64();
   const { env } = world({ sessions: {
     [old]: { ...member("cal", CAPS), reauthUntil: null },
@@ -31,7 +31,7 @@ test("R29: an administrator's own act REAUTH_ACTS names, asked by a member sessi
     [open]: { ...member("cal", CAPS), reauthUntil: Date.now() + 60e3 } } });
   const own = administratorsOwn();
   const acts = Object.keys(REAUTH_ACTS).filter((op) => OPS[op] && own.has(op)).sort();
-  assert.equal(acts.length, 5, "five administrator acts today, read from the declarations");
+  assert.equal(acts.length, 4, "four administrator acts today, read from the declarations (groupkeyset retired, op-declarations R24)");
   for (const op of acts) {
     const extraBody = ARG[op] ?? {};
     /* the member, window old or open: NOT_AN_ADMIN, nothing asked of the store about the password or the op */
@@ -78,7 +78,7 @@ test("R29 controls: an act REAUTH_ACTS names that is not an administrator's (cas
   assert.notEqual(r.refusal?.body.reason, "NOT_AN_ADMIN");
   assert.notEqual(r.refusal?.body.reason, "REAUTH_DUE");
   /* a bearer arriving by no session is not asked by R29 either: the fences and class lists answer as before */
-  for (const op of ["adminendorse", "groupkeyset"]) {
+  for (const op of ["adminendorse", "aiaccountadd"]) {
     const b = await gate(env, { op, token: env.ADMIN_TOKEN, extraBody: ARG[op] ?? {} });
     assert.notEqual(b.refusal?.body.reason, "NOT_AN_ADMIN", op);
   }

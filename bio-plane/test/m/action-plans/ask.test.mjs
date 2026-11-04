@@ -24,7 +24,7 @@ test("R51: a member's ask opens one planning run naming the plan, its project an
   const o = w.ctl.opens[0];
   assert.deepEqual([o.run, o.contextType, o.contextId, o.mode, o.plan, o.actor, o.viewer],
     [r.run, "project", w.P, "plan", w.PL, V("bob"), V("bob")]);
-  assert.equal(o.principalPlane, V("bob")); assert.equal(o.principalClaude, V("bob"));
+  assert.equal(o.principalPlane, V("bob")); assert.equal(o.principalAi, V("bob")); assert.equal("principalClaude" in o, false);
   assert.equal(typeof o.skillVersion, "string"); assert.ok(o.skillVersion);
   assert.ok(o.bounds.some((b) => b.bound === "proposals" && b.allowed > 0), "the proposals bound");
   assert.equal(w.runs.get(r.run).plan, w.PL);
