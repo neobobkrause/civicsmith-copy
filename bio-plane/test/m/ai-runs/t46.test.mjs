@@ -4,7 +4,7 @@
    (credentials R63), the page-held one retired, the run's end revoking them (R14), the sign-in's held token carried (R79). */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { world, OPEN, INQ, PROJ, ORG, T0, sha, agentWorker, SIGNIN_TOKEN } from "./world.mjs";
+import { world, OPEN, INQ, PROJ, ORG, T0, sha, agentWorker, SIGNIN_TOKEN, ENTRIES } from "./world.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 import { stepsWorld } from "../steps/fixtures.mjs";
 import { AI_RUN_MODE_WRITES } from "../../../src/ai-runs/index.mjs";
@@ -52,11 +52,14 @@ test("R78: partAdmitted answers run-rules' partAdmittedOn on what this record ho
   assert.equal(on.runs.partAdmitted("check").untested.kind, "untested");
   /* the chain stands: investigate is not admitted until check is verified live, even on a test instance */
   assert.deepEqual(on.runs.partAdmitted("investigate"), { admitted: false, untested: null });
-  /* a bar held: admitted unlabelled whatever the instance (the label follows the bar, not the instance) */
+  /* (T53) a Gate 1 verdict held for the entry: admitted unlabelled whatever the instance (the label follows the bar, not
+     the instance); with no entry named, nothing is admitted outside a test instance (run-rules R29) */
   for (const env of [{}, PAIR]) {
     const held = world({ env });
-    assert.deepEqual(held.runs.partAdmitted("check"), { admitted: true, untested: null }, JSON.stringify(env));
+    assert.deepEqual(held.runs.partAdmitted("check", ENTRIES.a), { admitted: true, untested: null }, JSON.stringify(env));
+    assert.deepEqual(held.runs.partAdmitted("check", { entry_id: ENTRIES.a }), { admitted: true, untested: null });
   }
+  assert.deepEqual(world({ env: {} }).runs.partAdmitted("check"), { admitted: false, untested: null });
 });
 
 test("R78, R40, R10, R19, R28: an open in mode check on Civicsmith's empty set on a test instance opens, recording and answering the untested label at the open; read and runFor answer it; control: the variable biosmoke8, empty or absent is refused C-109.1 with nothing written", async () => {
@@ -139,11 +142,7 @@ async function memberWorld(aw, { account = "signin", mode = "check", principal =
   await w.group("ann", "bob", { noAccount: ["ann", "bob"] });
   if (account === "signin") await w.signin("ann");
   if (account === "apikey") await w.account("ann");
-  if (account === "group") {
-    assert.equal((await w.aiAccounts.groupKeySet({ key: "group-key-secret", by: "admin" })).ok, true);
-    assert.equal(w.aiAccounts.groupKeySwitch({ on: true, by: "admin" }).ok, true);
-    assert.equal(w.aiAccounts.groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" }).ok, true);
-  }
+  if (account === "group") await w.team({ members: ["ann"] });
   await w.account("bob");
   let stamp = "member:ann";
   if (principal === "credential") {
@@ -184,8 +183,10 @@ test("R18 (T47; N955; credentials R63): a check run opened by her session is dis
   assert.equal(aw.calls[0].url, "https://agent-worker/run");
   const sent = aw.calls[0].body;
   assert.match(sent.credential, SHAPE, "the minted token in the gate's shape");
-  assert.deepEqual({ ...sent, credential: "·" }, { run_id: "R1", store: "bio", credential: "·",
-    account: { kind: "signin", level: "member", secret: SIGNIN_TOKEN("ann"), member: "member:ann", suggestions: false } });
+  /* (T53; agent-worker R6) the account ai-accounts.accountFor answers for her act, her personal subscription, never a secret */
+  assert.deepEqual({ ...sent, credential: "·" }, { run_id: "R1", store: "bio", credential: "·", account: await w.served("ann") });
+  assert.deepEqual([sent.account.personal, sent.account.level, "secret" in sent.account, "kind" in sent.account], [true, "member", false, false]);
+  assert.equal(JSON.stringify(sent).includes(SIGNIN_TOKEN("ann")), false, "no secret is carried");
   const creds = runCreds(w);
   assert.equal(creds.length, 1, "one credential minted for the segment");
   assert.deepEqual([creds[0].principal, creds[0].run, creds[0].secret_sha, JSON.parse(creds[0].scope_writes), creds[0].revoked_at],
@@ -221,8 +222,7 @@ test("R18 (T47): a plan run's segment credential holds exactly airuntick, option
   const { w } = await memberWorld(aw, { mode: "plan" });
   const d = await w.runs.dispatchMemberRun({ run: "R1", by: "member:ann" });
   assert.equal(d.dispatched, true, JSON.stringify(d));
-  assert.deepEqual(aw.calls.map((c) => c.body.account), [{ kind: "signin", level: "member", secret: SIGNIN_TOKEN("ann"),
-                                                          member: "member:ann", suggestions: false }]);
+  assert.deepEqual(aw.calls.map((c) => c.body.account), [await w.served("ann", { project: PROJ })]);
   assert.deepEqual(JSON.parse(runCreds(w)[0].scope_writes).sort(), ["airunclose", "airuntick", "optionpropose"]);
 });
 
@@ -274,7 +274,7 @@ test("R18 (T47) controls: a `credential` in the request changes nothing and is n
   }
 });
 
-test("R18 (T46, T47) controls: another member's `by` is AI_RUN_NOT_PRINCIPAL; absent or invisible {found: false}; an ended run {dispatched: false, status}; the same member on the group's key or her API-key reference withheld MEMBER_PRINCIPAL_RUN; AGENT_WORKER_UNBOUND, NAMESPACE_UNDETERMINED — no call counted and nothing minted on any", async () => {
+test("R18 (T46, T47, T53) controls: another member's `by` is AI_RUN_NOT_PRINCIPAL; absent or invisible {found: false}; an ended run {dispatched: false, status}; AGENT_WORKER_UNBOUND, NAMESPACE_UNDETERMINED — no call counted and nothing minted on any; (T53) the same member on the team's account or her own API account is dispatched once with that account and no secret; with none, NO_ACCOUNT", async () => {
   const aw = agentWorker();
   const { w, stamp } = await memberWorld(aw);
   const before = w.dump();
@@ -290,15 +290,26 @@ test("R18 (T46, T47) controls: another member's `by` is AI_RUN_NOT_PRINCIPAL; ab
   assert.equal(w.dump(), before, "nothing written");
   assert.equal(runCreds(w).length, 0, "nothing minted");
   assert.equal(aw.calls.length, 0, "no call counted");
-  /* the same member on the group's key, or on her own API-key reference: withheld MEMBER_PRINCIPAL_RUN, nothing sent */
+  /* (T53; AIR41) the same member on the team's account, or on her own API account: dispatched once on that account, as
+     ai-accounts answers it, no secret */
   for (const account of ["group", "apikey"]) {
-    const x = await memberWorld(aw, { account });
-    const b = x.w.dump();
+    const xAw = agentWorker();
+    const x = await memberWorld(xAw, { account });
     const r = await x.w.runs.dispatchMemberRun({ run: "R1", by: "member:ann" });
-    assert.deepEqual([r.dispatched, r.withheld], [false, "MEMBER_PRINCIPAL_RUN"], account);
-    assert.equal(x.w.dump(), b, `nothing written (${account})`);
-    assert.equal(runCreds(x.w).length, 0, `nothing minted (${account})`);
+    assert.equal(r.dispatched, true, `${account}: ${JSON.stringify(r)}`);
+    assert.equal(xAw.calls.length, 1, account);
+    assert.deepEqual(xAw.calls[0].body.account, await x.w.served("ann"), account);
+    assert.equal(xAw.calls[0].body.account.level, account === "group" ? "group" : "member");
+    assert.equal(JSON.stringify(xAw.calls[0].body).includes("secret"), false, `${account}: no secret`);
   }
+  /* no account serves her act: withheld NO_ACCOUNT, nothing sent, nothing minted */
+  const nAw = agentWorker();
+  const n = await memberWorld(nAw);
+  await n.w.removeAll("member:ann", "ann");
+  const nb = n.w.dump();
+  assert.deepEqual([(await n.w.runs.dispatchMemberRun({ run: "R1", by: "member:ann" })).withheld, nAw.calls.length], ["NO_ACCOUNT", 0]);
+  assert.equal(n.w.dump(), nb);
+  assert.equal(runCreds(n.w).length, 0);
   assert.equal(aw.calls.length, 0, "no call counted");
   /* every other R18 ground stands */
   const unbound = await memberWorld(null);
@@ -397,16 +408,14 @@ test("R14 (T47; N955; credentials R63): after the exit commits a run's ending, e
   assert.equal(x.w.row(`SELECT status FROM ai_runs WHERE run='R1'`).status, "finished");
 });
 
-test("R79 (T47; K3060 D10, K3068): a sentinel sign-in token held for the payer reaches the stub agent-worker's account.secret and no record or answer; control: an apikey account is unchanged", async () => {
+test("R18 (T53; R79 retired, K5457; agent-worker R6, R127): the dispatch carries no secret — a sentinel token held for her personal subscription reaches neither the stub agent-worker nor any record or answer; the wake's dispatch of an organisation run carries the account as ai-accounts answers it, no secret either", async () => {
   const aw = agentWorker();
   const { w } = await memberWorld(aw);
   const d = await w.runs.dispatchMemberRun({ run: "R1", by: "member:ann" });
   assert.equal(d.dispatched, true);
-  assert.deepEqual([aw.calls[0].body.account.kind, aw.calls[0].body.account.secret], ["signin", SIGNIN_TOKEN("ann")]);
+  assert.equal(JSON.stringify(aw.calls).includes(SIGNIN_TOKEN("ann")), false, "the sentinel reaches no binding");
   assert.equal(everything(w).includes(SIGNIN_TOKEN("ann")), false, "the sentinel enters no record");
   assert.equal(JSON.stringify(d).includes(SIGNIN_TOKEN("ann")), false, "nor the answer");
-  /* control: an API key is carried as before, through the wake's dispatch of an organisation run (scheduler.test.mjs holds
-     the rest of that path) */
   const TOKEN = "instance-ai-secret-value-7f3c";
   const aw2 = agentWorker();
   const x = world({ env: { AGENT_WORKER: aw2, INSTANCE_AI_TOKEN: TOKEN, STORE: { idFromName: (n) => `id:${n}` }, AI_RUN_DISPATCH_WAIT_MS: "50" } });
@@ -421,6 +430,6 @@ test("R79 (T47; K3060 D10, K3068): a sentinel sign-in token held for the payer r
   x.runs.registerWaitSource("capture-requests", { tickMs: () => 5000, holds: () => [], woken: () => (reqs[0].woken ? [] : ["R1"]),
     completions: () => reqs.filter((q) => !q.woken), markWoken: () => { reqs[0].woken = true; } });
   await x.runs.wake(Date.parse("2026-07-01T00:00:10Z"));
-  assert.deepEqual(aw2.calls[0].body.account, { kind: "apikey", level: "member", secret: "secret-of-ann", member: "member:ann",
-                                                suggestions: false });
+  assert.deepEqual(aw2.calls[0].body.account, await x.served("ann"));
+  assert.equal(JSON.stringify(aw2.calls[0].body.account).includes("secret-of-ann"), false);
 });

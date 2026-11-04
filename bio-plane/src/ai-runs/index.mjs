@@ -42,8 +42,8 @@ import { RUN_BOUNDS, RUN_ENDINGS, RUN_CONTEXTS, STANDARD_BASIS, OBSERVATION_STAT
          OBSERVATION_COVERAGE, OBSERVATION_COVERAGE_UNDETERMINED, observationCoverage, checkBound, checkCondition,
          checkConsume, checkRunState, finishedBound, runStatusFor, projectGate, runConsultsProjects, checkRunContextKind,
          runPrincipalGate, checkSkillVersion, DEPLOYED_MODES, DEFAULT_MODE, AI_RUNS_CHECKS, RUN_MODES, startAllowed,
-         checkVerification, partAdmittedOn, CIVICSMITH_TEST_SET, originAllowed, checkTestBarRecord } from "../run-rules/index.mjs";
-import { AI_RUNS_SCHEMA, AI_RUNS_TABLES, AI_RUNS_ADDED_COLUMNS } from "./schema.mjs";
+         checkVerification, partAdmittedOn, CIVICSMITH_TEST_SET, originAllowed, checkTestBarRecord, deployable } from "../run-rules/index.mjs";
+import { AI_RUNS_SCHEMA, AI_RUNS_TABLES, AI_RUNS_ADDED_COLUMNS, AI_RUNS_ADDED_TABLE_COLUMNS } from "./schema.mjs";
 
 export { AI_RUNS_SCHEMA, AI_RUNS_TABLES } from "./schema.mjs";
 
@@ -127,6 +127,7 @@ export class AiRuns {
   #waitSource = null;
   #runListeners = [];     // R43: {module, fn, seq}, in the modules' total order
   #openChecks = [];       // R47: {module, mode, fn}, one per mode and one per module
+  #gateSource = null;     // R78 (T53): {module, fn}, ai-gate's verdicts, one registration
   #deps;
   /** `deps` is for in-process wiring only (never the wire or `env`): `inquiry` (R27's `migratedSurfacing`), `steps`,
    *  `aiUse` and `aiAccounts` (each module's own instance, else its factory on this `ctx`), and, for a module test alone,
@@ -346,19 +347,52 @@ export class AiRuns {
       return typeof flag === "string" && typeof name === "string" && flag !== "" && name !== "" && flag === name;
     } catch { return false; }
   }
-  /** R78, run-rules R19, R29 (B6, K2489; K2816 (2)): MAY THIS AI PART RUN HERE, on what this record holds: its
-   *  verification chain (`verifications`) and its test bar (`testBarRecords`, R75) on Civicsmith's set (a module test's
-   *  own set through `deps.testSet`), with the test-instance exception (`testInstance`). `run-rules`' `partAdmittedOn`
-   *  is the one computation: `{admitted, untested}`, the label set only for a part admitted on the exception. The one
-   *  gate of this module (R40, R23's input), and what later modules ask (question-explorer, instance-setup, plane). */
-  partAdmitted(part) {
+  /** R78 (T53; AIR13, AD7; run-rules R19, R29): MAY THIS AI PART RUN HERE, ON THIS ENTRY. `entry` is the entry the act
+   *  is served on: its `entry_id` string, or an object carrying `entry_id` (an account as `ai-accounts.accountFor` answers
+   *  it). `run-rules`' `partAdmittedOn` is the one computation, over what this record holds (the verification chain, the
+   *  standing measure's R75 records) and the Gate 1 verdicts `ai-gate` recorded for that entry and part, read through
+   *  this service's one seam (`registerGateVerdicts`; a module test's own through `deps.gateRecords`). With no verdict
+   *  source registered (before `ai-gate` exists) a real instance admits nothing; a test instance (`testInstance`) admits
+   *  on the exception, labelled. `{admitted, untested}`; never throws. */
+  partAdmitted(part, entry = null) {
     try {
+      const entry_id = typeof entry === "string" ? entry
+        : entry && typeof entry === "object" && typeof entry.entry_id === "string" ? entry.entry_id : null;
       const set = this.#deps.testSet || CIVICSMITH_TEST_SET;
-      const said = partAdmittedOn(set, part, { verifications: this.verifications(), testBars: this.testBarRecords() },
-        { testInstance: this.testInstance() });
+      const said = partAdmittedOn(set, part,
+        { verifications: this.verifications(), testBars: this.testBarRecords(), gateRecords: this.#gateRecords(part, entry_id) },
+        { testInstance: this.testInstance(), ...(entry_id !== null ? { entry_id } : {}) });
       return said && said.admitted === true ? { admitted: true, untested: said.untested ?? null }
         : { admitted: false, untested: null };
     } catch { return { admitted: false, untested: null }; }
+  }
+
+  /** R40, R78 (T53): a mode's admission where no account serves the act (so no entry to judge Gate 1 on): its flag (the
+   *  caller filtered by `DEPLOYED_MODES`) and the verification chain alone, so R52's refusal is the one that answers. */
+  static #flagOnly(mode, verifications) {
+    try { return { admitted: deployable(mode, verifications) === true, untested: null }; }
+    catch { return { admitted: false, untested: null }; }
+  }
+
+  /** R78 (T53): THE ONE SEAM FOR GATE 1'S VERDICTS. `ai-gate` registers once at start a synchronous
+   *  `fn({part, entry_id}) → [record]`, its R37 records for that entry (any part; `run-rules` picks the gate part's). A
+   *  malformed or second registration is refused through `membership`'s `listenerRefusal`. */
+  registerGateVerdicts(module, fn) {
+    const refused = listenerRefusal(this.#gateSource, module, fn);
+    if (refused) return refused;
+    this.#gateSource = { module, fn };
+    return { ok: true, module };
+  }
+
+  /** The Gate 1 records for `entry_id`, as the registered source answers them (a module test's `deps.gateRecords`
+   *  first); none registered, none answered, or one that throws: none (so nothing is admitted on them). */
+  #gateRecords(part, entry_id) {
+    if (typeof entry_id !== "string" || entry_id === "") return [];
+    const src = this.#deps.gateRecords !== undefined ? this.#deps.gateRecords : this.#gateSource ? this.#gateSource.fn : null;
+    try {
+      const out = typeof src === "function" ? src({ part, entry_id }) : src;
+      return Array.isArray(out) ? out : [];
+    } catch { return []; }
   }
   #captureRequestConfigured() {
     const w = this.#wait();
@@ -1113,9 +1147,17 @@ export class AiRuns {
     /* DEC-49 REGION is-airun-open-mode — C-109.1. */
     /* K1606 (run-rules R16, R19): a RUN's mode is one of the order's (`RUN_MODES`; `ask` is deployed apart and is no
        run), deployed by its flag, and deployable on what this record holds (B6: the chain and the test bar, R75). */
-    /* R78: through `partAdmitted`, the one gate (the test-instance exception lifts the bar alone, never a flag). */
+    /* R78 (T53): through `partAdmitted(mode, entry)`, the one gate, on the entry the opener's account serves the act on
+       (R52's account, asked here before anything is written; its refusal is applied in R52's place below). The flag in
+       `DEPLOYED_MODES` is asked first; then Gate 1's verdict for that entry and part (`ai-gate`'s, through this module's
+       seam), the test-instance exception lifting the bar alone, never a flag. With no account serving, only the flag and
+       the chain are asked here, and R52's refusal names what is missing. */
+    const accountMember = AiRuns.#accountMember({ actor, principalPlane, principalClaude });
+    const account = accountMember ? await this.#accountFor(accountMember, "run", inProject.project) : null;
+    const servedOn = account && !account.refusal ? account.entry_id : null;
     const admissions = new Map(this.#deployedModes().filter((m) => RUN_MODES.includes(m))
-      .map((m) => [m, this.partAdmitted(m)]));
+      .map((m) => [m, servedOn !== null || this.testInstance() ? this.partAdmitted(m, servedOn)
+                                                                 : AiRuns.#flagOnly(m, this.verifications())]));
     const deployed = [...admissions.keys()].filter((m) => admissions.get(m).admitted);
     if (!deployed.includes(runMode))
       return refusal("AI_RUN_MODE_NOT_DEPLOYED", {
@@ -1155,7 +1197,10 @@ export class AiRuns {
        (K231), so `reexamination` outside mode `plan`, and any origin of a planning run but those two, are refused there.
        A re-examination names the `response`, stored verbatim, and one per plan and response runs at a time. */
     const originSaid = originAllowed({ origin: runOrigin, mode: runMode,
-                                       investigateDeployable: this.partAdmitted("investigate").admitted });
+                                       /* R78 (T53): on the entry the act is served on, as the mode's own admission */
+                                       investigateDeployable: (servedOn !== null || this.testInstance()
+                                         ? this.partAdmitted("investigate", servedOn)
+                                         : AiRuns.#flagOnly("investigate", this.verifications())).admitted });
     if (!originSaid || originSaid.ok !== true)
       return { run, started: false, code: originSaid.code, check: originSaid.check, translation: originSaid.translation,
                detail: originSaid.detail, note: word("consequences.nothing") };
@@ -1226,14 +1271,7 @@ export class AiRuns {
       bundles: (Array.isArray(lensNow.bundles) ? lensNow.bundles : [])
         .map((b) => ({ bundle_id: b.bundle_id, revision: b.revision ?? null })),
       at: now });
-    /* R52 (K1503, K1755): THE ACCOUNT THE RUN CARRIES, asked of `ai-accounts.accountFor` for the act of the member who
-       started it, here, before the id's existence is asked, so the check below and the insert stay one synchronous step
-       with no await between them. Its answer is applied in R52's place further down (after the re-run refusals), and
-       the unsealed key is dropped at once: only whether an account serves the member, and which, is kept. */
-    const accountMember = AiRuns.#accountMember({ actor, principalPlane, principalClaude });
-    /* (T41; ai-accounts R11) a run over a project names it, so the project's own account serves first when it is held */
-    const account = accountMember ? await this.#accountFor(accountMember, "run",
-      String(contextType) === "project" ? String(contextId) : null) : null;
+    /* R52 (T53): the account the run carries was asked above, with the mode's admission; its refusal is applied below. */
     /* REC-76 — the second of the two codeless refusals the widened classifier
        found here. It is a real member-facing condition (an id that is already in
        use), and it was answering with a bare sentence a surface could only
@@ -1722,7 +1760,7 @@ export class AiRuns {
     const out = this.tick(args);
     if (!out || out.ticked !== true || !out.segment_end || out.segment_end.next !== "continue") return out;
     const row = this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_claude,
-                                  principal_claude_ref, step FROM ai_runs WHERE run = ?`, out.run);
+                                  principal_claude_ref, step, project FROM ai_runs WHERE run = ?`, out.run);
     if (!row || row.status !== "running") return out;
     const iso = AiRuns.#aiIso(args.at ? Date.parse(args.at) : Date.now());
     let dispatch;
@@ -1737,7 +1775,7 @@ export class AiRuns {
         const decision = this.#aiRunResumeDecision(row, resumer);
         if (decision.dispatch) {
           const o = await this.#aiRunDispatch({ run: row.run, context_id: row.context_id, payer: AiRuns.#memberOfRun(row),
-            step: row.step || null, project: row.context_type === "project" ? row.context_id : null, owner: row.principal_claude },
+            step: row.step || null, project: row.project ?? (row.context_type === "project" ? row.context_id : null), owner: row.principal_claude },
             resumer, iso);
           dispatch = { dispatched: o.state === "DISPATCHED" || o.state === "RUNNING", state: o.state };
         } else dispatch = { dispatched: false, state: "WITHHELD", reason: decision.withheld, says: decision.says };
@@ -1959,7 +1997,7 @@ export class AiRuns {
     if (!w) return [];
     const ids = w.woken(AiRuns.AI_RUN_WAKE_TICK_BATCH);
     return (Array.isArray(ids) ? ids : []).slice(0, AiRuns.AI_RUN_WAKE_TICK_BATCH)
-      .map((run) => this.#one(`SELECT run, context_type, context_id, principal_plane, principal_claude, principal_claude_ref, step FROM ai_runs
+      .map((run) => this.#one(`SELECT run, context_type, context_id, principal_plane, principal_claude, principal_claude_ref, step, project FROM ai_runs
                                 WHERE run = ? AND status = 'running'`, String(run)))
       .filter(Boolean);
   }
@@ -2057,7 +2095,7 @@ export class AiRuns {
       wakes.push({ run: r.run, completions: done.length, captured, refused, expired,
                    woken: !bad, ...(bad ? { unwritable: bad } : { expires: until }),
                    resume: decision.dispatch ? "DISPATCH" : decision.withheld });
-      if (!bad && decision.dispatch) dispatches.push({ run: r.run, context_id: r.context_id, payer: AiRuns.#memberOfRun(r), step: r.step || null, project: r.context_type === "project" ? r.context_id : null,
+      if (!bad && decision.dispatch) dispatches.push({ run: r.run, context_id: r.context_id, payer: AiRuns.#memberOfRun(r), step: r.step || null, project: r.project ?? (r.context_type === "project" ? r.context_id : null),
                                        owner: r.principal_claude });
     }
 
@@ -2168,7 +2206,7 @@ export class AiRuns {
     const payer = AiRuns.#memberOfRun(run);
     /* (T41) a run a project's account pays for is judged by that account at the dispatch itself (ai-accounts R11) */
     const projectPaid = typeof (run && run.principal_claude) === "string" && run.principal_claude.startsWith("project:");
-    if (resumer && resumer.ready && principal === resumer.stamp && !(payer && (projectPaid || this.#accountServing(payer))))
+    if (resumer && resumer.ready && principal === resumer.stamp && !(payer && (projectPaid || this.#accountServing(payer, "run", run.project ?? null))))
       return { dispatch: false, withheld: "NO_ACCOUNT",
                says: localize("ai-runs.index.resumption_not_dispatched_no_claude", "Resumption: NOT dispatched — no Claude account serves the member whose act started this run (none of their own is connected, and the team's key is not set or not on), and a run continues only on the account that serves that member's act (K1503, K1755). It waits.") };
     if (resumer && resumer.ready && principal === resumer.stamp)
@@ -2202,27 +2240,11 @@ export class AiRuns {
     if (!ref || ref.refusal)
       outcome = { state: "REFUSED", status: null,
                   reason: String((ref && ref.refusal && (ref.refusal.code || ref.refusal.reason)) || "NO_ACCOUNT").slice(0, 80) };
-    /* K1615 (agent-worker R56): and the switch that governs the serving account. */
-    /* (T41; ai-accounts R14, R9) every account now holds its `suggestions` switch, set by `accountUsesSet`: a member's
-       reference or sign-in (whichever serves, read through `accountUses` as that member, its R15), and the group key
-       (`groupKeySwitches()`, an in-plane read, its R9). Anything but an explicit on is off. */
-    let suggestions = false;
-    if (!outcome) {
-      try {
-        const c = this.#aiAccounts();
-        if (ref.level === "group") suggestions = c.groupKeySwitches().suggestions === true;
-        else if (ref.level === "member") {
-          const u = c.accountUses({ owner: `member:${d.payer}`, viewer: `member:${d.payer}` });
-          const acct = u && u.ok === true && u.accounts ? (ref.kind === "signin" ? u.accounts.signin : u.accounts.reference) : null;
-          suggestions = !!(acct && acct.uses && acct.uses.suggestions === true);
-        }
-      } catch { suggestions = false; }
-    }
+    /* K1615 (agent-worker R56): the switch that governs the serving account rides on the account itself (T53: its
+       `suggestions`, ai-accounts R7). (T53; agent-worker R6, R127; R79 retired) the body carries the account as
+       ai-accounts R7 shapes it in-plane, never a secret: the Worker reads the secret itself, at the call. */
     const body = outcome ? null : { run_id: d.run, store: resumer.store, credential: resumer.token,
-                                    account: { kind: ref.kind, level: ref.level,
-                                               /* R79: a sign-in's held token rides as an API key's does */
-                                               ...(typeof ref.key === "string" ? { secret: ref.key } : {}),
-                                               member: `member:${d.payer}`, suggestions } };
+                                    account: { ...ref.account, member: `member:${d.payer}` } };
     ref = null; d.ref = null;
     if (body) try {
       const res = await Promise.race([
@@ -2340,22 +2362,27 @@ export class AiRuns {
     const store = this.#ownNamespace();
     if (!store) return withheld("NAMESPACE_UNDETERMINED");
     const d = { run: row.run, context_id: row.context_id, payer: AiRuns.#memberOfRun(row), step: row.step || null,
-                project: row.context_type === "project" ? row.context_id : null, owner: row.principal_claude,
+                project: row.project ?? (row.context_type === "project" ? row.context_id : null), owner: row.principal_claude,
                 /* R87: the door's trace and member ref, for the one call's headers; kept nowhere (no row, log or answer) */
                 headers: AiRuns.#doorHeaders(trace, memberRef) };
-    /* (T46; Bob's, K2892) on her own sign-in alone: any other account that would serve her (her API-key reference, the
-       group's key, a project's account) is withheld, nothing sent, nothing written. */
+    /* R18 (T53; AIR41; K2892's "check and plan only" now "deployed and passed for the account"): ON ANY ACCOUNT
+       `ai-accounts.accountFor` answers for her act (her own, a personal subscription of hers alone, the project's or the
+       team's). The team's keep-away (ai-accounts R7, R20), and any other refusal of that service, is relayed unchanged; no
+       account at all is withheld `NO_ACCOUNT`. */
     d.ref = await this.#dispatchAccount(d);
-    /* the group's keep-away (ai-accounts R7, R20) answers no account at all: relayed unchanged, as the mint would
-       refuse it (credentials R63), rather than read as another account */
-    if (d.ref && d.ref.refusal && d.ref.refusal.code === "AI_KEPT_AWAY") {
+    if (d.ref && d.ref.refusal && typeof d.ref.refusal.code === "string" && d.ref.refusal.code !== "NO_ACCOUNT"
+        && d.ref.refusal.code !== "AI_NO_ACCOUNT") {
       const { ok: _ok, ...kept } = d.ref.refusal;
       d.ref = null;
       return { run, found: true, dispatched: false, status: row.status, ...kept, note: word("ai-runs.note.sent") };
     }
-    if (!(d.ref && !d.ref.refusal && d.ref.kind === "signin" && d.ref.level === "member")) {
+    if (!d.ref || d.ref.refusal) { d.ref = null; return withheld("NO_ACCOUNT"); }
+    /* R18, R40, R78 (T53): the mode deployed and passed for the account's entry (Gate 1, through `partAdmitted`) */
+    if (!this.partAdmitted(row.mode, d.ref.entry_id).admitted) {
       d.ref = null;
-      return withheld("MEMBER_PRINCIPAL_RUN");
+      return { run, found: true, dispatched: false, status: row.status,
+               ...AiRuns.#shed(this.#refuse("MEMBER_RUN_MODE_NOT_ADMITTED", localize("ai-runs.index.mode_not_passed_for_account", "this run's kind of work, '{mode}', has not passed Civicsmith's tests on the AI the account that would serve it uses. Nothing was sent.", { mode: String(String(row.mode).slice(0, 40)) }))),
+               mode: row.mode };
     }
     /* (T47; credentials R63) the segment's own credential, minted in the plane for this run and the mode's writes */
     let minted = null;
@@ -3289,49 +3316,46 @@ export class AiRuns {
     return { provider_limit: true, detail: localize("ai-runs.index.the_claude_account_that_serves", "The Claude account that serves this run has reached the spending limit set on it, so the assistant cannot continue for now. Nothing was lost.") };
   }
 
-  /** R52 (K1755): which account serves `member`'s act now, read without unsealing, for the synchronous checks (an ask's
-   *  ceiling check, the wake's decision): `member` when they hold a reference of their own (ai-accounts R2's state, asked
-   *  as that member) or are connected through their subscription (its R18; T38, K2299), else `group` when the group's API
-   *  key is on and they are an active member (ai-accounts R6's state, asked as that member: it answers `{on}` to an active
-   *  member alone), else null. Its R7's choice, as its own order makes it. */
-  #accountServing(member) {
-    const as = `member:${member}`;
-    let c;
-    try { c = this.#aiAccounts(); } catch { return null; }
+  /** R52 (T53): which account serves `member`'s act of `kind` now, read without unsealing (`ai-accounts`'
+   *  `servingAccountOf`, its R25): the level (`member`, `project`, `group`) of the head, or null when none serves. */
+  #accountServing(member, kind = "run", project = null) {
     try {
-      const s = c.accountReferenceState({ member: as, viewer: as });
-      if (s && s.ok === true && s.held === true) return "member";
-      /* (T38; K2299) else their own sign-in, when connected through their subscription (ai-accounts R18, R7) */
-      if (s && s.ok === true && s.subscription && s.subscription.connected === true) return "member";
-    } catch { /* read as none of their own */ }
-    try {
-      const g = c.groupKeyState({ viewer: as });
-      return g && g.ok === true && g.on === true ? "group" : null;
+      const s = this.#aiAccounts().servingAccountOf({ member: `member:${member}`, use: kind, project: project ?? null });
+      return s && typeof s.level === "string" ? s.level : null;
     } catch { return null; }
   }
 
-  /** R52 (K1503, K1755): the account `ai-accounts.accountFor` (its R7, R11) answers for `member`'s act of `kind` (`run`):
-   *  `{level, kind, key}` when one serves it (R79; T47: a held sign-in's `key` is its token, ai-accounts R19); else `{refusal}`: `NO_ACCOUNT` read as this module's `AI_NO_ACCOUNT`, any
-   *  other refusal of that service (the group key's notice not yet read, a member not active, the seal) relayed as it
-   *  came. The caller keeps the key for the one call it serves, or not at all. */
+  /** R52 (T53; AIR26, AIR41, BR19): the account `ai-accounts.accountFor` (its R7, R11) answers for `member`'s act of
+   *  `kind`, with `project` the run's project: `{account, owner, level, account_id, entry_id, personal, suggestions}`,
+   *  `account` the in-plane account as R7 shapes it with every secret part dropped at once (`secret`, `reference`,
+   *  `gateway_id`: agent-worker R6 refuses one and reads the secret itself, R127); else `{refusal}`: `NO_ACCOUNT` read as
+   *  this module's `AI_NO_ACCOUNT`, any other refusal of that service relayed as it came. */
   async #accountFor(member, kind, project = null) {
     let a = null;
     try {
       a = await this.#aiAccounts().accountFor({ member: `member:${member}`,
         act: { kind, member: `member:${member}`, ...(project ? { project } : {}) } });
     } catch { a = null; }
-    /* R52 (T41): the owner that pays, as ai-use R1 spells it */
-    const owner = (lvl, proj) => (lvl === "group" ? "group" : lvl === "project" ? `project:${proj}` : `member:${member}`);
-    if (a && a.ok === true && typeof a.key === "string" && (a.level === "member" || a.level === "group" || a.level === "project"))
-      return { level: a.level, kind: a.kind, key: a.key, owner: owner(a.level, a.project) };
-    /* (T38; K2299) the member's own sign-in (ai-accounts R7, R18), or (T41; ai-accounts R10, R11) a project's, its sole
-       owner's, answered with no key: carried with no `secret`. (T47; R79, ai-accounts R19) A held sign-in answers its
-       token as `key` and is read by the arm above, its `kind` kept `signin`. */
-    if (a && a.ok === true && a.kind === "signin" && (a.level === "member" || a.level === "project"))
-      return { level: a.level, kind: "signin", key: null, owner: owner(a.level, a.project) };
+    if (a && a.ok === true && typeof a.account_id === "string" && typeof a.owner === "string"
+        && ["member", "project", "group"].includes(a.level)) {
+      const account = AiRuns.#accountShape(a);
+      a = null;
+      return { account, owner: account.owner, level: account.level, account_id: account.account_id,
+               entry_id: account.entry_id, personal: account.personal, suggestions: account.suggestions };
+    }
     if (!a || a.code === "NO_ACCOUNT" || typeof a.code !== "string") return { refusal: this.#noAccount(member, "A run") };
     const { ok: _ok, ...rest } = a;
     return { refusal: { ok: false, ...rest } };
+  }
+
+  /** The account as it travels to `agent-worker` (its R6) and is recorded per segment (R91): ai-accounts R7's in-plane
+   *  fields alone, never a secret, a reference or a gateway id. */
+  static #accountShape(a) {
+    return { account_id: a.account_id, level: a.level, owner: a.owner, provider: a.provider ?? null, plan: a.plan ?? null,
+             means: a.means ?? null, entry_id: a.entry_id ?? null, entries: Array.isArray(a.entries) ? [...a.entries] : [],
+             member: a.member ? (String(a.member).startsWith("member:") ? String(a.member) : `member:${a.member}`) : null,
+             ...(a.project != null ? { project: a.project } : {}), suggestions: a.suggestions === true,
+             personal: a.personal === true, disclosed: Array.isArray(a.disclosed) ? a.disclosed.map((d) => ({ ...d })) : [] };
   }
 
   #noAccount(member, what) {
@@ -3399,7 +3423,7 @@ export class AiRuns {
     const order = RUN_MODES;
     const next = order[order.indexOf(mode) + 1] ?? null;
     return { ok: true, mode, run, verified_by: v.verified_by, at: existed ? prior.at : now, existed,
-             next: next ? { mode: next, deployable: this.partAdmitted(next).admitted } : null };
+             next: next ? { mode: next, deployable: AiRuns.#flagOnly(next, this.verifications()).admitted } : null };
   }
 
   /* ---- R75 (T41; D14, D11): THE TEST BAR, written here, where runs are, and read by run-rules R19's deploy gate ---- */
@@ -3409,27 +3433,33 @@ export class AiRuns {
    *  C-22.22; B3, K2485), a RELAY; refused whole where that judge is not reachable (fail closed). Figures only: no transcript is
    *  taken or kept (D15). Append-only. */
   testBarRecord({ part = null, set = null, set_version = null, false_alarm_rate = null, passed = null, graded_by = null,
-                  at = null } = {}) {
+                  at = null, entry_id = undefined } = {}) {
     const now = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
-    const record = { part, set, set_version, false_alarm_rate, passed, graded_by, at: now };
+    /* R75 (T53): per entry, `entry_id` added to the record (run-rules R19's standing measure reads it per entry) */
+    const record = { part, set, set_version, false_alarm_rate, passed, graded_by, at: now,
+                     ...(entry_id !== undefined ? { entry_id } : {}) };
     const bad = checkTestBarRecord(record);
     if (bad) return bad;
     this.#transact(() => this.sql.exec(
-      `INSERT INTO ai_test_bar (part, set_name, set_version, false_alarm_rate, passed, graded_by, at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      String(part), String(set), Number(set_version), Number(false_alarm_rate), passed === true ? 1 : 0, String(graded_by), now));
+      `INSERT INTO ai_test_bar (part, set_name, set_version, false_alarm_rate, passed, graded_by, at, entry_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      String(part), String(set), Number(set_version), Number(false_alarm_rate), passed === true ? 1 : 0, String(graded_by), now,
+      typeof entry_id === "string" ? entry_id : null));
     return { ok: true, part: String(part), set: String(set), set_version: Number(set_version),
-             false_alarm_rate: Number(false_alarm_rate), passed: passed === true, at: now };
+             false_alarm_rate: Number(false_alarm_rate), passed: passed === true, at: now,
+             ...(typeof entry_id === "string" ? { entry_id } : {}) };
   }
 
   /** R75: every result recorded on Civicsmith's own test investigations (never a group's set, which opens or closes no
    *  gate), oldest first, in run-rules R19's shape, for its `deployable`. Writes nothing; never throws. */
   testBarRecords() {
     try {
-      return this.#rows(`SELECT part, set_name, set_version, false_alarm_rate, passed, graded_by, at FROM ai_test_bar
+      return this.#rows(`SELECT part, set_name, set_version, false_alarm_rate, passed, graded_by, at, entry_id FROM ai_test_bar
                           WHERE set_name <> 'group' ORDER BY seq`)
-        /* the version as the number run-rules' judge reads (a whole number of one or more), whatever the column's affinity */
+        /* the version as the number run-rules' judge reads (a whole number of one or more), whatever the column's affinity;
+           R75 (T53): the entry measured, where the record names one */
         .map((r) => ({ part: r.part, set: r.set_name, set_version: Number(r.set_version), false_alarm_rate: Number(r.false_alarm_rate),
-                       passed: r.passed === 1, graded_by: r.graded_by, at: r.at }));
+                       passed: r.passed === 1, graded_by: r.graded_by, at: r.at,
+                       ...(typeof r.entry_id === "string" ? { entry_id: r.entry_id } : {}) }));
     } catch { return []; }
   }
 
@@ -3466,9 +3496,11 @@ export class AiRuns {
     try { const f = who ? this.#membership().memberFacts(who) : null; active = !!f && f.status === "active"; } catch { active = false; }
     if (!active || !p) return { ok: true, part: p || null, matters: 0, results: [] };
     const matters = this.#one(`SELECT count(*) c FROM ai_group_tests WHERE part = ?`, p).c;
-    const results = this.#rows(`SELECT set_version, false_alarm_rate, passed, at FROM ai_test_bar
+    /* R75 (T53; AD7, AD13): shown per (entry, part), each result naming the entry it measured (null before T53) */
+    const results = this.#rows(`SELECT set_version, false_alarm_rate, passed, at, entry_id FROM ai_test_bar
                                  WHERE set_name = 'group' AND part = ? ORDER BY seq`, p)
-      .map((r) => ({ set_version: r.set_version, false_alarm_rate: Number(r.false_alarm_rate), passed: r.passed === 1, at: r.at }));
+      .map((r) => ({ entry_id: typeof r.entry_id === "string" ? r.entry_id : null, part: p, set_version: r.set_version,
+                     false_alarm_rate: Number(r.false_alarm_rate), passed: r.passed === 1, at: r.at }));
     return { ok: true, part: p, matters: Number(matters), results };
   }
 
@@ -3590,6 +3622,10 @@ export class AiRuns {
     const cols = new Set(this.#rows(`PRAGMA table_info(ai_runs)`).map((c) => c.name));
     for (const col of AI_RUNS_ADDED_COLUMNS)
       if (!cols.has(col)) this.sql.exec(`ALTER TABLE ai_runs ADD COLUMN ${col} TEXT`);
+    for (const [table, added] of Object.entries(AI_RUNS_ADDED_TABLE_COLUMNS)) {
+      const have = new Set(this.#rows(`PRAGMA table_info(${table})`).map((c) => c.name));
+      for (const col of added) if (!have.has(col)) this.sql.exec(`ALTER TABLE ${table} ADD COLUMN ${col} TEXT`);
+    }
     if (this.#rows(`PRAGMA table_info(ai_run_log)`).length) {
       this.sql.exec(
         `INSERT INTO observation_log

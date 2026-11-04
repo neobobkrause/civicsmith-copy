@@ -140,9 +140,7 @@ test("R77, R52: a re-examination run is paid as the recording member's act with 
   assert.deepEqual({ ...w.row(`SELECT principal_claude, principal_claude_ref FROM ai_runs WHERE run = 'X0'`) },
                    { principal_claude: "member:bob", principal_claude_ref: "member:bob" });
   /* the project's own account, held and on, pays (its key notice read first) */
-  assert.equal((await C.projectKeySet({ project: PROJ, key: "project-key-secret", by: "member:ann" })).ok, true);
-  assert.equal(C.projectAccountSwitch({ project: PROJ, on: true, by: "member:ann" }).ok, true);
-  assert.equal(C.projectKeyNoticeSeen({ member: "member:bob", project: PROJ, by: "member:bob" }).ok, true);
+  await w.projectAccount(PROJ, "ann", { members: ["bob"] });
   assert.equal((await reexam(w, { run: "X1", response: "COR-1" })).started, true);
   assert.deepEqual({ ...w.row(`SELECT principal_claude, principal_claude_ref FROM ai_runs WHERE run = 'X1'`) },
                    { principal_claude: `project:${PROJ}`, principal_claude_ref: "member:bob" });

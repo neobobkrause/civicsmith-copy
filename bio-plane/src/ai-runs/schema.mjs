@@ -14,6 +14,9 @@ export const AI_RUNS_ADDED_COLUMNS = Object.freeze(["lens_at_open", "rerun_of", 
   /* R89 (T50): the project a run was opened in, recorded at the open and never changed; NULL for a run opened with none */
   "project"]);
 
+/* R75 (T53): additive columns of other tables, `{table: [column]}`, added by `migrate` to a table created before them. */
+export const AI_RUNS_ADDED_TABLE_COLUMNS = Object.freeze({ ai_test_bar: Object.freeze(["entry_id"]) });
+
 export const AI_RUNS_SCHEMA = `
 
 -- IS-6 / INVESTIGATIVE-SESSION.md §11: THE RUN IS AN OBJECT, and it is built on
@@ -139,7 +142,10 @@ CREATE TABLE IF NOT EXISTS ai_test_bar (
   false_alarm_rate  REAL NOT NULL,
   passed            INTEGER NOT NULL,
   graded_by         TEXT NOT NULL,
-  at                TEXT NOT NULL
+  at                TEXT NOT NULL,
+  -- R75 (T53; AD13, N1258): the entry the result measured, so the standing measure is kept per entry; NULL for a
+  -- result recorded before T53, which measured no entry and withdraws none.
+  entry_id          TEXT
 );
 -- R75: a group's own test investigations, each a matter with the answers its members wrote.
 CREATE TABLE IF NOT EXISTS ai_group_tests (
