@@ -3,10 +3,10 @@
    C-41.18 (`case-catalogue` R7, run by R8's registration), a /10 document whose `ungraded_passages:` block disagrees with
    its own `passages:` and `grading_facts:`; a document whose statement is true signs, however many passages are
    ungraded; a document of an earlier format is not asked. Driven at the module's interface over its own case, signature
-   and gate. R63 (the edition records the statement from the signed bytes) rests on `publication` R80's commit. */
+   and gate. R63: the edition records the statement from the signed bytes (`publication` R80's commit, through R42). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { passagesWorld, refusedAlike, signs, ungraded, gateChecks, P1, P2, Q1 } from "./passages-world.mjs";
+import { passagesWorld, refusedAlike, signs, ungraded, gateChecks, keyOf, P1, P2, Q1, CASE } from "./passages-world.mjs";
 
 const ONE_UNGRADED = [{ finding: Q1, ord: 1, grade: null }, { finding: Q1, ord: 2, grade: "B" }];
 const ALL_GRADED = [{ finding: Q1, ord: 1, grade: "C" }, { finding: Q1, ord: 2, grade: "B" }];
@@ -48,4 +48,19 @@ test("R62 controls: all graded with no statement signs; two ungraded, both state
   await signs(await passagesWorld({ format: null, passages: null }), "the fixture's /6 document");
 });
 
-test.todo("R63: the edition records the ungraded-passages statement from the signed bytes (two ungraded at signing, one graded after, the scheduled publisher commits the two), and a pre-format edition records \"not stated\" — needs publication R80's commit (PR 229)");
+test("R63: an edition signed at a set time with two passages ungraded publishes, at its time, with the two as signed; a pre-format edition records them as not stated (predates), never as none", async () => {
+  const facts = [{ finding: Q1, ord: 1, grade: null }, { finding: Q1, ord: 2, grade: null }];
+  const s = await passagesWorld({ facts, lines: ungraded(P1, P2) });
+  assert.equal((await s.publishAt()).status, 200);
+  /* whatever is graded in the meantime, the waiting edition's bytes and its checks are the signing's (R41) */
+  const out = await s.scheduled(s.queued[0].checked);
+  assert.equal(out.published, true, JSON.stringify(out).slice(0, 400));
+  const st = s.w.publication.caseEditionState(CASE, 1, null);
+  assert.deepEqual([st.ungraded_passages.state, st.ungraded_passages.rows], ["stated", [keyOf(P1), keyOf(P2)]]);
+  const pre = await passagesWorld({ format: null, passages: null });
+  assert.equal((await pre.publishAt()).status, 200);
+  assert.equal((await pre.scheduled(pre.queued[0].checked)).published, true);
+  const ps = pre.w.publication.caseEditionState(CASE, 1, null);
+  assert.deepEqual([ps.ungraded_passages.state, ps.ungraded_passages.rows], ["predates", null]);
+  assert.notDeepEqual(ps.ungraded_passages.rows, [], "not stated is not none");
+});
