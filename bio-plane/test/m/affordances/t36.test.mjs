@@ -15,6 +15,7 @@ import * as A from "../../../src/affordances.mjs";
 import * as G from "../../../src/op-grades/index.mjs";
 import { MEMBERSHIP_CHECKS } from "../../../src/membership/index.mjs";
 import { word, hasWord, WORD_ROWS } from "../../../src/setup-words/index.mjs";
+import { RETIRED_ACTS } from "../../../src/wizard-scripts/data.mjs";
 import { T51_DESIGN_OPS, T51_OWED_OPS, T51_LIST_ONLY_OPS, T51_STANDIN_OPS, T51_STANDIN_HELP, T51_STANDARD_OPS } from "../../../src/affordances/act-help.mjs";
 
 const { ACT_HELP, ACT_HELP_KEYS, BROWSER_ACTS, affordancesAnswer } = A;
@@ -75,7 +76,10 @@ const OWED_HELD = [...OWED_NOW, ...OWED_NOW_T50, "aliaswithdraw", ...R69_ACTS, .
 /* R71 (K5303): the five Standard acts, words the list holds that its reads list (a generation behind) does not yet give */
 const B14_KEYS = [...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS, ...T51_STANDARD_OPS].map((op) => `act.${op}.does`);
 /* the reads list's act keys this module holds */
-const readsHeld = (key) => /^act\.[^.]+\.does$/.test(key) && !NOT_HELD_READS.includes(key)
+/* F1 (T53; ai-accounts R35): R48 holds no retired op, so the reads list's words for the ai-accounts ops T53 retired are not held; the
+   retired ops are wizard-scripts' own `RETIRED_ACTS`, never listed here */
+const retiredT53 = (key) => Object.hasOwn(RETIRED_ACTS, opOf(key) ?? "");
+const readsHeld = (key) => /^act\.[^.]+\.does$/.test(key) && !NOT_HELD_READS.includes(key) && !retiredT53(key)
   && !(key.startsWith("act.owed_") && !OWED_HELD.includes(key.slice("act.owed_".length, -".does".length)));
 const expected = () => {
   const out = new Map();
@@ -132,7 +136,7 @@ test("R48 R53 R54 R56 R57 R61 R62: ACT_HELP is a frozen module constant holding 
     assert.equal(Object.hasOwn(ACT_HELP, `owed_${k}`), false, k);
   }
   /* R54's own texts, R56's, and the ops the design re-keyed: each held under its op as the list gives it */
-  for (const op of ["captureupload", "ask", "subscriptiondisconnect", "clockproposals", "joindoors", "statusreportassist", "airundispatch",
+  for (const op of ["captureupload", "ask", "clockproposals", "joindoors", "statusreportassist", "airundispatch",
                     "actionscope", "itemtakeup", "filingsecondapprove", "escalationstoppursuing", "infolevelset", "subscriptionsignin",
                     "projectaikeepaway", "unlock", "passwordreset", "grouplogoset", "grouplanguagesset", "signrequest", "projectlist",
                     "projectquestions", "drawquestion", "projectbarset", "monitorset", "recover", "publish", "caseratify", "publishat",
