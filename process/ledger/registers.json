@@ -1,0 +1,53 @@
+{
+  "id": "registers",
+  "title": "registers: the new module, imports, search, cited rows and watches over public registers (all T53 requirements)",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/registers/",
+    "build/requirements/registers.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/registers/"
+  ],
+  "requirements": "build/requirements/registers.md",
+  "uses": [
+    "register-readers",
+    "jurisdictions",
+    "civil-time",
+    "id-spaces",
+    "record-grammar",
+    "runtime-limits",
+    "setup-words",
+    "test-support",
+    "record-core",
+    "membership",
+    "project-roster",
+    "promotion",
+    "host-governor",
+    "provenance",
+    "acquisition",
+    "capture",
+    "content",
+    "extraction",
+    "entities"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/registers.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet every unmet mark in build/requirements/registers.md, each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T02:35:00Z"
+  }
+}

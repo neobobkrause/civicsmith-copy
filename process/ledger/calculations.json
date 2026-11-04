@@ -1,0 +1,60 @@
+{
+  "id": "calculations",
+  "title": "calculations: its one unmet T53 requirement, R53",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/calculations/",
+    "build/requirements/calculations.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/calculations/"
+  ],
+  "requirements": "build/requirements/calculations.md",
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "calc-grammar",
+    "civil-time",
+    "id-spaces",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "entities",
+    "events",
+    "lines",
+    "observation-log",
+    "standards",
+    "progressions",
+    "money",
+    "duties",
+    "people",
+    "retrieval",
+    "extraction",
+    "connection-grammar",
+    "csv-reader",
+    "setup-words",
+    "test-support",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/calculations.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet every unmet mark in build/requirements/calculations.md, each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T02:35:00Z"
+  }
+}
