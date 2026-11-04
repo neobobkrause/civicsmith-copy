@@ -32,3 +32,4 @@
 {"at":"2026-11-04T02:10:29Z","row":"outcome","n":16,"outcome":"delivered"}
 {"at":"2026-11-04T02:11:55Z","row":"sent","n":17,"to":"bob","text":"ROOT: the old BOB is archived (ready at 02:11Z; handoff/bob.md written at 14272c5). Its merge loops for 60 and 57 stopped with it, so they are yours. PR 64 filings merged; its notices filings R29 and R71 now notify 11 modules, triage owed. PR 66 stands as root-16 (A)."}
 {"at":"2026-11-04T02:12:04Z","row":"outcome","n":17,"outcome":"delivered"}
+{"at":"2026-11-04T02:38:21Z","row":"sent","n":18,"to":"bob","text":"ROOT on bob-25: PR 66 was decided at 02:10Z (root-16): A. Drop the file-scanner F1 (and now the credentials mark, which the credentials job carries) from PR 66, merge the remaining marks plain, and enter file-scanner's F1 by `job start file-scanner --reopen` with F1 as its only work. Registers take-in: I have asked the coordinator; hold it until I answer (by 03:08Z at latest)."}
