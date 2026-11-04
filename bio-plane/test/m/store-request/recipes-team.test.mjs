@@ -4,6 +4,7 @@ import "../../sandbox.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { storeWorld, unnamedFounderWorld } from "./fixtures.mjs";
+import { issuedHeld } from "./recipes-team.mjs";
 
 const caps = { capabilities: ["contribute", "create_projects"] };
 
@@ -57,7 +58,7 @@ test("R19 connectedSignIn: the member's sign-in is connected and her account ref
   assert.deepEqual([made.connected, made.reference], [true, true]);
   const other = await storeWorld({ ai: true });
   const bo = await other.signIn("bo");
-  assert.equal((await bo.read("accountreference", { query: { member: bo.member } })).subscription.connected, false);
+  assert.equal(await issuedHeld(bo), false);
 });
 
 test("R19 investigating: a project reads forming and, once a question rests on a held document, investigating", async () => {

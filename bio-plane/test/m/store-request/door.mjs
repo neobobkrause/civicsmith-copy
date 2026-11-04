@@ -24,7 +24,7 @@ import { admit, aiCredentialPresented, presentedCredential, readerOf, bearerFenc
          sourceOf, countryOf, callerViewer, SCRATCH } from "../../../src/admission/index.mjs";
 import { json, doAnswer, storeRefusal, storeSilent, relayAnswer, dispatchRow, requiredArgument, STORE_SILENT_REASON,
          STORE_SILENT_DETAIL } from "../../../src/answer-envelope/index.mjs";
-import { subscriptionSignin, subscriptionDisconnect, signintrace, leaverOf, signoutLeaver } from "../../../src/signin-door/index.mjs";
+import { subscriptionSignin, signintrace, leaverOf, signoutLeaver } from "../../../src/signin-door/index.mjs";
 import { publicReadDoorRead, publicReadDoorOp } from "../../../src/public-read/door.mjs";
 import { publicReadOf } from "../../../src/public-read/index.mjs";
 import { bindPublishedPlane } from "../../../src/publication/worker.mjs";
@@ -346,19 +346,15 @@ async function answer(world, stub, env, page) {
     return byteAnswer(await stub.fetch(new Request(at, warned === undefined ? { method: "GET" }
       : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ warned }) })), op, extra);
   }
-  /* (5) the sign-in door's three, signin-door's functions over the store */
+  /* (5) the sign-in door's two, signin-door's functions over the store */
   const stored = (p, init) => doAnswer(stub.fetch(new Request(`http://do/${p}`, init)));
   if (op === "subscriptionsignin") {
     const signed = await subscriptionSignin({ env, member: actor, asked: reqBody, store: stored });
     return json(signed.body, signed.status);
   }
   if (op === "signintrace") { const traced = await signintrace({ env, store: stored }); return json(traced.body, traced.status); }
-  if (op === "subscriptiondisconnect") {
-    const out = await subscriptionDisconnect({ env, member: actor, store: stored });
-    if (out.refused) return storeRefusal(out, extra);
-    if (!out.answered) return storeSilent(op, out.correlation);
-    return json({ ...out.reply.body, ...extra }, out.reply.status);
-  }
+  /* notice op-declarations:95 (its R24, R30; ai-accounts R35): `subscriptiondisconnect` is retired with no alias, so the world has no arm
+     for it; a member's sign-in account is removed by ai-accounts' own `aiaccountremove`, a store route */
   /* (5) the module arms `plane/door.mjs` composes, with the stamps its `gatedOp` hands */
   const armed = await gatedArm({ req, url, env, op, cls, viaSession, sessMember, sessViewer, sessIdentity, sessRights, sessCaps,
                                  aiCred, storeName, stub });
@@ -578,7 +574,7 @@ async function templateAnswer(world, op, made) {
 
 /** R20: whether the world's door answers `op` through an arm or function of its own (class (b)); a store route is class (a). */
 export function worldAnswers(op) {
-  return ["whoami", "subscriptionsignin", "signintrace", "subscriptiondisconnect", "ask", "affordances", "registeraudit", "attest",
+  return ["whoami", "subscriptionsignin", "signintrace", "ask", "affordances", "registeraudit", "attest",
           "monitor", "pagetranscribe", "agentpack", "airundispatch", TEXT_CHECK, READ_TRANSLATE, "claim", "login", "recover", "passwordresetlook", "passwordreset", "invitelook", "enroll",
           "grouplanguages", "websiteinvite", "joinlinkinvite", "groupdescription", "handlecheck", "bootstrap",
           /* capture's arm (`capture`, `links`), ratification's (`ratify`), public-read's public arm (`publishedbytes`, `credit`) */
@@ -646,8 +642,11 @@ export async function signIn(world, handle, { admin = false, capabilities = null
     member = handle;
   } else member = handle;
   const signed = await login(isFounder ? (founderHandle || "admin") : handle, isFounder ? world.password : passwords.get(handle));
+  /* F1: the record the shell keeps carries no expiry (`e` 0, interface-shell R32's none). The login's `expires` is on the world's fixed clock,
+     and the shell compares a record's expiry with the real clock, so that instant would lapse once the real date passed it. The plane's own
+     expiry still holds: admission judges the token by the world's clock on every request, unchanged. */
   const me = { handle, member, token: signed.token, password: isFounder ? world.password : passwords.get(handle),
-               session: { t: signed.token, e: typeof signed.expires === "number" ? signed.expires : Date.parse(signed.expires) || 0, d: device === "own" ? "own" : "shared", w: handle } };
+               session: { t: signed.token, e: 0, d: device === "own" ? "own" : "shared", w: handle } };
   me.act = (op, { query = {}, body = {} } = {}) => call(op, me, { query, body });
   me.read = (op, { query = {} } = {}) => call(op, me, { query });
   return me;

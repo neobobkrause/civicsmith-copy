@@ -16,6 +16,8 @@ const ROOT = resolve(fileURLToPath(new URL("../../../../", import.meta.url)));
 const SRC = join(ROOT, "bio-plane", "src", "store-assembly");
 const env0 = () => ({ STORE: { idFromName: (n) => n } });
 const settle = async (blocked, from = 0) => { const out = []; for (const p of blocked.slice(from)) out.push(await p); return out; };
+/* the object's background work too (extraction's repairs, handed to waitUntil), so a snapshot is not taken mid-run */
+const settled = async (st) => { const out = await settle(st.blocked); for (let i = 0; i < st.waited.length; i++) await st.waited[i]; return out; };
 const snapshot = (db) => {
   const t = db.prepare("SELECT name, sql FROM sqlite_master ORDER BY name").all();
   return { schema: t.map((r) => `${r.name}:${r.sql}`).join("\n"),
@@ -44,7 +46,7 @@ test("R1: two calls over one storage start instance-setup once and migrate idemp
   const db = new DatabaseSync(":memory:");
   const st = storage(db), env = env0();   /* the runtime hands one object its one env */
   assembleStore(st.ctx, env);
-  await settle(st.blocked);
+  await settled(st);
   const first = snapshot(db);
   const n = st.blocked.length;
   assembleStore(st.ctx, env);
@@ -56,7 +58,7 @@ test("R1: two calls over one storage start instance-setup once and migrate idemp
   /* control: a fresh object (a restart) over the same database starts, and its migration and start add nothing */
   const st2 = storage(db);
   assembleStore(st2.ctx, env0());
-  const restarted = await settle(st2.blocked);
+  const restarted = await settled(st2);
   assert.equal(restarted[restarted.length - 1].started, true);
   const third = snapshot(db);
   assert.equal(third.schema, first.schema);

@@ -50,14 +50,23 @@ export async function deepChain(world, as, projectId, { depth = 9 } = {}) {
 }
 
 /** R19: a member's connected sign-in, by the real acts of the sign-in door: the runner (the platform's agent worker, bound as `AGENT_WORKER`; a stand-in that answers the codes it is given) accepts
- *  the code the member pastes (`subscriptionsignin`, `step: "code"`) and the connection is held. Needs `storeWorld({ ai: true })`. Answers `{connected, reference}` (the `state` step's and
- *  `accountreference`'s `subscription.connected`). */
+ *  the code the member pastes (`subscriptionsignin`, `step: "code"`) and the connection is held. Needs `storeWorld({ ai: true })`. Answers `{connected, reference}` (the `state` step's
+ *  `connected`, and whether her own accounts, as ai-accounts' `accountsof` lists them for owner `member:<id>`, the read signin-door's state asks (T53), hold an `issued` one). */
 export async function connectedSignIn(world, as, { code = "abc#def" } = {}) {
   world.env.AGENT_WORKER = { fetch: async (_url, init) => { const b = JSON.parse(init.body);
     return Response.json({ ok: true, member: b.member, step: b.step, connected: true, token: "sk-ant-oat01-" + "r".repeat(40), valid_for: 86400 }); } };
+  /* notice signin-door:153: the sign-in's `code` holds the token on her own issued account through ai-accounts, which asks the
+     disclosure first (ai-accounts R23): she is shown it by the real acts before she signs in */
+  const d = await as.read("disclosureof", { query: { member: `member:${as.member}` } });
+  await as.act("disclosureshown", { body: { member: `member:${as.member}`, version: d.version } });
   await as.act("subscriptionsignin", { body: { step: "code", code } });
   return { connected: (await as.act("subscriptionsignin", { body: { step: "state" } })).connected,
-           reference: (await as.read("accountreference", { query: { member: as.member } })).subscription.connected };
+           reference: await issuedHeld(as) };
+}
+
+/** Whether `as`'s own accounts (`accountsof`, owner `member:<id>`) hold an account issued by a subscription sign-in (ai-accounts R19, R42). */
+export async function issuedHeld(as) {
+  return ((await as.read("accountsof", { query: { owner: `member:${as.member}` } })).accounts ?? []).some((a) => a.means === "issued");
 }
 
 /** R19: a project that is investigating: a document held in it and a question drawn into it resting on that document. `projectstage` reads `forming` before and `investigating` after. Answers

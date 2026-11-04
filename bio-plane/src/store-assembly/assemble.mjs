@@ -47,6 +47,7 @@ import { acquireHandlerParts, acquireTimingsOps, traceStamped, ACQUIRE_STAGES_DD
 import { pendingOf, pendingOps, administersOf } from "./pending.mjs";
 import { storeId } from "../store-place.mjs";
 import { doorbellOf, doorbellOps } from "../doorbell/index.mjs";
+import { mailDoorOf, mailDoorOps } from "../mail-door/index.mjs";
 import { fileSafetyOf, fileSafetyOps } from "../file-safety/index.mjs";
 import { monitoringOf, monitoringOps } from "../monitoring/index.mjs";
 import { linkSweepOf, linkSweepOps } from "../link-sweep/index.mjs";
@@ -98,7 +99,8 @@ import { actionProducersOf } from "../action-producers/index.mjs";
 import { tasksOf } from "../tasks/index.mjs";
 import { wizardScriptsOf, wizardScriptsOps, SCREEN_REGISTRY } from "../wizard-scripts/index.mjs";
 import { translationsOf, translationsOps } from "../translations/index.mjs";
-import { instanceSetupOf, instanceSetupOps, disclosureReadOf, DISCLOSURE_READER } from "../setup.mjs";
+import { instanceSetupOf, instanceSetupOps, disclosureReadOf, DISCLOSURE_READER, testInstanceOf } from "../setup.mjs";
+import { aiCatalogueOf } from "../ai-catalogue/index.mjs";
 import { dispatch, controlPlaneRoutes } from "../store-door/dispatch.mjs";   /* K1907, K2041: the store's door */
 import { promotionStep } from "../store-door/step.mjs";
 import { registerOwnersCounts, registerStats, withDeepStats } from "./stats.mjs";
@@ -112,6 +114,8 @@ import { peopleOf, peopleOps } from "../people/index.mjs";
 import { exploreOf, exploreOps } from "../explore/index.mjs";
 import { calculationsOf, calculationsOps } from "../calculations/index.mjs";
 import { workbooksOf, workbooksOps } from "../workbooks/index.mjs";
+import { registersOf, registersOps } from "../registers/index.mjs";
+import { streamRegister, probeRegister, sourceChanged, keyedFetch } from "../acquisition/index.mjs";
 import { legEarningOf, legEarningOps } from "../leg-earning/index.mjs";
 import { hypothesesOf, hypothesesOps } from "../hypotheses/index.mjs";
 import { answersOf, answersOps } from "../answers/index.mjs";
@@ -192,12 +196,13 @@ const captureClockOf = (ctx, env) => {
 
 /** R1: every module of the record store built on `ctx`'s storage, migrated and started; answers the assembled store
  *  `{routes, dispatch, namespace, nowMs, read}`. `deliver`, optional, is `control-plane`'s owed-render delivery
- *  (`deliverOwedRender`), handed to the owed-work ledger: absent, a ledger row that needs it stays owed (R67). `releaseKeys`,
+ *  (`deliverOwedRender`), handed to the owed-work ledger: absent, a ledger row that needs it stays owed (R67). `catalogueKeys`,
+ *  optional, a test plane's keys for ai-catalogue, honoured on a test instance only (see below; the class hands none). `releaseKeys`,
  *  optional and a test's own, is the list of keys instance-setup verifies a release notice against in place of the
  *  product's (`RELEASE_KEYS`): the Durable Object class hands none. The
  *  migration and the starts are work handed to `ctx.blockConcurrencyWhile`, so they run before any request; a module that
  *  fails to build throws here, and the class that called it answers nothing. */
-export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } = {}) {
+export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, catalogueKeys = null } = {}) {
   env = env || {};
   const sql = ctx.storage.sql;
   const namespace = () => namespaceOf(ctx, env) || "bio";
@@ -212,7 +217,17 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
   /* R21 (K1541; credentials R23, R29): credentials holds the Worker secret its seal is derived from, built here before
      any module reaches it (its instance is one per storage, its deps read on the first call only). Unbound, setting a
      member's reference is refused ACCOUNT_SEAL_UNAVAILABLE. */
-  credentialsOf(ctx, { sealSecret: env.ACCOUNT_SEAL_SECRET ?? null, now: () => nowMs(null) });   /* K5168: the first construction takes the store's clock */
+  /* R1 (ai-accounts R40, R63; the coordinator, 4 Nov): ai-catalogue's one instance on this storage, over record-core, at the
+     store's clock, is ai-accounts' catalogue, handed through credentials' first construction (credentials R32 passes it on), so
+     an account act reads the signed list the copy holds and fails closed only when it holds none. Its keys are the product's
+     (`CATALOGUE_KEYS`) unless a test plane hands `catalogueKeys`, which are honoured on a test instance alone
+     (`testInstanceOf`: CIVICSMITH_TEST_INSTANCE equal to INSTANCE_NAME); anywhere else they are refused, the product's keys
+     kept and the refusal logged, so no other key can sign a list a real copy reads. */
+  const testKeys = catalogueKeys !== null && catalogueKeys !== undefined && testInstanceOf(env) ? catalogueKeys : null;
+  if (catalogueKeys !== null && catalogueKeys !== undefined && testKeys === null)
+    console.warn(JSON.stringify({ event: "CATALOGUE_TEST_KEYS_REFUSED", detail: "catalogueKeys are honoured on a test instance only; the product's keys are kept" }));
+  const catalogue = aiCatalogueOf(ctx, { record: recordOf(ctx), env, clock: () => nowMs(null), ...(testKeys ? { keys: testKeys } : {}) });
+  credentialsOf(ctx, { sealSecret: env.ACCOUNT_SEAL_SECRET ?? null, now: () => nowMs(null), catalogue });   /* K5168: the first construction takes the store's clock */
   /* R22 (T33-12; docprofile R36): the content types registered into docprofile's registry, once, generic last. */
   registerReaders();
   /* R10 (K861): the stats figures, each owner's registered under its own name (record-core R63), and the plane's own
@@ -297,6 +312,16 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
     entities: entitiesOf(ctx), progressions: progressionsOf(ctx) });
   workbooksOf(ctx, { provenance, content: contentOf(ctx), calculations,
                      recompute: sheetRecompute(env, () => namespace()) });
+  /* R101 (T53; N1259; K4403 (1)): registers, at its place after workbooks (layer 5), one instance per host. Its construction
+     is its start: it migrates its tables, declares them to record-core and registers, once, its row context with content
+     (`registerRowContext`, its R73) and its held-as reader with extraction (`registerHeldAs`, its R113). Its row store is the
+     default port over this storage (`sqliteRowStore`), and the shelf-free figure is the platform's (`sql.databaseSize`
+     against its ceiling), so it is handed neither. Acquisition's register functions read the governed store below. */
+  const registers = registersOf(ctx, { record: recordOf(ctx), membership: membershipOf(ctx), promotion,
+    acquisition: { streamRegister, probeRegister, sourceChanged, keyedFetch },
+    store: { core: recordOf(ctx), env, governor: governorOf(ctx, { env }), provenance },
+    content: contentOf(ctx), extraction: extractionOf(ctx), entities: entitiesOf(ctx),
+    now: () => nowMs() });   /* no evidencePurge: record-core's evidence store has no delete, so a removal says the object stays (registers R30) */
   registerInquiryGrammar(recordOf(ctx));   /* inquiry-grammar R6 (K812): before basis-versions, whose R43 runs at its sub-slot */
   basisVersionsOf(ctx, { retrieval, acceptedWork });   /* basis-versions registers its projection decoration (its R42) */
   /* R30 (K2567): steps, at its place before ai-use and ai-runs (layer 6), one instance per host, built here with the
@@ -493,12 +518,21 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
      (synchronous, so a reader may owe inside its own transaction), the alarm armed beside each row kept; every `readHeld` the ledger makes also
      carries `registerJob` and `armJobs` (pending.mjs). Guarded, as extraction's own merge is later than this line. */
   const extraction = extractionOf(ctx);
-  if (typeof extraction.registerOwe === "function")
-    extraction.registerOwe((a) => { const r = pending.registerJob(a); if (r && r.ok === true) void pending.armJobs(); return r; });
+  /* R1, R3: the registration starts extraction's repair run at once (its R89), which reads extraction's tables, so it is made
+     directly after the migration pass below, inside the same blocked work: on a fresh store a run started before the pass
+     found no tables, stopped, and ran first at the object's restart, so a restart wrote a migration row the first start had not. */
+  const registerExtractionOwe = () => {
+    if (typeof extraction.registerOwe === "function")
+      extraction.registerOwe((a) => { const r = pending.registerJob(a); if (r && r.ok === true) void pending.armJobs(); return r; });
+  };
   /* R37 (T42; N826; K2607 rule 3, K2629, K2630; doorbell R25): doorbell, directly after capture in the modules' order,
      the one instance per host (actions' factory may have reached it first for its hold reader, actions R55); it takes no
      `env` of its own and reads capture's at each use, the instance above. */
   doorbellOf(ctx);
+  /* R2, R47, R83 (mail-door R12): mail-door, directly after doorbell in the modules' order (layer 3), the one instance per
+     host over capture's instance (it reads capture's `env` at each use). It is handed no `settings`: no mail domain or switch
+     is composed yet (instance-setup R114), so the door is off (its R12: MAIL_OFF, MAIL_NOT_SET_UP), never guessed on. */
+  mailDoorOf(ctx, { capture: captureOf(ctx) });
   /* R26 (rev. 2 §4; K2063 (10)): file-safety, directly after doorbell in the modules' order (capture, doorbell,
      file-safety), built here with this
      environment (the `FILE_SCANNER` binding and the `CAPTURES` bucket; the evidence store and its prefix are
@@ -563,8 +597,13 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
   schedulerOf(ctx, env).register("plane", pending.consumer());   /* R75: `pending-work`, before the scheduler's start so its alarm is re-derived at a restart (scheduler R11) */
   /* R87 (fix round 6, G54): the case-file sweep, ratification's, a second consumer of the plane's, registered at the same place so a restart re-derives its alarm */
   schedulerOf(ctx, env).register("plane", casefileSweepConsumer(ratificationOf(ctx)));
+  /* R101 (registers R12): the import's slices run on the alarm as the consumer `register-import`, under monitoring's sweep
+     host (its one pause, epoch and claim, monitoring R65), one slice a firing. */
+  schedulerOf(ctx, env).register("registers", { name: "register-import",
+    due: (now) => registers.importDue(now, monitoring.sweepHost()), wake: (now) => registers.importWake(now),
+    tick: async (now) => ({ "register-import": await registers.importTick(now, undefined, monitoring.sweepHost()) }) });
   /* R3: the migration pass, then scheduler's start. */
-  ctx.blockConcurrencyWhile(async () => migrate());
+  ctx.blockConcurrencyWhile(async () => { migrate(); registerExtractionOwe(); });
   ctx.blockConcurrencyWhile(async () => schedulerOf(ctx, env).start());
   /* queue, then tasks, each creating its own tables (queue R36, tasks R8). R11: queue is handed the two modules
      `queue-producers` R20 and R21 read, R15 the docket its R30's items read (`Queue.PRODUCER_DEPS`), and R20 the
@@ -621,7 +660,7 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
   const instanceSetup = instanceSetupOf(ctx, env, { queueProducers, now: () => nowMs(null), ...(releaseKeys ? { releaseKeys } : {}) });   /* K5171: the instance clock, handed, not read from the env */
   /* R44 (T47; N981; K3030; credentials R64, instance-setup R54): instance-setup's disclosure read registered with
      credentials once, on this object's own instances, on instance-setup's behalf (credentials is earlier in the order
-     and cannot reach it), so `disclosureDue` is asked in the assembled plane: `accountreferenceset` and a sign-in's
+     and cannot reach it), so `disclosureDue` is asked in the assembled plane: a member's own account act (`aiownadd`; T53, op-declarations PR 95) and a sign-in's
      `start` are refused DISCLOSURE_DUE while no disclosure is recorded for the member. */
   /* R53 (T48; ai-accounts R23): the registration is ai-accounts', not credentials' delegate */
   aiAccountsOf(ctx).registerDisclosureRead(DISCLOSURE_READER, disclosureReadOf(instanceSetup));   /* instance-setup R54 */
@@ -687,6 +726,7 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
     captureOf(ctx).migrate();
     /* R37 (K2629): doorbell's tables directly after capture's, so capture's declaration is first and doorbell's held */
     doorbellOf(ctx).migrate();
+    mailDoorOf(ctx).migrate();   /* R3: mail-door's tables directly after doorbell's */
     fileSafetyOf(ctx).migrate();   /* R26: its tables, declared to purge (its R25), directly after doorbell's */
     extractionOf(ctx).migrate();
     observationLogOf(ctx).migrate();   /* before the run log folds into its tables below */
@@ -770,8 +810,9 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
         .filter(([op]) => !Object.hasOwn(accountOps, op))),
       /* R49 (T47; K3143; signin-door R2, R4, R5): the sign-in door's store-internal routes (`signintokenhold`,
          `signintokenrefused`, `signindisclosuredue`, `signintracekeep`, `signintraceread`), beside credentials' map, over
-         the plane's one credentials instance; none has an op spec, so none is served to a caller. */
-      ...signinDoorOps(credentialsOf(ctx), url, body, env),
+         ai-accounts' one instance (R40: the account reads are ai-accounts', never credentials' delegates, which T53
+         removed); none has an op spec, so none is served to a caller. */
+      ...signinDoorOps(aiAccountsOf(ctx), url, body, env),
       /* K2042 (acquisition R43; CONTROL-PLANE #24 J3): the group's co-archive setting, acquisition's one instance per
          host, at acquisition's place before capture's map; `by` is the door's stamp. */
       coarchiveset: () => acquisitionOf(ctx).coArchiveSet({ on: body ? body.on : undefined, by: url.searchParams.get("by") }),
@@ -786,6 +827,8 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
       /* R37 (N826; K2630): doorbell's nine routes, directly after capture's map, each answered by doorbell's instance
          (capture's copy deleted in T43, N849). */
       ...doorbellOps(doorbellOf(ctx), url, body),
+      /* R47 (mail-door R12): mail-door's member acts, directly after doorbell's map, over its one instance. */
+      ...mailDoorOps(mailDoorOf(ctx), url, body),
       /* R26: file-safety's ops (op-declarations R32), at its place directly after doorbell's map. */
       ...fileSafetyOps(fileSafetyOf(ctx), url, body, env),
       ...calibrationOps(calibrationOf(ctx), url, body),
@@ -810,6 +853,7 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
       ...exploreOps(explore, url, body),
       ...calculationsOps(calculationsOf(ctx), url, body),
       ...workbooksOps(workbooksOf(ctx), url, body),
+      ...registersOps(registersOf(ctx), url, body),   /* R101: registers' ops, at its place after workbooks */
       ...contradictionOps(contradictionOf(ctx), url, body),
       ...progressionOps(progressionsOf(ctx), url, body),
       ...intentOps(intentOf(ctx), url, body),

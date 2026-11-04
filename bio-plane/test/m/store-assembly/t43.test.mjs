@@ -4,13 +4,14 @@
    the assembled store's door) with a negative control (K874). The fixtures are made for this suite with
    Pillow 12.3.0: `t43-photo-o6.jpg`, a 3200×2400 baseline colour JPEG whose EXIF Orientation is 6, and `t43-page.png`,
    an 800×600 colour PNG. */
+import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
 import "../../../src/store-assembly/register.mjs";   /* R83: the start's registration before any op table is read */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { store, disclosed } from "./fixture.mjs";
+import { store, disclosed, admitPart } from "./fixture.mjs";
 import { SCREEN_REGISTRY } from "../../../src/wizard-scripts/index.mjs";
 import { screenFailures } from "../../../src/store-assembly/wizards.mjs";
 import { OPS } from "../../../src/op-declarations/index.mjs";
@@ -158,8 +159,9 @@ async function planeHolding(bytes, worker) {
   sql.exec(`INSERT INTO members (member_id, cover, handle, role, status, capabilities, created, updated)
             VALUES ('ann', 'Cover ann', 'h_ann', 'member', 'active', '["contribute"]', 't', 't')`);
   await disclosed(ctx);   /* R35 (T47): the disclosure first, as the assembled plane asks */
-  assert.equal((await credentialsOf(ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: SENTINEL, by: "member:ann" })).ok, true);
+  assert.equal((await aiAccountsOf(ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: SENTINEL, by: "member:ann" })).ok, true);
   assert.equal(aiRunsOf(ctx).testBarRecord(PASSED).ok, true);
+  await admitPart(ctx, "transcribe");   /* ai-runs R78: admitted on the fixture's entries */
   const d = shaOf(bytes);
   await evidence.put(`bio/captures/${d}`, bytes);
   sql.exec(`INSERT INTO bundles (bundle_id, object_type, group_id, title, current_state, created, last_updated, bundle_sha, row_version)
