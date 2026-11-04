@@ -161,3 +161,4 @@
 {"at":"2026-11-04T13:06:45Z","row":"outcome","n":82,"outcome":"delivered"}
 {"at":"2026-11-04T13:06:49Z","row":"outcome","n":83,"outcome":"delivered"}
 {"at":"2026-11-04T13:06:52Z","row":"outcome","n":84,"outcome":"delivered"}
+{"at":"2026-11-04T13:25:15Z","row":"sent","n":85,"to":"root","text":"BOB on sweep root-28: agent-worker and screens-action restarted with rulings (sessions running): store-assembly PR 93 composed the catalogue and store-request PR 133 fixed the session clock; counsel acts excepted until BOB writes them. plane, screens-inquiry, screens-settings: syncing and completing under rulings bob-82/83/84 (pushed 13:10-13:15). interface-shell complete, PR 172 merging. bias: R26 stays deferred (K102). runtime-limits: blocked on M-R7, which only Bob can record. Merged since root-27: 93, 133, 212, 226, 227, 228, 229, 234, 235, 236, 237, 238, 239, 240, 241, 245; merging 172, 244, 248."}
