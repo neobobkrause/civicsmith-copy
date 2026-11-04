@@ -36,7 +36,8 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: op-declarations:95 (index.mjs:152 BODY_ONLY_FIELDS still names groupkeyset). For each, decide from your own requirements what this module must do (the T53 ops that replace the retired ones are in ai-accounts' requirements and op-declarations), adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-04T18:44:03Z"
+    "state": "WORKING",
+    "at": "2026-11-04T18:58:46Z",
+    "reason": "reopened: Record the answer to provider notice op-declarations:289. PR 293 (merged) already answers it: the R19 test narrowed to administrators' own acts and a non-admin aiaccountadd without a fresh password gets REAUTH_DUE. The tool refused --test notice:op-declarations:289 then because the START named no such notice. Change no source; run job complete with --test notice:op-declarations:289=<that test file>::<test name>, adding --exempt-revert if the gate asks (the code change merged in 289/293)."
   }
 }
