@@ -6,3 +6,4 @@
 {"at":"2026-11-04T06:14:27Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-04T06:20:46Z","row":"sent","n":4,"to":"bob","text":"job question-explorer complete, PR #90 ready: run status"}
 {"at":"2026-11-04T06:20:54Z","row":"outcome","n":4,"outcome":"delivered"}
+{"at":"2026-11-04T06:29:26Z","row":"sent","n":5,"to":"bob","text":"job question-explorer: synced to tranche (money 154) and pushed, ebc5c5457d; job complete not rerun, so the code gate can check receipt attempt 3; suite 50/50"}
