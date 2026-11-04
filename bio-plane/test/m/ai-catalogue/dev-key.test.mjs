@@ -15,7 +15,13 @@ const { RELEASE_SEED, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, catalogueKeysFor, isD
 const DEVELOPMENT_KEY_VAR = "AI_CATALOGUE_DEVELOPMENT_KEY";
 const DEVELOPMENT_ACCOUNT = "20b533579290b9b93168345edd3b7f72";
 const DEVELOPMENT_SIGNING_SECRET = "AI_CATALOGUE_DEVELOPMENT_SIGNING_KEY";
-const devKey = () => import("../../../src/ai-catalogue/dev-key.mjs");
+/* dev-key.mjs is loaded inside each test; without it each test fails on this assertion (the load error is not passed on) */
+async function devKey() {
+  let mod = null;
+  try { mod = await import("../../../src/ai-catalogue/dev-key.mjs"); } catch { mod = null; }
+  assert.ok(mod && typeof mod.main === "function", "the development catalogue key command (dev-key.mjs) is not there");
+  return mod;
+}
 
 const ENV = { CIVICSMITH_TEST_INSTANCE: "p3dev-t1", CF_TOKEN: "token-for-test", CF_ACCT: DEVELOPMENT_ACCOUNT };
 const BOB = CATALOGUE_KEYS.filter((l) => !isDevelopmentKey(l));
