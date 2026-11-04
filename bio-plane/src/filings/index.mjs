@@ -210,6 +210,9 @@ const str = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
 const json = (v) => JSON.stringify(v ?? null);
 const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
 const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+/* R71 (T53): the layer that holds a fact of the view: its `layer` (jurisdictions R114, set when a package is named),
+   else its `profile` tag, which names the layer itself when layers or a plain profile are named; null with neither. */
+const layerOf = (...xs) => { for (const x of xs) if (isObj(x)) { const l = str(x.layer) || str(x.profile); if (l) return l; } return null; };
 const utf8 = (s) => new TextEncoder().encode(s).length;
 const WELL_FORMED = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 /* DEC-49: a refusal of this module's own carries its code, its C-115 row and the member's translation; one another
@@ -633,7 +636,7 @@ export class Filings {
       ? { value: clock.map((c) => `${c.date}: ${str(c.text) || str(c.description) || localize("filings.index.a_deadline", "a deadline")} (${c.basis})`).join("; "), source: action.id }
       : none(word("filings.action_holds_clock"));
     const venue = entry && isObj(entry.venue) ? entry.venue : null;
-    const vsrc = venue ? `profile:${venue.profile || entry.profile}/action_kinds/${entry.kind}/venue` : null;
+    const vsrc = venue ? `profile:${layerOf(venue, entry)}/action_kinds/${entry.kind}/venue` : null;
     out.venue = venue && str(venue.name) ? { value: str(venue.name), source: vsrc }
       : none(word("filings.profile_gives_kind"));
     out.venue_how = venue && str(venue.how) ? { value: str(venue.how), source: vsrc } : none(word("filings.profile_gives_means"));
@@ -755,7 +758,22 @@ export class Filings {
   }
 
   /* R29: what a draft or packet records of the template it was filled from: `{id, version, sha, origin}`. */
-  static #templateOf(v) { return { id: v.template, version: v.number, sha: v.sha, origin: v.origin }; }
+  static #templateOf(v, view = null) {
+    return { id: v.template, version: v.number, sha: v.sha, origin: v.origin,
+             ...(v.origin === "profile" ? { layer: Filings.#templateLayer(v, view) } : {}) };
+  }
+
+  /* R71 (T53): the layer that holds a profile template, read from the view's kind entry that carries it (a kind's
+     `templates` or its single `template`); null when the view holds it nowhere. */
+  static #templateLayer(v, view) {
+    for (const k of view && Array.isArray(view.action_kinds) ? view.action_kinds : []) {
+      if (!isObj(k)) continue;
+      const set = [...(Array.isArray(k.templates) ? k.templates : []), ...(isObj(k.template) ? [k.template] : [])];
+      const t = set.find((x) => isObj(x) && str(x.id) === v.template);
+      if (t) return layerOf(t, k);
+    }
+    return null;
+  }
 
   /* R29: the statement a draft or packet carries first (after any advisory) when its template names profiles none of
      which gave the action's kind (its `profile` tag, jurisdictions R13); null for a `general` template or one written
@@ -869,7 +887,8 @@ export class Filings {
     const disclosure = Filings.#disclosure(a);
     if (disclosure) body = `${disclosure}\n\n${body}`;
     const venue = entry && isObj(entry.venue) ? { name: entry.venue.name ?? null, how: entry.venue.how ?? null,
-                                                  source: `profile:${entry.venue.profile || entry.profile}/action_kinds/${entry.kind}/venue` }
+                                                  layer: layerOf(entry.venue, entry),
+                                                  source: `profile:${layerOf(entry.venue, entry)}/action_kinds/${entry.kind}/venue` }
       : { state: "undetermined", why: word("filings.why.profile_gives_kind") };
     /* R25: the exhibits the draft rests on, each with its grade and co-attestation, read against the venue's standard. */
     const standard = this.#venueStandard(v, a.kind);
@@ -884,7 +903,7 @@ export class Filings {
     const marks = { ...mk.marks, textcheck: mk.textcheck, printed: [disclosure, advisory && gov.tier === 2 ? advisory : null, notFor, review ? review.text : null].filter(Boolean),
                     ...(review ? { review_copy: review } : {}), rfc };
     /* R29: the template and version, or null for the member's own words */
-    const tpl = used ? Filings.#templateOf(used) : null;
+    const tpl = used ? Filings.#templateOf(used, v.view) : null;
     const year = when.slice(0, 4);
     return this.record.transact(() => {
       const { id } = this.record.allocId("FIL", year);
@@ -1054,7 +1073,7 @@ export class Filings {
     const window = a.clock.find((x) => realDate(x.date) && (x.basis_kind === "window"));
     out.push(law ? { part: localize("filings.index.a_time", "a time"), text: word("filings.time_law_allows", { days: law.days ?? law.amount ?? localize("filings.index.a_period", "a period"), count: law.count ?? law.units ?? localize("filings.index.days", "days"),
                                                                              citation: law.citation ?? word("filings.citation_stated") }),
-                     source: `profile:${law.profile}/deadlines/${law.rule}` }
+                     layer: layerOf(law), source: `profile:${layerOf(law)}/deadlines/${law.rule}` }
       : window ? { part: localize("filings.index.a_time", "a time"), text: word("filings.time_set", { date: window.date, basis: window.basis ?? word("filings.stated") }), source: `${a.id}/clock` }
       : { part: localize("filings.index.a_time", "a time"), text: word("filings.time_undetermined_profile"), source: null, undetermined: true });
     return out;
@@ -1214,7 +1233,8 @@ export class Filings {
         out.push({ kind: "election", key: "filings.election.notice",
                    text: keyed("filings.election.notice", { fact: str(f.statement) || str(f.key) || word("filings.governing_view_states"),
                                                             citation: str(f.citation) || word("filings.citation_stated") }),
-                   fact: f.key ?? null, citation: f.citation ?? null, statement: f.statement ?? null, source: `profile:${f.profile}/legal_facts/${f.key}` });
+                   fact: f.key ?? null, citation: f.citation ?? null, statement: f.statement ?? null, layer: layerOf(f),
+                   source: `profile:${layerOf(f)}/legal_facts/${f.key}` });
       if (!election.length)
         out.push({ kind: "election", key: "filings.election.notice",
                    text: keyed("filings.election.notice", { fact: word("filings.governing_view_holds"), citation: word("filings.citation_undetermined") }),
@@ -1226,7 +1246,7 @@ export class Filings {
     for (const f of facts)
       if (Array.isArray(f.applies_to) && f.applies_to.includes(a.kind))
         out.push({ kind: "legal_fact", key: f.key ?? null, citation: f.citation ?? null, statement: f.statement ?? null,
-                   source: `profile:${f.profile}/legal_facts/${f.key}` });
+                   layer: layerOf(f), source: `profile:${layerOf(f)}/legal_facts/${f.key}` });
     return out;
   }
 
@@ -2159,7 +2179,7 @@ export class Filings {
                                   counterparty: a.counterparty, kind: a.kind, factOf: factReader(this.localFacts, viewer) });
       return { rule: r.rule, days: r.days ?? null, count: r.count ?? null, starts: r.starts ?? null,
                ...(r.extension ? { extension: r.extension } : {}), citation: r.citation ?? null,
-               basis: r.basis ?? null, profile: r.profile ?? null, source: `profile:${r.profile}/deadlines/${r.rule}`,
+               basis: r.basis ?? null, profile: r.profile ?? null, layer: layerOf(r), source: `profile:${layerOf(r)}/deadlines/${r.rule}`,
                start, date: date.state === "determined" ? { ...date, start_source: start.source } : date };
     });
   }
@@ -2522,7 +2542,7 @@ export class Filings {
     const sections = this.#assemble(a, det, viewer, marking, at, { purpose: goal,
       challenged: named.map((x) => ({ statement: x.statement.trim(), findings: [...new Set((x.findings || []).map((f) => f.trim()))] })), privileged });
     if (used) sections.briefing = this.#briefing(used, a, det, hidden, viewer, at, marking, privileged);
-    const tpl = used ? Filings.#templateOf(used) : null;
+    const tpl = used ? Filings.#templateOf(used, this.#view().view) : null;
     const basis = this.#packetBasis(det, a);
     const disclosure = Filings.#disclosure(a);
     return this.record.transact(() => {
@@ -2551,7 +2571,7 @@ export class Filings {
     const check = this.#outward(filled.text, { a, facts: this.#matterFacts(a, det, viewer).facts, det, view: v.view,
       marks: { own_doing: [], voice: null, language: null, audience: null, names_pending: false }, form: "briefing", viewer });
     return { title: localize("filings.index.briefing", "Briefing"), marking, ...(privileged ? { privileged } : {}), text: notFor ? `${notFor}\n\n${filled.text}` : filled.text,
-             items: filled.blanks, unfilled: filled.unfilled, template: Filings.#templateOf(used), record_check: check.record_check,
+             items: filled.blanks, unfilled: filled.unfilled, template: Filings.#templateOf(used, v.view), record_check: check.record_check,
              ...(notFor ? { not_written_for: notFor } : {}),
              says: word("filings.says.group_briefing_counsel") };
   }
@@ -2590,13 +2610,20 @@ export class Filings {
   #templateShown(stored, viewer) {
     if (!isObj(stored) || !str(stored.id) || stored.version == null) return stored ?? null;
     const t = this.filingTemplates;
+    /* R29 (T53): a profile template has one present text; it is read as it stands now, whatever number it carries */
+    const profile = stored.origin === "profile";
     const r = t && typeof t.templateRead === "function"
-      ? this.#call(() => t.templateRead({ template: stored.id, version: stored.version, viewer })) : null;
+      ? this.#call(() => t.templateRead({ template: stored.id, ...(profile ? {} : { version: stored.version }), viewer })) : null;
     if (!r || r.ok === false) return { ...stored, read: false, says: word("filings.says.template_readable") };
     const ver = r.version || {};
     const retired = r.template && r.template.retired ? r.template.retired : null;
+    /* R29 (T53): a draft made from a profile text whose present SHA-256 differs from the one it recorded was made from an
+       earlier text: the existing flag for an updated version, naming the present one, no new word */
+    const earlier = profile && str(stored.sha) && str(ver.sha) && ver.sha !== stored.sha;
     const flags = [
-      ...(ver.updated_by ? [{ flag: "updated", by: ver.updated_by,
+      ...(earlier ? [{ flag: "updated", by: ver.id ?? null, sha: ver.sha,
+                       says: word("filings.says.prepared_version_updated", { version: stored.version, updated_by: ver.version ?? stored.version }) }]
+        : ver.updated_by ? [{ flag: "updated", by: ver.updated_by,
                               says: word("filings.says.prepared_version_updated", { version: stored.version, updated_by: String(ver.updated_by).split("@").pop() }) }] : []),
       ...(retired ? [{ flag: "retired", reason: retired.reason ?? null, at: retired.at ?? null,
                        says: word("filings.says.prepared_template_retired", { reason: retired.reason ?? word("filings.says.reason_stated") }) }] : []),

@@ -54,7 +54,8 @@ test("R28 R3 a filing takes at most one of template and text: the profile's file
   const p = prep(x, A);
   const profileText = x.profile().action_kinds.find((k) => k.kind === "bylaw_complaint").template.text;
   assert.equal(p.ok, true, JSON.stringify(p).slice(0, 300));
-  assert.deepEqual(p.template, { id: PROFILE_TPL, version: 1, sha: sha(profileText), origin: "profile" });
+  /* R71 (T53): a profile template also records the layer that holds it (a plain profile is its own layer) */
+  assert.deepEqual(p.template, { id: PROFILE_TPL, version: 1, sha: sha(profileText), origin: "profile", layer: PROFILE });
   assert.equal(p.text, `To the Selectboard: the adoption recorded as ${x.ACT_EVENT} does not conform to P.E.B.L. § 12; MCBC 2025-3.`);
   /* a group template: its latest approved version by default */
   const T = approved(x, { name: "notice" });
