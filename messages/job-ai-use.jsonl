@@ -2,3 +2,4 @@
 {"at":"2026-11-04T04:18:45Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T04:41:02Z","row":"sent","n":2,"to":"bob","text":"job ai-use: merged origin/tranche (e81b3da846, gate green), suite 117/117, job complete rerun (receipt commit 0b03e0648c pushed); its ready-for-review step failed on GraphQL (403) but PR #105 is already ready. No ai-accounts old names needed. Run status."}
 {"at":"2026-11-04T04:41:12Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-04T05:07:57Z","row":"sent","n":3,"to":"bob","text":"job ai-use complete, PR #105 ready: run status. Receipt: https://github.com/neobobkrause/civicsmith-copy/pull/105#issuecomment-6623095494 (merged tranche at c9fd1b0c78, pin efe3e97, suite 117/117; the tool noted the membership:77 notice was withdrawn, so its test is not recorded). Note: job complete's build leaves the six tracked */dist bundles modified; I restored them from HEAD, uncommitted."}
