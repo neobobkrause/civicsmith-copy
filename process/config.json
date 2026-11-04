@@ -22,6 +22,12 @@
   "suite_timeout_minutes": 20,
   "coordinator": "session_01RAN5eniJPZwnDgHRYfWFQb",
   "process_repo": "https://github.com/neobobkrause/process3",
+  "lanes": [
+    {
+      "name": "ux",
+      "dir": "docs/development/ux-substrate/"
+    }
+  ],
   "cloudflare_account": "20b533579290b9b93168345edd3b7f72",
   "environment": [
     "CLOUDFLARE_API_TOKEN",
