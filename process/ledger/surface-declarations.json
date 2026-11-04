@@ -1,0 +1,54 @@
+{
+  "id": "surface-declarations",
+  "title": "surface-declarations: new module split from op-declarations (4 Nov): T51's browser acts and reads, the screens' declared read waves and `screenread`, every op's and screen's budget class, and the assistant's and other lanes' ops",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/surface-declarations/",
+    "build/requirements/surface-declarations.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/surface-declarations/"
+  ],
+  "requirements": "build/requirements/surface-declarations.md",
+  "uses": [
+    "setup-words",
+    "test-support",
+    "runtime-limits",
+    "capture",
+    "promotion",
+    "basis-versions",
+    "entities",
+    "project-roster",
+    "filing-templates",
+    "standards",
+    "calculations",
+    "member-roster",
+    "ai-use",
+    "ai-runs",
+    "ai-gate",
+    "ai-catalogue",
+    "notice-producers",
+    "mail-door",
+    "registers"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/surface-declarations.md",
+    "build/requirements/op-declarations.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "New module split from op-declarations (4 Nov, coordinator). Build what its requirements say from the code the split names: move that code from op-declarations's paths only when op-declarations's own job has retired the lines; until then implement here and leave op-declarations's code to its job. Meet every unmet mark, each with a test that fails with the change reverted. Edit no other module; commit no generated file.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T03:49:31Z"
+  }
+}
