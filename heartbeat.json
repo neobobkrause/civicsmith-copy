@@ -1,1 +1,1 @@
-{"at":"2026-11-04T19:16:35Z","session":"session_01RAN5emK1snYonbEbVPHbAP","found":["live 14 of 24","sessions: 14 live (roles 4, jobs 9, builds 1, other 0); leftovers 0","control-plane: BLOCKED","runtime-limits: BLOCKED","store-assembly: BLOCKED"],"done":["wake BOB with one message"]}
+{"at":"2026-11-04T20:15:56Z","session":"session_01RAN5emK1snYonbEbVPHbAP","found":["live 9 of 24","layer 4 ready to close","sessions: 9 live (roles 4, jobs 4, builds 0, other 1); leftovers 0","control-plane: BLOCKED","runtime-limits: BLOCKED"],"done":["wake BOB with one message"]}
