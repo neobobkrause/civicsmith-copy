@@ -11,7 +11,8 @@ const gauge = (w, run, over = {}) =>
   w.p.find({ run, kind: "capture", ref: CAP, bearing: "supports", how: "the minutes record the vote", caller: CALLER, ...over });
 
 test("R4: each find (a capture, content row or connection the run located) is gauged supports, cuts_against or unclear against the question's live basis, answered {bearing, how, false_alarm_rate, gold_set, label: machine, enabled_by} (R16: untested null under the bar)", async () => {
-  const w = await world().standard();
+  /* Under the bar: Gate 1 held for the entry ai-runs judges (run-rules R19 as T53 amends it), off a test instance. */
+  const w = (await world().standard()).gate1();
   w.project(PROJ, ["alice"], { owners: ["alice"], setting: "discoverable" });
   w.draw(Q, PROJ);
   w.legEarning.writeBasis(Q, [{ target: DOC, role: "supports" }]);
@@ -142,18 +143,23 @@ test("R6: a follower outside every drawing project mutes a find; a participant o
 
 test("R7: finds are offered only while the gate is open: the explorer passed its bar on Civicsmith's test investigations, its false-alarm rate at most 20% and recorded, and run-rules R19 lets investigate and the explorer's use deploy; closed, findsFor answers nothing and counts nothing, and no member is offered exploring", async () => {
   assert.equal(EXPLORE_FALSE_ALARM_MAX, 0.2);
-  const w = await world().standard();
+  /* (T53) run-rules R19 lets investigate and the explorer's use deploy only on a Gate 1 record for the entry ai-runs
+     judges: held here (`w.gate1`), off a test instance, so the gate opens on R7's bar alone. */
+  const w = (await world().standard()).gate1();
   const o = await w.openRun("group");
   gauge(w, o.run);
   const open = w.p.findsFor({ viewer: "member:alice" });
   assert.equal(open.finds.length, 1);
+  assert.deepEqual([w.p.gate().false_alarm_rate, w.p.gate().untested], [0.1, null], "open on the bar, unlabelled");
   for (const [name, shut] of [
     ["no record", () => { w.testBars = [bar("investigate")]; }],
     ["not passed", () => { w.testBars = [bar("investigate"), bar("explore", { passed: false })]; }],
     ["false alarms above 20%", () => { w.testBars = [bar("investigate"), bar("explore", { false_alarm_rate: 0.21 })]; }],
     ["false-alarm rate not recorded", () => { w.testBars = [bar("investigate"), bar("explore", { false_alarm_rate: null })]; }],
     ["an earlier version of the set", () => { w.testBars = [bar("investigate"), bar("explore", { set_version: 0 })]; }],
-    ["investigate's bar not held", () => { w.testBars = [bar("explore")]; }],
+    ["Gate 1 not yet rated for the entry", () => { w.gate1("claude-a", "not_yet_rated"); }],
+    ["Gate 1 not suitable for the entry", () => { w.gate1("claude-a", "not_suitable"); }],
+    ["Gate 1 held for another entry only", () => { w.gate1("claude-a"); w.servedOn = "claude-b"; }],
     ["investigate's chain not verified", () => { w.verifications = []; }],
   ]) {
     shut();
@@ -162,17 +168,20 @@ test("R7: finds are offered only while the gate is open: the explorer passed its
     assert.equal(await w.p.exploreDue(w.clock.now), 0, name);
     assert.equal(await w.p.exploreWake(w.clock.now), null, name);
     assert.equal((await w.p.exploreTick(w.clock.now)).gate, "closed", name);
-    w.testBars = [bar("investigate"), bar("explore")]; w.verifications = [VERIFIED_CHECK];
+    w.testBars = [bar("investigate"), bar("explore")]; w.verifications = [VERIFIED_CHECK]; w.gate1();
   }
   /* Negative control: at exactly 20% the gate is open. */
   w.testBars = [bar("investigate"), bar("explore", { false_alarm_rate: 0.2 })];
   assert.equal(w.p.gate().open, true);
-  /* Civicsmith's own set holds no matter yet (run-rules R19): over it nothing opens. */
-  assert.equal((await world({ testSet: CIVICSMITH_TEST_SET }).standard()).p.gate().open, false);
+  /* Civicsmith's own set no longer opens the gate (run-rules R19 as T53 amends it): over it, off a test instance and
+     with no Gate 1 record, nothing opens. */
+  const civ = await world({ testSet: CIVICSMITH_TEST_SET }).standard();
+  civ.testInstance = false;
+  assert.equal(civ.p.gate().open, false);
 });
 
 test("R11: a group's own test investigations measure the explorer too; the result, with its false-alarm rate, is answered to that group's members only, and never opens or closes R7's gate", async () => {
-  const w = await world().standard();
+  const w = (await world().standard()).gate1();
   w.groupResults = [{ matter: "a test matter", false_alarm_rate: 0.5, passed: false }];
   const r = w.p.groupTestResults({ viewer: "member:alice" });
   assert.deepEqual(r.results, w.groupResults);
