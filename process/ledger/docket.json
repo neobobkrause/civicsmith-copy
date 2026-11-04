@@ -48,7 +48,8 @@
   ],
   "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/docket.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-04T15:35:58Z"
+    "state": "WORKING",
+    "at": "2026-11-04T15:58:22Z",
+    "reason": "reopened: docket R33 as built breaks docket R24: docketRecordEdition (bio-plane/src/docket/index.mjs ~943) stores the edition entry with signature '' and signer_key '', but R24 says each public entry's signature is the armored SSHSIG over docketStatement in NS_DOCKET. case-import R18 (check 2) therefore refuses every automatically recorded edition entry with check 'signature', so a watched import never sees a publisher's new edition (case-import R19). Sign the edition entry docketRecordEdition files exactly as the other public entries are signed (the same key and statement R24 names), drop the signer_key <> '' workaround if it is then unneeded, and add a test that a recorded edition entry's served signature verifies over docketStatement in NS_DOCKET, failing with the empty signature put back."
   }
 }
