@@ -9,6 +9,7 @@ import { D } from "./harness.mjs";
 import { declaredOpHolds } from "../../declared-ops.mjs";
 const { record } = await import("./record.mjs");
 const { credentialsOf } = await import("../../../src/credentials/index.mjs");
+const { aiAccountsOf } = await import("../../../src/ai-accounts/index.mjs");
 const { membershipOf } = await import("../../../src/membership/index.mjs");
 
 const ANSWERS = [{ question: "Who are you?", text: "Tenants" }];
@@ -24,9 +25,9 @@ async function drafting() {
     await mb.enroll({ invite: a.invite, handle: id, password: `${id}-passphrase-x` });
   }
   assert.equal(C.aiKeepAwaySet({ on: false, by: "ann" }).ok, true);
-  assert.equal((await C.groupKeySet({ key: "sk-group-key-17", by: "admin" })).ok, true);
-  assert.equal(C.groupKeySwitch({ on: true, by: "admin" }).ok, true);
-  assert.equal(C.groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" }).ok, true);
+  assert.equal((await aiAccountsOf(r.ctx).groupKeySet({ key: "sk-group-key-17", by: "admin" })).ok, true);
+  assert.equal(aiAccountsOf(r.ctx).groupKeySwitch({ on: true, by: "admin" }).ok, true);
+  assert.equal(aiAccountsOf(r.ctx).groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" }).ok, true);
   return r;
 }
 
