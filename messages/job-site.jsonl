@@ -10,3 +10,4 @@
 {"at":"2026-11-04T05:06:38Z","row":"outcome","n":5,"outcome":"delivered"}
 {"at":"2026-11-04T09:14:21Z","row":"sent","n":6,"to":"bob","text":"job site BLOCKED: run status"}
 {"at":"2026-11-04T09:14:31Z","row":"outcome","n":6,"outcome":"delivered"}
+{"at":"2026-11-04T12:06:33Z","row":"sent","n":7,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: job site complete, PR #195 ready: run status"}
