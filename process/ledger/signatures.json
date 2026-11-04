@@ -33,7 +33,7 @@
   ],
   "prior_work": "T53-592 (build/plan/T53-completion.md:17; K5751, signatures R58 as that line names it): CATALOGUE_KEYS in bio-plane/src/sshsig.mjs holds test-fixture keys. Replace them with Bob's two catalogue public keys, recorded in build/rulings.md K5751 (line 5745, sitting 1: the catalogue signing key and the catalogue recovery key, each an ssh-ed25519 public line; copy them byte for byte from that ruling, labels as R57 names them). Tests must pass throwaway keys as allowedKeys and never depend on the shipped list; add a test that CATALOGUE_KEYS equals exactly those two lines and that a statement signed by a throwaway key is refused against the default list, failing with the change reverted. If a requirement line for this is missing, state it in build/requirements/signatures.md (R58, or the existing line T53-592 cites). Any other unmet mark in build/requirements/signatures.md (R57) is yours too, if it can be met without Bob; otherwise name it in not-verified. Edit no other module (ai-catalogue's and ai-issuer's re-runs are theirs), and commit no generated file. Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-04T03:38:47Z"
+    "state": "COMPLETE",
+    "at": "2026-11-04T03:45:01Z"
   }
 }
