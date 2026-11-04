@@ -1,7 +1,7 @@
 /* screens-settings R3 (and R8, R10): Settings › Your account, the registry's 6 acts. The handle drawn fixed in DEC-197's
    words, with no act that changes it; the member's language; appearance and the explanation level (interface-shell R18,
    R17); the password, typed twice alike before it is sent; expertise; the member's own signing key (its public half, as
-   the signing page gives it); links to `aimine` (R3, R95: `connect` is retired) and `notes`. Every function is self-contained (interface-shell R21).
+   the signing page gives it); links to `notes` (R3; R95: `connect` is retired, and `aimine` is screens-ai's, which registers no screen yet, so it is not linked, BOB 4 Nov). Every function is self-contained (interface-shell R21).
    T47: appearance is the kit's own control (`cs.appearance()`, R12); "Sign out on this device" and "Sign out everywhere"
    (`signout`, `signouteverywhere`), each then drawing `front`'s signed-out state (R21); the signing key is made in the
    browser by the kit's signer (`cs.signer`, interface-shell R40) and its public line sent, nothing pasted (R22).
@@ -9,7 +9,7 @@
    T51 (R57; DEC-330 C1, A74, A11; DEC-336 (7), (8)): the signing key is made here on the page's terms (the kit's `cs.signer.register`
    with the member's ticks and optional passphrase, deferring the file), and once made says so, with "Save the key file" and "Copy the
    public line" as acts of their own; a key an administrator registered for the member is drawn "registered for you by <who>" (the
-   roster, `memberlist`, names who); and a reference to the glossary beside `aimine`, ties and notes. The key file and the passphrase live in
+   roster, `memberlist`, names who); and a reference to the glossary beside ties and notes. The key file and the passphrase live in
    page memory for the sitting and are never drawn again, stored or sent (R10).
    T51 FR-25 (R67; C81; DEC-376): "Your cover name": the cover the team knows the member by and the handle her work shows, and the choice
    whether the two are published together (`memberpairingset`), read from `memberpairings` and read again after the act.
@@ -138,7 +138,7 @@ export const account = {
 
     // elsewhere in the member's settings
     // the glossary is reached from here too (R57 (4)): its name, with its purpose beneath, as the design's link list draws it (R59)
-    out.push(cs.sec(S + "elsewhere.heading", `<div class="mk-links"><a class="cs-ref" href="/app/aimine" data-nav data-screen="aimine">${W("screen.aimine.name")}</a><a class="cs-ref" href="/app/ties" data-nav data-screen="ties">${W("screen.ties.name")}</a><a class="cs-ref" href="/app/notes">${W("screen.notes.name")}</a><a class="cs-ref" href="/app/glossary" data-nav data-screen="glossary">${W("screen.glossary.name")}</a><span class="mk-small">${W("screen.glossary.purpose")}</span></div>`));
+    out.push(cs.sec(S + "elsewhere.heading", `<div class="mk-links"><a class="cs-ref" href="/app/ties" data-nav data-screen="ties">${W("screen.ties.name")}</a><a class="cs-ref" href="/app/notes">${W("screen.notes.name")}</a><a class="cs-ref" href="/app/glossary" data-nav data-screen="glossary">${W("screen.glossary.name")}</a><span class="mk-small">${W("screen.glossary.purpose")}</span></div>`));
     return out.join("");
   },
 

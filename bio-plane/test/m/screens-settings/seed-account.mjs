@@ -2,7 +2,7 @@
    and the one thing a world cannot make, a fault at the edge (a read that is silent, a read refused with a provider's code). Nothing here
    builds another module's answer: the answers are the owners' own, made by their real acts. */
 import { generateKeyPairSync } from "node:crypto";
-import { storeWorld } from "./kit.mjs";
+import { storeWorld, teamAccountOn } from "./kit.mjs";
 import { refuse, env } from "./fixtures.mjs";
 
 /** A team: the founder (its one active administrator), dev (a member who contributes), and teo (a member holding no capability). */
@@ -36,12 +36,11 @@ export const writingHelp = (asker, over = {}) => ({
 
 /** A team whose assistant is reachable by the real acts: the founder gives the team's account (the platform's seal secret in `env`, the
  *  founder's password asked again, `reauth`). T53 (R95): the alpha's group key is retired; the team's account is `aiaccountadd` (`ai-accounts`
- *  R40, `op-declarations` R24), which the store's world answers CATALOGUE_UNAVAILABLE until it holds a catalogue (store-assembly). */
+ *  R40, `op-declarations` R24), switched on by `aiaccountswitch`, over the store's own catalogue (the kit's `storeWorld`). */
 export async function assistantTeam() {
   const w = await storeWorld({ env: { ACCOUNT_SEAL_SECRET: "a-long-seal-secret-for-the-notes-test" } });
   const founder = await w.signIn("founder");
   const dev = await w.signIn("dev", { capabilities: ["contribute"] });
-  await founder.act("reauth", { body: { password: w.password } });
-  await founder.act("aiaccountadd", { body: { owner: "group", provider: "anthropic", plan: "api-team", means: "sealed", secret: "sk-ant-api03-the-team-key-0000000000" } });
+  await teamAccountOn(founder, w, "sk-ant-api03-the-team-key-0000000000");   // aiaccountadd, then aiaccountswitch on, on the store's own catalogue
   return { w, founder, dev };
 }

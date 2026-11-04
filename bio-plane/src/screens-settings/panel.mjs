@@ -46,10 +46,12 @@ export function aiPanel(cs, view, o) {
   section(S + "uses.heading", cs.state(data.uses, (v) => {
     if (!v.uses) return "";
     const u = v.uses;
-    let h = `<ul class="mk-list">${USES.map((k) => `<li><span>${W("ai.use." + k + ".name")}</span> · <span>${W(u[k] ? S + "on" : S + "off")}</span> ${cs.act("accountusesset", { label: u[k] ? S + "switch.off" : S + "switch.on", data: { sw: k, to: u[k] ? "off" : "on" } })}</li>`).join("")}</ul>`;
+    // T53 (ai-accounts R25): a switch names the account it sets, the one the read answered (`accountusesset` takes `account_id`, not an owner)
+    const acct = v.account_id == null ? "" : String(v.account_id);
+    let h = `<ul class="mk-list">${USES.map((k) => `<li><span>${W("ai.use." + k + ".name")}</span> · <span>${W(u[k] ? S + "on" : S + "off")}</span> ${cs.act("accountusesset", { label: u[k] ? S + "switch.off" : S + "switch.on", data: { sw: k, to: u[k] ? "off" : "on", account: acct } })}</li>`).join("")}</ul>`;
     if (o.explore) {
       const x = u.explore || "no";
-      h += cs.choice(p + "-explore", "ai.use.explore.name", ["no", "ask", "yes"].map((y) => [y, "ai.explore." + y]), { value: x }) + cs.act("accountusesset", { label: S + "explore.save", data: { sw: "explore" } });
+      h += cs.choice(p + "-explore", "ai.use.explore.name", ["no", "ask", "yes"].map((y) => [y, "ai.explore." + y]), { value: x }) + cs.act("accountusesset", { label: S + "explore.save", data: { sw: "explore", account: acct } });
     }
     return h + `<p class="mk-note">${W(S + "uses.stops")}</p>`;
   }));
@@ -136,14 +138,16 @@ export function aiUsageBars(cs, view, o) {
   return h;
 }
 
-/** The request one of the panel's acts sends, from the pressed control's data and the form's fields; `{refuse}` (a word
+/** The request one of the panel's acts sends, from the pressed control's data and the form's fields (`owner` names a limit's owner;
+ *  a use's switch is the account's, `account_id`); `{refuse}` (a word
  *  drawn beside the act, nothing sent) when the form cannot make a valid one. */
 export function aiPanelSend(op, owner, el, cs) {
   const p = owner === "group" ? "aig" : "aio";
   const ds = (el && el.dataset) || {};
+  /* T53 (ai-accounts R25): the switch is set on the account the drawn uses were read for (`account_id`, from the pressed control) */
   if (op === "accountusesset") {
-    if (ds.sw === "explore") return { body: { owner, switch: "explore", on: cs.value(p + "-explore") || "no" } };
-    return { body: { owner, switch: ds.sw, on: ds.to === "on" } };
+    if (ds.sw === "explore") return { body: { account_id: ds.account, switch: "explore", on: cs.value(p + "-explore") || "no" } };
+    return { body: { account_id: ds.account, switch: ds.sw, on: ds.to === "on" } };
   }
   if (ds.remove === "1") return { body: { owner, scope: ds.scope, unit: ds.unit, period: ds.period, amount: null } };
   const amount = Number(String(cs.value(p + "-amount") || "").replace(/[,\s$]/g, ""));

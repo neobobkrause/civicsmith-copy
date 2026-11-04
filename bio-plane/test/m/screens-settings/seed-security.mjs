@@ -1,6 +1,6 @@
 /* The seed for Settings › Security, Updates and The team's assistant over the world (store-request's `storeWorld`, K5054): the worlds
    these screens' tests need, made by the real acts; and the few faults a world cannot make (an answer that never comes). */
-import { storeWorld } from "./kit.mjs";
+import { storeWorld, teamAccountOn } from "./kit.mjs";
 
 /** The sealing secret a deployment sets so that a key can be kept (ai-accounts R22; a platform binding, so a double of the environment). */
 export const SEAL = "a-long-seal-secret-for-screens-settings";
@@ -17,8 +17,7 @@ export const handleOf = async (as, id = "admin") => (await as.read("memberlist")
 
 /** The team's own account, held (T53, R95: by `aiaccountadd`, the alpha's group key retired), by the real acts (the password asked again first, as an administrator's page does). */
 export async function holdKey(as, w, key = "sk-ant-api03-SENTINELKEY") {
-  await as.act("reauth", { body: { password: w.password } });
-  await as.act("aiaccountadd", { body: { owner: "group", provider: "anthropic", plan: "api-team", means: "sealed", secret: key } });
+  await teamAccountOn(as, w, key);   // aiaccountadd, then aiaccountswitch on, on the store's own catalogue (the kit's `storeWorld`)
   return key;
 }
 
