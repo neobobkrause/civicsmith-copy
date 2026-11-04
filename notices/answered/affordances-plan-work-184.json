@@ -1,0 +1,1 @@
+{"row":"answered","user":"affordances","by":"triage","evidence":"bio-plane/src/affordances.mjs:82 imports only MATTER_STATES (used at :583), a constant the PR did not touch; the PR's change is to the re-examination ai.open arguments, which the affordances files never call","at":"2026-11-04T08:58:33.851Z","key":"plan-work:184","worker":"a0bdc5a61f25585ef","cost":"0.2"}

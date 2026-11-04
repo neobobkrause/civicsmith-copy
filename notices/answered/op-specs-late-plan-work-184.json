@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-specs-late","by":"triage","evidence":"build/modules.json:170 gives it empty paths and no file, so nothing of it imports or runs plan-work's re-examination","at":"2026-11-04T08:58:33.851Z","key":"plan-work:184","worker":"a70b9111c0e136161","cost":"0.2"}
