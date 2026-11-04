@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-door","by":"triage","evidence":"bio-plane/src/store-door/dispatch.mjs:20 imports only affordancesOf/affordancesOps (wired at :458); facts.mjs takes only explainRefusal and words.mjs, and none of these reads ACT_HELP, ACT_HELP_KEYS or ACT_HELP_OPS","at":"2026-11-04T15:16:59.001Z","key":"affordances:252","worker":"a2798205df48706bc","cost":"0.72"}

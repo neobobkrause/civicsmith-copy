@@ -1,0 +1,1 @@
+{"row":"triage","user":"queue","verdict":"not affected","evidence":"bio-plane/src/queue/index.mjs:59 imports only affordancesOf, deriveActs, decorate, PER_ITEM_ACTS and PER_ITEM_MAX (used :128, :634, :2601-2603), none of which reads ACT_HELP, ACT_HELP_OPS or ACT_HELP_KEYS","at":"2026-11-04T15:16:59.001Z","key":"affordances:252","worker":"a08f579884e1a4817","cost":"0.80"}

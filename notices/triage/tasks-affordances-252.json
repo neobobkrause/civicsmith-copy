@@ -1,0 +1,1 @@
+{"row":"triage","user":"tasks","verdict":"not affected","evidence":"bio-plane/src/tasks/index.mjs:44 imports only PER_ITEM_ACTS and PER_ITEM_MAX (used :1165-1168), neither of which touches ACT_HELP or ACT_HELP_OPS","at":"2026-11-04T15:16:59.001Z","key":"affordances:252","worker":"a2798205df48706bc","cost":"0.72"}
