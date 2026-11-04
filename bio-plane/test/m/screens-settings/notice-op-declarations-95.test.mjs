@@ -16,8 +16,8 @@ import { R95_RETIRED } from "./r95.mjs";
 
 const SRC = new URL("../../../src/screens-settings/", import.meta.url);
 
-test("notice op-declarations:95: OPS holds no spec and no alias for any op R95 lists", () => {
-  for (const op of R95_RETIRED) {
+test("notice op-declarations:95: OPS holds no spec and no alias for the ops PR 95 retired (every op R95 lists but `subscriptionsignin`, which is signin-door's and keeps its spec)", () => {
+  for (const op of R95_RETIRED.filter((o) => o !== "subscriptionsignin")) {
     assert.equal(OPS[op], undefined, `${op} has no spec`);
     assert.equal(OP_ALIASES[op], undefined, `${op} has no alias`);
   }
