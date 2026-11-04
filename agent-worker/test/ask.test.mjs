@@ -7,7 +7,7 @@
  * `AI_GRANT_OPS` (its R28), equal since N580 (K1603, K1609), `rule` included. */
 import { readFileSync } from "node:fs";
 import worker from "../src/index.mjs";
-import { ASK_OPS, ASK_PLANE_OPS, PLANE_OPS } from "../src/ops.mjs";
+import { ASK_OPS, ASK_PLANE_OPS, PLANE_OPS, GRANT_ONLY_OPS } from "../src/ops.mjs";
 import { AI_GRANT_OPS } from "../../bio-plane/src/credentials/index.mjs";
 import { ASK_SCOPE } from "../../bio-plane/src/answers/scope.mjs";
 import { ASK_BOUNDS } from "../../bio-plane/src/run-rules/index.mjs";
@@ -244,8 +244,8 @@ section("R55 · the ask's whole reach is ASK_OPS, equal to answers' ASK_SCOPE an
 {
   const scope = ASK_SCOPE.map((e) => e.op);
   t("R55: ASK_OPS equals answers' ASK_SCOPE, both ways", [ASK_OPS.filter((o) => !scope.includes(o)), scope.filter((o) => !ASK_OPS.includes(o))], [[], []]);
-  t("R55: and credentials' AI_GRANT_OPS, both ways, `rule` included (N580; K1603, K1609)",
-    [ASK_OPS.filter((o) => !AI_GRANT_OPS.includes(o)), AI_GRANT_OPS.filter((o) => !ASK_OPS.includes(o))], [[], []]);
+  t("R55: and credentials' AI_GRANT_OPS less GRANT_ONLY_OPS (answers:103), both ways, `rule` included (N580; K1603, K1609)",
+    [ASK_OPS.filter((o) => !AI_GRANT_OPS.includes(o)), AI_GRANT_OPS.filter((o) => !ASK_OPS.includes(o) && !GRANT_ONLY_OPS.includes(o))], [[], []]);
   t("R55: never a sources op, member history, an administrative op, an export, or a write",
     ASK_OPS.filter((o) => /^sources|history|admin|export|purge|suggest|tick|close|propose|capture|set$/.test(o)), []);
   t("R55, R37: an ask's reach is not PLANE_OPS: the run's ops are unchanged, and no write of a run is an ask's op",

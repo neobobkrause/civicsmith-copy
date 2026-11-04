@@ -69,6 +69,12 @@ export const ASK_OPS = Object.freeze([
   "structureat", "timeline",
 ]);
 
+/* R55 over answers:103 (answers R1 as BOB ruled 4 Nov; credentials R28 as T53 amends it, K5457): the grant's class
+ * also admits `aicredential`, ai-accounts' R65 read of the act's own sealed key, which serves the agent Worker's
+ * principal alone and is never an ask's read. So `ASK_OPS` equals `ASK_SCOPE` both ways and equals `AI_GRANT_OPS`
+ * less exactly these ops; the read tool never offers them and `admitRead` refuses them as any other op. */
+export const GRANT_ONLY_OPS = Object.freeze(["aicredential"]);
+
 /* R54 (K1601 (3), (4)) — THE ASK'S OWN CALLS, which are not reads of the record and so not in `ASK_OPS`: the control
  * plane admits them under a grant beside the grant's list. `askceiling` is asked before any model call (ai-runs R50);
  * `agentpack` carries the pack the ask is instructed by (R48, control-plane R41, no member data); `askcheck` hands the
