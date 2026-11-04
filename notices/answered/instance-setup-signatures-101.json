@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-setup","by":"triage","evidence":"bio-plane/src/setup.mjs:22 imports verifyReleaseNotice, RELEASE_KEYS from sshsig.mjs (release keys), not CATALOGUE_KEYS; setup-fleet.mjs and livefire.mjs have no sshsig import","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}

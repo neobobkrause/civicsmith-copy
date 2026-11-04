@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-import","verdict":"not affected","evidence":"bio-plane/src/case-import/index.mjs:78 imports verifySshsig, NS_DOCKET, docketStatement, normalizeKey from sshsig.mjs; docket namespace, not CATALOGUE_KEYS","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}

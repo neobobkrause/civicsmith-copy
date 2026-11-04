@@ -1,0 +1,1 @@
+{"row":"triage","user":"interface-shell","verdict":"not affected","evidence":"bio-plane/src/interface-shell/browser.mjs:1972 has its own local sshsig signer function, not an import from sshsig.mjs; no CATALOGUE_KEYS or verifyAi*","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"answer-envelope","verdict":"not affected","evidence":"bio-plane/src/answer-envelope/index.mjs:7 its imports are ./families.mjs and ./checks.mjs only; no import from sshsig.mjs in the module","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}

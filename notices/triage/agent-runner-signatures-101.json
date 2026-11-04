@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-runner","verdict":"not affected","evidence":"agent-runner/src/entry.mjs:5 no import of bio-plane sshsig.mjs or CATALOGUE_KEYS anywhere in agent-runner/ (its imports begin here, node:http)","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}

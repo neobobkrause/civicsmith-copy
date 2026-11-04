@@ -1,0 +1,1 @@
+{"row":"answered","user":"ai-gate","by":"triage","evidence":"build/modules.json:114 row has paths [] (no code of its own); its catalogue-key use is through ai-catalogue","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}

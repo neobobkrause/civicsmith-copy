@@ -1,0 +1,1 @@
+{"row":"triage","user":"attestation","verdict":"not affected","evidence":"bio-plane/src/attestation/index.mjs:28 imports record-grammar and timestamp helpers only; no import from sshsig.mjs, no CATALOGUE_KEYS or verifyAi* use","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}

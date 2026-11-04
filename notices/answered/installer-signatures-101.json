@@ -1,0 +1,1 @@
+{"row":"answered","user":"installer","by":"triage","evidence":"newgroup/src/index.mjs:51 imports verifySshsig, NS_RELEASE from sshsig.mjs (release keys; steps/signers.mjs:25 uses RELEASE_KEYS), not CATALOGUE_KEYS or verifyAi*","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}

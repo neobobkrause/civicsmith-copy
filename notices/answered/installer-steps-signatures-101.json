@@ -1,0 +1,1 @@
+{"row":"answered","user":"installer-steps","by":"triage","evidence":"newgroup/src/steps/signers.mjs:25 imports RELEASE_KEYS only (load.mjs:9 imports verifySshsig, NS_FLEET, fleetStatement); no CATALOGUE_KEYS","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}

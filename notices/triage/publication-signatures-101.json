@@ -1,0 +1,1 @@
+{"row":"triage","user":"publication","verdict":"not affected","evidence":"bio-plane/src/publication/worker.mjs:22 imports NS_RATIFY, ratifyStatement, caseRatifyStatement from sshsig.mjs (ratify namespace); deliverer.mjs:29 has no sshsig import; no CATALOGUE_KEYS","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}

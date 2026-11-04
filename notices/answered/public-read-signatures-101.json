@@ -1,0 +1,1 @@
+{"row":"answered","user":"public-read","by":"triage","evidence":"bio-plane/src/publication/worker.mjs:22 imports NS_RATIFY, ratifyStatement, caseRatifyStatement from sshsig.mjs only; public-read/index.mjs:42 and container.mjs:40 / inband.mjs:21 import nothing from it","at":"2026-11-04T05:34:43.065Z","key":"signatures:101","worker":"triage-s101-subagent","cost":"0.02"}
