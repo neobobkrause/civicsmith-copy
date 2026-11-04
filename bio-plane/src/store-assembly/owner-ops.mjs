@@ -30,7 +30,7 @@ export const OWNER_MAP_DECLARED_OPS = Object.freeze({
     fields: { accepts: ["case", "kind", "framing", "text", "flags", "run"], requires: ["case", "framing", "text", "run"] } },
   clockpropose: { classes: ["admin", "member", "probe"], mutating: true, stamps: ["viewer", "proposer"], needs: "contribute",
     weight: "reversible", description: localize("control-plane.declared.clockpropose", "action-directed: keyed by (action, rule, proposer); a proposal stored apart, never a clock entry until a member adopts it"),
-    fields: { accepts: ["target", "rule"], requires: ["target", "rule"] } },
+    fields: { accepts: ["target", "rule", "layer"], requires: ["target", "rule"] } },
 });
 
 /* The `by` stamp is the actor in the viewer's form (`member:<id>`, the founder's `admin`, a machine `class:<cls>`); the
@@ -77,9 +77,15 @@ export function ownerOps(of, url, body) {
                                                           limit: f("limit") === null || f("limit") === undefined ? null : Number(f("limit")) }),
     /* action-clocks R2 (T47; K3145, R79): a clock proposed for an action under a profile's rule. Any credential may
        propose (op-declarations' `proposal` posture), so `proposer` is the door's label stamp and `viewer` its sight;
-       `action-clocks` exports the service and no arm, so this one calls it by name. */
-    clockpropose: () => of.actionClocks().clockPropose({ target: f("target"), rule: f("rule"), proposer: q("proposer"),
-                                                         viewer: q("viewer") }),
+       `action-clocks` exports the service and no arm, so this one calls it by name. (T53; action-clocks R28, notice
+       action-clocks:60) `layer`, the jurisdiction layer whose rule is meant where two active layers give one name, is
+       taken from the body or the address and handed only when the request names one. */
+    clockpropose: () => {
+      const layer = f("layer");
+      return of.actionClocks().clockPropose({ target: f("target"), rule: f("rule"),
+                                              ...(layer !== undefined && layer !== null ? { layer } : {}),
+                                              proposer: q("proposer"), viewer: q("viewer") });
+    },
     /* R110 (T51; K4073; screens-action R30): the two reads whose owners export a service and no arm. `approvedunsent` is
        filings' `approvedUnsent` (its R53) as the viewer may see; `checkpointsdue` is action-plans' `checkpointsDue` (its R17),
        whose instant is the owner's clock, never the request's, and only `limit` comes from the address or the body. */
