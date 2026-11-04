@@ -24,7 +24,6 @@
     "bio-plane/test/m/bundler/",
     "bio-plane/test/system/bundle.test.mjs",
     "bio-plane/test/system/deploybindings.test.mjs",
-    "bio-plane/test/system/fleetbundles.test.mjs",
     "bio-plane/test/system/resolveversion.test.mjs",
     "bio-plane/test/fleetbundles.control.mjs"
   ],
