@@ -1,0 +1,44 @@
+{
+  "id": "agent-drafts",
+  "title": "agent-drafts: meet its unmet T53 requirements (R1, R4, R7: the draft answer carries label.ai) on the draft code it owns",
+  "layer": 6,
+  "paths": [
+    "agent-worker/src/draft.mjs",
+    "agent-worker/src/action-drafts.mjs",
+    "agent-worker/src/untested.mjs",
+    "build/requirements/agent-drafts.md"
+  ],
+  "tests": [
+    "agent-worker/test/agent-drafts/"
+  ],
+  "requirements": "build/requirements/agent-drafts.md",
+  "uses": [
+    "run-rules",
+    "agent-model",
+    "agent-harness",
+    "agent-steps",
+    "skills",
+    "answers",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "agent-worker",
+    "command": [
+      "node",
+      "--test",
+      "--test-concurrency=1"
+    ]
+  },
+  "reading": [
+    "build/requirements/agent-drafts.md",
+    "build/requirements/agent-worker.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet agent-drafts unmet T53 marks (R1, R4, R7: the /draft answer label is {kind: \"machine\", ai}, the stub adapter label, and a request-body label is ignored), each with a test under agent-worker/test/agent-drafts/ that fails with the change reverted. This module owns agent-worker/src/draft.mjs, action-drafts.mjs and untested.mjs (its header); change no other agent-worker file and leave agent-worker requirement lines to agent-worker own job. Commit no generated file (any dist; restore agent-worker/dist from HEAD if a build rewrites it).",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T12:12:46.196Z"
+  }
+}

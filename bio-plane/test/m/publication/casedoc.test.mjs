@@ -152,7 +152,9 @@ test("K651 the case document's grammar is case-grammar's, re-exported here uncha
   for (const name of ["CASE_DOCUMENT_FORMAT", "CASE_DOCUMENT_FORMAT_V6", "caseDocumentStatesMemberBlocks",
                       "caseDocumentRequiresTensionSection"])
     assert.equal(chk[name], cg[name], `checks.mjs ${name}`);
-  assert.equal(CASE_DOCUMENT_FORMAT, "bio-case-document/8");
+  /* case-grammar PR 202 (its R35): the format in force is /10, the first to state the passages published without a
+     grade and the typed passages (its R36, R37); this module re-exports it unchanged. */
+  assert.equal(CASE_DOCUMENT_FORMAT, "bio-case-document/10");
 });
 test("R21 storeCaseDocument replaces an unsigned document, never a signed one, and answers what the store holds", () => {
   const { w, proj, roles } = prepared();

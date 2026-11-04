@@ -100,7 +100,9 @@
     "case-inputs",
     "ai-accounts",
     "translations",
-    "setup-words"
+    "setup-words",
+    "ai-catalogue",
+    "mail-door"
   ],
   "suite": {
     "cwd": "bio-plane",
