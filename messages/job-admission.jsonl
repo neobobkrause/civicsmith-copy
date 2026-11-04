@@ -4,3 +4,4 @@
 {"at":"2026-11-04T07:45:54Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-04T08:23:52Z","row":"sent","n":3,"to":"bob","text":"job admission complete, PR #171 ready: run status"}
 {"at":"2026-11-04T08:24:18Z","row":"outcome","n":3,"outcome":"delivered"}
+{"at":"2026-11-04T17:47:57Z","row":"sent","n":4,"to":"bob","text":"job admission complete, PR #293 ready, session session_01RAN5eo8adZxA5w8jCdC4oP: run status"}
