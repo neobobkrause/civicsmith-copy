@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as O from "../../../src/op-declarations/index.mjs";
-import { explained } from "./help.mjs";
+import { explained, RETIRED_T53 } from "./help.mjs";
 import { browserActs, OWED_BY_FIX_ROUND_AT_43379A1A44, OWED_SERVED_BY_OWNERS } from "./browser.mjs";
 import { T47_SHARES, T47_FAMILIES, REAUTH_ACTS } from "../../../src/op-declarations/t47.mjs";
 import { T51_SHARES } from "../../../src/op-declarations/t51.mjs";
@@ -191,12 +191,14 @@ test("R57 (K3084; credentials R65, R66, R69, R71): unlock and reauth a session's
 
 /* ---------- R58 ---------- */
 
-test("R58, R62, R63 (K3061 D3, K3143, K3144; credentials R66): REAUTH_ACTS is frozen data, op → null or {field, values}, naming exactly the acts that ask the password again — caseratify, publishat, publishatmove, ratify, docketpost; adminendorse, adminremove, memberset (its role field present at all, values null, R62), memberadd (role admin); subscriptionsignin (step start), accountreferenceset, groupkeyset, projectkeyset, projectsigninset — each a declared mutating op, with its argument where one makes it so; exported by index.mjs (negative control: an act not named, signout, is absent)", () => {
+test("R58, R62, R63 (K3061 D3, K3143, K3144; credentials R66): REAUTH_ACTS is frozen data, op → null or {field, values}, naming exactly the acts that ask the password again — caseratify, publishat, publishatmove, ratify, docketpost; adminendorse, adminremove, memberset (its role field present at all, values null, R62), memberadd (role admin); subscriptionsignin (step start); accountreferenceset, groupkeyset, projectkeyset and projectsigninset until T53 retired them (ai-accounts R35, BOB 4 Nov) — each a declared mutating op, with its argument where one makes it so; exported by index.mjs (negative control: an act not named, signout, is absent)", () => {
   assert.equal(O.REAUTH_ACTS, REAUTH_ACTS);
   assert.ok(Object.isFrozen(REAUTH_ACTS));
-  assert.deepEqual(Object.keys(REAUTH_ACTS).sort(), ["accountreferenceset", "adminendorse", "adminremove", "caseratify",
-    "docketpost", "groupkeyset", "memberadd", "memberset", "projectkeyset", "projectsigninset", "publishat", "publishatmove",
-    "ratify", "subscriptionsignin"]);
+  assert.deepEqual(Object.keys(REAUTH_ACTS).sort(), ["adminendorse", "adminremove", "caseratify",
+    "docketpost", "memberadd", "memberset", "publishat", "publishatmove", "ratify", "subscriptionsignin"]);
+  /* T53: the four retired account-seam acts left with their ops (an act no op serves asks nothing) */
+  for (const op of ["accountreferenceset", "groupkeyset", "projectkeyset", "projectsigninset"])
+    assert.ok(RETIRED_T53.includes(op) && !Object.hasOwn(REAUTH_ACTS, op), op);
   for (const [op, arg] of Object.entries(REAUTH_ACTS)) {
     assert.ok(Object.hasOwn(OPS, op) && OPS[op].mutating, `${op}: no mutating spec`);
     if (arg !== null) {
@@ -208,8 +210,8 @@ test("R58, R62, R63 (K3061 D3, K3143, K3144; credentials R66): REAUTH_ACTS is fr
   assert.deepEqual(plain(REAUTH_ACTS.memberset), { field: "role", values: null });
   assert.deepEqual(plain(REAUTH_ACTS.memberadd), { field: "role", values: ["admin"] });
   assert.deepEqual(plain(REAUTH_ACTS.subscriptionsignin), { field: "step", values: ["start"] });
-  for (const op of ["caseratify", "publishat", "publishatmove", "ratify", "docketpost", "adminendorse", "adminremove",
-                    "accountreferenceset", "groupkeyset", "projectkeyset", "projectsigninset"]) assert.equal(REAUTH_ACTS[op], null, op);
+  for (const op of ["caseratify", "publishat", "publishatmove", "ratify", "docketpost", "adminendorse", "adminremove"])
+    assert.equal(REAUTH_ACTS[op], null, op);
   assert.throws(() => { "use strict"; REAUTH_ACTS.signout = null; });
   /* negative control */
   assert.ok(!Object.hasOwn(REAUTH_ACTS, "signout") && !Object.hasOwn(REAUTH_ACTS, "publish"));
@@ -291,13 +293,16 @@ test("R61 (K3104; people R37): peopledirectory a member session's read in people
 
 test("R54, R60 (K3062; DEC-198–DEC-217): R21 read against the registry at PR #33's head — every function act an op or an alias, the one new since PR #28 (subscriptiondisconnect) a declared op by its own name, capture no act of the capture screen, which names captureupload; every declared act has a spec; the one owed act, owed:passwordresetlink DEC-201, is declared under its own name by R57; projectaikeepaway and every act once owed (itemtakeup, actionscope, filingsecondapprove, escalationstoppursuing, infolevelset, subscriptionsignin) are declared acts; the owed acts of wizard-scripts R35 (passwordreset, grouplanguagesset, grouplogoset, signrequest) are served under their names; hostingaccessset is the act on setup and group, hostingaccess none (negative control: an undeclared act is seen)", () => {
   const fns = regActs.filter((a) => a.status === "function");
-  for (const a of fns) assert.ok(Object.hasOwn(OPS, a.op), `${a.op}: a function act with no spec`);
+  /* T53 (R21; ai-accounts R35, BOB 4 Nov): a retired account-seam function, subscriptiondisconnect among them, is served
+     through no op and has no spec */
+  for (const a of fns) assert.equal(Object.hasOwn(OPS, a.op), !RETIRED_T53.includes(a.op), `${a.op}: a function act with no spec, or retired and declared`);
   for (const al of Object.keys(OP_ALIASES)) assert.ok(fns.some((a) => a.op === al), `${al}: an alias of no registry function`);
   assert.ok(regActs.some((a) => a.op === "subscriptiondisconnect") && !Object.hasOwn(OP_ALIASES, "subscriptiondisconnect"));
   const capture = registry.screens.find((s) => s.id === "capture");
   assert.ok(!capture.acts.some((a) => a.op === "capture") && capture.acts.some((a) => a.op === "captureupload"));
   const declared = regActs.filter((a) => a.status === "declared");
-  assert.deepEqual(declared.filter((a) => !Object.hasOwn(OPS, a.op)).map((a) => a.op), []);
+  /* T53: a declared act whose op is retired (subscriptiondisconnect, ai-accounts R35) has no spec and is named back to BOB */
+  assert.deepEqual(declared.filter((a) => !Object.hasOwn(OPS, a.op)).map((a) => a.op).filter((op) => !RETIRED_T53.includes(op)), []);
   /* T48 (R65; PR #34's merge, `4664e8efd4`): DEC-226 adds the update screen's three owed acts, `updatestart`,
      `updatelater` and `updateskip` (the second also on the queue), each declared under its own name by R66 */
   /* T49 (K3321 (B); PR #36's registry): `owed:founderhandleset K3265` is declared by R71 (membership's founder-only op, the
@@ -329,8 +334,8 @@ test("R54, R60 (K3062; DEC-198–DEC-217): R21 read against the registry at PR #
     assert.ok(!sc.acts.some((a) => a.op === "hostingaccess"), id);
   }
   /* negative control */
-  assert.deepEqual([...declared, { op: "nosuchdeclaredact" }].filter((a) => !Object.hasOwn(OPS, a.op)).map((a) => a.op),
-                   ["nosuchdeclaredact"]);
+  assert.deepEqual([...declared, { op: "nosuchdeclaredact" }].filter((a) => !Object.hasOwn(OPS, a.op) && !RETIRED_T53.includes(a.op))
+    .map((a) => a.op), ["nosuchdeclaredact"]);
 });
 
 test("R54, R60 (wizard-scripts R31, R35, R36): R27 read against the library at PR #33's head — it marks no act owed, and every act its scripts' steps name is a declared op or an alias, the four R52 named owed carried under their own names in both session sets (negative control: an undeclared step is seen)", () => {
@@ -340,11 +345,13 @@ test("R54, R60 (wizard-scripts R31, R35, R36): R27 read against the library at P
   /* T48 (R65): a step marked `owed:<op> <ref>` names the op R66 declares, read as served */
   const steps = library.scripts.flatMap((s) => s.versions.flatMap((v) => v.steps.map((st) => st.act))).filter(Boolean)
     .map((act) => act.replace(/^owed:/, "").split(" ")[0]);
-  assert.deepEqual([...new Set(steps)].filter((op) => !Object.hasOwn(OPS, op)), []);
+  /* T53 (R21, R27; ai-accounts R35, BOB 4 Nov): the steps that name a retired account-seam act name an op no owner serves,
+     with no spec, named back to BOB */
+  assert.deepEqual([...new Set(steps)].filter((op) => !Object.hasOwn(OPS, op) && !RETIRED_T53.includes(op)), []);
   for (const op of ["actionscope", "itemtakeup", "escalationstoppursuing", "subscriptionsignin"])
     assert.ok(steps.includes(op) && both(op) && !Object.hasOwn(OP_ALIASES, op), op);
   /* negative control */
-  assert.deepEqual([...steps, "nosuchstep"].filter((op) => !Object.hasOwn(OPS, op)), ["nosuchstep"]);
+  assert.deepEqual([...steps, "nosuchstep"].filter((op) => !Object.hasOwn(OPS, op) && !RETIRED_T53.includes(op)), ["nosuchstep"]);
 });
 
 test("R54, R34 (T47; affordances R54, R56): every member op T47 declares is explained in ACT_HELP or named in ACT_HELP_ABSENT, never both — the reads sourceof, sourcerung, projectlist, projectquestions, peopledirectory and signintrace under the read ground and the acts the design has not yet explained under the last, while ACT_HELP has no text for them; statusreportassist, airundispatch, joindoors and clockproposals named only while ACT_HELP lacks their texts (negative control: an explained op is named under no ground)", () => {

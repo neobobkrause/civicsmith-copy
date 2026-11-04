@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as O from "../../../src/op-declarations/index.mjs";
 import { REGISTERED } from "./register-owners.mjs";
+import { RETIRED_T53 } from "./help.mjs";
 import { eventsOps } from "../../../src/events/index.mjs";
 import { linesOps } from "../../../src/lines/index.mjs";
 import { moneyOps } from "../../../src/money/index.mjs";
@@ -428,7 +429,11 @@ test("R19, R4, R5, R30 (K1674, K1683): OP_STAMPS maps every op this module decla
   assert.deepEqual([...OP_STAMPS.clockpropose], ["viewer", "proposer"]);
   assert.deepEqual([...OP_STAMPS.dutypropose], ["viewer", "by"]);
   assert.deepEqual([...OP_STAMPS.aigrantmint], ["viewer", "by", "member", "session"]);
-  assert.deepEqual([...OP_STAMPS.accountreference], ["viewer", "member"]);
+  /* restated for T53 (ai-accounts R35, BOB 4 Nov): the member's account reference is retired; ai-accounts' reads stamp the
+     viewer, and the Worker's credential read its `by` alone */
+  assert.ok(!Object.hasOwn(OP_STAMPS, "accountreference"));
+  assert.deepEqual([...OP_STAMPS.accountstate], ["viewer"]);
+  assert.deepEqual([...OP_STAMPS.aicredential], ["by"]);
   assert.deepEqual([...OP_STAMPS.ask], ["viewer", "member"]);
   for (const op of ASK_GRANT_OPS) assert.deepEqual([...OP_STAMPS[op]], ["viewer"], op);
   assert.deepEqual([...OP_STAMPS.exportpage], []);
@@ -496,32 +501,33 @@ test("R20 (T41; DEC-188 (8); K2484): ask a member's own session only (machineCla
   assert.equal(OP_FAMILIES["ai-use"].kinds.aiusage, "ownread");
   assert.ok(!Object.hasOwn(OP_FAMILIES["ai-runs"].kinds, "aiusage"));
   assert.ok(await reaches("ai-use", "aiusage", { key: "viewer", at: "query" }));
-  /* T48 (R68): the account ops are ai-accounts' now, `aigrantmint` stays credentials' */
+  /* T48 (R68): the account ops are ai-accounts' now, `aigrantmint` stays credentials'. Restated for T53 (ai-accounts R35,
+     BOB 4 Nov): the account-reference ops are retired with the rest of the old door; a member's own account is set by
+     ai-accounts' declared acts (`aiownadd`, its R61), and its uses still by `accountusesset` */
   const cr = OP_FAMILIES.credentials, aa = OP_FAMILIES["ai-accounts"];
-  for (const [owner, f, op] of [["ai-accounts", aa, "accountreferenceset"], ["ai-accounts", aa, "accountreferenceremove"],
-                                ["credentials", cr, "aigrantmint"], ["ai-accounts", aa, "accountusesset"]]) {
+  for (const [owner, f, op] of [["ai-accounts", aa, "projectaikeepaway"], ["credentials", cr, "aigrantmint"], ["ai-accounts", aa, "accountusesset"]]) {
     assert.equal(f.kinds[op], "own", op);
     assert.deepEqual([...OPS[op].machineClasses], [], op);
     assert.ok(await reaches(owner, op, { key: "by", at: "query" }), op);
   }
+  assert.deepEqual(plain(OPS.aiownadd), { classes: ["admin", "member"], machineClasses: [], mutating: true });
   assert.deepEqual(cr.actor, { key: "by", at: "query" });
   assert.deepEqual(aa.actor, { key: "by", at: "query" });
-  /* the switches: one act, accountusesset; the retired switch acts have no spec and are in no table */
-  for (const op of ["accountswitchset", "groupswitchset"])
+  /* the switches: one act, accountusesset; the retired switch acts, and T53's retired door ops, have no spec and are in no table */
+  for (const op of ["accountswitchset", "groupswitchset", ...RETIRED_T53])
     assert.ok(!Object.hasOwn(OPS, op) && !Object.hasOwn(NEEDS, op) && !Object.hasOwn(OP_STAMPS, op)
-      && !SESSION_OPS.member.has(op) && !FAMILY_OPS.includes(op) && !servedBy("credentials").includes(op)
-      && !servedBy("ai-accounts").includes(op), op);
-  assert.deepEqual(Object.keys(OPS).filter((op) => /switch/.test(op) && /account|group/.test(op)).sort(),
-                   ["groupkeyswitch", "projectaccountswitch"]);
-  /* no op names a group-level subscription or a group account; a project's account ops are R41's alone */
+      && !SESSION_OPS.member.has(op) && !SESSION_OPS.admin.has(op) && !FAMILY_OPS.includes(op)
+      && !servedBy("credentials").includes(op) && !servedBy("ai-accounts").includes(op), op);
+  /* the one switch of an account is ai-accounts' declared `aiaccountswitch` (its R61) */
+  assert.deepEqual(Object.keys(OPS).filter((op) => /switch/.test(op) && /account|group/.test(op)).sort(), ["aiaccountswitch"]);
+  /* no op names a group-level subscription or a group account; a project's own ops are its keep-away alone */
   for (const op of Object.keys(OPS)) assert.doesNotMatch(op, /^(group|instance)(account|claude|reference|subscription)/, op);
   assert.deepEqual(Object.keys(OPS).filter((op) => /^project(account|key|signin|aikeep)/.test(op)).sort(),
-    ["projectaccountremove", "projectaccountstate", "projectaccountswitch", "projectaikeepaway", "projectaikeepawaystate",
-     "projectkeynotice", "projectkeynoticeseen", "projectkeyset", "projectsigninset"]);
+    ["projectaikeepaway", "projectaikeepawaystate"]);
   /* the agent's grant is admitted by its scope alone: no spec names ai */
   for (const op of [...FAMILY_OPS, ...ASK_GRANT_OPS]) assert.ok(!JSON.stringify(OPS[op]).includes('"ai"'), op);
   /* negative control */
-  assert.ok(Object.hasOwn(OPS, "accountreferenceset"));
+  assert.ok(Object.hasOwn(OPS, "accountusesset") && !Object.hasOwn(OPS, "accountreferenceset"));
 });
 
 test("R19, R3 (K1601, K1566): the ask's three plane ops admit a session's kinds and no bearer, are in no session set, askusage alone mutating and unattended by a cited decision; moneydetectorsrun the operator's (admin, probe), in no session set, unattended by money-checks R6", () => {

@@ -115,12 +115,183 @@ CREATE TABLE IF NOT EXISTS ai_explore_asks (
   PRIMARY KEY (owner, day)
 );
 
+-- R1, R21 (T53; BR22): THE MONEY OF THE COUNTER, kept apart from ai_usage per unit: what the provider (or the gateway
+-- log) reported and what the catalogue's price estimated, in millionths of the unit, never added together; with the calls
+-- that carried each, so a sum says how many were priced. A unit other than 'usd' is summed only with its own unit.
+CREATE TABLE IF NOT EXISTS ai_usage_money (
+  owner            TEXT NOT NULL,
+  member           TEXT NOT NULL,
+  day              TEXT NOT NULL,
+  use              TEXT NOT NULL,
+  mode             TEXT NOT NULL,
+  unit             TEXT NOT NULL,
+  reported_micro   INTEGER NOT NULL DEFAULT 0,
+  reported_calls   INTEGER NOT NULL DEFAULT 0,
+  estimated_micro  INTEGER NOT NULL DEFAULT 0,
+  estimated_calls  INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (owner, member, day, use, mode, unit)
+);
+CREATE INDEX IF NOT EXISTS ai_usage_money_owner_day ON ai_usage_money(owner, day);
+
+-- R28 (T53): THE USE OF EACH ENTRY BY EACH OWNER AND LOCAL DAY, in money and calls, for the monthly re-test caps
+-- (scope 'retest:<entry_id>'). Numbers only.
+CREATE TABLE IF NOT EXISTS ai_usage_entries (
+  owner            TEXT NOT NULL,
+  day              TEXT NOT NULL,
+  entry_id         TEXT NOT NULL,
+  mode             TEXT NOT NULL,
+  calls            INTEGER NOT NULL DEFAULT 0,
+  reported_micro   INTEGER NOT NULL DEFAULT 0,
+  estimated_micro  INTEGER NOT NULL DEFAULT 0,
+  unpriced_calls   INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (owner, day, entry_id, mode)
+);
+
+-- R11, R15 (T53): EACH MEASURED ACT'S CONVERSATIONS, one row per entry and label (provider, host, model version,
+-- effort, account level, owner; '' where not stated, read back as null), with their calls, 'seq' first-seen order.
+CREATE TABLE IF NOT EXISTS ai_use_act_entries (
+  seq            INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner          TEXT NOT NULL,
+  act            TEXT NOT NULL,
+  entry_id       TEXT NOT NULL,
+  provider       TEXT NOT NULL,
+  host           TEXT NOT NULL,
+  model_version  TEXT NOT NULL,
+  effort         TEXT NOT NULL,
+  account_level  TEXT NOT NULL,
+  label_owner    TEXT NOT NULL,
+  calls          INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (owner, act, entry_id, provider, host, model_version, effort, account_level, label_owner)
+);
+
+-- R18 (T53; BR23): THE PROVIDER LIMITS agent-model returned as a 'limit' outcome, one row per account, entry ('' for an
+-- account-wide limit), kind and resets_at ('' when the provider gave none). 'recorded_at' is the latest recording. No
+-- provider message is kept.
+CREATE TABLE IF NOT EXISTS ai_provider_limits (
+  owner        TEXT NOT NULL,
+  account_id   TEXT NOT NULL,
+  entry_id     TEXT NOT NULL,
+  kind         TEXT NOT NULL,
+  scope        TEXT NOT NULL,
+  resets_at    TEXT NOT NULL,
+  recorded_at  TEXT NOT NULL,
+  project_id   TEXT,
+  PRIMARY KEY (account_id, entry_id, kind, resets_at)
+);
+
+-- R23, R24 (T53; BR24): THE ALERT THRESHOLDS, several per owner, scope, unit and period; 'level' a percent of the matching
+-- limit or an amount in the unit (whole cents for usd); their history appended; each first crossing in a period noted once.
+CREATE TABLE IF NOT EXISTS ai_thresholds (
+  owner       TEXT NOT NULL,
+  scope       TEXT NOT NULL,
+  unit        TEXT NOT NULL,
+  period      TEXT NOT NULL,
+  kind        TEXT NOT NULL,
+  level       INTEGER NOT NULL,
+  project_id  TEXT,
+  set_by      TEXT NOT NULL,
+  set_at      TEXT NOT NULL,
+  PRIMARY KEY (owner, scope, unit, period, kind, level)
+);
+CREATE TABLE IF NOT EXISTS ai_threshold_history (
+  seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner       TEXT NOT NULL,
+  scope       TEXT NOT NULL,
+  unit        TEXT NOT NULL,
+  period      TEXT NOT NULL,
+  kind        TEXT NOT NULL,
+  level       INTEGER,
+  change      TEXT NOT NULL,
+  project_id  TEXT,
+  by          TEXT NOT NULL,
+  at          TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ai_threshold_crossed (
+  owner         TEXT NOT NULL,
+  scope         TEXT NOT NULL,
+  unit          TEXT NOT NULL,
+  period        TEXT NOT NULL,
+  kind          TEXT NOT NULL,
+  level         INTEGER NOT NULL,
+  period_start  TEXT NOT NULL,
+  crossed_at    TEXT NOT NULL,
+  basis         TEXT,
+  project_id    TEXT,
+  PRIMARY KEY (owner, scope, unit, period, kind, level, period_start)
+);
+
+-- R25 (T53): A RECONCILIATION GAP outside RECONCILE_TOLERANCE, recorded in the account's history with who and when.
+CREATE TABLE IF NOT EXISTS ai_reconcile_gaps (
+  seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner       TEXT NOT NULL,
+  period      TEXT NOT NULL,
+  figure      TEXT NOT NULL,
+  ours        REAL,
+  theirs      REAL,
+  unit        TEXT,
+  source      TEXT NOT NULL,
+  project_id  TEXT,
+  by          TEXT NOT NULL,
+  at          TEXT NOT NULL
+);
+
+-- R28, R29 (T53; K5480): EACH PAYING ACCOUNT'S RE-TEST SWITCH, on until turned off, with who turned it off and when.
+CREATE TABLE IF NOT EXISTS ai_retest (
+  owner           TEXT PRIMARY KEY,
+  on_             INTEGER NOT NULL DEFAULT 1,
+  changed_by      TEXT,
+  changed_at      TEXT,
+  turned_off_by   TEXT,
+  turned_off_at   TEXT,
+  project_id      TEXT
+);
+
+-- R31 (T53; AD38; K5487): THE HEALTH COUNTS per entry, personal flag and UTC day: calls, refusals, silences and one count
+-- per agent-model error class (a JSON object of class to count). No owner, account, member, run, content or message.
+CREATE TABLE IF NOT EXISTS ai_health (
+  entry_id  TEXT NOT NULL,
+  personal  INTEGER NOT NULL,
+  day       TEXT NOT NULL,
+  calls     INTEGER NOT NULL DEFAULT 0,
+  refused   INTEGER NOT NULL DEFAULT 0,
+  silent    INTEGER NOT NULL DEFAULT 0,
+  errors    TEXT NOT NULL DEFAULT '{}',
+  PRIMARY KEY (entry_id, personal, day)
+);
+
+-- R32, R33 (T53): THE TEAM'S HEALTH-SHARING SWITCH, every set appended (the latest is the state), and the days sent.
+CREATE TABLE IF NOT EXISTS ai_health_switch (
+  seq  INTEGER PRIMARY KEY AUTOINCREMENT,
+  on_  INTEGER NOT NULL,
+  by   TEXT NOT NULL,
+  at   TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ai_health_sent (
+  day      TEXT PRIMARY KEY,
+  sent_at  TEXT NOT NULL
+);
+
 -- R1, R2: the migrations this module has carried out, each once (today: the pre-T40 ceilings, B4).
 CREATE TABLE IF NOT EXISTS ai_use_migrations (
   name  TEXT PRIMARY KEY,
   at    TEXT NOT NULL
 );
 `;
+
+/* R1, R10, R22 (T53): columns added to tables a running store already holds, each added once by `migrate` when absent. */
+export const AI_USE_ADDED_COLUMNS = Object.freeze([
+  ["ai_usage", "reasoning_tokens", "INTEGER NOT NULL DEFAULT 0"],
+  ["ai_usage", "unpriced_calls", "INTEGER NOT NULL DEFAULT 0"],
+  ["ai_usage", "unstated", "TEXT NOT NULL DEFAULT '[]'"],
+  ["ai_use_acts", "member", "TEXT"],
+  ["ai_use_acts", "last_input_tokens", "INTEGER"],
+  ["ai_use_acts", "unpriced_calls", "INTEGER NOT NULL DEFAULT 0"],
+  ["ai_use_acts", "reported_micro", "INTEGER NOT NULL DEFAULT 0"],
+  ["ai_use_acts", "reported_calls", "INTEGER NOT NULL DEFAULT 0"],
+  ["ai_use_acts", "estimated_micro", "INTEGER NOT NULL DEFAULT 0"],
+  ["ai_use_acts", "estimated_calls", "INTEGER NOT NULL DEFAULT 0"],
+  ["ai_use_acts", "money_unit", "TEXT"],
+]);
 
 const CLASSES = Object.freeze({ purge: "clear", expunge: "none", export: "admin-only", sight: "group", derive: "stored",
   version_chain: false });
@@ -136,4 +307,16 @@ export const AI_USE_TABLES = Object.freeze([
   { name: "ai_limit_history", keys: ["project_id"] },
   { name: "ai_limit_reached", keys: ["project_id"] },
   { name: "ai_explore_asks", keys: ["project_id"] },
+  { name: "ai_usage_money", keys: [] },
+  { name: "ai_usage_entries", keys: [] },
+  { name: "ai_use_act_entries", keys: [] },
+  { name: "ai_provider_limits", keys: ["project_id"] },
+  { name: "ai_thresholds", keys: ["project_id"] },
+  { name: "ai_threshold_history", keys: ["project_id"] },
+  { name: "ai_threshold_crossed", keys: ["project_id"] },
+  { name: "ai_reconcile_gaps", keys: ["project_id"] },
+  { name: "ai_retest", keys: ["project_id"] },
+  { name: "ai_health", keys: [] },
+  { name: "ai_health_switch", keys: [] },
+  { name: "ai_health_sent", keys: [] },
 ].map((t) => Object.freeze({ ...t, keys: Object.freeze([...t.keys]), ...CLASSES })));

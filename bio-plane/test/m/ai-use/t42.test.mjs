@@ -1,5 +1,6 @@
 /* ai-use T42 (T42-17): R2's drop of `ai_ceilings` after the carry (N848, K2592) and R3's `explore` read through
-   `ai-accounts.accountUsesOf` (N831, K2620; T48: was credentials'), at the interface, each with a negative control (K874). */
+   `ai-accounts.accountUsesOf` (N831, K2620; T48: was credentials'; T53: by the account's id), at the interface, each with a
+   negative control (K874). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, standard } from "./fixture.mjs";
@@ -55,16 +56,17 @@ function spied(w, accountUsesOf = null) {
   return { u, calls };
 }
 
-test("R3 (T42) the owner's explore is read through ai-accounts.accountUsesOf with no viewer, never through accountUses asked as an owner, on every kind of account", async () => {
+test("R3 (T42; T53) the owner's explore is read through ai-accounts.accountUsesOf({account_id}) with no viewer, never through accountUses asked as an owner, on every kind of account", async () => {
   const w = await standard();
-  w.a.accountUsesSet({ owner: "group", switch: "explore", on: "yes", by: "admin" });
-  w.a.accountUsesSet({ owner: "project:P", switch: "explore", on: "yes", by: "ann" });
-  w.a.accountUsesSet({ owner: "member:ann", switch: "explore", on: "yes", by: "ann" });
+  const ids = { group: w.acct.group, "project:P": w.acct.P, "member:ann": w.acct.ann };
+  w.explore(w.acct.group, "yes", "admin");
+  w.explore(w.acct.P, "yes", "ann");
+  w.explore(w.acct.ann, "yes", "ann");
   const { u, calls } = spied(w);
   for (const owner of ["group", "project:P", "member:ann"]) {
     calls.length = 0;
-    assert.equal(u.useCheck({ owner, member: null, use: "explore", at: AT }), null, owner);
-    assert.deepEqual(calls.filter(([n]) => n === "accountUsesOf"), [["accountUsesOf", { owner }]], owner);
+    assert.equal(u.useCheck({ owner, member: null, use: "explore", at: AT, account_id: ids[owner] }), null, owner);
+    assert.deepEqual(calls.filter(([n]) => n === "accountUsesOf"), [["accountUsesOf", { account_id: ids[owner] }]], owner);
     assert.deepEqual(calls.filter(([n]) => n === "accountUses"), [], `${owner}: never accountUses`);
   }
   /* control: another use than explore reads no explore value at all */
@@ -73,9 +75,11 @@ test("R3 (T42) the owner's explore is read through ai-accounts.accountUsesOf wit
   assert.deepEqual(calls.filter(([n]) => n === "accountUsesOf"), []);
 });
 
-test("R3 (T42) held is read, never uses alone: an account not held, unreadable, holding another value, or whose read throws, reads as no (EXPLORE_NOT_ENABLED); held at yes it passes (control)", async () => {
+test("R3 (T42; T53) held is read, never uses alone: an account not held, unreadable, holding another value, another owner's, or whose read throws, reads as no (EXPLORE_NOT_ENABLED); held at yes it passes (control)", async () => {
   const w = await standard();
+  const g = { account_id: w.acct.group };
   const cases = [
+    [{ ok: true, owner: "member:ann", held: true, uses: { explore: "yes" } }, "another owner's account"],
     [{ ok: true, owner: "group", held: false, uses: { explore: "yes" } }, "held false, uses still carrying yes"],
     [{ ok: true, owner: "group", held: null, uses: null, unreadable: true }, "unreadable"],
     [{ ok: true, owner: "group", held: true, uses: { explore: "maybe" } }, "another value"],
@@ -84,29 +88,29 @@ test("R3 (T42) held is read, never uses alone: an account not held, unreadable, 
   ];
   for (const [answer, why] of cases) {
     const { u } = spied(w, typeof answer === "function" ? answer : () => answer);
-    assert.equal(u.useCheck({ owner: "group", use: "explore", at: AT }).code, "EXPLORE_NOT_ENABLED", why);
-    assert.equal(u.exploreAllowed({ owner: "group", question: "INQ-1", at: AT }).code, "EXPLORE_NOT_ENABLED", `R6: ${why}`);
-    assert.equal(u.exploreAsk({ owner: "group", at: AT, what: "INQ-1" }).code, "EXPLORE_NOT_ENABLED", `R9: ${why}`);
+    assert.equal(u.useCheck({ owner: "group", use: "explore", at: AT, ...g }).code, "EXPLORE_NOT_ENABLED", why);
+    assert.equal(u.exploreAllowed({ owner: "group", question: "INQ-1", at: AT, ...g }).code, "EXPLORE_NOT_ENABLED", `R6: ${why}`);
+    assert.equal(u.exploreAsk({ owner: "group", at: AT, what: "INQ-1", ...g }).code, "EXPLORE_NOT_ENABLED", `R9: ${why}`);
   }
   for (const v of ["yes", "ask"]) {
     const { u } = spied(w, () => ({ ok: true, owner: "group", held: true, uses: { explore: v } }));
-    assert.equal(u.useCheck({ owner: "group", use: "explore", at: AT }), null, `control: held at ${v}`);
+    assert.equal(u.useCheck({ owner: "group", use: "explore", at: AT, ...g }), null, `control: held at ${v}`);
   }
 });
 
-test("R3 (T42) on the real ai-accounts: the group's explore set while its key is not held reads as no; a revoked member's account reads as no; held, each passes (control)", async () => {
+test("R3 (T42; T53) on the real ai-accounts: the team's account at yes whose credential failed (held false) reads as no; a revoked member's account reads as no; held, each passes (control)", async () => {
   const w = await (await world()).group("ann");
-  assert.equal(w.a.accountUsesSet({ owner: "group", switch: "explore", on: "yes", by: "admin" }).ok, true);
-  const of = w.a.accountUsesOf({ owner: "group" });
+  const team = await w.account("group", "admin");
+  assert.equal(w.explore(team, "yes", "admin").ok, true);
+  assert.equal(w.u.useCheck({ owner: "group", use: "explore", at: AT, account_id: team }), null, "control: held, at yes");
+  w.a.accountCredentialFailed({ account_id: team, why: "unresolved" });
+  const of = w.a.accountUsesOf({ account_id: team });
   assert.deepEqual([of.held, of.uses.explore], [false, "yes"], "the K2620 shape: not held, its uses still carrying yes");
-  assert.equal(w.u.useCheck({ owner: "group", use: "explore", at: AT }).code, "EXPLORE_NOT_ENABLED", "group key not held");
-  await w.a.groupKeySet({ key: "sk-group", by: "admin" });
-  w.a.accountUsesSet({ owner: "group", switch: "explore", on: "yes", by: "admin" });
-  assert.equal(w.u.useCheck({ owner: "group", use: "explore", at: AT }), null, "control: the group key held, at yes");
+  assert.equal(w.u.useCheck({ owner: "group", use: "explore", at: AT, account_id: team }).code, "EXPLORE_NOT_ENABLED", "not held");
 
-  await w.a.accountReferenceSet({ member: "ann", kind: "apikey", secret: "sk-ann", by: "ann" });
-  w.a.accountUsesSet({ owner: "member:ann", switch: "explore", on: "yes", by: "ann" });
-  assert.equal(w.u.useCheck({ owner: "member:ann", use: "explore", at: AT }), null, "control: ann's own account, at yes");
+  const anns = await w.account("member:ann", "ann");
+  w.explore(anns, "yes", "ann");
+  assert.equal(w.u.useCheck({ owner: "member:ann", use: "explore", at: AT, account_id: anns }), null, "control: ann's own account, at yes");
   assert.equal(w.m.memberSet({ memberId: "ann", status: "revoked", by: "admin" }).ok, true);
-  assert.equal(w.u.useCheck({ owner: "member:ann", use: "explore", at: AT }).code, "EXPLORE_NOT_ENABLED", "revoked");
+  assert.equal(w.u.useCheck({ owner: "member:ann", use: "explore", at: AT, account_id: anns }).code, "EXPLORE_NOT_ENABLED", "revoked");
 });
