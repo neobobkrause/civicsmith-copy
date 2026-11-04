@@ -1,0 +1,1 @@
+{"row":"triage","user":"interface-shell","verdict":"not affected","evidence":"bio-plane/test/m/interface-shell/world.mjs:6 its only use of store-request is the test store world (storeWorld); no file under interface-shell names projectkeyset, accountreferenceset or BODY_ONLY","at":"2026-11-04T13:02:25.342Z","key":"store-request:133","worker":"adcc9d453977e710d","cost":"0.40"}
