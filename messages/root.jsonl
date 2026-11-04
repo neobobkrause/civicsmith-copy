@@ -73,3 +73,4 @@
 {"at":"2026-11-04T22:16:30Z","row":"sent","n":37,"to":"bob","text":"Sweep: control-plane: BLOCKED; op-declarations: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-04T22:16:39Z","row":"outcome","n":37,"outcome":"delivered"}
 {"at":"2026-11-04T23:16:25Z","row":"sent","n":38,"to":"bob","text":"Sweep: control-plane: BLOCKED; op-declarations: BLOCKED; runtime-limits: BLOCKED. Also: the sweep had me archive your idle job session case-checker (session_01RAN5emKwgoLPmA3GchM3Ke, branch job/case-checker-2); its last summary read 'waiting on BOB for Process3 fix; resend in 30m if silent' (review_ready). If that job still owes work, restart it."}
+{"at":"2026-11-04T23:16:35Z","row":"outcome","n":38,"outcome":"delivered"}
