@@ -74,8 +74,11 @@ test("R16: whenever the explorer's bar is held, R7's recorded false-alarm rate o
   const o = await w.openRun("group");
   const before = gauge(w, o.run);
   assert.deepEqual(before.gauge.untested, label());
-  /* The bar held: the label follows the bar, not the instance. */
+  /* The bar held (T53: Gate 1 for the entry ai-runs judges, and R7's recorded rate), on a test instance still: the label
+     follows the bar, not the instance. */
   w.testBars = [bar("investigate"), bar("explore")];
+  w.gate1();
+  w.testInstance = true;
   assert.deepEqual(w.p.gate(), { open: true, why: null, false_alarm_rate: 0.1, gold_set: "civicsmith@1", untested: null });
   w.content("CNT-1", DOC2, CAP2);
   const after = w.p.find({ run: o.run, kind: "content", ref: "CNT-1", bearing: "unclear", how: "a passage", caller: CALLER });
