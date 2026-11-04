@@ -8,3 +8,4 @@
 {"at":"2026-11-04T06:20:54Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-04T06:29:26Z","row":"sent","n":5,"to":"bob","text":"job question-explorer: synced to tranche (money 154) and pushed, ebc5c5457d; job complete not rerun, so the code gate can check receipt attempt 3; suite 50/50"}
 {"at":"2026-11-04T06:29:33Z","row":"outcome","n":5,"outcome":"delivered"}
+{"at":"2026-11-04T09:18:56Z","row":"sent","n":6,"to":"bob","text":"job question-explorer complete, PR #199 ready: run status. Note in not-verified: on real providers no exploring run can open (ai-runs refuses AI_RUN_NOT_A_MEMBER_ACT; ai-use R6 bars member accounts) — needs your ruling."}
