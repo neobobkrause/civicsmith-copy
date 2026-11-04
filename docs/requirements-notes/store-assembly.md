@@ -38,3 +38,7 @@ and `store-assembly`'s `uses` gains `"store-jobs", "store-ask"`. The `uses` list
 **Callers.** `plane` imports `askOp`, `actionDraftOp`, `ACTION_DRAFT_OPS`, `askOnObject`, `draftOnObject` and `traceStamped` through `store-assembly/index.mjs`. `store-assembly` re-exports them from the new modules, so `plane` does not change.
 
 **Provider notices.** `action-clocks:60` and `run-rules:72` were not answered: they wait for the split. `run-rules` is used by `ask.mjs`, so after the split that notice goes to `store-ask` (and to `store-assembly` only if `assemble.mjs` reads the changed ids).
+
+## The split as landed (job store-assembly, attempt 1, replacement session, 4 Nov 2026)
+
+BOB accepted the split above and landed it on `tranche` (PR 109 `store-jobs`, PR 110 `store-ask`). This job retired the moved lines in `build/requirements/store-assembly.md`, each as one line naming its new id (`- **R<n>** *(retired: moved to <module>:R<m>, K617)*`), so ids stay traceable and are never reused: R49–R59 → `store-ask` R1–R11, R60–R82 → `store-jobs` R1–R23, R102–R104 → `store-jobs` R24–R26. The unmet marks of R102–R104 (T53) travel with them. The file went from 95,700 to about 62 KB, under the cap, with no other text moved. `requirements-split.test.mjs` pins the start commit's ids and marks and checks each moved line against its new module's copy. The code (`pending.mjs`, `casesweep.mjs`, `acquire-timings.mjs`, `stats.mjs`, `ask.mjs`, `transcribe.mjs`, `unpack.mjs`) stays here until the new modules' jobs build it.
