@@ -90,15 +90,20 @@ test("R59 R60 R39: each connection kind's `group` in the vocabulary is one of th
   assert.deepEqual(Object.keys(CONNECTION_GROUPS).filter((k) => !registry.includes(k)), [], "no stale entry in the map");
   assert.deepEqual([...new Set(Object.values(CONNECTION_GROUPS))].sort(), [...CONNECTION_GROUP_NAMES].sort());
   /* the words the design names for its groups hold: money moved is the money owner's, a person's claim the people owner's */
-  assert.equal(v.words.money_flow.group, "money");
+  /* R72 (T53): the money owner's five kinds are each in `money`, in place of `money_flow`, which the registry holds no longer */
+  for (const k of ["money_transfer", "money_payment", "money_contribution", "money_revenue", "money_other"])
+    assert.equal(v.words[k].group, "money", k);
+  assert.equal(registry.includes("money_flow"), false);
   assert.equal(v.words.mentioned_together.group, "ment");
+  /* R72's group clause (T53): `named_in`, which connections now registers, is in `ment` */
+  assert.equal(v.words.named_in.group, "ment");
   assert.equal(v.words.same_as.group, "same");
   assert.equal(v.words.step_source.group, "step_source");
   assert.equal(v.words.event_voted.group, "part");
   assert.equal(v.words["line:holds:elected"].group, "pos");
   /* control: a kind the map lacks is seen by the same check */
-  const unmapped = registry.filter((k) => !CONNECTION_GROUP_NAMES.includes({ ...CONNECTION_GROUPS, money_flow: undefined }[k]));
-  assert.deepEqual(unmapped, ["money_flow"]);
+  const unmapped = registry.filter((k) => !CONNECTION_GROUP_NAMES.includes({ ...CONNECTION_GROUPS, money_payment: undefined }[k]));
+  assert.deepEqual(unmapped, ["money_payment"]);
 });
 
 test("R60: `step_source` is answered in its own group, `step_source`, and in none of the other five; R59's groups are six, each used; "
@@ -113,7 +118,7 @@ test("R60: `step_source` is answered in its own group, `step_source`, and in non
   /* totality over the registry, with the new group: every kind has one of the six, and `step_source` is the only kind in its own */
   for (const kind of registry) assert.ok(CONNECTION_GROUP_NAMES.includes(v.words[kind].group), kind);
   assert.deepEqual(registry.filter((k) => v.words[k].group === "step_source"), ["step_source"]);
-  assert.deepEqual(registry.filter((k) => v.words[k].group === "ment").sort(), ["hunch", "in_tension_with", "mentioned_together"]);
+  assert.deepEqual(registry.filter((k) => v.words[k].group === "ment").sort(), ["hunch", "in_tension_with", "mentioned_together", "named_in"]);
   for (const kind of registry.filter((k) => v.words[k].group === "ment")) assert.notEqual(kind, "step_source");
   /* control (K874): the earlier map, `step_source` under `ment`, fails the checks above */
   const old = { ...CONNECTION_GROUPS, step_source: "ment" };
