@@ -28,8 +28,6 @@ export const NONE = Object.freeze({
   inquiry: { datedWaits: ({ member }) => ({ ok: true, member, waits: [] }) },
   credentials: { securityLevel: () => ({ level: "Ordinary", levelAt: null }),
                  securityMap: () => securityRefusals.notAnAdmin },
-  /* R16 (T48; N996 §5): the suspended sign-ins are ai-accounts' (its R13), no longer credentials' */
-  aiAccounts: { projectAccountsSuspended: () => [] },
   following: { policyChanges: () => ({ ok: true, changes: [], cursor: null }), dutyWatchEndAt: () => null,
                watchedBy: () => ({ ok: true, watchers: [] }) },
   /* R24 (T50; retrieval R85): the viewer's own watches */
@@ -43,7 +41,7 @@ export const NONE = Object.freeze({
   capture: { fetchesDone: () => ({ ok: true, fetches: [], limit: 200, truncated: false, next: null }) },
   /* R28 (G55): calculations' finished or stopped background ingests */
   calculations: { ingestNotices: () => ({ ok: true, items: [], next: null }) },
-  /* R16 (ai-use R5, R9; ai-accounts R13), R17 (steps, question-explorer, investigation, review), T41 */
+  /* R16 (ai-use R5, R9; ai-accounts R13's suspended sign-ins retired, T53), R17 (steps, question-explorer, investigation, review), T41 */
   aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached: [] }) },
   steps: { laterFound: () => ({ ok: true, found: [] }), stepsDue: () => ({ ok: true, due: [] }),
            costShares: () => ({ ok: true, shares: [] }), costMessages: () => ({ ok: true, messages: [] }) },
