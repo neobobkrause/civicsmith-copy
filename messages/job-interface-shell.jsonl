@@ -1,2 +1,3 @@
 {"at":"2026-11-04T07:36:43Z","row":"sent","n":1,"to":"bob","text":"job interface-shell BLOCKED: run status"}
 {"at":"2026-11-04T07:36:55Z","row":"outcome","n":1,"outcome":"delivered"}
+{"at":"2026-11-04T13:20:17Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (5 jobs ready). Then: job interface-shell complete, PR #172 ready, session session_01RAN5ekJFivQTYT2LEY7WQL: run status"}
