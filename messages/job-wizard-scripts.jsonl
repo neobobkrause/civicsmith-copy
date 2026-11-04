@@ -2,3 +2,4 @@
 {"at":"2026-11-04T03:42:40Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T04:39:46Z","row":"sent","n":2,"to":"bob","text":"job wizard-scripts complete, PR #98 ready: run status. One refusal, exact words: 'p3 job complete: --test notice:answers:103: this job's START named no provider notice answers:103 (named: run-rules:72, membership:77)'. So job complete ran with the two START notices only; the answers R1 notice is confirmed, no code change, by bio-plane/test/m/wizard-scripts/t53.test.mjs 'notice answers:103 (answers R1): ...' (commit 639e9bb69b), named in the receipt's not-verified line."}
 {"at":"2026-11-04T04:39:57Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-04T06:47:56Z","row":"sent","n":3,"to":"bob","text":"job wizard-scripts complete, PR #163 ready: run status"}
