@@ -166,7 +166,7 @@ test("R105 state f, nothing proposed (the assistant is held): the screen says so
   assert.deepEqual(acts(m), []);
   assert.equal(p.requests.filter((r) => /^contradiction/.test(r.op)).length, 0, "nothing is read or sent");
   assert.ok(says(m, S + "finding.passages.that.may.conflict.is.2") && !says(m, S + "finding.passages.that.may.conflict.is"), "the assistant is off for her");
-  const q = await open("/app/contradiction", { ...view(null), plane: { ...view(null).plane, assistantstate: ok({ on: true }), accountreference: ok({ held: true }) } });
+  const q = await open("/app/contradiction", { ...view(null), plane: { ...view(null).plane, assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
   assert.ok(says(main(q), S + "finding.passages.that.may.conflict.is") && !says(main(q), S + "finding.passages.that.may.conflict.is.2"), "reachable: it is not available yet");
 });
 
@@ -411,7 +411,7 @@ test("R105 every refusal the plane makes of the six acts is drawn beside the act
 
 test("R105 writinghelp: offered beside her own-words fields while the assistant is reachable, told only what she typed; none beside a reason field (control); none while the assistant is not reachable (control)", async () => {
   /* writinghelp never returns a draft (K5212: past its refusals it answers ASSISTANT_DRAFT_UNAVAILABLE), so no drafted text is scripted here */
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   const p = await open("/app/contradiction/" + CAND, { ...view(cand()), plane: { ...view(cand()).plane, ...reach } });
   const helps = main(p).querySelectorAll('button[data-act="writinghelp"]');
   assert.deepEqual(helps.map((b) => b.getAttribute("data-field")).sort(), ["explanation", "question"]);
@@ -451,7 +451,7 @@ test("R105 what the record cannot state is not drawn or offered: a stated date t
 
 test("R105 writinghelp: beside her conclusion on a taken-up question and beside her response once the projects are named, never beside what would change it", async () => {
   /* no drafted text is scripted (K5212) */
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   const c = await open("/app/contradiction/" + CAND, { ...TAKEN(), plane: { ...TAKEN().plane, ...reach } });
   assert.deepEqual(main(c).querySelectorAll('button[data-act="writinghelp"]').map((b) => b.getAttribute("data-field")), ["conclusion"]);
   fill(c, { "cd-concl": "They differ in time." });

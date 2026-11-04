@@ -36,7 +36,7 @@ test("R1 R9 R28 R29 reads: its stage (the subject), the project, participants, b
   assert.equal(q("strengthbarof").project, P);
   assert.deepEqual([q("projectquestions").project, q("projectquestions").limit, q("projectquestions").after], [P, "100", undefined]);
   assert.deepEqual([q("list").type, q("list").limit], ["inquiry", "500"]);
-  assert.equal(q("projectaccountstate").project, P);
+  assert.equal(p.byOp("projectaccountstate").length, 0, "R1 (T53): nothing of what pays for the assistant is read");
   assert.equal(q("projectvisibility").projectId, P);
   assert.equal(q("projectownervotes").projectId, P);
   assert.equal(q("plans").project, P);
@@ -74,7 +74,7 @@ test("R1 the project drawn: title, objective, stage, its questions with their st
   const rowOf = (q) => rows.find((r) => r.querySelector(`a[href$="${q}"]`));
   assert.deepEqual(rowOf(graded).querySelectorAll(".cs-grade").map((g) => g.textContent.slice(-1)), [real.capture.grade, real.connection.grade]);
   assert.equal(rowOf(bare).querySelectorAll('.cs-gap[data-gap="unrated"]').length, 2);
-  assert.ok(says(m, "screen.project.account.member"));
+  assert.ok(!says(m, "screen.project.account.member") && says(m.querySelector(`a[href="/app/aiproject/${project}"]`), "screen.project.account.open"), "R1, R153 (T53): nothing of what pays; the link to the project's AI screen");
   /* changed in fix round 3 (DEC-394 (3a), R128): the registry lists `heldcaptures` on the project, drawn as "List this project's documents" */
   assert.deepEqual(actsIn(m).sort(), ["drawquestion", "findin", "heldcaptures", "planopen", "projectbarset", "projectleave", "projectstakeset", "promote"]);
   assert.ok(!actsIn(m).includes("strengthbarset"), "the group's bar is never set from a project (R10)");
@@ -460,10 +460,10 @@ test("R1 R37 a member invited and not yet joined sees the not-joined state with 
   assert.ok(says(m, "screen.project.notjoined"));
   assert.equal(m.querySelector('[data-state="failed"]'), null, "no failed read drawn");
   assert.equal(m.querySelector("h1").textContent, "Pothole repairs");
-  assert.equal(p.byOp("projectaccountstate").length, 0, "what pays is not read for a member who has not joined");
+  assert.equal(main(p).querySelector('[data-aiproject="link"]'), null, "R153: no link to the project's AI screen before she joins");
   await press(p, "projectjoin");
   assert.equal(p.byOp("projectjoin")[0].query.projectId, project);
-  assert.equal(p.byOp("projectaccountstate").length, 1, "read once she has joined");
+  assert.ok(main(p).querySelector(`a[href="/app/aiproject/${project}"]`), "R153: the link, once she has joined");
   assert.ok(actsIn(main(p)).includes("projectleave") && !actsIn(main(p)).includes("projectjoin"), "now a participant's page");
   /* control: a joined member's page is not the not-joined state */
   const j = await pageOf(world, ann, path);
@@ -484,10 +484,16 @@ test("R39 no heading is a record id; a project with no title draws undetermined"
   assert.ok(main(bare).querySelector("h1").textContent.startsWith(lead("state.undetermined")));
 });
 
-test("R14 the project links AI for this project to its projectai screen", async () => {
+test("R153 the project draws one link to its AI screen, aiproject, by address and the key's word; no read or act of R14's former list is sent", async () => {
   const p = await open(at());
-  const a = section(p, "screen.project.account.head").querySelector(`a[href="/app/projectai/${P}"]`);
-  assert.ok(says(a, "screen.projectai.name"));
+  const links = main(p).querySelectorAll('a[href^="/app/aiproject/"]');
+  assert.equal(links.length, 1, "one link");
+  assert.equal(links[0].getAttribute("href"), "/app/aiproject/" + P);
+  assert.ok(says(links[0], "screen.project.account.open"));
+  assert.equal(p.root().querySelectorAll('a[href^="/app/projectai/"]').length, 0, "the old address is drawn nowhere");
+  const FORMER = ["projectaccountstate", "accountuses", "ailimits", "aiusage", "accounthistory", "projectaikeepawaystate", "projectkeyset", "projectsigninset",
+    "projectaccountswitch", "projectaccountremove", "projectkeynoticeseen", "accountusesset", "ailimitset", "projectaikeepaway"];
+  for (const op of FORMER) assert.equal(p.byOp(op).length, 0, `${op} is not sent`);
 });
 
 test("R1 controls: no handle and no plan title or question are refused by their words, nothing sent", async () => {

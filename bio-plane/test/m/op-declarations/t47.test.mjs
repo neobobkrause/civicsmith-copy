@@ -191,10 +191,11 @@ test("R57 (K3084; credentials R65, R66, R69, R71): unlock and reauth a session's
 
 /* ---------- R58 ---------- */
 
-test("R58, R62, R63 (K3061 D3, K3143, K3144; credentials R66): REAUTH_ACTS is frozen data, op → null or {field, values}, naming exactly the acts that ask the password again — caseratify, publishat, publishatmove, ratify, docketpost; adminendorse, adminremove, memberset (its role field present at all, values null, R62), memberadd (role admin); subscriptionsignin (step start); accountreferenceset, groupkeyset, projectkeyset and projectsigninset until T53 retired them (ai-accounts R35, BOB 4 Nov) — each a declared mutating op, with its argument where one makes it so; exported by index.mjs (negative control: an act not named, signout, is absent)", () => {
+test("R58, R62, R63 (K3061 D3, K3143, K3144; credentials R66): REAUTH_ACTS is frozen data, op → null or {field, values}, naming exactly the acts that ask the password again — caseratify, publishat, publishatmove, ratify, docketpost; adminendorse, adminremove, memberset (its role field present at all, values null, R62), memberadd (role admin); subscriptionsignin (step start); accountreferenceset, groupkeyset, projectkeyset and projectsigninset until T53 retired them (ai-accounts R35), and their T53 replacements (BOB 4 Nov, coordinator audit; ai-accounts R61, R69) — each a declared mutating op, with its argument where one makes it so; exported by index.mjs (negative control: an act not named, signout, is absent)", () => {
   assert.equal(O.REAUTH_ACTS, REAUTH_ACTS);
   assert.ok(Object.isFrozen(REAUTH_ACTS));
-  assert.deepEqual(Object.keys(REAUTH_ACTS).sort(), ["adminendorse", "adminremove", "caseratify",
+  assert.deepEqual(Object.keys(REAUTH_ACTS).sort(), ["adminendorse", "adminremove", "aiaccountadd", "aiaccountremove",
+    "aiaccountswitch", "aikeycloudflare", "aikeyenter", "aikeyseal", "aiownadd", "caseratify",
     "docketpost", "memberadd", "memberset", "publishat", "publishatmove", "ratify", "subscriptionsignin"]);
   /* T53: the four retired account-seam acts left with their ops (an act no op serves asks nothing) */
   for (const op of ["accountreferenceset", "groupkeyset", "projectkeyset", "projectsigninset"])

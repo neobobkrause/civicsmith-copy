@@ -42,6 +42,7 @@
   ],
   "prior_work": "Meet the found mark in build/requirements/workbooks.md (an xlsx whose declared text exceeds runtime-limits' xlsx.declared_text row, read-bounds.mjs:195, is refused as FILE_TOO_LARGE with condition declared_text) and any other unmet mark, each with a test failing with the change reverted. Coordinator priority: plane green (plane's g124f-bounds and g41 R84/R116 wait on this). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN"
+    "state": "COMPLETE",
+    "at": "2026-11-04T16:44:29Z"
   }
 }

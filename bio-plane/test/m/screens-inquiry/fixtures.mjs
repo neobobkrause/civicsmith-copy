@@ -139,7 +139,7 @@ export function plane(o = {}) {
     image: (r) => (Object.hasOwn(images, r.query.id) ? ok(images[r.query.id]) : ok(null)),
     /* the owners' reads, answered by the world (B86): the project's stage, roster, bar, account, directory, visibility, owner votes and stake; the question's strength (single and batch),
        a reading's, and the grouping's independence; the document's held captures, version chain, grade and route; the themes; the members */
-    ...Object.fromEntries(["projectstage", "projectparticipants", "strengthbarof", "projectaccountstate", "projectdirectory", "projectvisibility", "projectownervotes", "projectstake"] /* the project page's reads */
+    ...Object.fromEntries(["projectstage", "projectparticipants", "strengthbarof", "projectdirectory", "projectvisibility", "projectownervotes", "projectstake"] /* the project page's reads */
       .concat(["inquirystrength", "versionstrength", "partitionindependence"] /* the question's */, ["heldcaptures", "versionchain", "capturegrade"] /* the document's */, ["themeread", "provenanceroutes", "memberlist"] /* the themes, the route, the members */)
       .map((op) => [op, world])),
     list: ok(QUESTIONS),
@@ -208,3 +208,29 @@ export const section = (p, key, vars) => main(p).querySelectorAll("section").fin
 /** A word's text up to its first placeholder, for a sentence filled with drawn markup (a date). */
 export const lead = (key) => word(key, new Proxy({}, { get: () => "\u0000", has: () => true,
   getOwnPropertyDescriptor: () => ({ value: "\u0000", configurable: true, enumerable: true, writable: true }) })).split("\u0000")[0];
+
+/* op-declarations PR 95 (T53; ai-accounts R35): who serves a member is read by `accountsof` (ai-accounts R2), an owner's list
+   of accounts, each with `on`. Its answers are ai-accounts' real service's, over its published fixture (`accountsServing`):
+   her own sealed key on (`own`), the team's list empty (`none`) and then holding a key switched on (`group`), and a project's
+   own key on (`project`). `accountsOf({own, group, project})` answers each owner's read with the one named. Read once. */
+let AI_ACCOUNTS = null;
+export async function aiAccounts() {
+  if (!AI_ACCOUNTS) AI_ACCOUNTS = (async () => {
+    /* imported when asked, so a test that reads no account loads none of ai-accounts' test world */
+    const { accountsServing } = await import("../ai-accounts/fixtures.mjs");
+    const s = await accountsServing({ member: "ann" });
+    const read = (owner) => s.accounts.accountsOf({ owner, viewer: "ann" });
+    const ACCOUNTS = { own: read("member:ann"), none: read("group") };
+    const t = await s.world.team({ secret: "sk-ant-api03-" + "8".repeat(40) });
+    s.accounts.accountSwitch({ account_id: t.account_id, on: true, by: "admin" });
+    ACCOUNTS.group = read("group");
+    s.world.project("P", "ann");
+    const pa = await s.world.projectAccount("P", "ann", { secret: "sk-ant-api03-" + "9".repeat(40) });
+    s.accounts.accountSwitch({ account_id: pa.account_id, on: true, by: "ann" });
+    ACCOUNTS.project = read("project:P");
+    const accountsOf = ({ own = ACCOUNTS.own, group = ACCOUNTS.group, project = ACCOUNTS.none } = {}) => (r) =>
+      ok(/^member:/.test(r.query.owner) ? own : r.query.owner === "group" ? group : /^project:/.test(r.query.owner) ? project : ACCOUNTS.none);
+    return { ACCOUNTS, accountsOf };
+  })();
+  return AI_ACCOUNTS;
+}

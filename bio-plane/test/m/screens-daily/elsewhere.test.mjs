@@ -91,7 +91,7 @@ test("R16: opening elsewhere records nothing and tells nobody: its only read is 
   const SHELL = new Set(SHELL_OPS);
   const mine = [...new Set(p.requests.map((r) => r.op).filter((op) => !SHELL.has(op)))];
   assert.deepEqual(mine, ["startfrom"]);
-  // The shell's own reachability read (`subscriptionsignin` `{step: "state"}`, interface-shell R20) aside, nothing but reads.
+  // The shell's own reachability read (`aipathready`, interface-shell R20 since T53) aside, nothing but reads.
   assert.deepEqual(p.requests.filter((r) => r.method !== "GET" && !SHELL.has(r.op)).map((r) => r.op), [], "nothing sent but reads");
   assert.equal(p.byOp("wizardprogress").length, 0);
   assert.equal(p.byOp("lookedsince").length, 0, "no look recorded");

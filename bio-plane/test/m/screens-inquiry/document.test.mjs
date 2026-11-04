@@ -24,7 +24,7 @@ const TESTIMONY_MD = ["---", `id: ${D}`, "object_type: information", "title: \"T
   "source:", "  locator: \"a member's firsthand observation, authored in this record\"", "  authority: the observing member", "  retrieved: 2026-10-04T09:00:00Z",
   "---", "", "## Summary", "", "## Provenance Notes", "", "Authored through op=testify. Observed 2026-10-04.", ""].join("\n");
 /* the assistant reachable for this member (interface-shell R20) */
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 /* R111: `heldcaptures` as the plane answers it, `{held: rows}` (capture R77): this copy, the viewer's own, not yet vouched for */
 const HELD = ok({ ok: true, held: [{ bundle_id: D, capture: { sha256: SHA } }] });
 /* a document that is watched (R118): its `monitoring.enabled` */
@@ -187,7 +187,10 @@ test("R32 R67 R68 the links this page carries, held ones a reference; the names 
   /* control: no links and no names, no section */
   const none = await open(at);
   assert.equal(section(none, "document.links.title"), undefined);
-  assert.equal(section(none, "document.names.title"), undefined);
+  { /* wizard-scripts R54 (PR 98): the registry admits `resolve` on document, so a document naming no one draws the section with that act alone (R139), no row (R20) */
+    const sec = section(none, "document.names.title");
+    assert.ok(!sec || (sec.querySelectorAll(".cs-row").length === 0 && sec.querySelectorAll('button[data-act="resolve"]').length === 1), "no names: no row, only the act that finds them");
+  }
 });
 
 test("R3 pagetranscribe only while the assistant is reachable (DEC-190); transcribe wherever pages are unread", async () => {
