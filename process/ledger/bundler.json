@@ -1,0 +1,57 @@
+{
+  "id": "bundler",
+  "title": "bundler: take in PR 47 (p3dev guard and walk setup) and gather every member's dist for the development release",
+  "layer": 1,
+  "paths": [
+    "bio-plane/scripts/fleet-bundle.mjs",
+    "bio-plane/scripts/provenance.mjs",
+    "bio-plane/scripts/build-plane.mjs",
+    "bio-plane/scripts/deploy.mjs",
+    "bio-plane/scripts/derive-bindings.mjs",
+    "bio-plane/scripts/resolve-version.mjs",
+    "bio-plane/scripts/jsonc.mjs",
+    "bio-plane/scripts/release-assemble.mjs",
+    "bio-plane/scripts/deploy-fleet.mjs",
+    "bio-plane/scripts/bundles.mjs",
+    "bio-plane/scripts/release-advisories.mjs",
+    "bio-plane/scripts/third-party.json",
+    "bio-plane/scripts/p3dev.mjs",
+    "bio-plane/scripts/p3dev-walk-setup.mjs",
+    "bio-plane/scripts/release-gather.mjs",
+    "build/requirements/bundler.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/bundler/",
+    "bio-plane/test/system/bundle.test.mjs",
+    "bio-plane/test/system/deploybindings.test.mjs",
+    "bio-plane/test/system/fleetbundles.test.mjs",
+    "bio-plane/test/system/resolveversion.test.mjs",
+    "bio-plane/test/fleetbundles.control.mjs"
+  ],
+  "requirements": "build/requirements/bundler.md",
+  "uses": [
+    "signatures",
+    "test-support",
+    "setup-words",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/bundler.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Work found elsewhere, decided by the coordinator (root-10). (1) Your start commit merges in PR 47's work (branch bob/take-in-47: the p3dev name guard in deploy.mjs and deploy-fleet.mjs, bio-plane/scripts/p3dev.mjs, p3dev-walk-setup.mjs and their tests under bio-plane/test/m/bundler/), without its deploy-test.yml edit, which is Bob's and stays out. Make the suite pass with it. (2) Add bio-plane/scripts/release-gather.mjs: it gathers every fleet member's built dist output (the eight dist directories bundles.mjs builds: bio-plane, pdf-worker, ocr-worker, agent-runner, agent-worker, sheet-worker, file-scanner, reader-container) into one directory named on its command line, refusing a missing or stale artifact (reuse bundles.mjs/fleet-bundle.mjs's freshness check, do not write a second one) and two files with one name, for the development release's assemble step; test it under bio-plane/test/m/bundler/. (3) Do NOT commit any dist or setup-words output: the gate refuses generated files, and the bio-plane bundle is 29 MB; the stale agent-worker and bio-plane bundles are rebuilt at release time by the assemble, not committed. Add to build/requirements/bundler.md one requirement for release-gather (stated as what a caller sees) and one for the p3dev guard if none covers it, each met by your tests; name them with --test at job complete. Edit no other module. Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "WORKING",
+    "at": "2026-11-04T01:21:30Z"
+  }
+}

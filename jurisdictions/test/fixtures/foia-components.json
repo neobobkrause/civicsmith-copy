@@ -1,0 +1,320 @@
+{
+ "read": "2026-11-03",
+ "note": "saved responses of https://api.foia.gov/api/agency_components (trimmed to the fields the script reads); B is A a later day: one office removed, one renamed with an e-mail added (a made-up address under .example), one added",
+ "a": [
+  {
+   "data": [
+    {
+     "type": "agency_component",
+     "id": "403a8fdc-18bf-4ae5-99cb-8185367399c7",
+     "attributes": {
+      "status": true,
+      "title": "American Battle Monuments Commission",
+      "email": [
+       "foia@abmc.gov"
+      ],
+      "submission_address": {
+       "langcode": null,
+       "country_code": "US",
+       "administrative_area": "VA",
+       "locality": "Arlington",
+       "dependent_locality": null,
+       "postal_code": "22201",
+       "sorting_code": null,
+       "address_line1": "2300 Clarendon Boulevard, Suite 500",
+       "address_line2": "Attn: FOIA",
+       "address_line3": null
+      },
+      "submission_web": null
+     },
+     "relationships": {
+      "agency": {
+       "data": {
+        "type": "agency",
+        "id": "0562281a-9b9f-4f43-89c3-d1661841d5a4"
+       }
+      }
+     }
+    },
+    {
+     "type": "agency_component",
+     "id": "9843e5a0-05b2-42a1-a5a1-61e6262b9f8b",
+     "attributes": {
+      "status": true,
+      "title": "Administrative Conference of the United States",
+      "email": [],
+      "submission_address": {
+       "langcode": null,
+       "country_code": "US",
+       "administrative_area": "DC",
+       "locality": "Washington",
+       "dependent_locality": null,
+       "postal_code": "20036",
+       "sorting_code": null,
+       "address_line1": "Shawne McGibbon, Chief FOIA Officer",
+       "address_line2": "1120 20th Street, NW, Suite 706 South",
+       "address_line3": null
+      },
+      "submission_web": {
+       "uri": "https://www.foia.gov/agency-search.html?id=9843e5a0-05b2-42a1-a5a1-61e6262b9f8b&type=component",
+       "resolvable_uri": "https://www.foia.gov/agency-search.html?id=9843e5a0-05b2-42a1-a5a1-61e6262b9f8b&type=component",
+       "title": "Submit a FOIA Request to ACUS at FOIA.gov",
+       "options": []
+      }
+     },
+     "relationships": {
+      "agency": {
+       "data": {
+        "type": "agency",
+        "id": "df052ffe-a315-4194-8a4a-e572ae328f24"
+       }
+      }
+     }
+    }
+   ],
+   "included": [
+    {
+     "type": "agency",
+     "id": "0562281a-9b9f-4f43-89c3-d1661841d5a4",
+     "attributes": {
+      "name": "American Battle Monuments Commission"
+     }
+    },
+    {
+     "type": "agency",
+     "id": "df052ffe-a315-4194-8a4a-e572ae328f24",
+     "attributes": {
+      "name": "Administrative Conference of the United States"
+     }
+    }
+   ],
+   "links": {
+    "self": {
+     "href": "https://api.foia.gov/api/agency_components?page%5Boffset%5D=0"
+    },
+    "next": {
+     "href": "https://api.foia.gov/api/agency_components?page%5Boffset%5D=2"
+    }
+   }
+  },
+  {
+   "data": [
+    {
+     "type": "agency_component",
+     "id": "f629547b-3bef-4658-961a-21ad6168218a",
+     "attributes": {
+      "status": true,
+      "title": "Headquarters",
+      "email": [],
+      "submission_address": {
+       "langcode": null,
+       "country_code": "US",
+       "administrative_area": "DC",
+       "locality": "Washington",
+       "dependent_locality": null,
+       "postal_code": "20460",
+       "sorting_code": null,
+       "address_line1": " National FOIA Office, Office of General Counsel, US Environmental Protection Agency",
+       "address_line2": "1200 Pennsylvania Avenue, NW, Mail Code 2310A",
+       "address_line3": null
+      },
+      "submission_web": {
+       "uri": "https://foiapublicaccessportal.epa.gov/",
+       "resolvable_uri": "https://foiapublicaccessportal.epa.gov/",
+       "title": "EPA FOIA Public Access Link",
+       "options": []
+      }
+     },
+     "relationships": {
+      "agency": {
+       "data": {
+        "type": "agency",
+        "id": "c2f1eb45-d4c4-451d-83ca-ab704dee3a04"
+       }
+      }
+     }
+    },
+    {
+     "type": "agency_component",
+     "id": "fbf6e2b2-8275-4ba8-b98f-ecd88c8da8c0",
+     "attributes": {
+      "status": false,
+      "title": "FOIA/Privacy Act Appeals Office",
+      "email": [],
+      "submission_address": null,
+      "submission_web": null
+     },
+     "relationships": {
+      "agency": {
+       "data": {
+        "type": "agency",
+        "id": "b303a456-09df-4063-958b-5a713e3b89e2"
+       }
+      }
+     }
+    }
+   ],
+   "included": [
+    {
+     "type": "agency",
+     "id": "b303a456-09df-4063-958b-5a713e3b89e2",
+     "attributes": {
+      "name": "Department of the Interior"
+     }
+    },
+    {
+     "type": "agency",
+     "id": "c2f1eb45-d4c4-451d-83ca-ab704dee3a04",
+     "attributes": {
+      "name": "Environmental Protection Agency"
+     }
+    }
+   ],
+   "links": {
+    "self": {
+     "href": "https://api.foia.gov/api/agency_components?page%5Boffset%5D=2"
+    }
+   }
+  }
+ ],
+ "b": [
+  {
+   "data": [
+    {
+     "type": "agency_component",
+     "id": "403a8fdc-18bf-4ae5-99cb-8185367399c7",
+     "attributes": {
+      "status": true,
+      "title": "American Battle Monuments Commission",
+      "email": [
+       "foia@abmc.gov"
+      ],
+      "submission_address": {
+       "langcode": null,
+       "country_code": "US",
+       "administrative_area": "VA",
+       "locality": "Arlington",
+       "dependent_locality": null,
+       "postal_code": "22201",
+       "sorting_code": null,
+       "address_line1": "2300 Clarendon Boulevard, Suite 500",
+       "address_line2": "Attn: FOIA",
+       "address_line3": null
+      },
+      "submission_web": null
+     },
+     "relationships": {
+      "agency": {
+       "data": {
+        "type": "agency",
+        "id": "0562281a-9b9f-4f43-89c3-d1661841d5a4"
+       }
+      }
+     }
+    },
+    {
+     "type": "agency_component",
+     "id": "f629547b-3bef-4658-961a-21ad6168218a",
+     "attributes": {
+      "status": true,
+      "title": "Headquarters (renamed)",
+      "email": [
+       "records@hq.example"
+      ],
+      "submission_address": {
+       "langcode": null,
+       "country_code": "US",
+       "administrative_area": "DC",
+       "locality": "Washington",
+       "dependent_locality": null,
+       "postal_code": "20460",
+       "sorting_code": null,
+       "address_line1": " National FOIA Office, Office of General Counsel, US Environmental Protection Agency",
+       "address_line2": "1200 Pennsylvania Avenue, NW, Mail Code 2310A",
+       "address_line3": null
+      },
+      "submission_web": {
+       "uri": "https://foiapublicaccessportal.epa.gov/",
+       "resolvable_uri": "https://foiapublicaccessportal.epa.gov/",
+       "title": "EPA FOIA Public Access Link",
+       "options": []
+      }
+     },
+     "relationships": {
+      "agency": {
+       "data": {
+        "type": "agency",
+        "id": "c2f1eb45-d4c4-451d-83ca-ab704dee3a04"
+       }
+      }
+     }
+    },
+    {
+     "type": "agency_component",
+     "id": "7115be6d-7904-41aa-99f7-6c8b623ea2db",
+     "attributes": {
+      "status": true,
+      "title": "Department of Commerce (General)",
+      "email": [
+       "eFOIA@doc.gov"
+      ],
+      "submission_address": {
+       "langcode": null,
+       "country_code": "US",
+       "administrative_area": "DC",
+       "locality": "Washington",
+       "dependent_locality": null,
+       "postal_code": "20230",
+       "sorting_code": null,
+       "address_line1": "Office of Privacy and Open Government",
+       "address_line2": "1401 Constitution Avenue NW, Room 61013",
+       "address_line3": null
+      },
+      "submission_web": {
+       "uri": "https://foia-pal.commerce.gov",
+       "resolvable_uri": "https://foia-pal.commerce.gov",
+       "title": "",
+       "options": []
+      }
+     },
+     "relationships": {
+      "agency": {
+       "data": {
+        "type": "agency",
+        "id": "e2d10762-5d89-4f49-8353-4a2a22e4db07"
+       }
+      }
+     }
+    }
+   ],
+   "included": [
+    {
+     "type": "agency",
+     "id": "0562281a-9b9f-4f43-89c3-d1661841d5a4",
+     "attributes": {
+      "name": "American Battle Monuments Commission"
+     }
+    },
+    {
+     "type": "agency",
+     "id": "c2f1eb45-d4c4-451d-83ca-ab704dee3a04",
+     "attributes": {
+      "name": "Environmental Protection Agency"
+     }
+    },
+    {
+     "type": "agency",
+     "id": "e2d10762-5d89-4f49-8353-4a2a22e4db07",
+     "attributes": {
+      "name": "Department of Commerce"
+     }
+    }
+   ],
+   "links": {
+    "self": {
+     "href": "https://api.foia.gov/api/agency_components"
+    }
+   }
+  }
+ ]
+}

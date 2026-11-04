@@ -1034,8 +1034,22 @@ function validateInto(p, errors) {
   if (own(p, "counterparties")) list("counterparties", p.counterparties).forEach((c, i) => {
     const at = `counterparties[${i}]`;
     if (!entry(at, c)) return;
-    fields(at, c, ["role", "body", "level", "elected", "oversight", "hours", "time_zone", "ids", "within", "organisation", "government", ...(teamLayer ? ["status"] : []), "basis"]);
+    fields(at, c, ["role", "body", "level", "elected", "oversight", "hours", "time_zone", "ids", "within", "organisation", "contacts", "source", "government", ...(teamLayer ? ["status"] : []), "basis"]);
     if (own(c, "time_zone")) zone(`${at}.time_zone`, c.time_zone); /* R74 */
+    /* R119 (T53; DEC-401): the means an office publishes for sending a request, R32's {how, value}, read from `source`,
+       the list or page the office is named on; contacts without their source are not written (R44). */
+    if (own(c, "contacts")) {
+      if (!Array.isArray(c.contacts) || !c.contacts.length) err(`${at}.contacts`, "CONTACT_INVALID", "contacts is a non-empty list of {how, value}");
+      else c.contacts.forEach((k, j) => {
+        const ka = `${at}.contacts[${j}]`;
+        if (!isObj(k)) { err(ka, "CONTACT_INVALID", "a contact is {how, value}"); return; }
+        fields(ka, k, ["how", "value"]);
+        if (!CONTACT_HOW.includes(k.how)) err(`${ka}.how`, "CONTACT_INVALID", `how is one of ${CONTACT_HOW.join(", ")}`);
+        if (!isStr(k.value)) err(`${ka}.value`, "CONTACT_INVALID", "the value is a non-empty string");
+      });
+      if (!own(c, "source")) err(`${at}.source`, "SOURCE_MISSING", "an office's contacts name the list or page they were read from");
+    }
+    if (own(c, "source") && !isStr(c.source)) err(`${at}.source`, "VALUE_INVALID", "source is the address or citation read, non-empty");
     /* R59: the office's and its body's identifiers, the organisation the body is part of, its body-variant key */
     if (own(c, "ids")) {
       if (!isObj(c.ids) || !Object.keys(c.ids).length) err(`${at}.ids`, "VALUE_INVALID", "ids is {office?, body?}, at least one");

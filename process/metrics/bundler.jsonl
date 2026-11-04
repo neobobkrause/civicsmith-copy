@@ -1,0 +1,1 @@
+{"at":"2026-11-04T01:21:30Z","module":"bundler","row":"attempt","event":"start","role":"job","attempt":1,"reading_bytes":48338,"start_bytes":5998,"tool":"7f50bddae3bfcbb7fcb205c8e77220946b4cc02e","take_in":{"branch":"bob/take-in-47","pr":null,"commits":3,"tip":"d2dc0aa1d3a5c081209c7e77c7b124dcbc2ebd8e"}}
