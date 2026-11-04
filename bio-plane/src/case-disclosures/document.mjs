@@ -9,7 +9,7 @@
  * `fmSafe`. */
 
 import { EARNED_CAPTURE_CEILING } from "../record-grammar/index.mjs";
-import { fmSafe, pairLine, ANONYMOUS_ATTESTATION_LEVELS } from "../case-grammar/index.mjs";
+import { fmSafe, pairLine, ANONYMOUS_ATTESTATION_LEVELS, ungradedPassagesLines } from "../case-grammar/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
 /* ===========================================================================
@@ -155,6 +155,31 @@ export function acceptedBodyLines(accepted) {
          ...flags.map((f) => word("case-disclosures.flag_edition_raised", { flag: String(f.flag), ref: String(f.ref), edition: String(f.edition), flagged_at: String(f.flagged_at ?? word("case-disclosures.time_stated")), words: String(sentence(f.issue)), acknowledged_by: String(f.words ? ` ${word("case-disclosures.owner_words", { words: String(sentence(f.words)) })}` : ""), acknowledged_at: String(f.acknowledged_by), value: String(f.acknowledged_at) }))]
       : ["", word("case-disclosures.flag_open_work")]),
     ""];
+}
+
+/* ===========================================================================
+ * THE PASSAGES PUBLISHED WITHOUT A GRADE (R36; T53; DEC-461). The rows are R35's entries and nothing else (R20), written
+ * once through `case-grammar`'s block writer (its R36); the body states it in one fixed sentence, by its key. Nothing is
+ * written for an empty list, so a case with every passage graded keeps the bytes of an earlier-format document there.
+ * =========================================================================== */
+
+/** R36: the key of the one body sentence (words the UX stream's). */
+export const UNGRADED_BODY_KEY = "case-disclosures.document.ungraded_body";
+const ungradedRows = (entries) => (Array.isArray(entries) ? entries : [])
+  .filter((e) => e && typeof e === "object" && !Array.isArray(e))
+  .map((e) => ({ finding: e.finding, ord: e.ord, content_id: e.content_id }));
+
+/** R36: the `ungraded_passages:` block, R35's entries as `{finding, ord, content_id}` rows in their order; none for none. */
+export function ungradedLines(entries) {
+  const rows = ungradedRows(entries);
+  return rows.length ? ungradedPassagesLines(rows) : [];
+}
+
+/** R36: the body's one fixed sentence that this edition was published with these passages not graded by the team, then a
+ *  blank line; none for none. */
+export function ungradedBodyLines(entries) {
+  if (!ungradedRows(entries).length) return [];
+  return [localize("case-disclosures.document.ungraded_body", "This edition was published with the passages listed in its frontmatter not graded by the team."), ""];
 }
 
 /* ===========================================================================
