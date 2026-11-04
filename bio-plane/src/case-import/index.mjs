@@ -160,6 +160,44 @@ const PAIR_AXES = Object.freeze(["capture", "connection"]);
 /** R30: the most findings of a project read, and the page. */
 const PROJECT_FINDINGS_PAGE = 500;
 
+/* ================================================================ R34, R35 (T53; DEC-461): what the source published ungraded */
+
+/** R35: the label the source's statement carries: its own statement of passages it published without a grade, never this
+ *  group's grade (R11). Its key is answered beside it. */
+export const UNGRADED_LABEL_KEY = "case-import.ungraded.label";
+export const UNGRADED_LABEL = localize("case-import.ungraded.label",
+  "These are the passages the publishing group says it published without a grade. That is their statement, not a grade of this team's.");
+/** R35: what an edition whose document does not state its ungraded passages reads: the source does not say, never none. */
+export const UNGRADED_NOT_STATED_KEY = "case-import.ungraded.not_stated";
+export const UNGRADED_NOT_STATED = localize("case-import.ungraded.not_stated",
+  "The source does not say which passages it published without a grade. That is not a statement that there were none.");
+
+/** R34: the source's statement as its case document states it (`case-grammar` R36): `{stated: true, rows}` (rows
+ *  `{finding, ord, content_id}`, empty with no block) for a `/10` or later document, else `{stated: false}` (with
+ *  `unreadable: true` when the key is present and not a list). Pure; never throws. */
+export function ungradedStatementOf(fm) {
+  try {
+    const r = caseGrammar.ungradedPassagesOf(isObj(fm) ? fm : null);
+    if (!isObj(r) || r.state !== "stated" || !Array.isArray(r.rows)) return { stated: false, ...(isObj(r) && r.state === "unreadable" ? { unreadable: true } : {}) };
+    return { stated: true, rows: r.rows.filter(isObj).map((x) => ({ finding: str(x.finding), ord: Number.isSafeInteger(x.ord) ? x.ord : null,
+                                                                     content_id: str(x.content_id) })) };
+  } catch { return { stated: false }; }
+}
+
+/* R35: a listed passage's title: the title its document's capture holds (`case-grammar` R12's material row), found by the
+   passage's capture (R17's `passages:` row of the same finding and `ord`) or else by the leg's target; null otherwise. */
+function passageTitleOf(fm, finding, ord) {
+  try {
+    const mats = caseGrammar.materialsOf(fm)?.materials;
+    if (!Array.isArray(mats)) return null;
+    const passage = (caseGrammar.passagesOf(fm)?.[finding] || []).find((p) => p.ord === ord);
+    const leg = (caseGrammar.gradingFactsOf(fm)?.[finding] || []).find((g) => g.ord === ord);
+    const m = (passage && str(passage.capture_sha) && mats.find((x) => x.sha === passage.capture_sha))
+      || (leg && str(leg.target) && mats.find((x) => x.ref === leg.target)) || null;
+    return m ? str(m.title) : null;
+  } catch { return null; }
+}
+
 /* ================================================================ R4 (T46; N903): the source group's identity and stake */
 
 /** R4 (`public-read` R34): the keys of a group's `group_fields`, and the instant the caller read them. */
@@ -736,6 +774,10 @@ export class CaseImport {
       for (const f of files)
         this.sql.exec(`INSERT OR IGNORE INTO case_import_files (import_id, edition, path, kind, sha, bytes, part) VALUES (?,?,?,?,?,?,?)`,
                       importId, who.edition, f.path, str(f.kind), shaOf(f.content), f.content.length, listed.get(f.path)?.part ?? 0);
+      /* R34: the source's statement of its ungraded passages, recorded once with the edition; never a refusal */
+      const ug = ungradedStatementOf(fm);
+      this.sql.exec(`INSERT INTO case_import_ungraded (import_id, edition, stated, unreadable, rows) VALUES (?,?,?,?,?)`,
+                    importId, who.edition, ug.stated ? 1 : 0, ug.unreadable ? 1 : 0, ug.stated ? canonicalJson(ug.rows) : null);
       if (gf.fields)
         this.sql.exec(`INSERT INTO case_import_group_fields (import_id, edition, fields, read_at) VALUES (?,?,?,?)`,
                       importId, who.edition, canonicalJson(gf.matter_stake_malformed ? { ...gf.fields, matter_stake_malformed: true } : gf.fields),
@@ -901,6 +943,7 @@ export class CaseImport {
     return this.#rows(`SELECT edition, imported_at, imported_by FROM case_import_editions WHERE import_id=? ORDER BY edition`, i.import_id)
       .map((e) => ({ edition: Number(e.edition), imported_at: e.imported_at, imported_by: e.imported_by,
                      importer: this.#importerOf(e.imported_by), ...this.#countsOf(i.import_id, Number(e.edition)),
+                     ungraded_count: CaseImport.#ungradedView(this.#ungradedOf(i.import_id, Number(e.edition))).count,
                      ...this.#groupFields(i.import_id, Number(e.edition)), ...wf.publisher(Number(e.edition)) }));
   }
 
@@ -917,6 +960,26 @@ export class CaseImport {
              ...(f.matter_stake_malformed === true ? { group_fields_note: say("caseimport.stake.unreadable") } : {}) };
   }
 
+  /* R34, R35: the source's ungraded statement recorded with an edition, each row with its passage's title. An edition
+     recorded before T53 has no row; its document's bytes, which never change, state the same and are read instead. */
+  #ungradedOf(importId, ed) {
+    const r = this.#one(`SELECT stated, unreadable, rows FROM case_import_ungraded WHERE import_id=? AND edition=?`, importId, ed);
+    let fm = r ? undefined : this.#documentFront(importId, ed);
+    const st = r ? (Number(r.stated) === 1 ? { stated: true, rows: parse(r.rows, []) } : { stated: false, ...(Number(r.unreadable) === 1 ? { unreadable: true } : {}) })
+      : ungradedStatementOf(fm);
+    if (!st.stated) return st;
+    if (fm === undefined && Array.isArray(st.rows) && st.rows.length) fm = this.#documentFront(importId, ed);
+    return { stated: true, rows: (Array.isArray(st.rows) ? st.rows : []).filter(isObj)
+      .map((x) => ({ finding: x.finding ?? null, ord: x.ord ?? null, content_id: x.content_id ?? null, title: passageTitleOf(fm, x.finding, x.ord) })) };
+  }
+  /* R35: the edition's block as a member reads it, labeled the source's statement; `stated: false` says so by key. */
+  static #ungradedView(u) {
+    return u.stated
+      ? { stated: true, count: u.rows.length, rows: u.rows, whose: "source", label_key: UNGRADED_LABEL_KEY, label: UNGRADED_LABEL }
+      : { stated: false, count: null, rows: null, whose: "source", note_key: UNGRADED_NOT_STATED_KEY, note: UNGRADED_NOT_STATED,
+          ...(u.unreadable ? { unreadable: true } : {}) };
+  }
+
   /* R4: one edition in full. */
   #editionView(i, e, viewer = null) {
     const ed = Number(e.edition);
@@ -927,8 +990,11 @@ export class CaseImport {
     const flags = this.#openFlags(i.import_id, ed);
     const verified = signatureVerified(lastAnswer);
     const sourceBar = e.source_bar ? parse(e.source_bar) : null;
+    const ungraded = this.#ungradedOf(i.import_id, ed);
     const findings = (rec ? rec.findings : []).map((f) => ({
       ...f,
+      /* R35: the source's statement of this finding's passages published without a grade; null when it does not say */
+      ungraded_passages: ungraded.stated ? ungraded.rows.filter((x) => x.finding === f.finding).map(({ finding, ...x }) => x) : null,
       ref: importedFindingRef(i.import_id, f.finding),
       /* R4 (K5148): the finding's title from its file's front matter (R31's rule), null where none, never the id */
       title: this.#findingTitle(i.import_id, ed, f.finding),
@@ -946,6 +1012,7 @@ export class CaseImport {
       imported_at: e.imported_at, imported_by: e.imported_by, ...this.#groupFields(i.import_id, ed),
       checked_at: rec ? rec.checked_at : null, checker: rec ? rec.checker : null, ...(rec && rec.unread ? { unread: rec.unread } : {}),
       statement: rec ? rec.statement : STATEMENT,
+      ungraded_passages: CaseImport.#ungradedView(ungraded),
       source_bar: { whose: "source", label: SOURCE_BAR, group: i.source_group, stated: sourceBar,
                     bar: barAxes(sourceBar) },
       own_bar: own,
@@ -2034,6 +2101,9 @@ export class CaseImport {
     const a = this.#acceptanceFor(i.import_id, edition, p.finding);
     return { ref: ref.trim(), import: i.import_id, group: i.source_group, case: i.case_id, edition, finding: p.finding,
              manifest_sha: e.manifest_sha, result: r.result, pair: r.published ?? r.pair ?? null,
+             /* R35: the source's statement of this finding's ungraded passages, null when it does not say */
+             ungraded_passages: (() => { const u = this.#ungradedOf(i.import_id, edition);
+               return u.stated ? u.rows.filter((x) => x.finding === p.finding).map(({ finding, ...x }) => x) : null; })(),
              acceptance: a ? { by: a.by, at: a.at, reason: a.reason, checked: a.checked, gaps: a.gaps } : null };
   }
 

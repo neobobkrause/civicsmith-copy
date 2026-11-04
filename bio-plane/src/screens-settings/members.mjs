@@ -2,7 +2,7 @@
    row's acts in its panel (interface-shell R19, `cs.rows`); the one-administrator note while not met (setup-page R16's
    meaning); inviting, with the invitation shown once; joining through the team's website. To a member who does not
    administer it is a table of members, what each may do and their expertise (R47). The team's key, its use and keeping
-   material away from AI are `teamai`'s (R48). The founder's row is the roster's (R51). A member opened by address
+   material away from AI are `aiproviders`' (screens-ai; R47, R95: `teamai` is retired). The founder's row is the roster's (R51). A member opened by address
    (`/app/members/<id>`) has their expertise read (`expertiselist`) and their row's panel offers its confirmation. Every
    function is self-contained (interface-shell R21).
    T47: each row's name is the member's reference (R12, `cs.rows`' `name`, interface-shell R27); a row offers "Make a

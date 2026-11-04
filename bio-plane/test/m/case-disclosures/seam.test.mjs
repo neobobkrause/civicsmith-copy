@@ -232,6 +232,7 @@ test("R23: every service is synchronous, and none throws when every module it re
     accountJudged: () => w.cd.accountJudged({ account: [{ ord: 1, text: "It met.", cites: ["h1"], bias_statement: "S1" }],
       cited: {}, lens: "instance", flags: [{ kind: "account_check", ord: 1, text: "It met.", cites: ["h1"] }], viewer: V("alice") }),
     biasApplicationsOf: () => w.cd.biasApplicationsOf(prep, V("alice")),
+    subjectNaming: () => w.cd.subjectNaming({ subject: { entity_id: "ENT-2026-0001", kind: "person", label: "P" }, bases: [], viewer: V("alice") }),
   };
   const services = Object.getOwnPropertyNames(Object.getPrototypeOf(w.cd)).filter((k) => k !== "constructor"
     && typeof Object.getOwnPropertyDescriptor(Object.getPrototypeOf(w.cd), k).value === "function");

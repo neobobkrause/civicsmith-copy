@@ -47,6 +47,7 @@
   ],
   "prior_work": "First, consolidate build/requirements/file-safety.md under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/file-safety.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks is unchanged by the move. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal. Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/file-safety.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN"
+    "state": "COMPLETE",
+    "at": "2026-11-04T15:38:52Z"
   }
 }
