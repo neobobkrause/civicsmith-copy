@@ -1,0 +1,1 @@
+{"row":"triage","user":"queue-producers","verdict":"not affected","evidence":"bio-plane/src/queue-producers/index.mjs:66 imports only wizardScriptsOf, using brokenScripts/submittedFor/baseUpdates (:2669, :2732, :2995), which are script facts, not registry data","at":"2026-11-04T05:08:32.355Z","key":"wizard-scripts:98","worker":"triage-w98-subagent","cost":"0.03"}

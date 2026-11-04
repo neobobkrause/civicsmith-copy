@@ -1,0 +1,1 @@
+{"row":"triage","user":"control-plane","verdict":"not affected","evidence":"bio-plane/src/control-plane/draft.mjs:10 imports only checkDraft from wizard-scripts (and index.mjs:104 the refusal tally); no registry/screen data used","at":"2026-11-04T05:08:32.355Z","key":"wizard-scripts:98","worker":"triage-w98-subagent","cost":"0.03"}

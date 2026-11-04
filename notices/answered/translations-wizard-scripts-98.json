@@ -1,0 +1,1 @@
+{"row":"answered","user":"translations","by":"triage","evidence":"bio-plane/src/translations/index.mjs:20 imports only WIZARD_SCRIPTS_CHECKS (the assistant-draft row, :19); no registry data","at":"2026-11-04T05:08:32.355Z","key":"wizard-scripts:98","worker":"triage-w98-subagent","cost":"0.03"}

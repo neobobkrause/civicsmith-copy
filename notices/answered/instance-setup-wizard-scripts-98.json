@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-setup","by":"triage","evidence":"bio-plane/src/setup.mjs:37 imports only checkDraft and WIZARD_SCRIPTS_CHECKS from wizard-scripts; setup-fleet.mjs and livefire.mjs have no wizard-scripts import; no SCREEN_REGISTRY use","at":"2026-11-04T05:08:32.355Z","key":"wizard-scripts:98","worker":"triage-w98-subagent","cost":"0.03"}

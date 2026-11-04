@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-publish","verdict":"not affected","evidence":"bio-plane/src/screens-publish/ceremony.mjs:27 ceremony screen has no leggrade or other newly registered act (none in module) and no SCREEN_REGISTRY use; docket.mjs:160 mentions only writinghelp","at":"2026-11-04T05:08:32.355Z","key":"wizard-scripts:98","worker":"triage-w98-subagent","cost":"0.03"}

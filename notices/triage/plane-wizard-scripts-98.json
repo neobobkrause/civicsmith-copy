@@ -1,0 +1,1 @@
+{"row":"triage","user":"plane","verdict":"not affected","evidence":"bio-plane/src/plane/door.mjs:5-12 its imports are door modules (setup, affordances, queue, ...) and none is wizard-scripts or SCREEN_REGISTRY; the registration is handed in by store-assembly/assemble.mjs:547","at":"2026-11-04T05:08:32.355Z","key":"wizard-scripts:98","worker":"triage-w98-subagent","cost":"0.03"}

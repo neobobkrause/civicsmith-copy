@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-intake","by":"triage","evidence":"bio-plane/src/screens-intake/capture.mjs:1404 the capture screen's acts do not include captureuploadabort or previewmore (no occurrence in the module) and nothing imports SCREEN_REGISTRY or admitted()","at":"2026-11-04T05:08:32.355Z","key":"wizard-scripts:98","worker":"triage-w98-subagent","cost":"0.03"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-plan","by":"triage","evidence":"build/modules.json:193 declares no paths, so it holds no code; the plan screen is in bio-plane/src/screens-action/plan.mjs (index.mjs:86), which has no registry use","at":"2026-11-04T05:08:32.355Z","key":"wizard-scripts:98","worker":"triage-w98-subagent","cost":"0.03"}

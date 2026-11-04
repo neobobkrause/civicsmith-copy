@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-wizards","verdict":"not affected","evidence":"bio-plane/src/screens-wizards/index.mjs:13-14 and library.mjs/guide.mjs use only the wizard library (guide.mjs:16 library ids, library.mjs:12 step codes); no SCREEN_REGISTRY import","at":"2026-11-04T05:08:32.355Z","key":"wizard-scripts:98","worker":"triage-w98-subagent","cost":"0.03"}
