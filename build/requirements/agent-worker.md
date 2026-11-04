@@ -308,3 +308,8 @@ The answer:
 ## Open for Bob
 
 None: answered by Bob 2026-09-26 (K102).
+
+
+## Walk findings
+
+- **F1** *(not yet met: walk p3dev-l1)* (walk p3dev-l1, 4 Nov 2026 01:04-01:11Z; the coordinator's root-14) **A deployed version answers on `/version` within the rollout check.** After `deploy-fleet.mjs` uploaded this member to copy p3dev-l1, its `https://<member>-p3dev-l1.<sub>.workers.dev/version` did not answer the deployed version (0.87.0) within 60 s: `ROLLOUT NOT CONFIRMED after 60s`. The same was measured for every container-backed member (agent-runner, agent-worker, file-scanner, reader-container) and none of the others. Test: after a deploy to a p3dev copy, `/version` answers the deployed version within the rollout check's bound; or the bound is stated from a measured container start time and the check waits for it.
