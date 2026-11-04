@@ -1,28 +1,12 @@
-/* interface-shell, fix round 10 (T51; K5308): R134's three re-points and R135's choice controls telling their screen of a change.
+/* interface-shell, fix round 10 (T51; K5308): R134's re-points (ended, see notice-wizard-scripts-98) and R135's choice controls telling their screen of a change.
    fixtures-own: a stand-in screen whose render and handlers are the test's own input */
 import "./register.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { checkScreens, RE_POINTS } from "../../../src/interface-shell/index.mjs";
-import { OPS } from "../../../src/op-declarations/index.mjs";
-import { SCREEN_REGISTRY } from "../../../src/wizard-scripts/index.mjs";
 import { boot } from "./harness.mjs";
 
-const screen = (id, op) => ({ id, render: () => "", acts: [{ op }] });
-
-/* R134: each re-point is admitted on its screen, refused on any other, and listed by no registry screen it names */
-for (const [id, op, other] of [["setup", "factconfirm", "explore"], ["question", "leggrade", "document"], ["document", "resolve", "explore"], ["queue", "signerknown", "explore"]]) {
-  test(`R134 ${op} is a named re-point of ${id}: ${id} naming it is served; control: ${op} on ${other}, and another unlisted op on ${id}, still throw`, () => {
-    assert.ok(RE_POINTS[id].includes(op), `${op} is a re-point of ${id}`);
-    const reg = SCREEN_REGISTRY.find((r) => r.id === id);
-    assert.equal(reg.acts.includes(op) || (reg.owed || []).some((o) => o.op === op), false, "the registry lists it nowhere on this screen, so it is a re-point");
-    /* `leggrade` is declared by op-declarations after citation's merge (citation R24); until then OPS refuses the name, as R21 says */
-    assert.ok(Object.hasOwn(OPS, op), `${op} is an op OPS holds`);
-    assert.equal(checkScreens([screen(id, op)]), true);
-    assert.throws(() => checkScreens([screen(other, op)]), new RegExp(other + ".*" + op));
-    assert.throws(() => checkScreens([screen(id, "stepsourcewithdraw")]), new RegExp(id + ".*stepsourcewithdraw"));
-  });
-}
+/* R134's four re-points ended (wizard-scripts R54, PR 98): the registry re-taken at 30af4350f2 lists each on its screen. They are covered by
+   notice-wizard-scripts-98.test.mjs. */
 
 /* R135: a radio group and a box tell the screen of a change as a typed field does */
 const FORM = {
