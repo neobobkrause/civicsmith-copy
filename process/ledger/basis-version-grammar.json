@@ -36,7 +36,7 @@
   ],
   "prior_work": "Meet the open requirement in build/requirements/basis-version-grammar.md (R3), with a test of it at the module's interface that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-04T05:09:15Z"
+    "state": "COMPLETE",
+    "at": "2026-11-04T05:35:10Z"
   }
 }
