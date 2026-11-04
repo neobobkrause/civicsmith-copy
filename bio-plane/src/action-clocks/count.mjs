@@ -166,8 +166,18 @@ export function factReader(localFacts, viewer) {
    from the office calendar's, its words naming the list and year (N562). A correction a later confirmation confirmed is
    counted on (civil-time R16, N603) and reads `confirmed`, as R10 states it. Without a reader of the confirmations (a
    pure caller), `not_read`. */
-function calendarStated(calls, readable) {
+/** R29 (T53; jurisdictions R99): the layer a holiday entry of the view is of: the one it names, else its profile when that
+ *  is a layer of the view; null in a view of no layers. */
+export function entryLayer(h, view) {
+  if (!isObj(h)) return null;
+  if (typeof h.layer === "string" && h.layer) return h.layer;
+  const ids = isObj(view) && Array.isArray(view.layers) ? view.layers.map((l) => l && l.id) : [];
+  return typeof h.profile === "string" && ids.includes(h.profile) ? h.profile : null;
+}
+function calendarStated(calls, readable, view = null) {
+  /* R29 (T53): a closure list's year names the layer that holds it, where the view is of layers. */
   const years = calls.map(({ h, f }) => ({ year: Number(h.year), list: isListEntry(h) ? h.list : null,
+    ...(isListEntry(h) && entryLayer(h, view) ? { layer: entryLayer(h, view) } : {}),
     offices: Array.isArray(h.offices) ? h.offices : null, path: f.path ?? null, status: f.status, basis: h.basis ?? null,
     ...(f.status === "corrected" ? { corrected_by: f.by ?? null, corrected_at: f.at ?? null } : {}) }));
   if (!readable) return { status: "not_read", years, says: [word("action-clocks.says.whether_group_confirmed")] };
@@ -288,7 +298,7 @@ export function computeDeadline(d, fm, view, { factOf = null, receipts = null } 
     let r;
     try { r = evaluateRule({ rule: base, anchor, view: v, office, factOf: rec.read }); }
     catch (x) { r = { undetermined: true, code: "RULE_INVALID", why: word("action-clocks.why.rule_cannot_counted", { item: String(textOf(x && x.message) || word("action-clocks.why.malformed_rule")) }) }; }
-    const calendar = reads || rec.calls.length ? { calendar: calendarStated(rec.calls, rec.readable) } : {};
+    const calendar = reads || rec.calls.length ? { calendar: calendarStated(rec.calls, rec.readable, v) } : {};
     if (!r || r.refused || r.undetermined) {
       /* R10: a disputed year names who disputed it and when, as local-facts answered them. */
       const disputed = r && r.code === "FACT_DISPUTED" ? rec.calls.find((c) => c.f.status === "disputed") : null;
