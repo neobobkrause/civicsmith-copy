@@ -1,3 +1,4 @@
 {"at":"2026-11-04T05:38:55Z","row":"sent","n":1,"to":"bob","text":"job leg-earning complete, PR #138 ready: run status"}
 {"at":"2026-11-04T05:39:05Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T05:52:42Z","row":"sent","n":2,"to":"bob","text":"job leg-earning complete, PR #138 ready: run status (revert fix: earned-basis typed-row test now asserts R18, fails reverted; 'job sync' is not a command in the pinned tool, so I fetched the branch instead)"}
+{"at":"2026-11-04T05:52:52Z","row":"outcome","n":2,"outcome":"delivered"}
