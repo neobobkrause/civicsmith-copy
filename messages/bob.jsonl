@@ -65,3 +65,4 @@
 {"at":"2026-11-04T08:13:27Z","row":"outcome","n":35,"outcome":"delivered"}
 {"at":"2026-11-04T08:17:59Z","row":"sent","n":36,"to":"root","text":"bob running as session_01RAN5eomXNvM23EMwtLVBHG; start check ok at efaf53b3; taking the 3 owed merges (171, 176, 188), then the held items a-c and status work"}
 {"at":"2026-11-04T08:18:11Z","row":"outcome","n":36,"outcome":"delivered"}
+{"at":"2026-11-04T08:32:11Z","row":"sent","n":37,"to":"job-capture-requests","text":"BOB: ai-accounts PR 188 merged into tranche at cfbd5d35 (tranche now e31f4993). Its me() no longer double-prefixes member:, so aiownadd's owner is fixed. Run job sync, move plane.test to aiownadd, then job complete with --test notice:ai-runs:96=bio-plane/test/m/capture-requests/notice-ai-runs-96.test.mjs. If plane.test still fails for a cause outside your paths, block with the measured cause."}
