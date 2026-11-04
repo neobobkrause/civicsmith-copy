@@ -7,3 +7,4 @@
 {"at":"2026-11-04T05:06:15Z","row":"sent","n":4,"to":"bob","text":"job signatures complete, PR #101 ready: run status. Receipt (attempt 3, head 41c8dcc4, merged tranche 69fde567, pin efe3e97): https://github.com/neobobkrause/civicsmith-copy/pull/101#issuecomment-6623072705. Note: job complete's own build step rewrites the tracked bundles agent-worker, bio-plane, file-scanner, ocr-worker, pdf-worker and sheet-worker dist/*.bundle.json, so its first run refused 'commit your work first: tracked files have changes'; I restored them from HEAD (not committed) and reran."}
 {"at":"2026-11-04T05:06:40Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-04T09:46:44Z","row":"sent","n":5,"to":"bob","text":"job signatures complete, PR #208 ready: run status"}
+{"at":"2026-11-04T09:47:40Z","row":"outcome","n":5,"outcome":"delivered"}
