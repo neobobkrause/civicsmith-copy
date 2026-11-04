@@ -2463,9 +2463,13 @@ export class AiRuns {
     try {
       /* R89 (credentials R79): the project the run was opened in, so everything the segment reads is within it; a run with
          none passes none and reads as before */
+      /* (T53; credentials R63, R73, notice credentials:74): the credential carries the account the segment is served on,
+         so clearing, refusing or revoking that account revokes it in the clearing act */
       minted = credentialsOf(this.ctx).aiRunCredentialMint({ member: `member:${member}`, run: row.run,
                                                              writes: [...AI_RUN_MODE_WRITES[row.mode]],
-                                                             ...(row.project ? { project: row.project } : {}) });
+                                                             ...(row.project ? { project: row.project } : {}),
+                                                             ...(d.ref && d.ref.account && typeof d.ref.account.account_id === "string"
+                                                               ? { account_id: d.ref.account.account_id } : {}) });
     } catch { minted = null; }
     if (!minted || typeof minted !== "object") { d.ref = null; return withheld("CREDENTIAL_RECORD_SILENT"); }
     if (minted.ok !== true || typeof minted.token !== "string") {
