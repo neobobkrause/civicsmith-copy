@@ -1,0 +1,1 @@
+{"row":"triage","user":"surface-declarations","verdict":"not affected","evidence":"build/modules.json:170 gives it no paths, and no file imports member-roster.","at":"2026-11-04T19:09:20.741Z","key":"member-roster:286","worker":"a3d3b7de564997d8c","cost":"0.12"}
