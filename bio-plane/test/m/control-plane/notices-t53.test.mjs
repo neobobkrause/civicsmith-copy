@@ -53,10 +53,12 @@ test("notice screens-entry:170: the door's page builder (appPage, R75) draws scr
   assert.ok((await r.text()).length > 0);
 });
 
-/* The whole door's `/app/setup` over all nine screen modules answers PLANE_INTERNAL_ERROR at this tranche: interface-shell's
-   checkScreens refuses screens-daily's queue (acts the retired `projectkeyset`; its job's PR 281) and screens-inquiry's projectai
-   (the same; its PR 173). Not this module's: reported to BOB. */
-test.todo("notice screens-entry:170: GET /app/setup is served through the whole door (once screens-daily's and screens-inquiry's T53 jobs merge)");
+test("notice screens-entry:170, screens-daily:281, screens-inquiry:173: GET /app/setup is served through the whole door over all nine screen modules (interface-shell's checkScreens accepts them: no screen acts a retired op)", async () => {
+  const { env, S } = world();
+  const r = await call(env, { path: "/app/setup", token: S.founder, headers: { accept: "text/html" } });
+  assert.equal(r.status, 200, r.text.slice(0, 300));
+  assert.match(r.headers.get("content-type") || "", /text\/html/);
+});
 
 test("notice answers:103: the door admits an ask's grant by credentials' AI_GRANT_OPS (R53), never by answers' ASK_SCOPE: aicredential, off the ask's scope since PR 103 and on the grant's list for the agent Worker (ai-accounts R65), is still asked of credentials' aigrantadmit; an op on neither is not", async () => {
   const dir = new URL("../../../src/control-plane/", import.meta.url);
