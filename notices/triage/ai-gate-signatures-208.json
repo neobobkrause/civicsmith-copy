@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-gate","verdict":"not affected","evidence":"build/modules.json:114 paths is [] and no file imports signatures; the module owns no code to use the changed default","at":"2026-11-04T10:37:10.649Z","key":"signatures:208","worker":"a5e61b540c0692879","cost":"0.2"}

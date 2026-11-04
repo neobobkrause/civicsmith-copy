@@ -1,0 +1,1 @@
+{"row":"answered","user":"plane","by":"triage","evidence":"bio-plane/src/plane/door.mjs:6 imports only caseRatifyStatement and NS_RATIFY from sshsig.mjs; none of the changed verify functions or their default allowedKeys is used (only ai-catalogue/index.mjs:17 imports them)","at":"2026-11-04T10:37:10.649Z","key":"signatures:208","worker":"a832468c8c97cf03e","cost":"0.2"}

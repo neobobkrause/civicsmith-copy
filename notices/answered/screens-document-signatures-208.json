@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-document","by":"triage","evidence":"build/modules.json:189 lists paths [] and no file imports signatures, so no use of verifyAiCatalogue/verifyAiAdvisory/verifyAiSealKey or their default allowedKeys exists","at":"2026-11-04T10:37:10.649Z","key":"signatures:208","worker":"a26ddb5d7a0b5011c","cost":"0.2"}

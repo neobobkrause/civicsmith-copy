@@ -1,0 +1,1 @@
+{"row":"answered","user":"promotion","by":"triage","evidence":"bio-plane/src/promotion/release.mjs:10 imports only verifySshsig from sshsig.mjs, which takes its own key list and is not among the changed exports; no AI catalogue verifier is used","at":"2026-11-04T10:37:10.649Z","key":"signatures:208","worker":"a832468c8c97cf03e","cost":"0.2"}

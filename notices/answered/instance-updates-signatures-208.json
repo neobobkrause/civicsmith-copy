@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-updates","by":"triage","evidence":"build/modules.json:166 lists the module with paths [] and no file importing signatures (its \"signatures\" use edge is declared but unused), so nothing uses verifyAiCatalogue, verifyAiAdvisory or verifyAiSealKey","at":"2026-11-04T10:37:10.649Z","key":"signatures:208","worker":"a3e22b96399b8b80c","cost":"0.2"}

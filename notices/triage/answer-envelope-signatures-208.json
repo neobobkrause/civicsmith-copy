@@ -1,0 +1,1 @@
+{"row":"triage","user":"answer-envelope","verdict":"not affected","evidence":"build/modules.json:173 owns bio-plane/src/answer-envelope/ (checks.mjs, families.mjs, index.mjs), none of which imports signatures or names CATALOGUE_KEYS or the verifiers","at":"2026-11-04T10:37:10.649Z","key":"signatures:208","worker":"a5e61b540c0692879","cost":"0.2"}

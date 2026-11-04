@@ -1,0 +1,1 @@
+{"row":"answered","user":"attestation","by":"triage","evidence":"bio-plane/src/attestation/index.mjs:29 the line imports timestamp helpers from ../tsa.mjs, not verifyAi* or CATALOGUE_KEYS from signatures; no use of the changed defaults","at":"2026-11-04T10:37:10.649Z","key":"signatures:208","worker":"a5e61b540c0692879","cost":"0.2"}
