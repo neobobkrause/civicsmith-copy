@@ -51,6 +51,12 @@
  * copy. The copy must be the one the environment marks (CIVICSMITH_TEST_INSTANCE names it) and the member's pinned
  * account the test account; anything else is refused before a request is made. It reads no signed release. It logs the
  * artifact deployed and the target it can return to (the bytes now deployed under the member's name).
+ * A test deploy names every resource by the copy's slug, as the installer does (`p3dev.mjs`): the Worker `<member>-<slug>`,
+ * its buckets `<bucket>-<slug>`, its container applications `<member>[-<class>]-<slug>` (each deploying the Docker Hub
+ * image its marker names, by digest, with nothing pushed to a registry), its service
+ * targets and Durable Object scripts `<target>-<slug>` (the phantom is the plane, `<slug>`). The copy must begin with
+ * `p3dev-` and every one of those names must pass the p3dev guard, checked before any request; missing buckets are
+ * created. In a dry run a missing service target the route deploys earlier is said, not refused.
  *
  * usage (bundler R19, R20, R26, R40; moved from the old process's `tools/` in T19), from the repository root:
  *   node bio-plane/scripts/deploy-fleet.mjs <member> --instance <slug> [--test-instance]
@@ -63,6 +69,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseJsonc } from "./jsonc.mjs";   /* R11: one parser, shared with release-assemble.mjs */
 import { imageReference, markerIsContainer, containerClasses } from "./fleet-bundle.mjs";   /* R24–R26: one reading of a container */
+import { slugMember, memberPlan, refuseUnlessP3dev, ensureBuckets } from "./p3dev.mjs";   /* a test deploy's names and guard */
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const argv = process.argv.slice(2);
@@ -121,9 +128,20 @@ catch (e) { die("UNPARSEABLE_CONFIG", `${member}/wrangler.jsonc did not parse.`,
 /* THE TEMPLATING, and it is the whole point. Every service target equal to the
    phantom becomes the instance slug. A target that is NOT the phantom is left
    exactly as written — this tool substitutes one known placeholder and never
-   guesses at a name somebody meant on purpose. */
+   guesses at a name somebody meant on purpose. A TEST deploy slugs every name instead (p3dev.mjs). */
 const substituted = [];
-for (const svc of cfg.services || []) {
+const MULTI_EARLY = CONTAINER ? !!containerClasses({ marker }).multi : false;
+if (TEST) {
+  const was = cfg.services || [];
+  const before = was.map((s) => s.service);
+  cfg = slugMember(cfg, { member, slug: instance, multi: MULTI_EARLY });
+  (cfg.services || []).forEach((s, i) => substituted.push(`${s.binding} -> ${s.service}  (was "${before[i]}")`));
+  for (const b of cfg.r2_buckets || []) substituted.push(`${b.binding} -> bucket ${b.bucket_name}`);
+  for (const d of (cfg.durable_objects && cfg.durable_objects.bindings) || []) if (d.script_name) substituted.push(`${d.name} -> script ${d.script_name} (class ${d.class_name})`);
+  for (const c of cfg.containers || []) substituted.push(`container ${c.class_name} -> application ${c.name}`);
+  console.log(`worker   : ${cfg.name}`);
+}
+for (const svc of TEST ? [] : cfg.services || []) {
   if (svc.service === PHANTOM) {
     svc.service = instance;
     substituted.push(`${svc.binding} -> ${instance}  (was the phantom "${PHANTOM}")`);
@@ -151,6 +169,9 @@ if (!cfg.account_id) {
 if (TEST && cfg.account_id !== TEST_ACCOUNT)
   die("WRONG_ACCOUNT", `a test deploy goes to account ${TEST_ACCOUNT} only; ${member}/wrangler.jsonc pins ${cfg.account_id}.`,
     "Nothing was requested or deployed.");
+
+/* The registry tag an image is pushed under (not by a test deploy, which names the Docker Hub image by digest). */
+const tagOf = (cls, multi, digest) => `${multi ? `${member}-${String(cls).toLowerCase()}` : member}:${digest.slice("sha256:".length, "sha256:".length + 12)}`;
 
 /* R26: what a container member deploys is stated by its own files before any request: the image by digest in its
    marker, and the container in its own config. Neither is defaulted. */
@@ -192,6 +213,9 @@ if (CONTAINER) {
   for (const i of images) console.log(`image    : ${MULTI ? `${i.class_name} ` : ""}${i.reference}`);
 }
 
+/* THE P3DEV GUARD (CLAUDE.md, the Cloudflare paragraph): every name this test deploy creates or binds, before any request. */
+if (TEST) refuseUnlessP3dev(memberPlan(cfg, { slug: instance }));
+
 /* PRE-FLIGHT: every service target must EXIST, checked before the upload rather
    than discovered as Cloudflare's 10143. This is D-292 turned from a note into a
    guard: the refusal names the missing worker and what to do, instead of a
@@ -212,6 +236,10 @@ for (const svc of cfg.services || []) {
   let ok;
   try { ok = await scriptExists(svc.service); }
   catch (e) { die("PREFLIGHT_UNREADABLE", `could not check whether "${svc.service}" exists.`, String(e.message)); }
+  if (!ok && TEST && DRY) {
+    console.log(`preflight: ${svc.service} is not deployed yet; on a real run the route deploys it before this step`);
+    continue;
+  }
   if (!ok) {
     die("BINDING_TARGET_MISSING",
       `binding ${svc.binding} points at "${svc.service}", which does not exist in this account.`,
@@ -271,6 +299,12 @@ if (TEST) {
     : `rollback : ${name} is not deployed in ${cfg.account_id} (or is unreadable); delete the script to return to none`);
 }
 
+/* A test deploy's buckets, created when missing (a dry run only reads), after the guard has passed their names. */
+if (TEST && (cfg.r2_buckets || []).length) {
+  try { await ensureBuckets(cfg.r2_buckets.map((b) => b.bucket_name), { acct: cfg.account_id, token: TOKEN, dry: DRY }); }
+  catch (e) { die("BUCKETS_NOT_READY", String(e.message), "Nothing was deployed."); }
+}
+
 if (DRY) { console.log(`\n--dry-run: nothing was ${CONTAINER ? "pushed or " : ""}deployed.`); process.exit(0); }
 
 /* Wrangler is a devDependency of `bio-plane` ONLY — no fleet member installs
@@ -286,12 +320,19 @@ const cfEnv = { ...process.env, CLOUDFLARE_API_TOKEN: TOKEN, CLOUDFLARE_ACCOUNT_
 /* R26: THE PROJECT'S OWN COPY OF THE IMAGE, pushed to Cloudflare's registry. The image is pulled BY DIGEST and tagged
    by its digest, so what is pushed is exactly the image the marker names and a re-run pushes the same tag. A failed
    step exits with its own status, and nothing is deployed after it. */
-if (CONTAINER) {
+/* A TEST DEPLOY names the image the product published on Docker Hub, by digest (CLAUDE.md, the Cloudflare paragraph), and
+   pushes nothing to any registry. */
+if (CONTAINER && TEST) {
+  const refOf = new Map(images.map((i) => [i.class_name, i.reference]));
+  const only = images.length === 1 ? images[0].reference : null;
+  cfg.containers = cfg.containers.map((c) => ({ ...c, image: MULTI ? refOf.get(c.class_name) : only }));
+  for (const c of cfg.containers) console.log(`container: the generated config deploys ${c.name} from ${c.image} (Docker Hub, by digest; nothing pushed)`);
+}
+if (CONTAINER && !TEST) {
   const pushedOf = new Map();
   for (const img of images) {
-    const short = img.digest.slice("sha256:".length, "sha256:".length + 12);
-    /* One class keeps the member's own name; several are told apart by class (a tag is lower case). */
-    const tag = `${MULTI ? `${member}-${img.class_name.toLowerCase()}` : member}:${short}`;
+    /* One class keeps the member's own name; several are told apart by class (a tag is lower case); a test deploy adds the slug. */
+    const tag = tagOf(img.class_name, MULTI, img.digest);
     const steps = [
       ["docker", ["pull", img.reference], `pull ${img.reference}`],
       ["docker", ["tag", img.reference, tag], `tag it ${tag}`],
@@ -356,7 +397,7 @@ if (!sub || !want) {
   console.log("         The deploy reported success. Do not measure behaviour yet.");
   process.exit(0);
 }
-const url = `https://${member}.${sub}.workers.dev/version`;
+const url = `https://${TEST ? cfg.name : member}.${sub}.workers.dev/version`;
 const t0 = Date.now();
 for (let attempt = 1; attempt <= 15; attempt++) {
   let seen = null;
