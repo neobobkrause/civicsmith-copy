@@ -3,3 +3,4 @@
 {"at":"2026-11-04T11:48:39Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job plan-work BLOCKED: run status"}
 {"at":"2026-11-04T11:48:47Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-04T11:51:52Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job plan-work complete, PR #216 ready: run status"}
+{"at":"2026-11-04T11:51:59Z","row":"outcome","n":3,"outcome":"delivered"}
