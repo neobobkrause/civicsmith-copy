@@ -2299,9 +2299,9 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     if (el.getBoundingClientRect && t.style) placeTip(el, t);
   }
   /* R103 (R84; T-10), R145, F3 (walk p3dev-t1, 4 Nov): below what it explains, else above it, the first place that covers no control (the one it
-     explains included, and any control holding it, so the rail's next place, a list's next row) and stays inside the page. At each height it is
-     slid along the row, from the explained thing's own edge, to the nearest place clear of every control and inside the page; failing every
-     place, the one inside the page that covers the least, never the explained thing where another place spares it. Never beside it. */
+     explains included, and any control holding it, so the rail's next place, a list's next row) and stays inside the page. Where neither is
+     clear at the explained thing's own left edge, it is slid along each row to the nearest place clear of every control and inside the page;
+     failing every place, the one inside the page that covers the least, never the explained thing where another place spares it. Never beside it. */
   function placeTip(el, t) {
     /* measured where nothing narrows it: a tip measured at the page's right edge shrinks to what is left, and then runs taller (F3) */
     t.style.left = "0px"; t.style.top = "0px";
@@ -2326,17 +2326,16 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     const above = [r.top - gap - th, ...own.concat(others).map((b) => b.top - gap - th).filter((y) => y < r.top - th)].map(Math.round);
     const ys = [...new Set([below[0], above[0], ...below.slice(1).concat(above.slice(1)).sort((a, b) => (a > r.bottom ? a - r.bottom : r.top - a - th) - (b > r.bottom ? b - r.bottom : r.top - b - th))])].slice(0, 16);
     const inside = (c) => c.left >= 0 && c.top >= 0 && (!vw || c.left + tw <= vw) && (!vh || c.top + th <= vh);
+    /* R103's order first: below, then above, each at its own left edge; then the places slid along each row */
+    const x0 = clampX(r.left);
+    const tries = [{ left: x0, top: ys[0] }, { left: x0, top: ys[1] }, ...ys.flatMap((top) => xs.map((left) => ({ left, top })))];
     let pick = null, best = null;
-    for (const top of ys) {
-      for (const left of xs) {
-        const c = { left, top };
-        if (!inside(c)) continue;
-        const mine = area(c, own), theirs = area(c, others);
-        if (!mine && !theirs) { pick = c; break; }
-        const cost = mine * 1e6 + theirs;
-        if (!best || cost < best.cost) best = { c, cost };
-      }
-      if (pick) break;
+    for (const c of tries) {
+      if (!inside(c)) continue;
+      const mine = area(c, own), theirs = area(c, others);
+      if (!mine && !theirs) { pick = c; break; }
+      const cost = mine * 1e6 + theirs;
+      if (!best || cost < best.cost) best = { c, cost };
     }
     pick = pick || (best && best.c) || { left: clampX(r.left), top: ys[0] };
     t.style.left = pick.left + "px";
