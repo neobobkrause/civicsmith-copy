@@ -20,7 +20,9 @@ test("R17 (T48; N996, K3101; amends R7, R14): CHECK_FAMILY_FILES reads src/ai-ac
   const i = p.indexOf("src/ai-accounts/checks.mjs");
   assert.ok(i > 0);
   assert.equal(p[i + 1], "src/credentials/checks.mjs");
-  assert.equal(p[i - 1], "src/project-roster/checks.mjs");
+  /* since T53 ai-catalogue's file (layer 2, directly before ai-accounts) sits between project-roster's and it */
+  assert.equal(p[i - 1], "src/ai-catalogue/checks.mjs");
+  assert.equal(p[i - 2], "src/project-roster/checks.mjs");
   assert.equal(p.filter((x) => x === "src/ai-accounts/checks.mjs").length, 1);
   assert.ok(MODULES.indexOf("ai-accounts") >= 0 && MODULES.indexOf("ai-accounts") < MODULES.indexOf("credentials"), "modules.json order");
   /* the file is the one namespace listed, the family its AI_ACCOUNT_CHECKS */
@@ -97,10 +99,10 @@ test("R18 (T48; N1039, K3147; amends R7): CHECK_FAMILIES, CHECK_FAMILY_FILES and
   assert.equal(m.dec49Row[1], 0, "the file list is its own table, built only when it is read");
   assert.deepEqual(m.again, m.dec49Row, "a second read builds nothing again");
   assert.equal(m.tables[0], m.dec49Row[0], "the families are built once");
-  assert.equal(m.tables[1], 90, "the file list is built by its first read, one frozen entry each");
+  assert.equal(m.tables[1], 92, "the file list is built by its first read, one frozen entry each");
   assert.equal(out.same, true);
   assert.deepEqual(out.row.check, "C-113.6");
-  assert.ok(out.names > 100 && out.count === 90, `${out.names} ${out.count}`);
+  assert.ok(out.names > 100 && out.count === 92, `${out.names} ${out.count}`);
   assert.equal(out.frozen, true);
   assert.equal(out.isArray, true);
 });
@@ -108,7 +110,7 @@ test("R18 (T48; N1039, K3147; amends R7): CHECK_FAMILIES, CHECK_FAMILY_FILES and
 test("R18 (T48; N1039): the lazy tables read as the plain ones did: entries, length, frozenness, prototype and a write refused in strict code, identical across reads", () => {
   const f1 = M.CHECK_FAMILY_FILES, f2 = M.CHECK_FAMILY_FILES;
   assert.equal(f1, f2);
-  assert.ok(Array.isArray(f1) && f1.length === 90 && Object.isFrozen(f1));
+  assert.ok(Array.isArray(f1) && f1.length === 92 && Object.isFrozen(f1));
   assert.ok(f1.every((e) => Object.isFrozen(e) && e.length === 2 && typeof e[0] === "string"));
   assert.equal(f1[f1.length - 1][0], "src/answer-envelope/checks.mjs");
   assert.equal(Object.getPrototypeOf(f1), Array.prototype);

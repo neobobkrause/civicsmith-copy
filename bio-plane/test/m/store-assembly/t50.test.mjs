@@ -2,6 +2,7 @@
    reach readers, R56 the ask stream passed through, R42 the translations route. (The Store's RPC `groupFields`, plane R62, and the parallel reads through the Worker,
    plane R63, stay with plane.) Each test drives the assembled store at its interface (the
    object's routes, its door and its RPC bodies) and carries a negative control (K874). */
+import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -183,7 +184,7 @@ async function askWorld({ wait = 2000 } = {}) {
   sql.exec(`INSERT INTO sessions (token_sha, role, expires, created) VALUES (?, 'member:ann', ?, 'x')`,
            createHash("sha256").update(SESSION).digest("hex"), Date.now() + 3600e3);
   await disclosed(x.ctx);
-  const r = await credentialsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" });
+  const r = await aiAccountsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" });
   assert.equal(r.ok, true, JSON.stringify(r));
   /* the door's arm asks the `bio` object over its RPC: here, this object. A Durable Object stub's `fetch` takes an address as
      well as a Request (the host does), as `groupIdentityOp` and `instanceGroupOp` ask it; the world answers the same. */

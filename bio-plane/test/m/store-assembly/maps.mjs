@@ -32,6 +32,8 @@ import { pendingOf, pendingOps } from "../../../src/store-assembly/pending.mjs";
 import { acquisitionOf } from "../../../src/acquisition/index.mjs";
 import { captureOf, captureOps } from "../../../src/capture/index.mjs";
 import { doorbellOf, doorbellOps } from "../../../src/doorbell/index.mjs";
+import { mailDoorOf, mailDoorOps } from "../../../src/mail-door/index.mjs";
+import { registersOf, registersOps } from "../../../src/registers/index.mjs";
 import { monitoringOf, monitoringOps } from "../../../src/monitoring/index.mjs";
 import { linkSweepOf, linkSweepOps } from "../../../src/link-sweep/index.mjs";
 import { connectionsOf, connectionsOps } from "../../../src/connections/index.mjs";
@@ -116,6 +118,7 @@ export const MODULE_MAPS = [
   ["store-assembly", (c, u) => pendingOps(pendingOf(c), u)],
   ["capture", (c, u, b, e) => captureOps(captureOf(c), u, b, e)],
   ["doorbell", (c, u, b) => doorbellOps(doorbellOf(c), u, b)],   /* R32: directly after capture's */
+  ["mail-door", (c, u, b) => mailDoorOps(mailDoorOf(c), u, b)],   /* R47: directly after doorbell's */
   ["file-safety", (c, u, b, e) => fileSafetyOps(fileSafetyOf(c), u, b, e)],   /* R24: directly after doorbell's */
   ["calibration", (c, u, b) => calibrationOps(calibrationOf(c), u, b)],
   ["bias", (c, u, b) => biasOps(biasOf(c), u, b)],
@@ -137,6 +140,7 @@ export const MODULE_MAPS = [
   ["explore", (c, u, b) => exploreOps(exploreOf(c), u, b)],
   ["calculations", (c, u, b) => calculationsOps(calculationsOf(c), u, b)],
   ["workbooks", (c, u, b) => workbooksOps(workbooksOf(c), u, b)],
+  ["registers", (c, u, b) => registersOps(registersOf(c), u, b)],   /* R101: directly after workbooks' */
   ["contradiction", (c, u, b) => contradictionOps(contradictionOf(c), u, b)],
   ["progressions", (c, u, b) => progressionOps(progressionsOf(c), u, b)],
   ["intent", (c, u, b) => intentOps(intentOf(c), u, b)],
