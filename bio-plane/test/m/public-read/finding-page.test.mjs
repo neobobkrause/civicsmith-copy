@@ -121,7 +121,8 @@ test("R39 each leg of the signed bytes is a basis entry: served only where its t
   const f = (await (await call(w, env, { id: F })).json()).findings[0];
   assert.deepEqual(f.basis.map((l) => [l.target, l.served]), [[DOC_WORK, false], [DOC_PUB, true]]);
   for (const l of f.basis)
-    assert.deepEqual(Object.keys(l).sort(), ["cited_edition", "detail", "document", "grade", "grade_axis", "grade_source", "role", "served", "target", "target_edition"]);
+    /* R47 (T53) amends R39: each entry also states `ungraded` (null for a document before `/10`) */
+    assert.deepEqual(Object.keys(l).sort(), ["cited_edition", "detail", "document", "grade", "grade_axis", "grade_source", "role", "served", "target", "target_edition", "ungraded"]);
   const [named, served] = f.basis;
   assert.equal(named.cited_edition, null, "nothing of a named leg is handed over");
   assert.deepEqual(Object.keys(served.cited_edition).sort(), ["bundle_sha", "capture", "case_id", "connection", "edition", "ratified_at", "title"]);
