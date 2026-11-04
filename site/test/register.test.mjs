@@ -1,14 +1,14 @@
-/* R17: the listed groups exclude a standing withdrawal. The register is the stewards' own answer, produced by the stewards
- * Worker's real code when the test runs (its published fixture, stewards/test/fixture.mjs; K4990, K4993): a steward
- * withdraws a `public_listing` item, the listed group's address, and `GET /steward/withdrawals` answers the register
- * that the site is deployed with. Kept apart from site.test.mjs because that fixture traps the console and `fetch`. */
+/* R17: the listed groups exclude a standing withdrawal. The register is drawn in the shape `stewards` R13 gives it
+ * (`GET /steward/withdrawals`: `{register, sha256}`, the register's canonical JSON, keys sorted, and its SHA-256), made
+ * here by the test's own steps (withdraw, reinstate) because the site does not use the stewards module (BOB, PR #79's
+ * gate: no import of stewards' fixture). */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { makeEnv, call, report, signIn } from "../../stewards/test/fixture.mjs";
 import { word } from "../../bio-plane/src/setup-words/index.mjs";
 import worker, { check, withdrawn, ConfigError } from "../src/index.mjs";
 import { parse, find, esc } from "../build.mjs";
@@ -27,25 +27,23 @@ async function groups(env) {
   return { status: r.status, t, rows: main ? find(main, (e) => cls(e).includes("cs-row")).map(textOf) : [] };
 }
 
-/* The stewards' service: a report, a steward's withdrawal of a listing, the register as it answers it, and reinstatement. */
-async function stewards() {
-  const env = makeEnv();
-  const s = await signIn(env);
-  const ref = (await report(env, { concerns: GROUP_B.address })).data.ref;
-  const register = async () => {
-    const r = await call(env, "/steward/withdrawals", { cookie: s.cookie });
-    assert.equal(r.status, 200);
-    return r.text;
+/* The stewards' register as R13 answers it: each standing withdrawal `{service, item, since, ref, kind}`, newest first. */
+const canonical = (v) => (Array.isArray(v) ? `[${v.map(canonical).join(",")}]`
+  : v && typeof v === "object" ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}`
+    : JSON.stringify(v));
+function stewards() {
+  let standing = [], t = Date.UTC(2026, 10, 1);
+  const register = () => {
+    const body = canonical(standing);
+    return canonical({ register: standing, sha256: createHash("sha256").update(body).digest("hex") });
   };
   return {
-    withdraw: async (item, service = "public_listing") => {
-      const d = await call(env, "/steward/decide", { method: "POST", body: { ref, decision: "withdraw", reason: "the rule's part 1", withdraw: { service, item } }, cookie: s.cookie });
-      assert.equal(d.status, 200, d.text);
+    withdraw: (item, service = "public_listing") => {
+      standing = [{ service, item, since: (t += 1000), ref: `r-${standing.length + 1}`, kind: "spam" }, ...standing];
       return register();
     },
-    reinstate: async (item, service = "public_listing") => {
-      const d = await call(env, "/steward/reinstate", { method: "POST", body: { service, item, reason: "fixed" }, cookie: s.cookie });
-      assert.equal(d.status, 200, d.text);
+    reinstate: (item, service = "public_listing") => {
+      standing = standing.filter((x) => !(x.service === service && x.item === item));
       return register();
     },
   };
@@ -56,11 +54,11 @@ function deployCheck(vars) {
   const dir = mkdtempSync(join(tmpdir(), "site-check-"));
   const cfg = join(dir, "wrangler.jsonc");
   writeFileSync(cfg, `// a deploy configuration\n${JSON.stringify({ name: "civicsmith-site", vars }, null, 2)}\n`);
-  return spawnSync(process.execPath, [CHECK, cfg], { encoding: "utf8" });
+  return spawnSync(process.execPath, [CHECK, cfg], { encoding: "utf8", timeout: 60_000 });
 }
 
 test("R17: two listed groups and a register withdrawing one draw one row and no word of the other; after reinstatement both draw; a malformed register fails the deploy check", async () => {
-  const st = await stewards();
+  const st = stewards();
   const reg = await st.withdraw(GROUP_B.address);
   assert.deepEqual([...(await withdrawn({ WITHDRAWAL_REGISTER: reg }))], [GROUP_B.address]);
 
@@ -133,9 +131,9 @@ test("R17 control: with no register both rows draw and R13's empty-state rules h
     assert.ok(!empty.t.includes(esc(word("screen.site.groups.listing"))));
   }
   /* the deploy configuration in this directory passes its own check */
-  const r = spawnSync(process.execPath, [CHECK], { encoding: "utf8" });
+  const r = spawnSync(process.execPath, [CHECK], { encoding: "utf8", timeout: 60_000 });
   assert.equal(r.status, 0, r.stderr);
   /* and `npm run deploy` runs the check first */
-  const pkg = JSON.parse((await import("node:fs")).readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
   assert.equal(pkg.scripts.predeploy, "node check.mjs");
 });

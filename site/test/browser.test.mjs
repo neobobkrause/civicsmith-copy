@@ -3,7 +3,7 @@
  * prints for BOB. Each served page is checked: no wider than the viewport, every class it draws defined by a stylesheet
  * it loads, every face and icon loaded from the site itself. Needs `npm ci` in site/ (playwright-core) and Chromium
  * (CHROMIUM, or /opt/pw-browsers/chromium). */
-import test from "node:test";
+import base from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { execFileSync } from "node:child_process";
@@ -13,8 +13,12 @@ import { join } from "node:path";
 import worker from "../src/index.mjs";
 import { SITE_COMMIT, STATES, designMain } from "../build.mjs";
 
-const { chromium } = await import("playwright-core");
 const EXE = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
+/* Where no browser is installed (CI's gate), these tests are skipped, saying why, never left to fail or wait. */
+const chromium = await import("playwright-core").then((m) => m.chromium, () => null);
+const NO_BROWSER = !chromium ? "playwright-core is not installed (npm ci in site/)" : !existsSync(EXE) ? `no Chromium at ${EXE} (set CHROMIUM)` : false;
+const test = (name, fn) => base(name, { skip: NO_BROWSER, timeout: 120_000 }, fn);
+test.todo = base.todo;
 const ENV = {
   INSTALLER_ADDRESS: "https://install.example/",
   FEATURED_CASE: { case: "case-x", title: "Case X", edition: 2, group: "Group X", place: "Place X", signer: "Signer X", date: "Date X", address: "https://x.example" },
@@ -80,7 +84,7 @@ test("R9: each page beside the design's drawing at 1280 and 390 px; control: no 
       assert.deepEqual(violations, [], `at ${width}`);
       await page.close();
     }
-  } finally { await browser.close(); server.close(); }
+  } finally { await browser.close(); server.closeAllConnections(); server.close(); }
   t.diagnostic(`pairs at ${out}`);
 });
 
@@ -135,7 +139,7 @@ test("R18: /start's Create your team is the front page's primary button's contro
       assert.equal(primary.tone, "primary");
       await page.close();
     }
-  } finally { await browser.close(); server.close(); }
+  } finally { await browser.close(); server.closeAllConnections(); server.close(); }
 });
 
 test.todo("R18: at 1280 px Create your team is at least 44 px high (the visual language draws cs-btn 40 px there; interface-assets' stylesheet, a BOB question)");
