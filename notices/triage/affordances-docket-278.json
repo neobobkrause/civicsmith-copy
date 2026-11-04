@@ -1,0 +1,1 @@
+{"row":"triage","user":"affordances","verdict":"not affected","evidence":"bio-plane/src/affordances.mjs:120 imports only the constant arrays SHELVES, ENTRY_KINDS, PROPOSALS, PRESSURE_KINDS and republishes them (:562-565); nothing in affordances calls docketRecordEdition.","at":"2026-11-04T19:16:20.112Z","key":"docket:278","worker":"a252a64e8b9fcf9b6","cost":"0.10"}

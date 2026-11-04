@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:121 imports * as DOCKET from docket/checks.mjs (not index.mjs) and lists it in the families table (:254); PR 278 changed only docket/index.mjs.","at":"2026-11-04T19:16:20.112Z","key":"docket:278","worker":"a252a64e8b9fcf9b6","cost":"0.10"}
