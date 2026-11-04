@@ -1,5 +1,5 @@
-/* case-checker: the standalone program (R13, R16) and its committed build (`program.mjs`, a generated artifact, manifest
-   §14), run as a person runs it: one file copied to an empty directory outside the repository, started by Node. */
+/* case-checker: the standalone program (R13, R16) and its build (`program.mjs`, generated before the suites and not
+   committed, BOB 4 Nov), run as a person runs it: one file copied to an empty directory outside the repository, started by Node. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -29,10 +29,14 @@ test("R13: the build gives the same bytes every time, and the committed program.
   assert.equal(programModule(one), programModule(two));
 });
 
-test("R13 R32: the committed program.mjs is, byte for byte, the module a fresh generation writes (regenerate: node bio-plane/src/case-checker/build-program.mjs)", async () => {
-  const committed = readFileSync(new URL("../../../src/case-checker/program.mjs", import.meta.url), "utf8");
-  const fresh = programModule(await buildProgram());
-  assert.ok(committed === fresh, `program.mjs is stale (committed ${sha(committed)}, fresh ${sha(fresh)}): run node bio-plane/src/case-checker/build-program.mjs`);
+test("R13 R32: program.mjs (generated before the suites, not committed: BOB 4 Nov) answers through programData() exactly the program a fresh build gives (regenerate: node bio-plane/src/case-checker/build-program.mjs)", async () => {
+  const fresh = await buildProgram();
+  const { programData } = await import("../../../src/case-checker/program.mjs");
+  const data = JSON.parse(programData());
+  assert.equal(data.sha256, fresh.sha256, "program.mjs is stale: run node bio-plane/src/case-checker/build-program.mjs");
+  assert.equal(data.body_sha256, fresh.body_sha256);
+  assert.ok(data.text === fresh.text);
+  assert.ok(readFileSync(new URL("../../../src/case-checker/program.mjs", import.meta.url), "utf8") === programModule(fresh));
 });
 
 test("R13: the program file carries its own SHA-256: its first line names the SHA-256 of everything after it, and the served SHA-256 is the whole file's", () => {
