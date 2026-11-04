@@ -1,0 +1,40 @@
+{
+  "id": "case-checker",
+  "title": "case-checker: answer its provider notice case-catalogue:224 (C-41.18 and C-41.19 now found by checkCaseDocument)",
+  "layer": 8,
+  "paths": [
+    "bio-plane/src/case-checker/",
+    "build/requirements/case-checker.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-checker/"
+  ],
+  "requirements": "build/requirements/case-checker.md",
+  "uses": [
+    "record-grammar",
+    "signatures",
+    "bundler",
+    "content",
+    "strength",
+    "case-grammar",
+    "public-read",
+    "promotion",
+    "calc-grammar",
+    "case-catalogue",
+    "answers",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T12:28:36.225Z"
+  }
+}

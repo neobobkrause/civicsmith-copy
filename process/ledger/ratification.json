@@ -1,0 +1,58 @@
+{
+  "id": "ratification",
+  "title": "ratification: answer its provider notice case-catalogue:224 (C-41.18 and C-41.19 now found by checkCaseDocument)",
+  "layer": 8,
+  "paths": [
+    "bio-plane/src/ratification/",
+    "build/requirements/ratification.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/ratification/"
+  ],
+  "requirements": "build/requirements/ratification.md",
+  "uses": [
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "capture",
+    "acquisition",
+    "retrieval",
+    "inquiry",
+    "basis-versions",
+    "strength",
+    "publication",
+    "public-read",
+    "case-grammar",
+    "connections",
+    "credentials",
+    "inquiry-grammar",
+    "contradiction",
+    "reevaluation",
+    "network-notices",
+    "people",
+    "local-facts",
+    "jurisdictions",
+    "money",
+    "case-catalogue",
+    "case-tensions",
+    "publish-schedule",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T12:28:36.224Z"
+  }
+}
