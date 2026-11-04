@@ -309,3 +309,4 @@
 {"at":"2026-11-04T23:22:04Z","row":"sent","n":158,"to":"root","text":"x"}
 {"at":"2026-11-04T23:22:08Z","row":"sent","n":159,"to":"root","text":"placeholder"}
 {"at":"2026-11-04T23:22:36Z","row":"outcome","n":157,"outcome":"delivered"}
+{"at":"2026-11-04T23:22:40Z","row":"outcome","n":158,"outcome":"failed"}
