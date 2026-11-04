@@ -5,16 +5,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { boot, stubOver, envOver, io, read } from "./fixture.mjs";
 import { selftest } from "../../../src/setup.mjs";
-import { N26_MIGRATION, N439_MIGRATION, REPAIR_MIGRATION, PART_MIGRATION, OWED_MIGRATION, SHAPE_MIGRATION } from "../../../src/extraction/index.mjs";
+import { extractionOf } from "../../../src/extraction/index.mjs";
 
 const LIVE = "a-live-admin-token-0123456789";
-const NAMES = [N26_MIGRATION, N439_MIGRATION, REPAIR_MIGRATION, PART_MIGRATION, OWED_MIGRATION, SHAPE_MIGRATION];
 
-test("R105 op=selftest states each migration's counts for an administrator: the six of R110, each with its examined, migrated, done, at, retry and counts", async () => {
+test("R105 op=selftest states each migration's counts for an administrator: extraction's own migrationCounts() over the same store (its R110, never a list kept here, K3268), each with its examined, migrated, done, at, retry and counts", async () => {
   const w = await boot();
   const env = envOver(stubOver(w.m), { ADMIN_TOKEN: LIVE });
   const r = await read(await selftest(env, "bio", { cls: "admin", viewer: "class:admin" }, io));
-  assert.deepEqual(r.body.migrations.map((m) => m.migration), NAMES);
+  const theirs = JSON.parse(JSON.stringify(extractionOf(w.ctx).migrationCounts().migrations));
+  assert.ok(theirs.length > 0);
+  assert.deepEqual(r.body.migrations, theirs);
   for (const m of r.body.migrations) {
     assert.equal(typeof m.examined, "number", m.migration);
     assert.equal(typeof m.migrated, "number", m.migration);
