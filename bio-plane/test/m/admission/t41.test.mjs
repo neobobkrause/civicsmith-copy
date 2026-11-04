@@ -72,9 +72,10 @@ test("R19 (T41, DEC-188 (8)): groupswitchset, retired to accountusesset, is no l
   refused(A.aiScopeDeclaration(["accountusesset"]), 403, "AI_SCOPE_BEYOND_MEMBER_REACH", "C-29.9");
   /* a session reaches it: whose accounts it may set is credentials' to answer */
   for (const t of [S.founder, S.ann]) assert.equal((await gate(env, { op: "accountusesset", token: t })).caller?.viaSession, true);
-  /* negative control: the group key's own switch stays R19's — a session's, refused to a binding class */
-  assert.equal((await gate(env, { op: "groupkeyswitch", token: S.founder })).caller?.viaSession, true);
-  refused(await gate(env, { op: "groupkeyswitch", token: env.ADMIN_TOKEN }), 403, "CLASS_FORBIDDEN", "C-38.2");
+  /* negative control: the team account's own switch (T53, op-declarations R24: the group key's, retired) stays R19's — a
+     session's, refused to a binding class */
+  assert.equal((await gate(env, { op: "aiaccountswitch", token: S.founder })).caller?.viaSession, true);
+  refused(await gate(env, { op: "aiaccountswitch", token: env.ADMIN_TOKEN }), 403, "CLASS_FORBIDDEN", "C-38.2");
 });
 
 /* ---------------------------------------------------------------------------------------------------------------- */
