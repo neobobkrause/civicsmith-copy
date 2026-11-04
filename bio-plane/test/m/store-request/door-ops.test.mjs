@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { storeWorld } from "./fixtures.mjs";
 import { agentPackOp, airunDispatchOp, draftCheckOp, TEXT_CHECK, READ_TRANSLATE } from "../../../src/store-request/door-ops.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
+import { draftOnObject } from "../../../src/store-assembly/index.mjs";
 
 const body = async (res) => ({ status: res.status, json: await res.json() });
 const STAMPS = { env: {}, cls: "member", viaSession: true, sessMember: "ann", sessViewer: "member:ann", storeName: "bio", stub: {} };
@@ -117,13 +118,20 @@ test("R28: a refusal of the object is answered as given at its status (a status 
   }
 });
 
-test("R28: through the world, textcheck and readtranslate reach the plane's draft door and answer its own refusal", async () => {
+test("R28 (notice store-assembly:93): through the world, textcheck and readtranslate reach the plane's draft door and answer its own refusal, as the owner's draftOnObject answers that member", async () => {
+  /* store-assembly PR 93: the draft door's first check is its `deployGate` on the serving account's entry (`servingEntry`), so
+     each kind answers the refusal its own gate reaches: textcheck's kind is not switched on in a world, while reading's is
+     and, with no account to admit, goes on to the Worker's agent the world does not bind. The door relays it as given. */
   const w = await storeWorld();
   const f = await w.signIn("admin");
+  const seen = {};
   for (const [op, b] of [["textcheck", { text: "a sentence" }], ["readtranslate", { subject: "S-1", language: "es" }]]) {
     const r = await w.door({ url: `/api/?op=${op}`, init: { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) } }, f);
-    assert.equal(r.status, 403, op);
+    const own = await draftOnObject(w.ctx, w.env, { op, member: f.member, ...b }, { read: (o, params) => w.store.read(o, params) });
+    const owned = await own.json();
     assert.equal(r.json.ok, false, op);
-    assert.match(r.json.reason ?? r.json.code, /^AI_(PART|RUN_MODE)_NOT_DEPLOYED$/, `${op}: the plane's draft door is not switched on in a world`);
+    assert.deepEqual([r.status, r.json.reason], [own.status, owned.reason], `${op}: the owner's own refusal, relayed`);
+    seen[op] = r.json.reason;
   }
+  assert.deepEqual(seen, { textcheck: "AI_RUN_MODE_NOT_DEPLOYED", readtranslate: "AGENT_WORKER_UNBOUND" });
 });
