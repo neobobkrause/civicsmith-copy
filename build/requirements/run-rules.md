@@ -115,3 +115,4 @@ The AI run's rules without a store: the bounds, endings and statuses a run can h
 ## Open for Bob
 
 None: the split is BOB's (K617, K649).
+- **F1** K5821, Bob's REC-11: an exploring run, a team's or a project's with origin explore, records as its accountable member the member who turned exploring on for that team or project, and R18's startAllowed is judged on that member at each run, so K1606 holds unchanged. If that member is gone or no longer allowed, the run is refused with a reason the screen shows, and exploring stays off until a member turns it on again. Today such a run has no member and is refused AI_RUN_NOT_A_MEMBER_ACT.

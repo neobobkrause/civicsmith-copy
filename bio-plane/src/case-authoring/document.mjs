@@ -15,11 +15,12 @@
 
 import { fmSafe, whatChangedBlockLines, whatChangedSectionLines, lensBlockLines,
          lensSectionLines, caseDocumentFormatFor, workingOnLines, methodBlockLines, materialBlockLines, acceptedWorkBlockLines,
-         gradingFactsLines, passagesLines, memberBasisVersionLines } from "../case-grammar/index.mjs";
+         gradingFactsLines, passagesLines, memberBasisVersionLines, caseDocumentStatesUngradedAndTyped,
+         typedPassagesLines } from "../case-grammar/index.mjs";
 /* N529 (K1333): the disclosure renderers and their fixed sentences are `case-disclosures`' (its R1–R4, R7, R13, R14),
    moved there and imported here, never copied, so the signed document is byte-identical before and after the split. */
 import { FLAG_SENTENCE, tensionFrontmatterLines, tensionBodyLines, tensionSentence, captureBodyLines, carriesBodyLines,
-         acceptedBodyLines } from "../case-disclosures/index.mjs";
+         acceptedBodyLines, ungradedLines } from "../case-disclosures/index.mjs";
 import { attributionFrontmatterLines, attributionBodyLines, captureBlockLines,
          sourceBlockLines } from "../publication/index.mjs";
 import { caseConclusionRowLines } from "../ratification/index.mjs";
@@ -77,7 +78,7 @@ export function caseDocumentText({ caseId, edition, project, workingOn = null, s
                                    citations = [], attributions = [], tensions = [],
                                    tensionsUnread = [], captures = [], sources = [], whatChanged = null,
                                    lens: lensRead = null, method = null, materials = null, group = null,
-                                   accepted = null, grading = null, passages = null,
+                                   accepted = null, grading = null, passages = null, ungraded = null, typed = null,
                                    calculations = [], calculationsBlock = [], timeline = [], timelineLeftOut = 0,
                                    timelineCut = [], timelineUnread = null, timelineWithheld = 0,
                                    timelineBlock = [], peopleBlock = [], memberTiesBlock = [],
@@ -182,6 +183,10 @@ export function caseDocumentText({ caseId, edition, project, workingOn = null, s
     /* R55, `case-disclosures` R15 (K1315): each reached finding's grading facts and relied-on passages, signed with the document. */
     ...(grading ? gradingFactsLines(grading) : []),
     ...(passages ? passagesLines(passages) : []),
+    /* F2 (`case-grammar` R35–R37; `case-disclosures` R35, R36): a `/10` document states the relied-on passages published
+       without a grade (`case-disclosures`' rows, written by its renderer) and the typed ones with who typed and checked
+       them, so `case-catalogue` C-41.18 and C-41.19 read what the gate compares; an earlier format states neither. */
+    ...(caseDocumentStatesUngradedAndTyped({ format }) ? [...ungradedLines(ungraded || []), ...typedPassagesLines(typed || [])] : []),
     /* R56 (C:A-15): every calculation and workbook a chain reaches, its state at this act and the owner's words where a
        disclosure was needed; R57 (C11): the timeline, two lanes never mixed; R55 (case-disclosures R28): the people the
        case names with each one's basis, and each signer's declared ties. Each block is its owner's one spelling, rendered
