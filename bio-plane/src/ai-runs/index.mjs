@@ -3716,16 +3716,27 @@ export class AiRuns {
     return { ok: true, module };
   }
 
-  /** R95, R97: whether the path of `account_id` and `entry_id` is ready: `{asked, ready, state, reset_at}`. With no source
-   *  registered the plane is not asked (`asked: false`, read as ready: the Worker still answers AI_PATH_NOT_READY itself);
-   *  a source that throws or answers nothing reads `unknown`, not ready. */
+  /** R95, R97, F1: whether the path of `account_id` and `entry_id` is ready: `{asked, ready, state, reset_at}`. With no
+   *  source registered nothing stands behind the path, so it reads not ready (F1, fail closed: `asked: false`, state
+   *  `unregistered`); a source that throws or answers nothing reads `unknown`, not ready. */
   async #pathReady(account_id, entry_id) {
-    if (!this.#pathSource) return { asked: false, ready: true, state: null, reset_at: null };
+    if (!this.#pathSource) return { asked: false, ready: false, state: "unregistered", reset_at: null };
     let said = null;
     try { said = await this.#pathSource.fn({ account_id, entry_id }); } catch { said = null; }
     const state = said && typeof said.state === "string" ? said.state : "unknown";
     return { asked: true, ready: AiRuns.READY_STATES.includes(state), state,
              reset_at: said && typeof said.reset_at === "string" ? said.reset_at : null };
+  }
+
+  /** F1, R95, R97: the path's state for (account, entry), the read `op=aipathready` routes to: `{state: "ready" |
+   *  "not_ready", reason}`, `reason` the source's state (`unregistered` with no source, `unknown` when it fails or is
+   *  silent). The same fail-closed rule as the dispatch: only a registered source answering a ready state reads ready.
+   *  Never throws; writes nothing. */
+  async pathState({ account_id, entry_id } = {}) {
+    if (typeof account_id !== "string" || !account_id || typeof entry_id !== "string" || !entry_id)
+      return { state: "not_ready", reason: "unknown" };
+    const p = await this.#pathReady(account_id, entry_id);
+    return { state: p.ready ? "ready" : "not_ready", reason: p.state };
   }
 
   /** R91: a run's segments, oldest first; `[]` when none. */

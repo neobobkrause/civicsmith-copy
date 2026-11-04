@@ -178,7 +178,7 @@ test("R95, R98 (T53; AIR27, AIR28, BR28): a non-interactive run held after a sto
   const probe = w.runs.healthProbe();
   assert.equal(probe.wake(Date.parse(T0)), null, "nothing held: wake is null");
   const states = { s: "open" };
-  assert.equal(w.runs.registerPathReady("plane", () => ({ state: states.s })).ok, true);
+  w.setPath(() => ({ state: states.s }));
   assert.equal((await stop(w, "unavailable")).segment_end.stop.decision, "held");
   const now = Date.parse(at(1));
   assert.equal(probe.due(now), 1);
@@ -192,7 +192,7 @@ test("R95, R98 (T53; AIR27, AIR28, BR28): a non-interactive run held after a sto
   assert.equal(probe.wake(later), null);
   /* a run a member started: held with her three choices, never resumed by the probe */
   const m = await segWorld({ own: 1 });
-  m.w.runs.registerPathReady("plane", () => ({ state: "ok" }));
+  m.w.setPath(() => ({ state: "ok" }));
   await stop(m.w, "unavailable");
   const held = (await m.w.runs.read({ run: "R1", viewer: "member:ann" })).session.held;
   assert.deepEqual([held.kind, held.choices], ["pause", ["ai.choice.wait", "ai.choice.switch", "ai.choice.without_ai"]]);
@@ -212,7 +212,7 @@ test("R98 (T53; scheduler R8): the consumer is ai-health-probe under the answer 
                                                                                     : (held.push({ module, c }), { ok: true, module, name: c.name, key: c.key })) };
   assert.deepEqual(w.runs.registerHealthProbe(slot), { ok: true, module: "ai-runs", name: "ai-health-probe", key: "aihealthprobe" });
   assert.equal(w.runs.registerHealthProbe(slot).reason, "CONSUMER_DECLARED");
-  w.runs.registerPathReady("plane", () => ({ state: "open" }));
+  w.setPath(() => ({ state: "open" }));
   await stop(w, "limit", { retry_after: at(30) });
   const probe = w.runs.healthProbe();
   assert.equal(probe.due(Date.parse(at(10))), 0, "not before its reset_at");
@@ -243,7 +243,7 @@ test("R96 (T53; AD14, AD37): a notice before a new recipient holds the run — a
 test("R97 (T53; AIR28): an AI path not ready withholds the dispatch — a stub aipathready answering auth_failed appends the resumable entry and the run is not dispatched, named AI_PATH_NOT_READY; control: ready dispatches", async () => {
   const { w, aw } = await segWorld({ own: 1 });
   const state = { s: "auth_failed" };
-  w.runs.registerPathReady("plane", () => ({ state: state.s }));
+  w.setPath(() => ({ state: state.s }));
   const before = log(w).length;
   const r = await w.runs.dispatchMemberRun({ run: "R1", by: "member:ann", at: at(1) });
   assert.deepEqual([r.dispatched, r.dispatch.withheld], [false, "AI_PATH_NOT_READY"]);
@@ -260,7 +260,7 @@ test("R105 (T53; K5489, DEC-475): wait a set time, then switch — a wait that e
   assert.deepEqual(AiRuns.WAIT_THEN_SWITCH_CHOICES, [5, 15, 60]);
   const { w, aw } = await segWorld();
   const st = { s: "open" };
-  w.runs.registerPathReady("plane", () => ({ state: st.s }));
+  w.setPath(() => ({ state: st.s }));
   await stop(w, "unavailable", {}, 1);
   /* the stop hopped already (a next account answers); hold it on the second account as a member's wait */
   assert.equal((await w.op("aiwaitswitch", { actor: "member:ann" }, { run: "R1", wait: 7 })).code, "WAIT_INVALID");
@@ -268,7 +268,7 @@ test("R105 (T53; K5489, DEC-475): wait a set time, then switch — a wait that e
   /* a fresh run on ann's first of two accounts, its provider down: she waits 5 minutes then switches */
   const x = await segWorld();
   const first = x.w.accountsOf("member:ann")[0];
-  x.w.runs.registerPathReady("plane", ({ account_id }) => ({ state: account_id === first ? st.s : "ok" }));
+  x.w.setPath(({ account_id }) => ({ state: account_id === first ? st.s : "ok" }));
   const ws = x.w.runs.waitThenSwitch({ run: "R1", member: "member:ann", wait: 5, at: at(1) });
   assert.deepEqual([ws.acted, ws.wait_choice.wait, ws.wait_choice.member], [true, 5, "member:ann"]);
   assert.deepEqual(JSON.parse(x.w.row(`SELECT wait_choice FROM ai_runs WHERE run='R1'`).wait_choice).wait, 5);
@@ -281,7 +281,7 @@ test("R105 (T53; K5489, DEC-475): wait a set time, then switch — a wait that e
   /* recovered within the wait: continues on the same account, nothing switches */
   const y = await segWorld();
   const ys = { s: "open" };
-  y.w.runs.registerPathReady("plane", () => ({ state: ys.s }));
+  y.w.setPath(() => ({ state: ys.s }));
   y.w.runs.waitThenSwitch({ run: "R1", member: "member:ann", wait: 15, at: at(1) });
   ys.s = "ok";
   await y.w.runs.healthProbe().tick(Date.parse(at(3)));
@@ -289,7 +289,7 @@ test("R105 (T53; K5489, DEC-475): wait a set time, then switch — a wait that e
   assert.deepEqual(segs(y.w).map((r) => r.hop_in), [null, null], "no switch");
   /* a switch to another owner's account still waits for aicontinue */
   const z = await segWorld({ own: 1, team: true });
-  z.w.runs.registerPathReady("plane", () => ({ state: "open" }));
+  z.w.setPath(() => ({ state: "open" }));
   z.w.aiAccounts.hopFor = () => teamHop(z.w);
   z.w.runs.waitThenSwitch({ run: "R1", member: "member:ann", wait: 5, at: at(1) });
   await z.w.runs.healthProbe().tick(Date.parse(at(7)));
