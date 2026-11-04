@@ -37,8 +37,12 @@ test("R1–R6 (interface-shell R21, R38): each screen's acts are exactly its reg
   // (`actionstake`, `actioninquiry`, T50). T51 (FR-31): `writinghelp` is drawn on every screen the registry lists it on, `start-send`,
   // `plan` and `matter` included (the registry test names it, entry 17).
   const NOT_YET = (a) => a.status === "owed" && !Object.hasOwn(OPS, String(a.op).replace(/^owed:/, "").split(" ")[0]);
+  // BOB ruling (4 Nov): the counsel screen's counselpacketread and counselpacketexport (DEC-444) have no requirement in this
+  // module yet; excepted here until BOB writes the counsel requirement. Every other act is held exactly.
+  const EXCEPTED = { counsel: new Set(["counselpacketread", "counselpacketexport"]) };
   for (const s of SCREENS) {
-    const reg = REGISTRY.find((r) => r.id === s.id).acts.filter((a) => !NOT_YET(a)).map((a) => String(a.op).replace(/^owed:/, "").split(" ")[0]);
+    const reg = REGISTRY.find((r) => r.id === s.id).acts.filter((a) => !NOT_YET(a)).map((a) => String(a.op).replace(/^owed:/, "").split(" ")[0])
+      .filter((op) => !EXCEPTED[s.id]?.has(op));
     const mine = s.acts.map((a) => a.op);
     assert.deepEqual([...mine].sort(), [...reg].sort(), s.id);
     for (const a of s.acts) {
