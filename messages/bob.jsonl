@@ -205,3 +205,4 @@
 {"at":"2026-11-04T15:59:08Z","row":"outcome","n":105,"outcome":"delivered"}
 {"at":"2026-11-04T16:22:50Z","row":"sent","n":106,"to":"job-docket","text":"bob-106: gate red on e256047f7c: revert check, notice-case-tensions-262 inert; rerun job complete with --exempt-revert naming it; do not push to kick CI (Actions outage)."}
 {"at":"2026-11-04T16:22:54Z","row":"outcome","n":106,"outcome":"delivered"}
+{"at":"2026-11-04T16:31:42Z","row":"sent","n":107,"to":"job-store-assembly","text":"bob-107: order.mjs stale from PR 274; regenerated in PR 283 (merging). After it lands: job sync, suite, job complete with --exempt-revert for notice-case-tensions-262; wake BOB. No pushes to kick CI."}
