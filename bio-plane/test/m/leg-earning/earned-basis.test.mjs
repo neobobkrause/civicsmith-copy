@@ -181,7 +181,7 @@ test("R3 the two legitimate nulls are stated as which, each with its own sentenc
   assert.match(none.why_no_content, /never evidence about what the document says/);
 });
 
-test("R1 a whole-document attestation of a chainless capture does not raise a member's typing through a leg; a second member's attestation of the typing does", () => {
+test("R1 R18 a whole-document attestation of a chainless capture does not raise a member's typing through a leg; a second member's attestation of the typing does", () => {
   const w = world(); w.member("ruth"); w.member("sam");
   const DOC_N = "INFO-2026-1501-nochain", QN = "INQ-2026-1501-qn";
   const [capN] = w.doc(DOC_N, ["no chain was ever recorded"], { chain: null });
@@ -192,12 +192,13 @@ test("R1 a whole-document attestation of a chainless capture does not raise a me
                                     transcriber: "ruth", viewer: V("ruth"), at: "2026-09-27T00:00:00Z" });
   assert.equal(tx.ok, true, JSON.stringify(tx).slice(0, 300));
   assert.equal(w.promoteInquiry(QN, md(QN, [{ target: DOC_N, f: { content_id: q(tx.content_id) } }])).ok, true);
+  /* R18 (T53): the typed row's capture ceiling is the passage's own, beside the typing's transcription standing */
   const ceil = (id) => { const s = w.k.earnedBasis({ id, viewer: "admin" }).earned.content?.[tx.content_id];
-    return s ? [s.transcription.ceiling, s.transcription.determinant, s.transcription.by] : null; };
+    return s ? [s.transcription.ceiling, s.transcription.determinant, s.transcription.by, s.capture.grain, s.capture.grade] : null; };
   /* text-chain R107: the typing stands on the typist's word; the capture attestation checked other text */
-  assert.deepEqual(ceil(QN), [TYPED_UNCHECKED_GRADE, "typist", ["ruth"]], "the capture attestation checked other text");
+  assert.deepEqual(ceil(QN), [TYPED_UNCHECKED_GRADE, "typist", ["ruth"], "passage", TYPED_UNCHECKED_GRADE], "the capture attestation checked other text");
   const sa = w.content.transcriptionAttest({ contentId: tx.content_id, attestor: "sam", viewer: V("sam"), at: "2026-09-27T01:00:00Z",
                                             note: "The typing matches the page." });
   assert.equal(sa.ok, true, JSON.stringify(sa).slice(0, 300));
-  assert.deepEqual(ceil(QN), [TYPED_CHECKED_GRADE, "second_member", ["sam"]], "the leg earns what the typing's attestation supports");
+  assert.deepEqual(ceil(QN), [TYPED_CHECKED_GRADE, "second_member", ["sam"], "passage", TYPED_CHECKED_GRADE], "the leg earns what the typing's attestation supports");
 });
