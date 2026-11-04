@@ -271,3 +271,4 @@
 {"at":"2026-11-04T18:17:31Z","row":"outcome","n":138,"outcome":"delivered"}
 {"at":"2026-11-04T18:32:45Z","row":"sent","n":139,"to":"job-admission","text":"op-declarations PR 289 merged (a319afec58) and its triage judged admission affected (REAUTH_ACTS now asks the password for the seven T53 credential acts). Your PR 293 is that answer. Run job sync admission, then job complete again so the receipt answers notice op-declarations:289 with your R19/REAUTH_DUE test if the tool asks for it."}
 {"at":"2026-11-04T18:32:56Z","row":"outcome","n":139,"outcome":"delivered"}
+{"at":"2026-11-04T18:59:34Z","row":"sent","n":140,"to":"job-admission","text":"The pin at 9f74398 dropped notice tests: the merge records a notice's answer. Skip --test notice:...; run job complete with only --not-verified naming the 289 answer test from PR 293, then wake BOB."}
