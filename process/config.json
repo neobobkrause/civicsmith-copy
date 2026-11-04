@@ -214,6 +214,11 @@
         "sh",
         "-c",
         "f=bio-plane/src/journey-check/testpage/deploy.mjs; if [ ! -f \"$f\" ]; then echo \"testpage: $f not in this tree, skipped\"; exit 0; fi; CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node \"$f\" {slug} --dry-run"
+      ],
+      [
+        "sh",
+        "-c",
+        "f=bio-plane/src/ai-catalogue/dev-key.mjs; if [ ! -f \"$f\" ]; then echo \"catalogue dev key: $f not in this tree, skipped\"; exit 0; fi; CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node \"$f\" {slug} --dry-run"
       ]
     ],
     "deploy": [
@@ -301,6 +306,11 @@
         "sh",
         "-c",
         "f=bio-plane/src/journey-check/testpage/deploy.mjs; if [ ! -f \"$f\" ]; then echo \"testpage: $f not in this tree, skipped\"; exit 0; fi; CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node \"$f\" {slug}"
+      ],
+      [
+        "sh",
+        "-c",
+        "f=bio-plane/src/ai-catalogue/dev-key.mjs; if [ ! -f \"$f\" ]; then echo \"catalogue dev key: $f not in this tree, skipped\"; exit 0; fi; CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node \"$f\" {slug}"
       ]
     ],
     "walk": [
