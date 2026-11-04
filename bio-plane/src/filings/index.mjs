@@ -1683,11 +1683,16 @@ export class Filings {
     const v = this.#view();
     const rules = v.view && Array.isArray(v.view.deadlines)
       ? v.view.deadlines.filter((r) => a && r.applies_to === a.kind && (r.starts === "filed" || r.starts === "received")) : [];
+    /* R71 (T53; action-clocks R28): each deadline is offered from its own layer, named to clockPropose, so two layers
+       giving one rule are each offered apart, never NAME_AMBIGUOUS; the layer is relayed with the offer. A view of no
+       layers names none, as before. */
     const clocks = rules.map((r) => {
       const c = this.actionClocks;
+      const ids = Array.isArray(v.view.layers) ? v.view.layers.map((l) => isObj(l) && str(l.id)).filter(Boolean) : [];
+      const layer = ids.includes(layerOf(r)) ? layerOf(r) : null;
       const p = c && typeof c.clockPropose === "function"
-        ? this.#call(() => c.clockPropose({ target: d.action_id, rule: r.rule, proposer: who, viewer })) : null;
-      return { rule: r.rule, starts: r.starts, citation: r.citation ?? null,
+        ? this.#call(() => c.clockPropose({ target: d.action_id, rule: r.rule, ...(layer ? { layer } : {}), proposer: who, viewer })) : null;
+      return { rule: r.rule, ...(layer ? { layer } : {}), starts: r.starts, citation: r.citation ?? null,
                offered: p ?? { ok: false, reason: "UNAVAILABLE", detail: localize("filings.index.no_module_offers_a_clock_entry", "no module offers a clock entry") } };
     });
     return {
