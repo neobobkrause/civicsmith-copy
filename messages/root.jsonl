@@ -64,3 +64,4 @@
 {"at":"2026-11-04T17:18:43Z","row":"outcome","n":32,"outcome":"delivered"}
 {"at":"2026-11-04T18:16:27Z","row":"sent","n":33,"to":"bob","text":"Sweep: plane: BLOCKED; runtime-limits: BLOCKED; store-assembly: BLOCKED."}
 {"at":"2026-11-04T18:16:52Z","row":"outcome","n":33,"outcome":"delivered"}
+{"at":"2026-11-04T19:17:02Z","row":"sent","n":34,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: Sweep: control-plane: BLOCKED; runtime-limits: BLOCKED; store-assembly: BLOCKED."}
