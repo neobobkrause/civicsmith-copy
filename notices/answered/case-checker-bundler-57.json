@@ -1,0 +1,1 @@
+{"row":"answered","user":"case-checker","by":"triage","evidence":"bio-plane/scripts/fleet-bundle.mjs:847 the standalone case checker is neither a fleet member nor the plane, so R44 does not gather it and it has no wrangler config for an R45 test deploy","at":"2026-11-04T02:44:18.310Z","key":"bundler:57","worker":"a2bd68b9eb2585621","cost":"0.25"}

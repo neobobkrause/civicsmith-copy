@@ -1,0 +1,1 @@
+{"row":"answered","user":"plane","by":"triage","evidence":"bio-plane/wrangler.jsonc:121 its service targets and :41-42 its buckets are renamed by bundler's R45 guard at deploy, and its dist is gathered by R44; no code of the plane calls either","at":"2026-11-04T02:44:18.310Z","key":"bundler:57","worker":"a2bd68b9eb2585621","cost":"0.25"}
