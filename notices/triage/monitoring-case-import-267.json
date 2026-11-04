@@ -1,0 +1,1 @@
+{"row":"triage","user":"monitoring","verdict":"not affected","evidence":"bio-plane/src/monitoring/index.mjs:2428 calls only caseImport.recordDocketRead, which PR 267 did not change","at":"2026-11-04T15:50:20.149Z","key":"case-import:267","worker":"aa791d0666c50b73f","cost":"0.35"}

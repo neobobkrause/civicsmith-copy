@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-document","verdict":"not affected","evidence":"build/modules.json:190 gives it \"paths\": [], so no file of its own imports case-import","at":"2026-11-04T15:50:20.149Z","key":"case-import:267","worker":"aa791d0666c50b73f","cost":"0.35"}
