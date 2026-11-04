@@ -150,8 +150,8 @@ test("R1: with no `AGENT_WORKER` binding the door answers 503 AGENT_WORKER_UNBOU
   assert.equal(kept.body.translation, "theirs");
 });
 
-test("R1 (ai-accounts R18, R27): `leaverOf` names the member a successful `subscriptiondisconnect` (the caller), `memberset` to revoked and a carried `adminremove` leave; `signoutLeaver` sends `step: \"signout\"` for that member and a runner that cannot be reached throws nothing; acts that did not succeed or did not revoke name nobody", async () => {
-  assert.equal(leaverOf("subscriptiondisconnect", {}, { ok: true, disconnected: true }, ANN), ANN);
+test("R1 (ai-accounts R27): `leaverOf` names the member a `memberset` to revoked and a carried `adminremove` leave; `signoutLeaver` sends `step: \"signout\"` for that member and a runner that cannot be reached throws nothing; acts that did not succeed or did not revoke, and the retired `subscriptiondisconnect` (notice op-declarations:95), name nobody", async () => {
+  assert.equal(leaverOf("subscriptiondisconnect", {}, { ok: true, disconnected: true }, ANN), null);
   assert.equal(leaverOf("memberset", { memberId: "bea", status: "revoked" }, { ok: true, memberId: "bea" }, "admin"), "member:bea");
   assert.equal(leaverOf("adminremove", { memberId: "bea" }, { ok: true, memberId: "bea", removed: true }, "admin"), "member:bea");
   for (const [op, asked, result] of [["subscriptiondisconnect", {}, { ok: false, reason: "NOT_YOUR_ACCOUNT" }],
@@ -321,22 +321,14 @@ test("F1 (ai-accounts R2): a connected subscription sign-in reads its state thro
   assert.equal(typeof w.ops("", null).accountreference, "undefined", "control: ai-accounts serves no accountreference");
 });
 
-test("R4 (ai-accounts R18, R19): `subscriptionDisconnect` reaches the store's `subscriptiondisconnect` (ai-accounts drops the token there) with `by` the stamp, then sends `signout` for that member; a runner that cannot be reached changes nothing of the answer; a refused disconnect sends nothing", async () => {
-  for (const throws of [false, true]) {
-    /* ai-accounts' T53 rewrite retired `subscriptionDisconnect` and publishes no answer for it; the door relays the store's
-       answer as given, so the success here is the shape `leaverOf` reads */
-    const store = storeOf({ subscriptiondisconnect: { ok: true, disconnected: true } });
-    const aw = agentWorker(() => { if (throws) throw new Error("down"); return json(200, { ok: true }); });
-    const out = await subscriptionDisconnect({ env: { AGENT_WORKER: aw }, member: ANN, store });
-    assert.deepEqual([out.answered, out.result], [true, { ok: true, disconnected: true }]);
-    assert.deepEqual(store.of("subscriptiondisconnect")[0].params, { by: ANN });
-    assert.deepEqual(aw.sent.map((s) => s.body), [{ member: ANN, step: "signout" }]);
-  }
-  const store = storeOf({ subscriptiondisconnect: { ok: false, reason: "NOT_YOUR_ACCOUNT" } });
-  const aw = agentWorker();
+test("notice op-declarations:95 (its R30; ai-accounts R35): `subscriptionDisconnect` is retired: it asks no store route, sends nothing to the runner and answers the store's own refusal of an op it does not serve", async () => {
+  const store = storeOf({ subscriptiondisconnect: { ok: true, disconnected: true } });
+  const aw = agentWorker(() => json(200, { ok: true }));
   const out = await subscriptionDisconnect({ env: { AGENT_WORKER: aw }, member: ANN, store });
-  assert.equal(out.result.reason, "NOT_YOUR_ACCOUNT");
-  assert.deepEqual(aw.sent, [], "control: refused, nothing sent");
+  assert.deepEqual([out.answered, out.refused, out.reply.status, out.reply.body],
+                   [false, true, 400, { ok: false, error: "unknown op: subscriptiondisconnect" }]);
+  assert.deepEqual(store.of("subscriptiondisconnect"), [], "the retired route is never asked");
+  assert.deepEqual(aw.sent, [], "nothing sent to the runner");
 });
 
 test("R4 (ai-accounts R19): an ask or draft answered SIGNIN_TOKEN_REFUSED, at the top level or in `result`, calls `subscriptionTokenRefused` for that member (the store's `signintokenrefused`); any other answer calls nothing", async () => {
