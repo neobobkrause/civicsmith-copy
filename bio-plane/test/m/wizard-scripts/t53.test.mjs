@@ -76,3 +76,18 @@ test("notice membership:77 (R154): the membership names this module reads answer
   assert.equal(notAdmin.ok, false, "control: an owner who does not administer cannot widen");
   for (const op of ["adminproposalcancel", "adminremovals"]) assert.equal(wz.ADMIN_ACTS.has(op), false, `${op}: R51's list is fixed`);
 });
+
+test("notice answers:103 (answers R1): the writing help's draft (WRITING_HELP_PART, kind own_words) reaches what answers' draftAdmits admits, the whole ASK_SCOPE and never the agent Worker's own credential read aicredential, so no such read can enter the readLog checkDraft is given (R25); checkDraft is unchanged by it: a fact found only in an admitted read is kept with suggestions on, withheld with them off", async () => {
+  const { ASK_SCOPE, askAdmits, draftAdmits } = await import("../../../src/answers/index.mjs");
+  const kind = wz.WRITING_HELP_PART.split(":")[1];
+  assert.equal(kind, "own_words");
+  for (const { op } of ASK_SCOPE) assert.ok(draftAdmits(op, kind), `the draft reads ${op} as an ask does`);
+  assert.equal(askAdmits("aicredential"), false, "answers R1 (T53): aicredential is not an ask's read");
+  assert.equal(draftAdmits("aicredential", kind), false, "nor the writing help draft's");
+  const told = ["The gate was locked."];
+  const readLog = ["Budget line: 2000 dollars, council minutes."];
+  const on = wz.checkDraft("The council spent 2,000 dollars on it.", { told, readLog, suggestions: true });
+  const off = wz.checkDraft("The council spent 2,000 dollars on it.", { told, readLog, suggestions: false });
+  assert.deepEqual(on.withheld, [], "with suggestions on, a fact from an admitted read stays");
+  assert.notDeepEqual(off.withheld, [], "control: with suggestions off the same fact is withheld");
+});
