@@ -56,7 +56,8 @@ const REAUTH_ACTS = Object.freeze({
   memberset: Object.freeze({ field: "role", values: null }),
   memberadd: Object.freeze({ field: "role", values: Object.freeze(["admin"]) }),
   subscriptionsignin: Object.freeze({ field: "step", values: Object.freeze(["start"]) }),
-  accountreferenceset: null, groupkeyset: null, projectkeyset: null, projectsigninset: null,
+  /* T53 (ai-accounts R35, BOB 4 Nov): `accountreferenceset`, `groupkeyset`, `projectkeyset` and `projectsigninset` left
+     with their retired ops; which of ai-accounts' T53 credential acts ask the password again is not yet decided */
 });
 
 export { T47_SHARES, T47_FAMILIES, REAUTH_ACTS };

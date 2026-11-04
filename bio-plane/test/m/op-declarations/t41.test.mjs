@@ -9,7 +9,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as O from "../../../src/op-declarations/index.mjs";
-import { explained } from "./help.mjs";
+import { explained, RETIRED_T53 } from "./help.mjs";
 import * as AFF from "../../../src/affordances.mjs";
 import { AI_GRANT_OPS, credentialsOps } from "../../../src/credentials/index.mjs";
 import { aiAccountsOps } from "../../../src/ai-accounts/index.mjs";
@@ -74,11 +74,15 @@ const KIND = {
 
 /* every op T41 declares, by requirement: [family, kind, stamps] */
 /* T48 (R68): the project-account ops and the uses and history reads are ai-accounts' family now */
+/* Restated for T53 (ai-accounts R35, BOB 4 Nov): the project's key, sign-in, removal, switch, state and notice ops are
+   retired with no aliases (`RETIRED_T53`); a project's account is ai-accounts' declared `aiaccountadd` (owner the
+   project), its list `aiprojectorder`, its offered AIs `aiprojectuse` and its checks `aiprojectcheckset` (ai-accounts R40,
+   R41, R46, R53, R61), read by `accountsof` and `accountstate` (its R2). */
 const R41 = {
-  projectkeyset: ["ai-accounts", "own", ["by", "viewer"]], projectsigninset: ["ai-accounts", "own", ["by", "viewer"]],
-  projectaccountremove: ["ai-accounts", "own", ["by", "viewer"]], projectaccountswitch: ["ai-accounts", "own", ["by", "viewer"]],
-  projectaccountstate: ["ai-accounts", "ownread", ["viewer"]], projectkeynotice: ["ai-accounts", "ownread", ["viewer"]],
-  projectkeynoticeseen: ["ai-accounts", "own", ["by", "viewer"]], projectaikeepaway: ["ai-accounts", "own", ["by", "viewer"]],
+  aiaccountadd: ["ai-accounts", "own", ["by", "viewer"]], aiprojectorder: ["ai-accounts", "own", ["by", "viewer"]],
+  aiprojectuse: ["ai-accounts", "own", ["by", "viewer"]], aiprojectcheckset: ["ai-accounts", "own", ["by", "viewer"]],
+  accountsof: ["ai-accounts", "ownread", ["viewer"]], accountstate: ["ai-accounts", "ownread", ["viewer"]],
+  projectaikeepaway: ["ai-accounts", "own", ["by", "viewer"]],
   projectaikeepawaystate: ["ai-accounts", "ownread", ["viewer"]], accountusesset: ["ai-accounts", "own", ["by", "viewer"]],
   accountuses: ["ai-accounts", "ownread", ["viewer"]], accounthistory: ["ai-accounts", "ownread", ["viewer"]],
   ailimitset: ["ai-use", "own", ["by", "viewer"]], ailimits: ["ai-use", "ownread", ["viewer"]],
@@ -157,12 +161,15 @@ const holds = (op, [fam, kind, st]) => {
 /* ---------- R41 ---------- */
 
 test("R41 (N812; DEC-188; K2373, K2435): the project-account ops, accountusesset, accountuses and accounthistory (credentials) and ailimitset, ailimits, aiusage and exploreapprove (ai-use) — each a session's only (machineClasses []), acts by stamped, reads viewer stamped, a present null row, both session sets, in its owner's family, in neither bearer fence, not on AI_GRANT_OPS (negative control: a drifted spec is seen)", () => {
-  assert.equal(Object.keys(R41).length, 16);
+  assert.equal(Object.keys(R41).length, 15);
   for (const [op, want] of Object.entries(R41)) holds(op, want);
+  /* T53: the retired project-account ops are in no table (ai-accounts R35) */
+  for (const op of RETIRED_T53.filter((o) => o.startsWith("project"))) assert.ok(inNoTable(op), `${op} is declared`);
+  assert.equal(RETIRED_T53.filter((o) => o.startsWith("project")).length, 7);
   /* every act is mutating and stamped by; every read is not mutating and stamped viewer alone */
   for (const op of Object.keys(R41)) assert.equal(stamps(op).includes("by"), OPS[op].mutating, op);
   /* negative controls */
-  assert.notDeepEqual(plain({ ...OPS.projectkeyset, machineClasses: undefined }), KIND.own.spec);
+  assert.notDeepEqual(plain({ ...OPS.aiaccountadd, machineClasses: undefined }), KIND.own.spec);
   assert.notDeepEqual(plain({ ...OPS.ailimits, mutating: true }), KIND.ownread.spec);
 });
 
@@ -174,8 +181,10 @@ test("R41, R4, R6: each R41 op is served by its owner's map (ai-accounts', ai-us
     assert.ok(await reaches(MAP[fam], op, { query: { [st]: SENT } }), `${op}: ${st} does not reach`);
     assert.equal(await reaches(MAP[fam], op, { query: { nosuchstamp: SENT } }), false, `${op}: any key reaches`);
   }
-  assert.ok(await reaches(aiAccountsOps, "projectkeyset", { body: { key: SENT } }));
-  assert.equal(await reaches(aiAccountsOps, "projectkeyset", { query: { key: SENT } }), false, "the query's key reaches");
+  /* a project's secret is the body's alone (T53: aiaccountadd's `secret`, ai-accounts R40) */
+  assert.ok(await reaches(aiAccountsOps, "aiaccountadd", { body: { owner: "project:p1", secret: SENT } }));
+  assert.equal(await reaches(aiAccountsOps, "aiaccountadd", { query: { secret: SENT } }), false, "the query's secret reaches");
+  for (const op of RETIRED_T53) assert.ok(!keysOf(aiAccountsOps).includes(op), `${op} is served`);
   /* a body copy of by is not the actor (ai-accounts spreads the body, then the stamp) */
   assert.equal((await drive(aiAccountsOps, "accountusesset", { body: { by: SENT }, query: { by: "member:real" } })).includes(SENT), false);
   const mine = await drive(aiUseOps, "aiusage", { query: { viewer: SENT } });
@@ -311,7 +320,9 @@ test("R46 (K2457, K2443, K2554): recordcapturedlocator is a store-internal route
 test("R34 (T41; K2593): every member op T41 declares is explained in affordances' ACT_HELP or named under one ground of ACT_HELP_ABSENT, never both — R41's and R42's ten owed acts explained (affordances R48, merged: PR #19's owed texts held under their ops), the other reads under the read ground, the other acts under the last; handlecheck, public, under none (negative control: an unnamed op is seen)", () => {
   const ground = (op) => Object.entries(ACT_HELP_ABSENT).find(([, g]) => g.ops.includes(op))?.[0] ?? null;
     const OWED = ["accountusesset", "ailimitset", "exploreapprove", "handlechange", "projectaccountremove", "projectaccountswitch",
-                "projectaikeepaway", "projectkeynoticeseen", "projectkeyset", "projectsigninset"];
+                "projectaikeepaway", "projectkeynoticeseen", "projectkeyset", "projectsigninset"]
+    /* T53: the retired project-account acts have no spec and are no member op (ai-accounts R35) */
+    .filter((op) => !RETIRED_T53.includes(op));
   for (const op of OWED) {
     assert.ok(explained(op), `${op}: no ACT_HELP text`);
     assert.equal(ground(op), null, `${op} is explained and named`);
