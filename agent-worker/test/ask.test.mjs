@@ -7,7 +7,7 @@
  * `AI_GRANT_OPS` (its R28), equal since N580 (K1603, K1609), `rule` included. */
 import { readFileSync } from "node:fs";
 import worker from "../src/index.mjs";
-import { ASK_OPS, ASK_PLANE_OPS, PLANE_OPS } from "../src/ops.mjs";
+import { ASK_OPS, ASK_PLANE_OPS, PLANE_OPS, GRANT_ONLY_OPS } from "../src/ops.mjs";
 import { AI_GRANT_OPS } from "../../bio-plane/src/credentials/index.mjs";
 import { ASK_SCOPE } from "../../bio-plane/src/answers/scope.mjs";
 import { ASK_BOUNDS } from "../../bio-plane/src/run-rules/index.mjs";
@@ -196,12 +196,17 @@ section("R54 · interpret, read through the grant, compose, check, and return on
   const requests = (tool) => r.model.filter((c) => (c.body.tools || []).some((x) => x.name === tool)).length;
   /* agent-model R13 (T40; K2376): on the API-key path its usage adds the copy's estimate beside the five figures. */
   const FIGURES = [...USAGE_FIGURES, ESTIMATE];
-  t("R54 (N588): each conversation's usage is reported for mode ask, with its model, its figures (agent-model R13's "
+  t("R54 (N588): each conversation's usage is reported for mode ask, with its figures (agent-model R13's "
     + "estimate on the API-key path included) and its calls exactly as agent-model R6 answers them (one per model call "
     + "that reached the provider)",
-    usage.map((u) => [u.mode, u.model, Object.keys(u.usage), u.calls]),
-    [["ask", MODEL_FOR_MODE.ask, FIGURES, requests("done_reading")],
-     ["ask", MODEL_FOR_MODE.ask, FIGURES, requests("answer")]]);
+    usage.map((u) => [u.mode, Object.keys(u.usage), u.calls]),
+    [["ask", FIGURES, requests("done_reading")],
+     ["ask", FIGURES, requests("answer")]]);
+  /* R112 (T53; BR22): each report is `{mode, entry_id, label, usage, calls}`, `entry_id` and `label` as `agent-model`
+     answered them (null where it stated none, never invented), and never a model filled in here. */
+  t("R112 (T53): each ask usage report is exactly {mode, entry_id, label, usage, calls}, naming no model, its entry and label null where agent-model stated none",
+    usage.map((u) => [Object.keys(u).join(","), u.entry_id, u.label]),
+    usage.map(() => ["mode,entry_id,label,usage,calls", null, null]));
   t("R54: the turns ran through agent-model under the member's own reference, mode ask's model",
     [[...new Set(r.model.map((c) => c.url))], [...new Set(r.model.map((c) => c.key))], [...new Set(r.model.map((c) => c.body.model))]],
     [[MODEL_ENDPOINT], [SECRET], [MODEL_FOR_MODE.ask]]);
@@ -244,8 +249,8 @@ section("R55 · the ask's whole reach is ASK_OPS, equal to answers' ASK_SCOPE an
 {
   const scope = ASK_SCOPE.map((e) => e.op);
   t("R55: ASK_OPS equals answers' ASK_SCOPE, both ways", [ASK_OPS.filter((o) => !scope.includes(o)), scope.filter((o) => !ASK_OPS.includes(o))], [[], []]);
-  t("R55: and credentials' AI_GRANT_OPS, both ways, `rule` included (N580; K1603, K1609)",
-    [ASK_OPS.filter((o) => !AI_GRANT_OPS.includes(o)), AI_GRANT_OPS.filter((o) => !ASK_OPS.includes(o))], [[], []]);
+  t("R55: and credentials' AI_GRANT_OPS less GRANT_ONLY_OPS (answers:103), both ways, `rule` included (N580; K1603, K1609)",
+    [ASK_OPS.filter((o) => !AI_GRANT_OPS.includes(o)), AI_GRANT_OPS.filter((o) => !ASK_OPS.includes(o) && !GRANT_ONLY_OPS.includes(o))], [[], []]);
   t("R55: never a sources op, member history, an administrative op, an export, or a write",
     ASK_OPS.filter((o) => /^sources|history|admin|export|purge|suggest|tick|close|propose|capture|set$/.test(o)), []);
   t("R55, R37: an ask's reach is not PLANE_OPS: the run's ops are unchanged, and no write of a run is an ask's op",
@@ -297,9 +302,9 @@ section("R58, R36 · a run's model half: turns through agent-model, usage report
   const ticks = r.plane.filter((x) => x.op === "airuntick" && x.body?.log !== undefined && x.body?.consume !== undefined);
   const entries = ticks.flatMap((x) => x.body?.usage || []);
   t("R26, R58 (N588; ai-runs R48): each tick carries the usage of the conversations since the last, each exactly "
-    + "{mode, model, usage, calls}",
+    + "{mode, entry_id, label, usage, calls} (R112 as T53 amends it)",
     [entries.length > 0, [...new Set(entries.map((e) => Object.keys(e).join(",")))], [...new Set(entries.map((e) => e.mode))]],
-    [true, ["mode,model,effort,usage,calls"], ["check"]]);
+    [true, ["mode,entry_id,label,usage,calls"], ["check"]]);
   t("R26 (N588): `calls` is agent-model R6's, so the calls summed over every entry are the model calls that reached the "
     + "provider (each API-key request one), never a conversation counted as one",
     entries.reduce((n, e) => n + (Number.isInteger(e.calls) ? e.calls : NaN), 0), r.model.length);
