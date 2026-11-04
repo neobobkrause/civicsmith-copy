@@ -1,0 +1,1 @@
+{"row":"answered","user":"case-disclosures","by":"triage","evidence":"bio-plane/src/case-disclosures/index.mjs:768 (and :755) uses only sourceStatement/unnamedSourceStatement (imported at :71); nothing calls commitCaseEdition or caseEditionState or reads the passage columns","at":"2026-11-04T12:51:59.155Z","key":"publication:229","worker":"a4ad1be6e5467b79c","cost":"0.25"}
