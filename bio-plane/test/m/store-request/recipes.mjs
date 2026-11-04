@@ -89,7 +89,7 @@ export async function noticeSeen(as) {
 export async function openRun(world, as, projectId) {
   const run = `RUN-${instant(world).slice(0, 4)}-${String(counter(world, "__runs")).padStart(4, "0")}-world`;
   const opened = await as.act("airunopen", { body: { run, contextType: "project", contextId: projectId, skillVersion: "contradiction@1",
-    principalClaude: `member:${as.member}`, mode: "check" } });
+    principalAi: `member:${as.member}`, mode: "check" } });
   if (!opened || opened.started !== true) throw new Error(`storeWorld: airunopen was refused: ${JSON.stringify(opened).slice(0, 400)}`);
   return run;
 }
