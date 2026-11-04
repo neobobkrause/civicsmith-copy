@@ -20,6 +20,11 @@ import { AI_CATALOGUE_SCHEMA, AI_CATALOGUE_TABLES, AI_CATALOGUE_DECLARATIONS } f
 import { validatePayload, isObj, isOpen, isInstant, isDate, TOKEN_RE, CHECK_IDS, SHOWN_IDS, ENTRY_ID_MAX, DISPLAY_NAME_MAX,
   EFFORT_WORD_MAX, GRADES, LIFECYCLE, VERDICTS, LIMIT_KINDS } from "./validate.mjs";
 import { ADVISORY_KINDS, ADVISORY_REASONS, MOVES, legalMove, badMove, effectiveState } from "./lifecycle.mjs";
+import { RELEASE_SEED, SEED_PAYLOAD, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_MARK, isDevelopmentKey,
+  catalogueKeysFor, seedOf } from "./seed.mjs";
+
+export { RELEASE_SEED, SEED_PAYLOAD, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_MARK, isDevelopmentKey,
+  catalogueKeysFor, seedOf };
 
 export { validatePayload, CATALOGUE_CHECKS, CATALOGUE_STATES, STATE_WORDS, AI_CATALOGUE_TABLES, AI_CATALOGUE_DECLARATIONS,
   ADVISORY_KINDS, ADVISORY_REASONS, MOVES, CHECK_IDS, SHOWN_IDS, ENTRY_ID_MAX, DISPLAY_NAME_MAX, EFFORT_WORD_MAX, GRADES,
@@ -94,7 +99,7 @@ export function pullRequest(kind, path) {
 /* ------------------------------------------------------------------ the catalogue */
 
 export class AiCatalogue {
-  #sql; #core; #env; #clock; #keys; #supported;
+  #sql; #core; #env; #clock; #keys; #supported; #seed;
   #held = new Map();        /* seq → a held, verified payload: its statement, source, text and parsed document */
   #advisories = [];         /* verified advisories, by seq */
   #rollbacks = [];          /* rollback and unrollback rows, in order */
@@ -103,12 +108,15 @@ export class AiCatalogue {
   #pending = null;          /* R35: the index's catalogue line, until its payload is received */
   #view = null;             /* the applied fold, rebuilt after every write */
 
-  constructor({ sql, core = null, env = {}, clock = null, keys = CATALOGUE_KEYS, supported = SCHEMA_VERSIONS_READ } = {}) {
+  constructor({ sql, core = null, env = {}, clock = null, keys = CATALOGUE_KEYS, supported = SCHEMA_VERSIONS_READ,
+    seed = RELEASE_SEED } = {}) {
     this.#sql = sql;
     this.#core = core;
     this.#env = env || {};
     this.#clock = typeof clock === "function" ? clock : () => Date.now();
-    this.#keys = keys;
+    /* the keys this build trusts: development lines only where the deployment says it is one (seed.mjs) */
+    this.#keys = catalogueKeysFor(keys, this.#env);
+    this.#seed = seed;
     this.#supported = Object.freeze([...supported]);
     this.ready = null;
   }
@@ -172,6 +180,7 @@ export class AiCatalogue {
     this.#rollbacks = this.#rows(`SELECT act, from_seq, to_seq, by, reason, at FROM ai_catalogue_rollbacks ORDER BY n`);
     this.#checks = this.#rows(`SELECT at, trigger, kind, outcome, seq FROM ai_catalogue_checks ORDER BY n`);
     this.#view = null;
+    this.seedAtStart = await this.#loadReleaseSeed();
     return true;
   }
 
@@ -397,6 +406,22 @@ export class AiCatalogue {
   async loadSeed({ statement, armored, body, at } = {}) {
     const r = await this.#acceptPayload(statement, armored, body, "seed", this.#now(at));
     return out(r);
+  }
+
+  /* R39: the release's seed, loaded at every start and verified as a pulled payload is. Its signature is the
+     deployment's variable (a development deploy's) or the one the release carries (Bob's); with neither, nothing is
+     loaded and the copy offers nothing until a payload is pulled. A seed already held answers `none` and writes nothing;
+     one older than a held payload answers `NOT_NEWER`; a bad signature is refused and changes nothing. */
+  async #loadReleaseSeed() {
+    const seed = this.#seed;
+    if (!isObj(seed) || !isObj(seed.statement) || typeof seed.body !== "string") return null;
+    const fromEnv = this.#env[SEED_SIGNATURE_VAR];
+    const armored = typeof fromEnv === "string" && fromEnv.trim() ? fromEnv : seed.armored;
+    if (typeof armored !== "string" || !armored.trim()) return null;
+    try {
+      const r = await this.#acceptPayload(seed.statement, armored, seed.body, "seed", this.#now());
+      return out(r.ok ? { ok: true, outcome: r.outcome, seq: r.seq } : { ok: false, code: r.code });
+    } catch { return out({ ok: false, code: "CATALOGUE_PAYLOAD_INVALID" }); }
   }
 
   /** R35: the only way a pulled byte becomes state. `kind` is `index` or `payload`; `status` the HTTP status; `body` the
@@ -734,12 +759,12 @@ export class AiCatalogue {
 /* K61: the one AiCatalogue of a Durable Object's storage, made on first use over its `sql`, reaching record-core by
    `recordOf(ctx)`, migrated and started once (`ready`). The options are read on the first call only. */
 const OF = new WeakMap();
-export function aiCatalogueOf(ctx, { record = null, env = {}, clock = null, keys, supported } = {}) {
+export function aiCatalogueOf(ctx, { record = null, env = {}, clock = null, keys, supported, seed } = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let c = OF.get(storage);
   if (!c) {
     c = new AiCatalogue({ sql: storage.sql, core: record ?? recordOf(ctx), env, clock,
-      ...(keys ? { keys } : {}), ...(supported ? { supported } : {}) });
+      ...(keys ? { keys } : {}), ...(supported ? { supported } : {}), ...(seed !== undefined ? { seed } : {}) });
     OF.set(storage, c);
     c.migrate();
     c.ready = c.start();
