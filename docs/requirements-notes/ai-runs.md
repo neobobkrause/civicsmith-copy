@@ -1,0 +1,27 @@
+# ai-runs — requirements notes
+
+Text moved out of `build/requirements/ai-runs.md` to bring that file under the requirements cap (70,000 bytes), unchanged in wording (job ai-runs, T53). No requirement lives here: every **R<n>** line and its mark stays in the requirements file. `bio-plane/test/m/ai-runs/requirements-ids.test.mjs` asserts the move changed no id and no mark.
+
+## Change history (the requirements file's former Status line)
+
+**Status** · In force: approved by Bob 2026-09-26 (K102), as split that day (K82: `op=suggest` and the EXTRACT proposals to `run-productions`, the bias debt to `bias`). Split again for size (K617, K649 (1)): R1–R8 and R44 retired here, moved to `run-rules`. Last changed T35 (T35-44: R48, R52 amended; R54 new); every requirement met (K1990). Last changed T40 (T40-8: R48–R51 retired, moved to `ai-use` R1–R4; R52, R53 amended; R72 new; N812; K2373, K2394); those marked not yet met (T40), now T41. Last changed T41 (T41-23: R73–R76 new, the explorer's runs, batches, the test bar and a run's actual cost, as `draft-T41-investigation.md` §3.6; K2405, K2418), not yet met. Last changed T46 (T46-14: R78 new, `testInstance()` and `partAdmitted`, the test-instance exception as the one gate, its label answered by R10, R19 and R28; R18 amended, a member's own run on her own sign-in dispatched for her only at her act (Bob's, K2892); N897 (2), K2816, N919); marked not yet met (T46). Last changed T47 (T47-20: R18 amended, a member's run dispatched at her act under the segment credential `credentials` R63 mints, T46's page-held one-day credential retired, so a reloaded dock continues the run; R14 amended, the run's segment credentials ended with it; N955, K2976, K2999, K3027, K3030; R40 re-worded, its "(today only check)"; N949); marked not yet met (T47). Last changed T48 (T48-30: `groupKeySwitches`, `accountUses`, `accountReferenceState`, `groupKeyState` and `accountFor` read from `ai-accounts`, `credentials` kept for `aiRunCredentialMint`, `aiRunCredentialsEnd` and `aiCredentialLook`, its tests following; R18, R52 and R79's citations re-pointed, meaning unchanged; N996 §5; K3195): no requirement's meaning changed, so none is marked. Last changed T50 (T50-13: R87–R89; K3637); marked not yet met (T50).
+
+## Size
+
+**Size (P6).** About 3,490 lines at T45 (K2826): `index.mjs` and `schema.mjs`. Under the 4,000 mark. A job reads it whole with its uses' public parts.
+
+## R79's former notes (R79 is retired; its line stays in the requirements file)
+
+  - This replaces the T38 sentence "no `secret` key at all" (`index.mjs`:2083, :3141).
+  - The secret stays where an API key's does: never logged, stored or answered.
+  - **Tests:**
+    - a sentinel token held for the payer reaches the stub agent-worker's `account.secret` and no record;
+    - control: an `apikey` account is unchanged.
+  -
+
+## Suggestions moved from the requirements file
+
+- **What stays out.** `op=suggest`, `op=extractpropose`, `op=extractproposals`, `proposed_readings`, `suggest_refusals` and C-27 are `run-productions`'. The bias debt and C-26.13–C-26.19 are `bias`'s (K82 (3)); its queue item (`#obligationsBiasDebt`) is `queue`'s. The migration replay's `surfaced_in` arm and C-66.5 are `inquiry`'s; C-66.6 (`REPLAY_UNVERIFIED`) is `control-plane`'s; `aiCredentialLook` is `credentials`', C-29 `membership`'s; `searchedSection` is `case-authoring`'s (N138).
+- **T46 (T46-14).** M-T46-3 at START: whether `CIVICSMITH_TEST_INSTANCE`, a `secret_text` binding, survives `deploy.mjs`' `keep_bindings` as the trial assumes; if not, the deploy's fix is `bundler`'s, and R78 is unchanged. M-T46-4 at START: whether `agent-worker`'s `/run` takes a member's sign-in principal through the runner; if not, its admission joins T46-19 (`agent-worker` R80) and R18's tests drive a stub binding until it merges. `partAdmitted` and `testInstance` are read by `question-explorer` (its R16), `instance-setup` (`bootstrap`'s `test_instance`) and `store-assembly` (R57, the transcriber); the door that calls `dispatchMemberRun` is `control-plane`'s (T46-59).
+- **T47 (T47-20).** `credentials` R63 (T47-9, L2) is the provider; `control-plane` R77 (T47-65), the plane's `dispatchMemberRun` RPC (T47-66) and `screens-inquiry` (T47-61) retire the page's credential in their own jobs, so the composed plane carries the change only when they merge. `agent-worker` R37's `PLANE_OPS` writes are `AI_RUN_WRITES`; whether the gate confines the minted credential to its run and writes is `admission`'s (its R10). The Tests line above still says an open in mode `plan` is refused by R40; since T46 `plan` is deployed (`run-rules` R14), so that arm reads the deployed flag.
+- **Tests.** Each refusal gets a negative control; R14 and R15 get the killed-run arm (a lapsed lease is reaped with its terminal entry); R18 the arm that counts calls at the binding; R23 the arm proving the search half has no lens field; R28 the arm proving an invisible run and an absent one answer alike. For K660: R46 each refusal in order with nothing written, `plan` stored and answered by `read` and `runFor`, and today an open in mode `plan` refused C-109.1 by R40 (control: an open in mode `check` with no `plan` still lands); R47 the registered check's refusal passed on unchanged, no check registered refused `AI_RUN_MODE_UNCHECKED`, a second registration `LISTENER_DECLARED` (control: a check answering null lets the open land).
