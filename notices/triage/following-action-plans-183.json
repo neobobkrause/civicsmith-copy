@@ -1,0 +1,1 @@
+{"row":"triage","user":"following","verdict":"not affected","evidence":"bio-plane/src/following/index.mjs:1106 uses only actionPlans.planRead (via actionPlansOf, line 50 import), not planAsk or the ai.open principal field that PR 183 changed","at":"2026-11-04T08:58:25.109Z","key":"action-plans:183","worker":"a430dafad76aa211e","cost":"0.2"}

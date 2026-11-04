@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-plan","verdict":"not affected","evidence":"build/modules.json:193 lists no paths (\"paths\": []) and no file imports action-plans, so nothing there uses planAsk's changed principalAi argument","at":"2026-11-04T08:58:25.109Z","key":"action-plans:183","worker":"a430dafad76aa211e","cost":"0.2"}

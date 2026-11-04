@@ -1,0 +1,1 @@
+{"row":"answered","user":"control-plane","by":"triage","evidence":"build/modules.json:195 lists paths bio-plane/src/control-plane/ and no file there imports action-plans, so it cannot use planAsk's ai.open principal field that PR 183 changed","at":"2026-11-04T08:58:25.109Z","key":"action-plans:183","worker":"a430dafad76aa211e","cost":"0.2"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-declarations","verdict":"not affected","evidence":"build/modules.json:171 lists paths bio-plane/src/op-declarations/ and no file there imports action-plans or names planAsk/principalClaude, so the changed ai.open argument is not used","at":"2026-11-04T08:58:25.109Z","key":"action-plans:183","worker":"a430dafad76aa211e","cost":"0.2"}

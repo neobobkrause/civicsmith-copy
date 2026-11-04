@@ -1,0 +1,1 @@
+{"row":"triage","user":"plane","verdict":"not affected","evidence":"build/modules.json:196 lists paths bio-plane/src/plane/, wrangler.jsonc, package.json, package-lock.json, .gitignore, .dev.vars.example, none of which import action-plans or reference planAsk/principalClaude","at":"2026-11-04T08:58:25.109Z","key":"action-plans:183","worker":"a430dafad76aa211e","cost":"0.2"}
