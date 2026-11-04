@@ -189,8 +189,9 @@ test("R37 (T47; K3143; signin-door R2, R4, R5): signin-door's store-internal map
   assert.equal(held.result.ok, true, JSON.stringify(held));
   assert.equal(JSON.stringify(held).includes(TOKEN), false, "the token is never answered");
   assert.equal(aiAccountsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).subscription.held, true);
+  /* signin-door R4 (fixed by its notice ai-accounts:124): a refused token is dropped through ai-accounts' issuedTokenRefused */
+  assert.equal((await via("signintokenrefused?by=ann")).result.dropped, true);
+  assert.equal(aiAccountsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).subscription.held, false);
   /* negative control */
   assert.equal(keys.includes("signinzz"), false);
 });
-
-test.todo("R37 (signin-door R4; ai-accounts R19): signintokenrefused drops the held token through the door. Owed by signin-door: its arm calls `subscriptionTokenRefused`, which ai-accounts' T53 seam does not carry (its R19 is `issuedTokenRefused({account_id})`), so the arm throws on either instance the assembly can hand it");
