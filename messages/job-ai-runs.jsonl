@@ -17,3 +17,4 @@
 {"at":"2026-11-04T10:24:26Z","row":"sent","n":10,"to":"bob","text":"job ai-runs complete, PR #213 ready: run status"}
 {"at":"2026-11-04T10:25:02Z","row":"outcome","n":10,"outcome":"delivered"}
 {"at":"2026-11-04T22:17:01Z","row":"sent","n":11,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job ai-runs complete, PR #323 ready, session session_01RAN5en8ryKt2xa7VntpqVq: run status"}
+{"at":"2026-11-04T22:17:12Z","row":"outcome","n":11,"outcome":"delivered"}
