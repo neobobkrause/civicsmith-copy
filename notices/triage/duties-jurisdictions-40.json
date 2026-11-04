@@ -1,0 +1,1 @@
+{"row":"triage","user":"duties","verdict":"not affected","evidence":"bio-plane/src/duties/index.mjs:50 imports combine, governingZone and nameResolve; no read of counterparties","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

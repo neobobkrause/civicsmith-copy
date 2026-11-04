@@ -1,0 +1,1 @@
+{"row":"triage","user":"lines","verdict":"not affected","evidence":"bio-plane/src/lines/index.mjs:23 imports only governingZone","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

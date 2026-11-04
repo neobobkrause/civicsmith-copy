@@ -1,0 +1,1 @@
+{"row":"triage","user":"installer","verdict":"not affected","evidence":"newgroup/src/ui.mjs:26 imports only list() (profile names and coverage); no read of counterparties","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

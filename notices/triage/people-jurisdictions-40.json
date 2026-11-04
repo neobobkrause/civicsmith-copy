@@ -1,0 +1,1 @@
+{"row":"triage","user":"people","verdict":"not affected","evidence":"bio-plane/src/people/index.mjs:29 imports combine; checks.mjs:102 \"counterparty\" is the module's own row-join term, not jurisdictions' counterparties","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

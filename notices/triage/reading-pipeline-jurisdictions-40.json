@@ -1,0 +1,1 @@
+{"row":"triage","user":"reading-pipeline","verdict":"not affected","evidence":"bio-plane/src/reading-pipeline/index.mjs:2716 takes a combined view as a parameter; no read of counterparties","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

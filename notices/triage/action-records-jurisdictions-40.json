@@ -1,0 +1,1 @@
+{"row":"triage","user":"action-records","verdict":"not affected","evidence":"bio-plane/src/action-records/index.mjs:42 takes LAW_LEVELS from action-grammar; no import of jurisdictions and no read of counterparties","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-action","by":"triage","evidence":"bio-plane/src/screens-action/action.mjs:57 reads records laws and rules; request.mjs:306 writes the action's own counterparty block; no read of the profile's counterparties","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"action-grammar","verdict":"not affected","evidence":"bio-plane/src/action-grammar/checks.mjs:47 imports only LAW_LEVELS; its counterparty code (checks.mjs:241-265, 561) reads the action's own front-matter block, never the profile's counterparties","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

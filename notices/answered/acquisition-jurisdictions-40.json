@@ -1,0 +1,1 @@
+{"row":"answered","user":"acquisition","by":"triage","evidence":"bio-plane/src/acquisition/index.mjs:50 imports only combine; no read of the view's counterparties anywhere in the module","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"filing-templates","verdict":"not affected","evidence":"bio-plane/src/filing-templates/blanks.mjs:13 counterparty_* are labels for the action's own addressee; index.mjs:38 never reads the profile's counterparties","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

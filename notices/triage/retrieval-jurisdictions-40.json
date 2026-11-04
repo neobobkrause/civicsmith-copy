@@ -1,0 +1,1 @@
+{"row":"triage","user":"retrieval","verdict":"not affected","evidence":"bio-plane/src/retrieval/index.mjs:27 imports combine; projection.mjs:18 action_counterparty_state is the action's own state, not the profile's counterparties","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

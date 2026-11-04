@@ -1,0 +1,1 @@
+{"row":"answered","user":"court-doctypes","by":"triage","evidence":"court-doctypes/courtlistener-api.mjs:14 only reads systems paths; \"counterpart\" in common.mjs:285 is a register-row pairing, not jurisdictions","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

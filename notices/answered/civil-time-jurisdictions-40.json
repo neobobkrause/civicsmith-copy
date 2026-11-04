@@ -1,0 +1,1 @@
+{"row":"answered","user":"civil-time","by":"triage","evidence":"bio-plane/src/civil-time/rules.mjs:111 looks up counterparties by role only to read hours. The federal entries have no hours, and none of their roles matches a local layer's role","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

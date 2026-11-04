@@ -1,0 +1,1 @@
+{"row":"answered","user":"action-producers","by":"triage","evidence":"bio-plane/src/action-producers/index.mjs:34 imports only governingZone; no read of counterparties","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"journey-check","verdict":"not affected","evidence":"bio-plane/src/journey-check/run.mjs:170 reads only the held profiles' display names","at":"2026-11-04T01:41:56.531Z","key":"jurisdictions:40","worker":"a078737c846ae63ad","cost":"1.5"}
