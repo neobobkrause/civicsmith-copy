@@ -308,3 +308,4 @@
 {"at":"2026-11-04T23:21:55Z","row":"sent","n":157,"to":"root","text":"root-38 answered: control-plane waits for the base-comparison pin move (coordinator); op-declarations waits on ai-runs PR 323 (BLOCK review, fixes in progress, re-review before merge), then adds aipathready; runtime-limits waits on M-R7, measured by BOB once p3dev-t1 walks. case-checker: archive accepted; it restarts on a fresh branch with its test change only once PR 338 (untrack program.mjs) merges. Started ai-catalogue attempt 7 (F1 guard line); merged PR 337 walk_reports."}
 {"at":"2026-11-04T23:22:04Z","row":"sent","n":158,"to":"root","text":"x"}
 {"at":"2026-11-04T23:22:08Z","row":"sent","n":159,"to":"root","text":"placeholder"}
+{"at":"2026-11-04T23:22:36Z","row":"outcome","n":157,"outcome":"delivered"}
