@@ -660,7 +660,7 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, ca
   const instanceSetup = instanceSetupOf(ctx, env, { queueProducers, now: () => nowMs(null), ...(releaseKeys ? { releaseKeys } : {}) });   /* K5171: the instance clock, handed, not read from the env */
   /* R44 (T47; N981; K3030; credentials R64, instance-setup R54): instance-setup's disclosure read registered with
      credentials once, on this object's own instances, on instance-setup's behalf (credentials is earlier in the order
-     and cannot reach it), so `disclosureDue` is asked in the assembled plane: `accountreferenceset` and a sign-in's
+     and cannot reach it), so `disclosureDue` is asked in the assembled plane: a member's own account act (`aiownadd`; T53, op-declarations PR 95) and a sign-in's
      `start` are refused DISCLOSURE_DUE while no disclosure is recorded for the member. */
   /* R53 (T48; ai-accounts R23): the registration is ai-accounts', not credentials' delegate */
   aiAccountsOf(ctx).registerDisclosureRead(DISCLOSURE_READER, disclosureReadOf(instanceSetup));   /* instance-setup R54 */
