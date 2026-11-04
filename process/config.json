@@ -61,6 +61,21 @@
     },
     {
       "paths": [
+        "docs/development/ux-substrate/screens/words-reads.json"
+      ],
+      "regenerate": [
+        "node",
+        "docs/development/ux-substrate/screens/words-reads.src.mjs",
+        "."
+      ],
+      "verify": [
+        "node",
+        "docs/development/ux-substrate/screens/words-reads.src.mjs",
+        "."
+      ]
+    },
+    {
+      "paths": [
         "bio-plane/dist/bio-plane.bundle.json",
         "bio-plane/dist/bio-plane.bundled.mjs",
         "pdf-worker/dist/pdf-worker.bundle.json",

@@ -3277,6 +3277,7 @@
    "file-safety.scanners_report_file",
    "file-safety.start_program",
    "refusal.ADDRESS_WOULD_LEAVE",
+   "refusal.BYTES_CHANGED",
    "refusal.CONFIG_MISSING",
    "refusal.CONFIG_UNKNOWN",
    "refusal.CREDENTIALS_MISSING",
