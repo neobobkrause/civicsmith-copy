@@ -1,0 +1,1 @@
+{"row":"triage","user":"answer-envelope","verdict":"not affected","evidence":"bio-plane/src/answer-envelope/families.mjs:29 imports only ai-catalogue/checks.mjs (CATALOGUE_CHECKS rows, :199); nothing runs dev-key.mjs","at":"2026-11-04T23:38:36.799Z","key":"ai-catalogue:336","worker":"read-only-explore-x3","cost":"0.45"}

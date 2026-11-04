@@ -1,0 +1,1 @@
+{"row":"answered","user":"ai-use","by":"triage","evidence":"bio-plane/src/ai-use/index.mjs:24 imports only aiCatalogueOf (called :135); nothing under bio-plane/src/ai-use/ imports or runs dev-key.mjs or GUARD_LINE","at":"2026-11-04T23:38:36.799Z","key":"ai-catalogue:336","worker":"read-only-explore-x3","cost":"0.45"}
