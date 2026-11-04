@@ -1,4 +1,4 @@
-/* mail-door's tables (R1, R3, R8, R9). `MailDoor#migrate` runs this DDL at the instance's creation, idempotently. No
+/* mail-door's tables (R1, R3, R8, R9, R15). `MailDoor#migrate` runs this DDL at the instance's creation, idempotently. No
  * table holds a clear address: a member's private address is kept as its keyed digest and the salt its local part is
  * derived from under the instance key (R1), and no member's own email address is a column anywhere (K5505, K5527 (1)).
  * SQL comments are `--` lines, dropped before the statements run. */
@@ -48,6 +48,18 @@ CREATE TABLE IF NOT EXISTS mail_tally (
   size_or_rate INTEGER NOT NULL DEFAULT 0
 );
 
+-- R15: the clearing's owners kept as counts until notice-producers has read them: per owner per clearing, the count, the
+-- received instants and when it was cleared, nothing else (no sender, subject, header, text or address). Dropped 30 days on.
+CREATE TABLE IF NOT EXISTS mail_cleared (
+  seq            INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner          TEXT NOT NULL,
+  count          INTEGER NOT NULL,
+  received_dates TEXT NOT NULL,
+  cleared_at     TEXT NOT NULL,
+  cleared_ms     INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mail_cleared_at ON mail_cleared(cleared_ms, seq);
+
 -- R1, R8: the instance key the address digests are taken under when the operator binds none (MAIL_ADDRESS_KEY). One row,
 -- generated at first use, answered by no op.
 CREATE TABLE IF NOT EXISTS mail_key (
@@ -57,5 +69,5 @@ CREATE TABLE IF NOT EXISTS mail_key (
 )`;
 
 /* R6 removes waiting rows itself; the whole-store purge clears none of these: operational facts about the instance's
-   door (an address, a waiting message held outside the record, a rate, a tally, a key), not corpus-derived. */
-export const MAIL_DOOR_EXEMPT_TABLES = Object.freeze(["mail_address", "mail_waiting", "mail_rate", "mail_tally", "mail_key"]);
+   door (an address, a waiting message held outside the record, a rate, a tally, a clearing's counts, a key), not corpus-derived. */
+export const MAIL_DOOR_EXEMPT_TABLES = Object.freeze(["mail_address", "mail_waiting", "mail_rate", "mail_tally", "mail_cleared", "mail_key"]);
