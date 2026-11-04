@@ -226,7 +226,7 @@ test("p3dev walk setup: claims, invites and joins against a copy, writes the cre
   const fetchOf = async (url, init) => {
     const name = new URL(url).searchParams.get("op");
     calls.push({ name, body: JSON.parse(init.body), auth: init.headers.authorization || null });
-    return new Response(JSON.stringify(answers[name]), { status: 200 });
+    return new Response(JSON.stringify({ ok: true, result: answers[name] }), { status: 200 });   /* the door relays (R46) */
   };
   const logged = [];
   const out = await claimAndJoin({ address: "https://p3dev-l1.sub.workers.dev/", creds: { ...c, P3DEV_STAGE: "bootstrap" },
@@ -252,6 +252,38 @@ test("p3dev walk setup: claims, invites and joins against a copy, writes the cre
   await assert.rejects(claimAndJoin({ address: "https://x", creds: { ...c, P3DEV_STAGE: "bootstrap" }, save: () => {}, fetchOf: refusing, log: () => {}, wait: async () => {} }),
     (e) => e.code === "CLAIM_FAILED" && /BOOTSTRAP_CREDENTIAL_MISMATCH/.test(e.message) && !e.message.includes(c.JOURNEY_ADMIN_PASSWORD));
   rm(dir);
+});
+
+/* R46: the door relays every answer as {ok: true, result}; the walk setup reads the store's own answer inside it. */
+test("R46 p3dev walk setup: op() reads the store's answer inside the door's {ok:true,result}, its token from there and a refusal by its inner code", async () => {
+  const { op, claimAndJoin, credentials } = await import("../../../scripts/p3dev-walk-setup.mjs");
+  const door = (result) => async () => new Response(JSON.stringify({ ok: true, result }), { status: 200 });
+  const yes = await op(door({ ok: true, token: "sess-1" }), "https://x/", "login", {});
+  assert.equal(yes.status, 200);
+  assert.equal(yes.j.ok, true);
+  assert.equal(yes.j.token, "sess-1", "the token is the store's, from inside result");
+  const no = await op(door({ ok: false, code: "BOOTSTRAP_CREDENTIAL_MISMATCH" }), "https://x/", "claim", {});
+  assert.notEqual(no.j.ok, true, "a store refusal inside an outer ok:true is not success");
+  assert.equal(no.j.code, "BOOTSTRAP_CREDENTIAL_MISMATCH");
+  const c = credentials();
+  const quiet = { save: () => {}, log: () => {}, wait: async () => {} };
+  /* a claim the store refused, at HTTP 200 inside ok:true, stops naming the inner code */
+  await assert.rejects(claimAndJoin({ address: "https://x", creds: { ...c, P3DEV_STAGE: "bootstrap" }, fetchOf: door({ ok: false, code: "BOOTSTRAP_CREDENTIAL_MISMATCH" }), ...quiet }),
+    (e) => e.code === "CLAIM_FAILED" && /HTTP 200 BOOTSTRAP_CREDENTIAL_MISMATCH/.test(e.message));
+  /* a founder's sign-in the store answered ok, inside the envelope, succeeds with its token */
+  const seen = [];
+  const relay = async (url, init) => {
+    const name = new URL(url).searchParams.get("op");
+    seen.push({ name, auth: init.headers.authorization || null });
+    const result = name === "login" ? { ok: true, token: "sess-2" } : name === "memberadd" ? { ok: true, invite: "inv" } : { ok: true };
+    return new Response(JSON.stringify({ ok: true, result }), { status: 200 });
+  };
+  const out = await claimAndJoin({ address: "https://x", creds: { ...c, P3DEV_STAGE: "claimed" }, fetchOf: relay, ...quiet });
+  assert.equal(out.P3DEV_STAGE, "joined");
+  assert.equal(seen.find((x) => x.name === "memberadd").auth, "Bearer sess-2");
+  /* a sign-in the store refused inside ok:true is LOGIN_FAILED with its inner code */
+  await assert.rejects(claimAndJoin({ address: "https://x", creds: { ...c, P3DEV_STAGE: "joined" }, fetchOf: door({ ok: false, code: "LOGIN_REFUSED" }), ...quiet }),
+    (e) => e.code === "LOGIN_FAILED" && /LOGIN_REFUSED/.test(e.message));
 });
 
 test("p3dev: a container member's test deploy names its application by the slug and deploys the Docker Hub image by digest, pushing nothing", async () => {
