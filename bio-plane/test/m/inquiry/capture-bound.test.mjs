@@ -58,7 +58,7 @@ test("R6 the write: a capture grade above the fidelity bound is refused by name,
   const above = legOn(w, OCR_C, EARNED_CAPTURE_CEILING);
   assert.equal(above.ok, false); assert.equal(above.reason, "BASIS_REFUSED");
   assert.deepEqual(checks(above), ["C-2.8"]);
-  assert.ok(details(above).some((d) => /STRONGER than the C/.test(d)), details(above).join(" | "));
+  assert.ok(details(above).some((d) => /stronger than the C the record can earn/.test(d)), details(above).join(" | "));
   assert.ok(details(above).some((d) => /derivation is measured at C/.test(d)));
   assert.ok(details(above).some((d) => /weakest link of byte provenance and transcription fidelity/.test(d)));
   const at = legOn(w, OCR_C, "C");

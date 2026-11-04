@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { open, all, texts, WORDS, SCREENS, SCREEN_WORDS, word, hasWord, sentence, unescape, squash, used, scenes, team, act, worldOf } from "./kit.mjs";
 import { OPS } from "../../../src/op-declarations/index.mjs";
+import { currentAct } from "../../../src/wizard-scripts/data.mjs";
 
 const REGISTRY = JSON.parse(fs.readFileSync(new URL("../../../../docs/development/ux-substrate/screens/registry.json", import.meta.url), "utf8"));
 const REG = (REGISTRY.screens || REGISTRY);
@@ -124,7 +125,8 @@ test("R11 each screen is drawn at its address with or without a session record; 
 });
 
 /* a registry act's op: an owed one is spelled `owed:<op> <ruling>` (registry.json, K3265) */
-const opOf = (x) => String(x.op).replace(/^owed:/, "").split(/\s/)[0];
+/* T53 (wizard-scripts' RETIRED_ACTS, op-declarations PR 95): a retired op is read as the op that does its act now */
+const opOf = (x) => currentAct(String(x.op).replace(/^owed:/, "").split(/\s/)[0]);
 
 test("R9 the contract: six screens, each a registry screen in its frame; every act names an op OPS holds and the registry lists for it (an owed act by its op)", () => {
   assert.deepEqual(SCREENS.map((s) => s.id), ["front", "tour", "forgot", "reset", "setup", "join"]);
@@ -141,7 +143,7 @@ test("R9 the contract: six screens, each a registry screen in its frame; every a
     }
     // every registry act of the screen is drawn by it (R1–R7), but join's memberlanguageset, sent once the member's
     // session exists (R7), since no act but a public one is drawn before it
-    for (const x of reg.acts) assert.ok(s.acts.some((a) => a.op === opOf(x)) || (s.id === "join" && x.op === "memberlanguageset"), `${s.id}: the registry's ${x.op} is not drawn`);
+    for (const x of reg.acts) assert.ok(opOf(x) === null || s.acts.some((a) => a.op === opOf(x)) || (s.id === "join" && x.op === "memberlanguageset"), `${s.id}: the registry's ${x.op} is not drawn`);
   }
 });
 

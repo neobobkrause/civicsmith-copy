@@ -2065,7 +2065,7 @@ export class ActionPlans {
     const who = str(author);
     const run = `RUN-${hex8()}${hex8()}`;
     const opening = ai.open({ run, contextType: "project", contextId: p.project, mode: "plan", plan: p.id,
-      label: localize("action-plans.label.asking_assistant_options", "asking the assistant for options on a plan"), principalPlane: who, principalClaude: who, skillVersion: ASK_SKILL,
+      label: localize("action-plans.label.asking_assistant_options", "asking the assistant for options on a plan"), principalPlane: who, principalAi: who, skillVersion: ASK_SKILL,
       bounds: ASK_BOUNDS.map((b) => ({ ...b })), actor: who, viewer: who });
     this.#asking.set(p.id, Promise.resolve(opening).then((r) => (r && r.started === true && r.ok !== false ? run : null), () => null));
     let r;
