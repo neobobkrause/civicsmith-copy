@@ -12,7 +12,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { word } from "../bio-plane/src/setup-words/index.mjs";
 
-export const SITE_COMMIT = "2a64c5ae77";
+export const SITE_COMMIT = "1b6f2bc383";
 const ROOT = new URL("../", import.meta.url);
 const SCREENS = "docs/development/ux-substrate/screens/";
 const OUT = new URL("src/pages.mjs", import.meta.url);
@@ -31,7 +31,7 @@ export const KEYS = Object.freeze({
   "screen.site.member.head": [], "screen.site.member.where": [],
   "screen.site.questions.head": [], "screen.site.questions.write": ["address"], "screen.site.questions.unset": [],
   "screen.site.start.lede": [], "screen.site.fit.head": [], "screen.site.fit.what": [],
-  "screen.site.need.head": [], "screen.site.need.cloudflare": [], "screen.site.need.time": [], "screen.site.need.nothing": [],
+  "screen.site.need.head": [], "screen.site.need.cloudflare": [], "screen.site.need.time": [], "screen.site.need.nothing": [], "screen.site.start.noaccount": [],
   "screen.site.hold.head": [], "screen.site.hold.what": [],
   "screen.site.steps.head": [], "screen.site.steps.name": ["places"], "screen.site.steps.name.noplace": [], "screen.site.steps.permission": [], "screen.site.steps.install": [],
   "screen.site.steps.claim": [], "screen.site.steps.setup": [], "screen.site.steps.invite": [],
