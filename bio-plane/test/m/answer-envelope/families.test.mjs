@@ -543,11 +543,11 @@ test("R11 (T42; N843, K238, K2566, K2651, K2656; R7, R10): N843's re-codings dec
   assert.equal(holders(withIntruder, "NO_SUCH_STEP_PROPOSAL")[0][2].check, "C-0.1");
 });
 
-/* R12's rows (N851): the nine codes doorbell's family holds, `[family, code, check]`. */
+/* R12's rows (N851): the codes doorbell's family holds (nine at T43; C-85.6 since T53, doorbell R31), `[family, code, check]`. */
 const DOORBELL_ROWS = [
   ["KNOCK_CHECKS", "RATE_IP", "C-85.1"], ["KNOCK_CHECKS", "RATE_GLOBAL", "C-85.2"],
   ["KNOCK_CHECKS", "KNOCK_ENVELOPE_TOO_LARGE", "C-85.3"], ["KNOCK_CHECKS", "KNOCK_PAYLOAD_TOO_LARGE", "C-85.4"],
-  ["KNOCK_CHECKS", "KNOCK_EMPTY", "C-85.5"],
+  ["KNOCK_CHECKS", "KNOCK_EMPTY", "C-85.5"], ["KNOCK_CHECKS", "KNOCK_BYTES_CHANGED", "C-85.6"],
   ["DOORBELL_CHECKS", "NO_SUCH_KNOCK", "C-118.2"], ["DOORBELL_CHECKS", "KNOCKER_SECRET_WEAK", "C-118.3"],
   ["DOORBELL_CHECKS", "KNOCK_DISCARDED", "C-118.4"], ["DOORBELL_CHECKS", "RESOLVE_NO_REASON", "C-118.7"],
 ];
@@ -555,6 +555,9 @@ const DOORBELL_ROWS = [
 /* C-118.7 `RESOLVE_NO_REASON` (DEC-88) came after the snapshot: its check and the digest of the translation capture's
    table held for it on `main` at T43's opening (0b28d3b32d), which doorbell's row keeps. */
 const AFTER_SNAPSHOT = { RESOLVE_NO_REASON: ["C-118.7", "f109af9836597e65"] };
+/* C-85.6 `KNOCK_BYTES_CHANGED` (doorbell R31, T53; DEC-479, K5693) was minted after the snapshot and after T43's opening:
+   no earlier decoration to pin, so it is held to doorbell's own row alone. */
+const UNPINNED = new Set(["KNOCK_BYTES_CHANGED"]);
 
 test("R12, R7, R2 (T43; N851, K2609, K2697): CHECK_FAMILY_FILES lists doorbell's file (`DOORBELL_CHECKS`, `KNOCK_CHECKS`) directly after capture's and before file-safety's, its place in `build/modules.json`, so the catalogue is total again; C-85.1–C-85.5 and C-118.2, .3, .4, .7 are held by doorbell's family alone and each decorates with the code, check and translation R7 pins, read from doorbell's family; no other code moves (negative controls: the list without doorbell's file misses its two families and leaves the nine codes bare, and a code of capture's family still decorates from capture's)", async () => {
   const { createHash } = await import("node:crypto");
@@ -573,7 +576,7 @@ test("R12, R7, R2 (T43; N851, K2609, K2697): CHECK_FAMILY_FILES lists doorbell's
   assert.deepEqual(await unreached(M.CHECK_FAMILY_FILES), []);
   const DB = M.CHECK_FAMILY_FILES[paths.indexOf(path)][1];
   assert.equal(DB, await import(`../../../${path}`));
-  /* exactly the nine rows, in their two families */
+  /* exactly its rows, in their two families */
   const own = Object.entries(DB).filter(([k, v]) => isFamily(k, v)).flatMap(([k, v]) => Object.entries(v).map(([c, r]) => [k, c, r.check]));
   assert.deepEqual(own.map((x) => x.join(" ")).sort(), DOORBELL_ROWS.map((x) => x.join(" ")).sort());
   const holders = (files, code) => files.flatMap(([p, ns]) => Object.entries(ns).filter(([k, v]) => isFamily(k, v) && Object.hasOwn(v, code))
@@ -587,9 +590,9 @@ test("R12, R7, R2 (T43; N851, K2609, K2697): CHECK_FAMILY_FILES lists doorbell's
     /* R7's pin: the same check and translation the door decorated before (the snapshot's, or for C-118.7, minted after
        it under DEC-88, the row capture's table held at T43's opening) */
     const pin = SNAP.rows[code] ?? AFTER_SNAPSHOT[code];
-    assert.ok(pin, `${code} is pinned`);
+    assert.ok(pin || UNPINNED.has(code), `${code} is pinned`);
     assert.deepEqual(M.dec49Row(code), { check, translation: row.translation }, code);
-    assert.deepEqual([M.dec49Row(code).check, digest(M.dec49Row(code).translation)], pin, code);
+    if (pin) assert.deepEqual([M.dec49Row(code).check, digest(M.dec49Row(code).translation)], pin, code);
     /* and what the door puts on the wire */
     assert.deepEqual(M.dec49Attach({ ok: false, reason: code }), { ok: false, reason: code, code, check, translation: row.translation }, code);
   }
