@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-ask","by":"triage","evidence":"build/modules.json:177 gives store-ask empty paths and tests (no files yet), so no file imports signin-door or uses subscriptionDisconnect or RETIRED_DISCONNECT","at":"2026-11-04T08:58:08.488Z","key":"signin-door:168","worker":"ab36d8da1447b9bcc","cost":"0.2"}
