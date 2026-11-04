@@ -12,14 +12,14 @@ let GUIDE = null;
 for (const m of MODS) { const x = await import(`../../../src/${m}/index.mjs`); if (x.GUIDE) GUIDE = x.GUIDE; }
 
 /* the six, as the frame groups them: the team and the level, and the four that decide whether the assistant is reachable (R20) */
-const TEAM = ["groupidentity", "infolevel"], REACH_OPS = ["assistantstate", "accountreference", "subscriptionsignin", "groupkeystate"];
+const TEAM = ["groupidentity", "infolevel"], REACH_OPS = ["assistantstate", "aipathready"];
 const SIX = [...TEAM, ...REACH_OPS];
 const KEY = STORE_KEY + ":frame";
 /* a working screen with one read of its own (`heldcaptures`: not a frame read), registry id `held`, which the test answers when it likes */
 const held = { id: "held", words: [], reads: () => ({ h: { op: "heldcaptures", query: { limit: "5" } } }), acts: [],
   render: (cs, view) => cs.state("h", view, () => '<p id="seen">held</p>') };
 /* the plane when the assistant is reachable for the member: on, and her own reference held */
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 const plane = (more = {}) => ({ whoami: ok({ ...MEMBER, capabilities: ["contribute"] }), heldcaptures: ok({ items: [{ id: "h1" }] }), wizardsat: ok({ scripts: [] }), ...REACH, ...more });
 const ops = (p) => p.requests.map((r) => r.op);
 const sixOf = (p) => ops(p).filter((o) => SIX.includes(o));
@@ -163,7 +163,7 @@ test("R124 (G12b) a different member in the same tab sees none of the first memb
   const mine = JSON.parse(a.store.get(KEY));
   for (const [who, rec, member] of [["rosa", { t: "tok-2", e: 0, d: "own", w: "rosa" }, ADMIN], ["mai", { t: "tok-3", e: 0, d: "own", w: "mai" }, MEMBER]]) {
     const b = await boot({ screens: [held], guide: GUIDE, path: "/app/held", tabStore: a.store, session: rec,
-      plane: plane({ whoami: ok(member), assistantstate: pending, accountreference: pending, subscriptionsignin: pending, groupkeystate: pending, groupidentity: pending, infolevel: pending, heldcaptures: pending }) });
+      plane: plane({ whoami: ok(member), assistantstate: pending, aipathready: pending, groupidentity: pending, infolevel: pending, heldcaptures: pending }) });
     assert.equal(dockButton(b), false, who + ": no assistant button from the first member's answers");
     for (const op of SIX) assert.equal(b.byOp(op).length, 1, who + ": " + op + " asked, not drawn from the other's");
     assert.equal(b.store.get(KEY) === undefined || JSON.parse(b.store.get(KEY)).who !== mine.who, true, who + ": the other's store is not kept as ours");

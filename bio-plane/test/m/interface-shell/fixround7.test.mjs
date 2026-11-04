@@ -95,10 +95,10 @@ import { ok, STORE_KEY, MEMBER, settle } from "./harness.mjs";
 import { inWorld, bootAs } from "./world.mjs";
 
 const KEY = STORE_KEY + ":frame";
-const TEAM = ["groupidentity", "infolevel"], REACH = ["assistantstate", "accountreference", "subscriptionsignin", "groupkeystate"];
+const TEAM = ["groupidentity", "infolevel"], REACH = ["assistantstate", "aipathready"];
 const HELD = { id: "held", words: [], reads: () => ({ h: { op: "heldcaptures", query: { limit: "5" } } }), acts: [],
   render: (cs, view) => cs.state("h", view, () => '<p id="seen">held</p>') };
-const plane = (more = {}) => ({ whoami: ok({ ...MEMBER, capabilities: ["contribute"] }), heldcaptures: ok({ items: [{ id: "h1" }] }), wizardsat: ok({ scripts: [] }), assistantstate: ok({ on: true }), accountreference: ok({ held: true }), ...more });
+const plane = (more = {}) => ({ whoami: ok({ ...MEMBER, capabilities: ["contribute"] }), heldcaptures: ok({ items: [{ id: "h1" }] }), wizardsat: ok({ scripts: [] }), assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }), ...more });
 /* the team's name and level are the world's: its administrator names the team by the real act, and a later load reads what the world then holds */
 const load = async (o = {}) => {
   const { world, me } = await inWorld();
@@ -165,12 +165,10 @@ test("G81 R124 the member's own change of the level makes the next load ask it a
   assert.equal(p.byOp("groupidentity").length, 0, "the other constant is still kept");
 });
 
-/* the four that stay: each is asked once on the second load, and another actor's change is drawn (a characterization: green before the change and after) */
+/* the two that stay (R20, T53): each is asked once on the second load, and another actor's change is drawn (a characterization: green before the change and after) */
 const CASES = [
-  ["assistantstate", { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) }, { assistantstate: ok({ on: false }) }, "the assistant turned off"],
-  ["accountreference", { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) }, { accountreference: ok({ held: false }) }, "the member's own reference gone"],
-  ["subscriptionsignin", { assistantstate: ok({ on: true }), accountreference: ok({ held: false }), subscriptionsignin: ok({ connected: true }) }, { subscriptionsignin: ok({ connected: false }) }, "a subscription lapsed"],
-  ["groupkeystate", { assistantstate: ok({ on: true }), accountreference: ok({ held: false }), groupkeystate: ok({ on: true, held: true }) }, { groupkeystate: ok({ on: false }) }, "the group key turned off"],
+  ["assistantstate", { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) }, { assistantstate: ok({ on: false }) }, "the assistant turned off"],
+  ["aipathready", { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) }, { aipathready: ok({ state: "auth_failed" }) }, "every path no longer ready"],
 ];
 for (const [op, first, change, what] of CASES) {
   test(`G81 R124 CHARACTERIZATION ${op}: asked once on the next load and never kept past it, so ${what} is drawn`, async () => {

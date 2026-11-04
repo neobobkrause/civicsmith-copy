@@ -105,7 +105,7 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
      carries no Authorization header and is sent only for a public op (R30, R45). Answers `{kind: "ok", value}`,
      `{kind: "refused", code, translation, fields, server}` (R13) or `{kind: "silent"}` (no answer). */
   /* R123 (fix round 5, E12; P9): one request per `(op, query, body)` per load. A read (an op `OPS` declares not mutating, or a call that says
-     `read: true`: every read a screen's `reads` names, and the frame's `subscriptionsignin` state) identical to one still in flight, or answered during this load, is that
+     `read: true`: every read a screen's `reads` names, and the frame's `aipathready`) identical to one still in flight, or answered during this load, is that
      one request: the second reader waits for it and is handed its own copy of the answer. A load is a `route()`; every act, every call of
      a mutating op, a change of the session record and a new route opens a new epoch, so an act's re-reads, a re-visit and a refresh still
      ask. A completed answer is shared only while the load is open (until the screen's first reads settle) and for 5 seconds at most. */
@@ -2749,17 +2749,18 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
      it; each is asked again, once, when the screen's first reads have settled, and the frame follows the answer. Kept or not, each is read by the same
      requests as before. */
   const FRAME_KEY = D.storeKey + ":frame";
-  /* what the frame uses of each answer, and the request that reads it (`subscriptionsignin`'s `state` step is a read though its op is declared
-     mutating); `min` answers null for an answer of no use, and is applied to what is read back from the store too, so a stored value is never taken as it is */
+  /* what the frame uses of each answer, and the request that reads it (`aipathready` is marked a read, as `OPS` does not yet declare it);
+     `min` answers null for an answer of no use, and is applied to what is read back from the store too, so a stored value is never taken as it is */
   const FRAME_READS = {
     groupidentity: { req: {}, min: (v) => ({ display_name: typeof v.display_name === "string" && v.display_name.trim() ? v.display_name : null }) },
     infolevel: { req: {}, min: (v) => (v.level === "prompt" || v.level === "pause" ? { level: v.level, set_at: v.set_at || null, asked_at: v.asked_at || null } : null) },
     assistantstate: { req: {}, min: (v) => ({ on: v.on === true }) },
-    accountreference: { req: {}, min: (v) => ({ held: v.held === true }) },
-    subscriptionsignin: { req: { body: { step: "state" }, read: true }, min: (v) => ({ connected: v.connected === true }) },
-    groupkeystate: { req: {}, min: (v) => ({ on: v.on === true && v.held !== false }) },
+    /* R20 (T53): the one combined read of whether some act of the member's has a ready AI path on an account the cascade can choose
+       (her own, a joined project's, the team's); it replaces the alpha's three (`accountreference`, `subscriptionsignin`'s state,
+       `groupkeystate`), which ai-accounts R35 retired. Ready is the answer `state: "ready"`; any other state, or none, is not ready. */
+    aipathready: { req: { read: true }, min: (v) => ({ ready: v.state === "ready" }) },
   };
-  const FRAME_NAMES = Object.keys(FRAME_READS), FRAME_REACH = ["assistantstate", "accountreference", "subscriptionsignin", "groupkeystate"];
+  const FRAME_NAMES = Object.keys(FRAME_READS), FRAME_REACH = ["assistantstate", "aipathready"];
   /* FRAME_VAL: what the frame holds of each (kept or answered); FRAME_DONE: settled (held, answered, or answered with nothing of use); FRAME_KEPT: those
      drawn from the store; FRAME_FRESH: those the plane has answered in this page; FRAME_CHECKED: the one asking-again of the kept ones is done */
   let FRAME_VAL = {}, FRAME_DONE = new Set(), FRAME_KEPT = new Set(), FRAME_FRESH = new Set(), FRAME_CHECKED = false;
@@ -2828,10 +2829,10 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
       /* R75 (2): a member whose level is still the default, and of no other */
       ASK_LEVEL = !asked && LEVEL === "prompt" && Date.now() - first >= 30 * 24 * 3600 * 1000;
     } else if (FRAME_REACH.includes(name)) {
-      /* R20: reachable when the assistant is on and the member holds her own reference, is connected or the group holds a key; a read that did not answer is "not reachable" */
+      /* R20: reachable when the assistant is on and some act of the member's has a ready path; a read that did not answer is "not reachable" */
       if (!FRAME_REACH.every((n) => FRAME_DONE.has(n))) return;
       const v = FRAME_VAL, was = REACHABLE;
-      REACHABLE = !!((v.assistantstate && v.assistantstate.on) && ((v.accountreference && v.accountreference.held) || (v.subscriptionsignin && v.subscriptionsignin.connected) || (v.groupkeystate && v.groupkeystate.on)));
+      REACHABLE = !!(v.assistantstate && v.assistantstate.on && v.aipathready && v.aipathready.ready);
       if (REACHABLE !== was) {
         DOCKI = REACHABLE && screenOf("assistant") && ROUTE && (!MAIN || frameOf(MAIN.spec.id) === "working") ? instance(screenOf("assistant"), ROUTE.subject, "d", { screen: ROUTE.screen, subject: ROUTE.subject }) : null;
         if (!REACHABLE) DOCK = false;
@@ -2855,7 +2856,7 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     if (name === "groupidentity" || name === "infolevel") draw();
   }
   const frameAsk = (name) => call(name, Object.assign({}, FRAME_READS[name].req)).then((a) => frameTake(name, a));
-  /* a screen's read of exactly a frame read (no query; `subscriptionsignin`'s `state` step) is that read's answer as well */
+  /* a screen's read of exactly a frame read (no query, no body) is that read's answer as well */
   function noteFrame(spec, a) {
     if (a.kind !== "ok" || !Object.hasOwn(FRAME_READS, spec.op) || !ME) return;
     const q = spec.query || {};

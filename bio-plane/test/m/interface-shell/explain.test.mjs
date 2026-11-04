@@ -72,7 +72,7 @@ test("R14 nothing is hidden at either level: the same explanations exist promptl
 test("R15 no explaining element sits inside another, on every screen in every state at both widths; a control or mark with explanations inside absorbs them, said after its own", async () => {
   const states = [PLANE, Object.fromEntries(Object.keys(PLANE).map((k) => [k, pending])), Object.fromEntries(Object.keys(PLANE).map((k) => [k, ok(null)])), Object.fromEntries(Object.keys(PLANE).map((k) => [k, refused("NO")]))];
   for (const plane of states) for (const path of ["/app", "/app/held", "/app/document/c1", "/app/members", "/app/settings", "/app/people", "/app/more"]) for (const phone of [false, true]) {
-    const p = await boot({ screens: ALL, path, plane: { ...plane, assistantstate: ok({ on: true }), accountreference: ok({ held: true }) }, phone });
+    const p = await boot({ screens: ALL, path, plane: { ...plane, assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) }, phone });
     const d = p.root().querySelector('[data-shell="dock"]');
     if (d) await p.click(d);
     assert.deepEqual(nestedTips(p.root()).map((e) => e.outerHTML.slice(0, 60)), [], path);

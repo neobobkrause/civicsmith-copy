@@ -117,7 +117,7 @@ test("R56 class literals: written classes are taken, every one of a class attrib
 
 const FRAME_ANSWERS = await frameAnswers();
 test("R57 the working frame is the design's page: at the phone width the masthead shows icons only (the mark and the group's name, search, the explanation control, the avatar), each label kept as its accessible name, and the tabs are drawn last inside the frame, which is fixed-height; control: at 1280 px the labels are drawn and the tabs hidden by the stylesheet", async () => {
-  const p = await boot({ screens: ALL, phone: true, plane: { ...FRAME_ANSWERS, assistantstate: ok({ on: true }), accountreference: ok({ held: true }) } });
+  const p = await boot({ screens: ALL, phone: true, plane: { ...FRAME_ANSWERS, assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
   const frame = p.root().querySelector(".cs-frame");
   assert.ok(frame.classList.contains("cs-frame") && frame.getAttribute("data-frame") === "working");
   const mast = frame.querySelector(".cs-mast");
@@ -140,7 +140,7 @@ test("R57 the working frame is the design's page: at the phone width the masthea
   assert.match(style, /#cs-root>\.cs-frame\{[^}]*flex:1 1 auto[^}]*overflow:hidden/);
   assert.match(style, /#cs-root>\.cs-frame>\.cs-main\{overflow:auto/);
   /* control: at 1280 px the labels are drawn, and civicsmith.css hides the tabs outside its 760 px query */
-  const q = await boot({ screens: ALL, plane: { ...FRAME_ANSWERS, assistantstate: ok({ on: true }), accountreference: ok({ held: true }) } });
+  const q = await boot({ screens: ALL, plane: { ...FRAME_ANSWERS, assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
   const m2 = q.root().querySelector(".cs-mast");
   assert.equal(m2.querySelector(".mk-mastsearch").textContent, word("shell.search"));
   assert.equal(m2.querySelector('[data-shell="level"] .mk-hide-phone').textContent, word("shell.level.button.prompt"));

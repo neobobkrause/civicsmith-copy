@@ -104,7 +104,7 @@ test("R113 control: a refused act sends no read", async () => {
 });
 
 test("R113 (P2.1) loadReach makes no screen read: the assistant becoming reachable redraws and re-reads nothing; control: a read whose request now differs by reachability is read", async () => {
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   const screen = { id: "members", words: [], reads: () => ({ a: { op: "memberlist" }, b: { op: "browse" } }), acts: [], render: () => "<p>x</p>" };
   const p = await boot({ screens: [screen], path: "/app/members", plane: { ...plane, ...reach } });
   assert.equal(p.root().querySelector('[data-shell="dock"]') !== null, true, "the assistant became reachable");
@@ -183,7 +183,7 @@ test("R115 the key-file helper answers a chosen file's text and refuses an uncho
 });
 
 test("R113 a partial re-read (a read that appears once the assistant is reachable) does not discard the answer of a full read still on its way", async () => {
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   const screen = { id: "members", words: [], reads: (view) => (view.reachable ? { a: { op: "memberlist" }, b: { op: "browse" } } : { a: { op: "memberlist" } }), acts: [],
     render: (cs) => cs.state("a", () => '<b id="drawn">a</b>') };
   let release;
