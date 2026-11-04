@@ -48,8 +48,7 @@
   ],
   "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/case-import.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "BLOCKED",
-    "reason": "For BOB, on docket:266. case-import's requirements say an entry must be signed, so the fix belongs in docket. R18 (build/requirements/case-import.md) records an entry 'verified' only when all three checks hold, check 2 being that signatures.verifySshsig(signature, docketStatement(case, seq, digest), NS_DOCKET) verifies; 'An entry that fails a check is recorded refused, naming the check. It is never a move.' Only a key outside the manifests is tolerated (key_listed: false), never a missing signature (K1339 F3: silence must be earned). Admitting or skipping an unsigned entry would let anyone serving the docket address inject or hide edition moves, a design change to R18 that is not this job's to make. docket's own R24 also says each public entry's signature IS the armored SSHSIG over docketStatement in NS_DOCKET; docketRecordEdition (bio-plane/src/docket/index.mjs ~line 943) stores signature '' and signer_key '', so docket R33 as built breaks docket R24. Today case-import refuses every such entry with check 'signature', as R18 requires, so a watched import never shows a publisher's new edition (R19 publisher.edition stays null). To unblock: docket signs the edition entry it files (with a key the case's manifest lists, or a deployment's docket key), or Bob rules R18 changed for an unsigned edition entry (e.g. kept, labelled unsigned, never a move). Then I add the test at docket's real answer and complete. Nothing changed on this branch.",
-    "at": "2026-11-04T15:52:27Z"
+    "state": "COMPLETE",
+    "at": "2026-11-04T16:03:56Z"
   }
 }
