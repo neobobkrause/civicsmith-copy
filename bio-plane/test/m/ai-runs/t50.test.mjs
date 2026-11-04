@@ -102,7 +102,7 @@ test("R87 (controls): a value that is not a non-empty printable string of at mos
 const entry = (model, effort, calls = 1) => ENTRY("check", {}, calls, { label: { model_version: model, effort: effort === undefined ? null : effort } });
 const at = (s) => `2026-07-01T${s}Z`;
 
-test("R88: each usage entry's effort is passed to ai-use.countUsage beside its model, an entry stating none as null; session.cost and the close's cost carry ai-use's by_model, to the paying account's owner alone; nothing of it reaches the run's log", async () => {
+test("R88: each usage entry's effort is passed to ai-use.countUsage beside its model, an entry stating none as null; session.cost and the close's cost carry ai-use's by_entry, to the paying account's owner alone; nothing of it reaches the run's log", async () => {
   const w = world();
   await w.group("ann", "bob"); w.bundle(INQ);
   aiUseOf(w.ctx);
@@ -114,14 +114,15 @@ test("R88: each usage entry's effort is passed to ai-use.countUsage beside its m
   assert.deepEqual(w.rows(`SELECT * FROM observation_log`), logBefore, "no entry for the conversations");
   assert.equal(/claude-opus-5-5|medium/.test(JSON.stringify(w.rows(`SELECT * FROM ai_runs`))), false, "nothing of it on the run");
   const owner = (await w.runs.read({ run: "R1", viewer: ANN })).session.cost;
-  assert.deepEqual(owner.by_model, [{ model: "claude-sonnet-5-5", effort: "low", calls: 3 }, { model: "claude-opus-5-5", effort: "medium", calls: 1 },
-                                    { model: "claude-haiku-5-5", effort: null, calls: 1 }]);
+  /* (ai-use T53, its R15) the conversations as by_entry, each {entry_id, label, calls}: the model and effort on its label */
+  assert.deepEqual(owner.by_entry.map((e) => [e.entry_id, e.label.model_version, e.label.effort, e.calls]),
+                   [["claude-a", "claude-sonnet-5-5", "low", 3], ["claude-a", "claude-opus-5-5", "medium", 1], ["claude-a", "claude-haiku-5-5", null, 1]]);
   assert.equal(owner.calls, 5, "their calls sum to the cost's calls");
   /* a non-owner who sees the run reads no cost at all */
   for (const viewer of ["member:bob", "admin"]) assert.equal("cost" in (await w.runs.read({ run: "R1", viewer })).session, false, viewer);
   const closed = await w.runs.close({ run: "R1", bound: "completed", caller: ORG, viewer: ANN, at: at("00:06:00") });
-  assert.deepEqual([closed.terminated, closed.cost.final, closed.cost.by_model.length], [true, true, 3]);
-  /* control: a close read by another member carries no cost, hence no by_model */
+  assert.deepEqual([closed.terminated, closed.cost.final, closed.cost.by_entry.length], [true, true, 3]);
+  /* control: a close read by another member carries no cost, hence no by_entry */
   await w.runs.open(OPEN({ run: "R2" }));
   await w.runs.tick({ run: "R2", viewer: "admin", caller: ORG, at: at("00:07:00"), usage: [entry("claude-sonnet-5-5", "low")] });
   assert.equal("cost" in (await w.runs.close({ run: "R2", bound: "completed", caller: ORG, viewer: "member:bob", at: at("00:08:00") })), false);
@@ -144,7 +145,7 @@ test("R88 (control): an entry whose effort is not a lowercase word is refused AI
   const kept = await w.runs.tick({ run: "R1", viewer: "admin", caller: ORG, at: at("00:06:00"),
     usage: [ENTRY("check", {}, 1, { label: { model_version: null } })] });
   assert.equal(kept.ticked, true, JSON.stringify(kept));
-  assert.deepEqual((await w.runs.read({ run: "R1", viewer: ANN })).session.cost.by_model, [{ model: null, effort: null, calls: 1 }]);
+  assert.deepEqual((await w.runs.read({ run: "R1", viewer: ANN })).session.cost.by_entry.map((e) => [e.label.model_version, e.label.effort, e.calls]), [[null, null, 1]]);
 });
 
 /* ---- R89 ---- */

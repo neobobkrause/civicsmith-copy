@@ -46,6 +46,8 @@ test("R10, R12, R14, R16, R18, R26, R29, R52 (N418): every write of the run's ac
   assert.equal(m.ok, true, JSON.stringify(m));
   const cred = w.credentials.aiCredentialLook({ secretSha: sha(TOKEN) }).credential;
   const stamp = `${cred.principal}/${cred.tokenId}`;
+  /* ai-use's own migration (its T53 money table) runs at its first reach: made before the watch, it is not this module's */
+  aiUseOf(w.ctx);
   const seen = watch(w);
 
   assert.equal((await w.runs.open(OPEN({ bounds: [{ bound: "fetches", allowed: 5 }, { bound: "surfaces", allowed: 2 }] }))).started, true);

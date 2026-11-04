@@ -105,7 +105,7 @@ test("R72 (T53; BR22, BR29): tick takes usage entries {mode, entry_id, label, us
   assert.deepEqual([ok.ticked, ok.counted], [true, 2], JSON.stringify(ok).slice(0, 300));
 });
 
-test("R88 (T53; BR22, BR29): each usage entry is passed to ai-use.countUsage unchanged, entry_id and label beside usage; control: a label.effort that is not a lowercase word (\"Low!\") is AI_RUN_CONSUME_INVALID and countUsage is not asked", async () => {
+test("R88 (T53; BR22, BR29): each usage entry is passed to ai-use.countUsage as ai-use R1 shapes agent-model's label (display_name kept and checked here), entry_id and label beside usage; control: a label.effort that is not a lowercase word (\"Low!\") is AI_RUN_CONSUME_INVALID and countUsage is not asked", async () => {
   const w = world();
   await w.group("ann");
   w.bundle(INQ);
@@ -117,7 +117,9 @@ test("R88 (T53; BR22, BR29): each usage entry is passed to ai-use.countUsage unc
   const e = ENTRY("check", {}, 2, { label: { effort: "low" } });
   assert.equal(w.runs.tick({ run: "R1", caller: ORG, viewer: "admin", at: T0, usage: [e] }).ticked, true);
   assert.equal(asked.length, 1);
-  assert.deepEqual([asked[0].entry_id, asked[0].label, asked[0].usage, asked[0].calls, asked[0].act], [e.entry_id, e.label, e.usage, 2, "R1"]);
+  /* (restated BOB 4 Nov, ai-use PR 105) agent-model's label as ai-use R1 shapes it: display_name kept and checked here */
+  const { display_name: _shown, ...useLabel } = e.label;
+  assert.deepEqual([asked[0].entry_id, asked[0].label, asked[0].usage, asked[0].calls, asked[0].act], [e.entry_id, useLabel, e.usage, 2, "R1"]);
   const bad = w.runs.tick({ run: "R1", caller: ORG, viewer: "admin", at: T0, usage: [ENTRY("check", {}, 1, { label: { effort: "Low!" } })] });
   assert.deepEqual([bad.ticked, bad.code], [false, "AI_RUN_CONSUME_INVALID"]);
   assert.equal(asked.length, 1, "nothing counted");

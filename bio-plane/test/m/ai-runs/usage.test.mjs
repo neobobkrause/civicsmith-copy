@@ -65,9 +65,13 @@ test("R72, R52: tick takes usage, one entry per conversation {mode, model, usage
             call("check", { total_cost_usd: null }, null)] });
   assert.deepEqual([t.ticked, t.counted, t.appended], [true, 3, 0]);
   /* three conversations: 4 calls, 1 call, and one whose runner stated none, counted as one */
-  assert.deepEqual(usageRows(w), [{ owner: "member:ann", member: "ann", day: "2026-07-01", use: "run", mode: "check", calls: 6,
-    input_tokens: 2010, output_tokens: 405, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, cost_micro_usd: 512000,
-    tokens_unstated: 0, cost_unstated: 1 }]);
+  assert.deepEqual(usageRows(w).map(({ owner, member, day, use, mode, calls, input_tokens, output_tokens, cache_read_input_tokens,
+                                       cache_creation_input_tokens, tokens_unstated, cost_unstated }) =>
+    ({ owner, member, day, use, mode, calls, input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens,
+       tokens_unstated, cost_unstated })), [{ owner: "member:ann", member: "ann", day: "2026-07-01", use: "run", mode: "check", calls: 6,
+    input_tokens: 2010, output_tokens: 405, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, tokens_unstated: 0, cost_unstated: 1 }]);
+  /* (ai-use T53) the money as the accounts reported it, kept by ai-use apart from the counter */
+  assert.deepEqual(w.rows(`SELECT reported_micro, reported_calls FROM ai_usage_money`), [{ reported_micro: 512000, reported_calls: 5 }]);
   assert.deepEqual(w.rows(`SELECT * FROM observation_log`), logBefore, "no entry for the calls");
   assert.deepEqual(w.rows(`SELECT * FROM bundles ORDER BY bundle_id`), bundlesBefore);
   assert.equal(JSON.stringify(w.rows(`SELECT * FROM ai_runs`)).includes("claude-model-x"), false, "nothing of a call on the run");
@@ -124,7 +128,9 @@ test("R72: a usage entry not of that shape refuses the whole tick AI_RUN_CONSUME
   const est = await w.runs.tick({ run: "R1", viewer: "admin", caller: ORG, at: at("00:05:30"),
     usage: [call("check", { total_cost_usd: null, estimated_cost_usd: 0.25 }, 2)] });
   assert.deepEqual([est.ticked, est.counted], [true, 1]);
-  assert.deepEqual(w.row(`SELECT calls, cost_micro_usd, cost_unstated FROM ai_usage`), { calls: 3, cost_micro_usd: 250000, cost_unstated: 1 });
+  assert.deepEqual(w.row(`SELECT calls, cost_unstated FROM ai_usage`), { calls: 3, cost_unstated: 1 });
+  /* (ai-use T53) an estimated_cost_usd stated is kept as estimated money, apart from the reported */
+  assert.deepEqual(w.rows(`SELECT estimated_micro, estimated_calls FROM ai_usage_money`), [{ estimated_micro: 250000, estimated_calls: 2 }]);
   /* the order: the run's own refusals come first (an absent run is absent; a stranger is not its principal) */
   assert.equal((await w.runs.tick({ run: "R404", viewer: "admin", caller: ORG, usage: "x" })).found, false);
   assert.equal((await w.runs.tick({ run: "R1", viewer: "admin", caller: "class:ai/other", usage: "x" })).code, "AI_RUN_NOT_PRINCIPAL");

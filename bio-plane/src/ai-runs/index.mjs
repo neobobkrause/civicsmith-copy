@@ -3369,13 +3369,20 @@ export class AiRuns {
       const fault = this.#entryFault(e);
       const said = fault ? this.#refuse("AI_RUN_CONSUME_INVALID", fault)
         : use.countUsage({ owner: this.#payerNow(row), member: `member:${payer}`, use: "run", mode: e.mode,
-                           entry_id: e.entry_id, label: e.label, model: e.label.model_version ?? null,
+                           entry_id: e.entry_id, label: AiRuns.#useLabel(e.label), model: e.label.model_version ?? null,
                            effort: e.label.effort ?? null, usage: e.usage, calls: e.calls, at: AiRuns.#aiIso(ms), act: String(row.run) });
       if (!said || said.ok !== true)
         return { ...(said || this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.the_entry_could_not_be", "the entry could not be counted."))),
                  detail: localize("ai-runs.index.usage_entry_v1_v2", "usage entry {v1}: {v2}", { v1: String(i + 1), v2: String((said && said.detail) || localize("ai-runs.index.it_could_not_be_counted", "it could not be counted")) }) };
     }
     return null;
+  }
+
+  /** R88 (T53; restated BOB 4 Nov, ai-use PR 105): the label as ai-use R1 shapes it, agent-model's own fields;
+   *  `display_name` is kept and checked here (R104), never passed on. */
+  static #useLabel(l) {
+    const { display_name: _shown, ...rest } = l;
+    return rest;
   }
 
   /** R72, R88, R104 (T53; BR2, BR22, BR29): THE FIELDS OF A CONVERSATION'S LABEL, as `agent-model` composes it (its R26)
