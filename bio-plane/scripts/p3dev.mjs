@@ -99,7 +99,8 @@ export function p3devFindings(plan) {
   return out;
 }
 
-/** Prints the plan's names and exits 1 naming each offender, before any write. Returns the plan when it passes. */
+/** Exits 1 naming each offender, before any write; when the plan passes, prints the exact line `p3dev guard: passed`, then its
+ * names on the next line, and returns the plan. */
 export function refuseUnlessP3dev(plan, { log = console.log, err = console.error, exit = process.exit } = {}) {
   const found = p3devFindings(plan);
   if (found.length) {
@@ -110,7 +111,9 @@ export function refuseUnlessP3dev(plan, { log = console.log, err = console.error
     return null;
   }
   const show = (l) => (l.length ? l.join(", ") : "none");
-  log(`p3dev guard: passed for ${plan.slug}: workers ${show(plan.workers)}; services ${show(plan.services)}; buckets ${show(plan.buckets)}; `
+  /* The first line is exact and the same on every pass (p3 deploy dev's guard_line reads it); the detail follows on its own line. */
+  log("p3dev guard: passed");
+  log(`  for ${plan.slug}: workers ${show(plan.workers)}; services ${show(plan.services)}; buckets ${show(plan.buckets)}; `
     + `do scripts ${show(plan.doScripts)}; container apps ${show(plan.apps)}; images ${show(plan.images)}`);
   return plan;
 }
