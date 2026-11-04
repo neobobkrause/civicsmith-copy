@@ -2,3 +2,4 @@
 {"at":"2026-11-04T03:40:59Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T04:27:22Z","row":"sent","n":2,"to":"bob","text":"job ai-runs complete, PR #96 ready: run status"}
 {"at":"2026-11-04T04:27:35Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-04T05:08:07Z","row":"sent","n":3,"to":"bob","text":"job ai-runs complete, PR #96 ready: run status"}
