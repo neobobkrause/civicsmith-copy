@@ -1,0 +1,1 @@
+{"row":"answered","user":"escalation","by":"triage","evidence":"bio-plane/src/escalation/index.mjs:627 takes `drafts` and `packets` from filingsFor and passes them through whole; it reads no template, sha or layer field.","at":"2026-11-04T02:43:41.500Z","key":"filings:64","worker":"a14eeff5d2cd5c7a5","cost":"0.2"}

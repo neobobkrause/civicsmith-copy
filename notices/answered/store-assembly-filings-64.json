@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-assembly","by":"triage","evidence":"bio-plane/src/store-assembly/assemble.mjs:26 and :459 only construct and wire `filingsOf`/`filingsOps` and the filing-templates instance; they do not read the draft `template`/`layer` shape.","at":"2026-11-04T02:43:41.500Z","key":"filings:64","worker":"a14eeff5d2cd5c7a5","cost":"0.2"}

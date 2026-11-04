@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-declarations","verdict":"not affected","evidence":"bio-plane/src/op-declarations/index.mjs:1236 only declares the `filingsfor` op's classes and `mutating: false`; no draft template or layer logic.","at":"2026-11-04T02:43:41.500Z","key":"filings:64","worker":"a14eeff5d2cd5c7a5","cost":"0.2"}

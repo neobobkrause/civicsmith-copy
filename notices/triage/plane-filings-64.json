@@ -1,0 +1,1 @@
+{"row":"triage","user":"plane","verdict":"not affected","evidence":"bio-plane/wrangler.jsonc:1 no file under bio-plane/src/plane/ or the plane's config mentions filings, filingsFor, filing_drafts or template.","at":"2026-11-04T02:43:41.500Z","key":"filings:64","worker":"a14eeff5d2cd5c7a5","cost":"0.2"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"action-plans","by":"triage","evidence":"bio-plane/src/action-plans/index.mjs:1068 calls filingsFor only to read drafts' `sending` time (d.sending.at, line 1070); it never reads template, sha, layer or sources.","at":"2026-11-04T02:43:41.500Z","key":"filings:64","worker":"a14eeff5d2cd5c7a5","cost":"0.2"}
