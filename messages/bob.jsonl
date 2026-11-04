@@ -111,3 +111,4 @@
 {"at":"2026-11-04T11:49:56Z","row":"outcome","n":58,"outcome":"delivered"}
 {"at":"2026-11-04T11:50:16Z","row":"sent","n":59,"to":"job-intent","text":"BOB: your session's cost so far, read from get_session after your turn ended: 1.24837228. Rerun job complete with your prepared flags plus --cost-usd 1.24837228. Wake me."}
 {"at":"2026-11-04T11:50:24Z","row":"outcome","n":59,"outcome":"delivered"}
+{"at":"2026-11-04T11:55:57Z","row":"sent","n":60,"to":"job-site","text":"BOB: interface-assets PR 207 is merged: its stylesheet now carries .cs-btn min-height var(--tap) at the new ASSETS_COMMIT. Do your restart plan: job sync site, set SITE_COMMIT to the same commit as ASSETS_COMMIT, add key screen.site.start.noaccount to KEYS (words.json DEC-430), regenerate pages.mjs, turn the R18 1280 todo into an assertion, strike R18, then job complete. If job complete refuses only for a missing cost, block saying so and I send the figure. Wake me."}
