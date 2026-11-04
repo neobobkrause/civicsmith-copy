@@ -147,7 +147,7 @@ async function drainedSweepRefusal(ctx) {
   sql.exec(`INSERT INTO bundles (bundle_id, object_type, group_id, title, current_state, created, last_updated, bundle_sha)
             VALUES (?, 'inquiry', 'g', ?, 'open', 't', 't', 'sha')`, INQ, INQ);
   const t = new Date().toISOString(), later = new Date(Date.now() + 3600e3).toISOString();
-  sql.exec(`INSERT INTO ai_runs (run, status, context_type, context_id, principal_plane, principal_claude, created, updated,
+  sql.exec(`INSERT INTO ai_runs (run, status, context_type, context_id, principal_plane, principal_ai, created, updated,
                                  expires, state) VALUES ('R-zz', 'running', 'inquiry', ?, 'class:admin', 'instance', ?, ?, ?, '{}')`,
            INQ, t, t, later);
   const cr = captureRequestsOf(ctx);
