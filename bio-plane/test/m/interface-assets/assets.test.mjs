@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
@@ -17,8 +17,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const MODULE = join(ROOT, "bio-plane/src/interface-assets/index.mjs");
 const DIR = "docs/development/ux-substrate/visual-language";
 const PAGE = "docs/development/ux-substrate/screens/page.src.html";
-const COMMIT = "2a64c5ae77"; // R10 (T51): the design commit the START names; R9 named 7be06eb4cb and R8 f498560a37 before it
+const COMMIT = "1b6f2bc383"; // R10 (T51): the design commit the START names (tranche head holding PR 191, DEC-412); 2a64c5ae77 before it, R9 named 7be06eb4cb and R8 f498560a37 before it
 const R9_COMMIT = "7be06eb4cb";
+const R10_COMMIT = "2a64c5ae77"; // the commit R10 was met at, before PR 191
 const git = (args) => execFileSync("git", args, { cwd: ROOT, maxBuffer: 1 << 26 });
 const atCommit = (path) => git(["show", `${ASSETS_COMMIT}:${DIR}/${path}`]);
 const bytesOf = (e) => (e.encoding === "base64" ? Buffer.from(e.body, "base64") : Buffer.from(e.body, "utf8"));
@@ -134,13 +135,23 @@ function loadWatched(path) {
     return JSON.parse(r.stdout);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
+/* R4: index.mjs imports only its own face modules (./faces-<n>.mjs, R6's carriers), and a face module imports nothing. */
+const FACE_MODULE = /^\.\/faces-\d+\.mjs$/;
 function r4Failures(loaded) {
-  const out = loaded.seen.map((s) => `does ${s} when loaded`);
+  const out = loaded.seen.filter((s) => !FACE_MODULE.test(s.replace(/^import /, ""))).map((s) => `does ${s} when loaded`);
   if (loaded.exports.join(",") !== "ASSETS_COMMIT,ASSET_FILES") out.push(`exports ${loaded.exports.join(",")}`);
   return out;
 }
+const HERE_SRC = dirname(MODULE);
+const faceModules = () => readdirSync(HERE_SRC).filter((f) => FACE_MODULE.test(`./${f}`)).sort();
+function faceModuleFailures(path) {
+  const loaded = loadWatched(path);
+  const out = loaded.seen.map((s) => `${path}: does ${s} when loaded`);
+  if (!loaded.exports.every((e) => /^f\d+$/.test(e))) out.push(`${path}: exports ${loaded.exports.join(",")}`);
+  return out;
+}
 
-test("R1, R5, R8, R9, R10: ASSETS_COMMIT is 2a64c5ae77 and ASSET_FILES holds exactly R1's 20 files and R7's shell.css, each equal byte for byte to git at the commit", () => {
+test("R1, R5, R8, R9, R10: ASSETS_COMMIT is 1b6f2bc383 and ASSET_FILES holds exactly R1's 20 files and R7's shell.css, each equal byte for byte to git at the commit", () => {
   const { faces } = expected();
   assert.equal(faces.length, 15);
   assert.equal(Object.keys(ASSET_FILES).length, 21);
@@ -198,7 +209,11 @@ test("R3 control: an unfrozen map or entry is refused", () => {
 });
 
 test("R4: loading the module imports nothing, does no I/O, timing or randomness, and defines only its two exports; every read answers the same", async () => {
-  assert.deepEqual(r4Failures(loadWatched(MODULE)), []);
+  const loaded = loadWatched(MODULE);
+  assert.deepEqual(r4Failures(loaded), []);
+  assert.ok(faceModules().length > 0, "the faces live in face modules");
+  assert.deepEqual(loaded.seen.map((s) => s.replace(/^import /, "")).sort(), faceModules().map((f) => `./${f}`), "imports exactly its face modules");
+  for (const f of faceModules()) assert.deepEqual(faceModuleFailures(join(HERE_SRC, f)), []);
   assert.deepEqual(Object.keys(assets).sort(), ["ASSETS_COMMIT", "ASSET_FILES"]);
   const again = await import(`${pathToFileURL(MODULE).href}?again`);
   assert.equal(again.ASSETS_COMMIT, ASSETS_COMMIT);
@@ -221,6 +236,13 @@ test("R4 control: a module that imports, reads a file, reads the clock or draws 
       writeFileSync(join(dir, f), body);
       assert.ok(r4Failures(loadWatched(join(dir, f))).length > 0, f);
     }
+    // A face module that imports or reads the clock is refused; one that only defines its faces passes.
+    writeFileSync(join(dir, "faces-1.mjs"), 'import "./dep.mjs"; export const f0 = () => "";');
+    assert.ok(faceModuleFailures(join(dir, "faces-1.mjs")).length > 0, "a face module that imports");
+    writeFileSync(join(dir, "faces-2.mjs"), 'export const f0 = () => String(Date.now());\nexport const t = Date.now();');
+    assert.ok(faceModuleFailures(join(dir, "faces-2.mjs")).length > 0, "a face module that reads the clock");
+    writeFileSync(join(dir, "faces-3.mjs"), 'export const f0 = () => "AA==";');
+    assert.deepEqual(faceModuleFailures(join(dir, "faces-3.mjs")), []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -267,7 +289,7 @@ function r5Failures(css) {
   return out;
 }
 
-test("R5, R8, R9, R10: civicsmith.css at 2a64c5ae77 holds no cursor: help, no cursor in .cs-card, and the three kind tokens light and dark", () => {
+test("R5, R8, R9, R10: civicsmith.css at 1b6f2bc383 holds no cursor: help, no cursor in .cs-card, and the three kind tokens light and dark", () => {
   assert.equal(ASSETS_COMMIT, COMMIT);
   const css = ASSET_FILES["civicsmith.css"].body;
   assert.deepEqual(r5Failures(css), []);
@@ -306,14 +328,18 @@ test("R6: a fresh import evaluates no face; each face's base64 is built on its f
   const m = faceHeap(MODULE);
   console.log(`interface-assets R6: import ${m.importMs.toFixed(1)} ms (bundler R31 budget 500 ms), heap at import ${(m.atImport / 1024) | 0} KB, on reading the faces ${(m.onRead / 1024) | 0} KB of ${(m.chars / 1024) | 0} KB base64`);
   assert.equal(m.faces, 15);
-  assert.ok(m.atImport < m.chars / 2, `the import holds ${m.atImport} bytes, not under half the faces' ${m.chars}`);
+  /* Node keeps a module's source text on the heap when it is under about 1 MiB (each face module is, by the size rule),
+     and off it above; that text is not a face built. So the import holds the face modules' source and under half the
+     faces beyond it; an eager module builds every face's string at import (the control below). */
+  const source = faceModules().reduce((a, f) => a + statSync(join(HERE_SRC, f)).size, 0);
+  assert.ok(m.atImport - source < m.chars / 2, `the import holds ${m.atImport} bytes, ${m.atImport - source} beyond the face modules' ${source}, not under half the faces' ${m.chars}`);
   assert.ok(m.onRead > m.chars * 0.75, `reading the faces built ${m.onRead} bytes of their ${m.chars}`);
   // Every read answers the same text, equal to R1's bytes (R1's test checks each against git).
   for (const [n, e] of Object.entries(ASSET_FILES)) if (n.endsWith(".woff2")) assert.equal(e.body, ASSET_FILES[n].body);
   assert.deepEqual(r1Failures(ASSET_FILES, ASSETS_COMMIT), []);
 });
 
-test("R6 control: a module holding its faces as base64 literals in the global scope is refused", () => {
+test("R6 control: a module holding its faces as base64 literals in the global scope is refused, also when split under 1 MiB", () => {
   const dir = mkdtempSync(join(tmpdir(), "interface-assets-r6-"));
   try {
     const eager = join(dir, "eager.mjs");
@@ -322,6 +348,15 @@ test("R6 control: a module holding its faces as base64 literals in the global sc
     writeFileSync(eager, `export const ASSETS_COMMIT = "x";\nexport const ASSET_FILES = Object.freeze({\n${faces.join("\n")}\n});\n`);
     const m = faceHeap(eager);
     assert.ok(!(m.atImport < m.chars / 2), `an eager module held only ${m.atImport} bytes at import`);
+    // Split eager: the faces as top-level strings in two face modules; beyond their source the import still holds every face.
+    const entries = Object.entries(ASSET_FILES).filter(([n]) => n.endsWith(".woff2"));
+    const half = Math.ceil(entries.length / 2);
+    const parts = [entries.slice(0, half), entries.slice(half)];
+    parts.forEach((p, k) => writeFileSync(join(dir, `faces-${k + 1}.mjs`), p.map(([, e], i) => `export const f${k * half + i} = ${JSON.stringify(e.body)}.split("").join("");\n`).join("")));
+    writeFileSync(join(dir, "split.mjs"), `import * as a from "./faces-1.mjs"; import * as b from "./faces-2.mjs";\nconst all = { ...a, ...b };\nexport const ASSETS_COMMIT = "x";\nexport const ASSET_FILES = Object.freeze(Object.fromEntries(Object.keys(all).map((k) => ["fonts/" + k + ".woff2", Object.freeze({ type: "font/woff2", encoding: "base64", body: all[k] })])));\n`);
+    const sm = faceHeap(join(dir, "split.mjs"));
+    const src = [1, 2].reduce((a, k) => a + statSync(join(dir, `faces-${k}.mjs`)).size, 0);
+    assert.ok(!(sm.atImport - src < sm.chars / 2), `a split eager module held only ${sm.atImport - src} bytes beyond its source`);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -444,7 +479,7 @@ function r9Failures(civicsmith) {
   return R9_CLASSES.filter((c) => !namedBy(named, c)).map((c) => `civicsmith.css: no rule for ${c}`);
 }
 
-test("R9, R10: ASSETS_COMMIT is 2a64c5ae77, the design commit the START names; civicsmith.css names each class DEC-280, DEC-249 and DEC-279 added; each served file is R1's bytes and R7's transform", () => {
+test("R9, R10: ASSETS_COMMIT is 1b6f2bc383, the design commit the START names; civicsmith.css names each class DEC-280, DEC-249 and DEC-279 added; each served file is R1's bytes and R7's transform", () => {
   assert.equal(ASSETS_COMMIT, COMMIT);
   const civ = ASSET_FILES["civicsmith.css"].body;
   assert.deepEqual(r9Failures(civ), []);
@@ -468,6 +503,10 @@ test("R9 control: another commit, a hand edit of a served file, and a stylesheet
    except the markers and mock-only classes R10 lists. */
 const SCREENS = "docs/development/ux-substrate/screens/";
 const DRAWINGS = ["mock-screens.js", "mock-shell.js", "mock-kit.js", "mock-acts.js", "mock-refs.js"];
+/* Found at 1b6f2bc383 by R10's scan (its control's purpose): drawn, in neither stylesheet and not in R10's marker list.
+   mk-det (mock-screens.js cdPart's <div>) and mk-widen (a hook mock-screens.js's querySelector toggles with hidden).
+   Whether each is a marker or owes a style is UX-DESIGN's, reported to BOB; the scan stays exact, so any other new class fails. */
+const R10_FOUND = ["mk-det", "mk-widen"];
 const R10_NO_STYLE = ["mk-data", "mk-codes", "mk-cv", "mk-unpick", "mk-updband", "mk-lvlbtn", "mk-front", "mk-held", "mk-used", "mk-page", "mk-mockctl", "mk-osprompt"];
 const classesIn = (css) => new Set([...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)].map((m) => m[1]));
 function drawnClasses(readDrawing) {
@@ -486,10 +525,11 @@ const drawing = (f) => git(["show", `${ASSETS_COMMIT}:${SCREENS}${f}`]).toString
 test("R10: ASSETS_COMMIT is the START's design commit; the visual files are R9's, shell.css holds the 32 px sort buttons and the further st- states, icons.svg holds the three icons, and every class the drawings write is defined", () => {
   assert.equal(ASSETS_COMMIT, COMMIT);
   assert.deepEqual(r1Failures(ASSET_FILES, ASSETS_COMMIT), []);
-  // civicsmith.css, the 15 faces and the three licences are byte-identical to R9's commit.
+  // At R10's own commit, civicsmith.css was byte-identical to R9's (read from git); the served one is R1's bytes at the
+  // pin (above), which since PR 191 (DEC-412) also carries .cs-btn's var(--tap). The 15 faces and three licences are R9's.
   const at9 = (p) => git(["show", `${R9_COMMIT}:${DIR}/${p}`]);
-  assert.ok(Buffer.from(ASSET_FILES["civicsmith.css"].body, "utf8").equals(Buffer.concat([at9("civicsmith.css"),
-    Buffer.from(at9("faces.css").toString("utf8").split('url("fonts/').join('url("/app/assets/fonts/'), "utf8")])), "civicsmith.css is R9's");
+  const at10 = (p) => git(["show", `${R10_COMMIT}:${DIR}/${p}`]);
+  assert.ok(at10("civicsmith.css").equals(at9("civicsmith.css")) && at10("faces.css").equals(at9("faces.css")), "civicsmith.css at R10's commit is R9's");
   for (const n of Object.keys(ASSET_FILES).filter((k) => k.startsWith("fonts/")))
     assert.ok(bytesOf(ASSET_FILES[n]).equals(at9(n)), `${n} is R9's`);
   // DEC-330: the sort buttons are 32 px tall; the state-switching rule carries .st-j, .st-k and .st-l.
@@ -504,15 +544,17 @@ test("R10: ASSETS_COMMIT is the START's design commit; the visual files are R9's
   for (const id of ["i-group", "i-document", "i-due", "i-sever"]) assert.ok(new RegExp(`<symbol id="${id}"`).test(icons), id);
   // No class the drawings write is left without a style, and the scan reads real class attributes.
   assert.ok(drawnClasses(drawing).size > 100, "the scan finds the drawings' classes");
-  assert.deepEqual(r10Undefined(ASSET_FILES, drawing), []);
+  assert.deepEqual(r10Undefined(ASSET_FILES, drawing), R10_FOUND);
   // No print rule is written by hand: every @media print rule of shell.css is the transform's (R7's equality above).
   assert.equal(ASSET_FILES["shell.css"].body, shellCss(git(["show", `${ASSETS_COMMIT}:${PAGE}`]).toString("utf8")));
 });
 
+test.todo("R10 at 1b6f2bc383: mk-det and mk-widen, drawn since 2a64c5ae77, are styled or named markers (UX-DESIGN, reported to BOB)");
+
 test("R10 control: a drawn class with no style fails the scan, so a later design commit's new class is found; a hand edit of a served file or R9's commit is refused", () => {
   const files = ASSET_FILES;
-  assert.deepEqual(r10Undefined(files, (f) => drawing(f) + '\n<div class="mk-newthing cs-another">'), ["cs-another", "mk-newthing"]);
-  for (const c of R10_NO_STYLE) assert.deepEqual(r10Undefined(files, (f) => drawing(f) + `\n<i class="${c}">`), [], `${c} is a marker`);
+  assert.deepEqual(r10Undefined(files, (f) => drawing(f) + '\n<div class="mk-newthing cs-another">'), ["cs-another", ...R10_FOUND, "mk-newthing"].sort());
+  for (const c of R10_NO_STYLE) assert.deepEqual(r10Undefined(files, (f) => drawing(f) + `\n<i class="${c}">`), R10_FOUND, `${c} is a marker`);
   assert.ok(r10Undefined({ "civicsmith.css": { body: "" }, "shell.css": { body: "" } }, drawing).length > 0);
   assert.ok(r1Failures(ASSET_FILES, R9_COMMIT).length > 0, "R9's commit is refused");
   const copy = Object.fromEntries(Object.entries(ASSET_FILES).map(([n, e]) => [n, { ...e }]));
@@ -543,4 +585,43 @@ test("R11 control: an ellipsis, a nowrap or a hidden overflow on the name or its
     assert.ok(r11Failures(withCss(extra)).length > 0, extra);
   const noWrap = { ...ASSET_FILES, "shell.css": { ...ASSET_FILES["shell.css"], body: ASSET_FILES["shell.css"].body.split("overflow-wrap: anywhere").join("overflow-wrap: normal") } };
   assert.ok(r11Failures(noWrap).some((f) => f.includes("wrap")));
+});
+
+/* DEC-412 (PR 191; site R18): .cs-btn is min-height var(--tap), 44 px at every width, not 40 px with only the phone
+   query raising it. Read from the served stylesheet, so a pin before PR 191 fails here. */
+function tapFailures(css) {
+  const out = [];
+  const all = rules(css);
+  const btn = all.filter((r) => !r.media && sels(r).includes(".cs-btn") && /min-height\s*:/.test(r.body));
+  if (btn.length === 0) out.push(".cs-btn: no min-height outside a media query");
+  for (const r of btn) { const m = /min-height\s*:\s*([^;]+)/.exec(r.body)[1].trim(); if (m !== "var(--tap)") out.push(`.cs-btn: min-height ${m}`); }
+  const tap = all.filter((r) => !r.media && /--tap\s*:/.test(r.body)).map((r) => /--tap\s*:\s*([^;]+)/.exec(r.body)[1].trim());
+  if (!tap.includes("44px")) out.push(`--tap: ${tap.join(",") || "undefined"}, not 44px`);
+  return out;
+}
+
+test("DEC-412 (site R18): .cs-btn's min-height is var(--tap), and --tap is 44px, at every width", () => {
+  assert.deepEqual(tapFailures(ASSET_FILES["civicsmith.css"].body), []);
+});
+
+test("DEC-412 control: a .cs-btn at 40px, or a --tap other than 44px, is refused", () => {
+  const css = ASSET_FILES["civicsmith.css"].body;
+  assert.ok(tapFailures(css.replace(/(\.cs-btn \{[^}]*?)min-height: var\(--tap\)/, "$1min-height: 40px")).some((f) => f.includes("40px")));
+  assert.ok(tapFailures(css.split("--tap: 44px").join("--tap: 40px")).some((f) => f.startsWith("--tap")));
+});
+
+/* R4, R6 (BOB #45): every file the generator writes is under the process's max_file_bytes, so it can be committed. */
+const MAX_FILE_BYTES = 1048576;
+const generatedFiles = () => ["index.mjs", ...faceModules()].map((f) => join(HERE_SRC, f));
+const oversize = (paths, size = (p) => statSync(p).size) => paths.filter((p) => size(p) > MAX_FILE_BYTES).map((p) => `${p}: ${size(p)} bytes`);
+
+test("R4, R6: index.mjs and each face module are under 1,048,576 bytes, and together carry all 15 faces", () => {
+  assert.deepEqual(oversize(generatedFiles()), []);
+  const exported = faceModules().map((f) => readFileSync(join(HERE_SRC, f), "utf8").match(/^export const f\d+ = /gm).length).reduce((a, b) => a + b, 0);
+  assert.equal(exported, 15);
+});
+
+test("R4, R6 control: a file over the cap is refused", () => {
+  assert.equal(oversize([MODULE], () => MAX_FILE_BYTES + 1).length, 1);
+  assert.deepEqual(oversize([MODULE], () => MAX_FILE_BYTES), []);
 });

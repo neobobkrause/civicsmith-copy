@@ -138,10 +138,12 @@ async function world() {
   const shown = (await call("disclosureshown", RUTH, { member: "member:ruth", version })).body;
   assert.deepEqual([shown.ok, shown.shown], [true, true], JSON.stringify(shown));
   await reauth(RUTH, "ruth");
-  const acct = (await call("accountreferenceset", RUTH, { member: "ruth", kind: "apikey", secret: "sk-cr-plane" })).body;
+  /* ai-accounts T53: her own account, connected by her own session (`aiownadd`; accountreferenceset is retired) */
+  const acct = (await call("aiownadd", RUTH, { provider: "anthropic", plan: "api", means: "apikey", secret: "sk-cr-plane" })).body;
   assert.equal(acct.ok, true, JSON.stringify(acct));
+  /* ai-runs R9 (T53; notice ai-runs:96): the run names its paying principal `principalAi` and its member `principalAiRef` */
   const run = (await call("airunopen", RUTH, { run: "RUN-CR-1", contextType: "inquiry", contextId: "INQ-2026-9000-cr",
-    label: "cr", mode: "check", principalClaude: "project", principalClaudeRef: "g/claude",
+    label: "cr", mode: "check", principalAi: "member:ruth", principalAiRef: "ruth",
     skillVersion: "investigative-session@1", biasManifest: null, bounds: [{ bound: "fetches", allowed: 5, unit: "requests" }],
     leaseMs: 900000 })).body;
   assert.equal(run.started, true, JSON.stringify(run));

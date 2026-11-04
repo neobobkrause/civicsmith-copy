@@ -381,7 +381,7 @@ test("R24: each constant equals its list; each family equals op-declarations' ex
   assert.deepEqual([...QUERY_STAMPS], ["viewer", "identity", "author", "by", "actor", "who", "origin", "administer", "aiCred", "source", "country"]);
   assert.equal(ACT_CLOCK_OPS.length, 21);
   assert.deepEqual([...BODY_STAMPS], ["actorIdentity", "actorViewer", "actorMemberId", "ownerMemberId", "assistantPrincipal", "migrationReplay"]);
-  assert.deepEqual(JSON.parse(JSON.stringify(BODY_ONLY)), { securitytooladd: ["credentials", "config"], projectkeyset: ["key"], setpassword: ["current", "password", "role"] });
+  assert.deepEqual(JSON.parse(JSON.stringify(BODY_ONLY)), { securitytooladd: ["credentials", "config"], setpassword: ["current", "password", "role"] });
   assert.deepEqual(JSON.parse(JSON.stringify(BODY_DROPPED)), { setpassword: ["role"] });
   for (const [name, mine] of Object.entries(ownConstants)) {
     const listed = name === "SESSION_MEMBER_BODY_OPS" ? ["stepsource", "stepsourcewithdraw"] : listOf(name);

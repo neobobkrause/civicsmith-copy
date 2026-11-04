@@ -519,7 +519,13 @@ test("R20 (T41; DEC-188 (8); K2484): ask a member's own session only (machineCla
       && !SESSION_OPS.member.has(op) && !SESSION_OPS.admin.has(op) && !FAMILY_OPS.includes(op)
       && !servedBy("credentials").includes(op) && !servedBy("ai-accounts").includes(op), op);
   /* the one switch of an account is ai-accounts' declared `aiaccountswitch` (its R61) */
-  assert.deepEqual(Object.keys(OPS).filter((op) => /switch/.test(op) && /account|group/.test(op)).sort(), ["aiaccountswitch"]);
+  /* (notice ai-runs:96) ai-runs' run acts are no account's switch: its `aiswitchaccount` moves a held run on to the next
+     account (ai-runs R95) and sets no account's switch, so the ops ai-runs declares are read out of this census from
+     its own declaration (K3268) */
+  const runActs = Object.keys(REGISTERED["ai-runs"] ?? {});
+  assert.ok(runActs.length > 0, "ai-runs declares nothing");
+  assert.deepEqual(Object.keys(OPS).filter((op) => /switch/.test(op) && /account|group/.test(op) && !runActs.includes(op)).sort(),
+    ["aiaccountswitch"]);
   /* no op names a group-level subscription or a group account; a project's own ops are its keep-away alone */
   for (const op of Object.keys(OPS)) assert.doesNotMatch(op, /^(group|instance)(account|claude|reference|subscription)/, op);
   assert.deepEqual(Object.keys(OPS).filter((op) => /^project(account|key|signin|aikeep)/.test(op)).sort(),

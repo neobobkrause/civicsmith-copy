@@ -7,6 +7,7 @@ import { HEADINGS } from "../../../src/record-grammar/index.mjs";
 import { caseRatifyStatement, ratifyStatement, NS_RATIFY } from "../../../src/sshsig.mjs";
 import { memoryBucket } from "../store-assembly/world.mjs";
 import { hold, project, resultOf, refusedAct, instant, hex } from "./door.mjs";
+import { PLANS, HOSTS } from "../ai-accounts/catalogue.mjs";
 
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
 const counter = (world, key) => (world[key] = (world[key] || 0) + 1);
@@ -61,15 +62,27 @@ export async function questions(world, as, projectId, n, { legsOf = null } = {})
   return ids;
 }
 
-/** The team's Claude account, by an administrator's real acts: her password again (`reauth`), the team's key set and switched on
- *  (`groupkeyset`, `groupkeyswitch`) and its notice read by her (`groupkeynoticeseen`). The key is a stand-in no call ever sends. */
+/** The team's Claude account, by an administrator's real acts (ai-accounts R61, T53): her password again (`reauth`), the team's account of
+ *  ai-accounts' published catalogue's team API plan added with its key sealed (`aiaccountadd`, owner `group`) and switched on
+ *  (`aiaccountswitch`), and the recipient notice of its host read by her (`aisend`). The key is a stand-in no call ever sends.
+ *  Answers the account's id. Needs the assembled plane's ai-accounts to hold a catalogue (else `aiaccountadd` is CATALOGUE_UNAVAILABLE). */
 export async function aiAccount(world, as) {
-  if (world.__aiAccount) return;
+  if (world.__aiAccount) return world.__aiAccount;
   await as.act("reauth", { body: { password: as.password } });
-  await as.act("groupkeyset", { body: { key: "sk-ant-api03-" + "w".repeat(40) } });
-  await as.act("groupkeyswitch", { body: { on: true } });
-  await as.act("groupkeynoticeseen", { body: {} });
-  world.__aiAccount = true;
+  const added = await as.act("aiaccountadd", { body: { owner: "group", provider: PLANS.provider, plan: PLANS.teamApi, means: "sealed",
+    secret: "sk-ant-api03-" + "w".repeat(40) } });
+  if (!added || added.ok !== true || typeof added.account_id !== "string") throw refusedAct("aiaccountadd", { json: added });
+  const on = await as.act("aiaccountswitch", { body: { account_id: added.account_id, on: true } });
+  if (!on || on.ok !== true) throw refusedAct("aiaccountswitch", { json: on });
+  await noticeSeen(as);
+  world.__aiAccount = added.account_id;
+  return added.account_id;
+}
+
+/** The recipient notice of the team account's host, read by `as` (`aisend`, ai-accounts R51). */
+export async function noticeSeen(as) {
+  const seen = await as.act("aisend", { body: { provider: PLANS.provider, host: HOSTS.main } });
+  if (!seen || seen.ok !== true) throw refusedAct("aisend", { json: seen });
 }
 
 /** A run opened by `as` over a project (`airunopen`), under the account `aiAccount` set. Answers the run's id. */
@@ -186,7 +199,7 @@ export async function conflict(world, as, { label = "record", through = "notice"
     await m.act("projectinvite", { query: { projectId: projects[i], handle: judge.handle } });
     await judge.act("projectjoin", { query: { projectId: projects[i] } });
   }
-  await judge.act("groupkeynoticeseen", { body: {} });   /* the team's key is used for her only once she has read its notice */
+  await noticeSeen(judge);   /* the team's account is used for her only once she has read its host's notice */
   const run = await openRun(world, judge, projects[0]);
   const doc = await hold(world, members[0], `Fee schedule ${n}`, `The fee was set in 2026 (${n}).\n`, "");
   const words = ["The fee rose in 2026.", "The fee did not rise in 2026."];
@@ -278,15 +291,16 @@ export async function rerun(world, as, { from = null, through = "paired", title 
   return { ...imp, project: projectId, rerun: started, own, pairing };
 }
 
-/** R19 (K5178; J42 (d)): the team's Claude account set up by an administrator's real acts (`reauth`, `groupkeyset`, `groupkeyswitch`, `groupkeynoticeseen`), so the assistant is
- *  reachable (`assistantstate` on and `groupkeystate` on), and each of `readers` (members) has read its notice. Needs `storeWorld({ ai: true })`. Answers `{assistant, key}`: the
- *  two reads a page boots with. */
+/** R19 (K5178; J42 (d)): the team's Claude account set up by an administrator's real acts (`aiAccount`: `reauth`, `aiaccountadd`, `aiaccountswitch`, `aisend`), so the
+ *  assistant is reachable (`assistantstate` on and the team's account listed and on), and each of `readers` (members) has read its host's notice (`aisend`). Needs
+ *  `storeWorld({ ai: true })`. Answers `{assistant, account}`: `assistantstate` and the team's account as `accountsof` (owner `group`) lists it. */
 export async function assistant(world, as, { readers = [] } = {}) {
   if (!world.env.ACCOUNT_SEAL_SECRET)
     throw new Error("storeWorld: recipes.assistant needs the team's account sealed: make the world with storeWorld({ ai: true })");
-  await aiAccount(world, as);
-  for (const m of readers) await m.act("groupkeynoticeseen", { body: {} });
-  return { assistant: await as.read("assistantstate"), key: await as.read("groupkeystate") };
+  const id = await aiAccount(world, as);
+  for (const m of readers) await noticeSeen(m);
+  const listed = await as.read("accountsof", { query: { owner: "group" } });
+  return { assistant: await as.read("assistantstate"), account: (listed.accounts ?? []).find((a) => a.account_id === id) ?? null };
 }
 
 /** R19 (K5178; J42 (d)): the writing help, as the world's door answers `writinghelp` for `as`: `{op, field, told}` (the act the field belongs to, the field, what she told the assistant).

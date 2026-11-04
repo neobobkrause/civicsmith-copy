@@ -889,7 +889,7 @@ export class PlanWork {
     try {
       const r = await ai.open({ run, contextType: "project", contextId: p.project, mode: "plan", plan: planId,
         origin: "reexamination", response, label: word("plan-work.label.re_examining_plan"),
-        principalPlane: who, principalClaude: who, skillVersion: REEXAM_SKILL, bounds: REEXAM_BOUNDS.map((b) => ({ ...b })),
+        principalPlane: who, principalAi: who, principalAiRef: who, skillVersion: REEXAM_SKILL, bounds: REEXAM_BOUNDS.map((b) => ({ ...b })),
         actor: who, viewer: who });
       if (r && r.started !== false && r.ok !== false) return { opened: true, run };
       return { opened: false, run: null, refused: { code: r && (r.code ?? r.reason) || null, detail: r && (r.detail ?? r.note) || null } };

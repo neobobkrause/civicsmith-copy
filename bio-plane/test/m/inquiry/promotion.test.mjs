@@ -191,11 +191,11 @@ test("R11 K681 the entry arm at the write: inquiry-grammar's entry requirements,
   const Q = "INQ-2026-0011-e";
   const robot = w.promote(Q, inquiryMd(Q).replace("surfaced_by: human", "surfaced_by: robot"));
   assert.deepEqual([robot.ok, robot.reason], [false, "BASIS_REFUSED"]);
-  assert.ok(robot.findings.some((x) => x.check === "C-2.8" && /surfaced_by 'robot'/.test(x.detail)), JSON.stringify(robot));
+  assert.ok(robot.findings.some((x) => x.check === "C-2.8" && /who surfaced this inquiry is 'robot'/.test(x.detail)), JSON.stringify(robot));
   assert.equal(w.record.head(Q), null, "nothing written");
   /* a question resting on nothing: no basis, no grounds, still judged (the arm is not only the leg grammar) */
   const deferred = w.promote(Q, inquiryMd(Q, { state: "deferred" }));
-  assert.ok(deferred.findings.some((x) => /deferred state requires a non-empty disposition_reason/.test(x.detail)));
+  assert.ok(deferred.findings.some((x) => /the deferred state requires a non-empty reason/.test(x.detail)));
   const concluded = w.promote(Q, inquiryMd(Q, { state: "concluded" }));
   assert.deepEqual(concluded.reason, "BASIS_REFUSED");
   assert.ok(concluded.findings.some((x) => /concluded state requires a non-empty conclusion/.test(x.detail)));
@@ -203,9 +203,9 @@ test("R11 K681 the entry arm at the write: inquiry-grammar's entry requirements,
   const divided = w.promote(Q, inquiryMd(Q, { state: "divided", legs: [{ target: A }] }));
   assert.ok(divided.findings.some((x) => /divided state requires a division block/.test(x.detail)));
   const shape = w.promote(Q, inquiryMd(Q, { subject: "not-an-entity" }));
-  assert.ok(shape.findings.some((x) => x.check === "C-2.8" && /subject registry key/.test(x.detail)), "the shape before the registry");
+  assert.ok(shape.findings.some((x) => x.check === "C-2.8" && /is not an entry in the subject registry/.test(x.detail)), "the shape before the registry");
   const caseKey = w.promote(Q, inquiryMd(Q, { extra: ["case_id: CASE-2026-0001"] }));
-  assert.ok(caseKey.findings.some((x) => /name a case \(case_id\)/.test(x.detail)));
+  assert.ok(caseKey.findings.some((x) => /case facts of its own/.test(x.detail)));
   /* negative controls: the well-formed question lands, and a replay of the malformed one is held verbatim */
   assert.equal(w.promote(Q, inquiryMd(Q)).ok, true);
   assert.equal(w.promote("INQ-2026-0012-r", inquiryMd("INQ-2026-0012-r").replace("surfaced_by: human", "surfaced_by: robot"),

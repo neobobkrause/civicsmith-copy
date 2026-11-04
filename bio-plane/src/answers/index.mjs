@@ -290,8 +290,11 @@ export class Answers {
     const owner = S.ownerOf(account, member);
     const check = this.dep("useCheck");
     let limit;
+    /* (ai-use:105, its R3, R18) the account chosen and its entry are named, so a provider limit standing on either is
+       judged with the paying account's own limits; without them only the own limits would be */
     try { limit = typeof check === "function" ? await check({ owner, member: S.memberOf(member) ?? member, use,
-                                                                at: filled(at) ? at : this.now() }) : undefined; }
+                                                                at: filled(at) ? at : this.now(),
+                                                                ...S.accountNamed(account) }) : undefined; }
     catch { limit = undefined; }
     if (limit === undefined) return { ok: false, reason: "LIMITS_UNREADABLE",
                                       detail: "the limits of the account that would pay for this ask could not be read; nothing was used" };
