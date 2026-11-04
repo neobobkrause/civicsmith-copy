@@ -2,3 +2,4 @@
 {"at":"2026-11-04T03:37:33Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T04:32:12Z","row":"sent","n":2,"to":"bob","text":"job store-assembly BLOCKED: run status"}
 {"at":"2026-11-04T04:32:24Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-04T06:16:55Z","row":"sent","n":3,"to":"bob","text":"job store-assembly BLOCKED: run status"}
