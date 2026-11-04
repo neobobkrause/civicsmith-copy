@@ -173,13 +173,13 @@ test("R9 the router maps /app to home and /app/<screen>[/<subject>] to that scre
   assert.ok(f.root().querySelector('#cs-main [data-state="failed"]'));
 });
 
-test("R20 the assistant is reachable when assistantstate answers on and the member's own reference, a connected subscription, or the group's key held and on serves; then the masthead's button opens the dock with screens-inquiry's panel beside the screen; otherwise no assistant control anywhere", async () => {
+test("R20 (T53) the assistant is reachable when assistantstate answers on and aipathready answers ready (the plane's one combined read over every account the cascade can choose: the member's own, a joined project's, the team's); then the masthead's button opens the dock with screens-inquiry's panel beside the screen; otherwise no assistant control anywhere", async () => {
   const reach = async (plane) => boot({ screens: ALL, path: "/app/document/c1", plane: { ...PLANE, ...plane } });
   const ON = { assistantstate: ok({ on: true }) };
-  for (const plane of [{ ...ON, accountreference: ok({ held: true }) }, { ...ON, subscriptionsignin: ok({ connected: true }) }, { ...ON, groupkeystate: ok({ held: true, on: true }) }, { ...ON, groupkeystate: ok({ on: true }) }]) {
-    const p = await reach(plane);
+  {
+    const p = await reach({ ...ON, aipathready: ok({ state: "ready" }) });
     const b = p.root().querySelector('.cs-mast [data-shell="dock"]');
-    assert.ok(b, JSON.stringify(plane));
+    assert.ok(b, "a ready path: the button");
     assert.equal(p.root().querySelector(".cs-dock"), null);
     await p.click(b);
     const dock = p.root().querySelector(".cs-dock");
@@ -188,10 +188,14 @@ test("R20 the assistant is reachable when assistantstate answers on and the memb
     assert.ok(p.root().querySelector("#cs-main"), "beside the screen it serves");
     await p.click(dock.querySelector('button[data-act="airunopen"]'));
     assert.deepEqual([p.byOp("airunopen")[0].body.contextType, p.byOp("airunopen")[0].body.contextId], ["document", "c1"]);
+    /* the alpha's three reads are no longer asked */
+    for (const op of ["accountreference", "subscriptionsignin", "groupkeystate"]) assert.equal(p.byOp(op).length, 0, op + " is not asked");
   }
-  const NOT = [{ assistantstate: ok({ on: false }), accountreference: ok({ held: true }) }, { ...ON }, { ...ON, groupkeystate: ok({ held: true, on: false }) },
-    { ...ON, groupkeystate: ok({ held: false, on: true }) }, { assistantstate: silent, accountreference: ok({ held: true }) },
-    { ...ON, accountreference: refused("NOT_YOUR_ACCOUNT") }, { assistantstate: pending, accountreference: ok({ held: true }) }];
+  /* control: on false; every path not ready (auth_failed, open); an answer that is no state; a read that does not answer, or is refused */
+  const NOT = [{ assistantstate: ok({ on: false }), aipathready: ok({ state: "ready" }) }, { ...ON }, { ...ON, aipathready: ok({ state: "auth_failed" }) },
+    { ...ON, aipathready: ok({ state: "open" }) }, { ...ON, aipathready: ok({ ready: true }) }, { assistantstate: silent, aipathready: ok({ state: "ready" }) },
+    { ...ON, aipathready: silent }, { ...ON, aipathready: refused("NOT_YOUR_ACCOUNT") }, { assistantstate: pending, aipathready: ok({ state: "ready" }) },
+    { ...ON, aipathready: pending }];
   for (const plane of NOT) {
     const p = await reach(plane);
     assert.equal(p.root().querySelector('[data-shell="dock"]'), null, JSON.stringify(plane));

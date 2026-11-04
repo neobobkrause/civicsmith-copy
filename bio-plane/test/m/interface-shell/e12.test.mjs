@@ -13,7 +13,7 @@ for (const m of MODS) { const x = await import(`../../../src/${m}/index.mjs`); R
 const sigs = (p) => p.requests.map((r) => r.op + " " + JSON.stringify(Object.fromEntries(Object.entries(r.query).filter(([k]) => k !== "op" && k !== "background"))) + (r.body === undefined ? "" : " " + JSON.stringify(r.body)));
 const repeats = (p) => { const n = new Map(); for (const s of sigs(p)) n.set(s, (n.get(s) || 0) + 1); return [...n].filter(([, c]) => c > 1).map(([s, c]) => s + " x" + c); };
 
-/* the world answers the frame's reads (`whoami`, `groupidentity`, `queue`, `assistantstate`, `accountreference`) for an administrator who holds a project */
+/* the world answers the frame's reads (`whoami`, `groupidentity`, `queue`, `assistantstate`, `aipathready`) for an administrator who holds a project */
 const loaded = async (path, options = {}) => {
   const { world, me } = await inWorld();
   const project = await world.recipes.project(me, "Stormwater");
