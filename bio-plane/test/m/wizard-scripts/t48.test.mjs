@@ -6,15 +6,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { world, step, V } from "./fixture.mjs";
+import { world, step, V, currentRegistry, currentLibrary } from "./fixture.mjs";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
 const F = V("frank");
 const src = (f) => readFileSync(new URL(`./source/${f}`, import.meta.url), "utf8");
-const REG_FILE = JSON.parse(src("registry.json")), LIB_T48 = JSON.parse(src("library-4664e8efd4.json"));
-const LIB_T47 = JSON.parse(src("library-f90b187c7b.json")), REG_T47 = JSON.parse(src("registry-f90b187c7b.json"));
-const REG_T48 = JSON.parse(src("registry-4664e8efd4.json"));   /* PR #34's registry, as R38 re-took it; R41 re-takes it again (the file `registry.json` is the later) */
+const REG_FILE = currentRegistry(JSON.parse(src("registry.json"))), LIB_T48 = currentLibrary(JSON.parse(src("library-4664e8efd4.json")));
+const LIB_T47 = currentLibrary(JSON.parse(src("library-f90b187c7b.json"))), REG_T47 = currentRegistry(JSON.parse(src("registry-f90b187c7b.json")));
+const REG_T48 = currentRegistry(JSON.parse(src("registry-4664e8efd4.json")));   /* PR #34's registry, as R38 re-took it; R41 re-takes it again (the file `registry.json` is the later) */
 const OWED = /^owed:([a-z][a-z0-9]*)(?:\s+(DEC-\d+|K\d+))?$/;
 const opOf = (a) => (a.status === "owed" ? OWED.exec(a.op)[1] : a.op);
 /* every op the registry names, owed ones as their op: the member op table once each owed op is declared */
@@ -98,10 +98,10 @@ test("R38 (T48; DEC-226, DEC-227, DEC-218; K2241, K3190, K3192 D1; amends R13, R
   assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "30af4350f2", path: "docs/development/ux-substrate/screens/registry.json",
                                                 sha256: createHash("sha256").update(src("registry.json"), "utf8").digest("hex") });
   assert.equal(REG_T48.screens.length, 67);
-  assert.equal(REG_T48.screens.reduce((n, s) => n + s.acts.length, 0), 329);
+  assert.equal(JSON.parse(src("registry-4664e8efd4.json")).screens.reduce((n, s) => n + s.acts.length, 0), 329, "the file's own count");
   assert.equal(REG_T48.screens.flatMap((s) => s.acts).filter((a) => a.status === "owed").length, 5, "five owed at PR #34: passwordresetlink and the update acts");
   assert.equal(wz.SCREEN_REGISTRY.length, 91, "R54: 91 at 30af4350f2");
-  assert.equal(REG_FILE.screens.reduce((n, s) => n + s.acts.length, 0), 678, "R54: the file at 30af4350f2, 678 acts (R53's b1adf4236d held 656), 114 more than R49's 564 (projectjoin, scanmirror, T52's owed acts and DEC-438's five standard acts, less taskresolve on dash-action)");
+  assert.equal(JSON.parse(src("registry.json")).screens.reduce((n, s) => n + s.acts.length, 0), 678, "R54: the file at 30af4350f2, 678 acts (R53's b1adf4236d held 656), 114 more than R49's 564 (projectjoin, scanmirror, T52's owed acts and DEC-438's five standard acts, less taskresolve on dash-action)");
   assert.equal(REG_FILE.screens.flatMap((s) => s.acts).filter((a) => a.status === "owed").length, 135, "R54: 135 owed at 30af4350f2 (121 at b1adf4236d)");
   assert.deepEqual(wz.SCREEN_REGISTRY.map((s) => s.id), REG_FILE.screens.map((f) => f.id));
   assert.equal(REG_T48.screens.length - REG_T47.screens.length, 1, "PR #34 has one screen more than PR #33's head");

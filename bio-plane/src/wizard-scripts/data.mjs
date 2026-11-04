@@ -83,6 +83,19 @@ export function registryActGaps({ screens = [], declared = [] } = {}) {
   return gaps;
 }
 
+/** ai-accounts R35, R36 (T53; K5457; op-declarations PR 95, no aliases): the door ops ai-accounts retired, each read as the
+ *  T53 op that does its act (its R61), or as no act (`null`) where T53 has no act for it: a notice is marked seen by
+ *  `aisend`'s `recipientNoticeSeen`, not by an op of its own. Applied wherever the design files are read (the registry's
+ *  acts and every library version's steps), so no carried screen or step names an op no spec holds. */
+export const RETIRED_ACTS = Object.freeze({
+  groupkeyset: "aiaccountadd", groupkeyswitch: "aiaccountswitch", groupkeyremove: "aiaccountremove", groupkeynoticeseen: null,
+  accountreferenceset: "aiownadd", accountreferenceremove: "aiaccountremove", subscriptiondisconnect: "aiaccountremove",
+  projectkeyset: "aiaccountadd", projectsigninset: "aiaccountadd", projectaccountswitch: "aiaccountswitch",
+  projectaccountremove: "aiaccountremove", projectkeynoticeseen: null,
+});
+/** The op an act is carried as: a retired op's replacement (or null), else the op itself. */
+export const currentAct = (op) => (typeof op === "string" && Object.hasOwn(RETIRED_ACTS, op) ? RETIRED_ACTS[op] : op);
+
 /** R13 (DEC-139 (5)): the registry's screens as `[{id, name, purpose, acts, owed}]`: `acts` the op of each act marked
  *  `declared` or `function`, in the file's order; `owed` each act marked `owed`, `{op, dec, at}`, `at` the number of
  *  `acts` that precede it, so an owed act whose op is declared is registered in the file's order (R13; DEC-148). */
@@ -92,7 +105,7 @@ export function screensFromFile(file) {
     const acts = [], owed = [];
     for (const a of Array.isArray(s.acts) ? s.acts : []) {
       /* R45: an op the file lists for two acts of one screen (members: confirm and withdraw an expertise) is one act here */
-      if (a.status === "declared" || a.status === "function") { if (!acts.includes(a.op)) acts.push(a.op); }
+      if (a.status === "declared" || a.status === "function") { const op = currentAct(a.op); if (op && !acts.includes(op)) acts.push(op); }
       else if (a.status === "owed") {
         const m = OWED_ACT.exec(String(a.op ?? "").trim());
         if (m) owed.push({ op: m[1], dec: m[2] ?? null, at: acts.length });
@@ -201,7 +214,7 @@ export function doorsFromFile(file) {
 function stepsOf(s, v, byName) {
     return (v.steps || []).map((t) => {
       const owed = typeof t.act === "string" ? OWED_ACT.exec(t.act.trim()) : null;
-      const step = { screen: t.screen, act: owed ? owed[1] : t.act ?? null, what: t.what, why: t.why };
+      const step = { screen: t.screen, act: currentAct(owed ? owed[1] : t.act ?? null), what: t.what, why: t.why };
       if (t.draft !== undefined && t.draft !== null) step.draft = t.draft;
       if (t.via !== undefined && t.via !== null) {
         if (!byName.has(t.via)) throw new Error(`library: '${s.name}' names a side trip '${t.via}' the library does not hold`);
