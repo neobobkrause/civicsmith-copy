@@ -42,6 +42,7 @@ import { captureOf, captureOps } from "../../../src/capture/index.mjs";
 import { doorbellOf, doorbellOps } from "../../../src/doorbell/index.mjs";
 import { instanceSetupOf } from "../../../src/setup.mjs";
 import { answersOf } from "../../../src/answers/index.mjs";
+import { catalogueFor } from "../ai-accounts/catalogue.mjs";
 
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 function cursor(rows) {
@@ -93,7 +94,13 @@ export async function record({ step = false, probes = {}, sealSecret = null } = 
   const record = recordOf(ctx, { evidence: bucket, evidencePrefix: () => "bio/captures/" });
   const promotion = step ? promotionOf(ctx, { order: STEP_ORDER }) : promotionOf(ctx);
   /* T34 (R10): credentials built first with a seal secret when a suite asks for one, so accounts can be held */
-  if (sealSecret) credentialsOf(ctx, { record, sealSecret });
+  /* (T53; ai-accounts R32, R59) and with ai-catalogue's real service, seeded as ai-accounts' tests seed it, since an account
+     is now held on a catalogue plan (the old forms included); the seed awaited before any act */
+  if (sealSecret) {
+    const catalogue = catalogueFor(ctx, { record });
+    credentialsOf(ctx, { record, sealSecret, catalogue });
+    await catalogue.seeded;
+  }
   observationLogOf(ctx, { extraction: null, provenance: provenanceOf(ctx, { signingKey: null, instanceName: "test" }) });
   /* N512: provenance's split, each built after provenance in the module order */
   attestationOf(ctx, { record, provenance: provenanceOf(ctx), signingKey: null });
