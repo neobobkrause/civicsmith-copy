@@ -19,6 +19,8 @@ const START = {"R24":"e19380ce9b6427d0","R1":"a5eb42fea5599c8c","R2":"ba19fb4ff9
 const START_UNMET = ["R68"];
 /* the line carrying R44's text, R28's amendment and R23's (no id first on its line), kept word for word */
 const G41_LINE = "cf65a562a1983338";
+/* lines BOB restated after the split, with their new hash: R54 drops email from its unsupported list (BOB 4 Nov, PR 272 (a)) */
+const AMENDED = { R54: { from: "138b8c8c10d9fa12", to: "0f78b7e934acdd64" } };
 const MOVED = [45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 60, 61, 62, 63, 64, 65, 66, 67].map((n) => `R${n}`);
 
 test("split and consolidation: the ids and unmet marks of reading-pipeline.md and reader-contract.md together equal reading-pipeline.md's at the start commit, every line word for word", () => {
@@ -28,7 +30,11 @@ test("split and consolidation: the ids and unmet marks of reading-pipeline.md an
   assert.deepEqual(all.map((l) => l.id).sort(), Object.keys(START).sort(), "the same ids, none lost or added");
   assert.equal(new Set(all.map((l) => l.id)).size, all.length, "no id in both files");
   assert.deepEqual(all.filter((l) => l.unmet).map((l) => l.id).sort(), [...START_UNMET].sort(), "the same unmet marks");
-  for (const l of all) assert.equal(hash(l.line), START[l.id], `${l.id} is word for word`);
+  for (const l of all) {
+    const a = AMENDED[l.id];
+    if (a) assert.equal(START[l.id], a.from, `${l.id} was restated from its start line`);
+    assert.equal(hash(l.line), a ? a.to : START[l.id], a ? `${l.id} is BOB's restatement` : `${l.id} is word for word`);
+  }
   assert.deepEqual(rc.map((l) => l.id).sort(), [...MOVED].sort(), "reader-contract holds R45–R58 and R60–R67");
   assert.ok(read("build/requirements/reading-pipeline.md").split("\n").some((l) => hash(l) === G41_LINE), "R44's line is kept word for word");
 });
