@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-ask","verdict":"not affected","evidence":"build/modules.json:177 has no paths; no file imports ai-runs, so it has no use of the provider and cannot reach the changed useCheck call.","at":"2026-11-04T11:25:04.680Z","key":"ai-runs:213","worker":"a4c68c18134a73cc5","cost":"0.2"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-account","verdict":"not affected","evidence":"bio-plane/src/case-account/index.mjs:715 only calls aiRunsOf(...).runFor (imported at :51, used at :207) to read a draft's run; the changed #useCheck on open and tick is not reached by runFor","at":"2026-11-04T11:25:04.680Z","key":"ai-runs:213","worker":"a304525839c2eb398","cost":"0.2"}

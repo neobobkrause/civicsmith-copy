@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-specs-late","by":"triage","evidence":"build/modules.json:170 lists op-specs-late with paths [] and tests [] (empty until its job's merge, build/layers.md:115), so no file of it imports or calls ai-runs and the changed useCheck cannot be reached from it.","at":"2026-11-04T11:25:04.680Z","key":"ai-runs:213","worker":"ac268e4143e68eb75","cost":"0.2"}
