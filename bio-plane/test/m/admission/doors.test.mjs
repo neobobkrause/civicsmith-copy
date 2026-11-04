@@ -4,7 +4,7 @@
    `groupswitchset` is retired to `accountusesset` and is no longer among R19's ops (t41.test.mjs). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { A, O, world, gate, urlOf, refused, opCalls, hex64, aik, cred } from "./harness.mjs";
+import { A, O, world, gate, urlOf, refused, opCalls, hex64, aik, cred, member, REAUTH_DUE_ANSWER } from "./harness.mjs";
 
 const { OPS, SESSION_OPS, NEEDS, GOVERNANCE_ACTIONS, IDENTITY_ACTIONS } = O;
 const DOORS = ["joinlinkinvite", "websiteinvite"];
@@ -20,6 +20,11 @@ const ADMIN_ACTS = declared(membershipOps).filter((op) => OPS[op]?.mutating && A
   && !GOVERNANCE_ACTIONS.includes(op) && !IDENTITY_ACTIONS.includes(op));
 const ACCOUNT_OPS = declared(aiAccountsOps).filter((op) => Array.isArray(OPS[op]?.machineClasses) && OPS[op].machineClasses.length === 0);
 /* the group key's ops R19 names, retired with no alias (op-declarations R24, ai-accounts R35) */
+/* the administrator's own acts as admission R29 defines them, read from op-declarations: its governance and custodial
+   acts and the ops of its kinds admin and roster */
+const ADMINISTRATORS_OWN = new Set([...O.GOVERNANCE_ACTIONS, ...O.CUSTODIAL_ACTIONS]);
+for (const f of Object.values(O.OP_FAMILIES))
+  for (const [op, kind] of Object.entries(f.kinds)) if (kind === "admin" || kind === "roster") ADMINISTRATORS_OWN.add(op);
 const RETIRED_GROUP_KEY_OPS = ["groupkeyset", "groupkeyremove", "groupkeyswitch", "groupkeystate", "groupkeynotice", "groupkeynoticeseen"];
 const SECRET = "wk_" + hex64(), LINK = "jl_" + hex64(), COVER = "Rosa from the tenants' union", APIKEY = "sk-ant-api03-" + hex64();
 
@@ -151,10 +156,13 @@ test("R19 (T53; op-declarations R24, PR 95): the group key's ops are retired, an
     assert.equal(opCalls(w2.env).length, 0, "before any store call");
     refused(A.aiScopeDeclaration([op]), 403, "AI_SCOPE_BEYOND_MEMBER_REACH", "C-29.9");
     /* every session reaches ai-accounts (an administrator's or not: NOT_AN_ADMIN is its owner's); no fence here, and
-       R29's question first only for an act REAUTH_ACTS names */
+       R29's question first only for an administrator's own act (as R29 defines them) that REAUTH_ACTS names. Judged
+       against the declarations' table with every account op named (as op-declarations PR 289 names the T53 credential
+       acts), so an account op that is not an administrator's own act is admitted to a session whose window is open */
+    const reauthActs = { ...O.REAUTH_ACTS, [op]: null };
     for (const t of [S.founder, S.admin, S.ann, S.bare]) {
-      const r = await gate(env, { op, token: t, extraBody: { secret: APIKEY } });
-      if (Object.hasOwn(O.REAUTH_ACTS, op) && ![S.founder, S.admin].includes(t)) {
+      const r = await gate(env, { op, token: t, reauthActs, extraBody: { secret: APIKEY } });
+      if (ADMINISTRATORS_OWN.has(op) && ![S.founder, S.admin].includes(t)) {
         assert.equal(r.refusal?.body.reason, "NOT_AN_ADMIN", `${op}: R29 asks the roster first`);
         continue;
       }
@@ -172,4 +180,20 @@ test("R19 (T53; op-declarations R24, PR 95): the group key's ops are retired, an
   /* negative control: the same request with no secret in its query keeps its URL whole */
   const n = await gate(env, { op: "aiaccountadd", token: S.founder, params: { owner: "group" } });
   assert.deepEqual(Object.fromEntries(n.url.searchParams), { owner: "group" });
+});
+
+test("R19, R29 (op-declarations PR 289): aiaccountadd is not an administrator's own act, so once REAUTH_ACTS names it a member session that is not an administrator, asking it with its password window old, is answered REAUTH_DUE (credentials' code), never NOT_AN_ADMIN, the password asked once; control: the same member with the window open is admitted", async () => {
+  const CAPS = ["contribute", "publish", "create_projects"];
+  const old = hex64(), open = hex64();
+  const { env } = world({ sessions: { [old]: { ...member("cal", CAPS), reauthUntil: null },
+                                      [open]: { ...member("cal", CAPS), reauthUntil: Date.now() + 60e3 } } });
+  assert.equal(ADMINISTRATORS_OWN.has("aiaccountadd"), false, "aiaccountadd is no administrator's own act (R29)");
+  const reauthActs = { ...O.REAUTH_ACTS, aiaccountadd: null };
+  env.calls.length = 0;
+  const r = await gate(env, { op: "aiaccountadd", token: old, reauthActs, extraBody: { secret: APIKEY } });
+  refused(r, 403, "REAUTH_DUE", REAUTH_DUE_ANSWER.check, [old, APIKEY]);
+  assert.equal(env.calls.filter((c) => c.route === "reauthdue").length, 1, "the password is asked once");
+  assert.equal(opCalls(env).length, 0, "nothing of the op");
+  const c = await gate(env, { op: "aiaccountadd", token: open, reauthActs, extraBody: { secret: APIKEY } });
+  assert.equal(c.caller?.viaSession, true, "the window open: admitted");
 });
