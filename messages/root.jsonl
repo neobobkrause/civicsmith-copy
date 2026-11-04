@@ -41,3 +41,4 @@
 {"at":"2026-11-04T06:15:00Z","row":"sent","n":21,"to":"bob","text":"Sweep: agent-worker: BLOCKED; ai-catalogue: BLOCKED; bundler: BLOCKED; instance-setup: BLOCKED; runtime-limits: BLOCKED; screens-action: BLOCKED; store-assembly: BLOCKED; store-request: BLOCKED; wizard-scripts: BLOCKED."}
 {"at":"2026-11-04T06:15:10Z","row":"outcome","n":21,"outcome":"delivered"}
 {"at":"2026-11-04T07:14:54Z","row":"sent","n":22,"to":"bob","text":"Sweep: agent-worker: BLOCKED; ai-catalogue: BLOCKED; runtime-limits: BLOCKED; screens-action: BLOCKED; store-assembly: BLOCKED; store-request: BLOCKED."}
+{"at":"2026-11-04T07:15:10Z","row":"outcome","n":22,"outcome":"delivered"}
