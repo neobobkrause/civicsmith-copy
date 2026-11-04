@@ -5,7 +5,7 @@
    owner's rows are read from the owner (K3268), never listed here. The search is kept here, not in test-support's collector,
    because this module uses nothing outside its own layer order (P4). Import this file before `affordances.mjs`: registration
    is refused once any table has been read, and happens once per process, at this file's evaluation. */
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { registerDeclaredOps } from "../../../src/op-grades/index.mjs";
@@ -15,6 +15,7 @@ const { modules } = JSON.parse(readFileSync(join(ROOT, "build", "modules.json"),
 
 const filesOf = (path) => {
   const abs = join(ROOT, path);
+  if (!existsSync(abs)) return []; /* a module listed before its job has landed its files (today `registers`) declares nothing yet */
   if (!statSync(abs).isDirectory()) return [abs];
   return readdirSync(abs, { withFileTypes: true }).filter((e) => e.name !== "node_modules")
     .flatMap((e) => (e.isDirectory() ? filesOf(join(path, e.name)) : /\.(mjs|js)$/.test(e.name) ? [join(abs, e.name)] : []));

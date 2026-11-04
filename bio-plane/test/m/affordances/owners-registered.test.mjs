@@ -4,7 +4,7 @@
 import "./register-owners.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { REGISTERED } from "./register-owners.mjs";
@@ -14,6 +14,7 @@ const { modules } = JSON.parse(readFileSync(join(ROOT, "build", "modules.json"),
 
 const sourcesOf = (path) => {
   const abs = join(ROOT, path);
+  if (!existsSync(abs)) return []; /* a module listed before its job has landed its files declares nothing yet */
   if (!statSync(abs).isDirectory()) return [abs];
   return readdirSync(abs, { withFileTypes: true }).filter((e) => e.name !== "node_modules")
     .flatMap((e) => (e.isDirectory() ? sourcesOf(join(path, e.name)) : /\.(mjs|js)$/.test(e.name) ? [join(abs, e.name)] : []));
