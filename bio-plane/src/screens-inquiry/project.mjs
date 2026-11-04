@@ -34,8 +34,6 @@ function reads(view) {
     /* an empty first page is drawn by the screen's own state b, or paged on while a cursor follows */
     questions: { op: "projectquestions", query: { project: id, limit: "100" }, empty: () => false },
     others: { op: "list", query: { type: "inquiry", limit: "500" } },
-    /* what pays (`projectaccountstate`) is read by the screen (`later`) once she is a participant: an invited member who has
-       not joined is answered NO_SUCH_PROJECT, a refused read the page must not make (R1, R37) */
     visibility: { op: "projectvisibility", query: { projectId: id } },
     /* R53: the team's declared stake and the project's own (project-roster R32), each its own state when it cannot be read */
     identity: { op: "groupidentity", query: {} },
@@ -150,8 +148,8 @@ function render(cs, view) {
   /* R40 (K5148; WALK-FINAL-03 R24): the viewer is found in a roster by `member`, else by handle: a founder who chose no handle has
      `handle: null` in the roster and in `whoami`, and is still the owner whose row reads "founder" */
   const isMe = (x) => P.isMe(view, x);
-  /* R1, R37: an invited member who has not joined is a participant to the roster but not to the project's reads
-     (`projectaccountstate` answers NO_SUCH_PROJECT): she sees the not-joined state, never a failed read */
+  /* R1, R60: an invited member who has not joined is a participant to the roster but not to the project's reads: she sees
+     the not-joined state, never a failed read */
   const roster = d.participants && d.participants.state === "ok" && Array.isArray(d.participants.value.participants)
     ? d.participants.value.participants.find(isMe) : null;
   const invited = !!(roster && roster.state === "invited");
@@ -503,12 +501,10 @@ function render(cs, view) {
         + cs.act("projectvisibilityset", { label: "act.projectvisibilityset.label.project", data: { to: v.setting === "discoverable" ? "hidden" : "discoverable" } }) : "");
   }));
 
-  /* what pays for the assistant here (credentials' projectaccountstate), and the project's AI screen (R14) */
-  out.push(cs.sec("screen.project.account.head", cs.state(!d.participants || d.participants.state === "loading" ? { state: "loading" } : later("account", "projectaccountstate", { project: id }), (a) => {
-    const say = a.on === false && a.held ? "screen.project.account.off"
-      : a.serving === "project" || (a.on && a.held) ? "screen.project.account.project" : "screen.project.account.member";
-    return `<p>${W(say)}</p>`;
-  }) + `<p class="mk-small">${W("screen.project.account.where")} <a class="cs-btn" data-tone="quiet" href="/app/projectai/${cs.esc(id)}" data-nav>${W("screen.projectai.name")}</a></p>`));
+  /* R153 (T53; replaces R14): one link to the project's AI screen, `aiproject` (screens-ai), by address only; this screen
+     reads nothing of the project's account (R1: `projectaccountstate` is retired) and imports nothing of screens-ai's.
+     Reached only by a participant: a viewer who has not joined returned above (R60). */
+  out.push(`<p class="mk-small" data-aiproject="link"><a class="cs-btn" data-tone="quiet" href="/app/aiproject/${cs.esc(id)}" data-nav>${W("screen.project.account.open")}</a></p>`);
 
   /* R53: what the team has at stake here: the team's own statement read-only, the project's stake with who set it and when, its
      history, and the participant's (or an administrator's) field; an unreadable stake is said, never none */
@@ -1153,7 +1149,7 @@ const acts = [
 
 /** The keys the project screen may draw (R44: keys only). */
 const words = Object.freeze([
-  "screen.project.name", "screen.project.purpose", "screen.projectai.name",
+  "screen.project.name", "screen.project.purpose", "screen.project.account.open",
   ...["promote", "drawquestion", "findin", "projectbarset", "projectinvite", "projectjoin", "planopen", "projectvisibilityset",
     "projectownerremove", "projectowneradd", "projectremove", "projectleave", "projectfork", "projectownerrescue",
     "projectrequest", "projectrequestwithdraw", "noticeprepare", "noticepost"]

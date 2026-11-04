@@ -58,13 +58,11 @@ function refusalWords(cs, code, translation, own, fills) {
   return code ? cs.w("refusal.uncatalogued") + " <code>" + cs.esc(code) + "</code>" : cs.w("shell.unread");
 }
 
-/** R4: who serves this member (interface-shell R20's three reads), her use today, the pack the run names, and (R42)
- *  whether the group keeps its material away from AI. */
+/** R4: her use today, the pack the run names, and (R42) whether the group keeps its material away from AI. Who serves her is
+ *  read by the screen (`accountsof`, below): T53 retired `accountreference`, `groupkeystate` and `projectaccountstate`
+ *  (ai-accounts R35; op-declarations PR 95). */
 function reads(view) {
   return {
-    own: { op: "accountreference", query: {} },
-    signin: { op: "subscriptionsignin", body: { step: "state" } },
-    groupkey: { op: "groupkeystate", query: {} },
     usage: { op: "aiusage", query: {} },
     pack: { op: "agentpack", query: {} },
     keepaway: { op: "aikeepawaystate", query: {} },
@@ -115,13 +113,15 @@ function render(cs, view) {
     const m = im.state === "ok" && im.value && typeof im.value["bundle.md"] === "string" ? /^project:\s*(\S+)\s*$/m.exec(im.value["bundle.md"]) : null;
     if (m) context = { type: "project", id: m[1] };
   }
-  const proj = context && context.type === "project" ? later("projectaccount", "projectaccountstate", { project: context.id }) : null;
-  const ownHeld = (ok("own") && (d.own.value.reference || d.own.value.held || d.own.value.ref))
-    || (ok("signin") && d.signin.value.connected === true);
-  /* an administrator is told `{held, on}`; a member `{on}` alone (ai-accounts R10): with no `held`, the group key serves when it is on */
-  const gk = ok("groupkey") ? d.groupkey.value : null;
-  const groupOn = !!gk && (gk.held === undefined ? gk.on === true : gk.held && gk.on !== false);
-  const account = proj && proj.state === "ok" && (proj.value.serving === true || proj.value.serving === "project") ? "ai.account.project.inline"
+  /* T53 (ai-accounts R2's `accountsof`, op-declarations PR 95): an owner's list of accounts, each with `on`; an owner serves
+     when an account on its list is switched on. Her own is read under her member, the team's as any active member reads
+     it, a project's as its joined participants do; a refused or failed read serves nothing. */
+  const me0 = view.me && view.me.member;
+  const serves = (o) => !!o && o.state === "ok" && !!o.value && Array.isArray(o.value.accounts) && o.value.accounts.some((a) => a && a.on === true);
+  const proj = context && context.type === "project" ? later("projectaccount", "accountsof", { owner: "project:" + context.id }) : null;
+  const ownHeld = me0 ? serves(later("own", "accountsof", { owner: "member:" + me0 })) : false;
+  const groupOn = serves(later("group", "accountsof", { owner: "group" }));
+  const account = serves(proj) ? "ai.account.project.inline"
     : ownHeld ? "ai.account.own.inline" : groupOn ? "ai.account.group.inline" : "";
   out.push(`<p>${account ? cs.w("screen.assistant.serves") + " " + cs.w(account) : cs.w("screen.assistant.serves.unknown")}</p>`);
   /* no count is drawn at zero (R20) */
@@ -304,7 +304,7 @@ const acts = [
       /* R33: the bounds the mode needs, as the plane's rules state them; the dock opens `check` only (R6) */
       const mode = "check";
       cs.call("airunopen", { body: { run, contextType: ctx.type, contextId: ctx.id, mode,
-        principalClaude: "member:" + member, skillVersion: el.dataset.pack, bounds: (P.bounds || {})[mode] || [],
+        principalAi: "member:" + member, skillVersion: el.dataset.pack, bounds: (P.bounds || {})[mode] || [],
         ...(el.dataset.project ? { project: el.dataset.project } : {}) } })
         .then((o) => {
           /* R33: `started: false` is a refusal, drawn by its words; nothing is dispatched after it */

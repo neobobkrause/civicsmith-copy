@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { boot, ok, refusedIn, silent, ADMIN } from "../interface-shell/harness.mjs";
 import { interfacePage } from "../../../src/interface-shell/index.mjs";
 import { SCREEN_WORDS } from "../../../src/screens-inquiry/index.mjs";
-import { open, storeWorld, WORLD_FOUNDER_HANDLE, main, plane, says, word, SCREENS, P, Q, D, SHA, BASIS, READING, PROJECT_QUESTIONS, DOCUMENT_MD, inquiryMd } from "./fixtures.mjs";
+import { open, storeWorld, aiAccounts, WORLD_FOUNDER_HANDLE, main, plane, says, word, SCREENS, P, Q, D, SHA, BASIS, READING, PROJECT_QUESTIONS, DOCUMENT_MD, inquiryMd } from "./fixtures.mjs";
 
 const RUN = "RUN-" + "b".repeat(16);
 const text = (el) => el.textContent;
@@ -20,40 +20,29 @@ function aiUsageBars(cs, view, o) {
 const SERVING = SCREENS.map((s) => (s.id === "assistant" ? { ...s, parts: { aiUsageBars } } : s));
 const OWN = { capabilities: ["contribute", "create_projects"] };
 const KEY = "sk-ant-api03-" + "7".repeat(40);
-/** The real state the dock reads (the world made with `storeWorld({ ai: true })`, K5054): the team's Claude account set and switched on by the administrator's acts, `ann` a member
- *  with a project of her own, a question resting on a held passage and a document held in it; `own` also gives her an account of her own (`accountreferenceset`), `key` a key
- *  for the project (`projectkeyset`, switched on). Answers `{world, admin, ann, project, doc, id}`. */
+/** The real state the dock reads (the world made with `storeWorld({ ai: true })`, K5054): `ann` a member with a project of her own, a question resting
+ *  on a held passage and a document held in it. Answers `{world, admin, ann, project, doc, id, ai}`. Who serves her is not made by acts of the world: T53 retired
+ *  the door ops that set the team's, her own and a project's key (ai-accounts R35; op-declarations PR 95), and the assembled store holds ai-accounts with no
+ *  catalogue, so `aiaccountadd` answers CATALOGUE_UNAVAILABLE (store-request's report). `ai` answers `accountsof` from ai-accounts' real service (fixtures.mjs'
+ *  `aiAccounts`): the team's key on, and with `own` her own key, with `key` the project's; and the shell's reachability reads (interface-shell R20 still asks the
+ *  retired `accountreference` and `groupkeystate`) as the assistant on with an account held. */
 const worldOf = async ({ own = false, key = false } = {}) => {
   const world = await storeWorld({ ai: true });
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
-  await admin.act("reauth", { body: { password: admin.password } });
-  await admin.act("groupkeyset", { body: { key: "sk-ant-api03-" + "w".repeat(40) } });
-  await admin.act("groupkeyswitch", { body: { on: true } });
-  await admin.act("groupkeynoticeseen", { body: {} });
   const ann = await world.signIn("ann", OWN);
-  await ann.act("groupkeynoticeseen", { body: {} });
   const project = await world.recipes.project(ann, "Pothole repairs");
   const doc = (await world.recipes.hold(ann, "Policy memo", "The Director shall repair each reported pothole within seven days.", project)).bundle;
   const id = (await world.recipes.question(ann, project, { title: "Seven days", text: "Do crews repair each pothole within seven days?", legs: [{ target: doc, role: "supports" }], draw: true })).id;
-  if (own) {
-    /* what connecting means, read first; her password again; then the key, named as ai-accounts' route reads it */
-    const d = await ann.read("disclosureof", { query: { member: "member:" + ann.member } });
-    await ann.act("disclosureshown", { body: { member: "member:" + ann.member, version: d.version } });
-    await ann.act("reauth", { body: { password: ann.password } });
-    await ann.act("accountreferenceset", { body: { member: "member:" + ann.member, kind: "apikey", secret: KEY } });
-  }
-  if (key) {
-    await ann.act("reauth", { body: { password: ann.password } });
-    await ann.act("projectkeyset", { body: { project, key: KEY } });
-    await ann.act("projectaccountswitch", { body: { project, on: true } });
-  }
-  return { world, admin, ann, project, doc, id };
+  const { ACCOUNTS, accountsOf } = await aiAccounts();
+  const ai = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }), groupkeystate: ok({ held: true, on: true }),
+    accountsof: accountsOf({ own: own ? ACCOUNTS.own : ACCOUNTS.none, group: ACCOUNTS.group, project: key ? ACCOUNTS.project : ACCOUNTS.none }) };
+  return { world, admin, ann, project, doc, id, ai };
 };
 /** The page of `subject` as `as` reads it over the world's door (`plane` overrides only the ops it names), the dock opened. */
 async function dock(w, subject, extra = {}, as = w.ann) {
   const screen = /^PROJ-/.test(subject) ? "project" : /^INFO-/.test(subject) ? "document" : "question";
   const { door, session } = w.world.boot(as);
-  const p = await boot({ screens: SERVING, door, session, path: `/app/${screen}/${subject}`, ...(Object.keys(extra).length ? { plane: extra } : {}) });
+  const p = await boot({ screens: SERVING, door, session, path: `/app/${screen}/${subject}`, plane: { ...w.ai, ...extra } });
   await p.settle();
   await p.click(p.root().querySelector('.cs-mast [data-shell="dock"]'));
   await p.settle();
@@ -77,7 +66,6 @@ test("R17 a project's account she owns draws its bars; a refusal as a non-owner 
   const dev = await w.world.signIn("dev", OWN);
   await w.ann.act("projectinvite", { query: { projectId: w.project, handle: "dev" }, body: {} });
   await dev.act("projectjoin", { query: { projectId: w.project }, body: {} });
-  await dev.act("groupkeynoticeseen", { body: {} });
   const other = await dock(w, w.doc, {}, dev);
   assert.ok(!bars(other) && !panel(other).querySelector("[data-state]"), "nothing drawn, no failure");
   assert.doesNotMatch(text(panel(other)), /Only an owner|owner/);
@@ -139,10 +127,8 @@ test("R19 the module holds no copy of a words.json word, and none spelled \"labe
 });
 
 /* ---- R20: the common line ---- */
-/* projectai draws screens-settings' AI account panel (R14, `view.parts`); its classes are that module's (its R20), so a
-   stand-in that draws nothing leaves only this module's own */
-function noPanel() { return ""; }
-const OWN_ONLY = SCREENS.map((s) => (s.id === "projectai" ? { ...s, parts: { ...s.parts, aiPanel: noPanel } } : s));
+/* T53: `projectai`, which drew screens-settings' AI account panel, is retired with R14, so every screen here draws this module's own classes */
+const OWN_ONLY = SCREENS;
 
 test("R20 the module's real screens compose under interface-shell R56: every class they draw is one a served stylesheet defines", () => {
   assert.equal(typeof interfacePage(OWN_ONLY), "string");
@@ -151,22 +137,12 @@ test("R20 the module's real screens compose under interface-shell R56: every cla
 });
 
 test("R20 every labelled field is drawn with cs.field: no screen draws cs-form or a bare label", async () => {
-  /* the AI account screen over the real project: her key held and on, as the page's panel reads it */
-  const w = await worldOf({ key: true });
-  const ai = async () => {
-    const { door, session } = w.world.boot(w.ann);
-    const p = await boot({ screens: OWN_ONLY, door, session, path: "/app/projectai/" + w.project });
-    await p.settle();
-    return p;
-  };
-  for (const [path, real] of [["/app/project/" + P, false], ["/app/question/" + Q, false], ["/app/document/" + D, false], ["/app/projectai/" + w.project, true]]) {
-    const m = main(real ? await ai() : await open(path, { boot: { screens: OWN_ONLY } }));
+  /* T53: `projectai`'s key field is retired with R14; the project, question and document pages remain */
+  for (const path of ["/app/project/" + P, "/app/question/" + Q, "/app/document/" + D]) {
+    const m = main(await open(path, { boot: { screens: OWN_ONLY } }));
     assert.equal(m.querySelectorAll(".cs-form").length, 0, path);
     for (const l of m.querySelectorAll("label")) assert.ok(String(l.parentElement.getAttribute("class")).split(/\s+/).includes("cs-field"), `${path}: ${l.textContent}`);
   }
-  const m = main(await ai());
-  const key = m.querySelectorAll("input").find((i) => i.getAttribute("type") === "password");
-  assert.ok(key && key.parentElement.querySelector("label") && key.parentElement.querySelector(".help"), "the key field has its label and help");
 });
 
 test("R20 over an empty fixture no section is drawn empty and no count is drawn at zero", async () => {
@@ -206,8 +182,8 @@ test("R20 controls: a read that failed is still drawn failed, beside the rest, i
 });
 
 /* ---- R21: the subject guard ---- */
-test("R21 project, question, projectai and document mark their subject read, and drawn bare each draws nothing of its own", () => {
-  const SUBJECT = { project: ["stage", "projectstage"], question: ["inquiry", "image"], projectai: ["project", "image"], document: ["capture", "image"] };
+test("R21 project, question and document mark their subject read, and drawn bare each draws nothing of its own", () => {
+  const SUBJECT = { project: ["stage", "projectstage"], question: ["inquiry", "image"], document: ["capture", "image"] };
   for (const [id, [key, op]] of Object.entries(SUBJECT)) {
     const s = SCREENS.find((x) => x.id === id);
     const r = s.reads({ subject: "X-1" });
