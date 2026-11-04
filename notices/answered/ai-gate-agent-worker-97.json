@@ -1,0 +1,1 @@
+{"row":"answered","user":"ai-gate","by":"triage","evidence":"build/modules.json:114 lists empty paths and tests for ai-gate; bio-plane/src/ai-gate/ does not exist, so no code uses the changed requirements or GRANT_ONLY_OPS","at":"2026-11-04T14:41:22.372Z","key":"agent-worker:97","worker":"a37e260d522f71237","cost":"0.70"}
