@@ -1787,6 +1787,9 @@ export class InstanceSetup {
     for (const { id: profile, p } of active) {
       const cps = Array.isArray(p.counterparties) ? p.counterparties : [];
       cps.forEach((cp, i) => {
+        /* R107 (T53; `jurisdictions` R119, PR 40): federal offices are not seeded; they stay in the layer, found by search
+           (`entities` R68). A federal layer's entries, or an entry the layer states is federal, write and list nothing. */
+        if ((p.layer && p.layer.level === "federal") || (cp && cp.level === "federal")) return;
         const entry = `counterparties[${i}]`;
         const role = cp && typeof cp.role === "string" ? cp.role.trim() : "";
         const body = cp && typeof cp.body === "string" ? cp.body.trim() : "";
@@ -1964,6 +1967,8 @@ export class InstanceSetup {
     for (const { id: profile, p } of active) {
       const view = { vocabulary: p.vocabulary || {} };
       (Array.isArray(p.counterparties) ? p.counterparties : []).forEach((cp, i) => {
+        /* R107 (`jurisdictions` R119): a federal office is never seeded (officesSeed), so it is not matched to a team's body */
+        if ((p.layer && p.layer.level === "federal") || (cp && cp.level === "federal")) return;
         const body = cp && typeof cp.body === "string" ? cp.body.trim() : "";
         if (!body) return;
         const read = legistarBodyName(body, { view });

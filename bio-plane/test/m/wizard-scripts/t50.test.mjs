@@ -23,7 +23,7 @@ const REG_FILE = JSON.parse(src("registry.json")), LIB_T50 = JSON.parse(src("lib
 const COMMIT = "2a64c5ae77";
 const FIX = "1cc4a957f0";   /* R45: the fix round re-takes the doors and the library again */
 const LIB_R45 = JSON.parse(src("library-1cc4a957f0.json"));
-const REG_COMMIT = "b1adf4236d";   /* the registry's pin, moved by R44, R45, DEC-389 (R41) and DEC-402 (R49) and DEC-419 (R50) */
+const REG_COMMIT = "30af4350f2";   /* the registry's pin, moved by R44, R45, DEC-389 (R41) and DEC-402 (R49) and DEC-419 (R50), DEC-438 (R53) and the tranche's design commit at T53 (R54) */
 const OWED = /^owed:([a-z][a-z0-9]*)(?:\s+(DEC-\d+|K\d+))?$/;
 const status = (s) => REG_FILE.screens.flatMap((f) => f.acts.filter((a) => a.status === s).map((a) => [f.id, a.op]));
 const OWED_OPS = [...new Set(status("owed").map(([, op]) => OWED.exec(op)[1]))];
@@ -114,8 +114,8 @@ test("R41 (T50; DEC-266, DEC-279, DEC-281) SCREEN_REGISTRY is the registry at th
   assert.deepEqual(wz.SCREEN_REGISTRY.map((s) => s.id), REG_FILE.screens.map((f) => f.id), "the file's order");
   const acts = REG_FILE.screens.flatMap((f) => f.acts);
   assert.deepEqual([acts.length, acts.filter((a) => a.status === "declared").length, acts.filter((a) => a.status === "function").length, acts.filter((a) => a.status === "owed").length],
-                   [656, 452, 83, 121]);
-  assert.equal(OWED_OPS.length, 105, "121 owed acts name 105 ops: updatelater, taskdecide and others are owed on more than one screen");
+                   [678, 461, 82, 135]);
+  assert.equal(OWED_OPS.length, 118, "135 owed acts name 118 ops (R54): updatelater, taskdecide and others are owed on more than one screen");
   REG_FILE.screens.forEach((f, i) => {
     const s = wz.SCREEN_REGISTRY[i];
     assert.deepEqual([s.id, s.name, s.purpose], [f.id, f.name, f.purpose], f.id);
@@ -138,7 +138,7 @@ test("R41 (T50; N1130; K3674) the check that every registry act has a declaratio
   assert.deepEqual(status("owed").map(([, op]) => OWED.exec(op)[1]).filter((op) => INSTALL.includes(op)), INSTALL, "the file owes the four");
   /* every function act is an op in the table or an alias: here, the table is the file's own acts */
   const functions = status("function");
-  assert.equal(functions.length, 83);
+  assert.equal(functions.length, 82, "R54: 82 at 30af4350f2 (83 at b1adf4236d: contradictionflag became function, accountreferenceset and accountreferenceremove declared)");
   assert.deepEqual(wz.registryActGaps({ screens: wz.SCREEN_REGISTRY, declared: DECLARED_OPS }).filter((g) => !g.owed), [], "every declared and function act has its declaration");
   for (const [screen, op] of functions) assert.ok(DECLARED_OPS.includes(op), `${screen}/${op}`);
   /* owed acts: gaps until declared, the installer's four never */
@@ -183,7 +183,7 @@ test("R41 (T50; N1130; R13) each of the owed acts the file names is registered a
     assert.deepEqual(check(w), [], `${op}: admitted once declared`);
     assert.deepEqual(check(base), [["WIZARD_ACT_UNKNOWN", 1]], `${op}: refused while undeclared`);
   }
-  assert.equal(new Set(OWED_NOW).size, 101, "R52: 105 owed ops at b1adf4236d less the installer's four");
+  assert.equal(new Set(OWED_NOW).size, 114, "R54: 118 owed ops at 30af4350f2 less the installer's four");
   assert.ok(T50_OWED.every((op) => OWED_NOW.includes(op)), "T50's owed acts are still owed or declared in the file");
   /* aliaswithdraw is the entities' op, declared already (K3674): a table that holds it registers it now */
   assert.ok(where("aliaswithdraw").length > 0);
