@@ -102,6 +102,7 @@ import { parseFrontmatter, normalizeType, isMachineIdentity, OBJECT_TYPES, BASIS
 import { caseAccountOf } from "../case-account/index.mjs";
 /* B10 (K4240): `capture`, the one instance on the host, which records the members who captured each capture (its R69). */
 import { captureOf } from "../capture/index.mjs";
+import { contentOf } from "../content/index.mjs";
 /* R56, R57 (T33): case-grammar's `calculationsLines` and `timelineLines` (its R18, R20), the one spelling of each block. */
 import { calculationsLines, timelineLines, materialsOf, passagesOf, memberTiesOf, caseDocumentBlocks,
          caseTensionsOf as tensionsOfDocument } from "../case-grammar/index.mjs";
@@ -259,15 +260,36 @@ export class CaseAuthoring {
                 bias = null, observations = null, reevaluation = null, publication = null, publishSchedule = null,
                 ratification = null, account = null, inputs = null, networkNotices = null, disclosures = null, calculations = null,
                 workbooks = null, events = null, caseTensions = null, projectRoster = null, caseCarriage = null,
-                now = null } = {}) {
+                content = null, now = null } = {}) {
     this.sql = storage.sql;
     this.storage = storage;
     this.record = record;
     this.membership = membership;
     this.#deps = { host, inquiry, basisVersions, strength, bias, observations, reevaluation, publication, publishSchedule,
                    ratification, account, inputs, networkNotices, disclosures, calculations, workbooks, events, caseTensions,
-                   projectRoster, caseCarriage };
+                   projectRoster, caseCarriage, content };
     this.now = typeof now === "function" ? now : (precision) => stampInstant(precision);
+  }
+
+  /* F2 (`case-grammar` R37): one `typed_passages:` row per relied-on passage that is a member's typing, as `content`'s
+     earned read states it at the act (`standings`, its R20, R64): when it was typed, the typist's credit and each other
+     member who had checked it, in time order, each at the credit level in force, a name only where that level shows one;
+     no member id is handed on. A passage whose read states no typing is not listed. Never throws: a read that fails
+     lists none. */
+  #typedPassageRows(passages) {
+    const rows = Array.isArray(passages) ? passages : [];
+    if (!rows.length) return [];
+    let standing = {};
+    try { standing = this.content.standings([...new Set(rows.map((p) => p.content_id))]) || {}; } catch { standing = {}; }
+    const credit = (c) => ({ level: c && typeof c.credit === "string" ? c.credit : null, shown: c && c.name ? c.name : null });
+    return rows.flatMap((p) => {
+      const t = standing[p.content_id] && standing[p.content_id].typed;
+      if (!t) return [];
+      const typist = credit(t.typist);
+      return [{ finding: p.finding, ord: p.ord, content_id: p.content_id, typed_at: t.at ?? null,
+                typist_level: typist.level, typist_shown: typist.shown,
+                checkers: (Array.isArray(t.checkers) ? t.checkers : []).map((c) => ({ ...credit(c), at: c.at ?? null })) }];
+    });
   }
 
   /* The modules reached lazily: each is created on the same host on first use, unless a test passed its own. */
@@ -287,6 +309,8 @@ export class CaseAuthoring {
   get account() { return this.#deps.account ||= caseAccountOf(this.#deps.host); }
   /* B10 (K4240): `capture`, the one instance on this host (`captureOf`), read for who captured what the pre-flight lists. */
   get capture() { return this.#deps.capture ||= captureOf(this.#deps.host); }
+  /* F2 (`case-grammar` R37): `content`, the one instance on this host, read for who typed and who checked a passage. */
+  get content() { return this.#deps.content ||= contentOf(this.#deps.host); }
   /* R14, R34, R38, R74 (T47; N908; K2982): `case-inputs`, the one instance on this host, which holds what other acts
      record about a case (the statement's acknowledgements and writer, the drafts of what changed, the open requests, the
      outcomes carried); created at this module's creation (`caseAuthoringOf`), so its tables exist and are declared at
@@ -1094,6 +1118,7 @@ export class CaseAuthoring {
     /* R55: each reached finding's grading facts and passages (`case-disclosures` R15), the method signed under (its
        R5), and the rows of the captures, materials and flags blocks (its R3, R7, R10, R14). */
     const findingFacts = D.findingFacts(reached.findings, viewer);
+    const typedRows = this.#typedPassageRows(findingFacts.passages);
     const method = D.methodOf();
     const { captures: captureRows, materials: materialBlocks, flags: flagRows, group } = D.disclosureBlocks({
       resting, facts, selfAttested: selfJ, reached, flags: flagsJ, withheld, attributionOf, project: proj, author: who,
@@ -1165,6 +1190,8 @@ export class CaseAuthoring {
       /* R55: `case-disclosures` R7, R13, R14, R15. */
       materials: materialBlocks, group, accepted: { rows: accepted.rows, flags: flagRows },
       grading: findingFacts.grading, passages: findingFacts.passages,
+      /* F2 (`case-grammar` R36, R37): the passages published without a grade (`case-disclosures` R35's rows) and the typed ones. */
+      ungraded: findingFacts.ungraded, typed: typedRows,
       /* R56, R57: case-grammar's blocks (its R18, R20); R55: case-disclosures' people and member-ties blocks (its R28). */
       calculations: calcJ.rows, calculationsBlock: calculationsLines(calcJ.rows),
       timeline: timeline.rows, timelineLeftOut: timeline.left_out, timelineCut: timeline.cut, timelineUnread: timeline.unread,
