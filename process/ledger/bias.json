@@ -1,0 +1,42 @@
+{
+  "id": "bias",
+  "title": "bias: its unmet requirements",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/bias/",
+    "build/requirements/bias.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/bias/"
+  ],
+  "requirements": "build/requirements/bias.md",
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "record-core",
+    "membership",
+    "promotion",
+    "entities",
+    "credentials",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/bias.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet every unmet mark in build/requirements/bias.md, each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T11:42:27Z"
+  }
+}
