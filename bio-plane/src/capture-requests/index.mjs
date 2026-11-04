@@ -206,7 +206,7 @@ export class CaptureRequests {
 
   /** `deps`: `record`, `observations`, `governor`, `capture`, `credentials` (each module's instance on this storage),
    *  `runs` (ai-runs' run sight, R28 of ai-runs: `runFor(run, viewer)` answering the run's `status`,
-   *  `principal_plane` and `principal_claude`, or null), `env`, `now()` (milliseconds; a test may inject its clock),
+   *  `principal_plane` and `principal_ai`, or null), `env`, `now()` (milliseconds; a test may inject its clock),
    *  `storeName`, `configured()` (R11; `unattendedBound(env)` by default), `promotion` (R38), `order` (R44: the
    *  modules' total order, membership's `MODULE_ORDER` unless a test passes its own), `inquiry` (R14: its R44
    *  `memberUserAgent(id)`), `steps` (R55: its R2 read by key, R9's `recordProduct`, R11's arrival registration). */
@@ -439,7 +439,9 @@ export class CaptureRequests {
          co_archive, step)
        VALUES (?,?,?,?,?,?,?,?,?,'requested',0,?,?,?,?,?,?,?,?)`,
       request, run || null, target || null, address, host, purpose, uaMode, callerPlane,
-      mine ? null : String(runRow.principal_claude ?? ""),
+      /* ai-runs R9, R28 (T53, PR 96): the run's paying principal is answered as `principal_ai`; this row keeps it in its
+         own `principal_claude` column (Terms, R8), which this module's requirements still name so. */
+      mine ? null : String(runRow.principal_ai ?? ""),
       now, now, expires, lead || null, render, sweep, coArchive, step || null);
     const written = this.#one(`SELECT * FROM capture_requests WHERE request=?`, request);
     /* R44 (N223): every listener told once, after the write, in the modules' total order; none can change the row or
