@@ -1,0 +1,1 @@
+{"row":"answered","user":"query-language","by":"triage","evidence":"bio-plane/src/query.mjs:1044 imports only MONEY_KINDS, PHASES, STAGES, BASES from money/vocab.mjs, not DECLARED_OPS or the fiscal-years door","at":"2026-11-04T07:02:22.993Z","key":"money:154","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

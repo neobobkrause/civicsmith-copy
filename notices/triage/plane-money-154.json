@@ -1,0 +1,1 @@
+{"row":"triage","user":"plane","verdict":"not affected","evidence":"bio-plane/src/plane/door.mjs:5 import block has no money import; it reads no money declared op (module row build/modules.json:196)","at":"2026-11-04T07:02:22.993Z","key":"money:154","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"duties","by":"triage","evidence":"bio-plane/src/duties/index.mjs:41 imports only noSuchFact, moneyOf; it does not read DECLARED_OPS or the fiscal-years door","at":"2026-11-04T07:02:22.993Z","key":"money:154","worker":"triage-a8ac876e3c208abec","cost":"0.05"}
