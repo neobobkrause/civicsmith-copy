@@ -1,0 +1,1 @@
+{"row":"answered","user":"notice-producers","by":"triage","evidence":"bio-plane/src/notice-producers/index.mjs:69 imports only entitiesOf; no federalOfficesFind or built_in use","at":"2026-11-04T02:07:27.703Z","key":"entities:63","worker":"abb59125dfe5ec28e","cost":"0.9"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-door","verdict":"not affected","evidence":"bio-plane/src/store-door/dispatch.mjs:1 no use of entities","at":"2026-11-04T02:07:27.703Z","key":"entities:63","worker":"abb59125dfe5ec28e","cost":"0.9"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"people","verdict":"not affected","evidence":"bio-plane/src/people/index.mjs:24 imports noSuchEntity/noEntity/entitiesOf/ORGANISATION_KINDS/ENTITY_KINDS; no federalOfficesFind or built_in use","at":"2026-11-04T02:07:27.703Z","key":"entities:63","worker":"abb59125dfe5ec28e","cost":"0.9"}
