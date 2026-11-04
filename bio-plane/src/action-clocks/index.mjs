@@ -56,7 +56,7 @@ import { PROJECTION_TABLE } from "../retrieval/index.mjs";
 import { conformanceOf } from "../conformance/index.mjs";
 import { actionsOf, noSuchAction, actionZone } from "../actions/index.mjs";
 import { standardsOf, noSuchStandard } from "../standards/index.mjs";
-import { combine } from "../../../jurisdictions/index.mjs";
+import { combine, nameResolve } from "../../../jurisdictions/index.mjs";
 import { parseFrontmatter } from "../record-grammar/frontmatter.mjs";
 import { normalizeType } from "../record-grammar/types.mjs";
 import { isMachineIdentity } from "../record-grammar/actors.mjs";
@@ -189,6 +189,54 @@ const deadlineLevel = (d, view) => {
     && cite !== "" && cite.startsWith(l.citation.replace(/\s+et seq\.?$/, "").trim()));
   return law ? law.level : null;
 };
+/** R28, R29 (T53; jurisdictions R99, R121): the layer an entry of the view is of: the one it names, else its profile when
+ *  that is a layer of the view; null in a view of no layers. Pure; never throws. */
+export function layerOf(e, view) {
+  try {
+    if (!e || typeof e !== "object") return null;
+    if (typeof e.layer === "string" && e.layer) return e.layer;
+    const ids = view && Array.isArray(view.layers) ? view.layers.map((l) => l && l.id) : [];
+    return typeof e.profile === "string" && ids.includes(e.profile) ? e.profile : null;
+  } catch { return null; }
+}
+/* R28: the view's layers as `jurisdictions.nameResolve` (its R121) takes them, each holding the view's deadlines it gives that
+   `keep` keeps and its closure-list entries; [] for a view of no layers. The order of resolution is nameResolve's alone. */
+function layersOf(view, keep = () => true) {
+  const ls = view && Array.isArray(view.layers) ? view.layers.filter((l) => l && typeof l.id === "string") : [];
+  return ls.map((l) => ({ id: l.id,
+    layer: { ...(l.level ? { level: l.level, place: l.place } : {}), ...(l.within ? { within: l.within } : {}), origin: l.origin },
+    deadlines: (Array.isArray(view.deadlines) ? view.deadlines : []).filter((d) => d && layerOf(d, view) === l.id && keep(d)),
+    holidays: (Array.isArray(view.holidays) ? view.holidays : []).filter((h) => h && typeof h.list === "string" && layerOf(h, view) === l.id) }));
+}
+/** R28 (T53; N1257; K5458): the deadline `rule` names for an action of `kind`, resolved with `jurisdictions.nameResolve`
+ *  (its R121) over the view's layers: `{d, layer}` (`layer` null in a view of no layers), `{ambiguous: [{layer, level,
+ *  place}]}` when two layers give the name and none is named, or `{d: null}`. `rule` may be written `<layer id>:<rule>`.
+ *  A view of no layers reads the first deadline of that rule for the kind, as before. Pure; never throws. */
+export function ruleFor(view, kind, rule, layer = null) {
+  const none = { d: null, layer: null };
+  try {
+    if (typeof rule !== "string" || !rule) return none;
+    const all = (view && Array.isArray(view.deadlines) ? view.deadlines : []).filter((x) => x && x.applies_to === kind && typeof x.rule === "string");
+    const named = typeof layer === "string" && layer ? layer : null;
+    const ls = layersOf(view, (x) => x.applies_to === kind);
+    if (!ls.length) { const d = named ? null : all.find((x) => x.rule === rule); return d ? { d, layer: null } : none; }
+    const r = nameResolve({ section: "deadlines", name: rule, ...(named ? { layer: named } : {}), layers: ls });
+    if (r && r.ok) { const d = all.find((x) => x.rule === r.entry.rule && layerOf(x, view) === r.layer); return d ? { d, layer: r.layer } : none; }
+    if (r && r.reason === "NAME_AMBIGUOUS") return { d: null, layer: null, ambiguous: r.layers };
+    /* an entry of no layer in a layered view (a profile combined with the layers) is read as before */
+    const d = named ? null : all.find((x) => x.rule === rule && layerOf(x, view) === null);
+    return d ? { d, layer: null } : none;
+  } catch { return none; }
+}
+/* R28, R29: each closure list a rule counts or rolls on, resolved from the rule's own layer (`jurisdictions` R104, R121):
+   `{name, layer}` (`layer` null where the view does not resolve it to one). */
+function listsOfRule(d, view, layer) {
+  const ls = layersOf(view);
+  return closureListsRead(d).map((name) => {
+    const r = ls.length ? nameResolve({ section: "closures", name, ...(layer ? { asking: layer } : {}), layers: ls }) : null;
+    return { name, layer: r && r.ok ? r.layer : null };
+  });
+}
 /** R2 (K4227, T51 C68; screens-investigate R59): the deadlines the view states for an action of `kind`, each `{rule, label?, citation?}`
  *  as the profile gives it: what `clockPropose` accepts as `rule`, in the view's order; `[]` when none applies or no view is held. A
  *  `label` or `citation` the profile does not state is left out. With the action's document `fm`, those of the level of the office it
@@ -201,8 +249,10 @@ export function deadlinesFor(view, kind, fm = null) {
     for (const x of view && Array.isArray(view.deadlines) ? view.deadlines : []) {
       if (!x || typeof x.rule !== "string" || !x.rule || x.applies_to !== kind) continue;
       const of = level ? deadlineLevel(x, view) : null;
+      const ly = layerOf(x, view);
       out.push({ at: out.length, rank: !of ? 1 : of === level ? 0 : 2,
-        d: { rule: x.rule, ...(typeof x.label === "string" && x.label ? { label: x.label } : {}), ...(typeof x.citation === "string" && x.citation ? { citation: x.citation } : {}) } });
+        d: { rule: x.rule, ...(typeof x.label === "string" && x.label ? { label: x.label } : {}), ...(typeof x.citation === "string" && x.citation ? { citation: x.citation } : {}),
+             ...(ly ? { layer: ly } : {}) } });
     }
     return out.sort((a, b) => a.rank - b.rank || a.at - b.at).map((x) => x.d);
   } catch { return []; }
@@ -744,7 +794,7 @@ export class ActionClocks {
    *  deadlines read are `local-facts.governingView`'s (`#view`); a `received` rule counts from the receipt `actions`
    *  records and a `served` rule from the recorded service (`#receiptsOf`; `count.mjs` `startOf`), the answer saying
    *  which; the entry carries `owed_by` from the deadline's (R18), `undetermined` where the profile does not say. */
-  clockPropose({ target, rule, proposer = null, viewer = null } = {}) {
+  clockPropose({ target, rule, layer = null, proposer = null, viewer = null } = {}) {
     const who = String(proposer ?? "").trim();
     if (!who) return { ok: false, reason: "NO_AUTHOR", detail: localize("action-clocks.index.this_call_carries_nobody", "this call carries nobody: the proposer is stamped from the credential that asked.") };
     if (!target) return { ok: false, reason: "NO_TARGET", detail: localize("action-clocks.index.one_action_at_a_time", "one action at a time: pass target=<action id>") };
@@ -755,13 +805,25 @@ export class ActionClocks {
       return { ok: false, reason: "NOT_AN_ACTION", target, object_type: b.object_type };
     const fm = this.#heldFm(target) || {};
     const view = this.#view();
-    const d = rule ? (view && Array.isArray(view.deadlines) ? view.deadlines : [])
-      .find((x) => x && x.rule === rule && x.applies_to === fm.action_kind) : null;
+    /* R28 (T53; jurisdictions R121): the rule resolved for the action's kind over the view's layers, `layer` naming one. */
+    const res = rule ? ruleFor(view, fm.action_kind, String(rule), layer) : { d: null, layer: null };
+    if (res.ambiguous)
+      return { ok: false, reason: "NAME_AMBIGUOUS", target, rule: String(rule).slice(0, 200), layers: res.ambiguous,
+               deadlines: deadlinesFor(view, fm.action_kind, fm),
+               detail: localize("action-clocks.index.rule_given_by_two_layers", "more than one active layer gives a deadline '{rule}' for an action of kind '{kind}': name the layer (layer=<layer id>, or rule=<layer id>:<rule>). Nothing was written.", { rule: String(rule).slice(0, 60), kind: String(fm.action_kind) }) };
+    const d = res.d;
     if (!d) return { ok: false, reason: "NO_SUCH_RULE", target, rule: rule || null, deadlines: deadlinesFor(view, fm.action_kind, fm),
       detail: rule ? localize("action-clocks.index.no_active_profile_states", "no active profile states a deadline '{rule}' for an action of kind '{kind}'", { rule: String(rule).slice(0, 60), kind: String(fm.action_kind) })
                    : localize("action-clocks.index.no_rule_was_named", "no rule was named: name the profile deadline's rule (rule=<rule>) for an action of kind '{kind}'", { kind: String(fm.action_kind) }) };
     const sourced = typeof d.basis === "string" && d.basis.trim() && d.basis !== "UNMEASURED";
-    const computed = sourced ? computeDeadline(d, fm, view, { factOf: this.#factOf(viewer), receipts: this.#receiptsOf(target, viewer) })
+    /* R28, R29 (jurisdictions R104): each closure list the rule reads is the one its own layer resolves; another layer's
+       list of the same name is not counted on. */
+    const lists = listsOfRule(d, view, res.layer);
+    const cview = lists.some((l) => l.layer) && view ? { ...view, holidays: (Array.isArray(view.holidays) ? view.holidays : []).filter((h) => {
+      const l = h && lists.find((x) => x.layer && x.name === h.list);
+      return !l || layerOf(h, view) === l.layer;
+    }) } : view;
+    const computed = sourced ? computeDeadline(d, fm, cview, { factOf: this.#factOf(viewer), receipts: this.#receiptsOf(target, viewer) })
       : { date: null, why: localize("action-clocks.index.the_rule_is_not_held", "the rule is not held with a primary source: UNMEASURED is not a basis") };
     const basis = `${d.citation}${d.basis ? ` (profile basis: ${d.basis}${d.profile ? `, ${d.profile}` : ""})` : ""}`;
     const amount = d.amount ?? d.days;
@@ -769,20 +831,28 @@ export class ActionClocks {
     /* R18 (T45; jurisdictions R75): whose deadline it is, from the profile's; undetermined where it does not say. */
     const owed = d.owed_by === "group" || d.owed_by === "body" ? d.owed_by : "undetermined";
     const entry = { text: d.rule, description: `${amount} ${unit} ${d.direction === "backward" ? "before" : "from"} ${d.starts}`,
-                    date: computed.date, basis, status: "pending", basis_kind: "rule", owed_by: owed };
+                    date: computed.date, basis, status: "pending", basis_kind: "rule", owed_by: owed, ...(res.layer ? { layer: res.layer } : {}) };
+    /* R28: a new proposal of a layer's rule is stored as `<layer id>:<rule>`, so two layers' rules stand apart under the
+       table's key; a view of no layers stores the rule as before. */
+    const stored = res.layer ? `${res.layer}:${d.rule}` : d.rule;
+    const qualified = (n) => { const l = lists.find((x) => x.name === n); return l && l.layer ? `${l.layer}:${n}` : n; };
     const at = stampInstant("second", this.#nowMs(null));
     const kept = { trace: computed.trace ?? null, due: computed.due ?? null, candidates: computed.candidates ?? null,
                    extension: computed.extension ?? null, observed: computed.observed ?? null, calendar: computed.calendar ?? null,
                    start: computed.start ?? null, start_from: computed.start_from ?? null, start_note: computed.start_note ?? null,
                    trace_line: computed.date ? traceLine(computed) : null };
+    /* R28: the trace kept names each closure list it counted on as `<layer id>:<name>`. */
+    if (kept.trace && typeof kept.trace === "object" && typeof kept.trace.closures === "string")
+      kept.trace = { ...kept.trace, closures: qualified(kept.trace.closures) };
+    if (lists.length) kept.closures = lists.map((l) => qualified(l.name));
     this.sql.exec(`INSERT INTO action_clock_proposals (bundle_id, proposed_by, rule, date, basis, entry_json, why, proposed_at,
-        trace_json, adopted_by, adopted_at, adopted_ord)
-      VALUES (?,?,?,?,?,?,?,?,?,NULL,NULL,NULL) ON CONFLICT(bundle_id, proposed_by, rule) DO UPDATE SET date=excluded.date,
+        trace_json, adopted_by, adopted_at, adopted_ord, layer)
+      VALUES (?,?,?,?,?,?,?,?,?,NULL,NULL,NULL,?) ON CONFLICT(bundle_id, proposed_by, rule) DO UPDATE SET date=excluded.date,
       basis=excluded.basis, entry_json=excluded.entry_json, why=excluded.why, proposed_at=excluded.proposed_at,
-      trace_json=excluded.trace_json, adopted_by=NULL, adopted_at=NULL, adopted_ord=NULL`,
-      target, who, rule, computed.date, basis, JSON.stringify(entry), computed.why ?? null, at, JSON.stringify(kept));
+      trace_json=excluded.trace_json, adopted_by=NULL, adopted_at=NULL, adopted_ord=NULL, layer=excluded.layer`,
+      target, who, stored, computed.date, basis, JSON.stringify(entry), computed.why ?? null, at, JSON.stringify(kept), res.layer);
     return { ok: true, target, weight: "single", evidence: false,
-             proposal: { ...proposalLabelFor(who), key: `${rule}@${who}`, rule, entry, at,
+             proposal: { ...proposalLabelFor(who), key: `${stored}@${who}`, rule: d.rule, ...(res.layer ? { layer: res.layer } : {}), entry, at,
                          ...(computed.start ? { start: computed.start, counted_from: word("action-clocks.day", { start: String(computed.start) }) } : {}),
                          ...(computed.start_from ? { start_from: computed.start_from } : {}),
                          ...(computed.start_note ? { start_note: computed.start_note } : {}),
@@ -805,14 +875,16 @@ export class ActionClocks {
   clockProposalsFor({ action = null, viewer = null } = {}) {
     const a = this.#actionFor(action, viewer);
     if (!a) return noSuchAction(action ?? null);
-    const rows = this.#rows(`SELECT proposed_by, rule, date, basis, entry_json, why, proposed_at, trace_json
+    const rows = this.#rows(`SELECT proposed_by, rule, layer, date, basis, entry_json, why, proposed_at, trace_json
       FROM action_clock_proposals WHERE bundle_id=? AND adopted_at IS NULL ORDER BY rule, proposed_by LIMIT ?`,
       a.id, CLOCK_PROPOSALS_MAX + 1);
     const parse = (t) => { try { const v = JSON.parse(t || "null"); return v && typeof v === "object" ? v : null; } catch { return null; } };
     const proposals = rows.slice(0, CLOCK_PROPOSALS_MAX).map((r) => {
       const kept = parse(r.trace_json) || {};
       const dated = typeof r.date === "string" && r.date !== "";
-      return { key: `${r.rule}@${r.proposed_by}`, rule: r.rule, date: dated ? r.date : null,
+      /* R28: a layer's proposal is keyed `<layer id>:<rule>@<proposer>` and answers its rule and layer apart. */
+      const ly = typeof r.layer === "string" && r.layer && r.rule.startsWith(`${r.layer}:`) ? r.layer : null;
+      return { key: `${r.rule}@${r.proposed_by}`, rule: ly ? r.rule.slice(ly.length + 1) : r.rule, ...(ly ? { layer: ly } : {}), date: dated ? r.date : null,
                undetermined: dated ? null : (r.why || word("action-clocks.count_undetermined")), basis: r.basis, entry: parse(r.entry_json),
                trace: kept.trace ?? null, trace_line: kept.trace_line ?? null,
                ...(Array.isArray(kept.candidates) ? { candidates: kept.candidates } : {}), ...(kept.due ? { due: kept.due } : {}),
@@ -852,23 +924,28 @@ export class ActionClocks {
     const deadlines = (view && Array.isArray(view.deadlines) ? view.deadlines : []).filter((d) => d && typeof d.applies_to === "string");
     const business = new Set(deadlines.filter((d) => d.count === "business").map((d) => d.applies_to));
     const calendarKinds = new Set(deadlines.filter(readsOfficeCalendar).map((d) => d.applies_to));
-    /* N689: each kind's named closure lists, read by a rule's count or roll or by its observed practice. */
+    /* N689: each kind's named closure lists, read by a rule's count or roll or by its observed practice; (R27, T53) each
+       resolved from its rule's own layer (jurisdictions R104, R121), `{name, layer}`, `layer` null in a view of no layers. */
     const listsOf = new Map();
     for (const d of deadlines)
-      for (const l of closureListsRead(d)) {
-        if (!listsOf.has(d.applies_to)) listsOf.set(d.applies_to, new Set());
-        listsOf.get(d.applies_to).add(l);
+      for (const l of listsOfRule(d, view, layerOf(d, view))) {
+        if (!listsOf.has(d.applies_to)) listsOf.set(d.applies_to, new Map());
+        listsOf.get(d.applies_to).set(`${l.layer ?? ""}|${l.name}`, l);
       }
+    /* R27 (jurisdictions R108): the last year each layer's closure lists hold, as the view states it. */
+    const through = new Map((view && Array.isArray(view.layers) ? view.layers : [])
+      .filter((l) => l && Number.isInteger(l.holidays_through)).map((l) => [l.id, l.holidays_through]));
     const gate = viewerPredicate(viewer);
     const closed = CLOSED_ACTION_STATES.map(() => "?").join(",");
     const rows = business.size ? this.#rows(`SELECT b.bundle_id FROM bundles b
       WHERE b.object_type='action' AND b.current_state NOT IN (${closed}) AND (${gate.sql}) ORDER BY b.bundle_id LIMIT ?`,
       ...CLOSED_ACTION_STATES, ...gate.args, CALENDAR_FACTS_ACTIONS_MAX + 1) : [];
-    const read = new Map();
-    const add = (path, a) => {
+    const read = new Map(), pathLayer = new Map(), ending = new Map();
+    const add = (path, a, layer = null) => {
       if (typeof path !== "string" || !path) return;
       if (!read.has(path)) read.set(path, []);
       if (!read.get(path).includes(a)) read.get(path).push(a);
+      if (layer && !pathLayer.has(path)) pathLayer.set(path, layer);
     };
     const y0 = Number(today.slice(0, 4));
     for (const r of rows.slice(0, CALENDAR_FACTS_ACTIONS_MAX)) {
@@ -877,21 +954,40 @@ export class ActionClocks {
       /* K1000: the action as its paths answer it, one object shared by every path it reads. */
       const a = { action: r.bundle_id, project: this.#projectOf(fm, viewer), created_by: this.#createdBy(r.bundle_id) };
       const offices = actionOffices(fm, view);
-      const lists = [...(listsOf.get(fm.action_kind) || [])].sort();
+      const lists = [...(listsOf.get(fm.action_kind) || new Map()).values()]
+        .sort((x, y) => (x.name < y.name ? -1 : x.name > y.name ? 1 : String(x.layer ?? "") < String(y.layer ?? "") ? -1 : 1));
       if (calendarKinds.has(fm.action_kind) || lists.length) {
         let y1 = y0 + 1;
         for (const e of Array.isArray(fm.clock) ? fm.clock : [])
           if (e && e.status === "pending" && isDay(e.date)) y1 = Math.max(y1, Number(e.date.slice(0, 4)));
-        /* null: the office calendar; a name: that closure list's entries, at their own paths. */
+        /* null: the office calendar; a name: that closure list's entries, at their own paths, those of its own layer. */
         const reads = [...(calendarKinds.has(fm.action_kind) ? [null] : []), ...lists];
         for (let y = y0; y <= y1; y++)
-          for (const list of reads)
-            for (const h of yearEntries(view, offices, y, list).entries) { try { add(factPath(holidayFact(h)), a); } catch { /* no path */ } }
+          for (const l of reads)
+            for (const h of yearEntries(view, offices, y, l ? l.name : null).entries) {
+              if (l && l.layer && layerOf(h, view) !== l.layer) continue;
+              try { add(factPath(holidayFact(h)), a, layerOf(h, view)); } catch { /* no path */ }
+            }
+        /* R27 (T53; jurisdictions R108): a list whose layer's holidays end before the count's last year is due to be
+           confirmed or extended, naming the layer and the years it lacks. */
+        for (const l of lists) {
+          const t = l.layer ? through.get(l.layer) : undefined;
+          if (t === undefined || y1 <= t) continue;
+          const k = `${l.layer}|${l.name}`;
+          if (!ending.has(k)) ending.set(k, { list: l.name, layer: l.layer, holidays_through: t, years: new Set(), actions: [] });
+          const x = ending.get(k);
+          for (let y = Math.max(t + 1, y0); y <= y1; y++) x.years.add(y);
+          if (!x.actions.includes(a)) x.actions.push(a);
+        }
       }
       for (const f of officeHours(view, offices)) { try { add(factPath(f), a); } catch { /* no path */ } }
     }
-    const paths = [...read.keys()].sort().map((path) => ({ path, actions: read.get(path).map((a) => ({ ...a })) }));
-    return { ok: true, as_of: today, paths, actions_limit: CALENDAR_FACTS_ACTIONS_MAX,
+    const paths = [...read.keys()].sort().map((path) => ({ path, ...(pathLayer.has(path) ? { layer: pathLayer.get(path) } : {}),
+                                                         actions: read.get(path).map((a) => ({ ...a })) }));
+    const lists_ending = [...ending.keys()].sort().map((k) => { const x = ending.get(k);
+      return { list: x.list, layer: x.layer, holidays_through: x.holidays_through, years: [...x.years].sort((p, q) => p - q),
+               actions: x.actions.map((a) => ({ ...a })) }; });
+    return { ok: true, as_of: today, paths, lists_ending, actions_limit: CALENDAR_FACTS_ACTIONS_MAX,
              truncated: rows.length > CALENDAR_FACTS_ACTIONS_MAX };
   }
 
@@ -1144,6 +1240,8 @@ export class ActionClocks {
       ? { due_at: due.value, ...(typeof due.zone === "string" && due.zone ? { due_zone: due.zone } : {}) } : {};
     const written = { text: amend.text ?? entry.text, description: amend.description ?? entry.description,
       date: amend.date ?? entry.date, basis: entry.basis, status: "pending", basis_kind: "rule",
+      /* R29 (T53): an entry adopted from a layer's rule records that layer beside its text, basis and kind. */
+      ...(typeof p.layer === "string" && p.layer ? { layer: p.layer } : {}),
       owed_by: amend.owed_by ?? (CLOCK_OWED_BY.includes(entry.owed_by) ? entry.owed_by : "undetermined"), ...timed,
       ...(std ? { standard: std } : {}), trace: kept.trace_line || traceLine({ trace: kept.trace, start: kept.start }),
       proposal: key, proposed_by: p.proposed_by, adopted_by: who, adopted_at: when,
@@ -1171,7 +1269,7 @@ export class ActionClocks {
   clockState({ target, text = null, description = null, date = null, basis = null, basis_kind: kind = null,
                owed_by: owedBy = null, standard = null, committed_by: committedBy = null, precedes = null, lead = null,
                why = null, stated_by: statedBy = null, held_in: heldIn = null, due_at: dueAt = null, due_zone: dueZone = null,
-               author = null, viewer = null } = {}) {
+               layer = null, author = null, viewer = null } = {}) {
     const who = String(author ?? "").trim();
     /* DEC-49 REGION is-machine-state-clock */
     if (!who || isMachineIdentity(who))
@@ -1202,7 +1300,9 @@ export class ActionClocks {
     const kindFields = { commitment: [["committed_by", committedBy, false]], dependency: [["precedes", precedes, true], ["lead", lead, false], ["why", why, false]],
                          stated: [["stated_by", statedBy, true], ["held_in", heldIn, true]] }[k] || [];
     for (const [name, v, need] of kindFields) { const r = field(name, v, need); if (r) return r; }
-    for (const [name, v] of [["committed_by", committedBy], ["precedes", precedes], ["lead", lead], ["why", why], ["stated_by", statedBy], ["held_in", heldIn], ["standard", standard]])
+    /* R29 (T53): a `rule` entry may name the layer of its rule; another kind naming one is refused, naming the field. */
+    if (k === "rule") { const r = field("layer", layer, false); if (r) return r; }
+    for (const [name, v] of [["committed_by", committedBy], ["precedes", precedes], ["lead", lead], ["why", why], ["stated_by", statedBy], ["held_in", heldIn], ["standard", standard], ["layer", layer]])
       if (v !== null && v !== undefined && String(v).trim() && !(name in own) && !(name === "standard" && k === "rule"))
         return clockEntryRefused(name, localize("action-clocks.index.field_belongs_to_another_basis_kind", "{field} belongs to another basis kind than '{kind}'. Nothing was written.", { field: String(name), kind: String(k) }), ext);
     if (dueAt !== null && dueAt !== undefined && dueAt !== "") {
@@ -1226,9 +1326,9 @@ export class ActionClocks {
     }
     const when = stampInstant("second", this.#nowMs(null));
     const written = { text: String(text).trim(), description: String(description).trim(), date: String(date), basis: String(basis).trim(),
-      status: "pending", basis_kind: k, owed_by: owed, ...(own.due_at ? { due_at: own.due_at } : {}),
+      status: "pending", basis_kind: k, ...(own.layer ? { layer: own.layer } : {}), owed_by: owed, ...(own.due_at ? { due_at: own.due_at } : {}),
       ...(own.due_zone ? { due_zone: own.due_zone } : {}), ...(std ? { standard: std } : {}),
-      ...Object.fromEntries(Object.entries(own).filter(([n]) => !["due_at", "due_zone"].includes(n))),
+      ...Object.fromEntries(Object.entries(own).filter(([n]) => !["due_at", "due_zone", "layer"].includes(n))),
       entered_by: who, entered_at: when };
     return this.#reviseClock(a.id, written, who, viewer, when, (ord) =>
       ({ ok: true, target: a.id, ord, entry: written, says: word("action-clocks.says.deadline_action_clock_stated") }));
@@ -1552,7 +1652,7 @@ export function actionClocksOps(m, url, body) {
                                      owed_by: pick("owed_by"), standard: pick("standard"), committed_by: pick("committed_by"),
                                      precedes: pick("precedes"), lead: pick("lead"), why: pick("why"),
                                      stated_by: pick("stated_by"), held_in: pick("held_in"), due_at: pick("due_at"),
-                                     due_zone: pick("due_zone"), author: q("author"), viewer: q("viewer") }),
+                                     due_zone: pick("due_zone"), layer: pick("layer"), author: q("author"), viewer: q("viewer") }),
     clocksics: () => m.clocksIcs({ actions: has("actions") ? url.searchParams.getAll("actions").join(",") : b.actions ?? null,
                                    viewer: q("viewer") }),
     clocklateness: () => m.lateness({ from: pick("from"), to: pick("to"), project: pick("project"), viewer: q("viewer") }),

@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS action_clock_proposals (
   adopted_by  TEXT,            -- R13: the member who adopted it into clock[], and when, at which position
   adopted_at  TEXT,
   adopted_ord INTEGER,
+  layer       TEXT,            -- R28 (T53): the layer whose rule it is, its rule then stored <layer id>:<rule>; NULL before, or in a view of no layers
   PRIMARY KEY (bundle_id, proposed_by, rule)
 );
 
@@ -54,7 +55,8 @@ export const ACTION_CLOCKS_TABLE_CLASSES = Object.freeze(ACTION_CLOCKS_TABLES.ma
 
 /* The columns a table created before T33-74 gains in place (CREATE TABLE IF NOT EXISTS leaves a held table as it was). */
 const ADDED_COLUMNS = [["action_clock_proposals", "trace_json", "TEXT"], ["action_clock_proposals", "adopted_by", "TEXT"],
-                       ["action_clock_proposals", "adopted_at", "TEXT"], ["action_clock_proposals", "adopted_ord", "INTEGER"]];
+                       ["action_clock_proposals", "adopted_at", "TEXT"], ["action_clock_proposals", "adopted_ord", "INTEGER"],
+                       ["action_clock_proposals", "layer", "TEXT"]];
 
 /** Creates the tables, and adds the columns a held table lacks; idempotent. */
 export function migrateActionClocks(sql) {
