@@ -41,8 +41,9 @@ const teamed = (html) => {
 };
 const wordsIn = (html) => html.match(/\bgroup\b/gi) ?? [];
 
-test("R33 CASE_DOCUMENT_FORMAT is /8 and /7 stays accepted: caseWordsOf answers group for /7 and every earlier accepted format, team for /8 and later, and team for a document stating no readable format", () => {
-  assert.equal(CG.CASE_DOCUMENT_FORMAT, V8);
+test("R33 R35 CASE_DOCUMENT_FORMAT is /10 (R35) and /8 and /7 stay accepted: caseWordsOf answers group for /7 and every earlier accepted format, team for /8 and later, and team for a document stating no readable format", () => {
+  assert.equal(CG.CASE_DOCUMENT_FORMAT, "bio-case-document/10");
+  assert.equal(CG.CASE_DOCUMENT_FORMATS_ACCEPTED.includes(V8), true);
   assert.equal(CG.CASE_DOCUMENT_FORMAT_V7, V7);
   assert.equal(CG.CASE_DOCUMENT_FORMATS_ACCEPTED.includes(V7), true);
   for (const format of EARLIER) assert.equal(CG.caseWordsOf({ format }), "group", format);

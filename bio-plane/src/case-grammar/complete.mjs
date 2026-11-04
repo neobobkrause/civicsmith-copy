@@ -89,6 +89,7 @@ import { timelineOf } from "./timeline.mjs";
 import { accountOf, accountBiasMark, reviewCommentsOf, approvalsOf } from "./account.mjs";
 import { outcomesOf, outcomeWords } from "./outcomes.mjs";
 import { SENTENCES } from "./sentences.mjs";
+import { ungradedPassagesOf, typedPassagesOf } from "./passages.mjs";
 
 /** R14: the sections, in order, by their headings (the UX stream's words, until it gives them). */
 export const COMPLETE_EDITION_HEADINGS = Object.freeze(["The claims", "The findings", "The documents and observations",
@@ -157,6 +158,26 @@ export const OBSCURED_WORDS = Object.freeze({
   unmarked: "Carried as a copy with nothing covered and none of the original's metadata; the copy's fingerprint (SHA-256): ",
   cleaned: "Carried as a cleaned copy, with none of the details of who made it or of its pictures; the copy's fingerprint (SHA-256): ",
 });
+/** R36, R37 (T53; DEC-461, DEC-464): the `/10` edition's words for a passage published without a grade and for a typed
+ *  passage, by their keys (the UX stream's), frozen for `/10` as R33 freezes words and never read from the word table. A
+ *  typed passage's credit is named by its level (`case.typed.credit.<level>`): a member who chose `group` is "a member of
+ *  the team"; at `cover` and `name` the phrase carries the `shown` the row states, and nothing else of the member. */
+export const PASSAGE_WORDS_V10 = Object.freeze({
+  "case.ungraded.head": "The team published this case without grading some of the passages it relies on; each one is "
+    + "marked where it is printed below.",
+  "case.ungraded.passage": "The team published this case without grading this passage.",
+  "case.typed.label": "Typed words: a member typed this passage from the document's page, so these are their typed words, "
+    + "not words quoted from the document's own text.",
+  "case.typed.checked": (typist, checkers) => `Typed by ${typist}; it had been checked by ${checkers} when this case was signed.`,
+  "case.typed.unchecked": (typist) => `Typed by ${typist}; no second member had checked it when this case was signed.`,
+  "case.typed.credit.group": () => "a member of the team",
+  "case.typed.credit.project": () => "a member of the project",
+  "case.typed.credit.cover": (shown) => (shown ? `the member the team knows by the cover name ${shown}` : "a member credited by a cover name not stated"),
+  "case.typed.credit.name": (shown) => (shown ? shown : "a member credited by a name not stated"),
+  "case.typed.credit.none": () => "a member whose credit is not stated",
+});
+const creditWords = (level, shown) => (PASSAGE_WORDS_V10[`case.typed.credit.${level}`] || PASSAGE_WORDS_V10["case.typed.credit.none"])(shown);
+const listWords = (xs) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 /** R14: what the checker's public reads are called (`case-checker` R15). */
 export const CHECKER_READS = Object.freeze({ program: "casechecker", specification: "casefilespec" });
 
@@ -257,7 +278,14 @@ export function completeEditionOf(caseFile) {
     /* R17: each finding's legs and passages as the document signs them; the per-finding files where it carries none. */
     const signedLegs = gradingFactsOf(fm);
     const signedPassages = passagesOf(fm);
+    /* R36, R37: a `/10` document's passages published without a grade and its typed passages, by finding, ord and
+       content id; an earlier document states neither (`predates`), so nothing below is added to its bytes */
+    const passageKey = (r) => `${r.finding}\u0000${r.ord}\u0000${r.content_id}`;
+    const ungraded = new Set((ungradedPassagesOf(fm).rows || []).map(passageKey));
+    const typed = new Map((typedPassagesOf(fm).rows || []).map((r) => [passageKey(r), r]));
     const chainFacts = {
+      ungraded: (f, q) => ungraded.has(passageKey({ finding: f, ord: q.ord, content_id: q.content_id })),
+      typed: (f, q) => typed.get(passageKey({ finding: f, ord: q.ord, content_id: q.content_id })) || null,
       /* the block holds a row per leg of every finding a chain reaches, so a finding with none rests on nothing */
       legs: (f) => (signedLegs ? signedLegs[f] || []
         : (() => { const j = jsonOf(files.get(caseFilePath("grading_facts", f))); return j && Array.isArray(j.legs) ? objects(j.legs) : null; })()),
@@ -406,7 +434,8 @@ export function completeEditionOf(caseFile) {
     if (approvals) sections.splice(before, 0, [APPROVALS_HEADING, approvalsHtml(approvals, W)]);
     if (comments) sections.splice(before, 0, [REVIEW_COMMENTS_HEADING, reviewCommentsHtml(comments)]);
 
-    return page({ product, title: `${said(group, W.titleGroup)} · Case ${caseId} · Edition ${edition}`, notice, group, sections:
+    return page({ product, title: `${said(group, W.titleGroup)} · Case ${caseId} · Edition ${edition}`, notice, group,
+      lead: ungraded.size ? p(PASSAGE_WORDS_V10["case.ungraded.head"]) : null, sections:
       sections.map(([h, body], i) => `<h2>${esc(`${i + 1}. ${h}`)}</h2>${body.join("")}`) });
   } catch {
     return page({ product: PRODUCT_NAMES.current, title: "A case file that could not be read", notice: null, group: null,
@@ -451,9 +480,18 @@ function chainHtml(finding, facts, accepted, member, depth, seen, W) {
       }));
   const quoted = facts.passages(finding);
   const passageHtml = quoted.length
-    ? `<p>${esc(`The passages ${finding} relies on:`)}</p>${quoted.map((q) => `<blockquote class="quote">${esc(said(q.quoted, ""))}`
-      + `<br><small>${esc(`In the document captured as ${said(q.capture_sha)}, at ${extentWords(q.extent)} (content `
-      + `${said(q.content_id)}).`)}</small></blockquote>`).join("")}`
+    ? `<p>${esc(`The passages ${finding} relies on:`)}</p>${quoted.map((q) => {
+      /* R37: a typed passage is labelled as typed words, never as quoted, with who typed and who checked it as of signing;
+         R36: a passage published without a grade says so beside it. Neither adds a byte to a passage that is neither. */
+      const t = facts.typed ? facts.typed(finding, q) : null;
+      const credit = t ? (t.checkers.length
+        ? PASSAGE_WORDS_V10["case.typed.checked"](creditWords(t.typist_level, t.typist_shown), listWords(t.checkers.map((c) => creditWords(c.level, c.shown))))
+        : PASSAGE_WORDS_V10["case.typed.unchecked"](creditWords(t.typist_level, t.typist_shown))) : null;
+      return `<blockquote class="quote">${t ? `<small>${esc(PASSAGE_WORDS_V10["case.typed.label"])}</small><br>` : ""}${esc(said(q.quoted, ""))}`
+        + `<br><small>${esc(`In the document captured as ${said(q.capture_sha)}, at ${extentWords(q.extent)} (content `
+        + `${said(q.content_id)}).`)}</small>${t ? `<br><small>${esc(credit)}</small>` : ""}`
+        + `${facts.ungraded && facts.ungraded(finding, q) ? `<br><small>${esc(PASSAGE_WORDS_V10["case.ungraded.passage"])}</small>` : ""}</blockquote>`;
+    }).join("")}`
     : "";
   return legHtml + passageHtml;
 }
@@ -542,13 +580,14 @@ function attestationWords(a, W) {
   }
 }
 
-function page({ product, title, notice, group, sections }) {
+function page({ product, title, notice, group, lead = null, sections }) {
   return ["<!doctype html>", '<html lang="en">', "<head>", '<meta charset="utf-8">',
     ...(product === PRODUCT_NAMES.before_v7 ? [] : ['<meta name="color-scheme" content="light">']),
     `<title>${esc(title)}</title>`, `<style>${STYLE}</style>`, "</head>", "<body>",
     ...(notice ? [`<div class="notice">${esc(notice)}</div>`] : []),
     `<h1>${esc(title)}</h1>`,
     ...(group ? [p(`Published and signed by ${group}.`)] : []),
+    ...(lead ? [lead] : []),
     ...sections,
     `<p class="foot">${esc(madeWithLine(product))}</p>`,
     "</body>", "</html>", ""].join("\n");
