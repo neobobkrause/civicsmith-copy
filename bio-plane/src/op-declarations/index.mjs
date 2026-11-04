@@ -2665,7 +2665,11 @@ const UNATTENDED_BY_DECISION = Object.freeze({
    T53 (R20, R24, R30, R41 restated; ai-accounts R35, BOB 4 Nov): the retired account-seam reads leave the read ground with
    their ops; ai-accounts' new reads (`accountstate`, `accountsof`, `aichecks`, `aioffered`, `personalchoice`) and the
    Worker's credential read (`aicredential`) take it, and the Worker's two recording calls (`aigatewayserved`,
-   `aicredentialfailed`), steps of a run that no control offers, the nocontrol ground. */
+   `aicredentialfailed`), steps of a run that no control offers, the nocontrol ground.
+   ai-runs PR 96 (notice ai-runs:96): its member acts on a run that waits or is refused (`aicontinue`, `aistop`, `aiwait`,
+   `aiswitchaccount`, `aiwithout`, `aisendrefuse`, `aiwaitswitch`) take the unexplained ground and its read `airunparts` the
+   read ground, until `affordances`' `ACT_HELP` holds a text. money PR 154 (notice money:154; money R27, R40): money serves
+   `moneyfiscalyears`, never `fiscalyears`, so `fiscalyears` leaves the read ground (R34: no named op without a spec). */
 const ACT_HELP_ABSENT = Object.freeze({
   alias: Object.freeze({ ground: localize("op-declarations.index.an_alias_of_a_declared", "An alias of a declared op (R21): its op's explanation serves it."),
     ops: frozenList([
@@ -2678,7 +2682,7 @@ const ACT_HELP_ABSENT = Object.freeze({
       "acceptancecounts", "accounthistory", "accountsof", "accountstate", "accountuses", "actionholdpreview",
       "actionquotes", "adminrecoverystep", "adminremovals", "adminremovalsopen", "advocacychecks", "aiactual",
       "aichecks", "aicredential", "aiestimate", "aihealthpreview", "aikeepawaystate", "ailimits", "aioffered",
-      "aiusage", "aiusebymember", "applicationrecipes", "approvedunsent", "asktallies", "assistantstate", "audit",
+      "airunparts", "aiusage", "aiusebymember", "applicationrecipes", "approvedunsent", "asktallies", "assistantstate", "audit",
       "baseupdates", "bearingnotes", "bindsat", "browse", "bundlehistory", "calculation", "calculationevaluate",
       "capturegrade", "capturerequestplatformhosts", "career", "checkpointsdue", "checkrequests", "checksof",
       "citationresolve", "claims", "clocklateness", "clocksics", "clocksrunning", "coarchivestate", "concerns",
@@ -2688,7 +2692,7 @@ const ACT_HELP_ABSENT = Object.freeze({
       "entitybyalias", "entityidonly", "entitysimilar", "escalationreasondraft", "escalationstatus", "event",
       "eventforact", "eventsfor", "exceptions", "exploreall", "explorecontinue", "explorepath", "exploreshorter",
       "exploretimeline", "extractproposals", "factsdue", "factstatus", "federaloffices", "finddoors", "findingkind",
-      "fiscalyears", "follows", "forcesof", "governorstate", "grouprules", "grouptestresults", "guide", "guidefor",
+      "follows", "forcesof", "governorstate", "grouprules", "grouptestresults", "guide", "guidefor",
       "guideproposals", "guides", "heldat", "holderat", "holdsdue", "holdsplaced", "hypotheses", "identity",
       "importedcase", "importedcases", "inbox", "inboxget", "inboxview", "infolevel", "inforceat", "inforcethroughof",
       "inquirypartition", "instances", "interestchecks", "interfacewords", "interview", "interviewform",
@@ -2723,11 +2727,12 @@ const ACT_HELP_ABSENT = Object.freeze({
   unexplained: Object.freeze({ ground: localize("op-declarations.index.an_act_or_a_draft", "An act, or a draft made for a member at their request, that the design has not yet explained; named back to the design stream (DEC-174 (3))."),
     ops: frozenList([
       "actalias", "actionriskpropose", "actionseekspropose", "addressfrequencyset", "adminproposalcancel",
-      "adminresign", "aiaccountadd", "aiaccountremove", "aiaccountswitch", "aicheckset", "aicredentialmint",
+      "adminresign", "aiaccountadd", "aiaccountremove", "aiaccountswitch", "aicheckset", "aicontinue", "aicredentialmint",
       "aicredentialrevoke", "aicreditsclear", "aigrantmint", "aihealthset", "aikeycloudflare", "aikeyenter",
       "aikeyseal", "aimemberallow", "aimineuse", "aimycheckset", "aioptinset", "aiorderset", "aiownadd",
       "aipersonalchoose", "aiprojectcheckset", "aiprojectorder", "aiprojectuse", "airetestset", "airunverify", "aisend",
-      "aitermsaccept", "aitermswithdraw", "approvalruleset", "assessmentrecord", "attesttext", "bearingnote",
+      "aisendrefuse", "aistop", "aiswitchaccount", "aitermsaccept", "aitermswithdraw", "aiwait", "aiwaitswitch",
+      "aiwithout", "approvalruleset", "assessmentrecord", "attesttext", "bearingnote",
       "bindingadopt", "calibrate", "calibrationsignal", "calibrationsubject", "capturerequestplatformmark",
       "capturerequestplatformunmark", "caseapprove", "caseimportdocument", "checkrecord", "checktake", "claimfindstep",
       "claimfound", "clockstate", "coarchiveset", "comparisonpropose", "contentmint", "contradictionpropose",
