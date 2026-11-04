@@ -61,3 +61,25 @@ test("R90, R1: storeWorld forwards `catalogueKeys`, so a test-instance world see
   const off = await storeWorld({ catalogueKeys: [KEY.line] });
   await assert.rejects(catalogueFor(off.ctx, { record: recordOf(off.ctx) }).seeded, /catalogue seed refused/);
 });
+
+/* ai-catalogue R33, R39 (from ai-runs' job): the deployment's env reaches the plane's catalogue. A development deployment sets
+   AI_CATALOGUE_DEVELOPMENT ("1", so its build trusts the development key line) and AI_CATALOGUE_SEED_SIGNATURE (the release
+   seed's signature by that key); the assembled store's catalogue then loads the seed at start. */
+test("R1 (ai-catalogue R33, R39): the assembled catalogue is built with the store's env, so a development deployment's AI_CATALOGUE_SEED_SIGNATURE loads the release seed when AI_CATALOGUE_DEVELOPMENT is \"1\"; control: without it the development-signed seed is refused and the catalogue holds none", async () => {
+  const { NS_AI_CATALOGUE, aiCatalogueStatement } = await import("../../../src/sshsig.mjs");
+  const { RELEASE_SEED, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_MARK } = await import("../../../src/ai-catalogue/index.mjs");
+  const { newKey, sign } = await import("../ai-catalogue/fixture.mjs");
+  const DEV = await newKey();
+  const devLine = DEV.line.replace(/ throwaway$/, ` bio-ai-catalogue${DEVELOPMENT_KEY_MARK}`);
+  const armored = await sign(DEV, NS_AI_CATALOGUE, aiCatalogueStatement(RELEASE_SEED.statement));
+  const state = async (env) => {
+    const x = await plane({ ...TEST_INSTANCE, [SEED_SIGNATURE_VAR]: armored, ...env }, { catalogueKeys: [devLine] });
+    await aiCatalogueOf(x.ctx).ready;
+    return aiCatalogueOf(x.ctx).catalogueState({});
+  };
+  const dev = await state({ [DEVELOPMENT_VAR]: "1" });
+  assert.equal(dev.source, "seed", JSON.stringify(dev));
+  assert.notEqual(dev.state, "unavailable");
+  const pub = await state({});
+  assert.equal(pub.state, "unavailable", "a build that is not a development one drops the development line");
+});
