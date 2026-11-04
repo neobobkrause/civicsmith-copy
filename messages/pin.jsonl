@@ -66,3 +66,4 @@
 {"at":"2026-11-04T16:34:50Z","row":"outcome","n":33,"outcome":"delivered"}
 {"at":"2026-11-04T17:17:36Z","row":"sent","n":34,"to":"bob","text":"pin moved to c88742943f5adb80f0c914db520eb485f0c3d97e: run your wake steps (start check --wake prints a changed prompt), then status"}
 {"at":"2026-11-04T17:17:48Z","row":"outcome","n":34,"outcome":"delivered"}
+{"at":"2026-11-04T18:03:44Z","row":"sent","n":35,"to":"bob","text":"pin moved to a607cb653a0d2d3d4934361a49c818fa5acc557c: run your wake steps (start check --wake prints a changed prompt), then status"}
