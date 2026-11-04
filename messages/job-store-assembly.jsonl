@@ -12,3 +12,4 @@
 {"at":"2026-11-04T06:59:44Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-04T07:03:22Z","row":"sent","n":7,"to":"bob","text":"job store-assembly BLOCKED: 410 pass, 40 fail (37 doors: store-ask R2 vs R78 entry; 2 sweep: capture-requests principal_claude; R95). Not complete."}
 {"at":"2026-11-04T07:03:29Z","row":"outcome","n":7,"outcome":"delivered"}
+{"at":"2026-11-04T07:53:35Z","row":"sent","n":8,"to":"bob","text":"job store-assembly BLOCKED: R78 gate done (2677627ce); 447 pass, 3 fail = R95 + 2 sweep (capture-requests principal_claude); job complete stops on R95 too"}
