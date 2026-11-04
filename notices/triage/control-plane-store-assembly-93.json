@@ -1,0 +1,1 @@
+{"row":"triage","user":"control-plane","verdict":"not affected","evidence":"build/modules.json:195 control-plane (bio-plane/src/control-plane/) holds no file that imports store-assembly, every code file under its paths read at 289bdf2b02","at":"2026-11-04T12:57:09.511Z","key":"store-assembly:93","worker":"merge: imports check","cost":"0"}
