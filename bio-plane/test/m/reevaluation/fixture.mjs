@@ -169,7 +169,8 @@ export function world({ caseMembers = new Set(), group = "test-group", earnedOve
     now: () => clock.now });
   basisVersions.migrate();
   const strength = strengthOf(host, { record, membership,
-    inquiry: { basisFor: (id, o) => k.basisFor(id, o), earned: (e, t) => k.earned(e, t), legCapped,
+    /* earned forwards the passage ids too (strength R46: a typed passage is bounded at its own grain). */
+    inquiry: { basisFor: (id, o) => k.basisFor(id, o), earned: (e, t, c) => k.earned(e, t, c), legCapped,
                subjectEntityOf: (id) => k.subjectEntityOf(id) },
     versions: basisVersions, producingGroup: () => group, now: () => clock.now });
   /* contradiction (R27), the real one; its run gate answers every run as running, the caller its principal. */

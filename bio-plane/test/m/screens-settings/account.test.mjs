@@ -38,7 +38,7 @@ test("R3 the handle drawn fixed in DEC-197's words; no handlechange act, and no 
   assert.ok(!/formerly/i.test(a.html));
 });
 
-test("R3, R21 every registry act is drawn (memberlanguageset, setpassword, expertisedeclare, signerregisterown, signerrevokeown, the explanation level, the two sign-outs), and the links to connect and notes", async () => {
+test("R3, R21 every registry act is drawn (memberlanguageset, setpassword, expertisedeclare, signerregisterown, signerrevokeown, the explanation level, the two sign-outs), and the links to aimine (R95: connect is retired) and notes", async () => {
   const { w, dev, teo } = await team();
   const mine = await keyed(dev);
   await keyed(teo);
@@ -49,9 +49,10 @@ test("R3, R21 every registry act is drawn (memberlanguageset, setpassword, exper
   const rev = acts(a.tree).filter((b) => b.attrs["data-act"] === "signerrevokeown");
   assert.equal(rev.length, 1);
   assert.equal(rev[0].attrs["data-key"], mine);
-  assert.ok(all(a.tree, (e) => e.tag === "a" && e.attrs.href === "/app/connect").length === 1);
+  assert.ok(all(a.tree, (e) => e.tag === "a" && e.attrs.href === "/app/aimine").length === 1);
+  assert.equal(all(a.tree, (e) => e.tag === "a" && e.attrs.href === "/app/connect").length, 0, "R95: no link to the retired connect");
   assert.ok(all(a.tree, (e) => e.tag === "a" && e.attrs.href === "/app/notes").length === 1);
-  // R57 (4): the glossary and the ties are reached from here too, beside connect and notes
+  // R57 (4): the glossary and the ties are reached from here too, beside aimine and notes
   assert.equal(all(a.tree, (e) => e.tag === "a" && e.attrs.href === "/app/ties").length, 1);
   assert.equal(all(a.tree, (e) => e.tag === "a" && e.attrs.href === "/app/glossary" && textOf(e) === said("screen.glossary.name")).length, 1);
   has(a, "screen.glossary.purpose");

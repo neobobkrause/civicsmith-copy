@@ -5,7 +5,6 @@
 import { storeWorld, open } from "./kit.mjs";
 import * as G from "./seed-group.mjs";
 import * as S from "./seed-security.mjs";
-import * as C from "./seed-connect.mjs";
 import { attempt, reauth, KEYS, EMPTY_ROSTER } from "./seed-members.mjs";
 
 export { attempt, reauth, KEYS };
@@ -16,10 +15,10 @@ export const READY = Object.freeze({ version: "0.84.0", date: "2026-10-11" });
 
 /** The team every Settings screen is drawn over: the founder (its one active administrator at the start; the root of trust), rosa and lu
  *  (administrators), kim (an administrator proposed, whom the others have yet to endorse), dev (who contributes and may start projects),
- *  ana (who declared CPA), old (revoked) and mai-k (invited, not enrolled). The team's key is held and on (the assistant is reachable)
- *  unless `key: false`; the group is named, speaks English and Spanish, has its website verified and its hosting recorded, and
+ *  ana (who declared CPA), old (revoked) and mai-k (invited, not enrolled). The team holds an account (the assistant is reachable)
+ *  only with `key: true` (T53: see seed-group's `holdKey`); the group is named, speaks English and Spanish, has its website verified and its hosting recorded, and
  *  has taken two copies of the record; Spanish is kept in part by ana; a release is ready and one runs; dev keeps a note; the recovery codes are issued. */
-export async function fullTeam({ key = true, env = {}, verified = false } = {}) {
+export async function fullTeam({ key = false, env = {}, verified = false } = {}) {
   const t = await G.team({ env: { ACCOUNT_SEAL_SECRET: SEAL, ...env } });
   const { w, founder, rosa } = t;
   t.lu = await w.signIn("lu", { admin: true });
@@ -83,9 +82,8 @@ export async function fullTeam({ key = true, env = {}, verified = false } = {}) 
   // a release is ready and one runs
   S.deployed(w, "0.83.0");
   S.shipped(w, { version: READY.version, date: READY.date, security: true, notes: S.notesOf("Searching the record now finds words inside scanned pages.", "New releases are checked for once a day.", "After it, open Translations once.") });
-  // the team's limits
+  // the team's account (T53: R95, the alpha's group key is retired; the team holds an account by `aiaccountadd`, seed-group's `holdKey`)
   await reauth(founder);
-  await founder.act("ailimitset", { body: { owner: "group", scope: "overall", unit: "usd", period: "month", amount: 60 } });
   if (key) await G.holdKey(founder, w);
   // an office a member named, and one the administrator made
   const law = (await founder.read("profiles")).view.records_laws.find((l) => l.level === "federal").citation;
@@ -117,29 +115,12 @@ export async function securityTeam({ tool = true, ...opts } = {}) {
 /* ---- the teams the screens are drawn over, by name; and the runs (a screen, as whom, over which team) the cross-screen tests make ---- */
 
 const REASON = "We hold tips from city employees; none of it may go to an AI service.";
-const connecting = (opts) => C.connecting(opts);
 export const TEAMS = {
   full: () => fullTeam({ verified: true }),
   security: () => securityTeam(),
   "security-bare": () => securityTeam({ tool: false }),
   /** the founder alone, the assistant kept away, no key held: the bare roster */
   bare: async () => { const w = await storeWorld(); const founder = await w.signIn("founder"); await founder.act("aikeepaway", { body: { on: true, reason: REASON } }); return { w, founder }; },
-  "connect-undisclosed": () => C.team(),
-  "connect-none": () => connecting(),
-  "connect-group": async () => { const t = await connecting(); await C.teamKey(t); return t; },
-  "connect-own": async () => { const t = await C.team(); await C.ownKey(t.dev); return t; },
-  "connect-subscription": async () => { const t = await C.team(); await C.signedIn(t.dev); return t; },
-  "connect-keptaway": async () => { const t = await connecting(); await C.teamKey(t); await t.founder.act("aikeepaway", { body: { on: true, reason: REASON } }); return t; },
-  "connect-nosignin": () => connecting({ worker: C.agentWorker({ runner: false }) }),
-  "connect-unknownpart": () => connecting({ worker: C.agentWorker({ runner: undefined }) }),
-  /** a sign-in Anthropic has since refused: the token is dropped and the refusal recorded (signin-door R4) */
-  "connect-expired": async () => {
-    const t = await C.team({ testInstance: true });
-    await C.signedIn(t.dev);
-    t.worker.ask = () => ({ event: "answer", ok: false, reason: "SIGNIN_TOKEN_REFUSED", code: "SIGNIN_TOKEN_REFUSED" });
-    await C.ask(t, t.dev);
-    return t;
-  },
 };
 const built = new Map();
 /** A team by name, built once and shared by the tests that only read it (a test that acts builds its own). */
@@ -150,9 +131,8 @@ export const RUNS = [
   ["settings", { team: "full", who: "founder" }], ["settings", { team: "full", who: "dev" }],
   ["members", { team: "full", who: "founder", subject: "ana" }], ["members", { team: "full", who: "dev" }],
   ["members", { team: "bare", who: "founder", table: () => EMPTY_ROSTER }],
-  ["account", { team: "full", who: "ana" }], ["connect", { team: "connect-none", who: "dev" }], ["connect", { team: "connect-own", who: "dev" }],
-  ["connect", { team: "connect-group", who: "dev" }], ["connect", { team: "connect-subscription", who: "dev" }],
-  ["notes", { team: "full", who: "dev" }], ["notes", { team: "connect-none", who: "dev" }],
+  ["account", { team: "full", who: "ana" }],
+  ["notes", { team: "full", who: "dev" }],
   ["group", { team: "full", who: "founder" }], ["group", { team: "full", who: "dev" }],
   ["places", { team: "full", who: "founder" }], ["places", { team: "full", who: "dev" }], ["recovery", { team: "full", who: "founder" }],
   ["group-identity", { team: "full", who: "founder" }], ["group-identity", { team: "full", who: "dev" }],
@@ -166,4 +146,4 @@ export async function readsOf(id, run) {
   return [...new Set(o.p.all.map((r) => r.op))].filter((op) => op !== "whoami");
 }
 
-export { C, G, S };
+export { G, S };

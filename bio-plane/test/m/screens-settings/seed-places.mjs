@@ -100,12 +100,11 @@ export async function rulesTeam() {
   return t;
 }
 
-/** The team's own key, held and switched on by the real acts (the password asked again first, as an administrator's page does): the assistant is reachable. */
+/** The team's own account, held (T53, R95: by `aiaccountadd`, the alpha's group key retired) by the real acts (the password asked again first, as an administrator's page does): the assistant is reachable. */
 export const SEAL = { ACCOUNT_SEAL_SECRET: "a-long-seal-secret-for-the-settings-test-only" };
 export async function holdKey(w, founder, key = "sk-ant-api03-TEAM-KEY-0123456789abcdef") {
   await founder.act("reauth", { body: { password: w.password } });
-  await founder.act("groupkeyset", { body: { key } });
-  await founder.act("groupkeyswitch", { body: { on: true } });
+  await founder.act("aiaccountadd", { body: { owner: "group", provider: "anthropic", plan: "api-team", means: "sealed", secret: key } });
 }
 
 /** `as` vouches for the held document `bundle` (the selection and its release, as Home's "Vouch" does). */
