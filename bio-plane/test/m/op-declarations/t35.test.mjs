@@ -5,6 +5,7 @@
    session set and stamp is compared whole at the exported tables, and each stamp is driven through its owner's own map,
    so a stamp named at a site the owner does not read is seen. Each comparison has a negative control. */
 import "./register-owners.mjs";
+import { RETIRED_T53 } from "./help.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as O from "../../../src/op-declarations/index.mjs";
@@ -82,14 +83,14 @@ const R30 = {
   adminrecoverystep:  { spec: { classes: SESSION, machineClasses: [], mutating: false }, needs: null, stamps: ["viewer"],
                         family: "instance-setup", map: null },
   agentpack:          { spec: { classes: MP, mutating: false }, needs: undefined, stamps: ["viewer"], family: null, map: null },
-  /* the seventh of credentials' T35 routes (red 23): a member's own subscription disconnected (credentials R43) */
-  subscriptiondisconnect: { spec: { classes: SESSION, machineClasses: [], mutating: true }, needs: null,
-                            stamps: ["by", "viewer"], family: "ai-accounts", map: aiAccountsOps },
+  /* the seventh of credentials' T35 routes (red 23), a member's own subscription disconnected (credentials R43), is
+     retired for T53 with ai-accounts' old door (ai-accounts R35, BOB 4 Nov): no spec, no table (`RETIRED_T53`) */
 };
 const PUBLIC = Object.keys(R30).filter((op) => R30[op].spec.classes === null);
 
 test("R30, R2: OPS holds the spec R30 gives each of T35's ops — compared whole, none naming ai — and each sits in the family R30 names (the archive's in acquisition's, passed through capture's map; the notes in hypotheses' as notewrite; findin retrieval's; entitieskind entities'; credit public-read's; the security, sign-out and recovery ops credentials'; the step instance-setup's), agentpack in OPS beside affordances (negative control: a drifted spec is seen)", () => {
-  assert.equal(Object.keys(R30).length, 18);
+  assert.equal(Object.keys(R30).length, 17);
+  assert.ok(!Object.hasOwn(R30, "subscriptiondisconnect") && RETIRED_T53.includes("subscriptiondisconnect"));
   for (const [op, want] of Object.entries(R30)) {
     assert.ok(Object.hasOwn(OPS, op), `${op} has no spec`);
     assert.deepEqual(plain(OPS[op]), want.spec, op);
@@ -144,7 +145,7 @@ test("R30, R2, R4: none of T35's ops is in GOVERNANCE_ACTIONS or IDENTITY_ACTION
   assert.equal(agentReachable("agentpack"), true);
   assert.equal(AI_GRANT_OPS.includes("agentpack"), AI_GRANT_OPS.includes("affordances"));
   for (const op of ["securitymap", "signout", "signouteverywhere", "recoverycodesissue", "recoverycodesstate",
-                    "adminrecoverystep", "noterevise", "notedelete", "subscriptiondisconnect"])
+                    "adminrecoverystep", "noterevise", "notedelete"])
     assert.deepEqual([...OPS[op].machineClasses], [], op);
   /* unpack: the daemon continues an automatic unpack, the probe as an operator's bearer; no member or admin bearer */
   assert.ok(!OPS.unpack.machineClasses.includes("member") && !OPS.unpack.machineClasses.includes("admin"));
@@ -183,7 +184,7 @@ test("R30, R4: each stamp reaches its owner where the owner reads it, through th
     assert.ok(await reaches(credentialsOps, op, { query: { [st]: SENT } }), `${op}: ${st}`);
     checked++;
   }
-  assert.equal(checked, 19, `${checked} stamps driven`);
+  assert.equal(checked, 18, /* 19 until T53 retired the disconnection (ai-accounts R35) */ `${checked} stamps driven`);
   /* the note acts read the body's by, never the query's */
   assert.equal(await reaches(hypothesesOps, "noterevise", { query: { by: SENT } }), false);
   /* recover's secrets are read from the body alone (admission R20) */
@@ -204,8 +205,9 @@ test("R30, R6: every op of R30 is served — by its owner's map (capture's for t
   for (const op of ["coarchiveset", "coarchivestate"]) assert.ok(!keysOf(captureOps).includes(op), `${op} is in capture's map now`);
   /* capture's archive pass-through and credentials' seven routes all have specs */
   for (const op of ["unpack", "archivelist"]) assert.ok(Object.hasOwn(OPS, op), op);
-  const credsT35 = ["signout", "signouteverywhere", "securitymap", "recoverycodesissue", "recoverycodesstate", "recover",
-                    "subscriptiondisconnect"];
+  const credsT35 = ["signout", "signouteverywhere", "securitymap", "recoverycodesissue", "recoverycodesstate", "recover"];
+  /* the seventh, the disconnection, is retired (T53; ai-accounts R35): no map serves it */
+  for (const m of [credentialsOps, aiAccountsOps]) assert.ok(!keysOf(m).includes("subscriptiondisconnect"));
   for (const op of credsT35) assert.ok(keysOf(credentialsOps).includes(op) && Object.hasOwn(OPS, op), op);
   /* negative control */
   assert.deepEqual([...keysOf(credentialsOps), "signoutall"].filter((op) => !Object.hasOwn(OPS, op))
@@ -219,13 +221,13 @@ test("R6 (T35; N703, K2038): credentials' securitycount, the in-plane write of i
   assert.ok(!inNoTable("securitymap"));
 });
 
-test("R27, R30 (T37: R27's T35 sentence retired, R36): subscriptionsignin is declared under its own name in credentials' family, and no alias names it; the member's own subscription disconnect is credentials' own act (machineClasses [], by stamped)", () => {
+test("R27, R30 (T37: R27's T35 sentence retired, R36; restated for T53, ai-accounts R35, BOB 4 Nov): subscriptionsignin is declared under its own name in credentials' family, and no alias names it; the member's own subscription disconnect is retired with no alias: in no family and no table", () => {
   assert.ok(!inNoTable("subscriptionsignin") && OP_FAMILIES.credentials.kinds.subscriptionsignin === "own");
   assert.ok(!Object.hasOwn(OP_ALIASES, "subscriptionsignin") && !Object.values(OP_ALIASES).includes("subscriptionsignin"));
-  /* T48 (R68): the disconnection is ai-accounts' with the other account ops */
-  assert.equal(OP_FAMILIES["ai-accounts"].kinds.subscriptiondisconnect, "own");
+  /* T48 (R68) moved the disconnection to ai-accounts; T53 retires it (ai-accounts R35): in no family and no table */
+  assert.ok(!Object.hasOwn(OP_FAMILIES["ai-accounts"].kinds, "subscriptiondisconnect"));
   assert.ok(!Object.hasOwn(OP_FAMILIES.credentials.kinds, "subscriptiondisconnect"));
-  assert.ok(!inNoTable("subscriptiondisconnect"));
+  assert.ok(inNoTable("subscriptiondisconnect") && !Object.hasOwn(OP_ALIASES, "subscriptiondisconnect"));
 });
 
 /* R6, R19: the ops T35's jobs added to the earlier modules' maps, each requirement naming them op-declarations' to

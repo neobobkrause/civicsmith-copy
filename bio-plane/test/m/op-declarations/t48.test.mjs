@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import * as O from "../../../src/op-declarations/index.mjs";
 import { REGISTERED } from "./register-owners.mjs";
-import { explained } from "./help.mjs";
+import { explained, RETIRED_T53 } from "./help.mjs";
 import { browserActs, OWED_BY_FIX_ROUND_AT_43379A1A44, OWED_SERVED_BY_OWNERS } from "./browser.mjs";
 import { T48_SHARES, T48_FAMILIES } from "../../../src/op-declarations/t48.mjs";
 import * as AFF from "../../../src/affordances.mjs";
@@ -187,11 +187,12 @@ test("R65, R21 (N847, N1054; DEC-226, DEC-227; wizard-scripts R38): R21 read aga
   const fns = regActs.filter((a) => a.status === "function");
   /* T49 (K3321 (B), K3393; R21): the count is read from the registry, never pinned (K3268) */
   assert.ok(fns.length > 0, `${fns.length} function acts`);
-  for (const a of fns) assert.ok(Object.hasOwn(OPS, a.op), `${a.op}: a function act with no spec`);
+  /* T53 (R21; ai-accounts R35, BOB 4 Nov): a retired account-seam function is served through no op and has no spec */
+  for (const a of fns) assert.equal(Object.hasOwn(OPS, a.op), !RETIRED_T53.includes(a.op), `${a.op}: a function act with no spec, or retired and declared`);
   /* the alias table equals the file's function acts: each alias is a function act of the file; every other function act is
      an op declared under its own name */
   for (const al of Object.keys(OP_ALIASES)) assert.ok(fns.some((a) => a.op === al), `${al}: an alias of no registry function`);
-  for (const a of fns.filter((x) => !Object.hasOwn(OP_ALIASES, x.op))) assert.ok(O.FAMILY_OPS.includes(a.op) || Object.hasOwn(OPS, a.op), a.op);
+  for (const a of fns.filter((x) => !Object.hasOwn(OP_ALIASES, x.op) && !RETIRED_T53.includes(x.op))) assert.ok(O.FAMILY_OPS.includes(a.op) || Object.hasOwn(OPS, a.op), a.op);
   const elsewhere = registry.screens.find((s) => s.id === "elsewhere");
   assert.ok(elsewhere && elsewhere.acts.length === 0, "the elsewhere screen lists an act");
   assert.deepEqual(Object.keys(OPS).filter((op) => /^elsewhere/.test(op)), []);
@@ -219,7 +220,8 @@ test("R65, R21 (N847, N1054; DEC-226, DEC-227; wizard-scripts R38): R21 read aga
     assert.equal(OP_FAMILIES["instance-setup"].kinds[op], "admin", op);
   }
   /* negative control */
-  assert.deepEqual([...fns, { op: "nosuchfunction" }].filter((a) => !Object.hasOwn(OPS, a.op)).map((a) => a.op), ["nosuchfunction"]);
+  assert.deepEqual([...fns, { op: "nosuchfunction" }].filter((a) => !Object.hasOwn(OPS, a.op) && !RETIRED_T53.includes(a.op))
+    .map((a) => a.op), ["nosuchfunction"]);
 });
 
 test("R65, R27 (N1054; DEC-226; wizard-scripts R38): R27 read against the library at PR #34's merge — its one owed act is updatestart in the update wizard, declared under its own name in both session sets with no alias, every other step names a declared op or an alias (negative control: an undeclared step is seen)", () => {
@@ -227,10 +229,11 @@ test("R65, R27 (N1054; DEC-226; wizard-scripts R38): R27 read against the librar
   const named = library.scripts.flatMap((s) => s.versions.flatMap((v) => v.steps.map((st) => st.act))).filter(Boolean);
   const steps = named.map((act) => act.replace(/^owed:/, "").split(" ")[0]);
   assert.ok(named.some((act) => /^owed:updatestart /.test(act)));
-  assert.deepEqual([...new Set(steps)].filter((op) => !Object.hasOwn(OPS, op)), []);
+  /* T53 (R21, R27; ai-accounts R35): a step naming a retired account-seam act names no op, named back to BOB */
+  assert.deepEqual([...new Set(steps)].filter((op) => !Object.hasOwn(OPS, op) && !RETIRED_T53.includes(op)), []);
   assert.ok(Object.hasOwn(OPS, "updatestart") && both("updatestart") && !Object.hasOwn(OP_ALIASES, "updatestart"));
   /* negative control */
-  assert.deepEqual([...steps, "nosuchstep"].filter((op) => !Object.hasOwn(OPS, op)), ["nosuchstep"]);
+  assert.deepEqual([...steps, "nosuchstep"].filter((op) => !Object.hasOwn(OPS, op) && !RETIRED_T53.includes(op)), ["nosuchstep"]);
 });
 
 test("R65, R60 (N1054; DEC-226): the control — a step naming updateskip on the updates screen passes op=wizardcheck once R66's specs are held, and is refused without them (the check's act table is the declared ops), the same step naming an act the screen does not offer is refused either way", () => {
@@ -389,68 +392,84 @@ const MOVED = ["accountreferenceset", "accountreferenceremove", "accountreferenc
   "accountusesset", "accountuses", "accounthistory", "projectkeyset", "projectsigninset", "projectaccountremove",
   "projectaccountswitch", "projectaccountstate", "projectkeynotice", "projectkeynoticeseen", "projectaikeepaway",
   "projectaikeepawaystate"];
-/* each moved op's T47 spec, session sets, NEEDS row and stamps, as R20, R24, R33 and R41 gave them */
+/* Restated for T53 (R20, R24, R30, R41; ai-accounts R35, BOB 4 Nov): 17 of the 24 are retired with no aliases; the 7 kept
+   keep their T47 kinds; the family is ai-accounts' current map, the new ops beside them */
+const KEPT = MOVED.filter((op) => !RETIRED_T53.includes(op));
 const T47 = {
   own: { spec: { classes: SESSION, machineClasses: [], mutating: true }, needs: null },
   ownread: { spec: { classes: SESSION, machineClasses: [], mutating: false }, needs: null },
   admin: { spec: { classes: SESSION, machineClasses: [], mutating: true }, needs: null },
   settingread: { spec: { classes: MP, mutating: false }, needs: null },
+  tally: { spec: { classes: MP, mutating: true }, needs: null },
 };
-const T47_KIND = { accountreferenceset: "own", accountreferenceremove: "own", accountreference: "ownread", groupkeyset: "admin",
-  groupkeyremove: "admin", groupkeyswitch: "admin", groupkeystate: "ownread", groupkeynotice: "ownread", groupkeynoticeseen: "own",
-  subscriptiondisconnect: "own", aikeepaway: "admin", aikeepawaystate: "settingread", accountusesset: "own", accountuses: "ownread",
-  accounthistory: "ownread", projectkeyset: "own", projectsigninset: "own", projectaccountremove: "own", projectaccountswitch: "own",
-  projectaccountstate: "ownread", projectkeynotice: "ownread", projectkeynoticeseen: "own", projectaikeepaway: "own",
-  projectaikeepawaystate: "ownread" };
+const T53_KIND = { aikeepaway: "admin", aikeepawaystate: "settingread", accountusesset: "own", accountuses: "ownread",
+  accounthistory: "ownread", projectaikeepaway: "own", projectaikeepawaystate: "ownread",
+  /* ai-accounts R2, R46, R47, R52, R53: the owners' reads */
+  accountstate: "ownread", accountsof: "ownread", aichecks: "ownread", aioffered: "ownread", personalchoice: "ownread",
+  /* R65–R67: the Worker's plane ops, any credential at admission, the owner refusing every principal but the Worker's */
+  aicredential: "settingread", aigatewayserved: "tally", aicredentialfailed: "tally" };
+/* R61, R71: the acts the screens send, ai-accounts' DECLARED_OPS, each a session's own act */
+const DECLARED_ACTS = ["aiaccountadd", "aiownadd", "aiaccountremove", "aiaccountswitch", "aiorderset", "aiprojectorder",
+  "aimemberallow", "aiprojectuse", "aimineuse", "aicheckset", "aiprojectcheckset", "aimycheckset", "aikeyenter",
+  "aikeycloudflare", "aikeyseal", "aitermsaccept", "aitermswithdraw", "aipersonalchoose", "aicreditsclear", "aioptinset", "aisend"];
+for (const op of DECLARED_ACTS) T53_KIND[op] = "own";
 
-test("R68, R24, R33, R41, R20 (N996; K3101; ai-accounts): the 24 ops whose routes moved to ai-accounts form a family of ai-accounts' own — their names, specs, session sets, NEEDS rows, stamps and act lists are what they were in T47, their family ai-accounts and credentials' family holds none of them, aigrantmint stays credentials' and AI_GRANT_OPS stays credentials' (negative control: aigrantmint is credentials', a drifted kind is seen)", () => {
+test("R68, R24, R33, R41, R20 (N996; K3101; ai-accounts; restated for T53, ai-accounts R35, BOB 4 Nov): ai-accounts' family is its map's ops — the 7 of the 24 moved ops it still serves with their T47 kinds, specs, session sets, NEEDS rows and stamps, its 5 owners' reads, the Worker's 3 plane ops and its 21 declared acts, each act by stamped; the 17 retired ops are in no family and no table; credentials' family holds none of them, aigrantmint stays credentials' (negative control: aigrantmint is credentials', a drifted kind is seen)", () => {
   assert.equal(MOVED.length, 24);
-  assert.equal(new Set(MOVED).size, 24);
-  assert.deepEqual(Object.keys(OP_FAMILIES["ai-accounts"].kinds).sort(), [...MOVED].sort());
+  assert.equal(KEPT.length, 7);
+  assert.equal(RETIRED_T53.length, 17);
+  assert.ok(RETIRED_T53.every((op) => MOVED.includes(op)));
+  assert.deepEqual(Object.keys(OP_FAMILIES["ai-accounts"].kinds).sort(), Object.keys(T53_KIND).sort());
   assert.equal(OP_FAMILIES["ai-accounts"].owner, "ai-accounts");
   assert.deepEqual(OP_FAMILIES["ai-accounts"].actor, { key: "by", at: "query" });
-  for (const op of MOVED) {
-    const want = T47[T47_KIND[op]];
+  for (const [op, kind] of Object.entries(T53_KIND)) {
+    const want = T47[kind];
     assert.deepEqual(familyOf(op), ["ai-accounts"], `${op}: family`);
-    assert.equal(OP_FAMILIES["ai-accounts"].kinds[op], T47_KIND[op], `${op}: kind`);
-    assert.ok(!Object.hasOwn(OP_FAMILIES.credentials.kinds, op), `${op}: still in credentials' family`);
+    assert.equal(OP_FAMILIES["ai-accounts"].kinds[op], kind, `${op}: kind`);
+    assert.ok(!Object.hasOwn(OP_FAMILIES.credentials.kinds, op), `${op}: in credentials' family`);
     assert.deepEqual(plain(OPS[op]), want.spec, `${op}: spec`);
     assert.equal(NEEDS[op], want.needs, `${op}: NEEDS`);
     assert.ok(both(op) && ACT_GATE.mode(op) === "session", `${op}: session sets`);
-    assert.ok(!GOVERNANCE_ACTIONS.includes(op) && !IDENTITY_ACTIONS.includes(op) && !AI_GRANT_OPS.includes(op), op);
+    assert.ok(!GOVERNANCE_ACTIONS.includes(op) && !IDENTITY_ACTIONS.includes(op), op);
+    assert.equal(AI_GRANT_OPS.includes(op), op === "aicredential", op);
     assert.deepEqual(listsOf(op), [], op);
     assert.ok(!JSON.stringify(OPS[op]).includes('"ai"'), op);
-    /* the stamps: by on an act, viewer on a read, the member beside them on the three account-reference ops */
-    const extra = ["accountreferenceset", "accountreferenceremove", "accountreference"].includes(op) ? ["member"] : [];
+    /* the stamps: by on an act, viewer on a session's act and read; the two setting reads none but the credential's by */
     const act = OPS[op].mutating;
-    const stamped = op === "aikeepawaystate" ? [] : ["viewer", ...(act ? ["by"] : []), ...extra];
+    const stamped = op === "aikeepawaystate" ? [] : op === "aicredential" ? ["by"] : ["viewer", ...(act ? ["by"] : [])];
     assert.deepEqual(stamps(op), stamped.sort(), `${op}: stamps`);
   }
-  /* the owner's map serves exactly these 24 (ai-accounts R-routes) */
-  assert.deepEqual(keysOf(aiAccountsOps).sort(), [...MOVED].sort());
+  /* the retired ops: in no family and no table */
+  for (const op of RETIRED_T53) {
+    assert.deepEqual(familyOf(op), [], `${op}: family`);
+    assert.ok(!Object.hasOwn(OPS, op) && !Object.hasOwn(NEEDS, op) && !Object.hasOwn(OP_STAMPS, op)
+      && !SESSION_OPS.member.has(op) && !SESSION_OPS.admin.has(op) && listsOf(op).length === 0, `${op}: in a table`);
+  }
+  /* the owner's map serves exactly the family (ai-accounts' routes) */
+  assert.deepEqual(keysOf(aiAccountsOps).sort(), Object.keys(T53_KIND).sort());
   /* credentials keeps the rest */
   assert.equal(OP_FAMILIES.credentials.kinds.aigrantmint, "own");
   assert.deepEqual(stamps("aigrantmint"), ["by", "member", "session", "viewer"]);
   assert.ok(OP_FAMILIES.credentials.kinds.subscriptionsignin === "own" && OP_FAMILIES.credentials.kinds.setpassword === "own");
   /* negative controls */
   assert.ok(!Object.hasOwn(OP_FAMILIES["ai-accounts"].kinds, "aigrantmint"));
-  assert.notDeepEqual(plain({ ...OPS.groupkeyset, machineClasses: undefined }), T47.admin.spec);
-  assert.notEqual(OP_FAMILIES["ai-accounts"].kinds.groupkeystate, "read");
+  assert.notDeepEqual(plain({ ...OPS.aiaccountadd, machineClasses: undefined }), T47.own.spec);
+  assert.notEqual(OP_FAMILIES["ai-accounts"].kinds.accountstate, "read");
 });
 
-test("R68, R24, R41 (N996): the moved ops reach their owner through ai-accounts' map where it reads them — by from the query on every act, viewer on every read, the member beside by on the account-reference ops, the group's key and the project's key the body's only (negative control: a body by is not the actor, a query key does not reach)", async () => {
-  const ACTS = MOVED.filter((op) => OPS[op].mutating);
-  for (const op of ACTS) assert.ok(await reaches(aiAccountsOps, op, Q("by")), `${op}: by does not reach`);
-  for (const op of MOVED.filter((o) => !OPS[o].mutating && o !== "aikeepawaystate"))
+test("R68, R24, R41 (N996; restated for T53, ai-accounts R35, BOB 4 Nov): ai-accounts' ops reach their owner through its map where it reads them — by from the query on every act and on the credential read, viewer on every owner's read, a secret or key the body's only (negative control: a body by is not the actor, a query secret does not reach)", async () => {
+  const ACTS = Object.keys(T53_KIND).filter((op) => OPS[op].mutating);
+  for (const op of [...ACTS, "aicredential"]) assert.ok(await reaches(aiAccountsOps, op, Q("by")), `${op}: by does not reach`);
+  for (const op of Object.keys(T53_KIND).filter((o) => !OPS[o].mutating && !["aikeepawaystate", "aicredential"].includes(o)))
     assert.ok(await reaches(aiAccountsOps, op, Q("viewer")), `${op}: viewer does not reach`);
-  for (const op of ["groupkeyset", "projectkeyset"]) {
-    assert.ok(await reaches(aiAccountsOps, op, B("key")), `${op}: the body's key does not reach`);
-    assert.equal(await reaches(aiAccountsOps, op, Q("key")), false, `${op}: the query's key reaches`);
+  for (const [op, k] of [["aiaccountadd", "secret"], ["aiownadd", "secret"], ["aikeyseal", "secret"], ["aikeyenter", "key"]]) {
+    assert.ok(await reaches(aiAccountsOps, op, B(k)), `${op}: the body's ${k} does not reach`);
+    assert.equal(await reaches(aiAccountsOps, op, Q(k)), false, `${op}: the query's ${k} reaches`);
   }
   /* negative controls */
-  for (const op of ["groupkeyswitch", "accountusesset", "aikeepaway"])
+  for (const op of ["aiaccountswitch", "accountusesset", "aikeepaway", "aiownadd"])
     assert.equal((await drive(aiAccountsOps, op, { body: { by: SENT }, query: { by: "member:real" } })).includes(SENT), false, op);
-  assert.equal(await reaches(aiAccountsOps, "groupkeystate", Q("nosuchstamp")), false);
+  assert.equal(await reaches(aiAccountsOps, "accountstate", Q("nosuchstamp")), false);
 });
 
 /* ---------- R69 ---------- */
