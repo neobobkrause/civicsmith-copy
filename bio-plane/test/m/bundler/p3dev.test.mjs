@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { slugMember, slugPlane, memberPlan, planePlan, p3devFindings, isP3devName, appName } from "../../../scripts/p3dev.mjs";
+import { slugMember, slugPlane, memberPlan, planePlan, p3devFindings, isP3devName, appName, refuseUnlessP3dev } from "../../../scripts/p3dev.mjs";
 import { deriveBindings } from "../../../scripts/derive-bindings.mjs";
 import { parseJsonc } from "../../../scripts/jsonc.mjs";
 import { containerClasses, markerIsContainer } from "../../../scripts/fleet-bundle.mjs";
@@ -113,6 +113,33 @@ test("R45 p3dev: a marked copy that does not begin with p3dev- is refused NOT_A_
   } finally { rm(root); }
 });
 
+test("R45 p3dev: a passing guard prints the exact line 'p3dev guard: passed' on its own line, a refusing guard does not, and both scripts print it on a dry --test-instance run", async () => {
+  const LINE = "p3dev guard: passed";
+  const capture = (plan) => {
+    const out = []; let code = null;
+    const ret = refuseUnlessP3dev(plan, { log: (s) => out.push(String(s)), err: (s) => out.push(String(s)), exit: (c) => { code = c; } });
+    return { lines: out.join("\n").split("\n"), code, ret };
+  };
+  const pass = capture(memberPlanOf("pdf-worker").plan);
+  assert.equal(pass.code, null);
+  assert.ok(pass.ret);
+  assert.equal(pass.lines[0], LINE, "the first line printed is exactly the guard line");
+  assert.equal(pass.lines.filter((l) => l === LINE).length, 1);
+  for (const plan of [{ ...memberPlanOf("pdf-worker").plan, slug: "biosmoke8" }, { ...memberPlanOf("pdf-worker").plan, buckets: ["bio-captures"] }]) {
+    const no = capture(plan);
+    assert.equal(no.code, 1);
+    assert.ok(!no.lines.some((l) => l.startsWith(LINE)), no.lines.join("\n"));
+  }
+  const root = await repo();
+  try {
+    const stub = { subdomain: "sub", scripts: { [SLUG]: { body: "x", settings: {} } } };
+    for (const r of [fleet(root, SLUG, ["--dry-run"], stub), plane(root, SLUG, ["--dry-run"], stub)]) {
+      assert.ok(r.stdout.split("\n").includes(LINE), r.stdout + r.stderr);
+      assert.deepEqual(r.calls.filter((c) => c.method !== "GET"), [], "the dry run only reads");
+    }
+  } finally { rm(root); }
+});
+
 test("p3dev: a member's generated config names its Worker, bucket, Durable Object script and services by the slug, and its missing bucket is created", async () => {
   const root = await repo();
   try {
@@ -125,7 +152,7 @@ test("p3dev: a member's generated config names its Worker, bucket, Durable Objec
     const stub = { subdomain: "sub", scripts: { [SLUG]: { settings: {} }, [`pdf-worker-${SLUG}`]: { settings: {} } } };
     const dry = fleet(root, SLUG, ["--dry-run"], stub);
     assert.equal(dry.status, 0, dry.stdout + dry.stderr);
-    assert.match(dry.stdout, /^p3dev guard: passed for p3dev-l1/m);
+    assert.match(dry.stdout, /^p3dev guard: passed\n  for p3dev-l1: /m);
     assert.match(dry.stdout, new RegExp(`bucket   : bio-captures-${SLUG} missing; a real run creates it`));
     assert.deepEqual(dry.calls.filter((c) => c.method !== "GET"), [], "the dry run only reads");
     const real = fleet(root, SLUG, [], stub);
