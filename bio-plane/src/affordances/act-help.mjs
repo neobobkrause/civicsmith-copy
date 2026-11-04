@@ -164,18 +164,19 @@ export const T51_STANDIN_HELP = Object.freeze({
 });
 export const T51_STANDIN_OPS = Object.freeze(Object.keys(T51_STANDIN_HELP));
 
-/** The ops held, in the design's order (R48, R61). */
+/** The ops held, in the design's order (R48, R61). F1 (T53; ai-accounts R35, wizard-scripts' `RETIRED_ACTS`): the twelve ai-accounts ops
+ *  T53 retired (the group key's four, the account reference's two, `subscriptiondisconnect`, the project account's five) are not held. */
 export const ACT_HELP_OPS = Object.freeze([
   "bootstrap", "login", "unlock", "recover", "grouplanguagesset", "grouplogoset", "passwordreset", "signout",
   "signouteverywhere", "joinlinkinvite", "passwordresetlink", "peopledirectory", "claim", "groupnameset",
-  "groupdomainset", "profilesset", "officesseed", "entitycreate", "placewanted", "aikeepaway", "groupkeyset",
-  "groupkeyswitch", "courtnoticeset", "hostingaccessset", "updatestart", "updatelater", "updateskip",
+  "groupdomainset", "profilesset", "officesseed", "entitycreate", "placewanted", "aikeepaway",
+  "courtnoticeset", "hostingaccessset", "updatestart", "updatelater", "updateskip",
   "securitytooladd", "memberadd", "groupdescriptionset", "groupdescriptiondraft", "invitelook", "memberlanguageset",
   "enroll", "startfrom", "membercaps", "memberset", "adminendorse", "adminremove", "expertiseconfirm",
-  "invitewithdraw", "websitekeycreate", "joinlinkenable", "groupkeyremove", "securitymap", "securitytooltest",
+  "invitewithdraw", "websitekeycreate", "joinlinkenable", "securitymap", "securitytooltest",
   "securitytoolremove", "expertisedeclare", "setpassword", "signrequest", "signerset", "signerregister",
-  "signerrevoke", "infolevelset", "groupkeynoticeseen", "disclosureshown", "subscriptionsignin",
-  "subscriptiondisconnect", "accountreferenceset", "accountreferenceremove", "membertie", "membertiewithdraw",
+  "signerrevoke", "infolevelset", "disclosureshown", "subscriptionsignin",
+  "membertie", "membertiewithdraw",
   "notewrite", "noteturn", "noterevise", "notedelete", "writinghelp", "translationdraft", "translationadopt",
   "translationgrant", "translationconfirm", "translationrevert", "wizards", "wizarddraft", "wizardrevise",
   "wizardsubmit", "wizardapprove", "wizardretire", "taskresolve", "taskforward", "proposedispose", "queuesnooze",
@@ -191,7 +192,6 @@ export const ACT_HELP_OPS = Object.freeze([
   "actionrisktier", "actionlawspropose", "actioninquiry", "inquiryground", "versionaccept", "versionhide",
   "versionconsider", "versionreject", "versionrevert", "versioncurrent", "connectionchoose", "retire", "attest",
   "identityclaim", "standingset", "personfact", "datedfact", "clockpropose", "accountusesset", "ailimitset",
-  "projectkeyset", "projectsigninset", "projectaccountswitch", "projectaccountremove", "projectkeynoticeseen",
   "projectaikeepaway", "projectscopeset", "projectapprovalset", "ruledraft", "ruleconfirm", "rulewithdraw",
   "ruleoffer", "dutyfromresponse", "dutiesarising", "procedureguides", "standingendset", "declaredstakeset",
   "clockproposals", "joindoors", "textcheck", "infractiondraft", "bearingdraft", "publishcheck", "casecheck",

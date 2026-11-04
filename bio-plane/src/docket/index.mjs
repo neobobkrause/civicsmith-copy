@@ -94,6 +94,31 @@ export const PROPOSALS = Object.freeze(["record", "public", "both"]);           
 export const PRESSURE_KINDS = Object.freeze(["legal", "retaliation", "discrediting", "other"]);   /* R2: as `actions` R48's */
 /** R1 (T45; N880, Actions D5, D20): what an `outcome` entry states it was. */
 export const OUTCOME_KINDS = Object.freeze(["cure", "harm_addressed"]);
+/** R32 (T53; K5558): the two fields an outcome states, named by its refusal. */
+export const OUTCOME_FIELDS = Object.freeze(["outcome.kind", "outcome.on"]);
+/** R32 (T53; K5558, J5 = A): what each kind a joined member files (`docketFile`, R1) needs, beside `case`. A response
+ *  or statement is from the named subject or a holder of standing, a reaction from anyone else; an outcome adds its two
+ *  fields and the member's summary. */
+export const FILE_KIND_FIELDS = Object.freeze({
+  response: Object.freeze(["edition", "from", "capture", "proposed", "reason"]),
+  statement: Object.freeze(["edition", "from", "capture", "proposed", "reason"]),
+  reaction: Object.freeze(["edition", "from", "capture", "proposed", "reason"]),
+  outcome: Object.freeze(["edition", "from", "capture", "proposed", "reason", ...OUTCOME_FIELDS, "summary"]),
+});
+/** R32 (T53; K5558, J5 = A): what each kind the manager places directly (`docketPrepare`, then `docketPost`, R4, R5:
+ *  one act, prepared, signed and posted) needs, beside `case`; no record entry is filed first. A correction is a
+ *  `take-back` of an earlier public entry (R11), or the `edition` entry of a new edition (R9 (b), R33); a withdrawal
+ *  (R12) and a court order (R25) each their own kind. The record kinds the manager places are the record entry's, named
+ *  by `entry`. */
+export const PLACE_KIND_FIELDS = Object.freeze({
+  edition: Object.freeze(["edition"]),
+  "take-back": Object.freeze(["edition", "takesBack", "reason"]),
+  withdrawal: Object.freeze(["edition", "reason"]),
+  "court-order": Object.freeze(["order.effect", "order.editions", "capture", "reason"]),
+  "standing-granted": Object.freeze(["edition", "holder", "reason"]),
+  "standing-withdrawn": Object.freeze(["edition", "grant", "reason"]),
+  disclosure: Object.freeze(["edition", "candidate"]),
+});
 /** R27 (T45): the bounds of a page of pressure marks. */
 export const MARKS_LIMIT_DEFAULT = 1000, MARKS_LIMIT_MAX = 1000;
 /** R28 (T45; N892): the code a counsel matter's case is refused, `publication` R78's one row. */
@@ -399,43 +424,45 @@ export class Docket {
     /* DEC-49 REGION is-docket-form */
     if (ed === null || !c.editions.some((e) => e.edition === ed))
       return { refusal: refuse("DOCKET_NO_EDITION", "the edition named is not a ratified edition of this case",
-                               { editions: c.editions.map((e) => e.edition) }) };
+                               { editions: c.editions.map((e) => e.edition), fields: ["edition"] }) };
     if (!f || typeof f !== "object" || !FROM_KINDS.includes(f.kind))
-      return { refusal: refuse("DOCKET_NOT_ATTRIBUTED", "from is {kind: subject, entity}, {kind: holder, grant} or {kind: other, name}") };
+      return { refusal: refuse("DOCKET_NOT_ATTRIBUTED", "from is {kind: subject, entity}, {kind: holder, grant} or {kind: other, name}",
+                                              { fields: ["from"] }) };
     let fromRow;
     if (f.kind === "subject") {
       const entity = str(f.entity);
       if (!entity || !this.#namedSubjects(c.case, ed).has(entity))
-        return { refusal: refuse("DOCKET_NOT_THE_SUBJECT", `the entity named is not a subject of edition ${ed}`, { edition: ed }) };
+        return { refusal: refuse("DOCKET_NOT_THE_SUBJECT", `the entity named is not a subject of edition ${ed}`, { edition: ed, fields: ["from.entity"] }) };
       fromRow = { kind: "subject", entity };
     } else if (f.kind === "holder") {
       const grant = this.#grant(c.case, f.grant);
       if (!this.#liveAt(grant, at))
         return { refusal: refuse("DOCKET_NO_STANDING", "the grant named is not a grant of standing on this docket live at the filing",
-                                 { grant: int(f.grant) }) };
+                                 { grant: int(f.grant), fields: ["from.grant"] }) };
       fromRow = { kind: "holder", grant: grant.seq };
     } else {
       if (!oneLine(f.name, NAME_MAX))
-        return { refusal: refuse("DOCKET_NOT_ATTRIBUTED", `the source's name is one line of 1 to ${NAME_MAX} characters`) };
+        return { refusal: refuse("DOCKET_NOT_ATTRIBUTED", `the source's name is one line of 1 to ${NAME_MAX} characters`, { fields: ["from.name"] }) };
       fromRow = { kind: "other", name: f.name.trim() };
     }
     const cap = this.#capture(capture);
     if (!cap.held)
       return { refusal: refuse("DOCKET_NO_CAPTURE", "the capture named is not one the register holds with its origin locator",
-                               { capture: typeof capture === "string" ? capture : null }) };
+                               { capture: typeof capture === "string" ? capture : null, fields: ["capture"] }) };
     const fits = { response: ["subject", "holder"], statement: ["subject", "holder"], reaction: ["other"], outcome: FROM_KINDS };
     if (!RECORD_KINDS.includes(kind) || !fits[kind].includes(fromRow.kind))
       return { refusal: refuse("DOCKET_KIND_UNKNOWN", "a response or statement is from the subject or a holder, a reaction "
-        + "from anyone else, an outcome from anyone", { kind: typeof kind === "string" ? kind : null, from: fromRow.kind }) };
+        + "from anyone else, an outcome from anyone", { kind: typeof kind === "string" ? kind : null, from: fromRow.kind, fields: ["kind", "from"] }) };
     let answering = null;
     if (answers !== undefined && answers !== null && answers !== "") {
       const r = this.#recordEntry(str(answers));
       if (!r || r.case_id !== c.case || this.#recordState(r.entry_id).state !== "receipted")
-        return { refusal: refuse("NO_SUCH_DOCKET_ENTRY", "answers names no receipted record entry of this case", { answers: str(answers) }) };
+        return { refusal: refuse("NO_SUCH_DOCKET_ENTRY", "answers names no receipted record entry of this case", { answers: str(answers), fields: ["answers"] }) };
       answering = r.entry_id;
     }
     if (!PROPOSALS.includes(proposed) || !words(reason, REASON_MAX))
-      return { refusal: refuse("DOCKET_NO_REASON", `proposed is record, public or both, with a reason of 1 to ${REASON_MAX} characters`) };
+      return { refusal: refuse("DOCKET_NO_REASON", `proposed is record, public or both, with a reason of 1 to ${REASON_MAX} characters`,
+                                 { fields: PROPOSALS.includes(proposed) ? ["reason"] : words(reason, REASON_MAX) ? ["proposed"] : ["proposed", "reason"] }) };
     /* R1 (T45): an outcome states what it was and when, no later than the filing's day, with the member's summary; no
        other kind states an outcome. */
     const stated = outcome !== undefined && outcome !== null && outcome !== "";
@@ -445,12 +472,13 @@ export class Docket {
       const on = o && typeof o === "object" ? calendarDay(o.on) : null;
       if (!o || typeof o !== "object" || !OUTCOME_KINDS.includes(o.kind) || !on || on > dayOf(at))
         return { refusal: refuse("DOCKET_OUTCOME_UNREADABLE", `an outcome states {kind, on}: kind ${OUTCOME_KINDS.join(" or ")}, on a calendar `
-          + `date no later than the filing's day (${dayOf(at)})`, { kind: o && typeof o.kind === "string" ? o.kind : null }) };
+          + `date no later than the filing's day (${dayOf(at)})`, { kind: o && typeof o.kind === "string" ? o.kind : null, fields: OUTCOME_FIELDS }) };
       if (!oneParagraph(summary, SUMMARY_MAX))
-        return { refusal: refuse("DOCKET_NO_SUMMARY", `an outcome carries the member's summary, one paragraph of 1 to ${SUMMARY_MAX} characters`) };
+        return { refusal: refuse("DOCKET_NO_SUMMARY", `an outcome carries the member's summary, one paragraph of 1 to ${SUMMARY_MAX} characters`,
+                                 { fields: ["summary"] }) };
       outcomeRow = { kind: o.kind, on };
     } else if (stated) {
-      return { refusal: refuse("DOCKET_OUTCOME_UNREADABLE", `only an outcome states an outcome, and this entry is a ${kind}`, { kind }) };
+      return { refusal: refuse("DOCKET_OUTCOME_UNREADABLE", `only an outcome states an outcome, and this entry is a ${kind}`, { kind, fields: ["outcome"] }) };
     }
     /* END DEC-49 REGION is-docket-form */
     return { fields: { edition: ed, from: fromRow, capture: cap, kind, proposed, reason, answers: answering, contests: yes(contests),
@@ -590,21 +618,22 @@ export class Docket {
     /* DEC-49 REGION is-docket-form */
     if (rec) {
       if (a.edition !== null && a.edition !== undefined && a.edition !== "" && ed !== Number(rec.edition))
-        return { refusal: refuse("DOCKET_NO_EDITION", `the record entry concerns edition ${rec.edition}`, { edition: Number(rec.edition) }) };
+        return { refusal: refuse("DOCKET_NO_EDITION", `the record entry concerns edition ${rec.edition}`, { edition: Number(rec.edition), fields: ["edition"] }) };
       out.edition = Number(rec.edition);
     } else {
       if (ed === null || (ed === "all" ? !["withdrawal", "court-order"].includes(kind) : !c.editions.some((e) => e.edition === ed)))
         return { refusal: refuse("DOCKET_NO_EDITION", "the edition named is not a ratified edition of this case",
-                                 { editions: c.editions.map((e) => e.edition) }) };
+                                 { editions: c.editions.map((e) => e.edition), fields: ["edition"] }) };
       out.edition = ed;
     }
     if (kind === "edition" && !(out.edition > 1))
-      return { refusal: refuse("DOCKET_NO_EDITION", "an edition entry names a ratified edition above 1") };
+      return { refusal: refuse("DOCKET_NO_EDITION", "an edition entry names a ratified edition above 1", { fields: ["edition"] }) };
     if (kind === "standing-granted" && !oneLine(a.holder, NAME_MAX))
-      return { refusal: refuse("DOCKET_NOT_ATTRIBUTED", `a grant names its holder in one line of 1 to ${NAME_MAX} characters`) };
+      return { refusal: refuse("DOCKET_NOT_ATTRIBUTED", `a grant names its holder in one line of 1 to ${NAME_MAX} characters`, { fields: ["holder"] }) };
     const needsReason = ["withdrawal", "standing-granted", "standing-withdrawn", "take-back", "receipt", "court-order"].includes(kind);
     if (!reasonOk(needsReason))
-      return { refusal: refuse("DOCKET_NO_REASON", `${needsReason ? "this kind carries" : "a reason given is"} a reason of 1 to ${REASON_MAX} characters`) };
+      return { refusal: refuse("DOCKET_NO_REASON", `${needsReason ? "this kind carries" : "a reason given is"} a reason of 1 to ${REASON_MAX} characters`,
+                                 { fields: ["reason"] }) };
     /* END DEC-49 REGION is-docket-form */
     /* DEC-49 REGION is-docket-kind */
     if (kind === "receipt") {
@@ -614,14 +643,14 @@ export class Docket {
     }
     if (kind === "standing-withdrawn") {
       const g = this.#grant(c.case, a.grant);
-      if (!g) return { refusal: refuse("NO_SUCH_DOCKET_ENTRY", "grant names no grant of standing on this docket", { grant: int(a.grant) }) };
+      if (!g) return { refusal: refuse("NO_SUCH_DOCKET_ENTRY", "grant names no grant of standing on this docket", { grant: int(a.grant), fields: ["grant"] }) };
       if (g.ended_at) return { refusal: refuse("DOCKET_NO_STANDING", "that grant has already ended", { grant: g.seq }) };
       out.grant = g;
     }
     if (kind === "take-back") {
       const n = int(a.takesBack);
       const t = n === null ? null : this.#entry(c.case, n);
-      if (!t) return { refusal: refuse("NO_SUCH_DOCKET_ENTRY", "takesBack names no public entry of this case", { takes_back: n }) };
+      if (!t) return { refusal: refuse("NO_SUCH_DOCKET_ENTRY", "takesBack names no public entry of this case", { takes_back: n, fields: ["takesBack"] }) };
       if (FINAL_KINDS.includes(t.kind))
         return { refusal: refuse("DOCKET_WITHDRAWAL_FINAL", t.kind === "court-order" ? "a court order is never taken back: a later order is a "
           + "new entry" : "a withdrawal is never lifted", { takes_back: n, kind: t.kind }) };
@@ -631,7 +660,7 @@ export class Docket {
     }
     if (kind === "disclosure") {
       const cand = str(a.candidate);
-      if (!cand) return { refusal: refuse("NO_SUCH_DOCKET_ENTRY", "a disclosure names the candidate it discloses") };
+      if (!cand) return { refusal: refuse("NO_SUCH_DOCKET_ENTRY", "a disclosure names the candidate it discloses", { fields: ["candidate"] }) };
       out.candidate = cand;
     }
     if (kind === "withdrawal") {
@@ -643,13 +672,13 @@ export class Docket {
     }
     const shelf = kind === "reaction" ? "reactions" : "listed";
     if (a.shelf !== shelf)
-      return { refusal: refuse("DOCKET_WRONG_SHELF", `a ${kind} goes on ${shelf}`, { shelf: typeof a.shelf === "string" ? a.shelf : null }) };
+      return { refusal: refuse("DOCKET_WRONG_SHELF", `a ${kind} goes on ${shelf}`, { shelf: typeof a.shelf === "string" ? a.shelf : null, fields: ["shelf"] }) };
     const hasSummary = a.summary !== null && a.summary !== undefined && a.summary !== "";
     if ((shelf === "reactions" || hasSummary) && !oneParagraph(a.summary, SUMMARY_MAX))
-      return { refusal: refuse("DOCKET_NO_SUMMARY", `a summary is one paragraph of 1 to ${SUMMARY_MAX} characters`) };
+      return { refusal: refuse("DOCKET_NO_SUMMARY", `a summary is one paragraph of 1 to ${SUMMARY_MAX} characters`, { fields: ["summary"] }) };
     if (shelf === "reactions" && !recFields.capture.archived)
       return { refusal: refuse("DOCKET_NO_ARCHIVE_COPY", "the capture's co-archive has not succeeded; ask it again (op=reattest)",
-                               { capture: rec.capture_sha }) };
+                               { capture: rec.capture_sha, fields: ["capture"] }) };
     /* END DEC-49 REGION is-docket-kind */
     out.shelf = shelf;
     return { out };
@@ -671,15 +700,15 @@ export class Docket {
     /* DEC-49 REGION is-docket-form */
     if (!editions)
       return { refusal: refuse("DOCKET_NO_EDITION", "a court order names the ratified editions of this case it concerns, or all",
-                               { editions: c.editions.map((e) => e.edition) }) };
+                               { editions: c.editions.map((e) => e.edition), fields: ["order.editions"] }) };
     /* END DEC-49 REGION is-docket-form */
     const cap = this.#capture(capture);
     /* DEC-49 REGION is-docket-form */
     if (!cap.held)
       return { refusal: refuse("DOCKET_NO_CAPTURE", "a court order is placed with the order itself captured, its origin locator held",
-                               { capture: typeof capture === "string" ? capture : null }) };
+                               { capture: typeof capture === "string" ? capture : null, fields: ["capture"] }) };
     if (!words(reason, REASON_MAX))
-      return { refusal: refuse("DOCKET_NO_REASON", `a court order carries the manager's reason of 1 to ${REASON_MAX} characters`) };
+      return { refusal: refuse("DOCKET_NO_REASON", `a court order carries the manager's reason of 1 to ${REASON_MAX} characters`, { fields: ["reason"] }) };
     /* END DEC-49 REGION is-docket-form */
     const effect = o.effect;
     const hasParts = o.parts !== undefined && o.parts !== null;
@@ -689,7 +718,8 @@ export class Docket {
     if (!ORDER_EFFECTS.includes(effect) || (PART_EFFECTS.includes(effect) && !hasParts) || (hasParts && !partsOk))
       return { refusal: refuse("DOCKET_ORDER_UNREADABLE", `effect is one of ${ORDER_EFFECTS.join(", ")}; to ${PART_EFFECTS.join(", ")}, `
         + `parts are the distinct parts of the edition it names, each one line of 1 to ${PART_MAX} characters`,
-        { effect: typeof effect === "string" ? effect : null }) };
+        { effect: typeof effect === "string" ? effect : null,
+          fields: !ORDER_EFFECTS.includes(effect) ? ["order.effect"] : ["order.parts"] }) };
     const parts = hasParts ? o.parts.map((x) => x.trim()) : null;
     if (effect === "unseal") {
       const sealed = new Set(this.#orders(c.case).filter((x) => x.order.effect === "seal").flatMap((x) => x.order.parts || []));
@@ -863,6 +893,61 @@ export class Docket {
     return { ok: true, case: held.case, seq: held.seq, entry: publicId(held.case, held.seq), published_at: at };
   }
 
+  /* ================================================================ R33: each new edition recorded automatically */
+
+  /** R33 (T53; K5559, K5571; was `publication` R83): files the `edition` entry of R9 (b) for a ratified edition of the
+   *  case, in-plane, carrying the "What changed" statement `case-grammar.whatChangedOf` (its R8) answers; edition 1 files
+   *  one without a change text. Called by the module that ratifies an edition (a later module; this one calls nothing of
+   *  it). An edition already holding a live `edition` entry files none, so a repeated call is harmless and answers
+   *  `filed: false` with the entry it holds. The entry is a public entry on `listed` with R6's fields; no member signs
+   *  it (the edition it records is the signed act), so it is stored with no signature and no signing key and every read
+   *  answers its `signature` null. Refusals, each writing nothing: an absent case or one with no ratified edition
+   *  `NO_SUCH_CASE`; an edition not ratified `DOCKET_NO_EDITION`; a counsel matter (R28); no group slug
+   *  `DOCKET_NO_GROUP_SLUG` (there are no anonymous entries). */
+  docketRecordEdition({ case: caseId = null, edition = null } = {}) {
+    const c = this.#case(caseId);
+    if (!c) return noSuchCase(caseId);
+    const ed = int(edition);
+    /* DEC-49 REGION is-docket-form */
+    if (ed === null || !c.editions.some((e) => e.edition === ed))
+      return refuse("DOCKET_NO_EDITION", "the edition named is not a ratified edition of this case",
+                    { editions: c.editions.map((e) => e.edition), fields: ["edition"] });
+    /* END DEC-49 REGION is-docket-form */
+    const counsel = this.#counselRefusal(c);
+    if (counsel) return counsel;
+    const slug = this.#slug();
+    /* DEC-49 REGION is-docket-manager */
+    if (!slug) return refuse("DOCKET_NO_GROUP_SLUG",
+      localize("docket.index.no_team_slug_recorded", "no team slug is recorded, and there are no anonymous entries"));
+    /* END DEC-49 REGION is-docket-manager */
+    const at = this.#stamp();
+    let what = null;
+    if (ed > 1) {
+      const doc = this.#call(() => this.#one(`SELECT text FROM case_documents WHERE case_id=? AND edition=? AND sig_armored IS NOT NULL`,
+                                             c.case, ed));
+      const p = doc ? this.#call(() => parseFrontmatter(doc.text)) : null;
+      what = p ? (this.#call(() => whatChangedOf(p.data, p.body)) || {}).statement ?? null : null;
+    }
+    const out = this.record.transact(() => {
+      const backs = this.#takenBack(c.case);
+      const held = this.#rows(`SELECT * FROM docket_entries WHERE case_id=? AND kind='edition' ORDER BY seq`, c.case)
+        .find((e) => !backs.has(Number(e.seq)) && (parse(e.json) || {}).edition === ed);
+      if (held) return { ok: true, filed: false, case: c.case, edition: ed, seq: Number(held.seq), entry: publicId(c.case, held.seq) };
+      const prior = this.#one(`SELECT seq, digest FROM docket_entries WHERE case_id=? ORDER BY seq DESC LIMIT 1`, c.case);
+      const seq = prior ? Number(prior.seq) + 1 : 1;
+      /* R6: exactly these fields; no member's name, handle or id. */
+      const json = { format: ENTRY_FORMAT, group: slug, case: c.case, seq, previous: prior ? prior.digest : null,
+                     shelf: "listed", kind: "edition", edition: ed, date: dayOf(at), what_changed: what };
+      const text = canonicalJson(json);
+      const digest = sha256HexSync(text);
+      this.sql.exec(`INSERT INTO docket_entries (case_id, seq, digest, json, kind, shelf, edition, record_entry, editions, signature,
+                                                 signer_key, published_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+                    c.case, seq, digest, text, "edition", "listed", String(ed), null, null, "", "", at);
+      return { ok: true, filed: true, case: c.case, edition: ed, seq, entry: publicId(c.case, seq), digest, published_at: at };
+    });
+    return out;
+  }
+
   /* ================================================================ R7, R8: declining, and the receipt's invitation */
 
   /** R7: the manager declines a submission that contains redactions; nothing is published. */
@@ -1001,8 +1086,19 @@ export class Docket {
   #publicView(e, backs) {
     const back = backs.get(Number(e.seq));
     return { seq: Number(e.seq), entry: publicId(e.case_id, e.seq), digest: e.digest, json: e.json, fields: entryFields(e.json),
-             signature: e.signature, published_at: e.published_at,
+             signature: e.signature || null, published_at: e.published_at,
              taken_back: back ? { seq: Number(back.seq), date: (parse(back.json) || {}).date ?? null } : null };
+  }
+
+  /* R32 (T53; K5558): the kinds `viewer` may act on, each with the fields its act needs: `file`, the record kinds a
+     joined member files (R1), and `place`, the kinds the case's manager places directly (R4); each empty for a viewer the
+     act would refuse (a member not joined; anyone not the manager), so the kinds offered are the kinds the act accepts. */
+  #kindsFor(c, viewer) {
+    const member = this.#member(viewer);
+    const joined = !!member && !this.#call(() => this.membership.projectAuthority(c.project, String(viewer).trim(), "joined", "docketfile"), true);
+    const manager = this.#isManager(c.project, member);
+    const list = (table) => Object.entries(table).map(([kind, fields]) => ({ kind, fields: [...fields] }));
+    return { file: joined ? list(FILE_KIND_FIELDS) : [], place: manager ? list(PLACE_KIND_FIELDS) : [] };
   }
 
   /** R3: every entry on all three shelves, oldest first, the core still due and a contesting entry's prompts. */
@@ -1036,7 +1132,8 @@ export class Docket {
     });
     /* oldest first; at one instant a record entry before the public entry that may place it, then in filing or seq order */
     const entries = [...rec, ...pub].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
-    return { ok: true, case: c.case, project: c.project, editions: c.editions, entries, core_due: this.#coreOf(c), wrote: false };
+    return { ok: true, case: c.case, project: c.project, editions: c.editions, entries, core_due: this.#coreOf(c),
+             kinds: this.#kindsFor(c, viewer), wrote: false };
   }
 
   /* ================================================================ R12, R13: withdrawal, and reevaluation's registration */
@@ -1213,7 +1310,9 @@ export class Docket {
 
   /** R5: each key that has signed a public entry, with the instant it first did; viewer-free, names no member. */
   docketSigners() {
-    return this.#rows(`SELECT signer_key AS k, MIN(published_at) AS first FROM docket_entries GROUP BY signer_key ORDER BY first, k`)
+    /* R33: an edition recorded automatically carries no signing key, and is no signer's */
+    return this.#rows(`SELECT signer_key AS k, MIN(published_at) AS first FROM docket_entries WHERE signer_key <> '' GROUP BY signer_key
+                       ORDER BY first, k`)
       .map((r) => ({ keyB64: r.k, first_signed: r.first }));
   }
 
@@ -1268,7 +1367,7 @@ export class Docket {
 }
 
 /* The member acts and reads answer their own refusals with code, check and translation (DEC-49). */
-for (const m of ["docketFile", "docketPressure", "docketPrepare", "docketDecline", "docketInvitation", "docketOf"]) {
+for (const m of ["docketFile", "docketPressure", "docketPrepare", "docketDecline", "docketInvitation", "docketOf", "docketRecordEdition"]) {
   const fn = Docket.prototype[m];
   Docket.prototype[m] = function (...a) { return withRow(fn.apply(this, a)); };
 }

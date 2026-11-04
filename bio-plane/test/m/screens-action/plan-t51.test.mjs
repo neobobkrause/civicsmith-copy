@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { actionWorld, openIn, planIn, optionOn, refusalSentence } from "./world-D.mjs";
 import { open, main, text, ops, press, last, ok, button, fill, choose, refusedIn, beside, W, D, hasWord, DATA_PLANE, ROUTES, PLAN, PLAN_ID, DET } from "./page.mjs";
 
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 const withPlan = (o) => ({ ...DATA_PLANE, plan: ok({ ...PLAN, ...o }) });
 const said = (p, key, vars) => assert.ok(text(p).includes(W(key, vars)), key);
 const unsaid = (p, key, vars) => assert.ok(!text(p).includes(W(key, vars)), key);

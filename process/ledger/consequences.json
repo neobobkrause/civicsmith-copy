@@ -1,0 +1,56 @@
+{
+  "id": "consequences",
+  "title": "consequences: answer its provider notice strength:176 (R46, R47) and meet any unmet mark",
+  "layer": 9,
+  "paths": [
+    "bio-plane/src/consequences/",
+    "build/requirements/consequences.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/consequences/"
+  ],
+  "requirements": "build/requirements/consequences.md",
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "inquiry",
+    "strength",
+    "conformance",
+    "entities",
+    "calc-grammar",
+    "money",
+    "calculations",
+    "people",
+    "civil-time",
+    "case-inputs",
+    "setup-words",
+    "test-support",
+    "retrieval",
+    "sources",
+    "basis-versions"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/consequences.md",
+    "build/requirements/strength.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/consequences.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T15:31:30Z"
+  }
+}
