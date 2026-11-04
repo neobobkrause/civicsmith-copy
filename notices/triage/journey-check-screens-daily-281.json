@@ -1,0 +1,1 @@
+{"row":"triage","user":"journey-check","verdict":"not affected","evidence":"build/modules.json:203 journey-check (bio-plane/src/journey-check/) holds no file that imports screens-daily, every code file under its paths read at 37b9e1e5df","at":"2026-11-04T19:24:30.382Z","key":"screens-daily:281","worker":"merge: imports check","cost":"0"}
