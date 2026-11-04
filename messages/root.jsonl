@@ -36,3 +36,4 @@
 {"at":"2026-11-04T02:38:35Z","row":"outcome","n":18,"outcome":"delivered"}
 {"at":"2026-11-04T02:39:28Z","row":"sent","n":19,"to":"bob","text":"From the coordinator, relayed by ROOT: take registers in now: `job start registers --take-in job/registers`. The take-in refuses any file outside registers' paths; if it refuses, send its exact words. When status lists a take-in, status wins over the prompt's 'no unmerged earlier work' (process3 will fix that line). Keep the jobs going."}
 {"at":"2026-11-04T02:39:39Z","row":"outcome","n":19,"outcome":"delivered"}
+{"at":"2026-11-04T05:16:07Z","row":"sent","n":20,"to":"bob","text":"Sweep: 30 live sessions, over the cap of 24: archive finished ones before starting more; agent-worker: BLOCKED; ai-catalogue: BLOCKED; instance-setup: BLOCKED; op-declarations: BLOCKED; question-explorer: BLOCKED; runtime-limits: BLOCKED; screens-action: BLOCKED; store-assembly: BLOCKED; wizard-scripts: BLOCKED."}
