@@ -106,7 +106,7 @@ const WORDS_OF = {
   queue: [...SHARED, ...DOORS_TO("queue"), "screen.queue.name", "screen.queue.purpose", ...MARKS(["kind.todo", "kind.noticed", "kind.status", "origin.accepted"]),
     "mark.due.means", "mark.hint.label", "mark.hint.means",
     ...ACTS("queue", ["taskresolve", "taskforward", "proposedispose", "queuesnooze", "queuemute", "adoptversion", "keepversion", "reminderanswer", "promote",
-      "projectkeyset", "exploreapprove", "actionmove", "release", "filingapprove"]), ...TODOS,
+      "exploreapprove", "actionmove", "release", "filingapprove"]), ...TODOS,
     ...KEYED_QUEUE, "action.noreply.title", ...SOURCES, "file.trigger.queue", "conformance.rests", "conformance.falsify",
     "queue.update.section", "queue.update.section_says", "queue.update.ready", "queue.update.see", "updates.ready.security", "updates.ready.security_says",
     "act.owed_updatelater.label.queue", "act.owed_updatelater.does",
@@ -117,7 +117,7 @@ const WORDS_OF = {
     "screen.queue.note", "screen.queue.note.once", "screen.queue.nocase", "screen.queue.empty", "screen.queue.more", "screen.queue.more.one", "screen.queue.open",
     "screen.queue.hint.how", "screen.queue.hint.matched", "screen.queue.hint.method", "screen.queue.hint.trust", "screen.queue.hint.rate", "screen.queue.hint.rate.none",
     "screen.queue.hint.not", "screen.queue.hint.not.text", "screen.queue.forward.to", "screen.queue.snooze.until", "screen.queue.reminder.on", "screen.queue.fieldfirst",
-    "screen.queue.why", "screen.queue.question", "screen.queue.projectkey", "screen.queue.unsent.pickup", "screen.queue.unsent.keep", "screen.queue.unsent.drop",
+    "screen.queue.why", "screen.queue.question", "screen.queue.unsent.pickup", "screen.queue.unsent.keep", "screen.queue.unsent.drop",
     // R68, R69, R75, R79: Defer beside Dismiss, a snoozed case and "Bring back", the routed decisions, the helps, the day picker, the answered rows.
     "screen.queue.defer", "screen.queue.bringback", "screen.queue.snoozed.head", "screen.queue.snoozed.holds", "screen.queue.snoozed.until", ...ROUTED, ...ROUTED_ACTS("queue"), ...INVITE, "queue.act.dothis.help", "queue.act.open.help", "screen.queue.snooze.pick", "queue.signer-self-registered.members", "queue.signer-self-registered.known",
     "queue.answered.done", "queue.answered.dismissed", "queue.answered.dismissed.noreason", "queue.answered.muted", "queue.answered.generic",
