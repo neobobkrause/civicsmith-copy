@@ -117,7 +117,7 @@ import { RUN_BOUNDS, RUN_ENDINGS, runStatusFor, OBSERVATION_LEVELS, OBSERVATION_
 /* N421: the harness's exports, for the purity walk, and the member driven in this process for the op arms (A9). */
 import * as HARNESS from "../../agent-harness/src/harness.mjs";
 import { driveMember, SUBSESSION_LIMIT } from "./inprocess.mjs";
-import { planeEntry } from "./plane-world.mjs";
+import { planeEntry, MEMBER_PLAN } from "./plane-world.mjs";
 import { PLANE_OPS_PINNED } from "./owners.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
@@ -1671,7 +1671,7 @@ console.log("\n--- R · REC-100: the step log meets the REAL plane's refusal (IC
 {
   /* T41 B6 (K2520): the real plane holds a passing test bar, or run-rules R19 refuses the fixture's run
      AI_RUN_MODE_NOT_DEPLOYED (C-109.1) and REC100-0 reads its log empty; see `./plane-world.mjs`. */
-  const PLANE_WORLD = planeEntry();
+  const PLANE_WORLD = await planeEntry();
   const RB = "INQ-2026-0918-rec100-aw";
   const PROMOTE = {
     bundleId: RB, base: null, snapKey: "20260918T090000Z_inbox", author: "ruth",
@@ -1693,11 +1693,11 @@ console.log("\n--- R · REC-100: the step log meets the REAL plane's refusal (IC
               sha256: createHash("sha256").update(PROJECT_MD).digest("hex") }],
     register: [] };
   const SURFACING_OPEN = { run: "RUN-2026-0918-rec171-surfacing", contextType: "project",
-    label: "REC-171: the run the context question is surfaced inside", mode: "check", principalClaude: MEMBER,
-    principalClaudeRef: "ruth's own account", skillVersion: "investigative-session@1", biasManifest: null,
+    label: "REC-171: the run the context question is surfaced inside", mode: "check", principalAi: MEMBER,
+    principalAiRef: "ruth's own account", skillVersion: "investigative-session@1", biasManifest: null,
     bounds: [{ bound: "surfaces", allowed: 1, unit: "questions" }], leaseMs: 3600000 };
   const OPEN = { contextType: "inquiry", contextId: RB, label: "REC-100's agent-worker fixture",
-    mode: "check", principalClaude: MEMBER, principalClaudeRef: "ruth's own account",
+    mode: "check", principalAi: MEMBER, principalAiRef: "ruth's own account",
     skillVersion: "investigative-session@1", biasManifest: null,
     bounds: [{ bound: "fetches", allowed: 100000, unit: "requests" }], leaseMs: 3600000 };
   /* K1610 (ai-runs R52, K1503): a run opens only on the account of the member whose act starts it, so the opener names
@@ -1705,9 +1705,13 @@ console.log("\n--- R · REC-100: the step log meets the REAL plane's refusal (IC
      routes `op=accountreferenceset` for a member's SESSION, never a deploy token (CLASS_FORBIDDEN), and keeps the
      reference under the copy's seal secret, so the fixture enrols Ruth with the administrator's token, signs her in,
      connects her account under her session, and makes every act of hers below (the surfacing project, the question,
-     both opens, each tick) under that session: the run's opener is then the member whose account it carries. */
+     both opens, each tick) under that session: the run's opener is then the member whose account it carries.
+     T53 (BOB's ruling, 4 Nov; ai-accounts R1, R7, R51; ai-runs R9): `accountreferenceset` is retired; her own account
+     is one of the catalogue's API plan for members (`MEMBER_PLAN`, ai-accounts' published fixture, seeded in the
+     plane by `./plane-world.mjs`), added by her `op=aiownadd`, its key sealed, switched on by her `op=aiaccountswitch`,
+     and the notice of what its host receives seen by her `op=aisend`; a run names her as `principalAi`. */
   const RUTH_ID = MEMBER.replace(/^member:/, "");
-  const CONNECT = { member: RUTH_ID, kind: ACCOUNT.kind, secret: ACCOUNT.secret };
+  const CONNECT = { provider: MEMBER_PLAN.provider, plan: MEMBER_PLAN.plan, means: "sealed", secret: ACCOUNT.secret };
   const FRONT = `
 export default {
   async fetch(req, env) {
@@ -1733,7 +1737,12 @@ export default {
          DISCLOSURE_DUE (C-29.40); its version is the one her own read (op=disclosureof) answers. */
       const shown = await real("disclosureof", globalThis.__session);
       await real("disclosureshown", globalThis.__session, { member: "member:" + id, version: shown && shown.version });
-      globalThis.__connected = await real("accountreferenceset", globalThis.__session, ${JSON.stringify(CONNECT)});
+      const added = await real("aiownadd", globalThis.__session, ${JSON.stringify(CONNECT)});
+      if (!added || !added.account_id) throw new Error("aiownadd: " + JSON.stringify(added));
+      const on = await real("aiaccountswitch", globalThis.__session, { account_id: added.account_id, on: true });
+      if (!on || on.ok !== true) throw new Error("aiaccountswitch: " + JSON.stringify(on));
+      await real("aisend", globalThis.__session, ${JSON.stringify({ provider: MEMBER_PLAN.provider, host: MEMBER_PLAN.host })});
+      globalThis.__connected = added;
     }
     const T = globalThis.__session;
     const post = (op, b) => env.REAL.fetch("http://real/api/?op=" + op,
@@ -1771,7 +1780,9 @@ export default {
         bindings: { ADMIN_TOKEN: "adm-rec100-aw", PROBE_TOKEN: "prb-rec100-aw",
                     VERSION: "test", TASK_DRAIN_DELAY_MS: "600000",
                     /* N585 (credentials R23): the seal secret Ruth's account reference is kept under */
-                    ACCOUNT_SEAL_SECRET: "rec100-aw-seal-secret" } },
+                    ACCOUNT_SEAL_SECRET: "rec100-aw-seal-secret",
+                    /* T53: the test instance, and the catalogue's test key and signed list (`./plane-world.mjs`) */
+                    ...PLANE_WORLD.bindings } },
     ],
   });
   const realLog = async (mf) => {
