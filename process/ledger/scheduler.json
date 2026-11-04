@@ -64,8 +64,7 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: question-explorer:90 (index.mjs:481 calls exploreTick, whose account read changed). For each, decide from your own requirements what this module must do (the T53 ops that replace the retired ones are in ai-accounts' requirements and op-declarations), adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "BLOCKED",
-    "reason": "For BOB, after bob-42: synced (pin 1a78296998) and ran job complete scheduler --no-suite with your flags and both --not-verified. It stopped at the record check: 'approvals: CLAUDE.md:1: commit 20aaeb29bd changes the approvals but is not neobobkrause's own commit through GitHub's website (author claude, committer claude, verified true)' / 'failed (exit 1): p3 record-check --base 8c62b58056'. 20aaeb29bd is the first job sync merge ('Bring job/scheduler up to tranche', 07:24). It brought tranche's CLAUDE.md onto this branch; this branch makes no change of its own there: git diff origin/tranche HEAD -- CLAUDE.md is empty, and so is the diff from base 8c62b58056. The check reads the tool's own sync merge as an approvals change. I cannot rewrite it (no force-push), and the check is the process's. To unblock: the process exempts sync merges whose CLAUDE.md equals tranche's, or BOB rules on it; then I rerun the same job complete.",
-    "at": "2026-11-04T09:01:35Z"
+    "state": "COMPLETE",
+    "at": "2026-11-04T10:18:01Z"
   }
 }
