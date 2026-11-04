@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:29 imports only ../ai-catalogue/checks.mjs (C-156, registered :199); PR 317 changed only dev-key.mjs, index.mjs and seed.mjs","at":"2026-11-04T22:48:40.334Z","key":"ai-catalogue:317","worker":"read-only-explore-x3","cost":"0.60"}

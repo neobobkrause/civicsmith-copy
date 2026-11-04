@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-issuer","verdict":"not affected","evidence":"build/modules.json:202 gives ai-issuer \"paths\": [], so nothing imports ai-catalogue","at":"2026-11-04T22:48:40.334Z","key":"ai-catalogue:317","worker":"read-only-explore-x3","cost":"0.60"}
