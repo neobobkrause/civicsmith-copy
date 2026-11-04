@@ -7,7 +7,7 @@
  * as signed (its `ref` when the origin is not stated), the place the passage's `extent` exactly as signed (an object, or the canonical text of one, R43), for the
  * reader's surface to word. Pure; never throws. */
 
-import { gradingFactsOf, passagesOf, materialsOf } from "../case-grammar/index.mjs";
+import { gradingFactsOf, passagesOf, materialsOf, ungradedPassagesOf, typedPassagesOf } from "../case-grammar/index.mjs";
 
 const HEX64 = /^[0-9a-f]{64}$/;
 const text = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
@@ -43,22 +43,67 @@ export function legReaderOf(fm) {
       const rows = Array.isArray(grading[id]) ? grading[id] : [];
       const mine = Array.isArray(passages[id]) ? passages[id] : [];
       const usedRows = new Set(), usedPassages = new Set();
+      /* R47, R49 (T53): `at(leg)` answers `{ord, document}`: the signed row's `ord` the leg is paired with (null when no
+         row is), so the leg is found in the `/10` passage blocks, beside `of(leg)`'s `document`. Each leg is asked once. */
+      const at = (leg) => {
+        const i = rows.findIndex((r, k) => !usedRows.has(k) && r && r.target === (leg && leg.target));
+        if (i < 0) return { ord: null, document: null };
+        usedRows.add(i);
+        const row = rows[i];
+        return { ord: Number.isSafeInteger(row.ord) ? row.ord : null, document: documentOf(row, leg) };
+      };
+      const documentOf = (row, leg) => {
+        if (row.kind !== "document") return null;
+        const shas = new Set((Array.isArray(row.captures) ? row.captures : []).map(shaOf).filter(Boolean));
+        const fits = (p, i) => !usedPassages.has(i) && p && shas.has(String(p.capture_sha ?? "").toLowerCase());
+        const named = typeof leg.content_id === "string" ? mine.findIndex((p, i) => fits(p, i) && p.content_id === leg.content_id) : -1;
+        const found = named >= 0 ? named : mine.findIndex(fits);
+        if (found >= 0) usedPassages.add(found);
+        const passage = found >= 0 ? mine[found] : null;
+        const extent = extentOf(passage && passage.extent);
+        const material = materials.find((m) => shas.has(String(m.sha ?? "").toLowerCase()));
+        return { name: material ? text(material.title) ?? text(material.origin) ?? text(material.ref) : null, place: extent };
+      };
+      return { at, of: (leg) => at(leg).document };
+    },
+  };
+}
+
+/* R49 (T53; DEC-464): the key the typed words' label is drawn by, and the key a member is named by whose credit at signing
+   showed nothing of her (`group` or `project`, or none stated). */
+export const TYPED_LABEL_KEY = "case.typed.label";
+export const TEAM_MEMBER_KEY = "credit.team_member";
+const SHOWN = ["cover", "name"];
+/* A credit as the signed row states it: the name it showed at `cover` or `name`, else the plain key and nothing of her. */
+const creditOf = (level, shown) => (SHOWN.includes(level) && text(shown)
+  ? { level, name: text(shown), key: null } : { level: level ?? null, name: null, key: TEAM_MEMBER_KEY });
+
+/** R47, R49 (T53; DEC-461, DEC-464; `case-grammar` R36, R37): what one signed case document states of a member's passages,
+ *  for its `basis` entries. `forFinding(id)` answers `{ungraded_count, marks(ord)}`; `marks(ord)` answers `{ungraded,
+ *  typed}` for the leg paired with the signed row at `ord`: `ungraded` true when the `ungraded_passages:` block lists (the
+ *  finding, `ord`), false when it does not, null for a format before `/10` (or an unreadable block); `typed` `{label_key,
+ *  typist, checked_by, frozen_at}` exactly as the `typed_passages:` row states it, `frozen_at` the edition's signing
+ *  (`signedAt`), else null. A name is the one the row states, never a member id; nothing is re-read from `content` or
+ *  credit. `ungraded_count` is the block's rows for the finding, null before `/10`. Pure; never throws. */
+export function passageMarksOf(fm, signedAt = null) {
+  let ungraded = { state: "predates", rows: null }, typed = { state: "predates", rows: null };
+  try { ungraded = ungradedPassagesOf(fm); typed = typedPassagesOf(fm); } catch { /* states nothing: null below */ }
+  const uRows = ungraded.state === "stated" && Array.isArray(ungraded.rows) ? ungraded.rows : null;
+  const tRows = typed.state === "stated" && Array.isArray(typed.rows) ? typed.rows : null;
+  return {
+    forFinding(id) {
+      const mineU = uRows ? uRows.filter((r) => r && r.finding === id) : null;
+      const mineT = tRows ? tRows.filter((r) => r && r.finding === id) : [];
       return {
-        of(leg) {
-          const at = rows.findIndex((r, i) => !usedRows.has(i) && r && r.target === (leg && leg.target));
-          if (at < 0) return null;
-          usedRows.add(at);
-          const row = rows[at];
-          if (row.kind !== "document") return null;
-          const shas = new Set((Array.isArray(row.captures) ? row.captures : []).map(shaOf).filter(Boolean));
-          const fits = (p, i) => !usedPassages.has(i) && p && shas.has(String(p.capture_sha ?? "").toLowerCase());
-          const named = typeof leg.content_id === "string" ? mine.findIndex((p, i) => fits(p, i) && p.content_id === leg.content_id) : -1;
-          const found = named >= 0 ? named : mine.findIndex(fits);
-          if (found >= 0) usedPassages.add(found);
-          const passage = found >= 0 ? mine[found] : null;
-          const extent = extentOf(passage && passage.extent);
-          const material = materials.find((m) => shas.has(String(m.sha ?? "").toLowerCase()));
-          return { name: material ? text(material.title) ?? text(material.origin) ?? text(material.ref) : null, place: extent };
+        ungraded_count: mineU ? mineU.length : null,
+        marks(ord) {
+          const t = ord == null ? null : mineT.find((r) => r.ord === ord) || null;
+          return {
+            ungraded: mineU ? (ord != null && mineU.some((r) => r.ord === ord)) : null,
+            typed: t ? { label_key: TYPED_LABEL_KEY, typist: creditOf(t.typist_level, t.typist_shown),
+                         checked_by: (Array.isArray(t.checkers) ? t.checkers : []).map((c) => ({ ...creditOf(c.level, c.shown), at: c.at ?? null })),
+                         frozen_at: typeof signedAt === "string" && signedAt ? signedAt : null } : null,
+          };
         },
       };
     },
