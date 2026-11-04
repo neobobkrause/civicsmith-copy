@@ -334,9 +334,22 @@ function accountHeld(r, level) {
 
 /** R19, R30: the paying owner of an account `ai-accounts.accountFor` answered, spelled as `ai-use` R1's. */
 export function ownerOf(account, member) {
+  /* (ai-accounts:124, :188) T53's answer names its owner as ai-use spells it; the level is read only when it does not */
+  if (account && typeof account.owner === "string" && /^(group|project:.+|member:(?!member:).+)$/.test(account.owner)) return account.owner;
   if (account && account.level === "project" && account.project) return `project:${account.project}`;
   if (account && account.level === "group") return "group";
   return `member:${memberOf(member) ?? member}`;
+}
+
+/** R19, R30 (ai-use:105, its R3 T53): the account `accountFor` chose and its entry, as `useCheck` takes them, so a provider
+ *  limit standing on the account or the entry (ai-use R18) holds the use back as the paying account's own limits do. Only
+ *  the two ids; never a secret. */
+export function accountNamed(account) {
+  const id = (v) => (typeof v === "string" && v ? v : null);
+  const out = {};
+  if (account && id(account.account_id)) out.account_id = account.account_id;
+  if (account && id(account.entry_id)) out.entry_id = account.entry_id;
+  return out;
 }
 
 /* R19, R26, R30: what holds the AI half back, or null with the grant it reads under when every condition holds. In
@@ -362,10 +375,11 @@ async function heldBack(self, r, at) {
   if (!acct || acct.ok !== true) return { held: accountHeld(acct, null) };
   const level = acct.level === "group" ? "group" : acct.level === "project" ? "project" : "member";
   const owner = ownerOf(acct, author);
+  const named = accountNamed(acct);
   acct = null;   /* the account's key is used by no caller here (ai-accounts R3, R7; agent-model R8) */
   const check = self.dep("useCheck");
   let limit;
-  try { limit = typeof check === "function" ? await check({ owner, member: memberOf(author), use: STANDING_USE, at }) : undefined; }
+  try { limit = typeof check === "function" ? await check({ owner, member: memberOf(author), use: STANDING_USE, at, ...named }) : undefined; }
   catch { limit = undefined; }
   /* a limit that cannot be judged holds it back, fail closed (ai-use R3) */
   if (limit === undefined) return { held: { condition: "limit", code: null, translation: null } };

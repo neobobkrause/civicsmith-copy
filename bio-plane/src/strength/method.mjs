@@ -17,15 +17,17 @@ import { DERIVED_KINDS, CAPTURE_ONLY_KINDS } from "./legs.mjs";
  *  T33 the calculation, standard and occurrence legs of R36–R38). It changes whenever any of them changes, and whenever
  *  the words of the method do (T51-54: "team" for the group that holds the case); a case states it (`case-grammar` R11)
  *  and a checker recomputes at it. */
-export const GRADING_METHOD_VERSION = "bio-grading/4";
+export const GRADING_METHOD_VERSION = "bio-grading/5";
 /* The version T28 published: R1–R5, R29–R34, with no calculation, standard or occurrence leg. */
 const V1 = "bio-grading/1";
 /* The version T33 published: V1 with the calculation, standard and occurrence legs; its words say "group". */
 const V2 = "bio-grading/2";
 /* The version T51-54 published: V2 with the team named "team". */
 const V3 = "bio-grading/3";
+/* The version T51 published (K4213, R42): V3 with a cutting leg kept out of the parts. */
+const V4 = "bio-grading/4";
 /** R32: every version this module has published, oldest first; `recomputePair` answers for each. */
-export const GRADING_METHOD_VERSIONS = Object.freeze([V1, V2, V3, GRADING_METHOD_VERSION]);
+export const GRADING_METHOD_VERSIONS = Object.freeze([V1, V2, V3, V4, GRADING_METHOD_VERSION]);
 /* R42 (K4213): the versions published before a cutting leg was kept out of the parts. Their arithmetic still counts it,
    so `recomputePair` at these versions counts it, as the version was published to. */
 const BEFORE_CUTTING_LEGS = Object.freeze([V1, V2, V3]);
@@ -349,11 +351,20 @@ const withLegs = (lines, more = []) => {
 const V4_CUTTING = "11. Legs that cut against the finding. A leg that cuts against the finding is not one of the sets of "
   + "reasons that carry it, and is never counted toward its strength. It is listed beside the strength, with the strength "
   + "it has on its own, worked out the same way as any other leg's.";
+/* Version 5 (T53; DEC-464; R46, R47): version 4's words, and the rule that a typed passage is worth its typist's word,
+   one step more once a second member checked it, never the standing of text the product read. The arithmetic of the
+   sets of reasons is version 4's; a case file states each leg's recorded grade, so every version recomputes from it. */
+const V5_TYPED = "12. Typed passages. A leg resting on a passage a member typed from the page counts for "
+  + "the capture strength at what the typing stands on: the typist's word, D, or one step more, C, once a second member "
+  + "has checked the typing against the page, and never stronger than the capture of the document itself. No one needs "
+  + "to state a letter for it, and a stronger letter stated is not taken; a weaker one stands. A check raises it without "
+  + "anyone stating it again. A typing never has the standing of text read from the capture itself.";
 const METHOD_TEXT = Object.freeze({
   [V1]: (product) => V1_LINES(product, V1).join("\n"),
   [V2]: (product) => withLegs(V1_LINES(product, V2)),
   [V3]: (product) => withLegs(V1_LINES(product, V3, "team")),
-  [GRADING_METHOD_VERSION]: (product) => withLegs(V1_LINES(product, GRADING_METHOD_VERSION, "team"), [V4_CUTTING]),
+  [V4]: (product) => withLegs(V1_LINES(product, V4, "team"), [V4_CUTTING]),
+  [GRADING_METHOD_VERSION]: (product) => withLegs(V1_LINES(product, GRADING_METHOD_VERSION, "team"), [V4_CUTTING, V5_TYPED]),
 });
 
 /** R31: the method of `version` in plain words, complete enough to recompute a grade by hand, naming the product by
