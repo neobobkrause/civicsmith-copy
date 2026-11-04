@@ -293,3 +293,4 @@
 {"at":"2026-11-04T19:32:43Z","row":"outcome","n":149,"outcome":"delivered"}
 {"at":"2026-11-04T20:07:14Z","row":"sent","n":150,"to":"job-control-plane","text":"173, 281 and 272 are merged; tranche below. Run job sync control-plane and your complete.sh. Also answer notice screens-daily:281 (the queue screen you serve no longer offers projectkeyset; confirm with your t46-app/app tests). If still over the base-red tolerance, block with the remaining reds by name and owner."}
 {"at":"2026-11-04T20:07:33Z","row":"outcome","n":150,"outcome":"delivered"}
+{"at":"2026-11-04T20:42:07Z","row":"sent","n":151,"to":"job-screens-settings","text":"Pin a2fffa8 fixes the receipt-subset bug that held PR 291; run job sync screens-settings once for a fresh gate; no other change."}
