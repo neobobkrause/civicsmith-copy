@@ -46,22 +46,25 @@ const F = "INQ-2026-4400-c";
 const withKeys = (keys, extraLines = null) =>
   inquiryMd(F, { extra: extraLines ?? keys.flatMap((k) => KEY_LINES[k]) });
 /* The C-2.8 findings naming a case, by the key each names. */
-const caseKeyFindings = (found) => found.filter((x) => x.check === "C-2.8" && /a finding's bytes name a case/.test(x.message));
-const namedKeys = (found) => caseKeyFindings(found).map((x) => /name a case \((\w+)\)/.exec(x.message)?.[1]).sort();
+const caseKeyFindings = (found) => found.filter((x) => x.check === "C-2.8" && /case facts of its own/.test(x.message));
+/* inquiry-grammar R69 (plain words): the finding no longer names the key, so each key present answers one finding of
+   its own, counted (a list of that many `case`), and a key absent answers none. */
+const namedKeys = (found) => caseKeyFindings(found).map(() => "case");
+const asKeys = (keys) => keys.map(() => "case");
 
-test("R2 R38 a finding's bytes naming the case are refused C-2.8, every key named rather than the first (checkInquiryEntry and checkEntry)", async () => {
+test("R2 R38 a finding's bytes naming the case are refused C-2.8, one finding for every key rather than the first (checkInquiryEntry and checkEntry)", async () => {
   const w = world();
   for (const judge of [(md) => checkInquiryEntry(md), (md) => w.k.checkEntry(md)]) {
     /* the negative control: the same document with no case key draws no such finding */
     assert.deepEqual(caseKeyFindings(await judge(inquiryMd(F))), [], "a finding naming no case is not refused on this arm");
     /* all eight at once: the class, named whole (caseproduction adversary 3) */
-    assert.deepEqual(namedKeys(await judge(withKeys(CASE_KEYS))), [...CASE_KEYS].sort());
+    assert.deepEqual(namedKeys(await judge(withKeys(CASE_KEYS))), asKeys(CASE_KEYS));
     /* the multifinding roster lie (block 2b): another case's id, edition, scope, acknowledgement and roster */
     assert.deepEqual(namedKeys(await judge(withKeys(["case_id", "case_edition", "case_scope", "bias_acknowledgement", "case_findings"]))),
-      ["bias_acknowledgement", "case_edition", "case_findings", "case_id", "case_scope"]);
+      asKeys(["bias_acknowledgement", "case_edition", "case_findings", "case_id", "case_scope"]));
     /* each key alone is refused by its own name, and only by it (caseproduction adversaries 1 and 2, multifinding's
        isolated acknowledgement) */
-    for (const k of CASE_KEYS) assert.deepEqual(namedKeys(await judge(withKeys([k]))), [k], `${k} alone`);
+    for (const k of CASE_KEYS) assert.deepEqual(namedKeys(await judge(withKeys([k]))), asKeys([k]), `${k} alone`);
   }
 });
 
@@ -70,11 +73,10 @@ test("R2 the refusal says where the case's facts live and how to repair it; an e
   assert.equal(found.length, 2);
   for (const x of found) {
     assert.equal(x.severity, "error");
-    assert.match(x.message, /CASE DOCUMENT a member reviews and ratifies/, "multifinding (a2): it says where those facts live now");
-    assert.match(x.message, /signed ONCE, in the CASE DOCUMENT/, "multifinding REC-47 isolated: signed once, not N times");
-    const k = /name a case \((\w+)\)/.exec(x.message)[1];
-    assert.deepEqual(x.repairs, [localize("inquiry-grammar.grammar.remove_k_from_this_documents", "remove {k} from this document's frontmatter", { k }),
-                                 localize("inquiry-grammar.grammar.the_case_states_these_facts", "the case states these facts once, in its own signed document")]);
+    assert.match(x.message, /case document a member reviews and ratifies/, "multifinding (a2): it says where those facts live now");
+    assert.match(x.message, /signed once, in the case document/, "multifinding REC-47 isolated: signed once, not N times");
+    assert.deepEqual(x.repairs, [localize("inquiry-grammar.grammar.remove_k_from_this_documents_p", "remove the case facts from this inquiry"),
+                                 localize("inquiry-grammar.grammar.the_case_states_these_facts_p", "the case states these facts once, in its own signed document")]);
   }
   /* edge: a key present but empty, null or the word null states nothing, so it names no case */
   for (const v of ['""', "null", "''"]) {
@@ -134,9 +136,9 @@ test("R7 C-21.2 per axis, the four probes: capture A over B and connection B ove
   };
   /* PROBE 1 and 2: refused, each on its own axis */
   refused(legsOn(CASE, inh("A", "capture")),
-    /basis\[1\] inherits capture grade A from INQ-2026-1400-case edition 1, whose frozen capture strength is B: .*PER AXIS/);
+    /basis leg 1 inherits capture grade A from INQ-2026-1400-case edition 1, whose frozen capture strength is B: .*per axis/);
   refused(legsOn(CASE, inh("B", "connection")),
-    /basis\[1\] inherits connection grade B from INQ-2026-1400-case edition 1, whose frozen connection strength is C/);
+    /basis leg 1 inherits connection grade B from INQ-2026-1400-case edition 1, whose frozen connection strength is C/);
   /* PROBE 3 and 4: the legal legs at each axis's frozen grade — a comparison composed to the weakest letter refuses
      the first, one composed to the strongest accepts probe 2 */
   for (const e of [inh("B", "capture"), inh("C", "connection"), inh("C", "capture"), inh("D", "connection")]) {
@@ -155,22 +157,22 @@ test("R7 C-21.2 edge cases: no edition, an edition never published, an own grade
   const one = (legs) => { const r = w.probe(legs); return [r.ok, checksOf(r), detailsOf(r)]; };
   let [ok, checks, d] = one(legsOn(CASE, inh("B", "capture", null)));
   assert.deepEqual([ok, checks], [false, ["C-21.2"]], "an unnamed edition fixes nothing to compare");
-  assert.match(d, /basis\[1\] inherits from INQ-2026-1400-case without naming an edition/);
+  assert.match(d, /basis leg 1 inherits from INQ-2026-1400-case without naming an edition/);
   [ok, checks, d] = one(legsOn(CASE, inh("B", "capture", 9)));
   assert.deepEqual([ok, checks], [false, ["C-21.2"]], "an edition never published");
-  assert.match(d, /basis\[1\] names edition 9 of INQ-2026-1400-case, which is not in the published record \(published editions: 1\)/);
+  assert.match(d, /basis leg 1 names edition 9 of INQ-2026-1400-case, which is not in the published record \(published editions: 1\)/);
   /* a leg AUTHORING its grade on a published case is refused twice, by both items' gates: C-21.2 (it must inherit)
      and C-2.8 (an authored capture grade on an inquiry leg has no referent, DEC-21) */
   [ok, checks, d] = one(legsOn(CASE, { grade: "B", grade_axis: "capture", grade_source: "resolution", target_edition: 1 }));
   assert.deepEqual([ok, checks], [false, ["C-2.8", "C-21.2"]]);
-  assert.match(d, /basis\[1\] carries a grade of its own on a PUBLISHED case \(INQ-2026-1400-case\)/);
-  assert.match(d, /basis\[1\] states a capture-axis grade on an inquiry leg/);
+  assert.match(d, /basis leg 1 carries a grade of its own on a PUBLISHED case \(INQ-2026-1400-case\)/);
+  assert.match(d, /basis leg 1 states a capture-axis grade on an inquiry leg/);
   /* an UNGRADED leg on a published case is legal: undetermined, stated (DEC-18) */
   assert.equal(w.probe(legsOn(CASE, {})).ok, true);
   /* but claiming inheritance with no grade is not inheritance */
   [ok, checks, d] = one(legsOn(CASE, { grade_source: "inherited", target_edition: 1 }));
   assert.deepEqual([ok, checks], [false, ["C-2.8"]]);
-  assert.match(d, /basis\[1\] claims 'inherited' with no grade/);
+  assert.match(d, /basis leg 1 claims 'inherited' with no grade/);
   /* inheriting ANY grade from an UNRATED axis: nothing was established there to inherit */
   for (const e of [inh("C", "capture"), inh("D", "connection")]) {
     [ok, checks, d] = one(legsOn(THIN, e));
@@ -180,7 +182,7 @@ test("R7 C-21.2 edge cases: no edition, an edition never published, an own grade
   /* 'inherited' on a target that is not a published case (a document) is refused C-2.8 */
   [ok, checks, d] = one([{ target: INFO, grade: "B", grade_axis: "capture", grade_source: "inherited", target_edition: 1 }]);
   assert.deepEqual([ok, checks], [false, ["C-2.8"]]);
-  assert.match(d, /basis\[0\] states grade_source 'inherited' but its target is not a published case/);
+  assert.match(d, /basis leg 0 states grade source 'inherited' but its target is not a published case/);
 });
 
 test("R7 C-21.2 edge cases at the pure arm: an undetermined or absent axis admits no grade; no registry refuses inheritance; a published document is not a case", () => {
@@ -221,7 +223,7 @@ test("R7 C-21.2 is checked PER FINDING: two findings frozen differently each mee
   /* a leg naming the CASE rather than a finding resolves to nothing: legs rest on findings, never on cases */
   const onCase = one({ target: "CASE-2026-0001", ...inh("B", "capture") });
   assert.equal(onCase.ok, false);
-  assert.match(detailsOf(onCase), /basis\[0\]\.target 'CASE-2026-0001' is not a canonical record id/);
+  assert.match(detailsOf(onCase), /basis leg 0 names 'CASE-2026-0001', which is not a valid record reference/);
   /* the pure arm, per finding */
   assert.deepEqual(pureErrs([{ target: FIND_A, ...inh("C", "connection") }]), []);
   assert.deepEqual(pureErrs([{ target: FIND_B, ...inh("C", "connection") }]).map((x) => x.check), ["C-21.2"]);
@@ -259,7 +261,7 @@ test("R8 the grounds gate: a machine's spelling of asserted_by is refused C-2.8 
     const rows = [row("charter", { asserted_by: spelling }), row("code")];
     const r = w.try(LEGS, rows);
     assert.deepEqual([r.ok, r.reason, checksOf(r)], [false, "BASIS_REFUSED", ["C-2.8"]], spelling);
-    const want = localize("inquiry-grammar.grammar.grounds_i_asserted_by_asserted", 'grounds[{i}].asserted_by \'{asserted_by}\' is not a named member: "these legs are enough on their own" is an authored judgment that makes the finding STRONGER, so it carries the name of the member making it — never a machine\'s', { i: "0", asserted_by: spelling });
+    const want = localize("inquiry-grammar.grammar.grounds_i_asserted_by_asserted_p", "grounds row {i} names '{asserted_by}' as the one asserting it, which is not a named member: \"these legs are enough on their own\" is an authored judgment that makes the finding stronger, so it carries the name of the member making it — never a machine's", { i: "0", asserted_by: spelling });
     assert.equal(r.findings[0].detail, want);
     assert.deepEqual(r.findings[0].repairs, [localize("inquiry-grammar.grammar.name_the_member_asserting_that", "name the member asserting that this ground is independently sufficient")]);
     assert.equal(w.record.head(r.id), null, "the refused write landed nothing");
@@ -281,11 +283,11 @@ test("R8 the grounds gate: an undated, doubled, empty or ill-labelled ground is 
     assert.match(detailsOf(r), re);
   };
   refused(LEGS, [row("charter", { at: "yesterday" }), row("code")],
-    /grounds\[0\] requires 'at' as an ISO timestamp \(got 'yesterday'\)/);
+    /grounds row 0 requires a date as a full timestamp \(got 'yesterday'\)/);
   refused(LEGS, [row("charter"), row("charter"), row("code")],
-    /grounds\[1\] declares 'charter' a second time: one ground, one assertion, one member answering for it/);
+    /grounds row 1 declares 'charter' a second time: one ground, one assertion, one member answering for it/);
   refused(LEGS, [...ROWS, row("practice")],
-    /grounds\[2\] declares 'practice', which no basis leg belongs to: a ground is a partition OF THE LEGS/);
+    /grounds row 2 declares 'practice', which no basis leg belongs to: a ground groups the legs of the inquiry/);
   refused([{ target: DA, ground: 'char"ter' }, { target: DB, ground: "code" }], [row('char"ter'), row("code")],
     /is not a ground label/);
   /* an optional per-ground statement is a plain-words label for the reader, gating nothing */
@@ -293,15 +295,15 @@ test("R8 the grounds gate: an undated, doubled, empty or ill-labelled ground is 
                           row("code", { statement: "The code does not forbid it." })]);
   assert.equal(ok.ok, true, JSON.stringify(ok).slice(0, 300));
   assert.deepEqual(errs((f) => checkInquiryBasis(fmWith(LEGS, [row("charter", { statement: 7 }), row("code")]), f, null, null))
-    .map((x) => x.message), ["grounds[0].statement is not a string"]);
+    .map((x) => x.message), [localize("inquiry-grammar.grammar.grounds_i_statement_is_not_p", "the statement on grounds row {i} is not a string", { i: "0" })]);
 });
 
 test("R8 a grounds[] block over NO basis is refused at the write and by the pure arm, and the act answers NO_BASIS", () => {
   const w = groundsWorld();
   const r = w.try([], ROWS);
   assert.deepEqual([r.ok, r.reason, checksOf(r)], [false, "BASIS_REFUSED", ["C-2.8", "C-2.8"]]);
-  assert.match(r.findings[0].detail, /^grounds\[0\] declares 'charter', which no basis leg belongs to/);
-  assert.match(r.findings[1].detail, /^grounds\[1\] declares 'code', which no basis leg belongs to/);
+  assert.match(r.findings[0].detail, /^grounds row 0 declares 'charter', which no basis leg belongs to/);
+  assert.match(r.findings[1].detail, /^grounds row 1 declares 'code', which no basis leg belongs to/);
   assert.equal(w.record.head(r.id), null);
   const pure = errs((f) => checkInquiryBasis({ id: "INQ-2026-1009-z", object_type: "inquiry", references: [], grounds: ROWS }, f, null, null));
   assert.deepEqual(pure.map((x) => x.check), ["C-2.8", "C-2.8"]);
@@ -319,7 +321,7 @@ test("R8 the default is AND: a label with no grounds[] block is refused at the w
   const w = groundsWorld();
   const noBlock = w.try(LEGS, null);
   assert.deepEqual([noBlock.ok, noBlock.reason, checksOf(noBlock)], [false, "BASIS_REFUSED", ["C-2.8"]]);
-  assert.match(noBlock.findings[0].detail, /^basis legs 0, 1 name a ground with no grounds\[\] block: .*affirmative, attributed act/);
+  assert.match(noBlock.findings[0].detail, /^basis legs 0, 1 name a ground, but there is no grounds section: .*affirmative, attributed act/);
   assert.equal(w.record.head(noBlock.id), null, "the refused write landed nothing");
   /* a supporting leg without a label beside a labelled ground is a necessary leg (inquiry-grammar R68), no finding */
   const half = w.try([{ target: DA, ground: "charter" }, { target: DB }], [row("charter")]);
@@ -328,7 +330,7 @@ test("R8 the default is AND: a label with no grounds[] block is refused at the w
   const cut = w.try([{ target: DA, ground: "charter" }, { target: DB, role: "cuts_against", ground: "charter" }], [row("charter")]);
   assert.deepEqual([cut.ok, cut.reason], [false, "BASIS_REFUSED"]);
   /* the pure arm names the same document */
-  assert.ok(errs((f) => checkInquiryBasis(fmWith(LEGS), f, null, null)).some((x) => /no grounds\[\] block/.test(x.message)));
+  assert.ok(errs((f) => checkInquiryBasis(fmWith(LEGS), f, null, null)).some((x) => /there is no grounds section/.test(x.message)));
 });
 
 test("R8 R27 R30 through the act: every machine spelling is refused MACHINE_CANNOT_GROUND, and a caller's asserted_by is never what lands", () => {

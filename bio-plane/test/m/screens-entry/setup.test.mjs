@@ -7,6 +7,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { currentAct } from "../../../src/wizard-scripts/data.mjs";
 import { open, served, has, lacks, said, date, all, texts, textOf, actOps, links, word, sentence, unescape, squash, SCREENS, worldOf, act, viaDoor, scannerBinding, SEAL, enrol } from "./kit.mjs";
 
 const OTP = "otp-sentinel-5d1e";
@@ -278,8 +279,6 @@ const nameOfPlace = (o) => o.view.data.profiles.value.choices.find((c) => c.id =
 async function opened({ env = {}, after } = {}) {
   const o = await claimed({ env: { FILE_SCANNER: scannerBinding(), ...env }, after: async (c) => {
     await act(c.world, c.as, "profilesset", { body: { profiles: [PLACE] } });
-    await reauth(c.world, c.as);
-    await act(c.world, c.as, "groupkeyset", { body: { key: "sk-held-key-1234567890" } });
     if (after) await after(c);
   } });
   await choose(o, "su-site", 1);
@@ -292,16 +291,17 @@ test("R6 after the claim every part is the registry's act for it, each drawn onc
   // the parts are the registry's acts for setup (its own declaration, N1073), but the claim (before a session), the
   // codes (shown once, R20), the founder's handle (R18), and the acts a choice opens instead of another
   const REG = JSON.parse(fs.readFileSync(new URL("../../../../docs/development/ux-substrate/screens/registry.json", import.meta.url), "utf8"));
-  const parts = (REG.screens || REG).find((r) => r.id === "setup").acts.map((x) => String(x.op).replace(/^owed:/, "").split(/\s/)[0])
+  const parts = (REG.screens || REG).find((r) => r.id === "setup").acts.map((x) => currentAct(String(x.op).replace(/^owed:/, "").split(/\s/)[0]))
     .filter((op) => !["claim", "recoverycodesissue", "founderhandleset"].includes(op));
   assert.ok(parts.length >= 10);
   /* R34: DEC-439 (D-B1) gives the time zone step its words and names `factconfirm`, but the registry's `setup` does not yet list the act
      (REPORTed to BOB for the design); the union makes this hold the day the registry lists it, with the same set */
   parts.push(...OWED_TO_REGISTRY);
-  // with the place known and the assistant paid for by the team: all but `placewanted` (a place not known) and
-  // `aikeepaway` (keeping AI out), each drawn when chosen
+  // with the place known and the assistant paid for by the team: all but `placewanted` (a place not known),
+  // `aikeepaway` (keeping AI out), each drawn when chosen, and `aiaccountswitch`, drawn once the team holds a key, which
+  // this world cannot hold (its ai-accounts has no catalogue: CATALOGUE_UNAVAILABLE, store-assembly's)
   const drawn = actOps(o.tree);
-  assert.deepEqual(drawn, [...new Set(parts)].filter((op) => !["placewanted", "aikeepaway"].includes(op)).sort());
+  assert.deepEqual(drawn, [...new Set(parts)].filter((op) => op && !["placewanted", "aikeepaway", "aiaccountswitch"].includes(op)).sort());
   o.fields["su-pick"] = "other"; await o.tick(300);
   assert.ok(actOps(o.tree).includes("placewanted") && !actOps(o.tree).includes("officesseed"));
   await choose(o, "su-ai", 1);
@@ -323,9 +323,9 @@ test("R6 the real store walked from the claim to Finished: each part sends its a
   assert.ok(answerOf("officesseed").value.seeded.length > 0, "the plane seeded the place's public offices");
   assert.deepEqual(await sent("entitycreate", { "su-office": "The records office", "su-office-note": "Where the team files its requests" }), [{ kind: "office", label: "The records office", note: "Where the team files its requests" }]);
   has(o, "screen.setup.office.added", { label: "The records office" });
-  assert.deepEqual(await sent("groupkeyset", { "su-key0": "sk-sentinel-key-9876543210" }), [{ key: "sk-sentinel-key-9876543210" }]);
+  // T53: the team's key is a sealed account of the team (ai-accounts R5, R40), the key its `secret`, in the body only
+  assert.deepEqual(await sent("aiaccountadd", { "su-key0": "sk-sentinel-key-9876543210" }), [{ owner: "group", provider: "anthropic", means: "sealed", secret: "sk-sentinel-key-9876543210" }]);
   assert.ok(!o.drawn().includes("sk-sentinel-key"), "the key never drawn");
-  assert.deepEqual(await sent("groupkeyswitch", {}, { on: "on" }), [{ on: true }]);
   assert.deepEqual(await sent("ailimitset", { "su-limit": "$5.00" }), [{ owner: "group", scope: "per_member", unit: "usd", period: "day", amount: 5 }]);
   assert.deepEqual(await sent("courtnoticeset", { "su-court-0": false, "su-court-1": true }), [{ choice: "dont" }]);
   assert.deepEqual(await sent("hostingaccessset", { "su-holders": "Two members, on the team's account", "su-hnote": "" }), [{ holders: "Two members, on the team's account", note: null }]);
@@ -530,11 +530,11 @@ test("R22 the assistant: 'no' sends aikeepaway on with the reason and then hides
 test("R22 control: choosing 'yes' draws no key field until 'your team pays' is chosen; the team's key, its switch and the limit only then", async () => {
   const o = await claimed();
   const keyed = () => all(o.tree, (e) => /^su-key/.test(e.attrs.id || "")).length;
-  assert.equal(keyed(), 0); assert.ok(!actOps(o.tree).includes("groupkeyset"));
+  assert.equal(keyed(), 0); assert.ok(!actOps(o.tree).includes("aiaccountadd"));
   has(o, "screen.setup.pay.q");
   await choose(o, "su-pay", 1);
   assert.equal(keyed(), 1);
-  for (const op of ["groupkeyset", "ailimitset"]) assert.ok(actOps(o.tree).includes(op), op);
+  for (const op of ["aiaccountadd", "ailimitset"]) assert.ok(actOps(o.tree).includes(op), op);
   has(o, "screen.setup.key.told");
   assert.ok(all(o.tree, (e) => /\bcs-card\b/.test(e.attrs.class || "")).map(tipOf).includes(said("screen.setup.key.tip")));
   await choose(o, "su-pay", 0);
