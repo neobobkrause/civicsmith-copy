@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-declarations","verdict":"not affected","evidence":"bio-plane/src/op-declarations/index.mjs:705 declares selftest and :968 cpuprobe (op names/classes, unchanged by retirement), no import of setup.mjs; retired lines moved verbatim, no behaviour change","at":"2026-11-04T05:07:47.144Z","key":"instance-setup:99","worker":"triage-is99-subagent","cost":"0.04"}

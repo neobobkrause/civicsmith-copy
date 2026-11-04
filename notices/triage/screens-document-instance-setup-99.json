@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-document","verdict":"not affected","evidence":"build/modules.json:189 (no paths; its code would be bio-plane/src/screens-document/) only lists instance-setup as a use; retired lines moved verbatim, no behaviour change","at":"2026-11-04T05:07:47.144Z","key":"instance-setup:99","worker":"triage-is99-subagent","cost":"0.04"}

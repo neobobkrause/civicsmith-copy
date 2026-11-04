@@ -1,0 +1,1 @@
+{"row":"triage","user":"stewards","verdict":"not affected","evidence":"stewards/src/config.mjs:2 imports only GROUP_SLUG_RE from setup-fleet.mjs, none of the retired requirements; retired lines moved verbatim, no behaviour change","at":"2026-11-04T05:07:47.144Z","key":"instance-setup:99","worker":"triage-is99-subagent","cost":"0.04"}
