@@ -273,3 +273,4 @@
 {"at":"2026-11-04T18:32:56Z","row":"outcome","n":139,"outcome":"delivered"}
 {"at":"2026-11-04T18:59:34Z","row":"sent","n":140,"to":"job-admission","text":"The pin at 9f74398 dropped notice tests: the merge records a notice's answer. Skip --test notice:...; run job complete with only --not-verified naming the 289 answer test from PR 293, then wake BOB."}
 {"at":"2026-11-04T18:59:44Z","row":"outcome","n":140,"outcome":"delivered"}
+{"at":"2026-11-04T19:00:14Z","row":"sent","n":141,"to":"job-screens-daily","text":"Pin 9f74398 gives the smoke's base build the full suite budget. Run job sync screens-daily once onto the tranche tip for a fresh gate; no code change."}
