@@ -1,0 +1,1 @@
+{"row":"answered","user":"scheduler","by":"triage","evidence":"bio-plane/src/scheduler/index.mjs:378 registers the connections R18 'connection-derive' job (connectionsOf :1025); derivation scheduling, not neighbours/hubs/named_in","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"queue-producers","by":"triage","evidence":"bio-plane/src/queue-producers/proposals.mjs:21 imports only weakerGrade from connections (used :69, :79), not the changed behaviour","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

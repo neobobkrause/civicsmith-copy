@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-declarations","by":"triage","evidence":"bio-plane/src/op-declarations/t48.mjs:62 declares only connections stepsource/stepsourcewithdraw ops (and index.mjs:2183 lists op connections); no neighbours/explore/named_in/hub/registerProjectReach declaration","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

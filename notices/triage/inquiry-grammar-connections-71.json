@@ -1,0 +1,1 @@
+{"row":"triage","user":"inquiry-grammar","verdict":"not affected","evidence":"bio-plane/src/inquiry-grammar/grammar.mjs:36 imports only themeLegFindings from connections/checks.mjs (theme-leg check), not the changed hub/named_in behaviour","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

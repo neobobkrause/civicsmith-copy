@@ -1,0 +1,1 @@
+{"row":"triage","user":"control-plane","verdict":"not affected","evidence":"bio-plane/src/control-plane/app.mjs:21 imports interface-shell only; no connections import or call of the changed ops in its 10 files","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

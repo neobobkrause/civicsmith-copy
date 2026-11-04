@@ -1,0 +1,1 @@
+{"row":"answered","user":"ratification","by":"triage","evidence":"bio-plane/src/ratification/index.mjs:156 gets connectionsOf and only passes it to a collaborator (:1649); no neighbours/hubs/named_in/registerProjectReach call","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

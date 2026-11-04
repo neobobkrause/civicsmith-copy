@@ -1,0 +1,1 @@
+{"row":"triage","user":"queue","verdict":"not affected","evidence":"bio-plane/src/queue/index.mjs:252 uses only connections.edgeSevered (connectionsOf at :125), not the changed hub/named_in behaviour","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

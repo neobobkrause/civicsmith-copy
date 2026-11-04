@@ -1,0 +1,1 @@
+{"row":"triage","user":"reevaluation","verdict":"not affected","evidence":"bio-plane/src/reevaluation/index.mjs:41 documents use of connections edgeSevered via inquiry's restingOn only; no neighbours/hubs/named_in call","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

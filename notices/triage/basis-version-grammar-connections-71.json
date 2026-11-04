@@ -1,0 +1,1 @@
+{"row":"triage","user":"basis-version-grammar","verdict":"not affected","evidence":"bio-plane/src/basis-version-grammar/grammar.mjs:16 imports only themeLegFindings (theme-leg check, connections R46), not neighbours/hubs/named_in/registerProjectReach","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

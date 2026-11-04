@@ -1,0 +1,1 @@
+{"row":"answered","user":"retrieval","by":"triage","evidence":"bio-plane/src/retrieval/index.mjs:1738 only runs SQL 'SELECT 1 FROM connections WHERE entity_id=?' for existence; no neighbours/hubs/named_in call","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

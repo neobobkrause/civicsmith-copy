@@ -1,0 +1,1 @@
+{"row":"triage","user":"tasks","verdict":"not affected","evidence":"bio-plane/src/tasks/index.mjs:229 uses only connections.edgeSevered (connectionsOf :119), not the changed behaviour","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"observation-log","by":"triage","evidence":"bio-plane/src/observation-log/vocabulary.mjs:1225 only documents what op=connections says about derivation behind its rows; no neighbours/named_in/hub handling","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"actions","by":"triage","evidence":"bio-plane/src/actions/index.mjs:46 imports record-core/membership, never connections; its only graph reads are lines.linesOf/structureAt at index.mjs:2143 and :3040, not the connections kinds","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

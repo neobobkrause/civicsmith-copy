@@ -1,0 +1,1 @@
+{"row":"answered","user":"corpus-export","by":"triage","evidence":"bio-plane/src/corpus-export/index.mjs:114 reads the connections' refs table by SQL (target_id, kind), not neighbours/named_in/hubs","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

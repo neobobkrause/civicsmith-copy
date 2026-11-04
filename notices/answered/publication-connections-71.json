@@ -1,0 +1,1 @@
+{"row":"answered","user":"publication","by":"triage","evidence":"bio-plane/src/publication/checks.mjs:22 and bio-plane/src/deliverer.mjs:29 import setup-words only; no connections import in its files","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

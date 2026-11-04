@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-door","by":"triage","evidence":"bio-plane/src/store-door/dispatch.mjs:66 only maps op connectionsasserted to a bundle id kind (and :111 describes connections id); no hub/named_in handling","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

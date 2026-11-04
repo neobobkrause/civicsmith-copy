@@ -1,0 +1,1 @@
+{"row":"answered","user":"run-productions","by":"triage","evidence":"bio-plane/src/run-productions/index.mjs:252 uses only connections.citesInto (connectionsOf :1401), not the changed behaviour","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}

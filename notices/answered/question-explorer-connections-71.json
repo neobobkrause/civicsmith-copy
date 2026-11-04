@@ -1,0 +1,1 @@
+{"row":"answered","user":"question-explorer","by":"triage","evidence":"bio-plane/src/question-explorer/index.mjs:178 uses connections.asserted and :572 connections.read (captureSha rows), neither neighbours, explore, hubs nor named_in","at":"2026-11-04T05:08:08.343Z","key":"connections:71","worker":"triage-c71-subagent","cost":"0.03"}
