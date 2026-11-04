@@ -7,3 +7,4 @@
 {"at":"2026-11-04T10:29:13Z","row":"sent","n":4,"to":"bob","text":"job store-request complete, PR #133 ready: run status"}
 {"at":"2026-11-04T10:29:27Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-04T11:21:37Z","row":"sent","n":5,"to":"bob","text":"job store-request complete, PR #133 ready: run status"}
+{"at":"2026-11-04T11:22:39Z","row":"outcome","n":5,"outcome":"delivered"}
