@@ -231,3 +231,4 @@
 {"at":"2026-11-04T17:42:40Z","row":"outcome","n":118,"outcome":"delivered"}
 {"at":"2026-11-04T17:43:03Z","row":"sent","n":119,"to":"job-screens-daily","text":"bob-119: after revert-pin word: job sync, job complete with Chromium unavailable so the 6 browser tests fail at base as on the runner; name them in --not-verified."}
 {"at":"2026-11-04T17:43:07Z","row":"outcome","n":119,"outcome":"delivered"}
+{"at":"2026-11-04T17:44:36Z","row":"sent","n":120,"to":"job-plane","text":"bob-120: no flaky-accept or skip; make r8-heal-door R102 deterministic (controlled clock/alarm hook, assert after the alarm ran), 5 consecutive passes, then job complete."}
