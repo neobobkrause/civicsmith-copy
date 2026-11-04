@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-document","verdict":"not affected","evidence":"build/modules.json:189 lists no paths for screens-document, so no file of it imports strength","at":"2026-11-04T14:31:42.567Z","key":"strength:176","worker":"ad6880edb00676381","cost":"0.77"}
