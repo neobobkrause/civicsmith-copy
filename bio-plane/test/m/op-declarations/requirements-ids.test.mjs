@@ -130,10 +130,19 @@ test("the set of ids is the start commit's: none lost, none added", () => {
   assert.deepEqual([...here.keys()].sort(), Object.keys(START_LINES).sort());
 });
 
-test("every kept id's line is the start commit's, word for word, and the unmet marks are unchanged", () => {
+/* R20, R24, R30 and R41 restated for T53 by BOB's ruling (4 Nov; ai-accounts R35): each keeps its id and purpose and says so */
+const RESTATED = ["R20", "R24", "R30", "R41"];
+const RESTATED_NOTE = "restated for T53 (`ai-accounts` R35, BOB 4 Nov)";
+
+test("every kept id's line is the start commit's, word for word, and the unmet marks are unchanged; the four BOB restated for T53 each name the ruling and no other line changed", () => {
   const unmet = {};
   for (const [id, l] of here) {
     if (MOVED[id]) continue;
+    if (RESTATED.includes(id)) {
+      assert.ok(l.includes(RESTATED_NOTE) && l.startsWith(`- **${id}** `), `${id} is restated without the ruling`);
+      assert.notEqual(sha(l), START_LINES[id], `${id} is not restated`);
+      continue;
+    }
     assert.equal(sha(l), START_LINES[id], `${id} changed`);
     const m = MARK.exec(l);
     if (m) unmet[id] = m[1];

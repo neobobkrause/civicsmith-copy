@@ -117,3 +117,31 @@ On BOB's ruling of 4 Nov, this job named under R34's grounds the 48 member ops t
 - The layer entries and reports (`layerentrydraft`, `layerentryconfirm`, `layerentrywithdraw`, `layerreport`, `layerreportcarry` acts; `layerentries`, `layerreports` reads): `surface-declarations` R17; their owner's T53 lines.
 - `eventwithdraw` (act): events R61; grades T53-604.
 - Reads: `previewmore`, `inboxview`, `ruleresolve`, `standardsbinding`, `fiscalyears`, `moneyby`, `moneyfiscalyears` (T53-604 grades), `federaloffices` (entities R68), `exploreall`, `explorepath`, `exploreshorter`, `explorecontinue` (`surface-declarations` R16, the explore class): `surface-declarations` R17 for the other lanes' ops; `affordances` for the texts.
+
+## T53: ai-accounts' old door retired (R20, R24, R30, R41 restated; BOB, 4 Nov)
+
+BOB ruled option (b): `ai-accounts` R35 retires the old door ops with no aliases, so this module's declarations follow T53's
+op set. The 17 retired ops (`accountreferenceset`, `accountreferenceremove`, `accountreference`, `groupkeyset`,
+`groupkeyremove`, `groupkeyswitch`, `groupkeystate`, `groupkeynotice`, `groupkeynoticeseen`, `subscriptiondisconnect`,
+`projectkeyset`, `projectsigninset`, `projectaccountremove`, `projectaccountswitch`, `projectaccountstate`,
+`projectkeynotice`, `projectkeynoticeseen`) have no spec and are in no table. ai-accounts' family is its map's 36 ops:
+the 7 kept, 5 owners' reads (`accountstate`, `accountsof`, `aichecks`, `aioffered`, `personalchoice`), the Worker's 3
+plane ops (`aicredential` a setting read stamped `by` alone, `aigatewayserved` and `aicredentialfailed` acts any credential
+reaches at admission, the owner refusing every principal but the Worker's, R65 to R67) and the 21 acts ai-accounts
+declares (R61, R71), named in the family so they are stamped `by` (a declaration with no `stamps` is stamped the viewer
+alone, and every one of those arms reads `by`).
+
+Named back to BOB (R21: a function its owner serves through no op has no spec):
+- the live screen registry (`wizard-scripts`' `SCREEN_REGISTRY`) still draws retired ops: `groupkeyset` and
+  `groupkeyswitch` (setup, teamai), `groupkeyremove` (teamai), `groupkeynoticeseen`, `accountreferenceset`,
+  `accountreferenceremove` and `subscriptiondisconnect` (connect), `projectkeyset` (queue, projectai), `projectsigninset`,
+  `projectaccountswitch`, `projectaccountremove` and `projectkeynoticeseen` (projectai). The screens library's steps name
+  `groupkeyset`, `accountreferenceset` and `subscriptiondisconnect`. Those screens and steps are not this module's.
+- `REAUTH_ACTS` no longer names `accountreferenceset`, `groupkeyset`, `projectkeyset` or `projectsigninset`. Which of
+  ai-accounts' T53 credential acts (`aiaccountadd`, `aiownadd`, `aikeyseal`, `aikeyenter`, `aipersonalchoose`) should ask
+  the password again is not decided (op-specs-late R6 to R15, was R58 to R63).
+- The Worker's plane ops sit in both session sets (their kinds put them there), so a member's session reaches ai-accounts,
+  which refuses it `AI_CREDENTIAL_NOT_SERVED`. `aigatewayserved` and `aicredentialfailed` are not on `AI_GRANT_OPS`.
+- Four ai-use ops the tranche added with no spec were declared for R19's census, as BOB ruled for T53's other rows:
+  `aiusebymember` (ai-use R27) and `aihealthpreview` (R33), owners' reads; `airetestset` (R28) and `aihealthset` (R32),
+  administrators' acts.

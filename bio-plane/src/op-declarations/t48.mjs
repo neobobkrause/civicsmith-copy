@@ -33,7 +33,13 @@ const T48_SHARES = Object.freeze({
     updatenotice: "ownread", updatestart: "admin", updatelater: "admin", updateskip: "admin" }) }),
   /* ai-use R14 (R67; N1026, K3206): one account's use over time, declared beside `ailimits` and as it is (a session's
      read), `owner` a query field. */
-  "ai-use": Object.freeze({ cite: "ai-use R14; R67; N1026", ops: Object.freeze({ aiuseovertime: "ownread" }) }),
+  /* T53 (ai-use R27; K5459): each member's use of a team's or a project's account, a read to that account's owners,
+     declared as `aiuseovertime` is; `owner` and `at` the query's. (ai-use R28, R32, R33) The re-tests' switch and caps
+     and the health report's switch, each an administrator's act (the owner answering NOT_AN_ADMIN), `by` the query's
+     after the body; the health report's preview an administrator's read, `viewer` the query's. Declared for R19's census,
+     as BOB ruled for T53's other rows. */
+  "ai-use": Object.freeze({ cite: "ai-use R14, R27, R28, R32, R33; R67; N1026", ops: Object.freeze({ aiuseovertime: "ownread",
+    aiusebymember: "ownread", airetestset: "admin", aihealthset: "admin", aihealthpreview: "ownread" }) }),
   /* explore R21 (R67; N1027): the neighbourhood of a centre, a read as explore's others are (its arm spreads the body
      and takes the viewer from the query alone); `centre`, `at`, `rings`, `kinds` and `scope` the body's. */
   explore: Object.freeze({ cite: "explore R21; R67; N1027", ops: Object.freeze({ exploregraph: "read" }) }),
