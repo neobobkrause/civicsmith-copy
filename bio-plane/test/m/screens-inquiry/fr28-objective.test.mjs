@@ -80,7 +80,7 @@ function plane(o = {}) {
     objectiveprogress: ok(PROGRESS), objectivegaps: ok(GAPS), intentproposals: ok(PROPOSALS),
     list: ok({ bundles: [{ bundle_id: GOAL.id, title: "Close the unvoted collections loophole" }] }),
     goal: ok({ ok: true, goal: GOAL }),
-    assistantstate: ok({ on: true }), accountreference: ok({ held: true }),
+    assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }),
     ...o,
   };
 }

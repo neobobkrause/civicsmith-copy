@@ -710,7 +710,7 @@ function render(cs, view) {
     if (legGrade(l) && axis && axis !== "capture") return "";
     const ceiling = ceilingOf(target);
     if (!ceiling) return "";
-    const act = cs.act("leggrade", { label: "screen.question.leggrade.act", data: { target, ord: String(l.ord) } });
+    const act = cs.act("leggrade", { label: "act.leggrade.label.question", data: { target, ord: String(l.ord) } });
     if (!act) return "";
     return `<details class="mk-details" data-leggrade="${l.ord}"><summary>${W("screen.question.leggrade.head")}</summary><p class="mk-small">${W("screen.question.leggrade.help", { ceiling })}</p>`
       + cs.checks("question-leggrade-" + l.ord, "", GRADES.slice(GRADES.indexOf(ceiling)).map((g) => ({ value: g, text: g })), { radio: true })
@@ -1695,7 +1695,7 @@ const acts = [
       cs.set("asking", run);
       const pm = /^project:\s*(\S+)\s*$/m.exec(String((view.data.inquiry && view.data.inquiry.state === "ok" && view.data.inquiry.value["bundle.md"]) || "").split(/\n---\s*\n/)[0] || "");
       cs.call("airunopen", { body: { run, contextType: "inquiry", contextId: String(view.subject || ""), mode: "check",
-        principalClaude: "member:" + member, skillVersion: pack, bounds, ...(view.project || pm ? { project: view.project || pm[1] } : {}) } }).then((o) => {
+        principalAi: "member:" + member, skillVersion: pack, bounds, ...(view.project || pm ? { project: view.project || pm[1] } : {}) } }).then((o) => {
         const r = res(o) || {};
         if (!o || o.ok === false || r.ok === false || r.started === false) {
           const code = String(r.code || r.reason || "");
@@ -1736,7 +1736,7 @@ const acts = [
  *  document's `readheldActs` is: the act is carried only once the registry (or `RE_POINTS`) admits it (admit.mjs), so no screen is stopped by an act it does not yet hold. A refusal
  *  (`GRADE_OVER_CEILING`, `NOT_CITED`, `LEG_NOT_GRADABLE`, `LEG_GRADE_OTHER_AXIS`, a machine) is drawn by the owner's own words, and the question reads its legs and strength again. */
 const legGradeActs = Object.freeze(admitted("question", "leggrade") ? [
-  { op: "leggrade", label: "screen.question.leggrade.act", reasonField: "reason", rereads: ["inquiry", "basis", "strength", "partition"],
+  { op: "leggrade", label: "act.leggrade.label.question", reasonField: "reason", rereads: ["inquiry", "basis", "strength", "partition"],
     send(view, el, cs) {
       const ord = String(el.dataset.ord || ""), target = String(el.dataset.target || "");
       const grade = String((cs.value("question-leggrade-" + ord) || [])[0] || "");
@@ -1828,7 +1828,7 @@ const words = Object.freeze([
   ...["summary", "what", "case", "kept", "why", "why.help", "next", "next.link", "next.link.text", "refused.summary", "refused.noreason", "refused.badreason", "refused.notsetdown"].map((k) => "screen.question.reopen." + k),
   "act.writinghelp.does",
   /* R139 (DEC-439): the leg-grade fold, the Yes set aside, the other side beside Reinstate, a published case carrying the question */
-  "screen.question.leggrade.head", "screen.question.leggrade.help", "screen.question.leggrade.act", "screen.question.yes.setaside", "screen.question.reinstate.otherside",
+  "screen.question.leggrade.head", "screen.question.leggrade.help", "act.leggrade.label.question", "screen.question.yes.setaside", "screen.question.reinstate.otherside",
   "screen.question.reinstate.otherside.help", "screen.question.carried", "capture.fieldneeded", "shell.reason.needed",
   /* T51 CHANGE B22 (R110) */
   "act.owed_citeimported.label.question", "act.owed_withdrawimported.label.question", "refusal.IMPORTED_NOT_ACCEPTED",

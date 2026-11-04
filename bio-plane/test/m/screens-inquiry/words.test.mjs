@@ -48,12 +48,6 @@ test("R44 over fixtures, what the screens draw for a sample of their keys equals
   assert.ok(says(main(q), "question.ask.first.title") && says(main(q), "question.ask.first.says"));
   const d = await open("/app/document/" + D);
   assert.ok(says(main(d), "screen.document.captured", { date: day("2026-10-02T09:00:00Z", { year: true }), source: "https://example.org/ai-4-12.pdf" }));
-  /* the project's AI page over the real world: a team's owner on a project she started, no account held and no keep-away set */
-  const world = await storeWorld();
-  const ann = await world.signIn("ann", { capabilities: ["contribute", "create_projects"] });
-  const project = await world.recipes.project(ann, "Stormwater");
-  const { door, session } = world.boot(ann);
-  const a = await boot({ screens: SCREENS, door, session, path: "/app/projectai/" + project });
-  await a.settle();
-  assert.ok(says(main(a), "screen.projectai.account.none") && says(main(a), "screen.projectai.keepaway.off"));
+  /* R153 (T53): the project's AI screen is `aiproject`'s, linked by the key's word */
+  assert.ok(says(main(p).querySelector('a[href^="/app/aiproject/"]'), "screen.project.account.open"));
 });
