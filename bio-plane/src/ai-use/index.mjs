@@ -261,7 +261,8 @@ export class AiUse {
         unjudged: true, whose, use: use ?? null };
     }
     const scope = lim.scope;
-    const word = LIMIT_WORD_BY_SCOPE[scope] || "ai.refused.limit";
+    /* a re-test cap (R28, `retest:<entry>`) names no use: the overall sentence */
+    const word = LIMIT_WORD_BY_SCOPE[scope] || (scope.startsWith("retest:") ? LIMIT_WORD_BY_SCOPE.overall : "ai.refused.limit");
     return { ...this.#refuse("AI_LIMIT_REACHED", localize("ai-use.index.owner_s_period_limit_scope", "{owner}'s {period} limit ({scope}, in {unit}) is reached for the period from {start}. Nothing was started.", { owner: String(p.owner), period: String(lim.period), scope: String(scope), unit: String(lim.unit), start: String(start) })), translation: AiUse.#limitSentence(word, whose, lim, start),
       word, whose, scope, unit: lim.unit, period: lim.period, period_start: start, use: use ?? null };
     /* END DEC-49 REGION is-ai-limit-reached */
@@ -900,12 +901,12 @@ export class AiUse {
 
   /** R3, R13 (T53; B4): `AI_LIMIT_REACHED` for a provider limit, `source: "provider"`, `walkable: true`, its sentence
    *  `ai.refused.limit.provider` filled with `{when}` from its reset time, or `ai.refused.limit.provider.unknown`. */
-  #providerReached(p, r, use) {
+  #providerReached(p, r, use, ms) {
     const whose = whoseOf(p);
     const resets = r.resets_at || null;
     const w = { whose: AI_USE_WORDS[WHOSE_WORD[whose]] };
     /* `{when}`: `ai.when.day` when it resets on the next local day, `ai.when.month` when on a month's 1st, else the day */
-    const today = this.#dayOf(this.#nowMs()).day;
+    const today = this.#dayOf(ms).day;
     const resetDay = resets ? this.#dayOf(Date.parse(resets)).day : null;
     const next = new Date(Date.parse(`${today}T00:00:00Z`) + 864e5).toISOString().slice(0, 10);
     const when = !resetDay ? null : resetDay === next ? AI_USE_WORDS[WHEN_WORD.day]
@@ -937,7 +938,7 @@ export class AiUse {
       const ms = this.#ms(at);
       if (typeof account_id === "string" && account_id) {
         const standing = this.#providerStanding(`account_id = ? AND (scope = 'account' OR entry_id = ?)`, [account_id, entry_id ?? ""], ms);
-        if (standing.length) return this.#providerReached(p, standing[0], use);
+        if (standing.length) return this.#providerReached(p, standing[0], use, ms);
       }
       const hit = this.#reachedFor(p, use, memberIdOf(member), ms);
       if (hit) return { ...this.#limitReached(p, hit.lim, use, hit.start), source: "own", walkable: true };
@@ -1670,7 +1671,7 @@ export class AiUse {
   }
 
   /** R28 (T53) `retestAllowed({owner, entry_id, at})`: `true`, or `{off: true}` while re-testing is off, or
-   *  `{cap_reached: true, cap, used}` at the entry's monthly cap; `ai-gate`'s canary schedule asks it before each run.
+   *  `{cap_reached: true, cap, used}` at the entry's monthly cap, carrying R3's `AI_LIMIT_REACHED` on the cap's scope; `ai-gate`'s canary schedule asks it before each run.
    *  Unreadable answers `{off: true, unreadable: true}` (fail closed). Writes nothing; never throws. */
   retestAllowed({ owner = null, entry_id = null, at = null } = {}) {
     try {
@@ -1680,8 +1681,11 @@ export class AiUse {
       if (!r.on) return { off: true };
       const lim = this.#limit(p.owner, `retest:${entry_id}`, "usd", "month");
       if (!lim) return true;
-      const used = this.#retestUsed(p.owner, entry_id, this.#dayOf(at).day);
-      return used >= Number(lim.amount) ? { cap_reached: true, cap: Number(lim.amount) / 100, used: used / 100 } : true;
+      const { day } = this.#dayOf(at);
+      const used = this.#retestUsed(p.owner, entry_id, day);
+      /* at the cap: R3's refusal, `AI_LIMIT_REACHED` on the cap's scope, beside `cap_reached` */
+      return used >= Number(lim.amount) ? { ...this.#limitReached(p, lim, null, AiUse.#start("month", day)), source: "own", walkable: false,
+        cap_reached: true, cap: Number(lim.amount) / 100, used: used / 100 } : true;
     } catch { return { off: true, unreadable: true }; }
   }
 
