@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:142 only imports action-clocks' checks.mjs catalogue rows, which R27-R29 do not change.","at":"2026-11-04T02:43:58.116Z","key":"action-clocks:60","worker":"a2c3baf999b936821","cost":"0.3"}

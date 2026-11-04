@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-assembly","verdict":"affected","evidence":"bio-plane/src/store-assembly/owner-ops.mjs:81 `clockpropose` passes only target, rule, proposer and viewer to `clockPropose`, so R28's new `layer?` argument is never forwarded (and NAME_AMBIGUOUS can result).","at":"2026-11-04T02:43:58.116Z","key":"action-clocks:60","worker":"a2c3baf999b936821","cost":"0.3"}

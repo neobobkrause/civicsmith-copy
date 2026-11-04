@@ -1,0 +1,1 @@
+{"row":"answered","user":"plane","by":"triage","evidence":"bio-plane/wrangler.jsonc:1 the plane's paths are runtime and config; a search of bio-plane/src/plane/ for action-clocks and its clock ops finds nothing.","at":"2026-11-04T02:43:58.116Z","key":"action-clocks:60","worker":"a2c3baf999b936821","cost":"0.3"}

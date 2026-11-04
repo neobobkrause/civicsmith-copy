@@ -1,0 +1,1 @@
+{"row":"answered","user":"monitoring","by":"triage","evidence":"bio-plane/src/monitoring/index.mjs:513 only reads `pendingClocks` items for due instants and flips status pending->overdue (index.mjs:398); no layer, proposal or calendarFactsRead.","at":"2026-11-04T02:43:58.116Z","key":"action-clocks:60","worker":"a2c3baf999b936821","cost":"0.3"}

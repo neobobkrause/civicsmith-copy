@@ -1,0 +1,1 @@
+{"row":"answered","user":"following","by":"triage","evidence":"bio-plane/src/following/index.mjs:1686 uses only `actionClocks.ourDeadlines`, which R27-R29 do not change.","at":"2026-11-04T02:43:58.116Z","key":"action-clocks:60","worker":"a2c3baf999b936821","cost":"0.3"}

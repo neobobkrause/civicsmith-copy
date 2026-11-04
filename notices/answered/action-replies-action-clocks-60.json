@@ -1,0 +1,1 @@
+{"row":"answered","user":"action-replies","by":"triage","evidence":"bio-plane/src/action-replies/index.mjs:466 only reads `a.clock` entries' `status` and `date` and never uses the `layer` field or the changed ops.","at":"2026-11-04T02:43:58.116Z","key":"action-clocks:60","worker":"a2c3baf999b936821","cost":"0.3"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-action","by":"triage","evidence":"bio-plane/src/screens-action/action.mjs:223 renders `a.clock` entries (date/status) and dash-action.mjs:45 filters them; it does not call clockpropose, clockadopt or clockstate.","at":"2026-11-04T02:43:58.116Z","key":"action-clocks:60","worker":"a2c3baf999b936821","cost":"0.3"}
