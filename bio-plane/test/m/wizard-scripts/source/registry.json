@@ -24,7 +24,9 @@
      "label": "Continue to Cloudflare",
      "status": "declared",
      "modules": [
+      "control-plane",
       "installer",
+      "installer-steps",
       "instance-setup",
       "membership",
       "op-declarations"
@@ -82,7 +84,9 @@
      "label": "Continue to Cloudflare to update",
      "status": "declared",
      "modules": [
+      "control-plane",
       "installer",
+      "installer-steps",
       "instance-setup",
       "membership",
       "op-declarations"
@@ -276,7 +280,7 @@
      "label": "Choose whether members are told what a court can reach",
      "status": "function",
      "modules": [
-      "membership"
+      "member-roster"
      ]
     },
     {
@@ -309,6 +313,15 @@
      "status": "function",
      "modules": [
       "credentials"
+     ]
+    },
+    {
+     "op": "factconfirm",
+     "label": "Save the time zone",
+     "status": "declared",
+     "modules": [
+      "local-facts",
+      "op-declarations"
      ]
     }
    ],
@@ -373,7 +386,7 @@
      "status": "declared",
      "modules": [
       "admission",
-      "membership"
+      "member-roster"
      ]
     },
     {
@@ -407,7 +420,7 @@
    "acts": [
     {
      "op": "release",
-     "label": "Vouch for photos",
+     "label": "Vouch for copies",
      "status": "declared",
      "modules": [
       "capture",
@@ -507,7 +520,7 @@
     },
     {
      "op": "taskforward",
-     "label": "Pass it to someone else",
+     "label": "Pass it to another member",
      "status": "declared",
      "modules": [
       "op-declarations",
@@ -612,6 +625,11 @@
      ]
     },
     {
+     "op": "owed:adminproposalcancel K5563",
+     "label": "Cancel this proposal",
+     "status": "owed"
+    },
+    {
      "op": "expertiseconfirm",
      "label": "Confirm declared expertise",
      "status": "declared",
@@ -629,7 +647,7 @@
      "label": "Withdraw an unused invitation",
      "status": "function",
      "modules": [
-      "membership"
+      "member-roster"
      ]
     },
     {
@@ -637,7 +655,7 @@
      "label": "Create a website key",
      "status": "function",
      "modules": [
-      "membership"
+      "member-roster"
      ]
     },
     {
@@ -645,7 +663,7 @@
      "label": "Turn on the reusable join link",
      "status": "function",
      "modules": [
-      "membership"
+      "member-roster"
      ]
     }
    ],
@@ -696,7 +714,6 @@
      "op": "scanmirror",
      "label": "Check for new signatures now",
      "status": "declared",
-     "onTranche": "origin/tranche/T51",
      "modules": [
       "file-safety"
      ]
@@ -833,7 +850,7 @@
     {
      "op": "accountreferenceset",
      "label": "Connect with your own API key",
-     "status": "function",
+     "status": "declared",
      "modules": [
       "ai-accounts"
      ]
@@ -865,7 +882,7 @@
     {
      "op": "accountreferenceremove",
      "label": "Disconnect",
-     "status": "function",
+     "status": "declared",
      "modules": [
       "ai-accounts"
      ]
@@ -1052,7 +1069,6 @@
      "op": "officeconfirm",
      "label": "Confirm this office",
      "status": "declared",
-     "onTranche": "origin/tranche/T51",
      "modules": [
       "entities"
      ]
@@ -1126,7 +1142,7 @@
      "label": "Show the court notice",
      "status": "function",
      "modules": [
-      "membership"
+      "member-roster"
      ]
     },
     {
@@ -1243,6 +1259,7 @@
      "status": "declared",
      "modules": [
       "installer",
+      "installer-steps",
       "instance-setup",
       "op-declarations"
      ]
@@ -1252,7 +1269,9 @@
      "label": "Show what each part runs",
      "status": "declared",
      "modules": [
+      "control-plane",
       "installer",
+      "installer-steps",
       "instance-setup",
       "membership",
       "op-declarations"
@@ -1612,7 +1631,7 @@
    "acts": [
     {
      "op": "release",
-     "label": "Vouch for photos",
+     "label": "Vouch for copies",
      "status": "declared",
      "modules": [
       "capture",
@@ -1843,6 +1862,14 @@
      "modules": [
       "op-declarations"
      ]
+    },
+    {
+     "op": "signerknown",
+     "label": "I know about this key",
+     "status": "declared",
+     "modules": [
+      "credentials"
+     ]
     }
    ],
    "journeys": [
@@ -1861,10 +1888,17 @@
      "label": "Search",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
+      "calculations",
+      "content",
+      "extraction",
       "op-declarations",
+      "plane",
+      "reading-pipeline",
       "retrieval",
-      "screens-daily"
+      "screens-daily",
+      "screens-inquiry",
+      "screens-intake"
      ]
     },
     {
@@ -1881,7 +1915,8 @@
      "label": "Find in these",
      "status": "declared",
      "modules": [
-      "retrieval"
+      "retrieval",
+      "retrieval-browse"
      ]
     },
     {
@@ -1997,6 +2032,7 @@
      "status": "declared",
      "modules": [
       "capture",
+      "control-plane",
       "screens-intake"
      ]
     },
@@ -2013,7 +2049,7 @@
      "label": "Ask for a capture later",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
       "capture-requests",
       "op-declarations"
      ]
@@ -2066,6 +2102,19 @@
      "modules": [
       "capture-requests",
       "op-declarations"
+     ]
+    },
+    {
+     "op": "owed:previewmore DEC-455",
+     "label": "Show more rows",
+     "status": "owed"
+    },
+    {
+     "op": "captureuploadabort",
+     "label": "Cancel sending",
+     "status": "declared",
+     "modules": [
+      "capture"
      ]
     },
     {
@@ -2261,6 +2310,11 @@
      ]
     },
     {
+     "op": "owed:interpretmark K5495",
+     "label": "Interpret parts of this for an investigation",
+     "status": "owed"
+    },
+    {
      "op": "cite",
      "label": "Cite a passage",
      "status": "declared",
@@ -2320,7 +2374,8 @@
      "label": "Find in this",
      "status": "declared",
      "modules": [
-      "retrieval"
+      "retrieval",
+      "retrieval-browse"
      ]
     },
     {
@@ -2460,8 +2515,7 @@
     {
      "op": "contradictionflag",
      "label": "Say these two contradict",
-     "status": "declared",
-     "onTranche": "origin/tranche/T51",
+     "status": "function",
      "modules": [
       "contradiction"
      ]
@@ -2519,6 +2573,17 @@
      "op": "owed:registersearch DEC-406",
      "label": "Search the registers",
      "status": "owed"
+    },
+    {
+     "op": "resolve",
+     "label": "Find the people and offices it names",
+     "status": "declared",
+     "modules": [
+      "entities",
+      "op-declarations",
+      "queue",
+      "record-core"
+     ]
     }
    ],
    "journeys": [
@@ -2611,7 +2676,8 @@
      "label": "Find in this",
      "status": "declared",
      "modules": [
-      "retrieval"
+      "retrieval",
+      "retrieval-browse"
      ]
     },
     {
@@ -2677,10 +2743,17 @@
      "label": "See all in Find",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
+      "calculations",
+      "content",
+      "extraction",
       "op-declarations",
+      "plane",
+      "reading-pipeline",
       "retrieval",
-      "screens-daily"
+      "screens-daily",
+      "screens-inquiry",
+      "screens-intake"
      ]
     }
    ],
@@ -2721,7 +2794,8 @@
      "label": "Find in this project",
      "status": "declared",
      "modules": [
-      "retrieval"
+      "retrieval",
+      "retrieval-browse"
      ]
     },
     {
@@ -2743,7 +2817,7 @@
     },
     {
      "op": "projectvisibilityset",
-     "label": "Change who can find it",
+     "label": "Change who can find this project",
      "status": "declared",
      "modules": [
       "op-declarations"
@@ -2986,7 +3060,7 @@
    "id": "projectai",
    "name": "AI for this project",
    "frame": "working",
-   "purpose": "Who pays for the assistant's work in a project: its own API key, or its sole member's sign-in; what it pays for; its limits; its use summed, naming no member; keeping the project's material away from AI; every change, seen by every owner (DEC-188). In the first beta, AI for this project takes its place (DEC-420).",
+   "purpose": "Who pays for the assistant's work in a project: its own API key, or its sole member's sign-in; what it pays for; its limits; its use summed, and by member for its owners; keeping the project's material away from AI; every change, seen by every owner (DEC-188). In the first beta, AI for this project takes its place (DEC-420).",
    "acts": [
     {
      "op": "projectkeyset",
@@ -3129,7 +3203,8 @@
      "modules": [
       "basis-versions",
       "contradiction",
-      "op-declarations"
+      "op-declarations",
+      "review"
      ]
     },
     {
@@ -3239,10 +3314,17 @@
      "label": "Find another source",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
+      "calculations",
+      "content",
+      "extraction",
       "op-declarations",
+      "plane",
+      "reading-pipeline",
       "retrieval",
-      "screens-daily"
+      "screens-daily",
+      "screens-inquiry",
+      "screens-intake"
      ]
     },
     {
@@ -3324,7 +3406,7 @@
      "label": "Read in my language",
      "status": "declared",
      "modules": [
-      "plane"
+      "store-assembly"
      ]
     },
     {
@@ -3334,6 +3416,14 @@
      "modules": [
       "connections",
       "op-declarations"
+     ]
+    },
+    {
+     "op": "leggrade",
+     "label": "Record this grade",
+     "status": "declared",
+     "modules": [
+      "citation"
      ]
     },
     {
@@ -3351,7 +3441,7 @@
      "label": "Stop the assistant",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
       "ai-runs",
       "op-declarations"
      ]
@@ -3376,8 +3466,8 @@
      "status": "declared",
      "modules": [
       "control-plane",
-      "plane",
-      "screens-daily"
+      "screens-daily",
+      "store-assembly"
      ]
     },
     {
@@ -3393,10 +3483,17 @@
      "label": "Search instead",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
+      "calculations",
+      "content",
+      "extraction",
       "op-declarations",
+      "plane",
+      "reading-pipeline",
       "retrieval",
-      "screens-daily"
+      "screens-daily",
+      "screens-inquiry",
+      "screens-intake"
      ]
     },
     {
@@ -3443,8 +3540,8 @@
      "status": "declared",
      "modules": [
       "control-plane",
-      "plane",
-      "screens-daily"
+      "screens-daily",
+      "store-assembly"
      ]
     },
     {
@@ -3452,7 +3549,7 @@
      "label": "Suggest",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
       "ai-runs",
       "basis-versions",
       "op-declarations",
@@ -3464,7 +3561,7 @@
      "label": "Stop the run",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
       "ai-runs",
       "op-declarations"
      ]
@@ -3485,10 +3582,17 @@
      "label": "Search people and organizations",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
+      "calculations",
+      "content",
+      "extraction",
       "op-declarations",
+      "plane",
+      "reading-pipeline",
       "retrieval",
-      "screens-daily"
+      "screens-daily",
+      "screens-inquiry",
+      "screens-intake"
      ]
     },
     {
@@ -3707,7 +3811,8 @@
      "label": "Look for dates in this project",
      "status": "declared",
      "modules": [
-      "retrieval"
+      "retrieval",
+      "retrieval-browse"
      ]
     },
     {
@@ -3775,10 +3880,17 @@
      "label": "Search",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
+      "calculations",
+      "content",
+      "extraction",
       "op-declarations",
+      "plane",
+      "reading-pipeline",
       "retrieval",
-      "screens-daily"
+      "screens-daily",
+      "screens-inquiry",
+      "screens-intake"
      ]
     },
     {
@@ -3866,7 +3978,8 @@
      "label": "Look for it in this project",
      "status": "declared",
      "modules": [
-      "retrieval"
+      "retrieval",
+      "retrieval-browse"
      ]
     },
     {
@@ -3935,10 +4048,17 @@
      "label": "Search",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
+      "calculations",
+      "content",
+      "extraction",
       "op-declarations",
+      "plane",
+      "reading-pipeline",
       "retrieval",
-      "screens-daily"
+      "screens-daily",
+      "screens-inquiry",
+      "screens-intake"
      ]
     },
     {
@@ -4127,10 +4247,17 @@
      "label": "Search",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
+      "calculations",
+      "content",
+      "extraction",
       "op-declarations",
+      "plane",
+      "reading-pipeline",
       "retrieval",
-      "screens-daily"
+      "screens-daily",
+      "screens-inquiry",
+      "screens-intake"
      ]
     },
     {
@@ -4710,7 +4837,7 @@
      "label": "Show the routes",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
       "reading-guides"
      ]
     },
@@ -4853,6 +4980,22 @@
     {
      "op": "counselpacket",
      "label": "Assemble the packet, with a reason",
+     "status": "declared",
+     "modules": [
+      "op-declarations"
+     ]
+    },
+    {
+     "op": "counselpacketread",
+     "label": "Read this version",
+     "status": "declared",
+     "modules": [
+      "op-declarations"
+     ]
+    },
+    {
+     "op": "counselpacketexport",
+     "label": "Save as a file",
      "status": "declared",
      "modules": [
       "op-declarations"
@@ -5286,6 +5429,7 @@
      "modules": [
       "case-authoring",
       "case-check",
+      "case-grammar",
       "case-inputs",
       "op-declarations",
       "review"
@@ -5318,6 +5462,16 @@
      "modules": [
       "case-carriage"
      ]
+    },
+    {
+     "op": "owed:mailnameshow K5534",
+     "label": "Show a name, with why it is material",
+     "status": "owed"
+    },
+    {
+     "op": "owed:mailnamewithhold K5534",
+     "label": "Withhold a name again",
+     "status": "owed"
     },
     {
      "op": "signerregisterown",
@@ -5357,6 +5511,14 @@
      "op": "owed:casedetails K4169",
      "label": "See the details of this work",
      "status": "owed"
+    },
+    {
+     "op": "leggrade",
+     "label": "Record this grade",
+     "status": "declared",
+     "modules": [
+      "citation"
+     ]
     }
    ],
    "journeys": [
@@ -5417,7 +5579,8 @@
      "modules": [
       "op-declarations",
       "public-read",
-      "publication"
+      "publication",
+      "screens-publish"
      ]
     },
     {
@@ -5587,6 +5750,11 @@
    "frame": "working",
    "purpose": "Material handed in through the doorbell.",
    "acts": [
+    {
+     "op": "owed:inboxview DEC-479",
+     "label": "Show it safely",
+     "status": "owed"
+    },
     {
      "op": "inboxpull",
      "label": "Move into the record",
@@ -5790,7 +5958,7 @@
     },
     {
      "op": "monitorslate",
-     "label": "Read what is due",
+     "label": "Show what is due",
      "status": "declared",
      "modules": [
       "op-declarations"
@@ -5843,7 +6011,7 @@
    "purpose": "The public registers the team holds (campaign finance, economic interests, lobbyists, licenses, company officers), bringing one in whole, searching and citing a row, watching a named filer, license or docket, outside alerts, and the assisted asking that comes after the alpha.",
    "acts": [
     {
-     "op": "owed:registerimport DEC-406",
+     "op": "owed:registerfileimport DEC-406",
      "label": "Bring in a register",
      "status": "owed"
     },
@@ -5922,10 +6090,17 @@
      "label": "Search",
      "status": "declared",
      "modules": [
-      "agent-worker",
+      "agent-steps",
+      "calculations",
+      "content",
+      "extraction",
       "op-declarations",
+      "plane",
+      "reading-pipeline",
       "retrieval",
-      "screens-daily"
+      "screens-daily",
+      "screens-inquiry",
+      "screens-intake"
      ]
     },
     {
@@ -5952,6 +6127,26 @@
     {
      "op": "owed:aiplanconnect DEC-420",
      "label": "Connect a plan",
+     "status": "owed"
+    },
+    {
+     "op": "owed:aicreditsclear K5478",
+     "label": "Clear a charge to Cloudflare's credits and turn the account back on",
+     "status": "owed"
+    },
+    {
+     "op": "owed:airetestset K5480",
+     "label": "Turn monthly re-testing on or off",
+     "status": "owed"
+    },
+    {
+     "op": "owed:aihealthset K5487",
+     "label": "Turn on or off sharing daily counts with Civicsmith",
+     "status": "owed"
+    },
+    {
+     "op": "owed:aihealthpreview K5487",
+     "label": "See what the daily counts would send",
      "status": "owed"
     },
     {
@@ -6026,8 +6221,13 @@
      "status": "owed"
     },
     {
+     "op": "owed:aikeyseal DEC-465",
+     "label": "Keep it sealed",
+     "status": "owed"
+    },
+    {
      "op": "owed:aitermsaccept DEC-420",
-     "label": "Accept the terms that bind our use",
+     "label": "Accept the free-tier warning",
      "status": "owed"
     },
     {
@@ -6069,6 +6269,11 @@
     {
      "op": "owed:aimycheckset DEC-420",
      "label": "Require a check for my own work",
+     "status": "owed"
+    },
+    {
+     "op": "owed:aiorderset DEC-420",
+     "label": "Move an account up or down",
      "status": "owed"
     }
    ],
@@ -6172,6 +6377,11 @@
      "op": "owed:aiaccountpick DEC-420",
      "label": "Choose another account",
      "status": "owed"
+    },
+    {
+     "op": "owed:aiwaitswitch K5489",
+     "label": "Wait, then switch to another account if the provider is still down",
+     "status": "owed"
     }
    ],
    "journeys": [
@@ -6218,6 +6428,11 @@
     {
      "op": "owed:airesultsread DEC-420",
      "label": "Read the results for an AI",
+     "status": "owed"
+    },
+    {
+     "op": "owed:airesultown K5482",
+     "label": "Open your team's own result",
      "status": "owed"
     }
    ],
