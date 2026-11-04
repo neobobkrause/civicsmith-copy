@@ -283,3 +283,4 @@
 {"at":"2026-11-04T19:01:11Z","row":"sent","n":145,"to":"job-reading-pipeline","text":"Pin 9f74398 gives the smoke's base build the full suite budget. Run job sync reading-pipeline once onto the tranche tip for a fresh gate; no code change."}
 {"at":"2026-11-04T19:01:22Z","row":"outcome","n":144,"outcome":"delivered"}
 {"at":"2026-11-04T19:01:26Z","row":"outcome","n":145,"outcome":"delivered"}
+{"at":"2026-11-04T19:05:44Z","row":"sent","n":146,"to":"job-plane","text":"Fresh review of PR 175: the rewritten R102 control test (r8-heal-door.test.mjs:152-165) cannot fail; the frozen clock keeps both whoami requests inside the 5 s window, so heal returns at scheduler/index.mjs:781 before the #firing guard. Add await w.get('clock?advance=6000') after the firing is confirmed in flight and before the two whoami; show it fails with the #firing check removed (by hand, not committed); then job sync and job complete again."}
