@@ -1,0 +1,1 @@
+{"row":"triage","user":"progressions","verdict":"not affected","evidence":"bio-plane/src/progressions/index.mjs:1709 reads lf.factStatus({}) for the zone only; R23/R25 changed only their \"(not yet met)\" mark","at":"2026-11-04T02:07:03.148Z","key":"local-facts:62","worker":"aa6dae34593e47a89","cost":"0.8"}

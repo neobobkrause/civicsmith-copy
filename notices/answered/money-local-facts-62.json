@@ -1,0 +1,1 @@
+{"row":"answered","user":"money","by":"triage","evidence":"bio-plane/src/money/index.mjs:290 reads lf.factStatus only; R23/R25 changed only their \"(not yet met)\" mark","at":"2026-11-04T02:07:03.148Z","key":"local-facts:62","worker":"aa6dae34593e47a89","cost":"0.8"}

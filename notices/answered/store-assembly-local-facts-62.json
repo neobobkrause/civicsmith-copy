@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-assembly","by":"triage","evidence":"bio-plane/src/store-assembly/assemble.mjs:18 imports localFactsOf/localFactsOps to wire the module; R23/R25 changed only their \"(not yet met)\" mark, which changes no op or behaviour","at":"2026-11-04T02:07:03.148Z","key":"local-facts:62","worker":"aa6dae34593e47a89","cost":"0.8"}

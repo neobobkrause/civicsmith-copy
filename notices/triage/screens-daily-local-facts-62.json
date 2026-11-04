@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-daily","verdict":"not affected","evidence":"bio-plane/src/screens-daily/find-in-forms.mjs:23 only reads the team zone through factstatus (comment); no layerEntry/factConfirm call","at":"2026-11-04T02:07:03.148Z","key":"local-facts:62","worker":"aa6dae34593e47a89","cost":"0.8"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"plane","verdict":"not affected","evidence":"bio-plane/src/plane/index.mjs:1 no use of local-facts (no import, no layerEntry/factConfirm/factStatus)","at":"2026-11-04T02:07:03.148Z","key":"local-facts:62","worker":"aa6dae34593e47a89","cost":"0.8"}
