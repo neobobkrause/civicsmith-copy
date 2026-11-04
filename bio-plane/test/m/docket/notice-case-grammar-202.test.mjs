@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import * as CG from "../../../src/case-grammar/index.mjs";
 import { parseFrontmatter } from "../../../src/record-grammar/frontmatter.mjs";
 import { caseDocument } from "../case-grammar/casefile-fixture.mjs";
-import { seeded, prepare, post, CASE } from "./fixture.mjs";
+import { seeded, prepare, post, sign, V, CASE } from "./fixture.mjs";
 
 const statementOf = (text) => { const p = parseFrontmatter(text); return CG.whatChangedOf(p.data, p.body).statement; };
 
@@ -36,7 +36,9 @@ test("notice case-grammar:202 (R35) a /10 case document, as case-grammar writes 
     /* R33: the automatic entry quotes it too */
     const v = seeded();
     v.publish(v.P, CASE, 2, [{ id: v.F1, role: "load_bearing" }], { document });
-    const r = v.docket.docketRecordEdition({ case: CASE, edition: 2 });
+    const pr = await v.docket.docketRecordEdition({ case: CASE, edition: 2 });
+    assert.equal(JSON.parse(pr.entry).what_changed, said, `${format}: the prepared automatic entry quotes it`);
+    const r = await v.docket.docketRecordEdition({ case: CASE, edition: 2, digest: pr.digest, signature: sign(pr), by: V("alice") });
     assert.equal(r.filed, true, JSON.stringify(r).slice(0, 300));
     const pub = await v.docket.docketPublic({ case: CASE, captures: "omit" });
     assert.equal(pub.entries.find((e) => e.seq === r.seq).fields.what_changed, said, `${format}: the automatic entry quotes it`);

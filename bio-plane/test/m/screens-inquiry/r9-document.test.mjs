@@ -16,7 +16,7 @@ async function openWith(path, o = {}) {
   await p.settle();
   return p;
 }
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 /** the document's record with a given profile and file name in its register document */
 const docWith = (reg = {}, sha = SHA) => ({ [D]: { "bundle.md": DOCUMENT_MD, "data/provenance.json": JSON.stringify({ documents: [{ capture: { sha256: sha, ...(reg.capture || {}) },
   ...Object.fromEntries(Object.entries(reg).filter(([k]) => k !== "capture")) }] }) } });

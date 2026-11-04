@@ -82,7 +82,8 @@ test("R64: a part that is not one of the four shapes is refused, and no AI membe
   const w = fresh();
   assert.equal((await interpretUnits(doc({ digest: "a".repeat(64) }), { kind: "table", from: 1, to: 2 }, { evidence: evidenceStore(w.evidence) })).reason, "PART_NOT_VALID");
   assert.equal((await interpretUnits(doc({ digest: "a".repeat(64) }), { kind: "slide", from: 0, to: 1 }, { evidence: evidenceStore(w.evidence) })).reason, "PART_NOT_VALID");
-  const src = readFileSync(new URL("../../../src/reading-pipeline/index.mjs", import.meta.url), "utf8");
+  /* this module's source and, since BOB's split (PR 274), `reader-contract`'s, which it re-exports */
+  const src = ["../../../src/reading-pipeline/index.mjs", "../../../src/reader-contract/index.mjs"].map((f) => readFileSync(new URL(f, import.meta.url), "utf8")).join("\n");
   assert.doesNotMatch(src, /from\s+["'][^"']*\/(?:ai-[a-z-]+|agent-[a-z-]+|skills)\b/);
 });
 
