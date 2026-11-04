@@ -36,8 +36,10 @@ import { CLAIM_KINDS } from "../people/index.mjs";
  *   part   a recorded event or decision a party took part in: every `event_*` kind, the duty's meeting and use (`met_by`,
  *          `used_in`), the law and court links between instruments (`law_*`, `court_*`, `in_force_at_event`), and a stage placed on
  *          a declared flow;
- *   money  `money_flow`;
- *   ment   the weakest ties, a lead and never a finding: `mentioned_together`, a member's `hunch`, `in_tension_with`;
+ *   money  (R72, T53) the money owner's five kinds, `money_transfer`, `money_payment`, `money_contribution`, `money_revenue` and
+ *          `money_other`, in place of `money_flow`;
+ *   ment   the weakest ties, a lead and never a finding: `mentioned_together`, a member's `hunch`, `in_tension_with`, and
+ *          (R72) `named_in`, an entity named in a document;
  *   same   a member's claim about whether two records are one person (`same_as`, `not_same_as`, `unsure`);
  *   step_source  (R60) a step backed by a passage (`step_source`): neither "Mentioned together" nor a position, so its own group. */
 const GROUP_KINDS = {
@@ -54,8 +56,8 @@ const GROUP_KINDS = {
     "event_stated_cause", "event_within", "event_precedes", "met_by", "used_in", "law_amends", "law_repeals", "law_renumbers",
     "law_recodifies", "law_refers_to", "law_defines", "law_excepts", "law_implements", "law_incorporates", "court_interprets",
     "court_applies", "court_holds_invalid", "court_requires", "in_force_at_event", "placed_on_flow"],
-  money: ["money_flow"],
-  ment: ["mentioned_together", "hunch", "in_tension_with"],
+  money: ["money_transfer", "money_payment", "money_contribution", "money_revenue", "money_other"],
+  ment: ["mentioned_together", "hunch", "in_tension_with", /* R72 (T53): a document a capture names an entity in */ "named_in"],
   same: ["same_as", "not_same_as", "unsure"],
   step_source: ["step_source"],
 };
