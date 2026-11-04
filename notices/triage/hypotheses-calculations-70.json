@@ -1,0 +1,1 @@
+{"row":"triage","user":"hypotheses","verdict":"not affected","evidence":"bio-plane/src/hypotheses/index.mjs:770 reads calculation inputs through `calculations.gradeFactsOf` only","at":"2026-11-04T02:55:24.404Z","key":"calculations:70","worker":"a52c3903d49bde63d","cost":"0.3"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"case-authoring","by":"triage","evidence":"bio-plane/src/case-authoring/index.mjs:441 calls `calculations.read({ calcId, viewer })` and :445 `recompute({ calcId })`; neither creates or evaluates from a selection","at":"2026-11-04T02:55:24.404Z","key":"calculations:70","worker":"a52c3903d49bde63d","cost":"0.3"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"inquiry","verdict":"not affected","evidence":"bio-plane/src/inquiry/index.mjs:779 its only calculations use is `calcStatusOf` by calcId and viewer; its selectionResolve call at :1714 is retrieval's, not calculations'","at":"2026-11-04T02:55:24.404Z","key":"calculations:70","worker":"a52c3903d49bde63d","cost":"0.3"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-assembly","verdict":"not affected","evidence":"bio-plane/src/store-assembly/assemble.mjs:811 only wires `calculationsOps(calculationsOf(ctx), url, body)`; the owner is read in calculations","at":"2026-11-04T02:55:24.404Z","key":"calculations:70","worker":"a52c3903d49bde63d","cost":"0.3"}
