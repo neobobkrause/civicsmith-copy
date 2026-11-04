@@ -42,3 +42,4 @@
 {"at":"2026-11-04T06:15:10Z","row":"outcome","n":21,"outcome":"delivered"}
 {"at":"2026-11-04T07:14:54Z","row":"sent","n":22,"to":"bob","text":"Sweep: agent-worker: BLOCKED; ai-catalogue: BLOCKED; runtime-limits: BLOCKED; screens-action: BLOCKED; store-assembly: BLOCKED; store-request: BLOCKED."}
 {"at":"2026-11-04T07:15:10Z","row":"outcome","n":22,"outcome":"delivered"}
+{"at":"2026-11-04T08:15:22Z","row":"sent","n":23,"to":"bob","text":"From the coordinator via ROOT: you carry the old BOB's held items under CLAUDE.md 9fb1b38: (a) the words-reads generator, (b) the 44 px .cs-btn, (c) the dev catalogue key for ai-catalogue R39. Also: no tranche-into-main PR until the coordinator says."}
