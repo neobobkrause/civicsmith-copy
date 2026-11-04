@@ -1,7 +1,7 @@
 /* Settings › Members at the module's interface (R1, R2, R8 as R47 leaves them: the roster only; R12, R23, R29, R35, R47, R51): the
    screen run over the world (store-request's `storeWorld`): the team's members, keys, invitations and votes are made by the real acts
    (`seed-members.mjs`), and what each test expects is read back from what the owners answer. What it reads, what it draws, and what
-   each act sends. The team's key and its account are `teamai`'s (teamai.test.mjs). */
+   each act sends. The team's account is `aiproviders`' (screens-ai; R47, R95: `teamai` is retired). */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { acts, all, ancestor, day, has, lacks, open, panelOf, rowOf, said, squash, textOf, SCREENS } from "./kit.mjs";
@@ -32,12 +32,11 @@ test("R1 the reads: the roster for every member; the recovery step and the signi
   const all0 = a.p.requests.map((r) => [r.op, r.query]);
   const reads = all0.slice(all0.findIndex((r) => r[0] === "memberlist")).slice(0, 6);
   assert.deepEqual(reads, [["memberlist", {}], ["expertiselist", { memberId: "ana" }], ["adminrecoverystep", {}], ["signerlist", {}], ["adminarith", {}], ["adminremovalsopen", {}]]);
-  // the team's key and its use are `teamai`'s reads (R47): whatever it reads beyond the roster's own and the frame's is not read here
+  // the team's account is not read here (R47): the screen asks nothing beyond its own declared reads and the frame's
   const admin = await t.founder.read("whoami"), member = await t.dev.read("whoami");
   const mine = Object.values(SCREENS.find((s) => s.id === "members").reads({ me: admin, subject: "ana" })).map((r) => r.op);
-  const teams = Object.values(SCREENS.find((s) => s.id === "teamai").reads({ me: admin })).map((r) => r.op).filter((op) => !mine.includes(op) && !SHELL_OPS.includes(op));
-  assert.ok(teams.length >= 5, "the team's account reads");
-  for (const op of teams) assert.ok(!a.p.requests.some((r) => r.op === op), `${op} is teamai's (R47)`);
+  const own = a.p.requests.map((r) => r.op).slice(a.p.requests.findIndex((r) => r.op === "memberlist"));
+  assert.deepEqual(own.filter((op) => !mine.includes(op) && !SHELL_OPS.includes(op)), [], "nothing beyond the screen's own reads");
   const m = await open("members", { world: t.w, as: t.dev });
   const mo = m.p.requests.map((r) => r.op);
   assert.deepEqual(mo.filter((op) => !SHELL_OPS.includes(op)), ["memberlist"]);
