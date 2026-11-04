@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-matter","verdict":"not affected","evidence":"build/modules.json:194 lists no paths, so no file of this module imports wizard-scripts or reads ADMIN_ACTS","at":"2026-11-04T14:19:08.692Z","key":"wizard-scripts:253","worker":"a6bc0a4b66736193c","cost":"0.66"}

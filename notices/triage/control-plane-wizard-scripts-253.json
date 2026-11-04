@@ -1,0 +1,1 @@
+{"row":"triage","user":"control-plane","verdict":"not affected","evidence":"bio-plane/src/control-plane/draft.mjs:10 imports only checkDraft (wizard-scripts/writing-help.mjs:119), which judges a draft's sentences and never reads ADMIN_ACTS","at":"2026-11-04T14:19:08.692Z","key":"wizard-scripts:253","worker":"a801701ca04ea5694","cost":"0.77"}

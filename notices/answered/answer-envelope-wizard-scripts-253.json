@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:167 imports wizard-scripts/checks.mjs as a check family (registered at families.mjs:279); checks.mjs imports only setup-words, not admin.mjs or ADMIN_ACTS","at":"2026-11-04T14:19:08.692Z","key":"wizard-scripts:253","worker":"a801701ca04ea5694","cost":"0.77"}

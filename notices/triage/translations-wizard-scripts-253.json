@@ -1,0 +1,1 @@
+{"row":"triage","user":"translations","verdict":"not affected","evidence":"bio-plane/src/translations/index.mjs:20 imports only WIZARD_SCRIPTS_CHECKS, not ADMIN_ACTS; its admin checks (:245, :269) are its own membership checks","at":"2026-11-04T14:19:08.692Z","key":"wizard-scripts:253","worker":"afec3b97c6bfaf132","cost":"0.73"}
