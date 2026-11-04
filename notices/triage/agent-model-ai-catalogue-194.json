@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-model","verdict":"not affected","evidence":"build/modules.json:101 lists ai-catalogue in agent-model's uses, but no file under agent-model/ imports ai-catalogue, aiCatalogueOf or any new seed name","at":"2026-11-04T14:32:09.093Z","key":"ai-catalogue:194","worker":"a302f862aaed76b88","cost":"0.86"}
