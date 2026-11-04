@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-specs-late","verdict":"not affected","evidence":"build/modules.json:170 lists op-specs-late with paths [] and no file imports answers, so nothing of it reads the changed useCheck arguments","at":"2026-11-04T10:50:46.743Z","key":"answers:197","worker":"a1c9859178cbcc214","cost":"0.2"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"case-checker","by":"triage","evidence":"bio-plane/src/case-checker/account.mjs:29 imports checkSentences, VERDICT_WORDS and CAUSE_MARKERS from answers/sentences.mjs, which PR 197 did not change","at":"2026-11-04T10:50:46.743Z","key":"answers:197","worker":"a1c9859178cbcc214","cost":"0.2"}

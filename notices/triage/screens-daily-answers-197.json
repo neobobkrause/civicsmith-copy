@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-daily","verdict":"not affected","evidence":"bio-plane/src/screens-daily/index.mjs:14 imports only its own ./answers.mjs, no file imports the answers provider (modules file build/modules.json:187 lists it as a use only)","at":"2026-11-04T10:50:46.743Z","key":"answers:197","worker":"a72742a659e2aedf7","cost":"0.2"}

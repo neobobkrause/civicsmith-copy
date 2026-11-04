@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-door","verdict":"affected","evidence":"bio-plane/src/store-door/dispatch.mjs:361 uses answers' ownerOf, which now returns account.owner when ai-use-spelled, and :346 and :486 call askAccount whose limit check now names account and entry","at":"2026-11-04T10:50:46.743Z","key":"answers:197","worker":"a72742a659e2aedf7","cost":"0.2"}
