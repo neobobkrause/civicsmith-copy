@@ -1,0 +1,59 @@
+{
+  "id": "reading-pipeline",
+  "title": "reading-pipeline: answer its provider notice ai-accounts:124, consolidate its requirements file under the cap, and meet any unmet mark",
+  "layer": 4,
+  "paths": [
+    "bio-plane/src/reading-pipeline/",
+    "build/requirements/reading-pipeline.md",
+    "docs/requirements-notes/reading-pipeline.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/reading-pipeline/",
+    "bio-plane/test/d606-perpage-ocr.test.mjs",
+    "bio-plane/test/tier2-wire.test.mjs",
+    "bio-plane/test/tier-pagewise.probe.mjs",
+    "bio-plane/test/system/pdf-worker-binding.test.mjs",
+    "bio-plane/test/fixtures/d460/",
+    "bio-plane/test/fixtures/cpdf20/tier2-recorded.json"
+  ],
+  "requirements": "build/requirements/reading-pipeline.md",
+  "uses": [
+    "jurisdictions",
+    "test-support",
+    "pdf-reader",
+    "format-registry",
+    "text-chain",
+    "docprofile",
+    "pdf-worker",
+    "ocr-worker",
+    "capture-sources",
+    "acquisition",
+    "membership",
+    "doctypes",
+    "court-doctypes",
+    "record-core",
+    "ai-accounts",
+    "setup-words",
+    "runtime-limits",
+    "ooxml"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/reading-pipeline.md",
+    "build/requirements/ai-accounts.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "First, consolidate build/requirements/reading-pipeline.md under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/reading-pipeline.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks is unchanged by the move. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal. Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/reading-pipeline.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "OPEN"
+  }
+}
