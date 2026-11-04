@@ -7,7 +7,7 @@
  * run-rules' rows, read there by key. Each row's `where` names its one site in `index.mjs`. Tested in
  * `test/m/ai-use/`. */
 
-import { word } from '../setup-words/index.mjs';
+import { word, localize } from '../setup-words/index.mjs';
 
 const at = (fn, region) => `src/ai-use/index.mjs ${fn} > ${region}`;
 
@@ -79,6 +79,15 @@ export const AI_USE_WORDS = Object.freeze({
   'ai.queue.exploreask': word('ai.queue.exploreask', { scope: '{scope}', what: '{what}', account: '{account}' }),
 });
 
+/* R13 (T53): the sentences T53 adds, each written once at its use (K3943) and extracted into the word table by the
+   build step, where the design stream reviews it (`words-unreviewed.json`); the table wins once it holds the key. */
+export const AI_USE_NEW_WORDS = Object.freeze({
+  'ai.refused.thresholdinvalid': localize('ai.refused.thresholdinvalid', "That alert can't be set: {field}. An alert is a percent of a limit you have set, or an amount in dollars, tokens or calls.", { field: '{field}' }),
+  'ai.refused.notapayingaccount': localize('ai.refused.notapayingaccount', "A member's own AI account is theirs alone: its use is shown only to them."),
+  'ai.alert.threshold': localize('ai.alert.threshold', "{whose} account has used {level} of its {period} amount for {use}.", { whose: '{whose}', level: '{level}', period: '{period}', use: '{use}' }),
+  'ai.use.notmeasurable': localize('ai.use.notmeasurable', "Not measurable in money: this plan reports no cost and your team's Civicsmith has no price for it. Tokens and calls are shown instead."),
+});
+
 /* R13: the key each refusal and each fill reads. `AI_LIMIT_REACHED` by its scope (a use's own: `ai.refused.limit`), or
    `ai.refused.limit.unjudged` when R3 cannot judge it; `{whose}` by the account's kind; `{period}`, `{when}` by the
    limit's period; `{month}` by the next period's month (0 for January); `{field}` by the field R2 refuses. */
@@ -145,5 +154,21 @@ export const AI_USE_CHECKS = Object.freeze({
     check: 'C-143.6',
     where: at('#askFault', 'is-explore-ask-invalid'),
     translation: AI_USE_WORDS['ai.refused.exploreaskinvalid'],
+  },
+  /* R23 (T53; BR24): an alert threshold as set is not one: its kind, its level, or a percent with no matching limit, named.
+     The next free number of C-143 at this job's START, awaiting promotion's stamp. */
+  AI_THRESHOLD_INVALID: {
+    check: 'C-143.7',
+    where: at('#thresholdInvalid', 'is-ai-threshold-invalid'),
+    translation: AI_USE_NEW_WORDS['ai.refused.thresholdinvalid'],
+    word: 'ai.refused.thresholdinvalid',
+  },
+  /* R27 (T53; K5459): the use by member is asked of a member's own account, which is never a paying account read by
+     member. C-143.8, awaiting promotion's stamp. */
+  NOT_A_PAYING_ACCOUNT: {
+    check: 'C-143.8',
+    where: at('accountUseByMember', 'is-not-a-paying-account'),
+    translation: AI_USE_NEW_WORDS['ai.refused.notapayingaccount'],
+    word: 'ai.refused.notapayingaccount',
   },
 });

@@ -78,7 +78,7 @@ test("R3 (T43) a limit that cannot be judged (the counter unreadable, the use no
 
 test("R13 (T43) every fill is read by key: {use} from ai.use.<use>.inline (transcribe's included), {period} from ai.period.*, {when} from ai.when.day or ai.when.month with the next month from date.month.* for every month; a different period reads a different fill (negative control)", async () => {
   const w = await standard();
-  assert.equal(w.a.accountUsesSet({ owner: "member:ann", switch: "explore", on: "yes", by: "ann" }).ok, true);
+  assert.equal(w.explore(w.acct.ann, "yes", "ann").ok, true);
   const sentence = (use, period, start) => {
     const next = MONTHS[Number(start.slice(5, 7)) % 12];
     const when = period === "day" ? WORDS["ai.when.day"] : WORDS["ai.when.month"].replace("{month}", WORDS[`date.month.${next}`]);
@@ -88,7 +88,7 @@ test("R13 (T43) every fill is read by key: {use} from ai.use.<use>.inline (trans
   for (const use of NAMED_USES) {
     w.u.aiLimitSet({ owner: "member:ann", scope: use, unit: "calls", period: "day", amount: 1, by: "ann" });
     w.count("member:ann", "ann", use);
-    const r = w.u.useCheck({ owner: "member:ann", member: "ann", use, at: AT });
+    const r = w.u.useCheck({ owner: "member:ann", member: "ann", use, at: AT, account_id: w.acct.ann });
     assert.deepEqual([r.scope, r.word], [use, "ai.refused.limit"], use);
     assert.equal(r.translation, sentence(use, "day", "2026-10-09"), use);
     w.u.aiLimitSet({ owner: "member:ann", scope: use, unit: "calls", period: "day", amount: null, by: "ann" });
