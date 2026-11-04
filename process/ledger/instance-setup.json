@@ -1,0 +1,67 @@
+{
+  "id": "instance-setup",
+  "title": "instance-setup: consolidate its requirements under the cap, then answer its provider notices",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/setup.mjs",
+    "bio-plane/src/setup-fleet.mjs",
+    "bio-plane/src/livefire.mjs",
+    "build/requirements/instance-setup.md",
+    "docs/requirements-notes/instance-setup.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/instance-setup/"
+  ],
+  "requirements": "build/requirements/instance-setup.md",
+  "uses": [
+    "jurisdictions",
+    "runtime-limits",
+    "legistar-reader",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "host-governor",
+    "provenance",
+    "acquisition",
+    "capture",
+    "extraction",
+    "entities",
+    "lines",
+    "scheduler",
+    "wizard-scripts",
+    "queue-producers",
+    "record-grammar",
+    "action-grammar",
+    "public-read",
+    "ai-runs",
+    "ai-accounts",
+    "signatures",
+    "civil-time",
+    "setup-words",
+    "translations",
+    "test-support",
+    "ai-use",
+    "mail-door",
+    "local-facts"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/instance-setup.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "First, consolidate build/requirements/instance-setup.md (103340 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/instance-setup.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/instance-setup.md is unchanged by the move (compare against the ids at the start commit). Then do the provider-notice work this START lists: for each notice, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal (new module ids, build/modules.json rows, build/layers.md). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T03:32:00Z"
+  }
+}

@@ -40,8 +40,10 @@ test("R62, R69: registered once at load through connection-grammar.registerOwner
   const held = defaultRegistry.owners().find((o) => o.owner === MENTIONED_OWNER);
   const mentionedWord = localize("connections.mentioned.kind_word", "mentioned together");
   const stepWord = localize("connections.stepsources.kind_word", "stated in a source");
+  const namedWord = localize("connections.namedin.kind_word", "named in");
   assert.deepEqual(held, { owner: "connections", kinds: [{ kind: "mentioned_together", word: mentionedWord, class: "derived" },
-                                                         { kind: "step_source", word: stepWord, class: "evidentiary" }] });
+                                                         { kind: "step_source", word: stepWord, class: "evidentiary" },
+                                                         { kind: "named_in", word: namedWord, class: "evidentiary" }] });
   assert.deepEqual(defaultRegistry.kindOf("step_source"), { owner: "connections", word: stepWord, class: "evidentiary" });
   assert.deepEqual(defaultRegistry.kindOf(MENTIONED_KIND), { owner: "connections", word: mentionedWord, class: "derived" });
   assert.equal(defaultRegistry.registerOwner({ owner: "connections", kinds: [...MENTIONED_KINDS], neighbours: registeredNeighbours }).refused,
@@ -147,7 +149,10 @@ test("R63: sight — a hidden document is neither an item nor counted; a hidden 
   assert.deepEqual(ask(w, { node: "INFO-2026-0999-none", viewer: V("bob") }), { items: [] });
   assert.equal(ask(w, { node: H, viewer: MACHINE }).items.length, 3, "A, B and C through E");
   assert.deepEqual(ask(w, { node: A, viewer: V("bob"), kinds: ["took_part"] }), { items: [] });
-  assert.deepEqual(ask(w, { node: A, viewer: V("bob"), kinds: undefined }), bob, "no kinds asked is every kind");
+  const every = ask(w, { node: A, viewer: V("bob"), kinds: undefined });
+  assert.deepEqual(every.items.filter((i) => i.kind === MENTIONED_KIND), bob.items, "no kinds asked is every kind");
+  assert.deepEqual(every.items.filter((i) => i.kind !== MENTIONED_KIND).map((i) => i.kind), ["named_in", "named_in"],
+                   "every kind (R74): A's two entities beside its co-mentions");
   assert.deepEqual(ask(w, { node: A, viewer: V("bob"), scope: "INQ-2026-0001-x", at: "1900-01-01" }), bob);
   for (const viewer of [undefined, null, ""])
     assert.equal(ask(w, { node: A, viewer }).refused, "VIEWER_MISSING");

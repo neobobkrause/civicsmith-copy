@@ -6,6 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, V, PROFILE, WHY, sha, attributed } from "./fixture.mjs";
 import { combine } from "../../../../jurisdictions/index.mjs";
+import { FOREST, forestCopy } from "../../../../jurisdictions/test/fixtures/forest.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
 const prep = (x, action, over = {}) => x.f.filingPrepare({ action, preparer: V("bo"), viewer: V("bo"), ...over });
@@ -170,4 +171,40 @@ test("notice jurisdictions:40 a determination whose actor is a federal FOIA offi
   const E = x.determine({ standards: compliant, act: { ...x.act, actor: { role: "No Such FOIA Office", body: office.body } } });
   const o = x.f.availableActions({ determination: E, viewer: V("olive") }).determinations[0].office;
   assert.deepEqual([o.in_profile, "level" in o, o.says], [false, false, word("filings.says.office_active_profile_lists")]);
+});
+
+/* ---------------------------------------------------------------- notice action-clocks:60 (R28 there) */
+
+/* jurisdictions' published test forest (its R118), combined by its real code: the chain and the second branch, the two
+   city-like layers' rules both named `records_response`, so two layers give one rule for a records request. */
+const RULE = "records_response";
+const CITY_FA = "forest-city-a", CITY_FB = "forest-city-b";
+const TWO = ["forest-federal", "forest-state", "forest-county-a", CITY_FA, "forest-county-b", CITY_FB];
+function twoCities() {
+  const ls = forestCopy(FOREST.all).filter((l) => TWO.includes(l.id));
+  for (const l of ls) if (l.id === CITY_FA || l.id === CITY_FB) { l.deadlines[0].rule = RULE; l.records_laws[0].response = RULE; }
+  return TWO.map((id) => ls.find((l) => l.id === id));
+}
+
+test("notice action-clocks:60 R7 R71 two layers each giving the rule records_response for a records request: recording the sending offers each layer's clock entry apart, named by its layer and keyed <layer id>:<rule>@<proposer>, never NAME_AMBIGUOUS", async () => {
+  const profiles = twoCities();
+  const view = combine(profiles).view;
+  assert.deepEqual(view.deadlines.filter((r) => r.rule === RULE).map((r) => r.layer ?? r.profile).sort(), [CITY_FA, CITY_FB],
+                   "two layers give the rule");
+  const x = world({ profiles });
+  x.record.setSetting("jurisdiction_profiles", TWO, V("olive"));
+  const A = x.action({ kind: "records_request", risk_tier: 1, state: "planned", law: profiles[3].records_laws[0].name });
+  const d = prep(x, A, { text: "To the records office: the minutes, please." });
+  assert.equal(d.ok, true, JSON.stringify(d).slice(0, 300));
+  assert.equal((await approve(x, d.id)).ok, true);
+  const s = x.f.filingRecordSent({ filing: d.id, at: "2026-09-29", account: "emailed", author: V("bo"), viewer: V("bo") });
+  assert.equal(s.ok, true, JSON.stringify(s).slice(0, 300));
+  const rr = s.proposed.clocks.filter((c) => c.rule === RULE);
+  assert.deepEqual(rr.map((c) => c.layer).sort(), [CITY_FA, CITY_FB], "each offer names its rule's layer");
+  for (const c of rr) {
+    assert.equal(c.offered.ok, true, `${c.layer}: ${JSON.stringify(c.offered).slice(0, 300)}`);
+    assert.deepEqual([c.offered.proposal.rule, c.offered.proposal.layer, c.offered.proposal.key],
+                     [RULE, c.layer, `${c.layer}:${RULE}@${V("bo")}`]);
+  }
+  assert.equal(x.read(A).clock.some((e) => e.text === RULE), false, "neither offer is on the clock");
 });
