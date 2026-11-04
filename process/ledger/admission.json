@@ -36,8 +36,7 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: op-declarations:95 (index.mjs:152 BODY_ONLY_FIELDS still names groupkeyset). For each, decide from your own requirements what this module must do (the T53 ops that replace the retired ones are in ai-accounts' requirements and op-declarations), adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-04T17:36:08Z",
-    "reason": "reopened: op-declarations PR 289 (security, BOB 4 Nov) puts the T53 credential acts (aiaccountadd, aiownadd, aiaccountremove, aiaccountswitch, aikeyenter, aikeyseal, aikeycloudflare) in REAUTH_ACTS. bio-plane/test/m/admission/doors.test.mjs R19 (line 157) then fails: it expects NOT_AN_ADMIN for every account op in REAUTH_ACTS asked by a non-admin, but by admission R29 aiaccountadd/aiaccountremove/aiaccountswitch are not administrators' own acts, so admission rightly answers REAUTH_DUE. Admission's code is right: narrow R19's test condition to administrators' own acts (as R29 defines them), and add a case that a non-admin asking aiaccountadd without a fresh password gets REAUTH_DUE. No code change in src/admission unless your requirements demand it. Do not consolidate (deferred to after the first release)."
+    "state": "COMPLETE",
+    "at": "2026-11-04T17:47:30Z"
   }
 }
