@@ -1,0 +1,1 @@
+{"row":"triage","user":"plane","verdict":"not affected","evidence":"build/modules.json:196 lists plane's paths and none of them imports admission; bio-plane/src/plane/door.mjs:26 only mentions namespace names control-plane re-exports, unchanged","at":"2026-11-04T13:04:43.371Z","key":"admission:171","worker":"a9339b33e4d2da11f","cost":"0.35"}

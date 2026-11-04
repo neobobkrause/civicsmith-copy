@@ -1,0 +1,1 @@
+{"row":"triage","user":"signin-door","verdict":"not affected","evidence":"build/modules.json:175 lists bio-plane/src/signin-door/ and no file there imports admission; bio-plane/src/signin-door/index.mjs:9 only names admission in prose and never uses queryGate or BODY_ONLY_FIELDS","at":"2026-11-04T13:04:43.371Z","key":"admission:171","worker":"a9339b33e4d2da11f","cost":"0.35"}

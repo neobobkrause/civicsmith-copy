@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-request","verdict":"not affected","evidence":"bio-plane/src/store-request/index.mjs:14 imports only projectCreationGate and callerViewer from admission/index.mjs, neither of which reads BODY_ONLY_FIELDS","at":"2026-11-04T13:04:43.371Z","key":"admission:171","worker":"a9339b33e4d2da11f","cost":"0.35"}
