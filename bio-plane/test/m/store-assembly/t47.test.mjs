@@ -180,17 +180,17 @@ test("R37 (T47; K3143; signin-door R2, R4, R5): signin-door's store-internal map
   assert.deepEqual(keys.slice(at, at + own.length), own, "directly after credentials' map");
   for (const op of own) assert.equal(Object.hasOwn(OPS, op), false, `${op} has no op spec: never served to a caller`);
   const via = async (path, body = {}) => JSON.parse(await (await x.fetch(`/${path}`, { method: "POST", body: JSON.stringify(body) })).text());
-  const due = await via("signindisclosuredue?by=ann");
+  const due = await via("signindisclosuredue?by=member:ann");
   assert.equal(due.result.reason, "DISCLOSURE_DUE", JSON.stringify(due));
-  assert.equal(instanceSetupOf(x.ctx).disclosureShown({ member: "ann", version: ASSISTANT_DISCLOSURE.version, by: "ann" }).ok, true);
-  assert.deepEqual((await via("signindisclosuredue?by=ann")).result, { ok: true });
+  assert.equal(instanceSetupOf(x.ctx).disclosureShown({ member: "member:ann", version: ASSISTANT_DISCLOSURE.version, by: "member:ann" }).ok, true);
+  assert.deepEqual((await via("signindisclosuredue?by=member:ann")).result, { ok: true });
   const TOKEN = "sk-ant-oat01-SENTINEL-r49-held-token";
-  const held = await via("signintokenhold?by=ann", { token: TOKEN });
+  const held = await via("signintokenhold?by=member:ann", { token: TOKEN });
   assert.equal(held.result.ok, true, JSON.stringify(held));
   assert.equal(JSON.stringify(held).includes(TOKEN), false, "the token is never answered");
   assert.equal(aiAccountsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).subscription.held, true);
   /* signin-door R4 (fixed by its notice ai-accounts:124): a refused token is dropped through ai-accounts' issuedTokenRefused */
-  assert.equal((await via("signintokenrefused?by=ann")).result.dropped, true);
+  assert.equal((await via("signintokenrefused?by=member:ann")).result.dropped, true);
   assert.equal(aiAccountsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" }).subscription.held, false);
   /* negative control */
   assert.equal(keys.includes("signinzz"), false);
