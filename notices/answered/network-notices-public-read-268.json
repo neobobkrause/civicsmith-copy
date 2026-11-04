@@ -1,0 +1,1 @@
+{"row":"answered","user":"network-notices","by":"triage","evidence":"bio-plane/src/network-notices/index.mjs:944 uses only publicReadOf(host).registerPublicReads(...) (imported at :44); never calls publishedCase, subjectChangedLine, SUBJECT_CHANGED_KEYS or UNGRADED_HEAD_KEY.","at":"2026-11-04T18:24:21.959Z","key":"public-read:268","worker":"a53a1dd0b89c34c34","cost":"0.10"}
