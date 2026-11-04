@@ -20,7 +20,7 @@ export const STUB = join(HERE, "stubfetch.mjs");
 
 /* bundler's scripts (its `paths`), and the files of other modules they read. */
 const OWN = ["fleet-bundle.mjs", "provenance.mjs", "build-plane.mjs", "deploy.mjs", "derive-bindings.mjs",
-  "resolve-version.mjs", "jsonc.mjs", "bundles.mjs", "deploy-fleet.mjs", "release-assemble.mjs", "release-advisories.mjs", "p3dev.mjs"];
+  "resolve-version.mjs", "jsonc.mjs", "bundles.mjs", "deploy-fleet.mjs", "release-assemble.mjs", "release-advisories.mjs", "p3dev.mjs", "release-gather.mjs"];
 
 export const hex = (b) => createHash("sha256").update(b).digest("hex");
 export const VERSION = "1.2.3";

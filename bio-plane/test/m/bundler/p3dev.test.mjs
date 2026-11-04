@@ -58,7 +58,7 @@ test("p3dev: the plane of p3dev-l1 binds its own buckets, its slugged members, S
   assert.deepEqual(b.filter((x) => !["plain_text", "r2_bucket", "service"].includes(x.type)).map((x) => `${x.type} ${x.name}`), ["browser BROWSER"]);
 });
 
-test("p3dev: each forbidden name in CLAUDE.md's list is refused by name in every place a plan can carry it", () => {
+test("R45 p3dev: each forbidden name in CLAUDE.md's list is refused by name in every place a plan can carry it", () => {
   const base = memberPlanOf("agent-worker").plan;
   assert.deepEqual(p3devFindings(base), []);
   for (const n of FORBIDDEN_WORKERS) {
@@ -101,7 +101,7 @@ const fleet = (root, copy, flags, stub) => run(root, ".", ["bio-plane/scripts/de
 const plane = (root, copy, flags, stub) => run(root, "bio-plane", ["scripts/deploy.mjs", copy, VERSION, ASSET, "--test-instance", ...flags], { env: env(copy), stub });
 const refusedBy = (r, code) => { assert.notEqual(r.status, 0, r.stdout); assert.match(r.stderr, new RegExp(`REFUSED \\[${code}\\]`), r.stderr); };
 
-test("p3dev: a marked copy that does not begin with p3dev- is refused NOT_A_P3DEV_NAME by both scripts before any request", async () => {
+test("R45 p3dev: a marked copy that does not begin with p3dev- is refused NOT_A_P3DEV_NAME by both scripts before any request", async () => {
   const root = await repo();
   try {
     for (const r of [fleet(root, "biosmoke8", ["--dry-run"], {}), plane(root, "biosmoke8", ["--dry-run"], {})]) {
@@ -170,7 +170,7 @@ test("p3dev: a fresh copy's plane is installed first with STORE, its migration a
   } finally { rm(root); }
 });
 
-test("p3dev: a plane script that already holds a binding to a fixed name, which the upload would keep, is refused before any write", async () => {
+test("R45 p3dev: a plane script that already holds a binding to a fixed name, which the upload would keep, is refused before any write", async () => {
   const root = await repo();
   try {
     const stub = { subdomain: "sub", put: "accept", scripts: { [`alpha-worker-${SLUG}`]: { settings: {} },
