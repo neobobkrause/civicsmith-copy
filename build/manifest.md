@@ -42,7 +42,7 @@ Committed files built from several modules' source. No job edits one by hand or 
 | --- | --- | --- | --- |
 | `bio-plane/src/member-roster/order.mjs` | member-roster (from `build/modules.json`; K3633, K3972, K3979) | `node bio-plane/src/member-roster/order-build.mjs` | `node bio-plane/src/member-roster/order-build.mjs --check` |
 | `bio-plane/src/setup-words/rows.mjs`, `bio-plane/src/setup-words/words-unreviewed.json` | setup-words (from `words.json` and every `t(id, en)` call; K3366, K3932) | `node bio-plane/src/setup-words/build.mjs` | `node bio-plane/src/setup-words/build.mjs --check` |
-| `bio-plane/src/case-checker/program.mjs` | case-checker (through `bundler`; K1315) | `node bio-plane/src/case-checker/build-program.mjs` | `node --test bio-plane/test/m/case-checker/program.test.mjs` |
+| `bio-plane/src/case-checker/program.mjs` (not committed since 4 Nov: over `max_file_bytes`; built where needed by process/config.json's generated row, the deploy and the release assemble, before the bundles; BOB) | case-checker (through `bundler`; K1315) | `node bio-plane/src/case-checker/build-program.mjs` | `node --test bio-plane/test/m/case-checker/program.test.mjs` |
 | `court-citations/court-data.mjs` | court-citations (vendored packages; K1518) | `node court-citations/build.mjs` | `node court-citations/build.mjs --check` |
 | `bio-plane/src/wizard-scripts/screen-registry.mjs`, `bio-plane/src/wizard-scripts/front-doors.mjs`, `bio-plane/src/wizard-scripts/civicsmith-library.mjs` | wizard-scripts (the design registry; K3771) | `node bio-plane/src/wizard-scripts/build-data.mjs` | `node bio-plane/src/wizard-scripts/build-data.mjs --check` |
 | `site/src/pages.mjs` | site (K3372) | `node site/build.mjs` | `node site/build.mjs --check` |
