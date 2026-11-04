@@ -1,0 +1,1 @@
+{"row":"triage","user":"signin-door","verdict":"not affected","evidence":"bio-plane/src/signin-door/index.mjs:32 imports only storeSilent; its other envelope reference is the DISPATCH_CHECKS C-69.7 row (:287), with no mail-door code","at":"2026-11-04T13:12:09.786Z","key":"answer-envelope:212","worker":"a4761bc3bb4b2ccaf","cost":"0.25"}

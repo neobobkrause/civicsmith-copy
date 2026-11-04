@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-door","by":"triage","evidence":"bio-plane/src/store-door/dispatch.mjs:28 imports only DISPATCH_CHECKS and reads its STORE_INTERNAL_ERROR and PURGE_HOLD_IN_PLACE rows (:251, :275), never CHECK_FAMILY_FILES or C-157","at":"2026-11-04T13:12:09.786Z","key":"answer-envelope:212","worker":"a4761bc3bb4b2ccaf","cost":"0.25"}

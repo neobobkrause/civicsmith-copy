@@ -1,0 +1,1 @@
+{"row":"answered","user":"plane","by":"triage","evidence":"bio-plane/src/plane/door.mjs:27 imports only json/doAnswer/storeSilent/storeRefusal/STORE_SILENT_*/requiredArgument, as plane/index.mjs:9 does; neither uses CHECK_FAMILIES or any mail-door/C-157 code","at":"2026-11-04T13:12:09.786Z","key":"answer-envelope:212","worker":"a4761bc3bb4b2ccaf","cost":"0.25"}
