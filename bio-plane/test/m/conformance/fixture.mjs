@@ -154,9 +154,10 @@ export function world({ group = "test-group" } = {}) {
   k.migrate();
   k.entities.migrate();
   k.connections.migrate();
-  /* strength's factory does not reach inquiry itself (reported, CONFORMANCE #1): it is given the reads it walks. */
+  /* strength's factory does not reach inquiry itself (reported, CONFORMANCE #1): it is given the reads it walks, each with
+     every argument strength passes (the content ids its R46 grades a typed passage by, strength PR 176). */
   const strength = strengthOf(host, { record, membership, now,
-    inquiry: { basisFor: (id, o) => k.basisFor(id, o), earned: (e, t) => k.earned(e, t), legCapped,
+    inquiry: { basisFor: (id, o) => k.basisFor(id, o), earned: (e, t, c) => k.earned(e, t, c), legCapped,
                subjectEntityOf: (id) => k.subjectEntityOf(id) } });
   /* the registry and the world's events, the real modules on this host (layer 5); the view gives events its zone */
   const entities = k.entities;

@@ -34,15 +34,14 @@ export const writingHelp = (asker, over = {}) => ({
   writinghelp: () => env({ ok: true, text: DRAFT_TEXT, label: { kind: "machine", asked_by: "member:" + asker }, withheld: [], note: "", ...over }),
 });
 
-/** A team whose assistant is reachable by the real acts the shell reads (`assistantstate`, `groupkeystate`): the founder gives the
- *  team's key (the platform's seal secret in `env`, the founder's password asked again, `reauth`) and switches it on. */
+/** A team whose assistant is reachable by the real acts: the founder gives the team's account (the platform's seal secret in `env`, the
+ *  founder's password asked again, `reauth`). T53 (R95): the alpha's group key is retired; the team's account is `aiaccountadd` (`ai-accounts`
+ *  R40, `op-declarations` R24), which the store's world answers CATALOGUE_UNAVAILABLE until it holds a catalogue (store-assembly). */
 export async function assistantTeam() {
   const w = await storeWorld({ env: { ACCOUNT_SEAL_SECRET: "a-long-seal-secret-for-the-notes-test" } });
   const founder = await w.signIn("founder");
   const dev = await w.signIn("dev", { capabilities: ["contribute"] });
   await founder.act("reauth", { body: { password: w.password } });
-  await founder.act("groupkeyset", { body: { key: "sk-ant-api03-the-team-key-0000000000" } });
-  await founder.act("groupkeyswitch", { body: { on: true } });
-  await dev.act("groupkeynoticeseen");
+  await founder.act("aiaccountadd", { body: { owner: "group", provider: "anthropic", plan: "api-team", means: "sealed", secret: "sk-ant-api03-the-team-key-0000000000" } });
   return { w, founder, dev };
 }

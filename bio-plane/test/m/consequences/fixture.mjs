@@ -157,7 +157,7 @@ export function world({ passages = true, group = "test-group", superseded = null
   calculations = calculationsOf(host, { record, membership, content, provenance: prov, money, entities, events: none,
     duties: none, people, now: () => clock.now, clock: () => Date.parse(clock.now) });
   const strength = strengthOf(host, { record, membership,
-    inquiry: { basisFor: (id, o) => inquiry.basisFor(id, o), earned: (e, t) => inquiry.earned(e, t), legCapped,
+    inquiry: { basisFor: (...a) => inquiry.basisFor(...a), earned: (...a) => inquiry.earned(...a), legCapped,
                subjectEntityOf: (id) => inquiry.subjectEntityOf(id) },
     producingGroup: () => group, now: () => clock.now });
 
