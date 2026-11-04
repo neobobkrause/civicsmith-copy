@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-gate","verdict":"not affected","evidence":"build/modules.json:114 lists no paths; no ASK_SCOPE/askAdmits/AI_GRANT_OPS reader in any ai-gate code (would be a gate over answers' checks, none reads the scope)","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

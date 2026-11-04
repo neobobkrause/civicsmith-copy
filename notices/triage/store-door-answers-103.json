@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-door","verdict":"affected","evidence":"bio-plane/src/store-door/dispatch.mjs:320 underGrant logs a grant's read only if askAdmits(op) (imported :22), so askAdmits(\"aicredential\") false keeps it out of the read log","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

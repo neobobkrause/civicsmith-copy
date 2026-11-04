@@ -1,0 +1,1 @@
+{"row":"triage","user":"following","verdict":"not affected","evidence":"bio-plane/src/following/index.mjs:53 imports only answersOf (used :158); no ASK_SCOPE/askAdmits read","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

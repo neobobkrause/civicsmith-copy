@@ -1,0 +1,1 @@
+{"row":"triage","user":"notice-producers","verdict":"not affected","evidence":"bio-plane/src/notice-producers/index.mjs:70 imports only answersOf; no scope read","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

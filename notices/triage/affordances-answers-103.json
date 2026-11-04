@@ -1,0 +1,1 @@
+{"row":"triage","user":"affordances","verdict":"not affected","evidence":"bio-plane/src/affordances/door.mjs:21 imports only ANSWERS_CHECKS from answers (used at door.mjs:64); no ASK_SCOPE/askAdmits/AI_GRANT_OPS read","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

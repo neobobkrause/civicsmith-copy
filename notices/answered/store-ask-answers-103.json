@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-ask","by":"triage","evidence":"build/modules.json:177 lists no paths; its code is bio-plane/src/store-assembly/ask.mjs:19 which imports only answersOf and uses run-rules draftMayRead (:418), never askAdmits/ASK_SCOPE","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:95 imports only answers/checks.mjs; the AI_BEYOND_TASK_SCOPE mentions (checks.mjs:145) are a refusal code, not ASK_SCOPE","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

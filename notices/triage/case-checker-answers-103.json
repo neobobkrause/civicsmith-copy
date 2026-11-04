@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-checker","verdict":"not affected","evidence":"bio-plane/src/case-checker/account.mjs:29 imports only checkSentences/VERDICT_WORDS/CAUSE_MARKERS from answers/sentences.mjs; no scope read","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

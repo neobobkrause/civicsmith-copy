@@ -1,0 +1,1 @@
+{"row":"triage","user":"scheduler","verdict":"not affected","evidence":"bio-plane/src/scheduler/index.mjs:83 imports only answersOf (used :1030); no scope read","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

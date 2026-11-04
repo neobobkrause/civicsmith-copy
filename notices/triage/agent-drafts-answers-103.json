@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-drafts","verdict":"affected","evidence":"agent-worker/src/draft.mjs:277 a draft's onTool reads only ASK_OPS (the mirror of answers' ASK_SCOPE, ops.mjs:65), per action-drafts.mjs:28; module has no paths of its own (build/modules.json:112)","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

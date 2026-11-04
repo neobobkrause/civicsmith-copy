@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-daily","by":"triage","evidence":"bio-plane/src/screens-daily/home-readings.mjs:59 only reads members' grants list from the control plane screen data; no ASK_SCOPE/askAdmits/AI_GRANT_OPS reference in bio-plane/src/screens-daily/","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}

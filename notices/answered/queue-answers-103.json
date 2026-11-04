@@ -1,0 +1,1 @@
+{"row":"answered","user":"queue","by":"triage","evidence":"bio-plane/src/queue/index.mjs:796 and queuestate.mjs use no ASK_SCOPE/askAdmits/AI_GRANT_OPS; no import from answers/ in bio-plane/src/queue/","at":"2026-11-04T05:07:31.497Z","key":"answers:103","worker":"triage-a103-subagent","cost":"0.03"}
