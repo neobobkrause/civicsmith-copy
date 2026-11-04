@@ -336,5 +336,12 @@
     ],
     "out": "build/dev-release",
     "full_history": false
+  },
+  "smoke": {
+    "files": [
+      "bio-plane/test/m/control-plane/t46-app.test.mjs",
+      "bio-plane/test/m/store-assembly/declarations.test.mjs"
+    ],
+    "seconds": 120
   }
 }
