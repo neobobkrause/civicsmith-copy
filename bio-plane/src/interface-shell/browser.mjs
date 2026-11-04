@@ -141,10 +141,14 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     SHARED.set(key, entry);
     return entry.snap.then((x) => x.a);
   }
+  const DECLARED = new Set(D.declared);
   async function send(op, req = {}) {
     const own = typeof req.bearer === "string" && req.bearer !== "";
     /* R46: `unlock` is sent under the locked session's token, from whichever frame */
     const pub = !own && (!S || (!!req.public && op !== "unlock"));
+    /* F1 (walk p3dev-t1, 4 Nov): the page never sends an op `OPS` does not declare, whether the frame or a screen asks it; it is answered here
+       as the door would answer it, and nothing leaves the page (R20: a read that does not answer is not reachable) */
+    if (!DECLARED.has(op)) return { kind: "refused", code: "UNKNOWN_OP", translation: null, fields: {} };
     if (pub && !D.publicOps.includes(op)) return { kind: "refused", code: "NOT_SIGNED_IN", translation: null, fields: {} };
     const qs = new URLSearchParams();
     qs.set("op", op);
@@ -2296,27 +2300,51 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     t.hidden = false;
     TIP = el;
     el.setAttribute("aria-describedby", "cs-tip");
-    if (el.getBoundingClientRect && t.style) {
-      /* R103 (R84; T-10): below what it explains, else above it: the first that covers no other control and stays inside the page;
-         failing that, the first inside the page, else below. Never beside it. */
-      const r = el.getBoundingClientRect();
-      const tw = Number(t.offsetWidth) || 0, th = Number(t.offsetHeight) || 0, vw = Number(win.innerWidth) || 0, vh = Number(win.innerHeight) || 0, gap = 6;
-      const at = [
-        { left: Math.max(8, Math.round(r.left)), top: Math.round(r.bottom + gap) },
-        { left: Math.max(8, Math.round(r.left)), top: Math.round(r.top - gap - th) },
-      ];
-      const inside = (c) => c.left >= 0 && c.top >= 0 && (!vw || c.left + tw <= vw) && (!vh || c.top + th <= vh);
-      const others = [];
-      for (const c of doc.getElementById("cs-root").querySelectorAll(["a[href]", "button", "input", "select", "textarea", "[tabindex]"].join(","))) {
-        if (c === el || (el.contains && (el.contains(c) || c.contains(el))) || typeof c.getBoundingClientRect !== "function") continue;
-        const b = c.getBoundingClientRect();
-        if (b && b.right > b.left && b.bottom > b.top) others.push(b);
-      }
-      const covers = (c) => others.some((b) => c.left < b.right && c.left + tw > b.left && c.top < b.bottom && c.top + th > b.top);
-      const pick = at.find((c) => inside(c) && !covers(c)) || at.find(inside) || at[0];
-      t.style.left = pick.left + "px";
-      t.style.top = pick.top + "px";
+    if (el.getBoundingClientRect && t.style) placeTip(el, t);
+  }
+  /* R103 (R84; T-10), R145, F3 (walk p3dev-t1, 4 Nov): below what it explains, else above it, the first place that covers no control (the one it
+     explains included, and any control holding it, so the rail's next place, a list's next row) and stays inside the page. At each height it is
+     slid along the row, from the explained thing's own edge, to the nearest place clear of every control and inside the page; failing every
+     place, the one inside the page that covers the least, never the explained thing where another place spares it. Never beside it. */
+  function placeTip(el, t) {
+    /* measured where nothing narrows it: a tip measured at the page's right edge shrinks to what is left, and then runs taller (F3) */
+    t.style.left = "0px"; t.style.top = "0px";
+    const r = el.getBoundingClientRect();
+    const tw = Number(t.offsetWidth) || 0, th = Number(t.offsetHeight) || 0, vw = Number(win.innerWidth) || 0, vh = Number(win.innerHeight) || 0, gap = 6, edge = 8;
+    const own = [], others = [];
+    for (const c of doc.getElementById("cs-root").querySelectorAll(["a[href]", "button", "input", "select", "textarea", "summary", "[role=button]", "[tabindex]:not([tabindex='-1'])"].join(","))) {
+      if (typeof c.getBoundingClientRect !== "function" || c === t || (t.contains && t.contains(c)) || (el.contains && el.contains(c) && c !== el)) continue;
+      const b = c.getBoundingClientRect();
+      if (!b || !(b.right > b.left && b.bottom > b.top)) continue;
+      if (vh && (b.bottom < 0 || b.top > vh)) continue;
+      (c === el || (c.contains && c.contains(el)) ? own : others).push(b);
     }
+    own.push(r);
+    const area = (c, list) => list.reduce((n, b) => n + Math.max(0, Math.min(c.left + tw, b.right) - Math.max(c.left, b.left)) * Math.max(0, Math.min(c.top + th, b.bottom) - Math.max(c.top, b.top)), 0);
+    const hi = vw ? Math.max(edge, vw - tw - edge) : Infinity;
+    const clampX = (x) => Math.round(Math.min(hi, Math.max(edge, x)));
+    const xs = [...new Set([r.left, r.right - tw, ...own.map((b) => b.right + gap), ...others.flatMap((b) => [b.right + gap, b.left - gap - tw]), edge, hi].map(clampX))]
+      .sort((a, b) => Math.abs(a - r.left) - Math.abs(b - r.left)).slice(0, 32);
+    /* below it, then above it; and, where the row beneath or above is full, just past the controls there (the nearest first, below before above) */
+    const below = [r.bottom + gap, ...own.concat(others).map((b) => b.bottom + gap).filter((y) => y > r.bottom)].map(Math.round);
+    const above = [r.top - gap - th, ...own.concat(others).map((b) => b.top - gap - th).filter((y) => y < r.top - th)].map(Math.round);
+    const ys = [...new Set([below[0], above[0], ...below.slice(1).concat(above.slice(1)).sort((a, b) => (a > r.bottom ? a - r.bottom : r.top - a - th) - (b > r.bottom ? b - r.bottom : r.top - b - th))])].slice(0, 16);
+    const inside = (c) => c.left >= 0 && c.top >= 0 && (!vw || c.left + tw <= vw) && (!vh || c.top + th <= vh);
+    let pick = null, best = null;
+    for (const top of ys) {
+      for (const left of xs) {
+        const c = { left, top };
+        if (!inside(c)) continue;
+        const mine = area(c, own), theirs = area(c, others);
+        if (!mine && !theirs) { pick = c; break; }
+        const cost = mine * 1e6 + theirs;
+        if (!best || cost < best.cost) best = { c, cost };
+      }
+      if (pick) break;
+    }
+    pick = pick || (best && best.c) || { left: clampX(r.left), top: ys[0] };
+    t.style.left = pick.left + "px";
+    t.style.top = pick.top + "px";
   }
   function closeTip() {
     clearTimeout(openT); clearTimeout(closeT);
@@ -2749,7 +2777,7 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
      it; each is asked again, once, when the screen's first reads have settled, and the frame follows the answer. Kept or not, each is read by the same
      requests as before. */
   const FRAME_KEY = D.storeKey + ":frame";
-  /* what the frame uses of each answer, and the request that reads it (`aipathready` is marked a read, as `OPS` does not yet declare it);
+  /* what the frame uses of each answer, and the request that reads it (`aipathready` is marked a read; while `OPS` does not declare it, `send` sends it not, F1, and the assistant is not reachable);
      `min` answers null for an answer of no use, and is applied to what is read back from the store too, so a stored value is never taken as it is */
   const FRAME_READS = {
     groupidentity: { req: {}, min: (v) => ({ display_name: typeof v.display_name === "string" && v.display_name.trim() ? v.display_name : null }) },
