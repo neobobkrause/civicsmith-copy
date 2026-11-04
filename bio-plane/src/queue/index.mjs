@@ -826,6 +826,10 @@ export class Queue {
    *  their recipient for themselves as a CONDITION is: a member who left is told to the project's owners, and its doors
    *  are the take-ups its options lead with. */
   static QUIETED_FINDINGS = Object.freeze(["member-left-items"]);
+  /** R98 (T53; N1259; notice-producers R30, R31): a register's change and an import's end are told to whom they concern and
+   *  disposed of by that recipient, as R57 gives `watched-changed`: no team decides them. */
+  static REGISTER_NOTICES = Object.freeze(["register-changed-noticed", "register-import-done", "register-import-stopped",
+    "register-import-failed"]);
   /** R52: the FINDINGs a member quiets for themselves when no project home holds them (a personal mute). */
   static MUTED_OUTSIDE_A_PROJECT = Object.freeze(["question-find"]);
 
@@ -921,6 +925,11 @@ export class Queue {
       return { available: false, op: null, scope: null, keyed_on: KEYED_ON, key: null,
                reason: "a_watched_change_is_told_to_you_alone_and_quieted", instead: "queuemute",
                detail: localize("queue.index.something_you_watch_changed_and", "something you watch changed, and you alone are told: no team's list holds it and there is no team for a disposition to speak for. Quiet it for yourself (op=queuemute, naming this item) once you have read it; the watch goes on and a later change is told as a new item.") };
+    /* R98 (T53; notice-producers R30, R31): a register's change or an import's end, disposed of as R57 gives watched-changed. */
+    if (Queue.REGISTER_NOTICES.includes(item.kind))
+      return { available: false, op: null, scope: null, keyed_on: KEYED_ON, key: null,
+               reason: "a_register_notice_is_told_to_you_and_quieted", instead: "queuemute",
+               detail: localize("queue.index.a_register_notice_is_told", "this tells you what happened to a register: a change to one you watch, or an import you began that ended. No team's list holds it and there is no team for a disposition to speak for. Quiet it for yourself (op=queuemute, naming this item) once you have read it; a later change or import is told as a new item.") };
     /* R12 (T40; N812): an explore ask, a limit reached and a suspended project account are facts about an account,
        told to its owners or the member it served; no team decides them. */
     if (Object.prototype.hasOwnProperty.call(Queue.ACCOUNT_DOORS, item.kind)) {
