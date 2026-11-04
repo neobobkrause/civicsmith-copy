@@ -38,7 +38,7 @@ const aiTeam = async (world) => {
 let runs = 0;
 const openRun = async (w, who = w.ann, run = "RUN-" + String(++runs).padStart(16, "c")) => {
   await who.act("groupkeynoticeseen", { body: {} });
-  await who.act("airunopen", { body: { run, contextType: "inquiry", contextId: w.id, skillVersion: "investigative-session@1", principalClaude: `member:${who.member}`, mode: "check" } });
+  await who.act("airunopen", { body: { run, contextType: "inquiry", contextId: w.id, skillVersion: "investigative-session@1", principalAi: `member:${who.member}`, mode: "check" } });
   return run;
 };
 /** a reading of two separately sufficient parts that is suggested, by her real acts: the passages grouped into two parts (`inquiryground`), a reading accepted with both parts affirmed, withdrawn, turned down and put back (`versionrevert`) */

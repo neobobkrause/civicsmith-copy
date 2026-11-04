@@ -22,7 +22,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 // that op once declared (wizard-scripts R13) and is drawn only then (interface-shell R12): until `OPS` holds it, it is left out.
 const REGISTRY = JSON.parse(readFileSync(new URL("./fixtures/registry-43379a1a44.json", import.meta.url), "utf8")).screens
   .map((r) => ({ ...r, acts: r.acts.filter((a) => !String(a.op).startsWith("owed:") || OPS[String(a.op).replace(/^owed:/, "").split(" ")[0]])
-    .map((a) => ({ ...a, op: String(a.op).replace(/^owed:/, "").split(" ")[0] })) }));
+    .map((a) => ({ ...a, op: String(a.op).replace(/^owed:/, "").split(" ")[0] }))
+    // An act the registry still lists whose op the door has retired (T53's `projectkeyset`: op-declarations R41, ai-accounts R35, F2) is not drawn:
+    // OPS no longer holds it, so the shell would refuse the screen (interface-shell checkScreens).
+    .filter((a) => Object.hasOwn(OPS, a.op)) }));
 const byId = Object.fromEntries(SCREENS.map((s) => [s.id, s]));
 const SCREEN_IDS = SCREENS.map((s) => s.id);
 // The acts a screen draws are the registry's for it (the owner's declaration, N1073: read, never listed here), with a named

@@ -48,7 +48,7 @@ const citing = (copy, questionMd) => open("/app/document/" + copy.bundle, { imag
   plane: { backlinks: ok({ ok: true, target: copy.bundle, backlinks: [{ from: Q, from_type: "inquiry", from_title: "Seven days?", rel: "cites" }] }), reading: readingWith() } });
 const tabs = (p) => main(p).querySelectorAll('input[type="radio"][name="document-read-tab"]');
 const tabOf = (p, value) => main(p).querySelector(`input[type="radio"][name="document-read-tab"][value="${value}"]`);
-const writes = (p) => p.requests.filter((r) => r.method === "POST" && r.op !== "subscriptionsignin");
+const writes = (p) => p.requests.filter((r) => r.method === "POST" && r.op !== "subscriptionsignin" && r.op !== "aipathready");
 
 /* ---- R81: the second tab, where a question cites an earlier revision of this copy ---- */
 

@@ -20,7 +20,7 @@
   ],
   "node": "26.10.0",
   "suite_timeout_minutes": 45,
-  "coordinator": "session_01RAN5eoLoqw2E3pPRs8poFv",
+  "coordinator": "session_01RAN5enU4cvkBoxmmSGsudK",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
     {
@@ -73,6 +73,20 @@
         "node",
         "docs/development/ux-substrate/screens/words-reads.src.mjs",
         "."
+      ]
+    },
+    {
+      "paths": [
+        "bio-plane/src/case-checker/program.mjs"
+      ],
+      "regenerate": [
+        "node",
+        "bio-plane/src/case-checker/build-program.mjs"
+      ],
+      "verify": [
+        "node",
+        "--test",
+        "bio-plane/test/m/case-checker/program.test.mjs"
       ]
     },
     {
@@ -195,6 +209,16 @@
         "sh",
         "-c",
         "cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance --dry-run"
+      ],
+      [
+        "sh",
+        "-c",
+        "f=bio-plane/src/journey-check/testpage/deploy.mjs; if [ ! -f \"$f\" ]; then echo \"testpage: $f not in this tree, skipped\"; exit 0; fi; CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node \"$f\" {slug} --dry-run"
+      ],
+      [
+        "sh",
+        "-c",
+        "f=bio-plane/src/ai-catalogue/dev-key.mjs; if [ ! -f \"$f\" ]; then echo \"catalogue dev key: $f not in this tree, skipped\"; exit 0; fi; CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node \"$f\" {slug} --dry-run"
       ]
     ],
     "deploy": [
@@ -277,6 +301,16 @@
         "sh",
         "-c",
         "cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance"
+      ],
+      [
+        "sh",
+        "-c",
+        "f=bio-plane/src/journey-check/testpage/deploy.mjs; if [ ! -f \"$f\" ]; then echo \"testpage: $f not in this tree, skipped\"; exit 0; fi; CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node \"$f\" {slug}"
+      ],
+      [
+        "sh",
+        "-c",
+        "f=bio-plane/src/ai-catalogue/dev-key.mjs; if [ ! -f \"$f\" ]; then echo \"catalogue dev key: $f not in this tree, skipped\"; exit 0; fi; CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node \"$f\" {slug}"
       ]
     ],
     "walk": [
@@ -329,5 +363,26 @@
       "bio-plane/test/m/store-assembly/declarations.test.mjs"
     ],
     "seconds": 120
+  },
+  "review_triggers": {
+    "security_paths": [
+      "bio-plane/src/op-declarations/",
+      "bio-plane/src/wizard-scripts/admin.mjs",
+      "bio-plane/src/admission/",
+      "bio-plane/src/store-request/index.mjs",
+      "bio-plane/src/credentials/index.mjs",
+      "bio-plane/src/ai-accounts/index.mjs",
+      "bio-plane/src/signin-door/index.mjs",
+      "bio-plane/src/answers/scope.mjs",
+      "bio-plane/src/member-roster/index.mjs",
+      "bio-plane/src/op-grades/index.mjs",
+      "bio-plane/src/registers/ops.mjs",
+      "bio-plane/src/capture-sources/credentials.mjs",
+      "agent-worker/src/ops.mjs",
+      "agent-worker/src/signin.mjs",
+      "agent-runner/src/signin.mjs",
+      "agent-runner/src/entry.mjs",
+      "agent-harness/src/subsession.mjs"
+    ]
   }
 }

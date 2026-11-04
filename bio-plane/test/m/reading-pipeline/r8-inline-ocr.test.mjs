@@ -44,6 +44,7 @@ test("R55 R37 (G126j): the owe hook is retired: a hook handed in is never called
   assert.deepEqual(out.reading.ocr_left, { cursor: 24, pages: 6 });
   assert.equal(out.counters.owed, 6);
   assert.deepEqual(owed, [], "nothing here registers owed work");
-  const src = readFileSync(new URL("../../../src/reading-pipeline/index.mjs", import.meta.url), "utf8");
+  /* this module's source and, since BOB's split (PR 274), `reader-contract`'s, which it re-exports */
+  const src = ["../../../src/reading-pipeline/index.mjs", "../../../src/reader-contract/index.mjs"].map((f) => readFileSync(new URL(f, import.meta.url), "utf8")).join("\n");
   assert.doesNotMatch(src, /\bowe\s*\(/, "no call of an owe hook remains");
 });

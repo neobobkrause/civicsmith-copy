@@ -52,7 +52,7 @@ const aiTeam = async (world) => {
 const readNotice = (w) => w.ann.act("groupkeynoticeseen", { body: {} });
 /** a run of the member's own over the question, opened by her real act (`airunopen`: running, as the page's own press opens one, before anything dispatches it) */
 const openRun = async (w, run = "RUN-" + "c".repeat(16)) => {
-  await w.ann.act("airunopen", { body: { run, contextType: "inquiry", contextId: w.id, skillVersion: "investigative-session@1", principalClaude: `member:${w.ann.member}`, mode: "check" } });
+  await w.ann.act("airunopen", { body: { run, contextType: "inquiry", contextId: w.id, skillVersion: "investigative-session@1", principalAi: `member:${w.ann.member}`, mode: "check" } });
   return run;
 };
 /** the question's page, as `who` reads it over the world */

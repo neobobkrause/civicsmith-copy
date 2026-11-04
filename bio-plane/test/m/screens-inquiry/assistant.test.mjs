@@ -7,11 +7,14 @@ import assert from "node:assert/strict";
 import { ok, refusedIn, SESSION } from "../interface-shell/harness.mjs";
 import { airunDispatchRefusal, airunOpenRefusal } from "../ai-runs/fixtures.mjs";
 import { keepAwayState } from "../ai-accounts/fixtures.mjs";
-import { open, plane, button, fill, says, word, day, storeWorld, P, Q, D } from "./fixtures.mjs";
+import { open, plane, button, fill, says, word, day, storeWorld, aiAccounts, P, Q, D } from "./fixtures.mjs";
 
 const UNTESTED = { kind: "untested", part: "check", set: "s", set_version: 1, words: "ai.label.untested" };
 const SESSION_HEADER = "Bearer " + SESSION.t;
 const OLD = "RUN-" + "a".repeat(16);
+
+/* who serves her (`accountsof`, op-declarations PR 95): ai-accounts' real answers, from fixtures.mjs */
+const { ACCOUNTS, accountsOf } = await aiAccounts();
 
 /* R33: the open's allowance rule as `run-rules` states it (a declared bound states a positive whole allowance,
    C-22.16 AI_RUN_BOUND_NO_ALLOWANCE; a planning run declares no search allowance, C-109.6), played by the fake plane */
@@ -30,8 +33,9 @@ function stub({ untested = UNTESTED, dispatch = null, open: opened = null, runs 
     held,
     ops: {
       assistantstate: ok({ on: true }),
-      accountreference: ok({ held: true }),
-      groupkeystate: ok({ held: true, on: true }),
+      /* the shell's reachability read (interface-shell R20, PR 172): a ready path */
+      aipathready: ok({ state: "ready" }),
+      accountsof: accountsOf(),
       aiusage: ok({ ok: true, today: { used: "$0.42", limit: "$2.00" } }),
       agentpack: ok({ ok: true, pack: { version: "civicsmith@3+ab12cd" } }),
       aikeepawaystate: ok(OFF),
@@ -65,19 +69,13 @@ test("R4 the panel says once what it is and never does, and whose account serves
   assert.equal(t.split(word("screen.assistant.says")).length - 1, 1);
   assert.ok(says(panel(p), "screen.assistant.serves") && says(panel(p), "ai.account.own.inline"));
   assert.ok(says(panel(p), "screen.assistant.use", { used: "$0.42", limit: "$2.00" }));
-  const g = await dock(Q, stub(), { accountreference: ok({ held: false }) });
+  const g = await dock(Q, stub(), { accountsof: accountsOf({ own: ACCOUNTS.none }) });
   assert.ok(says(panel(g), "ai.account.group.inline"));
 });
 
 test("R4 a project's own account serves her in its project; a document's run is its project's", async () => {
-  /* the project's own account, by the real acts of its owner (her password again, the project's key set and switched on), as the world answers it to her */
-  const world = await storeWorld({ ai: true });
-  const ann = await world.signIn("ann", { capabilities: ["contribute", "create_projects"] });
-  const project = await world.recipes.project(ann, "Pothole repairs");
-  await ann.act("reauth", { body: { password: ann.password } });
-  await ann.act("projectkeyset", { body: { project, key: "sk-ant-api03-" + "7".repeat(40) } });
-  await ann.act("projectaccountswitch", { body: { project, on: true } });
-  const p = await dock(D, stub(), { projectaccountstate: ok(await ann.read("projectaccountstate", { query: { project } })) });
+  /* the project's own account switched on, as ai-accounts answers its participant (`accountsof` for `project:<id>`) */
+  const p = await dock(D, stub(), { accountsof: accountsOf({ project: ACCOUNTS.project }) });
   assert.ok(says(panel(p), "ai.account.project.inline"));
   const b = button(p, "airunopen", panel(p));
   assert.deepEqual([b.getAttribute("data-ctx-type"), b.getAttribute("data-ctx-id")], ["project", P]);
@@ -91,9 +89,9 @@ test("R6 R13 R33 Work on this opens the run under her session with the bounds it
   assert.deepEqual(dockActs(p), ["airunopen"]);
   await workOn(p);
   const [opened, dispatch] = ["airunopen", "airundispatch"].map((op) => p.byOp(op)[0]);
-  assert.deepEqual(Object.keys(opened.body).sort(), ["bounds", "contextId", "contextType", "mode", "principalClaude", "project", "run", "skillVersion"]);
+  assert.deepEqual(Object.keys(opened.body).sort(), ["bounds", "contextId", "contextType", "mode", "principalAi", "project", "run", "skillVersion"]);
   assert.equal(opened.body.project, P, "R58: a run opened in a project sends that project (the question's)");
-  assert.deepEqual([opened.body.contextType, opened.body.contextId, opened.body.mode, opened.body.principalClaude, opened.body.skillVersion],
+  assert.deepEqual([opened.body.contextType, opened.body.contextId, opened.body.mode, opened.body.principalAi, opened.body.skillVersion],
                    ["inquiry", Q, "check", "member:mai", "civicsmith@3+ab12cd"]);
   /* R33: no zero allowance, so the plane's rule does not refuse it AI_RUN_BOUND_NO_ALLOWANCE */
   assert.equal(openRule(opened.body), null);
@@ -253,7 +251,7 @@ test("R42 where the assistant cannot work, the other reasons by key and whose ac
   assert.ok(says(r, "ai.refused.keptaway", { member: KEPT.set_by, date: day(KEPT.set_at, { year: true }), reason: KEPT.reason }), "kept away");
   assert.ok(says(r, "dock.withheld.AGENT_WORKER_UNBOUND"), "not installed");
   assert.ok(says(r, "question.ai.whose") && says(r, "ai.account.own.inline"), "whose account serves her");
-  const none = await dock(Q, stub(), { accountreference: ok({ held: false }), groupkeystate: ok({ held: true, on: true }), agentpack: refusedIn("PACK_UNDETERMINED") });
+  const none = await dock(Q, stub(), { accountsof: accountsOf({ own: ACCOUNTS.none }), agentpack: refusedIn("PACK_UNDETERMINED") });
   const r2 = panel(none).querySelector('[data-reasons="assistant"]');
   assert.ok(says(panel(none), "screen.assistant.run.notready") && says(r2, "dock.withheld.AGENT_WORKER_UNBOUND"));
 });

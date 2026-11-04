@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { read } from "../../../src/reading-pipeline/index.mjs";
-import { visibleTextOfHtml, visibleTextOfHtmlYielding, HTML_STRETCH } from "../../../src/reading-pipeline/html.mjs";
+import { visibleTextOfHtml, visibleTextOfHtmlYielding, HTML_STRETCH } from "../../../src/reader-contract/html.mjs";
 import { visibleTextOfHtmlOld } from "./html-oracle.mjs";
 import { bucket, evidenceStore, hold, doc } from "./fixture.mjs";
 

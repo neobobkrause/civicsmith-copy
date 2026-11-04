@@ -116,7 +116,7 @@ export async function securityTeam({ tool = true, ...opts } = {}) {
 
 const REASON = "We hold tips from city employees; none of it may go to an AI service.";
 export const TEAMS = {
-  full: () => fullTeam({ verified: true }),
+  full: () => fullTeam({ verified: true, key: true }),   // the team holds its own account: the assistant is reachable (seed-group's `holdKey`, on the store's own catalogue)
   security: () => securityTeam(),
   "security-bare": () => securityTeam({ tool: false }),
   /** the founder alone, the assistant kept away, no key held: the bare roster */

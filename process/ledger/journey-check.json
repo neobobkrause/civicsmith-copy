@@ -1,0 +1,44 @@
+{
+  "id": "journey-check",
+  "title": "journey-check: the walk passes on a development deployment",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/journey-check/",
+    "bio-plane/scripts/p3dev-walk-setup.mjs",
+    "build/requirements/journey-check.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/journey-check/"
+  ],
+  "requirements": "build/requirements/journey-check.md",
+  "uses": [
+    "jurisdictions",
+    "setup-words",
+    "file-safety",
+    "interface-assets",
+    "interface-shell",
+    "screens-entry",
+    "screens-settings",
+    "screens-daily",
+    "installer",
+    "screens-inquiry"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/journey-check.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T21:39:07Z"
+  }
+}
