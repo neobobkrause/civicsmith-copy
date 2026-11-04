@@ -7,7 +7,8 @@
     "build/requirements/reading-pipeline.md",
     "docs/requirements-notes/reading-pipeline.md",
     "bio-plane/src/reader-contract/",
-    "docs/requirements-notes/reader-contract.md"
+    "docs/requirements-notes/reader-contract.md",
+    "build/requirements/reader-contract.md"
   ],
   "tests": [
     "bio-plane/test/m/reading-pipeline/",
@@ -51,12 +52,11 @@
   },
   "reading": [
     "build/requirements/reading-pipeline.md",
-    "build/requirements/reader-contract.md",
     "build/requirements/ai-accounts.md",
     "build/requirements/README.md",
     "build/situations/job.md"
   ],
-  "prior_work": "BOB ruled your split proposal (PR 272): accepted, the new module is reader-contract (layer 4; build/modules.json row added; reading-pipeline now uses reader-contract, and reader-contract must not import reading-pipeline). BOB moved R45-R58 and R60-R67 word for word, ids and marks kept, to build/requirements/reader-contract.md; reading-pipeline.md keeps R1-R44, R59 and R68 (now 58196 bytes). This attempt: (1) move the code that serves the moved requirements (plan, rangeSource, windowCursor, chunkUnits, completenessOf, the readers, interpretUnits/partsOf and their helpers) out of bio-plane/src/reading-pipeline/index.mjs into bio-plane/src/reader-contract/, and their tests (r46-r67, pieces-formats, html, csv-range and like) into bio-plane/test/m/reader-contract/; keep reading-pipeline's public exports unchanged by re-exporting from reader-contract, so no other module changes; behaviour unchanged. (2) Consolidate build/requirements/reading-pipeline.md as before: non-requirement text to docs/requirements-notes/reading-pipeline.md, every R and F line and mark verbatim; R44's text, which sits only in the 'Fix round 6, G41' line, may be restated as an R44 line word for word. Add a test asserting the id and unmet-mark sets of reading-pipeline.md and reader-contract.md together equal those at the start commit. (3) Answer ai-accounts:124 and meet any unmet mark in either file (R68 included), each with a test failing with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "prior_work": "BOB ruled your split proposal (PR 272): accepted; the new module is reader-contract (layer 4; its build/modules.json row is added; reading-pipeline now uses reader-contract, and reader-contract must not import reading-pipeline). This attempt: (1) Move R45-R58 and R60-R67 word for word, ids and marks kept, out of build/requirements/reading-pipeline.md into a new build/requirements/reader-contract.md (title '# reader-contract — requirements', a Status line saying it was split from reading-pipeline by BOB on 4 Nov 2026 and that an id named there without a module is reading-pipeline's, then the section heading 'The reader contract and the readers within the alpha' and the lines); reading-pipeline keeps R1-R44, R59 and R68. (2) Move the code that serves the moved requirements (plan, rangeSource, windowCursor, chunkUnits, completenessOf, the readers, interpretUnits/partsOf and their helpers) out of bio-plane/src/reading-pipeline/index.mjs into bio-plane/src/reader-contract/, and their tests (r46-r67, pieces-formats, html, csv-range and like) into bio-plane/test/m/reader-contract/; keep reading-pipeline's public exports unchanged by re-exporting from reader-contract, so no other module changes; behaviour unchanged. (3) Consolidate build/requirements/reading-pipeline.md under the cap: non-requirement text to docs/requirements-notes/reading-pipeline.md, every R and F line and mark verbatim; R44's text, which sits only in the 'Fix round 6, G41' line, may be restated as an R44 line word for word. Add a test asserting the id and unmet-mark sets of reading-pipeline.md and reader-contract.md together equal reading-pipeline.md's at the start commit. (4) Answer ai-accounts:124 and meet any unmet mark in either file (R68 included), each with a test failing with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
     "state": "OPEN"
   }
