@@ -90,6 +90,7 @@ import { promotionOf, PROMOTION_ROW_CHECKS } from "../promotion/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { inquiryOf } from "../inquiry/index.mjs";
 import { legEarningOf, legCapped } from "../leg-earning/index.mjs";
+import { TYPED_UNCHECKED_GRADE } from "../textchain.mjs";
 import { acceptedWorkOf } from "../accepted-work/index.mjs";
 import { basisVersionsOf, BASIS_VERSION_LEGS_MAX, VERSION_MACHINE } from "../basis-versions/index.mjs";
 import { BASIS_GRADES, TESTIMONY_GRADE, normalizeType, OBJECT_TYPES, BUNDLE_ID_RE, parseFrontmatter,
@@ -263,7 +264,7 @@ function appendSessionLog(text, entry) {
    `leg-earning` (its R1, R2, R4, with its module-level `legCapped`), and the subject and the grouping act's slot from
    `inquiry` (its R13's subject, R42), each module reached on first use. */
 function inquiryReader(earning, inquiry) {
-  return { basisFor: (id, o) => earning().basisFor(id, o), earned: (s, t) => earning().earned(s, t), legCapped,
+  return { basisFor: (id, o) => earning().basisFor(id, o), earned: (s, t, c) => earning().earned(s, t, c), legCapped,
            restingOn: (id) => earning().restingOn(id),
            subjectEntityOf: (id) => inquiry().subjectEntityOf(id), onGrounded: (m, fn) => inquiry().onGrounded(m, fn) };
 }
@@ -398,7 +399,7 @@ export class Strength {
      subject is null on purpose: the registry's capture arm does not branch on one. Null when there is nothing to ask.
      Another group's finding (R33) is not a document and is not asked about. */
   #captureBoundsFor(bundleId, bound, topLegs = null) {
-    const targets = new Set();
+    const targets = new Set(), contentIds = new Set();
     const visit = (legs, depth) => {
       for (const leg of legs) {
         if (typeof leg.target_id !== "string" || !leg.target_id) continue;
@@ -409,12 +410,44 @@ export class Strength {
           continue;
         }
         targets.add(leg.target_id);
+        if (kind === "document" && typeof leg.content_id === "string" && leg.content_id) contentIds.add(leg.content_id);
       }
     };
     visit(topLegs ?? this.#legsOf(bundleId), 0);
     if (!targets.size) return null;
-    const reg = this.inquiry.earned(null, [...targets]);
-    return new Map(Object.entries((reg && reg.earned && reg.earned.capture) || {}));
+    const reg = this.inquiry.earned(null, [...targets], [...contentIds]);
+    const bounds = new Map(Object.entries((reg && reg.earned && reg.earned.capture) || {}));
+    /* R1, R46 (leg-earning R15, R18): a passage the record grades at its own grain (an AI transcription's passage, a
+       member's typing) bounds a leg naming that row by its own ceiling, in place of the document's. */
+    bounds.passages = new Map(Object.entries((reg && reg.earned && reg.earned.content) || {})
+      .filter(([, st]) => st && st.capture && st.capture.grain === "passage").map(([cid, st]) => [cid, st.capture]));
+    return bounds;
+  }
+
+  /* R1, R46: the capture ceiling a leg is bounded by: its passage's own (leg-earning R15, R18) when it names one the
+     record grades at the passage's grain, else its target document's. */
+  static #ceilingOf(leg, captureBounds) {
+    if (!captureBounds) return undefined;
+    const p = captureBounds.passages && typeof leg.content_id === "string" ? captureBounds.passages.get(leg.content_id) : null;
+    return p ?? captureBounds.get(leg.target_id);
+  }
+
+  /* R46 (leg-earning R18, R19): the ceiling of the typed passage a leg names, which the record grades with no letter
+     stated, or null for any other leg. */
+  static #typedOf(leg, captureBounds) {
+    const c = Strength.#ceilingOf(leg, captureBounds);
+    return c && c.record_graded === true ? c : null;
+  }
+
+  /* R46 (leg-earning R19): a leg on a typed passage as the walk counts it: on the capture axis, its stated capture
+     letter kept beside (`typed_stated`, null when none) so the cap reads it, and a letter standing in for a leg stating
+     none, which the cap always replaces with the record's grade or why it is unknown. A hunch stays a hunch (R5), and a
+     leg stating a grade on another axis keeps it. Any other leg is unchanged. */
+  static #asWalkLeg(leg, captureBounds) {
+    if (!leg || isHunch(leg.grade_source) || !Strength.#typedOf(leg, captureBounds)) return leg;
+    if (leg.grade != null && leg.grade_axis != null && leg.grade_axis !== "capture") return leg;
+    const stated = leg.grade_axis === "capture" && GRADE_RANK[leg.grade] ? leg.grade : null;
+    return { ...leg, grade_axis: "capture", grade: stated ?? TYPED_UNCHECKED_GRADE, typed_stated: stated };
   }
 
   /* R43: an inquiry's LIVE legs. The projected basis keeps a leg whose citation the question has withdrawn (its
@@ -434,15 +467,24 @@ export class Strength {
   #liveLegs(id, legs) {
     if (!legs.length || !id || typeof this.record?.readFile !== "function") return legs;
     const md = this.record.readFile(id, "bundle.md");
-    const refs = md && typeof md.text === "string" ? parseFrontmatter(md.text).data?.references : null;
-    if (!Array.isArray(refs)) return legs;
+    const fm = md && typeof md.text === "string" ? (parseFrontmatter(md.text).data || {}) : {};
+    /* R46: the content row a document leg names in its authored `basis[ord]` (the projected basis leg-earning R4 reads
+       back does not carry it), so a leg on a passage the record grades at its own grain (a typing) is bounded by it. */
+    const basis = Array.isArray(fm.basis) ? fm.basis : [];
+    const named = (l) => {
+      const w = basis[l.ord];
+      const cid = w && typeof w === "object" && w.target === l.target_id && typeof w.content_id === "string" ? w.content_id.trim() : "";
+      return cid && !l.content_id ? { ...l, content_id: cid } : l;
+    };
+    const refs = fm.references;
+    if (!Array.isArray(refs)) return legs.map(named);
     const seen = new Set(), severed = new Set();
     for (const x of refs) {
       if (!x || typeof x !== "object" || seen.has(x.target)) continue;
       seen.add(x.target);
       if (x.status === "severed") severed.add(x.target);
     }
-    return severed.size ? legs.filter((l) => !severed.has(l.target_id)) : legs;
+    return (severed.size ? legs.filter((l) => !severed.has(l.target_id)) : legs).map(named);
   }
 
   /* A leg's kind as the walk reads it (R2, R33, R36–R38): another group's finding by its reference, an occurrence by
@@ -502,8 +544,9 @@ export class Strength {
      There is deliberately no visited set and no memo: the depth bound is what makes it terminate, so a cycle written
      around the write-time guard costs a bounded walk and reports `undetermined` (R2). */
   #walk(bundleId, depth, bound, legsOverride, ctx) {
-    const legs = legsOverride ?? this.#legsOf(bundleId);
     const captureBounds = ctx.captureBounds;
+    /* R46: a leg on a typed passage is counted on the capture axis at the record's grade, at every level. */
+    const legs = (legsOverride ?? this.#legsOf(bundleId)).map((l) => Strength.#asWalkLeg(l, captureBounds));
     return levelPair(bundleId, legs, {
       bound,
       kindOf: (l) => Strength.#kindOf(l),
@@ -534,9 +577,21 @@ export class Strength {
   /* R1, R37: a stated capture letter under what the record earns for its target, or null when it stands. A held
      standard the registry earns nothing for is unknown, never counted at its stated letter (R37). */
   #capped(leg, stated, captureBounds) {
-    const earned = captureBounds ? captureBounds.get(leg.target_id) : undefined;
+    const earned = Strength.#ceilingOf(leg, captureBounds);
     if (Strength.#kindOf(leg) === "standard" && !earned)
       return { grade: null, why: word("strength.why.establishes_record_holds", { target_id: leg.target_id }) };
+    /* R46: a typed passage counts at the grade the record gives it (leg-earning R19), the typist's word, one step more
+       once a second member checked it; a weaker stated letter stands. */
+    if (Object.hasOwn(leg, "typed_stated") && earned && earned.record_graded === true) {
+      const res = this.inquiry.legCapped(leg.typed_stated ?? undefined, earned, leg.target_id);
+      if (!res) return null;
+      if (res.grade == null) return res;
+      const typed = earned.typed && typeof earned.typed.label === "string" ? earned.typed.label : "";
+      return { grade: res.grade, typed: true,
+               why: leg.typed_stated
+                 ? localize("strength.why.typed_passage_stated", "{target_id} rests on a member's typing ({typed}), so it counts at {grade}: a typing is worth its typist's word, one step more once another member has checked it. The letter {stated} the leg states is not taken.", { target_id: String(leg.target_id), typed, grade: String(res.grade), stated: String(leg.typed_stated) })
+                 : localize("strength.why.typed_passage", "{target_id} rests on a member's typing ({typed}), so it counts at {grade}: a typing is worth its typist's word, one step more once another member has checked it.", { target_id: String(leg.target_id), typed, grade: String(res.grade) }) };
+    }
     return captureBounds ? this.inquiry.legCapped(stated, earned, leg.target_id) : null;
   }
 
@@ -652,7 +707,7 @@ export class Strength {
     if (Strength.#kindOf(leg) !== "document") return null;
     if (leg.grade_axis === "testimony") return TESTIMONY_GRADE;
     if (leg.grade_axis === "capture" && captureBounds) {
-      const capped = this.inquiry.legCapped(leg.grade, captureBounds.get(leg.target_id), leg.target_id);
+      const capped = this.#capped(leg, leg.grade, captureBounds);
       return capped ? capped.grade : leg.grade;
     }
     return leg.grade;
@@ -1235,6 +1290,8 @@ export class Strength {
              role: typeof l?.role === "string" ? l.role : "",
              grade: l?.grade ?? null, grade_axis: l?.grade_axis ?? null,
              grade_source: l?.grade_source ?? null, ground: str(l?.ground),
+             /* R46: the passage a candidate leg names, so a typed passage counts at its own grade there too. */
+             ...(str(l?.content_id) ? { content_id: str(l.content_id) } : {}),
              ...(l?.target_edition != null ? { target_edition: l.target_edition } : {}) };
   }
 
@@ -1353,6 +1410,8 @@ export class Strength {
     } else {
       legs = this.#legsOf(id);
       captureBounds = this.#captureBoundsFor(id, DEPTH_BOUND, legs);
+      /* R46, R47: a leg on a typed passage stated as the walk counts it (its recorded grade on the capture axis). */
+      legs = legs.map((l) => Strength.#asWalkLeg(l, captureBounds));
       ownTop = true;
     }
     const ctx = { captureBounds, levels: lv, refs: new Map(), ownTop };
@@ -1382,8 +1441,14 @@ export class Strength {
       }
       /* R1: a capture letter as the walk counts it, under its ceiling (null when the ceiling is undetermined). */
       if (kind0 === "document" && leg.grade_axis === "capture" && leg.grade != null && captureBounds) {
-        const capped = this.inquiry.legCapped(leg.grade, captureBounds.get(leg.target_id), leg.target_id);
+        const capped = this.#capped(leg, leg.grade, captureBounds);
         if (capped) out.grade = capped.grade;
+        /* R47: a leg on a typed passage says it is typed, and whether a second member checked it; no names. */
+        const typed = Object.hasOwn(leg, "typed_stated") ? Strength.#typedOf(leg, captureBounds) : null;
+        if (typed) {
+          out.typed = { checked: typed.determinant === "second_member" };
+          if (capped && capped.grade == null) out.undetermined = capped.why;
+        }
       }
       /* R36–R38: a calculation's or an occurrence's derived capture grade, or why it is unknown; a held standard's
          letter under its text's ceiling, or why that text is unknown. */
