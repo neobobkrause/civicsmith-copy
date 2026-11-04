@@ -77,7 +77,7 @@ test("R2 the entry requirements judge inquiry@1 and the legacy PROB/focus spelli
   assert.match(focusOpen[0].message, /current_state 'open' is not legal for focus \(legal: surfaced, elevated, deferred, dismissed\)/);
   const robot = await w.k.checkEntry(focusMd("PROB-2026-0711-legacy", { type: "problem", schema: "problem@1" })
     .replace("surfaced_by: agent", "surfaced_by: robot"));
-  assert.deepEqual(checks(robot), ["C-2.8"]); assert.match(robot[0].message, /surfaced_by 'robot' is not one of: agent, human/);
+  assert.deepEqual(checks(robot), ["C-2.8"]); assert.match(robot[0].message, /who surfaced this inquiry is 'robot', which is not one of: agent, human/);
   /* inquiry@1's headings under the focus spelling are judged by focus's heading set, not passed as an inquiry's */
   const crossed = await checkInquiryEntry(fullInquiryMd("FOCUS-2026-0713-crossed").replace("object_type: inquiry", "object_type: focus")
     .replace("schema: inquiry@1", "schema: focus@1"));
