@@ -17628,7 +17628,16 @@
    ]
   },
   "plane": {
-   "reads": [],
+   "reads": [
+    "ai.draft.planunread",
+    "ai.draft.recordsunread",
+    "ai.keepaway.unread",
+    "refusal.AGENT_WORKER_SILENT",
+    "refusal.ASK_NOT_A_MEMBER",
+    "refusal.NO_SUCH_NOTE",
+    "refusal.PASSAGE_TOO_LONG",
+    "translate.undetermined.language"
+   ],
    "counts": {
     "reads": 0,
     "minted": 0,
