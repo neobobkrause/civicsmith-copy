@@ -35,8 +35,8 @@ const SILENT = { escalationsFor: () => ({ ok: true, items: [] }), determinationR
   templatesForAction: () => ({ ok: false }), filingsFor: () => ({ ok: false }), remindersFor: () => ({ ok: false }),
   pressureFor: () => ({ ok: false }), holdsOf: () => ({ ok: false }) };
 
-test("notice action-clocks:60 (R52 R18): two layers' proposals of one rule are offered as two clockadopt acts, each naming its own "
-   + "<layer id>:<rule>@<proposer> key as action-clocks answers it, and each act's key is accepted; control: one adopted, only the other stays offered", () => {
+test("notice action-clocks:60 (R52 R18): two layers' proposals of one rule offer two clockadopt acts, each naming its own layer key", () => {
+  /* each act's key is the one action-clocks answers, and is accepted; control: one adopted, only the other stays offered */
   const w = cWorld(forest());
   const CA = "ACTN-2026-0001-a", M = CV("alice");
   w.action(CA);
@@ -56,8 +56,8 @@ test("notice action-clocks:60 (R52 R18): two layers' proposals of one rule are o
 });
 
 /* ---- credentials:74 ---- */
-test("notice credentials:74 (R12 R1): aigrantmint is still credentials' op, accounted for and no act; the run credential is no op; "
-   + "the account-reference ops ai-accounts R35 retired are served by no owner", () => {
+test("notice credentials:74 (R12 R1): aigrantmint stays credentials' op and accounted; the retired account-reference ops are served by none", () => {
+  /* the run credential (R63, R73) is in-plane and no op */
   const creds = keysOf(credentialsOps), accounts = keysOf(aiAccountsOps);
   assert.ok(creds.includes("aigrantmint"));
   assert.equal(published("aigrantmint"), false);
@@ -69,8 +69,8 @@ test("notice credentials:74 (R12 R1): aigrantmint is still credentials' op, acco
 });
 
 /* ---- membership:77 ---- */
-test("notice membership:77 (R12 R1): membershipOps answers adminproposalcancel and adminremovals; registered as declared, the write is "
-   + "ranked and the read a NON_ACT, nothing is unaccounted, and neither is an act; adminremove keeps its rung", () => {
+test("notice membership:77 (R12 R1): adminproposalcancel and adminremovals are answered, accounted for and no act", () => {
+  /* registered as declared: the write is ranked and the read a NON_ACT; adminremove keeps its rung */
   const ops = keysOf(membershipOps);
   for (const op of ["adminproposalcancel", "adminremovals"]) {
     assert.ok(ops.includes(op), `membership answers ${op}`);
