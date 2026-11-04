@@ -197,7 +197,8 @@ test("R52, R72: a tick's usage is counted by ai-use under the run's paying owner
   assert.deepEqual(usageRows(w).map((r) => [r.owner, r.member, r.use, r.mode, r.calls]), [["member:ann", "ann", "run", "check", 5]]);
   assert.deepEqual(actRows(w).map((r) => [r.owner, r.act, r.use, r.mode, r.calls, r.tokens]), [["member:ann", "R1", "run", "check", 5, 2400]]);
   const a = u.actualOf({ act: "R1", viewer: "member:ann" });
-  assert.deepEqual([a.found, a.owner, a.use, a.calls, a.tokens, a.cost], [true, "member:ann", "run", 5, 2400, { usd: 0.024 }]);
+  /* (ai-use T53) the cost as the account reported it */
+  assert.deepEqual([a.found, a.owner, a.use, a.calls, a.tokens, a.cost_reported], [true, "member:ann", "run", 5, 2400, { amount: 0.024, unit: "usd" }]);
   /* another run of the same member is its own act */
   await w.runs.tick({ run: "R2", viewer: "admin", caller: ORG, at: at("00:05:30"), usage: [call("check", {}, 1)] });
   assert.deepEqual(actRows(w).map((r) => [r.act, r.calls]), [["R1", 5], ["R2", 1]]);
@@ -254,8 +255,8 @@ test("R76: read and close answer the run's cost (ai-use.actualOf for the run) to
   await w.runs.tick({ run: "R1", viewer: "admin", caller: ORG, at: at("00:05:00"), usage: [call("check", {}, 2)] });
   /* the owner: ann's own account pays */
   const mine = (await w.runs.read({ run: "R1", viewer: ANN })).session;
-  assert.deepEqual(mine.cost && [mine.cost.final, mine.cost.owner, mine.cost.calls, mine.cost.tokens, mine.cost.cost],
-    [false, "member:ann", 2, 1200, { usd: 0.012 }], JSON.stringify(mine.cost));
+  assert.deepEqual(mine.cost && [mine.cost.final, mine.cost.owner, mine.cost.calls, mine.cost.tokens, mine.cost.cost_reported],
+    [false, "member:ann", 2, 1200, { amount: 0.012, unit: "usd" }], JSON.stringify(mine.cost));
   /* the negative control: others who see the run, the founder and another administrator among them */
   for (const viewer of ["member:bob", "admin", "member:second"]) {
     const r = await w.runs.read({ run: "R1", viewer });
@@ -265,7 +266,7 @@ test("R76: read and close answer the run's cost (ai-use.actualOf for the run) to
   /* close, read by its viewer: the owner is answered the final cost */
   const closed = await w.runs.close({ run: "R1", bound: "completed", caller: ORG, viewer: ANN, at: at("00:06:00") });
   assert.equal(closed.terminated, true, JSON.stringify(closed).slice(0, 300));
-  assert.deepEqual([closed.cost.final, closed.cost.calls, closed.cost.cost], [true, 2, { usd: 0.012 }]);
+  assert.deepEqual([closed.cost.final, closed.cost.calls, closed.cost.cost_reported], [true, 2, { amount: 0.012, unit: "usd" }]);
   assert.equal((await w.runs.read({ run: "R1", viewer: ANN })).session.cost.final, true);
   assert.equal("cost" in (await w.runs.read({ run: "R1", viewer: "member:bob" })).session, false);
   /* a close whose viewer is not the paying account's owner answers no cost key */
