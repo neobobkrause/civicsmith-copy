@@ -92,3 +92,4 @@
 {"at":"2026-11-04T10:08:32Z","row":"outcome","n":48,"outcome":"delivered"}
 {"at":"2026-11-04T10:09:00Z","row":"outcome","n":49,"outcome":"delivered"}
 {"at":"2026-11-04T10:18:27Z","row":"sent","n":50,"to":"job-screens-wizards","text":"BOB: (1) R23: the UX lane recorded that its per-filter words are owed by the design stream and none exist. Leave R23's mark and its test.todo; name it in --not-verified as words owed by the design stream. (2) The real-clock reds are the session clock in other modules. Pin 5850aad's gate tolerates tests that fail identically at the base, so name them in --not-verified. Run job sync, then job complete with --test notice:wizard-scripts:163=bio-plane/test/m/screens-wizards/notice-wizard-scripts-163.test.mjs --exempt-revert 'notice confirmed with no code change'. Wake me."}
+{"at":"2026-11-04T10:18:43Z","row":"outcome","n":50,"outcome":"delivered"}
