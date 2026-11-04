@@ -9,6 +9,7 @@ import { world, inquiryMd, infoMd, provDoc, sha, V } from "./fixture.mjs";
 import { contentIdFor } from "../../../src/content/index.mjs";
 import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
 import { LEG_BACKFILL_MAX } from "../../../src/leg-earning/index.mjs";
+import { TYPED_UNCHECKED_GRADE, TYPED_CHECKED_GRADE } from "../../../src/textchain.mjs";
 
 /* ------------------------------------------------------------------------------------------------ helpers */
 
@@ -193,9 +194,10 @@ test("R1 a whole-document attestation of a chainless capture does not raise a me
   assert.equal(w.promoteInquiry(QN, md(QN, [{ target: DOC_N, f: { content_id: q(tx.content_id) } }])).ok, true);
   const ceil = (id) => { const s = w.k.earnedBasis({ id, viewer: "admin" }).earned.content?.[tx.content_id];
     return s ? [s.transcription.ceiling, s.transcription.determinant, s.transcription.by] : null; };
-  assert.deepEqual(ceil(QN), [null, "derivation", []], "the capture attestation checked other text");
+  /* text-chain R107: the typing stands on the typist's word; the capture attestation checked other text */
+  assert.deepEqual(ceil(QN), [TYPED_UNCHECKED_GRADE, "typist", ["ruth"]], "the capture attestation checked other text");
   const sa = w.content.transcriptionAttest({ contentId: tx.content_id, attestor: "sam", viewer: V("sam"), at: "2026-09-27T01:00:00Z",
                                             note: "The typing matches the page." });
   assert.equal(sa.ok, true, JSON.stringify(sa).slice(0, 300));
-  assert.deepEqual(ceil(QN), [EARNED_CAPTURE_CEILING, "attestation", ["sam"]], "the leg earns what the typing's attestation supports");
+  assert.deepEqual(ceil(QN), [TYPED_CHECKED_GRADE, "second_member", ["sam"]], "the leg earns what the typing's attestation supports");
 });
