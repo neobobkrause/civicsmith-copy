@@ -262,14 +262,16 @@ function baseOf(claimed, instanceName) {
  *  `instanceName` is the slug the installer binds as `INSTANCE_NAME` for the first boot (default `WORLD_INSTANCE_NAME`); `null` binds none, as
  *  an older installation's first boot had, so instance-setup records no producing team. `deliver` is `control-plane`'s owed-render delivery,
  *  handed to `assembleStore` as the Durable Object class hands it (R1); none, a row that needs it stays owed (R67). `releaseKeys` is the list of
- *  release keys instance-setup verifies a release notice against, a test's own keys instead of the product's (a test signs with the private half). */
-export async function storeWorld({ claimed = true, now = WORLD_NOW, env: extra = {}, instanceName = WORLD_INSTANCE_NAME, deliver = null, releaseKeys = null } = {}) {
+ *  release keys instance-setup verifies a release notice against, a test's own keys instead of the product's (a test signs with the private half).
+ *  `catalogueKeys` are the keys ai-catalogue verifies a list against (R1), honoured only when `env` makes the world a test instance
+ *  (`CIVICSMITH_TEST_INSTANCE` equal to `INSTANCE_NAME`); a test then seeds the list through the catalogue's own channel. */
+export async function storeWorld({ claimed = true, now = WORLD_NOW, env: extra = {}, instanceName = WORLD_INSTANCE_NAME, deliver = null, releaseKeys = null, catalogueKeys = null } = {}) {
   const base = await baseOf(claimed !== false, instanceName);
   const t0 = performance.now();
   const db = new DatabaseSync(":memory:");
   db.deserialize(base.bytes);
   const env = { STORE: { idFromName: (n) => n }, CAPTURES: memoryBucket(copyObjects(base.objects)), ...(instanceName === null ? {} : { INSTANCE_NAME: instanceName }), ...extra, BIO_NOW_MS: now };
-  const { ctx, store } = await assembled(db, env, { deliver, ...(releaseKeys ? { releaseKeys } : {}) });
+  const { ctx, store } = await assembled(db, env, { deliver, ...(releaseKeys ? { releaseKeys } : {}), ...(catalogueKeys ? { catalogueKeys } : {}) });
   const copyMs = ms(t0);
   if (!printed) { printed = true; console.log(`storeWorld: base ${base.ms} ms, copy ${copyMs} ms`); }
   const scope = { scripts: [] };   /* R94: this world's network scripts */
