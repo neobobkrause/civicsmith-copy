@@ -176,13 +176,15 @@ export class AiAccountsLegacy extends AiAccountsLifecycle {
       return h.ok ? { ok: true, since: h.since, account_id: held.account_id } : h;
     }
     const planId = AiAccountsLegacy._planId(this._legacyPlan("subscription"));
-    const set = await this.accountSet({ owner, provider: PROVIDER, plan: planId, means: "issued", secret: token, by: id });
+    /* F4: the act is hers, so `by` is her member reference (`member:<id>`), the spelling instance-setup records the
+       disclosure under (its R54, the door's stamp) and so the one `disclosureDue` must be asked with; never the bare id. */
+    const set = await this.accountSet({ owner, provider: PROVIDER, plan: planId, means: "issued", secret: token, by: owner });
     if (!set.ok) return set;
     if (validFor !== null && validFor !== undefined) {
       const h = await this.issuedTokenHold({ account_id: set.account_id, token, valid_until: validFor });
       if (!h.ok) return h;
     }
-    const on = this.accountSwitch({ account_id: set.account_id, on: true, by: id });
+    const on = this.accountSwitch({ account_id: set.account_id, on: true, by: owner });
     if (!on.ok) return on;
     const row = this._account(set.account_id);
     return { ok: true, since: row?.held_since ?? set.set_at, account_id: set.account_id };
