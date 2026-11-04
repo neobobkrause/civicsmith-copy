@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-disclosures","verdict":"not affected","evidence":"build/modules.json:133 gives its paths as bio-plane/src/case-disclosures/ only and no file there imports case-tensions, so nothing reaches case-tensions/index.mjs:506","at":"2026-11-04T21:56:33.133Z","key":"case-tensions:262","worker":"read-only-explore-x4","cost":"0.60"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:251 only lists the refusal-code table from case-tensions/checks.mjs (imported :114); PR 262 did not change checks.mjs, its whole diff is index.mjs:506","at":"2026-11-04T21:56:33.133Z","key":"case-tensions:262","worker":"read-only-explore-x4","cost":"0.60"}
