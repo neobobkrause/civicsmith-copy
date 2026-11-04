@@ -7,7 +7,6 @@ import { interfacePage, interfaceScript, NONCE_SLOT } from "../../../src/interfa
 import { webcrypto } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { declaredOpsOf } from "../../declared-ops.mjs";
-import { OPS } from "../../../src/op-declarations/index.mjs";
 import { documentOf, Event, textNodes } from "./dom.mjs";
 
 export { textNodes, Event };
@@ -36,11 +35,6 @@ export const pending = Object.freeze({ pending: true });
    An op with no owner declaration is let through and counted. The owners' rows are the collector's (`test-support`'s
    `declaredOpsOf`, R16): `collectOwnerRows` is its one seam here, never a second copy of the collection; a test passes
    fixture rows as `boot({declared})`. */
-/* F1 (walk p3dev-t1, 4 Nov): an op request naming an op `OPS` does not declare is the door's `UNKNOWN_OP`; the page never sends one,
-   whether the frame or a screen asks it, so the harness throws `UndeclaredOp` and fails the test that made the page send it */
-export class UndeclaredOp extends Error {
-  constructor(op, screen) { super(`${screen}: the page sent op=${op}, which OPS does not declare`); this.name = "UndeclaredOp"; this.op = op; this.screen = screen; }
-}
 export class FieldMismatch extends Error {
   constructor(message, detail) { super(message); this.name = "FieldMismatch"; Object.assign(this, detail); }
 }
@@ -181,11 +175,6 @@ export async function boot({ screens = [], plane = {}, session = SESSION, path =
       body: init.body === undefined ? undefined : typeof init.body === "string" ? safeJson(init.body) : init.body, method: init.method || "GET" };
     /* R92: the version poll is a plain-text address of its own, no op: kept apart from `requests`, which are the op door's */
     (op === "version" ? polls : requests).push(req);
-    if (op !== "version" && !(typeof op === "string" && Object.hasOwn(OPS, op))) {
-      const err = new UndeclaredOp(op, (/^\/app\/([^/]+)/.exec(location.pathname) || [])[1] || "home");
-      unsettled.push(err);
-      throw err;
-    }
     /* R104: the request against its owner's declaration; an op with none is let through and counted */
     if (op && op !== "version") {
       const row = declared[op];

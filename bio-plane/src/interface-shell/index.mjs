@@ -293,8 +293,6 @@ function dataOf(screens, guide) {
     publicOps: Object.keys(OPS).filter((op) => OPS[op].classes === null),
     /* R123 (E12): the ops `OPS` declares not mutating, whichever screen asks them: the reads the page may share while they are in flight */
     readOps: Object.keys(OPS).filter((op) => OPS[op].mutating === false),
-    /* F1: every op `OPS` declares; the page sends no other */
-    declared: Object.keys(OPS),
     needs: pick((op) => (Object.hasOwn(NEEDS, op) ? NEEDS[op] : undefined)),
     /* R12 (K4237): a read is gated by its classes, not by `SESSION_OPS`, which holds mutating ops alone */
     readClasses: pick((op) => (OPS[op] && OPS[op].mutating === false && (OPS[op].classes === null || Array.isArray(OPS[op].classes)) ? (OPS[op].classes === null ? null : [...OPS[op].classes]) : undefined)),

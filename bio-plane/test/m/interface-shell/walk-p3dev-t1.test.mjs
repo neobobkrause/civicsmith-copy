@@ -1,46 +1,40 @@
 /* interface-shell, attempt 4: the walk of p3dev-t1 at 0.87.0 (4 Nov 2026; coordinator 22:10). Its three found marks, F1-F3. */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { OPS } from "../../../src/op-declarations/index.mjs";
 import { ASSET_FILES } from "../../../src/interface-assets/index.mjs";
 import { stylesheetClasses, interfacePage, HOOK_CLASSES } from "../../../src/interface-shell/index.mjs";
 import { shellProgram } from "../../../src/interface-shell/browser.mjs";
-import { boot, ok } from "./harness.mjs";
+import { boot, ok, refused, silent, httpError } from "./harness.mjs";
 import { ALL } from "./screens.fixture.mjs";
 import { inChromium } from "./chromium.mjs";
 
-const UNDECLARED = "aipathready";
+/* ---------- F1: the frame's aipathready refused (UNKNOWN_OP on p3dev-t1, surface-declarations R15 unmet) ---------- */
 
-/* ---------- F1: no op `OPS` does not declare leaves the page ---------- */
+/* the frame drawn whole: the masthead with the group's name and the member, the rail, the screen's main column; and no assistant control */
+function frameWhole(p, path) {
+  const root = p.root();
+  assert.ok(root.querySelector(".cs-mast"), path + ": the masthead");
+  assert.ok(root.querySelector('.cs-mast [data-shell="menu"], .cs-mast button.mk-avatar'), path + ": the member's control");
+  assert.ok(root.querySelector("#cs-main"), path + ": the main column");
+  assert.equal(root.querySelector('[data-shell="dock"]'), null, path + ": no assistant control (R20)");
+  assert.equal(root.querySelector(".cs-dock"), null, path + ": no dock");
+}
 
-test("F1 the op the frame asks for the assistant's path is one OPS does not declare today (this file's premise; when op-declarations declares it, F1's frame arm is moot and R20's ready arm is met)", () => {
-  assert.equal(Object.hasOwn(OPS, UNDECLARED), false);
-});
-
-test("F1 R20 the frame sends no op OPS does not declare: aipathready is not asked on any screen, the assistant stays unreachable (no assistant control), and every request names a declared op", async () => {
+test("F1 R20 with aipathready refused UNKNOWN_OP, as p3dev-t1 answers it, the frame asks it, takes the assistant as not reachable and draws every screen whole with no assistant control; control: answered ready, the button is drawn", async () => {
   for (const path of ["/app", "/app/document/c1", "/app/queue", "/app/members"]) {
-    /* the plane would answer ready: the page must not ask it */
-    const p = await boot({ screens: ALL, path, plane: { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
-    assert.equal(p.byOp(UNDECLARED).length, 0, path + ": aipathready is not sent");
-    for (const r of p.requests) assert.ok(Object.hasOwn(OPS, r.op), path + ": " + r.op + " is declared");
-    assert.equal(p.root().querySelector('[data-shell="dock"]'), null, path + ": no assistant control while the path read cannot be asked (R20)");
-    assert.equal(p.root().querySelector(".cs-dock"), null);
-    /* control: the declared frame reads still go */
-    assert.ok(p.byOp("whoami").length >= 1 && p.byOp("assistantstate").length >= 1, path + ": declared reads are sent");
+    const p = await boot({ screens: ALL, path, plane: { assistantstate: ok({ on: true }), aipathready: refused("UNKNOWN_OP") } });
+    assert.ok(p.byOp("aipathready").length >= 1, path + ": the frame asks it (R20)");
+    frameWhole(p, path);
+    const c = await boot({ screens: ALL, path, plane: { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
+    assert.ok(c.root().querySelector('.cs-mast [data-shell="dock"]'), path + ": control: a ready path draws the button");
   }
 });
 
-test("F1 a screen's read or call of an op OPS does not declare sends nothing and is drawn as the door's refusal; control: its declared read is sent", async () => {
-  const SCREEN = {
-    id: "home", words: [], acts: [],
-    reads: () => ({ odd: { op: "nonesuchop" }, fine: { op: "queue" } }),
-    render: (cs, view) => '<h1 class="t-title">x</h1><p id="odd">' + view.data.odd.state + (view.data.odd.refusal ? ":" + view.data.odd.refusal.code : "")
-      + '</p><p id="fine">' + view.data.fine.state + "</p>",
-  };
-  const p = await boot({ screens: [SCREEN], path: "/app" });
-  assert.equal(p.byOp("nonesuchop").length, 0, "nothing leaves the page");
-  assert.equal(p.doc.getElementById("odd").textContent, "failed:UNKNOWN_OP");
-  assert.equal(p.byOp("queue").length >= 1, true, "control: the declared read is sent");
+test("F1 R20 any refusal of aipathready, a refusal with words, a server error and no answer each leave the assistant not reachable and the frame whole", async () => {
+  for (const answer of [refused("UNKNOWN_OP"), refused("NOT_YOUR_ACCOUNT", "Not yours."), httpError(500), silent]) {
+    const p = await boot({ screens: ALL, path: "/app/queue", plane: { assistantstate: ok({ on: true }), aipathready: answer } });
+    frameWhole(p, "/app/queue");
+  }
 });
 
 /* ---------- F2: every hook class the shell draws sits beside its design partner, and every page loads the sheet that defines it ---------- */

@@ -141,14 +141,10 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     SHARED.set(key, entry);
     return entry.snap.then((x) => x.a);
   }
-  const DECLARED = new Set(D.declared);
   async function send(op, req = {}) {
     const own = typeof req.bearer === "string" && req.bearer !== "";
     /* R46: `unlock` is sent under the locked session's token, from whichever frame */
     const pub = !own && (!S || (!!req.public && op !== "unlock"));
-    /* F1 (walk p3dev-t1, 4 Nov): the page never sends an op `OPS` does not declare, whether the frame or a screen asks it; it is answered here
-       as the door would answer it, and nothing leaves the page (R20: a read that does not answer is not reachable) */
-    if (!DECLARED.has(op)) return { kind: "refused", code: "UNKNOWN_OP", translation: null, fields: {} };
     if (pub && !D.publicOps.includes(op)) return { kind: "refused", code: "NOT_SIGNED_IN", translation: null, fields: {} };
     const qs = new URLSearchParams();
     qs.set("op", op);
@@ -2777,7 +2773,7 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
      it; each is asked again, once, when the screen's first reads have settled, and the frame follows the answer. Kept or not, each is read by the same
      requests as before. */
   const FRAME_KEY = D.storeKey + ":frame";
-  /* what the frame uses of each answer, and the request that reads it (`aipathready` is marked a read; while `OPS` does not declare it, `send` sends it not, F1, and the assistant is not reachable);
+  /* what the frame uses of each answer, and the request that reads it (`aipathready` is marked a read, as `OPS` does not yet declare it);
      `min` answers null for an answer of no use, and is applied to what is read back from the store too, so a stored value is never taken as it is */
   const FRAME_READS = {
     groupidentity: { req: {}, min: (v) => ({ display_name: typeof v.display_name === "string" && v.display_name.trim() ? v.display_name : null }) },
