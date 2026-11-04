@@ -155,6 +155,8 @@ test("R102 G93 L (control): a request during a firing in progress changes nothin
     await until(w, "a firing holding the scanner", () => w.flight.scanning);
     const before = await w.get("counters");
     assert.ok(before.fired.started > before.fired.ended, "a firing is in progress (the scanner holds it)");
+    /* the test's clock steps past the five seconds, so the frame's window would let it look: only the firing in progress keeps it from looking */
+    await w.get("clock?advance=6000");
     await w.door(w.member, "whoami");
     await w.door(w.founder, "whoami");
     const during = await w.get("counters");
