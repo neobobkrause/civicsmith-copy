@@ -9,7 +9,8 @@ import * as CG from "../../../src/case-grammar/index.mjs";
 import { doc, sha, NOW } from "./helpers.mjs";
 
 const fmOf = (text) => { const p = parseFrontmatter(text); assert.deepEqual(p.findings, [], "the grammar reads every line"); return p.data; };
-const V8 = CG.CASE_DOCUMENT_FORMAT;
+const V8 = "bio-case-document/8";
+const V10 = CG.CASE_DOCUMENT_FORMAT;
 const V9 = "bio-case-document/9";
 const SOURCE = "INFO-2026-0001-faq";
 const CAPS = [sha("capture one"), sha("capture two"), sha("capture three")];
@@ -57,30 +58,28 @@ test("R12 (G47) control: a row without a sha is written byte for byte as before 
   assert.doesNotThrow(() => CG.materialAttestationLines([{ ...OLD_ROW, get sha() { throw new Error("boom"); } }]));
 });
 
-test("R1 R12 (G47) a document carrying any attestation sha declares bio-case-document/9, one carrying none stays /8; /9 is accepted and every predicate holds for it as for /8", () => {
-  assert.equal(CG.CASE_DOCUMENT_FORMAT, V8, "the format in force is unchanged");
+test("R1 R12 R35 (G47, T53) every document declares bio-case-document/10, whatever its attestation rows carry; /9 and /8 stay accepted and every predicate holds for /9 and /10 as for /8", () => {
+  /* R35 amends G47's rule: the format in force is /10 and caseDocumentFormatFor answers it always */
+  assert.equal(V10, "bio-case-document/10");
   assert.equal(CG.CASE_DOCUMENT_FORMAT_V9, V9);
-  assert.equal(CG.caseDocumentFormatFor([{ ...OLD_ROW, sha: CAPS[0] }]), V9);
-  assert.equal(CG.caseDocumentFormatFor([OLD_ROW, { ...OLD_ROW, sha: CAPS[2] }, OLD_ROW]), V9, "any one row");
-  assert.equal(CG.caseDocumentFormatFor([OLD_ROW]), V8);
-  assert.equal(CG.caseDocumentFormatFor([]), V8);
+  assert.equal(CG.caseDocumentFormatFor([{ ...OLD_ROW, sha: CAPS[0] }]), V10);
+  assert.equal(CG.caseDocumentFormatFor([OLD_ROW, { ...OLD_ROW, sha: CAPS[2] }, OLD_ROW]), V10, "any one row");
+  assert.equal(CG.caseDocumentFormatFor([OLD_ROW]), V10);
+  assert.equal(CG.caseDocumentFormatFor([]), V10);
   for (const odd of [undefined, null, 7, "x", {}, [null, 7], [{ ...OLD_ROW, sha: "" }], [{ ...OLD_ROW, sha: 7 }], [{ get sha() { throw new Error("boom"); } }]])
-    assert.equal(CG.caseDocumentFormatFor(odd), V8);
-  /* the helper and the writer agree on what a sha is: a row the writer leaves bare never makes the document /9 */
-  for (const row of [OLD_ROW, { ...OLD_ROW, sha: CAPS[0] }, { ...OLD_ROW, sha: " " }]) {
-    const written = CG.materialAttestationLines([row]).some((l) => l.includes("sha:"));
-    assert.equal(CG.caseDocumentFormatFor([row]) === V9, written);
-  }
-  assert.deepEqual([...CG.CASE_DOCUMENT_FORMATS_ACCEPTED], [V9, V8, "bio-case-document/7", "bio-case-document/6", "bio-case-document/5",
+    assert.equal(CG.caseDocumentFormatFor(odd), V10);
+  assert.deepEqual([...CG.CASE_DOCUMENT_FORMATS_ACCEPTED], [V10, V9, V8, "bio-case-document/7", "bio-case-document/6", "bio-case-document/5",
     "bio-case-document/4", "bio-case-document/3", "bio-case-document/2", "bio-case-document/1"]);
   const preds = [CG.caseDocumentStatesMemberBlocks, CG.caseDocumentRequiresDisclosures, CG.caseDocumentRequiresV4Disclosures,
                  CG.caseDocumentRequiresTensionSection, CG.caseDocumentRequiresMaterials];
-  for (const p of preds) assert.equal(p({ format: V9 }), p({ format: V8 }), p.name);
+  for (const p of preds) { assert.equal(p({ format: V9 }), p({ format: V8 }), p.name); assert.equal(p({ format: V10 }), p({ format: V8 }), p.name); }
   assert.equal(CG.caseDocumentRequiresMaterials({ format: V9 }), true);
-  for (const p of preds) assert.equal(p({ format: "bio-case-document/10" }), false);
+  for (const p of preds) assert.equal(p({ format: "bio-case-document/11" }), false);
   /* the words and the name /8 states: team words, Civicsmith */
   assert.equal(CG.caseWordsOf({ format: V9 }), "team");
   assert.equal(CG.editionProductOf({ format: V9 }), CG.PRODUCT_NAMES.current);
+  assert.equal(CG.caseWordsOf({ format: V10 }), "team");
+  assert.equal(CG.editionProductOf({ format: V10 }), CG.PRODUCT_NAMES.current);
   /* control: a /9 document's blocks are read, an older format's still are not */
   assert.notEqual(CG.materialsOf(fmOf(doc(V9, [...CG.materialsLines([MAT(0)]), ...CG.materialAttestationLines(ATT(0, { sha: CAPS[0] }))]))), null);
   assert.equal(CG.materialsOf(fmOf(doc("bio-case-document/5", CG.materialAttestationLines(ATT(0, { sha: CAPS[0] }))))), null);

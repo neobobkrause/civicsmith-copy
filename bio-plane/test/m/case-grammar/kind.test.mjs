@@ -59,7 +59,7 @@ test("R31 control: a row stating no kind reads kind: null, and a row handed none
   const t37 = caseFileFixture({ photo: true, fileFormat: CG.CASE_FILE_FORMAT });
   assert.equal(createHash("sha256").update(CG.completeEditionOf(editionInput(t37.manifest, t37.files))).digest("hex"),
                "910634ae4b5ee876b270213a84d13eafa65e717db54d8360ff5b1449e2c53a35");
-  assert.equal(CG.CASE_DOCUMENT_FORMAT, "bio-case-document/8");
+  assert.equal(CG.CASE_DOCUMENT_FORMAT, "bio-case-document/10");
   assert.equal(CG.CASE_FILE_FORMAT, "bio-case-file/3");
 });
 

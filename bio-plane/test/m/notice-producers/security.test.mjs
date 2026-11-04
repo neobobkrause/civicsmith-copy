@@ -182,8 +182,8 @@ test("R12: a securityLevel or securityMap that throws or does not answer contrib
     assert.deepEqual(ofKind(r, KIND), []);
     assert.deepEqual(r.facts.failed, ["credentials"]);
   }
-  /* a non-administrator's read never asks the level or the map, so their failure is none of theirs (R16's own read, ai-accounts'
-     `projectAccountsSuspended`, is every member's, and none of credentials') */
+  /* a non-administrator's read never asks the level or the map, so their failure is none of theirs (R16's own reads, ai-use's,
+     are every member's, and none of credentials') */
   let asked = 0;
   const counted = () => { asked += 1; throw new Error("down"); };
   const quiet = await setup({ credentials: { securityLevel: counted, securityMap: counted } });
