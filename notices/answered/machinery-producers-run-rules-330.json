@@ -1,0 +1,1 @@
+{"row":"answered","user":"machinery-producers","by":"triage","evidence":"bio-plane/src/machinery-producers/index.mjs:39 imports only runPrincipalOf, used near :497 for whose credential it is","at":"2026-11-04T23:11:53.226Z","key":"run-rules:330","worker":"read-only-explore-x4","cost":"0.90"}

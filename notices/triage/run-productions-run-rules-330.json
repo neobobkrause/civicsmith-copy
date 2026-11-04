@@ -1,0 +1,1 @@
+{"row":"triage","user":"run-productions","verdict":"not affected","evidence":"bio-plane/src/run-productions/index.mjs:29 imports only runPrincipalGate, checkPagesRead and RUN_BOUNDS (used :235, :631, :1061, :91); none is or calls startAllowed","at":"2026-11-04T23:11:53.226Z","key":"run-rules:330","worker":"read-only-explore-x4","cost":"0.90"}

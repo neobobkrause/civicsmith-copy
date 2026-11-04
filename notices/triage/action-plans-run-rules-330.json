@@ -1,0 +1,1 @@
+{"row":"triage","user":"action-plans","verdict":"not affected","evidence":"bio-plane/src/action-plans/index.mjs:880 its only run-rules import, runPrincipalGate, is called here; that function (rules.mjs:1059) never calls startAllowed and PR 330 did not change it","at":"2026-11-04T23:11:53.226Z","key":"run-rules:330","worker":"read-only-explore-x4","cost":"0.90"}

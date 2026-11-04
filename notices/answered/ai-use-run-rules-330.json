@@ -1,0 +1,1 @@
+{"row":"answered","user":"ai-use","by":"triage","evidence":"bio-plane/src/ai-use/index.mjs:27 imports only AI_RUNS_CHECKS, a code table looked up at :231, not startAllowed","at":"2026-11-04T23:11:53.226Z","key":"run-rules:330","worker":"read-only-explore-x4","cost":"0.90"}

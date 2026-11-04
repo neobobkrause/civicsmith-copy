@@ -1,0 +1,1 @@
+{"row":"triage","user":"wizard-scripts","verdict":"not affected","evidence":"bio-plane/src/wizard-scripts/index.mjs:38 imports only untestedLabel from run-rules/test-bar.mjs, used at :432; no startAllowed or origin explore path","at":"2026-11-04T23:11:53.226Z","key":"run-rules:330","worker":"read-only-explore-x4","cost":"0.90"}

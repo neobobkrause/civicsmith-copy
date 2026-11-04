@@ -1,0 +1,1 @@
+{"row":"answered","user":"agent-steps","by":"triage","evidence":"agent-steps/src/drive.mjs:6 imports only AI_RUN_STATE_MAX_BYTES; entries.mjs:5 only checkCondition and DEFINITIVE_STATES; subsessions.mjs:5 only checkCondition; nothing under agent-steps calls startAllowed","at":"2026-11-04T23:11:53.226Z","key":"run-rules:330","worker":"read-only-explore-x4","cost":"0.90"}

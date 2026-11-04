@@ -1,0 +1,1 @@
+{"row":"answered","user":"agent-harness","by":"triage","evidence":"agent-harness/src/harness.mjs:136 imports only levelEmptyHolds (R35), not startAllowed; nothing under agent-harness/src calls startAllowed","at":"2026-11-04T23:11:53.226Z","key":"run-rules:330","worker":"read-only-explore-x4","cost":"0.90"}

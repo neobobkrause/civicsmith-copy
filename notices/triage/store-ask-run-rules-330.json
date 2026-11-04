@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-ask","verdict":"not affected","evidence":"build/modules.json:178 gives store-ask \"paths\": [], so nothing imports run-rules","at":"2026-11-04T23:11:53.226Z","key":"run-rules:330","worker":"read-only-explore-x4","cost":"0.90"}
