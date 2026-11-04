@@ -187,7 +187,10 @@ test("R32 R67 R68 the links this page carries, held ones a reference; the names 
   /* control: no links and no names, no section */
   const none = await open(at);
   assert.equal(section(none, "document.links.title"), undefined);
-  assert.equal(section(none, "document.names.title"), undefined);
+  { /* wizard-scripts R54 (PR 98): the registry admits `resolve` on document, so a document naming no one draws the section with that act alone (R139), no row (R20) */
+    const sec = section(none, "document.names.title");
+    assert.ok(!sec || (sec.querySelectorAll(".cs-row").length === 0 && sec.querySelectorAll('button[data-act="resolve"]').length === 1), "no names: no row, only the act that finds them");
+  }
 });
 
 test("R3 pagetranscribe only while the assistant is reachable (DEC-190); transcribe wherever pages are unread", async () => {

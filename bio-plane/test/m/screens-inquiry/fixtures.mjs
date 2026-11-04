@@ -13,7 +13,6 @@ import { questionWaitsSetAside, readRefusals } from "../inquiry/fixtures.mjs";
 import { importedCasesAnswer } from "../case-import/fixtures.mjs";
 import { listAnswer } from "../hypotheses/fixtures.mjs";
 import { groupIdentityAnswer } from "../instance-setup/fixtures.mjs";
-import { accountsServing } from "../ai-accounts/fixtures.mjs";
 
 export { SCREENS, word, WORLD_FOUNDER_HANDLE };
 export const storeWorld = requestWorld;
@@ -217,6 +216,8 @@ export const lead = (key) => word(key, new Proxy({}, { get: () => "\u0000", has:
 let AI_ACCOUNTS = null;
 export async function aiAccounts() {
   if (!AI_ACCOUNTS) AI_ACCOUNTS = (async () => {
+    /* imported when asked, so a test that reads no account loads none of ai-accounts' test world */
+    const { accountsServing } = await import("../ai-accounts/fixtures.mjs");
     const s = await accountsServing({ member: "ann" });
     const read = (owner) => s.accounts.accountsOf({ owner, viewer: "ann" });
     const ACCOUNTS = { own: read("member:ann"), none: read("group") };

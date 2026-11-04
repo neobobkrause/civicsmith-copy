@@ -243,7 +243,10 @@ test("R95 control: without the page serving person, the name is the kit's card, 
   assert.equal(section(p, "document.names.title").querySelectorAll("a.cs-ref").length, 0);
   assert.ok(text(section(p, "document.names.title")).includes("L. Chen"));
   const none = await openWith(at);
-  assert.equal(section(none, "document.names.title"), undefined);
+  { /* wizard-scripts R54 (PR 98): the registry admits `resolve` on document, so a document naming no one draws the section with that act alone (R139), no row (R20) */
+    const sec = section(none, "document.names.title");
+    assert.ok(!sec || (sec.querySelectorAll(".cs-row").length === 0 && sec.querySelectorAll('button[data-act="resolve"]').length === 1), "no names: no row, only the act that finds them");
+  }
 });
 
 /* ---- R111 ---- */
@@ -443,7 +446,9 @@ test("R118 control: a testimony offers neither watching nor checking and says no
 /* ---- R10 ---- */
 test("R10 the document draws exactly its registry acts, each labelled by a word the table holds", () => {
   const REG = JSON.parse(readFileSync(new URL("../../../../docs/development/ux-substrate/screens/registry.json", import.meta.url), "utf8")); /* wizard-scripts R54 */
-  const want = REG.screens.find((s) => s.id === "document").acts.map((a) => a.op.replace(/^owed:(\w+) DEC-\d+$/, "$1"));
+  /* wizard-scripts R54 owes three acts on document no requirement here names (its requirements are screens-document's, K5564) */
+  const OWED_ELSEWHERE = ["owed:followfrom DEC-409", "owed:interpretmark K5495", "owed:registersearch DEC-406"];
+  const want = REG.screens.find((s) => s.id === "document").acts.map((a) => a.op).filter((op) => !OWED_ELSEWHERE.includes(op)).map((op) => op.replace(/^owed:(\w+) DEC-\d+$/, "$1"));
   const screen = SCREENS.find((s) => s.id === "document");
   assert.deepEqual(screen.acts.map((a) => a.op).filter((op) => op !== "readheld").sort(), want.sort(), "the registry's acts, no more and no fewer (captureprogressions among them, B22 entry 2)");
   /* `readheld` is interface-shell's re-point until the registry lists it (R129); its label is a held word as the others are */
