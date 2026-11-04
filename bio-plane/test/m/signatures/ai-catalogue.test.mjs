@@ -93,11 +93,14 @@ test("R49 a signature made in NS_RELEASE over a catalogue statement's bytes is N
 
 /* ===================================================================== R50 */
 
-test("R50 CATALOGUE_KEYS: two lines R2 reads as allowed keys, different, none a RELEASE_KEYS line, and the list frozen", () => {
-  assert.equal(CATALOGUE_KEYS.length, 2);
+test("R50 CATALOGUE_KEYS: lines R2 reads as allowed keys, different, none a RELEASE_KEYS line, and the list frozen", () => {
+  /* Bob's two, then development lines, at least one (R58, R59) */
+  assert.ok(CATALOGUE_KEYS.length > 2);
+  for (const l of CATALOGUE_KEYS.slice(2)) assert.ok(l.split(" ")[2].endsWith("-development"));
+  for (const l of CATALOGUE_KEYS.slice(0, 2)) assert.ok(!l.split(" ")[2].endsWith("-development"));
   const norm = CATALOGUE_KEYS.map(normalizeKey);
   for (const n of norm) assert.ok(n);
-  assert.equal(new Set(norm).size, 2);
+  assert.equal(new Set(norm).size, CATALOGUE_KEYS.length);
   const release = RELEASE_KEYS.map(normalizeKey);
   for (const n of norm) assert.ok(!release.includes(n));
   assert.ok(Object.isFrozen(CATALOGUE_KEYS));

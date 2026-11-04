@@ -103,8 +103,9 @@ export function questionMd(id, { subject = null, surfacedBy = "human", state = "
    `w.tablesBefore` then names the explore tables the storage held just before the factory ran. */
 /* `aiAccounts` hands question-explorer a stand-in for ai-accounts in place of the real one (the rest of the world
    keeps the real one). */
-export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiAccounts: standIn = null } = {}) {
-  const over = { aiAccounts: standIn };
+/* `basisVersions` hands it basis-versions' own answer in place of the stand-in below (a test's real `currentOf`). */
+export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiAccounts: standIn = null, basisVersions: bvIn = null } = {}) {
+  const over = { aiAccounts: standIn, basisVersions: bvIn };
   const st = storage();
   const host = { storage: st };
   for (const t of RECORD_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n").split(";"))
@@ -204,7 +205,7 @@ export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiA
       const r = typeof run === "string" ? w.runs.get(run.trim()) : null;
       if (!r || !membership.inSight(r.contextId, viewer)) return null;
       return { run: r.run, status: r.status === "running" ? "running" : "stopped", mode: r.mode, context_type: r.contextType,
-               context_id: r.contextId, principal_plane: r.principalPlane, principal_claude: r.principalClaude };
+               context_id: r.contextId, principal_plane: r.principalPlane, principal_ai: r.principalAi };
     },
     boundOf(run, bound) { const b = w.bounds.get(`${run}|${bound}`); return b ? { ...b } : null; },
     consumeBound(run, bound, n) {
@@ -251,7 +252,7 @@ export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiA
      the stand-in's `edgeSevered` (R22) answering every edge live; its R4 `basisFor` over its own `inquiry_basis`. */
   const legEarning = legEarningOf(host, { record, membership, connections,
                                           promotion: { fact: () => ({ ok: false }) }, content: {} });
-  const basisVersions = { currentOf: (p) => ({ current: `reading of ${p}` }) };
+  const basisVersions = over.basisVersions || { currentOf: (p) => ({ current: `reading of ${p}` }) };
   /* steps is the real module (merged, K2491): R17 `findRecipients` over leg-earning's drawing projects and its own
      follows. Its registrations with promotion and observation-log are answered by stand-ins (neither is read here). */
   const realSteps = stepsOf(host, { record, membership, legEarning,

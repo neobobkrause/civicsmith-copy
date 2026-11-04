@@ -576,11 +576,25 @@ export const NS_AI_RUN = "bio-ai-run";
    catalogue key ceremony's sitting 1 (K5751, 2026-10-28): the signing key
    (SHA256:RpBqiKYcBfY0ZXvLJVJIazLH8TCAgUMTSwbLF6x0qLM), then the recovery key
    (SHA256:34muQ7LZW9VVCrllKQqOfhHpTkTKJUSugGbQ67J3Klg). No test key is held here:
-   a test signs with its own throwaway key and passes it as allowedKeys. */
-export const CATALOGUE_KEYS = Object.freeze([
+   a test signs with its own throwaway key and passes it as allowedKeys.
+
+   R59: DEVELOPMENT LINES ARE KEPT APART FROM BOB'S. A development deployment signs
+   its seed with a development catalogue key it generates and holds as a secret;
+   its public line follows Bob's two, its comment ending "-development" (ai-catalogue's
+   DEVELOPMENT_KEY_MARK), and only a build whose environment says it is a development
+   deployment trusts it (ai-catalogue's catalogueKeysFor). The verifiers' default list
+   is Bob's lines alone, so a caller that passes no list never trusts a development
+   key. The line held now (SHA256:UDzf6JtyBvTcy1WVqReYlkwidsmNP9Gmlw2g28KyWUk) is a
+   placeholder whose private half was discarded when it was made: it verifies nothing
+   until the development deployment's own public line replaces it. */
+const BOB_CATALOGUE_KEYS = Object.freeze([
   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICzjuXnpqLaVYtDu31PbDKjswFWytmmhkU2SsgdkY50J bio-ai-catalogue",
   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMcDvL37Gr543+bDycYk53h83ZVfCxmIquuIlV+Ptn9c bio-ai-catalogue-recovery",
 ]);
+const DEVELOPMENT_CATALOGUE_KEYS = Object.freeze([
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBMUxtwLqZFIVAbZIbyThkmFYPke1XbAB6zp1DeIRlJ6 bio-ai-catalogue-development",
+]);
+export const CATALOGUE_KEYS = Object.freeze([...BOB_CATALOGUE_KEYS, ...DEVELOPMENT_CATALOGUE_KEYS]);
 
 const AI_TOKEN_RE = /^[a-z0-9._:-]+$/;
 const AI_WORD_RE = /^[a-z_]+$/;
@@ -686,12 +700,12 @@ async function verifyAi(read, render, namespace, input, armored, heldSeq, allowe
 /* R53: a catalogue payload or an advisory, judged as a copy must judge one
    fetched from the network: well formed, signed in its own namespace by a
    catalogue key over exactly its fields, and newer than the highest held. */
-export async function verifyAiCatalogue(statement, armored, heldSeq, allowedKeys = CATALOGUE_KEYS) {
+export async function verifyAiCatalogue(statement, armored, heldSeq, allowedKeys = BOB_CATALOGUE_KEYS) {
   const r = await verifyAi(readCatalogue, renderCatalogue, NS_AI_CATALOGUE, statement, armored,
     heldSeq === undefined ? 0 : heldSeq, allowedKeys, (c) => Object.freeze({ ...c }));
   return r.ok ? { ok: true, statement: r.copy } : r;
 }
-export async function verifyAiAdvisory(advisory, armored, heldSeq, allowedKeys = CATALOGUE_KEYS) {
+export async function verifyAiAdvisory(advisory, armored, heldSeq, allowedKeys = BOB_CATALOGUE_KEYS) {
   const r = await verifyAi(readAdvisory, renderAdvisory, NS_AI_ADVISORY, advisory, armored,
     heldSeq === undefined ? 0 : heldSeq, allowedKeys,
     (c) => Object.freeze({ ...c, target: Object.freeze({ ...c.target }) }));
@@ -700,7 +714,7 @@ export async function verifyAiAdvisory(advisory, armored, heldSeq, allowedKeys =
 
 /* R54: the seal-key document, signed in NS_AI_CATALOGUE. Validity at an instant
    is the caller's; a key swapped by an attacker is UNKNOWN_KEY. */
-export async function verifyAiSealKey(doc, armored, allowedKeys = CATALOGUE_KEYS) {
+export async function verifyAiSealKey(doc, armored, allowedKeys = BOB_CATALOGUE_KEYS) {
   const r = await verifyAi(readSealKey, renderSealKey, NS_AI_CATALOGUE, doc, armored, undefined, allowedKeys,
     (c) => Object.freeze({ ...c }));
   return r.ok ? { ok: true, doc: r.copy } : r;
