@@ -15,11 +15,10 @@ export async function team(env = {}) {
 /** The founder's handle as the roster gives it (what the screens say for the founder, never the id). */
 export const handleOf = async (as, id = "admin") => (await as.read("memberlist")).members.find((m) => m.member_id === id).handle;
 
-/** The team's own key, held and switched on, by the real acts (the password asked again first, as an administrator's page does). */
+/** The team's own account, held (T53, R95: by `aiaccountadd`, the alpha's group key retired), by the real acts (the password asked again first, as an administrator's page does). */
 export async function holdKey(as, w, key = "sk-ant-api03-SENTINELKEY") {
   await as.act("reauth", { body: { password: w.password } });
-  await as.act("groupkeyset", { body: { key } });
-  await as.act("groupkeyswitch", { body: { on: true } });
+  await as.act("aiaccountadd", { body: { owner: "group", provider: "anthropic", plan: "api-team", means: "sealed", secret: key } });
   return key;
 }
 

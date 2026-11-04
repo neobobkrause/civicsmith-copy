@@ -1,0 +1,16 @@
+# file-safety — requirements notes
+
+Text moved out of `build/requirements/file-safety.md` to bring that file under the requirements cap (70,000 bytes), unchanged in wording (job file-safety, T53). No requirement lives here: every **R<n>** line and its mark stays in the requirements file. `bio-plane/test/m/file-safety/requirements-ids.test.mjs` asserts the move changed no id and no mark.
+
+## Change history (the requirements file's former Status line)
+
+**Status** · In force: a new product module (layer 3, after `capture` and, since T42, `doorbell`; K2727), by Bob's K1913, K1928, K1929, K1939 and K1949 (with DEC-173), packaged by BOB (K2008, K2063), entering at T36's opening; every requirement not yet met (T36). Last changed T37 (T37-8: R12, R15, R21, R27, R28, R31, R33, R35, R36 amended; R39–R41 new; K2099, K2129, K2130, K2153, K2155, K2160, K2161). Last changed T46 (T46-7: R42 new, `SCANNER_ABSENT` and `RENDERER_ABSENT` said in members' words wherever answered, their details never "copy"; N897 (4), DEC-149, `draft-T46-trial.md` §3.2); marked not yet met (T46). Last changed T47 (T47-12: R43 new, amending R12, an unreadable render queue with a renderer bound answers its own code `RENDER_QUEUE_UNREADABLE`, a new row C-140.43; N941, K231, K3027 doubt 3; R44 new, `onOwnServers` stated in Provides; N971); marked not yet met (T47). Last changed T51 (FR-12: R46, R47, R48 new, amending R5 and R3; K4182, K4194, K4168, K4202); met (K4214). Last changed T51 fix round 9 (BOB; K4831, K4834, K4837: R1, R3, R4, R6, R11, R12, R16, R21, R51 amended; R53-R57 new; marked not yet met T51). Last changed T53 (BOB #325: R60–R67 new, a photograph's safe picture, DEC-460; R68 new, a held-and-named file, N1266; R69, R70 new, JOURNEYS R-28, R-64; R11 and R45 amended for the picture); marked not yet met (T53).
+
+## Suggestions (moved from the requirements file's Private part)
+
+- The structure check reuses the readers' `structure()` answers already held where `reading-pipeline` keeps them; reading again is allowed.
+- The on-demand scan of R8 is a `/scan` request of one target; a short wait (a few seconds) before `SCAN_PENDING` suits the screens.
+- R6's archive rule walks at most `ooxml`'s `ARCHIVE_TREE_ENTRIES_MAX` entries; caching a member's grade per call is enough.
+- R38's table may hold, for each kind, the names engines use for it (ClamAV's `Downloader`, `Dropper`, `Trojan`, `Macro`, `Exploit`, `Phishing`, `PUA`, `Heuristics`), matched without regard to case.
+- **T47 (T47-12).** N941 names R14; the condition is `renderBatch`'s (R12), so R43 amends R12. Today the one `catch` around the batch answers `RENDERER_ABSENT` for any fault inside it ("The render queue could not be read"); R43's region covers the queue reads (and the safe copies' count), while R12's region keeps the binding test only. R39's `render` wake is unchanged (null with no renderer bound). N971's other half (R42's "no virus scanner" against `setup-page` R30's "no file scanner") is the design stream's words, not this entry. Doubt 3 (K3027): a distinct code, not capability, so it runs before file-safety's split.
+- Not here: the assistant's rule (text and `active` only) is `skills` and `agent-worker`'s (T35-46, T35-50). Citing only originals is each citing module's own rule; R37 makes it hold by construction.

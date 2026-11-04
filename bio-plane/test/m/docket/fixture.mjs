@@ -190,14 +190,15 @@ export function world({ slug = SLUG, before = null } = {}) {
       st.sql.exec(`INSERT OR REPLACE INTO project_participants (project_id, member_id, state, owner, created, updated)
                    VALUES (?, ?, ?, ?, 't', 't')`, projectId, memberId, state, owner ? 1 : 0);
     },
-    /** A ratified edition of case `caseId` of `pid`, its members `[{id, role, sha}]`, and its signed case document. */
-    publish(pid, caseId, edition, members, { whatChanged = null, at = clock.now } = {}) {
+    /** A ratified edition of case `caseId` of `pid`, its members `[{id, role, sha}]`, and its signed case document;
+     *  `document` its text as the case document's own author wrote it (a provider's fixture), else a bare `/5` one. */
+    publish(pid, caseId, edition, members, { whatChanged = null, at = clock.now, document = null } = {}) {
       st.sql.exec(`INSERT OR IGNORE INTO cases (case_id, project_id, opened) VALUES (?, ?, ?)`, caseId, pid, iso(at));
       st.sql.exec(`INSERT INTO published_cases (case_id, edition, opened, ratified_at, scope) VALUES (?, ?, ?, ?, ?)`,
                   caseId, edition, iso(at), iso(at), "What the case covers.");
       members.forEach((m, i) => st.sql.exec(`INSERT INTO published_case_members (case_id, edition, ord, bundle_id, version_sha, role)
                                               VALUES (?, ?, ?, ?, ?, ?)`, caseId, edition, i, m.id, m.sha ?? sha(m.id), m.role ?? "supporting"));
-      const text = ["---", "format: bio-case-document/5", `case_id: ${caseId}`, `edition: ${edition}`, "---", "",
+      const text = document ?? ["---", "format: bio-case-document/5", `case_id: ${caseId}`, `edition: ${edition}`, "---", "",
                     `# Case ${caseId}`, "", ...(whatChanged ? ["## What Changed in This Edition, and Why", "", whatChanged, ""] : [])].join("\n");
       st.sql.exec(`INSERT INTO case_documents (case_id, edition, doc_sha, text, authored_by, authored_at, sig_armored, ratified_at)
                    VALUES (?, ?, ?, ?, 'member:alice', ?, 'SIG', ?)`, caseId, edition, sha(text), text, iso(at), iso(at));

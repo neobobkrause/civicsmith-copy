@@ -63,7 +63,7 @@
 import { recordOf } from "../record-core/index.mjs";
 import { viewerPredicate, membershipOf } from "../membership/index.mjs";
 import { inquiryOf, biasNotInForce } from "../inquiry/index.mjs";
-import { strengthOf, DEPTH_BOUND, GRADING_METHOD_VERSION } from "../strength/index.mjs";
+import { strengthOf, DEPTH_BOUND, GRADING_METHOD_VERSION, VERSION_STRENGTH_INERT_SOURCES } from "../strength/index.mjs";
 import { extractionOf } from "../extraction/index.mjs";
 import { promotionOf, CATALOG_VERSION } from "../promotion/index.mjs";
 import { parseImportedFindingRef, readBiasApplied, flattenBiasApplied } from "../inquiry-grammar/index.mjs";
@@ -89,7 +89,7 @@ import { retrievalOf } from "../retrieval/index.mjs";
 import { localDay } from "../civil-time/index.mjs";
 import { DRAFT_KINDS } from "../run-rules/index.mjs";
 import { CASE_DISCLOSURE_CHECKS, ACCOUNT_ARMS } from "./checks.mjs";
-import { basesListed, basisCitation, placesStated, PERSON_PLACES, TIE_LINE_KINDS, TIE_ANONYMOUS_LEVELS } from "./people.mjs";
+import { basesListed, basisCitation, placesStated, subjectNaming, PERSON_PLACES, TIE_LINE_KINDS, TIE_ANONYMOUS_LEVELS } from "./people.mjs";
 import { chainsOf, materialHeld, materialRows, photoRead, documentRead, PHOTO_NOT_COVERABLE_WORDS,
          PHOTO_UNCHECKED_WORDS } from "./materials.mjs";
 import { flagsListed, flagsJudged, acceptedWorkRow } from "./accepted.mjs";
@@ -100,13 +100,15 @@ const NO_ANSWER = localize("case-disclosures.why.no_answer", "no answer");
 
 export { CASE_DISCLOSURE_CHECKS, PHOTO_WORDS, DOCUMENT_WORDS, ACCOUNT_ARMS } from "./checks.mjs";
 export { PERSON_BASES, PERSON_PLACES, TIE_LINE_KINDS, TIE_ANONYMOUS_LEVELS, basesListed, basisCitation, placesStated,
+         subjectNaming,
          peopleLines, memberTieLines, peopleOf, memberTiesOf } from "./people.mjs";
 export { chainsOf, materialHeld, materialRows, photoRead, documentRead, obscuredRead, PHOTO_STATES, DOCUMENT_STATES,
          PHOTO_NOT_COVERABLE_WORDS, PHOTO_UNCHECKED_WORDS } from "./materials.mjs";
 export { flagsListed, acceptedWorkRow, FLAG_SENTENCE, FLAGS_SAY } from "./accepted.mjs";
 export { SELF_ATTESTED_SENTENCE, TENSION_TEMPLATES, HIGHLIGHT_SENTENCE, NOT_SHOWN_WORDS, TENSIONS_DEPTH_STATED,
          tensionSide, tensionTemplate, tensionSentence, tensionsUnreadStated, tensionFrontmatterLines,
-         tensionBodyLines, captureBodyLines, carriesBodyLines, acceptedBodyLines } from "./document.mjs";
+         tensionBodyLines, captureBodyLines, carriesBodyLines, acceptedBodyLines, ungradedLines, ungradedBodyLines,
+         UNGRADED_BODY_KEY } from "./document.mjs";
 
 /** The longest owner's words in a list (`tensionsDisclosed`, `selfAttested`): this module's own copy of
  *  `case-authoring`'s `COMPLETENESS_MAX` (K57), the bound its R3 sets on every authored field. */
@@ -630,9 +632,23 @@ export class CaseDisclosures {
    *  signed attribution section states), one `grading_facts:` row each, `{finding, ord}` beside the answer's fields; and
    *  each relied-on passage, one `passages:` row per leg naming a content row, `{finding, ord, content_id, capture_sha,
    *  extent, chain, quoted}` (`chain` as minted, null when none: K1317), `quoted` the text of the extracted unit at that extent (`extraction.unitsOf`), null where the copy
-   *  holds none there. A finding `gradingFacts` refuses contributes no row, and the refusal is kept in `unread`, stated. */
+   *  holds none there. A finding `gradingFacts` refuses contributes no row, and the refusal is kept in `unread`, stated.
+   *  R35 (T53; DEC-461): `ungraded`, from the same read, one `{finding, ord, content_id, title, role}` per leg with a
+   *  `passages:` row whose `grading_facts:` row holds no counted grade (strength R9: `grade` null; a hunch leg, R16, and a
+   *  leg a record-derived grade counts, a typed passage's among them, strength R46, are not listed), in the order the
+   *  findings are handed (members first, R6) then `ord`; `title` the document's title as its record states it (as R7's
+   *  `materials:` row), else null; `role` the leg's own role in the basis. A refused finding adds no entry. */
   findingFacts(findings, viewer) {
-    const grading = [], passages = [], unread = [];
+    const grading = [], passages = [], unread = [], ungraded = [];
+    const titles = new Map();
+    const titleOf = (bundle) => {
+      if (!titles.has(bundle)) {
+        let t = null;
+        try { t = (this.#one(`SELECT title FROM bundles WHERE bundle_id=?`, bundle) || {}).title; } catch { t = null; }
+        titles.set(bundle, typeof t === "string" && t.trim() ? t : null);
+      }
+      return titles.get(bundle);
+    };
     const units = new Map();
     const unitsOf = (sha) => {
       if (!units.has(sha)) { let u = null; try { u = this.extraction.unitsOf(sha); } catch { u = null; } units.set(sha, u); }
@@ -643,15 +659,20 @@ export class CaseDisclosures {
       try { gf = this.strength.gradingFacts({ inquiry: id, levels: null, viewer }); } catch (e) { gf = { ok: false, reason: String(e && e.message || e).slice(0, 160) }; }
       if (!gf || gf.ok !== true) { unread.push({ finding: id, reason: gf ? gf.reason ?? null : null }); continue; }
       gf.legs.forEach((leg, ord) => grading.push({ finding: id, ord, ...leg }));
-      for (const leg of this.#rows(`SELECT b.ord, c.content_id, c.capture_sha, c.extent, c.chain FROM inquiry_basis b
+      for (const leg of this.#rows(`SELECT b.ord, c.content_id, c.capture_sha, c.bundle_id, c.extent, c.chain FROM inquiry_basis b
                                     JOIN content c ON c.content_id = b.content_id WHERE b.bundle_id=? ORDER BY b.ord`, id)) {
+        const facts = gf.legs[Number(leg.ord)];
+        if (facts && (facts.grade === null || facts.grade === undefined)
+            && !VERSION_STRENGTH_INERT_SOURCES.includes(facts.grade_source))
+          ungraded.push({ finding: id, ord: Number(leg.ord), content_id: leg.content_id, title: titleOf(leg.bundle_id),
+                          role: typeof facts.role === "string" && facts.role ? facts.role : null });
         const u = unitsOf(leg.capture_sha);
         const at = u && Array.isArray(u.units) ? u.units.find((x) => canonicalJson(x.extent) === leg.extent) : null;
         passages.push({ finding: id, ord: Number(leg.ord), content_id: leg.content_id, capture_sha: leg.capture_sha,
                         extent: JSON.parse(leg.extent), chain: leg.chain == null ? null : JSON.parse(leg.chain), quoted: at && !at.truncated ? at.text : null });
       }
     }
-    return { grading, passages, unread };
+    return { grading, passages, unread, ungraded };
   }
 
   /** R4, R8, R10 (K1316): the off-the-record captures, those whose `sources:` row (R4) states the identity "Withheld":
@@ -883,6 +904,9 @@ export class CaseDisclosures {
       .map((h) => ({ person: h.person, members: [...parent.keys()].filter((m) => find(m) === h.person).sort(), places: h.places }));
     return { named, unresolved, entities: [...entities].sort(), money_parties: [...moneyParties].sort() };
   }
+
+  /** R46: `subjectNaming` (`people.mjs`), the pure judgment, as a service of this instance. */
+  subjectNaming(args) { return subjectNaming(args && typeof args === "object" ? args : {}); }
 
   /** R25, R26 (K1483, K1493): `peopleBases: [{person, basis, ref, words?}]`, the owner's recorded basis for each person
    *  R24 named, judged against the record at the act. A listed person is matched to a named one through its identity

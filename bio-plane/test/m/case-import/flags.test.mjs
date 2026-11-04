@@ -137,7 +137,7 @@ test("R16 `finding` answers R4's facts for one finding at one edition with R9's 
   assert.ok(!(got instanceof Promise));
   assert.deepEqual(got, { ref, import: a.import, group: SOURCE, case: CASE, edition: 1, finding: F1, manifest_sha: file.manifestSha,
                           result: "recreated", pair: { capture: { state: "graded", grade: "B" }, connection: { state: "graded", grade: "C" } },
-                          acceptance: null });
+                          ungraded_passages: null, acceptance: null });
   /* the pair is the one the edition publishes, not the recomputed one */
   assert.equal(got.pair.capture.grade, "B");
   w.clock.now = Date.parse("2026-10-13T00:00:00Z");

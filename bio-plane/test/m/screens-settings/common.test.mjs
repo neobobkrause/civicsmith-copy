@@ -38,12 +38,6 @@ const PRESSES = [
   // T51 (R55, R61): a key registered for a member; a rule confirmed and one withdrawn (`ruledraft` and `writinghelp` of grouprules are held, J1)
   P("full", "members", "signeradd", { choose: { "ms-who": "ana" }, values: { "ms-line": "ssh-ed25519 " + keyOf("ana") + " ana@laptop" } }),
   P("full", "members", "memberset", { data: { member: "dev", status: "revoked" } }),
-  P("full", "teamai", "groupkeyset", { values: { "mk-key0": "sk-ant-api03-" + SECRET } }, { secret: SECRET, setup: asked }),
-  P("full", "teamai", "accountusesset", { data: { sw: "ask", to: "off" } }, { setup: asked }),
-  P("full", "teamai", "ailimitset", { data: { remove: "" }, values: { "aig-scope": "overall", "aig-amount": "9", "aig-unit": "calls", "aig-period": "day" } }, { setup: asked }),
-  P("full", "teamai", "groupkeyswitch", { data: { on: "off" } }, { setup: asked }),
-  P("full", "teamai", "groupkeyremove", {}, { setup: asked }),
-  P("full", "teamai", "aikeepaway", { data: { on: "on" }, values: { "mk-all": true, "mk-why": "why" } }, { setup: asked }),
   P("full", "account", "memberlanguageset", { values: { "ma-lang": "es" } }, { who: "dev" }),
   P("full", "account", "infolevelset", { values: { "ma-level": "pause" } }, { who: "dev" }),
   P("full", "account", "memberpairingset", { values: { "ma-pair-1": true } }, { who: "dev" }),
@@ -53,14 +47,6 @@ const PRESSES = [
   P("full", "account", "signout", {}, { who: "dev", setup: again }),
   P("full", "account", "signouteverywhere", {}, { who: "dev", setup: again }),
   P("full", "account", "setpassword", (t) => ({ values: { "ma-cur0": t.dev.password, "ma-new0": SECRET, "ma-again0": SECRET } }), { who: "dev", secret: SECRET, setup: again }),
-  P("connect-group", "connect", "groupkeynoticeseen", {}, { who: "dev" }),
-  P("connect-undisclosed", "connect", "disclosureshown", async (t) => ({ data: { version: (await t.dev.read("disclosureof", { query: { member: "member:dev" } })).version } }), { who: "dev" }),
-  P("connect-none", "connect", "subscriptionsignin", { data: { step: "code" }, values: { "mc-code0": SECRET } }, { who: "dev", secret: SECRET }),
-  P("connect-none", "connect", "accountreferenceset", { choose: { "mc-way": "apikey" }, values: { "mc-key0": "sk-ant-api03-" + SECRET } }, { who: "dev", secret: SECRET, fresh: true }),
-  P("connect-own", "connect", "accountusesset", { data: { own: "1" }, values: { "mu-ask": false } }, { who: "dev" }),
-  P("connect-own", "connect", "ailimitset", { data: { remove: "" }, values: { "aio-scope": "overall", "aio-amount": "9", "aio-unit": "calls", "aio-period": "day" } }, { who: "dev" }),
-  P("connect-own", "connect", "accountreferenceremove", {}, { who: "dev" }),
-  P("connect-subscription", "connect", "subscriptiondisconnect", {}, { who: "dev" }),
   P("full", "notes", "notewrite", { values: { "mn-new": "n" } }, { who: "dev" }),
   P("full", "notes", "writinghelp", { data: { field: "new", id: "mn-new" }, values: { "mn-new": "n" } }, { who: "dev", table: (t) => writingHelp(t.dev.member) }),
   P("full", "notes", "noterevise", { data: { note: "2" }, values: { "mn-r2": "n" } }, { who: "dev" }),
@@ -118,10 +104,9 @@ function teamNamedOf(name) { if (!readOnly.has(name)) readOnly.set(name, name ==
 /* The reads an act changes (R8), named by what each owner's act writes. */
 const CHANGES = {
   memberadd: ["roster"], membercaps: ["roster"], memberset: ["roster"], adminendorse: ["roster"], adminremove: ["roster"], expertiseconfirm: ["roster", "expertise"],
-  expertisewithdraw: ["roster", "expertise"], memberpairingset: ["pairings"], invitewithdraw: ["roster"], websitekeycreate: [], joinlinkenable: [], groupkeyset: ["groupkey"], groupkeyswitch: ["groupkey"], groupkeyremove: ["groupkey", "uses"],
+  expertisewithdraw: ["roster", "expertise"], memberpairingset: ["pairings"], invitewithdraw: ["roster"], websitekeycreate: [], joinlinkenable: [],
   accountusesset: ["uses", "history"], ailimitset: ["limits"], aikeepaway: ["keepaway"], memberlanguageset: ["language"], infolevelset: [], expertisedeclare: ["expertise"],
-  setpassword: [], signout: [], signouteverywhere: [], signerregisterown: ["signers"], signerrevokeown: ["signers"], groupkeynoticeseen: ["notice"], disclosureshown: ["disclosure"],
-  subscriptionsignin: ["signin", "reference"], accountreferenceset: ["reference", "uses"], accountreferenceremove: ["reference", "uses"], subscriptiondisconnect: ["signin", "reference"],
+  setpassword: [], signout: [], signouteverywhere: [], signerregisterown: ["signers"], signerrevokeown: ["signers"],
   notewrite: ["notes"], noterevise: ["notes"], notedelete: ["notes"], noteturn: ["notes"], writinghelp: [],
   passwordresetlink: [], signerset: ["signers"], signeradd: ["signers"], ruleconfirm: ["rules"], rulewithdraw: ["rules"], ruledraft: ["rules"], groupnameset: ["identity"], groupdomainset: ["identity"], grouplanguagesset: ["languages"], courtnoticeset: ["court"],
   hostingaccessset: ["hosting"], strengthbarset: ["bar"], profilesset: ["profiles"], placewanted: ["place"], officesseed: ["offices"], entitycreate: ["offices"],
@@ -152,9 +137,7 @@ test("R8 nothing is drawn as done before the answer: while an act has not answer
     await o.press(p.op, { ...press, choose: {} });
     o.redraw();
     assert.ok(o.p.all.some((r) => r.op === p.op), `${p.screen} ${p.op} sent`);
-    // R50: a code being exchanged is drawn as working beside the act, never as connected
-    if (p.op === "subscriptionsignin") { assert.ok(o.text.includes(said("shell.working")), "R50 the exchange is said to be working"); assert.equal(o.text.split(said("shell.working")).join(""), before, `${p.screen} ${p.op}`); }
-    else assert.equal(o.text, before, `${p.screen} ${p.op}`);
+    assert.equal(o.text, before, `${p.screen} ${p.op}`);
   }, { shared: true, over: (p) => ({ [p.op]: "pending" }) });
 });
 
@@ -279,22 +262,6 @@ test("R27 R73 C94: updates names who allowed or skipped a release by memberName:
   assert.ok(!b.text.includes("m-9"));
 });
 
-test("R48 C94: teamai names who set the key, and who made each change, by memberName; a member with no handle by the fallback word, never an id", async () => {
-  const t = await fullTeam();
-  await named(t);
-  const { w, founder } = t;
-  // SEED, no act makes it: the key was set, and the changes made, by members the roster knows by another handle
-  const by = (id) => { w.sql.exec("UPDATE group_key SET set_by = ?", "member:" + id); w.sql.exec("UPDATE account_changes SET by = ?", "member:" + id); };
-  by("m-7");
-  const a = await open("teamai", { world: w, as: founder });
-  const key = await founder.read("groupkeystate");
-  has(a, "screen.teamai.setby", { who: "luisa", date: day(key.set_at) });
-  assert.ok(!a.text.includes("m-7") && !a.text.includes("m-9"), "no id");
-  by("m-9");
-  const b = await open("teamai", { world: w, as: founder });
-  has(b, "screen.teamai.setby", { who: FALLBACK(), date: day(key.set_at) });
-  assert.ok(!b.text.includes("m-9"));
-});
 
 test("R57 C94: a key an administrator registered for the member names the registrar by memberName: the handle where it differs from the id, the fallback word for one with none, never an id", async () => {
   const t = await fullTeam();
