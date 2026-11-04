@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-model","verdict":"not affected","evidence":"build/modules.json:101 agent-model (agent-model/) holds no file that imports ai-catalogue, every code file under its paths read at 4ce6c6cb45","at":"2026-11-04T09:55:56.071Z","key":"ai-catalogue:204","worker":"merge: imports check","cost":"0"}
