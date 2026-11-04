@@ -34,12 +34,19 @@ test("R1 ASK_SCOPE is one closed list, each entry naming its op, its owner and t
   assert.equal(ASK_SCOPE.some((e) => /^sources?/.test(e.op) || /export|admin|purge|stats/.test(e.op)), false);
 });
 
-test("R1 the copy test: ASK_SCOPE equals credentials' AI_GRANT_OPS both ways, `rule` included (N580; K1603, K1609)", () => {
+/* (BOB, 4 Nov) the one op on AI_GRANT_OPS an ask never makes: the agent Worker's own credential read (ai-accounts R65) */
+const WORKER_ONLY = ["aicredential"];
+
+test("R1 the copy test: ASK_SCOPE equals credentials' AI_GRANT_OPS minus aicredential, both ways, `rule` included (N580; K1603, K1609; BOB, 4 Nov)", () => {
   const scope = ASK_SCOPE.map((e) => e.op);
-  assert.deepEqual(scope, [...AI_GRANT_OPS].sort());
-  for (const op of AI_GRANT_OPS) assert.equal(askAdmits(op), true, op);
+  assert.deepEqual(scope, AI_GRANT_OPS.filter((op) => !WORKER_ONLY.includes(op)).sort());
+  for (const op of AI_GRANT_OPS) assert.equal(askAdmits(op), !WORKER_ONLY.includes(op), op);
   for (const op of scope) assert.ok(AI_GRANT_OPS.includes(op), op);
   assert.ok(AI_GRANT_OPS.includes("rule"));
+  /* the difference is exactly that op: it is on the grant's list and never in the ask's, so its answer (a secret) is never
+     written into a grant's read log (ai-accounts R64, R65) */
+  assert.deepEqual(AI_GRANT_OPS.filter((op) => !scope.includes(op)), WORKER_ONLY);
+  assert.equal(askAdmits("aicredential"), false);
 });
 
 test("R2 a read under a grant never answers, names or counts a member's tie, the source-to-person link, or a hidden project's row", async () => {

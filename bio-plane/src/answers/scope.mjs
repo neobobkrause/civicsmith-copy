@@ -9,7 +9,9 @@
 const e = (op, owner, ruling) => Object.freeze({ op, owner, ruling });
 
 /** R1: the asking scope, sorted by op, each op named as the plane routes it (N580; K1603, K1609), so the list equals
- *  credentials' `AI_GRANT_OPS` both ways. `rule` is R7's door to every rule service (R8–R12), J1 (1). */
+ *  credentials' `AI_GRANT_OPS` both ways, less `aicredential` (BOB, 4 Nov): the agent Worker's own credential read
+ *  (ai-accounts R65), which an ask never makes, so its answer never enters a grant's read log. `rule` is R7's door to
+ *  every rule service (R8–R12), J1 (1). */
 export const ASK_SCOPE = Object.freeze([
   e("calculation", "calculations", "C:B-3"),
   e("career", "people", "K1470"),

@@ -267,7 +267,9 @@ test("R7: the installer hand-off is a plain link equal to INSTALLER_ADDRESS, pas
   const { t } = await html("/start");
   const a = find(mainOf(t), (e) => e.tag === "a" && e.attrs.href === INSTALLER);
   assert.equal(a.length, 1);
-  assert.deepEqual(Object.keys(a[0].attrs).sort(), ["class", "href"]);
+  /* a plain link (no target, rel, ping or download), drawn as the primary button (R18) */
+  assert.deepEqual(Object.keys(a[0].attrs).sort(), ["class", "data-tone", "href"]);
+  assert.deepEqual([a[0].attrs.class, a[0].attrs["data-tone"]], ["cs-btn", "primary"]);
   /* unset until the release: drawn, with nowhere to go */
   const { t: u } = await html("/start", { ...ENV, INSTALLER_ADDRESS: undefined });
   const c = find(mainOf(u), (e) => e.tag === "a" && norm(textOf(e)) === word("screen.site.create"))[0];
@@ -372,7 +374,7 @@ test("R10: nothing about a visitor is held: no cookie, and no binding beyond the
   assert.deepEqual(Object.keys(cfg).sort(), ["$schema", "account_id", "compatibility_date", "main", "name", "observability", "vars"]);
   assert.equal(cfg.account_id, "20b533579290b9b93168345edd3b7f72");
   assert.equal(cfg.observability.enabled, false);
-  for (const k of Object.keys(cfg.vars)) assert.ok(["INSTALLER_ADDRESS", "STEWARDS_ADDRESS", "FEATURED_CASE", "LISTED_GROUPS"].includes(k), k);
+  for (const k of Object.keys(cfg.vars)) assert.ok(["INSTALLER_ADDRESS", "STEWARDS_ADDRESS", "FEATURED_CASE", "LISTED_GROUPS", "WITHDRAWAL_REGISTER"].includes(k), k);
   /* a binding handed to it is never touched */
   const touched = [];
   const trap = new Proxy({}, { get: (_, p) => { touched.push(p); return () => {}; } });
