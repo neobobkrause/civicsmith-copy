@@ -13,6 +13,7 @@ import { frontDoorPointer } from "../../../src/store-assembly/wiring.mjs";
 import { transcriberOf } from "../../../src/store-assembly/transcribe.mjs";
 import { credentialsOf, Credentials } from "../../../src/credentials/index.mjs";
 import { aiAccountsOf, aiAccountsOps } from "../../../src/ai-accounts/index.mjs";
+import { aiRunsOf } from "../../../src/ai-runs/index.mjs";
 import { hypothesesOf } from "../../../src/hypotheses/index.mjs";
 import { networkNoticesOf } from "../../../src/network-notices/index.mjs";
 import { instanceSetupOf } from "../../../src/setup.mjs";
@@ -197,18 +198,26 @@ test("R53 (T48; N670): a notice is read through network-notices for her, the pro
   away.aiKeptAway = real;
 });
 
-test("R53, R50 (T48): readtranslate is refused AI_RUN_MODE_NOT_DEPLOYED while draft's flag is off, and AI_PART_NOT_DEPLOYED while ai-runs does not admit draft:reading, before the subject is read, with nothing posted; control: with both, it runs", async () => {
+test("R53, R50 (T48; ai-runs R78): readtranslate is refused AI_RUN_MODE_NOT_DEPLOYED while draft's flag is off, AI_PART_NOT_DEPLOYED (naming the serving account's entry) with no Gate 1 verdict for that entry, and PART_WITHDRAWN when the standing measure failed draft:reading on it, before the subject is read, with nothing posted; control: with both, it runs", async () => {
   const off = await doors({ gate: { flags: { ...READ_FLAGS, draft: false }, testSet: GATE_SET } });
   const n = hypothesesOf(off.ctx).noteWrite({ text: "A note.", by: "member:ann" });
   const a = await off.draft({ op: "readtranslate", subject: { kind: "note", id: n.note } });
   assert.deepEqual([a.status, a.body.reason], [403, "AI_RUN_MODE_NOT_DEPLOYED"]);
-  const bar = await doors({ parts: READ_PARTS.filter((p) => p !== "draft:reading") });
-  const m = hypothesesOf(bar.ctx).noteWrite({ text: "A note.", by: "member:ann" });
-  const b = await bar.draft({ op: "readtranslate", subject: { kind: "note", id: m.note } });
+  const none = await doors({ parts: [] });
+  const entry = aiAccountsOf(none.ctx).accountServing({ member: "member:ann", use: "draft" }).entry_id;
+  const m = hypothesesOf(none.ctx).noteWrite({ text: "A note.", by: "member:ann" });
+  const b = await none.draft({ op: "readtranslate", subject: { kind: "note", id: m.note } });
   const { grant: _g, suggestions: _s, read: _r, ...given } = b.body;
   assert.equal(b.status, 403);
-  assert.deepEqual(given, partRefusal("draft:reading"), "run-rules' own refusal for the part, relayed unchanged");
-  assert.equal(off.posts.length + bar.posts.length, 0);
+  assert.deepEqual(given, partRefusal("draft:reading", entry), "run-rules' own refusal for the part on the entry, relayed unchanged");
+  /* Gate 1 passed for drafts, the standing measure failed draft:reading on the entry: withdrawn */
+  const bar = await doors();
+  assert.equal(aiRunsOf(bar.ctx).testBarRecord({ part: "draft:reading", set: GATE_SET.id, set_version: GATE_SET.version, false_alarm_rate: 0.5,
+    passed: false, graded_by: "harness", at: "2026-10-02T00:00:00Z", entry_id: entry }).ok, true);
+  const mb = hypothesesOf(bar.ctx).noteWrite({ text: "A note.", by: "member:ann" });
+  const w = await bar.draft({ op: "readtranslate", subject: { kind: "note", id: mb.note } });
+  assert.deepEqual([w.status, w.body.code, w.body.entry_id], [403, "PART_WITHDRAWN", entry]);
+  assert.equal(off.posts.length + none.posts.length + bar.posts.length, 0);
   const on = await doors();
   const k = hypothesesOf(on.ctx).noteWrite({ text: "A note.", by: "member:ann" });
   assert.equal((await on.draft({ op: "readtranslate", subject: { kind: "note", id: k.note } })).body.ok, true);
@@ -288,6 +297,8 @@ test("R39 (T48; N1047): through op=queue the administrators' to-do for a ready r
 
 /* ===== R40 (T48; N996; K3101; ai-accounts R32, R23) ===== */
 
+test.todo("R40 (T48; N996): with credentials' delegates removed an ask and a draft still run, their account reads being ai-accounts'. Waits on ai-runs' per-entry gate (its R78): `partAdmitted(part)` passes no entry, so the doors refuse AI_PART_NOT_DEPLOYED off a test instance; the account reads are tested in ai-accounts-seam.test.mjs");
+
 test("R40 (T48; N996): the route map spreads ai-accounts' ops directly before credentials', and each reaches its handler once with credentials' delegates removed; control: a second disclosure registration is refused LISTENER_DECLARED, ai-accounts' registration being the plane's", async () => {
   const x = await doors();
   const u = new URL("http://do/x?viewer=member:ann&by=member:ann&member=member:ann");
@@ -299,28 +310,16 @@ test("R40 (T48; N996): the route map spreads ai-accounts' ops directly before cr
   for (const op of own) assert.ok(Object.hasOwn(map, op), `op=${op}`);
   const keys = Object.keys(map);
   assert.ok(keys.indexOf(own[0]) < keys.indexOf("aicredentialmint"), "before credentials' own ops");
-  /* the delegates removed: the moved services answer from ai-accounts alone */
-  const removed = [];
-  for (const name of own) void name;
+  /* the delegates removed (ai-accounts T53 deleted them from credentials): the account reads the assembly makes answer from
+     ai-accounts alone, through its own map and its in-plane seam */
   const proto = Credentials.prototype;
-  const saved = new Map();
-  /* the delegates the plane's own code used to reach (`aiKeptAway` is left: instance-setup's `assistantGate` still asks it
-     through credentials until its own job re-points, and it is not the plane's) */
-  for (const name of ["accountReferenceState", "accountFor", "groupKeySwitches", "registerDisclosureRead",
-                      "subscriptionTokenRefused", "accountReferenceSet"]) {
-    saved.set(name, Object.getOwnPropertyDescriptor(proto, name));
-    delete proto[name]; removed.push(name);
-  }
-  try {
-    const st = JSON.parse(JSON.stringify(await map.accountreference()));
-    assert.equal(st.ok, true, JSON.stringify(st));
-    assert.equal(typeof (await map.groupkeystate()), "object");
-    /* an ask and a draft still run, their account reads being ai-accounts' */
-    const r = await x.s.draft({ op: "writinghelp", member: "ann", session: SESSION, told: "t", act: "conclude", field: "reason", pack: { layers: [] } });
-    assert.equal(r.status, 200, await r.text());
-    const a = await x.s.ask({ member: "member:ann", session: SESSION, question: "q" });
-    assert.equal(a.status, 200);
-  } finally { for (const [name, d] of saved) if (d) Object.defineProperty(proto, name, d); }
+  for (const name of ["accountReferenceState", "groupKeySwitches", "accountReferenceSet", "subscriptionTokenRefused"])
+    assert.equal(typeof proto[name], "undefined", `credentials holds no ${name} delegate`);
+  const st = JSON.parse(JSON.stringify(await map.accountsof()));
+  assert.equal(typeof st, "object", "ai-accounts' list read answers through the map");
+  const seam = aiAccountsOf(x.ctx).accountReferenceState({ member: "member:ann", viewer: "member:ann" });
+  assert.deepEqual([seam.ok, seam.held], [true, true], JSON.stringify(seam));
+  assert.equal(aiAccountsOf(x.ctx).groupKeySwitches().on, false);
   const again = aiAccountsOf(x.ctx).registerDisclosureRead("zz-probe", () => ({ shown: true }));
   assert.deepEqual([again.ok, again.reason], [false, "LISTENER_DECLARED"], JSON.stringify(again));
 });

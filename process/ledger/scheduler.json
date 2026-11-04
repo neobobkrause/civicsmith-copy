@@ -1,0 +1,70 @@
+{
+  "id": "scheduler",
+  "title": "scheduler: answer its provider notices",
+  "layer": 10,
+  "paths": [
+    "bio-plane/src/scheduler/",
+    "build/requirements/scheduler.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/scheduler/"
+  ],
+  "requirements": "build/requirements/scheduler.md",
+  "uses": [
+    "promotion",
+    "capture",
+    "acquisition",
+    "calibration",
+    "entities",
+    "connections",
+    "progressions",
+    "bias",
+    "retrieval",
+    "ai-runs",
+    "capture-requests",
+    "intent",
+    "reevaluation",
+    "monitoring",
+    "link-sweep",
+    "network-notices",
+    "civil-time",
+    "jurisdictions",
+    "record-core",
+    "duties",
+    "people",
+    "money-checks",
+    "answers",
+    "inquiry",
+    "following",
+    "file-safety",
+    "case-carriage",
+    "doc-clean",
+    "publish-schedule",
+    "question-explorer",
+    "setup-words",
+    "calculations",
+    "test-support",
+    "doorbell",
+    "mail-door",
+    "registers"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/scheduler.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: question-explorer:90 (index.mjs:481 calls exploreTick, whose account read changed). For each, decide from your own requirements what this module must do (the T53 ops that replace the retired ones are in ai-accounts' requirements and op-declarations), adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T12:07:41Z"
+  }
+}

@@ -2,7 +2,7 @@
    K2490), R74's batch, R75's test bar and the deploy gate that reads it (B6), R76's cost. */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { world, OPEN, INQ, ORG, ANN, T0, TEST_SET } from "./world.mjs";
+import { world, OPEN, INQ, ORG, ANN, T0, TEST_SET, ENTRIES } from "./world.mjs";
 import { stepsWorld } from "../steps/fixtures.mjs";
 import { QH, QP1, CAT } from "../steps/fixture.mjs";
 import { AiRuns } from "../../../src/ai-runs/index.mjs";
@@ -139,8 +139,10 @@ test("R74 (B4 (5); J5 (8), (9), (11)): openMany, a member's batch — no member'
   assert.equal(w.dump(), before, "nothing written");
   const r = await batch();
   assert.equal(r.ok, true);
-  assert.deepEqual(r.estimate, { ok: true, owner: "member:ann", use: "run", mode: "check", count: 4, estimate: word("question-explorer.known") },
-    "ai-use R10, asked once for the batch");
+  /* ai-use R10's answer, relayed as it came: what the batch asked is this module's; the estimate itself is ai-use's */
+  const { estimate: figures, ...asked } = r.estimate;
+  assert.deepEqual(asked, { ok: true, owner: "member:ann", use: "run", mode: "check", count: 4 }, "ai-use R10, asked once for the batch");
+  assert.equal(typeof figures, "object");
   assert.deepEqual(r.runs.map((x) => [x.step, x.run ?? null, x.refusal ? x.refusal.code : null]),
     [[A, `RUN-${A}-1`, null], [H, null, "AI_RUN_STEP_UNKNOWN"], [G, null, "AI_RUN_NO_CONTEXT"], [C, `RUN-${C}-1`, null]]);
   const created = f.acts.filter(([a]) => a === "stepCreate").map(([, a]) => a);
@@ -148,7 +150,7 @@ test("R74 (B4 (5); J5 (8), (9), (11)): openMany, a member's batch — no member'
     [[`RUN-${A}-1`, SYS(`RUN-${A}-1`), "AI run on " + A + ": Ask the clerk for the agenda", JSON.stringify({ questions: [Q] })],
      [`RUN-${C}-1`, SYS(`RUN-${C}-1`), "AI run on " + C + ": Ask the clerk for the minutes", JSON.stringify({ questions: [Q] })]]);
   const a = (await w.runs.read({ run: `RUN-${A}-1`, viewer: ANN })).session;
-  assert.deepEqual([a.step, a.context.id, a.principal.claude, a.principal.ref], [r.runs[0].system_step, Q, "member:ann", "member:ann"]);
+  assert.deepEqual([a.step, a.context.id, a.principal.ai, a.principal.ref], [r.runs[0].system_step, Q, "member:ann", "member:ann"]);
   /* the bound ends RUN-<A>-1 alone, setting its own step aside; RUN-<C>-1 runs on */
   const t = await w.runs.tick({ run: `RUN-${A}-1`, viewer: ANN, caller: ANN_CRED, consume: { fetches: 1 } });
   assert.equal(t.ended.step_end.end, "set_aside");
@@ -180,26 +182,33 @@ test("R75: testBarRecord records a part's result through run-rules' checkTestBar
   }
   assert.equal(w.count("ai_group_tests"), 1);
   const mine = w.runs.groupTestResults({ part: "explore", viewer: "member:ann" });
-  assert.deepEqual([mine.matters, mine.results.map((r) => [r.false_alarm_rate, r.passed])], [1, [[0.3, false]]]);
+  assert.deepEqual([mine.matters, mine.results.map((r) => [r.entry_id, r.part, r.false_alarm_rate, r.passed])], [1, [[null, "explore", 0.3, false]]]);
   assert.deepEqual(w.runs.groupTestResults({ part: "explore", viewer: "class:ai/x" }).results, [], "control: no member, nothing");
   assert.deepEqual(w.rows(`PRAGMA table_info(ai_test_bar)`).map((c) => c.name),
-    ["seq", "part", "set_name", "set_version", "false_alarm_rate", "passed", "graded_by", "at"], "figures only: no transcript");
+    ["seq", "part", "set_name", "set_version", "false_alarm_rate", "passed", "graded_by", "at", "entry_id"], "figures only: no transcript");
 });
 
-test("R40, R75 (B6; run-rules R19 as amended; J5 (7)): the open deploys a mode only when its test bar is held on the set the gate reads, besides the chain — no bar refuses check C-109.1, nothing written; Civicsmith's set, empty today (N829), holds no bar whatever is recorded on it; control: the bar held, check opens", async () => {
+test("R40, R75, R78 (T53; run-rules R19, R29 as amended; AD13, K5475): the open deploys a mode only on a Gate 1 verdict held for the account's entry, besides the chain — none refuses check C-109.1, nothing written; an R75 record opens nothing; control: a passing verdict on the entry opens check, and a failed R75 record for that entry on the current set withdraws it for that entry alone", async () => {
   const none = world({ bars: [] });
   await none.group("ann"); none.bundle(INQ);
   const before = none.dump();
   const r = await none.runs.open(OPEN());
   assert.deepEqual([r.started, r.code, r.deployed], [false, "AI_RUN_MODE_NOT_DEPLOYED", []]);
   assert.equal(none.dump(), before);
-  const civic = world({ testSet: CIVICSMITH_TEST_SET, bars: ["check"] });
-  await civic.group("ann"); civic.bundle(INQ);
-  assert.equal(civic.runs.testBarRecords().length, 1, "a passing record is held on Civicsmith's set");
-  assert.equal((await civic.runs.open(OPEN())).code, "AI_RUN_MODE_NOT_DEPLOYED", "and counts for nothing while it holds no matter");
-  /* control: the bar held on a set with a matter */
-  none.runs.testBarRecord({ part: "check", set: TEST_SET.id, set_version: TEST_SET.version, false_alarm_rate: 0, passed: true, graded_by: "harness", at: T0 });
+  /* a passing R75 record (Civicsmith's standing measure) is no gate: still refused */
+  none.runs.testBarRecord({ part: "check", set: TEST_SET.id, set_version: TEST_SET.version, false_alarm_rate: 0, passed: true,
+                            graded_by: "harness", at: T0, entry_id: ENTRIES.a });
+  assert.equal((await none.runs.open(OPEN())).code, "AI_RUN_MODE_NOT_DEPLOYED");
+  /* control: Gate 1's verdict for ann's head entry opens check */
+  none.gates.push(none.gate("check", ENTRIES.a));
   assert.equal((await none.runs.open(OPEN())).started, true);
+  /* a failed R75 record for that entry on the current set withdraws it, for that entry only */
+  none.runs.testBarRecord({ part: "check", set: TEST_SET.id, set_version: TEST_SET.version, false_alarm_rate: 0.4, passed: false,
+                            graded_by: "harness", at: "2026-07-02T00:00:00Z", entry_id: ENTRIES.a });
+  assert.equal((await none.runs.open(OPEN({ run: "R2" }))).code, "AI_RUN_MODE_NOT_DEPLOYED");
+  assert.deepEqual([none.runs.partAdmitted("check", ENTRIES.a).admitted, none.runs.partAdmitted("check", ENTRIES.b).admitted], [false, false]);
+  none.gates.push(none.gate("check", ENTRIES.b));
+  assert.equal(none.runs.partAdmitted("check", ENTRIES.b).admitted, true, "another entry is unaffected");
 });
 
 test("R76 (K2482; J5 (10)): a run's cost is ai-use's actualOf for the run's id, asked with the reader's own stamp, answered to whom it answers (the paying account's owners) with `final` once the run has ended; no cost key at all where it answers nothing", async () => {

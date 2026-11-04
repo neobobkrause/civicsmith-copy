@@ -28,12 +28,12 @@ const textSha = (bundle) => sha(canonicalJson([{ extent: { kind: "doc-para", par
 const account = (w, capture, text = "I saved it myself.") => w.st.sql.exec(`INSERT INTO capture_accounts (capture_sha, seq,
   by, text, signature, key_b64, at) VALUES (?, 1, 'alice', ?, 'SIG-of-alice-7f3', 'AAAA', ?)`, capture, text, "2026-09-27T12:00:00Z");
 
-test("R14, R55 (case-disclosures R5): the document is bio-case-document/8, which requires the materials blocks as /6 does, and its method: block carries strength's GRADING_METHOD_VERSION and promotion's CATALOG_VERSION at the act, inside what the owner signs", () => {
+test("R14, R55 (case-disclosures R5): the document is bio-case-document/10 (case-grammar R35, the format in force), which requires the materials blocks as /6 does, and its method: block carries strength's GRADING_METHOD_VERSION and promotion's CATALOG_VERSION at the act, inside what the owner signs", () => {
   const w = world(); w.member("alice"); w.doc(DOC); w.finding(Q, [{ target: DOC }]);
   const r = w.publish(w.project("Team", "alice", [Q]), "alice", [Q]);
   assert.equal(r.ok, true, JSON.stringify(r).slice(0, 300));
   const fm = w.fm(docOf(w, r));
-  assert.deepEqual([fm.format, CASE_DOCUMENT_FORMAT, caseDocumentRequiresMaterials(fm)], ["bio-case-document/8", "bio-case-document/8", true]);
+  assert.deepEqual([fm.format, CASE_DOCUMENT_FORMAT, caseDocumentRequiresMaterials(fm)], ["bio-case-document/10", "bio-case-document/10", true]);
   assert.deepEqual(methodOf(fm), { grading: GRADING_METHOD_VERSION, checks: CATALOG_VERSION });
   assert.ok(bodyOf(docOf(w, r)).includes(`by the grading method ${GRADING_METHOD_VERSION}`));
 });

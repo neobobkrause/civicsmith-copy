@@ -40,7 +40,7 @@ test("R39: no place is named in the module's outward text — its acts' rows, re
   const w = world();
   await w.group("ann"); w.bundle(INQ);
   const texts = Object.keys(MINTED).map((c) => AI_RUNS_CHECKS[c].translation);
-  texts.push(JSON.stringify(await w.runs.open(OPEN({ run: "" }))), JSON.stringify(await w.runs.open(OPEN({ principalClaude: null }))),
+  texts.push(JSON.stringify(await w.runs.open(OPEN({ run: "" }))), JSON.stringify(await w.runs.open(OPEN({ principalAi: null }))),
              JSON.stringify(await w.runs.open(OPEN({ mode: "extract" }))), JSON.stringify(await w.runs.open(OPEN({ plan: "PLN-2026-0001" }))),
              JSON.stringify(await w.runs.open(OPEN())), JSON.stringify(await w.runs.open(OPEN())),
              JSON.stringify(await w.runs.listInContext({})), JSON.stringify(await w.runs.read({ run: "R1", viewer: "admin" })),
@@ -48,7 +48,7 @@ test("R39: no place is named in the module's outward text — its acts' rows, re
              JSON.stringify(await w.runs.close({ run: "R1", bound: "completed", viewer: "admin", caller: ORG })));
   /* R52's account, R73's origin and step, R74's batch, R75's group test */
   texts.push(
-             JSON.stringify(await w.runs.open(OPEN({ run: "R9", principalClaude: "x" }))),
+             JSON.stringify(await w.runs.open(OPEN({ run: "R9", principalAi: "x" }))),
              JSON.stringify(await w.runs.open(OPEN({ run: "R9", origin: "elsewhere" }))),
              JSON.stringify(await w.runs.open(OPEN({ run: "R9", origin: "explore" }))),
              JSON.stringify(await w.runs.open(OPEN({ run: "R9", step: "STP-2026-0001" }))),

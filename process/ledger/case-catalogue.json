@@ -1,0 +1,39 @@
+{
+  "id": "case-catalogue",
+  "title": "case-catalogue: its unmet requirements, and case-grammar's format /10",
+  "layer": 8,
+  "paths": [
+    "bio-plane/src/case-catalogue/",
+    "build/requirements/case-catalogue.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-catalogue/"
+  ],
+  "requirements": "build/requirements/case-catalogue.md",
+  "uses": [
+    "record-grammar",
+    "strength",
+    "case-grammar",
+    "setup-words",
+    "text-chain"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/case-catalogue.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet every unmet mark in build/requirements/case-catalogue.md, each with a test that fails with the change reverted. Found work (case-grammar PR 202, R35): CASE_DOCUMENT_FORMAT is now bio-case-document/10; 2 of this module's tests pin /8 as the format in force and are red: restate them against case-grammar as merged. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T12:06:47Z"
+  }
+}

@@ -1,9 +1,9 @@
 /* ai-runs' published fixtures (fix round 10; K4990, K4993, K4995, K5044): each is made by ai-runs' real code over the real
    modules it uses (./world.mjs) when a test calls it, never stored. A user takes the refusal from here and never builds
    one by hand. Each is checked by `fixtures.test.mjs`, which calls it and compares the real answer. */
-import { world, OPEN, INQ, PROJ, ORG, T0, agentWorker } from "./world.mjs";
+import { world, OPEN, INQ, PROJ, ORG, T0, USAGE, agentWorker } from "./world.mjs";
 import { AI_RUN_MODE_WRITES } from "../../../src/ai-runs/index.mjs";
-import { ceilingRefusal } from "../ai-use/fixtures.mjs";
+import { aiUseOf } from "../../../src/ai-use/index.mjs";
 
 const STORE = { idFromName: (n) => `id:${n}` };
 const must = (r, what) => {
@@ -25,7 +25,7 @@ async function memberRun(mode = "check") {
     await w.runs.open(OPEN({ run: "V" }));
     must(w.runs.verificationRecord({ mode: "check", run: "V", evidence: ["seen live"], by: "member:ann", at: T0 }), "verification");
   }
-  must(await w.runs.open(OPEN({ mode, principalPlane: "member:ann", principalClaude: "member:ann", actor: "member:ann",
+  must(await w.runs.open(OPEN({ mode, principalPlane: "member:ann", principalAi: "member:ann", actor: "member:ann",
                                 viewer: "member:ann" })), `open ${mode}`);
   return w;
 }
@@ -70,9 +70,19 @@ export async function airunOpenRefusal(code) {
     const w = world();
     await w.group("dan", { noAccount: ["dan"] });
     w.bundle(INQ);
-    return w.runs.open(OPEN({ principalClaude: "member:dan" }));
+    return w.runs.open(OPEN({ principalAi: "member:dan" }));
   }
-  if (code === "AI_LIMIT_REACHED") return ceilingRefusal();
+  if (code === "AI_LIMIT_REACHED") {
+    /* ai-use's own refusal (its R3), relayed by the open: ann's own account holds a limit of one call a day, spent. */
+    const w = world();
+    await w.group("ann");
+    w.bundle(INQ);
+    const use = aiUseOf(w.ctx);
+    must(use.aiLimitSet({ owner: "member:ann", scope: "overall", unit: "calls", period: "day", amount: 1, by: "ann", at: T0 }), "limit");
+    must(use.countUsage({ owner: "member:ann", member: "member:ann", use: "run", mode: "check", usage: USAGE(),
+                          calls: 1, at: T0, act: "R0" }), "count");
+    return w.runs.open(OPEN());
+  }
   throw new Error(`airunOpenRefusal: no open refusal ${code}`);
 }
 
@@ -85,7 +95,7 @@ export async function airunRefusal() {
   await w.group("ann", "bob");
   w.project(PROJ, "ann");
   w.bundle(INQ);
-  const ann = { principalPlane: "member:ann", principalClaude: "member:ann", actor: "member:ann", viewer: "member:ann" };
+  const ann = { principalPlane: "member:ann", principalAi: "member:ann", actor: "member:ann", viewer: "member:ann" };
   must(await w.runs.open(OPEN({ run: "R1", ...ann })), "open on a question");
   must(await w.runs.open(OPEN({ run: "R2", contextType: "project", contextId: PROJ, ...ann })), "open in a project");
   const bob = { principal: "member:bob", actor: "member:bob", viewer: "member:bob" };

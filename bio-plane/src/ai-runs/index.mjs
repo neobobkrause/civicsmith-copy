@@ -31,6 +31,7 @@ import { promotionOf } from "../promotion/index.mjs";
 import { normalizeType, OBJECT_TYPES, isMachineIdentity, MACHINE_CLASS_PREFIX } from "../record-grammar/index.mjs";
 import { credentialsOf } from "../credentials/index.mjs";
 import { aiAccountsOf } from "../ai-accounts/index.mjs";
+import { aiCatalogueOf, EFFORT_WORD_MAX } from "../ai-catalogue/index.mjs";
 import { inquiryOf } from "../inquiry/index.mjs";
 import { sha256hex, instanceAiCredential } from "../tokens.mjs";
 import { storeId, storeStub } from "../store-place.mjs";
@@ -42,8 +43,8 @@ import { RUN_BOUNDS, RUN_ENDINGS, RUN_CONTEXTS, STANDARD_BASIS, OBSERVATION_STAT
          OBSERVATION_COVERAGE, OBSERVATION_COVERAGE_UNDETERMINED, observationCoverage, checkBound, checkCondition,
          checkConsume, checkRunState, finishedBound, runStatusFor, projectGate, runConsultsProjects, checkRunContextKind,
          runPrincipalGate, checkSkillVersion, DEPLOYED_MODES, DEFAULT_MODE, AI_RUNS_CHECKS, RUN_MODES, startAllowed,
-         checkVerification, partAdmittedOn, CIVICSMITH_TEST_SET, originAllowed, checkTestBarRecord } from "../run-rules/index.mjs";
-import { AI_RUNS_SCHEMA, AI_RUNS_TABLES, AI_RUNS_ADDED_COLUMNS } from "./schema.mjs";
+         checkVerification, partAdmittedOn, CIVICSMITH_TEST_SET, originAllowed, checkTestBarRecord, deployable } from "../run-rules/index.mjs";
+import { AI_RUNS_SCHEMA, AI_RUNS_TABLES, AI_RUNS_ADDED_COLUMNS, AI_RUNS_ADDED_TABLE_COLUMNS } from "./schema.mjs";
 
 export { AI_RUNS_SCHEMA, AI_RUNS_TABLES } from "./schema.mjs";
 
@@ -127,6 +128,7 @@ export class AiRuns {
   #waitSource = null;
   #runListeners = [];     // R43: {module, fn, seq}, in the modules' total order
   #openChecks = [];       // R47: {module, mode, fn}, one per mode and one per module
+  #gateSource = null;     // R78 (T53): {module, fn}, ai-gate's verdicts, one registration
   #deps;
   /** `deps` is for in-process wiring only (never the wire or `env`): `inquiry` (R27's `migratedSurfacing`), `steps`,
    *  `aiUse` and `aiAccounts` (each module's own instance, else its factory on this `ctx`), and, for a module test alone,
@@ -150,7 +152,10 @@ export class AiRuns {
          matters (R75), group-wide, cleared only with the whole store. */
       { name: "ai_run_looks", keys: [], ...cls, sight: "group" },
       { name: "ai_test_bar", keys: [], ...cls, sight: "group" },
-      { name: "ai_group_tests", keys: [], ...cls, sight: "group" }]);
+      { name: "ai_group_tests", keys: [], ...cls, sight: "group" },
+      /* R91 (T53): a run's segments, purged with the run as R38's tables are; R107: who produced an entry's result */
+      { name: "ai_run_segments", keys: [], ...cls, sight: "bundle" },
+      { name: "ai_run_producers", keys: [], ...cls, sight: "bundle" }]);
     /* R36: observation-log's `run` resolver (a run's log rows are visible to whoever may read the run) and
        retrieval's hidden-run tail (R42's `hiddenRuns`) and `surfaced_in` decoration; R30: the runs as bias's work
        products. */
@@ -200,17 +205,17 @@ export class AiRuns {
 
   /** B2 (K2480): whether `by` holds `run`, for steps' machine arm: `{enabled_by, principal}` for a running run whose
    *  principal `by` is (run-rules R5), or whose own system identity it is (`systemOf`); `enabled_by` the paying owner the
-   *  run records (`principal_claude`, R52; ai-use R6's label) and `principal` the viewer the run's opener acts as (steps
+   *  run records (`principal_ai`, R52; ai-use R6's label) and `principal` the viewer the run's opener acts as (steps
    *  judges the step's place in that sight); null for a blank, unknown or ended run, or one another principal holds.
    *  Writes nothing and never throws. */
   runHolder(by, run) {
     try {
       const id = run == null ? "" : String(run).trim();
       if (!id || typeof by !== "string" || !by.trim()) return null;
-      const r = this.#one(`SELECT status, principal_plane, principal_claude FROM ai_runs WHERE run = ?`, id);
+      const r = this.#one(`SELECT status, principal_plane, principal_ai FROM ai_runs WHERE run = ?`, id);
       if (!r || r.status !== "running") return null;
       if (by !== AiRuns.systemOf(id) && runPrincipalGate({ caller: by, principal: r.principal_plane })) return null;
-      return { enabled_by: r.principal_claude ?? null, principal: AiRuns.#viewerOf(r.principal_plane) };
+      return { enabled_by: r.principal_ai ?? null, principal: AiRuns.#viewerOf(r.principal_plane) };
     } catch { return null; }
   }
 
@@ -221,10 +226,12 @@ export class AiRuns {
    *  only the rows of a run R19 would answer `found: true` for, as R42's `hiddenRuns` does: with `hid` given, a run is in
    *  sight exactly when its context is a bundle not in `hid`, which is `runSight`'s gate, since `hid` is every bundle the
    *  gate does not pass (every one, for a viewer it refuses). Synchronous; writes nothing. */
-  static COUNT_KEYS = Object.freeze(["aiRuns", "aiRunBounds", "inquiryRunSurfacings", "aiRunLog"]);
+  static COUNT_KEYS = Object.freeze(["aiRuns", "aiRunBounds", "inquiryRunSurfacings", "aiRunLog", "aiRunSegments"]);
   counts(hid = null) {
     const c = (q, ...a) => this.#one(q, ...a).c;
     if (!hid) return { aiRuns: c(`SELECT count(*) c FROM ai_runs`), aiRunBounds: c(`SELECT count(*) c FROM ai_run_bounds`),
+      /* R91 (T53): a run's segments, through the same sight as its bounds */
+      aiRunSegments: c(`SELECT count(*) c FROM ai_run_segments`),
       inquiryRunSurfacings: c(`SELECT count(*) c FROM inquiry_run_surfacings`),
       aiRunLog: c(`SELECT count(*) c FROM observation_log WHERE authority_kind = 'run'`) };
     const seen = `(SELECT r.run FROM ai_runs r WHERE r.context_id IS NULL OR (r.context_id IN (SELECT bundle_id FROM bundles)
@@ -236,6 +243,7 @@ export class AiRuns {
         ...hid.args),
       aiRunLog: c(`SELECT count(*) c FROM observation_log WHERE authority_kind = 'run' AND COALESCE(authority, '') IN ${seen}`,
         ...hid.args),
+      aiRunSegments: c(`SELECT count(*) c FROM ai_run_segments WHERE COALESCE(run, '') IN ${seen}`, ...hid.args),
     };
   }
 
@@ -346,19 +354,52 @@ export class AiRuns {
       return typeof flag === "string" && typeof name === "string" && flag !== "" && name !== "" && flag === name;
     } catch { return false; }
   }
-  /** R78, run-rules R19, R29 (B6, K2489; K2816 (2)): MAY THIS AI PART RUN HERE, on what this record holds: its
-   *  verification chain (`verifications`) and its test bar (`testBarRecords`, R75) on Civicsmith's set (a module test's
-   *  own set through `deps.testSet`), with the test-instance exception (`testInstance`). `run-rules`' `partAdmittedOn`
-   *  is the one computation: `{admitted, untested}`, the label set only for a part admitted on the exception. The one
-   *  gate of this module (R40, R23's input), and what later modules ask (question-explorer, instance-setup, plane). */
-  partAdmitted(part) {
+  /** R78 (T53; AIR13, AD7; run-rules R19, R29): MAY THIS AI PART RUN HERE, ON THIS ENTRY. `entry` is the entry the act
+   *  is served on: its `entry_id` string, or an object carrying `entry_id` (an account as `ai-accounts.accountFor` answers
+   *  it). `run-rules`' `partAdmittedOn` is the one computation, over what this record holds (the verification chain, the
+   *  standing measure's R75 records) and the Gate 1 verdicts `ai-gate` recorded for that entry and part, read through
+   *  this service's one seam (`registerGateVerdicts`; a module test's own through `deps.gateRecords`). With no verdict
+   *  source registered (before `ai-gate` exists) a real instance admits nothing; a test instance (`testInstance`) admits
+   *  on the exception, labelled. `{admitted, untested}`; never throws. */
+  partAdmitted(part, entry = null) {
     try {
+      const entry_id = typeof entry === "string" ? entry
+        : entry && typeof entry === "object" && typeof entry.entry_id === "string" ? entry.entry_id : null;
       const set = this.#deps.testSet || CIVICSMITH_TEST_SET;
-      const said = partAdmittedOn(set, part, { verifications: this.verifications(), testBars: this.testBarRecords() },
-        { testInstance: this.testInstance() });
+      const said = partAdmittedOn(set, part,
+        { verifications: this.verifications(), testBars: this.testBarRecords(), gateRecords: this.#gateRecords(part, entry_id) },
+        { testInstance: this.testInstance(), ...(entry_id !== null ? { entry_id } : {}) });
       return said && said.admitted === true ? { admitted: true, untested: said.untested ?? null }
         : { admitted: false, untested: null };
     } catch { return { admitted: false, untested: null }; }
+  }
+
+  /** R40, R78 (T53): a mode's admission where no account serves the act (so no entry to judge Gate 1 on): its flag (the
+   *  caller filtered by `DEPLOYED_MODES`) and the verification chain alone, so R52's refusal is the one that answers. */
+  static #flagOnly(mode, verifications) {
+    try { return { admitted: deployable(mode, verifications) === true, untested: null }; }
+    catch { return { admitted: false, untested: null }; }
+  }
+
+  /** R78 (T53): THE ONE SEAM FOR GATE 1'S VERDICTS. `ai-gate` registers once at start a synchronous
+   *  `fn({part, entry_id}) → [record]`, its R37 records for that entry (any part; `run-rules` picks the gate part's). A
+   *  malformed or second registration is refused through `membership`'s `listenerRefusal`. */
+  registerGateVerdicts(module, fn) {
+    const refused = listenerRefusal(this.#gateSource, module, fn);
+    if (refused) return refused;
+    this.#gateSource = { module, fn };
+    return { ok: true, module };
+  }
+
+  /** The Gate 1 records for `entry_id`, as the registered source answers them (a module test's `deps.gateRecords`
+   *  first); none registered, none answered, or one that throws: none (so nothing is admitted on them). */
+  #gateRecords(part, entry_id) {
+    if (typeof entry_id !== "string" || entry_id === "") return [];
+    const src = this.#deps.gateRecords !== undefined ? this.#deps.gateRecords : this.#gateSource ? this.#gateSource.fn : null;
+    try {
+      const out = typeof src === "function" ? src({ part, entry_id }) : src;
+      return Array.isArray(out) ? out : [];
+    } catch { return []; }
   }
   #captureRequestConfigured() {
     const w = this.#wait();
@@ -456,9 +497,9 @@ export class AiRuns {
          HERE, and the change of shape is a finding rather than a preference.
          §4.4 says `actor` is *"the run's credential"*; `ai_runs` HAS NO SUCH
          COLUMN — measured, not assumed — and the column that actually carries
-         the machine identity is `principal_claude`, IS-6's Claude principal.
+         the machine identity is `principal_ai`, IS-6's Claude principal.
          Reported as a DESIGN GAP against §4.4.
-         THE FIRST DRAFT READ IT HERE, with `SELECT principal_claude FROM
+         THE FIRST DRAFT READ IT HERE, with `SELECT principal_ai FROM
          ai_runs`, and `run-conditions.test.mjs` ARM W3 caught it BY NAME: that
          made this method a THIRTEENTH reader of `ai_runs`, and ARM W9 then
          refused the only role that could have fitted, because an ATTRIBUTES
@@ -490,6 +531,10 @@ export class AiRuns {
       /* C-22.6 travels through UNCHANGED: the bundle key is what the refusal
          reads, and it is passed rather than dropped here. */
       bundle: entry ? entry.bundle : null,
+      /* R99 (T53; N1219; observation-log R40): a tick's entry's `read` and `disagree`, passed through unchanged for the
+         writer to judge (OBSERVATION_FIELD_MALFORMED is its); absent is null */
+      read: entry && entry.read !== undefined ? entry.read : null,
+      disagree: entry && entry.disagree !== undefined ? entry.disagree : null,
     }, at, terminal);
     if (!bad && step) {
       const r = this.#one(`SELECT MAX(seq) seq FROM observation_log WHERE authority_kind = 'step' AND authority = ?`, String(step));
@@ -856,11 +901,11 @@ export class AiRuns {
    *  (R52's `#accountMember`). The refusal is `run-rules` R6's `projectGate`, relayed over that project, so a project that
    *  is absent, hidden, not drawn on or not joined is refused alike; with no member behind the caller it is refused too
    *  (a project is a member's to name). Reads only; writes nothing. */
-  #runProjectGate({ actor, principalPlane, principalClaude, contextType, contextId, project }) {
+  #runProjectGate({ actor, principalPlane, principalAi, contextType, contextId, project }) {
     if (String(contextType) === "project") return { project: String(contextId), refusal: null };
     const named = typeof project === "string" ? project.trim() : project == null ? "" : String(project).trim();
     if (!named) return { project: null, refusal: null };
-    const member = AiRuns.#accountMember({ actor, principalPlane, principalClaude });
+    const member = AiRuns.#accountMember({ actor, principalPlane, principalAi });
     const drawn = this.#runContextProjects(contextType, contextId).includes(named);
     const part = member && drawn ? this.#membership().participation(named, member) : null;
     const said = projectGate({ actor: member || "no-member", contextType: "project", contextId: named, projects: [named],
@@ -934,7 +979,7 @@ export class AiRuns {
    *  DEC-27(b), DEC-55.4). The Claude account a run carries is the one
    *  `ai-accounts.accountFor` answers for the act of the member who started it
    *  (R52; K1755: their own, else the group's API key), and the run is that
-   *  member's act, recorded as `principal_claude`, `member:<id>`, whichever
+   *  member's act, recorded as `principal_ai`, `member:<id>`, whichever
    *  account serves it; the plane refuses to open a run that names no member, or
    *  one no account serves.
    *
@@ -946,7 +991,9 @@ export class AiRuns {
    *  is still never derived: the plane refuses, it does not fill in. The
    *  refusal is C-22.7, built in `run-rules checkSkillVersion`. */
   async open({ run, contextType, contextId, label = null, mode = null,
-              principalPlane = null, principalClaude = null, principalClaudeRef = null,
+              principalPlane = null, principalAi = null, principalAiRef = null,
+              /* R9 (T53; K3472): the arguments' names before the rename, refused whenever sent (never read as the new) */
+              principalClaude = undefined, principalClaudeRef = undefined,
               skillVersion = null, biasManifest = null, standardPair = null,
               bounds = null, state = null, leaseMs = null, at = null,
               /* REC-207 (BOB #32, 2026-09-23 23:42Z): WHICH RUN THIS ONE RE-RUNS, the opener's own word
@@ -1061,7 +1108,7 @@ export class AiRuns {
        recorded at the open. A run over a project is in that project, whatever `project` carries; a run over a question names
        one explicitly: a project the opening member has joined that draws on the question (`run-rules` R6's refusal,
        relayed, so a project that is absent, hidden, not drawn on or not joined answers alike). */
-    const inProject = this.#runProjectGate({ actor, principalPlane, principalClaude, contextType, contextId, project });
+    const inProject = this.#runProjectGate({ actor, principalPlane, principalAi, contextType, contextId, project });
     if (inProject.refusal)
       return { run, started: false, code: inProject.refusal.code, check: inProject.refusal.check,
                translation: inProject.refusal.translation, detail: inProject.refusal.detail, note: word("consequences.nothing") };
@@ -1089,9 +1136,11 @@ export class AiRuns {
        stays the refusal of a request that names no principal at all.] */
     /* DEC-49 REGION is-airun-open-capability — C-33.29. No account to run under: the
        two principals are not both named. See REC-64's note above for why one code and not two. */
-    if (!principalPlane || !principalClaude)
+    if (!principalPlane || !principalAi || principalClaude !== undefined || principalClaudeRef !== undefined)
       return refusal("AI_RUN_CAPABILITY_UNAVAILABLE", {
-               note: localize("ai-runs.index.a_run_names_two_principals", "a run names TWO principals — the plane credential acting and the member whose own Claude account carries it (K1502, K1503). They are different principals and an act must say both (DEC-27(b), DEC-55.4)") });
+               note: principalClaude !== undefined || principalClaudeRef !== undefined
+                 ? localize("ai-runs.index.a_run_names_its_principals_renamed", "a run names its paying principal as principalAi and its member as principalAiRef (R9, T53); the arguments of their old names are no longer read")
+                 : localize("ai-runs.index.a_run_names_two_principals_ai", "a run names TWO principals — the plane credential acting and the owner of the AI account that pays for it (R9, R52). They are different principals and an act must say both (DEC-27(b), DEC-55.4)") });
     /* END DEC-49 REGION is-airun-open-capability */
     /* SK-1 — THE THIRD CONDITION, AND IT IS REFUSED WHERE THE PRINCIPALS ARE.
        §11 records what a run was FORMED under, and the skill version is one of
@@ -1113,9 +1162,17 @@ export class AiRuns {
     /* DEC-49 REGION is-airun-open-mode — C-109.1. */
     /* K1606 (run-rules R16, R19): a RUN's mode is one of the order's (`RUN_MODES`; `ask` is deployed apart and is no
        run), deployed by its flag, and deployable on what this record holds (B6: the chain and the test bar, R75). */
-    /* R78: through `partAdmitted`, the one gate (the test-instance exception lifts the bar alone, never a flag). */
+    /* R78 (T53): through `partAdmitted(mode, entry)`, the one gate, on the entry the opener's account serves the act on
+       (R52's account, asked here before anything is written; its refusal is applied in R52's place below). The flag in
+       `DEPLOYED_MODES` is asked first; then Gate 1's verdict for that entry and part (`ai-gate`'s, through this module's
+       seam), the test-instance exception lifting the bar alone, never a flag. With no account serving, only the flag and
+       the chain are asked here, and R52's refusal names what is missing. */
+    const accountMember = AiRuns.#accountMember({ actor, principalPlane, principalAi });
+    const account = accountMember ? await this.#accountFor(accountMember, "run", inProject.project) : null;
+    const servedOn = account && !account.refusal ? account.entry_id : null;
     const admissions = new Map(this.#deployedModes().filter((m) => RUN_MODES.includes(m))
-      .map((m) => [m, this.partAdmitted(m)]));
+      .map((m) => [m, servedOn !== null || this.testInstance() ? this.partAdmitted(m, servedOn)
+                                                                 : AiRuns.#flagOnly(m, this.verifications())]));
     const deployed = [...admissions.keys()].filter((m) => admissions.get(m).admitted);
     if (!deployed.includes(runMode))
       return refusal("AI_RUN_MODE_NOT_DEPLOYED", {
@@ -1155,7 +1212,10 @@ export class AiRuns {
        (K231), so `reexamination` outside mode `plan`, and any origin of a planning run but those two, are refused there.
        A re-examination names the `response`, stored verbatim, and one per plan and response runs at a time. */
     const originSaid = originAllowed({ origin: runOrigin, mode: runMode,
-                                       investigateDeployable: this.partAdmitted("investigate").admitted });
+                                       /* R78 (T53): on the entry the act is served on, as the mode's own admission */
+                                       investigateDeployable: (servedOn !== null || this.testInstance()
+                                         ? this.partAdmitted("investigate", servedOn)
+                                         : AiRuns.#flagOnly("investigate", this.verifications())).admitted });
     if (!originSaid || originSaid.ok !== true)
       return { run, started: false, code: originSaid.code, check: originSaid.check, translation: originSaid.translation,
                detail: originSaid.detail, note: word("consequences.nothing") };
@@ -1226,14 +1286,7 @@ export class AiRuns {
       bundles: (Array.isArray(lensNow.bundles) ? lensNow.bundles : [])
         .map((b) => ({ bundle_id: b.bundle_id, revision: b.revision ?? null })),
       at: now });
-    /* R52 (K1503, K1755): THE ACCOUNT THE RUN CARRIES, asked of `ai-accounts.accountFor` for the act of the member who
-       started it, here, before the id's existence is asked, so the check below and the insert stay one synchronous step
-       with no await between them. Its answer is applied in R52's place further down (after the re-run refusals), and
-       the unsealed key is dropped at once: only whether an account serves the member, and which, is kept. */
-    const accountMember = AiRuns.#accountMember({ actor, principalPlane, principalClaude });
-    /* (T41; ai-accounts R11) a run over a project names it, so the project's own account serves first when it is held */
-    const account = accountMember ? await this.#accountFor(accountMember, "run",
-      String(contextType) === "project" ? String(contextId) : null) : null;
+    /* R52 (T53): the account the run carries was asked above, with the mode's admission; its refusal is applied below. */
     /* REC-76 — the second of the two codeless refusals the widened classifier
        found here. It is a real member-facing condition (an id that is already in
        use), and it was answering with a bare sentence a surface could only
@@ -1293,7 +1346,7 @@ export class AiRuns {
       return { run, started: false, ...(account ? account.refusal : this.#noAccount(accountMember, "A run")) };
     /* R52 (B5): the paying account's limits, judged by `ai-use.useCheck` (its R3) for this member's use `run`, its
        refusal relayed in the open's shape. */
-    const overLimit = this.#useCheck(account.owner, accountMember, nowMs);
+    const overLimit = this.#useCheck(account.owner, accountMember, nowMs, { account_id: account.account_id, entry_id: account.entry_id });
     if (overLimit) return { run, started: false, ...AiRuns.#shed(overLimit) };
     /* R73, R74: a system step of its own needs steps, asked before anything is written. */
     if (ownStep && !this.#steps())
@@ -1326,7 +1379,7 @@ export class AiRuns {
     try { this.#transact(() => {
       this.sql.exec(
         `INSERT INTO ai_runs (run, status, label, mode, context_type, context_id,
-           principal_plane, principal_claude, principal_claude_ref, skill_version,
+           principal_plane, principal_ai, principal_ai_ref, skill_version,
            bias_manifest, standard_pair, created, updated, expires, ticks, state, lens_at_open,
            rerun_of, plan, step, origin, response, untested, project)
          VALUES (?, 'running', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -1335,9 +1388,9 @@ export class AiRuns {
            a value that survives a falsiness guard while naming nothing reads as
            present and travels. `checkSkillVersion` judged the trimmed value, so
            storing the untrimmed one would store something the guard never saw. */
-        /* R52: `principal_claude` is the member whose account carries the run (agent-worker R10 reads it so). */
-        /* R52 (T41): `principal_claude` the paying owner the account answered (`member:<id>`, `project:<id>`, `group`),
-           `principal_claude_ref` the member whose act it is, whichever account paid */
+        /* R52: `principal_ai` is the member whose account carries the run (agent-worker R10 reads it so). */
+        /* R52 (T41): `principal_ai` the paying owner the account answered (`member:<id>`, `project:<id>`, `group`),
+           `principal_ai_ref` the member whose act it is, whichever account paid */
         String(principalPlane), account.owner, `member:${accountMember}`,
         String(skillVersion).trim(),
         biasManifest, standardPair, now, now, AiRuns.#aiIso(nowMs + lease),
@@ -1464,7 +1517,7 @@ export class AiRuns {
       while (this.#one(`SELECT run FROM ai_runs WHERE run = ?`, `RUN-${stepId}-${k}`)) k += 1;
       const run = `RUN-${stepId}-${k}`;
       const opened = await this.open({ run, contextType: context.type, contextId: context.id, label, mode: runMode,
-        principalPlane, principalClaude: `member:${member}`, skillVersion, bounds, at, actor, viewer, origin: "member",
+        principalPlane, principalAi: `member:${member}`, skillVersion, bounds, at, actor, viewer, origin: "member",
         place: context.place, work: localize("ai-runs.index.ai_run_on_stepid_string", "AI run on {stepId}: {String}", { stepId: String(stepId), String: String(String(seen.work ?? "")) }).slice(0, WORK_MAX) });
       if (opened && opened.started === true) runs.push({ step: stepId, run, system_step: opened.step ?? null });
       else { const { run: _r, started: _s, ...refusal } = opened || {}; runs.push({ step: stepId, refusal }); }
@@ -1611,10 +1664,10 @@ export class AiRuns {
     const calls = usage == null ? [] : Array.isArray(usage) ? usage : null;
     if (!calls)
       return { run, ticked: false, found: true, status: row.status,
-               ...AiRuns.#shed(this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.usage_is_a_list", "`usage` is a list with one entry per conversation that reached the model since the last tick, each {mode, model, usage, calls}."))),
+               ...AiRuns.#shed(this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.usage_is_a_list_t53", "`usage` is a list with one entry per conversation that reached a provider since the last tick, each {mode, entry_id, label, usage, calls}."))),
                note: word("ai-runs.note.appended_budget_spent") };
-    /* R52: the calls are counted to the account the run recorded as paying (`principal_claude`) and the member whose act
-       the run is (`principal_claude_ref`); a run that names no member (one opened before T33-50) cannot have its calls
+    /* R52: the calls are counted to the account the run recorded as paying (`principal_ai`) and the member whose act
+       the run is (`principal_ai_ref`); a run that names no member (one opened before T33-50) cannot have its calls
        counted, and a tick reporting calls for it is refused by name. */
     const payer = AiRuns.#memberOfRun(row);
     if (calls.length && !payer)
@@ -1622,7 +1675,8 @@ export class AiRuns {
     /* R52 (B5) — THE PAYING ACCOUNT'S LIMITS (`ai-use.useCheck`, its R3), on the use before this tick. The calls this tick
        reports were made and paid for, so they are counted whatever the answer (the counter stays true, J5 (13)); over a
        limit the refusal is then answered and nothing else of the tick is written: no entry, no figure, no lease, no tick. */
-    const overLimit = payer ? this.#useCheck(row.principal_claude, payer, nowMs) : null;
+    /* (T53; R52, R92) the paying owner now: after a hop, the next account's own limits apply, never the first's */
+    const overLimit = payer ? this.#useCheck(this.#payerNow(row), payer, nowMs, this.#lastSegment(row.run)) : null;
     if (overLimit) {
       const counted = calls.length ? this.#countTick(row, payer, calls, nowMs) : 0;
       if (counted && typeof counted === "object")
@@ -1643,21 +1697,37 @@ export class AiRuns {
       if (calls.length) {
         const bad = this.#countEntries(row, payer, calls, nowMs);
         if (bad) { usageRefusal = bad; throw USAGE_REFUSED; }
+        /* R91, R101: the open segment's entries and labels */
+        this.#segmentUsage(run, calls);
       }
       for (const e of Array.isArray(log) ? log : []) {
-        /* `row.principal_claude` is the run's machine identity and this method
+        /* R107 (T53): who produced the entry's result, checked as a usage label is; a malformed one refuses the entry alone */
+        const producers = e && typeof e === "object" && e.produced_by != null ? this.#producedBy(run, e.produced_by, calls) : null;
+        if (producers && producers.refusal) { refused.push(producers.refusal); continue; }
+        /* `row.principal_ai` is the run's machine identity and this method
            already holds the row — see #aiRunAppend's note on why it is passed
            rather than looked up. */
-        const bad = this.#aiRunAppend(run, e, now, 0, row.principal_claude || null, row.step || null);
-        if (bad) refused.push(bad); else appended += 1;
+        const bad = this.#aiRunAppend(run, e, now, 0, row.principal_ai || null, row.step || null);
+        if (bad) refused.push(bad);
+        else {
+          appended += 1;
+          if (producers) {
+            const at = this.#one(`SELECT MAX(seq) seq FROM observation_log WHERE authority_kind = ? AND authority = ?`,
+              row.step ? "step" : "run", String(row.step || run));
+            if (at && at.seq != null)
+              this.sql.exec(`INSERT OR REPLACE INTO ai_run_producers (seq, run, produced_by) VALUES (?, ?, ?)`, at.seq, run, JSON.stringify(producers.list));
+          }
+        }
       }
       /* R84: the segment's end, at level `meaning`, after the entries the segment sent with it */
       if (seg) {
         const bad = this.#aiRunAppend(run, {
           level: "meaning", subject: "segment -> end", ...this.#aiRunRestatedState(run), governed: false,
-          detail: localize("ai-runs.index.the_segment_ended_by_v1", "the segment ended (by: {v1}; {v2}{v3}). Refusals it met: {v4}", { v1: String(seg.by ?? "its own segment bound"), v2: String(seg.done ? localize("ai-runs.index.the_runs_work_is_done", "the run's work is done") : localize("ai-runs.index.the_runs_work_is_not_done", "the run's work is not done")), v3: String(seg.error ? `; in error ${seg.error}` : ""), v4: String(seg.refusals.length ? seg.refusals.join(", ") : "none") }),
-        }, now, 0, row.principal_claude || null, row.step || null);
+          detail: localize("ai-runs.index.the_segment_ended_by_v1", "the segment ended (by: {v1}; {v2}{v3}). Refusals it met: {v4}", { v1: String(seg.by ?? "its own segment bound"), v2: String(seg.done ? localize("ai-runs.index.the_runs_work_is_done", "the run's work is done") : localize("ai-runs.index.the_runs_work_is_not_done", "the run's work is not done")), v3: String(seg.error ? `; in error ${seg.error}` : seg.ai_stop ? `; ai_stop ${seg.ai_stop.reason} (${seg.ai_stop.class ?? "unclassed"})` : ""), v4: String(seg.refusals.length ? seg.refusals.join(", ") : "none") }),
+        }, now, 0, row.principal_ai || null, row.step || null);
         if (bad) refused.push(bad); else appended += 1;
+        /* R91: the open segment's end */
+        this.#segmentClose(run, seg, now);
       }
       for (const [k, v] of Object.entries(consume && typeof consume === "object" ? consume : {})) {
         if (!Object.prototype.hasOwnProperty.call(RUN_BOUNDS, k)) continue;
@@ -1693,7 +1763,8 @@ export class AiRuns {
     let next = null;
     if (seg && !ended) {
       const live = this.#one(`SELECT status FROM ai_runs WHERE run = ?`, run);
-      next = !live || live.status !== "running" ? "ended" : seg.error ? "error" : seg.done ? "done" : "continue";
+      /* R84 (T53): a segment that ended with an `ai_stop` is not continued by R84: R93 decides (`stop`) */
+      next = !live || live.status !== "running" ? "ended" : seg.error ? "error" : seg.done ? "done" : seg.ai_stop ? "stop" : "continue";
     }
     const after = this.#one(`SELECT ticks, status, expires FROM ai_runs WHERE run = ?`, run);
     return { run, found: true, ticked: true, ticks: after.ticks, status: after.status,
@@ -1708,9 +1779,16 @@ export class AiRuns {
   static #segmentEnd(x) {
     if (!x || typeof x !== "object" || Array.isArray(x)) return null;
     const text = (v, n) => (typeof v === "string" && v.trim() ? v.trim().slice(0, n) : null);
+    /* R84 (T53; agent-steps R52, R53): `ai_stop` `{reason, class, retry_after?, recipient?}`, bounded and of its own types */
+    const st = x.ai_stop && typeof x.ai_stop === "object" && !Array.isArray(x.ai_stop) && text(x.ai_stop.reason, 40)
+      ? { reason: text(x.ai_stop.reason, 40), class: text(x.ai_stop.class, 40),
+          ...(text(x.ai_stop.retry_after, 40) ? { retry_after: text(x.ai_stop.retry_after, 40) } : {}),
+          ...(x.ai_stop.recipient && typeof x.ai_stop.recipient === "object"
+            ? { recipient: { provider: text(x.ai_stop.recipient.provider, 80), host: text(x.ai_stop.recipient.host, 200) } } : {}) }
+      : null;
     return { by: text(x.by, 80), done: x.done === true,
              refusals: (Array.isArray(x.refusals) ? x.refusals : []).map((c) => text(c, 80)).filter(Boolean).slice(0, 20),
-             error: text(x.error, 80) };
+             error: text(x.error, 80), ...(st ? { ai_stop: st } : {}) };
   }
 
   /** R84: the tick of `op=airuntick`, and what follows it. The tick commits first (`tick`); then a segment that stopped on
@@ -1720,9 +1798,15 @@ export class AiRuns {
    *  the run waits for its principal. */
   async tickAndContinue(args = {}) {
     const out = this.tick(args);
+    /* R84, R93–R96 (T53): an `ai_stop` is decided by R93's hop, R94's offer and R95, R96's holds, never by R84 */
+    if (out && out.ticked === true && out.segment_end && out.segment_end.next === "stop") {
+      const stop = AiRuns.#segmentEnd(args.segment_end).ai_stop;
+      const iso = AiRuns.#aiIso(args.at ? Date.parse(args.at) : Date.now());
+      return { ...out, segment_end: { ...out.segment_end, stop: await this.#afterStop(out.run, stop, iso) } };
+    }
     if (!out || out.ticked !== true || !out.segment_end || out.segment_end.next !== "continue") return out;
-    const row = this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_claude,
-                                  principal_claude_ref, step FROM ai_runs WHERE run = ?`, out.run);
+    const row = this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_ai,
+                                  principal_ai_ref, step, project FROM ai_runs WHERE run = ?`, out.run);
     if (!row || row.status !== "running") return out;
     const iso = AiRuns.#aiIso(args.at ? Date.parse(args.at) : Date.now());
     let dispatch;
@@ -1737,7 +1821,7 @@ export class AiRuns {
         const decision = this.#aiRunResumeDecision(row, resumer);
         if (decision.dispatch) {
           const o = await this.#aiRunDispatch({ run: row.run, context_id: row.context_id, payer: AiRuns.#memberOfRun(row),
-            step: row.step || null, project: row.context_type === "project" ? row.context_id : null, owner: row.principal_claude },
+            step: row.step || null, project: row.project ?? (row.context_type === "project" ? row.context_id : null), owner: row.principal_ai },
             resumer, iso);
           dispatch = { dispatched: o.state === "DISPATCHED" || o.state === "RUNNING", state: o.state };
         } else dispatch = { dispatched: false, state: "WITHHELD", reason: decision.withheld, says: decision.says };
@@ -1748,7 +1832,7 @@ export class AiRuns {
       this.#transact(() => this.#aiRunAppend(row.run, {
         level: "meaning", subject: "segment -> end", ...this.#aiRunRestatedState(row.run), governed: false,
         detail: localize("ai-runs.index.the_next_segment_was_not", "the next segment was not dispatched ({reason}). The run is still resumable by its own principal; nothing it established is lost", { reason: String(dispatch.reason) }),
-      }, iso, 0, row.principal_claude || null, row.step || null));
+      }, iso, 0, row.principal_ai || null, row.step || null));
     }
     return { ...out, segment_end: { ...out.segment_end, dispatch } };
   }
@@ -1959,7 +2043,7 @@ export class AiRuns {
     if (!w) return [];
     const ids = w.woken(AiRuns.AI_RUN_WAKE_TICK_BATCH);
     return (Array.isArray(ids) ? ids : []).slice(0, AiRuns.AI_RUN_WAKE_TICK_BATCH)
-      .map((run) => this.#one(`SELECT run, context_type, context_id, principal_plane, principal_claude, principal_claude_ref, step FROM ai_runs
+      .map((run) => this.#one(`SELECT run, context_type, context_id, principal_plane, principal_ai, principal_ai_ref, step, project FROM ai_runs
                                 WHERE run = ? AND status = 'running'`, String(run)))
       .filter(Boolean);
   }
@@ -2057,8 +2141,8 @@ export class AiRuns {
       wakes.push({ run: r.run, completions: done.length, captured, refused, expired,
                    woken: !bad, ...(bad ? { unwritable: bad } : { expires: until }),
                    resume: decision.dispatch ? "DISPATCH" : decision.withheld });
-      if (!bad && decision.dispatch) dispatches.push({ run: r.run, context_id: r.context_id, payer: AiRuns.#memberOfRun(r), step: r.step || null, project: r.context_type === "project" ? r.context_id : null,
-                                       owner: r.principal_claude });
+      if (!bad && decision.dispatch) dispatches.push({ run: r.run, context_id: r.context_id, payer: AiRuns.#memberOfRun(r), step: r.step || null, project: r.project ?? (r.context_type === "project" ? r.context_id : null),
+                                       owner: r.principal_ai });
     }
 
     /* D-260 — THE DISPATCH, AFTER EVERY WAKE IS WRITTEN AND OUTSIDE ANY TRANSACTION: a network call inside
@@ -2159,18 +2243,18 @@ export class AiRuns {
   }
 
   /** THE GATE, and the sentence the wake entry carries. `dispatch` is true ONLY on equality of the two stamps. The
-   *  sentence (`says`) is served to a member in the run's log (R24), so it calls the group's own Civicsmith "your group's
-   *  Civicsmith" (R54, DEC-149); `withheld`'s values are codes and stay. */
+   *  sentence (`says`) is served to a member in the run's log (R24), so it calls the team's own Civicsmith by its word-table key (R54,
+   *  T53; DEC-149); `withheld`'s values are codes and stay. */
   #aiRunResumeDecision(run, resumer) {
     const principal = String((run && run.principal_plane) || "");
     /* R52 (K1503, K1755): the run continues only on the account that serves the act of the member who started it (their
        own, their own sign-in (T38; K2299), or the group's key); with none, it is withheld by name and waits, and the binding is not called. */
     const payer = AiRuns.#memberOfRun(run);
     /* (T41) a run a project's account pays for is judged by that account at the dispatch itself (ai-accounts R11) */
-    const projectPaid = typeof (run && run.principal_claude) === "string" && run.principal_claude.startsWith("project:");
-    if (resumer && resumer.ready && principal === resumer.stamp && !(payer && (projectPaid || this.#accountServing(payer))))
+    const projectPaid = typeof (run && run.principal_ai) === "string" && run.principal_ai.startsWith("project:");
+    if (resumer && resumer.ready && principal === resumer.stamp && !(payer && (projectPaid || this.#accountServing(payer, "run", run.project ?? null))))
       return { dispatch: false, withheld: "NO_ACCOUNT",
-               says: localize("ai-runs.index.resumption_not_dispatched_no_claude", "Resumption: NOT dispatched — no Claude account serves the member whose act started this run (none of their own is connected, and the team's key is not set or not on), and a run continues only on the account that serves that member's act (K1503, K1755). It waits.") };
+               says: localize("ai-runs.index.resumption_not_dispatched_no_ai_account", "Resumption: NOT dispatched — no AI account serves the member whose act started this run (none of their own is connected, and the team's key is not set or not on), and a run continues only on the account that serves that member's act (K1503, K1755). It waits.") };
     if (resumer && resumer.ready && principal === resumer.stamp)
       return { dispatch: true, withheld: null,
                says: word("ai-runs.says.resumption_handed_agent", { token_id: resumer.tokenId }) };
@@ -2202,27 +2286,23 @@ export class AiRuns {
     if (!ref || ref.refusal)
       outcome = { state: "REFUSED", status: null,
                   reason: String((ref && ref.refusal && (ref.refusal.code || ref.refusal.reason)) || "NO_ACCOUNT").slice(0, 80) };
-    /* K1615 (agent-worker R56): and the switch that governs the serving account. */
-    /* (T41; ai-accounts R14, R9) every account now holds its `suggestions` switch, set by `accountUsesSet`: a member's
-       reference or sign-in (whichever serves, read through `accountUses` as that member, its R15), and the group key
-       (`groupKeySwitches()`, an in-plane read, its R9). Anything but an explicit on is off. */
-    let suggestions = false;
+    /* K1615 (agent-worker R56): the switch that governs the serving account rides on the account itself (T53: its
+       `suggestions`, ai-accounts R7). (T53; agent-worker R6, R127; R79 retired) the body carries the account as
+       ai-accounts R7 shapes it in-plane, never a secret: the Worker reads the secret itself, at the call. */
+    /* R96 (T53; AD14, AD37): a recipient whose notice the member has not read withholds the dispatch, and the run waits */
     if (!outcome) {
-      try {
-        const c = this.#aiAccounts();
-        if (ref.level === "group") suggestions = c.groupKeySwitches().suggestions === true;
-        else if (ref.level === "member") {
-          const u = c.accountUses({ owner: `member:${d.payer}`, viewer: `member:${d.payer}` });
-          const acct = u && u.ok === true && u.accounts ? (ref.kind === "signin" ? u.accounts.signin : u.accounts.reference) : null;
-          suggestions = !!(acct && acct.uses && acct.uses.suggestions === true);
-        }
-      } catch { suggestions = false; }
+      let due = null;
+      try { due = this.#aiAccounts().recipientNoticeDue({ member: d.payer, entry_id: ref.account.entry_id }); } catch { due = null; }
+      if (due && due.code === "RECIPIENT_NOTICE_DUE") outcome = { state: "WITHHELD", withheld: "RECIPIENT_NOTICE_DUE", status: null,
+                                                              reason: "RECIPIENT_NOTICE_DUE", recipient: due.recipient || null };
     }
-    const body = outcome ? null : { run_id: d.run, store: resumer.store, credential: resumer.token,
-                                    account: { kind: ref.kind, level: ref.level,
-                                               /* R79: a sign-in's held token rides as an API key's does */
-                                               ...(typeof ref.key === "string" ? { secret: ref.key } : {}),
-                                               member: `member:${d.payer}`, suggestions } };
+    /* R97 (T53; AIR28): a path not ready for the account and entry withholds the dispatch, the run left resumable */
+    if (!outcome) {
+      const p = await this.#pathReady(ref.account.account_id, ref.account.entry_id);
+      if (!p.ready) outcome = { state: "WITHHELD", withheld: "AI_PATH_NOT_READY", status: null, reason: `AI_PATH_NOT_READY ${p.state}` };
+    }
+    const account = outcome ? null : { ...ref.account, member: `member:${d.payer}` };
+    const body = outcome ? null : { run_id: d.run, store: resumer.store, credential: resumer.token, account };
     ref = null; d.ref = null;
     if (body) try {
       const res = await Promise.race([
@@ -2240,6 +2320,8 @@ export class AiRuns {
         ? { state: "DISPATCHED", status: res.status }
         /* R50: the member's own provider limit is answered in plain words, as the ceiling is, never as an error. */
         : PROVIDER_LIMIT.test(said) ? { state: "LIMIT", status: res.status, ...this.#providerLimit() }
+        /* R97: the Worker's own answer that the path is not ready */
+        : /AI_PATH_NOT_READY/.test(said) ? { state: "WITHHELD", withheld: "AI_PATH_NOT_READY", status: res.status, reason: "AI_PATH_NOT_READY" }
         : { state: "REFUSED", status: res.status, reason: said.slice(0, 80) };
     } catch (e) {
       /* D-205's rule: the plane's own words, never the exception's — a thrown error can carry a request, and this
@@ -2253,9 +2335,14 @@ export class AiRuns {
                   reason: elapsed ? localize("ai-runs.index.no_acceptance_within_the_bound", "no acceptance within the bound") : word("ai-runs.reason.call_did_complete") };
     } finally { clearTimeout(timer); }
     if (outcome.state === "DISPATCHED" || outcome.state === "RUNNING") {
-      /* R83: an accepted dispatch is a heartbeat, the lease counted from it */
-      try { this.#transact(() => { this.sql.exec(`UPDATE ai_runs SET expires = ? WHERE run = ? AND status = 'running'`,
-        AiRuns.#aiIso(Date.parse(iso) + this.#leaseMs()), d.run); }); } catch { /* the lease stands as it was */ }
+      /* R83: an accepted dispatch is a heartbeat, the lease counted from it; R91, R92: and the segment it began is written,
+         with the hop that began it when the account moved, in one transaction */
+      try { this.#transact(() => {
+        this.sql.exec(`UPDATE ai_runs SET expires = ?, hold = NULL WHERE run = ? AND status = 'running'`,
+          AiRuns.#aiIso(Date.parse(iso) + this.#leaseMs()), d.run);
+        const row = this.#one(`SELECT run, step FROM ai_runs WHERE run = ?`, d.run);
+        if (row && account) this.#segmentOpen(row, account, iso, d.hop || null);
+      }); } catch { /* the lease stands as it was */ }
     } else {
       const refusal = this.#transact(() => this.#aiRunAppend(d.run, {
         level: "internet", subject: d.context_id, ...this.#aiRunRestatedState(d.run), governed: false,
@@ -2280,6 +2367,10 @@ export class AiRuns {
   /** R52 (T41): the account that serves the run's member now, `ai-accounts.accountFor`'s answer as `#accountFor` reads
    *  it; it must be the one the run recorded as paying (a run never moves to another), else `NO_ACCOUNT`. */
   async #dispatchAccount(d) {
+    /* (T53; R84, R92) a run continues on its last segment's account: only a hop (R93) moves it to another */
+    const seg = this.#lastSegment(d.run);
+    const held = seg ? safeJson(seg.account) : null;
+    if (held && held.account_id) return { account: held, owner: held.owner, level: held.level, account_id: held.account_id, entry_id: held.entry_id };
     const ref = d.payer ? await this.#accountFor(d.payer, "run", d.project) : null;
     return ref && !ref.refusal && d.owner && ref.owner !== d.owner ? { refusal: { code: "NO_ACCOUNT", reason: "NO_ACCOUNT" } } : ref;
   }
@@ -2303,12 +2394,16 @@ export class AiRuns {
    *  never answered, logged or written; a later mint for the run revokes it, and the run's end (R14) ends them all.
    *  (T50; R87, R89) `trace` and `memberRef`, the door's strings, ride the call as `x-civicsmith-trace` and
    *  `x-civicsmith-member-ref` and nowhere else; the mint carries the run's `project` when it has one. */
-  async dispatchMemberRun({ run = null, by = null, viewer = null, at = null, trace = null, memberRef = null } = {}) {
+  async dispatchMemberRun(args = {}) { return this.#dispatchMember(args ?? {}, {}); }
+
+  /** R18, R84, R92–R95 (T53): `dispatchMemberRun`'s path; `over.account` dispatches on that account (a hop, R92) and
+   *  `over.hop` names its reason. */
+  async #dispatchMember({ run = null, by = null, viewer = null, at = null, trace = null, memberRef = null } = {}, over = {}) {
     const iso = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
     const id = run == null ? "" : String(run).trim();
     const sight = viewer == null || viewer === "" ? by : viewer;
-    const row = id ? this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_claude,
-                                       principal_claude_ref, step, project FROM ai_runs WHERE run = ?`, id) : null;
+    const row = id ? this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_ai,
+                                       principal_ai_ref, step, project FROM ai_runs WHERE run = ?`, id) : null;
     if (!row || !this.#aiRunInSight(id, sight))
       return { run: run || null, found: false, note: word("ai-runs.note.run_either_existed") };
     /* run-rules R5's comparison, relayed: `by` must be the member the run's principal names. A run whose principal is no
@@ -2340,31 +2435,41 @@ export class AiRuns {
     const store = this.#ownNamespace();
     if (!store) return withheld("NAMESPACE_UNDETERMINED");
     const d = { run: row.run, context_id: row.context_id, payer: AiRuns.#memberOfRun(row), step: row.step || null,
-                project: row.context_type === "project" ? row.context_id : null, owner: row.principal_claude,
+                project: row.project ?? (row.context_type === "project" ? row.context_id : null), owner: row.principal_ai,
                 /* R87: the door's trace and member ref, for the one call's headers; kept nowhere (no row, log or answer) */
                 headers: AiRuns.#doorHeaders(trace, memberRef) };
-    /* (T46; Bob's, K2892) on her own sign-in alone: any other account that would serve her (her API-key reference, the
-       group's key, a project's account) is withheld, nothing sent, nothing written. */
-    d.ref = await this.#dispatchAccount(d);
-    /* the group's keep-away (ai-accounts R7, R20) answers no account at all: relayed unchanged, as the mint would
-       refuse it (credentials R63), rather than read as another account */
-    if (d.ref && d.ref.refusal && d.ref.refusal.code === "AI_KEPT_AWAY") {
+    /* R18 (T53; AIR41; K2892's "check and plan only" now "deployed and passed for the account"): ON ANY ACCOUNT
+       `ai-accounts.accountFor` answers for her act (her own, a personal subscription of hers alone, the project's or the
+       team's). The team's keep-away (ai-accounts R7, R20), and any other refusal of that service, is relayed unchanged; no
+       account at all is withheld `NO_ACCOUNT`. */
+    d.ref = over.account ? { account: over.account, owner: over.account.owner, entry_id: over.account.entry_id } : await this.#dispatchAccount(d);
+    d.hop = over.hop || null;
+    if (d.ref && d.ref.refusal && typeof d.ref.refusal.code === "string" && d.ref.refusal.code !== "NO_ACCOUNT"
+        && d.ref.refusal.code !== "AI_NO_ACCOUNT") {
       const { ok: _ok, ...kept } = d.ref.refusal;
       d.ref = null;
       return { run, found: true, dispatched: false, status: row.status, ...kept, note: word("ai-runs.note.sent") };
     }
-    if (!(d.ref && !d.ref.refusal && d.ref.kind === "signin" && d.ref.level === "member")) {
+    if (!d.ref || d.ref.refusal) { d.ref = null; return withheld("NO_ACCOUNT"); }
+    /* R18, R40, R78 (T53): the mode deployed and passed for the account's entry (Gate 1, through `partAdmitted`) */
+    if (!this.partAdmitted(row.mode, d.ref.entry_id).admitted) {
       d.ref = null;
-      return withheld("MEMBER_PRINCIPAL_RUN");
+      return { run, found: true, dispatched: false, status: row.status,
+               ...AiRuns.#shed(this.#refuse("MEMBER_RUN_MODE_NOT_ADMITTED", localize("ai-runs.index.mode_not_passed_for_account", "this run's kind of work, '{mode}', has not passed Civicsmith's tests on the AI the account that would serve it uses. Nothing was sent.", { mode: String(String(row.mode).slice(0, 40)) }))),
+               mode: row.mode };
     }
     /* (T47; credentials R63) the segment's own credential, minted in the plane for this run and the mode's writes */
     let minted = null;
     try {
       /* R89 (credentials R79): the project the run was opened in, so everything the segment reads is within it; a run with
          none passes none and reads as before */
+      /* (T53; credentials R63, R73, notice credentials:74): the credential carries the account the segment is served on,
+         so clearing, refusing or revoking that account revokes it in the clearing act */
       minted = credentialsOf(this.ctx).aiRunCredentialMint({ member: `member:${member}`, run: row.run,
                                                              writes: [...AI_RUN_MODE_WRITES[row.mode]],
-                                                             ...(row.project ? { project: row.project } : {}) });
+                                                             ...(row.project ? { project: row.project } : {}),
+                                                             ...(d.ref && d.ref.account && typeof d.ref.account.account_id === "string"
+                                                               ? { account_id: d.ref.account.account_id } : {}) });
     } catch { minted = null; }
     if (!minted || typeof minted !== "object") { d.ref = null; return withheld("CREDENTIAL_RECORD_SILENT"); }
     if (minted.ok !== true || typeof minted.token !== "string") {
@@ -2442,6 +2547,7 @@ export class AiRuns {
     const row = this.#one(
       `SELECT r.* FROM ai_runs r WHERE r.run = ? AND ${seen.sql}`, run, ...seen.args);
     if (!row) return { run: run || null, found: false, session: null };
+    const segs = this.#segmentsFor(row, viewer);
     const bounds = this.#rows(
       `SELECT bound, allowed, consumed, unit FROM ai_run_bounds WHERE run = ? ORDER BY bound`, run);
     /* R19: the stopping bound's or ending's sentence, whether or not a queue condition was named beside it (a close
@@ -2476,11 +2582,11 @@ export class AiRuns {
         ? { type: row.context_type, id: row.context_id,
             questions: this.#runContextQuestions(row.context_id, viewer) }
         : { type: row.context_type, id: row.context_id },
-      /* §14a: the record names WHOSE Claude account carried the run (`member:<id>`, R52), BESIDE the
+      /* §14a: the record names WHOSE AI account paid for the run (R9, R52), BESIDE the
          plane-credential principal — two principals, never one, and never a
          token value. `ref` is the opener's own label for the account. */
-      principal: { plane: row.principal_plane, claude: row.principal_claude,
-                   ref: row.principal_claude_ref, skill: row.skill_version },
+      principal: { plane: row.principal_plane, ai: row.principal_ai,
+                   ref: row.principal_ai_ref, skill: row.skill_version },
       budget: bounds.map((b) => ({ bound: b.bound, allowed: b.allowed,
                                    consumed: b.consumed, unit: b.unit })),
       condition: cond,
@@ -2522,6 +2628,9 @@ export class AiRuns {
       /* R73: the step a step-run works on, and its origin; the keys exist only on a run that names a step or explores. */
       ...(row.step ? { step: row.step } : {}),
       ...(row.origin && row.origin !== "member" ? { origin: row.origin } : {}),
+      /* R91 (T53): the run's segments and the distinct labels of its conversations, to its member and paying owners;
+         R95: and what holds it, with the member's three plain choices (or, for a payer-changing hop, continue or stop) */
+      ...(segs ? { segments: segs.segments, labels: segs.labels, held: AiRuns.#heldFor(row) } : {}),
       /* R76 (D12): the run's cost, only to its paying account's owners; no key at all for anyone else */
       ...((cost = this.#costFor(row, viewer)) ? { cost } : {}),
       /* R46: the plan a planning run works on; the key exists only on a run in mode `plan`. */
@@ -3092,7 +3201,8 @@ export class AiRuns {
        a single answer. */
     const page = this.#rows(
       `SELECT seq, at, level, subject, state, governed, condition, bound, terminal, detail,
-              result_kind, result_ref
+              result_kind, result_ref, read, disagree,
+              (SELECT p.produced_by FROM ai_run_producers p WHERE p.seq = observation_log.seq) AS produced_by
        FROM observation_log WHERE ${AiRuns.#ownRows()}
        ORDER BY seq LIMIT ?`, run, run, cap + 1);
     /* REC-100 / IC-130 — A ROLLUP'S `observation` REFERENT IS RE-EXPRESSED IN
@@ -3108,7 +3218,7 @@ export class AiRuns {
        dropping one, and is unreachable while that check stands. */
     const ordinal = new Map(page.slice(0, cap).map((e, i) => [String(e.seq), i + 1]));
     const entries = page.slice(0, cap)
-      .map((e, i) => ({ ...e, seq: i + 1, governed: e.governed === 1, terminal: e.terminal === 1,
+      .map(({ read: storedRead, disagree: storedDisagree, produced_by: storedBy, ...e }, i) => ({ ...e, seq: i + 1, governed: e.governed === 1, terminal: e.terminal === 1,
                         /* NULL IS NORMALISED TO `null` RATHER THAN LEFT AS `undefined`:
                            a key that serialises away is the absence-with-two-causes this
                            whole item is about, one layer down. */
@@ -3116,7 +3226,13 @@ export class AiRuns {
                         result_ref: e.result_kind === "observation" && ordinal.has(String(e.result_ref))
                           ? String(ordinal.get(String(e.result_ref)))
                           : (e.result_ref ?? null),
-                        coverage: observationCoverage({ state: e.state, resultRef: e.result_ref }) }));
+                        coverage: observationCoverage({ state: e.state, resultRef: e.result_ref }),
+                        /* R100 (T53; N1219): the entry's `read` and `disagree` as stored, null when it has none; a screen
+                           draws from these and parses no `detail` */
+                        read: storedRead == null ? null : safeJson(String(storedRead)),
+                        disagree: storedDisagree == null ? null : safeJson(String(storedDisagree)),
+                        /* R107 (T53): who produced the entry's result, as stored; null when it has none */
+                        produced_by: storedBy == null ? null : safeJson(String(storedBy)) }));
     return { run, found: true, status: row.status, entries,
              limit: cap, truncated: page.length > cap,
              stopped: row.stopped_bound
@@ -3143,17 +3259,17 @@ export class AiRuns {
 
   /** R28: the run's facts a producer gates on, for a held run the viewer can see; null for a blank id, an absent
    *  run and an invisible one alike. Never throws, writes nothing. Whether the caller holds it is R5 over
-   *  `principal_plane`; `principal_claude` is the level that pays, which a production under the run records
+   *  `principal_plane`; `principal_ai` is the level that pays, which a production under the run records
    *  (capture-requests' request row). */
   runFor(run, viewer) {
     try {
       const id = run == null ? "" : String(run).trim();
       if (!id) return null;
       const seen = this.#bundleGate("r.context_id", viewer);
-      const r = this.#one(`SELECT r.run, r.status, r.mode, r.context_type, r.context_id, r.principal_plane, r.principal_claude,
+      const r = this.#one(`SELECT r.run, r.status, r.mode, r.context_type, r.context_id, r.principal_plane, r.principal_ai,
                                   r.plan, r.origin, r.response, r.untested, r.project FROM ai_runs r WHERE r.run = ? AND ${seen.sql}`, id, ...seen.args);
       return r ? { run: r.run, status: r.status, mode: r.mode, context_type: r.context_type,
-                   context_id: r.context_id, principal_plane: r.principal_plane, principal_claude: r.principal_claude,
+                   context_id: r.context_id, principal_plane: r.principal_plane, principal_ai: r.principal_ai,
                    /* R78: the label recorded at the open */
                    untested: AiRuns.#untestedOf(r),
                    /* R89: the project the run was opened in */
@@ -3233,31 +3349,107 @@ export class AiRuns {
   #aiAccounts() { return this.#deps.aiAccounts || aiAccountsOf(this.ctx); }
 
   /** R52 (B5): `ai-use.useCheck` for the paying `owner` and `member`'s use `run` at `ms`: null, or its refusal relayed as
-   *  it came. A check that cannot be asked refuses (fail closed, as ai-use R3 fails closed). */
-  #useCheck(owner, member, ms) {
+   *  it came. A check that cannot be asked refuses (fail closed, as ai-use R3 fails closed). (T53; R52, R92; ai-use R3,
+   *  R18, PR 105) `served` names the account and entry the act is served on (the open's account, a tick's last segment),
+   *  so a provider limit standing on that account or entry holds it back and one on another account does not. */
+  #useCheck(owner, member, ms, served = null) {
+    const on = served && typeof served.account_id === "string" && served.account_id
+      ? { account_id: served.account_id, entry_id: typeof served.entry_id === "string" ? served.entry_id : null } : {};
     try {
-      return this.#aiUse().useCheck({ owner, member: `member:${member}`, use: "run", at: AiRuns.#aiIso(ms) }) ?? null;
+      return this.#aiUse().useCheck({ owner, member: `member:${member}`, use: "run", at: AiRuns.#aiIso(ms), ...on }) ?? null;
     } catch {
       return this.#refuse("AI_NO_ACCOUNT", localize("ai-runs.index.the_use_of_the_account", "The use of the account that would serve this run cannot be judged now. Nothing was started."));
     }
   }
 
-  /** R52, R72: each conversation of a tick counted through `ai-use.countUsage`, to the run's paying account and member,
-   *  under use `run` and `act` the run's id (R76), inside the caller's transaction. Null, or the first entry's refusal
-   *  (ai-use R1's `AI_RUN_CONSUME_INVALID`), naming which entry. */
+  /** R52, R72, R88, R104 (T53): each conversation of a tick, judged whole (`#entryFault`) and counted through
+   *  `ai-use.countUsage` unchanged, `entry_id` and `label` beside `usage`, to the run's paying owner and member, under use
+   *  `run` and `act` the run's id (R76), inside the caller's transaction. Null, or the first entry's refusal
+   *  (`AI_RUN_CONSUME_INVALID`), naming which entry. */
   #countEntries(row, payer, entries, ms) {
     const use = this.#aiUse();
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i];
-      const said = e && typeof e === "object" && !Array.isArray(e)
-        ? use.countUsage({ owner: row.principal_claude, member: `member:${payer}`, use: "run", mode: e.mode, model: e.model ?? null,
-                           /* R88: the conversation's effort beside its model, ai-use R15's to judge; null where none is stated */
-                           effort: e.effort ?? null, usage: e.usage, calls: e.calls, at: AiRuns.#aiIso(ms), act: String(row.run) })
-        : this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.the_entry_is_not", "the entry is not an object {mode, model, usage, calls}."));
+      const fault = this.#entryFault(e);
+      const said = fault ? this.#refuse("AI_RUN_CONSUME_INVALID", fault)
+        : use.countUsage({ owner: this.#payerNow(row), member: `member:${payer}`, use: "run", mode: e.mode,
+                           entry_id: e.entry_id, label: AiRuns.#useLabel(e.label), model: e.label.model_version ?? null,
+                           effort: e.label.effort ?? null, usage: e.usage, calls: e.calls, at: AiRuns.#aiIso(ms), act: String(row.run) });
       if (!said || said.ok !== true)
         return { ...(said || this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.the_entry_could_not_be", "the entry could not be counted."))),
                  detail: localize("ai-runs.index.usage_entry_v1_v2", "usage entry {v1}: {v2}", { v1: String(i + 1), v2: String((said && said.detail) || localize("ai-runs.index.it_could_not_be_counted", "it could not be counted")) }) };
     }
+    return null;
+  }
+
+  /** R88 (T53; restated BOB 4 Nov, ai-use PR 105): the label as ai-use R1 shapes it, agent-model's own fields;
+   *  `display_name` is kept and checked here (R104), never passed on. */
+  static #useLabel(l) {
+    const { display_name: _shown, ...rest } = l;
+    return rest;
+  }
+
+  /** R72, R88, R104 (T53; BR2, BR22, BR29): THE FIELDS OF A CONVERSATION'S LABEL, as `agent-model` composes it (its R26)
+   *  with the AI's display name (R104). */
+  static LABEL_FIELDS = Object.freeze(["display_name", "provider", "host", "model_version", "effort", "account_level", "owner"]);
+  /** R88: an effort is a lowercase word of at most this many letters (ai-catalogue's `EFFORT_WORD_MAX`), or null. */
+  static EFFORT_WORD_MAX = EFFORT_WORD_MAX;
+
+  /** R107 (T53; AIR25, BR29; agent-steps R56): a log entry's `produced_by`, the labels of the conversations that produced
+   *  its result, deduplicated in order, each checked as R72 and R104 check a usage label, its display name the catalogue's
+   *  for an entry the run was served on or used (its open segment's, or this tick's usage); `{list}` or `{refusal}`
+   *  (`AI_RUN_CONSUME_INVALID`). Never composed here; copied unchanged. */
+  #producedBy(run, given, calls) {
+    const bad = (detail) => ({ refusal: this.#refuse("AI_RUN_CONSUME_INVALID", detail) });
+    if (!Array.isArray(given) || given.length === 0)
+      return bad(localize("ai-runs.index.produced_by_list", "produced_by is a list of the labels of the conversations that produced the result."));
+    const seg = this.#lastSegment(run);
+    const ids = new Set([...(seg ? [seg.entry_id, ...(safeJson(seg.entries_used) || [])] : []), ...(calls || []).map((c) => c && c.entry_id)].filter(Boolean));
+    const names = new Set();
+    for (const id of ids) { try { const c = aiCatalogueOf(this.ctx).entryOf(id); if (c && c.display_name) names.add(c.display_name); } catch { /* none */ } }
+    const list = [];
+    for (const l of given) {
+      const fault = this.#labelFault(l, names);
+      if (fault) return bad(fault);
+      if (!list.some((x) => JSON.stringify(x) === JSON.stringify(l))) list.push(l);
+    }
+    return { list };
+  }
+
+  /** R72, R88, R104, R107: what is wrong with a label, or null: every field of the label, its effort a lowercase word or
+   *  null, and its display name one of `names` (the catalogue's for the entries in question). */
+  #labelFault(l, names) {
+    if (!l || typeof l !== "object" || Array.isArray(l))
+      return localize("ai-runs.index.usage_entry_no_label", "the entry carries no label.");
+    const missing = AiRuns.LABEL_FIELDS.filter((f) => !Object.prototype.hasOwnProperty.call(l, f));
+    if (missing.length)
+      return localize("ai-runs.index.usage_label_lacks", "its label lacks {fields}.", { fields: missing.join(", ") });
+    if (!(l.effort === null || (typeof l.effort === "string" && new RegExp(`^[a-z]{1,${AiRuns.EFFORT_WORD_MAX}}$`).test(l.effort))))
+      return localize("ai-runs.index.usage_label_effort", "its label's effort is not a lowercase word.");
+    if (typeof l.display_name !== "string" || l.display_name === "" || !names.has(l.display_name))
+      return localize("ai-runs.index.usage_label_display_name", "its label does not name the AI as the catalogue names its entry.");
+    return null;
+  }
+
+  /** R72, R88, R104 (T53): what is wrong with one `usage` entry, as a sentence, or null when it is well formed:
+   *  `{mode, entry_id, label, usage, calls}`, `calls` a positive integer or null; `label` holding every field of the
+   *  label, its `effort` a lowercase word or null, and its `display_name` the one `ai-catalogue` gives `entry_id`. */
+  #entryFault(e) {
+    if (!e || typeof e !== "object" || Array.isArray(e))
+      return localize("ai-runs.index.usage_entry_shape", "the entry is not an object {mode, entry_id, label, usage, calls}.");
+    if (typeof e.mode !== "string" || e.mode.trim() === "")
+      return localize("ai-runs.index.usage_entry_no_mode", "the entry names no mode.");
+    if (typeof e.entry_id !== "string" || e.entry_id.trim() === "")
+      return localize("ai-runs.index.usage_entry_no_entry", "the entry names no AI it was served by (entry_id).");
+    if (!(e.calls === null || (Number.isSafeInteger(e.calls) && e.calls > 0)))
+      return localize("ai-runs.index.usage_entry_calls", "its calls are not a whole number of one or more, or null.");
+    if (!e.usage || typeof e.usage !== "object" || Array.isArray(e.usage))
+      return localize("ai-runs.index.usage_entry_no_usage", "the entry carries no usage record.");
+    let named = null;
+    try { const c = aiCatalogueOf(this.ctx).entryOf(e.entry_id); named = c && typeof c.display_name === "string" ? c.display_name : null; }
+    catch { named = null; }
+    const fault = this.#labelFault(e.label, new Set(named === null ? [] : [named]));
+    if (fault) return fault;
     return null;
   }
 
@@ -3286,82 +3478,79 @@ export class AiRuns {
 
   /** R72: a provider's refusal for a spent limit, answered in plain words at the wake's dispatch, never as an error. */
   #providerLimit() {
-    return { provider_limit: true, detail: localize("ai-runs.index.the_claude_account_that_serves", "The Claude account that serves this run has reached the spending limit set on it, so the assistant cannot continue for now. Nothing was lost.") };
+    return { provider_limit: true, detail: localize("ai-runs.index.the_ai_account_that_serves", "The AI account that serves this run has reached the spending limit set on it, so the assistant cannot continue for now. Nothing was lost.") };
   }
 
-  /** R52 (K1755): which account serves `member`'s act now, read without unsealing, for the synchronous checks (an ask's
-   *  ceiling check, the wake's decision): `member` when they hold a reference of their own (ai-accounts R2's state, asked
-   *  as that member) or are connected through their subscription (its R18; T38, K2299), else `group` when the group's API
-   *  key is on and they are an active member (ai-accounts R6's state, asked as that member: it answers `{on}` to an active
-   *  member alone), else null. Its R7's choice, as its own order makes it. */
-  #accountServing(member) {
-    const as = `member:${member}`;
-    let c;
-    try { c = this.#aiAccounts(); } catch { return null; }
+  /** R52 (T53): which account serves `member`'s act of `kind` now, read without unsealing (`ai-accounts`'
+   *  `servingAccountOf`, its R25): the level (`member`, `project`, `group`) of the head, or null when none serves. */
+  #accountServing(member, kind = "run", project = null) {
     try {
-      const s = c.accountReferenceState({ member: as, viewer: as });
-      if (s && s.ok === true && s.held === true) return "member";
-      /* (T38; K2299) else their own sign-in, when connected through their subscription (ai-accounts R18, R7) */
-      if (s && s.ok === true && s.subscription && s.subscription.connected === true) return "member";
-    } catch { /* read as none of their own */ }
-    try {
-      const g = c.groupKeyState({ viewer: as });
-      return g && g.ok === true && g.on === true ? "group" : null;
+      const s = this.#aiAccounts().servingAccountOf({ member: `member:${member}`, use: kind, project: project ?? null });
+      return s && typeof s.level === "string" ? s.level : null;
     } catch { return null; }
   }
 
-  /** R52 (K1503, K1755): the account `ai-accounts.accountFor` (its R7, R11) answers for `member`'s act of `kind` (`run`):
-   *  `{level, kind, key}` when one serves it (R79; T47: a held sign-in's `key` is its token, ai-accounts R19); else `{refusal}`: `NO_ACCOUNT` read as this module's `AI_NO_ACCOUNT`, any
-   *  other refusal of that service (the group key's notice not yet read, a member not active, the seal) relayed as it
-   *  came. The caller keeps the key for the one call it serves, or not at all. */
+  /** R52 (T53; AIR26, AIR41, BR19): the account `ai-accounts.accountFor` (its R7, R11) answers for `member`'s act of
+   *  `kind`, with `project` the run's project: `{account, owner, level, account_id, entry_id, personal, suggestions}`,
+   *  `account` the in-plane account as R7 shapes it with every secret part dropped at once (`secret`, `reference`,
+   *  `gateway_id`: agent-worker R6 refuses one and reads the secret itself, R127); else `{refusal}`: `NO_ACCOUNT` read as
+   *  this module's `AI_NO_ACCOUNT`, any other refusal of that service relayed as it came. */
   async #accountFor(member, kind, project = null) {
     let a = null;
     try {
       a = await this.#aiAccounts().accountFor({ member: `member:${member}`,
         act: { kind, member: `member:${member}`, ...(project ? { project } : {}) } });
     } catch { a = null; }
-    /* R52 (T41): the owner that pays, as ai-use R1 spells it */
-    const owner = (lvl, proj) => (lvl === "group" ? "group" : lvl === "project" ? `project:${proj}` : `member:${member}`);
-    if (a && a.ok === true && typeof a.key === "string" && (a.level === "member" || a.level === "group" || a.level === "project"))
-      return { level: a.level, kind: a.kind, key: a.key, owner: owner(a.level, a.project) };
-    /* (T38; K2299) the member's own sign-in (ai-accounts R7, R18), or (T41; ai-accounts R10, R11) a project's, its sole
-       owner's, answered with no key: carried with no `secret`. (T47; R79, ai-accounts R19) A held sign-in answers its
-       token as `key` and is read by the arm above, its `kind` kept `signin`. */
-    if (a && a.ok === true && a.kind === "signin" && (a.level === "member" || a.level === "project"))
-      return { level: a.level, kind: "signin", key: null, owner: owner(a.level, a.project) };
+    if (a && a.ok === true && typeof a.account_id === "string" && typeof a.owner === "string"
+        && ["member", "project", "group"].includes(a.level)) {
+      const account = AiRuns.#accountShape(a);
+      a = null;
+      return { account, owner: account.owner, level: account.level, account_id: account.account_id,
+               entry_id: account.entry_id, personal: account.personal, suggestions: account.suggestions };
+    }
     if (!a || a.code === "NO_ACCOUNT" || typeof a.code !== "string") return { refusal: this.#noAccount(member, "A run") };
     const { ok: _ok, ...rest } = a;
     return { refusal: { ok: false, ...rest } };
   }
 
+  /** The account as it travels to `agent-worker` (its R6) and is recorded per segment (R91): ai-accounts R7's in-plane
+   *  fields alone, never a secret, a reference or a gateway id. */
+  static #accountShape(a) {
+    return { account_id: a.account_id, level: a.level, owner: a.owner, provider: a.provider ?? null, plan: a.plan ?? null,
+             means: a.means ?? null, entry_id: a.entry_id ?? null, entries: Array.isArray(a.entries) ? [...a.entries] : [],
+             member: a.member ? (String(a.member).startsWith("member:") ? String(a.member) : `member:${a.member}`) : null,
+             ...(a.project != null ? { project: a.project } : {}), suggestions: a.suggestions === true,
+             personal: a.personal === true, disclosed: Array.isArray(a.disclosed) ? a.disclosed.map((d) => ({ ...d })) : [] };
+  }
+
   #noAccount(member, what) {
     /* DEC-49 REGION is-ai-no-account */
     return this.#refuse("AI_NO_ACCOUNT", member
-      ? localize("ai-runs.index.what_needs_a_claude_account", "{what} needs a Claude account to serve the member whose act started it, and none serves that member: they have connected none of their own, and the team's key is not set or not on. Nothing was started.", { what: String(what) })
-      : localize("ai-runs.index.what_names_no_member_whose", "{what} names no member whose Claude account carries it. Nothing was started.", { what: String(what) }));
+      ? localize("ai-runs.index.what_needs_an_ai_account", "{what} needs an AI account to serve the member whose act started it, and none serves that member: they have connected none of their own, and the team's key is not set or not on. Nothing was started.", { what: String(what) })
+      : localize("ai-runs.index.what_names_no_member_whose_ai", "{what} names no member whose AI account carries it. Nothing was started.", { what: String(what) }));
     /* END DEC-49 REGION is-ai-no-account */
   }
 
   /** R52 (K1503): the member whose account a run carries — a member's session (`actor`), else the member a member-kind
    *  credential acts for (`principal_plane`), else, for a machine credential, the member the opener names
-   *  (`principalClaude`, `member:<id>`). Null when there is none. */
-  static #accountMember({ actor, principalPlane, principalClaude }) {
+   *  (`principalAi`, `member:<id>`). Null when there is none. */
+  static #accountMember({ actor, principalPlane, principalAi }) {
     return memberIdOf(actor) || memberIdOf(principalPlane)
-      || (typeof principalClaude === "string" && principalClaude.trim().startsWith("member:") ? memberIdOf(principalClaude) : null);
+      || (typeof principalAi === "string" && principalAi.trim().startsWith("member:") ? memberIdOf(principalAi) : null);
   }
 
-  /** R52: the member a stored run is carried by: its `principal_claude` when that is `member:<id>`; null for a run
+  /** R52: the member a stored run is carried by: its `principal_ai` when that is `member:<id>`; null for a run
    *  opened before T33-50, which recorded a level word there. */
-  static #payerOf(principalClaude) {
-    return typeof principalClaude === "string" && principalClaude.startsWith("member:") ? memberIdOf(principalClaude) : null;
+  static #payerOf(principalAi) {
+    return typeof principalAi === "string" && principalAi.startsWith("member:") ? memberIdOf(principalAi) : null;
   }
 
-  /** R52 (T41): the member whose act a stored run is: its `principal_claude_ref` (`member:<id>`), else, for a run opened
-   *  before T41, its `principal_claude` when that names a member. */
+  /** R52 (T41): the member whose act a stored run is: its `principal_ai_ref` (`member:<id>`), else, for a run opened
+   *  before T41, its `principal_ai` when that names a member. */
   static #memberOfRun(row) {
-    const ref = row && typeof row.principal_claude_ref === "string" && row.principal_claude_ref.startsWith("member:")
-      ? memberIdOf(row.principal_claude_ref) : null;
-    return ref || AiRuns.#payerOf(row && row.principal_claude);
+    const ref = row && typeof row.principal_ai_ref === "string" && row.principal_ai_ref.startsWith("member:")
+      ? memberIdOf(row.principal_ai_ref) : null;
+    return ref || AiRuns.#payerOf(row && row.principal_ai);
   }
 
   /* ---- K1606 (run-rules R19; VF-4): THE ACT THAT RECORDS A MODE'S FIRST LIVE RUN VERIFIED, written here, where runs
@@ -3399,7 +3588,7 @@ export class AiRuns {
     const order = RUN_MODES;
     const next = order[order.indexOf(mode) + 1] ?? null;
     return { ok: true, mode, run, verified_by: v.verified_by, at: existed ? prior.at : now, existed,
-             next: next ? { mode: next, deployable: this.partAdmitted(next).admitted } : null };
+             next: next ? { mode: next, deployable: AiRuns.#flagOnly(next, this.verifications()).admitted } : null };
   }
 
   /* ---- R75 (T41; D14, D11): THE TEST BAR, written here, where runs are, and read by run-rules R19's deploy gate ---- */
@@ -3409,27 +3598,33 @@ export class AiRuns {
    *  C-22.22; B3, K2485), a RELAY; refused whole where that judge is not reachable (fail closed). Figures only: no transcript is
    *  taken or kept (D15). Append-only. */
   testBarRecord({ part = null, set = null, set_version = null, false_alarm_rate = null, passed = null, graded_by = null,
-                  at = null } = {}) {
+                  at = null, entry_id = undefined } = {}) {
     const now = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
-    const record = { part, set, set_version, false_alarm_rate, passed, graded_by, at: now };
+    /* R75 (T53): per entry, `entry_id` added to the record (run-rules R19's standing measure reads it per entry) */
+    const record = { part, set, set_version, false_alarm_rate, passed, graded_by, at: now,
+                     ...(entry_id !== undefined ? { entry_id } : {}) };
     const bad = checkTestBarRecord(record);
     if (bad) return bad;
     this.#transact(() => this.sql.exec(
-      `INSERT INTO ai_test_bar (part, set_name, set_version, false_alarm_rate, passed, graded_by, at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      String(part), String(set), Number(set_version), Number(false_alarm_rate), passed === true ? 1 : 0, String(graded_by), now));
+      `INSERT INTO ai_test_bar (part, set_name, set_version, false_alarm_rate, passed, graded_by, at, entry_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      String(part), String(set), Number(set_version), Number(false_alarm_rate), passed === true ? 1 : 0, String(graded_by), now,
+      typeof entry_id === "string" ? entry_id : null));
     return { ok: true, part: String(part), set: String(set), set_version: Number(set_version),
-             false_alarm_rate: Number(false_alarm_rate), passed: passed === true, at: now };
+             false_alarm_rate: Number(false_alarm_rate), passed: passed === true, at: now,
+             ...(typeof entry_id === "string" ? { entry_id } : {}) };
   }
 
   /** R75: every result recorded on Civicsmith's own test investigations (never a group's set, which opens or closes no
    *  gate), oldest first, in run-rules R19's shape, for its `deployable`. Writes nothing; never throws. */
   testBarRecords() {
     try {
-      return this.#rows(`SELECT part, set_name, set_version, false_alarm_rate, passed, graded_by, at FROM ai_test_bar
+      return this.#rows(`SELECT part, set_name, set_version, false_alarm_rate, passed, graded_by, at, entry_id FROM ai_test_bar
                           WHERE set_name <> 'group' ORDER BY seq`)
-        /* the version as the number run-rules' judge reads (a whole number of one or more), whatever the column's affinity */
+        /* the version as the number run-rules' judge reads (a whole number of one or more), whatever the column's affinity;
+           R75 (T53): the entry measured, where the record names one */
         .map((r) => ({ part: r.part, set: r.set_name, set_version: Number(r.set_version), false_alarm_rate: Number(r.false_alarm_rate),
-                       passed: r.passed === 1, graded_by: r.graded_by, at: r.at }));
+                       passed: r.passed === 1, graded_by: r.graded_by, at: r.at,
+                       ...(typeof r.entry_id === "string" ? { entry_id: r.entry_id } : {}) }));
     } catch { return []; }
   }
 
@@ -3466,10 +3661,554 @@ export class AiRuns {
     try { const f = who ? this.#membership().memberFacts(who) : null; active = !!f && f.status === "active"; } catch { active = false; }
     if (!active || !p) return { ok: true, part: p || null, matters: 0, results: [] };
     const matters = this.#one(`SELECT count(*) c FROM ai_group_tests WHERE part = ?`, p).c;
-    const results = this.#rows(`SELECT set_version, false_alarm_rate, passed, at FROM ai_test_bar
+    /* R75 (T53; AD7, AD13): shown per (entry, part), each result naming the entry it measured (null before T53) */
+    const results = this.#rows(`SELECT set_version, false_alarm_rate, passed, at, entry_id FROM ai_test_bar
                                  WHERE set_name = 'group' AND part = ? ORDER BY seq`, p)
-      .map((r) => ({ set_version: r.set_version, false_alarm_rate: Number(r.false_alarm_rate), passed: r.passed === 1, at: r.at }));
+      .map((r) => ({ entry_id: typeof r.entry_id === "string" ? r.entry_id : null, part: p, set_version: r.set_version,
+                     false_alarm_rate: Number(r.false_alarm_rate), passed: r.passed === 1, at: r.at }));
     return { ok: true, part: p, matters: Number(matters), results };
+  }
+
+  /* ---- R83, R84, R91–R98, R101–R103, R105 (T53; K5457): SEGMENTS, HOPS AND A STOP AT THE STEP BOUNDARY -----------
+   *
+   * A run is worked in segments, each dispatched on one account and entry. Each accepted dispatch writes the segment's row
+   * (R91), and a dispatch on another account than the last segment's records the hop that began it (R92). A segment that
+   * ends with an `ai_stop` is not continued by R84: the hop is `ai-accounts`' (`hopFor`, R93), a hop that changes the payer
+   * waits for the member (R94), a run with nowhere to go is held, never failed (R95), a new recipient's notice holds it
+   * (R96), and a path not ready withholds the dispatch (R97). The plane's scheduler probes the paths held runs wait on and
+   * resumes the non-interactive ones (R98). The member may also wait a set time, then switch (R105). */
+
+  /** R103: the most parts `runParts` answers. */
+  static RUN_PARTS_LIMIT = 50;
+  /** R105 (DEC-475, BOB #323): the lengths a member may wait, in minutes. */
+  static WAIT_THEN_SWITCH_CHOICES = Object.freeze([5, 15, 60]);
+  /** R83 (T53; For BOB 8, [rec]): how long a held run's lease is extended from its stop; `AI_RUN_PAUSE_MAX_MS` overrides. */
+  static PAUSE_MAX_MS = 24 * 3600000;
+  /** R98: the most (account, entry) pairs one firing probes, and how long a pair not ready waits before it is probed again
+   *  (`AI_RUN_PROBE_INTERVAL_MS` overrides). */
+  static PROBE_BATCH = 10;
+  static PROBE_INTERVAL_MS = 60000;
+  /** R83: the lease, by its T53 name. */
+  static get RUN_LEASE_MS() { return AiRuns.AI_RUN_LEASE_MS; }
+  /** R93: the `ai_stop` reasons a hop is asked for. */
+  static HOP_STOPS = Object.freeze(["limit", "unavailable", "lapsed", "capability", "auth"]);
+  /** R95: the paths a held run's probe answers ready on (agent-model R35's states). */
+  static READY_STATES = Object.freeze(["ok", "half_open"]);
+
+  #pathSource = null;   // R97, R98: {module, fn}, the plane's op=aipathready, one registration
+
+  #pauseMaxMs() {
+    const v = Number(this.env && this.env.AI_RUN_PAUSE_MAX_MS);
+    return Number.isFinite(v) && v > 0 ? v : AiRuns.PAUSE_MAX_MS;
+  }
+  #probeIntervalMs() {
+    const v = Number(this.env && this.env.AI_RUN_PROBE_INTERVAL_MS);
+    return Number.isFinite(v) && v > 0 ? v : AiRuns.PROBE_INTERVAL_MS;
+  }
+
+  /** R97, R98: the plane's `op=aipathready` (agent-model's `health(account, entry)` read over the Worker), registered once at
+   *  start by the module that serves it: `fn({account_id, entry_id}) → {state, reset_at?}` (a promise allowed). A malformed
+   *  or second registration is refused through `membership`'s `listenerRefusal`. */
+  registerPathReady(module, fn) {
+    const refused = listenerRefusal(this.#pathSource, module, fn);
+    if (refused) return refused;
+    this.#pathSource = { module, fn };
+    return { ok: true, module };
+  }
+
+  /** R95, R97: whether the path of `account_id` and `entry_id` is ready: `{asked, ready, state, reset_at}`. With no source
+   *  registered the plane is not asked (`asked: false`, read as ready: the Worker still answers AI_PATH_NOT_READY itself);
+   *  a source that throws or answers nothing reads `unknown`, not ready. */
+  async #pathReady(account_id, entry_id) {
+    if (!this.#pathSource) return { asked: false, ready: true, state: null, reset_at: null };
+    let said = null;
+    try { said = await this.#pathSource.fn({ account_id, entry_id }); } catch { said = null; }
+    const state = said && typeof said.state === "string" ? said.state : "unknown";
+    return { asked: true, ready: AiRuns.READY_STATES.includes(state), state,
+             reset_at: said && typeof said.reset_at === "string" ? said.reset_at : null };
+  }
+
+  /** R91: a run's segments, oldest first; `[]` when none. */
+  #segmentRows(run) {
+    return this.#rows(`SELECT * FROM ai_run_segments WHERE run = ? ORDER BY n`, String(run));
+  }
+  #lastSegment(run) {
+    return this.#one(`SELECT * FROM ai_run_segments WHERE run = ? ORDER BY n DESC LIMIT 1`, String(run));
+  }
+
+  /** R92, R102: the account and entry as a hop names them, `{account_id, level, owner, provider, plan, entry_id}`. */
+  static #pairOf(a, entry_id) {
+    return { account_id: a.account_id ?? null, level: a.level ?? null, owner: a.owner ?? a.payer_owner ?? null,
+             provider: a.provider ?? null, plan: a.plan ?? null, entry_id: entry_id ?? a.entry_id ?? null };
+  }
+
+  /** R91, R92, R101: a segment's row, written inside the caller's transaction when a dispatch is accepted: the next `n`,
+   *  the account (never a secret), its entry, the paying owner and member, and `hop_in` when the account differs from the
+   *  last segment's (R92: `hop` names its reason and step; a resume on the same account writes none). The last segment
+   *  still open is closed at this instant. */
+  #segmentOpen(row, account, iso, hop = null) {
+    const prev = this.#lastSegment(row.run);
+    if (prev && !prev.ended)
+      this.sql.exec(`UPDATE ai_run_segments SET ended = ?, end_state = ? WHERE run = ? AND n = ?`,
+        iso, JSON.stringify({ by: "next_dispatch", done: false, refusals: [] }), row.run, prev.n);
+    const moved = !!prev && prev.account_id !== account.account_id;
+    const from = prev ? AiRuns.#pairOf({ ...safeJson(prev.account), account_id: prev.account_id }, prev.entry_id) : null;
+    const to = AiRuns.#pairOf(account, account.entry_id);
+    const hop_in = moved ? { run: row.run, step: row.step || null, from, to,
+                             reason: hop && hop.reason ? hop.reason : "member_switch",
+                             payer_change: from.owner !== to.owner ? { from_owner: from.owner, to_owner: to.owner } : null } : null;
+    this.sql.exec(
+      `INSERT INTO ai_run_segments (run, n, account_id, account, level, owner, provider, plan, means, entry_id, payer_owner,
+         member, started, hop_in) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      row.run, prev ? prev.n + 1 : 1, account.account_id, JSON.stringify(account), account.level ?? null, account.owner ?? null,
+      account.provider ?? null, account.plan ?? null, account.means ?? null, account.entry_id ?? null, account.owner ?? null,
+      account.member ?? null, iso, hop_in ? JSON.stringify(hop_in) : null);
+    return { n: prev ? prev.n + 1 : 1, hop_in };
+  }
+
+  /** R91, R101: a tick's conversations recorded on the open segment, inside the tick's transaction: the entries it used,
+   *  its distinct labels in first use, and its label, the first conversation's, never rewritten. A run with no segment
+   *  open records nothing. */
+  #segmentUsage(run, entries) {
+    const seg = this.#lastSegment(run);
+    if (!seg || seg.ended || !entries.length) return;
+    const used = safeJson(seg.entries_used) || [], labels = safeJson(seg.labels) || [];
+    for (const e of entries) {
+      if (!used.includes(e.entry_id)) used.push(e.entry_id);
+      const l = JSON.stringify(e.label);
+      if (!labels.some((x) => JSON.stringify(x) === l)) labels.push(e.label);
+    }
+    this.sql.exec(`UPDATE ai_run_segments SET entries_used = ?, labels = ?, label = COALESCE(label, ?) WHERE run = ? AND n = ?`,
+      JSON.stringify(used), JSON.stringify(labels), JSON.stringify(entries[0].label), run, seg.n);
+  }
+
+  /** R91, R84: the open segment's end, as `segment_end` reported it, inside the tick's transaction. */
+  #segmentClose(run, seg, iso) {
+    const s = this.#lastSegment(run);
+    if (!s || s.ended) return;
+    this.sql.exec(`UPDATE ai_run_segments SET ended = ?, end_state = ? WHERE run = ? AND n = ?`, iso, JSON.stringify(seg), run, s.n);
+  }
+
+  /** R91, R103: whether `viewer` reads a run's segments: the run's member, or an owner of an account that paid for it (a
+   *  member's own, an administrator for the team's, an owner of the project for a project's). */
+  #partsViewer(row, viewer) {
+    const id = memberIdOf(viewer);
+    if (!id || isMachineIdentity(String(viewer))) return false;
+    if (AiRuns.#memberOfRun(row) === id) return true;
+    const owners = new Set([row.principal_ai, ...this.#segmentRows(row.run).map((s) => s.payer_owner)].filter(Boolean));
+    const m = this.#membership();
+    for (const o of owners) {
+      try {
+        if (o === `member:${id}`) return true;
+        if (o === "group" && m.isAdministrator(id)) return true;
+        if (o.startsWith("project:") && m.isProjectOwner(o.slice(8), id)) return true;
+      } catch { /* not this owner */ }
+    }
+    return false;
+  }
+
+  /** R102: a hop as it is answered: accounts as `{level, provider, plan}`, entries by `entry_id`, the payer's change as
+   *  levels; never an account id or an owner's name. */
+  static #hopAnswered(h) {
+    if (!h || typeof h !== "object") return null;
+    const side = (x) => (x ? { level: x.level ?? null, provider: x.provider ?? null, plan: x.plan ?? null, entry_id: x.entry_id ?? null } : null);
+    const lvl = (o) => (o === "group" ? "group" : typeof o === "string" && o.startsWith("project:") ? "project" : "member");
+    return { reason: h.reason ?? null, from: side(h.from), to: side(h.to),
+             payer_change: h.payer_change ? { from_level: lvl(h.payer_change.from_owner), to_level: lvl(h.payer_change.to_owner) } : null };
+  }
+
+  /** R91: `session.segments` and `session.labels`, for `read` (R19) to the run's member and paying owners. */
+  #segmentsFor(row, viewer) {
+    if (!this.#partsViewer(row, viewer)) return null;
+    const rows = this.#segmentRows(row.run);
+    const segments = rows.map((s) => ({ n: s.n, account_id: s.account_id, level: s.level, owner: s.owner, provider: s.provider,
+      plan: s.plan, means: s.means, entries_used: safeJson(s.entries_used) || [], payer_owner: s.payer_owner, member: s.member,
+      started: s.started, ended: s.ended ?? null, end: safeJson(s.end_state), hop_in: safeJson(s.hop_in) }));
+    const labels = [];
+    for (const s of rows) for (const l of safeJson(s.labels) || []) {
+      const key = JSON.stringify(l);
+      const held = labels.find((x) => JSON.stringify(x.label) === key);
+      if (held) { if (!held.segments.includes(s.n)) held.segments.push(s.n); } else labels.push({ label: l, segments: [s.n] });
+    }
+    return { segments, labels };
+  }
+
+  /** R103 (T53; DEC-466 U2; `op=airunparts`): "HOW THIS RUN WENT". To the run's viewers (R91's: its member and the paying
+   *  owners), `{found: true, run, status, parts, truncated}`, each part `{n, label: {display_name, provider, model_version},
+   *  account: {level, provider, plan, own}, from, to, hop_in, end_refusal}`, at most `RUN_PARTS_LIMIT`; anyone else and an
+   *  absent run `{found: false, parts: []}`; an unreadable store `{unreadable: true, parts: null}` (fail closed). Never a
+   *  secret, an account id or another owner's name. Writes nothing; never throws. */
+  runParts({ run = null, viewer = null } = {}) {
+    try {
+      const id = run == null ? "" : String(run).trim();
+      const row = id ? this.#one(`SELECT * FROM ai_runs WHERE run = ?`, id) : null;
+      if (!row || !this.#aiRunInSight(id, viewer) || !this.#partsViewer(row, viewer)) return { found: false, parts: [] };
+      const rows = this.#rows(`SELECT * FROM ai_run_segments WHERE run = ? ORDER BY n LIMIT ?`, id, AiRuns.RUN_PARTS_LIMIT + 1);
+      const me = memberIdOf(viewer);
+      const parts = rows.slice(0, AiRuns.RUN_PARTS_LIMIT).map((s) => {
+        const l = safeJson(s.label);
+        return { n: s.n,
+                 label: l ? { display_name: l.display_name ?? null, provider: l.provider ?? null, model_version: l.model_version ?? null } : null,
+                 account: { level: s.level, provider: s.provider, plan: s.plan, own: !!me && s.owner === `member:${me}` },
+                 from: s.started, to: s.ended ?? null,
+                 hop_in: AiRuns.#hopAnswered(safeJson(s.hop_in)),
+                 end_refusal: (() => { const r = safeJson(s.end_refusal); return r ? { by: r.by ?? null, ...AiRuns.#hopAnswered(r), at: r.at ?? null } : null; })() };
+      });
+      return { found: true, run: id, status: row.status, parts, truncated: rows.length > AiRuns.RUN_PARTS_LIMIT };
+    } catch { return { unreadable: true, parts: null }; }
+  }
+
+  /** R96: the recipient's notice, in its words, filled with the recipient's provider and host. */
+  static #noticeWords(r) {
+    return word("ai.refused.recipientnotice", { provider: String((r && r.provider) || ""), host: String((r && r.host) || "") });
+  }
+
+  /** R95, R94, R96 (T53): what holds a run as its member reads it, with the choices open to her (word keys); null when
+   *  nothing holds it. */
+  static #heldFor(row) {
+    const h = AiRuns.#holdOf(row);
+    if (!h) return null;
+    /* R96: `aisend` is ai-accounts' act (its R51); once it records the notice the next dispatch goes on */
+    const choices = h.kind === "hop_offer" ? ["aicontinue", "aistop"] : h.kind === "disclosure" ? ["aisend", "aisendrefuse", "aiswitchaccount", "aiwithout"]
+      : ["ai.choice.wait", "ai.choice.switch", "ai.choice.without_ai"];
+    return { kind: h.kind, reason: h.reason ?? null, since: h.since ?? null, until: h.until ?? null,
+             ...(h.offer && h.offer.payer_change ? { payer_change: AiRuns.#hopAnswered({ payer_change: h.offer.payer_change }).payer_change } : {}),
+             ...(h.recipient ? { recipient: h.recipient } : {}), choices };
+  }
+
+  /** R93–R96, R105: what holds a run, or null. */
+  static #holdOf(row) { return row && row.hold ? safeJson(String(row.hold)) : null; }
+
+  /** R83, R95: a hold written on the run, inside a transaction, its lease extended to `pause_max` from the stop. */
+  #setHold(run, hold, iso) {
+    this.sql.exec(`UPDATE ai_runs SET hold = ?, expires = ? WHERE run = ? AND status = 'running'`,
+      hold ? JSON.stringify(hold) : null, AiRuns.#aiIso(Date.parse(hold && hold.since ? hold.since : iso) + this.#pauseMaxMs()), run);
+  }
+  #clearHold(run) { this.sql.exec(`UPDATE ai_runs SET hold = NULL WHERE run = ?`, run); }
+
+  /** R95: a run that works without a member watching (an exploring run, a standing question's AI half, mode `extract`). */
+  static #nonInteractive(row) {
+    return row.origin === "explore" || row.origin === "standing" || row.mode === "extract";
+  }
+
+  /** One entry in the run's log at level `meaning`, saying what became of a stop, a hop or a hold. */
+  #holdEntry(row, detail, iso) {
+    this.#aiRunAppend(row.run, { level: "meaning", subject: "segment -> end", ...this.#aiRunRestatedState(row.run), governed: false,
+                                 detail: String(detail).slice(0, 2000) }, iso, 0, row.principal_ai || null, row.step || null);
+  }
+
+  /** R93: `ai-accounts.hopFor` for the run's member's act from the last segment's pair, its answer unchanged (a refusal
+   *  that throws reads LIST_EXHAUSTED's absence: `{ok: false, code: "HOP_UNREADABLE"}`). */
+  #hopFor(row, reason) {
+    const member = AiRuns.#memberOfRun(row);
+    const seg = this.#lastSegment(row.run);
+    const project = row.project ?? (row.context_type === "project" ? row.context_id : null);
+    try {
+      return this.#aiAccounts().hopFor({ member: `member:${member}`,
+        act: { kind: "run", member: `member:${member}`, ...(project ? { project } : {}), interactive: !AiRuns.#nonInteractive(row) },
+        from: seg ? { account_id: seg.account_id, entry_id: seg.entry_id } : null, reason, at_step_boundary: true });
+    } catch { return { ok: false, code: "HOP_UNREADABLE" }; }
+  }
+
+  /** R92, R93: the account a hop leads to, as the dispatch carries it (ai-accounts R7's in-plane fields, never a secret),
+   *  read from `accountState` and the catalogue's entry. */
+  #hopAccount(row, hop) {
+    const member = AiRuns.#memberOfRun(row);
+    let st = null, entry = null;
+    try { st = this.#aiAccounts().accountState({ account_id: hop.account_id, viewer: `member:${member}` }); } catch { st = null; }
+    try { entry = aiCatalogueOf(this.ctx).entryOf(hop.entry_id); } catch { entry = null; }
+    const s = st && st.ok === true ? st : {};
+    const owner = hop.owner ?? s.owner ?? null;
+    const level = owner === "group" ? "group" : typeof owner === "string" && owner.startsWith("project:") ? "project" : "member";
+    return AiRuns.#accountShape({ account_id: hop.account_id, level, owner, provider: s.provider ?? (entry && entry.provider) ?? null,
+      plan: s.plan ?? null, means: hop.means ?? s.means ?? null, entry_id: hop.entry_id, entries: Array.isArray(s.entries) ? s.entries : [hop.entry_id],
+      member: `member:${member}`, suggestions: s.suggestions === true || (s.uses && s.uses.suggestions === true), personal: s.personal === true,
+      disclosed: [] });
+  }
+
+  /** R84, R93–R96 (T53): what follows a segment that ended with an `ai_stop`, after the tick has committed. `limit`,
+   *  `unavailable`, `lapsed`, `capability` and `auth` ask `hopFor` (R93): a next account with the same payer is dispatched
+   *  at once (R94), one changing the payer is offered to the member and waits (R94), a recipient not yet disclosed holds the
+   *  run (R96), and nowhere to go holds it (R95) with the refusal in the log, never looped and never closed. `disclosure`
+   *  holds the run for its recipient's notice (R96). Answers `{decision, ...}`. */
+  async #afterStop(runId, stop, iso) {
+    const row = this.#one(`SELECT * FROM ai_runs WHERE run = ?`, runId);
+    if (!row || row.status !== "running") return { decision: "ended" };
+    const seg = this.#lastSegment(runId);
+    const pair = seg ? { account_id: seg.account_id, entry_id: seg.entry_id } : { account_id: null, entry_id: null };
+    if (stop.reason === "disclosure") {
+      const hold = { kind: "disclosure", reason: "disclosure", recipient: stop.recipient || null, ...pair, since: iso };
+      this.#transact(() => { this.#setHold(runId, hold, iso); this.#holdEntry(row, AiRuns.#noticeWords(hold.recipient), iso); });
+      return { decision: "held", hold: "disclosure" };
+    }
+    if (!AiRuns.HOP_STOPS.includes(stop.reason)) return { decision: "none" };
+    const hop = this.#hopFor(row, stop.reason);
+    if (hop && hop.ok === true) {
+      if (hop.payer_change) {
+        const hold = { kind: "hop_offer", reason: stop.reason, offer: { ...hop, reason: stop.reason }, ...pair, since: iso };
+        this.#transact(() => { this.#setHold(runId, hold, iso);
+          this.#holdEntry(row, localize("ai-runs.index.hop_offered", "the next account would change who pays; it waits for the run's member to continue or stop ({reason})", { reason: stop.reason }), iso); });
+        return { decision: "offered", payer_change: AiRuns.#hopAnswered({ payer_change: hop.payer_change }).payer_change };
+      }
+      const out = await this.#redispatch(row, iso, { account: this.#hopAccount(row, hop), hop: { reason: stop.reason } });
+      return { decision: "hopped", ...out };
+    }
+    if (hop && hop.wait === true) {
+      const hold = { kind: "disclosure", reason: stop.reason, recipient: hop.recipient || null, offer: { ...hop, reason: stop.reason }, ...pair, since: iso };
+      this.#transact(() => { this.#setHold(runId, hold, iso); this.#holdEntry(row, AiRuns.#noticeWords(hold.recipient), iso); });
+      return { decision: "held", hold: "disclosure" };
+    }
+    const code = hop && typeof hop.code === "string" ? hop.code : "HOP_UNREADABLE";
+    const hold = { kind: "pause", reason: stop.reason, refusal: code, ...pair, reset_at: stop.retry_after ?? null,
+                   next_probe: stop.retry_after ?? iso, since: iso };
+    this.#transact(() => { this.#setHold(runId, hold, iso);
+      this.#holdEntry(row, code === "LIST_EXHAUSTED" ? `${word("ai.refused.listexhausted")} (ai.refused.listexhausted)`
+        : localize("ai-runs.index.hop_refused_held", "no other account can continue this run ({code}); it is held, not ended, and nothing it established is lost", { code }), iso); });
+    return { decision: "held", hold: "pause", code };
+  }
+
+  /** R84, R93–R95, R98: a run dispatched again by the plane, with no member's act: a member's run under a fresh segment
+   *  credential as `dispatchMemberRun` mints it, a run of the team's organisation credential as the wake dispatches it.
+   *  `over.account` dispatches on that account (a hop, R92) and `over.hop` names its reason. Answers `{dispatched, state,
+   *  reason?}`. */
+  async #redispatch(row, iso, over = {}) {
+    try {
+      const principal = String(row.principal_plane ?? "");
+      if (principal.startsWith("member:")) {
+        const r = await this.#dispatchMember({ run: row.run, by: principal, at: iso }, over);
+        return { dispatched: r.dispatched === true,
+                 ...(r.dispatch ? { state: r.dispatch.state } : { state: "WITHHELD", reason: String(r.withheld || r.code || "NOT_DISPATCHED").slice(0, 80) }) };
+      }
+      const resumer = await this.#aiRunResumer();
+      const decision = this.#aiRunResumeDecision(row, resumer);
+      if (!decision.dispatch) return { dispatched: false, state: "WITHHELD", reason: decision.withheld };
+      const o = await this.#aiRunDispatch({ run: row.run, context_id: row.context_id, payer: AiRuns.#memberOfRun(row),
+        step: row.step || null, project: row.project ?? (row.context_type === "project" ? row.context_id : null),
+        owner: this.#payerNow(row), ...(over.account ? { ref: { account: over.account, owner: over.account.owner, entry_id: over.account.entry_id } } : {}),
+        hop: over.hop || null }, resumer, iso);
+      return { dispatched: o.state === "DISPATCHED" || o.state === "RUNNING", state: o.state, ...(o.withheld ? { reason: o.withheld } : {}) };
+    } catch { return { dispatched: false, state: "WITHHELD", reason: "DISPATCH_FAILED" }; }
+  }
+
+  /** R52, R92 (T53): the owner paying for a run now: the last segment's (a hop may have moved it), else the one recorded at
+   *  the open. */
+  #payerNow(row) {
+    const seg = this.#lastSegment(row.run);
+    return (seg && seg.payer_owner) || row.principal_ai;
+  }
+
+  /** R94, R95, R96, R105: the run a member's own choice acts on, or the refusal: absent or unseen `{found: false}`; `by` not
+   *  the run's member `AI_RUN_NOT_PRINCIPAL` (run-rules R5, relayed); an ended run `{acted: false, status}`. */
+  #memberChoice(run, by, act) {
+    const id = run == null ? "" : String(run).trim();
+    const row = id ? this.#one(`SELECT * FROM ai_runs WHERE run = ?`, id) : null;
+    if (!row || !this.#aiRunInSight(id, by)) return { answer: { run: run || null, found: false, note: word("ai-runs.note.run_either_existed") } };
+    const member = memberIdOf(by);
+    const owner = AiRuns.#memberOfRun(row);
+    if (!member || member !== owner) {
+      const g = runPrincipalGate({ caller: member ? `member:${member}` : "", principal: owner ? `member:${owner}` : "", act });
+      const said = g || this.#refuse("AI_RUN_NOT_PRINCIPAL", act);
+      return { answer: { run: id, acted: false, found: true, status: row.status, ok: false, code: said.code, check: said.check,
+                         translation: said.translation, detail: said.detail } };
+    }
+    if (row.status !== "running") return { answer: { run: id, acted: false, found: true, status: row.status } };
+    return { row, member };
+  }
+
+  /** R94 (T53; DEC-420 `op=aicontinue`): the member accepts the hop offered to her: dispatched on it at once, the hold
+   *  cleared. Nothing offered: `{acted: false, held: null}`. */
+  async aiContinue({ run = null, by = null, at = null } = {}) {
+    const c = this.#memberChoice(run, by, word("ai-runs.act.continuing_run"));
+    if (c.answer) return c.answer;
+    const iso = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
+    const hold = AiRuns.#holdOf(c.row);
+    if (!hold || hold.kind !== "hop_offer" || !hold.offer) return { run: c.row.run, acted: false, held: hold ? hold.kind : null };
+    this.#transact(() => this.#clearHold(c.row.run));
+    const out = await this.#redispatch(c.row, iso, { account: this.#hopAccount(c.row, hold.offer), hop: { reason: hold.offer.reason || hold.reason } });
+    return { run: c.row.run, acted: true, ...out };
+  }
+
+  /** R94, R102 (T53; `op=aistop`): the member declines the hop offered to her, or stops a held run: the run ends `cancelled`
+   *  with its partial results kept, and, for a declined hop, the segment she would have continued from records
+   *  `end_refusal` `{by, reason, from, to, payer_change, at}`, the hop as it was offered, in the same act. */
+  async aiStop({ run = null, by = null, at = null } = {}) {
+    const c = this.#memberChoice(run, by, word("ai-runs.act.continuing_run"));
+    if (c.answer) return c.answer;
+    const iso = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
+    const hold = AiRuns.#holdOf(c.row);
+    const seg = this.#lastSegment(c.row.run);
+    if (hold && hold.kind === "hop_offer" && hold.offer && seg) {
+      const to = this.#hopAccount(c.row, hold.offer);
+      const from = AiRuns.#pairOf({ ...safeJson(seg.account), account_id: seg.account_id }, seg.entry_id);
+      const refusal = { by: `member:${c.member}`, reason: hold.offer.reason || hold.reason, from, to: AiRuns.#pairOf(to, to.entry_id),
+                        payer_change: hold.offer.payer_change || null, at: iso };
+      this.#transact(() => this.sql.exec(`UPDATE ai_run_segments SET end_refusal = ? WHERE run = ? AND n = ?`,
+        JSON.stringify(refusal), c.row.run, seg.n));
+    }
+    this.#transact(() => this.#clearHold(c.row.run));
+    const ended = this.#aiRunTerminate({ run: c.row.run, offered: "cancelled", condition: null, at: iso, derive: false });
+    return { run: c.row.run, acted: ended.terminated === true, status: ended.status, bound: ended.bound };
+  }
+
+  /** R95 (T53; `op=aiwithout`): the member continues without AI: the run is closed `cancelled`, its partial results kept. */
+  async aiWithout({ run = null, by = null, at = null } = {}) {
+    const c = this.#memberChoice(run, by, word("ai-runs.act.continuing_run"));
+    if (c.answer) return c.answer;
+    const iso = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
+    this.#transact(() => this.#clearHold(c.row.run));
+    const ended = this.#aiRunTerminate({ run: c.row.run, offered: "cancelled", condition: null, at: iso, derive: false });
+    return { run: c.row.run, acted: ended.terminated === true, status: ended.status, bound: ended.bound };
+  }
+
+  /** R95 (T53; `op=aiswitchaccount`): the member's deliberate move down her list: a hop with reason `member_switch` (R93),
+   *  as an `ai_stop` hop is decided. */
+  async aiSwitchAccount({ run = null, by = null, at = null } = {}) {
+    const c = this.#memberChoice(run, by, word("ai-runs.act.continuing_run"));
+    if (c.answer) return c.answer;
+    const iso = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
+    const hop = this.#hopFor(c.row, "member_switch");
+    if (!hop || hop.ok !== true) {
+      const { ok: _ok, ...rest } = hop || { code: "HOP_UNREADABLE" };
+      return { run: c.row.run, acted: false, ...rest };
+    }
+    if (hop.payer_change) {
+      const seg = this.#lastSegment(c.row.run);
+      this.#transact(() => this.#setHold(c.row.run, { kind: "hop_offer", reason: "member_switch", offer: { ...hop, reason: "member_switch" },
+        account_id: seg ? seg.account_id : null, entry_id: seg ? seg.entry_id : null, since: iso }, iso));
+      return { run: c.row.run, acted: true, decision: "offered" };
+    }
+    this.#transact(() => this.#clearHold(c.row.run));
+    const out = await this.#redispatch(c.row, iso, { account: this.#hopAccount(c.row, hop), hop: { reason: "member_switch" } });
+    return { run: c.row.run, acted: true, decision: "hopped", ...out };
+  }
+
+  /** R95, R105 (T53; `op=aiwait`, "Wait for"): the member waits a length from `WAIT_THEN_SWITCH_CHOICES` (minutes); the run
+   *  is held until the path is ready (resumed then, R98) or the wait ends (she is told again). `WAIT_INVALID` otherwise. */
+  aiWait({ run = null, by = null, wait = null, at = null } = {}) { return this.#holdWait(run, by, wait, at, "wait"); }
+
+  /** R105 (T53; K5489, DEC-475; `op=aiwaitswitch`): wait a set time, then switch if the provider is still down. Records
+   *  `{run, member, wait, from, at}` on the run; holds it until the wait ends or the path is ready, whichever comes first:
+   *  ready, it continues where it is and nothing switches; still down, `hopFor` is asked with reason `unavailable` and the
+   *  switch is made at the step boundary (R102's record), a payer-changing switch still waiting for `aicontinue` (R94). */
+  waitThenSwitch({ run = null, member = null, by = null, wait = null, at = null } = {}) {
+    return this.#holdWait(run, by ?? member, wait, at, "wait_switch");
+  }
+
+  #holdWait(run, by, wait, at, kind) {
+    const c = this.#memberChoice(run, by, word("ai-runs.act.continuing_run"));
+    if (c.answer) return c.answer;
+    const minutes = Number(wait);
+    /* DEC-49 REGION is-airun-wait */
+    if (!AiRuns.WAIT_THEN_SWITCH_CHOICES.includes(minutes))
+      return { run: c.row.run, acted: false, ...this.#refuse("WAIT_INVALID", localize("ai-runs.index.wait_invalid", "a wait is one of {choices} minutes. Nothing was changed.", { choices: AiRuns.WAIT_THEN_SWITCH_CHOICES.join(", ") })) };
+    /* END DEC-49 REGION is-airun-wait */
+    const ms = at ? Date.parse(at) : Date.now();
+    const iso = AiRuns.#aiIso(ms);
+    const seg = this.#lastSegment(c.row.run);
+    const prior = AiRuns.#holdOf(c.row) || {};
+    const until = AiRuns.#aiIso(ms + minutes * 60000);
+    const choice = { run: c.row.run, member: `member:${c.member}`, wait: minutes, from: iso, at: iso };
+    this.#transact(() => {
+      this.#setHold(c.row.run, { kind, reason: prior.reason || "unavailable", account_id: prior.account_id ?? (seg ? seg.account_id : null),
+        entry_id: prior.entry_id ?? (seg ? seg.entry_id : null), until, next_probe: iso, since: prior.since || iso }, iso);
+      if (kind === "wait_switch") this.sql.exec(`UPDATE ai_runs SET wait_choice = ? WHERE run = ?`, JSON.stringify(choice), c.row.run);
+    });
+    return { run: c.row.run, acted: true, ...(kind === "wait_switch" ? { wait_choice: choice } : { wait: minutes }), until };
+  }
+
+  /** R96 (T53; `op=aisendrefuse`): the member refuses the new recipient: nothing is sent to it, the run stays held (she may
+   *  still switch or continue without AI), and the refusal is in its log. */
+  aiSendRefuse({ run = null, by = null, at = null } = {}) {
+    const c = this.#memberChoice(run, by, word("ai-runs.act.continuing_run"));
+    if (c.answer) return c.answer;
+    const iso = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
+    const hold = AiRuns.#holdOf(c.row);
+    if (!hold || hold.kind !== "disclosure") return { run: c.row.run, acted: false, held: hold ? hold.kind : null };
+    this.#transact(() => this.#holdEntry(c.row, localize("ai-runs.index.recipient_refused", "the run's member refused to send its material to this recipient; nothing was sent, and the run is held"), iso));
+    return { run: c.row.run, acted: true, held: "disclosure" };
+  }
+
+  /** R98 (T53; scheduler R8): the consumer `ai-health-probe` (answer key `aihealthprobe`) this module registers into the
+   *  scheduler's slot at start (`slot.register(module, consumer)`; a name already held is the slot's `CONSUMER_DECLARED`). */
+  registerHealthProbe(slot) {
+    try { return slot.register("ai-runs", this.healthProbe()); }
+    catch { return { ok: false, reason: "CONSUMER_MALFORMED", module: "ai-runs", name: "ai-health-probe" }; }
+  }
+
+  /** R98: the held runs the probe watches, each with its pair and the instant it is next probed. */
+  #probeHeld() {
+    return this.#rows(`SELECT * FROM ai_runs WHERE status = 'running' AND hold IS NOT NULL ORDER BY run LIMIT 1000`)
+      .map((row) => ({ row, hold: AiRuns.#holdOf(row) }))
+      .filter(({ hold }) => hold && ["pause", "wait", "wait_switch"].includes(hold.kind) && hold.account_id && hold.entry_id);
+  }
+  static #nextOf(hold) {
+    const at = Date.parse(hold.next_probe || hold.reset_at || hold.since);
+    const reset = hold.reset_at ? Date.parse(hold.reset_at) : NaN;
+    return Number.isFinite(reset) ? Math.max(at || 0, reset) : at;
+  }
+
+  /** R98: `{name, key, due, wake, tick}`. `due(now)` counts the pairs due; `wake(now)` is the earliest instant a pair is next
+   *  to be probed (never before now), null when none; `tick(now)` probes at most `PROBE_BATCH` pairs through
+   *  `op=aipathready`, resumes the held runs waiting on a ready one (non-interactive runs, and runs whose member chose to
+   *  wait; a run a member started and left held is never resumed by it), switches a "wait then switch" run whose wait ended
+   *  still down (R105), and probes a pair not ready again after `PROBE_INTERVAL_MS`. Answers `{probed, resumed, still_down,
+   *  remaining}`. */
+  healthProbe() {
+    const due = (now) => {
+      const pairs = new Set();
+      for (const { hold } of this.#probeHeld()) if (AiRuns.#nextOf(hold) <= now) pairs.add(`${hold.account_id}\u0000${hold.entry_id}`);
+      return pairs.size;
+    };
+    const wake = (now) => {
+      let min = null;
+      for (const { hold } of this.#probeHeld()) {
+        const t = AiRuns.#nextOf(hold);
+        if (Number.isFinite(t)) min = min === null ? t : Math.min(min, t);
+      }
+      return min === null ? null : Math.max(min, now);
+    };
+    const tick = async (now) => {
+      const iso = AiRuns.#aiIso(now);
+      const held = this.#probeHeld().filter(({ hold }) => AiRuns.#nextOf(hold) <= now);
+      const pairs = [];
+      for (const h of held) {
+        const k = `${h.hold.account_id}\u0000${h.hold.entry_id}`;
+        if (!pairs.includes(k)) pairs.push(k);
+      }
+      const batch = pairs.slice(0, AiRuns.PROBE_BATCH);
+      let resumed = 0, still_down = 0;
+      for (const k of batch) {
+        const [account_id, entry_id] = k.split("\u0000");
+        const p = await this.#pathReady(account_id, entry_id);
+        for (const { row, hold } of held.filter((h) => h.hold.account_id === account_id && h.hold.entry_id === entry_id)) {
+          const resumable = AiRuns.#nonInteractive(row) || hold.kind === "wait" || hold.kind === "wait_switch";
+          if (p.ready && resumable) {
+            this.#transact(() => this.#clearHold(row.run));
+            const out = await this.#redispatch(row, iso);
+            if (out.dispatched) resumed += 1;
+            continue;
+          }
+          if (!p.ready && hold.kind === "wait_switch" && Date.parse(hold.until) <= now) {
+            this.#transact(() => this.#clearHold(row.run));
+            await this.#afterStop(row.run, { reason: "unavailable" }, iso);
+            continue;
+          }
+          if (!p.ready && hold.kind === "wait" && Date.parse(hold.until) <= now && !hold.told) {
+            this.#transact(() => { this.#setHold(row.run, { ...hold, told: true, next_probe: AiRuns.#aiIso(now + this.#probeIntervalMs()) }, iso);
+              this.#holdEntry(row, localize("ai-runs.index.wait_ended_still_down", "the wait ended and the AI is still not available; the run's member is told again"), iso); });
+            still_down += 1;
+            continue;
+          }
+          if (!p.ready) {
+            still_down += 1;
+            this.#transact(() => this.#setHold(row.run, { ...hold, next_probe: AiRuns.#aiIso(now + this.#probeIntervalMs()),
+              ...(p.reset_at ? { reset_at: p.reset_at } : {}) }, iso));
+          }
+        }
+      }
+      return { probed: batch.length, resumed, still_down, remaining: Math.max(0, pairs.length - batch.length) };
+    };
+    return { name: "ai-health-probe", key: "aihealthprobe", due, wake, tick };
   }
 
   /* ---- R25, R26: THE SURFACING STEP, registered with promotion (K31) --------------------------------------------- */
@@ -3584,18 +4323,30 @@ export class AiRuns {
   /** The tables and their two additive columns (R38), and D-85's `ai_run_log` fold: the pre-fold run log's rows are
    *  copied into the observation log under `authority_kind = run` and the old table dropped, once. Idempotent;
    *  called by the store's migration after observation-log's. */
+  /** R9 (T53): the principal columns renamed at the migration, old name then new. */
+  static #RENAMED = Object.freeze([["principal_" + "claude", "principal_ai"], ["principal_" + "claude_ref", "principal_ai_ref"]]);
+
   migrate() {
     const bare = AI_RUNS_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+    /* R9 (T53; K3472, BR29): the two principal columns of a table made before T53 are renamed in place, every row kept and
+       no meaning changed, before anything else reads them. */
+    const before = new Set(this.#rows(`PRAGMA table_info(ai_runs)`).map((c) => c.name));
+    for (const [from, to] of AiRuns.#RENAMED)
+      if (before.has(from) && !before.has(to)) this.sql.exec(`ALTER TABLE ai_runs RENAME COLUMN ${from} TO ${to}`);
     for (const st of bare.split(";")) if (st.trim()) this.sql.exec(st);
     const cols = new Set(this.#rows(`PRAGMA table_info(ai_runs)`).map((c) => c.name));
     for (const col of AI_RUNS_ADDED_COLUMNS)
       if (!cols.has(col)) this.sql.exec(`ALTER TABLE ai_runs ADD COLUMN ${col} TEXT`);
+    for (const [table, added] of Object.entries(AI_RUNS_ADDED_TABLE_COLUMNS)) {
+      const have = new Set(this.#rows(`PRAGMA table_info(${table})`).map((c) => c.name));
+      for (const col of added) if (!have.has(col)) this.sql.exec(`ALTER TABLE ${table} ADD COLUMN ${col} TEXT`);
+    }
     if (this.#rows(`PRAGMA table_info(ai_run_log)`).length) {
       this.sql.exec(
         `INSERT INTO observation_log
            (at, actor_class, actor, authority_kind, authority, level, subject_kind, subject,
             state, governed, condition, bound, terminal, result_kind, result_ref, detail)
-         SELECT l.at, 'machine', r.principal_claude, 'run', l.run, l.level, 'unstated', l.subject,
+         SELECT l.at, 'machine', r.principal_ai, 'run', l.run, l.level, 'unstated', l.subject,
                 l.state, l.governed, l.condition, l.bound, l.terminal, NULL, NULL, l.detail
            FROM ai_run_log l LEFT JOIN ai_runs r ON r.run = l.run
           ORDER BY l.run, l.seq`);
@@ -3625,6 +4376,7 @@ export function aiRunsOf(ctx, env = null, deps = null) {
  *  REC-152) and `by` (who records a verification). */
 export function aiRunsOps(runs, url, body) {
   const q = (k) => url.searchParams.get(k);
+  const memberStamp = () => q("actor") || q("viewer");
   return {
     airunopen: () => runs.open({ ...(body || {}), principalPlane: q("principal"), actor: q("actor"), viewer: q("viewer") }),
     airuntick: () => runs.tickAndContinue({ ...(body || {}), actor: q("actor"), viewer: q("viewer"), caller: q("principal") }),
@@ -3638,6 +4390,16 @@ export function aiRunsOps(runs, url, body) {
     airunspawn: () => runs.spawnPayload({ run: q("run"), half: q("half"), viewer: q("viewer") }),
     /* K1606 (run-rules R19): the verification act, `by` the stamp. */
     airunverify: () => runs.verificationRecord({ ...(body || {}), by: q("by") }),
+    /* (T53; R94–R96, R103, R105) the member's own choices over her held run, `by` her stamp (the door's actor, else its
+       viewer), never the body's; R103's read in the viewer's sight */
+    aicontinue: () => runs.aiContinue({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
+    aistop: () => runs.aiStop({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
+    aiwait: () => runs.aiWait({ run: (body || {}).run ?? q("run"), wait: (body || {}).wait ?? q("wait"), by: memberStamp() }),
+    aiswitchaccount: () => runs.aiSwitchAccount({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
+    aiwithout: () => runs.aiWithout({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
+    aisendrefuse: () => runs.aiSendRefuse({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
+    aiwaitswitch: () => runs.waitThenSwitch({ run: (body || {}).run ?? q("run"), wait: (body || {}).wait ?? q("wait"), by: memberStamp() }),
+    airunparts: () => runs.runParts({ run: (body || {}).run ?? q("run"), viewer: q("viewer") }),
   };
 }
 
@@ -3645,7 +4407,26 @@ export function aiRunsOps(runs, url, body) {
    the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
 export const DECLARED_OPS = Object.freeze({
   airunopen: { classes: ["admin","member","probe"], mutating: true, weight: "reversible", description: localize("ai-runs.declared.airunopen", "investigative run lifecycle, keyed by run id: starts a background session in the context of an inquiry or a project and changes NOTHING about that object (§14a)"),
-    fields: { accepts: ["run","contextType","contextId","label","mode","principalClaude","principalClaudeRef","skillVersion","biasManifest","standardPair","bounds","state","leaseMs","at","rerunOf","plan","step","origin","place","work","response","project"], requires: ["run","contextType","contextId","principalClaude","skillVersion"] } },
+    fields: { accepts: ["run","contextType","contextId","label","mode","principalAi","principalAiRef","skillVersion","biasManifest","standardPair","bounds","state","leaseMs","at","rerunOf","plan","step","origin","place","work","response","project"], requires: ["run","contextType","contextId","principalAi","skillVersion"] } },
   airunclose: { classes: ["admin","member","probe"], mutating: true, weight: "reversible", description: localize("ai-runs.declared.airunclose", "investigative run lifecycle, keyed by run id: ends a run and names the bound that stopped it (§14b.6); what the run PROPOSED is a separate act with its own author"),
     fields: { accepts: ["run","bound","condition","at"], requires: ["run","bound"] } },
+  /* R90 (T53; DEC-420's spellings, `draft-assistant-screens.md` §4): the member's choices over her held run (R94–R96, R105)
+     and "How this run went" (R103), each read from its arm whole; each a member's act over her own run, with no
+     capability rung (`needs: null`, op-declarations R80), as ai-accounts' own acts are declared */
+  aicontinue: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aicontinue", "the run's member continues her run on the next account, which changes who pays (R94)"),
+    fields: { accepts: ["run"], requires: ["run"] } },
+  aistop: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aistop", "the run's member declines the next account or stops her held run; it ends cancelled with what it found kept (R94, R102)"),
+    fields: { accepts: ["run"], requires: ["run"] } },
+  aiwait: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aiwait", "the run's member waits a set time for her AI to come back (R95, R105)"),
+    fields: { accepts: ["run","wait"], requires: ["run","wait"] } },
+  aiswitchaccount: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aiswitchaccount", "the run's member moves her held run to the next account on her list (R95, R93)"),
+    fields: { accepts: ["run"], requires: ["run"] } },
+  aiwithout: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aiwithout", "the run's member continues without AI; the run ends with what it found kept (R95)"),
+    fields: { accepts: ["run"], requires: ["run"] } },
+  aisendrefuse: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aisendrefuse", "the run's member refuses a new recipient; nothing is sent and the run stays held (R96)"),
+    fields: { accepts: ["run"], requires: ["run"] } },
+  airunparts: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-runs.declared.airunparts", "read: how a run went, part by part, each with its AI, its account's level and its instants; writes nothing (R103)"),
+    fields: { accepts: ["run"], requires: ["run"] } },
+  aiwaitswitch: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aiwaitswitch", "the run's member waits a set time, then switches to her next account if her AI is still down (R105)"),
+    fields: { accepts: ["run","wait"], requires: ["run","wait"] } },
 });

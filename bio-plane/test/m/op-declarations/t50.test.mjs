@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { REGISTERED } from "./register-owners.mjs";
 import * as O from "../../../src/op-declarations/index.mjs";
-import { explained } from "./help.mjs";
+import { explained, RETIRED_T53 } from "./help.mjs";
 import { T50_SHARES, T50_FAMILIES } from "../../../src/op-declarations/t50.mjs";
 import { needsRows } from "../../../src/op-capabilities/index.mjs";
 import { OWED_BY_FIX_ROUND } from "./browser.mjs";
@@ -397,12 +397,17 @@ test("R73, R21 (T50; wizard-scripts R41, B2 CHANGE): every act of the registry h
   const OWED_NOW = OWED_BY_FIX_ROUND.filter((act) => !DECLARED_NOW.includes(act));
   /* T51 (R76): the seven browser acts are owed rows of the registry and no op, a class of their own: they are the only gaps */
   const gapsOf = (d) => registryActGaps({ screens: SCREEN_REGISTRY, declared: d });
-  assert.deepEqual(gapsOf(declared).filter((g) => !Object.hasOwn(O.BROWSER_ACTS, g.act) && !OWED_NOW.includes(g.act)), []);
-  assert.deepEqual([...new Set(gapsOf(declared).map((g) => g.act))].sort(), [...Object.keys(O.BROWSER_ACTS), ...OWED_NOW].sort());
+  /* T53 (R21; ai-accounts R35, BOB 4 Nov): an act of the registry that names a retired account-seam op is a gap no owner
+     serves, named back to BOB; the screens that draw it are not this module's */
+  const RETIRED_GAPS = [...new Set(gapsOf(declared).map((g) => g.act))].filter((act) => RETIRED_T53.includes(act));
+  assert.deepEqual(gapsOf(declared).filter((g) => !Object.hasOwn(O.BROWSER_ACTS, g.act) && !OWED_NOW.includes(g.act)
+    && !RETIRED_T53.includes(g.act)), []);
+  assert.deepEqual([...new Set(gapsOf(declared).map((g) => g.act))].sort(), [...Object.keys(O.BROWSER_ACTS), ...OWED_NOW, ...RETIRED_GAPS].sort());
   for (const op of INSTALLER_ROUTES) assert.equal(Object.hasOwn(OPS, op), false, `${op}: declared`);
   for (const op of ["watchitem", "secondlook", "secondlookclear", "projectstakeset", "actionstake", "actioninquiry"]) assert.ok(declared.has(op), op);
   const without = new Set([...declared].filter((op) => op !== "secondlookclear"));
-  assert.deepEqual(gapsOf(without).filter((g) => !Object.hasOwn(O.BROWSER_ACTS, g.act) && !OWED_NOW.includes(g.act)).map((g) => g.act), ["secondlookclear"]);
+  assert.deepEqual(gapsOf(without).filter((g) => !Object.hasOwn(O.BROWSER_ACTS, g.act) && !OWED_NOW.includes(g.act)
+    && !RETIRED_T53.includes(g.act)).map((g) => g.act), ["secondlookclear"]);
 });
 
 test("R73, R3 (T50; B3, screens-investigate R31): themeread and instances are in both session sets, so the act gate answers session for a member and the theme screen draws its Search act; their specs are unchanged and no NEEDS row gates them (negative control: an op in neither set answers machine)", () => {

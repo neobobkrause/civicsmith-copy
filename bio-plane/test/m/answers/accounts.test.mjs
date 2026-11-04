@@ -27,7 +27,8 @@ test("R30 an ask calls accountFor with kind ask and its project, and is judged b
   assert.equal(r.ok, true, JSON.stringify(r));
   assert.equal(r.owner, "member:bob"); assert.equal(r.account.level, "member");
   assert.deepEqual(seen.at(-1), { member: BOB, act: { kind: "ask", member: BOB } }, "kind ask, no project named");
-  assert.deepEqual(w.limit.asked.at(-1), { owner: "member:bob", member: "bob", use: "ask", at: "2026-10-05T16:00:00Z" });
+  assert.deepEqual(w.limit.asked.at(-1), { owner: "member:bob", member: "bob", use: "ask", at: "2026-10-05T16:00:00Z",
+                                            account_id: own, entry_id: r.account.entry_id });
   assert.deepEqual(w.snapshot(), before, "writes nothing");
   /* the limit reached: ai-use's refusal, unchanged */
   const reached = w.reach("member:bob", "ask");

@@ -154,7 +154,7 @@ test("R20, R21, R23, R24 (convert run-conditions): the read and both spawn halve
   }
   assert.deepEqual([...bases].sort(), Object.keys(STANDARD_BASIS).sort(), "every basis reached, and none outside the vocabulary");
   /* the log answers about the search: none of the run's own cells travel on it */
-  const SENT = { label: "sentinel-label-7", principalClaudeRef: "sentinel-ref-7", skillVersion: "sentinel@7",
+  const SENT = { label: "sentinel-label-7", principalAiRef: "sentinel-ref-7", skillVersion: "sentinel@7",
                  biasManifest: '{"statements_sha":"sentinel-sha-7"}', standardPair: '{"capture":"sentinel-bar-7"}' };
   await w.runs.open(OPEN({ run: "M", ...SENT, state: { sentinel: "sentinel-state-7" }, rerunOf: "noProject" }));
   await w.runs.tick({ run: "M", viewer: "admin", caller: ORG, log: [look("LOOKED_ABSENT")] });

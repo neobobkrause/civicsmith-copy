@@ -128,7 +128,8 @@ import { projectRosterOf } from "../project-roster/index.mjs";
    importers import exactly what they imported. */
 import { caseDocumentStatesMemberBlocks, caseDocumentBlocks, SECTIONS, REAUTHORABLE_SECTIONS, signedCitations,
          publishedGraphEdges, caseDocumentRequiresMaterials, calculationsOf, timelineOf,
-         caseFilePath, materialsOf } from "../case-grammar/index.mjs";
+         caseFilePath, materialsOf, ungradedPassagesOf, typedPassagesOf, UNGRADED_PREDATE_SENTENCE,
+         UNGRADED_UNREADABLE_SENTENCE, TYPED_PREDATE_SENTENCE, TYPED_UNREADABLE_SENTENCE } from "../case-grammar/index.mjs";
 
 export { CASE_SOURCES_CHECKS, rowOf as publicationRowOf } from "./checks.mjs";
 export { WORDS, caseWordsOf, lensClosingSentencesOf } from "../case-grammar/index.mjs";
@@ -212,6 +213,32 @@ const CITATION_NAMES_CAPTURE = Object.freeze(["pinned", "only_capture"]);
 /* CPDF-10: a column this module WROTE as JSON, read back; null rather than a throw on a malformed value. */
 const safeJson = (s) => { try { return s == null ? null : JSON.parse(s); } catch { return null; } };
 const HEX64 = /^[0-9a-f]{64}$/;
+/* R80-R82 (T53; DEC-461, DEC-464): the two statements an edition freezes from its signed bytes, each `{rows, state}` as
+   `case-grammar` reads it (its R36, R37); the sentence a read answers is `case-grammar`'s for the state, never stored. */
+const PASSAGE_STATEMENTS = Object.freeze({
+  ungraded: { read: ungradedPassagesOf, sentences: { predates: UNGRADED_PREDATE_SENTENCE, unreadable: UNGRADED_UNREADABLE_SENTENCE } },
+  typed: { read: typedPassagesOf, sentences: { predates: TYPED_PREDATE_SENTENCE, unreadable: TYPED_UNREADABLE_SENTENCE } },
+});
+const PASSAGE_STATES = Object.freeze(["stated", "predates", "unreadable"]);
+/* R80, R82: what the commit records of one statement: the rows as JSON for a `stated` document, else null, beside the
+   state. */
+const passagesRecord = (kind, fm) => {
+  const r = PASSAGE_STATEMENTS[kind].read(fm);
+  return r.state === "stated" ? [JSON.stringify(r.rows ?? []), "stated"] : [null, PASSAGE_STATES.includes(r.state) ? r.state : "unreadable"];
+};
+/* R81, R82: one statement as an edition holds it: `{state, rows, detail}`, `detail` `case-grammar`'s sentence for
+   `predates` and `unreadable`, null for `stated`. A row committed before T53 holds no state (never back-filled); its
+   signed bytes, which are what the commit would have read, answer for it. */
+const passagesAnswer = (kind, rowsJson, state, fm) => {
+  if (!PASSAGE_STATES.includes(state)) {
+    const r = PASSAGE_STATEMENTS[kind].read(fm);
+    return { state: r.state, rows: r.rows, detail: r.detail };
+  }
+  const rows = state === "stated" ? safeJson(rowsJson) : null;
+  if (state === "stated" && !Array.isArray(rows))
+    return { state: "unreadable", rows: null, detail: PASSAGE_STATEMENTS[kind].sentences.unreadable };
+  return { state, rows, detail: state === "stated" ? null : PASSAGE_STATEMENTS[kind].sentences[state] };
+};
 /* R72: a leg's target that names a held standard (inquiry-grammar R13): a bundle id of the `STD` prefix, slug included. */
 const isStandardId = (v) => BUNDLE_ID_RE.test(v) && v.startsWith("STD-");
 /* R72: what an edition committed before T35 states of its criteria. */
@@ -1082,7 +1109,7 @@ export class Publication {
       /* END DEC-49 REGION is-counsel-matter-published */
     }
     /* R58 (DEC-112; K1268, BOB's decision 5): EVERY EDITION COMMITTED FROM T28 ON CARRIES ITS METHOD AND MATERIALS, so a
-       preparation made before T28 (any format but /6) is never committed, nothing written: the remedy is a new
+       preparation made before T28 (a format earlier than /6; /7 to /10 are /6 in these fields) is never committed, nothing written: the remedy is a new
        preparation, which carries them. A retry of an edition already signed answered above, whatever its format. A /7
        document (T31, DEC-124) is /6 in every field and is read as /6 here, as everywhere in this module: every reading of
        a document's shape is `case-grammar`'s predicates (its R1), never a format named here (N538, K1367). */
@@ -1164,16 +1191,24 @@ export class Publication {
     /* R70, R40 (DEC-147 (5); K1826): when it was signed beside when it is published, on the row: a set time's signing
        (R77's `signedAtOf`), else this commit's instant; published at this commit. */
     const signedAt = this.#signedAtOf(id, ed) || when;
+    /* R80, R82 (T53; DEC-461, DEC-464): the passages published without a grade, and the typed passages with their typist
+       and checkers at the credit each chose, as the signed bytes state them (`case-grammar` R36, R37), never read from
+       `strength`, `content` or today's attestations, so nothing done after signing reaches this edition (R24). */
+    const [ungradedRows, ungradedState] = passagesRecord("ungraded", docFm);
+    const [typedRows, typedState] = passagesRecord("typed", docFm);
     this.sql.exec(
       `INSERT INTO published_cases (case_id,edition,scope,completeness,bias_acknowledgement,bar,opened,signed_at,published_at,
-         criteria)
-       VALUES (?,?,?,?,?,?,?,?,?,?)
+         criteria,ungraded_passages,ungraded_state,typed_passages,typed_state)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
        ON CONFLICT(case_id,edition) DO UPDATE SET scope=excluded.scope,
          completeness=excluded.completeness, bias_acknowledgement=excluded.bias_acknowledgement, bar=excluded.bar,
-         signed_at=excluded.signed_at, published_at=excluded.published_at, criteria=excluded.criteria`,
+         signed_at=excluded.signed_at, published_at=excluded.published_at, criteria=excluded.criteria,
+         ungraded_passages=excluded.ungraded_passages, ungraded_state=excluded.ungraded_state,
+         typed_passages=excluded.typed_passages, typed_state=excluded.typed_state`,
       id, ed, typeof scope === "string" ? scope : null, completeness ? JSON.stringify(completeness) : null,
       typeof biasAcknowledgement === "string" ? biasAcknowledgement : null,
-      bar && typeof bar === "object" ? JSON.stringify(bar) : null, when, signedAt, when, JSON.stringify(criteria));
+      bar && typeof bar === "object" ? JSON.stringify(bar) : null, when, signedAt, when, JSON.stringify(criteria),
+      ungradedRows, ungradedState, typedRows, typedState);
     /* THE ROSTER AND THE PINS, IN ONE ACT: the publisher authored all N pins in one document and a member signed it,
        so the freeze is one statement somebody made. The ordinal is the roster's own order. */
     members.forEach((m, i) => {
@@ -2046,7 +2081,8 @@ export class Publication {
      in particular NO case-level strength, because there is no such thing —
      every member's frozen PAIR travels with that member. */
   caseEditionState(caseId, ed, group = null) {
-    const c = this.#one(`SELECT scope, completeness, bias_acknowledgement, bar, opened, ratified_at, manifest_sha, criteria
+    const c = this.#one(`SELECT scope, completeness, bias_acknowledgement, bar, opened, ratified_at, manifest_sha, criteria,
+                                ungraded_passages, ungraded_state, typed_passages, typed_state
                          FROM published_cases WHERE case_id=? AND edition=?`, caseId, ed);
     if (!c) return null;
     /* CASE-5 / DEC-72 clause 2: WHOSE PRODUCTION, on the one accessor that
@@ -2243,6 +2279,19 @@ export class Publication {
                const d = this.#one(`SELECT text FROM case_documents WHERE case_id=? AND edition=? AND ratified_at IS NOT NULL`,
                                    caseId, ed);
                return d ? this.#timelineOfText(d.text) : null;
+             })(),
+             /* R81, R82 (T53; DEC-461, DEC-464): the two passage statements as the edition froze them at its commit
+                (R80), the rows as signed, with no title, grade or join to today's record; null until it is ratified,
+                as `timeline`. */
+             ...(() => {
+               const d = this.#one(`SELECT text FROM case_documents WHERE case_id=? AND edition=? AND ratified_at IS NOT NULL`,
+                                   caseId, ed);
+               if (!d) return { ungraded_passages: null, typed_passages: null };
+               let fm = null;
+               if (!PASSAGE_STATES.includes(c.ungraded_state) || !PASSAGE_STATES.includes(c.typed_state))
+                 fm = parseFrontmatter(String(d.text ?? "")).data || {};
+               return { ungraded_passages: passagesAnswer("ungraded", c.ungraded_passages, c.ungraded_state, fm),
+                        typed_passages: passagesAnswer("typed", c.typed_passages, c.typed_state, fm) };
              })(),
              opened: c.opened, ratified_at: c.ratified_at ?? null,
              manifest_sha: c.manifest_sha ?? null,

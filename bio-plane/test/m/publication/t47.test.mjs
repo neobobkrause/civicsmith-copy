@@ -14,7 +14,9 @@ const TIMELINE = [
 ];
 /* R53's answer, as its T47 clause lists it. */
 const R53_KEYS = ["caseId", "edition", "group", "project", "bar", "scope", "document", "bias_acknowledgement", "completeness",
-                  "timeline", "opened", "ratified_at", "manifest_sha", "criteria", "complete", "awaiting", "findings", "detail"];
+                  "timeline", "opened", "ratified_at", "manifest_sha", "criteria", "complete", "awaiting", "findings", "detail",
+                  /* R81, R82 (T53; amends R53): the two passage statements frozen at the commit */
+                  "ungraded_passages", "typed_passages"];
 
 const standardsOf = () => ({
   standardRead: ({ id }) => (id === STD

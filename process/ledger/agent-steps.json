@@ -1,0 +1,46 @@
+{
+  "id": "agent-steps",
+  "title": "agent-steps: answer its provider notices",
+  "layer": 6,
+  "paths": [
+    "agent-steps/src/",
+    "build/requirements/agent-steps.md"
+  ],
+  "tests": [
+    "agent-steps/test/"
+  ],
+  "requirements": "build/requirements/agent-steps.md",
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "provenance",
+    "query-language",
+    "retrieval",
+    "basis-versions",
+    "run-rules",
+    "run-productions",
+    "capture-requests",
+    "ai-runs",
+    "agent-harness",
+    "agent-model",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "agent-steps",
+    "command": [
+      "node",
+      "--test",
+      "--test-concurrency=1"
+    ]
+  },
+  "reading": [
+    "build/requirements/agent-steps.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: ai-runs:96 (agent-steps/src/plane.mjs:116 sends tick usage as {mode, model, effort, usage, calls}; ai-runs now takes {mode, entry_id, label, usage, calls}). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T07:39:21Z"
+  }
+}

@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
+import { currentAct } from "../../../src/wizard-scripts/data.mjs";
 import { GENERATED, SOURCES } from "../../../src/wizard-scripts/build-data.mjs";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
@@ -35,7 +36,7 @@ test("R54 (T53; BOB's ruling (a); amends R53) the registry is re-taken at 30af43
 test("R54: the acts new at 30af4350f2 are registered on their screens; the status changes keep their acts registered; registerimport is owed no more and registerfileimport is; every non-owed act of b1adf4236d, kept whole beside the carried file, is still registered", () => {
   for (const [id, op] of [["setup", "factconfirm"], ["queue", "signerknown"], ["capture", "captureuploadabort"], ["document", "resolve"],
                           ["question", "leggrade"], ["ceremony", "leggrade"], ["counsel", "counselpacketread"], ["counsel", "counselpacketexport"],
-                          ["connect", "accountreferenceset"], ["connect", "accountreferenceremove"], ["document", "contradictionflag"]])
+                          ["connect", "aiownadd"], ["connect", "aiaccountremove"], ["document", "contradictionflag"]])
     assert.ok(screen(id).acts.includes(op), `${id}: ${op} is registered`);
   const owedOn = (f, id) => f.screens.find((s) => s.id === id).acts.filter((a) => a.status === "owed").map((a) => a.op);
   assert.ok(!owedOn(file, "registers").some((o) => /registerimport /.test(o)), "registerimport is gone");
@@ -46,7 +47,7 @@ test("R54: the acts new at 30af4350f2 are registered on their screens; the statu
   assert.equal(earlier.screens.reduce((n, s) => n + s.acts.length, 0), 656, "the earlier file is kept whole: 656 acts");
   assert.ok(!earlier.screens.find((s) => s.id === "setup").acts.some((a) => a.op === "factconfirm"), "control: the earlier file lacks factconfirm on setup");
   for (const s of earlier.screens)
-    for (const a of s.acts.filter((x) => x.status !== "owed")) assert.ok(screen(s.id).acts.includes(a.op), `${s.id}: ${a.op} still registered`);
+    for (const a of s.acts.filter((x) => x.status !== "owed" && currentAct(x.op) !== null)) assert.ok(screen(s.id).acts.includes(currentAct(a.op)), `${s.id}: ${a.op} still registered`);
 });
 
 test("R54: build-data.mjs --check passes on the committed files; a one-byte change to the generated registry fails it; the library and the front doors are unchanged", () => {

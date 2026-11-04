@@ -23,6 +23,10 @@ import * as PROJECT_ROSTER from "../project-roster/checks.mjs";
 /* R17 (T48; N996, K3101; `extraction/credentials-split.md` §2, §7): ai-accounts' rows (`AI_ACCOUNT_CHECKS`: the C-29 rows that
    moved from credentials' file, each code, number and translation unchanged, `DISCLOSURE_DUE`'s C-29.40 among them), in its
    place in the module order (directly before credentials). */
+/* T53 (R7, K5457): ai-catalogue's C-156 (`CATALOGUE_CHECKS`), in its place in the module order (directly before
+   ai-accounts). Its rows name a word key and carry no translation, so they are listed (the catalogue stays total) and R2
+   decorates none of them: a code reaches its row's words only through a family whose row has a translation. */
+import * as AI_CATALOGUE from "../ai-catalogue/checks.mjs";
 import * as AI_ACCOUNTS from "../ai-accounts/checks.mjs";
 import * as CREDENTIALS from "../credentials/checks.mjs";
 import * as PROMOTION from "../promotion/checks.mjs";
@@ -37,11 +41,17 @@ import * as ACQUISITION from "../acquisition/checks.mjs";
 import * as CAPTURE from "../capture/checks.mjs";
 /* R12 (T43-14; N851, K2609, K2697): doorbell's rows (`DOORBELL_CHECKS`: C-118.2, .3, .4, .7; `KNOCK_CHECKS`: C-85.1–C-85.5),
    which moved with their raisers from capture's file (capture R37, doorbell R21), in its place in the module order
-   (directly after capture, before file-safety). No code is in both files, so each reads the row R7 pins. */
+   (directly after capture, before file-safety; since T53, K5448, `build/modules.json` puts file-safety before doorbell,
+   so doorbell's file is read directly after file-safety's, before sources'). No code is in both files, so each reads
+   the row R7 pins. */
 import * as DOORBELL from "../doorbell/checks.mjs";
 /* K2130, K2103 (T36-47; red 11): file-safety's C-140 rows (`FILE_SAFETY_CHECKS`), in its place in the module order
-   (directly after capture, before sources). K2103 re-coded the three codes earlier families held, so no row moves. */
+   (directly after capture; since T53, K5448, before doorbell). K2103 re-coded the three codes earlier families held, so no row moves. */
 import * as FILE_SAFETY from "../file-safety/checks.mjs";
+/* R19 (T53; N824, K5692 (4)): mail-door's C-157 (`MAIL_CHECKS`, C-157.1 to C-157.9), in its place in the module order
+   (directly after doorbell, before sources). No other family holds one of its codes; `MAIL_NO_STATEMENT` is capture's
+   C-118.12. */
+import * as MAIL_DOOR from "../mail-door/checks.mjs";
 import * as SOURCES from "../sources/checks.mjs";
 import * as CALIBRATION from "../calibration/checks.mjs";
 import * as EXTRACTION from "../extraction/checks.mjs";
@@ -186,6 +196,7 @@ const FILE_LIST = [
   ["src/record-core/checks.mjs", RECORD_CORE],
   ["src/membership/checks.mjs", MEMBERSHIP],
   ["src/project-roster/checks.mjs", PROJECT_ROSTER],
+  ["src/ai-catalogue/checks.mjs", AI_CATALOGUE],
   ["src/ai-accounts/checks.mjs", AI_ACCOUNTS],
   ["src/credentials/checks.mjs", CREDENTIALS],
   ["src/promotion/checks.mjs", PROMOTION],
@@ -195,8 +206,9 @@ const FILE_LIST = [
   ["src/capture-sources/credentials.mjs", CAPTURE_SOURCES],
   ["src/acquisition/checks.mjs", ACQUISITION],
   ["src/capture/checks.mjs", CAPTURE],
-  ["src/doorbell/checks.mjs", DOORBELL],
   ["src/file-safety/checks.mjs", FILE_SAFETY],
+  ["src/doorbell/checks.mjs", DOORBELL],
+  ["src/mail-door/checks.mjs", MAIL_DOOR],
   ["src/sources/checks.mjs", SOURCES],
   ["src/calibration/checks.mjs", CALIBRATION],
   ["src/extraction/checks.mjs", EXTRACTION],

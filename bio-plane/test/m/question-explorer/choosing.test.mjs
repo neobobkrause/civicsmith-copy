@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { world, Q, Q2, Q3, PROJ, ENT, PERSON, CAP, DOC } from "./fixture.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 import { EXPLORE_QUESTIONS_PER_TICK, EXPLORE_BOUNDS } from "../../../src/question-explorer/index.mjs";
+import { PLANS } from "../ai-accounts/catalogue.mjs";
 
 test("R1: exploreDue, exploreWake and exploreTick for the scheduler; exploreAllowed decides each owner and question; null opens one run, at most one a question a day", async () => {
   const w = await world().standard();
@@ -36,9 +37,14 @@ test("R1: a refusal from exploreAllowed opens nothing and the next owner is aske
   assert.equal(asks.length, 1, "one Ask per owner per tick");
   assert.equal(asks[0].owner, `project:${PROJ}`);
   assert.deepEqual(asks[0].what, [Q], "the questions worth exploring");
-  /* R12: the Ask item its owners read carries ai-use R10's estimate (here, no run measured yet). */
+  /* R12: the Ask item its owners read carries ai-use R10's estimate, as ai-use itself answers it for that account (here, no
+     run measured yet); this module's own answer says "not known yet". */
   const [item] = w.realAiUse.exploreAsksPending({ viewer: "member:alice", at: w.clock.now }).asks;
-  assert.deepEqual([item.owner, item.what, item.estimate], [`project:${PROJ}`, [Q], word("question-explorer.known")]);
+  const r10 = w.realAiUse.estimate({ owner: `project:${PROJ}`, use: "explore", mode: "explore", count: 1, viewer: "member:alice" }).estimate;
+  assert.deepEqual([item.owner, item.what, item.estimate], [`project:${PROJ}`, [Q], r10]);
+  /* The Ask names the account ai-use decides on (ai-use R9 as T53 states it). */
+  assert.equal(asks[0].account_id, w.aiAccounts.accountUsesOf({ owner: `project:${PROJ}` }).account_id);
+  assert.equal(typeof asks[0].account_id, "string");
   assert.equal(t.asked[0].estimate, word("question-explorer.known"));
   /* The Ask waits an hour before it is looked at again (Q2, refused by every owner, not again that day); then,
      approved, the run opens that day. */
@@ -87,7 +93,7 @@ test("R3: the run opens through ai-runs in the investigate run path, origin expl
   const w = await world().standard();
   const o = await w.openRun("group");
   const [open] = w.calledAs("open");
-  assert.deepEqual([open.mode, open.origin, open.use, open.principalClaude, open.contextType, open.contextId],
+  assert.deepEqual([open.mode, open.origin, open.use, open.principalAi, open.contextType, open.contextId],
                    ["investigate", "explore", "explore", "group", "inquiry", Q]);
   assert.equal("step" in open, false, "this module passes no step of its own");
   assert.deepEqual([open.place, typeof open.work], [{ questions: [Q] }, "string"], "it passes the step's place and work");
@@ -112,27 +118,35 @@ test("R3: the run opens through ai-runs in the investigate run path, origin expl
 });
 
 test("R3: a principal served by a sign-in explores only while that sign-in account's explore use is on; off (its default) it is refused as any account whose explore use is off (ai-accounts R14 and ai-use R6, the real modules; the sign-in held, ai-accounts R19)", async () => {
-  const w = await world().standard();
-  /* A project whose account is its sole member's own sign-in (ai-accounts R18, R10), its token held (ai-accounts R19:
-     a sign-in with no token held answers not connected). */
-  w.project(PROJ, ["alice"], { owners: ["alice"] });
-  w.draw(Q, PROJ);
-  assert.equal((await w.aiAccounts.subscriptionTokenHold({ member: "alice", token: "sign-in-token-of-alice-0123456789" })).ok, true);
-  assert.equal(w.aiAccounts.projectSigninSet({ project: PROJ, by: "alice" }).ok, true);
-  /* Off: the sign-in account's switch at its default, no. */
+  /* (T53) A sign-in serves only the level its plan's scope names (ai-accounts R10, R42: a project's sign-in is refused, and
+     a member's own account explores no question, ai-use R6), so the principal served by a sign-in here is the team's: its
+     account a team-scope subscription of the catalogue's (the fixture's `teamSubscription` plan), set by an administrator,
+     instead of the standard world's API key. */
+  const w = world();
+  for (const m of ["alice", "bob"]) w.member(m);
+  w.member("dana", "admin");
+  await w.catalogue.seeded;
+  const set = await w.aiAccounts.accountSet({ owner: "group", provider: PLANS.provider, plan: PLANS.teamSubscription, means: "issued",
+                                               secret: "sk-ant-oat01-team-sign-in-0123456789", by: "member:dana" });
+  assert.equal(set.ok, true, JSON.stringify(set));
+  w.doc(DOC, CAP);
+  w.question(Q, { recipients: ["alice"] });
+  /* Off: the sign-in account's switch at its default, no: ai-use asked and refused, nothing opened. */
   const off = await w.p.exploreTick(w.clock.now);
   assert.equal(off.opened.length, 0);
   assert.equal(w.calledAs("open").length, 0);
-  assert.ok(w.calledAs("exploreAllowed").some((a) => a.owner === `project:${PROJ}`), "ai-use asked, and refused");
+  assert.ok(w.calledAs("exploreAllowed").some((a) => a.owner === "group"), "ai-use asked, and refused");
   /* On: set by the account's owner's own act. */
   w.clock.now = "2026-10-11T09:00:00Z";
-  assert.equal(w.aiAccounts.accountUsesSet({ owner: `project:${PROJ}`, switch: "explore", on: "yes", by: "member:alice" }).ok, true);
+  await w.setExplore("group", "yes");
   const on = await w.p.exploreTick(w.clock.now);
-  assert.deepEqual(on.opened.map((o) => o.owner), [`project:${PROJ}`]);
-  assert.equal(w.calledAs("open")[0].principalClaude, `project:${PROJ}`);
-  /* Her own account is that same sign-in, explore at no when the off tick ran: refused here before ai-use is asked. */
-  assert.equal(off.refused, 3, "the team, the project and her own account");
-  assert.equal(w.calledAs("exploreAllowed").some((a) => a.owner === "member:alice"), false);
+  assert.deepEqual(on.opened.map((o) => o.owner), ["group"]);
+  assert.equal(w.calledAs("open")[0].principalAi, "group");
+  /* Negative control: switched back off by its owner's act, the next day opens nothing more. */
+  w.clock.now = "2026-10-12T09:00:00Z";
+  await w.setExplore("group", "no");
+  assert.equal((await w.p.exploreTick(w.clock.now)).opened.length, 0);
+  assert.equal(w.calledAs("open").length, 1);
 });
 
 test("R12: each Ask item and each run carries ai-use R10's estimate before", async () => {
@@ -160,7 +174,9 @@ test("R3: a member's account's explore switch is read through ai-accounts' in-pl
   await w.setExplore("member:alice", "yes");
   stand.unreadable = true;
   const t = await w.p.exploreTick(w.clock.now);
-  assert.deepEqual(asked, [["accountUsesOf", { owner: "member:alice" }]], "the in-plane read, with no viewer");
+  assert.deepEqual(asked.filter(([, a]) => a.owner === "member:alice"), [["accountUsesOf", { owner: "member:alice" }]],
+                   "the in-plane read, with no viewer, once a tick");
+  assert.ok(asked.every(([k, a]) => k === "accountUsesOf" && Object.keys(a).join() === "owner"), "every read in-plane, by owner");
   assert.equal(w.calledAs("exploreAllowed").some((a) => a.owner === "member:alice"), false, "refused here, ai-use not asked");
   assert.equal(t.refused, 2, "the group (its switch at no, by ai-use) and her unreadable account");
   /* Negative control: read, at yes, she is passed to ai-use to decide (ai-use R6). */
