@@ -25,7 +25,7 @@ function setup(opts) {
 const docOf = (w, r) => w.row(`SELECT * FROM case_documents WHERE case_id=? AND edition=?`, r.caseId, r.edition);
 const bodyOf = (text) => text.slice(text.indexOf("\n---\n", 4) + 5);
 
-test("R14: the document, in publication's CASE_DOCUMENT_FORMAT, which is bio-case-document/8 from T31 (DEC-124), is stored unsigned through publication and states the case, edition and project, the scope, the roster with roles and pins, each member's own edition, frozen pair (capture and connection always, testimony when not unrated) with grounds and conclusion, the completeness block, the bias acknowledgement and manifest, the bar, the attributions, the citations, the searched section, the draft link and a receipt; its body prints every authored sentence", () => {
+test("R14: the document, in publication's CASE_DOCUMENT_FORMAT, which is bio-case-document/10 from T53 (case-grammar R35; /8 from T31, DEC-124), is stored unsigned through publication and states the case, edition and project, the scope, the roster with roles and pins, each member's own edition, frozen pair (capture and connection always, testimony when not unrated) with grounds and conclusion, the completeness block, the bias acknowledgement and manifest, the bar, the attributions, the citations, the searched section, the draft link and a receipt; its body prints every authored sentence", () => {
   const w = setup();
   /* a member's firsthand observation, reached through Q2's testimony leg */
   const obs = w.prov.testify({ words: "I was at the meeting.", observedAt: "2026-09-20", title: "At the meeting",
@@ -44,7 +44,7 @@ test("R14: the document, in publication's CASE_DOCUMENT_FORMAT, which is bio-cas
   const fm = w.fm(row.text);
   assert.deepEqual([fm.format, fm.case_id, fm.case_edition, fm.case_project, fm.case_scope],
     [CASE_DOCUMENT_FORMAT, r.caseId, 1, P, AUTHORED.scope]);
-  assert.equal(fm.format, "bio-case-document/8", "op=publish writes /8, never /6 (DEC-124)");
+  assert.equal(fm.format, "bio-case-document/10", "op=publish writes the format in force, /10 (case-grammar R35), with no attestation sha too");
   /* its tension section, present with nothing to disclose (R55 (case-disclosures R1); `/5` and publication's reader: tensions.test.mjs) */
   assert.deepEqual([fm.tensions_disclosed, fm.tensions_highlighted, fm.case_tensions, fm.case_tension_sentences],
     [0, 0, [], []]);
@@ -260,10 +260,11 @@ test("R17: the searched section is computed from the observation log at authorin
   /* 502 captures (the leg's own and the 501 above): 500 computed over, 2 folded into unidentified */
   assert.deepEqual([blv.content.subjects, blv.content.unidentified], [SEARCHED_SUBJECT_MAX, 2]);
   assert.notEqual(blv.content.outcome, "searched");
-  /* R14 (G47 4): 501 captures of one source carry attestation shas, so the document declares /9 through case-grammar's helper */
+  /* R14 (G47 4; case-grammar R35): 501 captures of one source carry attestation shas; case-grammar's helper answers the
+     format in force, /10, with or without a sha (it answered /9 here before R35) */
   const bigFm = w2.fm(docOf(w2, big).text);
   assert.equal((bigFm.material_attestations || []).some((a) => a.sha), true);
-  assert.equal(bigFm.format, "bio-case-document/9");
+  assert.equal(bigFm.format, "bio-case-document/10");
 });
 
 test("R17: searchedSection refuses to compute dishonestly — no instant, a subject source other than case_basis, no levels, a level or subject kind the vocabulary does not name — and never says never_looked where the evidence is one-sided", () => {
