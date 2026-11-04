@@ -20,7 +20,8 @@ const IDS_AT_START = ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10
   "R20", "R49", "R50"];
 const UNMET_AT_START = [];
 /* BOB's ruling (a), 4 Nov 2026: this job re-takes the registry at the tranche's design commit and states it as R54, after R53. */
-const IDS_NOW = [...IDS_AT_START.slice(0, IDS_AT_START.indexOf("R53") + 1), "R54", ...IDS_AT_START.slice(IDS_AT_START.indexOf("R53") + 1)];
+/* Attempt 3 (store-assembly PR 242, interface-shell PR 172): F1, this module's own found mark on ADMIN_ACTS, after R54. */
+const IDS_NOW = [...IDS_AT_START.slice(0, IDS_AT_START.indexOf("R53") + 1), "R54", "F1", ...IDS_AT_START.slice(IDS_AT_START.indexOf("R53") + 1)];
 
 const idsOf = (text) => [...text.matchAll(/^\s*- \*\*([RF]\d+)\*\*/gm)].map((m) => m[1]);
 const unmetOf = (text) => text.split("\n").filter((l) => /^\s*- \*\*[RF]\d+\*\*/.test(l))
@@ -28,7 +29,7 @@ const unmetOf = (text) => text.split("\n").filter((l) => /^\s*- \*\*[RF]\d+\*\*/
 
 test("T53 consolidation: the requirement ids and unmet marks of build/requirements/wizard-scripts.md are those of the start commit, in order, and the file is under the 70000-byte cap; the moved text is in the notes file", () => {
   const text = readFileSync(REQ, "utf8");
-  assert.deepEqual(idsOf(text), IDS_NOW, "every R and F id kept, none lost, order unchanged; only R54 added, by BOB's ruling (a)");
+  assert.deepEqual(idsOf(text), IDS_NOW, "every R and F id kept, none lost, order unchanged; only R54 (BOB's ruling (a)) and F1 (attempt 3) added");
   assert.deepEqual(unmetOf(text), UNMET_AT_START, "the unmet marks unchanged by the move");
   assert.ok(Buffer.byteLength(text) < 70000, `under the cap: ${Buffer.byteLength(text)} bytes`);
   const notes = readFileSync(NOTES, "utf8");
