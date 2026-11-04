@@ -1,0 +1,1 @@
+{"row":"answered","user":"plane","by":"triage","evidence":"bio-plane/src/plane/door.mjs:23 imports only ACT_GATE, which PR 167 did not change (it changed ACT_HELP_ABSENT, op-declarations/index.mjs:2673); no other plane file imports the provider","at":"2026-11-04T08:57:44.902Z","key":"op-declarations:167","worker":"a984ac138a319e5d1","cost":"0.2"}

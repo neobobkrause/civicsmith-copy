@@ -1,0 +1,1 @@
+{"row":"triage","user":"load-check","verdict":"not affected","evidence":"build/modules.json:203 lists load-check with \"paths\": [] and no file imports op-declarations, so nothing in it reads ACT_HELP_ABSENT","at":"2026-11-04T08:57:44.902Z","key":"op-declarations:167","worker":"a984ac138a319e5d1","cost":"0.2"}
