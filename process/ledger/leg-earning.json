@@ -42,7 +42,7 @@
   ],
   "prior_work": "Meet the open T53 requirements in build/requirements/leg-earning.md (R10, R18, R19, R20: the typed passage's own capture ceiling, its record-graded leg, and 'no subject named' as its own reason), each with a test at the module's interface that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-04T05:28:40Z"
+    "state": "COMPLETE",
+    "at": "2026-11-04T05:38:40Z"
   }
 }
