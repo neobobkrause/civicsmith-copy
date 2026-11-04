@@ -6,12 +6,13 @@
    methods call, the door, the transcriber it registers) and carries a negative control (K874). What is the Durable Object class's stays with
    `plane`: the Store booted on workerd over a store holding notes (plane R42) and its RPC methods `dispatchMemberRun` and `groupFields`
    (plane R114). */
+import { ENTRIES } from "../ai-accounts/catalogue.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { store, deployed, GATE_FLAGS, GATE_SET, GATE_PARTS, disclosed } from "./fixture.mjs";
+import { store, deployed, GATE_FLAGS, GATE_SET, GATE_PARTS, disclosed, admitPart } from "./fixture.mjs";
 import { MODULE_MAPS, ownMaps, servedThroughDoor } from "./maps.mjs";
 import { assistantGateOf, draftOnObject, DRAFT_KIND_OF } from "../../../src/store-assembly/ask.mjs";
 import { transcriberOf } from "../../../src/store-assembly/transcribe.mjs";
@@ -79,11 +80,13 @@ test("R50 (was plane R40; T46; N897 (2); run-rules R29, R30; ai-runs R78; agent-
   const off = await doors({ gate: { flags: GATE_FLAGS }, env: { INSTANCE_NAME: "t46-copy" } });
   const a = await off.ask();
   assert.equal(a.status, 403);
-  assert.deepEqual(await a.r.json(), partRefusal("ask"), "relayed unchanged");
+  const entry = aiAccountsOf(off.ctx).accountServing({ member: "member:ann", use: "ask" }).entry_id;
+  assert.equal(typeof entry, "string", "ai-runs R78: refused on the serving account's entry");
+  assert.deepEqual(await a.r.json(), partRefusal("ask", entry), "relayed unchanged");
   const d = await off.draft(WRITING);
   assert.equal(d.status, 403);
   const { grant, suggestions, read, ...given } = d.body;
-  assert.deepEqual(given, partRefusal("draft:own_words"));
+  assert.deepEqual(given, partRefusal("draft:own_words", entry));
   assert.deepEqual([grant, suggestions, read, d.body.untested], [null, false, [], undefined]);
   assert.equal(off.asks.length, 0, "nothing posted to the binding");
   assert.equal(off.grants(), 0, "no grant minted");
@@ -122,17 +125,23 @@ test("R50 (was plane R40; T46; run-rules R29): admitted by the bar, neither the 
   assert.equal(flagOff.asks.length, 0);
 });
 
-test("R50, R57 (was plane R40, R36; T46; extraction R74): the transcriber's deployable() is partAdmitted(\"transcribe\").admitted and its transcription() answers `untested`, the label, when the part runs on the test instance; off it, not deployable and no label", async () => {
+test("R50, R57 (was plane R40, R36; T46; extraction R74; ai-runs R78): the transcriber's deployable() answers true (no entry is known before the act); the act's gate is partAdmitted(\"transcribe\", entry) on the account handed, and on the test instance the transcription answers `untested`, the label, once the act is admitted on the exception; off it, the act is refused AI_PART_NOT_DEPLOYED naming the entry and no label is set", async () => {
+  const account = { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: "sk" };
   const on = await doors({ env: TEST_COPY });
   const t = transcriberOf(on.ctx, on.env);
   assert.equal(t.deployable(), true);
-  assert.equal(t.deployable(), aiRunsOf(on.ctx).partAdmitted("transcribe").admitted);
-  assert.deepEqual(t.transcription({ member: "member:ann", at: "2026-10-12T00:00:00Z" }).untested, untestedLabel("transcribe"));
-  /* negative control: no test instance, Civicsmith's empty set */
+  const tx = t.transcription({ member: "member:ann", at: "2026-10-12T00:00:00Z" });
+  assert.equal(tx.untested, null, "no label before the act's gate");
+  await tx.transcribe({ account, capture_sha: "0".repeat(64), pages: [0] });
+  assert.deepEqual(tx.untested, untestedLabel("transcribe"));
+  /* negative control: no test instance, no Gate 1 verdict */
   const off = await doors({ env: { INSTANCE_NAME: "t46-copy" } });
   const u = transcriberOf(off.ctx, off.env);
-  assert.equal(u.deployable(), false);
-  assert.equal(u.transcription({ member: "member:ann", at: "2026-10-12T00:00:00Z" }).untested, null);
+  assert.equal(u.deployable(), true);
+  const ux = u.transcription({ member: "member:ann", at: "2026-10-12T00:00:00Z" });
+  const r = await ux.transcribe({ account, capture_sha: "0".repeat(64), pages: [0] });
+  assert.deepEqual([r.code, r.entry_id], ["AI_PART_NOT_DEPLOYED", ENTRIES.a]);
+  assert.equal(ux.untested, null);
 });
 
 /* ===== R40 (T46; N920): the status report's draft ===== */
@@ -161,15 +170,18 @@ test("R50 (was plane R40; T46; N920; study-T46-assistant §2): a status-report d
   const r = await statusReport(w, { keptAway: AWAY });
   assert.equal(r.status, 403);
   assert.deepEqual([r.body.reason, r.body.grant, r.body.read], ["PROJECT_AI_KEPT_AWAY", null, []]);
-  assert.deepEqual(r.order, [["aiKeptAway", { project: "PROJ-2026-0007-harbour", use: "draft" }]], "kept away before any account is read");
+  /* ai-runs R78: the serving account's entry is resolved first (ai-accounts' accountServing, which asks its own keep-away
+     with no project and unseals nothing), then the plan's keep-away; no account is read */
+  assert.deepEqual(r.order, [["aiKeptAway", { project: null, use: "draft" }], ["aiKeptAway", { project: "PROJ-2026-0007-harbour", use: "draft" }]],
+                   "kept away before any account is read");
   assert.equal(w.asks.length, 0);
   assert.equal(w.grants(), 0);
   /* control */
   const ok = await statusReport(w);
   assert.equal(ok.status, 200, JSON.stringify(ok.body));
   /* the plan's keep-away first, then the account (credentials' own cascade reads its keep-away again inside it) */
-  assert.deepEqual(ok.order.slice(0, 2).map(([k]) => k), ["aiKeptAway", "askAccount"]);
-  assert.equal(ok.order[1][1], "draft", "the account judged for a draft");
+  assert.deepEqual(ok.order.slice(0, 3).map(([k]) => k), ["aiKeptAway", "aiKeptAway", "askAccount"]);
+  assert.equal(ok.order[2][1], "draft", "the account judged for a draft");
   assert.deepEqual([ok.body.grant, ok.body.read], [null, []], "it reads nothing of the record, whatever the switch");
   const [u, body] = w.asks.at(-1);
   assert.equal(u, "https://agent-worker/draft");
@@ -180,14 +192,16 @@ test("R50 (was plane R40; T46; N920; study-T46-assistant §2): a status-report d
   assert.equal(w.grants(), 0);
 });
 
-test("R50 (was plane R40; T46; N920): a status-report draft is refused AI_PART_NOT_DEPLOYED while partAdmitted(\"draft:statusreport\") does not admit it, before the plan, the keep-away or any account is read; a plan the member cannot read ends it with that read's refusal, and a task naming no plan or items is BAD_TASK, each before any account is read", async () => {
-  const bar = await doors({ gate: { flags: GATE_FLAGS, testSet: GATE_SET }, parts: GATE_PARTS.filter((p) => p !== "draft:statusreport") });
+test("R50 (was plane R40; T46; N920; ai-runs R78): a status-report draft is refused AI_PART_NOT_DEPLOYED, naming the serving account's entry, while partAdmitted(\"draft:statusreport\", entry) does not admit it (no Gate 1 verdict for the entry), before the plan, the plan's keep-away or any account is read; a plan the member cannot read ends it with that read's refusal, and a task naming no plan or items is BAD_TASK, each before any account is read", async () => {
+  const bar = await doors({ gate: { flags: GATE_FLAGS, testSet: GATE_SET }, parts: [] });
   let reads = 0;
   const g = await statusReport(bar, { read: () => { reads++; return { ok: true, project: null }; } });
   assert.equal(g.status, 403);
   const { grant: _g, suggestions: _s, read: _r, ...given } = g.body;
-  assert.deepEqual(given, partRefusal("draft:statusreport"));
-  assert.deepEqual([g.order, reads], [[], 0]);
+  const entry = aiAccountsOf(bar.ctx).accountServing({ member: "member:ann", use: "draft" }).entry_id;
+  assert.deepEqual(given, partRefusal("draft:statusreport", entry));
+  assert.deepEqual(g.order, [["aiKeptAway", { project: null, use: "draft" }]], "only the resolver's own keep-away: no plan, plan keep-away or account read");
+  assert.equal(reads, 0);
   /* the real route map's read, through the object's own draft RPC: no such plan */
   const w = await doors({ gate: { flags: GATE_FLAGS, testSet: GATE_SET }, parts: GATE_PARTS });
   const a = answersOf(w.ctx), acc = a.askAccount.bind(a);
@@ -257,6 +271,7 @@ test("R52 (was plane R47; T47; K3084; credentials R70): an answer SIGNIN_TOKEN_R
   for (const path of ["ask", "draft", "transcribe"]) {
     const bw = refusing();
     const w = await doors({ gate: { flags: GATE_FLAGS, testSet: GATE_SET }, parts: GATE_PARTS, account: "signin", worker: bw });
+    await admitPart(w.ctx, "transcribe");   /* ai-runs R78 */
     assert.equal(held(w), true, `${path}: held before`);
     if (path === "ask") {
       const r = await w.ask();
@@ -318,6 +333,7 @@ async function scanned(w, { account = "apikey" } = {}) {
   const x = await doors({ gate: { testSet: ONE_MATTER }, env: { CAPTURES: bucket() }, worker: w, account });
   assert.equal(aiRunsOf(x.ctx).testBarRecord({ part: "transcribe", set: "t46-set", set_version: 1, false_alarm_rate: 0, passed: true,
                                                 graded_by: "harness", at: "2026-10-01T00:00:00Z" }).ok, true);
+  await admitPart(x.ctx, "transcribe");   /* ai-runs R78: admitted on the fixture's entries */
   const d = shaOf(SCAN);
   await x.env.CAPTURES.put(`bio/captures/${d}`, SCAN);
   x.ctx.storage.sql.exec(`INSERT INTO bundles (bundle_id, object_type, group_id, title, current_state, created, last_updated, bundle_sha, row_version)
@@ -342,7 +358,7 @@ test("R57 (was plane R36; T46; N886; K2940; extraction R75; agent-worker R72): a
   assert.deepEqual([n.status, n.body.code], [409, "NO_ACCOUNT"]);
   /* the AI path itself answers the status beside the code */
   const p = await transcriberOf(r.x.ctx, r.x.env).transcription({ member: "member:ann", at: "2026-10-12T00:00:00Z" })
-    .transcribe({ account: { ok: true, kind: "apikey", level: "member", key: "sk" }, capture_sha: shaOf(SCAN), pages: [0] });
+    .transcribe({ account: { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: "sk" }, capture_sha: shaOf(SCAN), pages: [0] });
   assert.deepEqual([p.ok, p.reason, p.status], [false, "BAD_PAGES", 400]);
   /* control */
   const fine = worker(200, { ok: true, engine: "claude-test", version: null, pages: [{ page: 0, text: "words" }], not_transcribed: [] });

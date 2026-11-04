@@ -13,6 +13,7 @@ import { frontDoorPointer } from "../../../src/store-assembly/wiring.mjs";
 import { transcriberOf } from "../../../src/store-assembly/transcribe.mjs";
 import { credentialsOf, Credentials } from "../../../src/credentials/index.mjs";
 import { aiAccountsOf, aiAccountsOps } from "../../../src/ai-accounts/index.mjs";
+import { aiRunsOf } from "../../../src/ai-runs/index.mjs";
 import { hypothesesOf } from "../../../src/hypotheses/index.mjs";
 import { networkNoticesOf } from "../../../src/network-notices/index.mjs";
 import { instanceSetupOf } from "../../../src/setup.mjs";
@@ -197,18 +198,26 @@ test("R53 (T48; N670): a notice is read through network-notices for her, the pro
   away.aiKeptAway = real;
 });
 
-test("R53, R50 (T48): readtranslate is refused AI_RUN_MODE_NOT_DEPLOYED while draft's flag is off, and AI_PART_NOT_DEPLOYED while ai-runs does not admit draft:reading, before the subject is read, with nothing posted; control: with both, it runs", async () => {
+test("R53, R50 (T48; ai-runs R78): readtranslate is refused AI_RUN_MODE_NOT_DEPLOYED while draft's flag is off, AI_PART_NOT_DEPLOYED (naming the serving account's entry) with no Gate 1 verdict for that entry, and PART_WITHDRAWN when the standing measure failed draft:reading on it, before the subject is read, with nothing posted; control: with both, it runs", async () => {
   const off = await doors({ gate: { flags: { ...READ_FLAGS, draft: false }, testSet: GATE_SET } });
   const n = hypothesesOf(off.ctx).noteWrite({ text: "A note.", by: "member:ann" });
   const a = await off.draft({ op: "readtranslate", subject: { kind: "note", id: n.note } });
   assert.deepEqual([a.status, a.body.reason], [403, "AI_RUN_MODE_NOT_DEPLOYED"]);
-  const bar = await doors({ parts: READ_PARTS.filter((p) => p !== "draft:reading") });
-  const m = hypothesesOf(bar.ctx).noteWrite({ text: "A note.", by: "member:ann" });
-  const b = await bar.draft({ op: "readtranslate", subject: { kind: "note", id: m.note } });
+  const none = await doors({ parts: [] });
+  const entry = aiAccountsOf(none.ctx).accountServing({ member: "member:ann", use: "draft" }).entry_id;
+  const m = hypothesesOf(none.ctx).noteWrite({ text: "A note.", by: "member:ann" });
+  const b = await none.draft({ op: "readtranslate", subject: { kind: "note", id: m.note } });
   const { grant: _g, suggestions: _s, read: _r, ...given } = b.body;
   assert.equal(b.status, 403);
-  assert.deepEqual(given, partRefusal("draft:reading"), "run-rules' own refusal for the part, relayed unchanged");
-  assert.equal(off.posts.length + bar.posts.length, 0);
+  assert.deepEqual(given, partRefusal("draft:reading", entry), "run-rules' own refusal for the part on the entry, relayed unchanged");
+  /* Gate 1 passed for drafts, the standing measure failed draft:reading on the entry: withdrawn */
+  const bar = await doors();
+  assert.equal(aiRunsOf(bar.ctx).testBarRecord({ part: "draft:reading", set: GATE_SET.id, set_version: GATE_SET.version, false_alarm_rate: 0.5,
+    passed: false, graded_by: "harness", at: "2026-10-02T00:00:00Z", entry_id: entry }).ok, true);
+  const mb = hypothesesOf(bar.ctx).noteWrite({ text: "A note.", by: "member:ann" });
+  const w = await bar.draft({ op: "readtranslate", subject: { kind: "note", id: mb.note } });
+  assert.deepEqual([w.status, w.body.code, w.body.entry_id], [403, "PART_WITHDRAWN", entry]);
+  assert.equal(off.posts.length + none.posts.length + bar.posts.length, 0);
   const on = await doors();
   const k = hypothesesOf(on.ctx).noteWrite({ text: "A note.", by: "member:ann" });
   assert.equal((await on.draft({ op: "readtranslate", subject: { kind: "note", id: k.note } })).body.ok, true);

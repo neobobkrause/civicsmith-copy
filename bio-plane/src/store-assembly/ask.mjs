@@ -22,7 +22,7 @@ import { membershipOf, noSuchProject } from "../membership/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { storeStub } from "../store-place.mjs";
 import { deployedModesFor, draftKindDeployed, draftMayRead, partRefusal, AI_RUN_OPEN_CHECKS, ASK_MODE,
-         DRAFT_MODE } from "../run-rules/index.mjs";
+         DRAFT_MODE, CIVICSMITH_TEST_SET } from "../run-rules/index.mjs";
 
 const json = (body, status) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const idOf = (m) => (typeof m === "string" && m.startsWith("member:") ? m.slice(7) : m);
@@ -172,11 +172,39 @@ function notDeployed(mode, kind = null) {
   return { ok: false, reason: NOT_DEPLOYED, code: NOT_DEPLOYED, check: row.check, translation: row.translation, mode,
            ...(kind !== null ? { kind } : {}) };
 }
-/** R40: `{refusal: null, untested}` when `mode` (`ask`, or `draft` of `kind`) is deployed by its flag and admitted by
- *  `ai-runs.partAdmitted`, `untested` the test-instance label (run-rules R29) when it is admitted on the exception, else
- *  null; otherwise `{refusal}`, AI_RUN_MODE_NOT_DEPLOYED for the flag, run-rules' `partRefusal(part)` for the bar.
- *  Anything that throws refuses. */
-export function deployGate(ctx, env, mode, kind = null) {
+/** R40, ai-runs R78 (T53, AIR13; the coordinator's ruling, 4 Nov): the catalogue entry of the account that serves
+ *  `member`'s act of kind `use` (in `project`), resolved by ai-accounts' `accountServing` (its R25), which unseals nothing
+ *  and reads none of the account's content; null when no account serves (or the read throws). */
+export function servingEntry(ctx, { member = null, use = null, project = null } = {}) {
+  try {
+    const s = aiAccountsOf(ctx).accountServing({ member, use, project: project ?? null });
+    return s && !s.refusal && typeof s.entry_id === "string" && s.entry_id !== "" ? s.entry_id : null;
+  } catch { return null; }
+}
+
+/** ai-runs R78: `part` admitted on `entry` by `ai-runs.partAdmitted(part, entry)`, the one gate: `{refusal: null,
+ *  untested}`, else `{refusal}` as run-rules' `partRefusal(part, entry)` answers it (AI_PART_NOT_DEPLOYED, or
+ *  PART_WITHDRAWN). Anything that throws refuses. */
+export function admitOn(ctx, env, part, entry) {
+  let said = null, runs = null;
+  try { runs = aiRunsOf(ctx, env); said = runs.partAdmitted(part, entry); } catch { said = null; }
+  if (said && said.admitted === true) return { refusal: null, untested: said.untested ?? null };
+  /* the refusal on the set ai-runs judges by and the bars it holds, so a part the standing measure withdrew for this entry
+     is PART_WITHDRAWN (run-rules R37), else AI_PART_NOT_DEPLOYED */
+  let held = null;
+  try { held = { testBars: runs ? runs.testBarRecords() : [] }; } catch { held = null; }
+  const set = assistantGateOf(ctx).testSet || CIVICSMITH_TEST_SET;
+  return { refusal: partRefusal(part, entry, held ? { set, held } : { set }), untested: null };
+}
+
+/** R40, ai-runs R78: `{refusal: null, untested, part, entry}` when `mode` (`ask`, or `draft` of `kind`) is deployed by its
+ *  flag and its part admitted on the serving account's `entry` (`servingEntry`, resolved by the caller before this gate);
+ *  `untested` the test-instance label (run-rules R29) when it is admitted on the exception, else null. With no account
+ *  serving (`entry` null) the flag alone admits (as ai-runs admits a mode no account serves, its R40), so the account's
+ *  own refusal (NO_ACCOUNT and the rest) is the one that answers, and nothing is posted; a door that then finds an
+ *  account asks `admitOn` for its entry before any grant or call. Otherwise `{refusal}`: AI_RUN_MODE_NOT_DEPLOYED for the
+ *  flag, run-rules' `partRefusal(part, entry)` for the gate. Anything that throws refuses. */
+export function deployGate(ctx, env, mode, kind = null, entry = null) {
   let flagged = false;
   try {
     const g = assistantGateOf(ctx);
@@ -186,10 +214,17 @@ export function deployGate(ctx, env, mode, kind = null) {
   } catch { flagged = false; }
   if (!flagged) return { refusal: notDeployed(mode, mode === ASK_MODE.mode ? null : kind), untested: null };
   const part = mode === ASK_MODE.mode ? ASK_MODE.mode : `draft:${kind}`;
-  let said = null;
-  try { said = aiRunsOf(ctx, env).partAdmitted(part); } catch { said = null; }
-  if (!said || said.admitted !== true) return { refusal: partRefusal(part), untested: null };
-  return { refusal: null, untested: said.untested ?? null };
+  if (entry === null || entry === undefined) return { refusal: null, untested: null, part, entry: null };
+  const a = admitOn(ctx, env, part, entry);
+  return a.refusal ? a : { ...a, part, entry };
+}
+
+/** ai-runs R78: after the account is judged, the gate for ITS entry when it is not the one the door was admitted on
+ *  (no account was resolved before, or another serves now): `{refusal}` or `{refusal: null, untested}`. */
+function servedGate(ctx, env, gate, judged) {
+  const entry = judged && judged.account && typeof judged.account.entry_id === "string" ? judged.account.entry_id : null;
+  if (entry !== null && entry === gate.entry) return { refusal: null, untested: gate.untested ?? null };
+  return admitOn(ctx, env, gate.part, entry);
 }
 
 /* R33: `answers.askAccount`'s account, read once. */
@@ -274,7 +309,7 @@ export async function askOnObject(ctx, env, { member, session = null, grant = nu
                                               project = null, trace = null, memberRef = null }) {
   /* R40 (K2853; T46): first, before the keep-away read, any account read or any grant: the mode deployed by its flag and
      admitted by ai-runs' `partAdmitted`; `untested` the test-instance label when admitted on the exception. */
-  const gate = deployGate(ctx, env, ASK_MODE.mode);
+  const gate = deployGate(ctx, env, ASK_MODE.mode, null, servingEntry(ctx, { member, use: "ask", project }));
   if (gate.refusal) return json(gate.refusal, 403);
   const w = env && env.AGENT_WORKER;
   if (!w || typeof w.fetch !== "function")
@@ -290,6 +325,9 @@ export async function askOnObject(ctx, env, { member, session = null, grant = nu
      given, before any grant is minted or anything posted. */
   const judged = await answersOf(ctx).askAccount({ member, kind: "ask", ...(project ? { project } : {}) });
   if (!judged || judged.ok !== true) return json(judged, 409);
+  /* ai-runs R78: the part admitted on the entry of the account that serves, before any grant is minted or anything posted */
+  const served = servedGate(ctx, env, gate, judged);
+  if (served.refusal) return json(served.refusal, 403);
   let token = grant;
   if (!token) {
     const g = await c.aiGrantMint({ member, by: member, session, ...(project ? { project } : {}) });
@@ -302,7 +340,7 @@ export async function askOnObject(ctx, env, { member, session = null, grant = nu
   const heard = tokenRefusal(acc, accountOf(judged));
   let { account } = wireAccount(acc, accountOf(judged), member);
   const out = JSON.stringify({ question, ...(conversation !== undefined ? { conversation } : {}), ...(store ? { store } : {}),
-                               grant: token, account, ...(gate.untested ? { untested: gate.untested } : {}) });
+                               grant: token, account, ...(served.untested ? { untested: served.untested } : {}) });
   account = null;
   let res;
   try {
@@ -356,7 +394,7 @@ export async function draftOnObject(ctx, env, { op = null, member = null, sessio
            grant, suggestions, read: readOf(grant), ...(untested ? { untested } : {}) }, status);
   /* R40 (K2853; T46): the kind deployed by its flag and admitted by ai-runs' `partAdmitted`, before anything else is read */
   const kind = Object.hasOwn(DRAFT_KIND_OF, op ?? "") ? DRAFT_KIND_OF[op] : null;
-  const gate = deployGate(ctx, env, DRAFT_MODE.mode, kind);
+  const gate = deployGate(ctx, env, DRAFT_MODE.mode, kind, servingEntry(ctx, { member: who, use: "draft" }));
   if (gate.refusal) return out(403, gate.refusal);
   untested = gate.untested;
   const w = env && env.AGENT_WORKER;
@@ -406,6 +444,10 @@ export async function draftOnObject(ctx, env, { op = null, member = null, sessio
      as given, before any grant is minted or anything posted. */
   const judged = await answersOf(ctx).askAccount({ member: who, kind: "draft" });
   if (!judged || judged.ok !== true) return out(409, judged);
+  /* ai-runs R78: the part admitted on the serving account's entry, before any grant is minted or anything posted */
+  const served = servedGate(ctx, env, gate, judged);
+  if (served.refusal) return out(403, served.refusal);
+  untested = served.untested;
   /* R33 (T46; M-T46-6, K2946): the serving account's own switch; R47 (T47): a sign-in's secret its held token
      (`wireAccount`), and an answer refusing that token has credentials drop it */
   const heard = tokenRefusal(acc, accountOf(judged));

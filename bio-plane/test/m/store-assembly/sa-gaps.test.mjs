@@ -1,12 +1,13 @@
 /* store-assembly R33, R52, R58, R63: the requirements whose plane tests ran under workerd (and so stay with plane), tested here
    on the assembled store in plain node, at its interface. */
+import { ENTRIES } from "../ai-accounts/catalogue.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { storage, store, assembleStore } from "./fixture.mjs";
+import { storage, store, assembleStore, admitPart } from "./fixture.mjs";
 import { memoryBucket } from "./world.mjs";
 import { ownerGettersOf } from "../../../src/store-assembly/owners.mjs";
 import { wireAccount, tokenRefusal, SIGNIN_TOKEN_REFUSED } from "../../../src/store-assembly/ask.mjs";
@@ -68,10 +69,11 @@ async function transcriberWith(bytes) {
   const evidence = memoryBucket(), worker = binding();
   const env = { STORE: { idFromName: (n) => n }, CAPTURES: evidence, AGENT_WORKER: worker };
   const x = await store({ env });
+  await admitPart(x.ctx, "transcribe");   /* ai-runs R78: admitted on the fixture's entries */
   const sha = shaOf(bytes);
   await evidence.put(`bio/captures/${sha}`, bytes);
   const tx = transcriberOf(x.ctx, env).transcription({ member: "member:ann", at: "2026-10-11T06:00:00Z" });
-  const account = { ok: true, kind: "apikey", level: "member", key: "sk-ant-R58" };
+  const account = { ok: true, entry_id: ENTRIES.a, kind: "apikey", level: "member", key: "sk-ant-R58" };
   return { ...x, worker, sha, ask: (pages) => tx.transcribe({ account, capture_sha: sha, pages }) };
 }
 
