@@ -200,3 +200,4 @@
 {"at":"2026-11-04T15:50:57Z","row":"sent","n":103,"to":"job-case-import","text":"bob-103: triage finding for docket:266: case-import/index.mjs:1785 check 2 refuses unsigned public docket entries; R33's docketRecordEdition files edition entries with empty signature. Decide from your requirements (admit unsigned, skip, or refuse by name) and test it; block if the fix is docket's."}
 {"at":"2026-11-04T15:51:02Z","row":"outcome","n":103,"outcome":"delivered"}
 {"at":"2026-11-04T15:56:37Z","row":"sent","n":104,"to":"job-screens-inquiry","text":"bob-104: addition to bob-102: projectai.mjs draws retired projectkeyset (115, 162) and lists projectsigninset/projectaccountswitch/projectaccountremove/projectkeynoticeseen (214); checkScreens throws on any act OPS lacks (p3dev-t1 500). Drop every act the assembled registration no longer declares; test each screen's acts against the assembled ops."}
+{"at":"2026-11-04T15:56:41Z","row":"outcome","n":104,"outcome":"delivered"}
