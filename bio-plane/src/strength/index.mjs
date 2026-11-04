@@ -90,7 +90,6 @@ import { promotionOf, PROMOTION_ROW_CHECKS } from "../promotion/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { inquiryOf } from "../inquiry/index.mjs";
 import { legEarningOf, legCapped } from "../leg-earning/index.mjs";
-import { TYPED_UNCHECKED_GRADE } from "../textchain.mjs";
 import { acceptedWorkOf } from "../accepted-work/index.mjs";
 import { basisVersionsOf, BASIS_VERSION_LEGS_MAX, VERSION_MACHINE } from "../basis-versions/index.mjs";
 import { BASIS_GRADES, TESTIMONY_GRADE, normalizeType, OBJECT_TYPES, BUNDLE_ID_RE, parseFrontmatter,
@@ -447,7 +446,7 @@ export class Strength {
     if (!leg || isHunch(leg.grade_source) || !Strength.#typedOf(leg, captureBounds)) return leg;
     if (leg.grade != null && leg.grade_axis != null && leg.grade_axis !== "capture") return leg;
     const stated = leg.grade_axis === "capture" && GRADE_RANK[leg.grade] ? leg.grade : null;
-    return { ...leg, grade_axis: "capture", grade: stated ?? TYPED_UNCHECKED_GRADE, typed_stated: stated };
+    return { ...leg, grade_axis: "capture", grade: stated ?? BASIS_GRADES[BASIS_GRADES.length - 1], typed_stated: stated };
   }
 
   /* R43: an inquiry's LIVE legs. The projected basis keeps a leg whose citation the question has withdrawn (its
