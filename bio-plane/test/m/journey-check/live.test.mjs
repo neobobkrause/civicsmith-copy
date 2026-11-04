@@ -177,11 +177,11 @@ test("R6: text a person must never read: a slug, a language tag, a record id, a 
 
 /* R12: the live arm walks R9 and R10 through the real sign-in, whose code the person types (`codeOf`). Against the fake
    plane, which draws R9's steps 2 to 4 only, the walk reaches the sign-in and goes no further than the plane draws. */
-async function investigated(codeOf) {
+async function investigated(codeOf, env = ENV) {
   const fp = await fakePlane({ admins: { ada: true }, assistantControls: true });
   try {
     const out = join(dir, String(Math.random()).slice(2));
-    const r = await runLive({ base: fp.base, env: ENV, out, commit: COMMIT, screens: only("members"), codeOf, assistant: true });
+    const r = await runLive({ base: fp.base, env, out, commit: COMMIT, screens: only("members"), codeOf, assistant: true });
     return { r, fp, printed: r.report + readFileSync(join(out, "report.json"), "utf8") };
   } finally { await fp.close(); }
 }
@@ -202,7 +202,8 @@ test("R12 (with the assistant working, R20's switch set): with no sign-in comple
 
 test("R12 control (the switch set): the code the person types connects, and no token or code is in any output", { timeout: 300000 }, async () => {
   const CODE = "sentinel-code-" + "7".repeat(24) + "#state-sentinel";
-  const { r, fp, printed } = await investigated(async () => CODE);
+  /* F5: the walk captures by address only from a test page of ours, which the walk setup names; with one, step 5 is walked */
+  const { r, fp, printed } = await investigated(async () => CODE, { ...ENV, JOURNEY_CITY_ORIGIN: "https://p3dev-t1-testpage.civic7.workers.dev" });
   const four = r.walk.steps.find((s) => s.label.startsWith("4 · connect"));
   assert.ok(four && four.ok, r.report);
   assert.deepEqual(fp.codes, [CODE], "the code reached the plane once, as typed");
