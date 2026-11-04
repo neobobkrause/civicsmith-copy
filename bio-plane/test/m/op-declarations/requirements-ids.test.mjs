@@ -1,7 +1,8 @@
-/* op-declarations: the requirements file's consolidation and the surface-declarations split (4 Nov 2026) keep every id.
+/* op-declarations: the requirements file's consolidation and the two splits (4 Nov 2026) keep every id.
    START_LINES is each R and F line of build/requirements/op-declarations.md at the start commit (128357dd88c), by
-   sha256 of the whole line. A kept id's line is unchanged, word for word with its mark; a moved id (R76-R93) is a
-   one-line retirement here naming its new id, and the new id's line in surface-declarations is the old line verbatim,
+   sha256 of the whole line. A kept id's line is unchanged, word for word with its mark; a moved id (R49-R75 to
+   op-specs-late, R76-R93 to surface-declarations) is a one-line retirement here naming its new id, and the new id's
+   line in its new module is the old line verbatim,
    with only its id and the "(moved from op-declarations:R<n>)" note changed. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -116,10 +117,14 @@ const START_LINES = {
   R93: "9282814274fe4b2d1542fe6c3e24a7cdf6fd9a1c75c55e09bea7331652bbbe63",
 };
 const START_UNMET = { R93: "T53" };
-const MOVED = Object.fromEntries(Array.from({ length: 18 }, (_, i) => [`R${76 + i}`, `R${1 + i}`]));
+const MOVED = Object.fromEntries([
+  ...Array.from({ length: 27 }, (_, i) => [`R${49 + i}`, ["op-specs-late", `R${1 + i}`]]),
+  ...Array.from({ length: 18 }, (_, i) => [`R${76 + i}`, ["surface-declarations", `R${1 + i}`]]),
+]);
 
 const here = idLines(read("build/requirements/op-declarations.md"));
-const there = idLines(read("build/requirements/surface-declarations.md"));
+const THERE = Object.fromEntries(["op-specs-late", "surface-declarations"].map((m) => [m, idLines(read(`build/requirements/${m}.md`))]));
+const there = ([mod, id]) => THERE[mod].get(id);
 
 test("the set of ids is the start commit's: none lost, none added", () => {
   assert.deepEqual([...here.keys()].sort(), Object.keys(START_LINES).sort());
@@ -134,17 +139,17 @@ test("every kept id's line is the start commit's, word for word, and the unmet m
     if (m) unmet[id] = m[1];
   }
   for (const [id, mark] of Object.entries(START_UNMET)) {
-    const now = MOVED[id] ? MARK.exec(there.get(MOVED[id]) ?? "")?.[1] : unmet[id];
+    const now = MOVED[id] ? MARK.exec(there(MOVED[id]) ?? "")?.[1] : unmet[id];
     assert.equal(now, mark, `${id}'s mark`);
   }
   for (const id of Object.keys(unmet)) assert.ok(START_UNMET[id] !== undefined, `${id} gained a mark`);
 });
 
-test("every retired id here names its new id, and that id exists in surface-declarations as the old line verbatim", () => {
-  for (const [old, neu] of Object.entries(MOVED)) {
-    assert.equal(here.get(old), `- **${old}** *(retired: moved to surface-declarations:${neu}, split 4 Nov 2026)*`, old);
-    const l = there.get(neu);
-    assert.ok(l, `surface-declarations has no ${neu}`);
+test("every retired id here names its new id, and that id exists in its new module as the old line verbatim", () => {
+  for (const [old, [mod, neu]] of Object.entries(MOVED)) {
+    assert.equal(here.get(old), `- **${old}** *(retired: moved to ${mod}:${neu}, split 4 Nov 2026)*`, old);
+    const l = there([mod, neu]);
+    assert.ok(l, `${mod} has no ${neu}`);
     const note = ` (moved from op-declarations:${old})`;
     assert.ok(l.includes(note), `${neu} does not say it moved from ${old}`);
     const back = l.replace(note, "").replace(`- **${neu}**`, `- **${old}**`);
