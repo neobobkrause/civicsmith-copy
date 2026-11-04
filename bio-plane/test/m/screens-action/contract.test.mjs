@@ -167,7 +167,7 @@ test("R7 (interface-shell R5, R10): every text node each screen draws, with data
 
 test("R19: no screen draws a placeholder: every {name} of a word it reads is filled, in every state the fixtures reach", async () => {
   const fail = refused("STORE_DID_NOT_ANSWER", null, 502);
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   const planes = [DATA_PLANE, { ...DATA_PLANE, ...reach }, Object.fromEntries(Object.keys(DATA_PLANE).map((k) => [k, fail]))];
   for (const plane of planes) for (const path of [...Object.values(ROUTES), `/app/start-send/${ACTION_ID}`, `/app/request/${PROJECT}`, `/app/matter/${DET}`]) {
     const p = await open(path, plane);
@@ -223,7 +223,7 @@ test("R1–R6 (interface-shell R8): every working screen is drawn under its path
 /* ---------- R14 (T48; K3250, K3254; walk C1): the common line ---------- */
 
 const CLASS_PLANES = () => {
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   const ending = { ...reach, planask: ok({ ok: true, plan: PLAN_ID, run: "RUN-1", started: true }), airun: ok({ found: true, session: { id: "RUN-1", status: "completed" } }) };
   return [
     [DATA_PLANE, [ROUTES.plan, ROUTES["start-send"], ROUTES.request, ROUTES.action, ROUTES.matter, ROUTES["help-records"]]],
@@ -284,7 +284,7 @@ test("R14: a section, list or reading that holds nothing is not drawn, and no co
     escalationstatus: ok(STATUS_NONE), escalation: ok({}),
     profiles: ok({ ...PROFILES, view: { deadlines: [] } }),
   };
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }), planproposals: ok({ plan: PLAN_ID, run: "RUN-1", proposals: [], says: "x" }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }), planproposals: ok({ plan: PLAN_ID, run: "RUN-1", proposals: [], says: "x" }) };
   const { world, me, action } = await actionWorld();
   for (const [path, extra] of [[ROUTES.plan, reach], [ROUTES.plan, {}], [ROUTES.action, {}], [ROUTES.matter, {}], [ROUTES["help-records"], {}], [ROUTES.request, {}], [`/app/start-send/${ACTION_ID}`, {}],
     [`/app/request/${PROJECT}`, { addresseesuggest: ok({ subject: PROJECT, offices: [], suggestion: true }), whoami: ok(ADMIN) }]]) {

@@ -19,7 +19,7 @@ const unsaid = (p, key, vars) => assert.ok(!text(p).includes(W(key, vars)), key)
 const refusedWith = (code, extra = {}) => ({ status: 200, json: { ok: true, result: { ok: false, reason: code, code, ...extra } } });
 const APPROVED = { approved_by: "member:mai", at: "2026-10-10T09:00:00Z", sha: "s" };
 const slot = (p, b) => p.root().querySelector(`[data-slot="${b.getAttribute("data-ai")}"]`);
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 
 /* ---------- R41 (C70; amends R3) ---------- */
 
