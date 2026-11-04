@@ -217,3 +217,4 @@
 {"at":"2026-11-04T17:19:21Z","row":"outcome","n":111,"outcome":"delivered"}
 {"at":"2026-11-04T17:20:29Z","row":"sent","n":112,"to":"job-workbooks","text":"bob-112: gate red is the dependant plane suite timing out (old 20-min budget); job sync once onto current tranche (45 min, pin c887429); no code change."}
 {"at":"2026-11-04T17:20:34Z","row":"outcome","n":112,"outcome":"delivered"}
+{"at":"2026-11-04T17:24:12Z","row":"sent","n":113,"to":"job-control-plane","text":"bob-113: priority: (1) stop routing retired subscriptiondisconnect (index.mjs:1406) with a routed-ops-declared test; (2) re-point r9-seam-limits ACCEPTED at reader-contract paths (PR 272). Then consolidation."}
