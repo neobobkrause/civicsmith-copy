@@ -2,7 +2,9 @@
    START_BLOCKS is each R line of build/requirements/interface-shell.md at the start commit (7b41d33c), with its indented
    lines beneath, by sha256. At the head each id is present once, its block unchanged word for word, except that a mark this
    branch met may be struck (STRUCK: the mark text removed, nothing else); the unmet marks are the start's less STRUCK; and
-   the text moved out is in docs/requirements-notes/interface-shell.md word for word. */
+   the text moved out is in docs/requirements-notes/interface-shell.md word for word.
+   Attempt 4 (walk p3dev-t1, 4 Nov): found marks (F ids) are admitted. Every R id, block and unmet R mark stays pinned to the start commit;
+   an F id is new requirement text, held once each, and its mark is checked for its form only. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -183,12 +185,24 @@ const START_BLOCKS = {
 const REQ = read("build/requirements/interface-shell.md");
 const NOTES = read("docs/requirements-notes/interface-shell.md");
 
-test("the consolidation keeps the set of requirement ids: every id at the start commit, and no other", () => {
-  assert.deepEqual([...blocks(REQ).keys()].sort(), Object.keys(START_BLOCKS).sort());
+const isR = (id) => id.startsWith("R");
+
+test("the consolidation keeps the set of requirement ids: every R id at the start commit, and no other R id", () => {
+  assert.deepEqual([...blocks(REQ).keys()].filter(isR).sort(), Object.keys(START_BLOCKS).sort());
+});
+
+test("found marks are admitted: each F id is held once, numbered from F1 with no gap, and an unmet one carries a mark of the form `*(not yet met: <where>)*`", () => {
+  const fs = [...blocks(REQ)].filter(([id]) => !isR(id));
+  assert.deepEqual(fs.map(([id]) => id), fs.map((_, i) => "F" + (i + 1)));
+  for (const [id, text] of fs) {
+    const first = text.split("\n")[0];
+    if (first.includes(MARK)) assert.match(first, /\*\(not yet met: [^)]+\)\*/, id + "'s mark");
+  }
 });
 
 test("every requirement is word for word as at the start commit, with its lines beneath; a struck mark is the one change", () => {
   for (const [id, text] of blocks(REQ)) {
+    if (!isR(id)) continue;
     if (Object.hasOwn(STRUCK, id)) {
       assert.equal(text.includes(MARK), false, id + " is struck");
       const first = text.split("\n")[0];
@@ -199,8 +213,8 @@ test("every requirement is word for word as at the start commit, with its lines 
   }
 });
 
-test("the unmet marks are the start commit's, less those this branch struck; control: no mark is added", () => {
-  const unmet = [...blocks(REQ)].filter(([, t]) => t.split("\n")[0].includes(MARK)).map(([id]) => id);
+test("the unmet R marks are the start commit's, less those this branch struck; control: no R mark is added", () => {
+  const unmet = [...blocks(REQ)].filter(([id, t]) => isR(id) && t.split("\n")[0].includes(MARK)).map(([id]) => id);
   assert.deepEqual(unmet, START_UNMET.filter((id) => !Object.hasOwn(STRUCK, id)));
 });
 
