@@ -106,3 +106,4 @@
 {"at":"2026-11-04T11:43:28Z","row":"sent","n":56,"to":"job-store-assembly","text":"BOB: pin c790f06 is on tranche: job complete now refuses a missing or zero --cost-usd. Pass your own get_session external_metadata.usage.cost_usd as --cost-usd <n> (job sync first to take the pin)."}
 {"at":"2026-11-04T11:43:41Z","row":"outcome","n":56,"outcome":"delivered"}
 {"at":"2026-11-04T11:43:58Z","row":"sent","n":57,"to":"job-interface-assets","text":"BOB: pin c790f06 is on tranche, and it waives the size finding on your first commit e7019453a8 because every file at your head is under the cap. Run job sync interface-assets, then job complete with your tests, naming mk-det and mk-widen (test.todo, owed by the design stream) in --not-verified, plus --cost-usd <your get_session external_metadata.usage.cost_usd>. Wake me with the receipt."}
+{"at":"2026-11-04T11:44:07Z","row":"outcome","n":57,"outcome":"delivered"}
