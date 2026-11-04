@@ -41,7 +41,8 @@
   ],
   "prior_work": "Answer provider notice case-catalogue:224, judged affected by a read-only triage: check.mjs:517 calls checkCaseDocument and carries every finding into publication_checks.findings, and lines 522-523 add error-severity findings to caseLevel.differs, so the new C-41.18 UNGRADED_PASSAGES_MISMATCH and C-41.19 TYPED_PASSAGES_MISMATCH findings now change what the checker reports. Decide from your own requirements what this module must do, adapt or confirm, and add a test of your own (failing with the change reverted where code changes); where your requirements decide nothing, name the gap in not-verified. Edit no other module and commit no generated file.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-04T12:54:59Z"
+    "state": "WORKING",
+    "at": "2026-11-04T17:26:22Z",
+    "reason": "reopened: bio-plane/src/case-checker/program.mjs (generated) is stale: it still names money.declared.fiscalyears, so program.test.mjs is 3 of 6 red (coordinator audit 17:23). Regenerate program.mjs with this module's own generator from the current sources, commit it (this module's tracked generated file), and make program.test.mjs 6/6, with a check that the committed program.mjs equals a fresh generation, failing with the stale file put back."
   }
 }
