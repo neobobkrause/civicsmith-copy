@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-request","verdict":"not affected","evidence":"bio-plane/src/store-request/index.mjs:16-23 imports act lists, OPS, NEEDS and OP_STAMPS, not REAUTH_ACTS, the only export PR 289 changed (t47.mjs:59-65).","at":"2026-11-04T18:32:34.032Z","key":"op-declarations:289","worker":"a3c36fc5367066643","cost":"0.12"}

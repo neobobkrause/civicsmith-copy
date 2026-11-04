@@ -1,0 +1,1 @@
+{"row":"answered","user":"plane","by":"triage","evidence":"bio-plane/src/plane/door.mjs:23 imports only ACT_GATE, a separate table; plane/ names REAUTH_ACTS nowhere, and its only reader is admission (admission/index.mjs:778).","at":"2026-11-04T18:32:34.032Z","key":"op-declarations:289","worker":"a23aa3c15a5cf1ad8","cost":"0.12"}

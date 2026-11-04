@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-daily","by":"triage","evidence":"bio-plane/src/screens-daily/home.mjs:22 uses only OPS through Object.hasOwn(OPS, spec.op) (queue.mjs:22 likewise); neither reads REAUTH_ACTS.","at":"2026-11-04T18:32:34.032Z","key":"op-declarations:289","worker":"a3c36fc5367066643","cost":"0.12"}

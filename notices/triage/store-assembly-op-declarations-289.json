@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-assembly","verdict":"not affected","evidence":"bio-plane/src/store-assembly/declarations.mjs:189 uses only registerDeclaredOps, and wizards.mjs:32,43 only OPS; neither touches REAUTH_ACTS.","at":"2026-11-04T18:32:34.032Z","key":"op-declarations:289","worker":"a3c36fc5367066643","cost":"0.12"}
