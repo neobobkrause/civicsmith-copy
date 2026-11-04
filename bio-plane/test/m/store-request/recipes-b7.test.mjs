@@ -189,9 +189,10 @@ test("R19 recipes.assistant sets up the team's Claude account by an administrato
   assert.equal(help.text, undefined, "the draft is asked of the Worker's assistant object, which the world does not hold");
   assert.equal((await w.recipes.writingHelp(ann, { op: "contradictionclarify", field: "explanation", told: "" })).reason, "WRITING_HELP_NOTHING_TOLD");
   assert.equal((await w.recipes.writingHelp(ann, { op: "contradictionresolve", field: "conclusion", told: "They differ in time." })).reason, "WRITING_HELP_REFUSED");
-  /* a member who has not read the notice of the team's key is not served */
+  /* a member who has not read the notice of the team account's recipient is not served (T53, op-declarations:95: the group key's
+     notice is retired with its ops; ai-accounts R51's recipient notice replaces it) */
   const bo = await w.signIn("bo", caps);
-  assert.equal((await w.recipes.writingHelp(bo, {})).reason, "GROUP_KEY_NOTICE_DUE");
+  assert.equal((await w.recipes.writingHelp(bo, {})).reason, "RECIPIENT_NOTICE_DUE");
   /* control: a world without the team's account sealed cannot set it up */
   const bare = await storeWorld();
   await assert.rejects(async () => bare.recipes.assistant(await bare.signIn("admin")), /storeWorld\(\{ ai: true \}\)/);
