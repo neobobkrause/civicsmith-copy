@@ -93,7 +93,7 @@ test("R3: the run opens through ai-runs in the investigate run path, origin expl
   const w = await world().standard();
   const o = await w.openRun("group");
   const [open] = w.calledAs("open");
-  assert.deepEqual([open.mode, open.origin, open.use, open.principalClaude, open.contextType, open.contextId],
+  assert.deepEqual([open.mode, open.origin, open.use, open.principalAi, open.contextType, open.contextId],
                    ["investigate", "explore", "explore", "group", "inquiry", Q]);
   assert.equal("step" in open, false, "this module passes no step of its own");
   assert.deepEqual([open.place, typeof open.work], [{ questions: [Q] }, "string"], "it passes the step's place and work");
@@ -141,7 +141,7 @@ test("R3: a principal served by a sign-in explores only while that sign-in accou
   await w.setExplore("group", "yes");
   const on = await w.p.exploreTick(w.clock.now);
   assert.deepEqual(on.opened.map((o) => o.owner), ["group"]);
-  assert.equal(w.calledAs("open")[0].principalClaude, "group");
+  assert.equal(w.calledAs("open")[0].principalAi, "group");
   /* Negative control: switched back off by its owner's act, the next day opens nothing more. */
   w.clock.now = "2026-10-12T09:00:00Z";
   await w.setExplore("group", "no");
