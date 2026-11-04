@@ -9,14 +9,16 @@ import * as aiUseChecks from "../../../src/ai-use/checks.mjs";
 import { USE_KINDS } from "../../../src/ai-accounts/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
-const { AI_USE_CHECKS, AI_USE_WORDS, fillWords } = aiUse;
+const { AI_USE_CHECKS, AI_USE_WORDS, AI_USE_NEW_WORDS, fillWords } = aiUse;
 const AT = "2026-10-09T12:00:00Z";
 const PLACEHOLDER = /\{[A-Za-z_]+\}/;
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november",
   "december"];
 const differences = (held, file) => Object.entries(held).filter(([k, en]) => typeof file[k] !== "string" || file[k] !== en)
   .map(([k]) => k);
-const explore = (w, owner, on, by) => w.a.accountUsesSet({ owner, switch: "explore", on, by });
+/* (T53) exploring is read from the owner's account by its id */
+const acctOf = (w, owner) => (owner === "group" ? w.acct.group : owner === "project:P" ? w.acct.P : w.acct.ann);
+const explore = (w, owner, on, by) => w.explore(acctOf(w, owner), on, by);
 
 /* ===== R13: AI_USE_WORDS equals words.json, the T44 keys included ===== */
 
@@ -59,9 +61,10 @@ test("R8 (T44) EXPLORE_OUT_OF_SCOPE (C-143.5) and EXPLORE_ASK_INVALID (C-143.6) 
   /* negative control: the sentence C-143.5 held before T44 is not words.json's, and is gone */
   assert.notEqual(oos.translation, "The assistant can't explore this question on this account: it lies outside what the "
     + "account's owners explore.");
-  assert.deepEqual(Object.values(AI_USE_CHECKS).map((r) => r.check), ["C-143.1", "C-143.2", "C-143.3", "C-143.4", "C-143.5", "C-143.6"]);
+  assert.deepEqual(Object.values(AI_USE_CHECKS).map((r) => r.check), ["C-143.1", "C-143.2", "C-143.3", "C-143.4", "C-143.5", "C-143.6", "C-143.7", "C-143.8"]);
+  /* (T53) the two rows T53 adds read the sentences written at their use (AI_USE_NEW_WORDS, K3943) until the words file holds them */
   for (const r of Object.values(AI_USE_CHECKS))
-    assert.ok(Object.values(AI_USE_WORDS).includes(r.translation), `${r.check}: a words.json sentence`);
+    assert.ok([...Object.values(AI_USE_WORDS), ...Object.values(AI_USE_NEW_WORDS)].includes(r.translation), `${r.check}: a word-table sentence`);
 });
 
 test("R8 R13 (T44) EXPLORE_OUT_OF_SCOPE carries whose (group, project or own), its sentence ai.refused.exploreoutofscope with {whose} filled from ai.whose.*; an in-scope question passes (negative control)", async () => {
@@ -75,28 +78,28 @@ test("R8 R13 (T44) EXPLORE_OUT_OF_SCOPE carries whose (group, project or own), i
   explore(w, "member:ann", "yes", "ann");
   const cases = [["group", "INFO-1", "group", "INQ-2"], ["project:P", "INQ-2", "project", "INQ-1"], ["member:ann", "INQ-1", "own", null]];
   for (const [owner, outside, whose, inside] of cases) {
-    const r = w.u.exploreAllowed({ owner, question: outside, at: AT });
+    const r = w.u.exploreAllowed({ owner, account_id: acctOf(w, owner), question: outside, at: AT });
     assert.deepEqual([r.ok, r.code, r.check, r.whose, r.owner, r.word], [false, "EXPLORE_OUT_OF_SCOPE", "C-143.5", whose, owner,
       "ai.refused.exploreoutofscope"], owner);
     assert.equal(r.translation, WORDS["ai.refused.exploreoutofscope"].replace("{whose}", WORDS[`ai.whose.${whose}`]), owner);
     assert.doesNotMatch(r.translation, PLACEHOLDER);
     /* negative control: a question in the owner's scope passes (a member's scope holds none yet, D36) */
-    if (inside) assert.equal(w.u.exploreAllowed({ owner, question: inside, at: AT }).ok, true, `${owner} ${inside}`);
+    if (inside) assert.equal(w.u.exploreAllowed({ owner, account_id: acctOf(w, owner), question: inside, at: AT }).ok, true, `${owner} ${inside}`);
   }
-  assert.equal(new Set(cases.map(([owner, q]) => w.u.exploreAllowed({ owner, question: q, at: AT }).translation)).size, 3,
+  assert.equal(new Set(cases.map(([owner, q]) => w.u.exploreAllowed({ owner, account_id: acctOf(w, owner), question: q, at: AT }).translation)).size, 3,
     "each account's own words");
 });
 
 test("R8 R13 (T44) EXPLORE_ASK_INVALID answers ai.refused.exploreaskinvalid verbatim, for an ask naming nothing worth exploring and an approval naming no day; a well-formed ask and approval pass (negative control)", async () => {
   const w = await standard();
   explore(w, "group", "ask", "admin");
-  const refusals = [w.u.exploreAsk({ owner: "group", at: AT, what: "" }), w.u.exploreApprove({ owner: "group", day: "9 Oct", by: "admin" })];
+  const refusals = [w.u.exploreAsk({ owner: "group", account_id: w.acct.group, at: AT, what: "" }), w.u.exploreApprove({ owner: "group", day: "9 Oct", by: "admin" })];
   for (const r of refusals) {
     assert.deepEqual([r.code, r.check, r.word, r.translation], ["EXPLORE_ASK_INVALID", "C-143.6", "ai.refused.exploreaskinvalid",
       WORDS["ai.refused.exploreaskinvalid"]]);
   }
   assert.deepEqual(refusals.map((r) => r.field), ["what", "day"]);
-  assert.equal(w.u.exploreAsk({ owner: "group", at: AT, what: "INQ-1" }).ok, true);
+  assert.equal(w.u.exploreAsk({ owner: "group", account_id: w.acct.group, at: AT, what: "INQ-1" }).ok, true);
   assert.equal(w.u.exploreApprove({ owner: "group", day: "2026-10-09", by: "admin", at: AT }).ok, true);
 });
 
@@ -108,7 +111,7 @@ test("R13 (T44) {use} reads ai.use.<use>.inline for all nine uses (enquire, read
     if (use === "explore") explore(w, "member:ann", "yes", "ann");
     w.u.aiLimitSet({ owner: "member:ann", scope: use, unit: "calls", period: "day", amount: 1, by: "ann" });
     w.count("member:ann", "ann", use);
-    const r = w.u.useCheck({ owner: "member:ann", member: "ann", use, at: AT });
+    const r = w.u.useCheck({ owner: "member:ann", member: "ann", use, at: AT, account_id: w.acct.ann });
     assert.deepEqual([r.code, r.scope, r.word], ["AI_LIMIT_REACHED", use, "ai.refused.limit"], use);
     assert.equal(r.translation, WORDS["ai.refused.limit"].replace("{whose}", WORDS["ai.whose.own"])
       .replace("{period}", WORDS["ai.period.day"]).replace("{use}", WORDS[`ai.use.${use}.inline`])
@@ -154,12 +157,12 @@ test("R9 R13 (T44) the Ask item's {what} is the owner's words exactly as written
   const w = await standard();
   explore(w, "group", "ask", "admin");
   const what = "Who paid $& and $' and $1 to the $$ council?";
-  w.u.exploreAsk({ owner: "group", at: AT, what });
+  w.u.exploreAsk({ owner: "group", account_id: w.acct.group, at: AT, what });
   const [item] = w.u.exploreAsksPending({ viewer: "admin", at: AT }).asks;
   assert.equal(item.text, WORDS["ai.queue.exploreask"].split("{what}").join(what));
   assert.ok(item.text.includes(what));
   explore(w, "project:P", "ask", "ann");
-  w.u.exploreAsk({ owner: "project:P", at: AT, what: "Who signed?" });
+  w.u.exploreAsk({ owner: "project:P", account_id: w.acct.P, at: AT, what: "Who signed?" });
   assert.ok(w.u.exploreAsksPending({ viewer: "ann", at: AT }).asks[0].text.includes(": Who signed?. "));
 });
 

@@ -2,14 +2,14 @@
    control (K874), R3's inclusive and exclusive arms, exploring at no and at yes, as the requirements' Suggestions ask. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, standard, WORDS } from "./fixture.mjs";
+import { world, standard, WORDS, PLANS, ENTRIES } from "./fixture.mjs";
 import { AI_USE_CHECKS, LIMIT_FIELD_WORD } from "../../../src/ai-use/index.mjs";
 import { AI_RUNS_CHECKS } from "../../../src/run-rules/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
 const AT = "2026-10-09T12:00:00Z";
 const set = (w, owner, scope, unit, period, amount, by, extra = {}) => w.u.aiLimitSet({ owner, scope, unit, period, amount, by, at: AT, ...extra });
-const check = (w, owner, member, use, at = AT) => w.u.useCheck({ owner, member, use, at });
+const check = (w, owner, member, use, at = AT, more = {}) => w.u.useCheck({ owner, member, use, at, ...more });
 
 /* ===== R2 ===== */
 
@@ -70,7 +70,7 @@ test("R2 who may set it is the owner's own act: the member alone (NOT_YOUR_CEILI
   }
   for (const by of ["bob", "admin", "cy", null]) {
     const r = set(w, "project:P", "ask", "calls", "day", 5, by);
-    const own = w.a.accountUses({ owner: "project:P", viewer: by });
+    const own = w.a.accountActBar({ owner: "project:P", by });
     assert.equal(r.ok, false, String(by));
     assert.deepEqual([r.code, r.check], [own.code, own.check], `${by}: ai-accounts' own refusal, relayed`);
     assert.ok(["PROJECT_ACT_NOT_THE_OWNER", "PROJECT_SEEN_NOT_A_PARTICIPANT", "NO_SUCH_PROJECT"].includes(r.code), r.code);
@@ -85,22 +85,33 @@ test("R2 who may set it is the owner's own act: the member alone (NOT_YOUR_CEILI
   assert.equal(set(w, "group", "ask", "calls", "day", 6, "admin").ok, true);
 });
 
-test("R2 usd on a sign-in is refused LIMIT_UNIT_UNAVAILABLE (a member's sign-in, a project's sign-in account), writing nothing; on an API key it is set, and tokens or calls on a sign-in are set", async () => {
+test("R2 (T53; B1) usd is allowed only on an account whose plan's money is reported or priced: on none and on OPEN it is refused LIMIT_UNIT_UNAVAILABLE, writing nothing; tokens and calls are set on all (control: the same owner's plan changed to reported accepts usd)", async () => {
   const w = await standard();
-  /* T47 (K3084; ai-accounts R19): a sign-in serves cy only while its token is held, the fact alone answering not connected */
-  assert.equal((await w.a.subscriptionTokenHold({ member: "cy", token: "sk-ant-oat01-held-signin-token-of-cy" })).ok, true);
+  const flat = await w.account("member:cy", "cy", PLANS.none);
+  await w.account("member:bob", "bob", PLANS.open);
   w.project("S", "cy");
-  assert.equal(w.a.projectSigninSet({ project: "S", by: "cy" }).ok, true);
+  await w.account("project:S", "cy", PLANS.none);
   const before = w.snapshot();
-  for (const owner of ["member:cy", "project:S"]) {
-    const r = set(w, owner, "overall", "usd", "month", 10, "cy");
+  for (const [owner, by] of [["member:cy", "cy"], ["project:S", "cy"], ["member:bob", "bob"]]) {
+    const r = set(w, owner, "overall", "usd", "month", 10, by);
     assert.deepEqual([r.code, r.check, r.translation], ["LIMIT_UNIT_UNAVAILABLE", "C-143.3", WORDS["ai.refused.unitunavailable"]], owner);
   }
   assert.equal(w.snapshot(), before);
-  assert.equal(set(w, "member:cy", "overall", "tokens", "month", 10, "cy").ok, true);
-  assert.equal(set(w, "member:ann", "overall", "usd", "month", 10, "ann").ok, true);
+  for (const [owner, by] of [["member:cy", "cy"], ["project:S", "cy"], ["member:bob", "bob"]])
+    for (const unit of ["tokens", "calls"]) assert.equal(set(w, owner, "overall", unit, "month", 10, by).ok, true, `${owner} ${unit}`);
+  assert.equal(set(w, "member:ann", "overall", "usd", "month", 10, "ann").ok, true, "priced");
   assert.equal(set(w, "project:P", "overall", "usd", "month", 10, "ann").ok, true);
   assert.equal(set(w, "group", "overall", "usd", "month", 10, "admin").ok, true);
+  /* control: cy's account moved to a plan that reports money: usd is set */
+  w.a.accountRemove({ account_id: flat, by: "cy" });
+  await w.account("member:cy", "cy", PLANS.reported);
+  assert.equal(set(w, "member:cy", "overall", "usd", "month", 10, "cy").ok, true);
+});
+
+test("R2 (T53) an owner holding no account cannot set usd (the plan cannot be read: fail closed); tokens it can", async () => {
+  const w = await standard();
+  assert.equal(set(w, "member:cy", "overall", "usd", "month", 10, "cy").code, "LIMIT_UNIT_UNAVAILABLE");
+  assert.equal(set(w, "member:cy", "overall", "tokens", "month", 10, "cy").ok, true);
 });
 
 test("R2 the migration writes today's ceilings: a member's own daily ceiling becomes that member's account's overall day limits in tokens and calls; the copy-wide ceiling the group account's per_member day limits; once", async () => {
@@ -202,15 +213,17 @@ test("R3 for explore: EXPLORE_NOT_ENABLED when the owner's explore is no; at yes
   const r = check(w, "group", null, "explore");
   assert.deepEqual([r.code, r.check, r.whose], ["EXPLORE_NOT_ENABLED", "C-143.4", "group"]);
   assert.equal(r.translation, WORDS["ai.refused.explorenotenabled"].replace("{whose}", WORDS["ai.whose.group"]));
-  w.a.accountUsesSet({ owner: "group", switch: "explore", on: "yes", by: "admin" });
+  const g = { account_id: w.acct.group };
+  w.explore(w.acct.group, "yes", "admin");
   set(w, "group", "overall", "calls", "day", 2, "admin");
-  assert.equal(check(w, "group", null, "explore"), null, "under the overall limit it passes");
+  assert.equal(check(w, "group", null, "explore", AT, g), null, "under the overall limit it passes");
   w.count("group", "bob", "ask", { calls: 2 });
-  assert.equal(check(w, "group", null, "explore").scope, "overall");
-  w.a.accountUsesSet({ owner: "group", switch: "explore", on: "ask", by: "admin" });
-  assert.equal(check(w, "group", null, "explore").code, "AI_LIMIT_REACHED", "at ask, R3 judges the limits only");
+  assert.equal(check(w, "group", null, "explore", AT, g).scope, "overall");
+  w.explore(w.acct.group, "ask", "admin");
+  assert.equal(check(w, "group", null, "explore", AT, g).code, "AI_LIMIT_REACHED", "at ask, R3 judges the limits only");
   set(w, "group", "overall", "calls", "day", null, "admin");
-  assert.equal(check(w, "group", null, "explore"), null);
+  assert.equal(check(w, "group", null, "explore", AT, g), null);
+  assert.equal(check(w, "group", null, "explore").walkable, false, "a use switched off is never walkable");
 });
 
 test("R3 it writes nothing and never throws; a counter that cannot be read answers the refusal (fail closed)", async () => {
@@ -223,8 +236,47 @@ test("R3 it writes nothing and never throws; a counter that cannot be read answe
   assert.equal(w.u.useCheck({ owner: "x", use: "ask" }).code, "AI_LIMIT_REACHED");
   w.db.exec(`ALTER TABLE ai_usage RENAME TO ai_usage_away`);
   const r = check(w, "member:ann", "ann", "ask");
-  assert.deepEqual([r.code, r.check], ["AI_LIMIT_REACHED", AI_USE_CHECKS.AI_LIMIT_REACHED.check]);
+  assert.deepEqual([r.code, r.check, r.unjudged, r.walkable, r.scope], ["AI_LIMIT_REACHED", AI_USE_CHECKS.AI_LIMIT_REACHED.check, true, false, undefined]);
   /* negative control: readable again, under the limit, it passes */
   w.db.exec(`ALTER TABLE ai_usage_away RENAME TO ai_usage`);
   assert.equal(check(w, "member:ann", "ann", "ask"), null);
+});
+
+/* ===== R3 (T53): the source, the provider's limits, walkable, the unjudged dollar limit ===== */
+
+test("R3 R18 (T53) a recorded provider limit with a future resets_at answers source provider, its reset time and walkable true; after resets_at (pinned clock) it answers null; an own limit reached answers source own, walkable true (control: under every limit it answers null)", async () => {
+  const w = await standard();
+  const a = { account_id: w.acct.ann, entry_id: ENTRIES.priced };
+  assert.equal(check(w, "member:ann", "ann", "ask", AT, a), null);
+  assert.equal(w.u.recordProviderLimit({ owner: "member:ann", account_id: w.acct.ann, entry_id: null, kind: "spend", scope: "account",
+    resets_at: "2026-10-09T18:00:00Z", at: AT }).ok, true);
+  const r = check(w, "member:ann", "ann", "ask", AT, a);
+  assert.deepEqual([r.code, r.source, r.resets_at, r.walkable, r.kind, r.scope, r.whose], ["AI_LIMIT_REACHED", "provider", "2026-10-09T18:00:00Z", true, "spend", "account", "own"]);
+  assert.equal(r.word, "ai.refused.limit.provider");
+  assert.equal(check(w, "member:ann", "ann", "ask", "2026-10-09T18:00:01Z", a), null, "past resets_at it passes");
+  assert.equal(check(w, "member:ann", "ann", "ask", AT, { account_id: w.acct.group }), null, "another account's provider limit is its own");
+  set(w, "member:ann", "ask", "calls", "day", 1, "ann");
+  w.count("member:ann", "ann", "ask");
+  const own = check(w, "member:ann", "ann", "ask", "2026-10-09T19:00:00Z", a);
+  assert.deepEqual([own.source, own.walkable, own.scope], ["own", true, "ask"]);
+});
+
+test("R3 (T53; B2) a usd limit bearing on an act whose entry carries neither a price nor a reported cost is refused LIMIT_UNIT_UNAVAILABLE with unjudged, never counted as zero (control: a priced entry, and a tokens limit on the unpriced one, are judged)", async () => {
+  const w = await standard();
+  set(w, "member:ann", "overall", "usd", "day", 5, "ann");
+  const r = check(w, "member:ann", "ann", "ask", AT, { account_id: w.acct.ann, entry_id: ENTRIES.unpriced });
+  assert.deepEqual([r.code, r.unjudged, r.walkable, r.entry_id], ["LIMIT_UNIT_UNAVAILABLE", true, false, ENTRIES.unpriced]);
+  assert.equal(check(w, "member:ann", "ann", "ask", AT, { account_id: w.acct.ann, entry_id: ENTRIES.priced }), null);
+  set(w, "member:ann", "overall", "usd", "day", null, "ann");
+  set(w, "member:ann", "overall", "tokens", "day", 5000, "ann");
+  assert.equal(check(w, "member:ann", "ann", "ask", AT, { account_id: w.acct.ann, entry_id: ENTRIES.unpriced }), null);
+});
+
+test("R3 (T53) a usd limit is judged from the money counted: the reported cost where every call stated one, else the estimate; reached, it refuses source own", async () => {
+  const w = await standard();
+  set(w, "member:ann", "overall", "usd", "day", 1, "ann");
+  w.count("member:ann", "ann", "ask", { cost: 0.4, reported: 0.6 });
+  assert.equal(check(w, "member:ann", "ann", "ask"), null, "0.60 reported is under 1.00");
+  w.count("member:ann", "ann", "ask", { cost: 0.5, reported: 0.5 });
+  assert.equal(check(w, "member:ann", "ann", "ask").unit, "usd", "1.10 reported reaches 1.00");
 });
