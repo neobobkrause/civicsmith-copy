@@ -2,3 +2,4 @@
 {"at":"2026-11-04T07:36:55Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T13:20:17Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (5 jobs ready). Then: job interface-shell complete, PR #172 ready, session session_01RAN5ekJFivQTYT2LEY7WQL: run status"}
 {"at":"2026-11-04T13:20:28Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-04T14:00:05Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job interface-shell complete, PR #172 ready, session session_01RAN5ekJFivQTYT2LEY7WQL: run status. Re-synced to cab6b703e4 and re-ran with the same flags; here the suite measures 366 pass / 22 fail, all 22 base-red at cab6b703e4 (new receipt 6632566152). If the gate still measures 358/30, the 8 extra are its environment's, not this branch's: tell me which and I will name them."}
