@@ -1,0 +1,1 @@
+{"row":"answered","user":"affordances","by":"triage","evidence":"build/modules.json:157 affordances (bio-plane/src/affordances.mjs, bio-plane/src/affordances/) holds no file that imports publication, every code file under its paths read at 4b79889359","at":"2026-11-04T12:46:17.064Z","key":"publication:229","worker":"merge: imports check","cost":"0"}
