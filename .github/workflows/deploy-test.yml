@@ -103,14 +103,6 @@ jobs:
           done
       - name: build the branch's artifacts
         run: node bio-plane/scripts/bundles.mjs
-      # A fresh copy: the members bind the plane and the plane binds the members, so the plane is installed first with its
-      # store and SELF alone, and deployed again after them. On a copy that exists this step does nothing.
-      - name: first install of the plane, when the copy does not exist yet
-        working-directory: bio-plane
-        run: |
-          set -euo pipefail
-          version=$(node -p 'require("./package.json").version')
-          node scripts/deploy.mjs "$COPY" "$version" dist/bio-plane.bundled.mjs --test-instance --first-install $DRY $STORE
       - name: deploy each member, in the order discoverMembers lists
         run: |
           set -euo pipefail
