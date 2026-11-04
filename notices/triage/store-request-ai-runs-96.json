@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-request","verdict":"affected","evidence":"bio-plane/test/m/store-request/recipes.mjs:79 openRun opens every world run through op=airunopen with principalClaude and throws unless started; PR 96 refuses principalClaude (R9 rename)","at":"2026-11-04T07:13:20.338Z","key":"ai-runs:96","worker":"triage-a126dd48e59c94080","cost":"0.07"}

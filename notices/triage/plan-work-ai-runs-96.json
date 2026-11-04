@@ -1,0 +1,1 @@
+{"row":"triage","user":"plan-work","verdict":"affected","evidence":"bio-plane/src/plan-work/index.mjs:892 the re-examination run is opened with principalClaude: who (no principalAi); PR 96's open refuses principalClaude by name, so no re-examination run starts","at":"2026-11-04T07:13:20.338Z","key":"ai-runs:96","worker":"triage-a126dd48e59c94080","cost":"0.07"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-door","verdict":"not affected","evidence":"bio-plane/src/store-door/dispatch.mjs:116 names ai-runs' read ops only as contents-addressed op names; it calls nothing of ai-runs (test record.mjs:113 only constructs it)","at":"2026-11-04T07:13:20.338Z","key":"ai-runs:96","worker":"triage-a126dd48e59c94080","cost":"0.07"}

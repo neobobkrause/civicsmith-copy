@@ -1,0 +1,1 @@
+{"row":"answered","user":"ai-gate","by":"triage","evidence":"build/modules.json:114 ai-gate has no paths and no tests; no code of it exists to call the new registerGateVerdicts seam or anything changed","at":"2026-11-04T07:13:20.338Z","key":"ai-runs:96","worker":"triage-a126dd48e59c94080","cost":"0.07"}

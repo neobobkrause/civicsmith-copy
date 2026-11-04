@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-setup","by":"triage","evidence":"bio-plane/src/setup.mjs:254 its only use of AiRuns is AiRuns.prototype.testInstance (bootstrap's test_instance), which PR 96 did not change","at":"2026-11-04T07:13:20.338Z","key":"ai-runs:96","worker":"triage-a126dd48e59c94080","cost":"0.07"}
