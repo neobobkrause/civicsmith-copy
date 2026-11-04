@@ -82,7 +82,7 @@
 /* ============================================================
    Acts and their weight (principles 4.1–4.6, DEC-87, the measures map's pips)
    ============================================================ */
-.cs-btn { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 40px; padding: 7px 14px;
+.cs-btn { display: inline-flex; align-items: center; gap: var(--s-2); min-height: var(--tap); padding: 7px 14px;
           font: 600 var(--t-md)/1.2 var(--f-sans); border-radius: var(--r-1); border: 1.5px solid var(--c-ink);
           background: transparent; color: var(--c-ink); cursor: pointer; text-decoration: none; text-align: left; flex-wrap: wrap; max-width: 100%;
           transition: background-color var(--d-1) var(--ease); }
