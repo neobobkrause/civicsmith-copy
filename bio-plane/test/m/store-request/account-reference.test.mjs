@@ -19,7 +19,7 @@ async function ready(as) {
 const own = async (as) => (await as.read("accountsof", { query: { owner: `member:${as.member}` } })).accounts ?? [];
 const add = (as, body) => as.act("aiownadd", { body: { provider: PLANS.provider, plan: PLANS.memberApi, means: "sealed", ...body } });
 
-test("R7 (ai-accounts R38): a member sets, reads and removes their own account with a body naming no member; control: a body naming another member acts on the caller's own account only", async () => {
+test("R7 (ai-accounts R38): a member sets, reads and removes their own reference with a body naming no member; control: a body naming another member acts on the caller's own reference only", async () => {
   const w = await storeWorld({ ai: true });
   const ann = await w.signIn("ann", caps);
   const bo = await w.signIn("bo", caps);
