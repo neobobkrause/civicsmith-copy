@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-ask","verdict":"not affected","evidence":"build/modules.json:177 no paths of its own and no file imports signin-door","at":"2026-11-04T07:02:13.808Z","key":"signin-door:153","worker":"triage-a8ac876e3c208abec","cost":"0.05"}
