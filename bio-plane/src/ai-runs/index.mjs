@@ -2206,8 +2206,8 @@ export class AiRuns {
   }
 
   /** THE GATE, and the sentence the wake entry carries. `dispatch` is true ONLY on equality of the two stamps. The
-   *  sentence (`says`) is served to a member in the run's log (R24), so it calls the group's own Civicsmith "your group's
-   *  Civicsmith" (R54, DEC-149); `withheld`'s values are codes and stay. */
+   *  sentence (`says`) is served to a member in the run's log (R24), so it calls the team's own Civicsmith by its word-table key (R54,
+   *  T53; DEC-149); `withheld`'s values are codes and stay. */
   #aiRunResumeDecision(run, resumer) {
     const principal = String((run && run.principal_plane) || "");
     /* R52 (K1503, K1755): the run continues only on the account that serves the act of the member who started it (their

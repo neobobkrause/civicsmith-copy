@@ -4,6 +4,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { world, OPEN, INQ, PROJ, ORG, T0, USAGE, ENTRY, LABEL, ENTRIES, PLANS, agentWorker } from "./world.mjs";
 import { aiUseOf } from "../../../src/ai-use/index.mjs";
+import { word, hasWord } from "../../../src/setup-words/index.mjs";
+import { readFileSync } from "node:fs";
 
 const OLD = "principal_" + "claude";
 const columns = (w) => w.rows(`PRAGMA table_info(ai_runs)`).map((c) => c.name);
@@ -175,4 +177,22 @@ test("R100 (T53; N1219): op=airunlog serves each entry's read and disagree as st
   assert.deepEqual(log.entries.map((e) => [e.read, e.disagree]), [[null, null], [read, null], [null, disagree]]);
   const unseen = await w.op("airunlog", { run: "R1", viewer: "member:bob" });
   assert.deepEqual([unseen.found, unseen.entries], [false, []]);
+});
+
+/* ---- R54 ---- */
+
+test("R54 (T53; K3472): the five rows call the team's own Civicsmith by their word-table keys — each key's sentence names your team's Civicsmith and never your group's; control: no member-facing sentence this module writes holds the old English", () => {
+  const ROWS = ["ai-runs.note.mode_deployed_group", "ai-runs.says.resumption_handed_agent", "ai-runs.says.resumption_dispatched",
+                "ai-runs.text.principal_opened_organization", "ai-runs.text.group_civicsmith_resume"];
+  const vars = { mode: "m", deployed: "d", are: "is", token_id: "t", why: "w", withheld: "x" };
+  for (const key of ROWS) {
+    assert.equal(hasWord(key), true, key);
+    assert.doesNotMatch(word(key, vars), /group's Civicsmith/i, key);
+  }
+  for (const key of ROWS.filter((k) => k !== "ai-runs.says.resumption_dispatched"))
+    assert.match(word(key, vars), /team's Civicsmith/, key);
+  const src = readFileSync(new URL("../../../src/ai-runs/index.mjs", import.meta.url), "utf8");
+  const sentences = [...src.matchAll(/localize\(\s*"[^"]+",\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]);
+  assert.ok(sentences.length > 20);
+  assert.equal(sentences.filter((t) => /group's Civicsmith/i.test(t)).length, 0);
 });
