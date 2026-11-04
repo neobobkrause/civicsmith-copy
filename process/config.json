@@ -209,6 +209,11 @@
         "sh",
         "-c",
         "cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance --dry-run"
+      ],
+      [
+        "sh",
+        "-c",
+        "f=bio-plane/src/journey-check/testpage/deploy.mjs; if [ ! -f \"$f\" ]; then echo \"testpage: $f not in this tree, skipped\"; exit 0; fi; CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node \"$f\" {slug} --dry-run"
       ]
     ],
     "deploy": [
@@ -291,6 +296,11 @@
         "sh",
         "-c",
         "cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance"
+      ],
+      [
+        "sh",
+        "-c",
+        "f=bio-plane/src/journey-check/testpage/deploy.mjs; if [ ! -f \"$f\" ]; then echo \"testpage: $f not in this tree, skipped\"; exit 0; fi; CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node \"$f\" {slug}"
       ]
     ],
     "walk": [
