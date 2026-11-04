@@ -100,15 +100,15 @@ const CAPS = {
 };
 const SHAS = { bodies: "b".repeat(64), persons: "c".repeat(64), officerecords: ["d".repeat(64)] };
 
-async function world({ view = profileView(), env = {} } = {}) {
-  let views = { [PID]: view };
+async function world({ view = profileView(), env = {}, extra = {} } = {}) {
+  let views = { ...extra, [PID]: view };
   const reg = await registryOver(() => viewOf(Object.values(views)), Object.keys(CAPS));
   const prov = providers({ admins: ["admin"] });
   const w = await boot({ env, prov, now: () => Date.parse("2026-10-06T12:00:00Z"),
     more: { jurisdictions: jurisOver(() => views), entities: reg.entities, lines: reg.lines,
             readCapture: async (sha) => CAPS[sha] || null } });
-  if (!env.JURISDICTION_PROFILES) w.record.setSetting("jurisdiction_profiles", [PID], "test");
-  return { ...w, reg, setView: (v) => { views = { [PID]: v }; } };
+  if (!env.JURISDICTION_PROFILES) w.record.setSetting("jurisdiction_profiles", [...Object.keys(extra), PID], "test");
+  return { ...w, reg, setView: (v) => { views = { ...extra, [PID]: v }; } };
 }
 const whats = (list) => list.map((x) => `${x.what}:${x.role ?? x.OfficeRecordId ?? x.body ?? ""}`);
 
@@ -386,12 +386,15 @@ test("R50 R51 R52 on the first profile as held (N613), measured: each body the p
   w.record.setSetting("jurisdiction_profiles", [real.id], "test");
   const o = w.m.officesSeed({ by: "admin" });
   /* R50: a body is seeded under the profile's own identifier for it, an office only under its own, never by a name */
-  const withBody = held.counterparties.filter((c) => c.ids && c.ids.body);
+  /* R107 (jurisdictions R119): the package's federal records offices are not seeded and not listed */
+  const own = held.counterparties.filter((c) => c.level !== "federal");
+  assert.deepEqual([...o.seeded, ...o.already, ...o.unseeded].filter((x) => /^counterparties\[\d+\]$/.test(x.entry ?? "") && held.counterparties[Number(/\d+/.exec(x.entry)[0])].level === "federal"), []);
+  const withBody = own.filter((c) => c.ids && c.ids.body);
   assert.deepEqual(o.seeded.map((x) => [x.what, x.body, x.ident.id]), withBody.map((c) => ["body", c.body, c.ids.body.id]));
   for (const x of o.seeded) assert.deepEqual(reg.entities.idents.find((i) => i.entity_id === x.entity_id).basis,
     { system: held.identifier_schemes.find((sc) => sc.scheme === "legistar_body_id").systems[0], row: `${real.id}/${x.entry}/body` });
   const un = o.unseeded.map((x) => `${x.what}:${x.role}`);
-  for (const c of held.counterparties) {
+  for (const c of own) {
     assert.ok(un.includes(`office:${c.role}`), `${c.role}: no ids.office, so no office`);
     assert.equal(un.includes(`body:${c.role}`), !(c.ids && c.ids.body), c.role);
   }
@@ -405,7 +408,8 @@ test("R50 R51 R52 on the first profile as held (N613), measured: each body the p
     ["Finance Department", "name:finance department", [171]],
     ["Oakland City Council", "organisation:city_council", [1, 226]],
     ["Office Of The City Auditor", "name:office of the city auditor", [16]]]);
-  assert.deepEqual(s.unmatched.map((m) => [m.body, m.candidates]), [["Alameda County Civil Grand Jury", []], ["California State Controller's Office", []]]);
+  /* in the package's order, which is the provider's (the state's office before the county's since PR 40) */
+  assert.deepEqual(s.unmatched.map((m) => [m.body, m.candidates]).sort(), [["Alameda County Civil Grand Jury", []], ["California State Controller's Office", []]]);
   /* the Council's body entity now holds both BodyIds: the profile's own (1, already) and the cancellation form's (226) */
   const council = o.seeded.find((x) => x.role === "City Council").entity_id;
   assert.deepEqual(reg.entities.idents.filter((i) => i.entity_id === council).map((i) => i.id), ["1", "226"]);
@@ -536,4 +540,24 @@ test("R93 control: a profile with no forums (the view holds none, or an empty li
     assert.deepEqual(r.forums, []);
     assert.equal([...w.reg.entities.ents.values()].some((e) => e.forum_kind), false);
   }
+});
+
+/* ---- notice jurisdictions:40 (R119, PR 40): the federal layer holds the government's FOIA offices; R107: none is seeded ---- */
+
+test("notice jurisdictions:40 (R107; jurisdictions R119) officesSeed seeds no federal office: with the held federal layer (its FOIA offices, R119) active beside a profile, and a federal-level office in that profile, the answer seeds, holds and lists nothing federal, and the profile's own offices seed as before", async () => {
+  const federal = heldProfile("us-federal");
+  assert.ok(Array.isArray(federal.counterparties) && federal.counterparties.length > 0, "the held federal layer carries its records offices (R119)");
+  const alone = (await world()).m.officesSeed({ by: "admin" });
+  const view = profileView();
+  view.counterparties.push({ role: "FOIA Office", body: "A Federal Agency", level: "federal", elected: false, basis: "TEST",
+    ids: { office: { scheme: "ellery_office", id: "O-9" }, body: { scheme: "ellery_body", id: "B-9" } } });
+  const w = await world({ view, extra: { [federal.id]: federal } });
+  assert.deepEqual(w.record.getSetting("jurisdiction_profiles"), [federal.id, PID]);
+  const r = w.m.officesSeed({ by: "admin" });
+  assert.equal(r.ok, true);
+  const all = [...r.seeded, ...r.already, ...r.unseeded];
+  assert.deepEqual(all.filter((x) => x.profile === federal.id), [], "no entry of the federal layer is seeded or listed");
+  assert.deepEqual(all.filter((x) => x.role === "FOIA Office"), [], "a federal-level office is not seeded");
+  assert.deepEqual(whats(r.seeded), whats(alone.seeded), "the profile's own offices seed as before");
+  assert.deepEqual(whats(r.unseeded), whats(alone.unseeded));
 });
