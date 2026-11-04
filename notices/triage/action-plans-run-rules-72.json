@@ -1,0 +1,1 @@
+{"row":"triage","user":"action-plans","verdict":"not affected","evidence":"bio-plane/src/action-plans/index.mjs:73 imports only runPrincipalGate from run-rules; none of partAdmitted, untestedLabel, partRefusal, GATE_PART_OF or PART_WITHDRAWN appears","at":"2026-11-04T03:22:23.259Z","key":"run-rules:72","worker":"a355b7a5429373895","cost":"0.3"}

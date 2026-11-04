@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-worker","verdict":"affected","evidence":"agent-worker/src/untested.mjs:18 calls run-rules' untestedLabel(v.part) (imported at line 8), R29","at":"2026-11-04T03:22:23.259Z","key":"run-rules:72","worker":"a355b7a5429373895","cost":"0.3"}
