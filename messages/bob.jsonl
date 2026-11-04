@@ -208,3 +208,4 @@
 {"at":"2026-11-04T16:31:42Z","row":"sent","n":107,"to":"job-store-assembly","text":"bob-107: order.mjs stale from PR 274; regenerated in PR 283 (merging). After it lands: job sync, suite, job complete with --exempt-revert for notice-case-tensions-262; wake BOB. No pushes to kick CI."}
 {"at":"2026-11-04T16:31:46Z","row":"outcome","n":107,"outcome":"delivered"}
 {"at":"2026-11-04T16:34:41Z","row":"sent","n":108,"to":"job-store-assembly","text":"bob-108: correction: order.mjs fix comes via reopened member-roster job (PR 283 refused); wait for BOB's word after it merges."}
+{"at":"2026-11-04T16:34:45Z","row":"outcome","n":108,"outcome":"delivered"}
