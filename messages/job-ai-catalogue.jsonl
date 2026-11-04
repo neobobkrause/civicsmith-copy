@@ -1,3 +1,4 @@
 {"at":"2026-11-04T02:39:53Z","row":"sent","n":1,"to":"bob","text":"job ai-catalogue BLOCKED: run status"}
 {"at":"2026-11-04T02:40:06Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-04T09:02:19Z","row":"sent","n":2,"to":"bob","text":"job ai-catalogue complete, PR #194 ready: run status. For signatures (outside my paths): add the development catalogue key's public line to CATALOGUE_KEYS with a comment ending -development. For the dev deploy (yours): sign aiCatalogueStatement(RELEASE_SEED.statement) in NS_AI_CATALOGUE with that key, set vars AI_CATALOGUE_SEED_SIGNATURE (armored) and AI_CATALOGUE_DEVELOPMENT=1. The seed has zero entries at seq 1; the issuer's first payload needs seq 2 or above."}
+{"at":"2026-11-04T09:02:36Z","row":"outcome","n":2,"outcome":"delivered"}
