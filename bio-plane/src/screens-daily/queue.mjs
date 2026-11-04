@@ -58,12 +58,12 @@ export const queue = Object.freeze({
   render: function (cs, view) {
     const SORTS = ["added", "due", "case", "kind"];
     const CLASS_KIND = { OBLIGATION: "todo", FINDING: "noticed", CONDITION: "status" };
-    // The registry's twelve acts (R3, R13), under the names options and dispositions carry (OP_ALIASES' targets included);
+    // The registry's acts (R3, R13), less `projectkeyset`, retired at the door in T53 with no alias (op-declarations R41, ai-accounts R35; F2), under the names options and dispositions carry (OP_ALIASES' targets included);
     // `actionmove` is drawn only on the unsent-request item, by R13's own rule below.
     const REGISTERED = {
       taskresolve: "taskresolve", taskforward: "taskforward", proposedispose: "proposedispose", queuesnooze: "queuesnooze",
       queuemute: "queuemute", adoptversion: "adoptversion", versionadopt: "adoptversion", keepversion: "keepversion",
-      versionkeep: "keepversion", reminderanswer: "reminderanswer", promote: "promote", projectkeyset: "projectkeyset",
+      versionkeep: "keepversion", reminderanswer: "reminderanswer", promote: "promote",
       exploreapprove: "exploreapprove", signerknown: "signerknown", updatelater: "updatelater", projectjoin: "projectjoin", projectrequestanswer: "projectrequestanswer", filingapprove: "filingapprove",
     };
     const sort = SORTS.indexOf(String(view.subject || "")) >= 0 ? String(view.subject) : "case";
@@ -79,11 +79,11 @@ export const queue = Object.freeze({
     const FIELDS = {
       taskforward: [["to", "screen.queue.forward.to"]], adoptversion: [["why", "screen.queue.why"]],
       reminderanswer: [["on", "screen.queue.reminder.on"]], promote: [["question", "screen.queue.question"]],
-      projectkeyset: [["key", "screen.queue.projectkey"]], queuesnooze: [["until", "screen.queue.snooze.until"]],
+      queuesnooze: [["until", "screen.queue.snooze.until"]],
     };
     // R79 (a): an item's own act (not putting it aside) carries `queue.act.dothis.help`; Open carries `queue.act.open.help`. The help
     // joins the explanation the button already has, never a second one around it.
-    const OWN = ["adoptversion", "keepversion", "reminderanswer", "promote", "projectkeyset", "exploreapprove", "projectjoin", "projectrequestanswer"];
+    const OWN = ["adoptversion", "keepversion", "reminderanswer", "promote", "exploreapprove", "projectjoin", "projectrequestanswer"];
     const helped = function (html, key) {
       if (!html) return html;
       const add = cs.esc('<span class="why">' + cs.w(key) + "</span>");
@@ -506,13 +506,6 @@ export const queue = Object.freeze({
             .then(function (p) { if (p && p.ok !== false) cs.go("question", id); });
         }, function () { return null; });
         return null;
-      } },
-    { op: "projectkeyset", label: "act.projectkeyset.label.queue", rereads: ["queue"],
-      send: function (view, el, cs) {
-        const key = String(cs.value(el.dataset.f + "-key") || "").trim();
-        const owner = String(el.dataset.owner || "");
-        const project = owner.indexOf("project:") === 0 ? owner.slice(8) : el.dataset.project;
-        return key && project ? { body: { project: project, key: key } } : { refuse: "screen.queue.fieldfirst" };
       } },
     // R13: the unsent request dropped, with the member's reason (the shell asks it: `actionmove` is reasoned).
     // The store reads the act's fields, the reason too, from the query (`raw: ""` has the shell put the reason there).
