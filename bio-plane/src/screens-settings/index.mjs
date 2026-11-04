@@ -1,20 +1,21 @@
 /* screens-settings (T46-55; N897 (1), (3); K2147): the settings a member and an administrator use day to day, as
-   screens of the member interface: `members`, `account`, `connect` and `notes` (registry screens, DEC-139), with the AI
-   account panel drawn once for the group's key and the member's own (R9); since T47, `group-identity`, `security` and
+   screens of the member interface: `members`, `account` and `notes` (registry screens, DEC-139); since T47, `group-identity`, `security` and
    `translations` (R14–R16), and the settings index and the sections the setup page held, `settings`, `group`, `places`
-   and `recovery` (R17–R20); since T50, `teamai`, the team's assistant (R47, R48), and `updates` (R27); since T51, `glossary` (R59) and
+   and `recovery` (R17–R20); since T50, `updates` (R27); since T51, `glossary` (R59) and
    `grouprules` (R61), with the members' signing keys on `members` (R55, R56) and the key made on `account` (R57). Pure: every read and act is an op the plane
    serves, called through `interface-shell`'s screen contract (its R21) and kit; nothing here reads a table, writes, or
    keeps anything in the browser.
 
    `SCREENS`: per screen `{id, reads, render, acts, words, parts}` as interface-shell R21 states them (K2996, K2998);
    every function self-contained. `words` lists the keys a screen draws, all keys (R39: this module holds no English;
-   `keys.mjs`). `parts` holds the AI account panel's functions, handed to `members` and `connect` as `view.parts`
-   (J2 (1)). `SCREEN_WORDS` is empty (words.mjs). */
+   `keys.mjs`). `parts` holds the shared render of an account's use (R26), handed as `view.parts` (J2 (1)). `SCREEN_WORDS`
+   is empty (words.mjs).
+
+   T53 (R95; N1220, DEC-420): `connect` and `teamai`, the alpha's AI screens, are gone, and so is every alpha AI op they drew
+   or sent (op-declarations R20, R24, R30, R41 retired them with no aliases); the Settings list names `aimine` and
+   `aiproviders` (screens-ai's) in their place. */
 import { members } from "./members.mjs";
-import { teamai } from "./teamai.mjs";
 import { account } from "./account.mjs";
-import { connect } from "./connect.mjs";
 import { notes } from "./notes.mjs";
 import { settings } from "./settings.mjs";
 import { group } from "./group.mjs";
@@ -44,21 +45,12 @@ const WORDS = {
     ...LABELS("members", ["memberadd", "membercaps", "memberset", "adminendorse", "adminremove", "expertiseconfirm", "invitewithdraw",
       "websitekeycreate", "joinlinkenable", "signerset", "signeradd"]), "refusal.BAD_KEY", "refusal.NO_SUCH_MEMBER", "screen.members.signer.held.nodate",
     "act.owed_passwordresetlink.label.members", "act.owed_expertisewithdraw.label.members", "act.owed_expertisewithdraw.does", "refusal.CONSENSUS_REQUIRED", "shell.card.member", "screen.projects.name", "screen.members.tip.owner", "screen.members.tip.workson"],
-  teamai: [...STATES, "screen.teamai.name", ...own("screen.teamai.", "screen.members.key.", "screen.members.keepaway."), ...PANEL, "ai.whopays", "act.aikeepaway.does", "screen.connect.whopays.summary", "ai.usage.meter.month_group",
-    ...["ask", "draft", "run", "enquire", "read", "transcribe", "account", "suggestions"].map((u) => `ai.use.${u}.inline`),
-    ...LABELS("teamai", ["groupkeyset", "groupkeyswitch", "accountusesset", "ailimitset", "groupkeyremove", "aikeepaway"])],
   account: [...STATES, "screen.account.name", ...own("screen.account."), "handle.fixed", "level.prompt.name", "level.pause.name", "signing.ceremony.keepkey",
-    "screen.connect.name", "screen.notes.name", "screen.ties.name", "screen.glossary.name", "screen.glossary.purpose", "member.founder.unnamed", "screen.members.signer.held.nodate", "shell.signer.loadfile", "shell.signer.load", "shell.signer.notkey",
+    "screen.aimine.name", "screen.notes.name", "screen.ties.name", "screen.glossary.name", "screen.glossary.purpose", "member.founder.unnamed", "screen.members.signer.held.nodate", "shell.signer.loadfile", "shell.signer.load", "shell.signer.notkey",
     ...LABELS("account", ["expertisedeclare", "setpassword", "signerregisterown", "signerrevokeown", "memberlanguageset", "infolevelset", "signout", "signouteverywhere", "memberpairingset"])],
-  connect: [...STATES, "screen.connect.name", ...own("screen.connect."), "member.founder.unnamed", ...PANEL, "ai.whopays", "mark.outward.means", "screen.setup.state.needed", "shell.working",
-    ...["ask", "draft", "run", "enquire", "read", "transcribe", "account", "suggestions", "standing"].flatMap((u) => [`ai.use.${u}.name`, `ai.use.${u}.means`]),
-    "connect.ifnot", "connect.notnow", "refusal.reference", "session.reauth", "shell.password", "session.reauth.head", "screen.panel.amount", "ai.usage.today",
-    "instance.part.signin.absent", "instance.part.unknown",
-    ...["NO_SIGNIN_WAITING", "SIGNIN_REFUSED", "SIGNIN_UNAVAILABLE", "SIGNIN_ADDRESS_UNEXPECTED", "AGENT_WORKER_UNBOUND", "DISCLOSURE_DUE"].map((c) => "refusal." + c),
-    ...LABELS("connect", ["groupkeynoticeseen", "disclosureshown", "subscriptionsignin", "reauth", "accountreferenceset", "accountusesset", "ailimitset", "accountreferenceremove", "subscriptiondisconnect"])],
   notes: [...STATES, "screen.notes.name", ...own("screen.notes."), "ai.label.untested",
     ...LABELS("notes", ["notewrite", "noteturn", "noterevise", "notedelete", "writinghelp"])],
-  settings: [...STATES, ...own("screen.settings."), "screen.settings.everyone", "screen.watching.name", "screen.leads.name", "screen.watching.purpose", "screen.leads.purpose", ...["settings", "account", "connect", "ties", "notes", "recovery", "group", "group-identity", "members", "teamai", "places", "security", "updates", "translations", "wizards", "bias", "grouprules"]
+  settings: [...STATES, ...own("screen.settings."), "screen.settings.everyone", "screen.watching.name", "screen.leads.name", "screen.watching.purpose", "screen.leads.purpose", ...["settings", "account", "aimine", "ties", "notes", "recovery", "group", "group-identity", "members", "aiproviders", "places", "security", "updates", "translations", "wizards", "bias", "grouprules"]
     .flatMap((id) => [`screen.${id}.name`, `screen.${id}.purpose`])],
   group: [...STATES, "screen.group.name", ...own("screen.group."), "screen.settings.storage.head", "settings.set.setup", "settings.set.system", "settings.set.line.setup", "settings.set.line.system", "term.hostingaccount.means", "term.bar.team.means", "member.founder.unnamed",
     ...["America/Los_Angeles", "America/Denver", "America/Phoenix", "America/Chicago", "America/New_York", "America/Anchorage", "Pacific/Honolulu"].map((z) => `label.timezones.${z}`), "stake.group.title", "stake.group.help", "stake.group.label", "stake.group.save", "stake.set", "stake.none", "stake.history", "stake.unreadable", "ai.label.untested",  "screen.group-identity.draft.label",
@@ -103,4 +95,4 @@ const freeze = (s) => Object.freeze({
   parts: PARTS,
 });
 
-export const SCREENS = Object.freeze([settings, members, teamai, account, connect, notes, group, identity, places, recovery, security, translations, updates, glossary, grouprules, bias].map(freeze));
+export const SCREENS = Object.freeze([settings, members, account, notes, group, identity, places, recovery, security, translations, updates, glossary, grouprules, bias].map(freeze));
