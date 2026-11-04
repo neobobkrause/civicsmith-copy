@@ -7,3 +7,4 @@
 {"at":"2026-11-04T14:22:20Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job interface-shell complete, PR #172 ready, session session_01RAN5ekJFivQTYT2LEY7WQL: run status. The 8 the gate measured that this container did not were the real-browser tests (fixround7 G77, phone390 x2, r120 x5): the gate runner has no Chromium. This receipt (6633083398) ran with CHROMIUM at no browser, so it claims the gate's 30 base-red (358/30), named in --not-verified."}
 {"at":"2026-11-04T14:22:32Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-04T22:06:51Z","row":"sent","n":5,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job interface-shell complete, PR #310 ready, session session_01RAN5ekJqw7WurjuTwoX1rC: run status"}
+{"at":"2026-11-04T22:07:04Z","row":"outcome","n":5,"outcome":"delivered"}
