@@ -139,3 +139,4 @@
 {"at":"2026-11-04T12:29:10Z","row":"outcome","n":72,"outcome":"delivered"}
 {"at":"2026-11-04T12:30:42Z","row":"sent","n":73,"to":"job-publication","text":"BOB: the pin moved to 8f472b4 (process3 PR 106): job complete no longer takes a cost; BOB records it at merge. Run git submodule update --init .process (or job sync publication, which brings the pin), then rerun your job complete as drafted without --cost-usd. R30 stays open (D-246)."}
 {"at":"2026-11-04T12:30:52Z","row":"outcome","n":73,"outcome":"delivered"}
+{"at":"2026-11-04T12:30:55Z","row":"sent","n":74,"to":"job-case-authoring","text":"BOB: correction to bob-71: the pin moved to 8f472b4; job complete no longer takes a cost. If your job complete refuses --cost-usd, run job sync case-authoring and rerun it without that flag."}
