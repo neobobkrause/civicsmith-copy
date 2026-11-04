@@ -1,5 +1,5 @@
 /* The consolidation of build/requirements/screens-settings.md (4 Nov 2026): non-requirement text (the Status history, the Size line, the bullets
-   left under the retired R4 and R5, the Satisfies list) moved to docs/requirements-notes/screens-settings.md. The ids, their order and their
+   left under the retired R4 and R5, the Satisfies list; in attempt 4 the Uses and Suggestions lists) moved to docs/requirements-notes/screens-settings.md. The ids, their order and their
    unmet marks are those of the start commit d3580fbd, except R95's mark, struck by this branch (R95 met). Every R line is kept byte for byte,
    R95's apart from that struck mark. */
 import test from "node:test";
@@ -43,7 +43,10 @@ test("every R line is kept byte for byte, R95's with its mark struck; the unmet 
 
 test("the moved text is in the notes, and the notes hold no requirement line", () => {
   for (const s of ["**Status** · New in T46 (T46-55; K657, K1043)", "**Size (P6).** Estimated 2,400–3,000 lines", "  - **Subscription sign-in** (DEC-156; K2147; N897 (3))",
-    "- Registry screens `members`, `account`, `connect`, `notes` (DEC-139)"]) {
+    "- Registry screens `members`, `account`, `connect`, `notes` (DEC-139)",
+    /* attempt 4: the Uses and Suggestions lists */
+    "- `setup-words.word`, `setup-words.hasWord` (K3366, K3368): every member-facing sentence, by key.", "- Tests only: `op-declarations` (`OPS`).",
+    "- The \"Need more? Connect your own account\" link is a scroll to the section, not a route."]) {
     assert.ok(NOTES.includes(s), s);
     assert.ok(!FILE.includes(s), `${s} is no longer in the requirements file`);
   }

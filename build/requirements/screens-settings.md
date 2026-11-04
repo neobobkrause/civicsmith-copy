@@ -197,16 +197,7 @@ A sentence the design holds only as a drawn sample (a name, a day or a count wri
 
 ### Uses
 
-- `setup-words.word`, `setup-words.hasWord` (K3366, K3368): every member-facing sentence, by key.
-
-- `interface-shell`: the kit `cs` and the screen contract (its R21), the act gate and refusals (its R11–R13, R19, R20).
-- `setup-words`: `WORD_ROWS` keys.
-- (T47) Through the plane: `membership` (`groupdescription`, `groupdescriptionset`, R109, R110; R14), `instance-setup` (`groupdescriptiondraft`, R65; the translation ops, R67–R74, R16; `bootstrap`'s parts, R82, R13, R15), `file-safety` (R5, R27–R31; R15), `wizard-scripts` (R34's label; R11).
-- Through the plane: `membership` (the roster and administrator acts, R12–R13, R123; R108's court sentence), `credentials` (R3, R9–R10, R33, R35, R43, R51–R62), `ai-use` (R12 and the limit acts), `instance-setup` (R53, R54, R64, R79), `hypotheses` (notes), `wizard-scripts` (R27, `writinghelp`), `signin-door` R1.
-- (T48) Through the plane: `wizard-scripts` (`startfrom`, its R37; R25), `ai-use` (`aiuseovertime`, its R14; R26), `instance-setup` (`updatenotice`, `updatestart`, `updatelater`, `updateskip`, its R89, R90; R27).
-- Tests only: `op-declarations` (`OPS`).
-- (T51) Through the plane: `credentials` R6–R9 (`signeradd`, `signerset`, `signerlist`; R55, R57), `membership` R5 (`adminarith`; R56; the read of removals under way is N1248, T52's, and is not used in T51), (`instancegroup` and `instancegroupseed` are not used by a session: R58, DEC-336 (1).) `interface-shell` R90, R95, R97, R101 (the kit options, chips and terms, the signer and the new paths).
-- (T53) For the founder's lines (R91 to R94): `member-roster` K5562-R1 to K5563-R5 (`adminremove`, `adminremovals`, `adminendorse`, `adminproposalcancel`) through the plane; for the gauge (R86, R87): the plane's weekly indicator counts (PL26) and `runtime-limits`' level rows (`levelOf`, `levelFigures`) through the plane; `instance-setup` R108 (`profiles`) and `local-facts` R23, R26 (R83). Tests only: `op-declarations` for the new and retired ops.
+The modules this one uses, and what it reaches of each, are in `docs/requirements-notes/screens-settings.md` ("Uses"), moved there word for word on 4 Nov 2026.
 
 ### Invariants
 
@@ -218,6 +209,4 @@ A sentence the design holds only as a drawn sample (a name, a day or a count wri
 
 ### Suggestions
 
-- The sign-in refusals' words, DEC-197's handle sentence and the screens' own sentences are a HANDOFF to the design stream in BOB's channel act; until given, `SCREEN_WORDS` holds the meanings above (`screen.<id>.<part>` keys).
-- The "Need more? Connect your own account" link is a scroll to the section, not a route. (T53: R9 is retired and `projectai` with it; R26's render is the one kept.)
-- Tests per `draft-T46-interface.md` §4 (1): one table per screen lists every registry act; a test fails if a screen draws an act not listed, or a listed act is not drawn in the state where it applies.
+In `docs/requirements-notes/screens-settings.md` ("Suggestions"), moved there word for word on 4 Nov 2026.
