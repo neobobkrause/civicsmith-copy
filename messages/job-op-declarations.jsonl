@@ -14,3 +14,4 @@
 {"at":"2026-11-04T07:14:59Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-04T17:35:26Z","row":"sent","n":8,"to":"bob","text":"job op-declarations complete, PR #289 ready, session session_01RAN5enRb43BTWwKyCTNu7C: run status"}
 {"at":"2026-11-04T17:35:38Z","row":"outcome","n":8,"outcome":"delivered"}
+{"at":"2026-11-04T17:36:28Z","row":"sent","n":9,"to":"bob","text":"re bob-114: already done as asked. This attempt made no consolidation (the file was already 65199 bytes, under the cap): only the REAUTH_ACTS fix and its test, commit cd9dcdb3. job complete ran, receipt https://github.com/neobobkrause/civicsmith-copy/pull/289#issuecomment-6637535952, PR #289 ready. Consolidation deferred by BOB to after the first release. Still open for you: admission's doors.test.mjs R19 line 157 (see MSG 8)."}
