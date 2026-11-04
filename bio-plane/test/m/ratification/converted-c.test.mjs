@@ -18,7 +18,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, plane, newKey, signBundle, signCase, cleanInfoMd, sha, V, SILENT, NOW } from "./fixture.mjs";
 import { caseRatifyOp, ratifyOp } from "../../../src/ratification/ops.mjs";
-import { methodBlockLines, materialBlockLines } from "../../../src/case-grammar/index.mjs";
+import { methodBlockLines, materialBlockLines, CASE_DOCUMENT_FORMATS_ACCEPTED, CASE_DOCUMENT_FORMAT, passagesLines } from "../../../src/case-grammar/index.mjs";
 import { checkCaseDocument, CASE_DOCUMENT_FAMILY, caseConclusionRowLines } from "../../../src/ratification/index.mjs";
 import { parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 import { CASE_AUTHORITY_CHECKS, PROJECT_AUTHORITY_CHECKS } from "../../../src/membership/index.mjs";
@@ -122,9 +122,15 @@ const CASESIGN_ARMS = [
   ["CITATIONS", "C-41.15", (d) => { delete d.case_citations; return d; }],
   ["WHAT_CHANGED", "C-41.16", (d) => { d.case_edition = 2; return d; }],   /* over the body, which states no change */
   ["WORKING_ON", "C-41.17", (d) => { d.working_on = "PROJ 2026"; return d; }],   /* case-catalogue R3 (once R38 here) */
+  /* case-catalogue R7, R8 (T53; notice case-catalogue:224): a pre-/10 document carrying the key; a /10 one stating a
+     typed passage it does not list */
+  ["UNGRADED_PASSAGES_MISMATCH", "C-41.18", (d) => { d.ungraded_passages = []; return d; }],
+  ["TYPED_PASSAGES_MISMATCH", "C-41.19", (d) => ({ ...d, format: CASE_DOCUMENT_FORMAT, ...parseFrontmatter(["---",
+    ...passagesLines([{ finding: LEAD, ord: 1, content_id: "c".repeat(64), capture_sha: "d".repeat(64), extent: null,
+                        chain: [{ step: "typed", member: "bo" }], quoted: null }]), "---", ""].join("\n")).data })],
 ];
 
-test("R8 (casesign §7): the case gate draws no finding over a /6 document in op=publish's shape, and each of C-41.1–C-41.17 is what CASE_DOCUMENT_FAMILY declares and fires on its own mutation; the arms cover the family exactly", () => {
+test("R8 (casesign §7): the case gate draws no finding over a /6 document in op=publish's shape, and each of C-41.1–C-41.19 is what CASE_DOCUMENT_FAMILY declares and fires on its own mutation; the arms cover the family exactly", () => {
   const { data: fm, body } = parsed();
   const ctx = { caseId: CASE, edition: 1 };
   assert.equal(fm.format, "bio-case-document/6");
@@ -242,7 +248,7 @@ test("R4, R9 (casesign §4): a finding whose own bytes name a case is GATE_REFUS
   };
   const refused = await ratifyAs(w, keys, { signer: "alice", deliverer: "alice", id: Q, image: lie });
   assert.deepEqual([refused.status, refused.body.reason], [409, "GATE_REFUSED"]);
-  assert.ok(refused.body.findings.some((x) => x.check === "C-2.8" && /a finding's bytes name a case \(case_id\)/.test(x.detail)),
+  assert.ok(refused.body.findings.some((x) => x.check === "C-2.8" && x.detail === word("inquiry-grammar.grammar.a_finding_s_bytes_name_p")),
     JSON.stringify(refused.body.findings).slice(0, 600));
   assert.equal(w.count("published_bundles"), 0, "nothing crossed");
   delete w.ops.image;
@@ -267,7 +273,10 @@ test("R8 (d442 §5): over a /6 document in op=publish's shape, with its body and
   assert.deepEqual(errorsOf(checkCaseDocument({ ...fm, format: "bio-case-document/1", case_strength: undefined,
                                                 case_strength_grounds: undefined }, ctx)), [],
     "rule 12 (e): a legacy /1 document's format is accepted and the member arms are not asked of it");
-  assert.ok(errorsOf(checkCaseDocument({ ...fm, format: "bio-case-document/10" }, ctx)).includes("C-41.1"));
+  /* the first format after the newest accepted one (case-grammar R35 made /10 a format; notice case-grammar:202) */
+  const unknown = `bio-case-document/${Math.max(...CASE_DOCUMENT_FORMATS_ACCEPTED.map((x) => Number(x.split("/")[1]))) + 1}`;
+  assert.ok(!CASE_DOCUMENT_FORMATS_ACCEPTED.includes(unknown));
+  assert.ok(errorsOf(checkCaseDocument({ ...fm, format: unknown }, ctx)).includes("C-41.1"));
 });
 
 /* ================================================================ ratify-authority */
