@@ -11,7 +11,7 @@ import { open, main, text, ops, press, last, ok, refused, button, beside, choose
 
 const AT = `/app/matter/${DET}~${ESC}`;
 const BARE = `/app/matter/${DET}`;
-const REACH = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 const STANDARDS = ok({ ok: true, items: [{ id: "STD-1", cite: "Lease §7.2" }, { id: "STD-9", cite: "Lease §9.1" }], truncated: false });
 const PUBLISHED = { publishedlist: ok({ bundles: [], cases: [] }) };
 const QUESTIONS = ok({ ok: true, project: PROJECT, items: [{ inquiry: "INQ-1", title: "Did the adjustments cause the higher rent?" }], cursor: null });
