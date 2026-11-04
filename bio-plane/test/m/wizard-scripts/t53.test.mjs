@@ -19,6 +19,8 @@ const IDS_AT_START = ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10
   "R37", "R38", "R39", "R40", "R41", "R42", "R43", "R44", "R45", "R46", "R47", "R48", "R51", "R52", "R53", "R18", "R19",
   "R20", "R49", "R50"];
 const UNMET_AT_START = [];
+/* BOB's ruling (a), 4 Nov 2026: this job re-takes the registry at the tranche's design commit and states it as R54, after R53. */
+const IDS_NOW = [...IDS_AT_START.slice(0, IDS_AT_START.indexOf("R53") + 1), "R54", ...IDS_AT_START.slice(IDS_AT_START.indexOf("R53") + 1)];
 
 const idsOf = (text) => [...text.matchAll(/^\s*- \*\*([RF]\d+)\*\*/gm)].map((m) => m[1]);
 const unmetOf = (text) => text.split("\n").filter((l) => /^\s*- \*\*[RF]\d+\*\*/.test(l))
@@ -26,14 +28,14 @@ const unmetOf = (text) => text.split("\n").filter((l) => /^\s*- \*\*[RF]\d+\*\*/
 
 test("T53 consolidation: the requirement ids and unmet marks of build/requirements/wizard-scripts.md are those of the start commit, in order, and the file is under the 70000-byte cap; the moved text is in the notes file", () => {
   const text = readFileSync(REQ, "utf8");
-  assert.deepEqual(idsOf(text), IDS_AT_START, "every R and F id kept, none added, none lost, order unchanged");
+  assert.deepEqual(idsOf(text), IDS_NOW, "every R and F id kept, none lost, order unchanged; only R54 added, by BOB's ruling (a)");
   assert.deepEqual(unmetOf(text), UNMET_AT_START, "the unmet marks unchanged by the move");
   assert.ok(Buffer.byteLength(text) < 70000, `under the cap: ${Buffer.byteLength(text)} bytes`);
   const notes = readFileSync(NOTES, "utf8");
   for (const h of ["## Status history", "## Settled readings", "## Satisfies", "## Suggestions"]) assert.ok(notes.includes(h), h);
   assert.deepEqual(idsOf(notes), [], "the notes hold no requirement line");
   /* control: an id dropped from the file is seen */
-  assert.notDeepEqual(idsOf(text.replace(/^- \*\*R52\*\*/m, "- R52")), IDS_AT_START);
+  assert.notDeepEqual(idsOf(text.replace(/^- \*\*R52\*\*/m, "- R52")), IDS_NOW);
 });
 
 const ON = { on: true, account: { kind: "own", level: "member" } };
