@@ -20,7 +20,7 @@
   ],
   "node": "26.10.0",
   "suite_timeout_minutes": 45,
-  "coordinator": "session_01RAN5eoLoqw2E3pPRs8poFv",
+  "coordinator": "session_01RAN5enU4cvkBoxmmSGsudK",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
     {
@@ -329,5 +329,26 @@
       "bio-plane/test/m/store-assembly/declarations.test.mjs"
     ],
     "seconds": 120
+  },
+  "review_triggers": {
+    "security_paths": [
+      "bio-plane/src/op-declarations/",
+      "bio-plane/src/wizard-scripts/admin.mjs",
+      "bio-plane/src/admission/",
+      "bio-plane/src/store-request/index.mjs",
+      "bio-plane/src/credentials/index.mjs",
+      "bio-plane/src/ai-accounts/index.mjs",
+      "bio-plane/src/signin-door/index.mjs",
+      "bio-plane/src/answers/scope.mjs",
+      "bio-plane/src/member-roster/index.mjs",
+      "bio-plane/src/op-grades/index.mjs",
+      "bio-plane/src/registers/ops.mjs",
+      "bio-plane/src/capture-sources/credentials.mjs",
+      "agent-worker/src/ops.mjs",
+      "agent-worker/src/signin.mjs",
+      "agent-runner/src/signin.mjs",
+      "agent-runner/src/entry.mjs",
+      "agent-harness/src/subsession.mjs"
+    ]
   }
 }

@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { deflateRawSync } from "node:zlib";
 import { fresh, hold, doc, sha } from "./fixture.mjs";
 import { getFormat } from "../../../src/formats.mjs";
+import { boundOf } from "../../../src/read-bounds.mjs";
 
 /* ---- independent crc32 and zip assembler (the old suites' own; nothing here imports the container reader) ---- */
 function crc32(buf) {
@@ -118,7 +119,9 @@ const PPTX = deck(["FY 2026-27 PROPOSED MIDCYCLE BUDGET", "GENERAL PURPOSE FUND 
 const PPTX_GAPPED = deck(["MIDCYCLE OVERVIEW", "THE SLIDE THIS CAPTURE CANNOT READ", "GENERAL PURPOSE FUND RECONCILIATION"], [2, null, 4], { missing: 2 });
 const TRAILING = ["AGENDA", "PROPOSED CUTS", "THE SLIDE THIS CAPTURE CANNOT READ"];
 const PPTX_TRAILING = deck(TRAILING, [3, 1, null], { missing: 3 });
-const PPTX_OVERBOUND = deck(TRAILING, [3, 1, 2], { declare: { 1: 64 * 1024 * 1024 } });
+/* over the bound: one slide declares one byte past runtime-limits' current streamed-text bound for a deck, read from the register
+   (READ_BOUNDS office.streamed_text_bytes, as read-bounds.mjs states it), never a figure of its own (BOB 4 Nov, PR 272 (b)) */
+const PPTX_OVERBOUND = deck(TRAILING, [3, 1, 2], { declare: { 1: boundOf("office", "streamed_text_bytes") + 1 } });
 
 /* ---- OpenDocument (odt, ods) ---- */
 const ODF_NS = ['xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"', 'xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"',
