@@ -460,15 +460,32 @@ export class BasisVersions {
     if (!Array.isArray(rows) || !rows.length) return rows;
     const bounded = (r) => !!r && r.grade_axis === "capture" && r.grade != null
       && typeof r.target_id === "string" && !!r.target_id && normalizeType(r.target_type) !== "inquiry";
-    const targets = new Set();
-    for (const r of rows) if (bounded(r)) targets.add(r.target_id);
+    /* R60 (leg-earning R18, R19, R10; PR 138): a leg naming a content row on the capture axis, or stating no letter, may
+       rest on a member's typing, whose capture ceiling is the passage's own (`earned.content[cid].capture`, marked
+       `record_graded`), not the document's: the record grades such a leg, stated or not, and a check moves it. */
+    const passage = (r) => !!r && typeof r.content_id === "string" && !!r.content_id
+      && (r.grade_axis === "capture" || r.grade == null)
+      && typeof r.target_id === "string" && !!r.target_id && normalizeType(r.target_type) !== "inquiry";
+    const targets = new Set(), contentIds = new Set();
+    for (const r of rows) {
+      if (bounded(r)) targets.add(r.target_id);
+      if (passage(r)) { targets.add(r.target_id); contentIds.add(r.content_id); }
+    }
     const inq = this.inquiry;
-    const cap = targets.size && inq && typeof inq.earned === "function"
-      ? (inq.earned(null, [...targets])?.earned?.capture || {}) : {};
+    const reg = targets.size && inq && typeof inq.earned === "function"
+      ? (contentIds.size ? inq.earned(null, [...targets], [...contentIds]) : inq.earned(null, [...targets]))?.earned || {}
+      : {};
+    const cap = reg.capture || {};
+    const typedOf = (r) => {
+      const e = passage(r) ? reg.content?.[r.content_id]?.capture : null;
+      return e && e.record_graded === true ? e : null;
+    };
     return rows.map((r) => {
-      const res = bounded(r) && inq && typeof inq.legCapped === "function"
-        ? inq.legCapped(r.grade, cap[r.target_id], r.target_id) : null;
-      return { ...r, grade: res ? res.grade : r.grade, grade_authored: r.grade, grade_why: res ? res.why : null };
+      const typed = typedOf(r);
+      const res = (typed || bounded(r)) && inq && typeof inq.legCapped === "function"
+        ? inq.legCapped(r.grade, typed || cap[r.target_id], r.target_id) : null;
+      return { ...r, grade: res ? res.grade : r.grade, grade_authored: r.grade, grade_why: res ? res.why : null,
+               ...(typed ? { graded_by: res && res.graded_by === "record" ? "record" : res ? "record_cap" : "stated" } : {}) };
     });
   }
 
@@ -1563,7 +1580,7 @@ export function basisVersionsOf(host, deps) {
     let own = ["earned", "legCapped", "cyclePath"].every((k) => typeof given[k] === "function") ? null
       : inquiryOf(host, { record, membership, promotion, content });
     const inquiry = {
-      earned: typeof given.earned === "function" ? given.earned : (s, t) => own.earned(s, t),
+      earned: typeof given.earned === "function" ? given.earned : (s, t, c) => own.earned(s, t, c),
       legCapped: typeof given.legCapped === "function" ? given.legCapped : legCapped,
       cyclePath: typeof given.cyclePath === "function" ? given.cyclePath : (id, t) => own.cyclePath(id, t),
       basisFor: typeof given.basisFor === "function" ? given.basisFor

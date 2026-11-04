@@ -42,7 +42,8 @@ export const setup = {
       place: { op: "placewantedstate" },
       offices: { op: "entitieskind", query: { kind: "office", limit: "500" }, empty: (v) => !(v && Array.isArray(v.entities) && v.entities.length) },
       keepaway: { op: "aikeepawaystate" },
-      groupkey: { op: "groupkeystate" },
+      // the team's AI accounts (ai-accounts R2, R5; op-declarations R24): `groupkeystate` is retired with no alias (T53)
+      groupkey: { op: "accountsof", query: { owner: "group" } },
       court: { op: "courtnotice" },
       hosting: { op: "hostingaccess" },
       // R33: the scanner's true state (signatures held or not); drawn only while the scanner part is built in
@@ -198,7 +199,9 @@ export const setup = {
     const wanted = (ok(data.place) || {}).name || "";
     const offices = ok(data.offices) && Array.isArray(data.offices.value.entities) ? data.offices.value.entities : [];
     const keep = ok(data.keepaway) || {};
-    const gk = ok(data.groupkey) || {};
+    // the team's key: its first account the team holds a sealed key on, else its first account (ai-accounts R2, R5)
+    const teamAccounts = ok(data.groupkey) && Array.isArray(data.groupkey.value.accounts) ? data.groupkey.value.accounts.filter((a) => a && a.owner === "group") : [];
+    const gk = teamAccounts.find((a) => a.means === "sealed" && a.held === true) || teamAccounts[0] || {};
     const court = ok(data.court) || {};
     const host = ok(data.hosting) || {};
     const tools = ok(data.tools) && Array.isArray(data.tools.value.tools) ? data.tools.value.tools : [];
@@ -314,7 +317,7 @@ export const setup = {
         if (pays === "group") {
           ai += (gk.held === true ? `<p data-state="groupkey">${W(S + "key.held", { state: { html: W(gk.on ? S + "key.on" : S + "key.off") } })}</p>` : "")
             + explained(cs.field("su-key" + (ui.keyGen || 0), S + "key", { type: "password", help: S + "key.help", autocomplete: "off" }), S + "key.tip")
-            + `<div class="mk-acts">${cs.act("groupkeyset")}${gk.held === true ? cs.act("groupkeyswitch", { label: gk.on ? S + "key.switchoff" : S + "key.switchon", data: { on: gk.on ? "off" : "on" } }) : ""}</div>`
+            + `<div class="mk-acts">${cs.act("aiaccountadd")}${gk.held === true && gk.account_id ? cs.act("aiaccountswitch", { label: gk.on ? S + "key.switchoff" : S + "key.switchon", data: { on: gk.on ? "off" : "on", account: gk.account_id } }) : ""}</div>`
             + `<p class="mk-note">${W(S + "key.told")}</p>`
             + (ui.limit ? `<p>${W(S + "limit.set")}</p>` : "")
             + cs.field("su-limit", S + "limit", { help: S + "limit.help" })
@@ -522,11 +525,25 @@ export const setup = {
         return { body: { on: el.dataset.on !== "off", reason } };
       } },
     // the key in the request's body only, never drawn again (the field drawn anew, empty)
-    { op: "groupkeyset", rereads: ["groupkey"],
-      send(view, el, cs) { view.ui.at = "assistant"; const key = String(cs.value("su-key" + ((view.ui && view.ui.keyGen) || 0)) || "").trim(); return key ? { body: { key } } : { refuse: "screen.setup.key.nokey" }; },
+    /* T53 (ai-accounts R5, R40; op-declarations R24): the team's key is a sealed account of the team, `aiaccountadd` with
+       `owner: "group"` and the key as `secret`; a team that holds an account has its credential replaced (its `account_id`,
+       provider and plan); the retired `groupkeyset` and `groupkeyswitch` are sent no more. The words stay the setup's own. */
+    { op: "aiaccountadd", rereads: ["groupkey"], label: "act.groupkeyset.label.setup",
+      send(view, el, cs) {
+        view.ui.at = "assistant";
+        const key = String(cs.value("su-key" + ((view.ui && view.ui.keyGen) || 0)) || "").trim();
+        if (!key) return { refuse: "screen.setup.key.nokey" };
+        const r = view.data && view.data.groupkey;
+        const list = r && r.state === "ok" && r.value && Array.isArray(r.value.accounts) ? r.value.accounts.filter((a) => a && a.owner === "group") : [];
+        const held = list.find((a) => a.means === "sealed") || null;
+        const body = { owner: "group", provider: held && held.provider ? held.provider : "anthropic", means: "sealed", secret: key };
+        if (held && held.plan) body.plan = held.plan;
+        if (held && held.account_id) body.account_id = held.account_id;
+        return { body };
+      },
       done(view) { view.ui.keyGen = ((view.ui && view.ui.keyGen) || 0) + 1; } },
-    { op: "groupkeyswitch", rereads: ["groupkey"],
-      send(view, el) { view.ui.at = "assistant"; return { body: { on: el.dataset.on === "on" } }; } },
+    { op: "aiaccountswitch", rereads: ["groupkey"],
+      send(view, el) { view.ui.at = "assistant"; return { body: { account_id: el.dataset.account, on: el.dataset.on === "on" } }; } },
     // each member's daily use of the team's key, in dollars (ai-use R2: owner group, per member, a day)
     { op: "ailimitset", rereads: [],
       send(view, el, cs) {
