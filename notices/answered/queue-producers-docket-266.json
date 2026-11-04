@@ -1,0 +1,1 @@
+{"row":"answered","user":"queue-producers","by":"triage","evidence":"bio-plane/src/queue-producers/index.mjs:2231 calls only docket.coreDue({viewer}) (unchanged) and uses DOCKET_UNREADABLE as a sentence at line 2613","at":"2026-11-04T15:47:34.423Z","key":"docket:266","worker":"acbeb704d48ce3e01","cost":"0.40"}

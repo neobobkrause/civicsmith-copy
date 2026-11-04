@@ -1,0 +1,1 @@
+{"row":"triage","user":"answer-envelope","verdict":"not affected","evidence":"bio-plane/src/answer-envelope/families.mjs:121 imports only docket/checks.mjs (the C-129 refusal-code family, row at line 254), which PR 266 did not touch","at":"2026-11-04T15:47:34.423Z","key":"docket:266","worker":"a2e7f9a5c7a4f0ce2","cost":"0.40"}
