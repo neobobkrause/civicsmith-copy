@@ -1,0 +1,82 @@
+{
+  "id": "case-authoring",
+  "title": "case-authoring: restate its tests for case-grammar's format /10",
+  "layer": 8,
+  "paths": [
+    "bio-plane/src/case-authoring/",
+    "build/requirements/case-authoring.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-authoring/"
+  ],
+  "requirements": "build/requirements/case-authoring.md",
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "provenance",
+    "attestation",
+    "extraction",
+    "content",
+    "bias",
+    "observation-log",
+    "inquiry",
+    "basis-versions",
+    "strength",
+    "contradiction",
+    "reevaluation",
+    "publication",
+    "ratification",
+    "capture",
+    "sources",
+    "case-grammar",
+    "credentials",
+    "network-notices",
+    "promotion",
+    "case-import",
+    "inquiry-grammar",
+    "case-carriage",
+    "case-disclosures",
+    "case-account",
+    "calculations",
+    "workbooks",
+    "events",
+    "case-tensions",
+    "jurisdictions",
+    "entities",
+    "connections",
+    "lines",
+    "money",
+    "people",
+    "case-checker",
+    "publish-schedule",
+    "doorbell",
+    "project-roster",
+    "case-inputs",
+    "test-support",
+    "runtime-limits",
+    "doc-clean",
+    "retrieval",
+    "standards"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/case-authoring.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Found work (case-grammar PR 202, R35): CASE_DOCUMENT_FORMAT is now bio-case-document/10; 4 of this module's tests pin /8 as the format in force and are red. Restate them (and any code naming the format in force) against case-grammar as merged, with a test that fails with the change reverted. Any unmet mark in build/requirements/case-authoring.md is yours too. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T11:42:27Z"
+  }
+}
