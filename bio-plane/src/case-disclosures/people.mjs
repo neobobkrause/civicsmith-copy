@@ -6,6 +6,7 @@
  */
 
 import { PEOPLE_KINDS } from "../lines/index.mjs";
+import { ORGANISATION_KINDS } from "../entities/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
 /** R25: the closed list of bases a named person is named on (K1483). */
@@ -100,6 +101,34 @@ export function basisCitation(basis, ref) {
 export function placesStated(places) {
   return (Array.isArray(places) ? places : []).map((p) => [p.place, p.where].filter((x) => x != null && x !== "").join(" "))
     .filter(Boolean).join("; ");
+}
+
+/** R46 (T53; K5571 (2); `public-read` R52): whether a later subject may be named on a published case. `subject` is the
+ *  entity the question's live document now states, as `entities.readEntity` answers it (`{entity_id, kind, label}`);
+ *  `bases` the recorded bases of R25 (`peopleBases`, `[{person, basis, ref, words?}]`). Answers `{named: true, name}`
+ *  only when a recorded basis other than `private_party` names that person or organisation (`person` the subject's
+ *  `entity_id`), and `{named: false}` otherwise. A private person is never named: a person any recorded basis states
+ *  as a `private_party` (a person outside any official, professional or public role, K1483) answers `{named: false}`
+ *  whatever other basis is recorded. Only a person or an organisation (`entities`' `ORGANISATION_KINDS`) is ever named.
+ *  `name` is the subject's label and nothing else of it (no contact, address or phone, R26). Pure: writes nothing, reads
+ *  no capture's bytes, never throws. `viewer` is taken for the caller's symmetry and decides nothing here. */
+export function subjectNaming(args) {
+  const no = { named: false };
+  try {
+    const { subject = null, bases = null } = args && typeof args === "object" ? args : {};
+    if (!subject || typeof subject !== "object" || Array.isArray(subject)) return no;
+    const id = typeof subject.entity_id === "string" ? subject.entity_id : null;
+    const name = typeof subject.label === "string" ? subject.label.trim() : "";
+    if (!id || !name) return no;
+    const isPerson = subject.kind === "person";
+    if (!isPerson && !ORGANISATION_KINDS.includes(subject.kind)) return no;
+    const own = (Array.isArray(bases) ? bases : [])
+      .filter((b) => b && typeof b === "object" && !Array.isArray(b) && b.person === id && PERSON_BASES.includes(b.basis));
+    if (isPerson && own.some((b) => b.basis === "private_party")) return no;
+    return own.some((b) => b.basis !== "private_party") ? { named: true, name } : no;
+  } catch {
+    return no;
+  }
 }
 
 /* ===========================================================================
