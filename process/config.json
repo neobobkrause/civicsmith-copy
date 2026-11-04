@@ -19,7 +19,7 @@
     "site/package-lock.json"
   ],
   "node": "26.10.0",
-  "suite_timeout_minutes": 20,
+  "suite_timeout_minutes": 45,
   "coordinator": "session_01RAN5eoLoqw2E3pPRs8poFv",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
@@ -77,6 +77,20 @@
     },
     {
       "paths": [
+        "bio-plane/src/case-checker/program.mjs"
+      ],
+      "regenerate": [
+        "node",
+        "bio-plane/src/case-checker/build-program.mjs"
+      ],
+      "verify": [
+        "node",
+        "--test",
+        "bio-plane/test/m/case-checker/program.test.mjs"
+      ]
+    },
+    {
+      "paths": [
         "bio-plane/dist/bio-plane.bundle.json",
         "bio-plane/dist/bio-plane.bundled.mjs",
         "pdf-worker/dist/pdf-worker.bundle.json",
@@ -112,7 +126,7 @@
       [
         "sh",
         "-c",
-        "(cd bio-plane && npm ci --no-audit --no-fund --loglevel=error) && for d in $(node bio-plane/scripts/bundles.mjs --install-dirs); do [ \"$d\" = bio-plane ] || (cd \"$d\" && npm ci --no-audit --no-fund --loglevel=error) || exit 1; done && node bio-plane/src/setup-words/build.mjs && node bio-plane/scripts/bundles.mjs && cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance --first-install --dry-run"
+        "(cd bio-plane && npm ci --no-audit --no-fund --loglevel=error) && for d in $(node bio-plane/scripts/bundles.mjs --install-dirs); do [ \"$d\" = bio-plane ] || (cd \"$d\" && npm ci --no-audit --no-fund --loglevel=error) || exit 1; done && node bio-plane/src/setup-words/build.mjs && node bio-plane/src/case-checker/build-program.mjs && node bio-plane/scripts/bundles.mjs && cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance --first-install --dry-run"
       ],
       [
         "env",
@@ -201,7 +215,7 @@
       [
         "sh",
         "-c",
-        "(cd bio-plane && npm ci --no-audit --no-fund --loglevel=error) && for d in $(node bio-plane/scripts/bundles.mjs --install-dirs); do [ \"$d\" = bio-plane ] || (cd \"$d\" && npm ci --no-audit --no-fund --loglevel=error) || exit 1; done && node bio-plane/src/setup-words/build.mjs && node bio-plane/scripts/bundles.mjs && cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance --first-install"
+        "(cd bio-plane && npm ci --no-audit --no-fund --loglevel=error) && for d in $(node bio-plane/scripts/bundles.mjs --install-dirs); do [ \"$d\" = bio-plane ] || (cd \"$d\" && npm ci --no-audit --no-fund --loglevel=error) || exit 1; done && node bio-plane/src/setup-words/build.mjs && node bio-plane/src/case-checker/build-program.mjs && node bio-plane/scripts/bundles.mjs && cd bio-plane && CIVICSMITH_TEST_INSTANCE={slug} CF_TOKEN=\"${CF_TOKEN:-$CLOUDFLARE_API_TOKEN}\" CF_ACCT=20b533579290b9b93168345edd3b7f72 node scripts/deploy.mjs {slug} \"$(node -p 'require(\"./package.json\").version')\" dist/bio-plane.bundled.mjs --test-instance --first-install"
       ],
       [
         "env",
@@ -318,7 +332,7 @@
     "assemble": [
       "sh",
       "-c",
-      "node bio-plane/src/setup-words/build.mjs && node bio-plane/scripts/bundles.mjs && node bio-plane/scripts/release-gather.mjs build/dev-release"
+      "node bio-plane/src/setup-words/build.mjs && node bio-plane/src/case-checker/build-program.mjs && node bio-plane/scripts/bundles.mjs && node bio-plane/scripts/release-gather.mjs build/dev-release"
     ],
     "out": "build/dev-release",
     "full_history": false
