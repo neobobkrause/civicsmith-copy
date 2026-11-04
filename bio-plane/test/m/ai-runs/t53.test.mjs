@@ -2,7 +2,8 @@
    interface over the real modules it uses (./world.mjs). */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { world, OPEN, INQ, ORG, T0, USAGE, agentWorker } from "./world.mjs";
+import { world, OPEN, INQ, PROJ, ORG, T0, USAGE, ENTRY, LABEL, ENTRIES, PLANS, agentWorker } from "./world.mjs";
+import { aiUseOf } from "../../../src/ai-use/index.mjs";
 
 const OLD = "principal_" + "claude";
 const columns = (w) => w.rows(`PRAGMA table_info(ai_runs)`).map((c) => c.name);
@@ -82,4 +83,96 @@ test("R18 (T53; AIR41) control: a member's personal subscription never serves an
   assert.deepEqual(aw.calls.map((c) => c.body.account), [await w.served("bob")]);
   assert.equal(aw.calls[0].body.account.personal, false);
   assert.equal(JSON.stringify(aw.calls[0].body.account).includes("secret"), false);
+});
+
+/* ---- R72, R88, R104: a tick's usage entries and their labels ---- */
+
+test("R72 (T53; BR22, BR29): tick takes usage entries {mode, entry_id, label, usage, calls} — two well-formed entries count; control: a label lacking a field is AI_RUN_CONSUME_INVALID, counting nothing", async () => {
+  const w = world();
+  await w.group("ann");
+  w.bundle(INQ);
+  assert.equal((await w.runs.open(OPEN())).started, true);
+  const before = w.dump();
+  for (const field of ["display_name", "provider", "host", "model_version", "effort", "account_level", "owner"]) {
+    const { [field]: _gone, ...lacking } = LABEL(ENTRIES.a);
+    const r = w.runs.tick({ run: "R1", caller: ORG, viewer: "admin", at: T0, usage: [ENTRY(), { ...ENTRY(), label: lacking }] });
+    assert.deepEqual([r.ticked, r.code], [false, "AI_RUN_CONSUME_INVALID"], field);
+  }
+  assert.equal(w.dump(), before, "nothing counted or written");
+  const ok = w.runs.tick({ run: "R1", caller: ORG, viewer: "admin", at: T0, usage: [ENTRY(), ENTRY("check", {}, 2, { entry_id: ENTRIES.b })] });
+  assert.deepEqual([ok.ticked, ok.counted], [true, 2], JSON.stringify(ok).slice(0, 300));
+});
+
+test("R88 (T53; BR22, BR29): each usage entry is passed to ai-use.countUsage unchanged, entry_id and label beside usage; control: a label.effort that is not a lowercase word (\"Low!\") is AI_RUN_CONSUME_INVALID and countUsage is not asked", async () => {
+  const w = world();
+  await w.group("ann");
+  w.bundle(INQ);
+  assert.equal((await w.runs.open(OPEN())).started, true);
+  const use = aiUseOf(w.ctx);
+  const asked = [];
+  const real = use.countUsage.bind(use);
+  use.countUsage = (a) => { asked.push(a); return real(a); };
+  const e = ENTRY("check", {}, 2, { label: { effort: "low" } });
+  assert.equal(w.runs.tick({ run: "R1", caller: ORG, viewer: "admin", at: T0, usage: [e] }).ticked, true);
+  assert.equal(asked.length, 1);
+  assert.deepEqual([asked[0].entry_id, asked[0].label, asked[0].usage, asked[0].calls, asked[0].act], [e.entry_id, e.label, e.usage, 2, "R1"]);
+  const bad = w.runs.tick({ run: "R1", caller: ORG, viewer: "admin", at: T0, usage: [ENTRY("check", {}, 1, { label: { effort: "Low!" } })] });
+  assert.deepEqual([bad.ticked, bad.code], [false, "AI_RUN_CONSUME_INVALID"]);
+  assert.equal(asked.length, 1, "nothing counted");
+});
+
+test("R104 (T53; BR2, DEC-466 U1): a usage label must name the AI as ai-catalogue names the entry — counted when display_name equals entryOf(entry_id).display_name, the same name whether the team's account or her own served it; control: missing, different, or the account's provider-and-plan name are each AI_RUN_CONSUME_INVALID with nothing counted", async () => {
+  const w = world();
+  await w.group("ann", "dan", { noAccount: ["dan"] });
+  await w.team({ members: ["dan"] });
+  w.bundle(INQ);
+  assert.equal((await w.runs.open(OPEN())).started, true);
+  assert.equal((await w.runs.open(OPEN({ run: "D1", principalAi: "member:dan" }))).started, true);
+  const named = w.catalogue.entryOf(ENTRIES.a).display_name;
+  assert.equal(LABEL(ENTRIES.a).display_name, named);
+  const own = w.runs.tick({ run: "R1", caller: ORG, viewer: "admin", at: T0, usage: [ENTRY("check", {}, 1, { label: { account_level: "member", owner: "member:ann" } })] });
+  const team = w.runs.tick({ run: "D1", caller: ORG, viewer: "admin", at: T0, usage: [ENTRY("check", {}, 1, { label: { account_level: "group", owner: "group" } })] });
+  assert.deepEqual([own.counted, team.counted], [1, 1]);
+  const before = w.dump();
+  for (const display_name of [undefined, "", "Fake claude-b", `${PLANS.provider} ${PLANS.teamApi}`]) {
+    const label = display_name === undefined ? (({ display_name: _d, ...rest }) => rest)(LABEL(ENTRIES.a)) : LABEL(ENTRIES.a, { display_name });
+    const r = w.runs.tick({ run: "R1", caller: ORG, viewer: "admin", at: T0, usage: [{ ...ENTRY(), label }] });
+    assert.deepEqual([r.ticked, r.code], [false, "AI_RUN_CONSUME_INVALID"], String(display_name));
+  }
+  assert.equal(w.dump(), before, "nothing counted");
+});
+
+/* ---- R99, R100: a log entry's read and disagree ---- */
+
+test("R99 (T53; N1219): a tick passes each log entry's read and disagree through — three entries read 1, 2 and 3 of 3 append three rows each with its field; control: an entry with n above total is returned in refused as OBSERVATION_FIELD_MALFORMED and the other two are appended", async () => {
+  const w = world();
+  await w.group("ann");
+  w.bundle(INQ);
+  assert.equal((await w.runs.open(OPEN())).started, true);
+  const look = (n, total = 3) => ({ level: "document", subject: INQ, state: "LOOKED_ABSENT", detail: `read ${n}`,
+                                    read: { record: INQ, n, total, outcome: "answered" } });
+  const t = w.runs.tick({ run: "R1", caller: ORG, viewer: "admin", at: T0, log: [look(1), look(2), look(3)] });
+  assert.deepEqual([t.ticked, t.appended, t.refused.length], [true, 3, 0]);
+  assert.deepEqual(w.rows(`SELECT read FROM observation_log WHERE authority='R1' ORDER BY seq`).map((r) => JSON.parse(r.read).n), [1, 2, 3]);
+  const bad = w.runs.tick({ run: "R1", caller: ORG, viewer: "admin", at: T0, log: [look(1), look(4), look(3)] });
+  assert.deepEqual([bad.ticked, bad.appended, bad.refused.map((r) => r.code)], [true, 2, ["OBSERVATION_FIELD_MALFORMED"]]);
+});
+
+test("R100 (T53; N1219): op=airunlog serves each entry's read and disagree as stored, in order — a read entry and a disagreement entry answer both fields; control: an entry with neither answers both null, and a viewer outside the run's sight gets found: false with no entries", async () => {
+  const w = world();
+  await w.group("ann", "bob");
+  w.project(PROJ, "ann");
+  const mine = { principalPlane: "member:ann", principalAi: "member:ann", actor: "member:ann", viewer: "member:ann" };
+  assert.equal((await w.runs.open(OPEN({ contextType: "project", contextId: PROJ, ...mine }))).started, true);
+  const read = { record: PROJ, n: 1, total: 2, outcome: "answered" };
+  const disagree = { record: PROJ, levels: ["document", "meaning"] };
+  const t = w.runs.tick({ run: "R1", caller: "member:ann", viewer: "member:ann", actor: "member:ann", at: T0, log: [
+    { level: "document", subject: PROJ, state: "LOOKED_ABSENT", detail: "plain" },
+    { level: "document", subject: PROJ, state: "LOOKED_ABSENT", detail: "a read", read },
+    { level: "meaning", subject: PROJ, state: "LOOKED_INDETERMINATE", detail: "a disagreement", disagree }] });
+  assert.equal(t.appended, 3, JSON.stringify(t).slice(0, 300));
+  const log = await w.op("airunlog", { run: "R1", viewer: "member:ann" });
+  assert.deepEqual(log.entries.map((e) => [e.read, e.disagree]), [[null, null], [read, null], [null, disagree]]);
+  const unseen = await w.op("airunlog", { run: "R1", viewer: "member:bob" });
+  assert.deepEqual([unseen.found, unseen.entries], [false, []]);
 });

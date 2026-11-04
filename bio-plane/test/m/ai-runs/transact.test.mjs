@@ -4,6 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { world, OPEN, INQ, ORG, sha, agentWorker, USAGE } from "./world.mjs";
+import { ENTRY } from "./world.mjs";
 import { aiUseOf } from "../../../src/ai-use/index.mjs";
 
 const at = (s) => Date.parse(`2026-07-01T${s}Z`);
@@ -52,13 +53,13 @@ test("R10, R12, R14, R16, R18, R26, R29, R52 (N418): every write of the run's ac
     state: { next: 1 }, log: [{ level: "document", subject: INQ, state: "LOOKED_ABSENT" }] });
   assert.deepEqual([t.ticked, t.appended], [true, 1]);
   assert.equal((await w.runs.tick({ run: "R1", viewer: "admin", caller: ORG, at: "2026-07-01T00:00:02Z",
-    usage: [{ mode: "check", model: "m", usage: USAGE(), calls: 1 }] })).counted, 1);
+    usage: [ENTRY()] })).counted, 1);
   const limit = (amount) => aiUseOf(w.ctx).aiLimitSet({ owner: "member:ann", scope: "overall", unit: "calls", period: "day",
     amount, by: "member:ann", at: "2026-07-01T00:00:02Z" });
   assert.equal(limit(1).ok, true, "ai-use R2: ann's own account limited to one call a day");
   /* at the limit (ai-use R3): the refused tick's calls are still counted, inside transact */
   const over = await w.runs.tick({ run: "R1", viewer: "admin", caller: ORG, at: "2026-07-01T00:00:03Z",
-    usage: [{ mode: "check", model: "m", usage: USAGE(), calls: 1 }] });
+    usage: [ENTRY()] });
   assert.deepEqual([over.ticked, over.code, over.counted], [false, "AI_LIMIT_REACHED", 1]);
   assert.equal(limit(null).ok, true);
   assert.equal(w.surface("INQ-2026-0009").ok, true);

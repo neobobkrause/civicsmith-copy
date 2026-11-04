@@ -15,7 +15,7 @@ import { observationLogOf } from "../../../src/observation-log/index.mjs";
 import { connectionsOf } from "../../../src/connections/index.mjs";
 import { retrievalOf } from "../../../src/retrieval/index.mjs";
 import { aiRunsOf, aiRunsOps } from "../../../src/ai-runs/index.mjs";
-import { catalogueFor, PLANS, ENTRIES, HOSTS } from "../ai-accounts/catalogue.mjs";
+import { catalogueFor, baseDoc, PLANS, ENTRIES, HOSTS } from "../ai-accounts/catalogue.mjs";
 import { gatePartOf } from "../../../src/run-rules/index.mjs";
 export { PLANS, ENTRIES, HOSTS };
 
@@ -333,6 +333,20 @@ export const OPEN = (over = {}) => ({ run: "R1", contextType: "inquiry", context
 /** One model call's figures, as `agent-model` R5 states them. */
 export const USAGE = (over = {}) => ({ input_tokens: 1000, output_tokens: 200, cache_read_input_tokens: 0,
   cache_creation_input_tokens: 0, total_cost_usd: 0.012, ...over });
+
+/** (T53; R72, R104) A conversation's label as `agent-model` composes it (its R26: the served identity, the effort, the
+ *  account's level and owner) with the AI's display name, each identity field read from the catalogue fixture's own
+ *  payload for `entry_id` (ai-catalogue's published data); `agent-model` has no published fixture of a label yet.
+ *  // fixtures-own: harness - agent-model's label has no published fixture until its T53 job lands */
+const CATALOGUED = new Map(baseDoc().entries.map((e) => [e.entry_id, e]));
+export const LABEL = (entry_id = ENTRIES.a, over = {}) => {
+  const e = CATALOGUED.get(entry_id) || {};
+  return { display_name: e.display_name ?? null, provider: e.provider ?? null, host: e.host ?? null,
+           model_version: e.model ?? null, effort: null, account_level: "member", owner: "member:ann", ...over };
+};
+/** (T53; R72) One `usage` entry of a tick as `agent-worker` passes it (its R112): `{mode, entry_id, label, usage, calls}`. */
+export const ENTRY = (mode = "check", over = {}, calls = 1, { entry_id = ENTRIES.a, label = {} } = {}) =>
+  ({ mode, entry_id, label: LABEL(entry_id, label), usage: USAGE(over), calls });
 
 /** An `agent-worker` binding that counts its calls and answers as told. */
 export function agentWorker(answer = { status: 200, body: { ok: true } }) {

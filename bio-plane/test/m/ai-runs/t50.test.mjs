@@ -4,7 +4,7 @@
    Every refusal has a control (K874). */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { world, OPEN, INQ, ANN, ORG, sha, agentWorker, USAGE } from "./world.mjs";
+import { world, OPEN, INQ, ANN, ORG, sha, agentWorker, USAGE, ENTRY } from "./world.mjs";
 import { aiUseOf, AI_USE_TABLES } from "../../../src/ai-use/index.mjs";
 
 const AW = (aw) => ({ AGENT_WORKER: aw, STORE: { idFromName: (n) => `id:${n}` }, AI_RUN_DISPATCH_WAIT_MS: "50" });
@@ -98,7 +98,8 @@ test("R87 (controls): a value that is not a non-empty printable string of at mos
 
 /* ---- R88 ---- (ai-use R15, merged: the real module, reached through its factory on the world's storage) */
 
-const entry = (model, effort, calls = 1) => ({ mode: "check", model, ...(effort === undefined ? {} : { effort }), usage: USAGE(), calls });
+/* (T53; R72, R104) the model and effort ride on the conversation's label (agent-model R26) */
+const entry = (model, effort, calls = 1) => ENTRY("check", {}, calls, { label: { model_version: model, effort: effort === undefined ? null : effort } });
 const at = (s) => `2026-07-01T${s}Z`;
 
 test("R88: each usage entry's effort is passed to ai-use.countUsage beside its model, an entry stating none as null; session.cost and the close's cost carry ai-use's by_model, to the paying account's owner alone; nothing of it reaches the run's log", async () => {
@@ -141,7 +142,7 @@ test("R88 (control): an entry whose effort is not a lowercase word is refused AI
   }
   assert.equal(all(), before, "nothing written: no entry, no figure, no tick, nothing counted");
   const kept = await w.runs.tick({ run: "R1", viewer: "admin", caller: ORG, at: at("00:06:00"),
-    usage: [{ mode: "check", usage: USAGE(), calls: 1 }] });
+    usage: [ENTRY("check", {}, 1, { label: { model_version: null } })] });
   assert.equal(kept.ticked, true, JSON.stringify(kept));
   assert.deepEqual((await w.runs.read({ run: "R1", viewer: ANN })).session.cost.by_model, [{ model: null, effort: null, calls: 1 }]);
 });

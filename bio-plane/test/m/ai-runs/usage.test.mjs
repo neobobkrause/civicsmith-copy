@@ -8,7 +8,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { word } from "../../../src/setup-words/index.mjs";
-import { world, OPEN, INQ, PROJ, ANN, ORG, T0, USAGE, sha, agentWorker, PLANS, HOSTS } from "./world.mjs";
+import { world, OPEN, INQ, PROJ, ANN, ORG, T0, USAGE, ENTRY, LABEL, sha, agentWorker, PLANS, HOSTS } from "./world.mjs";
 import { aiUseOf, AI_USE_TABLES } from "../../../src/ai-use/index.mjs";
 import { AI_RUNS_CHECKS } from "../../../src/run-rules/index.mjs";
 
@@ -21,7 +21,7 @@ const useDump = (w) => AI_USE_TABLES.map((t) => JSON.stringify(w.rows(`SELECT * 
 /** Every row this module and ai-use hold, and the observation log: "nothing written". */
 const all = (w) => `${w.dump()}\n${useDump(w)}`;
 /** One conversation's entry, `{mode, model, usage, calls}` (agent-worker R26, agent-model R6). */
-const call = (mode = "check", over = {}, calls = 1) => ({ mode, model: "claude-model-x", usage: USAGE(over), calls });
+const call = (mode = "check", over = {}, calls = 1) => ENTRY(mode, over, calls);
 /** A refusal carrying its row (R35: read by key from `run-rules`' table, its R20). */
 function refused(r, code) {
   assert.equal(r.code, code, JSON.stringify(r).slice(0, 300));
@@ -93,14 +93,14 @@ test("R72: a usage entry not of that shape refuses the whole tick AI_RUN_CONSUME
   const look = { level: "document", subject: "https://example.org/a", state: "LOOKED_ABSENT", detail: "none" };
   const before = all(w);
   const { input_tokens: _drop, ...missing } = USAGE();
-  for (const usage of [{}, "x", [null], [1], [{ model: "m", usage: USAGE(), calls: 1 }], [{ mode: "", model: "m", usage: USAGE(), calls: 1 }],
-                       [{ mode: "check", model: 7, usage: USAGE(), calls: 1 }], [{ mode: "check", model: "m", calls: 1 }],
-                       [{ mode: "check", model: "m", usage: [], calls: 1 }],
+  for (const usage of [{}, "x", [null], [1], [{ ...call(), mode: undefined }], [{ ...call(), mode: "" }],
+                       [{ ...call(), entry_id: undefined }], [{ ...call(), usage: undefined }],
+                       [{ ...call(), usage: [] }], [{ ...call(), label: undefined }],
                        /* N588: `calls` absent, or neither null nor a positive whole number */
-                       [{ mode: "check", model: "m", usage: USAGE() }], [call("check", {}, 0)], [call("check", {}, -1)], [call("check", {}, 1.5)],
+                       [{ ...call(), calls: undefined }], [call("check", {}, 0)], [call("check", {}, -1)], [call("check", {}, 1.5)],
                        [call("check", {}, "2")], [call("check", {}, Number.NaN)], [call("check", {}, Infinity)], [call("check", {}, 2 ** 53)],
                        [{ ...call(), calls: undefined }], [call("check", {}, true)], [call("check"), call("check", {}, [3])],
-                       [{ mode: "check", model: "m", usage: missing, calls: 1 }], [call("check", { input_tokens: -1 })], [call("check", { output_tokens: 1.5 })],
+                       [{ ...call(), usage: missing }], [call("check", { input_tokens: -1 })], [call("check", { output_tokens: 1.5 })],
                        [call("check", { cache_read_input_tokens: "5" })], [call("check", { total_cost_usd: -0.1 })],
                        [call("check", { total_cost_usd: Number.NaN })], [call("check", { estimated_cost_usd: -1 })],
                        [call("check", { estimated_cost_usd: "0.2" })],
@@ -117,7 +117,7 @@ test("R72: a usage entry not of that shape refuses the whole tick AI_RUN_CONSUME
   const nulls = { input_tokens: null, output_tokens: null, cache_read_input_tokens: null, cache_creation_input_tokens: null,
                   total_cost_usd: null, estimated_cost_usd: null };
   assert.equal((await w.runs.tick({ run: "R1", viewer: "admin", caller: ORG, at: at("00:05:00"),
-    usage: [{ mode: "check", model: null, usage: nulls, calls: null }] })).counted, 1);
+    usage: [{ ...call(), usage: nulls, calls: null }] })).counted, 1);
   assert.deepEqual(w.row(`SELECT calls, input_tokens, cost_micro_usd, tokens_unstated, cost_unstated FROM ai_usage`),
     { calls: 1, input_tokens: 0, cost_micro_usd: 0, tokens_unstated: 1, cost_unstated: 1 });
   /* an estimated_cost_usd stated is the entry's cost (ai-use R1) */

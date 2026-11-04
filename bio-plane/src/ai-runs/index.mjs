@@ -31,6 +31,7 @@ import { promotionOf } from "../promotion/index.mjs";
 import { normalizeType, OBJECT_TYPES, isMachineIdentity, MACHINE_CLASS_PREFIX } from "../record-grammar/index.mjs";
 import { credentialsOf } from "../credentials/index.mjs";
 import { aiAccountsOf } from "../ai-accounts/index.mjs";
+import { aiCatalogueOf, EFFORT_WORD_MAX } from "../ai-catalogue/index.mjs";
 import { inquiryOf } from "../inquiry/index.mjs";
 import { sha256hex, instanceAiCredential } from "../tokens.mjs";
 import { storeId, storeStub } from "../store-place.mjs";
@@ -524,6 +525,10 @@ export class AiRuns {
       /* C-22.6 travels through UNCHANGED: the bundle key is what the refusal
          reads, and it is passed rather than dropped here. */
       bundle: entry ? entry.bundle : null,
+      /* R99 (T53; N1219; observation-log R40): a tick's entry's `read` and `disagree`, passed through unchanged for the
+         writer to judge (OBSERVATION_FIELD_MALFORMED is its); absent is null */
+      read: entry && entry.read !== undefined ? entry.read : null,
+      disagree: entry && entry.disagree !== undefined ? entry.disagree : null,
     }, at, terminal);
     if (!bad && step) {
       const r = this.#one(`SELECT MAX(seq) seq FROM observation_log WHERE authority_kind = 'step' AND authority = ?`, String(step));
@@ -1653,7 +1658,7 @@ export class AiRuns {
     const calls = usage == null ? [] : Array.isArray(usage) ? usage : null;
     if (!calls)
       return { run, ticked: false, found: true, status: row.status,
-               ...AiRuns.#shed(this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.usage_is_a_list", "`usage` is a list with one entry per conversation that reached the model since the last tick, each {mode, model, usage, calls}."))),
+               ...AiRuns.#shed(this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.usage_is_a_list_t53", "`usage` is a list with one entry per conversation that reached a provider since the last tick, each {mode, entry_id, label, usage, calls}."))),
                note: word("ai-runs.note.appended_budget_spent") };
     /* R52: the calls are counted to the account the run recorded as paying (`principal_ai`) and the member whose act
        the run is (`principal_ai_ref`); a run that names no member (one opened before T33-50) cannot have its calls
@@ -3123,7 +3128,7 @@ export class AiRuns {
        a single answer. */
     const page = this.#rows(
       `SELECT seq, at, level, subject, state, governed, condition, bound, terminal, detail,
-              result_kind, result_ref
+              result_kind, result_ref, read, disagree
        FROM observation_log WHERE ${AiRuns.#ownRows()}
        ORDER BY seq LIMIT ?`, run, run, cap + 1);
     /* REC-100 / IC-130 — A ROLLUP'S `observation` REFERENT IS RE-EXPRESSED IN
@@ -3139,7 +3144,7 @@ export class AiRuns {
        dropping one, and is unreachable while that check stands. */
     const ordinal = new Map(page.slice(0, cap).map((e, i) => [String(e.seq), i + 1]));
     const entries = page.slice(0, cap)
-      .map((e, i) => ({ ...e, seq: i + 1, governed: e.governed === 1, terminal: e.terminal === 1,
+      .map(({ read: storedRead, disagree: storedDisagree, ...e }, i) => ({ ...e, seq: i + 1, governed: e.governed === 1, terminal: e.terminal === 1,
                         /* NULL IS NORMALISED TO `null` RATHER THAN LEFT AS `undefined`:
                            a key that serialises away is the absence-with-two-causes this
                            whole item is about, one layer down. */
@@ -3147,7 +3152,11 @@ export class AiRuns {
                         result_ref: e.result_kind === "observation" && ordinal.has(String(e.result_ref))
                           ? String(ordinal.get(String(e.result_ref)))
                           : (e.result_ref ?? null),
-                        coverage: observationCoverage({ state: e.state, resultRef: e.result_ref }) }));
+                        coverage: observationCoverage({ state: e.state, resultRef: e.result_ref }),
+                        /* R100 (T53; N1219): the entry's `read` and `disagree` as stored, null when it has none; a screen
+                           draws from these and parses no `detail` */
+                        read: storedRead == null ? null : safeJson(String(storedRead)),
+                        disagree: storedDisagree == null ? null : safeJson(String(storedDisagree)) }));
     return { run, found: true, status: row.status, entries,
              limit: cap, truncated: page.length > cap,
              stopped: row.stopped_bound
@@ -3273,22 +3282,59 @@ export class AiRuns {
     }
   }
 
-  /** R52, R72: each conversation of a tick counted through `ai-use.countUsage`, to the run's paying account and member,
-   *  under use `run` and `act` the run's id (R76), inside the caller's transaction. Null, or the first entry's refusal
-   *  (ai-use R1's `AI_RUN_CONSUME_INVALID`), naming which entry. */
+  /** R52, R72, R88, R104 (T53): each conversation of a tick, judged whole (`#entryFault`) and counted through
+   *  `ai-use.countUsage` unchanged, `entry_id` and `label` beside `usage`, to the run's paying owner and member, under use
+   *  `run` and `act` the run's id (R76), inside the caller's transaction. Null, or the first entry's refusal
+   *  (`AI_RUN_CONSUME_INVALID`), naming which entry. */
   #countEntries(row, payer, entries, ms) {
     const use = this.#aiUse();
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i];
-      const said = e && typeof e === "object" && !Array.isArray(e)
-        ? use.countUsage({ owner: row.principal_ai, member: `member:${payer}`, use: "run", mode: e.mode, model: e.model ?? null,
-                           /* R88: the conversation's effort beside its model, ai-use R15's to judge; null where none is stated */
-                           effort: e.effort ?? null, usage: e.usage, calls: e.calls, at: AiRuns.#aiIso(ms), act: String(row.run) })
-        : this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.the_entry_is_not", "the entry is not an object {mode, model, usage, calls}."));
+      const fault = this.#entryFault(e);
+      const said = fault ? this.#refuse("AI_RUN_CONSUME_INVALID", fault)
+        : use.countUsage({ owner: row.principal_ai, member: `member:${payer}`, use: "run", mode: e.mode,
+                           entry_id: e.entry_id, label: e.label, model: e.label.model_version ?? null,
+                           effort: e.label.effort ?? null, usage: e.usage, calls: e.calls, at: AiRuns.#aiIso(ms), act: String(row.run) });
       if (!said || said.ok !== true)
         return { ...(said || this.#refuse("AI_RUN_CONSUME_INVALID", localize("ai-runs.index.the_entry_could_not_be", "the entry could not be counted."))),
                  detail: localize("ai-runs.index.usage_entry_v1_v2", "usage entry {v1}: {v2}", { v1: String(i + 1), v2: String((said && said.detail) || localize("ai-runs.index.it_could_not_be_counted", "it could not be counted")) }) };
     }
+    return null;
+  }
+
+  /** R72, R88, R104 (T53; BR2, BR22, BR29): THE FIELDS OF A CONVERSATION'S LABEL, as `agent-model` composes it (its R26)
+   *  with the AI's display name (R104). */
+  static LABEL_FIELDS = Object.freeze(["display_name", "provider", "host", "model_version", "effort", "account_level", "owner"]);
+  /** R88: an effort is a lowercase word of at most this many letters (ai-catalogue's `EFFORT_WORD_MAX`), or null. */
+  static EFFORT_WORD_MAX = EFFORT_WORD_MAX;
+
+  /** R72, R88, R104 (T53): what is wrong with one `usage` entry, as a sentence, or null when it is well formed:
+   *  `{mode, entry_id, label, usage, calls}`, `calls` a positive integer or null; `label` holding every field of the
+   *  label, its `effort` a lowercase word or null, and its `display_name` the one `ai-catalogue` gives `entry_id`. */
+  #entryFault(e) {
+    if (!e || typeof e !== "object" || Array.isArray(e))
+      return localize("ai-runs.index.usage_entry_shape", "the entry is not an object {mode, entry_id, label, usage, calls}.");
+    if (typeof e.mode !== "string" || e.mode.trim() === "")
+      return localize("ai-runs.index.usage_entry_no_mode", "the entry names no mode.");
+    if (typeof e.entry_id !== "string" || e.entry_id.trim() === "")
+      return localize("ai-runs.index.usage_entry_no_entry", "the entry names no AI it was served by (entry_id).");
+    if (!(e.calls === null || (Number.isSafeInteger(e.calls) && e.calls > 0)))
+      return localize("ai-runs.index.usage_entry_calls", "its calls are not a whole number of one or more, or null.");
+    if (!e.usage || typeof e.usage !== "object" || Array.isArray(e.usage))
+      return localize("ai-runs.index.usage_entry_no_usage", "the entry carries no usage record.");
+    const l = e.label;
+    if (!l || typeof l !== "object" || Array.isArray(l))
+      return localize("ai-runs.index.usage_entry_no_label", "the entry carries no label.");
+    const missing = AiRuns.LABEL_FIELDS.filter((f) => !Object.prototype.hasOwnProperty.call(l, f));
+    if (missing.length)
+      return localize("ai-runs.index.usage_label_lacks", "its label lacks {fields}.", { fields: missing.join(", ") });
+    if (!(l.effort === null || (typeof l.effort === "string" && new RegExp(`^[a-z]{1,${AiRuns.EFFORT_WORD_MAX}}$`).test(l.effort))))
+      return localize("ai-runs.index.usage_label_effort", "its label's effort is not a lowercase word.");
+    let named = null;
+    try { const c = aiCatalogueOf(this.ctx).entryOf(e.entry_id); named = c && typeof c.display_name === "string" ? c.display_name : null; }
+    catch { named = null; }
+    if (typeof l.display_name !== "string" || l.display_name === "" || named === null || l.display_name !== named)
+      return localize("ai-runs.index.usage_label_display_name", "its label does not name the AI as the catalogue names its entry.");
     return null;
   }
 

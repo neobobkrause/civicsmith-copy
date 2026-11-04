@@ -216,7 +216,7 @@ test("R24: the log — absent or invisible found false with no entries; entries 
   assert.deepEqual([l.found, l.status, l.limit, l.truncated], [true, "finished", 200, false]);
   assert.deepEqual(l.entries.map((e) => e.seq), [1, 2, 3]);
   assert.deepEqual(Object.keys(l.entries[0]), ["seq", "at", "level", "subject", "state", "governed", "condition", "bound", "terminal", "detail",
-    "result_kind", "result_ref", "coverage"]);
+    "result_kind", "result_ref", "coverage", "read", "disagree"]);
   assert.deepEqual(l.entries.map((e) => [e.state, e.terminal, e.governed]), [["LOOKED_ABSENT", false, false], ["PRESENT", false, false], ["PRESENT", true, false]]);
   assert.deepEqual([l.entries[2].result_kind, l.entries[2].result_ref], ["observation", "2"], "the rollup points at entry 2 in this answer");
   assert.equal(l.entries[1].result_ref, CAP);
