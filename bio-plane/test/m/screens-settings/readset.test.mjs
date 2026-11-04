@@ -15,7 +15,6 @@ const cases = [
   ["R27 R78", "updates", "full"],
   ["R3 R78", "account", "full", "whoami"],
   ["R18 R78", "group", "full", "groupidentity"],
-  ["R48 R78", "teamai", "full", "groupkeystate"],
   ["R1", "members", "full"],
   ["R19", "places", "full"],
   ["R17", "settings", "full"],

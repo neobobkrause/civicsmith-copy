@@ -103,12 +103,11 @@ export function sized(w, bytes) {
   return w;
 }
 
-/** The team's own key, held and switched on, by the real acts (the password asked again first, as an administrator's page does): the
+/** The team's own account, held (T53, R95: by `aiaccountadd`, the alpha's group key retired), by the real acts (the password asked again first, as an administrator's page does): the
  *  assistant is then reachable. The world holds `ACCOUNT_SEAL_SECRET` (`team({ env: { ACCOUNT_SEAL_SECRET: SEAL } })`). */
 export async function holdKey(as, w, key = "sk-ant-api03-SENTINELKEY") {
   await as.act("reauth", { body: { password: w.password } });
-  await as.act("groupkeyset", { body: { key } });
-  await as.act("groupkeyswitch", { body: { on: true } });
+  await as.act("aiaccountadd", { body: { owner: "group", provider: "anthropic", plan: "api-team", means: "sealed", secret: key } });
   return key;
 }
 

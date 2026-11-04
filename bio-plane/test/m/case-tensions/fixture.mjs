@@ -232,11 +232,13 @@ export function infoMd(id, words = "first") {
 /** A `bio-case-document/6` case document, with the fields this module reads: `roles` ([{target, version_sha, role?}]),
  *  `findings` (else the roles' targets), `attributions` (a run is written only when given: [{observation, level,
  *  shown, chosen_at_edition}]), `tensions` (`case_tensions` rows, written when given), `sources` (case-grammar R1's
- *  rows), `materials`, `attestations` (its R12 rows), through case-grammar's own line builders. */
+ *  rows), `materials`, `attestations` (its R12 rows), through case-grammar's own line builders; `format` (`/6` unless
+ *  given) is the format it declares. */
 export function caseDoc(caseId, edition, { project = "PROJ-1", roles = [], findings = null, attributions = null,
-                                           tensions = null, sources = null, materials = [], attestations = [] } = {}) {
+                                           tensions = null, sources = null, materials = [], attestations = [],
+                                           format = "bio-case-document/6" } = {}) {
   const scalar = (v) => (v === null || v === undefined ? "null" : typeof v === "string" ? `"${v}"` : String(v));
-  const fm = ["---", "format: bio-case-document/6", `case_id: ${caseId}`, `case_edition: ${edition}`, `case_project: ${project}`,
+  const fm = ["---", `format: ${format}`, `case_id: ${caseId}`, `case_edition: ${edition}`, `case_project: ${project}`,
     "case_roles:", ...roles.flatMap((r) => [`  - target: ${r.target}`, `    version_sha: ${r.version_sha}`,
       `    role: ${r.role ?? "load_bearing"}`]),
     "case_findings:", ...(findings ?? roles.map((r) => r.target)).map((f) => `  - ${f}`),

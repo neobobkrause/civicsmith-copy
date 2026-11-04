@@ -50,13 +50,11 @@ async function check(id, { t, who, subject, table = {}, screens }, what, extra) 
   return o;
 }
 
-/* Each screen as a member finds it, and some states a team gets into: an account whose infolevel is not answered, the assistant kept away, a member
-   not yet told what connecting means, a copy with no sign-in part, a part that is unknown, a sign-in Anthropic has refused, a member who sees security. */
+/* Each screen as a member finds it, and some states a team gets into: an account whose infolevel is not answered, a member who sees security
+   (T53: `connect`'s states are gone with it, R95). */
 const RUNS_ALL = [
   ...RUNS,
-  ["account", { team: "connect-none", who: "dev", table: (t) => REFUSED("infolevel", "UNKNOWN_OP") }],
-  ["connect", { team: "connect-keptaway", who: "dev" }], ["connect", { team: "connect-undisclosed", who: "dev" }],
-  ["connect", { team: "connect-nosignin", who: "dev" }], ["connect", { team: "connect-unknownpart", who: "dev" }], ["connect", { team: "connect-expired", who: "dev" }],
+  ["account", { team: "full", who: "dev", table: (t) => REFUSED("infolevel", "UNKNOWN_OP") }],
   ["security", { team: "security", who: "dev" }],
 ];
 

@@ -131,7 +131,6 @@ test("R14 C87 (c) (interface-shell R119): the other reasoned acts with a require
     ["members", "websitekeycreate", { "mw-cap": "" }],
     ["group", "groupnameset", { "gr-name": " " }],
     ["group", "hostingaccessset", { "gr-holders": "" }],
-    ["teamai", "groupkeyset", {}],
   ];
   for (const [screen, op, values] of cases) {
     const o = await open(screen, { world: t.w, as: t.founder });

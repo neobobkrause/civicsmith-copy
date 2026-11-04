@@ -501,7 +501,9 @@ export class CaseTensions {
     const rows = this.attributionStatements(doc.case_id, Number(doc.edition), String(fm.case_project ?? "").trim(),
                                             this.#attributedReachedBy(doc.text));
     return this.#splice({ caseId: doc.case_id, edition: Number(doc.edition), docSha: doc.doc_sha, section: "attribution",
-      lines: { frontmatter: attributionFrontmatterLines(rows), body: attributionBodyLines(rows) } });
+      /* case-grammar R33, R35 (notice case-grammar:202): the body is spelled in the words of the document's own format,
+         so a `/7` draft prepared before the format in force moved keeps its `group` words; `/8` and later say `team`. */
+      lines: { frontmatter: attributionFrontmatterLines(rows), body: attributionBodyLines(rows, fm.format) } });
   }
 
   /* publication R21's splice through the provider, its answer without `ok`; a splice that cannot be made says so. */
