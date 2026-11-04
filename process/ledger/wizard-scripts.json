@@ -40,8 +40,7 @@
   ],
   "prior_work": "First, consolidate build/requirements/wizard-scripts.md (73462 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/wizard-scripts.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/wizard-scripts.md is unchanged by the move (compare against the ids at the start commit). Then do the provider-notice work this START lists: for each notice, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal (new module ids, build/modules.json rows, build/layers.md). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-04T14:19:53Z",
-    "reason": "reopened: PR 253 dropped scanmirror and officeconfirm from ADMIN_ACTS on the claim that OPS does not hold them, but both are owner-declared ops (file-safety/index.mjs:2588, entities/index.mjs:2516), each an administrator's act (file-safety R49, entities R64); interface-shell/index.mjs:305 builds the page's admin-only gate from ADMIN_ACTS, so a member who does not administer is now offered them. Put scanmirror and officeconfirm back in ADMIN_ACTS, keep the three retired groupkey acts out, and make the F1 test check names against the ops the assembled registration declares (owner OPS included), failing if either of the two is missing"
+    "state": "COMPLETE",
+    "at": "2026-11-04T14:28:30Z"
   }
 }
