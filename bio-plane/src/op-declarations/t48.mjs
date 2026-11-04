@@ -61,23 +61,33 @@ const T48_FAMILIES = Object.freeze([
      `reason` of the withdrawal) the body's. */
   Object.freeze({ owner: "connections", cite: "connections R68; R67; N1043", actor: QUERY("member"), ops: Object.freeze({
     stepsource: "member", stepsourcewithdraw: "member" }) }),
-  /* ai-accounts (R68; N996, K3101; `extraction/credentials-split.md` §2, doubt 4): the 24 ops whose routes moved from
-     `credentials`, with the kinds and stamps they had there: a member's own account reference (setting and clearing it,
-     reading it), the group's API key (an administrator's acts, a session's state and notice), a member's own
-     subscription disconnected, the keep-away (an administrator's act, every active member's state), the one switch act
-     `accountusesset` with the uses and history it reads, and a project's account (an owner's own acts, the state, the
-     notice and the keep-away, `projectkeyset`'s key the body's only). `aigrantmint` stays `credentials`'. */
-  Object.freeze({ owner: "ai-accounts", cite: "ai-accounts R1–R33; R68; credentials R20, R22–R27, R33, R36, R41; K1544, K1755, K2373, K2435",
+  /* ai-accounts (R68; N996, K3101; `extraction/credentials-split.md` §2, doubt 4), restated for T53 (ai-accounts R35, BOB
+     4 Nov): ai-accounts R35 retires the old door ops (the member's own account reference, the group's API key, the
+     subscription's disconnection, a project's key and sign-in, and their states and notices) with no aliases, so they
+     are declared nowhere; their place is ai-accounts' current map (`aiAccountsOps`). Kept from T48: the keep-away (an
+     administrator's act, every active member's state; a project's, its owner's), the one switch act `accountusesset`
+     with the uses and history it reads. New in T53: an account's state and an owner's accounts (ai-accounts R2), the
+     checks (R52, R53), the offered AIs (R46) and the personal choice (R47), each a read by its owners, `viewer` the
+     query's; and the three plane ops the agent Worker sends (R65–R67: `aicredential` a read stamped `by` alone, `aigatewayserved` and
+     `aicredentialfailed` acts that record), any credential's at admission, the owner refusing every principal but the
+     Worker's (AI_CREDENTIAL_NOT_SERVED), `by` the query's. The acts the screens send (`aiaccountadd` and the rest, R61,
+     R71) are ai-accounts' own `DECLARED_OPS`, and named here too, so the family stamps their `by`. `aigrantmint` stays
+     `credentials`'. */
+  Object.freeze({ owner: "ai-accounts", cite: "ai-accounts R2, R14–R17, R20–R22, R35, R46, R47, R52, R53, R65–R67; R20, R24, R30, R41; R68; K1544, K1755, K2373, K2435",
     actor: QUERY("by"),
-    extra: Object.freeze({ accountreferenceset: Object.freeze(["member"]), accountreferenceremove: Object.freeze(["member"]),
-                           accountreference: Object.freeze(["member"]) }), ops: Object.freeze({
-    accountreferenceset: "own", accountreferenceremove: "own", accountreference: "ownread",
-    groupkeyset: "admin", groupkeyremove: "admin", groupkeyswitch: "admin",
-    groupkeystate: "ownread", groupkeynotice: "ownread", groupkeynoticeseen: "own",
-    subscriptiondisconnect: "own", aikeepaway: "admin", aikeepawaystate: "settingread",
-    projectkeyset: "own", projectsigninset: "own", projectaccountremove: "own", projectaccountswitch: "own",
-    projectaccountstate: "ownread", projectkeynotice: "ownread", projectkeynoticeseen: "own", projectaikeepaway: "own",
-    projectaikeepawaystate: "ownread", accountusesset: "own", accountuses: "ownread", accounthistory: "ownread" }) }),
+    extra: Object.freeze({ aicredential: Object.freeze(["by"]) }), ops: Object.freeze({
+    aikeepaway: "admin", aikeepawaystate: "settingread",
+    projectaikeepaway: "own", projectaikeepawaystate: "ownread",
+    accountusesset: "own", accountuses: "ownread", accounthistory: "ownread",
+    accountstate: "ownread", accountsof: "ownread", aichecks: "ownread", aioffered: "ownread", personalchoice: "ownread",
+    aicredential: "settingread", aigatewayserved: "tally", aicredentialfailed: "tally",
+    /* the acts the screens send (R61, R71), each a session's own act as ai-accounts declares it, named here so the
+       family stamps the `by` each arm reads from the query (a declaration with no `stamps` is stamped the viewer alone) */
+    aiaccountadd: "own", aiownadd: "own", aiaccountremove: "own", aiaccountswitch: "own", aiorderset: "own",
+    aiprojectorder: "own", aimemberallow: "own", aiprojectuse: "own", aimineuse: "own", aicheckset: "own",
+    aiprojectcheckset: "own", aimycheckset: "own", aikeyenter: "own", aikeycloudflare: "own", aikeyseal: "own",
+    aitermsaccept: "own", aitermswithdraw: "own", aipersonalchoose: "own", aicreditsclear: "own", aioptinset: "own",
+    aisend: "own" }) }),
 ]);
 
 export { T48_SHARES, T48_FAMILIES };
