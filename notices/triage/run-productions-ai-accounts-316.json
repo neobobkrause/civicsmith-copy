@@ -1,0 +1,1 @@
+{"row":"triage","user":"run-productions","verdict":"not affected","evidence":"bio-plane/src/run-productions/index.mjs:1053 uses only aiKeepAwayState() and projectsKeptAway (:1057); never calls subscriptionTokenHold, accountSet or accountSwitch","at":"2026-11-04T22:13:10.778Z","key":"ai-accounts:316","worker":"read-only-explore-x8","cost":"1.20"}

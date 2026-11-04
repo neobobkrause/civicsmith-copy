@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-specs-late","verdict":"not affected","evidence":"build/modules.json:171 gives it \"paths\": [], so no file imports ai-accounts or calls subscriptionTokenHold","at":"2026-11-04T22:13:10.778Z","key":"ai-accounts:316","worker":"read-only-explore-x8","cost":"1.20"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"question-explorer","by":"triage","evidence":"bio-plane/src/question-explorer/index.mjs:368 uses only accountUsesOf({owner}) and aiKeptAway (:710); never calls subscriptionTokenHold, accountSet or accountSwitch, never reads the recorded by","at":"2026-11-04T22:13:10.778Z","key":"ai-accounts:316","worker":"read-only-explore-x8","cost":"1.20"}

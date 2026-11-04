@@ -1,0 +1,1 @@
+{"row":"answered","user":"wizard-scripts","by":"triage","evidence":"bio-plane/src/wizard-scripts/index.mjs:411 its only use of ai-accounts is aiKeptAway({use: KEEP_AWAY_USE}) (and KEPT_AWAY_UNREADABLE, :36), never subscriptionTokenHold/accountSet/accountSwitch","at":"2026-11-04T22:13:10.778Z","key":"ai-accounts:316","worker":"read-only-explore-x8","cost":"1.20"}

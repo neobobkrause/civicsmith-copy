@@ -1,0 +1,1 @@
+{"row":"triage","user":"translations","verdict":"not affected","evidence":"bio-plane/src/translations/index.mjs:170 its only use of ai-accounts is aiKeptAway() (limits.mjs:95), never subscriptionTokenHold/accountSet/accountSwitch or the by they record","at":"2026-11-04T22:13:10.778Z","key":"ai-accounts:316","worker":"read-only-explore-x8","cost":"1.20"}
