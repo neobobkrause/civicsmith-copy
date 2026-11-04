@@ -2,6 +2,7 @@
    door's arm admits only a member's own session or a presented grant's member and asks the `bio` object; there the
    member's grant is minted at their act, their own account unsealed for this ask, their suggestions switch read, and
    the question posted to agent-worker's `/ask`, whose answer comes back unchanged. Driven on the assembled store. */
+import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
 import { test } from "node:test";
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
@@ -43,7 +44,7 @@ async function world({ account = true, worker = true } = {}) {
            createHash("sha256").update(SESSION).digest("hex"), Date.now() + 3600e3);
   if (account) {
     await disclosed(x.ctx);   /* R35 (T47): the disclosure first, as the assembled store asks */
-    const r = await credentialsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" });
+    const r = await aiAccountsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" });
     assert.equal(r.ok, true, JSON.stringify(r));
   }
   return { ...x, asks };
@@ -185,7 +186,7 @@ test("B5 (K1685; answers R1, R2): a read under an ask's grant reaching this obje
 
 test("K1806, R49 (agent-worker R6, R54; credentials R35; K1755; T46: N897 (3)): a member with no account of their own is served by the group's API key while it is held and on, carried as level `group` with the group key's own suggestions switch; with it off, or its notice unread, nothing is asked", async () => {
   const x = await world({ account: false });
-  const c = credentialsOf(x.ctx);
+  const c = aiAccountsOf(x.ctx);
   const set = await c.groupKeySet({ key: "sk-ant-zz-group", by: "ada" });
   assert.equal(set.ok, true, JSON.stringify(set));
   /* held but off (off by default): no account serves ann, so nothing is minted and nothing asked */
@@ -194,7 +195,7 @@ test("K1806, R49 (agent-worker R6, R54; credentials R35; K1755; T46: N897 (3)): 
   assert.equal((await c.groupKeySwitch({ on: true, by: "ada" })).ok, true);
   /* on, but ann has not read the notice that her questions go to Anthropic under the group's account (credentials R36) */
   const due = await x.s.ask({ member: "member:ann", session: SESSION, question: "q" });
-  assert.match(JSON.stringify(await due.json()), /GROUP_KEY_NOTICE_DUE/);
+  assert.match(JSON.stringify(await due.json()), /RECIPIENT_NOTICE_DUE/);   /* ai-accounts T53 (its R51): the notice is the recipient's */
   assert.equal(x.asks.length, 0, "nothing reached agent-worker");
   assert.equal((await c.groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" })).ok, true);
   assert.equal((await c.accountUsesSet({ owner: "group", switch: "suggestions", on: true, by: "ada" })).ok, true);
@@ -291,7 +292,7 @@ test("R49 (T37; K2238; agent-worker R68, run-rules R22): a translation draft car
 
 test("R49 (N686; credentials R35, R37): a member with no account of their own is served by the group's key, carried as level `group` with the group's suggestions switch", async () => {
   const x = await world({ account: false });
-  const c = credentialsOf(x.ctx);
+  const c = aiAccountsOf(x.ctx);
   assert.equal((await c.groupKeySet({ key: "sk-ant-zz-group", by: "ada" })).ok, true);
   assert.equal((await c.groupKeySwitch({ on: true, by: "ada" })).ok, true);
   assert.equal((await c.groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" })).ok, true);
