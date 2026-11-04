@@ -227,3 +227,4 @@
 {"at":"2026-11-04T17:27:56Z","row":"outcome","n":116,"outcome":"delivered"}
 {"at":"2026-11-04T17:36:57Z","row":"sent","n":117,"to":"job-screens-daily","text":"bob-117: gate red: receipt disagrees + control-plane dependant; investigate locally; on BOB's word after the revert pin, job sync and rerun job complete."}
 {"at":"2026-11-04T17:37:00Z","row":"outcome","n":117,"outcome":"delivered"}
+{"at":"2026-11-04T17:42:35Z","row":"sent","n":118,"to":"job-case-checker","text":"bob-118: program.mjs built where needed, not committed (PR 294); after it merges: job sync, git rm --cached program.mjs, test from fresh build, job complete; wait for BOB's word."}
