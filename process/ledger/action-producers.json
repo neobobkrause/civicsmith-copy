@@ -45,7 +45,7 @@
   ],
   "prior_work": "Provider notice action-clocks:60, judged affected by a read-only triage: bio-plane/src/action-producers/index.mjs:979 #obligationsLocalFactDue reads `calendarFactsRead(...).paths` and builds local-fact-due obligations from `p.path`/`p.actions` (lines 981-990). action-clocks R27-R29 (PR 60) now put a `layer` on each path and list past-end deadlines as due to be confirmed. Decide, from your own requirements, what this module must do with them: adapt the code or confirm it already meets them, and add a test that loads a calendar read with layered paths and asserts what your requirements say; if they say nothing that decides it, name the gap in your receipt's not-verified list instead of inventing a rule. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-04T02:47:00Z"
+    "state": "WORKING",
+    "at": "2026-11-04T02:47:58Z"
   }
 }
