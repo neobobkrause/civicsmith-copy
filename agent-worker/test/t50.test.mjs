@@ -12,7 +12,6 @@ import { MEMBER } from "./account.mjs";
 import { meaningRowsUnknownArm } from "../../bio-plane/test/m/retrieval/fixtures.mjs";
 import { word } from "../../bio-plane/src/setup-words/index.mjs";
 import { REPORTING_LEVEL, LEVELS } from "../../agent-harness/src/harness.mjs";
-import { MODEL_FOR_MODE, EFFORT_DEFAULT, EFFORT_SUBSESSION, SUBSESSION_MODEL } from "../../agent-model/src/model.mjs";
 import { discoverMembers, buildMember } from "../../bio-plane/scripts/fleet-bundle.mjs";
 
 /* retrieval's real refusal of a meaning read it will not make (its published fixture). */
@@ -307,26 +306,25 @@ section("R110, R111 · the member's check record is kept in this member's own st
 
 /* ================================================================================================ R112 */
 
-section("R112 · a usage entry carries the model and effort requested, and the figures as the end states them");
+section("R112 · a usage entry is {mode, entry_id, label, usage, calls} as the end states them");
 {
+  /* T53 (BR22; R112 as amended): the entry names the catalogue entry and its label `agent-model` answered, never a model
+     or effort filled in here; a remote end that states none of them passes null, never invented. */
   const usageOf = (r) => r.plane.filter((c) => c.op === "airuntick").flatMap((c) => c.body?.usage || []);
   const stated = await drive("run", RUN, { remoteCfg: { usage: { input_tokens: 7, output_tokens: 3 }, numTurns: 2 } });
   const unstated = await drive("run", RUN);
-  const subs = (u) => u.filter((e) => e.model === SUBSESSION_MODEL);
-  const coord = (u) => u.filter((e) => e.model !== SUBSESSION_MODEL);
-  t("R112: a sign-in run's coordinating entries name the mode's model and the default effort; sub-sessions' the sub-session model and its effort",
-    [coord(usageOf(unstated)).length > 0, subs(usageOf(unstated)).length > 0,
-     [...new Set(coord(usageOf(unstated)).map((e) => `${e.model}/${e.effort}`))], [...new Set(subs(usageOf(unstated)).map((e) => `${e.model}/${e.effort}`))]],
-    [true, true, [`${MODEL_FOR_MODE.check}/${EFFORT_DEFAULT}`], [`${SUBSESSION_MODEL}/${EFFORT_SUBSESSION}`]]);
+  t("R112 (T53): every entry carries exactly mode, entry_id, label, usage, calls",
+    [usageOf(unstated).length > 0, [...new Set(usageOf(unstated).map((e) => Object.keys(e).join(",")))]],
+    [true, ["mode,entry_id,label,usage,calls"]]);
+  t("R112 (T53): no entry names a model or an effort, and an entry_id or label the end did not state is null, never invented",
+    usageOf(unstated).every((e) => !("model" in e) && !("effort" in e) && e.entry_id === null && e.label === null), true);
   t("R112: a remote end that states no usage and no turns passes null figures to the tick (never 0, never invented)",
     usageOf(unstated).every((e) => e.calls === null && Object.values(e.usage).every((v) => v === null)), true);
   t("R112: a remote end that states them passes them as stated",
     [usageOf(stated).every((e) => e.calls === 2), usageOf(stated).every((e) => e.usage.input_tokens === 7 && e.usage.output_tokens === 3)], [true, true]);
-  t("R112: every entry carries exactly mode, model, effort, usage, calls",
-    [...new Set(usageOf(unstated).map((e) => Object.keys(e).join(",")))], ["mode,model,effort,usage,calls"]);
   const api = await drive("run", { ...RUN, account: APIKEY }, { noRemote: true });
-  t("R112 (control): an apikey run's entries carry the effort too, with the figures the API stated",
-    [usageOf(api).length > 0, usageOf(api).every((e) => typeof e.effort === "string" && e.usage.input_tokens === 3)], [true, true]);
+  t("R112 (control): an apikey run's entries have the same shape, with the figures the API stated",
+    [usageOf(api).length > 0, usageOf(api).every((e) => Object.keys(e).join(",") === "mode,entry_id,label,usage,calls" && e.usage.input_tokens === 3)], [true, true]);
 }
 
 /* ================================================================================================ R113 */
