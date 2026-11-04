@@ -1,0 +1,1 @@
+{"at":"2026-11-04T15:26:09Z","module":"file-safety","row":"attempt","event":"start","role":"job","attempt":1,"reading_bytes":75235,"start_bytes":4609,"tool":"2c27f856a1a2418e4775109c222f0ffbde8e8278","over_cap":"the job's first step consolidates the requirements file under the cap (its ledger prior_work), as earlier consolidation jobs did"}
