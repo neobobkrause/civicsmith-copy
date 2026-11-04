@@ -18,7 +18,8 @@ const START_UNMET = Object.fromEntries(("R9 R10 R40 R12 R18 R19 R28 R52 R72 R75 
   "R95 R96 R97 R98 R99 R100 R101 R102 R103 R104 R105 R106 R107 R54 R90").split(" ").map((id) => [id, "T53"]));
 /* The marks this module's jobs have struck since the start commit (T53: ai-runs' T53 job), each removed from the unmet
    set the file must hold. */
-const STRUCK = "R9 R10 R12 R18 R19 R28 R78 R72 R88 R99 R100 R54 R76".split(" ");
+const STRUCK = ("R9 R10 R12 R18 R19 R28 R78 R72 R88 R99 R100 R54 R76 " +
+  "R52 R83 R84 R90 R91 R92 R93 R94 R95 R96 R97 R98 R101 R102 R103 R104 R105 R107").split(" ");
 const START_RETIRED = "R1 R2 R3 R4 R5 R6 R7 R8 R44 R48 R49 R50 R51 R79 R80".split(" ");
 
 const read = () => readFileSync(FILE, "utf8");

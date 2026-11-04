@@ -153,8 +153,9 @@ export class AiRuns {
       { name: "ai_run_looks", keys: [], ...cls, sight: "group" },
       { name: "ai_test_bar", keys: [], ...cls, sight: "group" },
       { name: "ai_group_tests", keys: [], ...cls, sight: "group" },
-      /* R91 (T53): a run's segments, purged with the run as R38's tables are */
-      { name: "ai_run_segments", keys: [], ...cls, sight: "bundle" }]);
+      /* R91 (T53): a run's segments, purged with the run as R38's tables are; R107: who produced an entry's result */
+      { name: "ai_run_segments", keys: [], ...cls, sight: "bundle" },
+      { name: "ai_run_producers", keys: [], ...cls, sight: "bundle" }]);
     /* R36: observation-log's `run` resolver (a run's log rows are visible to whoever may read the run) and
        retrieval's hidden-run tail (R42's `hiddenRuns`) and `surfaced_in` decoration; R30: the runs as bias's work
        products. */
@@ -1700,11 +1701,23 @@ export class AiRuns {
         this.#segmentUsage(run, calls);
       }
       for (const e of Array.isArray(log) ? log : []) {
+        /* R107 (T53): who produced the entry's result, checked as a usage label is; a malformed one refuses the entry alone */
+        const producers = e && typeof e === "object" && e.produced_by != null ? this.#producedBy(run, e.produced_by, calls) : null;
+        if (producers && producers.refusal) { refused.push(producers.refusal); continue; }
         /* `row.principal_ai` is the run's machine identity and this method
            already holds the row — see #aiRunAppend's note on why it is passed
            rather than looked up. */
         const bad = this.#aiRunAppend(run, e, now, 0, row.principal_ai || null, row.step || null);
-        if (bad) refused.push(bad); else appended += 1;
+        if (bad) refused.push(bad);
+        else {
+          appended += 1;
+          if (producers) {
+            const at = this.#one(`SELECT MAX(seq) seq FROM observation_log WHERE authority_kind = ? AND authority = ?`,
+              row.step ? "step" : "run", String(row.step || run));
+            if (at && at.seq != null)
+              this.sql.exec(`INSERT OR REPLACE INTO ai_run_producers (seq, run, produced_by) VALUES (?, ?, ?)`, at.seq, run, JSON.stringify(producers.list));
+          }
+        }
       }
       /* R84: the segment's end, at level `meaning`, after the entries the segment sent with it */
       if (seg) {
@@ -3184,7 +3197,8 @@ export class AiRuns {
        a single answer. */
     const page = this.#rows(
       `SELECT seq, at, level, subject, state, governed, condition, bound, terminal, detail,
-              result_kind, result_ref, read, disagree
+              result_kind, result_ref, read, disagree,
+              (SELECT p.produced_by FROM ai_run_producers p WHERE p.seq = observation_log.seq) AS produced_by
        FROM observation_log WHERE ${AiRuns.#ownRows()}
        ORDER BY seq LIMIT ?`, run, run, cap + 1);
     /* REC-100 / IC-130 — A ROLLUP'S `observation` REFERENT IS RE-EXPRESSED IN
@@ -3200,7 +3214,7 @@ export class AiRuns {
        dropping one, and is unreachable while that check stands. */
     const ordinal = new Map(page.slice(0, cap).map((e, i) => [String(e.seq), i + 1]));
     const entries = page.slice(0, cap)
-      .map(({ read: storedRead, disagree: storedDisagree, ...e }, i) => ({ ...e, seq: i + 1, governed: e.governed === 1, terminal: e.terminal === 1,
+      .map(({ read: storedRead, disagree: storedDisagree, produced_by: storedBy, ...e }, i) => ({ ...e, seq: i + 1, governed: e.governed === 1, terminal: e.terminal === 1,
                         /* NULL IS NORMALISED TO `null` RATHER THAN LEFT AS `undefined`:
                            a key that serialises away is the absence-with-two-causes this
                            whole item is about, one layer down. */
@@ -3212,7 +3226,9 @@ export class AiRuns {
                         /* R100 (T53; N1219): the entry's `read` and `disagree` as stored, null when it has none; a screen
                            draws from these and parses no `detail` */
                         read: storedRead == null ? null : safeJson(String(storedRead)),
-                        disagree: storedDisagree == null ? null : safeJson(String(storedDisagree)) }));
+                        disagree: storedDisagree == null ? null : safeJson(String(storedDisagree)),
+                        /* R107 (T53): who produced the entry's result, as stored; null when it has none */
+                        produced_by: storedBy == null ? null : safeJson(String(storedBy)) }));
     return { run, found: true, status: row.status, entries,
              limit: cap, truncated: page.length > cap,
              stopped: row.stopped_bound
@@ -3364,6 +3380,42 @@ export class AiRuns {
   /** R88: an effort is a lowercase word of at most this many letters (ai-catalogue's `EFFORT_WORD_MAX`), or null. */
   static EFFORT_WORD_MAX = EFFORT_WORD_MAX;
 
+  /** R107 (T53; AIR25, BR29; agent-steps R56): a log entry's `produced_by`, the labels of the conversations that produced
+   *  its result, deduplicated in order, each checked as R72 and R104 check a usage label, its display name the catalogue's
+   *  for an entry the run was served on or used (its open segment's, or this tick's usage); `{list}` or `{refusal}`
+   *  (`AI_RUN_CONSUME_INVALID`). Never composed here; copied unchanged. */
+  #producedBy(run, given, calls) {
+    const bad = (detail) => ({ refusal: this.#refuse("AI_RUN_CONSUME_INVALID", detail) });
+    if (!Array.isArray(given) || given.length === 0)
+      return bad(localize("ai-runs.index.produced_by_list", "produced_by is a list of the labels of the conversations that produced the result."));
+    const seg = this.#lastSegment(run);
+    const ids = new Set([...(seg ? [seg.entry_id, ...(safeJson(seg.entries_used) || [])] : []), ...(calls || []).map((c) => c && c.entry_id)].filter(Boolean));
+    const names = new Set();
+    for (const id of ids) { try { const c = aiCatalogueOf(this.ctx).entryOf(id); if (c && c.display_name) names.add(c.display_name); } catch { /* none */ } }
+    const list = [];
+    for (const l of given) {
+      const fault = this.#labelFault(l, names);
+      if (fault) return bad(fault);
+      if (!list.some((x) => JSON.stringify(x) === JSON.stringify(l))) list.push(l);
+    }
+    return { list };
+  }
+
+  /** R72, R88, R104, R107: what is wrong with a label, or null: every field of the label, its effort a lowercase word or
+   *  null, and its display name one of `names` (the catalogue's for the entries in question). */
+  #labelFault(l, names) {
+    if (!l || typeof l !== "object" || Array.isArray(l))
+      return localize("ai-runs.index.usage_entry_no_label", "the entry carries no label.");
+    const missing = AiRuns.LABEL_FIELDS.filter((f) => !Object.prototype.hasOwnProperty.call(l, f));
+    if (missing.length)
+      return localize("ai-runs.index.usage_label_lacks", "its label lacks {fields}.", { fields: missing.join(", ") });
+    if (!(l.effort === null || (typeof l.effort === "string" && new RegExp(`^[a-z]{1,${AiRuns.EFFORT_WORD_MAX}}$`).test(l.effort))))
+      return localize("ai-runs.index.usage_label_effort", "its label's effort is not a lowercase word.");
+    if (typeof l.display_name !== "string" || l.display_name === "" || !names.has(l.display_name))
+      return localize("ai-runs.index.usage_label_display_name", "its label does not name the AI as the catalogue names its entry.");
+    return null;
+  }
+
   /** R72, R88, R104 (T53): what is wrong with one `usage` entry, as a sentence, or null when it is well formed:
    *  `{mode, entry_id, label, usage, calls}`, `calls` a positive integer or null; `label` holding every field of the
    *  label, its `effort` a lowercase word or null, and its `display_name` the one `ai-catalogue` gives `entry_id`. */
@@ -3378,19 +3430,11 @@ export class AiRuns {
       return localize("ai-runs.index.usage_entry_calls", "its calls are not a whole number of one or more, or null.");
     if (!e.usage || typeof e.usage !== "object" || Array.isArray(e.usage))
       return localize("ai-runs.index.usage_entry_no_usage", "the entry carries no usage record.");
-    const l = e.label;
-    if (!l || typeof l !== "object" || Array.isArray(l))
-      return localize("ai-runs.index.usage_entry_no_label", "the entry carries no label.");
-    const missing = AiRuns.LABEL_FIELDS.filter((f) => !Object.prototype.hasOwnProperty.call(l, f));
-    if (missing.length)
-      return localize("ai-runs.index.usage_label_lacks", "its label lacks {fields}.", { fields: missing.join(", ") });
-    if (!(l.effort === null || (typeof l.effort === "string" && new RegExp(`^[a-z]{1,${AiRuns.EFFORT_WORD_MAX}}$`).test(l.effort))))
-      return localize("ai-runs.index.usage_label_effort", "its label's effort is not a lowercase word.");
     let named = null;
     try { const c = aiCatalogueOf(this.ctx).entryOf(e.entry_id); named = c && typeof c.display_name === "string" ? c.display_name : null; }
     catch { named = null; }
-    if (typeof l.display_name !== "string" || l.display_name === "" || named === null || l.display_name !== named)
-      return localize("ai-runs.index.usage_label_display_name", "its label does not name the AI as the catalogue names its entry.");
+    const fault = this.#labelFault(e.label, new Set(named === null ? [] : [named]));
+    if (fault) return fault;
     return null;
   }
 

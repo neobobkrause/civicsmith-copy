@@ -2,7 +2,7 @@
  * module's extraction (T40-8, K624: the use counter and the ceilings moved to `ai-use`, which declares and migrates them, its R7). `lens_at_open`, `rerun_of` and `plan` (R46) are additive columns of the store's migration; they are part of the
  * table here, and `migrate` adds them to a table created before them. */
 export const AI_RUNS_TABLES = Object.freeze(["ai_runs", "ai_run_bounds", "inquiry_run_surfacings",
-  "ai_mode_verifications", "ai_run_looks", "ai_test_bar", "ai_group_tests", "ai_run_segments"]);
+  "ai_mode_verifications", "ai_run_looks", "ai_test_bar", "ai_group_tests", "ai_run_segments", "ai_run_producers"]);
 /* T41 (T41-23): `step` and `origin` (R73), and `own_step` ('1' when `step` is the run's own system step, made by this
    module after the open, R73, R74) are additive columns, added by `migrate` to a table created before them. A run's
    cost is not kept here: its figures are `ai-use`'s, one store (R76, K2482). */
@@ -187,6 +187,13 @@ CREATE TABLE IF NOT EXISTS ai_run_segments (
   hop_in        TEXT,
   end_refusal   TEXT,
   PRIMARY KEY (run, n)
+);
+-- R107 (T53; AIR25, BR29; agent-steps R56): who produced a log entry's machine result, the deduplicated list of the labels
+-- of the conversations that produced it, keyed by the entry's own seq and stored with it; served by op=airunlog.
+CREATE TABLE IF NOT EXISTS ai_run_producers (
+  seq          INTEGER PRIMARY KEY,
+  run          TEXT NOT NULL,
+  produced_by  TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS ai_mode_verifications (
   mode         TEXT NOT NULL,

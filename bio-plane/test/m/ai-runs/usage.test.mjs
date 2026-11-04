@@ -431,7 +431,7 @@ test("R53: the module's tables are declared explicitly through record-core's dec
   const w = await useWorld();
   const decl = Object.fromEntries(w.record.declaredTables().filter((t) => t.module === "ai-runs").map((t) => [t.name, t]));
   assert.deepEqual(Object.keys(decl).sort(), ["ai_group_tests", "ai_mode_verifications", "ai_run_bounds", "ai_run_looks",
-                                               "ai_run_segments", "ai_runs", "ai_test_bar", "inquiry_run_surfacings"]);
+                                               "ai_run_producers", "ai_run_segments", "ai_runs", "ai_test_bar", "inquiry_run_surfacings"]);
   for (const t of Object.values(decl))
     assert.deepEqual([t.purge, t.expunge, t.export, t.derive, t.version_chain], ["clear", "none", "admin-only", "stored", false], t.name);
   /* T41: R73's step looks and R75's test bar and group test matters, group-wide, as the verifications are */

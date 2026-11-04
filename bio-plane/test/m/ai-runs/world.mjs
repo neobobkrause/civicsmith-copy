@@ -189,9 +189,9 @@ export function world({ env = {}, inquiry = undefined, deployedModes = undefined
     /** A member connects their own account (ai-accounts R1, T53): an account of the catalogue's API plan for members, its
      *  key sealed, switched on, and its recipient's notice read, all by her own acts. `kind` `apikey` is that account;
      *  any other kind is the same account with its key named so (the kinds of the old reference are gone, T53). */
-    async account(id, kind = "apikey", secret = `secret-of-${id}-0123456789`) {
+    async account(id, kind = "apikey", secret = `secret-of-${id}-0123456789`, { entries = undefined } = {}) {
       const r = await aiAccounts.accountSet({ owner: `member:${id}`, provider: PLANS.provider, plan: PLANS.memberApi,
-        means: "sealed", secret: String(secret).padEnd(20, "x"), by: id });
+        means: "sealed", secret: String(secret).padEnd(20, "x"), entries, by: id });
       if (!r.ok) throw new Error(`account ${id}: ${JSON.stringify(r)}`);
       hold(`member:${id}`, r.account_id);
       const on = aiAccounts.accountSwitch({ account_id: r.account_id, on: true, by: id });
