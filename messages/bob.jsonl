@@ -40,3 +40,4 @@
 {"at":"2026-11-04T02:11:01Z","row":"sent","n":23,"to":"root","text":"BOB session_01RAN5empMj9PkapKweHR6dU running on tranche 6ca372f (start check ok); root-15 received. Taking up: merge 60 action-clocks and 64 filings (gate green), 57 bundler when gate ends; then release blocks PR, #66 walk findings, layer 3 close, triages, jobs connections and run-rules."}
 {"at":"2026-11-04T02:11:08Z","row":"outcome","n":23,"outcome":"delivered"}
 {"at":"2026-11-04T02:11:21Z","row":"sent","n":24,"to":"root","text":"Outgoing BOB ready: metrics recorded (bob 39.99 USD; review jurisdictions 1.0 USD estimated), handoff/bob.md written at 14272c5, state forwarded to the new BOB session_01RAN5empMj9PkapKweHR6dU. Merge loops for 60 and 57 finish on their own; PR 66's refusal is with you (A/B). I forward anything that reaches me until archived."}
+{"at":"2026-11-04T02:11:43Z","row":"outcome","n":24,"outcome":"delivered"}
