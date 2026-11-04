@@ -24,7 +24,8 @@
  *       each item answering its `summary_key`, `detail_key` and `fills`; R12 keeps its plain sentence; R20, T47)
  *   R16 explore-ask              FINDING ("Ask"), ai-use.exploreAsksPending     an account's daily Ask, to its owners
  *       ai-limit-reached         FINDING, ai-use.limitsReached                  a limit reached this period, to its owners
- *       project-account-suspended FINDING, ai-accounts.projectAccountsSuspended   a project's sign-in stopped serving (T48, N996 §5)
+ *       (project-account-suspended is retired, T53 (K5571 (2); F1): ai-accounts R13 and its projectAccountsSuspended are
+ *       gone, so nothing reads it; R35's `signin-ended` tells the owners, once its kind and words are held)
  *       (each item's sentence and fills read by key from `words.json`, `words.mjs`; DEC-189 (5), (6); `{date}` by
  *       `date.daymonth|daymonthyear`, `{when}` by `ai.until.*`, DEC-191 (3), DEC-192 (3), (5))
  *   R17 the investigation's items, each told once, keyed by its source's own key (N820; K2418, K2484), each kind's summary
@@ -48,7 +49,7 @@
  *
  * REACHED as `noticeProducersOf(host, deps)` (K1563 (1)): one instance per Durable Object storage. It registers nothing
  * and holds no check row: it refuses nothing. `deps` (each defaults to its module's instance on the same host, reached
- * lazily when first asked): membership, people, moneyChecks, duties, entities (R20's `{office}`, K3144), answers, inquiry, credentials (R12), aiAccounts (R16's suspended sign-ins, T48), following, standards,
+ * lazily when first asked): membership, people, moneyChecks, duties, entities (R20's `{office}`, K3144), answers, inquiry, credentials (R12), following, standards,
  * retrieval (R24's watched items), capture (R27), calculations (R28), fileSafety, provenance, aiUse (R16), steps (with `step`, R17's step work), questionExplorer, investigation, review (R17);
  * and `view`, the jurisdiction view whose time zone R13's to R17's dates are read in (the profile's, when not given; read
  * once a read of `noticeItems`).
@@ -70,7 +71,6 @@ import { entitiesOf } from "../entities/index.mjs";
 import { answersOf } from "../answers/index.mjs";
 import { inquiryOf } from "../inquiry/index.mjs";
 import { credentialsOf, SECURITY_THRESHOLD, SECURITY_DAYS } from "../credentials/index.mjs";
-import { aiAccountsOf } from "../ai-accounts/index.mjs";
 import { followingOf } from "../following/index.mjs";
 import { retrievalOf } from "../retrieval/index.mjs";
 import { standardsOf } from "../standards/index.mjs";
@@ -143,7 +143,6 @@ export const NOTICE_KINDS = Object.freeze({
   /* R16 (queue R1, T40; K2376 (2), K2394) */
   "explore-ask": "FINDING",
   "ai-limit-reached": "FINDING",
-  "project-account-suspended": "FINDING",
   /* R17 (queue R1, T41; K2418, K2484) */
   "question-find": "FINDING",
   "step-later-found": "FINDING",
@@ -256,7 +255,6 @@ export class NoticeProducers {
   get #answers() { return this.#dep("answers", () => answersOf(this.#host)); }
   get #inquiry() { return this.#dep("inquiry", () => inquiryOf(this.#host)); }
   get #credentials() { return this.#dep("credentials", () => credentialsOf(this.#host)); }
-  get #aiAccounts() { return this.#dep("aiAccounts", () => aiAccountsOf(this.#host)); }
   get #retrieval() { return this.#dep("retrieval", () => retrievalOf(this.#host)); }
   get #following() { return this.#dep("following", () => followingOf(this.#host)); }
   get #standards() { return this.#dep("standards", () => standardsOf(this.#host)); }
@@ -298,7 +296,6 @@ export class NoticeProducers {
       security_tool_off: { bound: TOOL_EVENTS_MAX, truncated: false },
       explore_ask: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
       ai_limit: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
-      signin_suspended: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
       question_find: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
       step_later_found: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
       step_due: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
@@ -333,7 +330,6 @@ export class NoticeProducers {
       run("file-safety", () => ({ fact: "security_tool_off", ...this.#toolsOff(me, viewer, at) }));
       run("ai-use", () => ({ fact: "explore_ask", ...this.#exploreAsks(me, viewer, at) }));
       run("ai-use", () => ({ fact: "ai_limit", ...this.#limitsReached(me, viewer, at) }));
-      run("ai-accounts", () => ({ fact: "signin_suspended", ...this.#accountsSuspended(me, viewer, at) }));
       run("question-explorer", () => ({ fact: "question_find", ...this.#questionFinds(me, viewer, at) }));
       run("steps", () => ({ fact: "step_later_found", ...this.#laterFound(me, viewer, at) }));
       run("steps", () => ({ fact: "step_due", ...this.#stepsDue(me, viewer, at) }));
@@ -1080,7 +1076,11 @@ export class NoticeProducers {
     const today = NoticeProducers.#localDay(now, zone);
     const ok = [];
     for (const e of r.reached) {
-      if (!e || !filled(e.key) || !filled(e.owner) || !filled(e.scope) || !LIMIT_PERIODS.includes(e.period)) continue;
+      if (!e || !filled(e.key) || !filled(e.owner) || !filled(e.scope)) continue;
+      /* (ai-use:105, its R5, R18) a provider limit standing (`source: "provider"`, no period, a `resets_at`) is told by no
+         item yet: the words file holds no queue sentence for it (only the refusals' `ai.refused.limit.provider*`), and
+         R16 writes none of its own. Only the account's own limits, by their period, are told here. */
+      if (e.source === "provider" || !LIMIT_PERIODS.includes(e.period)) continue;
       const day = NoticeProducers.#localDay(e.reached_at, zone);
       const when = NoticeProducers.#periodEnd(e.period, e.period_start, day);
       const date = dayInSentence(day, today);
@@ -1107,31 +1107,6 @@ export class NoticeProducers {
         assignee: null, assignee_role: null,
         recipients: [me],
         options: this.#optionsOf(o.project ? [o.project] : []),
-      };
-    });
-    return { items, facts: { truncated } };
-  }
-
-  #accountsSuspended(me, viewer, now) {
-    /* (T48; N996 §5) read from ai-accounts (its R13), which took the account reads from credentials */
-    const r = this.#aiAccounts.projectAccountsSuspended({ viewer, at: instantOf(now) });
-    if (!Array.isArray(r)) throw failure("ai-accounts");
-    const { list, truncated } = cut(r.filter((e) => e && filled(e.key) && filled(e.project)), ACCOUNT_ITEMS_MAX);
-    const items = list.map((e) => {
-      const fills = { project: this.#titleOf(e.project, viewer) ?? e.project };
-      const text = wordsOf("ai.queue.suspended", fills);
-      return {
-        id: keyed("FINDING", "project-account-suspended", e.key), class: "FINDING", kind: "project-account-suspended",
-        label: NOTICED_LABEL, by: localize("notice-producers.group_civicsmith", "the team's Civicsmith"),
-        case: this.#homesAt([e.project], viewer),
-        subject: { kind: "project", id: e.project, since: e.since ?? null },
-        summary: text, detail: text, word: "ai.queue.suspended", fills,
-        basis: { source: "ai-accounts.projectAccountsSuspended", key: e.key, project: e.project, since: e.since ?? null,
-                 detail: localize("notice-producers.index.a_projects_sign_in_account", "a project's sign-in account serves only while the project has one member (ai-accounts R13); answered to the project's owners, naming no member.") },
-        age: ageFrom(e.since, now, "no_suspension_instant"),
-        assignee: null, assignee_role: null,
-        recipients: [me],
-        options: this.#optionsOf([e.project]),
       };
     });
     return { items, facts: { truncated } };
