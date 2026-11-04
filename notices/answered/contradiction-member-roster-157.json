@@ -1,0 +1,1 @@
+{"row":"answered","user":"contradiction","by":"triage","evidence":"bio-plane/src/contradiction/index.mjs:35 imports only viewerMember, baseViewer, ROOT_ADMIN from member-roster, not MODULE_ORDER","at":"2026-11-04T07:02:32.146Z","key":"member-roster:157","worker":"triage-a8ac876e3c208abec","cost":"0.05"}

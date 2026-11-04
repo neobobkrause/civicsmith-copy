@@ -1,0 +1,1 @@
+{"row":"triage","user":"plane","verdict":"not affected","evidence":"bio-plane/src/plane/door.mjs:7 imports only record-grammar actors, no member-roster import or MODULE_ORDER read (module row build/modules.json:196)","at":"2026-11-04T07:02:32.146Z","key":"member-roster:157","worker":"triage-a8ac876e3c208abec","cost":"0.05"}
