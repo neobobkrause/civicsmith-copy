@@ -18,8 +18,9 @@ const completenessOf = (...a) => rp.completenessOf(...a), chunkUnits = (...a) =>
       rangeSource = (...a) => rp.rangeSource(...a), windowCursor = (...a) => rp.windowCursor(...a);
 const UNIT_KINDS = rp.UNIT_KINDS || ["body", "footnote", "endnote", "header", "footer", "comment", "tracked_deletion", "text_box", "speaker_note", "master_text", "cell_note"];
 
-const SRC = new URL("../../../src/reading-pipeline/", import.meta.url);
-const source = () => readdirSync(SRC).filter((f) => f.endsWith(".mjs")).map((f) => readFileSync(new URL(f, SRC), "utf8")).join("\n");
+/* the module's source, and since BOB's split (4 Nov 2026, PR 274) `reader-contract`'s, where the ceilings it re-exports are written */
+const SRCS = [new URL("../../../src/reading-pipeline/", import.meta.url), new URL("../../../src/reader-contract/", import.meta.url)];
+const source = () => SRCS.flatMap((SRC) => readdirSync(SRC).filter((f) => f.endsWith(".mjs")).map((f) => readFileSync(new URL(f, SRC), "utf8"))).join("\n");
 const docOf = (d, bytes, format, ct = "application/octet-stream", extra = {}) => doc({ digest: d, bytes, ct, format, ...extra });
 const ev = (w) => evidenceStore(w.evidence);
 async function heldDoc(bytes, format, ct, extra) {
