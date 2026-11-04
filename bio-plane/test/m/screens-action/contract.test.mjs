@@ -37,8 +37,12 @@ test("R1–R6 (interface-shell R21, R38): each screen's acts are exactly its reg
   // (`actionstake`, `actioninquiry`, T50). T51 (FR-31): `writinghelp` is drawn on every screen the registry lists it on, `start-send`,
   // `plan` and `matter` included (the registry test names it, entry 17).
   const NOT_YET = (a) => a.status === "owed" && !Object.hasOwn(OPS, String(a.op).replace(/^owed:/, "").split(" ")[0]);
+  // BOB ruling (4 Nov): the counsel screen's counselpacketread and counselpacketexport (DEC-444) have no requirement in this
+  // module yet; excepted here until BOB writes the counsel requirement. Every other act is held exactly.
+  const EXCEPTED = { counsel: new Set(["counselpacketread", "counselpacketexport"]) };
   for (const s of SCREENS) {
-    const reg = REGISTRY.find((r) => r.id === s.id).acts.filter((a) => !NOT_YET(a)).map((a) => String(a.op).replace(/^owed:/, "").split(" ")[0]);
+    const reg = REGISTRY.find((r) => r.id === s.id).acts.filter((a) => !NOT_YET(a)).map((a) => String(a.op).replace(/^owed:/, "").split(" ")[0])
+      .filter((op) => !EXCEPTED[s.id]?.has(op));
     const mine = s.acts.map((a) => a.op);
     assert.deepEqual([...mine].sort(), [...reg].sort(), s.id);
     for (const a of s.acts) {
@@ -163,7 +167,7 @@ test("R7 (interface-shell R5, R10): every text node each screen draws, with data
 
 test("R19: no screen draws a placeholder: every {name} of a word it reads is filled, in every state the fixtures reach", async () => {
   const fail = refused("STORE_DID_NOT_ANSWER", null, 502);
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   const planes = [DATA_PLANE, { ...DATA_PLANE, ...reach }, Object.fromEntries(Object.keys(DATA_PLANE).map((k) => [k, fail]))];
   for (const plane of planes) for (const path of [...Object.values(ROUTES), `/app/start-send/${ACTION_ID}`, `/app/request/${PROJECT}`, `/app/matter/${DET}`]) {
     const p = await open(path, plane);
@@ -219,7 +223,7 @@ test("R1–R6 (interface-shell R8): every working screen is drawn under its path
 /* ---------- R14 (T48; K3250, K3254; walk C1): the common line ---------- */
 
 const CLASS_PLANES = () => {
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   const ending = { ...reach, planask: ok({ ok: true, plan: PLAN_ID, run: "RUN-1", started: true }), airun: ok({ found: true, session: { id: "RUN-1", status: "completed" } }) };
   return [
     [DATA_PLANE, [ROUTES.plan, ROUTES["start-send"], ROUTES.request, ROUTES.action, ROUTES.matter, ROUTES["help-records"]]],
@@ -280,7 +284,7 @@ test("R14: a section, list or reading that holds nothing is not drawn, and no co
     escalationstatus: ok(STATUS_NONE), escalation: ok({}),
     profiles: ok({ ...PROFILES, view: { deadlines: [] } }),
   };
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }), planproposals: ok({ plan: PLAN_ID, run: "RUN-1", proposals: [], says: "x" }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }), planproposals: ok({ plan: PLAN_ID, run: "RUN-1", proposals: [], says: "x" }) };
   const { world, me, action } = await actionWorld();
   for (const [path, extra] of [[ROUTES.plan, reach], [ROUTES.plan, {}], [ROUTES.action, {}], [ROUTES.matter, {}], [ROUTES["help-records"], {}], [ROUTES.request, {}], [`/app/start-send/${ACTION_ID}`, {}],
     [`/app/request/${PROJECT}`, { addresseesuggest: ok({ subject: PROJECT, offices: [], suggestion: true }), whoami: ok(ADMIN) }]]) {

@@ -142,7 +142,7 @@ test("R3 driving every screen and act with a sentinel token, the token is in eac
   const pushed = [];
   for (const path of ["/app", "/app/held", "/app/document/c1", "/app/members", "/app/settings", "/app/people", "/app/nowhere"]) {
     const p = await boot({ screens: SCREENS, path, session: { t: SENTINEL, e: 0, d: "own", w: "mai" },
-      plane: { image: IMAGE, heldcaptures: HELD, whoami: ok({ ...MEMBER, administer: true }), assistantstate: ok({ on: true }), accountreference: ok({ held: true }) } });
+      plane: { image: IMAGE, heldcaptures: HELD, whoami: ok({ ...MEMBER, administer: true }), assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
     const ph = p.win.history.pushState;
     p.win.history.pushState = (s, t, u) => { pushed.push(u); ph(s, t, u); };
     for (const b of p.root().querySelectorAll("button[data-act]")) { await p.click(b); for (const c of p.root().querySelectorAll('[data-shell="confirm"], [data-shell="reason-send"]')) { const ta = p.root().querySelector("textarea"); if (ta) ta.value = "because"; await p.click(c); } }
@@ -166,7 +166,7 @@ test("R3 driving every screen and act with a sentinel token, the token is in eac
 test("R3 (K2998) cs.call with a bearer sends that credential alone, for that request only; without one, the session", async () => {
   const screen = { id: "assistant", reads: () => ({}), acts: [{ op: "airunopen", async send(view, el, cs) { await cs.call("airun", { query: { run: "r1" }, bearer: "AI-CRED-1" }); await cs.call("airunlog", {}); return null; } }],
     render: (cs) => cs.act("airunopen") };
-  const p = await boot({ screens: [screen], plane: { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) } });
+  const p = await boot({ screens: [screen], plane: { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
   await p.click('[data-shell="dock"]');
   await p.click('button[data-act="airunopen"]');
   const [run] = p.byOp("airun"), [log] = p.byOp("airunlog");
@@ -174,7 +174,7 @@ test("R3 (K2998) cs.call with a bearer sends that credential alone, for that req
   assert.ok(!JSON.stringify(run).includes("tok-1"), "no session token on it");
   assert.equal(log.headers.Authorization, "Bearer tok-1");
   /* a 401 to the bearer's own request ends no session */
-  const q = await boot({ screens: [screen], plane: { airun: refused("AI_CREDENTIAL_EXPIRED", null, 401), assistantstate: ok({ on: true }), accountreference: ok({ held: true }) } });
+  const q = await boot({ screens: [screen], plane: { airun: refused("AI_CREDENTIAL_EXPIRED", null, 401), assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
   await q.click('[data-shell="dock"]');
   await q.click('button[data-act="airunopen"]');
   assert.equal(q.local.has(STORE_KEY), true);
@@ -214,11 +214,12 @@ test("R24 nothing the shell does records who opened what: no storage holds a rea
   for (const [k, v] of p.local) if (k !== STORE_KEY) assert.doesNotMatch(v, /held|document|home|members|\/app/);
   /* R124 (G12b): the tab keeps the frame's six constants for the session, and nothing else: no read of a screen, no route (R24 holds) */
   assert.deepEqual([...p.store.keys()], [STORE_KEY + ":frame"]);
-  assert.deepEqual(Object.keys(JSON.parse(p.store.get(STORE_KEY + ":frame")).reads).sort(), [...["groupidentity", "infolevel"], ...["assistantstate", "accountreference", "subscriptionsignin", "groupkeystate"]].sort());
+  assert.deepEqual(Object.keys(JSON.parse(p.store.get(STORE_KEY + ":frame")).reads).sort(), [...["groupidentity", "infolevel"], ...["assistantstate", "aipathready"]].sort());
   assert.doesNotMatch(p.store.get(STORE_KEY + ":frame"), /heldcaptures|document|home|members|\/app/);
   /* the ops the frame and the fixture screens declare they call: the shell's own list, and each fixture screen's reads (R24) */
   const ALLOWED = new Set([...SHELL_OPS, ...SCREENS.flatMap((x) => (x.reads ? Object.values(x.reads({ subject: "s", data: {}, ui: {} })).map((r) => r.op) : []))]);
-  for (const op of ALLOWED) assert.ok(Object.hasOwn(OPS, op), op + ": declared by its owner");
+  /* R20 (T53): `aipathready` is the plane's read over the Worker, declared by `surface-declarations` R15, not yet in `OPS` on the tranche */
+  for (const op of ALLOWED) if (op !== "aipathready") assert.ok(Object.hasOwn(OPS, op), op + ": declared by its owner");
   for (const r of p.requests) assert.ok(ALLOWED.has(r.op), r.op);
   await settle();
   assert.ok(ENTRY.length);

@@ -88,9 +88,7 @@ export const FRAME = Object.freeze({
   whoami: ok(MEMBER),
   infolevel: ok({ level: "prompt", set_at: null, asked_at: null }),
   assistantstate: ok({ on: false }),
-  accountreference: ok({ held: false }),
-  subscriptionsignin: ok({ connected: false }),
-  groupkeystate: ok({ on: false }),
+  aipathready: ok({ state: "auth_failed" }),
   version: { status: 200, text: "build-1\n" },
 });
 /* The session record interface-shell R32 keeps in localStorage under `SESSION_STORE_KEY`: `{t, e, d, w}`. */

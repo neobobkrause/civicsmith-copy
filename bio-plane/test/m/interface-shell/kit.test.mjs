@@ -167,7 +167,7 @@ const HELDROWS = ok({ items: [{ id: "h1", title: "Minutes", at: "2026-10-01" }] 
 
 test("R31 (K3143) the dock holds one panel: the guide's while it draws one, in place of the assistant's (no close control), the assistant's returning when it ends; cs.wizard calls the guide's start from any screen", async () => {
   const starter = { id: "home", reads: () => ({}), acts: [{ op: "startfrom", send: (view, el, cs) => { cs.wizard("WIZ-1", 2, { at: "home" }); return null; } }], render: (cs) => cs.act("startfrom") };
-  const p = await boot({ screens: [starter, ...ALL.filter((s) => s.id !== "home")], guide: GUIDE, plane: { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) } });
+  const p = await boot({ screens: [starter, ...ALL.filter((s) => s.id !== "home")], guide: GUIDE, plane: { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) } });
   await p.click('.cs-mast [data-shell="dock"]');
   assert.equal(p.root().querySelector(".cs-dock").getAttribute("data-panel"), "assistant");
   await p.click(btn(p, "startfrom"));

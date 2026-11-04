@@ -9,7 +9,7 @@
  * a capture request or an op outside the draft's reach. The stub model DOES WHAT IT SAYS: it calls the tools it names
  * and puts the document's words in the draft's own fields. Each is driven through each task. */
 import worker from "../src/index.mjs";
-import { ASK_OPS, PLANE_OPS } from "../src/ops.mjs";
+import { ASK_OPS, PLANE_OPS, GRANT_ONLY_OPS } from "../src/ops.mjs";
 import { DRAFT_OPS } from "../src/draft.mjs";
 import { ACTION_DRAFT_OPS, READS_AS, AUDIENCES, BEARINGS, TEXTCHECK_TEXT_MAX } from "../src/action-drafts.mjs";
 import { MODES } from "../../agent-harness/src/harness.mjs";
@@ -149,7 +149,7 @@ function modelApi(script = {}) {
         if (inj === "capture") return reply([use("read", { op: "capturerequest", args: { address: EVIL } })]);
         if (inj === "reach") return reply([use("read", { op: "sources", args: {} }), use("read", { op: "memberhistory", args: {} })]);
       }
-      if (names.includes("read") && results.length === 0) return reply([use("read", { op: "search", args: { q: "the reply" } })]);
+      if (names.includes("read") && results.length === 0) return reply([use("read", { op: script.readOp ?? "search", args: { q: "the reply" } })]);
       const said = inj && INJ_WORDS(inj);
       if (script.answer) return reply([use("draft", script.answer)]);
       if (props.sentences) {
@@ -328,6 +328,15 @@ section("R76 · infractiondraft and bearingdraft: read only through the grant, o
   t("R76: bearingdraft answers {claims: [{claim, bearing, quote}]}", [r.status, r.out.draft],
     [200, { claims: [{ claim: "the minutes were withheld", bearing: "not_addressed", quote: "" }] }]);
   t("R76: bearingdraft reads only the pack and ASK_OPS, under the grant", [draftOpsOk(r), r.plane.every((c) => c.authorization === `Bearer ${GRANT}`)], [[], true]);
+  /* answers:103 (answers R1, BOB 4 Nov): the grant's class also admits `aicredential` (ai-accounts R65), the agent
+     Worker's own read; a draft's onTool (draft.mjs grantReader) reads only ASK_OPS, so it is refused there, never sent. */
+  t("R55 (answers:103): the draft's read tool never offers GRANT_ONLY_OPS",
+    r.model[0].body.tools.find((x) => x.name === "read").input_schema.properties.op.enum.filter((o) => GRANT_ONLY_OPS.includes(o)), []);
+  r = await drive("draft", readBody(INF()), { model: { readOp: "aicredential" } });
+  const refusedRead = r.model.flatMap((c) => (c.body.messages || []).flatMap((m) => (Array.isArray(m.content) ? m.content : [])))
+    .find((b) => b.type === "tool_result" && b.is_error);
+  t("R55 (answers:103): a draft's read of aicredential is refused ASK_OP_REFUSED before any plane call, and the draft still answers",
+    [r.plane.map((c) => c.op).filter((o) => o !== "agentpack"), /ASK_OP_REFUSED/.test(JSON.stringify(refusedRead?.content ?? "")), r.status], [[], true, 200]);
   for (const [label, answer] of [
     ["an unknown bearing", { claims: [{ claim: "c", bearing: "refuted", quote: "q" }] }],
     ["new evidence with no quote", { claims: [{ claim: "c", bearing: "new_evidence", quote: "" }] }],
