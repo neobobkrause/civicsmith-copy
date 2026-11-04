@@ -54,6 +54,10 @@ const BOBS = CATALOGUE_KEYS.filter((l) => !l.split(" ")[2].endsWith("-developmen
 test("R58 CATALOGUE_KEYS's lines other than development lines are exactly Bob's two catalogue keys, signing key first", () => {
   assert.deepEqual([...BOBS], [SIGNING_LINE, RECOVERY_LINE]);
   assert.deepEqual(CATALOGUE_KEYS.slice(0, 2), [SIGNING_LINE, RECOVERY_LINE]);
+  /* R59: what follows Bob's two is development lines only, at least one */
+  const dev = CATALOGUE_KEYS.slice(2);
+  assert.ok(dev.length >= 1, "a development line follows Bob's two");
+  for (const l of dev) assert.match(l.split(" ")[2], /^bio-ai-catalogue.*-development$/);
   assert.deepEqual(BOBS.map(normalizeKey), [SIGNING_LINE, RECOVERY_LINE].map(normalizeKey));
   assert.deepEqual(BOBS.map((l) => l.split(" ")[2]), ["bio-ai-catalogue", "bio-ai-catalogue-recovery"]);
   const fp = (line) => createHash("sha256").update(Buffer.from(normalizeKey(line), "base64")).digest("base64")
