@@ -11,3 +11,4 @@
 {"at":"2026-11-04T09:18:56Z","row":"sent","n":6,"to":"bob","text":"job question-explorer complete, PR #199 ready: run status. Note in not-verified: on real providers no exploring run can open (ai-runs refuses AI_RUN_NOT_A_MEMBER_ACT; ai-use R6 bars member accounts) — needs your ruling."}
 {"at":"2026-11-04T09:19:08Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-04T11:50:48Z","row":"sent","n":7,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job question-explorer BLOCKED: run status"}
+{"at":"2026-11-04T11:50:58Z","row":"outcome","n":7,"outcome":"delivered"}
