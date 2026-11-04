@@ -14,3 +14,4 @@
 {"at":"2026-11-04T07:03:29Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-04T07:53:35Z","row":"sent","n":8,"to":"bob","text":"job store-assembly BLOCKED: R78 gate done (2677627ce); 447 pass, 3 fail = R95 + 2 sweep (capture-requests principal_claude); job complete stops on R95 too"}
 {"at":"2026-11-04T07:53:42Z","row":"outcome","n":8,"outcome":"delivered"}
+{"at":"2026-11-04T09:02:28Z","row":"sent","n":9,"to":"bob","text":"job store-assembly: R95 done (words.test reads modules['store-assembly'], 1102b2b7d, pushed); sweep.test:150 already inserts principal_ai. Waiting for your capture-requests merge message, then job sync and job complete."}
