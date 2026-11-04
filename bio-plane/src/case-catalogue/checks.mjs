@@ -1,4 +1,4 @@
-/* case-catalogue — the case-document catalogue (C-41.1–C-41.17, with the case arms of C-2.8, C-3.1 and C-21.1) and
+/* case-catalogue — the case-document catalogue (C-41.1–C-41.19, with the case arms of C-2.8, C-3.1 and C-21.1) and
  * C-2.8's case-member arm (requirements: `build/requirements/case-catalogue.md`, R1–R5). Pure: it reads no table,
  * writes nothing and registers nothing; `ratification` registers `checkCaseDocument` and `checkPublishedExtension` with
  * `promotion`, runs them at its gates and re-exports every name here.
@@ -7,7 +7,7 @@
  * with every name, id, message and translation unchanged: `caseEditionClaimed`, `isCaseMemberBytes` (record-grammar
  * keeps its own copy for C-3.1's heading rule, N69; Decided 3), `SUBJECT_POSITIONS`, `CASE_MEMBER_ROLES`,
  * `biasAcknowledgementOf`, `completenessFields`, `checkPublishedExtension` (C-2.8's case-member arm) and its three
- * runners (R2); `SEARCHED_SUBJECT_SOURCES`, `CASE_DOCUMENT_FAMILY` (C-41.1–C-41.17), `CASE_CITATION_VERSIONS`,
+ * runners (R2); `SEARCHED_SUBJECT_SOURCES`, `CASE_DOCUMENT_FAMILY` (C-41.1–C-41.19), `CASE_CITATION_VERSIONS`,
  * `checkCaseDocument` (R1, R3). The case-document formats and their three predicates are `case-grammar`'s (its R1).
  * The legacy code's comments moved with it. */
 
@@ -17,7 +17,11 @@ import { ISO_TS_RE, BUNDLE_ID_RE, BASIS_GRADES, GRADE_AXES } from "../record-gra
 import { STRENGTH_STATES } from "../strength/arithmetic.mjs";
 import { CASE_DOCUMENT_FORMAT, CASE_DOCUMENT_FORMATS_ACCEPTED,
          caseDocumentStatesMemberBlocks, caseDocumentRequiresDisclosures, caseDocumentRequiresV4Disclosures,
-         whatChangedOf, isNoticeReference, WORKING_ON_KEY } from "../case-grammar/index.mjs";
+         whatChangedOf, isNoticeReference, WORKING_ON_KEY,
+         caseDocumentStatesUngradedAndTyped, ungradedPassagesOf, typedPassagesOf, passagesOf, gradingFactsOf,
+         ATTRIBUTION_LEVELS } from "../case-grammar/index.mjs";
+/* R8 (A58, K1317): text-chain's pure `typedStepOf`; its file imports only record-grammar and setup-words. */
+import { typedStepOf } from "../textchain.mjs";
 import { localize } from '../setup-words/index.mjs';
 
 /* The catalogue's finding shape (`{check, severity, message, repairable?, repairs?, code?}`), so a finding from here
@@ -513,6 +517,10 @@ export const CASE_DOCUMENT_FAMILY = {
   WHAT_CHANGED: { check: 'C-41.16', what: 'the "What changed" statement, required of every edition above 1 (DEC-101 (2))' },
   /* DEC-111, R3 (K1119): the project reference a case may carry, read by case-grammar's `isNoticeReference` (its R10). */
   WORKING_ON:   { check: 'C-41.17', what: 'working_on, when present, a notice id (DEC-111; case-grammar R10)' },
+  /* R7 (T53; DEC-461): the passages a /10 document states it was published without a grade for (case-grammar R36). */
+  UNGRADED_PASSAGES_MISMATCH: { check: 'C-41.18', what: 'ungraded_passages — exactly the relied-on passages whose grading-facts row shows no grade, of a /10 document (DEC-461; case-grammar R36)' },
+  /* R8 (T53; DEC-464): the passages a member typed, with each credit as the member chose it (case-grammar R37). */
+  TYPED_PASSAGES_MISMATCH:    { check: 'C-41.19', what: 'typed_passages — exactly the relied-on passages whose chain is typed, each credit within its level, of a /10 document (DEC-464; case-grammar R37)' },
 };
 /* REC-219 / D-579(a): the states a case document's citation edge may carry, and which name a capture. */
 export const CASE_CITATION_VERSIONS = ['pinned', 'only_capture', 'undetermined', 'no_capture', 'no_bytes'];
@@ -961,6 +969,8 @@ export function checkCaseDocument(fm, ctx = {}) {
     findings.push(f(C41.WORKING_ON, 'error', localize('case-catalogue.checks.a_case_documents_working_on', 'a case document\'s working_on names the notice this case\'s project published, and \'{String}\' is not a notice id: the published case shows it as the project reference, so a value no notice can have would point a reader at nothing (DEC-111)', { String: String(String(fm[WORKING_ON_KEY])) }),
       [localize('case-catalogue.checks.publish_through_op_publish_which_writes_notice', 'publish through op=publish, which writes the project\'s notice id, or leave working_on out')]));
   }
+  /* R7, R8 (T53; DEC-461, DEC-464) — C-41.18 and C-41.19, asked only of an accepted format (as every arm above). */
+  if (CASE_DOCUMENT_FORMATS_ACCEPTED.includes(fm?.format)) findings.push(...passageStatementFindings(fm));
   /* C-21.1 AT CASE ALTITUDE, and it is the arm that moved here WITHOUT its
      wording changing at all, because it was always a comparison between two
      CASE EDITIONS and never between two findings. A completeness claim carried
@@ -976,6 +986,97 @@ export function checkCaseDocument(fm, ctx = {}) {
   return findings;
 }
 
+
+/* ===========================================================================
+ * R7, R8 (T53) — THE PASSAGES A /10 DOCUMENT STATES APART: C-41.18 AND C-41.19
+ *
+ * Each compares the block the document signs (case-grammar R36, R37) with what the same document's `passages:` and
+ * `grading_facts:` blocks (its R17) say it must hold, so a stranger holding the bytes can trust "published without a
+ * grade" and "typed by a member" without the plane. A passage is keyed by `(finding, ord, content_id)`. Pure; never throws.
+ * ========================================================================= */
+
+/** R7: whether a `grading_facts:` row holds no grade, neither member-authored nor earned from the record. The row's
+ *  `grade` is the grade the leg counts at (strength R35, R46); a leg on a typed passage (its `typed`, strength R47) is
+ *  graded by the record (leg-earning R19), so it is never ungraded. This stands in for `strength.isLegUngraded` (A58),
+ *  which `strength` does not yet export; its definition is the planning line's (lines-A5-A8-case-modules.md). */
+export function legUngraded(row) {
+  try {
+    if (!row || typeof row !== 'object') return false;
+    if (row.typed !== null && row.typed !== undefined) return false;
+    return row.grade === null || row.grade === undefined;
+  } catch { return false; }
+}
+
+const passageKey = (r) => JSON.stringify([r?.finding ?? null, r?.ord ?? null, r?.content_id ?? null]);
+const flatRows = (byFinding) => (byFinding && typeof byFinding === 'object' ? Object.values(byFinding).flat() : []);
+/* A raw block value as the grammar read it, back to its value (case-grammar's own spelling, R17): JSON from its
+   quoted form, a number or boolean as read, else null. */
+const unexactValue = (v) => {
+  if (v === null || v === undefined || typeof v === 'number' || typeof v === 'boolean') return v ?? null;
+  if (typeof v !== 'string') return null;
+  try { return JSON.parse(v); } catch { return null; }
+};
+/* The stated keys against the wanted ones: a repeated row, a row naming no `passages:` row, or a set that differs. */
+const sameSet = (stated, wanted, known) => {
+  const keys = stated.map(passageKey);
+  if (new Set(keys).size !== keys.length) return false;
+  if (keys.some((k) => !known.has(k))) return false;
+  const want = new Set(wanted.map(passageKey));
+  return keys.length === want.size && keys.every((k) => want.has(k));
+};
+const SHOWN_AT = ['cover', 'name'];
+/* R8: a credit as written stays within its level: a level of R2's or none; a name only at `cover` or `name`, and a
+   non-blank one there; nothing at `group`, `project` or no level. */
+const creditOk = (level, shown) => {
+  if (level !== null && !ATTRIBUTION_LEVELS.includes(level)) return false;
+  if (SHOWN_AT.includes(level)) return typeof shown === 'string' && shown.trim() !== '';
+  return shown === null;
+};
+
+function passageStatementFindings(fm) {
+  const out = [];
+  try {
+    const stated = caseDocumentStatesUngradedAndTyped(fm);
+    if (!stated) {
+      /* An earlier format is not asked, except that one carrying the key states what no reader would read (R7). */
+      if (fm && typeof fm === 'object' && Object.prototype.hasOwnProperty.call(fm, 'ungraded_passages'))
+        out.push(f(C41.UNGRADED_PASSAGES_MISMATCH, 'error', localize('case-catalogue.checks.the_list_of_passages_this', 'The list of passages this case was published without a grade for does not match the passages that have none. Prepare the case again, and sign it. Nothing was signed.'),
+          [localize('case-catalogue.checks.prepare_the_case_again_on_op', 'prepare the case again on op=publish, which states the passages for its format')]));
+      return out;
+    }
+    const passages = flatRows(passagesOf(fm));
+    const known = new Set(passages.map(passageKey));
+    const facts = flatRows(gradingFactsOf(fm));
+    const factOf = (p) => facts.find((g) => g.finding === p.finding && g.ord === p.ord);
+
+    /* R7 — C-41.18. */
+    const ungraded = ungradedPassagesOf(fm);
+    const wantUngraded = passages.filter((p) => legUngraded(factOf(p)));
+    if (ungraded.state !== 'stated' || !sameSet(ungraded.rows, wantUngraded, known))
+      out.push(f(C41.UNGRADED_PASSAGES_MISMATCH, 'error', localize('case-catalogue.checks.the_list_of_passages_this', 'The list of passages this case was published without a grade for does not match the passages that have none. Prepare the case again, and sign it. Nothing was signed.'),
+        [localize('case-catalogue.checks.prepare_the_case_again_on_op', 'prepare the case again on op=publish, which states the passages for its format')]));
+
+    /* R8 — C-41.19. */
+    const typed = typedPassagesOf(fm);
+    const wantTyped = passages.filter((p) => typedStepOf(p.chain) !== null);
+    let ok = typed.state === 'stated' && sameSet(typed.rows, wantTyped, known);
+    if (ok) {
+      const raw = Array.isArray(fm.typed_passages) ? fm.typed_passages.filter((r) => r && typeof r === 'object' && !Array.isArray(r)) : [];
+      ok = raw.every((r) => {
+        const checkers = unexactValue(r.checkers);
+        const list = Array.isArray(checkers) ? checkers : [];
+        const checked = unexactValue(r.checked);
+        if (checked !== (list.length > 0)) return false;
+        if (!creditOk(unexactValue(r.typist_level), unexactValue(r.typist_shown))) return false;
+        return list.every((c) => c && typeof c === 'object' && creditOk(c.level ?? null, c.shown ?? null));
+      });
+    }
+    if (!ok)
+      out.push(f(C41.TYPED_PASSAGES_MISMATCH, 'error', localize('case-catalogue.checks.a_page_a_member_typed', 'A page a member typed is not listed, or is listed with a credit the member\'s choice does not allow. Prepare the case again. Nothing was signed.'),
+        [localize('case-catalogue.checks.prepare_the_case_again_on_op', 'prepare the case again on op=publish, which states the passages for its format')]));
+  } catch { /* pure and never throws (R1): input it cannot read draws no finding here */ }
+  return out;
+}
 
 /* ===========================================================================
  * C-2.8's CASE-MEMBER ARM, WHERE IT RUNS (R2)
