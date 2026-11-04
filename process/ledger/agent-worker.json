@@ -33,7 +33,9 @@
     "reading-guides",
     "setup-words",
     "agent-steps",
-    "agent-runner"
+    "agent-runner",
+    "ai-catalogue",
+    "ai-accounts"
   ],
   "suite": {
     "cwd": "agent-worker",
