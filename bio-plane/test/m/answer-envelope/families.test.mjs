@@ -358,10 +358,12 @@ test("R7, R2 (K1961, K1974; red 26): the list reads law-relations' rows (`LAW_RE
 test("R7, R2 (T36; K2130, K2103; red 11; T43: R12, N851): the list reads file-safety's rows (`FILE_SAFETY_CHECKS`, C-140) from its own file, directly after doorbell's (since T43; capture's before it) and before sources' (its place in `build/modules.json`), every one of them decorates with its own check and words, and no row of an earlier family moves: no file-safety code is held by any other listed family, so `FILE_NOT_HELD` decorates with C-140.1 while `NO_SUCH_CAPTURE` keeps sources' row and `MACHINE_CANNOT_RELEASE` ratification's (negative control: the list without file-safety's file misses its family)", async () => {
   const paths = M.CHECK_FAMILY_FILES.map(([p]) => p);
   const path = "src/file-safety/checks.mjs";
-  assert.equal(paths.indexOf("src/doorbell/checks.mjs") + 1, paths.indexOf(path), paths.join(", "));
-  assert.equal(paths.indexOf(path) + 1, paths.indexOf("src/sources/checks.mjs"), paths.join(", "));
+  /* since T53 (K5448) `build/modules.json` puts file-safety directly after capture and before doorbell */
+  assert.equal(paths.indexOf("src/capture/checks.mjs") + 1, paths.indexOf(path), paths.join(", "));
+  assert.equal(paths.indexOf(path) + 1, paths.indexOf("src/doorbell/checks.mjs"), paths.join(", "));
   const order = MODULES.map((m) => m.id);
-  assert.ok(order.indexOf("doorbell") < order.indexOf("file-safety") && order.indexOf("file-safety") < order.indexOf("sources"), order.join(", "));
+  assert.ok(order.indexOf("capture") < order.indexOf("file-safety") && order.indexOf("file-safety") < order.indexOf("doorbell")
+            && order.indexOf("doorbell") < order.indexOf("sources"), order.join(", "));
   const table = (await import(`../../../${path}`)).FILE_SAFETY_CHECKS;
   assert.ok(Object.keys(table).length >= 39, String(Object.keys(table).length));
   for (const [code, row] of Object.entries(table)) {
@@ -560,12 +562,12 @@ test("R12, R7, R2 (T43; N851, K2609, K2697): CHECK_FAMILY_FILES lists doorbell's
   const digest = (s) => createHash("sha256").update(s).digest("hex").slice(0, 16);
   const paths = M.CHECK_FAMILY_FILES.map(([p]) => p);
   const path = "src/doorbell/checks.mjs";
-  /* its place: directly between capture's and file-safety's, as doorbell stands between them in `modules.json` */
-  assert.equal(paths.indexOf("src/capture/checks.mjs") + 1, paths.indexOf(path), paths.join(", "));
-  assert.equal(paths.indexOf(path) + 1, paths.indexOf("src/file-safety/checks.mjs"), paths.join(", "));
+  /* its place in `modules.json`: since T53 (K5448) directly after file-safety's, which follows capture's */
+  assert.equal(paths.indexOf("src/file-safety/checks.mjs") + 1, paths.indexOf(path), paths.join(", "));
+  assert.ok(paths.indexOf("src/capture/checks.mjs") < paths.indexOf(path) && paths.indexOf(path) < paths.indexOf("src/sources/checks.mjs"), paths.join(", "));
   const order = MODULES.map((m) => m.id);
-  assert.equal(order.indexOf("capture") + 1, order.indexOf("doorbell"), order.join(", "));
-  assert.equal(order.indexOf("doorbell") + 1, order.indexOf("file-safety"), order.join(", "));
+  assert.equal(order.indexOf("capture") + 1, order.indexOf("file-safety"), order.join(", "));
+  assert.equal(order.indexOf("file-safety") + 1, order.indexOf("doorbell"), order.join(", "));
   assert.ok(MODULES.find((m) => m.id === "answer-envelope").uses.includes("doorbell"), "answer-envelope uses doorbell");
   /* the catalogue is total with it */
   assert.deepEqual(await unreached(M.CHECK_FAMILY_FILES), []);
