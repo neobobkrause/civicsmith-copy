@@ -201,3 +201,4 @@
 {"at":"2026-11-04T15:51:02Z","row":"outcome","n":103,"outcome":"delivered"}
 {"at":"2026-11-04T15:56:37Z","row":"sent","n":104,"to":"job-screens-inquiry","text":"bob-104: addition to bob-102: projectai.mjs draws retired projectkeyset (115, 162) and lists projectsigninset/projectaccountswitch/projectaccountremove/projectkeynoticeseen (214); checkScreens throws on any act OPS lacks (p3dev-t1 500). Drop every act the assembled registration no longer declares; test each screen's acts against the assembled ops."}
 {"at":"2026-11-04T15:56:41Z","row":"outcome","n":104,"outcome":"delivered"}
+{"at":"2026-11-04T15:59:03Z","row":"sent","n":105,"to":"job-case-import","text":"bob-105: ruling: R18 stands; docket reopened (PR 278) to sign edition entries per R24. Answer docket:266 by a test that an unsigned edition entry is refused with check 'signature', never a move; job complete with --exempt-revert (no code change); wake BOB."}
