@@ -152,16 +152,11 @@ export const RE_POINTS = Object.freeze({
   /* G53 (fix round 6; K4699): `scanmirror` (on `security`) and `officeconfirm` (on `places`), R117's two, left this table: the
      design's registry lists both now, so the one screen-registry check admits them */
   /* B3 (K4467; screens-inquiry J21, N5): the read of a record stored unread, until the registry lists `readheld` on `document` */
-  document: Object.freeze(["readheld", "resolve"]),
+  document: Object.freeze(["readheld"]),
   /* K5178 (screens-investigate R1, screens-investigate J28 (1)): `linecurrentthrough` on a person's page, stating a holder current through a day, until the registry lists it for `person` */
   person: Object.freeze(["linecurrentthrough"]),
-  /* R134 (K5308; screens-entry R34, screens-inquiry R139): `factconfirm` on `setup` (DEC-439 D-B1, the time-zone step), `leggrade` on
-     `question` (citation R24), and `resolve` on `document` (entities' resolve, "Find the people and offices it names"), each until
-     the registry lists the op on that screen (the registry lists `factconfirm` on `group` and `resolve` on `person` only) */
-  setup: Object.freeze(["factconfirm"]),
-  question: Object.freeze(["leggrade"]),
-  /* R134 (K5310; credentials R83, screens-daily R107): `signerknown` on `queue`, until the registry lists it there */
-  queue: Object.freeze(["signerknown"]),
+  /* R134's four (`factconfirm` on `setup`, `leggrade` on `question`, `resolve` on `document`, `signerknown` on `queue`) left this table when
+     `wizard-scripts` R54 re-took the registry at 30af4350f2, which lists each on its screen, so the one screen-registry check admits them */
 });
 export const LOCKED_OPS = Object.freeze(["unlock"]);
 export const ANY_SCREEN_OPS = Object.freeze(["infolevelset"]);
@@ -176,7 +171,7 @@ const asksReason = (op) => ADMIN_ACTS.has(op) || MARK_ASKS_EXTRA.includes(op);
 
 /* The shell's own reads and acts (R3, R4, R7, R17, R20, R33, R34, R36). */
 export const SHELL_OPS = Object.freeze(["whoami", "interfacewords", "groupidentity", "queue", "infolevel", "infolevelset",
-  "assistantstate", "accountreference", "subscriptionsignin", "groupkeystate", "signout", "unlock", "reauth", "bootstrap"]);
+  "assistantstate", "aipathready", "signout", "unlock", "reauth", "bootstrap"]);
 
 /* R21: the screen contract. Throws, naming the screen, for a screen whose id the registry does not hold, an act naming
    an op `OPS` does not hold, or an op that is neither the registry's for that screen nor a named re-point. */

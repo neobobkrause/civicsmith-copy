@@ -251,7 +251,7 @@ export async function handleAsk(req, env, deps) {
       if (!got || !got.usage) return;
       const entries = model.drain();
       for (const e of entries)
-        await call("askusage", null, { mode: "ask", model: e.model, usage: e.usage, calls: e.calls });
+        await call("askusage", null, { mode: "ask", entry_id: e.entry_id, label: e.label, usage: e.usage, calls: e.calls });
     };
     const spend = (got) => model.spent(got, "ask");
     const finish = async (o) => { await emit(o); await writer.close(); };
