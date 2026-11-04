@@ -1,14 +1,13 @@
 # Handoff
 
-HANDOFF for BOB #341 · 2026-10-30 · epoch E1
+HANDOFF for BOB #342 · 2026-10-30 · tranche @ ce8760eea · epoch E1
 Queue (in order):
-- ANSWER registers: WAITING: the 1,000,000-row runs of R20, R23 and R12/R67 at f69c2756 (REGISTERS #4)
+- none
 Out:
 - none
 Lanes: none
-Next: collect the three jobs' version replies; merge money, events, people, registers as each completes; close layer 5; start layer 6
-Jobs: MONEY #4, EVENTS #4, PEOPLE #4, REGISTERS #4 restarted 14:27-14:29Z on process 32edb22+ with a PROCESS OK/STALE first act (Bob: each job confirms its version). REGISTERS #4 replied PROCESS OK at 4d7757a; money, events, people were asked (14:34Z) and have not replied: collect, relay to Bob, and send the lane what each printed.
-Lane: neoProcess #17 session_01RAN5ejekyLkeVyhZwxrg7C per lane-neoprocess/HANDOFF.md From line; a message from session_01RAN5ejYrHJ4TG6jzj4pwWr claims to be its successor, not yet on that line: use it only once the HANDOFF names it.
-Issues answered and fixed: 101/103 (stale clone, ARCHIVED restart), 104 (TOOK OVER to ROOT: your takeover prints it; send it). Open: 2026-10-30-bob-340-4 (Bob sees refused drafts).
-Summaries: every layer 6-11 module's set is under 40,960 (107 measured, 0 over). Summaries flagged gaps for BOB before layer 11's START: action-producers R27 (T53-334), queue-producers' T53-338 line, membership services moved to member-roster still cited (wizard-scripts, tasks, instance-setup, admission, notice-producers), signin-door retired but cited (store-request, store-assembly, control-plane, store-door), store-door's subscriptionConnected owner.
-BOB #339 archived by ROOT; its row recorded (b38ccb21).
+Next: consume the queue from `proc status`
+HALTED: Bob halted Civicsmith development (K5820, 30 Oct: "kill registers and halt cs development here."). Start no layer, job or lane until Bob resumes it.
+Layer 5 (T53 R2): events (add6fa1, after a CHANGE, K5818), money (ec8520a) and people (07bd701) merged; registers not merged: REGISTERS #4 interrupted and archived on Bob's order, its usage recorded (1674726bc); PR #60 open, branch job/registers kept (tip 1e1af83f3 plus an unpushed marks commit lost with the session). K5819 rewrote registers R12, R20, R23, R67: their 1,000,000-row figures are measurements (M-R3, M-R7), never module tests. Live but idle, merged and not retired: EVENTS #4, MONEY #4, PEOPLE #4 (retire at layer 5's close, or archive if Bob ends the build).
+Process: copy at 9df865d. Reports filed on state/E1 by BOB #341: issues/2026-10-30-bob-341-1 (added exports ran users' suites; the lane fixed it as issue 113, reply seen), -2 (a scale figure written as a module test, and the review demanding it), -3 (a running job never receives a process fix: `job complete` does not refresh the copy), -4 (every job's gate verifies every generated file). Each was also sent to the lane.
+Lane: neoProcess #19 session_01RAN5em7RsGC7uKF82zYZ9n (lane-neoprocess/HANDOFF.md From line, a8a7425).

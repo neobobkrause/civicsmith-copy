@@ -1,0 +1,41 @@
+{
+  "id": "membership",
+  "title": "membership: its unmet T53 requirements, R154",
+  "layer": 2,
+  "paths": [
+    "bio-plane/src/membership/",
+    "build/requirements/membership.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/membership/",
+    "bio-plane/test/members.test.mjs"
+  ],
+  "requirements": "build/requirements/membership.md",
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "test-support",
+    "member-roster"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/membership.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet every unmet mark in build/requirements/membership.md (R154), each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-04T02:40:00Z"
+  }
+}

@@ -2084,15 +2084,16 @@ test("R39: a service naming no member of the release, a container class and a mi
 
 const TEST_ACCOUNT = "20b533579290b9b93168345edd3b7f72";
 const OTHER_ACCOUNT = "ffffffffffffffffffffffffffffffff";
-const COPY = "trial-copy";
+const COPY = "p3dev-trial";   /* a test copy is a development deployment (p3dev.mjs) */
+const AS = (n) => `${n}-${COPY}`;
 const OLD_BYTES = "// what the account holds now";
 /** A fixture fleet pinned to the test account, with no `release/` signature anywhere: the branch's built artifacts only. */
 const testFleet = () => makeRepo({ members: { "alpha-worker": { account: TEST_ACCOUNT }, "beta-worker": { account: TEST_ACCOUNT } },
   plane: { config: { services: [{ binding: "SELF", service: "bio-plane" }, { binding: "AGENT", service: "alpha-worker" }] } } });
 const MARK = { CIVICSMITH_TEST_INSTANCE: COPY };
 // fixtures-own: platform the Cloudflare API's own answers to the test-instance deploy's account calls, a scripted-network double of the platform; no module answers for them
-const testStub = (extra = {}) => ({ subdomain: "sub", put: "accept", scripts: { [COPY]: { body: OLD_BYTES }, "alpha-worker": { body: OLD_BYTES, settings: {} } },
-  serving: { "alpha-worker": JSON.stringify({ version: VERSION }), "beta-worker": JSON.stringify({ version: VERSION }) }, ...extra });
+const testStub = (extra = {}) => ({ subdomain: "sub", put: "accept", scripts: { [COPY]: { body: OLD_BYTES, settings: {} }, [AS("alpha-worker")]: { body: OLD_BYTES, settings: {} } },
+  serving: { [AS("alpha-worker")]: JSON.stringify({ version: VERSION }), [AS("beta-worker")]: JSON.stringify({ version: VERSION }) }, ...extra });
 const testFleetDeploy = (root, member, { env = { CF_TOKEN: "t", ...MARK }, flags = ["--test-instance", "--dry-run"], instance = COPY, stub = testStub() } = {}) =>
   run(root, ".", ["bio-plane/scripts/deploy-fleet.mjs", member, "--instance", instance, ...flags], { env, stub });
 const testPlaneDeploy = (root, { env = { CF_TOKEN: "t", CF_ACCT: TEST_ACCOUNT, ...MARK }, flags = ["--test-instance", "--dry-run"], slug = COPY, stub = testStub() } = {}) =>
@@ -2115,9 +2116,9 @@ test("R40: a marked test copy and the right account run every member in order an
     }
     /* each member's rollback target is what the account holds under its name now */
     const alpha = testFleetDeploy(root, "alpha-worker");
-    assert.match(alpha.stdout, new RegExp(`^rollback : alpha-worker was ${hex(OLD_BYTES).slice(0, 16)}`, "m"));
+    assert.match(alpha.stdout, new RegExp(`^rollback : ${AS("alpha-worker")} was ${hex(OLD_BYTES).slice(0, 16)}`, "m"));
     const beta = testFleetDeploy(root, "beta-worker");
-    assert.match(beta.stdout, /^rollback : beta-worker is not deployed in 20b533579290b9b93168345edd3b7f72/m);
+    assert.match(beta.stdout, new RegExp(`^rollback : ${AS("beta-worker")} is not deployed in 20b533579290b9b93168345edd3b7f72`, "m"));
     const plane = testPlaneDeploy(root);
     assert.equal(plane.status, 0, plane.stdout + plane.stderr);
     assert.match(plane.stdout, new RegExp(`^test deploy: ${COPY} from ${ASSET} sha256 ${hex(readFileSync(join(root, "bio-plane", ASSET)))}`, "m"));
@@ -2130,7 +2131,7 @@ test("R40: a marked test copy and the right account run every member in order an
     const realFleet = testFleetDeploy(root, "alpha-worker", { flags: ["--test-instance"] });
     assert.equal(realFleet.status, 0, realFleet.stdout + realFleet.stderr);
     assert.equal(realFleet.wrangler.length, 1);
-    assert.match(realFleet.stdout, /^rollback : alpha-worker was /m);
+    assert.match(realFleet.stdout, new RegExp(`^rollback : ${AS("alpha-worker")} was `, "m"));
     const realPlane = testPlaneDeploy(root, { flags: ["--test-instance"] });
     assert.equal(realPlane.status, 0, realPlane.stdout + realPlane.stderr);
     assert.equal(puts(realPlane).length, 1);
@@ -2167,7 +2168,8 @@ test("R40: a copy the environment does not mark as a test instance, and an accou
     refused(both, "NOT_A_TEST_INSTANCE");
 
     /* control: without the flag the signed-release path is unchanged: no mark is asked for and any account is served */
-    const plain = testPlaneDeploy(root, { env: { CF_TOKEN: "t", CF_ACCT: OTHER_ACCOUNT }, flags: [], stub: testStub() });
+    const plain = testPlaneDeploy(root, { env: { CF_TOKEN: "t", CF_ACCT: OTHER_ACCOUNT }, flags: [],
+      stub: testStub({ scripts: { [COPY]: { body: OLD_BYTES }, "alpha-worker": { body: OLD_BYTES, settings: {} } } }) });
     assert.equal(plain.status, 0, plain.stdout + plain.stderr);
     assert.doesNotMatch(plain.stdout, /test deploy:|rollback :/);
     const plainFleet = testFleetDeploy(root, "gamma-worker", { env: { CF_TOKEN: "t" }, flags: ["--dry-run"] });

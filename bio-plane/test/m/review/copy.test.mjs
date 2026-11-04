@@ -319,8 +319,11 @@ test("R15, R28: each acknowledgement row carries its reason as case-inputs store
                { project: P, statement: "the statement", kind: "participant", by: "bea", at: "2026-09-28T01:00:02.000Z" },
                { project: P, statement: "the statement", kind: "recipient", by: "RVG-1", recipient: "R",
                  at: "2026-09-28T01:00:03.000Z", reason: "seen from outside" }];
+  /* case-inputs' row as it answers it, with R46's author beside it (a reader's name, else the member) */
   const answered = w.ca.acks.map((r) => ({ kind: r.kind, by: r.by, recipient: r.recipient ?? null, at: r.at,
-                                           reason: r.reason ?? null }));
+                                           reason: r.reason ?? null,
+                                           author: r.kind === "recipient" ? r.recipient : r.by,
+                                           author_kind: r.kind === "recipient" ? "recipient" : "member" }));
   for (const c of [w.r.copy({ draft: d.draftId, viewer: V("ann") }),
                    (grant(w, d, 1), w.r.copy({ secretSha: SECRET(1), bySecret: true }))]) {
     const rows = c.statement_acknowledgements.acknowledgements;

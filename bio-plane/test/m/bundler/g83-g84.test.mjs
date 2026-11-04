@@ -14,14 +14,15 @@ import { makeRepo, run, rm, VERSION, ACCOUNT, PLANE } from "./repo.mjs";
 const SLUG = "grp";
 const CF = { CF_TOKEN: "cf-secret-token-value", CF_ACCT: ACCOUNT };
 const TEST_ACCOUNT = "20b533579290b9b93168345edd3b7f72";
-const TESTENV = { CF_TOKEN: "cf-secret-token-value", CF_ACCT: TEST_ACCOUNT, CIVICSMITH_TEST_INSTANCE: SLUG };
-const testDeploy = (root, stub, flags = []) => run(root, "bio-plane", ["scripts/deploy.mjs", SLUG, VERSION, ASSET, "--test-instance", ...flags], { env: TESTENV, stub });
+const TSLUG = "p3dev-grp";   /* a test deploy's copy is a development deployment (p3dev.mjs) */
+const TESTENV = { CF_TOKEN: "cf-secret-token-value", CF_ACCT: TEST_ACCOUNT, CIVICSMITH_TEST_INSTANCE: TSLUG };
+const testDeploy = (root, stub, flags = []) => run(root, "bio-plane", ["scripts/deploy.mjs", TSLUG, VERSION, ASSET, "--test-instance", ...flags], { env: TESTENV, stub });
 const ASSET = "dist/bio-plane.bundled.mjs";
 const SERVICES = [{ binding: "SELF", service: "bio-plane" }, { binding: "AGENT", service: "alpha-worker" }];
 const repo = () => makeRepo({ plane: { config: { services: SERVICES } } });
 const deploy = (root, stub, flags = []) => run(root, "bio-plane", ["scripts/deploy.mjs", SLUG, VERSION, ASSET, ...flags], { env: CF, stub });
 // fixtures-own: platform the Cloudflare API's own answers to the deploy's account calls, a scripted-network double of the platform; no module answers for them
-const okStub = (extra = {}) => ({ subdomain: "sub", put: "accept", scripts: { "alpha-worker": { settings: {} } }, ...extra });
+const okStub = (extra = {}) => ({ subdomain: "sub", put: "accept", scripts: { "alpha-worker": { settings: {} }, [`alpha-worker-${TSLUG}`]: { settings: {} } }, ...extra });
 const uploads = (r) => r.calls.filter((c) => c.method === "PUT" && !c.url.endsWith("/schedules"));
 const plain = (put, name) => put.metadata.bindings.find((b) => b.name === name);
 const HAVE_HINTS = existsSync(join(PLANE, "src/store-place.mjs"));

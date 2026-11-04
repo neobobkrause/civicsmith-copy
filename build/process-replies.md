@@ -5,3 +5,4 @@
 - civicsmith/civicsmith:2026-10-30-money-1-1.md · 2026-10-30 · BOB #339 · A job's START tells it to merge a round-1 job branch the hooks refuse
 - civicsmith/civicsmith:2026-10-30-bob-339-1.md · 2026-10-30 · BOB #340 · proc job complete refuses a job behind the tranche only by BOB's gate-neutral re
 - civicsmith/civicsmith:2026-10-30-bob-339-2.md · 2026-10-30 · BOB #340 · The gate runs every user module's tests on every job, not only when a provided s
+- civicsmith/civicsmith:2026-10-30-bob-341-1.md · 2026-10-30 · BOB #341 · An added export runs every unnamed user's suite; the local gate outlives the 30-

@@ -123,7 +123,7 @@ test("R33: structured-text-reader's and mail-reader's entries are registered unm
     eml: "From: a@example.org\r\nTo: b@example.org\r\nSubject: hi\r\n\r\nbody\r\n" };
   for (const [f, body] of Object.entries(cases)) assert.equal(detectFormat(enc(body), null).format, f, f);
 });
-test.todo("R33: tsv and xlsm are keys of the list; csv-reader answers a tab table as csv with its dialect and R36 answers an .xlsm as xlsx with variant macro (BOB: which governs)");
+/* R33's tsv and xlsm (kinds answered as csv and xlsx), the whole roster as one list and mhtml: roster-t53.test.mjs */
 
 test("R34: a file is judged from its bytes; a name that disagrees is named in a signal, and the answer is the content's", () => {
   const cases = [["report.docx", PDF, "pdf"], ["report.pdf", SAMPLES.zip, "zip"], ["table.xls", enc("a,b,c\n1,2,3\n4,5,6\n7,8,9\n10,11,12\n13,14,15\n"), "csv"],

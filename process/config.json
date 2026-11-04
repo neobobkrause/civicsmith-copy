@@ -1,0 +1,85 @@
+{
+  "tranche": "tranche",
+  "record_since": "4250e8860a482bcbebab243e6627ba0cd690e9d7",
+  "records": [
+    "process/"
+  ],
+  "transient": [],
+  "max_file_bytes": 1048576,
+  "lockfiles": [
+    "agent-runner/package-lock.json",
+    "bio-plane/package-lock.json",
+    "bio-plane/src/journey-check/package-lock.json",
+    "file-scanner/package-lock.json",
+    "newgroup/package-lock.json",
+    "ocr-worker/package-lock.json",
+    "pdf-worker/package-lock.json",
+    "reader-container/package-lock.json",
+    "sheet-worker/package-lock.json",
+    "site/package-lock.json"
+  ],
+  "node": "26.10.0",
+  "suite_timeout_minutes": 20,
+  "coordinator": "session_01RAN5eniJPZwnDgHRYfWFQb",
+  "process_repo": "https://github.com/neobobkrause/process3",
+  "lanes": [
+    {
+      "name": "ux",
+      "dir": "docs/development/ux-substrate/"
+    }
+  ],
+  "cloudflare_account": "20b533579290b9b93168345edd3b7f72",
+  "environment": [
+    "CLOUDFLARE_API_TOKEN",
+    "CLOUDFLARE_ACCOUNT_ID",
+    "BIO_INSTANCE",
+    "BIO_ADMIN_TOKEN",
+    "BIO_MEMBER_TOKEN",
+    "BIO_RATIFY_SEED",
+    "BIO_RELEASE_SEED",
+    "JOURNEY_ADMIN_HANDLE",
+    "JOURNEY_ADMIN_PASSWORD",
+    "JOURNEY_MEMBER_HANDLE",
+    "JOURNEY_MEMBER_PASSWORD"
+  ],
+  "modules_file": "build/modules.json",
+  "generated": [
+    {
+      "paths": [
+        "bio-plane/src/setup-words/rows.mjs",
+        "bio-plane/src/setup-words/words-unreviewed.json"
+      ],
+      "regenerate": [
+        "node",
+        "bio-plane/src/setup-words/build.mjs"
+      ],
+      "verify": [
+        "node",
+        "bio-plane/src/setup-words/build.mjs",
+        "--check"
+      ]
+    },
+    {
+      "paths": [
+        "bio-plane/dist",
+        "pdf-worker/dist",
+        "ocr-worker/dist",
+        "agent-runner/dist",
+        "agent-worker/dist",
+        "sheet-worker/dist",
+        "file-scanner/dist",
+        "reader-container/dist"
+      ],
+      "regenerate": [
+        "node",
+        "bio-plane/scripts/bundles.mjs"
+      ],
+      "verify": [
+        "node",
+        "--test",
+        "--test-force-exit",
+        "bio-plane/test/system/fleetbundles.test.mjs"
+      ]
+    }
+  ]
+}

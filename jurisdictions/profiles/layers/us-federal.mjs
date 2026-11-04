@@ -1,5 +1,8 @@
 /* The federal layer: Civicsmith's read-only layer for the United States (R109). Federal law's own facts only. Cut from the unsplit `oakland-alameda` profile at T53 (R114): every fact keeps its basis.
- * Level: federal. Plain data. */
+ * Level: federal. Plain data. Its records offices (R119) are the dated snapshot of the government's own list in
+ * ./us-federal-offices.mjs, written by the makers' script (R120); `coverage.as_of` is that read's date. */
+import OFFICES from "./us-federal-offices.mjs";
+
 export default {
   "id": "us-federal",
   "name": "United States (federal law)",
@@ -13,7 +16,7 @@ export default {
     "origin": "civicsmith"
   },
   "coverage": {
-    "as_of": "2027-12-31",
+    "as_of": OFFICES.as_of,
     "holidays_through": 2027
   },
   "records_laws": [
@@ -76,6 +79,7 @@ export default {
       ]
     }
   ],
+  "counterparties": OFFICES.offices.map((o) => o.entry),
   "deadlines": [
     {
       "rule": "foia_response",

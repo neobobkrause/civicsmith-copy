@@ -95,3 +95,20 @@ test("R13 an Outlook message is judged msg by its container and answered as an E
   assert.equal(r.format, "msg");
   assert.equal((await readMessage(r.bytes)).format, "eml");
 });
+
+test("R13 no network address remains: an IPv4 and an IPv6 address in the subject and the text are stripped, and a time or version is kept", async () => {
+  const NET = localize("doc-clean.mail.network_address_withheld", "[network address withheld]");
+  const headers = HEADERS.map((h) => (/^Subject:/i.test(h) ? "Subject: Outage at 198.51.100.23" : h));
+  const body = "The relay [2001:db8::17] and 2001:0db8:0000:0000:0000:ff00:0042:8329 and fe80::1%eth0 dropped mail from 203.0.113.7 at 09:30:05; version 1.2.3 and 10.0.0.256 stay.";
+  const r = await copy(F.eml(headers, body));
+  const out = text(r.bytes);
+  const read = await readMessage(r.bytes);
+  for (const gone of ["198.51.100.23", "2001:db8::17", "2001:0db8", "fe80::1", "203.0.113.7"]) {
+    assert.equal(out.includes(gone), false, gone);
+    assert.equal(read.body.text.includes(gone) || read.headers.subject.includes(gone), false, gone);
+  }
+  assert.equal(read.headers.subject, `Outage at ${NET}`);
+  for (const kept of ["09:30:05", "version 1.2.3", "10.0.0.256"]) assert.equal(read.body.text.includes(kept), true, kept);
+  assert.equal(read.body.text.split(NET).length - 1, 4);
+  assert.deepEqual(await cleanDocument(r.bytes), { ok: true, clean: true, format: "eml" });
+});

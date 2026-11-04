@@ -308,3 +308,4 @@ The answer:
 ## Open for Bob
 
 None: answered by Bob 2026-09-26 (K102).
+- **F1** *(not yet met: walk p3dev-l1)* After a test deploy of release 0.87.0 to the p3dev-l1 copy (4 Nov, 01:04-01:11Z), this container-backed member's /version did not answer 0.87.0 within the 60 s rollout check (ROLLOUT NOT CONFIRMED after 60s). Its /version answers the deployed version within the rollout check, or the check's bound is set from a measured container rollout time.

@@ -1,8 +1,8 @@
 /* doc-clean: an email's published copy (R13; N824; K2334, K5534). A captured message is rebuilt from what a reader of
  * the case may see: its text, its attachments (each cleaned by its own format's rule) and From, To, Cc, Date and
- * Subject as displayed. Every other header is dropped, every email address is stripped, and a name shows only where
- * the case's author marked it material, else it is withheld. The copy is a plain internet message (EML) whatever the
- * original's format. The reading is `mail-reader`'s; this file judges nothing of the message's bytes itself. */
+ * Subject as displayed. Every other header is dropped, every email and network address is stripped, and a name
+ * shows only where the case's author marked it material, else it is withheld. The copy is a plain internet message
+ * (EML) whatever the original's format. The reading is `mail-reader`'s; this file judges nothing of the message's bytes itself. */
 import { readMessage, attachmentBytes } from "../mail-reader/index.mjs";
 import { localize } from "../setup-words/index.mjs";
 import { CleanRefusal } from "./refusal.mjs";
@@ -11,7 +11,16 @@ const enc = new TextEncoder();
 const ADDRESS = /[A-Za-z0-9._%+'!#$&*\/=?^`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/g;
 const oneLine = (s) => String(s).replace(/[\r\n]+/g, " ").trim();
 const withheld = () => localize("doc-clean.mail.withheld", "withheld");
-const stripAddresses = (s) => String(s).replace(ADDRESS, () => localize("doc-clean.mail.address_withheld", "[address withheld]"));
+/* A network address: an IPv4 address of four octets, or an IPv6 address written whole (eight groups) or shortened by
+ * `::`, optionally bracketed; an IPv4 tail on an IPv6 address is matched by IPV4 within it. */
+const OCTET = "(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)";
+const IPV4 = new RegExp(`(?<![\\w.])${OCTET}(?:\\.${OCTET}){3}(?![\\w]|\\.\\d)`, "g");
+const H = "[0-9A-Fa-f]{1,4}";
+const IPV6 = new RegExp(`(?<![\\w:.])\\[?(?:(?:${H}:){7}${H}|(?:${H}:){1,7}:(?:${H}(?::${H}){0,6})?|::(?:${H}(?::${H}){0,6}))(?:%[\\w.]+)?\\]?(?![\\w:])`, "g");
+const stripAddresses = (s) => String(s)
+  .replace(ADDRESS, () => localize("doc-clean.mail.address_withheld", "[address withheld]"))
+  .replace(IPV6, () => localize("doc-clean.mail.network_address_withheld", "[network address withheld]"))
+  .replace(IPV4, () => localize("doc-clean.mail.network_address_withheld", "[network address withheld]"));
 
 /* The display names of an address list: each entry's name part, never its address. */
 function namesOf(list) {
