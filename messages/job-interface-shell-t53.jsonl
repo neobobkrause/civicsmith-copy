@@ -1,3 +1,4 @@
 {"at":"2026-11-05T18:20:46Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: job interface-shell-t53 BLOCKED: run status"}
 {"at":"2026-11-05T18:20:59Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-05T19:35:14Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: job interface-shell-t53 BLOCKED: run status"}
+{"at":"2026-11-05T19:35:25Z","row":"outcome","n":2,"outcome":"delivered"}
