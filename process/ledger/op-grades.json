@@ -15,7 +15,9 @@
   "requirements": "build/requirements/op-grades.md",
   "uses": [
     "setup-words",
-    "op-grades-folds"
+    "op-grades-folds",
+    "credentials",
+    "registers"
   ],
   "suite": {
     "cwd": "bio-plane",
