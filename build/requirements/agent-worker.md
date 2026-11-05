@@ -256,6 +256,6 @@ The answer:
 
 None: answered by Bob 2026-09-26 (K102).
 - **F1** *(not yet met: walk p3dev-l1)* After a test deploy of release 0.87.0 to the p3dev-l1 copy (4 Nov, 01:04-01:11Z), this container-backed member's /version did not answer 0.87.0 within the 60 s rollout check (ROLLOUT NOT CONFIRMED after 60s). Its /version answers the deployed version within the rollout check, or the check's bound is set from a measured container rollout time.
-- **F2** *(not yet met: coordinator ruling 5 Nov 2026; agent-runner R13, K5576)* No runner is bound: the configuration declares no `REMOTE` or `RUNNER`, no source reads either, and no test of this module reads `agent-runner`'s wire; a sign-in account is refused `ASSISTANT_REMOTE_NOT_READY` (`why` `absent`) before any model call.
-- **F3** *(not yet met: agent-model R35, R53, PR 355)* `agent-model`'s circuit is kept in the Durable Object `HEALTH`: each conversation is admitted by `circuitAdmit` before it is sent and its class told to `circuitRecord` after; `GET /health` answers `health` for an `account_id` and `entry_id` over it.
-- **F4** *(not yet met: agent-drafts:358)* The suites read a draft's label as now carried, `{kind: "machine", ai}`, `ai` as `converse` served it, never as exactly `{kind: "machine"}`.
+- **F2** No runner is bound: the configuration declares no `REMOTE` or `RUNNER`, no source reads either, and no test of this module reads `agent-runner`'s wire; a sign-in account is refused `ASSISTANT_REMOTE_NOT_READY` (`why` `absent`) before any model call.
+- **F3** `agent-model`'s circuit is kept in the Durable Object `HEALTH`: each conversation is admitted by `circuitAdmit` before it is sent and its class told to `circuitRecord` after; `GET /health` answers `health` for an `account_id` and `entry_id` over it.
+- **F4** The suites read a draft's label as now carried, `{kind: "machine", ai}`, `ai` as `converse` served it, never as exactly `{kind: "machine"}`.
