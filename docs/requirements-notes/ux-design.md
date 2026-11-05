@@ -60,9 +60,9 @@ Four things first:
 | screens-intake | R92 | screen.inbox.row.named, screen.inbox.row.noted, screen.inbox.row.unnamed, screen.inbox.row.became, screen.inbox.ladder.unknown.means, screen.inbox.ladder.same.means, screen.inbox.ladder.partly.means, screen.inbox.ladder.group.means, screen.inbox.ladder.public.means | n/a | yes (words.json:123894) | screens-intake.md:149 |
 | screens-investigate | R92 | screen.ties.preview.employer.name, screen.ties.preview.employer.group, screen.ties.preview.relative.name, screen.ties.preview.relative.group, screen.ties.preview.business.name, screen.ties.preview.business.group, screen.ties.preview.other.name, screen.ties.preview.other.group | n/a | yes (words.json:123957) | screens-investigate.md:168 |
 | screens-plan | R9 | screen.plan.option.goes, screen.plan.option.nooffice, screen.plan.support.hypothetical.means | n/a | yes (words.json:123901) | screens-plan.md:27 |
-| screens-public, screens-publish | R102; R105, R106 | none named (words owed) | n/a | no | screens-public.md:44; screens-publish.md:169,172,173 |
+| screens-public, screens-publish | R102; R105, R106 | screen.published.ungraded.line, screen.published.ungraded.more, screen.ceremony.when.help.named, screen.case-editor.needed.targets, screen.case-editor.passages.heading | n/a | yes (words.json:123880) | screens-public.md:44; screens-publish.md:169,172,173 |
 | installer | R95 | none named (words are UX-DESIGN's) | n/a | no | installer.md:156 |
-| screens-settings | R88, R96, R104 | none named | n/a | no | screens-settings.md:177,185,193 |
+| screens-settings | R88, R96, R104 | screen.settings.placement.heading, screen.settings.placement.hint, screen.settings.placement.jurisdiction, screen.settings.placement.neither, screen.settings.placement.fixed, shell.choice.chosen, shell.toggle.state, shell.toggle.on, shell.toggle.off, screen.setup.places.offered.none | n/a | yes (words.json:123915) | screens-settings.md:177,185,193 |
 
 Counts: 51 blocking rows, about 50 requirement marks, 26 modules, 79 named keys; 39 named keys missing from W (11 of them drafted in U, 28 in neither).
 
