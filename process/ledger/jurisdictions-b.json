@@ -32,8 +32,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "R109 is the only open mark. Its unmet part is the federal layer's FOIA records_help block (jurisdictions/test/t53-shipped.test.mjs:230 test.todo; build/jobs/T53/jurisdictions.md R109 note). Everything else R109 lists is already in jurisdictions/profiles/layers/us-federal.mjs, and that file has no records_help (California and Oakland do). Two things stop me. (1) Paths: the block is profile data in jurisdictions/profiles/layers/us-federal.mjs, and its test belongs beside jurisdictions/test/t53-shipped.test.mjs. My START lets me change only build/requirements/jurisdictions-b.md, docs/requirements-notes/jurisdictions-b.md and bio-plane/test/m/jurisdictions-b/, and the Status line says the code stays in jurisdictions/ until a job of this module moves it. (2) Content: the T53 job left it owed for a reading of 5 U.S.C. section 552 for all ten citations. jurisdictions/test/fixtures/foia-text.mjs (govinfo, 2026-10-21) quotes only (a)(3)(A), (a)(3)(E), (a)(4)(A)(iii), (a)(4)(B), (a)(6)(A)(i), (a)(6)(A)(ii) and (a)(6)(B)(i). That leaves segregate (b), electronic (a)(3)(B), cost (a)(4)(A)(ii) and others unread. The T53 job also left open whether R93's integer days shows the twenty as working days. Needed, BOB's choice: (a) widen this job's paths to jurisdictions/profiles/layers/us-federal.mjs and jurisdictions/test/, and rule on the kind of day and on purpose/inspect_photograph, which FOIA may not have, so I can read the statute and write the block; or (b) give the block to a jurisdictions job. Nothing was changed on this branch.",
-    "at": "2026-11-05T09:39:08Z"
+    "state": "COMPLETE",
+    "at": "2026-11-05T11:28:24Z"
   }
 }
