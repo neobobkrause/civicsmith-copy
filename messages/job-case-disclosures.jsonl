@@ -1,3 +1,4 @@
 {"at":"2026-11-04T15:40:50Z","row":"sent","n":1,"to":"bob","text":"job case-disclosures complete, PR #269 ready, session session_01RAN5em1J2s8MbNd2xierk2: run status"}
 {"at":"2026-11-04T15:41:04Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-05T04:41:11Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job case-disclosures complete, PR #416 ready, session session_01RAN5epJsnS56RtzyykMZTx: run status"}
+{"at":"2026-11-05T04:41:32Z","row":"outcome","n":2,"outcome":"delivered"}
