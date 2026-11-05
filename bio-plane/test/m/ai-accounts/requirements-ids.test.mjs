@@ -3,7 +3,7 @@
    coverage check's rule (requirements README convention 5: `**Rn**` first on its line). The non-requirement text moved to
    docs/requirements-notes/ai-accounts.md. The R and F lines alone were over the cap (72,661 bytes), so BOB split by copy
    (ruling 5 Nov 08:23, PR 463): R41, R46, R49, R50, R70, R72 and R77 live verbatim in build/requirements/ai-accounts-lists.md
-   and this file keeps one line where they stood. The start commit's lines are rebuilt from the two files, in its order. */
+   and this file keeps each as a retired stub where it stood. The start commit's lines are rebuilt from the two files, in its order. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -15,7 +15,7 @@ const FILE = at("build/requirements/ai-accounts.md");
 const NOTES = at("docs/requirements-notes/ai-accounts.md");
 const LISTS = at("build/requirements/ai-accounts-lists.md");
 const MOVED = ["R41", "R46", "R49", "R50", "R70", "R72", "R77"];
-const MOVED_LINE = "- R41, R46, R49, R50, R70, R72 and R77 moved to ai-accounts-lists (5 Nov 2026)";
+const stub = (id) => `- **${id}** *(retired: moved to ai-accounts-lists ${id}, PR 463)*`;
 
 const START_IDS = ("R1 R2 R3 R4 R23 R5 R6 R7 R11 R9 R8 R10 R12 R13 R14 R15 R16 R17 R18 R19 R20 R21 R22 R24 R25 R26 R34 R38 R39 " +
   "R40 R41 R42 R43 R44 R45 R46 R47 R48 R49 R50 R51 R52 R53 R54 R55 R56 R57 R65 R66 R67 R68 R58 R59 R60 R61 R62 R69 R70 R71 R72 " +
@@ -35,15 +35,14 @@ const startLines = () => {
   return START_IDS.map((id) => (MOVED.includes(id) ? lists : here).get(id));
 };
 
-test("consolidation: the requirements file holds the start commit's ids, in their order, less the seven moved", () => {
-  assert.deepEqual(idLines(read(FILE)).map(idOf), START_IDS.filter((id) => !MOVED.includes(id)));
+test("consolidation: the requirements file holds the start commit's ids, in their order, the seven moved as stubs", () => {
+  assert.deepEqual(idLines(read(FILE)).map(idOf), START_IDS);
 });
 
-test("split: the seven moved ids are in ai-accounts-lists, and one line here says where they went", () => {
+test("split: the seven moved ids are in ai-accounts-lists, and each is a retired stub here naming where it went", () => {
   assert.deepEqual(idLines(read(LISTS)).map(idOf), MOVED);
-  const file = read(FILE).split("\n");
-  assert.equal(file.filter((l) => l === MOVED_LINE).length, 1);
-  assert.equal(file.indexOf(MOVED_LINE), file.findIndex((l) => /^- \*\*R40\*\*/.test(l)) + 1, "it stands where R41 stood");
+  const here = new Map(idLines(read(FILE)).map((l) => [idOf(l), l]));
+  for (const id of MOVED) assert.equal(here.get(id), stub(id), id);
 });
 
 test("consolidation: every R and F line is the start commit's word for word, its mark aside", () => {
