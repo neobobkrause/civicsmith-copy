@@ -197,3 +197,4 @@
 {"at":"2026-11-05T23:06:43Z","row":"sent","n":99,"to":"bob","text":"merged PR 489 (job screens-document-beta); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-05T23:08:42Z","row":"sent","n":100,"to":"bob","text":"the starter started job case-check (PR 603): subscribe_pr_activity to each pull request"}
 {"at":"2026-11-05T23:08:48Z","row":"outcome","n":99,"outcome":"delivered"}
+{"at":"2026-11-05T23:09:40Z","row":"outcome","n":100,"outcome":"delivered"}
