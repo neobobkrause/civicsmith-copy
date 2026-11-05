@@ -33,7 +33,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T03:34:41Z"
+    "state": "BLOCKED",
+    "reason": "R31 and R5 are done on job/action-grammar (d0def7c5): governingLawsOf answers {level, citation, layer} (layer null when absent), C-2.10 refuses a malformed layer naming governing_laws[i].layer, recordsLawOf answers law_layer; R5's owed test already exists (test/m/action-grammar/t45.test.mjs, 'R5 (T45): the lifecycle grammar is the same for every kind'); both marks struck; module suite 86/86 green. Not completed because merging it turns three tests in other modules red (they pass on tranche without this change): they pin the old shape without layer. Owner actions: bio-plane/test/m/actions/acts.test.mjs:108 (actionLaws, 'R18 R25 actionLaws: refusals in order...') expects [{level, citation}]. Owner screens-action: bio-plane/test/m/screens-action/seam-t51.test.mjs:54 (walk, reached from :99 and :107, the two 'R20, R4, R9' C64 tests) expects stored [{level:'federal', citation:'5 U.S.C. § 552'}]. Each needs layer: null added to its expected entry, which R31 states. Proposed: BOB lands those two one-line test edits with this branch (or reopens actions and screens-action for them), then completes this job; no change to action-grammar is needed.",
+    "at": "2026-11-05T03:50:12Z"
   }
 }
