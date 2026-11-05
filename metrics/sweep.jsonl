@@ -110,3 +110,4 @@
 {"at":"2026-11-05T09:32:58Z","row":"check","by":"job complete","live":9,"live_at":"2026-11-05T09:22:37Z","job_cap":20,"startable":3,"idle_capacity":{"kind":"work","since":"2026-11-05T08:51:44Z","min":41,"live":9,"cap":20,"held":0,"startable":3,"empty":11,"alarm":true}}
 {"at":"2026-11-05T09:35:27Z","row":"ready","live":15,"job_cap":20,"started":["jurisdictions-b","jurisdictions-c"]}
 {"at":"2026-11-05T09:40:54Z","row":"check","by":"job start","live":15,"live_at":"2026-11-05T09:35:27Z","job_cap":20,"startable":0}
+{"at":"2026-11-05T09:46:58Z","row":"check","by":"send","live":15,"live_at":"2026-11-05T09:35:27Z","job_cap":20,"startable":1,"idle_capacity":{"kind":"work","since":"2026-11-05T09:40:54Z","min":6,"live":15,"cap":20,"held":0,"startable":1,"empty":5,"alarm":false}}
