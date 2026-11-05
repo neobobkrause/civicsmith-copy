@@ -82,6 +82,25 @@ export function refusalsIn(body) {
   return out;
 }
 
+/* F2: the handles an answer of the store holds as content, at any depth: each string under a `handle` key, and each string of a
+   `handles` list. A handle the page then draws is a person's name, not a developer's slug (design.mjs `developerWords`). */
+export function handlesIn(body) {
+  const out = new Set();
+  const seen = new Set();
+  const visit = (v, depth) => {
+    if (!v || typeof v !== "object" || depth > 64 || seen.has(v)) return;
+    seen.add(v);
+    if (Array.isArray(v)) { for (const x of v) visit(x, depth + 1); return; }
+    for (const [k, x] of Object.entries(v)) {
+      if (k === "handle" && typeof x === "string" && x) out.add(x);
+      else if (k === "handles" && Array.isArray(x)) for (const h of x) if (typeof h === "string" && h) out.add(h);
+      visit(x, depth + 1);
+    }
+  };
+  visit(body, 0);
+  return [...out];
+}
+
 export class Walk {
   /* `out` the output directory; `arm` "local" or "live"; `copyHost` the instance's host (set once known); `ownHosts` the
      other hosts the walk itself serves (the installer, the consent page); `secrets` values never to be written. */
@@ -91,6 +110,8 @@ export class Walk {
     this.journey = "walk";
     /* R5: the latest member session `whoami` answered the browser, as the plane said it (`administer` and the rest) */
     this.whoami = null;
+    /* F2: the handles the copy's own answers held as content (`handlesIn`), so a drawn handle is not read as a slug */
+    this.handles = new Set();
     /* R6: the LIVE and DESIGN pairs written, relative to `out`, put to BOB before a release is called ready */
     this.pairs = [];
     /* what the walk could not walk here and says so, never a failure (R7 with no handle, K3380) */
@@ -129,6 +150,10 @@ export class Walk {
   /* K4473 (RC-R1): the digests of captures the walk made whose answer stated the reading pending (`reading_pending: true`), until a
      reading of the digest is read; `op=reading`'s `found: false` for one of these is not a refusal. */
   #pendingReadings = new Set();
+  /* a member's own testimony the walk recorded (`op=testify` answering `authored: true` and its `capture_sha`) is never read in
+     (`provenance`: "nothing was read in"), so no reading of it is ever held: `op=reading`'s `found: false` for its digest is the
+     plane's answer that none is held, never a refusal. */
+  #authored = new Set();
   #answers = Promise.resolve();
 
   async #onResponse(res) {
@@ -143,6 +168,7 @@ export class Walk {
       const text = await res.text().catch(() => "");
       body = text.split("\n").filter((l) => l.trim()).map((l) => { try { return JSON.parse(l); } catch { return { unreadable_line: l.slice(0, 200) }; } });
     } else if (/json/.test(type)) { try { body = JSON.parse(await res.text()); } catch { body = null; } }
+    if (url.host === this.copyHost && body) for (const h of handlesIn(body)) this.handles.add(h);
     if (url.searchParams.get("op") === "whoami" && body && body.ok === true && body.result && body.result.session) this.whoami = body.result;
     /* R8: every refusal the answer carries, at any depth, whatever its status. One the step expects is excused by its
        code wherever it sits, and excuses the answer's status; each other is one failure, naming where it sits. */
@@ -152,8 +178,10 @@ export class Walk {
       const sha = inner.document?.capture?.sha256 ?? inner.capture?.sha256;
       if (typeof sha === "string" && /^[0-9a-f]{64}$/.test(sha)) this.#pendingReadings.add(sha);
     }
+    if (op === "testify" && inner && inner.ok !== false && inner.authored === true && typeof inner.capture_sha === "string"
+      && /^[0-9a-f]{64}$/.test(inner.capture_sha)) this.#authored.add(inner.capture_sha);
     const readSha = op === "reading" ? url.searchParams.get("sha256") : null;
-    const pendingRead = readSha !== null && this.#pendingReadings.has(readSha);
+    const pendingRead = readSha !== null && (this.#pendingReadings.has(readSha) || this.#authored.has(readSha));
     if (pendingRead && inner && (inner.found === true || inner.reading?.found === true)) this.#pendingReadings.delete(readSha);
     const refusals = refusalsIn(body).filter((r) => !(pendingRead && r.how === "found: false"));
     const matches = (e, code) => (e instanceof RegExp ? e.test(code) : e === code);

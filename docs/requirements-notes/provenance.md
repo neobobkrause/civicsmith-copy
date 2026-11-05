@@ -1,0 +1,39 @@
+# provenance — requirements notes
+
+Text moved out of `build/requirements/provenance.md` to bring that file under the requirements cap (70,000 bytes), unchanged in wording (job provenance, T53). No requirement lives here: every **R<n>** line and its mark stays in the requirements file. `bio-plane/test/m/provenance/requirements-ids.test.mjs` asserts the move changed no id and no mark.
+
+## Change history (the requirements file's former Status line)
+
+**Status** · In force: approved by Bob 2026-09-26 (a product module, P17; K67), with later folds reviewed. Split (N512; K617, K1193): R19–R23, R36, R54 retired to `provenance-routes` and R31–R34, R39, R49, R56, R57 to `attestation`, never reused; R40 is stated in both new modules too; R58 by BOB's ruling on the seam. Last changed T51 fix round 9 (G127, K4833, K4837: the whole digest is the register's only key, parts are the child table `register_parts` (R74, R75, R77); R76 the refusal's shape, R78 `partsOf`, R79 the migration of part-keyed rows; R41, R72, R73 restated); R41, R72–R79 marked not yet met (T51). Last changed T51 (fix round 10, K5148: R80 new, the read op `authority`, so a decided authority reaches the read a member uses; R66 restated, R53 and R68 amended; R66 and R80 marked met by the tests that name them, BOB strikes R66's mark). Last changed T51 (CHANGE K4259: R70 new, the read op `origins`; R53 and R68 amended). Last changed T51 (FR-10: R64 new, `declareorigin` served; R65–R67 new, `declareAuthority`, `authorityOf` and the rule that an AI only proposes, K4169, C62; R68, R69 new, the module's `DECLARED_OPS`, K4168, K4202; R53 and R41 amended); R64–R69 met by the tests that name them (T51). Last changed T48 (T48-14: R1 and R48 amended, `registered` the first registration's instant, never moved by a re-registration, and `last_registered` the latest's, so `capture` R77's "first registered" reads true, N1009, K3065; `mk6-bundle-names-no-author.test.mjs` signs in by `{handle}`, N1052, K3192, test only; K3195); marked not yet met (T48). Last changed T36 (T36-9: R60 new, `receiptsOfCapture`; R61 new, a receipt's `reputation`; N730 a Suggestion only; K1973, K1993); R60, R61 marked not yet met (T36), every other requirement met (PROVENANCE #17, K1952). Last changed T53 (BOB #325: R82–R84 new, N824's message by email and its attachments; R42 pointing to R83; R81 amended, JOURNEYS R-24); marked not yet met (T53).
+
+## Satisfies
+
+- `docs/architecture/BIO_System_Design.md` §3, construct 2 (intake, capture and provenance: the trust root; the chain of hops with `provenance-routes`).
+- `docs/architecture/BIO_Intake_Doctrine_v1_1.md` §3, "Members of a captured archive" (K1852: a file cut out of an archive carries its grade unchanged; a later own capture lands beside it; R15, R42, R48, R59).
+- `docs/architecture/BIO_Intake_Doctrine_v1_1.md` §2a (the doorbell: its material received, not fetched, K509 (3); R51), §1a (admission requires provenance), §2 (provenance per document), §3 (the capture-chain axis; co-attestation by trusted timestamp and co-archive with `attestation`), §3a (member-original records), §3b (SHA-256, plain JSON), §8 (one capture, one home; the census; what `existed` may claim; a capture held in parts).
+- `docs/architecture/BIO_State_Rules_Consistency_v1_5.md` §4.1 (the intake provenance register and its daemon-era anatomy), §6 I-18.
+- `docs/development/AUTHORITY-AND-TRUST.md`, RULED: transitive trust with disclosure (the chain, grade a function of the chain); an alternative source counts as a re-fetch (the `via` column); what publication requires (provenance authority).
+- `docs/development/ARCHIVE-FALLBACK.md` §Shape on the capture, §Same document, two sources.
+- `docs/development/MEMBER-KNOWLEDGE-DESIGN.md` §2, §3, §4.1.
+- (T53) N824 (K2425, K2434, K5504–K5506, K5527: a message brought in by email, graded as an upload; an attachment earns what its message earns): R82–R84, R42. JOURNEYS R-24 (K5471 (6)): R81.
+- `docs/development/LINK-FIDELITY.md` §A re-capture of a document the record already holds is the NORMAL case.
+- `docs/architecture/BIO_Content_Framework_v0_10.md` §8.3 (a declared origin, REC-225), §14.2 (the fetch-path grade table, D-693).
+- Rulings: DEC-21 (the capture axis), D-179 and REC-190 (BOB #26, #31, #32), D-533, D-530, D-556 (BOB #33, #34), D-693 and D-709 (BOB #35). DEC-19 and DEC-56 (the route marker) are `provenance-routes`' (N512).
+
+## Suggestions
+
+- **Checks carried here.** C-53.1–C-53.9, C-53.13, C-53.14 (this module's own row, `REGISTER_ENTRY_CHECKS`; K324), C-24.1–C-24.3, C-103 (R58) and the C-18 register arms (R42–R46) move with this module. C-34.1–C-34.4 moved to `provenance-routes` and C-89.1 to `attestation` (N512). Of the rest of C-18, C-18.5 (`gathering.json`) goes to monitoring and C-18.7 stays with C-18.8 in promotion (K49). C-53.10–C-53.12 are publication's.
+- **What stays out.** `testimonyReach`, `observationsNamingAuthor` and `attributeObservation` read inquiry basis and attribution tables (later modules); `attestText`, `transcriptionAttest` and `text_attestations` are extraction's; `projectLinks` writes `refs` (connections, K23).
+- **Testify's later work.** Until T19's layers 4–5, the legacy store's promotion step indexed the words, minted the content row and logged the extraction look. They become the slot's registrations by `extraction` (its R65), `content` (its R49, the check and the mint) and `observation-log` (its R30) through R52, so this module calls none of them; the legacy store's `#testimonyWithin` and extent-check lines were replaced by the slot's two calls, and the store is retired.
+- **The receipt's observation row.** Observation-log (layer 5) registers its OBSERVATION-LOG-DESIGN §4.1 writer through R47; `capture`'s reuse-verdict rows can use the same pattern.
+- **The evidence store** (the R2 working bucket) is `record-core`'s, added to its requirements before T3 (K49); until then `registerAudit` and `partsHeld` take it through injected callbacks (`attest`, now `attestation`'s, too).
+- **Testify is here** (K49): the authored flag's only writer and its fence live in one module.
+- `homeCensus` walks every `files` and `history` row: an unbounded scan, admin-only today. Keep it admin-only or page it.
+- D-177, D-693, D-698 and D-709 have built work on `land/worker/D-177`, `D-693`, `D-698`, `D-709` (snapshot branch), judged at the job.
+- **T36 (T36-9).** (N730; K1993 (4)) An index on `captured_locators.retrieval_locator`, so `capture-requests` R49's retrieval-locator read (asked only after the indexed reads miss) does not scan the table. It changes nothing in R48's read contract.
+- **T35 (T35-18).** R59's `archive` names the archive, not the archive's own receipts; a reader that wants the archive's hop reads `captureGrade` or `receipts` for `archive.sha256`. The new bases (`CAPTURE_UNPACKED_FROM_ARCHIVE`, `CAPTURE_UNPACKED_UNRESOLVED`) are answer codes with no catalogue row, as R26's and R51's are. The archive's digest and the index are read from the receipt's retrieval locator (R15), which no caller writes, never from a document. The entry's seven DEC-149 strings (`checks.mjs`:138, :139 (C-103.7); `index.mjs`:899, :905, :923, :1387, :1402) are applied with a test naming each (plan rule 4; `build/plan/draft-T35-dec149-l1-l7.md`), and change no requirement; R59's own `why` sentences follow the same rule ("your group's Civicsmith", never "this instance" or "the plane").
+- **The T25 copies (option B, K1220), deleted in T26 (N516, K1248).** No name moved by N512 is held here any more: `routeFinding` is provenance-routes', `instanceStatement`, `attest` and `attestOp` attestation's. No table has two writers: `provenance_route_marks` is written only by `provenance-routes`, `receipt_keys` and `signed_receipts` only by `attestation` (P7).
+
+## Open for Bob
+
+None (R34's key ruled by Bob, K59).
