@@ -8,7 +8,7 @@ import { RUNGS, RUNG_ABSENT, NON_ACTS, MACHINE_REFUSALS, JUSTIFICATION_REFUSALS,
          aliased, phoneOf } from "../../../src/op-grades/index.mjs";
 import { T33_RUNGS, T33_RUNG_ABSENT, T33_NON_ACTS } from "../../../src/op-grades/t33.mjs";
 import { T34_RUNGS, T34_RUNG_ABSENT, T34_NON_ACTS } from "../../../src/op-grades/t34.mjs";
-import { readRows, declaredSentence, doesSentence, declaredAliases, ownerReads, collectDeclaredOps, reqText, tickedAll } from "./declared.mjs";
+import { readRows, declaredSentence, doesSentence, declaredAliases, ownerReads, collectDeclaredOps, registeredOpGrades, reqText, tickedAll } from "./declared.mjs";
 
 const gradeOf = (op) => Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op].ground : null;
 const isRead = (op) => typeof NON_ACTS[op] === "string" && NON_ACTS[op].startsWith("read: ");
@@ -230,10 +230,13 @@ const R13_OWNERS = new Set(tickedAll(reqText(13)).filter((m) => Object.values(DE
 const R13_DECLARED_READS = Object.keys(DECLARED.ops).filter((op) => DECLARED.ops[op].weight === "read" && R13_OWNERS.has(DECLARED.owners[op]));
 
 test("R13 (K5159): every read an owner R13 names declares is a NON_ACT, with no rung or ground; a declared read with no row fails "
-   + "here; control: the same owners' writes are graded, not read", () => {
+   + "here; control: the same owners' writes are graded, not read", async () => {
   assert.ok(R13_OWNERS.has("answers") && R13_DECLARED_READS.length >= 10, "the reads of R13's owners are found");
-  assert.deepEqual(R13_DECLARED_READS.filter((op) => !Object.hasOwn(NON_ACTS, op)), [], "every declared read holds its NON_ACTS row");
-  for (const op of R13_DECLARED_READS) assert.equal(gradeOf(op), null, op);
+  /* R49 (K4168): a declared op with no hand row takes its row from its owner's declaration, so the tables read here are the
+     registered ones (money's and explore's later reads have no hand row, and need none) */
+  const R = await registeredOpGrades();
+  assert.deepEqual(R13_DECLARED_READS.filter((op) => !Object.hasOwn(R.NON_ACTS, op)), [], "every declared read holds its NON_ACTS row");
+  for (const op of R13_DECLARED_READS) assert.equal(Object.hasOwn(R.RUNGS, op) || Object.hasOwn(R.RUNG_ABSENT, op), false, op);
   /* control: a write of an owner R13 names is not a read: answers declares standingquestionset as a mutating act */
   assert.equal(DECLARED.owners.standingquestionset, "answers");
   assert.equal(DECLARED.ops.standingquestionset.mutating, true);

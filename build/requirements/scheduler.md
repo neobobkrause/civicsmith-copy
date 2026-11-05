@@ -149,3 +149,4 @@ None: answered by Bob 2026-09-26 (K102).
 - R3 (a throwing consumer isolated), R9's four missing producers and R11 (reconcile at start) are stated from this reading.
 - D-583 is carried as R12, met when `capture-requests` R29 counts `expired` as a completion; `ai-runs` keeps the wake (its R16).
 - Uses: add `progressions`, `bias`, `entities`, `promotion`; drop `record-core`, `host-governor`, `extraction`, `strength`, `reevaluation` (nothing here calls them).
+- **F1** *(not yet met: base-red)* The test bio-plane/test/m/scheduler/plane.test.mjs::R12: a run waiting on a request that reaches expired is woken on the alarm that expires it, exactly once fails at the tranche (base-red since PR 180); make it pass, or change the requirement it pins.

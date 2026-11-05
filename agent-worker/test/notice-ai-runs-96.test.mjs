@@ -29,8 +29,11 @@ async function dispatched() {
     seen.answers.push({ status: res.status, body: JSON.parse(text) });
     return new Response(text, { status: res.status, headers: res.headers });
   } };
+  /* ai-runs PR 323 (F1, fail closed): with no path source the dispatch is withheld AI_PATH_NOT_READY. This test registers
+     its own source answering `ok` rather than leaning on the world's default stand-in (notice-ai-runs-323 holds the control). */
   const w = world({ env: { AGENT_WORKER, STORE: { idFromName: (n) => `id:${n}` }, AI_RUN_DISPATCH_WAIT_MS: "2000" },
-                    deployedModes: ["check"] });
+                    deployedModes: ["check"], pathReady: null });
+  assert.equal(w.runs.registerPathReady("plane", () => ({ state: "ok" })).ok, true, "this test's own path source");
   await w.group("ann", "bob", { noAccount: ["ann"] });
   await w.signin("ann");
   w.ctx.id = { equals: (x) => x === "id:bio" };

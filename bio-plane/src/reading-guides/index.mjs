@@ -1,5 +1,5 @@
 /* reading-guides — what to look for in one kind of document (requirements: `build/requirements/reading-guides.md`
- * R1–R15; D8, D24, D65; K2405, K2418, K2472; v0.2 rule 11).
+ * R1–R20; D8, D24, D65; K2405, K2418, K2472; v0.2 rule 11; T53: N1257, N858).
  *
  * A guide is a short list of items, each a label, what to look for and, if given, where: by hand a checklist, for the
  * assistant what to read for, so the two are one text (D65). Civicsmith's library ships with the release (R1,
@@ -34,6 +34,17 @@
  *   now          the module's clock, an ISO instant (default: the wall clock).
  *   profileView  `() → view`, the active profiles combined (R13; default: `jurisdictions.combine` over record-core's
  *                `jurisdiction_profiles` setting; none combining, an empty view).
+ *   profileList  `() → [id | profile]`, the active profiles and layers themselves (R17; default: record-core's
+ *                `jurisdiction_profiles` setting), combined for the view and read layer by layer for the guides.
+ *
+ * LAYERS (R17, R18; T53). A kind's procedure guide from each active layer is answered beside the others, each naming its
+ * layer, unranked: a layer's own guide is read from that layer (so two layers giving one kind never conflict here, and
+ * whatever `combine` keeps of them is not read twice). A group guide drafted from a layer's guide records `layer`.
+ *
+ * OFFERED ONLY WITH ALL THREE (R19, R20; T53). A profile guide is answered only when `jurisdictions`' `attributionLacks`
+ * answers none for it; else it is named in `not_offered` with what it lacks. A team's own guide is answered as before;
+ * the team's sole member may opt it out of review (`guideOptOut`), and it then answers `not_reviewed` until a counted
+ * professional review and R3's second approval are both recorded.
  *
  * No place is named here (R11). */
 import { isMachineIdentity } from "../record-grammar/actors.mjs";
@@ -43,7 +54,7 @@ import { canonicalJson } from "../record-grammar/json.mjs";
 import { sha256HexSync } from "../record-grammar/sha256.mjs";
 import { recordOf, stampInstant } from "../record-core/index.mjs";
 import { membershipOf, viewerPredicate } from "../membership/index.mjs";
-import { combine as combineProfiles } from "../../../jurisdictions/index.mjs";
+import { combine as combineProfiles, get as getProfile, attributionLacks, countedReview, textStanding } from "../../../jurisdictions/index.mjs";
 import { READING_GUIDES_WORDS, refusal } from "./checks.mjs";
 import { checkGuide, GUIDE_PURPOSES } from "./check.mjs";
 import { CIVICSMITH_GUIDES, GUIDE_KINDS } from "./library.mjs";
@@ -75,6 +86,11 @@ export const GUIDE_LIBRARY_PROPOSAL_FORMAT = "bio-reading-guide-library-proposal
 export const PROCEDURE_GUIDE_LABEL = Object.freeze({ key: "guide.procedure.legalinfo",
                                                      says: READING_GUIDES_WORDS["guide.procedure.legalinfo"] });
 
+/** R20: the statement every guide opted out of review carries, keyed for the surface (a word need of the design stream;
+ *  the word table wins once it holds the key). */
+export const NOT_REVIEWED_LABEL = Object.freeze({ key: "guide.procedure.notreviewed",
+                                                  says: localize("guide.procedure.notreviewed", "This guide was not reviewed.") });
+
 /** R12: what a proposal's label says, in each of `record-grammar`'s three proposal states (shaped as its
  *  `proposalLabel` answers; `lawProposalState` decides the state). */
 export const GUIDE_PROPOSAL_STATES = Object.freeze({
@@ -95,10 +111,10 @@ const safeJson = (s) => { try { return JSON.parse(s); } catch { return null; } }
 const argsOf = (a) => (isObj(a) ? a : {});
 
 export class ReadingGuides {
-  #sql; #record; #membership; #now; #groupSlug; #civicsmith; #profileView; #channel = null;
+  #sql; #record; #membership; #now; #groupSlug; #civicsmith; #profileView; #profileList; #channel = null;
 
   constructor({ storage, record, membership, now = null, groupSlug = null, civicsmith = CIVICSMITH_GUIDES,
-                profileView = null } = {}) {
+                profileView = null, profileList = null } = {}) {
     this.#sql = storage.sql;
     this.#record = record;
     this.#membership = membership;
@@ -106,6 +122,7 @@ export class ReadingGuides {
     this.#groupSlug = typeof groupSlug === "function" ? groupSlug : () => null;
     this.#civicsmith = Array.isArray(civicsmith) ? civicsmith : CIVICSMITH_GUIDES;
     this.#profileView = typeof profileView === "function" ? profileView : null;
+    this.#profileList = typeof profileList === "function" ? profileList : null;
     migrateReadingGuides(this.#sql);   // the tables exist once the instance does, so no caller migrates
   }
 
@@ -144,15 +161,40 @@ export class ReadingGuides {
 
   #civic(id) { return this.#civicsmith.find((g) => g.id === id) ?? null; }
 
+  /* R13, R17: the active profiles and layers, as ids or profiles, or [] when none is set. */
+  #profiles() {
+    try {
+      const l = this.#profileList ? this.#profileList() : this.#record.getSetting("jurisdiction_profiles");
+      return Array.isArray(l) ? l : [];
+    } catch { return []; }
+  }
+
   /* R13: the active profiles combined (`jurisdictions` R12–R16), or an empty view when none is set or none combines. */
   #view() {
     try {
       if (this.#profileView) { const v = this.#profileView(); return isObj(v) ? v : {}; }
-      const ids = this.#record.getSetting("jurisdiction_profiles");
-      if (!Array.isArray(ids) || !ids.length) return {};
-      const c = combineProfiles(ids);
+      const list = this.#profiles();
+      if (!list.length) return {};
+      const c = combineProfiles(list);
       return c && c.ok && isObj(c.view) ? c.view : {};
     } catch { return {}; }
+  }
+
+  /* R17: each profile guide for `kind`, `{pg, layer}`: every active layer's own (`layer` its id), in the view's order of
+     layers, then the view's guides that no active layer holds (a profile that is no layer; `layer` null). */
+  #profileGuides(view, kind) {
+    const byId = new Map(this.#profiles().filter(isObj).map((p) => [p.id, p]));
+    const layerOf = (id) => { if (byId.has(id)) return byId.get(id); try { return getProfile(id); } catch { return null; } };
+    const layers = (Array.isArray(view.layers) ? view.layers : []).map((l) => (isObj(l) ? l.id : null)).filter((x) => typeof x === "string");
+    const ids = new Set(layers), out = [];
+    const mine = (g) => isObj(g) && g.kind === kind && Array.isArray(g.items);
+    for (const id of layers) {
+      const p = layerOf(id);
+      for (const g of isObj(p) && Array.isArray(p.procedure_guides) ? p.procedure_guides : []) if (mine(g)) out.push({ pg: g, layer: id });
+    }
+    for (const g of Array.isArray(view.procedure_guides) ? view.procedure_guides : [])
+      if (mine(g) && !ids.has(g.layer) && !ids.has(g.profile)) out.push({ pg: g, layer: null });
+    return out;
   }
 
   /* R13: the action kinds of the active profiles' view. */
@@ -191,11 +233,13 @@ export class ReadingGuides {
 
   /* ================================================================ R2: a member's draft */
 
-  /** R2, R13: `{kind, items, purpose?, based_on?, by}`. Usable by its author at once. `purpose` `reading` (the
-   *  default) or `procedure`. `based_on`, when given, names a guide the author sees, one of Civicsmith's, or a proposal
-   *  (R12). Answers `{ok, guide, state, purpose}`. */
+  /** R2, R13, R18: `{kind, items, purpose?, based_on?, layer?, by}`. Usable by its author at once. `purpose` `reading`
+   *  (the default) or `procedure`. `based_on`, when given, names a guide the author sees, one of Civicsmith's, or a
+   *  proposal (R12). `layer` (R18), for a procedure guide drafted from a layer's guide, names an active layer that gives
+   *  a guide for `kind`, and is recorded (else `GUIDE_BASED_ON_UNKNOWN`); without it the guide is the team's for the kind
+   *  in every layer. Answers `{ok, guide, state, purpose, layer?}`. */
   guideDraft(args) {
-    const { kind, items, purpose: p, based_on: basedOn, by } = argsOf(args);
+    const { kind, items, purpose: p, based_on: basedOn, layer: l, by } = argsOf(args);
     const member = this.#member(by);
     if (!member) return memberRefusal(localize("reading-guides.index.writing_a_reading_guide", "writing a reading guide"));
     const purpose = purposeOf(p);
@@ -204,20 +248,23 @@ export class ReadingGuides {
     const checked = checkGuide(items, purpose);
     if (!checked.ok) return checked;
     const basis = basedOn === undefined || basedOn === null || basedOn === "" ? null : basedOn;
+    const layer = l === undefined || l === null || l === "" ? null : l;
+    const layerKnown = layer === null || (purpose === "procedure" && typeof layer === "string"
+      && this.#profileGuides(this.#view(), kind).some((x) => x.layer === layer));
     /* DEC-49 REGION is-guide-basis */
-    if (basis !== null && !(isGuideId(basis) && (this.#civic(basis) || this.#held(basis)
-        || this.#one(`SELECT 1 AS x FROM reading_guide_proposals WHERE proposal_id=?`, basis))))
-      return refusal("GUIDE_BASED_ON_UNKNOWN", localize("reading-guides.index.the_guide_or_proposal_named", "the guide or proposal named as this guide's basis is not one you can see. Nothing was written."), { based_on: typeof basis === "string" ? basis.slice(0, 100) : null });
+    if ((basis !== null && !(isGuideId(basis) && (this.#civic(basis) || this.#held(basis)
+        || this.#one(`SELECT 1 AS x FROM reading_guide_proposals WHERE proposal_id=?`, basis)))) || !layerKnown)
+      return refusal("GUIDE_BASED_ON_UNKNOWN", localize("reading-guides.index.the_guide_or_proposal_named", "the guide or proposal named as this guide's basis is not one you can see. Nothing was written."), { based_on: typeof basis === "string" ? basis.slice(0, 100) : null, ...(layerKnown ? {} : { layer: typeof layer === "string" ? layer.slice(0, 100) : null }) });
     /* END DEC-49 REGION is-guide-basis */
     const at = this.#instant();
     return this.#record.transact(() => {
       const m = this.#mint(at);
       if (m.refused) return m.refused;
       this.#sql.exec(`INSERT INTO reading_guides (guide_id, kind, purpose, origin, items_json, state, author, reviewed_by,
-                        based_on, offered_by, created_at, updated_at) VALUES (?,?,?,'group',?,'usable_by_author',?,NULL,?,NULL,?,?)`,
-        m.id, kind, purpose, canonicalJson(checked.items), member, basis, at, at);
+                        based_on, offered_by, layer, created_at, updated_at) VALUES (?,?,?,'group',?,'usable_by_author',?,NULL,?,NULL,?,?,?)`,
+        m.id, kind, purpose, canonicalJson(checked.items), member, basis, layer, at, at);
       this.#history(m.id, "draft", "usable_by_author", member, null, at);
-      return { ok: true, guide: m.id, state: "usable_by_author", purpose, at };
+      return { ok: true, guide: m.id, state: "usable_by_author", purpose, ...(layer !== null ? { layer } : {}), at };
     });
   }
 
@@ -271,9 +318,12 @@ export class ReadingGuides {
 
   /** R3: `{guide, verdict, reason, by}` by an active member other than the guide's author. `approve` makes it the
    *  group's; `refuse` keeps it as it was (its author's, or an adopted guide still unusable) with the reason, which a
-   *  refusal must give. R4 runs again over its items. Answers `{ok, guide, verdict, state}`. */
+   *  refusal must give. R4 runs again over its items. R20: an approval may record a professional's review of the guide
+   *  as it stands, `professional: {reviewer, organisation, credential, outcome, scope?, at}` (`jurisdictions` R40's
+   *  shape, its `reviewed_text_sha` the guide's items' hash, taken here); whether it counts is `jurisdictions`'
+   *  `countedReview`. Answers `{ok, guide, verdict, state}`. */
   guideReview(args) {
-    const { guide, verdict, reason, by } = argsOf(args);
+    const { guide, verdict, reason, by, professional } = argsOf(args);
     const member = this.#member(by);
     if (!member) return memberRefusal(localize("reading-guides.index.reviewing_a_reading_guide", "reviewing a reading guide"));
     const { row, refused } = this.#actOn(guide);
@@ -299,11 +349,56 @@ export class ReadingGuides {
     if (!checked.ok) return { ...checked, guide: row.guide_id };
     const at = this.#instant();
     const state = verdict === "approve" ? "group" : row.state;
+    const pro = verdict === "approve" && isObj(professional) ? professionalReview(professional, checked.items) : null;
     return this.#record.transact(() => {
       if (verdict === "approve")
         this.#sql.exec(`UPDATE reading_guides SET state='group', reviewed_by=?, updated_at=? WHERE guide_id=?`, member, at, row.guide_id);
+      if (pro) {
+        const held = safeJson(row.reviews_json);
+        this.#sql.exec(`UPDATE reading_guides SET reviews_json=? WHERE guide_id=?`,
+          canonicalJson([...(Array.isArray(held) ? held : []), pro]), row.guide_id);
+      }
       this.#history(row.guide_id, verdict, state, member, why || null, at);
       return { ok: true, guide: row.guide_id, verdict, state, at };
+    });
+  }
+
+  /* ================================================================ R20: a sole member's opt-out of review */
+
+  /** R20 (K5508, K5527): `{guide, viewer}`. The one member of a team opts the team's own guide out of the professional
+   *  review and the separate approver, both, and of nothing else; recorded on the guide as `review_opt_out: {member, at}`
+   *  and in its history. Refused `MACHINE_CANNOT_OPT_OUT` to a machine, `GUIDE_MEMBER_ACT` to a viewer who is no active
+   *  member, `OPT_OUT_NOT_OWN_GUIDE` for any guide but the team's own procedure guide (an adopted guide and a reading
+   *  guide are not), and `OPT_OUT_NOT_SOLE_MEMBER` while the team has more than one active member (the founder, once
+   *  the instance is claimed, counted as one); each records nothing. A
+   *  guide already opted out answers its record (`already: true`). The record stays when the team grows. */
+  guideOptOut(args) {
+    const { guide, viewer } = argsOf(args);
+    /* DEC-49 REGION is-guide-person */
+    if (str(viewer) && isMachineIdentity(str(viewer)))
+      return refusal("MACHINE_CANNOT_OPT_OUT", localize("reading-guides.index.a_machine_cannot_opt_out", "a machine cannot opt a guide out of review. Nothing was written."), { guide: typeof guide === "string" ? guide.slice(0, 100) : null });
+    /* END DEC-49 REGION is-guide-person */
+    const member = this.#member(viewer);
+    if (!member) return memberRefusal(localize("reading-guides.index.opting_a_guide_out_of_review", "opting a guide out of review"));
+    const { row, refused } = this.#actOn(guide);
+    if (refused) return refused;
+    /* DEC-49 REGION is-guide-team-procedure */
+    if (row.origin !== "group" || row.purpose !== "procedure")
+      return refusal("OPT_OUT_NOT_OWN_GUIDE", localize("reading-guides.index.only_a_teams_own_procedure", "{guide_id} is not the team's own procedure guide, so it cannot be opted out of review. Nothing was written.", { guide_id: String(row.guide_id) }), { guide: row.guide_id });
+    /* END DEC-49 REGION is-guide-team-procedure */
+    const held = safeJson(row.review_opt_json);
+    if (isObj(held)) return { ok: true, already: true, guide: row.guide_id, review_opt_out: { member: held.member, at: held.at } };
+    let members = null;
+    try { members = this.#membership.memberList({}).members.filter((m) => m && m.status === "active").length; } catch { members = null; }
+    /* DEC-49 REGION is-guide-sole-member */
+    if (members !== 1)
+      return refusal("OPT_OUT_NOT_SOLE_MEMBER", localize("reading-guides.index.only_a_teams_one_member", "only the one member of a team may opt out of the review of its guide; this team has {n}. Nothing was written.", { n: String(members ?? "?") }), { guide: row.guide_id });
+    /* END DEC-49 REGION is-guide-sole-member */
+    const at = this.#instant();
+    return this.#record.transact(() => {
+      this.#sql.exec(`UPDATE reading_guides SET review_opt_json=?, updated_at=? WHERE guide_id=?`, canonicalJson({ member, at }), at, row.guide_id);
+      this.#history(row.guide_id, "opt_out", row.state, member, null, at);
+      return { ok: true, guide: row.guide_id, review_opt_out: { member, at }, at };
     });
   }
 
@@ -499,14 +594,20 @@ export class ReadingGuides {
     }
   }
 
-  /** R13 (K2820): the procedure guides for an action `kind`: the profile's (`jurisdictions` R80, from `combine`'s view)
-   *  first, then the group's approved procedure guides in the order approved (the group's when the viewer sees the
-   *  group, R8), each `{guide, origin, items, approved_by, approved_at}` for a group's (`guide` its id, `approved_by` the
-   *  reviewing member, `approved_at` the UTC day of the approval; R15) and `{origin: "profile", items, status, basis}`
-   *  for the profile's, which has no id (its items as R80 holds them, `after` included); no rank, score or preferred route. Each passes R4's procedure check
-   *  again; one that no longer does is passed over and named in `withheld`. Every answer carries `label`
-   *  (`PROCEDURE_GUIDE_LABEL`). Answers `{ok: true, kind, guides, withheld, label}`; served by `op=procedureguides`.
-   *  Never throws. */
+  /** R13 (K2820), R15, R17-R20: the procedure guides for an action `kind`, side by side and unranked.
+   *  The profile's first (R17): each active layer's own guide for the kind, `{origin: "profile", layer, items, status,
+   *  basis, reviewed, statements}` (`layer` the layer's id, absent for a profile that is no layer; `reviewed` and
+   *  `statements` `jurisdictions`' `textStanding` on the day: "reviewed by", a changed source, the 12-month line), its
+   *  items as R80 holds them, `after` included; a profile guide is answered only when `attributionLacks` answers none
+   *  for it (R19), else it is named in `not_offered: [{kind, layer?, lacks}]` (present only when one is), and one
+   *  layer's guide not offered hides no other's. Then the group's (the group's when the viewer sees the group, R8), each
+   *  `{guide, origin, items, layer?, approved_by, approved_at, reviewed?}`: the approved in the order approved, then the
+   *  ones its sole member opted out of review (R20) not yet approved; an opted-out guide answers `not_reviewed:
+   *  {member, at}` and the statement `label` (`NOT_REVIEWED_LABEL`), never `reviewed`, until a counted professional
+   *  review and R3's approval are both recorded, which give `reviewed` instead. Each passes R4's procedure check again;
+   *  one that no longer does is passed over and named in `withheld`. Every answer carries `label`
+   *  (`PROCEDURE_GUIDE_LABEL`). Answers `{ok: true, kind, guides, withheld, label, not_offered?}`; served by
+   *  `op=procedureguides`. Never throws. */
   procedureGuidesFor(args) {
     const label = { ...PROCEDURE_GUIDE_LABEL };
     try {
@@ -514,32 +615,47 @@ export class ReadingGuides {
       const view = this.#view();
       if (typeof kind !== "string" || !this.#actionKinds(view).includes(kind))
         return { ok: true, kind: typeof kind === "string" ? kind.slice(0, 100) : null, guides: [], withheld: [], label };
-      const guides = [], withheld = [];
+      const guides = [], withheld = [], notOffered = [];
       const pass = (g, items) => {
         const c = checkGuide(items, "procedure");
         const { profile, ...answer } = g;
         if (c.ok) guides.push(answer);
-        else withheld.push({ guide: g.guide ?? null, origin: g.origin, profile: profile ?? null, reason: c.reason, item: c.item ?? null });
+        else withheld.push({ guide: g.guide ?? null, origin: g.origin, profile: profile ?? null, ...(g.layer ? { layer: g.layer } : {}), reason: c.reason, item: c.item ?? null });
       };
-      for (const pg of (Array.isArray(view.procedure_guides) ? view.procedure_guides : [])) {
-        if (!isObj(pg) || pg.kind !== kind || !Array.isArray(pg.items)) continue;
+      const today = String(this.#now()).slice(0, 10);
+      for (const { pg, layer } of this.#profileGuides(view, kind)) {
+        const lacks = attributionLacks(pg);
+        if (lacks.length) { notOffered.push({ kind, ...(layer ? { layer } : {}), lacks }); continue; }
         const items = pg.items.map((it) => (isObj(it) ? { ...it, ...(Array.isArray(it.after) ? { after: [...it.after] } : {}) } : it));
+        const { reviewed, statements } = textStanding(pg, today);
         /* R80's `after` (R87 (d)) is the profile's own field, carried as given; the check reads the route's texts */
-        pass({ origin: "profile", items, status: pg.status ?? null, basis: pg.basis ?? null, profile: pg.profile ?? null },
+        pass({ origin: "profile", ...(layer ? { layer } : {}), items, status: pg.status ?? null, basis: pg.basis ?? null, reviewed,
+               statements, profile: layer ?? pg.profile ?? null },
              items.map((it) => (isObj(it) ? Object.fromEntries(Object.entries(it).filter(([k]) => k !== "after")) : it)));
       }
       if (this.#seesGroup(viewer)) {
         const rows = this.#rows(`SELECT g.*, a.seq AS approved_seq, h.at AS approved_at FROM reading_guides g
-                                   JOIN (SELECT guide_id, MIN(seq) AS seq FROM reading_guide_history WHERE act='approve' GROUP BY guide_id) a
+                                   LEFT JOIN (SELECT guide_id, MIN(seq) AS seq FROM reading_guide_history WHERE act='approve' GROUP BY guide_id) a
                                      ON a.guide_id = g.guide_id
-                                   JOIN reading_guide_history h ON h.seq = a.seq
-                                 WHERE g.kind=? AND g.purpose='procedure' AND g.state='group' ORDER BY a.seq`, kind);
+                                   LEFT JOIN reading_guide_history h ON h.seq = a.seq
+                                 WHERE g.kind=? AND g.purpose='procedure'
+                                   AND ((g.state='group' AND a.seq IS NOT NULL) OR (g.state<>'retired' AND g.review_opt_json IS NOT NULL))
+                                 ORDER BY (a.seq IS NULL OR g.state<>'group'), a.seq, g.updated_at, g.guide_id`, kind);
         for (const r of rows) {
           const g = viewOf(r);
-          pass({ guide: g.id, origin: g.origin, items: g.items, approved_by: g.reviewed_by, approved_at: String(r.approved_at).slice(0, 10) }, g.items);
+          const approved = r.state === "group" && r.approved_seq !== null && r.approved_seq !== undefined;
+          const reviews = safeJson(r.reviews_json);
+          const counted = countedReview({ items: g.items, reviews: Array.isArray(reviews) ? reviews : [] });
+          const answer = { guide: g.id, origin: g.origin, items: g.items, ...(g.layer ? { layer: g.layer } : {}),
+                           ...(approved ? { approved_by: g.reviewed_by, approved_at: String(r.approved_at).slice(0, 10) } : {}) };
+          if (g.review_opt_out && !(approved && counted)) {
+            answer.not_reviewed = { ...g.review_opt_out };
+            answer.label = { ...NOT_REVIEWED_LABEL };
+          } else if (counted) answer.reviewed = { name: counted.reviewer, organisation: counted.organisation, at: counted.at };
+          pass(answer, g.items);
         }
       }
-      return { ok: true, kind, guides, withheld, label };
+      return { ok: true, kind, guides, withheld, label, ...(notOffered.length ? { not_offered: notOffered } : {}) };
     } catch {
       return { ok: true, kind: null, guides: [], withheld: [], label };
     }
@@ -561,9 +677,23 @@ export class ReadingGuides {
 
 /* ================================================================ views */
 
+/* R18, R20: `layer` and `review_opt_out` are answered only when held, so a guide written before T53 answers as before. */
 function viewOf(r) {
+  const opt = typeof r.review_opt_json === "string" ? safeJson(r.review_opt_json) : null;
   return { id: r.guide_id, kind: r.kind, purpose: r.purpose ?? "reading", origin: r.origin, items: safeJson(r.items_json), state: r.state, author: r.author,
-           reviewed_by: r.reviewed_by ?? null, based_on: r.based_on ?? null, offered_by: r.offered_by ?? null };
+           reviewed_by: r.reviewed_by ?? null, based_on: r.based_on ?? null, offered_by: r.offered_by ?? null,
+           ...(typeof r.layer === "string" && r.layer ? { layer: r.layer } : {}),
+           ...(isObj(opt) ? { review_opt_out: { member: opt.member ?? null, at: opt.at ?? null } } : {}) };
+}
+
+/* R20: a professional's review as R3's approval records it, in `jurisdictions` R40's shape: its text fields kept when
+   they are short text, `kind` professional, and `reviewed_text_sha` the hash of the items as they stand (K5528 T2). */
+function professionalReview(p, items) {
+  const out = { kind: "professional" };
+  for (const f of ["reviewer", "organisation", "credential", "scope", "outcome", "at"])
+    if (typeof p[f] === "string" && p[f].trim() && p[f].length <= 200) out[f] = p[f].trim();
+  out.reviewed_text_sha = sha256HexSync(canonicalJson(items));
+  return out;
 }
 
 function civicView(g) {
@@ -662,6 +792,7 @@ export function readingGuidesOps(s, url, body) {
     guide: () => s.guideRead({ guide: qp("guide") ?? b.guide, viewer: qp("viewer") }),
     guideproposals: () => s.guideProposals({ kind: qp("kind") ?? b.kind, viewer: qp("viewer") }),
     procedureguides: () => s.procedureGuidesFor({ kind: qp("kind") ?? b.kind, viewer: qp("viewer") }),   // R13 (K2820)
+    guideoptout: () => s.guideOptOut({ guide: qp("guide") ?? b.guide, viewer: qp("viewer") }),              // R20
   };
 }
 
@@ -670,6 +801,9 @@ export function readingGuidesOps(s, url, body) {
 export const DECLARED_OPS = Object.freeze({
   procedureguides: { classes: ["admin","member","probe"], mutating: false, weight: "read", description: localize("reading-guides.declared.procedureguides", "read: the procedure guides for a kind of action and their items, with each guide's origin; writes nothing"),
     fields: { accepts: ["kind"], requires: [] } },
+  /* R20 (T53; K5508): the sole member's opt-out of review, a member's act on the team's own guide; the viewer is the stamp */
+  guideoptout: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("reading-guides.declared.guideoptout", "the team's one member opts its own guide out of the professional review and the separate approver; the guide then says it was not reviewed"),
+    fields: { accepts: ["guide"], requires: ["guide"] } },
 });
 
 const instances = new WeakMap();
