@@ -6,7 +6,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const FILE = readFileSync(new URL("../../../../build/requirements/control-plane.md", import.meta.url), "utf8");
+const req = (name) => readFileSync(new URL(`../../../../build/requirements/${name}.md`, import.meta.url), "utf8");
+const PARENT = req("control-plane");
+/* The split files (5 Nov 2026, coordinator rulings 17:20 and 18:05) hold their lines verbatim under the same
+   numbers; the parent keeps one pointer line per run. The id set and unmet set are counted across all four. */
+const SPLITS = ["control-plane-store-request", "control-plane-door-reading", "control-plane-door-pages"];
+const FILE = [PARENT, ...SPLITS.map(req)].join("\n");
 const NOTES = readFileSync(new URL("../../../../docs/requirements-notes/control-plane.md", import.meta.url), "utf8");
 /* the R ids: found marks (F<n>) added after the move are not the move's */
 const ID_LINE = /^- \*\*(R\d+)\*\*/;
@@ -36,7 +41,18 @@ test("control-plane's unmet marks are the start commit's, none struck or added b
 test("the moved text holds no requirement line, and the requirements file keeps none of the moved sections", () => {
   assert.deepEqual(NOTES.split("\n").filter((l) => /^- \*\*[RF]\d+\*\*/.test(l)), []);
   for (const h of ["### Uses", "### Satisfies", "### Suggestions", "## Open for Bob", "## Decided by BOB", "**Size (P6).**"]) {
-    assert.ok(!FILE.split("\n").some((l) => l.startsWith(h)), `${h} moved out`);
+    assert.ok(!PARENT.split("\n").some((l) => l.startsWith(h)), `${h} moved out`);
     assert.ok(NOTES.includes(h.replace(/^### /, "## ")), `${h} in the notes`);
+  }
+});
+
+test("the parent keeps no requirement line a split file holds: each is in exactly one file, and a pointer names it", () => {
+  const parentIds = new Set(idLines(PARENT).map(idOf));
+  for (const name of SPLITS) {
+    for (const id of idLines(req(name)).map(idOf)) {
+      assert.ok(!parentIds.has(id), `${id} left in control-plane.md though ${name}.md holds it`);
+      assert.ok(PARENT.split("\n").some((l) => l.startsWith("Moved verbatim") && l.includes(`\`${name}.md\``) && new RegExp(`\\b${id}\\b`).test(l)),
+        `a pointer names ${id} in ${name}.md`);
+    }
   }
 });
