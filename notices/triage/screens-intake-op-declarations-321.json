@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-intake","verdict":"not affected","evidence":"build/modules.json:187 screens-intake (bio-plane/src/screens-intake/) holds no file that imports op-declarations, every code file under its paths read at 5f33ccd718","at":"2026-11-05T00:29:02.006Z","key":"op-declarations:321","worker":"merge: imports check","cost":"0"}
