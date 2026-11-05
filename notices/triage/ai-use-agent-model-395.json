@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-use","verdict":"not affected","evidence":"build/modules.json:103 ai-use (bio-plane/src/ai-use/) holds no file that imports agent-model, every code file under its paths read at 2468f29ab9","at":"2026-11-05T04:11:20.033Z","key":"agent-model:395","worker":"merge: imports check","cost":"0"}
