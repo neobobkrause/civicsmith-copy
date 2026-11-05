@@ -63,8 +63,9 @@ test("R60 control: a changed candidate with a new idem files its own row (addres
 
 test("R62 produced_by is stored deduplicated in order, answered by the door, by R24's read, by R26's reads and beside the drain's attribution (never in it); a request after a hop carries the new label, one before it the old", async () => {
   const w = world().scene();
-  const before = w.ask({ address: "https://example.org/before", produced_by: [label("old")] });
-  const after = w.ask({ address: "https://example.org/after", produced_by: [label("old"), label("new"), label("old")] });
+  /* two hosts, so one tick fetches both (one fetch per host per tick, R14) */
+  const before = w.ask({ address: "https://before.example.org/", produced_by: [label("old")] });
+  const after = w.ask({ address: "https://after.example.org/", produced_by: [label("old"), label("new"), label("old")] });
   assert.deepEqual(before.produced_by, [label("old")]);
   assert.deepEqual(after.produced_by, [label("old"), label("new")]);
   assert.deepEqual(JSON.parse(w.req(after.request).produced_by), [label("old"), label("new")]);
@@ -119,6 +120,7 @@ const hers = (w, address = WALL) => w.cr.captureRequest({ address }, { viewer: V
 test("R61 a drain answered SITE_ASKS_FOR_PERSON holds the row requested with needs_person and asked_at, files no capture and gives the host's slot back; the next tick does not fetch it; personWaits lists it for the asker and for no one who cannot see it", async () => {
   const w = world().scene();
   const id = hers(w).request;
+  w.tick(1000);   /* hers is the older, so the tick takes it first */
   const run = w.ask({ address: "https://wall.example.org/run" }).request;
   challenged(w);
   w.tick(1000);
