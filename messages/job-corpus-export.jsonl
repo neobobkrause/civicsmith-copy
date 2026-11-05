@@ -1,2 +1,3 @@
 {"at":"2026-11-05T04:49:24Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (9 jobs ready). Then: job corpus-export complete, PR #398 ready, session session_01RAN5emy3dDcHGb29sqPqPJ: run status"}
 {"at":"2026-11-05T04:49:48Z","row":"outcome","n":1,"outcome":"delivered"}
+{"at":"2026-11-05T05:09:35Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (8 jobs ready). Then: job corpus-export complete, PR #398 ready, session session_01RAN5emy3dDcHGb29sqPqPJ: run status"}
