@@ -398,3 +398,4 @@
 {"at":"2026-11-05T13:22:38Z","row":"outcome","n":201,"outcome":"delivered"}
 {"at":"2026-11-05T14:09:05Z","row":"sent","n":202,"to":"root","text":"root-57 answered: the 1 startable was ratification (notice inquiry-grammar:423, triaged 14:00: answer-envelope, inquiry, ratification affected; 16 not). Started 14:03, PR 509. Live 1. The '7 ready' is the old pin counting green in-train PRs (fix in process3 076ad2e, pinning soon). Blocks stand as ruled; holds renewed to ~15:57."}
 {"at":"2026-11-05T14:09:18Z","row":"outcome","n":202,"outcome":"delivered"}
+{"at":"2026-11-05T15:01:16Z","row":"sent","n":203,"to":"root","text":"root-58 answered: the 1 startable is installer-steps (PR 513 gate red on revert after its complete report); restarting it now. --ready at 14:58: 0 startable. Live: journey-check working; member-upload hold-11, acquisition-archives hold-10 (both to 15:14). Blocks stand as ruled."}
