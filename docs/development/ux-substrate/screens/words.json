@@ -9,9 +9,9 @@
   "draft": 5,
   "photo": 13,
   "handle": 7,
-  "ai": 192,
+  "ai": 206,
   "date": 14,
-  "queue": 505,
+  "queue": 514,
   "transcribe": 19,
   "capture": 97,
   "document": 79,
@@ -239,8 +239,8 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19835,
-  "protected": 1181
+  "total": 19858,
+  "protected": 1183
  },
  "words": [
   {
@@ -1428,6 +1428,167 @@
    "protected": false,
    "source": "DEC-189",
    "note": "{scope} in ai.queue.exploreask for a member's own account; a project's is its name"
+  },
+  {
+   "key": "ai.queue.limitreached.provider",
+   "en": "{account} reached the AI provider's own limit on {date}. The assistant pauses on it until {when}; everything else goes on.",
+   "protected": true,
+   "source": "UX lane, notice-producers R16",
+   "note": "the told-once Noticed item for a provider limit (ai-use R5, R18, source provider); {account} from ai.account.*; {date} from date.daymonth; {when} from ai.until.*, or date.daymonth for any other day; names no member and no cost"
+  },
+  {
+   "key": "ai.queue.limitreached.provider.unknown",
+   "en": "{account} reached the AI provider's own limit on {date}, and the provider didn't say when it lifts. The assistant tries it again after a while; everything else goes on.",
+   "protected": true,
+   "source": "UX lane, notice-producers R16",
+   "note": "as ai.queue.limitreached.provider when resets_at is null"
+  },
+  {
+   "key": "ai.alert.scope.overall",
+   "en": "everything it pays for",
+   "protected": false,
+   "source": "UX lane, notice-producers R33",
+   "note": "{use} in ai.alert.threshold for a threshold on the overall limit; a use's threshold fills ai.use.<use>.inline"
+  },
+  {
+   "key": "ai.alert.scope.per_member",
+   "en": "any one member",
+   "protected": false,
+   "source": "UX lane, notice-producers R33",
+   "note": "{use} in ai.alert.threshold for a per-member threshold; names no member"
+  },
+  {
+   "key": "ai.alert.level.percent",
+   "en": "{n}% of its limit",
+   "protected": false,
+   "source": "UX lane, notice-producers R33",
+   "note": "{level} in ai.alert.threshold, a percent threshold; {n} a whole number"
+  },
+  {
+   "key": "ai.alert.level.usd",
+   "en": "${n}",
+   "protected": false,
+   "source": "UX lane, notice-producers R33",
+   "note": "{level} in ai.alert.threshold, an amount in dollars; {n} to the cent, such as 20.00"
+  },
+  {
+   "key": "ai.alert.level.tokens",
+   "en": "{n} tokens",
+   "protected": false,
+   "source": "UX lane, notice-producers R33",
+   "note": "{level} in ai.alert.threshold, an amount in tokens; {n} comma-grouped"
+  },
+  {
+   "key": "ai.alert.level.calls",
+   "en": "{n} calls",
+   "protected": false,
+   "source": "UX lane, notice-producers R33",
+   "note": "{level} in ai.alert.threshold, an amount in calls; {n} comma-grouped"
+  },
+  {
+   "key": "ai.alert.basis.reported",
+   "en": "The dollar figure is what the provider reported.",
+   "protected": false,
+   "source": "UX lane, notice-producers R33",
+   "note": "after ai.alert.threshold for a dollar threshold judged on reported cost (ai-use R24 basis reported)"
+  },
+  {
+   "key": "ai.alert.basis.estimated",
+   "en": "The dollar figure is estimated from the AI's listed prices; the provider's bill may differ.",
+   "protected": false,
+   "source": "UX lane, notice-producers R33",
+   "note": "after ai.alert.threshold for a dollar threshold judged on estimated cost (ai-use R24 basis estimated)"
+  },
+  {
+   "key": "ai.queue.leftlist.own",
+   "en": "{account} has left your list of AI accounts: its owner stopped sharing it. To use it again, its owner shares it and you add it back.",
+   "protected": false,
+   "source": "UX lane, notice-producers R35",
+   "note": "left-list (ai-accounts R72), a member's own list; {account} the account by provider and plan, such as Anthropic API; carries no secret and names no member"
+  },
+  {
+   "key": "ai.queue.leftlist.project",
+   "en": "{account} has left {project}'s list of AI accounts: its owner stopped sharing it. To use it again, its owner shares it and an owner of {project} adds it back.",
+   "protected": false,
+   "source": "UX lane, notice-producers R35",
+   "note": "left-list (ai-accounts R72), a project's list; {project} its name"
+  },
+  {
+   "key": "ai.queue.leftprojectlist",
+   "en": "{account} has left {project}'s list of AI accounts because a member left the project. An owner of {project} can add another account in its place.",
+   "protected": false,
+   "source": "UX lane, notice-producers R35",
+   "note": "left-project-list (ai-accounts R77), to the project's other owners; never names the member who left"
+  },
+  {
+   "key": "ai.queue.signinended",
+   "en": "{account}, the sign-in that served {project}, has ended: a personal sign-in now serves only the member who holds it. An owner of {project} can add an account for the project.",
+   "protected": false,
+   "source": "UX lane, notice-producers R35",
+   "note": "signin-ended (ai-accounts R59), to the owner of a project sign-in account the migration ended"
+  },
+  {
+   "key": "queue.signer-self-registered.summary.other",
+   "en": "{member} registered {count} signing keys for themselves",
+   "protected": false,
+   "source": "UX lane, queue-producers R57",
+   "note": "the summary with two or more keys; {count} a number"
+  },
+  {
+   "key": "queue.signer-self-registered.summary.unnamed.other",
+   "en": "A member registered {count} signing keys for themselves",
+   "protected": false,
+   "source": "UX lane, queue-producers R57",
+   "note": "as .summary.other when the member cannot be named"
+  },
+  {
+   "key": "queue.signer-self-registered.key",
+   "en": "A signing key added {date}.",
+   "protected": false,
+   "source": "UX lane, queue-producers R57",
+   "note": "one line per key; {date} the local day in the team's zone, date.daymonth or date.daymonthyear, never UTC"
+  },
+  {
+   "key": "queue.signer-self-registered.key.undated",
+   "en": "A signing key added on a day your team's Civicsmith can't tell, because no time zone is set for your team.",
+   "protected": false,
+   "source": "UX lane, queue-producers R57, R36",
+   "note": "the line when no zone is held: the day is undetermined, never computed on UTC"
+  },
+  {
+   "key": "queue.signer-self-registered.key.comment",
+   "en": "Its note: “{comment}”",
+   "protected": false,
+   "source": "UX lane, queue-producers R57",
+   "note": "the key's own optional sentence, after .key or .key.undated, only when the key carries a comment; {comment} as written"
+  },
+  {
+   "key": "queue.capture-completed-unattended.request.summary.brought",
+   "en": "Brought in at {member}'s request: {title}",
+   "protected": false,
+   "source": "UX lane, machinery-producers F1",
+   "note": "a request a member filled with her own file (capture-requests fillAskedRequest, brought_by set)"
+  },
+  {
+   "key": "queue.capture-completed-unattended.request.summary.unnamed.brought",
+   "en": "Brought in at a request: {title}",
+   "protected": false,
+   "source": "UX lane, machinery-producers F1",
+   "note": "as .summary.brought when the request names no member"
+  },
+  {
+   "key": "queue.capture-completed-unattended.request.detail.brought",
+   "en": "{member} asked for this document, and {brought} brought in a file for it. It now sits with what your team holds; nothing any question or finding rests on has changed. Open it and check it before anyone vouches for it.",
+   "protected": false,
+   "source": "UX lane, machinery-producers F1",
+   "note": "{brought} the member who brought the file, as credited (may be {member})"
+  },
+  {
+   "key": "queue.capture-completed-unattended.request.detail.unnamed.brought",
+   "en": "This document was asked for, and {brought} brought in a file for it. It now sits with what your team holds; nothing any question or finding rests on has changed. Open it and check it before anyone vouches for it.",
+   "protected": false,
+   "source": "UX lane, machinery-producers F1",
+   "note": "as .detail.brought when the request names no member"
   },
   {
    "key": "queue.question-find.summary",
