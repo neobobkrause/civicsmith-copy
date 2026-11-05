@@ -15,7 +15,7 @@ test("R51: facts.ms has whole non-negative milliseconds for each feed read, the 
   const w = busy();
   const r = w.read("alice");
   const FEEDS = ["bias-debts", "proposals", "shared-inquiries", "leads", "exports", "references", "objectives", "sources", "machinery", "contradictions",
-    "signing-keys", "action", "attribution", "docket", "cited-cases", "wizards", "schedule", "places", "projects", "members"];
+    "signing-keys", "ai-credits-stop", "retesting-off", "action", "attribution", "docket", "cited-cases", "wizards", "schedule", "places", "projects", "members"];
   assert.deepEqual(Object.keys(r.facts.ms).sort(), [...FEEDS].sort(), "every feed this world reads");
   for (const [feed, v] of Object.entries(r.facts.ms)) assert.ok(Number.isInteger(v) && v >= 0, `${feed}: ${v}`);
   /* a feed that threw is timed too */

@@ -46,7 +46,7 @@ test("R8: every producer's items, homed through homesOf and offered optionsOf; n
   const m = byId(r);
   assert.deepEqual(m["FINDING::p::s"].options, [{ id: "opt", on: ["INF-1"] }]);
   assert.deepEqual(m["FINDING::export-performed::1"].options.map((o) => o.id), ["exportlog"]);
-  assert.deepEqual(m["OBLIGATION::signer-self-registered::KEY-1"].options.map((o) => o.id), ["signerset"]);
+  assert.deepEqual(m["OBLIGATION::signer-self-registered::kim"].options.map((o) => [o.id, o.key]), [["signerset", "KEY-1"], ["signerknown", "KEY-1"]]);   /* R56 */
   assert.deepEqual(m[`OBLIGATION::docket-core-due::${DOCKET.case}::response::${DOCKET.due.items[0].ref}`].options.map((o) => o.id),
     ["docketprepare", "docketdecline"]);
   assert.deepEqual(m["FINDING::edition-withdrawn::INQ-S::CASE-W#3"].options, [{ id: "opt", on: ["INQ-S"] }]);
