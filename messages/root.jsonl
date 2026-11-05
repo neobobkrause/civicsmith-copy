@@ -77,3 +77,4 @@
 {"at":"2026-11-05T00:16:35Z","row":"sent","n":39,"to":"bob","text":"Sweep: control-plane: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-05T00:16:44Z","row":"outcome","n":39,"outcome":"delivered"}
 {"at":"2026-11-05T01:16:44Z","row":"sent","n":40,"to":"bob","text":"Sweep: agent-runner: BLOCKED; contradiction: BLOCKED; runtime-limits: BLOCKED."}
+{"at":"2026-11-05T01:16:53Z","row":"outcome","n":40,"outcome":"delivered"}
