@@ -44,3 +44,4 @@
 {"at":"2026-11-05T14:26:24Z","row":"queue","id":"63ba803fb4f3","pr":510,"head":"f24696cf3d9ab286726c4b97d423abc35d5761db","ref":"p3/pin-74c36792ce","by":"session_018BhcecF4bpz38tjsYeiR8M","reviewed":null,"no_review":"a process pin move; the fix was reviewed in process3","rounds":0,"decision":null,"as":"pin","take_by":"2026-11-05T17:36:24.981Z","renews":true}
 {"at":"2026-11-05T14:31:39Z","row":"renew","id":"63ba803fb4f3","pr":510}
 {"at":"2026-11-05T14:31:44Z","row":"withdraw","id":"63ba803fb4f3","pr":510,"why":"the train stopped"}
+{"at":"2026-11-05T15:46:38Z","row":"queue","id":"5033b312ad61","pr":515,"head":"ab36416c014d2d3c2f0c18a7c264309e340bd59b","ref":"bob/ux-design-lane","by":"session_018BhcefhxhWd9YQkYbKBcTB","reviewed":null,"no_review":"process ledger and requirements only: ux-design lane within CLAUDE.md line 11 (coordinator 15:31) and the words inventory notes","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T18:56:38.040Z","renews":true}
