@@ -46,6 +46,34 @@
   "generated": [
     {
       "paths": [
+        "docs/development/ux-substrate/screens/words-drawn.json"
+      ],
+      "regenerate": [
+        "python3",
+        "docs/development/ux-substrate/screens/words-drawn.src.py"
+      ],
+      "verify": [
+        "node",
+        "docs/development/ux-substrate/screens/build_words.mjs",
+        "--check"
+      ]
+    },
+    {
+      "paths": [
+        "docs/development/ux-substrate/screens/words.json"
+      ],
+      "regenerate": [
+        "node",
+        "docs/development/ux-substrate/screens/build_words.mjs"
+      ],
+      "verify": [
+        "node",
+        "docs/development/ux-substrate/screens/build_words.mjs",
+        "--check"
+      ]
+    },
+    {
+      "paths": [
         "bio-plane/src/setup-words/rows.mjs",
         "bio-plane/src/setup-words/words-unreviewed.json"
       ],
