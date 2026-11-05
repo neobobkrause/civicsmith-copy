@@ -150,7 +150,7 @@
     {
       "path": "../bio-plane/src/setup-words/rows.mjs",
       "bytes": 55404,
-      "sha256": "aa52fb5548d594848886450ad8486b99a5c154e16ebc7536d613c3058a875fca"
+      "sha256": "37bbe3111796a43891f6bb58ee3d06229da38e35d41fd3aee26dc1c4f7213298"
     },
     {
       "path": "../bio-plane/src/sshsig.mjs",

@@ -1,6 +1,6 @@
 // Stubs for a run, all in-process: a stub issuer and a stub provider behind one `fetch` (the platform's, which only the
 // door calls), a test sealing key whose private half the test holds, a fake clock, and a log that keeps every line.
-import { verifyChallenge } from '../../ai-gate/src/index.mjs';
+import { verifyChallenge, PUBLIC_BANK } from '../../ai-gate/src/index.mjs';
 import { makeRunner } from '../src/run.mjs';
 
 export const ISSUER = 'https://issuer.test';
@@ -18,7 +18,7 @@ export async function testSealingKey() {
 
 // The issuer's good challenge, as `ai-issuer` R9 answers it.
 export function challengeFor(at = Date.now(), over = {}) {
-  return { challenge_id: 'chl-0001', nonce: 'A'.repeat(11) + 'nonceNONCEnonce0123456789', bank_version: 'bank-1',
+  return { challenge_id: 'chl-0001', nonce: 'A'.repeat(11) + 'nonceNONCEnonce0123456789', bank_version: PUBLIC_BANK.version,
     selection_seed: 'seed-0001', issued_at: new Date(at - 1000).toISOString(), expires_at: new Date(at + 3600_000).toISOString(), ...over };
 }
 
