@@ -10,3 +10,4 @@
 {"at":"2026-11-04T10:39:53Z","row":"outcome","n":5,"outcome":"delivered"}
 {"at":"2026-11-05T01:38:19Z","row":"sent","n":6,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job capture-requests complete, PR #359 ready, session session_01RAN5eoFbozvPuCGfTqm3Mo: run status"}
 {"at":"2026-11-05T01:38:30Z","row":"outcome","n":6,"outcome":"delivered"}
+{"at":"2026-11-05T07:39:03Z","row":"sent","n":7,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job capture-requests complete, PR #444 ready, session session_018BhcegRSYTHdybvvYQZNPd: run status"}
