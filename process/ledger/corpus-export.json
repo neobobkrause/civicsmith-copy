@@ -23,7 +23,8 @@
     "money",
     "people",
     "setup-words",
-    "registers"
+    "registers",
+    "runtime-limits"
   ],
   "suite": {
     "cwd": "bio-plane",
