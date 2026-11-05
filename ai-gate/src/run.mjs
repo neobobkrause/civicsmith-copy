@@ -338,21 +338,29 @@ const sumOf = (xs) => (xs.some((x) => x === null) ? null : xs.reduce((a, b) => a
 /* One sample: a turn of the role's fixed prompt, tool set and pack, its figures. */
 async function sample(provider, entry, account, role, spec, { session_key, cache_hints, key, now }) {
   const t = now();
-  const out = await provider.turn({ account, entry_id: entry.entry_id, runtime: RUNTIME,
+  /* R42's time to first byte: the first progress after the turn starts ("reading", the response's first bytes),
+     which `agent-model` sends only where the entry streams; a turn-level "turn_done" is the whole turn, so a
+     non-streaming entry records null (not measured), never the whole turn's time. */
+  let first = null;
+  const onProgress = (e) => { if (first === null && e?.kind !== "turn_started" && e?.kind !== "turn_done") first = now(); };
+  const out = await provider.turn({ account, entry_id: entry.entry_id, runtime: RUNTIME, onProgress,
     data_handling: { ...GATE_DATA_HANDLING, ...(session_key ? { provider_state: "allowed" } : {}) },
     messages: [{ role: "system", content: spec.system }, ...list(spec.messages)], tools: list(spec.tools),
     max_output: GATE_PARAMS.PROBE_MAX_OUTPUT, timeout_ms: GATE_PARAMS.PROBE_TIMEOUT_MS, idempotency_key: key,
     ...(session_key ? { session_key } : {}), ...(cache_hints ? { cache_hints } : {}) });
   const u = out?.usage ?? {};
   return { input: num(u.input_tokens), cached: num(u.cache_read_input_tokens), output: num(u.output_tokens),
-    cost: num(u.cost_reported?.amount) ?? num(u.cost_estimated?.amount), ms: Math.max(0, now() - t), ok: isObj(out?.result) };
+    cost: num(u.cost_reported?.amount) ?? num(u.cost_estimated?.amount), first_byte_ms: first === null ? null : Math.max(0, first - t),
+    ms: Math.max(0, now() - t), ok: isObj(out?.result) };
 }
 const summary = (ss) => ({ input: median(ss.map((s) => s.input)), cached: median(ss.map((s) => s.cached)),
-  output: median(ss.map((s) => s.output)), cost: median(ss.map((s) => s.cost)), ms: median(ss.map((s) => s.ms)) });
+  output: median(ss.map((s) => s.output)), cost: median(ss.map((s) => s.cost)),
+  first_byte_ms: median(ss.map((s) => s.first_byte_ms)), ms: median(ss.map((s) => s.ms)) });
 
 /** R42 — session start per role: the fixed prompt, tool set and pack (`roles: {role: {system, tools, messages}}`)
  *  sent cold (a new session key each, no cache) and warm (one session key, the cache hints), `CHAR_SAMPLES` each,
- *  recording input, cached and output tokens, cost, time and cold minus warm; then each efficiency lever the entry
+ *  recording input, cached and output tokens, cost, time to first byte (`first_byte_ms`), whole-turn time (`ms`) and
+ *  cold minus warm; then each efficiency lever the entry
  *  offers (`caching`, `session`; `batch` recorded OPEN, since `agent-model` sends no batch) with and without,
  *  `LEVER_RUNS` runs each. Answers R41 records (`charRecord` shape) graded by `source` (R61). */
 export async function sessionStart({ provider, entry, account, roles, source = "civicsmith", run_ref = null, at = null,

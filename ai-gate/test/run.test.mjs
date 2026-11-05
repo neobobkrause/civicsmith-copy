@@ -202,9 +202,16 @@ test("R42: session start cold and warm on agent-model's fake provider: the provi
   for (let i = 0; i < P.LEVER_RUNS; i++) script.push(warm, cold);
   const w = await world(script);
   const roles = { ask: { system: "fixed synthetic prompt", tools: [] } };
-  const r = await G.sessionStart({ provider: w.p, entry: GEN, account: account(), roles, run_ref: "run-1", at: "2026-11-05T10:00:00Z" });
+  /* a clock stepping 10 ms a read: start, the response's first bytes, the end of the turn */
+  let clock = 0;
+  const now = () => (clock += 10);
+  const r = await G.sessionStart({ provider: w.p, entry: GEN, account: account(), roles, run_ref: "run-1", at: "2026-11-05T10:00:00Z", now });
   assert.equal(r.ok, true);
   const s = r.records.find((x) => x.property === "session_start.ask");
+  /* time to first byte is the first progress after the start, not the whole turn */
+  assert.equal(s.value.cold.first_byte_ms, 10);
+  assert.equal(s.value.cold.ms, 20);
+  assert.ok(s.value.per_sample.cold.every((x) => x.first_byte_ms === 10 && x.ms === 20));
   assert.equal(s.samples, 2 * P.CHAR_SAMPLES);
   assert.deepEqual([s.value.cold.input, s.value.cold.cached, s.value.cold.output], [900, 0, 20]);
   assert.deepEqual([s.value.warm.input, s.value.warm.cached], [900, 800]);
