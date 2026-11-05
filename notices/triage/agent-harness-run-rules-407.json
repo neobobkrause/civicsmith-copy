@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-harness","verdict":"not affected","evidence":"agent-harness/src/harness.mjs:136 imports only levelEmptyHolds from run-rules; AI_RUN_IDEM_CHECKS (added) is not referenced anywhere in agent-harness/src/","at":"2026-11-05T07:56:38.650Z","key":"run-rules:407","worker":"a04ca0e269ff4a2d9","cost":"78738tokens"}

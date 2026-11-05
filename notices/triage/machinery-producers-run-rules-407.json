@@ -1,0 +1,1 @@
+{"row":"triage","user":"machinery-producers","verdict":"not affected","evidence":"bio-plane/src/machinery-producers/index.mjs:39 imports only runPrincipalOf (used at :503), defined in run-rules/rules.mjs:1038; AI_RUN_IDEM_CHECKS is not imported or used","at":"2026-11-05T07:56:38.650Z","key":"run-rules:407","worker":"a093c3b0af601aab2","cost":"68024tokens"}

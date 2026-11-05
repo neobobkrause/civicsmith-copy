@@ -1,0 +1,1 @@
+{"row":"triage","user":"wizard-scripts","verdict":"not affected","evidence":"bio-plane/src/wizard-scripts/index.mjs:38 imports only untestedLabel from ../run-rules/test-bar.mjs, not the changed checks table or AI_RUN_IDEM_CHECKS","at":"2026-11-05T07:56:38.650Z","key":"run-rules:407","worker":"a1fc798cb81036503","cost":"69694tokens"}

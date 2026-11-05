@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-ask","by":"triage","evidence":"build/modules.json:179 store-ask has empty paths and tests, so no file imports run-rules (it lists run-rules in uses only)","at":"2026-11-05T07:56:38.650Z","key":"run-rules:407","worker":"a3d49abbe44e328ee","cost":"81192tokens"}

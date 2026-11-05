@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-use","verdict":"not affected","evidence":"bio-plane/src/ai-use/index.mjs:231 looks up only AI_USE_CHECKS and AI_RUNS_CHECKS by key (imported at :27), never the new family or its code AI_RUN_IDEM_INVALID","at":"2026-11-05T07:56:38.650Z","key":"run-rules:407","worker":"ae3c798e1251a0c03","cost":"74440tokens"}

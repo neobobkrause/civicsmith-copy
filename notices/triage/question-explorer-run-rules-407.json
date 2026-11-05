@@ -1,0 +1,1 @@
+{"row":"triage","user":"question-explorer","verdict":"not affected","evidence":"bio-plane/src/question-explorer/index.mjs:73 uses only runRules.RUN_BOUNDS (namespace import at :40); AI_RUN_IDEM_CHECKS is never referenced, and its own error table is EXPLORE_CHECKS (:44, :134)","at":"2026-11-05T07:56:38.650Z","key":"run-rules:407","worker":"ac4b5cb22b925526b","cost":"71672tokens"}
