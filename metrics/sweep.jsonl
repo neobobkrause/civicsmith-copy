@@ -87,3 +87,4 @@
 {"at":"2026-11-05T07:38:40Z","row":"ready","live":12,"job_cap":20,"started":[]}
 {"at":"2026-11-05T07:45:20Z","row":"ready","live":12,"job_cap":20,"started":[]}
 {"at":"2026-11-05T07:50:37Z","row":"check","by":"job start","live":12,"live_at":"2026-11-05T07:45:20Z","job_cap":20,"startable":0}
+{"at":"2026-11-05T07:55:48Z","row":"check","by":"notice triage","live":12,"live_at":"2026-11-05T07:45:20Z","job_cap":20,"startable":0}
