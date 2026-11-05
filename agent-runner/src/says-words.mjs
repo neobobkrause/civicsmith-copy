@@ -7,7 +7,7 @@ export const SAYS_WORDS = Object.freeze({
   "agent-runner.signin.claudes_sign_in_gave_no": "Claude's sign-in gave no address within 30 seconds. Wait a minute, then try connecting Claude again.",
   "agent-runner.signin.claudes_sign_in_stopped_before": "Claude's sign-in stopped before it gave an address. Wait a minute, then try connecting Claude again.",
   "agent-runner.signin.this_claude_sign_in_was": "This Claude sign-in was ended before it gave an address. Start connecting Claude again.",
-  "agent-runner.signin.your_teams_civicsmith_cannot_start": "Your team's Civicsmith cannot start Claude's sign-in: Claude Code is missing from it. Tell your team's steward.",
+  "agent-runner.signin.your_teams_civicsmith_cannot_start": "Your team's Civicsmith cannot start Claude's sign-in: a part it needs is missing. Tell an administrator.",
   "agent-runner.signin.your_teams_civicsmith_could_not_2": "Your team's Civicsmith could not tell which member this is for. Sign in to Civicsmith again, then connect Claude.",
   "agent-runner.signin.your_teams_civicsmith_could_not_3": "Your team's Civicsmith could not run Claude's sign-in just now. Wait a minute, then try again.",
   "agent-runner.worker.your_teams_civicsmith_could_not": "Your team's Civicsmith could not start its Claude connection just now. Wait a minute, then try again.",

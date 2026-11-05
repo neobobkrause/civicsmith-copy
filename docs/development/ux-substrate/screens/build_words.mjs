@@ -177,6 +177,27 @@ must(scr, 'mock-screens.js', 'If nobody says yes today, it doesn\\\'t.');
 add('ai.label.explored', 'Machine work · found while exploring · enabled by {owner}', true, 'DEC-189', 'shown only to the paying account\'s owners (question-explorer R5); {owner}: the team, the project\'s name, or the member\'s handle');
 add('ai.label.explored.member', must(scr, 'mock-screens.js', 'Machine work · found while exploring'), true, 'DEC-189', 'what every other member sees: which account paid, and who enabled it, are answered only to its owners');
 add('ai.owner.group', 'the team', false, 'DEC-188', 'enabled_by for the team');
+// UX lane (5 Nov 2026): an AI path not ready, and the choices an interactive failure offers (agent-worker R110, R124); a part
+//     withdrawn for one AI (run-rules R37); the payer check (ai-accounts R75)
+add('ai.refused.aipathnotready', 'The assistant can\'t use this AI account right now, so nothing was started. Whoever manages the account can see why in AI providers. Everything else works as usual.', false, 'UX lane, agent-worker R110', 'AI_PATH_NOT_READY (503): the account or entry is open, auth_failed, payer_unverified or retired; a run stays as it was, resumable');
+add('ai.choice.wait', 'Wait and try again', false, 'UX lane, agent-worker R124', 'a choice on an interactive failure (AI_UNAVAILABLE, AI_LIMIT_REACHED); omitted where waiting helps nothing');
+add('ai.choice.switch', 'Use another AI account', false, 'UX lane, agent-worker R124', 'a choice on an interactive failure');
+add('ai.choice.without_ai', 'Go on without the assistant', false, 'UX lane, agent-worker R124', 'a choice on an interactive failure');
+add('ai.refused.payernotverified', 'This AI account is stopped: its own key wasn\'t the one that paid for its last call ({cause}). Nothing was used; whoever manages the account can clear it in AI providers.', false, 'UX lane, ai-accounts R75, agent-worker R124', 'PAYER_NOT_VERIFIED, passed through by name; {cause} from screen.aiproviders.stands.*');
+add('ai.refused.partwithdrawn', 'This part of the assistant no longer passes Civicsmith\'s tests on the AI chosen, so it is switched off for that AI. Another AI on the list may still do it; everything else works as usual.', false, 'UX lane, run-rules R37', 'PART_WITHDRAWN (C-22.34), in place of refusal.AI_PART_NOT_DEPLOYED\'s sentence');
+// UX lane (5 Nov 2026): agent-runner R41, the sign-in image's own sentences, carried by agent-runner/scripts/build-words.mjs
+add('agent-runner.signin.your_teams_civicsmith_could_not_2', 'Your team\'s Civicsmith could not tell which member this is for. Sign in to Civicsmith again, then connect Claude.', false, 'UX lane, agent-runner R41', 'BAD_MEMBER');
+add('agent-runner.signin.your_teams_civicsmith_cannot_start', 'Your team\'s Civicsmith cannot start Claude\'s sign-in: a part it needs is missing. Tell an administrator.', false, 'UX lane, agent-runner R41', 'NO_BINARY: Claude Code is absent from the image; the member is told what to do, not the part\'s name');
+add('agent-runner.signin.claudes_sign_in_gave_no', 'Claude\'s sign-in gave no address within 30 seconds. Wait a minute, then try connecting Claude again.', false, 'UX lane, agent-runner R41', 'NO_ADDRESS');
+add('agent-runner.signin.claudes_sign_in_stopped_before', 'Claude\'s sign-in stopped before it gave an address. Wait a minute, then try connecting Claude again.', false, 'UX lane, agent-runner R41', 'EXITED');
+add('agent-runner.signin.this_claude_sign_in_was', 'This Claude sign-in was ended before it gave an address. Start connecting Claude again.', false, 'UX lane, agent-runner R41', 'ENDED');
+add('agent-runner.signin.your_teams_civicsmith_could_not_3', 'Your team\'s Civicsmith could not run Claude\'s sign-in just now. Wait a minute, then try again.', false, 'UX lane, agent-runner R41', 'NOT_RUN');
+add('agent-runner.signin.claude_gave_no_answer_within', 'Claude gave no answer within 60 seconds of the code. Start connecting Claude again and paste the new code.', false, 'UX lane, agent-runner R41', 'NO_OUTCOME');
+add('agent-runner.signin.claude_answered_the_code_but', 'Claude answered the code, but not with a token your team\'s Civicsmith can use. Start connecting Claude again.', false, 'UX lane, agent-runner R41', 'TOKEN_SHAPE');
+add('agent-runner.signin.claude_did_not_accept_the', 'Claude did not accept the code{v1}. Start connecting Claude again and paste the new code.', false, 'UX lane, agent-runner R41', 'REFUSED; {v1} empty, or the reason Claude gave in brackets, led by a space');
+add('agent-runner.worker.your_teams_civicsmith_could_not', 'Your team\'s Civicsmith could not start its Claude connection just now. Wait a minute, then try again.', false, 'UX lane, agent-runner R41', 'RUNNER_NOT_STARTED');
+// UX lane (5 Nov 2026): screens-document R1 (G41), a sheet's reading kept whole, its cells for a range
+add('screen.document.cells_held', 'This sheet\'s text is read whole, so every line can be searched and cited. Its cells are worked out for a range when you open or cite it.', false, 'UX lane, screens-document R1, extraction R96', 'one quiet line on a sheet whose cells are held; not drawn while the text is being read');
 
 // 4c'. The fills of the AI sentences (DEC-189; BOB's B124 and B126): each placeholder above that names a fixed word has a key
 for (const [k, t] of [['day', 'daily'], ['month', 'monthly']]) add(`ai.period.${k}`, t, false, 'DEC-189', '{period}');
