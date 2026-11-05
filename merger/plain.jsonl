@@ -26,3 +26,4 @@
 {"at":"2026-11-05T12:21:30Z","row":"withdraw","id":"70643fc9d5ca","pr":499,"why":"the train stopped"}
 {"at":"2026-11-05T12:21:33Z","row":"withdraw","id":"88e3ee22a779","pr":500,"why":"the train stopped"}
 {"at":"2026-11-05T12:21:36Z","row":"withdraw","id":"4927a35f2fa9","pr":501,"why":"the train stopped"}
+{"at":"2026-11-05T12:25:35Z","row":"queue","id":"460de7352c86","pr":502,"head":"205a591a1d19445ef72fc13f9ab5ebdce1e4e965","ref":"p3/pin-105c202ace","by":"session_018BhcegsNkx99LYyf1WY2X1","reviewed":null,"no_review":"a process pin move; the fix was reviewed in process3","rounds":0,"decision":null,"as":"pin","take_by":"2026-11-05T15:35:35.650Z","renews":true}
