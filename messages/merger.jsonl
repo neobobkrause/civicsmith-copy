@@ -206,3 +206,4 @@
 {"at":"2026-11-05T23:32:07Z","row":"outcome","n":103,"outcome":"delivered"}
 {"at":"2026-11-05T23:33:29Z","row":"sent","n":104,"to":"bob","text":"merged PR 509 (job ratification); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-05T23:33:43Z","row":"outcome","n":104,"outcome":"delivered"}
+{"at":"2026-11-05T23:39:33Z","row":"sent","n":105,"to":"bob","text":"merged PR 512 (job corpus-export); the MERGER's starter starts the work it freed"}
