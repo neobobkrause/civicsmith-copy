@@ -67,19 +67,27 @@ function drive(op, adapterLabel, extra = {}) {
   return JSON.parse(m[1]);
 }
 
-for (const [ids, op] of [["R1", "writinghelp"], ["R1", "groupdescriptiondraft"], ["R4", "translationdraft"], ["R7", "readtranslate"]]) {
-  test(`${ids} (T53; R122): a ${op} draft's label is {kind: "machine", ai}, ai exactly the stub adapter's label, for two adapters`, () => {
-    for (const adapter of [ADAPTER_A, ADAPTER_B]) {
-      const r = drive(op, adapter);
-      assert.equal(r.status, 200, JSON.stringify(r.out));
-      assert.equal(r.out.ok, true);
-      assert.deepEqual(r.out.label, { kind: "machine", ai: adapter });
-    }
-  });
-
-  test(`${ids} (T53; R122, control): a label in a ${op} request body is ignored; the answer carries the adapter's`, () => {
-    const r = drive(op, ADAPTER_A, { label: { kind: "machine", ai: PLANTED } });
+/** Two stub adapters stating different labels: each answer's label is exactly `{kind: "machine", ai}` of its adapter. */
+function carriesAdapterLabel(op) {
+  for (const adapter of [ADAPTER_A, ADAPTER_B]) {
+    const r = drive(op, adapter);
     assert.equal(r.status, 200, JSON.stringify(r.out));
-    assert.deepEqual(r.out.label, { kind: "machine", ai: ADAPTER_A });
-  });
+    assert.equal(r.out.ok, true);
+    assert.deepEqual(r.out.label, { kind: "machine", ai: adapter });
+  }
 }
+/** A planted `label` in the body is ignored: the answer carries the adapter's. */
+function ignoresBodyLabel(op) {
+  const r = drive(op, ADAPTER_A, { label: { kind: "machine", ai: PLANTED } });
+  assert.equal(r.status, 200, JSON.stringify(r.out));
+  assert.deepEqual(r.out.label, { kind: "machine", ai: ADAPTER_A });
+}
+
+test("R1 writinghelp: the label is the stub adapter's, for two adapters", () => carriesAdapterLabel("writinghelp"));
+test("R1 writinghelp control: a request-body label is ignored", () => ignoresBodyLabel("writinghelp"));
+test("R1 groupdescriptiondraft: the label is the stub adapter's, for two adapters", () => carriesAdapterLabel("groupdescriptiondraft"));
+test("R1 groupdescriptiondraft control: a request-body label is ignored", () => ignoresBodyLabel("groupdescriptiondraft"));
+test("R4 translationdraft: the label is the stub adapter's, for two adapters", () => carriesAdapterLabel("translationdraft"));
+test("R4 translationdraft control: a request-body label is ignored", () => ignoresBodyLabel("translationdraft"));
+test("R7 readtranslate: the label is the stub adapter's, for two adapters", () => carriesAdapterLabel("readtranslate"));
+test("R7 readtranslate control: a request-body label is ignored", () => ignoresBodyLabel("readtranslate"));
