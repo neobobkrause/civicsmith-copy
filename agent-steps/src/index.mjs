@@ -6,3 +6,5 @@ export { planeAnswer, publishedPack, loadableLayers, loadLayer, modelHalf } from
 export { MEANING_ARM, RESPONSE_ID, SEGMENT_END_BY } from "./names.mjs";
 export { toolContent, textOnly, droppedNote } from "./reads.mjs";
 export { withRecordIds } from "./holdings.mjs";
+export { providerFor, talk, aiStopOf, gateOne, rolesOf, rowRole, subsessionNeed, RUN_DATA_HANDLING, RUN_RUNTIME } from "./talk.mjs";
+export { WRITE_OPS, withProducer, idemKey } from "./drive.mjs";
