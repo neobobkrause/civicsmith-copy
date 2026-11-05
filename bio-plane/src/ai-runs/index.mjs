@@ -43,7 +43,7 @@ import { RUN_BOUNDS, RUN_ENDINGS, RUN_CONTEXTS, STANDARD_BASIS, OBSERVATION_STAT
          OBSERVATION_COVERAGE, OBSERVATION_COVERAGE_UNDETERMINED, observationCoverage, checkBound, checkCondition,
          checkConsume, checkRunState, finishedBound, runStatusFor, projectGate, runConsultsProjects, checkRunContextKind,
          runPrincipalGate, checkSkillVersion, DEPLOYED_MODES, DEFAULT_MODE, AI_RUNS_CHECKS, RUN_MODES, startAllowed,
-         checkVerification, partAdmittedOn, CIVICSMITH_TEST_SET, originAllowed, checkTestBarRecord, deployable } from "../run-rules/index.mjs";
+         checkVerification, partAdmittedOn, CIVICSMITH_TEST_SET, originAllowed, checkTestBarRecord, checkGateRecord, deployable } from "../run-rules/index.mjs";
 import { AI_RUNS_SCHEMA, AI_RUNS_TABLES, AI_RUNS_ADDED_COLUMNS, AI_RUNS_ADDED_TABLE_COLUMNS } from "./schema.mjs";
 
 export { AI_RUNS_SCHEMA, AI_RUNS_TABLES } from "./schema.mjs";
@@ -153,6 +153,8 @@ export class AiRuns {
       { name: "ai_run_looks", keys: [], ...cls, sight: "group" },
       { name: "ai_test_bar", keys: [], ...cls, sight: "group" },
       { name: "ai_group_tests", keys: [], ...cls, sight: "group" },
+      /* R75 (T53): the Gate 1 records ai-gate builds and this module writes, group-wide, cleared only with the whole store */
+      { name: "ai_gate_records", keys: [], ...cls, sight: "group" },
       /* R91 (T53): a run's segments, purged with the run as R38's tables are; R107: who produced an entry's result */
       { name: "ai_run_segments", keys: [], ...cls, sight: "bundle" },
       { name: "ai_run_producers", keys: [], ...cls, sight: "bundle" }]);
@@ -391,14 +393,50 @@ export class AiRuns {
     return { ok: true, module };
   }
 
-  /** The Gate 1 records for `entry_id`, as the registered source answers them (a module test's `deps.gateRecords`
-   *  first); none registered, none answered, or one that throws: none (so nothing is admitted on them). */
+  /** The Gate 1 records for `entry_id`: those written here (R75's `gateVerdictRecord`), oldest first, then those the
+   *  registered source answers (a module test's `deps.gateRecords` first); a source that answers none, or throws, adds
+   *  none. `run-rules`' `gateAdmits` takes the latest by `at`. */
   #gateRecords(part, entry_id) {
     if (typeof entry_id !== "string" || entry_id === "") return [];
+    const written = this.gateVerdictRecords({ entry_id });
     const src = this.#deps.gateRecords !== undefined ? this.#deps.gateRecords : this.#gateSource ? this.#gateSource.fn : null;
     try {
       const out = typeof src === "function" ? src({ part, entry_id }) : src;
-      return Array.isArray(out) ? out : [];
+      return Array.isArray(out) ? [...written, ...out] : written;
+    } catch { return written; }
+  }
+
+  /** R75 (T53; coordinator ruling 5 Nov 03:50): WRITE A GATE 1 RECORD `ai-gate` BUILT. `ai-gate` builds the record (its R37
+   *  `gateRecord`, whose answer is `{ok: true, record}`; either that answer or the bare record is taken) and this module
+   *  writes it, as given, append-only. Its shape is judged by `run-rules`' `checkGateRecord`; an unfit one is refused
+   *  `AI_TEST_BAR_UNFIT` (C-22.22, R37's record being the extended test-bar record) naming the field, nothing written. An
+   *  in-plane call, reached by no route. Never throws. */
+  gateVerdictRecord(given = null) {
+    const rec = given && typeof given === "object" && given.ok === true && given.record && typeof given.record === "object"
+      ? given.record : given;
+    let field;
+    try { field = checkGateRecord(rec); } catch { field = "record"; }
+    if (field !== null)
+      return this.#refuse("AI_TEST_BAR_UNFIT", localize("ai-runs.index.gate_record_unfit", "this Gate 1 record is not well formed (its {field} is not as ai-gate's record states it). Nothing was recorded.", { field: String(field) }), { field });
+    try {
+      this.#transact(() => this.sql.exec(
+        `INSERT INTO ai_gate_records (entry_id, part, verdict, at, record) VALUES (?, ?, ?, ?, ?)`,
+        rec.entry_id, rec.part, rec.verdict, String(rec.at), JSON.stringify(rec)));
+    } catch {
+      return this.#refuse("AI_TEST_BAR_UNFIT", localize("ai-runs.index.gate_record_unfit", "this Gate 1 record is not well formed (its {field} is not as ai-gate's record states it). Nothing was recorded.", { field: "record" }), { field: "record" });
+    }
+    return { ok: true, entry_id: rec.entry_id, part: rec.part, verdict: rec.verdict, at: String(rec.at) };
+  }
+
+  /** R75: the Gate 1 records written here, oldest first, each as it was written; `entry_id` and `part` narrow them. Writes
+   *  nothing; never throws. */
+  gateVerdictRecords({ entry_id = null, part = null } = {}) {
+    try {
+      const where = [], args = [];
+      if (typeof entry_id === "string") { where.push("entry_id = ?"); args.push(entry_id); }
+      if (typeof part === "string") { where.push("part = ?"); args.push(part); }
+      return this.#rows(`SELECT record FROM ai_gate_records ${where.length ? "WHERE " + where.join(" AND ") : ""} ORDER BY seq`, ...args)
+        .map((r) => safeJson(r.record)).filter((r) => r && typeof r === "object");
     } catch { return []; }
   }
   #captureRequestConfigured() {
