@@ -162,3 +162,4 @@
 {"at":"2026-11-05T21:31:09Z","row":"outcome","n":81,"outcome":"delivered"}
 {"at":"2026-11-05T21:38:02Z","row":"sent","n":82,"to":"bob","text":"the starter started job inquiry (PR 601): subscribe_pr_activity to each pull request"}
 {"at":"2026-11-05T21:39:25Z","row":"outcome","n":82,"outcome":"delivered"}
+{"at":"2026-11-05T21:42:21Z","row":"sent","n":83,"to":"bob","text":"merged PR 494 (job action-records); the MERGER's starter starts the work it freed"}
