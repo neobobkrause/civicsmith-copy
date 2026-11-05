@@ -30,9 +30,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "Cleared (coordinator ruling 5 Nov 04:40): R17 retired with agent-runner R38 (K5457) in plain PR 417; no replacement requirement. Nothing left for this attempt.",
-    "at": "2026-11-05T04:34:53Z",
-    "owner": "bob"
+    "state": "COMPLETE",
+    "at": "2026-11-05T05:00:13Z"
   }
 }
