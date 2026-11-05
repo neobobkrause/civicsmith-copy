@@ -62,7 +62,7 @@ test("R31 published bytes and the court-order stamps are exempt from purge; the 
     const got = declared[d.name];
     assert.deepEqual([got.purge, got.expunge, got.export, got.derive, got.version_chain],
                      [PUBLICATION_EXEMPT.includes(d.name) ? "exempt" : "clear", "none", "admin-only", "stored", false], d.name);
-    assert.equal(got.sight, ["case_documents", "case_exclusions", "published_cases", "cases", "edition_stamps"].includes(d.name)
+    assert.equal(got.sight, ["case_documents", "case_exclusions", "case_photo_places", "published_cases", "cases", "edition_stamps"].includes(d.name)
       ? "group" : "bundle", `${d.name}'s sight`);
   }
   /* T33-63 (K1634): the flags and attributions are case-tensions', declared by it, created at this module's creation */
@@ -79,7 +79,7 @@ test("R31 published bytes and the court-order stamps are exempt from purge; the 
   assert.deepEqual([...CASE_CARRIAGE_EXEMPT].sort(), ["published_case_materials", "published_material_texts"]);
   for (const t of CASE_CARRIAGE_EXEMPT) assert.equal(publicationOwns(t), false, `${t} is case-carriage's`);
   assert.deepEqual(PUBLICATION_TABLES.map((t) => t.name || t).sort(),
-                   ["case_documents", "case_exclusions", "published_edges", "published_held_references"]);
+                   ["case_documents", "case_exclusions", "case_photo_places", "published_edges", "published_held_references"]);
   /* T41 (K2438): the waiting editions' table is publish-schedule's (its R10), neither created nor declared here */
   assert.equal(publicationOwns("scheduled_editions"), false, "publish-schedule's");
   assert.equal(w.row(`SELECT name FROM sqlite_master WHERE name='scheduled_editions'`), null, "not created by this module");
