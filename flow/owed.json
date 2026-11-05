@@ -1,1 +1,1 @@
-{"since":"2026-11-05T18:21:32Z","acts":[{"at":"2026-11-05T18:21:32Z","act":"job complete control-plane-store-request"},{"at":"2026-11-05T18:27:34Z","act":"job complete instance-setup"}]}
+{"since":"2026-11-05T18:21:32Z","acts":[{"at":"2026-11-05T18:21:32Z","act":"job complete control-plane-store-request"},{"at":"2026-11-05T18:27:34Z","act":"job complete instance-setup"},{"at":"2026-11-05T18:45:21Z","act":"block interface-shell"}]}
