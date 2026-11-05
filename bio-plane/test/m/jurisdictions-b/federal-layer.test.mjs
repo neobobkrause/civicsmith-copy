@@ -27,7 +27,7 @@ const responseOf = (view, law) => {
   return l ? view.deadlines.find((d) => d.rule === l.response && d.applies_to === 'records_request') : undefined;
 };
 
-test('R109 the federal layer: FOIA\'s records_help block read on the text, its twenty and ten working days; combine of the layer alone counts a foia_response due date over the federal list and the weekend, the unsplit profile\'s date; a request with no law named gets none', () => {
+test('R109 the federal layer: the FOIA records_help block read on the text, its twenty and ten working days; combine of the layer alone counts a foia_response due date over the federal list and the weekend, equal to the unsplit profile; a request with no law named gets none', () => {
   const f = get(FED);
   assert.deepEqual(validate(f).errors, []);
   assert.ok(f.weekend && !f.time_zone && !f.locale);
