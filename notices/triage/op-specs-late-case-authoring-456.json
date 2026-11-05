@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-specs-late","verdict":"not affected","evidence":"build/modules.json:179 lists op-specs-late with paths [] and tests [], so it has no code that could use R88-R90's behaviour","at":"2026-11-05T23:00:00.051Z","key":"case-authoring:456","worker":"aae9b3b92e2294d08","cost":"unmeasured"}
