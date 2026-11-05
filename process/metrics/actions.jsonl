@@ -1,0 +1,1 @@
+{"at":"2026-11-05T05:01:43Z","module":"actions","row":"attempt","event":"start","role":"job","attempt":1,"reading_bytes":77380,"start_bytes":3562,"tool":"c9c5aa126c594aae2ac522d4a30d4edbabbce5ff","over_cap":"one-line test edit for action-grammar R31's shape (acts.test.mjs:108), back to back with PR 396 (coordinator ruling 04:36); consolidating actions.md is a separate job"}
