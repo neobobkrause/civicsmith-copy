@@ -53,7 +53,7 @@
   "wizard": 359,
   "elsewhere": 38,
   "places": 6,
-  "screen": 8084,
+  "screen": 8090,
   "signin": 1,
   "forgot": 1,
   "founder": 6,
@@ -152,7 +152,7 @@
   "docprofile": 1,
   "installer-steps": 1,
   "capture-sources": 8,
-  "content": 132,
+  "content": 137,
   "office-readers": 1,
   "inquiry": 21,
   "citation": 4,
@@ -239,8 +239,8 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19835,
-  "protected": 1181
+  "total": 19846,
+  "protected": 1185
  },
  "words": [
   {
@@ -84168,7 +84168,7 @@
    "en": "This {kind} is kept whole and findable by its name and details. It isn't read yet; it will be read once Civicsmith reads files of this kind.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-467: Document and Add, a file of a kind not read yet (K5436); {kind} a plain name, such as \"A Visio drawing\""
+   "note": "DEC-467: Document and Add, a file of a kind not read yet (K5436); {kind} from file.kind.* (DEC-473), lowercase and without an article, such as \"Visio drawing\": \"This Visio drawing is kept whole...\"; the quote in screens-document-beta R62 (\"{kind}: kept whole\") is superseded by this wording (UX lane, 5 Nov 2026)"
   },
   {
    "key": "screen.capture.refused.type",
@@ -85926,6 +85926,83 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-489: file-safety R71 safeViewOfBytes: the bytes no longer match the digest they were offered under; as screen.inbox.view.changed (DEC-479)"
+  },
+  {
+   "key": "content.typed.unchecked",
+   "en": "typed by {typist}, not yet checked",
+   "protected": true,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: screens-document-beta R59, content R64: typed words no second member has checked (grade D); {typist} the member as her credit level allows, or content.typed.anonymous_member"
+  },
+  {
+   "key": "content.typed.checked",
+   "en": "typed by {typist}, checked by {checkers}",
+   "protected": true,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: screens-document-beta R59, content R64: typed words a second member checked (grade C); {checkers} the checkers in time order, joined with commas, each as credited"
+  },
+  {
+   "key": "content.typed.anonymous_member",
+   "en": "a member of the team",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: plane R119, content R64: {typist} or a checker when her credit level names no one, or no level is known"
+  },
+  {
+   "key": "content.typed.frozen.unchecked",
+   "en": "typed by {typist}, not checked when this edition was signed",
+   "protected": true,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: basis-versions R59, case-disclosures R39: the label as of signing; never the live \"not yet checked\""
+  },
+  {
+   "key": "content.typed.frozen.checked",
+   "en": "typed by {typist}, checked by {checkers} when this edition was signed",
+   "protected": true,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: basis-versions R59, case-disclosures R39: the label as of signing; {checkers} only those whose check is at or before it"
+  },
+  {
+   "key": "screen.document.basis.doorbell",
+   "en": "Handed to your team through its doorbell, so who issued it is not yet known. Recorded {at}; a member can settle it from the queue.",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: screens-document-beta R73: shown in place of doorbell.authority_basis, which stays as stored; names no knocker (R58)"
+  },
+  {
+   "key": "screen.document.basis.testimony",
+   "en": "{member}'s own account, written while signed in to your team's Civicsmith. Recorded {recorded}; it stands on their word.",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: screens-document-beta R73: shown in place of provenance.testify.authority_basis (\"taken from the session at op=testify\"), which stays as stored; {member} as credited"
+  },
+  {
+   "key": "screen.document.reading.unparsed",
+   "en": "Civicsmith couldn't make sense of this file's text, so no names or dates were taken from it. The document itself is unchanged.",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: screens-document-beta R73: shown in place of reading-pipeline.why.reader_parse_text, which stays as stored; reader_found_entities and reader_found_entities_document both draw screen.document.reading.nonames (DEC-445)"
+  },
+  {
+   "key": "screen.document.readway.stored",
+   "en": "Read from the text stored in this {kind}.",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: screens-document-beta R73: which way the text was read, in place of \"{fmt} text-layer text (tier 1)\"; {kind} from file.kind.*, such as Word document"
+  },
+  {
+   "key": "screen.document.readway.pictures",
+   "en": "Read from pictures of its pages, so a word here and there may be wrong.",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: screens-document-beta R73: which way the text was read when the pages were scanned or photographed (OCR); with screen.document.text.unsure where marks exist"
+  },
+  {
+   "key": "screen.document.readway.mixed",
+   "en": "Read from the text stored in this {kind}, and from pictures of the pages that had none.",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "UX lane, 5 Nov 2026: screens-document-beta R73: a file read partly from its own text and partly from pictures of its pages"
   },
   {
    "key": "refusal.GROUP_SLUG_MALFORMED",

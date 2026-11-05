@@ -8432,7 +8432,7 @@ w466('installer.cf.asks.gateway', "Create a gateway for the assistant, and keep 
 def w467(key, en, note):
     W.append(dict(key=key, en=en, protected=False, note='DEC-467: ' + note))
 # FILES F3 needs (K5435-K5439, DEC-460): held and named, refused types, macros, the type list, limits, photo data, mailboxes
-w467('screen.document.held.kind', "This {kind} is kept whole and findable by its name and details. It isn't read yet; it will be read once Civicsmith reads files of this kind.", 'Document and Add, a file of a kind not read yet (K5436); {kind} a plain name, such as "A Visio drawing"')
+w467('screen.document.held.kind', "This {kind} is kept whole and findable by its name and details. It isn't read yet; it will be read once Civicsmith reads files of this kind.", 'Document and Add, a file of a kind not read yet (K5436); {kind} from file.kind.* (DEC-473), lowercase and without an article, such as "Visio drawing": "This Visio drawing is kept whole..."; the quote in screens-document-beta R62 ("{kind}: kept whole") is superseded by this wording (UX lane, 5 Nov 2026)')
 w467('screen.capture.refused.type', "This {kind} can't be added: {reason}. Nothing was kept.", 'Add, a file of a refused type (K5436); {kind} {reason}')
 w467('screen.document.macros', 'This file contains macros. Its text is read; the macros were never run.', 'Document, a .docm, .xlsm or .pptm (K5435)')
 w467('screen.capture.types.head', 'What can be added', 'Add, the fold before choosing a file (K5435-K5437)')
@@ -8778,6 +8778,25 @@ def w489(key, en, note):
     W.append(dict(key=key, en=en, protected=False, note='DEC-489: ' + note))
 # B571: FILE-SAFETY's BYTES_CHANGED (C-140.46, R71) and NO_SAFE_VIEW now that photographs have a safe view (R60)
 w489('refusal.BYTES_CHANGED', "What is stored no longer matches the file that was sent, so it isn't shown. Nothing was changed; tell an administrator.", 'file-safety R71 safeViewOfBytes: the bytes no longer match the digest they were offered under; as screen.inbox.view.changed (DEC-479)')
+
+# UX lane (5 Nov 2026; CLAUDE.md: design lanes decide design and wording in the design stream): screens-document-beta R59
+# and R73, and the typed labels' frozen siblings (basis-versions R59, case-disclosures R39) and plane R119's fill.
+def wux(key, en, note, prot=False):
+    W.append(dict(key=key, en=en, protected=prot, note='UX lane, 5 Nov 2026: ' + note))
+# R59 (content R64): the label wherever a member's typed words show; an origin, so protected (DEC-157 (4))
+wux('content.typed.unchecked', 'typed by {typist}, not yet checked', 'screens-document-beta R59, content R64: typed words no second member has checked (grade D); {typist} the member as her credit level allows, or content.typed.anonymous_member', True)
+wux('content.typed.checked', 'typed by {typist}, checked by {checkers}', 'screens-document-beta R59, content R64: typed words a second member checked (grade C); {checkers} the checkers in time order, joined with commas, each as credited', True)
+wux('content.typed.anonymous_member', 'a member of the team', 'plane R119, content R64: {typist} or a checker when her credit level names no one, or no level is known')
+wux('content.typed.frozen.unchecked', 'typed by {typist}, not checked when this edition was signed', 'basis-versions R59, case-disclosures R39: the label as of signing; never the live "not yet checked"', True)
+wux('content.typed.frozen.checked', 'typed by {typist}, checked by {checkers} when this edition was signed', 'basis-versions R59, case-disclosures R39: the label as of signing; {checkers} only those whose check is at or before it', True)
+# R73: the document page's own sentences, shown in place of record text that stays as stored (DEC-445's pattern)
+wux('screen.document.basis.doorbell', 'Handed to your team through its doorbell, so who issued it is not yet known. Recorded {at}; a member can settle it from the queue.', 'screens-document-beta R73: shown in place of doorbell.authority_basis, which stays as stored; names no knocker (R58)')
+wux('screen.document.basis.testimony', "{member}'s own account, written while signed in to your team's Civicsmith. Recorded {recorded}; it stands on their word.", 'screens-document-beta R73: shown in place of provenance.testify.authority_basis ("taken from the session at op=testify"), which stays as stored; {member} as credited')
+wux('screen.document.reading.unparsed', "Civicsmith couldn't make sense of this file's text, so no names or dates were taken from it. The document itself is unchanged.", 'screens-document-beta R73: shown in place of reading-pipeline.why.reader_parse_text, which stays as stored; reader_found_entities and reader_found_entities_document both draw screen.document.reading.nonames (DEC-445)')
+wux('screen.document.readway.stored', 'Read from the text stored in this {kind}.', 'screens-document-beta R73: which way the text was read, in place of "{fmt} text-layer text (tier 1)"; {kind} from file.kind.*, such as Word document')
+wux('screen.document.readway.pictures', 'Read from pictures of its pages, so a word here and there may be wrong.', 'screens-document-beta R73: which way the text was read when the pages were scanned or photographed (OCR); with screen.document.text.unsure where marks exist')
+wux('screen.document.readway.mixed', 'Read from the text stored in this {kind}, and from pictures of the pages that had none.', 'screens-document-beta R73: a file read partly from its own text and partly from pictures of its pages')
+# R73's fingerprint: drawn as R66's row draws it, a short mark (screen.document.fingerprint) with shell.copy for the whole; no new key
 
 keys = [x['key'] for x in W]
 dup = sorted({k for k in keys if keys.count(k) > 1})
