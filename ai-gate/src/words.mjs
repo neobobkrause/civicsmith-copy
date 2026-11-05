@@ -27,6 +27,7 @@ const REFUSED = {
   GATE_CONSENT_MISSING: () => localize("gate.refused.GATE_CONSENT_MISSING", "A test run starts only after a person on the team says yes to its estimate and ceiling."),
   GATE_DECLARED_HOST: () => localize("gate.refused.GATE_DECLARED_HOST", "This address cannot be tested: it must be a public name reached over https, and not Civicsmith's own."),
   GATE_DECLARED_INVALID: () => localize("gate.refused.GATE_DECLARED_INVALID", "This plan description is missing a provider, host, model, plan, scope or route."),
+  GATE_ENTRY_NOT_LISTED: () => localize("gate.refused.GATE_ENTRY_NOT_LISTED", "This AI is not listed in Civicsmith's catalogue, so it is checked only as a described plan."),
   GATE_END_REASON_UNKNOWN: () => localize("gate.refused.GATE_END_REASON_UNKNOWN", "A test run may end early only for a reason the test names."),
   GATE_ESTIMATE_INPUT: () => localize("gate.refused.GATE_ESTIMATE_INPUT", "The estimate cannot be compared with what the run cost."),
   GATE_ESTIMATE_NO_MONEY: () => localize("gate.refused.GATE_ESTIMATE_NO_MONEY", "This plan reports no money, so the estimate has no money figure to compare."),
@@ -42,6 +43,7 @@ const REFUSED = {
   GATE_ROW_INVALID: () => localize("gate.refused.GATE_ROW_INVALID", "This results row is not in the form the results page publishes."),
   GATE_ROW_UNVERIFIED: () => localize("gate.refused.GATE_ROW_UNVERIFIED", "A team's results are published only from a bundle Civicsmith verified."),
   GATE_RUN_KIND_UNKNOWN: () => localize("gate.refused.GATE_RUN_KIND_UNKNOWN", "A run is either Civicsmith's own or a team's bundle."),
+  GATE_RUN_INPUT: () => localize("gate.refused.GATE_RUN_INPUT", "A test item runs only with its AI, its part and the connection the AI is reached through."),
   GATE_SCAN_INPUT: () => localize("gate.refused.GATE_SCAN_INPUT", "The bundle's contents could not be scanned for secrets, so they are not sent."),
   GATE_SCORE_INPUT: () => localize("gate.refused.GATE_SCORE_INPUT", "An item is scored only from its stored exchange."),
   GATE_SCORER_FAILED: () => localize("gate.refused.GATE_SCORER_FAILED", "The scorer could not read this stored exchange."),
@@ -93,6 +95,7 @@ const WARN = {
 };
 
 const NOTE = {
+  not_measurable_in_money: () => localize("gate.note.not_measurable_in_money", "not measurable in money"),
   reasonableness: () => localize("gate.note.reasonableness", "A person's reading of a sample of this AI's answers. It is a note beside the verdict, never part of it."),
 };
 
