@@ -1706,7 +1706,9 @@ export function readingTranslationLayer(catalog) {
 const PROCEDURE_ITEM_FIELDS = Object.freeze(["route", "expect", "citation"]);
 
 /** THE `procedure_guide` LAYER over what the caller passed (R46): `procedureGuidesFor`'s answer, `{ok, kind, guides:
- *  [{guide, origin, items}], withheld, label}` (`guide` the guide's id, null for the profile's, whose items may carry
+ *  [{guide, origin, items, layer?, not_reviewed?, label?}], withheld, label}` (`layer` the guide's layer, reading-guides
+ *  R17, R18; `not_reviewed` and its own statement `label` on a guide opted out of review, its R20; each carried as
+ *  given) (`guide` the guide's id, null for the profile's, whose items may carry
  *  `after`, carried as given; reading-guides R13, K2820, K2825), or a list of them (one per action kind). A guide R13
  *  withheld is not passed in its `guides`, and is not rendered.
  *  A stated absence in R9's form with no guide; with guides, `sourcing` `guide`, each named with its kind and origin in
@@ -1734,19 +1736,27 @@ export function procedureGuideLayer(answers) {
       procedures: sets.map(({ kind, label, guides }) => ({
         kind,
         label,
-        guides: guides.map(({ guide, origin, items }) => {
-          /* The profile's guide has no id (`guide: null`, reading-guides R13; K2825): it is named by its kind. */
+        guides: guides.map(({ guide, origin, items, layer, not_reviewed: notReviewed, label: own }) => {
+          /* The profile's guide has no id (`guide: null`, reading-guides R13; K2825): it is named by its kind, and by its
+             layer when the answer names one (reading-guides R17: one guide per layer, side by side). */
           const id = typeof guide === "string" && guide ? guide : null;
-          const name = id ?? (origin === "profile" ? localize("skills.skilldoctrine.the_profiles_guide_for_v1", "the profile's guide for {v1}", { v1: String(kind ?? "an unnamed kind") }) : "an unnamed guide");
+          const at = typeof layer === "string" && layer ? layer : null;
+          const name = (id ?? (origin === "profile" ? localize("skills.skilldoctrine.the_profiles_guide_for_v1", "the profile's guide for {v1}", { v1: String(kind ?? "an unnamed kind") }) : "an unnamed guide"))
+            + (at && !id ? `, layer ${at}` : "");
           items.forEach((item, i) => {
             const texts = PROCEDURE_ITEM_FIELDS.map((f) => item?.[f]).filter((t) => typeof t === "string");
             const found = [...new Set(texts.flatMap(controlFlowAuthority))];
             if (found.length > 0)
-              throw new Error(`the procedure guide ${id ?? `(${name})`} item ${i + 1} (${JSON.stringify(item?.route ?? null)}) carries `
+              throw new Error(`the procedure guide ${id ? (at ? `${id} (layer ${at})` : id) : `(${name})`} item ${i + 1} (${JSON.stringify(item?.route ?? null)}) carries `
                 + `a clause of conduct (${found.join("; ")}): a guide lists routes and replies to expect, never how the `
                 + "AI may behave");
           });
-          return { kind, guide: id, origin: origin ?? null, items };
+          /* reading-guides R17, R18: each guide keeps the layer its answer names, so two layers' guides for one kind
+             render apart; R20: a guide its team's sole member opted out of review keeps its `not_reviewed` record and its
+             own statement label (`NOT_REVIEWED_LABEL`), carried unchanged, so the run never presents it as reviewed. */
+          return { kind, guide: id, origin: origin ?? null, ...(at ? { layer: at } : {}),
+                   ...(notReviewed && typeof notReviewed === "object" ? { not_reviewed: notReviewed, label: own ?? null } : {}),
+                   items };
         }),
       })),
       note: localize("skills.skilldoctrine.a_procedure_guide_lists_the", "a procedure guide lists the routes the profile or the group knows for one kind of action, in its order and unranked, with the replies to expect and each route's citation; it is legal information, not legal advice, and never how the AI may behave: the AI's rules of conduct come only from the rules Bob approves, no guide can loosen them, and code checks that none does."),
