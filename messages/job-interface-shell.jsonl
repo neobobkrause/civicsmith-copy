@@ -14,3 +14,4 @@
 {"at":"2026-11-04T23:31:55Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-05T00:37:40Z","row":"sent","n":8,"to":"bob","text":"job interface-shell complete, PR #310 ready, session session_01RAN5ekJqw7WurjuTwoX1rC: run status"}
 {"at":"2026-11-05T00:37:50Z","row":"outcome","n":8,"outcome":"delivered"}
+{"at":"2026-11-05T05:26:08Z","row":"sent","n":9,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job interface-shell complete, PR #436 ready, session session_01RAN5enav8g2sC7AedAmjkJ: run status. R120 was no layout fault: its 5 tests were recorded red at PR 172 when the gate had no Chromium ('Chromium is needed'); they pass with Chromium here and at the gate since it installs one (PR 310 run). No code change, no found mark: nothing to record."}
