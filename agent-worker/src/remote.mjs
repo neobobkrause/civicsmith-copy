@@ -7,5 +7,5 @@
  * A member's own sign-in is refused before any model call (`index.mjs`' `assistantReady`, R110), and `/signin` answers
  * `RUNNER_NOT_CONFIGURED` (R66) until the adapter's connect flow replaces the relay (R66 as T53 amends it). */
 
-/** F2, R109 — no runner is bound: null for every environment, `env.REMOTE` and `env.RUNNER` unread. */
+/** F2, R109 — no runner is bound: null for every environment; neither binding is read. */
 export const remoteOf = () => null;

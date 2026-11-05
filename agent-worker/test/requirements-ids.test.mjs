@@ -3,7 +3,10 @@
  * build/requirements/agent-worker.md was brought under the 70,000-byte cap by moving non-requirement text to
  * docs/requirements-notes/agent-worker.md and by retiring the seven POST /draft lines moved to agent-drafts
  * (R59, R68, R69, R70, R76, R77, R86 -> agent-drafts R1-R7). START is every R and F id at the start commit
- * (d837b6d9), with its mark (null when met, "retired", or the not-yet-met text) and a digest of its whole line. */
+ * (d837b6d9), with its mark (null when met, "retired", or the not-yet-met text) and a digest of its whole line.
+ *
+ * ADMITTED is each found mark added since (5 Nov 2026: F2-F4, BOB's attempt 4), with the mark it was added under and a
+ * digest of its text after the mark, so the mark may be struck when met but the finding itself is never reworded. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -144,6 +147,12 @@ const START = {
   F1: ["not yet met: walk p3dev-l1", "ff088529553c9baa"],
 };
 
+const ADMITTED = {
+  F2: ["not yet met: coordinator ruling 5 Nov 2026; agent-runner R13, K5576", "a3ff85819faf6c0f"],
+  F3: ["not yet met: agent-model R35, R53, PR 355", "0c742c78c3eb6ec9"],
+  F4: ["not yet met: agent-drafts:358", "d869859058702ae8"],
+};
+
 const LINE = /^- \*\*([RF]\d+)\*\*(?: \*\((not yet met: [^)]*|retired[^*]*)\)\*)?/;
 function idsOf(text) {
   const out = {};
@@ -165,8 +174,17 @@ test("the requirements file is under the cap", () => {
   assert.ok(Buffer.byteLength(file) <= CAP, `${Buffer.byteLength(file)} bytes`);
 });
 
-test("the set of R and F ids is unchanged by the consolidation", () => {
-  assert.deepEqual(Object.keys(now).sort(), Object.keys(START).sort());
+test("the set of R and F ids is unchanged by the consolidation, but for the admitted found marks", () => {
+  assert.deepEqual(Object.keys(now).sort(), [...Object.keys(START), ...Object.keys(ADMITTED)].sort());
+});
+
+test("each admitted found mark is open under the mark it was added with, or struck, and its finding is unchanged", () => {
+  for (const [id, [mark, hash]] of Object.entries(ADMITTED)) {
+    assert.ok(now[id], `${id} missing`);
+    assert.ok(now[id].mark === null || now[id].mark === mark, `${id} mark ${now[id].mark}`);
+    const text = now[id].line.replace(/^- \*\*F\d+\*\* (?:\*\([^)]*\)\* )?/, "");
+    assert.equal(digest(text), hash, `${id} finding changed`);
+  }
 });
 
 test("every id not moved keeps its line verbatim, and so its mark", () => {
@@ -178,7 +196,7 @@ test("every id not moved keeps its line verbatim, and so its mark", () => {
 });
 
 test("the unmet marks are unchanged but for the moved ids, which agent-drafts now carries", () => {
-  const unmet = (o, f) => Object.entries(o).filter(([id, v]) => f(v) && !MOVED[id]).map(([id]) => id).sort();
+  const unmet = (o, f) => Object.entries(o).filter(([id, v]) => f(v) && !MOVED[id] && !ADMITTED[id]).map(([id]) => id).sort();
   assert.deepEqual(unmet(now, (v) => v.mark && v.mark !== "retired"), unmet(START, ([m]) => m && m !== "retired"));
 });
 
@@ -188,12 +206,13 @@ test("every moved id is retired here naming its agent-drafts id, and exists ther
     assert.ok(now[old].line.includes(`agent-drafts:${neu}`), `${old} names agent-drafts:${neu}`);
     assert.ok(drafts[neu], `agent-drafts ${neu} missing`);
     assert.ok(drafts[neu].line.includes(`moved from agent-worker:${old}`), `agent-drafts ${neu} names ${old}`);
-    assert.equal(drafts[neu].mark, START[old][0], `agent-drafts ${neu} mark equals ${old}'s at start`);
+    /* agent-drafts may since have met the mark it carried over (R1, R4, R7, PR 358): open as at start, or struck. */
+    assert.ok(drafts[neu].mark === START[old][0] || drafts[neu].mark === null, `agent-drafts ${neu} mark is ${old}'s at start or met`);
   }
 });
 
 test("each retired id here that names agent-drafts is one of the moved ids", () => {
   for (const [id, v] of Object.entries(now)) {
-    if (v.line.includes("agent-drafts:")) assert.ok(MOVED[id], `${id} names agent-drafts but did not move`);
+    if (v.mark === "retired" && v.line.includes("agent-drafts:")) assert.ok(MOVED[id], `${id} names agent-drafts but did not move`);
   }
 });

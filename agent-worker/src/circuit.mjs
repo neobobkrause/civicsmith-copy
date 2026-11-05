@@ -128,7 +128,8 @@ export async function circuitRun(env, account, { now } = {}) {
   if (!handle || !name) return inert;
   const admitted = await circuitAdmit(handle, name, DEFAULT_ENTRY, { now });
   if (!admitted.admit) return { ...inert, admitted: false, class: admitted.class, retry_at: admitted.retry_at ?? null };
-  const pending = [];
+  /* The records are chained, each reading the state the one before it wrote. */
+  let chain = Promise.resolve();
   const watch = (model) => {
     if (!model || typeof model.spent !== "function") return model;
     const spent = model.spent.bind(model);
@@ -136,15 +137,15 @@ export async function circuitRun(env, account, { now } = {}) {
       const cls = classOf(got);
       const entry = typeof got?.entry_id === "string" && got.entry_id ? got.entry_id : DEFAULT_ENTRY;
       if (cls !== undefined) {
-        pending.push(circuitRecord(handle, name, entry, cls, { now }).then((state) => {
+        chain = chain.then(() => circuitRecord(handle, name, entry, cls, { now })).then((state) => {
           if (state === "open" && model.meter) model.meter.turnsBound = model.meter.turns;
-        }));
+        });
       }
       return spent(got, mode);
     };
     return model;
   };
-  return { admitted: true, watch, settle: () => Promise.all(pending).then(() => {}) };
+  return { admitted: true, watch, settle: () => chain };
 }
 
 /** F3, agent-model R35 — `GET /health?account_id=…&entry_id=…`: the pair's health over this member's circuit handle,
