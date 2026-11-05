@@ -37,3 +37,4 @@
 {"at":"2026-11-05T03:27:48Z","row":"ready","live":12,"job_cap":20,"started":[]}
 {"at":"2026-11-05T03:35:56Z","row":"ready","live":20,"job_cap":20,"started":["ai-runs","agent-steps","ai-gate","agent-runner","agent-model","action-grammar","op-grades","corpus-export"]}
 {"at":"2026-11-05T03:41:05Z","row":"check","by":"test","live":20,"live_at":"2026-11-05T03:35:56Z","job_cap":20,"startable":9}
+{"at":"2026-11-05T03:46:08Z","row":"check","by":"merge","live":20,"live_at":"2026-11-05T03:35:56Z","job_cap":20,"startable":8}
