@@ -124,3 +124,4 @@
 {"at":"2026-11-05T18:42:47Z","row":"withdraw","id":"afaf009157cc","pr":553,"why":"the train stopped"}
 {"at":"2026-11-05T18:51:59Z","row":"queue","id":"f0c4a6b2f3ae","pr":554,"head":"f25d959b0f4c5df6d9fe4d4172a1ce03a3d6ff49","ref":"p3/pin-048f7f36fd","by":"session_018BhcecrreAXSc5DpDxqJkU","reviewed":null,"no_review":"a process pin move; the fix was reviewed in process3","rounds":0,"decision":null,"as":"pin","take_by":"2026-11-05T22:01:59.459Z","renews":true}
 {"at":"2026-11-05T18:57:14Z","row":"renew","id":"f0c4a6b2f3ae","pr":554}
+{"at":"2026-11-05T18:58:34Z","row":"queue","id":"208888842877","pr":553,"head":"cf1d6c3bbaa0c8f6636f8bd166b3313b229856eb","ref":"bob/t53-code-path","by":"session_018Bhceddtp3HAmB1Z9LtX2s","reviewed":null,"no_review":"ledger paths only, coordinator 18:31 option c","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T22:08:34.193Z","renews":true}
