@@ -209,6 +209,12 @@ CREATE TABLE IF NOT EXISTS register_cites (
   at           TEXT NOT NULL,
   PRIMARY KEY (register, row_key, content_hash, import_id)
 );
+-- R30 (citation R28): a reduced file's row a removal took, by the digest it had then (header row 1); content asks it for a removed answer
+CREATE TABLE IF NOT EXISTS register_segment_removed (
+  sha256 TEXT NOT NULL,
+  row    INTEGER NOT NULL,
+  PRIMARY KEY (sha256, row)
+);
 -- R30, R31: a removed row key; a re-import skips it
 CREATE TABLE IF NOT EXISTS register_removed (
   register TEXT NOT NULL,
@@ -242,6 +248,7 @@ export function registersTables(rebuildOf, rebuildTokensOf = () => []) {
     { ...base, ...projectKeyed, name: "register_interests", version_chain: true },
     { ...base, ...projectKeyed, name: "register_changes" },
     { ...base, export: "yes", name: "register_removed" },
+    { ...base, export: "yes", name: "register_segment_removed" },
     { ...base, ...projectKeyed, export: "never", name: "register_cites" },
     { ...base, name: "register_lookup_use" },
   ]);

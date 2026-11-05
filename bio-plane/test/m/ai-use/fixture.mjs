@@ -36,7 +36,9 @@ export const WORDS = Object.fromEntries(JSON.parse(readFileSync(new URL(
 export const PROVIDER = ACCOUNT_PLANS.provider;
 export const PLANS = Object.freeze({ team: "fake-team-api", member: "fake-member-api", none: "fake-flat", reported: "fake-reported",
   open: "fake-unknown-money" });
-export const ENTRIES = Object.freeze({ priced: "fake-priced", unpriced: "fake-unpriced", other: "fake-other" });
+export const ENTRIES = Object.freeze({ priced: "fake-priced", unpriced: "fake-unpriced", other: "fake-other", measured: "fake-measured" });
+/* R10: the measured entry's all-in cost of a standard task per part (`ai-catalogue`'s `standard_task_costs`), in usd. */
+export const TASK_COSTS = Object.freeze({ run: Object.freeze({ low: 0.02, high: 0.05 }) });
 export const PRICES = Object.freeze({ input: 3, output: 15, cache_read: 0.3, cache_write: 3.75 });
 
 /* The catalogue payload: the base of ai-accounts' fixture with these plans and entries added. */
@@ -48,10 +50,12 @@ export function useDoc() {
   doc.plans.push(...plans);
   doc.guidance.push(...plans.map((p) => guidance(p.plan_id)));
   const ids = plans.map((p) => p.plan_id);
-  const mk = (id, prices) => entry(id, { provider: PROVIDER, host: PROVIDER, plan_ids: ids, profile: { id: `p-${PROVIDER}`, min_version: 1 },
+  const mk = (id, prices, extra = {}) => entry(id, { provider: PROVIDER, host: PROVIDER, plan_ids: ids, profile: { id: `p-${PROVIDER}`, min_version: 1 },
     served_ids: [`model-${id}`], model: `model-${id}`, gate: Object.fromEntries(PARTS.map((p) => [p, gateOf()])),
-    prices: prices === OPEN ? OPEN : { unit: "usd_per_million_tokens", ...prices, date: "2026-10-01", ev: { grade: "STATED", source: "fixture source", date: "2026-10-01" } } });
-  doc.entries.push(mk(ENTRIES.priced, PRICES), mk(ENTRIES.unpriced, OPEN), mk(ENTRIES.other, { input: 1, output: 2, cache_read: 0.1, cache_write: null }));
+    prices: prices === OPEN ? OPEN : { unit: "usd_per_million_tokens", ...prices, date: "2026-10-01", ev: { grade: "STATED", source: "fixture source", date: "2026-10-01" } }, ...extra });
+  doc.entries.push(mk(ENTRIES.priced, PRICES), mk(ENTRIES.unpriced, OPEN), mk(ENTRIES.other, { input: 1, output: 2, cache_read: 0.1, cache_write: null }),
+    mk(ENTRIES.measured, PRICES, { standard_task_costs: { unit: "usd", price_date: "2026-10-01",
+      by_part: structuredClone(TASK_COSTS), ev: { grade: "STATED", source: "fixture source", date: "2026-10-01" } } }));
   return doc;
 }
 
