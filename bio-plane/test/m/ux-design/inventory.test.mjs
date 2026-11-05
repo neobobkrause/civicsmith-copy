@@ -67,5 +67,3 @@ test("R1 control: a key the inventory says is absent, added to a copy, fails the
   copy.add(absent.keys[0]);
   assert.equal(mismatches(rows, copy).length, 1);
 });
-
-test.todo("R2 for each row whose keys are all in words.json, the key resolves for the module to non-empty text");

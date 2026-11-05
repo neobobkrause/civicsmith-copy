@@ -66,6 +66,25 @@ Four things first:
 
 Counts: 51 blocking rows, about 50 requirement marks, 26 modules, 79 named keys; 39 named keys missing from W (11 of them drafted in U, 28 in neither).
 
+## Module entries (R2)
+
+Added 5 Nov 2026 by the lane (R2). For each row below the module's keys are all in W; the lane added the module's entry in `docs/development/ux-substrate/screens/words-reads-requirements.mjs`, which `words-reads.src.mjs` lists among the module's reads in `words-reads.json` (screens-document-beta has no source of its own yet, so its reads are these). No wording changed. Each requirement below **no longer waits on words**; what remains is the module's own code. Test: `bio-plane/test/m/ux-design/module-entries.test.mjs`, one test per mark.
+
+| module | mark | keys in its entry | waits on words? |
+|---|---|---|---|
+| screens-document-beta | R60 | screen.follow.document.laws | no longer |
+| screens-document-beta | R61 | screen.document.text.partial.one, .reading.beingread, .reading.firstn, document.read.more, screen.document.supporting.notwalked.pending, .toolarge, .unavailable, screen.document.unsupported.ico | no longer |
+| screens-document-beta | R62 (held.kind) | screen.document.held.kind | no longer for held.kind (W's English differs from R62's quote: the table wins, K3930); file.kind.* and the other R62 forms not in this entry |
+| screens-document-beta | R63 | screen.photo.dropped.thumbnail, .maker_note, .profile, .extra_picture, .after_end, .xmp, .credentials, .other_metadata, .unreadable | no longer |
+| screens-document-beta | R64 | screen.document.interp.label | no longer |
+| screens-document-beta | R65 | screen.document.interp.offer | no longer |
+| screens-document-beta | R66 | screen.document.interp.chooser.will | no longer |
+| screens-document-beta | R67 | screen.document.interp.recorded | no longer |
+| screens-document-beta | R68 | screen.document.interp.legend.this | no longer |
+| screens-document-beta | R72 | screen.document.text.unsure | no longer |
+
+Still waiting on words in screens-document-beta: R59 (two keys in U only, R3) and R73 (no key named).
+
 ## Other words items (not blocking a requirement)
 
 | module | keys | note | source |
