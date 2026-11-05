@@ -1,13 +1,12 @@
 {
   "session": "session_018BhcedwsJZrL1WAAcugNk7",
-  "token": "673dba6cc52bb63e",
+  "token": "e1a30d292d861a36",
   "proc": {
-    "pid": 16170,
+    "pid": 29085,
     "boot": "8b7a462c-067b-4d53-b921-1c519ff55360",
-    "started": "1034423"
+    "started": "1588462"
   },
-  "at": "2026-11-05T12:17:44Z",
-  "expires": "2026-11-05T12:21:23Z",
-  "since": "2026-11-05T10:50:25Z",
-  "released": "2026-11-05T12:21:23Z"
+  "at": "2026-11-05T12:22:46Z",
+  "expires": "2026-11-05T12:37:46Z",
+  "since": "2026-11-05T12:22:46Z"
 }
