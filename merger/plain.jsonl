@@ -87,3 +87,4 @@
 {"at":"2026-11-05T17:05:51Z","row":"withdraw","id":"fa385cf7ce0e","pr":515,"why":"the train stopped"}
 {"at":"2026-11-05T17:05:57Z","row":"withdraw","id":"73c953f274c0","pr":521,"why":"the train stopped"}
 {"at":"2026-11-05T17:06:10Z","row":"withdraw","id":"c25caa4f06de","pr":526,"why":"the train stopped"}
+{"at":"2026-11-05T17:06:32Z","row":"withdraw","id":"4efdde7dfd8a","pr":524,"why":"the caller stopped: the push of process-state was refused 5 times (process-state kept moving); run it again later. The last refusal: To https://github.com/neobobkrause/civicsmith-c"}
