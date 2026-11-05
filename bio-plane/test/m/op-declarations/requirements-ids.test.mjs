@@ -137,13 +137,20 @@ test("the set of R ids is the start commit's: none lost, none added; F ids (foun
 /* R20, R24, R30 and R41 restated for T53 by BOB's ruling (4 Nov; ai-accounts R35): each keeps its id and purpose and says so */
 const RESTATED = ["R20", "R24", "R30", "R41"];
 const RESTATED_NOTE = "restated for T53 (`ai-accounts` R35, BOB 4 Nov)";
+/* R36 restated by the coordinator's ruling (5 Nov 17:20): op-grades R57 governs, subscriptionsignin has no spec (F2) */
+const RESTATED_R57 = { R36: "restated by the coordinator's ruling, 5 Nov 17:20: op-grades R57 governs" };
 
-test("every kept id's line is the start commit's, word for word, and the unmet marks are unchanged; the four BOB restated for T53 each name the ruling and no other line changed", () => {
+test("every kept id's line is the start commit's, word for word, and the unmet marks are unchanged; the four BOB restated for T53 and R36 (op-grades R57) each name the ruling and no other line changed", () => {
   const unmet = {};
   for (const [id, l] of here) {
     if (MOVED[id] || (isFound(id) && !START_LINES[id])) continue;
     if (RESTATED.includes(id)) {
       assert.ok(l.includes(RESTATED_NOTE) && l.startsWith(`- **${id}** `), `${id} is restated without the ruling`);
+      assert.notEqual(sha(l), START_LINES[id], `${id} is not restated`);
+      continue;
+    }
+    if (RESTATED_R57[id]) {
+      assert.ok(l.includes(RESTATED_R57[id]) && l.startsWith(`- **${id}** `) && !MARK.test(l), `${id} is restated without the ruling`);
       assert.notEqual(sha(l), START_LINES[id], `${id} is not restated`);
       continue;
     }
