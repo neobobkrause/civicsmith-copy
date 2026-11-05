@@ -5,7 +5,8 @@
   "paths": [
     "bio-plane/src/queuestate.mjs",
     "bio-plane/src/queue/",
-    "build/requirements/queue.md"
+    "build/requirements/queue.md",
+    "docs/requirements-notes/queue.md"
   ],
   "tests": [
     "bio-plane/test/m/queue/",
