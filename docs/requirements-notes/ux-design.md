@@ -54,11 +54,11 @@ Four things first:
 | network-notices | R32 | listing.contact.note | no | no | network-notices.md:151 |
 | agent-runner | R41 | gate.runner.refused.<CODE> | no | no | agent-runner.md:67 |
 | screens-action | R74, R80 | none named (words owed) | n/a | no | screens-action.md:154,160 |
-| screens-daily | R108 | the basis.keys_more line | no | no | screens-daily.md:231 |
+| screens-daily | R108 | screen.queue.signer.keys_more, screen.queue.signer.keys_more.one | no | yes (words.json:123887) | screens-daily.md:231 |
 | screens-daily | R116 | none named (words owed) | n/a | no | screens-daily.md:242 |
 | screens-inquiry | R146, R149, R150 | none named (words owed) | n/a | no | screens-inquiry.md:292,295,296 |
-| screens-intake | R92 | none named (words owed) | n/a | no | screens-intake.md:149 |
-| screens-investigate | R92 | none named (words owed) | n/a | no | screens-investigate.md:168 |
+| screens-intake | R92 | screen.inbox.row.named, screen.inbox.row.noted, screen.inbox.row.unnamed, screen.inbox.row.became, screen.inbox.ladder.unknown.means, screen.inbox.ladder.same.means, screen.inbox.ladder.partly.means, screen.inbox.ladder.group.means, screen.inbox.ladder.public.means | n/a | yes (words.json:123894) | screens-intake.md:149 |
+| screens-investigate | R92 | screen.ties.preview.employer.name, screen.ties.preview.employer.group, screen.ties.preview.relative.name, screen.ties.preview.relative.group, screen.ties.preview.business.name, screen.ties.preview.business.group, screen.ties.preview.other.name, screen.ties.preview.other.group | n/a | yes (words.json:123957) | screens-investigate.md:168 |
 | screens-plan | R9 | none named (words owed) | n/a | no | screens-plan.md:27 |
 | screens-public, screens-publish | R102; R105, R106 | none named (words owed) | n/a | no | screens-public.md:44; screens-publish.md:169,172,173 |
 | installer | R95 | none named (words are UX-DESIGN's) | n/a | no | installer.md:156 |
