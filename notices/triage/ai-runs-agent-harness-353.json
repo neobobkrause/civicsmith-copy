@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-runs","verdict":"not affected","evidence":"build/modules.json:104 ai-runs (bio-plane/src/ai-runs/) holds no file that imports agent-harness, every code file under its paths read at 2b88aa7f7a","at":"2026-11-05T03:48:26.497Z","key":"agent-harness:353","worker":"merge: imports check","cost":"0"}
