@@ -20,14 +20,14 @@ test("R14, R53 (C94): a key the founder registered names her by her handle; with
   claim(w, "sparky");
   w.signer("KEY-F", "admin", { comment: "my laptop" });
   const [it] = kind(w.read("ada"), "signer-self-registered");
-  assert.equal(it.summary, word("queue.signer-self-registered.summary.comment", { member: "sparky", comment: "my laptop" }));
+  assert.equal(it.summary, word("queue.signer-self-registered.summary", { member: "sparky" }));
   assert.doesNotMatch(it.summary, /\badmin\b/);
   const bare = world();
   bare.member("ada", { role: "admin", handle: "ada" });
   claim(bare);
   bare.signer("KEY-F", "admin", { comment: "my laptop" });
   const [none] = kind(bare.read("ada"), "signer-self-registered");
-  assert.equal(none.summary, word("queue.signer-self-registered.summary.comment", { member: word("member.founder.unnamed"), comment: "my laptop" }));
+  assert.equal(none.summary, word("queue.signer-self-registered.summary", { member: word("member.founder.unnamed") }));
   assert.doesNotMatch(none.summary, /\badmin\b/i);
 });
 
@@ -35,9 +35,9 @@ test("R14, R53 (C94): control: an ordinary member's handle is named as itself, a
   const w = world();
   w.member("ada", { role: "admin", handle: "ada" }); w.member("m-q81xz02", { handle: null }); w.member("bo", { handle: "bobby" });
   w.signer("KEY-1", "bo", { comment: "c" }); w.signer("KEY-2", "m-q81xz02", { comment: "c" });
-  const by = Object.fromEntries(kind(w.read("ada"), "signer-self-registered").map((i) => [i.subject.id, i]));
-  assert.equal(by["KEY-1"].summary, word("queue.signer-self-registered.summary.comment", { member: "bobby", comment: "c" }));
-  assert.equal(by["KEY-2"].summary, word("queue.signer-self-registered.summary.comment", { member: "m-q81xz02", comment: "c" }));
+  const by = Object.fromEntries(kind(w.read("ada"), "signer-self-registered").map((i) => [i.basis.keys[0].key_b64, i]));   /* R56: one item for each member */
+  assert.equal(by["KEY-1"].summary, word("queue.signer-self-registered.summary", { member: "bobby" }));
+  assert.equal(by["KEY-2"].summary, word("queue.signer-self-registered.summary", { member: "m-q81xz02" }));
 });
 
 test("R33, R53 (C94): a wizard version the founder submitted names her by her handle, or by the founder word, never admin", () => {
