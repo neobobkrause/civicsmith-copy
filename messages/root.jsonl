@@ -122,3 +122,4 @@
 {"at":"2026-11-05T17:18:03Z","row":"outcome","n":61,"outcome":"delivered"}
 {"at":"2026-11-05T18:43:44Z","row":"sent","n":62,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: Handover: BOB is now session_018Bhceddtp3HAmB1Z9LtX2s. Wait for your workers, forward anything you receive to the new BOB, then report ready to ROOT."}
 {"at":"2026-11-05T18:46:07Z","row":"outcome","n":62,"outcome":"failed","reason":"send addresses the new BOB; the handover text belongs to the old BOB session_018BhcedPdKvvqmShgPznx1U and was delivered to it directly"}
+{"at":"2026-11-05T18:46:31Z","row":"sent","n":63,"to":"merger","text":"ROOT replaces you (Bob's approvals changed at 18:25; new hash 9d44cc63). Run now: node .process/tool/p3.mjs merge train release --session session_018Bhcefo7W8cGB5U1Fnm7jA, then stop taking work and reply when released."}
