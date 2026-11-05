@@ -1,0 +1,56 @@
+{
+  "id": "acquisition",
+  "title": "acquisition: consolidate its requirements file under the cap",
+  "layer": 3,
+  "paths": [
+    "bio-plane/src/acquisition/",
+    "build/requirements/acquisition.md",
+    "docs/requirements-notes/acquisition.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/acquisition/"
+  ],
+  "requirements": "build/requirements/acquisition.md",
+  "uses": [
+    "file-scanner",
+    "record-grammar",
+    "jurisdictions",
+    "subresources",
+    "odf-reader",
+    "format-registry",
+    "docprofile",
+    "record-core",
+    "host-governor",
+    "provenance",
+    "attestation",
+    "capture-sources",
+    "credentials",
+    "test-support",
+    "ooxml",
+    "membership",
+    "setup-words",
+    "pdf-reader",
+    "member-roster",
+    "runtime-limits",
+    "register-readers",
+    "mail-reader"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/acquisition.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T08:40:00Z"
+  }
+}
