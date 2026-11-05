@@ -1,0 +1,1 @@
+{"row":"answered","user":"scheduler","by":"triage","evidence":"bio-plane/src/scheduler/index.mjs:463 uses inquiry only for datedWaitsDue/datedWaitsWake/datedWaitsTick (import at :84); never setSubject, subjectHistory or subject_entity","at":"2026-11-05T03:15:30.081Z","key":"inquiry:360","worker":"ab7e51b53bc12d7fb","cost":"0.18"}

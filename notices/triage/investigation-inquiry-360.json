@@ -1,0 +1,1 @@
+{"row":"triage","user":"investigation","verdict":"not affected","evidence":"bio-plane/src/investigation/index.mjs:721 only calls inquiry's personFacts({text, viewer}) with no subject; never setSubject or subjectHistory, never reads subject_entity","at":"2026-11-05T03:15:30.081Z","key":"inquiry:360","worker":"abbce5569b6f25a79","cost":"0.18"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"hypotheses","verdict":"not affected","evidence":"bio-plane/src/hypotheses/index.mjs:692 imports only inquiryOf and personWarning (line 32) and calls personFacts({text, viewer}) with no subject; never setSubject, subjectHistory or subject_entity","at":"2026-11-05T03:15:30.081Z","key":"inquiry:360","worker":"a1eafc304f4f418fd","cost":"0.18"}

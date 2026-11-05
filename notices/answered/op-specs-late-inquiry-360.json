@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-specs-late","by":"triage","evidence":"build/modules.json:172 the module has \"paths\": [] and \"tests\": [], so no source imports inquiry; inquiry appears only in its uses","at":"2026-11-05T03:15:30.081Z","key":"inquiry:360","worker":"abbce5569b6f25a79","cost":"0.18"}

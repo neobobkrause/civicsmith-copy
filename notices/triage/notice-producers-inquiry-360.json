@@ -1,0 +1,1 @@
+{"row":"triage","user":"notice-producers","verdict":"not affected","evidence":"bio-plane/src/notice-producers/index.mjs:725 its only inquiry use is inquiry.datedWaits (via #inquiry at line 256); no setSubject, subjectHistory, subjectEntityOf or personFacts","at":"2026-11-05T03:15:30.081Z","key":"inquiry:360","worker":"abbce5569b6f25a79","cost":"0.18"}

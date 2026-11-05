@@ -1,0 +1,1 @@
+{"row":"answered","user":"ratification","by":"triage","evidence":"bio-plane/src/ratification/index.mjs:491 uses only inquiry.subjectEntityOf(bundleId) and earned to build the earned registry; never setSubject, subjectHistory or personFacts","at":"2026-11-05T03:15:30.081Z","key":"inquiry:360","worker":"a9a0c2596c31294a4","cost":"0.18"}

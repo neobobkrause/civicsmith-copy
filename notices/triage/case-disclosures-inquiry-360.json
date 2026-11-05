@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-disclosures","verdict":"affected","evidence":"bio-plane/src/case-disclosures/index.mjs:817 peopleNamed reads each finding's subject via this.inquiry.subjectEntityOf(p.id), the value R87's setSubject changes; the subject is listed as a named place at :818","at":"2026-11-05T03:15:30.081Z","key":"inquiry:360","worker":"a7ab384c452a184ca","cost":"0.18"}

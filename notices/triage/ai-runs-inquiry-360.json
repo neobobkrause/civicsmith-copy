@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-runs","verdict":"not affected","evidence":"bio-plane/src/ai-runs/index.mjs:4347 the only use of the imported inquiryOf (import at :35) calls inquiry's migratedSurfacing (:4348), not setSubject, subjectHistory, subjectEntityOf or personFacts","at":"2026-11-05T03:15:30.081Z","key":"inquiry:360","worker":"a234fcddeb8fe52a5","cost":"0.18"}

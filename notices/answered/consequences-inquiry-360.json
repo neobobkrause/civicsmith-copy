@@ -1,0 +1,1 @@
+{"row":"answered","user":"consequences","by":"triage","evidence":"bio-plane/src/consequences/index.mjs:71 imports only inquiryOf and uses only supersededBy (:435) and stateHistory (:925); never setSubject, subjectHistory or subject_entity","at":"2026-11-05T03:15:30.081Z","key":"inquiry:360","worker":"af1291f1867f1d39b","cost":"0.18"}

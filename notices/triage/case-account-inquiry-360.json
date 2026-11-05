@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-account","verdict":"not affected","evidence":"bio-plane/src/case-account/index.mjs:344 uses inquiryOf (line 47) only to call basisFor (also lines 443, 630); no setSubject, subjectHistory, subjectEntityOf or subject_entity use","at":"2026-11-05T03:15:30.081Z","key":"inquiry:360","worker":"ab97526dfec941f2d","cost":"0.18"}
