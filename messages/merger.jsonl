@@ -104,3 +104,4 @@
 {"at":"2026-11-05T17:21:30Z","row":"outcome","n":52,"outcome":"delivered"}
 {"at":"2026-11-05T17:27:28Z","row":"sent","n":53,"to":"bob","text":"merged PR 457 (job skills): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T17:30:07Z","row":"outcome","n":53,"outcome":"delivered"}
+{"at":"2026-11-05T17:33:53Z","row":"sent","n":54,"to":"bob","text":"merged PR 458 (job wizard-scripts): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
