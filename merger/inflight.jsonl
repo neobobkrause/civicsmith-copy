@@ -61,3 +61,4 @@
 {"at":"2026-11-05T21:56:09.838Z","row":"inflight","pr":496,"module":"registers","tip":"f07c3f1a2e6126b243749c6a4e7b92ccc2aff21e","session":"session_018BhcefSY1HcDdU87BP9fxU","until":"2026-11-05T23:41:09.838Z"}
 {"at":"2026-11-05T22:01:10.510Z","row":"end","pr":496,"tip":"f07c3f1a2e6126b243749c6a4e7b92ccc2aff21e","cause":"landed","session":"session_018BhcefSY1HcDdU87BP9fxU"}
 {"at":"2026-11-05T22:02:23.231Z","row":"inflight","pr":497,"module":"agent-steps","tip":"4b720bd3fd3750d651b46e3ee3662aeb0eb30e20","session":"session_018BhcefSY1HcDdU87BP9fxU","until":"2026-11-05T23:47:23.231Z"}
+{"at":"2026-11-05T22:08:28.576Z","row":"end","pr":497,"tip":"4b720bd3fd3750d651b46e3ee3662aeb0eb30e20","cause":"pull request 497's held merged result 4b720bd3fd would need a new one (14a45d1d9e): not pushed; the hold ends and the train merges it afresh","session":"session_018BhcefmntMFwp8MDNkzCNL"}
