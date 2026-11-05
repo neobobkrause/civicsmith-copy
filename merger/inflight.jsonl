@@ -25,3 +25,4 @@
 {"at":"2026-11-05T17:34:57.483Z","row":"inflight","pr":437,"module":"screens-settings","tip":"4a91b85e3e0495343b7541c4260241d77397240e","session":"session_018BhcegraPAsGJB6Ev1FpZ5","until":"2026-11-05T19:19:57.483Z"}
 {"at":"2026-11-05T17:47:31.369Z","row":"end","pr":437,"tip":"4a91b85e3e0495343b7541c4260241d77397240e","cause":"landed","session":"session_018BhcegraPAsGJB6Ev1FpZ5"}
 {"at":"2026-11-05T18:18:32.493Z","row":"inflight","pr":511,"module":"journey-check","tip":"156b4349a0f4d8302bfc86b96bc9e571676df077","session":"session_018Bhcefo7W8cGB5U1Fnm7jA","until":"2026-11-05T20:03:32.493Z"}
+{"at":"2026-11-05T18:51:55.880Z","row":"end","pr":511,"tip":"156b4349a0f4d8302bfc86b96bc9e571676df077","cause":"tranche moved","session":"session_018BhcefSY1HcDdU87BP9fxU"}
