@@ -41,3 +41,4 @@
 {"at":"2026-11-05T08:25:29Z","row":"outcome","n":20,"outcome":"delivered"}
 {"at":"2026-11-05T08:25:38Z","row":"outcome","n":21,"outcome":"delivered"}
 {"at":"2026-11-05T08:25:47Z","row":"sent","n":22,"to":"bob","text":"merged PR 429 (job local-facts): node .process/tool/p3.mjs notice triage local-facts:429 (provider notice local-facts:429; 17 user modules owe a worker's judgment: action-clocks, action-holds, action-producers, actions, affordances, answer-envelope, control-plane, duties, filings, money, op-declarations, op-specs-late, progressions, publish-schedule, retrieval, review, store-assembly: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
+{"at":"2026-11-05T08:26:04Z","row":"outcome","n":22,"outcome":"delivered"}
