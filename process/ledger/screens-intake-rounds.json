@@ -30,7 +30,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T20:36:38Z"
+    "state": "BLOCKED",
+    "reason": "No source path: the ledger entry (process/ledger/screens-intake-rounds.json) and this START allow only build/requirements/screens-intake-rounds.md, docs/requirements-notes/screens-intake-rounds.md and bio-plane/test/m/screens-intake-rounds/. All 23 open marks (R72-R94, all '(not yet met: T53)') need new screen code in bio-plane/src/screens-intake/ (capture.mjs, held.mjs, open-file.mjs, archive, inbox, about-knocker). Their keys are absent from src: screen.capture.limits.*, toolarge.nothing_read/register/part, 'Handed in through the doorbell', screen.capture.finish.*, screen.capture.preview.cut, screen.photo.dropped.*, the ceiling chip. Tests alone cannot meet them, and test.todo strikes nothing. Nothing changed. To unblock: add bio-plane/src/screens-intake/ (or a new bio-plane/src/screens-intake-rounds/) to the entry's paths and restart. Also note that R74 needs registers' registerList/registerFilter, R83 needs interface-shell R140's ceiling scale, and R94 needs capture R96/R120, so the module's uses may need to name them.",
+    "at": "2026-11-05T20:42:10Z"
   }
 }
