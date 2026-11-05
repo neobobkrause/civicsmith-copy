@@ -319,3 +319,4 @@
 {"at":"2026-11-05T05:30:57Z","row":"outcome","n":162,"outcome":"delivered"}
 {"at":"2026-11-05T05:37:18Z","row":"sent","n":163,"to":"root","text":"ready: outgoing BOB session_01RAN5eomXNvM23EMwtLVBHG has handed over to session_01RAN5ejkzH3MteyRfhrb2cm. Handoff at process-state handoff/bob.md (bccc03b0); everything received since forwarded to the new BOB. No workers of mine are running; I start and merge nothing more."}
 {"at":"2026-11-05T05:37:34Z","row":"outcome","n":163,"outcome":"delivered"}
+{"at":"2026-11-05T06:17:43Z","row":"sent","n":164,"to":"root","text":"BOB session_018Bhcef6ZxDw3oEq7kS2zZh running: start check ok at 8599ecfd; status read (0 job sessions live of 20); next: job start --ready"}
