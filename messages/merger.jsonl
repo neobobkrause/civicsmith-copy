@@ -138,3 +138,4 @@
 {"at":"2026-11-05T20:32:16Z","row":"outcome","n":69,"outcome":"delivered"}
 {"at":"2026-11-05T20:35:17Z","row":"sent","n":70,"to":"bob","text":"PR 460: job signin-door must sync (node .process/tool/p3.mjs job sync signin-door, then job complete signin-door): pull request 460 conflicts with tranche; nothing was merged"}
 {"at":"2026-11-05T20:35:29Z","row":"outcome","n":70,"outcome":"delivered"}
+{"at":"2026-11-05T20:42:40Z","row":"sent","n":71,"to":"bob","text":"PR 468 (job capture): its merged result is red; the job fixes it: the gate on the merged result is failure (spec PR 571, fffdcae094 on the tranche tip): https://github.com/neobobkrause/civicsmith-copy/actions/runs/42104874478/job/127516920790"}
