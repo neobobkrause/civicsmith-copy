@@ -13,3 +13,4 @@
 {"at":"2026-11-05T08:42:28Z","row":"sent","n":7,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job ai-gate complete, PR #411 ready, session session_018BhceerTPjZ6Aey5w8MkQV: run status"}
 {"at":"2026-11-05T08:42:40Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-05T19:58:47Z","row":"sent","n":8,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: job ai-gate complete, PR #411 ready, session session_018BhcecrcGSLSr7gqfocbq1: run status"}
+{"at":"2026-11-05T19:58:58Z","row":"outcome","n":8,"outcome":"delivered"}
