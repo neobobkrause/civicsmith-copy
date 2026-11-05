@@ -1,0 +1,59 @@
+{
+  "id": "screens-publish",
+  "title": "screens-publish: consolidate its requirements file under the cap",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/screens-publish/",
+    "build/requirements/screens-publish.md",
+    "docs/requirements-notes/screens-publish.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-publish/"
+  ],
+  "requirements": "build/requirements/screens-publish.md",
+  "uses": [
+    "case-import",
+    "interface-assets",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "test-support",
+    "doorbell",
+    "basis-versions",
+    "case-authoring",
+    "review",
+    "public-read",
+    "record-grammar",
+    "publication",
+    "case-grammar",
+    "case-disclosures",
+    "answer-envelope",
+    "case-inputs",
+    "store-request",
+    "entities",
+    "capture",
+    "citation",
+    "sources",
+    "credentials",
+    "wizard-scripts",
+    "action-holds"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/screens-publish.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T09:46:44Z"
+  }
+}
