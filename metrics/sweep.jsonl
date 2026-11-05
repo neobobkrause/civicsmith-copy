@@ -246,3 +246,4 @@
 {"at":"2026-11-05T20:47:04Z","row":"check","by":"job sync","live":2,"live_at":"2026-11-05T20:41:07Z","job_cap":20,"startable":0,"idle_capacity":{"kind":"empty","since":"2026-11-05T20:47:01Z","min":0,"live":2,"cap":20,"held":0,"startable":0,"empty":18,"alarm":false}}
 {"at":"2026-11-05T20:49:53Z","row":"ready","live":8,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-05T20:42:14Z"}
 {"at":"2026-11-05T20:52:35Z","row":"sweep","session":"session_018BhceduipEp2mmEFHN9Diu","bob_acts":true,"bob_quiet_h":0,"root_context":22,"live":9,"job_cap":20,"sessions":20,"startable":0,"blocked":8,"blocked_oldest_min":991,"working":6,"waiting":3,"idle_capacity":{"kind":"empty","since":"2026-11-05T20:47:01Z","min":5,"live":9,"cap":20,"held":0,"startable":0,"empty":11,"alarm":false}}
+{"at":"2026-11-05T20:58:54Z","row":"ready","live":8,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-05T20:47:30Z"}
