@@ -33,9 +33,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "Held (coordinator ruling 5 Nov 04:36): back-to-back route. BOB reopens actions (acts.test.mjs:108) and screens-action (seam-t51.test.mjs:54) as notice work for R31's shape (layer: null added to each expected entry). action-grammar completes once both are green with its change, then the three merge in order, provider first. No change to action-grammar needed.",
-    "at": "2026-11-05T04:47:01Z",
-    "owner": "bob"
+    "state": "COMPLETE",
+    "at": "2026-11-05T05:22:31Z"
   }
 }
