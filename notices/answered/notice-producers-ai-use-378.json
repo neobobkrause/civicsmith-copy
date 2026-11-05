@@ -1,0 +1,1 @@
+{"row":"answered","user":"notice-producers","by":"triage","evidence":"bio-plane/src/notice-producers/index.mjs:81 imports aiUseOf, used only for exploreAsksPending and limitsReached (:331-332, :1041, :1074); :1057 reads a.estimate off an Ask item, not useEstimate","at":"2026-11-05T10:44:56.372Z","key":"ai-use:378","worker":"triage378-3","cost":"unmeasured"}

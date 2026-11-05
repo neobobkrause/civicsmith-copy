@@ -1,0 +1,1 @@
+{"row":"triage","user":"instance-updates","verdict":"not affected","evidence":"build/modules.json:175 gives it empty paths and no file imports ai-use (ai-use is only a declared uses edge)","at":"2026-11-05T10:44:56.372Z","key":"ai-use:378","worker":"triage378-3","cost":"unmeasured"}

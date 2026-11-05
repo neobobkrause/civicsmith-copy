@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-door","verdict":"not affected","evidence":"bio-plane/src/store-door/dispatch.mjs:497 its only use of ai-use (imported at :24) is aiUseOf(ctx).countAskUsage; no useEstimate or estimate call anywhere in bio-plane/src/store-door/.","at":"2026-11-05T10:44:56.372Z","key":"ai-use:378","worker":"triage378-5","cost":"unmeasured"}

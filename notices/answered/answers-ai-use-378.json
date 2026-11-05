@@ -1,0 +1,1 @@
+{"row":"answered","user":"answers","by":"triage","evidence":"bio-plane/src/answers/index.mjs:407 uses only aiUseOf(...).useCheck (imported at :39); no estimate call anywhere in the module","at":"2026-11-05T10:44:56.372Z","key":"ai-use:378","worker":"triage378-3","cost":"unmeasured"}

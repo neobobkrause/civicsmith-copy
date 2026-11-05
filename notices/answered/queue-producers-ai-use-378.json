@@ -1,0 +1,1 @@
+{"row":"answered","user":"queue-producers","by":"triage","evidence":"bio-plane/src/queue-producers/index.mjs:2218 it imports ai-use only via aiUseOf (index.mjs:71, :152) and calls only retestingOff({viewer, at}); no useEstimate call anywhere in bio-plane/src/queue-producers/","at":"2026-11-05T10:44:56.372Z","key":"ai-use:378","worker":"triage378-4","cost":"unmeasured"}
