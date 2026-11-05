@@ -9,7 +9,7 @@ import { checkGuide, registerConductCheck, CONDUCT_LISTS, GUIDE_PURPOSES, PROCED
          ROUTE_MAX, EXPECT_MAX, CITATION_MAX, ITEMS_MAX, PROCEDURE_GUIDE_LABEL, GUIDE_OFFER_FORMAT,
          READING_GUIDES_SCHEMA, readingGuidesOps } from "../../../src/reading-guides/index.mjs";
 import { migrateReadingGuides } from "../../../src/reading-guides/schema.mjs";
-import { combine } from "../../../../jurisdictions/index.mjs";
+import { combine, textStanding } from "../../../../jurisdictions/index.mjs";
 import { canonicalJson } from "../../../src/record-grammar/json.mjs";
 import { world, row, item, ITEMS, ANN, BOB, CY, REV, MACHINE } from "./fixture.mjs";
 import { localize } from "../../../src/setup-words/index.mjs";
@@ -19,6 +19,9 @@ const step = (route, citation = "P.E.B.L. § 9(2)", expect) =>
   (expect === undefined ? { route, citation } : { route, expect, citation });
 const STEPS = [step("Send the complaint to the Town Clerk", "P.E.B.L. § 9(1)", "The Clerk must respond within 10 days"),
                step("Ask the Selectboard to hear it at its next sitting")];
+
+/* R19: what a profile guide answers of its review, as `jurisdictions`' own `textStanding` gives it on the module's day */
+const standing = (pg) => { const { reviewed, statements } = textStanding(pg, "2026-10-09"); return { reviewed, statements }; };
 
 let mode = "normal";
 const flow = (text) => {
@@ -205,9 +208,10 @@ test("R13 procedureGuidesFor: the profile's guide first, then the group's approv
   assert.ok(!r.guides.some((g) => g.guide === mine), "a guide its author's alone is not the team's");
   /* K2820's shape: each {guide, origin, items}; the profile's, as R80 holds it, its items in the profile's order, `after` carried */
   assert.deepEqual(Object.keys(r).sort(), ["guides", "kind", "label", "ok", "withheld"]);
-  assert.deepEqual(Object.keys(r.guides[0]).sort(), ["basis", "items", "origin", "status"]);
+  assert.deepEqual(Object.keys(r.guides[0]).sort(), ["basis", "items", "origin", "reviewed", "statements", "status"]);
   for (const g of r.guides.slice(1)) assert.deepEqual(Object.keys(g).sort(), ["approved_at", "approved_by", "guide", "items", "origin"]);
-  assert.deepEqual(r.guides[0], { origin: "profile", items: profileGuide.items, status: profileGuide.status, basis: profileGuide.basis });
+  assert.deepEqual(r.guides[0], { origin: "profile", items: profileGuide.items, status: profileGuide.status, basis: profileGuide.basis,
+    ...standing(profileGuide) });
   assert.deepEqual(r.guides[1].items, [step("Write to the Selectboard chair")]);
   assert.deepEqual(r.guides[0].items[1].after, ["denied", "none_stated"]);
   /* unranked: nothing in the answer ranks, scores or prefers */
@@ -266,7 +270,8 @@ test("R15 a procedure guide says who approved it and where it came from: a group
   const r = w.g.procedureGuidesFor({ kind: KIND, viewer: ANN });
   const [profile, mine] = r.guides;
   assert.equal(r.guides.length, 2);
-  assert.deepEqual(profile, { origin: "profile", items: profileGuide.items, status: profileGuide.status, basis: profileGuide.basis });
+  assert.deepEqual(profile, { origin: "profile", items: profileGuide.items, status: profileGuide.status, basis: profileGuide.basis,
+    ...standing(profileGuide) });
   assert.ok(profileGuide.status !== undefined && profileGuide.basis !== undefined, "the profile's guide holds both");
   assert.deepEqual(profile.items[1].after, ["denied", "none_stated"], "an item's `after` is answered when it has one");
   assert.deepEqual(mine, { guide: group, origin: "group", items: STEPS, approved_by: "bob", approved_at: "2026-10-09" });
