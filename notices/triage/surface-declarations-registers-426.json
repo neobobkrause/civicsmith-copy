@@ -1,0 +1,1 @@
+{"row":"triage","user":"surface-declarations","verdict":"not affected","evidence":"build/modules.json:178 gives it no paths and no file imports registers; the change would sit in bio-plane/src/store-assembly/declarations.mjs:133 (the module is not a source directory)","at":"2026-11-05T11:26:46.438Z","key":"registers:426","worker":"triage426-1","cost":"unmeasured"}
