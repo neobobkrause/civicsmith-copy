@@ -266,7 +266,7 @@ section("R18 · compose, dedup, submit: optionPropose's fields only, strongest f
     t("R18: submission order is the judgement's order, one at a time, strongest first",
       proposes.map((l) => l.body.summary), [C.summary, A.summary, B.summary]);
     t("R18: each proposal names the run and the run's plan, and carries no score, rank or strength",
-      proposes.map((l) => [l.body.run, l.body.plan, Object.keys(l.body).filter((k) => ![...OPTION_KEYS, "run", "plan"].includes(k))]),
+      proposes.map((l) => [l.body.run, l.body.plan, Object.keys(l.body).filter((k) => ![...OPTION_KEYS, "run", "plan", "idem"].includes(k))]),
       proposes.map(() => ["RUN-P", PLAN_ID, []]));
     t("R18 (control): a distinct candidate was submitted, and the run submitted every candidate it formed",
       [r.out.submitted, r.S.proposals.length], [3, 3]);
