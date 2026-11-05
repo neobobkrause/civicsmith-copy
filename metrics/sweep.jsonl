@@ -60,3 +60,4 @@
 {"at":"2026-11-05T05:17:00Z","row":"sweep","session":"session_01RAN5emK1snYonbEbVPHbAP","bob_acts":true,"bob_quiet_h":0.1,"root_context":46,"live":33,"job_cap":20,"sessions":39,"startable":1,"blocked":6,"blocked_oldest_min":56,"working":10,"waiting":23}
 {"at":"2026-11-05T05:22:42Z","row":"check","by":"test","live":33,"live_at":"2026-11-05T05:17:00Z","job_cap":20,"startable":2}
 {"at":"2026-11-05T05:27:48Z","row":"check","by":"test","live":33,"live_at":"2026-11-05T05:17:00Z","job_cap":20,"startable":2}
+{"at":"2026-11-05T05:29:24Z","row":"ready","live":12,"job_cap":20,"started":["interface-assets"]}
