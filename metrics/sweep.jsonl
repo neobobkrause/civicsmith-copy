@@ -24,3 +24,4 @@
 {"at":"2026-11-05T02:41:38Z","row":"check","by":"setup check","live":15,"live_at":"2026-11-05T02:17:11Z","job_cap":20,"startable":12,"idle_capacity":{"kind":"work","since":"2026-11-05T02:40:57Z","min":0,"live":15,"cap":20,"held":0,"startable":12,"empty":5,"alarm":false}}
 {"at":"2026-11-05T02:46:50Z","row":"check","by":"merge","live":15,"live_at":"2026-11-05T02:17:11Z","job_cap":20,"startable":8,"idle_capacity":{"kind":"work","since":"2026-11-05T02:40:57Z","min":5,"live":15,"cap":20,"held":0,"startable":8,"empty":5,"alarm":false}}
 {"at":"2026-11-05T02:52:01Z","row":"check","by":"merge","live":15,"live_at":"2026-11-05T02:17:11Z","job_cap":20,"startable":7,"idle_capacity":{"kind":"work","since":"2026-11-05T02:40:57Z","min":11,"live":15,"cap":20,"held":0,"startable":7,"empty":5,"alarm":false}}
+{"at":"2026-11-05T02:53:59Z","row":"ready","live":13,"job_cap":20,"started":["ai-use","citation","contradiction"]}
