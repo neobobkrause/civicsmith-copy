@@ -1,0 +1,62 @@
+{
+  "id": "screens-document",
+  "title": "screens-document: consolidate its requirements file under the cap",
+  "layer": 11,
+  "paths": [
+    "build/requirements/screens-document.md",
+    "docs/requirements-notes/screens-document.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-document/"
+  ],
+  "requirements": "build/requirements/screens-document.md",
+  "uses": [
+    "hypotheses",
+    "interface-assets",
+    "signatures",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "screens-settings",
+    "screens-intake",
+    "test-support",
+    "op-grades",
+    "case-import",
+    "investigation",
+    "provenance",
+    "inquiry-grammar",
+    "record-grammar",
+    "citation",
+    "store-request",
+    "project-roster",
+    "strength",
+    "inquiry",
+    "connections",
+    "wizard-scripts",
+    "instance-setup",
+    "review",
+    "queue",
+    "extraction",
+    "ai-runs",
+    "ai-accounts",
+    "network-notices"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/screens-document.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T08:40:00Z"
+  }
+}
