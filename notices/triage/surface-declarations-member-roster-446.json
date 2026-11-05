@@ -1,0 +1,1 @@
+{"row":"triage","user":"surface-declarations","verdict":"not affected","evidence":"build/modules.json:178 surface-declarations has \"paths\": [] (not yet built), so no source file of it exists to import member-roster or use its module order.","at":"2026-11-05T23:19:02.838Z","key":"member-roster:446","worker":"a2d1b2b7c0e0387f4","cost":"unmeasured"}
