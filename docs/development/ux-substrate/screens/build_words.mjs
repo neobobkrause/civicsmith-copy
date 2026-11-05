@@ -365,6 +365,13 @@ for (const x of DRAWN.rows) add(x.key, x.en, x.protected, 'DEC-259', x.note.repl
 // 4n. The other modules' inline English (DEC-260): written in words-mod-<n>.src.py, one file per batch, rows only
 for (const f of readdirSync(new URL('.', import.meta.url)).filter(f => /^words-mod-\d+\.json$/.test(f)).sort())
   for (const x of JSON.parse(R(f)).rows) add(x.key, x.en, x.protected, 'DEC-260', x.note.replace(/^DEC-260(: )?/, '') || undefined);
+// 4o. T53's owed words, settled by the design lane (5 Nov 2026; CLAUDE.md: design lanes decide wording in the design stream).
+//     content.typed.frozen.* (case-disclosures R37, R39) are words-drawn-4.src.py's (the same English).
+//     Each key is the one its requirement names; each placeholder is the one its call site fills.
+add('case-import.ungraded.label', 'These are the passages the team that published this case says it published without a grade. That is their statement, not a grade of your team\'s.', false, 'case-import R35, R36 (design lane)', 'src/case-import/index.mjs\'s sentence, with "team" for the publishing group (DEC-281); the module\'s inline English follows by its job');
+add('case-import.ungraded.not_stated', 'The source does not say which passages it published without a grade. That is not a statement that there were none.', false, 'case-import R35, R36 (design lane)', 'adopted word for word from src/case-import/index.mjs; never "none"');
+add('consequence.rowexpunge', 'This removes the row for good, for every member: it goes from your team\'s Civicsmith and from every export made from now on, and it cannot be restored. A marker stays where it was, holding your ground and reason and none of the row.', true, 'op-grades R55 (d); registers R30 (design lane)', 'op-grades\' consequence statement for rowexpunge (a dialog), read by the act\'s id');
+add('listing.contact.note', 'Optional: a line the stewards can use to reply to your team, by the stewards\' own mail. It goes only in the request you send them, and it is never on the site. Leave it blank if you like; nothing about that is public.', true, 'network-notices R32 (design lane)', 'the contact line of the prefilled listing request; says who can see something');
 
 // 5. The frame: rail, phone tabs, explanation levels
 for (const [k, name] of W.RAIL) { add(`rail.${k}.name`, name, false, 'mock-shell.js RAIL'); if (W.RAIL_HELP[k]) add(`rail.${k}.holds`, W.RAIL_HELP[k], false, 'mock-refs.js RAIL_HELP'); }

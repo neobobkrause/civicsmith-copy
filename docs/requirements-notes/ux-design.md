@@ -28,13 +28,13 @@ Four things first:
 | screens-document-beta | R72 | screen.document.text.unsure | no | yes (words.json:85441) | screens-document-beta.md:35 |
 | screens-document-beta | R73 | none named (words owed) | n/a | no | screens-document-beta.md:37 |
 | screens-document | R1 | screen.document.cells_held | yes (src/extraction/screen-words.mjs:7) | no | screens-document.md:15 |
-| case-disclosures | R37, R39 | content.typed.frozen.unchecked, content.typed.frozen.checked (basis-versions R59) | no | no | case-disclosures.md:177,179 |
-| case-import | R36 | case-import.ungraded.label, case-import.ungraded.not_stated | yes (src/case-import/index.mjs:168, :172) | no | case-import.md:202 |
+| case-disclosures | R37, R39 | content.typed.frozen.unchecked, content.typed.frozen.checked (basis-versions R59) | no | yes (words.json:123895) | case-disclosures.md:177,179 |
+| case-import | R36 | case-import.ungraded.label, case-import.ungraded.not_stated | yes (src/case-import/index.mjs:168, :172) | yes (words.json:123881) | case-import.md:202 |
 | notice-producers | R16 | a queue sentence for provider limits (no key named) | no | no | notice-producers.md:37 |
 | notice-producers | R33 | ai.alert.threshold, a {use} fill for thresholds, unit words for tokens/calls | yes (ai-use) | no | notice-producers.md:73 |
 | notice-producers | R35 | sentences for left-list, left-project-list, signin-ended (no keys named) | no | no | notice-producers.md:75 |
 | queue-producers | R57 | queue.signer-self-registered.summary.other, .summary.unnamed.other, .key, .key.undated, .key.comment | no | no | queue-producers.md:155 |
-| op-grades | R55 (d) | consequence.rowexpunge | no | no | op-grades.md:128 |
+| op-grades | R55 (d) | consequence.rowexpunge | no | yes (words.json:123909) | op-grades.md:128 |
 | machinery-producers | F1 | a brought-by sentence for capture-completed-unattended (no key yet) | no | no | machinery-producers.md:137 |
 | screens-wizards | R23 | per-filter words (words owed) | no | no | screens-wizards.md:78 |
 | journey-check | R17, R26 | rows in words.json and setup-words that still say "group" (keys not named) | n/a | n/a | journey-check.md:71,83 |
@@ -51,7 +51,7 @@ Four things first:
 | screens-intake | R73 | screen.capture.refusal.toolarge.nothing_read | no | no | screens-intake.md:129 |
 | screens-intake | R74 | screen.capture.refusal.toolarge.part, .register | no | no | screens-intake.md:130 |
 | screens-intake | R78 | screen.capture.read.queued | no | no | screens-intake.md:134 |
-| network-notices | R32 | listing.contact.note | no | no | network-notices.md:151 |
+| network-notices | R32 | listing.contact.note | no | yes (words.json:123916) | network-notices.md:151 |
 | agent-runner | R41 | gate.runner.refused.<CODE> | no | no | agent-runner.md:67 |
 | screens-action | R74, R80 | none named (words owed) | n/a | no | screens-action.md:154,160 |
 | screens-daily | R108 | the basis.keys_more line | no | no | screens-daily.md:231 |
