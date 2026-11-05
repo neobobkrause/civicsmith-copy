@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-ai","verdict":"not affected","evidence":"build/modules.json:194 lists no paths for screens-ai, so no source of its own imports interface-assets or reads ASSET_FILES' bodies","at":"2026-11-05T15:38:28.915Z","key":"interface-assets:443","worker":"wf_9759915a-0e7-w3","cost":"unmeasured"}
