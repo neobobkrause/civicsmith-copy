@@ -801,6 +801,9 @@ export function checkInquiryBasis(fm, findings, publishedRegistry, earnedRegistr
     /* R18 (D59): the bias statements applied at this leg, their form only; it moves no grade, so the grade arms around
        it judge the leg's stated grade exactly as without it. */
     biasAppliedFindings(label, leg, findings);
+    /* F1 (citation R29): a leg citing what a photograph's file says (its time taken or its place), judged by its own
+       arm; a leg carrying none of its fields is untouched. */
+    fileSaysLegFindings(label, leg, findings, targetType);
     /* REC-84 / IC-84 (1): THE EXTENT, at C-2.8 and through the ONE checker. The
        bundle-id target grammar above is KEPT exactly as it was — the leg still
        names a document or another question — and this adds WHICH PART of it.
@@ -1868,4 +1871,113 @@ function biasApplicationRefusal(checkId, message, repairs) {
   /* DEC-49 REGION is-bias-application-form */
   return refusal("BIAS_APPLICATION_MALFORMED");
   /* END DEC-49 REGION is-bias-application-form */
+}
+
+
+/* =====================================================================
+ * F1 (citation R29; DEC-460; K5523 (L9 = B)) — WHAT A PHOTOGRAPH'S FILE SAYS, CITED AS A LEG.
+ *
+ * A member may cite the time taken or the place of a photograph's `file_says` (`file-safety` R61: each field
+ * `{value, from: "the file", checked: false}`) as a citation of its capture. The leg names the capture (an information
+ * id listed in `references[]`, as any information leg) and carries the one field it cites as four flat scalars (a list
+ * item holds scalars only, record-grammar R7, as R17 flattens a derivation):
+ *   file_says_field    one of FILE_SAYS_CITABLE_FIELDS: `time_taken` (the time) or `gps_latitude`, `gps_longitude`,
+ *                      `place_name` (the place); any other field of the file is refused by name;
+ *   file_says_value    the field's value as the file states it: a non-empty string or a finite number;
+ *   file_says_from     exactly "the file";
+ *   file_says_checked  exactly false: the record has not checked it (a camera's clock may be wrong).
+ * It raises no grade (it carries no grade, axis or source) and names no part (no content id, extent or extent capture):
+ * the leg cites the file's statement, not a passage. Whether the capture's file says that value is citation's check at
+ * cite time, since this module reads no record (R9).
+ * ===================================================================== */
+
+/** F1: the fields of a photograph's file a leg may cite: its time taken, and its place. Each is a name of
+ *  `file-safety`'s `FILE_SAYS_FIELDS` (a test asserts it; not imported, so the grammar bundles no picture code). */
+export const FILE_SAYS_CITABLE_FIELDS = Object.freeze(['time_taken', 'gps_latitude', 'gps_longitude', 'place_name']);
+/** F1: the four scalar keys of a "the file says" leg, in the order they are written and judged. */
+export const FILE_SAYS_LEG_KEYS = Object.freeze(['file_says_field', 'file_says_value', 'file_says_from', 'file_says_checked']);
+/** F1: the one value of `file_says_from`. */
+export const FILE_SAYS_FROM = 'the file';
+
+const FILE_SAYS_KEY_RE = /^file_says_/;
+const fileSaysValue = (v) => (typeof v === 'string' && v.trim() !== '') || (typeof v === 'number' && Number.isFinite(v));
+
+/** F1: the four keys a leg citing `field` of a photograph's file carries, `{file_says_field, file_says_value,
+ *  file_says_from: "the file", file_says_checked: false}`, for the citing act to spread onto its leg; null when `field`
+ *  is not citable or `value` is not a non-empty string or a finite number. Pure; never throws. */
+export function fileSaysLeg(field, value) {
+  if (!FILE_SAYS_CITABLE_FIELDS.includes(field) || !fileSaysValue(value)) return null;
+  return { file_says_field: field, file_says_value: value, file_says_from: FILE_SAYS_FROM, file_says_checked: false };
+}
+
+/** F1: what a leg cites of a photograph's file, `{field, value, from, checked}`, read from its four keys, or null for a
+ *  leg carrying none of them (or anything that is not an object). It judges nothing: `fileSaysLegFindings` does. */
+export function readFileSaysLeg(leg) {
+  if (!leg || typeof leg !== 'object' || Array.isArray(leg)) return null;
+  if (!Object.keys(leg).some((k) => FILE_SAYS_KEY_RE.test(k))) return null;
+  return { field: leg.file_says_field, value: leg.file_says_value, from: leg.file_says_from, checked: leg.file_says_checked };
+}
+
+/** F1: a leg carrying any `file_says_` key gains one C-2.8 error FILE_SAYS_LEG_MALFORMED per departure, naming the
+ *  leg and, in plain words, what departs: a key outside the four; a field missing or not citable (named); a value
+ *  missing or not a non-empty string or finite number; a source other than "the file"; a checked other than false; a
+ *  target that is not an information record (when `targetType` is known and is another kind); a grade, axis or source;
+ *  a content id, extent or extent capture. The answer is true. Any other leg (a non-object read as an empty one)
+ *  gains nothing and the answer is false. `targetType` is the leg target's normalised type, or null when unknown (the
+ *  target arm has its own say on an unusable target). Pure; never throws. */
+export function fileSaysLegFindings(label, leg, findings, targetType = null) {
+  const l = leg && typeof leg === 'object' && !Array.isArray(leg) ? leg : {};
+  const keys = Object.keys(l).filter((k) => FILE_SAYS_KEY_RE.test(k));
+  if (!keys.length) return false;
+  const refuse = (message, repairs) => findings.push(fileSaysLegRefusal(message, repairs));
+  const what = localize('inquiry-grammar.grammar.file_says_what', 'a leg citing what a photograph\'s file says');
+  for (const k of keys) {
+    if (FILE_SAYS_LEG_KEYS.includes(k)) continue;
+    refuse(localize('inquiry-grammar.grammar.file_says_unknown_key', '{label} holds an entry that is not part of {what}, which records the field cited, its value, where the value came from and whether it was checked, and nothing else', { label: String(label), what }),
+      [localize('inquiry-grammar.grammar.file_says_remove_unknown_key', 'remove that entry from {label}', { label: String(label) })]);
+  }
+  const citable = FILE_SAYS_CITABLE_FIELDS.map(words).join(', ');
+  if (typeof l.file_says_field !== 'string' || l.file_says_field.trim() === '') {
+    refuse(localize('inquiry-grammar.grammar.file_says_no_field', '{label} is {what} and names no field of the file: it cites the time the photograph was taken or its place ({citable})', { label: String(label), what, citable }),
+      [localize('inquiry-grammar.grammar.file_says_name_the_field', 'name the field {label} cites: {citable}', { label: String(label), citable })]);
+  } else if (!FILE_SAYS_CITABLE_FIELDS.includes(l.file_says_field)) {
+    refuse(localize('inquiry-grammar.grammar.file_says_field_not_citable', '{label} cites the {field} the photograph\'s file states, which is not citable: only the time it was taken and its place ({citable}) are, as what the file says and nothing the record has checked', { label: String(label), field: words(String(l.file_says_field).slice(0, 40)), citable }),
+      [localize('inquiry-grammar.grammar.file_says_cite_time_or_place', 'cite the time taken or the place instead ({citable}), or remove the leg', { citable })]);
+  }
+  if (!fileSaysValue(l.file_says_value)) {
+    refuse(localize('inquiry-grammar.grammar.file_says_no_value', '{label} is {what} and carries no value: it records the value as the file states it, as text or a number', { label: String(label), what }),
+      [localize('inquiry-grammar.grammar.file_says_state_the_value', 'state on {label} the value the file gives', { label: String(label) })]);
+  }
+  if (l.file_says_from !== FILE_SAYS_FROM) {
+    refuse(localize('inquiry-grammar.grammar.file_says_from_not_the_file', '{label} is {what} and does not say the value came from the file: it is read as what the file says, never as a fact the record has checked', { label: String(label), what }),
+      [localize('inquiry-grammar.grammar.file_says_say_from_the_file', 'record on {label} that the value came from the file', { label: String(label) })]);
+  }
+  if (l.file_says_checked !== false) {
+    refuse(localize('inquiry-grammar.grammar.file_says_checked_not_false', '{label} is {what} and does not record it as unchecked: the record has not checked what a file says (a camera\'s clock may be wrong)', { label: String(label), what }),
+      [localize('inquiry-grammar.grammar.file_says_record_unchecked', 'record on {label} that the value is not checked', { label: String(label) })]);
+  }
+  if (targetType !== null && targetType !== 'information') {
+    refuse(localize('inquiry-grammar.grammar.file_says_target_not_capture', '{label} is {what} and rests on {target}, which is not a captured file: it cites the capture of the photograph', { label: String(label), what, target: String(String(l.target).slice(0, 40)) }),
+      [localize('inquiry-grammar.grammar.file_says_rest_on_capture', 'rest {label} on the photograph\'s capture', { label: String(label) })]);
+  }
+  for (const field of DERIVED_LEG_GRADE) {
+    if (carries(l[field])) {
+      refuse(localize('inquiry-grammar.grammar.file_says_graded', 'the {field} on {label} is set, on {what}: what a file says raises no grade, so the leg states none', { field: words(field), label: String(label), what }),
+        [localize('inquiry-grammar.grammar.file_says_remove_grade', 'remove the {field} from {label}', { field: words(field), label: String(label) })]);
+    }
+  }
+  if (carries(l.content_id) || legHasAuthoredExtent(l) || carries(l.extent_capture)) {
+    refuse(localize('inquiry-grammar.grammar.file_says_part', '{label} names a part of the file, on {what}: it cites the file\'s statement, not a passage', { label: String(label), what }),
+      [localize('inquiry-grammar.grammar.file_says_remove_part', 'remove the content id and the extent from {label}', { label: String(label) })]);
+  }
+  return true;
+}
+
+/** F1: the one site FILE_SAYS_LEG_MALFORMED is minted. */
+function fileSaysLegRefusal(message, repairs) {
+  /* The family helper, by name: DEC-49's guard judges `refusal("CODE"` at the site. */
+  const refusal = (code) => f(INQUIRY_GRAMMAR_CHECKS[code].check, 'error', message, repairs, code);
+  /* DEC-49 REGION is-file-says-leg-form */
+  return refusal("FILE_SAYS_LEG_MALFORMED");
+  /* END DEC-49 REGION is-file-says-leg-form */
 }
