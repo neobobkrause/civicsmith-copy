@@ -154,3 +154,4 @@
 {"at":"2026-11-05T13:03:39Z","row":"ready","live":2,"job_cap":20,"started":[]}
 {"at":"2026-11-05T13:12:07Z","row":"check","by":"ledger check","live":2,"live_at":"2026-11-05T13:03:39Z","job_cap":20,"startable":0,"idle_capacity":{"kind":"empty","since":"2026-11-05T12:58:02Z","min":14,"live":2,"cap":20,"held":0,"startable":0,"empty":18,"alarm":false}}
 {"at":"2026-11-05T13:22:00Z","row":"ready","live":0,"job_cap":20,"started":[]}
+{"at":"2026-11-05T13:28:04Z","row":"ready","live":1,"job_cap":20,"started":["stewards"]}
