@@ -1,3 +1,4 @@
 {"at":"2026-11-05T11:22:14Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job held-captures complete, PR #492 ready, session session_018Bhced3qwS4EefrD6FGs7G: run status"}
 {"at":"2026-11-05T11:22:32Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-05T11:25:55Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job held-captures complete with --exempt-revert (bob-187), PR #492 ready, session session_018Bhced3qwS4EefrD6FGs7G: run status"}
+{"at":"2026-11-05T11:26:06Z","row":"outcome","n":2,"outcome":"delivered"}
