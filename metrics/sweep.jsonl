@@ -166,3 +166,4 @@
 {"at":"2026-11-05T14:13:56Z","row":"check","by":"test","live":1,"live_at":"2026-11-05T14:08:07Z","job_cap":20,"startable":7,"idle_capacity":{"kind":"work","since":"2026-11-05T14:08:07Z","min":5,"live":1,"cap":20,"held":0,"startable":7,"empty":19,"alarm":false}}
 {"at":"2026-11-05T14:20:10Z","row":"check","by":"test","live":1,"live_at":"2026-11-05T14:08:07Z","job_cap":20,"startable":7,"idle_capacity":{"kind":"work","since":"2026-11-05T14:08:07Z","min":12,"live":1,"cap":20,"held":0,"startable":7,"empty":19,"alarm":false}}
 {"at":"2026-11-05T14:25:22Z","row":"check","by":"setup check","live":1,"live_at":"2026-11-05T14:08:07Z","job_cap":20,"startable":25,"idle_capacity":{"kind":"work","since":"2026-11-05T14:08:07Z","min":17,"live":1,"cap":20,"held":0,"startable":25,"empty":19,"alarm":true}}
+{"at":"2026-11-05T14:28:32Z","row":"ready","live":2,"job_cap":20,"started":["journey-check"]}
