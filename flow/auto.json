@@ -2,5 +2,7 @@
   "session": "session_018BhcefmntMFwp8MDNkzCNL",
   "at": "2026-11-05T22:59:25Z",
   "pass": 28,
-  "pending": []
+  "pending": [],
+  "beat": "2026-11-05T23:00:01Z",
+  "quiet": "no pass due"
 }
