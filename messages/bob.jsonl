@@ -368,3 +368,4 @@
 {"at":"2026-11-05T11:24:53Z","row":"sent","n":187,"to":"job-held-captures","text":"PR 492 gate red on revert only: 'the job adds or changes no test; name why in the receipt'. Rerun job complete held-captures with your same args plus --exempt-revert \"<why no test: e.g. every mark already met by the parent's tests, split by copy, nothing changed>\" and wake me."}
 {"at":"2026-11-05T11:25:07Z","row":"outcome","n":186,"outcome":"delivered"}
 {"at":"2026-11-05T11:25:17Z","row":"outcome","n":187,"outcome":"delivered"}
+{"at":"2026-11-05T11:35:22Z","row":"sent","n":188,"to":"job-acquisition-owed","text":"PR 490 gate red on revert only: 'the job adds or changes no test; name why in the receipt'. Rerun job complete acquisition-owed with your same args plus --exempt-revert \"<why no test>\" and wake me."}
