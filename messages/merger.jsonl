@@ -191,3 +191,4 @@
 {"at":"2026-11-05T22:48:04Z","row":"sent","n":96,"to":"bob","text":"merged PR 487 (job control-plane-door-reading); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-05T22:48:17Z","row":"outcome","n":96,"outcome":"delivered"}
 {"at":"2026-11-05T22:54:38Z","row":"sent","n":97,"to":"bob","text":"merged PR 456 (job case-authoring): node .process/tool/p3.mjs notice triage case-authoring:456 (provider notice case-authoring:456; 7 user modules owe a worker's judgment: affordances, answer-envelope, case-check, op-declarations, op-specs-late, review, store-assembly: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-05T22:54:55Z","row":"outcome","n":97,"outcome":"delivered"}
