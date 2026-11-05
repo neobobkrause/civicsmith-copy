@@ -31,3 +31,4 @@
 {"at":"2026-11-05T06:58:24Z","row":"sent","n":16,"to":"root","text":"MERGER start check FAILED (HEAD is not the tip): HEAD 7f3d41433eb07bafd481db134a7517a9505df00d, tranche e234b71169a0a049fd45288eee542e411e0105a3. Acting on nothing and ending."}
 {"at":"2026-11-05T06:58:40Z","row":"outcome","n":16,"outcome":"delivered"}
 {"at":"2026-11-05T07:01:13Z","row":"sent","n":17,"to":"bob","text":"PR 406 (job agent-harness) fires a review trigger and has no review recorded for a8b4a168cb: review it (node .process/tool/p3.mjs review brief 406), then node .process/tool/p3.mjs merge train note 406 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
+{"at":"2026-11-05T07:01:35Z","row":"outcome","n":17,"outcome":"delivered"}
