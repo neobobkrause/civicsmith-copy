@@ -6,6 +6,7 @@ import * as CG from "../../../src/case-grammar/index.mjs";
 import { caseFile, caseFiles, gradingFacts, keyFor, sha, A, B, C, GROUP, MINUTES, MEMO, OBS, MEMO_BYTES, MINUTES_BYTES, MINUTES_SHA,
          CALC, CALC_INPUT, CALC_INPUT_SHA, calcRow, rows } from "./fixture.mjs";
 import { NS_RELEASE } from "../../../src/sshsig.mjs";
+import { extractOpts, extractRow, regPassage, LIMIT, ORIGINAL } from "./extract-fixture.mjs";
 
 const doc = (t) => t.get(CG.caseFilePath("case_document"));
 const setDoc = (t, f) => t.set(CG.caseFilePath("case_document"), f(doc(t)));
@@ -109,6 +110,15 @@ export const CASES = [
   ["a case resting on another group's finding", { withImported: true }],
   ["a /8 case document", { format: "bio-case-document/8" }],
   ["a /7 case document", { format: "bio-case-document/7" }],
+  /* R29-R31: a register extract carried in its row */
+  ["a register extract that holds, from a limited register", extractOpts({ rows: [extractRow({ use_limit: LIMIT })] })],
+  ["a register extract whose cells moved and whose label and notice are gone", extractOpts({ rows: [extractRow({ use_limit: LIMIT })], editDoc: (d) => d
+    .replace(/(extract_row: ')\[([^\]]*)\]/, (_, k, cells) => `${k}[${cells},"x"]`).replace(/\n\s+extract_label_key: [^\n]*/, "")
+    .replace(/\n\s+extract_use_limit_text_key: [^\n]*/, "") })],
+  ["a register extract with malformed fingerprints and dates", extractOpts({ editDoc: (d) => d.replace(`"${ORIGINAL}"`, `"${ORIGINAL.slice(0, 40)}"`)
+    .replace(/(extract_reduced_sha256: '")[0-9a-f]{64}/, `$1${ORIGINAL}`).replace('"2026-08-01"', '"last summer"') })],
+  ["a register extract whose passage is not in it", extractOpts({ passage: regPassage({ quoted: "Someone Else 9999" }) })],
+  ["a register extract not carried in its row", extractOpts({ editDoc: (d) => d.replace(/\n\s+extract_header: [^\n]*/, "").replace(/\n\s+extract_row: [^\n]*/, "") })],
 ];
 
 /* Criteria files and the standards a case measures against (R22): the fixtures of `standards-offline.test.mjs`, shortened. */

@@ -30,7 +30,7 @@ import { checkCaseDocument } from "../case-catalogue/checks.mjs";
 import { caseFileManifestCheck, caseFileEntryOf, casePartDigest, CASE_FILE_MANIFEST_PATH, methodOf, materialsOf,
          acceptedWorkOf, standingOf, completeEditionOf, gradingFactsOf, passagesOf, GRADING_FACT_FIELDS,
          PASSAGE_FIELDS, calculationsOf, calculationFileText, provOf, CASE_FILE_PROV_PATH, lensOf, accountOf,
-         biasApplicationsOf } from "../case-grammar/index.mjs";
+         biasApplicationsOf, extractTextOf, EXTRACT_LABEL_KEY } from "../case-grammar/index.mjs";
 import { evaluate, resultKey, METHOD as CALC_METHOD } from "../calc-grammar/index.mjs";
 import { CATALOG_VERSION } from "../gate.mjs";
 import { readStoredZip, asBytes } from "./zip.mjs";
@@ -210,6 +210,59 @@ function readParts(parts) {
 
 /** G50: whether a file's path states no capture, or the capture whose SHA-256 is `sha` (both compared in lower case). */
 const ownsCapture = (f, sha) => f.capture === null || f.capture === lowerSha(sha);
+/* ============================================================ register extracts (R29-R31) */
+
+/** R29 (`case-grammar` R38): the extract a material row states, as `materialsOf` reads it, or null. */
+const extractOf = (mat) => (isObj(mat) && isObj(mat.extract) ? mat.extract : null);
+const EXTRACT_DATE = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2}))?$/;
+const isExtractDate = (v) => typeof v === "string" && EXTRACT_DATE.test(v) && !Number.isNaN(Date.parse(v.length === 10 ? `${v}T00:00:00Z` : v));
+const blank = (v) => typeof v !== "string" || v.trim() === "";
+
+/** R29, R30: what the checker can see of one extract, `{missing, differs}`, each a list of `{field, detail}`: the extract
+ *  absent (`missing`); its text not the `text_sha` the row signs, its header and row not of one length, a fingerprint, a
+ *  date or the row's number malformed, the label absent, or a limited register's notice absent (`differs`). */
+function extractFaults(mat) {
+  const x = extractOf(mat);
+  const ref = String(mat.ref ?? "");
+  const out = { missing: [], differs: [] };
+  if (!Array.isArray(x.header) || !Array.isArray(x.row)) {
+    out.missing.push({ field: !Array.isArray(x.header) ? "extract_header" : "extract_row",
+      detail: localize("case-checker.extract.not_carried", "the register extract of {ref} is not carried in its row, so its row cannot be read", { ref }) });
+    return out;
+  }
+  const bad = (field, detail) => out.differs.push({ field, detail });
+  const text = extractTextOf(x.header, x.row);
+  const textSha = text === null ? null : shaOf(te.encode(text));
+  if (textSha !== mat.text_sha)
+    bad("text_sha", localize("case-checker.extract.text_sha_differs", "the register extract of {ref} is not the text its row fingerprints ({sha})", { ref, sha: String(mat.text_sha) }));
+  if (x.header.length !== x.row.length)
+    bad("extract_row", localize("case-checker.extract.cells_differ", "the register extract of {ref} has {header} column names and {row} cells", { ref, header: String(x.header.length), row: String(x.row.length) }));
+  const malformed = (field) => bad(field, localize("case-checker.extract.field_malformed", "the register extract of {ref} states {field} absent or malformed", { ref, field }));
+  for (const k of ["reduced_sha256", "original_sha256"]) if (typeof x[k] !== "string" || !HEX64.test(x[k])) malformed(`extract_${k}`);
+  if (typeof x.reduced_sha256 === "string" && HEX64.test(x.reduced_sha256) && x.reduced_sha256 !== mat.sha)
+    bad("extract_reduced_sha256", localize("case-checker.extract.reduced_not_row_sha", "the register extract of {ref} names a reduced file ({reduced}) other than its row's ({sha})", { ref, reduced: x.reduced_sha256, sha: String(mat.sha) }));
+  for (const k of ["source_date", "imported_at"]) if (!isExtractDate(x[k])) malformed(`extract_${k}`);
+  if (!Number.isSafeInteger(x.src_row) || x.src_row < 1) malformed("extract_src_row");
+  if (x.label_key !== EXTRACT_LABEL_KEY)
+    bad("extract_label_key", localize("case-checker.extract.label_absent", "the register extract of {ref} does not carry its label ({key})", { ref, key: EXTRACT_LABEL_KEY }));
+  /* R30: a limited register's notice, by key */
+  const u = x.use_limit;
+  if (u !== null && u !== undefined) {
+    const lim = isObj(u) ? u : {};
+    const field = blank(lim.text_key) ? "extract_use_limit_text_key" : blank(lim.key) ? "extract_use_limit_key" : blank(lim.citation) ? "extract_use_limit_citation" : null;
+    if (field) bad(field, localize("case-checker.extract.notice_absent", "the register extract of {ref} comes from a register whose use is limited, and the case does not carry the notice of that limit", { ref }));
+  }
+  return out;
+}
+
+/** R31: the extract's text where a passage is looked for: the extract text, and the cited row's cells read as one line. */
+const extractTexts = (x) => (Array.isArray(x.header) && Array.isArray(x.row)
+  ? [extractTextOf(x.header, x.row), x.row.map((c) => (c === null ? "" : String(c))).join(" ")].filter((t) => typeof t === "string") : []);
+
+/** R31: the source file is not in the package. */
+export const UNVERIFIABLE_ROW_STATEMENT = localize("case-checker.extract.row_in_source_file",
+  "The source file is not in this package, so that the row exists in the file its fingerprints name cannot be re-derived from it. A reader who fetches the source can compare the original's fingerprint only if the source is unchanged. Recreating shows a case intact and consistent, not true.");
+
 const lowerSha = (v) => (typeof v === "string" ? v.toLowerCase() : null);
 
 /* The case document's `materials:` rows (`case-grammar` R12), read from the carried case document when it is the bytes
@@ -626,10 +679,19 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     else if (rows === null) differs.push(entry("passage", id, localize("case-checker.check.passages_unreadable", "finding {id}'s passages cannot be read", { id })));
     for (const row of (rows || []).filter(isObj)) {
       const cap = str(row.capture_sha) || "";
-      const mat = materials.find((x) => x.sha === cap) || null;
+      const mat = materials.find((x) => x.sha === cap && extractOf(x) && extractTexts(extractOf(x)).some((t) => typeof row.quoted === "string" && squash(t).includes(squash(row.quoted))))
+        || materials.find((x) => x.sha === cap) || null;
       const where = word("case-checker.where", { document: cap || word("case-checker.text.unnamed_document"), id });
       if (!HEX64.test(String(row.content_id ?? "")) || contentIdFor(cap, row.extent, row.chain ?? null) !== row.content_id) {
         differs.push(entry("passage", id, localize("case-checker.check.passage_content_id_differs", "{where} does not recompute to the content id it states ({content_id})", { where, content_id: String(row.content_id) }))); continue; }
+      /* R29 (b): a passage from a register row is found in its extract, carried in the row; the source file is not asked */
+      if (extractOf(mat)) {
+        const texts = extractTexts(extractOf(mat));
+        if (!texts.length) missing.push(entry("passage", id, localize("case-checker.extract.passage_not_carried", "{where} cannot be found, because the register extract is not carried in its row", { where }), { sha256: cap }));
+        else if (typeof row.quoted !== "string" || !texts.some((t) => squash(t).includes(squash(row.quoted))))
+          differs.push(entry("passage", id, localize("case-checker.extract.passage_not_found", "{where} is not found in the register extract its row carries", { where }), { field: "extract_row" }));
+        continue;
+      }
       const tf = mat && mat.kind === "observation" ? fileOfMaterial("observation", mat) : mat ? fileOfMaterial("extracted_text", mat) : null;
       if (!tf || !tf.content) {
         missing.push(entry("passage", id, localize("case-checker.check.passage_text_not_carried", "{where} cannot be found, because the document's extracted text is not carried", { where }) + (mat ? `; ${fetchMaterial(mat, "document")}` : ""),
@@ -701,6 +763,16 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
       /* R8 (DEC-180 (4)): a row carried as its copy is presentable when a file of kind `obscured` is carried at the copy's
          SHA-256 (R2 checks its bytes); its extracted text and the original's bytes are not asked: the original never
          travels. */
+      /* R29, R30: a row stating extract fields is presentable, `included: false`, when its extract is carried in the row;
+         neither the source file's bytes nor the reduced file's are asked. */
+      if (extractOf(mat)) {
+        const xf = extractFaults(mat);
+        for (const g of xf.missing) missing.push(entry(lb ? "presentability" : "integrity", id, g.detail, { field: g.field, sha256: str(mat.sha) }));
+        for (const g of xf.differs) differs.push(entry("extract", id, g.detail, { field: g.field, sha256: str(mat.sha) }));
+        for (const e of attestationsOf(attestationFails, mat)) differs.push({ ...e, about: id });
+        for (const e of attestationsOf(attestationGaps, mat)) missing.push({ ...e, about: id });
+        continue;
+      }
       const ob = obscuredOf(mat);
       if (ob) {
         const f = files.find((x) => x.kind === "obscured" && x.ref === mat.ref && ownsCapture(x, mat.sha) && x.sha256 === ob.copy) || null;
@@ -783,6 +855,8 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     calculations,
     standards_use,
     obscured: materials.filter(obscuredOf).map((x) => ({ ref: str(x.ref), sha: str(x.sha), copy: x.obscured.copy, label: str(x.obscured.label) })),
+    /* R31: for a case with extracts, each extract's row cannot be re-derived from the package; no key for a case with none */
+    ...(materials.some(extractOf) ? { unverifiable: materials.filter(extractOf).map((x) => ({ ref: str(x.ref), what: "row_in_source_file", why: UNVERIFIABLE_ROW_STATEMENT })) } : {}),
     account,
     lens: lensAnswer, lens_statement: LENS_LIMIT_STATEMENT,
     findings: findingsOut.map((f) => ({ finding: f.finding, role: f.role, result: f.result, missing: f.missing, differs: f.differs, pair: f.pair, bar_met: f.bar_met,

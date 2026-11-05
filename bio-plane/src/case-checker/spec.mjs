@@ -290,7 +290,28 @@ const V4 = edit(V3, [
    + "the row's capture), whose bytes rule 1 checks;"],
   ["Not carried is missing; not listed, or listed as not included, differs. A row stating",
    "Not carried is missing; not listed, or listed as not included, differs. For a `ref` on several rows, each row is asked for "
-   + "the files of its own capture, and a passage in a capture is found in that capture's text. A row stating"],
+   + "the files of its own capture, and a passage in a capture is found in that capture's text. A row stating"],  /* R14, R29 (T53; N1259; K4403 (4); `case-grammar` R38, R39): the case document's `/10` and a register extract's fields */
+  ["Its format is `bio-case-document/9`, `bio-case-document/8`,",
+   "Its format is `bio-case-document/10`, `bio-case-document/9`, `bio-case-document/8`,"],
+  ["A document is `/9` when any of its attestation rows carries a `sha`; a document without one keeps `/8`.",
+   "A document is `/9` when any of its attestation rows carries a `sha`; a document without one keeps `/8`. A document is "
+   + "`/10` when any `materials:` row states a register extract's fields (below); one stating none keeps `/9` or `/8`."],
+  ["The answer lists each such row, `{ref, sha, copy, label}`, in the document's order, so its label is stated beside it.\n",
+   "The answer lists each such row, `{ref, sha, copy, label}`, in the document's order, so its label is stated beside it. "
+   + "A `document` row of a `bio-case-document/10` document may state a cited register row's extract, as flat fields after "
+   + "`title`, each value its canonical JSON in one quoted value: `extract_register`, `extract_file`, `extract_reduced_sha256`, "
+   + "`extract_original_sha256`, `extract_original_covers`, `extract_source_date`, `extract_imported_at`, `extract_src_row`, "
+   + "`extract_kept_columns`, `extract_roles`, `extract_dropped_columns`, `extract_header`, `extract_row` and `extract_label_key` "
+   + "(`register.extract`), and, for a register whose use is limited, `extract_use_limit_key`, `extract_use_limit_citation` and "
+   + "`extract_use_limit_text_key`. The row's `sha` is the reduced segment's SHA-256, its `text_sha` the SHA-256 of the "
+   + "canonical JSON of `[extract_header, extract_row]`, and it states `included: false`: the source file and the reduced file "
+   + "are not carried. Such a row is presentable when its extract is carried in the row, and neither file is asked. Its `text_sha` "
+   + "must recompute; its header and row must have the same number of cells; the two SHA-256s must be 64 hex, the reduced one "
+   + "the row's `sha`; `extract_source_date` and `extract_imported_at` must be dates and `extract_src_row` a whole number from 1; "
+   + "the label must be present; and a limited register's notice must be present. Each failure differs, naming the field; an "
+   + "extract not carried in its row is missing. A passage relied on from the row is found in the extract, and its `content_id` "
+   + "recomputes from the row's `sha`, its extent and its chain. That the row exists in the source file cannot be re-derived "
+   + "from the case file: the answer lists each extract as `unverifiable`, `{ref, what: \"row_in_source_file\", why}`.\n"],
 ]);
 
 /** R14: every specification held, by the format it specifies. */
