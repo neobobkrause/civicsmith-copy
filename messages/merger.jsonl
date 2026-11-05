@@ -198,3 +198,4 @@
 {"at":"2026-11-05T23:08:42Z","row":"sent","n":100,"to":"bob","text":"the starter started job case-check (PR 603): subscribe_pr_activity to each pull request"}
 {"at":"2026-11-05T23:08:48Z","row":"outcome","n":99,"outcome":"delivered"}
 {"at":"2026-11-05T23:09:40Z","row":"outcome","n":100,"outcome":"delivered"}
+{"at":"2026-11-05T23:14:13Z","row":"sent","n":101,"to":"bob","text":"merged PR 446 (job member-roster): node .process/tool/p3.mjs notice triage member-roster:446 (provider notice member-roster:446; 9 user modules owe a worker's judgment: acquisition, contradiction, mail-door, membership, op-declarations, queue-producers, store-assembly, store-jobs, surface-declarations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
