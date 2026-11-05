@@ -358,3 +358,5 @@ node_modules
 # Built where needed, not committed (over max_file_bytes; BOB 4 Nov): case-checker R32, K1540
 bio-plane/src/case-checker/program.mjs
 /bio-plane/src/case-checker/program.mjs
+/docs/development/ux-substrate/screens/words.json
+/docs/development/ux-substrate/screens/words-drawn.json
