@@ -1,0 +1,1 @@
+{"row":"triage","user":"local-facts","verdict":"not affected","evidence":"bio-plane/src/local-facts/index.mjs:887 uses only lines.structureAt (part_of walk) and reasonText via linesOf (index.mjs:48, 880); never calls recordLine with a passage basis, nor lineRow","at":"2026-11-05T12:50:07.086Z","key":"lines:422","worker":"wf_3e6e7d67-3cf-w6","cost":"unmeasured"}
