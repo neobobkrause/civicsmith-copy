@@ -15,3 +15,4 @@
 {"at":"2026-11-05T12:03:45Z","row":"renew","id":"70643fc9d5ca","pr":499}
 {"at":"2026-11-05T12:04:26Z","row":"renew","id":"88e3ee22a779","pr":500}
 {"at":"2026-11-05T12:06:51Z","row":"queue","id":"4927a35f2fa9","pr":501,"head":"c40b90c79c40bc7f12e4086b7f162fa6b54a859a","ref":"bob/ledger-notes-paths-2","by":"session_018BhcefhxhWd9YQkYbKBcTB","reviewed":null,"no_review":"ledger paths: case-authoring and queue requirements-notes files (gate ownership findings on 456, 455)","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T15:16:51.025Z","renews":true}
+{"at":"2026-11-05T12:08:56Z","row":"renew","id":"70643fc9d5ca","pr":499}
