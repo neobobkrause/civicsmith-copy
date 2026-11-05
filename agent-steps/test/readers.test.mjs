@@ -108,8 +108,11 @@ section("R48 · the names the module and its shell share are declared here once"
     [MEANING_ARMS.includes(MEANING_ARM), Object.keys(MEANING).includes(MEANING_ARM)], [true, true]);
   t("R48: RESPONSE_ID is <action id>#<ord>", [RESPONSE_ID.exec("ACT-1#0")?.slice(1), RESPONSE_ID.exec("ACT-1#12")?.slice(1)], [["ACT-1", "0"], ["ACT-1", "12"]]);
   t("R48 (control): no ordinal, a leading-zero ordinal, a negative one and an empty id are none", ["ACT-1", "ACT-1#", "ACT-1#01", "ACT-1#-1", "#1"].map((s) => RESPONSE_ID.test(s)), [false, false, false, false, false]);
-  t("R48: SEGMENT_END_BY is frozen with the four names", [Object.isFrozen(SEGMENT_END_BY), { ...SEGMENT_END_BY }],
-    [true, { table: "the table", plane: "the plane's own exit", refusal: "a refusal", error: "an error" }]);
+  t("R48: SEGMENT_END_BY is frozen with exactly the five names (T53; AIR28: an AI stop)", [Object.isFrozen(SEGMENT_END_BY), { ...SEGMENT_END_BY }],
+    [true, { table: "the table", plane: "the plane's own exit", refusal: "a refusal", error: "an error", ai: "an AI stop" }]);
+  let threw = false;
+  try { SEGMENT_END_BY.extra = "x"; } catch { threw = true; }
+  t("R48 (control): adding a key to SEGMENT_END_BY throws and adds nothing", [threw, "extra" in SEGMENT_END_BY], [true, false]);
 }
 
 section("R43 · the module reaches the plane, words its refusals and holds a model half only through its host");

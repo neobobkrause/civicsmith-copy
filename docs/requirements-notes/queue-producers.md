@@ -1,0 +1,36 @@
+# queue-producers — requirements notes
+
+Text moved out of `build/requirements/queue-producers.md` on 5 Nov 2026 to bring it under the 70,000-byte cap, word for word. None of it is a requirement: every **R** and **F** line stays in the requirements file, with its mark.
+
+## Status history and Size (moved from the requirements file, 5 Nov 2026)
+
+**Status** · In force: split from `queue` (N363; Bob's K507, seams K531), its moved requirements' meaning unchanged; split again for size (K617, K1850): R3, R22, R26 and R27 retired as moved to `machinery-producers`, R11–R13, R24 and R36 copied there. Last fold T34 (T34-54, T34-82, T34-92: R6, R15, R18, R24 amended; R37–R39 new; K1536, K1784, K1818); every requirement met (QUEUE-PRODUCERS #13, K1871). Last changed T48 (K3254, the L11 design fold of WALK-084 #2, K3250: R40 new, source items carry `title` and name no id or mechanism); marked not yet met (T48). Last changed T50 (L11 fold, BOB #201: R41 project-invitation, R42 project-request; N1091; DEC-248, DEC-286; re-checked against the word list, BOB #205: R41's unnamed summary and R42's answer words now exist); marked not yet met (T50). Last changed T51 (L11 fold, BOB #210: R43 new, every older producer's `summary` and `detail` read by the `queue.<kind>.*` keys, facts not English, N1231, DEC-329 (10), K3766, K3806; R44 new, amending R41, the inviter from `project-roster.projectInvitations`, N1209, K3843; R45 new, amending R8, a feed that cannot be read is named, DEC-330 A62); marked not yet met (T51). Last changed T51's fix round (FR-22, BOB #229: R46–R48 new, the endorsement, owner vote and expertise confirmation owed, C62, K4169, UC-046, each carrying its door, K4210; R49 new, a feed reads once what it needs, L13, K4194; R50 new, a failed feed names the read and its code, and a refusal that says "told nothing" is not a failure, L12, K4195; R51 new, the feed's milliseconds, K4210); marked not yet met (T51). Last changed T53 (K5448; A6, DEC-462: R56, R57 new, one signing-key item for each member; N1257, DEC-404, K5458: R58, R59 new, the arrival item by layer); marked not yet met (T53).
+
+**Size (P6).** About 1,800 lines of today's queue code move here (`queue/index.mjs` :586–2100, :2328–2431, :3590–3643; `proposals.mjs` whole), with about 410 lines of tests (`producers.test.mjs`, `proposals.test.mjs`). Well under one reading.
+
+## Satisfies
+
+- `docs/architecture/BIO_Interaction_Constructs_v0_1.md`: Revision 0.2 (QUEUE; the three classes as domains); §P (a proposal looks derived); U (`undetermined` stated: `age`, the `subject_bound` home set).
+- `docs/development/NOTIFICATIONS.md`: the classes, the catalogue, the item contract.
+- DEC-36, D-82.
+- (T51) DEC-329 (10) (the 170 keys `queue.<kind>.summary` and `.detail`, facts not English), N1231, K3766, K3806: R43. N1209, K3843: R44.
+- DEC-95 (1) (R22) and DEC-102 item 3 (R23); K1019.
+- DEC-121 (1), (5) (R32, R33; N528).
+- DEC-147 (2), (3), (5) (R37: the owner's queue shows "Signed · publishes <date, time>", is told once when the check stops it and once when it goes public) and DEC-150 (3) (R38: administrators told once, Status); K1784, K1785 (T34-82).
+- DEC-158 (4) (the design session's, beneath DEC-121: a copy's editors told once when its base changes, and may bring the change across): R39; K1818 (T34-92).
+- DEC-101 response 3 and DEC-116 item 8 ("telling the members"; the citing copy's notices): R34, R35 (N534).
+- `BIO_Action_v0_1.md` §4 rule 5 (members are told without being nagged; two kinds of time never mix); DEC-10, DEC-69, DEC-70, DEC-94 (R15–R18, R20, R21); K921 (R20, R21).
+- `BIO_Action_v0_2.md` rule 18 (K2780; T45, N893; K2781 (1)): the Action layer's to-dos moved to `action-producers` (R15–R21, R29 retired there) and answered through R8.
+- N345 (R4–R7): DEC-76 item 3; DEC-84 items 1–3, 7 and 13; DEC-85 with K456 (R7); `CONTRADICTION-PRESENT-RESOLVE-DESIGN.md` §4.
+- (T53) DEC-462, K5456 (R56, R57: one signing-key item for each member). N1257, DEC-404, K5458 (R58, R59).
+
+## Suggestions
+
+- (T53; R56, R57) The item key changes from `::<key>` to `::<member>`; items are derived on read, so no migration, and a stored decision on an old key id is orphaned and harmless. One `signerList` read serves all members (R49); the founder counts as `admin`; the line keys are such as `queue.signer-self-registered.key` with `date.daymonth`/`date.daymonthyear` and `civil-time.localDay`. Optional: a `credentials` R84, `signerKnown` taking up to 20 keys at once, if Bob wants one-click "I know about all of these".
+- **Code it takes** (N363 draft, lines of `bio-plane/src/queue/index.mjs` on `tranche/T16`): :586–2100 (`#conditionHomes` … `#conditionsRecheckDue`); :2328–2431 (`#queueConditions`, `#conditionsRenderDeferred`); :3590–3643 (`#obligationsBiasDebt`); `queue/proposals.mjs` whole. `#conditionHomes` (`subject_bound`) and `#homesAt` (a case at depth 0) are built over `homesOf`. N352: `#hiddenBundles` (:173–178, whose only caller is `#queueSharedInquiryCandidates`, an R2 producer) lands here, reading `membership.hiddenBundles` (its R88); `queue` keeps no copy.
+- **Factory and exports.** `queueProducersOf(ctx, deps)`; `queue-producers/index.mjs` exports `queueProducersOf`, `proposalFindingItems`, `CARDINALITY_EXCEEDED`. It registers nothing with an earlier module and holds no check row; R38's registration door is the one it offers (T34), and `PLACE_ARRIVALS_REGISTERED` is a programming error answered to the caller, not a member's refusal.
+- **R8's items**: today only export-performed carries a `catalogue_id` (:1784); `queue` stamps it at the mint from its R2, whose catalogue this earlier module cannot import. `proposalFindingItems` already takes `homesOf` and `optionsOf` (`proposals.mjs`:80).
+- **`escalationsSeen()`** (monitoring R35) is offered with N229's facts but names none of monitoring R31's four kinds; no item is minted from it until a kind is catalogued for it.
+- **R23's reads (K1019).** The prepared, unsigned case editions are `publication`'s; the job reads them through `caseDocumentFacts` per edition and names any further read it needs to BOB rather than reading `publication`'s tables. The item's way forward is the author's act alone (DEC-102 item 3: the member is asked in their own queue; the state on the case draft is the redesign's).
+- **Callers' obligations** (convention 2): `queue` passes `member`, `viewer` and `identity` from the control plane's stamps, and `homesOf` and `optionsOf`.
+- Tests: `producers.test.mjs` (R2, R3), `proposals.test.mjs` (drives `proposalFindingItems` directly: R2, R10, R11); R1 (from `feed.test.mjs`'s bias half) and R9 (its take-up) gain tests here. N345: a duty reaching two projects is one item (R4); a hidden side yields no item and no count (R11); an owner and a non-owner for `tension-after-publication`. DEC-85: two projects, each hidden from the other, on the two sides of one duty: each member gets one `contradiction-duty-unseen` item homed on their own side only; no item, home, count or `truncated` flag names the other side (R11); after one opts in, the other's item reads `asked_by_another`; after both opt in, the parties' names appear; a response's chosen parts appear in the other project's next item, and never the responder's handle.
