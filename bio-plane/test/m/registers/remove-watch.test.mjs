@@ -95,7 +95,27 @@ test("R30, F1 (citation R28): the row context says which row of a rewritten segm
   assert.equal(ctx.holds(oldSha), false, "the old digest is no longer a held segment");
 });
 
-test.todo("F1 (citation R28; R30): content.cellsAt for a content row over a removed register row answers {cells: null, reason: 'removed'}: content's change, asked of the row context's removed(sha, n) (bio-plane/src/content/index.mjs:1512-1525)");
+test("F1 (citation R28; R30): content.cellsAt for a content row over a removed register row answers {cells: null, reason: 'removed'}; control: before the removal it is not removed, and another row cited over the old file is not removed after", async () => {
+  const w = seeded();
+  START(w);
+  await w.drain({ [URL_]: served(enc(withSentinel())) });
+  const key = keyOf(w, 6);
+  const other = keyOf(w, 3);
+  const cite = w.registers.citeRow({ import: 1, row_key: key, author: V("bob"), viewer: V("bob") });
+  const kept = w.registers.citeRow({ import: 1, row_key: other, author: V("bob"), viewer: V("bob") });
+  assert.deepEqual([cite.ok, kept.ok], [true, true]);
+  const before = await w.content.cellsAt(cite.content_id);
+  assert.equal(before.reason, undefined, `control: before the removal the cited row is answered, not refused: ${JSON.stringify(before.reason)}`);
+  assert.ok(Array.isArray(before.cells), "control: before the removal cellsAt answers a cells list");
+  assert.equal((await REMOVE(w, key)).ok, true);
+  const gone = await w.content.cellsAt(cite.content_id);
+  assert.equal(gone.cells, null);
+  assert.equal(gone.reason, "removed");
+  assert.ok(!JSON.stringify(gone).includes(SENT_NAME), "the answer holds none of the row");
+  const still = await w.content.cellsAt(kept.content_id);
+  assert.notEqual(still.reason, "removed", "another row cited over the old file is not removed");
+  assert.equal(w.sql(`SELECT COUNT(*) AS n FROM content WHERE content_id=?`, cite.content_id)[0].n, 1, "the content row over the removed row is kept");
+});
 
 test("R31 control: the other keys of the re-import land; a lawful demand of a kind the profile lists is accepted as a ground", async () => {
   const w = seeded();
