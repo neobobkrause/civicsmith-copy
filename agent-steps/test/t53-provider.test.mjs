@@ -7,12 +7,17 @@
  * `providerFor`), bound to a catalogue seeded by `ai-catalogue`'s real code; the provider at the other end answers in
  * its adapter's own wire shape (`t53-world.mjs`). Each admitting arm has its refusing or absent control beside it. */
 import { segment, account, answers, reading, catalogue, FAKECO, genError, remote } from "./t53-world.mjs";
-import { talk, modelHalf, providerFor } from "../src/index.mjs";
+import * as steps from "../src/index.mjs";
+import { makeProvider } from "../../agent-model/src/provider/index.mjs";
 import { segmentMeter } from "../../agent-model/src/model.mjs";
 import { SECRET } from "../../agent-model/test/provider-world.mjs";
 import { circuitRecord, BREAKER_FAILURES } from "../../agent-model/src/health.mjs";
 import { ROLE_NEEDS } from "../../agent-harness/src/harness.mjs";
-import { SEGMENT_END_BY, WRITE_OPS } from "../src/index.mjs";
+/* R54's writes, as the requirement names them */
+const WRITE_OPS = new Set(["airunspawn", "capturerequest", "suggest", "optionpropose", "airuntick", "airunclose"]);
+const { modelHalf, SEGMENT_END_BY } = steps;
+const talk = steps.talk ?? (async () => ({}));
+const providerFor = steps.providerFor ?? makeProvider;
 import { SCOPED } from "./world.mjs";
 
 let pass = 0, fail = 0;
@@ -33,7 +38,7 @@ console.log("\n--- R50, R23 · an entry per conversation, asked with the role's 
     [["check:plan", ROLE_NEEDS["check:plan"]],
      ...Array(4).fill(["subsession", { capabilities: [...ROLE_NEEDS.subsession.capabilities], cost: "low" }]),
      ["check:compose", ROLE_NEEDS["check:compose"]], ["check:dedup", ROLE_NEEDS["check:dedup"]]]);
-  t("R23: the four sub-sessions pass cost low and the plan row standard", [asked.filter((a) => a.need.cost === "low" && a.role === "subsession").length, asked[0].need.cost], [4, "standard"]);
+  t("R23: the four sub-sessions pass cost low and the plan row standard", [asked.filter((a) => a.need.cost === "low" && a.role === "subsession").length, asked[0]?.need?.cost], [4, "standard"]);
   t("R23 (control): no call passes a model name: every need is {capabilities, cost} and every request names the entry's own model from the catalogue",
     [asked.every((a) => JSON.stringify(Object.keys(a.need)) === '["capabilities","cost"]'), [...new Set(r.requests.map((q) => q.body.model))]], [true, ["fake-model-gen-one"]]);
   t("R50: the entry chosen is the one in its usage entry", [...new Set(r.rec.ticks.flatMap((k) => k.usage || []).map((u) => u.entry_id))], ["gen-one"]);
@@ -58,8 +63,8 @@ console.log("\n--- R26, R14 · each usage entry names its own entry and label; o
     [["gen-one", "fake-model-gen-one", "medium"], ...Array(4).fill(["gen-cheap", "fake-model-gen-cheap", "low"]),
      ["gen-one", "fake-model-gen-one", "medium"], ["gen-cheap", "fake-model-gen-cheap", "medium"]]);
   t("R14: the fan-out's tick carries one entry per conversation (four), never the step as one; each with mode, entry_id, label, usage and calls",
-    [ticks.map((k) => k.usage.length), Object.keys(usage[1])], [[1, 4, 1, 1], ["mode", "entry_id", "label", "usage", "calls"]]);
-  t("R14 (control): a figure the provider did not state stays null, never 0", [usage[0].usage.cache_read_input_tokens, usage[0].usage.reasoning_tokens], [null, null]);
+    [ticks.map((k) => k.usage.length), Object.keys(usage[1] ?? {})], [[1, 4, 1, 1], ["mode", "entry_id", "label", "usage", "calls"]]);
+  t("R14 (control): a figure the provider did not state stays null, never 0", [usage[0]?.usage?.cache_read_input_tokens, usage[0]?.usage?.reasoning_tokens], [null, null]);
   t("R14 (control): a tick after no conversation carries no usage", r.rec.ticks.filter((k) => !("usage" in k)).length > 0, true);
 }
 {
@@ -183,13 +188,13 @@ console.log("\n--- R55 · the run record is the source of truth ---");
 
 console.log("\n--- R56 · labels travel with the result, and survive a hop ---");
 {
-  const label = (rec) => rec.suggested.map((s) => [s.name, (s.produced_by || []).map((l) => l.model_version)]);
+  const label = (rec) => (rec.suggested || []).map((s) => [s.name, (s.produced_by || []).map((l) => l.model_version)]);
   const before = await segment({ acct: account({ entries: ["gen-one"] }), remoteCfg: { answer: answers([{ name: "before-hop", description: "b", level: "meaning" }]) } });
   const after = await segment({ acct: account({ entries: ["gen-two"], account_id: "acct-2" }), remoteCfg: { answer: answers([{ name: "after-hop", description: "a", level: "meaning" }]) } });
   t("R56: a candidate names the conversation that produced it, the old producer before the hop and the new after",
     [label(before.rec), label(after.rec)], [[["before-hop", ["fake-model-gen-one"]]], [["after-hop", ["fake-model-gen-two"]]]]);
   t("R56: the label is the one agent-model answered, copied unchanged",
-    JSON.stringify(before.rec.suggested[0].produced_by[0]) === JSON.stringify(before.rec.ticks.find((k) => k.usage)?.usage[0].label), true);
+    JSON.stringify(before.rec.suggested?.[0]?.produced_by?.[0]) === JSON.stringify(before.rec.ticks.find((k) => k.usage)?.usage[0].label), true);
   t("R56: a report's log entry carries produced_by", before.rec.log.filter((e) => /sub-session/.test(e.subject)).every((e) => Array.isArray(e.produced_by) && e.produced_by.length === 1), true);
   const empty = await segment({ remoteCfg: { answer: reading("LOOKED_ABSENT", [{ name: "judged-one", description: "j", level: "content" }]) } });
   const le = (empty.rec.suggested || []).filter((s) => /^level-empty-/.test(s.name));

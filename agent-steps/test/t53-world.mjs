@@ -6,7 +6,12 @@
 import { entry, payload, provider, seeded, claim } from "../../bio-plane/test/m/ai-catalogue/fixture.mjs";
 import { PROFILES, PLANS, ENTRIES, SECRET, genAnswer, genError, msgAnswer } from "../../agent-model/test/provider-world.mjs";
 import { segmentMeter } from "../../agent-model/src/model.mjs";
-import { driveHarness, modelHalf, providerFor } from "../src/index.mjs";
+/* as a namespace, so this world loads whatever the module exports: a module without the T53 door fails these suites by
+   their assertions, never at import (the revert check) */
+import * as steps from "../src/index.mjs";
+import { makeProvider } from "../../agent-model/src/provider/index.mjs";
+const { driveHarness, modelHalf } = steps;
+const providerFor = steps.providerFor ?? makeProvider;
 import { HOST } from "./shell.mjs";
 import { world as planeWorld } from "./world.mjs";
 import { MEMBER } from "./account.mjs";
