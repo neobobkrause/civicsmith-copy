@@ -222,3 +222,4 @@
 {"at":"2026-11-05T18:57:39Z","row":"ready","live":6,"job_cap":20,"started":[]}
 {"at":"2026-11-05T19:04:15Z","row":"ready","live":6,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-05T18:57:01Z"}
 {"at":"2026-11-05T19:06:03Z","row":"ready","live":6,"job_cap":20,"started":[]}
+{"at":"2026-11-05T19:12:56Z","row":"ready","live":6,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-05T19:01:45Z"}
