@@ -1014,6 +1014,9 @@ export class AiRuns {
               /* R89 (T50; N1186): the project a run over a question is opened in, explicit at the open; a run over a project
                  is in that project whatever is sent. */
               project = null,
+              /* F2 (K5821, Bob's REC-11; run-rules R18): for an exploring run (origin `explore`), the member who turned
+                 exploring on (`member:<id>` or `<id>`), its accountable member; absent, the stamped `actor`'s member. */
+              enabledBy = undefined,
               /* PL-18 / DEC-63: WHICH MEMBER IS ASKING, stamped server-side by
                  `control-plane` and empty for a machine credential. Never a
                  caller's word — a principal a caller can name is not one, which
@@ -1167,7 +1170,18 @@ export class AiRuns {
        `DEPLOYED_MODES` is asked first; then Gate 1's verdict for that entry and part (`ai-gate`'s, through this module's
        seam), the test-instance exception lifting the bar alone, never a flag. With no account serving, only the flag and
        the chain are asked here, and R52's refusal names what is missing. */
-    const accountMember = AiRuns.#accountMember({ actor, principalPlane, principalAi });
+    /* F2 (K5821, Bob's REC-11): an exploring run's accountable member is the member who turned exploring on (`enabledBy`,
+       else the stamped actor's member), judged by `run-rules` R18 below at each run; her act's account serves it, and she
+       is recorded as `principal_ai_ref`. Whether she may still start runs is read here, now: an active member. */
+    const exploring = (origin == null ? "" : String(origin).trim()) === "explore";
+    const enabler = exploring ? (enabledBy === undefined || enabledBy === null ? memberIdOf(actor) : memberIdOf(enabledBy)) : null;
+    let enablerAllowed = false;
+    if (enabler) {
+      try { const f = this.#membership().memberFacts(enabler); enablerAllowed = !!f && f.status === "active"; }
+      catch { enablerAllowed = false; }
+    }
+    const accountMember = exploring ? (enablerAllowed ? enabler : null)
+      : AiRuns.#accountMember({ actor, principalPlane, principalAi });
     const account = accountMember ? await this.#accountFor(accountMember, "run", inProject.project) : null;
     const servedOn = account && !account.refusal ? account.entry_id : null;
     const admissions = new Map(this.#deployedModes().filter((m) => RUN_MODES.includes(m))
@@ -1339,9 +1353,13 @@ export class AiRuns {
        the open's shape. */
     /* K1606 (run-rules R18, C-22.19, a RELAY): a run starts only at a member's act — the member found above; with none,
        the caller's own stamp is what is judged, and a run is never the standing question's exception. */
-    const start = startAllowed({ startedBy: accountMember ? `member:${accountMember}` : (actor || principalPlane), mode: runMode });
+    /* F2 (K5821): an exploring run is judged on the member who turned exploring on, with this module's reading of her now;
+       its refusal (`exploring: "off"`) is relayed. */
+    const start = startAllowed({ startedBy: accountMember ? `member:${accountMember}` : (actor || principalPlane), mode: runMode,
+                                 origin: runOrigin, enabledBy: enabler ? `member:${enabler}` : null, enablerAllowed });
     if (!start || start.ok !== true)
-      return { run, started: false, code: start.code, check: start.check, translation: start.translation, detail: start.detail };
+      return { run, started: false, code: start.code, check: start.check, translation: start.translation, detail: start.detail,
+               ...(start && start.exploring ? { exploring: start.exploring } : {}) };
     if (!account || account.refusal)
       return { run, started: false, ...(account ? account.refusal : this.#noAccount(accountMember, "A run")) };
     /* R52 (B5): the paying account's limits, judged by `ai-use.useCheck` (its R3) for this member's use `run`, its
