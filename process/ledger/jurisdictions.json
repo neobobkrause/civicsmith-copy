@@ -4,7 +4,8 @@
   "layer": 1,
   "paths": [
     "jurisdictions/",
-    "build/requirements/jurisdictions.md"
+    "build/requirements/jurisdictions.md",
+    "docs/requirements-notes/jurisdictions.md"
   ],
   "tests": [
     "jurisdictions/test/"
