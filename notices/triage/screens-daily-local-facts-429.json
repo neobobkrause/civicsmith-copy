@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-daily","verdict":"not affected","evidence":"build/modules.json:189 screens-daily (bio-plane/src/screens-daily/) holds no file that imports local-facts, every code file under its paths read at 4147ffd974","at":"2026-11-05T08:25:23.407Z","key":"local-facts:429","worker":"merge: imports check","cost":"0"}

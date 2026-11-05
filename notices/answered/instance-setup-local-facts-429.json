@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-setup","by":"triage","evidence":"build/modules.json:167 instance-setup (bio-plane/src/setup.mjs, bio-plane/src/setup-fleet.mjs, bio-plane/src/livefire.mjs) holds no file that imports local-facts, every code file under its paths read at 4147ffd974","at":"2026-11-05T08:25:23.407Z","key":"local-facts:429","worker":"merge: imports check","cost":"0"}
