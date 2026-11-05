@@ -283,3 +283,4 @@
 {"at":"2026-11-05T23:38:40Z","row":"ready","live":2,"parked":1,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-05T23:33:25Z"}
 {"at":"2026-11-05T23:44:04Z","row":"check","by":"send","live":2,"live_at":"2026-11-05T23:38:40Z","job_cap":20,"startable":0,"idle_capacity":{"kind":"empty","since":"2026-11-05T23:43:34Z","min":0,"live":2,"cap":20,"held":0,"startable":0,"empty":18,"alarm":false}}
 {"at":"2026-11-05T23:45:46Z","row":"ready","live":3,"parked":1,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-05T23:39:28Z"}
+{"at":"2026-11-05T23:51:14Z","row":"sweep","session":"session_018BhceduipEp2mmEFHN9Diu","bob_acts":true,"bob_quiet_h":0,"root_context":30,"live":2,"job_cap":20,"sessions":14,"parked":2,"startable":0,"blocked":4,"blocked_oldest_min":1170,"working":1,"waiting":3,"idle_capacity":{"kind":"empty","since":"2026-11-05T23:43:34Z","min":7,"live":2,"cap":20,"held":0,"startable":0,"empty":18,"alarm":false}}
