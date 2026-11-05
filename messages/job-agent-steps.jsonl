@@ -6,3 +6,4 @@
 {"at":"2026-11-05T03:42:14Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-05T05:18:02Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job agent-steps complete, PR #392 ready, session session_01RAN5epLua6YjFZjko6kGrF: run status"}
 {"at":"2026-11-05T05:18:14Z","row":"outcome","n":4,"outcome":"delivered"}
+{"at":"2026-11-05T05:31:44Z","row":"sent","n":5,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (16 jobs ready). Then: job agent-steps complete, PR #392 ready, session session_01RAN5epLua6YjFZjko6kGrF: run status. Revert check: plan.test now asserts each proposal's idem (R54); t53-world and t53-provider import the module as a namespace, so with src reverted they load and fail by assertion (checked by hand: t53-provider 32 fail, plan 1, readers 2)."}
