@@ -38,19 +38,19 @@ Four things first:
 | machinery-producers | F1 | a brought-by sentence for capture-completed-unattended (no key yet) | no | no | machinery-producers.md:137 |
 | screens-wizards | R23 | per-filter words (words owed) | no | no | screens-wizards.md:78 |
 | journey-check | R17, R26 | rows in words.json and setup-words that still say "group" (keys not named) | n/a | n/a | journey-check.md:71,83 |
-| screens-action | R62 | guide.procedure.notreviewed | yes (src/reading-guides/index.mjs:92) | no | screens-action.md:142 |
-| screens-action | R62 | text.reviewedby, text.lastchecked | no | no | screens-action.md:142 |
-| jurisdictions | R137 | text.lastchecked | no | no | jurisdictions.md:114 |
+| screens-action | R62 | guide.procedure.notreviewed | yes (src/reading-guides/index.mjs:92) | yes (words.json:123894) | screens-action.md:142 |
+| screens-action | R62 | text.reviewedby, text.lastchecked | no | yes (words.json:123880) | screens-action.md:142 |
+| jurisdictions | R137 | text.lastchecked | no | yes (words.json:123887) | jurisdictions.md:114 |
 | agent-worker | R110 | ai.refused.aipathnotready | no | no | agent-worker.md:246 |
 | agent-worker | R124 | ai.choice.wait, ai.choice.switch, ai.choice.without_ai | no | no | agent-worker.md:195 |
 | agent-worker | R124 | ai.refused.payernotverified | yes (src/ai-accounts/checks.mjs:160) | no | agent-worker.md:195 |
 | plane | R119 | content.typed.anonymous_member | yes (content) | no | plane.md:77 |
-| screens-inquiry | R142 | screen.project.interp.proposals.heading, screen.interp.proposal.label, screen.interp.proposals.more | no | no | screens-inquiry.md:288 |
-| screens-inquiry | R143 | screen.interp.proposals.unavailable | no | no | screens-inquiry.md:289 |
-| screens-intake | R72 | screen.capture.limits.heading, .document, .background | no | no | screens-intake.md:128 |
-| screens-intake | R73 | screen.capture.refusal.toolarge.nothing_read | no | no | screens-intake.md:129 |
-| screens-intake | R74 | screen.capture.refusal.toolarge.part, .register | no | no | screens-intake.md:130 |
-| screens-intake | R78 | screen.capture.read.queued | no | no | screens-intake.md:134 |
+| screens-inquiry | R142 | screen.project.interp.proposals.heading, screen.interp.proposal.label, screen.interp.proposals.more | no | yes (words.json:123908) | screens-inquiry.md:288 |
+| screens-inquiry | R143 | screen.interp.proposals.unavailable | no | yes (words.json:123929) | screens-inquiry.md:289 |
+| screens-intake | R72 | screen.capture.limits.heading, screen.capture.limits.document, screen.capture.limits.sheet, screen.capture.limits.image, screen.capture.limits.archive, screen.capture.limits.background | no | yes (words.json:123936) | screens-intake.md:128 |
+| screens-intake | R73 | screen.capture.refusal.toolarge.nothing_read | no | yes (words.json:123977) | screens-intake.md:129 |
+| screens-intake | R74 | screen.capture.refusal.toolarge.part, screen.capture.refusal.toolarge.register | no | yes (words.json:123991) | screens-intake.md:130 |
+| screens-intake | R78 | screen.capture.read.queued | no | yes (words.json:123997) | screens-intake.md:134 |
 | network-notices | R32 | listing.contact.note | no | no | network-notices.md:151 |
 | agent-runner | R41 | gate.runner.refused.<CODE> | no | no | agent-runner.md:67 |
 | screens-action | R74, R80 | none named (words owed) | n/a | no | screens-action.md:154,160 |
