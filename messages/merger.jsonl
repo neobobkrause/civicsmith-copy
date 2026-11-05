@@ -56,3 +56,4 @@
 {"at":"2026-11-05T10:22:05Z","row":"outcome","n":28,"outcome":"delivered"}
 {"at":"2026-11-05T10:38:42Z","row":"sent","n":29,"to":"bob","text":"merged PR 435 (job store-request): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T10:38:53Z","row":"outcome","n":29,"outcome":"delivered"}
+{"at":"2026-11-05T11:05:55Z","row":"sent","n":30,"to":"bob","text":"merged PR 426 (job registers): node .process/tool/p3.mjs notice triage registers:426 (provider notice registers:426; 4 user modules owe a worker's judgment: corpus-export, op-declarations, store-assembly, surface-declarations: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
