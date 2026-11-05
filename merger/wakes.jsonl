@@ -1,0 +1,2 @@
+{"at":"2026-11-05T14:34:38Z","row":"wake","pr":510,"sha":"d2a74592ca992eeb3a2f6cec0f0537d4b6f0e576","what":"pin moved to 74c36792ce4fd648f4e028085487efab8f67eb04: run your wake steps (start check --wake prints a changed prompt), then status","wake":"node .process/tool/p3.mjs send bob \"pin moved to 74c36792ce4fd648f4e028085487efab8f67eb04: run your wake steps (start check --wake prints a changed prompt), then status\" --from pin","by":"caller"}
+{"at":"2026-11-05T14:34:38Z","row":"printed","pr":510,"sha":"d2a74592ca992eeb3a2f6cec0f0537d4b6f0e576","by":"caller"}
