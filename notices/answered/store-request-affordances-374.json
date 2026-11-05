@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-request","by":"triage","evidence":"build/modules.json:181 store-request (bio-plane/src/store-request/) holds no file that imports affordances, every code file under its paths read at 60edf0fa9b","at":"2026-11-05T02:55:35.211Z","key":"affordances:374","worker":"merge: imports check","cost":"0"}
