@@ -34,3 +34,4 @@
 {"at":"2026-11-05T07:01:35Z","row":"outcome","n":17,"outcome":"delivered"}
 {"at":"2026-11-05T07:46:04Z","row":"sent","n":18,"to":"bob","text":"merged PR 406 (job agent-harness): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T07:46:24Z","row":"outcome","n":18,"outcome":"delivered"}
+{"at":"2026-11-05T08:01:40Z","row":"sent","n":19,"to":"root","text":"MERGER session_018BhcedwsJZrL1WAAcugNk7: merge train refused to start: 'the merge train's lease is held by session_018BhceeZ4P42p7PhwvxNiVm until 2026-11-05T08:13:03Z: one train runs'. Ending without a train."}
