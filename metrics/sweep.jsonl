@@ -131,3 +131,4 @@
 {"at":"2026-11-05T11:21:10Z","row":"check","by":"send","live":19,"live_at":"2026-11-05T11:16:05Z","job_cap":20,"startable":1,"idle_capacity":{"kind":"work","since":"2026-11-05T11:16:05Z","min":5,"live":19,"cap":20,"held":0,"startable":1,"empty":1,"alarm":false}}
 {"at":"2026-11-05T11:26:21Z","row":"check","by":"send","live":19,"live_at":"2026-11-05T11:16:05Z","job_cap":20,"startable":1,"idle_capacity":{"kind":"work","since":"2026-11-05T11:16:05Z","min":10,"live":19,"cap":20,"held":0,"startable":1,"empty":1,"alarm":false}}
 {"at":"2026-11-05T11:32:02Z","row":"check","by":"send","live":19,"live_at":"2026-11-05T11:16:05Z","job_cap":20,"startable":1,"idle_capacity":{"kind":"work","since":"2026-11-05T11:16:05Z","min":15,"live":19,"cap":20,"held":0,"startable":1,"empty":1,"alarm":true,"owed_since":"2026-11-05T11:16:23Z"}}
+{"at":"2026-11-05T11:33:06Z","row":"ready","live":19,"job_cap":20,"started":["agent-steps"]}
