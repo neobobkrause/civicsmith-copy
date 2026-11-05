@@ -156,3 +156,4 @@
 {"at":"2026-11-05T21:17:25Z","row":"outcome","n":78,"outcome":"delivered"}
 {"at":"2026-11-05T21:19:39Z","row":"sent","n":79,"to":"bob","text":"merged PR 441 (job inquiry); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-05T21:19:58Z","row":"outcome","n":79,"outcome":"delivered"}
+{"at":"2026-11-05T21:22:56Z","row":"sent","n":80,"to":"bob","text":"PR 483: job ai-accounts must sync (node .process/tool/p3.mjs job sync ai-accounts, then job complete ai-accounts): pull request 483 conflicts with tranche; nothing was merged"}
