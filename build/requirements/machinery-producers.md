@@ -134,3 +134,4 @@ Terms. An **item**, a **home set**, the **depth bound** and a **case** are `queu
 ## Open for Bob
 
 None.
+- **F1** *(not yet met: coordinator ruling 5 Nov 03:26)* When a request is completed by a member's own file (capture-requests fillAskedRequest, brought_by set), capture-completed-unattended does not say the team's Civicsmith captured it; the behaviour change is this module's, its words come through the design stream.

@@ -73,10 +73,10 @@ test("R1 control, R39: a new bank version leaves a stored verdict record unchang
   const rec = G.gateRecord({ entry_id: "e", part: "ask", verdict: "not_yet_rated", suiteVersions: VERSIONS, tier: "T2",
     run_ref: "run-1", grade: "REPRODUCED", source: "civicsmith", at: "2026-11-01T00:00:00Z" }).record;
   const before = canonicalJson(rec);
-  const next = { ...clone(G.PUBLIC_BANK), version: "bank-2" };
+  const next = { ...clone(G.PUBLIC_BANK), version: "bank-next" };
   G.selectItems(next, SEED, "T2", ["ask"]);
   assert.equal(canonicalJson(rec), before);
-  assert.deepEqual(G.testedOn(rec, "bank-2"), { tested_on: G.PUBLIC_BANK.version });
+  assert.deepEqual(G.testedOn(rec, "bank-next"), { tested_on: G.PUBLIC_BANK.version });
   assert.equal(G.testedOn(rec, G.PUBLIC_BANK.version), null);
 });
 
@@ -285,7 +285,7 @@ test("R31: scoreItem is pure (byte-identical twice); a v2 scorer re-scores store
 
 test("R32: scoreAnswerFree runs with no private bank and is labelled preliminary; an answer-bound check without it answers ok: false", () => {
   const item = G.itemById(G.PUBLIC_BANK, "g1-tool-args-ask");
-  const pre = G.scoreAnswerFree(item, { calls: [{ tool: "x", args: {}, result: {} }] }, [{ op: "read", allowed: true }]);
+  const pre = G.scoreAnswerFree(item, { calls: [{ tool: "x", args: {}, result: {} }] }, [{ op: "search", allowed: true }]);
   assert.equal(pre.preliminary, true);
   assert.equal(pre.outcome, "pass");
   assert.ok(pre.checks.every((c) => c.answer_free));
@@ -293,7 +293,8 @@ test("R32: scoreAnswerFree runs with no private bank and is labelled preliminary
   assert.equal(bound.answer_bound, true);
   assert.deepEqual(G.scoreItem({ item: bound, exchange: { output: { state: "LOOKED_ABSENT" } }, stub_log: [] }),
     { ok: false, code: "GATE_PRIVATE_BANK_NEEDED", item: bound.id });
-  assert.equal(G.scoreItem({ item: bound, exchange: { output: { state: "LOOKED_ABSENT" } }, stub_log: [],
+  assert.equal(G.scoreItem({ item: bound, exchange: { output: { state: "LOOKED_ABSENT", scope: { documents: 3 } } },
+    stub_log: [{ op: "meaningrows", step: "compose", answered: true, rows: 0, allowed: true }],
     privateItem: { expected: { state: "LOOKED_ABSENT" } } }).outcome, "pass");
 });
 

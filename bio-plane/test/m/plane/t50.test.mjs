@@ -4,13 +4,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { store, deployed, GATE_FLAGS, GATE_SET, disclosed } from "./fixture.mjs";
+import { store, deployed, GATE_FLAGS, GATE_SET, disclosed, withCatalogue } from "./fixture.mjs";
 
 import { promotionOf } from "../../../src/promotion/index.mjs";
 
 import { publicReadOf } from "../../../src/public-read/index.mjs";
 import { projectRosterOf } from "../../../src/project-roster/index.mjs";
 import { credentialsOf } from "../../../src/credentials/index.mjs";
+import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
 import { instanceSetupOf } from "../../../src/setup.mjs";
 import { assistantGateOf } from "../../../src/store-assembly/ask.mjs";
 
@@ -53,7 +54,8 @@ async function askWorld({ wait = 2000 } = {}) {
   sql.exec(`INSERT INTO sessions (token_sha, role, expires, created) VALUES (?, 'member:ann', ?, 'x')`,
            createHash("sha256").update(SESSION).digest("hex"), Date.now() + 3600e3);
   await disclosed(x.ctx);
-  const r = await credentialsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" });
+  await withCatalogue(x.ctx);   /* T53 (BOB, MSG bob-82 (2)): ai-accounts reads ai-catalogue's published fixture, as the assembled store composes it */
+  const r = await aiAccountsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" });
   assert.equal(r.ok, true, JSON.stringify(r));
   /* the door's arm asks the `bio` object over its RPC: here, this object. A Durable Object stub's `fetch` takes an address as
      well as a Request (the host does), as `groupIdentityOp` and `instanceGroupOp` ask it; the world answers the same. */
