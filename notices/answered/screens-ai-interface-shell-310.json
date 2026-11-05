@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-ai","by":"triage","evidence":"build/modules.json:186 gives screens-ai \"paths\": []; no code can use the tooltip placement","at":"2026-11-05T01:04:17.750Z","key":"interface-shell:310","worker":"read-only-explore-x2","cost":"0.30"}

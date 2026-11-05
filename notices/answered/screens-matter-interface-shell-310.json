@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-matter","by":"triage","evidence":"build/modules.json:195 gives screens-matter \"paths\": []; nothing imports interface-shell","at":"2026-11-05T01:04:17.750Z","key":"interface-shell:310","worker":"read-only-explore-x2","cost":"0.30"}
