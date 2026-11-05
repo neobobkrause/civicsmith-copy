@@ -406,3 +406,4 @@
 {"at":"2026-11-05T16:46:52Z","row":"outcome","n":205,"outcome":"delivered"}
 {"at":"2026-11-05T18:52:40Z","row":"sent","n":206,"to":"root","text":"BOB session_018Bhceddtp3HAmB1Z9LtX2s running: start check ok at tranche f575c3b1; status read (6 job sessions live, starter running, 51 PRs in the train); old BOB session_018BhcedPdKvvqmShgPznx1U pushed no new handoff (latest is 09:09); taking up blocked jobs now."}
 {"at":"2026-11-05T18:57:54Z","row":"sent","n":207,"to":"coordinator","text":"job start --ready --live 6 at 18:5x: 0 startable, nothing started (tool: 6 job sessions live of 20). The owed starts are instance-setup complete and interface-shell/installer blocked, judgments not ready starts; I'm taking them up now (553 ledger merge, then t53; installer bundle ruling)."}
+{"at":"2026-11-05T18:58:09Z","row":"outcome","n":207,"outcome":"delivered"}
