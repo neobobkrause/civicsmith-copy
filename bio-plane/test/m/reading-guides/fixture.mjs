@@ -50,7 +50,13 @@ export const ITEMS = [item(), item("Votes", "Note whether the vote was unanimous
 
 /** `slug`: the group's slug (null: none recorded); `civicsmith`: a library of the test's own; `profiles`: the active
  *  jurisdiction profiles, record-core's `jurisdiction_profiles` setting (R13; null: none set). */
-export function world({ slug = "test-group", civicsmith, profiles = ["test-port-ellery"] } = {}) {
+export const MEMBERS = Object.freeze([["ann", "member", "active"], ["bob", "member", "active"], ["cy", "member", "active"],
+                                       ["rev", "member", "revoked"], ["boss", "admin", "active"]]);
+
+/** `members`: the roster's rows, `[id, role, status]` (default `MEMBERS`; R20's team of one passes one row);
+ *  `profileList`: the active profiles and layers handed to the module as its `profileList` dep (R17; profile objects
+ *  `jurisdictions.validate` passes), in place of the setting. */
+export function world({ slug = "test-group", civicsmith, profiles = ["test-port-ellery"], members = MEMBERS, profileList } = {}) {
   const st = storage();
   const host = { storage: st };
   const bare = RECORD_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
@@ -60,13 +66,13 @@ export function world({ slug = "test-group", civicsmith, profiles = ["test-port-
   const membership = membershipOf(host, { record });
   membership.migrate();
   if (profiles) assert.equal(record.setSetting("jurisdiction_profiles", profiles, "admin").ok, true);
-  for (const [m, role, status] of [["ann", "member", "active"], ["bob", "member", "active"], ["cy", "member", "active"],
-                                   ["rev", "member", "revoked"], ["boss", "admin", "active"]])
+  for (const [m, role, status] of members)
     st.sql.exec(`INSERT INTO members (member_id, cover, role, status, created, updated) VALUES (?, 'c', ?, ?, '2026-01-01', '2026-01-01')`,
       m, role, status);
   let tick = 0;
   const now = () => new Date(Date.parse(NOW) + 1000 * tick++).toISOString();
-  const g = readingGuidesOf(host, { record, membership, now, groupSlug: () => slug, ...(civicsmith ? { civicsmith } : {}) });
+  const g = readingGuidesOf(host, { record, membership, now, groupSlug: () => slug, ...(civicsmith ? { civicsmith } : {}),
+                                    ...(profileList ? { profileList: () => profileList } : {}) });
   const w = {
     st, host, record, membership, g,
     rows: (q, ...a) => [...st.sql.exec(q, ...a)],

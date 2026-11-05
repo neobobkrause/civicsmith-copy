@@ -1,0 +1,47 @@
+{
+  "id": "corpus-export",
+  "title": "corpus-export: its unmet requirements (T53)",
+  "layer": 8,
+  "paths": [
+    "bio-plane/src/corpus-export/",
+    "build/requirements/corpus-export.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/corpus-export/"
+  ],
+  "requirements": "build/requirements/corpus-export.md",
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "record-core",
+    "membership",
+    "provenance",
+    "entities",
+    "events",
+    "lines",
+    "connections",
+    "money",
+    "people",
+    "setup-words",
+    "registers",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/corpus-export.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T03:20:00Z"
+  }
+}

@@ -16,7 +16,12 @@ import * as G from "../../../src/op-grades/index.mjs";
 import { MEMBERSHIP_CHECKS } from "../../../src/membership/index.mjs";
 import { word, hasWord, WORD_ROWS } from "../../../src/setup-words/index.mjs";
 import { RETIRED_ACTS } from "../../../src/wizard-scripts/data.mjs";
-import { T51_DESIGN_OPS, T51_OWED_OPS, T51_LIST_ONLY_OPS, T51_STANDIN_OPS, T51_STANDIN_HELP, T51_STANDARD_OPS } from "../../../src/affordances/act-help.mjs";
+import { T51_DESIGN_OPS, T51_OWED_OPS, T51_LIST_ONLY_OPS, T51_STANDIN_OPS, T51_STANDIN_HELP, T51_STANDARD_OPS, T53_STANDIN_OPS } from "../../../src/affordances/act-help.mjs";
+import * as READING_GUIDES from "../../../src/reading-guides/index.mjs";
+/* F2 (T53; reading-guides R20): an op its owner declares with no `act.<op>.does` row yet is held under that key, its row's text once the
+   list holds it, until then its owner's declared description, read from the owner here as there (never built, K3268) */
+const T53_OWNERS = { guideoptout: READING_GUIDES.DECLARED_OPS };
+const t53Want = (op) => hasWord(`act.${op}.does`) ? word(`act.${op}.does`) : T53_OWNERS[op][op].description;
 
 const { ACT_HELP, ACT_HELP_KEYS, BROWSER_ACTS, affordancesAnswer } = A;
 const SCREENS = new URL("../../../../docs/development/ux-substrate/screens/", import.meta.url);
@@ -74,7 +79,7 @@ const OWED_HELD = [...OWED_NOW, ...OWED_NOW_T50, "aliaswithdraw", ...R69_ACTS, .
 /* T51 (B14, K4376): the ops op-declarations' registration left without an explanation. `T51_LIST_ONLY_OPS` reads a key the reads list
    does not give; `T51_STANDIN_OPS` reads a `localize` default, the word list holding no sentence for them yet (one QUESTION to BOB). */
 /* R71 (K5303): the five Standard acts, words the list holds that its reads list (a generation behind) does not yet give */
-const B14_KEYS = [...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS, ...T51_STANDARD_OPS].map((op) => `act.${op}.does`);
+const B14_KEYS = [...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS, ...T51_STANDARD_OPS, ...T53_STANDIN_OPS].map((op) => `act.${op}.does`);
 /* the reads list's act keys this module holds */
 /* F1 (T53; ai-accounts R35): R48 holds no retired op, so the reads list's words for the ai-accounts ops T53 retired are not held; the
    retired ops are wizard-scripts' own `RETIRED_ACTS`, never listed here */
@@ -89,6 +94,7 @@ const expected = () => {
   }
   for (const op of [...T51_LIST_ONLY_OPS, ...T51_STANDARD_OPS]) out.set(op, word(`act.${op}.does`));
   for (const op of T51_STANDIN_OPS) out.set(op, T51_STANDIN_HELP[op]);
+  for (const op of T53_STANDIN_OPS) out.set(op, t53Want(op));
   out.set("handlechange", HANDLE_REFUSAL);
   return out;
 };
@@ -223,7 +229,7 @@ test("R61 R62 (T51, B14; K4376): the ops op-declarations' registration leaves wi
     if (row?.[5] === "design") assert.equal(ACT_HELP[op], word(`act.${op}.does`), `${op}: the design's row now stands`);
   }
   const without = (op) => Object.fromEntries(Object.entries(ACT_HELP).filter(([k]) => k !== op));
-  for (const op of [...T51_OWED_OPS, ...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS]) assert.equal(meetsR48(without(op)), false, op);
+  for (const op of [...T51_OWED_OPS, ...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS, ...T53_STANDIN_OPS]) assert.equal(meetsR48(without(op)), false, op);
 });
 
 test("R48 R34 R61 (T51, K5164): `authority` (provenance's read, R80) and `ruleservicesstate` (answers' read) are explained in ACT_HELP under their own "
@@ -279,6 +285,7 @@ test("R62: ACT_HELP holds its sentences as keys read through setup-words: every 
   assert.deepEqual(Object.keys(ACT_HELP_KEYS), ops, "a key for every held op but handlechange, in order");
   for (const [op, key] of Object.entries(ACT_HELP_KEYS)) {
     if (T51_STANDIN_OPS.includes(op)) { assert.equal(ACT_HELP[op], T51_STANDIN_HELP[op], op); continue; }
+    if (T53_STANDIN_OPS.includes(op)) { assert.equal(ACT_HELP[op], t53Want(op), op); continue; }
     assert.ok(hasWord(key), `${op}: ${key} is a word`);
     assert.equal(ACT_HELP[op], word(key), op);
   }
@@ -308,7 +315,7 @@ test("R48 (T43-17, T44-9; DEC-190, DEC-191): transcribe and pagetranscribe, both
   assert.ok(gradedOrPublished("translationmark"));
   assert.equal(hasWord("act.translationmark.does"), false);
   assert.equal(Object.hasOwn(ACT_HELP, "translationmark"), false);
-  for (const k of Object.keys(ACT_HELP).filter((k) => k !== "handlechange" && !T51_STANDIN_OPS.includes(k)))
+  for (const k of Object.keys(ACT_HELP).filter((k) => k !== "handlechange" && !T51_STANDIN_OPS.includes(k) && !T53_STANDIN_OPS.includes(k)))
     assert.ok(hasWord(ACT_HELP_KEYS[k]), `${k} has a registry text`);
   /* each way the two can depart is seen */
   const without = (op) => Object.fromEntries(Object.entries(ACT_HELP).filter(([k]) => k !== op));
@@ -337,7 +344,7 @@ test("R48 R53 R61 R65: no key is an alias or a retired op; every alias the list 
   /* the T51 design ops (K4248) are declared by op-declarations and graded when op-grades registers them at the plane's start (R49), not in these tables */
   /* T51 (B14, K4376): the owed and stand-in ops are declared by op-declarations and graded at the plane's registration likewise (R49) */
   const NOT_YET_GRADED = ["founderhandleset", ...OWED_NOW_T50, "secondlookclear", ...T51_DESIGN_OPS, ...T51_OWED_OPS,
-    ...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS,
+    ...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS, ...T53_STANDIN_OPS,
     /* T53: filings' read, declared by op-declarations and graded at the plane's registration (R49), not in these tables */
     "counselpacketread"];
   /* R69: the browser acts are no ops, so op-grades neither grades nor names them */

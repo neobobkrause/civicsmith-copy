@@ -3,18 +3,25 @@
   "title": "op-grades: split the grade folds into op-grades-folds.md under the cap, then its unmet requirements",
   "layer": 11,
   "paths": [
-    "bio-plane/src/op-grades/",
+    "bio-plane/src/op-grades/index.mjs",
+    "bio-plane/src/op-grades/marks.mjs",
+    "bio-plane/src/op-grades/declared.mjs",
     "build/requirements/op-grades.md",
-    "docs/requirements-notes/op-grades.md",
-    "build/requirements/op-grades-folds.md",
-    "docs/requirements-notes/op-grades-folds.md"
+    "docs/requirements-notes/op-grades.md"
   ],
   "tests": [
     "bio-plane/test/m/op-grades/"
   ],
   "requirements": "build/requirements/op-grades.md",
   "uses": [
-    "setup-words"
+    "setup-words",
+    "op-grades-folds",
+    "credentials",
+    "registers",
+    "ai-accounts",
+    "ai-gate",
+    "ai-runs",
+    "ai-use"
   ],
   "suite": {
     "cwd": "bio-plane",
@@ -31,7 +38,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T01:17:26Z"
+    "state": "COMPLETE",
+    "at": "2026-11-05T02:03:03Z"
   }
 }

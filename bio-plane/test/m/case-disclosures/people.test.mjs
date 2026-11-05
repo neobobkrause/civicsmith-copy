@@ -118,6 +118,24 @@ test("R24: peopleNamed answers every person the case names, each once (one perso
   assert.deepEqual(w.cd.peopleNamed([], [], V("alice")), { named: [], unresolved: [], entities: [], money_parties: [] });
 });
 
+test("R24 (provider notice inquiry:360, inquiry R87): a finding's subject is the one its question states now — after a member changes it with `setSubject`, peopleNamed lists the new subject at the place `subject` and the old one no longer there; nothing written", () => {
+  const x = setup();
+  const { w } = x;
+  const ch = w.inquiry.setSubject({ target: Q, subject: x.SAM, reason: "the question is about sam", viewer: V("alice"),
+                                    author: V("alice"), personWarningSeen: true });
+  assert.equal(ch.ok, true, JSON.stringify(ch).slice(0, 400));
+  assert.equal(w.inquiry.subjectEntityOf(Q), x.SAM);
+  const before = w.snapshot();
+  const n = w.cd.peopleNamed(w.prepared([Q]), [], V("alice"));
+  assert.deepEqual(n.named.map((p) => [p.person, p.places]), [[x.SAM, [{ place: "subject", where: Q, ref: x.SAM }]]],
+    "the new subject named at its question; the old subject (pat) is no longer named by it");
+  assert.deepEqual(n.unresolved, []);
+  assert.deepEqual(w.snapshot(), before, "nothing written");
+  /* control: taking the subject off leaves the finding naming no one */
+  assert.equal(w.inquiry.setSubject({ target: Q, subject: null, reason: "no one in particular", viewer: V("alice"), author: V("alice") }).ok, true);
+  assert.deepEqual(w.cd.peopleNamed(w.prepared([Q]), [], V("alice")).named, []);
+});
+
 /* R25's whole list for the setup's two people: pat on the post held at the signing, sam as a private party */
 const BASES = (x) => [{ person: x.P2, basis: "act_or_position", ref: { line: x.HOLDS, event: x.SIGNED } },
                       { person: x.SAM, basis: "private_party", ref: null, words: "they spoke at the hearing" }];
