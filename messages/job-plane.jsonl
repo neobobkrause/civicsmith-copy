@@ -17,3 +17,4 @@
 {"at":"2026-11-05T13:16:35Z","row":"sent","n":9,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job plane complete, PR #452 ready, session session_018BhcegBhJdaHNkfNF6PzGr: run status"}
 {"at":"2026-11-05T13:16:47Z","row":"outcome","n":9,"outcome":"delivered"}
 {"at":"2026-11-05T23:56:20Z","row":"sent","n":10,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job plane complete, PR #452 ready, session session_018BhcedhGUGK38G2aokFm2f: run status"}
+{"at":"2026-11-05T23:56:33Z","row":"outcome","n":10,"outcome":"delivered"}
