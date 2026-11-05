@@ -200,7 +200,11 @@ test("R5, R9: a promotion that leaves an action holding a past-dated pending clo
   assert.equal("deadlinerecheck" in after, false, "marked, it holds no wake (R15), so it is not due again");
 });
 
-test("R12: a run waiting on a request that reaches expired is woken on the alarm that expires it, exactly once", async () => {
+/* ai-accounts T53 (its R35, R61): a member's own account is set by `aiownadd`, which answers CATALOGUE_UNAVAILABLE until the
+   assembled store hands ai-accounts the object's own ai-catalogue (store-assembly's reopening, PR 342). Kept running as a todo
+   until then; R12 over the real ai-runs and capture-requests is `notice-ai-runs-323.test.mjs`. Reported to BOB. */
+test("R12: a run waiting on a request that reaches expired is woken on the alarm that expires it, exactly once",
+  { todo: "waits on store-assembly's catalogue in the assembled store (PR 342) for aiownadd" }, async () => {
   const obj = await store();
   const add = await POST("op=memberadd&token=adm-sch",
     { memberId: "ruth", cover: "cover for ruth", role: "admin", capabilities: ["contribute", "publish"] });
@@ -230,7 +234,8 @@ test("R12: a run waiting on a request that reaches expired is woken on the alarm
   /* credentials R66, R71 (2): connecting Claude asks for the password again, inside a 5-minute window */
   const re = await POST(`op=reauth&token=${RUTH}`, { password: "ruth-passphrase-1" });
   assert.equal(re.ok, true, JSON.stringify(re));
-  const acct = await POST(`op=accountreferenceset&token=${RUTH}`, { member: "ruth", kind: "apikey", secret: "sk-sched-plane" });
+  /* ai-accounts T53 (its R35 retired accountreferenceset; R61): her own account, connected by her own session (`aiownadd`) */
+  const acct = await POST(`op=aiownadd&token=${RUTH}`, { provider: "anthropic", plan: "api", means: "apikey", secret: "sk-sched-plane" });
   assert.equal(acct.ok, true, JSON.stringify(acct));
   /* capture-requests R49 (K1993): ruth captures the index page first, so the address the run asks for is one a held
      capture links to; only the page itself is fetched, never the address it links to. She files it in a bundle, as a
