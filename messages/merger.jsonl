@@ -141,3 +141,4 @@
 {"at":"2026-11-05T20:42:40Z","row":"sent","n":71,"to":"bob","text":"PR 468 (job capture): its merged result is red; the job fixes it: the gate on the merged result is failure (spec PR 571, fffdcae094 on the tranche tip): https://github.com/neobobkrause/civicsmith-copy/actions/runs/42104874478/job/127516920790"}
 {"at":"2026-11-05T20:42:54Z","row":"outcome","n":71,"outcome":"delivered"}
 {"at":"2026-11-05T20:57:47Z","row":"sent","n":72,"to":"bob","text":"merged PR 469 (job screens-publish): node .process/tool/p3.mjs notice triage screens-publish:469 (provider notice screens-publish:469; 1 user module owes a worker's judgment: control-plane: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-05T20:59:43Z","row":"outcome","n":72,"outcome":"delivered"}
