@@ -137,3 +137,4 @@
 {"at":"2026-11-05T20:32:03Z","row":"sent","n":69,"to":"bob","text":"merged PR 472 (job screens-document); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-05T20:32:16Z","row":"outcome","n":69,"outcome":"delivered"}
 {"at":"2026-11-05T20:35:17Z","row":"sent","n":70,"to":"bob","text":"PR 460: job signin-door must sync (node .process/tool/p3.mjs job sync signin-door, then job complete signin-door): pull request 460 conflicts with tranche; nothing was merged"}
+{"at":"2026-11-05T20:35:29Z","row":"outcome","n":70,"outcome":"delivered"}
