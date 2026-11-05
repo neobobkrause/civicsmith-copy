@@ -437,7 +437,7 @@ test("R72, R18: a provider's refusal for a spent limit (429 enforced_spend_limit
 test("R53: the module's tables are declared explicitly through record-core's declareTable, ai_runs, ai_run_bounds and inquiry_run_surfacings with a run's sight, as R38 purges them; the counter and the limits are no longer this module's (ai-use R7), and a bundle's purge leaves them", async () => {
   const w = await useWorld();
   const decl = Object.fromEntries(w.record.declaredTables().filter((t) => t.module === "ai-runs").map((t) => [t.name, t]));
-  assert.deepEqual(Object.keys(decl).sort(), ["ai_group_tests", "ai_mode_verifications", "ai_run_bounds", "ai_run_looks",
+  assert.deepEqual(Object.keys(decl).sort(), ["ai_gate_records", "ai_group_tests", "ai_mode_verifications", "ai_run_bounds", "ai_run_looks",
                                                "ai_run_producers", "ai_run_segments", "ai_runs", "ai_test_bar", "inquiry_run_surfacings"]);
   for (const t of Object.values(decl))
     assert.deepEqual([t.purge, t.expunge, t.export, t.derive, t.version_chain], ["clear", "none", "admin-only", "stored", false], t.name);
