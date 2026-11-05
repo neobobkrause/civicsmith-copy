@@ -129,6 +129,9 @@ export function modelHalf({ account = null, meter, suggestions, traced = {}, pro
   held("runtime", runtime);
   held("data_handling", data_handling);
   held("legacy", half.provider ? null : { reference: reference ?? null, runner: runner ?? null });
+  /* `agent-worker`'s `/ask` still reads these off the half until it moves to the T53 provider (its R33, R127): kept
+     readable on that route only, as the route, never as the half's state; a half on the T53 provider has neither. */
+  if (!half.provider) { held("reference", reference ?? null); held("runner", runner ?? null); }
   return half;
 }
 

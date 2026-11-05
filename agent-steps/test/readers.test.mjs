@@ -81,7 +81,8 @@ section("R47 · the model half keeps the usage of each conversation until it is 
   const meter = { turns: 0 };
   const half = modelHalf({ reference: { kind: "apikey", key: "k" }, runner: null, meter, suggestions: true, traced: { trace: "t" } });
   t("R47: the half's shape: account, meter, suggestions, traced, pack null, layers and messages empty; reference and runner are gone",
-    [Object.keys(half), half.account, half.meter === meter, half.suggestions, half.traced, half.pack, half.layers, half.messages, "reference" in half && half.reference !== undefined, Object.hasOwn(half, "runner") && Object.keys(half).includes("runner")],
+    [Object.keys(half), half.account, half.meter === meter, half.suggestions, half.traced, half.pack, half.layers, half.messages, Object.keys(half).includes("reference") || Object.keys(half).includes("runner"),
+     ["reference", "runner"].some((k) => k in modelHalf({ account: {}, meter, provider: { converse: async () => ({}) } }))],
     [["account", "meter", "suggestions", "traced", "pack", "layers", "messages", "spent", "drain"], null, true, true, { trace: "t" }, null, [], [], false, false]);
   const handle = { level: "member", account_id: "acct-1", entries: ["E1"] };
   t("R47: the account handle is the one handed", modelHalf({ account: handle, meter }).account === handle, true);
