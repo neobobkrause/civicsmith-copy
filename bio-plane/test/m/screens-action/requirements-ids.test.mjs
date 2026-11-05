@@ -16,7 +16,8 @@ const RETIRED = ["R1", "R13", "R15", "R18", "R25", "R44", "R53", "R67", "R68", "
 
 test("consolidation: the ids are the start commit's, in order, each once", () => {
   const ids = lines(read("build/requirements/screens-action.md")).map(idOf);
-  assert.deepEqual(ids, START_IDS);
+  // F1 (found, attempt 3: action-grammar R31's shape) follows the start's R ids
+  assert.deepEqual(ids, [...START_IDS, "F1"]);
 });
 
 test("consolidation: the unmet marks are the start's, less the lines retired to screens-plan and screens-matter", () => {
