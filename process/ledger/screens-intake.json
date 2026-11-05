@@ -1,0 +1,47 @@
+{
+  "id": "screens-intake",
+  "title": "screens-intake: consolidate its requirements file under the cap",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/screens-intake/",
+    "build/requirements/screens-intake.md",
+    "docs/requirements-notes/screens-intake.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-intake/"
+  ],
+  "requirements": "build/requirements/screens-intake.md",
+  "uses": [
+    "file-safety",
+    "provenance",
+    "interface-assets",
+    "wizard-scripts",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "capture",
+    "test-support",
+    "acquisition",
+    "runtime-limits",
+    "store-request",
+    "extraction"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/screens-intake.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T09:18:57Z"
+  }
+}

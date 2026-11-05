@@ -148,3 +148,16 @@ test("R24 control: a completed collect advances to compose, as advance does", ()
   /* a published state taken up with resumeFrom resumes at the step it names */
   assert.equal(resumeFrom({ step: "collect", pass: 1 }).at, "collect");
 });
+
+/* R17 retired with `agent-runner` R38 (K5457; coordinator 5 Nov): its line is marked retired, not open, and the
+   harness builds no remoteBrief. */
+test("R17 is retired with agent-runner R38: no open mark and no remoteBrief export", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const text = await readFile(new URL("../../build/requirements/agent-harness.md", import.meta.url), "utf8");
+  const line = text.split("\n").find((l) => l.startsWith("- **R17** "));
+  assert.ok(line, "R17 line present");
+  assert.match(line, /\*\(retired \(T53, K5457/);
+  assert.doesNotMatch(line, /not yet met/);
+  const harness = await import("../src/harness.mjs");
+  assert.equal("remoteBrief" in harness, false);
+});
