@@ -110,8 +110,12 @@ test("R14: T0 Connect through agent-model: the round trip, the identity turn and
   assert.equal(r.ok, true);
   assert.deepEqual([r.completed, r.identity_ok, r.pin_ok, r.tools_ok, r.early_stop], [true, true, true, true, null]);
   assert.ok(r.results.every((x) => x.outcome === "pass"), JSON.stringify(r.results.map((x) => [x.item_id, x.outcome])));
-  /* every request carried the required pin; the round trip's second turn holds the echo's result */
+  /* one request per item, and one more for the round trip, whose second turn holds the echo's result */
   assert.equal(good.fake.requests.length, T0_ORDER(seed).length + 1);
+  const resultTurns = good.fake.requests.filter((q) => q.body.messages.some((m) => m.role === "tool"));
+  assert.equal(resultTurns.length, 1);
+  const echoed = resultTurns[0].body.messages.find((m) => m.role === "tool");
+  assert.deepEqual([echoed.tool_call_id, JSON.parse(echoed.content)], ["e", { say: "echo" }]);
   /* control: the provider serves another model than the entry names */
   const other = await world(t0Script(seed, () => FAKE.answer({ text: "ok", served: { model: "fake-model-other", host: GEN.host } })));
   const bad = await G.runT0({ provider: other.p, entry: GEN, account: account(), selection_seed: seed });
@@ -168,6 +172,21 @@ test("R21: G0 over a run on agent-model's fake provider: usage the provider does
   assert.equal(c.results.find((x) => x.item_id === "g0-identity").outcome, "pass");
 });
 
+test("R21: G0 served identity under agent-model's R45 rule: a pinned entry answered from the routing host's own address fails; control: the host its pin names passes, and an unpinned entry is held to its own host", () => {
+  const item = byId("g0-identity");
+  const routed = ENTRIES.routed;
+  const entry = { model: routed.model, host: routed.host, served_ids: [...routed.served_ids], hosts: [...routed.pin.only] };
+  const ex = (served, e = entry) => ({ served, entry: e, completed: true, turns: 1, usage: { input_tokens: 5, output_tokens: 2 },
+    stated_usage: ["input_tokens", "output_tokens"], calls: [] });
+  const identity = (x) => checkOf(G.scoreItem({ item, exchange: x, stub_log: [] }), "served_identity").ok;
+  assert.equal(identity(ex({ model: routed.served_ids[0], host: routed.host })), false, "the aggregator's own host is not a pinned host");
+  assert.equal(identity(ex({ model: routed.served_ids[0], host: routed.pin.only[0] })), true);
+  assert.equal(identity(ex({ model: "fake-model-other", host: routed.pin.only[0] })), false, "a model outside served_ids");
+  const plain = { model: GEN.model, host: GEN.host, served_ids: [...GEN.served_ids], hosts: [] };
+  assert.equal(identity(ex({ model: GEN.served_ids[0], host: GEN.host }, plain)), true);
+  assert.equal(identity(ex({ model: GEN.served_ids[0], host: routed.host }, plain)), false);
+});
+
 /* ================================================================== R24 */
 
 test("R24: G3 over the stub plane: citations re-read as the collect step does; a verbatim quote passes, an invented quote, an unresolved citation and a planted token each fail", async () => {
@@ -217,8 +236,11 @@ test("R42: session start cold and warm on agent-model's fake provider: the provi
   assert.deepEqual([s.value.warm.input, s.value.warm.cached], [900, 800]);
   assert.equal(s.value.cold_minus_warm.cached, -800);
   assert.equal(s.ev.grade, "REPRODUCED");
-  /* cold samples each on a new key, warm ones on one: no cold request carried a cache hint */
+  /* one request per scripted answer; no cold request carried a cache mark */
   assert.equal(w.fake.requests.length, script.length);
+  const colds = w.fake.requests.filter((q) => q.headers["idempotency-key"].startsWith("cold:"));
+  assert.equal(colds.length, P.CHAR_SAMPLES);
+  assert.ok(colds.every((q) => !/cache_control|cache_hints/.test(JSON.stringify(q.body))));
   const lever = r.records.find((x) => x.property === "lever.caching.ask");
   assert.equal(lever.value.with.cached, 800);
   assert.equal(lever.value.without.cached, 0);

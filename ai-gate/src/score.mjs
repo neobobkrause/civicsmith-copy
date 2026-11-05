@@ -123,17 +123,23 @@ const count = (text, needle) => String(text).split(needle).length - 1;
 
 /* ------------------------------------------------------------------ the scorers, one per group (R4) */
 
-/* G0 (R21): served identity equal to the entry (its model, or one of its served ids; its host, or a host its pin
-   names), usage null where unstated, and never a zero standing for "none": a turn that was sent and answered used
-   input and output tokens, so a zero there is a figure the provider did not state. */
+/* G0 (R21): served identity equal to the entry under `agent-model`'s R45 rule: the served model one of the entry's
+   served ids; the served host one its pin names where the pin has an `only` list (a routing host's answer comes from
+   the host it pins, never from the routing host itself), else the entry's own host. Usage null where unstated, and
+   never a zero standing for "none": a turn that was sent and answered used input and output tokens, so a zero there
+   is a figure the provider did not state. */
+function identityHolds(served, entry) {
+  const pinned = list(entry.hosts);
+  const hosts = pinned.length ? pinned : typeof entry.host === "string" ? [entry.host] : [];
+  return list(entry.served_ids).includes(served.model) && hosts.includes(served.host);
+}
 function scoreIdentity(item, ex) {
   const served = ex.served ?? {}, entry = ex.entry ?? {};
   const stated = new Set(list(ex.stated_usage));
   const usage = isObj(ex.usage) ? ex.usage : {};
   const answered = ex.completed === true && (num(ex.turns) ?? 0) > 0;
   return [
-    check("served_identity", (served.model === entry.model || list(entry.served_ids).includes(served.model))
-      && (served.host === entry.host || list(entry.hosts).includes(served.host))),
+    check("served_identity", identityHolds(served, entry)),
     check("usage_null_not_zero", Object.entries(usage).every(([k, v]) => stated.has(k) || v === null)
       && !(answered && ["input_tokens", "output_tokens"].some((k) => usage[k] === 0))),
   ];
