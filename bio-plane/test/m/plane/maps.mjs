@@ -32,6 +32,7 @@ import { pendingOf, pendingOps } from "../../../src/store-assembly/pending.mjs";
 import { acquisitionOf } from "../../../src/acquisition/index.mjs";
 import { captureOf, captureOps } from "../../../src/capture/index.mjs";
 import { doorbellOf, doorbellOps } from "../../../src/doorbell/index.mjs";
+import { mailDoorOf, mailDoorOps } from "../../../src/mail-door/index.mjs";
 import { monitoringOf, monitoringOps } from "../../../src/monitoring/index.mjs";
 import { linkSweepOf, linkSweepOps } from "../../../src/link-sweep/index.mjs";
 import { connectionsOf, connectionsOps } from "../../../src/connections/index.mjs";
@@ -79,6 +80,7 @@ import { peopleOf, peopleOps } from "../../../src/people/index.mjs";
 import { exploreOf, exploreOps } from "../../../src/explore/index.mjs";
 import { calculationsOf, calculationsOps } from "../../../src/calculations/index.mjs";
 import { workbooksOf, workbooksOps } from "../../../src/workbooks/index.mjs";
+import { registersOf, registersOps } from "../../../src/registers/index.mjs";
 import { legEarningOf, legEarningOps } from "../../../src/leg-earning/index.mjs";
 import { hypothesesOf, hypothesesOps } from "../../../src/hypotheses/index.mjs";
 import { answersOf, answersOps } from "../../../src/answers/index.mjs";
@@ -116,6 +118,7 @@ export const MODULE_MAPS = [
   ["plane", (c, u) => pendingOps(pendingOf(c), u)],
   ["capture", (c, u, b, e) => captureOps(captureOf(c), u, b, e)],
   ["doorbell", (c, u, b) => doorbellOps(doorbellOf(c), u, b)],   /* R37: directly after capture's */
+  ["mail-door", (c, u, b) => mailDoorOps(mailDoorOf(c), u, b)],   /* R117 (store-assembly R47; mail-door R12): directly after doorbell's, the assembled store's one instance */
   ["file-safety", (c, u, b, e) => fileSafetyOps(fileSafetyOf(c), u, b, e)],   /* R26: directly after doorbell's */
   ["calibration", (c, u, b) => calibrationOps(calibrationOf(c), u, b)],
   ["bias", (c, u, b) => biasOps(biasOf(c), u, b)],
@@ -137,6 +140,7 @@ export const MODULE_MAPS = [
   ["explore", (c, u, b) => exploreOps(exploreOf(c), u, b)],
   ["calculations", (c, u, b) => calculationsOps(calculationsOf(c), u, b)],
   ["workbooks", (c, u, b) => workbooksOps(workbooksOf(c), u, b)],
+  ["registers", (c, u, b) => registersOps(registersOf(c), u, b)],   /* store-assembly R101 (T53): at its place after workbooks */
   ["contradiction", (c, u, b) => contradictionOps(contradictionOf(c), u, b)],
   ["progressions", (c, u, b) => progressionOps(progressionsOf(c), u, b)],
   ["intent", (c, u, b) => intentOps(intentOf(c), u, b)],
