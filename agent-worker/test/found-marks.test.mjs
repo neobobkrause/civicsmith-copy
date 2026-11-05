@@ -7,6 +7,8 @@
  *    each conversation: `BREAKER_FAILURES` failed drafts open it, the next is never sent, and `GET /health` answers the
  *    pair `open` with its `reset_at`. Control: with no `HEALTH` bound every call is sent and the pair reads `unknown`.
  *    A `/run` segment's model half records each conversation and its meter closes when the circuit opens.
+ *    Through the worker's own fetch, an open circuit refuses `POST /run` 503 `AI_PATH_NOT_READY` (class, retry_at) with
+ *    no model call and the run unread, and `POST /ask` and `POST /transcribe` send no call; each has its closed control.
  * F4 (agent-drafts:358): a draft's label is read as `{kind: "machine", ai}` (`label.mjs`), whatever `ai` was served. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -14,8 +16,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import worker, { CircuitState } from "../src/index.mjs";
-import { circuitRun, circuitAccount, DEFAULT_ENTRY } from "../src/circuit.mjs";
-import { BREAKER_FAILURES } from "../../agent-model/src/health.mjs";
+import { circuitRun, circuitAccount, circuitHandle, DEFAULT_ENTRY } from "../src/circuit.mjs";
+import { BREAKER_FAILURES, circuitRecord } from "../../agent-model/src/health.mjs";
 import { machineWork, MACHINE_WORK } from "./label.mjs";
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
@@ -154,6 +156,75 @@ test("F3: a /run segment's model half records each conversation, and its meter c
   const next = await circuitRun(env, APIKEY);
   assert.deepEqual([next.admitted, next.class], [false, "circuit_open"]);
 });
+
+/* The wiring, through the worker's own fetch (PR 364 review): `/run`, `/ask` and `/transcribe` each meet an open circuit
+   before any model call. The circuit is opened as `agent-model` opens it, BREAKER_FAILURES recorded failures. */
+const AIK = "aik-" + "7".repeat(64);
+const GRANT = "aig-found-marks-fixture-grant";
+async function openCircuit(env, account) {
+  const handle = circuitHandle(env);
+  for (let i = 0; i < BREAKER_FAILURES; i += 1) await circuitRecord(handle, circuitAccount(account), DEFAULT_ENTRY, "overload");
+}
+/** A recording plane: the credential's `whoami` reads as an `ai` credential, an ask's ceiling as not reached, the
+ *  pack as PACK; every other op answers ok with nothing in it. */
+function recordingPlane() {
+  const ops = [];
+  const ok = (result) => Response.json({ ok: true, result, store: "scratch", tokenClass: "ai" });
+  return { ops, async fetch(url) {
+    const op = new URL(url).searchParams.get("op") || "";
+    ops.push(op);
+    if (op === "whoami") return ok({ tokenClass: "ai", session: false, member: null });
+    if (op === "agentpack") return Response.json({ ok: true, fences: [], pack: PACK, store: "scratch", tokenClass: "ai" });
+    if (op === "askceiling") return ok({ ok: true, reached: false });
+    return ok({ rows: [] });
+  } };
+}
+const RUN_BODY = { run_id: "RUN-F3", store: "scratch", credential: AIK, account: APIKEY };
+const ASK_BODY = { question: "Who held the seat?", grant: GRANT, account: APIKEY };
+const TRANSCRIBE_BODY = { capture_sha: "c".repeat(64), pages: [{ page: 0, media_type: "image/png", data: "iVBORw0KGgoAAAANSUhEUgAA" }], account: APIKEY };
+
+test("F3: POST /run with the account's circuit open answers 503 AI_PATH_NOT_READY with class and retry_at; no model call, the run as it was", async () => {
+  const plane = recordingPlane();
+  const env = { VERSION: "t", PLANE: plane, HEALTH: healthNamespace() };
+  await openCircuit(env, APIKEY);
+  const seen = scriptModel(200);
+  const res = await post("run", RUN_BODY, env);
+  const out = await res.json();
+  assert.equal(res.status, 503);
+  assert.equal(out.code ?? out.reason, "AI_PATH_NOT_READY");
+  assert.equal(out.run_id, "RUN-F3");
+  assert.equal(out.class, "circuit_open");
+  assert.ok(Number.isFinite(Date.parse(out.retry_at)), `retry_at ${out.retry_at}`);
+  assert.equal(seen.calls, 0, "a model call was made");
+  assert.deepEqual(plane.ops, ["whoami"], "past the credential's whoami the run was read or written");
+});
+
+test("F3 (control): POST /run with the circuit closed is admitted: the segment goes on to read its run", async () => {
+  const plane = recordingPlane();
+  const env = { VERSION: "t", PLANE: plane, HEALTH: healthNamespace() };
+  scriptModel(200);
+  const out = await (await post("run", RUN_BODY, env)).json();
+  assert.notEqual(out.code ?? out.reason, "AI_PATH_NOT_READY");
+  assert.ok(plane.ops.includes("airun"), `the admitted segment never read its run: ${plane.ops}`);
+});
+
+for (const [path, body] of [["ask", ASK_BODY], ["transcribe", TRANSCRIBE_BODY]]) {
+  test(`F3: POST /${path} with the account's circuit open sends no call to the model API`, async () => {
+    const env = { VERSION: "t", PLANE: recordingPlane(), HEALTH: healthNamespace() };
+    await openCircuit(env, APIKEY);
+    const seen = scriptModel(200);
+    const res = await post(path, body, env);
+    await res.text();
+    assert.equal(seen.calls, 0, `/${path} reached the model API with the circuit open`);
+  });
+
+  test(`F3 (control): POST /${path} with the circuit closed reaches the model API`, async () => {
+    const env = { VERSION: "t", PLANE: recordingPlane(), HEALTH: healthNamespace() };
+    const seen = scriptModel(200);
+    await (await post(path, body, env)).text();
+    assert.ok(seen.calls > 0, `/${path} made no model call with the circuit closed`);
+  });
+}
 
 test("F3: the circuit names the account without its secret", () => {
   assert.equal(circuitAccount(APIKEY).includes(APIKEY.secret), false);
