@@ -1,0 +1,46 @@
+{
+  "id": "provenance",
+  "title": "provenance: consolidate its requirements file under the cap",
+  "layer": 3,
+  "paths": [
+    "bio-plane/src/provenance/",
+    "build/requirements/provenance.md",
+    "docs/requirements-notes/provenance.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/provenance/",
+    "bio-plane/test/mk6-bundle-names-no-author.test.mjs",
+    "bio-plane/test/publishingproject.mjs",
+    "bio-plane/test/adoptable-reading.mjs"
+  ],
+  "requirements": "build/requirements/provenance.md",
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "promotion",
+    "membership",
+    "credentials",
+    "test-support",
+    "ooxml",
+    "setup-words",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/provenance.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T09:52:14Z"
+  }
+}

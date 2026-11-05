@@ -9,6 +9,7 @@ import { GATE_PART_OF, GATE_PARTS, GATE_VERDICTS, gatePartOf, checkGateRecord, p
          partAdmitted, partRefusal, untestedLabel, TEST_BAR_PARTS, DEPLOYMENT_SEQUENCE, AI_RUN_CHECKS, AI_RUN_OWN_CHECKS,
          checkTestBarRecord, deployedModesFor, CIVICSMITH_TEST_SET, PART_REFUSAL_WORDS } from "../../../src/run-rules/index.mjs";
 import { PART_OF_KIND } from "../../../src/ai-accounts/index.mjs";
+import * as RR from "../../../src/run-rules/index.mjs";
 import { PARTS as CATALOGUE_PARTS, gateOf } from "../ai-catalogue/fixture.mjs";
 
 const EMPTY = Object.freeze({ id: "fixture", version: 2, matters: Object.freeze([]) });
@@ -175,4 +176,35 @@ test("R30 (T53): partRefusal(part, entry_id) is AI_PART_NOT_DEPLOYED carrying th
   assert.equal(/localize\(/.test(body), false, "partRefusal composes no sentence");
   assert.equal(/["'`][A-Z][a-z]+ [a-z]+ [a-z]+/.test(body), false, "partRefusal holds no English literal");
   assert.equal(/has not passed its bar on Civicsmith's test investigations/.test(src), false);
+});
+
+test("F2: PART_NOT_PASSED is a run-rules row beside AI_RUN_MODE_NOT_DEPLOYED, C-109.15, the next free number in C-109, minted by ai-runs at the open (its R40) and read here by key; control: C-109.1 keeps its code, number and site", () => {
+  const row = RR.AI_RUN_OPEN_CHECKS.PART_NOT_PASSED;
+  assert.deepEqual(Object.keys(RR.AI_RUN_OPEN_CHECKS), ["AI_RUN_MODE_NOT_DEPLOYED", "PART_NOT_PASSED"], "beside C-109.1");
+  assert.equal(row.check, "C-109.15");
+  assert.equal(row.where, "src/ai-runs/index.mjs open > is-airun-open-part, reached from op=airunopen");
+  assert.equal(AI_RUN_CHECKS.PART_NOT_PASSED, row);
+  assert.equal(RR.translationOf("PART_NOT_PASSED"), row.translation);
+  assert.ok(typeof row.translation === "string" && row.translation.length >= 40);
+  /* the next free number: above every held and retired C-109 number, and none taken twice */
+  const held = [...Object.values(AI_RUN_CHECKS), ...Object.values(RR.RETIRED_CHECKS)].map((r) => r.check).filter((c) => c.startsWith("C-109."));
+  assert.equal(new Set(held).size, held.length);
+  const others = held.filter((c) => c !== "C-109.15" && c !== "C-109.16").map((c) => Number(c.split(".")[1]));
+  assert.equal(Math.max(...others) + 1, 15);
+  /* control: C-109.1 keeps its code, number and site, and its sentence is not this one */
+  assert.deepEqual([RR.AI_RUN_OPEN_CHECKS.AI_RUN_MODE_NOT_DEPLOYED.check, RR.AI_RUN_OPEN_CHECKS.AI_RUN_MODE_NOT_DEPLOYED.where],
+                   ["C-109.1", "src/ai-runs/index.mjs open > is-airun-open-mode, reached from op=airunopen"]);
+  assert.notEqual(row.translation, RR.AI_RUN_OPEN_CHECKS.AI_RUN_MODE_NOT_DEPLOYED.translation);
+});
+
+test("F3: AI_RUN_IDEM_INVALID is a run-rules row, C-109.16, the number after F2's, minted by ai-runs at spawnPayload, tick and close (its R106) and read here by key; control: no other code holds C-109.16", () => {
+  const row = RR.AI_RUN_IDEM_CHECKS.AI_RUN_IDEM_INVALID;
+  assert.equal(row.check, "C-109.16");
+  assert.equal(row.where, "src/ai-runs/index.mjs spawnPayload, tick, close > is-airun-idem, reached from op=airunspawn, op=airuntick, op=airunclose");
+  assert.equal(AI_RUN_CHECKS.AI_RUN_IDEM_INVALID, row);
+  assert.equal(RR.translationOf("AI_RUN_IDEM_INVALID"), row.translation);
+  assert.ok(typeof row.translation === "string" && row.translation.length >= 40);
+  assert.notEqual(row.translation, RR.AI_RUN_OPEN_CHECKS.PART_NOT_PASSED.translation, "each names its own condition");
+  /* control */
+  assert.deepEqual(Object.entries(AI_RUN_CHECKS).filter(([, r]) => r.check === "C-109.16").map(([c]) => c), ["AI_RUN_IDEM_INVALID"]);
 });

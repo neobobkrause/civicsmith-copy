@@ -51,6 +51,8 @@ const AI_RUNS_ACTS = {
   AI_RUNS_NO_CONTEXT_TYPE: "C-36.1", AI_RUNS_UNKNOWN_CONTEXT_TYPE: "C-36.2", AI_RUNS_NO_CONTEXT_ID: "C-36.3",
   SURFACE_NO_RUN: "C-66.1", SURFACE_RUN_NOT_RUNNING: "C-66.2", SURFACE_NO_BOUND: "C-66.3", SURFACE_BOUND_REACHED: "C-66.4",
   AI_RUN_MODE_NOT_DEPLOYED: "C-109.1",
+  /* F2, F3 (coordinator ruling 5 Nov 03:50; ai-runs R40, R106) */
+  PART_NOT_PASSED: "C-109.15", AI_RUN_IDEM_INVALID: "C-109.16",
 };
 /** R15's rows, minted by ai-runs (its R46, R47). */
 const PLANNING = {
@@ -86,8 +88,9 @@ test("R11: the table holds exactly the rows the pure rules mint (each where nami
   assert.equal(Object.keys(AI_RUN_ACT_SHAPE_CHECKS).length, 6);
   assert.deepEqual(Object.keys(AI_RUNS_CONTEXT_CHECKS), ["AI_RUNS_NO_CONTEXT_TYPE", "AI_RUNS_UNKNOWN_CONTEXT_TYPE", "AI_RUNS_NO_CONTEXT_ID"]);
   assert.deepEqual(Object.keys(SURFACE_RUN_CHECKS), ["SURFACE_NO_RUN", "SURFACE_RUN_NOT_RUNNING", "SURFACE_NO_BOUND", "SURFACE_BOUND_REACHED"]);
-  assert.deepEqual(Object.keys(AI_RUN_OPEN_CHECKS), ["AI_RUN_MODE_NOT_DEPLOYED"]);
-  for (const fam of [AI_RUN_OWN_CHECKS, AI_RUN_ACT_SHAPE_CHECKS, AI_RUNS_CONTEXT_CHECKS, SURFACE_RUN_CHECKS, AI_RUN_OPEN_CHECKS, AI_RUN_PLAN_CHECKS, AI_USE_CHECKS])
+  assert.deepEqual(Object.keys(AI_RUN_OPEN_CHECKS), ["AI_RUN_MODE_NOT_DEPLOYED", "PART_NOT_PASSED"]);
+  assert.deepEqual(Object.keys(RR.AI_RUN_IDEM_CHECKS), ["AI_RUN_IDEM_INVALID"]);
+  for (const fam of [AI_RUN_OWN_CHECKS, AI_RUN_ACT_SHAPE_CHECKS, AI_RUNS_CONTEXT_CHECKS, SURFACE_RUN_CHECKS, AI_RUN_OPEN_CHECKS, RR.AI_RUN_IDEM_CHECKS, AI_RUN_PLAN_CHECKS, AI_USE_CHECKS])
     for (const [code, row] of Object.entries(fam)) assert.equal(AI_RUNS_CHECKS[code], row, code);
   /* each refusal R2–R8, R10, R17–R19, R23, R26 and R30 mint is built from its row here */
   const minted = [RR.checkBound("x"), RR.checkSkillVersion(""), RR.projectGate({ actor: "a", contextType: "project" }),
