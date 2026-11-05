@@ -154,6 +154,8 @@ function scoreToolUse(item, ex, log) {
     })),
     check("result_for_every_call", calls.every((c) => isObj(c) && c.result !== undefined)),
   ];
+  /* a call to a tool the run did not offer is the model's fault, however the plane answered it */
+  if (Array.isArray(ex.offered)) out.push(check("tools_offered", calls.every((c) => ex.offered.includes(c?.tool))));
   const want = item.fixture?.expect_end;
   if (isObj(want))
     out.push(check("end_step", ex.end_step === want.step && ex.close_reason === want.close && checkBound(ex.close_reason) === null));

@@ -85,7 +85,8 @@ export function stubPlane(item, part) {
     if (!allowed) refusal ??= { code: "GATE_OP_REFUSED", op };
     else if (a.project != null && a.project !== project) refusal = { code: "PROJECT_FENCE", op };
     if (refusal) {
-      log.push({ op, allowed, refused_as_result: true, answered: false, write, step, address, rows: null, repeated });
+      /* a refused write wrote nothing: it is logged as reached, not as a write */
+      log.push({ op, allowed, refused_as_result: true, answered: false, write: false, step, address, rows: null, repeated });
       return { refused: refusal };
     }
     const answer = op === "meaningrows" && address !== null ? rowsAt(address)
@@ -191,7 +192,7 @@ export async function runItem({ item, part, provider, entry, account, session_ke
     const exchange = {
       served: servedOfOut(out?.served), entry: entryIdentity(entry), error_class,
       stop_reason: refusedType === "refusal" || refusedType === "filtered" ? refusedType : out?.answer ? "end" : null,
-      completed: !!out?.answer, usage, stated_usage: stated, calls, output, citations,
+      completed: !!out?.answer, usage, stated_usage: stated, calls, output, citations, offered: tools.map((t) => t.name),
       reports: submissions.filter((s) => isObj(s?.report)).map((s) => s.report),
       turns: num(out?.calls) ?? num(out?.usage?.calls), session_key: session_key ?? null,
       cost_reported: num(out?.usage?.cost_reported?.amount), cost_estimated: num(out?.usage?.cost_estimated?.amount),
