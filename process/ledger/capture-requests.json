@@ -46,8 +46,7 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: ai-runs:96 (index.mjs:138 and :442 read ai_runs.principal_claude, which PR 96 renamed to principal_ai; store-assembly sweep.test fails CAPTURE_ATTRIBUTION_ONE_PRINCIPAL on it). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T05:31:00Z",
-    "reason": "reopened: base-red on tranche (since PR 182): bio-plane/test/m/capture-requests/plane.test.mjs, both R48 tests ('in the plane: a requested capture, drained and promoted, is listed by capture's op=heldcaptures...' and 'in the plane (T50): a capture a member made with acquire's for and no request...'). Find why with the tests as they stand; fix in your own module if yours, adapt and test if a provider changed under you, or block naming the other module's file:line and owner. Never weaken or skip the tests; add a found mark for the fix and admit it in requirements-ids.test.mjs if that pins your ids"
+    "state": "COMPLETE",
+    "at": "2026-11-05T07:37:46Z"
   }
 }
