@@ -33,8 +33,8 @@
   ],
   "status": {
     "state": "BLOCKED",
-    "reason": "Deferred (coordinator ruling 5 Nov 04:19): R55 waits on affordances (reopen), credentials F1, registers F2; R57 on found marks for ai-accounts, ai-gate, ai-runs, ai-use, op-declarations, signin-door; R58 on BOB grading the interpretation, layer and mailbringin ops in surface-declarations R17. Restart by uses when they land.",
-    "at": "2026-11-05T04:21:51Z",
+    "reason": "Deferred (coordinator ruling 5 Nov 04:19): R55 waits on affordances (reopen), credentials F1, registers F2; R57 on found marks for ai-accounts, ai-gate, ai-runs, ai-use, op-declarations, signin-door. R58: BOB graded the ops (PR 418, merged c7f16676): surface-declarations F1 states the grades (interpretmark, acceptProposals, interpretationWithdraw reversible by R3, refused to a machine; layer analogies confirmed; mailbringin as captureupload); owners declare them by extraction F1, investigation F1, mail-door F1, local-facts F1; instance-setup's layersset at its next job. op-grades' own next job re-points R58's citation to surface-declarations R17 (moved from op-declarations R92) and updates its pinned mark. Restart by uses when they land.",
+    "at": "2026-11-05T04:46:47Z",
     "owner": "bob"
   }
 }
