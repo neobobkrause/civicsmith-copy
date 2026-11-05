@@ -1,0 +1,1 @@
+{"row":"answered","user":"plane","by":"triage","evidence":"bio-plane/src/plane/door.mjs:23 imports only ACT_GATE, a separate export (op-declarations/index.mjs:2960) not built from ACT_HELP_ABSENT","at":"2026-11-05T00:31:45.362Z","key":"op-declarations:321","worker":"read-only-explore-x3","cost":"0.45"}

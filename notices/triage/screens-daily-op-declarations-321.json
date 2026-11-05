@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-daily","verdict":"not affected","evidence":"bio-plane/src/screens-daily/home.mjs:19 and queue.mjs:19 import only OPS, used only through Object.hasOwn(OPS, spec.op) in OWED (home.mjs:22); PR 321 left OPS unchanged","at":"2026-11-05T00:31:45.362Z","key":"op-declarations:321","worker":"read-only-explore-x3","cost":"0.45"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-action","verdict":"not affected","evidence":"bio-plane/src/screens-action/action.mjs:9 and start-send.mjs:6 import only OPS, which PR 321 left unchanged; no file reads ACT_HELP_ABSENT, ACT_HELP or aipathready","at":"2026-11-05T00:31:45.362Z","key":"op-declarations:321","worker":"read-only-explore-x3","cost":"0.45"}

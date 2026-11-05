@@ -1,0 +1,1 @@
+{"row":"answered","user":"interface-shell","by":"triage","evidence":"bio-plane/src/interface-shell/index.mjs:140 reads its namespace import (:9) only as DECLARATIONS.BROWSER_ACTS, and :10 imports OPS, NEEDS and SESSION_OPS; none is built from ACT_HELP_ABSENT","at":"2026-11-05T00:31:45.362Z","key":"op-declarations:321","worker":"read-only-explore-x3","cost":"0.45"}
