@@ -299,6 +299,25 @@ for (const x of DRAWN.rows) add(x.key, x.en, x.protected, 'DEC-259', x.note.repl
 // 4n. The other modules' inline English (DEC-260): written in words-mod-<n>.src.py, one file per batch, rows only
 for (const f of readdirSync(new URL('.', import.meta.url)).filter(f => /^words-mod-\d+\.json$/.test(f)).sort())
   for (const x of JSON.parse(R(f)).rows) add(x.key, x.en, x.protected, 'DEC-260', x.note.replace(/^DEC-260(: )?/, '') || undefined);
+// 4t. T53's "words owed" on screens-public, screens-publish and screens-settings, keys named and settled by the design lane
+//     (5 Nov 2026; CLAUDE.md: design lanes decide wording in the design stream). The screens' jobs draw them.
+for (const [k, en, prot, src, note] of [
+  ['screen.published.ungraded.line', 'Capture and connection not graded yet. They are graded when a member grades how well the team\'s copy shows each passage.', true, 'screens-public R102; screens-publish R102', 'the short line on a signed case whose evidence is ungraded (citation R24 names the grading); drawn on no case with graded evidence'],
+  ['screen.published.ungraded.more', 'Why no bar is shown', false, 'screens-public R102; screens-publish R102', 'the fold that holds the long no-bar paragraph, below screen.published.ungraded.line'],
+  ['screen.ceremony.when.help.named', 'Now, with “Sign and publish now”; or at a date and time in your team\'s time zone ({zone}), with “Sign now and publish at a set time, checked again then”. Until then the signed edition waits, not public, and is checked again at that time.', false, 'screens-publish R105', 'in place of screen.ceremony.when.help, which said "the other button"; the two labels are act.caseratify.label.ceremony and act.publishat.label.ceremony'],
+  ['screen.case-editor.needed.targets', 'Choose at least one concluded question for this case first. Nothing was captured.', false, 'screens-publish R106', 'in place of capture.fieldneeded filled with screen.case-editor.whatgoesin, which read "Fill in the Concluded questions, each with its findings first"'],
+  ['screen.case-editor.passages.heading', 'The passages this case cites', false, 'screens-publish R106', 'the section heading, without screen.case-editor.the_passages_this_case_cites\'s stray full stop'],
+  ['screen.settings.placement.heading', 'Where your data is kept', false, 'screens-settings R88', ''],
+  ['screen.settings.placement.hint', 'Near {place}, as a preference: it is faster for people near there, but it is not a promise about where your data is kept.', true, 'screens-settings R88; installer R96', 'a location hint (STORE_LOCATION); a claim about where data is kept, so protected'],
+  ['screen.settings.placement.jurisdiction', 'Your team\'s records and stored files are kept in {region}. That does not make everything run there: requests, the web worker, the browser that shows pages as a visitor saw them, the file scanner, the reading containers and the assistant\'s calls to its provider may run elsewhere.', true, 'screens-settings R88; installer R96', 'a jurisdiction (STORE_JURISDICTION): {region} EU, US or FedRAMP'],
+  ['screen.settings.placement.neither', 'No region was chosen when your team\'s Civicsmith was installed, so nothing is said here about where its data is kept.', true, 'screens-settings R88', 'neither a hint nor a jurisdiction: no region claim'],
+  ['screen.settings.placement.fixed', 'This was chosen at install and can\'t be changed. Moving to another region is an export and an import.', false, 'screens-settings R88; installer R96 (K5441)', 'beside the hint or jurisdiction line'],
+  ['shell.choice.chosen', 'chosen', false, 'screens-settings R96', 'the word beside the chosen one of a set of choices (Follow my device, Light, Dark), so the state is not color alone; aria-pressed stays'],
+  ['shell.toggle.state', '{setting}: {state}', false, 'screens-settings R96', 'an On/Off switch\'s label, e.g. "Sounds: On"; {setting} the setting\'s name (screen.account.sounds, screen.account.level.field), {state} shell.toggle.on or .off'],
+  ['shell.toggle.on', 'On', false, 'screens-settings R96', '{state} in shell.toggle.state'],
+  ['shell.toggle.off', 'Off', false, 'screens-settings R96', '{state} in shell.toggle.state'],
+  ['screen.setup.places.offered.none', 'Places are offered, but none is chosen yet. Until you choose one, your team\'s Civicsmith reads no local rules, and you enter due dates and offices yourself.', false, 'screens-settings R104', 'in place of screen.setup.places.none when places are offered and none is chosen; screen.setup.places.none stays for none offered'],
+]) add(k, en, prot, src + ' (design lane)', note || undefined);
 
 // 5. The frame: rail, phone tabs, explanation levels
 for (const [k, name] of W.RAIL) { add(`rail.${k}.name`, name, false, 'mock-shell.js RAIL'); if (W.RAIL_HELP[k]) add(`rail.${k}.holds`, W.RAIL_HELP[k], false, 'mock-refs.js RAIL_HELP'); }
