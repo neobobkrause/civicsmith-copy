@@ -311,3 +311,4 @@
 {"at":"2026-11-04T23:22:36Z","row":"outcome","n":157,"outcome":"delivered"}
 {"at":"2026-11-04T23:22:40Z","row":"outcome","n":158,"outcome":"failed"}
 {"at":"2026-11-04T23:22:45Z","row":"outcome","n":159,"outcome":"failed"}
+{"at":"2026-11-05T00:17:15Z","row":"sent","n":160,"to":"root","text":"root-39: control-plane woken on pin 89c180f to sync and complete under the base-comparison fix; runtime-limits waits on M-R7, deferred since deploys are tranche-end only. Layer 4 closed; layer 5 notice jobs started (store-assembly 342, scheduler 343, agent-worker 344); merging 321, 310, 338, 339, 175."}
