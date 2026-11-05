@@ -42,3 +42,4 @@
 {"at":"2026-11-05T03:56:31Z","row":"check","by":"test","live":20,"live_at":"2026-11-05T03:35:56Z","job_cap":20,"startable":9}
 {"at":"2026-11-05T04:01:37Z","row":"check","by":"merge","live":20,"live_at":"2026-11-05T03:35:56Z","job_cap":20,"startable":9}
 {"at":"2026-11-05T04:07:00Z","row":"check","by":"merge","live":20,"live_at":"2026-11-05T03:35:56Z","job_cap":20,"startable":9}
+{"at":"2026-11-05T04:13:05Z","row":"check","by":"job complete","live":20,"live_at":"2026-11-05T03:35:56Z","job_cap":20,"startable":9}
