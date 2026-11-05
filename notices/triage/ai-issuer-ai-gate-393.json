@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-issuer","verdict":"not affected","evidence":"build/modules.json:203 the module has no paths and no file imports ai-gate (listed only under uses)","at":"2026-11-05T04:17:15.093Z","key":"ai-gate:393","worker":"a08694f62b8867a9f","cost":"0.12"}
