@@ -23,16 +23,16 @@ const resolve = (key) => {
   return word(key, vars);
 };
 
-for (const mark of MARKS) {
-  test(`R2 ${MODULE} ${mark}: the module's entry names its keys and each resolves to non-empty text`, () => {
+test("R2 each screens-document-beta row's module entry names its keys and each resolves to non-empty text", () => {
+  for (const mark of MARKS) {
     const keys = entry[mark];
     assert.ok(Array.isArray(keys) && keys.length > 0, `${mark} has a module entry`);
     for (const k of keys) {
-      assert.ok(hasWord(k), `${k} is in the stream's words`);
-      assert.ok(resolve(k).trim().length > 0, `${k} resolves to non-empty text`);
+      assert.ok(hasWord(k), `${mark}: ${k} is in the stream's words`);
+      assert.ok(resolve(k).trim().length > 0, `${mark}: ${k} resolves to non-empty text`);
     }
-  });
-}
+  }
+});
 
 test("R2 control: a key the stream lacks does not resolve", () => {
   assert.equal(hasWord("screen.document.ux-design.no-such-key"), false);
