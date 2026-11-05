@@ -62,7 +62,8 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: capture-requests:182 (index.mjs:710 calls capture-requests leads() and acts on each row's attribution.ok, which now reads the request's principal filled from the run's principal_ai). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-04T12:13:37Z"
+    "state": "WORKING",
+    "at": "2026-11-05T01:17:03Z",
+    "reason": "reopened: first consolidate build/requirements/queue-producers.md (70697 bytes) under the 70000 cap: move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/queue-producers.md, keep every R and F line and its mark verbatim, and add a test that the set of requirement ids and unmet marks is unchanged by the move; then meet the unmet marks R56 R57 R58 R59 R60 R61"
   }
 }
