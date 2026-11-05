@@ -1,0 +1,59 @@
+{
+  "id": "extraction",
+  "title": "extraction: its found work (F1, declare the interpretation ops by BOB's grades)",
+  "layer": 4,
+  "paths": [
+    "bio-plane/src/extractrun.mjs",
+    "bio-plane/src/extraction/",
+    "build/requirements/extraction.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/extraction/"
+  ],
+  "requirements": "build/requirements/extraction.md",
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "text-chain",
+    "format-registry",
+    "office-readers",
+    "docprofile",
+    "pdf-reader",
+    "pdf-worker",
+    "ocr-worker",
+    "record-core",
+    "membership",
+    "ai-accounts",
+    "capture-sources",
+    "capture",
+    "provenance",
+    "promotion",
+    "calibration",
+    "reading-pipeline",
+    "doctypes",
+    "setup-words",
+    "test-support",
+    "acquisition",
+    "runtime-limits",
+    "civil-time",
+    "project-roster"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/extraction.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T04:53:00Z"
+  }
+}
