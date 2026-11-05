@@ -34,7 +34,7 @@ test('R6 any other path or method answers 404 UNKNOWN', async () => {
   } finally { await s.close(); }
 });
 
-test('R26 the server listens before the run\'s code loads: /version answers while a loader never resolves; POST /run waits for it', async () => {
+test('R26 the server listens before the run code loads: /version answers while a loader never resolves; POST /run waits for it', async () => {
   let release;
   const gate = new Promise((r) => { release = r; });
   const s = await listening({ env: { DEPLOYMENT: 'team' }, load: () => new Promise(() => {}) });
@@ -130,7 +130,7 @@ test('R16 control: a lockfile package with an install script, or an install with
   assert.ok(installScriptFaults({ ...ok, pkg: { ...pkg, scripts: { postinstall: 'x' } } }).includes('package.json declares postinstall'));
 });
 
-test('R33 the container\'s instance_type is the recorded figure; max_instances and the image are unchanged by it', () => {
+test('R33 the container instance_type is the recorded figure; max_instances and the image are unchanged by it', () => {
   const w = parseJsonc(read('../wrangler.jsonc'), 'wrangler.jsonc');
   assert.equal(w.containers[0].instance_type, RUNNER_INSTANCE_TYPE);
   assert.equal(RUNNER_INSTANCE_TYPE, 'standard-1');

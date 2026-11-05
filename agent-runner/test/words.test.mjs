@@ -14,7 +14,7 @@ const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const PLACE = /oakland|alameda|california|\bbay area\b/i;
 const table = new Map(WORD_ROWS.map((r) => [r[0], r[1]]));
 
-test('R41 every key the image reads is carried, the carried row equals the word table\'s, and stale data fails', () => {
+test('R41 every key the image reads is carried, the carried row equals the word table row, and stale data fails', () => {
   assert.deepEqual(Object.keys(SAYS_KEYS).sort(), [...REFUSAL_CODES].sort());
   for (const [code, key] of Object.entries(SAYS_KEYS)) {
     assert.equal(key, `gate.runner.refused.${code}`);

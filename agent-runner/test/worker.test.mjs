@@ -44,7 +44,7 @@ async function hosted({ provider, env = {} } = {}) {
 const post = (path, body, headers = {}) => new Request(`https://agent-runner${path}`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
 const get = (path) => new Request(`https://agent-runner${path}`);
 
-test('R12 the Worker exports AgentRunner, the library\'s proxy and the default handler; each request reaches the image unchanged and is answered as the image answers', async () => {
+test('R12 the Worker exports AgentRunner, the library proxy and the default handler; each request reaches the image unchanged and is answered as the image answers', async () => {
   const h = await hosted({ provider: () => new Promise(() => {}) });
   try {
     assert.deepEqual(Object.keys(h.mod).sort(), ['AgentRunner', 'ContainerProxy', 'default']);
@@ -67,7 +67,7 @@ test('R12 the Worker exports AgentRunner, the library\'s proxy and the default h
   } finally { await h.stop(); }
 });
 
-test('R12 R8 R57 the image\'s environment is three configuration values; the Worker has no binding, secret or address but its own (team: no service binding)', async () => {
+test('R12 R8 R57 the image environment is three configuration values; the Worker has no binding, secret or address but its own (team: no service binding)', async () => {
   const h = await hosted({ env: { DEPLOYMENT: 'civicsmith', SAMPLE_ACCOUNTS: 'cs-1', ANTHROPIC_API_KEY: 'env-secret', OTHER: 'x' } });
   try {
     await h.runner.fetch(get('/version'));

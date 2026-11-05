@@ -101,7 +101,7 @@ test('R44 POST /run refuses each bad request with its code and starts nothing (t
 
 /* ------------------------------------------------------------------ R45, R46 egress */
 
-test('R45 the run\'s list is the issuer and the declared host; a redirect to another host is refused and counted; after the run, the issuer alone', async () => {
+test('R45 the run list is the issuer and the declared host; a redirect to another host is refused and counted; after the run, the issuer alone', async () => {
   const w = world({ provider: () => new Response(null, { status: 307, headers: { location: 'https://elsewhere.test/v1/chat/completions' } }) });
   const h = await runner({ world: w });
   assert.deepEqual(h.r.egress, ['issuer.test'], 'at rest: the issuer alone');
@@ -319,7 +319,7 @@ test('R52 a provider echoing the key in an error body: scrubbed, and the scan is
 
 /* ------------------------------------------------------------------ R53 sealed and signed inside */
 
-test('R53 the bundle opens with the sealing key\'s private half only, the plaintext is dropped, and a flipped manifest byte breaks the signature', async () => {
+test('R53 the bundle opens with the private half of the sealing key only, the plaintext is dropped, and a flipped manifest byte breaks the signature', async () => {
   const h = await finishedRun();
   const bytes = await takeBundle(h);
   assert.ok((await open(h, bytes)).calls.length > 0);
@@ -338,7 +338,7 @@ test('R53 the bundle opens with the sealing key\'s private half only, the plaint
   assert.equal(bad.ok, false, 'control: a flipped byte breaks it');
 });
 
-test('R53 ai-gate verifyBundle reads the image\'s bundle: its schema, nonce, signature and payload check', async () => {
+test('R53 ai-gate verifyBundle reads the bundle the image makes: its schema, nonce, signature and payload check', async () => {
   const digest = 'sha256:' + 'ef'.repeat(32);
   const h = await finishedRun({ options: { imageDigest: digest } });
   const bytes = await takeBundle(h);
@@ -452,7 +452,7 @@ test('R5 GET /version answers exactly its keys; a run in progress changes none',
   await h.call('POST', '/run/discard');
 });
 
-test('R55 in the image: discard wipes the run at once; the review window\'s end wipes it as expired', async () => {
+test('R55 in the image: discard wipes the run at once; the end of the review window wipes it as expired', async () => {
   const h = await finishedRun({ options: { reviewWindowMs: 30 } });
   await new Promise((r) => setTimeout(r, 80));
   assert.equal(h.r.state, 'expired');
