@@ -1,0 +1,46 @@
+{
+  "id": "lines",
+  "title": "lines: its found work (F1, citation's provider)",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/lines/",
+    "build/requirements/lines.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/lines/"
+  ],
+  "requirements": "build/requirements/lines.md",
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "entities",
+    "events",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/lines.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T05:02:32Z"
+  }
+}

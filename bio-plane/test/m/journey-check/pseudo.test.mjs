@@ -23,7 +23,8 @@ const { WORD_ROWS, word } = await import("../../../src/setup-words/index.mjs");
 const { boot, ok, ADMIN } = await import("../interface-shell/harness.mjs");
 const { assertDeclared } = await import("./tables.mjs");
 const { world } = await import("../file-safety/fixture.mjs");
-const { default: OAKLAND } = await import("../../../../jurisdictions/profiles/oakland-alameda.mjs");
+/* since T53 the profile is a package of layers (jurisdictions R114): `get` resolves it to the profile a team holding it is told of */
+const OAKLAND = await (await import("../../../../jurisdictions/index.mjs")).get("oakland-alameda");
 
 const SCREENS = [...ENTRY, ...SETTINGS, ...DAILY];
 const FOUNDER = { ...ADMIN, member: "admin", handle: "rosa", rootOfTrust: true };
@@ -52,7 +53,8 @@ const PLANE = {
     choices: [{ id: OAKLAND.id, name: OAKLAND.name, covers: OAKLAND.covers }, { id: "second", name: "Second County", covers: ["Second County"] }], conflicts: [] }),
   placewantedstate: ok({ name: null }),
   aikeepawaystate: ok({ on: false }),
-  groupkeystate: ok({ on: false, held: false }),
+  /* the team's AI accounts, read as `accountsof` (`groupkeystate` retired in T53, ai-accounts R35): none held */
+  accountsof: ok({ ok: true, owner: "group", accounts: [] }),
   courtnotice: ok({ choice: null, history: [] }),
   hostingaccess: ok({ recorded: false, current: null }),
   memberlist: ok({ members: [{ member_id: "admin", handle: "rosa", founder: true, role: "admin", status: "active" }] }),

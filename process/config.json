@@ -20,7 +20,7 @@
   ],
   "node": "26.10.0",
   "suite_timeout_minutes": 45,
-  "coordinator": "session_01RAN5ekK8nutcUSV3rTsfxn",
+  "coordinator": "session_018BhcegkGtAhUqZ59UwPUUK",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
     {
@@ -380,5 +380,10 @@
       "agent-runner/src/entry.mjs",
       "agent-harness/src/subsession.mjs"
     ]
-  }
+  },
+  "merge_train": true,
+  "release_path": [
+    "control-plane",
+    "journey-check"
+  ]
 }
