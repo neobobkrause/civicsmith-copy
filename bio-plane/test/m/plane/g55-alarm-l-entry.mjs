@@ -91,4 +91,11 @@ export class G55Plane extends Store {
   }
 }
 
-export default { fetch: plane.fetch, scheduled: plane.scheduled };
+/* The test reaches the debug routes through this Worker over a fresh connection per request (`g55-alarm-l.test.mjs`), never through Miniflare's pooled proxy socket. */
+export default {
+  fetch(req, env, ctx) {
+    if (new URL(req.url).pathname.startsWith("/g55/")) return env.STORE.get(env.STORE.idFromName("bio")).fetch(req);
+    return plane.fetch(req, env, ctx);
+  },
+  scheduled: plane.scheduled,
+};

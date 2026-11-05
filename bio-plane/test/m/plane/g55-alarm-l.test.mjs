@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
+import { request } from "node:http";
 
 const ENTRY = fileURLToPath(new URL("./g55-alarm-l-entry.mjs", import.meta.url));
 const ROWS = 25_000;
@@ -25,16 +26,26 @@ const boot = (persist, gate) => new Miniflare({
 });
 const live = [];
 after(() => Promise.all(live.map((m) => m.dispose().catch(() => {}))));
+/* Every request goes over its own new connection (`agent: false`), never a pooled keep-alive socket. Each ingest slice holds workerd's one thread for seconds; a request written
+   during a slice to a socket that sat idle across earlier slices is dropped unread when the thread frees ("other side closed": Miniflare's proxy calls, `idFromName`, hit it). The
+   object is the one the plane's door uses (`idFromName("bio")`), reached through the entry's `/g55/` route. */
+const send = (base, path, { method = "GET", headers = {}, body } = {}) => new Promise((resolve, reject) => {
+  const u = new URL(path, base), data = body === undefined ? undefined : Buffer.from(body);
+  const req = request(u, { method, agent: false, headers: { ...headers, connection: "close", ...(data ? { "content-length": data.length } : {}) } }, (res) => {
+    const parts = []; res.on("data", (d) => parts.push(d)); res.on("error", reject);
+    res.on("end", () => resolve({ status: res.statusCode, text: Buffer.concat(parts).toString("utf8") }));
+  });
+  req.on("error", reject); req.end(data);
+});
 const world = (persist, gate) => {
   const mf = boot(persist, gate); live.push(mf);
   const step = async (name, body) => {
-    const ns = await mf.getDurableObjectNamespace("STORE"), stub = ns.get(ns.idFromName("bio"));
-    const r = await stub.fetch(`http://do/g55/${name}`, { method: "POST", body: JSON.stringify(body || {}) });
-    const j = await r.json(); assert.equal(r.status, 200, j.error); return j;
+    const r = await send(await mf.ready, `/g55/${name}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}) });
+    const j = JSON.parse(r.text); assert.equal(r.status, 200, j.error); return j;
   };
   const door = async (op, token, body, query = "") => {
-    const r = await mf.dispatchFetch(`http://plane/api?op=${op}${query}`, { method: body ? "POST" : "GET", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
-    const t = await r.text(); assert.equal(r.status, 200, t); return JSON.parse(t);
+    const r = await send(await mf.ready, `/api?op=${op}${query}`, { method: body ? "POST" : "GET", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+    assert.equal(r.status, 200, r.text); return JSON.parse(r.text);
   };
   return { mf, step, door };
 };
