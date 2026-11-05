@@ -521,6 +521,9 @@ const ARGS = {
   levelsWithoutScope: [{ reports: [{ level: "content", state: "LOOKED_ABSENT" }], scope: { content: { reads: 1, documents: 0 } } }],
   disagreementsToSettle: [{ disagreements: [{ record: "REC-1", levels: ["meaning", "content"] }], disagreed: [] }],
   disagreementKey: [{ record: "REC-1", levels: ["content", "meaning"] }],
+  needOf: ["subsession"], partOf: ["check:compose"], providerStateKey: [{ step: "plan", session_id: "s" }],
+  disclosureGate: [{ disclosed: [{ provider: "p", host: "h" }] }, { provider: "p", host: "h" }],
+  resumeAt: [{ step: "collect", pass: 1, reports: [] }, { at: "collect", completed: true }],
   flowFor: ["plan"], gateStep: [{ mode: "investigate" }], nextPlanStep: [{ step: "dedup", pass: 0, queue: [{ summary: "a" }] }],
   nextStep: [{ step: "submit", pass: 0, maxPasses: 3, refusal: { code: "X" } }], passLimit: [0],
   planAdvance: [{ step: "dedup", pass: 0 }, { step: "close", pass_done: true }], planDedup: [[{ summary: "a" }, { summary: "a" }], { options: [] }],
@@ -541,6 +544,7 @@ const ARGS = {
 test("R8: every export is pure: equal arguments give equal answers, with no network, clock or randomness reached", () => {
   const fns = [...Object.entries(HARNESS), ...Object.entries(SUBSESSION)].filter(([, v]) => typeof v === "function");
   assert.deepEqual(fns.map(([k]) => k).filter((k) => !(k in ARGS)), [], "every function export has a row");
+  assert.deepEqual(Object.keys(ARGS).filter((k) => !fns.some(([n]) => n === k)), [], "every row names a function export");
   const real = { fetch: globalThis.fetch, now: Date.now, random: Math.random };
   const called = [];
   globalThis.fetch = () => { called.push("fetch"); throw new Error("fetch called"); };

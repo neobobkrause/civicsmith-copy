@@ -6,7 +6,7 @@
  * `PROVIDER_MALFORMED`) are a starting module's errors and carry no row, as `public-read` R18's and `connections` R5's
  * do. This file imports nothing. */
 
-import { word } from "../setup-words/index.mjs";
+import { word, localize } from "../setup-words/index.mjs";
 
 const at = (file, fn, region) => `src/reading-guides/${file} ${fn} > ${region}`;
 
@@ -115,6 +115,20 @@ export const READING_GUIDES_CHECKS = Object.freeze({
   GUIDE_ITEM_UNSOURCED: {
     check: "C-144.19", where: at("check.mjs", "checkGuide", "is-guide-sourced"),
     translation: READING_GUIDES_WORDS["refusal.GUIDE_ITEM_UNSOURCED"],
+  },
+  /* T53 (R20; K5508): a sole member's opt-out of review. `words.json` does not hold these two yet, so each row keeps its
+     own sentence, written once here at its use (R14: "this module's other rows ... keep theirs"). */
+  OPT_OUT_NOT_SOLE_MEMBER: {
+    check: "C-144.20", where: at("index.mjs", "guideOptOut", "is-guide-sole-member"),
+    translation: localize("refusal.OPT_OUT_NOT_SOLE_MEMBER", "Only the one member of a team may opt out of the review of its guide. Nothing was written."),
+  },
+  MACHINE_CANNOT_OPT_OUT: {
+    check: "C-144.21", where: at("index.mjs", "guideOptOut", "is-guide-person"),
+    translation: localize("refusal.MACHINE_CANNOT_OPT_OUT", "A machine cannot opt a guide out of review; a member does. Nothing was written."),
+  },
+  OPT_OUT_NOT_OWN_GUIDE: {
+    check: "C-144.22", where: at("index.mjs", "guideOptOut", "is-guide-team-procedure"),
+    translation: localize("refusal.OPT_OUT_NOT_OWN_GUIDE", "Only a team's own procedure guide may be opted out of review. Nothing was written."),
   },
 });
 

@@ -1,0 +1,45 @@
+{
+  "id": "skills",
+  "title": "skills: its unmet requirements (T53)",
+  "layer": 6,
+  "paths": [
+    "bio-plane/src/skilldoctrine.mjs",
+    "bio-plane/src/skillpack.mjs",
+    "build/requirements/skills.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/skills/"
+  ],
+  "requirements": "build/requirements/skills.md",
+  "uses": [
+    "record-grammar",
+    "observation-log",
+    "strength",
+    "contradiction",
+    "ai-runs",
+    "run-rules",
+    "run-productions",
+    "basis-versions",
+    "inquiry-grammar",
+    "reading-guides",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/skills.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T03:35:00Z"
+  }
+}
