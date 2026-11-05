@@ -12,3 +12,4 @@
 {"at":"2026-11-05T05:32:58Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-05T05:37:14Z","row":"sent","n":7,"to":"bob","text":"merged PR 410 (job strength): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T05:37:29Z","row":"outcome","n":7,"outcome":"delivered"}
+{"at":"2026-11-05T05:42:20Z","row":"sent","n":8,"to":"bob","text":"merged PR 412 (job docket): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
