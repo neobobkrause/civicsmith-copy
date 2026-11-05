@@ -12,6 +12,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { startAllowed } from "../../../src/run-rules/index.mjs";
 import { world, Q, PROJ } from "./fixture.mjs";
+import { world as runsWorld, OPEN, INQ, T0 } from "../ai-runs/world.mjs";
+import { stepsWorld } from "../steps/fixtures.mjs";
 
 const DAY2 = "2026-10-11T09:00:00Z", DAY3 = "2026-10-12T09:00:00Z";
 
@@ -112,4 +114,48 @@ test("F1: with no owner left to read who turned exploring on, no member is accou
   assert.deepEqual(t2.opened.map((x) => [x.owner, x.enabled_by]), [[`project:${PROJ}`, "member:alice"]], JSON.stringify(t2).slice(0, 300));
 });
 
-test.todo("F1 (ai-runs F2, PR 348): replayed on ai-runs' real open, the explorer's open is refused when the member who turned exploring on is gone, and opens when she is allowed; written once PR 348 merges");
+/** ai-runs' real world (its published world, with steps'): `investigate` may deploy (check verified live), ann and dana
+ *  members. */
+async function realRuns() {
+  const f = stepsWorld();
+  const r = runsWorld({ steps: f.steps, deployedModes: ["check", "investigate"] });
+  await r.group("ann", "dana");
+  r.bundle(INQ);
+  await r.runs.open(OPEN({ run: "V" }));
+  assert.equal(r.runs.verificationRecord({ mode: "check", run: "V", evidence: ["seen live"], by: "member:ann", at: T0 }).ok, true);
+  return { r, f };
+}
+
+test("F1 (ai-runs F2, PR 348): the explorer's own open, replayed on ai-runs' real open, opens accountable to dana who turned exploring on; refused AI_RUN_NOT_A_MEMBER_ACT with exploring off once she is gone, and the explorer, handed that real refusal, keeps exploring off with its sentence for the owners; control: the open as it was before F1 (a label) is refused too", async () => {
+  const w = await world().standard();
+  await w.openRun("group");
+  const [mine] = w.calledAs("open");
+  assert.equal(mine.enabledBy, "member:dana");
+  const { r, f } = await realRuns();
+  const moved = { ...mine, contextId: INQ, place: f.place, at: T0 };
+  const x = await r.runs.open({ ...moved, run: "XPL-1" });
+  assert.deepEqual([x.started, x.origin], [true, "explore"], JSON.stringify(x).slice(0, 300));
+  assert.equal(r.rows(`SELECT principal_ai_ref FROM ai_runs WHERE run = 'XPL-1'`)[0].principal_ai_ref, "member:dana");
+  /* Control: the label the explorer passed before F1 reads as no member, and is refused. */
+  const old = await r.runs.open({ ...moved, run: "XPL-0", enabledBy: { kind: "machine", enabled_by: "group" } });
+  assert.deepEqual([old.started, old.code], [false, "AI_RUN_NOT_A_MEMBER_ACT"]);
+  /* dana is gone: the same open is refused, exploring off. */
+  r.membership.memberSet({ memberId: "dana", status: "revoked", by: "admin" });
+  const refused = await r.runs.open({ ...moved, run: "XPL-2" });
+  assert.deepEqual([refused.started, refused.code, refused.exploring], [false, "AI_RUN_NOT_A_MEMBER_ACT", "off"], JSON.stringify(refused).slice(0, 300));
+  assert.deepEqual(r.rows(`SELECT run FROM ai_runs WHERE run = 'XPL-2'`), []);
+  /* The explorer handed ai-runs' real refusal: no run, exploring off for the team, its sentence for the team's owners. */
+  const e = await world().standard();
+  await e.setExplore("group", "yes");
+  e.openRefuse = refused;
+  const t = await e.p.exploreTick(e.clock.now);
+  assert.equal(t.opened.length, 0);
+  assert.deepEqual(t.off, [{ owner: "group", code: refused.code, detail: refused.detail }]);
+  assert.deepEqual(e.p.exploringOff({ viewer: "member:dana" }).off.map((o) => [o.code, o.translation, o.detail]),
+                   [[refused.code, refused.translation, refused.detail]]);
+  e.openRefuse = null;
+  e.clock.now = DAY2;
+  const before = e.calledAs("open").length;
+  assert.equal((await e.p.exploreTick(e.clock.now)).opened.length, 0, "still off the next day");
+  assert.equal(e.calledAs("open").length, before);
+});
