@@ -50,3 +50,4 @@
 {"at":"2026-11-05T15:50:23Z","row":"withdraw","id":"5033b312ad61","pr":515,"why":"the train stopped"}
 {"at":"2026-11-05T16:16:50Z","row":"queue","id":"73dfe3c20745","pr":516,"head":"89859c0cdc0b7ee238f733613c28b1ae7de78ce9","ref":"found/journey-check-f10","by":"session_018BhcedPdKvvqmShgPznx1U","reviewed":null,"no_review":"work found elsewhere: one found mark, no code","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T19:26:50.173Z","renews":true}
 {"at":"2026-11-05T16:22:07Z","row":"renew","id":"73dfe3c20745","pr":516}
+{"at":"2026-11-05T16:22:13Z","row":"queue","id":"22fda05249a3","pr":521,"head":"3fe31d50137fa7adc07bf4a6acc9c3d829c151b3","ref":"p3/pin-f339ba9607","by":"session_018Bhcee9oeEB1Huxm8FqiN1","reviewed":null,"no_review":"a process pin move; the fix was reviewed in process3","rounds":0,"decision":null,"as":"pin","take_by":"2026-11-05T19:32:13.241Z","renews":true}
