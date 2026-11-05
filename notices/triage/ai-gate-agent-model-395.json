@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-gate","verdict":"affected","evidence":"ai-gate/src/groups.mjs:11 G0 names agent-model R5 (usage null-not-zero) as its plane check and applies it in scoreIdentity (ai-gate/src/score.mjs:67, usage_null_not_zero); no file imports agent-model","at":"2026-11-05T04:14:47.416Z","key":"agent-model:395","worker":"a7efa13421e94c1a0","cost":"0.2"}

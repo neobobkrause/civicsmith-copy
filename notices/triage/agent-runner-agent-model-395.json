@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-runner","verdict":"affected","evidence":"agent-runner/src/runner.mjs:65 no file imports agent-model, but the runner takes the caller's tool_result image blocks in agent-model R14's shape (imageFault at runner.mjs:71, MCP conversion at :80)","at":"2026-11-05T04:14:47.416Z","key":"agent-model:395","worker":"a40fd14ed39fb2286","cost":"0.2"}
