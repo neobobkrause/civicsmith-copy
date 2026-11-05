@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-worker","verdict":"affected","evidence":"agent-worker/src/index.mjs:151 imports SEGMENT_END_BY (R48) and uses it at :525 and :575 to name a segment end (ended.by); R2 payer check is not in its src, but R48 is used","at":"2026-11-05T07:39:49.665Z","key":"agent-steps:361","worker":"a8751b492b1cc27eb","cost":"69207tokens"}
