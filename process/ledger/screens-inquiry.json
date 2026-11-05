@@ -59,6 +59,6 @@
   "prior_work": "First, consolidate build/requirements/screens-inquiry.md (125474 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/screens-inquiry.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/screens-inquiry.md is unchanged by the move (compare against the ids at the start commit). Then: Answer this module's provider notices, judged affected by a read-only triage: op-declarations:95 (assistant.mjs:65 reads retired accountreference) and wizard-scripts:98. For each, decide from your own requirements what this module must do (the T53 ops that replace the retired ones are in ai-accounts' requirements and op-declarations), adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T16:18:30Z"
+    "at": "2026-11-05T05:47:11Z"
   }
 }
