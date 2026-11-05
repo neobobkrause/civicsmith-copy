@@ -1,23 +1,15 @@
-// ai-gate requirements not yet met by this first slice (attempt 1), named here per K208. Each needs the stub plane
-// run through the real harness and agent-model's fake provider (R8, R9, R14, R19, the group scorers' plane checks,
-// R42, R46, R66) or a setup-words table edit outside this module's paths (R65).
+// ai-gate requirements not yet met (attempt 3), named here per K208. Each rests on another module: a model reached
+// only through agent-model's `turn` by entry id, served by agent-model's fake provider (agent-model R25, R44, with
+// R5, R30, R34, R45), and the stub plane run through the real harness and worker loop on top of it (R9).
 import { test } from "node:test";
 for (const [id, why] of [
-  ["R8", "a run through agent-model's turn with a fake provider; the src scan"],
-  ["R9", "the stub plane over the real harness and worker loop"],
-  ["R14", "T0 Connect run against a fake provider"],
-  ["R19", "connectCheck running T0 in a team's copy"],
-  ["R21", "G0 scored with agent-model's own checks over a run"],
-  ["R22", "G1 with agent-worker's allow-list and agent-harness end step"],
-  ["R23", "G2 with checkCondition, ANSWER_FIELDS, plan option and draft endings"],
-  ["R24", "G3 with agent-steps citation resolution and the ask answer check"],
-  ["R26", "G4 as agent-worker R62's four assertions over a run"],
-  ["R27", "G5 needle depths and character error rate against fixtures"],
-  ["R28", "G6 with planDedup and agent-steps duplicate signals"],
-  ["R29", "G7 compose-time read and levelEmptyHolds; G8 bounds consumed"],
-  ["R30", "G9 over synthetic civic records through the stub plane"],
-  ["R42", "session start cold and warm on a stub provider"],
-  ["R46", "all-in cost of each role's standard task through the harness"],
-  ["R65", "the gate.* keys in setup-words' table"],
-  ["R66", "the table of known-good and known-bad stub models"],
-]) test.todo(`${id}: not yet met (ai-gate attempt 1) — needs ${why}`);
+  ["R8", "agent-model's turn (R25) and fake provider (R44) for a run; the src scan alone is not the requirement"],
+  ["R9", "the stub plane over the real harness and worker loop, its model turns served through agent-model R25/R44"],
+  ["R14", "T0 Connect against agent-model's fake provider (R44), capabilities (R30) and served-identity check (R45)"],
+  ["R19", "connectCheck running T0 through agent-model's turn (R25) and capabilities (R30)"],
+  ["R21", "G0 over a run on agent-model's fake provider (R44) stating usage null (R5)"],
+  ["R24", "G3's citation resolution as agent-steps' collect step does it, over the stub plane (R9)"],
+  ["R42", "session start cold and warm on agent-model's fake provider (R44) with session_key and cache_hints (R31)"],
+  ["R46", "each role's standard task through the harness on the stub plane (R9), priced from agent-model's usage (R5)"],
+  ["R66", "the stub-model table run on the stub plane (R9) with the cost estimate bracketing the fake provider's figures (R44)"],
+]) test.todo(`${id}: not yet met (ai-gate attempt 3) — needs ${why}`);
