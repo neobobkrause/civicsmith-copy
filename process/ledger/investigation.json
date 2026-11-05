@@ -1,0 +1,58 @@
+{
+  "id": "investigation",
+  "title": "investigation: its found work (F1, declare acceptProposals by BOB's grade)",
+  "layer": 7,
+  "paths": [
+    "bio-plane/src/investigation/",
+    "build/requirements/investigation.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/investigation/"
+  ],
+  "requirements": "build/requirements/investigation.md",
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "observation-log",
+    "leg-earning",
+    "inquiry",
+    "basis-versions",
+    "capture-requests",
+    "steps",
+    "skills",
+    "intent",
+    "setup-words",
+    "test-support",
+    "contradiction",
+    "project-roster",
+    "reading-pipeline",
+    "retrieval"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/investigation.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T04:53:00Z"
+  }
+}
