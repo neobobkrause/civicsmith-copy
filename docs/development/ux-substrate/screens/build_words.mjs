@@ -6,13 +6,11 @@ import { readdirSync } from 'node:fs';
 // mock-refs.js (SCREEN_HELP, RAIL_HELP, COL_HELP), page.src.html (the marks' explanations), registry.json (screen and act
 // names), library.json (Civicsmith's wizard scripts). Sentences on a screen that carry its data (names, counts, dates) are
 // not here: they become keyed strings with placeholders when each screen is built, under the same key scheme and rules.
-// Run: node docs/development/ux-substrate/screens/build_words.mjs   (builds words-drawn.json, then writes words.json beside it;
-// fails on any drift); --check builds and compares, writing no words.json. Neither file is committed (max_file_bytes).
+// Run: node docs/development/ux-substrate/screens/build_words.mjs   (writes words.json beside it; fails on any drift)
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const R = f => fs.readFileSync(path.join(HERE, f), 'utf8');
@@ -39,12 +37,6 @@ const seen = new Set();
 const T49 = JSON.parse(R('words-t49.json'));
 const retiredSeen = new Set(), rewriteSeen = new Set();
 // DEC-259: the remaining screens' drawn words, written by words-drawn.src.py; its rewrites apply like T49's, to any row
-// words-drawn.json (1.9 MB) and words.json (4.8 MB) are over the process's max_file_bytes, so neither is committed: both
-// are built here, words-drawn.json first from its source, as the process builds every over-size generated file
-// (.process/tool/lib/checks.mjs, "such a file is not committed at all"; words-reads.json's precedent, 598e386275).
-// `--check` builds both and exits 1 when words.json on disk differs from the build (or is absent), writing nothing to it.
-const CHECK = process.argv.includes('--check');
-execFileSync('python3', [path.join(HERE, 'words-drawn.src.py')], { cwd: HERE, stdio: ['ignore', 'ignore', 'inherit'] });
 const DRAWN = JSON.parse(R('words-drawn.json'));
 const drawnSeen = new Set();
 // DEC-281 (K3472): "team", never "group", names the people of one Civicsmith in every word people read; identifiers ({group},
@@ -371,14 +363,5 @@ const out = {
 for (const w of words) { const f = w.key.split('.')[0]; out.counts[f] = (out.counts[f] || 0) + 1; }
 out.counts.total = words.length;
 out.counts.protected = words.filter(w => w.protected).length;
-const text = JSON.stringify(out, null, 1) + '\n';
-if (CHECK) {
-  const at = path.join(HERE, 'words.json');
-  const held = fs.existsSync(at) ? fs.readFileSync(at, 'utf8') : null;
-  if (held !== text) fail(held === null ? 'words.json is absent: run node docs/development/ux-substrate/screens/build_words.mjs'
-    : 'words.json differs from its sources: run node docs/development/ux-substrate/screens/build_words.mjs');
-  console.log(`build_words --check: words.json matches its sources (${words.length} words and phrases)`);
-  process.exit(0);
-}
-fs.writeFileSync(path.join(HERE, 'words.json'), text);
+fs.writeFileSync(path.join(HERE, 'words.json'), JSON.stringify(out, null, 1) + '\n');
 console.log(`words.json: ${words.length} words and phrases, ${out.counts.protected} protected · ` + Object.entries(out.counts).filter(([k]) => !['total', 'protected'].includes(k)).map(([k, v]) => `${k} ${v}`).join(', '));

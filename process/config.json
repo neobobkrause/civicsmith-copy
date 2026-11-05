@@ -54,7 +54,7 @@
       ],
       "verify": [
         "node",
-        "docs/development/ux-substrate/screens/build_words.mjs",
+        "bio-plane/src/setup-words/build.mjs",
         "--check"
       ]
     },
@@ -68,7 +68,7 @@
       ],
       "verify": [
         "node",
-        "docs/development/ux-substrate/screens/build_words.mjs",
+        "bio-plane/src/setup-words/build.mjs",
         "--check"
       ]
     },
