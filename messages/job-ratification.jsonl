@@ -6,3 +6,4 @@
 {"at":"2026-11-04T13:25:20Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-04T14:30:36Z","row":"sent","n":4,"to":"bob","text":"job ratification complete, PR #247 ready, session session_01RAN5ekFPpty3UuXmrcJbMM: run status"}
 {"at":"2026-11-04T14:30:46Z","row":"outcome","n":4,"outcome":"delivered"}
+{"at":"2026-11-05T14:27:39Z","row":"sent","n":5,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job ratification complete, PR #509 ready, session session_018BhceeutkwQWbcqjatp5ht: run status"}
