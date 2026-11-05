@@ -1,0 +1,1 @@
+{"at":"2026-11-05T18:20:46Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: job interface-shell-t53 BLOCKED: run status"}
