@@ -132,9 +132,9 @@ async function credentialFor(account, deps) {
   return { cred: { secret, means } };
 }
 
-/** The binding a means reaches through, or null: `gateway` the account's gateway binding, `none` its AI binding. */
+/** The binding the account names (its gateway or AI binding), or null. `gateway` and `none` need one; a `sealed` key
+ *  through a gateway binding goes as a passthrough (R41). */
 function bindingFor(account, deps) {
-  if (account.means !== "gateway" && account.means !== "none") return null;
   const name = account.binding;
   const b = typeof name === "string" && deps.bindings ? deps.bindings[name] : null;
   return b && typeof b.fetch === "function" ? b : null;
@@ -211,9 +211,12 @@ function payerOf(log, account) {
 
 /** R45: the served identity against the entry, under the request's `host_pin`; a refusal or null. */
 function pinBreach(served, entry, hostPin) {
-  const expectHost = typeof entry.host === "string" ? entry.host : null;
+  /* a routing host's answer is served by the host its pin names; any other entry's by its own host */
+  const hosts = isObj(entry.pin) && Array.isArray(entry.pin.only) && entry.pin.only.length ? entry.pin.only
+    : typeof entry.host === "string" ? [entry.host] : [];
+  const expectHost = hosts.length === 1 ? hosts[0] : hosts;
   const ids = Array.isArray(entry.served_ids) ? entry.served_ids : [];
-  if (served.host != null ? served.host !== expectHost : hostPin === "required")
+  if (served.host != null ? !hosts.includes(served.host) : hostPin === "required")
     return { field: "host", expected: expectHost, got: served.host };
   if (served.model_version != null ? !ids.includes(served.model_version) : hostPin === "required")
     return { field: "model_version", expected: ids, got: served.model_version };
