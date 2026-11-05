@@ -64,3 +64,4 @@
 {"at":"2026-11-05T22:08:28.576Z","row":"end","pr":497,"tip":"4b720bd3fd3750d651b46e3ee3662aeb0eb30e20","cause":"pull request 497's held merged result 4b720bd3fd would need a new one (14a45d1d9e): not pushed; the hold ends and the train merges it afresh","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-05T22:09:20.458Z","row":"inflight","pr":488,"module":"control-plane-door-pages","tip":"34b1075cbe6bdd57fa0d207b4a6ce9732a5cb591","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-05T23:54:20.458Z"}
 {"at":"2026-11-05T22:13:34.280Z","row":"end","pr":488,"tip":"34b1075cbe6bdd57fa0d207b4a6ce9732a5cb591","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
+{"at":"2026-11-05T22:14:25.744Z","row":"inflight","pr":490,"module":"acquisition-owed","tip":"436cadbbc901941f48a4e570244b4d4248cd4d20","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-05T23:59:25.744Z"}
