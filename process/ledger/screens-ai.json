@@ -36,9 +36,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/screens-ai.md, each with a test under bio-plane/test/m/screens-ai/ that fails with the change reverted. None of the seven screens is built yet; they are registry rows in wizard-scripts/screen-registry.mjs, which stays wizard-scripts'. Build them in bio-plane/src/screens-ai/. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "BLOCKED",
-    "reason": "Deferred (coordinator ruling 5 Nov 19:55): restart when ai-gate (411), ai-runs, ai-use, ai-accounts, ai-catalogue and instance-setup have landed their ops, wizard-scripts has the registry rows (aioptinset on aiproviders and aimine; projectrequest and projectjoin on aiproject; carried by wizard-scripts' next attempt), and modules.json has the edge screens-ai uses screens-settings (BOB adds it). Its notes and todos dc5e70da land as they are.",
-    "at": "2026-11-05T20:07:51Z",
-    "owner": "coordinator"
+    "state": "COMPLETE",
+    "at": "2026-11-05T20:18:58Z"
   }
 }
