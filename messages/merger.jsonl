@@ -36,3 +36,4 @@
 {"at":"2026-11-05T07:46:24Z","row":"outcome","n":18,"outcome":"delivered"}
 {"at":"2026-11-05T08:01:40Z","row":"sent","n":19,"to":"root","text":"MERGER session_018BhcedwsJZrL1WAAcugNk7: merge train refused to start: 'the merge train's lease is held by session_018BhceeZ4P42p7PhwvxNiVm until 2026-11-05T08:13:03Z: one train runs'. Ending without a train."}
 {"at":"2026-11-05T08:01:52Z","row":"outcome","n":19,"outcome":"delivered"}
+{"at":"2026-11-05T08:23:53Z","row":"sent","n":20,"to":"bob","text":"PR 411 (job ai-gate) fires a review trigger and has no review recorded for 2c7224a413: review it (node .process/tool/p3.mjs review brief 411), then node .process/tool/p3.mjs merge train note 411 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
