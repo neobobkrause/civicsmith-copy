@@ -16,3 +16,4 @@
 {"at":"2026-11-04T23:26:34Z","row":"outcome","n":8,"outcome":"delivered"}
 {"at":"2026-11-05T11:25:11Z","row":"sent","n":9,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job ai-catalogue complete, PR #484 ready, session session_018Bhcee1ueAhRq9VsujWoFz: run status"}
 {"at":"2026-11-05T11:25:25Z","row":"outcome","n":9,"outcome":"delivered"}
+{"at":"2026-11-05T11:42:06Z","row":"sent","n":10,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job ai-catalogue complete, PR #484 ready, session session_018Bhcee1ueAhRq9VsujWoFz: run status. Re bob-189: the two edited seed test files now each assert the development build's default seed and fail with F2 reverted (checked against 653de8d1's src)."}
