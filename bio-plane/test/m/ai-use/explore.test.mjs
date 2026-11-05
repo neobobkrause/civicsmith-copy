@@ -96,6 +96,27 @@ test("R6 for the group, a question every project it is drawn on keeps from explo
   assert.equal(allowed(w, "group", { question: "INQ-1", at: AT }).ok, true);
 });
 
+test("F1 (K5821 REC-11) R6 reads the paying account, never the accountable member's own: a project's exploring turned on by ann is judged on the project's account, its explore value and its limits, while ann's own account is switched off and over its own limit; ann's own account named for the project is refused (control: a member's own account still explores no question)", async () => {
+  const w = await exploring();
+  explore(w, "project:P", "yes", "ann");
+  /* ann's own account: explore yes and its own overall limit reached; neither bears on the project's exploring */
+  assert.equal(explore(w, "member:ann", "yes", "ann").ok, true);
+  w.u.aiLimitSet({ owner: "member:ann", scope: "overall", unit: "calls", period: "day", amount: 1, by: "ann" });
+  w.count("member:ann", "ann", "ask");
+  const r = allowed(w, "project:P", { question: "INQ-1", at: AT });
+  assert.deepEqual([r.ok, r.ask, r.owner, r.account_id], [true, false, "project:P", w.acct.P], "read on the project's account");
+  assert.notEqual(r.account_id, w.acct.ann);
+  /* the enabling member's own account, named as the project's payer, is refused: it is not the project's */
+  const own = w.u.exploreAllowed({ owner: "project:P", account_id: w.acct.ann, question: "INQ-1", at: AT });
+  assert.equal(own.code, "EXPLORE_NOT_ENABLED", "a member's own account never pays a project's exploring");
+  assert.equal(w.u.exploreAllowed({ owner: "group", account_id: w.acct.ann, question: "INQ-1", at: AT }).code, "EXPLORE_NOT_ENABLED");
+  /* the project's explore off: refused though ann's own account says yes */
+  explore(w, "project:P", "no", "ann");
+  assert.equal(allowed(w, "project:P", { question: "INQ-1", at: AT }).code, "EXPLORE_NOT_ENABLED");
+  /* control: a member's own account, explore yes, explores no question */
+  assert.equal(allowed(w, "member:ann", { question: "INQ-1", at: AT }).code, "EXPLORE_OUT_OF_SCOPE");
+});
+
 test("R6 it writes nothing and never throws", async () => {
   const w = await exploring();
   explore(w, "group", "ask", "admin");

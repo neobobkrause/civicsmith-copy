@@ -24,3 +24,11 @@ export function untestedOf(body) {
 
 /** The words of the refusal of a malformed label. */
 export const UNTESTED_BAD = localize("agent-worker.untested.untested_when_present_is_the", "untested, when present, is the test-instance label exactly as the record's rules answer it for one part ({shape}); what arrived is not one, so nothing was done.", { shape: "{kind: untested, part, set, set_version, words}" });
+
+/** R122 (T53; BR29): the draft's label, machine work, with `ai` the label `agent-model`'s `converse` answered from the
+ *  served identity (its R21, R26), unchanged: never read from the request and never composed here. Where `converse`
+ *  answered no label the field is absent, so nothing stands in for the served identity. */
+export function machineLabel(got) {
+  const ai = got?.label;
+  return ai !== null && typeof ai === "object" && !Array.isArray(ai) ? { kind: "machine", ai } : { kind: "machine" };
+}
