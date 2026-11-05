@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-daily","verdict":"not affected","evidence":"build/modules.json:197 screens-daily (bio-plane/src/screens-daily/) holds no file that imports interface-assets, every code file under its paths read at bc796874ca","at":"2026-11-05T15:31:34.269Z","key":"interface-assets:443","worker":"merge: imports check","cost":"0"}
