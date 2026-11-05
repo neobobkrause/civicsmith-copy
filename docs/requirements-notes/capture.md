@@ -1,5 +1,9 @@
 # capture: requirements notes
 
+## The split, done (job capture, attempt 1, replacement session, 5 Nov 2026)
+
+BOB's cap split (PR 474, merge a3af376b) copied the proposed lines verbatim into `held-captures` (R77, R78, R79, R81, R82, R83, R84, R88, R91, R100, R101, R102) and `member-upload` (R86, R92, R93, R103, R107-R111, R113, R114, R116-R120), under their `capture` numbers. Each is now one line in `build/requirements/capture.md`: `*(retired: moved to <module> R<n>, cap split 5 Nov 2026, PR 474)*`. The file is **49,767 bytes**, under the 70,000 cap. `capture` keeps no unmet mark: R117 and R120 are `member-upload`'s now, still marked. The catalogue rows C-118.8, C-118.9, C-118.10 and C-118.12 stay in this module's table under R37, since the split copied only requirement lines; whether they move with their modules is BOB's call. `requirements-ids.test.mjs` checks each retired line, each moved line verbatim in its new module against the start commit's hash, and the cap. The code those lines rule stays in `bio-plane/src/capture/` until each new module's job moves it.
+
 ## Split proposal (job capture, attempt 1, 5 Nov 2026), for BOB
 
 **Done on this branch.** The status history, Size, Uses, Satisfies, Suggestions and the empty "Open for Bob" are moved here, verbatim (below). Every R line stays in `build/requirements/capture.md`, word for word with its mark, and the unmet marks are still R117 and R120. `bio-plane/test/m/capture/requirements-ids.test.mjs` pins every id's line (with its indented sub-bullets) to the start commit f2e87913578 by sha256, pins the unmet set, and checks that the moved text is here and no longer there. The file is now **95,197 bytes**, down from 109,908.

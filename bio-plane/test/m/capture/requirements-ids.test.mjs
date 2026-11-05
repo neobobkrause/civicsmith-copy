@@ -1,4 +1,5 @@
-/* capture: the requirements file's consolidation for size (job capture, attempt 1, 5 Nov 2026) keeps every id and mark.
+/* capture: the requirements file's consolidation for size (job capture, attempt 1, 5 Nov 2026) keeps every id and mark;
+   after the cap split (PR 474) the moved ids are retired lines here, held verbatim by held-captures and member-upload.
    START_LINES is each R line of build/requirements/capture.md at the start commit (f2e87913578), by sha256 of the
    line with any indented continuation lines under it. Every id stays, word for word with its mark; the set of unmet
    marks is unchanged; the text moved out (status history, size, uses, satisfies, suggestions) is in
@@ -153,19 +154,32 @@ const START_LINES = {
 };
 const START_UNMET = ["R117", "R120"];
 
-test("capture requirements consolidation: every R id at the start commit stays, word for word with its mark", () => {
+// The cap split (PR 474, 5 Nov 2026) copied these ids verbatim into two new modules; here each is one retired line.
+const MOVED = {
+  "held-captures": ["R77", "R78", "R79", "R81", "R82", "R83", "R84", "R88", "R91", "R100", "R101", "R102"],
+  "member-upload": ["R86", "R92", "R93", "R103", "R107", "R108", "R109", "R110", "R111", "R113", "R114", "R116", "R117", "R118", "R119", "R120"],
+};
+const MOVED_TO = new Map(Object.entries(MOVED).flatMap(([mod, ids]) => ids.map((id) => [id, mod])));
+
+test("capture requirements: every R id at the start commit stays, word for word with its mark, or is retired naming the module that holds it verbatim", () => {
   const now = idBlocks(read(REQ));
   assert.deepEqual([...now.keys()].sort(), Object.keys(START_LINES).sort(), "the set of ids is unchanged");
-  for (const [id, h] of Object.entries(START_LINES)) assert.equal(sha(now.get(id)), h, `${id}'s line is verbatim`);
+  const there = Object.fromEntries(Object.keys(MOVED).map((mod) => [mod, idBlocks(read(`build/requirements/${mod}.md`))]));
+  for (const [id, h] of Object.entries(START_LINES)) {
+    const mod = MOVED_TO.get(id);
+    if (!mod) { assert.equal(sha(now.get(id)), h, `${id}'s line is verbatim`); continue; }
+    assert.equal(now.get(id), `- **${id}** *(retired: moved to ${mod} ${id}, cap split 5 Nov 2026, PR 474)*`, `${id} is retired here, naming ${mod}`);
+    assert.equal(sha(there[mod].get(id)), h, `${id} is verbatim in ${mod}`);
+  }
 });
 
-test("capture requirements consolidation: the set of unmet marks is the start's, less only those this branch met", () => {
-  const now = unmet(idBlocks(read(REQ)));
-  for (const id of now) assert.ok(START_UNMET.includes(id), `${id} gained an unmet mark`);
-  assert.deepEqual(now, START_UNMET, "the unmet marks are unchanged");
+test("capture requirements: the unmet marks are the start's, those moved now held by member-upload", () => {
+  assert.deepEqual(unmet(idBlocks(read(REQ))), [], "capture keeps no unmet mark");
+  const moved = unmet(idBlocks(read("build/requirements/member-upload.md")));
+  assert.deepEqual(moved, START_UNMET.filter((id) => MOVED_TO.get(id) === "member-upload").sort());
 });
 
-test("capture requirements consolidation: the non-requirement text lives in the notes, not the requirements file", () => {
+test("capture requirements: the non-requirement text lives in the notes, and the file is under the cap", () => {
   const req = read(REQ), notes = read(NOTES);
   for (const marker of [
     "**Size (P6).** As the code stands",
@@ -178,5 +192,5 @@ test("capture requirements consolidation: the non-requirement text lives in the 
     assert.ok(!req.includes(marker), `the requirements file no longer holds: ${marker}`);
   }
   assert.ok(!/^\s*- \*\*[RF]\d+\*\*/m.test(notes), "the notes hold no requirement line");
-  assert.ok(Buffer.byteLength(req) < 110000, "the requirements file is smaller than at the start (109,908 bytes)");
+  assert.ok(Buffer.byteLength(req) < 70000, "the requirements file is under the 70,000-byte cap");
 });
