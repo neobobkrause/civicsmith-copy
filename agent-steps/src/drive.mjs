@@ -24,6 +24,24 @@ import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 export const MAX_STEPS = 400;
 
 /* R99 — the clock `wallclock` is measured on: `env.CLOCK` when a function (a test injects one), else `Date.now`. */
+/** R54: a write's `idem`, `<run>:<pass>:<step>:<n>`. `n` is the write's place among the step's writes and, after a dot,
+ *  a digest of what it writes (its body or query less `idem`, `consume` and `usage`, the spend and the clock): a step
+ *  re-run after a stop sends the same writes under the same keys, and a changed write (an adjusted candidate, a later
+ *  visit of the same step in the pass) a new key, never one the plane would read as a repeat. Pure. */
+export function idemKey(run, pass, step, n, content) {
+  const { idem: _i, consume: _c, usage: _u, ...rest } = content && typeof content === "object" ? content : {};
+  return `${run}:${pass}:${step}:${n}.${digest(stable(rest))}`;
+}
+const stable = (v) => (Array.isArray(v) ? `[${v.map(stable).join(",")}]`
+  : v && typeof v === "object" ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stable(v[k])}`).join(",")}}`
+  : JSON.stringify(v ?? null));
+/* FNV-1a, 32 bits, as eight hex digits: a key, not a seal. */
+const digest = (text) => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, "0");
+};
+
 /** R54: the ops whose calls are writes, each carrying its `idem`. */
 export const WRITE_OPS = new Set(["airunspawn", "capturerequest", "suggest", "optionpropose", "airuntick", "airunclose"]);
 
@@ -80,7 +98,7 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
     calls += 1;
     if (WRITE_OPS.has(op)) {
       idem.n += 1;
-      const key = `${runId}:${idem.pass}:${idem.step}:${idem.n}`;
+      const key = idemKey(runId, idem.pass, idem.step, idem.n, body ?? query);
       if (body != null) body = { ...body, idem: key }; else query = { ...(query || {}), idem: key };
     }
     return askPlane(env, op, credential, store, query, body);

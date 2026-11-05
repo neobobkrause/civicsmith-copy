@@ -101,7 +101,8 @@ export async function runSubsessions(call, state, runId, model, logSeq, contract
       if (governedDowngrade && report.state === governedDowngrade) report.state = "LOOKED_INDETERMINATE";
       /* R52: on the T53 provider, the tick also publishes the state at this step with the reports taken so far */
       const partial = typeof logSeq?.partialState === "function"
-        ? logSeq.partialState({ ...state, reports: sortByLevel([...reports, report]).map((r) => ({ ...r, [PARTIAL_MARK]: Number(state.pass) || 0 })) })
+        ? logSeq.partialState({ ...state, reports: sortByLevel([...reports, { ...report, ...(seq != null ? { observed_at: `log:${seq}` } : {}) }])
+            .map((r) => ({ ...r, [PARTIAL_MARK]: Number(state.pass) || 0 })) })
         : null;
       const tick = planeAnswer(await call("airuntick", null,
         { run: runId, log: [entry], ...(logSeq?.wall ? { consume: { wallclock: logSeq.wall.spend() } } : {}),
