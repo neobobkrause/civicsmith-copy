@@ -34,9 +34,9 @@ test("R1: assembleStore answers the assembled store {routes, dispatch, namespace
   for (const k of Object.keys(a)) assert.equal(typeof a[k], "function", k);
   assert.ok(Object.isFrozen(a));
   const answers = await settle(st.blocked);
-  assert.equal(answers.length, 3, "the migration, the scheduler's start, instance-setup's start");
-  assert.equal(answers[2].ok, true);
-  assert.equal(answers[2].started, true);
+  assert.equal(answers.length, 4, "the migration, the scheduler's start, ai-catalogue's start (F1), instance-setup's start");
+  assert.equal(answers[3].ok, true);
+  assert.equal(answers[3].started, true);
   /* the migrated store holds the ledger's tables and the owners' */
   const tables = new Set(st.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((r) => r.name));
   for (const t of ["keeps_pending", "keeps_last", "acquire_stages", "job_unit_attempts", "job_batches", "bundles", "members"]) assert.ok(tables.has(t), t);
