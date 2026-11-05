@@ -1,0 +1,1 @@
+{"row":"triage","user":"queue-producers","verdict":"not affected","evidence":"bio-plane/src/queue-producers/index.mjs:1170 maps basisVersions() versions to name, description, state, hidden, author, at and run only; never legs","at":"2026-11-05T02:48:23.710Z","key":"basis-versions:356","worker":"ac5c1724c44b4a45f","cost":"0.9"}

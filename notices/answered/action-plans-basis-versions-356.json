@@ -1,0 +1,1 @@
+{"row":"answered","user":"action-plans","by":"triage","evidence":"bio-plane/src/action-plans/index.mjs:2392 builds a basisVersionsOf instance only as a lazy dependency; it never calls basisVersions() and never reads legs","at":"2026-11-05T02:48:23.710Z","key":"basis-versions:356","worker":"ac5c1724c44b4a45f","cost":"0.9"}

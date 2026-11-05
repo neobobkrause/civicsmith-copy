@@ -1,0 +1,1 @@
+{"row":"answered","user":"agent-worker","by":"triage","evidence":"agent-worker/test/wire-vocabulary.test.mjs:73 imports only VERSION_NAME_RE and isBoilerplate; agent-worker/src reads no version legs","at":"2026-11-05T02:48:23.710Z","key":"basis-versions:356","worker":"ac5c1724c44b4a45f","cost":"0.9"}

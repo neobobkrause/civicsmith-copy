@@ -1,0 +1,1 @@
+{"row":"triage","user":"affordances","verdict":"not affected","evidence":"bio-plane/src/affordances/facts.mjs:130 calls only bv.conclusionOf(); affordances.mjs:66 imports only unchanged constants","at":"2026-11-05T02:48:23.710Z","key":"basis-versions:356","worker":"ac5c1724c44b4a45f","cost":"0.9"}

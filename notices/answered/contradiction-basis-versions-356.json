@@ -1,0 +1,1 @@
+{"row":"answered","user":"contradiction","by":"triage","evidence":"bio-plane/src/contradiction/index.mjs:1898 uses versionsIn() for name and claim only; basisVersions() is never called","at":"2026-11-05T02:48:23.710Z","key":"basis-versions:356","worker":"ac5c1724c44b4a45f","cost":"0.9"}
