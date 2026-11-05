@@ -75,3 +75,4 @@
 {"at":"2026-11-05T14:22:03Z","row":"sent","n":38,"to":"bob","text":"merged PR 314 (job journey-check): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T14:22:15Z","row":"outcome","n":38,"outcome":"delivered"}
 {"at":"2026-11-05T14:28:17Z","row":"sent","n":39,"to":"bob","text":"merged PR 398 (job corpus-export): node .process/tool/p3.mjs notice triage corpus-export:398 (provider notice corpus-export:398; 4 user modules owe a worker's judgment: op-declarations, publication, queue-producers, store-assembly: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
+{"at":"2026-11-05T14:28:28Z","row":"outcome","n":39,"outcome":"delivered"}
