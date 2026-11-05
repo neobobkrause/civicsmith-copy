@@ -95,3 +95,4 @@
 {"at":"2026-11-05T15:50:34Z","row":"sent","n":48,"to":"root","text":"MERGER session_018BhcedwsJZrL1WAAcugNk7: the merge train stopped at about 15:50Z with: 'p3 merge train: the approvals on tranche changed since the train started: nothing is landed, the train stops; tell ROOT'. It was waiting on PR 445's gate (6a926353a8); last land PR 444 at 15:43:37Z. I take no further step."}
 {"at":"2026-11-05T15:50:46Z","row":"outcome","n":48,"outcome":"delivered"}
 {"at":"2026-11-05T16:28:38Z","row":"sent","n":49,"to":"bob","text":"merged PR 439 (job screens-daily): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
+{"at":"2026-11-05T16:28:55Z","row":"outcome","n":49,"outcome":"delivered"}
