@@ -20,7 +20,7 @@
   ],
   "node": "26.10.0",
   "suite_timeout_minutes": 45,
-  "coordinator": "session_01RAN5ekK8nutcUSV3rTsfxn",
+  "coordinator": "session_018Bhcec9qpHxbPMJhPWd4dX",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
     {
