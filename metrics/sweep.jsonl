@@ -275,3 +275,4 @@
 {"at":"2026-11-05T22:52:16Z","row":"ready","live":1,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-05T22:48:00Z"}
 {"at":"2026-11-05T22:59:18Z","row":"ready","live":0,"job_cap":20,"started":[]}
 {"at":"2026-11-05T22:59:22Z","row":"ready","live":0,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-05T22:51:00Z"}
+{"at":"2026-11-05T23:08:33Z","row":"ready","live":1,"job_cap":20,"started":["case-check"],"by":"starter","owed_since":"2026-11-05T23:00:10Z"}
