@@ -45,3 +45,4 @@
 {"at":"2026-11-05T08:41:29Z","row":"sent","n":23,"to":"bob","text":"PR 426 (job registers) fires a review trigger and has no review recorded for 39536eb779: review it (node .process/tool/p3.mjs review brief 426), then node .process/tool/p3.mjs merge train note 426 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
 {"at":"2026-11-05T08:42:11Z","row":"outcome","n":23,"outcome":"delivered"}
 {"at":"2026-11-05T09:30:37Z","row":"sent","n":24,"to":"bob","text":"PR 426 (job registers) fires a review trigger and has no review recorded for 39536eb779: review it (node .process/tool/p3.mjs review brief 426), then node .process/tool/p3.mjs merge train note 426 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
+{"at":"2026-11-05T09:30:48Z","row":"outcome","n":24,"outcome":"delivered"}
