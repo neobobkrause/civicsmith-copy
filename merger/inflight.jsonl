@@ -72,3 +72,4 @@
 {"at":"2026-11-05T22:28:49.137Z","row":"end","pr":462,"tip":"deb595b08fb5fe876bca4bf91cae42918382a459","cause":"refused: the gate on the merged result is failure: https://github.com/neobobkrause/civicsmith-copy/actions/runs/42121210544/job/127573728564","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-05T22:29:08.696Z","row":"inflight","pr":471,"module":"screens-investigate","tip":"59a92258262179e4ac664bf4ad75b0d4acefd75b","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T00:14:08.696Z"}
 {"at":"2026-11-05T22:38:26.547Z","row":"end","pr":471,"tip":"59a92258262179e4ac664bf4ad75b0d4acefd75b","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
+{"at":"2026-11-05T22:39:15.102Z","row":"inflight","pr":487,"module":"control-plane-door-reading","tip":"887f3f612a3d96b2f900d3886c18d17267c18a18","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T00:24:15.102Z"}
