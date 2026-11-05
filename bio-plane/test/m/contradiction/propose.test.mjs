@@ -243,7 +243,7 @@ test("R20, R61: C-60.1–C-60.3 and C-93.1–C-93.42 are this module's invariant
   /* The N345 rows and their translations are exactly the requirement's table (R20; N345). */
   const req = readFileSync(fileURLToPath(new URL("../../../../build/requirements/contradiction.md", import.meta.url)), "utf8");
   const table = [...req.matchAll(/^\| (C-(?:60|93)\.\d+) \| `([A-Z_]+)` \| "(.+)" \|$/gm)].map((m) => [m[1], m[2], m[3]]);
-  assert.equal(table.length, 34);
+  assert.equal(table.length, 37);  /* C-60.2, C-60.3 and C-93.8–C-93.42 (R20; N345; R61) */
   const all = { ...CONTRADICTION_PAIR_CHECKS, ...CONTRADICTION_CANDIDATE_CHECKS };
   for (const [check, code, translation] of table) {
     assert.equal(all[code]?.check, check, code);

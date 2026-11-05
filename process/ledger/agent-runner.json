@@ -1,0 +1,38 @@
+{
+  "id": "agent-runner",
+  "title": "agent-runner: its unmet requirements",
+  "layer": 6,
+  "paths": [
+    "agent-runner/",
+    "build/requirements/agent-runner.md"
+  ],
+  "tests": [
+    "agent-runner/test/"
+  ],
+  "requirements": "build/requirements/agent-runner.md",
+  "uses": [
+    "bundler",
+    "setup-words",
+    "agent-harness",
+    "agent-model",
+    "run-rules",
+    "signatures"
+  ],
+  "suite": {
+    "cwd": "agent-runner",
+    "command": [
+      "node",
+      "--test",
+      "--test-concurrency=1"
+    ]
+  },
+  "reading": [
+    "build/requirements/agent-runner.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T00:56:11Z"
+  }
+}
