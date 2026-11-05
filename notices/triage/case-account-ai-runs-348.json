@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-account","verdict":"not affected","evidence":"bio-plane/src/case-account/index.mjs:51 imports aiRunsOf only to read runs with runFor, never open","at":"2026-11-05T02:44:14.054Z","key":"ai-runs:348","worker":"a8c0ea92f25dc719c","cost":"0.9"}

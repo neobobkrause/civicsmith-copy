@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-gate","verdict":"not affected","evidence":"build/modules.json:115 lists ai-gate (paths ai-gate/src/) as using ai-runs, but no file in it imports ai-runs, so it makes no AiRuns.open call","at":"2026-11-05T02:44:14.054Z","key":"ai-runs:348","worker":"a8c0ea92f25dc719c","cost":"0.9"}

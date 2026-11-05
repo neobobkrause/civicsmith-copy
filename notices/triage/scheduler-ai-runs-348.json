@@ -1,0 +1,1 @@
+{"row":"triage","user":"scheduler","verdict":"not affected","evidence":"bio-plane/src/scheduler/index.mjs:386 uses ai-runs only through reap and wake and onRunOpened (:969), never AiRuns.open","at":"2026-11-05T02:44:14.054Z","key":"ai-runs:348","worker":"a8c0ea92f25dc719c","cost":"0.9"}

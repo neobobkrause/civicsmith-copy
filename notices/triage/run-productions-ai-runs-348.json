@@ -1,0 +1,1 @@
+{"row":"triage","user":"run-productions","verdict":"not affected","evidence":"bio-plane/src/run-productions/index.mjs:226 uses ai-runs only through runFor, boundOf and consumeBound (:626, :730, :882), never AiRuns.open","at":"2026-11-05T02:44:14.054Z","key":"ai-runs:348","worker":"a8c0ea92f25dc719c","cost":"0.9"}

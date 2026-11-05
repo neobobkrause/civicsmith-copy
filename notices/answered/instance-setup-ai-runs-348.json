@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-setup","by":"triage","evidence":"bio-plane/src/setup.mjs:254 uses only AiRuns.prototype.testInstance, never open","at":"2026-11-05T02:44:14.054Z","key":"ai-runs:348","worker":"a8c0ea92f25dc719c","cost":"0.9"}
