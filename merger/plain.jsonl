@@ -33,3 +33,4 @@
 {"at":"2026-11-05T12:36:38Z","row":"renew","id":"1d7d9fec36dc","pr":503}
 {"at":"2026-11-05T12:39:18Z","row":"queue","id":"4925c05ea168","pr":502,"head":"f72d5c7153fb5dfbfcc42b64ad734249101054ed","ref":"p3/pin-105c202ace","by":"session_018BhcecWSZtAfhtStNDseYC","reviewed":null,"no_review":"a process pin move; the fix was reviewed in process3","rounds":0,"decision":null,"as":"pin","take_by":"2026-11-05T15:49:18.331Z","renews":true}
 {"at":"2026-11-05T12:44:31Z","row":"renew","id":"4925c05ea168","pr":502}
+{"at":"2026-11-05T12:46:29Z","row":"withdraw","id":"4925c05ea168","pr":502,"why":"the train stopped"}
