@@ -29,14 +29,17 @@ function entries(text) {
   for (const line of text.split("\n")) {
     const m = line.match(/^(?:- )?\*\*([RF]\d+)\*\*(.*)$/);
     if (!m) continue;
+    const retired = m[2].match(/^\s*\*\(retired: moved to (jurisdictions-[bc]) (R\d+), PR 474\)\*\s*$/);
     const mark = m[2].match(/^\s*\*\(not yet met: ([^)]*)\)\*/);
-    out.push({ id: m[1], mark: mark ? mark[1] : null });
+    out.push({ id: m[1], mark: mark ? mark[1] : null, movedTo: retired ? retired[1] : null, movedId: retired ? retired[2] : null });
   }
   return out;
 }
 
 const files = { jurisdictions: read("jurisdictions"), b: read("jurisdictions-b"), c: read("jurisdictions-c") };
-const all = Object.values(files).flatMap(entries);
+// The moved ids keep a retired line in jurisdictions (BOB, bob-175); the requirements are the rest.
+const all = Object.values(files).flatMap(entries).filter((e) => !e.movedTo);
+const stubs = entries(files.jurisdictions).filter((e) => e.movedTo);
 
 test("the split keeps every requirement id of the start commit, each in exactly one file", () => {
   const ids = all.map((e) => e.id);
@@ -51,10 +54,20 @@ test("the split keeps every unmet mark of the start commit unchanged", () => {
 });
 
 test("jurisdictions keeps R1–R60, and -b and -c hold R61–R110 and R111–R139", () => {
-  const nums = (t) => entries(t).map((e) => Number(e.id.slice(1)));
+  const nums = (t) => entries(t).filter((e) => !e.movedTo).map((e) => Number(e.id.slice(1)));
   assert.ok(nums(files.jurisdictions).every((n) => n <= 60));
   assert.ok(nums(files.b).every((n) => n >= 61 && n <= 110));
   assert.ok(nums(files.c).every((n) => n >= 111 && n <= 139));
+});
+
+test("each moved id keeps one retired line in jurisdictions naming the file that now holds it", () => {
+  const moved = START_IDS.filter((id) => Number(id.slice(1)) >= 61);
+  assert.deepEqual(stubs.map((e) => e.id), moved);
+  for (const e of stubs) {
+    assert.equal(e.movedId, e.id);
+    const there = entries(files[e.movedTo === "jurisdictions-b" ? "b" : "c"]).map((x) => x.id);
+    assert.ok(there.includes(e.id), `${e.id} is in ${e.movedTo}`);
+  }
 });
 
 test("build/requirements/jurisdictions.md is under the requirements cap", () => {

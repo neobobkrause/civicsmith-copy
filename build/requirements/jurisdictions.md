@@ -154,3 +154,86 @@ Holds the jurisdiction profiles: every local fact the product uses, as data, eac
 - **For the callers.** Consumers take `combine(...).view`, so conflict handling lives in one place. `instance-setup` holds the active list (record-core's setting, its R26) and refuses to activate a test profile (instance-setup R13–R14, `PROFILE_IS_TEST`). The installer offers the choice of profiles at install. Those requirements belong to the modules that hold the setting and call `combine`.
 - **T48 (T48-2): how the job gets the first profile's pointers (R92).** The job's session reads each body's own page with its web tool and records the address and the date read, the M-note form R56 and R85 use. A host the session's network refuses is named in the job's record, and that pointer stays absent. Nothing comes from memory, from the mockup or from a secondary aggregator where the body publishes its own page. If no primary page can be reached at all, the job stops and says so; that is a hard reason for R92 alone, and R89–R91 still merge. The `legalaid` official list is likely the State Bar's Legal Services Trust Fund grantees serving the county; the job names the list it used at START.
 - Known bases for the first profile: M-119, M-132 and M-157 (identifiers and systems); M-18 and M-24 (minutes, staff report, ordinance or resolution); M-121 (directory: it has no local vocabulary in code); and dated entries in `MEASUREMENTS.md` (the calendar and handlers, 2026-07-30; the agenda, FW-15).
+
+## Moved
+
+R61–R110 moved to `jurisdictions-b` and R111–R139 to `jurisdictions-c` under the same numbers (PR 474); each id keeps a retired line here.
+
+- **R61** *(retired: moved to jurisdictions-b R61, PR 474)*
+- **R62** *(retired: moved to jurisdictions-b R62, PR 474)*
+- **R63** *(retired: moved to jurisdictions-b R63, PR 474)*
+- **R64** *(retired: moved to jurisdictions-b R64, PR 474)*
+- **R65** *(retired: moved to jurisdictions-b R65, PR 474)*
+- **R66** *(retired: moved to jurisdictions-b R66, PR 474)*
+- **R67** *(retired: moved to jurisdictions-b R67, PR 474)*
+- **R68** *(retired: moved to jurisdictions-b R68, PR 474)*
+- **R69** *(retired: moved to jurisdictions-b R69, PR 474)*
+- **R70** *(retired: moved to jurisdictions-b R70, PR 474)*
+- **R71** *(retired: moved to jurisdictions-b R71, PR 474)*
+- **R72** *(retired: moved to jurisdictions-b R72, PR 474)*
+- **R73** *(retired: moved to jurisdictions-b R73, PR 474)*
+- **R74** *(retired: moved to jurisdictions-b R74, PR 474)*
+- **R75** *(retired: moved to jurisdictions-b R75, PR 474)*
+- **R76** *(retired: moved to jurisdictions-b R76, PR 474)*
+- **R77** *(retired: moved to jurisdictions-b R77, PR 474)*
+- **R78** *(retired: moved to jurisdictions-b R78, PR 474)*
+- **R79** *(retired: moved to jurisdictions-b R79, PR 474)*
+- **R80** *(retired: moved to jurisdictions-b R80, PR 474)*
+- **R81** *(retired: moved to jurisdictions-b R81, PR 474)*
+- **R82** *(retired: moved to jurisdictions-b R82, PR 474)*
+- **R83** *(retired: moved to jurisdictions-b R83, PR 474)*
+- **R84** *(retired: moved to jurisdictions-b R84, PR 474)*
+- **R85** *(retired: moved to jurisdictions-b R85, PR 474)*
+- **R86** *(retired: moved to jurisdictions-b R86, PR 474)*
+- **R87** *(retired: moved to jurisdictions-b R87, PR 474)*
+- **R88** *(retired: moved to jurisdictions-b R88, PR 474)*
+- **R89** *(retired: moved to jurisdictions-b R89, PR 474)*
+- **R90** *(retired: moved to jurisdictions-b R90, PR 474)*
+- **R91** *(retired: moved to jurisdictions-b R91, PR 474)*
+- **R92** *(retired: moved to jurisdictions-b R92, PR 474)*
+- **R93** *(retired: moved to jurisdictions-b R93, PR 474)*
+- **R94** *(retired: moved to jurisdictions-b R94, PR 474)*
+- **R95** *(retired: moved to jurisdictions-b R95, PR 474)*
+- **R96** *(retired: moved to jurisdictions-b R96, PR 474)*
+- **R97** *(retired: moved to jurisdictions-b R97, PR 474)*
+- **R98** *(retired: moved to jurisdictions-b R98, PR 474)*
+- **R99** *(retired: moved to jurisdictions-b R99, PR 474)*
+- **R100** *(retired: moved to jurisdictions-b R100, PR 474)*
+- **R101** *(retired: moved to jurisdictions-b R101, PR 474)*
+- **R102** *(retired: moved to jurisdictions-b R102, PR 474)*
+- **R103** *(retired: moved to jurisdictions-b R103, PR 474)*
+- **R104** *(retired: moved to jurisdictions-b R104, PR 474)*
+- **R105** *(retired: moved to jurisdictions-b R105, PR 474)*
+- **R106** *(retired: moved to jurisdictions-b R106, PR 474)*
+- **R107** *(retired: moved to jurisdictions-b R107, PR 474)*
+- **R108** *(retired: moved to jurisdictions-b R108, PR 474)*
+- **R109** *(retired: moved to jurisdictions-b R109, PR 474)*
+- **R110** *(retired: moved to jurisdictions-b R110, PR 474)*
+- **R111** *(retired: moved to jurisdictions-c R111, PR 474)*
+- **R112** *(retired: moved to jurisdictions-c R112, PR 474)*
+- **R113** *(retired: moved to jurisdictions-c R113, PR 474)*
+- **R114** *(retired: moved to jurisdictions-c R114, PR 474)*
+- **R115** *(retired: moved to jurisdictions-c R115, PR 474)*
+- **R116** *(retired: moved to jurisdictions-c R116, PR 474)*
+- **R117** *(retired: moved to jurisdictions-c R117, PR 474)*
+- **R118** *(retired: moved to jurisdictions-c R118, PR 474)*
+- **R119** *(retired: moved to jurisdictions-c R119, PR 474)*
+- **R120** *(retired: moved to jurisdictions-c R120, PR 474)*
+- **R121** *(retired: moved to jurisdictions-c R121, PR 474)*
+- **R123** *(retired: moved to jurisdictions-c R123, PR 474)*
+- **R124** *(retired: moved to jurisdictions-c R124, PR 474)*
+- **R125** *(retired: moved to jurisdictions-c R125, PR 474)*
+- **R126** *(retired: moved to jurisdictions-c R126, PR 474)*
+- **R127** *(retired: moved to jurisdictions-c R127, PR 474)*
+- **R128** *(retired: moved to jurisdictions-c R128, PR 474)*
+- **R129** *(retired: moved to jurisdictions-c R129, PR 474)*
+- **R130** *(retired: moved to jurisdictions-c R130, PR 474)*
+- **R131** *(retired: moved to jurisdictions-c R131, PR 474)*
+- **R132** *(retired: moved to jurisdictions-c R132, PR 474)*
+- **R133** *(retired: moved to jurisdictions-c R133, PR 474)*
+- **R134** *(retired: moved to jurisdictions-c R134, PR 474)*
+- **R135** *(retired: moved to jurisdictions-c R135, PR 474)*
+- **R136** *(retired: moved to jurisdictions-c R136, PR 474)*
+- **R137** *(retired: moved to jurisdictions-c R137, PR 474)*
+- **R138** *(retired: moved to jurisdictions-c R138, PR 474)*
+- **R139** *(retired: moved to jurisdictions-c R139, PR 474)*
