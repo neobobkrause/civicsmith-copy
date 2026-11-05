@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { readManifest, imageReference } from '../src/manifest.mjs';
+import { readManifest, imageReference, RUNNER_INSTANCE_TYPE } from '../src/manifest.mjs';
 import { parseJsonc } from '../../bio-plane/scripts/jsonc.mjs';
 import { containerDescriptor, discoverMembers, isGuarded } from '../../bio-plane/scripts/fleet-bundle.mjs';
 import { installRuntime, loadWorker, fakeCtx } from './stubs/runtime.mjs';
@@ -128,10 +128,11 @@ test('R14 the marker states kind, image, bundle, class_name, max_instances, bind
   });
 });
 
-test('R33 the container runs at Cloudflare\'s instance type standard-1, declared in its deploy configuration; its max_instances and image are unchanged', () => {
+test('R33 the container instance_type is declared in its deploy configuration at the recorded RUNNER_INSTANCE_TYPE; its max_instances and image are unchanged', () => {
   const c = wrangler().containers[0];
-  assert.equal(c.instance_type, 'standard-1');
-  // control: the figures the container had before R33
+  assert.equal(RUNNER_INSTANCE_TYPE, 'standard-1', 'the figure BOB recorded (provisional; revisit on measured load)');
+  assert.equal(c.instance_type, RUNNER_INSTANCE_TYPE);
+  // control: the edit changes neither max_instances nor the image
   assert.equal(c.max_instances, 10);
   assert.equal(c.image, imageReference(readManifest()), 'the image is the manifest\'s digest-pinned reference, whichever release wrote it');
 });
