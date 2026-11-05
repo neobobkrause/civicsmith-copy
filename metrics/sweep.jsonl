@@ -27,3 +27,4 @@
 {"at":"2026-11-05T02:53:59Z","row":"ready","live":13,"job_cap":20,"started":["ai-use","citation","contradiction"]}
 {"at":"2026-11-05T02:57:56Z","row":"ready","live":10,"job_cap":20,"started":[]}
 {"at":"2026-11-05T03:02:33Z","row":"ready","live":10,"job_cap":20,"started":[]}
+{"at":"2026-11-05T03:07:51Z","row":"check","by":"test","live":10,"live_at":"2026-11-05T03:02:33Z","job_cap":20,"startable":5,"idle_capacity":{"kind":"work","since":"2026-11-05T03:03:39Z","min":4,"live":10,"cap":20,"held":0,"startable":5,"empty":10,"alarm":true,"owed_since":"2026-11-05T02:45:35Z"}}
