@@ -91,7 +91,7 @@ export const BAR_PARTS = Object.freeze(["check", "investigate", "extract", "plan
    factory on this world's storage. `testSet` and `bars`: the test set the deploy gate reads and the parts holding a
    passing record on it (B6: run-rules R19's test bar); `bars: []` holds none. */
 export function world({ env = {}, inquiry = undefined, deployedModes = undefined, zone = null, steps = undefined,
-                        aiUse = undefined, testSet = TEST_SET, bars = BAR_PARTS } = {}) {
+                        aiUse = undefined, testSet = TEST_SET, bars = BAR_PARTS, pathReady = "ok" } = {}) {
   const db = new DatabaseSync(":memory:");
   const sql = { exec(q, ...args) {
     const literal = [...q.matchAll(/\b(?:GLOB|LIKE)\s+'((?:[^']|'')*)'/gi)].map((m) => m[1].replace(/''/g, "'"));
@@ -152,12 +152,29 @@ export function world({ env = {}, inquiry = undefined, deployedModes = undefined
     limits: verdict === "passes_with_limits" ? ["throwaway limit"] : [], grade: "throwaway", at: T0, ...more });
   for (const part of bars) for (const e of [ENTRIES.a, ENTRIES.b]) gates.push(gate(part, e));
   runs.registerGateVerdicts("ai-gate", ({ entry_id }) => gates.filter((g) => g.entry_id === entry_id));
+  /* R97, F1: the path source, which no module registers yet (R97/R98's server side, a known gap). With none the path reads
+     not ready (F1, fail closed), so a world stands one in answering `pathReady` (`ok`); `pathReady: null` registers none.
+     The stand-in is replaceable: a test's own first `runs.registerPathReady(module, fn)` takes its place (answered as a
+     first registration is), and a later one is refused as the module refuses a second; `w.setPath(fn)` swaps it too. */
+  let pathFn = () => ({ state: pathReady });
+  const setPath = (fn) => { pathFn = fn; };
+  if (pathReady !== null) {
+    // fixtures-own: harness - the plane's path source, which no module registers yet (R97/R98's server side)
+    runs.registerPathReady("plane", (a) => pathFn(a));
+    const real = runs.registerPathReady.bind(runs);
+    let standIn = true;
+    runs.registerPathReady = (module, fn) => {
+      if (!standIn || typeof module !== "string" || !module || typeof fn !== "function") return real(module, fn);
+      standIn = false; setPath(fn);
+      return { ok: true, module };
+    };
+  }
   let k = 0;
   /* the accounts this world's acts set, by owner, as `accountSet` answered their ids */
   const held = new Map();
   const hold = (owner, id) => held.set(owner, [...(held.get(owner) || []), id]);
   const w = {
-    db, sql, ctx, record, membership, credentials, aiAccounts, promotion, bias, runs, catalogue, gates, gate,
+    db, sql, ctx, record, membership, credentials, aiAccounts, promotion, bias, runs, catalogue, gates, gate, setPath,
     row: (q, ...a) => [...sql.exec(q, ...a)][0] ?? null, rows: (q, ...a) => [...sql.exec(q, ...a)],
     count: (t) => [...sql.exec(`SELECT count(*) AS n FROM ${t}`)][0].n,
     /** Every row of this module's tables and of the observation log, for "nothing was written". */

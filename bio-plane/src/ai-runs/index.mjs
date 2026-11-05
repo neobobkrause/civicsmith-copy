@@ -1014,6 +1014,9 @@ export class AiRuns {
               /* R89 (T50; N1186): the project a run over a question is opened in, explicit at the open; a run over a project
                  is in that project whatever is sent. */
               project = null,
+              /* F2 (K5821, Bob's REC-11; run-rules R18): for an exploring run (origin `explore`), the member who turned
+                 exploring on (`member:<id>` or `<id>`), its accountable member; absent, the stamped `actor`'s member. */
+              enabledBy = undefined,
               /* PL-18 / DEC-63: WHICH MEMBER IS ASKING, stamped server-side by
                  `control-plane` and empty for a machine credential. Never a
                  caller's word — a principal a caller can name is not one, which
@@ -1167,7 +1170,18 @@ export class AiRuns {
        `DEPLOYED_MODES` is asked first; then Gate 1's verdict for that entry and part (`ai-gate`'s, through this module's
        seam), the test-instance exception lifting the bar alone, never a flag. With no account serving, only the flag and
        the chain are asked here, and R52's refusal names what is missing. */
-    const accountMember = AiRuns.#accountMember({ actor, principalPlane, principalAi });
+    /* F2 (K5821, Bob's REC-11): an exploring run's accountable member is the member who turned exploring on (`enabledBy`,
+       else the stamped actor's member), judged by `run-rules` R18 below at each run; her act's account serves it, and she
+       is recorded as `principal_ai_ref`. Whether she may still start runs is read here, now: an active member. */
+    const exploring = (origin == null ? "" : String(origin).trim()) === "explore";
+    const enabler = exploring ? (enabledBy === undefined || enabledBy === null ? memberIdOf(actor) : memberIdOf(enabledBy)) : null;
+    let enablerAllowed = false;
+    if (enabler) {
+      try { const f = this.#membership().memberFacts(enabler); enablerAllowed = !!f && f.status === "active"; }
+      catch { enablerAllowed = false; }
+    }
+    const accountMember = exploring ? (enablerAllowed ? enabler : null)
+      : AiRuns.#accountMember({ actor, principalPlane, principalAi });
     const account = accountMember ? await this.#accountFor(accountMember, "run", inProject.project) : null;
     const servedOn = account && !account.refusal ? account.entry_id : null;
     const admissions = new Map(this.#deployedModes().filter((m) => RUN_MODES.includes(m))
@@ -1339,9 +1353,13 @@ export class AiRuns {
        the open's shape. */
     /* K1606 (run-rules R18, C-22.19, a RELAY): a run starts only at a member's act — the member found above; with none,
        the caller's own stamp is what is judged, and a run is never the standing question's exception. */
-    const start = startAllowed({ startedBy: accountMember ? `member:${accountMember}` : (actor || principalPlane), mode: runMode });
+    /* F2 (K5821): an exploring run is judged on the member who turned exploring on, with this module's reading of her now;
+       its refusal (`exploring: "off"`) is relayed. */
+    const start = startAllowed({ startedBy: accountMember ? `member:${accountMember}` : (actor || principalPlane), mode: runMode,
+                                 origin: runOrigin, enabledBy: enabler ? `member:${enabler}` : null, enablerAllowed });
     if (!start || start.ok !== true)
-      return { run, started: false, code: start.code, check: start.check, translation: start.translation, detail: start.detail };
+      return { run, started: false, code: start.code, check: start.check, translation: start.translation, detail: start.detail,
+               ...(start && start.exploring ? { exploring: start.exploring } : {}) };
     if (!account || account.refusal)
       return { run, started: false, ...(account ? account.refusal : this.#noAccount(accountMember, "A run")) };
     /* R52 (B5): the paying account's limits, judged by `ai-use.useCheck` (its R3) for this member's use `run`, its
@@ -3716,16 +3734,42 @@ export class AiRuns {
     return { ok: true, module };
   }
 
-  /** R95, R97: whether the path of `account_id` and `entry_id` is ready: `{asked, ready, state, reset_at}`. With no source
-   *  registered the plane is not asked (`asked: false`, read as ready: the Worker still answers AI_PATH_NOT_READY itself);
-   *  a source that throws or answers nothing reads `unknown`, not ready. */
+  /** R95, R97, F1: the states a path's `reason` may name, a closed set: `agent-model` R35's health states, and this
+   *  module's own `unregistered` (no source) and `unknown` (a source that fails, is silent or names anything else). */
+  static PATH_REASONS = Object.freeze(["ok", "degraded", "open", "half_open", "auth_failed", "payer_unverified", "retired",
+                                       "unknown", "unregistered"]);
+
+  /** R95, R97, F1: whether the path of `account_id` and `entry_id` is ready: `{asked, ready, state, reset_at}`. With no
+   *  source registered nothing stands behind the path, so it reads not ready (F1, fail closed: `asked: false`, state
+   *  `unregistered`); a source that throws, answers nothing or names a state outside `PATH_REASONS` reads `unknown`, not
+   *  ready. `reset_at` is passed out only as an instant (at most 40 characters that parse as a date). */
   async #pathReady(account_id, entry_id) {
-    if (!this.#pathSource) return { asked: false, ready: true, state: null, reset_at: null };
+    if (!this.#pathSource) return { asked: false, ready: false, state: "unregistered", reset_at: null };
     let said = null;
     try { said = await this.#pathSource.fn({ account_id, entry_id }); } catch { said = null; }
-    const state = said && typeof said.state === "string" ? said.state : "unknown";
-    return { asked: true, ready: AiRuns.READY_STATES.includes(state), state,
-             reset_at: said && typeof said.reset_at === "string" ? said.reset_at : null };
+    const raw = said && typeof said.state === "string" ? said.state : "unknown";
+    const state = AiRuns.PATH_REASONS.includes(raw) && raw !== "unregistered" ? raw : "unknown";
+    const r = said && typeof said.reset_at === "string" && said.reset_at.length <= 40 && Number.isFinite(Date.parse(said.reset_at))
+      ? said.reset_at : null;
+    return { asked: true, ready: AiRuns.READY_STATES.includes(state), state, reset_at: r };
+  }
+
+  /** F1 (coordinator 23:20; BOB 23:30): `op=aipathready`, the one read of the AI path, which this module owns. Answers a
+   *  declared read answer `{ok: true, state: "ready" | "not_ready", ready, reason, reset_at}` by `#pathReady`'s fail-closed
+   *  rule, the same rule the dispatch reads (R97). Not ready, and the source never asked, when: the door stamped no
+   *  viewer (`reason` `no_viewer`); no pair is named (`no_pair`); or the viewer cannot see the account (`ai-accounts`'
+   *  `accountState` refuses her: `reason` null, nothing about the account answered). Never throws; writes nothing. */
+  async pathReadyRead({ viewer, account_id, entry_id } = {}) {
+    const closed = (reason) => ({ ok: true, state: "not_ready", ready: false, reason, reset_at: null });
+    if (typeof viewer !== "string" || !viewer) return closed("no_viewer");
+    if (typeof account_id !== "string" || !account_id || typeof entry_id !== "string" || !entry_id) return closed("no_pair");
+    let seen = null;
+    try { seen = this.#aiAccounts().accountState({ account_id, viewer }); } catch { seen = null; }
+    if (!seen || seen.ok !== true) return closed(null);
+    let p = null;
+    try { p = await this.#pathReady(account_id, entry_id); } catch { p = null; }
+    if (!p) return closed("unknown");
+    return { ok: true, state: p.ready ? "ready" : "not_ready", ready: !!p.ready, reason: p.state, reset_at: p.reset_at };
   }
 
   /** R91: a run's segments, oldest first; `[]` when none. */
@@ -4400,6 +4444,8 @@ export function aiRunsOps(runs, url, body) {
     aisendrefuse: () => runs.aiSendRefuse({ run: (body || {}).run ?? q("run"), by: memberStamp() }),
     aiwaitswitch: () => runs.waitThenSwitch({ run: (body || {}).run ?? q("run"), wait: (body || {}).wait ?? q("wait"), by: memberStamp() }),
     airunparts: () => runs.runParts({ run: (body || {}).run ?? q("run"), viewer: q("viewer") }),
+    /* F1 (BOB 23:30): the frame's read of the AI path, fail closed; the viewer the door's stamp, never the body's */
+    aipathready: () => runs.pathReadyRead({ viewer: q("viewer"), account_id: q("account_id"), entry_id: q("entry_id") }),
   };
 }
 
@@ -4427,6 +4473,8 @@ export const DECLARED_OPS = Object.freeze({
     fields: { accepts: ["run"], requires: ["run"] } },
   airunparts: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-runs.declared.airunparts", "read: how a run went, part by part, each with its AI, its account's level and its instants; writes nothing (R103)"),
     fields: { accepts: ["run"], requires: ["run"] } },
+  aipathready: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-runs.declared.aipathready", "read: whether the AI path is ready for an account and entry; with nothing to ask it reads not ready; writes nothing (F1, R97)"),
+    fields: { accepts: ["account_id","entry_id"], requires: [] } },
   aiwaitswitch: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, weight: "reversible", description: localize("ai-runs.declared.aiwaitswitch", "the run's member waits a set time, then switches to her next account if her AI is still down (R105)"),
     fields: { accepts: ["run","wait"], requires: ["run","wait"] } },
 });

@@ -118,11 +118,12 @@ test("dev-key: through the spawn path, a wrangler that echoes its stdin still sh
   for (let i = 0; i + 24 <= secret.length; i += 8) assert.equal(out.includes(secret.slice(i, i + 24)), false);
 });
 
-test("dev-key: a dry run sends nothing and prints no key material", async () => {
+test("dev-key: a dry run looks the Worker up, sets nothing and prints no key material", async () => {
   const { main, makeDevelopmentKey, runWrangler } = await devKey();
-  const r = await run(["p3dev-t1", "--dry-run"], { ...ENV, CF_TOKEN: undefined });
+  const r = await run(["p3dev-t1", "--dry-run"]);
   assert.equal(r.code, 0, r.out);
-  assert.equal(r.calls.length, 0);
+  assert.deepEqual(r.calls.map((c) => c.args), [["deployments", "list", "--name", "p3dev-t1"]]);
+  assert.equal(r.sets.length, 0);
   assert.match(r.out, /dry run/);
   assert.doesNotMatch(r.out.split(DEVELOPMENT_ACCOUNT).join(""), /[A-Za-z0-9+/]{32,}/);
 });
@@ -186,4 +187,42 @@ test("catalogueKeysFor: the deployment's line is added only in a development bui
   for (const v of bad)
     assert.deepEqual([...catalogueKeysFor([...CATALOGUE_KEYS], { [DEVELOPMENT_VAR]: "1", [DEVELOPMENT_KEY_VAR]: v })],
       [...CATALOGUE_KEYS], String(v));
+});
+
+/* F1: `deploy dev`'s dry run accepts a step only if it exits 0 and prints this exact line alone on a line. */
+const GUARD = "p3dev guard: passed";
+const guardLines = (out) => out.split("\n").filter((l) => l.trim() === GUARD);
+
+test("dev-key F1: prints 'p3dev guard: passed' alone on its own line once every guard check passes, in a dry run and a real run", async () => {
+  await devKey();
+  for (const argv of [["p3dev-t1", "--dry-run"], ["p3dev-t1"]]) {
+    const r = await run(argv);
+    assert.equal(r.code, 0, r.out);
+    const lines = r.out.split("\n");
+    assert.equal(lines.filter((l) => l === GUARD).length, 1, `${argv.join(" ")}:\n${r.out}`);
+    /* printed after the Worker lookup and before any secret is sent */
+    assert.equal(r.calls[0].args[0], "deployments");
+  }
+});
+
+test("dev-key F1: never prints the guard line when a guard check fails, in a dry run or a real run", async () => {
+  await devKey();
+  const cases = [
+    [["p3dev-t1"], { ...ENV, CF_ACCT: "0123456789abcdef0123456789abcdef" }, {}, "WRONG_ACCOUNT"],
+    [["p3dev-t1"], { ...ENV, CF_ACCT: undefined }, {}, "WRONG_ACCOUNT"],
+    [["biosmoke8"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "biosmoke8" }, {}, "NOT_A_DEVELOPMENT_NAME"],
+    [["t1"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "t1" }, {}, "NOT_A_DEVELOPMENT_NAME"],
+    [["p3dev-t1"], { ...ENV, CIVICSMITH_TEST_INSTANCE: "p3dev-t2" }, {}, "NOT_A_TEST_INSTANCE"],
+    [["p3dev-t1"], { ...ENV, CIVICSMITH_TEST_INSTANCE: undefined }, {}, "NOT_A_TEST_INSTANCE"],
+    [["p3dev-t1"], { ...ENV, CF_TOKEN: undefined }, {}, "NO_TOKEN"],
+    [["p3dev-t1"], ENV, { listCode: 1 }, "NO_SUCH_WORKER"],
+  ];
+  for (const [argv, env, codes, code] of cases) for (const mode of [[], ["--dry-run"]]) {
+    const r = await run([...argv, ...mode], env, codes);
+    const label = `${[...argv, ...mode].join(" ")} ${code}`;
+    assert.equal(r.code, 1, label);
+    assert.match(r.out, new RegExp(`REFUSED \\[${code}\\]`), label);
+    assert.deepEqual(guardLines(r.out), [], label);
+    assert.equal(r.sets.length, 0, label);
+  }
 });

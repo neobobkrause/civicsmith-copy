@@ -1,0 +1,41 @@
+{
+  "id": "reading-guides",
+  "title": "reading-guides: its unmet requirements",
+  "layer": 6,
+  "paths": [
+    "bio-plane/src/reading-guides/",
+    "build/requirements/reading-guides.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/reading-guides/"
+  ],
+  "requirements": "build/requirements/reading-guides.md",
+  "uses": [
+    "doctypes",
+    "test-support",
+    "record-grammar",
+    "civil-time",
+    "record-core",
+    "membership",
+    "jurisdictions",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/reading-guides.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T01:44:38Z"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "ai-gate",
+  "title": "ai-gate: its unmet requirements (T53), its code in its own directory",
+  "layer": 6,
+  "paths": [
+    "ai-gate/src/",
+    "build/requirements/ai-gate.md"
+  ],
+  "tests": [
+    "ai-gate/test/"
+  ],
+  "requirements": "build/requirements/ai-gate.md",
+  "uses": [
+    "agent-model",
+    "agent-harness",
+    "ai-catalogue",
+    "ai-use",
+    "signatures",
+    "run-rules",
+    "answers",
+    "ai-runs",
+    "observation-log",
+    "agent-worker",
+    "setup-words",
+    "test-support",
+    "agent-steps",
+    "record-grammar"
+  ],
+  "suite": {
+    "cwd": "ai-gate",
+    "command": [
+      "node",
+      "--test",
+      "--test-concurrency=1"
+    ]
+  },
+  "reading": [
+    "build/requirements/ai-gate.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T03:55:58Z"
+  }
+}

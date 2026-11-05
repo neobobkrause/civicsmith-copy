@@ -23,12 +23,13 @@ export const PLANE = { session: true, member: "mai", handle: "mai", tokenClass: 
 
 /** Draws `screens` at `path` in Chromium at `width` px; `answer(op, url)` may answer an op with a result (default `PLANE`), and
  *  `seen` collects each request's op. Calls `fn(page, seen)` once `ready` (a selector) is drawn, closes the browser, answers fn's result. */
-export async function inChromium(screens, { width = 390, path = "/app/question/Q1", ready = "#cs-main", answer = null, record = null, plane = PLANE } = {}, fn) {
+export async function inChromium(screens, { width = 390, path = "/app/question/Q1", ready = "#cs-main", answer = null, record = null, plane = PLANE, scrollbars = false } = {}, fn) {
   const pw = engine();
   assert.ok(pw && pw.chromium, "playwright-core is needed beside the product (`npm ci` in site/), with Chromium: this test cannot measure without them");
   assert.ok(existsSync(EXE), "Chromium is needed at CHROMIUM or /opt/pw-browsers/chromium");
   const html = interfacePage(screens), script = interfaceScript(screens);
-  const browser = await pw.chromium.launch({ executablePath: EXE });
+  /* `scrollbars`: the page's scroll bars take their width, as on a desktop (headless Chromium is launched with them hidden by default) */
+  const browser = await pw.chromium.launch({ executablePath: EXE, ...(scrollbars ? { ignoreDefaultArgs: ["--hide-scrollbars"] } : {}) });
   try {
     const ctx = await browser.newContext({ viewport: { width, height: 900 } });
     await ctx.addInitScript(() => localStorage.setItem("bio-session", JSON.stringify({ t: "tok", e: 0, d: "own", w: "mai" })));

@@ -2669,7 +2669,9 @@ const UNATTENDED_BY_DECISION = Object.freeze({
    ai-runs PR 96 (notice ai-runs:96): its member acts on a run that waits or is refused (`aicontinue`, `aistop`, `aiwait`,
    `aiswitchaccount`, `aiwithout`, `aisendrefuse`, `aiwaitswitch`) take the unexplained ground and its read `airunparts` the
    read ground, until `affordances`' `ACT_HELP` holds a text. money PR 154 (notice money:154; money R27, R40): money serves
-   `moneyfiscalyears`, never `fiscalyears`, so `fiscalyears` leaves the read ground (R34: no named op without a spec). */
+   `moneyfiscalyears`, never `fiscalyears`, so `fiscalyears` leaves the read ground (R34: no named op without a spec).
+   F1 (walk p3dev-t1, 4 Nov; ai-runs PR 323): ai-runs serves and declares the frame's `aipathready` (surface-declarations R15,
+   a read act; interface-shell R20), so it takes the read ground until `affordances`' `ACT_HELP` holds a text. */
 const ACT_HELP_ABSENT = Object.freeze({
   alias: Object.freeze({ ground: localize("op-declarations.index.an_alias_of_a_declared", "An alias of a declared op (R21): its op's explanation serves it."),
     ops: frozenList([
@@ -2682,7 +2684,7 @@ const ACT_HELP_ABSENT = Object.freeze({
       "acceptancecounts", "accounthistory", "accountsof", "accountstate", "accountuses", "actionholdpreview",
       "actionquotes", "adminrecoverystep", "adminremovals", "adminremovalsopen", "advocacychecks", "aiactual",
       "aichecks", "aicredential", "aiestimate", "aihealthpreview", "aikeepawaystate", "ailimits", "aioffered",
-      "airunparts", "aiusage", "aiusebymember", "applicationrecipes", "approvedunsent", "asktallies", "assistantstate", "audit",
+      "aipathready", "airunparts", "aiusage", "aiusebymember", "applicationrecipes", "approvedunsent", "asktallies", "assistantstate", "audit",
       "baseupdates", "bearingnotes", "bindsat", "browse", "bundlehistory", "calculation", "calculationevaluate",
       "capturegrade", "capturerequestplatformhosts", "career", "checkpointsdue", "checkrequests", "checksof",
       "citationresolve", "claims", "clocklateness", "clocksics", "clocksrunning", "coarchivestate", "concerns",

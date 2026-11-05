@@ -213,6 +213,10 @@ export const JUSTIFICATION_REFUSALS = [
      object demanded (the deliberate exclusions above stay out). R24 (N707): a scan hold's release says why (file-safety
      R17), refused empty or over 2,000 characters; its own code, apart from `HOLD_REFUSED` (K231, K2103). */
   "NOT_TESTIMONY", "HOLD_NO_REASON",
+  /* R55 (T53; N1259): a register's definition refused without its own statement of terms, its authored reason (registers
+     R7), and a row's removal refused without its reason beside its ground (registers R30). Held here because registers'
+     rows carry no `refusal` yet (R49 would add each); a bad ground stays EXPUNGE_GROUND_REFUSED, which asks a choice. */
+  "REGISTER_NO_TERMS", "ROW_EXPUNGE_NO_REASON",
   /* R25 (T37; N755's follow-on; K2175): `credentials` R51 answers `aikeepaway`'s `on: true` without a reason in its own
      word for it (C-29.32), where it answered NO_REASON; `NO_REASON` stays for the ops that still answer it. */
   "AI_KEEP_AWAY_NO_REASON",

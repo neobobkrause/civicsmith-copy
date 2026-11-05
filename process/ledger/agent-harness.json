@@ -1,0 +1,36 @@
+{
+  "id": "agent-harness",
+  "title": "agent-harness: its unmet requirements",
+  "layer": 6,
+  "paths": [
+    "agent-harness/src/",
+    "build/requirements/agent-harness.md"
+  ],
+  "tests": [
+    "agent-harness/test/"
+  ],
+  "requirements": "build/requirements/agent-harness.md",
+  "uses": [
+    "observation-log",
+    "run-rules",
+    "setup-words",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "agent-harness",
+    "command": [
+      "node",
+      "--test",
+      "--test-concurrency=1"
+    ]
+  },
+  "reading": [
+    "build/requirements/agent-harness.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T03:17:02Z"
+  }
+}

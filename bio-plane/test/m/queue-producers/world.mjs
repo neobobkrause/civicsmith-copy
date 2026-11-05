@@ -200,6 +200,9 @@ export function defaultFakes() {
     /* T45 (K2781 (1)): the Action layer's to-dos, action-producers' (its R13), answered through R8; a test fills it */
     actionProducers: { actionItems: () => ({ items: [], facts: {} }) },
     docket: { coreDue: () => DOCKET.unread },
+    /* T53 (R60, R61): a stopped AI account (ai-accounts R75) and re-testing turned off (ai-use R29); a test hands the real module's read */
+    aiAccounts: { creditsStopsOpen: () => [] },
+    aiUse: { retestingOff: () => ({ ok: true, off: [] }) },
     networkNotices: { noticesOf: ({ project }) => ({ ok: true, project, notices: [], sealed_weeks: [], methodVersion: 1 }) },
   };
 }

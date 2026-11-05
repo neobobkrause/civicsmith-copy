@@ -1,0 +1,46 @@
+{
+  "id": "citation",
+  "title": "citation: its unmet requirements",
+  "layer": 6,
+  "paths": [
+    "bio-plane/src/citation/",
+    "build/requirements/citation.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/citation/"
+  ],
+  "requirements": "build/requirements/citation.md",
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "content",
+    "retrieval",
+    "inquiry",
+    "provenance",
+    "setup-words",
+    "inquiry-grammar",
+    "accepted-work",
+    "test-support",
+    "file-safety"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/citation.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T01:21:27Z"
+  }
+}
