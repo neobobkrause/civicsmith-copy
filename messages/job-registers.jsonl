@@ -3,3 +3,4 @@
 {"at":"2026-11-05T05:06:58Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job registers BLOCKED: run status"}
 {"at":"2026-11-05T05:07:09Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-05T05:14:10Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job registers complete, PR #426 ready, session session_01RAN5ektZimqp2ozTpc8QaS: run status"}
+{"at":"2026-11-05T05:14:20Z","row":"outcome","n":3,"outcome":"delivered"}
