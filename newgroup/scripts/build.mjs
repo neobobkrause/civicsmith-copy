@@ -71,8 +71,9 @@ export async function bundleText(esbuild) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const esbuild = await import("esbuild");
-  const { writeFileSync } = await import("node:fs");
+  const { writeFileSync, mkdirSync } = await import("node:fs");
   const text = await bundleText(esbuild);
+  mkdirSync(path.join(NG, "dist"), { recursive: true }); // dist/ is untracked, so a fresh checkout has none
   writeFileSync(path.join(NG, "dist/newgroup.bundled.mjs"), text);
   console.log(`built dist/newgroup.bundled.mjs (${text.length} bytes, ${(await bundledKeys()).length} words)`);
 }

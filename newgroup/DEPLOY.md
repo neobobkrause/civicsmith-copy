@@ -20,8 +20,10 @@ any page of ours can explain it. Deploy the hello-world it offers.
 
 ## 2. Paste the module
 
-Open the Worker, Edit code. Select everything in the editor, delete it, and
-paste the entire contents of `dist/newgroup.bundled.mjs`. Deploy.
+Build the bundle from this tree: `cd newgroup && npm run build`, which writes
+`dist/newgroup.bundled.mjs` (it is built here, never committed). Open the
+Worker, Edit code. Select everything in the editor, delete it, and paste the
+entire contents of the file the build just wrote. Deploy.
 
 ## 3. Verify the page
 
@@ -69,5 +71,5 @@ release (`node bio-plane/scripts/release-assemble.mjs --sign`). Then, in
 refuses to embed it unless it hashes to `RELEASE.json`, its signature
 verifies against the installer's own keys, it names the version
 `bio-plane/package.json` names, and no published token value appears in it,
-and produces a fresh `dist/newgroup.bundled.mjs` to paste. Then paste and deploy as in step 2, and existing groups pick the
+and writes a fresh `dist/newgroup.bundled.mjs`; paste the file the build wrote, never a committed one. Then paste and deploy as in step 2, and existing groups pick the
 release up through the wizard's update option.
