@@ -381,5 +381,9 @@
       "agent-harness/src/subsession.mjs"
     ]
   },
-  "merge_train": true
+  "merge_train": true,
+  "release_path": [
+    "control-plane",
+    "journey-check"
+  ]
 }
