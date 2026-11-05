@@ -1,0 +1,1 @@
+{"row":"triage","user":"plan-work","verdict":"not affected","evidence":"bio-plane/src/plan-work/index.mjs:884 only calls ai-runs `open` (re-examination run, R10) via the import at :46; no use of gateVerdictRecord(s) or partAdmitted","at":"2026-11-05T07:55:42.343Z","key":"ai-runs:391","worker":"a559263eb8f86510a","cost":"71176tokens"}

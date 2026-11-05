@@ -1,0 +1,1 @@
+{"row":"triage","user":"scheduler","verdict":"not affected","evidence":"bio-plane/src/scheduler/index.mjs:68 imports aiRunsOf and uses only reapDue/reap/wakeDue/wake/onRunOpened (index.mjs:385-390, 969); no gate verdict or partAdmitted use","at":"2026-11-05T07:55:42.343Z","key":"ai-runs:391","worker":"af326ec7e7e151eb5","cost":"71746tokens"}

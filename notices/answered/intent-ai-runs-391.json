@@ -1,0 +1,1 @@
+{"row":"answered","user":"intent","by":"triage","evidence":"bio-plane/src/intent/index.mjs:1523 only calls ai-runs `open` (R18) via the import at :41; it never uses gateVerdictRecord(s), partAdmitted or testBarRecord","at":"2026-11-05T07:55:42.343Z","key":"ai-runs:391","worker":"a559263eb8f86510a","cost":"71176tokens"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-reports","by":"triage","evidence":"build/modules.json:169 paths and tests are empty, so no file imports ai-runs; the declared ai-runs use has no code that reads the Gate 1 verdict records","at":"2026-11-05T07:55:42.343Z","key":"ai-runs:391","worker":"a3396e2f4f5e2f2ac","cost":"80663tokens"}

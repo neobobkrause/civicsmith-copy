@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-account","verdict":"not affected","evidence":"bio-plane/src/case-account/index.mjs:51 imports aiRunsOf only for ai-runs' runFor (line 207, run a draft names); no use of partAdmitted, gate verdict or test-bar records","at":"2026-11-05T07:55:42.343Z","key":"ai-runs:391","worker":"a56237336263c0c4d","cost":"69024tokens"}
