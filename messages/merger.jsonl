@@ -100,3 +100,4 @@
 {"at":"2026-11-05T17:11:15Z","row":"outcome","n":50,"outcome":"delivered"}
 {"at":"2026-11-05T17:14:41Z","row":"sent","n":51,"to":"bob","text":"merged PR 453 (job queue-producers): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T17:14:54Z","row":"outcome","n":51,"outcome":"delivered"}
+{"at":"2026-11-05T17:21:16Z","row":"sent","n":52,"to":"bob","text":"merged PR 428 (job mail-door): node .process/tool/p3.mjs notice triage mail-door:428 (provider notice mail-door:428; 4 user modules owe a worker's judgment: answer-envelope, op-declarations, store-assembly, surface-declarations: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
