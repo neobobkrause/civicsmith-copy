@@ -331,3 +331,4 @@
 {"at":"2026-11-05T09:11:59Z","row":"outcome","n":168,"outcome":"delivered"}
 {"at":"2026-11-05T09:15:12Z","row":"sent","n":169,"to":"root","text":"BOB session_018BhcefhxhWd9YQkYbKBcTB running; start check ok on 25c1786; taking over from session_018BhcecdJKXpFycvRBgqmS5 per handoff a927206103"}
 {"at":"2026-11-05T09:15:22Z","row":"outcome","n":169,"outcome":"delivered"}
+{"at":"2026-11-05T09:36:54Z","row":"sent","n":170,"to":"job-screens-publish","text":"PR 469 gate red only on revert: case-editor, fr30, fr30b, t50 tests pass with the change reverted (your change moves requirement text, no code). Rerun job complete screens-publish with your same --test args plus --exempt-revert \"requirements consolidation only: no code changed, the id/mark test guards the move\", then wake me."}
