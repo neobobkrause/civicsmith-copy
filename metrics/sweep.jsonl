@@ -200,3 +200,4 @@
 {"at":"2026-11-05T17:07:34Z","row":"check","by":"send","live":2,"live_at":"2026-11-05T16:57:12Z","job_cap":20,"startable":1,"idle_capacity":{"kind":"work","since":"2026-11-05T16:43:51Z","min":23,"live":2,"cap":20,"held":0,"startable":1,"empty":18,"alarm":true}}
 {"at":"2026-11-05T17:11:28Z","row":"ready","live":2,"job_cap":20,"started":["ux-design"]}
 {"at":"2026-11-05T17:16:18Z","row":"sweep","session":"session_018BhceeH3xpSe2ZFYNK6bxs","bob_acts":true,"bob_quiet_h":0,"root_context":15,"live":3,"job_cap":20,"sessions":14,"startable":1,"blocked":9,"blocked_oldest_min":775,"working":1,"waiting":2,"idle_capacity":{"kind":"work","since":"2026-11-05T17:13:39Z","min":2,"live":3,"cap":20,"held":0,"startable":1,"empty":17,"alarm":false}}
+{"at":"2026-11-05T17:20:51Z","row":"ready","live":2,"job_cap":20,"started":[]}
