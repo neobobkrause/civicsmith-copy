@@ -24,6 +24,8 @@ Text moved out of `build/requirements/screens-document.md` toward the requiremen
 
 **New in T53** (no old id): R58–R75.
 
+**Moved to `screens-document-beta`** (BOB's split, PR 474, 5 Nov 2026; verbatim, same numbers): R58–R75, the group "T53: the Document page in the beta". This file keeps R1–R57.
+
 ## Split proposal (job screens-document, T53; BOB's to rule)
 
 After this move the requirements file is 75,948 bytes, still over the cap of 70,000: its R1–R75 lines with their sub-bullets (R4, R8, R12, R49), kept verbatim, come to 73,293 bytes on their own, so no consolidation brings it under without changing requirement text. Proposed split along the file's own groups, verbatim and under the same numbers (as `op-grades` → `op-grades-folds`): R1–R57 (the moved lines, 46,849 bytes, and the copied lines, 9,801 bytes) stay in `screens-document`, about 59,000 bytes with its headings; R58–R75 ("T53: the Document page in the beta", 16,643 bytes) go to a new module `screens-document-beta`, about 18,000 bytes with its headings. Both sides stay under the cap with room.
