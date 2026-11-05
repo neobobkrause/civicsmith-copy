@@ -1,0 +1,50 @@
+{
+  "id": "network-notices",
+  "title": "network-notices: answer its provider notices",
+  "layer": 8,
+  "paths": [
+    "bio-plane/src/network-notices/",
+    "build/requirements/network-notices.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/network-notices/"
+  ],
+  "requirements": "build/requirements/network-notices.md",
+  "uses": [
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "host-governor",
+    "provenance",
+    "attestation",
+    "capture",
+    "publication",
+    "public-read",
+    "project-stage",
+    "docket",
+    "setup-words",
+    "test-support",
+    "member-roster"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/network-notices.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-04T22:40:45Z"
+  }
+}
