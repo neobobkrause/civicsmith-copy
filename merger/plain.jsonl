@@ -134,3 +134,4 @@
 {"at":"2026-11-05T19:19:23Z","row":"renew","id":"8cb14b47f6ae","pr":556}
 {"at":"2026-11-05T19:20:16Z","row":"queue","id":"1c84d8dc04d1","pr":559,"head":"a03d7a1c13a12d717ebcc7e542594683f818d51e","ref":"bob/train-window-3","by":"session_018Bhceddtp3HAmB1Z9LtX2s","reviewed":null,"no_review":"config only: merge_train_window 3, coordinator's trial call 19:00","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T22:30:16.490Z","renews":true}
 {"at":"2026-11-05T19:20:41Z","row":"renew","id":"7af0919e55ba","pr":557}
+{"at":"2026-11-05T19:21:26Z","row":"queue","id":"d801ac475cf0","pr":560,"head":"29afecc2e799320d76c45074acfd28f5b22060df","ref":"bob/drop-security-paths","by":"session_018Bhceddtp3HAmB1Z9LtX2s","reviewed":null,"no_review":"config only: removes review_triggers.security_paths, coordinator 19:20 under Bob's 19:18 rule","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T22:31:26.256Z","renews":true}
