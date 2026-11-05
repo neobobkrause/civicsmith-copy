@@ -2673,6 +2673,11 @@ const UNATTENDED_BY_DECISION = Object.freeze({
    `moneyfiscalyears`, never `fiscalyears`, so `fiscalyears` leaves the read ground (R34: no named op without a spec).
    F1 (walk p3dev-t1, 4 Nov; ai-runs PR 323): ai-runs serves and declares the frame's `aipathready` (surface-declarations R15,
    a read act; interface-shell R20), so it takes the read ground until `affordances`' `ACT_HELP` holds a text. */
+/* R34 (T53; F2; BOB 5 Nov): member acts an owner declares in its own DECLARED_OPS on a branch not yet merged, whose
+   text the design stream has not yet given. Each is named under the last ground once its owner's row is registered
+   (`OPS` holds it), and not before, so `ACT_HELP_ABSENT` never names an op `OPS` does not hold: investigation's
+   `acceptproposals` (PR 425) and extraction's `interpretmark` and `interpretationwithdraw` (PR 432). */
+const UNEXPLAINED_ONCE_DECLARED = ["acceptproposals", "interpretationwithdraw", "interpretmark"];
 const ACT_HELP_ABSENT = Object.freeze({
   alias: Object.freeze({ ground: localize("op-declarations.index.an_alias_of_a_declared", "An alias of a declared op (R21): its op's explanation serves it."),
     ops: frozenList([
@@ -2768,7 +2773,8 @@ const ACT_HELP_ABSENT = Object.freeze({
       "templatereviewgrant", "templaterevise", "templatesubmit", "theorypropose", "translationmark", "unfollow",
       "unpack", "uselink", "usesfreeze", "useunlink", "usewithdraw", "waitlook", "websitekeyrevoke", "websitekeyset",
       "wizardeditorgrant", "wizardeditorrevoke", "wizardpropose", "workbooklintexplain", "workbookmethodnote",
-      "workbookrecompute", "workbookunbind", "workobjective"]) }),
+      "workbookrecompute", "workbookunbind", "workobjective", ...UNEXPLAINED_ONCE_DECLARED.filter((op) => Object.hasOwn(OPS, op))]
+      .sort()) }),
 });
 
 /* R76 (T51; DEC-330 owed; U348; K3810): THE BROWSER ACTS, a class of their own, `{screen, census, registry}` each. They
