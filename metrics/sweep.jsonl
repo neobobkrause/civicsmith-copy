@@ -212,3 +212,4 @@
 {"at":"2026-11-05T18:03:06Z","row":"ready","live":4,"job_cap":20,"started":["control-plane-store-request"]}
 {"at":"2026-11-05T18:08:08Z","row":"ready","live":4,"job_cap":20,"started":[]}
 {"at":"2026-11-05T18:13:05Z","row":"ready","live":5,"job_cap":20,"started":["interface-shell-t53"]}
+{"at":"2026-11-05T18:18:24Z","row":"check","by":"block","live":5,"live_at":"2026-11-05T18:13:05Z","job_cap":20,"startable":0,"idle_capacity":{"kind":"empty","since":"2026-11-05T18:13:05Z","min":5,"live":5,"cap":20,"held":0,"startable":0,"empty":15,"alarm":false}}
