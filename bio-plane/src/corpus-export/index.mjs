@@ -617,13 +617,6 @@ export const DECLARED_OPS = Object.freeze({
   exportrender: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "substrate",
     description: localize("corpus-export.declared.exportrender", "export: keyed by (viewer, format); renders what the viewer would be carried and logs who took it"),
     fields: { accepts: ["format","part"], requires: ["format"] } },
-  /* R17, R18 (T53; K5441, K5443): administrator only, as `export`. */
-  exportwhole: { classes: ["admin"], mutating: true, needs: null, weight: "substrate",
-    description: localize("corpus-export.declared.exportwhole", "writes a whole-record manifest of what is already there, every stored file by parts, and logs it"),
-    fields: { accepts: ["note"], requires: [] } },
-  exportwholepart: { classes: ["admin"], mutating: false, weight: "read",
-    description: localize("corpus-export.declared.exportwholepart", "one part of a whole-record export's files, and its digest"),
-    fields: { accepts: ["file","offset","bytes"], requires: ["file"] } },
 });
 
 const instances = new WeakMap();

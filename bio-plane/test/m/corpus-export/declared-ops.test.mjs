@@ -39,14 +39,3 @@ test("R15 corpus-export declares exportrender: its requires alone raise no refus
     values: { format: "ftm", part: "1" }, refusedNaming: named({ format: ["EXPORT_FORMAT_UNKNOWN"], part: ["EXPORT_PART_MALFORMED"] }) });
 });
 
-test("R17 corpus-export declares exportwhole: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
-  await declaredOpHolds({ op: "exportwhole", declaration: DECLARED_OPS["exportwhole"], call: mk("exportwhole", {"viewer":"admin"}),
-    refusedNaming: named({}) });
-});
-
-test("R18 corpus-export declares exportwholepart: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
-  const setup = async () => { const w = world(); w.doc("INFO-2026-0001-minutes", ["the minutes, as captured"]); return w; };
-  const held = (await setup()).rows(`SELECT sha256 FROM files ORDER BY bundle_id, path LIMIT 1`)[0].sha256;
-  await declaredOpHolds({ op: "exportwholepart", declaration: DECLARED_OPS["exportwholepart"], call: mk("exportwholepart", {"viewer":"admin"}, setup),
-    values: { file: held, offset: "0", bytes: "16" }, refusedNaming: named({ file: ["EXPORT_PART_MALFORMED"], offset: ["EXPORT_PART_MALFORMED"], bytes: ["EXPORT_PART_MALFORMED"] }) });
-});
