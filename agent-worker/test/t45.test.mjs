@@ -15,6 +15,7 @@ import { ACTION_DRAFT_OPS, READS_AS, AUDIENCES, BEARINGS, TEXTCHECK_TEXT_MAX } f
 import { MODES } from "../../agent-harness/src/harness.mjs";
 import { MODEL_FOR_MODE } from "../../agent-model/src/model.mjs";
 import { ACCOUNT as WIRE_ACCOUNT, MEMBER } from "./account.mjs";
+import { machineWork, MACHINE_WORK } from "./label.mjs";
 
 let pass = 0, fail = 0;
 const t = (label, got, want) => {
@@ -282,9 +283,9 @@ section("R76 · textcheck: each sentence pointed out, quoted exactly, never rewr
   let r = await drive("draft", draftBody(TC(text), { account: ON }));
   t("R76: textcheck answers 200 {ok, task, draft, label, usage, calls}", [r.status, Object.keys(r.out)],
     [200, ["ok", "task", "draft", "label", "usage", "calls"]]);
-  t("R76: its draft is {sentences: [{index, quote, reads_as, why}]}, labelled machine work",
-    [r.out.draft, r.out.label], [{ sentences: [{ index: 0, quote: "The office broke the law.", reads_as: "assertion", why: "it states a breach" }] },
-                                 { kind: "machine" }]);
+  t("R76, F4: its draft is {sentences: [{index, quote, reads_as, why}]}, labelled machine work {kind: machine, ai}",
+    [r.out.draft, machineWork(r.out.label)], [{ sentences: [{ index: 0, quote: "The office broke the law.", reads_as: "assertion", why: "it states a breach" }] },
+                                 MACHINE_WORK]);
   t("R76: usage and calls as agent-model answers them", [r.out.usage?.input_tokens, r.out.calls], [2, 1]);
   t("R76: one conversation in mode draft, on the draft mode's model", [r.model.length, r.model[0].body.model], [1, MODEL_FOR_MODE.draft]);
   t("R76: textcheck is offered no read tool, only the draft", r.model[0].body.tools.map((x) => x.name), ["draft"]);
@@ -313,8 +314,8 @@ section("R76 · infractiondraft and bearingdraft: read only through the grant, o
   t("R76 (R48): the pack is read by op=agentpack under the grant, then the reads", r.plane.map((c) => c.op), ["agentpack", "search"]);
   t("R76 (R60): every plane call carries the grant in the Authorization header and no URL carries it",
     [r.plane.every((c) => c.authorization === `Bearer ${GRANT}`), r.plane.some((c) => c.url.includes(GRANT))], [true, false]);
-  t("R76: infractiondraft answers {text, sources}, labelled machine work",
-    [r.status, Object.keys(r.out.draft), r.out.label], [200, ["text", "sources"], { kind: "machine" }]);
+  t("R76, F4: infractiondraft answers {text, sources}, labelled machine work {kind: machine, ai}",
+    [r.status, Object.keys(r.out.draft), machineWork(r.out.label)], [200, ["text", "sources"], MACHINE_WORK]);
   t("R76: the task names the matter and the audience in the user turn",
     /matter 'PROJ-T45' for the audience 'oversight'/.test(JSON.stringify(r.model[0].body.messages[0].content)), true);
   r = await drive("draft", readBody(INF()), { model: { answer: { text: "a draft", sources: [] } } });
