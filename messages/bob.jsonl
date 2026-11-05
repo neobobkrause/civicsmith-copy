@@ -324,3 +324,4 @@
 {"at":"2026-11-05T06:56:04Z","row":"sent","n":165,"to":"root","text":"BOB start check FAILED (HEAD is not the tip): HEAD 7f3d41433eb07bafd481db134a7517a9505df00d, tranche e234b71169a0a049fd45288eee542e411e0105a3. Acting on nothing; ending."}
 {"at":"2026-11-05T06:56:14Z","row":"outcome","n":165,"outcome":"delivered"}
 {"at":"2026-11-05T07:02:01Z","row":"sent","n":166,"to":"root","text":"BOB running on e234b71 (pin c4f2cae), start check ok; 0/20 job sessions live; starting job start --ready now, then restarts for jobs whose sessions are gone"}
+{"at":"2026-11-05T07:02:12Z","row":"outcome","n":166,"outcome":"delivered"}
