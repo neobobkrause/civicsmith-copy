@@ -99,6 +99,19 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
         ? localize("agent-steps.drive.the_project_s_account_serving", "the project's account, serving that member") : localize("agent-steps.drive.that_member_s_own_reference", "that member's own reference")) }),
       409, { run_id: runId, recorded: recordedPayer, supplied: account.member }) };
 
+  /* R2 (T53; AIR25, BR18) — AN ACCOUNT NEVER CHANGES SILENTLY. The paying owner and account may differ from those
+     recorded at the open (after a hop, ai-runs R92, by design), but an arrived `account_id` that differs from the last
+     row of `session.segments` (ai-runs R19, R91) is refused: a hop writes the next segment's row, with its `hop_in`, in the
+     dispatch's own transaction (ai-runs R92), so a segment on another account with no row of its own is one no hop made. It is refused before any step, naming both ids.
+     A record that publishes no segments, or an account carrying no id, gives nothing to compare. */
+  const segs = Array.isArray(session.segments) ? session.segments.filter((x) => x && typeof x === "object") : [];
+  const lastSeg = segs.length ? segs[segs.length - 1] : null;
+  const arrivedId = account && typeof account.account_id === "string" && account.account_id ? account.account_id : null;
+  if (lastSeg && arrivedId && typeof lastSeg.account_id === "string" && lastSeg.account_id !== arrivedId)
+    return { refusal: refusal("ACCOUNT_CHANGE_UNRECORDED",
+      localize("agent-steps.drive.account_change_unrecorded", "the account handed to this segment is not the one the run's last segment ran on, and the record holds no hop between them, so no step was taken: a run's account never changes silently."),
+      409, { run_id: runId, recorded: lastSeg.account_id, supplied: arrivedId }) };
+
   /* R48 — THE PACK, AS THE PLANE PUBLISHED IT, HELD TO THE RUN'S RECORD, BEFORE ANY TURN. Only when model turns run:
      until then the pack instructs nothing and this changes nothing. */
   if (model) {
