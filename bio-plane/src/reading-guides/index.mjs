@@ -1,5 +1,5 @@
 /* reading-guides — what to look for in one kind of document (requirements: `build/requirements/reading-guides.md`
- * R1–R15; D8, D24, D65; K2405, K2418, K2472; v0.2 rule 11).
+ * R1–R20; D8, D24, D65; K2405, K2418, K2472; v0.2 rule 11; T53: N1257, N858).
  *
  * A guide is a short list of items, each a label, what to look for and, if given, where: by hand a checklist, for the
  * assistant what to read for, so the two are one text (D65). Civicsmith's library ships with the release (R1,
