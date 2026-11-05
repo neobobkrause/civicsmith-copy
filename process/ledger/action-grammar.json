@@ -1,0 +1,39 @@
+{
+  "id": "action-grammar",
+  "title": "action-grammar: its unmet requirements (T53)",
+  "layer": 9,
+  "paths": [
+    "bio-plane/src/action-grammar/",
+    "build/requirements/action-grammar.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/action-grammar/"
+  ],
+  "requirements": "build/requirements/action-grammar.md",
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "connections",
+    "inquiry-grammar",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/action-grammar.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T03:20:00Z"
+  }
+}
