@@ -116,3 +116,5 @@ The AI run's rules without a store: the bounds, endings and statuses a run can h
 
 None: the split is BOB's (K617, K649).
 - **F1** K5821, Bob's REC-11: an exploring run, a team's or a project's with origin explore, records as its accountable member the member who turned exploring on for that team or project, and R18's startAllowed is judged on that member at each run, so K1606 holds unchanged. If that member is gone or no longer allowed, the run is refused with a reason the screen shows, and exploring stays off until a member turns it on again. Today such a run has no member and is refused AI_RUN_NOT_A_MEMBER_ACT.
+- **F2** *(not yet met: coordinator ruling 5 Nov 03:50)* Add the run-rules row PART_NOT_PASSED for a run whose mode was not passed, with the next free C-109.x number in bio-plane/src/run-rules/checks.mjs (beside AI_RUN_MODE_NOT_DEPLOYED, checks.mjs:595); ai-runs R40 (ai-runs.md:28) refuses with it.
+- **F3** *(not yet met: coordinator ruling 5 Nov 03:50)* Add the run-rules row AI_RUN_IDEM_INVALID for a malformed idem, with the next free C-109.x number in bio-plane/src/run-rules/checks.mjs; ai-runs R106 (ai-runs.md:163) refuses with it.
