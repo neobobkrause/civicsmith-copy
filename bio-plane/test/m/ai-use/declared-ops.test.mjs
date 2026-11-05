@@ -34,3 +34,32 @@ test("R16 ai-use declares exploreapprove: its requires alone raise no refusal na
   await declaredOpHolds({ op: "exploreapprove", declaration: DECLARED_OPS["exploreapprove"], call: mk("exploreapprove", {"by":"ann"}),
     refusedNaming: named({}, true), values: {"owner":"member:ann","day":"2026-10-09"}, same: sameCode });
 });
+
+/* F2 (op-grades R57; coordinator ruling 5 Nov 04:19): the assistant's ops this module serves are declared here with R57's
+   grades, so op-grades reads them from their owner: the re-tests' and health switches reversible, the two reads `read`. */
+test("F2 ai-use declares op-grades R57's ops with R57's grades: airetestset and aihealthset reversible, aiusebymember and aihealthpreview read (control: ailimitset and exploreapprove keep their substrate rows)", () => {
+  const want = { airetestset: ["reversible", true], aihealthset: ["reversible", true], aiusebymember: ["read", false], aihealthpreview: ["read", false] };
+  for (const [op, [weight, mutating]] of Object.entries(want)) {
+    const row = DECLARED_OPS[op];
+    assert.ok(row, `${op} is declared`);
+    assert.equal(row.weight, weight, op);
+    assert.equal(row.mutating, mutating, op);
+    assert.deepEqual(row.machineClasses, [], `${op}: no machine takes it`);
+    assert.equal(typeof row.description, "string");
+    assert.ok(row.description.length > 0 && !row.description.startsWith("capture-directed:"), op);
+    if (weight === "read") assert.ok(row.description.startsWith("read:"), op);
+    assert.equal(typeof aiUseOps({}, new URL("http://x/"), {})[op], "function", `${op} is served here`);
+  }
+  assert.equal(DECLARED_OPS.ailimitset.weight, "substrate");
+  assert.equal(DECLARED_OPS.exploreapprove.weight, "substrate");
+});
+
+test("F2 ai-use declares airetestset: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
+  await declaredOpHolds({ op: "airetestset", declaration: DECLARED_OPS["airetestset"], call: mk("airetestset", {"by":"admin"}),
+    refusedNaming: named({}, true), values: {"owner":"group","on":true,"caps":{}}, same: sameCode });
+});
+
+test("F2 ai-use declares aihealthset: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
+  await declaredOpHolds({ op: "aihealthset", declaration: DECLARED_OPS["aihealthset"], call: mk("aihealthset", {"by":"admin"}),
+    refusedNaming: named({}, true), values: {"on":true}, same: sameCode });
+});
