@@ -31,7 +31,8 @@
   ],
   "status": {
     "state": "BLOCKED",
-    "reason": "Neither open mark can be met from this job's paths (tests and notes only). Pushed 6e0bb595: R117 seam test (emailCapture's member rows run through acquisition's real fileMember: three attachments filed, each with its own reading row and an email-attachment receipt; a refused kind not_filed; control no rows), suite 4 pass 3 todo. R117 stays open for two code changes outside my paths: (1) capture's gradeNoteOf (R76) gives a filed attachment the acquire (fetched) note, because RECEIVED_VIAS at bio-plane/src/capture/index.mjs:108 lacks 'email-attachment'; fix is one line there plus R76's text (owner: this module's code move, or a capture job). (2) Nothing in src/ runs a 'member' job row, so attachments wait for ever in the plane: store-jobs R24 (was store-assembly R102), no job yet. R120 needs a live study on PLATFORM's driver (coordinator's act) and its fix may land in reading-pipeline or store-door. Details: docs/requirements-notes/member-upload.md.",
-    "at": "2026-11-05T11:19:45Z"
+    "reason": "Deferred (coordinator ruling 5 Nov 19:55): R117 waits on (a) capture: RECEIVED_VIAS at bio-plane/src/capture/index.mjs:108 gains 'email-attachment', plus R76's text, owned by capture's next attempt as a requirement, and (b) store-jobs R24 (a runner for 'member' job rows). R120's live study is at the round's deploy (the coordinator's act). Its pushed seam test 6e0bb595 lands as is; restart by uses when capture and store-jobs land.",
+    "at": "2026-11-05T20:07:36Z",
+    "owner": "coordinator"
   }
 }
