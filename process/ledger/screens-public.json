@@ -30,7 +30,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T21:08:26Z"
+    "state": "BLOCKED",
+    "reason": "R86 met and struck (test bio-plane/test/m/screens-public/t53.test.mjs, pushed a0b77931b5). R84, R100, R101, R102, R104 need new drawing (and for R102/R104 new words) in bio-plane/src/screens-publish/ (published.mjs, published-parts.mjs, docket-public.mjs, review-outside.mjs, keys.mjs); screens-public's paths in build/modules.json hold only its requirements file and tests, and this START allows nothing else, so nothing was changed there; each stands as a test.todo. To unblock: give screens-public those code paths (move the public screens out of screens-publish), or hand the five marks to a screens-publish job. Notes: docs/requirements-notes/screens-public.md.",
+    "at": "2026-11-05T21:29:08Z"
   }
 }
