@@ -1,1 +1,1 @@
-{"since":"2026-11-05T18:08:39Z","acts":[{"at":"2026-11-05T18:08:39Z","act":"job complete instance-setup"},{"at":"2026-11-05T18:12:35Z","act":"job complete wizard-scripts"},{"at":"2026-11-05T18:20:13Z","act":"block interface-shell-t53"},{"at":"2026-11-05T18:21:32Z","act":"job complete control-plane-store-request"}]}
+{"since":"2026-11-05T18:21:32Z","acts":[{"at":"2026-11-05T18:21:32Z","act":"job complete control-plane-store-request"}]}
