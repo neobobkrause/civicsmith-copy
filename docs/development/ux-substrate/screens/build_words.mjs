@@ -411,6 +411,27 @@ for (const [k, en, src, note] of [
   ['screen.help.way.next', 'Next: {topic}', 'screens-daily R116', 'beside screen.help.way.home; {topic} the next help topic\'s screen.<id>.name'],
 ]) add(k, en, false, src + ' (design lane)', note);
 
+// 4r. T53's "words owed" on screens-daily, screens-intake and screens-investigate, keys named and settled by the design lane
+//     (5 Nov 2026; CLAUDE.md: design lanes decide wording in the design stream). The screens' jobs draw them.
+const TIE_PREVIEW = { employer: 'works for {party}', relative: 'is related to {party}', business: 'has a business interest in {party}', other: 'has a tie to {party}' };
+for (const [k, en, prot, src, note] of [
+  ['screen.queue.signer.keys_more.one', '1 more key is waiting. It appears here as you handle these.', false, 'screens-daily R108', 'below a signer-self-registered item\'s key lines when basis.keys_more is 1'],
+  ['screen.queue.signer.keys_more', '{n} more keys are waiting. They appear here as you handle these.', false, 'screens-daily R108', 'below a signer-self-registered item\'s key lines when basis.keys_more is 2 or more'],
+  ['screen.inbox.row.named', '{name}, {size}', false, 'screens-intake R92', 'an inbox row\'s title: the file\'s name as the sender gave it, and its true size'],
+  ['screen.inbox.row.noted', '“{words}…”, {size}', false, 'screens-intake R92', 'an inbox row\'s title when the knock gave no file name: the first words of its note, and its true size'],
+  ['screen.inbox.row.unnamed', 'Handed in without a name or note, {size}', false, 'screens-intake R92', 'an inbox row\'s title with neither a name nor a note'],
+  ['screen.inbox.row.became', 'Became {document}', false, 'screens-intake R92', 'after "Move into the record": a link to the document it made; drawn on no unmoved knock'],
+  ['screen.inbox.ladder.unknown.means', 'Nothing is known of who handed it in.', false, 'screens-intake R92', 'beside screen.inbox.ladder.unknown; the five lines replace screen.inbox.ladder.basis\'s run-on sentence'],
+  ['screen.inbox.ladder.same.means', 'It came with the same secret phrase as earlier material. That says nothing about who they are.', false, 'screens-intake R92', 'beside screen.inbox.ladder.same'],
+  ['screen.inbox.ladder.partly.means', 'The team knows something about them, such as an occupation, but not who they are.', false, 'screens-intake R92', 'beside screen.inbox.ladder.partly'],
+  ['screen.inbox.ladder.group.means', 'Members know who they are. It is kept with the source, not here.', false, 'screens-intake R92', 'beside screen.inbox.ladder.group'],
+  ['screen.inbox.ladder.public.means', 'They are publicly named.', false, 'screens-intake R92', 'beside screen.inbox.ladder.public'],
+  ...Object.entries(TIE_PREVIEW).flatMap(([kind, says]) => [
+    [`screen.ties.preview.${kind}.name`, `{handle}, who worked on this case, ${says}.`, true, 'screens-investigate R92', `the tie preview naming the member (kind ${kind}); {party} the person or organization the tie is with; replaces screen.ties.says.name.choice's "is {tie}", which put the kind where the party goes`],
+    [`screen.ties.preview.${kind}.group`, `A member of the team who worked on this case ${says}.`, true, 'screens-investigate R92', `the tie preview without naming the member (kind ${kind}); replaces screen.ties.says.group.choice's "is {tie}"`],
+  ]),
+]) add(k, en, prot, src + ' (design lane)', note);
+
 // 5. The frame: rail, phone tabs, explanation levels
 for (const [k, name] of W.RAIL) { add(`rail.${k}.name`, name, false, 'mock-shell.js RAIL'); if (W.RAIL_HELP[k]) add(`rail.${k}.holds`, W.RAIL_HELP[k], false, 'mock-refs.js RAIL_HELP'); }
 // DEC-241: the line beneath a place's name on the phone's More page: its rail.<k>.holds after the name, capitalized.
