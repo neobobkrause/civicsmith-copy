@@ -1,0 +1,37 @@
+{
+  "id": "agent-model",
+  "title": "agent-model: its unmet T53 requirements, R35 path source (health) first",
+  "layer": 6,
+  "paths": [
+    "agent-model/",
+    "build/requirements/agent-model.md"
+  ],
+  "tests": [
+    "agent-model/test/"
+  ],
+  "requirements": "build/requirements/agent-model.md",
+  "uses": [
+    "setup-words",
+    "runtime-limits",
+    "ai-catalogue",
+    "ai-accounts",
+    "agent-harness"
+  ],
+  "suite": {
+    "cwd": "agent-model",
+    "command": [
+      "node",
+      "--test",
+      "--test-concurrency=1"
+    ]
+  },
+  "reading": [
+    "build/requirements/agent-model.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T01:18:19Z"
+  }
+}

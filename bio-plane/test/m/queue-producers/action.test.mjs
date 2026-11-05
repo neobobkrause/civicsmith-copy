@@ -97,22 +97,23 @@ test("R8 (T45; R15–R21, R29 retired): the moved kinds are never raised here, w
     ["CONDITION::action-clock-overdue::ACT-1::0"]);
 });
 
-test("R14: OBLIGATIONs signer-self-registered, one per active self-registered key, to an administrator or the admin credential and nobody else, offering R26's revoke", () => {
+test("R14 (as R56 amends its grain): OBLIGATIONs signer-self-registered, one for each member holding an active self-registered key, to an administrator or the admin credential and nobody else, offering R26's revoke", () => {
   const w = world();
   w.member("ada", { role: "admin" }); w.member("alice"); w.member("bob");
   w.signer("KEY-A", "alice", { comment: "alice's laptop", added: iso(NOW - 3000) });
   w.signer("KEY-B", "bob", { origin: "admin" });                 // an administrator's registration: no item
   w.signer("KEY-C", "bob", { status: "revoked" });               // no longer active: no item
   const ids = (r) => ofKind(r, "signer-self-registered").map((i) => i.id);
-  assert.deepEqual(ids(w.read("ada")), ["OBLIGATION::signer-self-registered::KEY-A"]);
-  assert.deepEqual(ids(w.read(null, "class:admin")), ["OBLIGATION::signer-self-registered::KEY-A"]);
+  assert.deepEqual(ids(w.read("ada")), ["OBLIGATION::signer-self-registered::alice"]);
+  assert.deepEqual(ids(w.read(null, "class:admin")), ["OBLIGATION::signer-self-registered::alice"]);
   assert.deepEqual(ids(w.read("alice")), [], "not the member who registered it, who is no administrator");
   assert.deepEqual(ids(w.read(null, "class:member")), [], "nor another machine credential");
-  const it = byId(w.read("ada"))["OBLIGATION::signer-self-registered::KEY-A"];
-  assert.deepEqual([it.class, it.kind, it.subject.kind, it.subject.id, it.subject.comment, it.subject.registered_by],
-    ["OBLIGATION", "signer-self-registered", "signer_key", "KEY-A", "alice's laptop", "alice"], "naming the key's comment and its member");
+  const it = byId(w.read("ada"))["OBLIGATION::signer-self-registered::alice"];
+  assert.deepEqual([it.class, it.kind, it.subject.kind, it.subject.id, it.basis.keys[0].comment, it.subject.registered_by],
+    ["OBLIGATION", "signer-self-registered", "member", "alice", "alice's laptop", "alice"], "naming the key's comment and its member");
   assert.deepEqual(it.age, { state: "determined", since: iso(NOW - 3000), ms: 3000 }, "aged from its added instant");
-  assert.deepEqual(it.options, [{ id: "signerset", label: word("queue-producers.label.revoke_signing_key"), weight: "single" }]);
+  assert.deepEqual(it.options, [{ id: "signerset", label: word("queue-producers.label.revoke_signing_key"), weight: "single", key: "KEY-A" },
+                               { id: "signerknown", label: word("queue.signer-self-registered.known"), weight: "single", key: "KEY-A" }]);
   assert.deepEqual(it.basis.raised_to, ["ada"]);
   w.run(`UPDATE signers SET status='revoked' WHERE key_b64='KEY-A'`);
   assert.deepEqual(ids(w.read("ada")), [], "it leaves when the key is no longer active");
@@ -148,9 +149,9 @@ test("R14 (A-03): the member who registered a key is not told of it, though she 
   w.signer("KEY-A", "ada", { comment: "ada's laptop" });
   const ids = (r) => ofKind(r, "signer-self-registered").map((i) => i.id);
   assert.deepEqual(ids(w.read("ada")), [], "she registered it herself");
-  assert.deepEqual(ids(w.read("cy")), ["OBLIGATION::signer-self-registered::KEY-A"], "another administrator is told");
-  assert.deepEqual(ids(w.read(null, "class:admin")), ["OBLIGATION::signer-self-registered::KEY-A"], "the admin credential is told");
-  assert.deepEqual(byId(w.read("cy"))["OBLIGATION::signer-self-registered::KEY-A"].basis.raised_to, ["cy"], "raised_to does not name her");
+  assert.deepEqual(ids(w.read("cy")), ["OBLIGATION::signer-self-registered::ada"], "another administrator is told");
+  assert.deepEqual(ids(w.read(null, "class:admin")), ["OBLIGATION::signer-self-registered::ada"], "the admin credential is told");
+  assert.deepEqual(byId(w.read("cy"))["OBLIGATION::signer-self-registered::ada"].basis.raised_to, ["cy"], "raised_to does not name her");
 });
 
 test("R55: an administrator's signerKnown ends the signer-self-registered item for every administrator and the admin credential; a second self-registered key still mints one", () => {
@@ -158,7 +159,8 @@ test("R55: an administrator's signerKnown ends the signer-self-registered item f
   w.member("ada", { role: "admin" }); w.member("cy", { role: "admin" }); w.member("alice");
   w.signer("AAAAKEYA", "alice", { comment: "alice's laptop" });
   w.signer("AAAAKEYB", "alice", { comment: "alice's phone" });
-  const ids = (r) => ofKind(r, "signer-self-registered").map((i) => i.id).sort();
+  /* R56: one item for the member, listing her keys */
+  const ids = (r) => ofKind(r, "signer-self-registered").flatMap((i) => i.basis.keys.map((k) => `OBLIGATION::signer-self-registered::${k.key_b64}`)).sort();
   assert.deepEqual(ids(w.read("ada")), ["OBLIGATION::signer-self-registered::AAAAKEYA", "OBLIGATION::signer-self-registered::AAAAKEYB"], "minted");
   const done = w.credentials.signerKnown({ keyB64: "AAAAKEYA", viewer: "member:ada" });
   assert.equal(done.ok, true, "the act is the credentials module's own");

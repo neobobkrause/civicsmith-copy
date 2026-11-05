@@ -142,7 +142,7 @@ Terms. A **run** is `{run, status, label, mode, context_type, context_id, princi
 
 - **F1** (coordinator 23:20; R97, R95) **A missing health source reads not ready.** With no path source registered (`registerPathReady`, R97, R98), the AI path reads not ready (fail closed): a dispatch is withheld `AI_PATH_NOT_READY` (R97), the run left resumable, and `op=aipathready` answers not ready. Test: with no source registered a member's dispatch is withheld `AI_PATH_NOT_READY` with no call to the binding, and the path read answers not ready; control: a source answering `ok` dispatches.
 
-- **F2** *(not yet met: K5821, REC-11)* (Bob's REC-11, K5821, `build/rulings-product/ai.md`; `run-rules` R18) **An exploring run is accountable to the member who turned exploring on.** An exploring run (a team's or a project's, origin `explore`) records as its accountable member the member who turned exploring on, and `open` judges `run-rules` R18's `startAllowed` on that member at each run. Test: refused when R18 refuses her; control: allowed opens.
+- **F2** (Bob's REC-11, K5821, `build/rulings-product/ai.md`; `run-rules` R18) **An exploring run is accountable to the member who turned exploring on.** An exploring run (a team's or a project's, origin `explore`) records as its accountable member the member who turned exploring on, and `open` judges `run-rules` R18's `startAllowed` on that member at each run. Test: refused when R18 refuses her; control: allowed opens.
 
 **The run record: reads, parts and the AI's name (T53; N1219, DEC-466)**
 

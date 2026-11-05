@@ -2,13 +2,15 @@
    typed here (K3268, BOB K4069, K4076). This module uses nothing (P4): `op-declarations` merges after it, so no test imports
    a declaration of another module; what a requirement of this module states, in backticks or as plain words, is the
    contract, and the tables are the data under test. */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
 
 /* ---- this module's own requirements ------------------------------------------------------------------------------- */
-const REQ_LINES = readFileSync(new URL("../../../../build/requirements/op-grades.md", import.meta.url), "utf8").split("\n");
+/* the module's requirements and the folds split from them under the same numbers (5 Nov 2026, PR 369), read as one text */
+const REQ_LINES = ["op-grades", "op-grades-folds"]
+  .map((f) => readFileSync(new URL(`../../../../build/requirements/${f}.md`, import.meta.url), "utf8")).join("\n").split("\n");
 
 /** Requirement R<n> as written: its line and its sub-bullets, to the next requirement or heading. */
 export const reqText = (n) => {
@@ -57,11 +59,14 @@ export const worded = (text) => outsideParens(text).split(/[,;.]|\band\b/).map((
     (`own` are this module's exports, which are no codes). */
 export const joinedCodes = (own) => [...new Set(REQ_LINES.filter((line) => line.includes("JUSTIFICATION_REFUSALS"))
   .flatMap(tickedCodes)
-  .filter((c) => !Object.hasOwn(own, c) && !c.startsWith("MACHINE_CANNOT_") && c !== "ACTS" && !c.endsWith("_PATH")))];
+  .filter((c) => !Object.hasOwn(own, c) && !c.startsWith("MACHINE_CANNOT_") && c !== "ACTS" && !c.endsWith("_PATH")
+    /* this module's own registration refusals and the owners' table (R49, R50), named on R55's line, are no member's refusal;
+       nor is a code R1's rule excludes (R55's `EXPUNGE_GROUND_REFUSED` asks a choice, and "stays") */
+    && !c.startsWith("DECLARED_OP") && !asksNotTheAccount(c)))];
 
 /** R1's exclusions as a rule over a code, not a list of codes: a refusal that asks an object, an identifier, a choice, a
     form or a member (or is a machine's), and never the member's own account. */
-export const asksNotTheAccount = (code) => /^(NO_(TARGET|IDS?|KIND|CITATION|BODY|TITLE|CANDIDATE|COUNSEL)|NO_SUCH_|NOT_(A_|AN_)|MACHINE_CANNOT_|ALREADY_|KNOCK_EMPTY|BAD_)|_(NO_LABEL|NO_STATEMENT|TOO_LONG|NOT_FOUND|NOT_IN_PLACE|NOT_OPEN|NOT_PAUSED|LINKED|MISMATCH|INVALID|UNCHANGED|TEXT_REFUSED|NAME_REFUSED|STEP_REFUSED|SCOPE_REFUSED|WHY_REFUSED|ENTRY_INVALID|KIND_UNKNOWN|SIGNATURE_REFUSED|ACT_REFUSED|VALUE_REFUSED)$/.test(code);
+export const asksNotTheAccount = (code) => /^(NO_(TARGET|IDS?|KIND|CITATION|BODY|TITLE|CANDIDATE|COUNSEL)|NO_SUCH_|NOT_(A_|AN_)|MACHINE_CANNOT_|ALREADY_|KNOCK_EMPTY|BAD_)|_(NO_LABEL|NO_STATEMENT|TOO_LONG|NOT_FOUND|NOT_IN_PLACE|NOT_OPEN|NOT_PAUSED|LINKED|MISMATCH|INVALID|UNCHANGED|TEXT_REFUSED|NAME_REFUSED|STEP_REFUSED|SCOPE_REFUSED|WHY_REFUSED|GROUND_REFUSED|ENTRY_INVALID|KIND_UNKNOWN|SIGNATURE_REFUSED|ACT_REFUSED|VALUE_REFUSED)$/.test(code);
 
 /* ---- this module's own tables ------------------------------------------------------------------------------------- */
 /** The ops of a NON_ACTS table whose reason is a read's ("read: …"), in table order. */
@@ -86,6 +91,8 @@ export async function collectDeclaredOps(root) {
   const ops = {}, owners = {}, who = {};
   const filesOf = (path) => {
     const abs = join(root, path);
+    /* a path the ledger lists before its module has code (ai-gate's own directory, K5576) declares nothing yet */
+    if (!existsSync(abs)) return [];
     if (!statSync(abs).isDirectory()) return [abs];
     return readdirSync(abs, { withFileTypes: true }).filter((e) => e.name !== "node_modules").flatMap((e) => (e.isDirectory() ? filesOf(join(path, e.name)) : /\.(mjs|js)$/.test(e.name) ? [join(abs, e.name)] : []));
   };
