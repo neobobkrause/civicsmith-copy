@@ -58,3 +58,4 @@
 {"at":"2026-11-05T21:49:16.499Z","row":"end","pr":495,"tip":"31311579bcbe0463d201ba7d0ef501633ece9ffa","cause":"landed","session":"session_018BhcefSY1HcDdU87BP9fxU"}
 {"at":"2026-11-05T21:50:24.890Z","row":"inflight","pr":477,"module":"jurisdictions-b","tip":"b4a79f1c669ffa9c20e648e8e543fc4475d17228","session":"session_018BhcefSY1HcDdU87BP9fxU","until":"2026-11-05T23:35:24.890Z"}
 {"at":"2026-11-05T21:54:28.392Z","row":"end","pr":477,"tip":"b4a79f1c669ffa9c20e648e8e543fc4475d17228","cause":"landed","session":"session_018BhcefSY1HcDdU87BP9fxU"}
+{"at":"2026-11-05T21:56:09.838Z","row":"inflight","pr":496,"module":"registers","tip":"f07c3f1a2e6126b243749c6a4e7b92ccc2aff21e","session":"session_018BhcefSY1HcDdU87BP9fxU","until":"2026-11-05T23:41:09.838Z"}
