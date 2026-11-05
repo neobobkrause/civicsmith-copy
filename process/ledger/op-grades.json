@@ -1,11 +1,13 @@
 {
   "id": "op-grades",
-  "title": "op-grades: consolidate its requirements under the cap, then its unmet requirements",
+  "title": "op-grades: split the grade folds into op-grades-folds.md under the cap, then its unmet requirements",
   "layer": 11,
   "paths": [
     "bio-plane/src/op-grades/",
     "build/requirements/op-grades.md",
-    "docs/requirements-notes/op-grades.md"
+    "docs/requirements-notes/op-grades.md",
+    "build/requirements/op-grades-folds.md",
+    "docs/requirements-notes/op-grades-folds.md"
   ],
   "tests": [
     "bio-plane/test/m/op-grades/"
