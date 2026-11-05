@@ -165,3 +165,4 @@
 {"at":"2026-11-05T21:42:21Z","row":"sent","n":83,"to":"bob","text":"merged PR 494 (job action-records); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-05T21:42:45Z","row":"outcome","n":83,"outcome":"delivered"}
 {"at":"2026-11-05T21:49:25Z","row":"sent","n":84,"to":"bob","text":"merged PR 495 (job case-checker); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-05T21:49:39Z","row":"outcome","n":84,"outcome":"delivered"}
