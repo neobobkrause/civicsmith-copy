@@ -97,3 +97,4 @@
 {"at":"2026-11-05T16:28:38Z","row":"sent","n":49,"to":"bob","text":"merged PR 439 (job screens-daily): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T16:28:55Z","row":"outcome","n":49,"outcome":"delivered"}
 {"at":"2026-11-05T17:11:01Z","row":"sent","n":50,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: IDLE CAPACITY: 2 job sessions live of the cap 20, 25 startable, for 18 min; 18 x startable, not started: run node .process/tool/p3.mjs job start --ready --live <n>: run status"}
+{"at":"2026-11-05T17:11:15Z","row":"outcome","n":50,"outcome":"delivered"}
