@@ -31,9 +31,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "No source path: the ledger entry (process/ledger/screens-intake-rounds.json) and this START allow only build/requirements/screens-intake-rounds.md, docs/requirements-notes/screens-intake-rounds.md and bio-plane/test/m/screens-intake-rounds/. All 23 open marks (R72-R94, all '(not yet met: T53)') need new screen code in bio-plane/src/screens-intake/ (capture.mjs, held.mjs, open-file.mjs, archive, inbox, about-knocker). Their keys are absent from src: screen.capture.limits.*, toolarge.nothing_read/register/part, 'Handed in through the doorbell', screen.capture.finish.*, screen.capture.preview.cut, screen.photo.dropped.*, the ceiling chip. Tests alone cannot meet them, and test.todo strikes nothing. Nothing changed. To unblock: add bio-plane/src/screens-intake/ (or a new bio-plane/src/screens-intake-rounds/) to the entry's paths and restart. Also note that R74 needs registers' registerList/registerFilter, R83 needs interface-shell R140's ceiling scale, and R94 needs capture R96/R120, so the module's uses may need to name them.",
-    "at": "2026-11-05T20:42:10Z"
+    "state": "COMPLETE",
+    "at": "2026-11-05T21:04:43Z"
   },
   "prior_work": "BOB 5 Nov 20:45, as interface-shell-t53 (coordinator 18:31, option c): your code lives in bio-plane/src/screens-intake-rounds/, which you own; every hook you need inside bio-plane/src/screens-intake/ is screens-intake's: name each as a found mark for screens-intake (report it to BOB), never edit it. Marks resting on other modules (R74 registers' registerList/registerFilter, R83 interface-shell-t53's ceiling scale R140, R94 capture R96/R120) stay open as not-verified until those land."
 }
