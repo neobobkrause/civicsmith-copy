@@ -49,15 +49,19 @@ test("R124 refused, writing nothing: a statement without how, and one a machine 
 });
 
 test("R124 control: a stated year beside a layer's equal year is no conflict", () => {
-  const forest = forestCopy(FOREST.chain);
+  const forest = forestCopy(FOREST.all.filter((l) => l.id !== "team"));
   const city = forest.find((l) => l.layer && l.layer.level === "city" && l.layer.place === "Bburg");
   assert.ok(city, "the forest has Bburg's layer");
-  city.fiscal_year = [{ ...Y, status: "researched", basis: "TEST" }];
+  /* the layer's own year (`*`: every body of the city), equal to the one the member states; */
+  /* 07-01, as Bville County's own `*` year above it, so the layers agree among themselves */
+  const EQ = { ...Y, start: "07-01" };
+  city.fiscal_year = [{ ...EQ, body: "*", status: "researched", basis: "TEST" }];
   const team = { id: "team", name: "The team", covers: ["The team"], test: true, layer: { origin: "team" },
-                 fiscal_year: [{ government: B, ...Y, how: HOW }] };
+                 fiscal_year: [{ government: B, ...EQ, how: HOW }] };
   const r = combine([...forest, team]);
   assert.equal(r.ok, true, JSON.stringify(r.errors));
+  assert.deepEqual(combine(forest).conflicts, [], "the layers agree among themselves");
   assert.deepEqual(r.conflicts, [], "no conflict");
   assert.equal(r.view.set_aside, undefined, "nothing set aside");
-  assert.deepEqual(r.view.fiscal_year.filter((y) => y.body === "Bburg").map((y) => y.start), ["04-01"]);
+  assert.ok(r.view.fiscal_year.some((y) => y.start === "07-01" && (y.bases || []).some((x) => x.profile === city.id)), "the layer's equal year stands");
 });
