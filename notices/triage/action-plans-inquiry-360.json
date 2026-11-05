@@ -1,0 +1,1 @@
+{"row":"triage","user":"action-plans","verdict":"not affected","evidence":"build/modules.json:150 action-plans (bio-plane/src/action-plans/) holds no file that imports inquiry, every code file under its paths read at 41a9129a01","at":"2026-11-05T02:46:49.488Z","key":"inquiry:360","worker":"merge: imports check","cost":"0"}
