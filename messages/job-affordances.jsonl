@@ -12,3 +12,4 @@
 {"at":"2026-11-04T14:16:42Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-04T14:53:49Z","row":"sent","n":7,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job affordances complete, PR #252 ready, session session_01RAN5ekLAKMAaxRiCU7rvhh: run status. Per bob-96: synced (tranche + pin f9e82ad, pushed 14e8ecd1), suite 312/313 pass (1 todo), job complete rerun with --exempt-revert; receipt 6633814483."}
 {"at":"2026-11-04T14:54:00Z","row":"outcome","n":7,"outcome":"delivered"}
+{"at":"2026-11-05T02:44:51Z","row":"sent","n":8,"to":"bob","text":"job affordances complete, PR #374 ready, session session_01RAN5enUqGUVbb9QEeVYk2J: run status"}
