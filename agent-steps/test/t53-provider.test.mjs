@@ -123,6 +123,9 @@ console.log("\n--- R52 · a stop at the step boundary, for each class ---");
   const cr = await segment({ remoteCfg: { answer: answers(), fail: (ctx) => (ctx.final === "judge_compose"
     ? { status: 200, body: { id: "gen_1", choices: [{ index: 0, message: { role: "assistant", content: "no", refusal: "I won't" }, finish_reason: "stop" }], usage: { prompt_tokens: 1, completion_tokens: 1 } } } : null) } });
   t("R52 (control): a content refusal is the model's answer and no stop", [cr.status, cr.refusal?.code, cr.out.aiStop ?? null], [502, "MODEL_REFUSED", null]);
+  const rj = await segment({ remoteCfg: { answer: answers(), fail: atCompose(genError(400, "invalid_request", "bad")) } });
+  t("R52 (control): a rejected request is no stop and never a turn that judged nothing: the model's refusal, naming its class, and no suggest",
+    [rj.status, rj.refusal?.code, rj.refusal?.model_error, rj.out.aiStop ?? null, rj.rec.calls.some((c) => c.op === "suggest")], [502, "MODEL_REFUSED", "request_rejected", null, false]);
 }
 {
   /* the fan-out's third level (document) fails; the segment is resumed at the state its last tick published */

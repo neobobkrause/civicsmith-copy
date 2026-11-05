@@ -122,7 +122,10 @@ export async function talk(model, { role, need = null, mode, system, messages, t
   model.spent(got, mode);
   const stop = aiStopOf(got);
   if (stop) return { ...got, aiStop: stop };
-  /* the outcome a pre-T53 caller reads: a provider's refusal as `{refused: {type, message}}` is the model's own answer */
+  /* An error of a class that is no stop (`request_rejected`) is the provider refusing the request: it is named as the
+     model's refusal, never read as a turn that judged nothing. */
+  if (got && got.error && typeof got.error === "object" && !got.refused)
+    return { ...got, refused: { status: got.error.status ?? null, type: String(got.error.class ?? "error"), message: got.error.message ?? null } };
   return got;
 }
 
