@@ -605,6 +605,10 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, ca
   /* R3: the migration pass, then scheduler's start. */
   ctx.blockConcurrencyWhile(async () => { migrate(); registerExtractionOwe(); });
   ctx.blockConcurrencyWhile(async () => schedulerOf(ctx, env).start());
+  /* F1 (ai-catalogue R39, F2; the coordinator, 5 Nov 09:03): ai-catalogue's start, which loads the seed the deployment
+     signs (its `loadSeed` arm), is held before the first request, so a development plane's first account act reads that
+     seed's list and never races it to CATALOGUE_UNAVAILABLE. */
+  ctx.blockConcurrencyWhile(async () => { await catalogue.ready; });
   /* queue, then tasks, each creating its own tables (queue R36, tasks R8). R11: queue is handed the two modules
      `queue-producers` R20 and R21 read, R15 the docket its R30's items read (`Queue.PRODUCER_DEPS`), and R20 the
      case-import its R35's watch items read. */

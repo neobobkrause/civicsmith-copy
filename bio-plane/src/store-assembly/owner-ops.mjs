@@ -57,7 +57,8 @@ export function ownerOps(of, url, body) {
   const f = (k) => (b[k] !== undefined ? b[k] : q(k));
   return {
     /* ai-use R10, R11 (K2569): an estimate and an actual, answered only to the paying account's owners. */
-    aiestimate: () => of.aiUse().estimate({ owner: f("owner"), use: f("use"), mode: f("mode"),
+    /* ai-use R10 (notice 378): `entry_id`, when named, is the entry whose range answers for an account with too few acts */
+    aiestimate: () => of.aiUse().estimate({ owner: f("owner"), use: f("use"), mode: f("mode"), entry_id: f("entry_id"),
                                             count: b.count !== undefined ? b.count : q("count") === null ? undefined : Number(q("count")),
                                             viewer: q("viewer") }),
     aiactual: () => of.aiUse().actualOf({ run: f("run"), act: f("act"), viewer: q("viewer") }),
