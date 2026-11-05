@@ -3,18 +3,19 @@
   "title": "op-grades: split the grade folds into op-grades-folds.md under the cap, then its unmet requirements",
   "layer": 11,
   "paths": [
-    "bio-plane/src/op-grades/",
+    "bio-plane/src/op-grades/index.mjs",
+    "bio-plane/src/op-grades/marks.mjs",
+    "bio-plane/src/op-grades/declared.mjs",
     "build/requirements/op-grades.md",
-    "docs/requirements-notes/op-grades.md",
-    "build/requirements/op-grades-folds.md",
-    "docs/requirements-notes/op-grades-folds.md"
+    "docs/requirements-notes/op-grades.md"
   ],
   "tests": [
     "bio-plane/test/m/op-grades/"
   ],
   "requirements": "build/requirements/op-grades.md",
   "uses": [
-    "setup-words"
+    "setup-words",
+    "op-grades-folds"
   ],
   "suite": {
     "cwd": "bio-plane",
