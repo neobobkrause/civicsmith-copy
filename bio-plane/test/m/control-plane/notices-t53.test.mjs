@@ -77,3 +77,23 @@ test("notice answers:103: the door admits an ask's grant by credentials' AI_GRAN
   assert.equal(await admitted("search"), 1, "control: an ask's read is judged too");
   assert.equal(await admitted("memberset"), 0, "control: an op on no grant's list asks nothing");
 });
+
+test("notice screens-settings:437: the members screen's adminproposalcancel act and its two words reach the app page and the interface script the door serves and hashes (R75, R81): the script at the release's address carries the act and every word the members screen draws for it, and the page policy names that script's hash", async () => {
+  const { createHash } = await import("node:crypto");
+  const { SCREENS } = await import("../../../src/screens-settings/index.mjs");
+  const { scriptPath } = await import("../../../src/interface-shell/index.mjs");
+  const members = SCREENS.find((s) => s.id === "members");
+  assert.ok(members.acts.some((a) => a.op === "adminproposalcancel"), "screens-settings' members screen acts adminproposalcancel");
+  const words = members.words.filter((w) => w.includes("adminproposalcancel"));
+  assert.ok(words.length >= 2, `its words: ${words}`);
+  const { env, S } = world();
+  const page = await call(env, { path: "/app/members", token: S.founder, headers: { accept: "text/html" } });
+  assert.equal(page.status, 200, page.text.slice(0, 300));
+  const policy = (page.headers.get("content-security-policy") || "").match(/'sha256-[A-Za-z0-9+/]{43}='/g) || [];
+  const served = await call(env, { path: scriptPath(env.VERSION) });
+  assert.equal(served.status, 200);
+  const script = served.text;
+  assert.ok(script.includes(JSON.stringify("adminproposalcancel")), "the served script carries the act");
+  for (const w of words) assert.ok(script.includes(JSON.stringify(w)), `the served script carries ${w}`);
+  assert.deepEqual(policy, [`'sha256-${createHash("sha256").update(script).digest("base64")}'`], "the page names the served script's hash");
+});
