@@ -5,3 +5,4 @@
 {"at":"2026-11-05T03:42:05Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (9 jobs ready). Then: job agent-steps BLOCKED: run status"}
 {"at":"2026-11-05T03:42:14Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-05T05:18:02Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job agent-steps complete, PR #392 ready, session session_01RAN5epLua6YjFZjko6kGrF: run status"}
+{"at":"2026-11-05T05:18:14Z","row":"outcome","n":4,"outcome":"delivered"}
