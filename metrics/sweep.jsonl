@@ -151,3 +151,4 @@
 {"at":"2026-11-05T12:48:23Z","row":"check","by":"merge train","live":8,"live_at":"2026-11-05T12:43:18Z","job_cap":20,"startable":16,"idle_capacity":{"kind":"work","since":"2026-11-05T12:45:25Z","min":2,"live":8,"cap":20,"held":0,"startable":16,"empty":12,"alarm":false}}
 {"at":"2026-11-05T12:52:00Z","row":"ready","live":3,"job_cap":20,"started":[]}
 {"at":"2026-11-05T12:58:02Z","row":"sweep","session":"session_018BhcefwaVtx4V7dYW63amA","bob_acts":true,"bob_quiet_h":0.1,"root_context":28,"live":5,"job_cap":20,"sessions":11,"startable":1,"blocked":8,"blocked_oldest_min":517,"working":1,"waiting":4,"idle_capacity":{"kind":"work","since":"2026-11-05T12:45:25Z","min":12,"live":5,"cap":20,"held":0,"startable":1,"empty":15,"alarm":false}}
+{"at":"2026-11-05T13:03:39Z","row":"ready","live":2,"job_cap":20,"started":[]}
