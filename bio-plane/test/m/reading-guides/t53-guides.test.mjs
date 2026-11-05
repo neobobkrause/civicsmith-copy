@@ -195,6 +195,50 @@ test("R20 refused, recording nothing: a team of two (OPT_OUT_NOT_SOLE_MEMBER), a
   assert.deepEqual(g, { guide: d, origin: "group", items: STEPS, approved_by: "bob", approved_at: DAY });
 });
 
+test("R20 only the team's own procedure guide may be opted out: an adopted guide and a reading guide are refused OPT_OUT_NOT_OWN_GUIDE and write nothing", () => {
+  const a = world({ slug: "group-a" });
+  const offered = a.g.guideDraft({ kind: "bylaw_complaint", purpose: "procedure", items: STEPS, by: ANN }).guide;
+  a.g.guideReview({ guide: offered, verdict: "approve", by: BOB });
+  const sole = world({ members: SOLE, slug: "group-b" });
+  const adopted = sole.g.guideAdopt({ bytes: a.g.guideOffer({ guide: offered, by: ANN }).bytes, by: ANN }).guide;
+  const reading = sole.g.guideDraft({ kind: "staff_report", items: [{ label: "Fiscal impact", look_for: "Look for the fiscal impact" }], by: ANN }).guide;
+  const own = sole.g.guideDraft({ kind: "bylaw_complaint", purpose: "procedure", items: STEPS, by: ANN }).guide;
+  const snapshot = () => JSON.stringify([sole.rows(`SELECT * FROM reading_guides ORDER BY guide_id`), sole.count("reading_guide_history")]);
+  const before = snapshot();
+  for (const id of [adopted, reading]) {
+    const r = sole.g.guideOptOut({ guide: id, viewer: ANN });
+    row(r, "OPT_OUT_NOT_OWN_GUIDE");
+    assert.equal(r.guide, id);
+  }
+  assert.equal(snapshot(), before, "nothing was written");
+  assert.ok(!("review_opt_out" in sole.g.guideRead({ guide: adopted, viewer: ANN }).guide));
+  assert.ok(!sole.g.procedureGuidesFor({ kind: "bylaw_complaint", viewer: ANN }).guides.some((g) => g.guide === adopted));
+  /* control: the team's own procedure guide, in the same team of one */
+  assert.equal(sole.g.guideOptOut({ guide: own, viewer: ANN }).ok, true);
+});
+
+test("R20 the founder alone is the team's one member: once the instance is claimed she may opt out; a member beside her makes two; unclaimed, she is no member", () => {
+  const w = world({ members: [] });
+  assert.deepEqual(w.membership.registerClaimed("credentials", () => true), { ok: true, module: "credentials" });
+  const d = w.g.guideDraft({ kind: "bylaw_complaint", purpose: "procedure", items: STEPS, by: "admin" });
+  assert.equal(d.ok, true, JSON.stringify(d));
+  const o = w.g.guideOptOut({ guide: d.guide, viewer: "admin" });
+  assert.equal(o.ok, true, JSON.stringify(o));
+  assert.equal(o.review_opt_out.member, "admin");
+  assert.equal(w.g.procedureGuidesFor({ kind: "bylaw_complaint", viewer: "admin" }).guides.find((g) => g.guide === d.guide).not_reviewed.member, "admin");
+  /* the founder and one member are two: neither may opt out */
+  const two = world({ members: SOLE });
+  two.membership.registerClaimed("credentials", () => true);
+  const t = two.g.guideDraft({ kind: "bylaw_complaint", purpose: "procedure", items: STEPS, by: ANN }).guide;
+  row(two.g.guideOptOut({ guide: t, viewer: ANN }), "OPT_OUT_NOT_SOLE_MEMBER");
+  row(two.g.guideOptOut({ guide: t, viewer: "admin" }), "OPT_OUT_NOT_SOLE_MEMBER");
+  /* an instance not claimed has no founder: she acts as no member, and the one member is alone */
+  const un = world({ members: [] });
+  row(un.g.guideDraft({ kind: "bylaw_complaint", purpose: "procedure", items: STEPS, by: "admin" }), "GUIDE_MEMBER_ACT");
+  const u = world({ members: SOLE });
+  assert.equal(u.g.guideOptOut({ guide: u.g.guideDraft({ kind: "bylaw_complaint", purpose: "procedure", items: STEPS, by: ANN }).guide, viewer: ANN }).ok, true);
+});
+
 test("R20 a team that gains a second member keeps the record and the statement; only a counted professional review with the second approval ends it, giving `reviewed`", () => {
   const w = world({ members: SOLE });
   const a = w.g.guideDraft({ kind: "bylaw_complaint", purpose: "procedure", items: STEPS, by: ANN }).guide;

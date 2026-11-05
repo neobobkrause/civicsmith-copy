@@ -50,7 +50,7 @@ test("R14 every refusal row reads words.json's refusal.<CODE> by key from READIN
 test("R14 the family's order and count unmoved; every row's words are the design's, none a copy kept beside them", () => {
   assert.deepEqual(Object.values(READING_GUIDES_CHECKS).map((r) => r.check).slice(0, 19),
     Array.from({ length: 19 }, (_, i) => `C-144.${i + 1}`));
-  assert.deepEqual(Object.keys(READING_GUIDES_CHECKS).slice(19), ["OPT_OUT_NOT_SOLE_MEMBER", "MACHINE_CANNOT_OPT_OUT"], "R20's two follow, in order");
+  assert.deepEqual(Object.keys(READING_GUIDES_CHECKS).slice(19), ["OPT_OUT_NOT_SOLE_MEMBER", "MACHINE_CANNOT_OPT_OUT", "OPT_OUT_NOT_OWN_GUIDE"], "R20's three follow, in order");
   for (const [code] of R14_ROWS()) assert.ok(WORDS.some((w) => w.key === `refusal.${code}`), `words.json holds refusal.${code}`);
 });
 

@@ -126,6 +126,10 @@ export const READING_GUIDES_CHECKS = Object.freeze({
     check: "C-144.21", where: at("index.mjs", "guideOptOut", "is-guide-person"),
     translation: localize("refusal.MACHINE_CANNOT_OPT_OUT", "A machine cannot opt a guide out of review; a member does. Nothing was written."),
   },
+  OPT_OUT_NOT_OWN_GUIDE: {
+    check: "C-144.22", where: at("index.mjs", "guideOptOut", "is-guide-team-procedure"),
+    translation: localize("refusal.OPT_OUT_NOT_OWN_GUIDE", "Only a team's own procedure guide may be opted out of review. Nothing was written."),
+  },
 });
 
 /** A refusal carrying its row. Called with the code as a literal at each site, so the DEC-49 guard reads which code a

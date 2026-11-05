@@ -368,7 +368,9 @@ export class ReadingGuides {
   /** R20 (K5508, K5527): `{guide, viewer}`. The one member of a team opts the team's own guide out of the professional
    *  review and the separate approver, both, and of nothing else; recorded on the guide as `review_opt_out: {member, at}`
    *  and in its history. Refused `MACHINE_CANNOT_OPT_OUT` to a machine, `GUIDE_MEMBER_ACT` to a viewer who is no active
-   *  member, and `OPT_OUT_NOT_SOLE_MEMBER` while the team has more than one active member; each records nothing. A
+   *  member, `OPT_OUT_NOT_OWN_GUIDE` for any guide but the team's own procedure guide (an adopted guide and a reading
+   *  guide are not), and `OPT_OUT_NOT_SOLE_MEMBER` while the team has more than one active member (the founder, once
+   *  the instance is claimed, counted as one); each records nothing. A
    *  guide already opted out answers its record (`already: true`). The record stays when the team grows. */
   guideOptOut(args) {
     const { guide, viewer } = argsOf(args);
@@ -380,6 +382,10 @@ export class ReadingGuides {
     if (!member) return memberRefusal(localize("reading-guides.index.opting_a_guide_out_of_review", "opting a guide out of review"));
     const { row, refused } = this.#actOn(guide);
     if (refused) return refused;
+    /* DEC-49 REGION is-guide-team-procedure */
+    if (row.origin !== "group" || row.purpose !== "procedure")
+      return refusal("OPT_OUT_NOT_OWN_GUIDE", localize("reading-guides.index.only_a_teams_own_procedure", "{guide_id} is not the team's own procedure guide, so it cannot be opted out of review. Nothing was written.", { guide_id: String(row.guide_id) }), { guide: row.guide_id });
+    /* END DEC-49 REGION is-guide-team-procedure */
     const held = safeJson(row.review_opt_json);
     if (isObj(held)) return { ok: true, already: true, guide: row.guide_id, review_opt_out: { member: held.member, at: held.at } };
     let members = null;
