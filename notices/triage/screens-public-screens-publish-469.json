@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-public","verdict":"not affected","evidence":"build/modules.json:205 screens-public (build/requirements/screens-public.md) holds no file that imports screens-publish, every code file under its paths read at 933674c404","at":"2026-11-05T20:57:17.775Z","key":"screens-publish:469","worker":"merge: imports check","cost":"0"}
