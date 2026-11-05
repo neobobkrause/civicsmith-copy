@@ -3850,4 +3850,12 @@ export const DECLARED_OPS = Object.freeze({
     fields: { accepts: ["sha","defer"], requires: ["sha"] } },
   pdfstructure: { classes: ["admin","member","probe"], mutating: false, weight: "read", description: "act.pdfstructure.label.document",
     fields: { accepts: ["sha256","ocr"], requires: ["sha256"] } },
+  /* F1 (surface-declarations R17, F1; BOB's grade, coordinator ruling 5 Nov): `interpretPart` (R114, R117) and `interpretationWithdraw` (R118)
+     under R17's names. Each is reversible (neither asks an authored reason; a mark is taken back by a withdrawal, a withdrawal by a new mark)
+     and refused to a machine (R114's MEMBER_SESSION_REQUIRED). No door arm serves either yet; the fields are what the service reads, the
+     stamps (`by`, `viewer`) aside. interpretmark's description is the design stream's word; interpretationwithdraw has none. */
+  interpretmark: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, stamps: ["by","viewer"], weight: "reversible", description: "act.owed_interpretmark.label.document",
+    fields: { accepts: ["capture","part","project","how","proposal","began_from"], requires: ["capture","part","project","how"] } },
+  interpretationwithdraw: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: null, stamps: ["by","viewer"], weight: "reversible", description: localize("extraction.declared.interpretationwithdraw", "reversible: keyed by an interpretation row; at a member's act, the part is no longer stated as interpreted for that investigation; the row stays in the log and nothing is erased"),
+    fields: { accepts: ["id"], requires: ["id"] } },
 });
