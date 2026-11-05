@@ -140,12 +140,12 @@ export function recordsLawFindings(fm, findings) {
 export function recordsLawOf(fm, author = null) {
   const law = fm && typeof fm.law === "string" && fm.law.trim() ? fm.law.trim() : null;
   if (!fm || fm.action_kind !== "records_request" || !law)
-    return { state: "undetermined", law: null,
+    return { state: "undetermined", law: null, law_layer: null,
              says: word("action-grammar.says.undetermined_member_stated") };
   if (author && isMachineIdentity(author))
-    return { state: "machine_stated", law, by: author,
+    return { state: "machine_stated", law, law_layer: layerRead(fm.law_layer), by: author,
              says: word('action-grammar.says.machine_stated_machine') };
-  return { state: "stated", law, ...(author ? { by: author } : {}), says: word("action-grammar.says.stated_member") };
+  return { state: "stated", law, law_layer: layerRead(fm.law_layer), ...(author ? { by: author } : {}), says: word("action-grammar.says.stated_member") };
 }
 
 /* ---------------------------------------------------------------------------------------------- R13: what a records request seeks */
@@ -381,6 +381,12 @@ export const GOVERNING_LAWS_MAX = 12;
 /* The longest citation, in characters: a citation names a law ("Cal. Gov. Code § 7920.000 et seq."), it does
    not quote one. */
 export const CITATION_MAX = 200;
+/* R31 (T53; N1257, K5458): the longest `layer` a governing law (or a records law's `law_layer`) names, in characters:
+   the id of the layer that gave the law, never its text. */
+export const LAW_LAYER_MAX = 200;
+/* R31: a stated layer as the readers answer it: a non-empty single-line string of at most LAW_LAYER_MAX characters,
+   else null (absent reads null; a malformed one is C-2.10's to refuse, never answered as a layer). */
+const layerRead = (v) => (typeof v === 'string' && v.trim() && v.length <= LAW_LAYER_MAX && !/[\r\n]/.test(v) ? v : null);
 
 /** D-149: WHICH LAWS GOVERN THIS ACTION, AS THE RECORD CAN SUPPORT IT. The one reader: the action's own read
  *  (`op=projection`'s action block) reads this function (R8, proved by `test/m/action-grammar/`), so the sentence a reader is shown and
@@ -399,7 +405,7 @@ export const CITATION_MAX = 200;
 export function governingLawsOf(fm) {
   const raw = fm && Array.isArray(fm.governing_laws) ? fm.governing_laws : [];
   const laws = raw.filter((l) => l && typeof l === 'object' && !Array.isArray(l))
-    .map((l) => ({ level: String(l.level ?? ''), citation: String(l.citation ?? '') }));
+    .map((l) => ({ level: String(l.level ?? ''), citation: String(l.citation ?? ''), layer: layerRead(l.layer) }));
   if (laws.length) {
     return { state: 'stated', laws,
              by: typeof fm.governing_laws_by === 'string' && fm.governing_laws_by ? fm.governing_laws_by : null,
@@ -446,6 +452,9 @@ function governingLawsFindings(fm, findings) {
     if (!c) findings.push(f('C-2.10', 'error', `governing_laws[${i}].citation is empty: a law is named by its citation`));
     else if (c.length > CITATION_MAX)
       findings.push(f('C-2.10', 'error', `governing_laws[${i}].citation is longer than ${CITATION_MAX} characters`));
+    /* R31 (T53; K5458): a law keeps the layer that gave it; absent is accepted, a stated one is judged. */
+    if (l.layer !== undefined && l.layer !== null && layerRead(l.layer) === null)
+      findings.push(f('C-2.10', 'error', `governing_laws[${i}].layer is not a non-empty single-line name of at most ${LAW_LAYER_MAX} characters: a law names the layer that gave it by its id`));
   });
   if (!by || isMachineIdentity(by))
     findings.push(f('C-2.10', 'error',
