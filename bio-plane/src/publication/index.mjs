@@ -247,6 +247,9 @@ const CRITERIA_NOT_RECORDED = word("public-read.criteria_recorded_edition");
 const ACCESS_WORDS = Object.freeze({ free: word("label.standardaccess.free"), reading_room: word("label.standardaccess.reading_room"),
                                      paywalled: word("label.standardaccess.paywalled") });
 const str = (v) => (typeof v === "string" && v.trim() ? v.trim() : "");
+/* F1 (`citation` R29): the "the file says" fields a published citation may show, by kind. */
+const FILE_SAYS_TIME = new Set(["time_taken"]);
+const FILE_SAYS_PLACE = new Set(["gps_latitude", "gps_longitude", "gps_altitude", "gps_direction", "place_name"]);
 /* R77 (K2438, K2529): the doors the source of waiting editions gives. */
 const WAITING_DOORS = Object.freeze(["isWaiting", "signedAtOf", "signerOf"]);
 /* K2483 (D54): the viewer of an internal read that no member makes (R72's criteria with no signer), a machine one. */
@@ -1536,6 +1539,56 @@ export class Publication {
       }
       return { ok: true, editions };
     } catch { return { ok: true, editions: [] }; }
+  }
+
+  /* ---------------------------------------------------------------- F1: a photo's place, the author's switch */
+
+  /** F1 (`citation` R29; DEC-460, K5514, K5523): the author's switch for one photo's place in one case edition, off
+   *  by default. Set only while the edition's document is unsigned and not waiting (R21, R77): after signing the edition
+   *  keeps what was set (R24). Answers `{ok, case, edition, capture, shown, set, why?}`. */
+  setPhotoPlaceShown({ case: caseArg = null, caseId = null, edition = null, capture = null, shown = false } = {}) {
+    const id = str(caseArg ?? caseId), ed = Number(edition), cap = str(capture);
+    if (!id || !Number.isInteger(ed) || ed < 1 || !cap || typeof shown !== "boolean")
+      return { ok: false, reason: "MALFORMED", detail: localize("publication.index.a_photo_place_switch_names",
+        "a photo's place switch names a case, a positive edition, the photo's capture and whether its place is shown") };
+    const held = { case: id, edition: ed, capture: cap };
+    const doc = this.#one(`SELECT sig_armored FROM case_documents WHERE case_id=? AND edition=?`, id, ed);
+    if (doc && doc.sig_armored) return { ok: true, ...held, shown: this.photoPlaceShown(held), set: false,
+                                         why: word("publication.why.case_document_signed") };
+    if (this.#waits(id, ed)) return { ok: true, ...held, shown: this.photoPlaceShown(held), set: false,
+                                      why: word("publication.why.case_document_signed_waits") };
+    this.sql.exec(`INSERT INTO case_photo_places (case_id, edition, capture_sha, shown, set_at) VALUES (?,?,?,?,?)
+                   ON CONFLICT(case_id, edition, capture_sha) DO UPDATE SET shown=excluded.shown, set_at=excluded.set_at`,
+                  id, ed, cap, shown ? 1 : 0, this.#when());
+    return { ok: true, ...held, shown, set: true };
+  }
+
+  /** F1: whether the author turned this photo's place on in this edition; false when never set. Never throws. */
+  photoPlaceShown({ case: caseArg = null, caseId = null, edition = null, capture = null } = {}) {
+    try {
+      const r = this.#one(`SELECT shown FROM case_photo_places WHERE case_id=? AND edition=? AND capture_sha=?`,
+                          str(caseArg ?? caseId), Number(edition), str(capture));
+      return !!r && Number(r.shown) === 1;
+    } catch { return false; }
+  }
+
+  /** F1 (`citation` R29): how a published edition shows a "the file says" citation of a photo's time or place. The leg
+   *  is read by key (`inquiry-grammar`'s file_says leg: `capture` and `file_says: {field, value}`, or those keys flat);
+   *  the answer is always `from: "the file"`, `checked: false`, and its `key` is the "the file says" words. A place is
+   *  shown only where the author turned that photo's place on; otherwise `value` is null and `withheld` true. A field
+   *  outside time and place is refused `FILE_SAYS_FIELD_NOT_CITABLE`, naming it. Writes nothing; changes no grade or date. */
+  fileSaysCitationView({ case: caseArg = null, caseId = null, edition = null, leg = null } = {}) {
+    const said = leg && typeof leg === "object" ? (leg.file_says && typeof leg.file_says === "object" ? leg.file_says : leg) : {};
+    const field = str(said.field), capture = str(leg && (leg.capture ?? leg.capture_sha));
+    const kind = FILE_SAYS_TIME.has(field) ? "time" : FILE_SAYS_PLACE.has(field) ? "place" : null;
+    if (!kind) return { ok: false, reason: "FILE_SAYS_FIELD_NOT_CITABLE", field: field || null,
+                        detail: localize("publication.index.only_a_photo_s_time", "only a photo's time or place is citable as what the file says; {field} is not", { field: field || "-" }) };
+    const base = { ok: true, capture: capture || null, field, kind, from: "the file", checked: false };
+    if (kind === "place" && !this.photoPlaceShown({ case: caseArg ?? caseId, edition, capture }))
+      return { ...base, value: null, withheld: true, key: "publication.file_says.place_withheld",
+               text: localize("publication.file_says.place_withheld", "The file says where this photo was taken; the place is withheld.") };
+    return { ...base, value: said.value ?? null, withheld: false, key: "publication.file_says",
+             text: localize("publication.file_says", "The file says: {value}", { value: String(said.value ?? "") }) };
   }
 
   /* ---------------------------------------------------------------- R63: the published timeline, frozen at signing */
