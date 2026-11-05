@@ -55,8 +55,8 @@ Four things first:
 | agent-runner | R41 | gate.runner.refused.<CODE> | no | no | agent-runner.md:67 |
 | screens-action | R74, R80 | none named (words owed) | n/a | no | screens-action.md:154,160 |
 | screens-daily | R108 | the basis.keys_more line | no | no | screens-daily.md:231 |
-| screens-daily | R116 | none named (words owed) | n/a | no | screens-daily.md:242 |
-| screens-inquiry | R146, R149, R150 | none named (words owed) | n/a | no | screens-inquiry.md:292,295,296 |
+| screens-daily | R116 | screen.help.way.home, screen.help.way.next | n/a | yes (words.json:123936) | screens-daily.md:242 |
+| screens-inquiry | R146, R149, R150 | screen.dash-project.next.add, screen.dash-project.next.ask, screen.dash-project.next.project, screen.dash-project.story.none, screen.question.conclude.own.empty, screen.question.conclude.own.toolong, screen.project.stage.read.one, screen.project.question.notrated | n/a | yes (words.json:123880) | screens-inquiry.md:292,295,296 |
 | screens-intake | R92 | none named (words owed) | n/a | no | screens-intake.md:149 |
 | screens-investigate | R92 | none named (words owed) | n/a | no | screens-investigate.md:168 |
 | screens-plan | R9 | none named (words owed) | n/a | no | screens-plan.md:27 |
