@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:104 imports only question-explorer/checks.mjs (registered at :245), which PR 346 does not touch; it uses neither the tick/open change nor exploringOff","at":"2026-11-05T15:45:03.441Z","key":"question-explorer:346","worker":"a50013ec6f4494fdb","cost":"unmeasured"}
