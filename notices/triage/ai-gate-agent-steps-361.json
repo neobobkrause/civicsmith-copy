@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-gate","verdict":"not affected","evidence":"build/modules.json:115 ai-gate (ai-gate/src/) holds no file that imports agent-steps, every code file under its paths read at 347799d489","at":"2026-11-05T02:01:26.149Z","key":"agent-steps:361","worker":"merge: imports check","cost":"0"}
