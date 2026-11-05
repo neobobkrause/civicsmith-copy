@@ -2,7 +2,9 @@
 
 Taken 5 Nov 2026 by a read-only worker for BOB at the tranche tip (after PR 506), from the receipts' not-verified notes in `process/metrics/*.jsonl`, the unmet marks in `build/requirements/*.md` that wait on words, `bio-plane/src/setup-words/words-unreviewed.json` (**U**) and `docs/development/ux-substrate/screens/words.json` (**W**). The lane keeps it current (R1). No key is in both U and W. U holds 8,449 entries drafted by 160 modules; W holds 19,835 words.
 
-Four things first:
+Settled 5 Nov 2026 (R3), on job/ux-design: the wording of lane PRs 535, 536, 537, 540, 525, 527, 530, 532, 534 and 539, carried into `build_words.mjs` and `words-drawn-4.src.py`; every blocking row with named keys now has them in W. Left: installer R95 names no key; journey-check R17/R26 (rows that say "group" for a team) are setup-words rows in bio-plane/src, settled on branch `lane/ux-team-words` and left for their owner; agent-runner R41's NO_BINARY rewording ("a part it needs is missing. Tell an administrator.") waits on agent-runner regenerating its says-words.mjs and bundle, so the row keeps the English that file carries. The not-blocking items below stay open.
+
+Four things first (as taken, before the 5 Nov settlement):
 - screens-document-beta: every key its requirements name for R60 to R72 is already in W. It waits on words only for R59 (`content.typed.checked`, `content.typed.unchecked`, in U only) and R73 ("words owed", no key named). Its R62 quoted sentence differs from W's English ("This {kind} is kept whole..." in W).
 - ai-use R13: six keys drafted in U, none in W, plus `ai.refused.unitunavailable`, which is in W (words.json:1020) with the old wording ("A limit in dollars needs an API key: a subscription doesn't report what a use costs."); R13 asks for "the plan reports no money".
 - Settling any U key's wording into W is a wording change: the lane does it only when Bob's approval allows (R3).
@@ -26,16 +28,16 @@ Four things first:
 | screens-document-beta | R63 | screen.photo.dropped.* (9) | no | yes, all 9 | screens-document-beta.md:17 |
 | screens-document-beta | R64 to R68 | screen.document.interp.label, .offer, .chooser.will, .recorded, .legend.this | no | yes, all | screens-document-beta.md:19-27 |
 | screens-document-beta | R72 | screen.document.text.unsure | no | yes (words.json:85441) | screens-document-beta.md:35 |
-| screens-document-beta | R73 | none named (words owed) | n/a | no | screens-document-beta.md:37 |
+| screens-document-beta | R73 | screen.document.basis.doorbell, screen.document.basis.testimony, screen.document.reading.unparsed, screen.document.readway.stored, screen.document.readway.pictures, screen.document.readway.mixed | no | yes (named and settled 5 Nov, R3) | screens-document-beta.md:37 |
 | screens-document | R1 | screen.document.cells_held | no (moved to W) | yes (settled 5 Nov, R3) | screens-document.md:15 |
 | case-disclosures | R37, R39 | content.typed.frozen.unchecked, content.typed.frozen.checked (basis-versions R59) | no | yes (words.json:123895) | case-disclosures.md:177,179 |
 | case-import | R36 | case-import.ungraded.label, case-import.ungraded.not_stated | no (moved to W) | yes (words.json:123881) | case-import.md:202 |
-| notice-producers | R16 | a queue sentence for provider limits (no key named) | no | no | notice-producers.md:37 |
-| notice-producers | R33 | ai.alert.threshold, a {use} fill for thresholds, unit words for tokens/calls | no (moved to W) | yes (settled 5 Nov, R3) | notice-producers.md:73 |
-| notice-producers | R35 | sentences for left-list, left-project-list, signin-ended (no keys named) | no | no | notice-producers.md:75 |
+| notice-producers | R16 | ai.queue.limitreached.provider, ai.queue.limitreached.provider.unknown | no | yes (named and settled 5 Nov, R3) | notice-producers.md:37 |
+| notice-producers | R33 | ai.alert.threshold, ai.alert.scope.overall, ai.alert.scope.per_member, ai.alert.level.percent, ai.alert.level.usd, ai.alert.level.tokens, ai.alert.level.calls, ai.alert.basis.reported, ai.alert.basis.estimated | no (moved to W) | yes (settled 5 Nov, R3) | notice-producers.md:73 |
+| notice-producers | R35 | ai.queue.leftlist.own, ai.queue.leftlist.project, ai.queue.leftprojectlist, ai.queue.signinended | no | yes (named and settled 5 Nov, R3) | notice-producers.md:75 |
 | queue-producers | R57 | queue.signer-self-registered.summary.other, .summary.unnamed.other, .key, .key.undated, .key.comment | no | yes (settled 5 Nov, R3) | queue-producers.md:155 |
 | op-grades | R55 (d) | consequence.rowexpunge | no | yes (words.json:123909) | op-grades.md:128 |
-| machinery-producers | F1 | a brought-by sentence for capture-completed-unattended (no key yet) | no | no | machinery-producers.md:137 |
+| machinery-producers | F1 | queue.capture-completed-unattended.request.summary.brought, queue.capture-completed-unattended.request.summary.unnamed.brought, queue.capture-completed-unattended.request.detail.brought, queue.capture-completed-unattended.request.detail.unnamed.brought | no | yes (named and settled 5 Nov, R3) | machinery-producers.md:137 |
 | screens-wizards | R23 | screen.wizards.state.offered.tip, screen.wizards.empty.offered, screen.wizards.state.draft.tip, screen.wizards.empty.draft, screen.wizards.state.submitted.tip, screen.wizards.empty.submitted, screen.wizards.state.withdrawn.tip, screen.wizards.empty.withdrawn, screen.wizards.state.retired.tip, screen.wizards.empty.retired, screen.wizards.state.broken.tip, screen.wizards.empty.broken, screen.wizards.state.proposed.tip, screen.wizards.empty.proposed | no | yes (words.json:123922) | screens-wizards.md:78 |
 | journey-check | R17, R26 | rows in words.json and setup-words that still say "group" (keys not named) | n/a | n/a | journey-check.md:71,83 |
 | screens-action | R62 | guide.procedure.notreviewed | no (moved to W) | yes (words.json:123894) | screens-action.md:142 |
@@ -52,7 +54,7 @@ Four things first:
 | screens-intake | R74 | screen.capture.refusal.toolarge.part, screen.capture.refusal.toolarge.register | no | yes (words.json:123991) | screens-intake.md:130 |
 | screens-intake | R78 | screen.capture.read.queued | no | yes (words.json:123997) | screens-intake.md:134 |
 | network-notices | R32 | listing.contact.note | no | yes (words.json:123916) | network-notices.md:151 |
-| agent-runner | R41 | gate.runner.refused.<CODE> | no | no | agent-runner.md:67 |
+| agent-runner | R41 | agent-runner.signin.your_teams_civicsmith_could_not_2, agent-runner.signin.your_teams_civicsmith_cannot_start, agent-runner.signin.claudes_sign_in_gave_no, agent-runner.signin.claudes_sign_in_stopped_before, agent-runner.signin.this_claude_sign_in_was, agent-runner.signin.your_teams_civicsmith_could_not_3, agent-runner.signin.claude_gave_no_answer_within, agent-runner.signin.claude_answered_the_code_but, agent-runner.signin.claude_did_not_accept_the, agent-runner.worker.your_teams_civicsmith_could_not | no | yes (named and settled 5 Nov, R3 (the sign-in image's rows; NO_BINARY keeps the English its says-words.mjs carries: the reworded form waits on agent-runner)) | agent-runner.md:67 |
 | screens-action | R74, R80 | screen.request.nooffice.pointer.people, screen.actionnew.refused.deadline, screen.actionnew.refused.addressee | n/a | yes (words.json:123880) | screens-action.md:154,160 |
 | screens-daily | R108 | screen.queue.signer.keys_more, screen.queue.signer.keys_more.one | no | yes (words.json:123887) | screens-daily.md:231 |
 | screens-daily | R116 | screen.help.way.home, screen.help.way.next | n/a | yes (words.json:123936) | screens-daily.md:242 |

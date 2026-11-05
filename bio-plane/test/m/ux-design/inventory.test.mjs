@@ -67,3 +67,24 @@ test("R1 control: a row that places a present key outside words.json fails the c
   const withAbsent = [...rows, { module: "control", mark: "R0", keys: [listed.keys[0]], inW: "no" }];
   assert.equal(mismatches(withAbsent, keySet).length, 1);
 });
+
+/* ux-design R3: every key a blocking row places in words.json is settled: it resolves through setup-words (built from
+   words.json by bio-plane/src/setup-words/build.mjs) to non-empty English, and words-unreviewed.json no longer drafts it. */
+const UNREVIEWED = join(ROOT, "bio-plane/src/setup-words/words-unreviewed.json");
+
+test("R3 every key the inventory settles has non-empty English and is no longer drafted in words-unreviewed", async () => {
+  const { hasWord, WORD_ROWS } = await import("../../../src/setup-words/index.mjs");
+  const en = new Map(WORD_ROWS.map((r) => [r[0], r[1]]));
+  const drafted = new Set(JSON.parse(readFileSync(UNREVIEWED, "utf8")).unreviewed.map((u) => u.id));
+  const settled = rows.filter((r) => r.inW === "yes").flatMap((r) => r.keys.map((k) => [r, k]));
+  assert.ok(settled.length > 0, "the inventory settles keys");
+  // R3 settles ai-use R13's keys first: every ai-use R13 row with keys is settled
+  const r13 = rows.filter((r) => r.module === "ai-use" && /^R13\b/.test(r.mark) && r.keys.length);
+  assert.ok(r13.length > 0 && r13.every((r) => r.inW === "yes"), "every ai-use R13 row is settled in words.json");
+  const bad = [];
+  for (const [r, k] of settled) {
+    if (!hasWord(k) || !String(en.get(k) ?? "").trim()) bad.push(`${r.module} ${r.mark}: ${k} has no English in setup-words`);
+    if (drafted.has(k)) bad.push(`${r.module} ${r.mark}: ${k} is still drafted in words-unreviewed`);
+  }
+  assert.deepEqual(bad, []);
+});
