@@ -272,7 +272,8 @@ test("R4: success writes exactly one version through appendVersion, in state sug
   /* Nothing else moved: no run, no bound, no capture, no request, no notification — only the question's own rows. */
   const after = w.snapshot();
   const moved = Object.keys(after).filter((t) => after[t] !== before[t]).sort();
-  assert.deepEqual(moved.filter((t) => !["bundles", "files", "history", "manifest", "inquiry_basis_versions", "mint_ledger", "bundles_fts"].includes(t)), []);
+  /* and this module's own row of the write (R28, R29: its idem, answer and produced_by). */
+  assert.deepEqual(moved.filter((t) => !["bundles", "files", "history", "manifest", "inquiry_basis_versions", "mint_ledger", "bundles_fts", "suggest_writes"].includes(t)), []);
   assert.equal(w.calls.filter((c) => c.name === "consumeBound").length, 0);
 });
 
@@ -291,7 +292,7 @@ test("R5: the answer is labelled by source — record read back, derived, call �
   assert.equal(r.version, "the folded reading", "the name the record holds, not the one sent");
   assert.deepEqual(Object.keys(r).sort(), Object.keys(r.fields_of).sort(), "total over the answer's keys");
   const bySource = (s) => Object.keys(r.fields_of).filter((k) => r.fields_of[k] === s).sort();
-  assert.deepEqual(bySource("record"), ["at", "author", "bundleSha", "composition", "count", "ground_count", "grounds", "kind", "legs", "rowVersion", "run", "state", "target", "version"]);
+  assert.deepEqual(bySource("record"), ["at", "author", "bundleSha", "composition", "count", "ground_count", "grounds", "kind", "legs", "produced_by", "rowVersion", "run", "state", "target", "version"]);
   assert.deepEqual(bySource("derived"), ["origins_complete", "pair", "shared_origins"]);
   assert.deepEqual(bySource("call"), ["evaluated", "limit", "ok", "origin_limit", "read_back", "repeated", "truncated", "weight", "wrote"]);
   assert.deepEqual([r.weight, r.limit, r.origin_limit, r.truncated, r.evaluated, r.repeated, r.wrote, r.read_back],

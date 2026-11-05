@@ -48,7 +48,7 @@ test("R14: the source is registered with basis-versions' onCandidates (its R40) 
 });
 
 test("R16: C-27.1–C-27.14, C-27.16–C-27.19 and C-104.1–C-104.31 are this module's own rows, each with a translation and a `where` naming the region of this module's op that mints it; C-27.15 is not among them; SUGGEST_LEVELS is defined here; each row is minted by this module with its row (R21–R24's among them)", () => {
-  /* C-27 less C-27.15 (basis-versions' document-gate row, VERSION_KIND_UNKNOWN): eighteen rows. */
+  /* C-27 less C-27.15 (basis-versions' document-gate row, VERSION_KIND_UNKNOWN): nineteen rows (C-27.20 since T53). */
   const SUGGEST_REGIONS = { SUGGEST_NO_TARGET: ["C-27.1", "is-suggest-shape"], SUGGEST_NOT_AN_INQUIRY: ["C-27.2", "is-suggest-shape"],
     SUGGEST_UNKNOWN_KIND: ["C-27.3", "is-suggest-shape"], SUGGEST_NO_RUN: ["C-27.4", "is-suggest-shape"],
     SUGGEST_NAME_TAKEN: ["C-27.5", "is-suggest-shape"], SUGGEST_EMPTY_LEVEL_UNSTATED: ["C-27.6", "is-suggest-shape"],
@@ -57,7 +57,9 @@ test("R16: C-27.1–C-27.14, C-27.16–C-27.19 and C-104.1–C-104.31 are this m
     SUGGEST_BRANCHES_NOT_INDEPENDENT: ["C-27.11", "is-suggest-checks"], SUGGEST_BOILERPLATE: ["C-27.12", "is-suggest-checks"],
     SUGGEST_UNWRITABLE_STATE: ["C-27.13", "is-suggest-checks"], SUGGEST_UNWRITABLE_DOCUMENT: ["C-27.14", "is-suggest-write"],
     SUGGEST_COMPARISON_INCOMPLETE: ["C-27.16", "is-suggest-checks"], SUGGEST_NO_DOCUMENT: ["C-27.17", "is-suggest-shape"],
-    SUGGEST_RUN_NOT_RUNNING: ["C-27.18", "is-suggest-shape"], SUGGEST_OUTSIDE_RUN_CONTEXT: ["C-27.19", "is-suggest-shape"] };
+    SUGGEST_RUN_NOT_RUNNING: ["C-27.18", "is-suggest-shape"], SUGGEST_OUTSIDE_RUN_CONTEXT: ["C-27.19", "is-suggest-shape"],
+    /* T53 (R29): a malformed produced_by, the family's next number. */
+    SUGGEST_PRODUCED_BY_MALFORMED: ["C-27.20", "is-suggest-shape"] };
   assert.deepEqual([...RP.SUGGEST_CHECK_KEYS].sort(), Object.keys(SUGGEST_REGIONS).sort());
   assert.deepEqual(Object.keys(RP.SUGGEST_CHECKS).sort(), Object.keys(SUGGEST_REGIONS).sort());
   for (const [k, [check, region]] of Object.entries(SUGGEST_REGIONS)) {
@@ -111,6 +113,7 @@ test("R16: C-27.1–C-27.14, C-27.16–C-27.19 and C-104.1–C-104.31 are this m
   S({ target: "INQ-2026-0003-nofile", run: "RUN-NF" }); S({ target: Q2, run: "RUN-Q2", name: "held" });
   S({ name: "t", legs: Array.from({ length: 121 }, () => ({ target: DOC })) }); S({ name: "e", kind: "level-empty" });
   S({ name: "s", state: "accepted" }); S({ name: "b", description: "tbd" });
+  S({ name: "pb", produced_by: "an AI" });
   S({ name: "u", legs: [{ target: "INFO-2026-0099-x", role: "supports", ground: "g" }], grounds: [{ ground: "g", statement: "the one part" }] });
   w.strength.error = "x"; S({ name: "p" }); w.strength.error = null;
   w.strength.independence = { checked: true, parts: 2, shared: [], complete: false, limit: 200 }; S({ name: "i" });
