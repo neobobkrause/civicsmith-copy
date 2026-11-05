@@ -7734,6 +7734,7 @@ function makeRunner({
           if (m.decision === "stop") return endEarly(r, m.reason);
           const remainingMs = r.ceiling.seconds * 1e3 - (now() - r.startMs);
           const timer = setTimeout(() => r.abort.abort(), Math.max(0, remainingMs));
+          if (timer.unref) timer.unref();
           let out;
           try {
             out = await callModel({

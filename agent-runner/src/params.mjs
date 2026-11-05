@@ -12,7 +12,7 @@ export const PATH_SEGMENT_ID_MIN = 24;
 // R44: the longest key a run takes.
 export const KEY_CHARS_MAX = 4096;
 // R43: the largest `POST /run` body read.
-export const BODY_MAX = 64 * 1024;
+export const BODY_MAX = 60 * 1024;
 // R41: the longest sentence a refusal carries.
 export const RUNNER_DETAIL_CHARS_MAX = 300;
 // R55: how long the container stays awake after a run ends, for the person to read the manifest and take the bundle.
