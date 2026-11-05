@@ -200,11 +200,10 @@ test("R5, R9: a promotion that leaves an action holding a past-dated pending clo
   assert.equal("deadlinerecheck" in after, false, "marked, it holds no wake (R15), so it is not due again");
 });
 
-/* ai-accounts T53 (its R35, R61): a member's own account is set by `aiownadd`, which answers CATALOGUE_UNAVAILABLE until the
-   assembled store hands ai-accounts the object's own ai-catalogue (store-assembly's reopening, PR 342). Kept running as a todo
-   until then; R12 over the real ai-runs and capture-requests is `notice-ai-runs-323.test.mjs`. Reported to BOB. */
-test("R12: a run waiting on a request that reaches expired is woken on the alarm that expires it, exactly once",
-  { todo: "waits on store-assembly's catalogue in the assembled store (PR 342) for aiownadd" }, async () => {
+/* ai-accounts T53 (its R35, R61): a member's own account is set by `aiownadd`. In this miniflare plane store-assembly composes
+   ai-accounts without a catalogue, so it answers CATALOGUE_UNAVAILABLE (base-red, store-assembly's); R12 over the real
+   ai-runs and capture-requests is `notice-ai-runs-323.test.mjs`. */
+test("R12: a run waiting on a request that reaches expired is woken on the alarm that expires it, exactly once", async () => {
   const obj = await store();
   const add = await POST("op=memberadd&token=adm-sch",
     { memberId: "ruth", cover: "cover for ruth", role: "admin", capabilities: ["contribute", "publish"] });
