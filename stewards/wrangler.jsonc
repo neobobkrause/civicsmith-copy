@@ -19,7 +19,10 @@
   "vars": {
     // Bob's ruling (K2819 (2)): the contact 90 days and the report 1 year after its latest decision.
     "CONTACT_RETENTION_DAYS": "90",
-    "REPORT_RETENTION_DAYS": "365"
+    "REPORT_RETENTION_DAYS": "365",
+    // R24: the date of Bob's approval of the listing rule's text applied (Publication §5E), stored with each listing
+    // withdrawal; a later change of it alters no earlier decision.
+    "LISTING_RULE_TEXT_VERSION": "2026-10-15"
     // STEWARDS_ADDRESS is Bob's to name (K2799). Until it is set the service is not yet open and the deploy refuses.
     // NOTIFY_FROM: the sender of the notice, on a domain with Email Routing in this account (DEPLOY.md).
   },
