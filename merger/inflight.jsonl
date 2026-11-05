@@ -14,3 +14,4 @@
 {"at":"2026-11-05T16:16:45.836Z","row":"end","pr":445,"tip":"6a926353a8bac0a0bfba05c0ddbd053095e9d64d","cause":"tranche moved","session":"session_018BhcegraPAsGJB6Ev1FpZ5"}
 {"at":"2026-11-05T16:18:17.655Z","row":"inflight","pr":439,"module":"screens-daily","tip":"651695d0f98e784693eb561b0e2ef41f8e925e9a","session":"session_018BhcegraPAsGJB6Ev1FpZ5","until":"2026-11-05T18:03:17.655Z"}
 {"at":"2026-11-05T16:28:32.281Z","row":"end","pr":439,"tip":"651695d0f98e784693eb561b0e2ef41f8e925e9a","cause":"landed","session":"session_018BhcegraPAsGJB6Ev1FpZ5"}
+{"at":"2026-11-05T17:09:24.780Z","row":"inflight","pr":453,"module":"queue-producers","tip":"13f7af0844b0147d05da701fec837beccdcfdad2","session":"session_018BhcegraPAsGJB6Ev1FpZ5","until":"2026-11-05T18:54:24.780Z"}
