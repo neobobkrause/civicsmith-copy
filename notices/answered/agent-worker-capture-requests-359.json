@@ -1,0 +1,1 @@
+{"row":"answered","user":"agent-worker","by":"triage","evidence":"agent-worker/test/owners.mjs:7 imports captureRequestsOps only to list op names (:12) and pins capturerequest (:26); PR 359 renamed or removed no op","at":"2026-11-05T02:27:38.927Z","key":"capture-requests:359","worker":"a3049820214d98bf8","cost":"1.1"}

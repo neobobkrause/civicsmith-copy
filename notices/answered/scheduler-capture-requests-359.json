@@ -1,0 +1,1 @@
+{"row":"answered","user":"scheduler","by":"triage","evidence":"bio-plane/src/scheduler/index.mjs:392-395 uses drainPending(), drainIntervalMs() and drain({actor, now, rank}) without looking inside; R61's skip is inside the drain's own selection","at":"2026-11-05T02:27:38.927Z","key":"capture-requests:359","worker":"a3049820214d98bf8","cost":"1.1"}

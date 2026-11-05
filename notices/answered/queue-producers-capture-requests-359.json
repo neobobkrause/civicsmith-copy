@@ -1,0 +1,1 @@
+{"row":"answered","user":"queue-producers","by":"triage","evidence":"bio-plane/src/queue-producers/index.mjs:719 reads only leads({viewer}), unchanged; it does not call the new personWaits","at":"2026-11-05T02:27:38.927Z","key":"capture-requests:359","worker":"a3049820214d98bf8","cost":"1.1"}

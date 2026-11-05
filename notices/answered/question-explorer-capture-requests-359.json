@@ -1,0 +1,1 @@
+{"row":"answered","user":"question-explorer","by":"triage","evidence":"bio-plane/src/question-explorer/index.mjs:661 calls captureRequest({run, address, target, purpose, render, step}) with no idem or produced_by, R6's behaviour, and reads only ok and code","at":"2026-11-05T02:27:38.927Z","key":"capture-requests:359","worker":"a3049820214d98bf8","cost":"1.1"}

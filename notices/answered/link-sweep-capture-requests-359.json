@@ -1,0 +1,1 @@
+{"row":"answered","user":"link-sweep","by":"triage","evidence":"bio-plane/src/link-sweep/index.mjs:59 only builds captureRequestsOf(host, {record}) and registers its sweep scope (:67); it files no request with idem or produced_by","at":"2026-11-05T02:27:38.927Z","key":"capture-requests:359","worker":"a3049820214d98bf8","cost":"1.1"}

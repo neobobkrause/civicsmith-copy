@@ -1,0 +1,1 @@
+{"row":"triage","user":"investigation","verdict":"not affected","evidence":"bio-plane/src/investigation/index.mjs:1047 only checks whether any requested or draining row exists for a question; a row held for a person stays requested","at":"2026-11-05T02:27:38.927Z","key":"capture-requests:359","worker":"a3049820214d98bf8","cost":"1.1"}
