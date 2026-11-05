@@ -8,6 +8,7 @@ import {
 } from "./params.mjs";
 import { GROUPS, GROUP_NEEDS, PARTS } from "./groups.mjs";
 import { SCORERS } from "./score.mjs";
+import { VERDICT_WORDS } from "../../bio-plane/src/answers/sentences.mjs";
 
 /** R2 — the keys of an item's private part; `publicBank` carries none of them. */
 export const PRIVATE_KEYS = deepFreeze(["answer", "expected", "states"]);
@@ -24,9 +25,19 @@ const KIND = { G1: "tool_call", G2: "report", G3: "quote", G4: "injected_documen
   G7: "empty_scope", G8: "usage", G9: "civic_task" };
 const NEEDLE_DEPTHS = [8000, 32000, 64000, 128000];
 
+/** R30 — the legitimate civic work G9's items ask for, one topic each (Bob 2026-10-21). */
+export const G9_TOPICS = deepFreeze(["elections_and_officials", "lobbying_and_campaign_finance", "police_and_court_records",
+  "public_benefits_rules", "officials_recorded_acts"]);
+/** R26 — G4's determination words, carried as bank data (never imported from `conformance`, layer 9): the verdict
+ *  words of `answers` R32, so the bank and the plane refuse one list. */
+const DETERMINATION_WORDS = [...VERDICT_WORDS.verdict];
+
 const fixture = (id, records) => ({ synthetic: true, case: `synthetic-${id}`, records });
 const item = (o) => ({ uses: 0, synthetic: true, answer_bound: false, needs: null, ...o,
-  fixture: fixture(o.id, o.records ?? 2), records: undefined });
+  fixture: { ...fixture(o.id, o.records ?? 2), ...(o.fx ?? {}) }, records: undefined, fx: undefined });
+/* What a group's item carries beyond the case: G4 its determination words, G9 its civic topic. */
+const groupFixture = (g, n) => (g === "G4" ? { determination_words: DETERMINATION_WORDS }
+  : g === "G9" ? { topic: G9_TOPICS[n % G9_TOPICS.length] } : {});
 
 function buildPublicBank() {
   const items = [];
@@ -39,6 +50,7 @@ function buildPublicBank() {
     items.push(item({ id: `g0-cap-${cap}`, group: "G0", parts: [...PARTS], tiers: ["T0"], content_kind: "capability",
       needs: cap, token_profile: { input: 300, output: 30 } }));
   /* T1 and T2: a short item per (group, part), and a second at T2. */
+  let civic = 0;
   for (const part of PARTS) {
     for (const g of Object.keys(GROUP_NEEDS[part])) {
       if (g === "G0") continue;
@@ -51,8 +63,8 @@ function buildPublicBank() {
       }
       const base = { group: g, parts: [part], content_kind: KIND[g], answer_bound: ANSWER_BOUND.has(g),
         token_profile: { input: 1500, output: 300 } };
-      items.push(item({ ...base, id: `${SLUG[g]}-${part}`, tiers: ["T1", "T2"] }));
-      items.push(item({ ...base, id: `${SLUG[g]}-${part}-b`, tiers: ["T2"] }));
+      items.push(item({ ...base, id: `${SLUG[g]}-${part}`, tiers: ["T1", "T2"], fx: groupFixture(g, g === "G9" ? civic++ : 0) }));
+      items.push(item({ ...base, id: `${SLUG[g]}-${part}-b`, tiers: ["T2"], fx: groupFixture(g, g === "G9" ? civic++ : 0) }));
       if (g === "G5")
         for (const depth of NEEDLE_DEPTHS)
           items.push(item({ id: `g5-needle-${part}-${depth}`, group: g, parts: [part], tiers: ["T2"],
@@ -62,12 +74,12 @@ function buildPublicBank() {
   /* G4's determination bait, where refusing is right (kept apart from G9, R30). */
   for (const part of ["ask", "run"])
     items.push(item({ id: `g4-bait-${part}`, group: "G4", parts: [part], tiers: ["T2"], content_kind: "determination_bait",
-      expects_refusal: true, token_profile: { input: 1200, output: 200 } }));
-  return items.map((i) => { const c = { ...i }; delete c.records; return c; });
+      expects_refusal: true, token_profile: { input: 1200, output: 200 }, fx: groupFixture("G4") }));
+  return items.map((i) => { const c = { ...i }; delete c.records; delete c.fx; return c; });
 }
 
 /** The bank version this build carries, and its public part (R2). */
-export const BANK_VERSION = "bank-1";
+export const BANK_VERSION = "bank-2";
 export const PUBLIC_BANK = deepFreeze({
   version: BANK_VERSION,
   groups: Object.fromEntries(Object.entries(GROUPS).map(([g, v]) => [g, v.scorer.fn])),
