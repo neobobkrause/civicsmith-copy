@@ -180,3 +180,4 @@
 {"at":"2026-11-05T22:13:54Z","row":"outcome","n":90,"outcome":"delivered"}
 {"at":"2026-11-05T22:18:29Z","row":"sent","n":91,"to":"bob","text":"merged PR 490 (job acquisition-owed); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-05T22:18:40Z","row":"outcome","n":91,"outcome":"delivered"}
+{"at":"2026-11-05T22:23:33Z","row":"sent","n":92,"to":"bob","text":"merged PR 492 (job held-captures); the MERGER's starter starts the work it freed"}
