@@ -220,13 +220,14 @@ test("R5 the row: this module's LEAD_CHECKS is exactly {LEAD_NOT_EVIDENCE: C-54.
   for (const r of Object.values(OBSERVATION_LEAD_CHECKS)) assert.notEqual(r.check, "C-54.1");
 });
 
-test("R7 R16 R18 INQUIRY_GRAMMAR_CHECKS: the thirteen rows, each {check, where, translation}, number and translation unchanged; the five inquiry mints keep their `where`; LEAD_NOT_EVIDENCE's names the site that raises it now (stamped by 1.50.0); IMPORTED_LEG_MALFORMED (C-21.3) is new, its translation BOB's draft; the three T33 leg rows, T34's derived-connection row and T41's bias-application row (C-2.8) follow (R16, R18; t33, t34 and t41 tests); the table has one name", async () => {
+test("R7 R16 R18 INQUIRY_GRAMMAR_CHECKS: the fourteen rows, each {check, where, translation}, number and translation unchanged; the five inquiry mints keep their `where`; LEAD_NOT_EVIDENCE's names the site that raises it now (stamped by 1.50.0); IMPORTED_LEG_MALFORMED (C-21.3) is new, its translation BOB's draft; the three T33 leg rows, T34's derived-connection row and T41's bias-application row and F1's file-says row (C-2.8) follow (R16, R18, F1; t33, t34, t41 and f1 tests); the table has one name", async () => {
   assert.ok(Object.isFrozen(INQUIRY_GRAMMAR_CHECKS));
   const numbers = { LEAD_NOT_EVIDENCE: "C-54.1", NOT_INQUIRIES: "C-33.13", SELF_BASIS: "C-33.22", BASIS_CYCLE: "C-33.23",
                     MACHINE_CANNOT_DIVIDE: "C-32.7", MACHINE_CANNOT_GROUND: "C-32.8", IMPORTED_LEG_MALFORMED: "C-21.3",
                     STANDARD_LEG_AXIS: "C-2.8", CALCULATION_LEG_MALFORMED: "C-2.8", OCCURRENCE_LEG_MALFORMED: "C-2.8",
-                    DERIVED_LEG_MALFORMED: "C-2.8", CUTTING_LEG_IN_GROUND: "C-2.8", BIAS_APPLICATION_MALFORMED: "C-2.8" };
-  assert.deepEqual(Object.keys(INQUIRY_GRAMMAR_CHECKS), Object.keys(numbers), "the thirteen rows, in R7's order");
+                    DERIVED_LEG_MALFORMED: "C-2.8", CUTTING_LEG_IN_GROUND: "C-2.8", BIAS_APPLICATION_MALFORMED: "C-2.8",
+                    FILE_SAYS_LEG_MALFORMED: "C-2.8" };
+  assert.deepEqual(Object.keys(INQUIRY_GRAMMAR_CHECKS), Object.keys(numbers), "the fourteen rows, in R7's order");
   const imported = INQUIRY_GRAMMAR_CHECKS.IMPORTED_LEG_MALFORMED;
   assert.deepEqual(Object.keys(imported), ["check", "where", "translation"]);
   assert.equal(imported.check, "C-21.3");
