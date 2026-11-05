@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { ok, boot } from "../interface-shell/harness.mjs";
 import { hasWord } from "../../../src/setup-words/index.mjs";
 import { world, V } from "../citation/fixture.mjs";
-import { open, main, fill, press, says, word, plane, READING, SCREENS, D, SHA, Q, P } from "../screens-inquiry/fixtures.mjs";
+import { open, main, fill, press, says, word, plane, READING, SCREENS, D, SHA, Q } from "../screens-inquiry/fixtures.mjs";
 
 process.env.TZ = "UTC";
 const at = "/app/document/" + D;
@@ -45,12 +45,10 @@ test("R61: a kind not read draws `screen.document.unsupported.<kind>` (`ico`); a
   const rtf = main(await open(at, stated("rtf")));
   assert.ok(!says(rtf, "screen.document.unsupported.ico"), "rtf: not the ico row");
   assert.ok(!hasWord("screen.document.unsupported.rtf"), "and no unsupported row is held for a kind the beta reads (DEC-467)");
-});
-
-test("R61 control: a sentence the reading stored is drawn as stored", async () => {
+  /* control: a sentence the reading stored is drawn as stored */
   const BASIS = "the reading's own sentence, stored with it";
   const m = main(await open(at, reading({ text_units: [], unread_pages: [], reading: { content_type: "generic", found: false, failure: "final", reason: "SOMETHING_ELSE", basis: BASIS } })));
-  assert.ok(text(m).includes(BASIS));
+  assert.ok(text(m).includes(BASIS), "control: a stored reading sentence is drawn as stored");
 });
 
 /* ---- R74 ---- */
@@ -96,14 +94,9 @@ test("R74: after a 'cuts against' cite the line says 'Cuts against' with the que
     const link = line.querySelector('a[href^="#document-passage-"]');
     assert.ok(link, "and a link to the passage");
     assert.ok(main(p).querySelector("#" + link.getAttribute("href").slice(1)), "which is the passage drawn on the page");
+    /* control: the options list is unchanged */
+    assert.deepEqual(p.doc.getElementById("document-cite-role").querySelectorAll("option").map((o) => o.getAttribute("value")), ["supports", "cuts_against"], "control: the role's options are unchanged");
   }
-});
-
-test("R74 control: the role's options are unchanged (Supports, Cuts against)", async () => {
-  const p = await open(at);
-  const opts = p.doc.getElementById("document-cite-role").querySelectorAll("option").map((o) => o.getAttribute("value"));
-  assert.deepEqual(opts, ["supports", "cuts_against"]);
-  assert.ok(P, "the page's project");
 });
 
 /* ---- R62, R72: the parts the reading states today; the rest are owed (below) ---- */
