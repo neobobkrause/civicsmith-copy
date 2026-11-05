@@ -380,5 +380,6 @@
       "agent-runner/src/entry.mjs",
       "agent-harness/src/subsession.mjs"
     ]
-  }
+  },
+  "merge_train": true
 }

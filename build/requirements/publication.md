@@ -281,3 +281,4 @@ Moved by the second split (K617, K1024; J10): R18 → `corpus-export` R1; R19 �
 Moved by the fourth split (T33-62, T33-63; K617, K1505): R4 → `case-tensions` R1; R5 → R2; R6 → R3; R50 → R4; R17 → R5; R39 → R6; R60 → R7; R26 copied as R8; R33's C-92 rows → R9; R31's flags and attributions → R10; R34 copied as R11. New here: R61–R63.
 
 Moved by the third split (N532, K1332): R57's holding → `case-carriage` R1, `heldMaterialsOf` → R2, `publishedMaterialText` → R3; R59's re-read → R4; R51's re-read → R5; R31's held-materials clause → R6; R34 copied as R7. R51, R57 and R59 stay here, re-worded.
+- **F1** *(not yet met: coordinator ruling 5 Nov 03:26)* Citation R29 (citation.md:61): own the switch that shows a photograph's 'the file says' time and place in a published edition, reading by key as 'the file says', never as a checked fact.

@@ -16,7 +16,9 @@
     "agent-harness",
     "agent-model",
     "run-rules",
-    "signatures"
+    "signatures",
+    "ai-gate",
+    "ai-catalogue"
   ],
   "suite": {
     "cwd": "agent-runner",
