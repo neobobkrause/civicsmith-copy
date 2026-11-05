@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import net from 'node:net';
 import { stubSdk, success, request, startRunner, conversation, MEMBER } from './helpers.mjs';
 import { imageReference, readManifest } from '../src/manifest.mjs';
+import { installScriptFaults } from '../scripts/install-scripts.mjs';
 import { parseJsonc } from '../../bio-plane/scripts/jsonc.mjs';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
@@ -150,25 +151,24 @@ test('R11 no place is named in its behaviour, outward text or configuration; the
   ]) assert.notDeepEqual(placeFaults(configurationTexts(m, w)), [], `a place word in ${what} still fails`);
 });
 
-// R16 (F20; K1881): no package's install or lifecycle script runs at image build. A dependency that needs its script
+// R16 (F20, AIR15): no package's install or lifecycle script runs at image build. A dependency that needs its script
 // is admitted only by a reviewed change naming it here, which BOB rules on; none is.
 const ADMITTED_INSTALL_SCRIPTS = [];
+const installInputs = () => ({ dockerfile: read('../Dockerfile'), lock: JSON.parse(read('../package-lock.json')), pkg,
+  admitted: ADMITTED_INSTALL_SCRIPTS });
 
 test('R16 the image installs with npm ci --omit=dev --ignore-scripts, and the lock holds no package with an install script', () => {
-  const lines = read('../Dockerfile').split('\n').filter((l) => !/^\s*#/.test(l));
-  const installs = lines.flatMap((l) => l.split(/&&|;|\|\|/)).map((c) => c.trim()).filter((c) => /\bnpm\s+(ci|install|i|add|rebuild)\b/.test(c));
-  assert.ok(installs.length >= 1, 'the image installs its dependencies');
-  for (const c of installs) {
-    assert.match(c, /^(RUN\s+)?npm\s+ci\b/, `${c}: dependencies come from package-lock.json by npm ci alone`);
-    assert.match(c, /(^|\s)--ignore-scripts(\s|$)/, `${c}: no install script runs`);
-    assert.match(c, /(^|\s)--omit=dev(\s|$)/, `${c}: no dev dependency enters the image`);
-  }
+  assert.deepEqual(installScriptFaults(installInputs()), []);
   assert.match(read('../Dockerfile'), /^COPY package\.json package-lock\.json \.\/$/m, 'the lock is in the build context');
-  const lock = JSON.parse(read('../package-lock.json'));
-  const scripted = Object.entries(lock.packages).filter(([, p]) => p.hasInstallScript).map(([k]) => k.replace(/^.*node_modules\//, ''));
-  assert.deepEqual(scripted.filter((n) => !ADMITTED_INSTALL_SCRIPTS.includes(n)), [],
-    'a package needing its install script is admitted only by a reviewed change naming it (R16)');
-  // the package itself declares no lifecycle script that npm ci would run
-  for (const s of ['preinstall', 'install', 'postinstall', 'prepare', 'preprepare', 'postprepare'])
-    assert.ok(!(pkg.scripts && s in pkg.scripts), `package.json declares no ${s}`);
+});
+
+test('R16 control: a lockfile package with an install script, or an install without --ignore-scripts, fails naming it', () => {
+  const ok = installInputs();
+  const lock = structuredClone(ok.lock);
+  lock.packages['node_modules/planted-native'] = { version: '1.0.0', hasInstallScript: true };
+  assert.deepEqual(installScriptFaults({ ...ok, lock }), ['planted-native: has an install script']);
+  assert.deepEqual(installScriptFaults({ ...ok, lock, admitted: ['planted-native'] }), [], 'admitted only when named');
+  const dockerfile = ok.dockerfile.replace(/ --ignore-scripts/g, '');
+  assert.ok(installScriptFaults({ ...ok, dockerfile }).some((f) => /no --ignore-scripts/.test(f)));
+  assert.ok(installScriptFaults({ ...ok, pkg: { ...pkg, scripts: { postinstall: 'x' } } }).includes('package.json declares postinstall'));
 });
