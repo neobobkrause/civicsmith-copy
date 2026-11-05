@@ -341,6 +341,7 @@ export class Inquiry {
   #bias = null;          // R53: the lens a finding is made under is read here
   #onWaitSet = null;     // {module, fn}: scheduler's arming notice (R54; scheduler R9)
   #onMachinePassage = null; // {module, fn}: whether a member may cite as hers a passage a machine proposed (R62)
+  #subjectAct = null;    // R87: {bundleId, text} while setSubject's own revision is promoted (R64's arm lets it through)
   #view;                 // R55, R57: the active jurisdiction view, whose time_zone is the profile's
   #deps;
 
@@ -551,7 +552,7 @@ export class Inquiry {
        migration replay is not asked, as R11's other judging arms are not. */
     const held = c && c.head;
     if (held && c.base !== null && c.base !== undefined && !replay && normalizeType(held.type) === "inquiry"
-        && held.currentState === "divided")
+        && held.currentState === "divided" && !this.#isSubjectAct(bundleId, basisMd))
       return this.#dividedClosed(bundleId);
     /* R11 (K681; `inquiry-grammar` R1, R2, R4): the entry arm at the WRITE, judged synchronously by inquiry-grammar's
        own `checkInquiryExtension` over the document: the entry requirements, the division block, the subject's shape and
@@ -674,6 +675,15 @@ export class Inquiry {
       /* END DEC-49 REGION is-candidate-taken-up */
     }
     return this.#surfacedByCarried(c);
+  }
+
+  /* R87 (K5540): whether this promotion is `setSubject`'s own revision of `bundleId`, byte for byte the document the act
+     composed (only the subject, `last_updated` and a Session Log entry changed), so R64's closed door lets it through: a
+     divided question accepts a change of its subject like any other question. Decided on this instance's own state, set
+     only inside `setSubject`, never on a field a caller's package could carry. */
+  #isSubjectAct(bundleId, md) {
+    const a = this.#subjectAct;
+    return !!a && a.bundleId === bundleId && !!md && typeof md.text === "string" && md.text === a.text;
   }
 
   /* R64: the refusal of a revision of a divided question, naming the children its held document records (its
@@ -918,6 +928,14 @@ export class Inquiry {
       const n = written && written.ok ? written.written : 0;
       const subject = basisFm && typeof basisFm.subject_entity === "string" && basisFm.subject_entity.trim()
         ? basisFm.subject_entity.trim() : null;
+      /* R88 (T53): the subject as the last projection recorded it, read before this one overwrites it */
+      const priorSubject = cur ? (this.#one(`SELECT inquiry_subject_entity AS s FROM ${BUNDLE_FACTS} WHERE bundle_id=?`,
+        bundleId)?.s || null) : null;
+      this.#recordSubjectChange(bundleId, cur, priorSubject, subject, c.author);
+      /* R87 (K5539): the question's owner, the member whose promotion created it, recorded once */
+      const creator = typeof c.author === "string" ? c.author.trim() : "";
+      if (!cur && creator && !isMachineIdentity(creator))
+        this.sql.exec(`INSERT OR IGNORE INTO inquiry_owners (bundle_id, owner, at) VALUES (?,?,?)`, bundleId, creator, this.#when());
       /* R36, R40 (N136): the count and the subject in this module's own table, R40's read contract. */
       this.sql.exec(`INSERT INTO ${BUNDLE_FACTS} (bundle_id, inquiry_basis_count, inquiry_subject_entity) VALUES (?,?,?)
                      ON CONFLICT(bundle_id) DO UPDATE SET inquiry_basis_count=excluded.inquiry_basis_count,
@@ -962,6 +980,20 @@ export class Inquiry {
     return { ...(migrated ? { migration_replay: migrated } : {}),
              ...(contentProjected.length ? { content: contentProjected } : {}),
              ...(warned ? { warning: warned } : {}) };
+  }
+
+  /* R88 (T53; DEC-457): a change of the subject a promotion made by any door other than `setSubject` (which records its
+     own, with its reason and pair): `opened` for a creation stating one, else `named`, `changed` or `cleared` by the
+     promotion's author, with no reason and no pair (the door asked for neither). A question whose subject did not move
+     records nothing. */
+  #recordSubjectChange(bundleId, cur, from, to, author) {
+    if (this.#subjectAct && this.#subjectAct.bundleId === bundleId) return;
+    const act = !cur ? (to ? "opened" : null) : from === to ? null : !from ? "named" : !to ? "cleared" : "changed";
+    if (!act) return;
+    this.sql.exec(`INSERT INTO inquiry_subject_changes (bundle_id, at, by, act, from_entity, to_entity, reason,
+                     strength_before, strength_after) VALUES (?,?,?,?,?,?,?,?,?)`,
+      bundleId, this.#when(), typeof author === "string" && author.trim() ? author.trim() : null, act,
+      act === "opened" ? null : from, to, null, null, null);
   }
 
   /* R59 (D13; K2480): asked at a promotion of an inquiry that creates it, or revises its question (its `## Question`, or
@@ -2855,6 +2887,182 @@ export class Inquiry {
       const row = this.#one(`SELECT inquiry_subject_entity FROM ${BUNDLE_FACTS} WHERE bundle_id=?`, bundleId);
       return row && row.inquiry_subject_entity ? row.inquiry_subject_entity : null;
     } catch { return null; }
+  }
+
+  /* ---------------------------------------------------------------- R87–R90: a question's subject (T53; DEC-457) */
+
+  /** R87 (T53; DEC-457; K5536, K5539–K5542): a member names, changes or takes off who a question is about, with a reason,
+   *  by a revision of its document that moves only `subject_entity` (legs, grounds, state and conclusion untouched).
+   *  Refusals in R87's order, each writing nothing. Only the question's owner (the member whose promotion created it,
+   *  R87's (K5539)) or an administrator may act. A published case member, a divided question and a concluded one accept
+   *  the change like any other (K5540, K5542). A leg whose stated grade the new subject would not earn refuses it as
+   *  `BASIS_REFUSED`, naming each leg, and no grade is lowered (K5536). The answer carries the strength pair before and
+   *  after (R28's registration), R59's warning for a person in no public role (R89), and records the change for
+   *  `subjectHistory` (R88). `personWarningSeen: true` records that she saw the warning before the act (R59). */
+  setSubject(args = {}) { return withRow(this.#setSubject(args || {})); }
+  #setSubject({ target, subject = null, reason = "", viewer = null, author = null, personWarningSeen = false } = {}) {
+    const who = String(author ?? "").trim();
+    /* DEC-49 REGION is-machine-set-subject */
+    if (!who || isMachineIdentity(who))
+      return { ok: false, reason: "MACHINE_CANNOT_SET_SUBJECT",
+               detail: localize("inquiry.index.naming_who_a_question_is_about", "naming who a question is about is a member's act, and a machine is not a member. Sign in as a member. Nothing was written.") };
+    /* END DEC-49 REGION is-machine-set-subject */
+    if (!target)
+      return { ok: false, reason: "NO_TARGET", detail: "a subject is named on ONE question: pass target=<inquiry id>" };
+    const gate = viewerPredicate(viewer);
+    const b = this.#one(`SELECT b.bundle_id, b.object_type, b.current_state, b.bundle_sha FROM bundles b
+                          WHERE b.bundle_id=? AND (${gate.sql})`, target, ...gate.args);
+    if (!b) return { ok: false, reason: "NO_SUCH_BUNDLE", target };
+    if (normalizeType(b.object_type) !== "inquiry")
+      return { ok: false, reason: "NOT_AN_INQUIRY", target, object_type: b.object_type,
+               detail: localize("inquiry.index.only_a_question_names_who_it_is_about", "only a question names who it is about.") };
+    /* R87 (K5539): the question's owner, as this module recorded it at the creation (`inquiry_owners`), or an administrator */
+    if (!this.#mayNameSubject(target, who, viewer))
+      return { ok: false, reason: "NOT_THE_QUESTION_OWNER", key: "question.refused.notowner", target,
+               detail: localize("question.refused.notowner", "Only the member who opened this question, or an administrator, names or changes who it is about. Nothing was changed.") };
+    const md = this.#one(`SELECT content FROM files WHERE bundle_id=? AND path='bundle.md'`, target);
+    if (!md || md.content === null)
+      return { ok: false, reason: "NO_DOCUMENT", target,
+               detail: localize("inquiry.index.this_inquiry_has_no_readable_4", "this inquiry has no readable bundle.md, so who it is about cannot be changed") };
+    const why = String(reason ?? "").trim();
+    if (!why)
+      return { ok: false, reason: "NO_REASON", target,
+               detail: localize("inquiry.index.a_change_of_who_a_question", "a change of who a question is about records why: naming a subject, changing it and taking it off each take a reason. Nothing was written.") };
+    if (why.length > RELEASE_ACK_MAX || /["\\\r\n]/.test(why))
+      return { ok: false, reason: "BAD_REASON", target,
+               detail: localize("inquiry.index.a_reason_is_at_most_2", "a reason is at most {RELEASE_ACK_MAX} characters and cannot contain a quote, a backslash, or a newline: the restricted frontmatter grammar has no escapes", { RELEASE_ACK_MAX: String(RELEASE_ACK_MAX) }) };
+    let text = md.content;
+    const fm = parseFrontmatter(text).data || {};
+    const from = typeof fm.subject_entity === "string" && fm.subject_entity.trim() ? fm.subject_entity.trim() : null;
+    const to = typeof subject === "string" && subject.trim() ? subject.trim() : null;   /* K5541: empty takes it off */
+    if (from === to)
+      return { ok: false, reason: "SUBJECT_UNCHANGED", target, subject: to,
+               detail: localize("inquiry.index.this_question_is_already_about", "this question is already about that subject. Nothing was written.") };
+    /* R11's judging: an entity the registry does not hold (K231: the write's own code) */
+    if (to !== null && !this.entities.has(to))
+      return { ok: false, reason: "SUBJECT_REFUSED", target: to,
+               findings: [{ check: "C-2.8",
+                 detail: localize("inquiry.index.subject_entity_se_does_not", "subject_entity '{se}' does not resolve in this store: an inquiry naming its subject names an entry in the SUBJECT REGISTRY, and this one names a key no entity has. Register the subject with op=entitycreate, or omit subject_entity — an inquiry may name no subject, and then no leg of it earns an A/B/C connection grade (DEC-15).", { se: String(to) }) }] };
+    /* K5536: a leg whose stated grade the new subject would not earn refuses the change; no grade is lowered (R32). The
+       candidate is judged by the same grammar the write runs, over the earned registry under the new subject. */
+    const candidate = { ...fm };
+    if (to === null) delete candidate.subject_entity; else candidate.subject_entity = to;
+    const legs = Array.isArray(fm.basis) ? fm.basis.filter((l) => l && typeof l === "object") : [];
+    if (legs.length) {
+      const bf = [];
+      checkInquiryBasis(candidate, bf, this.#publishedRegistry(target, legs.map((l) => l.target).filter((t) => typeof t === "string")),
+        this.legEarning.earnedForDoc(candidate, legs));
+      const errs = bf.filter((x) => x.severity === "error");
+      if (errs.length)
+        return { ok: false, reason: "BASIS_REFUSED", target,
+                 findings: errs.map((x) => { const m = /basis(?: leg |\[)(\d+)/.exec(String(x.message ?? "")); const ord = m ? Number(m[1]) : null;
+                   return { check: x.check, ...(x.code ? { code: x.code } : {}), ...(ord !== null ? { ord, target: legs[ord]?.target ?? null } : {}),
+                            detail: x.message, repairs: x.repairs ?? [] }; }),
+                 detail: localize("inquiry.index.a_leg_of_this_question_states", "a leg of this question states a grade the new subject would not earn, so the subject is not changed and no grade is lowered. Change the leg's grade first, or keep the subject. Nothing was written.") };
+    }
+    const act = from === null ? "named" : to === null ? "cleared" : "changed";
+    const when = this.#when();
+    text = to === null ? removeBlock(text, "subject_entity") : setOrAddScalar(text, "subject_entity", fmSafe(to));
+    text = setScalar(text, "last_updated", `"${when}"`);
+    const before = this.#strength(target);
+    text = appendSessionLog(text, `### Session ${when} | Subject ${act} | ${who}\n`
+      + `Trigger: op=setSubject on ${target}\n`
+      + `Changes: subject ${from ?? "none"} -> ${to ?? "none"}.\n`
+      + `Reason: ${why}\n`);
+    let promoted = null, after = null;
+    this.#subjectAct = { bundleId: target, text };
+    let refused;
+    try {
+      refused = this.record.transact(() => {
+        promoted = this.#promote({ bundleId: target, base: b.bundle_sha, snapKey: `${when.replace(/[-:]/g, "")}_${rand(4)}`,
+          author: who, files: [mdFile(text), ...carriedFiles(this.sql, target)],
+          ...(personWarningSeen === true ? { personWarningSeen: true } : {}),
+          /* NO STATE MOVES: the document's own state carried forward unchanged */
+          meta: { object_type: fm.object_type ?? b.object_type, title: fm.title, current_state: b.current_state,
+                  prior_state: fm.prior_state ?? null, created: fm.created, last_updated: when, criticality: fm.criticality ?? null } });
+        if (!promoted.ok) return { ...promoted, target };
+        after = this.#strength(target);
+        const json = (v) => (v ? JSON.stringify(v) : null);
+        this.sql.exec(`INSERT INTO inquiry_subject_changes (bundle_id, at, by, act, from_entity, to_entity, reason,
+                         strength_before, strength_after) VALUES (?,?,?,?,?,?,?,?,?)`,
+          target, when, who, act, from, to, why, json(before && after ? before : null), json(before && after ? after : null));
+        return null;
+      });
+    } finally { this.#subjectAct = null; }
+    if (refused) return refused;
+    return { ok: true, target, act, subject: to, previous: from, reason: why, at: when, by: who,
+             bundleSha: promoted.bundleSha,
+             strength_before: before && after ? before : null, strength_after: before && after ? after : null,
+             ...(before && after ? {} : { strength_absent: word("inquiry.strength_absent") }),
+             ...(promoted.warning ? { warning: promoted.warning } : {}) };
+  }
+
+  /* R87 (K5539): the question's owner, `inquiry_owners`' row (the member whose promotion created it), or an administrator
+     (`membership.isAdministrator`, the founder's claim included), the acting member read from the author stamp and the
+     viewer stamp. A question with no recorded owner is changed by an administrator alone. */
+  #mayNameSubject(target, who, viewer) {
+    const owner = this.#one(`SELECT owner FROM inquiry_owners WHERE bundle_id=?`, target)?.owner ?? null;
+    if (owner !== null && owner === who) return true;
+    const idOf = (x) => (x === "admin" ? "admin" : (MEMBER_AUTHOR.exec(typeof x === "string" ? x : "") || [])[1] ?? null);
+    for (const x of [who, viewer]) {
+      const id = idOf(x);
+      try { if (id && this.membership.isAdministrator(id) === true) return true; } catch { /* not one */ }
+    }
+    return false;
+  }
+
+  /** R88, R90 (T53; DEC-457, DEC-481): a question's subject with the history of its changes: `{ok: true, id, subject,
+   *  changes, strength_now}` and R60's `projects`. `subject` is `{entity_id, label, kind}` as the held document states
+   *  it, else null (`label` and `kind` null, `label_unread` saying so, when the registry cannot be read). `changes`,
+   *  oldest first, are `{at, by, act, from, to, reason, strength_before, strength_after, part}`; `part` null for the
+   *  question's own subject, else `{id, title}` of the part of a divided question (its `division.into`) whose subject
+   *  changed, read under this question's own sight (a part's opening, which carries the subject it was divided with, is
+   *  no change of it). A question whose subject was stated before changes were recorded has `subject` and no `opened`
+   *  entry. A question the viewer may not see, or that is no question, is answered as an absent one (R33). Read in any
+   *  state; writes nothing; never throws. */
+  subjectHistory(args = {}) {
+    const { id = null, viewer = null } = args && typeof args === "object" ? args : {};
+    try {
+      if (!id || typeof id !== "string" || this.membership.inSight(id, viewer) !== true)
+        return { ok: false, reason: "NO_SUCH_BUNDLE", target: id ?? null };
+      const info = this.record.bundleInfo(id);
+      if (!info) return { ok: false, reason: "NO_SUCH_BUNDLE", target: id };
+      if (normalizeType(info.type) !== "inquiry") return { ok: false, reason: "NOT_AN_INQUIRY", target: id };
+      const md = this.record.readFile(id, "bundle.md");
+      const fm = md && typeof md.text === "string" ? parseFrontmatter(md.text).data : null;
+      if (!fm || typeof fm !== "object") return { ok: false, reason: "NO_DOCUMENT", target: id };
+      const se = typeof fm.subject_entity === "string" && fm.subject_entity.trim() ? fm.subject_entity.trim() : null;
+      let subject = null;
+      if (se) {
+        let e = null, unread = false;
+        try { e = this.#one(`SELECT label, kind FROM entities WHERE entity_id=?`, se); } catch { unread = true; }
+        subject = { entity_id: se, label: e ? e.label ?? null : null, kind: e ? e.kind ?? null : null,
+                    ...(e ? {} : { label_unread: localize("inquiry.index.the_subject_registry_could_not", "the subject registry could not be read for this entity, so its name is not shown") }) };
+        if (!unread && !e) subject.label_unread = localize("inquiry.index.the_subject_registry_holds_no", "the subject registry holds no entry for this id, so its name is not shown");
+      }
+      const parts = new Map();
+      const into = fm.division && Array.isArray(fm.division.into) ? fm.division.into.filter((x) => typeof x === "string") : [];
+      for (const p of into) {
+        let title = null;
+        try {
+          const pm = this.record.readFile(p, "bundle.md");
+          const pf = pm && typeof pm.text === "string" ? parseFrontmatter(pm.text).data : null;
+          title = pf && typeof pf.title === "string" ? pf.title : (this.record.bundleInfo(p)?.title ?? null);
+        } catch { title = null; }
+        parts.set(p, { id: p, title });
+      }
+      const ids = [id, ...parts.keys()];
+      const rows = this.#rows(`SELECT * FROM inquiry_subject_changes WHERE bundle_id IN (${ids.map(() => "?").join(",")})
+                               ORDER BY change_id`, ...ids)
+        .filter((r) => r.bundle_id === id || r.act !== "opened");
+      const changes = rows.map((r) => ({ at: r.at, by: r.by ?? null, act: r.act, from: r.from_entity ?? null, to: r.to_entity ?? null,
+        reason: r.reason ?? null, strength_before: safeJson(r.strength_before), strength_after: safeJson(r.strength_after),
+        part: r.bundle_id === id ? null : parts.get(r.bundle_id) }));
+      const now = this.#strength(id);
+      return { ok: true, id, subject, changes, strength_now: now,
+               ...(now === null ? { strength_absent: word("inquiry.strength_absent") } : {}),
+               ...this.#projectsField(id, viewer) };
+    } catch { return { ok: false, reason: "NO_SUCH_BUNDLE", target: typeof id === "string" ? id : null }; }
   }
 
 }

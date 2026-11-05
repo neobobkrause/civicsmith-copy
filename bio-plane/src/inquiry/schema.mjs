@@ -183,12 +183,42 @@ CREATE TABLE IF NOT EXISTS inquiry_ground_changes (
   strength_after   TEXT
 );
 CREATE INDEX IF NOT EXISTS inquiry_ground_changes_bundle ON inquiry_ground_changes(bundle_id, change_id);
+
+-- R88, R90 (T53; DEC-457, DEC-481): the changes of a question's subject, one row per change, oldest first (change_id),
+-- never edited. act is 'opened' (the creating promotion stated a subject; reason and pair NULL), 'named', 'changed' or
+-- 'cleared'; from_entity and to_entity the subject before and after (NULL for none); reason the member's (NULL for an
+-- opening, or for a revision that changed the subject by another door); strength_before and strength_after the pairs as
+-- JSON, NULL where no module answered strength. A question whose subject was stated before this table has no row.
+-- Keyed by bundle_id and cleared with its inquiry.
+CREATE TABLE IF NOT EXISTS inquiry_subject_changes (
+  change_id        INTEGER PRIMARY KEY,
+  bundle_id        TEXT NOT NULL,
+  at               TEXT NOT NULL,
+  by               TEXT,
+  act              TEXT NOT NULL,
+  from_entity      TEXT,
+  to_entity        TEXT,
+  reason           TEXT,
+  strength_before  TEXT,
+  strength_after   TEXT
+);
+CREATE INDEX IF NOT EXISTS inquiry_subject_changes_bundle ON inquiry_subject_changes(bundle_id, change_id);
+
+-- R87 (T53; K5539): who owns a question, the member whose promotion created it (the control plane's author stamp),
+-- recorded once at the creation and never after. A question created by a machine, or before this table, has no row and
+-- no owner: only an administrator names or changes its subject. Keyed by bundle_id and cleared with its inquiry.
+CREATE TABLE IF NOT EXISTS inquiry_owners (
+  bundle_id  TEXT PRIMARY KEY,
+  owner      TEXT NOT NULL,
+  at         TEXT NOT NULL
+);
 `;
 
 /** R36: the tables this module declares to purge, each keyed to a bundle by its `bundle_id`. */
 export const INQUIRY_TABLES = ["inquiry_exclusions", "inquiry_migration_replays", "inquiry_member_agents",
                               "inquiry_contradiction_links", "inquiry_bundle_facts", "inquiry_findings",
-                              "inquiry_dated_waits", "inquiry_person_warnings", "inquiry_ground_changes"];
+                              "inquiry_dated_waits", "inquiry_person_warnings", "inquiry_ground_changes",
+                              "inquiry_subject_changes", "inquiry_owners"];
 /** R36 (plan T33, Rules (6)): every table declared explicitly through `record-core.declareTable` (its R21), with the
  *  classes `declarePurge`'s default form gives (purge `clear`, expunge `none`, export `admin-only`, derive `stored`, no
  *  version chain), each with the sight of the bundle it names; `inquiry_findings` also keyed by the project its lens
