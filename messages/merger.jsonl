@@ -171,3 +171,4 @@
 {"at":"2026-11-05T21:55:06Z","row":"sent","n":86,"to":"bob","text":"PR 600 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 600 is a draft"}
 {"at":"2026-11-05T21:55:20Z","row":"outcome","n":86,"outcome":"delivered"}
 {"at":"2026-11-05T21:56:29Z","row":"sent","n":87,"to":"bob","text":"PR 484: job ai-catalogue must sync (node .process/tool/p3.mjs job sync ai-catalogue, then job complete ai-catalogue): pull request 484 conflicts with tranche; nothing was merged"}
+{"at":"2026-11-05T21:56:41Z","row":"outcome","n":87,"outcome":"delivered"}
