@@ -30,7 +30,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T11:08:48Z"
+    "state": "BLOCKED",
+    "reason": "All 18 marks (R58-R75) need changes to the Document page, which is drawn by bio-plane/src/screens-inquiry/document.mjs (module screens-inquiry). This job's paths are only build/requirements/screens-document-beta.md, docs/requirements-notes/screens-document-beta.md and bio-plane/test/m/screens-document-beta/, and screens-document itself has no source paths. None is met today. These keys are in no src file: screen.follow.document.laws (R60), screen.document.held.kind (R62), screen.photo.dropped.* (R63), screen.document.interp.* (R64-R68), screen.document.text.unsure (R72). document.mjs does not draw about-knocker (R58), content.typed.* (R59), Go to Home (R75) or Cuts against (R74), and it still reads heldcaptures (R71). I can't write a test that passes without the product change, and test.todo strikes nothing. Needed, BOB's choice: (a) give this job bio-plane/src/screens-inquiry/document.mjs, and its word rows, as paths; or (b) send R58-R75 to a screens-inquiry job and close this one. Nothing was changed on this branch.",
+    "at": "2026-11-05T11:16:19Z"
   }
 }
