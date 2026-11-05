@@ -8,6 +8,7 @@
 //   the run request's `declared.host` before it is passed on (the body itself is passed on unread and unchanged);
 // - R55's hold: the container stays awake through a run and its review window, with a closed marker in storage;
 // - R30's lines, one per lifecycle event and per egress request, and R34's per refused request.
+import { DurableObject } from 'cloudflare:workers';
 import { Container, ContainerProxy } from '@cloudflare/containers';
 import member from '../fleet-member.json' with { type: 'json' };
 import { CATALOGUE_ADDRESS } from '../../bio-plane/src/ai-catalogue/index.mjs';
@@ -212,6 +213,15 @@ export class AgentRunner extends Container {
     const head = String(error && error.message ? error.message : error).replace(/[?#]\S*/g, '').replace(/[A-Za-z0-9._-]{32,}/g, '[redacted]').slice(0, 120);
     await this.lifecycle('error', { error_head: head });
     throw error;
+  }
+}
+
+// R42 (retired) / R13: the `RemoteSession` stub stays exported while `agent-worker`'s `REMOTE` binding still names it
+// (agent-worker/wrangler.jsonc), so the fleet's bundles keep every bound class (bundler R39). It answers every request
+// 503 REMOTE_UNAVAILABLE and holds no state. It and its migration go in the change that removes `REMOTE` (agent-worker PR 364).
+export class RemoteSession extends DurableObject {
+  async fetch() {
+    return new Response(JSON.stringify({ ok: false, code: 'REMOTE_UNAVAILABLE' }), { status: 503, headers: { 'content-type': 'application/json' } });
   }
 }
 

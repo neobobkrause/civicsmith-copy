@@ -41,13 +41,16 @@ async function hosted({ provider, env = {} } = {}) {
   return { mod, ctx, runner, inner, base, allowed, stops: () => stops, tick: (ms) => { t += ms; },
     stop: async () => { restore(); server.closeAllConnections?.(); await new Promise((r) => server.close(r)); } };
 }
+// Whether agent-worker's configuration still binds RemoteSession (its REMOTE binding), which R13 deletes with it.
+const remoteBound = () => /"class_name":\s*"RemoteSession"/.test(readFileSync(new URL('../../agent-worker/wrangler.jsonc', import.meta.url), 'utf8'));
 const post = (path, body, headers = {}) => new Request(`https://agent-runner${path}`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
 const get = (path) => new Request(`https://agent-runner${path}`);
 
 test('R12 the Worker exports AgentRunner, the library proxy and the default handler; each request reaches the image unchanged and is answered as the image answers', async () => {
   const h = await hosted({ provider: () => new Promise(() => {}) });
   try {
-    assert.deepEqual(Object.keys(h.mod).sort(), ['AgentRunner', 'ContainerProxy', 'default']);
+    // RemoteSession (R42's stub) stays exported only while agent-worker's REMOTE binding names it (R13).
+    assert.deepEqual(Object.keys(h.mod).filter((k) => k !== 'RemoteSession' || !remoteBound()).sort(), ['AgentRunner', 'ContainerProxy', 'default']);
     const port = readManifest().image.port;
     for (const [method, path] of [['GET', '/version'], ['GET', '/run/status'], ['GET', '/'], ['DELETE', '/x'], ['POST', '/run']]) {
       const body = method === 'POST' ? JSON.stringify(runBody()) : undefined;
@@ -175,8 +178,14 @@ test('R12 R10 the class keeps the container off the internet: enableInternet fal
     assert.deepEqual(h.runner.allowedHosts, [ISSUER_HOST]);
     assert.equal(typeof h.mod.AgentRunner.outbound, 'function', 'every allowed request passes the logging handler');
     const w = wrangler();
-    assert.deepEqual(w.migrations.at(-1), { tag: 'v3', deleted_classes: ['RemoteSession'] }, 'RemoteSession is deleted by migration v3');
-    assert.ok(!('RemoteSession' in h.mod), 'and the bundle no longer exports it');
+    // agent-worker's REMOTE binding still names RemoteSession, so the stub and its migration stay until that binding goes (R13).
+    if (remoteBound()) {
+      assert.deepEqual(w.migrations.at(-1), { tag: 'v2', new_sqlite_classes: ['RemoteSession'] }, 'RemoteSession is not deleted while REMOTE binds it');
+      assert.equal(typeof h.mod.RemoteSession, 'function', 'the bundle exports RemoteSession while REMOTE binds it (bundler R39)');
+      const res = await new h.mod.RemoteSession({}, {}).fetch(new Request('https://x/remote/version'));
+      assert.equal(res.status, 503);
+      assert.equal((await res.json()).code, 'REMOTE_UNAVAILABLE');
+    }
   } finally { await h.stop(); }
 });
 

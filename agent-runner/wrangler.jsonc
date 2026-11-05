@@ -41,9 +41,9 @@
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["AgentRunner"] },
-    { "tag": "v2", "new_sqlite_classes": ["RemoteSession"] },
-    // R13: RemoteSession (R42, retired) is deleted with agent-worker's REMOTE binding (coordinator ruling, 5 Nov: agent-worker PR 364).
-    { "tag": "v3", "deleted_classes": ["RemoteSession"] }
+    // R13: RemoteSession (R42, retired) stays until agent-worker's REMOTE binding names it no more (agent-worker PR 364);
+    // that change adds { "tag": "v3", "deleted_classes": ["RemoteSession"] } here and drops the stub from src/worker.mjs.
+    { "tag": "v2", "new_sqlite_classes": ["RemoteSession"] }
   ],
 
   "observability": { "enabled": true }
