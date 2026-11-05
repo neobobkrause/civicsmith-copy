@@ -2,3 +2,4 @@
 {"at":"2026-11-04T07:37:34Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-05T01:32:42Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job inquiry complete, PR #360 ready, session session_01RAN5enB4S9DPtTRBxefnxA: run status"}
 {"at":"2026-11-05T01:32:55Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-05T05:27:58Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job inquiry complete, PR #441 ready, session session_01RAN5ejyUN9XAkEskj9uNJQ: run status"}
