@@ -119,7 +119,7 @@ async function signedIn(account) {
   return (path, init = {}) => account.handle(new Request(`${API}/accounts/${account.account}${path}`, { ...init, headers: { authorization: "Bearer " + grant.access_token, ...(init.headers || {}) } }));
 }
 
-test("F7 (installer R40): the fake account's script settings hold the Workers Logs its upload stated, as Cloudflare's do, so the install passes R40's check; control: an upload that states none reads back off", async () => {
+test("F8 (installer R40): the fake account's script settings hold the Workers Logs its upload stated, as Cloudflare's do, so the install passes R40's check; control: an upload that states none reads back off", async () => {
   const { account, events } = await install("fakelogs");
   assert.ok(!events.some((e) => e.k === "fail"), JSON.stringify(events.filter((e) => e.k === "fail")));
   const call = await signedIn(account);

@@ -198,7 +198,7 @@ export function fakeAccount({ name = "Journey test account", onScript = async ()
       if (sc) sc.bindings = sc.bindings.filter((k) => k.name !== x[2]);
       return ok({});
     }
-    /* F7 (installer R40): the settings hold the script's Workers Logs as its last upload stated them, as Cloudflare's do; an upload
+    /* F8 (installer R40): the settings hold the script's Workers Logs as its last upload stated them, as Cloudflare's do; an upload
        that states none leaves them off */
     if ((x = /^\/workers\/scripts\/([^/]+)\/settings$/.exec(rest)) && m === "GET") {
       if (!scripts.has(x[1])) return no("not found", 404, 10007);
