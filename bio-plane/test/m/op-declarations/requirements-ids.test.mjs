@@ -126,8 +126,12 @@ const here = idLines(read("build/requirements/op-declarations.md"));
 const THERE = Object.fromEntries(["op-specs-late", "surface-declarations"].map((m) => [m, idLines(read(`build/requirements/${m}.md`))]));
 const there = ([mod, id]) => THERE[mod].get(id);
 
-test("the set of ids is the start commit's: none lost, none added", () => {
-  assert.deepEqual([...here.keys()].sort(), Object.keys(START_LINES).sort());
+/* Found marks (F<n>) are admitted (coordinator, 4 Nov 23:05): a found defect is recorded as a new F id with its mark; the
+   R ids, their lines and their unmet marks stay pinned to the start commit. */
+const isFound = (id) => /^F\d+$/.test(id);
+
+test("the set of R ids is the start commit's: none lost, none added; F ids (found marks, met or not) are admitted", () => {
+  assert.deepEqual([...here.keys()].filter((id) => !isFound(id)).sort(), Object.keys(START_LINES).sort());
 });
 
 /* R20, R24, R30 and R41 restated for T53 by BOB's ruling (4 Nov; ai-accounts R35): each keeps its id and purpose and says so */
@@ -137,7 +141,7 @@ const RESTATED_NOTE = "restated for T53 (`ai-accounts` R35, BOB 4 Nov)";
 test("every kept id's line is the start commit's, word for word, and the unmet marks are unchanged; the four BOB restated for T53 each name the ruling and no other line changed", () => {
   const unmet = {};
   for (const [id, l] of here) {
-    if (MOVED[id]) continue;
+    if (MOVED[id] || (isFound(id) && !START_LINES[id])) continue;
     if (RESTATED.includes(id)) {
       assert.ok(l.includes(RESTATED_NOTE) && l.startsWith(`- **${id}** `), `${id} is restated without the ruling`);
       assert.notEqual(sha(l), START_LINES[id], `${id} is not restated`);

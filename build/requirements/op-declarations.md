@@ -245,6 +245,10 @@ Terms. An **op** is a name the instance answers. An **op spec** is `{classes, ma
 
 - **R93** *(retired: moved to surface-declarations:R18, split 4 Nov 2026)*
 
+### Found
+
+- **F1** aipathready, a read act by surface-declarations R15, is not in OPS or DECLARED_OPS, so the plane answers UNKNOWN_OP to the frame's every ask.
+
 ## Private
 
 ### Uses

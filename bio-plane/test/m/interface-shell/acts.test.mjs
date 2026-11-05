@@ -112,11 +112,11 @@ test("R11 a terminal act's dialog states what the act does (act.<op>.does)", asy
 });
 
 test("R11 an act that leaves the group carries mark.outward.means; one that does not, none", async () => {
-  const s = { id: "connect", reads: () => ({}), acts: [{ op: "disclosureshown", outward: true }, { op: "groupkeynoticeseen" }], render: (cs) => cs.act("disclosureshown") + cs.act("groupkeynoticeseen") };
+  const s = { id: "connect", reads: () => ({}), acts: [{ op: "disclosureshown", outward: true }, { op: "aiaccountremove" }], render: (cs) => cs.act("disclosureshown") + cs.act("aiaccountremove") };
   const p = await boot({ screens: [s], path: "/app/connect" });
   assert.ok(btn(p, "disclosureshown").querySelector('use[href$="#i-outward"]'));
   assert.ok(btn(p, "disclosureshown").getAttribute("data-tip").includes(word("mark.outward.means").replace(/'/g, "&#39;")));
-  assert.equal(btn(p, "groupkeynoticeseen").querySelector('use[href$="#i-outward"]'), null);
+  assert.equal(btn(p, "aiaccountremove").querySelector('use[href$="#i-outward"]'), null);
 });
 
 test("R11 (DEC-181) at the phone width a signed act is drawn with what it does and where to finish it, and is not sent; the same act on a wide screen is a button", async () => {
@@ -254,16 +254,16 @@ test("R21 (K3002) parts in view.parts, view.origin, a refusal word filled from t
   const s = { id: "connect", reads: () => ({}),
     parts: { pane: (cs, x) => "<b id=part>" + cs.esc(x) + "</b>" },
     acts: [
-      { op: "groupkeynoticeseen", refusals: { ZZ_FN: (r, cs) => "<i id=fn>" + cs.esc(r.code + ":" + r.detail) + "</i>" } },
+      { op: "ailimitset", send: fitSend("ailimitset"), refusals: { ZZ_FN: (r, cs) => "<i id=fn>" + cs.esc(r.code + ":" + r.detail) + "</i>" } },
       { op: "disclosureshown", send: (view, el, cs) => ({ refuse: "shell.picked", fills: { n: String(cs.value("c1")) + "/" + String(cs.value("r2")) } }) },
-      { op: "accountreferenceremove", send: async (view, el, cs) => { const h = await cs.digest("abc"); el.setAttribute("data-h", h); el.setAttribute("data-now", String(cs.now())); el.setAttribute("data-open", typeof cs.open); return null; } },
+      { op: "accountusesset", send: async (view, el, cs) => { const h = await cs.digest("abc"); el.setAttribute("data-h", h); el.setAttribute("data-now", String(cs.now())); el.setAttribute("data-open", typeof cs.open); return null; } },
     ],
     render: (cs, view) => view.parts.pane(cs, view.origin) + cs.checks("c", "shell.appearance", [["a", "shell.appearance.light", true]]) + '<input type="radio" id="r1" name="r"><input type="radio" id="r2" name="r" checked>'
       .replace(/<input type="radio" id="r1"/, '<label for="r1">x</label><input type="radio" id="r1"').replace(/<input type="radio" id="r2"/, '<label for="r2">y</label><input type="radio" id="r2"')
-      + '<input type="checkbox" id="c1" checked aria-label="z">' + cs.act("groupkeynoticeseen") + cs.act("disclosureshown") + cs.act("accountreferenceremove") };
-  const p = await boot({ screens: [s], path: "/app/connect", plane: { groupkeynoticeseen: refused("ZZ_FN", null, 400, { detail: "why not" }) } });
+      + '<input type="checkbox" id="c1" checked aria-label="z">' + cs.act("ailimitset") + cs.act("disclosureshown") + cs.act("accountusesset") };
+  const p = await boot({ screens: [s], path: "/app/connect", plane: { ailimitset: refused("ZZ_FN", null, 400, { detail: "why not" }) } });
   assert.equal(p.doc.getElementById("part").textContent, "https://group.example");
-  await p.click(btn(p, "groupkeynoticeseen"));
+  await p.click(btn(p, "ailimitset"));
   assert.equal(p.doc.getElementById("fn").textContent, "ZZ_FN:why not");
   await p.click(btn(p, "disclosureshown"));
   assert.equal(p.root().querySelector('[data-slot="m:1"]').textContent, "true/true picked");
@@ -272,20 +272,20 @@ test("R21 (K3002) parts in view.parts, view.origin, a refusal word filled from t
   await p.click(btn(p, "disclosureshown"));
   assert.equal(p.root().querySelector('[data-slot="m:1"]').textContent, "false/true picked");
   /* the digest is answered off the page's thread: wait for it */
-  const pressed = async () => { await p.click(btn(p, "accountreferenceremove")); for (let i = 0; i < 200 && !btn(p, "accountreferenceremove").getAttribute("data-h"); i++) await new Promise((r) => setTimeout(r, 5)); };
+  const pressed = async () => { await p.click(btn(p, "accountusesset")); for (let i = 0; i < 200 && !btn(p, "accountusesset").getAttribute("data-h"); i++) await new Promise((r) => setTimeout(r, 5)); };
   await pressed();
-  const t0 = Number(btn(p, "accountreferenceremove").getAttribute("data-now"));
-  assert.equal(btn(p, "accountreferenceremove").getAttribute("data-h"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
-  assert.equal(btn(p, "accountreferenceremove").getAttribute("data-open"), "undefined");
+  const t0 = Number(btn(p, "accountusesset").getAttribute("data-now"));
+  assert.equal(btn(p, "accountusesset").getAttribute("data-h"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+  assert.equal(btn(p, "accountusesset").getAttribute("data-open"), "undefined");
   await p.clock.tick(5000);
-  btn(p, "accountreferenceremove").removeAttribute("data-h");
+  btn(p, "accountusesset").removeAttribute("data-h");
   await pressed();
-  assert.equal(Number(btn(p, "accountreferenceremove").getAttribute("data-now")) - t0, 5000, "the harness's fake clock");
+  assert.equal(Number(btn(p, "accountusesset").getAttribute("data-now")) - t0, 5000, "the harness's fake clock");
   /* a refusal row's word filled from the refusal's own fields */
   const code = (await import("../../../src/setup-words/index.mjs")).WORD_ROWS.find((r) => r[0].startsWith("refusal.") && /\{detail\}/.test(r[1]));
   if (code) {
-    const q = await boot({ screens: [s], path: "/app/connect", plane: { groupkeynoticeseen: refused(code[0].slice(8), null, 400, { detail: "THE-DETAIL" }) } });
-    await q.click(btn(q, "groupkeynoticeseen"));
+    const q = await boot({ screens: [s], path: "/app/connect", plane: { ailimitset: refused(code[0].slice(8), null, 400, { detail: "THE-DETAIL" }) } });
+    await q.click(btn(q, "ailimitset"));
     assert.ok(q.root().querySelector('[data-slot="m:0"]').textContent.includes("THE-DETAIL"));
   }
 });

@@ -62,7 +62,7 @@
  *  said an investigation fetch *"introduces or reuses deliberately"*; `acquire`
  *  is the existing one and is admitted so a run re-fetching a source a member
  *  already named does not have to misdescribe that either. */
-import { word } from '../setup-words/index.mjs';
+import { word, localize } from '../setup-words/index.mjs';
 
 export const CAPTURE_PURPOSES = Object.freeze(['investigate', 'acquire']);
 
@@ -381,6 +381,14 @@ export const CAPTURE_REQUEST_CHECKS = Object.freeze({
     check: 'C-28.34',
     where: 'src/capture-requests/index.mjs captureRequest > is-capture-request',
     translation: word('refusal.CAPTURE_REQUEST_NO_STEP'),
+  },
+  /* R62 (T53; AIR25, BR29) — WHO PRODUCED THE CANDIDATE. `produced_by` is a list of the labels of the conversations that
+     produced it, each as `agent-model` answered it; a value that is not such a list is refused by name at the door,
+     before anything is written, never stored as sent nor dropped. New at T53, its number BOB's to confirm. */
+  CAPTURE_REQUEST_PRODUCED_BY_MALFORMED: {
+    check: 'C-28.35',
+    where: 'src/capture-requests/index.mjs captureRequest > is-capture-request',
+    translation: localize('refusal.CAPTURE_REQUEST_PRODUCED_BY_MALFORMED', "This request named who produced it in a form your team's Civicsmith cannot read, so nothing was requested. Send the labels of the conversations that produced it, or none."),
   },
 });
 

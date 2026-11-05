@@ -308,7 +308,7 @@ test("R63 R69 the phone's More page heads with screen.more.sub and lists the pla
 });
 
 test("R64 an act R11 draws with no weight carries the mark MARKS names, a mark and its explanation only: Sign in, Search, Capture and Mute draw theirs (Reversible: none above it), a Terminal-marked act its mark; control: Search still runs on press, and a weighed act carries its weight, not a mark. (fix round 2, C76) Start a project is marked Reasoned and asks nothing, so it draws no mark", async () => {
-  const cases = [["front", "login"], ["finder", "search"], ["capture", "acquire"], ["queue", "queuemute"], ["connect", "subscriptiondisconnect"]];
+  const cases = [["front", "login"], ["finder", "search"], ["capture", "acquire"], ["queue", "queuemute"], ["review-copy", "reviewrevoke"]];
   for (const [id, op] of cases) {
     assert.ok(Object.hasOwn(MARKS, op), op + " in MARKS");
     const s = { id, reads: () => ({}), acts: [{ op, send: fitSend(op) }], render: fn(`return cs.act("${op}");`) };
