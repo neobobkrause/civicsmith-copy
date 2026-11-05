@@ -92,7 +92,7 @@
   "standard": 15,
   "site": 3,
   "projectai": 1,
-  "consequence": 8,
+  "consequence": 9,
   "credential": 1,
   "template": 1,
   "file": 67,
@@ -152,7 +152,7 @@
   "docprofile": 1,
   "installer-steps": 1,
   "capture-sources": 8,
-  "content": 132,
+  "content": 134,
   "office-readers": 1,
   "inquiry": 21,
   "citation": 4,
@@ -200,7 +200,7 @@
   "queue-producers": 89,
   "case-checker": 59,
   "membership": 10,
-  "case-import": 32,
+  "case-import": 34,
   "ai-runs": 37,
   "textchain": 27,
   "plan-work": 27,
@@ -236,11 +236,12 @@
   "attestation": 13,
   "extractrun": 9,
   "tokens": 1,
+  "listing": 1,
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19835,
-  "protected": 1181
+  "total": 19841,
+  "protected": 1185
  },
  "words": [
   {
@@ -123875,6 +123876,48 @@
    "en": "Your team's Civicsmith binds no Claude account to its own settings, and none can be set there. The assistant is reached through a member's own Claude account or API key, or through the team's API key that an administrator sets; each is held sealed in Civicsmith's credentials, never as a setting.",
    "protected": false,
    "source": "DEC-260"
+  },
+  {
+   "key": "case-import.ungraded.label",
+   "en": "These are the passages the team that published this case says it published without a grade. That is their statement, not a grade of your team's.",
+   "protected": false,
+   "source": "case-import R35, R36 (design lane)",
+   "note": "src/case-import/index.mjs's sentence, with \"team\" for the publishing group (DEC-281); the module's inline English follows by its job"
+  },
+  {
+   "key": "case-import.ungraded.not_stated",
+   "en": "The source does not say which passages it published without a grade. That is not a statement that there were none.",
+   "protected": false,
+   "source": "case-import R35, R36 (design lane)",
+   "note": "adopted word for word from src/case-import/index.mjs; never \"none\""
+  },
+  {
+   "key": "content.typed.frozen.unchecked",
+   "en": "typed by {typist}, not checked when this edition was signed",
+   "protected": true,
+   "source": "basis-versions R59; case-disclosures R37, R39 (design lane)",
+   "note": "a typed passage's label as of signing; {typist} as content.typed.unchecked fills it, or credit.team_member; never the live \"not yet checked\""
+  },
+  {
+   "key": "content.typed.frozen.checked",
+   "en": "typed by {typist}, checked by {checkers} when this edition was signed",
+   "protected": true,
+   "source": "basis-versions R59; case-disclosures R37, R39 (design lane)",
+   "note": "a typed passage's label as of signing; {checkers} the checkers before signing, in time order, joined as content.typed.checked joins them"
+  },
+  {
+   "key": "consequence.rowexpunge",
+   "en": "This removes the row for good, for every member: it goes from your team's Civicsmith and from every export made from now on, and it cannot be restored. A marker stays where it was, holding your ground and reason and none of the row.",
+   "protected": true,
+   "source": "op-grades R55 (d); registers R30 (design lane)",
+   "note": "op-grades' consequence statement for rowexpunge (a dialog), read by the act's id"
+  },
+  {
+   "key": "listing.contact.note",
+   "en": "Optional: a line the stewards can use to reply to your team, by the stewards' own mail. It goes only in the request you send them, and it is never on the site. Leave it blank if you like; nothing about that is public.",
+   "protected": true,
+   "source": "network-notices R32 (design lane)",
+   "note": "the contact line of the prefilled listing request; says who can see something"
   },
   {
    "key": "rail.home.name",
