@@ -156,3 +156,4 @@
 {"at":"2026-11-05T23:41:34Z","row":"queue","id":"e5e8c59632a1","pr":606,"head":"8da956600b81df87305c248149425454faafd905","ref":"bob/untrack-newgroup-bundle","by":"session_018Bhceddtp3HAmB1Z9LtX2s","reviewed":null,"no_review":"git rm --cached of an ignored 11 MB generated file, coordinator 23:35","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-06T02:51:34.999Z","renews":true}
 {"at":"2026-11-05T23:46:37Z","row":"renew","id":"ce77eae5d2d2","pr":605}
 {"at":"2026-11-05T23:46:56Z","row":"renew","id":"e5e8c59632a1","pr":606}
+{"at":"2026-11-05T23:52:04Z","row":"renew","id":"e5e8c59632a1","pr":606}
