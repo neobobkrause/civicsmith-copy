@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-door","verdict":"not affected","evidence":"build/modules.json:175 store-door (bio-plane/src/store-door/) holds no file that imports capture-requests, every code file under its paths read at f5ba8ace53","at":"2026-11-05T01:53:13.455Z","key":"capture-requests:359","worker":"merge: imports check","cost":"0"}
