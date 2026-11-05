@@ -1,0 +1,61 @@
+{
+  "id": "op-grades-folds",
+  "title": "op-grades-folds: the grade folds split from op-grades (R13, R17, R21-R25, R27-R41, R43, R45, R47, R48)",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/op-grades/t33.mjs",
+    "bio-plane/src/op-grades/t34.mjs",
+    "bio-plane/src/op-grades/t35.mjs",
+    "bio-plane/src/op-grades/t36.mjs",
+    "bio-plane/src/op-grades/t37.mjs",
+    "bio-plane/src/op-grades/t38.mjs",
+    "bio-plane/src/op-grades/t41.mjs",
+    "bio-plane/src/op-grades/t42.mjs",
+    "bio-plane/src/op-grades/t45.mjs",
+    "bio-plane/src/op-grades/t46.mjs",
+    "bio-plane/src/op-grades/t47.mjs",
+    "bio-plane/src/op-grades/t48.mjs",
+    "bio-plane/src/op-grades/t49.mjs",
+    "bio-plane/src/op-grades/t50.mjs",
+    "bio-plane/src/op-grades/t51.mjs",
+    "build/requirements/op-grades-folds.md",
+    "docs/requirements-notes/op-grades-folds.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/op-grades/t35.test.mjs",
+    "bio-plane/test/m/op-grades/t36.test.mjs",
+    "bio-plane/test/m/op-grades/t37.test.mjs",
+    "bio-plane/test/m/op-grades/t38.test.mjs",
+    "bio-plane/test/m/op-grades/t41.test.mjs",
+    "bio-plane/test/m/op-grades/t42.test.mjs",
+    "bio-plane/test/m/op-grades/t45.test.mjs",
+    "bio-plane/test/m/op-grades/t46.test.mjs",
+    "bio-plane/test/m/op-grades/t47.test.mjs",
+    "bio-plane/test/m/op-grades/t48.test.mjs",
+    "bio-plane/test/m/op-grades/t49.test.mjs",
+    "bio-plane/test/m/op-grades/t50.test.mjs",
+    "bio-plane/test/m/op-grades/t51.test.mjs"
+  ],
+  "requirements": "build/requirements/op-grades-folds.md",
+  "uses": [
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/op-grades-folds.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T02:17:51Z"
+  }
+}

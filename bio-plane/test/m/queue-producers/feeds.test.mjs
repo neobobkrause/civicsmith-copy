@@ -11,7 +11,7 @@ import { hasWord } from "../../../src/setup-words/index.mjs";
 
 const REASONS = ["threw", "refused", "undetermined", "partial"];
 const FEEDS = ["bias-debts", "proposals", "shared-inquiries", "leads", "exports", "references", "objectives", "sources", "machinery",
-  "contradictions", "signing-keys", "action", "attribution", "docket", "cited-cases", "wizards", "schedule", "places", "projects", "members"];
+  "contradictions", "signing-keys", "ai-credits-stop", "retesting-off", "action", "attribution", "docket", "cited-cases", "wizards", "schedule", "places", "projects", "members"];
 /* R50: the provider read each broken feed names when its provider answers a refusal or undetermined (`<module>.<read>`). */
 const READ = {
   "bias-debts": "bias.uncleared", proposals: "progressions.proposalsFeed", "shared-inquiries": "basis-versions.basisVersions",
