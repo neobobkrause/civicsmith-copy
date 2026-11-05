@@ -1,0 +1,1 @@
+{"row":"answered","user":"local-facts","by":"triage","evidence":"bio-plane/src/local-facts/index.mjs:49 imports contentOf, checkContentExtent and uses only contentContextFor (:363); no call to cellsAt, the only method PR 440 changes","at":"2026-11-05T10:48:02.606Z","key":"content:440","worker":"triage440-17","cost":"unmeasured"}

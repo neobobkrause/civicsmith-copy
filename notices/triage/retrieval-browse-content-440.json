@@ -1,0 +1,1 @@
+{"row":"triage","user":"retrieval-browse","verdict":"not affected","evidence":"bio-plane/src/retrieval-browse/findin.mjs:23 it imports only extentRelation and canonicalExtent from content, pure extent helpers, and reads content rows by its own SQL (line 352); it never calls cellsAt","at":"2026-11-05T10:48:02.606Z","key":"content:440","worker":"triage440-22","cost":"unmeasured"}

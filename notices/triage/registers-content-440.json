@@ -1,0 +1,1 @@
+{"row":"triage","user":"registers","verdict":"not affected","evidence":"build/modules.json:95 registers' paths are bio-plane/src/registers/, no file there imports content (grep of bio-plane/src/registers/ for ../content finds none), so it does not call cellsAt","at":"2026-11-05T10:48:02.606Z","key":"content:440","worker":"triage440-21","cost":"unmeasured"}

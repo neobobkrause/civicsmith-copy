@@ -1,0 +1,1 @@
+{"row":"answered","user":"run-productions","by":"triage","evidence":"bio-plane/src/run-productions/index.mjs:22 it uses contentOf with captureFor (473), contentContextFor (823) and mint (909), plus mintLabel, canonicalExtent, citationExtent and legContentId; none is cellsAt","at":"2026-11-05T10:48:02.606Z","key":"content:440","worker":"triage440-22","cost":"unmeasured"}
