@@ -269,7 +269,7 @@ section("R71, R57, F2 · model turns on a project's account: its key to the Mess
     [200, "model", true, [PROJECT_KEY], []]);
   t("F2: a run's turns on a project's sign-in are refused ASSISTANT_REMOTE_NOT_READY (absent), no model call, no plane write",
     signinRefused(await drive("run", runBody(PSIGNIN()))), SIGNIN_REFUSED);
-  t("F2: an ask on a project's sign-in is refused the same way, before any model call or plane call",
+  t("R57, F2: an ask on a project's sign-in passes its account checks and is refused the same way, before any model call or plane call",
     signinRefused(await drive("ask", askBody(PSIGNIN()))), SIGNIN_REFUSED);
 }
 
@@ -278,7 +278,7 @@ section("R57 (N796, K2425, K2472) · a standing question's AI half: on its autho
   const ref = await drive("ask", askBody(MKEY()));
   t("R57: the author's own reference serves the AI half, every plane call carrying the standing grant and nothing else",
     [ref.status, last(ref)?.event, [...new Set(ref.plane.map((c) => c.token))]], [200, "answer", [GRANT]]);
-  t("F2: the author's own sign-in is refused ASSISTANT_REMOTE_NOT_READY (absent), no model call and no plane call",
+  t("R57, F2: the author's own sign-in is taken as an account (never BAD_ACCOUNT for being one), then refused ASSISTANT_REMOTE_NOT_READY (absent), no model call and no plane call",
     signinRefused(await drive("ask", askBody(SIGNIN()))), SIGNIN_REFUSED);
   /* Off: credentials R32 refuses the grant STANDING_SWITCH_OFF and answers R19 holds the AI half back; no grant exists. */
   const offNone = await drive("ask", askBody(MKEY(), { grant: undefined }));
