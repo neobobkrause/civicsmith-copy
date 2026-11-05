@@ -31,8 +31,9 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T14:00:00Z"
+    "state": "BLOCKED",
+    "reason": "job complete refuses: 'p3 job complete: interface-shell-t53 is OPEN; job complete needs WORKING'. Done and pushed: 2e96de70 adds the Status line 'Moved · was interface-shell R136; ... R151' (BOB 19:10), and the suite passes (3 pass, 16 todo, 0 fail). Nothing struck. The ledger says OPEN because the job sync conflict in process/ledger/interface-shell-t53.json was resolved to tranche's side (OPEN + prior_work); this attempt's job start never set WORKING. To unblock: set the job to WORKING (job start or a coordinator override), then rerun job complete with no --test.",
+    "at": "2026-11-05T19:34:30Z"
   },
   "prior_work": "Coordinator 18:31 (option c): your code lives in bio-plane/src/interface-shell-t53/, which you own; every hook you need inside bio-plane/src/interface-shell/ (index.mjs and the rest) is interface-shell's: name each as a found mark for interface-shell (report it to BOB), never edit it."
 }
