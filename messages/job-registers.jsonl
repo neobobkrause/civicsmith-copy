@@ -1,3 +1,4 @@
 {"at":"2026-11-04T05:06:57Z","row":"sent","n":1,"to":"bob","text":"job registers complete, PR #86 ready: run status"}
 {"at":"2026-11-04T05:07:06Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-05T05:06:58Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job registers BLOCKED: run status"}
+{"at":"2026-11-05T05:07:09Z","row":"outcome","n":2,"outcome":"delivered"}
