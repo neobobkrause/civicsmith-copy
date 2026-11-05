@@ -4,7 +4,9 @@
   "layer": 2,
   "paths": [
     "build/requirements/jurisdictions-b.md",
-    "docs/requirements-notes/jurisdictions-b.md"
+    "docs/requirements-notes/jurisdictions-b.md",
+    "jurisdictions/profiles/layers/us-federal.mjs",
+    "jurisdictions/test/"
   ],
   "tests": [
     "bio-plane/test/m/jurisdictions-b/"
@@ -30,7 +32,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T09:10:00Z"
+    "state": "COMPLETE",
+    "at": "2026-11-05T11:28:24Z"
   }
 }

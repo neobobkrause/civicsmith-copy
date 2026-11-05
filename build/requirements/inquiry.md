@@ -214,6 +214,8 @@ Rows C-2.11–C-2.17 (R38; N345), with their translations:
 | C-2.17 | `CANDIDATE_ALREADY_TAKEN_UP` | "That contradiction has already been taken up as another question, which is named. Work on it there, so that one conflict has one place where it is resolved. Nothing was written." |
 | C-2.18 | `CONTRADICTION_ARM_FAILED` | "The check of this question's contradiction fields (its link, its resolution, what it explores) stopped with an error instead of answering, so the question is refused rather than let through. The error is in the check and says nothing yet about the document. Nothing was written." |
 
+- **F1** (inquiry job, attempt 3; coordinator, 5 Nov; met 5 Nov) `inquiry-grammar` adds a row, `FILE_SAYS_LEG_MALFORMED` (C-2.8), for a leg citing what a file says, and this module's R38/R4 test hand-listed inquiry-grammar's rows exactly, so it went red with the new row (K3268). This module's rows are inquiry-grammar's export read as the same binding, so any row it adds is this module's without an edit here; the rows R4 and R38 name each answer with their ids. Test: `bio-plane/test/m/inquiry/grammar.test.mjs`, the R38 R4 F1 test, green on tranche and with PR 423.
+
 ### Satisfies
 
 - `docs/architecture/BIO_System_Design.md` §3, construct 8.
