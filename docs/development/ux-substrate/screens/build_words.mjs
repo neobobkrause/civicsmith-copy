@@ -432,6 +432,30 @@ for (const [k, en, prot, src, note] of [
   ]),
 ]) add(k, en, prot, src + ' (design lane)', note);
 
+// 4s. T53's "words owed" on screens-action, screens-plan and screens-wizards, keys named and settled by the design lane
+//     (5 Nov 2026; CLAUDE.md: design lanes decide wording in the design stream). The screens' jobs draw them.
+const WIZ_FILTER = {
+  offered: ['The wizards members are offered now: Civicsmith\'s own and your team\'s approved ones.', 'No wizard is offered to members yet.'],
+  draft: ['Wizards still being written. A draft is offered to no one until it is submitted and approved.', 'No wizard is being drafted.'],
+  submitted: ['Wizards waiting for a project owner to approve them.', 'No wizard is waiting for approval.'],
+  withdrawn: ['Versions their writers took back before approval. They are kept, and offered to no one.', 'No wizard has been withdrawn.'],
+  retired: ['Wizards no longer offered, each with the reason it was retired.', 'No wizard has been retired.'],
+  broken: ['Wizards that no longer match the screens. Members are not offered them until they are fixed.', 'No wizard is broken.'],
+  proposed: ['Steps a member or the assistant proposed as a wizard, each with why. Each waits for a member to start a draft from it.', 'No proposal is open.'],
+};
+for (const [k, en, src, note] of [
+  ['screen.request.nooffice.pointer.people', 'If you know which office keeps them, find it in People and choose “Record that an office keeps records”.', 'screens-action R74', 'in place of screen.request.nooffice.pointer.a, which named the section, not the act; the act\'s label is act.recordline.label.person'],
+  ['screen.actionnew.refused.deadline', 'Give each deadline a short name, a date and a state: pending, met, overdue or waived.', 'screens-action R80', 'actionnew\'s CLOCK_REFUSED, in the member\'s words; the code stays in the answer (R80\'s quote)'],
+  ['screen.actionnew.refused.addressee', 'Send it to an office, a reporter, an organization or a described audience. It can\'t go to a private person.', 'screens-action R80', 'actionnew\'s ADDRESSEE_REFUSED, in the member\'s words; the code stays in the answer'],
+  ['screen.plan.option.goes', 'Goes to {office} · {tier}', 'screens-plan R9', 'an option row: {office} the office it goes to, {tier} its screen.plan.option.tier.* words'],
+  ['screen.plan.option.nooffice', 'no office chosen', 'screens-plan R9', '{office} in screen.plan.option.goes for an option with none'],
+  ['screen.plan.support.hypothetical.means', 'Assumed: the team is planning as if this were true, but nothing in the record shows it yet.', 'screens-plan R9', 'the sentence beside screen.plan.support.hypothetical'],
+  ...Object.entries(WIZ_FILTER).flatMap(([st, [tip, empty]]) => [
+    [`screen.wizards.state.${st}.tip`, tip, 'screens-wizards R23', `the explanation of the ${st} filter, shown with it in place of the library's`],
+    [`screen.wizards.empty.${st}`, empty, 'screens-wizards R23', `an empty ${st} list, in place of screen.wizards.empty; names no administrators (wizard-scripts R10 lists to project owners and administrators alike)`],
+  ]),
+]) add(k, en, false, src + ' (design lane)', note);
+
 // 5. The frame: rail, phone tabs, explanation levels
 for (const [k, name] of W.RAIL) { add(`rail.${k}.name`, name, false, 'mock-shell.js RAIL'); if (W.RAIL_HELP[k]) add(`rail.${k}.holds`, W.RAIL_HELP[k], false, 'mock-refs.js RAIL_HELP'); }
 // DEC-241: the line beneath a place's name on the phone's More page: its rail.<k>.holds after the name, capitalized.
