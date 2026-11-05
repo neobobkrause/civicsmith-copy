@@ -1,5 +1,5 @@
 /* plane G123b, G123c (fix round 9; S-39, S-40; K4787): THE SHAPE HARNESS'S OWN TESTS. The harness (`shape/harness.mjs`) runs the real plane in a capped child; what it measures and what it injects must itself be shown.
-   R84 names the harness's reads (the cap convention is G123a's test in `g41-shape.test.mjs`). Each test runs a 3 MiB CSV (two ticks, a few seconds) through `shapeRun`:
+   R84 names the harness's reads (the cap convention is G123a's test in `g41-shape.test.mjs`). Each test runs a 3 MiB CSV (a few ticks, a few seconds) through `shapeRun`:
    G123b  a buffer held inside ONE tick shows in that tick's `peakMB` (the sampler is inside the tick; it was cleared on the next line, so `peakMB` was a tick-boundary reading), a clean tick does not
    G123c  each fault injector acts at the tick it names, through the real object (`injected`), and the control run beside it is untouched: a store that refuses writes, an owner that throws at its entry,
           the evidence object gone, a kill after k statements (a new object over the same storage), a restart, and the poke after the restart; the 2 MB value shim is applied in the suite process.
@@ -12,10 +12,12 @@ const run = (faults = {}, extra = {}) => shapeRun({ doc: csvDoc(3 * 1048576), fa
 const control = await run();
 const total = control.done.units;
 
-test("G123c: the platform's 2 MB value shim is applied in the suite process, and the control run reads the file whole in two ticks", async () => {
+test("G123c: the platform's 2 MB value shim is applied in the suite process, and the control run reads the file whole, injecting nothing at any tick", async () => {
   assert.equal(await shimApplied(), true, "run under --import test/platform-sqlite.mjs (npm test and the module runner do)");
   assert.equal(control.died, false);
-  assert.deepEqual(control.ticks.map((t) => t.injected), [[], []], "the control injects nothing");
+  /* T53: the tick count follows runtime-limits' per-tick budget (two ticks before T53-511, four since), so it is not pinned here; no tick injects */
+  assert.ok(control.ticks.length >= 2, `the file takes more than one tick: ${control.ticks.length}`);
+  assert.deepEqual(control.ticks.map((t) => t.injected), control.ticks.map(() => []), "the control injects nothing");
   assert.equal(control.done.state.state, "whole");
 });
 
