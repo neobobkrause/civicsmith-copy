@@ -1,0 +1,1 @@
+{"row":"answered","user":"accepted-work","by":"triage","evidence":"bio-plane/src/accepted-work/index.mjs:224 uses only parseImportedFindingRef (imported line 21), which PR 423 leaves unchanged; it neither runs checkInquiryBasis nor builds or reads file_says legs","at":"2026-11-05T14:00:30.095Z","key":"inquiry-grammar:423","worker":"wf_2d61617d-7d2-w1","cost":"unmeasured"}
