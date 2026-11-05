@@ -25,7 +25,7 @@ export function challengeFor(at = Date.now(), over = {}) {
 /**
  * The world outside the container. `issuer(req)` and `provider(req, body)` answer; every request is kept in `seen`.
  */
-export function world({ issuer, provider } = {}) {
+export function world({ issuer, provider = goodProvider() } = {}) {
   const seen = [];
   const fetchImpl = async (url, init = {}) => {
     const u = new URL(url);
@@ -33,14 +33,15 @@ export function world({ issuer, provider } = {}) {
     const body = typeof init.body === 'string' ? init.body : null;
     seen.push({ host: u.hostname, path: u.pathname, method: init.method || 'GET', headers, body, redirect: init.redirect });
     if (`${u.protocol}//${u.host}` === ISSUER) return (issuer ?? (() => Response.json(challengeFor())))({ url: u, headers, body });
-    return (provider ?? goodProvider())({ url: u, headers, body: body ? JSON.parse(body) : null, signal: init.signal });
+    return provider({ url: u, headers, body: body ? JSON.parse(body) : null, signal: init.signal });
   };
   return { fetchImpl, seen };
 }
 
 export function goodProvider({ model = MODEL, cost = 0.001, text = 'ok', headers = {} } = {}) {
+  let n = 0;
   return () => Response.json({ id: 'cmpl-1', model, choices: [{ finish_reason: 'stop', message: { role: 'assistant', content: text } }],
-    usage: { prompt_tokens: 10, completion_tokens: 2, cost } }, { headers: { 'x-request-id': 'req-1', ...headers } });
+    usage: { prompt_tokens: 10, completion_tokens: 2, cost } }, { headers: { 'x-request-id': `req-${++n}`, ...headers } });
 }
 
 export const declared = (over = {}) => ({ provider: 'stubco', host: PROVIDER_HOST, model: MODEL, plan: 'stub-plan',
