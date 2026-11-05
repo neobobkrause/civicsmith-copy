@@ -1,8 +1,8 @@
 /* agent-worker — T50 (T50-65; N1195, N1196; K3602, K3610, K3615, K3637): F2 (R109, R110 as they stand now that the
  * remote session is gone), R112, R113, R114, R115, AT THE MEMBER'S INTERFACE: the default export `fetch(request, env)`,
  * driven in this process with a recording plane binding and the global `fetch` replaced by a scripted model API
- * (agent-model's API-key path). `REMOTE` and `RUNNER`, the names no member binds since F2, are each bound to a tripwire
- * that records and throws, so a path that still reached a runner could not pass; no suite here speaks a runner's wire.
+ * (agent-model's API-key path). `REMOTE`, a name no member binds, is bound to a tripwire that records and throws; `RUNNER`
+ * is left unbound, so a sign-in meets the gate (F2's bound path is `f2-runner-bound.test.mjs`'s).
  *
  * Every arm that admits has its refusing counterpart beside it (K874). The F2 source and configuration questions read
  * `src/` and `wrangler.jsonc`; the one question about the bundle is asked of a fresh build of it. */
@@ -167,7 +167,7 @@ async function drive(path, body, { planeCfg = {}, modelCfg = {}, env = {}, metho
   try {
     const res = await worker.fetch(new Request(`http://agent-worker/${path}`,
       method === "GET" ? { method } : { method, body: typeof body === "string" ? body : JSON.stringify(body) }),
-      { VERSION: "t50", PLANE: p.binding, REMOTE: r, RUNNER: h, ...env });
+      { VERSION: "t50", PLANE: p.binding, REMOTE: r, ...env });
     const text = await res.text();
     const lines = res.headers.get("content-type") === "application/x-ndjson" ? text.trim().split("\n").map((l) => JSON.parse(l)) : null;
     let out = null; if (!lines) try { out = JSON.parse(text); } catch { out = null; }
@@ -184,7 +184,7 @@ const PATHS = [["ask", ASK], ["run", RUN], ["draft", DRAFT], ["transcribe", TRAN
 
 /* ================================================================================================ R109 */
 
-section("F2 · no runner is bound: a sign-in reaches none, and nothing names REMOTE or RUNNER");
+section("F2 · with no RUNNER bound a sign-in reaches none; only remote.mjs reads RUNNER, and nothing reads REMOTE");
 {
   for (const [path, body] of PATHS) {
     const r = await drive(path, body);
@@ -211,24 +211,26 @@ section("F2 · no runner is bound: a sign-in reaches none, and nothing names REM
   t("F2, R30: GET /version answers {ok, name, version, model_turns}: no `runner`, and no binding asked",
     [v.status, Object.keys(v.out ?? {}), v.remote, v.local], [200, ["ok", "name", "version", "model_turns"], [], []]);
 
-  /* The source and the configuration, read: no code of this member reads either name off `env`, and none is declared. */
+  /* The source and the configuration, read (F2, coordinator ruling 5 Nov 20:18): `REMOTE` is read by no code and
+     declared nowhere; `RUNNER` is read only by `remote.mjs` and declared once, cross-script to agent-runner's class. */
   const SRC = new URL("../src/", import.meta.url);
   const code = (f) => readFileSync(new URL(f, SRC), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
   const reads = readdirSync(SRC).filter((f) => f.endsWith(".mjs"))
     .filter((f) => /\benv\??\.(REMOTE|RUNNER)\b|\benv\??\.?\[\s*["'`](REMOTE|RUNNER)["'`]/.test(code(f)));
-  t("F2: no file of src/ reads env.REMOTE or env.RUNNER", reads, []);
+  t("F2: only remote.mjs reads env.RUNNER, and no file of src/ reads env.REMOTE", [reads,
+    readdirSync(SRC).filter((f) => f.endsWith(".mjs") && /\benv\??\.REMOTE\b/.test(code(f)))], [["remote.mjs"], []]);
   t("F2 (control): the scan finds a planted read", /\benv\??\.(REMOTE|RUNNER)\b/.test("const r = env.REMOTE;"), true);
   const cfg = JSON.parse(readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8")
     .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"])\/\/[^\n]*/g, "$1"));
   const names = [...(cfg.services || []).map((b) => b.binding), ...((cfg.durable_objects || {}).bindings || []).map((b) => b.name)];
-  t("F2: the wrangler configuration declares no REMOTE and no RUNNER binding, and nothing cross-script",
-    [names.filter((n) => ["REMOTE", "RUNNER"].includes(n)), ((cfg.durable_objects || {}).bindings || []).filter((b) => b.script_name).length],
-    [[], 0]);
+  t("F2: the wrangler configuration declares RUNNER, cross-script to agent-runner's AgentRunner, and no REMOTE",
+    [names.filter((n) => ["REMOTE", "RUNNER"].includes(n)), ((cfg.durable_objects || {}).bindings || []).filter((b) => b.script_name)],
+    [["RUNNER"], [{ name: "RUNNER", class_name: "AgentRunner", script_name: "agent-runner" }]]);
   const member = discoverMembers().find((m) => m.name === "agent-worker");
   const fresh = await buildMember(member);
   const bundled = Buffer.from(fresh.bytes).toString("utf8");
-  t("F2: a fresh build of the bundle reads neither env.RUNNER nor env.REMOTE",
-    [/\.RUNNER\b(?!_)/.test(bundled), /\.REMOTE\b/.test(bundled)], [false, false]);
+  t("F2: a fresh build of the bundle reads env.RUNNER and never env.REMOTE",
+    [/\.RUNNER\b(?!_)/.test(bundled), /\.REMOTE\b/.test(bundled)], [true, false]);
 }
 
 section("R110, R111 · the member's check record is kept in this member's own storage, a version and a time");
@@ -280,7 +282,7 @@ section("R113 · an ask's progress reaches the caller as it is written");
     globalThis.fetch = m.fn;
     try {
       const res = await worker.fetch(new Request("http://agent-worker/ask", { method: "POST", body: JSON.stringify({ ...ASK, account: APIKEY }) }),
-        { VERSION: "t50", PLANE: p.binding, RUNNER: h, REMOTE: hostile() });
+        { VERSION: "t50", PLANE: p.binding, REMOTE: hostile() });
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       const got = [];

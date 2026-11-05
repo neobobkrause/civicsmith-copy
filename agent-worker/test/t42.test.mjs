@@ -108,7 +108,7 @@ async function watched(fn, modelFetch) {
 async function transcribe(b, { model = {}, env = {}, method = "POST", path = "transcribe", noPlane = false } = {}) {
   const p = planeStub(), r = runnerStub(), m = modelApi(model);
   const keys = new Set();
-  const base = { VERSION: "t42", ...(noPlane ? {} : { PLANE: p.binding }), REMOTE: r.binding, RUNNER: r.binding, ...env };
+  const base = { VERSION: "t42", ...(noPlane ? {} : { PLANE: p.binding }), REMOTE: r.binding, ...env };
   const envProxy = new Proxy(base, { get: (o, k) => { keys.add(String(k)); return o[k]; } });
   const w = await watched(async () => {
     const res = await worker.fetch(new Request(`http://agent-worker/${path}`, { method,

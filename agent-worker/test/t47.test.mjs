@@ -51,7 +51,7 @@ async function signin(body, { headers = {} } = {}) {
   const r = untouched();
   const plane = [];
   const env = { VERSION: "t47", PLANE: { fetch: async (u) => { plane.push(String(u)); return Response.json({ ok: false }, { status: 500 }); } },
-                REMOTE: r.binding, RUNNER: r.binding };
+                REMOTE: r.binding };
   const w = await captured(async () => {
     const res = await worker.fetch(new Request("http://agent-worker/signin", { method: "POST", headers,
       body: typeof body === "string" ? body : JSON.stringify(body) }), env);
@@ -151,7 +151,7 @@ async function drive(path, body) {
   try {
     const w = await captured(async () => {
       const res = await worker.fetch(new Request(`http://agent-worker/${path}`, { method: "POST", body: JSON.stringify(body) }),
-        { VERSION: "t47", PLANE: p.binding, REMOTE: r.binding, RUNNER: r.binding });
+        { VERSION: "t47", PLANE: p.binding, REMOTE: r.binding });
       return { status: res.status, text: await res.text() };
     });
     const lines = w.result.text.trim().split("\n").map((l) => { try { return JSON.parse(l); } catch { return null; } });

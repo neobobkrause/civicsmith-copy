@@ -6,7 +6,9 @@
  * (d837b6d9), with its mark (null when met, "retired", or the not-yet-met text) and a digest of its whole line.
  *
  * ADMITTED is each found mark added since (5 Nov 2026: F2-F4, BOB's attempt 4), with the mark it was added under and a
- * digest of its text after the mark, so the mark may be struck when met but the finding itself is never reworded. */
+ * digest of its text after the mark, so the mark may be struck when met but the finding itself is never reworded.
+ * (Attempt 7, coordinator ruling 5 Nov 20:18: F2-F4 moved out of Open for Bob into this module's own marks, reopened
+ * under that ruling's mark, their text unchanged.) */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -152,9 +154,9 @@ const START = {
 const MOVED_OUT = { F1: "(moved to bundler F2, coordinator ruling 5 Nov 2026)" };
 
 const ADMITTED = {
-  F2: ["not yet met: coordinator ruling 5 Nov 2026; agent-runner R13, K5576", "a3ff85819faf6c0f"],
-  F3: ["not yet met: agent-model R35, R53, PR 355", "0c742c78c3eb6ec9"],
-  F4: ["not yet met: agent-drafts:358", "d869859058702ae8"],
+  F2: ["not yet met: coordinator ruling 5 Nov 20:18", "a3ff85819faf6c0f"],
+  F3: ["not yet met: coordinator ruling 5 Nov 20:18", "0c742c78c3eb6ec9"],
+  F4: ["not yet met: coordinator ruling 5 Nov 20:18", "d869859058702ae8"],
 };
 
 const LINE = /^- \*\*([RF]\d+)\*\*(?: \*\((not yet met: [^)]*|retired[^*]*)\)\*)?/;

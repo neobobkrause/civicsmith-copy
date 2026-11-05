@@ -209,7 +209,7 @@ section("R30, F2 · GET /version names the member and its version, and no runner
   const stale = await worker.fetch(new Request("http://agent-worker/version"),
     { VERSION: "t46", RUNNER: { idFromName: (n) => n, get: () => ({ fetch: async () => Response.json({ ok: true, version: "v" }) }) },
       REMOTE: { idFromName: (n) => n, get: () => ({ fetch: async () => Response.json({ ok: true, version: "v" }) }) } });
-  t("F2, R109 (control): a RUNNER or REMOTE binding changes nothing: the same answer, naming no runner",
+  t("F2 (control): a RUNNER or REMOTE binding changes nothing in GET /version: the same answer, naming no runner",
     Object.keys(await stale.json()), ["ok", "name", "version", "model_turns"]);
 }
 

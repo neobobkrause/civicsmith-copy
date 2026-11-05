@@ -1354,11 +1354,12 @@ section("R35 · its only binding is PLANE; the plane is reached by no other rout
 {
   /* R91 (R085): and this member's own segment driver, one object per run, holding nothing of the record. */
   t("R35, R91, F2, F3: wrangler declares exactly one service binding, PLANE, its own Durable Objects SEGMENTS, CHECKS and HEALTH "
-    + "(no REMOTE, no RUNNER, nothing cross-script), and no other Durable Object, R2, KV, D1, queue or secret binding",
+    + "(no REMOTE; RUNNER the one cross-script binding, to agent-runner's AgentRunner, F2), and no other Durable Object, R2, KV, D1, queue or secret binding",
     [WRANGLER_CFG.services, WRANGLER_CFG.durable_objects, ["r2_buckets", "kv_namespaces", "d1_databases", "queues",
       "secrets_store_secrets", "secrets", "containers"].filter((k) => k in WRANGLER_CFG)],
     [[{ binding: "PLANE", service: "bio-plane" }],
-     { bindings: [{ name: "SEGMENTS", class_name: "SegmentDriver" }, { name: "CHECKS", class_name: "CheckRecord" },
+     { bindings: [{ name: "RUNNER", class_name: "AgentRunner", script_name: "agent-runner" },
+                  { name: "SEGMENTS", class_name: "SegmentDriver" }, { name: "CHECKS", class_name: "CheckRecord" },
                   { name: "HEALTH", class_name: "CircuitState" }] }, []]);
   t("R35: its vars hold no token and no plane URL", Object.keys(WRANGLER_CFG.vars), ["VERSION"]);
   await reset(mf, {});

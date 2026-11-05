@@ -38,8 +38,8 @@
  * project's (R71), or the group's API key, as `credentials.accountFor` answers
  * it, K1755) and the run's mode has turns to run: an API key goes to the
  * Messages API, the member's own sign-in (or a one-member project's, which is
- * that member's own) reaches no runner: `agent-runner`'s remote session is gone and nothing is bound in its place
- * (F2; R109), so a call on a sign-in is refused `ASSISTANT_REMOTE_NOT_READY` (R110). A segment whose caller
+ * that member's own) reaches that member's own `agent-runner` instance through `RUNNER` (F2), and with no runner
+ * bound a call on a sign-in is refused `ASSISTANT_REMOTE_NOT_READY` (R110). A segment whose caller
  * supplied the judgements (`judgements` in the body, the stubbed path) runs no
  * turn. The answer's `turns_run` counts the turns that actually ran and
  * `judgement_source` says whose judgements the table applied (`model` or
@@ -55,7 +55,7 @@
  * picture the plane rendered, as a tool's result, and answers the AI's reading
  * of each page: no plane call. `POST /signin` (R66, R67, R81–R84)
  * relays one step of a member's own Claude sign-in to that member's own
- * runner instance, of which none is bound since F2 (it answers `RUNNER_NOT_CONFIGURED`), and holds nothing of it:
+ * runner instance through `RUNNER` (F2; unbound, `RUNNER_NOT_CONFIGURED`), and holds nothing of it:
  * no plane call, no model turn; the token the sign-in mints passes to the door
  * once, only under its `hold` (R81), and comes back on each act as the `signin`
  * account's `secret` (R82). (T48; R87) `/ask`, `/run`, `/draft` and
@@ -157,7 +157,7 @@ import { handleDraft } from "./draft.mjs";
 import { handleSignin, doorTrace, TRACE_HEADER, MEMBER_REF_HEADER } from "./signin.mjs";
 /* R72–R75 — `POST /transcribe`, the AI's reading of a page's picture the plane rendered, in its own file. */
 import { handleTranscribe } from "./transcribe.mjs";
-/* F2, R109 — no runner is bound (agent-runner R13: the remote session is gone). */
+/* F2 — the member's own runner, `RUNNER` when bound (remote.mjs). */
 import { remoteOf } from "./remote.mjs";
 /* F3 (agent-model R35, R53) — the circuit kept around each turn, and its health read. */
 import { circuitDeps, circuitRun, handleHealth, CircuitState } from "./circuit.mjs";
@@ -554,7 +554,7 @@ async function segmentAnswer(env, checked, body, whoami, traced, deadline, prefl
   /* R58 — MODEL TURNS RUN, through `agent-model`, when the account that serves the member's act arrived (it always has,
      past R6) and the caller supplied no judgements; `judgements` in the body is the stubbed path, in which no turn is taken. The
      reference is handed to `agent-model` for the calls it serves and kept by nothing here (R33, R36). A sign-in's
-     turns reach no runner (F2): `remoteOf` answers null and the gate (R110) has refused a sign-in before this. */
+     turns go to the member's own runner, `RUNNER` (F2); with none bound the gate (R110) has refused a sign-in before this. */
   const bytesBound = Number(env.MAX_SEGMENT_BYTES) > 0 ? Number(env.MAX_SEGMENT_BYTES) : DEFAULT_MAX_SEGMENT_BYTES;
   const meter = segmentMeter({ turnsBound: requested, bytesBound });
   const modelMode = !Array.isArray(body.judgements);
@@ -687,14 +687,13 @@ async function handleVersion(env) {
   return json({ ok: true, name: "agent-worker", version: env.VERSION || "0.0.0", model_turns: MODEL_TURNS });
 }
 
-/** R110, F2 — THE GATE. A member's own sign-in reached the assistant only through `agent-runner`'s remote session, which
- *  is gone (agent-runner R13; coordinator ruling 5 Nov 2026), so no runner is bound and a call on a sign-in is refused
- *  503 `ASSISTANT_REMOTE_NOT_READY`, its `detail` the record's word (DEC-301; R64), `why` `absent`, until the adapter's
- *  `issued` means serves it (R66, R82 as T53 amends them). An API-key account is unchanged (K3347). Null when the call
- *  may go on. Made after R1–R8's shape checks and before any plane write, model call or segment, so a refused `/run`
- *  leaves its run as it was (R57). */
+/** R110, F2 — THE GATE. A member's own sign-in reaches the assistant only through that member's own `agent-runner`
+ *  instance (`remote.mjs`). With `RUNNER` bound the call goes on to it; unbound, a call on a sign-in is refused 503
+ *  `ASSISTANT_REMOTE_NOT_READY`, its `detail` the record's word (DEC-301; R64), `why` `absent`. An API-key account is
+ *  unchanged (K3347). Null when the call may go on. Made after R1–R8's shape checks and before any plane write, model
+ *  call or segment, so a refused `/run` leaves its run as it was (R57). */
 async function assistantReady(env, account) {
-  if (account?.kind !== "signin") return null;
+  if (account?.kind !== "signin" || remoteOf(env)) return null;
   return refusal("ASSISTANT_REMOTE_NOT_READY", word("refusal.ASSISTANT_REMOTE_NOT_READY"), 503,
                  { capability: "unavailable", why: "absent" });
 }
@@ -750,7 +749,7 @@ export class SegmentDriver {
 /* R110, R111 (BOB's K3693) — THE MEMBER'S CHECK RECORD, in this member's own storage: one instance per member (`CHECKS`),
    holding the version at which that member's last `check` passed and the time, and nothing else (R36). `GET /check`
    answers `{ok: true, checked, version}`; `POST /check` with `{version}` records a pass (R111's `check` step makes it).
-   No path reads it since F2 (no runner is bound, so no check runs); it is not a store of the record and writes nothing
+   No path reads it today (no `check` step runs, R111 is conditional); it is not a store of the record and writes nothing
    of it. */
 export class CheckRecord {
   constructor(state) { this.state = state; }

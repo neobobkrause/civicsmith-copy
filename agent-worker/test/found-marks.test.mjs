@@ -1,8 +1,6 @@
-/* agent-worker — the found marks F2, F3 and F4 (5 Nov 2026), each at the member's interface.
+/* agent-worker — the found marks F3 and F4 (5 Nov 2026), each at the member's interface.
  *
- * F2 (coordinator ruling 5 Nov; agent-runner R13, K5576): no runner is bound. The configuration declares no `REMOTE`
- *    and no `RUNNER`, no source reads either or names `agent-runner`'s code, and a sign-in account is refused
- *    `ASSISTANT_REMOTE_NOT_READY` (`why: "absent"`) with a recording `REMOTE` stub in `env` never touched.
+ * F2: held by `f2-runner-bound.test.mjs` since the coordinator's ruling of 5 Nov 20:18 bound the runner.
  * F3 (agent-model R35, R53; PR 355): the circuit is kept in this member's own `HEALTH` Durable Object and asked around
  *    each conversation: `BREAKER_FAILURES` failed drafts open it, the next is never sent, and `GET /health` answers the
  *    pair `open` with its `reset_at`. Control: with no `HEALTH` bound every call is sent and the pair reads `unknown`.
@@ -12,7 +10,7 @@
  * F4 (agent-drafts:358): a draft's label is read as `{kind: "machine", ai}` (`label.mjs`), whatever `ai` was served. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import worker, { CircuitState } from "../src/index.mjs";
@@ -31,12 +29,6 @@ const PACK = { id: "investigative-session", version: "pack@found-marks",
 const draftBody = (account) => ({ task: { op: "writinghelp", act: "noteadd", field: "text" }, told: "I saw the vote.", account, pack: PACK });
 const PLANE = { async fetch() { return Response.json({ ok: false }, { status: 500 }); } };
 
-/** A recording namespace that throws on use: a binding nothing may touch. */
-function untouchable() {
-  const calls = [];
-  const fail = (what) => { calls.push(what); throw new Error(`${what} touched`); };
-  return { calls, idFromName: () => fail("idFromName"), newUniqueId: () => fail("newUniqueId"), get: () => fail("get") };
-}
 /** `HEALTH` as workerd stands it up: one `CircuitState` per name, each over its own storage. */
 function healthNamespace() {
   const objects = new Map();
@@ -68,49 +60,7 @@ const post = (path, body, env) => worker.fetch(new Request(`http://agent-worker/
 const health = async (env, account_id, entry_id) =>
   (await worker.fetch(new Request(`http://agent-worker/health?account_id=${encodeURIComponent(account_id)}&entry_id=${encodeURIComponent(entry_id)}`), env)).json();
 
-/* ------------------------------------------------------------------------------------------------------------ F2 */
-
-test("F2: the configuration declares no REMOTE or RUNNER binding and names no agent-runner script", () => {
-  const cfg = read("wrangler.jsonc");
-  assert.doesNotMatch(cfg, /"name":\s*"(REMOTE|RUNNER)"/);
-  assert.doesNotMatch(cfg, /"script_name":\s*"agent-runner"/);
-  assert.doesNotMatch(cfg, /RemoteSession"/);
-});
-
-test("F2: no source reads env.REMOTE or env.RUNNER, and none imports agent-runner's code", () => {
-  for (const f of readdirSync(new URL("../src/", import.meta.url))) {
-    const src = read(`src/${f}`);
-    assert.ok(!/env\??\.(REMOTE|RUNNER)\b/.test(src), `${f} reads REMOTE or RUNNER`);
-    assert.ok(!/from\s+["'][^"']*agent-runner\//.test(src), `${f} imports agent-runner`);
-  }
-});
-
-test("F2: no suite of this module imports agent-runner's code", () => {
-  for (const f of readdirSync(new URL("./", import.meta.url)).filter((n) => n.endsWith(".mjs"))) {
-    assert.ok(!/from\s+["'][^"']*agent-runner\//.test(read(`test/${f}`)), `${f} imports agent-runner`);
-  }
-});
-
-test("F2: a sign-in account is refused ASSISTANT_REMOTE_NOT_READY (absent) before any model call; REMOTE and RUNNER untouched", async () => {
-  const REMOTE = untouchable(), RUNNER = untouchable();
-  const seen = scriptModel(200);
-  const res = await post("draft", draftBody({ kind: "signin", level: "member", member: MEMBER, secret: "held-token-fixture" }),
-                         { VERSION: "t", PLANE, REMOTE, RUNNER });
-  const out = await res.json();
-  assert.equal(res.status, 503);
-  assert.equal(out.code, "ASSISTANT_REMOTE_NOT_READY");
-  assert.equal(out.why, "absent");
-  assert.equal(seen.calls, 0);
-  assert.deepEqual([REMOTE.calls, RUNNER.calls], [[], []]);
-});
-
-test("F2 (control): an API-key account is served with REMOTE and RUNNER in env untouched", async () => {
-  const REMOTE = untouchable(), RUNNER = untouchable();
-  scriptModel(200);
-  const res = await post("draft", draftBody(APIKEY), { VERSION: "t", PLANE, REMOTE, RUNNER });
-  assert.equal(res.status, 200);
-  assert.deepEqual([REMOTE.calls, RUNNER.calls], [[], []]);
-});
+/* F2 (the runner bound, coordinator ruling 5 Nov 20:18) is held by `f2-runner-bound.test.mjs`. */
 
 /* ------------------------------------------------------------------------------------------------------------ F3 */
 
