@@ -356,6 +356,7 @@ node_modules
 /bio-plane/dist/bio-plane.bundled.mjs
 /pdf-worker/dist/pdf-worker.bundled.mjs
 /agent-worker/dist/agent-worker.bundled.mjs
+/newgroup/dist/newgroup.bundled.mjs
 
 # Built where needed, not committed (over max_file_bytes; BOB 4 Nov): case-checker R32, K1540
 bio-plane/src/case-checker/program.mjs
