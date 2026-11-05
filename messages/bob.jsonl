@@ -336,3 +336,4 @@
 {"at":"2026-11-05T09:37:33Z","row":"outcome","n":171,"outcome":"delivered"}
 {"at":"2026-11-05T09:37:38Z","row":"outcome","n":170,"outcome":"failed","reason":"superseded by bob-171 before delivery"}
 {"at":"2026-11-05T09:37:44Z","row":"sent","n":172,"to":"job-screens-investigate","text":"PR 471 gate red: the suite fails 1 of 327, not base-red (passes at base a5456cbd10): bio-plane/test/m/screens-investigate/explore.test.mjs::R2 exploreverify \"Check this chain\" sends the drawn path as chain (explore R23) and draws matches, lead and each hop's answer; control: a tampered hop is drawn \"does not match\". Your receipt says the suite passed. Fix it on your branch, rerun job complete screens-investigate, and wake me."}
+{"at":"2026-11-05T09:37:57Z","row":"outcome","n":172,"outcome":"delivered"}
