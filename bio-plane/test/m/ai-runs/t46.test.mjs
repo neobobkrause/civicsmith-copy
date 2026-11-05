@@ -109,7 +109,7 @@ test("R78, R10, R19, R28: a run the bar admitted carries no label — untested i
 });
 
 test("R78, R23's input: an exploring run's origin is judged with investigate's admission through partAdmitted — refused while check is unverified even on a test instance; once check is verified live, admitted on the exception; control: the same record on a non-test instance stays refused", async () => {
-  const own = { origin: "explore", place: stepsWorld().place, work: "find the fee schedule" };
+  const own = { origin: "explore", enabledBy: "member:ann", place: stepsWorld().place, work: "find the fee schedule" };
   for (const [env, opens] of [[PAIR, true], [{}, false]]) {
     const w = world({ env, testSet: EMPTY, bars: [], steps: stepsWorld().steps });
     await w.group("ann"); w.bundle(INQ);
