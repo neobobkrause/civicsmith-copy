@@ -32,3 +32,4 @@
 {"at":"2026-11-05T19:34:28.917Z","row":"end","pr":511,"tip":"d2453a1cb48b9ce922c705adc0d92c8d7f4f0e78","cause":"gate cancelled: https://github.com/neobobkrause/civicsmith-copy/actions/runs/42090127669/job/127465673108","session":"session_018BhcefSY1HcDdU87BP9fxU"}
 {"at":"2026-11-05T20:09:22.988Z","row":"inflight","pr":364,"module":"agent-worker","tip":"f1f5051875e6bc6b366d9c850db1b088cbcb75ef","session":"session_018BhcefSY1HcDdU87BP9fxU","until":"2026-11-05T21:54:22.988Z"}
 {"at":"2026-11-05T20:12:42.348Z","row":"end","pr":364,"tip":"f1f5051875e6bc6b366d9c850db1b088cbcb75ef","cause":"landed","session":"session_018BhcefSY1HcDdU87BP9fxU"}
+{"at":"2026-11-05T20:14:03.272Z","row":"inflight","pr":470,"module":"screens-intake","tip":"2dccf8cd3718d6aa24225c7f9bce70180b60d126","session":"session_018BhcefSY1HcDdU87BP9fxU","until":"2026-11-05T21:59:03.272Z"}
