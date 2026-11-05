@@ -47,7 +47,8 @@
   ],
   "prior_work": "Meet every unmet mark in build/requirements/registers.md, each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T05:13:34Z"
+    "state": "WORKING",
+    "at": "2026-11-05T11:18:18Z",
+    "reason": "reopened: meet F1: content PR 440 merged, so cellsAt answers {cells:null, reason:'removed'} for an expunged register row; turn remove-watch.test.mjs:98's test.todo into a real test through the assembled content and strike F1 (PR 426 review, 5 Nov)"
   }
 }
