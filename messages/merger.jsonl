@@ -173,3 +173,4 @@
 {"at":"2026-11-05T21:56:29Z","row":"sent","n":87,"to":"bob","text":"PR 484: job ai-catalogue must sync (node .process/tool/p3.mjs job sync ai-catalogue, then job complete ai-catalogue): pull request 484 conflicts with tranche; nothing was merged"}
 {"at":"2026-11-05T21:56:41Z","row":"outcome","n":87,"outcome":"delivered"}
 {"at":"2026-11-05T22:01:21Z","row":"sent","n":88,"to":"bob","text":"merged PR 496 (job registers); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-05T22:03:00Z","row":"outcome","n":88,"outcome":"delivered"}
