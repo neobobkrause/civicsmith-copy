@@ -40,7 +40,9 @@ test("R41: locationHintFor answers by continent and longitude only (the table, i
 
 test("R42: storeLocationBinding answers the plain text for an allowed hint and nothing for any other value", () => {
   for (const h of LOCATION_HINTS) assert.deepEqual(storeLocationBinding(h), [{ type: "plain_text", name: "STORE_LOCATION", text: h }], h);
-  for (const bad of ["bogus", "", "WNAM", " wnam", "wnam ", "eu", "apac-sw", null, undefined, 3, ["wnam"], {}]) assert.deepEqual(storeLocationBinding(bad), [], JSON.stringify(bad));
+  /* "eu" is a jurisdiction since R46: it binds STORE_JURISDICTION, never STORE_LOCATION */
+  assert.deepEqual(storeLocationBinding("eu"), [{ type: "plain_text", name: "STORE_JURISDICTION", text: "eu" }]);
+  for (const bad of ["bogus", "", "WNAM", " wnam", "wnam ", "EU", "apac-sw", null, undefined, 3, ["wnam"], {}]) assert.deepEqual(storeLocationBinding(bad), [], JSON.stringify(bad));
 });
 
 test("R42: the install's creating upload carries STORE_LOCATION when given a hint, and is otherwise exactly the list of R12", async () => {
