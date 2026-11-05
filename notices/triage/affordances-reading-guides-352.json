@@ -1,0 +1,1 @@
+{"row":"triage","user":"affordances","verdict":"affected","evidence":"bio-plane/src/affordances/act-help.mjs:172 reads READING_GUIDES.DECLARED_OPS?.guideoptout (the R20 guideOptOut op) as the help text source for act.guideoptout.does","at":"2026-11-05T03:16:17.317Z","key":"reading-guides:352","worker":"afe18e822fdc26f8f","cost":"0.18"}
