@@ -66,3 +66,4 @@
 {"at":"2026-11-05T22:13:34.280Z","row":"end","pr":488,"tip":"34b1075cbe6bdd57fa0d207b4a6ce9732a5cb591","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-05T22:14:25.744Z","row":"inflight","pr":490,"module":"acquisition-owed","tip":"436cadbbc901941f48a4e570244b4d4248cd4d20","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-05T23:59:25.744Z"}
 {"at":"2026-11-05T22:18:21.164Z","row":"end","pr":490,"tip":"436cadbbc901941f48a4e570244b4d4248cd4d20","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
+{"at":"2026-11-05T22:19:14.923Z","row":"inflight","pr":492,"module":"held-captures","tip":"9c9028d4f2e23f77fc6f389d09d01640365ff32f","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T00:04:14.923Z"}
