@@ -1,0 +1,1 @@
+{"row":"triage","user":"escalation","verdict":"not affected","evidence":"build/modules.json:156 escalation (bio-plane/src/escalation/) holds no file that imports action-grammar, every code file under its paths read at 8e144c9e63","at":"2026-11-05T09:45:00.395Z","key":"action-grammar:396","worker":"merge: imports check","cost":"0"}
