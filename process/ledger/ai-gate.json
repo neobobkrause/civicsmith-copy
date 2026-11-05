@@ -40,7 +40,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T03:55:58Z"
+    "state": "WORKING",
+    "at": "2026-11-05T04:27:42Z",
+    "reason": "reopened: answer the provider notices agent-harness:353, agent-model:395"
   }
 }
