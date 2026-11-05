@@ -313,3 +313,4 @@
 {"at":"2026-11-04T23:22:45Z","row":"outcome","n":159,"outcome":"failed"}
 {"at":"2026-11-05T00:17:15Z","row":"sent","n":160,"to":"root","text":"root-39: control-plane woken on pin 89c180f to sync and complete under the base-comparison fix; runtime-limits waits on M-R7, deferred since deploys are tranche-end only. Layer 4 closed; layer 5 notice jobs started (store-assembly 342, scheduler 343, agent-worker 344); merging 321, 310, 338, 339, 175."}
 {"at":"2026-11-05T00:17:50Z","row":"outcome","n":160,"outcome":"delivered"}
+{"at":"2026-11-05T05:25:24Z","row":"sent","n":161,"to":"root","text":"handover begin: pin 86a12f1 changed BOB's first commands (step 3 drops --live; status counts the job sessions itself), so by the new prompt a fresh BOB is needed. I keep working (job start --ready, holds, merges notes) and forward what I receive until the new BOB reports ready; my handoff note goes to process-state handoff/bob.md."}
