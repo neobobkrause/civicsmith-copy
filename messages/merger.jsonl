@@ -15,3 +15,4 @@
 {"at":"2026-11-05T05:42:20Z","row":"sent","n":8,"to":"bob","text":"merged PR 412 (job docket): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T05:42:40Z","row":"outcome","n":8,"outcome":"delivered"}
 {"at":"2026-11-05T06:16:40Z","row":"sent","n":9,"to":"bob","text":"merged PR 408 (job agent-drafts): node .process/tool/p3.mjs notice triage agent-drafts:408 (provider notice agent-drafts:408; 1 user module owes a worker's judgment: agent-worker: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
+{"at":"2026-11-05T06:17:14Z","row":"outcome","n":9,"outcome":"delivered"}
