@@ -600,7 +600,15 @@ export function corpusExportOps(ce, q) {
     /* T33-61 (J1 (3), (4)): one page of a carried table (R8), and a part of a rendering for the stamped viewer (R10, R14). */
     exportpage: () => ce.exportPage({ table: q("table"), index: q("index"), after: q("after") }),
     exportrender: () => ce.exportRendering({ format: q("format"), viewer: q("viewer"), part: q("part") }),
-    /* T53 (R17, R18; K5441, K5443): the whole-record manifest, and one of its parts fetched alone. */
+  };
+}
+
+/** R17, R18 (T53; K5441, K5443): the whole-record arms, `exportwhole` (administrator only, as `export`) and
+ *  `exportwholepart`, in the form of `corpusExportOps`. Kept apart from that map until op-declarations holds their rows
+ *  (its spec check refuses an arm with none; a declared row would join the member session set): the plane spreads
+ *  this map once their rows are there. */
+export function wholeExportOps(ce, q) {
+  return {
     exportwhole: () => ce.exportWhole({ note: q("note") }),
     exportwholepart: () => ce.exportWholePart({ file: q("file"), offset: q("offset"), bytes: q("bytes") }),
   };

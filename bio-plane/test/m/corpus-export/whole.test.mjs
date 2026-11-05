@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { registersWorld, V } from "./registers-world.mjs";
 import { rich } from "./rich.mjs";
 import { inquiryMd } from "./fixture.mjs";
-import { corpusExportOps, verifyWholePart, WHOLE_PART_BYTES, WHOLE_PART_CEILING } from "../../../src/corpus-export/index.mjs";
+import { wholeExportOps, verifyWholePart, WHOLE_PART_BYTES, WHOLE_PART_CEILING } from "../../../src/corpus-export/index.mjs";
 
 const bytesOf = (n, seed = 7) => Uint8Array.from({ length: n }, (_, i) => (i * 31 + seed) & 0xff);
 const BOUND = 64;
@@ -43,7 +43,7 @@ test("R17: a seeded copy's whole-record manifest lists every held file, inline o
 
 test("R17: the exportwhole arm answers the whole-record manifest with q(\"note\") passed through", async () => {
   const w = registersWorld();
-  const x = await corpusExportOps(w.ce, (k) => (k === "note" ? "via the door" : null)).exportwhole();
+  const x = await wholeExportOps(w.ce, (k) => (k === "note" ? "via the door" : null)).exportwhole();
   assert.equal(x.scope, "whole-record");
   assert.equal(w.sql(`SELECT note FROM export_log ORDER BY seq DESC LIMIT 1`)[0].note, "via the door");
 });

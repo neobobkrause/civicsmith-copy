@@ -3,14 +3,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, NOW } from "./fixture.mjs";
-import { corpusExportOps, EXPORT_NOTE_MAX } from "../../../src/corpus-export/index.mjs";
+import { corpusExportOps, wholeExportOps, EXPORT_NOTE_MAX } from "../../../src/corpus-export/index.mjs";
 
 const A = "INFO-2026-0001-minutes", B = "INQ-2026-0001";
 const query = (params) => { const asked = []; const q = (k) => { asked.push(k); return params[k] ?? null; }; return { q, asked }; };
 
-const ARMS = ["export", "exportlog", "exportpage", "exportrender", "exportwhole", "exportwholepart"];
+const ARMS = ["export", "exportlog", "exportpage", "exportrender"];
 
-test("R6, R17 corpusExportOps publishes exactly the arms export, exportlog, exportpage, exportrender, exportwhole and exportwholepart, each a function of no arguments", () => {
+test("R6 corpusExportOps publishes exactly the arms export, exportlog, exportpage and exportrender, each a function of no arguments", () => {
   const w = world();
   const ops = corpusExportOps(w.ce, query({}).q);
   assert.deepEqual(Object.keys(ops).sort(), ARMS);
@@ -94,7 +94,7 @@ test("R18 the exportwholepart arm answers one part with q(\"file\"), q(\"offset\
   const x = await w.ce.exportWhole({});
   for (const p of x.parts) {
     const { q, asked } = query({ file: p.file, offset: String(p.offset), bytes: String(p.bytes) });
-    const viaOps = await corpusExportOps(w.ce, q).exportwholepart();
+    const viaOps = await wholeExportOps(w.ce, q).exportwholepart();
     assert.deepEqual(asked.sort(), ["bytes", "file", "offset"]);
     assert.deepEqual(viaOps, await w.ce.exportWholePart({ file: p.file, offset: p.offset, bytes: p.bytes }));
     assert.equal(viaOps.sha256, p.sha256);
