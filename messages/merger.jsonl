@@ -177,3 +177,4 @@
 {"at":"2026-11-05T22:03:42Z","row":"sent","n":89,"to":"root","text":"MERGER context 73% at 22:01 (734,999 of 1,000,000 tokens), up from 57% at 21:01 and 27% at 20:00; the auto-subscribed spec-PR GitHub notices are most of it. At this rate about 1.5 hours remain before autocompact (threshold 784,000). Train (pin 82cefb9dd8, window 1) and starter are running; lease held by this session. Plan a successor when convenient."}
 {"at":"2026-11-05T22:03:55Z","row":"outcome","n":89,"outcome":"delivered"}
 {"at":"2026-11-05T22:13:43Z","row":"sent","n":90,"to":"bob","text":"merged PR 488 (job control-plane-door-pages); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-05T22:13:54Z","row":"outcome","n":90,"outcome":"delivered"}
