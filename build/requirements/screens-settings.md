@@ -211,6 +211,7 @@ A sentence the design holds only as a drawn sample (a name, a day or a count wri
 ### Invariants
 
 - **R10** No key, code or password typed on these screens is written to the browser's storage, an address or a later request.
+- **F1** (screens-settings job, attempt 7; base-red on tranche since PR 174; `wizard-scripts` R54 re-took the registry at 30af4350f2; met 5 Nov) `contract.test.mjs` failed on two counts. (1) The registry lists `owed:adminproposalcancel K5563` on `members`, and the screen did not draw it: it is drawn now as R93 (3) says, on a `proposed` administrator's panel to the founder and to the proposer (`invited_by`) only, sending `{memberId}` with no reason, the roster and `recovery` read again, labelled by the owed act's key `act.owed_adminproposalcancel.label.members`. (2) The design's reads list for this module gained 25 keys (among them `act.authority.does`, the standards acts' `.does`, `part.page`, `part.section`) that R39's `KEYS` lacked; `KEYS` holds them now, each a word. R93's other items, R94 and the owner's answer to the cancel through the plane (`surface-declarations` R14 stamps its `by`) stay with their own marks.
 
 ### Satisfies
 

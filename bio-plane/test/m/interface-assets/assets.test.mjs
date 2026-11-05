@@ -610,6 +610,27 @@ test("DEC-412 control: a .cs-btn at 40px, or a --tap other than 44px, is refused
   assert.ok(tapFailures(css.split("--tap: 44px").join("--tap: 40px")).some((f) => f.startsWith("--tap")));
 });
 
+/* R6 (F1): the import's heap margin does not rest on the machine. index.mjs is ASCII, so Node holds its source as a
+   one-byte string (a single character above U+00FF doubles it), and every body, text or face, is a getter built on its
+   first read, so a fresh import holds no file's text beyond the modules' source. */
+function eagerFailures(source, map) {
+  const out = [];
+  const wide = [...source].filter((c) => c.charCodeAt(0) > 0x7f);
+  if (wide.length) out.push(`index.mjs holds ${wide.length} non-ASCII characters (${[...new Set(wide)].join(" ")})`);
+  for (const [n, e] of Object.entries(map)) if (!Object.getOwnPropertyDescriptor(e, "body")?.get) out.push(`${n}: body built at import`);
+  return out;
+}
+
+test("R6 (F1): index.mjs is ASCII and every body of ASSET_FILES is built on its first read", () => {
+  assert.deepEqual(eagerFailures(readFileSync(MODULE, "utf8"), ASSET_FILES), []);
+});
+
+test("R6 (F1) control: a non-ASCII character in index.mjs, or a body held as a value at import, is refused", () => {
+  assert.ok(eagerFailures(readFileSync(MODULE, "utf8") + "/* R1\u2013R10 */", ASSET_FILES).some((f) => f.includes("non-ASCII")));
+  const held = { ...ASSET_FILES, "icons.svg": Object.freeze({ type: "image/svg+xml", body: ASSET_FILES["icons.svg"].body }) };
+  assert.deepEqual(eagerFailures(readFileSync(MODULE, "utf8"), held), ["icons.svg: body built at import"]);
+});
+
 /* R4, R6 (BOB #45): every file the generator writes is under the process's max_file_bytes, so it can be committed. */
 const MAX_FILE_BYTES = 1048576;
 const generatedFiles = () => ["index.mjs", ...faceModules()].map((f) => join(HERE_SRC, f));

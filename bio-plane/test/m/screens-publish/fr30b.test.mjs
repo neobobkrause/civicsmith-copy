@@ -395,7 +395,7 @@ test("R68 a project whose title the viewer cannot read is named by the unjoined 
 });
 
 test("R59 the assistant helps with the citing note only while it is reachable: it sends the note for citeimported and draws wizard-scripts' real refusal in its words, the field left as typed (B420 3); not reachable draws no help (control)", async () => {
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   /* the real `writinghelp` never returns a draft (K5212): the draft already held in the field, or the assistant unreachable */
   for (const which of ["held", "unreachable"]) {
     const answer = await provided.writinghelp(which);
