@@ -53,7 +53,7 @@
   "wizard": 359,
   "elsewhere": 38,
   "places": 6,
-  "screen": 8084,
+  "screen": 8103,
   "signin": 1,
   "forgot": 1,
   "founder": 6,
@@ -239,8 +239,8 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19835,
-  "protected": 1181
+  "total": 19854,
+  "protected": 1189
  },
  "words": [
   {
@@ -123875,6 +123875,139 @@
    "en": "Your team's Civicsmith binds no Claude account to its own settings, and none can be set there. The assistant is reached through a member's own Claude account or API key, or through the team's API key that an administrator sets; each is held sealed in Civicsmith's credentials, never as a setting.",
    "protected": false,
    "source": "DEC-260"
+  },
+  {
+   "key": "screen.queue.signer.keys_more.one",
+   "en": "1 more key is waiting. It appears here as you handle these.",
+   "protected": false,
+   "source": "screens-daily R108 (design lane)",
+   "note": "below a signer-self-registered item's key lines when basis.keys_more is 1"
+  },
+  {
+   "key": "screen.queue.signer.keys_more",
+   "en": "{n} more keys are waiting. They appear here as you handle these.",
+   "protected": false,
+   "source": "screens-daily R108 (design lane)",
+   "note": "below a signer-self-registered item's key lines when basis.keys_more is 2 or more"
+  },
+  {
+   "key": "screen.inbox.row.named",
+   "en": "{name}, {size}",
+   "protected": false,
+   "source": "screens-intake R92 (design lane)",
+   "note": "an inbox row's title: the file's name as the sender gave it, and its true size"
+  },
+  {
+   "key": "screen.inbox.row.noted",
+   "en": "“{words}…”, {size}",
+   "protected": false,
+   "source": "screens-intake R92 (design lane)",
+   "note": "an inbox row's title when the knock gave no file name: the first words of its note, and its true size"
+  },
+  {
+   "key": "screen.inbox.row.unnamed",
+   "en": "Handed in without a name or note, {size}",
+   "protected": false,
+   "source": "screens-intake R92 (design lane)",
+   "note": "an inbox row's title with neither a name nor a note"
+  },
+  {
+   "key": "screen.inbox.row.became",
+   "en": "Became {document}",
+   "protected": false,
+   "source": "screens-intake R92 (design lane)",
+   "note": "after \"Move into the record\": a link to the document it made; drawn on no unmoved knock"
+  },
+  {
+   "key": "screen.inbox.ladder.unknown.means",
+   "en": "Nothing is known of who handed it in.",
+   "protected": false,
+   "source": "screens-intake R92 (design lane)",
+   "note": "beside screen.inbox.ladder.unknown; the five lines replace screen.inbox.ladder.basis's run-on sentence"
+  },
+  {
+   "key": "screen.inbox.ladder.same.means",
+   "en": "It came with the same secret phrase as earlier material. That says nothing about who they are.",
+   "protected": false,
+   "source": "screens-intake R92 (design lane)",
+   "note": "beside screen.inbox.ladder.same"
+  },
+  {
+   "key": "screen.inbox.ladder.partly.means",
+   "en": "The team knows something about them, such as an occupation, but not who they are.",
+   "protected": false,
+   "source": "screens-intake R92 (design lane)",
+   "note": "beside screen.inbox.ladder.partly"
+  },
+  {
+   "key": "screen.inbox.ladder.group.means",
+   "en": "Members know who they are. It is kept with the source, not here.",
+   "protected": false,
+   "source": "screens-intake R92 (design lane)",
+   "note": "beside screen.inbox.ladder.group"
+  },
+  {
+   "key": "screen.inbox.ladder.public.means",
+   "en": "They are publicly named.",
+   "protected": false,
+   "source": "screens-intake R92 (design lane)",
+   "note": "beside screen.inbox.ladder.public"
+  },
+  {
+   "key": "screen.ties.preview.employer.name",
+   "en": "{handle}, who worked on this case, works for {party}.",
+   "protected": true,
+   "source": "screens-investigate R92 (design lane)",
+   "note": "the tie preview naming the member (kind employer); {party} the person or organization the tie is with; replaces screen.ties.says.name.choice's \"is {tie}\", which put the kind where the party goes"
+  },
+  {
+   "key": "screen.ties.preview.employer.group",
+   "en": "A member of the team who worked on this case works for {party}.",
+   "protected": true,
+   "source": "screens-investigate R92 (design lane)",
+   "note": "the tie preview without naming the member (kind employer); replaces screen.ties.says.group.choice's \"is {tie}\""
+  },
+  {
+   "key": "screen.ties.preview.relative.name",
+   "en": "{handle}, who worked on this case, is related to {party}.",
+   "protected": true,
+   "source": "screens-investigate R92 (design lane)",
+   "note": "the tie preview naming the member (kind relative); {party} the person or organization the tie is with; replaces screen.ties.says.name.choice's \"is {tie}\", which put the kind where the party goes"
+  },
+  {
+   "key": "screen.ties.preview.relative.group",
+   "en": "A member of the team who worked on this case is related to {party}.",
+   "protected": true,
+   "source": "screens-investigate R92 (design lane)",
+   "note": "the tie preview without naming the member (kind relative); replaces screen.ties.says.group.choice's \"is {tie}\""
+  },
+  {
+   "key": "screen.ties.preview.business.name",
+   "en": "{handle}, who worked on this case, has a business interest in {party}.",
+   "protected": true,
+   "source": "screens-investigate R92 (design lane)",
+   "note": "the tie preview naming the member (kind business); {party} the person or organization the tie is with; replaces screen.ties.says.name.choice's \"is {tie}\", which put the kind where the party goes"
+  },
+  {
+   "key": "screen.ties.preview.business.group",
+   "en": "A member of the team who worked on this case has a business interest in {party}.",
+   "protected": true,
+   "source": "screens-investigate R92 (design lane)",
+   "note": "the tie preview without naming the member (kind business); replaces screen.ties.says.group.choice's \"is {tie}\""
+  },
+  {
+   "key": "screen.ties.preview.other.name",
+   "en": "{handle}, who worked on this case, has a tie to {party}.",
+   "protected": true,
+   "source": "screens-investigate R92 (design lane)",
+   "note": "the tie preview naming the member (kind other); {party} the person or organization the tie is with; replaces screen.ties.says.name.choice's \"is {tie}\", which put the kind where the party goes"
+  },
+  {
+   "key": "screen.ties.preview.other.group",
+   "en": "A member of the team who worked on this case has a tie to {party}.",
+   "protected": true,
+   "source": "screens-investigate R92 (design lane)",
+   "note": "the tie preview without naming the member (kind other); replaces screen.ties.says.group.choice's \"is {tie}\""
   },
   {
    "key": "rail.home.name",
