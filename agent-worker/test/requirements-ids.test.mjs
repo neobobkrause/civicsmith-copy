@@ -147,6 +147,10 @@ const START = {
   F1: ["not yet met: walk p3dev-l1", "ff088529553c9baa"],
 };
 
+/* F1 struck by BOB's ruling (5 Nov 2026, 03:13): the rollout check is bundler's (its F2), R47 unchanged. Its line
+   keeps its finding word for word after the note that replaced the mark. */
+const MOVED_OUT = { F1: "(moved to bundler F2, coordinator ruling 5 Nov 2026)" };
+
 const ADMITTED = {
   F2: ["not yet met: coordinator ruling 5 Nov 2026; agent-runner R13, K5576", "a3ff85819faf6c0f"],
   F3: ["not yet met: agent-model R35, R53, PR 355", "0c742c78c3eb6ec9"],
@@ -189,14 +193,14 @@ test("each admitted found mark is open under the mark it was added with, or stru
 
 test("every id not moved keeps its line verbatim, and so its mark", () => {
   for (const [id, [mark, hash]] of Object.entries(START)) {
-    if (MOVED[id]) continue;
+    if (MOVED[id] || MOVED_OUT[id]) continue;
     assert.equal(now[id].mark, mark, `${id} mark`);
     assert.equal(digest(now[id].line), hash, `${id} line changed`);
   }
 });
 
 test("the unmet marks are unchanged but for the moved ids, which agent-drafts now carries", () => {
-  const unmet = (o, f) => Object.entries(o).filter(([id, v]) => f(v) && !MOVED[id] && !ADMITTED[id]).map(([id]) => id).sort();
+  const unmet = (o, f) => Object.entries(o).filter(([id, v]) => f(v) && !MOVED[id] && !MOVED_OUT[id] && !ADMITTED[id]).map(([id]) => id).sort();
   assert.deepEqual(unmet(now, (v) => v.mark && v.mark !== "retired"), unmet(START, ([m]) => m && m !== "retired"));
 });
 
@@ -214,5 +218,15 @@ test("every moved id is retired here naming its agent-drafts id, and exists ther
 test("each retired id here that names agent-drafts is one of the moved ids", () => {
   for (const [id, v] of Object.entries(now)) {
     if (v.mark === "retired" && v.line.includes("agent-drafts:")) assert.ok(MOVED[id], `${id} names agent-drafts but did not move`);
+  }
+});
+
+test("F1 is struck as moved to bundler F2, its finding unchanged", () => {
+  for (const [id, note] of Object.entries(MOVED_OUT)) {
+    assert.equal(now[id].mark, null, `${id} still carries a mark`);
+    const was = `- **${id}** *(${START[id][0]})* `;
+    const finding = now[id].line.slice(`- **${id}** ${note} `.length);
+    assert.ok(now[id].line.startsWith(`- **${id}** ${note} `), `${id} carries the note`);
+    assert.equal(digest(was + finding), START[id][1], `${id} finding changed`);
   }
 });
