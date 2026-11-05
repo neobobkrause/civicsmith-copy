@@ -4,7 +4,7 @@ import { verifyChallenge, PUBLIC_BANK } from '../../ai-gate/src/index.mjs';
 import { makeRunner } from '../src/run.mjs';
 
 export const ISSUER = 'https://issuer.test';
-export const PROVIDER_HOST = 'models.provider.test';
+export const PROVIDER_HOST = 'api.stubmodels.net';
 export const KEY = 'sk-test-SENTINELKEY-9f2c41d07ab35e88';
 export const MODEL = 'stub-model-1';
 

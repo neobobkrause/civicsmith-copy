@@ -144,6 +144,42 @@ test('R45 on the platform: the list is the issuer alone at rest, the issuer and 
   } finally { await h.stop(); }
 });
 
+test('R45 a declared host that fails the check never reaches the platform list; a second start cannot change the list a run set', async () => {
+  for (const host of ['http://api.stubmodels.net', '10.0.0.5', '*.stubmodels.net', 'localhost', 'models.internal', ISSUER_HOST,
+    'api.stubmodels.net:8443', 'api.stubmodels.net/v1', 42]) {
+    const h = await hosted();
+    try {
+      const res = await h.runner.fetch(post('/run', { ...runBody(), declared: { ...runBody().declared, host } }));
+      // The image may still take a host the Worker will not open (a port, or the stub's issuer differing): what is
+      // asserted is that the platform list is never widened to it.
+      await res.arrayBuffer();
+      assert.ok(!h.allowed.flat().some((x) => x !== ISSUER_HOST), `${host}: never on the platform list`);
+      assert.deepEqual(h.runner.allowedHosts, [ISSUER_HOST]);
+    } finally { await h.stop(); }
+  }
+  const h = await hosted({ provider: () => new Promise(() => {}) });
+  try {
+    const other = { ...runBody(), declared: { ...runBody().declared, host: 'api.otherhost.net' } };
+    const [a, b] = await Promise.all([h.runner.fetch(post('/run', runBody())), h.runner.fetch(post('/run', other))]);
+    assert.deepEqual([a.status, b.status], [202, 409], 'the starts are taken one at a time');
+    assert.deepEqual(h.allowed, [[ISSUER_HOST, PROVIDER_HOST]], 'the second start, made under the run hold, left the list as the run set it');
+    await h.runner.fetch(post('/run/discard', {}));
+  } finally { await h.stop(); }
+});
+
+test('R12 R10 the class keeps the container off the internet: enableInternet false, HTTPS intercepted, the issuer alone at rest', async () => {
+  const h = await hosted();
+  try {
+    assert.equal(h.runner.enableInternet, false);
+    assert.equal(h.runner.interceptHttps, true);
+    assert.deepEqual(h.runner.allowedHosts, [ISSUER_HOST]);
+    assert.equal(typeof h.mod.AgentRunner.outbound, 'function', 'every allowed request passes the logging handler');
+    const w = wrangler();
+    assert.deepEqual(w.migrations.at(-1), { tag: 'v3', deleted_classes: ['RemoteSession'] }, 'RemoteSession is deleted by migration v3');
+    assert.ok(!('RemoteSession' in h.mod), 'and the bundle no longer exports it');
+  } finally { await h.stop(); }
+});
+
 test('R30 the class logs each lifecycle event and each egress request, never a query, header or body; R34 a refused request logs one line', async () => {
   const cap = capture();
   const h = await hosted();

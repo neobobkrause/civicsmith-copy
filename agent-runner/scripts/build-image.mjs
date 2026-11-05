@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-/* Build what the image carries (R56, R26): `dist/image/entry.mjs`, the server that listens at once, and the run it loads
- * after listening (`dist/image/chunks/run.mjs`), each one self-contained file with `ai-gate` and the plane modules it
+/* Build what the image carries (R56, R26): `dist/image/entry.js`, the server that listens at once, and the run it loads
+ * after listening (`dist/image/chunks/run.js`), each one self-contained file with `ai-gate` and the plane modules it
  * reads bundled in (the image cannot reach the repository), and no package of `node_modules`. The plane's word table
  * (`setup-words/rows.mjs`) is left out: the image reads its own carried rows (R41), and a `localize` inside a bundled
  * module answers its code's own sentence. The output is committed;

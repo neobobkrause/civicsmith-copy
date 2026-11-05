@@ -8039,21 +8039,17 @@ function egressList(issuerHost) {
 function makeDoor({ fetchImpl = globalThis.fetch, list: list3, log = () => {
 }, onRefused = () => {
 } }) {
+  const check2 = (url, method = "GET") => {
+    const host = hostOf2(url);
+    if (list3.allows(host)) return true;
+    log({ event: "runner.egress.refused", instance_ref: null, host, method, path_template: pathTemplate(url), status: 520 });
+    onRefused(host);
+    return false;
+  };
   return {
+    check: check2,
     async fetch(url, init = {}) {
-      const host = hostOf2(url);
-      if (!list3.allows(host)) {
-        log({
-          event: "runner.egress.refused",
-          instance_ref: null,
-          host,
-          method: init.method || "GET",
-          path_template: pathTemplate(url),
-          status: 520
-        });
-        onRefused(host);
-        throw new EgressRefused(host);
-      }
+      if (!check2(url, init.method || "GET")) throw new EgressRefused(hostOf2(url));
       return fetchImpl(url, { ...init, redirect: "manual" });
     }
   };
@@ -8124,13 +8120,12 @@ async function callModel({ door, declared, item: item2, repeat, nonce, key: key2
     await res.arrayBuffer().catch(() => {
     });
     record2.timings.last_byte = nowIso(now);
-    if (loc) {
-      try {
-        await door.fetch(new URL(loc, url).href, { method: "POST", signal });
-      } catch (e2) {
-        if (e2 && e2.code === "EGRESS_REFUSED") return { ...fail2("malformed"), refusedHost: e2.host };
-      }
+    let target = null;
+    try {
+      target = loc ? new URL(loc, url).href : null;
+    } catch {
     }
+    if (target && !door.check(target, "POST")) return { ...fail2("malformed"), refusedHost: hostOf2(target) };
     return fail2("malformed");
   }
   let text;

@@ -5,6 +5,7 @@
 // This is the image's stand-in for `agent-model`'s adapters and credential resolver for a declared plan (`agent-model`
 // R2, BR16; `ai-gate` R8), which are not on tranche yet: when they are, a run's calls go through them and this file goes.
 import { CAPTURED_HEADERS, isObj } from './params.mjs';
+import { hostOf } from './door.mjs';
 
 const nowIso = (now) => new Date(now()).toISOString();
 
@@ -53,15 +54,14 @@ export async function callModel({ door, declared, item, repeat, nonce, key, maxO
   record.status = res.status;
   record.headers = keptHeaders(res.headers);
   record.request_id = record.headers['x-request-id'] ?? record.headers['request-id'] ?? null;
-  // A redirect is never followed to a host the run did not declare: asking the door is the check (R45).
+  // A redirect is never followed: its Location host is checked against the run's list and nothing is sent (R45).
   if (res.status >= 300 && res.status < 400) {
     const loc = res.headers.get('location');
     await res.arrayBuffer().catch(() => {});
     record.timings.last_byte = nowIso(now);
-    if (loc) {
-      try { await door.fetch(new URL(loc, url).href, { method: 'POST', signal }); }
-      catch (e) { if (e && e.code === 'EGRESS_REFUSED') return { ...fail('malformed'), refusedHost: e.host }; }
-    }
+    let target = null;
+    try { target = loc ? new URL(loc, url).href : null; } catch { /* an unreadable Location is followed nowhere */ }
+    if (target && !door.check(target, 'POST')) return { ...fail('malformed'), refusedHost: hostOf(target) };
     return fail('malformed');
   }
   let text;

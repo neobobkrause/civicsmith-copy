@@ -74,8 +74,8 @@ test('R43 control: GET /run/bundle before approval answers MANIFEST_NOT_SHOWN wi
 test('R44 POST /run refuses each bad request with its code and starts nothing (the stub issuer is not called)', async () => {
   const cases = [
     ['not json', 'BAD_REQUEST'],
-    [{ ...runBody(), declared: declared({ host: 'http://models.provider.test' }) }, 'BAD_RUN'],
-    [{ ...runBody(), declared: declared({ host: '*.provider.test' }) }, 'BAD_RUN'],
+    [{ ...runBody(), declared: declared({ host: 'http://api.stubmodels.net' }) }, 'BAD_RUN'],
+    [{ ...runBody(), declared: declared({ host: '*.stubmodels.net' }) }, 'BAD_RUN'],
     [{ ...runBody(), declared: declared({ host: 'issuer.test' }) }, 'BAD_RUN'],
     [{ ...runBody(), declared: declared({ host: '10.0.0.5' }) }, 'BAD_RUN'],
     [{ ...runBody(), declared: declared({ host: 'models.internal' }) }, 'BAD_RUN'],
@@ -116,6 +116,9 @@ test('R45 the run list is the issuer and the declared host; a redirect to anothe
   const payload = await open(h, await takeBundle(h));
   assert.equal(payload.run.refused_egress, refused.length, 'the run\'s record counts each');
   assert.ok(w.seen.some((s) => s.host === 'issuer.test') && w.seen.some((s) => s.host === PROVIDER_HOST), 'control: both listed hosts reached');
+  const calls = w.seen.filter((s) => s.host === PROVIDER_HOST).length;
+  assert.equal(w.seen.length, calls + 1, 'a 3xx sends no second request: only the challenge and the provider calls were sent');
+  assert.ok(w.seen.every((s) => s.redirect === 'manual'), 'the door follows no redirect itself');
 });
 
 test('R46 every outbound request goes through the one door: a scan finds no other network call; an unlisted host is refused before a connection', async () => {

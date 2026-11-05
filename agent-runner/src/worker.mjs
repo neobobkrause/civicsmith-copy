@@ -12,7 +12,7 @@ import { Container, ContainerProxy } from '@cloudflare/containers';
 import member from '../fleet-member.json' with { type: 'json' };
 import { CATALOGUE_ADDRESS } from '../../bio-plane/src/ai-catalogue/index.mjs';
 import { REVIEW_WINDOW_MS, TRACE_HEADER, RUN_REF_HEX, DEPLOYMENTS, DEFAULT_DEPLOYMENT } from './params.mjs';
-import { pathTemplate, hostOf } from './door.mjs';
+import { pathTemplate, hostOf, platformHost } from './door.mjs';
 import { says } from './says.mjs';
 
 const ISSUER_HOST = new URL(CATALOGUE_ADDRESS).hostname;
@@ -98,14 +98,28 @@ export class AgentRunner extends Container {
   async fetch(request) {
     const url = new URL(request.url);
     const route = `${request.method} ${url.pathname}`;
-    if (route === 'POST /run') await this.allowFor(request);
+    if (route !== 'POST /run') return this.forward(request, route);
+    // R45, R55: one run start at a time, to its answer and marker, so a second request cannot change the list it set.
+    const turn = (this.runStarts ?? Promise.resolve()).then(() => this.startRun(request));
+    this.runStarts = turn.catch(() => {});
+    return turn;
+  }
+
+  // R45: the platform list is widened only for a host that passes the check, and never while a run holds the instance.
+  async startRun(request) {
+    const widened = !(await this.held()) && await this.allowFor(request);
+    const res = await this.forward(request, 'POST /run');
+    if (widened && res.status !== 202) await this.setAllowedHosts([ISSUER_HOST]);
+    return res;
+  }
+
+  async forward(request, route) {
     let res;
     try { res = await this.containerFetch(request, this.defaultPort); }
     catch { res = new Response('the container could not be reached', { status: 500 }); }
     const bytes = route === 'GET /run/bundle' && res.status === 200 && /^application\/octet-stream\b/i.test(res.headers.get('content-type') || '');
     if (!isJson(res) && !bytes) {
       await res.arrayBuffer().catch(() => {});
-      if (route === 'POST /run') await this.setAllowedHosts([ISSUER_HOST]);
       return new Response(JSON.stringify({ ok: false, code: 'RUNNER_NOT_STARTED', status: res.status, trace: traceOf(request),
         detail: says('RUNNER_NOT_STARTED') }), { status: 503, headers: { 'content-type': 'application/json' } });
     }
@@ -113,14 +127,14 @@ export class AgentRunner extends Container {
     return res;
   }
 
-  // R45: the platform's list for the run. Only `declared.host` is read; the request goes on unchanged.
+  // R45: the platform's list for the run, only for a declared host that passes `platformHost` (a public DNS name over
+  // https, not the issuer); the image checks it again in full. Only `declared.host` is read; the request goes on unchanged.
   async allowFor(request) {
     let host = null;
-    try {
-      const d = JSON.parse(await request.clone().text())?.declared;
-      if (d && typeof d.host === 'string') host = hostOf(/^[a-z]+:\/\//i.test(d.host) ? d.host : `https://${d.host}`);
-    } catch { /* not JSON: the image refuses it */ }
-    if (host && host !== ISSUER_HOST && !(await this.held())) await this.setAllowedHosts([ISSUER_HOST, host]);
+    try { host = platformHost(JSON.parse(await request.clone().text())?.declared?.host, ISSUER_HOST); } catch { /* not JSON */ }
+    if (!host) return false;
+    await this.setAllowedHosts([ISSUER_HOST, host]);
+    return true;
   }
 
   // R55: the marker, from the image's answers' status and closed fields alone.
@@ -131,7 +145,6 @@ export class AgentRunner extends Container {
     if (route === 'POST /run') {
       if (res.status === 202 && body && typeof body.run === 'string')
         await this.ctx.storage.put(MARKER_KEY, { run_ref: await sha256Ref(body.run), deadline: null, state: 'running' });
-      else if (!(await this.held(m))) await this.setAllowedHosts([ISSUER_HOST]);
       return;
     }
     if (!m) return;
