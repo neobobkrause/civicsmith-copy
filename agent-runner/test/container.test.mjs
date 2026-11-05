@@ -128,7 +128,7 @@ test('R14 the marker states kind, image, bundle, class_name, max_instances, bind
   });
 });
 
-test('R33 the container\'s instance_type is declared in its deploy configuration at the recorded RUNNER_INSTANCE_TYPE; its max_instances and image are unchanged', () => {
+test('R33 the container instance_type is declared in its deploy configuration at the recorded RUNNER_INSTANCE_TYPE; its max_instances and image are unchanged', () => {
   const c = wrangler().containers[0];
   assert.equal(RUNNER_INSTANCE_TYPE, 'standard-1', 'the figure BOB recorded (provisional; revisit on measured load)');
   assert.equal(c.instance_type, RUNNER_INSTANCE_TYPE);
