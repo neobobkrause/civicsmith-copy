@@ -450,7 +450,8 @@ test("R68, R24, R33, R41, R20 (N996; K3101; ai-accounts; restated for T53, ai-ac
   /* credentials keeps the rest */
   assert.equal(OP_FAMILIES.credentials.kinds.aigrantmint, "own");
   assert.deepEqual(stamps("aigrantmint"), ["by", "member", "session", "viewer"]);
-  assert.ok(OP_FAMILIES.credentials.kinds.subscriptionsignin === "own" && OP_FAMILIES.credentials.kinds.setpassword === "own");
+  /* T53 (op-grades R57; F2): subscriptionsignin, the alpha's sign-in, leaves the family */
+  assert.ok(!Object.hasOwn(OP_FAMILIES.credentials.kinds, "subscriptionsignin") && OP_FAMILIES.credentials.kinds.setpassword === "own");
   /* negative controls */
   assert.ok(!Object.hasOwn(OP_FAMILIES["ai-accounts"].kinds, "aigrantmint"));
   assert.notDeepEqual(plain({ ...OPS.aiaccountadd, machineClasses: undefined }), T47.own.spec);

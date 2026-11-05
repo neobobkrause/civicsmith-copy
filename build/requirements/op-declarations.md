@@ -249,6 +249,8 @@ Terms. An **op** is a name the instance answers. An **op spec** is `{classes, ma
 
 - **F1** aipathready, a read act by surface-declarations R15, is not in OPS or DECLARED_OPS, so the plane answers UNKNOWN_OP to the frame's every ask.
 
+- **F2** (T53; op-grades R57, BOB's START 5 Nov) The alpha's `subscriptionsignin` is still in this module's tables (`REAUTH_ACTS`, `credentials`' family), though op-grades R57 puts it and the alpha's other AI ops (`groupkeyset`, `groupkeyremove`, `groupkeyswitch`, `groupkeynoticeseen`, `groupkeystate`, `accountreferenceset`, `accountreferenceremove`, `accountreference`, `subscriptiondisconnect`, `projectkeyset`, `projectsigninset`, `projectaccountremove`, `projectaccountswitch`, `projectkeynoticeseen`) in no table, with no alias. Test: before owners' rows are registered, none of the fifteen is in `OPS`, `NEEDS`, `OP_STAMPS`, either session set, `REAUTH_ACTS`, any family's kinds or `OP_ALIASES` (key or value). Control: `setpassword` keeps its spec and `credentials`' family; `memberadd` keeps its `REAUTH_ACTS` row.
+
 ## Private
 
 ### Uses

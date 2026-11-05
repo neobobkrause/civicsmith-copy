@@ -374,7 +374,8 @@ const OP_FAMILIES = Object.freeze({
      reference, the group's API key, the subscription disconnected, the keep-away, `accountusesset` with its reads, and
      a project's account — form a family of `ai-accounts`' own (`T48_FAMILIES`, `t48.mjs`), their names, specs, session
      sets, `NEEDS` rows, stamps and act lists unchanged; this family keeps the rest, `aigrantmint` among them
-     (`AI_GRANT_OPS` stays `credentials`'). */
+     (`AI_GRANT_OPS` stays `credentials`').
+     T53 (op-grades R57; F2): the alpha's `subscriptionsignin` leaves this family and every hand table here (no alias). */
   credentials: family({ owner: "credentials", cite: "credentials R3, R27, R39, R43, R45–R47, R51; K1544; R20, R30, R36, R39, R68", actor: QUERY("by"),
     extra: { aigrantmint: ["member", "session"],
              signout: ["session"], signouteverywhere: ["session"], securitymap: ["by"], recoverycodesstate: ["by"],
@@ -382,7 +383,7 @@ const OP_FAMILIES = Object.freeze({
     aigrantmint: "own", keyedserviceset: "admin", keyedserviceswitch: "admin", keyedservices: "read",
     signout: "sessionend", signouteverywhere: "sessionend", securitymap: "ownread", recoverycodesissue: "admin",
     recoverycodesstate: "ownread", recover: "door",
-    subscriptionsignin: "own", setpassword: "own" } }),
+    setpassword: "own" } }),
   /* sources (K1550): marking a capture as from a keyed service, its capturer's own act (MACHINE_CANNOT_MARK, R16, R18). */
   sources: family({ owner: "sources", cite: "sources R16, R18; K1550", actor: QUERY("by"), ops: { sourcekeyed: "member" } }),
   /* entities (K1572; R18): a scheme identifier, `resolutiondefect`'s stamp; a machine on a system rule's basis (R43).

@@ -221,8 +221,9 @@ test("R6 (T35; N703, K2038): credentials' securitycount, the in-plane write of i
   assert.ok(!inNoTable("securitymap"));
 });
 
-test("R27, R30 (T37: R27's T35 sentence retired, R36; restated for T53, ai-accounts R35, BOB 4 Nov): subscriptionsignin is declared under its own name in credentials' family, and no alias names it; the member's own subscription disconnect is retired with no alias: in no family and no table", () => {
-  assert.ok(!inNoTable("subscriptionsignin") && OP_FAMILIES.credentials.kinds.subscriptionsignin === "own");
+test("R27, R30 (T37: R27's T35 sentence retired, R36; restated for T53, ai-accounts R35, BOB 4 Nov; F2): subscriptionsignin is in no family here (op-grades R57), and no alias names it; the member's own subscription disconnect is retired with no alias: in no family and no table", () => {
+  /* T53 (op-grades R57; F2): subscriptionsignin, the alpha's sign-in, leaves credentials' family and every family here */
+  for (const f of Object.values(OP_FAMILIES)) assert.ok(!Object.hasOwn(f.kinds, "subscriptionsignin"), f.owner);
   assert.ok(!Object.hasOwn(OP_ALIASES, "subscriptionsignin") && !Object.values(OP_ALIASES).includes("subscriptionsignin"));
   /* T48 (R68) moved the disconnection to ai-accounts; T53 retires it (ai-accounts R35): in no family and no table */
   assert.ok(!Object.hasOwn(OP_FAMILIES["ai-accounts"].kinds, "subscriptiondisconnect"));

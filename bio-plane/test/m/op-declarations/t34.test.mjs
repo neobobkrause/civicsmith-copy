@@ -354,9 +354,10 @@ test("R24, R20 (T41, DEC-188 (8): groupswitchset retired to R41's accountusesset
   assert.deepEqual(plain(OPS.ask), { classes: ["admin", "member"], machineClasses: [], mutating: true });
   /* no op names a group- or project-level subscription */
   for (const op of Object.keys(OPS)) assert.doesNotMatch(op, /^(group|project|instance)subscription|^project(claude|credential)/, op);
-  /* T37 (R36): the member's own sign-in stays credentials'; the disconnection is retired (T53) */
-  assert.deepEqual(Object.keys(OPS).filter((op) => /subscription/.test(op)).sort(), ["subscriptionsignin"]);
-  assert.equal(OP_FAMILIES.credentials.kinds.subscriptionsignin, "own");
+  /* T37 (R36): the member's own sign-in was credentials'; the disconnection is retired (T53); T53 (op-grades R57; F2): the
+     sign-in is in no family here, so OPS holds it only as another owner's DECLARED_OPS row while that owner keeps one */
+  for (const op of Object.keys(OPS).filter((o) => /subscription/.test(o))) assert.equal(op, "subscriptionsignin");
+  for (const f of Object.values(OP_FAMILIES)) assert.ok(!Object.hasOwn(f.kinds, "subscriptionsignin"), f.owner);
   /* negative control: a declared op is seen as in a table */
   assert.ok(!inNoTable("aiaccountadd"));
 });

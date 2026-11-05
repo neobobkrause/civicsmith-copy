@@ -115,8 +115,7 @@ const SERVED_ELSEWHERE = { clockpropose: "control-plane (T33-89)",
      setting, the acquisition instance's two methods the door routes (control-plane R58) */
   adminrecoverystep: "instance-setup (T35-69)", coarchiveset: "control-plane (T35-72)",
   coarchivestate: "control-plane (T35-72)",
-  /* T37 (R36): the member's own sign-in is the control plane's route to the member's own runner (agent-worker R66) */
-  subscriptionsignin: "control-plane (T37-33)",
+  /* T37 (R36): the member's own sign-in was the control plane's route; T53 (op-grades R57; F2): it is in no family here */
   /* T37 (R35, R37): the interface's translation, built by instance-setup's T37 job beside this one (its R67, R69–R74;
      the draft routed through the control plane's third draft, T37-33) */
   translationdraft: "instance-setup (T37-30)", translationgrant: "instance-setup (T37-30)",
