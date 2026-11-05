@@ -1,0 +1,39 @@
+{
+  "id": "screens-investigate",
+  "title": "screens-investigate: consolidate its requirements file under the cap",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/screens-investigate/",
+    "build/requirements/screens-investigate.md",
+    "docs/requirements-notes/screens-investigate.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-investigate/"
+  ],
+  "requirements": "build/requirements/screens-investigate.md",
+  "uses": [
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "test-support",
+    "store-request"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/screens-investigate.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T08:40:00Z"
+  }
+}
