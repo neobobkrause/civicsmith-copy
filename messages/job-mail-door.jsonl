@@ -1,1 +1,2 @@
 {"at":"2026-11-05T05:07:45Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job mail-door complete, PR #428 ready, session session_01RAN5eoRtBS1mAtbk4Eydpe: run status"}
+{"at":"2026-11-05T05:07:56Z","row":"outcome","n":1,"outcome":"delivered"}
