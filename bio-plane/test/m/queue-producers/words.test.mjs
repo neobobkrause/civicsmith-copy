@@ -187,21 +187,19 @@ test("R43 (R4–R7): contradiction items read .detail.open, .taken_up and .expla
   assert.equal(m["FINDING::tension-after-publication::CASE-2::CC-O"].detail, word(`${C("tension-after-publication")}.detail`));
 });
 
-test("R43 (R14): signer-self-registered reads .summary, .summary.comment, .summary.unnamed and .summary.unnamed.comment by whether a member and a comment are named", () => {
+test("R43, R57 (R14 as R56 amends it): signer-self-registered reads .summary or .summary.unnamed by whether a member is named, and .detail; the comment travels on its key's line", () => {
   /* credentials is a fake here: its real rows always name a member, and the unnamed forms are for a row that names none */
   const keys = [{ key_b64: "KEY-1", member_id: "kim", registered_by: "kim", comment: "laptop", status: "active", origin: "self", added: iso(NOW) },
-                { key_b64: "KEY-2", member_id: "kim", registered_by: "kim", comment: null, status: "active", origin: "self", added: iso(NOW) },
-                { key_b64: "KEY-3", member_id: "", registered_by: "not recorded", comment: "kiosk", status: "active", origin: "self", added: iso(NOW) },
-                { key_b64: "KEY-4", member_id: "", registered_by: "not recorded", comment: null, status: "active", origin: "self", added: iso(NOW) }];
+                { key_b64: "KEY-3", member_id: "", registered_by: "not recorded", comment: null, status: "active", origin: "self", added: iso(NOW) }];
   const w = busy({ credentials: { signerList: () => ({ ok: true, signers: keys }) } });
   const m = byId(w.read("alice"));
   const S = (key) => `${K("signer-self-registered")}.${key}`;
-  assert.equal(m["OBLIGATION::signer-self-registered::KEY-1"].summary, word(S("summary.comment"), { member: "kim", comment: "laptop" }));
-  assert.equal(m["OBLIGATION::signer-self-registered::KEY-2"].summary, word(S("summary"), { member: "kim" }));
-  assert.equal(m["OBLIGATION::signer-self-registered::KEY-2"].summary_key, S("summary"));
-  assert.equal(m["OBLIGATION::signer-self-registered::KEY-3"].summary, word(S("summary.unnamed.comment"), { comment: "kiosk" }));
-  assert.equal(m["OBLIGATION::signer-self-registered::KEY-4"].summary, word(S("summary.unnamed")));
-  for (const id of ["KEY-1", "KEY-2"]) assert.equal(m[`OBLIGATION::signer-self-registered::${id}`].detail, word(S("detail")));
+  const kim = m["OBLIGATION::signer-self-registered::kim"];
+  assert.equal(kim.summary, word(S("summary"), { member: "kim" }));
+  assert.equal(kim.summary_key, S("summary"));
+  assert.equal(kim.detail, word(S("detail")));
+  assert.equal(kim.lines[0].comment, "laptop");
+  assert.equal(m["OBLIGATION::signer-self-registered::"].summary, word(S("summary.unnamed")));
 });
 
 test("R43 (R23): attribution-unchosen names the case and the observation by its title else its id, and the edition in its detail", () => {
