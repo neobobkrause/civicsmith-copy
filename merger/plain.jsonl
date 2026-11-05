@@ -80,3 +80,4 @@
 {"at":"2026-11-05T17:02:50Z","row":"renew","id":"4efdde7dfd8a","pr":524}
 {"at":"2026-11-05T17:03:07Z","row":"renew","id":"fa385cf7ce0e","pr":515}
 {"at":"2026-11-05T17:04:09Z","row":"renew","id":"4752048325ad","pr":516}
+{"at":"2026-11-05T17:04:37Z","row":"queue","id":"73c953f274c0","pr":521,"head":"4882bccfedea4b92bea407fe23e81ac7c507ae41","ref":"p3/pin-f339ba9607","by":"session_018Bhcee9oeEB1Huxm8FqiN1","reviewed":null,"no_review":"a process pin move; the fix was reviewed in process3","rounds":0,"decision":null,"as":"pin","take_by":"2026-11-05T20:14:37.959Z","renews":true}
