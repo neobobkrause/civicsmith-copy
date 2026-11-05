@@ -43,8 +43,7 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: capture-requests:182 (index.mjs:667 the capture-completed-unattended producer reads a request's attribution, whose principal now comes from the run's principal_ai). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T03:03:45Z",
-    "reason": "reopened: answer the provider notice capture-requests:359"
+    "state": "COMPLETE",
+    "at": "2026-11-05T03:16:03Z"
   }
 }
