@@ -49,8 +49,7 @@
   ],
   "prior_work": "First, consolidate build/requirements/screens-action.md (89043 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/screens-action.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/screens-action.md is unchanged by the move (compare against the ids at the start commit). Then do the provider-notice work this START lists: for each notice, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal (new module ids, build/modules.json rows, build/layers.md). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T04:48:40Z",
-    "reason": "reopened: answer action-grammar's R31 shape (governingLawsOf answers {level, citation, layer}, layer null when absent; PR 396, job/action-grammar d0def7c5): bio-plane/test/m/screens-action/seam-t51.test.mjs:54 (walk, reached from :99 and :107, the two 'R20, R4, R9' C64 tests) expects stored [{level:'federal', citation:'5 U.S.C. § 552'}]; add layer: null to its expected entry so it is green both on tranche and with PR 396 (coordinator ruling 5 Nov 04:36, back to back with action-grammar)"
+    "state": "COMPLETE",
+    "at": "2026-11-05T04:58:36Z"
   }
 }
