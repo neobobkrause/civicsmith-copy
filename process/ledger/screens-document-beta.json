@@ -4,7 +4,8 @@
   "layer": 11,
   "paths": [
     "build/requirements/screens-document-beta.md",
-    "docs/requirements-notes/screens-document-beta.md"
+    "docs/requirements-notes/screens-document-beta.md",
+    "bio-plane/src/screens-inquiry/document.mjs"
   ],
   "tests": [
     "bio-plane/test/m/screens-document-beta/"
