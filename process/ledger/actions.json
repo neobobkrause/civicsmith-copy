@@ -1,0 +1,59 @@
+{
+  "id": "actions",
+  "title": "actions: answer action-grammar R31 shape (acts.test.mjs:108)",
+  "layer": 9,
+  "paths": [
+    "bio-plane/src/actions/",
+    "build/requirements/actions.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/actions/"
+  ],
+  "requirements": "build/requirements/actions.md",
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "connections",
+    "retrieval",
+    "inquiry",
+    "conformance",
+    "entities",
+    "lines",
+    "events",
+    "standards",
+    "duties",
+    "action-grammar",
+    "progressions",
+    "intent",
+    "consequences",
+    "project-roster",
+    "local-facts",
+    "action-records",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/actions.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T05:12:15Z"
+  }
+}

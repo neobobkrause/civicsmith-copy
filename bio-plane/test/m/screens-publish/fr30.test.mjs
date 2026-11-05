@@ -262,7 +262,7 @@ test("R63 R65 a draft naming no case says so in the fold by review's sentence; t
 });
 
 test("R8 the assistant helps with the docket entry's summary only while it is reachable: it sends the summary for docketfile and draws wizard-scripts' real refusal in its words, the field left as typed (B17; B420 2); not reachable draws no help (control)", async () => {
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   /* the real `writinghelp` never returns a draft (K5212): the draft already held in the field, or the assistant unreachable */
   for (const which of ["held", "unreachable"]) {
     const answer = await provided.writinghelp(which);
@@ -282,7 +282,7 @@ test("R8 the assistant helps with the docket entry's summary only while it is re
 });
 
 test("R8 the summary's help sends nothing when nothing was typed (control)", async () => {
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   const p = await open(DOCKET, { plane: { ...reach, writinghelp: await provided.writinghelp("held") } });
   await press(p, "writinghelp", { values: { "dk-summary": "" } });
   assert.equal(p.byOp("writinghelp").length, 0);

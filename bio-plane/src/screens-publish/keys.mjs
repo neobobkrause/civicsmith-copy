@@ -78,10 +78,13 @@ export const SCREEN_KEYS = Object.freeze({
     "act.casedrafts.label.review-copy", "act.casedrafts.does", "screen.review-copy.drafts.help", "screen.review-copy.drafts.choose", "screen.review-copy.drafts.newest", "screen.review-copy.drafts.item", "screen.review-copy.links.heading", "screen.review-copy.links.note", "screen.review-copy.links.help", "case.draft.untitled",
   ]),
   ceremony: Object.freeze([
+    "screen.ceremony.ungraded.head", "screen.ceremony.ungraded.lead", "screen.ceremony.ungraded.row", "screen.ceremony.ungraded.grade",
+    "screen.ceremony.ungraded.note", "act.leggrade.label.ceremony", "act.leggrade.does", "screen.question.leggrade.head", "shell.reason",
+    "capture.fieldneeded", "shell.reason.needed",
     "shell.signer.loadfile", "shell.signer.load", "member.founder.unnamed", "shell.card.member",
     "refusal.NOT_THE_PROJECT_OWNER", "refusal.PROJECT_ACT_NOT_THE_OWNER",
     "screen.case-editor.details.name.area", "screen.case-editor.details.name.contact", "screen.case-editor.details.name.related", "screen.case-editor.details.name.relationships", "screen.case-editor.details.stated", "screen.ceremony.conf.self.tick", "case-inputs.details.not_stated",
-    "state.loading", "state.empty", "state.failed", "refusal.uncatalogued", "screen.ceremony.name", "screen.ceremony.purpose",
+    "state.loading", "state.empty", "state.failed", "shell.noanswer", "refusal.uncatalogued", "screen.ceremony.name", "screen.ceremony.purpose",
     "act.publishpreflight.label.ceremony", "act.publishpreflight.does", "act.publishtensions.label.ceremony",
     "act.publishtensions.does", "act.caseratify.label.ceremony", "act.caseratify.does", "act.publish.label.ceremony",
     "act.publish.does", "act.publishat.label.ceremony", "act.publishat.does", "act.obscuremark.label.ceremony",
@@ -179,7 +182,7 @@ export const SCREEN_KEYS = Object.freeze({
   ]),
   imported: Object.freeze([
     "refusal.IMPORT_ACCEPT_NO_REASON", "refusal.IMPORT_NOTHING_ACCEPTED",
-    "act.writinghelp.label.imported", "act.writinghelp.does", "screen.start-send.draft.machine", "refusal.IMPORTED_NOT_ACCEPTED",
+    "act.writinghelp.label.imported", "act.writinghelp.does", "screen.start-send.draft.machine", "refusal.IMPORTED_NOT_ACCEPTED", "refusal.BASIS_REFUSED",
     "screen.published.finding", "state.loading", "state.empty", "state.failed", "refusal.uncatalogued", "screen.imported.name", "screen.imported.purpose",
     "act.caseimport.label.imported", "act.caseimport.does", "act.importaccept.label.imported",
     "act.importaccept.does", "act.importflag.label.imported", "act.importflag.does", "act.importwatch.label.imported",
@@ -229,7 +232,7 @@ export const SCREEN_KEYS = Object.freeze({
     "shell.unavailable.nothing.title",
   ]),
   doorbell: Object.freeze([
-    "refusal.SECRET_NOT_RECOGNISED",
+    "refusal.SECRET_NOT_RECOGNISED", "screen.doorbell.preview.head", "screen.doorbell.after.head",
     "screen.doorbell.secret.make", "screen.doorbell.secret.make.help", "screen.doorbell.receipt.fingerprint", "screen.doorbell.receipt.fingerprint.help", "screen.doorbell.receipt.size", "screen.doorbell.receipt.pseudonym", "screen.doorbell.receipt.pseudonym.help", "screen.doorbell.receipt.secret", "screen.doorbell.receipt.secret.note",
     "state.loading", "state.empty", "state.failed", "refusal.uncatalogued", "screen.doorbell.name", "screen.doorbell.purpose",
     "act.knock.label.doorbell", "act.knock.does", "screen.doorbell.file.help", "screen.doorbell.file.label",
