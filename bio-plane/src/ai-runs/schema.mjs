@@ -2,7 +2,7 @@
  * module's extraction (T40-8, K624: the use counter and the ceilings moved to `ai-use`, which declares and migrates them, its R7). `lens_at_open`, `rerun_of` and `plan` (R46) are additive columns of the store's migration; they are part of the
  * table here, and `migrate` adds them to a table created before them. */
 export const AI_RUNS_TABLES = Object.freeze(["ai_runs", "ai_run_bounds", "inquiry_run_surfacings",
-  "ai_mode_verifications", "ai_run_looks", "ai_test_bar", "ai_group_tests", "ai_run_segments", "ai_run_producers"]);
+  "ai_mode_verifications", "ai_run_looks", "ai_test_bar", "ai_group_tests", "ai_run_segments", "ai_run_producers", "ai_gate_records"]);
 /* T41 (T41-23): `step` and `origin` (R73), and `own_step` ('1' when `step` is the run's own system step, made by this
    module after the open, R73, R74) are additive columns, added by `migrate` to a table created before them. A run's
    cost is not kept here: its figures are `ai-use`'s, one store (R76, K2482). */
@@ -151,6 +151,17 @@ CREATE TABLE IF NOT EXISTS ai_test_bar (
   -- result recorded before T53, which measured no entry and withdraws none.
   entry_id          TEXT
 );
+-- R75 (T53; coordinator ruling 5 Nov 03:50): the Gate 1 records ai-gate builds (its R37 gateRecord), written here as
+-- given, judged by run-rules' checkGateRecord; append-only, read per (entry, part) by R78's partAdmitted.
+CREATE TABLE IF NOT EXISTS ai_gate_records (
+  seq       INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_id  TEXT NOT NULL,
+  part      TEXT NOT NULL,
+  verdict   TEXT NOT NULL,
+  at        TEXT NOT NULL,
+  record    TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ai_gate_records_entry ON ai_gate_records(entry_id, part, seq);
 -- R75: a group's own test investigations, each a matter with the answers its members wrote.
 CREATE TABLE IF NOT EXISTS ai_group_tests (
   part     TEXT NOT NULL,
