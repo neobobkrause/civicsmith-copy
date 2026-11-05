@@ -12,3 +12,4 @@
 {"at":"2026-11-05T09:19:54Z","row":"takeover","session":"session_018BhcedwsJZrL1WAAcugNk7","from":"session_018BhcedwsJZrL1WAAcugNk7","expired":"2026-11-05T09:17:19Z"}
 {"at":"2026-11-05T09:50:19Z","row":"takeover","session":"session_018BhcedwsJZrL1WAAcugNk7","from":"session_018BhcedwsJZrL1WAAcugNk7","expired":"2026-11-05T10:00:16Z","dead":{"pid":27568,"boot":"8b7a462c-067b-4d53-b921-1c519ff55360","started":"491334"}}
 {"at":"2026-11-05T10:07:03Z","row":"context","session":"session_018BhcedwsJZrL1WAAcugNk7","context":17}
+{"at":"2026-11-05T10:49:25Z","row":"release","session":"session_018BhcedwsJZrL1WAAcugNk7"}
