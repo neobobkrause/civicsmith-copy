@@ -44,7 +44,7 @@ import { biasOf } from "../bias/index.mjs";
 /* The extent grammar is content's face (N99): its `extentRelation` holds D-670's space rule and the `envelope` kind,
    which the retired check catalogue's copy (legacy-checks) did not. */
 import { contentOf, mintLabel, contentMintState, CONTENT_MINTED_BY_PLANE, legContentId, legExtent, canonicalExtent,
-         describeExtent, extentRelation, CONTENT_EXTENT_CHECKS } from "../content/index.mjs";
+         describeExtent, extentRelation, CONTENT_EXTENT_CHECKS, CONTENT_EARNED_MAX } from "../content/index.mjs";
 import { acceptedWorkOf, ACCEPTED_WORK_CHECKS } from "../accepted-work/index.mjs";
 /* the version grammar is `basis-version-grammar`'s (T51, CR-9; K624, K3946): imported, and re-exported whole below so
    every reader of this module's names keeps them (K3268) */
@@ -69,6 +69,10 @@ export { BASIS_VERSIONS_SCHEMA, BASIS_VERSIONS_TABLES } from "./schema.mjs";
 export const BASIS_VERSIONS_LIMIT_DEFAULT = 200;
 export const BASIS_VERSIONS_LIMIT_MAX = 1000;
 export const BASIS_VERSION_LEGS_MAX = 500;
+/** R59: the keys of a typed leg's label as of the reading, this module's (the words are the design stream's), read by
+ *  `case-disclosures` R39. */
+export const TYPED_FROZEN_UNCHECKED_KEY = "content.typed.frozen.unchecked";
+export const TYPED_FROZEN_CHECKED_KEY = "content.typed.frozen.checked";
 /** R25: candidates listed per source. */
 export const NARROW_CANDIDATES_MAX = 50;
 /** R37: projects named per inquiry. */
@@ -489,6 +493,54 @@ export class BasisVersions {
     });
   }
 
+  /** R59 (T53; DEC-464): a leg whose content row is a member's typing carries who typed and checked it as of the
+   *  reading (`typed_at_freeze`: only members other than the typist whose attestation is at or before the version's
+   *  `at`, in time order, by the team's handles) and as of now (`typed`, content R64's block). Derived here at the read
+   *  from content; nothing is stored in the version (R7, R29). A checker whose instant is not kept is listed under
+   *  `undetermined`, never placed before or after. A typing the viewer may not read carries neither. */
+  #typedLegs(versions, viewer) {
+    const c = this.content;
+    if (!c || typeof c.transcriptionRead !== "function") return;
+    const ids = new Set();
+    for (const v of versions) for (const l of v.legs || []) if (typeof l.content_id === "string" && l.content_id) ids.add(l.content_id);
+    if (!ids.size) return;
+    /* the typings among the cited rows, in content's bounded batch read; a handle read only for those */
+    const typedIds = new Set();
+    const all = [...ids];
+    if (typeof c.standings === "function")
+      for (let i = 0; i < all.length; i += CONTENT_EARNED_MAX)
+        for (const [cid, s] of Object.entries(c.standings(all.slice(i, i + CONTENT_EARNED_MAX)) || {}))
+          if (s && s.typed) typedIds.add(cid);
+    if (!typedIds.size) return;
+    const reads = new Map();
+    for (const cid of typedIds) {
+      const t = c.transcriptionRead({ id: cid, viewer });
+      if (t && t.ok && t.typed) reads.set(cid, t);
+    }
+    const instant = (x) => (typeof x === "string" && x ? Date.parse(x) : NaN);
+    for (const v of versions) {
+      const frozenAt = instant(v.at);
+      for (const l of v.legs || []) {
+        const t = reads.get(l.content_id);
+        if (!t) continue;
+        const checked_by = [], undetermined = [];
+        const others = (t.attestations || []).filter((a) => a.attestor !== t.transcriber)
+          .slice().sort((x, y) => String(x.at ?? "").localeCompare(String(y.at ?? "")) || String(x.attestor).localeCompare(String(y.attestor)));
+        for (const a of others) {
+          const when = instant(a.at);
+          if (Number.isNaN(when) || Number.isNaN(frozenAt)) undetermined.push({ checker: a.attestor, at: a.at ?? null });
+          else if (when <= frozenAt) checked_by.push({ checker: a.attestor, at: a.at });
+        }
+        l.typed_at_freeze = {
+          typist: t.transcriber, checked_by,
+          ...(undetermined.length ? { undetermined } : {}),
+          label_key: checked_by.length ? TYPED_FROZEN_CHECKED_KEY : TYPED_FROZEN_UNCHECKED_KEY,
+        };
+        l.typed = t.typed;
+      }
+    }
+  }
+
   /** R8–R11 (`op=basisversions`). Hidden versions are returned, flagged (DEC-29(b)); a version is whole or absent
    *  (the bound counts VERSIONS); an inquiry the viewer may not see answers exactly as one with no versions, and
    *  `inquiry_present` appears only when it is visible. The run a version names is reported, never joined (§14b.7). */
@@ -526,6 +578,7 @@ export class BasisVersions {
         leg_count: rec.leg_count, legs_complete: rec.legs_complete, legs: rec.legs,
       };
     });
+    this.#typedLegs(versions, viewer);
     const concRec = project ? this.conclusionRecordOf(project, inq, viewer) : null;
     return {
       ok: true, inquiry: inq, ...(present ? { inquiry_present: true } : {}),
