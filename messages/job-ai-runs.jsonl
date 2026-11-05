@@ -29,3 +29,4 @@
 {"at":"2026-11-05T01:10:29Z","row":"sent","n":16,"to":"bob","text":"job ai-runs complete, PR #348 ready, session session_01RAN5ep4EDaVhJrTTsJVrNH: run status"}
 {"at":"2026-11-05T01:10:39Z","row":"outcome","n":16,"outcome":"delivered"}
 {"at":"2026-11-05T03:43:19Z","row":"sent","n":17,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (9 jobs ready). Then: job ai-runs BLOCKED: run status"}
+{"at":"2026-11-05T03:43:33Z","row":"outcome","n":17,"outcome":"delivered"}
