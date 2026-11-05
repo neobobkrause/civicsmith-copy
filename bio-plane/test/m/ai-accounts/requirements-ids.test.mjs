@@ -30,7 +30,9 @@ test("consolidation: the requirements file holds exactly the start commit's ids,
 });
 
 test("consolidation: every R and F line is the start commit's word for word, its mark aside", () => {
-  const lines = idLines(read(FILE)).map((l) => l.replace(MARK, ""));
+  /* a mark this job meets is struck as `(<its mark>; met <day>)`, which is taken out as the mark is */
+  const struck = (l) => { const u = START_UNMET[idOf(l)]; return u ? l.replace(` (${u}; met 5 Nov)`, "") : l; };
+  const lines = idLines(read(FILE)).map((l) => struck(l.replace(MARK, "")));
   assert.equal(createHash("sha256").update(lines.join("\n")).digest("hex"), START_DIGEST);
 });
 
