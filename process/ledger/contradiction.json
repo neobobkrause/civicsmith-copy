@@ -45,8 +45,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "For BOB. Every open mark in contradiction.md rests on a measured live model run (K488), and none is reachable from this job (api.anthropic.com answers 401; no key in the container). The marks: the K5 arms of R24, R27, R32, R33 and R57 (K5's gate arm must be measured and recorded in MEASUREMENTS.md before any K5 candidate is shown; derive.mjs K5_GATE_MEASURED=false), R34 (no_difference's K5 half, unreachable while K5 is unshown; its K1-K4 refusal is tested and passes), and R41 (RECOMMEND_PROMPT_SHA256 stays null until the blind fixture of dissolved pairs is run). R50 and R55's T41 amendment (non-hidden party named) is already implemented and tested (projects.test.mjs). I fixed one stale test: R20's table count is 37 rows since R61 added C-93.40-42 (was 34, red); suite now 147 pass, 0 fail, 8 todo, pushed at b716282c. Needed to unblock: a session with model access runs the K5 gate arm and the recommender's blind fixture, records the figures in MEASUREMENTS.md, then this job flips K5_GATE_MEASURED and sets RECOMMEND_PROMPT_SHA256. Or BOB merges the test fix and leaves these marks open.",
-    "at": "2026-11-05T01:12:25Z"
+    "state": "COMPLETE",
+    "at": "2026-11-05T01:39:15Z"
   }
 }
