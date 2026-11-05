@@ -2,7 +2,9 @@
    START_BLOCKS is each R line of build/requirements/interface-shell.md at the start commit (7b41d33c), with its indented
    lines beneath, by sha256. At the head each id is present once, its block unchanged word for word, except that a mark this
    branch met may be struck (STRUCK: the mark text removed, nothing else); the unmet marks are the start's less STRUCK; and
-   the text moved out is in docs/requirements-notes/interface-shell.md word for word. */
+   the text moved out is in docs/requirements-notes/interface-shell.md word for word.
+   Attempt 4 (walk p3dev-t1, 4 Nov): found marks (F ids) are admitted. Every R id, block and unmet R mark stays pinned to the start commit;
+   an F id is new requirement text, held once each, and its mark is checked for its form only. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -183,12 +185,34 @@ const START_BLOCKS = {
 const REQ = read("build/requirements/interface-shell.md");
 const NOTES = read("docs/requirements-notes/interface-shell.md");
 
-test("the consolidation keeps the set of requirement ids: every id at the start commit, and no other", () => {
-  assert.deepEqual([...blocks(REQ).keys()].sort(), Object.keys(START_BLOCKS).sort());
+const isR = (id) => id.startsWith("R");
+
+test("the consolidation keeps the set of requirement ids: every R id at the start commit, and no other R id", () => {
+  assert.deepEqual([...blocks(REQ).keys()].filter(isR).sort(), Object.keys(START_BLOCKS).sort());
+});
+
+/* this branch's found marks (attempt 4, walk p3dev-t1; F4 at BOB's word after the review), pinned as the R ids are: each held, in this order, and the unmet ones exactly these,
+   each with its mark; a later found mark is admitted after them (F5 on), numbered on with no gap */
+const BRANCH_F = ["F1", "F2", "F3", "F4"];
+const BRANCH_F_UNMET = { F2: "*(not yet met: walk p3dev-t1 4 Nov)*", F4: "*(not yet met: walk p3dev-t1 4 Nov; R103 placement has no clear place)*" };
+
+test("this branch's found marks F1-F4 are each held, in order, and only F2 and F4 are unmet, each with its mark; a later F id is admitted after them, numbered on from F5 with no gap, and an unmet one carries a mark of the form `*(not yet met: <where>)*`", () => {
+  const fs = [...blocks(REQ)].filter(([id]) => !isR(id));
+  const ids = fs.map(([id]) => id);
+  assert.deepEqual(ids.slice(0, BRANCH_F.length), BRANCH_F, "F1-F4 held, in order");
+  assert.deepEqual(ids, ids.map((_, i) => "F" + (i + 1)), "numbered on with no gap");
+  for (const [id, text] of fs) {
+    const first = text.split("\n")[0];
+    if (BRANCH_F.includes(id)) {
+      if (Object.hasOwn(BRANCH_F_UNMET, id)) assert.ok(first.includes(BRANCH_F_UNMET[id]), id + " keeps its mark");
+      else assert.equal(first.includes(MARK), false, id + " is met");
+    } else if (first.includes(MARK)) assert.match(first, /\*\(not yet met: [^)]+\)\*/, id + "'s mark");
+  }
 });
 
 test("every requirement is word for word as at the start commit, with its lines beneath; a struck mark is the one change", () => {
   for (const [id, text] of blocks(REQ)) {
+    if (!isR(id)) continue;
     if (Object.hasOwn(STRUCK, id)) {
       assert.equal(text.includes(MARK), false, id + " is struck");
       const first = text.split("\n")[0];
@@ -199,8 +223,8 @@ test("every requirement is word for word as at the start commit, with its lines 
   }
 });
 
-test("the unmet marks are the start commit's, less those this branch struck; control: no mark is added", () => {
-  const unmet = [...blocks(REQ)].filter(([, t]) => t.split("\n")[0].includes(MARK)).map(([id]) => id);
+test("the unmet R marks are the start commit's, less those this branch struck; control: no R mark is added", () => {
+  const unmet = [...blocks(REQ)].filter(([id, t]) => isR(id) && t.split("\n")[0].includes(MARK)).map(([id]) => id);
   assert.deepEqual(unmet, START_UNMET.filter((id) => !Object.hasOwn(STRUCK, id)));
 });
 

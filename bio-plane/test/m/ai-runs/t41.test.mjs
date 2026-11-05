@@ -52,7 +52,7 @@ test("R73 (K2490): an exploring run names its system step's place and work and i
   const code = async (o) => (await w.runs.open(OPEN({ run: "S", ...o }))).code;
   const own = { place: f.place, work: "find the fee schedule" };
   assert.equal(await code({ origin: "elsewhere" }), "AI_RUN_ORIGIN_UNKNOWN");
-  assert.equal(await code({ origin: "explore", ...own }), "AI_RUN_EXPLORE_NOT_DEPLOYABLE", "check not yet verified live");
+  assert.equal(await code({ origin: "explore", enabledBy: ANN, ...own }), "AI_RUN_EXPLORE_NOT_DEPLOYABLE", "check not yet verified live");
   assert.equal(await code({ step: f.unknown }), "AI_RUN_STEP_UNKNOWN");
   assert.equal(await code({ step: unseen }), "AI_RUN_STEP_UNKNOWN", "seen by another viewer only");
   assert.equal(await code({ step: seen, ...own }), "AI_RUN_STEP_UNKNOWN", "a run works one step");
@@ -63,13 +63,13 @@ test("R73 (K2490): an exploring run names its system step's place and work and i
   assert.equal(w.runs.verificationRecord({ mode: "check", run: "V", evidence: ["seen live: the run checked the fee table"], by: "member:ann", at: T0 }).ok, true);
   const mid = w.dump();
   assert.equal(await code({ origin: "explore" }), "AI_RUN_EXPLORE_NEEDS_STEP");
-  assert.equal(await code({ origin: "explore", step: seen }), "AI_RUN_EXPLORE_NEEDS_STEP", "explore names no step (K2490)");
+  assert.equal(await code({ origin: "explore", enabledBy: ANN, step: seen }), "AI_RUN_EXPLORE_NEEDS_STEP", "explore names no step (K2490)");
   /* a step steps refuses rolls the run back: nothing written */
-  const refused = await w.runs.open(OPEN({ run: "X", origin: "explore", place: own.place, work: " " }));
+  const refused = await w.runs.open(OPEN({ run: "X", origin: "explore", enabledBy: ANN, place: own.place, work: " " }));
   assert.deepEqual([refused.started, refused.code], [false, "STEP_NO_WORK"]);
   assert.equal(w.dump(), mid, "the run steps refused to give a step was not opened");
   /* control: it opens; its step is the system's, made after the open by the run's own identity */
-  const x = await w.runs.open(OPEN({ run: "X", origin: "explore", ...own }));
+  const x = await w.runs.open(OPEN({ run: "X", origin: "explore", enabledBy: ANN, ...own }));
   assert.deepEqual([x.started, x.origin, typeof x.step], [true, "explore", "string"], JSON.stringify(x));
   const made = f.acts.filter(([a]) => a === "stepCreate").pop()[1];
   assert.deepEqual(made, { ...own, run: "X", by: SYS("X") });
@@ -91,7 +91,7 @@ test("R73: a step-run's looks name authority step and its log and rollup read th
   const seen = f.world.step();
   await w.runs.open(OPEN({ run: "V" }));
   w.runs.verificationRecord({ mode: "check", run: "V", evidence: ["seen live"], by: "member:ann", at: T0 });
-  const own = { origin: "explore", place: f.place, work: "find the fee schedule" };
+  const own = { origin: "explore", enabledBy: ANN, place: f.place, work: "find the fee schedule" };
   const x = await w.runs.open(OPEN({ run: "X", ...own }));
   assert.equal(x.started, true, JSON.stringify(x));
   await w.runs.open(OPEN({ run: "S", step: seen }));
@@ -239,7 +239,7 @@ test("R73, R74 over the real steps module (K2490; J5 (8), (9)): an exploring run
   const steps = stepsOf(w.ctx);
   await w.runs.open(OPEN({ run: "V" }));
   w.runs.verificationRecord({ mode: "check", run: "V", evidence: ["seen live"], by: "member:ann", at: T0 });
-  const x = await w.runs.open(OPEN({ run: "X", origin: "explore", place: { questions: [INQ] }, work: "find the fee schedule" }));
+  const x = await w.runs.open(OPEN({ run: "X", origin: "explore", enabledBy: ANN, place: { questions: [INQ] }, work: "find the fee schedule" }));
   assert.equal(x.started, true, JSON.stringify(x));
   const made = steps.step({ step: x.step, viewer: "admin" });
   assert.deepEqual([made.doer, made.enabled_by, made.state], ["system", "member:ann", "planned"]);

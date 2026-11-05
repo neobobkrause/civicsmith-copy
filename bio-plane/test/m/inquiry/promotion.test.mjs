@@ -124,7 +124,8 @@ test("R36 the module's tables carry bundle_id and are declared to record-core's 
     `contradiction:\n  candidate: ${"c".repeat(64)}\n---\n\n## Question`)).ok, true);
   assert.deepEqual(INQUIRY_TABLES, ["inquiry_exclusions", "inquiry_migration_replays", "inquiry_member_agents",
                                     "inquiry_contradiction_links", "inquiry_bundle_facts", "inquiry_findings",
-                                    "inquiry_dated_waits", "inquiry_person_warnings", "inquiry_ground_changes"]);
+                                    "inquiry_dated_waits", "inquiry_person_warnings", "inquiry_ground_changes",
+                                    "inquiry_subject_changes", "inquiry_owners"]);
   /* T33 (plan Rules (6)): each declared explicitly, with the default form's classes, the sight of the bundle it names,
      and the dated waits told to their setter alone */
   const declared = w.record.declaredTables().filter((d) => d.module === "inquiry");

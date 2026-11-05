@@ -1,0 +1,51 @@
+{
+  "id": "contradiction",
+  "title": "contradiction: its unmet requirements",
+  "layer": 6,
+  "paths": [
+    "bio-plane/src/contradiction.mjs",
+    "bio-plane/src/contradiction/",
+    "build/requirements/contradiction.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/contradiction/"
+  ],
+  "requirements": "build/requirements/contradiction.md",
+  "uses": [
+    "retrieval",
+    "record-grammar",
+    "civil-time",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "extraction",
+    "content",
+    "entities",
+    "events",
+    "money",
+    "inquiry",
+    "basis-versions",
+    "member-roster",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/contradiction.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T01:39:15Z"
+  }
+}

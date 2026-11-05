@@ -20,7 +20,7 @@
   ],
   "node": "26.10.0",
   "suite_timeout_minutes": 45,
-  "coordinator": "session_01RAN5ekK8nutcUSV3rTsfxn",
+  "coordinator": "session_018BhcecFLE3NZJnVDC127ku",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
     {
@@ -303,7 +303,19 @@
     "walk_reports": [
       "bio-plane/src/journey-check/out/live/report.json",
       "bio-plane/src/journey-check/out/live/report.txt"
-    ]
+    ],
+    "internal_walk": {
+      "run": [
+        "sh",
+        "-c",
+        "(cd bio-plane/src/journey-check && npm ci --no-audit --no-fund --loglevel=error) && cd bio-plane/src/journey-check && node journey.mjs"
+      ],
+      "timeout_minutes": 45,
+      "reports": [
+        "bio-plane/src/journey-check/out/local/report.json",
+        "bio-plane/src/journey-check/out/local/report.txt"
+      ]
+    }
   },
   "release": {
     "checks": [
@@ -368,5 +380,6 @@
       "agent-runner/src/entry.mjs",
       "agent-harness/src/subsession.mjs"
     ]
-  }
+  },
+  "merge_train": true
 }

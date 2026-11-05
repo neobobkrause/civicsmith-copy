@@ -1,0 +1,44 @@
+{
+  "id": "inquiry-grammar",
+  "title": "inquiry-grammar: its found work (F1, citation R29's leg shape)",
+  "layer": 6,
+  "paths": [
+    "bio-plane/src/inquiry-grammar/",
+    "build/requirements/inquiry-grammar.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/inquiry-grammar/"
+  ],
+  "requirements": "build/requirements/inquiry-grammar.md",
+  "uses": [
+    "record-grammar",
+    "text-chain",
+    "civil-time",
+    "record-core",
+    "content",
+    "connections",
+    "observation-log",
+    "connection-grammar",
+    "standards",
+    "duties",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/inquiry-grammar.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T04:20:00Z"
+  }
+}
