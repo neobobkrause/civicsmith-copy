@@ -111,3 +111,4 @@
 {"at":"2026-11-05T17:06:59Z","row":"sent","n":56,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (5 jobs ready). Then: pin moved to f339ba96076ffeb0e0f8a42be55127c93ccff92e: run your wake steps (start check --wake prints a changed prompt), then status"}
 {"at":"2026-11-05T17:07:13Z","row":"outcome","n":56,"outcome":"delivered"}
 {"at":"2026-11-05T18:11:46Z","row":"sent","n":57,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (22 jobs ready). Then: pin moved to 89d87b9ab3ae372a872aadc4d853ce86e144ea3a: run your wake steps (start check --wake prints a changed prompt), then status"}
+{"at":"2026-11-05T18:12:15Z","row":"outcome","n":57,"outcome":"delivered"}
