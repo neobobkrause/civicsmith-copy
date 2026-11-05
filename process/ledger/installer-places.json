@@ -1,0 +1,40 @@
+{
+  "id": "installer-places",
+  "title": "installer-places: split by copy from installer (R21, R83, R94, R95, R96, R97, R98)",
+  "layer": 11,
+  "paths": [
+    "build/requirements/installer-places.md",
+    "docs/requirements-notes/installer-places.md"
+  ],
+  "tests": [
+    "newgroup/test/places/"
+  ],
+  "requirements": "build/requirements/installer-places.md",
+  "uses": [
+    "installer",
+    "installer-steps",
+    "jurisdictions",
+    "runtime-limits",
+    "corpus-export",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "newgroup",
+    "command": [
+      "node",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/installer-places.md",
+    "build/requirements/installer.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the unmet requirement marks in build/requirements/installer-places.md (split by copy from installer, 5 Nov 2026), each with a test under newgroup/test/places/ that fails with the change reverted. Its terms are installer's (build/requirements/installer.md). The installer Worker (newgroup) is a live site: deploying it is never yours. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T15:00:00Z"
+  }
+}

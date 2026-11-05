@@ -1,0 +1,39 @@
+{
+  "id": "installer-check",
+  "title": "installer-check: split by copy from installer (R84, R85, R86, R87, R88, R89, R90, R91, R92, R93)",
+  "layer": 11,
+  "paths": [
+    "build/requirements/installer-check.md",
+    "docs/requirements-notes/installer-check.md",
+    "newgroup/src/ready.mjs",
+    "newgroup/src/guide.mjs"
+  ],
+  "tests": [
+    "newgroup/test/check/"
+  ],
+  "requirements": "build/requirements/installer-check.md",
+  "uses": [
+    "installer",
+    "installer-steps",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "newgroup",
+    "command": [
+      "node",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/installer-check.md",
+    "build/requirements/installer.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the unmet requirement marks in build/requirements/installer-check.md (split by copy from installer, 5 Nov 2026), each with a test under newgroup/test/check/ that fails with the change reverted. Its terms are installer's (build/requirements/installer.md). The installer Worker (newgroup) is a live site: deploying it is never yours. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T15:00:00Z"
+  }
+}
