@@ -202,3 +202,4 @@
 {"at":"2026-11-05T23:15:58Z","row":"outcome","n":101,"outcome":"delivered"}
 {"at":"2026-11-05T23:18:17Z","row":"sent","n":102,"to":"bob","text":"PR 452: job plane must sync (node .process/tool/p3.mjs job sync plane, then job complete plane): job/plane-2 conflicts with tranche; the job must bring itself up to date: node .process/tool/p3.mjs job sync plane, then job complete plane again"}
 {"at":"2026-11-05T23:18:33Z","row":"outcome","n":102,"outcome":"delivered"}
+{"at":"2026-11-05T23:31:28Z","row":"sent","n":103,"to":"bob","text":"the starter started job membership (PR 604): subscribe_pr_activity to each pull request"}
