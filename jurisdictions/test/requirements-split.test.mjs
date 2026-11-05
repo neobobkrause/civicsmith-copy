@@ -48,9 +48,19 @@ test("the split keeps every requirement id of the start commit, each in exactly 
   assert.deepEqual([...ids].sort(byNum), [...START_IDS].sort(byNum));
 });
 
+// The move adds no mark and changes none: every unmet mark now standing is one
+// the start commit held, word for word. A mark may since have been struck by
+// the module that now owns its file (jurisdictions-b met R109, jurisdictions-c
+// met R124, after the split); striking is that module's act, not the move's.
 test("the split keeps every unmet mark of the start commit unchanged", () => {
   const marks = Object.fromEntries(all.filter((e) => e.mark).map((e) => [e.id, e.mark]));
-  assert.deepEqual(marks, START_MARKS);
+  for (const [id, mark] of Object.entries(marks)) {
+    assert.equal(mark, START_MARKS[id], `${id}'s mark is the start commit's`);
+  }
+  // R1–R60 stay in this module's file; their marks are exactly the start commit's.
+  const here = (o) =>
+    Object.fromEntries(Object.entries(o).filter(([id]) => Number(id.slice(1)) <= 60));
+  assert.deepEqual(here(marks), here(START_MARKS));
 });
 
 test("jurisdictions keeps R1–R60, and -b and -c hold R61–R110 and R111–R139", () => {
