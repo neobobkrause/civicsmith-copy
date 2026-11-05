@@ -116,4 +116,11 @@ export const INQUIRY_GRAMMAR_CHECKS = Object.freeze({
     where: 'src/inquiry-grammar/grammar.mjs biasApplicationRefusal > is-bias-application-form',
     translation: word('refusal.BIAS_APPLICATION_MALFORMED'),
   },
+  /* F1 (citation R29; DEC-460): a leg citing what a photograph's file says, whose form departs from its shape, C-2.8,
+     refused by `fileSaysLegRefusal` in `./grammar.mjs`. Stamped by promotion's next stamping. */
+  FILE_SAYS_LEG_MALFORMED: {
+    check: 'C-2.8',
+    where: 'src/inquiry-grammar/grammar.mjs fileSaysLegRefusal > is-file-says-leg-form',
+    translation: localize('inquiry-grammar.checks.a_leg_citing_what_a_file_says', 'A leg citing what a photograph\'s file says cites its time taken or its place, with the value as the file gives it, from the file and not checked, and no grade. Correct the leg. Nothing was written.'),
+  },
 });
