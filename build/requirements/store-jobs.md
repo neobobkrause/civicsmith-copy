@@ -42,4 +42,3 @@ The owed-work ledger, the job table and the object alarm of the assembled store.
 ### Uses
 
 `acquisition`, `ai-runs`, `basis-versions`, `capture`, `connections`, `extraction`, `inquiry`, `member-roster`, `membership`, `observation-log`, `project-roster`, `record-core`, `run-productions`, `scheduler`, `test-support`, `setup-words`.
-- **F1** *(not yet met: coordinator 17:24 and 13:08, scheduler ruling)* R24 (a tick's runner for 'member' job rows, member-upload R117) joins store-assembly's reopen: the kind is registered but a running plane must run its rows to finished or final through acquisition.fileMember. Test: an email with attachments filed through the plane leaves each 'member' row finished, none queued for ever.
