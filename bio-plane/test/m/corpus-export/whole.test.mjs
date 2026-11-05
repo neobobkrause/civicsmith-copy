@@ -6,7 +6,10 @@ import assert from "node:assert/strict";
 import { registersWorld, V } from "./registers-world.mjs";
 import { rich } from "./rich.mjs";
 import { inquiryMd } from "./fixture.mjs";
-import { wholeExportOps, verifyWholePart, WHOLE_PART_BYTES, WHOLE_PART_CEILING } from "../../../src/corpus-export/index.mjs";
+import * as CE from "../../../src/corpus-export/index.mjs";
+/* read off the module whole, so a module without them fails each test by its assertions, never at load */
+const wholeExportOps = (...a) => CE.wholeExportOps(...a);
+const verifyWholePart = (...a) => CE.verifyWholePart(...a);
 
 const bytesOf = (n, seed = 7) => Uint8Array.from({ length: n }, (_, i) => (i * 31 + seed) & 0xff);
 const BOUND = 64;
@@ -54,7 +57,7 @@ test("R18: a record larger than the part bound lists more than one part, each wi
   const sha = await w.storedFile("INQ-2026-0102", big);
   const x = await w.ce.exportWhole({});
   assert.equal(x.part_bound, BOUND);
-  assert.ok(WHOLE_PART_BYTES <= WHOLE_PART_CEILING, "the stated bound is under the plane's per-call memory");
+  assert.ok(CE.WHOLE_PART_BYTES <= CE.WHOLE_PART_CEILING, "the stated bound is under the plane's per-call memory");
   assert.ok(x.parts.length > 1, "more than one part");
   x.parts.forEach((p, i) => {
     assert.equal(p.index, i);

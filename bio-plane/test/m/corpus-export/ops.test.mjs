@@ -3,22 +3,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, NOW } from "./fixture.mjs";
-import { corpusExportOps, wholeExportOps, EXPORT_NOTE_MAX } from "../../../src/corpus-export/index.mjs";
+import * as CE from "../../../src/corpus-export/index.mjs";
+const { corpusExportOps, EXPORT_NOTE_MAX } = CE;
 
 const A = "INFO-2026-0001-minutes", B = "INQ-2026-0001";
 const query = (params) => { const asked = []; const q = (k) => { asked.push(k); return params[k] ?? null; }; return { q, asked }; };
 
-const ARMS = ["export", "exportlog", "exportpage", "exportrender"];
-
 test("R6 corpusExportOps publishes exactly the arms export, exportlog, exportpage and exportrender, each a function of no arguments", () => {
   const w = world();
   const ops = corpusExportOps(w.ce, query({}).q);
-  assert.deepEqual(Object.keys(ops).sort(), ARMS);
+  assert.deepEqual(Object.keys(ops).sort(), ["export", "exportlog", "exportpage", "exportrender"]);
   for (const [name, arm] of Object.entries(ops)) {
     assert.equal(typeof arm, "function", name);
     assert.equal(arm.length, 0, `${name} takes no arguments`);
   }
-  assert.deepEqual(Object.keys({ ...ops }).sort(), ARMS, "a spread carries every arm");
+  assert.deepEqual(Object.keys({ ...ops }).sort(), ["export", "exportlog", "exportpage", "exportrender"], "a spread carries every arm");
 });
 
 test("R6 the export arm answers R1 with q(\"note\") passed through: the same manifest exportManifest answers, and the same log row", () => {
@@ -89,12 +88,14 @@ test("R6 the exportrender arm answers R10 with q(\"format\"), q(\"viewer\") and 
 });
 
 test("R18 the exportwholepart arm answers one part with q(\"file\"), q(\"offset\") and q(\"bytes\") passed through", async () => {
+  assert.equal(typeof CE.wholeExportOps, "function", "the whole-record arms are published");
   const w = world();
   w.doc(A, ["the minutes, as captured"]);
   const x = await w.ce.exportWhole({});
+  assert.ok(x.parts.length > 0);
   for (const p of x.parts) {
     const { q, asked } = query({ file: p.file, offset: String(p.offset), bytes: String(p.bytes) });
-    const viaOps = await wholeExportOps(w.ce, q).exportwholepart();
+    const viaOps = await CE.wholeExportOps(w.ce, q).exportwholepart();
     assert.deepEqual(asked.sort(), ["bytes", "file", "offset"]);
     assert.deepEqual(viaOps, await w.ce.exportWholePart({ file: p.file, offset: p.offset, bytes: p.bytes }));
     assert.equal(viaOps.sha256, p.sha256);

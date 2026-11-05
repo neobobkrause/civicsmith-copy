@@ -38,4 +38,3 @@ test("R15 corpus-export declares exportrender: its requires alone raise no refus
   await declaredOpHolds({ op: "exportrender", declaration: DECLARED_OPS["exportrender"], call: mk("exportrender", {"viewer":"member:ann"}),
     values: { format: "ftm", part: "1" }, refusedNaming: named({ format: ["EXPORT_FORMAT_UNKNOWN"], part: ["EXPORT_PART_MALFORMED"] }) });
 });
-
