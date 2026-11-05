@@ -1,3 +1,4 @@
 {"at":"2026-11-05T09:39:51Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job jurisdictions-b BLOCKED: run status"}
 {"at":"2026-11-05T09:40:02Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-05T11:29:19Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job jurisdictions-b complete, PR #477 ready, session session_018Bhced6QUc1LbN4UV18mXu: run status"}
+{"at":"2026-11-05T11:29:34Z","row":"outcome","n":2,"outcome":"delivered"}
