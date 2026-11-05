@@ -30,7 +30,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T18:12:57Z"
+    "state": "BLOCKED",
+    "reason": "No mark can be met from this job's paths (requirements file, notes, tests). Every one of R136-R151 needs code in bio-plane/src/interface-shell/ (and for some, other modules). None of it exists on tranche: no screenread op (op-declarations PL11, PR 430), no cs.follow, no ceiling scale, no screen.machine AI labels (ai-runs R104, PR 485), no skip link or data-screen sweep. Pushed fa1fc81e: a test.todo per id (suite 3 pass, 16 todo) and docs/requirements-notes/interface-shell-t53.md, which lists each mark's wait and owners. To unblock: restart with bio-plane/src/interface-shell/ in the paths (the code move the Status names), once 430 and 485 land for R136/R137/R141.",
+    "at": "2026-11-05T18:20:10Z"
   }
 }
