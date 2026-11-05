@@ -45,7 +45,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T01:39:15Z"
+    "state": "WORKING",
+    "at": "2026-11-05T02:52:28Z",
+    "reason": "reopened: meet the unmet requirement marks R34, R41"
   }
 }
