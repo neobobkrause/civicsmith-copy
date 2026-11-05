@@ -37,7 +37,7 @@
 import { admitRead, readTool, ASK_DECLARED } from "./ask.mjs";
 import { toolContent } from "../../agent-steps/src/index.mjs";
 import { ACTION_DRAFT_OPS, actionTaskOf, actionDraft } from "./action-drafts.mjs";
-import { untestedOf, UNTESTED_BAD } from "./untested.mjs";
+import { untestedOf, UNTESTED_BAD, machineLabel } from "./untested.mjs";
 import { doorTrace } from "./signin.mjs";
 import { remoteOf } from "./remote.mjs";
 import { askBoundReached, draftMayRead, TRANSLATION_DRAFT_MAX_WORDS } from "../../bio-plane/src/run-rules/index.mjs";
@@ -250,7 +250,7 @@ export async function handleDraft(req, env, deps) {
   const spent = { usage: got.usage ?? null, calls: got.calls === undefined ? null : got.calls };
   if (got.answer !== undefined) {
     const draft = draftOf(task.op, got.answer);
-    if (draft) return json({ ok: true, task, draft, ...labelled, label: { kind: "machine" }, ...spent });
+    if (draft) return json({ ok: true, task, draft, ...labelled, label: machineLabel(got), ...spent });
     return refusal("DRAFT_UNFORMED", localize("agent-worker.draft.the_model_answered_without_a", "the model answered without a draft of the task's shape, so nothing is returned."),
       502, { ending: "unformed", ...spent });
   }
@@ -402,7 +402,7 @@ async function translationDraft(body, task, env, deps, labelled = {}, traced = {
   if (got.answer !== undefined) {
     const made = translationOf(task, got.answer);
     if (made) return json({ ok: true, task, draft: made.draft, ...(toLanguage ? { not_drafted: made.not_drafted } : {}),
-                            ...labelled, label: { kind: "machine" }, ...spent });
+                            ...labelled, label: machineLabel(got), ...spent });
     return refusal("DRAFT_UNFORMED", localize("agent-worker.draft.the_model_answered_without_a_2", "the model answered without a draft of the task's shape, so nothing is returned."),
       502, { ending: "unformed", ...spent });
   }
@@ -477,7 +477,7 @@ async function readingDraft(body, task, env, deps, labelled = {}, traced = {}) {
   const spent = { usage: got.usage ?? null, calls: got.calls === undefined ? null : got.calls };
   if (got.answer !== undefined) {
     const draft = readingOf(task, got.answer);
-    if (draft) return json({ ok: true, task, draft, ...labelled, label: { kind: "machine" }, ...spent });
+    if (draft) return json({ ok: true, task, draft, ...labelled, label: machineLabel(got), ...spent });
     return refusal("DRAFT_UNFORMED", localize("agent-worker.draft.the_model_answered_without_a_3", "the model answered without a translation, so nothing is returned."), 502,
       { ending: "unformed", ...spent });
   }

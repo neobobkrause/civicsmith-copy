@@ -21,4 +21,6 @@ export const SEGMENT_END_BY = Object.freeze({
   plane: "the plane's own exit",
   refusal: "a refusal",
   error: "an error",
+  /* R48, R52 (T53; AIR28): a segment ended at a step boundary by an AI stop, the run left resumable */
+  ai: "an AI stop",
 });

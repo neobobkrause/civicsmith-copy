@@ -58,7 +58,7 @@ import { isMachineIdentity } from "../record-grammar/actors.mjs";
 import { CITE_CHECKS, CITE_EXTENT_CHECKS, CITE_IMPORTED_CHECKS, CITE_LEG_GRADE_CHECKS } from "./checks.mjs";
 import { spliceEdgeStatus, spliceReferences, spliceBasis, removeBasisLegs, setBasisRole, setLegGrade, setLegStatus, setScalar, appendSessionLog } from "./splice.mjs";
 import { recordedBy } from "./recorded.mjs";
-import { localize } from "../setup-words/index.mjs";
+import { localize, word } from "../setup-words/index.mjs";
 
 export { CITE_CHECKS, CITE_EXTENT_CHECKS, CITE_IMPORTED_CHECKS, CITE_LEG_GRADE_CHECKS } from "./checks.mjs";
 export { spliceEdgeStatus, spliceReferences, spliceBasis, removeBasisLegs, setBasisRole, setLegGrade, legExtentLines } from "./splice.mjs";
@@ -168,6 +168,40 @@ export class Citation {
       const h = this.record.head(id);
       return !!h && String(h.currentState ?? "").trim() === "retired";
     } catch { return false; }
+  }
+
+  /* ---- R27 ---- */
+
+  /** R27 (T53; DEC-464; K5525): what a leg on a member's typing says of it, as the typing stands NOW: who typed it, when,
+   *  who has checked it (members other than the typist, in time order, each with when), and the label by content's key
+   *  (`content.typed.unchecked` / `content.typed.checked`, content R64). A member is named as the caller passes her in
+   *  `names` (`{member: "how she is named"}`; the credit level is the caller's to apply), else as content names her
+   *  (its credit rule), else "a member of the team"; a member's handle never appears. Null for a content id that is not
+   *  a typing, or one the viewer may not see. Read by `cite` for its answer and Session Log, and by any caller reading a
+   *  leg afterward. Writes nothing; never throws. */
+  typedOf({ contentId = null, viewer = null, names = null } = {}) {
+    try {
+      if (typeof contentId !== "string" || !contentId.trim() || !this.content || typeof this.content.transcriptionRead !== "function") return null;
+      const r = this.content.transcriptionRead({ id: contentId.trim(), viewer });
+      if (!r || !r.ok || !isObj(r.typed)) return null;
+      const passed = isObj(names) ? names : {};
+      const nameOf = (member, fallback) => {
+        const n = Object.prototype.hasOwnProperty.call(passed, member) && typeof passed[member] === "string" && passed[member].trim()
+          ? passed[member].trim() : null;
+        return n ?? (fallback && typeof fallback.name === "string" && fallback.name ? fallback.name : null);
+      };
+      const said = (n) => n ?? word("content.typed.anonymous_member");
+      const typist = { name: said(nameOf(r.transcriber, r.typed.typist)) };
+      const counted = (Array.isArray(r.attestations) ? r.attestations : []).filter((a) => a && a.attestor !== r.transcriber);
+      const heldCheckers = Array.isArray(r.typed.checkers) ? r.typed.checkers : [];
+      const checkers = counted.map((a, i) => ({ name: said(nameOf(a.attestor, heldCheckers[i])), at: a.at ?? null }));
+      const checked = checkers.length > 0;
+      const label_key = checked ? "content.typed.checked" : "content.typed.unchecked";
+      const label = checked
+        ? word(label_key, { typist: typist.name, checkers: checkers.map((c) => c.name).join(", ") })
+        : word(label_key, { typist: typist.name });
+      return { content_id: r.content_id, typist, at: r.at ?? null, checkers, checked, label_key, label };
+    } catch { return null; }
   }
 
   /* ---- R13 ---- */
@@ -518,7 +552,7 @@ export class Citation {
    *     that judges it again at the write.
    *   - IT ASKS ONE THING ABOUT A TARGET'S STATE, ON BOTH ARMS: whether the group RETIRED it (R5). */
   cite({ project = null, handle = null, found = null, question = null, viewer = null, owner = null,
-         note = "", author = null, role = null, extent = null, identity = null, ground = null } = {}) {
+         note = "", author = null, role = null, extent = null, identity = null, ground = null, names = null } = {}) {
     /* T35 (N698, DEC-164 (4), (5)): WHAT IS CITED, from ONE source, asked before anything else. A selection (`handle`,
        with an optional `extent`), or one match "Find in this" answered (`found`, retrieval R73), which stands in place
        of both: its document is the one member, its extent that member's part. Being found changes no judgement: the
@@ -889,6 +923,17 @@ export class Citation {
       : localize("citation.index.trigger_selection_moved", "Trigger: selection {handle}{moved}", { handle: String(handle), moved: setMovedNote }))
       + (questionId ? localize("citation.index.for_question_suffix", "; for question {question}", { question: String(questionId) }) : "") + "\n";
     const logNote = nt ? localize("citation.index.log_note", " Note: {note}.", { note: nt }) : "";
+    /* R27 (T53; DEC-464): a leg on a member's typing names who typed it and who has checked it, as at the act, by
+       content's keys and as the caller names each member (`names`); never the original's or Civicsmith's words. */
+    const typedAt = new Map();
+    if (ontoInquiry)
+      for (const l of filled)
+        if (typeof l.content_id === "string" && !typedAt.has(l.content_id)) {
+          const t = this.typedOf({ contentId: l.content_id, viewer, names });
+          if (t) typedAt.set(l.content_id, t);
+        }
+    const logTyped = [...typedAt.entries()].map(([cid, t]) =>
+      localize("citation.index.log_typed_passage", "Passage {content_id}: {label}.\n", { content_id: cid, label: t.label })).join("");
     const logHead = ontoInquiry
       ? (add.length === 1
         ? localize("citation.index.session_rested_one_record", "### Session {when} | Rested this question on 1 record ({role}) | {who}\n", { when, role: rl, who: author || "member" })
@@ -899,6 +944,7 @@ export class Citation {
     text = appendSessionLog(text, ontoInquiry
       ? logHead + trigger
         + localize("citation.index.changes_basis_legs_added", "Changes: basis legs added for {listed}, each with role {role}. Grades: {graded} filled from the record's own resolutions to this question's subject; {ungraded} left undetermined and stated.{note}\n", { listed, role: rl, graded: String(graded), ungraded: String(ungraded), note: logNote })
+        + logTyped
       : logHead + trigger
         + localize("citation.index.changes_cites_edges_added", "Changes: cites edges added to {listed}.{note}\n", { listed, note: logNote }));
 
@@ -943,7 +989,8 @@ export class Citation {
                                    ...(Object.keys(legFields).length
                                        ? { extent: citationExtent(l),
                                            ...(l.content_id ? { content_id: l.content_id } : {}) }
-                                       : {}) })),
+                                       : {}),
+                                   ...(l.content_id && typedAt.has(l.content_id) ? { typed: typedAt.get(l.content_id) } : {}) })),
                                  gradesFilled: filled.filter((l) => l.grade).length,
                                  gradesUndetermined: filled.filter((l) => !l.grade).length }
                              : {}) };
@@ -1370,6 +1417,8 @@ export function citationOps(c, url, body) {
          for for. */
       found: foundParam(has("found") ? b.found : q("found")),
       question: s("question"),
+      /* R27: how the caller names each member a typed passage credits, an object (or one JSON string). */
+      names: foundParam(has("names") ? b.names : q("names")),
     }),
     sever: () => c.sever({ project: q("project"), handle: q("handle"), viewer: q("viewer"), owner: q("owner"),
                            reason: q("reason") ?? "", author: q("author"), identity: q("identity"),
@@ -1404,7 +1453,7 @@ export function citationOps(c, url, body) {
 export const DECLARED_OPS = Object.freeze({
   cite: { classes: ["admin", "member", "probe"], mutating: true, needs: "contribute", weight: "reversible",
     description: localize("citation.declared.cite", "cites material or a question into a case's references or a question's basis, and sever takes it back"),
-    fields: { accepts: ["project", "handle", "found", "question", "note", "role", "ground", ...Object.keys(EXTENT_PARAMS)],
+    fields: { accepts: ["project", "handle", "found", "question", "note", "role", "ground", "names", ...Object.keys(EXTENT_PARAMS)],
               requires: ["project", ["handle", "found"]] } },
   drawquestion: { classes: ["admin", "member", "probe"], mutating: true, needs: "contribute", weight: "reversible",
     description: localize("citation.declared.drawquestion", "project-directed: keyed by a project and one question; draws the question into the project as a confirmed `cites` edge and promotes the project; moves the project's bundle"),
