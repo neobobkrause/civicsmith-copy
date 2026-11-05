@@ -371,3 +371,4 @@
 {"at":"2026-11-05T11:35:22Z","row":"sent","n":188,"to":"job-acquisition-owed","text":"PR 490 gate red on revert only: 'the job adds or changes no test; name why in the receipt'. Rerun job complete acquisition-owed with your same args plus --exempt-revert \"<why no test>\" and wake me."}
 {"at":"2026-11-05T11:35:27Z","row":"sent","n":189,"to":"job-ai-catalogue","text":"PR 484 gate red on 2 revert findings (suite pass): bio-plane/test/m/ai-catalogue/notice-signatures-101.test.mjs and seed.test.mjs pass with your change reverted. F2 is a code change (the development seed with plans): its test must fail without it (e.g. assert the development seed lists 'api' and RELEASE_SEED does not, through the module's interface). Fix the tests, rerun job complete ai-catalogue, wake me."}
 {"at":"2026-11-05T11:35:41Z","row":"outcome","n":188,"outcome":"delivered"}
+{"at":"2026-11-05T11:35:46Z","row":"outcome","n":189,"outcome":"delivered"}
