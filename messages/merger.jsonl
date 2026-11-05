@@ -82,3 +82,4 @@
 {"at":"2026-11-05T15:21:14Z","row":"outcome","n":41,"outcome":"delivered"}
 {"at":"2026-11-05T15:26:36Z","row":"sent","n":42,"to":"bob","text":"merged PR 386 (job answer-envelope): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T15:27:26Z","row":"outcome","n":42,"outcome":"delivered"}
+{"at":"2026-11-05T15:28:10Z","row":"sent","n":43,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (26 jobs ready). Then: IDLE CAPACITY: 2 job sessions live of the cap 20, 26 startable, for 44 min (starts owed since 2026-11-05T14:56:40Z); 18 x startable, not started: run node .process/tool/p3.mjs job start --ready --live <n>: run status"}
