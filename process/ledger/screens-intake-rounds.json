@@ -3,6 +3,7 @@
   "title": "screens-intake-rounds: split by copy from screens-intake (R63, R64, R65, R66, R67, R68, R69, R70, R72, R73, R74, R75, R76, R77, R78, R79, R80, R81, R82, R83, R84, R85, R86, R87, R88, R94, R89, R90, R91, R92, R93, R55, R56, R57, R58, R59, R60, R61, R62, R71)",
   "layer": 11,
   "paths": [
+    "bio-plane/src/screens-intake-rounds/",
     "build/requirements/screens-intake-rounds.md",
     "docs/requirements-notes/screens-intake-rounds.md"
   ],
@@ -30,8 +31,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "No source path: the ledger entry (process/ledger/screens-intake-rounds.json) and this START allow only build/requirements/screens-intake-rounds.md, docs/requirements-notes/screens-intake-rounds.md and bio-plane/test/m/screens-intake-rounds/. All 23 open marks (R72-R94, all '(not yet met: T53)') need new screen code in bio-plane/src/screens-intake/ (capture.mjs, held.mjs, open-file.mjs, archive, inbox, about-knocker). Their keys are absent from src: screen.capture.limits.*, toolarge.nothing_read/register/part, 'Handed in through the doorbell', screen.capture.finish.*, screen.capture.preview.cut, screen.photo.dropped.*, the ceiling chip. Tests alone cannot meet them, and test.todo strikes nothing. Nothing changed. To unblock: add bio-plane/src/screens-intake/ (or a new bio-plane/src/screens-intake-rounds/) to the entry's paths and restart. Also note that R74 needs registers' registerList/registerFilter, R83 needs interface-shell R140's ceiling scale, and R94 needs capture R96/R120, so the module's uses may need to name them.",
-    "at": "2026-11-05T20:42:10Z"
-  }
+    "state": "OPEN",
+    "at": "2026-11-05T10:15:00Z"
+  },
+  "prior_work": "BOB 5 Nov 20:45, as interface-shell-t53 (coordinator 18:31, option c): your code lives in bio-plane/src/screens-intake-rounds/, which you own; every hook you need inside bio-plane/src/screens-intake/ is screens-intake's: name each as a found mark for screens-intake (report it to BOB), never edit it. Marks resting on other modules (R74 registers' registerList/registerFilter, R83 interface-shell-t53's ceiling scale R140, R94 capture R96/R120) stay open as not-verified until those land."
 }
