@@ -1,3 +1,4 @@
 {"at":"2026-11-05T01:18:55Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job agent-model complete, PR #355 ready, session session_01RAN5emMpJNrZ1gYtYoDtdh: run status"}
 {"at":"2026-11-05T01:19:10Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-05T04:05:17Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (10 jobs ready). Then: job agent-model complete, PR #395 ready, session session_01RAN5enFQNFochCrhxnkDYQ: run status. 45 of 47 marks met (R34 estimate is in: ai-use R10 can restart). R1 and R13 left marked: they rest on agent-worker and agent-steps moving off the reference path's MODEL_FOR_MODE/SUBSESSION_MODEL/MODEL_PRICES (file:lines in the receipt)."}
+{"at":"2026-11-05T04:05:33Z","row":"outcome","n":2,"outcome":"delivered"}
