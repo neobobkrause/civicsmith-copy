@@ -182,20 +182,20 @@ test("R85 (C94): Find in names who recorded a result by handle, never by id", ti
 
 for (const [where, path] of [["queue", "/app/queue"], ["home", "/app"]]) {
   test(`R85 (C94, ${where}): who has agreed and who is still awaited on an endorsement are named by handle (the founder by hers), never by member id; control: a handle is drawn as itself`, timeout, async () => {
-    // The founder proposes a third administrator while rosa and sam are the others: the real endorsement-owed item is rosa's, who has agreed (the founder) and who is awaited (rosa, sam) in its basis.
+    // sam proposes a further administrator while the founder and rosa are the others (the founder's own proposal issues at once, member-roster R87): the real
+    // endorsement-owed item is rosa's, who has agreed (sam) and who is awaited (the founder, rosa) in its basis.
     const w = await storeWorld(WORLD);
-    const founder = await w.signIn("admin");
     const rosa = await w.signIn("rosa", { admin: true });
-    await w.signIn("sam", { admin: true });
-    await founder.act("reauth", { body: { password: founder.password } });
-    const proposed = await founder.act("memberadd", { body: { memberId: "ana", cover: "the world's member ana", role: "admin" } }).catch((e) => e);
-    assert.match(String(proposed.message || ""), /CONSENSUS_REQUIRED/, "the third administrator awaits the others' endorsement");
+    const sam = await w.signIn("sam", { admin: true });
+    await sam.act("reauth", { body: { password: sam.password } });
+    const proposed = await sam.act("memberadd", { body: { memberId: "ana", cover: "the world's member ana", role: "admin" } }).catch((e) => e);
+    assert.match(String(proposed.message || ""), /CONSENSUS_REQUIRED/, "the further administrator awaits the others' endorsement");
     const item = (await rosa.read("queue")).items.find((i) => i.kind === "endorsement-owed");
-    assert.deepEqual([item.basis.have, item.basis.awaiting], [["admin"], ["rosa", "sam"]], "the real item holds ids");
+    assert.deepEqual([item.basis.have, item.basis.awaiting], [["sam"], ["admin", "rosa"]], "the real item holds ids");
     const p = await open(w, rosa, path);
     await settle();
     const t = text(p);
-    assert.ok(t.includes("founder"), "the founder who has endorsed, by her handle");
+    assert.ok(t.includes("founder"), "the founder who is awaited, by her handle");
     assert.ok(t.includes("rosa") && t.includes("sam"), "control: a handle is drawn as itself");
     assert.ok(!/\badmin\b/.test(t), "no member id is drawn");
   });
