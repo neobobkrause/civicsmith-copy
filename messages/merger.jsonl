@@ -124,3 +124,4 @@
 {"at":"2026-11-05T19:05:13Z","row":"outcome","n":62,"outcome":"delivered"}
 {"at":"2026-11-05T19:34:53Z","row":"sent","n":63,"to":"bob","text":"PR 556 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 556 is closed"}
 {"at":"2026-11-05T19:35:10Z","row":"outcome","n":63,"outcome":"delivered"}
+{"at":"2026-11-05T19:35:20Z","row":"sent","n":64,"to":"bob","text":"PR 556 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 556 is closed"}
