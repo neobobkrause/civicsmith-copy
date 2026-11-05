@@ -12,3 +12,4 @@
 {"at":"2026-11-05T00:44:56Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-05T01:29:25Z","row":"sent","n":7,"to":"bob","text":"job agent-worker BLOCKED: run status"}
 {"at":"2026-11-05T01:29:34Z","row":"outcome","n":7,"outcome":"delivered"}
+{"at":"2026-11-05T03:46:25Z","row":"sent","n":8,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (17 jobs ready). Then: job agent-worker complete, PR #364 ready, session session_01RAN5emqF4k7uDbWaDF6xsP: run status"}
