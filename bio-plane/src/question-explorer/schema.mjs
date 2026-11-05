@@ -92,6 +92,23 @@ CREATE TABLE IF NOT EXISTS explore_doors (
   at        TEXT NOT NULL,
   PRIMARY KEY (find, question, member)
 );
+
+-- F1 (K5821): exploring off for an owner (group, project:<id>, member:<id>) after a run was refused because the member
+-- who turned it on is gone or no longer allowed: the refusal as given (its code, check, translation and sentence), and
+-- the turning-on it carried (enabled_key), so it stays off until a member turns exploring on again. project names a
+-- project owner's bundle (purge).
+CREATE TABLE IF NOT EXISTS explore_off (
+  owner       TEXT PRIMARY KEY,
+  project     TEXT,
+  account_id  TEXT,
+  enabled_by  TEXT,
+  enabled_key TEXT,
+  code        TEXT NOT NULL,
+  check_id    TEXT,
+  translation TEXT,
+  detail      TEXT,
+  at          TEXT NOT NULL
+);
 `;
 
 /** The declaration to record-core's purge (its R21, R46): every table by the question it serves; a find also by the
@@ -103,6 +120,7 @@ export const QUESTION_EXPLORER_TABLES = Object.freeze([
   { name: "explore_finds", keys: ["question", "bundle_id", "bundle_b"] },
   { name: "explore_doors", keys: ["question"] },
   { name: "explore_considered", keys: ["question"] },
+  { name: "explore_off", keys: ["project"] },
 ]);
 
 /** The module's tables, created where absent. */

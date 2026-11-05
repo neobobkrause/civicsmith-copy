@@ -427,7 +427,7 @@ export class QuestionExplorer {
 
   async #tick(now) {
     const at = this.#iso(now);
-    const out = { at, gate: "open", opened: [], asked: [], refused: 0, considered: 0 };
+    const out = { at, gate: "open", opened: [], asked: [], refused: 0, considered: 0, off: [] };
     const g = this.gate();
     if (!g.open) return { ...out, gate: "closed" };
     const day = this.#day(at);
@@ -435,12 +435,16 @@ export class QuestionExplorer {
     const accounts = new Map();
     const accountOf = (owner) => { if (!accounts.has(owner)) accounts.set(owner, this.#accountOf(owner)); return accounts.get(owner); };
     const idOf = (owner) => { const u = accountOf(owner); return u && typeof u.account_id === "string" && u.account_id ? u.account_id : null; };
+    const enablers = new Map();
+    const enablerOf = (owner) => { if (!enablers.has(owner)) enablers.set(owner, this.#enablerOf(owner, idOf(owner))); return enablers.get(owner); };
     for (const w of this.#due(at)) {
       out.considered += 1;
       for (const owner of this.#ownersFor(w)) {
         const prior = this.#considered(w.question, owner, day);
         if (prior && prior.outcome === "refused") continue;
         if (this.#switchedOff(owner, accountOf(owner))) { this.#consider(w.question, owner, day, "refused", at); out.refused += 1; continue; }
+        /* F1: exploring off after its accountable member was refused, until a member turns it on again. */
+        if (this.#offFor(owner, enablerOf(owner))) { this.#consider(w.question, owner, day, "refused", at); out.refused += 1; continue; }
         let a;
         try { a = this.aiUse.exploreAllowed({ owner, account_id: idOf(owner), question: w.question, at }); }
         catch { a = { ok: false, code: "EXPLORE_ALLOWED_UNREADABLE" }; }
@@ -456,8 +460,12 @@ export class QuestionExplorer {
           continue;
         }
         const label = (a && a.label) || { kind: "machine", enabled_by: owner };
-        const opened = await this.#open(w, owner, label, at, day);
+        const opened = await this.#open(w, owner, label, at, day, enablerOf(owner));
         if (opened.ok) { this.#consider(w.question, owner, day, "opened", at); out.opened.push(opened); break; }
+        if (QuestionExplorer.#offRefusal(opened.refused)) {
+          this.#turnOff(owner, idOf(owner), enablerOf(owner), opened.refused, at);
+          out.off.push({ owner, code: opened.refused.code ?? null, detail: opened.refused.detail ?? null });
+        }
         this.#consider(w.question, owner, day, "refused", at);
         out.refused += 1;
       }
@@ -477,14 +485,8 @@ export class QuestionExplorer {
    *  project's first owner; the group's first active administrator, as ai-use reads an account itself), answered here
    *  only to that account's owners (`runCost`). `"not known yet"` when it cannot say. */
   #estimate(owner, count, at) {
-    let as = null;
-    try {
-      as = owner.startsWith("member:") ? owner
-        : owner.startsWith("project:") ? this.membership.projectOwners(owner.slice(8))[0] ?? null
-          : this.membership.activeAdmins()[0] ?? null;
-    } catch { as = null; }
-    if (!as) return say("question-explorer.known");
-    const viewer = as.startsWith("member:") || as === "admin" ? as : `member:${as}`;
+    const viewer = this.#ownerViewer(owner);
+    if (!viewer) return say("question-explorer.known");
     try {
       const e = this.aiUse.estimate({ owner, use: EXPLORE_USE, mode: EXPLORE_MODE, count, viewer, at });
       if (!e || e.ok === false || e.estimate === undefined || e.estimate === null) return say("question-explorer.known");
@@ -496,9 +498,92 @@ export class QuestionExplorer {
     } catch { return say("question-explorer.known"); }
   }
 
+  /** An owner of `owner`'s account, as ai-use reads an account itself: the member; a project's first owner; the group's
+   *  first active administrator. Null when there is none. */
+  #ownerViewer(owner) {
+    let as = null;
+    try {
+      as = owner.startsWith("member:") ? owner
+        : owner.startsWith("project:") ? this.membership.projectOwners(owner.slice(8))[0] ?? null
+          : this.membership.activeAdmins()[0] ?? null;
+    } catch { as = null; }
+    if (!as) return null;
+    return as.startsWith("member:") || as === "admin" ? as : `member:${as}`;
+  }
+
+  /* ---------------------------------------------------------------- F1: the member accountable for exploring */
+
+  /** F1 (K5821, REC-11): the member who turned exploring on for `owner`'s account `account_id`: the latest change of its
+   *  `explore` switch to `yes` or `ask` (ai-accounts R14, R16), read through ai-accounts' `accountHistory` as one of the
+   *  account's owners. `{member, key}`: `member` that member (`member:<id>`), or null when none is found or the history
+   *  cannot be read (fail closed: a run with no enabling member is refused); `key` names that turning-on, so a later one,
+   *  by any member, is told apart. */
+  #enablerOf(owner, account_id) {
+    const viewer = this.#ownerViewer(owner);
+    if (!viewer || !account_id) return { member: null, key: null };
+    let h = null;
+    try { h = this.aiAccounts.accountHistory({ owner, viewer, limit: 500 }); } catch { h = null; }
+    const ons = (h && Array.isArray(h.changes) ? h.changes : []).filter((c) => c && c.change === "use_set"
+      && c.switch === "explore" && c.account_id === account_id && (c.value === "yes" || c.value === "ask"));
+    const last = ons[ons.length - 1];
+    const by = last ? str(last.by) : null;
+    if (!by) return { member: null, key: ons.length ? `${ons.length}|${last.at ?? ""}|` : null };
+    const member = by.startsWith("member:") ? by : `member:${by}`;
+    return { member, key: `${ons.length}|${last.at ?? ""}|${member}` };
+  }
+
+  /** F1: whether exploring is off for `owner` after a refused run: the row, or null. It stays off until a member turns
+   *  exploring on again (a turning-on other than the one the refused run carried), and is then lifted. */
+  #offFor(owner, enabler) {
+    const off = this.#one(`SELECT * FROM explore_off WHERE owner=?`, owner);
+    if (!off) return null;
+    if (enabler && enabler.key && enabler.key !== off.enabled_key) {
+      this.sql.exec(`DELETE FROM explore_off WHERE owner=?`, owner);
+      return null;
+    }
+    return off;
+  }
+
+  /** F1: exploring turned off for `owner` by a refusal of its accountable member, the refusal kept as given so its
+   *  sentence reaches the account's owners (`exploringOff`). */
+  #turnOff(owner, account_id, enabler, refusal, at) {
+    const r = refusal && typeof refusal === "object" ? refusal : {};
+    this.sql.exec(`INSERT INTO explore_off (owner, project, account_id, enabled_by, enabled_key, code, check_id, translation, detail, at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT(owner) DO UPDATE SET account_id=excluded.account_id, enabled_by=excluded.enabled_by,
+                     enabled_key=excluded.enabled_key, code=excluded.code, check_id=excluded.check_id,
+                     translation=excluded.translation, detail=excluded.detail, at=excluded.at`,
+                  owner, owner.startsWith("project:") ? owner.slice(8) : null, account_id ?? null, enabler?.member ?? null,
+                  enabler?.key ?? null, str(r.code) ?? "AI_RUN_NOT_A_MEMBER_ACT", str(r.check), str(r.translation), str(r.detail), at);
+  }
+
+  /** F1: whether an open's refusal says its accountable member is gone or no longer allowed (`run-rules` R18 as F1 amends
+   *  it: `exploring: "off"`; an exploring run has no other member's act, so its `AI_RUN_NOT_A_MEMBER_ACT` is that). */
+  static #offRefusal(r) {
+    return !!r && typeof r === "object" && (r.exploring === "off" || r.code === "AI_RUN_NOT_A_MEMBER_ACT");
+  }
+
+  /** F1: where exploring is off after a refused run, to the owners of the account only: the refusal's own words
+   *  (`run-rules`' sentence and translation, as given), when, and who had turned it on. It stays until a member turns
+   *  exploring on again. Never throws. */
+  exploringOff({ viewer = null } = {}) {
+    try {
+      const rows = this.#rows(`SELECT * FROM explore_off ORDER BY at DESC, owner LIMIT 1000`);
+      return { ok: true, off: rows.filter((x) => this.#ownsAccount(viewer, x.owner)).map((x) => ({
+        key: `explore-off:${x.owner}:${x.at}`, owner: x.owner, enabled_by: x.enabled_by, code: x.code, check: x.check_id,
+        translation: x.translation, detail: x.detail, at: x.at, exploring: "off" })) };
+    } catch { return { ok: true, off: [] }; }
+  }
+
   /** R3, R12: open one exploring run on a question for an owner: its estimate, then the run, passing the step's place
    *  and work; `ai-runs` opens the run and then creates its system step (its R73, K2490), answering it. */
-  async #open(w, owner, label, at, day) {
+  async #open(w, owner, label, at, day, enabler = { member: null }) {
+    /* F1 (K5821): the run is accountable to the member who turned exploring on; with none found, `run-rules` R18 refuses
+       it here, its one site, and nothing is asked of `ai-runs`. */
+    if (!enabler.member) {
+      const refused = runRules.startAllowed({ startedBy: null, mode: EXPLORE_MODE, origin: EXPLORE_ORIGIN, enabledBy: null });
+      return { ok: false, question: w.question, owner, refused };
+    }
     const estimate = this.#estimate(owner, 1, at);
     const run = `XPL-${day}-${sha256HexSync(`${w.question}|${owner}|${at}`).slice(0, 12)}`;
     /* R17: `ai-runs.open` answers asynchronously and is awaited; a run it refuses, or that it fails to open, is no run. */
@@ -509,7 +594,7 @@ export class QuestionExplorer {
                                         mode: EXPLORE_MODE, origin: EXPLORE_ORIGIN, use: EXPLORE_USE,
                                         place: { questions: [w.question] }, work: EXPLORE_WORK,
                                         principalPlane: this.principal, principalAi: owner, principalAiRef: null,
-                                        enabledBy: label, skillVersion: EXPLORE_SKILL, bounds: EXPLORE_BOUNDS.map((b) => ({ ...b })),
+                                        enabledBy: enabler.member, skillVersion: EXPLORE_SKILL, bounds: EXPLORE_BOUNDS.map((b) => ({ ...b })),
                                         at, actor: null, viewer: this.principal });
     } catch { opened = null; }
     if (!opened || opened.ok === false || typeof opened.step !== "string" || !opened.step)
@@ -517,7 +602,7 @@ export class QuestionExplorer {
     const step = opened.step;
     this.sql.exec(`INSERT INTO explore_runs (run, question, owner, step, day, seen, estimate, opened_at)
                    VALUES (?,?,?,?,?,?,?,?)`, run, w.question, owner, step, day, w.seen, json({ estimate }), at);
-    return { ok: true, run, question: w.question, owner, step, estimate, label };
+    return { ok: true, run, question: w.question, owner, step, estimate, label, enabled_by: enabler.member };
   }
 
   /* ---------------------------------------------------------------- R9, R10: persons */
