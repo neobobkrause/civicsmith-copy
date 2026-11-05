@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const text = readFileSync(new URL('../../../build/requirements/installer-places.md', import.meta.url), 'utf8');
+const text = readFileSync(new URL('../../../../build/requirements/installer-places.md', import.meta.url), 'utf8');
 const ids = [...text.matchAll(/^- \*\*(R\d+|F\d+)\*\*/gm)].map((m) => m[1]);
 
 test('installer-places holds R21, R83, R94, R95, R96, R97 and R98, each once, and no other requirement', () => {

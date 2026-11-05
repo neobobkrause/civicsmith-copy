@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const text = readFileSync(new URL('../../../build/requirements/installer-copies.md', import.meta.url), 'utf8');
+const text = readFileSync(new URL('../../../../build/requirements/installer-copies.md', import.meta.url), 'utf8');
 const ids = [...text.matchAll(/^- \*\*(R\d+|F\d+)\*\*/gm)].map((m) => m[1]);
 
 test('installer-copies holds R13, R24, R32, R62, R63, R64 and R65, each once, and no other requirement', () => {

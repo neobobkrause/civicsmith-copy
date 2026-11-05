@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const text = readFileSync(new URL('../../../build/requirements/installer-check.md', import.meta.url), 'utf8');
+const text = readFileSync(new URL('../../../../build/requirements/installer-check.md', import.meta.url), 'utf8');
 const ids = [...text.matchAll(/^- \*\*(R\d+|F\d+)\*\*/gm)].map((m) => m[1]);
 
 test('installer-check holds R84, R85, R86, R87, R88, R89, R90, R91, R92 and R93, each once, and no other requirement', () => {

@@ -4,11 +4,10 @@
   "layer": 11,
   "paths": [
     "build/requirements/installer-copies.md",
-    "docs/requirements-notes/installer-copies.md",
-    "newgroup/src/held.mjs"
+    "docs/requirements-notes/installer-copies.md"
   ],
   "tests": [
-    "newgroup/test/copies/"
+    "bio-plane/test/m/installer-copies/"
   ],
   "requirements": "build/requirements/installer-copies.md",
   "uses": [
@@ -19,9 +18,11 @@
     "test-support"
   ],
   "suite": {
-    "cwd": "newgroup",
+    "cwd": "bio-plane",
     "command": [
       "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
       "--test"
     ]
   },
@@ -31,7 +32,7 @@
     "build/requirements/README.md",
     "build/situations/job.md"
   ],
-  "prior_work": "Meet the unmet requirement marks in build/requirements/installer-copies.md (split by copy from installer, 5 Nov 2026), each with a test under newgroup/test/copies/ that fails with the change reverted. Its terms are installer's (build/requirements/installer.md). The installer Worker (newgroup) is a live site: deploying it is never yours. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "prior_work": "Meet the unmet requirement marks in build/requirements/installer-copies.md (split by copy from installer, 5 Nov 2026), each with a test under bio-plane/test/m/installer-copies/ that fails with the change reverted. Until a job of this module moves the code they rule, it lives in newgroup/, which is installer's; installer.md still holds R13, R24, R32 and R62 to R65 until installer's own job removes them (coordinator ruling, 5 Nov 2026 17:20). Its terms are installer's (build/requirements/installer.md). The installer Worker (newgroup) is a live site: deploying it is never yours. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
     "state": "OPEN",
     "at": "2026-11-05T15:00:00Z"
