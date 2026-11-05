@@ -7,3 +7,4 @@
 {"at":"2026-11-05T07:29:19Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job answer-envelope complete, PR #386 ready, session session_018BhcegWxBjqMJAqA2fYmec: run status"}
 {"at":"2026-11-05T07:29:29Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-05T15:52:26Z","row":"sent","n":5,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (9 jobs ready). Then: job answer-envelope complete, PR #514 ready, session session_018BhceepkTPohdZryYJkr1g: run status"}
+{"at":"2026-11-05T15:52:43Z","row":"outcome","n":5,"outcome":"delivered"}
