@@ -47,9 +47,7 @@
   ],
   "prior_work": "Meet every unmet mark in build/requirements/registers.md, each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "BLOCKED",
-    "reason": "Routed (BOB 5 Nov 05:13): F2 met on this branch. F1's remaining half is content's: content found mark + ledger (PR 434) for cellsAt to answer removed via the row context's removed(sha, n) (content/index.mjs:1512-1519). When content merges, reopen registers to turn the F1 todo in remove-watch.test.mjs into a test and strike F1. This branch (F2) can be completed now with F1 left unmet.",
-    "at": "2026-11-05T05:08:09Z",
-    "owner": "bob"
+    "state": "COMPLETE",
+    "at": "2026-11-05T05:13:34Z"
   }
 }
