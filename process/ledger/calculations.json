@@ -54,8 +54,7 @@
   ],
   "prior_work": "Meet every unmet mark in build/requirements/calculations.md, each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T10:59:52Z",
-    "reason": "reopened: answer the provider notice content:440"
+    "state": "COMPLETE",
+    "at": "2026-11-05T11:19:10Z"
   }
 }
