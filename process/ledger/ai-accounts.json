@@ -4,7 +4,8 @@
   "layer": 2,
   "paths": [
     "bio-plane/src/ai-accounts/",
-    "build/requirements/ai-accounts.md"
+    "build/requirements/ai-accounts.md",
+    "docs/requirements-notes/ai-accounts.md"
   ],
   "tests": [
     "bio-plane/test/m/ai-accounts/"

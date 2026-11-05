@@ -301,7 +301,9 @@ test("R19: `terminal` is given only while STATES.information.edges.retired is em
   assert.equal(RUNGS.retire, "terminal");
   for (const op of ["publish", "publishcheck"]) assert.equal(RUNGS[op], "terminal", op);
   assert.deepEqual(Object.keys(RUNGS).filter((op) => RUNGS[op] === "irreversible").sort(), ["publishat", "publishatmove"]);
-  assert.deepEqual([...G.IRREVERSIBLE_WEIGHT].sort(), ["personexpunge", "publishat", "publishatmove", "standardrelease"]);
+  /* F3 (op-grades R55): rowexpunge may join them, as personexpunge is held */
+  assert.deepEqual([...G.IRREVERSIBLE_WEIGHT].filter((op) => op !== "rowexpunge").sort(),
+    ["personexpunge", "publishat", "publishatmove", "standardrelease"]);
 });
 
 /* N891: the family's content (each code the reasoned ops refuse with, and the exclusions) is op-grades' own, pinned in
