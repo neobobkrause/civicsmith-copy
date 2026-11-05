@@ -36,7 +36,7 @@ Four things first:
 | queue-producers | R57 | queue.signer-self-registered.summary.other, .summary.unnamed.other, .key, .key.undated, .key.comment | no | no | queue-producers.md:155 |
 | op-grades | R55 (d) | consequence.rowexpunge | no | no | op-grades.md:128 |
 | machinery-producers | F1 | a brought-by sentence for capture-completed-unattended (no key yet) | no | no | machinery-producers.md:137 |
-| screens-wizards | R23 | per-filter words (words owed) | no | no | screens-wizards.md:78 |
+| screens-wizards | R23 | screen.wizards.state.offered.tip, screen.wizards.empty.offered, screen.wizards.state.draft.tip, screen.wizards.empty.draft, screen.wizards.state.submitted.tip, screen.wizards.empty.submitted, screen.wizards.state.withdrawn.tip, screen.wizards.empty.withdrawn, screen.wizards.state.retired.tip, screen.wizards.empty.retired, screen.wizards.state.broken.tip, screen.wizards.empty.broken, screen.wizards.state.proposed.tip, screen.wizards.empty.proposed | no | yes (words.json:123922) | screens-wizards.md:78 |
 | journey-check | R17, R26 | rows in words.json and setup-words that still say "group" (keys not named) | n/a | n/a | journey-check.md:71,83 |
 | screens-action | R62 | guide.procedure.notreviewed | yes (src/reading-guides/index.mjs:92) | no | screens-action.md:142 |
 | screens-action | R62 | text.reviewedby, text.lastchecked | no | no | screens-action.md:142 |
@@ -53,13 +53,13 @@ Four things first:
 | screens-intake | R78 | screen.capture.read.queued | no | no | screens-intake.md:134 |
 | network-notices | R32 | listing.contact.note | no | no | network-notices.md:151 |
 | agent-runner | R41 | gate.runner.refused.<CODE> | no | no | agent-runner.md:67 |
-| screens-action | R74, R80 | none named (words owed) | n/a | no | screens-action.md:154,160 |
+| screens-action | R74, R80 | screen.request.nooffice.pointer.people, screen.actionnew.refused.deadline, screen.actionnew.refused.addressee | n/a | yes (words.json:123880) | screens-action.md:154,160 |
 | screens-daily | R108 | the basis.keys_more line | no | no | screens-daily.md:231 |
 | screens-daily | R116 | none named (words owed) | n/a | no | screens-daily.md:242 |
 | screens-inquiry | R146, R149, R150 | none named (words owed) | n/a | no | screens-inquiry.md:292,295,296 |
 | screens-intake | R92 | none named (words owed) | n/a | no | screens-intake.md:149 |
 | screens-investigate | R92 | none named (words owed) | n/a | no | screens-investigate.md:168 |
-| screens-plan | R9 | none named (words owed) | n/a | no | screens-plan.md:27 |
+| screens-plan | R9 | screen.plan.option.goes, screen.plan.option.nooffice, screen.plan.support.hypothetical.means | n/a | yes (words.json:123901) | screens-plan.md:27 |
 | screens-public, screens-publish | R102; R105, R106 | none named (words owed) | n/a | no | screens-public.md:44; screens-publish.md:169,172,173 |
 | installer | R95 | none named (words are UX-DESIGN's) | n/a | no | installer.md:156 |
 | screens-settings | R88, R96, R104 | none named | n/a | no | screens-settings.md:177,185,193 |
