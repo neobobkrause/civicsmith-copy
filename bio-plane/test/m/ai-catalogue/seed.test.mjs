@@ -34,6 +34,9 @@ test("R39 a copy with no network loads the release's seed at start and holds a v
   assert.equal(offered(cat).ok, true);
   assert.deepEqual(offered(cat).entries, []);
   assert.equal(cat.seedAtStart.outcome, "found");
+  /* F2: handed no seed, a development build takes the development seed, which the release seed's signature does not sign */
+  const unnamed = await world({ keys: KEYS, env: DEV_ENV(await signSeed(DEV)) });
+  assert.ok(unnamed.cat.seedAtStart && unnamed.cat.seedAtStart.ok === false, JSON.stringify(unnamed.cat.seedAtStart));
 });
 
 test("R39 a copy with no network offers the seed's entries, the seed loaded at start", async () => {
