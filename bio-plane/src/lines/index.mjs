@@ -23,7 +23,7 @@ import { defaultRegistry, BOUNDS } from "../connection-grammar/index.mjs";
 import { governingZone } from "../../../jurisdictions/index.mjs";
 import { LINES_SCHEMA, LINES_TABLES, LINES_ADDITIVE_COLUMNS } from "./schema.mjs";
 import { LINE_KINDS, STRUCTURE_KINDS, PEOPLE_KINDS, PROCEEDING_KINDS, CAPACITIES, ROLES, END_KINDS, OWNER,
-         CONNECTION_KINDS, connectionKind, lineKindOf, PARTY_ROLES, OCDS_PARTY_ROLES } from "./vocab.mjs";
+         CONNECTION_KINDS, connectionKind, lineKindOf, PARTY_ROLES, OCDS_PARTY_ROLES, rowStateLabel } from "./vocab.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { reason, asReason, reasonText } from "./reasons.mjs";
 
@@ -439,7 +439,15 @@ export class Lines {
         bad = checkContentExtent(basis.extent, ctx);
       } catch (e) { bad = { reason: "CONTENT_EXTENT_UNREADABLE", detail: String(e.message || e) }; }
       if (bad) return { refusal: refuse("EXTENT_NOT_IN_CAPTURE", localize("lines.index.the_extent_is_not_a", "the extent is not a part of that capture: {v1}", { v1: String(bad.detail || bad.reason || bad.code) }), { extent_refusal: bad.reason || bad.code || null }) };
-      return { form: "passage", basis: { captureSha: sha, extent: basis.extent }, captureSha: sha, sight: home.bundleId,
+      /* F1 (citation R28): a passage over a register row may name the row's content id (registers R28), so a read
+         can say when the row is later removed (registers R30). */
+      let contentId = null;
+      if (basis.contentId !== undefined && basis.contentId !== null) {
+        contentId = typeof basis.contentId === "string" ? basis.contentId.trim() : "";
+        const row = contentId && this.#content && typeof this.#content.contentRow === "function" ? this.#content.contentRow(contentId) : null;
+        if (!row) return { refusal: refuse("NO_SUCH_CONTENT", localize("lines.index.the_record_holds_no_content", "the record holds no content row by that id"), { content_id: contentId || null }) };
+      }
+      return { form: "passage", basis: { captureSha: sha, extent: basis.extent, ...(contentId ? { contentId } : {}) }, captureSha: sha, sight: home.bundleId,
                assertion: this.#captureGrade(sha) };
     }
     if ("rule" in basis || "source" in basis) {
@@ -622,6 +630,25 @@ export class Lines {
     const line = this.#visible(lineId, viewer);
     if (!line) return { ok: true, found: false, line_id: lineId };
     return { ok: true, found: true, line: this.#view(line, viewer) };
+  }
+
+  /** F1 (citation R28; registers R30): a line read with the register row its passage names by content id, as
+   *  `content.cellsAt` answers it. A row removed under K1493 answers `{state: "removed", cells: null}` with its reason
+   *  and no byte of the row; the line itself stands, neither withdrawn nor uncounted. A line naming no row answers
+   *  `row: null`. */
+  async lineRow({ lineId, viewer } = {}) {
+    const r = this.readLine({ lineId, viewer });
+    if (!r.ok || !r.found) return r;
+    const contentId = r.line.basis.form === "passage" ? r.line.basis.contentId ?? null : null;
+    if (!contentId) return { ...r, row: null };
+    let a;
+    try { a = await this.#content.cellsAt(contentId); } catch (e) { a = { cells: null, reason: String(e && e.message || e) }; }
+    const removed = a && a.cells === null && a.reason === "removed";
+    const state = removed ? "removed" : a && a.cells != null ? "held" : "unread";
+    const row = { content_id: contentId, state, label: rowStateLabel(state), cells: state === "held" ? a.cells : null };
+    if (state === "removed") row.why = reason("lines.why.row_removed", { content_id: contentId });
+    if (state === "unread") row.why = reason("lines.why.row_unread", { content_id: contentId, reason: String(a && a.reason || "unknown") });
+    return { ...r, row };
   }
 
   linesOf({ entity, kinds: ks, direction = "both", limit, viewer } = {}) {

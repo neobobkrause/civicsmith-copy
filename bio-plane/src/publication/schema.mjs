@@ -490,6 +490,17 @@ CREATE TABLE IF NOT EXISTS edition_stamps (
   stamped_at TEXT NOT NULL,
   PRIMARY KEY (case_id, edition, entry_seq)
 );
+
+-- F1 (citation R29; K5514): the author's switch for a photo's place in a case edition, off unless a row says shown=1.
+-- Written only before signing; cleared with its document, as case_exclusions.
+CREATE TABLE IF NOT EXISTS case_photo_places (
+  case_id     TEXT NOT NULL,
+  edition     INTEGER NOT NULL,
+  capture_sha TEXT NOT NULL,
+  shown       INTEGER NOT NULL CHECK (shown IN (0,1)),
+  set_at      TEXT NOT NULL,
+  PRIMARY KEY (case_id, edition, capture_sha)
+);
 `;
 
 /** R31 (K23): what purge clears, as the store declared it — `published_edges` keyed by either end, the unsigned case
@@ -499,6 +510,7 @@ export const PUBLICATION_TABLES = Object.freeze([
   { name: "published_held_references", keys: ["from_bundle", "to_bundle"] },
   { name: "case_documents", keys: [], whole: "ratified_at IS NULL" },
   { name: "case_exclusions", keys: [], whole: "NOT EXISTS (SELECT 1 FROM case_documents d WHERE d.case_id = case_exclusions.case_id AND d.edition = case_exclusions.edition)" },
+  { name: "case_photo_places", keys: [], whole: "NOT EXISTS (SELECT 1 FROM case_documents d WHERE d.case_id = case_photo_places.case_id AND d.edition = case_photo_places.edition)" },
 ]);
 /** R24, R31: the published bytes, never cleared by any purge. */
 export const PUBLICATION_EXEMPT = Object.freeze([

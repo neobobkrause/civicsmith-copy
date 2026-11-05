@@ -8,7 +8,7 @@ import { withRecordIds } from "./holdings.mjs";
 import { MEANING_ARM, RESPONSE_ID } from "./names.mjs";
 import { LOG_DETAIL_MAX } from "./entries.mjs";
 import { planeAnswer, meaningRead } from "./plane.mjs";
-import { runSubsessions } from "./subsessions.mjs";
+import { runSubsessions, PARTIAL_MARK } from "./subsessions.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
 /** WHAT EACH ROW ACTUALLY DOES AGAINST THE PLANE. One `case` per row that has
@@ -73,8 +73,10 @@ export async function performStep(call, state, runId, model = null, logSeq = nul
       /* agent-harness R7 — THE SUB-SESSIONS RUN, when model turns do: one per level, each its own conversation under its own
          contract, and each hands back a REPORT that `collect` holds to R20. */
       if (model) {
-        const ran = await runSubsessions(call, out.state, runId, model, logSeq, contracts);
-        if (ran.silent || ran.model || ran.stopped) return ran;
+        /* R52: the reports of this pass a stopped segment took are held; only the levels without one are asked. */
+        const held = (state.reports || []).filter((r) => r && typeof r === "object" && r[PARTIAL_MARK] === (Number(state.pass) || 0));
+        const ran = await runSubsessions(call, out.state, runId, model, logSeq, contracts, held);
+        if (ran.silent || ran.model || ran.stopped || ran.aiStop || ran.roleUnknown) return ran;
         if (ran.dropped.length) out.dropped = ran.dropped;
         out.state = { ...out.state, reports: ran.reports, scope: ran.scope,
                       reportsRefused: [...(out.state.reportsRefused || []), ...ran.refused] };
@@ -99,7 +101,9 @@ export async function performStep(call, state, runId, model = null, logSeq = nul
            to the run's target (FL-11's class, one call over): a request naming none is refused
            `CAPTURE_REQUEST_NOT_AN_INQUIRY`. */
         const r = planeAnswer(await call("capturerequest", null,
-          { run: runId, target: t.target ?? state.target ?? null, address: t.url ?? null }), "capturerequest");
+          { run: runId, target: t.target ?? state.target ?? null, address: t.url ?? null,
+            /* R56: the request names the conversation that judged its target */
+            ...(Array.isArray(t.produced_by) && t.produced_by.length ? { produced_by: t.produced_by } : {}) }), "capturerequest");
         if (r.silent) return { silent: r.silent };
         /* Already ANSWER-checked before D-276 — routed through `planeAnswer` so
            every refusal this member publishes carries the same three fields
