@@ -168,3 +168,4 @@ Holds the public registers a team imported, whole or in part, by fixed steps wit
 ## Open for Bob
 
 None.
+- **F1** *(not yet met: coordinator ruling 5 Nov 03:26)* Meet R30's removed answer for citation R28: after rowExpunge takes a row, content.cellsAt for that row answers {cells: null, reason: 'removed'} (bio-plane/src/content/index.mjs:1512-1525 has no removed answer today); citation R28 marks the leg removed from it.
