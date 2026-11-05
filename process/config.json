@@ -1,4 +1,5 @@
 {
+  "merge_train_window": 3,
   "tranche": "tranche",
   "record_since": "4250e8860a482bcbebab243e6627ba0cd690e9d7",
   "records": [
@@ -20,7 +21,7 @@
   ],
   "node": "26.10.0",
   "suite_timeout_minutes": 45,
-  "coordinator": "session_018BhcegkGtAhUqZ59UwPUUK",
+  "coordinator": "session_018BhceevG6A8yj9fzc24C89",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
     {
@@ -44,6 +45,34 @@
   ],
   "modules_file": "build/modules.json",
   "generated": [
+    {
+      "paths": [
+        "docs/development/ux-substrate/screens/words-drawn.json"
+      ],
+      "regenerate": [
+        "python3",
+        "docs/development/ux-substrate/screens/words-drawn.src.py"
+      ],
+      "verify": [
+        "node",
+        "bio-plane/src/setup-words/build.mjs",
+        "--check"
+      ]
+    },
+    {
+      "paths": [
+        "docs/development/ux-substrate/screens/words.json"
+      ],
+      "regenerate": [
+        "node",
+        "docs/development/ux-substrate/screens/build_words.mjs"
+      ],
+      "verify": [
+        "node",
+        "bio-plane/src/setup-words/build.mjs",
+        "--check"
+      ]
+    },
     {
       "paths": [
         "bio-plane/src/setup-words/rows.mjs",
@@ -118,7 +147,8 @@
         "--test-force-exit",
         "bio-plane/test/system/fleetbundles.test.mjs"
       ]
-    }
+    },
+    {"paths": ["newgroup/dist/newgroup.bundled.mjs"], "regenerate": ["npm", "--prefix", "newgroup", "run", "build"], "verify": ["node", "--test", "--test-force-exit", "bio-plane/test/system/newgroup-bundle-fresh.test.mjs"]}
   ],
   "deploy": {
     "slug_prefix": "p3dev-",
@@ -359,27 +389,6 @@
       "bio-plane/test/m/store-assembly/declarations.test.mjs"
     ],
     "seconds": 120
-  },
-  "review_triggers": {
-    "security_paths": [
-      "bio-plane/src/op-declarations/",
-      "bio-plane/src/wizard-scripts/admin.mjs",
-      "bio-plane/src/admission/",
-      "bio-plane/src/store-request/index.mjs",
-      "bio-plane/src/credentials/index.mjs",
-      "bio-plane/src/ai-accounts/index.mjs",
-      "bio-plane/src/signin-door/index.mjs",
-      "bio-plane/src/answers/scope.mjs",
-      "bio-plane/src/member-roster/index.mjs",
-      "bio-plane/src/op-grades/index.mjs",
-      "bio-plane/src/registers/ops.mjs",
-      "bio-plane/src/capture-sources/credentials.mjs",
-      "agent-worker/src/ops.mjs",
-      "agent-worker/src/signin.mjs",
-      "agent-runner/src/signin.mjs",
-      "agent-runner/src/entry.mjs",
-      "agent-harness/src/subsession.mjs"
-    ]
   },
   "merge_train": true,
   "release_path": [
