@@ -11,3 +11,4 @@
 {"at":"2026-11-05T05:32:43Z","row":"sent","n":6,"to":"bob","text":"merged PR 409 (job skills): node .process/tool/p3.mjs notice triage skills:409 (provider notice skills:409; 6 user modules owe a worker's judgment: agent-drafts, agent-worker, answer-envelope, control-plane, investigation, store-request: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T05:32:58Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-05T05:37:14Z","row":"sent","n":7,"to":"bob","text":"merged PR 410 (job strength): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
+{"at":"2026-11-05T05:37:29Z","row":"outcome","n":7,"outcome":"delivered"}
