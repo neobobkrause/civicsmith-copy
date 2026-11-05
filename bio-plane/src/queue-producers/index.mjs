@@ -72,7 +72,7 @@ import { aiUseOf } from "../ai-use/index.mjs";
 import { ROOT_ADMIN } from "../member-roster/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { proposalFindingItems } from "./proposals.mjs";
-import { say, holds, joined, tidy, fillWord, reasonWord, dayText, localDayOf, instantText, setText } from "./words.mjs";
+import { say, holds, joined, fillWord, reasonWord, dayText, localDayOf, instantText, setText } from "./words.mjs";
 
 export { proposalFindingItems, CARDINALITY_EXCEEDED } from "./proposals.mjs";
 
@@ -2115,13 +2115,10 @@ export class QueueProducers {
       const more = all.length - listed.length;
       const earliest = listed[0];
       const name = member ? this.#memberName(member) : "";
-      const form = all.length === 1 ? "one" : "other";
-      /* R57: the one form is the word list's own sentence; the other form, which the list does not hold yet, is written once here */
-      const summaryKey = form === "one" ? `queue.signer-self-registered.summary${member ? "" : ".unnamed"}` : `queue-producers.signer.summary${member ? "" : ".unnamed"}.other`;
+      /* R43: the summary is the word list's own sentence, by key, and nothing is composed here. The list holds the one form
+         alone; R57's other form (how many keys) has no word yet, so the count travels as a fill (`count`) beside it. */
+      const summaryKey = `queue.signer-self-registered.summary${member ? "" : ".unnamed"}`;
       const fills = { member: name, count: all.length };
-      const summary = form === "one" ? say(summaryKey, fills)
-        : member ? localize("queue-producers.signer.summary.other", "{member} registered {count} new signing keys for themselves", fills)
-          : localize("queue-producers.signer.summary.unnamed.other", "A member registered {count} new signing keys for themselves", fills);
       const lines = listed.map((k) => this.#signerKeyLine(k));
       return {
         id: `OBLIGATION::signer-self-registered::${m}`,
@@ -2129,9 +2126,10 @@ export class QueueProducers {
         kind: "signer-self-registered",
         case: homes,
         subject: { kind: "member", id: member, registered_by: member, keys: listed.map((k) => k.key_b64) },
-        summary: tidy(summary),
+        summary: say(summaryKey, fills),
         summary_key: summaryKey,
-        detail: joined(say("queue.signer-self-registered.detail"), ...lines.map((l) => l.text)),
+        fills,
+        detail: say("queue.signer-self-registered.detail"),
         detail_key: "queue.signer-self-registered.detail",
         lines,
         basis: { source: "credentials.signerList", member, registered_by: member, origin: "self",
@@ -2150,20 +2148,13 @@ export class QueueProducers {
     });
   }
 
-  /** R57: one listed key's line, by key: the comment as its own optional sentence (R43's rule) and `added` as a local day in
-   *  the group's zone (R36), never UTC; with no zone held the day is undetermined and the line names no date. */
+  /** R56, R36: one listed key's facts for its line: the key, its comment, and `added` as a local day in the group's zone, never
+   *  UTC; with no zone held the day is undetermined (null). R57's keyed line sentence has no word yet, so no sentence is made here. */
   #signerKeyLine(k) {
     const zone = this.#zoneNow();
-    const day = zone ? this.#dayWord(k.added) : "";
+    const day = zone ? localDayOf(k.added, zone) : null;
     const comment = typeof k.comment === "string" && k.comment.trim() ? k.comment.trim() : null;
-    const key = `queue-producers.signer.key${day ? "" : ".undated"}`;
-    const base = day
-      ? localize("queue-producers.signer.key", "A key added {date}.", { date: day })
-      : localize("queue-producers.signer.key.undated", "A key added on a day that can't be told, as no time zone is set.", {});
-    const tail = comment ? localize("queue-producers.signer.key.comment", "Its note says: {comment}", { comment }) : "";
-    return { key: k.key_b64, text: joined(tidy(base), tail ? tidy(tail) : ""), text_key: key,
-             ...(comment ? { comment_key: "queue-producers.signer.key.comment" } : {}),
-             day: zone ? localDayOf(k.added, zone) : null, day_state: day ? "determined" : "undetermined" };
+    return { key: k.key_b64, comment, added: k.added ?? null, day, day_state: day ? "determined" : "undetermined" };
   }
 
   /* ======================================================================
@@ -2234,9 +2225,9 @@ export class QueueProducers {
       const id = `OBLIGATION::retesting-off::${e.key}`;
       if (seen.has(id)) continue;
       seen.add(id);
+      /* R43: who and when travel as fills beside the word list's sentence; nothing is composed here */
       const who = typeof e.turned_off_by === "string" && e.turned_off_by ? this.#memberName(String(e.turned_off_by).replace(/^member:/, "")) : "";
       const when = instantText(e.turned_off_at, zone, today);
-      const line = who && when ? localize("queue-producers.retesting-off.by", "{who} turned it off {when}.", { who, when }) : "";
       out.push({
         id,
         class: "OBLIGATION",
@@ -2245,7 +2236,8 @@ export class QueueProducers {
         subject: { kind: "ai_paying_account", id: e.owner },
         summary: say("queue.retesting-off.summary"),
         summary_key: "queue.retesting-off.summary",
-        detail: joined(say("queue.retesting-off.summary"), line ? tidy(line) : ""),
+        fills: { who, when },
+        detail: say("queue.retesting-off.summary"),
         detail_key: "queue.retesting-off.summary",
         basis: { source: "ai-use.retestingOff", key: e.key, owner: e.owner, turned_off_by: e.turned_off_by ?? null,
                  turned_off_at: e.turned_off_at ?? null, recipients_rule: "administrators_of_paying_account",

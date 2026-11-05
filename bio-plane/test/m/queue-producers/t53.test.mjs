@@ -4,7 +4,7 @@
    their own test worlds (their `fixture.mjs`), reached through the one read this module calls, never a hand-built answer. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, byId, NOW, iso, said, dayWord } from "./world.mjs";
+import { world, byId, NOW, iso, said } from "./world.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 import { world as accountsWorld } from "../ai-accounts/fixture.mjs";
 import { PLANS } from "../ai-accounts/catalogue.mjs";
@@ -83,36 +83,47 @@ test("R56: 21 keys list 20, keys_more is 1 and the 21st has no option; after one
   assert.equal(it.basis.keys_more, 0);
 });
 
-test("R57: the summary states the member and how many new keys; each key's line names the day it was added in the group's zone, never UTC; with no zone held the day is undetermined and the line names no date", () => {
+/* R57 stays not yet met: its keyed sentences (the summary's other form, each key's line) have no words in the design stream's list.
+   What is met is tested: the summary by the list's key with the count as a fill, and each key's local day (R36). */
+test.todo("R57: the summary states how many keys in its one or other form, and each key's line is a keyed sentence with the comment and the added day (words owed)");
+
+test("R56, R36 (R57 in part): each listed key carries the day it was added in the group's zone, never UTC; with no zone held the day is undetermined; the summary is the word list's by key, the count a fill", () => {
   /* 23:30 on the 4th in Los Angeles is 06:30 UTC on the 5th */
   const added = "2026-08-05T06:30:00Z";
   const w = admins("America/Los_Angeles");
   w.member("sp", { role: "member", handle: "sparky" });
   w.signer("AAAAKEYA", "sp", { added, comment: "laptop" });
   let it = byId(w.read("ada"))["OBLIGATION::signer-self-registered::sp"];
-  assert.equal(it.summary, word("queue.signer-self-registered.summary", { member: "sparky" }));
-  const [line] = it.lines;
-  assert.equal(line.day, "2026-08-04", "the 4th, the local day");
-  assert.ok(line.text.includes(dayWord("2026-08-04")), line.text);
-  assert.ok(!line.text.includes(dayWord("2026-08-05")), "never the UTC day");
-  assert.ok(it.detail.startsWith(said("queue.signer-self-registered.detail")));
+  assert.deepEqual([it.summary_key, it.summary, it.fills.count], ["queue.signer-self-registered.summary", word("queue.signer-self-registered.summary", { member: "sparky" }), 1]);
+  assert.deepEqual(it.lines, [{ key: "AAAAKEYA", comment: "laptop", added, day: "2026-08-04", day_state: "determined" }], "the 4th, the local day, never the UTC 5th");
+  assert.deepEqual([it.detail_key, it.detail], ["queue.signer-self-registered.detail", said("queue.signer-self-registered.detail")]);
   w.signer("AAAAKEYB", "sp", { added: iso(NOW) });
   it = byId(w.read("ada"))["OBLIGATION::signer-self-registered::sp"];
-  assert.equal(it.summary, "sparky registered 2 new signing keys for themselves", "the other form");
+  assert.deepEqual([it.summary_key, it.fills.count], ["queue.signer-self-registered.summary", 2], "two keys: the count travels as a fill");
   const bare = admins(null);
   bare.signer("AAAAKEYA", "alice", { added });
   const [undated] = byId(bare.read("ada"))["OBLIGATION::signer-self-registered::alice"].lines;
-  assert.deepEqual([undated.day, undated.day_state, undated.text_key], [null, "undetermined", "queue-producers.signer.key.undated"]);
-  assert.ok(!/\b(4|5)\b/.test(undated.text), "no date");
+  assert.deepEqual([undated.day, undated.day_state], [null, "undetermined"], "no zone: no date");
 });
 
-test("R57 control: a key with no comment reads the base line with no blank", () => {
+test("R56 (R43): a member the rows do not name reads the unnamed word, for one key and for two (the other form), the count a fill", () => {
+  const signers = (n) => Array.from({ length: n }, (_, i) => ({ key_b64: `AAAAKEY${i}`, member_id: "", registered_by: "not recorded", comment: null,
+    status: "active", origin: "self", added: iso(NOW - i * H) }));
+  for (const n of [1, 2]) {
+    const w = world({ credentials: { signerList: () => ({ ok: true, signers: signers(n) }) } });
+    w.member("ada", { role: "admin" });
+    const [it] = kind(w.read("ada"), "signer-self-registered");
+    assert.deepEqual([it.summary_key, it.summary, it.fills.count, it.basis.keys.length],
+      ["queue.signer-self-registered.summary.unnamed", word("queue.signer-self-registered.summary.unnamed"), n, n], String(n));
+  }
+});
+
+test("R56 control: a key with no comment carries comment null, and no item text holds a sentence the word list does not", () => {
   const w = admins();
   w.signer("AAAAKEYA", "alice", { added: iso(NOW) });
-  const [line] = byId(w.read("ada"))["OBLIGATION::signer-self-registered::alice"].lines;
-  assert.equal(line.text, `A key added ${dayWord(iso(NOW).slice(0, 10))}.`);
-  assert.ok(!/ {2}|\s[.,]/.test(line.text));
-  assert.ok(!("comment_key" in line));
+  const it = byId(w.read("ada"))["OBLIGATION::signer-self-registered::alice"];
+  assert.equal(it.lines[0].comment, null);
+  assert.deepEqual([it.summary, it.detail], [word("queue.signer-self-registered.summary", { member: "alice" }), said("queue.signer-self-registered.detail")]);
 });
 
 /* ai-accounts' own world: a team gateway account, flagged by a call the platform's credits paid (its R45). */
@@ -174,8 +185,10 @@ test("R61: switching re-testing off makes one retesting-off item for each admini
     const [it] = items;
     const entry = uw.u.retestingOff({ viewer: `member:${who}` }).off[0];
     assert.equal(it.id, `OBLIGATION::retesting-off::${entry.key}`);
-    assert.deepEqual([it.summary, it.summary_key, it.door, it.basis.turned_off_by, it.basis.turned_off_at],
-      [word("queue.retesting-off.summary"), "queue.retesting-off.summary", "airetestset", entry.turned_off_by, at]);
+    assert.deepEqual([it.summary, it.summary_key, it.detail, it.door, it.basis.turned_off_by, it.basis.turned_off_at],
+      [word("queue.retesting-off.summary"), "queue.retesting-off.summary", word("queue.retesting-off.summary"), "airetestset", entry.turned_off_by, at]);
+    assert.equal(it.fills.who, word("member.founder.unnamed"), "who turned it off (the founder, by her word, R53), as a fill beside the word");
+    assert.ok(it.fills.when.length > 0, "and when");
     assert.ok(!("disposition" in it), "queue gives the disposition (its R12)");
   }
   uw.u.retestSet({ owner: "group", on: false, by: "second", at: "2026-08-31T11:00:00Z" });

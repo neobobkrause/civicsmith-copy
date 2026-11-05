@@ -187,7 +187,7 @@ test("R43 (R4–R7): contradiction items read .detail.open, .taken_up and .expla
   assert.equal(m["FINDING::tension-after-publication::CASE-2::CC-O"].detail, word(`${C("tension-after-publication")}.detail`));
 });
 
-test("R43, R57 (R14 as R56 amends it): signer-self-registered reads .summary or .summary.unnamed for one key by whether a member is named, and .detail; the comment is its key line's own sentence", () => {
+test("R43, R57 (R14 as R56 amends it): signer-self-registered reads .summary or .summary.unnamed by whether a member is named, and .detail; the comment travels on its key's line", () => {
   /* credentials is a fake here: its real rows always name a member, and the unnamed forms are for a row that names none */
   const keys = [{ key_b64: "KEY-1", member_id: "kim", registered_by: "kim", comment: "laptop", status: "active", origin: "self", added: iso(NOW) },
                 { key_b64: "KEY-3", member_id: "", registered_by: "not recorded", comment: null, status: "active", origin: "self", added: iso(NOW) }];
@@ -197,9 +197,8 @@ test("R43, R57 (R14 as R56 amends it): signer-self-registered reads .summary or 
   const kim = m["OBLIGATION::signer-self-registered::kim"];
   assert.equal(kim.summary, word(S("summary"), { member: "kim" }));
   assert.equal(kim.summary_key, S("summary"));
-  assert.ok(kim.detail.startsWith(word(S("detail"))));
-  assert.equal(kim.lines[0].comment_key, "queue-producers.signer.key.comment");
-  assert.ok(kim.lines[0].text.includes("laptop"));
+  assert.equal(kim.detail, word(S("detail")));
+  assert.equal(kim.lines[0].comment, "laptop");
   assert.equal(m["OBLIGATION::signer-self-registered::"].summary, word(S("summary.unnamed")));
 });
 
