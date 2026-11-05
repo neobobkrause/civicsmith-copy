@@ -25,27 +25,14 @@ const SIGNIN = join(MEMBER, "src/signin.mjs");
 const DRAFT = join(MEMBER, "src/draft.mjs");
 const sha = (b) => createHash("sha256").update(b).digest("hex");
 
+/* F2 (no runner bound): the relay's arms (R81's hold, R83's headers and scrub, R84's relayed trace and SIGNIN_CODES, R85's
+   attempt) break code no request reaches any more, so they are retired with the suite sections that drove a runner. */
 const ARMS = [
-  { name: "the token relayed without the door's hold", file: SIGNIN, ids: ["R81"], from: `if (hold) held = true;`, to: `if (true) held = true;` },
-  { name: "valid_for kept when the token is dropped", file: SIGNIN, ids: ["R81"],
-    from: `const { token: _token, valid_for: _validFor, ...rest } = answer;`, to: `const { token: _token, ...rest } = answer;` },
   { name: "a sign-in with no secret taken (SIGNIN_NOT_HELD dropped)", file: INDEX, ids: ["R82"],
     from: `if (a.kind === "signin" && !(typeof a.secret === "string" && a.secret.length > 0))`, to: `if (false)` },
   { name: "a sign-in's secret of another type taken", file: INDEX, ids: ["R82"],
     from: `((a.secret !== undefined && a.secret !== null && typeof a.secret !== "string")`, to: `((false)` },
-  { name: "the trace header not passed on to the runner", file: SIGNIN, ids: ["R83"],
-    from: `const headers = { "content-type": "application/json", [TRACE_HEADER]: trace,`, to: `const headers = { "content-type": "application/json",` },
   { name: "no line written", file: SIGNIN, ids: ["R83"], from: `log(JSON.stringify({ ...line, ...fields }));`, to: `` },
-  { name: "the text head not scrubbed of token-shaped runs", file: SIGNIN, ids: ["R83"],
-    from: `    .replace(/[A-Za-z0-9._-]{32,}/g, "[token]");`, to: `;` },
-  { name: "trace not added to a relayed answer", file: SIGNIN, ids: ["R84"],
-    from: `const relayed = typeof out.trace === "string" ? out : { ...out, trace };`, to: `const relayed = out;` },
-  { name: "a refusal's detail in the old words (the place named)", file: SIGNIN, ids: ["R84"],
-    from: `  BAD_BODY: localize("agent-worker.signin.your_teams_civicsmith_could_not", "Your team's Civicsmith could not read`, to: `  BAD_BODY: localize("agent-worker.signin.control_old_words_unlisted", "The plane instance could not read` },
-  { name: "a runner code left out of SIGNIN_CODES", file: SIGNIN, ids: ["R84", "R85"],
-    from: `"BAD_CODE", "SIGNIN_REFUSED", "SIGNOUT_FAILED",`, to: `"BAD_CODE", "SIGNIN_REFUSED",` },
-  { name: "the attempt not passed on", file: SIGNIN, ids: ["R85"],
-    from: `body.attempt.length <= ATTEMPT_MAX ? { attempt: body.attempt } : {}`, to: `false ? {} : {}` },
   { name: "a draft's suggestions layer loaded whatever the switch", file: DRAFT, ids: ["R56"],
     from: `const suggestionsOn = account.suggestions === true;`, to: `const suggestionsOn = true;` },
 ];
