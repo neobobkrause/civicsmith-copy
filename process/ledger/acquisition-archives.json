@@ -30,7 +30,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T11:09:49Z"
+    "state": "BLOCKED",
+    "reason": "R126 is the only open mark and it waits on measure M-R7. R126 says REGISTER_STREAM_MAX and REGISTER_SEGMENT_MAX are quoted from runtime-limits' READ_BOUNDS, set from M-R7. Those rows do not exist: runtime-limits R47 is blocked on the same measure, the plan marks it [waits: M-R7] (build/plan/T53-R1/runtime-limits.md:15), and no M-R7 figure is on tranche. Until the rows exist, bio-plane/src/acquisition/register.mjs:44-46 answers null and streamRegister refuses REGISTER_LIMITS_NOT_RECORDED. That refusal is safe, but it means R126's 'accepted under the bound' cannot happen in the shipped build. Everything else R126 asks for (the 413 with size, bound and key; segments cut at row boundaries; the last one final; the header-only capture) already works with test-supplied bounds and is proved in bio-plane/test/m/acquisition/t53-register.test.mjs:115 and :134. The code is in bio-plane/src/acquisition and the figures are runtime-limits', so neither is in my paths. Pushed 72b4b998: a test.todo naming R126 (bio-plane/test/m/acquisition-archives/r126-bounds.test.mjs); suite 2 pass, 1 todo. To unblock: record M-R7 and add the two READ_BOUNDS rows (runtime-limits R47), then restart this job to strike R126 with a test against the quoted figures. Or, BOB's call: strike R126 now as met with the test-supplied bounds and leave the figures to runtime-limits R47.",
+    "at": "2026-11-05T11:18:52Z"
   }
 }
