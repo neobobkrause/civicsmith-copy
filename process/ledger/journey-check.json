@@ -38,7 +38,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T11:23:35Z"
+    "state": "WORKING",
+    "at": "2026-11-05T14:27:07Z",
+    "reason": "reopened: answer the provider notice interface-shell:310"
   }
 }
