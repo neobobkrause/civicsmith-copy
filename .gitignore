@@ -351,9 +351,12 @@ node_modules
 /bio-plane/src/setup-words/rows.mjs
 /bio-plane/src/setup-words/words-unreviewed.json
 /docs/development/ux-substrate/screens/words-reads.json
+/docs/development/ux-substrate/screens/words.json
+/docs/development/ux-substrate/screens/words-drawn.json
 /bio-plane/dist/bio-plane.bundled.mjs
 /pdf-worker/dist/pdf-worker.bundled.mjs
 /agent-worker/dist/agent-worker.bundled.mjs
+/newgroup/dist/newgroup.bundled.mjs
 
 # Built where needed, not committed (over max_file_bytes; BOB 4 Nov): case-checker R32, K1540
 bio-plane/src/case-checker/program.mjs
