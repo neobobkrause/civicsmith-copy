@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-specs-late","by":"triage","evidence":"build/modules.json:172 gives it paths [] (no code, no import of local-facts); the changed line is bio-plane/src/local-facts/index.mjs:1005","at":"2026-11-05T08:31:54.518Z","key":"local-facts:429","worker":"aa84898f63381386b","cost":"86371tokens"}
