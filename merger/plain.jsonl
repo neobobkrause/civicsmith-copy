@@ -100,3 +100,4 @@
 {"at":"2026-11-05T17:50:12Z","row":"renew","id":"692c563b65de","pr":526}
 {"at":"2026-11-05T17:50:16Z","row":"renew","id":"dc8a1900481a","pr":531}
 {"at":"2026-11-05T17:50:55Z","row":"renew","id":"70ba266f5113","pr":543}
+{"at":"2026-11-05T17:54:28Z","row":"queue","id":"95e550a510ac","pr":542,"head":"06d3319ae690be9faedfc8d3936f1cdfd5176b64","ref":"bob/found-marks-1720","by":"session_018BhcedPdKvvqmShgPznx1U","reviewed":null,"no_review":"found marks only (coordinator rulings 17:20, 17:24) and one modules.json uses edge; no code; store-jobs' mark dropped to store-assembly's reopen","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T21:04:28.391Z","renews":true}
