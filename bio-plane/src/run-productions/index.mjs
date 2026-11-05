@@ -134,6 +134,40 @@ export function substanceOf(composition) {
     .join("\n");
 }
 
+/** R29 (T53): the fields of a conversation's label (`agent-model` R26), each a string or null; `display_name`
+ *  (`ai-runs` R104) may stand beside them, a non-empty string. */
+export const PRODUCED_BY_FIELDS = Object.freeze(["provider", "host", "model_version", "effort", "account_level", "owner"]);
+export const PRODUCED_BY_MAX = 32;
+const LABEL_TEXT_MAX = 200;
+
+/** R29: `produced_by` read: `{list: null}` when absent or null; `{list}` the labels, repeats dropped and the first
+ *  kept, in order; `{malformed: <what is wrong>}` otherwise. Never throws. */
+export function producedByOf(x) {
+  if (x === undefined || x === null) return { list: null };
+  if (!Array.isArray(x)) return { malformed: "not a list" };
+  if (x.length === 0) return { malformed: "an empty list (send null when no AI produced the reading)" };
+  if (x.length > PRODUCED_BY_MAX) return { malformed: `a list of ${x.length} labels, over the ${PRODUCED_BY_MAX} it may hold` };
+  const text = (v) => typeof v === "string" && v.length <= LABEL_TEXT_MAX;
+  const seen = new Set();
+  const list = [];
+  for (let i = 0; i < x.length; i++) {
+    const l = x[i];
+    if (!l || typeof l !== "object" || Array.isArray(l)) return { malformed: `a list whose entry ${i} is not a label` };
+    const extra = Object.keys(l).filter((k) => !PRODUCED_BY_FIELDS.includes(k) && k !== "display_name");
+    if (extra.length) return { malformed: `a list whose entry ${i} carries fields a label has not: ${extra.slice(0, 5).join(", ").slice(0, 120)}` };
+    const missing = PRODUCED_BY_FIELDS.filter((k) => !(k in l) || !(l[k] === null || text(l[k])));
+    if (missing.length) return { malformed: `a list whose entry ${i} lacks or misstates ${missing.join(", ")}` };
+    if ("display_name" in l && !(text(l.display_name) && l.display_name.trim() !== ""))
+      return { malformed: `a list whose entry ${i} has a display_name that is not a name` };
+    const label = Object.fromEntries([...PRODUCED_BY_FIELDS, ...("display_name" in l ? ["display_name"] : [])].map((k) => [k, l[k]]));
+    const key = canonicalJson(label);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    list.push(label);
+  }
+  return { list };
+}
+
 export class RunProductions {
   constructor({ storage, record, membership, content, connections, aiRuns, strength, citation, basisVersions,
                 extraction = null, steps = null, aiAccounts = null, legEarning = null, now = null }) {
@@ -240,6 +274,15 @@ export class RunProductions {
       return { ok: false, reason: notPrincipal.code, code: notPrincipal.code, check: notPrincipal.check,
                translation: notPrincipal.translation, detail: notPrincipal.detail, target, run,
                note: "a suggestion names a run its caller holds. Nothing was composed or written" };
+    /* R28 (T53; agent-steps R54): A RETRIED CALL OF A RUN WRITES ONE VERSION. A call carrying an `idem` this run has
+       already sent, and whose first call wrote, is answered that first answer verbatim with `repeated: true`: nothing
+       is judged or written again. Asked after sight and position, so only the run's holder hears it, and before the
+       name check, which the first call's own version would otherwise answer. A call refused never kept an `idem`. */
+    const idem = typeof args.idem === "string" && args.idem.trim() !== "" ? args.idem.trim() : null;
+    if (idem) {
+      const first = this.#one(`SELECT answer FROM suggest_writes WHERE run=? AND idem=?`, run, idem);
+      if (first && first.answer) return { ...JSON.parse(first.answer), repeated: true };
+    }
     if (runRow.status !== "running")
       return refusal("SUGGEST_RUN_NOT_RUNNING",
         `the run '${run.slice(0, 60)}' has ended, and a version is formed under a LIVE run's conditions `
@@ -293,6 +336,16 @@ export class RunProductions {
         + `address of the search that establishes it>. Absence at one level is not evidence of absence at `
         + `the next, and an unattributed empty answer is the one shape a later reader cannot check.`,
         { target, level, observed_at: observedAt, levels: SUGGEST_LEVELS });
+
+    /* R29 (T53; agent-steps R56): WHO PRODUCED THE CANDIDATE, the labels of the conversations as agent-model answered
+       them (its R26), kept as sent but for repeats, first kept. Absent or null for a reading no AI produced. */
+    const producedBy = producedByOf(args.produced_by);
+    if (producedBy.malformed)
+      return refusal("SUGGEST_PRODUCED_BY_MALFORMED",
+        `produced_by is ${producedBy.malformed}. It is the list of the labels of the conversations that produced this `
+        + `reading, each {${PRODUCED_BY_FIELDS.join(", ")}} as the conversation answered it (display_name beside them `
+        + `when it carries one), or null when no AI produced it. Nothing was written.`,
+        { target, fields: PRODUCED_BY_FIELDS, limit: PRODUCED_BY_MAX });
     /* END DEC-49 REGION is-suggest-shape */
 
     /* ---- R2 (F10). THE SUBMISSION'S IDENTITY, AND THE STRUCTURAL NO-OP.
@@ -524,21 +577,31 @@ export class RunProductions {
      * and reason it carries, so the refusal is never read as a verdict inherited from the spread; every other field is
      * the provider's, unchanged (R3). */
     const pv = persisted.version;
-    const promoted = this.basisVersions.appendVersion({
-      target,
-      version: { name: pv.name, kind: pv.kind, description: pv.description,
-                 ...(pv.claim === null ? {} : { claim: pv.claim }), relationship: pv.relationship,
-                 derived_from: pv.derived_from, run: pv.run,
-                 ...(pv.author === null ? {} : { author: pv.author }), at: pv.at,
-                 ...(pv.level === null ? {} : { level: pv.level }),
-                 ...(pv.observed_at === null ? {} : { observed_at: pv.observed_at }) },
-      grounds: persisted.grounds.map((g) => ({ ground: g.ground, asserted_by: g.asserted_by, at: g.at,
-                                               ...(g.statement === null ? {} : { statement: g.statement }) })),
-      legs: persisted.legs.map((l) => Object.fromEntries(Object.entries(l).filter(([, v]) => v !== null))),
-      author: pv.author, at: pv.at,
+    const producedJson = producedBy.list ? canonicalJson(producedBy.list) : null;
+    const promoted = this.record.transact(() => {
+      const done = this.basisVersions.appendVersion({
+        target,
+        version: { name: pv.name, kind: pv.kind, description: pv.description,
+                   ...(pv.claim === null ? {} : { claim: pv.claim }), relationship: pv.relationship,
+                   derived_from: pv.derived_from, run: pv.run,
+                   ...(pv.author === null ? {} : { author: pv.author }), at: pv.at,
+                   ...(pv.level === null ? {} : { level: pv.level }),
+                   ...(pv.observed_at === null ? {} : { observed_at: pv.observed_at }) },
+        grounds: persisted.grounds.map((g) => ({ ground: g.ground, asserted_by: g.asserted_by, at: g.at,
+                                                 ...(g.statement === null ? {} : { statement: g.statement }) })),
+        legs: persisted.legs.map((l) => Object.fromEntries(Object.entries(l).filter(([, v]) => v !== null))),
+        author: pv.author, at: pv.at,
       log: `### Session ${nowIso} | Suggestion | ${who || run}\n`
          + `Trigger: op=suggest on ${target}\n`
-         + `Changes: reading '${name}' proposed as ${kind}, in state suggested, carrying run ${run}.\n`,
+         + `Changes: reading '${name}' proposed as ${kind}, in state suggested, carrying run ${run}.\n`
+         + (producedJson ? `Produced by: ${producedJson}\n` : ""),
+      });
+      /* R28, R29: the version's row here, in the same transaction as the version, so neither stands without the
+         other. */
+      if (done && done.ok)
+        this.sql.exec(`INSERT INTO suggest_writes (target, version, run, idem, produced_by, answer, at)
+                       VALUES (?,?,?,?,?,NULL,?)`, target, pv.name, run, idem, producedJson, nowIso);
+      return done;
     });
     if (promoted && promoted.ok === false && promoted.reason === "UNSPLICEABLE_BASIS")
       return remember(refusal("SUGGEST_UNWRITABLE_DOCUMENT",
@@ -573,6 +636,11 @@ export class RunProductions {
       grounds: recorded ? recorded.grounds ?? null : null,
       ground_count: recorded && Array.isArray(recorded.grounds) ? recorded.grounds.length : null,
       composition: recorded ? recorded.composition : null,
+      /* R29: read back from the row written with the version, as stored; null for a reading no AI produced. */
+      produced_by: (() => {
+        const w = this.#one(`SELECT produced_by FROM suggest_writes WHERE target=? AND version=?`, target, pv.name);
+        return w && w.produced_by ? JSON.parse(w.produced_by) : null;
+      })(),
       bundleSha: promoted.bundleSha, rowVersion: promoted.rowVersion,
     };
     const derived = {
@@ -588,11 +656,14 @@ export class RunProductions {
     const fields_of = { fields_of: "label", composition_of: "label", composition_grades: "label" };
     for (const [src, group] of [["record", fromRecord], ["derived", derived], ["call", call]])
       for (const k of Object.keys(group)) fields_of[k] = src;
-    return {
+    const answer = {
       ...fromRecord, ...derived, ...call, fields_of,
       composition_of: recorded ? "record" : "unread",
       composition_grades: recorded ? recorded.composition_grades ?? null : null,
     };
+    /* R28: the answer a retry with the same `idem` is given, verbatim. */
+    this.sql.exec(`UPDATE suggest_writes SET answer=? WHERE target=? AND version=?`, JSON.stringify(answer), target, pv.name);
+    return answer;
   }
 
   /* ==================================================================== *
@@ -1460,7 +1531,7 @@ export const DECLARED_OPS = Object.freeze({
   suggest: {
     classes: ["admin", "member", "probe"], mutating: true, weight: "reversible",
     description: localize("run-productions.declared.suggest", "the investigative session's ONE write (§4 group 2), keyed by inquiry and run: proposes a reading of the evidence in state suggested. Not object-directed — no member takes it; the six acts ON the proposal are the member-facing ones and they are ACTS rows"),
-    fields: { accepts: ["target", "kind", "run", "name", "description", "claim", "relationship", "derived_from", "level", "observed_at", "grounds", "legs"],
+    fields: { accepts: ["target", "kind", "run", "name", "description", "claim", "relationship", "derived_from", "level", "observed_at", "grounds", "legs", "idem", "produced_by"],
               requires: ["target", "kind", "run", "description"] },
   },
 });
