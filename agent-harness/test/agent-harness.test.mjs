@@ -544,6 +544,7 @@ const ARGS = {
 test("R8: every export is pure: equal arguments give equal answers, with no network, clock or randomness reached", () => {
   const fns = [...Object.entries(HARNESS), ...Object.entries(SUBSESSION)].filter(([, v]) => typeof v === "function");
   assert.deepEqual(fns.map(([k]) => k).filter((k) => !(k in ARGS)), [], "every function export has a row");
+  assert.deepEqual(Object.keys(ARGS).filter((k) => !fns.some(([n]) => n === k)), [], "every row names a function export");
   const real = { fetch: globalThis.fetch, now: Date.now, random: Math.random };
   const called = [];
   globalThis.fetch = () => { called.push("fetch"); throw new Error("fetch called"); };
