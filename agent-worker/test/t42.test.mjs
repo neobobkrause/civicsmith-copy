@@ -201,7 +201,7 @@ section("R72 · the refusals, before any model call, in order");
     [codeOf(held), nothingCalled(held)], [[409, "SIGNIN_NOT_HELD"], [0, 0, 0]]);
   const noPlane = await transcribe(body(), { noPlane: true });
   t("R72: no PLANE binding is needed: the pages are transcribed", [noPlane.status, noPlane.out?.pages?.length], [200, 2]);
-  t("R72, R35, F2, F3: the only binding /transcribe reads from env is HEALTH (the circuit); never REMOTE or RUNNER", [...new Set([...ok.keys, ...noPlane.keys])].sort(), ["HEALTH"]);
+  t("R72, R35, F2, F3: the only bindings /transcribe reads from env are HEALTH (the circuit) and RUNNER (F2: the member's own runner); never REMOTE", [...new Set([...ok.keys, ...noPlane.keys])].sort(), ["HEALTH", "RUNNER"]);
   t("R72: no plane call is made", [ok.plane.length, eight.plane.length], [0, 0]);
 }
 
