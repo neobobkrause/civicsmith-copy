@@ -15,3 +15,4 @@
 {"at":"2026-11-05T03:46:25Z","row":"sent","n":8,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (17 jobs ready). Then: job agent-worker complete, PR #364 ready, session session_01RAN5emqF4k7uDbWaDF6xsP: run status"}
 {"at":"2026-11-05T03:47:21Z","row":"outcome","n":8,"outcome":"delivered"}
 {"at":"2026-11-05T04:16:01Z","row":"sent","n":9,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (20 jobs ready). Then: job agent-worker complete, PR #364 ready, session session_01RAN5emqF4k7uDbWaDF6xsP: run status"}
+{"at":"2026-11-05T04:16:30Z","row":"outcome","n":9,"outcome":"delivered"}
