@@ -17,7 +17,7 @@
   "document": 79,
   "question": 82,
   "connection": 34,
-  "guide": 7,
+  "guide": 9,
   "prepared": 2,
   "label": 231,
   "project": 56,
@@ -53,7 +53,7 @@
   "wizard": 359,
   "elsewhere": 38,
   "places": 6,
-  "screen": 8084,
+  "screen": 8098,
   "signin": 1,
   "forgot": 1,
   "founder": 6,
@@ -160,7 +160,7 @@
   "project-stage": 17,
   "doorbell": 14,
   "part": 6,
-  "text": 1,
+  "text": 3,
   "duties": 79,
   "basis-versions": 23,
   "filing-templates": 29,
@@ -239,8 +239,8 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19835,
-  "protected": 1181
+  "total": 19853,
+  "protected": 1185
  },
  "words": [
   {
@@ -123875,6 +123875,130 @@
    "en": "Your team's Civicsmith binds no Claude account to its own settings, and none can be set there. The assistant is reached through a member's own Claude account or API key, or through the team's API key that an administrator sets; each is held sealed in Civicsmith's credentials, never as a setting.",
    "protected": false,
    "source": "DEC-260"
+  },
+  {
+   "key": "text.reviewedby",
+   "en": "reviewed by {name}, {organisation}, {date}",
+   "protected": true,
+   "source": "jurisdictions R137; screens-action R62 (design lane)",
+   "note": "on every profile template and guide a member opens; {name}, {organisation} and {date} from its counted review (jurisdictions R126)"
+  },
+  {
+   "key": "text.lastchecked",
+   "en": "last checked {date}",
+   "protected": false,
+   "source": "jurisdictions R137; screens-action R62 (design lane)",
+   "note": "beside the review date of a text whose latest review is over 12 months old; {date} the link check's source_check.checked_on, or the review date where no source has an address"
+  },
+  {
+   "key": "guide.procedure.notreviewed",
+   "en": "Not reviewed",
+   "protected": true,
+   "source": "reading-guides R19, R20; screens-action R62 (design lane)",
+   "note": "in place of text.reviewedby on a guide opted out of review; read with no fill (reading-guides' NOT_REVIEWED_LABEL), its who and when in guide.procedure.notreviewed.by"
+  },
+  {
+   "key": "guide.procedure.notreviewed.by",
+   "en": "{member} chose on {date} to use this guide without a professional's review.",
+   "protected": true,
+   "source": "screens-action R62 (design lane)",
+   "note": "beside guide.procedure.notreviewed; {member} the member's handle, {date} when the opt-out was recorded (K5508)"
+  },
+  {
+   "key": "screen.project.interp.proposals.heading",
+   "en": "Parts of your documents that may matter to this investigation",
+   "protected": false,
+   "source": "screens-inquiry R142 (design lane)",
+   "note": "on project and question"
+  },
+  {
+   "key": "screen.interp.proposal.label",
+   "en": "a proposal",
+   "protected": true,
+   "source": "screens-inquiry R142 (design lane)",
+   "note": "the label on each proposed part: nothing is interpreted until a member accepts it"
+  },
+  {
+   "key": "screen.interp.proposals.more",
+   "en": "Showing {shown} of {total}; narrow by document",
+   "protected": false,
+   "source": "screens-inquiry R142 (design lane)",
+   "note": "when proposeParts answers truncated"
+  },
+  {
+   "key": "screen.interp.proposals.unavailable",
+   "en": "Suggestions for this kind of file are not available yet. You can still open, cite or choose parts yourself.",
+   "protected": false,
+   "source": "screens-inquiry R143 (design lane)",
+   "note": "in place of the list, for a kind answering unavailable (R29); not drawn for a project with no documents"
+  },
+  {
+   "key": "screen.capture.limits.heading",
+   "en": "What can be added",
+   "protected": false,
+   "source": "screens-intake R72 (design lane)",
+   "note": "drawn before a file is chosen"
+  },
+  {
+   "key": "screen.capture.limits.document",
+   "en": "Documents, PDFs and text: up to {size} and {pages} pages",
+   "protected": false,
+   "source": "screens-intake R72 (design lane)",
+   "note": "figures from limitsByKind (R135); sizes in MB"
+  },
+  {
+   "key": "screen.capture.limits.sheet",
+   "en": "Spreadsheets: up to {size}, about {rows} rows",
+   "protected": false,
+   "source": "screens-intake R72 (design lane)",
+   "note": "figures from limitsByKind (R135)"
+  },
+  {
+   "key": "screen.capture.limits.image",
+   "en": "Pictures: up to {size} each",
+   "protected": false,
+   "source": "screens-intake R72 (design lane)",
+   "note": "figure from limitsByKind (R135)"
+  },
+  {
+   "key": "screen.capture.limits.archive",
+   "en": "Archives: up to {size} in all, and each file inside within its own kind's limit",
+   "protected": false,
+   "source": "screens-intake R72 (design lane)",
+   "note": "figure from limitsByKind (R135)"
+  },
+  {
+   "key": "screen.capture.limits.background",
+   "en": "A large file is read in the background; we tell you when it is done.",
+   "protected": false,
+   "source": "screens-intake R72 (design lane)"
+  },
+  {
+   "key": "screen.capture.refusal.toolarge.nothing_read",
+   "en": "Nothing was added or read.",
+   "protected": false,
+   "source": "screens-intake R73 (design lane)",
+   "note": "after the TOO_LARGE sentence (its size and the kind's limit), before R74's ways in"
+  },
+  {
+   "key": "screen.capture.refusal.toolarge.register",
+   "en": "This is a public register. Bring in just the rows you need.",
+   "protected": false,
+   "source": "screens-intake R74 (a) (design lane)",
+   "note": "opens registers for that register, the project's filter prefilled"
+  },
+  {
+   "key": "screen.capture.refusal.toolarge.part",
+   "en": "Cut out the part you need (for a sheet, the rows and columns; for a document, the pages) and add that. We read what you add in full.",
+   "protected": false,
+   "source": "screens-intake R74 (b) (design lane)"
+  },
+  {
+   "key": "screen.capture.read.queued",
+   "en": "Waiting its turn to be read.",
+   "protected": false,
+   "source": "screens-intake R78 (DEC-454) (design lane)",
+   "note": "the reading's first step, before screen.capture.read.fetching; the design's returned row for DEC-456"
   },
   {
    "key": "rail.home.name",
