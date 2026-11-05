@@ -2,7 +2,8 @@
  * row below is DEFINED HERE.
  *
  *   C-27.1–C-27.14, C-27.16–C-27.19  `op=suggest` (R1, R3), SUGGEST_CHECKS. Moved out of the catalogue (N155's last
- *                                    share, T19), the rows unchanged. C-27.15 (`VERSION_KIND_UNKNOWN`) is
+ *                                    share, T19), the rows unchanged. C-27.20 (T53; R29) a malformed `produced_by`,
+ *                                    the next free number of the family (its number BOB's to confirm). C-27.15 (`VERSION_KIND_UNKNOWN`) is
  *                                    basis-versions' (its R1; K82 (4)), the document gate's row, never minted here.
  *   C-104.1–C-104.12                 `op=extractpropose` and `op=extractproposals` (R10, R12, R13),
  *                                    EXTRACT_PROPOSE_CHECKS. Moved whole out of the catalogue (N155, T18).
@@ -17,7 +18,7 @@
  * N155, T18). Every code below is minted by this module's `index.mjs`, inside the region its row's `where` names. */
 
 import { SUGGEST_KINDS } from "../basis-versions/index.mjs";
-import { word } from '../setup-words/index.mjs';
+import { word, localize } from '../setup-words/index.mjs';
 
 export { SUGGEST_KINDS };
 
@@ -177,6 +178,14 @@ const SUGGEST_ROWS = {
     check: 'C-27.16',
     where: 'src/run-productions/index.mjs suggest > is-suggest-checks',
     translation: word('refusal.SUGGEST_COMPARISON_INCOMPLETE'),
+  },
+
+  /* ---- T53 (R29): who produced the candidate. A shape refusal like R1's, asked before anything is composed and never
+     kept for R2. ---- */
+  SUGGEST_PRODUCED_BY_MALFORMED: {
+    check: 'C-27.20',
+    where: 'src/run-productions/index.mjs suggest > is-suggest-shape',
+    translation: localize('refusal.SUGGEST_PRODUCED_BY_MALFORMED', "This suggestion's list of the AI conversations that produced it is not in the shape a label has, so nothing was written. Send the labels as the conversations answered them, or none for a reading no AI produced."),
   },
 
   /* ---- the write itself. Separate from check 6 on purpose: that one is about
