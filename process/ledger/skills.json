@@ -39,7 +39,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T04:39:26Z"
+    "state": "WORKING",
+    "at": "2026-11-05T08:00:45Z",
+    "reason": "reopened: answer the provider notice run-rules:407"
   }
 }
