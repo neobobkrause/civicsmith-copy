@@ -1,0 +1,1 @@
+{"row":"answered","user":"tasks","by":"triage","evidence":"bio-plane/src/tasks/index.mjs:44 imports only PER_ITEM_ACTS and PER_ITEM_MAX (PER_ITEM_MAX used at :1165); neither is the added T53_STANDIN_OPS (act-help.mjs:173) and no removed or changed export is used","at":"2026-11-05T07:40:54.075Z","key":"affordances:374","worker":"a10286bc53c697dbb","cost":"72641tokens"}
