@@ -31,8 +31,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T03:34:09Z",
-    "reason": "reopened: meet the unmet requirement marks R1, R2, R3, R4, R5, R6, R13, R12, R14, R16, R18, R19, R21, R25, R26, R27, R28, R29, R30, R31, R32, R33, R34, R36, R37, R38, R39, R40, R41, R42, R43, R44, R45, R46, R47, R48, R50, R51, R52, R53, R54, R55, R8, R9, R10, R11, R49"
+    "state": "COMPLETE",
+    "at": "2026-11-05T04:04:42Z"
   }
 }
