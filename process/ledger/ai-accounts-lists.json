@@ -1,0 +1,36 @@
+{
+  "id": "ai-accounts-lists",
+  "title": "ai-accounts-lists: the account-list rules split from ai-accounts (R41, R46, R49, R50, R70, R72, R77)",
+  "layer": 3,
+  "paths": [
+    "build/requirements/ai-accounts-lists.md",
+    "docs/requirements-notes/ai-accounts-lists.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/ai-accounts-lists/"
+  ],
+  "requirements": "build/requirements/ai-accounts-lists.md",
+  "uses": [
+    "ai-accounts",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/ai-accounts-lists.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T08:30:00Z"
+  }
+}
