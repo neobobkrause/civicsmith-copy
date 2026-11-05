@@ -154,6 +154,13 @@ const START_LINES = {
 };
 const START_UNMET = ["R117", "R120"];
 
+/* Amended since the start, each by a mark this module met: F1 (found on tranche 5 Nov 2026, member-upload R117's ruling) widened R76's list of received
+   routes to email and email-attachment, and is itself struck. Each such line is held here by its sha256 as it reads now. */
+const AMENDED = {
+  R76: "307526e2f3161cfbb093d9d9fa7271a9d619a5b9a5234efd44e7e6dde42c059e",
+  F1: "c62ea4df0ad50fc57eb6221572dbfb8437686f2bae22e5399fc4688c5dc90dd5",
+};
+
 // The cap split (PR 474, 5 Nov 2026) copied these ids verbatim into two new modules; here each is one retired line.
 const MOVED = {
   "held-captures": ["R77", "R78", "R79", "R81", "R82", "R83", "R84", "R88", "R91", "R100", "R101", "R102"],
@@ -163,11 +170,12 @@ const MOVED_TO = new Map(Object.entries(MOVED).flatMap(([mod, ids]) => ids.map((
 
 test("capture requirements: every R id at the start commit stays, word for word with its mark, or is retired naming the module that holds it verbatim", () => {
   const now = idBlocks(read(REQ));
-  assert.deepEqual([...now.keys()].sort(), Object.keys(START_LINES).sort(), "the set of ids is unchanged");
+  assert.deepEqual([...now.keys()].sort(), [...new Set([...Object.keys(START_LINES), ...Object.keys(AMENDED)])].sort(), "the set of ids is the start's and the found marks'");
+  for (const id of Object.keys(AMENDED).filter((id) => !(id in START_LINES))) assert.equal(sha(now.get(id)), AMENDED[id], `${id}'s line is as struck`);
   const there = Object.fromEntries(Object.keys(MOVED).map((mod) => [mod, idBlocks(read(`build/requirements/${mod}.md`))]));
   for (const [id, h] of Object.entries(START_LINES)) {
     const mod = MOVED_TO.get(id);
-    if (!mod) { assert.equal(sha(now.get(id)), h, `${id}'s line is verbatim`); continue; }
+    if (!mod) { assert.equal(sha(now.get(id)), AMENDED[id] ?? h, `${id}'s line is verbatim${AMENDED[id] ? " as amended" : ""}`); continue; }
     assert.equal(now.get(id), `- **${id}** *(retired: moved to ${mod} ${id}, cap split 5 Nov 2026, PR 474)*`, `${id} is retired here, naming ${mod}`);
     assert.equal(sha(there[mod].get(id)), h, `${id} is verbatim in ${mod}`);
   }
