@@ -43,3 +43,4 @@
 {"at":"2026-11-05T21:02:21.440Z","row":"inflight","pr":467,"module":"acquisition","tip":"44f8916de7fe32dd6c9c6029f698a97ed99e49a6","session":"session_018BhcefSY1HcDdU87BP9fxU","until":"2026-11-05T22:47:21.440Z"}
 {"at":"2026-11-05T21:04:16.932Z","row":"end","pr":467,"tip":"44f8916de7fe32dd6c9c6029f698a97ed99e49a6","cause":"landed","session":"session_018BhcefSY1HcDdU87BP9fxU"}
 {"at":"2026-11-05T21:05:47.778Z","row":"inflight","pr":473,"module":"provenance","tip":"a8db0380548403af73427cc6175713e2380fc350","session":"session_018BhcefSY1HcDdU87BP9fxU","until":"2026-11-05T22:50:47.778Z"}
+{"at":"2026-11-05T21:07:55.026Z","row":"end","pr":473,"tip":"a8db0380548403af73427cc6175713e2380fc350","cause":"landed","session":"session_018BhcefSY1HcDdU87BP9fxU"}
