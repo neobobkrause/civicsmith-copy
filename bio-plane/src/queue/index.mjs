@@ -1543,9 +1543,13 @@ export class Queue {
     if (d === null) {
       d = this.#measured(() => this.#derive({ me, viewer, now, identity }));
       if (d.ok !== true) return d;
-      if (derivedSig !== null) {
+      /* R93: kept under the signature as it stands after the derivation: a provider's first read may write its own
+         migrations (a row in its ledger) while it is read, and those writes are the derivation's own, so the count asked
+         next with nothing written since is the one already made. */
+      const keptSig = derivedSig !== null ? this.#countSignature(now) : null;
+      if (keptSig !== null) {
         if (!this.#derived.has(derivedKey) && this.#derived.size >= Queue.QUEUE_COUNT_VIEWERS_MAX) this.#derived.clear();
-        this.#derived.set(derivedKey, { sig: derivedSig, d });
+        this.#derived.set(derivedKey, { sig: keptSig, d });
       }
     }
     /* R94: what the Server-Timing marks carry (control-plane's phase clock): `queue-count` is `served`, and `rows-queue` the
