@@ -243,3 +243,4 @@ The instance's composition root. It builds every module on one Durable Object's 
 ## Open for Bob
 
 None.
+- **F1** *(not yet met: agent-model PR 355)* At start, register agent-model's path source with ai-runs registerPathReady over AGENT_WORKER (agent-model R35, PR 355), so AI runs dispatch once the path is ready

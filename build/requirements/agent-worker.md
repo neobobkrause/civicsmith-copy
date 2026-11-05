@@ -258,3 +258,5 @@ The answer:
 
 None: answered by Bob 2026-09-26 (K102).
 - **F1** *(not yet met: walk p3dev-l1)* After a test deploy of release 0.87.0 to the p3dev-l1 copy (4 Nov, 01:04-01:11Z), this container-backed member's /version did not answer 0.87.0 within the 60 s rollout check (ROLLOUT NOT CONFIRMED after 60s). Its /version answers the deployed version within the rollout check, or the check's bound is set from a measured container rollout time.
+- **F2** *(not yet met: coordinator ruling 5 Nov)* Drop the REMOTE binding to agent-runner's RemoteSession (wrangler.jsonc:100), agent-runner from its uses, and its tests' reads of agent-runner's wire (t37, t41, t46, t47, requirements.test.mjs), as agent-runner's R13 and K5576 need gone before RemoteSession is deleted
+- **F3** *(not yet met: agent-model PR 355)* Keep a persistent agent-model circuit handle, call circuitRecord and circuitAdmit around each turn, and answer agent-model's health read, so agent-model's R35 path source (health and pathSource, PR 355) can be registered
