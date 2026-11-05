@@ -20,7 +20,8 @@ import { isMachineIdentity, normalizeType } from "../record-grammar/index.mjs";
 import { localDay } from "../civil-time/index.mjs";
 import { recordOf, stampInstant } from "../record-core/index.mjs";
 import { membershipOf, notAnAdmin, notTheOwner } from "../membership/index.mjs";
-import { aiAccountsOf, KEPT_AWAY_UNREADABLE, USE_KINDS } from "../ai-accounts/index.mjs";
+import { aiAccountsOf, KEPT_AWAY_UNREADABLE, USE_KINDS, PART_OF_KIND } from "../ai-accounts/index.mjs";
+import { estimate as entryEstimate } from "../../../agent-model/src/provider/catalogue.mjs";
 import { aiCatalogueOf } from "../ai-catalogue/index.mjs";
 import { connectionsOf } from "../connections/index.mjs";
 import { retrievalOf } from "../retrieval/index.mjs";
@@ -1257,8 +1258,20 @@ export class AiUse {
 
   /** R10 `useEstimate({owner, use, mode, entry_id?, count?, viewer, at?})` (`estimate` is its older name): before an AI act
    *  or exploring run (or a batch of `count`), a range `{low, high, unit, basis}` from that account's measured acts of that
-   *  use and mode, or `basis: "not_known"`; answered only to the account's owners (R2's refusals otherwise). Writes nothing. */
-  useEstimate({ owner = null, use = null, mode = null, count = 1, viewer = null } = {}) {
+   *  use and mode (`account_measured`); with too few and an `entry_id`, `agent-model.estimate`'s range for the part
+   *  (`PART_OF_KIND[use]`), its `basis` unchanged (`measured` or `price_only`), money shown only where the plan's money
+   *  allows it, else `not_measurable`; with neither, `basis: "not_known"`. Answered only to the account's owners (R2's
+   *  refusals otherwise). Writes nothing, never throws. `agent-model.estimate` is asynchronous, so a call naming an
+   *  `entry_id` answers a promise of the same answer (its refusals too); a call naming none answers at once, as before. */
+  useEstimate({ owner = null, use = null, mode = null, entry_id = null, count = 1, viewer = null } = {}) {
+    const named = entry_id !== null && entry_id !== undefined;
+    const answer = this.#useEstimateNow({ owner, use, mode, entry_id, count, viewer, named });
+    if (!named) return answer;
+    if (!answer.fallback) return Promise.resolve(answer);
+    return this.#entryRange(answer).catch(() => ({ ...answer.result, estimate: { low: null, high: null, unit: null, basis: "not_known" } }));
+  }
+
+  #useEstimateNow({ owner, use, mode, entry_id, count, viewer, named }) {
     const p = parseOwner(owner);
     if (!p) return this.#invalid("owner", localize("ai-use.index.an_estimate_is_for", "an estimate is for 'group', 'project:<id>' or 'member:<id>'."));
     const bar = this.#ownerBar(p, viewer, "read");
@@ -1267,7 +1280,21 @@ export class AiUse {
     const m = typeof mode === "string" && mode.trim() ? mode.trim() : use;
     const n = count === undefined || count === null ? 1 : count;
     if (!Number.isSafeInteger(n) || n < 1) return this.#invalid("count", localize("ai-use.index.an_estimates_count_is_a", "an estimate's count is a whole number of one or more."));
-    return { ok: true, owner: p.owner, use, mode: m, count: n, estimate: this.#estimate(p, use, m, n, viewer) };
+    if (named && !(typeof entry_id === "string" && /^[A-Za-z0-9._:-]{1,96}$/.test(entry_id)))
+      return this.#invalid("entry_id", localize("ai-use.index.an_estimates_entry_is_a", "an estimate's entry_id names a catalogue entry."));
+    const result = { ok: true, owner: p.owner, use, mode: m, count: n, ...(named ? { entry_id } : {}), estimate: this.#estimate(p, use, m, n, viewer) };
+    if (named && result.estimate.basis === "not_known") return { fallback: true, result, p, use, n, entry_id, viewer };
+    return result;
+  }
+
+  /** R10: the entry's range from `agent-model.estimate` (its R34) for the part of `use`, read over this store's catalogue;
+   *  its `basis` kept; money only where the account's plan allows it, else the range withheld as `not_measurable`. */
+  async #entryRange({ result, p, use, n, entry_id, viewer }) {
+    const e = await entryEstimate({ entry_id, task: { kind: PART_OF_KIND[use], count: n } }, { catalogue: this.#catalogue() });
+    if (!e || e.basis === "not_known") return result;
+    const est = { low: e.low ?? null, high: e.high ?? null, unit: e.unit ?? null, basis: e.basis };
+    if (!this.#ownerMoney(p, viewer).allows) return { ...result, estimate: { low: null, high: null, unit: null, basis: e.basis, not_measurable: true } };
+    return { ...result, estimate: est };
   }
   estimate(args = {}) { return this.useEstimate(args); }
 
@@ -1824,4 +1851,13 @@ export const DECLARED_OPS = Object.freeze({
     fields: { accepts: ["owner","scope","unit","period","amount","inclusive"], requires: ["owner","scope","unit","period","amount"] } },
   exploreapprove: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "substrate", description: localize("ai-use.declared.exploreapprove", "the account's configuration: an owner's approval of one day's exploring on that account; moves no document, claim or grade"),
     fields: { accepts: ["owner","day"], requires: ["owner","day"] } },
+  /* F2 (op-grades R57; coordinator ruling 5 Nov 04:19): the assistant's ops this module serves, with R57's grades: the
+     re-tests' switch and caps and the health report's switch reversible (a further set takes each back), the use by
+     member and the health report's preview reads. Classes and stamps agree with op-declarations' hand rows (t48). */
+  airetestset: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-use.declared.airetestset", "the account's configuration: whether an account re-tests its entries and each entry's monthly cap, set by an owner of the paying account; a further set takes it back"),
+    fields: { accepts: ["owner","on","caps"], requires: ["owner"] } },
+  aihealthset: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-use.declared.aihealthset", "the team's configuration: whether the team shares its AI health counts, an administrator's act recorded with who and when; a further set takes it back"),
+    fields: { accepts: ["on"], requires: ["on"] } },
+  aiusebymember: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-use.declared.aiusebymember", "read: each member's use of a team's or a project's account, to that account's owners; writes nothing") },
+  aihealthpreview: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-use.declared.aihealthpreview", "read: the health report the team would share, to an administrator; writes nothing") },
 });

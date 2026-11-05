@@ -4,7 +4,7 @@
    run), each at the module's exports. Each reasoned op's backing (R19) is driven at its owner's interface in
    t33-backing.test.mjs. The owners' declarations are registered first, as the plane does at start-up (op-grades R49), so an
    op an owner declares after T33 (explore's and money's reads of T53) is graded as its owner declares it. */
-import "./register-owners.mjs";
+import { REGISTERED } from "./register-owners.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as A from "../../../src/affordances.mjs";
@@ -190,10 +190,14 @@ test("R19: each `reversible` T33 op is taken back by a published act of its own 
 
 /* R52 (T46): `clockadopt`, graded in T33, is offered on an action since T46, so it is the one T33 op that is an act. */
 const T33_ACTS_SINCE = ["clockadopt"];
-test("R1 R20 R52: no T33 op is an act but clockadopt (R52), and MACHINE_REFUSALS holds only ACTS", () => {
+/* F3 (op-grades R55): MACHINE_REFUSALS may also hold the register ops, read from `registers`' own declaration as the
+   owners' registration found it (register-owners.mjs; K3268), never listed here */
+test("R1 R20 R52 F3: no T33 op is an act but clockadopt (R52), and MACHINE_REFUSALS holds only ACTS and the register ops "
+   + "op-grades R55 refuses a machine", () => {
   const t33 = [...Object.keys(ALL_WRITES), ...ALL_READS];
   assert.deepEqual(t33.filter((op) => published().has(op)), T33_ACTS_SINCE);
-  assert.deepEqual(Object.keys(MACHINE_REFUSALS).filter((op) => !ACTS.some((a) => a.id === op)), []);
+  assert.deepEqual(Object.keys(MACHINE_REFUSALS).filter((op) => !ACTS.some((a) => a.id === op)
+    && !Object.hasOwn(REGISTERED.registers ?? {}, op)), []);
 });
 
 test("R12 R24: with the control plane's rows for them (op-declarations R17–R20: every write mutating with a NEEDS "
