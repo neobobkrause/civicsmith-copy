@@ -406,7 +406,11 @@
       "agent-worker/src/signin.mjs",
       "agent-runner/src/signin.mjs",
       "agent-runner/src/entry.mjs",
-      "agent-harness/src/subsession.mjs"
+      "agent-harness/src/subsession.mjs",
+      "bio-plane/src/ai-catalogue/dev-key.mjs",
+      "bio-plane/src/sshsig.mjs",
+      "ai-gate/src/verify.mjs",
+      "ai-gate/src/bundle.mjs"
     ]
   },
   "merge_train": true,
