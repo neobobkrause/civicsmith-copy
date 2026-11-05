@@ -8,13 +8,14 @@ import { readFileSync } from "node:fs";
 
 const FILE = readFileSync(new URL("../../../../build/requirements/control-plane.md", import.meta.url), "utf8");
 const NOTES = readFileSync(new URL("../../../../docs/requirements-notes/control-plane.md", import.meta.url), "utf8");
-const ID_LINE = /^- \*\*([RF]\d+)\*\*/;
+/* the R ids: found marks (F<n>) added after the move are not the move's */
+const ID_LINE = /^- \*\*(R\d+)\*\*/;
 const idLines = (s) => s.split("\n").filter((l) => ID_LINE.test(l));
 const idOf = (l) => ID_LINE.exec(l)[1];
 const unmetOf = (l) => (/\*\(not yet met:? ?([^)]*)\)\*/.exec(l) || [])[1] ?? null;
 const byNumber = (a, b) => a.localeCompare(b, "en", { numeric: true });
 
-/* At fc1494a3c (the start commit): R1 to R140, no F ids, and these unmet marks. */
+/* At fc1494a3c (the start commit): R1 to R140 and these unmet marks. */
 const START_IDS = Array.from({ length: 140 }, (_, i) => `R${i + 1}`);
 const START_UNMET = {
   R29: "T52", R64: "T52", R72: "T52", R74: "T52", R100: "T52", R107: "T52", R120: "T52", R123: "T52", R124: "T52",
@@ -33,7 +34,7 @@ test("control-plane's unmet marks are the start commit's, none struck or added b
 });
 
 test("the moved text holds no requirement line, and the requirements file keeps none of the moved sections", () => {
-  assert.deepEqual(idLines(NOTES), []);
+  assert.deepEqual(NOTES.split("\n").filter((l) => /^- \*\*[RF]\d+\*\*/.test(l)), []);
   for (const h of ["### Uses", "### Satisfies", "### Suggestions", "## Open for Bob", "## Decided by BOB", "**Size (P6).**"]) {
     assert.ok(!FILE.split("\n").some((l) => l.startsWith(h)), `${h} moved out`);
     assert.ok(NOTES.includes(h.replace(/^### /, "## ")), `${h} in the notes`);
