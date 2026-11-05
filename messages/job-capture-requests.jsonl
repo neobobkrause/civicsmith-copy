@@ -13,3 +13,4 @@
 {"at":"2026-11-05T07:39:03Z","row":"sent","n":7,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job capture-requests complete, PR #444 ready, session session_018BhcegRSYTHdybvvYQZNPd: run status"}
 {"at":"2026-11-05T07:39:29Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-05T17:38:20Z","row":"sent","n":8,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (5 jobs ready). Then: job capture-requests complete, PR #541 ready, session session_018BhceezHvhxdRM3XBayM2s: run status"}
+{"at":"2026-11-05T17:38:33Z","row":"outcome","n":8,"outcome":"delivered"}
