@@ -142,6 +142,8 @@ const TABLE = [
   ["passwordresetlink", "dev"], ["signerset", null], ["signeradd", null],
   ["memberadd", null], ["membercaps", "dev"], ["memberset", "dev"], ["adminendorse", "kim"], ["adminremove", "lu"], ["expertiseconfirm", "ana"],
   ["invitewithdraw", "mai-k"], ["websitekeycreate", null], ["joinlinkenable", null],
+  // R93 (3): the waiting proposal cancelled, drawn to the founder (and the proposer) on the proposed row
+  ["adminproposalcancel", "kim"],
 ];
 
 test("R2 every registry act is drawn for an administrator where it applies, each row's acts in its own panel; none to a member who does not administer", async () => {
