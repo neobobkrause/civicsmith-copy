@@ -20,7 +20,8 @@
     "skills",
     "answers",
     "setup-words",
-    "test-support"
+    "test-support",
+    "agent-worker"
   ],
   "suite": {
     "cwd": "agent-worker",
