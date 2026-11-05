@@ -53,7 +53,7 @@
   "wizard": 359,
   "elsewhere": 38,
   "places": 6,
-  "screen": 8084,
+  "screen": 8094,
   "signin": 1,
   "forgot": 1,
   "founder": 6,
@@ -239,7 +239,7 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19835,
+  "total": 19845,
   "protected": 1181
  },
  "words": [
@@ -123875,6 +123875,76 @@
    "en": "Your team's Civicsmith binds no Claude account to its own settings, and none can be set there. The assistant is reached through a member's own Claude account or API key, or through the team's API key that an administrator sets; each is held sealed in Civicsmith's credentials, never as a setting.",
    "protected": false,
    "source": "DEC-260"
+  },
+  {
+   "key": "screen.dash-project.next.add",
+   "en": "Add something",
+   "protected": false,
+   "source": "screens-inquiry R146 (design lane)",
+   "note": "a link to Add, under screen.dash-project.next.heading, for a project with no documents and no timeline"
+  },
+  {
+   "key": "screen.dash-project.next.ask",
+   "en": "Open a question",
+   "protected": false,
+   "source": "screens-inquiry R146 (design lane)",
+   "note": "a link to a new question, beside screen.dash-project.next.add"
+  },
+  {
+   "key": "screen.dash-project.next.project",
+   "en": "Go to the project page",
+   "protected": false,
+   "source": "screens-inquiry R146 (design lane)",
+   "note": "the empty dashboard's link to the project page"
+  },
+  {
+   "key": "screen.dash-project.story.none",
+   "en": "Nothing yet",
+   "protected": false,
+   "source": "screens-inquiry R146 (design lane)",
+   "note": "under screen.dash-project.story.heading when the project has no timeline; drawn in place of state.loading once the read answers"
+  },
+  {
+   "key": "screen.question.conclude.own.empty",
+   "en": "Write your reading first, in at most 500 characters.",
+   "protected": false,
+   "source": "screens-inquiry R149 (design lane)",
+   "note": "Conclude pressed with no reading written and no named reading; refusal.BAD_READING's clause about taking a named reading's place is drawn only when one exists"
+  },
+  {
+   "key": "screen.question.conclude.own.toolong",
+   "en": "Your reading is longer than 500 characters. Shorten it, then conclude again.",
+   "protected": false,
+   "source": "screens-inquiry R149 (design lane)",
+   "note": "a reading over 500 characters, with no named reading"
+  },
+  {
+   "key": "screen.project.stage.read.one",
+   "en": "1 question",
+   "protected": false,
+   "source": "screens-inquiry R150 (design lane)",
+   "note": "screen.project.stage.read (\"{count} questions\") when the count is 1; 0 and 2 or more read the plural"
+  },
+  {
+   "key": "screen.project.question.notrated",
+   "en": "Not rated yet",
+   "protected": false,
+   "source": "screens-inquiry R150 (design lane)",
+   "note": "a question row whose two axes are both unrated: drawn once, in place of two mark.gap.unrated names"
+  },
+  {
+   "key": "screen.help.way.home",
+   "en": "Back to Home",
+   "protected": false,
+   "source": "screens-daily R116 (design lane)",
+   "note": "the help screen's last line, after its last section"
+  },
+  {
+   "key": "screen.help.way.next",
+   "en": "Next: {topic}",
+   "protected": false,
+   "source": "screens-daily R116 (design lane)",
+   "note": "beside screen.help.way.home; {topic} the next help topic's screen.<id>.name"
   },
   {
    "key": "rail.home.name",

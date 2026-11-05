@@ -299,6 +299,20 @@ for (const x of DRAWN.rows) add(x.key, x.en, x.protected, 'DEC-259', x.note.repl
 // 4n. The other modules' inline English (DEC-260): written in words-mod-<n>.src.py, one file per batch, rows only
 for (const f of readdirSync(new URL('.', import.meta.url)).filter(f => /^words-mod-\d+\.json$/.test(f)).sort())
   for (const x of JSON.parse(R(f)).rows) add(x.key, x.en, x.protected, 'DEC-260', x.note.replace(/^DEC-260(: )?/, '') || undefined);
+// 4q. T53's "words owed" on screens-inquiry and help, keys named and settled by the design lane (5 Nov 2026; CLAUDE.md:
+//     design lanes decide wording in the design stream). The screens' jobs draw them.
+for (const [k, en, src, note] of [
+  ['screen.dash-project.next.add', 'Add something', 'screens-inquiry R146', 'a link to Add, under screen.dash-project.next.heading, for a project with no documents and no timeline'],
+  ['screen.dash-project.next.ask', 'Open a question', 'screens-inquiry R146', 'a link to a new question, beside screen.dash-project.next.add'],
+  ['screen.dash-project.next.project', 'Go to the project page', 'screens-inquiry R146', 'the empty dashboard\'s link to the project page'],
+  ['screen.dash-project.story.none', 'Nothing yet', 'screens-inquiry R146', 'under screen.dash-project.story.heading when the project has no timeline; drawn in place of state.loading once the read answers'],
+  ['screen.question.conclude.own.empty', 'Write your reading first, in at most 500 characters.', 'screens-inquiry R149', 'Conclude pressed with no reading written and no named reading; refusal.BAD_READING\'s clause about taking a named reading\'s place is drawn only when one exists'],
+  ['screen.question.conclude.own.toolong', 'Your reading is longer than 500 characters. Shorten it, then conclude again.', 'screens-inquiry R149', 'a reading over 500 characters, with no named reading'],
+  ['screen.project.stage.read.one', '1 question', 'screens-inquiry R150', 'screen.project.stage.read ("{count} questions") when the count is 1; 0 and 2 or more read the plural'],
+  ['screen.project.question.notrated', 'Not rated yet', 'screens-inquiry R150', 'a question row whose two axes are both unrated: drawn once, in place of two mark.gap.unrated names'],
+  ['screen.help.way.home', 'Back to Home', 'screens-daily R116', 'the help screen\'s last line, after its last section'],
+  ['screen.help.way.next', 'Next: {topic}', 'screens-daily R116', 'beside screen.help.way.home; {topic} the next help topic\'s screen.<id>.name'],
+]) add(k, en, false, src + ' (design lane)', note);
 
 // 5. The frame: rail, phone tabs, explanation levels
 for (const [k, name] of W.RAIL) { add(`rail.${k}.name`, name, false, 'mock-shell.js RAIL'); if (W.RAIL_HELP[k]) add(`rail.${k}.holds`, W.RAIL_HELP[k], false, 'mock-refs.js RAIL_HELP'); }
