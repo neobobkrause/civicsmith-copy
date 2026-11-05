@@ -389,27 +389,6 @@
     ],
     "seconds": 120
   },
-  "review_triggers": {
-    "security_paths": [
-      "bio-plane/src/op-declarations/",
-      "bio-plane/src/wizard-scripts/admin.mjs",
-      "bio-plane/src/admission/",
-      "bio-plane/src/store-request/index.mjs",
-      "bio-plane/src/credentials/index.mjs",
-      "bio-plane/src/ai-accounts/index.mjs",
-      "bio-plane/src/signin-door/index.mjs",
-      "bio-plane/src/answers/scope.mjs",
-      "bio-plane/src/member-roster/index.mjs",
-      "bio-plane/src/op-grades/index.mjs",
-      "bio-plane/src/registers/ops.mjs",
-      "bio-plane/src/capture-sources/credentials.mjs",
-      "agent-worker/src/ops.mjs",
-      "agent-worker/src/signin.mjs",
-      "agent-runner/src/signin.mjs",
-      "agent-runner/src/entry.mjs",
-      "agent-harness/src/subsession.mjs"
-    ]
-  },
   "merge_train": true,
   "release_path": [
     "control-plane",
