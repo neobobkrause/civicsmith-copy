@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-declarations","by":"triage","evidence":"build/modules.json:173 op-declarations (bio-plane/src/op-declarations/) holds no file that imports ai-gate, every code file under its paths read at 249c5a203a","at":"2026-11-05T03:13:33.793Z","key":"ai-gate:372","worker":"merge: imports check","cost":"0"}
