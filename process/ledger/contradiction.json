@@ -45,8 +45,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "R34 and R41 rest only on a live model run; no offline test settles either, and no measurement is recorded in docs/development/MEASUREMENTS.md (no recommender or K5-arm entry). Met offline already: R34's refusal half (no_difference on K1-K4 is CLARIFY_CHOICE_UNKNOWN, acts.test.mjs R32) and the K5 weight rule (derive.mjs weightOf: plurality, duty after no_difference), unreachable while K5_GATE_MEASURED=false. CHECKS A RUN MUST MAKE: (R34) run the over-strictness gate's K5 arm (gate.test.mjs harness, R57; two stances, at least one agreeing pair and one differing wording of one claim) against a live model under the unchanged JUDGEMENT_PROMPT (R2 digest), record the run with 0 false conflicts in MEASUREMENTS.md and gate-recorded.mjs; then this module flips K5_GATE_MEASURED to true and turns the todos in present.test.mjs (R24 K5, R27 plurality), acts.test.mjs (R32 K5, R33/R36 K5, R34) and k5.test.mjs into tests: a K5 candidate reads weight plurality, and after clarify no_difference reads duty for both projects. (R41) run the blind fixture of dissolved pairs through op=contradictionrecommend's prompt (RECOMMEND_PROMPT) on a live model, record the figures and sha256(RECOMMEND_PROMPT) in MEASUREMENTS.md; then this module sets RECOMMEND_PROMPT_SHA256 to that digest and measures.test.mjs asserts sha256(RECOMMEND_PROMPT) equals it. Provider notice inquiry:360 confirmed, no change: setSubject revises the document through promotion, which upserts inquiry_bundle_facts.inquiry_subject_entity (inquiry/index.mjs:940), the column K2 joins on. Suite green (147 pass, 8 todo). Nothing changed on job/contradiction.",
-    "at": "2026-11-05T03:13:44Z"
+    "state": "WORKING",
+    "at": "2026-11-05T02:52:28Z",
+    "reason": "reopened: meet the unmet requirement marks R34, R41"
   }
 }

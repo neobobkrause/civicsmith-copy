@@ -187,6 +187,24 @@ CREATE TABLE IF NOT EXISTS bearing_notes (
 CREATE INDEX IF NOT EXISTS bearing_notes_bundle ON bearing_notes(bundle_id);
 CREATE INDEX IF NOT EXISTS bearing_notes_question ON bearing_notes(question);
 
+-- T53 (R28, R29; agent-steps R54, R56) -- EVERY SUGGESTION THIS MODULE WROTE, one row per version, keyed by the
+-- question and the version's name. It holds what basis-versions' document does not: the conversations that produced
+-- the candidate (produced_by, the labels as agent-model answered them, canonical JSON, NULL for a reading no AI
+-- produced) and, when the call carried one, its idem (<run>:<pass>:<step>:<n>) with the answer the first call gave, so
+-- a step re-run after a stop is answered that answer verbatim and writes nothing a second time. Written in the same
+-- transaction as the version; never updated but for the answer it is given once the read-back is assembled.
+CREATE TABLE IF NOT EXISTS suggest_writes (
+  target       TEXT NOT NULL,      -- the question the version was written on
+  version      TEXT NOT NULL,      -- the version's name, as the document holds it
+  run          TEXT NOT NULL,
+  idem         TEXT,               -- the call's idem, NULL when it carried none
+  produced_by  TEXT,               -- canonical JSON of the label list, NULL when none
+  answer       TEXT,               -- the first call's answer, verbatim (R28)
+  at           TEXT NOT NULL,
+  PRIMARY KEY (target, version)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS suggest_writes_idem ON suggest_writes(run, idem) WHERE idem IS NOT NULL;
+
 -- T41-24 (R24; run-rules R26; D2) -- WHAT A RUN HAS READ: one row per page of a capture a run read, so a page is
 -- charged to the 'pages' bound once and a run stopping at the bound says how far it read.
 CREATE TABLE IF NOT EXISTS run_pages_read (
@@ -210,10 +228,12 @@ export const RUN_PRODUCTIONS_TABLES = Object.freeze([
   "proposal_acceptances",
   { name: "bearing_notes", keys: ["bundle_id", "question"] },
   "run_pages_read",
+  /* T53 (R28, R29): each written suggestion by its question. */
+  { name: "suggest_writes", keys: ["target"] },
 ]);
 
 const OWNED = new Set(["proposed_readings", "suggest_refusals", "proposed_connections", "proposal_acceptances",
-                       "bearing_notes", "run_pages_read"]);
+                       "bearing_notes", "run_pages_read", "suggest_writes"]);
 
 /** Which of the legacy declarations this module now owns (the legacy store filters them out of its own list). */
 export function runProductionsOwns(t) {
