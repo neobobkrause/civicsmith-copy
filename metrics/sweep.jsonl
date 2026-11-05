@@ -274,3 +274,4 @@
 {"at":"2026-11-05T22:51:00Z","row":"sweep","session":"session_018BhceduipEp2mmEFHN9Diu","bob_acts":true,"bob_quiet_h":0,"root_context":28,"live":1,"job_cap":20,"sessions":10,"startable":0,"blocked":5,"blocked_oldest_min":1110,"working":0,"waiting":1,"idle_capacity":{"kind":"empty","since":"2026-11-05T21:49:05Z","min":61,"live":1,"cap":20,"held":0,"startable":0,"empty":19,"alarm":true}}
 {"at":"2026-11-05T22:52:16Z","row":"ready","live":1,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-05T22:48:00Z"}
 {"at":"2026-11-05T22:59:18Z","row":"ready","live":0,"job_cap":20,"started":[]}
+{"at":"2026-11-05T22:59:22Z","row":"ready","live":0,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-05T22:51:00Z"}
