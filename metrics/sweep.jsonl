@@ -44,3 +44,4 @@
 {"at":"2026-11-05T04:07:00Z","row":"check","by":"merge","live":20,"live_at":"2026-11-05T03:35:56Z","job_cap":20,"startable":9}
 {"at":"2026-11-05T04:13:05Z","row":"check","by":"job complete","live":20,"live_at":"2026-11-05T03:35:56Z","job_cap":20,"startable":9}
 {"at":"2026-11-05T04:16:50Z","row":"sweep","session":"session_01RAN5emK1snYonbEbVPHbAP","bob_acts":true,"bob_quiet_h":0.1,"root_context":40,"live":6,"job_cap":20,"sessions":10,"startable":11,"blocked":7,"blocked_oldest_min":64,"working":2,"waiting":4,"idle_capacity":{"kind":"work","since":"2026-11-05T04:13:16Z","min":3,"live":6,"cap":20,"held":0,"startable":11,"empty":14,"alarm":true,"owed_since":"2026-11-05T03:38:28Z"}}
+{"at":"2026-11-05T04:19:15Z","row":"ready","live":8,"job_cap":20,"started":[]}
