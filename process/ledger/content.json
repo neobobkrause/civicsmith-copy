@@ -1,0 +1,47 @@
+{
+  "id": "content",
+  "title": "content: its found work (cellsAt answers removed; citation R28, registers R30)",
+  "layer": 4,
+  "paths": [
+    "bio-plane/src/content/",
+    "build/requirements/content.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/content/"
+  ],
+  "requirements": "build/requirements/content.md",
+  "uses": [
+    "record-grammar",
+    "text-chain",
+    "format-registry",
+    "pdf-pixels",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "reading-pipeline",
+    "setup-words",
+    "test-support",
+    "acquisition",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/content.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T05:12:00Z"
+  }
+}
