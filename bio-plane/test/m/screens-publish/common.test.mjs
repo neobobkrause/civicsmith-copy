@@ -114,7 +114,10 @@ test("R10 (interface-shell R21) the nine registry screens, each drawing exactly 
     const browser = (op) => Object.hasOwn(BROWSER_ACTS, op) && BROWSER_ACTS[op].screen === s.id;
     /* an act the registry holds as `owed:<op> <ref>` is the op itself once its owner declares it (FR-30: `casedetails`, `casedetailsset`) */
     const owed = (op) => { const m = /^owed:(\S+)/.exec(op); return m && Object.hasOwn(OPS, m[1]) ? m[1] : op; };
-    const named = reg.acts.map((a) => (Object.entries(BROWSER_ACTS).find(([, b]) => b.screen === s.id && b.registry === a.op) || [owed(a.op)])[0]);
+    /* an act the registry still owes (`owed:<op> <ref>`) whose owner has not declared it is drawn by no screen yet (interface-shell R12;
+       R87's `mailnameshow`, `mailnamewithhold` wait on `case-disclosures` R45) */
+    const undeclared = (op) => /^owed:/.test(op) && owed(op) === op && !Object.values(BROWSER_ACTS).some((b) => b.screen === s.id && b.registry === op);
+    const named = reg.acts.filter((a) => !undeclared(a.op)).map((a) => (Object.entries(BROWSER_ACTS).find(([, b]) => b.screen === s.id && b.registry === a.op) || [owed(a.op)])[0]);
     assert.deepEqual(s.acts.map((a) => a.op).sort(), named.sort(), s.id);
     for (const a of s.acts) {
       assert.ok(browser(a.op) ? !Object.hasOwn(OPS, a.op) : Object.hasOwn(OPS, a.op), `${a.op} is a browser act or in OPS`);

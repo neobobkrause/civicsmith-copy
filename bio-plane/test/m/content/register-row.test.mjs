@@ -93,3 +93,32 @@ test("R67: the row remembers the reduction it points into; a plain row has no re
   w.content.migrate();
   assert.equal(w.content.contentRow(m.content_id).register, undefined, "a row minted before the column has no register key");
 });
+
+test("F1 (citation R28, registers R30): cellsAt answers removed for a register row the provider says was removed; a provider that throws, or has no removed, answers the cells as before", async () => {
+  const { w, seg, provider } = setup();
+  const gone = new Set([4]);
+  let throws = false;
+  provider.removed = (sha, n) => { if (throws) throw new Error("down"); return sha === seg.sha && gone.has(n); };
+  w.content.registerRowContext(provider);
+  const four = mint(w, DOC, seg.sha, range(4));
+  const three = mint(w, DOC, seg.sha, range(3));
+  const got = await w.content.cellsAt(four.content_id);
+  assert.deepEqual([got.cells, got.reason], [null, "removed"]);
+  assert.equal(typeof got.why, "string"); assert.ok(got.why.length > 0, "the why is a sentence");
+  const kept = await w.content.cellsAt(three.content_id);
+  assert.deepEqual(kept.cells.map((c) => c.value), ["2", "Bo", "clerk"], "a row not removed answers its cells");
+  /* a range over several rows is removed when any row in it was */
+  const span = mint(w, DOC, seg.sha, { kind: "sheet-range", sheet: FILE, range: "A3:C5" });
+  assert.equal((await w.content.cellsAt(span.content_id)).reason, "removed");
+  throws = true;
+  const thrown = await w.content.cellsAt(four.content_id);
+  assert.deepEqual(thrown.cells.map((c) => c.value), ["3", "Cy", "judge"], "a provider that throws answers false");
+});
+
+test("F1 control: a provider with no removed function answers a register row's cells as before", async () => {
+  const { w, seg, provider } = setup();
+  w.content.registerRowContext(provider);
+  const four = mint(w, DOC, seg.sha, range(4));
+  const got = await w.content.cellsAt(four.content_id);
+  assert.deepEqual(got.cells.map((c) => c.value), ["3", "Cy", "judge"]);
+});
