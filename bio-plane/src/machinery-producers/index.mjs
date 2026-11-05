@@ -811,7 +811,14 @@ export class MachineryProducers {
    *
    *  THE FACT IS THE REQUEST ROW'S OWN: a request that asked for the page as a visitor saw it (`render = 1`) and
    *  carries a C-83 code. While it is `requested` the drain is HOLDING it under that code (D-491) and asks again on
-   *  every tick until its `expires`; once `expired` the drain has RELEASED it and the render never happened. Both
+   *  every tick until its `expires`; once `expired` the drain has RELEASED it and the render never happened.
+   *
+   *  (capture-requests R61, PR 359) ONE HOLD IS NOT ASKED AGAIN: a fetch the site answered with a challenge
+   *  (`SITE_ASKS_FOR_PERSON`, acquisition R140) leaves the row `requested` with `needs_person`, and the drain no
+   *  longer selects it; it waits for a member's own file (`fillAskedRequest`) until it expires. That code is
+   *  acquisition's, catalogued in none of the families `renderHoldReason` reads, so this producer says what the site
+   *  asked and that the request waits for a person, never that it is asked again on every tick. The item still
+   *  stands while it waits, so the render does not vanish from the feed while nothing has been filed. Both
    *  are shown, under one kind, because they are one fact at two moments and a member who saw the first must be
    *  able to see how it ended — an item that simply vanished at expiry would be the silent drop the ruling forbids.
    *
@@ -837,9 +844,15 @@ export class MachineryProducers {
          silence the ruling forbids. A row never yet attempted (no code) is simply queued and is not shown. The
          reason is the code's own family's sentence; a code no family catalogues says so. */
       const row = renderHoldReason(r.code);
-      const words = row.translation
-        || word("machinery-producers.text.last_thing_recorded", { code: r.code || "no code" });
       const released = r.state === "expired";
+      /* R61: a row the site answered with a challenge waits for a person; the drain does not ask again. */
+      const forPerson = r.needs_person === true;
+      const words = forPerson
+        ? (released
+          ? localize("machinery-producers.index.site_asked_for_person_expired", "The site asked for proof that a person is asking, so nothing was saved, and no member added the file before the request expired.")
+          : localize("machinery-producers.index.site_asks_for_person", "The site asked for proof that a person is asking, so nothing was saved. Open the page yourself and add the file you get, with the address it came from."))
+        : row.translation
+          || word("machinery-producers.text.last_thing_recorded", { code: r.code || "no code" });
       const sinceMs = Date.parse(r.requested_at);
       out.push({
         id: `CONDITION::render-deferred::${r.request}`,
@@ -852,11 +865,14 @@ export class MachineryProducers {
           : word("machinery-producers.summary.render_waiting", { address: r.address, words }),
         detail: released
           ? localize("machinery-producers.index.words_the_request_expired_at", "{words} The request expired at {expires} and was released; nothing was filed in the render's place, and no conclusion about the page can rest on it.", { words: String(words), expires: String(r.expires) })
-          : localize("machinery-producers.index.words_the_request_is_held", "{words} The request is held and asked again on every tick until {expires}; if it cannot be rendered by then it is recorded UNDETERMINED and released.", { words: String(words), expires: String(r.expires) }),
+          : forPerson
+            ? localize("machinery-producers.index.words_the_request_waits_for_person", "{words} The request is not asked again: it waits for a member's file until {expires}; if none is added by then it is recorded UNDETERMINED and released.", { words: String(words), expires: String(r.expires) })
+            : localize("machinery-producers.index.words_the_request_is_held", "{words} The request is held and asked again on every tick until {expires}; if it cannot be rendered by then it is recorded UNDETERMINED and released.", { words: String(words), expires: String(r.expires) }),
         basis: { source: "capture_requests", request: r.request, run: r.run, inquiry: r.target,
                  address: r.address, host: r.host,
                  render: released ? { state: "expired", content: "undetermined" }
-                                  : { state: "deferred", content: "undetermined" },
+                                  : { state: forPerson ? "waiting_for_person" : "deferred", content: "undetermined" },
+                 needs_person: forPerson, asked_at: r.asked_at ?? null,
                  code: r.code, check: row.check, translation: row.translation,
                  attempts: r.attempts, expires: r.expires, updated: r.updated,
                  plane_detail: r.detail ?? null,
