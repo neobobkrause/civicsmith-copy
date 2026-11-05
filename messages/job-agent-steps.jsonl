@@ -1,2 +1,3 @@
 {"at":"2026-11-04T07:39:32Z","row":"sent","n":1,"to":"bob","text":"job agent-steps complete, PR #185 ready: run status"}
 {"at":"2026-11-04T07:39:45Z","row":"outcome","n":1,"outcome":"delivered"}
+{"at":"2026-11-05T01:24:21Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job agent-steps complete, PR #361 ready, session session_01RAN5ent1XYwQA65oSosVjB: run status"}
