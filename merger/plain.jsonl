@@ -71,3 +71,4 @@
 {"at":"2026-11-05T16:53:15Z","row":"renew","id":"22fda05249a3","pr":521}
 {"at":"2026-11-05T16:53:45Z","row":"renew","id":"4752048325ad","pr":516}
 {"at":"2026-11-05T16:56:01Z","row":"renew","id":"0bbbb95bc55a","pr":522}
+{"at":"2026-11-05T16:57:28Z","row":"queue","id":"4efdde7dfd8a","pr":524,"head":"6e69f2acb6a2ba0fb2c98d439c85469b2b579e92","ref":"bob/cap-splits-cp","by":"session_018BhcedPdKvvqmShgPznx1U","reviewed":null,"no_review":"cap split by copy: requirement lines moved verbatim, one new ledger entry, the parent's ids test counts across its split files","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T20:07:28.262Z","renews":true}
