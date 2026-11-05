@@ -22,9 +22,10 @@ const fact = (as, person, sha, o = {}) => as.act("recordpersonfact", { body: { p
 const claim = (as, a, b, o = {}) => as.act("identityclaim", { body: { a, b, kind: "same_as", basis: "testimony", note: "I met both at the same meeting", ...o } });
 const sha256 = (s) => createHash("sha256").update(s).digest("hex");
 
-/** A held document whose reading names `names` (a reading the document's own promotion keeps, `extraction` R20), captured by the member's own upload. */
+/** A held document whose reading names `names` (a `.pdf` name and type where its reading is a PDF's and its passages are `pdf-page` extents, which `content` R62
+ *  refuses on a text document) (a reading the document's own promotion keeps, `extraction` R20), captured by the member's own upload. */
 async function holdNamed(world, me, name, text, names) {
-  const up = await world.door({ url: `/api/?${new URLSearchParams({ op: "captureupload", statement: name, name })}`, init: { method: "POST", headers: { "content-type": "text/plain" }, body: new TextEncoder().encode(text) } }, me);
+  const up = await world.door({ url: `/api/?${new URLSearchParams({ op: "captureupload", statement: name, name })}`, init: { method: "POST", headers: { "content-type": "application/pdf" }, body: new TextEncoder().encode("%PDF-1.4\n" + text) } }, me);
   const doc = up.json.result.document;
   const now = new Date(world.now()).toISOString().replace(/\.\d{3}Z$/, "Z");
   const id = (await me.read("allocid", { query: { prefix: "INFO", year: now.slice(0, 4) } })).id + "-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -56,8 +57,8 @@ async function scene() {
   const org = await entity(me, "body", "Public Works Department", "A city department");
   const chen = await entity(me, "person", "L. Chen", "Director of the department");
   const twin = await entity(me, "person", "L. Chen", "A second record under the same name");
-  const lease = await holdNamed(world, me, "Lease amendment 1.txt", "Lin Chen, Director of Public Works. Appointed in March 2022.", []);
-  const rent = await holdNamed(world, me, "Rent schedule.txt", "Monthly rent is due on the first.", []);
+  const lease = await holdNamed(world, me, "Lease amendment 1.pdf", "Lin Chen, Director of Public Works. Appointed in March 2022.", []);
+  const rent = await holdNamed(world, me, "Rent schedule.pdf", "Monthly rent is due on the first.", []);
   return { world, me, org, chen, twin, lease, rent, member: (handle, o = {}) => world.signIn(handle, { admin: false, ...o }) };
 }
 
