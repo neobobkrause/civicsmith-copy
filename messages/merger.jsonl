@@ -150,3 +150,4 @@
 {"at":"2026-11-05T21:08:22Z","row":"outcome","n":75,"outcome":"delivered"}
 {"at":"2026-11-05T21:08:43Z","row":"sent","n":76,"to":"bob","text":"the starter started job screens-public (PR 598): subscribe_pr_activity to each pull request"}
 {"at":"2026-11-05T21:09:24Z","row":"outcome","n":76,"outcome":"delivered"}
+{"at":"2026-11-05T21:12:02Z","row":"sent","n":77,"to":"bob","text":"merged PR 431 (job actions); the MERGER's starter starts the work it freed"}
