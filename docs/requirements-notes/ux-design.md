@@ -12,14 +12,14 @@ Four things first:
 
 | module | mark | keys needed | in U? | in W? | source |
 |---|---|---|---|---|---|
-| ai-use | R13 | ai.refused.limit.provider | yes (src/ai-use/index.mjs:917) | no | build/requirements/ai-use.md:59; ai-use.md:139; process/metrics/ai-use.jsonl |
-| ai-use | R13 | ai.refused.limit.provider.unknown | yes (index.mjs:918) | no | same |
-| ai-use | R13 | ai.refused.thresholdinvalid | yes (src/ai-use/checks.mjs:85) | no | same |
-| ai-use | R13 | ai.alert.threshold | yes (checks.mjs:87) | no | same |
-| ai-use | R13 | ai.use.notmeasurable | yes (checks.mjs:88) | no | same |
-| ai-use | R13 (R27's key) | ai.refused.notapayingaccount | yes (checks.mjs:86) | no | ai-use.md:139; ai-use.jsonl |
-| ai-use | R13 | ai.refused.unitunavailable (generalised) | no | yes, old wording (words.json:1020) | ai-use.md:59 |
-| screens-document-beta | R59 | content.typed.checked, content.typed.unchecked | yes (src/content/index.mjs:823, :824) | no | screens-document-beta.md:9 |
+| ai-use | R13 | ai.refused.limit.provider | no (moved to W) | yes (settled 5 Nov, R3) | build/requirements/ai-use.md:59; ai-use.md:139; process/metrics/ai-use.jsonl |
+| ai-use | R13 | ai.refused.limit.provider.unknown | no (moved to W) | yes (settled 5 Nov, R3) | same |
+| ai-use | R13 | ai.refused.thresholdinvalid | no (moved to W) | yes (settled 5 Nov, R3) | same |
+| ai-use | R13 | ai.alert.threshold | no (moved to W) | yes (settled 5 Nov, R3) | same |
+| ai-use | R13 | ai.use.notmeasurable | no (moved to W) | yes (settled 5 Nov, R3) | same |
+| ai-use | R13 (R27's key) | ai.refused.notapayingaccount | no (moved to W) | yes (settled 5 Nov, R3) | ai-use.md:139; ai-use.jsonl |
+| ai-use | R13 | ai.refused.unitunavailable (generalised) | no | yes (generalised 5 Nov, R3: the plan reports no money) | ai-use.md:59 |
+| screens-document-beta | R59 | content.typed.checked, content.typed.unchecked | no (moved to W) | yes (settled 5 Nov, R3) | screens-document-beta.md:9 |
 | screens-document-beta | R60 | screen.follow.document.laws | no | yes (words.json:83285) | screens-document-beta.md:11 |
 | screens-document-beta | R61 | screen.document.text.partial.one, screen.document.reading.beingread, screen.document.reading.firstn, document.read.more, screen.document.supporting.notwalked.pending/toolarge/unavailable, screen.document.unsupported.ico | no | yes, all | screens-document-beta.md:13 |
 | screens-document-beta | R62 | screen.document.held.kind, file.kind.* (48), screen.document.macros, .converted, .encrypted | no | yes (held.kind at words.json:84167; W's English differs from R62's quote) | screens-document-beta.md:15 |
@@ -27,24 +27,24 @@ Four things first:
 | screens-document-beta | R64 to R68 | screen.document.interp.label, .offer, .chooser.will, .recorded, .legend.this | no | yes, all | screens-document-beta.md:19-27 |
 | screens-document-beta | R72 | screen.document.text.unsure | no | yes (words.json:85441) | screens-document-beta.md:35 |
 | screens-document-beta | R73 | none named (words owed) | n/a | no | screens-document-beta.md:37 |
-| screens-document | R1 | screen.document.cells_held | yes (src/extraction/screen-words.mjs:7) | no | screens-document.md:15 |
+| screens-document | R1 | screen.document.cells_held | no (moved to W) | yes (settled 5 Nov, R3) | screens-document.md:15 |
 | case-disclosures | R37, R39 | content.typed.frozen.unchecked, content.typed.frozen.checked (basis-versions R59) | no | yes (words.json:123895) | case-disclosures.md:177,179 |
-| case-import | R36 | case-import.ungraded.label, case-import.ungraded.not_stated | yes (src/case-import/index.mjs:168, :172) | yes (words.json:123881) | case-import.md:202 |
+| case-import | R36 | case-import.ungraded.label, case-import.ungraded.not_stated | no (moved to W) | yes (words.json:123881) | case-import.md:202 |
 | notice-producers | R16 | a queue sentence for provider limits (no key named) | no | no | notice-producers.md:37 |
-| notice-producers | R33 | ai.alert.threshold, a {use} fill for thresholds, unit words for tokens/calls | yes (ai-use) | no | notice-producers.md:73 |
+| notice-producers | R33 | ai.alert.threshold, a {use} fill for thresholds, unit words for tokens/calls | no (moved to W) | yes (settled 5 Nov, R3) | notice-producers.md:73 |
 | notice-producers | R35 | sentences for left-list, left-project-list, signin-ended (no keys named) | no | no | notice-producers.md:75 |
-| queue-producers | R57 | queue.signer-self-registered.summary.other, .summary.unnamed.other, .key, .key.undated, .key.comment | no | no | queue-producers.md:155 |
+| queue-producers | R57 | queue.signer-self-registered.summary.other, .summary.unnamed.other, .key, .key.undated, .key.comment | no | yes (settled 5 Nov, R3) | queue-producers.md:155 |
 | op-grades | R55 (d) | consequence.rowexpunge | no | yes (words.json:123909) | op-grades.md:128 |
 | machinery-producers | F1 | a brought-by sentence for capture-completed-unattended (no key yet) | no | no | machinery-producers.md:137 |
 | screens-wizards | R23 | per-filter words (words owed) | no | no | screens-wizards.md:78 |
 | journey-check | R17, R26 | rows in words.json and setup-words that still say "group" (keys not named) | n/a | n/a | journey-check.md:71,83 |
-| screens-action | R62 | guide.procedure.notreviewed | yes (src/reading-guides/index.mjs:92) | yes (words.json:123894) | screens-action.md:142 |
+| screens-action | R62 | guide.procedure.notreviewed | no (moved to W) | yes (words.json:123894) | screens-action.md:142 |
 | screens-action | R62 | text.reviewedby, text.lastchecked | no | yes (words.json:123880) | screens-action.md:142 |
 | jurisdictions | R137 | text.lastchecked | no | yes (words.json:123887) | jurisdictions.md:114 |
-| agent-worker | R110 | ai.refused.aipathnotready | no | no | agent-worker.md:246 |
-| agent-worker | R124 | ai.choice.wait, ai.choice.switch, ai.choice.without_ai | no | no | agent-worker.md:195 |
-| agent-worker | R124 | ai.refused.payernotverified | yes (src/ai-accounts/checks.mjs:160) | no | agent-worker.md:195 |
-| plane | R119 | content.typed.anonymous_member | yes (content) | no | plane.md:77 |
+| agent-worker | R110 | ai.refused.aipathnotready | no | yes (settled 5 Nov, R3) | agent-worker.md:246 |
+| agent-worker | R124 | ai.choice.wait, ai.choice.switch, ai.choice.without_ai | no | yes (settled 5 Nov, R3) | agent-worker.md:195 |
+| agent-worker | R124 | ai.refused.payernotverified | no (moved to W) | yes (settled 5 Nov, R3) | agent-worker.md:195 |
+| plane | R119 | content.typed.anonymous_member | no (moved to W) | yes (settled 5 Nov, R3) | plane.md:77 |
 | screens-inquiry | R142 | screen.project.interp.proposals.heading, screen.interp.proposal.label, screen.interp.proposals.more | no | yes (words.json:123908) | screens-inquiry.md:288 |
 | screens-inquiry | R143 | screen.interp.proposals.unavailable | no | yes (words.json:123929) | screens-inquiry.md:289 |
 | screens-intake | R72 | screen.capture.limits.heading, screen.capture.limits.document, screen.capture.limits.sheet, screen.capture.limits.image, screen.capture.limits.archive, screen.capture.limits.background | no | yes (words.json:123936) | screens-intake.md:128 |

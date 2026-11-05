@@ -60,10 +60,10 @@ test("R1 control: a word list with one key the inventory places in it removed fa
   assert.equal(mismatches(rows, copy).length, 1);
 });
 
-test("R1 control: a key the inventory says is absent, added to a copy, fails the check", () => {
-  const absent = rows.find((r) => r.inW === "no" && r.keys.length);
-  assert.ok(absent, "a row places a key outside words.json");
-  const copy = new Set(keySet);
-  copy.add(absent.keys[0]);
-  assert.equal(mismatches(rows, copy).length, 1);
+test("R1 control: a row that places a present key outside words.json fails the check", () => {
+  // once every listed key is settled no row may say "no", so the control adds one: a key words.json holds, listed as absent
+  const listed = rows.find((r) => r.inW === "yes" && r.keys.length);
+  assert.ok(listed, "a row places a key in words.json");
+  const withAbsent = [...rows, { module: "control", mark: "R0", keys: [listed.keys[0]], inW: "no" }];
+  assert.equal(mismatches(withAbsent, keySet).length, 1);
 });
