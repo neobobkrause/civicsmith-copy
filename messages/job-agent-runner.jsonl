@@ -8,3 +8,4 @@
 {"at":"2026-11-05T04:21:28Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-05T17:02:34Z","row":"sent","n":5,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: job agent-runner complete, PR #394 ready, session session_018BhcefvqLpUyE8JqHT33Nx: run status. Synced with tranche, dist/image rebuilt; unmet.test.mjs (todos only) exempted from revert. The remaining gate finding (agent-worker REMOTE names RemoteSession, deleted here by migration v3 per your 5 Nov ruling) clears only after agent-worker PR 364 merges: merge 364 first, then resync 394."}
 {"at":"2026-11-05T17:03:40Z","row":"outcome","n":5,"outcome":"delivered"}
+{"at":"2026-11-05T20:18:55Z","row":"sent","n":6,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (8 jobs ready). Then: job agent-runner complete, PR #394 ready, session session_018Bhcede4jgHXPzedRdMwaT: run status"}
