@@ -373,6 +373,29 @@ add('case-import.ungraded.not_stated', 'The source does not say which passages i
 add('consequence.rowexpunge', 'This removes the row for good, for every member: it goes from your team\'s Civicsmith and from every export made from now on, and it cannot be restored. A marker stays where it was, holding your ground and reason and none of the row.', true, 'op-grades R55 (d); registers R30 (design lane)', 'op-grades\' consequence statement for rowexpunge (a dialog), read by the act\'s id');
 add('listing.contact.note', 'Optional: a line the stewards can use to reply to your team, by the stewards\' own mail. It goes only in the request you send them, and it is never on the site. Leave it blank if you like; nothing about that is public.', true, 'network-notices R32 (design lane)', 'the contact line of the prefilled listing request; says who can see something');
 
+// 4p. T53's owed screen words, settled by the design lane (5 Nov 2026; CLAUDE.md: design lanes decide wording in the design
+//     stream). Each key is the one its requirement names, its English the requirement's quote where it gives one.
+for (const [k, en, prot, src, note] of [
+  ['text.reviewedby', 'reviewed by {name}, {organisation}, {date}', true, 'jurisdictions R137; screens-action R62', 'on every profile template and guide a member opens; {name}, {organisation} and {date} from its counted review (jurisdictions R126)'],
+  ['text.lastchecked', 'last checked {date}', false, 'jurisdictions R137; screens-action R62', 'beside the review date of a text whose latest review is over 12 months old; {date} the link check\'s source_check.checked_on, or the review date where no source has an address'],
+  ['guide.procedure.notreviewed', 'Not reviewed', true, 'reading-guides R19, R20; screens-action R62', 'in place of text.reviewedby on a guide opted out of review; read with no fill (reading-guides\' NOT_REVIEWED_LABEL), its who and when in guide.procedure.notreviewed.by'],
+  ['guide.procedure.notreviewed.by', '{member} chose on {date} to use this guide without a professional\'s review.', true, 'screens-action R62', 'beside guide.procedure.notreviewed; {member} the member\'s handle, {date} when the opt-out was recorded (K5508)'],
+  ['screen.project.interp.proposals.heading', 'Parts of your documents that may matter to this investigation', false, 'screens-inquiry R142', 'on project and question'],
+  ['screen.interp.proposal.label', 'a proposal', true, 'screens-inquiry R142', 'the label on each proposed part: nothing is interpreted until a member accepts it'],
+  ['screen.interp.proposals.more', 'Showing {shown} of {total}; narrow by document', false, 'screens-inquiry R142', 'when proposeParts answers truncated'],
+  ['screen.interp.proposals.unavailable', 'Suggestions for this kind of file are not available yet. You can still open, cite or choose parts yourself.', false, 'screens-inquiry R143', 'in place of the list, for a kind answering unavailable (R29); not drawn for a project with no documents'],
+  ['screen.capture.limits.heading', 'What can be added', false, 'screens-intake R72', 'drawn before a file is chosen'],
+  ['screen.capture.limits.document', 'Documents, PDFs and text: up to {size} and {pages} pages', false, 'screens-intake R72', 'figures from limitsByKind (R135); sizes in MB'],
+  ['screen.capture.limits.sheet', 'Spreadsheets: up to {size}, about {rows} rows', false, 'screens-intake R72', 'figures from limitsByKind (R135)'],
+  ['screen.capture.limits.image', 'Pictures: up to {size} each', false, 'screens-intake R72', 'figure from limitsByKind (R135)'],
+  ['screen.capture.limits.archive', 'Archives: up to {size} in all, and each file inside within its own kind\'s limit', false, 'screens-intake R72', 'figure from limitsByKind (R135)'],
+  ['screen.capture.limits.background', 'A large file is read in the background; we tell you when it is done.', false, 'screens-intake R72', ''],
+  ['screen.capture.refusal.toolarge.nothing_read', 'Nothing was added or read.', false, 'screens-intake R73', 'after the TOO_LARGE sentence (its size and the kind\'s limit), before R74\'s ways in'],
+  ['screen.capture.refusal.toolarge.register', 'This is a public register. Bring in just the rows you need.', false, 'screens-intake R74 (a)', 'opens registers for that register, the project\'s filter prefilled'],
+  ['screen.capture.refusal.toolarge.part', 'Cut out the part you need (for a sheet, the rows and columns; for a document, the pages) and add that. We read what you add in full.', false, 'screens-intake R74 (b)', ''],
+  ['screen.capture.read.queued', 'Waiting its turn to be read.', false, 'screens-intake R78 (DEC-454)', 'the reading\'s first step, before screen.capture.read.fetching; the design\'s returned row for DEC-456'],
+]) add(k, en, prot, src + ' (design lane)', note || undefined);
+
 // 5. The frame: rail, phone tabs, explanation levels
 for (const [k, name] of W.RAIL) { add(`rail.${k}.name`, name, false, 'mock-shell.js RAIL'); if (W.RAIL_HELP[k]) add(`rail.${k}.holds`, W.RAIL_HELP[k], false, 'mock-refs.js RAIL_HELP'); }
 // DEC-241: the line beneath a place's name on the phone's More page: its rail.<k>.holds after the name, capitalized.
