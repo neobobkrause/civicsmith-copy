@@ -127,4 +127,4 @@ Terms. A **part** is one of the catalogue's six ids `ask`, `draft`, `read`, `tra
 
 - Bob's pass marks (the floors, AD13) are set after the first measuring run; until then no entry reaches members outside a test instance (`not_yet_rated`, `run-rules` R29).
 - Answered: AI6 A with an administrator's switch to turn re-testing off and a queue reminder while it is off (K5480; `ai-use` R28, R29); AI7 B (K5481); AI8 as Bob amended it (K5482): the shared results page shows every tested AI, a team's results are active six months and statistically joined (R63, R67).
-- **F1** *(not yet met: coordinator ruling 5 Nov 04:19)* op-grades R57 (op-grades.md:132): declare this module's own ops (the gate's test, consent and drift ops R57 names) in a DECLARED_OPS row with R57's grades, so op-grades reads them from their owner.
+- **F1** op-grades R57 (op-grades.md:132): declare this module's own ops (the gate's test, consent and drift ops R57 names) in a DECLARED_OPS row with R57's grades, so op-grades reads them from their owner.

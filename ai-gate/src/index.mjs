@@ -19,3 +19,4 @@ export * from "./bundle.mjs";
 export * from "./verify.mjs";
 export * from "./words.mjs";
 export * from "./run.mjs";
+export * from "./ops.mjs";

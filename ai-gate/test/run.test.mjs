@@ -373,3 +373,23 @@ test("R66: the suite's own table of stubs: the known-good stub passes every need
   assert.ok(!G.partsRefused(earned).some((x) => x.part === "ask"));
   assert.ok(G.partsRefused(other).some((x) => x.part === "ask"));
 });
+
+/* ================================================================== F1 */
+
+test("F1: this module declares its own ops with op-grades R57's grades, each refused to a machine, each described by a gate.* key the word table extracts", async () => {
+  const { callsOf } = await import("../../bio-plane/src/setup-words/build.mjs");
+  const extracted = new Map(Object.entries(SRC_FILES).flatMap(([f, t]) => callsOf(t, f)).map((c) => [c.id, c.en]));
+  const R57 = { aitestsetup: "credential", aiconnecttest: "observational", aitestrun: "observational", airesultsend: "irreversible",
+    airesultsdecline: "reversible", airesultsread: "read", airesultown: "read" };
+  assert.deepEqual(Object.keys(G.DECLARED_OPS).sort(), Object.keys(R57).sort());
+  for (const [op, r] of Object.entries(G.DECLARED_OPS)) {
+    assert.equal(r.weight, R57[op], op);
+    assert.equal(r.mutating, r.weight !== "read", op);
+    assert.deepEqual(r.machineClasses, [], op);
+    assert.ok(r.classes.length > 0 && r.classes.every((c) => ["admin", "member"].includes(c)), op);
+    const key = `gate.declared.${op}`;
+    assert.equal(r.description, extracted.get(key), op);
+  }
+  /* control: the re-test switch is ai-use's, not declared here */
+  assert.ok(!("airetestset" in G.DECLARED_OPS));
+});
