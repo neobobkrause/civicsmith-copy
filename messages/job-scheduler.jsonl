@@ -13,3 +13,4 @@
 {"at":"2026-11-04T12:08:13Z","row":"sent","n":7,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job scheduler complete, PR #219 ready: run status"}
 {"at":"2026-11-04T12:08:21Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-05T00:35:01Z","row":"sent","n":8,"to":"bob","text":"job scheduler complete, PR #343 ready, session session_01RAN5ek2WvN4nee1GjBMX1y: run status"}
+{"at":"2026-11-05T00:35:18Z","row":"outcome","n":8,"outcome":"delivered"}
