@@ -618,7 +618,7 @@ export const DECLARED_OPS = Object.freeze({
     description: localize("corpus-export.declared.exportrender", "export: keyed by (viewer, format); renders what the viewer would be carried and logs who took it"),
     fields: { accepts: ["format","part"], requires: ["format"] } },
   /* R17, R18 (T53; K5441, K5443): administrator only, as `export`. */
-  exportwhole: { classes: ["admin"], mutating: true, weight: "substrate",
+  exportwhole: { classes: ["admin"], mutating: true, needs: null, weight: "substrate",
     description: localize("corpus-export.declared.exportwhole", "writes a whole-record manifest of what is already there, every stored file by parts, and logs it"),
     fields: { accepts: ["note"], requires: [] } },
   exportwholepart: { classes: ["admin"], mutating: false, weight: "read",
