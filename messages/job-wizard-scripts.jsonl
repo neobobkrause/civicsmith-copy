@@ -8,3 +8,4 @@
 {"at":"2026-11-04T14:07:06Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-04T14:28:58Z","row":"sent","n":5,"to":"bob","text":"job wizard-scripts complete, PR #255 ready, session session_01RAN5epL5idRzyzgAzGgdC8: run status"}
 {"at":"2026-11-04T14:29:09Z","row":"outcome","n":5,"outcome":"delivered"}
+{"at":"2026-11-05T08:15:25Z","row":"sent","n":6,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job wizard-scripts complete, PR #458 ready, session session_018BhcedsmFJsopo6ZvwHHus: run status"}
