@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-steps","verdict":"not affected","evidence":"agent-steps/src/drive.mjs:5 imports converse, judge tools and prompts (converse called at drive.mjs:285, subsessions.mjs:23); it never reads health or the circuit","at":"2026-11-05T02:39:36.892Z","key":"agent-model:355","worker":"a11a5d294a5a042b7","cost":"0.4"}

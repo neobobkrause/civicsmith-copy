@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-runner","verdict":"not affected","evidence":"build/modules.json:112 agent-runner/ has no file that imports agent-model; its only mentions are comments citing agent-model R14 (agent-runner/src/runner.mjs:64)","at":"2026-11-05T02:39:36.892Z","key":"agent-model:355","worker":"a11a5d294a5a042b7","cost":"0.4"}

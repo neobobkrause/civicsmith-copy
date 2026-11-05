@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-runs","verdict":"not affected","evidence":"build/modules.json:104 bio-plane/src/ai-runs/ has no file importing agent-model; it receives pathSource only through registerPathReady (bio-plane/src/ai-runs/index.mjs:3712), registered by the plane","at":"2026-11-05T02:39:36.892Z","key":"agent-model:355","worker":"a11a5d294a5a042b7","cost":"0.4"}
