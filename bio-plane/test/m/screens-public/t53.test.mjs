@@ -54,9 +54,9 @@ test("R86 control: a receipt with no reference draws no 'What to keep' heading, 
 });
 
 for (const [id, what] of [
-  ["R84", "the edition and a signed case draw 'Published with {n} passages not yet graded' with a 'Which passages' fold (screen.published.ungraded); needs code in src/screens-publish/"],
-  ["R100", "each case-level EVIDENCE row draws name, locator, short fingerprint and where to read it; signature and key drawn or the sentence not; needs code in src/screens-publish/"],
-  ["R101", "'Read the case', 'Check it' (short paste) and 'Print the case' each draw a sentence on press; needs code in src/screens-publish/"],
-  ["R102", "the unrated line is short and the 'NO BAR IS RECORDED' paragraph folds; words owed; needs code in src/screens-publish/"],
-  ["R104", "published, the public docket and review-outside draw the group's name at head, 'Made with Civicsmith' at foot, tab '<case> - <group>'; needs code in src/screens-publish/"],
-]) test.todo(`${id} (not yet met: T53): ${what}`);
+  ["R84", "on the page: published lists screens-public's ungradedStatement among its parts and draws it at the top of the edition and of a signed case (screens-publish's hook)"],
+  ["R100", "on the page: published draws screens-public's evidenceList and signatureShown in place of its EVIDENCE section and verify.detail (screens-publish's hook)"],
+  ["R101", "'Read the case' (with the time), 'Check it' (short paste) and 'Print the case' each draw a sentence on press; the re-read and print rows are owed, and the acts are screens-publish's"],
+  ["R102", "the unrated line is short and the 'NO BAR IS RECORDED' paragraph folds; words owed"],
+  ["R104", "published, the public docket and review-outside draw the group's name at head, 'Made with Civicsmith' at foot, tab '<case> - <group>'; the foot row is owed, and the screens are screens-publish's"],
+]) test.todo(`${id} ${what}`);
