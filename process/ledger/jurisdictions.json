@@ -28,7 +28,8 @@
   ],
   "prior_work": "Meet R109, R119, R120, R124, R133, R137 only, each marked '(not yet met: T53)' in build/requirements/jurisdictions.md. Turn each into real tests under jurisdictions/test/ (a test.todo for it becomes real tests), make them pass inside jurisdictions/, and when a requirement is met clear its mark yourself (REQ-4); the requirements already met answer as before. If meeting one needs a change in another module, or rests on something not yet recorded, do not edit it: say so to your coordinator in your receipt's not-verified list and leave that requirement's mark. Commit no generated file (bio-plane/src/setup-words/rows.mjs, words-unreviewed.json, any dist): the gate refuses it. Where build/situations/job.md names the old tool (proc), follow this START's commands instead. No earlier unmerged work touches this module.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-03T23:39:42Z"
+    "state": "WORKING",
+    "at": "2026-11-05T08:18:54Z",
+    "reason": "reopened: consolidate build/requirements/jurisdictions.md (137280 bytes) under the requirements cap of 70000 bytes: move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/jurisdictions.md, keep every R and F line and its mark verbatim, and add a test under the module's tests that asserts the set of requirement ids and unmet marks is unchanged by the move (compare with the ids at the start commit). The job is not complete while the file is over 70000 bytes. Then meet any open requirements it can."
   }
 }
