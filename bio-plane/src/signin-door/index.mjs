@@ -42,13 +42,10 @@ export const SIGNIN_WORDS = Object.freeze({
   "ai.refused.signinabsent": hasWord("ai.refused.signinabsent") ? word("ai.refused.signinabsent")
     : localize("signin-door.index.signing_in_with_claude_is", "Signing in with Claude is not installed in your team's Civicsmith yet. Whoever installed your team's Civicsmith can add it."),
 });
-/* R6 (K5046 (c); op-declarations R80, R81): the one op this door answers and declares, beside its function; `control-plane`
-   no longer declares it. `step` is required: `agent-worker` R66's `BAD_STEP` is relayed as R1 relays it. */
-export const DECLARED_OPS = Object.freeze({
-  subscriptionsignin: Object.freeze({ classes: ["admin", "member"], machineClasses: [], mutating: true, stamps: ["viewer", "by"], needs: null,
-    weight: "credential", description: localize("signin-door.declared.subscriptionsignin", "credential: a member's own sign-in to their own Claude subscription, in their own runner; no login held here; moves no bundle"),
-    fields: { accepts: ["step", "code", "attempt"], requires: ["step"] } }),
-});
+/* R6 retired, F3 (coordinator ruling 5 Nov 08:01; op-grades R57: a retired op is in no table): `subscriptionsignin` is
+   retired and replaced by `aisignin` (ai-accounts, op-declarations R90), so this module declares no op. The export stays,
+   empty and frozen, so the assembly still finds the module's DECLARED_OPS. */
+export const DECLARED_OPS = Object.freeze({});
 /* R3 (`agent-worker` R83): the two headers the door sends, and no other of its own. */
 export const TRACE_HEADER = "x-civicsmith-trace";
 export const MEMBER_REF_HEADER = "x-civicsmith-member-ref";
