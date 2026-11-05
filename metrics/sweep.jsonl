@@ -88,3 +88,4 @@
 {"at":"2026-11-05T07:45:20Z","row":"ready","live":12,"job_cap":20,"started":[]}
 {"at":"2026-11-05T07:50:37Z","row":"check","by":"job start","live":12,"live_at":"2026-11-05T07:45:20Z","job_cap":20,"startable":0}
 {"at":"2026-11-05T07:55:48Z","row":"check","by":"notice triage","live":12,"live_at":"2026-11-05T07:45:20Z","job_cap":20,"startable":0}
+{"at":"2026-11-05T07:58:24Z","row":"sweep","session":"session_018BhcefwaVtx4V7dYW63amA","bob_acts":true,"bob_quiet_h":0.2,"root_context":14,"live":16,"job_cap":20,"sessions":23,"startable":3,"blocked":5,"blocked_oldest_min":217,"working":6,"waiting":10,"idle_capacity":{"kind":"work","since":"2026-11-05T07:55:48Z","min":2,"live":16,"cap":20,"held":0,"startable":3,"empty":4,"alarm":true,"owed_since":"2026-11-05T07:37:07Z"}}
