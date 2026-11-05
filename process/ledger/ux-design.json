@@ -1,6 +1,6 @@
 {
   "id": "ux-design",
-  "title": "ux-design: the UX design lane under BOB, within CLAUDE.md's design-stream approval (inventory, module entries for words already in the stream, generators)",
+  "title": "ux-design: the UX design lane under BOB (inventory, wording of blocked keys, module entries)",
   "layer": 11,
   "paths": [
     "docs/development/ux-substrate/",
@@ -29,7 +29,7 @@
     "build/requirements/README.md",
     "build/situations/job.md"
   ],
-  "prior_work": "You are the UX design lane. Bob's standing approval in CLAUDE.md bounds you exactly: in docs/development/ux-substrate you may fix a generator so its output matches the product's code, stop committing a generated file over the size limit and have it built where needed, add a module's entries for words already in the stream, and set a component's measured value when a recorded decision of Bob's already fixes it. You NEVER change wording there and NEVER make a design decision (no new or edited English in words.json or any design file), until Bob amends that CLAUDE.md line himself. Meet R1 (a test that the inventory in docs/requirements-notes/ux-design.md matches words.json) and R2 (for rows whose keys are already in words.json, add the module entries the stream's generators need, change no wording, and record per row that the requirement no longer waits on words). Leave R3 unmet with its reason. A row you cannot do within the approval goes in --not-verified. Edit no other module, and commit no generated file over the size limit (rows.mjs, words-unreviewed.json, any dist).",
+  "prior_work": "You are the UX design lane. CLAUDE.md: design lanes, run under BOB, own the design stream (docs/development/ux-substrate) and, within the product's principles, decide design and wording there; changes land through the gated merge train. Meet R1 (bio-plane/test/m/ux-design/inventory.test.mjs keeps the inventory and words.json in agreement: update the notes in the same commit as any words.json change), R2 (module entries for rows whose keys are in words.json, row by row in the notes) and R3 (settle the wording of the blocked keys, ai-use R13 first). Regenerate with node bio-plane/src/setup-words/build.mjs and node docs/development/ux-substrate/screens/words-reads.src.mjs . --build. Edit no other module's code, and commit no generated file over the size limit.",
   "status": {
     "state": "OPEN",
     "at": "2026-11-05T16:00:00Z"
