@@ -153,7 +153,10 @@ export class Queue {
     "caseImport", "wizardScripts",
     /* queue-producers R37 (K2484, K2582): publish-schedule's scheduled editions, read there directly since N823's split;
        queue passes it and calls none of its reads. */
-    "publishSchedule"]);
+    "publishSchedule",
+    /* queue-producers R60, R61 (T53; PR 362): ai-accounts' stopped accounts and ai-use's re-testing turned off; queue passes
+       them and calls none of their reads. */
+    "aiAccounts", "aiUse"]);
   get #scheduler() { return this.#dep("scheduler", () => schedulerOf(this.#host, this.#env)); }
   /* R51 (T33-83): `notice-producers`, read beside `queue-producers`. */
   get #notices() { return this.#dep("notices", () => noticeProducersOf(this.#host)); }
@@ -712,7 +715,10 @@ export class Queue {
    *  doors. The contradiction duties' doors are R46's, read off the item's subject (`#contradictionDisposition`); the
    *  bridge (R28), which holds no subject, answers the doors of a duty not yet taken up. A list is copied out
    *  (`doorOf`), never handed out frozen. */
-  static OBLIGATION_DOORS = Object.freeze({ "bias-debt": "biasdebtresolve", "signer-self-registered": "signerset",
+  static OBLIGATION_DOORS = Object.freeze({ "bias-debt": "biasdebtresolve",
+    /* R97 (T53; DEC-462): a signing-key item is answered per key, by the revoke (the door the screen leads with) or by
+       "I know about this key"; the bridge names both. */
+    "signer-self-registered": ["signerset", "signerknown"],
     "plan-checkpoint-due": "checkpointrecord", "escalation-stage-proposed": "escalationadvance",
     "action-reminder": "reminderanswer", "litigation-hold": "actionhold",
     "template-review-requested": "templatereview", "local-fact-due": "factconfirm",
@@ -745,6 +751,33 @@ export class Queue {
   }
   /** The door R12 and R28 name for an OBLIGATION of `kind`: the door its producer declared on the item (`declared`, R12),
    *  else its entry above (a list copied), else `taskresolve`. */
+  /** R97: the keys a signing-key item lists, `basis.keys`' `key_b64` in order, each once; none when the producer listed none. */
+  static signerKeysOf(item) {
+    const listed = item && item.basis && Array.isArray(item.basis.keys) ? item.basis.keys : [];
+    const out = [];
+    for (const k of listed) {
+      const b = k && typeof k === "object" && typeof k.key_b64 === "string" ? k.key_b64.trim() : "";
+      if (b && !out.includes(b)) out.push(b);
+    }
+    return out;
+  }
+  /** R97: a signing-key item's options are the producer's per-key pair (R34), kept only for a key the item lists and only
+   *  the two acts, each once per key, so they number at most twice the keys listed; the revoke states `to: "revoked"`. */
+  static SIGNER_ACTS = Object.freeze(["signerset", "signerknown"]);
+  static signerOptionsOf(item) {
+    const keys = Queue.signerKeysOf(item);
+    const seen = new Set();
+    const out = [];
+    for (const o of Array.isArray(item.options) ? item.options : []) {
+      if (!o || typeof o !== "object" || !Queue.SIGNER_ACTS.includes(o.id) || typeof o.key !== "string" || !keys.includes(o.key)) continue;
+      const k = `${o.id}\u0000${o.key}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(o.id === "signerset" ? { ...o, to: "revoked" } : { ...o });
+    }
+    const at = (o) => keys.indexOf(o.key) * 2 + Queue.SIGNER_ACTS.indexOf(o.id);
+    return out.sort((a, b) => at(a) - at(b));
+  }
   static doorOf(kind, declared) {
     const own = Queue.declaredDoor(declared);
     if (own !== null) return own;
@@ -883,12 +916,15 @@ export class Queue {
       ? item.subject.definition_version : null;
     const contradiction = this.#contradictionDisposition(item);
     if (contradiction) return contradiction;
-    /* R96 (fix round 10; DEC-439 to DEC-441, K5303, A-03; credentials R83): an administrator may answer a self-registered
-       key with "I know about this key" (op=signerknown), keyed by the key; revoking it (op=signerset) stays its door. */
+    /* R96, R97 (T53; DEC-462; credentials R7, R83; queue-producers R56): one item per member lists her keys (`basis.keys`);
+       each listed key is answered on its own, by "I know about this key" (op=signerknown) or the revoke (op=signerset), the
+       key named by the field both ops take (`keyB64`). `keys` is one entry per listed key, in the list's order; a key only
+       `basis.keys_more` counts has none. The top-level `acts` names the answer that ends a key (R96). */
     if (item.kind === "signer-self-registered") {
-      const key = pick(item.subject, "id");
-      return { available: key !== null, op: "signerknown", scope: "key", keyed_on: ["keyB64"], key, acts: ["signerknown"],
+      const keys = Queue.signerKeysOf(item);
+      return { available: keys.length > 0, op: "signerknown", scope: "key", keyed_on: ["keyB64"], key: null, acts: ["signerknown"],
                requires: ["keyB64"], instead: Queue.doorOf(item.kind, item.door),
+               keys: keys.map((k) => ({ key_b64: k, acts: ["signerknown"], instead: "signerset" })),
                detail: localize("queue.index.an_administrator_who_knows_this", "an administrator who knows of this key says so (op=signerknown) and it leaves every administrator's list; revoking it (op=signerset) ends it too.") };
     }
     if (item.class === "OBLIGATION")
@@ -1309,6 +1345,7 @@ export class Queue {
          is the same argument `suppressedBy` makes one block down. A producer
          computing its own answer would be six copies of the act's key. */
       it.disposition = this.#dispositionOf(it);
+      if (it.kind === "signer-self-registered") it.options = Queue.signerOptionsOf(it);
       /* R56 (N1123): the subject names its title, `null` where it names no bundle the viewer may see or the bundle states none,
          never missing; asked here for every item whatever its producer, so no producer carries a copy. */
       if (it.subject && typeof it.subject === "object" && !Array.isArray(it.subject))
@@ -2696,7 +2733,13 @@ export function queueAnswer(r, { gate } = {}) {
     return { status: 200, result: r };
   return { status: 200, result: {
     ...r,
-    items: (r.items || []).map((i) => ({ ...i, options: (i.options || []).map((a) => decorate(a, gate)) })),
+    /* R97: a per-key option keeps the key it carries (and the revoke its `to`), which `decorate` does not name. */
+    items: (r.items || []).map((i) => ({ ...i, options: (i.options || []).map((a) => {
+      const d = decorate(a, gate);
+      if (a && typeof a.key === "string") d.key = a.key;
+      if (a && typeof a.to === "string") d.to = a.to;
+      return d;
+    }) })),
   } };
 }
 

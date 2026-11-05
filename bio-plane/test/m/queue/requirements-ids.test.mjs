@@ -14,7 +14,7 @@ const START_IDS = ("R1 R2 R3 R4 R5 R6 R48 R49 R7 R8 R51 R9 R10 R11 R12 R13 R14 R
   "R21 R22 R23 R24 R25 R26 R27 R28 R29 R41 R42 R43 R44 R45 R46 R50 R52 R47 R55 R56 R57 R58 R59 R60 R61 R91 R92 R93 R94 " +
   "R95 R30 R31 R32 R33 R34 R35 R36 R37 R38 R96 R97 R98 R99").split(" ");
 const START_UNMET = { R97: "T53", R99: "T53" };
-const STRUCK = [];
+const STRUCK = ["R97"];
 
 const read = () => readFileSync(FILE, "utf8");
 const idLines = (text) => text.split("\n").map((l) => l.match(/^\s*- \*\*([RF]\d+)\*\*(.*)$/)).filter(Boolean);
