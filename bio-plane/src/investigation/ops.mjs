@@ -27,4 +27,11 @@ export const DECLARED_OPS = Object.freeze({
   projectclose: { classes: ["admin","member"], machineClasses: [], mutating: true, stamps: ["viewer","by"], needs: "contribute", weight: "reasoned", refusal: "CLOSE_BAD_REASON",
     description: localize("investigation.declared.projectclose", "project-directed: an owner closes a project now, whether or not its work has gone quiet, with a reason (resolved, superseded or abandoned) and an optional note, keyed by project; the gaps read at the close are kept beside it"),
     fields: { accepts: ["project","reason","note"], requires: ["project","reason"] } },
+  /* F1 (BOB's grade, surface-declarations R17 and F1; R28): accepting proposed parts writes interpretation rows; no
+     authored reason is asked (R28) and an accepted proposal is taken back by `extraction`'s `interpretationWithdraw`
+     (its R118), so it is reversible; a member's act, refused to a machine. Its fields are R28's `{project, proposals}`,
+     `by` the stamp. The service and its arm are R28's, owed to their own job. */
+  acceptproposals: { classes: ["admin","member"], machineClasses: [], mutating: true, stamps: ["viewer","by"], needs: "contribute", weight: "reversible",
+    description: localize("investigation.declared.acceptproposals", "project-directed: accepting a proposal is a member's act: each proposed part a member accepts for a project is interpreted for it, keyed by project; taken back by withdrawing that interpretation"),
+    fields: { accepts: ["project","proposals"], requires: ["project","proposals"] } },
 });
