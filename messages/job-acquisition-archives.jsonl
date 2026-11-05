@@ -1,3 +1,4 @@
 {"at":"2026-11-05T11:19:30Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job acquisition-archives BLOCKED: run status"}
 {"at":"2026-11-05T11:19:46Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-05T17:44:24Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (5 jobs ready). Then: job acquisition-archives complete, PR #491 ready, session session_018Bhcec9G6Cef6iQLYSfp4t: run status"}
+{"at":"2026-11-05T17:44:49Z","row":"outcome","n":2,"outcome":"delivered"}
