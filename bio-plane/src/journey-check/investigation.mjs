@@ -310,9 +310,9 @@ async function concludeOn(walk, page, { question, project }) {
    in the words of `refusal.AGENT_WORKER_UNBOUND` or `refusal.ASSISTANT_REMOTE_NOT_READY`, never a code. A screen that
    draws an assistant control that cannot work fails by name. */
 /* the acts that connect or run the assistant, by the names the plane declares: `connect` draws the sign-in (`subscriptionsignin`, after
-   `disclosureshown`) and the own key (`accountreferenceset`); the question's dock `airunopen`; the plan `planask`; Ask `ask` */
-export const ASSISTANT_OPS = Object.freeze(["subscriptionsignin", "disclosureshown", "accountreferenceset", "airunopen", "planask", "ask"]);
-export const CONNECT_OPS = Object.freeze(["subscriptionsignin", "disclosureshown", "accountreferenceset"]);
+   `disclosureshown`) and the own key (`aiownadd`, `accountreferenceset` before T53); the question's dock `airunopen`; the plan `planask`; Ask `ask` */
+export const ASSISTANT_OPS = Object.freeze(["subscriptionsignin", "disclosureshown", "accountreferenceset", "aiownadd", "airunopen", "planask", "ask"]);
+export const CONNECT_OPS = Object.freeze(["subscriptionsignin", "disclosureshown", "accountreferenceset", "aiownadd"]);
 export const ASSISTANT_SHELL = Object.freeze(["dock"]);
 export const NOT_READY_KEYS = Object.freeze(["refusal.AGENT_WORKER_UNBOUND", "refusal.ASSISTANT_REMOTE_NOT_READY"]);
 

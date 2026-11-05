@@ -150,6 +150,10 @@ export class Walk {
   /* K4473 (RC-R1): the digests of captures the walk made whose answer stated the reading pending (`reading_pending: true`), until a
      reading of the digest is read; `op=reading`'s `found: false` for one of these is not a refusal. */
   #pendingReadings = new Set();
+  /* a member's own testimony the walk recorded (`op=testify` answering `authored: true` and its `capture_sha`) is never read in
+     (`provenance`: "nothing was read in"), so no reading of it is ever held: `op=reading`'s `found: false` for its digest is the
+     plane's answer that none is held, never a refusal. */
+  #authored = new Set();
   #answers = Promise.resolve();
 
   async #onResponse(res) {
@@ -174,8 +178,10 @@ export class Walk {
       const sha = inner.document?.capture?.sha256 ?? inner.capture?.sha256;
       if (typeof sha === "string" && /^[0-9a-f]{64}$/.test(sha)) this.#pendingReadings.add(sha);
     }
+    if (op === "testify" && inner && inner.ok !== false && inner.authored === true && typeof inner.capture_sha === "string"
+      && /^[0-9a-f]{64}$/.test(inner.capture_sha)) this.#authored.add(inner.capture_sha);
     const readSha = op === "reading" ? url.searchParams.get("sha256") : null;
-    const pendingRead = readSha !== null && this.#pendingReadings.has(readSha);
+    const pendingRead = readSha !== null && (this.#pendingReadings.has(readSha) || this.#authored.has(readSha));
     if (pendingRead && inner && (inner.found === true || inner.reading?.found === true)) this.#pendingReadings.delete(readSha);
     const refusals = refusalsIn(body).filter((r) => !(pendingRead && r.how === "found: false"));
     const matches = (e, code) => (e instanceof RegExp ? e.test(code) : e === code);
