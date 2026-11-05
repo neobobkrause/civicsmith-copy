@@ -67,6 +67,8 @@ import { wizardScriptsOf } from "../wizard-scripts/index.mjs";
 import { machineryProducersOf, MachineryProducers } from "../machinery-producers/index.mjs";
 import { actionProducersOf } from "../action-producers/index.mjs";
 import { projectRosterOf } from "../project-roster/index.mjs";
+import { aiAccountsOf } from "../ai-accounts/index.mjs";
+import { aiUseOf } from "../ai-use/index.mjs";
 import { ROOT_ADMIN } from "../member-roster/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { proposalFindingItems } from "./proposals.mjs";
@@ -145,6 +147,9 @@ export class QueueProducers {
   /* T51's fix round (R46, R48): who owes an endorsement and which expertise awaits confirmation are member-roster's (its R77, R78),
      read through the one membership instance, which delegates both: it is the roster credentials told the copy is claimed, so the
      founder is among the administrators (a second `membersOf` instance is never told, and drops her). */
+  /* T53 (R60, R61; K5571 (2)): a stopped AI account is ai-accounts' (its R75); re-testing turned off is ai-use's (its R29). */
+  get #aiAccounts() { return this.#dep("aiAccounts", () => aiAccountsOf(this.#host, { record: this.#record, membership: this.#membership })); }
+  get #aiUse() { return this.#dep("aiUse", () => aiUseOf(this.#host, { record: this.#record, membership: this.#membership })); }
   get #memberRoster() { return this.#dep("memberRoster", () => this.#membership); }
   /* R38: the read instance-setup registers at start (its R62), or null while none is. */
   #placeArrivals = null;
@@ -484,6 +489,10 @@ export class QueueProducers {
       }));
       /* OBLIGATION · R14: a member's own signing key, to the administrators. */
       add(feed("signing-keys", () => this.#obligationsSignerSelfRegistered(me, viewer, at)));
+      /* OBLIGATION · R60, R61 (T53; K5571 (2)): a stopped AI account, to whoever may clear it; re-testing turned off, to the
+         administrators of the paying account. */
+      add(feed("ai-credits-stop", () => this.#obligationsAiCreditsStop(me, viewer, at)));
+      add(feed("retesting-off", () => this.#obligationsRetestingOff(me, viewer, at)));
       /* The Action layer (T45; K2781 (1)): its to-dos are action-producers' (its R1–R12, was this module's R15–R21, R29),
          answered as machinery-producers' are, through the same walk and options this read was handed. */
       let actionFacts = {};
@@ -2062,11 +2071,20 @@ export class QueueProducers {
   /** R14: the act an administrator takes on a self-registered key, credentials R7's revoke (`op=signerset`). */
   static SIGNER_REVOKE = Object.freeze({ id: "signerset", label: word("queue-producers.label.revoke_signing_key"), weight: "single" });
 
-  /** `signer-self-registered` (R14; credentials R8, R9; N375): for an administrator member (membership R64), or the
-   *  `admin` machine credential as export-performed's reader is, one OBLIGATION per key `credentials.signerList`
-   *  answers `active` with `origin: "self"`, naming the key's comment and its member, aged from its `added` instant, and
-   *  offering credentials R7's revoke. Every other reader gets none, and not a count. It leaves when the key is no longer
-   *  `active`, or when its row carries `known_by` (R55; credentials R83's `signerKnown`): the list is read at every read, so nothing is stored to clear. */
+  /** R56: how many members' items one read raises (R4's bound, Bob's), and how many keys one item lists (Bob's). */
+  static SIGNER_MEMBERS_MAX = 50;
+  static SIGNER_KEYS_MAX = 20;
+  /** R56: credentials R83's "I know about this key" (`op=signerknown`), offered beside the revoke for each listed key. */
+  static SIGNER_KNOWN = Object.freeze({ id: "signerknown", label: word("queue.signer-self-registered.known"), weight: "single" });
+
+  /** `signer-self-registered` (R14 as R56 amends it; credentials R8, R9, R83; N375; DEC-462): for an administrator member
+   *  (membership R64), or the `admin` machine credential as export-performed's reader is, one OBLIGATION for each member holding
+   *  at least one key `credentials.signerList` answers `active`, `origin: "self"` and not known (R55), at most 50 members in id
+   *  order, keyed `OBLIGATION::signer-self-registered::<member>`. It lists her keys, earliest added first, at most 20, as
+   *  `basis.keys` (`{key_b64, comment, added}`), with `basis.keys_more` the number beyond them, aged from the earliest `added`,
+   *  and offers for each listed key the revoke and "I know about this key", each carrying that key alone. Every other reader
+   *  gets none, and not a count; the member who registered the keys is not told of them (A-03). The list is read at every
+   *  read, so nothing is stored to clear: a key leaves when revoked, no longer active or known, the item when none remains. */
   #obligationsSignerSelfRegistered(me, viewer, now) {
     const admin = me ? this.#isAdminMember(me) : viewer === `${MACHINE_CLASS_PREFIX}admin`;
     if (!admin) return [];
@@ -2075,40 +2093,165 @@ export class QueueProducers {
       .filter((k) => k && k.status === "active" && k.origin === "self" && typeof k.key_b64 === "string" && k.key_b64
         && !k.known_by);                                       // R55: an administrator said they know of it (credentials R83)
     if (keys.length === 0) return [];
+    const registrant = (k) => (k.registered_by && k.registered_by !== "not recorded" ? k.registered_by : k.member_id) || null;
+    /* R56: one item for each member; A-03 (K5257): the member who registered a key is told nothing of it. */
+    const byMember = new Map();
+    for (const k of keys) {
+      const m = registrant(k);
+      if (me && m === me) continue;
+      const g = m ?? "";
+      if (!byMember.has(g)) byMember.set(g, []);
+      byMember.get(g).push(k);
+    }
+    if (byMember.size === 0) return [];
     const raisedTo = this.#activeAdmins();
     const homes = this.#homesOf([]);
-    const registrant = (k) => (k.registered_by && k.registered_by !== "not recorded" ? k.registered_by : k.member_id);
-    /* A-03 (K5257): the member who registered a key is told nothing of it: she did it, and has nothing to decide. */
-    return keys.filter((k) => !me || registrant(k) !== me).map((k) => {
-      const addedMs = Date.parse(k.added ?? "");
-      const member = registrant(k);
+    const addedMs = (k) => { const t = Date.parse(k.added ?? ""); return Number.isFinite(t) ? t : Infinity; };
+    const members = [...byMember.keys()].sort().slice(0, QueueProducers.SIGNER_MEMBERS_MAX);
+    return members.map((m) => {
+      const member = m || null;
+      const all = byMember.get(m).sort((a, b) => addedMs(a) - addedMs(b) || (a.key_b64 < b.key_b64 ? -1 : a.key_b64 > b.key_b64 ? 1 : 0));
+      const listed = all.slice(0, QueueProducers.SIGNER_KEYS_MAX);
+      const more = all.length - listed.length;
+      const earliest = listed[0];
+      const name = member ? this.#memberName(member) : "";
+      /* R43: the summary is the word list's own sentence, by key, and nothing is composed here. The list holds the one form
+         alone; R57's other form (how many keys) has no word yet, so the count travels as a fill (`count`) beside it. */
+      const summaryKey = `queue.signer-self-registered.summary${member ? "" : ".unnamed"}`;
+      const fills = { member: name, count: all.length };
+      const lines = listed.map((k) => this.#signerKeyLine(k));
       return {
-        id: `OBLIGATION::signer-self-registered::${k.key_b64}`,
+        id: `OBLIGATION::signer-self-registered::${m}`,
         class: "OBLIGATION",
         kind: "signer-self-registered",
         case: homes,
-        subject: { kind: "signer_key", id: k.key_b64, member: k.member_id ?? null, comment: k.comment ?? null,
-                   registered_by: member ?? null },
-        ...(() => {
-          const name = member ? this.#memberName(member) : "";
-          const key = `queue.signer-self-registered.summary${member ? "" : ".unnamed"}${k.comment ? ".comment" : ""}`;
-          return { summary: say(key, { member: name, comment: k.comment }), summary_key: key };
-        })(),
+        subject: { kind: "member", id: member, registered_by: member, keys: listed.map((k) => k.key_b64) },
+        summary: say(summaryKey, fills),
+        summary_key: summaryKey,
+        fills,
         detail: say("queue.signer-self-registered.detail"),
         detail_key: "queue.signer-self-registered.detail",
-        basis: { source: "credentials.signerList", key: k.key_b64, member: k.member_id ?? null, comment: k.comment ?? null,
-                 registered_by: member ?? null, origin: "self", status: k.status, added: k.added ?? null,
-                 attests: k.attests === true, raised_to: Array.isArray(raisedTo) ? raisedTo.filter((a) => a !== member) : raisedTo,
-                 detail: localize("queue-producers.index.the_key_is_credentials_own", "the key is credentials' own row (its R8), registered by its member (its R9) and read here at every read: it is told to every administrator but the one who registered the key, and to nobody else, and it leaves when the key is no longer active, by an administrator's revoke (its R7) or otherwise.") },
-        age: Number.isFinite(addedMs)
-          ? { state: "determined", since: k.added, ms: Math.max(0, now - addedMs) }
+        lines,
+        basis: { source: "credentials.signerList", member, registered_by: member, origin: "self",
+                 keys: listed.map((k) => ({ key_b64: k.key_b64, comment: k.comment ?? null, added: k.added ?? null })),
+                 keys_more: more,
+                 raised_to: Array.isArray(raisedTo) ? raisedTo.filter((a) => a !== member) : raisedTo,
+                 detail: localize("queue-producers.index.the_keys_are_credentials_own", "the keys are credentials' own rows (its R8), registered by their member (its R9) and read here at every read: one item for each member, told to every administrator but the one who registered the keys, and to nobody else. A key leaves the list when it is revoked (its R7), no longer active, or known (its R83); the item leaves when none remains.") },
+        age: earliest && Number.isFinite(addedMs(earliest))
+          ? { state: "determined", since: earliest.added, ms: Math.max(0, now - addedMs(earliest)) }
           : { state: "undetermined", reason: "unparseable_added",
               detail: localize("queue-producers.index.the_keys_row_carries_an", "the key's row carries an added stamp this producer cannot read as an instant") },
         assignee: null,
         assignee_role: null,
-        options: [QueueProducers.SIGNER_REVOKE],
+        options: listed.flatMap((k) => [{ ...QueueProducers.SIGNER_REVOKE, key: k.key_b64 }, { ...QueueProducers.SIGNER_KNOWN, key: k.key_b64 }]),
       };
     });
+  }
+
+  /** R56, R36: one listed key's facts for its line: the key, its comment, and `added` as a local day in the group's zone, never
+   *  UTC; with no zone held the day is undetermined (null). R57's keyed line sentence has no word yet, so no sentence is made here. */
+  #signerKeyLine(k) {
+    const zone = this.#zoneNow();
+    const day = zone ? localDayOf(k.added, zone) : null;
+    const comment = typeof k.comment === "string" && k.comment.trim() ? k.comment.trim() : null;
+    return { key: k.key_b64, comment, added: k.added ?? null, day, day_state: day ? "determined" : "undetermined" };
+  }
+
+  /* ======================================================================
+   * T53 · R60, R61 — A STOPPED AI ACCOUNT, AND RE-TESTING TURNED OFF (ai-accounts R75, R68; ai-use R28, R29; K5571 (2)).
+   * ====================================================================== */
+
+  /** R60: the cause's sentence, by key per cause (ai-accounts R75; DEC-471, DEC-475). */
+  static AI_STOP_CAUSE_KEYS = Object.freeze({ credits: "screen.aiproviders.stands.credits", other_gateway: "screen.aiproviders.stands.othergateway",
+                                              log_unreadable: "screen.aiproviders.stands.logunreadable" });
+
+  /** `ai-credits-stop` (R60; ai-accounts R75): one OBLIGATION per entry `ai-accounts.creditsStopsOpen({viewer, at})` answers for
+   *  this viewer (the read itself answers only the accounts the viewer may clear: the team's administrators, a project's owners,
+   *  the member for her own), keyed by the entry's own `key`, naming the account, the time of the call and the cause by key per
+   *  cause. Its way forward is `aicreditsclear` (queue R12 gives the disposition). It leaves when the read stops answering the
+   *  account (cleared, or the account removed). A read that throws is named `ai-accounts` in `facts.failed` (R50). */
+  #obligationsAiCreditsStop(me, viewer, now) {
+    if (!me) return [];
+    const rows = QueueProducers.#via("ai-accounts", () => this.#aiAccounts.creditsStopsOpen({ viewer, at: now }));
+    if (!Array.isArray(rows)) throw new FeedFail("refused", "ai-accounts", codeOf(rows));
+    const zone = this.#zoneNow(), today = this.#todayNow();
+    const out = [], seen = new Set();
+    for (const e of rows) {
+      if (!e || typeof e.key !== "string" || !e.key || typeof e.account_id !== "string" || !e.account_id) continue;
+      const id = `OBLIGATION::ai-credits-stop::${e.key}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const causeKey = QueueProducers.AI_STOP_CAUSE_KEYS[e.cause] ?? QueueProducers.AI_STOP_CAUSE_KEYS.log_unreadable;
+      const time = instantText(e.flagged_at, zone, today);
+      const summary = say(causeKey, { account: e.account_id, time });
+      out.push({
+        id,
+        class: "OBLIGATION",
+        kind: "ai-credits-stop",
+        case: this.#homesOf([]),
+        subject: { kind: "ai_account", id: e.account_id },
+        summary,
+        summary_key: causeKey,
+        detail: summary,
+        detail_key: causeKey,
+        basis: { source: "ai-accounts.creditsStopsOpen", key: e.key, account_id: e.account_id, flagged_at: e.flagged_at ?? null,
+                 cause: e.cause ?? null, recipients_rule: "who_may_clear",
+                 detail: localize("queue-producers.index.a_stopped_ai_account_is", "a stopped AI account is ai-accounts' fact (its R45, R75), read here at every read and never stored. It goes to whoever may clear it, the team's administrators, a project's owners or the member for her own account, and leaves when the flag is cleared (its R68) or the account removed.") },
+        age: QueueProducers.#instantAge(e.flagged_at, now, "no_flag_instant",
+                                        localize("queue-producers.index.the_stop_carries_no_instant", "the stop carries no instant this producer can read")),
+        assignee: null,
+        assignee_role: null,
+        recipients: [me],
+        options: [],
+        door: "aicreditsclear",
+      });
+    }
+    return out;
+  }
+
+  /** `retesting-off` (R61; ai-use R29): one OBLIGATION per entry `ai-use.retestingOff({viewer, at})` answers for this viewer (the
+   *  read answers only the paying accounts the viewer administers), keyed by the entry's own `key`, naming who turned it off and
+   *  when, by key `queue.retesting-off.summary`. Its way forward is `airetestset` (queue R12 gives the disposition). It leaves
+   *  when the read stops answering the account (turned back on). A read that throws is named `ai-use` in `facts.failed` (R50). */
+  #obligationsRetestingOff(me, viewer, now) {
+    if (!me) return [];
+    const r = QueueProducers.#via("ai-use", () => this.#aiUse.retestingOff({ viewer, at: now }));
+    if (!r || typeof r !== "object" || r.ok === false || r.unreadable === true || !Array.isArray(r.off))
+      throw new FeedFail(r && r.unreadable === true ? "undetermined" : "refused", "ai-use", codeOf(r));
+    const zone = this.#zoneNow(), today = this.#todayNow();
+    const out = [], seen = new Set();
+    for (const e of r.off) {
+      if (!e || typeof e.key !== "string" || !e.key || typeof e.owner !== "string" || !e.owner) continue;
+      const id = `OBLIGATION::retesting-off::${e.key}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      /* R43: who and when travel as fills beside the word list's sentence; nothing is composed here */
+      const who = typeof e.turned_off_by === "string" && e.turned_off_by ? this.#memberName(String(e.turned_off_by).replace(/^member:/, "")) : "";
+      const when = instantText(e.turned_off_at, zone, today);
+      out.push({
+        id,
+        class: "OBLIGATION",
+        kind: "retesting-off",
+        case: this.#homesOf([]),
+        subject: { kind: "ai_paying_account", id: e.owner },
+        summary: say("queue.retesting-off.summary"),
+        summary_key: "queue.retesting-off.summary",
+        fills: { who, when },
+        detail: say("queue.retesting-off.summary"),
+        detail_key: "queue.retesting-off.summary",
+        basis: { source: "ai-use.retestingOff", key: e.key, owner: e.owner, turned_off_by: e.turned_off_by ?? null,
+                 turned_off_at: e.turned_off_at ?? null, recipients_rule: "administrators_of_paying_account",
+                 detail: localize("queue-producers.index.retesting_off_is_ai_uses", "re-testing turned off is ai-use's fact (its R28, R29), read here at every read and never stored. It goes to the administrators of the paying account and to nobody else, and leaves when re-testing is turned back on.") },
+        age: QueueProducers.#instantAge(e.turned_off_at, now, "no_off_instant",
+                                        localize("queue-producers.index.the_turning_off_carries_no", "the turning-off carries no instant this producer can read")),
+        assignee: null,
+        assignee_role: null,
+        recipients: [me],
+        options: [],
+        door: "airetestset",
+      });
+    }
+    return out;
   }
 
   /* ======================================================================

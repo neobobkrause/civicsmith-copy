@@ -26,10 +26,13 @@ const LABEL_KEY = "guide.procedure.legalinfo";
 /* Every row's number, check and `where`, unmoved since T50 (canonical JSON's sha256 over {check, where} of the 19 rows,
    in order). T50-42 (N1132) moves only translations: each row now reads its `refusal.<CODE>` key. */
 const NUMBERS_AND_WHERES = { count: 19, sha256: "96c05f885f8c780365f5a51c1372a6d7d4376341d69a5f45640bb5906d7aa55d" };
+/* R14's rows: C-144.1-.19, the rows `words.json` holds. R20's two (T53, C-144.20-.21) are rows `words.json` does not hold
+   yet, which R14 lets keep their own sentence ("this module's other rows ... keep theirs"). */
+const R14_ROWS = () => Object.entries(READING_GUIDES_CHECKS).slice(0, 19);
 
 test("R14 every refusal row reads words.json's refusal.<CODE> by key from READING_GUIDES_WORDS, never a copy; the table holds exactly those words and the label's, verbatim; numbers and wheres unmoved", () => {
   assert.ok(Object.isFrozen(READING_GUIDES_WORDS));
-  const rows = Object.entries(READING_GUIDES_CHECKS);
+  const rows = R14_ROWS();
   assert.deepEqual(Object.keys(READING_GUIDES_WORDS).sort(),
     [...rows.map(([c]) => `refusal.${c}`), LABEL_KEY].sort(), "the table holds the rows' keys and the label's");
   for (const [key, text] of Object.entries(READING_GUIDES_WORDS)) assert.equal(text, en(key), `${key} verbatim`);
@@ -45,9 +48,10 @@ test("R14 every refusal row reads words.json's refusal.<CODE> by key from READIN
 });
 
 test("R14 the family's order and count unmoved; every row's words are the design's, none a copy kept beside them", () => {
-  assert.deepEqual(Object.values(READING_GUIDES_CHECKS).map((r) => r.check),
+  assert.deepEqual(Object.values(READING_GUIDES_CHECKS).map((r) => r.check).slice(0, 19),
     Array.from({ length: 19 }, (_, i) => `C-144.${i + 1}`));
-  for (const code of Object.keys(READING_GUIDES_CHECKS)) assert.ok(WORDS.some((w) => w.key === `refusal.${code}`), `words.json holds refusal.${code}`);
+  assert.deepEqual(Object.keys(READING_GUIDES_CHECKS).slice(19), ["OPT_OUT_NOT_SOLE_MEMBER", "MACHINE_CANNOT_OPT_OUT", "OPT_OUT_NOT_OWN_GUIDE"], "R20's three follow, in order");
+  for (const [code] of R14_ROWS()) assert.ok(WORDS.some((w) => w.key === `refusal.${code}`), `words.json holds refusal.${code}`);
 });
 
 test("R14 R13's label carries guide.procedure.legalinfo's words, read by that key (protected), never a copy; the key unchanged", () => {

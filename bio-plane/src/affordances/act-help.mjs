@@ -43,8 +43,9 @@
  *   - `selftest` (FR-40, K4190): the word list holds `act.selftest.does` for the updates screen (DEC-376), but this module's reads
  *     list (R62) does not give it and no act this module draws is `selftest` (instance-setup's probe), so it is held none.
  * A retired op is not held. */
-import { word, localize } from "../setup-words/index.mjs";
+import { word, localize, hasWord } from "../setup-words/index.mjs";
 import { MEMBERSHIP_CHECKS } from "../membership/index.mjs";
+import * as READING_GUIDES from "../reading-guides/index.mjs";
 
 /** T51 (K4248; U421, DEC-387): the declared ops whose `act.<op>.does` words the design's reads list for this module gives (R62), held
  *  under their own names in the reads list's order; `handlechange` is not (R53). Exported so the tests can name them. */
@@ -164,6 +165,14 @@ export const T51_STANDIN_HELP = Object.freeze({
 });
 export const T51_STANDIN_OPS = Object.freeze(Object.keys(T51_STANDIN_HELP));
 
+/** F2 (T53; `reading-guides` R20, K5508; `op-declarations` R34): member ops their owner declares whose `act.<op>.does` row the design
+ *  stream has not given. Each is held once its owner declares it (R48: a key naming no declared op is not held), under `act.<op>.does`;
+ *  its text is that row once the word list holds it, until then the owner's own declared description, read by reference as
+ *  `handlechange`'s is (R53), so this module writes no sentence for it. Exported so the tests can name them. */
+const T53_DECLARED_BY_OWNER = Object.freeze({ guideoptout: READING_GUIDES.DECLARED_OPS?.guideoptout });
+export const T53_STANDIN_OPS = Object.freeze(Object.keys(T53_DECLARED_BY_OWNER).filter((op) => T53_DECLARED_BY_OWNER[op]));
+const t53Standin = (op) => hasWord(`act.${op}.does`) ? word(`act.${op}.does`) : T53_DECLARED_BY_OWNER[op].description;
+
 /** The ops held, in the design's order (R48, R61). F1 (T53; ai-accounts R35, wizard-scripts' `RETIRED_ACTS`): the twelve ai-accounts ops
  *  T53 retired (the group key's four, the account reference's two, `subscriptiondisconnect`, the project account's five) are not held. */
 export const ACT_HELP_OPS = Object.freeze([
@@ -227,6 +236,7 @@ export const ACT_HELP_OPS = Object.freeze([
   ...T51_STANDARD_OPS,
   ...T51_LIST_ONLY_OPS,
   ...T51_STANDIN_OPS,
+  ...T53_STANDIN_OPS,
 ]);
 
 /** R69 (T51; DEC-330 owed, U348, K3810; `op-declarations` R76): the seven browser acts, each explained under its own name though none
@@ -290,4 +300,5 @@ export const ACT_HELP_KEYS = Object.freeze(Object.fromEntries(HELD.filter((op) =
 /** R48, R61, R62, R69, R70: what each act does, each sentence read through `word`; the very object `op=affordances` answers (R49). */
 export const ACT_HELP = Object.freeze(Object.fromEntries(HELD.map((op) =>
   [op, op === "handlechange" ? MEMBERSHIP_CHECKS.HANDLE_FIXED.translation
-    : Object.hasOwn(T51_STANDIN_HELP, op) ? T51_STANDIN_HELP[op] : word(ACT_HELP_KEYS[op])])));
+    : Object.hasOwn(T51_STANDIN_HELP, op) ? T51_STANDIN_HELP[op]
+    : T53_STANDIN_OPS.includes(op) ? t53Standin(op) : word(ACT_HELP_KEYS[op])])));
