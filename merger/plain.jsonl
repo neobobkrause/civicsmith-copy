@@ -84,3 +84,4 @@
 {"at":"2026-11-05T17:05:01Z","row":"queue","id":"42c869a40a38","pr":531,"head":"402aaaf315527905644bfc1ffbf8dc15c3fdf29b","ref":"bob/cap-splits-installer","by":"session_018BhcedPdKvvqmShgPznx1U","reviewed":null,"no_review":"cap split by copy: installer marks moved verbatim into three modules, three ledger entries, split tests; no code","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T20:15:01.202Z","renews":true}
 {"at":"2026-11-05T17:05:45Z","row":"withdraw","id":"4752048325ad","pr":516,"why":"the train stopped"}
 {"at":"2026-11-05T17:05:48Z","row":"withdraw","id":"0bbbb95bc55a","pr":522,"why":"the train stopped"}
+{"at":"2026-11-05T17:05:51Z","row":"withdraw","id":"fa385cf7ce0e","pr":515,"why":"the train stopped"}
