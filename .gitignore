@@ -351,6 +351,8 @@ node_modules
 /bio-plane/src/setup-words/rows.mjs
 /bio-plane/src/setup-words/words-unreviewed.json
 /docs/development/ux-substrate/screens/words-reads.json
+/docs/development/ux-substrate/screens/words.json
+/docs/development/ux-substrate/screens/words-drawn.json
 /bio-plane/dist/bio-plane.bundled.mjs
 /pdf-worker/dist/pdf-worker.bundled.mjs
 /agent-worker/dist/agent-worker.bundled.mjs
