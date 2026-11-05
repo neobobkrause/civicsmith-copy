@@ -4,7 +4,9 @@
   "layer": 2,
   "paths": [
     "build/requirements/jurisdictions-b.md",
-    "docs/requirements-notes/jurisdictions-b.md"
+    "docs/requirements-notes/jurisdictions-b.md",
+    "jurisdictions/profiles/layers/us-federal.mjs",
+    "jurisdictions/test/"
   ],
   "tests": [
     "bio-plane/test/m/jurisdictions-b/"
