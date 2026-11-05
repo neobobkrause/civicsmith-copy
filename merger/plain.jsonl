@@ -59,3 +59,4 @@
 {"at":"2026-11-05T16:35:49Z","row":"renew","id":"b8d013fb512a","pr":522}
 {"at":"2026-11-05T16:37:47Z","row":"renew","id":"22fda05249a3","pr":521}
 {"at":"2026-11-05T16:38:26Z","row":"renew","id":"4752048325ad","pr":516}
+{"at":"2026-11-05T16:40:32Z","row":"queue","id":"0bbbb95bc55a","pr":522,"head":"9de962ee01abe0caef36d9fcb26e688f583ca455","ref":"p3/coordinator-evg6a","by":"session_018BhcegW8KhyCoCTYkN6rEX","reviewed":null,"no_review":"one-field coordinator id change","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T19:50:32.785Z","renews":true}
