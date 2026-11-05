@@ -12,3 +12,4 @@
 {"at":"2026-11-05T07:45:54Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-05T09:17:53Z","row":"sent","n":7,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job case-checker complete, PR #450 ready, session session_018BhcednyX24DHxHT9U9Da2: run status"}
 {"at":"2026-11-05T09:18:11Z","row":"outcome","n":7,"outcome":"delivered"}
+{"at":"2026-11-05T11:27:40Z","row":"sent","n":8,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job case-checker complete, PR #495 ready, session session_018BhcedcMYKGpRcq7TLhkjV: run status"}
