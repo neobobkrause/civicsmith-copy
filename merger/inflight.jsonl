@@ -84,3 +84,4 @@
 {"at":"2026-11-05T23:14:06.026Z","row":"end","pr":446,"tip":"286989fb130fc9b488d7b73d751dd54e562bf4a2","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-05T23:19:35.535Z","row":"inflight","pr":508,"module":"load-check","tip":"f2e1c80d61ac0109fb7071de3e25d47490597dce","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T01:04:35.535Z"}
 {"at":"2026-11-05T23:26:40.473Z","row":"end","pr":508,"tip":"f2e1c80d61ac0109fb7071de3e25d47490597dce","cause":"pull request 508's held merged result f2e1c80d61 would need a new one (becc286e82): not pushed; the hold ends and the train merges it afresh","session":"session_018BhcefmntMFwp8MDNkzCNL"}
+{"at":"2026-11-05T23:27:04.513Z","row":"inflight","pr":509,"module":"ratification","tip":"7ad2b969b72a5f59e4a391209c5ffdcba0f0d0e0","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T01:12:04.513Z"}
