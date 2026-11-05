@@ -33,8 +33,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "R61 and R74 are met on this branch (5bdd2d07): document.mjs and tests in bio-plane/test/m/screens-document-beta/t53-document.test.mjs, each failing with the change reverted; the module suite passes (10 pass, 16 todo). R62 and R72 are met in part (held kind, password sentence; the unsure count and its pages). Blocked on one thing: R61 retires stand-ins that two screens-inquiry tests still assert, so the tranche would go red: bio-plane/test/m/screens-inquiry/r9-document.test.mjs:33 (R130, expects the old ico sentence 'ICO is not read yet.', now screen.document.unsupported.ico) and bio-plane/test/m/screens-inquiry/fr6-document.test.mjs:130-133 (G13, expects 'Passages: 4 / 6' and the document.read.next label, now screen.document.reading.firstn and document.read.more). Needed, BOB's choice: (a) give this job those two test files as paths, to change only those assertions; or (b) have screens-inquiry change them, then I complete striking R61 and R74. The other marks wait on providers (todo tests name each): R58 sourceLinksFor has no route; R59 cite of a typing; R60 interface-shell R139 and followfrom; R62 rest, no macro, page-of or converted data in the reading; R63 no read carries the photo facts; R64-R68 interpretationOf and interpretmark are owed ops; R69 interface-shell R140; R70 and R71 interface-shell R138; R72 rest, the reading states counts per page, not per word; R73 its words are owed; R75 the shell's unavailable page draws the place, not Go to Home. Pre-existing and not mine: fr4-document R5 C81 and fr6-seam G6 fail on tranche without this change.",
-    "at": "2026-11-05T12:17:46Z"
+    "state": "COMPLETE",
+    "at": "2026-11-05T12:44:53Z"
   }
 }
