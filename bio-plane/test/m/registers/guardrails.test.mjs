@@ -321,6 +321,30 @@ test("R38: every op of the route map is declared and every declaration has its a
   assert.equal(DECLARED_OPS.rowexpunge.weight, "reasoned");
 });
 
+test("F2 (op-grades R55): the reasoned ops declare the refusal of their absent authored reason, the very code each answers; every write op and the officers lookup refuse a machine by its own code, writing nothing", async () => {
+  const w = seeded();
+  const carrying = Object.entries(DECLARED_OPS).filter(([, d]) => d.refusal !== undefined).map(([op, d]) => [op, d.weight, d.refusal]).sort();
+  assert.deepEqual(carrying, [["registerdefine", "reasoned", "REGISTER_NO_TERMS"], ["rowexpunge", "reasoned", "ROW_EXPUNGE_NO_REASON"]]);
+  const own = { ...DEF("town_filings"), key: "our_filings", label: "Our filings", terms_basis: undefined };
+  assert.equal(w.registers.registerDefine({ definition: own, author: V("bob") }).reason, DECLARED_OPS.registerdefine.refusal);
+  assert.equal((await w.registers.rowExpunge({ register: "town_filings", row_key: "k", ground: "unlawful", reason: "  ", author: V("alice") })).reason, DECLARED_OPS.rowexpunge.refusal);
+  START(w);
+  const before = dump(w);
+  const net = network({});
+  const outs = [];
+  try {
+    outs.push(await w.registers.registerRefresh({ import: 1, author: MACHINE, viewer: MACHINE }));
+    outs.push(w.registers.importSet({ import: 1, action: "pause", author: MACHINE, viewer: MACHINE }));
+    outs.push(await w.registers.officersLookup({ query: "C1234567", author: MACHINE, viewer: MACHINE }));
+    outs.push(await w.registers.rowExpunge({ register: "town_filings", row_key: "k", ground: "unlawful", reason: "a reason", author: MACHINE }));
+    outs.push(w.registers.watchSet({ interest: 1, watch: true, author: MACHINE, viewer: MACHINE }));
+    outs.push(w.registers.watchSet({ interest: 1, watch: false, author: MACHINE, viewer: MACHINE }));
+  } finally { net.restore(); }
+  assert.deepEqual(outs.map((o) => o.reason), ["MACHINE_CANNOT_REFRESH_REGISTER", "MACHINE_CANNOT_SET_IMPORT", "MACHINE_CANNOT_LOOK_UP_OFFICERS", "MACHINE_CANNOT_EXPUNGE_ROW", "MACHINE_CANNOT_FOLLOW", "MACHINE_CANNOT_STOP_REGISTER_WATCH"]);
+  assert.equal(dump(w), before, "nothing written");
+  assert.equal(net.seen.length, 0, "nothing fetched");
+});
+
 test("R39: refusals, states and absence sentences are words by key: a refusal's detail is the word table's sentence for its code", async () => {
   const w = seeded();
   const r = w.registers.importStart({ register: "nope", filter: {}, scope: "project", project: w.P, author: V("bob"), viewer: V("bob") });

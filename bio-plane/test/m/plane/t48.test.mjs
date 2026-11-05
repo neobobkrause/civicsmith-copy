@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { relative } from "node:path";
-import { store, deployed, GATE_FLAGS, GATE_SET, GATE_PARTS, disclosed } from "./fixture.mjs";
+import { store, deployed, GATE_FLAGS, GATE_SET, GATE_PARTS, disclosed, withCatalogue } from "./fixture.mjs";
 
 import { assistantGateOf, askOp, doorHeaders } from "../../../src/store-assembly/ask.mjs";
 
@@ -56,6 +56,7 @@ async function doors({ gate = { flags: READ_FLAGS, testSet: GATE_SET }, parts = 
   sql.exec(`INSERT INTO sessions (token_sha, role, expires, created) VALUES (?, 'member:ann', ?, 'x')`,
            createHash("sha256").update(SESSION).digest("hex"), Date.now() + 3600e3);
   await disclosed(x.ctx);
+  await withCatalogue(x.ctx);   /* T53 (BOB, MSG bob-82 (2)): ai-accounts reads ai-catalogue's published fixture, as the assembled store composes it */
   assert.equal((await aiAccountsOf(x.ctx).accountReferenceSet({ member: "member:ann", kind: "apikey", secret: SECRET, by: "member:ann" })).ok, true);
   /* instance-setup R87's `readingLanguage`: the member's own language is the one set by her own act */
   const setup = instanceSetupOf(x.ctx, x.env);

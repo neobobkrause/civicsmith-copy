@@ -10,7 +10,8 @@ import { createHash } from "node:crypto";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { civicsmithUserAgent } from "../../../src/acquisition/index.mjs";
-import { planeEntry } from "./plane-world.mjs";
+import { planeEntry, PLANE_BINDINGS } from "./plane-world.mjs";
+import { PLANS, HOSTS } from "../ai-accounts/catalogue.mjs";
 import { CAPTURE_REQUEST_CHECKS } from "../../../src/capture-requests/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
@@ -34,7 +35,11 @@ const mf = new Miniflare({
               VERSION: "1.0.0", INSTANCE_NAME: "cr-plane", GOVERNOR_APPETITE_PER_MIN: "600000",
               CAPTURE_REQUEST_TICK_MS: "3600000", MONITOR_TICK_MS: "3600000",
               /* N585 (K1614): the seal secret the opener's account reference is kept under (credentials R23) */
-              ACCOUNT_SEAL_SECRET: "cr-plane-seal-secret" },
+              ACCOUNT_SEAL_SECRET: "cr-plane-seal-secret",
+              /* F1: the plane trusts its development catalogue key and holds the test catalogue (plane-world.mjs); and it is a
+                 test instance (store-assembly's testInstanceOf), so a run served on the catalogue's entry is admitted by
+                 run-rules R29's test-instance exception, Gate 1 recording no verdict for it here (ai-runs R78) */
+              ...PLANE_BINDINGS, CIVICSMITH_TEST_INSTANCE: "cr-plane" },
   outboundService(request) {
     SEEN.push(request.url);
     AGENTS.set(request.url, request.headers.get("User-Agent"));
@@ -138,9 +143,15 @@ async function world() {
   const shown = (await call("disclosureshown", RUTH, { member: "member:ruth", version })).body;
   assert.deepEqual([shown.ok, shown.shown], [true, true], JSON.stringify(shown));
   await reauth(RUTH, "ruth");
-  /* ai-accounts T53: her own account, connected by her own session (`aiownadd`; accountreferenceset is retired) */
-  const acct = (await call("aiownadd", RUTH, { provider: "anthropic", plan: "api", means: "apikey", secret: "sk-cr-plane" })).body;
+  /* ai-accounts T53: her own account, connected by her own session (`aiownadd`; accountreferenceset is retired), on a
+     member plan the catalogue lists (F1: the plane's catalogue is ai-accounts' test catalogue, plane-world.mjs) */
+  const acct = (await call("aiownadd", RUTH, { provider: PLANS.provider, plan: PLANS.memberApi, means: "sealed", secret: "sk-ant-zz-cr-plane-0123456789" })).body;
   assert.equal(acct.ok, true, JSON.stringify(acct));
+  /* ai-accounts R38, R51 (as store-assembly's plane-green): the account switched on, and its recipient's notice seen */
+  const on = (await call("aiaccountswitch", RUTH, { account_id: acct.account_id, on: true })).body;
+  assert.equal(on.ok, true, JSON.stringify(on));
+  const seen = (await call("aisend", RUTH, { provider: PLANS.provider, host: HOSTS.main })).body;
+  assert.equal(seen.ok, true, JSON.stringify(seen));
   /* ai-runs R9 (T53; notice ai-runs:96): the run names its paying principal `principalAi` and its member `principalAiRef` */
   const run = (await call("airunopen", RUTH, { run: "RUN-CR-1", contextType: "inquiry", contextId: "INQ-2026-9000-cr",
     label: "cr", mode: "check", principalAi: "member:ruth", principalAiRef: "ruth",
