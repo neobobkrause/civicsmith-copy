@@ -1,0 +1,57 @@
+{
+  "id": "capture",
+  "title": "capture: consolidate its requirements file under the cap",
+  "layer": 3,
+  "paths": [
+    "bio-plane/src/capture/",
+    "build/requirements/capture.md",
+    "docs/requirements-notes/capture.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/capture/",
+    "bio-plane/test/cap13-reuse-pages.test.mjs",
+    "bio-plane/test/d57selflink.test.mjs"
+  ],
+  "requirements": "build/requirements/capture.md",
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "subresources",
+    "odf-reader",
+    "format-registry",
+    "docprofile",
+    "record-core",
+    "membership",
+    "credentials",
+    "host-governor",
+    "provenance",
+    "attestation",
+    "capture-sources",
+    "acquisition",
+    "signatures",
+    "test-support",
+    "setup-words",
+    "runtime-limits",
+    "mail-reader",
+    "csv-reader",
+    "office-readers"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/capture.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-05T08:40:00Z"
+  }
+}
