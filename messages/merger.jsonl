@@ -200,3 +200,4 @@
 {"at":"2026-11-05T23:09:40Z","row":"outcome","n":100,"outcome":"delivered"}
 {"at":"2026-11-05T23:14:13Z","row":"sent","n":101,"to":"bob","text":"merged PR 446 (job member-roster): node .process/tool/p3.mjs notice triage member-roster:446 (provider notice member-roster:446; 9 user modules owe a worker's judgment: acquisition, contradiction, mail-door, membership, op-declarations, queue-producers, store-assembly, store-jobs, surface-declarations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-05T23:15:58Z","row":"outcome","n":101,"outcome":"delivered"}
+{"at":"2026-11-05T23:18:17Z","row":"sent","n":102,"to":"bob","text":"PR 452: job plane must sync (node .process/tool/p3.mjs job sync plane, then job complete plane): job/plane-2 conflicts with tranche; the job must bring itself up to date: node .process/tool/p3.mjs job sync plane, then job complete plane again"}
