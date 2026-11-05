@@ -129,3 +129,4 @@
 {"at":"2026-11-05T11:11:55Z","row":"check","by":"send","live":13,"live_at":"2026-11-05T11:01:35Z","job_cap":20,"startable":2,"idle_capacity":{"kind":"work","since":"2026-11-05T11:04:27Z","min":7,"live":13,"cap":20,"held":0,"startable":2,"empty":7,"alarm":false}}
 {"at":"2026-11-05T11:16:05Z","row":"ready","live":19,"job_cap":20,"started":["action-records"]}
 {"at":"2026-11-05T11:21:10Z","row":"check","by":"send","live":19,"live_at":"2026-11-05T11:16:05Z","job_cap":20,"startable":1,"idle_capacity":{"kind":"work","since":"2026-11-05T11:16:05Z","min":5,"live":19,"cap":20,"held":0,"startable":1,"empty":1,"alarm":false}}
+{"at":"2026-11-05T11:26:21Z","row":"check","by":"send","live":19,"live_at":"2026-11-05T11:16:05Z","job_cap":20,"startable":1,"idle_capacity":{"kind":"work","since":"2026-11-05T11:16:05Z","min":10,"live":19,"cap":20,"held":0,"startable":1,"empty":1,"alarm":false}}
