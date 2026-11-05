@@ -108,3 +108,4 @@
 {"at":"2026-11-05T17:36:25Z","row":"outcome","n":54,"outcome":"delivered"}
 {"at":"2026-11-05T17:47:36Z","row":"sent","n":55,"to":"bob","text":"merged PR 437 (job screens-settings): node .process/tool/p3.mjs notice triage screens-settings:437 (provider notice screens-settings:437; 4 user modules owe a worker's judgment: control-plane, journey-check, screens-document, screens-inquiry: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
 {"at":"2026-11-05T17:50:23Z","row":"outcome","n":55,"outcome":"delivered"}
+{"at":"2026-11-05T17:53:04Z","row":"sent","n":56,"to":"bob","text":"PR 542 (plain, queued by session_018BhcedPdKvvqmShgPznx1U) was not merged by the train: gh api -X PUT failed: gh: Repository rule violations found"}
