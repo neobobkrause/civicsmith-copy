@@ -5561,6 +5561,21 @@ var AI_RUN_OPEN_CHECKS = {
     check: "C-109.1",
     where: "src/ai-runs/index.mjs open > is-airun-open-mode, reached from op=airunopen",
     translation: word("refusal.AI_RUN_MODE_NOT_DEPLOYED")
+  },
+  /* F2 (coordinator ruling 5 Nov 03:50; ai-runs R40 as amended, T53, AIR5, AD14): a deployed mode no entry of the
+   * opener's account has passed is refused at the open, after run-rules R8 and before anything is written, naming
+   * `part`. The next free number in the family. ai-accounts' own PART_NOT_PASSED (C-29.61, an entry's offer) stays its own. */
+  PART_NOT_PASSED: {
+    check: "C-109.15",
+    where: "src/ai-runs/index.mjs open > is-airun-open-part, reached from op=airunopen",
+    translation: localize("run-rules.checks.nothing_was_started_because_none", "Nothing was started, because none of the AI accounts your group's Civicsmith can use has passed the test for this part of the work. Ask whoever looks after your team's AI accounts to add one that has passed it, or do this part without AI.")
+  }
+};
+var AI_RUN_IDEM_CHECKS = {
+  AI_RUN_IDEM_INVALID: {
+    check: "C-109.16",
+    where: "src/ai-runs/index.mjs spawnPayload, tick, close > is-airun-idem, reached from op=airunspawn, op=airuntick, op=airunclose",
+    translation: localize("run-rules.checks.nothing_was_done_because_this", "Nothing was done, because this step of the investigation was sent with a repeat mark the record could not read, or one that belongs to another investigation. The step was not counted, so nothing is lost; it can be sent again as it was first written.")
   }
 };
 var AI_RUN_PLAN_CHECKS = {
@@ -5646,6 +5661,7 @@ var AI_RUNS_CHECKS = Object.freeze({
   ...AI_RUNS_CONTEXT_CHECKS,
   ...SURFACE_RUN_CHECKS,
   ...AI_RUN_OPEN_CHECKS,
+  ...AI_RUN_IDEM_CHECKS,
   ...AI_RUN_PLAN_CHECKS,
   ...AI_USE_CHECKS
 });
