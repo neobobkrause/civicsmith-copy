@@ -254,9 +254,9 @@ The answer:
 
 **Found marks** (this module's own; moved from Open for Bob, coordinator ruling 5 Nov 20:18)
 
-- **F2** *(not yet met: coordinator ruling 5 Nov 20:18)* No runner is bound: the configuration declares no `REMOTE` or `RUNNER`, no source reads either, and no test of this module reads `agent-runner`'s wire; a sign-in account is refused `ASSISTANT_REMOTE_NOT_READY` (`why` `absent`) before any model call.
-- **F3** *(not yet met: coordinator ruling 5 Nov 20:18)* `agent-model`'s circuit is kept in the Durable Object `HEALTH`: each conversation is admitted by `circuitAdmit` before it is sent and its class told to `circuitRecord` after; `GET /health` answers `health` for an `account_id` and `entry_id` over it.
-- **F4** *(not yet met: coordinator ruling 5 Nov 20:18)* The suites read a draft's label as now carried, `{kind: "machine", ai}`, `ai` as `converse` served it, never as exactly `{kind: "machine"}`.
+- **F2** No runner is bound: the configuration declares no `REMOTE` or `RUNNER`, no source reads either, and no test of this module reads `agent-runner`'s wire; a sign-in account is refused `ASSISTANT_REMOTE_NOT_READY` (`why` `absent`) before any model call.
+- **F3** `agent-model`'s circuit is kept in the Durable Object `HEALTH`: each conversation is admitted by `circuitAdmit` before it is sent and its class told to `circuitRecord` after; `GET /health` answers `health` for an `account_id` and `entry_id` over it.
+- **F4** The suites read a draft's label as now carried, `{kind: "machine", ai}`, `ai` as `converse` served it, never as exactly `{kind: "machine"}`.
 
 ## Open for Bob
 
