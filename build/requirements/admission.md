@@ -148,3 +148,4 @@ None: the split is BOB's (K617, K624).
 
 - The seam (K624 (2)): the credential and admission path is this module's, each gate with the R that states its refusal; the op tables it reads are `op-declarations`'; the door, the stamps (`store-request` R3, R4, R6, R7; `control-plane` R18, R29), the bootstrap claim (R15), the replay (R16), the review doors (R20) and the gate order (R28) stay `control-plane`'s.
 - R32's rows split with the gates that raise them: the admission families here (R14); C-69.1, C-69.2, the internal-error rows, C-68.2–C-68.4 and C-66.6 stay `control-plane`'s.
+- **F1** *(not yet met: coordinator 17:20, op-declarations ruling)* bio-plane/test/m/admission/t47.test.mjs:136 (R25, test at :126) asserts declared.length >= 10; it must assert the exact count of the ops REAUTH_ACTS names and OPS declares, which is 9 once subscriptionsignin is retired (op-grades R57: in no table), so the test fails if one is added or dropped.
