@@ -25,7 +25,7 @@ const LAYER = (body) => ({ load_when: "when asked", sourcing: "authored", body }
 const PACK = { id: "investigative-session", version: "pack@agent-drafts-label",
   resident: { objective: { text: "answer from the record" }, disclosable: [] },
   disclosed: { ask: LAYER("closed book"), suggestions: LAYER("S"), writing_help: LAYER("W"),
-               interface_translation: LAYER("T"), reading_translation: LAYER("RT") } };
+               interface_translation: LAYER("T"), reading_translation: LAYER("RT"), action_drafting: LAYER("AD") } };
 const TASKS = {
   writinghelp: { body: { task: { op: "writinghelp", act: "noteadd", field: "text" }, told: "I saw the vote." },
                  answer: { text: "drafted" } },
@@ -36,6 +36,9 @@ const TASKS = {
                       answer: { words: [{ key: "screen.word1", text: "Palabra" }] } },
   readtranslate: { body: { task: { op: "readtranslate", language: "es", text: "The group meets on Tuesdays." } },
                    answer: { text: "El grupo se reúne los martes.", from_language: "en" } },
+  /* R5, R6 (agent-model:395 notice): an action draft's label is the conversation's, as every draft's. */
+  textcheck: { body: { task: { op: "textcheck", text: "The clerk broke the law." } },
+               answer: { sentences: [{ index: 0, quote: "The clerk broke the law.", reads_as: "assertion", why: "it asserts a breach" }] } },
 };
 
 /** Drives one `/draft` in a child whose `converse` answers `adapterLabel`; `extra` is merged into the body. */
@@ -91,3 +94,5 @@ test("R4 translationdraft: the label is the stub adapter's, for two adapters", (
 test("R4 translationdraft control: a request-body label is ignored", () => ignoresBodyLabel("translationdraft"));
 test("R7 readtranslate: the label is the stub adapter's, for two adapters", () => carriesAdapterLabel("readtranslate"));
 test("R7 readtranslate control: a request-body label is ignored", () => ignoresBodyLabel("readtranslate"));
+test("R5 R6 textcheck (notice agent-model:395): the label is the stub adapter's, for two adapters", () => carriesAdapterLabel("textcheck"));
+test("R5 R6 textcheck control: a request-body label is ignored", () => ignoresBodyLabel("textcheck"));
