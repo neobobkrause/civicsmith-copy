@@ -195,3 +195,4 @@
 {"at":"2026-11-05T23:00:53Z","row":"sent","n":98,"to":"bob","text":"merged PR 455 (job queue): node .process/tool/p3.mjs notice triage queue:455 (provider notice queue:455; 5 user modules owe a worker's judgment: answer-envelope, plane, screens-document, store-assembly, store-door: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-05T23:01:09Z","row":"outcome","n":98,"outcome":"delivered"}
 {"at":"2026-11-05T23:06:43Z","row":"sent","n":99,"to":"bob","text":"merged PR 489 (job screens-document-beta); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-05T23:08:42Z","row":"sent","n":100,"to":"bob","text":"the starter started job case-check (PR 603): subscribe_pr_activity to each pull request"}
