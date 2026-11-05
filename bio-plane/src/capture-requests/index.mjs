@@ -42,6 +42,8 @@ import { runPrincipalGate, runPrincipalOf } from "../run-rules/index.mjs";
 import { normalizeAddress } from "../subresources.mjs";
 import { standardsOf } from "../standards/index.mjs";
 import { stepsOf } from "../steps/index.mjs";
+import { AiRuns } from "../ai-runs/index.mjs";
+import { ARCHIVE_CHECKS } from "../acquisition/index.mjs";
 import { migrateCaptureRequests } from "./schema.mjs";
 import { CAPTURE_REQUEST_CHECKS, CAPTURE_SOURCE_CHECKS, CAPTURE_PURPOSES, CAPTURE_UA_MODES, CAPTURE_UA_MODE_ALIASES,
          uaModeOf, userAgentIsLegible } from "./checks.mjs";
@@ -274,6 +276,18 @@ export class CaptureRequests {
         localize("capture-requests.index.no_run_named_run_is_2", "no run named '{run}' is running in this store. DEC-47 makes the SESSION LAUNCH the authorisation for reaching a public source, so a request that cannot name a live session is a fetch nothing authorised.", { run: String(run.slice(0, 60)) }),
         { run });
 
+    /* R60 (T53; AIR28, BR27; K5571 (6); agent-steps R54): A RETRIED WRITE OF THE RUN FILES ONE REQUEST. A request
+       carrying an `idem` this run has already sent answers the first request's row, as R6 answers a standing one, with
+       `repeated: true`, and writes nothing: a run resumed after a stop holds each request once. Asked once sight,
+       position and status have been, so an idem says nothing to a caller R1 refuses. A member's request has no run and
+       so no run's idem. */
+    const idem = mine ? "" : text(args.idem).trim();
+    if (idem) {
+      const first = this.#one(`SELECT * FROM capture_requests WHERE run=? AND idem=? ORDER BY requested_at, request LIMIT 1`,
+                              run, idem);
+      if (first) return { ...CaptureRequests.#standingAnswer(first, null), repeated: true };
+    }
+
     /* R2: a public locator with a host this module can read; the host is derived here, lower-cased, and stored, so
        the drain's rate rule reads one column instead of re-parsing a locator inside the enforcement point. */
     const address = text(args.address).trim();
@@ -380,6 +394,15 @@ export class CaptureRequests {
       return coArchiveRefusal("not-a-members", localize("capture-requests.index.the_choice_about_a_public", "the choice about a public archive copy is a member's, and this request was not made under a member's own credential. Send no co_archive to let the team's setting decide."));
     const coArchive = coRaw === null ? null : coRaw ? 1 : 0;
 
+    /* R62 (T53; AIR25, BR29; agent-steps R56): WHO PRODUCED THE CANDIDATE, the labels of the conversations, each as
+       `agent-model` answered it, kept deduplicated in order. Absent or null is stored null; anything that is not a list
+       of label objects, or a label holding a field a label lacks, is refused by name before anything is written. */
+    const producedBy = producedByOf(args.produced_by);
+    if (producedBy === undefined)
+      return refusal("CAPTURE_REQUEST_PRODUCED_BY_MALFORMED",
+        localize("capture-requests.index.produced_by_malformed", "produced_by={shown} is not a list of the labels of the conversations that produced this request, each holding only a label's fields ({fields}). Nothing was requested or written.", { shown: String(shown(args.produced_by)), fields: String(AiRuns.LABEL_FIELDS.join(", ")) }),
+        { produced_by: null });
+
     /* END DEC-49 REGION is-capture-request */
 
     /* R8: the PLANE principal is the caller's stamp (REC-168), the CLAUDE principal the run's: it is the account the
@@ -406,20 +429,18 @@ export class CaptureRequests {
     const standing = mine
       ? this.#one(`SELECT * FROM capture_requests WHERE run IS NULL AND principal_plane=? AND address=? AND render=?
                      AND state IN ('requested','draining','captured')`, callerPlane, address, render)
-      : this.#one(
-        `SELECT * FROM capture_requests WHERE run=? AND address=? AND render=? AND state IN ('requested','draining','captured')`,
-        run, address, render);
+      : idem
+        /* R60: a request with a new idem whose address, render or purpose changed files its own; one changing none of
+           them is R6's standing row, so the same document is never fetched twice for one run. */
+        ? this.#one(`SELECT * FROM capture_requests WHERE run=? AND address=? AND render=? AND purpose=?
+                       AND state IN ('requested','draining','captured')`, run, address, render, purpose)
+        : this.#one(
+          `SELECT * FROM capture_requests WHERE run=? AND address=? AND render=? AND state IN ('requested','draining','captured')`,
+          run, address, render);
     /* R56: whether the request will be drained, said to the member so it is never silently parked. */
     const drains = mine ? this.configured() : null;
     const told = mine ? { drains, detail: drains ? MEMBER_REQUEST_DRAINS : MEMBER_REQUEST_WAITS } : {};
-    if (standing)
-      return { ok: true, request: standing.request, run: standing.run ?? null, target: standing.target ?? null, address,
-               host: standing.host, purpose: standing.purpose, ua_mode: uaModeOf(standing.ua_mode),
-               lead_inquiry: standing.lead_inquiry ?? null, render: standing.render === 1,
-               sweep: standing.sweep ?? null, co_archive: coArchiveOf(standing.co_archive),
-               step: standing.step ?? null,
-               state: standing.state, requested: false, already: true,
-               principals: { plane: standing.principal_plane, claude: standing.principal_claude ?? null }, ...told };
+    if (standing) return { ...CaptureRequests.#standingAnswer(standing, address), ...told };
 
     /* R6, R7: THE TIME IS THE IN-PROCESS CALLER'S STATED INSTANT (`at`, a test or the scheduler's replay) OR THIS
        INSTANCE'S CLOCK, never a body's `at` (the op handler passes none), so each request's expiry follows its own
@@ -436,13 +457,14 @@ export class CaptureRequests {
     this.#sql.exec(
       `INSERT INTO capture_requests (request, run, target, address, host, purpose, ua_mode,
          principal_plane, principal_claude, state, attempts, requested_at, updated, expires, lead_inquiry, render, sweep,
-         co_archive, step)
-       VALUES (?,?,?,?,?,?,?,?,?,'requested',0,?,?,?,?,?,?,?,?)`,
+         co_archive, step, idem, produced_by)
+       VALUES (?,?,?,?,?,?,?,?,?,'requested',0,?,?,?,?,?,?,?,?,?,?)`,
       request, run || null, target || null, address, host, purpose, uaMode, callerPlane,
       /* ai-runs R9, R28 (T53, PR 96): the run's paying principal is answered as `principal_ai`; this row keeps it in its
          own `principal_claude` column (Terms, R8), which this module's requirements still name so. */
       mine ? null : String(runRow.principal_ai ?? ""),
-      now, now, expires, lead || null, render, sweep, coArchive, step || null);
+      now, now, expires, lead || null, render, sweep, coArchive, step || null, idem || null,
+      producedBy === null ? null : JSON.stringify(producedBy));
     const written = this.#one(`SELECT * FROM capture_requests WHERE request=?`, request);
     /* R44 (N223): every listener told once, after the write, in the modules' total order; none can change the row or
        the answer. A rejection is swallowed where it lands. */
@@ -456,11 +478,24 @@ export class CaptureRequests {
              host: written.host, purpose: written.purpose, ua_mode: written.ua_mode,
              lead_inquiry: written.lead_inquiry ?? null, render: written.render === 1,
              sweep: written.sweep ?? null, co_archive: coArchiveOf(written.co_archive),
-             step: written.step ?? null,
+             step: written.step ?? null, produced_by: producedByRead(written.produced_by),
              state: written.state, requested: true, already: false,
              requested_at: written.requested_at, expires: written.expires,
              principals: { plane: written.principal_plane, claude: written.principal_claude ?? null },
              detail: localize("capture-requests.index.requested_your_teams_civicsmith_does", "requested. Your team's Civicsmith does not fetch on a caller's timing: the daemon drains this queue, and DEC-47's conduct rules are applied there."), ...told };
+  }
+
+  /** R6's answer for a standing row (`already: true`), and R60's for a repeated idem: the row's values, never the
+   *  call's, `produced_by` the stored one (R62). `address` the call's when R6 answers, else the row's. */
+  static #standingAnswer(standing, address) {
+    return { ok: true, request: standing.request, run: standing.run ?? null, target: standing.target ?? null,
+             address: address ?? standing.address,
+             host: standing.host, purpose: standing.purpose, ua_mode: uaModeOf(standing.ua_mode),
+             lead_inquiry: standing.lead_inquiry ?? null, render: standing.render === 1,
+             sweep: standing.sweep ?? null, co_archive: coArchiveOf(standing.co_archive),
+             step: standing.step ?? null, produced_by: producedByRead(standing.produced_by),
+             state: standing.state, requested: false, already: true,
+             principals: { plane: standing.principal_plane, claude: standing.principal_claude ?? null } };
   }
 
   /** Is `id` an inquiry this viewer can see (membership's predicate over record-core's `bundles` read contract)? A
@@ -693,8 +728,9 @@ export class CaptureRequests {
          at most ten times its batch, oldest first, and takes its batch in the rank's order; without one, or when the
          rank fails, oldest first. */
       const ranking = typeof rank === "function";
+      /* R61 (T53): a row waiting for a person is skipped until it expires (above) or her file completes it. */
       const read = this.#rows(
-        `SELECT * FROM capture_requests WHERE state='requested' AND expires > ? ORDER BY requested_at, request LIMIT ?`,
+        `SELECT * FROM capture_requests WHERE state='requested' AND needs_person=0 AND expires > ? ORDER BY requested_at, request LIMIT ?`,
         at, ranking ? cap * CAPTURE_REQUEST_RANK_READ : cap);
       const queued = ranking ? this.#ranked(read, rank, nowMs).slice(0, cap) : read;
       const captured = [], refused = [], held = [];
@@ -781,8 +817,23 @@ export class CaptureRequests {
           /* R55: a request made for a step ties its capture (new or already held, R39) to that step. */
           const tied = q.step && r.sha ? await this.#tieToStep(q, r.sha) : null;
           captured.push({ request: q.request, address: q.address, sha: r.sha || null, grade: r.grade ?? null,
-                          attribution: verdict.attribution, already_held: r.existed === true,
+                          attribution: verdict.attribution,
+                          /* R62: who produced the request, beside its attribution, when the request named any */
+                          ...(q.produced_by ? { produced_by: producedByRead(q.produced_by) } : {}),
+                          already_held: r.existed === true,
                           ...(promoted ? { promoted } : {}), ...(tied ? { step_product: tied } : {}) });
+        } else if (r.reason === "SITE_ASKS_FOR_PERSON") {
+          /* R61 (T53; K5574, K5575; acquisition R140): THE SITE ASKED FOR A PERSON. Nothing was filed and nothing is
+             worked around or retried: the row is held `requested` under acquisition's code with `needs_person` and
+             `asked_at`, the drain no longer selects it, and it waits for the member's own file (`fillAskedRequest`) or
+             its expiry. The challenge is the source's answer, so the look is not governed and the reason is `other`
+             (R40); the host's slot is given back, as nothing was taken from it that a next request could not use. */
+          const row = ARCHIVE_CHECKS.SITE_ASKS_FOR_PERSON;
+          hostsThisTick.set(q.host, Math.max(0, (hostsThisTick.get(q.host) || 1) - 1));
+          settle(q, { terminal: false, code: "SITE_ASKS_FOR_PERSON", check: row.check, translation: row.translation,
+                      detail: r.detail || row.translation, sourceReason: "other", governed: false, condition: null,
+                      countAttempt: false });
+          this.#sql.exec(`UPDATE capture_requests SET needs_person=1, asked_at=? WHERE request=?`, at, q.request);
         } else if (r.sweepRefused) {
           /* R45: the fetch met a locator outside the sweep: refused, nothing filed; the redirect was fetched, so the
              host's slot stays spent. */
@@ -1031,7 +1082,7 @@ export class CaptureRequests {
                renderCode, platform,
                renderState: renderCode && out && out.render && (out.render.state === "waiting" || out.render.state === "deferred")
                  ? out.render.state : null,
-               detail: renderCode ? String((out && out.detail) || "").slice(0, 400) : null };
+               detail: renderCode || reason === "SITE_ASKS_FOR_PERSON" ? String((out && out.detail) || "").slice(0, 400) : null };
     } catch {
       return { ok: false, reason: word("capture-requests.fetch_complete_group"), status: null };
     }
@@ -1123,6 +1174,11 @@ export class CaptureRequests {
       lead_inquiry: r.lead_inquiry ?? null, run_woken_at: r.run_woken_at ?? null,
       render: r.render === 1, source_reason: r.source_reason ?? null, sweep: r.sweep ?? null,
       co_archive: coArchiveOf(r.co_archive), step: r.step ?? null,
+      /* R60, R62 (T53): the run's idem, and who produced the request, as stored, beside the attribution, never in it. */
+      idem: r.idem ?? null, produced_by: producedByRead(r.produced_by),
+      /* R61 (T53): the site asked for a person (and when); who brought the file, on her word, and when. */
+      needs_person: r.needs_person === 1, asked_at: r.asked_at ?? null,
+      brought_by: r.brought_by ?? null, brought_at: r.brought_at ?? null,
       /* R25, D-523: what became of a render this instance could not do, in the drain's and op=queue's words. */
       render_deferral: (r.render === 1 && (r.state === "expired" || (r.state === "requested" && r.code)))
         ? (({ code, check, translation }) => ({ state: r.state === "expired" ? "expired" : "deferred",
@@ -1203,6 +1259,63 @@ export class CaptureRequests {
   rendersHeld({ viewer = null, limit = null } = {}) {
     return this.#bounded(["cr.render = 1", "(cr.state = 'expired' OR (cr.state = 'requested' AND cr.code IS NOT NULL))"], [],
                          "cr.updated, cr.request", limit, "cr.target", viewer);
+  }
+
+  /** R61 (T53; K5574, K5575): the rows waiting for a person (a drain fetch the site answered with a challenge), that
+   *  the viewer can see by target (R23's sight, R56's for a member's own request), not past `expires`, oldest first,
+   *  each `{request, address, host, asked_at, asker}`: `asker` the member whose own request it was (R56), else null
+   *  (`queue-producers` then offers it to the members following the address). Bounded as R23; writes nothing; never
+   *  throws. */
+  personWaits({ viewer = null, limit = null, now = null } = {}) {
+    const cap = clamp(limit, CAPTURE_REQUEST_READ_LIMIT, CAPTURE_REQUEST_READ_MAX);
+    try {
+      const iso = stampInstant("second", Number.isFinite(now) ? now : this.#nowMs());
+      const seen = CaptureRequests.#rowGate("cr.target", viewer);
+      const found = this.#rows(
+        `SELECT cr.* FROM capture_requests cr WHERE cr.state='requested' AND cr.needs_person=1 AND cr.expires > ?
+           AND (${seen.sql}) ORDER BY cr.asked_at, cr.request LIMIT ?`, iso, ...seen.args, cap + 1);
+      const rows = found.slice(0, cap);
+      return { count: rows.length, limit: cap, truncated: found.length > cap,
+               waits: rows.map((r) => ({ request: r.request, address: r.address, host: r.host, asked_at: r.asked_at,
+                                         asker: isMemberRequest(r) ? r.principal_plane : null })) };
+    } catch { return { count: 0, limit: cap, truncated: false, waits: [] }; }
+  }
+
+  /** R61 (T53; K5574, K5575; capture R86, R116): in process, called by `capture`'s upload path when a member adds a file
+   *  with the address it came from. The address is judged as R2 judges it; the one row waiting for a person, among the
+   *  rows `by` can see, whose address equals it and which has not expired, is set `captured` with `capture_sha`,
+   *  `captured_at`, and the record that `by` brought the file from that address (`brought_by`, `brought_at`), the
+   *  site's ask kept (`needs_person`, `asked_at`). It rests on her word: nothing is fetched. No row, or more than one
+   *  (a served and a rendered ask of the address alike), changes nothing and answers `matched: false`, and her file is
+   *  an ordinary upload. Never throws. */
+  fillAskedRequest({ address = null, capture_sha = null, by = null, at = null } = {}) {
+    const none = (why) => ({ ok: true, matched: false, why });
+    try {
+      const addr = text(address).trim();
+      let host = null;
+      try { host = isPublicHttpsLocator(addr) ? new URL(addr).host.toLowerCase() : null; } catch { host = null; }
+      if (!host) return none("not-public");
+      const member = memberSession(by);
+      const digest = text(capture_sha).trim();
+      if (!member || !/^[0-9a-f]{64}$/.test(digest)) return none("malformed");
+      const atMs = instantMs(at) ?? this.#nowMs();
+      const iso = stampInstant("second", atMs);
+      const seen = CaptureRequests.#rowGate("cr.target", member);
+      const rows = this.#rows(
+        `SELECT cr.request FROM capture_requests cr WHERE cr.state='requested' AND cr.needs_person=1 AND cr.address=?
+           AND cr.expires > ? AND (${seen.sql}) LIMIT 2`, addr, iso, ...seen.args);
+      if (rows.length !== 1) return none(rows.length ? "several" : "no-waiting-request");
+      const request = rows[0].request;
+      const said = localize("capture-requests.index.brought_by_member", "{by} brought this file from {address} after the site asked for a person ({asked_at}); it was added at {at} and rests on that member's word.",
+        { by: member, address: addr.slice(0, 200), asked_at: String(this.#one(`SELECT asked_at FROM capture_requests WHERE request=?`, request).asked_at ?? ""), at: iso });
+      this.#sql.exec(
+        `UPDATE capture_requests SET state='captured', code=NULL, source_reason=NULL, detail=?, capture_sha=?, captured_at=?,
+           brought_by=?, brought_at=?, updated=? WHERE request=? AND state='requested' AND needs_person=1`,
+        said.slice(0, 600), digest, iso, member, iso, iso, request);
+      const r = this.#one(`SELECT * FROM capture_requests WHERE request=?`, request);
+      return { ok: true, matched: true, request, address: r.address, capture_sha: r.capture_sha, brought_by: r.brought_by,
+               asked_at: r.asked_at, brought_at: r.brought_at, captured_at: r.captured_at };
+    } catch { return none("unavailable"); }
   }
 
   /** R43 (N169): one request by id, as R24 answers a row (with R25's `render_deferral`), when its target is one the
@@ -1761,6 +1874,28 @@ function recordsRefusal(kind, detail, extra = {}) {
 }
 
 /** R50: a stored co-archive choice as every answer gives it: `true`, `false`, or null (the group's setting decides). */
+/** R62: `produced_by` as the door takes it: null when absent or null; the list deduplicated in order when it is a list of
+ *  label objects each holding only a label's fields (`ai-runs`' `LABEL_FIELDS`, agent-model's label with the AI's
+ *  display name); `undefined` when malformed. */
+export function producedByOf(v) {
+  if (v === undefined || v === null) return null;
+  if (!Array.isArray(v)) return undefined;
+  const out = [], seen = new Set();
+  for (const l of v) {
+    if (!l || typeof l !== "object" || Array.isArray(l)) return undefined;
+    const keys = Object.keys(l);
+    if (!keys.length || keys.some((k) => !AiRuns.LABEL_FIELDS.includes(k))) return undefined;
+    if (keys.some((k) => l[k] !== null && typeof l[k] !== "string")) return undefined;
+    const key = JSON.stringify(AiRuns.LABEL_FIELDS.filter((k) => k in l).map((k) => [k, l[k]]));
+    if (!seen.has(key)) { seen.add(key); out.push({ ...l }); }
+  }
+  return out;
+}
+/** R62: a stored `produced_by` as every answer gives it: the list as stored, or null. */
+function producedByRead(v) {
+  if (v === null || v === undefined) return null;
+  try { const l = JSON.parse(v); return Array.isArray(l) ? l : null; } catch { return null; }
+}
 function coArchiveOf(v) { return v === 1 || v === true ? true : v === 0 || v === false ? false : null; }
 
 /** R49: an address with its scheme and host lower-cased and nothing else touched (no parsing that re-encodes), or null
@@ -1892,7 +2027,9 @@ export const DECLARED_OPS = Object.freeze({
     description: "the investigative session's request for a capture (§4 group 1), keyed by run and address, or (capture-requests R56) a member's own request for later, keyed by her stamp and address: writes a row and fetches nothing — the daemon captures, and DEC-47's conduct is applied at that drain. Not object-directed; the completion reaches a member as a queue CONDITION, not as an act",
     fields: {
       accepts: ["run", "address", "target", "lead_inquiry", "lead", "purpose", "ua_mode", "render", "step", "co_archive",
-                "site_kind", "sweep", "capture_sha", "sha256", "bytes", "content", "provenance_chain", "via", "retrieved"],
+                "site_kind", "sweep", "capture_sha", "sha256", "bytes", "content", "provenance_chain", "via", "retrieved",
+                /* R60, R62 (T53): the agent's idem and the labels of the conversations that produced the request */
+                "idem", "produced_by"],
       requires: ["address"],
     },
   },
