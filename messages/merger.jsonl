@@ -132,3 +132,4 @@
 {"at":"2026-11-05T20:13:16Z","row":"outcome","n":66,"outcome":"delivered"}
 {"at":"2026-11-05T20:20:25Z","row":"sent","n":67,"to":"bob","text":"the starter started job agent-worker (PR 569): subscribe_pr_activity to each pull request"}
 {"at":"2026-11-05T20:21:10Z","row":"outcome","n":67,"outcome":"delivered"}
+{"at":"2026-11-05T20:28:02Z","row":"sent","n":68,"to":"bob","text":"merged PR 470 (job screens-intake); the MERGER's starter starts the work it freed"}
