@@ -1,0 +1,1 @@
+{"row":"triage","user":"control-plane","verdict":"not affected","evidence":"build/modules.json:197 paths bio-plane/src/control-plane/; no file there imports citation (it reads op tables from op-declarations at bio-plane/src/control-plane/index.mjs:87)","at":"2026-11-05T02:30:56.519Z","key":"citation:351","worker":"a278d9e81ff6d96c3","cost":"0.5"}

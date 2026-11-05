@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-assembly","by":"triage","evidence":"bio-plane/src/store-assembly/assemble.mjs:842 spreads citationOps(citationOf(ctx), url, body) unchanged and reads none of cite's new fields; declarations.mjs:136 only collects citation's DECLARED_OPS into the registry","at":"2026-11-05T02:30:56.519Z","key":"citation:351","worker":"a278d9e81ff6d96c3","cost":"0.5"}
