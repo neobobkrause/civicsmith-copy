@@ -1,0 +1,1839 @@
+{
+ "arm": "local",
+ "steps": [
+  {
+   "journey": "journey 28",
+   "label": "civicsmith.org: what Civicsmith is",
+   "screenshot": "01-local-journey-28-civicsmith-org-what-civicsmith-is.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "civicsmith.org: start a team, and create it",
+   "screenshot": "02-local-journey-28-civicsmith-org-start-a-team-and-create-it.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "install: the installer's first page",
+   "screenshot": "03-local-journey-28-install-the-installer-s-first-page.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "install: the short name, confirmed permanent",
+   "screenshot": "04-local-journey-28-install-the-short-name-confirmed-permanent.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "install: before Cloudflare, what it will be asked to allow",
+   "screenshot": "05-local-journey-28-install-before-cloudflare-what-it-will-be-asked-to-allow.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "install: Cloudflare's permission, allowed",
+   "screenshot": "06-local-journey-28-install-cloudflare-s-permission-allowed.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "install: each step finishes, the checks pass",
+   "screenshot": "07-local-journey-28-install-each-step-finishes-the-checks-pass.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "hand-over: to the team's address, finishing setup",
+   "screenshot": "08-local-journey-28-hand-over-to-the-team-s-address-finishing-setup.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "1 · setup: claim with her own handle; she is the team's first administrator",
+   "screenshot": "09-local-journey-28-1-setup-claim-with-her-own-handle-she-is-the-team-s-first-ad.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "setup: her ten recovery codes, shown once",
+   "screenshot": "10-local-journey-28-setup-her-ten-recovery-codes-shown-once.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "setup: the team's name",
+   "screenshot": "11-local-journey-28-setup-the-team-s-name.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "home: a new team's home, inviting members and saying who it is",
+   "screenshot": "12-local-journey-28-home-a-new-team-s-home-inviting-members-and-saying-who-it-is.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "security: a first look at Security",
+   "screenshot": "13-local-journey-28-security-a-first-look-at-security.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "members: an invitation link for mai",
+   "screenshot": "14-local-journey-28-members-an-invitation-link-for-mai.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "join: the invitation link opens the join screen",
+   "screenshot": "15-local-journey-28-join-the-invitation-link-opens-the-join-screen.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "join: a handle, free, and a password; joined and signed in",
+   "screenshot": "16-local-journey-28-join-a-handle-free-and-a-password-joined-and-signed-in.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "join: her ten recovery codes, shown once",
+   "screenshot": "17-local-journey-28-join-her-ten-recovery-codes-shown-once.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "home: the guided welcome she began when she joined, continued",
+   "screenshot": "18-local-journey-28-home-the-guided-welcome-she-began-when-she-joined-continued.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "account: her first settings, her expertise declared",
+   "screenshot": "19-local-journey-28-account-her-first-settings-her-expertise-declared.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "home: what happened? a problem I live with",
+   "screenshot": "20-local-journey-28-home-what-happened-a-problem-i-live-with.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "capture: her first testimony, labelled as hers",
+   "screenshot": "21-local-journey-28-capture-her-first-testimony-labelled-as-hers.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "shell menu: sign out on this device",
+   "screenshot": "22-local-journey-28-shell-menu-sign-out-on-this-device.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "front: on her phone, sign in, kept signed in",
+   "screenshot": "23-local-journey-28-front-on-her-phone-sign-in-kept-signed-in.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "lock: idle half an hour on her own device",
+   "screenshot": "24-local-journey-28-lock-idle-half-an-hour-on-her-own-device.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 28",
+   "label": "unlock: her password again, back where she was",
+   "screenshot": "25-local-journey-28-unlock-her-password-again-back-where-she-was.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 3",
+   "label": "members: an invitation link for teo",
+   "screenshot": "26-local-journey-3-members-an-invitation-link-for-teo.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 3",
+   "label": "welcome 1–2: join, the language and a handle and a password",
+   "screenshot": "27-local-journey-3-welcome-1-2-join-the-language-and-a-handle-and-a-password.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 3",
+   "label": "welcome 3: this is your team's home",
+   "screenshot": "28-local-journey-3-welcome-3-this-is-your-team-s-home.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 3",
+   "label": "welcome 4: a question's strength, and Undetermined",
+   "screenshot": "29-local-journey-3-welcome-4-a-question-s-strength-and-undetermined.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 3",
+   "label": "welcome 5: optional: connect your own Claude account, skipped",
+   "screenshot": "30-local-journey-3-welcome-5-optional-connect-your-own-claude-account-skipped.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 3",
+   "label": "welcome 6: optional: your own ties, skipped",
+   "screenshot": "31-local-journey-3-welcome-6-optional-your-own-ties-skipped.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 3",
+   "label": "welcome 7: a first step",
+   "screenshot": "32-local-journey-3-welcome-7-a-first-step.png",
+   "ok": true
+  },
+  {
+   "journey": "journey 3",
+   "label": "welcome: finished",
+   "screenshot": "33-local-journey-3-welcome-finished.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "2 · start a project with a title, and open it",
+   "screenshot": "34-local-r9-as-administrator-2-start-a-project-with-a-title-and-open-it.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "3 · open a question in it",
+   "screenshot": "35-local-r9-as-administrator-3-open-a-question-in-it.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "assistant not ready: the connect screen",
+   "screenshot": "36-local-r9-as-administrator-assistant-not-ready-the-connect-screen.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "5 · capture by address into the question, from its \"Add a document\"",
+   "screenshot": "37-local-r9-as-administrator-5-capture-by-address-into-the-question-from-its-add-a-docume.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "5 · capture by upload into the question",
+   "screenshot": "38-local-r9-as-administrator-5-capture-by-upload-into-the-question.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "6 · see both held, and vouch for one",
+   "screenshot": "39-local-r9-as-administrator-6-see-both-held-and-vouch-for-one.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "document: its first page reads Page 1",
+   "screenshot": "40-local-r9-as-administrator-document-its-first-page-reads-page-1.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "7 · open the document, see its words, and Find-in a passage",
+   "screenshot": "41-local-r9-as-administrator-7-open-the-document-see-its-words-and-find-in-a-passage.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "8 · cite it with a role (supports)",
+   "screenshot": "42-local-r9-as-administrator-8-cite-it-with-a-role-supports.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "assistant not ready: the question's dock",
+   "screenshot": "43-local-r9-as-administrator-assistant-not-ready-the-question-s-dock.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "assistant not ready: the Ask screen",
+   "screenshot": "44-local-r9-as-administrator-assistant-not-ready-the-ask-screen.png",
+   "ok": true
+  },
+  {
+   "journey": "R9 as administrator",
+   "label": "12 · conclude on her own reading, as the project's",
+   "screenshot": "45-local-r9-as-administrator-12-conclude-on-her-own-reading-as-the-project-s.png",
+   "ok": true
+  },
+  {
+   "journey": "R10 as member",
+   "label": "she signs in on her own computer",
+   "screenshot": "46-local-r10-as-member-she-signs-in-on-her-own-computer.png",
+   "ok": true
+  },
+  {
+   "journey": "R10 as member",
+   "label": "assistant not ready: her connect screen",
+   "screenshot": "47-local-r10-as-member-assistant-not-ready-her-connect-screen.png",
+   "ok": true
+  },
+  {
+   "journey": "R16 without the assistant (journey 29's search path)",
+   "label": "2 · start a project with a title, and open it",
+   "screenshot": "48-local-r16-without-the-assistant-journey-29-s-search-path-2-start-a-project-with-a-title-and-open-it.png",
+   "ok": true
+  },
+  {
+   "journey": "R16 without the assistant (journey 29's search path)",
+   "label": "3 · open a question in it",
+   "screenshot": "49-local-r16-without-the-assistant-journey-29-s-search-path-3-open-a-question-in-it.png",
+   "ok": true
+  },
+  {
+   "journey": "R16 without the assistant (journey 29's search path)",
+   "label": "no assistant · nothing to conclude on yet: no citation",
+   "screenshot": "50-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-nothing-to-conclude-on-yet-no-citation.png",
+   "ok": true
+  },
+  {
+   "journey": "R16 without the assistant (journey 29's search path)",
+   "label": "no assistant · search: look for a source the team already holds",
+   "screenshot": "51-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-search-look-for-a-source-the-team-already-holds.png",
+   "ok": true
+  },
+  {
+   "journey": "R16 without the assistant (journey 29's search path)",
+   "label": "no assistant · capture by address, from the question's \"Add a document\"",
+   "screenshot": "52-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-capture-by-address-from-the-question-s-add-a-do.png",
+   "ok": true
+  },
+  {
+   "journey": "R16 without the assistant (journey 29's search path)",
+   "label": "no assistant · see it held, and vouch for it",
+   "screenshot": "53-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-see-it-held-and-vouch-for-it.png",
+   "ok": true
+  },
+  {
+   "journey": "R16 without the assistant (journey 29's search path)",
+   "label": "no assistant · open the document, see its words, and Find-in a passage",
+   "screenshot": "54-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-open-the-document-see-its-words-and-find-in-a-p.png",
+   "ok": true
+  },
+  {
+   "journey": "R16 without the assistant (journey 29's search path)",
+   "label": "no assistant · cite it with a role (supports)",
+   "screenshot": "55-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-cite-it-with-a-role-supports.png",
+   "ok": true
+  },
+  {
+   "journey": "R16 without the assistant (journey 29's search path)",
+   "label": "no assistant · conclude on her own reading",
+   "screenshot": "56-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-conclude-on-her-own-reading.png",
+   "ok": true
+  },
+  {
+   "journey": "R22 the dashboards",
+   "label": "dashboard dash-project: opened from the door on Home",
+   "screenshot": "57-local-r22-the-dashboards-dashboard-dash-project-opened-from-the-door-on-home.png",
+   "ok": true
+  },
+  {
+   "journey": "R22 the dashboards",
+   "label": "dashboard dash-action: opened from the door on Home",
+   "screenshot": "58-local-r22-the-dashboards-dashboard-dash-action-opened-from-the-door-on-home.png",
+   "ok": true
+  },
+  {
+   "journey": "R25 the old pages",
+   "label": "sign: /sign answers the nothing-is-here page",
+   "screenshot": "59-local-r25-the-old-pages-sign-sign-answers-the-nothing-is-here-page.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen front",
+   "screenshot": "60-local-r7-as-the-founder-her-handle-held-screen-front.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen tour",
+   "screenshot": "61-local-r7-as-the-founder-her-handle-held-screen-tour.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen reset",
+   "screenshot": "62-local-r7-as-the-founder-her-handle-held-screen-reset.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen forgot",
+   "screenshot": "63-local-r7-as-the-founder-her-handle-held-screen-forgot.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen setup",
+   "screenshot": "64-local-r7-as-the-founder-her-handle-held-screen-setup.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen group-identity",
+   "screenshot": "65-local-r7-as-the-founder-her-handle-held-screen-group-identity.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen join",
+   "screenshot": "66-local-r7-as-the-founder-her-handle-held-screen-join.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen home",
+   "screenshot": "67-local-r7-as-the-founder-her-handle-held-screen-home.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen members",
+   "screenshot": "68-local-r7-as-the-founder-her-handle-held-screen-members.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen security",
+   "screenshot": "69-local-r7-as-the-founder-her-handle-held-screen-security.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen account",
+   "screenshot": "70-local-r7-as-the-founder-her-handle-held-screen-account.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen connect",
+   "screenshot": "71-local-r7-as-the-founder-her-handle-held-screen-connect.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen teamai",
+   "screenshot": "72-local-r7-as-the-founder-her-handle-held-screen-teamai.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen bias",
+   "screenshot": "73-local-r7-as-the-founder-her-handle-held-screen-bias.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen places",
+   "screenshot": "74-local-r7-as-the-founder-her-handle-held-screen-places.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen recovery",
+   "screenshot": "75-local-r7-as-the-founder-her-handle-held-screen-recovery.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen group",
+   "screenshot": "76-local-r7-as-the-founder-her-handle-held-screen-group.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen settings",
+   "screenshot": "77-local-r7-as-the-founder-her-handle-held-screen-settings.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen more",
+   "screenshot": "78-local-r7-as-the-founder-her-handle-held-screen-more.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen updates",
+   "screenshot": "79-local-r7-as-the-founder-her-handle-held-screen-updates.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen ties",
+   "screenshot": "80-local-r7-as-the-founder-her-handle-held-screen-ties.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen notes",
+   "screenshot": "81-local-r7-as-the-founder-her-handle-held-screen-notes.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen translations",
+   "screenshot": "82-local-r7-as-the-founder-her-handle-held-screen-translations.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen wizards",
+   "screenshot": "83-local-r7-as-the-founder-her-handle-held-screen-wizards.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen projects",
+   "screenshot": "84-local-r7-as-the-founder-her-handle-held-screen-projects.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen theme",
+   "screenshot": "85-local-r7-as-the-founder-her-handle-held-screen-theme.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen dash-action",
+   "screenshot": "86-local-r7-as-the-founder-her-handle-held-screen-dash-action.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen dash-project",
+   "screenshot": "87-local-r7-as-the-founder-her-handle-held-screen-dash-project.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen unavailable",
+   "screenshot": "88-local-r7-as-the-founder-her-handle-held-screen-unavailable.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen elsewhere",
+   "screenshot": "89-local-r7-as-the-founder-her-handle-held-screen-elsewhere.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen queue",
+   "screenshot": "90-local-r7-as-the-founder-her-handle-held-screen-queue.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen finder",
+   "screenshot": "91-local-r7-as-the-founder-her-handle-held-screen-finder.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen capture",
+   "screenshot": "92-local-r7-as-the-founder-her-handle-held-screen-capture.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen held",
+   "screenshot": "93-local-r7-as-the-founder-her-handle-held-screen-held.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen archive",
+   "screenshot": "94-local-r7-as-the-founder-her-handle-held-screen-archive.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen open-file",
+   "screenshot": "95-local-r7-as-the-founder-her-handle-held-screen-open-file.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen document",
+   "screenshot": "96-local-r7-as-the-founder-her-handle-held-screen-document.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen contradiction",
+   "screenshot": "97-local-r7-as-the-founder-her-handle-held-screen-contradiction.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen find-in",
+   "screenshot": "98-local-r7-as-the-founder-her-handle-held-screen-find-in.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen project",
+   "screenshot": "99-local-r7-as-the-founder-her-handle-held-screen-project.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen objective",
+   "screenshot": "100-local-r7-as-the-founder-her-handle-held-screen-objective.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen projectai",
+   "screenshot": "101-local-r7-as-the-founder-her-handle-held-screen-projectai.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen question",
+   "screenshot": "102-local-r7-as-the-founder-her-handle-held-screen-question.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen answers",
+   "screenshot": "103-local-r7-as-the-founder-her-handle-held-screen-answers.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen assistant",
+   "screenshot": "104-local-r7-as-the-founder-her-handle-held-screen-assistant.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen people",
+   "screenshot": "105-local-r7-as-the-founder-her-handle-held-screen-people.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen person",
+   "screenshot": "106-local-r7-as-the-founder-her-handle-held-screen-person.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen timeline",
+   "screenshot": "107-local-r7-as-the-founder-her-handle-held-screen-timeline.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen money",
+   "screenshot": "108-local-r7-as-the-founder-her-handle-held-screen-money.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen calculation",
+   "screenshot": "109-local-r7-as-the-founder-her-handle-held-screen-calculation.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen help-records",
+   "screenshot": "110-local-r7-as-the-founder-her-handle-held-screen-help-records.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen help",
+   "screenshot": "111-local-r7-as-the-founder-her-handle-held-screen-help.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen explore",
+   "screenshot": "112-local-r7-as-the-founder-her-handle-held-screen-explore.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen proceeding",
+   "screenshot": "113-local-r7-as-the-founder-her-handle-held-screen-proceeding.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen due-date",
+   "screenshot": "114-local-r7-as-the-founder-her-handle-held-screen-due-date.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen standard",
+   "screenshot": "115-local-r7-as-the-founder-her-handle-held-screen-standard.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen plan",
+   "screenshot": "116-local-r7-as-the-founder-her-handle-held-screen-plan.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen start-send",
+   "screenshot": "117-local-r7-as-the-founder-her-handle-held-screen-start-send.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen glossary",
+   "screenshot": "118-local-r7-as-the-founder-her-handle-held-screen-glossary.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen actionnew",
+   "screenshot": "119-local-r7-as-the-founder-her-handle-held-screen-actionnew.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen request",
+   "screenshot": "120-local-r7-as-the-founder-her-handle-held-screen-request.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen action",
+   "screenshot": "121-local-r7-as-the-founder-her-handle-held-screen-action.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen hold",
+   "screenshot": "122-local-r7-as-the-founder-her-handle-held-screen-hold.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen holdnotice",
+   "screenshot": "123-local-r7-as-the-founder-her-handle-held-screen-holdnotice.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen counsel",
+   "screenshot": "124-local-r7-as-the-founder-her-handle-held-screen-counsel.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen grouprules",
+   "screenshot": "125-local-r7-as-the-founder-her-handle-held-screen-grouprules.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen matter",
+   "screenshot": "126-local-r7-as-the-founder-her-handle-held-screen-matter.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen case-editor",
+   "screenshot": "127-local-r7-as-the-founder-her-handle-held-screen-case-editor.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen review-copy",
+   "screenshot": "128-local-r7-as-the-founder-her-handle-held-screen-review-copy.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen ceremony",
+   "screenshot": "129-local-r7-as-the-founder-her-handle-held-screen-ceremony.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen review-outside",
+   "screenshot": "130-local-r7-as-the-founder-her-handle-held-screen-review-outside.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen published",
+   "screenshot": "131-local-r7-as-the-founder-her-handle-held-screen-published.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen imported",
+   "screenshot": "132-local-r7-as-the-founder-her-handle-held-screen-imported.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen docket",
+   "screenshot": "133-local-r7-as-the-founder-her-handle-held-screen-docket.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen docket-public",
+   "screenshot": "134-local-r7-as-the-founder-her-handle-held-screen-docket-public.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen inbox",
+   "screenshot": "135-local-r7-as-the-founder-her-handle-held-screen-inbox.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen doorbell",
+   "screenshot": "136-local-r7-as-the-founder-her-handle-held-screen-doorbell.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen about-knocker",
+   "screenshot": "137-local-r7-as-the-founder-her-handle-held-screen-about-knocker.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen leads",
+   "screenshot": "138-local-r7-as-the-founder-her-handle-held-screen-leads.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen watching",
+   "screenshot": "139-local-r7-as-the-founder-her-handle-held-screen-watching.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen registers",
+   "screenshot": "140-local-r7-as-the-founder-her-handle-held-screen-registers.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen aiproviders",
+   "screenshot": "141-local-r7-as-the-founder-her-handle-held-screen-aiproviders.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen aiconnect",
+   "screenshot": "142-local-r7-as-the-founder-her-handle-held-screen-aiconnect.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen aimine",
+   "screenshot": "143-local-r7-as-the-founder-her-handle-held-screen-aimine.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen aiproject",
+   "screenshot": "144-local-r7-as-the-founder-her-handle-held-screen-aiproject.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen aimoments",
+   "screenshot": "145-local-r7-as-the-founder-her-handle-held-screen-aimoments.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen aitest",
+   "screenshot": "146-local-r7-as-the-founder-her-handle-held-screen-aitest.png",
+   "ok": true
+  },
+  {
+   "journey": "R7 as the founder, her handle held",
+   "label": "screen airesults",
+   "screenshot": "147-local-r7-as-the-founder-her-handle-held-screen-airesults.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "R27 · she signs in on a device that draws the pseudo rows",
+   "screenshot": "148-local-r27-the-pseudo-locale-walk-r27-she-signs-in-on-a-device-that-draws-the-pseudo-rows.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen front",
+   "screenshot": "149-local-r27-the-pseudo-locale-walk-pseudo-screen-front.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen tour",
+   "screenshot": "150-local-r27-the-pseudo-locale-walk-pseudo-screen-tour.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen reset",
+   "screenshot": "151-local-r27-the-pseudo-locale-walk-pseudo-screen-reset.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen forgot",
+   "screenshot": "152-local-r27-the-pseudo-locale-walk-pseudo-screen-forgot.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen setup",
+   "screenshot": "153-local-r27-the-pseudo-locale-walk-pseudo-screen-setup.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen group-identity",
+   "screenshot": "154-local-r27-the-pseudo-locale-walk-pseudo-screen-group-identity.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen join",
+   "screenshot": "155-local-r27-the-pseudo-locale-walk-pseudo-screen-join.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen home",
+   "screenshot": "156-local-r27-the-pseudo-locale-walk-pseudo-screen-home.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen members",
+   "screenshot": "157-local-r27-the-pseudo-locale-walk-pseudo-screen-members.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen security",
+   "screenshot": "158-local-r27-the-pseudo-locale-walk-pseudo-screen-security.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen account",
+   "screenshot": "159-local-r27-the-pseudo-locale-walk-pseudo-screen-account.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen connect",
+   "screenshot": "160-local-r27-the-pseudo-locale-walk-pseudo-screen-connect.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen teamai",
+   "screenshot": "161-local-r27-the-pseudo-locale-walk-pseudo-screen-teamai.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen bias",
+   "screenshot": "162-local-r27-the-pseudo-locale-walk-pseudo-screen-bias.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen places",
+   "screenshot": "163-local-r27-the-pseudo-locale-walk-pseudo-screen-places.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen recovery",
+   "screenshot": "164-local-r27-the-pseudo-locale-walk-pseudo-screen-recovery.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen group",
+   "screenshot": "165-local-r27-the-pseudo-locale-walk-pseudo-screen-group.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen settings",
+   "screenshot": "166-local-r27-the-pseudo-locale-walk-pseudo-screen-settings.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen more",
+   "screenshot": "167-local-r27-the-pseudo-locale-walk-pseudo-screen-more.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen updates",
+   "screenshot": "168-local-r27-the-pseudo-locale-walk-pseudo-screen-updates.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen ties",
+   "screenshot": "169-local-r27-the-pseudo-locale-walk-pseudo-screen-ties.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen notes",
+   "screenshot": "170-local-r27-the-pseudo-locale-walk-pseudo-screen-notes.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen translations",
+   "screenshot": "171-local-r27-the-pseudo-locale-walk-pseudo-screen-translations.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen wizards",
+   "screenshot": "172-local-r27-the-pseudo-locale-walk-pseudo-screen-wizards.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen projects",
+   "screenshot": "173-local-r27-the-pseudo-locale-walk-pseudo-screen-projects.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen theme",
+   "screenshot": "174-local-r27-the-pseudo-locale-walk-pseudo-screen-theme.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen dash-action",
+   "screenshot": "175-local-r27-the-pseudo-locale-walk-pseudo-screen-dash-action.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen dash-project",
+   "screenshot": "176-local-r27-the-pseudo-locale-walk-pseudo-screen-dash-project.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen unavailable",
+   "screenshot": "177-local-r27-the-pseudo-locale-walk-pseudo-screen-unavailable.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen elsewhere",
+   "screenshot": "178-local-r27-the-pseudo-locale-walk-pseudo-screen-elsewhere.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen queue",
+   "screenshot": "179-local-r27-the-pseudo-locale-walk-pseudo-screen-queue.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen finder",
+   "screenshot": "180-local-r27-the-pseudo-locale-walk-pseudo-screen-finder.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen capture",
+   "screenshot": "181-local-r27-the-pseudo-locale-walk-pseudo-screen-capture.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen held",
+   "screenshot": "182-local-r27-the-pseudo-locale-walk-pseudo-screen-held.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen archive",
+   "screenshot": "183-local-r27-the-pseudo-locale-walk-pseudo-screen-archive.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen open-file",
+   "screenshot": "184-local-r27-the-pseudo-locale-walk-pseudo-screen-open-file.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen document",
+   "screenshot": "185-local-r27-the-pseudo-locale-walk-pseudo-screen-document.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen contradiction",
+   "screenshot": "186-local-r27-the-pseudo-locale-walk-pseudo-screen-contradiction.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen find-in",
+   "screenshot": "187-local-r27-the-pseudo-locale-walk-pseudo-screen-find-in.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen project",
+   "screenshot": "188-local-r27-the-pseudo-locale-walk-pseudo-screen-project.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen objective",
+   "screenshot": "189-local-r27-the-pseudo-locale-walk-pseudo-screen-objective.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen projectai",
+   "screenshot": "190-local-r27-the-pseudo-locale-walk-pseudo-screen-projectai.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen question",
+   "screenshot": "191-local-r27-the-pseudo-locale-walk-pseudo-screen-question.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen answers",
+   "screenshot": "192-local-r27-the-pseudo-locale-walk-pseudo-screen-answers.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen assistant",
+   "screenshot": "193-local-r27-the-pseudo-locale-walk-pseudo-screen-assistant.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen people",
+   "screenshot": "194-local-r27-the-pseudo-locale-walk-pseudo-screen-people.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen person",
+   "screenshot": "195-local-r27-the-pseudo-locale-walk-pseudo-screen-person.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen timeline",
+   "screenshot": "196-local-r27-the-pseudo-locale-walk-pseudo-screen-timeline.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen money",
+   "screenshot": "197-local-r27-the-pseudo-locale-walk-pseudo-screen-money.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen calculation",
+   "screenshot": "198-local-r27-the-pseudo-locale-walk-pseudo-screen-calculation.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen help-records",
+   "screenshot": "199-local-r27-the-pseudo-locale-walk-pseudo-screen-help-records.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen help",
+   "screenshot": "200-local-r27-the-pseudo-locale-walk-pseudo-screen-help.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen explore",
+   "screenshot": "201-local-r27-the-pseudo-locale-walk-pseudo-screen-explore.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen proceeding",
+   "screenshot": "202-local-r27-the-pseudo-locale-walk-pseudo-screen-proceeding.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen due-date",
+   "screenshot": "203-local-r27-the-pseudo-locale-walk-pseudo-screen-due-date.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen standard",
+   "screenshot": "204-local-r27-the-pseudo-locale-walk-pseudo-screen-standard.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen plan",
+   "screenshot": "205-local-r27-the-pseudo-locale-walk-pseudo-screen-plan.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen start-send",
+   "screenshot": "206-local-r27-the-pseudo-locale-walk-pseudo-screen-start-send.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen glossary",
+   "screenshot": "207-local-r27-the-pseudo-locale-walk-pseudo-screen-glossary.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen actionnew",
+   "screenshot": "208-local-r27-the-pseudo-locale-walk-pseudo-screen-actionnew.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen request",
+   "screenshot": "209-local-r27-the-pseudo-locale-walk-pseudo-screen-request.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen action",
+   "screenshot": "210-local-r27-the-pseudo-locale-walk-pseudo-screen-action.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen hold",
+   "screenshot": "211-local-r27-the-pseudo-locale-walk-pseudo-screen-hold.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen holdnotice",
+   "screenshot": "212-local-r27-the-pseudo-locale-walk-pseudo-screen-holdnotice.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen counsel",
+   "screenshot": "213-local-r27-the-pseudo-locale-walk-pseudo-screen-counsel.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen grouprules",
+   "screenshot": "214-local-r27-the-pseudo-locale-walk-pseudo-screen-grouprules.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen matter",
+   "screenshot": "215-local-r27-the-pseudo-locale-walk-pseudo-screen-matter.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen case-editor",
+   "screenshot": "216-local-r27-the-pseudo-locale-walk-pseudo-screen-case-editor.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen review-copy",
+   "screenshot": "217-local-r27-the-pseudo-locale-walk-pseudo-screen-review-copy.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen ceremony",
+   "screenshot": "218-local-r27-the-pseudo-locale-walk-pseudo-screen-ceremony.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen review-outside",
+   "screenshot": "219-local-r27-the-pseudo-locale-walk-pseudo-screen-review-outside.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen published",
+   "screenshot": "220-local-r27-the-pseudo-locale-walk-pseudo-screen-published.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen imported",
+   "screenshot": "221-local-r27-the-pseudo-locale-walk-pseudo-screen-imported.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen docket",
+   "screenshot": "222-local-r27-the-pseudo-locale-walk-pseudo-screen-docket.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen docket-public",
+   "screenshot": "223-local-r27-the-pseudo-locale-walk-pseudo-screen-docket-public.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen inbox",
+   "screenshot": "224-local-r27-the-pseudo-locale-walk-pseudo-screen-inbox.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen doorbell",
+   "screenshot": "225-local-r27-the-pseudo-locale-walk-pseudo-screen-doorbell.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen about-knocker",
+   "screenshot": "226-local-r27-the-pseudo-locale-walk-pseudo-screen-about-knocker.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen leads",
+   "screenshot": "227-local-r27-the-pseudo-locale-walk-pseudo-screen-leads.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen watching",
+   "screenshot": "228-local-r27-the-pseudo-locale-walk-pseudo-screen-watching.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen registers",
+   "screenshot": "229-local-r27-the-pseudo-locale-walk-pseudo-screen-registers.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen aiproviders",
+   "screenshot": "230-local-r27-the-pseudo-locale-walk-pseudo-screen-aiproviders.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen aiconnect",
+   "screenshot": "231-local-r27-the-pseudo-locale-walk-pseudo-screen-aiconnect.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen aimine",
+   "screenshot": "232-local-r27-the-pseudo-locale-walk-pseudo-screen-aimine.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen aiproject",
+   "screenshot": "233-local-r27-the-pseudo-locale-walk-pseudo-screen-aiproject.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen aimoments",
+   "screenshot": "234-local-r27-the-pseudo-locale-walk-pseudo-screen-aimoments.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen aitest",
+   "screenshot": "235-local-r27-the-pseudo-locale-walk-pseudo-screen-aitest.png",
+   "ok": true
+  },
+  {
+   "journey": "R27 the pseudo-locale walk",
+   "label": "pseudo screen airesults",
+   "screenshot": "236-local-r27-the-pseudo-locale-walk-pseudo-screen-airesults.png",
+   "ok": true
+  }
+ ],
+ "failures": [
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "document, the held copy: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "project, an owner standing down: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "project, an owner preparing a notice: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "project, an owner whose notice is published: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "project, a project the member is not in: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "project, the hidden project's rescue: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "question, deferred for the project: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "question, dismissed for the project: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "question, each passage is asked: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "question, concluded on a member's own reading: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "review-copy, saved as a file: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "plan, the project's plans: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "plan, none: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "action, the date passed with no reply: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "action, asking about the silence: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "action, a member who may read and not act: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "people, other things the record follows: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "people, adding one: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "person, an ordinance: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "person, an office: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "home, on a new member's first visit (one who may start projects): not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "home, on a new member's first visit (one who may not start projects): not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "home, for a member who may not start projects, with no project open to them: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "home, for the founder of a new team: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "members, as a member sees it: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "members, an administrator's removal under way: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "security, an ordinary week: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "account, a newer version of Civicsmith is live: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "account, making your signing key: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "connect, a team offering its key; you connected your own API key: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "connect, a team offering its key; you signed in with your own Claude subscription: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "connect, your own Claude sign-in has expired: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "connect, a team that doesn't pay for the assistant: members bring their own: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "connect, a team that keeps its material away from AI: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "teamai, Ask every day: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "teamai, Yes: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "places, a state with no profile: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "recovery, new codes just issued: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "group-identity, an older installation, no short name recorded: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "updates, the same, seen by the administrator who holds it: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "updates, nothing ready: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "translations, a team that uses only English: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "projects, a new team with no projects: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "projects, for a member who may not start projects: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "unavailable, something you may not see: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "unavailable, your team's Civicsmith out of reach: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "elsewhere, a place that lists none yet: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "queue, the queue with nothing waiting: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "queue, an invitation to a project, waiting: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "queue, choosing several items: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "queue, what happened to the chosen items: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "queue, what you answered and set aside: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "queue, an all-clear that cannot be given: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "finder, a search with no results: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "finder, Find with no words: browsing: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "finder, citing the whole set you hold: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "finder, the whole record as one table: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "finder, a search answered by three routes, with what it covered: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "archive, an archive that could not be opened: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "open-file, a high-risk file: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "open-file, a file held after a finding: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "open-file, a file you added yourself: not reached on the local arm, which makes its own data"
+  },
+  {
+   "journey": "R21 the carried states",
+   "step": null,
+   "kind": "state",
+   "detail": "counsel, a packet for a defense: not reached on the local arm, which makes its own data"
+  }
+ ],
+ "pairs": [
+  "pairs/dashboard-dash-project-1280.png",
+  "pairs/dashboard-dash-project-390.png",
+  "pairs/dashboard-dash-action-1280.png",
+  "pairs/dashboard-dash-action-390.png",
+  "pairs/journey-29-step-01-install.png",
+  "pairs/journey-29-step-02-install.png",
+  "pairs/journey-29-step-03-setup.png",
+  "pairs/journey-29-step-05-home.png",
+  "pairs/journey-29-step-06-security.png",
+  "pairs/journey-29-step-07-projects.png",
+  "pairs/journey-29-step-08-project.png",
+  "pairs/journey-29-step-12-question.png",
+  "pairs/journey-29-step-13-capture.png",
+  "pairs/journey-29-step-14-document.png",
+  "pairs/journey-29-step-15-document.png",
+  "pairs/journey-29-step-17-question.png",
+  "pairs/journey-29-step-18-question.png"
+ ],
+ "notes": [
+  "R7 with no handle: not walkable here (the claim took a handle)",
+  "R9 step 4, connect an assistant by her own Claude subscription: not walked, the assistant does not work (K3717)",
+  "document: the capture states no page, so none is drawn",
+  "R9 step 9, run the assistant on the question from the dock: not walked, the assistant does not work (K3717)",
+  "R9 step 10, read its run's answer and its suggested reading: not walked, the assistant does not work (K3717)",
+  "R9 step 11, Ask, and read the answer: not walked, the assistant does not work (K3717)",
+  "R10, she connects her own Claude subscription: not walked, the assistant does not work (K3717)",
+  "R10, her own run is dispatched on that sign-in: not walked, the assistant does not work (K3717)",
+  "R10, the project's assistant page, as hers (projectai): not walked, the assistant does not work (K3717)",
+  "R10, plan help, as hers (planask): not walked, the assistant does not work (K3717)",
+  "R10, Ask, as hers: not walked, the assistant does not work (K3717)",
+  "Action block: not drawn, the team holds no action",
+  "journey 29 step 4 (setup, groupkeyset): not walked, the assistant does not work (K3717)",
+  "journey 29 step 9 (question, new, airunopen): not walked, the assistant does not work (K3717)",
+  "journey 29 step 10 (question, running): not walked, the assistant does not work (K3717)",
+  "journey 29 step 11 (question, ended, airunopen): not walked, the assistant does not work (K3717)",
+  "journey 29 step 16 (question, proposal, versionaccept): not walked, the assistant does not work (K3717)"
+ ]
+}

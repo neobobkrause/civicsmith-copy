@@ -1,0 +1,335 @@
+journey-check (local): 236 steps, 63 failures
+ok   journey 28 · civicsmith.org: what Civicsmith is (01-local-journey-28-civicsmith-org-what-civicsmith-is.png)
+ok   journey 28 · civicsmith.org: start a team, and create it (02-local-journey-28-civicsmith-org-start-a-team-and-create-it.png)
+ok   journey 28 · install: the installer's first page (03-local-journey-28-install-the-installer-s-first-page.png)
+ok   journey 28 · install: the short name, confirmed permanent (04-local-journey-28-install-the-short-name-confirmed-permanent.png)
+ok   journey 28 · install: before Cloudflare, what it will be asked to allow (05-local-journey-28-install-before-cloudflare-what-it-will-be-asked-to-allow.png)
+ok   journey 28 · install: Cloudflare's permission, allowed (06-local-journey-28-install-cloudflare-s-permission-allowed.png)
+ok   journey 28 · install: each step finishes, the checks pass (07-local-journey-28-install-each-step-finishes-the-checks-pass.png)
+ok   journey 28 · hand-over: to the team's address, finishing setup (08-local-journey-28-hand-over-to-the-team-s-address-finishing-setup.png)
+ok   journey 28 · 1 · setup: claim with her own handle; she is the team's first administrator (09-local-journey-28-1-setup-claim-with-her-own-handle-she-is-the-team-s-first-ad.png)
+ok   journey 28 · setup: her ten recovery codes, shown once (10-local-journey-28-setup-her-ten-recovery-codes-shown-once.png)
+ok   journey 28 · setup: the team's name (11-local-journey-28-setup-the-team-s-name.png)
+ok   journey 28 · home: a new team's home, inviting members and saying who it is (12-local-journey-28-home-a-new-team-s-home-inviting-members-and-saying-who-it-is.png)
+ok   journey 28 · security: a first look at Security (13-local-journey-28-security-a-first-look-at-security.png)
+ok   journey 28 · members: an invitation link for mai (14-local-journey-28-members-an-invitation-link-for-mai.png)
+ok   journey 28 · join: the invitation link opens the join screen (15-local-journey-28-join-the-invitation-link-opens-the-join-screen.png)
+ok   journey 28 · join: a handle, free, and a password; joined and signed in (16-local-journey-28-join-a-handle-free-and-a-password-joined-and-signed-in.png)
+ok   journey 28 · join: her ten recovery codes, shown once (17-local-journey-28-join-her-ten-recovery-codes-shown-once.png)
+ok   journey 28 · home: the guided welcome she began when she joined, continued (18-local-journey-28-home-the-guided-welcome-she-began-when-she-joined-continued.png)
+ok   journey 28 · account: her first settings, her expertise declared (19-local-journey-28-account-her-first-settings-her-expertise-declared.png)
+ok   journey 28 · home: what happened? a problem I live with (20-local-journey-28-home-what-happened-a-problem-i-live-with.png)
+ok   journey 28 · capture: her first testimony, labelled as hers (21-local-journey-28-capture-her-first-testimony-labelled-as-hers.png)
+ok   journey 28 · shell menu: sign out on this device (22-local-journey-28-shell-menu-sign-out-on-this-device.png)
+ok   journey 28 · front: on her phone, sign in, kept signed in (23-local-journey-28-front-on-her-phone-sign-in-kept-signed-in.png)
+ok   journey 28 · lock: idle half an hour on her own device (24-local-journey-28-lock-idle-half-an-hour-on-her-own-device.png)
+ok   journey 28 · unlock: her password again, back where she was (25-local-journey-28-unlock-her-password-again-back-where-she-was.png)
+ok   journey 3 · members: an invitation link for teo (26-local-journey-3-members-an-invitation-link-for-teo.png)
+ok   journey 3 · welcome 1–2: join, the language and a handle and a password (27-local-journey-3-welcome-1-2-join-the-language-and-a-handle-and-a-password.png)
+ok   journey 3 · welcome 3: this is your team's home (28-local-journey-3-welcome-3-this-is-your-team-s-home.png)
+ok   journey 3 · welcome 4: a question's strength, and Undetermined (29-local-journey-3-welcome-4-a-question-s-strength-and-undetermined.png)
+ok   journey 3 · welcome 5: optional: connect your own Claude account, skipped (30-local-journey-3-welcome-5-optional-connect-your-own-claude-account-skipped.png)
+ok   journey 3 · welcome 6: optional: your own ties, skipped (31-local-journey-3-welcome-6-optional-your-own-ties-skipped.png)
+ok   journey 3 · welcome 7: a first step (32-local-journey-3-welcome-7-a-first-step.png)
+ok   journey 3 · welcome: finished (33-local-journey-3-welcome-finished.png)
+ok   R9 as administrator · 2 · start a project with a title, and open it (34-local-r9-as-administrator-2-start-a-project-with-a-title-and-open-it.png)
+ok   R9 as administrator · 3 · open a question in it (35-local-r9-as-administrator-3-open-a-question-in-it.png)
+ok   R9 as administrator · assistant not ready: the connect screen (36-local-r9-as-administrator-assistant-not-ready-the-connect-screen.png)
+ok   R9 as administrator · 5 · capture by address into the question, from its "Add a document" (37-local-r9-as-administrator-5-capture-by-address-into-the-question-from-its-add-a-docume.png)
+ok   R9 as administrator · 5 · capture by upload into the question (38-local-r9-as-administrator-5-capture-by-upload-into-the-question.png)
+ok   R9 as administrator · 6 · see both held, and vouch for one (39-local-r9-as-administrator-6-see-both-held-and-vouch-for-one.png)
+ok   R9 as administrator · document: its first page reads Page 1 (40-local-r9-as-administrator-document-its-first-page-reads-page-1.png)
+ok   R9 as administrator · 7 · open the document, see its words, and Find-in a passage (41-local-r9-as-administrator-7-open-the-document-see-its-words-and-find-in-a-passage.png)
+ok   R9 as administrator · 8 · cite it with a role (supports) (42-local-r9-as-administrator-8-cite-it-with-a-role-supports.png)
+ok   R9 as administrator · assistant not ready: the question's dock (43-local-r9-as-administrator-assistant-not-ready-the-question-s-dock.png)
+ok   R9 as administrator · assistant not ready: the Ask screen (44-local-r9-as-administrator-assistant-not-ready-the-ask-screen.png)
+ok   R9 as administrator · 12 · conclude on her own reading, as the project's (45-local-r9-as-administrator-12-conclude-on-her-own-reading-as-the-project-s.png)
+ok   R10 as member · she signs in on her own computer (46-local-r10-as-member-she-signs-in-on-her-own-computer.png)
+ok   R10 as member · assistant not ready: her connect screen (47-local-r10-as-member-assistant-not-ready-her-connect-screen.png)
+ok   R16 without the assistant (journey 29's search path) · 2 · start a project with a title, and open it (48-local-r16-without-the-assistant-journey-29-s-search-path-2-start-a-project-with-a-title-and-open-it.png)
+ok   R16 without the assistant (journey 29's search path) · 3 · open a question in it (49-local-r16-without-the-assistant-journey-29-s-search-path-3-open-a-question-in-it.png)
+ok   R16 without the assistant (journey 29's search path) · no assistant · nothing to conclude on yet: no citation (50-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-nothing-to-conclude-on-yet-no-citation.png)
+ok   R16 without the assistant (journey 29's search path) · no assistant · search: look for a source the team already holds (51-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-search-look-for-a-source-the-team-already-holds.png)
+ok   R16 without the assistant (journey 29's search path) · no assistant · capture by address, from the question's "Add a document" (52-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-capture-by-address-from-the-question-s-add-a-do.png)
+ok   R16 without the assistant (journey 29's search path) · no assistant · see it held, and vouch for it (53-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-see-it-held-and-vouch-for-it.png)
+ok   R16 without the assistant (journey 29's search path) · no assistant · open the document, see its words, and Find-in a passage (54-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-open-the-document-see-its-words-and-find-in-a-p.png)
+ok   R16 without the assistant (journey 29's search path) · no assistant · cite it with a role (supports) (55-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-cite-it-with-a-role-supports.png)
+ok   R16 without the assistant (journey 29's search path) · no assistant · conclude on her own reading (56-local-r16-without-the-assistant-journey-29-s-search-path-no-assistant-conclude-on-her-own-reading.png)
+ok   R22 the dashboards · dashboard dash-project: opened from the door on Home (57-local-r22-the-dashboards-dashboard-dash-project-opened-from-the-door-on-home.png)
+ok   R22 the dashboards · dashboard dash-action: opened from the door on Home (58-local-r22-the-dashboards-dashboard-dash-action-opened-from-the-door-on-home.png)
+ok   R25 the old pages · sign: /sign answers the nothing-is-here page (59-local-r25-the-old-pages-sign-sign-answers-the-nothing-is-here-page.png)
+ok   R7 as the founder, her handle held · screen front (60-local-r7-as-the-founder-her-handle-held-screen-front.png)
+ok   R7 as the founder, her handle held · screen tour (61-local-r7-as-the-founder-her-handle-held-screen-tour.png)
+ok   R7 as the founder, her handle held · screen reset (62-local-r7-as-the-founder-her-handle-held-screen-reset.png)
+ok   R7 as the founder, her handle held · screen forgot (63-local-r7-as-the-founder-her-handle-held-screen-forgot.png)
+ok   R7 as the founder, her handle held · screen setup (64-local-r7-as-the-founder-her-handle-held-screen-setup.png)
+ok   R7 as the founder, her handle held · screen group-identity (65-local-r7-as-the-founder-her-handle-held-screen-group-identity.png)
+ok   R7 as the founder, her handle held · screen join (66-local-r7-as-the-founder-her-handle-held-screen-join.png)
+ok   R7 as the founder, her handle held · screen home (67-local-r7-as-the-founder-her-handle-held-screen-home.png)
+ok   R7 as the founder, her handle held · screen members (68-local-r7-as-the-founder-her-handle-held-screen-members.png)
+ok   R7 as the founder, her handle held · screen security (69-local-r7-as-the-founder-her-handle-held-screen-security.png)
+ok   R7 as the founder, her handle held · screen account (70-local-r7-as-the-founder-her-handle-held-screen-account.png)
+ok   R7 as the founder, her handle held · screen connect (71-local-r7-as-the-founder-her-handle-held-screen-connect.png)
+ok   R7 as the founder, her handle held · screen teamai (72-local-r7-as-the-founder-her-handle-held-screen-teamai.png)
+ok   R7 as the founder, her handle held · screen bias (73-local-r7-as-the-founder-her-handle-held-screen-bias.png)
+ok   R7 as the founder, her handle held · screen places (74-local-r7-as-the-founder-her-handle-held-screen-places.png)
+ok   R7 as the founder, her handle held · screen recovery (75-local-r7-as-the-founder-her-handle-held-screen-recovery.png)
+ok   R7 as the founder, her handle held · screen group (76-local-r7-as-the-founder-her-handle-held-screen-group.png)
+ok   R7 as the founder, her handle held · screen settings (77-local-r7-as-the-founder-her-handle-held-screen-settings.png)
+ok   R7 as the founder, her handle held · screen more (78-local-r7-as-the-founder-her-handle-held-screen-more.png)
+ok   R7 as the founder, her handle held · screen updates (79-local-r7-as-the-founder-her-handle-held-screen-updates.png)
+ok   R7 as the founder, her handle held · screen ties (80-local-r7-as-the-founder-her-handle-held-screen-ties.png)
+ok   R7 as the founder, her handle held · screen notes (81-local-r7-as-the-founder-her-handle-held-screen-notes.png)
+ok   R7 as the founder, her handle held · screen translations (82-local-r7-as-the-founder-her-handle-held-screen-translations.png)
+ok   R7 as the founder, her handle held · screen wizards (83-local-r7-as-the-founder-her-handle-held-screen-wizards.png)
+ok   R7 as the founder, her handle held · screen projects (84-local-r7-as-the-founder-her-handle-held-screen-projects.png)
+ok   R7 as the founder, her handle held · screen theme (85-local-r7-as-the-founder-her-handle-held-screen-theme.png)
+ok   R7 as the founder, her handle held · screen dash-action (86-local-r7-as-the-founder-her-handle-held-screen-dash-action.png)
+ok   R7 as the founder, her handle held · screen dash-project (87-local-r7-as-the-founder-her-handle-held-screen-dash-project.png)
+ok   R7 as the founder, her handle held · screen unavailable (88-local-r7-as-the-founder-her-handle-held-screen-unavailable.png)
+ok   R7 as the founder, her handle held · screen elsewhere (89-local-r7-as-the-founder-her-handle-held-screen-elsewhere.png)
+ok   R7 as the founder, her handle held · screen queue (90-local-r7-as-the-founder-her-handle-held-screen-queue.png)
+ok   R7 as the founder, her handle held · screen finder (91-local-r7-as-the-founder-her-handle-held-screen-finder.png)
+ok   R7 as the founder, her handle held · screen capture (92-local-r7-as-the-founder-her-handle-held-screen-capture.png)
+ok   R7 as the founder, her handle held · screen held (93-local-r7-as-the-founder-her-handle-held-screen-held.png)
+ok   R7 as the founder, her handle held · screen archive (94-local-r7-as-the-founder-her-handle-held-screen-archive.png)
+ok   R7 as the founder, her handle held · screen open-file (95-local-r7-as-the-founder-her-handle-held-screen-open-file.png)
+ok   R7 as the founder, her handle held · screen document (96-local-r7-as-the-founder-her-handle-held-screen-document.png)
+ok   R7 as the founder, her handle held · screen contradiction (97-local-r7-as-the-founder-her-handle-held-screen-contradiction.png)
+ok   R7 as the founder, her handle held · screen find-in (98-local-r7-as-the-founder-her-handle-held-screen-find-in.png)
+ok   R7 as the founder, her handle held · screen project (99-local-r7-as-the-founder-her-handle-held-screen-project.png)
+ok   R7 as the founder, her handle held · screen objective (100-local-r7-as-the-founder-her-handle-held-screen-objective.png)
+ok   R7 as the founder, her handle held · screen projectai (101-local-r7-as-the-founder-her-handle-held-screen-projectai.png)
+ok   R7 as the founder, her handle held · screen question (102-local-r7-as-the-founder-her-handle-held-screen-question.png)
+ok   R7 as the founder, her handle held · screen answers (103-local-r7-as-the-founder-her-handle-held-screen-answers.png)
+ok   R7 as the founder, her handle held · screen assistant (104-local-r7-as-the-founder-her-handle-held-screen-assistant.png)
+ok   R7 as the founder, her handle held · screen people (105-local-r7-as-the-founder-her-handle-held-screen-people.png)
+ok   R7 as the founder, her handle held · screen person (106-local-r7-as-the-founder-her-handle-held-screen-person.png)
+ok   R7 as the founder, her handle held · screen timeline (107-local-r7-as-the-founder-her-handle-held-screen-timeline.png)
+ok   R7 as the founder, her handle held · screen money (108-local-r7-as-the-founder-her-handle-held-screen-money.png)
+ok   R7 as the founder, her handle held · screen calculation (109-local-r7-as-the-founder-her-handle-held-screen-calculation.png)
+ok   R7 as the founder, her handle held · screen help-records (110-local-r7-as-the-founder-her-handle-held-screen-help-records.png)
+ok   R7 as the founder, her handle held · screen help (111-local-r7-as-the-founder-her-handle-held-screen-help.png)
+ok   R7 as the founder, her handle held · screen explore (112-local-r7-as-the-founder-her-handle-held-screen-explore.png)
+ok   R7 as the founder, her handle held · screen proceeding (113-local-r7-as-the-founder-her-handle-held-screen-proceeding.png)
+ok   R7 as the founder, her handle held · screen due-date (114-local-r7-as-the-founder-her-handle-held-screen-due-date.png)
+ok   R7 as the founder, her handle held · screen standard (115-local-r7-as-the-founder-her-handle-held-screen-standard.png)
+ok   R7 as the founder, her handle held · screen plan (116-local-r7-as-the-founder-her-handle-held-screen-plan.png)
+ok   R7 as the founder, her handle held · screen start-send (117-local-r7-as-the-founder-her-handle-held-screen-start-send.png)
+ok   R7 as the founder, her handle held · screen glossary (118-local-r7-as-the-founder-her-handle-held-screen-glossary.png)
+ok   R7 as the founder, her handle held · screen actionnew (119-local-r7-as-the-founder-her-handle-held-screen-actionnew.png)
+ok   R7 as the founder, her handle held · screen request (120-local-r7-as-the-founder-her-handle-held-screen-request.png)
+ok   R7 as the founder, her handle held · screen action (121-local-r7-as-the-founder-her-handle-held-screen-action.png)
+ok   R7 as the founder, her handle held · screen hold (122-local-r7-as-the-founder-her-handle-held-screen-hold.png)
+ok   R7 as the founder, her handle held · screen holdnotice (123-local-r7-as-the-founder-her-handle-held-screen-holdnotice.png)
+ok   R7 as the founder, her handle held · screen counsel (124-local-r7-as-the-founder-her-handle-held-screen-counsel.png)
+ok   R7 as the founder, her handle held · screen grouprules (125-local-r7-as-the-founder-her-handle-held-screen-grouprules.png)
+ok   R7 as the founder, her handle held · screen matter (126-local-r7-as-the-founder-her-handle-held-screen-matter.png)
+ok   R7 as the founder, her handle held · screen case-editor (127-local-r7-as-the-founder-her-handle-held-screen-case-editor.png)
+ok   R7 as the founder, her handle held · screen review-copy (128-local-r7-as-the-founder-her-handle-held-screen-review-copy.png)
+ok   R7 as the founder, her handle held · screen ceremony (129-local-r7-as-the-founder-her-handle-held-screen-ceremony.png)
+ok   R7 as the founder, her handle held · screen review-outside (130-local-r7-as-the-founder-her-handle-held-screen-review-outside.png)
+ok   R7 as the founder, her handle held · screen published (131-local-r7-as-the-founder-her-handle-held-screen-published.png)
+ok   R7 as the founder, her handle held · screen imported (132-local-r7-as-the-founder-her-handle-held-screen-imported.png)
+ok   R7 as the founder, her handle held · screen docket (133-local-r7-as-the-founder-her-handle-held-screen-docket.png)
+ok   R7 as the founder, her handle held · screen docket-public (134-local-r7-as-the-founder-her-handle-held-screen-docket-public.png)
+ok   R7 as the founder, her handle held · screen inbox (135-local-r7-as-the-founder-her-handle-held-screen-inbox.png)
+ok   R7 as the founder, her handle held · screen doorbell (136-local-r7-as-the-founder-her-handle-held-screen-doorbell.png)
+ok   R7 as the founder, her handle held · screen about-knocker (137-local-r7-as-the-founder-her-handle-held-screen-about-knocker.png)
+ok   R7 as the founder, her handle held · screen leads (138-local-r7-as-the-founder-her-handle-held-screen-leads.png)
+ok   R7 as the founder, her handle held · screen watching (139-local-r7-as-the-founder-her-handle-held-screen-watching.png)
+ok   R7 as the founder, her handle held · screen registers (140-local-r7-as-the-founder-her-handle-held-screen-registers.png)
+ok   R7 as the founder, her handle held · screen aiproviders (141-local-r7-as-the-founder-her-handle-held-screen-aiproviders.png)
+ok   R7 as the founder, her handle held · screen aiconnect (142-local-r7-as-the-founder-her-handle-held-screen-aiconnect.png)
+ok   R7 as the founder, her handle held · screen aimine (143-local-r7-as-the-founder-her-handle-held-screen-aimine.png)
+ok   R7 as the founder, her handle held · screen aiproject (144-local-r7-as-the-founder-her-handle-held-screen-aiproject.png)
+ok   R7 as the founder, her handle held · screen aimoments (145-local-r7-as-the-founder-her-handle-held-screen-aimoments.png)
+ok   R7 as the founder, her handle held · screen aitest (146-local-r7-as-the-founder-her-handle-held-screen-aitest.png)
+ok   R7 as the founder, her handle held · screen airesults (147-local-r7-as-the-founder-her-handle-held-screen-airesults.png)
+ok   R27 the pseudo-locale walk · R27 · she signs in on a device that draws the pseudo rows (148-local-r27-the-pseudo-locale-walk-r27-she-signs-in-on-a-device-that-draws-the-pseudo-rows.png)
+ok   R27 the pseudo-locale walk · pseudo screen front (149-local-r27-the-pseudo-locale-walk-pseudo-screen-front.png)
+ok   R27 the pseudo-locale walk · pseudo screen tour (150-local-r27-the-pseudo-locale-walk-pseudo-screen-tour.png)
+ok   R27 the pseudo-locale walk · pseudo screen reset (151-local-r27-the-pseudo-locale-walk-pseudo-screen-reset.png)
+ok   R27 the pseudo-locale walk · pseudo screen forgot (152-local-r27-the-pseudo-locale-walk-pseudo-screen-forgot.png)
+ok   R27 the pseudo-locale walk · pseudo screen setup (153-local-r27-the-pseudo-locale-walk-pseudo-screen-setup.png)
+ok   R27 the pseudo-locale walk · pseudo screen group-identity (154-local-r27-the-pseudo-locale-walk-pseudo-screen-group-identity.png)
+ok   R27 the pseudo-locale walk · pseudo screen join (155-local-r27-the-pseudo-locale-walk-pseudo-screen-join.png)
+ok   R27 the pseudo-locale walk · pseudo screen home (156-local-r27-the-pseudo-locale-walk-pseudo-screen-home.png)
+ok   R27 the pseudo-locale walk · pseudo screen members (157-local-r27-the-pseudo-locale-walk-pseudo-screen-members.png)
+ok   R27 the pseudo-locale walk · pseudo screen security (158-local-r27-the-pseudo-locale-walk-pseudo-screen-security.png)
+ok   R27 the pseudo-locale walk · pseudo screen account (159-local-r27-the-pseudo-locale-walk-pseudo-screen-account.png)
+ok   R27 the pseudo-locale walk · pseudo screen connect (160-local-r27-the-pseudo-locale-walk-pseudo-screen-connect.png)
+ok   R27 the pseudo-locale walk · pseudo screen teamai (161-local-r27-the-pseudo-locale-walk-pseudo-screen-teamai.png)
+ok   R27 the pseudo-locale walk · pseudo screen bias (162-local-r27-the-pseudo-locale-walk-pseudo-screen-bias.png)
+ok   R27 the pseudo-locale walk · pseudo screen places (163-local-r27-the-pseudo-locale-walk-pseudo-screen-places.png)
+ok   R27 the pseudo-locale walk · pseudo screen recovery (164-local-r27-the-pseudo-locale-walk-pseudo-screen-recovery.png)
+ok   R27 the pseudo-locale walk · pseudo screen group (165-local-r27-the-pseudo-locale-walk-pseudo-screen-group.png)
+ok   R27 the pseudo-locale walk · pseudo screen settings (166-local-r27-the-pseudo-locale-walk-pseudo-screen-settings.png)
+ok   R27 the pseudo-locale walk · pseudo screen more (167-local-r27-the-pseudo-locale-walk-pseudo-screen-more.png)
+ok   R27 the pseudo-locale walk · pseudo screen updates (168-local-r27-the-pseudo-locale-walk-pseudo-screen-updates.png)
+ok   R27 the pseudo-locale walk · pseudo screen ties (169-local-r27-the-pseudo-locale-walk-pseudo-screen-ties.png)
+ok   R27 the pseudo-locale walk · pseudo screen notes (170-local-r27-the-pseudo-locale-walk-pseudo-screen-notes.png)
+ok   R27 the pseudo-locale walk · pseudo screen translations (171-local-r27-the-pseudo-locale-walk-pseudo-screen-translations.png)
+ok   R27 the pseudo-locale walk · pseudo screen wizards (172-local-r27-the-pseudo-locale-walk-pseudo-screen-wizards.png)
+ok   R27 the pseudo-locale walk · pseudo screen projects (173-local-r27-the-pseudo-locale-walk-pseudo-screen-projects.png)
+ok   R27 the pseudo-locale walk · pseudo screen theme (174-local-r27-the-pseudo-locale-walk-pseudo-screen-theme.png)
+ok   R27 the pseudo-locale walk · pseudo screen dash-action (175-local-r27-the-pseudo-locale-walk-pseudo-screen-dash-action.png)
+ok   R27 the pseudo-locale walk · pseudo screen dash-project (176-local-r27-the-pseudo-locale-walk-pseudo-screen-dash-project.png)
+ok   R27 the pseudo-locale walk · pseudo screen unavailable (177-local-r27-the-pseudo-locale-walk-pseudo-screen-unavailable.png)
+ok   R27 the pseudo-locale walk · pseudo screen elsewhere (178-local-r27-the-pseudo-locale-walk-pseudo-screen-elsewhere.png)
+ok   R27 the pseudo-locale walk · pseudo screen queue (179-local-r27-the-pseudo-locale-walk-pseudo-screen-queue.png)
+ok   R27 the pseudo-locale walk · pseudo screen finder (180-local-r27-the-pseudo-locale-walk-pseudo-screen-finder.png)
+ok   R27 the pseudo-locale walk · pseudo screen capture (181-local-r27-the-pseudo-locale-walk-pseudo-screen-capture.png)
+ok   R27 the pseudo-locale walk · pseudo screen held (182-local-r27-the-pseudo-locale-walk-pseudo-screen-held.png)
+ok   R27 the pseudo-locale walk · pseudo screen archive (183-local-r27-the-pseudo-locale-walk-pseudo-screen-archive.png)
+ok   R27 the pseudo-locale walk · pseudo screen open-file (184-local-r27-the-pseudo-locale-walk-pseudo-screen-open-file.png)
+ok   R27 the pseudo-locale walk · pseudo screen document (185-local-r27-the-pseudo-locale-walk-pseudo-screen-document.png)
+ok   R27 the pseudo-locale walk · pseudo screen contradiction (186-local-r27-the-pseudo-locale-walk-pseudo-screen-contradiction.png)
+ok   R27 the pseudo-locale walk · pseudo screen find-in (187-local-r27-the-pseudo-locale-walk-pseudo-screen-find-in.png)
+ok   R27 the pseudo-locale walk · pseudo screen project (188-local-r27-the-pseudo-locale-walk-pseudo-screen-project.png)
+ok   R27 the pseudo-locale walk · pseudo screen objective (189-local-r27-the-pseudo-locale-walk-pseudo-screen-objective.png)
+ok   R27 the pseudo-locale walk · pseudo screen projectai (190-local-r27-the-pseudo-locale-walk-pseudo-screen-projectai.png)
+ok   R27 the pseudo-locale walk · pseudo screen question (191-local-r27-the-pseudo-locale-walk-pseudo-screen-question.png)
+ok   R27 the pseudo-locale walk · pseudo screen answers (192-local-r27-the-pseudo-locale-walk-pseudo-screen-answers.png)
+ok   R27 the pseudo-locale walk · pseudo screen assistant (193-local-r27-the-pseudo-locale-walk-pseudo-screen-assistant.png)
+ok   R27 the pseudo-locale walk · pseudo screen people (194-local-r27-the-pseudo-locale-walk-pseudo-screen-people.png)
+ok   R27 the pseudo-locale walk · pseudo screen person (195-local-r27-the-pseudo-locale-walk-pseudo-screen-person.png)
+ok   R27 the pseudo-locale walk · pseudo screen timeline (196-local-r27-the-pseudo-locale-walk-pseudo-screen-timeline.png)
+ok   R27 the pseudo-locale walk · pseudo screen money (197-local-r27-the-pseudo-locale-walk-pseudo-screen-money.png)
+ok   R27 the pseudo-locale walk · pseudo screen calculation (198-local-r27-the-pseudo-locale-walk-pseudo-screen-calculation.png)
+ok   R27 the pseudo-locale walk · pseudo screen help-records (199-local-r27-the-pseudo-locale-walk-pseudo-screen-help-records.png)
+ok   R27 the pseudo-locale walk · pseudo screen help (200-local-r27-the-pseudo-locale-walk-pseudo-screen-help.png)
+ok   R27 the pseudo-locale walk · pseudo screen explore (201-local-r27-the-pseudo-locale-walk-pseudo-screen-explore.png)
+ok   R27 the pseudo-locale walk · pseudo screen proceeding (202-local-r27-the-pseudo-locale-walk-pseudo-screen-proceeding.png)
+ok   R27 the pseudo-locale walk · pseudo screen due-date (203-local-r27-the-pseudo-locale-walk-pseudo-screen-due-date.png)
+ok   R27 the pseudo-locale walk · pseudo screen standard (204-local-r27-the-pseudo-locale-walk-pseudo-screen-standard.png)
+ok   R27 the pseudo-locale walk · pseudo screen plan (205-local-r27-the-pseudo-locale-walk-pseudo-screen-plan.png)
+ok   R27 the pseudo-locale walk · pseudo screen start-send (206-local-r27-the-pseudo-locale-walk-pseudo-screen-start-send.png)
+ok   R27 the pseudo-locale walk · pseudo screen glossary (207-local-r27-the-pseudo-locale-walk-pseudo-screen-glossary.png)
+ok   R27 the pseudo-locale walk · pseudo screen actionnew (208-local-r27-the-pseudo-locale-walk-pseudo-screen-actionnew.png)
+ok   R27 the pseudo-locale walk · pseudo screen request (209-local-r27-the-pseudo-locale-walk-pseudo-screen-request.png)
+ok   R27 the pseudo-locale walk · pseudo screen action (210-local-r27-the-pseudo-locale-walk-pseudo-screen-action.png)
+ok   R27 the pseudo-locale walk · pseudo screen hold (211-local-r27-the-pseudo-locale-walk-pseudo-screen-hold.png)
+ok   R27 the pseudo-locale walk · pseudo screen holdnotice (212-local-r27-the-pseudo-locale-walk-pseudo-screen-holdnotice.png)
+ok   R27 the pseudo-locale walk · pseudo screen counsel (213-local-r27-the-pseudo-locale-walk-pseudo-screen-counsel.png)
+ok   R27 the pseudo-locale walk · pseudo screen grouprules (214-local-r27-the-pseudo-locale-walk-pseudo-screen-grouprules.png)
+ok   R27 the pseudo-locale walk · pseudo screen matter (215-local-r27-the-pseudo-locale-walk-pseudo-screen-matter.png)
+ok   R27 the pseudo-locale walk · pseudo screen case-editor (216-local-r27-the-pseudo-locale-walk-pseudo-screen-case-editor.png)
+ok   R27 the pseudo-locale walk · pseudo screen review-copy (217-local-r27-the-pseudo-locale-walk-pseudo-screen-review-copy.png)
+ok   R27 the pseudo-locale walk · pseudo screen ceremony (218-local-r27-the-pseudo-locale-walk-pseudo-screen-ceremony.png)
+ok   R27 the pseudo-locale walk · pseudo screen review-outside (219-local-r27-the-pseudo-locale-walk-pseudo-screen-review-outside.png)
+ok   R27 the pseudo-locale walk · pseudo screen published (220-local-r27-the-pseudo-locale-walk-pseudo-screen-published.png)
+ok   R27 the pseudo-locale walk · pseudo screen imported (221-local-r27-the-pseudo-locale-walk-pseudo-screen-imported.png)
+ok   R27 the pseudo-locale walk · pseudo screen docket (222-local-r27-the-pseudo-locale-walk-pseudo-screen-docket.png)
+ok   R27 the pseudo-locale walk · pseudo screen docket-public (223-local-r27-the-pseudo-locale-walk-pseudo-screen-docket-public.png)
+ok   R27 the pseudo-locale walk · pseudo screen inbox (224-local-r27-the-pseudo-locale-walk-pseudo-screen-inbox.png)
+ok   R27 the pseudo-locale walk · pseudo screen doorbell (225-local-r27-the-pseudo-locale-walk-pseudo-screen-doorbell.png)
+ok   R27 the pseudo-locale walk · pseudo screen about-knocker (226-local-r27-the-pseudo-locale-walk-pseudo-screen-about-knocker.png)
+ok   R27 the pseudo-locale walk · pseudo screen leads (227-local-r27-the-pseudo-locale-walk-pseudo-screen-leads.png)
+ok   R27 the pseudo-locale walk · pseudo screen watching (228-local-r27-the-pseudo-locale-walk-pseudo-screen-watching.png)
+ok   R27 the pseudo-locale walk · pseudo screen registers (229-local-r27-the-pseudo-locale-walk-pseudo-screen-registers.png)
+ok   R27 the pseudo-locale walk · pseudo screen aiproviders (230-local-r27-the-pseudo-locale-walk-pseudo-screen-aiproviders.png)
+ok   R27 the pseudo-locale walk · pseudo screen aiconnect (231-local-r27-the-pseudo-locale-walk-pseudo-screen-aiconnect.png)
+ok   R27 the pseudo-locale walk · pseudo screen aimine (232-local-r27-the-pseudo-locale-walk-pseudo-screen-aimine.png)
+ok   R27 the pseudo-locale walk · pseudo screen aiproject (233-local-r27-the-pseudo-locale-walk-pseudo-screen-aiproject.png)
+ok   R27 the pseudo-locale walk · pseudo screen aimoments (234-local-r27-the-pseudo-locale-walk-pseudo-screen-aimoments.png)
+ok   R27 the pseudo-locale walk · pseudo screen aitest (235-local-r27-the-pseudo-locale-walk-pseudo-screen-aitest.png)
+ok   R27 the pseudo-locale walk · pseudo screen airesults (236-local-r27-the-pseudo-locale-walk-pseudo-screen-airesults.png)
+  state: R21 the carried states · between steps: document, the held copy: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: project, an owner standing down: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: project, an owner preparing a notice: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: project, an owner whose notice is published: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: project, a project the member is not in: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: project, the hidden project's rescue: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: question, deferred for the project: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: question, dismissed for the project: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: question, each passage is asked: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: question, concluded on a member's own reading: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: review-copy, saved as a file: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: plan, the project's plans: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: plan, none: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: action, the date passed with no reply: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: action, asking about the silence: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: action, a member who may read and not act: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: people, other things the record follows: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: people, adding one: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: person, an ordinance: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: person, an office: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: home, on a new member's first visit (one who may start projects): not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: home, on a new member's first visit (one who may not start projects): not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: home, for a member who may not start projects, with no project open to them: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: home, for the founder of a new team: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: members, as a member sees it: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: members, an administrator's removal under way: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: security, an ordinary week: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: account, a newer version of Civicsmith is live: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: account, making your signing key: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: connect, a team offering its key; you connected your own API key: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: connect, a team offering its key; you signed in with your own Claude subscription: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: connect, your own Claude sign-in has expired: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: connect, a team that doesn't pay for the assistant: members bring their own: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: connect, a team that keeps its material away from AI: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: teamai, Ask every day: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: teamai, Yes: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: places, a state with no profile: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: recovery, new codes just issued: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: group-identity, an older installation, no short name recorded: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: updates, the same, seen by the administrator who holds it: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: updates, nothing ready: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: translations, a team that uses only English: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: projects, a new team with no projects: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: projects, for a member who may not start projects: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: unavailable, something you may not see: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: unavailable, your team's Civicsmith out of reach: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: elsewhere, a place that lists none yet: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: queue, the queue with nothing waiting: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: queue, an invitation to a project, waiting: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: queue, choosing several items: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: queue, what happened to the chosen items: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: queue, what you answered and set aside: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: queue, an all-clear that cannot be given: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: finder, a search with no results: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: finder, Find with no words: browsing: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: finder, citing the whole set you hold: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: finder, the whole record as one table: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: finder, a search answered by three routes, with what it covered: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: archive, an archive that could not be opened: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: open-file, a high-risk file: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: open-file, a file held after a finding: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: open-file, a file you added yourself: not reached on the local arm, which makes its own data
+  state: R21 the carried states · between steps: counsel, a packet for a defense: not reached on the local arm, which makes its own data
+note: R7 with no handle: not walkable here (the claim took a handle)
+note: R9 step 4, connect an assistant by her own Claude subscription: not walked, the assistant does not work (K3717)
+note: document: the capture states no page, so none is drawn
+note: R9 step 9, run the assistant on the question from the dock: not walked, the assistant does not work (K3717)
+note: R9 step 10, read its run's answer and its suggested reading: not walked, the assistant does not work (K3717)
+note: R9 step 11, Ask, and read the answer: not walked, the assistant does not work (K3717)
+note: R10, she connects her own Claude subscription: not walked, the assistant does not work (K3717)
+note: R10, her own run is dispatched on that sign-in: not walked, the assistant does not work (K3717)
+note: R10, the project's assistant page, as hers (projectai): not walked, the assistant does not work (K3717)
+note: R10, plan help, as hers (planask): not walked, the assistant does not work (K3717)
+note: R10, Ask, as hers: not walked, the assistant does not work (K3717)
+note: Action block: not drawn, the team holds no action
+note: journey 29 step 4 (setup, groupkeyset): not walked, the assistant does not work (K3717)
+note: journey 29 step 9 (question, new, airunopen): not walked, the assistant does not work (K3717)
+note: journey 29 step 10 (question, running): not walked, the assistant does not work (K3717)
+note: journey 29 step 11 (question, ended, airunopen): not walked, the assistant does not work (K3717)
+note: journey 29 step 16 (question, proposal, versionaccept): not walked, the assistant does not work (K3717)
+17 pairs, LIVE beside DESIGN, for BOB's comparison (R6):
+  pairs/dashboard-dash-project-1280.png
+  pairs/dashboard-dash-project-390.png
+  pairs/dashboard-dash-action-1280.png
+  pairs/dashboard-dash-action-390.png
+  pairs/journey-29-step-01-install.png
+  pairs/journey-29-step-02-install.png
+  pairs/journey-29-step-03-setup.png
+  pairs/journey-29-step-05-home.png
+  pairs/journey-29-step-06-security.png
+  pairs/journey-29-step-07-projects.png
+  pairs/journey-29-step-08-project.png
+  pairs/journey-29-step-12-question.png
+  pairs/journey-29-step-13-capture.png
+  pairs/journey-29-step-14-document.png
+  pairs/journey-29-step-15-document.png
+  pairs/journey-29-step-17-question.png
+  pairs/journey-29-step-18-question.png
