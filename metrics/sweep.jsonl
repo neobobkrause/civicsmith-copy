@@ -138,3 +138,4 @@
 {"at":"2026-11-05T11:50:28Z","row":"ready","live":14,"job_cap":20,"started":[]}
 {"at":"2026-11-05T11:55:45Z","row":"check","by":"status","live":14,"live_at":"2026-11-05T11:50:28Z","job_cap":20,"startable":1,"idle_capacity":{"kind":"work","since":"2026-11-05T11:33:06Z","min":22,"live":14,"cap":20,"held":0,"startable":1,"empty":6,"alarm":true}}
 {"at":"2026-11-05T11:59:12Z","row":"ready","live":10,"job_cap":20,"started":[]}
+{"at":"2026-11-05T11:59:47Z","row":"sweep","session":"session_018BhcefwaVtx4V7dYW63amA","bob_acts":true,"bob_quiet_h":0.1,"root_context":25,"live":5,"job_cap":20,"sessions":13,"startable":1,"blocked":9,"blocked_oldest_min":458,"working":2,"waiting":3,"idle_capacity":{"kind":"work","since":"2026-11-05T11:33:06Z","min":26,"live":5,"cap":20,"held":0,"startable":1,"empty":15,"alarm":true}}
