@@ -1,0 +1,1 @@
+{"row":"triage","user":"surface-declarations","verdict":"not affected","evidence":"build/modules.json:178 gives it no paths (\"paths\": []), so no source of it imports or reads mail-door's changed declaration","at":"2026-11-05T17:37:05.027Z","key":"mail-door:428","worker":"a07960c53499804c6","cost":"0"}
