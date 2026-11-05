@@ -117,3 +117,4 @@
 {"at":"2026-11-05T18:53:39Z","row":"sent","n":59,"to":"bob","text":"PR 364 (job agent-worker) fires a review trigger and has no review recorded for d3af394666: review it (node .process/tool/p3.mjs review brief 364), then node .process/tool/p3.mjs merge train note 364 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
 {"at":"2026-11-05T18:53:51Z","row":"outcome","n":59,"outcome":"delivered"}
 {"at":"2026-11-05T18:57:06Z","row":"sent","n":60,"to":"bob","text":"merged PR 459 (job admission): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"}
+{"at":"2026-11-05T18:59:03Z","row":"outcome","n":60,"outcome":"delivered"}
