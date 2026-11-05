@@ -176,14 +176,19 @@ test("R10 the title is the question's first non-empty line, folded, cut at a wor
   assert.equal(inquiryQuestionOf("---\nid: x\n---\n\n## Other\n\nno\n"), "");
 });
 
-test("R38 R4 the rows the module mints are inquiry-grammar's, read with their ids: C-54.1, C-33.13, C-33.22, C-33.23, C-32.7, C-32.8, C-21.3 for a leg on an imported finding (N522), and the four C-2.8 rows of the new leg kinds, the derived connection's among them (inquiry-grammar R16; K1608; T34-28), and R18's bias application (T41; K2491)", () => {
-  assert.deepEqual(Object.fromEntries(Object.entries(INQUIRY_ROWS).map(([k, r]) => [k, r.check])), {
+test("R38 R4 F1 the rows the module mints are inquiry-grammar's, read with their ids: C-54.1, C-33.13, C-33.22, C-33.23, C-32.7, C-32.8, C-21.3 for a leg on an imported finding (N522), and the C-2.8 rows of the new leg kinds, the derived connection's among them (inquiry-grammar R16; K1608; T34-28), and R18's bias application (T41; K2491); inquiry-grammar's further rows are admitted as read, never hand-listed (F1, K3268)", async () => {
+  const IG = await import("../../../src/inquiry-grammar/index.mjs");
+  assert.equal(INQUIRY_ROWS, IG.INQUIRY_GRAMMAR_CHECKS, "F1: the row set is inquiry-grammar's export, read");
+  /* the rows this module's R4 and R38 name, each with its id; the set may hold more (F1) */
+  const named = {
     LEAD_NOT_EVIDENCE: "C-54.1", NOT_INQUIRIES: "C-33.13", SELF_BASIS: "C-33.22", BASIS_CYCLE: "C-33.23",
     MACHINE_CANNOT_DIVIDE: "C-32.7", MACHINE_CANNOT_GROUND: "C-32.8", IMPORTED_LEG_MALFORMED: "C-21.3",
     STANDARD_LEG_AXIS: "C-2.8", CALCULATION_LEG_MALFORMED: "C-2.8", OCCURRENCE_LEG_MALFORMED: "C-2.8",
     DERIVED_LEG_MALFORMED: "C-2.8", BIAS_APPLICATION_MALFORMED: "C-2.8",
     /* inquiry-grammar R70 (T52-20; K5332): a cutting leg named in a ground, R85's refusal inside BASIS_REFUSED */
-    CUTTING_LEG_IN_GROUND: "C-2.8" });
+    CUTTING_LEG_IN_GROUND: "C-2.8" };
+  for (const [k, check] of Object.entries(named)) assert.equal(INQUIRY_ROWS[k]?.check, check, k);
+  for (const [k, r] of Object.entries(INQUIRY_ROWS)) assert.match(String(r.check), /^C-\d+\.\d+$/, k);
   for (const r of Object.values(INQUIRY_ROWS)) assert.ok(typeof r.translation === "string" && r.translation.length > 20);
   const f = []; assert.equal(leadLegFindings("basis[0]", { target: "LEAD-2026-0001-abc" }, f), true);
   assert.equal(f[0].check, "C-54.1");
