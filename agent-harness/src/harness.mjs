@@ -821,6 +821,12 @@ export function stateBytes(state) {
  *  publishes none), the state as it is. `restarted` is null when it fits, else `{ bytes, limit, at }`: the measured
  *  size of the state that did not fit and the step the published one restarts at. */
 export function publishableState(state, limit, flow = CONTROL_FLOW) {
+  /* R23 (T53; AIR7): a provider's session, response, conversation or continuation id is never carried to the next
+     segment, and never dropped without a word: a state holding one is refused, naming the key. */
+  const held = providerStateKey(state);
+  if (held !== null)
+    return { ok: false, reason: STATE_HOLDS_PROVIDER_STATE, code: STATE_HOLDS_PROVIDER_STATE, key: held,
+             detail: localize("agent-harness.harness.the_runs_state_holds_provider_state", "The run's state holds '{key}', which is state a model provider keeps; a run resumes from its own record alone, so this state is not published", { key: String(held).slice(0, 60) }) };
   const full = resumableState(state);
   const bytes = stateBytes(full);
   const ceiling = Number(limit);
@@ -832,6 +838,24 @@ export function publishableState(state, limit, flow = CONTROL_FLOW) {
     composed: full.composed, kept: full.kept, wrote: full.wrote, scope: full.scope,
     disagreed: full.disagreed });
   return { state: restart, bytes: stateBytes(restart), restarted: { bytes, limit: ceiling, at } };
+}
+
+/* ---------------------------------------------------- R23 (T53; AIR7): NO PROVIDER-HELD STATE IN THE RESUMABLE STATE
+ *
+ * A run resumes from its own record, never from a conversation a provider holds open: no key of `RESUMABLE` is named or
+ * shaped as a session, response, conversation or continuation id, and a state that carries one (at its top level) is
+ * refused by `publishableState` rather than published with the key quietly dropped. */
+export const STATE_HOLDS_PROVIDER_STATE = "STATE_HOLDS_PROVIDER_STATE";
+/* A continuation or conversation by any name, or an id of a session, response or thread (`session_id`, `responseId`,
+   `previous_response_id`). A bare `response` is the record's (agent-steps' re-examined response, ai-runs R77), not a
+   provider's, and is not matched. */
+export const PROVIDER_STATE_KEY = /continuation|conversation|(session|response|thread)[_-]?id$/i;
+
+/** The first top-level key of `state` named or shaped as provider-held state, else null. Pure; never throws. */
+export function providerStateKey(state) {
+  if (!state || typeof state !== "object" || Array.isArray(state)) return null;
+  for (const k of Object.keys(state)) if (PROVIDER_STATE_KEY.test(k)) return k;
+  return null;
 }
 
 const list = (v) => (Array.isArray(v) ? v : []);
@@ -866,6 +890,28 @@ export function resumeFrom(published, flow = CONTROL_FLOW) {
     passAdded: p.passAdded === true, composed: countOf(p.composed), kept: countOf(p.kept), wrote: countOf(p.wrote),
     scope: record(p.scope), disagreed: list(p.disagreed),
   } };
+}
+
+/* ---------------------------------------------------- R24 (T53; AIR28): WHERE A STOPPED SEGMENT TAKES UP
+ *
+ * A segment can stop part way through a step (its wall clock, an eviction). A step abandoned there was not done: the
+ * next segment does it again from the same state, its pass and every bound as they were, so nothing is spent twice and
+ * nothing is skipped. A step that was done moves on exactly as `advance` moves it. */
+
+/** `resumeAt(state, step)`, pure: `{ next, state }`. `step` is the row the stop came at, either its name (abandoned
+ *  there) or `{ at, completed, decision }`: `completed` true for a step that finished, with the `decision` it took
+ *  (else the table's own `nextStep` for that row). Abandoned: the state unchanged and `next` that same row.
+ *  Completed: `advance`'s result, and `next` the row it moved to. `flow` picks `PLAN_FLOW`'s moves. Never throws. */
+export function resumeAt(state, step, flow = CONTROL_FLOW) {
+  const s = state || {};
+  const st = typeof step === "string" ? { at: step, completed: false } : (step || {});
+  const at = String(st.at || s.step || FIRST_STEP);
+  const here = s.step === at ? s : { ...s, step: at };
+  if (st.completed !== true) return { next: at, state: here };
+  const plan = flow === PLAN_FLOW;
+  const decision = st.decision && typeof st.decision === "object" ? st.decision : (plan ? nextPlanStep(here) : nextStep(here));
+  const moved = plan ? planAdvance(here, decision) : advance(here, decision);
+  return { next: moved.step, state: moved };
 }
 
 /* ------------------------------------------------------- WHAT A STEP LOGS
@@ -1278,4 +1324,78 @@ export function whyWithUndetermined(why, undetermined) {
   const room = WHY_MAX - tail.length;
   const head = own.length > room ? `${own.slice(0, Math.max(0, room - 1))}…` : own;
   return `${head}${tail}`.trim().slice(0, WHY_MAX);
+}
+
+/* ---------------------------------------------------- R20–R22 (T53; K5457): WHAT A ROLE NEEDS, ITS PART, ITS RECIPIENT
+ *
+ * R20 (AIR5, BR3). The capability names are held here, before `agent-model`, whose `capabilities` is tested equal to
+ * them (FOLD-AI §2.2). Each role names what it needs of a model and a cost tier, never a model, an id or a price: which
+ * model meets it is the catalogue's and the account's answer, not this table's. `min_context` is a number tested against
+ * an entry's `context_window`; no role sets one until a measure records it. */
+export const CAPABILITY_NAMES = Object.freeze(["tools", "schema_output", "image_input", "parallel_tools", "min_context"]);
+export const COSTS = Object.freeze(["low", "standard", "high"]);
+
+/* The draft kinds (`run-rules` DRAFT_KINDS, R22, R25, R27, R33), held as roles; the suite tests them equal. */
+export const ROLE_DRAFT_KINDS = Object.freeze(["own_words", "translation", "case_account", "account_check", "bearing_note",
+  "textcheck", "infractiondraft", "bearingdraft", "statusreport", "reading"]);
+
+const need = (capabilities, cost) => Object.freeze({ capabilities: Object.freeze(capabilities), cost });
+const JUDGED_NEED = { plan: need(["schema_output"], "standard"), collect: need(["schema_output"], "standard"),
+  compose: need(["schema_output"], "high"), dedup: need(["schema_output"], "low"), adjust: need(["schema_output"], "standard") };
+const DRAFT_NEED = { own_words: "standard", translation: "standard", case_account: "high", account_check: "high",
+  bearing_note: "standard", textcheck: "standard", infractiondraft: "high", bearingdraft: "high", statusreport: "standard",
+  reading: "standard" };
+
+/** The roles of the gate's judged rows: `<mode>:<row>` for each judged row of each mode's table. */
+const judgedRoles = () => Object.keys(MODES).flatMap((m) => {
+  const flow = flowFor(m);
+  return Object.keys(flow).filter((r) => flow[r].judged).map((r) => [`${m}:${r}`, JUDGED_NEED[r] || need(["schema_output"], "standard")]);
+});
+
+/** R20 — every role to `{capabilities, cost}`. Frozen. */
+export const ROLE_NEEDS = Object.freeze(Object.fromEntries([
+  ...judgedRoles(),
+  ["subsession", need(["tools", "schema_output"], "standard")],
+  ["ask", need(["tools"], "standard")],
+  ["standing", need(["tools"], "standard")],
+  ["enquire", need(["tools", "schema_output"], "standard")],
+  ["explore", need(["tools", "schema_output"], "standard")],
+  ...ROLE_DRAFT_KINDS.map((k) => [`draft:${k}`, need(["schema_output"], DRAFT_NEED[k])]),
+  ["transcribe", need(["image_input"], "standard")],
+  ["read", need(["schema_output"], "standard")],
+]));
+
+/** R20 — what `role` needs, or null for a role the table does not hold. Pure; never throws. */
+export function needOf(role) {
+  return typeof role === "string" && Object.prototype.hasOwnProperty.call(ROLE_NEEDS, role) ? ROLE_NEEDS[role] : null;
+}
+
+/* R21 (AIR5, AD14): the six parts, `run-rules` GATE_PARTS, which the map's values equal both ways. */
+export const PARTS = Object.freeze(["ask", "draft", "read", "transcribe", "run", "account"]);
+const RUN_MODES_OF_PART = ["check", "plan", "investigate", "explore"];
+
+/** R21 — the part of a role or a mode: one of PARTS, or null for a name it does not know. A judged row's role
+ *  (`<mode>:<row>`) is its mode's part; `subsession` is a run's. Pure; never throws. */
+export function partOf(role) {
+  if (typeof role !== "string") return null;
+  if (role === "draft:case_account" || role === "draft:account_check" || role === "case_account" || role === "account_check") return "account";
+  if (role.startsWith("draft:")) return ROLE_DRAFT_KINDS.includes(role.slice(6)) ? "draft" : null;
+  if (role === "enquire" || role === "draft") return "draft";
+  if (role === "extract" || role === "read") return "read";
+  if (role === "ask" || role === "standing") return "ask";
+  if (role === "transcribe") return "transcribe";
+  if (role === "subsession" || RUN_MODES_OF_PART.includes(role)) return "run";
+  const colon = role.indexOf(":");
+  if (colon > 0 && Object.prototype.hasOwnProperty.call(ROLE_NEEDS, role)) return partOf(role.slice(0, colon));
+  return null;
+}
+
+/** R22 (AD14, AD37) — whether `recipient` `{provider, host}` is one the account disclosed to its member: `{ok: true}`,
+ *  else `{ok: false, recipient}`. The recipient is read from the catalogue by the caller. Pure; never throws. */
+export function disclosureGate(account, recipient) {
+  const r = recipient && typeof recipient === "object" ? recipient : {};
+  const disclosed = account && Array.isArray(account.disclosed) ? account.disclosed : [];
+  const ok = typeof r.provider === "string" && typeof r.host === "string"
+    && disclosed.some((d) => d && d.provider === r.provider && d.host === r.host);
+  return ok ? { ok: true } : { ok: false, recipient: { provider: r.provider ?? null, host: r.host ?? null } };
 }
