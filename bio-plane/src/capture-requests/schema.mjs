@@ -2,7 +2,8 @@
  * legacy `schema.mjs` at this module's extraction, with the comments that record why it is shaped as it is:
  * `capture_requests` and its indexes, and R46's `capture_request_platforms`. Its three additive columns (`lead_inquiry`, `run_woken_at`, `render`)
  * are in the table as created and are added to a store that predates them by `migrateCaptureRequests`, with R40's
- * `source_reason`, R45's `sweep`, R50's `co_archive` (T35) and R55's `step` (T41); R51's `records_requests` (T35) is its own table; R56 (T47) makes `run`, `target` and `principal_claude` nullable, rebuilding a
+ * `source_reason`, R45's `sweep`, R50's `co_archive` (T35), R55's `step` (T41), and T53's R60 `idem`, R62 `produced_by` and R61's
+ * `needs_person`, `asked_at`, `brought_by`, `brought_at`; R51's `records_requests` (T35) is its own table; R56 (T47) makes `run`, `target` and `principal_claude` nullable, rebuilding a
  * table that predates it. The table is keyed to a bundle by `target` for purge (R35). */
 
 export const CAPTURE_REQUESTS_SCHEMA = `
@@ -152,7 +153,25 @@ CREATE TABLE IF NOT EXISTS capture_requests (
   -- NULL is the honest value on every row written before it: no door read a
   -- step then. On completion the drain ties the capture to it
   -- (steps.recordProduct), and the step's arrival wait reads this row.
-  step              TEXT
+  step              TEXT,
+  -- R60 (T53; K5571 (6)): THE AGENT'S IDEMPOTENCE KEY for this write,
+  -- <run>:<pass>:<step>:<n>, identical when its step re-runs after a stop; a
+  -- second request of the run carrying it answers this row (repeated: true).
+  -- NULL on a request that sent none, and on every row written before it.
+  idem              TEXT,
+  -- R62 (T53; AIR25, BR29): THE LABELS OF THE CONVERSATIONS THAT PRODUCED the
+  -- candidate, a JSON list as agent-model answered each, deduplicated in order;
+  -- NULL when none was sent (a member's request, a script's).
+  produced_by       TEXT,
+  -- R61 (T53; K5574, K5575): THE SITE ASKED FOR A PERSON. 1 once a drain fetch
+  -- was answered SITE_ASKS_FOR_PERSON (acquisition R140): the row waits for the
+  -- member, the drain never selects it again, and it stays 1 once her file
+  -- completes it, as the record that the site asked. asked_at is that instant.
+  needs_person      INTEGER NOT NULL DEFAULT 0,
+  asked_at          TEXT,
+  -- R61: who brought the file from the address, on her word, and when.
+  brought_by        TEXT,
+  brought_at        TEXT
 );
 CREATE INDEX IF NOT EXISTS capture_requests_state ON capture_requests(state, requested_at);
 CREATE INDEX IF NOT EXISTS capture_requests_target ON capture_requests(target);
@@ -169,6 +188,9 @@ CREATE INDEX IF NOT EXISTS capture_requests_address ON capture_requests(address,
 -- filed one of its capture digests (the captured-for reader), so that read is
 -- one indexed lookup per digest rather than a walk of every request.
 CREATE INDEX IF NOT EXISTS capture_requests_sha ON capture_requests(capture_sha, state);
+-- R60: a run's idem is one lookup; R61: the rows waiting for a person.
+CREATE INDEX IF NOT EXISTS capture_requests_idem ON capture_requests(run, idem);
+CREATE INDEX IF NOT EXISTS capture_requests_person ON capture_requests(needs_person, state, address);
 -- R46 (T33-51; K1492 (2), (4)): THE HOSTS A MEMBER HAS MARKED A LOGIN-GATED
 -- PLATFORM, R41's scope record for a platform (kind 'platform'). A page on such
 -- a host is captured only by a member's own act in their own browser: the drain
@@ -224,6 +246,12 @@ export const CAPTURE_REQUESTS_ADDITIVE = Object.freeze([
   ["sweep", "TEXT"],
   ["co_archive", "INTEGER"],
   ["step", "TEXT"],
+  ["idem", "TEXT"],
+  ["produced_by", "TEXT"],
+  ["needs_person", "INTEGER NOT NULL DEFAULT 0"],
+  ["asked_at", "TEXT"],
+  ["brought_by", "TEXT"],
+  ["brought_at", "TEXT"],
 ]);
 
 /** R56 (T47): the columns a member's own request leaves NULL, made nullable in a store whose table predates it. */
