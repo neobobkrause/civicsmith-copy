@@ -62,3 +62,4 @@
 {"at":"2026-11-05T05:27:48Z","row":"check","by":"test","live":33,"live_at":"2026-11-05T05:17:00Z","job_cap":20,"startable":2}
 {"at":"2026-11-05T05:29:24Z","row":"ready","live":12,"job_cap":20,"started":["interface-assets"]}
 {"at":"2026-11-05T05:34:47Z","row":"check","by":"job sync","live":12,"live_at":"2026-11-05T05:29:24Z","job_cap":20,"startable":2,"idle_capacity":{"kind":"work","since":"2026-11-05T05:32:02Z","min":2,"live":12,"cap":20,"held":0,"startable":2,"empty":8,"alarm":false}}
+{"at":"2026-11-05T05:39:34Z","row":"ready","live":12,"job_cap":20,"started":[]}
