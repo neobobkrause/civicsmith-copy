@@ -141,3 +141,4 @@
 {"at":"2026-11-05T19:27:14Z","row":"withdraw","id":"d801ac475cf0","pr":560,"why":"the train stopped"}
 {"at":"2026-11-05T19:27:18Z","row":"withdraw","id":"7af0919e55ba","pr":557,"why":"the train stopped"}
 {"at":"2026-11-05T19:27:21Z","row":"withdraw","id":"1c84d8dc04d1","pr":559,"why":"the train stopped"}
+{"at":"2026-11-05T19:40:53Z","row":"queue","id":"4044645a12c6","pr":557,"head":"4bac558c19c5c9a50dd64875b3f5a62e412f83fc","ref":"bob/untrack-words","by":"session_018Bhceddtp3HAmB1Z9LtX2s","reviewed":null,"no_review":"untrack two generated words files; two anchored .gitignore lines; nothing else","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T22:50:53.428Z","renews":true}
