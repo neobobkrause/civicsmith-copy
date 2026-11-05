@@ -31,7 +31,8 @@
   ],
   "status": {
     "state": "BLOCKED",
-    "reason": "R17 cannot be met as written. It is CONDITIONAL on agent-runner R38 ('built only once its proof passes', K3615), and R38 is retired on tranche (T53, K5457: 'the remote conversation, its door, its proof ... the remote route is unbuilt and out of this design'), so the proof can never pass. K3717/K3718 also keep the remote Anthropic route unbuilt, and R17's own T53 amendment moves remoteBrief behind agent-model, outside this job's paths (agent-harness/ only). Nothing changed; the R17 todo in agent-harness/test/unmet-parked.test.mjs stays. Proposed: BOB retires agent-harness R17 with agent-runner R38 (same reason, K5457), which needs no code; or, if a remote brief is still wanted, re-home it as an agent-model requirement with no R38 condition.",
-    "at": "2026-11-05T04:32:24Z"
+    "reason": "Cleared (coordinator ruling 5 Nov 04:40): R17 retired with agent-runner R38 (K5457) in plain PR 417; no replacement requirement. Nothing left for this attempt.",
+    "at": "2026-11-05T04:34:53Z",
+    "owner": "bob"
   }
 }
