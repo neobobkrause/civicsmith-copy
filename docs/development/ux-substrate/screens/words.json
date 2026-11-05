@@ -53,7 +53,7 @@
   "wizard": 359,
   "elsewhere": 38,
   "places": 6,
-  "screen": 8084,
+  "screen": 8104,
   "signin": 1,
   "forgot": 1,
   "founder": 6,
@@ -239,7 +239,7 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19835,
+  "total": 19855,
   "protected": 1181
  },
  "words": [
@@ -123875,6 +123875,146 @@
    "en": "Your team's Civicsmith binds no Claude account to its own settings, and none can be set there. The assistant is reached through a member's own Claude account or API key, or through the team's API key that an administrator sets; each is held sealed in Civicsmith's credentials, never as a setting.",
    "protected": false,
    "source": "DEC-260"
+  },
+  {
+   "key": "screen.request.nooffice.pointer.people",
+   "en": "If you know which office keeps them, find it in People and choose “Record that an office keeps records”.",
+   "protected": false,
+   "source": "screens-action R74 (design lane)",
+   "note": "in place of screen.request.nooffice.pointer.a, which named the section, not the act; the act's label is act.recordline.label.person"
+  },
+  {
+   "key": "screen.actionnew.refused.deadline",
+   "en": "Give each deadline a short name, a date and a state: pending, met, overdue or waived.",
+   "protected": false,
+   "source": "screens-action R80 (design lane)",
+   "note": "actionnew's CLOCK_REFUSED, in the member's words; the code stays in the answer (R80's quote)"
+  },
+  {
+   "key": "screen.actionnew.refused.addressee",
+   "en": "Send it to an office, a reporter, an organization or a described audience. It can't go to a private person.",
+   "protected": false,
+   "source": "screens-action R80 (design lane)",
+   "note": "actionnew's ADDRESSEE_REFUSED, in the member's words; the code stays in the answer"
+  },
+  {
+   "key": "screen.plan.option.goes",
+   "en": "Goes to {office} · {tier}",
+   "protected": false,
+   "source": "screens-plan R9 (design lane)",
+   "note": "an option row: {office} the office it goes to, {tier} its screen.plan.option.tier.* words"
+  },
+  {
+   "key": "screen.plan.option.nooffice",
+   "en": "no office chosen",
+   "protected": false,
+   "source": "screens-plan R9 (design lane)",
+   "note": "{office} in screen.plan.option.goes for an option with none"
+  },
+  {
+   "key": "screen.plan.support.hypothetical.means",
+   "en": "Assumed: the team is planning as if this were true, but nothing in the record shows it yet.",
+   "protected": false,
+   "source": "screens-plan R9 (design lane)",
+   "note": "the sentence beside screen.plan.support.hypothetical"
+  },
+  {
+   "key": "screen.wizards.state.offered.tip",
+   "en": "The wizards members are offered now: Civicsmith's own and your team's approved ones.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "the explanation of the offered filter, shown with it in place of the library's"
+  },
+  {
+   "key": "screen.wizards.empty.offered",
+   "en": "No wizard is offered to members yet.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "an empty offered list, in place of screen.wizards.empty; names no administrators (wizard-scripts R10 lists to project owners and administrators alike)"
+  },
+  {
+   "key": "screen.wizards.state.draft.tip",
+   "en": "Wizards still being written. A draft is offered to no one until it is submitted and approved.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "the explanation of the draft filter, shown with it in place of the library's"
+  },
+  {
+   "key": "screen.wizards.empty.draft",
+   "en": "No wizard is being drafted.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "an empty draft list, in place of screen.wizards.empty; names no administrators (wizard-scripts R10 lists to project owners and administrators alike)"
+  },
+  {
+   "key": "screen.wizards.state.submitted.tip",
+   "en": "Wizards waiting for a project owner to approve them.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "the explanation of the submitted filter, shown with it in place of the library's"
+  },
+  {
+   "key": "screen.wizards.empty.submitted",
+   "en": "No wizard is waiting for approval.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "an empty submitted list, in place of screen.wizards.empty; names no administrators (wizard-scripts R10 lists to project owners and administrators alike)"
+  },
+  {
+   "key": "screen.wizards.state.withdrawn.tip",
+   "en": "Versions their writers took back before approval. They are kept, and offered to no one.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "the explanation of the withdrawn filter, shown with it in place of the library's"
+  },
+  {
+   "key": "screen.wizards.empty.withdrawn",
+   "en": "No wizard has been withdrawn.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "an empty withdrawn list, in place of screen.wizards.empty; names no administrators (wizard-scripts R10 lists to project owners and administrators alike)"
+  },
+  {
+   "key": "screen.wizards.state.retired.tip",
+   "en": "Wizards no longer offered, each with the reason it was retired.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "the explanation of the retired filter, shown with it in place of the library's"
+  },
+  {
+   "key": "screen.wizards.empty.retired",
+   "en": "No wizard has been retired.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "an empty retired list, in place of screen.wizards.empty; names no administrators (wizard-scripts R10 lists to project owners and administrators alike)"
+  },
+  {
+   "key": "screen.wizards.state.broken.tip",
+   "en": "Wizards that no longer match the screens. Members are not offered them until they are fixed.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "the explanation of the broken filter, shown with it in place of the library's"
+  },
+  {
+   "key": "screen.wizards.empty.broken",
+   "en": "No wizard is broken.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "an empty broken list, in place of screen.wizards.empty; names no administrators (wizard-scripts R10 lists to project owners and administrators alike)"
+  },
+  {
+   "key": "screen.wizards.state.proposed.tip",
+   "en": "Steps a member or the assistant proposed as a wizard, each with why. Each waits for a member to start a draft from it.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "the explanation of the proposed filter, shown with it in place of the library's"
+  },
+  {
+   "key": "screen.wizards.empty.proposed",
+   "en": "No proposal is open.",
+   "protected": false,
+   "source": "screens-wizards R23 (design lane)",
+   "note": "an empty proposed list, in place of screen.wizards.empty; names no administrators (wizard-scripts R10 lists to project owners and administrators alike)"
   },
   {
    "key": "rail.home.name",
