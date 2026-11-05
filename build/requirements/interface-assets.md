@@ -74,4 +74,4 @@ None. It imports only its own face modules (R4, R6). For its tests only: the des
 - **All 15 faces** (Latin, Latin Extended, Vietnamese; DEC-138 (2)): about 0.79 MB, about 1.05 MB as base64, taking the plane bundle from about 13.9 MB to about 15 MB, under `bundler` R31's 32 MiB warning (`draft-T46-interface.md` §7 T3).
 - `check_contrast.py` is the design stream's, run whenever a colour changes (DEC-138's owed item); a new `ASSETS_COMMIT` is the moment to ask for it.
 - The file's path: `bio-plane/src/interface-assets/index.mjs`, the repository's convention for a module.
-- **F1** *(not yet met: base-red)* The test bio-plane/test/m/interface-assets/assets.test.mjs::R6: a fresh import evaluates no face; each face's base64 is built on its first read, byte-identical to R1's fails at the tranche (base-red since PR 207); make it pass, or change the requirement it pins.
+- **F1** The test bio-plane/test/m/interface-assets/assets.test.mjs::R6: a fresh import evaluates no face; each face's base64 is built on its first read, byte-identical to R1's fails at the tranche (base-red since PR 207); make it pass, or change the requirement it pins.

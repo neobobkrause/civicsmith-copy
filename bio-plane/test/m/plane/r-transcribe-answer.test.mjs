@@ -9,7 +9,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { store } from "./fixture.mjs";
+import { store, admitPart } from "./fixture.mjs";
+import { ENTRIES } from "../ai-accounts/catalogue.mjs";   /* the account serves on a catalogue fixture entry (ai-runs R78) */
 import { transcriberOf } from "../../../src/store-assembly/transcribe.mjs";
 
 const SCAN = new Uint8Array(readFileSync(fileURLToPath(new URL("../../../../pdf-worker/test/fixtures/scan-dct-page.pdf", import.meta.url))));
@@ -44,10 +45,11 @@ function worker() {
 async function answerOf(pages) {
   const evidence = bucket(), w = worker();
   const x = await store({ env: { CAPTURES: evidence, AGENT_WORKER: w } });
+  await admitPart(x.ctx, "transcribe");   /* ai-runs R78 (T53): transcription admitted on the catalogue fixture's entries */
   const d = shaOf(SCAN);
   await evidence.put(`bio/captures/${d}`, SCAN);
   const tx = transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", project: null, at: "2026-10-25T00:00:00Z" });
-  const answer = await tx.transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, pages });
+  const answer = await tx.transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL, entry_id: ENTRIES.a }, capture_sha: d, pages });
   return { answer, seen: w.seen, d };
 }
 

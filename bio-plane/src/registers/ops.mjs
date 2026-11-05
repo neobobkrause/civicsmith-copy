@@ -34,10 +34,13 @@ const TABLE = {
   registerofficers:     ["read", MEMBER, false, "read", 2000, ["query"], ["query"], localize("registers.declared.registerofficers", "looks up a company by its number in the state's own service, on the team's own key")],
 };
 
+/* op-grades R55: a `reasoned` op's refusal of the absent authored reason (R7's terms statement; R30's reason) */
+const REFUSAL = { registerdefine: "REGISTER_NO_TERMS", rowexpunge: "ROW_EXPUNGE_NO_REASON" };
+
 /** R38: every op the module serves, declared, each held true by calling it as the door does. */
 export const DECLARED_OPS = Object.freeze(Object.fromEntries(Object.entries(TABLE).map(([op, [, classes, mutating, weight, ms, accepts, requires, description]]) => [op, {
   classes: [...classes], machineClasses: [], mutating, weight, stamps: ["viewer", "by"], needs: "contribute",
-  description, budget_ms: ms,
+  description, budget_ms: ms, ...(REFUSAL[op] ? { refusal: REFUSAL[op] } : {}),
   fields: { accepts: [...accepts], requires: requires.map((r) => (Array.isArray(r) ? [...r] : r)) } }])));
 
 export const REGISTERS_OPS = Object.freeze(Object.keys(TABLE));
