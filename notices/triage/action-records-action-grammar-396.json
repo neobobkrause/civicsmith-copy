@@ -1,0 +1,1 @@
+{"row":"triage","user":"action-records","verdict":"affected","evidence":"bio-plane/src/action-records/index.mjs:435 calls governingLawsOf(fm), whose entries now carry layer (R31), and :82 loads GOVERNING_LAW_CHECKS (index.mjs:42), whose C-2.10 arm now judges layer","at":"2026-11-05T10:29:09.987Z","key":"action-grammar:396","worker":"triage396-2","cost":"unmeasured"}
