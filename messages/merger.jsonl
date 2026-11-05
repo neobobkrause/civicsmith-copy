@@ -110,3 +110,4 @@
 {"at":"2026-11-05T17:50:23Z","row":"outcome","n":55,"outcome":"delivered"}
 {"at":"2026-11-05T17:53:04Z","row":"sent","n":56,"to":"bob","text":"PR 542 (plain, queued by session_018BhcedPdKvvqmShgPznx1U) was not merged by the train: gh api -X PUT failed: gh: Repository rule violations found"}
 {"at":"2026-11-05T17:53:23Z","row":"outcome","n":56,"outcome":"delivered"}
+{"at":"2026-11-05T18:29:39Z","row":"sent","n":57,"to":"root","text":"MERGER session_018Bhcefo7W8cGB5U1Fnm7jA: the starter stopped: the approvals changed; tell ROOT, word for word. start check --wake on tranche f575c3b1f5ae28de2b5fb2c00065e7d17dada22f says: approvals changed since this session started: it is replaced. I stopped the train (PR 511's merged result 156b4349a0 was mid-gate) and the starter, and take no further step."}
