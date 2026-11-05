@@ -36,7 +36,10 @@ const startLines = () => {
 };
 
 test("consolidation: the requirements file holds the start commit's ids, in their order, the seven moved as stubs", () => {
-  assert.deepEqual(idLines(read(FILE)).map(idOf), START_IDS);
+  /* found marks the coordinator added on tranche after the job's start (F6, 5 Nov) follow the start's ids */
+  const ids = idLines(read(FILE)).map(idOf);
+  assert.deepEqual(ids.slice(0, START_IDS.length), START_IDS);
+  for (const id of ids.slice(START_IDS.length)) assert.match(id, /^F\d+$/, `${id} after the start's ids`);
 });
 
 test("split: the seven moved ids are in ai-accounts-lists, and each is a retired stub here naming where it went", () => {
