@@ -185,7 +185,7 @@ test("K3, R1, R7, R14: the op routes — the control plane's stamps are read fro
   ops.cite(); ops.sever(); ops.reinstate();
   assert.deepEqual(calls[0], ["cite", { project: "P", handle: "H", viewer: "member:ann", owner: "o", note: "n", author: "member:ann",
     identity: "member:ann", role: "supports", ground: null, extent: { extent_kind: "pdf-page", extent_page: "2", content_id: "" },
-    found: null, question: null }]);
+    found: null, question: null, names: null }]);
   const edgeArgs = { project: "P", handle: "H", viewer: "member:ann", owner: "o", reason: "why", author: "member:ann", identity: "member:ann" };
   /* R25: both also read the passage's part, as `cite` names it. */
   const part = { extent_kind: "pdf-page", extent_page: "2", content_id: "" };
