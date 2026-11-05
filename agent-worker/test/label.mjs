@@ -4,7 +4,9 @@
  * absent where it answered none (today's `converse` states none; `agent-drafts`' label-ai suite stands a stub adapter's
  * on it). `machineWork(label)` reads a label as `MACHINE_WORK` exactly when it is that shape, whatever `ai` was served,
  * and returns anything else unchanged, so a suite comparing it with `MACHINE_WORK` fails on any other label: a bare
- * string, another kind, an extra field, or an `ai` that is not a label object. NOT a `.test.mjs`. */
+ * string, another kind, an extra field, or an `ai` that is not a label object. It accepts a label with no `ai`, because
+ * today's `converse` states none on this tree: that `ai` is carried exactly where it is served is held by
+ * `found-marks.test.mjs`' F4 test, whose child `converse` states one. NOT a `.test.mjs`. */
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 
 /** What a suite expects a draft's label to read as: machine work, carrying the `ai` that was served. */

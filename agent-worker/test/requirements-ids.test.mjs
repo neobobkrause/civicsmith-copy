@@ -200,6 +200,7 @@ test("every id not moved keeps its line verbatim, and so its mark", () => {
 });
 
 test("the unmet marks are unchanged but for the moved ids, which agent-drafts now carries", () => {
+  /* MOVED_OUT (F1, BOB's ruling) and ADMITTED (F2-F4) are excluded; agent-drafts PR 358 struck the moved ids' marks there. */
   const unmet = (o, f) => Object.entries(o).filter(([id, v]) => f(v) && !MOVED[id] && !MOVED_OUT[id] && !ADMITTED[id]).map(([id]) => id).sort();
   assert.deepEqual(unmet(now, (v) => v.mark && v.mark !== "retired"), unmet(START, ([m]) => m && m !== "retired"));
 });
@@ -217,6 +218,7 @@ test("every moved id is retired here naming its agent-drafts id, and exists ther
 
 test("each retired id here that names agent-drafts is one of the moved ids", () => {
   for (const [id, v] of Object.entries(now)) {
+    /* Only retired lines: F4's finding names agent-drafts PR 358 (agent-drafts:358) without having moved. */
     if (v.mark === "retired" && v.line.includes("agent-drafts:")) assert.ok(MOVED[id], `${id} names agent-drafts but did not move`);
   }
 });

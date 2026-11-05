@@ -11,6 +11,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import worker, { CircuitState } from "../src/index.mjs";
 import { circuitRun, circuitAccount, DEFAULT_ENTRY } from "../src/circuit.mjs";
 import { BREAKER_FAILURES } from "../../agent-model/src/health.mjs";
@@ -159,6 +161,31 @@ test("F3: the circuit names the account without its secret", () => {
 });
 
 /* ------------------------------------------------------------------------------------------------------------ F4 */
+
+/** One `/draft` in a child whose `converse` is the real one with `ai` stated on its answer, as a served adapter states
+ *  it (agent-model R21, R26; today's `converse` states none). Answers the draft's label. */
+function servedLabel(ai) {
+  const model = fileURLToPath(new URL("../../agent-model/src/model.mjs", import.meta.url));
+  const index = fileURLToPath(new URL("../src/index.mjs", import.meta.url));
+  const script = `
+    import { mock } from "node:test";
+    const real = { ...(await import(${JSON.stringify("file://" + model + "?real")})) };
+    mock.module(${JSON.stringify("file://" + model)}, { namedExports: { ...real,
+      converse: async (a) => { const o = await real.converse(a); return o && "answer" in o ? { ...o, label: ${JSON.stringify(ai)} } : o; } } });
+    const { default: worker } = await import(${JSON.stringify("file://" + index)});
+    globalThis.fetch = async () => Response.json({ id: "m", type: "message", role: "assistant", stop_reason: "tool_use",
+      content: [{ type: "tool_use", id: "u1", name: "draft", input: { text: "drafted" } }], usage: { input_tokens: 3, output_tokens: 2 } });
+    const res = await worker.fetch(new Request("http://agent-worker/draft", { method: "POST", body: ${JSON.stringify(JSON.stringify(draftBody(APIKEY)))} }),
+      { VERSION: "t", PLANE: { fetch: async () => Response.json({ ok: false }, { status: 500 }) } });
+    process.stdout.write("OUT " + JSON.stringify(await res.json()) + "\\n");`;
+  const out = execFileSync(process.execPath, ["--experimental-test-module-mocks", "--no-warnings", "--input-type=module", "-e", script], { encoding: "utf8" });
+  return JSON.parse(/^OUT (.*)$/m.exec(out)[1]).label;
+}
+
+test("F4: where converse states the served AI, the draft's label carries it exactly, {kind: machine, ai}", () => {
+  const ai = { provider: "stub", host: "stub.test", model_version: "stub-1", effort: "medium", account_level: "member", owner: MEMBER };
+  assert.deepEqual(servedLabel(ai), { kind: "machine", ai });
+});
 
 test("F4: a draft's label reads as machine work {kind: machine, ai}, whatever ai was served", async () => {
   scriptModel(200);
