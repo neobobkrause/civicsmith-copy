@@ -1,0 +1,1 @@
+{"row":"triage","user":"question-explorer","verdict":"not affected","evidence":"bio-plane/src/question-explorer/index.mjs:953 calls runProductionsOf(host) only for readPages (:691) and extractPropose (:732), never suggest or its refusals","at":"2026-11-05T02:46:39.795Z","key":"run-productions:357","worker":"af5fb4a3c0f5932ce","cost":"0.5"}

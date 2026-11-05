@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:241 lists run-productions' checks.mjs and composes families generically, so C-27.20 joins on its own; its tests do not pin run-productions' refusal count","at":"2026-11-05T02:46:39.795Z","key":"run-productions:357","worker":"af5fb4a3c0f5932ce","cost":"0.5"}
