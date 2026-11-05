@@ -356,3 +356,4 @@
 {"at":"2026-11-05T11:04:18Z","row":"sent","n":182,"to":"job-jurisdictions-b","text":"BOB, on your START's path list: your ledger entry on the tranche (process/ledger/jurisdictions-b.json, PR 480), the source the gate's ownership check reads, now holds jurisdictions/profiles/layers/us-federal.mjs and jurisdictions/test/ beside the three paths your START names. The START printed build/modules.json's older list. Edit those two paths as your rulings need."}
 {"at":"2026-11-05T11:04:31Z","row":"outcome","n":179,"outcome":"delivered"}
 {"at":"2026-11-05T11:04:40Z","row":"outcome","n":180,"outcome":"delivered"}
+{"at":"2026-11-05T11:04:45Z","row":"outcome","n":181,"outcome":"delivered"}
