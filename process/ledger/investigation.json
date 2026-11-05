@@ -52,7 +52,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T04:55:01Z"
+    "state": "BLOCKED",
+    "reason": "F1 is done on the branch (e9d3c2ae): DECLARED_OPS.acceptproposals with weight reversible, classes admin and member, machineClasses [] (refused to a machine), fields R28's {project, proposals}, stamps viewer and by, needs contribute; the module suite is green (39/39). It cannot merge alone. Declaring a member-session op turns two op-declarations tests red, because every member-session op has to be explained in affordances' ACT_HELP or named in op-declarations' ACT_HELP_ABSENT: test/m/op-declarations t51/t42/t36 ('member ops with no text and no ground: acceptproposals'; 'acceptproposals: neither explained nor named'). The fix is one name outside my paths: add \"acceptproposals\" to op-declarations' ACT_HELP_ABSENT list (bio-plane/src/op-declarations/index.mjs around line 2756, the list that already holds mailbringin and the layer-entry ops), on the ground that the design has no text for it. Then merge back to back with this branch, op-declarations first. Separately, store-assembly's two order-law tests (store-door's step vs op-grades-folds at layer 11) are already red on tranche without this change. Description: the design stream has no word for this op. Its English reuses the stream's own phrase 'accepting a proposal is a member's act' (investigation/index.mjs:978, words-reads-mod-4.json) inside the existing localize(investigation.declared.acceptproposals, ...) shape, and is not yet in words.json. The acceptProposals service and its arm stay with R28.",
+    "at": "2026-11-05T05:17:47Z"
   }
 }
