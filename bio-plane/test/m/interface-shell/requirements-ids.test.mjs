@@ -183,12 +183,16 @@ const START_BLOCKS = {
   R127: "669a7c09febf96e206cd0ba4cee1a9da4844fe23ab111ed0c9e51897f54a5c9a",
 };
 const REQ = read("build/requirements/interface-shell.md");
+/* Cap split (5 Nov 2026, BOB): R73-R111, R117-R120, R122-R125 and R128-R135 were moved verbatim to
+   interface-shell-t50-t51, and R136-R151 to interface-shell-t53. Every R id and block stays pinned to the start
+   commit across the three files together (HELD); the found marks and the moved-text check read this file alone. */
+const HELD = [REQ, read("build/requirements/interface-shell-t50-t51.md"), read("build/requirements/interface-shell-t53.md")].join("\n\n");
 const NOTES = read("docs/requirements-notes/interface-shell.md");
 
 const isR = (id) => id.startsWith("R");
 
 test("the consolidation keeps the set of requirement ids: every R id at the start commit, and no other R id", () => {
-  assert.deepEqual([...blocks(REQ).keys()].filter(isR).sort(), Object.keys(START_BLOCKS).sort());
+  assert.deepEqual([...blocks(HELD).keys()].filter(isR).sort(), Object.keys(START_BLOCKS).sort());
 });
 
 /* this branch's found marks (attempt 4, walk p3dev-t1; F4 at BOB's word after the review), pinned as the R ids are: each held, in this order, and the unmet ones exactly these,
@@ -211,7 +215,7 @@ test("this branch's found marks F1-F4 are each held, in order, and only F2 and F
 });
 
 test("every requirement is word for word as at the start commit, with its lines beneath; a struck mark is the one change", () => {
-  for (const [id, text] of blocks(REQ)) {
+  for (const [id, text] of blocks(HELD)) {
     if (!isR(id)) continue;
     if (Object.hasOwn(STRUCK, id)) {
       assert.equal(text.includes(MARK), false, id + " is struck");
@@ -224,7 +228,7 @@ test("every requirement is word for word as at the start commit, with its lines 
 });
 
 test("the unmet R marks are the start commit's, less those this branch struck; control: no R mark is added", () => {
-  const unmet = [...blocks(REQ)].filter(([id, t]) => isR(id) && t.split("\n")[0].includes(MARK)).map(([id]) => id);
+  const unmet = [...blocks(HELD)].filter(([id, t]) => isR(id) && t.split("\n")[0].includes(MARK)).map(([id]) => id);
   assert.deepEqual(unmet, START_UNMET.filter((id) => !Object.hasOwn(STRUCK, id)));
 });
 
