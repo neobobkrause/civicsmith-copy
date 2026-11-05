@@ -4,7 +4,8 @@
   "layer": 11,
   "paths": [
     "bio-plane/src/queue-producers/",
-    "build/requirements/queue-producers.md"
+    "build/requirements/queue-producers.md",
+    "docs/requirements-notes/queue-producers.md"
   ],
   "tests": [
     "bio-plane/test/m/queue-producers/"
