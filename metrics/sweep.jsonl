@@ -149,3 +149,4 @@
 {"at":"2026-11-05T12:40:13Z","row":"check","by":"test","live":6,"live_at":"2026-11-05T12:23:31Z","job_cap":20,"startable":1,"idle_capacity":{"kind":"work","since":"2026-11-05T11:33:06Z","min":67,"live":6,"cap":20,"held":0,"startable":1,"empty":14,"alarm":true,"owed_since":"2026-11-05T12:21:42Z"}}
 {"at":"2026-11-05T12:43:18Z","row":"ready","live":8,"job_cap":20,"started":["store-assembly"]}
 {"at":"2026-11-05T12:48:23Z","row":"check","by":"merge train","live":8,"live_at":"2026-11-05T12:43:18Z","job_cap":20,"startable":16,"idle_capacity":{"kind":"work","since":"2026-11-05T12:45:25Z","min":2,"live":8,"cap":20,"held":0,"startable":16,"empty":12,"alarm":false}}
+{"at":"2026-11-05T12:52:00Z","row":"ready","live":3,"job_cap":20,"started":[]}
