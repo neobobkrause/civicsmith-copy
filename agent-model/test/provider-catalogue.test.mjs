@@ -5,6 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { world, req, account, ENTRIES, genAnswer } from "./provider-world.mjs";
+import { needOf } from "../../agent-harness/src/harness.mjs";
 
 const GEN = ENTRIES.generic.entry_id;
 
@@ -65,18 +66,15 @@ test("R13 an entry with prices yields the product as cost_estimated with price_d
   assert.equal(costEstimated(full, { entry, plan: { price_basis: { basis: "subscription" } } }), null);
 });
 
-const harness = await import("../../agent-harness/src/harness.mjs").catch(() => null);
-const needOf = harness && typeof harness.needOf === "function" ? harness.needOf : null;
-const t = needOf ? test : test.todo;
 
-t("R1 over an entry lacking image input, serves(fake, needOf(\"transcribe\")) answers lacks naming image_input and serves(fake, needOf(\"ask\")) ok; control: an entry with image input serves transcribe", async () => {
+test("R1 over an entry lacking image input, serves(fake, needOf(\"transcribe\")) answers lacks naming image_input and serves(fake, needOf(\"ask\")) ok; control: an entry with image input serves transcribe", async () => {
   const w = await world([]);
   assert.deepEqual(await w.p.serves(ENTRIES.noimage.entry_id, needOf("transcribe")), { ok: false, lacks: ["image_input"] });
   assert.deepEqual(await w.p.serves(ENTRIES.noimage.entry_id, needOf("ask")), { ok: true });
   assert.deepEqual(await w.p.serves(GEN, needOf("transcribe")), { ok: true });
 });
 
-t("R55 over an account with a cheap and a dear entry, a low need picks the cheap one and a standard need the head; an entry lacking image_input is passed over for transcribe; control: with no entry serving the need, UNSUPPORTED_CONTROL names it", async () => {
+test("R55 over an account with a cheap and a dear entry, a low need picks the cheap one and a standard need the head; an entry lacking image_input is passed over for transcribe; control: with no entry serving the need, UNSUPPORTED_CONTROL names it", async () => {
   const w = await world([]);
   const acct = account({ entries: [GEN, ENTRIES.cheap.entry_id, ENTRIES.noimage.entry_id], entry_id: GEN });
   const low = { ...needOf("subsession"), cost: "low" };
@@ -90,4 +88,4 @@ t("R55 over an account with a cheap and a dear entry, a low need picks the cheap
   assert.equal(w.fake.requests.length, 0);
 });
 
-t("R1 a scan of the module's source and tests finds no claude-, opus- or sonnet- string (waits on agent-worker and agent-steps leaving MODEL_FOR_MODE and SUBSESSION_MODEL)");
+test.todo("R1 a scan of the module's source and tests finds no claude-, opus- or sonnet- string (waits on agent-worker and agent-steps leaving MODEL_FOR_MODE and SUBSESSION_MODEL, which the reference path still exports)");
