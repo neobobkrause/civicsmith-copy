@@ -16,7 +16,9 @@
     "agent-harness",
     "agent-model",
     "run-rules",
-    "signatures"
+    "signatures",
+    "ai-gate",
+    "ai-catalogue"
   ],
   "suite": {
     "cwd": "agent-runner",
@@ -32,7 +34,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T00:56:11Z"
+    "state": "COMPLETE",
+    "at": "2026-11-05T01:54:06Z"
   }
 }

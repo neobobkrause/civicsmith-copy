@@ -90,7 +90,7 @@ test("R9 the tables are declared through record-core.declareTable, sight the gro
 
 test("R11 each refusal carries its row in the module's own checks.mjs, a new family C-144, numbered in order", () => {
   const codes = Object.keys(READING_GUIDES_CHECKS);
-  assert.equal(codes.length, 19);
+  assert.equal(codes.length, 22, "C-144.1-19, and R20's three (T53)");
   codes.forEach((code, i) => {
     const r = READING_GUIDES_CHECKS[code];
     assert.equal(r.check, `C-144.${i + 1}`, code);
@@ -133,6 +133,10 @@ test("R11 every code is answered by its act, with its row, naming no place (each
   see(w.g.guidePropose({ kind: "policy", items: ITEMS, run: "R", by: ANN }));
   see(w.g.guidePropose({ kind: "policy", items: ITEMS, run: "", by: MACHINE }));
   see(w.g.guideDraft({ kind: "bylaw_complaint", purpose: "procedure", items: [{ route: "Ask the Town Clerk" }], by: ANN }));
+  const proc = w.g.guideDraft({ kind: "bylaw_complaint", purpose: "procedure", items: [{ route: "Ask the Town Clerk", citation: "C" }], by: ANN }).guide;
+  see(w.g.guideOptOut({ guide: proc, viewer: ANN }));      // R20: a team of more than one
+  see(w.g.guideOptOut({ guide: proc, viewer: MACHINE }));  // R20: a machine
+  see(w.g.guideOptOut({ guide: own, viewer: ANN }));       // R20: a reading guide is not the team's own procedure guide
   assert.deepEqual([...reached].sort(), Object.keys(READING_GUIDES_CHECKS).sort());
 });
 
@@ -145,6 +149,6 @@ test("R2–R8 the ops this module hands the control plane: by in the body, viewe
   assert.equal(readingGuidesOps(w.g, url(`viewer=stranger`), { viewer: ANN }).guides().guides.length, 0, "a body cannot set the viewer");
   assert.equal(readingGuidesOps(w.g, url(`guide=${d.guide}&viewer=${ANN}`), {}).guide().guide.id, d.guide);
   assert.deepEqual(Object.keys(readingGuidesOps(w.g, url(""), {})).sort(),
-    ["guide", "guideadopt", "guidedraft", "guidefor", "guideoffer", "guideproposals", "guidepropose", "guideproposetocivicsmith",
+    ["guide", "guideadopt", "guidedraft", "guidefor", "guideoffer", "guideoptout", "guideproposals", "guidepropose", "guideproposetocivicsmith",
      "guideretire", "guidereview", "guides", "procedureguides"]);
 });
