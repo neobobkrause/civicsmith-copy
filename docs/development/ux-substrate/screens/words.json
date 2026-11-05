@@ -9,7 +9,7 @@
   "draft": 5,
   "photo": 13,
   "handle": 7,
-  "ai": 192,
+  "ai": 200,
   "date": 14,
   "queue": 505,
   "transcribe": 19,
@@ -239,8 +239,8 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19835,
-  "protected": 1181
+  "total": 19843,
+  "protected": 1184
  },
  "words": [
   {
@@ -1018,10 +1018,10 @@
   },
   {
    "key": "ai.refused.unitunavailable",
-   "en": "A limit in dollars needs an API key: a subscription doesn't report what a use costs. Set it in tokens or calls instead.",
+   "en": "A limit in dollars can't be judged here: this plan doesn't report what a use costs, and your team's Civicsmith has no price for it. Set the limit in tokens or calls instead.",
    "protected": false,
-   "source": "DEC-188",
-   "note": "LIMIT_UNIT_UNAVAILABLE"
+   "source": "DEC-188; ai-use R13 (design lane, 5 Nov 2026): generalised, the plan reports no money, whatever the kind of account",
+   "note": "LIMIT_UNIT_UNAVAILABLE, at set (ai-use R2) and when a dollar limit meets an unpriced act (R3, unjudged)"
   },
   {
    "key": "ai.refused.explorenotenabled",
@@ -1260,6 +1260,62 @@
    "protected": false,
    "source": "DEC-189",
    "note": "{field} in ai.refused.limitinvalid"
+  },
+  {
+   "key": "ai.refused.limit.provider",
+   "en": "The assistant stopped here: the AI provider's own limit on {whose} account is reached. It works again {when}. Everything else works as usual.",
+   "protected": true,
+   "source": "ai-use R13",
+   "note": "AI_LIMIT_REACHED, source provider (ai-use R3, R18); {whose} from ai.whose.*; {when} from ai.when.*, or the day it resets; never a cost or the provider's message"
+  },
+  {
+   "key": "ai.refused.limit.provider.unknown",
+   "en": "The assistant stopped here: the AI provider's own limit on {whose} account is reached, and the provider didn't say when it lifts. The assistant tries again after a while. Everything else works as usual.",
+   "protected": true,
+   "source": "ai-use R13",
+   "note": "AI_LIMIT_REACHED, source provider, resets_at null (ai-use R18: one call is let through after PROVIDER_REPROBE_MS)"
+  },
+  {
+   "key": "ai.refused.thresholdinvalid",
+   "en": "That alert can't be set: {field}. An alert is a percent of a limit you have set, or an amount in dollars, tokens or calls, for a day or a month.",
+   "protected": false,
+   "source": "ai-use R13",
+   "note": "AI_THRESHOLD_INVALID (ai-use R23); {field} from ai.limitfield.*, with .kind and .level for an alert"
+  },
+  {
+   "key": "ai.limitfield.kind",
+   "en": "a percent alert needs a limit to be a percent of, so set that limit first or alert on an amount",
+   "protected": false,
+   "source": "ai-use R13",
+   "note": "{field} in ai.refused.thresholdinvalid, field kind (also a percent with no matching limit)"
+  },
+  {
+   "key": "ai.limitfield.level",
+   "en": "a percent is a whole number from 1 to 99, and an amount is more than zero",
+   "protected": false,
+   "source": "ai-use R13",
+   "note": "{field} in ai.refused.thresholdinvalid, field level; 1 to 99 are THRESHOLD_PERCENT_MIN and _MAX"
+  },
+  {
+   "key": "ai.alert.threshold",
+   "en": "The alert you set is reached: {whose} account's {period} use for {use} is now {level}. The assistant keeps working.",
+   "protected": false,
+   "source": "ai-use R13",
+   "note": "the told-once alert (ai-use R24, notice-producers); {whose} from ai.whose.*, {period} from ai.period.*, {use} from ai.use.*.inline; {level} as \"80% of its limit\" for a percent alert, or the amount (\"$20\", \"2,000 tokens\", \"150 calls\"); names no member"
+  },
+  {
+   "key": "ai.use.notmeasurable",
+   "en": "Not measurable in money: this plan doesn't report what a use costs, and your team's Civicsmith has no price for it. Tokens and calls are shown instead.",
+   "protected": false,
+   "source": "ai-use R13",
+   "note": "ai-use R4, R14, R21: in place of a cost, never 0"
+  },
+  {
+   "key": "ai.refused.notapayingaccount",
+   "en": "This is a member's own AI account, so how much they use it is shown only to them.",
+   "protected": true,
+   "source": "ai-use R13",
+   "note": "NOT_A_PAYING_ACCOUNT (ai-use R27): says who can see something"
   },
   {
    "key": "ai.use.ask.inline",
