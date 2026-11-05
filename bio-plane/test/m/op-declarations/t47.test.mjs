@@ -196,7 +196,9 @@ test("R58, R62, R63 (K3061 D3, K3143, K3144; credentials R66): REAUTH_ACTS is fr
   assert.ok(Object.isFrozen(REAUTH_ACTS));
   assert.deepEqual(Object.keys(REAUTH_ACTS).sort(), ["adminendorse", "adminremove", "aiaccountadd", "aiaccountremove",
     "aiaccountswitch", "aikeycloudflare", "aikeyenter", "aikeyseal", "aiownadd", "caseratify",
-    "docketpost", "memberadd", "memberset", "publishat", "publishatmove", "ratify", "subscriptionsignin"]);
+    "docketpost", "memberadd", "memberset", "publishat", "publishatmove", "ratify"]);
+  /* T53 (op-grades R57; F2): the alpha's subscriptionsignin is in no table, this one among them */
+  assert.ok(!Object.hasOwn(REAUTH_ACTS, "subscriptionsignin"));
   /* T53: the four retired account-seam acts left with their ops (an act no op serves asks nothing) */
   for (const op of ["accountreferenceset", "groupkeyset", "projectkeyset", "projectsigninset"])
     assert.ok(RETIRED_T53.includes(op) && !Object.hasOwn(REAUTH_ACTS, op), op);
@@ -210,7 +212,6 @@ test("R58, R62, R63 (K3061 D3, K3143, K3144; credentials R66): REAUTH_ACTS is fr
   }
   assert.deepEqual(plain(REAUTH_ACTS.memberset), { field: "role", values: null });
   assert.deepEqual(plain(REAUTH_ACTS.memberadd), { field: "role", values: ["admin"] });
-  assert.deepEqual(plain(REAUTH_ACTS.subscriptionsignin), { field: "step", values: ["start"] });
   for (const op of ["caseratify", "publishat", "publishatmove", "ratify", "docketpost", "adminendorse", "adminremove"])
     assert.equal(REAUTH_ACTS[op], null, op);
   assert.throws(() => { "use strict"; REAUTH_ACTS.signout = null; });

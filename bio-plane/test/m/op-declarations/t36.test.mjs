@@ -4,7 +4,7 @@
    compared whole at the exported tables, each stamp is driven through its owner's own map so a stamp named at a site
    the owner does not read is seen, and R6's totality is read from each owner's map. Each comparison has a negative
    control. */
-import "./register-owners.mjs";
+import { REGISTERED } from "./register-owners.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as O from "../../../src/op-declarations/index.mjs";
@@ -348,6 +348,9 @@ test("R34 (K4254; affordances R48, T51_DESIGN_OPS): ACT_HELP_ABSENT names no op 
 
 test("R5, R7: ACT_HELP_ABSENT is frozen to its leaves, the same on a second load, and names no place", async () => {
   const again = await import(`../../../src/op-declarations/index.mjs?second=${Date.now()}`);
+  /* F2 (BOB 5 Nov): an op an owner declares may join the last ground once registered, so the second load is given the
+     same owners' rows */
+  again.registerDeclaredOps(REGISTERED);
   assert.equal(JSON.stringify(again.ACT_HELP_ABSENT), JSON.stringify(ACT_HELP_ABSENT));
   for (const g of Object.values(ACT_HELP_ABSENT)) {
     assert.throws(() => { "use strict"; g.ops.push("x"); });

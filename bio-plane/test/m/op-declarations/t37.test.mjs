@@ -81,8 +81,10 @@ test("R36 (N708; DEC-156; K2134): subscriptionsignin — the member's own act, a
   assert.ok(Object.hasOwn(NEEDS, "subscriptionsignin") && NEEDS.subscriptionsignin === null);
   assert.deepEqual(stamps("subscriptionsignin"), ["by", "viewer"]);
   for (const f of ["step", "code", "member"]) assert.ok(!stamps("subscriptionsignin").includes(f), f);
-  assert.equal(familyOf("subscriptionsignin"), "credentials");
-  assert.equal(OP_FAMILIES.credentials.kinds.subscriptionsignin, "own");
+  /* T53 (op-grades R57; F2): it leaves credentials' family; its spec, row and stamps above are its owner's DECLARED_OPS
+     row (signin-door R6) while that owner keeps one */
+  assert.equal(familyOf("subscriptionsignin"), null);
+  assert.ok(!Object.hasOwn(OP_FAMILIES.credentials.kinds, "subscriptionsignin"));
   assert.deepEqual(OP_FAMILIES.credentials.actor, { key: "by", at: "query" });
   assert.deepEqual(machineAdmits("subscriptionsignin"), []);
   shared("subscriptionsignin");
@@ -194,6 +196,8 @@ test("R21 (T37; N776, DEC-180, DEC-182; K2159, K2171): on PR #14's registry ever
      until T47 (R54, R60): at PR #33's head it is a declared act too */
   for (const op of T37) {
     assert.ok(actsOf("declared").includes(op) && !owed.includes(op), `${op} is not re-pointed to its declared op`);
+    /* T53 (op-grades R57; F2): subscriptionsignin, the alpha's sign-in, is in no family here */
+    if (op === "subscriptionsignin") { assert.equal(familyOf(op), null, op); continue; }
     assert.ok(Object.hasOwn(OPS, op) && familyOf(op), `${op}: not declared in a family`);
   }
   /* T46 (R52): every owed act of PR #28's registry is declared (infolevelset, owed with no spec until T46, is R50's); (T50,

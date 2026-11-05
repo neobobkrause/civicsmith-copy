@@ -374,7 +374,8 @@ const OP_FAMILIES = Object.freeze({
      reference, the group's API key, the subscription disconnected, the keep-away, `accountusesset` with its reads, and
      a project's account — form a family of `ai-accounts`' own (`T48_FAMILIES`, `t48.mjs`), their names, specs, session
      sets, `NEEDS` rows, stamps and act lists unchanged; this family keeps the rest, `aigrantmint` among them
-     (`AI_GRANT_OPS` stays `credentials`'). */
+     (`AI_GRANT_OPS` stays `credentials`').
+     T53 (op-grades R57; F2): the alpha's `subscriptionsignin` leaves this family and every hand table here (no alias). */
   credentials: family({ owner: "credentials", cite: "credentials R3, R27, R39, R43, R45–R47, R51; K1544; R20, R30, R36, R39, R68", actor: QUERY("by"),
     extra: { aigrantmint: ["member", "session"],
              signout: ["session"], signouteverywhere: ["session"], securitymap: ["by"], recoverycodesstate: ["by"],
@@ -382,7 +383,7 @@ const OP_FAMILIES = Object.freeze({
     aigrantmint: "own", keyedserviceset: "admin", keyedserviceswitch: "admin", keyedservices: "read",
     signout: "sessionend", signouteverywhere: "sessionend", securitymap: "ownread", recoverycodesissue: "admin",
     recoverycodesstate: "ownread", recover: "door",
-    subscriptionsignin: "own", setpassword: "own" } }),
+    setpassword: "own" } }),
   /* sources (K1550): marking a capture as from a keyed service, its capturer's own act (MACHINE_CANNOT_MARK, R16, R18). */
   sources: family({ owner: "sources", cite: "sources R16, R18; K1550", actor: QUERY("by"), ops: { sourcekeyed: "member" } }),
   /* entities (K1572; R18): a scheme identifier, `resolutiondefect`'s stamp; a machine on a system rule's basis (R43).
@@ -2672,6 +2673,11 @@ const UNATTENDED_BY_DECISION = Object.freeze({
    `moneyfiscalyears`, never `fiscalyears`, so `fiscalyears` leaves the read ground (R34: no named op without a spec).
    F1 (walk p3dev-t1, 4 Nov; ai-runs PR 323): ai-runs serves and declares the frame's `aipathready` (surface-declarations R15,
    a read act; interface-shell R20), so it takes the read ground until `affordances`' `ACT_HELP` holds a text. */
+/* R34 (T53; F2; BOB 5 Nov): member acts an owner declares in its own DECLARED_OPS on a branch not yet merged, whose
+   text the design stream has not yet given. Each is named under the last ground once its owner's row is registered
+   (`OPS` holds it), and not before, so `ACT_HELP_ABSENT` never names an op `OPS` does not hold: investigation's
+   `acceptproposals` (PR 425) and extraction's `interpretmark` and `interpretationwithdraw` (PR 432). */
+const UNEXPLAINED_ONCE_DECLARED = ["acceptproposals", "interpretationwithdraw", "interpretmark"];
 const ACT_HELP_ABSENT = Object.freeze({
   alias: Object.freeze({ ground: localize("op-declarations.index.an_alias_of_a_declared", "An alias of a declared op (R21): its op's explanation serves it."),
     ops: frozenList([
@@ -2767,7 +2773,8 @@ const ACT_HELP_ABSENT = Object.freeze({
       "templatereviewgrant", "templaterevise", "templatesubmit", "theorypropose", "translationmark", "unfollow",
       "unpack", "uselink", "usesfreeze", "useunlink", "usewithdraw", "waitlook", "websitekeyrevoke", "websitekeyset",
       "wizardeditorgrant", "wizardeditorrevoke", "wizardpropose", "workbooklintexplain", "workbookmethodnote",
-      "workbookrecompute", "workbookunbind", "workobjective"]) }),
+      "workbookrecompute", "workbookunbind", "workobjective", ...UNEXPLAINED_ONCE_DECLARED.filter((op) => Object.hasOwn(OPS, op))]
+      .sort()) }),
 });
 
 /* R76 (T51; DEC-330 owed; U348; K3810): THE BROWSER ACTS, a class of their own, `{screen, census, registry}` each. They

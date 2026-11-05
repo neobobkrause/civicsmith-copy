@@ -55,8 +55,9 @@ const REAUTH_ACTS = Object.freeze({
   adminendorse: null, adminremove: null,
   memberset: Object.freeze({ field: "role", values: null }),
   memberadd: Object.freeze({ field: "role", values: Object.freeze(["admin"]) }),
-  subscriptionsignin: Object.freeze({ field: "step", values: Object.freeze(["start"]) }),
-  /* T53 (ai-accounts R35): `accountreferenceset`, `groupkeyset`, `projectkeyset` and `projectsigninset` left with their
+  /* T53 (op-grades R57; F2): `subscriptionsignin`, the alpha's subscription sign-in, is in no table
+     (no alias), so it has no row here.
+     T53 (ai-accounts R35): `accountreferenceset`, `groupkeyset`, `projectkeyset` and `projectsigninset` left with their
      retired ops. Their replacements ask the password again as they did, every call (BOB 4 Nov, coordinator audit):
      every ai-accounts T53 act that sets, replaces, switches or removes a credential or a sign-in (ai-accounts R61,
      R69). `aikeycloudflare` (`gatewayKeyAttest`, R44) is added under that ruling's "any further R61 act": it records a

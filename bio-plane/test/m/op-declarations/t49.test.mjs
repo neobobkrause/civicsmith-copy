@@ -157,15 +157,16 @@ test("R3 (T49; K3298, K3339): NEEDS is composed from op-capabilities.needsRows()
   /* T53 (BOB, 4 Nov; t53-rows.test.mjs): eventwithdraw, moneyfiscalyears and federaloffices, three family rows more */
   /* T53 (R20, R24, R30, R41 restated; ai-accounts R35, BOB 4 Nov): ai-accounts' family goes from 24 ops to 36, twelve rows
      more (17 retired out; its 5 reads, 3 plane ops and 21 declared acts in); and ai-use's `aiusebymember`, `airetestset`, `aihealthset` and `aihealthpreview` (its R27, R28, R32, R33), four */
-  assert.equal(Object.keys(fam).length, 500 + 15 + 16 + 1 + 1 + 1 + 3 + 12 + 4, "T49's 500, R73's 15, T51's 16 (action-holds R22's `holdsplaced` among them) and strength's `strengthbarset` (R21, K4254) (R77 to R79; publishedfrozen, public, a present null row), money's `moneysets` (R17, R19; T51 fix round 3, K4369) and calculations' `moneyingestread` (T51 fix round 6, G55)");
+  /* T53 (op-grades R57; F2): credentials' subscriptionsignin leaves the family, one row fewer */
+  assert.equal(Object.keys(fam).length, 500 + 15 + 16 + 1 + 1 + 1 + 3 + 12 + 4 - 1, "T49's 500, R73's 15, T51's 16 (action-holds R22's `holdsplaced` among them) and strength's `strengthbarset` (R21, K4254) (R77 to R79; publishedfrozen, public, a present null row), money's `moneysets` (R17, R19; T51 fix round 3, K4369) and calculations' `moneyingestread` (T51 fix round 6, G55)");
   /* the two parts share no op */
   assert.deepEqual(Object.keys(fam).filter((op) => Object.hasOwn(hand, op)), []);
   const aliasRows = Object.entries(OP_ALIASES).filter(([, op]) => Object.hasOwn(NEEDS, op)).map(([al]) => al);
   assert.equal(aliasRows.length, 26);
   /* R83 (K4237): and `export`'s row, the founder's session act that is no family op */
-  assert.equal(Object.keys(NEEDS).length, 323 + 537 + 12 + 4 + 26 + 1);
+  assert.equal(Object.keys(NEEDS).length, 323 + 537 + 12 + 4 + 26 + 1 - 1);
   /* T53: ai-accounts' family twelve rows more and ai-use's four (R20, R24, R30, R41 restated) */
-  assert.equal(Object.keys(NEEDS).length, 848 + 2 + 15 + 16 + 1 + 1 + 1 + 3 + 12 + 4, "848 before the split, founderhandleset and projectownervotes (T49), R73's 15 (T50), T51's 16, export (R83), moneysets (T51 fix round 3) and moneyingestread (T51 fix round 6)");
+  assert.equal(Object.keys(NEEDS).length, 848 + 2 + 15 + 16 + 1 + 1 + 1 + 3 + 12 + 4 - 1, "848 before the split, founderhandleset and projectownervotes (T49), R73's 15 (T50), T51's 16, export (R83), moneysets (T51 fix round 3) and moneyingestread (T51 fix round 6)");
   for (const [op, row] of Object.entries(hand)) assert.equal(NEEDS[op], row, `${op}: the hand-written row`);
   for (const [op, row] of Object.entries(fam)) assert.equal(NEEDS[op], row, `${op}: the family row`);
   for (const al of aliasRows) assert.equal(NEEDS[al], NEEDS[OP_ALIASES[al]], `${al}: an alias row equals its op's`);
