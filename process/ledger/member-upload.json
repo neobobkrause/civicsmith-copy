@@ -30,9 +30,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "Deferred (coordinator ruling 5 Nov 19:55): R117 waits on (a) capture: RECEIVED_VIAS at bio-plane/src/capture/index.mjs:108 gains 'email-attachment', plus R76's text, owned by capture's next attempt as a requirement, and (b) store-jobs R24 (a runner for 'member' job rows). R120's live study is at the round's deploy (the coordinator's act). Its pushed seam test 6e0bb595 lands as is; restart by uses when capture and store-jobs land.",
-    "at": "2026-11-05T20:07:36Z",
-    "owner": "coordinator"
+    "state": "COMPLETE",
+    "at": "2026-11-05T20:21:29Z"
   }
 }
