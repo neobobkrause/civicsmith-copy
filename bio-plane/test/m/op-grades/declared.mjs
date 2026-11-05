@@ -2,13 +2,15 @@
    typed here (K3268, BOB K4069, K4076). This module uses nothing (P4): `op-declarations` merges after it, so no test imports
    a declaration of another module; what a requirement of this module states, in backticks or as plain words, is the
    contract, and the tables are the data under test. */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
 
 /* ---- this module's own requirements ------------------------------------------------------------------------------- */
-const REQ_LINES = readFileSync(new URL("../../../../build/requirements/op-grades.md", import.meta.url), "utf8").split("\n");
+/* the module's requirements and the folds split from them under the same numbers (5 Nov 2026, PR 369), read as one text */
+const REQ_LINES = ["op-grades", "op-grades-folds"]
+  .map((f) => readFileSync(new URL(`../../../../build/requirements/${f}.md`, import.meta.url), "utf8")).join("\n").split("\n");
 
 /** Requirement R<n> as written: its line and its sub-bullets, to the next requirement or heading. */
 export const reqText = (n) => {
@@ -86,6 +88,8 @@ export async function collectDeclaredOps(root) {
   const ops = {}, owners = {}, who = {};
   const filesOf = (path) => {
     const abs = join(root, path);
+    /* a path the ledger lists before its module has code (ai-gate's own directory, K5576) declares nothing yet */
+    if (!existsSync(abs)) return [];
     if (!statSync(abs).isDirectory()) return [abs];
     return readdirSync(abs, { withFileTypes: true }).filter((e) => e.name !== "node_modules").flatMap((e) => (e.isDirectory() ? filesOf(join(path, e.name)) : /\.(mjs|js)$/.test(e.name) ? [join(abs, e.name)] : []));
   };
