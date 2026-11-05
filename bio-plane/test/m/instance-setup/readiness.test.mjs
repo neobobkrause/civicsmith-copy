@@ -13,7 +13,8 @@ async function over() {
   c.project("P", "ann");
   assert.equal(c.join("P", "ann", "bob").ok, true);
   c.project("S", "cy");
-  const w = await boot({ more: { membership: c.m, aiAccounts: c.a, record: c.core } });
+  /* one database: this module's record-core is the real one over the world's tables, where the projects' bundles are */
+  const w = await boot({ st: { db: c.db }, more: { membership: c.m, aiAccounts: c.a } });
   return { ...w, c };
 }
 /* an account set by its owner's act, then switched on by that owner */
@@ -38,6 +39,7 @@ test("R115 assistantReadiness: no team account and a joined project with one ans
   const w = await over();
   await on(w.c, w.c.projectAccount("P", "ann"), "ann");
   const name = w.c.core.bundleInfo("P").title;
+  assert.ok(typeof name === "string" && name, "the project has its name");
   assert.deepEqual(w.m.assistantReadiness({ viewer: "bob" }), { ok: true, state: "project_only", projects: [{ id: "P", name }] });
   assert.deepEqual(w.m.assistantReadiness({ viewer: "eve" }), { ok: true, state: "not_ready", reason: "no_account_on" }, "P is hidden from eve");
   await on(w.c, w.c.projectAccount("S", "cy"), "cy");
