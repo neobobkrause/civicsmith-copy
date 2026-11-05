@@ -1,0 +1,1 @@
+{"row":"answered","user":"agent-runner","by":"triage","evidence":"agent-runner/src/runner.mjs:1 no file under agent-runner/ (src, scripts, package.json) mentions or imports agent-harness, so none of the new exports or R23's refusal reaches it","at":"2026-11-05T07:39:18.850Z","key":"agent-harness:353","worker":"af05560dc2f2c0872","cost":"71457tokens"}
