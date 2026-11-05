@@ -7,3 +7,4 @@
 {"at":"2026-11-05T11:34:42Z","row":"queue","id":"9cf1d861cee9","pr":498,"head":"a0a5d21a0bbf44170ff19252a4e37bb21c2e906b","ref":"bob/release-path","by":"session_018BhcefhxhWd9YQkYbKBcTB","reviewed":null,"no_review":"release_path for the first dev release (coordinator 11:21) and screens-document-beta paths (coordinator 11:22); process config and ledger only","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-05T14:44:42.285Z","renews":true}
 {"at":"2026-11-05T11:39:52Z","row":"renew","id":"9cf1d861cee9","pr":498}
 {"at":"2026-11-05T11:45:15Z","row":"renew","id":"9cf1d861cee9","pr":498}
+{"at":"2026-11-05T11:48:22Z","row":"queue","id":"9851d2b51266","pr":499,"head":"b0ff4e22de5dfbcbb57c6b2fdf972e2c9328ea59","ref":"p3/pin-06ab5329ef","by":"session_018BhcedH89Ji4J97RgC9RKG","reviewed":null,"no_review":"a process pin move; the fix was reviewed in process3","rounds":0,"decision":null,"as":"pin","take_by":"2026-11-05T14:58:22.250Z","renews":true}
