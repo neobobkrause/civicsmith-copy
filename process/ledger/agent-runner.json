@@ -32,7 +32,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T01:02:54Z"
+    "state": "BLOCKED",
+    "reason": "For BOB. Not started: this job's prerequisites under K5576 are unmet, checked on tranche 63d9015b. (1) agent-worker has not dropped its use of agent-runner: build/modules.json still lists agent-runner in agent-worker's uses, agent-worker/wrangler.jsonc:100 still binds REMOTE to class RemoteSession on script agent-runner, and its tests still read agent-runner's wire (t37, t41, t46, t47, requirements.test.mjs:1360). R13 says RemoteSession is deleted in the same change that removes that binding, and removing the Claude Code route (R56, R8) before then breaks agent-worker's deploy and suite. (2) ai-gate has no code (modules.json paths []), and R44-R60 (and R5, R43 and R55, which rest on them) call ai-gate's checkDeclared, selectItems, verifyChallenge, meter, scanForSecrets, buildManifest, sealPayload and signBundle. K5576 (3) puts R44-R60 'after ai-gate', and the plan's second entry also says [waits: the offline keys]. (3) R33's instance_type needs a figure BOB records; none is recorded. Nothing changed on job/agent-runner. To unblock: merge agent-worker's T53 entry that drops REMOTE and agent-runner, then move agent-runner after ai-gate (K5576 (2)) and merge ai-gate. Then restart this job, or now restart it scoped to a subset BOB names (for example R15, R16, R6 only).",
+    "at": "2026-11-05T01:08:10Z"
   }
 }
