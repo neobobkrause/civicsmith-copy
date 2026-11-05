@@ -11,3 +11,4 @@
 {"at":"2026-11-05T15:38:34.689Z","row":"inflight","pr":444,"module":"capture-requests","tip":"c4485340ab6a5e4988682c99b587bf5986e8a4d2","session":"session_018BhcedwsJZrL1WAAcugNk7","until":"2026-11-05T17:23:34.689Z"}
 {"at":"2026-11-05T15:43:51.237Z","row":"end","pr":444,"tip":"c4485340ab6a5e4988682c99b587bf5986e8a4d2","cause":"landed","session":"session_018BhcedwsJZrL1WAAcugNk7"}
 {"at":"2026-11-05T15:44:53.621Z","row":"inflight","pr":445,"module":"screens-wizards","tip":"6a926353a8bac0a0bfba05c0ddbd053095e9d64d","session":"session_018BhcedwsJZrL1WAAcugNk7","until":"2026-11-05T17:29:53.621Z"}
+{"at":"2026-11-05T16:16:45.836Z","row":"end","pr":445,"tip":"6a926353a8bac0a0bfba05c0ddbd053095e9d64d","cause":"tranche moved","session":"session_018BhcegraPAsGJB6Ev1FpZ5"}
