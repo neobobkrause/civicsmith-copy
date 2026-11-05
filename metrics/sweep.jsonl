@@ -159,3 +159,4 @@
 {"at":"2026-11-05T13:39:59Z","row":"check","by":"job complete","live":2,"live_at":"2026-11-05T13:33:28Z","job_cap":20,"startable":7,"idle_capacity":{"kind":"work","since":"2026-11-05T13:33:28Z","min":6,"live":2,"cap":20,"held":0,"startable":7,"empty":18,"alarm":false}}
 {"at":"2026-11-05T13:47:41Z","row":"ready","live":1,"job_cap":20,"started":[]}
 {"at":"2026-11-05T13:53:09Z","row":"check","by":"job complete","live":1,"live_at":"2026-11-05T13:47:41Z","job_cap":20,"startable":7,"idle_capacity":{"kind":"work","since":"2026-11-05T13:33:28Z","min":19,"live":1,"cap":20,"held":0,"startable":7,"empty":19,"alarm":true}}
+{"at":"2026-11-05T13:58:16Z","row":"check","by":"notice triage","live":1,"live_at":"2026-11-05T13:47:41Z","job_cap":20,"startable":6,"idle_capacity":{"kind":"work","since":"2026-11-05T13:33:28Z","min":24,"live":1,"cap":20,"held":0,"startable":6,"empty":19,"alarm":true}}
