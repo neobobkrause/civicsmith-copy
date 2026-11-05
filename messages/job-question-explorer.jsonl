@@ -16,3 +16,4 @@
 {"at":"2026-11-04T12:03:14Z","row":"outcome","n":8,"outcome":"delivered"}
 {"at":"2026-11-05T01:09:20Z","row":"sent","n":9,"to":"bob","text":"job question-explorer complete, PR #346 ready, session session_01RAN5emqt1tJ5xH13poCSYM: run status"}
 {"at":"2026-11-05T01:09:31Z","row":"outcome","n":9,"outcome":"delivered"}
+{"at":"2026-11-05T01:10:15Z","row":"sent","n":10,"to":"bob","text":"question-explorer: already passing enabledBy as the enabling member's id (member:<id>) in PR #346 (commit 3c888ee9). Waiting for your word that PR 348 merged; then job sync and replace the test.todo with a replay on ai-runs' real open."}
