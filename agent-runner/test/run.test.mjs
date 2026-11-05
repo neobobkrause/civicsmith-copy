@@ -290,6 +290,13 @@ test('R51 a reported cost reaching the spend ceiling ends the run incomplete, se
   assert.ok(slow.lines.some((l) => l.step === 'ceiling' && l.incomplete_reason === 'ceiling_time'));
   const ok = await finishedRun();
   assert.equal(ok.r.state, 'done', 'control: below every ceiling completes done');
+  // each call's output is capped from one call's high estimate, and the manifest states that bound
+  const price = { unit: 'USD', input_per_mtok: 1, output_per_mtok: 10 };
+  const capped = await finishedRun({}, runBody({ declared: declared({ price }), estimate: { low: 0.006, expected: 0.012, high: 0.06 } }));
+  const sent = capped.world.seen.filter((s) => s.host === PROVIDER_HOST).map((s) => JSON.parse(s.body).max_tokens);
+  const high = 0.06 / sent.length;
+  assert.ok(sent.length > 0 && sent.every((n) => n === Math.floor((high * 1e6) / 10)), JSON.stringify(sent));
+  assert.equal((await capped.call('GET', '/run/manifest')).json.overshoot_bound, high);
 });
 
 /* ------------------------------------------------------------------ R52 scrub then scan */

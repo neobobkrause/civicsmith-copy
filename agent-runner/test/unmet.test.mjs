@@ -1,0 +1,8 @@
+// Requirements not yet met by this module's own paths, named here per K208 (the owner of what each waits on is named).
+import { test } from 'node:test';
+test.todo('R10 egress in fleet-member.json equals the issuer host alone: the issuer host (bio-plane/src/ai-catalogue/index.mjs:43, CATALOGUE_ADDRESS) holds a place word R11 forbids in configuration; a ruling or a placeless issuer host first');
+test.todo('R13 the configuration declares the issuer host as egress at rest (as R10), and RemoteSession is deleted in the same change as agent-worker\'s REMOTE binding (agent-worker/wrangler.jsonc:100, agent-worker PR 364)');
+test.todo('R14 `bind` names the binding BOB chooses in place of agent-worker\'s retired RUNNER, and `egress` the issuer host (as R10)');
+test.todo('R47 the key reaches the adapters only through agent-model\'s credential resolver for the run\'s account (BR16): agent-model exports no turn or resolver for a declared plan yet (agent-model/src/model.mjs)');
+test.todo('R50 every call goes through agent-model with its host pin, and a served identity that differs is refused as ai-gate R18 says: agent-model\'s pinned turn is not on tranche (agent-model/src/model.mjs; ai-gate R8)');
+test.todo('F1 /version answers the deployed version within the rollout check: bio-plane/scripts/deploy-fleet.mjs:398-417 polls workers.dev, which this member has off (wrangler.jsonc workers_dev:false, R57)');

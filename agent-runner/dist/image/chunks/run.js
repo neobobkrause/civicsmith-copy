@@ -7711,6 +7711,8 @@ function makeRunner({
   async function execute(r) {
     const live = () => run === r && r.state === "running";
     const price = r.declared.price;
+    const planned = r.plan.tiers.reduce((a, t) => a + t.items.reduce((b, it) => b + it.repeats, 0), 0);
+    r.callHigh = typeof r.estimate?.high === "number" && Number.isFinite(r.estimate.high) && planned > 0 ? r.estimate.high / planned : null;
     for (const step of r.plan.tiers) {
       r.tier = step.tier;
       r.items_done = 0;
@@ -7727,7 +7729,7 @@ function makeRunner({
               ...r.usage.spendReported ? { spend_reported: r.usage.spend } : { spend_estimated: r.usage.spend }
             },
             r.ceiling,
-            { price, callHigh: null }
+            { price, callHigh: r.callHigh }
           );
           if (m.decision === "stop") return endEarly(r, m.reason);
           const remainingMs = r.ceiling.seconds * 1e3 - (now() - r.startMs);
@@ -7832,7 +7834,7 @@ function makeRunner({
       image_digest_declared: imageDigest,
       identity_mismatches: r.mismatches,
       incomplete_reason: incomplete ? reason : null,
-      overshoot_bound: null
+      overshoot_bound: r.callHigh ?? null
     });
     const scan = built.ok ? scanForSecrets({ payload, manifest: built.manifest }, [...GENERIC_KEY_SHAPES], secrets) : null;
     if (!built.ok || !scan.clean) {

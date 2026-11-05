@@ -52,7 +52,7 @@ var package_default = {
   private: true,
   type: "module",
   version: "0.87.0",
-  description: "The container in which a member's own Claude account runs one model conversation, with only relayed tools.",
+  description: "The container in which a team runs one gate run against an AI it names, and seals the results inside.",
   main: "src/entry.mjs",
   engines: {
     node: ">=22"
@@ -60,14 +60,10 @@ var package_default = {
   scripts: {
     start: "node src/entry.mjs",
     build: "node scripts/build.mjs",
+    "build:image": "node scripts/build-image.mjs",
     test: "node --test test/"
   },
-  dependencies: {
-    "@anthropic-ai/claude-agent-sdk": "0.3.289",
-    "@anthropic-ai/sdk": "0.131.0",
-    "@modelcontextprotocol/sdk": "1.32.1",
-    zod: "4.6.5"
-  },
+  dependencies: {},
   devDependencies: {
     "@cloudflare/containers": "0.3.7"
   }

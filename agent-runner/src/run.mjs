@@ -174,6 +174,10 @@ export function makeRunner({
   async function execute(r) {
     const live = () => run === r && r.state === 'running';
     const price = r.declared.price;
+    // R51: one call's high estimate, the run's high estimate over its planned calls; the meter caps each call's output
+    // so its cost cannot pass it, and the manifest states it as the bound on the overshoot past `spend`.
+    const planned = r.plan.tiers.reduce((a, t) => a + t.items.reduce((b, it) => b + it.repeats, 0), 0);
+    r.callHigh = typeof r.estimate?.high === 'number' && Number.isFinite(r.estimate.high) && planned > 0 ? r.estimate.high / planned : null;
     for (const step of r.plan.tiers) {
       r.tier = step.tier;
       r.items_done = 0;
@@ -185,7 +189,7 @@ export function makeRunner({
           const elapsed = (now() - r.startMs) / 1000;
           const m = meter({ calls: r.usage.calls, seconds: elapsed,
             ...(r.usage.spendReported ? { spend_reported: r.usage.spend } : { spend_estimated: r.usage.spend }) },
-          r.ceiling, { price, callHigh: null });
+          r.ceiling, { price, callHigh: r.callHigh });
           if (m.decision === 'stop') return endEarly(r, m.reason);
           const remainingMs = r.ceiling.seconds * 1000 - (now() - r.startMs);
           const timer = setTimeout(() => r.abort.abort(), Math.max(0, remainingMs));
@@ -255,7 +259,7 @@ export function makeRunner({
       tiers: r.tiersAsked.map((t) => ({ tier: t, completed: r.tiersDone.includes(t) })),
       spend: { estimate: r.estimate, ceiling: r.ceiling.spend, actual: r.usage.spend },
       scope_declared: r.declared.scope_declared, terms_page: r.declared.terms_page, image_digest_declared: imageDigest,
-      identity_mismatches: r.mismatches, incomplete_reason: incomplete ? reason : null, overshoot_bound: null });
+      identity_mismatches: r.mismatches, incomplete_reason: incomplete ? reason : null, overshoot_bound: r.callHigh ?? null });
     const scan = built.ok ? scanForSecrets({ payload, manifest: built.manifest }, [...GENERIC_KEY_SHAPES], secrets) : null;
     if (!built.ok || !scan.clean) {
       r.incomplete_reason = 'secret_in_payload';

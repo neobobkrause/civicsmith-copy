@@ -15,10 +15,10 @@ import { REVIEW_WINDOW_MS, TRACE_HEADER, RUN_REF_HEX, DEPLOYMENTS, DEFAULT_DEPLO
 import { pathTemplate, hostOf } from './door.mjs';
 import { says } from './says.mjs';
 
-export const ISSUER_HOST = new URL(CATALOGUE_ADDRESS).hostname;
+const ISSUER_HOST = new URL(CATALOGUE_ADDRESS).hostname;
 const UNKNOWN = JSON.stringify({ ok: false, code: 'UNKNOWN' });
 // R55: the one key of the class's own storage, the closed marker `{run_ref, deadline, state}`.
-export const MARKER_KEY = 'run';
+const MARKER_KEY = 'run';
 const REFUSED_WORDS = 'Origin is disallowed';
 
 const log = (line) => console.log(JSON.stringify(line));
