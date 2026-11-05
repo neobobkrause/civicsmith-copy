@@ -41,7 +41,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T05:08:56Z"
+    "state": "WORKING",
+    "at": "2026-11-05T14:39:53Z",
+    "reason": "reopened: answer the provider notice registers:426"
   }
 }
