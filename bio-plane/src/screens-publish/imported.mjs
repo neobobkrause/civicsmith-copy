@@ -248,7 +248,7 @@ export const IMPORTED = Object.freeze({
           const found = (Array.isArray(r.findings) ? r.findings : []).filter(function (f) { return f && typeof f === "object"; });
           if (found.some(function (f) { return f.code === "IMPORTED_NOT_ACCEPTED"; })) return cs.w("screen.imported.citeimp.ref.notaccepted1") + " " + cs.w("screen.imported.citeimp.ref.notaccepted2");
           const said = found.map(function (f) { return String(f.translation || ""); }).filter(Boolean)[0] || String(r.translation || "");
-          return said ? cs.esc(said) : cs.w("refusal.uncatalogued") + " <code>" + cs.esc(String(r.code || r.reason || "")) + "</code>";
+          return said ? cs.esc(said) : cs.w("refusal.BASIS_REFUSED");
         },
       },
       send: function (view, el, cs) {

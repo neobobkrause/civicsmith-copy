@@ -4,7 +4,8 @@
   "layer": 8,
   "paths": [
     "bio-plane/src/case-authoring/",
-    "build/requirements/case-authoring.md"
+    "build/requirements/case-authoring.md",
+    "docs/requirements-notes/case-authoring.md"
   ],
   "tests": [
     "bio-plane/test/m/case-authoring/"
