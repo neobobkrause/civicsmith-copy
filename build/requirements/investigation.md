@@ -103,3 +103,4 @@ A project's own working material over its steps and objective: milestones (D27),
 ### Suggestions
 
 - Paths: `bio-plane/src/investigation/`; tests `bio-plane/test/m/investigation/`.
+- **F1** *(not yet met: BOB grading, coordinator ruling 04:19 5 Nov)* declare acceptProposals with weight reversible, refused to a machine (surface-declarations R17, BOB's grade; investigation R28)
