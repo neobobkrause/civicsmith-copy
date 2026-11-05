@@ -137,11 +137,17 @@ function reset(cfg) {
         state: CFG.state === undefined ? {} : CFG.state };
 }
 reset({});
-/* the canonical bytes \`plane-suggest.mjs\`'s F10 branch keys a verbatim resubmit on */
-const canon = (v) => {
+/* the canonical bytes \`plane-suggest.mjs\`'s F10 branch keys a verbatim resubmit on: the submission without the write's
+   own \`idem\` (agent-steps:392), which names the call, not what is submitted, as the plane's own key leaves it out */
+const canonOf = (v) => {
   if (v === null || typeof v !== "object") return JSON.stringify(v ?? null);
-  if (Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
-  return "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}";
+  if (Array.isArray(v)) return "[" + v.map((x) => canonOf(x)).join(",") + "]";
+  return "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + canonOf(v[k])).join(",") + "}";
+};
+const canon = (v) => {
+  if (v === null || typeof v !== "object" || Array.isArray(v)) return canonOf(v);
+  const { idem, ...rest } = v;
+  return canonOf(rest);
 };
 const runCtx = (CFG) => (CFG.contextType || "inquiry") === "project"
   ? { type: "project", id: CFG.target || "INQ-1", questions: CFG.questions || CFG.cites || [] }
@@ -751,8 +757,12 @@ section("R18 · fanout, the internet level: one op=capturerequest per judged tar
                 { level: "internet", url: "http://localhost/x" }, { level: "meaning", target: "INQ-R18" }] },
     { reports: [] }, { candidates: [] }, {}] });
   const st = await planeState(mf);
+  /* agent-steps:392: each write now carries its own \`idem\` (agent-steps R54), one per call, never repeated. */
+  const capIdem = st.log.filter((l) => l.op === "capturerequest").map((l) => l.body.idem);
+  t("R18 (agent-steps:392): each request carries its own idem, distinct, naming the run",
+    [capIdem.every((x) => typeof x === "string" && x.startsWith("run-1:")), new Set(capIdem).size], [true, 3]);
   t("R18: one request per internet-level target, {run, target, address}, its own target else the run's",
-    st.log.filter((l) => l.op === "capturerequest").map((l) => l.body),
+    st.log.filter((l) => l.op === "capturerequest").map(({ body: { idem, ...rest } }) => rest),
     [{ run: "run-1", target: "INQ-R18", address: "https://example.org/a" },
      { run: "run-1", target: "INQ-R18", address: "https://example.org/b" },
      { run: "run-1", target: "INQ-R18", address: "http://localhost/x" }]);
