@@ -21,3 +21,4 @@
 {"at":"2026-11-05T21:39:12Z","row":"created","pass":18,"id":"inquiry","session":"session_018Bhceg9VMeWecrAxj5Ygzr","printed_at":"2026-11-05T21:37:56Z","owed_since":"2026-11-05T21:15:39Z","min":23.6}
 {"at":"2026-11-05T21:46:37Z","row":"pass","pass":19,"session":"session_018BhcefSY1HcDdU87BP9fxU","why":"starts owed since 2026-11-05T21:30:52Z","owed_since":"2026-11-05T21:30:52Z","started":[],"archive":[],"failed":[],"waiting":[],"again":[]}
 {"at":"2026-11-05T21:54:59Z","row":"pass","pass":20,"session":"session_018BhcefSY1HcDdU87BP9fxU","why":"starts owed since 2026-11-05T21:42:16Z","owed_since":"2026-11-05T21:42:16Z","started":[],"archive":[],"failed":[],"waiting":[],"again":[]}
+{"at":"2026-11-05T22:03:23Z","row":"pass","pass":21,"session":"session_018BhcefSY1HcDdU87BP9fxU","why":"starts owed since 2026-11-05T21:51:06Z","owed_since":"2026-11-05T21:51:06Z","started":[],"archive":[],"failed":[],"waiting":[],"again":[]}
