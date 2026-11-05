@@ -351,6 +351,8 @@ export const searchMethods = {
     const segs = this.rows(`SELECT import_id, piece, n FROM register_segments WHERE sha256=?`, oldSha);
     this.tx(() => {
       this.sql.exec(`UPDATE register_segments SET sha256=?, bytes=?, rows = rows - ? WHERE sha256=?`, newSha, out.length, drop.size, oldSha);
+      /* citation R28: the old file's rows taken (data row i is file row i + 2), so a content row over one answers removed */
+      for (const i of drop) this.sql.exec(`INSERT OR IGNORE INTO register_segment_removed (sha256, row) VALUES (?,?)`, oldSha, i + 2);
       this.port.repoint({ from: oldSha, to: newSha, places: moved });
       /* the rows after a removed one move up by the number removed before them */
       for (const s of segs) {

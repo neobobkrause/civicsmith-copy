@@ -119,7 +119,7 @@ export async function handleSignin(req, env, deps) {
     written(refusal(code, WORDS[code], status, { trace, ...extra }), { outcome, code, ...lineOf(extra) });
   const lineOf = (extra) => ("runner_text_head" in extra ? { runner_text_head: extra.runner_text_head } : {});
 
-  /* R109: the one road to a runner is `REMOTE`. */
+  /* R109, F2: no runner is bound (the remote session is gone), so every step answers RUNNER_NOT_CONFIGURED. */
   const runner = remoteOf(env);
   if (!runner) return own("RUNNER_NOT_CONFIGURED", 503, {}, "failed");
   const body = await req.json().catch(() => null);
