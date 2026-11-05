@@ -232,7 +232,7 @@ export const SCREEN_KEYS = Object.freeze({
     "shell.unavailable.nothing.title",
   ]),
   doorbell: Object.freeze([
-    "refusal.SECRET_NOT_RECOGNISED",
+    "refusal.SECRET_NOT_RECOGNISED", "screen.doorbell.preview.head", "screen.doorbell.after.head",
     "screen.doorbell.secret.make", "screen.doorbell.secret.make.help", "screen.doorbell.receipt.fingerprint", "screen.doorbell.receipt.fingerprint.help", "screen.doorbell.receipt.size", "screen.doorbell.receipt.pseudonym", "screen.doorbell.receipt.pseudonym.help", "screen.doorbell.receipt.secret", "screen.doorbell.receipt.secret.note",
     "state.loading", "state.empty", "state.failed", "refusal.uncatalogued", "screen.doorbell.name", "screen.doorbell.purpose",
     "act.knock.label.doorbell", "act.knock.does", "screen.doorbell.file.help", "screen.doorbell.file.label",
