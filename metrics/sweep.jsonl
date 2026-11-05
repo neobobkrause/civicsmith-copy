@@ -33,3 +33,4 @@
 {"at":"2026-11-05T03:16:07Z","row":"sweep","session":"session_01RAN5emK1snYonbEbVPHbAP","bob_acts":true,"bob_quiet_h":0,"root_context":39,"live":10,"job_cap":20,"sessions":15,"startable":6,"blocked":4,"blocked_oldest_min":107,"working":6,"waiting":4,"idle_capacity":{"kind":"work","since":"2026-11-05T03:03:39Z","min":12,"live":10,"cap":20,"held":0,"startable":6,"empty":10,"alarm":true,"owed_since":"2026-11-05T02:45:35Z"}}
 {"at":"2026-11-05T03:19:06Z","row":"ready","live":12,"job_cap":20,"started":[]}
 {"at":"2026-11-05T03:23:08Z","row":"ready","live":12,"job_cap":20,"started":[]}
+{"at":"2026-11-05T03:23:45Z","row":"ready","live":13,"job_cap":20,"started":["answer-envelope"]}
