@@ -1,0 +1,1 @@
+{"row":"triage","user":"installer","verdict":"not affected","evidence":"build/modules.json:212 installer (newgroup/, bio-plane/public/newgroup/) holds no file that imports corpus-export, every code file under its paths read at 39ad801299","at":"2026-11-05T14:27:56.931Z","key":"corpus-export:398","worker":"merge: imports check","cost":"0"}
