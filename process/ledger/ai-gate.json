@@ -23,7 +23,8 @@
     "agent-worker",
     "setup-words",
     "test-support",
-    "agent-steps"
+    "agent-steps",
+    "record-grammar"
   ],
   "suite": {
     "cwd": "ai-gate",
