@@ -49,8 +49,9 @@ const get = (path) => new Request(`https://agent-runner${path}`);
 test('R12 the Worker exports AgentRunner, the library proxy and the default handler; each request reaches the image unchanged and is answered as the image answers', async () => {
   const h = await hosted({ provider: () => new Promise(() => {}) });
   try {
-    // RemoteSession (R42's stub) stays exported only while agent-worker's REMOTE binding names it (R13).
-    assert.deepEqual(Object.keys(h.mod).filter((k) => k !== 'RemoteSession' || !remoteBound()).sort(), ['AgentRunner', 'ContainerProxy', 'default']);
+    // RemoteSession (R42's retired stub) is set aside here: its deletion, with migration v3, is R13's (not yet met),
+    // and the R12 R10 test below checks it while agent-worker's REMOTE binding names it.
+    assert.deepEqual(Object.keys(h.mod).filter((k) => k !== 'RemoteSession').sort(), ['AgentRunner', 'ContainerProxy', 'default']);
     const port = readManifest().image.port;
     for (const [method, path] of [['GET', '/version'], ['GET', '/run/status'], ['GET', '/'], ['DELETE', '/x'], ['POST', '/run']]) {
       const body = method === 'POST' ? JSON.stringify(runBody()) : undefined;

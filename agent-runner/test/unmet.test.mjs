@@ -1,7 +1,7 @@
 // Requirements not yet met by this module's own paths, named here per K208 (the owner of what each waits on is named).
 import { test } from 'node:test';
 test.todo('R10 egress in fleet-member.json equals the issuer host alone: the issuer host (bio-plane/src/ai-catalogue/index.mjs:43, CATALOGUE_ADDRESS) holds a place word R11 forbids in configuration; a ruling or a placeless issuer host first');
-test.todo('R13 the configuration declares the issuer host as egress at rest (as R10). RemoteSession stays exported (stub, migration v2) until agent-worker PR 364 removes the REMOTE binding (agent-worker/wrangler.jsonc:100); that change deletes it (migration v3)');
+test.todo('R13 the configuration declares the issuer host as egress at rest (as R10). agent-worker no longer binds REMOTE (agent-worker/wrangler.jsonc:90), so the RemoteSession stub and its deletion by migration v3 are due: left to the next attempt by the coordinator ruling of 5 Nov');
 test.todo('R14 `bind` names the binding BOB chooses in place of agent-worker\'s retired RUNNER, and `egress` the issuer host (as R10)');
 test.todo('R47 the key reaches the adapters only through agent-model\'s credential resolver for the run\'s account (BR16): agent-model exports no turn or resolver for a declared plan yet (agent-model/src/model.mjs). Also: the key lives on in JS strings (the request text, call.mjs Authorization header, run.mjs key decode), so key.fill(0) clears only the run\'s byte copy');
 test.todo('R50 every call goes through agent-model with its host pin, and a served identity that differs is refused as ai-gate R18 says: agent-model\'s pinned turn is not on tranche (agent-model/src/model.mjs; ai-gate R8)');
