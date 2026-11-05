@@ -143,3 +143,4 @@
 {"at":"2026-11-05T20:57:47Z","row":"sent","n":72,"to":"bob","text":"merged PR 469 (job screens-publish): node .process/tool/p3.mjs notice triage screens-publish:469 (provider notice screens-publish:469; 1 user module owes a worker's judgment: control-plane: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-05T20:59:43Z","row":"outcome","n":72,"outcome":"delivered"}
 {"at":"2026-11-05T21:01:11Z","row":"sent","n":73,"to":"bob","text":"merged PR 478 (job jurisdictions-c); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-05T21:01:38Z","row":"outcome","n":73,"outcome":"delivered"}
