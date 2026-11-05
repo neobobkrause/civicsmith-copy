@@ -344,3 +344,4 @@ None: answered by Bob 2026-09-26 (K102). The draft's two questions were technica
 - `reviewAnswer`, the grant secret and the review door's reader are here, as `build/extraction/review.md` placed them. C-66.6 is here, as `build/extraction/ai-runs.md` placed it.
 - C-61.1 (`requiredArgument`), C-68.1 (`storageAbsent`) and C-68.5 (`publishedStoreAbsent`) are not this module's. Each is raised by handlers that move out (`capture`, `publication`, the knock). The earliest of them holds the row, and later ones import it (K78 (3)).
 - The legacy root query API (`/?op=`, one old deployment) stays until Bob retires that deployment (P1).
+- **F1** *(not yet met: signin-door PR 460, coordinator 08:25)* R112 (K4210) test bio-plane/test/m/control-plane/declared-ops.test.mjs reads SIGNIN_DECLARED.subscriptionsignin, which signin-door PR 460 retires under op-grades R57: the test must pass with or without that entry
