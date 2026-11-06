@@ -20,3 +20,4 @@
 {"at":"2026-11-05T11:42:16Z","row":"outcome","n":10,"outcome":"delivered"}
 {"at":"2026-11-05T22:12:46Z","row":"sent","n":11,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job ai-catalogue complete, PR #484 ready, session session_018BhcegXqmfrixXmJNsCVY3: run status"}
 {"at":"2026-11-05T22:12:59Z","row":"outcome","n":11,"outcome":"delivered"}
+{"at":"2026-11-06T01:59:51Z","row":"sent","n":12,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (12 jobs ready). Then: job ai-catalogue BLOCKED: run status"}
