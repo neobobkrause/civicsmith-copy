@@ -1,7 +1,7 @@
 /* filing-templates: the reads (R14, R15, R20, R24, R25), at the module's interface. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seeded, world, draft, approved, V, MACHINE, TEST, HARBOUR, TEXT, sha, secret, twoProfiles, reviewedOf, attributed, PROFILE_IDS, PRO_REVIEW } from "./fixture.mjs";
+import { seeded, world, draft, approved, V, MACHINE, TEST, HARBOUR, TEXT, sha, secret, twoProfiles, reviewedOf, attributed, PROFILE_IDS } from "./fixture.mjs";
 import * as ft from "../../../src/filing-templates/index.mjs";
 import * as jurisdictions from "../../../../jurisdictions/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
@@ -108,7 +108,7 @@ test("R15 the profile's templates are read as approved versions of origin profil
   const r = w.ft.templateRead({ template: "TPL-test-records-request", viewer: D });
   const pt = jurisdictions.get(TEST).action_kinds.find((k) => k.kind === "records_request").template;
   assert.deepEqual({ ...r.template }, { id: pt.id, kind: "records_request", use: "file", profiles: [TEST], name: "request under the records act",
-                                        scope: "group", origin: "profile" });
+                                        scope: "group", origin: "profile", layer: TEST });
   const v = r.version;
   assert.deepEqual([v.state, v.text, v.sha, v.version, v.author.name, v.approved.by.name, v.approved.at, v.approved.basis, v.notes.text],
                    ["approved", pt.text, sha(pt.text), 1, "Ada Example", "Cy Example", "2026-09-01", "TEST", "A made-up template for tests."]);
