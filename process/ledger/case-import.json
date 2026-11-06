@@ -48,7 +48,8 @@
   ],
   "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/case-import.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-04T16:03:56Z"
+    "state": "WORKING",
+    "at": "2026-11-06T14:09:19Z",
+    "reason": "reopened: meet the unmet requirement marks R36"
   }
 }
