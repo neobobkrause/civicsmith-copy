@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "action-records",
+  "session": "session_018BhceemLa7LWFnk9ZmfiV8",
+  "started": "2026-11-06T19:00:12Z",
+  "ended": "2026-11-06T19:02:10Z",
+  "at": "2026-11-06T19:02:10Z",
+  "minutes": 1.97,
+  "result": "pass",
+  "layer": 9,
+  "suite_seconds": 2.159,
+  "tests": {
+    "total": 42,
+    "pass": 41,
+    "fail": 0
+  }
+}
