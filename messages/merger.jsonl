@@ -281,3 +281,4 @@
 {"at":"2026-11-06T02:55:08Z","row":"sent","n":141,"to":"bob","text":"PR 507 (job stewards) fires a review trigger and has no review recorded for e6901805cd: review it (node .process/tool/p3.mjs review brief 507), then node .process/tool/p3.mjs merge train note 507 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
 {"at":"2026-11-06T02:55:25Z","row":"sent","n":142,"to":"bob","text":"PR 513 (job installer-steps) fires a review trigger and has no review recorded for 1353565048: review it (node .process/tool/p3.mjs review brief 513), then node .process/tool/p3.mjs merge train note 513 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
 {"at":"2026-11-06T02:55:40Z","row":"outcome","n":141,"outcome":"delivered"}
+{"at":"2026-11-06T02:55:49Z","row":"outcome","n":142,"outcome":"delivered"}
