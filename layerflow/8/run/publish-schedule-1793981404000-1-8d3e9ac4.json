@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 8,
+  "module": "publish-schedule",
+  "round": 1,
+  "started": "2026-11-06T16:10:04Z",
+  "ended": "2026-11-06T16:11:31Z",
+  "minutes": 1.5,
+  "tested_on": "b69df73d6fa15c54d61c527e6a40c7354f4ce6ec",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-06T16:11:31Z"
+}
