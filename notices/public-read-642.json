@@ -1,0 +1,24 @@
+{
+  "row": "notice",
+  "at": "2026-11-06T15:11:36Z",
+  "key": "public-read:642",
+  "provider": "public-read",
+  "ids": [],
+  "pr": 642,
+  "users": [
+    "answer-envelope",
+    "control-plane",
+    "filings",
+    "instance-setup",
+    "op-declarations",
+    "plane",
+    "screens-publish",
+    "store-assembly",
+    "store-request"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 8,
+    "provides": true
+  }
+}

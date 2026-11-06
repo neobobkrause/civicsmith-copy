@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 8,
+  "user": "case-inputs",
+  "provider": "public-read",
+  "provider_pr": 642,
+  "provider_land": "02a112a634d2a6eb0d9cd11a60acf6c51bb4ad21",
+  "at": "2026-11-06T15:11:36Z",
+  "key": "case-inputs<-public-read@02a112a634",
+  "why": "its Public / Provides section changed; its tests of Public / Provides requirements changed (bio-plane/test/m/public-read/fixtures.mjs, bio-plane/test/m/public-read/fixtures.test.mjs), which may mean a changed answer shape",
+  "triggers": [
+    "provides-text",
+    "provides-test"
+  ]
+}
