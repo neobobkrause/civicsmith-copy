@@ -224,3 +224,4 @@
 {"at":"2026-11-06T00:20:06Z","row":"sent","n":113,"to":"bob","text":"PR 609 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 609 changes module files, which go through a job: newgroup/dist/.gitkeep (installer)"}
 {"at":"2026-11-06T00:21:23Z","row":"outcome","n":112,"outcome":"delivered"}
 {"at":"2026-11-06T00:21:46Z","row":"outcome","n":113,"outcome":"delivered"}
+{"at":"2026-11-06T00:22:25Z","row":"sent","n":114,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: IDLE CAPACITY: 3 job sessions live of the cap 20, 0 startable, for 36 min; 17 x no startable work: run node .process/tool/p3.mjs job start --ready --live <n>: run status"}
