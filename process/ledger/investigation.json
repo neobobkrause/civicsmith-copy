@@ -52,8 +52,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "Ruling of 6 Nov ~12:38 applied: R26-R32 met on the branch (suite 64/64); the acceptproposals declaration and arm withdrawn (F1 restored not met, for layer 11 with op-declarations 430); partsOf cited as reader-contract R65 (provenance's partsOf is the register's parts of a whole, a different function). Still refused, outside my paths: layer publish's record-check says 'CLAUDE.md:1: commit 68addf0d3e changes the approvals but is not neobobkrause's own commit'. 68addf0d is job sync's merge of layer/7 into the branch (parents 34df18c9, 8754e192); CLAUDE.md at the tip equals layer/7's (git diff 8754e192e5 HEAD -- CLAUDE.md is empty). The ids it holds back: R26, R27, R28, R29, R30, R31, R32. Needs the record-check to judge a sync merge against its layer parent, or BOB's way through.",
-    "at": "2026-11-06T13:11:05Z"
+    "state": "COMPLETE",
+    "at": "2026-11-06T13:34:11Z"
   }
 }
