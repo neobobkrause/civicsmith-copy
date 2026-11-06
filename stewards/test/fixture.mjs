@@ -69,6 +69,7 @@ export function makeEnv(over = {}) {
     STEWARD_KEYS: `${ALICE.name}:${shaHex(ALICE.key)}\n${BOB.name}:${shaHex(BOB.key)}\n`,
     SOURCE_KEY: "k".repeat(32),
     NOTIFY_FROM: "notices@civicsmith.example",
+    LISTING_RULE_TEXT_VERSION: "2026-10-15",
     STORE: makeStore(),
     NOTIFY: { send: async (m) => { sent.push(m); } },
     ...over,

@@ -1,7 +1,7 @@
 /* stewards: the pages and their words (R1, R5, R7, R18–R20, R22, R23). Nothing is loaded from another origin; every
    text a reporter or steward supplied is escaped where it is shown. */
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
-import { KINDS, CAPS } from "./config.mjs";
+import { KINDS, CAPS, RULE_PARTS } from "./config.mjs";
 
 export const PUBLISHER = "Believe in Oakland";
 export const STEWARDS = "Civicsmith's stewards";
@@ -46,6 +46,27 @@ export const DECISION_WORDS = Object.freeze({
   withdraw: localize("stewards.ui.decision_withdraw", "Withdrawn"),
   reinstate: localize("stewards.ui.decision_reinstate", "Reinstated"),
 });
+
+/* R24: the parts of the approved listing rule, in words, by their number. */
+export const RULE_PART_WORDS = Object.freeze({
+  1: localize("stewards.ui.rule_part_1", "it is not a team using Civicsmith, or it is advertising or spam"),
+  2: localize("stewards.ui.rule_part_2", "it pretends to be another team, person or office"),
+  3: localize("stewards.ui.rule_part_3", "it was published against a court's order, or it is unlawful to publish"),
+  4: localize("stewards.ui.rule_part_4", "it is aimed at a private person's home, family or private life"),
+});
+
+/* R26: what the steward may tell the group, by their own mail; the service sends it nowhere. */
+export const TELL_GROUP_KEY = "stewards.ui.tell_group_listing";
+export const tellGroupSentence = ({ rule_part, reason }) => localize("stewards.ui.tell_group_listing",
+  "Civicsmith's stewards have removed your team's public listing. It breaks part {number} of the listing rule: {part}. The stewards' reason: {reason}",
+  { number: rule_part, part: RULE_PART_WORDS[rule_part] ?? rule_part, reason });
+export const TELL_GROUP = Object.freeze({
+  send: (contact) => localize("stewards.ui.tell_group_send", "If you tell the team, send it by your own mail to the contact given: {contact}. This service sends nothing to the team.", { contact }),
+  noContact: localize("stewards.ui.tell_group_no_contact", "No contact was given, so the team is told nothing. No public status line exists for a declined or removed team."),
+});
+const tellGroupBlock = (d, contact) => `<section class="notice" data-word="${TELL_GROUP_KEY}"><h3>${esc(localize("stewards.ui.tell_group_heading", "What to tell the team"))}</h3>`
+  + `<p data-part="${esc(d.rule_part)}">${esc(tellGroupSentence(d))}</p>`
+  + `<p>${esc(contact == null ? TELL_GROUP.noContact : TELL_GROUP.send(contact))}</p></section>`;
 
 /* A sentence that holds one link: the link's place is a marker in the sentence, put back after the sentence is escaped. */
 const MARK = "\u0001";
@@ -164,7 +185,10 @@ export function reportDetailPage({ report: r, decisions, standing }) {
   const services = Object.entries(SERVICE_WORDS).map(([k, w]) => `<option value="${k}">${esc(w)}</option>`).join("");
   const reason = esc(localize("stewards.ui.label_reason", "Reason"));
   const decided = (d) => `<li>${esc(when(d.at))} · ${esc(d.steward)} · ${esc(DECISION_WORDS[d.decision] || d.decision)}`
-    + `${d.service ? ` · ${esc(SERVICE_WORDS[d.service] || d.service)} ${esc(d.item)}${d.already ? ` ${esc(localize("stewards.ui.already_withdrawn", "(already withdrawn)"))}` : ""}` : ""}: ${esc(d.reason)}</li>`;
+    + `${d.service ? ` · ${esc(SERVICE_WORDS[d.service] || d.service)} ${esc(d.item)}${d.already ? ` ${esc(localize("stewards.ui.already_withdrawn", "(already withdrawn)"))}` : ""}` : ""}`
+    + `${d.rule_part != null ? ` · ${esc(localize("stewards.ui.decision_rule_part", "listing rule part {number} (text of {version})", { number: d.rule_part, version: d.rule_text_version }))}` : ""}: ${esc(d.reason)}`
+    + `${d.decision === "withdraw" && d.service === "public_listing" && d.rule_part != null ? tellGroupBlock(d, r.contact) : ""}</li>`;
+  const parts = RULE_PARTS.map((k) => `<option value="${k}">${esc(localize("stewards.ui.option_rule_part", "{number}: {part}", { number: k, part: RULE_PART_WORDS[k] }))}</option>`).join("");
   return page(localize("stewards.ui.detail_title", "Report {ref}", { ref: r.ref }), `<h1>${esc(localize("stewards.ui.detail_title", "Report {ref}", { ref: r.ref }))}</h1>
 <p>${esc(localize("stewards.ui.detail_summary", "{kind} · received {received} · {state}", { kind: KIND_WORDS[r.kind], received: when(r.received), state: STATE_WORDS[r.state] || r.state }))}</p>
 <p><strong>${esc(localize("stewards.ui.detail_concerns", "Concerns:"))}</strong> ${esc(r.concerns)}</p><p><strong>${esc(localize("stewards.ui.detail_contact", "Contact:"))}</strong> ${r.contact == null ? esc(localize("stewards.ui.detail_contact_none", "none kept")) : esc(r.contact)}</p>
@@ -174,6 +198,7 @@ export function reportDetailPage({ report: r, decisions, standing }) {
 <label for="decision">${esc(localize("stewards.ui.label_decision", "Decision"))}</label><select id="decision" name="decision"><option value="dismiss">${esc(localize("stewards.ui.option_dismiss", "Dismiss"))}</option><option value="withdraw">${esc(localize("stewards.ui.option_withdraw", "Withdraw a shared service"))}</option></select>
 <label for="service">${esc(localize("stewards.ui.label_service", "Shared service (to withdraw)"))}</label><select id="service" name="withdraw_service"><option value=""></option>${services}</select>
 <label for="item">${esc(localize("stewards.ui.label_item", "Item (to withdraw)"))}</label><input id="item" name="withdraw_item" maxlength="${CAPS.item}">
+<label for="rule_part">${esc(localize("stewards.ui.label_rule_part", "Part of the listing rule (a public listing only)"))}</label><select id="rule_part" name="withdraw_rule_part"><option value=""></option>${parts}</select>
 <label for="reason">${reason}</label><textarea id="reason" name="reason" required maxlength="${CAPS.reason}"></textarea><button type="submit">${esc(localize("stewards.ui.button_record", "Record the decision"))}</button></form>`
   + standing.map((w) => `<h2>${esc(localize("stewards.ui.reinstate_heading", "Reinstate {service} {item}", { service: SERVICE_WORDS[w.service] || w.service, item: w.item }))}</h2><form method="post" action="/steward/reinstate"><input type="hidden" name="service" value="${esc(w.service)}"><input type="hidden" name="item" value="${esc(w.item)}"><label>${reason}</label><textarea name="reason" required maxlength="${CAPS.reason}"></textarea><button type="submit">${esc(localize("stewards.ui.button_reinstate", "Reinstate"))}</button></form>`).join("")
   + `<p><a href="/steward/reports">${esc(localize("stewards.ui.link_reports", "Reports"))}</a></p>`, { steward: true });

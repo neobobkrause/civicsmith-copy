@@ -2,7 +2,7 @@
    limit's check and its count, or a decision and its register entry, never interleave with another request. The Worker
    calls it by `stub.fetch` with `{op, args}` and reads `{ok, ...}` or `{refused, ...}`. */
 import { LIMITS, UNDECIDED_MAX, PAGE_SIZE, SERVICE_SOURCE, DAY, bucketOf, firstBucket, retryAfter, oldestKept } from "./limits.mjs";
-import { DECISIONS, validReason, validTarget } from "./config.mjs";
+import { DECISIONS, validReason, validTarget, checkRulePart, rulePartOf } from "./config.mjs";
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS reports (ref TEXT PRIMARY KEY, kind TEXT NOT NULL, concerns TEXT NOT NULL,
@@ -28,6 +28,9 @@ export class StewardsStore {
   constructor(state) {
     this.sql = state.storage.sql;
     for (const s of SCHEMA) this.sql.exec(s);
+    /* R24: a listing withdrawal's rule part and the rule text's version, kept per decision; added to a store made before. */
+    const have = new Set(this.rows("SELECT name FROM pragma_table_info('decisions')").map((r) => r.name));
+    for (const col of ["rule_part", "rule_text_version"]) if (!have.has(col)) this.sql.exec(`ALTER TABLE decisions ADD COLUMN ${col} TEXT`);
   }
 
   async fetch(request) {
@@ -102,14 +105,15 @@ const OPS = {
   get({ ref }) {
     const r = this.one("SELECT ref, kind, concerns, description, contact, received, state FROM reports WHERE ref = ?", ref);
     if (!r) return { refused: "NO_SUCH_REPORT" };
-    const decisions = this.rows("SELECT decision, reason, service, item, already, steward, at FROM decisions WHERE ref = ? ORDER BY id", ref)
-      .map((d) => ({ ...d, already: !!d.already }));
+    const decisions = this.rows("SELECT decision, reason, service, item, already, steward, at, rule_part, rule_text_version FROM decisions WHERE ref = ? ORDER BY id", ref)
+      .map(({ rule_part, rule_text_version, ...d }) => ({ ...d, already: !!d.already,
+        ...(rule_part != null ? { rule_part, rule_text_version } : {}) }));
     const standing = this.rows("SELECT service, item, since FROM withdrawals WHERE ref = ? ORDER BY since DESC", ref);
     return { ok: true, report: r, decisions, standing };
   },
 
   /* R12, in its refusal order (the session is the Worker's). */
-  decide({ ref, decision, reason, withdraw, steward, now }) {
+  decide({ ref, decision, reason, withdraw, steward, now, ruleTextVersion }) {
     const r = typeof ref === "string" ? this.one("SELECT ref, kind FROM reports WHERE ref = ?", ref) : null;
     if (!r) return { refused: "NO_SUCH_REPORT" };
     if (!DECISIONS.includes(decision)) return { refused: "DECISION_UNKNOWN" };
@@ -117,15 +121,20 @@ const OPS = {
     let already = false;
     if (decision === "withdraw") {
       if (!validTarget(withdraw)) return { refused: "WITHDRAW_TARGET_INVALID" };
+      const partRefused = checkRulePart(withdraw);
+      if (partRefused) return { refused: partRefused };
+      if (withdraw.service === "public_listing" && !ruleTextVersion) return { refused: "RULE_TEXT_VERSION_UNSET" };
       already = !!this.one("SELECT 1 AS x FROM withdrawals WHERE service = ? AND item = ?", withdraw.service, withdraw.item);
       if (!already) this.sql.exec("INSERT INTO withdrawals (service, item, since, ref, kind) VALUES (?, ?, ?, ?, ?)",
         withdraw.service, withdraw.item, now, ref, r.kind);
     }
-    this.sql.exec("INSERT INTO decisions (ref, decision, reason, service, item, already, steward, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    const listing = decision === "withdraw" && withdraw.service === "public_listing";
+    this.sql.exec("INSERT INTO decisions (ref, decision, reason, service, item, already, steward, at, rule_part, rule_text_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       ref, decision, reason, decision === "withdraw" ? withdraw.service : null, decision === "withdraw" ? withdraw.item : null,
-      already ? 1 : 0, steward, now);
+      already ? 1 : 0, steward, now, listing ? rulePartOf(withdraw) : null, listing ? ruleTextVersion : null);
     this.sql.exec("UPDATE reports SET latest_act = ?, state = ? WHERE ref = ?", now, decision === "dismiss" ? "dismissed" : "withdrawn", ref);
-    return { ok: true, ref, decision, ...(decision === "withdraw" ? { already } : {}) };
+    return { ok: true, ref, decision, ...(decision === "withdraw" ? { already } : {}),
+      ...(listing ? { rule_part: rulePartOf(withdraw), rule_text_version: ruleTextVersion } : {}) };
   },
 
   /* R13: reinstatement, recorded on the report whose withdrawal it ends. */
