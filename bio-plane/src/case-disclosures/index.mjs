@@ -95,6 +95,9 @@ import { chainsOf, materialHeld, materialRows, photoRead, documentRead, PHOTO_NO
 import { flagsListed, flagsJudged, acceptedWorkRow } from "./accepted.mjs";
 import { NOT_SHOWN_WORDS, tensionSide, SELF_ATTESTED_SENTENCE } from "./document.mjs";
 import { word, localize } from "../setup-words/index.mjs";
+import { contentOf } from "../content/index.mjs";
+import { typedStepOf } from "../textchain.mjs";
+import { TYPED_FROZEN_UNCHECKED_KEY, TYPED_FROZEN_CHECKED_KEY } from "../basis-versions/index.mjs";
 
 const NO_ANSWER = localize("case-disclosures.why.no_answer", "no answer");
 
@@ -127,6 +130,9 @@ function refusal(family, key, extra = {}) {
    against the rows that govern it (N259, N275). */
 const disclosureRefusal = (key, extra) => refusal(CASE_DISCLOSURE_CHECKS, key, extra);
 
+/** R38: the key a typist or checker with no credit choice (or `group`, `project`) is named by. */
+export const TEAM_MEMBER_CREDIT_KEY = "credit.team_member";
+
 export class CaseDisclosures {
   #deps;
   #now;
@@ -135,13 +141,13 @@ export class CaseDisclosures {
                 attestation = null, capture = null, sources = null, extraction = null, caseImport = null,
                 promotion = null, entities = null, events = null, lines = null, money = null, people = null,
                 membership = null, caseCarriage = null, bias = null, caseChecker = null, retrieval = null,
-                now = null } = {}) {
+                content = null, now = null } = {}) {
     this.sql = storage.sql;
     this.storage = storage;
     this.record = record;
     this.#deps = { host, inquiry, strength, contradiction, provenance, attestation, capture, sources, extraction,
                    caseImport, promotion, entities, events, lines, money, people, membership, caseCarriage, bias,
-                   caseChecker, retrieval };
+                   caseChecker, retrieval, content };
     this.#now = typeof now === "function" ? now : () => new Date().toISOString();
   }
 
@@ -174,6 +180,8 @@ export class CaseDisclosures {
   get caseChecker() { return this.#deps.caseChecker ||= caseCheckerModule; }
   /* R33 (T51): the team's governing time zone (`retrieval` R69), the zone a photo's day is read in. */
   get retrieval() { return this.#deps.retrieval ||= retrievalOf(this.#deps.host); }
+  /* R37, R39 (T53; DEC-464): a typed passage's words (`content.passageText`) and its typing (`transcriptionRead`). */
+  get content() { return this.#deps.content ||= contentOf(this.#deps.host); }
 
   #rows(q, ...a) { return [...this.sql.exec(q, ...a)]; }
   #one(q, ...a) { for (const r of this.sql.exec(q, ...a)) return r; return null; }
@@ -627,6 +635,40 @@ export class CaseDisclosures {
     return typeof z === "string" && z ? z : null;
   }
 
+  /* R37, R39 (T53; DEC-464): a leg on a `typed` chain (text-chain R107, `typedStepOf`). `quoted` is the typed words as
+     `content.passageText` holds them, byte for byte (null only when content holds none); `typed` is the label as of
+     signing, `{label_key, typist, checked_by: [{checker, at}], frozen_at}`: `frozen_at` the instant the document is
+     prepared (this call), `checked_by` the members other than the typist whose attestation is at or before it, in time
+     order, and `label_key` `basis-versions`' frozen key (its R59), never the live "not yet checked". The typist and each
+     checker are credited as `#typingCredit` says. Null for a leg on no typed chain. Never throws. */
+  #typedAsSigned(contentId, chain, frozenAt, viewer) {
+    let step = null;
+    try { step = Array.isArray(chain) ? typedStepOf(chain) : null; } catch { step = null; }
+    if (!step) return null;
+    let quoted = null, read = null;
+    try { quoted = this.content.passageText(contentId); } catch { quoted = null; }
+    try { read = this.content.transcriptionRead({ id: contentId, viewer }); } catch { read = null; }
+    const typist = read && read.ok === true ? read.transcriber : (typeof step.member === "string" ? step.member : null);
+    const atOrBefore = (t) => typeof t === "string" && Date.parse(t) <= Date.parse(frozenAt);
+    const first = new Map();
+    for (const a of read && read.ok === true && Array.isArray(read.attestations) ? read.attestations : [])
+      if (a && a.attestor !== typist && atOrBefore(a.at)
+          && (!first.has(a.attestor) || Date.parse(a.at) < Date.parse(first.get(a.attestor)))) first.set(a.attestor, a.at);
+    const checked_by = [...first].sort((x, y) => Date.parse(x[1]) - Date.parse(y[1]) || (x[0] < y[0] ? -1 : 1))
+      .map(([member, at]) => ({ checker: this.#typingCredit(member), at }));
+    return { quoted: typeof quoted === "string" ? quoted : null,
+             typed: { label_key: checked_by.length ? TYPED_FROZEN_CHECKED_KEY : TYPED_FROZEN_UNCHECKED_KEY,
+                      typist: this.#typingCredit(typist), checked_by, frozen_at: frozenAt } };
+  }
+
+  /* R38's credit of a typist or a checker. The credit act for a typing is `case-tensions`' and it holds none yet
+     (requirements, Uses), so every typing stands at "no choice": no handle, key, signature or member id, named by the
+     key `credit.team_member`. The shape is `case-grammar` R37's credit (`{level, shown}`) with that key beside it. A
+     missing choice never blocks signing. */
+  #typingCredit(_member) {
+    return { level: null, shown: null, key: TEAM_MEMBER_CREDIT_KEY };
+  }
+
   /** R15 (DEC-112 (3); K1305, K1315): for each finding a member's chain reaches (R8), its legs exactly as
    *  `strength.gradingFacts` (its R35) answers them at the act, with `levels` null (`recomputePair` takes the levels the
    *  signed attribution section states), one `grading_facts:` row each, `{finding, ord}` beside the answer's fields; and
@@ -639,6 +681,7 @@ export class CaseDisclosures {
    *  findings are handed (members first, R6) then `ord`; `title` the document's title as its record states it (as R7's
    *  `materials:` row), else null; `role` the leg's own role in the basis. A refused finding adds no entry. */
   findingFacts(findings, viewer) {
+    const frozenAt = this.#now();
     const grading = [], passages = [], unread = [], ungraded = [];
     const titles = new Map();
     const titleOf = (bundle) => {
@@ -668,8 +711,12 @@ export class CaseDisclosures {
                           role: typeof facts.role === "string" && facts.role ? facts.role : null });
         const u = unitsOf(leg.capture_sha);
         const at = u && Array.isArray(u.units) ? u.units.find((x) => canonicalJson(x.extent) === leg.extent) : null;
+        const chain = leg.chain == null ? null : JSON.parse(leg.chain);
+        const typed = this.#typedAsSigned(leg.content_id, chain, frozenAt, viewer);
         passages.push({ finding: id, ord: Number(leg.ord), content_id: leg.content_id, capture_sha: leg.capture_sha,
-                        extent: JSON.parse(leg.extent), chain: leg.chain == null ? null : JSON.parse(leg.chain), quoted: at && !at.truncated ? at.text : null });
+                        extent: JSON.parse(leg.extent), chain,
+                        quoted: typed ? typed.quoted : (at && !at.truncated ? at.text : null),
+                        ...(typed ? { typed: typed.typed } : {}) });
       }
     }
     return { grading, passages, unread, ungraded };
