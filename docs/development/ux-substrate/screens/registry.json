@@ -6151,7 +6151,7 @@
     },
     {
      "op": "owed:aitestopen DEC-420",
-     "label": "Test an AI that isn't listed",
+     "label": "Test an AI that is not listed",
      "status": "owed"
     },
     {
@@ -6335,7 +6335,7 @@
     },
     {
      "op": "owed:aisendrefuse DEC-420",
-     "label": "Don't send",
+     "label": "Do not send",
      "status": "owed"
     },
     {
@@ -6411,7 +6411,7 @@
     },
     {
      "op": "owed:airesultsdecline DEC-420",
-     "label": "Don't send the results",
+     "label": "Do not send the results",
      "status": "owed"
     }
    ],
