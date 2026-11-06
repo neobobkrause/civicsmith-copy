@@ -38,8 +38,13 @@ test("notice signatures:101 (as R59 amends it): a development build adds the dep
   const key = await newKey();
   const line = key.line.replace(/ throwaway$/, ` bio-ai-catalogue${DEVELOPMENT_KEY_MARK}`);
   const { cat } = await world({ keys: null,
-    env: { ...DEV_ENV(await signSeed(key)), [DEVELOPMENT_KEY_VAR]: line } });
+    env: { ...DEV_ENV(await signSeed(key)), [DEVELOPMENT_KEY_VAR]: line }, seed: RELEASE_SEED });
   assert.equal(cat.seedAtStart.outcome, "found");
+  /* F2: handed no seed, the development build takes the development seed, signed by that line's key: it lists plans */
+  const dev = await world({ keys: null, env: { ...DEV_ENV(await sign(key, NS_AI_CATALOGUE,
+    aiCatalogueStatement(catalogue.DEVELOPMENT_SEED.statement))), [DEVELOPMENT_KEY_VAR]: line } });
+  assert.equal(dev.cat.seedAtStart && dev.cat.seedAtStart.outcome, "found");
+  assert.ok(dev.cat.plansOf({ at: AT }).length > 0);
 });
 
 test("notice signatures:101: a copy built with no keys of its own refuses a throwaway-signed seed UNKNOWN_KEY, even in a development build", async () => {
