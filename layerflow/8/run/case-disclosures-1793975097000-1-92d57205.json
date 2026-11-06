@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 8,
+  "module": "case-disclosures",
+  "round": 1,
+  "started": "2026-11-06T14:24:57Z",
+  "ended": "2026-11-06T14:26:19Z",
+  "minutes": 1.4,
+  "tested_on": "2ec3f0bed0c001296309565d060d61561288bca0",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-06T14:26:19Z"
+}
