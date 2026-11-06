@@ -302,3 +302,4 @@
 {"at":"2026-11-06T03:35:26Z","row":"outcome","n":151,"outcome":"delivered"}
 {"at":"2026-11-06T03:41:41Z","row":"sent","n":152,"to":"bob","text":"merged PR 485 (job ai-runs): node .process/tool/p3.mjs notice triage ai-runs:485 (provider notice ai-runs:485; 22 user modules owe a worker's judgment: action-plans, agent-worker, capture-requests, case-account, control-plane, instance-reports, instance-setup, intent, op-declarations, op-specs-late, plan-work, plane, question-explorer, queue-producers, run-productions, scheduler, screens-document, store-ask, store-assembly, store-jobs, surface-declarations, wizard-scripts: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-06T03:42:04Z","row":"outcome","n":152,"outcome":"delivered"}
+{"at":"2026-11-06T03:42:49Z","row":"sent","n":153,"to":"bob","text":"the starter started job inquiry (PR 617): subscribe_pr_activity to each pull request"}
