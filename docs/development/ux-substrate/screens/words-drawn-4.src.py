@@ -2995,3 +2995,15 @@ wform('screen.form.refused.nothing', 'Nothing was saved. Your answers are kept h
 wform('screen.form.refused.item', '{field}: {what}', "one link in the summary; {field} the field's label, {what} its line")
 wform('screen.form.refused.prefix', 'To put right:', "before each field's line, so it is never colour alone; read by screen readers")
 wform('screen.form.refused.title', 'To put right: {title}', "the page title while the form is refused (WCAG 2.4.2)")
+
+# DEC-495 (the ux lane, 6 Nov 2026; BD-11): "How Civicsmith uses AI" is a static public page on each team's Civicsmith,
+# at /ai, served beside the published cases (no account), versioned with the release so it describes the code that ran.
+# Reached from DEC-491's note on every published case and review copy, and named in the complete edition with its
+# release. Its body is the publication lane's draft, worded here when it arrives; these are its frame and its links.
+def w495(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-495: ' + note))
+w495('screen.ai-use.name', 'How Civicsmith uses AI', "the page's title and its link text")
+w495('screen.ai-use.release', 'This describes Civicsmith {version}, the version {team} runs.', "under the title: which release the page describes")
+w495('screen.ai-use.respond', "To respond to a published case, use its docket: each case's docket is its public record, and the team answers there.", 'BD-11: in place of a contact address')
+w495('screen.published.ai.howpage', 'How Civicsmith uses AI', "a link at the end of DEC-491's note, to this team's /ai page")
+w495('case.edition.ai.howpage', 'How Civicsmith {version} uses AI: {address}', "the complete edition's line naming the page by release and address (DEC-41: the edition stands alone, so it states the version)")
