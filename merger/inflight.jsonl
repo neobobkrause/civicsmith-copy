@@ -93,3 +93,4 @@
 {"at":"2026-11-05T23:58:42.685Z","row":"inflight","pr":514,"module":"answer-envelope","tip":"28efc6058ca89a34c7506d1ed8bff29543fd83fd","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T01:43:42.685Z"}
 {"at":"2026-11-06T00:03:37.253Z","row":"end","pr":514,"tip":"28efc6058ca89a34c7506d1ed8bff29543fd83fd","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-06T00:04:26.386Z","row":"inflight","pr":519,"module":"site","tip":"068891dd0571d8731e157bf22b1e76e6776764f1","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T01:49:26.386Z"}
+{"at":"2026-11-06T00:09:22.030Z","row":"end","pr":519,"tip":"068891dd0571d8731e157bf22b1e76e6776764f1","cause":"pull request 519's held merged result 068891dd05 would need a new one (e8dc251fbb): not pushed; the hold ends and the train merges it afresh","session":"session_018BhcefmntMFwp8MDNkzCNL"}
