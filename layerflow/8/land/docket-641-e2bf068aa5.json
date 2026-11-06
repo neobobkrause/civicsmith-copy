@@ -1,0 +1,20 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "docket",
+  "pr": 641,
+  "head": "e2bf068aa5aca952afb25df6e9973e29a8dc1f5a",
+  "before": "536fe28388070a393bbdaacc6760a59ebb7d5aa2",
+  "merge": "ce49eb117c1bca1b31d2a5da7a241392aaeb17e3",
+  "at": "2026-11-06T15:02:42Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": []
+  },
+  "users_rescheduled": [],
+  "users_noticed": []
+}
