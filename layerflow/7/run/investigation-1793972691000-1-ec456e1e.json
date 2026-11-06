@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 7,
+  "module": "investigation",
+  "round": 1,
+  "started": "2026-11-06T13:44:51Z",
+  "ended": "2026-11-06T13:46:35Z",
+  "minutes": 1.7,
+  "tested_on": "8754e192e5fc99a8a8bedde2b9ca218e06f55f9a",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-06T13:46:35Z"
+}
