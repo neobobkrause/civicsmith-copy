@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-issuer","verdict":"not affected","evidence":"build/modules.json:221 gives ai-issuer no paths (\"paths\": []), so no file of it imports ai-catalogue or uses the changed seed default or added exports","at":"2026-11-06T01:44:26.339Z","key":"ai-catalogue:484","worker":"a2e65f354941f3f84","cost":"unmeasured"}

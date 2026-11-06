@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-declarations","verdict":"not affected","evidence":"bio-plane/src/op-declarations/ (compose, declared, index, t45-t51.mjs) no file imports ai-catalogue; build/modules.json:180 lists it as a use only","at":"2026-11-06T01:44:26.339Z","key":"ai-catalogue:484","worker":"a169b70beab21d390","cost":"unmeasured"}

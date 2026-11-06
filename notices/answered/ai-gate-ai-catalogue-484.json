@@ -1,0 +1,1 @@
+{"row":"answered","user":"ai-gate","by":"triage","evidence":"ai-gate/src/plan.mjs:4 imports only CATALOGUE_ADDRESS (used at line 114 for the issuer host), unchanged by PR 484","at":"2026-11-06T01:44:26.339Z","key":"ai-catalogue:484","worker":"a2e65f354941f3f84","cost":"unmeasured"}
