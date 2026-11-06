@@ -129,6 +129,9 @@ test("R47: C-124.30 and C-124.58–.62 take their translations from words.json's
      rows, does not carry it */
   const NO_ROW_YET = ["ADDRESSEE_INCOMPLETE", "PLAN_PRODUCED_BY_MALFORMED"];
   for (const c of Object.keys(ACTION_PLAN_CHECKS)) assert.ok(`refusal.${c}` in WORDS || NO_ROW_YET.includes(c), c);
+  /* R56 (T53): PLAN_PRODUCED_BY_MALFORMED is a row of this module's own, its sentence its own until the design holds one */
+  assert.equal(typeof ACTION_PLAN_CHECKS.PLAN_PRODUCED_BY_MALFORMED?.translation, "string", "R56's row is minted here");
+  assert.equal("refusal.PLAN_PRODUCED_BY_MALFORMED" in WORDS, false);
   assert.equal(ACTION_PLAN_CHECKS.SUBJECT_MALFORMED.translation, WORDS["refusal.SUBJECT_MALFORMED"]);
   assert.equal("refusal.SUBJECT_MALFORMED" in PLAN_WORDS, false);
 });
