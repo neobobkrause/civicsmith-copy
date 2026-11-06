@@ -212,3 +212,4 @@
 {"at":"2026-11-05T23:45:37Z","row":"outcome","n":106,"outcome":"delivered"}
 {"at":"2026-11-05T23:58:00Z","row":"sent","n":107,"to":"bob","text":"PR 606 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 606 changes generated module files (newgroup/dist/newgroup.bundled.mjs), and the gate on 4bf798b202 is not green"}
 {"at":"2026-11-05T23:59:51Z","row":"outcome","n":107,"outcome":"delivered"}
+{"at":"2026-11-06T00:03:46Z","row":"sent","n":108,"to":"bob","text":"merged PR 514 (job answer-envelope); the MERGER's starter starts the work it freed"}
