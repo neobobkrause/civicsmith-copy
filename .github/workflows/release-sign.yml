@@ -50,6 +50,14 @@ jobs:
             [ "$dir" = "bio-plane" ] && continue
             (cd "$dir" && npm ci --no-audit --no-fund --loglevel=error)
           done
+      - name: build the bundles (the dist pass, 6 Nov 2026; dist/ is not committed)
+        run: |
+          set -euo pipefail
+          # build_words first: setup-words reads words.json, which is generated and not committed.
+          node docs/development/ux-substrate/screens/build_words.mjs \
+            && node bio-plane/src/setup-words/build.mjs \
+            && node bio-plane/src/case-checker/build-program.mjs \
+            && node bio-plane/scripts/bundles.mjs
       - name: assemble, nothing written (step 3)
         run: node bio-plane/scripts/release-assemble.mjs --version "${{ inputs.version }}" --dry-run
       - name: sign (step 4)

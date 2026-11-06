@@ -41,6 +41,20 @@ jobs:
           # Bounded (K3191): run 38522006895 hung after Chromium's download until the job's limit. Without the
           # browser journey-check's arms report their failures and end (K3185), so the rest of the battery still runs.
           (cd bio-plane/src/journey-check && timeout 600 npx playwright-core install --with-deps chromium) || echo "::warning::Chromium not installed; journey-check's browser arms will fail by name"
+      - name: build (the dist pass, 6 Nov 2026; generated files and dist/ are not committed)
+        run: |
+          set -euo pipefail
+          # bundles.mjs builds every guarded member, so each member with a lock file is installed first.
+          node bio-plane/scripts/bundles.mjs --install-dirs | while read -r dir; do
+            [ -d "$dir/node_modules" ] && continue
+            (cd "$dir" && npm ci --no-audit --no-fund --loglevel=error)
+          done
+          node docs/development/ux-substrate/screens/build_words.mjs
+          node bio-plane/src/setup-words/build.mjs
+          node docs/development/ux-substrate/screens/words-reads.src.mjs . --build
+          node bio-plane/src/case-checker/build-program.mjs
+          node bio-plane/scripts/bundles.mjs
+          npm --prefix newgroup run build
       - name: test every package
         run: |
           set -uo pipefail

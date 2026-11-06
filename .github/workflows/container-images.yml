@@ -51,6 +51,17 @@ jobs:
       - name: version
         id: v
         run: echo "version=$(node -p "require('./${{ matrix.member }}/package.json').version")" >> "$GITHUB_OUTPUT"
+      # agent-runner's Dockerfile copies dist/image/, which is built, never committed (R56; the dist pass, 6 Nov 2026).
+      - if: matrix.member == 'agent-runner'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "26.10.0"
+      - name: build agent-runner's image code
+        if: matrix.member == 'agent-runner'
+        run: |
+          set -euo pipefail
+          (cd bio-plane && npm ci --no-audit --no-fund --loglevel=error)
+          node agent-runner/scripts/build-image.mjs
       - name: build and push
         id: push
         uses: docker/build-push-action@v6

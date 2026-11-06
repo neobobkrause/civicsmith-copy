@@ -102,7 +102,12 @@ jobs:
             (cd "$dir" && npm ci --no-audit --no-fund --loglevel=error)
           done
       - name: build the branch's artifacts
-        run: node bio-plane/scripts/bundles.mjs
+        run: |
+          set -euo pipefail
+          # The generated words, rows and program the bundles import are not committed (rows.mjs, program.mjs).
+          node docs/development/ux-substrate/screens/build_words.mjs
+          node bio-plane/src/setup-words/build.mjs && node bio-plane/src/case-checker/build-program.mjs
+          node bio-plane/scripts/bundles.mjs
       - name: deploy each member, in the order discoverMembers lists
         run: |
           set -euo pipefail
