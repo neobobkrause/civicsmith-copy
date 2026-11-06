@@ -53,7 +53,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T05:12:15Z"
+    "state": "WORKING",
+    "at": "2026-11-06T23:43:17Z",
+    "reason": "reopened: Continue on a new branch: GitHub hides the PR the suspended civicsmith account opened on job/actions and refuses a second PR on that head. First merge origin/job/actions (efdacd8eeb: the R112-R116 work, attempt 2, already synced with layer/9 at a24b559676; suite 164/164) into your branch (a merge, keeps history), then sync with layer/9 and publish. Its notes: R116 needs the revert exemption at publish (its test passes reverted because actionMove already refused NO_RESOLUTION; the complied default was in screens-action); R112 --not-verified: the two-clock-entry half is action-clocks clockPropose, not asserted here. ActionRecords.lawEntries was not removed (the R8 classifier misread it): leave actionLaws calling it."
   }
 }
