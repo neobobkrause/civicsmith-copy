@@ -414,3 +414,4 @@
 {"at":"2026-11-06T14:52:45Z","row":"sweep","session":"session_018BhceduipEp2mmEFHN9Diu","bob_acts":true,"bob_quiet_h":0.3,"root_context":58,"live":10,"job_cap":20,"sessions":20,"startable":7,"blocked":1,"blocked_oldest_min":2045,"working":5,"waiting":5}
 {"at":"2026-11-06T14:57:50Z","row":"check","by":"start check","live":10,"live_at":"2026-11-06T14:52:45Z","job_cap":20,"startable":0}
 {"at":"2026-11-06T15:03:05Z","row":"check","by":"send","live":10,"live_at":"2026-11-06T14:52:45Z","job_cap":20,"startable":0}
+{"at":"2026-11-06T15:08:12Z","row":"check","by":"job start","live":10,"live_at":"2026-11-06T14:52:45Z","job_cap":20,"startable":0}
