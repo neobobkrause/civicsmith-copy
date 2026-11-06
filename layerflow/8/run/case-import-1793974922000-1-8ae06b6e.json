@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 8,
+  "module": "case-import",
+  "round": 1,
+  "started": "2026-11-06T14:22:02Z",
+  "ended": "2026-11-06T14:23:36Z",
+  "minutes": 1.6,
+  "tested_on": "2ec3f0bed0c001296309565d060d61561288bca0",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-06T14:23:36Z"
+}
