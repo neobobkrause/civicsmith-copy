@@ -41,3 +41,9 @@ Consequences:
 - ux is qualified the same way if it lacks a research area.
 - The first ask is ratification F1's second-signature design over docketStatement, to publication once it is qualified. If the lane rules it Bob's, it goes to the coordinator.
 - Until then, no job takes ratification F1.
+
+## BD-3: Screens and words stay with ux; the other lanes design behaviour (BOB, 6 Nov)
+Context: two questions after qualification. The ux lane's Q5: who owns the ceremony, docket, case and question-page screens, ux or the new lanes (BD-2)? The publication lane's F1 answer: where should the words for the ceremony's docket step live, since today they sit in ux-substrate's words files?
+Decision: ux owns every screen and every word. The design stream is ux's (CLAUDE.md's design-lanes line), and one words stream feeds the build (setup-words, ux-substrate/screens/words.json). The publication and investigation lanes design behaviour, requirements, capabilities and use cases in their areas. They state each screen or wording need (what the member must see or be told, and when) and BOB passes it to the ux lane, which writes the screen and the words.
+Rejected: each lane writing its own words. That splits one words stream across three folders the build reads, and loses the single voice.
+Consequences: the publication lane's F1 needs (the ceremony's docket step, the core-due "not yet on the docket" line, and the Publish at… notice) go to ux as its first ask from another lane. This restates the earlier charters (INVESTIGATION-DESIGN K2076 and ACTIONS-DESIGN K2433: "screens owed to the UX stream").
