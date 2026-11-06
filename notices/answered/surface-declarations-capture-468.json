@@ -1,0 +1,1 @@
+{"row":"answered","user":"surface-declarations","by":"triage","evidence":"build/modules.json:178 surface-declarations has \"paths\": [] and no file imports capture, so nothing reads gradeNoteOf's answer","at":"2026-11-06T01:26:34.928Z","key":"capture:468","worker":"a5f5215858606b9d6","cost":"unmeasured"}

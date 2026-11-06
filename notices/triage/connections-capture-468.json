@@ -1,0 +1,1 @@
+{"row":"triage","user":"connections","verdict":"not affected","evidence":"bio-plane/src/connections/index.mjs:963 its only call on capture is resolveLinks (the instance built at index.mjs:1467); it never calls gradeNoteOf/op=gradenote or reads the grade note","at":"2026-11-06T01:26:34.928Z","key":"capture:468","worker":"a20053db4ad920a55","cost":"unmeasured"}

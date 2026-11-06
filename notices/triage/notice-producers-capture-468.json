@@ -1,0 +1,1 @@
+{"row":"triage","user":"notice-producers","verdict":"not affected","evidence":"bio-plane/src/notice-producers/index.mjs:1403 its only use of captureOf (bound at :262) is #capture.fetchesDone for the fetch-done notices; it never calls gradeNoteOf/op=gradenote","at":"2026-11-06T01:26:34.928Z","key":"capture:468","worker":"a889171d4f495e14d","cost":"unmeasured"}

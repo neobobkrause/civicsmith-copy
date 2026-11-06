@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-ask","by":"triage","evidence":"build/modules.json:186 store-ask has no paths (\"paths\": []) and no file imports capture, so nothing of it calls capture's gradeNoteOf (R76)","at":"2026-11-06T01:26:34.928Z","key":"capture:468","worker":"a6bc2dae0ab7bffdb","cost":"unmeasured"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"mail-door","by":"triage","evidence":"bio-plane/src/mail-door/index.mjs:528 uses capture only for emailCapture (and evidenceAbsent at :519); it never reads gradeNoteOf/op=gradenote, so R76's null for email captures is not used by it","at":"2026-11-06T01:26:34.928Z","key":"capture:468","worker":"ab4915a6e0e539acf","cost":"unmeasured"}

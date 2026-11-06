@@ -1,0 +1,1 @@
+{"row":"triage","user":"op-specs-late","verdict":"not affected","evidence":"build/modules.json:179 has no paths (\"paths\": []), so no file of it imports capture or uses gradeNoteOf","at":"2026-11-06T01:26:34.928Z","key":"capture:468","worker":"a889171d4f495e14d","cost":"unmeasured"}

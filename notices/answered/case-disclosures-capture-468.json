@@ -1,0 +1,1 @@
+{"row":"answered","user":"case-disclosures","by":"triage","evidence":"bio-plane/src/case-disclosures/index.mjs:348 uses capture only for lateAttestationsOf and captureAccountsOf (also :349, :618); it never calls gradeNoteOf (op=gradenote), the only behaviour R76 changed","at":"2026-11-06T01:26:34.928Z","key":"capture:468","worker":"ae5b06bc5188089f1","cost":"unmeasured"}

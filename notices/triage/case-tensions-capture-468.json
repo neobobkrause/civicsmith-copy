@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-tensions","verdict":"not affected","evidence":"bio-plane/src/case-tensions/index.mjs:607 uses capture only for captureAccountsOf (also :691); it never calls gradeNoteOf (op=gradenote), the only behaviour R76 changed","at":"2026-11-06T01:26:34.928Z","key":"capture:468","worker":"ae5b06bc5188089f1","cost":"unmeasured"}
