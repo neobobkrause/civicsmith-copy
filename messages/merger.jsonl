@@ -284,3 +284,4 @@
 {"at":"2026-11-06T02:55:49Z","row":"outcome","n":142,"outcome":"delivered"}
 {"at":"2026-11-06T02:59:46Z","row":"sent","n":143,"to":"bob","text":"merged PR 611 (job ai-catalogue): node .process/tool/p3.mjs notice triage ai-catalogue:611 (provider notice ai-catalogue:611; 12 user modules owe a worker's judgment: agent-model, agent-runner, agent-worker, ai-accounts, ai-gate, ai-issuer, ai-runs, ai-use, answer-envelope, op-declarations, store-assembly, surface-declarations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-06T03:01:39Z","row":"outcome","n":143,"outcome":"delivered"}
+{"at":"2026-11-06T03:05:57Z","row":"sent","n":144,"to":"bob","text":"the starter started job ai-catalogue (PR 615): subscribe_pr_activity to each pull request"}
