@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-document","by":"triage","evidence":"build/modules.json:201 the module lists no paths and no file imports wizard-scripts, so nothing of it reads SCREEN_REGISTRY's added acts (aiproviders, aimine, aiproject) or SCREEN_ACTS_ADDED","at":"2026-11-06T00:46:58.450Z","key":"wizard-scripts:546","worker":"a41766be2d089e9f5","cost":"unmeasured"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-door","by":"triage","evidence":"bio-plane/src/store-door/dispatch.mjs:462 uses wizardScriptsOf only for tallyRefusal and writingHelp (dispatch.mjs:528), neither of which reads SCREEN_REGISTRY or the screensFromFile/SCREEN_ACTS_ADDED change","at":"2026-11-06T00:46:58.450Z","key":"wizard-scripts:546","worker":"a41766be2d089e9f5","cost":"unmeasured"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-plan","by":"triage","evidence":"build/modules.json:207 the module lists no paths and no file imports wizard-scripts, so nothing of it reads the added registry acts or SCREEN_ACTS_ADDED","at":"2026-11-06T00:46:58.450Z","key":"wizard-scripts:546","worker":"a41766be2d089e9f5","cost":"unmeasured"}
