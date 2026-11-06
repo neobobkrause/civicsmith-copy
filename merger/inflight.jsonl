@@ -107,3 +107,4 @@
 {"at":"2026-11-06T00:43:48.275Z","row":"inflight","pr":547,"module":"control-plane-store-request","tip":"a956ddc0c682b79cb512935b8400e957449c0db3","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T02:28:48.275Z"}
 {"at":"2026-11-06T00:48:29.592Z","row":"end","pr":547,"tip":"a956ddc0c682b79cb512935b8400e957449c0db3","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-06T00:49:15.424Z","row":"inflight","pr":411,"module":"ai-gate","tip":"41bc35c81a0df000132de2bba03811306407790d","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T02:34:15.424Z"}
+{"at":"2026-11-06T00:54:17.120Z","row":"end","pr":411,"tip":"41bc35c81a0df000132de2bba03811306407790d","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
