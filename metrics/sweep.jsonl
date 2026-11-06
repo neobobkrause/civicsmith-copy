@@ -311,3 +311,4 @@
 {"at":"2026-11-06T01:49:17Z","row":"ready","live":1,"parked":2,"job_cap":20,"started":["ai-catalogue"],"by":"starter","owed_since":"2026-11-06T01:39:35Z"}
 {"at":"2026-11-06T01:52:12Z","row":"sweep","session":"session_018BhceduipEp2mmEFHN9Diu","bob_acts":true,"bob_quiet_h":0.1,"root_context":34,"live":0,"job_cap":20,"sessions":14,"parked":2,"startable":2,"blocked":4,"blocked_oldest_min":1291,"working":0,"waiting":2,"idle_capacity":{"kind":"empty","since":"2026-11-06T01:49:17Z","min":2,"live":0,"cap":20,"held":0,"startable":0,"empty":20,"alarm":false}}
 {"at":"2026-11-06T01:55:04Z","row":"ready","live":3,"job_cap":20,"started":[]}
+{"at":"2026-11-06T01:56:58Z","row":"ready","live":1,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-06T01:43:57Z"}
