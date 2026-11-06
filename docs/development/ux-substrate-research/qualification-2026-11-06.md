@@ -156,7 +156,7 @@ These go to BOB, which brings them to Bob. Options and the lane's recommendation
 
 The lane's own calls, each reported to BOB:
 
-- **`layouts.html`.** At 1.55 MB it is over the 1 MB cap, it is stale (built 28 Oct), and it cannot be rebuilt green: `check_library.py` fails 15 times on renamed acts. The lane will decide whether it leaves the tree to be built at close, or is split.
+- **`layouts.html`.** At 1.55 MB it is over the 1 MB cap, it is stale (built 28 Oct), and `check_library.py` had seemed to fail 15 times on renamed acts (corrected 6 Nov: that was a missing `origin/main` ref; see code.md H2's correction). The lane will decide whether it leaves the tree to be built at close, or is split.
 - **`door.escalationdecline`.** The source `words-actions.src.py:282` says "Hold at this stage", but the shipped `words-actions.json:1695` says "Decline to escalate". The lane will decide which is intended, and whether to add a check that each source matches its output.
 - **The folder's contents.** Files no build reads (code.md H8), and the README's statement of what `build.py` builds.
 - **Owed words not in the inventory** (requirements.md §3B):
