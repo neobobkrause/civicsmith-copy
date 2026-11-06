@@ -237,3 +237,4 @@
 {"at":"2026-11-06T00:43:11Z","row":"sent","n":119,"to":"bob","text":"merged PR 546 (job wizard-scripts): node .process/tool/p3.mjs notice triage wizard-scripts:546 (provider notice wizard-scripts:546; 15 user modules owe a worker's judgment: affordances, answer-envelope, control-plane, instance-setup, interface-shell, op-declarations, queue-producers, screens-document, screens-inquiry, screens-matter, screens-plan, screens-publish, store-assembly, store-door, translations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-06T00:43:31Z","row":"outcome","n":119,"outcome":"delivered"}
 {"at":"2026-11-06T00:48:38Z","row":"sent","n":120,"to":"bob","text":"merged PR 547 (job control-plane-store-request); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-06T00:50:19Z","row":"outcome","n":120,"outcome":"delivered"}
