@@ -230,3 +230,4 @@
 {"at":"2026-11-06T00:25:33Z","row":"outcome","n":115,"outcome":"delivered"}
 {"at":"2026-11-06T00:31:02Z","row":"sent","n":116,"to":"bob","text":"merged PR 541 (job capture-requests); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-06T00:31:24Z","row":"outcome","n":116,"outcome":"delivered"}
+{"at":"2026-11-06T00:32:04Z","row":"sent","n":117,"to":"bob","text":"PR 430 (job op-declarations) fires a review trigger and has no review recorded for eecb25a8d8: review it (node .process/tool/p3.mjs review brief 430), then node .process/tool/p3.mjs merge train note 430 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
