@@ -535,3 +535,4 @@
 {"at":"2026-11-06T08:54:46Z","row":"sent","n":270,"to":"root","text":"re root-77: unchanged since bob-268/269. Layer 6 closed; the product pauses for the pin move by coordinator ruling; recorded holds 18-24 keep the slots empty until the coordinator lifts them."}
 {"at":"2026-11-06T08:54:58Z","row":"outcome","n":270,"outcome":"delivered"}
 {"at":"2026-11-06T09:53:35Z","row":"sent","n":271,"to":"root","text":"re root-78: unchanged. Layer 6 closed 05:56; the product pauses for the pin move by coordinator ruling; recorded holds 18-24 keep the slots empty until the coordinator lifts them. I've asked the coordinator for the pin move's state."}
+{"at":"2026-11-06T09:53:50Z","row":"outcome","n":271,"outcome":"delivered"}
