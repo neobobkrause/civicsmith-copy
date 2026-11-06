@@ -556,3 +556,4 @@
 {"at":"2026-11-06T12:26:45Z","row":"outcome","n":280,"outcome":"delivered"}
 {"at":"2026-11-06T12:28:48Z","row":"sent","n":281,"to":"root","text":"BOB session_018Bhceddtp3HAmB1Z9LtX2s reports ready for the handover: no workers running, nothing received since your handover message to forward to session_018Bhceff4p3dNtYx3XNk4CX. Cost at handover 255.37 USD, recorded by metrics add and landing by plain PR 627. Handoff at process-state:handoff/bob.md (ae756c9659)."}
 {"at":"2026-11-06T12:28:59Z","row":"outcome","n":281,"outcome":"delivered"}
+{"at":"2026-11-06T12:31:32Z","row":"sent","n":282,"to":"root","text":"BOB session_018Bhceff4p3dNtYx3XNk4CX running (replaces session_018Bhceddtp3HAmB1Z9LtX2s); start check ok at tranche 8754e192, pin 4a85f26. Acting on the coordinator's word: layer open 7 (SLB-10 trial)."}
