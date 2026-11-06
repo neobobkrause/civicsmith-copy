@@ -30,6 +30,6 @@
   "prior_work": "Meet R109, R119, R120, R124, R133, R137 only, each marked '(not yet met: T53)' in build/requirements/jurisdictions.md. Turn each into real tests under jurisdictions/test/ (a test.todo for it becomes real tests), make them pass inside jurisdictions/, and when a requirement is met clear its mark yourself (REQ-4); the requirements already met answer as before. If meeting one needs a change in another module, or rests on something not yet recorded, do not edit it: say so to your coordinator in your receipt's not-verified list and leave that requirement's mark. Commit no generated file (bio-plane/src/setup-words/rows.mjs, words-unreviewed.json, any dist): the gate refuses it. Where build/situations/job.md names the old tool (proc), follow this START's commands instead. No earlier unmerged work touches this module.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-03T23:39:42Z"
+    "at": "2026-11-05T22:40:24Z"
   }
 }
