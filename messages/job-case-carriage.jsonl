@@ -1,3 +1,4 @@
 {"at":"2026-11-06T16:12:35Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (16 jobs ready). Then: job case-carriage BLOCKED: run status"}
 {"at":"2026-11-06T16:12:50Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-06T17:39:51Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job case-carriage complete, PR #658 ready, session session_018BhcegbaF4gRNDGS9Dab2N: run status"}
+{"at":"2026-11-06T17:40:03Z","row":"outcome","n":2,"outcome":"delivered"}
