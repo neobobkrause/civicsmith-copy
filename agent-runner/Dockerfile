@@ -8,7 +8,7 @@ FROM gcr.io/distroless/nodejs22-debian12:nonroot@sha256:afa48e2ae1100924bfb06924
 # NODE_EXTRA_CA_CERTS: Cloudflare's container CA, through which the Worker applies R45's platform list to HTTPS.
 ENV NODE_ENV=production PORT=8080 NODE_EXTRA_CA_CERTS=/etc/cloudflare/certs/cloudflare-containers-ca.crt
 WORKDIR /app
-# The image's code, built and committed by scripts/build-image.mjs: one self-contained entry and the run it loads. It
+# The image's code, built by scripts/build-image.mjs at test, deploy and release, never committed: one self-contained entry and the run it loads. It
 # installs no package, so no install or lifecycle script runs (R16).
 COPY dist/image/ ./
 USER nonroot

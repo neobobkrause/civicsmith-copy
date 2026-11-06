@@ -3,7 +3,7 @@
  * after listening (`dist/image/chunks/run.js`), each one self-contained file with `ai-gate` and the plane modules it
  * reads bundled in (the image cannot reach the repository), and no package of `node_modules`. The plane's word table
  * (`setup-words/rows.mjs`) is left out: the image reads its own carried rows (R41), and a `localize` inside a bundled
- * module answers its code's own sentence. The output is committed;
+ * module answers its code's own sentence. The output is built at test, deploy and release, never committed;
  * the image's Dockerfile copies `dist/image/` and nothing else. Deterministic: the same sources give the same bytes.
  *
  * Run from the repository root: node agent-runner/scripts/build-image.mjs [--check]
