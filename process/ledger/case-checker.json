@@ -41,8 +41,7 @@
   ],
   "prior_work": "Answer provider notice case-catalogue:224, judged affected by a read-only triage: check.mjs:517 calls checkCaseDocument and carries every finding into publication_checks.findings, and lines 522-523 add error-severity findings to caseLevel.differs, so the new C-41.18 UNGRADED_PASSAGES_MISMATCH and C-41.19 TYPED_PASSAGES_MISMATCH findings now change what the checker reports. Decide from your own requirements what this module must do, adapt or confirm, and add a test of your own (failing with the change reverted where code changes); where your requirements decide nothing, name the gap in not-verified. Edit no other module and commit no generated file.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-06T14:08:43Z",
-    "reason": "reopened: meet the unmet requirement marks R29, R30, R31, R32"
+    "state": "COMPLETE",
+    "at": "2026-11-06T14:31:31Z"
   }
 }
