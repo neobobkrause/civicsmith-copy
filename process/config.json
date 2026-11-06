@@ -396,5 +396,9 @@
   "release_path": [
     "control-plane",
     "journey-check"
-  ]
+  ],
+  "pacing": {
+    "jobs": 3,
+    "pushes_per_hour": 120
+  }
 }

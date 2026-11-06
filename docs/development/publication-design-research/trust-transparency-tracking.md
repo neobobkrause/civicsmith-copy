@@ -1,6 +1,6 @@
 # Standing research: trust and transparency developments (principle, Bob 6 Nov 2026)
 
-Principle (Bob, 6 Nov 2026): "CivicSmith tracks trust and transparency developments, starting with the EU AI Act, and adopts them voluntarily where they serve readers." CivicSmith is not bound by EU rules. This is the first entry, written by a read-only research worker for the `publication` design lane.
+Principle (Bob, 6 Nov 2026): "Civicsmith tracks trust and transparency developments, starting with the EU AI Act, and adopts them voluntarily where they serve readers." Civicsmith is not bound by EU rules. This is the first entry, written by a read-only research worker for the `publication` design lane.
 
 - **Date read:** 2026-11-06. Every source below was read on 2026-11-06 unless the entry says otherwise.
 - **Status of this entry:** research only. Every "adopt / watch / not applicable" below is a suggestion. Each adoption is BOB's decision.
@@ -264,6 +264,21 @@ These are suggestions only.
 | California SB 942/AB 853 | Before **1 Jan 2027** and **1 Jan 2028** | Platform and device dates; any 2026 amendments (not checked). |
 | AP / Reuters primary texts | Next pass | Verify the secondary-source claims. |
 | AI Act scope question (Art 2(1)(c)) | When BOB chooses | Legal advice only if BOB wants it. |
+
+## Open items
+
+These are carried forward from the first entry (lane, 6 Nov 2026), and each is re-checked on the next pass:
+
+1. **AP and Reuters AI policies: primary texts.** The AP July 2026 update and Reuters' AI guidance were read only through secondary sources, because ap.org and reutersagency.com were unreachable from the research tool. Read the primary texts and correct §4.3 where they differ.
+2. **ISO/DIS 22144 (C2PA on the ISO track): its stage.** iso.org returned 403. Confirm the stage and expected publication, and whether the ISO text differs from C2PA 2.5 on text embedding or `c2pa.ai-disclosure`.
+
+## Adoptions so far
+
+This lists each adoption under the principle, with the BOB decision that made it (BD-6 makes each adoption BOB's):
+
+- **BD-7 (Bob, 6 Nov):** a first-exposure AI-use disclosure, led by who ratified. Machine-readable per-sentence provenance goes in the signed case document (case document `/11`).
+- **BD-8 (BOB, 6 Nov):** a published review standard, modelled on Code Commitment 4 and guidelines paras 134–136. The lane's draft is `docs/development/publication-design/review-standard/civicsmith-review-1.md`, id `civicsmith-review/1`.
+- **BD-9 (Bob, 6 Nov):** AI help the product cannot see is declared per field (`declared_ai`) and affirmed by the signer (`review.affirmed`). Per-sentence provenance is an overlay that is available but not shown by default.
 
 ## Not verified
 
