@@ -5,7 +5,6 @@ import assert from "node:assert/strict";
 import { declaredOpHolds } from "../../declared-ops.mjs";
 import { world, projectMd, ANN, BOB, DAN, AI, Q1 } from "./fixture.mjs";
 import { investigationOps, DECLARED_OPS } from "../../../src/investigation/ops.mjs";
-import { declaredRows } from "../../../src/op-declarations/declared.mjs";
 import { parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 import { CLOSED_REASONS } from "../../../src/intent/index.mjs";
 
@@ -106,7 +105,7 @@ const door = async (fields) => {
 };
 
 test("R25: investigation declares projectclose: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
-  assert.ok(Object.hasOwn(DECLARED_OPS, "projectclose"));
+  assert.deepEqual(Object.keys(DECLARED_OPS), ["projectclose"]);
   await declaredOpHolds({ op: "projectclose", declaration: DECLARED_OPS.projectclose, call: door,
     refusedNaming: named({ project: ["NO_SUCH_PROJECT"], reason: ["CLOSE_BAD_REASON"] }),
     values: { project: "sample-project", reason: "resolved" }, same: sameCode });
@@ -120,4 +119,3 @@ test("R25: the declaration states what the screen sends and what the arm reads: 
   assert.deepEqual(d.machineClasses, []);
   assert.equal(d.needs, "contribute");
 });
-
