@@ -19,6 +19,8 @@ const START_IDS = ("R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R99 R11 R12 R13 R14 R15 R16 R
 /* R101 struck by attempt 3 (4 Nov): registers composed, compose-t53.test.mjs */
 const START_UNMET = { R102: "T53", R103: "T53", R104: "T53" };
 const START_RETIRED = ["R48"];
+/* found marks added after the split (F1: attempt 9, 5 Nov, the catalogue's start held before the first request) */
+const FOUND = ["F1"];
 const MOVED = { "store-ask": "R49 R50 R51 R52 R53 R54 R55 R56 R57 R58 R59".split(" "),
   "store-jobs": ("R60 R61 R62 R63 R64 R65 R66 R67 R68 R69 R70 R71 R72 R73 R74 R75 R76 R77 R78 R79 R80 R81 R82 " +
     "R102 R103 R104").split(" ") };
@@ -34,7 +36,7 @@ const copies = (m) => Object.fromEntries(idLines(read(m)).map(([, id, rest]) => 
 }).filter(Boolean));
 
 test("split: the file holds every start-commit id, in the same order, none dropped or added", () => {
-  assert.deepEqual(idLines(read("store-assembly")).map((m) => m[1]), START_IDS);
+  assert.deepEqual(idLines(read("store-assembly")).map((m) => m[1]).filter((id) => !FOUND.includes(id)), START_IDS);
 });
 
 test("split: every moved id is retired here naming its new id, and only those besides R48", () => {
