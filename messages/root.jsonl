@@ -170,3 +170,4 @@
 {"at":"2026-11-06T14:53:31Z","row":"outcome","n":85,"outcome":"delivered"}
 {"at":"2026-11-06T15:52:03Z","row":"sent","n":86,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: Sweep: citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-06T15:52:14Z","row":"outcome","n":86,"outcome":"delivered"}
+{"at":"2026-11-06T16:53:47Z","row":"sent","n":87,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (11 jobs ready). Then: Sweep: IDLE CAPACITY, 17 slots empty, 0 startable: run node .process/tool/p3.mjs job start --ready --live <n> first; only a recorded hold (p3 hold) keeps a slot empty; case-account: BLOCKED; case-carriage: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; project-stage: BLOCKED; publish-schedule: BLOCKED; runtime-limits: BLOCKED."}
