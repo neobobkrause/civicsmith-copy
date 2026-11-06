@@ -1,4 +1,5 @@
 {
+  "merge_strategy": "layer",
   "merge_train_window": 1,
   "tranche": "tranche",
   "record_since": "4250e8860a482bcbebab243e6627ba0cd690e9d7",
