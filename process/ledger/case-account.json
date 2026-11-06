@@ -44,7 +44,8 @@
   ],
   "prior_work": "This module's code and tests exist (split by copy, build/modules.json) but it had no ledger entry until layer 8 opened, so the process never recorded it. Its requirement file has no unmet mark. Run its suite on layer/8. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Edit no other module, and commit no generated file.",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-06T14:20:00Z"
+    "state": "BLOCKED",
+    "reason": "Module work is done: requirement file has no unmet mark; all 49 tests (R1-R17, each with a test) pass on layer/8 b69df73d; nothing to change. layer publish is refused by 'p3 ledger check --base b69df73d6f': process/ledger/case-account.json:1 'a job may not add a ledger entry'. The branch's only diff vs layer/8 is BOB's job-start commit 44f1682f, which adds process/ledger/case-account.json and process/metrics/case-account.jsonl; the entry is on tranche but not on layer/8. Fix (coordinator's): bring the ledger entry into layer/8 (sync tranche into layer/8), then restart publish; no code change needed.",
+    "at": "2026-11-06T16:09:56Z"
   }
 }
