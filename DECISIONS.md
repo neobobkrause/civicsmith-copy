@@ -58,3 +58,13 @@ Context: the ux lane's question. docs/development/ux-substrate/screens/layouts.h
 Decision: option A. layouts.html becomes a generated row in process/config.json, built by screens/build_page.py at layer close and release like words.json. journey-check reads the built file.
 Rejected: B, build_page.py splitting it into parts under the cap; journey-check still changes, to read several files, and the parts stay generated files in git. C, leaving it frozen at 28 Oct; journey-check R6 would compare live screens with an old design after the pin moves.
 Consequences: found mark F11 on journey-check (layer 11), PR 683. Its job changes design.mjs and live.test.mjs:152. BOB adds the config generated row, which lands with the job's change. After that lands, the ux lane removes the frozen copy in a lane-only change.
+
+## BD-6: Trust and transparency developments are tracked and adopted voluntarily (Bob, 6 Nov)
+Context: the ux lane's Q2 on disclosing AI use raised the EU AI Act's transparency duties (Art 50). CivicSmith is not bound by EU rules.
+Decision: a product principle, Bob's words ("agreed", ~18:15Z through the coordinator): "CivicSmith tracks trust and transparency developments, starting with the EU AI Act, and adopts them voluntarily where they serve readers." Adoption is a choice, never a claim of compliance.
+Consequences: the publication lane does the tracking as standing research in docs/development/publication-design-research/. Each adoption is a BD decision of BOB's. The first two adoptions are BD-7 and the provenance part of F1(2).
+
+## BD-7: A published case discloses its AI use at first exposure (Bob, 6 Nov)
+Context: the ux lane's Q2.
+Decision: yes (Bob, "agreed", ~18:15Z). A published case discloses its AI use where a reader first meets it. It is framed as human-reviewed and ratified: it leads with who ratified, with AI as a tool. Machine-readable AI-use provenance (the Art 50(2) direction: per passage, AI or human, inside the signed record) is folded into the publication lane's F1(2) signing-at-scheduling design, so the signed format changes once.
+Consequences: the ux lane writes the words and placement (BD-3). The publication lane extends its F1(2) answer with the provenance's place, shape, source and format change. BOB records that answer and places the requirement changes it names.
