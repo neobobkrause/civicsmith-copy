@@ -226,3 +226,4 @@
 {"at":"2026-11-06T00:21:46Z","row":"outcome","n":113,"outcome":"delivered"}
 {"at":"2026-11-06T00:22:25Z","row":"sent","n":114,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: IDLE CAPACITY: 3 job sessions live of the cap 20, 0 startable, for 36 min; 17 x no startable work: run node .process/tool/p3.mjs job start --ready --live <n>: run status"}
 {"at":"2026-11-06T00:22:45Z","row":"outcome","n":114,"outcome":"delivered"}
+{"at":"2026-11-06T00:25:18Z","row":"sent","n":115,"to":"bob","text":"merged PR 491 (job acquisition-archives); the MERGER's starter starts the work it freed"}
