@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { ok, refusedIn } from "../interface-shell/harness.mjs";
 import { main, actsIn, button, fill, press, word, hasWord, drew, notDrew, dayOf } from "./fixtures.mjs";
-import { inWorld, openAs, settled, readHeld, rewrite } from "./world.mjs";
+import { inWorld, openAs, settled, settledUntil, readHeld, rewrite } from "./world.mjs";
 
 /** Two people the record follows and a tie one declared to the other (a `proxy_for`, a declared step with no source), by the members' own acts. */
 async function declaredTie(me) {
@@ -252,7 +252,10 @@ test("R2 exploreverify \"Check this chain\" sends the drawn path as chain (explo
   const a = longest(p), lead = leadsOf(p)[0];
   const chain = (c) => walk.paths[Number(c.getAttribute("data-chain"))].hops;
   const [ai, li] = [a, lead].map((c) => c.getAttribute("data-chain"));
+  /* the check's answer is drawn when it arrives, after the press settles: waited for, never raced */
+  const verifiedIn = (q, i) => settledUntil(q, () => main(q).querySelector(`[data-verified="${i}"]`));
   await press(p, "exploreverify", { within: a });
+  await verifiedIn(p, ai);
   const body = p.byOp("exploreverify")[0].body;
   assert.equal(body.chain.length, 2);
   assert.deepEqual(body.chain, chain(a).map((h) => ({ id: h.id, kind: h.kind, owner: h.owner })), "the drawn path, hop by hop");
@@ -264,16 +267,23 @@ test("R2 exploreverify \"Check this chain\" sends the drawn path as chain (explo
   const rederived = await openAs(world, me, explorePath(C.chen), { plane: { exploreverify: changing(world, me, "exploreverify", (r) => ({ ...r, hops: r.hops.map((h, i) => (i ? { id: h.id, matches: true } : h)) })) } });
   fill(rederived, { "explore-at": START });
   await press(rederived, "explore");
-  await press(rederived, "exploreverify", { within: longest(rederived) });
-  drew(main(rederived).querySelector(`[data-verified="${ai}"]`), "screen.explore.verify.hop.holds");
+  await settled(rederived);
+  /* each page's own index: chains of one length may be drawn in another order on another walk */
+  const ra = longest(rederived);
+  await press(rederived, "exploreverify", { within: ra });
+  await verifiedIn(rederived, ra.getAttribute("data-chain"));
+  drew(main(rederived).querySelector(`[data-verified="${ra.getAttribute("data-chain")}"]`), "screen.explore.verify.hop.holds");
   /* a tampered hop: a fault the check is made to answer */
-  const t = await walked(world, me, C, { plane: { exploreverify: ok({ ok: true, matches: false, lead: false, hops: [{ id: chain(a)[1].id, matches: false }] }) } });
-  await press(t, "exploreverify", { within: longest(t) });
-  const bad = main(t).querySelector(`[data-verified="${ai}"]`);
+  const t = await walked(world, me, C, { plane: { exploreverify: changing(world, me, "exploreverify", (r) => ({ ...r, matches: false, lead: false, hops: r.hops.map((h, i) => (i ? { id: h.id, matches: false } : h)) })) } });
+  const ta = longest(t);
+  await press(t, "exploreverify", { within: ta });
+  await verifiedIn(t, ta.getAttribute("data-chain"));
+  const bad = main(t).querySelector(`[data-verified="${ta.getAttribute("data-chain")}"]`);
   drew(bad, "screen.explore.verify.differs", { why: "" });
   drew(bad, "screen.explore.verify.hop.differs");
   /* the declared step is a lead, said so by the check itself */
   await press(p, "exploreverify", { within: leadsOf(p)[0] });
+  await verifiedIn(p, li);
   drew(main(p).querySelector(`[data-verified="${li}"]`), "screen.explore.verify.lead");
   assert.deepEqual(p.byOp("exploreverify")[1].body.chain.map((h) => h.id), chain(lead).map((h) => h.id));
 });
