@@ -1,0 +1,23 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "publish-schedule",
+  "pr": 659,
+  "head": "7de355aa05e27971b95ac583ea3e8aede982e256",
+  "before": "45a883ce7b083c692a2f408d1d463c907a79099c",
+  "merge": "2020dcd1fb930482362ae50732ed5fde2109356a",
+  "at": "2026-11-06T17:40:51Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none"
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
