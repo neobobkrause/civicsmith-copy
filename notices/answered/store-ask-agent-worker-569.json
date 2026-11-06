@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-ask","by":"triage","evidence":"build/modules.json:186 lists store-ask with no paths and no tests, so no file of its own uses agent-worker; its one call site would be its own source, which does not exist","at":"2026-11-06T04:38:38.375Z","key":"agent-worker:569","worker":"ac5a7da7b83272170","cost":"unmeasured"}
