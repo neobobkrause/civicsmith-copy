@@ -199,7 +199,7 @@ Terms.
   - C-130.15 `IMPORT_WATCH_BAD_ADDRESS`: "That is not the public https address of the publishing group's copy. Give the address of their copy, with no query and no fragment. Nothing was written."
   - C-130.16 `IMPORT_NOT_WATCHED`: "This imported case is not being watched, so there is no watch to end. Nothing was written."
 - **R15** No place is named in this module's behaviour or outward text.
-- **R36** (T53; DEC-461; invariant) *(not yet met: T53)* **The source's ungrading is not this group's.** The statement changes no result (R3), acceptance (R6), flag (R8) or re-evaluation cause; this group's own case resting on accepted work lists only its own ungraded passages. Test: accept a finding with a listed passage, run case-disclosures R35 on an own case resting on it: none of the source's listed. Control: an own ungraded passage in that case is listed.
+- **R36** (T53; DEC-461; invariant) **The source's ungrading is not this group's.** The statement changes no result (R3), acceptance (R6), flag (R8) or re-evaluation cause; this group's own case resting on accepted work lists only its own ungraded passages. Test: accept a finding with a listed passage, run case-disclosures R35 on an own case resting on it: none of the source's listed. Control: an own ungraded passage in that case is listed.
 
 ### Satisfies
 
