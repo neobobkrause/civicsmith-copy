@@ -9,3 +9,4 @@
 {"at":"2026-11-06T14:35:47Z","row":"sent","n":5,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job publication complete, PR #632 ready, session session_018Bhced7hcY8A9vCPiMGWfg: run status. Fixes: invariants.test.mjs dropped from the PR (its R30 test.todo is now stale; a follow-up). recordCaseManifest's refusal names field pixels_sha256, asserted. r30 test's SQL reads kept: they check the parts record's informative label. Receipt: https://github.com/neobobkrause/civicsmith-copy/pull/632#issuecomment-6687326949"}
 {"at":"2026-11-06T14:36:00Z","row":"outcome","n":5,"outcome":"delivered"}
 {"at":"2026-11-06T17:59:59Z","row":"sent","n":6,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job publication complete, PR #670 ready, session session_018BhcegdJgXQhF5KRmzh3am: run status"}
+{"at":"2026-11-06T18:00:19Z","row":"outcome","n":6,"outcome":"delivered"}
