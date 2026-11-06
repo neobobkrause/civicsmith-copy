@@ -87,11 +87,14 @@
     { "binding": "PLANE", "service": "bio-plane" }
   ],
 
-  // R35, F2 (coordinator ruling 5 Nov 2026; agent-runner R13, K5576): no runner is bound. The cross-script binding
-  // `REMOTE` to `agent-runner`'s `RemoteSession` is removed in the change that deletes that class, and the local
-  // container's binding (`RUNNER`) was never declared here (R109).
+  // F2 (coordinator ruling 5 Nov 2026, 20:18): the runner is bound. `RUNNER` is `agent-runner`'s Container Durable
+  // Object class `AgentRunner`, cross-script, the binding agent-runner's own manifest names (`bind`); each environment's
+  // deploy names the script for itself (p3dev.mjs and deploy-fleet slug `script_name`; the installer binds it from the
+  // release). A member's own sign-in reaches that member's own instance through it (src/remote.mjs). `REMOTE`
+  // (`RemoteSession`) stays unbound: agent-runner R13 deletes that class.
   "durable_objects": {
     "bindings": [
+      { "name": "RUNNER", "class_name": "AgentRunner", "script_name": "agent-runner" },
       // R91 (R085-8; K3477): this member's OWN Durable Object, one per run, so a segment outlives the request that
       // started it. It holds the segment's inputs in memory only (R36) and runs it from an alarm; it is not a store
       // and writes nothing of the record.

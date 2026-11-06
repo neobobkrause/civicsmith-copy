@@ -53,7 +53,7 @@ async function watched(fn, modelFetch = null) {
 
 async function signin(body, { method = "POST", path = "signin" } = {}) {
   const r = runner(), p = planeStub();
-  const env = { VERSION: "t37", PLANE: p.binding, REMOTE: r.binding, RUNNER: r.binding };
+  const env = { VERSION: "t37", PLANE: p.binding, REMOTE: r.binding };
   const w = await watched(async () => {
     const res = await worker.fetch(new Request(`http://agent-worker/${path}`, { method,
       ...(method === "GET" ? {} : { body: typeof body === "string" ? body : JSON.stringify(body) }) }), env);
@@ -165,7 +165,7 @@ async function draft(body, { model = {}, noPlane = false, env = {} } = {}) {
   const w = await watched(async () => {
     const res = await worker.fetch(new Request("http://agent-worker/draft", { method: "POST",
       body: typeof body === "string" ? body : JSON.stringify(body) }),
-      { VERSION: "t37", ...(noPlane ? {} : { PLANE: p.binding }), REMOTE: r.binding, RUNNER: r.binding, ...env });
+      { VERSION: "t37", ...(noPlane ? {} : { PLANE: p.binding }), REMOTE: r.binding, ...env });
     const text = await res.text();
     let out = null; try { out = JSON.parse(text); } catch { out = null; }
     return { status: res.status, text, out };
