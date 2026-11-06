@@ -1,0 +1,23 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "project-stage",
+  "pr": 660,
+  "head": "a89513b4dc61eda83d7f849d1e237dcf5a12968c",
+  "before": "aace4c4cf6c7f651376e5e3dcb33db4ab819e4a2",
+  "merge": "a5e28d69e26622b6cb2ea46419e6f5e26042223e",
+  "at": "2026-11-06T17:45:56Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none"
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}

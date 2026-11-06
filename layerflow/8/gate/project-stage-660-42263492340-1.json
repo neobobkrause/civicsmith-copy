@@ -1,0 +1,16 @@
+{
+  "row": "gate",
+  "layer": 8,
+  "module": "project-stage",
+  "pr": 660,
+  "sha": "a89513b4dc61eda83d7f849d1e237dcf5a12968c",
+  "run_id": 42263492340,
+  "run_attempt": 1,
+  "at": "2026-11-06T17:39:34Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 2.78,
+  "suite_minutes": 0.05,
+  "record_only": false
+}
