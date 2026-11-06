@@ -42,8 +42,7 @@
   ],
   "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/case-inputs.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-06T15:20:52Z",
-    "reason": "reopened: re-test against the new interface of public-read (land 02a112a634)"
+    "state": "COMPLETE",
+    "at": "2026-11-06T15:35:42Z"
   }
 }
