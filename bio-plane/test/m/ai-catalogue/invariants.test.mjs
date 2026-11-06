@@ -69,7 +69,7 @@ test("R47 the module's exports hold no writer beyond the seed, receive, registra
   const fns = Object.entries(catalogue).filter(([, v]) => typeof v === "function").map(([k]) => k).sort();
   /* pure helpers beside them: the seed's shape and the build's keys (R39; seed.mjs) write nothing */
   assert.deepEqual(fns, ["AiCatalogue", "aiCatalogueOf", "isDate", "isInstant", "pullRequest", "validatePayload",
-    "catalogueKeysFor", "isDevelopmentKey", "seedOf"].sort());
+    "catalogueKeysFor", "isDevelopmentKey", "seedOf", "seedFor"].sort());
 });
 test("R47 the reads never throw and write nothing", async () => {
   const { cat, db } = await seeded();
