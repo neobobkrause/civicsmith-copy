@@ -1,0 +1,16 @@
+{
+  "row": "test",
+  "module": "wizard-scripts",
+  "session": "session_018BhcecNoRqhE43eukKnjdo",
+  "started": "2026-11-06T23:36:15Z",
+  "ended": "2026-11-06T23:37:34Z",
+  "at": "2026-11-06T23:37:34Z",
+  "minutes": 1.32,
+  "result": "fail",
+  "suite_seconds": 9.498,
+  "tests": {
+    "total": 163,
+    "pass": 149,
+    "fail": 14
+  }
+}
