@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 8,
+  "module": "case-carriage",
+  "round": 1,
+  "started": "2026-11-06T17:35:23Z",
+  "ended": "2026-11-06T17:35:27Z",
+  "minutes": 0.1,
+  "tested_on": "45a883ce7b083c692a2f408d1d463c907a79099c",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-06T17:35:27Z"
+}
