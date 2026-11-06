@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-reports","by":"triage","evidence":"build/modules.json:176 gives instance-reports empty paths and tests, so no file of it imports extraction or reads its DECLARED_OPS (bio-plane/src/extraction/index.mjs:3853-3860, the only change in PR 432)","at":"2026-11-06T03:37:24.032Z","key":"extraction:432","worker":"a21070cceba9e790f","cost":"unmeasured"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"calculations","by":"triage","evidence":"bio-plane/src/calculations/application.mjs:12 imports only normAlias (used at :52 to fold reason words; defined extraction/index.mjs:212, unchanged), never DECLARED_OPS","at":"2026-11-06T03:37:24.032Z","key":"extraction:432","worker":"a82aaa0f28bacc681","cost":"unmeasured"}

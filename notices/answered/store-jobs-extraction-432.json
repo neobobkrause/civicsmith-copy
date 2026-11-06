@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-jobs","by":"triage","evidence":"build/modules.json:185 store-jobs has \"paths\": [] (no bio-plane/src/store-jobs/ directory exists), so no file of it imports extraction or reads its DECLARED_OPS","at":"2026-11-06T03:37:24.032Z","key":"extraction:432","worker":"a3f28c19fc001a8af","cost":"unmeasured"}
