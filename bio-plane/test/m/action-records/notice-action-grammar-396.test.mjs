@@ -3,7 +3,7 @@
    governing-law arm now judges a stated `layer`. This module reads the list only through `governingLawsOf` (R1's answer,
    `governing_laws`, passed through whole) and loads `GOVERNING_LAW_CHECKS` only for its rows (C-73.1–C-73.5, which PR 396
    left as they were); it mints no C-2.10 finding. So it needs no change: R1's answer carries each law's layer as the one
-   reader answers it, and R7's refusals keep their rows. R21 (a proposal that keeps its own layer) stays open. */
+   reader answers it, and R7's refusals keep their rows. R21 (a proposal that keeps its own layer) is t53-layer.test.mjs's. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, MACHINE, A, B } from "./fixture.mjs";
