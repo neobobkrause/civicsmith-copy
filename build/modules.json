@@ -220,6 +220,7 @@
     {"id": "stewards", "layer": 11, "paths": ["stewards/"], "tests": ["stewards/test/"], "uses": ["test-support", "instance-setup", "setup-words"]},
     {"id": "ai-issuer", "layer": 11, "paths": [], "tests": [], "uses": ["signatures", "record-grammar", "ai-catalogue", "ai-gate", "test-support"]},
     {"id": "journey-check", "layer": 11, "paths": ["bio-plane/src/journey-check/", "bio-plane/scripts/p3dev-walk-setup.mjs"], "tests": ["bio-plane/test/m/journey-check/"], "uses": ["jurisdictions", "setup-words", "file-safety", "interface-assets", "interface-shell", "screens-entry", "screens-settings", "screens-daily", "installer", "screens-inquiry"]},
-    {"id": "load-check", "layer": 11, "paths": [], "tests": [], "uses": ["op-declarations", "runtime-limits", "test-support"]}
+    {"id": "load-check", "layer": 11, "paths": [], "tests": [], "uses": ["op-declarations", "runtime-limits", "test-support"]},
+    {"id": "ux-design", "layer": 11, "paths": ["docs/development/ux-substrate/", "docs/requirements-notes/ux-design.md"], "tests": ["bio-plane/test/m/ux-design/"], "uses": ["setup-words"]}
   ]
 }

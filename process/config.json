@@ -32,13 +32,11 @@
     },
     {
       "name": "investigation",
-      "dir": "docs/development/investigation-design/",
-      "module": "investigation-design"
+      "dir": "docs/development/investigation-design/"
     },
     {
       "name": "publication",
-      "dir": "docs/development/publication-design/",
-      "module": "publication-design"
+      "dir": "docs/development/publication-design/"
     }
   ],
   "cloudflare_account": "20b533579290b9b93168345edd3b7f72",
