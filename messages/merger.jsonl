@@ -315,3 +315,4 @@
 {"at":"2026-11-06T04:41:33Z","row":"sent","n":158,"to":"bob","text":"the starter started job agent-worker (PR 619): subscribe_pr_activity to each pull request"}
 {"at":"2026-11-06T04:42:17Z","row":"outcome","n":158,"outcome":"delivered"}
 {"at":"2026-11-06T05:14:18Z","row":"sent","n":159,"to":"bob","text":"merged PR 619 (job agent-worker); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-06T05:14:33Z","row":"outcome","n":159,"outcome":"delivered"}
