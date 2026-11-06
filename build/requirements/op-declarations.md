@@ -249,6 +249,8 @@ Terms. An **op** is a name the instance answers. An **op spec** is `{classes, ma
 
 - **F1** aipathready, a read act by surface-declarations R15, is not in OPS or DECLARED_OPS, so the plane answers UNKNOWN_OP to the frame's every ask.
 
+- **F2** (base-red on tranche from ai-use PR 613; coordinator 6 Nov 02:47; layer 11's round, with signin-door 460, op-declarations 430 and store-assembly) **R34 holds over ai-use's F3 member ops.** ai-use F3 adds `aibudgetset` and `aiprojectbudget` to `SESSION_OPS.member`; neither has an `ACT_HELP` text (`affordances` R48) nor an `ACT_HELP_ABSENT` ground here (`aiprojectuse` sits under the last ground, an op the design has not yet explained), so R34 and R47's partition test (`bio-plane/test/m/op-declarations/t42.test.mjs`) fails on the tranche from PR 613 on. That failure is this mark's, not a later job's own: each op gains its `ACT_HELP` text or one ground in `ACT_HELP_ABSENT`, and t42 passes.
+
 ## Private
 
 ### Uses
