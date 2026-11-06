@@ -66,8 +66,7 @@
   ],
   "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/case-disclosures.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-06T14:09:56Z",
-    "reason": "reopened: meet the unmet requirement marks R37, R38, R39, R40, R41, R42, R43, R44, R45"
+    "state": "COMPLETE",
+    "at": "2026-11-06T14:26:09Z"
   }
 }
