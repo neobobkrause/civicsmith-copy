@@ -313,3 +313,4 @@
 {"at":"2026-11-06T04:33:03Z","row":"sent","n":157,"to":"bob","text":"merged PR 569 (job agent-worker): node .process/tool/p3.mjs notice triage agent-worker:569 (provider notice agent-worker:569; 5 user modules owe a worker's judgment: agent-drafts, ai-gate, signin-door, store-ask, store-assembly: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-06T04:34:51Z","row":"outcome","n":157,"outcome":"delivered"}
 {"at":"2026-11-06T04:41:33Z","row":"sent","n":158,"to":"bob","text":"the starter started job agent-worker (PR 619): subscribe_pr_activity to each pull request"}
+{"at":"2026-11-06T04:42:17Z","row":"outcome","n":158,"outcome":"delivered"}
