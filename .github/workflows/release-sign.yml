@@ -58,6 +58,11 @@ jobs:
             && node bio-plane/src/setup-words/build.mjs \
             && node bio-plane/src/case-checker/build-program.mjs \
             && node bio-plane/scripts/bundles.mjs
+          # agent-runner's image code (dist/image/, not committed): the assembly's container check reads the files
+          # an image was built from, and without them agent-runner reads UNREAD (CONTAINER_IMAGE_STALE). The digests
+          # themselves are recorded on the cut before this run: container-images builds and pushes each stale image,
+          # and `bundles.mjs --record-image <member> <class> <digest>` writes each printed digest at the cut.
+          node agent-runner/scripts/build-image.mjs
       - name: assemble, nothing written (step 3)
         run: node bio-plane/scripts/release-assemble.mjs --version "${{ inputs.version }}" --dry-run
       - name: sign (step 4)
