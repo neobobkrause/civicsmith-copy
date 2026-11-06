@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 9,
+  "module": "action-holds",
+  "round": 1,
+  "started": "2026-11-06T23:57:00Z",
+  "ended": "2026-11-06T23:58:58Z",
+  "minutes": 2,
+  "tested_on": "a24b559676ae387629d7596fda6dc3fc7020ef2c",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-06T23:58:58Z"
+}
