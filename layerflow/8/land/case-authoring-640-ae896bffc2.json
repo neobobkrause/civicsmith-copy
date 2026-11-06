@@ -1,0 +1,20 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "case-authoring",
+  "pr": 640,
+  "head": "ae896bffc2a1b6fe3fd7f67467e8811bb784520f",
+  "before": "3258868d57d0984be91b50ea01ceabc257eaab37",
+  "merge": "f660c33eec68c94b98c2d6d8312ad494943f143a",
+  "at": "2026-11-06T14:51:27Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": []
+  },
+  "users_rescheduled": [],
+  "users_noticed": []
+}
