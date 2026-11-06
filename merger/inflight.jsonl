@@ -126,3 +126,4 @@
 {"at":"2026-11-06T01:39:30.514Z","row":"end","pr":484,"tip":"0ba8922788c3007fe93bdf25623a98fc7fcdf3a6","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-06T01:40:18.210Z","row":"inflight","pr":598,"module":"screens-public","tip":"ceb2d61e08cd2ba58e4c2ccaf33db97a48cb05c9","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T03:25:18.210Z"}
 {"at":"2026-11-06T01:43:53.370Z","row":"end","pr":598,"tip":"ceb2d61e08cd2ba58e4c2ccaf33db97a48cb05c9","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
+{"at":"2026-11-06T01:44:37.422Z","row":"inflight","pr":462,"module":"jurisdictions","tip":"b0dbd97eb53f1fc0163d0409a17721f5476b9bd7","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T03:29:37.422Z"}
