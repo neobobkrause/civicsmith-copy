@@ -3,3 +3,4 @@
 {"at":"2026-11-06T12:44:42Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (9 jobs ready). Then: investigation (replacement job): synced to layer/7 (68addf0d), suite 39/39 green; now building R26-R32 on job/investigation, so layer 7 is not ready to close for investigation yet. The test tool printed: IDLE CAPACITY, 3 job sessions live of 20, 0 startable; layer 7 ready to close (job start --ready). ACT_HELP_ABSENT acceptproposals still absent on layer/7; I will report it found at publish."}
 {"at":"2026-11-06T12:44:54Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-06T13:02:02Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (11 jobs ready). Then: job investigation BLOCKED: run status"}
+{"at":"2026-11-06T13:02:12Z","row":"outcome","n":3,"outcome":"delivered"}
