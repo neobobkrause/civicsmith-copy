@@ -63,3 +63,31 @@ test("F2 ai-use declares aihealthset: its requires alone raise no refusal naming
   await declaredOpHolds({ op: "aihealthset", declaration: DECLARED_OPS["aihealthset"], call: mk("aihealthset", {"by":"admin"}),
     refusedNaming: named({}, true), values: {"on":true}, same: sameCode });
 });
+
+/* F3 (coordinator 17:24, screens-ai R2, R7): the screens' limits and alerts, declared here and held against their arms */
+test("F3 ai-use declares aibudgetset: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
+  await declaredOpHolds({ op: "aibudgetset", declaration: DECLARED_OPS["aibudgetset"], call: mk("aibudgetset", {"by":"admin"}),
+    refusedNaming: named({}, true), values: {"scope":"overall","unit":"calls","period":"month","amount":40}, same: sameCode });
+});
+
+test("F3 ai-use declares aiprojectbudget: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
+  await declaredOpHolds({ op: "aiprojectbudget", declaration: DECLARED_OPS["aiprojectbudget"], call: mk("aiprojectbudget", {"by":"ann"}),
+    refusedNaming: named({}, true), values: {"project":"P","scope":"ask","unit":"tokens","period":"day","amount":5000}, same: sameCode });
+});
+
+test("F3 aibudgetset with kind sets an alert threshold, without it a limit; aiprojectbudget sets the project's (control: a member's aibudgetset of the team's is NOT_AN_ADMIN, nothing set)", async () => {
+  const env = await standard();
+  const url = (by) => new URL(`http://x/?by=${by}`);
+  const lim = aiUseOps(env.u, url("admin"), { scope: "overall", unit: "calls", period: "month", amount: 40 }).aibudgetset();
+  assert.deepEqual([lim.ok, lim.owner, lim.amount], [true, "group", 40]);
+  const thr = aiUseOps(env.u, url("admin"), { scope: "overall", unit: "calls", period: "month", kind: "percent", level: 80 }).aibudgetset();
+  assert.equal(thr.ok, true, JSON.stringify(thr));
+  assert.equal(thr.amount, undefined, "a threshold, not a limit");
+  const own = aiUseOps(env.u, url("ann"), { owner: "member", scope: "ask", unit: "calls", period: "day", amount: 3 }).aibudgetset();
+  assert.deepEqual([own.ok, own.owner], [true, "member:ann"]);
+  const proj = aiUseOps(env.u, url("ann"), { project: "P", scope: "ask", unit: "tokens", period: "day", amount: 5000 }).aiprojectbudget();
+  assert.deepEqual([proj.ok, proj.owner], [true, "project:P"]);
+  const no = aiUseOps(env.u, url("ann"), { scope: "overall", unit: "calls", period: "month", amount: 1 }).aibudgetset();
+  assert.equal(no.code, "NOT_AN_ADMIN");
+  assert.ok(!env.u.aiLimits({ owner: "group", viewer: "admin" }).limits.some((l) => l.amount === 1));
+});
