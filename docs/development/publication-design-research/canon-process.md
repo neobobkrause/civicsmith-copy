@@ -25,7 +25,7 @@ Sources and citation forms:
   - "Within the product's principles they decide design and wording there."
   - "Their design documents are claude.ai artifacts, not repository files."
 - **Source-of-truth role.** "A lane is the load-bearing source of truth in its area, and is qualified for that before it decides anything" (Foundations, ¶"Lane qualification (SES-19 to SES-23)", SES-19, Bob 6 Nov).
-- **Partition.** "Lanes are cut by design area; for CivicSmith, the earlier process versions' investigation design and publication design lanes, beside UX" (same ¶, SES-23).
+- **Partition.** "Lanes are cut by design area; for Civicsmith, the earlier process versions' investigation design and publication design lanes, beside UX" (same ¶, SES-23; the Foundations spell the name "CivicSmith", but the name is Civicsmith, BD-12).
   - Bob also said the lane startup and operating requirements "should be part of the process3 canon of requirements" (same ¶).
 - **This lane's configuration** (`process/config.json:38-42`).
   - `{"name":"publication","dir":"docs/development/publication-design/","module":"publication-design"}`.
