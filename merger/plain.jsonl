@@ -172,3 +172,4 @@
 {"at":"2026-11-06T03:40:46Z","row":"renew","id":"ce3a51c1ebe1","pr":616}
 {"at":"2026-11-06T03:46:00Z","row":"renew","id":"ce3a51c1ebe1","pr":616}
 {"at":"2026-11-06T03:51:17Z","row":"renew","id":"ce3a51c1ebe1","pr":616}
+{"at":"2026-11-06T03:54:45Z","row":"queue","id":"f43195f20d49","pr":618,"head":"bcd9791463d562e891684b7752d41b3ffb72fe9f","ref":"bob/control-plane-f2b","by":"session_018Bhceddtp3HAmB1Z9LtX2s","reviewed":null,"no_review":"found mark only on control-plane (F2), coordinator ruling 6 Nov 03:51","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-06T07:04:45.818Z","renews":true}
