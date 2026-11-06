@@ -44,8 +44,7 @@
   ],
   "prior_work": "This module's code and tests exist (split by copy, build/modules.json) but it had no ledger entry until layer 8 opened, so the process never recorded it. Its requirement file has no unmet mark. Run its suite on layer/8. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Edit no other module, and commit no generated file.",
   "status": {
-    "state": "BLOCKED",
-    "reason": "Code done, publish refused by the ledger check. Suite 110/110 on layer/8 b69df73d6f after fix 9ebf39228f (R1 photo rule: format-registry R38 now answers unnamed bytes 'unlisted', which was read as a stated format; test updated, fails with fix reverted). No marks to strike. layer publish fails at 'p3 ledger check --base b69df73d6f': process/ledger/case-carriage.json:1 'a job may not add a ledger entry'. The entry was written by the job start commit faeeab8df1 on job/case-carriage, not on layer/8 (absent from layer/8 and tranche). To unblock: put the ledger entry on layer/8 (or tranche), then restart; my branch then changes only my paths.",
-    "at": "2026-11-06T16:11:51Z"
+    "state": "COMPLETE",
+    "at": "2026-11-06T17:37:53Z"
   }
 }
