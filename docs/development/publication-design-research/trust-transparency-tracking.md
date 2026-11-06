@@ -265,6 +265,21 @@ These are suggestions only.
 | AP / Reuters primary texts | Next pass | Verify the secondary-source claims. |
 | AI Act scope question (Art 2(1)(c)) | When BOB chooses | Legal advice only if BOB wants it. |
 
+## Open items
+
+These are carried forward from the first entry (lane, 6 Nov 2026), and each is re-checked on the next pass:
+
+1. **AP and Reuters AI policies: primary texts.** The AP July 2026 update and Reuters' AI guidance were read only through secondary sources, because ap.org and reutersagency.com were unreachable from the research tool. Read the primary texts and correct §4.3 where they differ.
+2. **ISO/DIS 22144 (C2PA on the ISO track): its stage.** iso.org returned 403. Confirm the stage and expected publication, and whether the ISO text differs from C2PA 2.5 on text embedding or `c2pa.ai-disclosure`.
+
+## Adoptions so far
+
+This lists each adoption under the principle, with the BOB decision that made it (BD-6 makes each adoption BOB's):
+
+- **BD-7 (Bob, 6 Nov):** a first-exposure AI-use disclosure, led by who ratified. Machine-readable per-sentence provenance goes in the signed case document (case document `/11`).
+- **BD-8 (BOB, 6 Nov):** a published review standard, modelled on Code Commitment 4 and guidelines paras 134–136. The lane's draft is `docs/development/publication-design/review-standard/civicsmith-review-1.md`, id `civicsmith-review/1`.
+- **BD-9 (Bob, 6 Nov):** AI help the product cannot see is declared per field (`declared_ai`) and affirmed by the signer (`review.affirmed`). Per-sentence provenance is an overlay that is available but not shown by default.
+
 ## Not verified
 
 - **AP July 2026 update and Reuters AI guidance:** secondary sources only. ap.org and reutersagency.com were unreachable from this tool.
