@@ -1,0 +1,1 @@
+{"row":"triage","user":"instance-setup","verdict":"not affected","evidence":"build/modules.json:174 instance-setup (bio-plane/src/setup.mjs, bio-plane/src/setup-fleet.mjs, bio-plane/src/livefire.mjs) holds no file that imports ai-use, every code file under its paths read at 79aaad96c8","at":"2026-11-06T03:34:48.348Z","key":"ai-use:613","worker":"merge: imports check","cost":"0"}
