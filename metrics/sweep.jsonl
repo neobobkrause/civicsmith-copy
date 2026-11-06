@@ -456,3 +456,4 @@
 {"at":"2026-11-06T22:45:25Z","row":"check","by":"setup check","live":"unmeasured","live_at":"2026-11-06T18:52:33Z","job_cap":20,"startable":null}
 {"at":"2026-11-06T23:05:10Z","row":"check","by":"address","live":"unmeasured","live_at":"2026-11-06T18:52:33Z","job_cap":20,"startable":null}
 {"at":"2026-11-06T23:10:52Z","row":"check","by":"layer sync","live":"unmeasured","live_at":"2026-11-06T18:52:33Z","job_cap":20,"startable":null}
+{"at":"2026-11-06T23:15:55Z","row":"check","by":"job sync","live":"unmeasured","live_at":"2026-11-06T18:52:33Z","job_cap":20,"startable":null}
