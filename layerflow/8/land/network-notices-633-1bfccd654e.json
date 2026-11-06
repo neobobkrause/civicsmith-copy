@@ -1,0 +1,45 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "network-notices",
+  "pr": 633,
+  "head": "1bfccd654ea738ea9f13993ab89f2087682f75d5",
+  "before": "91ad402fd4c71f3e93f31fe1225c22d88a91680c",
+  "merge": "994f9e70e2ac61b2a0a4ed3168d8cd4d4d4e1c59",
+  "at": "2026-11-06T14:31:41Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "NetworkNotices.listingRequest"
+      ],
+      "changed": []
+    },
+    "provides": null,
+    "provides_tests": [
+      "bio-plane/test/m/network-notices/listing.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ]
+  },
+  "users_rescheduled": [
+    "case-authoring",
+    "ratification"
+  ],
+  "users_noticed": [
+    "answer-envelope",
+    "control-plane",
+    "machinery-producers",
+    "plane",
+    "scheduler",
+    "screens-document",
+    "screens-inquiry",
+    "store-ask",
+    "store-assembly"
+  ]
+}

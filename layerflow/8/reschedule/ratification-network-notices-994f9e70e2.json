@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 8,
+  "user": "ratification",
+  "provider": "network-notices",
+  "provider_pr": 633,
+  "provider_land": "994f9e70e2ac61b2a0a4ed3168d8cd4d4d4e1c59",
+  "at": "2026-11-06T14:31:41Z",
+  "key": "ratification<-network-notices@994f9e70e2",
+  "why": "added NetworkNotices.listingRequest; its tests of Public / Provides requirements changed (bio-plane/test/m/network-notices/listing.test.mjs), which may mean a changed answer shape",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ]
+}
