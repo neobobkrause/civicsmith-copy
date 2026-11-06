@@ -23,6 +23,9 @@
  *   progressions   `readProgression` (its R5): the stages a `seeks` item names (R10).
  *   promotion      `promote` (its R1 to R20): the question R19 opens.
  *   standards      `standardRead` (its R5): whether a law's `standard` is one the viewer may read (R9).
+ *   layers         R21: a function answering the active jurisdiction layers as profiles (`jurisdictions`' layer shape,
+ *                  each with its `records_laws`); by default the layers of record-core's `jurisdiction_profiles`, a
+ *                  package read as its layers (`jurisdictions` R114). A test passes `jurisdictions`' own forest.
  *   now            the instance clock, milliseconds (default: `env.BIO_NOW_MS`, else the wall clock).
  *   env            the instance bindings.
  *
@@ -39,7 +42,8 @@ import { word, localize } from "../setup-words/index.mjs";
 import { standardsOf, noSuchStandard } from "../standards/index.mjs";
 import { isCalendarDate } from "../civil-time/index.mjs";
 import { parseFrontmatter, normalizeType, isMachineIdentity, deriveInquiryTitle, BUNDLE_ID_RE } from "../record-grammar/index.mjs";
-import { RISK_TIERS, riskTierState, lawProposalLabel, LAW_LEVELS, GOVERNING_LAWS_MAX, CITATION_MAX, governingLawsOf,
+import { combine as combineProfiles, get as getProfile, nameResolve } from "../../../jurisdictions/index.mjs";
+import { RISK_TIERS, riskTierState, lawProposalLabel, LAW_LEVELS, GOVERNING_LAWS_MAX, CITATION_MAX, LAW_LAYER_MAX, governingLawsOf,
          seeksOf, seeksFindings, SEEKS_MAX, PROMISE_KINDS, ACTION_FENCE_CHECKS, ACTION_ACT_CHECKS, GOVERNING_LAW_CHECKS,
          QUOTE_CHECKS, LIFECYCLE_CHECKS, RISK_TIER_REVISION_CHECKS, RECORDS_LAW_FENCE_CHECKS,
          ACTION_CATALOGUE_CHECKS } from "../action-grammar/index.mjs";
@@ -188,9 +192,10 @@ export class ActionRecords {
   #deps;
 
   constructor({ storage, record, host = null, membership = null, progressions = null, standards = null, promotion = null,
-                now = null, env = null } = {}) {
+                layers = null, now = null, env = null } = {}) {
     this.sql = storage.sql;
     this.record = record;
+    this.layerSource = typeof layers === "function" ? layers : null;
     this.#deps = { host, membership, progressions, standards, promotion };
     this.env = env && typeof env === "object" ? env : {};
     this.now = typeof now === "function" ? now : null;
@@ -265,6 +270,64 @@ export class ActionRecords {
   #seenAction(id, viewer) {
     const b = this.#visibleAction(id, viewer);
     return b && normalizeType(b.object_type) === "action" ? b : null;
+  }
+
+  /* R21 (T53; N1257, K5458): the active jurisdiction layers, as profiles: the `layers` dependency's, else the setting's
+     ids (record-core's `jurisdiction_profiles`), each a layer held by `jurisdictions` or a package read as its layers
+     (its R114, through `combine`). [] when none can be read; never throws. */
+  #activeLayers() {
+    try {
+      if (this.layerSource) { const ls = this.layerSource(); return Array.isArray(ls) ? ls.filter((l) => l && typeof l === "object" && l.layer) : []; }
+      let ids = this.record.getSetting("jurisdiction_profiles");
+      if (typeof ids === "string") { try { ids = JSON.parse(ids); } catch { ids = null; } }
+      if (!Array.isArray(ids)) return [];
+      const out = new Map();
+      for (const id of ids) {
+        if (typeof id !== "string") continue;
+        const p = getProfile(id);
+        if (p && p.layer && typeof p.layer === "object") { out.set(p.id, p); continue; }
+        if (!p) continue;
+        const c = combineProfiles([id]);
+        for (const l of c && c.ok && c.view && Array.isArray(c.view.layers) ? c.view.layers : []) {
+          const q = l && typeof l.id === "string" && !out.has(l.id) ? getProfile(l.id) : null;
+          if (q && q.layer && typeof q.layer === "object") out.set(q.id, q);
+        }
+      }
+      return [...out.values()];
+    } catch { return []; }
+  }
+  /* R21: the layers among `layers` that give a law at `level` whose citation (or name) is `citation`, case-folded, asked of
+     `jurisdictions.nameResolve` (its R121, the one resolver; no module copies its order): null when one layer or none gives
+     it, else `NAME_AMBIGUOUS`'s `[{layer, level, place}]`. Each layer is handed to it holding only its laws at that level,
+     each named by its citation and by its name, so the one resolver judges the name the proposal carries. Never throws. */
+  #ambiguousLaw(layers, level, citation) {
+    try {
+      const key = String(citation).toLowerCase();
+      const asked = layers.map((l) => ({ id: l.id, layer: l.layer,
+        records_laws: (Array.isArray(l.records_laws) ? l.records_laws : [])
+          .filter((e) => e && typeof e === "object" && String(e.level ?? l.layer.level ?? "") === level)
+          .flatMap((e) => [e.citation, e.name].filter((x) => typeof x === "string" && x).map((x) => ({ ...e, name: x.toLowerCase() }))) }));
+      const r = nameResolve({ section: "records_laws", name: key, layers: asked });
+      return r && r.ok === false && r.reason === "NAME_AMBIGUOUS" ? r.layers : null;
+    } catch { return null; }
+  }
+  /* R21: each proposed entry's `layer`, read from the list as sent (its entries index for index with `lawEntries`'): the
+     layer's id, or null when none is named; a `layer` that is not a layer id (not a string of 1 to `LAW_LAYER_MAX`
+     characters on one line with no quote or backslash) is `BAD_LAW_LEVEL` naming the index, the row of an entry's level. */
+  #proposedLayers(laws) {
+    let list = laws;
+    if (typeof list === "string") { try { list = JSON.parse(list); } catch { list = []; } }
+    const out = [];
+    for (let i = 0; i < (Array.isArray(list) ? list.length : 0); i++) {
+      const v = list[i] && typeof list[i] === "object" ? list[i].layer : undefined;
+      if (v === undefined || v === null || v === "") { out.push(null); continue; }
+      const t = typeof v === "string" ? v.trim() : "";
+      if (!t || t.length > LAW_LAYER_MAX || /["\\\r\n]/.test(t))
+        return { refusal: withRow({ ok: false, reason: "BAD_LAW_LEVEL", index: i, legal: LAW_LEVELS,
+          detail: localize("action-records.index.law_layer_malformed", "laws[{i}].layer names the layer that gave the law: its id, 1 to {max} characters on one line with no quote or backslash", { i: String(i), max: String(LAW_LAYER_MAX) }) }) };
+      out.push(t);
+    }
+    return { layers: out };
   }
 
   /* ================================================================ the single-site judgments (R7–R10) */
@@ -409,7 +472,15 @@ export class ActionRecords {
       return { ok: false, reason: "NO_TARGET", detail: localize("action-records.index.no_target_one_action", "one action at a time: pass target=<action id>") };
     const read = this.lawEntries(laws);
     if (!read.ok) return read;
-    const entries = read.entries;
+    /* R21 (T53): each entry keeps the layer its proposer named; with none named, a citation two active layers give at the
+       entry's level is stored as written and answered `layer: null, ambiguous: true`, never settled for the proposer. */
+    const named = this.#proposedLayers(laws);
+    if (named.refusal) return named.refusal;
+    const active = named.layers.some((x) => x === null) ? this.#activeLayers() : [];
+    const entries = read.entries.map((e, i) => {
+      if (named.layers[i]) return { level: e.level, citation: e.citation, layer: named.layers[i], ...(e.standard ? { standard: e.standard } : {}) };
+      return this.#ambiguousLaw(active, e.level, e.citation) ? { ...e, layer: null, ambiguous: true } : e;
+    });
 
     if (!this.#seenAction(target, viewer)) return noSuchAction(target);
     /* R64, R19 (R9, R1 here): a proposal may name a held standard with a law; it is one the proposer may read. */
@@ -424,8 +495,9 @@ export class ActionRecords {
     this.record.transact(() => {
       this.sql.exec(`DELETE FROM action_law_proposals WHERE bundle_id=? AND proposed_by=?`, target, who);
       entries.forEach((e, i) => this.sql.exec(
-        `INSERT INTO action_law_proposals (bundle_id, proposed_by, ord, level, citation, standard, proposed_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`, target, who, i, e.level, e.citation, e.standard ?? null, at));
+        `INSERT INTO action_law_proposals (bundle_id, proposed_by, ord, level, citation, standard, proposed_at, layer, ambiguous)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, target, who, i, e.level, e.citation, e.standard ?? null, at, e.layer ?? null,
+        e.layer ? 0 : e.ambiguous ? 1 : 0));
     });
 
     /* THE ACT'S OWN ANSWER SAYS WHAT IT DID NOT DO, read through the ONE reader of the list (`governingLawsOf`)
@@ -500,13 +572,16 @@ export class ActionRecords {
     const cap = LAW_PROPOSALS_READ_MAX;
     const rowCap = (cap + 1) * GOVERNING_LAWS_MAX;
     const rows = this.#rows(
-      `SELECT proposed_by, ord, level, citation, standard, proposed_at FROM action_law_proposals
+      `SELECT proposed_by, ord, level, citation, standard, proposed_at, layer, ambiguous FROM action_law_proposals
         WHERE bundle_id=? ORDER BY proposed_at DESC, proposed_by, ord LIMIT ?`, bundleId, rowCap + 1);
     const byProposer = new Map();
     for (const r of rows) {
       if (!byProposer.has(r.proposed_by))
         byProposer.set(r.proposed_by, { ...lawProposalLabel(r.proposed_by), at: r.proposed_at, laws: [] });
-      byProposer.get(r.proposed_by).laws.push({ level: r.level, citation: r.citation, ...(r.standard ? { standard: r.standard } : {}) });
+      /* R21: a law's layer as proposed; `layer: null, ambiguous: true` where two active layers gave the citation and none
+         was named; a row written before R21 (its layer empty) answered as it was, `layer` absent. */
+      const layer = r.layer ? { layer: r.layer } : Number(r.ambiguous) === 1 ? { layer: null, ambiguous: true } : {};
+      byProposer.get(r.proposed_by).laws.push({ level: r.level, citation: r.citation, ...layer, ...(r.standard ? { standard: r.standard } : {}) });
     }
     const all = [...byProposer.values()];
     const proposals = all.slice(0, cap);

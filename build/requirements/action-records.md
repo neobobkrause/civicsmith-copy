@@ -67,7 +67,7 @@ Terms are `actions`'. An **action** is a bundle whose type normalises to `action
 
 #### T53 additions
 
-- **R21** (T53; N1257; K5458; amends `action-records` R1, R11) *(not yet met: T53)* **A proposed law keeps its layer.** `action_law_proposals` (`action-records/schema.mjs:38-47`, keyed `bundle_id, proposed_by, ord`) gains a column `layer`, empty for rows written before; `lawPropose` (`op=actionlawspropose`) takes and stores it, `governing_laws_proposals` answers it, and a member's `actionLaws` that adopts a proposed entry carries its `layer` (`actions` R113). A proposal naming a citation two active layers give, with no `layer`, is stored as written and answered `layer: null` with `ambiguous: true`, never settled for the proposer. Test: a proposal with `layer` is answered with it; adopting it writes it into the governing law. Control: a proposal written before the change is answered as it was, `layer` absent.
+- **R21** (T53; N1257; K5458; amends `action-records` R1, R11) **A proposed law keeps its layer.** `action_law_proposals` (`action-records/schema.mjs:38-47`, keyed `bundle_id, proposed_by, ord`) gains a column `layer`, empty for rows written before; `lawPropose` (`op=actionlawspropose`) takes and stores it, `governing_laws_proposals` answers it, and a member's `actionLaws` that adopts a proposed entry carries its `layer` (`actions` R113). A proposal naming a citation two active layers give, with no `layer`, is stored as written and answered `layer: null` with `ambiguous: true`, never settled for the proposer. Test: a proposal with `layer` is answered with it; adopting it writes it into the governing law. Control: a proposal written before the change is answered as it was, `layer` absent.
 
 ## Private
 
