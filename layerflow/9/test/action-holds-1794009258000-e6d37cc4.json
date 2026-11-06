@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "action-holds",
+  "session": "session_018BhcecZgH3ZbNcTQXZsEa9",
+  "started": "2026-11-06T23:54:18Z",
+  "ended": "2026-11-06T23:56:39Z",
+  "at": "2026-11-06T23:56:39Z",
+  "minutes": 2.35,
+  "result": "pass",
+  "layer": 9,
+  "suite_seconds": 10.178,
+  "tests": {
+    "total": 62,
+    "pass": 62,
+    "fail": 0
+  }
+}
