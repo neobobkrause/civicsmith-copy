@@ -299,3 +299,4 @@
 {"at":"2026-11-06T03:32:12Z","row":"outcome","n":149,"outcome":"delivered"}
 {"at":"2026-11-06T03:32:31Z","row":"outcome","n":150,"outcome":"delivered"}
 {"at":"2026-11-06T03:35:09Z","row":"sent","n":151,"to":"bob","text":"merged PR 613 (job ai-use): node .process/tool/p3.mjs notice triage ai-use:613 (provider notice ai-use:613; 14 user modules owe a worker's judgment: agent-worker, ai-runs, answer-envelope, answers, instance-updates, notice-producers, op-declarations, op-specs-late, question-explorer, queue-producers, store-ask, store-assembly, store-door, surface-declarations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-06T03:35:26Z","row":"outcome","n":151,"outcome":"delivered"}
