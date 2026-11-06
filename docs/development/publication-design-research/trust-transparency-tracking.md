@@ -1,6 +1,6 @@
 # Standing research: trust and transparency developments (principle, Bob 6 Nov 2026)
 
-Principle (Bob, 6 Nov 2026): "CivicSmith tracks trust and transparency developments, starting with the EU AI Act, and adopts them voluntarily where they serve readers." CivicSmith is not bound by EU rules. This is the first entry, written by a read-only research worker for the `publication` design lane.
+Principle (Bob, 6 Nov 2026): "Civicsmith tracks trust and transparency developments, starting with the EU AI Act, and adopts them voluntarily where they serve readers." Civicsmith is not bound by EU rules. This is the first entry, written by a read-only research worker for the `publication` design lane.
 
 - **Date read:** 2026-11-06. Every source below was read on 2026-11-06 unless the entry says otherwise.
 - **Status of this entry:** research only. Every "adopt / watch / not applicable" below is a suggestion. Each adoption is BOB's decision.
