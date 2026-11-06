@@ -8,7 +8,7 @@ Writes registry.json and library.json from registry.src.py and library.src.py, t
     screen; an act the screen lists, or none; `what` and `why` of 1-300 characters; a draft of one of R2's three kinds;
     no draft placed on an act the machine is refused (affordances R7); `start` is the first step's screen; `required`
     only in the Civicsmith library; a side trip names a script in the library; R12's warnings (one step; duplicates).
-Usage: python3 check_library.py [--ref origin/tranche/T34]   (the git ref whose build/requirements is read)
+Usage: python3 check_library.py [--ref origin/main]   (the git ref whose build/requirements is read)
 Exit 1 on any failure.
 """
 import json, os, re, subprocess, sys, tarfile, io
@@ -33,6 +33,7 @@ def op_universe(ref):
     try:
         data = subprocess.check_output(['git', 'archive', ref, 'build/requirements'], cwd=ROOT)
     except subprocess.CalledProcessError:
+        print(f'note: {ref} is not in this checkout; checking against HEAD instead (fetch it for the intended check)', file=sys.stderr)
         ref = 'HEAD'
         data = subprocess.check_output(['git', 'archive', ref, 'build/requirements'], cwd=ROOT)
     declared, functions = {}, {}
@@ -65,6 +66,9 @@ def main():
     tranches = subprocess.run(['git', 'for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin/tranche/'],
                               cwd=ROOT, capture_output=True, text=True).stdout.split()
     tranches = sorted((r for r in tranches if re.fullmatch(r'origin/tranche/T\d+', r)), key=lambda r: int(r.rsplit('T', 1)[1]))
+    # Process3 keeps one open tranche, branch `tranche` (6 Nov 2026); the numbered tranche/T<n> branches are older.
+    if subprocess.run(['git', 'rev-parse', '-q', '--verify', 'refs/remotes/origin/tranche'], cwd=ROOT, capture_output=True).returncode == 0:
+        tranches.append('origin/tranche')
     ahead = op_universe(tranches[-1]) if tranches and tranches[-1] != ref else None
     screens, lib = load('registry.src.py', 'S'), load('library.src.py', 'L')
     fails, warns, owed = [], [], {}

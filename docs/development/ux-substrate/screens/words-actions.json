@@ -1693,7 +1693,7 @@
  },
  {
   "key": "door.escalationdecline",
-  "en": "Decline to escalate",
+  "en": "Hold at this stage",
   "protected": false,
   "note": "a queue item's leading act"
  },
