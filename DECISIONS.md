@@ -25,11 +25,14 @@ Consequences: op-capabilities gets found mark F1 now (PR 664). op-declarations, 
 ## BD-2: Two design lanes beside ux, investigation and publication (BOB, 6 Nov)
 Context: Bob, 6 Nov, through the coordinator: lanes keep the earlier partition, with investigation design and publication design beside ux. Each must qualify as the load-bearing source of truth in its area before it decides anything (lane qualification, process3 PR 195). Bob, ~17:05Z: "Yes, publication design is the ACTIONS-DESIGN area". The earlier charters are in process3 notes/lane-charters.md on build/lane-qualification.
 Decision: two lanes are added to process/config.json beside ux.
-- `investigation`: dir docs/development/investigation-design/, module investigation-design. It owns INVESTIGATION-DESIGN's area (K2076): the investigation engine and the project as an investigation. The earlier lane's folder lived only on branch design/investigation; its canon is docs/architecture/BIO_Investigation_v0_1.md.
-- `publication`: dir docs/development/publication-design/, module publication-design. It owns ACTIONS-DESIGN's "Publication & action" area (K2433): publication, ratification, docket, case making and the actions around them.
+- `investigation`: dir docs/development/investigation-design/, with no module. It owns INVESTIGATION-DESIGN's area (K2076): the investigation engine and the project as an investigation. The earlier lane's folder lived only on branch design/investigation; its canon is docs/architecture/BIO_Investigation_v0_1.md.
+- `publication`: dir docs/development/publication-design/, with no module. It owns ACTIONS-DESIGN's "Publication & action" area (K2433): publication, ratification, docket, case making and the actions around them.
   - It gets a new folder named for the lane. It does not reuse docs/development/action-design/, which is the ended ACTION_DESIGN #1 lane's history (K592).
   - Its qualification research starts from that folder and from actions-design/ on branch design/actions (R1-R6, Actions D1-D24, BIO_Action_v0_2).
 - Each research area is the tool's default, `<dir>-research`.
+- Neither new lane names a `module` (amended 6 Nov, after the coordinator's ruling that a lane whose config names a module carries a ledger entry, a modules.json row and a requirements file).
+  - A lane's work is already on record without one: its research and qualification in its research folder, and its asks and decisions in process-state's lanes/asks.jsonl.
+  - Neither folder overlaps a module's paths. That overlap is why ux names `ux-design` (PR 629); ux-design keeps its ledger entry and requirements file and gains its modules.json row.
 Rejected:
 - Reusing action-design/: it would mix an ended lane's history with the new lane's work.
 - One lane for both areas: each area has its own canon, and the earlier partition kept them apart.
