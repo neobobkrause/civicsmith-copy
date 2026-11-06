@@ -1,0 +1,18 @@
+{
+  "row": "notice",
+  "at": "2026-11-06T15:06:08Z",
+  "key": "case-checker:634",
+  "provider": "case-checker",
+  "ids": [],
+  "pr": 634,
+  "users": [
+    "filings",
+    "plane",
+    "store-assembly"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 8,
+    "provides": false
+  }
+}

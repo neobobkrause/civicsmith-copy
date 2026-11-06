@@ -1,0 +1,14 @@
+{
+  "row": "reschedule",
+  "layer": 8,
+  "user": "case-disclosures",
+  "provider": "case-checker",
+  "provider_pr": 634,
+  "provider_land": "6fedfde88900a605c6e7f6fd8beb6500fd3b3289",
+  "at": "2026-11-06T15:06:08Z",
+  "key": "case-disclosures<-case-checker@6fedfde889",
+  "why": "its tests of Public / Provides requirements changed (bio-plane/test/m/case-checker/battery.mjs, bio-plane/test/m/case-checker/fixture.mjs, bio-plane/test/m/case-checker/t53-extract.test.mjs), which may mean a changed answer shape",
+  "triggers": [
+    "provides-test"
+  ]
+}

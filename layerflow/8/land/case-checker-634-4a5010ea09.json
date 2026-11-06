@@ -1,0 +1,36 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "case-checker",
+  "pr": 634,
+  "head": "4a5010ea0995d775c8f438b8928644f6a72d398b",
+  "before": "641a8445be298295270f6a501b5f40cbd32482dd",
+  "merge": "6fedfde88900a605c6e7f6fd8beb6500fd3b3289",
+  "at": "2026-11-06T15:06:08Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests": [
+      "bio-plane/test/m/case-checker/battery.mjs",
+      "bio-plane/test/m/case-checker/fixture.mjs",
+      "bio-plane/test/m/case-checker/t53-extract.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ]
+  },
+  "users_rescheduled": [
+    "case-account",
+    "case-authoring",
+    "case-disclosures",
+    "case-import"
+  ],
+  "users_noticed": [
+    "filings",
+    "plane",
+    "store-assembly"
+  ]
+}
