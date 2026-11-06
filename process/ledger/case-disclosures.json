@@ -67,6 +67,6 @@
   "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/case-disclosures.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-05T04:39:56Z"
+    "at": "2026-11-06T14:32:25Z"
   }
 }
