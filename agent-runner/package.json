@@ -12,6 +12,7 @@
     "start": "node src/entry.mjs",
     "build": "node scripts/build.mjs",
     "build:image": "node scripts/build-image.mjs",
+    "pretest": "cd .. && node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs && node bio-plane/src/case-checker/build-program.mjs && node bio-plane/scripts/bundles.mjs",
     "test": "node --test test/"
   },
   "dependencies": {},

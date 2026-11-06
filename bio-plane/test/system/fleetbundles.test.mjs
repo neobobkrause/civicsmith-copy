@@ -71,13 +71,13 @@
 import "../stdio.mjs";                 /* D-282: a suite's own exit must not discard the suite's own output */
 import "../sandbox.mjs";               /* D-186: owns $TMPDIR for this process and removes it on exit */
 import { Miniflare } from "miniflare";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { copyFileSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   REPO_ROOT, discoverMembers, buildMember, writeMember, verifyStatic, verifyFresh,
   freshBuildRunnable, unresolvableSpecifiers, sha256, fleetProvenance, memberPaths,
-  planeMember, assetsOf, optionsFor, isContainer, isGuarded,
+  planeMember, inDir, assetsOf, optionsFor, isContainer, isGuarded,
   BUDGET, MIB, sizeVerdict, startVerdict, measureStart, budgetReport, releaseBindingFindings, ASCII_RECIPE,
 } from "../../scripts/fleet-bundle.mjs";
 
@@ -106,7 +106,7 @@ const show = (findings) => { for (const f of findings) console.log(`         ! $
    window as the member, by the same rule. */
 const GUARDED_FLOOR = 4;
 
-const members = discoverMembers(REPO_ROOT);
+let members = discoverMembers(REPO_ROOT);
 
 console.log("\n--- 1 · every fleet member is DISCOVERED, and every one of them is GUARDED ---");
 /* T34-6 (BUNDLER #8; N578, bundler R24): `agent-runner` is the fleet's first CONTAINER member — its deliverable is an
@@ -137,25 +137,33 @@ const off = new Set(prov.off.map((r) => r.path));
 const reproducible = members.filter((m) => {
   if (!m.bundle) return false;
   const p = memberPaths(m);
-  return !prov.verified || [p.marker, p.artifact, p.manifest].every((x) => !off.has(x));
+  return !prov.verified || !off.has(p.marker);   /* the marker: the artifact and manifest are built here, never committed */
 }).length;
 const counted = members.filter((m) => m.bundle).length;
 if (reproducible !== counted)
   console.log(`        ${counted} guarded member(s) counted; ${reproducible} of them stand on files in the commit`);
-t(`at least ${GUARDED_FLOOR} REPRODUCIBLE member(s) declare a committed bundle (the floor — a member DIRECTORY deleted is invisible to any per-member check, and a phantom one must not satisfy it)`,
+t(`at least ${GUARDED_FLOOR} REPRODUCIBLE member(s) declare a bundle (the floor — a member DIRECTORY deleted is invisible to any per-member check, and a phantom one must not satisfy it)`,
   reproducible >= GUARDED_FLOOR, true);
 /* R24: the one exemption is a container member with no Worker bundle, stated by its own marker; a marker that merely
    drops its `bundle` block is still named here. */
 t("every discovered member declares one — a member with no `bundle` block is NAMED, never silently unguarded",
   members.filter((m) => !m.bundle && isGuarded(m)).map((m) => m.name), []);
 
-/* The committed bytes are taken HERE, before a single build runs anywhere in
-   this file. Everything downstream compares against this snapshot. */
+/* THE DIST PASS (BOB, 6 Nov 2026): nothing under dist/ is committed. Every guarded bundle, the plane's included, is
+   BUILT HERE, into a temp dir, before anything below reads it (never a file under a member's own dist/), and every
+   arm below runs on those bytes: the dependency-free arm checks the build's own manifest, and the byte-identity arm
+   builds a SECOND time and compares (the build reproduces). `inDir` keeps each path member-relative, so the library
+   reads the copy exactly as it reads the member. The names below still say "committed" where the history does. */
+const BUILT = mkdtempSync(join(tmpdir(), "fleetbundles-"));
+process.on("exit", () => rmSync(BUILT, { recursive: true, force: true }));
+/* Each member's own outfile, where its module sits beside its upload parts: a boot below names the module there. */
+const ownOutfile = new Map(members.filter((m) => m.bundle).map((m) => [m.name, m.bundle.outfile]));
+members = members.map((m) => (m.bundle ? inDir(m, join(BUILT, m.name, "dist")) : m));
+const builtPlane = inDir(planeMember(REPO_ROOT), join(BUILT, "bio-plane", "dist"));
 const committedOf = new Map();
-for (const m of members) {
-  if (!m.bundle) continue;
-  try { committedOf.set(m.name, readFileSync(join(m.abs, m.bundle.outfile))); }
-  catch { committedOf.set(m.name, null); }
+for (const m of [...members.filter((x) => x.bundle), builtPlane]) {
+  try { await writeMember(m); committedOf.set(m.name, readFileSync(join(m.abs, m.bundle.outfile))); }
+  catch (e) { console.log(`        ${m.name}: its bundle did not build: ${String(e.message).split("\n")[0]}`); committedOf.set(m.name, null); }
 }
 
 console.log("\n--- 2 · THE DEPENDENCY-FREE ARM: the committed artifact against the sources it was built from ---");
@@ -274,7 +282,7 @@ console.log("\n--- 3 · THE BYTE-IDENTITY ARM: a fresh build of the SOURCE again
    pdf-worker's boundary comments and this arm read 84/3 on identical source. The flag is asserted HERE, on the
    recipe, because a real install has no symlink and the byte arm below cannot see the defect on it: this line
    is what fails on EVERY layout when the flag is dropped (fleetbundles.control.mjs arm 9). */
-for (const m of [...members.filter((x) => x.bundle), planeMember()])
+for (const m of [...members.filter((x) => x.bundle), builtPlane])
   t(`${m.name}: its build recipe preserves symlinks, so the install layout cannot reach the bytes`,
     optionsFor(m).preserveSymlinks, true);
 const freshRan = [];
@@ -539,7 +547,8 @@ console.log("\n--- 7 · and the committed bytes really are a Worker: each boots 
                                ["sheet-worker", { r2Buckets: ["CAPTURES"] }]]) {
     const m = members.find((x) => x.name === name);
     if (!m || !m.bundle || !committedOf.get(name)) { t(`${name}: present to boot`, false, true); continue; }
-    const p = join(m.abs, m.bundle.outfile);
+    /* The module's NAME is the member's own outfile (its parts' specifiers are relative to it); its bytes the temp build's. */
+    const p = join(m.abs, ownOutfile.get(name));
     /* CPDF-10: A MEMBER WITH UPLOAD PARTS BOOTS WITH THEM, and the modules array
        is how a boot expresses that — `modules:true` cannot. The parts are typed
        the way the PLATFORM types them at upload: `CompiledWasm` (Workers forbid
@@ -587,7 +596,7 @@ console.log("\n--- 8 · THE PLANE ITSELF (FL-10, D-298): the same guard, because
      member rules would refuse it), so it arrives as `planeMember()`'s descriptor
      and the member walk and `GUARDED_FLOOR` keep their meaning. Booting the artifact is NOT re-proved here — that is
      `bundle.test.mjs`'s whole job, one file over. */
-  const plane = planeMember(REPO_ROOT);
+  const plane = builtPlane;
 
   /* The committed bytes are read from disk BEFORE any plane build runs — the
      same independence rule the members get at line one of this file. */
@@ -657,8 +666,16 @@ console.log("\n--- 9 · R31: every member's SIZE and START-UP against the fleet'
   t("R31: the budget is the one the requirement states — warn past 32 MiB, fail past 48 MiB, warn past 500 ms",
     [BUDGET.sizeWarn, BUDGET.sizeFail, BUDGET.startWarnMs], [32 * 1024 * 1024, 48 * 1024 * 1024, 500]);
   const measured = [];
-  for (const m of [...members.filter((x) => x.bundle), planeMember(REPO_ROOT)]) {
-    const r = await budgetReport(m);
+  /* A member with upload parts imports them as "../assets/…" from its outfile's directory, so it is measured from a copy
+     of itself rooted at BUILT/<name>, where the temp build sits at dist/ and its parts are copied beside it. */
+  const asBuilt = (m) => {
+    if (!assetsOf(m).length) return m;
+    const abs = join(BUILT, m.name);
+    for (const rel of assetsOf(m)) { mkdirSync(dirname(join(abs, rel)), { recursive: true }); copyFileSync(join(m.abs, rel), join(abs, rel)); }
+    return { ...m, abs, bundle: { ...m.bundle, outfile: ownOutfile.get(m.name) } };
+  };
+  for (const m of [...members.filter((x) => x.bundle), builtPlane]) {
+    const r = await budgetReport(asBuilt(m));
     console.log(`        ${r.line}`);
     for (const w of r.warnings) console.log(`  WARN  ${w}`);
     show(r.findings);
@@ -756,7 +773,7 @@ console.log("\n--- 9 · the release is coherent: every binding names a class or 
   /* A member bound to a class another member's bundle does not export is refused by Cloudflare at deploy (10061), so the
      release is checked here, against the bundles that would ship (built, not read from source). Red by name until
      agent-runner exports `RemoteSession` (agent-worker's REMOTE). */
-  const { findings, unchecked } = await releaseBindingFindings([planeMember(), ...members.filter((m) => m.bundle)]);
+  const { findings, unchecked } = await releaseBindingFindings([builtPlane, ...members.filter((m) => m.bundle)]);
   show(findings.map((f) => f.text));
   t("R39: every service and Durable Object binding, container class and migration class of the plane and each member is exported by the release's bundles", findings.map((f) => f.text), []);
   t("R39: every bundle was built here to read its exports", unchecked.map((u) => `${u.name}: ${u.reason}`), []);
@@ -765,7 +782,7 @@ console.log("\n--- 9 · the release is coherent: every binding names a class or 
 console.log("\n--- 10 · every committed fleet bundle is pure ASCII (R2; G39), and its manifest records the recipe ---");
 {
   /* One character above U+007F anywhere makes V8 hold the whole script two bytes a character (36 MB of the plane's 86 MB idle). */
-  for (const m of [planeMember(), ...members.filter((x) => x.bundle)]) {
+  for (const m of [builtPlane, ...members.filter((x) => x.bundle)]) {
     const bytes = readFileSync(join(m.abs, m.bundle.outfile));
     let at = -1;
     for (let i = 0; i < bytes.length; i++) if (bytes[i] > 0x7f) { at = i; break; }
