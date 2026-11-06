@@ -105,11 +105,9 @@ test("R18 R25 actionLaws: refusals in order; the whole list replaced, stamped an
   const fm = w.fm(A);
   assert.equal(fm.governing_laws_by, M); assert.equal(fm.governing_laws.length, 1);
   const two = L([{ level: "county", citation: "C 1" }, { level: "city", citation: "B 2" }]);
-  /* F1: the list replaced is read through action-grammar's one reader (governingLawsOf); its R31 adds `layer`
-     (null when none is stored). Where the reader answers the key, each entry is {level, citation, layer: null};
-     where it does not yet, the entry is {level, citation}. */
-  const layered = two.replaced.every((l) => Object.hasOwn(l, "layer"));
-  assert.deepEqual(two.replaced, layered ? ok.map((l) => ({ ...l, layer: null })) : ok);
+  /* F1: the list replaced is read through action-grammar's one reader (governingLawsOf), whose R31 (PR 396) answers
+     each entry as {level, citation, layer}, `layer` null when none is stored. */
+  assert.deepEqual(two.replaced, ok.map((l) => ({ ...l, layer: null })));
   /* the proposals stored apart are action-records' (its R1); the read answers them beside the member's list */
   assert.equal(w.a.records.actionLawsPropose({ target: A, laws: [{ level: "state", citation: "Other" }], proposer: MACHINE, viewer: MACHINE }).ok, true);
   assert.equal(w.fm(A).governing_laws.length, 2, "never changes the list");
