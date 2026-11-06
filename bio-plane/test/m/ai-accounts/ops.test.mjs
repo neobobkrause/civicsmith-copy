@@ -102,7 +102,7 @@ test("R61 ai-accounts declares the screens' ops for the account model: each held
   for (const op of ["aicredential", "aigatewayserved", "aicredentialfailed"]) assert.equal(op in DECLARED_OPS, false, `${op} is a plane op with no member rung (R65–R67)`);
   assert.ok(!("secret" in (DECLARED_OPS.aikeyseal.fields.accepts.reduce((o, k) => ({ ...o, [k]: 1 }), {}).secret ? {} : {})), "field list only");
   const sealed = DECLARED_OPS.aikeyseal;
-  assert.deepEqual([sealed.classes, sealed.machineClasses, sealed.mutating, sealed.weight], [["admin", "member"], [], true, "substrate"], "R71");
+  assert.deepEqual([sealed.classes, sealed.machineClasses, sealed.mutating, sealed.weight], [["admin", "member"], [], true, "credential"], "R71; ground credential (op-grades R57, F5)");
   assert.deepEqual(sealed.fields, { accepts: ["account_id", "secret"], requires: ["account_id", "secret"] });
   assert.deepEqual(DECLARED_OPS.aioptinset.fields, { accepts: ["account_id", "on"], requires: ["account_id", "on"] }, "no `flag` field: the owner level decides (R49)");
   assert.deepEqual(DECLARED_OPS.aiorderset.fields, { accepts: ["owner", "account_id", "position"], requires: ["owner", "account_id", "position"] });
