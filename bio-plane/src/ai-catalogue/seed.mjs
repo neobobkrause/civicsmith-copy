@@ -91,3 +91,87 @@ export function seedOf(doc, armored = null) {
 
 /** R39: the seed this release carries. `armored` is Bob's signature for a public release; null until he signs one. */
 export const RELEASE_SEED = seedOf(SEED_PAYLOAD, null);
+
+/* F2: THE DEVELOPMENT SEED. A test or development plane needs a catalogue that lists a plan, or nothing can connect an
+ * account through it (`op=aiownadd` answers CATALOGUE_UNAVAILABLE on the release seed). This seed lists the plan `api`
+ * and one entry reached through it, all under a made-up provider (`DEVELOPMENT_PROVIDER`; R48: no provider is named in
+ * code). Nothing in it is a provider fact: every evidence row says it is development data. It is the default seed only
+ * where `DEVELOPMENT_VAR` is "1" (`seedFor`), and is signed only by a development key (`dev-key.mjs`), which a release
+ * build never trusts; a release never carries it (`RELEASE_SEED` is unchanged). Its seq is 2, so a development copy
+ * that already holds the release seed (seq 1) takes it. */
+export const DEVELOPMENT_PROVIDER = "p3dev-provider";
+export const DEVELOPMENT_PLAN = "api";
+const DEV_DATE = "2026-11-05";
+const devEv = (grade = "STATED") => ({ grade, source: "development seed: not a provider fact", date: DEV_DATE });
+const devClaim = (value, grade = "STATED") => ({ value, ev: devEv(grade) });
+const devQuoted = () => ({ ...devEv(), page: "https://p3dev.invalid/terms", quote: "development seed: not a provider fact" });
+const devMet = () => ({ answer: "met", ev: devQuoted() });
+const devProp = (value) => ({ value, method: "suite", samples: 1, conditions: "development seed", ev: devEv("REPRODUCED") });
+const devGate = () => ({ verdict: "passes", limits: [], partial_coverage: false,
+  suiteVersions: { bank: "dev", scorer: "dev", thresholds: "dev", image: "dev" }, tier: null, at: `${DEV_DATE}T00:00:00Z`,
+  run_ref: "p3dev-seed", ev: devEv("REPRODUCED") });
+const devCharacterization = () => {
+  const c = {};
+  for (let i = 1; i <= 9; i++) c[`CH${i}`] = devProp(i);
+  c.CH4 = { ...devProp("reasonable"), ev: devEv("REPORTED"), reviewer: "p3dev" };
+  c.CH10 = { ref: "checks" };
+  return c;
+};
+const DEV_PROFILE = "p3dev-profile";
+const DEV_ENTRY = "p3dev-model";
+
+/** F2: the development seed document (R36-valid). */
+export const DEVELOPMENT_SEED_PAYLOAD = Object.freeze({
+  schema_version: 1, seq: 2, issued_at: `${DEV_DATE}T00:00:00Z`,
+  providers: [{ id: DEVELOPMENT_PROVIDER, name: "Development provider", kind: "direct" }], parts: PARTS,
+  policy: { origin: { check: "P7", barred: [] }, review_period_days: 90, stale_after_days: 14 },
+  profiles: [{ id: DEV_PROFILE, adapter_type: "generic_chat", version: 1, base_url: "https://p3dev.invalid/v1",
+    allowed_hosts: ["p3dev.invalid"], auth_style: "bearer", mappings: {}, pin_map: null, idempotency: null,
+    reasoning_billing: "in_output", features: [], quirks: [], served_report: null, key_shapes: [] }],
+  plans: [{ plan_id: DEVELOPMENT_PLAN, provider: DEVELOPMENT_PROVIDER, kind: "api", scope: devClaim("team"),
+    credential_kind: "api_key", means_allowed: devClaim(["gateway", "sealed"]), connection_ways: ["pasted_key"],
+    runtimes: devClaim(["shared_worker"]), token_storage: devClaim("sealed"),
+    price_basis: { basis: "per_token", includes: [], limits: [], date: DEV_DATE, ev: devEv() }, money: devClaim("priced"),
+    restrictions: [], binding_terms: [], guidance_id: `${DEVELOPMENT_PLAN}-guide`, free_tier_trains: devClaim(false),
+    lifecycle: "listed", confirmed_at: DEV_DATE }],
+  guidance: [{ guidance_id: `${DEVELOPMENT_PLAN}-guide`, plan_id: DEVELOPMENT_PLAN,
+    steps: [{ kind: "link", text: { en: "development seed" }, url: "https://p3dev.invalid/keys" }], ev: devEv() }],
+  warnings: [],
+  entries: [{ entry_id: DEV_ENTRY, display_name: "Development model", provider: DEVELOPMENT_PROVIDER,
+    host: DEVELOPMENT_PROVIDER, model: DEV_ENTRY, version: DEV_DATE, version_kind: "dated", plan_ids: [DEVELOPMENT_PLAN],
+    adapter_type: "generic_chat", profile: { id: DEV_PROFILE, min_version: 1 },
+    developer: { name: "Development developer", jurisdiction: "ZZ" },
+    capabilities: { tools: devClaim(true), parallel_tools: devClaim(true), schema_output: devClaim(true),
+      schema_with_tools: devClaim(false), image_input: devClaim(false), streaming: devClaim("text"),
+      session: devClaim("resend_only"), caching: devClaim("automatic"), batch: devClaim(false) },
+    effort_set: { values: ["low", "medium", "high"], default: "medium", ev: devEv() },
+    effort_classes: { low: "low", medium: "medium", ev: devEv() },
+    limits: { context_stated: devClaim(200000), context_effective: devClaim(150000, "REPRODUCED"),
+      max_output: devClaim(8000), image_max_bytes: { open: true } },
+    prices: { unit: "usd_per_million_tokens", input: 1, output: 2, cache_read: 0.1, cache_write: null, date: DEV_DATE, ev: devEv() },
+    zero_retention: devClaim(false), standard_task_costs: { open: true }, served_ids: [DEV_ENTRY],
+    checks: Object.fromEntries(["P1", "P2", "P3", "P4", "P5", "P6", "P7"].map((p) => [p, devMet()])),
+    shown: { terms_permit_use: devMet(), breach_notification: { answer: "OPEN" } },
+    gate: Object.fromEntries(PARTS.map((p) => [p, devGate()])), characterization: devCharacterization(),
+    lifecycle: "listed", confirmed_at: DEV_DATE }],
+  tested: [], library: [], combined: [],
+});
+
+/** F3: the adapter types the development seed's entries need (R38), one per profile it lists. No module of the product
+ *  registers an adapter type yet, so with nothing registered every entry needs a newer release and a development plane
+ *  could hold the plan `api` yet connect nothing through it (`aiownadd` ENTRIES_EMPTY). Where the development seed is
+ *  the one taken and it verifies, the catalogue registers these itself (`AiCatalogue.start`); a release build, which
+ *  never takes that seed, registers nothing. */
+export const DEVELOPMENT_ADAPTERS = Object.freeze(Object.values(DEVELOPMENT_SEED_PAYLOAD.profiles.reduce((by, p) => {
+  (by[p.adapter_type] ||= { type: p.adapter_type, profiles: {} }).profiles[p.id] = p.version;
+  return by;
+}, {})).map((t) => Object.freeze({ type: t.type, profiles: Object.freeze(t.profiles) })));
+
+/** F2: the development seed, unsigned: a development deployment hands its signature as `SEED_SIGNATURE_VAR`. */
+export const DEVELOPMENT_SEED = seedOf(DEVELOPMENT_SEED_PAYLOAD, null);
+
+/** F2: the seed a copy takes at start: the development seed only where `env[DEVELOPMENT_VAR]` is "1", else the release's. */
+export function seedFor(env = {}) {
+  const dev = !!env && typeof env === "object" && String(env[DEVELOPMENT_VAR] ?? "") === "1";
+  return dev ? DEVELOPMENT_SEED : RELEASE_SEED;
+}

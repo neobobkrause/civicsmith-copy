@@ -21,10 +21,10 @@ import { validatePayload, isObj, isOpen, isInstant, isDate, TOKEN_RE, CHECK_IDS,
   EFFORT_WORD_MAX, GRADES, LIFECYCLE, VERDICTS, LIMIT_KINDS } from "./validate.mjs";
 import { ADVISORY_KINDS, ADVISORY_REASONS, MOVES, legalMove, badMove, effectiveState } from "./lifecycle.mjs";
 import { RELEASE_SEED, SEED_PAYLOAD, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_MARK, DEVELOPMENT_KEY_VAR, isDevelopmentKey,
-  catalogueKeysFor, seedOf } from "./seed.mjs";
+  catalogueKeysFor, seedOf, DEVELOPMENT_SEED, DEVELOPMENT_SEED_PAYLOAD, DEVELOPMENT_PROVIDER, DEVELOPMENT_PLAN, DEVELOPMENT_ADAPTERS, seedFor } from "./seed.mjs";
 
 export { RELEASE_SEED, SEED_PAYLOAD, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_MARK, DEVELOPMENT_KEY_VAR, isDevelopmentKey,
-  catalogueKeysFor, seedOf };
+  catalogueKeysFor, seedOf, DEVELOPMENT_SEED, DEVELOPMENT_SEED_PAYLOAD, DEVELOPMENT_PROVIDER, DEVELOPMENT_PLAN, DEVELOPMENT_ADAPTERS, seedFor };
 
 export { validatePayload, CATALOGUE_CHECKS, CATALOGUE_STATES, STATE_WORDS, AI_CATALOGUE_TABLES, AI_CATALOGUE_DECLARATIONS,
   ADVISORY_KINDS, ADVISORY_REASONS, MOVES, CHECK_IDS, SHOWN_IDS, ENTRY_ID_MAX, DISPLAY_NAME_MAX, EFFORT_WORD_MAX, GRADES,
@@ -109,14 +109,15 @@ export class AiCatalogue {
   #view = null;             /* the applied fold, rebuilt after every write */
 
   constructor({ sql, core = null, env = {}, clock = null, keys = CATALOGUE_KEYS, supported = SCHEMA_VERSIONS_READ,
-    seed = RELEASE_SEED } = {}) {
+    seed } = {}) {
     this.#sql = sql;
     this.#core = core;
     this.#env = env || {};
     this.#clock = typeof clock === "function" ? clock : () => Date.now();
     /* the keys this build trusts: development lines only where the deployment says it is one (seed.mjs) */
     this.#keys = catalogueKeysFor(keys, this.#env);
-    this.#seed = seed;
+    /* F2: with no seed handed, the release's, or the development seed where the deployment says it is one */
+    this.#seed = seed === undefined ? seedFor(this.#env) : seed;
     this.#supported = Object.freeze([...supported]);
     this.ready = null;
   }
@@ -420,6 +421,13 @@ export class AiCatalogue {
     if (typeof armored !== "string" || !armored.trim()) return null;
     try {
       const r = await this.#acceptPayload(seed.statement, armored, seed.body, "seed", this.#now());
+      /* F3: the development seed, verified and held, brings the adapter types its own entries need (R38), in memory */
+      if (r.ok && seed === DEVELOPMENT_SEED && String(this.#env[DEVELOPMENT_VAR] ?? "") === "1")
+        for (const t of DEVELOPMENT_ADAPTERS) {
+          const had = this.#adapters.get(t.type) || {};
+          this.registerAdapterTypes([{ type: t.type, profiles: Object.fromEntries(Object.entries(t.profiles)
+            .filter(([id]) => !(id in had))) }]);
+        }
       return out(r.ok ? { ok: true, outcome: r.outcome, seq: r.seq } : { ok: false, code: r.code });
     } catch { return out({ ok: false, code: "CATALOGUE_PAYLOAD_INVALID" }); }
   }
