@@ -3,8 +3,8 @@ id: civicsmith-review/1
 title: How a published case is reviewed
 status: draft
 drafted: 2026-11-06
-decision: BD-8 (BOB, 6 Nov 2026), with BD-9 and BD-10 (Bob, 6 Nov 2026)
-contact: to be named by Bob
+decision: BD-8 (BOB, 6 Nov 2026), with BD-9, BD-10 and BD-11 (Bob, 6 Nov 2026)
+ai_page: How Civicsmith uses AI (how-civicsmith-uses-ai.md; its link is set where the ux lane places it)
 ---
 
 # How a published case is reviewed
@@ -20,7 +20,8 @@ Civicsmith adopts this standard voluntarily. It is modelled on the EU Code of Pr
 - The group named on the case as having ratified it holds editorial responsibility for that edition. The group decided what it says and chose to publish it.
 - A member of the group who is an owner of the case signed the edition. The signature covers the exact text of the edition.
 - Members who approved the edition before signing are listed with it.
-- Civicsmith contact: to be named by Bob.
+- How Civicsmith uses AI, and how that relates to rules such as the EU AI Act, is explained on the page [How Civicsmith uses AI](../how-civicsmith-uses-ai.md).
+- To respond to a publication, use its docket (section 5).
 
 ## 2. What review means
 
@@ -56,10 +57,10 @@ These may help the members. They never stand in for them.
 - Where a reader first meets the case, it says that the case was reviewed and ratified by the group, with AI used as a tool. The sentence-by-sentence record is available to any reader on request, and is not shown by default.
 - Quoted passages from public records also record how their text was obtained, for example a member's transcription or an AI transcription, with the member checks made.
 
-## 5. Reporting a problem
+## 5. Responding to a publication
 
-- Anyone named in a case, or who holds a record it cites, can send the group a response. The group files it on the case's public docket and lists it there as the docket's rules say.
-- To report a missing or wrong AI-use record, or a breach of this standard, write to the Civicsmith contact (section 1) and name the case and edition.
+- Each case has a public docket, its signed record of what happened after publication. Anyone can send the group a response to a publication, including a person named in the case, someone who holds a record it cites, or a reader who thinks an AI-use record is missing or wrong. The group files the response on the case's docket and lists it there as the docket's rules say.
+- A correction the group makes is a new edition. Its "what changed" statement appears on the same docket.
 
 ## 6. Changes to this standard
 

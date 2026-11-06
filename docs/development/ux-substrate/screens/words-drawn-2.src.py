@@ -1775,7 +1775,7 @@ W.append(dict(key='queue.fill.reason.not_a_docket', en='what came back was not a
 W.append(dict(key='queue.fill.reason.too_large', en='what came back was too large to read', protected=False, note='DEC-359 (B368 1): queue-producers; the {reason} of queue.cited-docket-unreadable.detail.reason, code too_large'))
 W.append(dict(key='queue.fill.reason.fetch_failed', en="the docket's address could not be reached", protected=False, note='DEC-359 (B368 1): queue-producers; the {reason} of queue.cited-docket-unreadable.detail.reason, code fetch_failed'))
 W.append(dict(key='queue.fill.reason.http_unknown', en="the publisher's site answered with an error", protected=False, note='DEC-359 (B368 1): queue-producers; the {reason} of queue.cited-docket-unreadable.detail.reason, code http_unknown'))
-W.append(dict(key='queue.fill.reason.http', en="the publisher's site answered with error {status}", protected=False, note='DEC-359 (B368 1): queue-producers; the {reason} for a code http_<status>, {status} the number (404)'))
+W.append(dict(key='queue.fill.reason.http', en="the publisher's site would not send the page (its code: {status})", protected=False, note='DEC-359 (B368 1): queue-producers; the {reason} for a code http_<status>, {status} the number (404)'))
 W.append(dict(key='screen.actionnew.rests.advances', en='Advances', protected=False, note='DEC-359 (B368 2): screens-action; the link choice beside screen.start-send.rests (Rests on)'))
 W.append(dict(key='screen.actionnew.due.what', en='What is due', protected=False, note='DEC-359 (B368 2): screens-action; field label in When things are due'))
 W.append(dict(key='screen.actionnew.due.when', en='When', protected=False, note='DEC-359 (B368 2): screens-action; field label in When things are due'))

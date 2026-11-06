@@ -1,4 +1,4 @@
-# CivicSmith product decision records
+# Civicsmith product decision records
 
 A product's decisions are BOB's (AUD-5, kept by Bob 6 Nov). Each is written here as a short decision record (REC-11) and reported to the coordinator in one line. Process technical decisions are the coordinator's and live in process3's DECISIONS.md. Bob's own rulings are not recorded here: they live in the line they refine (REQ-7).
 
@@ -60,8 +60,8 @@ Rejected: B, build_page.py splitting it into parts under the cap; journey-check 
 Consequences: found mark F11 on journey-check (layer 11), PR 683. Its job changes design.mjs and live.test.mjs:152. BOB adds the config generated row, which lands with the job's change. After that lands, the ux lane removes the frozen copy in a lane-only change.
 
 ## BD-6: Trust and transparency developments are tracked and adopted voluntarily (Bob, 6 Nov)
-Context: the ux lane's Q2 on disclosing AI use raised the EU AI Act's transparency duties (Art 50). CivicSmith is not bound by EU rules.
-Decision: a product principle, Bob's words ("agreed", ~18:15Z through the coordinator): "CivicSmith tracks trust and transparency developments, starting with the EU AI Act, and adopts them voluntarily where they serve readers." Adoption is a choice, never a claim of compliance.
+Context: the ux lane's Q2 on disclosing AI use raised the EU AI Act's transparency duties (Art 50). Civicsmith is not bound by EU rules.
+Decision: a product principle, Bob's words ("agreed", ~18:15Z through the coordinator): "Civicsmith tracks trust and transparency developments, starting with the EU AI Act, and adopts them voluntarily where they serve readers." Adoption is a choice, never a claim of compliance.
 Consequences: the publication lane does the tracking as standing research in docs/development/publication-design-research/. Each adoption is a BD decision of BOB's. The first two adoptions are BD-7 and the provenance part of F1(2).
 
 ## BD-7: A published case discloses its AI use at first exposure (Bob, 6 Nov)
@@ -81,7 +81,7 @@ Rejected: no standard. The disclosure (BD-7) would then rest on an unstated bar.
 Consequences: the standard's public contact address is a value Bob gives. Until he does, the standard says "contact: to be named by Bob". The publication lane drafts the standard's text in its folder. The ux lane writes the words that link to it. case-grammar's /11 carries review.standard.
 
 ## BD-9: AI help the product cannot see is declared and affirmed; per-sentence provenance is an overlay (Bob, 6 Nov)
-Context: the publication lane's provenance answer (F1 part 2), Bob's call 1. Text pasted from an AI tool outside CivicSmith is not observable, so an unmarked sentence could claim more than the product knows.
+Context: the publication lane's provenance answer (F1 part 2), Bob's call 1. Text pasted from an AI tool outside Civicsmith is not observable, so an unmarked sentence could claim more than the product knows.
 Decision: option C (Bob, ~18:35Z): both. A member may declare outside AI help per field (origin declared_ai). The signer affirms in the ceremony, inside the signed document (review.affirmed), that every AI use in the text is recorded. Display, in Bob's words: "the disclosure of which elements of a published case are produced/edited by AI is an information overlay that isn't visible by default. I believe that this level of disclosure should be available, but not visible by default." The first-exposure note of BD-7 stays visible. The per-sentence marks (ux DEC-492 (e)) are an overlay any reader can open, not drawn by default.
 Rejected: A or B alone; D, recording only what the product observes.
 Consequences: case-inputs records the declaration; case-grammar /11 carries review.affirmed. The ux lane designs the overlay: how it is revealed, how it is labelled, its accessibility and its words. It also writes the declared_ai control and the affirmation sentence (BD-3).
@@ -90,3 +90,21 @@ Consequences: case-inputs records the declaration; case-grammar /11 carries revi
 Context: Bob's call 2. An AI draft adopted unchanged is refused for the account (ACCEPT_MUST_REAUTHOR, record-grammar) but allowed for what changed (adopted_as_drafted).
 Decision: option A (Bob, ~18:35Z): keep the split. An unchanged draft of what changed is disclosed as ai_kept under /11.
 Rejected: B, refusing everywhere; C, allowing everywhere.
+
+## BD-11: A "How Civicsmith uses AI" page in place of a contact address (Bob, 6 Nov)
+Context: BD-8 left the review standard's contact address for Bob to give.
+Decision (Bob, ~18:50Z): "Rather than an email address (remember that we don't have to conform exactly to EU regs), there's should be a page or document explaining how the system uses AI as it relates to situations like those covered by regulations like the EU's. Again, we're following in the EU direction, not conforming. The docket mechanism already provides a means for people to respond to publications." So BD-8's standard carries no contact address. In its place: (a) a link to the "How Civicsmith uses AI" page; (b) "to respond to a publication, use its docket" (docket R1). This amends BD-8's consequences.
+The page explains in plain language how the system uses AI in the situations regulations like the EU AI Act address:
+- drafting and editing, extraction and grading;
+- provenance and the per-sentence overlay (BD-7, BD-9);
+- human review and ratification under the standard (BD-8);
+- what the signer affirms (BD-9);
+- what is never done: no AI change after signing, and AI critique is not review;
+- how to respond (the docket).
+It follows the EU direction voluntarily (BD-6). It claims no conformity and makes no legal claims.
+Consequences: the publication lane writes the content, since it holds the tracking research. The ux lane owns its words and placement (BD-3), including where it lives and how the BD-7 note and published cases link to it. BOB files a found mark on the module that serves the page, in its layer, once the ux lane names it. civicsmith-review/1 is revised to match.
+
+## BD-12: The product's name is spelled "Civicsmith" (Bob, 6 Nov)
+Context: Bob's messages today wrote "CivicSmith", while the product's documents use "Civicsmith" (DEC-124: one word, only its first letter capital).
+Decision (Bob, ~19:05Z): "The spell checker keeps replacing civicsmith and Civicsmith with CivicSmith. The correct name is Civicsmith." Where Bob's quoted words read "CivicSmith", that was his spell checker, not a decision. They are recorded here with the correct spelling.
+Consequences: BD-6, BD-9 and BD-11 are corrected in this file. The lanes correct their own folders. The ux lane may add a words check that refuses "CivicSmith". Earlier records stay as they are, as history.
