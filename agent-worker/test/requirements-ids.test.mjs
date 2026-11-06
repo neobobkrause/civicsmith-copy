@@ -157,6 +157,8 @@ const ADMITTED = {
   F2: ["not yet met: coordinator ruling 5 Nov 20:18", "a3ff85819faf6c0f"],
   F3: ["not yet met: coordinator ruling 5 Nov 20:18", "0c742c78c3eb6ec9"],
   F4: ["not yet met: coordinator ruling 5 Nov 20:18", "d869859058702ae8"],
+  /* F5: BOB's ruling 6 Nov 03:33, added here already met (PR 616 closed unmerged); its test is f2-runner-bound's F5. */
+  F5: ["not yet met: coordinator ruling 5 Nov 20:18, restated 6 Nov 03:33", "7bfff2655168d558"],
 };
 
 const LINE = /^- \*\*([RF]\d+)\*\*(?: \*\((not yet met: [^)]*|retired[^*]*)\)\*)?/;
