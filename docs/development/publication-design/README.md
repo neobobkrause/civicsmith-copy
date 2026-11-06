@@ -8,4 +8,5 @@ The folder holds only what the product reads or publishes. Sources and generator
 
 | Path | What it is |
 |---|---|
-| `review-standard/civicsmith-review-1.md` | The published review standard `civicsmith-review/1` (BD-8, with BD-9 and BD-10), carried by a `/11` case document's `review.standard`. It is a draft until Bob names the contact address. A change to it is a new file with a new id; an existing id's text is never changed once published. |
+| `review-standard/civicsmith-review-1.md` | The published review standard `civicsmith-review/1` (BD-8, with BD-9 to BD-11), carried by a `/11` case document's `review.standard`. It is a draft until the ux lane places the AI page it links to. A change to it is a new file with a new id; an existing id's text is never changed once published. |
+| `how-civicsmith-uses-ai.md` | The content of the "How Civicsmith uses AI" page (BD-11), the lane's draft. The ux lane owns its final words, placement and where it lives (BD-3). `civicsmith-review/1` links to it. |
