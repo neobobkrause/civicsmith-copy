@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "case-account",
+  "session": "session_018BhcedyjALGDnbYwtZMhcf",
+  "started": "2026-11-06T17:30:54Z",
+  "ended": "2026-11-06T17:32:45Z",
+  "at": "2026-11-06T17:32:45Z",
+  "minutes": 1.85,
+  "result": "pass",
+  "layer": 8,
+  "suite_seconds": 4.883,
+  "tests": {
+    "total": 49,
+    "pass": 49,
+    "fail": 0
+  }
+}
