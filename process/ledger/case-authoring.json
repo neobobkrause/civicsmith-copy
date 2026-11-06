@@ -78,6 +78,6 @@
   "prior_work": "Found work (case-grammar PR 202, R35): CASE_DOCUMENT_FORMAT is now bio-case-document/10; 4 of this module's tests pin /8 as the format in force and are red. Restate them (and any code naming the format in force) against case-grammar as merged, with a test that fails with the change reverted. Any unmet mark in build/requirements/case-authoring.md is yours too. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-05T12:36:55Z"
+    "at": "2026-11-06T18:28:22Z"
   }
 }
