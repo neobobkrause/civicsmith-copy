@@ -102,6 +102,37 @@ const MINUTES_UNITS = [{ extent: { kind: "pdf-page", page: 0 }, ref: "page 1", t
 const MEMO_UNITS = [{ extent: { kind: "pdf-page", page: 0 }, ref: "page 1", text: "Please sign the lease before the meeting." }];
 export const extracted = (units) => CG.extractedTextOf(units);
 
+/* R29-R32 (T53; `case-grammar` R38, R39): a cited register row travelling as its extract, built by `case-grammar`'s own
+   `registerExtractRow`, never by hand. Its reduced segment and its source file never travel. */
+export const SEGMENT = "SEGMENT licence,holder,street\nL-17,Pine Co,1 Mill Lane\n";
+export const REDUCED_SHA = sha(SEGMENT);
+export const EXT = sha("the licence register's row 17");             /* the row's own ref (its content id) */
+export const EXT2 = sha("the licence register's row 18");
+export const EXTRACT = { ref: EXT, origin: "https://registers.example.org/licences", rests_under: "load_bearing", title: "Licence L-17",
+  register: "licences", file: "licences-2026.csv", reduced_sha256: REDUCED_SHA, original_sha256: sha("the original piece"),
+  original_covers: "every licence issued in 2026", source_date: "2026-08-01", imported_at: "2026-08-03", src_row: 17,
+  kept_columns: ["licence", "holder"], roles: ["identifier", "organisation"], dropped_columns: ["street"],
+  header: ["licence", "holder"], row: ["L-17", "Pine Co"] };
+export const USE_LIMIT = { key: "register.limit.licences", citation: "Licensing Act s.12", text_key: "register.limit.licences.text" };
+export const EXTRACT_EXTENT = { kind: "document" };
+/** The extract's `materials:` row, as `case-grammar` builds it; `over` changes the arguments, `after` the built row. */
+export function extractRow(over = {}, after = (r) => r) {
+  const r = CG.registerExtractRow({ ...EXTRACT, ...over });
+  if (!r.ok) throw new Error(`fixture: ${JSON.stringify(r)}`);
+  return after(r.row);
+}
+/** `caseFile` options for a `/10` case whose load-bearing member A rests on extracts (one by default): a leg on each, and a
+ *  passage relied on from the first, quoting one of its cells. `rows` are the extracts' material rows; `quoted` the passage's
+ *  words; `more` other options, `docEdit` among them. */
+export function withExtract({ rows: list = [extractRow()], quoted = "Pine Co", more = {} } = {}) {
+  const facts = gradingFacts();
+  const ord = facts[A].legs.length;                              /* the passage's ord is its leg's (`case-grammar` R17) */
+  for (const r of list) facts[A].legs.push({ target: r.ref, kind: "document", role: "supports", grade: "B", grade_axis: "capture",
+    grade_source: "capture", ground: null, captures: [r.sha] });
+  const passage = { ord, content_id: contentIdFor(REDUCED_SHA, EXTRACT_EXTENT, null), capture_sha: REDUCED_SHA, extent: EXTRACT_EXTENT, chain: null, quoted };
+  return { format: "bio-case-document/10", facts, materialRows: (m) => [...m, ...list], extraPassages: { [A]: [passage] }, ...more };
+}
+
 const PAIR_AXES = ["capture", "connection", "testimony"];
 const pairOf = (r) => Object.fromEntries(PAIR_AXES.map((a) => [a, { state: r[a].state, grade: r[a].grade ?? null }]));
 
@@ -198,7 +229,7 @@ export function caseFiles(opts = {}) {
   const passageExtent = { kind: "pdf-page", page: 0 };
   const passage = { content_id: contentIdFor(MINUTES_SHA, passageExtent, null), capture_sha: MINUTES_SHA, extent: passageExtent, chain: null,
                     quoted: opts.quoted || "The lease was approved without a vote." };
-  const passages = { [A]: [passage], [B]: [], [C]: [] };
+  const passages = { [A]: [passage, ...(opts.extraPassages?.[A] || [])], [B]: [], [C]: [] };
   for (const [id, list] of Object.entries(passages)) put("passages", id, JSON.stringify(list));
   put("document", MINUTES, MINUTES_BYTES);
   put("extracted_text", MINUTES, extracted(MINUTES_UNITS));
@@ -234,9 +265,11 @@ export function caseFiles(opts = {}) {
     { ref: MEMO, by_kind: "group", by: GROUP },
     { ref: OBS, by_kind: "member", by: null, level: "group", at: NOW }];
   const attestations = opts.attestationRows ? opts.attestationRows(attestations0) : attestations0;
-  const doc = caseDocument({ format: opts.format, pairs, findings, pins, materials, attestations, accounts, accepted, bar: opts.bar,
+  const doc0 = caseDocument({ format: opts.format, pairs, findings, pins, materials, attestations, accounts, accepted, bar: opts.bar,
     recorded: opts.recorded ? opts.recorded(pairs) : null, facts: opts.signedFacts || facts, passages: opts.signedPassages || passages,
     calculations, extra: opts.docLines || [], lens: opts.lens || [], omit: opts.omit || [] });
+  /* a change to the document's text before it is signed (a field the line builders would not write), so only it differs */
+  const doc = opts.docEdit ? opts.docEdit(doc0) : doc0;
   put("case_document", null, doc);
   /* R22: the edition's criteria rows, as `public-read` R33 carries them (a list in canonical JSON; text as given) */
   if (opts.criteria !== undefined) put("criteria", null, typeof opts.criteria === "string" ? opts.criteria : canonicalJson(opts.criteria));
