@@ -62,3 +62,5 @@ Not met here, each waiting on another module:
 - K2816 (2) (Bob: the deployer-set test-instance exception, every output labelled; R78); K2892 (Bob: a member's own sign-in runs check and plan for that member only; R18).
 - `build/layers.md`, layer 6's contract.
 - (T53) AIR5, AIR7, AIR13, AIR25–AIR28, AIR41, AD7, AD13, AD14, AD36, AD37, BR13, BR18, BR19, BR22, BR27–BR29 (K5457, K5475, K5477, K5489): R9, R10, R12, R18, R19, R28, R40, R52, R54, R72, R75, R76, R78, R83, R84, R88, R90–R105; N1219, DEC-466 U1, U2: R99–R105.
+
+- **Notice ai-use:378 (5 Nov 2026, attempt 12).** `ai-use` R10 now falls back to `agent-model.estimate`'s range for the entry an act is served on when the account has too few measured acts, and `useEstimate` answers a promise when an `entry_id` is named. Adapted: R74's `openMany` names the entry of the account `ai-accounts.accountFor` answers for her act (when that account is the paying owner's) and awaits the answer, so a new account's batch estimate is the entry's range (`price_only` or `measured`) rather than `not_known`. Test `notice-ai-use-378.test.mjs`; R74's test now expects `entry_id` in the asked fields. No requirement text changed.
