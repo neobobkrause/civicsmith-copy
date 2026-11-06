@@ -3,7 +3,7 @@
    each lacks. At the interface, under the test profile and copies of it handed in as `jurisdictions`. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seeded, draft, approved, V, TEST, secret, sha, reviewedOf, proReview } from "./fixture.mjs";
+import { seeded, draft, approved, V, TEST, secret, sha, reviewedOf, PRO_REVIEW, proReview } from "./fixture.mjs";
 import * as ft from "../../../src/filing-templates/index.mjs";
 import * as jurisdictions from "../../../../jurisdictions/index.mjs";
 
@@ -81,6 +81,8 @@ test("R35 unofferedFor lists the kind's profile templates R15 does not offer, ea
   const listed = (w, kind = "records_request", viewer = A) => w.ft.unofferedFor({ kind, viewer });
   const one = (patch, lacks) => assert.deepEqual(listed(lacking((t) => patch(whole(t)))), [{ handle: "records-request", name: "Records request", lacks }]);
   one((t) => ({ ...t, authored_by: "" }), ["writer"]);
+  /* R38 (`jurisdictions` R126): a professional review naming no reviewed_text_sha is not counted, so it lacks professional_review */
+  one((t) => ({ ...t, reviews: [PRO_REVIEW] }), ["professional_review"]);
   one((t) => ({ ...t, sources: [] }), ["sources"]);
   one((t) => ({ ...t, reviews: [] }), ["professional_review"]);
   one((t) => ({ ...t, approved_by: "" }), ["second_approval"]);
