@@ -1,0 +1,41 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "case-import",
+  "pr": 635,
+  "head": "5ddb7c92a98254fed8d2e602586a66e4240d063c",
+  "before": "2ec3f0bed0c001296309565d060d61561288bca0",
+  "merge": "91ad402fd4c71f3e93f31fe1225c22d88a91680c",
+  "at": "2026-11-06T14:30:12Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests": [
+      "bio-plane/test/m/case-import/own-ungraded.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ]
+  },
+  "users_rescheduled": [
+    "case-authoring",
+    "case-disclosures"
+  ],
+  "users_noticed": [
+    "affordances",
+    "answer-envelope",
+    "conformance",
+    "control-plane",
+    "monitoring",
+    "op-declarations",
+    "plane",
+    "queue-producers",
+    "screens-document",
+    "screens-inquiry",
+    "screens-publish",
+    "store-assembly"
+  ]
+}

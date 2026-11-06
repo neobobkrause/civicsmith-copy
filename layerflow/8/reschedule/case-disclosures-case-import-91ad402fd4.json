@@ -1,0 +1,14 @@
+{
+  "row": "reschedule",
+  "layer": 8,
+  "user": "case-disclosures",
+  "provider": "case-import",
+  "provider_pr": 635,
+  "provider_land": "91ad402fd4c71f3e93f31fe1225c22d88a91680c",
+  "at": "2026-11-06T14:30:12Z",
+  "key": "case-disclosures<-case-import@91ad402fd4",
+  "why": "its tests of Public / Provides requirements changed (bio-plane/test/m/case-import/own-ungraded.test.mjs), which may mean a changed answer shape",
+  "triggers": [
+    "provides-test"
+  ]
+}

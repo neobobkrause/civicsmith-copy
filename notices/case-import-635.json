@@ -1,0 +1,27 @@
+{
+  "row": "notice",
+  "at": "2026-11-06T14:30:12Z",
+  "key": "case-import:635",
+  "provider": "case-import",
+  "ids": [],
+  "pr": 635,
+  "users": [
+    "affordances",
+    "answer-envelope",
+    "conformance",
+    "control-plane",
+    "monitoring",
+    "op-declarations",
+    "plane",
+    "queue-producers",
+    "screens-document",
+    "screens-inquiry",
+    "screens-publish",
+    "store-assembly"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 8,
+    "provides": false
+  }
+}
