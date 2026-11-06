@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS action_law_proposals (
   citation    TEXT NOT NULL,   -- as the proposer wrote it, and never parsed for a rule
   standard    TEXT,            -- R64: the held standard (STD-) the proposer names with it, or NULL
   proposed_at TEXT NOT NULL,
+  layer       TEXT,            -- R21 (T53): the layer that gave the law, as the proposer named it, NULL when none was named
+  ambiguous   INTEGER,         -- R21: 1 when no layer was named and two active layers give the citation, NULL before R21
   PRIMARY KEY (bundle_id, proposed_by, ord)
 );
 
@@ -134,7 +136,7 @@ CREATE TABLE IF NOT EXISTS action_stakes (
 export const ACTION_RECORDS_TABLES = Object.freeze(["action_law_proposals", "action_risk_proposals",
   "action_seeks_proposals", "action_receipts", "action_scopes", "action_promises", "action_stakes"]);
 
-/** R15: creates the tables (idempotent) and adds `action_law_proposals`' `standard` column where a table created before
+/** R15, R21: creates the tables (idempotent) and adds `action_law_proposals`' `standard`, `layer` and `ambiguous` columns where a table created before
  *  it had the column lacks it (`actions`' `migrate()` did the same), so a running store's rows are kept. */
 export function migrateActionRecords(sql) {
   const bare = ACTION_RECORDS_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
@@ -142,4 +144,8 @@ export function migrateActionRecords(sql) {
   /* R64, R19 (actions'; R1, R9 here): a proposed law's held standard, on a table created before it had the column. */
   const cols = [...sql.exec(`PRAGMA table_info(action_law_proposals)`)].map((r) => r.name);
   if (!cols.includes("standard")) sql.exec(`ALTER TABLE action_law_proposals ADD COLUMN standard TEXT`);
+  /* R21 (T53; N1257, K5458): a proposed law's layer, and whether it was named over two layers giving it; empty (NULL) for
+     rows written before, which are answered as they were. */
+  if (!cols.includes("layer")) sql.exec(`ALTER TABLE action_law_proposals ADD COLUMN layer TEXT`);
+  if (!cols.includes("ambiguous")) sql.exec(`ALTER TABLE action_law_proposals ADD COLUMN ambiguous INTEGER`);
 }
