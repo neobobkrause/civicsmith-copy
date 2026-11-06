@@ -1,0 +1,1 @@
+{"row":"triage","user":"control-plane","verdict":"not affected","evidence":"build/modules.json:209 control-plane (bio-plane/src/control-plane/) holds no file that imports agent-worker, every code file under its paths read at bd0c7fb882","at":"2026-11-06T04:32:41.600Z","key":"agent-worker:569","worker":"merge: imports check","cost":"0"}
