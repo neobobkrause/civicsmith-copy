@@ -167,7 +167,7 @@ The lane's own calls, each reported to BOB:
   - file-safety R11;
   - extraction R101;
   - notice-producers R16.
-- **Missing icons.** `i-document`, `i-due` and `i-sever` are absent from `icons.svg`.
+- **Missing icons.** ~~`i-document`, `i-due` and `i-sever` are absent from `icons.svg`.~~ Corrected 6 Nov: they are present; interface-assets' note reads a pinned commit.
 - **Library pin drift.** wizard-scripts pins `library.json` at 6 Oct, and the file has changed by +451/-79 lines since. To be re-taken, or recorded as deliberate.
 - **Stale artifact text:**
   - principle 4.3;

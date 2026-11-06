@@ -15,6 +15,7 @@ Researched against tranche `705f8823d1` (6 Nov 2026), with the process pinned at
 | [`code.md`](code.md) | The existing code. It has all 90 files in `docs/development/ux-substrate/` (source or generated, builder, readers), the build graph, the generated config rows, and product readers with file:line. It ends with 14 health findings, among them `layouts.html` over the size cap, the `escalationdecline` drift, the 15 failures in `check_library.py`, unread files and stale `lane/ux-*` branches. |
 | [`artifacts.md`](artifacts.md) | The nine design artifacts, read whole. It holds the 58 principles and 7 voice traits verbatim, brand words, the name, the 27 journeys, visual tokens, the 91 screens and their states, and the measures map. It also records every question to Bob and its ruling, and the contradictions and drift between artifacts. |
 | [`best-practice.md`](best-practice.md) | Current public best practice, cited with dates: WCAG 2.2, ADA Title II and 508, plain language (ISO 24495-1, GOV.UK), GOV.UK and USWDS patterns, DTCG design tokens, AI disclosure (EU AI Act Art. 50, NIST), C2PA, showing uncertainty, onboarding and front doors, and usability research. For each, it says where the product follows or departs. |
+| [`wcag-gaps.md`](wcag-gaps.md) | The WCAG 2.2 AA gaps as a list to schedule: the lane's own (W1–W8) and the modules' (M1–M4), each with its criterion, where it is and its size, plus the contractions call still open (6 Nov). |
 
 ## Keeping it true
 
