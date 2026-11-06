@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "case-carriage",
+  "session": "session_018BhcegbaF4gRNDGS9Dab2N",
+  "started": "2026-11-06T17:30:04Z",
+  "ended": "2026-11-06T17:31:49Z",
+  "at": "2026-11-06T17:31:49Z",
+  "minutes": 1.75,
+  "result": "pass",
+  "layer": 8,
+  "suite_seconds": 6.576,
+  "tests": {
+    "total": 110,
+    "pass": 110,
+    "fail": 0
+  }
+}
