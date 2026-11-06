@@ -5,3 +5,4 @@
 {"at":"2026-11-04T16:04:23Z","row":"sent","n":3,"to":"bob","text":"job case-import complete, PR #275 ready, session session_01RAN5emBTiBMBw8DzUJXmUM: run status"}
 {"at":"2026-11-04T16:04:34Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-06T14:25:28Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job case-import complete, PR #635 ready, session session_018Bhcee3PwJQBFQG92HXax2: run status"}
+{"at":"2026-11-06T14:25:39Z","row":"outcome","n":4,"outcome":"delivered"}
