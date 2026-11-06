@@ -12,3 +12,4 @@
 {"at":"2026-11-06T14:48:00Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-06T15:24:45Z","row":"sent","n":7,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job case-authoring complete, PR #650 ready, session session_018BhcegtK4xjSAvY2dNnNK6: run status"}
 {"at":"2026-11-06T15:25:53Z","row":"outcome","n":7,"outcome":"delivered"}
+{"at":"2026-11-06T18:29:24Z","row":"sent","n":8,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job case-authoring complete, PR #681 ready, session session_018BhcecQoEvEopQw2ySuoYX: run status. Note: F2 was already met on layer/8 (marked met; no open mark struck). store-request at layer/8 has 2 reds, not this module's: recipes-b6 R19 timing bound (120 questions in ~40 s) and world R20 unreachable ops interpretmark, interpretationwithdraw; no UNGRADED_PASSAGES_MISMATCH red."}
