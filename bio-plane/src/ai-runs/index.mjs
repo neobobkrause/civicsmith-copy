@@ -1523,7 +1523,7 @@ export class AiRuns {
    *  `skillVersion`, `label` are each run's, as `open` takes them; `owner` the account the estimate is asked of (default:
    *  the account `ai-accounts.accountFor` answers for her act). Refused whole, nothing written: no member's act
    *  (`run-rules` R18, relayed), or no list of steps (`AI_RUN_NO_CONTEXT`). Otherwise `ai-use.estimate` is asked once for
-   *  the batch (its answer, a refusal included, carried as `estimate`), then each step in order: one she cannot see
+   *  the batch, naming the entry its runs are served on (ai-use R10's entry fallback; its answer, a refusal included, carried as `estimate`), then each step in order: one she cannot see
    *  answers `AI_RUN_STEP_UNKNOWN` for that step alone, a group-placed one `AI_RUN_NO_CONTEXT` (a run sits in an inquiry
    *  or a project); every other opens through `open` exactly as one run (its own checks, its own `useCheck`), over the
    *  step's place (its first question she sees, or its project), with a system step of its own whose work names hers
@@ -1542,14 +1542,17 @@ export class AiRuns {
     if (!list.length || list.length > AiRuns.OPEN_MANY_MAX || list.some((x) => !x) || new Set(list).size !== list.length)
       return { ...this.#refuse("AI_RUN_NO_CONTEXT", localize("ai-runs.index.a_batch_names_the_steps", "a batch names the steps it runs on, each once, 1 to {OPEN_MANY_MAX} of them. Nothing was started.", { OPEN_MANY_MAX: String(AiRuns.OPEN_MANY_MAX) })), started: false };
     /* END DEC-49 REGION is-airun-open-many */
-    let payer = owner;
-    if (payer == null) {
-      const a = await this.#accountFor(member, "run", null);
-      payer = a && !a.refusal ? a.owner : null;
-    }
+    /* ai-use R10 (notice ai-use:378): the batch's estimate names the entry its runs are served on (the account
+       ai-accounts answers for her act, when it is the paying owner's), so an account with too few measured acts is
+       answered that entry's range; a call naming an entry answers a promise, awaited here. */
+    const served = member ? await this.#accountFor(member, "run", null) : null;
+    const held = served && !served.refusal ? served : null;
+    const payer = owner ?? (held ? held.owner : null);
+    const entry_id = held && held.owner === payer && typeof held.entry_id === "string" ? held.entry_id : null;
     let estimate = null;
     try {
-      estimate = payer ? this.#aiUse().estimate({ owner: payer, use: "run", mode: runMode, count: list.length, viewer: `member:${member}` })
+      estimate = payer ? await this.#aiUse().estimate({ owner: payer, use: "run", mode: runMode, count: list.length,
+        viewer: `member:${member}`, ...(entry_id !== null ? { entry_id } : {}) })
         : this.#noAccount(member, "A batch of runs");
     } catch { estimate = null; }
     const st = this.#steps();
