@@ -90,3 +90,16 @@ Consequences: case-inputs records the declaration; case-grammar /11 carries revi
 Context: Bob's call 2. An AI draft adopted unchanged is refused for the account (ACCEPT_MUST_REAUTHOR, record-grammar) but allowed for what changed (adopted_as_drafted).
 Decision: option A (Bob, ~18:35Z): keep the split. An unchanged draft of what changed is disclosed as ai_kept under /11.
 Rejected: B, refusing everywhere; C, allowing everywhere.
+
+## BD-11: A "How CivicSmith uses AI" page in place of a contact address (Bob, 6 Nov)
+Context: BD-8 left the review standard's contact address for Bob to give.
+Decision (Bob, ~18:50Z): "Rather than an email address (remember that we don't have to conform exactly to EU regs), there's should be a page or document explaining how the system uses AI as it relates to situations like those covered by regulations like the EU's. Again, we're following in the EU direction, not conforming. The docket mechanism already provides a means for people to respond to publications." So BD-8's standard carries no contact address. In its place: (a) a link to the "How CivicSmith uses AI" page; (b) "to respond to a publication, use its docket" (docket R1). This amends BD-8's consequences.
+The page explains in plain language how the system uses AI in the situations regulations like the EU AI Act address:
+- drafting and editing, extraction and grading;
+- provenance and the per-sentence overlay (BD-7, BD-9);
+- human review and ratification under the standard (BD-8);
+- what the signer affirms (BD-9);
+- what is never done: no AI change after signing, and AI critique is not review;
+- how to respond (the docket).
+It follows the EU direction voluntarily (BD-6). It claims no conformity and makes no legal claims.
+Consequences: the publication lane writes the content, since it holds the tracking research. The ux lane owns its words and placement (BD-3), including where it lives and how the BD-7 note and published cases link to it. BOB files a found mark on the module that serves the page, in its layer, once the ux lane names it. civicsmith-review/1 is revised to match.
