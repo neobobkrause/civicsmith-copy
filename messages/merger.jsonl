@@ -262,3 +262,4 @@
 {"at":"2026-11-06T01:49:26Z","row":"sent","n":132,"to":"bob","text":"the starter started job ai-catalogue (PR 611): subscribe_pr_activity to each pull request"}
 {"at":"2026-11-06T01:50:08Z","row":"outcome","n":131,"outcome":"delivered"}
 {"at":"2026-11-06T01:50:55Z","row":"outcome","n":132,"outcome":"delivered"}
+{"at":"2026-11-06T01:52:16Z","row":"sent","n":133,"to":"bob","text":"merged PR 508 (job load-check); the MERGER's starter starts the work it freed"}
