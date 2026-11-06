@@ -1,0 +1,20 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "review",
+  "pr": 646,
+  "head": "c2fa4b10fa574c4917a5074e5e53e6601f114aa2",
+  "before": "5fa7bf4616a5c5580e12e6db9b06496da31951ea",
+  "merge": "cf716c12d3d6f318c622873b46499d495d00e2dd",
+  "at": "2026-11-06T15:12:28Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": []
+  },
+  "users_rescheduled": [],
+  "users_noticed": []
+}
