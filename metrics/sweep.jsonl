@@ -295,3 +295,4 @@
 {"at":"2026-11-06T00:28:22Z","row":"ready","live":2,"parked":3,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-06T00:19:34Z"}
 {"at":"2026-11-06T00:35:21Z","row":"ready","live":2,"parked":3,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-06T00:25:12Z"}
 {"at":"2026-11-06T00:42:26Z","row":"ready","live":1,"parked":4,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-06T00:37:12Z"}
+{"at":"2026-11-06T00:49:26Z","row":"ready","live":1,"parked":4,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-06T00:43:08Z"}
