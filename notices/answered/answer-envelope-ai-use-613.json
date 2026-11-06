@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:99 imports only ai-use/checks.mjs (used as a check family at families.mjs:240), which PR 613 did not touch; it never calls AiUse or budgetSet","at":"2026-11-06T03:44:25.144Z","key":"ai-use:613","worker":"a3e58ed9cbbaf5bb6","cost":"unmeasured"}

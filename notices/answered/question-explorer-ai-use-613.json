@@ -1,0 +1,1 @@
+{"row":"answered","user":"question-explorer","by":"triage","evidence":"bio-plane/src/question-explorer/index.mjs:1084 builds aiUseOf(...) and uses only exploreAllowed (:450), exploreAsk (:479) and estimate (:492), all unchanged by PR 613; no budgetSet use","at":"2026-11-06T03:44:25.144Z","key":"ai-use:613","worker":"a3e58ed9cbbaf5bb6","cost":"unmeasured"}

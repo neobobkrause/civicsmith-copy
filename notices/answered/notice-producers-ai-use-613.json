@@ -1,0 +1,1 @@
+{"row":"answered","user":"notice-producers","by":"triage","evidence":"bio-plane/src/notice-producers/index.mjs:265 builds aiUseOf(host) and calls only exploreAsksPending (:1040) and limitsReached (:1073), both unchanged by PR 613; no budgetSet use","at":"2026-11-06T03:44:25.144Z","key":"ai-use:613","worker":"a3e58ed9cbbaf5bb6","cost":"unmeasured"}

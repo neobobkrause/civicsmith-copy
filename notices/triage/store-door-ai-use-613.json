@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-door","verdict":"not affected","evidence":"bio-plane/src/store-door/dispatch.mjs:497 its only use of ai-use is aiUseOf(ctx).countAskUsage(...), unchanged by PR 613; nothing in store-door calls budgetSet or names aibudgetset/aiprojectbudget","at":"2026-11-06T03:44:25.144Z","key":"ai-use:613","worker":"a16a56ed4c0bf4317","cost":"unmeasured"}

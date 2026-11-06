@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-ask","verdict":"not affected","evidence":"build/modules.json:186 store-ask has no paths (\"paths\": []) and only lists ai-use in \"uses\"; no source file imports ai-use, so nothing reaches AiUse.budgetSet or the new aibudgetset/aiprojectbudget ops","at":"2026-11-06T03:44:25.144Z","key":"ai-use:613","worker":"a16a56ed4c0bf4317","cost":"unmeasured"}
