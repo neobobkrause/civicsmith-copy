@@ -57,6 +57,20 @@
   "generated": [
     {
       "paths": [
+        "bio-plane/src/member-roster/order.mjs"
+      ],
+      "regenerate": [
+        "node",
+        "bio-plane/src/member-roster/order-build.mjs"
+      ],
+      "verify": [
+        "node",
+        "bio-plane/src/member-roster/order-build.mjs",
+        "--check"
+      ]
+    },
+    {
+      "paths": [
         "docs/development/ux-substrate/screens/words-drawn.json"
       ],
       "regenerate": [
