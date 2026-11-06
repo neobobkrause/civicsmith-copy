@@ -35,7 +35,8 @@
   ],
   "prior_work": "This module's code and tests exist (split by copy, build/modules.json) but it had no ledger entry until layer 8 opened, so the process never recorded it. Its requirement file has no unmet mark. Run its suite on layer/8. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Edit no other module, and commit no generated file.",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-06T14:20:00Z"
+    "state": "BLOCKED",
+    "reason": "Publish refused by the ledger check, not by the work: 'process/ledger/project-stage.json:1: a job may not add a ledger entry'. The tool's own job-start commit 5e9b28ab adds that entry (and process/metrics/project-stage.jsonl) to job/project-stage because layer/8 (b69df73d6f) does not hold it; tranche does. The work itself is done: no code change is needed, the suite passes 23 of 23 on layer/8, R1-R9 are each tested in bio-plane/test/m/project-stage/stage.test.mjs, and there is no mark to strike. To unblock: put the ledger entry on layer/8 (sync tranche into layer/8, or the coordinator's commit there), then restart; publish will then carry no files.",
+    "at": "2026-11-06T16:06:39Z"
   }
 }
