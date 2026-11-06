@@ -53,8 +53,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-05T23:49:38Z",
-    "reason": "reopened: meet found mark F1: the published page's evidence reads publishedcase's {materials:[...]} shape (published.mjs:178, published-pages.mjs:53), with its test and control; and report to BOB whether public-read (publishedcase's provider, bio-plane/src/public-read/reads.mjs) states that shape in its Public / Provides in build/requirements/public-read.md, citing file:line, so BOB records a found mark there if not (Bob, 5 Nov 23:33)"
+    "state": "COMPLETE",
+    "at": "2026-11-06T00:08:00Z"
   }
 }
