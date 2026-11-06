@@ -1,3 +1,4 @@
 {"row":"start","at":"2026-11-06T05:00:45Z","tranche":"tranche","lane":"ux"}
 {"row":"record","at":"2026-11-06T05:03:08Z","lane":"ux","session":"session_018BhcegQtKAXA1KeiQQ7ZXT"}
 {"row":"end","at":"2026-11-06T05:55:28Z","lane":"ux","session":"session_018BhcegQtKAXA1KeiQQ7ZXT","why":"one row (act.guideoptout.does) landed via ux-design PR 622; layer 6 closed; product pauses for the pin move. Cleanup PR 620 held as draft for after it."}
+{"row":"start","at":"2026-11-06T12:36:55Z","tranche":"tranche","lane":"ux"}
