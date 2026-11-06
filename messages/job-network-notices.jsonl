@@ -5,3 +5,4 @@
 {"at":"2026-11-06T15:01:12Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job network-notices complete, PR #643 ready, session session_018BhcecHGoYHP5TM2crpayU: run status"}
 {"at":"2026-11-06T15:01:26Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-06T15:33:49Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job network-notices complete, PR #654 ready, session session_018BhceetXQaWMZt46BQbxNH: run status"}
+{"at":"2026-11-06T15:34:00Z","row":"outcome","n":4,"outcome":"delivered"}
