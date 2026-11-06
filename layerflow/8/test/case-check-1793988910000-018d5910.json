@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "case-check",
+  "session": "session_018BhcecRKEt2PDqRLNHsNro",
+  "started": "2026-11-06T18:15:10Z",
+  "ended": "2026-11-06T18:17:09Z",
+  "at": "2026-11-06T18:17:09Z",
+  "minutes": 1.98,
+  "result": "pass",
+  "layer": 8,
+  "suite_seconds": 3.885,
+  "tests": {
+    "total": 39,
+    "pass": 39,
+    "fail": 0
+  }
+}
