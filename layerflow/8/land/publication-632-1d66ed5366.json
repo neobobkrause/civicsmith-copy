@@ -1,0 +1,62 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "publication",
+  "pr": 632,
+  "head": "1d66ed53666066610f5382d366222a6062b734a1",
+  "before": "a38a1ffe101047d98a047fadcb5c182633c5bdaa",
+  "merge": "3258868d57d0984be91b50ea01ceabc257eaab37",
+  "at": "2026-11-06T14:41:11Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "Publication.renderingsByPixels"
+      ],
+      "changed": []
+    },
+    "provides": null,
+    "provides_tests": [
+      "bio-plane/test/m/publication/g47t-miniflare.test.mjs",
+      "bio-plane/test/m/publication/g47t-registry.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ]
+  },
+  "users_rescheduled": [
+    "case-account",
+    "case-authoring",
+    "case-check",
+    "case-disclosures",
+    "case-inputs",
+    "docket",
+    "network-notices",
+    "project-stage",
+    "public-read",
+    "publish-schedule",
+    "ratification",
+    "review"
+  ],
+  "users_noticed": [
+    "action-holds",
+    "affordances",
+    "answer-envelope",
+    "conformance",
+    "control-plane",
+    "filings",
+    "monitoring",
+    "op-declarations",
+    "plane",
+    "queue-producers",
+    "screens-action",
+    "screens-publish",
+    "store-assembly",
+    "store-request",
+    "tasks"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 8,
+  "user": "case-check",
+  "provider": "publication",
+  "provider_pr": 632,
+  "provider_land": "3258868d57d0984be91b50ea01ceabc257eaab37",
+  "at": "2026-11-06T14:41:11Z",
+  "key": "case-check<-publication@3258868d57",
+  "why": "added Publication.renderingsByPixels; its tests of Public / Provides requirements changed (bio-plane/test/m/publication/g47t-miniflare.test.mjs, bio-plane/test/m/publication/g47t-registry.test.mjs), which may mean a changed answer shape",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ]
+}

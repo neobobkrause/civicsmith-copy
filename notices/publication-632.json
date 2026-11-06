@@ -1,0 +1,37 @@
+{
+  "row": "notice",
+  "at": "2026-11-06T14:41:11Z",
+  "key": "publication:632",
+  "provider": "publication",
+  "ids": [],
+  "pr": 632,
+  "users": [
+    "action-holds",
+    "affordances",
+    "answer-envelope",
+    "conformance",
+    "control-plane",
+    "filings",
+    "monitoring",
+    "op-declarations",
+    "plane",
+    "queue-producers",
+    "screens-action",
+    "screens-publish",
+    "store-assembly",
+    "store-request",
+    "tasks"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "Publication.renderingsByPixels"
+    ],
+    "changed": []
+  },
+  "layer_flow": {
+    "layer": 8,
+    "provides": false
+  }
+}
