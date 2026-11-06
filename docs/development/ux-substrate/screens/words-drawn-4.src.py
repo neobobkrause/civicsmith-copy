@@ -2893,3 +2893,22 @@ wlvl('move.notcarried.none', 'Everything in the export was carried.', 'R97')
 wlvl('move.done', "Your team's record is in its new place. Check it there, then end the old one.", 'R97')
 wlvl('move.end', 'End the old one', "R97: the old one's end act")
 wlvl('move.end.what', 'Ending it stops it for everyone. Do this only after you have checked the new one.', 'R97: said before the end act')
+
+# DEC-491 (the ux lane, 6 Nov 2026; BD-7, BD-6): a published case discloses its AI use at first exposure. Framed as
+# human-reviewed and ratified: it leads with who ratified, AI as a tool. Placement: on `published` and `review-outside`,
+# directly under the edition's dated line and before "How to read a case", the first block a reader meets; on `front`,
+# one short line on each case listed; and in the complete edition's own rendering (DEC-41), in the case's language.
+# Never a claim of compliance (BD-6). True only to the record: the uses named are those the case's record holds.
+def w491(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-491: ' + note))
+w491('screen.published.ai.ratified', 'Reviewed and signed by {ratifiers} for {team} on {date}. They checked each finding against its evidence before signing.', 'first: who ratified; {ratifiers} the signing owners as they are credited (DEC-102)')
+w491('screen.published.ai.tool', '{team} used an AI assistant as a tool in preparing this case: {uses}. A person made every finding, and nothing the assistant drafted was published without being reviewed.', 'second: AI as a tool; {uses} a list of .use.* the record holds')
+w491('screen.published.ai.use.reading', 'reading documents', 'a use: the assistant read or transcribed documents')
+w491('screen.published.ai.use.searching', 'finding sources', 'a use: the assistant searched for material')
+w491('screen.published.ai.use.drafting', 'drafting parts of the account', 'a use: an account or passage began as the assistant\'s draft')
+w491('screen.published.ai.use.translating', 'translating', 'a use: the assistant translated material')
+w491('screen.published.ai.none', 'No AI assistant was used in preparing this case.', 'instead of .tool, only when the record shows no machine work at all')
+w491('screen.published.ai.more', 'How the assistant was used', 'a disclosure that opens below the two lines')
+w491('screen.published.ai.more.text', 'An AI assistant can read, search and draft. It cannot decide what is true: a finding is made only when a member concludes it, and a case is published only when an owner signs it. The signatures above can be checked without trusting anyone.', 'the opened text')
+w491('screen.published.ai.passages', 'Passages that began as the assistant\'s drafts are marked where they appear, and the signed record says which they are.', 'held for the per-passage provenance (BD-7, publication lane F1(2)); drawn only once the signed record carries it')
+w491('screen.front.case.ai', 'Reviewed and signed by people; AI used as a tool', 'one short line under each case listed on the team\'s page, when the record holds machine work')
