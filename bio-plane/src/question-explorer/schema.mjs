@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS explore_runs (
   reason     TEXT,
   closed_at  TEXT,
   actual     TEXT,
-  close_refused TEXT           -- null, or the plane's code when ai-runs did not accept the run close (R17)
+  close_refused TEXT,          -- null, or the plane's code when ai-runs did not accept the run close (R17)
+  entry      TEXT              -- F1: the catalogue entry the gate was judged on at the open, or null (none named)
 );
 CREATE INDEX IF NOT EXISTS explore_runs_question ON explore_runs(question, opened_at);
 
@@ -133,4 +134,5 @@ export function migrateQuestionExplorer(sql) {
   /* R17 (T50): a store made before the column gains it. */
   const runCols = [...sql.exec(`PRAGMA table_info(explore_runs)`)].map((c) => c.name);
   if (!runCols.includes("close_refused")) sql.exec(`ALTER TABLE explore_runs ADD COLUMN close_refused TEXT`);
+  if (!runCols.includes("entry")) sql.exec(`ALTER TABLE explore_runs ADD COLUMN entry TEXT`);
 }
