@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 8,
+  "user": "case-authoring",
+  "provider": "case-disclosures",
+  "provider_pr": 636,
+  "provider_land": "a38a1ffe101047d98a047fadcb5c182633c5bdaa",
+  "at": "2026-11-06T14:40:10Z",
+  "key": "case-authoring<-case-disclosures@a38a1ffe10",
+  "why": "added CaseDisclosures.content, TEAM_MEMBER_CREDIT_KEY; its tests of Public / Provides requirements changed (bio-plane/test/m/case-disclosures/t53-typed.test.mjs), which may mean a changed answer shape",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ]
+}

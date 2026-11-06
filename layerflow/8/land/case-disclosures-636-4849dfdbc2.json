@@ -1,0 +1,41 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "case-disclosures",
+  "pr": 636,
+  "head": "4849dfdbc29a485f623af987403bf12bc8b36dbe",
+  "before": "994f9e70e2ac61b2a0a4ed3168d8cd4d4d4e1c59",
+  "merge": "a38a1ffe101047d98a047fadcb5c182633c5bdaa",
+  "at": "2026-11-06T14:40:10Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "CaseDisclosures.content",
+        "TEAM_MEMBER_CREDIT_KEY"
+      ],
+      "changed": []
+    },
+    "provides": null,
+    "provides_tests": [
+      "bio-plane/test/m/case-disclosures/t53-typed.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ]
+  },
+  "users_rescheduled": [
+    "case-account",
+    "case-authoring"
+  ],
+  "users_noticed": [
+    "answer-envelope",
+    "plane",
+    "screens-publish",
+    "store-assembly"
+  ]
+}

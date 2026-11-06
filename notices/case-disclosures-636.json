@@ -1,0 +1,27 @@
+{
+  "row": "notice",
+  "at": "2026-11-06T14:40:10Z",
+  "key": "case-disclosures:636",
+  "provider": "case-disclosures",
+  "ids": [],
+  "pr": 636,
+  "users": [
+    "answer-envelope",
+    "plane",
+    "screens-publish",
+    "store-assembly"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "CaseDisclosures.content",
+      "TEAM_MEMBER_CREDIT_KEY"
+    ],
+    "changed": []
+  },
+  "layer_flow": {
+    "layer": 8,
+    "provides": false
+  }
+}
