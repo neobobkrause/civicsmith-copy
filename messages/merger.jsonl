@@ -286,3 +286,4 @@
 {"at":"2026-11-06T03:01:39Z","row":"outcome","n":143,"outcome":"delivered"}
 {"at":"2026-11-06T03:05:57Z","row":"sent","n":144,"to":"bob","text":"the starter started job ai-catalogue (PR 615): subscribe_pr_activity to each pull request"}
 {"at":"2026-11-06T03:06:41Z","row":"outcome","n":144,"outcome":"delivered"}
+{"at":"2026-11-06T03:14:17Z","row":"sent","n":145,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (11 jobs ready). Then: TRAIN WAITING ON A CANCELLED GATE: PR 570 (job agent-drafts): its merged result 52f9b34eb6 was pushed to job/agent-drafts at ~03:03Z and the process-gate run on it reads cancelled; the train has polled it ~25 times over ~10 min and lands nothing else while it holds. A re-run of that gate, or your word on 570, frees the train."}
