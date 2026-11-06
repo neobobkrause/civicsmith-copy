@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "filing-templates",
+  "session": "session_018BhcecDsAf6bjB2gmsqByr",
+  "started": "2026-11-06T18:55:51Z",
+  "ended": "2026-11-06T18:57:42Z",
+  "at": "2026-11-06T18:57:42Z",
+  "minutes": 1.85,
+  "result": "pass",
+  "layer": 9,
+  "suite_seconds": 1.932,
+  "tests": {
+    "total": 86,
+    "pass": 86,
+    "fail": 0
+  }
+}
