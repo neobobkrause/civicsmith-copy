@@ -3,3 +3,4 @@
 {"at":"2026-11-06T14:57:26Z","row":"sent","n":2,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job case-inputs complete, PR #644 ready, session session_018BhcedzjguTz8HJ81dzMzY: run status"}
 {"at":"2026-11-06T14:57:37Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-06T15:36:53Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job case-inputs complete, PR #653 ready, session session_018Bhcefj2gzzg4cQF5f6w2S: run status"}
+{"at":"2026-11-06T15:37:04Z","row":"outcome","n":3,"outcome":"delivered"}
