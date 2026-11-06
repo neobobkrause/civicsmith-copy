@@ -1,5 +1,5 @@
 {
-  "merge_train_window": 3,
+  "merge_train_window": 1,
   "tranche": "tranche",
   "record_since": "4250e8860a482bcbebab243e6627ba0cd690e9d7",
   "records": [
@@ -147,7 +147,8 @@
         "--test-force-exit",
         "bio-plane/test/system/fleetbundles.test.mjs"
       ]
-    }
+    },
+    {"paths": ["newgroup/dist/newgroup.bundled.mjs"], "regenerate": ["npm", "--prefix", "newgroup", "run", "build"], "verify": ["node", "--test", "--test-force-exit", "bio-plane/test/system/newgroup-bundle-fresh.test.mjs"]}
   ],
   "deploy": {
     "slug_prefix": "p3dev-",

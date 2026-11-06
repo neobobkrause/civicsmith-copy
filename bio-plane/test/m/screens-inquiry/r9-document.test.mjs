@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ok, boot } from "../interface-shell/harness.mjs";
 import { main, actsIn, word, plane, READING, DOCUMENT_MD, SCREENS, D, SHA } from "./fixtures.mjs";
+import { hasWord } from "../../../src/setup-words/index.mjs";
 
 process.env.TZ = "UTC";
 const at = "/app/document/" + D;
@@ -37,7 +38,9 @@ test("R130 G135a G135e SCAN A2-A9 DOCS R1-R3: a kind no reader opens is named by
     const note = m.querySelector('[data-reading="unsupported"]');
     assert.ok(note, `${kind}: the statement is its own element`);
     assert.equal(note.getAttribute("data-unsupported-kind"), kind);
-    assert.equal(text(note).trim(), word(UNSUPPORTED + kind), `${kind}: the sentence of its kind`);
+    /* screens-document-beta R61 (DEC-454, DEC-467): a kind the Document page holds its own row for (`screen.document.unsupported.<kind>`, `ico`) draws that row */
+    const OWN = "screen.document.unsupported.";
+    assert.equal(text(note).trim(), hasWord(OWN + kind) ? word(OWN + kind) : word(UNSUPPORTED + kind), `${kind}: the sentence of its kind`);
     const acts = actsIn(m);
     for (const a of READ_ACTS) assert.ok(!acts.includes(a), `${kind}: no ${a}: ${acts}`);
     assert.ok(!text(m).includes(FIXTURE_BASIS), `${kind}: the key's sentence, not the reading's own words`);

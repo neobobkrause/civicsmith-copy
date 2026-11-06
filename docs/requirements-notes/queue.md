@@ -1,0 +1,37 @@
+# queue — requirements notes
+
+Text moved out of `build/requirements/queue.md` on 5 Nov 2026 to bring it under the 70,000-byte cap, word for word. None of it is a requirement: every **R** and **F** line stays in the requirements file, with its mark.
+
+## Status history and Size (moved from the requirements file, 5 Nov 2026)
+
+**Status** · In force: approved by Bob 2026-09-26 (K102), with later folds reviewed. Split by N363 (Bob's K507, seams K531): the obligation inbox's ids retired to `tasks` and the feed producers' to `queue-producers`, each naming its new id. Last fold T34 (T34-53, T34-56: R1, R48, R49 amended; DEC-131, DEC-135; R17 trimmed, K1863); every requirement met (QUEUE #19, K1871). Last changed T40 (T40-21: R1, R12, R27 amended, the set-aside always the project arm and the AI accounts' three kinds; N812, N814; K2371, K2376, K2394); those marked not yet met (T40). Last changed T41 (T41-55's text: R1 amended, its T40 text kept; R52 new; N820; K2405, K2417, K2418); marked not yet met (T41). Last changed T47 (T47-73: R53 new, amending R6, `op=queue` evaluated at the server's instant, a query `now` ignored, the clock `queueOf`'s `now` option; N983, K3027); marked not yet met (T47). Last changed T48 (T48-60: R54 new, amending R1, R12 and R28, the update to-do's kind classed and filed under "Your group's Civicsmith"; N1047; DEC-226 (1); K3189; N1036's line re-tested at START, N1052's sign-ins tests only; K3192, K3195); marked not yet met (T48). Last changed T50 (L11 fold, BOB #201: R55 the muted list, R56 every item's subject title, R57 the new kinds; N1094, N1123, N1091, N1204; DEC-240, DEC-248, DEC-286, DEC-304; re-checked, BOB #205: R55 names `queue.kind.<kind>` for `{kind}` (DEC-309 (1)) and keys owed); marked not yet met (T50). Last changed T51 (L11 fold, BOB #210: R58 new, amending R20 and R55, a muted item's title; R59 new, the receipts of what a member answered, `answered: true`; R60 new, the feeds' honesty and the per-class all-clear; R61 new, amending R15, the set-aside findings list, instance rows carrying the version they judged; N1238, K3775; DEC-299 (8), DEC-329 (11), DEC-330 A58, A61, A62, A63, K3839; A58 is met by R12, R21, R27, R40 and `tasks` R3); marked not yet met (T51). Fix round 9 (T51; K4933): R1 amended, `reading-ended` FINDING (`notice-producers` R29); marked not yet met (T51). Last changed T53 (K5480, K5478: R1 amended, `retesting-off` and `ai-credits-stop`; A6, DEC-462: R97 new, per-key acts; N1259, K4403 (7): R98 new, the four register kinds; K4354, P24: R99 new, a kept count); marked not yet met (T53).
+
+**Size (P6).** About 4,440 lines once extracted (about 2,160 of code), about 4,600–4,700 (about 2,300) with N172's and N229's producers (`build/extraction/queue.md`, re-measured 2026-09-28). Accepted by BOB as fitting one reading, as K93 accepted control-plane's (2026-09-28); the split to take if a job reports it cannot read the module whole is in Suggestions.
+
+## Suggestions (moved from the requirements file, 5 Nov 2026)
+
+- **Factory.** `queueOf(ctx)`; `queuestate.mjs` stays pure and module-level.
+- **The producers' deps (K921).** `Queue.PRODUCER_DEPS` gains the deps `queue-producers` R20 and R21 read (`filingTemplates`, `localFacts`), as K919 added `actions`; `queue` passes them and calls neither.
+- **Registration.** `scheduler` is earlier: this module registers its `queue-renotify` consumer with it (K31), `legacy-store` registering it until then (`task-drain` is `tasks`', N363). The mute-fence and mint are the negative controls worth keeping: remove the write fence and a real obligation disappears from a real feed.
+- **The depth bound** is this module's own constant; `strength` keeps an equal one.
+- **Callers' obligations** (convention 2): the control plane stamps `member`, `viewer`, `identity` and the decider, passes `gate`, and maps a store silence to its own answer; `capture` enqueues and never drains.
+- **`escalationsSeen()`** (monitoring R35) is offered with N229's facts but names none of R31's four kinds; no item is minted from it until a kind is catalogued for it.
+- **(T48; N1036, K3189)** The START re-tests whether `op=queue` answers what Home's "what needs the group" draws (the items by kind, and whose move: `assignee` and `assignee_role`). A line found missing joins this job's text at START, or is a T49 row. **(N1052)** `conclude-project.test.mjs` signs in by `{handle, password}` (the founder's `handle: "admin"`), tests only.
+- Tests: R7 over a chain of seven with one invisible ancestor; R11 with a producer stubbed to mint each fault; R13 with two project homes, one deciding. N345: a duty cannot be muted; a duty reaching two projects is one item with two homes (R32); a lead dismissed leaves; a plurality mark has no set-aside. DEC-85: each member's `contradiction-duty-unseen` item cannot be muted; a plurality between hidden projects gives `contradiction-plurality-unseen`, with no set-aside. R11 is unchanged: the new kinds are catalogued by R1, so the mint holds. (One item per candidate, owners only for `tension-after-publication`, and a hidden side yielding nothing are `queue-producers`' tests, N363.)
+
+## A58's ruling (moved from the T51 section, 5 Nov 2026)
+
+- **A58 (choose several items, act once, each item's outcome) is met by existing requirements, and nothing is written for it.** Forward and dismiss run per item through `record-core.perItem` with `items` (`tasks` R3 for `taskforward` and `taskresolve`; R27 for `proposedispose`), each outcome `{index, outcome, asked, …}` with its own `check` and `translation` when retained (`record-core` R50–R52); an item no set act reaches (a letter to approve, a check to answer) carries `disposition.available: false` with its `instead` door (R12), which is why it "stays here". A snooze is per case (R21, R40): the screen calls `queuesnooze` once for each distinct case of the chosen items and states each item's outcome from those answers; an item with no case (`case.ungrouped`) has nothing to snooze. Doubt for UX-DESIGN, not a requirement: snoozing hides the case's other items too.
+
+## (moved) Open for Bob
+
+None: answered by Bob 2026-09-26 (K102).
+
+## (moved) Decided by BOB (for the rulings)
+
+- `from` is `legacy-store`, `legacy-checks` and `legacy-index`: the `op=queue` composition moves here; the control plane keeps routing, the two stamps, the store-silence answer and the envelope (K3).
+- The obligation inbox (`tasks`, `#routeTask`, `taskDrain`, `taskList`, `taskForward`, `taskResolve`, `#refuseNotYours`; C-19.1, C-32.10, C-32.11, C-76) is this module's, K49's "later module": the feed's OBLIGATION half is its only reader. `scheduler` reaches the drain by registration. (Superseded: moved to `tasks` by N363, K531.)
+- `op=proposedispose`'s dispatch is this module's: it routes the progression shape to `progressions.disposeProposal` and keeps the project arm, the class bridge and mixed sets (K78 (2)).
+- `#perItem`, `PER_ITEM_MAX` and C-75 go to `record-core` as `perItem`, generic over the act's identity groups passed as a parameter (record-core R49–R52, R55); `entities` (`op=resolve`) and this module call it, and `affordances` re-exports the bound.
+- `#projectsDrawingOn` goes to `basis-versions` (both `publication` and this module call it).
+- Uses corrected to what the code calls: add `record-core`, `affordances`, `scheduler`, `capture`, `provenance`, `host-governor`, `capture-requests`, `connections`, `basis-versions`, `progressions`, `ai-runs`, `bias`, `publication`, `observation-log`, `legacy-checks`; drop `review`.
