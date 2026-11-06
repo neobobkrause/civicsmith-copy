@@ -175,16 +175,15 @@ export const PUBLISHED = Object.freeze({
         + '<div class="mk-acts">' + cs.act("casedetailspublic") + "</div>"));
     }
 
-    const evidence = Array.isArray(e.captures) ? e.captures : Array.isArray(e.materials) ? e.materials : [];
+    // F1: the rows as `publishedcase` answers them (`materials.materials`), else its `captures:` rows
+    const evidence = P.evidenceOf(e);
     // R19: each piece of evidence with a full SHA-256 opens its bytes by that hash (`publishedbytes`, no credential); a row
-    // with no full hash draws no hash and no link.
+    // with no full hash draws no hash and no link, and a row whose bytes are not published draws its hash and no link.
     out.push(P.sec(cs, "screen.published.evidence", evidence.length ? cs.sheet(evidence.map(function (x) {
-      const sha = String(x.sha256 || x.capture_sha || "").toLowerCase();
-      const full = /^[0-9a-f]{64}$/.test(sha);
-      const graded = P.gradeMark(cs, x.axis || "capture", x.grade);
-      return cs.row("", '<span class="rec">' + cs.esc(x.title || x.label || x.locator || (full ? sha : "")) + "</span>" + (graded ? ' <span data-evidence-grade>' + graded + "</span>" : ""),
-        full ? '<span class="id">' + cs.esc(sha.slice(0, 12)) + "</span>" : "",
-        full ? cs.act("publishedcase", { label: "screen.published.evidence.open", data: { sha: sha } }) : "");
+      const graded = P.gradeMark(cs, x.axis, x.grade);
+      return cs.row("", '<span class="rec" data-evidence-row>' + cs.esc(x.name || x.sha) + "</span>" + (graded ? ' <span data-evidence-grade>' + graded + "</span>" : ""),
+        x.sha ? '<span class="id">' + cs.esc(x.sha.slice(0, 12)) + "</span>" : "",
+        x.open ? cs.act("publishedcase", { label: "screen.published.evidence.open", data: { sha: x.open } }) : "");
     }).join("")) : ""));
 
     out.push('<div class="mk-acts">' + cs.act("verify", { data: { sha: String(e.manifest_sha || "") } }) + cs.act("publishedcase")

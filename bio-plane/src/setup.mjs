@@ -2165,6 +2165,30 @@ export class InstanceSetup {
              detail: word("instance-setup.assistant.detail.keep_away_unread") };
   }
 
+  /** R115 (T53; DEC-466 U3; AIR5), op=assistantreadiness: Setup's ready state, to any signed-in member, from
+   *  `ai-accounts.accountsOnSummary` (its R74) alone: `{state: "ready", accounts_on: n}` while the team holds at least one
+   *  account that is on and held; else `{state: "project_only", projects: [{id, name}]}` while a project the viewer may see
+   *  holds one (none she may not see is named); else `{state: "not_ready", reason: "no_account_on"}`. An unreadable summary
+   *  (or one that throws) is `not_ready` with reason `unreadable` (fail closed). Keep-away is R53's answer, never a state
+   *  here; a member's own accounts are never counted. Writes nothing and never throws. */
+  assistantReadiness({ viewer = null } = {}) {
+    let s = null;
+    try { s = this.#aiAccounts().accountsOnSummary({ viewer }); } catch { s = null; }
+    if (!s || typeof s !== "object" || s.unreadable === true || !Number.isInteger(s.team_on) || s.team_on < 0
+        || !Array.isArray(s.projects_on))
+      return { ok: true, state: "not_ready", reason: "unreadable" };
+    if (s.team_on > 0) return { ok: true, state: "ready", accounts_on: s.team_on };
+    if (s.projects_on.length) {
+      const projects = s.projects_on.filter((id) => typeof id === "string" && id).map((id) => {
+        let name = null;
+        try { name = this.#record().bundleInfo(id)?.title ?? null; } catch { name = null; }
+        return { id, name };
+      });
+      if (projects.length) return { ok: true, state: "project_only", projects };
+    }
+    return { ok: true, state: "not_ready", reason: "no_account_on" };
+  }
+
   /** R55 (T37; N765, K231, K2201; T48, N996): `ai-accounts.aiKeptAway()` (its R7) as given: null while the group does not keep its
    *  material away, otherwise that service's one `AI_KEPT_AWAY` refusal with its row and `keep_away: {reason, set_by,
    *  set_at}` (null, and said so, when the setting could not be read). This module holds no copy of the condition and
@@ -3101,6 +3125,8 @@ export function instanceSetupOps(m, url, body) {
     recordcpuprobestep: () => m.recordCpuProbeStep(body || {}),
     cpuprobeend: () => m.recordCpuProbeEnd(body || {}),
     assistantstate: () => m.assistantState(),
+    /* R115 (T53): Setup's ready state; `viewer` is the stamp. */
+    assistantreadiness: () => m.assistantReadiness({ viewer: q("viewer") }),
     disclosureshown: () => m.disclosureShown({ ...(body || {}), by: q("by") }),
     disclosureof: () => m.disclosureOf({ member: q("member") ?? (body || {}).member, version: q("version") ?? (body || {}).version }),
     officesseed: () => m.officesSeed({ ...(body || {}), boot: false, by: q("by") }),
@@ -3150,6 +3176,10 @@ export function instanceSetupOps(m, url, body) {
 const ADMIN_ACT = Object.freeze(["admin", "member"]);
 const STAMPED_ACT = Object.freeze(["admin", "member", "probe"]);
 export const DECLARED_OPS = Object.freeze({
+  /* R115 (T53; F-mark of the screens-ai ruling, 5 Nov 17:24): Setup's ready state, a read for any signed-in member. */
+  assistantreadiness: { classes: ADMIN_ACT, machineClasses: [], mutating: false, weight: "read",
+    description: localize("instance-setup.declared.assistantreadiness", "read: whether the team's assistant is ready: a team account on, a project's only, or none; it names no member's own account"),
+    fields: { accepts: [], requires: [] } },
   declaredstakeset: { classes: ADMIN_ACT, machineClasses: [], mutating: true, weight: "reversible",
     description: localize("instance-setup.declared.declaredstakeset", "setting: the group's declared stake in its own words, carried beside its public identity on what it sends or publishes from then; an administrator's act, every earlier value kept; moves no bundle"),
     fields: { accepts: ["stake"], requires: ["stake"] } },

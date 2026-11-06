@@ -29,6 +29,6 @@
   "prior_work": "Meet every unmet mark in build/requirements/site.md (R17, R18), each with a test that fails with the change reverted. Deploying the site is not yours or BOB's: the worker civicsmith-site is not a development deployment; test locally only. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T12:06:04Z"
+    "at": "2026-11-05T16:06:45Z"
   }
 }
