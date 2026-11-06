@@ -19,6 +19,7 @@ export function world(opts = {}) {
   const w = baseWorld({ ...opts, parts: true, interpreter, ...(measured ? { measured } : {}) });
   w.calls = calls;
   let n = 0;
+  w.held = [];
   /** A document held in `project` (none: placed in no project), promoted through the real promotion with its capture registered,
    *  then read as extraction writes a reading, its units indexed. */
   w.doc = (project, name, units, reading = {}) => {
@@ -38,6 +39,7 @@ export function world(opts = {}) {
     if (!r.ok) throw new Error(`parts fixture promote refused: ${JSON.stringify(r).slice(0, 600)}`);
     w.record.transact(() => w.extraction.writeReading({ bundleId: id, captureSha: d, composed: true, textUnits: units,
       reading: { found: true, entities: [], content_type: "application/pdf", text_source: null, basis: "t", at: AT, ...reading } }));
+    w.held.push(d);
     return { id, sha: d };
   };
   /** A PDF of `pages` pages, page i's text `text(i)`. */

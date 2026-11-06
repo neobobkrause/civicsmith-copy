@@ -6,13 +6,20 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { world, sha } from "./parts-fixture.mjs";
 import { ANN, BOB, CAT, DAN, AI, P1, P2, PH } from "./fixture.mjs";
-import { MARK_PARTS_MAX, PROPOSALS_MAX, PROPOSALS_MEASURED } from "../../../src/investigation/index.mjs";
+import { MARK_PARTS_MAX, PROPOSALS_MAX, PROPOSALS_MEASURED, PLANE_VIEWER } from "../../../src/investigation/index.mjs";
+import { ASSISTANT_SCREEN } from "../../../src/screens-inquiry/assistant.mjs";
+import { AI_RUN_ACTIONS } from "../../../src/op-declarations/index.mjs";
 import { DECLARED_OPS } from "../../../src/investigation/ops.mjs";
 
 const pages = (from, to) => ({ kind: "pdf-page", from, to });
 const rows = (sheet, from_row, to_row) => ({ kind: "sheet-range", sheet, from_row, to_row });
-const interpretations = (w) => w.rows(`SELECT project, how, basis, proposal, began_from, part FROM interpretations ORDER BY seq`)
-  .map((r) => ({ ...r, part: JSON.parse(r.part) }));
+/* What a caller sees of every document the test held: `extraction.interpretationOf` (its R116), as the plane's own viewer, each live
+   row's project, how, basis, proposal, began_from and part, in document order. */
+const interpretations = (w) => w.held.flatMap((capture) => {
+  const r = w.extraction.interpretationOf({ capture, viewer: PLANE_VIEWER });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  return r.parts.map((x) => ({ project: x.project, how: x.how, basis: x.basis, proposal: x.proposal ?? null, began_from: x.began_from ?? null, part: x.part }));
+});
 const SEWER = "Was the sewer fund of $4.2 million spent?";
 
 /* A 30-page budget PDF in P1: "sewer fund" on pages 3 and 17, "$4.2 million" on page 25 (parts are runs of ten pages). */
@@ -271,6 +278,9 @@ test("R29 (control): proposalRates states counts only, carries no id, and a chan
   assert.deepEqual(r.kinds, [{ kind: "pdf", offered: 1, accepted: 0, chosen_unaided: 1, chose_otherwise: 0, review_due: false }]);
   assert.ok(!/PP-|INT-|PROJ-/.test(JSON.stringify(r)));
   assert.deepEqual(w.inv.proposalRates({ kind: "sheet" }).kinds, []);
+  /* a proposal refused twice is counted once */
+  for (let i = 0; i < 2; i++) await w.inv.acceptProposals({ project: P1, proposals: [{ id: w.five[1].id, refused: true }], by: ANN });
+  assert.deepEqual(w.inv.proposalRates({ kind: "pdf" }).kinds.map((k) => [k.offered, k.chose_otherwise]), [[2, 1]]);
 });
 
 /* ------------------------------------------------------------------------------------------------------------------- R30 */
@@ -307,7 +317,7 @@ test("R31: a viewer in Q and in P sees P's marked pages 3 to 9 with member and d
     "a document the project does not hold is not marked through it");
   const viaExtraction = await w.extraction.interpretPart({ capture: d.sha, part: pages(3, 9), project: PH, how: "opened", by: CAT });
   assert.equal(viaExtraction.ok, true, JSON.stringify(viaExtraction));
-  const p1 = await w.extraction.interpretPart({ capture: d.sha, part: pages(3, 9), project: P1, how: "cited", by: ANN });
+  const p1 = await w.extraction.interpretPart({ capture: d.sha, part: pages(3, 9), project: P1, how: "marked", by: ANN });
   assert.equal(p1.ok, true);
   /* Bob is in P1 and P2: from P2 he is told P1's pages, Ann's handle and the date; the hidden project is not named */
   const bob = w.inv.interpretedElsewhere({ capture: d.sha, project: P2, viewer: BOB });
@@ -330,13 +340,21 @@ test("R31 (control): no row of a project the viewer may not see appears in any a
 
 /* ------------------------------------------------------------------------------------------------------------------- R32 */
 
-test("R32: no op of this module lets a machine interpret: every op that interprets is refused to a machine, and the proposals are made by code alone", async () => {
-  for (const [op, d] of Object.entries(DECLARED_OPS)) if (/accept|interpret|mark|propos/.test(op)) assert.deepEqual(d.machineClasses, [], op);
+test("R32: the assistant screen and airunopen have no op naming interpretPart: its acts and the run's acts are none of this lane's, and a machine is refused every act that interprets", async () => {
+  const lane = /interpret|acceptproposals|markfor/i;
+  const screenOps = ASSISTANT_SCREEN.acts.map((a) => a.op);
+  assert.ok(screenOps.includes("airunopen"), "the assistant screen opens a run");
+  assert.deepEqual(screenOps.filter((op) => lane.test(op)), [], "the assistant screen offers no interpret act");
+  assert.deepEqual([...AI_RUN_ACTIONS].filter((op) => lane.test(op)), [], "no act of a run, airunopen's among them, interprets");
+  assert.deepEqual(Object.keys(DECLARED_OPS).filter((op) => lane.test(op)), [], "this module declares no interpret op in this release");
   const w = five();
   assert.equal((await w.inv.acceptProposals({ project: P1, proposals: [w.five[0].id], by: AI })).code, "INVESTIGATION_MEMBER_ONLY");
   assert.equal((await w.inv.markForInterpretation({ project: P1, capture: w.d.sha, parts: [pages(0, 1)], by: AI })).code, "INVESTIGATION_MEMBER_ONLY");
+  /* the proposals are made by code alone: the parts lane imports no ai-*, agent-* or skills module */
   const src = readFileSync(new URL("../../../src/investigation/parts.mjs", import.meta.url), "utf8");
-  const imports = [...src.matchAll(/^import .* from "([^"]+)";/gm)].map((m) => m[1]);
-  assert.deepEqual(imports, ["../record-grammar/index.mjs"]);
+  assert.deepEqual([...src.matchAll(/^import .* from "([^"]+)";/gm)].map((m) => m[1]), ["../record-grammar/index.mjs"]);
+  const index = readFileSync(new URL("../../../src/investigation/index.mjs", import.meta.url), "utf8");
+  const imported = [...index.matchAll(/^import [\s\S]*? from "([^"]+)";/gm)].map((m) => m[1]);
+  assert.deepEqual(imported.filter((f) => /\/(ai-|agent-)/.test(f)), []);
   assert.equal(interpretations(w).length, 0);
 });

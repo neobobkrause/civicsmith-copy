@@ -1568,9 +1568,10 @@ export class Investigation {
         const p = byId.get(a.id.trim());
         if (a.refused === true) {
           this.#record.transact(() => {
-            if (!this.#one(`SELECT 1 AS x FROM inv_part_refusals WHERE project_id = ? AND proposal_id = ?`, project, p.id))
-              this.#sql.exec(`INSERT INTO inv_part_refusals (project_id, proposal_id, capture_sha, part_json, by_actor, at) VALUES (?,?,?,?,?,?)`,
-                project, p.id, p.capture, json(p.part), by, at);
+            /* a proposal already refused is answered as refused and counted once (R29) */
+            if (this.#one(`SELECT 1 AS x FROM inv_part_refusals WHERE project_id = ? AND proposal_id = ?`, project, p.id)) return;
+            this.#sql.exec(`INSERT INTO inv_part_refusals (project_id, proposal_id, capture_sha, part_json, by_actor, at) VALUES (?,?,?,?,?,?)`,
+              project, p.id, p.capture, json(p.part), by, at);
             this.#sql.exec(`INSERT INTO inv_proposal_acts (project_id, proposal_id, kind, outcome, by_actor, at) VALUES (?,?,?,?,?,?)`,
               project, p.id, p.kind, "chose_otherwise", by, at);
           });
