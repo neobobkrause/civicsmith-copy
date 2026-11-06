@@ -1,0 +1,20 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "network-notices",
+  "pr": 643,
+  "head": "8ad963d8f304d4cbaa86c00e64212ed0306fa3fa",
+  "before": "ce49eb117c1bca1b31d2a5da7a241392aaeb17e3",
+  "merge": "641a8445be298295270f6a501b5f40cbd32482dd",
+  "at": "2026-11-06T15:04:40Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": []
+  },
+  "users_rescheduled": [],
+  "users_noticed": []
+}
