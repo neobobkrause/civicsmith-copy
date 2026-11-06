@@ -758,9 +758,13 @@ export class CaseCarriage {
     if (types.some((t) => t.startsWith("image/"))) return true;
     let stated = types.length > 0;
     for (const d of docs) {
-      const fmt = str(d.profile?.format?.format).toLowerCase(), declared = str(d.profile?.source_content_type).toLowerCase();
+      /* format-registry R38 (K5436): bytes no signature names are `unlisted` with no `named`, which states no format; an
+         `unlisted` kind it does name is that kind. */
+      const f = d.profile?.format, raw = str(f?.format).toLowerCase();
+      const fmt = raw === "unlisted" ? str(f?.named).toLowerCase() : raw === "undetermined" ? "" : raw;
+      const declared = str(d.profile?.source_content_type).toLowerCase();
       if (IMAGE_FORMATS.has(fmt)) return true;
-      if (fmt && fmt !== "undetermined") stated = true;
+      if (fmt) stated = true;
       else if (declared) { if (declared.startsWith("image/")) return true; stated = true; }
     }
     return !stated && paths.some((x) => IMAGE_EXT.test(String(x || "")));

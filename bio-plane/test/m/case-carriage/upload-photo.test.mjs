@@ -59,8 +59,11 @@ test("R1 R9 R13 (controls) the format decides: a text upload named notes.png is 
   assert.equal(r.ok, false);
   assert.equal(r.code ?? r.reason, "NOT_A_PHOTO");
   assert.notEqual(w.cc.documentCopy(text).state, "photo");
-  const undetermined = await uploaded(w, "INFO-2026-0034-x", "plain words", { name: "x.png", filedAs: "x.png" });
+  // Bytes no signature names: format-registry answers them `unlisted`, naming no kind (its R38), so nothing states a format.
+  const undetermined = await uploaded(w, "INFO-2026-0034-x", [0, 1, 2, 3, 250, 251, 252, 7, 9, 0, 13], { name: "x.png", filedAs: "x.png" });
   assert.equal(w.cc.documentCopy(undetermined).state, "photo", "nothing states a format: the extension decides");
+  const named = await uploaded(w, "INFO-2026-0034-z", "plain words", { name: "z.png", filedAs: "z.png" });
+  assert.notEqual(w.cc.documentCopy(named).state, "photo", "a stated format that is not an image wins over the extension");
   const plain = await uploaded(w, "INFO-2026-0035-y", "more plain words", { name: "y.txt" });
   assert.equal((await w.cc.obscureMark({ captureSha: plain, areas: [], by: OLIVE })).ok, false, "no format, no type, no extension: not a photo");
 });
