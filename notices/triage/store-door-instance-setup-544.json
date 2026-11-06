@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-door","verdict":"not affected","evidence":"bio-plane/src/store-door/dispatch.mjs:347 uses only instanceSetupOf(ctx).assistantState().on (and groupDescriptionDraft at :510), never assistantReadiness or op=assistantreadiness","at":"2026-11-06T02:21:47.516Z","key":"instance-setup:544","worker":"a884ff7b63e8ee3d7","cost":"unmeasured"}

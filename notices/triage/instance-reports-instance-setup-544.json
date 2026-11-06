@@ -1,0 +1,1 @@
+{"row":"triage","user":"instance-reports","verdict":"not affected","evidence":"build/modules.json:176 gives it no paths (only a \"uses\" entry for instance-setup), so no file of it imports InstanceSetup.assistantReadiness or the R115 op","at":"2026-11-06T02:21:47.516Z","key":"instance-setup:544","worker":"a3af5ed884eec5abb","cost":"unmeasured"}
