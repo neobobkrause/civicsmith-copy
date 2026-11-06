@@ -2403,10 +2403,11 @@ export class Publication {
     if (!(built == null || typeof built === "boolean")) built = Symbol.for("malformed");
     if (typeof caseId !== "string" || !caseId.trim() || !Number.isInteger(Number(edition)) || Number(edition) < 1
         || !manifest || typeof manifest !== "object" || typeof manifestSha !== "string" || !/^[0-9a-f]{64}$/.test(manifestSha)
-        || !(bytes == null || (Number.isInteger(bytes) && bytes >= 0)) || typeof built === "symbol"
-        || (Array.isArray(manifest.files) && !manifest.files.every((f) => !f || typeof f !== "object" || renderingCarriesPixels(f))))
+        || !(bytes == null || (Number.isInteger(bytes) && bytes >= 0)) || typeof built === "symbol")
       return { ok: false, reason: "MALFORMED",
                detail: localize("publication.index.a_case_manifest_names_its", "a case manifest names its case, its edition, the manifest and its SHA-256 (64 lowercase hex)") };
+    if (Array.isArray(manifest.files) && !manifest.files.every((f) => !f || typeof f !== "object" || renderingCarriesPixels(f)))
+      return { ok: false, reason: "MALFORMED", field: "pixels_sha256" };   /* R30: a rendering is stated by its pixel hash */
     const ed = Number(edition);
     return this.record.transact(() => {
       const c = this.#one(`SELECT manifest_sha FROM published_cases WHERE case_id=? AND edition=?`, caseId, ed);

@@ -65,7 +65,7 @@ test("R30 the container's manifest states a rendering by the pixel hash taken be
   const file = { path: `${F}/renderings/page-1.png`, sha256: NODE, kind: "rendering", bytes: 132691 };
   const before = w.count("published_shas");
   const bare = w.p.recordCaseManifest({ caseId: CASE, edition: 1, manifest: { files: [file] }, manifestSha: sha("manifest"), bytes: 5 });
-  assert.equal(bare.reason, "MALFORMED");
+  assert.deepEqual([bare.reason, bare.field], ["MALFORMED", "pixels_sha256"]);
   assert.equal(w.count("published_shas"), before);
   assert.equal(w.row(`SELECT manifest_sha FROM published_cases WHERE case_id=?`, CASE).manifest_sha, null);
   const ok = w.p.recordCaseManifest({ caseId: CASE, edition: 1, manifest: { files: [{ ...file, pixels_sha256: PX }] },
