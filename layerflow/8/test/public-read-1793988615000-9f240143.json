@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "public-read",
+  "session": "session_018BhcegjPo5wLF23jZ6bZrR",
+  "started": "2026-11-06T18:10:15Z",
+  "ended": "2026-11-06T18:13:03Z",
+  "at": "2026-11-06T18:13:03Z",
+  "minutes": 2.8,
+  "result": "pass",
+  "layer": 8,
+  "suite_seconds": 31.056,
+  "tests": {
+    "total": 331,
+    "pass": 331,
+    "fail": 0
+  }
+}
