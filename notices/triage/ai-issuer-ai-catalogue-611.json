@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-issuer","verdict":"not affected","evidence":"build/modules.json:221 lists no paths for ai-issuer, so no file of it imports ai-catalogue or uses DEVELOPMENT_ADAPTERS","at":"2026-11-06T03:05:00.029Z","key":"ai-catalogue:611","worker":"a846731774a0cf77d","cost":"unmeasured"}

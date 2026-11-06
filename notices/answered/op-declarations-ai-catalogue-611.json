@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-declarations","by":"triage","evidence":"build/modules.json:180 lists the ai-catalogue edge, but no file under bio-plane/src/op-declarations/ imports ai-catalogue or names DEVELOPMENT_ADAPTERS (grep finds none)","at":"2026-11-06T03:05:00.029Z","key":"ai-catalogue:611","worker":"ad92c00bc35f5431c","cost":"unmeasured"}

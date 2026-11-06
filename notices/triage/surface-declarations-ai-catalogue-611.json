@@ -1,0 +1,1 @@
+{"row":"triage","user":"surface-declarations","verdict":"not affected","evidence":"build/modules.json:178 gives surface-declarations empty paths (\"paths\": []), so no file of it exists to import ai-catalogue","at":"2026-11-06T03:05:00.029Z","key":"ai-catalogue:611","worker":"ad92c00bc35f5431c","cost":"unmeasured"}

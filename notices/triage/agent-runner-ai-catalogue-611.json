@@ -1,0 +1,1 @@
+{"row":"triage","user":"agent-runner","verdict":"not affected","evidence":"build/modules.json:119 paths agent-runner/ only; no file under agent-runner/ imports ai-catalogue, DEVELOPMENT_ADAPTERS or AI_CATALOGUE_DEVELOPMENT","at":"2026-11-06T03:05:00.029Z","key":"ai-catalogue:611","worker":"a846731774a0cf77d","cost":"unmeasured"}

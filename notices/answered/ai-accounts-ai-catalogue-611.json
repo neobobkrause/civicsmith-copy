@@ -1,0 +1,1 @@
+{"row":"answered","user":"ai-accounts","by":"triage","evidence":"bio-plane/src/ai-accounts/base.mjs:10 imports only refusal from ai-catalogue/checks.mjs, untouched by PR 611; it uses neither DEVELOPMENT_ADAPTERS nor the catalogue's start-time adapter registration","at":"2026-11-06T03:05:00.029Z","key":"ai-catalogue:611","worker":"a846731774a0cf77d","cost":"unmeasured"}
