@@ -310,3 +310,4 @@
 {"at":"2026-11-06T03:58:52Z","row":"outcome","n":155,"outcome":"delivered"}
 {"at":"2026-11-06T04:07:06Z","row":"sent","n":156,"to":"bob","text":"merged PR 610 (job agent-runner): node .process/tool/p3.mjs notice triage agent-runner:610 (provider notice agent-runner:610; 1 user module owes a worker's judgment: agent-worker: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-06T04:07:23Z","row":"outcome","n":156,"outcome":"delivered"}
+{"at":"2026-11-06T04:33:03Z","row":"sent","n":157,"to":"bob","text":"merged PR 569 (job agent-worker): node .process/tool/p3.mjs notice triage agent-worker:569 (provider notice agent-worker:569; 5 user modules owe a worker's judgment: agent-drafts, ai-gate, signin-door, store-ask, store-assembly: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
