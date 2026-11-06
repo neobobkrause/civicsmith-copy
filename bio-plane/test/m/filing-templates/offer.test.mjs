@@ -2,7 +2,7 @@
    module's interface, under the test profile and copies of it handed in as `jurisdictions`. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seeded, draft, V, TEST, HARBOUR, TEXT, twoProfiles, reviewedOf, PROFILE_IDS, PRO_REVIEW } from "./fixture.mjs";
+import { seeded, draft, V, TEST, HARBOUR, TEXT, twoProfiles, reviewedOf, PROFILE_IDS, proReview } from "./fixture.mjs";
 import * as ft from "../../../src/filing-templates/index.mjs";
 import * as jurisdictions from "../../../../jurisdictions/index.mjs";
 
@@ -16,12 +16,12 @@ const editedOf = (edit, base = jurisdictions) => ({ ...base, get: (id) => { cons
 const kindOf = (p, kind) => p.action_kinds.find((k) => k.kind === kind);
 const templatesOf = (k) => k.templates || [k.template];
 /* the attribution v0.2 rule 11 asks, on one template */
-const whole = (t) => ({ ...t, sources: [{ citation: "P.E.B.L. § 1" }], reviews: [PRO_REVIEW] });
+const whole = (t) => ({ ...t, sources: [{ citation: "P.E.B.L. § 1" }], reviews: [proReview(t.text)] });
 
 test("R15 (T45) a profile template is offered only when its attribution names its writer, its public sources, a professional review with no concerns and an approver other than its writer; one lacking any is not offered and reads TEMPLATE_NOT_REVIEWED, naming what it lacks", () => {
   /* the test profile as it stands: no template carries all four */
   const w = seeded();
-  const want = { "TPL-test-records-request": ["sources"], "TPL-test-bylaw-complaint": ["sources", "professional_review"],
+  const want = { "TPL-test-records-request": ["sources", "professional_review"], "TPL-test-bylaw-complaint": ["sources", "professional_review"],
                  "TPL-test-commitment-brief": ["sources", "professional_review"], "TPL-test-recognition": ["professional_review"],
                  "TPL-test-recognition-follow-up": ["professional_review"] };
   assert.deepEqual(Object.keys(want).sort(), [...PROFILE_IDS].sort());
@@ -55,13 +55,13 @@ test("R15 (T45) each of the four parts, missing alone, withholds the template an
   assert.deepEqual(lacks((t) => ({ ...t, sources: [{ citation: "" }] })), ["sources"]);
   assert.deepEqual(lacks((t) => { const { sources, ...rest } = t; return rest; }), ["sources"]);
   assert.deepEqual(lacks((t) => ({ ...t, reviews: [] })), ["professional_review"]);
-  assert.deepEqual(lacks((t) => ({ ...t, reviews: [{ ...PRO_REVIEW, outcome: "concerns" }] })), ["professional_review"]);
-  assert.deepEqual(lacks((t) => ({ ...t, reviews: [{ ...PRO_REVIEW, outcome: "changes_requested" }] })), ["professional_review"]);
-  assert.deepEqual(lacks((t) => ({ ...t, reviews: [{ ...PRO_REVIEW, kind: "member" }] })), ["professional_review"]);
-  assert.deepEqual(lacks((t) => ({ ...t, approved_by: "" })), ["approver"]);
-  assert.deepEqual(lacks((t) => ({ ...t, approved_by: t.authored_by })), ["approver"]);
+  assert.deepEqual(lacks((t) => ({ ...t, reviews: [proReview(t.text, { outcome: "concerns" })] })), ["professional_review"]);
+  assert.deepEqual(lacks((t) => ({ ...t, reviews: [proReview(t.text, { outcome: "changes_requested" })] })), ["professional_review"]);
+  assert.deepEqual(lacks((t) => ({ ...t, reviews: [proReview(t.text, { kind: "member" })] })), ["professional_review"]);
+  assert.deepEqual(lacks((t) => ({ ...t, approved_by: "" })), ["second_approval"]);
+  assert.deepEqual(lacks((t) => ({ ...t, approved_by: t.authored_by })), ["second_approval"]);
   assert.deepEqual(lacks((t) => ({ ...t, authored_by: "", sources: [], reviews: [], approved_by: "" })),
-                   ["writer", "sources", "professional_review", "approver"], "every part lacking, each named, in order");
+                   ["writer", "sources", "professional_review", "second_approval"], "every part lacking, each named, in order");
   /* not offered anywhere: not listed, refused by offeredVersion and by name, read with offered false; still readable */
   const w = withT((t) => ({ ...t, reviews: [] }));
   assert.equal(ids(w.ft.templatesFor({ viewer: A })).includes(ID), false);
@@ -77,14 +77,14 @@ test("R15 (T45; K2781 (6)) @records-request stays unresolved until a named write
   /* a "Records request" template in the profile, written from sources, approved, but with no professional review */
   const rr = (reviews) => editedOf((p) => {
     const k = kindOf(p, "records_request");
-    k.templates = [{ ...k.template, name: "Records request", purpose: "initial", sources: [{ citation: "P.E.B.L. § 4" }], reviews }];
+    k.templates = [{ ...k.template, name: "Records request", purpose: "initial", sources: [{ citation: "P.E.B.L. § 4" }], reviews: reviews(k.template.text) }];
     delete k.template;
   });
-  const without = seeded({ jur: rr([{ ...PRO_REVIEW, kind: "member" }]) });
+  const without = seeded({ jur: rr((text) => [proReview(text, { kind: "member" })]) });
   const o = refused(without.ft.offeredVersion({ name: "@records-request", viewer: A }), "TEMPLATE_NOT_REVIEWED");
   assert.deepEqual(o.lacks, ["professional_review"]);
   /* control: with a professional's review with no concerns */
-  const withR = seeded({ jur: rr([PRO_REVIEW]) });
+  const withR = seeded({ jur: rr((text) => [proReview(text)]) });
   const ok = withR.ft.offeredVersion({ name: "@records-request", viewer: A });
   assert.deepEqual([ok.ok, ok.template, ok.name, ok.origin], [true, "TPL-test-records-request", "Records request", "profile"]);
 });
