@@ -43,8 +43,18 @@ import { combine as combineProfiles, governingZone } from "../../../jurisdiction
 import { INVESTIGATION_SCHEMA, INVESTIGATION_TABLES } from "./schema.mjs";
 import { INVESTIGATION_CHECKS } from "./checks.mjs";
 import { word, localize } from "../setup-words/index.mjs";
+import { extractionOf } from "../extraction/index.mjs";
+import { retrievalOf } from "../retrieval/index.mjs";
+import { partsOf } from "../reading-pipeline/index.mjs";
+import { MARK_PARTS_MAX, PROPOSALS_MAX, PROPOSAL_REVIEW, FILE_KINDS, termsOf, fileKindOf, partIndexOf, proposalId, blocksOf, samePart }
+  from "./parts.mjs";
 
 export { INVESTIGATION_SCHEMA, INVESTIGATION_TABLES, INVESTIGATION_CHECKS };
+export { MARK_PARTS_MAX, PROPOSALS_MAX, PROPOSAL_REVIEW, FILE_KINDS };
+
+/** R29 (T53; N1272; K5445 C): the recorded measure of proposals by file kind, `{kind: {measured_at, corpus_digest,
+ *  bar_digest, met}}`. Empty until M-N1272 (section 6) has run: until then every kind answers `unavailable: not_measured`. */
+export const PROPOSALS_MEASURED = Object.freeze({});
 
 /** The module's name: its tables' declarer and its promotion step. */
 export const OWNER = "investigation";
@@ -141,6 +151,10 @@ export class Investigation {
   get #intent() { return this.#dep("intent", (h) => intentOf(h)); }
   get #captureRequests() { return this.#dep("captureRequests", (h) => captureRequestsOf(h)); }
   get #provenance() { return this.#dep("provenance", (h) => provenanceOf(h)); }
+  get #extraction() { return this.#dep("extraction", (h) => extractionOf(h)); }
+  get #retrieval() { return this.#dep("retrieval", (h) => retrievalOf(h)); }
+  /* R29: the measure table, `deps.proposalsMeasured` when a test states one, else the recorded table. */
+  get #measured() { return isObj(this.#deps.proposalsMeasured) ? this.#deps.proposalsMeasured : PROPOSALS_MEASURED; }
 
   /* ---- boot (R10) ---- */
 
@@ -1309,6 +1323,330 @@ export class Investigation {
              progress: progress && progress.computable === false ? { computable: false, why: progress.why ?? word("investigation.why.cannot_computed") } : progress,
              questions, ...(qs === null ? { questions_undetermined: word("investigation.questions_project_draws") } : {}),
              gaps: gaps && gaps.ok !== false ? gaps.gaps : null };
+  }
+
+  /* ---- parts to interpret (R26-R32; T53; N1272; K5445, K5453, K5495, K5496) ---- */
+
+  /* This lane's refusals mint no check row, as `extraction`'s interpretation refusals mint none (its R47 catalogue is
+     unmoved): `{ok: false, reason, code, status, detail}`, the detail a sentence a member can read (K3985). */
+  static #no(code, status, detail, more = {}) { return { ...more, ok: false, reason: code, code, status, detail }; }
+
+  /* R27, R30: the documents the project holds that the viewer may see and that carry a reading, each once, in the order the
+     project came to hold them: the project's own register first, then each bundle placed in it (`provenance` R12, `record-core`
+     R35). `[{capture, bundle, held_at, reading}]`, or null when a provider is absent. */
+  #heldDocuments(project, viewer) {
+    const prov = this.#provenance, x = this.#extraction;
+    if (!prov || !x) return null;
+    const bundles = [project];
+    let after = "";
+    for (let i = 0; i < 1000; i++) {
+      const r = this.#record.listBundles({ project, after, limit: 1000 });
+      bundles.push(...r.ids);
+      if (!r.cursor || r.ids.length < 1000) break;
+      after = r.cursor;
+    }
+    const out = [], seen = new Set();
+    for (const b of bundles) {
+      if (!this.#seenBundle(b, viewer)) continue;
+      for (const c of prov.capturesOf(b)) {
+        if (seen.has(c.capture_sha)) continue;
+        const reading = x.readingOf(c.capture_sha);
+        if (!reading) continue;
+        seen.add(c.capture_sha);
+        out.push({ capture: c.capture_sha, bundle: b, held_at: c.held_at, reading });
+      }
+    }
+    return out;
+  }
+
+  /* R26, R27: a held document's candidate parts (`reading-pipeline.partsOf`, its R65), from its reading and its units'
+     places and headings (`extraction.unitsOf`, page by page; no unit's text is kept but a heading's). */
+  #partsOfDoc(doc) {
+    if (doc.parts) return doc.parts;
+    const units = [];
+    let after = null;
+    for (let i = 0; i < 10000; i++) {
+      const u = this.#extraction.unitsOf(doc.capture, { after });
+      for (const x of (u && Array.isArray(u.units) ? u.units : []))
+        units.push({ extent: x.extent, kind: x.kind, ...(x.kind === "heading" && typeof x.text === "string" ? { text: x.text.slice(0, 200) } : {}) });
+      if (!u || !Number.isInteger(u.next)) break;
+      after = u.next;
+    }
+    const got = partsOf({ reading: isObj(doc.reading.reading) ? doc.reading.reading : {}, text_units: units });
+    doc.parts = got && Array.isArray(got.parts) ? got.parts : [];
+    return doc.parts;
+  }
+
+  /* R26: a sheet's used columns, as its reading states them, for the blocks a large part is taken in. */
+  static #colsOf(doc, sheet) {
+    const ext = doc && isObj(doc.reading) && isObj(doc.reading.reading) ? doc.reading.reading.container_extent : null;
+    const s = ext && Array.isArray(ext.sheets) ? ext.sheets.find((x) => x && x.name === sheet) : null;
+    return s ? (Number.isInteger(s.usedCols) ? s.usedCols : Number.isInteger(s.cols) ? s.cols : 1) : 1;
+  }
+
+  /** R26 (T53; N1272; K5445 B): `markForInterpretation({project, capture, parts, by})`, a member's deliberate act,
+   *  "interpret these parts for this investigation": each named part of the held document is interpreted for the
+   *  project through `extraction.interpretPart` with `how: marked`. At most MARK_PARTS_MAX parts a call (more is refused
+   *  `TOO_MANY_PARTS` with the count and the bound); a sheet part larger than R115's cell bound is taken in blocks, each
+   *  listed with `next`. `parts: "whole"` names every part of the document, the member's act in plain sight, bounded as
+   *  `extraction` R119 bounds it. No part is interpreted that the member did not name (`NO_PARTS_NAMED`). Refused for a
+   *  machine and for a project the member is not in. Never throws. */
+  async markForInterpretation({ project = null, capture = null, parts = null, by = null } = {}) {
+    try {
+      const g = this.#memberGate(project, by, "markForInterpretation");
+      if (g.refusal) return g.refusal;
+      const viewer = g.actor.viewer, member = `member:${g.actor.member}`;
+      const whole = parts === "whole" || (isObj(parts) && parts.whole === true);
+      if (!whole && (!Array.isArray(parts) || parts.length === 0))
+        return Investigation.#no("NO_PARTS_NAMED", 400, localize("investigation.parts.none_named", "a part is interpreted only when you name it, and none was named; nothing was interpreted"));
+      if (!whole && parts.length > MARK_PARTS_MAX)
+        return Investigation.#no("TOO_MANY_PARTS", 400, localize("investigation.parts.too_many", "one mark takes at most {bound} parts and this names {count}; name fewer; nothing was interpreted",
+          { bound: String(MARK_PARTS_MAX), count: String(parts.length) }), { count: parts.length, bound: MARK_PARTS_MAX });
+      const sha = typeof capture === "string" ? capture.trim().toLowerCase() : "";
+      const doc = (this.#heldDocuments(project, viewer) ?? []).find((d) => d.capture === sha);
+      if (!doc) return Investigation.#no("NO_SUCH_DOCUMENT", 404, localize("investigation.parts.no_document", "this investigation holds no document by that fingerprint that you can see; nothing was interpreted"));
+      const named = whole ? this.#partsOfDoc(doc) : parts;
+      const marked = [];
+      let stopped = null;
+      for (const part of named) {
+        if (stopped) break;
+        const blocks = blocksOf(part, isObj(part) ? Investigation.#colsOf(doc, part.sheet) : 1);
+        const done = [];
+        for (let i = 0; i < blocks.length; i++) {
+          const r = await this.#extraction.interpretPart({ capture: sha, part: blocks[i], project, how: "marked", by: member, viewer });
+          const next = i + 1 < blocks.length ? blocks[i + 1] : null;
+          if (!r || r.ok !== true) {
+            done.push({ part: blocks[i], refused: r ?? null, next });
+            if (r && r.code === "INTERPRETATION_LIMIT") stopped = r;
+            break;
+          }
+          done.push({ part: blocks[i], id: r.id, recorded: r.recorded, next });
+        }
+        marked.push({ part, ok: done.every((b) => !b.refused), blocks: done });
+      }
+      return { ok: true, project, capture: sha, how: "marked", whole, marked, ...(stopped ? { stopped } : {}) };
+    } catch (e) {
+      return Investigation.#no("INTERPRET_UNREAD", 500, localize("investigation.parts.failed", "the parts could not be interpreted just now ({why}); nothing more was interpreted",
+        { why: String((e && e.message) || e).slice(0, 160) }));
+    }
+  }
+
+  /** R27 (T53; N1272; K5445 C; K1471; DEC-77 (3b)): `proposeParts({project, captures?, viewer, refused?})`: candidate
+   *  parts from the investigation's own words, by code: no AI, no score. The terms are its questions' titles (words, the
+   *  names they name, their amounts and dates, quoted as written: `parts.mjs`' `termsOf`); for each held document (or each
+   *  of `captures`) its parts are `reading-pipeline.partsOf`'s and each term is found by `retrieval`'s text search. Each
+   *  proposal `{id, capture, part, why: [{term, kind, unit}], position, kind, labelled: "proposal", machine_work: true}`;
+   *  ordered by document, then by place in it; never by importance. At most PROPOSALS_MAX (`truncated`, `shown`, `total`).
+   *  A part already live for the project is omitted, and so is one a member said is not for it unless `refused` asks for
+   *  those; each omission is counted. A kind whose measure is absent or not met (R29) offers none and is named in
+   *  `unavailable`. Writes nothing. Never throws. */
+  proposeParts({ project = null, captures = null, viewer = null, refused = false } = {}) {
+    try {
+      const r = this.#proposeParts({ project, captures, viewer, refused });
+      if (!r.ok) return r;
+      const { all, ...out } = r;
+      return out;
+    } catch (e) {
+      return Investigation.#no("PROPOSALS_UNREAD", 500, localize("investigation.parts.proposals_unread", "the proposals could not be read just now ({why})",
+        { why: String((e && e.message) || e).slice(0, 160) }));
+    }
+  }
+
+  #proposeParts({ project, captures, viewer, refused }) {
+    const seen = this.#projectSeen(project, viewer);
+    if (seen) return seen;
+    const held = this.#heldDocuments(project, viewer);
+    if (held === null) return Investigation.#no("PROPOSALS_UNREAD", 500, localize("investigation.parts.no_provider", "the documents this investigation holds cannot be read here"));
+    const want = Array.isArray(captures) && captures.length ? new Set(captures.map((c) => String(c).trim().toLowerCase())) : null;
+    const docs = want ? held.filter((d) => want.has(d.capture)) : held;
+    const texts = [];
+    for (const q of this.#questionsSeen(project, viewer) ?? []) {
+      const b = this.#record.bundleInfo(q.inquiry);
+      if (b && filled(b.title)) texts.push(b.title);
+    }
+    const terms = termsOf(texts);
+    /* R29: a kind offers proposals only once its measure is recorded and met */
+    const unavailable = new Map();
+    const offerable = [];
+    for (const d of docs) {
+      d.kind = fileKindOf(this.#partsOfDoc(d));
+      const m = d.kind && Object.hasOwn(this.#measured, d.kind) ? this.#measured[d.kind] : null;
+      if (isObj(m) && m.met === true) { offerable.push(d); continue; }
+      const k = d.kind ?? "unknown";
+      const u = unavailable.get(k) ?? { kind: k, why: isObj(m) ? "below_bar" : "not_measured", captures: [] };
+      u.captures.push(d.capture);
+      unavailable.set(k, u);
+    }
+    /* the terms, found by `retrieval`'s text search over the project's documents, each hit placed in its part */
+    const byCapture = new Map(offerable.map((d) => [d.capture, d]));
+    const hits = new Map();
+    let searchCut = false;
+    if (terms.length && offerable.length) {
+      const search = this.#retrieval;
+      if (!search || typeof search.findIn !== "function")
+        return Investigation.#no("PROPOSALS_UNREAD", 500, localize("investigation.parts.no_search", "the text search these proposals are made with cannot be read here"));
+      /* each document searched on its own, so one document's many hits never crowd out another's (a find answers at most
+         its item cap, stated `truncated`) */
+      for (const t of terms) for (const doc of offerable) {
+        let cursor = null;
+        for (let i = 0; i < 1000; i++) {
+          const f = search.findIn({ scope: { capture: doc.capture }, kinds: ["term"], term: t.term, limit: 500, cursor, viewer });
+          if (!f || f.ok !== true) break;
+          const k = Array.isArray(f.kinds) ? f.kinds.find((x) => x.kind === "term") : null;
+          if (k && k.truncated) searchCut = true;
+          for (const it of (k && Array.isArray(k.items) ? k.items : [])) {
+            const d = byCapture.get(it.capture_sha);
+            if (!d) continue;
+            const at = partIndexOf(d.parts, it.extent, it.sheet ?? null);
+            if (at < 0) continue;
+            const unit = typeof it.sheet === "string" && it.sheet && !isObj(it.extent) ? { sheet: it.sheet, range: it.extent } : it.extent;
+            const key = `${d.capture}\u0000${at}`;
+            const why = hits.get(key) ?? [];
+            if (!why.some((w) => w.term === t.term && w.kind === t.kind && json(w.unit) === json(unit))) why.push({ term: t.term, kind: t.kind, unit });
+            hits.set(key, why);
+          }
+          if (!filled(f.next)) break;
+          cursor = f.next;
+        }
+      }
+    }
+    const refusedIds = new Set(this.#rows(`SELECT proposal_id FROM inv_part_refusals WHERE project_id = ?`, project).map((r) => r.proposal_id));
+    let omittedLive = 0, omittedRefused = 0;
+    const list = [];
+    for (const d of offerable) {
+      const of = this.#extraction.interpretationOf({ capture: d.capture, project, viewer });
+      const live = of && of.ok === true ? of.for_this.map((x) => x.part) : [];
+      d.parts.forEach((part, i) => {
+        const why = hits.get(`${d.capture}\u0000${i}`);
+        if (!why) return;
+        if (live.some((p) => samePart(p, part))) { omittedLive += 1; return; }
+        const id = proposalId(d.capture, part, why);
+        const wasRefused = refusedIds.has(id);
+        if (wasRefused && refused !== true) { omittedRefused += 1; return; }
+        list.push({ id, capture: d.capture, part, why, position: i, kind: d.kind, labelled: "proposal", machine_work: true,
+                    ...(wasRefused ? { refused: true } : {}) });
+      });
+    }
+    const shown = list.slice(0, PROPOSALS_MAX);
+    return { ok: true, project, proposals: shown, shown: shown.length, total: list.length,
+             ...(list.length > PROPOSALS_MAX || searchCut ? { truncated: true } : {}),
+             omitted: { already_interpreted: omittedLive, refused: omittedRefused },
+             ...(unavailable.size ? { unavailable: [...unavailable.values()] } : {}),
+             terms, all: list };
+  }
+
+  /** R28 (T53; N1272; K5445 C, K5453 (3); DEC-77 (3b, c)): `acceptProposals({project, proposals, by})`, the member's
+   *  attributed act of acceptance. `proposals` lists `{id, part?}` (or an id) to accept and `{id, refused: true}` for one
+   *  that is not for this investigation. Each accepted proposal standing for the project now (as `proposeParts` answers
+   *  it, refused ones included) is interpreted through `extraction.interpretPart` with `how: accepted_proposal`, the
+   *  proposals standing for its document beside it: unchanged it is recorded basis `accepted` naming it; with a part the
+   *  member changed, as the member's own choice, basis `unaided` with `began_from` (`extraction` R117). One that does not
+   *  stand refuses the whole act `PROPOSAL_NOT_STANDING`, nothing written. A refusal is remembered for the project with
+   *  who and when, and judges no document. Each answer is counted for R29's measure. Refused for a machine. */
+  async acceptProposals({ project = null, proposals = null, by = null } = {}) {
+    try {
+      const g = this.#memberGate(project, by, "acceptProposals");
+      if (g.refusal) return g.refusal;
+      const viewer = g.actor.viewer, member = `member:${g.actor.member}`;
+      if (!Array.isArray(proposals) || proposals.length === 0)
+        return Investigation.#no("NO_PARTS_NAMED", 400, localize("investigation.parts.none_accepted", "a proposal is interpreted only when you accept it, and none was named; nothing was interpreted"));
+      if (proposals.length > PROPOSALS_MAX)
+        return Investigation.#no("TOO_MANY_PARTS", 400, localize("investigation.parts.too_many_accepted", "one acceptance takes at most {bound} proposals and this names {count}; nothing was interpreted",
+          { bound: String(PROPOSALS_MAX), count: String(proposals.length) }), { count: proposals.length, bound: PROPOSALS_MAX });
+      const now = this.#proposeParts({ project, captures: null, viewer, refused: true });
+      if (!now.ok) return now;
+      const byId = new Map(now.all.map((p) => [p.id, p]));
+      const asks = proposals.map((raw) => (typeof raw === "string" ? { id: raw } : isObj(raw) ? raw : {}));
+      for (const a of asks) {
+        if (!filled(a.id) || !byId.has(a.id.trim()))
+          return Investigation.#no("PROPOSAL_NOT_STANDING", 409, localize("investigation.parts.not_standing", "that proposal is not standing for this investigation, so it was not accepted; nothing was interpreted"),
+            { proposal: filled(a.id) ? a.id.trim() : null });
+      }
+      const at = this.#at();
+      const answers = [];
+      for (const a of asks) {
+        const p = byId.get(a.id.trim());
+        if (a.refused === true) {
+          this.#record.transact(() => {
+            /* a proposal already refused is answered as refused and counted once (R29) */
+            if (this.#one(`SELECT 1 AS x FROM inv_part_refusals WHERE project_id = ? AND proposal_id = ?`, project, p.id)) return;
+            this.#sql.exec(`INSERT INTO inv_part_refusals (project_id, proposal_id, capture_sha, part_json, by_actor, at) VALUES (?,?,?,?,?,?)`,
+              project, p.id, p.capture, json(p.part), by, at);
+            this.#sql.exec(`INSERT INTO inv_proposal_acts (project_id, proposal_id, kind, outcome, by_actor, at) VALUES (?,?,?,?,?,?)`,
+              project, p.id, p.kind, "chose_otherwise", by, at);
+          });
+          answers.push({ ok: true, proposal: p.id, refused: true });
+          continue;
+        }
+        const part = a.part === undefined || a.part === null ? p.part : a.part;
+        const standing = now.all.filter((s) => s.capture === p.capture).map((s) => ({ id: s.id, capture: s.capture, part: s.part, why: s.why }));
+        const r = await this.#extraction.interpretPart({ capture: p.capture, part, project, how: "accepted_proposal", by: member, viewer,
+                                                         proposal: { id: p.id, matched: p.why }, standing });
+        if (r && r.ok === true && r.recorded) {
+          const outcome = r.interpretation && r.interpretation.basis === "accepted" ? "accepted" : "chosen_unaided";
+          this.#sql.exec(`INSERT INTO inv_proposal_acts (project_id, proposal_id, kind, outcome, by_actor, at) VALUES (?,?,?,?,?,?)`,
+            project, p.id, p.kind, outcome, by, at);
+        }
+        answers.push({ proposal: p.id, ...(r ?? { ok: false }) });
+      }
+      return { ok: true, project, answers };
+    } catch (e) {
+      return Investigation.#no("INTERPRET_UNREAD", 500, localize("investigation.parts.failed", "the parts could not be interpreted just now ({why}); nothing more was interpreted",
+        { why: String((e && e.message) || e).slice(0, 160) }));
+    }
+  }
+
+  /** R29 (T53; N1272; K5445 C; `contradiction` R39's form): `proposalRates({kind?, since?})` answers per file kind the
+   *  counts of proposals `offered` (each a member answered), `accepted` (as offered), `chosen_unaided` (accepted with a
+   *  part the member changed) and `chose_otherwise` (said not for this investigation); never a bare percentage.
+   *  `review_due` when accepted / offered reaches PROPOSAL_REVIEW's rate over at least its offered (PROVISIONAL). No id;
+   *  never throws. */
+  proposalRates({ kind = null, since = null } = {}) {
+    const per = {};
+    try {
+      for (const r of this.#rows(`SELECT kind, outcome, at FROM inv_proposal_acts ORDER BY seq`)) {
+        if (filled(since) && !(r.at >= since)) continue;
+        const s = (per[r.kind] ||= { kind: r.kind, offered: 0, accepted: 0, chosen_unaided: 0, chose_otherwise: 0 });
+        s.offered += 1;
+        if (["accepted", "chosen_unaided", "chose_otherwise"].includes(r.outcome)) s[r.outcome] += 1;
+      }
+    } catch { /* never throws: what was counted stands */ }
+    const kinds = Object.values(per).filter((r) => !filled(kind) || r.kind === kind)
+      .sort((a, b) => (a.kind < b.kind ? -1 : 1))
+      .map((r) => ({ ...r, review_due: r.offered >= PROPOSAL_REVIEW.min_offered && r.accepted / r.offered >= PROPOSAL_REVIEW.rate }));
+    return { ok: true, wrote: false, kinds, threshold: { ...PROPOSAL_REVIEW } };
+  }
+
+  /** R30 (T53; N1272; K4636): `interpretedFor({project, viewer})` lists, for each document the project holds, the parts
+   *  interpreted for it, by whom, when and how (`extraction.interpretationOf`, sight as its R116), and states a document
+   *  with none as `none_interpreted`; never "no data of value". A project the viewer may not see is answered as absent. */
+  interpretedFor({ project = null, viewer = null } = {}) {
+    const seen = this.#projectSeen(project, viewer);
+    if (seen) return seen;
+    const docs = this.#heldDocuments(project, viewer);
+    if (docs === null) return Investigation.#no("PROPOSALS_UNREAD", 500, localize("investigation.parts.no_provider", "the documents this investigation holds cannot be read here"));
+    const documents = docs.map((d) => {
+      const r = this.#extraction.interpretationOf({ capture: d.capture, project, viewer });
+      const rows = r && r.ok === true ? r.for_this : [];
+      const b = this.#record.bundleInfo(d.bundle);
+      return { capture: d.capture, bundle: d.bundle, title: b ? b.title : null,
+               interpreted: rows.map((x) => ({ id: x.id, part: x.part, by: this.#handle(x.by) ?? x.by, at: x.at, how: x.how, basis: x.basis })),
+               none_interpreted: rows.length === 0,
+               ...(r && r.ok === true ? { not_interpreted: r.not_interpreted, read: r.read } : { unread: r ? r.reason ?? null : null }) };
+    });
+    return { ok: true, project, documents };
+  }
+
+  /** R31 (T53; N1272; K4636, K5495 A): `interpretedElsewhere({capture, project, viewer})`: what a held document was
+   *  interpreted for before, and by whom, for a viewer in `project`: `extraction.interpretationOf`'s `for_others`, each
+   *  `{project, part, by, at, how}`; a project the viewer may not see is never named and its parts never described. */
+  interpretedElsewhere({ capture = null, project = null, viewer = null } = {}) {
+    const seen = this.#projectSeen(project, viewer);
+    if (seen) return seen;
+    const r = this.#extraction.interpretationOf({ capture, project, viewer });
+    if (!r || r.ok !== true) return r;
+    return { ok: true, capture: r.capture, project,
+             for_others: r.for_others.map((x) => ({ project: x.project, part: x.part, by: this.#handle(x.by) ?? x.by, at: x.at, how: x.how })) };
   }
 
   /* ---- registered with promotion (R12) ---- */
