@@ -30,6 +30,6 @@ The **size** column is rough: S is under an hour, M is a session, L is several s
 | M3 | 3.2.6 Consistent help | Check that help sits in the same relative place on every screen, by journey-check's walk at both widths. | journey-check | M |
 | M4 | 2.4.11 | Confirm W3 in the live product, by journey-check's walker, with a focused control behind each sticky bar. | journey-check | M |
 
-## The lane's own call, not yet made
+## The lane's own call: negative contractions (decided 6 Nov, DEC-494)
 
-**Negative contractions.** GOV.UK advises avoiding "can't", "don't" and similar, which some readers find harder. The words use them more than 370 times, and the voice traits ("Plain", "Calm") read naturally with them. This is a voice decision beneath Bob's principles (BD-4), so it is the lane's to make. When the lane decides, it records the decision as a DEC with its evidence.
+The lane keeps negative contractions in the house voice. It writes negatives in full in protected words, the warnings before a signed, terminal, irreversible or outward act, and in any clause that says what did not happen. New words follow this rule from today. The 45 protected rows that use a contraction now (of 636 rows in all) will be reworded in one sweep, run with the modules' tests. The decision is recorded on the ux decisions artifact.
