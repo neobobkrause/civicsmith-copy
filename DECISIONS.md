@@ -68,3 +68,14 @@ Consequences: the publication lane does the tracking as standing research in doc
 Context: the ux lane's Q2.
 Decision: yes (Bob, "agreed", ~18:15Z). A published case discloses its AI use where a reader first meets it. It is framed as human-reviewed and ratified: it leads with who ratified, with AI as a tool. Machine-readable AI-use provenance (the Art 50(2) direction: per passage, AI or human, inside the signed record) is folded into the publication lane's F1(2) signing-at-scheduling design, so the signed format changes once.
 Consequences: the ux lane writes the words and placement (BD-3). The publication lane extends its F1(2) answer with the provenance's place, shape, source and format change. BOB records that answer and places the requirement changes it names.
+
+## BD-8: A published review standard for every edition (BOB, 6 Nov)
+Context: BD-6 makes each voluntary adoption of a trust and transparency development BOB's decision. The publication lane's provenance answer (F1 part 2, 6 Nov) recommends a published review standard, modelled on the EU Code of Practice on transparency (final 10 Jun 2026), Commitment 4, and the Art 50 guidelines C(2026) 7702, paras 134–136 (docs/development/publication-design-research/trust-transparency-tracking.md).
+Decision: adopt it. Every ratified edition is reviewed under one published standard, which states:
+- a named responsible group (the ratifying group);
+- substantive review, with fact-checking each finding against its cited records as the minimum;
+- no AI change after signing (any substantive AI change voids the sign-off);
+- AI critique never counts as review.
+Its id goes in the /11 case document's review.standard. Until the standard is published, standard is null.
+Rejected: no standard. The disclosure (BD-7) would then rest on an unstated bar.
+Consequences: the standard's public contact address is a value Bob gives. Until he does, the standard says "contact: to be named by Bob". The publication lane drafts the standard's text in its folder. The ux lane writes the words that link to it. case-grammar's /11 carries review.standard.
