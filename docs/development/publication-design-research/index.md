@@ -1,0 +1,20 @@
+# Publication lane: research area
+
+This folder is the research area of the `publication` design lane (`process/config.json` `lanes`; BD-2, DECISIONS.md, 6 Nov 2026). The lane's area is ACTIONS-DESIGN's "Publication & action" area: publication, ratification, docket, case making and the actions around them.
+
+The product's build reads nothing here. Sources and generators go in `docs/development/publication-design/`, never in this folder. Every session of the lane reads this index first, then whatever its question needs.
+
+Unless a file says otherwise, citations are `path:line` at tranche `705f8823`.
+
+| File | What it holds |
+|---|---|
+| `qualification-2026-11-06.md` | The dated qualification record. It lists what was researched, by which workers and from which sources, the lane's ground truth, and the open questions with whose call each is. Read it second. |
+| `canon-process.md` | Process3's definition of the lane, from the Foundations (SES-14, SES-19 to SES-23), `.process/README.md`, the rulebooks, `lane-charters.md` §4, CLAUDE.md and the config. Covers what the lane may and may not do, qualification, asks and how they are answered, the lane-only landing path and what takes a PR off it, and the boundaries with BOB, jobs and the ux and investigation lanes. |
+| `canon-publication.md` | The principles that bind the lane (Roadmap values, Design Requirements, System Design, the 58 Design Principles artifact). Also the Publication, Case Making and Distribution canon, publication touchpoints in other canon, and the stale and conflicting points, including Publication §3 rule 15(b)–(d), "manager" against "owner", and rulings that the Publication canon is missing. |
+| `canon-actions-and-history.md` | The Action canon v0.2 and how it differs from v0.1. The history of ACTION_DESIGN #1 and ACTIONS-DESIGN. Rulings D1–D28 and the related K rulings, each with where it now lives. What this lane inherits and what it must re-verify. |
+| `requirements-publication.md` | Requirements and ledger entries for publication, ratification, docket, signatures, publish-schedule, public-read, screens-publish, screens-public and case-disclosures/carriage/check/checker. §2 covers ratification F1, the second signature and `docketStatement`. |
+| `requirements-case-action.md` | Requirements and ledger entries for the seven case modules, the eight action modules and screens-action. Covers the hand-offs to publication, ratification and docket, the action lifecycle, design owed elsewhere, and contradictions between modules. |
+| `code.md` | The code this lane shapes: `bio-plane/src` publication, ratification, docket, signatures (`sshsig.mjs`), publish-schedule, public-read and screens, with their wording. The signature model as built (namespaces, statements, who signs, where verification happens). Gaps between the code and the requirements. What reads `docs/development/publication-design/` (nothing, today). |
+| `best-practice.md` | Current public practice, each source cited and dated: SSHSIG and domain separation, co-signatures and thresholds, transparency logs and witnesses, civic dockets, ratification and quorum, corrections practice, content credentials, WCAG 2.2 and plain language. Each topic notes where Civicsmith follows the practice or departs from it. Ends with the options for a second signature over a docket statement. |
+
+Keep this index current: a new research file gets a row here, and a new qualification or re-qualification gets its own dated record.
