@@ -1,0 +1,1 @@
+{"row":"triage","user":"interface-shell","verdict":"not affected","evidence":"build/modules.json:190 interface-shell (bio-plane/src/interface-shell/) holds no file that imports instance-setup, every code file under its paths read at 23ffad5c76","at":"2026-11-06T02:16:27.953Z","key":"instance-setup:544","worker":"merge: imports check","cost":"0"}
