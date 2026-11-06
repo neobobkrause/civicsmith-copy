@@ -5,3 +5,4 @@
 {"at":"2026-11-06T13:02:02Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (11 jobs ready). Then: job investigation BLOCKED: run status"}
 {"at":"2026-11-06T13:02:12Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-06T13:11:48Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (11 jobs ready). Then: job investigation BLOCKED: run status"}
+{"at":"2026-11-06T13:11:58Z","row":"outcome","n":4,"outcome":"delivered"}
