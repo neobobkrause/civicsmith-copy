@@ -67,3 +67,4 @@
 {"at":"2026-11-06T10:02:25Z","row":"takeover","session":"session_018BhcefmntMFwp8MDNkzCNL","from":"session_018BhcefmntMFwp8MDNkzCNL","expired":"2026-11-06T10:14:48Z","dead":{"pid":22469,"boot":"88266e3c-18b9-4592-98ed-68d444d39156","started":"1479444"}}
 {"at":"2026-11-06T11:01:48Z","row":"context","session":"session_018BhcefmntMFwp8MDNkzCNL","context":16}
 {"at":"2026-11-06T12:02:45Z","row":"takeover","session":"session_018BhcefmntMFwp8MDNkzCNL","from":"session_018BhcefmntMFwp8MDNkzCNL","expired":"2026-11-06T12:12:40Z","dead":{"pid":8127,"boot":"88266e3c-18b9-4592-98ed-68d444d39156","started":"1840185"}}
+{"at":"2026-11-06T12:22:54Z","row":"release","session":"session_018BhcefmntMFwp8MDNkzCNL"}
