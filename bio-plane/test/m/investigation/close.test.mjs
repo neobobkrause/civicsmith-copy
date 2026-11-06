@@ -84,7 +84,7 @@ test("R24: another word is CLOSE_BAD_REASON; a machine, a non-participant and a 
 test("R25: the ops map serves projectclose and answers it as projectClose does", () => {
   const w = openWorld(); const P = w.P;
   const call = (query, body) => investigationOps(w.inv, new URL(`https://plane.invalid/?op=projectclose&${new URLSearchParams(query)}`), body).projectclose();
-  assert.deepEqual(Object.keys(investigationOps(w.inv, new URL("https://plane.invalid/?op=projectclose"), {})), ["projectclose"]);
+  assert.deepEqual(Object.keys(investigationOps(w.inv, new URL("https://plane.invalid/?op=projectclose"), {})), ["projectclose", "acceptproposals"]);
   assert.equal(call({ by: BOB, viewer: BOB }, { project: P, reason: "resolved" }).code, "PROJECT_ACT_NOT_THE_OWNER");
   assert.equal(call({ by: ANN, viewer: ANN }, { project: P, reason: "done" }).code, "CLOSE_BAD_REASON");
   /* the stamp is the query's: a body's copy of `by` never wins */
