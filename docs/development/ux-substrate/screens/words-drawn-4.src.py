@@ -2912,3 +2912,41 @@ w491('screen.published.ai.more', 'How the assistant was used', 'a disclosure tha
 w491('screen.published.ai.more.text', 'An AI assistant can read, search and draft. It cannot decide what is true: a finding is made only when a member concludes it, and a case is published only when an owner signs it. The signatures above can be checked without trusting anyone.', 'the opened text')
 w491('screen.published.ai.passages', 'Passages that began as the assistant\'s drafts are marked where they appear, and the signed record says which they are.', 'held for the per-passage provenance (BD-7, publication lane F1(2)); drawn only once the signed record carries it')
 w491('screen.front.case.ai', 'Reviewed and signed by people; AI used as a tool', 'one short line under each case listed on the team\'s page, when the record holds machine work')
+
+# DEC-492 (the ux lane, 6 Nov 2026; BOB's ask, F1 need 4 and the AI-use provenance of bio-case-document/11, BD-3, BD-7):
+# (a)-(d) the docket entry when an edition is set to publish at a time; (e) the complete edition's per-sentence marks
+# and legend (frozen with /11 in case-grammar); (f) the ceremony's provenance summary, shown before signing and never
+# blocking (case-authoring R88's pattern). Sentences members wrote stay unmarked and the legend says so; only what began
+# as the assistant's draft is marked. An edition before /11 reads "not stated", never "written by members".
+# (h) the declared-AI control and the signer's affirmation wait on Bob.
+def w492(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-492: ' + note))
+# (a) at scheduling
+w492('screen.ceremony.docket.scheduled.signing', "The edition's docket entry is being signed now, with the same key. It appears on the public docket when the edition publishes, dated {date}.", '(a) once the edition is set to publish; what is signed follows, as in DEC-490 (screen.ceremony.docket.sign, .signs)')
+w492('screen.ceremony.docket.scheduled.done', 'Signed. The entry joins the public docket on {date}, when the edition publishes.', '(a) the result')
+w492('screen.ceremony.docket.scheduled.notyet', "The entry wasn't signed: {reason}. After Edition {edition} publishes, its entry will wait on the case's docket among the items due, and any owner of the project can post it there with one signature.", "(a) the step did not complete; {reason} one of DEC-490's .reason.*")
+# (b) at publish time, in the owner's published notice (publish-schedule R42)
+w492('notice.publishat.docket.with', 'Its docket entry went out with it.', "(b) appended to the published notice when the entry was filed")
+w492('notice.publishat.docket.waits', "Its docket entry wasn't filed with it, so it waits on the case's docket for an owner's signature.", '(b) appended when filing fell back')
+w492('notice.publishat.docket.door', 'Open the docket item', '(b) the door when filing fell back')
+# (c) any docket entry placed while an edition is scheduled
+w492('screen.docket.file.scheduled', "Edition {edition} is set to publish on {date}. Posting this entry also re-signs that edition's waiting entry, so the docket stays in order.", '(c) said on the act; no extra decision is asked')
+# (d) the publishing time moved to another day
+w492('screen.ceremony.publishat.move.docket', "Moving it to another day also re-signs the edition's waiting docket entry with the new day.", '(d) said on Move the publishing time, when the day changes')
+# (e) the complete edition: per-sentence marks and their legend (case-grammar /11)
+w492('case.origin.mark.ai_edited', "assistant's draft, changed", '(e) the mark on a sentence of origin ai_edited')
+w492('case.origin.mark.ai_kept', "assistant's draft, kept", '(e) the mark on a sentence of origin ai_kept')
+w492('case.origin.mark.notstated', 'origin not stated', '(e) a sentence of an edition before /11, when marks are drawn at all')
+w492('case.origin.legend.heading', 'Who wrote each sentence', '(e) the legend, before the case\'s own writing')
+w492('case.origin.legend.human', 'Sentences with no mark were written by members of {team}.', '(e) human: unmarked')
+w492('case.origin.legend.ai_edited', "Marked “assistant's draft, changed”: the sentence began as the assistant's draft, and a member changed it.", '(e)')
+w492('case.origin.legend.ai_kept', "Marked “assistant's draft, kept”: the assistant's draft, which a member kept word for word.", '(e)')
+w492('case.origin.legend.review', 'Every sentence, however it began, was reviewed and signed by {ratifiers} under {standard}.', '(e) review, stated once per edition: ratified_by, standard')
+w492('case.origin.legend.predates', 'This edition was published before Civicsmith recorded who wrote each sentence, so who wrote them is not stated. That does not mean members wrote them, or that the assistant did.', '(e) editions up to /10: never read as human')
+w492('case.origin.legend.scope', "The marks cover the case's own writing. Quoted passages from documents are the documents' words.", '(e) what the marks do and do not cover')
+# (f) the ceremony: what the signer is about to sign, by origin (shown before signing, never blocking)
+w492('screen.ceremony.origin.heading', "Who wrote the case's sentences", '(f)')
+w492('screen.ceremony.origin.count', "Of the {total} sentences in the case's own writing, members wrote {human}, {edited} began as the assistant's drafts and were changed, and {kept} are the assistant's drafts kept word for word.", '(f) the summary; zero counts are said, never hidden')
+w492('screen.ceremony.origin.none', "Members wrote every sentence in the case's own writing.", '(f) when no sentence began as a machine draft')
+w492('screen.ceremony.origin.signs', 'Your signature records this with the edition, and readers see each sentence marked.', '(f)')
+w492('screen.ceremony.origin.kept.list', "Kept word for word from the assistant's drafts", "(f) the list of ai_kept sentences, each opening to its place; read before signing, never a stop")
