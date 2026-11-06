@@ -1,0 +1,23 @@
+{
+  "row": "notice",
+  "at": "2026-11-06T17:42:00Z",
+  "key": "case-carriage:658",
+  "provider": "case-carriage",
+  "ids": [],
+  "pr": 658,
+  "users": [
+    "affordances",
+    "answer-envelope",
+    "control-plane",
+    "op-declarations",
+    "plane",
+    "scheduler",
+    "store-assembly"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 8,
+    "provides": false,
+    "rescheduled": true
+  }
+}

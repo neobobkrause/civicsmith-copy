@@ -1,0 +1,63 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "case-carriage",
+  "pr": 658,
+  "head": "9d5cc63ec4da5a4eed779387f9dbc1d00a65c3ff",
+  "before": "2020dcd1fb930482362ae50732ed5fde2109356a",
+  "merge": "aace4c4cf6c7f651376e5e3dcb33db4ab819e4a2",
+  "at": "2026-11-06T17:42:00Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/case-carriage/upload-photo.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/case-carriage/upload-photo.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/case-carriage/upload-photo.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/case-carriage/upload-photo.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking"
+  },
+  "users_rescheduled": [
+    "case-authoring",
+    "case-check",
+    "case-disclosures",
+    "public-read",
+    "publication"
+  ],
+  "users_rescheduled_old_rule": [
+    "case-authoring",
+    "case-check",
+    "case-disclosures",
+    "public-read",
+    "publication"
+  ],
+  "users_noticed": [
+    "affordances",
+    "answer-envelope",
+    "control-plane",
+    "op-declarations",
+    "plane",
+    "scheduler",
+    "store-assembly"
+  ]
+}

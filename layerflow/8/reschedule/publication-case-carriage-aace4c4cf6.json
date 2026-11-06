@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 8,
+  "user": "publication",
+  "provider": "case-carriage",
+  "provider_pr": 658,
+  "provider_land": "aace4c4cf6c7f651376e5e3dcb33db4ab819e4a2",
+  "at": "2026-11-06T17:42:00Z",
+  "key": "publication<-case-carriage@aace4c4cf6",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/case-carriage/upload-photo.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
