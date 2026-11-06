@@ -6,3 +6,4 @@
 {"at":"2026-11-06T13:02:12Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-06T13:11:48Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (11 jobs ready). Then: job investigation BLOCKED: run status"}
 {"at":"2026-11-06T13:11:58Z","row":"outcome","n":4,"outcome":"delivered"}
+{"at":"2026-11-06T13:35:14Z","row":"sent","n":5,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job investigation complete, PR #628 ready, session session_018BhcefYCpTkHTBNvLi1qy1: run status"}
