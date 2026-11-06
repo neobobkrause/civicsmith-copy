@@ -1,4 +1,4 @@
-/* GENERATED: do not edit by hand. member-roster R61 (N1115, N1171; K657, K3268): the ids of build/modules.json (213
+/* GENERATED: do not edit by hand. member-roster R61 (N1115, N1171; K657, K3268): the ids of build/modules.json (220
    modules) in the order the file holds them. Written by `node bio-plane/src/member-roster/order-build.mjs` from the
    repository root (`--check` finds it stale); bio-plane/test/m/member-roster/module-order.test.mjs holds it equal to the file. */
 export const MODULE_IDS = Object.freeze([
@@ -188,6 +188,8 @@ export const MODULE_IDS = Object.freeze([
   "store-request",
   "interface-assets",
   "interface-shell",
+  "interface-shell-t50-t51",
+  "interface-shell-t53",
   "screens-entry",
   "screens-wizards",
   "screens-settings",
@@ -207,12 +209,17 @@ export const MODULE_IDS = Object.freeze([
   "control-plane",
   "control-plane-door-reading",
   "control-plane-door-pages",
+  "control-plane-store-request",
   "plane",
   "installer-steps",
   "installer",
+  "installer-check",
+  "installer-places",
+  "installer-copies",
   "site",
   "stewards",
   "ai-issuer",
   "journey-check",
   "load-check",
+  "ux-design",
 ]);
