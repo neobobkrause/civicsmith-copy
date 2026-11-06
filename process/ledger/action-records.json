@@ -42,6 +42,6 @@
   "prior_work": "Provider notice action-grammar:396 (PR 396, triage 5 Nov: affected): bio-plane/src/action-records/index.mjs:435 calls governingLawsOf(fm), whose entries now carry layer (action-grammar R31), and :82 loads GOVERNING_LAW_CHECKS (index.mjs:42), whose C-2.10 arm now judges layer. Confirm or adapt this module's use of both, with a notice test naming action-grammar:396; the requirements already met answer as before. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-06T19:05:08Z"
+    "at": "2026-11-06T19:11:02Z"
   }
 }
