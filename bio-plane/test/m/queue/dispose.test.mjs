@@ -75,7 +75,7 @@ test("R28, R50: the bridge: a CONDITION or OBLIGATION key is CLASS_NOT_DISPOSED 
   for (const [key, cls, kind, instead] of [["CONDITION::governor-holding-host::h", "CONDITION", "governor-holding-host", "queuemute"],
                                            ["render-deferred::CR-1", "CONDITION", "render-deferred", "queuemute"],
                                            ["bias-debt::r1", "OBLIGATION", "bias-debt", "biasdebtresolve"],
-                                           ["signer-self-registered::K1", "OBLIGATION", "signer-self-registered", "signerset"],
+                                           ["signer-self-registered::K1", "OBLIGATION", "signer-self-registered", ["signerset", "signerknown"]],
                                            ["authority-undetermined::TASK-1", "OBLIGATION", "authority-undetermined", "taskresolve"],
                                            ["plan-checkpoint-due::PLN-1::S::2", "OBLIGATION", "plan-checkpoint-due", "checkpointrecord"],
                                            ["escalation-stage-proposed::ESC-1::filed", "OBLIGATION", "escalation-stage-proposed", "escalationadvance"],
