@@ -872,6 +872,27 @@ export class AiUse {
     }
   }
 
+  /** F3 (coordinator 17:24, screens-ai R2, R7; DEC-420's spellings, `draft-assistant-screens.md` §4) `budgetSet({owner,
+   *  scope, unit, period, amount?, inclusive?, kind?, level?, was?, by, at?}, ownerField?)`, the act of `op=aibudgetset`
+   *  (the team's or a member's own account, the screen's "Limits and alerts") and `op=aiprojectbudget` (a project's): with
+   *  `kind`, an alert threshold as R23 sets it (`aiThresholdSet`); without, a limit as R2 sets it (`aiLimitSet`). Either
+   *  way the owner's own act, refused and recorded as those are. An owner that is not one is refused `AI_LIMIT_INVALID`
+   *  naming `ownerField` (`owner`, or `project` for a project's). Never throws. */
+  budgetSet({ owner = null, scope = null, unit = null, period = null, amount = undefined, inclusive = undefined, kind = undefined,
+              level = undefined, was = null, by = null, at = null } = {}, ownerField = "owner") {
+    try {
+      if (!parseOwner(owner)) {
+        const r = this.#invalid("owner", localize("ai-use.index.a_limit_s_owner_is", "a limit's owner is 'group', 'project:<id>' or 'member:<id>'."));
+        return ownerField === "owner" ? r : { ...r, field: ownerField };
+      }
+      return kind !== undefined && kind !== null
+        ? this.aiThresholdSet({ owner, scope, unit, period, kind, level, was, by, at })
+        : this.aiLimitSet({ owner, scope, unit, period, amount, inclusive, by, at });
+    } catch (err) {
+      return this.#invalid("owner", localize("ai-use.index.the_limit_could_not_be", "the limit could not be set ({String}).", { String: String(String(err && err.message || err).slice(0, 200)) }));
+    }
+  }
+
   /** R2, R23: a unit, a period and an amount checked: `{stored}` (whole cents for `usd`, whole numbers otherwise, null to
    *  remove), or `{refusal}` naming the field. */
   #amountOf(unit, period, amount) {
@@ -1822,8 +1843,14 @@ export function aiUseOf(ctx, deps = {}) {
 
 /** The ops this module answers (`op-declarations` R41): `ailimitset`, `ailimits`, `aiusage` (with `owner` an account's
  *  month, R4; without, the viewer's own), `exploreapprove`, `aiuseovertime` (R14), and (T53) `aiusebymember` (R27),
- *  `airetestset` (R28), `aihealthset` (R32) and `aihealthpreview` (R33). Every identity (`by`, `viewer`) is the control
+ *  `airetestset` (R28), `aihealthset` (R32), `aihealthpreview` (R33), and (F3) `aibudgetset` and `aiprojectbudget`
+ *  (R2's limits and R23's thresholds, the screens' spellings). Every identity (`by`, `viewer`) is the control
  *  plane's stamp, read from the QUERY after the body is spread, so a caller's own copy never wins (D-136). */
+/** F3: the owner `aibudgetset` names: `group` (or `team`, or none given), the member's own from the stamp (`member`), or
+ *  an owner as written (the act's own bar judges it). */
+const budgetOwner = (owner, by) => (owner === undefined || owner === null || owner === "group" || owner === "team" ? "group"
+  : owner === "member" ? (memberIdOf(by) ? `member:${memberIdOf(by)}` : null) : owner);
+
 export function aiUseOps(use, url, body, env = null) {
   /* R17 (K5132): the store's environment is the instance clock's source (`BIO_NOW_MS`), as credentialsOps hands it */
   if (env && typeof env === "object") use.env = env;
@@ -1841,6 +1868,11 @@ export function aiUseOps(use, url, body, env = null) {
     airetestset: () => use.retestSet({ ...b, by: q("by") }),
     aihealthset: () => use.healthShareSet({ ...b, by: q("by") }),
     aihealthpreview: () => use.healthPreview({ viewer: q("viewer") }),
+    /* F3 (screens-ai R2, R7): a limit or (with `kind`) an alert threshold, the team's (`owner` `group`, the default) or the
+       member's own (`member`, the member from the stamp) by `aibudgetset`, a project's by `aiprojectbudget` (`project`) */
+    aibudgetset: () => use.budgetSet({ ...b, owner: budgetOwner(b.owner, q("by")), by: q("by") }),
+    aiprojectbudget: () => use.budgetSet({ ...b, owner: typeof b.project === "string" && b.project ? `project:${b.project}` : null,
+      by: q("by") }, "project"),
   };
 }
 
@@ -1860,4 +1892,10 @@ export const DECLARED_OPS = Object.freeze({
     fields: { accepts: ["on"], requires: ["on"] } },
   aiusebymember: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-use.declared.aiusebymember", "read: each member's use of a team's or a project's account, to that account's owners; writes nothing") },
   aihealthpreview: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-use.declared.aihealthpreview", "read: the health report the team would share, to an administrator; writes nothing") },
+  /* F3 (coordinator 17:24, screens-ai R2, R7): the screens' limits and alerts, op-grades R57's reversible rows (a further
+     set takes each back), served here (`budgetSet`) and reaching OPS through this declaration (op-declarations R80) */
+  aibudgetset: { classes: ["admin","member"], machineClasses: [], mutating: true, stamps: ["by"], needs: null, weight: "reversible", description: localize("ai-use.declared.aibudgetset", "the account's configuration: a limit or an alert threshold on the team's or the member's own account, set by its owner; a further set takes it back"),
+    fields: { accepts: ["owner","scope","unit","period","amount","inclusive","kind","level","was"], requires: ["scope","unit","period",["amount","level"]] } },
+  aiprojectbudget: { classes: ["admin","member"], machineClasses: [], mutating: true, stamps: ["by"], needs: null, weight: "reversible", description: localize("ai-use.declared.aiprojectbudget", "the project's configuration: a limit or an alert threshold on a project's account, set by an owner of the project; a further set takes it back"),
+    fields: { accepts: ["project","scope","unit","period","amount","inclusive","kind","level","was"], requires: ["project","scope","unit","period",["amount","level"]] } },
 });
