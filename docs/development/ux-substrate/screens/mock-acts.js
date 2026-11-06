@@ -204,6 +204,10 @@ const ACT_HELP = {
   owed_aiorderset: 'Moves this account one place up or down in the order. Work goes to the first account that is on, allowed for that work and within its limits.',
   owed_aiaccountswitch: 'Switches this account off or on. Work stays refused on a use that is off; it is never moved to another account.',
   owed_aiaccountremove: 'Removes this account from your team\'s list. Its key is deleted from Cloudflare\'s store, and what it cost stays in the history.',
+  /* T53's ops as the alpha screens send them (screens-entry setup.mjs:320, 531, 545; ai-accounts R5, R40); the ux lane, 6 Nov.
+     Lands only with affordances' ACT_HELP holding them (its R62, R65), in that module's reopen. */
+  aiaccountadd: 'Adds an AI account to its owner\'s list: the team\'s, a project\'s or your own. Its key is sealed and never shown again, and the account starts switched off.',
+  aiaccountswitch: 'Switches this account off or on. Work stays refused on a use that is off; it is never moved to another account.',
   owed_aibudgetset: 'Sets a monthly budget for one account or for all of them, and the percentage at which administrators are told.',
   owed_aicheckset: 'Chooses which of the seven privacy and origin checks the whole team requires. A required check is locked for project owners and members.',
   owed_aimemberallow: 'Chooses which providers, plans and models members may use, and whether they may add accounts of their own.',
