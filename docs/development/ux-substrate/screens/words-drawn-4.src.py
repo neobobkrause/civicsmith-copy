@@ -1284,6 +1284,31 @@ w416('check.closed', 'Install now opens when every line is ready.', 'the gate, s
 w416('check.allready', 'Every line is ready.', 'the gate, open')
 w416('refused.rare', 'This is rare: the check before installing should have caught it.', "added to the install's own stop, the second line of defence")
 
+# The ux lane (6 Nov 2026): the words installer R86-R93 need beyond DEC-416's table (R93's "keys the design adds for
+# section 3's needs"; installer-check). Same voice as DEC-416: the founder is told what is true, what to do, and where.
+def winst(key, en, note):
+    W.append(dict(key='screen.install.' + key, en=en, protected=False, note='ux lane, installer ' + note))
+winst('check.unknown', 'Could not tell', 'R87: a checklist line that is unknown (never ready, never zero)')
+winst('check.unknown.fix', "Cloudflare didn't give a clear answer for this one: {cause}. Check again; if it stays like this, open the page and look yourself.", 'R87: any line, unknown; {cause} Cloudflare\'s own words')
+winst('check.unknown.busy', 'Cloudflare is busy and didn\'t answer in time. Try again in a minute.', 'R89: too many requests past the bounded wait; drawn as unknown, never not ready')
+winst('check.account', 'Checked the Cloudflare account {account}.', 'R86: the list names the account it read')
+winst('check.probe', 'To check the plan, the installer makes one test Worker and removes it at once. Nothing else is made.', "R86, R88: the plan line's probe, said where the list is drawn")
+winst('check.probe.left', "The check made one test Worker, {name}, and couldn't remove it. Delete it from your Workers list; nothing else was made.", 'R86: a probe whose delete failed is named, never silent')
+winst('check.card.storage', "Your account is on Workers Paid, but Cloudflare says file storage (R2) isn't turned on for it yet. Turn it on, then check again.", 'R88: card line, not ready when R2 is not entitled; says what was measured, never that a card is missing')
+winst('check.plan.open', 'Open Cloudflare plans', "R92: the plan line's fix button")
+winst('check.containers.open', 'Open Cloudflare containers', "R92: the containers line's fix button")
+winst('check.card.open', 'Open Cloudflare billing', "R92: the card line's fix button")
+winst('check.card.storage.open', 'Open R2 storage', "R92: the card line's fix button when storage is the cause")
+winst('check.now.note', 'Cloudflare asks you to approve once more, then the install begins.', 'R90: said before Install now posts (K5449)')
+winst('getready.account.open', 'Open Cloudflare sign-up', 'R91: the account step\'s button (opens a new tab)')
+winst('getready.account.see', 'Cloudflare asks for an email address and a password, then sends you a link to confirm the address.', 'R91: what the founder will see there')
+winst('getready.plan.open', 'Open Cloudflare plans', "R91: the plan step's button (opens a new tab)")
+winst('getready.plan.see', 'Choose Workers Paid. Cloudflare asks for a payment card before the plan starts.', 'R91: what the founder will see there')
+winst('getready.storage.open', 'Open R2 storage', "R91: the storage step's button (opens a new tab)")
+winst('getready.storage.see', "Turn on R2, Cloudflare's file storage. Your team pays only for what it stores beyond Cloudflare's free amount.", 'R91: what the founder will see there')
+winst('getready.done', 'When these are done, check your account.', "R91: the last step's end, before Check my account")
+W.append(dict(key='refusal.CHECK_NOT_PASSED', en='Check your account first: press Check my account, and install once every line is ready. A check is good for 30 minutes. Nothing was created.', protected=False, note='ux lane, installer R90: install /begin without a passed check for this name, or with an expired one'))
+
 # DEC-417: B477 (K4557, K4559): an invited member's join door, and two reading rows (later-ux.md)
 def w417(key, en, note):
     W.append(dict(key=key, en=en, protected=False, note='DEC-417: B477 ' + note))
@@ -2365,6 +2390,7 @@ w454('capture.index.parted_unavailable', "Your team's Civicsmith can't take a fi
 w454('capture.index.parted_not_begun', "Your team's file storage wouldn't start an upload in parts, so nothing was saved. Try again.", 'capture, parted upload')
 w454('capture.index.parted_not_aborted', "Your team's file storage wouldn't cancel the upload. It stays open until it runs out of time, then it is stopped.", 'capture, parted upload (18 of 18)')
 w454('refusal.WORKBOOK_TOO_LARGE', "This workbook has {cells} cells, more than the {bound_cells} your team's Civicsmith can hold and read, so it wasn't added. Nothing was written.", "workbooks: the refusal (until now only the code's stand-in); {cells} {bound_cells}")
+w454('refusal.WORKBOOK_FILE_TOO_LARGE', "This file is {size} MB, more than the {bound} MB your team's Civicsmith can add as a workbook, so it wasn't added as one. The file itself is unchanged.", "workbooks R2: the file-size refusal, the companion of WORKBOOK_TOO_LARGE (the ux lane, 6 Nov); {size} {bound} in MB")
 w454('file-safety.index.the_file_is_encrypted_so_no_safe_view', 'This file is locked with a password, so no safe view can be made of it.', 'file-safety: a safe view refused for an encrypted file')
 w454('file-safety.checks.the_file_scanner_could_not_read', "The file scanner couldn't read all of this file, so it counts as not checked.", 'file-safety: a partial scan (the reason beside it is still a code: owed)')
 w454('file-safety.index.reading_is_not_gated', "Your team's Civicsmith reads this file without waiting for its safety scan. The scan is a separate check; if it finds a threat, the file stays readable and searchable for now.", 'file-safety: drawn on Document once this row is held (document.mjs:399)')
@@ -2782,3 +2808,43 @@ wux('screen.document.readway.pictures', 'Read from pictures of its pages, so a w
 wux('screen.document.readway.mixed', 'Read from the text stored in this {kind}, and from pictures of the pages that had none.', 'screens-document-beta R73: a file read partly from its own text and partly from pictures of its pages')
 # R73's fingerprint: drawn as R66's row draws it, a short mark (screen.document.fingerprint) with shell.copy for the whole; no new key
 
+
+# DEC-490 (the ux lane, 6 Nov 2026; BOB's ask "Ratification F1", BD-3): the edition's docket entry, needs 1-3 of the
+# publication lane. Recorded in the ux lane's decisions artifact. Plain words; the docket explained, never assumed; no
+# member named in the entry itself (docket R6), "you" on the screen; public and permanent said once, with no second
+# warning (the outward act was acknowledged in the sitting). Need 4 (the Publish at... notices) waits on Bob.
+def w490(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-490: ' + note))
+# 1. The ceremony's docket step (screens-publish R13), after the edition commits, the signer at the screen
+w490('screen.ceremony.docket.heading', 'Recording it on the docket', "the step's heading")
+w490('screen.ceremony.docket.published', 'Edition {edition} is published. This step does not hold it back.', 'the first line: the edition is public whatever this step does')
+w490('screen.ceremony.docket.what', "The docket is the case's public, signed record of what happened to it after it was published: each edition, correction and withdrawal, in order. Anyone reading the case can open it.", 'what the docket is, for a reader who does not know the word')
+w490('screen.ceremony.docket.changed', 'The entry quotes what changed, in your words: "{said}"', "the entry's what-changed text, editions after the first")
+w490('screen.ceremony.docket.first', 'This is the first edition, so the entry records that it was published and says nothing changed.', 'edition 1: no what-changed text')
+w490('screen.ceremony.docket.public', 'The entry is public and permanent: a later entry can correct it, but none can unsay it. It names no member.', 'said once, plainly; not a second warning')
+w490('screen.ceremony.docket.sign', 'It takes one more signature with the same key. What your key signs, exactly:', 'before the statement, drawn as the case statement is (screen.ceremony.signs.exactly)')
+w490('screen.ceremony.docket.signs', 'the docket entry for Edition {edition} of {case}', 'the statement line, as screen.ceremony.signs.case')
+w490('screen.ceremony.docket.device', 'Your device asks you once more to confirm with your signing key. The edition stays published whatever you choose.', 'only when the key needs unlocking; otherwise signing starts by itself')
+w490('screen.ceremony.docket.signing', 'Signing the entry and filing it on the docket now.', 'while the signature and filing run (a silent re-sign on staleness needs no words)')
+w490('screen.ceremony.docket.done', 'Recorded on the docket as entry {seq}.', 'the result')
+w490('screen.ceremony.docket.open', 'Open the docket', "a link to the case's docket")
+# 2. Published; not yet on the docket (the step did not file). Informational, never an error state.
+w490('screen.ceremony.docket.notyet', 'Published; not yet on the docket: {reason}.', 'the end line when the step did not file; {reason} one of .reason.*')
+w490('screen.ceremony.docket.notyet.safe', 'Edition {edition} is published, and nothing about that is in doubt.', 'first: the edition is not in doubt')
+w490('screen.ceremony.docket.reason.declined', 'the signature was not confirmed', 'cause: declined or cancelled at the device')
+w490('screen.ceremony.docket.reason.stale', 'the entry changed twice while it was being signed', 'cause: the second staleness failed')
+w490('screen.ceremony.docket.reason.key', 'your signing key was not accepted for the docket', 'cause: refusal, key not accepted')
+w490('screen.ceremony.docket.reason.noaddress', "your team's Civicsmith has no public address yet", 'cause: refusal, no team slug')
+w490('screen.ceremony.docket.reason.notowner', 'only an owner of the project can sign it', 'cause: refusal, not an owner')
+w490('screen.ceremony.docket.reason.failed', 'the connection failed before it was filed', 'cause: network or server failure')
+w490('screen.ceremony.docket.notyet.waits', "The entry waits on the case's docket among the items due. Any owner of the project can post it there with one signature.", 'where it waits, and who can finish it')
+w490('screen.ceremony.docket.notyet.go', 'Go to the docket item', 'a link straight to the waiting item')
+# The docket page's due item for an edition; its act is docketpost, "Post it, signed" (act.docketpost.label.docket)
+w490('screen.docket.due.heading', 'Waiting to be posted', "the docket page's group of items due")
+w490('screen.docket.due.edition', "Edition {edition}'s entry: published {date}, not yet on the docket", "an edition's due entry, its own label")
+w490('screen.docket.due.edition.help', 'Posting it signs the entry with your key and adds it to the public docket. The edition is already public either way.', "under the edition's due entry, beside Post it, signed")
+# 3. The deliverer is not the owner who signed (REC-128): in place of the docket step
+w490('screen.ceremony.docket.notsigner', "Edition {edition} is published. Its docket entry has to be signed by an owner of the project: {signer}, who signed the edition, or another owner. It waits on the case's docket until then.", 'to the deliverer; {signer} the owner who signed (a screen line, not the entry)')
+w490('queue.docket-edition-due.summary', "Edition {edition} of {case} is published, and its docket entry waits for an owner's signature", "the owners' To-do item, the signer's first")
+w490('queue.docket-edition-due.detail', "Edition {edition} went public on {date}. Its entry on the case's public docket still needs one signature from an owner of the project. Any owner can sign it.", "the item's detail")
+w490('queue.docket-edition-due.door', 'Open the docket item', "the item's door, straight to the waiting entry")
