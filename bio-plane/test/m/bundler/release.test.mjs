@@ -764,20 +764,27 @@ test("R20: --dry-run deploys nothing; otherwise wrangler deploys from the member
 
 const bundles = (root, args = []) => run(root, ".", ["bio-plane/scripts/bundles.mjs", ...args]);
 
-test("R21: --check surveys every guarded bundle by R6, names each finding, writes nothing, and exits 1 when any is stale, 0 when none", async () => {
+/* The dist pass (BOB, 6 Nov 2026): dist/ is not committed, so --check builds every bundle into a temp dir, checks it by
+   R6 and builds it again to compare; a source edit is no longer "stale" (nothing committed to be stale against), and what
+   --check refuses is a bundle that does not build or does not reproduce. */
+test("R21: --check builds every guarded bundle into a temp dir, checks it by R6 and against a second build, names each failure, writes nothing, and exits 1 when any fails, 0 when none", async () => {
   const root = await makeRepo();
   try {
+    writeFileSync(join(root, "alpha-worker/src/word.mjs"), 'export const word = "changed";\n');
+    const edited = snapshot(root);
     const fresh = bundles(root, ["--check"]);
     assert.equal(fresh.status, 0, fresh.stdout + fresh.stderr);
     assert.match(fresh.stdout, /3 guarded bundle\(s\) — alpha-worker, beta-worker, bio-plane/);
-    writeFileSync(join(root, "alpha-worker/src/word.mjs"), 'export const word = "changed";\n');
-    writeFileSync(join(root, "bio-plane/src/tag.mjs"), 'export const tag = "changed";\n');
+    assert.match(fresh.stdout, /every guarded bundle builds and reproduces/, "a source edit is built, not refused: nothing is committed to be stale against");
+    assert.deepEqual(snapshot(root), edited, "--check writes nothing in the tree");
+    writeFileSync(join(root, "alpha-worker/src/word.mjs"), 'export const word = ;\n');
+    writeFileSync(join(root, "bio-plane/src/tag.mjs"), 'export const tag = ;\n');
     const before = snapshot(root);
     const stale = bundles(root, ["--check"]);
     assert.equal(stale.status, 1);
-    for (const m of discoverMembers(root).concat(planeMember(root)))
-      for (const f of verifyStatic(m).findings) assert.ok(stale.stdout.includes(f), `names: ${f}`);
-    assert.match(stale.stdout, /2 of 3 bundle\(s\) are STALE — alpha-worker, bio-plane/);
+    assert.match(stale.stdout, /! alpha-worker: its bundle does not build/);
+    assert.match(stale.stdout, /! bio-plane: its bundle does not build/);
+    assert.match(stale.stdout, /2 of 3 bundle\(s\) do not build reproducibly — alpha-worker, bio-plane/);
     assert.deepEqual(snapshot(root), before, "--check writes nothing");
     const lib = await import(pathToFileURL(join(root, "bio-plane/scripts/bundles.mjs")).href);
     assert.equal(await lib.run({ repoRoot: root, check: true, log: () => {} }), 1, "run({check}) is the same survey");
@@ -1040,10 +1047,10 @@ test("R24: bundles.mjs surveys a container member with no Worker bundle as liste
     assert.doesNotMatch(r.stdout, /runner: declares no/);
     const full = bundles(root);
     assert.equal(full.status, 0, "and a rebuild run has nothing to rebuild and nothing it could not");
-    writeFileSync(join(root, "hosted/src/word.mjs"), 'export const word = "moved";\n');
+    writeFileSync(join(root, "hosted/src/word.mjs"), 'export const word = ;\n');
     const stale = bundles(root, ["--check"]);
     assert.equal(stale.status, 1);
-    assert.match(stale.stdout, /1 of 4 bundle\(s\) are STALE — hosted/);
+    assert.match(stale.stdout, /1 of 4 bundle\(s\) do not build reproducibly — hosted/);
   } finally { rm(root); }
 });
 

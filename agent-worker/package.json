@@ -5,6 +5,7 @@
   "version": "0.87.0",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "pretest": "cd .. && node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs && node bio-plane/src/case-checker/build-program.mjs && node bio-plane/scripts/bundles.mjs",
     "test": "node --test --test-concurrency=1 test/*.test.mjs",
     "control": "node test/agent-worker.control.mjs"
   },

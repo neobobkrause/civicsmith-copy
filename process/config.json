@@ -359,14 +359,6 @@
         ]
       },
       {
-        "name": "bundles fresh",
-        "argv": [
-          "node",
-          "bio-plane/scripts/bundles.mjs",
-          "--check"
-        ]
-      },
-      {
         "name": "fleet bundles",
         "argv": [
           "node",
