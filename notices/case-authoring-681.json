@@ -1,0 +1,27 @@
+{
+  "row": "notice",
+  "at": "2026-11-06T18:32:00Z",
+  "key": "case-authoring:681",
+  "provider": "case-authoring",
+  "ids": [],
+  "pr": 681,
+  "users": [
+    "action-replies",
+    "affordances",
+    "answer-envelope",
+    "case-check",
+    "control-plane",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "review",
+    "screens-publish",
+    "store-assembly"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 8,
+    "provides": true,
+    "rescheduled": false
+  }
+}
