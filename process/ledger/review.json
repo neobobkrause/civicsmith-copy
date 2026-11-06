@@ -44,8 +44,7 @@
   ],
   "prior_work": "Meet R46 only: a reader grant's acknowledgement keeps the reader's name (the grant's recipient) as its author, distinct from a member's. Acknowledgements are written and read by case-inputs (op statementack; bio-plane/src/case-inputs/index.mjs around line 694 already sets kind recipient and the grant's recipient), and review serves them on the copy; read what is there before changing anything. Write R46's test as the requirement states it (acknowledge through a grant: the stored author names the recipient, and a member's acknowledgement names the member) in bio-plane/test/m/review/, make it pass inside bio-plane/src/review/, and when R46 is met clear its '(not yet met: T53)' mark yourself (REQ-4). If meeting it needs a change in bio-plane/src/case-inputs/ or any other module, do not edit it: say so to your coordinator in your receipt's not-verified list. Where build/situations/job.md names the old tool (proc), follow this START's commands instead. No earlier unmerged work touches this module.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-06T14:54:33Z",
-    "reason": "reopened: re-test against the new interface of publication (land 3258868d57)"
+    "state": "COMPLETE",
+    "at": "2026-11-06T15:05:56Z"
   }
 }
