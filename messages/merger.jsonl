@@ -308,3 +308,4 @@
 {"at":"2026-11-06T03:52:34Z","row":"outcome","n":154,"outcome":"delivered"}
 {"at":"2026-11-06T03:58:29Z","row":"sent","n":155,"to":"bob","text":"PR 610 (job agent-runner) fires a review trigger and has no review recorded for 8fd133edc8: review it (node .process/tool/p3.mjs review brief 610), then node .process/tool/p3.mjs merge train note 610 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
 {"at":"2026-11-06T03:58:52Z","row":"outcome","n":155,"outcome":"delivered"}
+{"at":"2026-11-06T04:07:06Z","row":"sent","n":156,"to":"bob","text":"merged PR 610 (job agent-runner): node .process/tool/p3.mjs notice triage agent-runner:610 (provider notice agent-runner:610; 1 user module owes a worker's judgment: agent-worker: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
