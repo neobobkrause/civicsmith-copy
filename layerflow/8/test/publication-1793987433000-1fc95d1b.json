@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "publication",
+  "session": "session_018BhcegdJgXQhF5KRmzh3am",
+  "started": "2026-11-06T17:50:33Z",
+  "ended": "2026-11-06T17:52:57Z",
+  "at": "2026-11-06T17:52:57Z",
+  "minutes": 2.4,
+  "result": "pass",
+  "layer": 8,
+  "suite_seconds": 15.384,
+  "tests": {
+    "total": 199,
+    "pass": 198,
+    "fail": 0
+  }
+}
