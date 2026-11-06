@@ -398,7 +398,7 @@
     "journey-check"
   ],
   "pacing": {
-    "jobs": 1,
-    "pushes_per_hour": 60
+    "jobs": 3,
+    "pushes_per_hour": 120
   }
 }
