@@ -463,3 +463,4 @@
 {"at":"2026-11-06T23:40:10Z","row":"check","by":"github push","live":"unmeasured","live_at":"2026-11-06T18:52:33Z","job_cap":3,"startable":null}
 {"at":"2026-11-06T23:45:24Z","row":"check","by":"status","live":"unmeasured","live_at":"2026-11-06T18:52:33Z","job_cap":20,"startable":null}
 {"at":"2026-11-06T23:52:18Z","row":"check","by":"layer publish","live":"unmeasured","live_at":"2026-11-06T18:52:33Z","job_cap":20,"startable":null}
+{"at":"2026-11-06T23:52:17Z","row":"sweep","session":"session_018BhceduipEp2mmEFHN9Diu","bob_acts":true,"bob_quiet_h":0.1,"root_context":67,"live":6,"job_cap":3,"sessions":18,"startable":2,"blocked":0,"blocked_oldest_min":null,"working":2,"waiting":4}
