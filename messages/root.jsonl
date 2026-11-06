@@ -153,3 +153,4 @@
 {"at":"2026-11-06T08:54:17Z","row":"sent","n":77,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: Sweep: IDLE CAPACITY, 17 slots empty, 0 startable: run node .process/tool/p3.mjs job start --ready --live <n> first; only a recorded hold (p3 hold) keeps a slot empty; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-06T08:54:43Z","row":"outcome","n":77,"outcome":"delivered"}
 {"at":"2026-11-06T09:53:08Z","row":"sent","n":78,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: Sweep: IDLE CAPACITY, 17 slots empty, 0 startable: run node .process/tool/p3.mjs job start --ready --live <n> first; only a recorded hold (p3 hold) keeps a slot empty; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; runtime-limits: BLOCKED."}
+{"at":"2026-11-06T09:53:24Z","row":"outcome","n":78,"outcome":"delivered"}
