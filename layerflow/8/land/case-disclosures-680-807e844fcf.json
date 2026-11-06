@@ -1,0 +1,23 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "case-disclosures",
+  "pr": 680,
+  "head": "807e844fcf70910c3987df4aa89bfafa2fd75f5a",
+  "before": "22c8a4027355b64f678ca5d93f623402058fffbe",
+  "merge": "00c7b1d383487919163556e2846d17d259b4dfb7",
+  "at": "2026-11-06T18:27:24Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none"
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
