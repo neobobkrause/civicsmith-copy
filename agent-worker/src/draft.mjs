@@ -33,13 +33,17 @@
  *
  * THE TRACE (R87; T48, N1015). Every task's conversation carries the door's `x-civicsmith-trace` and
  * `x-civicsmith-member-ref` when sent in their shapes (`doorTrace`), so a member's runner receives them (`agent-model`
- * R16); nothing else changes with them. */
+ * R16); nothing else changes with them.
+ *
+ * NO RUNNER (agent-worker:364 notice; its F2, F3). The member binds no runner, so no draft names one: `converse` is
+ * called without `runner`, and a sign-in account is refused before any call as `agent-model` holds it. `converse` is
+ * the shell's deps' own, which `circuitDeps` wraps around the agent-model circuit, so each draft is admitted and its
+ * outcome recorded there; the `reference` passed is the one the same deps' `cascadeToken` handed out. */
 import { admitRead, readTool, ASK_DECLARED } from "./ask.mjs";
 import { toolContent } from "../../agent-steps/src/index.mjs";
 import { ACTION_DRAFT_OPS, actionTaskOf, actionDraft } from "./action-drafts.mjs";
 import { untestedOf, UNTESTED_BAD, machineLabel } from "./untested.mjs";
 import { doorTrace } from "./signin.mjs";
-import { remoteOf } from "./remote.mjs";
 import { askBoundReached, draftMayRead, TRANSLATION_DRAFT_MAX_WORDS } from "../../bio-plane/src/run-rules/index.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
@@ -244,7 +248,7 @@ export async function handleDraft(req, env, deps) {
   const reference = (await cascadeToken(account)).reference;
   const meter = segmentMeter({ turnsBound: ASK_DECLARED.turns, bytesBound: DEFAULT_MAX_SEGMENT_BYTES });
   const got = await converse({
-    reference, runner: remoteOf(env), mode: "draft", meter, system, messages, tools, finalTool: "draft",
+    reference, mode: "draft", meter, system, messages, tools, finalTool: "draft",
     maxTurns: ASK_DECLARED.turns, onTool: grantReader({ env, grant, meter, deps }), ...traced,
   });
   const spent = { usage: got.usage ?? null, calls: got.calls === undefined ? null : got.calls };
@@ -393,7 +397,7 @@ async function translationDraft(body, task, env, deps, labelled = {}, traced = {
   const reference = (await cascadeToken(account)).reference;
   const meter = segmentMeter({ turnsBound: ASK_DECLARED.turns, bytesBound: DEFAULT_MAX_SEGMENT_BYTES });
   const got = await converse({
-    reference, runner: remoteOf(env), mode: "draft", meter, system, messages, tools, finalTool: "draft",
+    reference, mode: "draft", meter, system, messages, tools, finalTool: "draft",
     maxTurns: ASK_DECLARED.turns, ...traced,
     /* R69: no tool reaches anything; any call but the answer is refused here, with no plane call. */
     onTool: async (name) => ({ content: localize("agent-worker.draft.string_is_not_a_tool_2", "'{String}' is not a tool of this draft", { String: String(String(name).slice(0, 40)) }), error: true }),
@@ -469,7 +473,7 @@ async function readingDraft(body, task, env, deps, labelled = {}, traced = {}) {
   const reference = (await cascadeToken(account)).reference;
   const meter = segmentMeter({ turnsBound: ASK_DECLARED.turns, bytesBound: DEFAULT_MAX_SEGMENT_BYTES });
   const got = await converse({
-    reference, runner: remoteOf(env), mode: "draft", meter, system, messages, tools: [readingTool()],
+    reference, mode: "draft", meter, system, messages, tools: [readingTool()],
     finalTool: "draft", maxTurns: ASK_DECLARED.turns, ...traced,
     /* R86: no tool reaches anything; any call but the answer is refused here, with no plane call. */
     onTool: async (name) => ({ content: localize("agent-worker.draft.string_is_not_a_tool_3", "'{String}' is not a tool of this translation", { String: String(String(name).slice(0, 40)) }), error: true }),
