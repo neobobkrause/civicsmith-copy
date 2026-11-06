@@ -326,3 +326,4 @@
 {"at":"2026-11-06T07:01:38Z","row":"outcome","n":163,"outcome":"delivered"}
 {"at":"2026-11-06T11:53:24Z","row":"sent","n":164,"to":"bob","text":"PR 625 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: the pull request changes .github/workflows/container-images.yml, .github/workflows/deploy-test.yml, .github/workflows/regression.yml, .github/workflows/release-sign.yml: .github/workflows/container-images.yml is not the process's own shim at 4a85f2621b. A workflow change needs the owner's word: brin"}
 {"at":"2026-11-06T11:53:40Z","row":"outcome","n":164,"outcome":"delivered"}
+{"at":"2026-11-06T11:54:41Z","row":"sent","n":165,"to":"bob","text":"PR 624 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 624 is a pass, and a pass runs while no job holds its modules (P7): installer (job PR 597 is open), plane (job PR 452 is open)"}
