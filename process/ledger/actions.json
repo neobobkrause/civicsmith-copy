@@ -53,8 +53,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-06T18:50:15Z",
-    "reason": "reopened: meet the unmet requirement marks R112, R113, R114, R115, R116"
+    "state": "BLOCKED",
+    "reason": "GitHub access lost mid-job (git fetch/ls-remote 403 since ~the unshallow fetch; GitHub connector needs re-sign-in). Work for R112-R116 is pushed at 67d83b06 on job/actions (suite 164/164 locally on the pre-c06702976d layer/9; downstream screens-action, action-clocks, op-declarations, action-grammar 469/469). Not adapted yet to action-records c06702976d (lawEntries removed): actionLaws calls this.records.lawEntries, so it must move to whatever replaces it. Restart with GitHub access; job sync, adapt actionLaws, re-run, publish.",
+    "at": "2026-11-06T19:19:00Z"
   }
 }
