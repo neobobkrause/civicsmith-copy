@@ -1,0 +1,81 @@
+{
+  "id": "op-specs-late",
+  "title": "op-specs-late: confirm its requirements on layer 11 (ledger entry written 6 Nov; no unmet mark)",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/op-declarations/t45.mjs",
+    "bio-plane/src/op-declarations/t46.mjs",
+    "bio-plane/src/op-declarations/t47.mjs",
+    "bio-plane/src/op-declarations/t48.mjs",
+    "bio-plane/src/op-declarations/t49.mjs",
+    "bio-plane/src/op-declarations/t50.mjs",
+    "build/requirements/op-specs-late.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/op-specs-late/",
+    "bio-plane/test/m/op-declarations/t45.test.mjs",
+    "bio-plane/test/m/op-declarations/t46.test.mjs",
+    "bio-plane/test/m/op-declarations/t47.test.mjs",
+    "bio-plane/test/m/op-declarations/t48.test.mjs",
+    "bio-plane/test/m/op-declarations/t49.test.mjs",
+    "bio-plane/test/m/op-declarations/t50.test.mjs"
+  ],
+  "requirements": "build/requirements/op-specs-late.md",
+  "uses": [
+    "setup-words",
+    "test-support",
+    "op-capabilities",
+    "progressions",
+    "escalation",
+    "explore",
+    "answers",
+    "following",
+    "standards",
+    "sources",
+    "ai-runs",
+    "ai-use",
+    "ai-accounts",
+    "inquiry",
+    "capture-requests",
+    "actions",
+    "action-clocks",
+    "action-holds",
+    "action-replies",
+    "action-plans",
+    "action-records",
+    "membership",
+    "retrieval",
+    "acquisition",
+    "capture",
+    "instance-setup",
+    "case-authoring",
+    "case-check",
+    "citation",
+    "plan-work",
+    "filings",
+    "conformance",
+    "consequences",
+    "project-roster",
+    "local-facts",
+    "connections"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/op-specs-late.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "This module was split by copy from op-declarations on 4 Nov and had no ledger entry, so the process never recorded it (found in the R15 census, 6 Nov). Its modules.json row keeps empty paths and tests until its job's merge (K1043; build/layers.md). Its code is op-declarations' t45.mjs to t50.mjs, with t45.test.mjs to t50.test.mjs (its Status line); no code exists yet under a folder of its own, and bio-plane/test/m/op-specs-late/ does not exist yet. Change only those files. Its requirement file has no unmet mark. Run its suite on its layer. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test under bio-plane/test/m/op-specs-late/. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Leave op-declarations's requirement lines to its own job, edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-06T18:57:34Z"
+  }
+}
