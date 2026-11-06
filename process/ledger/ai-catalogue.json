@@ -33,8 +33,8 @@
   ],
   "prior_work": "Meet every unmet mark in build/requirements/ai-catalogue.md (R39), each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-06T01:47:53Z",
-    "reason": "reopened: meet the found marks F3, F4"
+    "state": "BLOCKED",
+    "reason": "F3 met on this branch (d7d86481; test bio-plane/test/m/ai-catalogue/development-plane.test.mjs::'F3 through the store: ...', fails with the change reverted; suite 146/146). Cause: no module registers an adapter type (R38), so the development seed's entry needed a newer release and aiownadd answered ENTRIES_EMPTY; the development seed, once verified, now registers its own profiles' types in memory (release builds register nothing). F4 cannot be met within ai-catalogue's paths: (1) serving needs store-assembly to import an aiCatalogueOps map and route it in assemble.mjs; (2) exporting DECLARED_OPS from ai-catalogue alone turns store-assembly's declarations.test.mjs R83 red (its collector finds every 'export const DECLARED_OPS' that declarations.mjs does not import); (3) airesultsread's OPS spec is surface-declarations R15 (OPEN) and its grade op-grades R57; (4) the other catalogue reads F4 lists (providers, plans, entries, checks with ev, listing word and reason, staleness) have no op names anywhere: screens-ai's Uses says they are named at START in op-declarations, and this START names none. To unblock: name the read ops, and either run ai-catalogue (ops map + DECLARED_OPS) together with store-assembly's import and routing in one tranche change, or let store-assembly land the import first. ai-catalogue's half (ops over libraryRows, combinedResults, plansOf, entryOf, entriesFor, catalogueState) is small once the names exist.",
+    "at": "2026-11-06T01:59:14Z"
   }
 }
