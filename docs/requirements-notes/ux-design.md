@@ -91,7 +91,7 @@ Still waiting on words in screens-document-beta: R59 (two keys in U only, R3) an
 
 | module | keys | note | source |
 |---|---|---|---|
-| affordances (F2, met) | act.guideoptout.does (neither); stand-in reading-guides.declared.guideoptout (U) | no help word for guideoptout | affordances.jsonl |
+| affordances (F2, met) | act.guideoptout.does (W, settled 6 Nov by the lane, words-drawn-1.src.py:863); stand-in reading-guides.declared.guideoptout (U) | act-help.mjs reads the W row in place of the stand-in; the words-reads finding that refused layer close 6 is cleared | affordances.jsonl |
 | screens-entry | act.aiaccountadd.does, act.aiaccountswitch.does (neither) | buttons carry no explanation | screens-entry.jsonl |
 | reading-guides | guide.procedure.notreviewed, refusal.OPT_OUT_NOT_SOLE_MEMBER, refusal.MACHINE_CANNOT_OPT_OUT, refusal.OPT_OUT_NOT_OWN_GUIDE (U) | | reading-guides.jsonl |
 | content | content.index.register_row_removed (U) | | content.jsonl |
