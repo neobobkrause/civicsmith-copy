@@ -3,7 +3,8 @@
 
 Reads palette.json beside this file; prints every pair with its ratio and exits 1 if any text
 pair is below 4.5:1 or any graphic pair below 3:1, in either theme. Also checks that
-civicsmith.css carries exactly the palette's values. Run: python3 check_contrast.py
+civicsmith.css carries exactly the palette's values. Graphic colours are checked against every
+plain background in pairs.graphic_backgrounds (W1), and every focus outline keeps a 2px offset (W2). Run: python3 check_contrast.py
 """
 import json, os, re, sys
 
@@ -28,7 +29,14 @@ def main():
     for theme in ('light', 'dark'):
         t = pal[theme]
         for kind, need in (('text', 4.5), ('graphic', 3.0)):
-            for fg, bg in pal['pairs'][kind]:
+            pairs = list(pal['pairs'][kind])
+            if kind == 'graphic':
+                # W1 (1.4.11: 3:1 against each adjacent colour): a graphic colour can sit on any of the plain
+                # backgrounds, so each is checked against all of them, not only the background listed.
+                for fg in dict.fromkeys(f for f, _ in pal['pairs']['graphic']):
+                    for bg in pal['pairs'].get('graphic_backgrounds', []):
+                        if [fg, bg] not in pairs: pairs.append([fg, bg])
+            for fg, bg in pairs:
                 r = ratio(t[fg], t[bg])
                 ok = r >= need
                 fails += not ok
@@ -44,6 +52,22 @@ def main():
                 if found.get(k, '').upper() != v.upper():
                     fails += 1
                     out.append(f"{theme:5} css     --c-{k} is {found.get(k)!r}, palette.json says {v}")
+    # W2 (2.4.7, 2.4.11): a focus ring is drawn outside the control (outline-offset of at least 2px), so it always
+    # meets the background, never a fill of its own colour (--c-focus equals accent-strong, the primary button's fill).
+    comp = os.path.join(HERE, 'components.css')
+    if os.path.exists(comp):
+        for rule in re.findall(r'[^{}]*:focus-visible[^{]*\{[^}]*\}', open(comp).read()):
+            if 'outline:' not in rule: continue
+            if re.search(r'outline:\s*none', rule):
+                # an outline removed must be replaced by an indicator of its own (a bar, border or shadow)
+                if not re.search(r'(background|box-shadow|border)[a-z-]*:', rule):
+                    fails += 1
+                    out.append(f"focus   a :focus-visible rule removes the outline and draws nothing instead: {rule.strip()[:80]}")
+                continue
+            m = re.search(r'outline-offset:\s*(\d+)px', rule)
+            if not m or int(m.group(1)) < 2:
+                fails += 1
+                out.append(f"focus   a :focus-visible outline without an offset of 2px or more: {rule.strip()[:80]}")
     print('\n'.join(out))
     print(f"\n{'FAILED: %d' % fails if fails else 'All pairs meet WCAG 2.2 AA in both themes.'}")
     return 1 if fails else 0

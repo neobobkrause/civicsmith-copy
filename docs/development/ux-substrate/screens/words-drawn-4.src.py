@@ -2893,3 +2893,93 @@ wlvl('move.notcarried.none', 'Everything in the export was carried.', 'R97')
 wlvl('move.done', "Your team's record is in its new place. Check it there, then end the old one.", 'R97')
 wlvl('move.end', 'End the old one', "R97: the old one's end act")
 wlvl('move.end.what', 'Ending it stops it for everyone. Do this only after you have checked the new one.', 'R97: said before the end act')
+
+# DEC-491 (the ux lane, 6 Nov 2026; BD-7, BD-6): a published case discloses its AI use at first exposure. Framed as
+# human-reviewed and ratified: it leads with who ratified, AI as a tool. Placement: on `published` and `review-outside`,
+# directly under the edition's dated line and before "How to read a case", the first block a reader meets; on `front`,
+# one short line on each case listed; and in the complete edition's own rendering (DEC-41), in the case's language.
+# Never a claim of compliance (BD-6). True only to the record: the uses named are those the case's record holds.
+def w491(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-491: ' + note))
+w491('screen.published.ai.ratified', 'Reviewed and signed by {ratifiers} for {team} on {date}. They checked each finding against its evidence before signing.', 'first: who ratified; {ratifiers} the signing owners as they are credited (DEC-102)')
+w491('screen.published.ai.tool', '{team} used an AI assistant as a tool in preparing this case: {uses}. A person made every finding, and nothing the assistant drafted was published without being reviewed.', 'second: AI as a tool; {uses} a list of .use.* the record holds')
+w491('screen.published.ai.use.reading', 'reading documents', 'a use: the assistant read or transcribed documents')
+w491('screen.published.ai.use.searching', 'finding sources', 'a use: the assistant searched for material')
+w491('screen.published.ai.use.drafting', 'drafting parts of the account', 'a use: an account or passage began as the assistant\'s draft')
+w491('screen.published.ai.use.translating', 'translating', 'a use: the assistant translated material')
+w491('screen.published.ai.none', 'No AI assistant was used in preparing this case.', 'instead of .tool, only when the record shows no machine work at all')
+w491('screen.published.ai.more', 'How the assistant was used', 'a disclosure that opens below the two lines')
+w491('screen.published.ai.more.text', 'An AI assistant can read, search and draft. It cannot decide what is true: a finding is made only when a member concludes it, and a case is published only when an owner signs it. The signatures above can be checked without trusting anyone.', 'the opened text')
+w491('screen.published.ai.passages', 'You can show who wrote each sentence: the signed record says which began as the assistant\'s drafts. Open “Show who wrote each sentence”.', 'held for the per-passage provenance (BD-7, publication lane F1(2)); drawn only once the signed record carries it')
+w491('screen.front.case.ai', 'Reviewed and signed by people; AI used as a tool', 'one short line under each case listed on the team\'s page, when the record holds machine work')
+
+# DEC-492 (the ux lane, 6 Nov 2026; BOB's ask, F1 need 4 and the AI-use provenance of bio-case-document/11, BD-3, BD-7):
+# (a)-(d) the docket entry when an edition is set to publish at a time; (e) the complete edition's per-sentence marks
+# and legend (frozen with /11 in case-grammar); (f) the ceremony's provenance summary, shown before signing and never
+# blocking (case-authoring R88's pattern). Sentences members wrote stay unmarked and the legend says so; only what began
+# as the assistant's draft is marked. An edition before /11 reads "not stated", never "written by members".
+# (h) the declared-AI control and the signer's affirmation wait on Bob.
+def w492(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-492: ' + note))
+# (a) at scheduling
+w492('screen.ceremony.docket.scheduled.signing', "The edition's docket entry is being signed now, with the same key. It appears on the public docket when the edition publishes, dated {date}.", '(a) once the edition is set to publish; what is signed follows, as in DEC-490 (screen.ceremony.docket.sign, .signs)')
+w492('screen.ceremony.docket.scheduled.done', 'Signed. The entry joins the public docket on {date}, when the edition publishes.', '(a) the result')
+w492('screen.ceremony.docket.scheduled.notyet', "The entry wasn't signed: {reason}. After Edition {edition} publishes, its entry will wait on the case's docket among the items due, and any owner of the project can post it there with one signature.", "(a) the step did not complete; {reason} one of DEC-490's .reason.*")
+# (b) at publish time, in the owner's published notice (publish-schedule R42)
+w492('notice.publishat.docket.with', 'Its docket entry went out with it.', "(b) appended to the published notice when the entry was filed")
+w492('notice.publishat.docket.waits', "Its docket entry wasn't filed with it, so it waits on the case's docket for an owner's signature.", '(b) appended when filing fell back')
+w492('notice.publishat.docket.door', 'Open the docket item', '(b) the door when filing fell back')
+# (c) any docket entry placed while an edition is scheduled
+w492('screen.docket.file.scheduled', "Edition {edition} is set to publish on {date}. Posting this entry also re-signs that edition's waiting entry, so the docket stays in order.", '(c) said on the act; no extra decision is asked')
+# (d) the publishing time moved to another day
+w492('screen.ceremony.publishat.move.docket', "Moving it to another day also re-signs the edition's waiting docket entry with the new day.", '(d) said on Move the publishing time, when the day changes')
+# (e) the complete edition: per-sentence marks and their legend (case-grammar /11)
+w492('case.origin.mark.ai_edited', "assistant's draft, changed", '(e) the mark on a sentence of origin ai_edited')
+w492('case.origin.mark.ai_kept', "assistant's draft, kept", '(e) the mark on a sentence of origin ai_kept')
+w492('case.origin.mark.notstated', 'origin not stated', '(e) a sentence of an edition before /11, when marks are drawn at all')
+w492('case.origin.legend.heading', 'Who wrote each sentence', '(e) the legend, before the case\'s own writing')
+w492('case.origin.legend.human', 'Sentences with no mark were written by members of {team}, with no AI help recorded.', '(e) human: unmarked (DEC-493: with declared outside help marked)')
+w492('case.origin.legend.ai_edited', "Marked “assistant's draft, changed”: the sentence began as the assistant's draft, and a member changed it.", '(e)')
+w492('case.origin.legend.ai_kept', "Marked “assistant's draft, kept”: the assistant's draft, which a member kept word for word.", '(e)')
+w492('case.origin.legend.review', 'Every sentence, however it began, was reviewed and signed by {ratifiers} under {standard}.', '(e) review, stated once per edition: ratified_by, standard')
+w492('case.origin.legend.predates', 'This edition was published before Civicsmith recorded who wrote each sentence, so who wrote them is not stated. That does not mean members wrote them, or that the assistant did.', '(e) editions up to /10: never read as human')
+w492('case.origin.legend.scope', "The marks cover the case's own writing. Quoted passages from documents are the documents' words.", '(e) what the marks do and do not cover')
+# (f) the ceremony: what the signer is about to sign, by origin (shown before signing, never blocking)
+w492('screen.ceremony.origin.heading', "Who wrote the case's sentences", '(f)')
+w492('screen.ceremony.origin.count', "Of the {total} sentences in the case's own writing, members wrote {human}, {edited} began as the assistant's drafts and were changed, and {kept} are the assistant's drafts kept word for word.", '(f) the summary; zero counts are said, never hidden')
+w492('screen.ceremony.origin.none', "Members wrote every sentence in the case's own writing.", '(f) when no sentence began as a machine draft')
+w492('screen.ceremony.origin.signs', 'Your signature records this with the edition, and readers see each sentence marked.', '(f)')
+w492('screen.ceremony.origin.kept.list', "Kept word for word from the assistant's drafts", "(f) the list of ai_kept sentences, each opening to its place; read before signing, never a stop")
+
+# DEC-493 (the ux lane, 6 Nov 2026; Bob's BD-9, BD-10): who wrote each sentence is an overlay any reader can open, never
+# drawn by default; DEC-491's note stays visible and holds its control. The overlay's state is kept for the visit only
+# (each visit opens without it, as Bob asked) and a link to #origins opens with it on. Marks are bracketed words drawn
+# with the machine-work edge (dotted, no hue), real text inside each sentence, never colour alone. The complete edition
+# (DEC-41) carries an appendix that lists every marked sentence, always printed; inline marks print only when shown.
+# Members declare outside AI help per field (declared_ai), and the signer affirms, inside what is signed, that every AI
+# use in the case's own writing is recorded.
+def w493(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-493: ' + note))
+# the overlay's control, in DEC-491's note on published, review-outside and the edition's rendering
+w493('screen.published.origins.show', 'Show who wrote each sentence', 'the control (a button, aria-pressed false); in the AI note, after How the assistant was used')
+w493('screen.published.origins.hide', 'Hide who wrote each sentence', 'the same control when the overlay is on (aria-pressed true)')
+w493('screen.published.origins.shown', "Showing who wrote each sentence: {edited} began as the assistant's drafts and were changed, {kept} were kept as drafted, {declared} had outside AI help, and members wrote the rest.", 'announced in a polite live region when shown, and the line at the legend\'s top')
+w493('screen.published.origins.hidden', 'Who wrote each sentence is hidden.', 'announced when hidden')
+w493('screen.published.origins.next', 'Next marked sentence', 'a keyboard step through the marked sentences while the overlay is on')
+w493('screen.published.origins.visit', 'This stays shown until you leave the page. A link that ends in #origins opens it shown.', 'under the legend: why it is off on the next visit, and how to share it on')
+# a fourth mark (declared_ai) and its legend
+w493('case.origin.mark.declared_ai', 'outside AI help, declared', 'the mark on a sentence of origin declared_ai')
+w493('case.origin.legend.declared_ai', "Marked “outside AI help, declared”: a member declared that an AI tool outside Civicsmith helped write it.", 'the legend line')
+w493('case.origin.legend.affirmed', '{signer} affirmed, in what they signed, that every use of AI in this writing is recorded here.', 'the legend line stating the affirmation, once per edition')
+# the complete edition's appendix (always present, always printed)
+w493('case.origin.appendix.heading', 'Appendix: who wrote each sentence', 'the edition\'s appendix, after the case and before its signatures')
+w493('case.origin.appendix.intro', 'Every sentence of the case\'s own writing that did not come only from its members, by section and number. Every other sentence was written by members.', 'its first line')
+w493('case.origin.appendix.none', "Members wrote every sentence of the case's own writing, with no AI help recorded.", 'when nothing is marked')
+w493('case.origin.appendix.row', 'Section {section}, sentence {n}: {mark}', 'one row; {mark} one of case.origin.mark.*')
+# the declared_ai control, per field in the case editor
+w493('screen.case-editor.declared_ai', 'An AI tool outside Civicsmith helped me write this', 'a checkbox under each field of the case\'s own writing')
+w493('screen.case-editor.declared_ai.help', 'Tick this if you used an AI tool outside Civicsmith, such as a chatbot, to write or rewrite this text. Readers who show who wrote each sentence see it marked. Help from Civicsmith\'s own assistant is recorded without this.', 'beside the checkbox')
+# the signer's affirmation, in the ceremony, part of what is signed
+w493('screen.ceremony.affirm.ai', "I affirm that every use of AI in this case's own writing is recorded here, including any help from AI tools outside Civicsmith.", 'a checkbox in the Sign step, beside the ties confirmation; part of what is signed')
+w493('screen.ceremony.affirm.ai.part', 'Your affirmation is part of what you sign. Readers see that you made it.', 'under it')
+w493('screen.ceremony.affirm.ai.needed', 'Tick the affirmation first.', 'when Sign is pressed without it')

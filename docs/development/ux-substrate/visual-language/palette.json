@@ -1,5 +1,5 @@
 {
- "_note": "Civicsmith's color tokens (DEC-138). The one source: civicsmith.css is checked against this file by check_contrast.py. Every text pair listed in 'pairs' must reach 4.5:1 (WCAG 2.2 AA, 1.4.3) and every graphic pair 3:1 (1.4.11), in both themes.",
+ "_note": "Civicsmith's color tokens (DEC-138). The one source: civicsmith.css is checked against this file by check_contrast.py. Every text pair listed in 'pairs' must reach 4.5:1 (WCAG 2.2 AA, 1.4.3) and every graphic pair 3:1 (1.4.11), in both themes. Every graphic colour is also checked against each of pairs.graphic_backgrounds, the plain backgrounds it can sit on (W1, 6 Nov 2026). 'rule' is a decorative divider, never the only sign of anything, so it is exempt from 1.4.11; a rule that carries meaning uses rule-strong.",
  "light": {
   "ground": "#EDEFE9",
   "ground-2": "#E3E7DF",
@@ -320,6 +320,11 @@
     "kind-mention",
     "surface"
    ]
+  ],
+  "graphic_backgrounds": [
+   "ground",
+   "surface",
+   "sheet"
   ]
  }
 }
