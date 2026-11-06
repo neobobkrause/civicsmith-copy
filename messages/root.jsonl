@@ -167,3 +167,4 @@
 {"at":"2026-11-06T13:53:55Z","row":"sent","n":84,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (5 jobs ready). Then: Sweep: citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-06T13:54:06Z","row":"outcome","n":84,"outcome":"delivered"}
 {"at":"2026-11-06T14:53:19Z","row":"sent","n":85,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: Sweep: citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; runtime-limits: BLOCKED."}
+{"at":"2026-11-06T14:53:31Z","row":"outcome","n":85,"outcome":"delivered"}
