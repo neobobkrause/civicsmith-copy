@@ -163,3 +163,4 @@
 {"at":"2026-11-06T12:29:41Z","row":"sent","n":82,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: Old BOB session_018Bhceddtp3HAmB1Z9LtX2s reported ready (bob-281) and is archived. Its last note said it was merging plain PR 627 (its metrics row, 255.37 USD) when it reported ready. If 627 has not landed, merge it as a plain PR."}
 {"at":"2026-11-06T12:31:17Z","row":"outcome","n":82,"outcome":"delivered"}
 {"at":"2026-11-06T12:53:25Z","row":"sent","n":83,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: Sweep: IDLE CAPACITY, 16 slots empty, 0 startable: run node .process/tool/p3.mjs job start --ready --live <n> first; only a recorded hold (p3 hold) keeps a slot empty; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; investigation: BLOCKED; runtime-limits: BLOCKED."}
+{"at":"2026-11-06T12:53:37Z","row":"outcome","n":83,"outcome":"delivered"}
