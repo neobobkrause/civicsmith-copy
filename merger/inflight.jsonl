@@ -121,3 +121,4 @@
 {"at":"2026-11-06T01:24:46.373Z","row":"inflight","pr":497,"module":"agent-steps","tip":"917dcb5fcc50324c4b806ab352d2c8866c2f54a5","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T03:09:46.373Z"}
 {"at":"2026-11-06T01:29:28.225Z","row":"end","pr":497,"tip":"917dcb5fcc50324c4b806ab352d2c8866c2f54a5","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-06T01:30:13.909Z","row":"inflight","pr":483,"module":"ai-accounts","tip":"33eac333a57434f52223764df518128d82e93ffc","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T03:15:13.909Z"}
+{"at":"2026-11-06T01:35:00.223Z","row":"end","pr":483,"tip":"33eac333a57434f52223764df518128d82e93ffc","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
