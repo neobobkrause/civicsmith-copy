@@ -44,8 +44,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-06T14:44:04Z",
-    "reason": "reopened: re-test against the new interface of publication (land 3258868d57)"
+    "state": "COMPLETE",
+    "at": "2026-11-06T15:00:15Z"
   }
 }
