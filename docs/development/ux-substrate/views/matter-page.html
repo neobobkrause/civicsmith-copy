@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matter Page</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<style>
+/* One matter (a government act measured against its standards): determination, consequences, the escalation track, actions, pressure. */
+:root{
+  --bg:#F4F6F8; --panel:#FFFFFF; --ink:#18202B; --muted:#5B6676; --rule:#D8DEE6; --chip:#E9EEF3;
+  --accent:#1D6A86; --accent-bg:#D7EAF1;
+  --ok:#2F6B3A; --ok-bg:#DCEEDD; --warn:#8A5A12; --warn-bg:#F5E6C8; --bad:#9A3B2E; --bad-bg:#F6E0DA; --ai:#5B45A8; --ai-bg:#E7E2F6;
+  --serif:"Source Serif 4",Georgia,serif; --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#11161D; --panel:#18202A; --ink:#E4E9EF; --muted:#9AA6B5; --rule:#2B3542; --chip:#222C38;
+  --accent:#5FB3CF; --accent-bg:#16394A; --ok:#8FD19B; --ok-bg:#1C3822; --warn:#E0B060; --warn-bg:#43341A; --bad:#F09A86; --bad-bg:#472019; --ai:#A895F0; --ai-bg:#2C2550;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#11161D; --panel:#18202A; --ink:#E4E9EF; --muted:#9AA6B5; --rule:#2B3542; --chip:#222C38;
+  --accent:#5FB3CF; --accent-bg:#16394A; --ok:#8FD19B; --ok-bg:#1C3822; --warn:#E0B060; --warn-bg:#43341A; --bad:#F09A86; --bad-bg:#472019; --ai:#A895F0; --ai-bg:#2C2550;
+}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:grid;gap:18px}
+.banner{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ai);background:var(--ai-bg);border-radius:6px;padding:6px 10px}
+header{display:grid;gap:6px}
+.crumbs{font-size:13px;color:var(--muted)}
+h1{font:600 clamp(24px,3.4vw,30px)/1.2 var(--serif);margin:0;text-wrap:balance}
+h2{font:600 18px/1.3 var(--serif);margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.pill{display:inline-block;font:500 12px/1.3 var(--mono);padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.pill.open{background:var(--ok-bg);color:var(--ok)}
+.checks{background:var(--warn-bg);color:var(--ink);border-radius:8px;padding:10px 14px;display:grid;gap:6px;font-size:14px}
+.checks b{color:var(--warn);font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase}
+.checks li{margin-left:18px}
+section{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;display:grid;gap:12px;min-width:0}
+.sechead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.subject{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--rule)}
+.subject:first-of-type{border-top:0}
+.num{font:500 13px var(--mono);color:var(--muted);padding-top:2px}
+.subject .line{font-weight:500}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font:500 11.5px/1.3 var(--mono);padding:3px 7px;border-radius:5px;background:var(--chip)}
+.tag.bad{background:var(--bad-bg);color:var(--bad)} .tag.ok{background:var(--ok-bg);color:var(--ok)} .tag.warn{background:var(--warn-bg);color:var(--warn)} .tag.acc{background:var(--accent-bg);color:var(--accent)} .tag.ai{background:var(--ai-bg);color:var(--ai)}
+.small{font-size:13px;color:var(--muted)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,button,input[type=text]{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:6px 10px}
+button{cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.opts{display:grid;gap:0}
+.opt{border-top:1px solid var(--rule)}
+.opt summary{list-style:none;display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;cursor:pointer}
+.opt summary::-webkit-details-marker{display:none}
+.opt .sum{font-weight:500}
+.opt .detail{padding:0 0 12px 34px;display:grid;gap:6px;font-size:14px}
+.opt .detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;margin:0}
+.opt .detail dt{color:var(--muted)} .opt .detail dd{margin:0}
+.disp{font:500 12px var(--mono);white-space:nowrap}
+.disp.chosen{color:var(--ok)} .disp.declined{color:var(--bad)} .disp.open{color:var(--muted)}
+.tray{border:1.5px dashed var(--ai);border-radius:8px;padding:10px 12px;display:grid;gap:8px;background:color-mix(in srgb,var(--ai-bg) 45%,var(--panel))}
+.tray .head{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ai)}
+.sugg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start}
+.decline{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.decline input{flex:1 1 220px;min-width:0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button[aria-selected=true]{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.phases{display:grid;gap:10px}
+.phase{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;border-left:3px solid var(--accent);padding:6px 0 6px 12px}
+@media (max-width:620px){.phase{grid-template-columns:1fr;gap:4px}}
+.phase .when{font:500 12.5px var(--mono);color:var(--muted)}
+.phase .name{font-weight:600}
+.checkpoint{font-size:14px;margin-top:4px}
+.checkpoint b{font-weight:500}
+.branch{font-size:13.5px;color:var(--muted);margin-top:2px}
+.started{display:grid;gap:8px}
+.act{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;border-top:1px solid var(--rule);padding-top:8px}
+.act:first-child{border-top:0;padding-top:0}
+.foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center}
+.toast{font-size:13px;color:var(--ok)}
+[hidden]{display:none!important}
+.act>.tag{align-self:start}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+.stages{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+@media (max-width:760px){.stages{grid-template-columns:1fr}}
+.stage{border:1px solid var(--rule);border-radius:8px;padding:8px;font-size:13px;display:grid;gap:4px;align-content:start}
+.stage .n{font:500 11.5px var(--mono);color:var(--muted)}
+.stage.done{background:var(--chip)}
+.stage.now{border:2px solid var(--accent);background:var(--accent-bg)}
+.stage.prop{border:2px dashed var(--accent)}
+.rows{width:100%;border-collapse:collapse;font-size:14px}
+.rows th{font:500 11.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--rule)}
+.rows td{padding:8px;border-bottom:1px solid var(--rule);vertical-align:top}
+.tw{overflow-x:auto}
+.proposal{background:var(--accent-bg);border-radius:8px;padding:10px 12px;display:grid;gap:8px}
+.exit{display:grid;gap:4px;font-size:14px}
+</style>
+<div class="wrap">
+  <div class="banner">Design view · sample data · ACTION_DESIGN #1 · nothing here is saved</div>
+  <header>
+    <div class="crumbs">Project: School bond measure · Matters</div>
+    <h1>The certification of the bond measure as passed</h1>
+    <div class="meta"><span>The act: certification resolution, 18 July · by the City Council (office)</span><span>· in plan "Bond measure: certification and proceeds", subject 1</span></div>
+  </header>
+
+  <section aria-labelledby="h-det">
+    <div class="sechead"><h2 id="h-det">Determination</h2><span class="small">recorded 22 Sep by a joined participant · rests on 2 findings published in edition 1 of the case</span></div>
+    <div class="tw"><table class="rows">
+      <thead><tr><th>standard</th><th>requires</th><th>the act did</th><th>outcome</th></tr></thead>
+      <tbody>
+        <tr><td>The two-thirds vote requirement for the bond (captured text, in force)</td><td>at least two-thirds of votes cast in favour</td><td>certified as passed at 61.8% in favour (canvass report)</td><td><span class="tag bad">noncompliant</span></td></tr>
+        <tr><td>The city's certification procedure (adopted policy, in force)</td><td>certification within 30 days of the canvass</td><td>certified on day 21</td><td><span class="tag ok">compliant</span></td></tr>
+      </tbody></table></div>
+    <div class="small">A compliant outcome is recorded with the same care. No significance or priority is recorded here; that judgement lives in the group's acts and reasons.</div>
+  </section>
+
+  <section aria-labelledby="h-cons">
+    <div class="sechead"><h2 id="h-cons">Consequences</h2><span class="tag warn">not yet addressed</span></div>
+    <div class="tw"><table class="rows">
+      <thead><tr><th>who or what</th><th>measure</th><th>how known</th><th>caused by the act</th></tr></thead>
+      <tbody>
+        <tr><td>Property owners in the district (a class)</td><td>$100,000,000 of bond debt authorised</td><td><span class="tag ok">computed</span> from the resolution and the bond schedule · grade B, co-attested</td><td><span class="tag ok">established</span> · by the inquiry "Was the measure properly certified?"</td></tr>
+        <tr><td>The school facilities program (a program)</td><td>undetermined</td><td><span class="tag">undetermined</span> · the program's budget has not been captured</td><td><span class="tag warn">unproven</span></td></tr>
+      </tbody></table></div>
+    <div class="small">Undetermined is never read as zero. People are counted as a class, never singled out.</div>
+  </section>
+
+  <section aria-labelledby="h-esc">
+    <div class="sechead"><h2 id="h-esc">Escalation</h2><span class="small">opened 23 Sep · pursues the two-thirds requirement</span></div>
+    <div class="stages" id="stages"></div>
+    <div class="proposal" id="proposal">
+      <div><b>Proposed: stage 3, clock starts</b> · its trigger was met 5 days ago (the demand was sent on 25 Sep). The system proposes; a member decides.</div>
+      <div class="row toolbar"><button type="button" class="primary" id="adv">Advance to stage 3</button><button type="button" id="dec">Decline…</button></div>
+      <div class="decline" id="decRow" hidden><input type="text" id="decReason" placeholder="Why not now (one line)" aria-label="Reason to decline"><button type="button" id="decGo">Decline with reason</button></div>
+    </div>
+    <div class="exit"><b>It ends only when both hold</b>
+      <div><span class="tag bad">not yet</span> compliance restored: a live compliant determination of this act against the two-thirds requirement</div>
+      <div><span class="tag bad">not yet</span> consequences addressed: every live part recorded addressed, with evidence</div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-acts">
+    <div class="sechead"><h2 id="h-acts">Actions</h2><span class="small">attached at stages 2, 5 or 7 · breach actions only</span></div>
+    <div class="started">
+      <div class="act"><div><b>Demand to rescind the certification</b> · to the Office of the City Clerk · stage 2<div class="small">Sent 25 Sep · response due 9 Oct (the group's stated window; basis: DEC-13 precedent) · no reply yet</div></div><span class="tag acc">awaiting response</span></div>
+    </div>
+    <div class="small">Available at legal tools (stage 5), from the profile, as facts: Tier 1 complaint to the civil grand jury; Tier 3 court petition (counsel packet for named counsel; legal organisations listed). Nothing here is a recommendation.</div>
+  </section>
+
+  <section aria-labelledby="h-pr">
+    <div class="sechead"><h2 id="h-pr">Pressure recorded</h2><button type="button" id="markPr">Mark a reply as pressure…</button></div>
+    <div class="act"><div><b>A public statement by an office holder calling the group's members saboteurs</b><div class="small">Recorded 28 Sep as <span class="tag warn">discrediting</span> · captured video of the council meeting, grade B · kept as evidence (Operational Principle 8); can open an inquiry of its own</div></div><button type="button" id="inq">Open an inquiry</button></div>
+  </section>
+
+  <div class="foot"><span class="toast" id="toast" aria-live="polite"></span></div>
+</div>
+<script>
+const STAGES=["documentation","notification","clock starts","response evaluation","legal tools","sustained attention","political accountability"];
+let now=2, proposed=3;
+const $=id=>document.getElementById(id);
+function render(){
+  $("stages").innerHTML=STAGES.map((n,i)=>{const k=i+1; const cls=k<now?"done":k===now?"now":k===proposed?"prop":""; return `<div class="stage ${cls}"><span class="n">stage ${k}</span><span>${n}</span>${k===now?'<span class="small">current</span>':k===proposed?'<span class="small">proposed</span>':""}</div>`;}).join("");
+}
+function toast(t){$("toast").textContent=t;}
+$("adv").addEventListener("click",()=>{now=3;proposed=0;$("proposal").hidden=true;render();toast("Advanced to stage 3 by a member. The clock entry must state its basis.");});
+$("dec").addEventListener("click",()=>{$("decRow").hidden=false;$("decReason").focus();});
+$("decGo").addEventListener("click",()=>{const r=$("decReason").value.trim(); if(!r){toast("Declining needs a short reason.");return;} proposed=0;$("proposal").hidden=true;render();toast("Declined, with the reason kept in the escalation's record.");});
+$("markPr").addEventListener("click",()=>toast("Mark as pressure: choose a received entry, a kind (legal, retaliation, discrediting, other) and a note. A legal threat also reminds an administrator to consider a litigation hold."));
+$("inq").addEventListener("click",()=>toast("Opens a new inquiry citing the pressure entry as evidence."));
+render();
+</script>

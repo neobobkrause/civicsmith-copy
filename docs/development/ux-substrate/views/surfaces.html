@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action Surfaces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<style>
+/* Three surfaces on one page for review: standards, a filing and the counsel packet, the queue items. */
+:root{
+  --bg:#F4F6F8; --panel:#FFFFFF; --ink:#18202B; --muted:#5B6676; --rule:#D8DEE6; --chip:#E9EEF3;
+  --accent:#1D6A86; --accent-bg:#D7EAF1;
+  --ok:#2F6B3A; --ok-bg:#DCEEDD; --warn:#8A5A12; --warn-bg:#F5E6C8; --bad:#9A3B2E; --bad-bg:#F6E0DA; --ai:#5B45A8; --ai-bg:#E7E2F6;
+  --serif:"Source Serif 4",Georgia,serif; --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#11161D; --panel:#18202A; --ink:#E4E9EF; --muted:#9AA6B5; --rule:#2B3542; --chip:#222C38;
+  --accent:#5FB3CF; --accent-bg:#16394A; --ok:#8FD19B; --ok-bg:#1C3822; --warn:#E0B060; --warn-bg:#43341A; --bad:#F09A86; --bad-bg:#472019; --ai:#A895F0; --ai-bg:#2C2550;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#11161D; --panel:#18202A; --ink:#E4E9EF; --muted:#9AA6B5; --rule:#2B3542; --chip:#222C38;
+  --accent:#5FB3CF; --accent-bg:#16394A; --ok:#8FD19B; --ok-bg:#1C3822; --warn:#E0B060; --warn-bg:#43341A; --bad:#F09A86; --bad-bg:#472019; --ai:#A895F0; --ai-bg:#2C2550;
+}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:grid;gap:18px}
+.banner{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ai);background:var(--ai-bg);border-radius:6px;padding:6px 10px}
+header{display:grid;gap:6px}
+.crumbs{font-size:13px;color:var(--muted)}
+h1{font:600 clamp(24px,3.4vw,30px)/1.2 var(--serif);margin:0;text-wrap:balance}
+h2{font:600 18px/1.3 var(--serif);margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.pill{display:inline-block;font:500 12px/1.3 var(--mono);padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.pill.open{background:var(--ok-bg);color:var(--ok)}
+.checks{background:var(--warn-bg);color:var(--ink);border-radius:8px;padding:10px 14px;display:grid;gap:6px;font-size:14px}
+.checks b{color:var(--warn);font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase}
+.checks li{margin-left:18px}
+section{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;display:grid;gap:12px;min-width:0}
+.sechead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.subject{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--rule)}
+.subject:first-of-type{border-top:0}
+.num{font:500 13px var(--mono);color:var(--muted);padding-top:2px}
+.subject .line{font-weight:500}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font:500 11.5px/1.3 var(--mono);padding:3px 7px;border-radius:5px;background:var(--chip)}
+.tag.bad{background:var(--bad-bg);color:var(--bad)} .tag.ok{background:var(--ok-bg);color:var(--ok)} .tag.warn{background:var(--warn-bg);color:var(--warn)} .tag.acc{background:var(--accent-bg);color:var(--accent)} .tag.ai{background:var(--ai-bg);color:var(--ai)}
+.small{font-size:13px;color:var(--muted)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,button,input[type=text]{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:6px 10px}
+button{cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.opts{display:grid;gap:0}
+.opt{border-top:1px solid var(--rule)}
+.opt summary{list-style:none;display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;cursor:pointer}
+.opt summary::-webkit-details-marker{display:none}
+.opt .sum{font-weight:500}
+.opt .detail{padding:0 0 12px 34px;display:grid;gap:6px;font-size:14px}
+.opt .detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;margin:0}
+.opt .detail dt{color:var(--muted)} .opt .detail dd{margin:0}
+.disp{font:500 12px var(--mono);white-space:nowrap}
+.disp.chosen{color:var(--ok)} .disp.declined{color:var(--bad)} .disp.open{color:var(--muted)}
+.tray{border:1.5px dashed var(--ai);border-radius:8px;padding:10px 12px;display:grid;gap:8px;background:color-mix(in srgb,var(--ai-bg) 45%,var(--panel))}
+.tray .head{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ai)}
+.sugg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start}
+.decline{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.decline input{flex:1 1 220px;min-width:0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button[aria-selected=true]{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.phases{display:grid;gap:10px}
+.phase{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;border-left:3px solid var(--accent);padding:6px 0 6px 12px}
+@media (max-width:620px){.phase{grid-template-columns:1fr;gap:4px}}
+.phase .when{font:500 12.5px var(--mono);color:var(--muted)}
+.phase .name{font-weight:600}
+.checkpoint{font-size:14px;margin-top:4px}
+.checkpoint b{font-weight:500}
+.branch{font-size:13.5px;color:var(--muted);margin-top:2px}
+.started{display:grid;gap:8px}
+.act{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;border-top:1px solid var(--rule);padding-top:8px}
+.act:first-child{border-top:0;padding-top:0}
+.foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center}
+.toast{font-size:13px;color:var(--ok)}
+[hidden]{display:none!important}
+.act>.tag{align-self:start}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>
+.rows{width:100%;border-collapse:collapse;font-size:14px}
+.rows th{font:500 11.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--rule)}
+.rows td{padding:8px;border-bottom:1px solid var(--rule);vertical-align:top}
+.tw{overflow-x:auto}
+.doc{border:1px solid var(--rule);border-radius:8px;padding:12px;font-size:14px;display:grid;gap:8px;background:var(--bg)}
+.unfilled{background:var(--bad-bg);color:var(--bad);font:500 12.5px var(--mono);padding:1px 5px;border-radius:4px}
+.src{font:11.5px var(--mono);color:var(--muted)}
+.mark{font:500 12.5px var(--mono);color:var(--bad);border:1.5px solid var(--bad);border-radius:6px;padding:6px 8px}
+.qitem{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:10px;align-items:start;border-top:1px solid var(--rule);padding:10px 0}
+.qitem:first-child{border-top:0}
+@media (max-width:620px){.qitem{grid-template-columns:1fr}}
+.cls{font:500 11.5px var(--mono);letter-spacing:.05em;text-transform:uppercase}
+.cls.ob{color:var(--accent)} .cls.co{color:var(--warn)}
+</style>
+<div class="wrap">
+  <div class="banner">Design view · sample data · ACTION_DESIGN #1 · nothing here is saved or sent</div>
+  <h1>Standards, filings and the queue</h1>
+
+  <section aria-labelledby="h-std">
+    <div class="sechead"><h2 id="h-std">Standards</h2><div class="toolbar"><label class="small" for="at">In force on</label><input type="text" id="at" value="2026-07-18" aria-label="Date"><button type="button" id="declare">Declare a standard</button></div></div>
+    <div class="tw"><table class="rows">
+      <thead><tr><th>citation</th><th>kind · issuer</th><th>source</th><th>in force on the date</th><th>text</th></tr></thead>
+      <tbody>
+        <tr><td>The two-thirds requirement for general obligation bonds</td><td>statute · the state legislature</td><td><span class="tag ok">matched</span> the profile's state code, level state</td><td><span class="tag ok">in force</span></td><td>captured, 1 passage · current</td></tr>
+        <tr><td>Bond proceeds to serve the voter-approved purpose</td><td>statute · the state legislature</td><td><span class="tag ok">matched</span></td><td><span class="tag ok">in force</span></td><td>captured · <span class="tag warn">a newer capture holds a changed passage</span></td></tr>
+        <tr><td>Council resolution on certification timing</td><td>policy · the City Council</td><td><span class="tag">undetermined</span> no profile source matches; still held</td><td><span class="tag">undetermined</span> no start date in the record</td><td>captured, 2 passages</td></tr>
+      </tbody></table></div>
+    <div class="tray"><div class="head">Proposed by the assistant · not a standard until a member adopts it</div>
+      <div class="sugg"><div><b>The state's open-meeting law, notice requirements</b><div class="small">Why: the certification was adopted at a special meeting; the notice requirement may apply.</div></div><button type="button" class="adopt1">Adopt…</button></div></div>
+  </section>
+
+  <section aria-labelledby="h-fil">
+    <div class="sechead"><h2 id="h-fil">A Tier 2 filing draft</h2><span class="tag warn">tier 2 · file with caution</span></div>
+    <div class="small">Governing tier: the stricter of the kind's (2, from the profile) and the action's (2, set by a member).</div>
+    <div class="disclose" style="background:var(--warn-bg);border-radius:8px;padding:10px 12px;font-size:14px"><b>Advisory (from the profile):</b> a petition dismissed on procedure is usually dismissed without prejudice; check the filing window and the court's format rules before filing.</div>
+    <div class="doc">
+      <div>Petitioner: <b>the group</b> <span class="src">[source: the instance's producing group]</span></div>
+      <div>Respondent: <b>City Council</b> <span class="src">[source: the action's addressee]</span></div>
+      <div>The act complained of: certification of the bond measure as passed, 18 July <span class="src">[source: determination, the act]</span></div>
+      <div>Records withheld: <span class="unfilled">[UNFILLED: records]</span> <span class="src">the template names a blank the record cannot fill; a member writes it before approval</span></div>
+      <div class="small">Exhibits: canvass report (grade B, co-attested) · certification resolution (grade B, co-attested). The venue's standard: accepts B co-attested; B without co-attestation is contestable (profile).</div>
+    </div>
+    <div class="toolbar"><button type="button" class="primary" id="approveF" disabled title="A blank is still unfilled">Approve</button><span class="small">Approval is refused while any blank reads UNFILLED, or if the draft went stale.</span></div>
+  </section>
+
+  <section aria-labelledby="h-cp">
+    <div class="sechead"><h2 id="h-cp">A counsel packet (Tier 3)</h2><span class="tag bad">tier 3 · do not file without counsel</span></div>
+    <div class="mark">Prepared for review by the named counsel, their organisation. Not legal advice. Not for filing.</div>
+    <div class="small">Sections: facts with citations · chronology · exhibits with provenance and grades · the standards' text · candidate theories and remedies (proposed, labelled machine or member) · deadlines that bind a claim (the election-contest window: 20 Nov, basis from the profile). No caption, court heading, signature block or prayer. Never published; exported only by a member, each export carrying the in-band stamp.</div>
+    <div class="toolbar"><button type="button" id="export">Export for counsel…</button></div>
+  </section>
+
+  <section aria-labelledby="h-q">
+    <div class="sechead"><h2 id="h-q">What reaches the queue</h2><span class="small">told once, dispositionable, ageing (DEC-10, DEC-69, DEC-70)</span></div>
+    <div class="qitem"><span class="cls co">condition</span><div><b>A deadline passed: the city's response to "Demand to rescind the certification"</b><div class="small">Due 9 Oct (the group's stated window) · the counterparty's deadline, not ours · notifies once; its response offers another reminder at a time the member picks, or none (DEC-10, DEC-94)</div></div><button type="button" class="qb">Open</button></div>
+    <div class="qitem"><span class="cls ob">obligation</span><div><b>A stage is proposed: clock starts, for the certification</b><div class="small">A member advances or declines with a reason; the system never advances</div></div><button type="button" class="qb">Open</button></div>
+    <div class="qitem"><span class="cls ob">obligation · ours</span><div><b>Checkpoint due: "the city shows earnest commitment", scenario A</b><div class="small">The group's own intention; a missed checkpoint is never a finding about the city</div></div><button type="button" class="qb">Judge</button></div>
+    <div class="qitem"><span class="cls ob">obligation</span><div><b>Consider a litigation hold</b><div class="small">A reply marked as a legal threat on 29 Sep · for an administrator · deciding nothing by itself</div></div><button type="button" class="qb">Open</button></div>
+  </section>
+  <div class="foot"><span class="toast" id="toast" aria-live="polite"></span></div>
+</div>
+<script>
+const $=id=>document.getElementById(id); const toast=t=>$("toast").textContent=t;
+$("declare").addEventListener("click",()=>toast("Declare: citation, kind, issuer, the captured text (content ids), period in force, and what it supersedes. A machine may only propose."));
+document.querySelector(".adopt1").addEventListener("click",()=>toast("Adopting opens the declare form filled from the proposal; the new standard records the proposal it came from."));
+$("export").addEventListener("click",()=>toast("Export records who exported it and when, and stamps it in-band. The instance sends nothing."));
+document.querySelectorAll(".qb").forEach(b=>b.addEventListener("click",()=>toast("Opens the item's subject, where the act runs as usual.")));
+</script>

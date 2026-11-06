@@ -1,0 +1,501 @@
+[
+ {
+  "idx": 10,
+  "context": "A newcomer is someone just invited to a group: they open the invitation link, choose a handle (the name the record shows) and a password, and land in the product. Before they can usefully capture, weigh or publish, they need the group's values, how evidence is graded, and how to stay safe. The canon calls the learning materials the 'starter kit'.",
+  "canonSays": [
+   {
+    "source": "Design Requirement 11",
+    "says": "The starter kit (values and principles explained, a walkthrough of a real case, data-source and legal-tool guides, a security guide) must be 'usable within one session' by someone with no civic experience, free at believeinoakland.org."
+   },
+   {
+    "source": "Roadmap §15 'Not yet started'",
+    "says": "'All starter kit materials', the explanatory paragraphs and the security guide are 'not yet started'."
+   },
+   {
+    "source": "UI-KICKOFF refinements",
+    "says": "Load-bearing state is 'named explicitly so a newcomer can recognize it and learn its implications'."
+   },
+   {
+    "source": "DEC-69",
+    "says": "Informing at the act, once, is respect; 'responsibility reminders detached from any act' are the flaw."
+   },
+   {
+    "source": "build/layers.md 'No jurisdiction in the product'",
+    "says": "The product must not carry Oakland-specific references that tell a group elsewhere it is not for them."
+   }
+  ],
+  "whyOpen": "No module covers UC-148: nothing says what the first session contains, in what order, or whether the kit lives in the product or on a website. Two tensions: Requirement 11 names Oakland sources, tools and case, while the 2026-09-25 ruling bars local content from the product; and DEC-69 forbids act-detached 'responsibility' lessons, so a front-loaded tutorial risks being the nagging the canon calls a flaw.",
+  "todayInOldUI": "No onboarding or starter kit; newcomers get hover glossary definitions and short 'teach' paragraphs on each surface, and the invitation page shows cover, role and capabilities.",
+  "related": [
+   "14 (empty first screens)",
+   "15 (languages, accessibility)",
+   "12 (teaching at the act)",
+   "DEC-69",
+   "jurisdiction profiles",
+   "UC-148"
+  ],
+  "options": [
+   {
+    "option": "Teach at the act only: no tutorial; every first encounter with an act or state carries its one-time explanation, plus a public starter kit on the group's website outside the product.",
+    "tradeoffs": "Fully consistent with DEC-69 and cheap; a newcomer never gets the big picture (values, security) unless they find the website."
+   },
+   {
+    "option": "A short in-product 'first session' path: values and principles, a security briefing, then a guided walkthrough of one real published case read end to end, with jurisdiction-specific guides supplied by the group's installed profile.",
+    "tradeoffs": "Meets Requirement 11 inside the product and keeps local content in profiles; costs authoring a generic sample case and per-profile guides."
+   },
+   {
+    "option": "A practice sandbox: the newcomer captures, grades and drafts in a scratch space with a sample case, then enters the real record.",
+    "tradeoffs": "Most effective learning; a second, practice world risks confusion with the real record."
+   }
+  ],
+  "recommendation": "Option 2, with option 1's teach-at-the-act rule everywhere else: it satisfies Requirement 11 in one session while keeping local guides in jurisdiction profiles, not in the product.",
+  "whoDecides": "Bob: what a newcomer must learn first, and whether the starter kit is part of the product or the group's website, is a requirement and UX principle; the layout of the path is Design's."
+ },
+ {
+  "idx": 11,
+  "context": "Members often use work that someone else produced, above all another group's published case. The Roadmap wants every piece of information to carry a visible trust indicator with five levels, from 'our own work' down to 'flagged concerns', so a member can tell at a glance how far to lean on it. A member meets it when reading or citing material they did not produce.",
+  "canonSays": [
+   {
+    "source": "Roadmap §11 'Five trust levels'",
+    "says": "'Every piece of information carries a visible trust indicator': our work; independently verified; meets standards (compliance skill); not yet evaluated; flagged concerns. Signals are 'ambient (always visible)' (§12)."
+   },
+   {
+    "source": "Functional Architecture v3 'Trust signals throughout the stack'",
+    "says": "The signal travels with the data; 'independently verified' comes from the group re-evaluating incoming work before citing it."
+   },
+   {
+    "source": "AUTHORITY-AND-TRUST.md (RULED, Bob 2026-07-30)",
+    "says": "Bob revised 'no transitive trust': inherited trust is accepted if disclosed; what is inherited is 'the fact of publication, never the credibility of the content'."
+   },
+   {
+    "source": "inquiry R7; Publication §3 rule 5",
+    "says": "A leg citing a published case is 'inherited', names an edition, and cannot be stronger than that edition's frozen strength."
+   },
+   {
+    "source": "UC-082, UC-083 (coverage notes)",
+    "says": "The five-level indicator and a group's acceptance into its own body of work are covered by no requirement."
+   }
+  ],
+  "whyOpen": "No module produces the levels: nothing records that a group verified or accepted another group's work, and no evaluator of incoming work yields 'meets standards' or 'flagged'. The canon also shifted: the Functional Architecture says incoming work is re-evaluated before citation, while Bob's 2026-07-30 ruling and inquiry R7 let a member cite a published edition directly. Whether the levels replace, sit beside or derive from the record's own grades is undecided.",
+  "todayInOldUI": "Nothing: no trust dots; a published case shows its frozen strength per finding and a stranger can verify its signature.",
+  "related": [
+   "17 (which edition a citation names)",
+   "19 (lens travels with the case)",
+   "UC-082",
+   "UC-083",
+   "Design Requirement 5",
+   "inquiry R7"
+  ],
+  "options": [
+   {
+    "option": "Derive the levels from facts the record already holds: ours (produced here); inherited (another group's published edition, signature verified); accepted (a recorded acceptance act, new); not yet evaluated; flagged only when a recorded evaluation names issues.",
+    "tradeoffs": "Honest and ambient with little new doctrine; needs one new act (accept into our body of work) and drops or defers 'meets standards' until an evaluator exists."
+   },
+   {
+    "option": "Build the Roadmap's five levels as written, including a compliance evaluation of incoming work.",
+    "tradeoffs": "Faithful to the Roadmap; requires a new evaluation module and risks a machine verdict reading as a trust grade, which the 'machine proposes, member decides' rule resists."
+   },
+   {
+    "option": "Drop a separate trust indicator and rely on grades, provenance chain and edition shown everywhere.",
+    "tradeoffs": "No new construct; loses the at-a-glance signal the Roadmap requires and the idea of a group's accepted body of work."
+   }
+  ],
+  "recommendation": "Option 1: it keeps the ambient signal while grounding every level in a recorded fact, and leaves 'meets standards' for when an evaluator exists.",
+  "whoDecides": "Bob: the trust hierarchy is mission doctrine (Roadmap §11) and choosing to revise it, and adding an acceptance act, are requirements; the dot's look is Design's."
+ },
+ {
+  "idx": 12,
+  "context": "When a member captures a document from a web address, the record fetches it, fingerprints the bytes and gives the capture a grade: how strong it is as evidence of what that address served and when (a direct fetch earns at most B; A needs a chain-of-custody archive). 'Co-attestation' is a separate act that asks an independent timestamp service to record when those bytes existed. The question is what the member is told about the grade at the moment they capture.",
+  "canonSays": [
+   {
+    "source": "DEC-51 (decided 2026-08-10)",
+    "says": "'RENDER IT, WHOLE, AT THE MOMENT OF CAPTURE': the plane's grade note is shown when the capture completes, including the co-attestation clause, never split."
+   },
+   {
+    "source": "DEC-39 (Bob, 2026-08-04)",
+    "says": "The fence wording is the record's and must state the question co-attestation answers: 'when did these bytes exist?'; not whether the document is true; it strengthens a Grade B capture toward evidentiary weight and 'never reaches Grade A'."
+   },
+   {
+    "source": "DEC-69",
+    "says": "The grade note at capture is named as the model of 'informing at the act, once'."
+   },
+   {
+    "source": "UC-009, UC-023",
+    "says": "A capture earns a grade (at most B for a direct fetch); an attestation is recorded and never reaches A."
+   }
+  ],
+  "whyOpen": "The substance is already settled: DEC-51 overturned the discard this question describes, and DEC-39 states what co-attestation is worth, so the question's premise is out of date. What remains open is presentation only: where and how long the note sits after capture, how a bulk or machine-requested capture (which completes later, unattended) carries it, and how the grade looks when the member returns to the document. One real tension: the pre-capture explanation deliberately predicts no grade (the capture does not exist yet), so the member sees nothing about strength until the capture lands.",
+  "todayInOldUI": "The Add surface renders the plane's full grade note, co-attestation clause included, right after a capture completes (UI-54), and states no grade beforehand.",
+  "related": [
+   "10 (teaching at the act)",
+   "14 (captures finishing later)",
+   "DEC-39",
+   "DEC-51",
+   "DEC-69"
+  ],
+  "options": [
+   {
+    "option": "Carry the old interface's treatment forward: the whole note shown once at completion, then the grade chip on the document page from then on.",
+    "tradeoffs": "Already ruled and built; nothing is decided anew. A member capturing many documents sees the same long note repeatedly."
+   },
+   {
+    "option": "Show the whole note in full on a member's first capture, and afterwards a one-line grade statement that expands to the whole note.",
+    "tradeoffs": "Less repetition, consistent with 'once'; but DEC-51 said 'whole', so a collapsed default needs Bob to confirm that collapsed-but-present still counts as whole."
+   },
+   {
+    "option": "For captures that complete later (bulk or machine-requested), attach the note to the completed-capture status on the document and in the queue's condition item.",
+    "tradeoffs": "Fills the unattended gap; adds nothing new to the record."
+   }
+  ],
+  "recommendation": "Option 1 plus option 3 for unattended captures; ask Bob only if Design wants option 2's collapsed form.",
+  "whoDecides": "Design, within DEC-51 and DEC-39, which already settle the substance; Bob only if the note is to be shortened or collapsed."
+ },
+ {
+  "idx": 13,
+  "context": "The queue is the member's one list of 'things that want me', grouped by case (a question or project). It holds obligations (a named person must act, sometimes against a legal deadline), items the record noticed (shown as 'Noticed', K356), and conditions about the product's own machinery. Some obligations carry clocks, such as a records-request response due in so many days.",
+  "canonSays": [
+   {
+    "source": "DEC-69 (Bob, 2026-08-10)",
+    "says": "'The workflow must not nag or second-guess members'; repeating, re-confirming and act-detached reminders are the flaw; informing at the act, once, is respect."
+   },
+   {
+    "source": "Design Requirements, Operational Principle 3",
+    "says": "'The clock runs. Deadlines are deadlines.'"
+   },
+   {
+    "source": "Interaction Constructs rev 0.2 (DEC-10)",
+    "says": "One standing entry per (member, case), no digest cadence; it 're-notifies only on a snooze increment or when something new lands'. Obligations can never be muted (queue R19, R31)."
+   },
+   {
+    "source": "monitoring R34, R35 (not yet met)",
+    "says": "A passed clock is marked overdue and the action's members are told; the next escalation stage is proposed, never advanced."
+   },
+   {
+    "source": "NOTIFICATIONS.md 'What this does not settle'",
+    "says": "Transport (for example email) is undecided; the in-app queue is the only channel."
+   }
+  ],
+  "whyOpen": "The canon says obligations cannot be muted and overdue clocks are marked, but not how a clock's approach is shown: whether an item's position, colour or wording changes as a deadline nears, and whether anything reaches a member who has not opened the product. DEC-69 forbids repeated reminders, while Operational Principle 3 and monitoring R34 require members to be told; the only sanctioned re-notify triggers are 'snooze ended' and 'something new', and it is undecided whether 'a deadline is now N days away' counts as something new.",
+  "todayInOldUI": "The queue lists items by class and case with mute; an overdue clock is shown as an overdue mark on the action's own page; nothing warns of an approaching deadline and nothing leaves the app.",
+  "related": [
+   "14 (clocks of days)",
+   "DEC-10",
+   "DEC-69",
+   "K356 (Noticed)",
+   "monitoring R34-R35",
+   "UC-040",
+   "UC-127"
+  ],
+  "options": [
+   {
+    "option": "Treat a clock crossing a stated threshold (for example 'due within 3 days', 'overdue') as a new event: the standing entry rises and says so once per threshold, never repeated.",
+    "tradeoffs": "Uses DEC-10's 'something new' rule without inventing a reminder cadence; needs the thresholds defined (per action kind or profile)."
+   },
+   {
+    "option": "No escalation of display: sort obligations by due date and show the date; the member judges.",
+    "tradeoffs": "Maximally respectful; a deadline can be missed by a member who does not open the product."
+   },
+   {
+    "option": "Add an outside channel (email or push) for clock obligations only, opted into by the member.",
+    "tradeoffs": "Reaches absent members; reopens the transport decision and its security concerns (D-98)."
+   }
+  ],
+  "recommendation": "Option 1 inside the product, with option 3 left as a member's opt-in later: a threshold is a real change, so it is not nagging.",
+  "whoDecides": "Bob: where respect ends and a deadline duty begins is doctrine (DEC-69 is his); the threshold values and look are Design's."
+ },
+ {
+  "idx": 14,
+  "context": "Many things in the product take time: a capture may take minutes, a page render may be held back ('deferred') with a code, a capture the assistant requested may run hours later when the host allows, and a legal response clock runs for days. Every list can also be empty. What a surface shows while waiting, or when there is nothing, tells the member whether to act, wait or worry.",
+  "canonSays": [
+   {
+    "source": "Interaction Constructs §U",
+    "says": "'undetermined' is first-class and must be STATED, 'never invented past and never dressed as an error'; one treatment everywhere: 'what we do not know, and why we do not know it.'"
+   },
+   {
+    "source": "NOTIFICATIONS.md (three dispositions)",
+    "says": "A condition is recorded (no surface), noticed (status where the thing lives) or actionable (a queue item); losing 'noticed' means 'either drowning the member or hiding what is happening'."
+   },
+   {
+    "source": "capture-requests R17, R20, R25",
+    "says": "A deferred render is held with its code and translation, content 'undetermined'; past its expiry it is released as expired, 'nothing was filed'."
+   },
+   {
+    "source": "instance-setup R20; Publication §7",
+    "says": "A page that cannot read the group says so, 'never that none is recorded'."
+   }
+  ],
+  "whyOpen": "The canon distinguishes 'none' from 'could not read' in one place (the setup page) and defines 'undetermined', but gives no general treatment for empty, loading or long-wait states; the UX substrate marks them 'not specified' on almost every surface. The gap matters because three different truths look alike on screen: nothing exists, the record has not answered yet, and the record answered that it cannot know; plus waits measured in days need a visible 'what happens next and when'.",
+  "todayInOldUI": "Mostly a plain 'Loading…' line and a few empty sentences (for example 'Nothing is waiting for review'); the group name distinguishes none-recorded from could-not-read.",
+  "related": [
+   "13 (clocks)",
+   "12 (captures finishing later)",
+   "10 (first screens)",
+   "Interaction Constructs §U",
+   "capture-requests R17-R25",
+   "UC-089",
+   "UC-118"
+  ],
+  "options": [
+   {
+    "option": "One product-wide state vocabulary with four named states (nothing here; still reading; could not read, and why; not known, and why) plus a 'waiting on' pattern that names what is awaited, by whom, and the expected or legal date.",
+    "tradeoffs": "Consistent and teachable, matching §U's 'one voice'; needs every surface's reads to tell the four apart, which some plane answers may not yet do."
+   },
+   {
+    "option": "Per-surface treatment designed case by case.",
+    "tradeoffs": "Fits each context; drifts, which §U warns teaches members to ignore the signal."
+   },
+   {
+    "option": "Option 1 plus an empty state that offers the natural next step for that surface (for example a new project's first step).",
+    "tradeoffs": "Helps newcomers; must not become a prompt that nags (DEC-69)."
+   }
+  ],
+  "recommendation": "Option 1, adding option 3's next step only where the member has just created the empty thing.",
+  "whoDecides": "Design: the canon already sets the principle (state it, never dress it as an error); the vocabulary and treatments are detail within it."
+ },
+ {
+  "idx": 15,
+  "context": "The member surfaces are the screens members work in; the published output is the public case page, its print version and its downloadable file, read by residents, journalists, officials and other groups. Accessibility means people using screen readers, keyboards only, magnification or with low vision can use them; language means whether anything appears in languages other than English.",
+  "canonSays": [
+   {
+    "source": "UI-KICKOFF refinements",
+    "says": "Devices: phones supported, 'acceptably as a viewing MVP'; the printed publication is 'first-class and must carry the full narrative'."
+   },
+   {
+    "source": "UI-PLAN U14 (reference, not canon)",
+    "says": "'The hardening pass' (keyboard and screen-reader coverage) is ABSENT: 'two aria- attributes in 18,736 lines'."
+   },
+   {
+    "source": "Technical Architecture Decisions §12 open questions",
+    "says": "'Accessibility (UX): validate that a static PWA meets Requirement 11', framed as usability for newcomers, not disability access."
+   },
+   {
+    "source": "Design Requirement 11; Roadmap §4 values",
+    "says": "Materials must be understandable with no prior civic experience; financial barriers to participation are to be minimized."
+   },
+   {
+    "source": "build/layers.md 'No jurisdiction in the product'",
+    "says": "The product must serve groups anywhere, not only Oakland."
+   }
+  ],
+  "whyOpen": "No canon document names an accessibility standard (such as WCAG 2.2 AA) or any language requirement, for members or for the public. The one 'accessibility' item in the canon means ease of use, not disability access. Language raises a further doctrinal question: a translated published case is not the signed bytes, so who translates, whether a translation is itself published and signed, and how it is marked are all unaddressed.",
+  "todayInOldUI": "English only, almost no screen-reader markup, a narrow-screen viewing layout and a full print layout.",
+  "related": [
+   "10 (newcomers)",
+   "17 (readers of an edition)",
+   "19 (public reads the manifest)",
+   "Publication §6",
+   "UC-107"
+  ],
+  "options": [
+   {
+    "option": "Adopt WCAG 2.2 AA for member surfaces and published output now; interface language English at first, built so strings can be translated; published cases in the language written.",
+    "tradeoffs": "A recognised bar at modest cost if designed in from the start; non-English readers still depend on the group writing in their language."
+   },
+   {
+    "option": "As option 1, plus interface translation per jurisdiction profile (for example Spanish, Chinese, Vietnamese in California) and an optional 'translated rendering' output act, marked as unsigned and naming the signed original.",
+    "tradeoffs": "Reaches the communities most affected; translations become an output act needing doctrine on who stands behind them."
+   },
+   {
+    "option": "Defer both to a later hardening pass.",
+    "tradeoffs": "Cheapest now; retrofitting accessibility is costly, and a civic product's public output excluding readers undercuts its mission."
+   }
+  ],
+  "recommendation": "Option 1 as a requirement now, with option 2's translated rendering taken up as a separate publication decision.",
+  "whoDecides": "Bob: a conformance level and supported languages are requirements, and a translated publication is doctrine; the implementation is Design's."
+ },
+ {
+  "idx": 16,
+  "context": "A published case often names a subject: a government office, or an official acting in their role. Good practice is to put the findings to the subject before publishing and report what came back. The subject meets the product only as any reader does, on the public case page; the publishing group records whether it sought the subject's comment and why.",
+  "canonSays": [
+   {
+    "source": "Publication §3 rule 6 (DEC-13)",
+    "says": "'The subject's right of reply is a declaration, not a gate': the publisher's determination and justification are an element of the group's recorded bias."
+   },
+   {
+    "source": "research/README (DEC-13, D-153)",
+    "says": "Pre-publication contact with the subject is the required workflow in practice literature, overturning its earlier listing as a hazard."
+   },
+   {
+    "source": "case-authoring R3; ratification R9",
+    "says": "Every case must state a subject position, one of 'sought_and_answered', 'sought_no_answer', 'not_sought', and a subject justification."
+   },
+   {
+    "source": "actions R1, R34 (DEC-13)",
+    "says": "A 'request_for_comment' action must name an inquiry and a clock entry; a reply is captured bytes or a member's account, and 'a non-response is recorded with its date'."
+   }
+  ],
+  "whyOpen": "The record side is built; the experience is not. Undecided: how a reader and the subject see the three-valued position and its justification (prominence, wording, whether a reply is linked to where it is quoted); whether a subject can find cases naming them; and how a reply that arrives after publication shows up (it can only enter as captured evidence and appear in a later edition). The tension is between the practice literature calling contact 'required' and the canon refusing to make it a gate.",
+  "todayInOldUI": "The published case prints 'Position on putting this case to its subject' with the justification; the review copy shows it; a reply box for subjects was considered and refused.",
+  "related": [
+   "17 (a reply leads to a new edition)",
+   "19 (position is part of the recorded bias)",
+   "DEC-13",
+   "actions R1, R34",
+   "UC-107",
+   "UC-119"
+  ],
+  "options": [
+   {
+    "option": "Show the subject position prominently near the top of every published case in plain words ('We asked the Office of X on date; they replied / did not reply by date / we did not ask, because…'), each linked to the captured correspondence where public.",
+    "tradeoffs": "Fair and self-evident; linking correspondence needs a rule on which correspondence is published as evidence."
+   },
+   {
+    "option": "Add a public 'cases naming this subject' index keyed on the subject registry.",
+    "tradeoffs": "Lets offices find and answer cases; it also creates a listing of targets, which may read as adversarial."
+   },
+   {
+    "option": "Keep it where it is (a line among the completeness details).",
+    "tradeoffs": "No new work; a reader may miss it, weakening the fairness it records."
+   }
+  ],
+  "recommendation": "Option 1: it makes the declaration legible without making it a gate; revisit option 2 when there is a directory.",
+  "whoDecides": "Bob for prominence and any subject-facing index (effects on people outside the project); Design for wording and layout."
+ },
+ {
+  "idx": 17,
+  "context": "A published case can never be changed or withdrawn. When a group finds an error or new evidence, it publishes a new edition; the old one stays readable forever at the same address and fingerprint. Journalists, officials and other groups may have quoted or cited the earlier edition. 'Pull, never push' means the product lets readers find out about a correction but never sends them a message.",
+  "canonSays": [
+   {
+    "source": "Publication §2 (DEC-12)",
+    "says": "A published case is revised as a new edition, 'treated as a separate document; a citation names an edition; supersession is surfaced, not followed'."
+   },
+   {
+    "source": "publication R24 (DEC-19, DEC-12)",
+    "says": "Nothing updates or deletes a published row; 'a correction is a new edition, and an edition answers forever'."
+   },
+   {
+    "source": "case-authoring R10 (C-21.1)",
+    "says": "The exclusion statement, subject justification and bias acknowledgement must be freshly authored for each edition."
+   },
+   {
+    "source": "reevaluation R2",
+    "says": "Inside the group, a finding citing an older edition gains an 'edition' re-evaluation cause when a later edition exists."
+   },
+   {
+    "source": "Old UI design note H2 (reference)",
+    "says": "'NOTIFY ME. Refused': it converts a reader into a list; the editions index and a held hash tell a reader what to check."
+   }
+  ],
+  "whyOpen": "The canon guarantees that later editions are findable but nothing requires the new edition to say what was corrected and why; the freshness rule covers the exclusion statement and bias acknowledgement, not a correction note. Also undecided: how prominently an older edition announces it has been superseded, and how a reader in another group, who holds only a citation, learns of it without a central directory.",
+  "todayInOldUI": "Every edition page shows a banner, 'A newer edition of this case exists', with links, stating the old one still answers and that its numbers are its own; the published index lists all editions.",
+  "related": [
+   "11 (citing another group's edition)",
+   "16 (a subject's reply)",
+   "19 (fresh acknowledgement)",
+   "DEC-12",
+   "publication R24",
+   "UC-105"
+  ],
+  "options": [
+   {
+    "option": "Require an authored 'What changed in this edition' statement on every edition after the first, shown at the top of the new edition and quoted in the older edition's banner.",
+    "tradeoffs": "Gives readers the correction in one place; one more authored field at publication, which must not be a pro-forma box."
+   },
+   {
+    "option": "Generate a machine difference between editions (findings added, removed, strength changed) beside the banner.",
+    "tradeoffs": "Objective and effortless; does not explain why, and a diff can overstate trivial changes."
+   },
+   {
+    "option": "Keep the banner and index only.",
+    "tradeoffs": "Already built; a reader sees that something changed but not what or why."
+   }
+  ],
+  "recommendation": "Option 1 with option 2 as supporting detail: corrections should explain themselves, and the pull model stays intact.",
+  "whoDecides": "Bob: a new required authored statement at publication is a requirement; banner design is Design's."
+ },
+ {
+  "idx": 18,
+  "context": "When a member's own firsthand observation (something they saw or heard, recorded in their words) is used in a published case, that member chooses how they are credited: as the group, the project, their cover (a name an administrator gave them), or by name. A source who spoke to the member off the record can be included without any field that could identify them. The worry is that anything short of a real name should not look like weaker evidence.",
+  "canonSays": [
+   {
+    "source": "Publication §3 rule 7 (Bob, 2026-09-14)",
+    "says": "Attribution is the attesting member's choice among group, project, cover or name; an off-the-record source is valid."
+   },
+   {
+    "source": "Publication §7",
+    "says": "The attribution surface is 'designed in Program B and rowed nowhere yet'."
+   },
+   {
+    "source": "MEMBER-KNOWLEDGE-DESIGN §4, §4.4, §4.6",
+    "says": "No default; chosen per case edition and observation; an unchosen observation blocks ratifying that edition, and 'name' publishes the handle (both provisional, with Bob). Testimony keeps its own grade whatever the level (§3)."
+   },
+   {
+    "source": "publication R17, R39 (R39 not yet met, K240)",
+    "says": "The plane records the choice with refusals for invalid levels; the level in force is read per case edition."
+   }
+  ],
+  "whyOpen": "The record rules and the act exist; how the choice is made and shown does not. Undecided: where the author is asked (their own queue item, or the case draft), how the three blocking consequences of not choosing are explained without pressure, and how the public page renders 'group' or 'cover' so it reads as a protection, not as missing credibility. Two provisionals are still with Bob: that an unchosen observation blocks ratification, and that 'name' means the handle.",
+  "todayInOldUI": "Nothing: no attribution act is offered, and the published page names each finding's attesting member id.",
+  "related": [
+   "16 (named subjects)",
+   "19 (lens without weakening work)",
+   "10 (the handle is public)",
+   "publication R17, R39",
+   "UC-098"
+  ],
+  "options": [
+   {
+    "option": "Ask in the author's queue as an obligation when a draft first reaches their observation, offering the four levels with one sentence each on what the public will see; show every level publicly in the same neutral style with the testimony grade beside it.",
+    "tradeoffs": "Respects DEC-69 (asked once, at the act) and keeps the grade the visible measure of strength; adds an obligation that can hold up a case."
+   },
+   {
+    "option": "As option 1, but the case owner can publish without that finding while waiting.",
+    "tradeoffs": "Already the canon's recourse; making it visible on the draft avoids pressure on the author."
+   },
+   {
+    "option": "Default to 'group' with the author able to change it.",
+    "tradeoffs": "Never blocks; contradicts the ruling that there is no default."
+   }
+  ],
+  "recommendation": "Option 1 with option 2's recourse shown on the draft; confirm the two provisionals with Bob first.",
+  "whoDecides": "Bob for the two provisionals (blocking and handle-as-name, both doctrine about members' own words); Design for the choice screen and uniform public display."
+ },
+ {
+  "idx": 19,
+  "context": "A group declares its 'bias': a set of written statements about how it treats certain sources (for example 'claims by X must be cross-checked'), each with a justification. Every published case carries the bias in force when it was produced (the 'manifest') and an acknowledgement the publisher wrote about what that lens did to this edition's findings. Opponents will read and quote it; the aim is that a reader can weigh the lens, and it cannot easily be turned against the group.",
+  "canonSays": [
+   {
+    "source": "Declared Bias 'The two-audience choice, made knowingly'",
+    "says": "'Published work carries its bias manifest, and opponents will quote it'; the trade is accepted because a declared, justified rule is more respectable than an undeclared lens, and 'the malformedness rule is what makes each statement survivable when read aloud by an adversary'."
+   },
+   {
+    "source": "Declared Bias 'The malformedness rule'",
+    "says": "Statements may raise scrutiny, constrain inference or assert evidenced patterns; they 'may never issue verdicts' ('X lies' is refused)."
+   },
+   {
+    "source": "Declared Bias 'The bias acknowledgement, authored at export' (DEC-46, DEC-20)",
+    "says": "The manifest (computed, hashed) and the acknowledgement (authored, fresh per edition) travel together; a disclosure, 'never a bar'."
+   },
+   {
+    "source": "UC-073",
+    "says": "Members and public readers read the lens in force."
+   }
+  ],
+  "whyOpen": "The doctrine accepts that the manifest will be quoted but says nothing about how it is presented: where it sits on the case, whether justifications and citations are shown with each statement, whether the acknowledgement leads, and how the three statement kinds are explained to a lay reader. A statement quoted without its justification is exactly the 'weapon' reading the doctrine wants to avoid, so the display is load-bearing.",
+  "todayInOldUI": "The public case page shows under 'Declared bias' only each finding's hunch legs ('none declared'), not the manifest's statements or the publisher's acknowledgement, which appear only on the review copy.",
+  "related": [
+   "16 (subject position)",
+   "17 (fresh acknowledgement)",
+   "11 (trust signals)",
+   "DEC-20",
+   "DEC-46",
+   "UC-073"
+  ],
+  "options": [
+   {
+    "option": "A 'The lens this was produced under' section: the publisher's acknowledgement first, then each statement shown with its kind in plain words, its justification and citations inseparable from its text, plus a short explanation of why the group declares bias.",
+    "tradeoffs": "Makes each statement quotable only with its reasons; longer page, handled by progressive disclosure and full print."
+   },
+   {
+    "option": "A compact summary (counts by kind, subjects named) linking to the full manifest.",
+    "tradeoffs": "Clean first view; a summary line naming a subject without its justification is the easiest thing to quote out of context."
+   },
+   {
+    "option": "Show the manifest only in the downloadable file.",
+    "tradeoffs": "Least exposure; contradicts DEC-20's 'public and accompanies every published case'."
+   }
+  ],
+  "recommendation": "Option 1: pairing every statement with its justification is what makes the two-audience choice survivable, and it fixes the old page's mislabelled 'Declared bias'.",
+  "whoDecides": "Design within the doctrine (DEC-20, DEC-46 and the two-audience choice already decide that it is shown); Bob only if the summary-first form is preferred."
+ }
+]

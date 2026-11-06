@@ -1,0 +1,83 @@
+<title>Federal Records Requests</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600&family=Source+Code+Pro:wght@400&display=swap">
+<style>
+/* Layout: one reading column, the options as three equal blocks that stack on a phone. */
+:root {
+  --paper: #f7f6f2; --ink: #22252b; --muted: #5c6270; --rule: #d9d6cc; --accent: #2f5d8a; --mark: #e7eef6;
+  --serif: "Source Serif 4", Georgia, serif; --sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif; --mono: "Source Code Pro", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #1b1d21; --ink: #e6e4de; --muted: #a3a8b3; --rule: #3a3d44; --accent: #8cb6e0; --mark: #24303d; color-scheme: dark } }
+:root[data-theme="dark"] { --paper: #1b1d21; --ink: #e6e4de; --muted: #a3a8b3; --rule: #3a3d44; --accent: #8cb6e0; --mark: #24303d; color-scheme: dark }
+body { background: var(--paper); color: var(--ink); font: 17px/1.55 var(--sans); padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+main { max-width: 44rem; margin: 0 auto; display: grid; gap: 28px }
+h1 { font: 600 2rem/1.2 var(--serif); margin: 0; text-wrap: balance }
+h2 { font: 600 1.25rem/1.3 var(--serif); margin: 0 0 8px; text-wrap: balance }
+p { margin: 0 0 10px } p:last-child { margin-bottom: 0 }
+.eyebrow { font: 600 .78rem/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px }
+.screen { font-family: var(--mono); font-size: .9em; background: var(--mark); padding: 1px 5px; border-radius: 3px }
+.opts { display: grid; gap: 14px }
+.opt { border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; display: grid; gap: 6px }
+.opt.rec { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent) }
+.opt h3 { font: 600 1.05rem/1.3 var(--serif); margin: 0 }
+.tag { font: 600 .75rem/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--accent) }
+.gc { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: .95rem }
+.gc b { display: block; font-weight: 600; color: var(--muted); font-size: .8rem; letter-spacing: .05em; text-transform: uppercase }
+@media (max-width: 560px) { .gc { grid-template-columns: 1fr } }
+.answer { background: var(--mark); border-radius: 6px; padding: 16px 18px }
+.answer code { font-family: var(--mono) }
+ul { margin: 0; padding-left: 1.2em } li { margin-bottom: 4px }
+</style>
+<main>
+  <header>
+    <div class="eyebrow">A question for Bob · October 21, 2026 · answered: A for now, B as time and tokens allow</div>
+    <h1>How does a member ask a federal office for records?</h1>
+  </header>
+
+  <section>
+    <h2>The issue</h2>
+    <p>You ruled that the search for records goes beyond the city, to state and federal government. But a member cannot yet file a records request with a federal office. The build walk found this dead end (BOB's note of October 21), and BOB asks you to choose how it opens. That choice is yours because it decides who may add an office to the team's record.</p>
+  </section>
+
+  <section>
+    <h2>How it works today</h2>
+    <p>A records request starts by picking the office that holds the records, from a list. The list holds only the offices of the team's places, chosen at setup (for Lakeshore Tenants: the City of Oakland, Alameda County and the State of California). It then offers the laws that apply to that office, each with its answer time, such as the California Public Records Act's 10 days.</p>
+    <p>When no office fits, the screen says: <span class="screen">No office is known to hold such records yet. An administrator can add the office under Settings, Places and offices.</span> A member who is not an administrator stops there.</p>
+  </section>
+
+  <section>
+    <h2>An example</h2>
+    <p>Mai, a member of Lakeshore Tenants, learns that the city's repair program for the Coliseum-area buildings was paid for with a federal housing grant. She wants the grant reports the city sent to the U.S. Department of Housing and Urban Development (HUD). HUD's San Francisco regional office holds them, and the law is the federal Freedom of Information Act, which gives the agency 20 working days. HUD is not one of the team's places, so Mai cannot pick it. She has to find Dev, the administrator, and wait for him to add it.</p>
+  </section>
+
+  <section class="opts" aria-label="Options">
+    <h2>The options</h2>
+    <div class="opt rec">
+      <span class="tag">Recommended</span>
+      <h3>A. The member names the office inside the request</h3>
+      <p>When no listed office fits, Mai writes in the office herself: the agency and office, where requests go (its address or portal), and the law, picked from the laws Civicsmith knows. The office is saved for the team's next request and marked "named by a member", so an administrator can confirm or correct it later under Places and offices.</p>
+      <div class="gc"><div><b>Gains</b>Mai files today, for any federal body. It also opens state or county offices outside the team's places. It is the smallest change, so it fits the alpha.</div><div><b>Costs</b>Offices may be named unevenly or twice, until an administrator tidies them. If Mai picks the wrong law, the due date is wrong until someone corrects it.</div></div>
+    </div>
+    <div class="opt">
+      <h3>B. Civicsmith comes with federal offices built in</h3>
+      <p>Civicsmith carries a list of federal agencies' records offices, taken from the government's own list of where to send requests, each with the Freedom of Information Act's rules. Mai picks HUD's office just as she would pick the City Clerk.</p>
+      <div class="gc"><div><b>Gains</b>Offices and due dates are right from the start, the same for every team.</div><div><b>Costs</b>Hundreds of offices to gather, source and keep current. It covers only the agencies on the list, and building it would delay the alpha.</div></div>
+    </div>
+    <div class="opt">
+      <h3>C. Only administrators add offices, but a member can ask from inside the request</h3>
+      <p>The rule stays as it is. The dead end gets a button that sends the administrator a note naming the office Mai needs, and the note waits in his queue.</p>
+      <div class="gc"><div><b>Gains</b>The team's list of offices stays under an administrator's control.</div><div><b>Costs</b>Mai still waits for Dev before she can file. On a small team, where the administrator is often away, that wait is the whole problem.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Recommendation</h2>
+    <p><b>A.</b> It removes the dead end for every member now, at the least cost, and the "named by a member" mark keeps the administrator's say over the team's list. B can follow later as a convenience, so that offices a team uses often are ready-made.</p>
+    <p><b>Risk:</b> a misnamed office or a wrong law gives a wrong due date. The mark and the administrator's later confirmation limit that, and the member still approves the request's text before anything is sent.</p>
+  </section>
+
+  <section class="answer">
+    <h2>How to answer</h2>
+    <p>Reply in the chat with one letter, for example <code>Federal offices: A</code>, or say what you would change.</p>
+  </section>
+</main>

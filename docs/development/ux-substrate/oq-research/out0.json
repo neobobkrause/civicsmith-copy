@@ -1,0 +1,471 @@
+[
+ {
+  "idx": 0,
+  "context": "A contradiction is two things the record holds that cannot both be true. The system already pairs statements worth comparing and lets an AI run label each pair (in the world, in our own record, a difference of precision, unrelated, undetermined), but these 'candidates' are stored out of sight; no member sees them yet.",
+  "canonSays": [
+   {
+    "source": "Case Making §CONTRADICTION (Bob, 2026-09-17)",
+    "says": "Three cases: in the WORLD a finding, 'drawn attention to' and never fixed; in our RECORD a defect with a duty to identify, present and resolve; a difference of precision is no contradiction."
+   },
+   {
+    "source": "Case Making §CONTRADICTION, 'Three mechanisms'",
+    "says": "PRESENT: a member sees both sides in the record's own words, never a machine verdict. RESOLVE: a member's attributed act that never deletes either side."
+   },
+   {
+    "source": "Case Making §CONTRADICTION, 'Resolution records its kind'",
+    "says": "At least one resolution kind must be able to promote the conflict into a finding: double-speak found while cleaning our record becomes a finding about the subject."
+   },
+   {
+    "source": "contradiction R1, R16, R19",
+    "says": "Labels are world, record, precision, unrelated, undetermined; a candidate is 'proposed machine work and no finding'; no read shows one to a member."
+   }
+  ],
+  "whyOpen": "Only detection is designed and built. Nothing says where a candidate appears, what 'both sides with enough context' contains, which resolution kinds exist (misquote, our capture error, genuine double-speak, difference of opinion), or what promotion to a finding does. The irreconcilable pair (two well-supported findings the group keeps both of) needs a claim object Bob has not ruled on. Detection passed its gate (0/17 false conflicts, M-162) only on a test fixture, not real documents.",
+  "todayInOldUI": "Nothing: the old interface never shows a contradiction candidate.",
+  "related": [
+   "Q28 (queue classes; 'Noticed', K356)",
+   "Q10 (machine work must look machine-made)",
+   "Q6 (undetermined)",
+   "contradiction R19",
+   "DEC-24"
+  ],
+  "options": [
+   {
+    "option": "Show candidates as 'Noticed' queue items opening a side-by-side page (side A, side B, each with document, date and surrounding passage), with resolve acts named by kind",
+    "tradeoffs": "Uses the one queue members already learn; could flood it if real false conflicts exceed the fixture's."
+   },
+   {
+    "option": "Show them only in place, as a mark on the question or document where a side sits",
+    "tradeoffs": "Quieter and in context; a conflict between two projects' work may never be seen by anyone."
+   },
+   {
+    "option": "Design 'record' conflicts first (the duty) and treat 'world' candidates as a prompt to open a question whose conclusion is the discrepancy",
+    "tradeoffs": "Matches the doctrine's priorities and reuses built question acts; the irreconcilable pair still waits for Bob."
+   }
+  ],
+  "recommendation": "The third option, delivered through the first (a Noticed item opening a side-by-side page), with a resolution vocabulary Bob approves; measure false conflicts on real documents before anything reaches members.",
+  "whoDecides": "Bob for the resolution kinds, the promotion to a finding and the irreconcilable pair (doctrine); Design for the side-by-side layout within them."
+ },
+ {
+  "idx": 1,
+  "context": "The doorbell lets anyone, with no account, hand the group a file or text (a 'knock'), for example a whistleblower. The knocker gets a receipt; the material sits in a separate doorbell inbox and is not part of the record. A signed-in member reads each knock and marks it 'pulled', 'discarded' or back to 'new'.",
+  "canonSays": [
+   {
+    "source": "Intake Doctrine §2a",
+    "says": "A knock 'does not enter the record by knocking'; the intake contract and the provenance-for-admission rule 'apply when a member brings its material in, not before'."
+   },
+   {
+    "source": "Intake Doctrine §2a; Membership v2 §1.2",
+    "says": "What comes through the doorbell 'has NO attributed source, and the record says so rather than supplying one'; hand-carried material must be attributed to a member, 'as distinct from anonymous material arriving through the doorbell'."
+   },
+   {
+    "source": "Intake Doctrine §2 (intake contract)",
+    "says": "Every submission carries provenance: a locator (an address, or 'in hand' with chain-of-custody notes), who issued it, when, the capture method and the capturing actor."
+   },
+   {
+    "source": "capture R32",
+    "says": "Resolving records only the status (pulled, discarded, new), who and when; nothing else changes."
+   }
+  ],
+  "whyOpen": "'Pulled' is only a label today: it creates no capture and nothing links the knock to a later one. Two rules pull apart: the intake contract wants a named locator and issuer, while the doorbell doctrine says the source is unknown and must be stated as unknown. Also undecided: whether pulling vouches for the material (release, a weightier act) or only admits it unvetted, and whether the knocker's note and contact travel into the record.",
+  "todayInOldUI": "Nothing: the old interface has no doorbell inbox or knock screen.",
+  "related": [
+   "Q26 (knock rate limit)",
+   "Q13 (capture grade at capture)",
+   "Q7 (release as a weighty act)",
+   "Q19 (off-the-record sources)",
+   "capture R30-R32",
+   "Intake Doctrine §1a, §3"
+  ],
+  "options": [
+   {
+    "option": "'Pull' creates a capture at 'collected' whose provenance says 'received through the doorbell, source unknown' plus the knock id and digest, and commits the member to nothing more",
+    "tradeoffs": "Honest and simple; release (vouching) stays a separate later act. Needs a doorbell provenance class in the capture module."
+   },
+   {
+    "option": "Pulling is itself the member vouching: they become the hand-carrying source",
+    "tradeoffs": "One step, but it turns an anonymous source into a named one, which Membership §1.2 forbids."
+   },
+   {
+    "option": "Keep 'pulled' a status only; the member uploads the material separately and writes chain-of-custody notes",
+    "tradeoffs": "No new mechanism, but the link to the knock is manual and can be lost or misstated."
+   }
+  ],
+  "recommendation": "The first option: pulling admits the material with 'doorbell, source unknown' as its stated provenance, and vouching stays with release.",
+  "whoDecides": "Bob: whether pulling vouches and how anonymous provenance is stated are intake doctrine; Design settles the inbox screens afterward."
+ },
+ {
+  "idx": 2,
+  "context": "A project is a group's line of work around a stated objective. The canon gives it a stage (forming, investigating, matured, closed) and gives its work product a readiness ladder (draft, internally checked, externally compliant, distributed), so members can see where the work stands.",
+  "canonSays": [
+   {
+    "source": "K356 (Bob, 2026-09-29); N300",
+    "says": "A project shows its stage, one of State Rules §4.3's four, 'derived and never set by hand', with its work products' readiness, computed from the questions it holds and what it has published; the redesign shows it on the project's home screen (T12)."
+   },
+   {
+    "source": "State Rules §4.3",
+    "says": "Lifecycle: forming (scope settling) → investigating → matured (analysis supports a defensible position) → closed, with a closed_reason (resolved, superseded, abandoned), 'preserved, reversible'."
+   },
+   {
+    "source": "State Rules §4.3",
+    "says": "The readiness ladder advances only on recorded evaluations: internally_checked needs passing internal compliance and argument evaluations; externally_compliant passing external ones; distributed at least one distribution record."
+   },
+   {
+    "source": "intent (Decided by BOB); substrate inFlux",
+    "says": "The workproduct_state, evaluations and closed_reason checks stay in legacy code; no module requirement holds the lifecycle or ladder."
+   }
+  ],
+  "whyOpen": "K356 settles that the stage is shown and derived. Still open: the derivation rule (what moves forming to investigating, or to matured), which BOB must word before T12 (N300). 'Closed' carries a judged reason (resolved, superseded, abandoned), which sits uneasily with 'never set by hand'. The ladder advances on compliance and argument evaluations that are not built (UC-100), and the Roadmap's 'phase bars with tooltips' are undesigned.",
+  "todayInOldUI": "The workspace shows the readiness ladder read-only from the document's workproduct_state; the lifecycle is a stored state with chips and allows closed back to investigating.",
+  "related": [
+   "Q24 (working vs published side)",
+   "Q4 (publication ceremony)",
+   "Q5 (grades in the workspace)",
+   "K356",
+   "N300",
+   "State Rules §4.3",
+   "UC-100"
+  ],
+  "options": [
+   {
+    "option": "Derive all four stages: forming until a question has a leg, investigating while questions are open, matured when a question has concluded, closed only by an owner's reasoned act that the display then shows",
+    "tradeoffs": "Clear and mostly automatic; 'closed' remains an authored act, a stated exception to 'never by hand'."
+   },
+   {
+    "option": "Derive stage only and drop the readiness ladder until evaluations exist",
+    "tradeoffs": "Avoids showing a ladder that never moves; loses the path-to-publication signal the Roadmap wanted."
+   },
+   {
+    "option": "Show both, the ladder with its unmet rungs stated as 'no evaluation recorded'",
+    "tradeoffs": "Honest about absence; a ladder that never moves may read as failure."
+   }
+  ],
+  "recommendation": "The first option for stage, with the ladder shown only for rungs the record can actually earn, each unearned rung stated rather than hidden.",
+  "whoDecides": "Bob confirms whether 'closed' may be an authored act despite K356 (requirement); Design settles the phase-bar layout; BOB words the derivation (N300)."
+ },
+ {
+  "idx": 3,
+  "context": "Publishing a case is the one act that cannot be taken back; corrections only move forward as new editions. The 'ceremony' is the deliberate screen sequence an owner goes through before signing. Bob deferred it; today the group's operator publishes and members see a placeholder page.",
+  "canonSays": [
+   {
+    "source": "DEC-33 (Bob, 2026-08-03)",
+    "says": "'The publication process is very involved. Defer anything related to the process, though create a placeholder surface.' UI-17 (the five-step ceremony) and REC-15 (its dry run) are deferred."
+   },
+   {
+    "source": "Publication §5",
+    "says": "The ceremony reopens with Program B's member surfaces or the first self-run group, whichever first; until then a member reaches the placeholder and is told, once, what is not yet there (DEC-69)."
+   },
+   {
+    "source": "Interaction Constructs §RULED 2026-08-01",
+    "says": "The pre-flight is plane-sourced: op=publishpreflight runs the real refusals (uncleared hunch, below the project's strength, no signers) without writing, because the browser cannot compute them."
+   },
+   {
+    "source": "Interaction Constructs rev. 0.2",
+    "says": "The top rung 'carries its own ceremony (what becomes permanent, what it does and does not claim, an explicit key act)'; 'the ceremony IS the safeguard'."
+   }
+  ],
+  "whyOpen": "The five steps are named only in archived research, not in canon: What becomes permanent; What this rests on; What you are leaving out (the gate); The revision this creates; Sign (BUILD-ORDER UI-17, RECONCILED). They predate DEC-72, which made a case a production of a project signed by an owner, so they may need re-deriving. The placeholder's wording is also not fixed in canon beyond DEC-33's three points.",
+  "todayInOldUI": "A statement page (S8, UI-17a) says what publication is and that the operator publishes for now; it has no publish control.",
+  "related": [
+   "Q7 (rung weight)",
+   "Q21 (clearing hunches before publication)",
+   "Q24 (which side of the fence)",
+   "Q18 (corrections)",
+   "DEC-19",
+   "DEC-33",
+   "DEC-72",
+   "case-authoring R12"
+  ],
+  "options": [
+   {
+    "option": "Adopt the archived five steps as the design input, re-derived for DEC-72 (case as a production, owner signs), and design them now while the placeholder ships",
+    "tradeoffs": "Uses reasoned, adversarially reviewed work; building still waits for DEC-33's trigger."
+   },
+   {
+    "option": "Design only the placeholder now and leave the steps for when the trigger fires",
+    "tradeoffs": "Least work; risks the redesign's layout not leaving room for a heavy ceremony."
+   },
+   {
+    "option": "Ask Bob to lift DEC-33 for the redesign",
+    "tradeoffs": "Lets members publish without the operator; brings forward REC-15 and a large body of work."
+   }
+  ],
+  "recommendation": "The first option: design the five steps on paper so the layout carries their weight, and ship the placeholder text DEC-33 describes until the trigger fires.",
+  "whoDecides": "Bob, if the steps become requirements or DEC-33 is reopened; Design for the placeholder wording within DEC-33."
+ },
+ {
+  "idx": 4,
+  "context": "Strength is how well a question's answer is supported: a pair (weakest captured document, weakest connection) with testimony beside it, never one score. The project workspace lists the questions and actions inside a project; the old interface deliberately showed no strength there.",
+  "canonSays": [
+   {
+    "source": "Case Making §4a",
+    "says": "The tool should make a supported case easy and an unsupported one hard to state, visible in the surface: 'strength shown rather than hidden, exclusions named rather than dropped'."
+   },
+   {
+    "source": "strength Purpose (DEC-21, DEC-44)",
+    "says": "Strength is derived, never stated: a pair of independent measurements with testimony beside them, never composed into one value."
+   },
+   {
+    "source": "case-authoring R6; DEC-17",
+    "says": "A project declares the strength its work requires (its bar); publishing is refused when a load-bearing leg falls below it."
+   },
+   {
+    "source": "old app.html UI-16 note (not canon)",
+    "says": "A project is a container and an inquiry a claim structure; the workspace 'shows NO strength, NO grade and NO conclusion', and a test asserts no grade letter appears."
+   }
+  ],
+  "whyOpen": "Canon wants strength visible, and each project declares a bar strength is measured against, yet the screen listing a project's questions hides it. The old reason (a project is a container, a question a claim structure) is an interface choice, not a ruling; the research left open where the line falls between '3 questions live here' and 'one is at grade C'. Showing it in a list must still avoid a single summary figure (DEC-44).",
+  "todayInOldUI": "The workspace lists questions with no strength or grade; strength appears only on each question's own page.",
+  "related": [
+   "Q3 (project stage)",
+   "Q6 (undetermined vs unrated)",
+   "Q21 (hunches in strength)",
+   "Q30 (explaining strength)",
+   "DEC-17",
+   "DEC-44",
+   "strength R10"
+  ],
+  "options": [
+   {
+    "option": "Show each question's pair against the project's bar in the list (e.g. 'capture B, connection C; bar B/B'), unrated and undetermined stated",
+    "tradeoffs": "Makes over-claiming visible where work happens; a busier list, and must never collapse into one badge."
+   },
+   {
+    "option": "Show only whether each question meets the project's bar (meets / short on connection / undetermined), with the pair one click away",
+    "tradeoffs": "Simple and tied to what matters for publishing; a met/not-met can read like a score."
+   },
+   {
+    "option": "Keep the workspace grade-free",
+    "tradeoffs": "Clean container view; contradicts Case Making §4a's 'shown rather than hidden'."
+   }
+  ],
+  "recommendation": "The first option: show the pair per question beside the project's bar, because the bar is the project's own declaration and the canon asks strength to be seen.",
+  "whoDecides": "Design, within Case Making §4a and DEC-44; the old UI note is not canon, so no ruling is needed unless Design proposes hiding strength."
+ },
+ {
+  "idx": 5,
+  "context": "'Undetermined' is the system's honest 'we do not know, and here is why': an unchecked link, an unstated document date, an incomputable strength. It appears in many unrelated places. Nearby states mean different things: withheld (exists, not yours to see), unrated (nothing graded yet), never looked (nobody searched), refused (the system declined an act).",
+  "canonSays": [
+   {
+    "source": "Interaction Constructs §U",
+    "says": "A display primitive rendered 'identically everywhere', in at least six places; 'first-class and must be STATED, never invented past and never dressed as an error'; 'One visual treatment, one voice: what we do not know, and why we do not know it.'"
+   },
+   {
+    "source": "Interaction Constructs, DEC-36",
+    "says": "Something out of view is stated only as an incompleteness: the member learns something is missing, never what it is (withheld)."
+   },
+   {
+    "source": "strength R3",
+    "says": "An ungraded member is inert and named; an axis with no graded member is 'unrated' and says it rests on nothing, distinct from 'undetermined'."
+   },
+   {
+    "source": "observation-log R1, R11",
+    "says": "Look states are looked-absent, looked-indeterminate, partial, present and never-looked; a missing look has a cause (pre-log, purged, never looked)."
+   }
+  ],
+  "whyOpen": "The canon fixes the principle (one look, one voice, with the reason) but no visual treatment or wording exists, and it does not say how the four neighbours differ visibly. The risk runs both ways: if all five look alike, members cannot tell 'nobody looked' from 'we could not tell'; if undetermined looks like an error, members learn to ignore it.",
+  "todayInOldUI": "A tinted 'undetermined' badge, but the same badge style also marks 'no grade yet', so undetermined and unrated look alike.",
+  "related": [
+   "Q23 (out-of-view wording)",
+   "Q15 (empty and loading states)",
+   "Q30 (explaining to the public)",
+   "Q5, Q8 (strength and plan support status reuse it)",
+   "DEC-36",
+   "observation-log R20-R21"
+  ],
+  "options": [
+   {
+    "option": "One component with a fixed mark and a mandatory 'because…' line, plus four distinct sibling treatments (withheld, unrated, never looked, refused), each with its own fixed sentence pattern",
+    "tradeoffs": "Clear and teachable; needs a small, strict vocabulary and discipline in every surface."
+   },
+   {
+    "option": "One neutral 'gap' family with a colour-free text label for each kind",
+    "tradeoffs": "Accessible and calm; differences rest on reading, easier to miss."
+   }
+  ],
+  "recommendation": "The first option: one undetermined component that always carries its reason, and four visibly different neighbours with fixed wording.",
+  "whoDecides": "Design: §U already sets the principle; the treatment and wording are the designer's within it."
+ },
+ {
+  "idx": 6,
+  "context": "Every act carries a 'rung' naming its weight: reversible, reasoned (needs a written reason), terminal, attested (signed, cannot be undone silently) and irreversible (publishing). The aim is that a member feels how heavy an act is before taking it, so dismissing a note and publishing a case never feel like the same click.",
+  "canonSays": [
+   {
+    "source": "K356 (Bob, 2026-09-29)",
+    "says": "'Rung' names the weight of an act; the sequence release → … → publish is the 'path to publication'. This settles the naming conflict the substrate recorded."
+   },
+   {
+    "source": "Interaction Constructs rev. 0.2",
+    "says": "'Weight flattening' is 'a doctrine failure wearing a usability improvement'; the ladder is 'a property of every act, visible and escalating, learned once and read everywhere'; the top rung carries its own ceremony: 'one thing to learn, two things to feel'."
+   },
+   {
+    "source": "Interaction Constructs §A; DEC-19",
+    "says": "Attestation can be corrected, but only by a further dated, signed act, never silently; publishing is irreversible and corrections move forward as editions."
+   },
+   {
+    "source": "affordances R2, R27",
+    "says": "The plane publishes each act's rung; 57 ops are still graded 'undetermined' and are to be reassigned by BOB."
+   }
+  ],
+  "whyOpen": "K356 settles the word; the look and feel is undesigned. The canon wants weight felt yet also one act shape (choose, pre-flight, reason, receipt), and does not say what escalates with each rung: friction, colour, confirmation, a separate screen. 57 acts have no rung yet, so the design must handle unknown weight.",
+  "todayInOldUI": "Act dialogs show a five-rung 'How heavy this act is' ladder with the act's own rung lit, worded 'at X weight', which collides with the plane's separate meaning of weight.",
+  "related": [
+   "Q4 (publication ceremony)",
+   "Q2 (release of pulled material)",
+   "Q24 (working vs published side)",
+   "K356",
+   "affordances R2, R27",
+   "DEC-19"
+  ],
+  "options": [
+   {
+    "option": "Escalating friction by rung: reversible acts inline; reasoned open a reason field; terminal and attested a full dialog stating what cannot be silently undone; irreversible only through the ceremony",
+    "tradeoffs": "The hand feels the difference; heavier acts are slower, which is the point."
+   },
+   {
+    "option": "Same dialog for all, with the ladder shown and the current rung highlighted",
+    "tradeoffs": "Consistent and easy to build; the difference is read rather than felt, the flattening the canon warns against."
+   }
+  ],
+  "recommendation": "The first option, with the rung's name on the button, and an undetermined-rung act treated as reasoned until BOB assigns it.",
+  "whoDecides": "Design, within Interaction Constructs rev. 0.2 and K356; BOB assigns the 57 missing rungs (affordances R27)."
+ },
+ {
+  "idx": 7,
+  "context": "Once a group finds that a government body broke a rule, it must decide whether it is worth pursuing (escalating): a report two days late may not be; a $52.6 million unauthorised transfer is. No significance, severity or priority score may be stored, so the judgement exists only as acts on an escalation.",
+  "canonSays": [
+   {
+    "source": "Functional Architecture Layer 2 Function 4",
+    "says": "'Not every discrepancy is a violation'; significance is 'human judgment informed by context, scale, pattern, and consequences', the point where the temptation to let policy preferences colour compliance judgement 'is strongest'."
+   },
+   {
+    "source": "conformance R8; escalation R19; consequences R11; K12",
+    "says": "No input or answer carries a significance, severity, priority, urgency, rank or score; 'significance is the members' judgment'."
+   },
+   {
+    "source": "escalation R1, R13-R15",
+    "says": "Any joined member may open an escalation from a noncompliant determination; advancing, declining a stage and suspending each need a written reason."
+   }
+  ],
+  "whyOpen": "Reasons are recorded once an escalation exists, but the first judgement, deciding not to escalate a noncompliant finding at all, has no act and so leaves no trace; nor does the reasoning for opening one. The ban on a significance field protects neutrality, while the doctrine that decisions are authored and kept argues for somewhere to write why. The canon does not reconcile the two.",
+  "todayInOldUI": "Nothing: the old interface has no escalation surface.",
+  "related": [
+   "Q9 (action plan: declined options)",
+   "Q20 (declared bias, policy lens)",
+   "Q14 (queue nagging)",
+   "conformance R8",
+   "escalation R1, R19",
+   "K12"
+  ],
+  "options": [
+   {
+    "option": "Require a free-text reason when opening an escalation, and add a reasoned 'decline to escalate' act on a noncompliant determination",
+    "tradeoffs": "Every judgement leaves an authored trace; a new act, and free text could smuggle in a severity word nobody checks."
+   },
+   {
+    "option": "Record the reasoning as a declined or chosen option in the action plan (S11)",
+    "tradeoffs": "One home for 'what we chose and why'; the plan is unbuilt and never published (DEC-25)."
+   },
+   {
+    "option": "Leave it to discussion outside the record",
+    "tradeoffs": "No new mechanism; the most policy-sensitive judgement goes unrecorded."
+   }
+  ],
+  "recommendation": "The first option: a required reason when opening and a reasoned decline act, both prose only, so the judgement is kept without becoming a score.",
+  "whoDecides": "Bob: adding a decline act and a required reason changes the escalation and conformance requirements and touches Operational Principle 1."
+ },
+ {
+  "idx": 8,
+  "context": "When a group finds that an agency broke a rule, it must decide what to do: records requests, referrals, public comment, media, litigation support. The action plan (surface S11) would lay out options, order, deadlines, resources, what follows each outcome, and the options rejected. Each step taken becomes an 'action' page, which exists today.",
+  "canonSays": [
+   {
+    "source": "Case Making §THE ACTION PLAN §2-3",
+    "says": "A plan is a distinct object holding candidate steps; each step has dependencies, deadlines, outcome-keyed branches, resources and a disposition (chosen, declined with reason, done, blocked); a declined step 'keeps its reason and stays visible'."
+   },
+   {
+    "source": "Case Making §6a",
+    "says": "Every element carries a support status (established, short of the standard, hypothetical), displayed wherever it is 'in the same treatment everywhere, exactly as undetermined is'; a hypothetical premise is hunch debt."
+   },
+   {
+    "source": "Case Making §5",
+    "says": "The machine may suggest a plan as candidates and check it (e.g. an outcome with no next step); it never adopts a step."
+   },
+   {
+    "source": "DEC-25 (deferred)",
+    "says": "The plan is working material and never published; if that changes it applies only to plans written afterwards."
+   }
+  ],
+  "whyOpen": "No requirement or module holds a plan, so none is built. Undecided: how to draw an outcome-keyed decision tree legibly, how support status shows on every element, how a plan relates to the escalation module's built seven-stage protocol (which also sequences outward acts), and how refusing an outward act whose step is not 'established' appears.",
+  "todayInOldUI": "Nothing for plans; individual action pages exist (risk tier, governing laws, correspondence).",
+  "related": [
+   "Q8 (why escalate)",
+   "Q25 (declared flows; plans must not share their machinery)",
+   "Q21 (hunch debt)",
+   "Q6 (support status reuses the undetermined treatment)",
+   "DEC-25",
+   "DEC-17",
+   "escalation R1-R19"
+  ],
+  "options": [
+   {
+    "option": "A tree/graph view with each step as a card (support status, deadline, resources list, disposition), branches labelled by outcome, declined steps greyed but present",
+    "tradeoffs": "Matches Bob's 'dependency graphs keyed to outcomes'; graphs are hard on phones and in print."
+   },
+   {
+    "option": "An outline (nested list) of steps with 'if denied / if ignored' sub-steps, and a separate declined-options list",
+    "tradeoffs": "Readable anywhere and simple to build; branching is less visible."
+   },
+   {
+    "option": "Fold the plan into escalation stages rather than a separate object",
+    "tradeoffs": "Reuses built code; conflicts with Case Making §2, since an escalation is one pursued breach, not a set of options."
+   }
+  ],
+  "recommendation": "The second option first (an outline with support status on every line), with a graph view added later; a module requirement must be written before design goes deep.",
+  "whoDecides": "Bob: a plan needs requirements and a module (scope and tranche are his); Design settles the layout once he does."
+ },
+ {
+  "idx": 9,
+  "context": "The assistant is a text or voice box available on every screen. A member can ask it to find something, help with a task, create something, or take an act. It may search, gather and check, but it never concludes, authors a reason or signs; for multi-step work it acts as a guide that opens the right screen and waits while the member acts.",
+  "canonSays": [
+   {
+    "source": "DEC-24 (AI Roles §1)",
+    "says": "'The machine may do the looking; the member does the concluding.'"
+   },
+   {
+    "source": "Interaction Constructs §P; DEC-27",
+    "says": "One way in on every surface, a persistent tag expanding to a dialog (S12); the assistant may initiate an act but the act 'still runs its four beats'; it is a named non-member actor ('the assistant did this, at Anna's request')."
+   },
+   {
+    "source": "ASSISTANT-PILOT §2",
+    "says": "It shows how it read the request; asks at most one clarifying question; an answer names the level searched ('I found nothing' without a level is the overclaim)."
+   },
+   {
+    "source": "ASSISTANT-PILOT §3",
+    "says": "The wizard is a plan rendered as steps, 'visibly machine-made, dismissible, never blocking'; it 'never enters values into fields and never presses Submit'; an abandoned wizard is a non-event."
+   }
+  ],
+  "whyOpen": "The rules are clear but the pilot flow and wizard are unbuilt, and nothing says how the dialog looks, where it sits on each surface, or what signals machine output versus member text. Only CHECK runs are deployed, so the dialog must explain refused modes. Showing voice transcription for correction is undesigned.",
+  "todayInOldUI": "No prompt box anywhere; only a running-session indicator for AI runs.",
+  "related": [
+   "Q1 (machine candidates)",
+   "Q11 (newcomer onboarding)",
+   "Q15 (long waits)",
+   "DEC-24",
+   "DEC-27",
+   "DEC-55",
+   "ai-runs R40, R44"
+  ],
+  "options": [
+   {
+    "option": "A side panel docked beside the owning surface; machine text in a distinct 'machine work' style with attribution; each wizard step highlights the real control but never fills it",
+    "tradeoffs": "The member always acts on the real surface; needs space and a consistent machine style across the product."
+   },
+   {
+    "option": "A modal dialog that navigates away and returns",
+    "tradeoffs": "Simple on phones; hides the surface the member is meant to act on, weakening 'you do the concluding'."
+   }
+  ],
+  "recommendation": "The first option: a docked panel with one visible 'machine work' treatment shared with every other machine output, and acts always performed on the real surface.",
+  "whoDecides": "Design, within DEC-24, DEC-27 and ASSISTANT-PILOT; Bob only if the pilot's read-only scope or its order is to change."
+ }
+]

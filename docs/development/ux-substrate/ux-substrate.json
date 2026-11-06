@@ -1,0 +1,4456 @@
+{
+ "meta": {
+  "branch": "tranche/T10",
+  "commit": "6faa808405",
+  "written": "2026-09-28",
+  "note": "Requirements win over canon; maturity: layer 9 and intent built in T8 at the plane (no member surface)."
+ },
+ "constructs": [
+  {
+   "id": "group-instance",
+   "name": "Group and its copy (instance)",
+   "plainDefinition": "A group, as small as one person, runs its own copy of CivicOS in its own account; the copy knows which group it belongs to and which local rules it reads.",
+   "layer": 11,
+   "module": "instance-setup (with installer, membership)",
+   "states": [
+    {
+     "name": "uninstalled",
+     "meaning": "no copy yet; the installer puts one in the group's own account"
+    },
+    {
+     "name": "unclaimed",
+     "meaning": "installed; waiting for the founder's one-time password"
+    },
+    {
+     "name": "claimed",
+     "meaning": "founder has set a password; the copy is the group's"
+    },
+    {
+     "name": "identified",
+     "meaning": "group name recorded, display name and domain set (domain verified or not)"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "uninstalled",
+     "to": "unclaimed",
+     "act": "install",
+     "who": "group operator",
+     "src": "installer Purpose"
+    },
+    {
+     "from": "unclaimed",
+     "to": "claimed",
+     "act": "claim",
+     "who": "founder (holder of the bootstrap credential)",
+     "src": "membership R1, R72"
+    },
+    {
+     "from": "claimed",
+     "to": "identified",
+     "act": "set display name / domain",
+     "who": "administrator",
+     "src": "instance-setup R5-R8"
+    }
+   ],
+   "keyFields": [
+    "group slug",
+    "display name",
+    "verified domain",
+    "active jurisdiction profiles",
+    "build version"
+   ],
+   "acts": [
+    {
+     "name": "Install or update the copy",
+     "who": "group operator",
+     "src": "installer Purpose",
+     "note": "never touches credentials or record on update"
+    },
+    {
+     "name": "Claim the copy",
+     "who": "founder",
+     "src": "membership R1",
+     "op": "claim"
+    },
+    {
+     "name": "Set group display name",
+     "who": "administrator",
+     "src": "instance-setup R5-R6"
+    },
+    {
+     "name": "Claim and verify a domain",
+     "who": "administrator",
+     "src": "instance-setup R7-R9"
+    },
+    {
+     "name": "Choose jurisdiction profiles",
+     "who": "administrator's own session",
+     "src": "instance-setup R14-R15",
+     "note": "none preselected; warns local facts will read differently"
+    },
+    {
+     "name": "Read health, build and cost reports",
+     "who": "any caller (some credentialed)",
+     "src": "instance-setup R17-R18, R37"
+    }
+   ],
+   "shownAs": [
+    "setup page at the copy's root (claim, sign-in, enrolment)",
+    "group line: name · slug · domain with date only when verified"
+   ],
+   "maturity": "built, gaps",
+   "src": "instance-setup Purpose, R1-R21; installer Purpose; Design Requirement 2 via System Design §2"
+  },
+  {
+   "id": "member",
+   "name": "Member",
+   "plainDefinition": "A person enrolled in the group, known by a cover name and a handle, whose every act is signed with who did it.",
+   "layer": 2,
+   "module": "membership",
+   "states": [
+    {
+     "name": "proposed",
+     "meaning": "an administrator candidate awaiting every administrator's endorsement"
+    },
+    {
+     "name": "invited",
+     "meaning": "invitation issued; not yet enrolled"
+    },
+    {
+     "name": "active",
+     "meaning": "enrolled with handle and password; may sign in"
+    },
+    {
+     "name": "revoked",
+     "meaning": "removed; sessions ended and keys revoked"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "(none)",
+     "to": "invited",
+     "act": "add member",
+     "who": "administrator (ordinary member only once 2+ administrators exist)",
+     "src": "membership R12-R13"
+    },
+    {
+     "from": "(none)",
+     "to": "proposed",
+     "act": "add administrator when 2+ exist",
+     "who": "administrator",
+     "src": "membership R14"
+    },
+    {
+     "from": "proposed",
+     "to": "invited",
+     "act": "last endorsement",
+     "who": "every administrator",
+     "src": "membership R6"
+    },
+    {
+     "from": "invited",
+     "to": "active",
+     "act": "enrol with invitation",
+     "who": "the invitee",
+     "src": "membership R16"
+    },
+    {
+     "from": "active",
+     "to": "revoked",
+     "act": "revoke",
+     "who": "administrator (vote for an administrator)",
+     "src": "membership R20, R7-R8"
+    },
+    {
+     "from": "revoked",
+     "to": "active",
+     "act": "reactivate",
+     "who": "administrator (an ex-administrator returns as ordinary member)",
+     "src": "membership R20"
+    }
+   ],
+   "keyFields": [
+    "cover",
+    "handle",
+    "role (member/admin)",
+    "status and who set it",
+    "capabilities",
+    "declared expertise",
+    "projects participated in"
+   ],
+   "acts": [
+    {
+     "name": "Add a member",
+     "who": "administrator",
+     "src": "membership R12",
+     "op": "memberAdd"
+    },
+    {
+     "name": "Enrol from invitation",
+     "who": "invitee",
+     "src": "membership R16",
+     "op": "enroll"
+    },
+    {
+     "name": "Change capabilities",
+     "who": "administrator",
+     "src": "membership R9",
+     "op": "memberCaps"
+    },
+    {
+     "name": "Revoke or reactivate",
+     "who": "administrator",
+     "src": "membership R20",
+     "op": "memberSet"
+    },
+    {
+     "name": "Declare expertise",
+     "who": "the member themself",
+     "src": "membership R21",
+     "note": "expertise gates nothing (R24)"
+    },
+    {
+     "name": "Confirm or withdraw expertise",
+     "who": "administrator",
+     "src": "membership R22"
+    },
+    {
+     "name": "Publish cover-handle pairing or not",
+     "who": "the member or an administrator",
+     "src": "membership R19"
+    },
+    {
+     "name": "Sign in",
+     "who": "member",
+     "src": "membership R2",
+     "note": "one refusal for every failure; never says which roles exist"
+    }
+   ],
+   "shownAs": [
+    "roster (cover shown only to administrators)",
+    "'not recorded' when a stamp is missing (R17)"
+   ],
+   "maturity": "built, gaps",
+   "src": "membership Purpose, R2-R24, R64"
+  },
+  {
+   "id": "administrator",
+   "name": "Administrator (and founder)",
+   "plainDefinition": "A custodian of the roster: the founder plus members voted in; they hold every working capability but no project standing by that alone.",
+   "layer": 2,
+   "module": "membership",
+   "states": [
+    {
+     "name": "proposed",
+     "meaning": "awaiting endorsement by every administrator"
+    },
+    {
+     "name": "active administrator",
+     "meaning": "holds administer and every capability"
+    },
+    {
+     "name": "resigned",
+     "meaning": "back to ordinary member (only while more than two administrators)"
+    },
+    {
+     "name": "removed",
+     "meaning": "voted out: revoked"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "proposed",
+     "to": "active administrator",
+     "act": "endorse (all)",
+     "who": "every administrator",
+     "src": "membership R6"
+    },
+    {
+     "from": "active administrator",
+     "to": "resigned",
+     "act": "resign",
+     "who": "the administrator (not the founder)",
+     "src": "membership R10"
+    },
+    {
+     "from": "active administrator",
+     "to": "removed",
+     "act": "removal vote carried",
+     "who": "majority of all administrators, target not voting",
+     "src": "membership R7-R8"
+    }
+   ],
+   "keyFields": [
+    "votes needed / eligible voters (arithmetic table)",
+    "who holds hosting access",
+    "deciders and reasons"
+   ],
+   "acts": [
+    {
+     "name": "Endorse a proposed administrator",
+     "who": "administrator",
+     "src": "membership R6",
+     "op": "adminEndorse"
+    },
+    {
+     "name": "Vote to remove an administrator",
+     "who": "administrator (not the target), reason required",
+     "src": "membership R7",
+     "op": "adminRemove",
+     "note": "impossible at two administrators; founder cannot be removed"
+    },
+    {
+     "name": "Record who holds hosting access",
+     "who": "group, asked when 2nd administrator added",
+     "src": "membership R11"
+    },
+    {
+     "name": "Rescue an ownerless project",
+     "who": "administrator, only when every owner inactive",
+     "src": "membership R41"
+    }
+   ],
+   "shownAs": [
+    "ballot arithmetic with denominator (adminMath)",
+    "CONSENSUS_REQUIRED with have / awaiting"
+   ],
+   "maturity": "built",
+   "src": "membership R5-R11, R41, R64; Membership v2 §4-§5"
+  },
+  {
+   "id": "invitation",
+   "name": "Invitation link",
+   "plainDefinition": "A one-time link that lets one invited person enrol; it shows their cover and capabilities, never their id.",
+   "layer": 2,
+   "module": "membership",
+   "states": [
+    {
+     "name": "live",
+     "meaning": "issued, unused"
+    },
+    {
+     "name": "spent",
+     "meaning": "used to enrol (indistinguishable from never-existed)"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "live",
+     "to": "spent",
+     "act": "enrol",
+     "who": "invitee",
+     "src": "membership R16"
+    }
+   ],
+   "keyFields": [
+    "cover",
+    "role",
+    "capabilities",
+    "expertise"
+   ],
+   "acts": [
+    {
+     "name": "Look at an invitation",
+     "who": "anyone holding the link",
+     "src": "membership R15",
+     "op": "inviteLook"
+    },
+    {
+     "name": "Enrol",
+     "who": "invitee",
+     "src": "membership R16"
+    }
+   ],
+   "shownAs": [
+    "#invite= on the setup page; 'not live' stated, form hidden (instance-setup R21)"
+   ],
+   "maturity": "built",
+   "src": "membership R13, R15-R16; instance-setup R21"
+  },
+  {
+   "id": "capability",
+   "name": "Capability",
+   "plainDefinition": "A permission an administrator grants a member: contribute, publish, or create projects.",
+   "layer": 2,
+   "module": "membership (enforced by control-plane)",
+   "states": [
+    {
+     "name": "held",
+     "meaning": "in the member's set"
+    },
+    {
+     "name": "not held",
+     "meaning": "absent from the member's interface, refused at the op"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "not held",
+     "to": "held",
+     "act": "grant",
+     "who": "administrator",
+     "src": "membership R9"
+    },
+    {
+     "from": "held",
+     "to": "not held",
+     "act": "remove",
+     "who": "administrator",
+     "src": "membership R9"
+    }
+   ],
+   "keyFields": [
+    "contribute",
+    "publish",
+    "create_projects"
+   ],
+   "acts": [
+    {
+     "name": "Set a member's capabilities",
+     "who": "administrator",
+     "src": "membership R9",
+     "op": "memberCaps",
+     "note": "administer is never grantable; administrators hold all"
+    }
+   ],
+   "shownAs": [
+    "capability absent, never greyed (Membership v2 §5; System Design §3 row 12)",
+    "NOT_CAPABLE naming needs and held (control-plane R13)"
+   ],
+   "maturity": "built",
+   "src": "membership R3-R4, R9; control-plane R13; Membership v2 §5"
+  },
+  {
+   "id": "project",
+   "name": "Project",
+   "plainDefinition": "A working group inside the copy with owners and participants, an objective, and the questions and cases it works on.",
+   "layer": 2,
+   "module": "membership, promotion, intent, strength",
+   "states": [
+    {
+     "name": "hidden / discoverable",
+     "meaning": "visibility: hidden by default; discoverable shows its name to outsiders"
+    },
+    {
+     "name": "participation: invited → joined → leaving",
+     "meaning": "each participant's own state"
+    },
+    {
+     "name": "forming",
+     "meaning": "state a new or forked project starts in (promotion R44); the rest of the canon lifecycle is not in any requirement"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "(none)",
+     "to": "forming",
+     "act": "create project (plane mints id; creator sole owner)",
+     "who": "member (create_projects)",
+     "src": "promotion R19; membership R71"
+    },
+    {
+     "from": "invited",
+     "to": "joined",
+     "act": "join",
+     "who": "the invited member",
+     "src": "membership R34"
+    },
+    {
+     "from": "joined",
+     "to": "leaving",
+     "act": "ask to leave, with comment",
+     "who": "participant (not last committed owner)",
+     "src": "membership R35"
+    },
+    {
+     "from": "hidden",
+     "to": "discoverable",
+     "act": "set visibility with reason",
+     "who": "owner only",
+     "src": "membership R45"
+    }
+   ],
+   "keyFields": [
+    "title (unique)",
+    "objective (required)",
+    "owners",
+    "participants and states",
+    "visibility",
+    "strength bar",
+    "CURRENT versions",
+    "conclusions"
+   ],
+   "acts": [
+    {
+     "name": "Invite a participant",
+     "who": "owner",
+     "src": "membership R32",
+     "op": "projectInvite"
+    },
+    {
+     "name": "Join",
+     "who": "invited member",
+     "src": "membership R34",
+     "op": "projectJoin"
+    },
+    {
+     "name": "Ask to leave",
+     "who": "participant",
+     "src": "membership R35",
+     "op": "projectLeave"
+    },
+    {
+     "name": "Remove a participant, with reason",
+     "who": "owner",
+     "src": "membership R36, R63"
+    },
+    {
+     "name": "Add owner",
+     "who": "owner (sole owner alone; else every owner votes)",
+     "src": "membership R39"
+    },
+    {
+     "name": "Remove owner",
+     "who": "owner vote, reason",
+     "src": "membership R40"
+    },
+    {
+     "name": "Set visibility",
+     "who": "owner",
+     "src": "membership R45"
+    },
+    {
+     "name": "Request to join / withdraw",
+     "who": "member outside a discoverable project",
+     "src": "membership R49-R50"
+    },
+    {
+     "name": "Grant or decline a request",
+     "who": "owner",
+     "src": "membership R51",
+     "note": "a grant invites, never joins"
+    },
+    {
+     "name": "Fork a project",
+     "who": "joined participant",
+     "src": "promotion R41-R44"
+    },
+    {
+     "name": "Set objective's satisfaction condition",
+     "who": "joined participant",
+     "src": "intent R2"
+    },
+    {
+     "name": "Declare the strength bar",
+     "who": "project (required_strength in project document)",
+     "src": "strength R14"
+    }
+   ],
+   "shownAs": [
+    "sight FULL / EXISTENCE / NONE: at existence only id and name (membership R44)",
+    "ownership arithmetic and decision history readable by every participant (R38, R42, R63)"
+   ],
+   "maturity": "built, gaps",
+   "src": "membership R31-R56, R63; promotion R19, R41-R44; intent R1-R2; strength R14; State Rules §4.3"
+  },
+  {
+   "id": "document",
+   "name": "Document (information item) and its captures",
+   "plainDefinition": "A public document the group has brought in, held as exact captured bytes with a record of where and when each version was fetched.",
+   "layer": 3,
+   "module": "capture, provenance, capture-sources, promotion",
+   "states": [
+    {
+     "name": "collected",
+     "meaning": "captured with provenance; not yet vouched for"
+    },
+    {
+     "name": "verified",
+     "meaning": "a named member released it (signed release record)"
+    },
+    {
+     "name": "retired",
+     "meaning": "group judges it superseded or no longer standing; kept, never citable"
+    },
+    {
+     "name": "source status: unchanged / modified / removed",
+     "meaning": "what monitoring saw at the address; recorded beside the state"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "collected",
+     "to": "verified",
+     "act": "release",
+     "who": "named member (never a machine), signed",
+     "src": "promotion R31; affordances R1, R7; State Rules §4.1"
+    },
+    {
+     "from": "verified",
+     "to": "retired",
+     "act": "retire (reason; refused while cited)",
+     "who": "member",
+     "src": "promotion R16; affordances R2 (terminal)"
+    },
+    {
+     "from": "collected",
+     "to": "retired",
+     "act": "retire",
+     "who": "member",
+     "src": "State Rules §4.1 (edge 'deliberately left unforced', Intake Doctrine §8)"
+    }
+   ],
+   "keyFields": [
+    "address and retrieval locator",
+    "capture grade (B direct, C archive, authored when unrecorded)",
+    "versions at the address",
+    "attestations (trusted timestamps)",
+    "origin system",
+    "source status"
+   ],
+   "acts": [
+    {
+     "name": "Capture from a public address",
+     "who": "member with contribute; daemon for requests",
+     "src": "capture Purpose",
+     "op": "acquire"
+    },
+    {
+     "name": "Release (vouch for)",
+     "who": "member",
+     "src": "affordances R1; promotion R31",
+     "op": "release",
+     "note": "no approved module holds this act's Provides"
+    },
+    {
+     "name": "Retire",
+     "who": "member",
+     "src": "affordances R1-R2",
+     "op": "retire"
+    },
+    {
+     "name": "Get a trusted timestamp",
+     "who": "member (a third party's timestamp)",
+     "src": "provenance R32",
+     "op": "attest"
+    },
+    {
+     "name": "Declare which office/system it came from",
+     "who": "member",
+     "src": "provenance R29"
+    },
+    {
+     "name": "Mark whether its route can be shown",
+     "who": "member",
+     "src": "provenance R22"
+    },
+    {
+     "name": "Turn monitoring on",
+     "who": "member (document asks to be monitored)",
+     "src": "monitoring R14, R45"
+    }
+   ],
+   "shownAs": [
+    "capture grade letter",
+    "version chain",
+    "'held in parts'",
+    "UNDETERMINED for unrecorded route"
+   ],
+   "maturity": "built, gaps",
+   "src": "capture Purpose; provenance Purpose, R22-R32; promotion R16, R31; State Rules §4.1; Intake Doctrine §3"
+  },
+  {
+   "id": "knock",
+   "name": "Doorbell drop (inbox item)",
+   "plainDefinition": "Material anyone, even without an account, hands to the group; it waits in the inbox for a member to review.",
+   "layer": 3,
+   "module": "capture",
+   "states": [
+    {
+     "name": "new",
+     "meaning": "received, awaiting member review"
+    },
+    {
+     "name": "resolved",
+     "meaning": "a member decided what becomes of it (status set by inboxResolve)"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "new",
+     "to": "resolved",
+     "act": "resolve",
+     "who": "member",
+     "src": "capture Provides (inboxResolve)"
+    }
+   ],
+   "keyFields": [
+    "digest",
+    "size",
+    "note (2,000 chars)",
+    "contact",
+    "received time"
+   ],
+   "acts": [
+    {
+     "name": "Knock (hand over material)",
+     "who": "anyone, no account; rate limited",
+     "src": "capture R30-R32, R53-R54",
+     "op": "knock"
+    },
+    {
+     "name": "List / read / resolve inbox",
+     "who": "member",
+     "src": "capture Provides (inboxList, inboxGet, inboxResolve)"
+    }
+   ],
+   "shownAs": [
+    "answer: 'in the group's inbox awaiting member review' (R54)"
+   ],
+   "maturity": "built, gaps",
+   "src": "capture R30-R32, R53-R54; Intake Doctrine §2a (how a knock becomes record is not designed)"
+  },
+  {
+   "id": "firsthand-observation",
+   "name": "Firsthand observation (testimony)",
+   "plainDefinition": "A member's own words about what they saw, recorded as evidence that is always graded D and attributed as the member chooses when published.",
+   "layer": 3,
+   "module": "provenance, publication",
+   "states": [
+    {
+     "name": "collected",
+     "meaning": "recorded as a new information item"
+    },
+    {
+     "name": "attributed per case edition",
+     "meaning": "author has chosen group / project / cover / name for that edition"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "collected",
+     "to": "attributed per case edition",
+     "act": "choose attribution",
+     "who": "the observation's author, before signing",
+     "src": "publication R17"
+    }
+   ],
+   "keyFields": [
+    "words",
+    "observed at",
+    "author",
+    "testimony grade D",
+    "attribution level"
+   ],
+   "acts": [
+    {
+     "name": "Record an observation",
+     "who": "member (never a machine)",
+     "src": "provenance R28",
+     "op": "testify"
+    },
+    {
+     "name": "Choose attribution for a case edition",
+     "who": "its author",
+     "src": "publication R17",
+     "op": "attribute"
+    }
+   ],
+   "shownAs": [
+    "testimony axis D; capture axis stated not applicable (provenance R27)"
+   ],
+   "maturity": "built",
+   "src": "provenance R27-R28; publication R17; MEMBER-KNOWLEDGE-DESIGN §2-§4 via System Design §3 row 2"
+  },
+  {
+   "id": "lead",
+   "name": "Lead",
+   "plainDefinition": "Something a member was told that is worth looking into; a place to look, never evidence.",
+   "layer": 5,
+   "module": "observation-log",
+   "states": [
+    {
+     "name": "NEVER_LOOKED",
+     "meaning": "nobody has looked yet"
+    },
+    {
+     "name": "looked",
+     "meaning": "latest look: LOOKED_ABSENT, LOOKED_INDETERMINATE, partial or PRESENT"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "NEVER_LOOKED",
+     "to": "looked",
+     "act": "record a look",
+     "who": "member (not a machine)",
+     "src": "observation-log R17"
+    }
+   ],
+   "keyFields": [
+    "words",
+    "locator",
+    "author",
+    "shared to projects",
+    "looks"
+   ],
+   "acts": [
+    {
+     "name": "Record a lead",
+     "who": "member",
+     "src": "observation-log R14",
+     "op": "lead"
+    },
+    {
+     "name": "Share to a project",
+     "who": "the lead's author, joined in that project",
+     "src": "observation-log R16",
+     "op": "leadshare"
+    },
+    {
+     "name": "Record a look",
+     "who": "member who can read it",
+     "src": "observation-log R17",
+     "op": "leadlook"
+    },
+    {
+     "name": "Take it up into a question / set it aside",
+     "who": "joined member",
+     "src": "queue R18",
+     "note": "not yet met"
+    }
+   ],
+   "shownAs": [
+    "evidence: false",
+    "NEVER_LOOKED",
+    "out-of-inquiry-lead queue item"
+   ],
+   "maturity": "built, gaps",
+   "src": "observation-log R14-R21; queue R9, R18"
+  },
+  {
+   "id": "reading",
+   "name": "Reading (extracted text)",
+   "plainDefinition": "The machine's reading of a captured document into text and references, with how it was read and how trustworthy that reader is.",
+   "layer": 4,
+   "module": "extraction, calibration",
+   "states": [
+    {
+     "name": "not extracted",
+     "meaning": "no reading yet"
+    },
+    {
+     "name": "read",
+     "meaning": "reading recorded with its tier and provenance"
+    },
+    {
+     "name": "re-read",
+     "meaning": "another reading kept beside it; disagreement attributed"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "not extracted",
+     "to": "read",
+     "act": "extract",
+     "who": "plane",
+     "src": "extraction Purpose"
+    },
+    {
+     "from": "read",
+     "to": "re-read",
+     "act": "re-read (e.g. OCR)",
+     "who": "member with contribute (not an ai credential)",
+     "src": "extraction R32"
+    }
+   ],
+   "keyFields": [
+    "tier (in-plane / pdf worker / ocr worker)",
+    "transcription chain",
+    "references found",
+    "engine calibration (fidelity cap)"
+   ],
+   "acts": [
+    {
+     "name": "Ask for a re-read",
+     "who": "member with contribute",
+     "src": "extraction R32",
+     "op": "pdfstructure&ocr=1"
+    }
+   ],
+   "shownAs": [
+    "content-axis state (indexed_full / partial / none / not_extracted / undetermined)",
+    "text-undetermined condition"
+   ],
+   "maturity": "built",
+   "src": "extraction Purpose, R32; calibration Purpose; observation-log R1, R12"
+  },
+  {
+   "id": "passage",
+   "name": "Passage (content)",
+   "plainDefinition": "A precise part of a captured document (a page region, a cell, a paragraph, or the whole) that a question or case points at.",
+   "layer": 4,
+   "module": "content",
+   "states": [
+    {
+     "name": "current",
+     "meaning": "addressed under the capture's current reading"
+    },
+    {
+     "name": "stale",
+     "meaning": "cited under an earlier reading; still resolves and says so"
+    },
+    {
+     "name": "newer capture: carried / affected / undetermined",
+     "meaning": "whether a later version of the document still holds it"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "current",
+     "to": "stale",
+     "act": "re-read changes the chain",
+     "who": "plane",
+     "src": "content R22"
+    }
+   ],
+   "keyFields": [
+    "extent (which part)",
+    "capture",
+    "transcription axis",
+    "who minted it (member or machine, labelled)"
+   ],
+   "acts": [
+    {
+     "name": "Point at a part (mint)",
+     "who": "member; machine within a run's mints bound, labelled",
+     "src": "content Provides (contentMint); run-productions Purpose",
+     "op": "contentmint"
+    },
+    {
+     "name": "Type a transcription of a part",
+     "who": "member",
+     "src": "content R23",
+     "op": "transcribe"
+    },
+    {
+     "name": "Attest another member's transcription",
+     "who": "a second member (not the typist)",
+     "src": "content Provides; System Design §3 row 4",
+     "op": "transcriptionattest"
+    },
+    {
+     "name": "Attest a capture's text",
+     "who": "member",
+     "src": "content Provides",
+     "op": "attesttext"
+    },
+    {
+     "name": "Ask if a newer version holds it",
+     "who": "member",
+     "src": "content Provides (passageNotice)",
+     "op": "versionnotice"
+    }
+   ],
+   "shownAs": [
+    "crop image of the region",
+    "stale marker",
+    "machine-work label"
+   ],
+   "maturity": "built, gaps",
+   "src": "content Purpose, Terms, R19-R23; System Design §3 row 4 (no member surface for transcribe)"
+  },
+  {
+   "id": "entity",
+   "name": "Subject (entity)",
+   "plainDefinition": "A real thing a case is about (an office, a fund, an ordinance, a contract...) that outlives any document naming it.",
+   "layer": 5,
+   "module": "entities",
+   "states": [
+    {
+     "name": "registered",
+     "meaning": "declared with kind, label, aliases"
+    }
+   ],
+   "transitions": [],
+   "keyFields": [
+    "kind (source, institution, office, movement, person, body, ordinance, parcel, contract, fund)",
+    "label",
+    "aliases",
+    "relations with justification",
+    "documents that concern / name it"
+   ],
+   "acts": [
+    {
+     "name": "Register a subject",
+     "who": "member",
+     "src": "entities Provides",
+     "op": "entitycreate"
+    },
+    {
+     "name": "Add an alias",
+     "who": "member",
+     "src": "entities Provides",
+     "op": "entityalias"
+    },
+    {
+     "name": "Declare a relation, with justification and citation",
+     "who": "member",
+     "src": "entities Provides",
+     "op": "relationdeclare"
+    },
+    {
+     "name": "Resolve a document's references to subjects",
+     "who": "member (set form)",
+     "src": "entities R9",
+     "op": "resolve"
+    },
+    {
+     "name": "Testify a match the recogniser missed (grade D)",
+     "who": "member",
+     "src": "entities R12",
+     "op": "resolvetestify"
+    }
+   ],
+   "shownAs": [
+    "match grade A/B/C by recogniser, D by testimony; established = A or B (entities R9, R34)"
+   ],
+   "maturity": "built",
+   "src": "entities Purpose, Terms, R9, R12, R34"
+  },
+  {
+   "id": "connection",
+   "name": "Connection (and theme)",
+   "plainDefinition": "A link between two documents because they name the same subject, graded by how surely each end matched; a theme groups material by an idea but can never support a claim.",
+   "layer": 5,
+   "module": "connections",
+   "states": [
+    {
+     "name": "derived",
+     "meaning": "machine-derived, carries the machine's pair of mentions"
+    },
+    {
+     "name": "chosen",
+     "meaning": "a member chose the on-point mention"
+    },
+    {
+     "name": "established",
+     "meaning": "grade A or B"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "derived",
+     "to": "chosen",
+     "act": "choose on-point mention",
+     "who": "member (machine refused)",
+     "src": "connections Provides (choose); System Design §3 row 6"
+    }
+   ],
+   "keyFields": [
+    "grade (weaker end)",
+    "determining mentions",
+    "source's own link (A)",
+    "backlinks / dangling references"
+   ],
+   "acts": [
+    {
+     "name": "Choose the on-point mention",
+     "who": "member",
+     "src": "connections Provides",
+     "op": "connectionchoose"
+    },
+    {
+     "name": "Declare a theme with its test",
+     "who": "member",
+     "src": "connections Provides",
+     "op": "themedeclare"
+    },
+    {
+     "name": "Place / propose / withdraw material in a theme",
+     "who": "member; machine proposes",
+     "src": "connections Provides"
+    }
+   ],
+   "shownAs": [
+    "grade letter",
+    "'machine-proposed connections are never presented as connections' (AI Roles §3 rule 9)"
+   ],
+   "maturity": "built",
+   "src": "connections Purpose, Terms; inquiry R4 (theme refused as leg)"
+  },
+  {
+   "id": "progression",
+   "name": "Flow (progression)",
+   "plainDefinition": "The group's declared sequence of steps for a kind of happening (e.g. notice, hearing, vote), against which real documents are threaded to show what is missing or late.",
+   "layer": 5,
+   "module": "progressions",
+   "states": [
+    {
+     "name": "declared version N",
+     "meaning": "definition with stages; revisions need basis and citation"
+    },
+    {
+     "name": "instance threaded",
+     "meaning": "documents placed at stages for one subject"
+    },
+    {
+     "name": "finding: missing / overdue / too many",
+     "meaning": "derived on every read"
+    },
+    {
+     "name": "decided",
+     "meaning": "a member deferred or dismissed the finding; still listed"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "declared version N",
+     "to": "declared version N+1",
+     "act": "revise with basis",
+     "who": "member",
+     "src": "progressions R4"
+    },
+    {
+     "from": "finding",
+     "to": "decided",
+     "act": "defer / dismiss with reason",
+     "who": "member",
+     "src": "progressions R21-R22"
+    }
+   ],
+   "keyFields": [
+    "stages with requiredness (always/usually/sometimes/never/unless_exception)",
+    "instance grade (weakest link)",
+    "missing and overdue stages"
+   ],
+   "acts": [
+    {
+     "name": "Declare or revise a flow",
+     "who": "member",
+     "src": "progressions R1-R4",
+     "op": "progressiondefine"
+    },
+    {
+     "name": "Thread documents into an instance",
+     "who": "member",
+     "src": "progressions R6-R8",
+     "op": "thread"
+    },
+    {
+     "name": "Discharge a stage lawfully skipped",
+     "who": "member with reason and citation",
+     "src": "progressions Provides",
+     "op": "discharge"
+    },
+    {
+     "name": "Defer / dismiss a derived finding",
+     "who": "member",
+     "src": "progressions R21-R22",
+     "op": "proposedispose"
+    }
+   ],
+   "shownAs": [
+    "grade of weakest link",
+    "'decision applies' vs moved definition (R20)"
+   ],
+   "maturity": "built",
+   "src": "progressions Purpose, Terms, R1-R22"
+  },
+  {
+   "id": "observation",
+   "name": "Look (observation) and frontier",
+   "plainDefinition": "A record that the system or a person looked for something at one of four levels, and what it found, including that it found nothing or could not tell.",
+   "layer": 5,
+   "module": "observation-log, retrieval, query-language",
+   "states": [
+    {
+     "name": "NEVER_LOOKED",
+     "meaning": "no row: nobody looked"
+    },
+    {
+     "name": "LOOKED_ABSENT",
+     "meaning": "looked and it is not there"
+    },
+    {
+     "name": "LOOKED_INDETERMINATE",
+     "meaning": "looked and could not tell"
+    },
+    {
+     "name": "partial",
+     "meaning": "looked; stopped at a bound"
+    },
+    {
+     "name": "PRESENT",
+     "meaning": "looked and found it"
+    }
+   ],
+   "transitions": [],
+   "keyFields": [
+    "level (internet, documents, content, meaning)",
+    "authority (run, sweep, lead, objective...)",
+    "actor class (plane/machine/member)",
+    "when"
+   ],
+   "acts": [
+    {
+     "name": "Search the record",
+     "who": "member",
+     "src": "retrieval Purpose",
+     "op": "search"
+    },
+    {
+     "name": "Make a selection and act on it as a set",
+     "who": "member",
+     "src": "retrieval Provides (Selections)",
+     "op": "select"
+    },
+    {
+     "name": "Read the frontier (what was looked for, what nobody looked at)",
+     "who": "member",
+     "src": "retrieval Provides (frontier)",
+     "op": "frontier"
+    }
+   ],
+   "shownAs": [
+    "NEVER_LOOKED / 'nobody looked'",
+    "which absence is true",
+    "rows withheld whole, never blanked (observation-log R13)"
+   ],
+   "maturity": "built, gaps",
+   "src": "observation-log Purpose, R1-R13; retrieval Purpose, R36; System Design §3 row 9 (no member surface for the frontier)"
+  },
+  {
+   "id": "bias-set",
+   "name": "Declared bias (bias set)",
+   "plainDefinition": "A group's public statement of the lens it reads evidence through, so readers can discount it; it never blocks work.",
+   "layer": 5,
+   "module": "bias",
+   "states": [
+    {
+     "name": "draft",
+     "meaning": "being written"
+    },
+    {
+     "name": "proposed",
+     "meaning": "offered for adoption"
+    },
+    {
+     "name": "adopted",
+     "meaning": "in force where adopted"
+    },
+    {
+     "name": "retired",
+     "meaning": "no longer in force; readable"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "draft",
+     "to": "proposed",
+     "act": "promote",
+     "who": "member",
+     "src": "bias R8"
+    },
+    {
+     "from": "proposed",
+     "to": "adopted",
+     "act": "promote",
+     "who": "member",
+     "src": "bias R8"
+    },
+    {
+     "from": "adopted",
+     "to": "retired",
+     "act": "promote",
+     "who": "member",
+     "src": "bias R8"
+    },
+    {
+     "from": "draft",
+     "to": "retired",
+     "act": "promote",
+     "who": "member",
+     "src": "bias R8"
+    },
+    {
+     "from": "proposed",
+     "to": "draft",
+     "act": "promote",
+     "who": "member",
+     "src": "bias R8"
+    }
+   ],
+   "keyFields": [
+    "statements: scrutiny / inference / pattern, each with subject and justification",
+    "scope (instance or project)",
+    "what this does not enforce",
+    "lens hash"
+   ],
+   "acts": [
+    {
+     "name": "Adopt for a project",
+     "who": "project owner",
+     "src": "bias R11",
+     "op": "biasadopt"
+    },
+    {
+     "name": "Adopt for the instance",
+     "who": "administrator",
+     "src": "bias R11",
+     "op": "biasadopt"
+    },
+    {
+     "name": "Read the manifest in force",
+     "who": "member",
+     "src": "bias R14-R18",
+     "op": "biasmanifest"
+    },
+    {
+     "name": "Read an outside policy into a proposal (never installs)",
+     "who": "member",
+     "src": "bias R19-R21",
+     "op": "biasinhale"
+    }
+   ],
+   "shownAs": [
+    "'no manifest was in force' (never an empty lens)",
+    "bias acknowledgement on every published case"
+   ],
+   "maturity": "built, gaps",
+   "src": "bias Purpose, Terms, R8-R21; System Design §3 row 7 (no member surface)"
+  },
+  {
+   "id": "bias-debt",
+   "name": "Bias debt and hunch debt",
+   "plainDefinition": "Bias debt is a disclosed note that work was done under a lens that has since changed; hunch debt is a guess used as a grade that must be cleared before publishing.",
+   "layer": 5,
+   "module": "bias, strength, case-authoring",
+   "states": [
+    {
+     "name": "open",
+     "meaning": "raised: the lens moved since the work"
+    },
+    {
+     "name": "settled",
+     "meaning": "a member resolved it with a reason, or a re-run under today's lens discharged it"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "open",
+     "to": "settled",
+     "act": "resolve with reason",
+     "who": "member recipient (never a machine)",
+     "src": "bias R35"
+    },
+    {
+     "from": "open",
+     "to": "settled",
+     "act": "re-run under current lens",
+     "who": "run",
+     "src": "bias R38"
+    }
+   ],
+   "keyFields": [
+    "lens then / lens now",
+    "recipients",
+    "settlements"
+   ],
+   "acts": [
+    {
+     "name": "Resolve a bias debt",
+     "who": "member",
+     "src": "bias R35",
+     "op": "biasdebtresolve"
+    },
+    {
+     "name": "Clear a hunch before publishing",
+     "who": "member",
+     "src": "case-authoring R12",
+     "note": "refusal UNCLEARED_HUNCH not yet met"
+    }
+   ],
+   "shownAs": [
+    "OBLIGATION queue item 'bias-debt' (queue R8)",
+    "hunch named, inert in strength (strength R5, not yet met)"
+   ],
+   "maturity": "built, gaps",
+   "src": "bias R33-R43; strength R5; case-authoring R12; Declared Bias §Bias debt, and HUNCH DEBT"
+  },
+  {
+   "id": "inquiry",
+   "name": "Question (inquiry); a finding once concluded",
+   "plainDefinition": "A question the group is investigating, which gathers evidence and other questions as its support and may reach a conclusion, then called a finding.",
+   "layer": 6,
+   "module": "inquiry, basis-versions, promotion",
+   "states": [
+    {
+     "name": "open (surfaced)",
+     "meaning": "being worked; 'surfaced' marks one raised by the assistant or a proposal"
+    },
+    {
+     "name": "deferred",
+     "meaning": "set aside for now, with reason"
+    },
+    {
+     "name": "dismissed",
+     "meaning": "set aside as not worth pursuing, with reason"
+    },
+    {
+     "name": "concluded",
+     "meaning": "answered: a claim adopted with its falsifier (per project, or the question's own)"
+    },
+    {
+     "name": "divided",
+     "meaning": "split into two or more child questions; terminal"
+    },
+    {
+     "name": "published",
+     "meaning": "read, never entered: a case pins it (DEC-72)"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "open",
+     "to": "deferred",
+     "act": "defer (reason)",
+     "who": "joined member; per project when several projects draw on it",
+     "src": "inquiry R1, R20-R22, R39"
+    },
+    {
+     "from": "open",
+     "to": "dismissed",
+     "act": "dismiss (reason; refused while cited)",
+     "who": "member",
+     "src": "inquiry R20"
+    },
+    {
+     "from": "deferred / dismissed",
+     "to": "open",
+     "act": "reopen (reason)",
+     "who": "named member",
+     "src": "promotion R21-R25"
+    },
+    {
+     "from": "open",
+     "to": "concluded",
+     "act": "conclude (no project)",
+     "who": "named member",
+     "src": "basis-versions R19"
+    },
+    {
+     "from": "open",
+     "to": "divided",
+     "act": "divide (reason, apportion every leg)",
+     "who": "named member",
+     "src": "inquiry R23-R26"
+    },
+    {
+     "from": "surfaced",
+     "to": "deferred",
+     "act": "age out after interval (default 30 days)",
+     "who": "plane, recorded reason",
+     "src": "intent R17"
+    }
+   ],
+   "keyFields": [
+    "question text",
+    "subject",
+    "legs (supports / cuts against)",
+    "grounds",
+    "strength pair",
+    "conclusion and falsifier",
+    "state history (who, when)",
+    "exclusions",
+    "who surfaced it"
+   ],
+   "acts": [
+    {
+     "name": "Open a question",
+     "who": "member; assistant surfaces within a run's bound",
+     "src": "ai-runs R25-R26; intent R16"
+    },
+    {
+     "name": "Cite material into it",
+     "who": "member (report weight)",
+     "src": "citation R1-R3",
+     "op": "cite"
+    },
+    {
+     "name": "Defer / dismiss",
+     "who": "member",
+     "src": "inquiry R20",
+     "op": "dispose"
+    },
+    {
+     "name": "Divide",
+     "who": "member",
+     "src": "inquiry R23",
+     "op": "inquirydivide"
+    },
+    {
+     "name": "Group the legs into grounds",
+     "who": "member",
+     "src": "inquiry R27-R28",
+     "op": "inquiryground"
+    },
+    {
+     "name": "Reopen",
+     "who": "member",
+     "src": "promotion R21-R26",
+     "op": "reopen"
+    },
+    {
+     "name": "Conclude",
+     "who": "member",
+     "src": "basis-versions R16-R19",
+     "op": "conclude"
+    },
+    {
+     "name": "Withdraw a project's conclusion",
+     "who": "joined member, reason",
+     "src": "basis-versions R20",
+     "op": "withdrawconclusion"
+    }
+   ],
+   "shownAs": [
+    "agent-surfaced marker wherever listed (System Design §3 row 12, D-82)",
+    "strength pair",
+    "UNDETERMINED legs named, never floored"
+   ],
+   "maturity": "built",
+   "src": "inquiry Purpose, R1-R3, R19-R28, R39; basis-versions R16-R23; promotion R21-R26; Case Making §Naming"
+  },
+  {
+   "id": "leg",
+   "name": "Support (basis leg) and grounds",
+   "plainDefinition": "One piece of support a question rests on (a document, passage or another question), marked as supporting or cutting against, with a grade that says how well it is established.",
+   "layer": 6,
+   "module": "inquiry, citation, content",
+   "states": [
+    {
+     "name": "confirmed",
+     "meaning": "live support"
+    },
+    {
+     "name": "severed",
+     "meaning": "withdrawn on a case; still listed as informing a second look"
+    },
+    {
+     "name": "frozen",
+     "meaning": "rests in a published case"
+    },
+    {
+     "name": "ungraded (undetermined)",
+     "meaning": "inert: counts for nothing, always named"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "confirmed",
+     "to": "severed",
+     "act": "sever (reason)",
+     "who": "joined member",
+     "src": "citation R4"
+    },
+    {
+     "from": "severed",
+     "to": "confirmed",
+     "act": "reinstate (reason; not onto retired)",
+     "who": "joined member",
+     "src": "citation R4-R5"
+    }
+   ],
+   "keyFields": [
+    "role (supports / cuts against)",
+    "grade A-D",
+    "axis (capture / connection / testimony)",
+    "source (resolution, testimony, hunch, inherited, capture)",
+    "ground label",
+    "pinned capture"
+   ],
+   "acts": [
+    {
+     "name": "Cite",
+     "who": "member",
+     "src": "citation R1-R2",
+     "op": "cite"
+    },
+    {
+     "name": "Sever / reinstate on a case",
+     "who": "joined member",
+     "src": "citation R4",
+     "op": "sever / reinstate"
+    },
+    {
+     "name": "Narrow to the on-point part",
+     "who": "member (machine proposes candidates)",
+     "src": "basis-versions R24-R27",
+     "op": "narrow"
+    }
+   ],
+   "shownAs": [
+    "grade letter as earned (authored letter shown beside, capped)",
+    "hunch named",
+    "'version undetermined' when unpinned"
+   ],
+   "maturity": "built",
+   "src": "inquiry Terms, R4-R8, R13-R17; citation Purpose, R1-R5; basis-versions R24-R27"
+  },
+  {
+   "id": "basis-version",
+   "name": "Account of support (basis version)",
+   "plainDefinition": "One complete, named alternative account of the support for a question's claim, frozen once written; members accept or reject them and each project picks one to stand on.",
+   "layer": 6,
+   "module": "basis-versions, run-productions",
+   "states": [
+    {
+     "name": "suggested",
+     "meaning": "proposed (often by the assistant)"
+    },
+    {
+     "name": "considering",
+     "meaning": "under review (reason)"
+    },
+    {
+     "name": "accepted",
+     "meaning": "a member accepted it"
+    },
+    {
+     "name": "rejected",
+     "meaning": "declined (reason)"
+    },
+    {
+     "name": "hidden",
+     "meaning": "flag; never deleted"
+    },
+    {
+     "name": "CURRENT (per project)",
+     "meaning": "the accepted version a project stands on"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "suggested",
+     "to": "considering",
+     "act": "consider (reason)",
+     "who": "member",
+     "src": "basis-versions R4, R12-R14"
+    },
+    {
+     "from": "suggested / considering / rejected",
+     "to": "accepted",
+     "act": "accept (affirm shared-origin check)",
+     "who": "member",
+     "src": "basis-versions R4; System Design §3 row 12"
+    },
+    {
+     "from": "any",
+     "to": "rejected",
+     "act": "reject (reason)",
+     "who": "member",
+     "src": "basis-versions R4"
+    },
+    {
+     "from": "accepted",
+     "to": "CURRENT",
+     "act": "make current for project (reason)",
+     "who": "joined participant",
+     "src": "basis-versions R13, R15"
+    }
+   ],
+   "keyFields": [
+    "name",
+    "description",
+    "claim",
+    "AND/OR relationship",
+    "legs and grounds",
+    "derived from",
+    "run that suggested it"
+   ],
+   "acts": [
+    {
+     "name": "Accept / reject / consider / revert",
+     "who": "member (machine refused)",
+     "src": "basis-versions R12-R14",
+     "op": "versionaccept etc."
+    },
+    {
+     "name": "Preview any act",
+     "who": "member",
+     "src": "basis-versions R14",
+     "note": "receipt with wrote:false"
+    },
+    {
+     "name": "Make current for a project",
+     "who": "joined participant",
+     "src": "basis-versions R13",
+     "op": "versioncurrent"
+    },
+    {
+     "name": "Hide / unhide",
+     "who": "member",
+     "src": "basis-versions R14",
+     "op": "versionhide"
+    },
+    {
+     "name": "Suggest a version",
+     "who": "AI run (investigate)",
+     "src": "run-productions Purpose; basis-versions R28"
+    }
+   ],
+   "shownAs": [
+    "composition grades 'authored' vs legs as bounded (R9-R10)",
+    "what-if strength over other states (strength R8)"
+   ],
+   "maturity": "built",
+   "src": "basis-versions Purpose, R1-R15, R28; run-productions Purpose; INVESTIGATIVE-SESSION §6-§7"
+  },
+  {
+   "id": "strength",
+   "name": "Strength (the pair) and the bar",
+   "plainDefinition": "How well a claim is supported, shown as separate grades for the weakest capture and weakest connection (plus testimony), never combined into one score; a project may declare the minimum it requires.",
+   "layer": 6,
+   "module": "strength",
+   "states": [
+    {
+     "name": "graded",
+     "meaning": "a letter on the axis"
+    },
+    {
+     "name": "unrated",
+     "meaning": "no graded support on the axis"
+    },
+    {
+     "name": "undetermined",
+     "meaning": "a necessary part cannot be graded"
+    }
+   ],
+   "transitions": [],
+   "keyFields": [
+    "capture axis",
+    "connection axis",
+    "testimony axis",
+    "weakest member named",
+    "project bar per axis",
+    "group default bar"
+   ],
+   "acts": [
+    {
+     "name": "Read strength of a question or version",
+     "who": "member",
+     "src": "strength R6-R10",
+     "op": "inquirystrength / versionstrength"
+    },
+    {
+     "name": "Check whether grounds share an origin",
+     "who": "member",
+     "src": "strength R11-R12",
+     "op": "partitionindependence"
+    },
+    {
+     "name": "Set the group default bar",
+     "who": "active administrator",
+     "src": "strength R15",
+     "op": "strengthbarset"
+    }
+   ],
+   "shownAs": [
+    "pair, never composed (refused if composed, R10)",
+    "'no bar set on the … axis' (R14)",
+    "'an object you may not see' (R6)"
+   ],
+   "maturity": "built, gaps",
+   "src": "strength Purpose, Terms, R1-R17; DEC-21, DEC-44"
+  },
+  {
+   "id": "contradiction",
+   "name": "Contradiction candidate",
+   "plainDefinition": "A pair of statements in the record the machine thinks may conflict, stored only as a labelled machine proposal.",
+   "layer": 6,
+   "module": "contradiction",
+   "states": [
+    {
+     "name": "proposed",
+     "meaning": "machine judgement stored; nobody has judged it"
+    }
+   ],
+   "transitions": [],
+   "keyFields": [
+    "key (K1-K4)",
+    "both sides",
+    "label: world / record / precision / unrelated / undetermined",
+    "run"
+   ],
+   "acts": [
+    {
+     "name": "Pair assertions worth comparing",
+     "who": "plane, for a viewer",
+     "src": "contradiction R5-R12",
+     "op": "contradictionpairs"
+    },
+    {
+     "name": "Propose a label",
+     "who": "AI run's principal",
+     "src": "contradiction R13-R16",
+     "op": "contradictionpropose"
+    }
+   ],
+   "shownAs": [
+    "'proposed machine work and no finding' (R16)"
+   ],
+   "maturity": "specified, not built",
+   "src": "contradiction Purpose (PRESENT and RESOLVE not designed; nothing shows a candidate to a member), R1-R16"
+  },
+  {
+   "id": "aspiration-goal",
+   "name": "Aspiration and goal",
+   "plainDefinition": "An aspiration is a standing aim that never closes and sets priority; a goal is a bounded pursuit under it that eventually closes.",
+   "layer": 7,
+   "module": "intent",
+   "states": [
+    {
+     "name": "aspiration: held",
+     "meaning": "in force for its scope (group, project, member)"
+    },
+    {
+     "name": "aspiration: retired",
+     "meaning": "closed with what it taught; readable"
+    },
+    {
+     "name": "goal: open",
+     "meaning": "being pursued"
+    },
+    {
+     "name": "goal: closed",
+     "meaning": "closed with a reason"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "held",
+     "to": "retired",
+     "act": "retire (what it taught)",
+     "who": "scope owner: member / joined participant / administrator for group",
+     "src": "intent R9, R11"
+    },
+    {
+     "from": "open",
+     "to": "closed",
+     "act": "close goal (reason)",
+     "who": "member",
+     "src": "intent R8"
+    }
+   ],
+   "keyFields": [
+    "statement",
+    "scope",
+    "entities and flows it names",
+    "departures",
+    "dead ends",
+    "pursuit record"
+   ],
+   "acts": [
+    {
+     "name": "Declare an aspiration",
+     "who": "member (own), joined participant (project), administrator (group)",
+     "src": "intent R9"
+    },
+    {
+     "name": "Depart from a group aspiration (reason)",
+     "who": "project",
+     "src": "intent R10",
+     "note": "shown as notable"
+    },
+    {
+     "name": "Record a dead end",
+     "who": "member",
+     "src": "intent R11"
+    },
+    {
+     "name": "Declare / close a goal; link an objective",
+     "who": "member",
+     "src": "intent R8"
+    }
+   ],
+   "shownAs": [
+    "no precedence stated between aspirations (R12)",
+    "contacts: aspirations sharing a subject, never 'contradict' (R13)",
+    "no completion figure (R14)"
+   ],
+   "maturity": "built, gaps",
+   "src": "intent Purpose, Terms, R8-R14; Content Framework §12"
+  },
+  {
+   "id": "objective",
+   "name": "Objective, progress and gaps (with proposals)",
+   "plainDefinition": "A project's aim with a checkable condition; progress is computed from the record and each shortfall becomes a gap on the work list.",
+   "layer": 7,
+   "module": "intent",
+   "states": [
+    {
+     "name": "no condition",
+     "meaning": "progress cannot be computed; never reads as zero"
+    },
+    {
+     "name": "short",
+     "meaning": "some matched instances fall short"
+    },
+    {
+     "name": "satisfied",
+     "meaning": "every matched instance meets it"
+    },
+    {
+     "name": "proposal: open → adopted / questioned / deferred / dismissed",
+     "meaning": "the discovery loop"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "open proposal",
+     "to": "adopted",
+     "act": "adopt into objective",
+     "who": "member",
+     "src": "intent R16"
+    },
+    {
+     "from": "open proposal",
+     "to": "question opened",
+     "act": "open a question at surfaced",
+     "who": "member",
+     "src": "intent R16"
+    },
+    {
+     "from": "open proposal",
+     "to": "deferred / dismissed",
+     "act": "set aside with reason",
+     "who": "member",
+     "src": "intent R16"
+    }
+   ],
+   "keyFields": [
+    "objective text",
+    "satisfaction condition (flow, subject, grade)",
+    "matched / meeting / short / undetermined",
+    "gaps"
+   ],
+   "acts": [
+    {
+     "name": "Set the condition",
+     "who": "joined participant (machine refused)",
+     "src": "intent R2"
+    },
+    {
+     "name": "Read progress and gaps",
+     "who": "member",
+     "src": "intent R3-R6"
+    },
+    {
+     "name": "Triage a proposal",
+     "who": "member",
+     "src": "intent R15-R16"
+    },
+    {
+     "name": "Have the assistant work the objective",
+     "who": "member only",
+     "src": "intent R18",
+     "op": "workObjective"
+    }
+   ],
+   "shownAs": [
+    "computed, never reported",
+    "objective-gap queue item (queue R1; producer pending N172)"
+   ],
+   "maturity": "built, gaps",
+   "src": "intent R1-R7, R15-R18, R28"
+  },
+  {
+   "id": "reevaluation",
+   "name": "Re-evaluation notice",
+   "plainDefinition": "A notice that something a finding rests on has changed (superseded, set down, reopened, newer document version), naming what is affected; nothing changes by itself.",
+   "layer": 7,
+   "module": "reevaluation",
+   "states": [
+    {
+     "name": "raised",
+     "meaning": "a cause stands on the dependent"
+    },
+    {
+     "name": "recorded",
+     "meaning": "a member re-evaluated; closed until the target moves again"
+    },
+    {
+     "name": "adopted newer / kept earlier",
+     "meaning": "member's choice on a newer document version"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "raised",
+     "to": "recorded",
+     "act": "record re-evaluation",
+     "who": "member",
+     "src": "reevaluation R16"
+    },
+    {
+     "from": "raised",
+     "to": "adopted newer",
+     "act": "adopt newer version (new basis version)",
+     "who": "member",
+     "src": "reevaluation R15"
+    },
+    {
+     "from": "raised",
+     "to": "kept earlier",
+     "act": "keep earlier version, optional why",
+     "who": "member",
+     "src": "reevaluation R15"
+    }
+   ],
+   "keyFields": [
+    "cause (supersession, edition, deferred, reopened, dismissed)",
+    "since",
+    "affected legs",
+    "strength pair",
+    "both captures"
+   ],
+   "acts": [
+    {
+     "name": "Read obligations",
+     "who": "member",
+     "src": "reevaluation R1-R6",
+     "op": "reevaluations"
+    },
+    {
+     "name": "Adopt newer / keep earlier",
+     "who": "member",
+     "src": "reevaluation R15"
+    },
+    {
+     "name": "Record re-evaluation",
+     "who": "member",
+     "src": "reevaluation R16",
+     "op": "reevaluationrecord"
+    }
+   ],
+   "shownAs": [
+    "notice only for affected or undetermined, never for A or B (R14)",
+    "dependent the viewer cannot see withheld without count (R3)"
+   ],
+   "maturity": "built, gaps",
+   "src": "reevaluation Purpose, R1-R17"
+  },
+  {
+   "id": "case",
+   "name": "Case and edition (publication)",
+   "plainDefinition": "What a project publishes: one or more concluded findings the group stands behind, signed and permanent, so anyone can verify it; corrections are new editions.",
+   "layer": 8,
+   "module": "case-authoring, ratification, publication",
+   "states": [
+    {
+     "name": "prepared (unsigned)",
+     "meaning": "owner assembled the case document"
+    },
+    {
+     "name": "acknowledged",
+     "meaning": "members and reviewers confirmed reading the statement"
+    },
+    {
+     "name": "ratified",
+     "meaning": "owner signed the case document"
+    },
+    {
+     "name": "published",
+     "meaning": "findings and evidence crossed by signature; public"
+    },
+    {
+     "name": "flagged",
+     "meaning": "a pinned finding changed since; revision flag outstanding"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "(none)",
+     "to": "prepared",
+     "act": "prepare case",
+     "who": "project owner (machine refused)",
+     "src": "case-authoring R1-R18"
+    },
+    {
+     "from": "prepared",
+     "to": "acknowledged",
+     "act": "acknowledge statement",
+     "who": "member with standing or review recipient",
+     "src": "case-authoring R19-R20"
+    },
+    {
+     "from": "prepared",
+     "to": "ratified",
+     "act": "sign case document",
+     "who": "owner signs; delivered by a human session (founder or joined member)",
+     "src": "ratification R2-R3"
+    },
+    {
+     "from": "ratified",
+     "to": "published",
+     "act": "ratify each finding and its evidence",
+     "who": "signer with case authority, human session",
+     "src": "ratification R4-R6"
+    },
+    {
+     "from": "published",
+     "to": "flagged",
+     "act": "finding revised",
+     "who": "plane",
+     "src": "publication R5"
+    }
+   ],
+   "keyFields": [
+    "project",
+    "edition",
+    "findings: load-bearing / supporting, pinned",
+    "scope",
+    "statement and who wrote it",
+    "exclusions",
+    "searched section",
+    "bias acknowledgement",
+    "frozen strength per finding",
+    "signer and deliverer"
+   ],
+   "acts": [
+    {
+     "name": "Prepare a case",
+     "who": "project owner",
+     "src": "case-authoring R1-R17",
+     "op": "publish",
+     "note": "bar checked per axis on load-bearing findings"
+    },
+    {
+     "name": "Acknowledge the statement",
+     "who": "member / review recipient",
+     "src": "case-authoring R19",
+     "op": "statementack"
+    },
+    {
+     "name": "Sign the case",
+     "who": "owner, own session, signing key that attests",
+     "src": "ratification R2-R3; membership R27",
+     "op": "caseratify"
+    },
+    {
+     "name": "Ratify a finding / evidence",
+     "who": "case authority, own session",
+     "src": "ratification R4-R5",
+     "op": "ratify"
+    },
+    {
+     "name": "Verify a published hash",
+     "who": "anyone, no account",
+     "src": "publication R8",
+     "op": "verify"
+    },
+    {
+     "name": "Export the working corpus verifiably",
+     "who": "credentialed",
+     "src": "publication R18",
+     "op": "export"
+    }
+   ],
+   "shownAs": [
+    "irreversible rung",
+    "NOT_PUBLISHED / FINDING_IN_SEVERAL_CASES",
+    "strengthUndetermined CASES_DISAGREE (publication R11)",
+    "deliverer 'undetermined' when unrecorded"
+   ],
+   "maturity": "built, gaps",
+   "src": "publication Purpose, Terms, R1-R22; case-authoring Purpose, R1-R21; ratification R1-R8; Publication §1-§3; System Design §3 row 12-13 (no member publish surface)"
+  },
+  {
+   "id": "review-copy",
+   "name": "Review copy (draft and grant)",
+   "plainDefinition": "A private draft of a case shown to members and to named outside reviewers through a revocable link; clearly marked as not a publication.",
+   "layer": 8,
+   "module": "review",
+   "states": [
+    {
+     "name": "draft",
+     "meaning": "editable by project editors"
+    },
+    {
+     "name": "grant live",
+     "meaning": "recipient can read and comment"
+    },
+    {
+     "name": "grant dead",
+     "meaning": "revoked, or its edition published"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "(none)",
+     "to": "draft",
+     "act": "create / edit draft",
+     "who": "member with project edit permission",
+     "src": "review R2-R4"
+    },
+    {
+     "from": "draft",
+     "to": "grant live",
+     "act": "grant to a named recipient",
+     "who": "project owner",
+     "src": "review R6"
+    },
+    {
+     "from": "grant live",
+     "to": "grant dead",
+     "act": "revoke",
+     "who": "project owner",
+     "src": "review R7-R8"
+    }
+   ],
+   "keyFields": [
+    "authored fields",
+    "findings as the editor sees them",
+    "missing (what publishing would still refuse)",
+    "comments",
+    "acknowledgements",
+    "observations and attribution choices"
+   ],
+   "acts": [
+    {
+     "name": "Draft",
+     "who": "project editor",
+     "src": "review R3-R4",
+     "op": "casedraft"
+    },
+    {
+     "name": "Grant / revoke",
+     "who": "owner",
+     "src": "review R6-R7",
+     "op": "reviewgrant / reviewrevoke"
+    },
+    {
+     "name": "Read the copy",
+     "who": "member with standing or live grant",
+     "src": "review R10-R11",
+     "op": "reviewcopy"
+    },
+    {
+     "name": "Comment",
+     "who": "same doors",
+     "src": "review R18",
+     "op": "reviewcomment"
+    }
+   ],
+   "shownAs": [
+    "marking: not a publication, unsigned",
+    "dead answer identical for every failure (R10)"
+   ],
+   "maturity": "built, gaps",
+   "src": "review Purpose, R1-R19; Publication §6A"
+  },
+  {
+   "id": "standard",
+   "name": "Standard",
+   "plainDefinition": "A rule a government act is measured against (statute, regulation, ordinance, court order, adopted policy or public commitment), held with its captured text and the period it was in force.",
+   "layer": 9,
+   "module": "standards",
+   "states": [
+    {
+     "name": "proposal",
+     "meaning": "suggested by a member or the machine, stored apart, labelled"
+    },
+    {
+     "name": "declared",
+     "meaning": "held in the record; never edited"
+    },
+    {
+     "name": "superseded",
+     "meaning": "replaced by a later standard; still readable"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "proposal",
+     "to": "declared",
+     "act": "adopt proposal",
+     "who": "member",
+     "src": "standards R9-R10"
+    },
+    {
+     "from": "declared",
+     "to": "superseded",
+     "act": "declare a superseding standard",
+     "who": "member",
+     "src": "standards R6"
+    }
+   ],
+   "keyFields": [
+    "citation",
+    "kind",
+    "issuer",
+    "source (matched to profile, or undetermined)",
+    "in-force period",
+    "captured text"
+   ],
+   "acts": [
+    {
+     "name": "Declare a standard",
+     "who": "member (machine refused)",
+     "src": "standards R1-R4",
+     "op": "standardDeclare"
+    },
+    {
+     "name": "Propose a standard",
+     "who": "member or machine",
+     "src": "standards R9",
+     "op": "standardPropose"
+    },
+    {
+     "name": "Adopt a proposal",
+     "who": "member",
+     "src": "standards R10"
+    },
+    {
+     "name": "Ask what was in force on a date",
+     "who": "member",
+     "src": "standards R7-R8"
+    }
+   ],
+   "shownAs": [
+    "in force / not in force / undetermined (never a default)",
+    "null period = 'not stated in the record'"
+   ],
+   "maturity": "built, gaps",
+   "src": "standards Purpose, Terms, R1-R10; T8 archive (built)"
+  },
+  {
+   "id": "determination",
+   "name": "Conformance determination",
+   "plainDefinition": "The group's recorded judgment that a named government act was compliant, noncompliant or unclear against named standards, resting on published findings.",
+   "layer": 9,
+   "module": "conformance",
+   "states": [
+    {
+     "name": "live: compliant / noncompliant / unclear (per standard)",
+     "meaning": "never one overall verdict"
+    },
+    {
+     "name": "basis changed",
+     "meaning": "a finding or standard it rests on moved"
+    },
+    {
+     "name": "superseded",
+     "meaning": "replaced by a later determination of the same act"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "(none)",
+     "to": "live",
+     "act": "determine",
+     "who": "joined participant of the publishing project (machine refused)",
+     "src": "conformance R1-R6"
+    },
+    {
+     "from": "live",
+     "to": "superseded",
+     "act": "determine again, with reason",
+     "who": "joined participant",
+     "src": "conformance R7"
+    }
+   ],
+   "keyFields": [
+    "act (what, which office, when, evidence)",
+    "findings pinned at edition",
+    "standards",
+    "per-standard outcome",
+    "open questions (unclear)",
+    "comparison it drew on"
+   ],
+   "acts": [
+    {
+     "name": "Record a determination",
+     "who": "joined member",
+     "src": "conformance R1",
+     "op": "determine",
+     "note": "no significance, rank or score allowed (R8)"
+    },
+    {
+     "name": "Propose a comparison",
+     "who": "machine or member",
+     "src": "conformance R12"
+    },
+    {
+     "name": "Open a question from an unclear outcome",
+     "who": "same act",
+     "src": "conformance R6"
+    }
+   ],
+   "shownAs": [
+    "frozen vs live strength pair per finding (R9)",
+    "basis_changed flag (R10)",
+    "disagreement stated beside, not refused (R4)"
+   ],
+   "maturity": "built, gaps",
+   "src": "conformance Purpose, Terms, R1-R12, R18"
+  },
+  {
+   "id": "consequence",
+   "name": "Consequence (harm)",
+   "plainDefinition": "What a breach did and to whom (a class of people, a fund, a program, a service), measured from the record where possible, otherwise assessed by a member or marked undetermined.",
+   "layer": 9,
+   "module": "consequences",
+   "states": [
+    {
+     "name": "computed",
+     "meaning": "arithmetic over figures in the record, graded"
+    },
+    {
+     "name": "assessed",
+     "meaning": "a member's stated value with rationale"
+    },
+    {
+     "name": "undetermined",
+     "meaning": "no measure; never read as zero"
+    },
+    {
+     "name": "addressed / not addressed",
+     "meaning": "member's record, with evidence"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "undetermined",
+     "to": "computed or assessed",
+     "act": "revise (successor part)",
+     "who": "member",
+     "src": "consequences R6"
+    },
+    {
+     "from": "any",
+     "to": "addressed",
+     "act": "record addressed with evidence",
+     "who": "member (machine refused)",
+     "src": "consequences R9"
+    }
+   ],
+   "keyFields": [
+    "affected (class, fund, program, service, body)",
+    "measure and unit",
+    "period",
+    "causation question",
+    "state"
+   ],
+   "acts": [
+    {
+     "name": "Record a consequence part",
+     "who": "joined member; machine only computes",
+     "src": "consequences R1-R4"
+    },
+    {
+     "name": "Revise",
+     "who": "member",
+     "src": "consequences R6"
+    },
+    {
+     "name": "Record addressed / not addressed",
+     "who": "member",
+     "src": "consequences R9",
+     "op": "addressedrecord"
+    }
+   ],
+   "shownAs": [
+    "totals only within one state, unit and currency (R7)",
+    "UNDETERMINED",
+    "unproven causation"
+   ],
+   "maturity": "built, gaps",
+   "src": "consequences Purpose, Terms, R1-R9"
+  },
+  {
+   "id": "action",
+   "name": "Action (outward act)",
+   "plainDefinition": "Something the group sends or does outside the system (a records request, a comment, a filing), to whom, under which laws, by when, and what came back.",
+   "layer": 9,
+   "module": "actions",
+   "states": [
+    {
+     "name": "planned",
+     "meaning": "drafted"
+    },
+    {
+     "name": "active",
+     "meaning": "under way"
+    },
+    {
+     "name": "awaiting_response",
+     "meaning": "sent; clock running"
+    },
+    {
+     "name": "resolved",
+     "meaning": "complied / denied / escalated / withdrawn"
+    },
+    {
+     "name": "abandoned",
+     "meaning": "given up, with reason"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "planned",
+     "to": "active",
+     "act": "move (reason)",
+     "who": "member (machine refused)",
+     "src": "actions R13-R14; State Rules §4.4"
+    },
+    {
+     "from": "active",
+     "to": "awaiting_response",
+     "act": "move",
+     "who": "member",
+     "src": "actions R13; State Rules §4.4"
+    },
+    {
+     "from": "awaiting_response",
+     "to": "resolved",
+     "act": "move with resolution",
+     "who": "member",
+     "src": "actions R13"
+    },
+    {
+     "from": "any",
+     "to": "abandoned",
+     "act": "move (reason)",
+     "who": "member",
+     "src": "State Rules §4.4"
+    }
+   ],
+   "keyFields": [
+    "kind (product: records request, request for comment, other; more from profile)",
+    "risk tier 1/2/3/undetermined",
+    "counterparty office (role and body, never a person)",
+    "clock entries with legal basis (pending/met/overdue/waived)",
+    "correspondence ledger",
+    "governing laws",
+    "fee quotes",
+    "rests on determination (breach actions)"
+   ],
+   "acts": [
+    {
+     "name": "Move state",
+     "who": "member",
+     "src": "actions R13",
+     "op": "actionmove"
+    },
+    {
+     "name": "Record correspondence (sent / received / no response)",
+     "who": "member",
+     "src": "actions R15-R17",
+     "op": "actioncorrespond"
+    },
+    {
+     "name": "State governing laws",
+     "who": "member; anyone may propose",
+     "src": "actions R18-R19",
+     "op": "actionlaws"
+    },
+    {
+     "name": "Set risk tier (reason)",
+     "who": "member; anyone may propose",
+     "src": "actions R23-R24, R28",
+     "op": "actionrisktier"
+    },
+    {
+     "name": "Propose a clock entry from a profile deadline",
+     "who": "any credential",
+     "src": "actions R32"
+    }
+   ],
+   "shownAs": [
+    "risk tier never defaulted to 1 (undetermined)",
+    "overdue clock",
+    "machine-stated law labelled"
+   ],
+   "maturity": "built, gaps",
+   "src": "actions Purpose, Terms, R1-R32; State Rules §4.4"
+  },
+  {
+   "id": "filing",
+   "name": "Filing draft and counsel packet",
+   "plainDefinition": "What the group sends, prepared from the record: a pre-filled filing for lower-risk actions, or for high-risk ones a packet for the group's lawyer that can never be filed as is.",
+   "layer": 9,
+   "module": "filings",
+   "states": [
+    {
+     "name": "draft prepared",
+     "meaning": "machine or member prepared; labelled, not evidence"
+    },
+    {
+     "name": "stale",
+     "meaning": "action changed since the draft"
+    },
+    {
+     "name": "approved",
+     "meaning": "member approved the text"
+    },
+    {
+     "name": "sent",
+     "meaning": "recorded as a sent entry on the action"
+    },
+    {
+     "name": "packet version N",
+     "meaning": "counsel packet; new version on reassembly; basis-changed flag"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "draft prepared",
+     "to": "approved",
+     "act": "approve",
+     "who": "member (machine refused)",
+     "src": "filings R6"
+    },
+    {
+     "from": "approved",
+     "to": "sent",
+     "act": "record sent",
+     "who": "member",
+     "src": "filings R7"
+    }
+   ],
+   "keyFields": [
+    "governing tier (stricter of kind and action tier)",
+    "blanks filled with source; [UNFILLED] markers",
+    "Tier 2 advisory note",
+    "counsel named",
+    "six packet sections"
+   ],
+   "acts": [
+    {
+     "name": "Prepare a filing (tier 1-2)",
+     "who": "any credential",
+     "src": "filings R1-R5",
+     "op": "filingPrepare"
+    },
+    {
+     "name": "Approve",
+     "who": "member",
+     "src": "filings R6"
+    },
+    {
+     "name": "Record as sent",
+     "who": "member",
+     "src": "filings R7"
+    },
+    {
+     "name": "Assemble counsel packet (tier 3)",
+     "who": "member names counsel",
+     "src": "filings R8-R12",
+     "op": "counselPacket"
+    },
+    {
+     "name": "Propose a legal theory",
+     "who": "any credential",
+     "src": "filings R14"
+    }
+   ],
+   "shownAs": [
+    "'Prepared for review by … Not legal advice. Not for filing.' (R10)",
+    "[UNFILLED: name]",
+    "tier undetermined refused, never read as 1"
+   ],
+   "maturity": "built, gaps",
+   "src": "filings Purpose, Terms, R1-R15, R21"
+  },
+  {
+   "id": "escalation",
+   "name": "Escalation",
+   "plainDefinition": "The staged path a group follows to bring a government act back into conformance, from documentation through notice, deadlines, response, legal tools, sustained attention and political accountability.",
+   "layer": 9,
+   "module": "escalation",
+   "states": [
+    {
+     "name": "1 documentation",
+     "meaning": "findings and determination"
+    },
+    {
+     "name": "2 notification",
+     "meaning": "a breach action sent to the office"
+    },
+    {
+     "name": "3 clock",
+     "meaning": "a deadline with its basis"
+    },
+    {
+     "name": "4 response evaluation",
+     "meaning": "member reads the response"
+    },
+    {
+     "name": "5 legal tools",
+     "meaning": "filings or counsel packets"
+    },
+    {
+     "name": "6 sustained attention",
+     "meaning": "watching"
+    },
+    {
+     "name": "7 political accountability",
+     "meaning": "officials, oversight, audit, testimony, legislation to enforce"
+    },
+    {
+     "name": "suspended",
+     "meaning": "proposals paused; clocks run"
+    },
+    {
+     "name": "ended",
+     "meaning": "compliance restored and consequences addressed"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "n",
+     "to": "next stage",
+     "act": "advance (reason; trigger must be met)",
+     "who": "member",
+     "src": "escalation R13"
+    },
+    {
+     "from": "proposed stage",
+     "to": "declined",
+     "act": "decline",
+     "who": "member",
+     "src": "escalation R13"
+    },
+    {
+     "from": "open",
+     "to": "suspended",
+     "act": "suspend (reason)",
+     "who": "member",
+     "src": "escalation R15"
+    },
+    {
+     "from": "open",
+     "to": "ended",
+     "act": "end",
+     "who": "member; refused unless both exit conditions met",
+     "src": "escalation R14"
+    }
+   ],
+   "keyFields": [
+    "current stage",
+    "proposed next stages with when first met",
+    "attached actions",
+    "evaluations",
+    "exit: compliance / consequences (never composed)"
+   ],
+   "acts": [
+    {
+     "name": "Open from a live noncompliant determination",
+     "who": "joined member",
+     "src": "escalation R1",
+     "op": "escalationOpen"
+    },
+    {
+     "name": "Attach a breach action (stage 2, 5, 7)",
+     "who": "member",
+     "src": "escalation R9"
+    },
+    {
+     "name": "Evaluate a response (complied / partial / denied / none)",
+     "who": "member",
+     "src": "escalation R10",
+     "op": "escalationEvaluate"
+    },
+    {
+     "name": "Advance / decline",
+     "who": "member",
+     "src": "escalation R13"
+    },
+    {
+     "name": "Suspend / resume",
+     "who": "member",
+     "src": "escalation R15"
+    },
+    {
+     "name": "End",
+     "who": "member",
+     "src": "escalation R14"
+    }
+   ],
+   "shownAs": [
+    "proposed, never auto-advanced",
+    "exit conditions each met / not met / undetermined (R3)"
+   ],
+   "maturity": "built, gaps",
+   "src": "escalation Purpose, Terms, R1-R16; layers.md layer 9 ruling 3"
+  },
+  {
+   "id": "monitoring",
+   "name": "Watch (monitoring)",
+   "plainDefinition": "The copy's unattended checking of watched documents and action deadlines, which records what it saw and never decides what a change means.",
+   "layer": 10,
+   "module": "monitoring, scheduler",
+   "states": [
+    {
+     "name": "due / scheduled / unscheduled",
+     "meaning": "per address, with the cadence that governs"
+    },
+    {
+     "name": "unchanged",
+     "meaning": "same as baseline"
+    },
+    {
+     "name": "modified",
+     "meaning": "changed; new bytes captured"
+    },
+    {
+     "name": "removed",
+     "meaning": "404/410"
+    },
+    {
+     "name": "unreachable",
+     "meaning": "fetch failed; may become archive-fallback eligible"
+    },
+    {
+     "name": "paused",
+     "meaning": "administrator paused the daemon (not yet met)"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "due",
+     "to": "unchanged / modified / removed",
+     "act": "tick",
+     "who": "plane (mechanical promotion)",
+     "src": "monitoring R1-R9"
+    },
+    {
+     "from": "clock pending",
+     "to": "overdue",
+     "act": "deadline recheck",
+     "who": "plane",
+     "src": "monitoring R34, R44 (not yet met)"
+    }
+   ],
+   "keyFields": [
+    "address",
+    "cadence and its source",
+    "last checked",
+    "baseline",
+    "status"
+   ],
+   "acts": [
+    {
+     "name": "Check now",
+     "who": "member, administrator, daemon",
+     "src": "monitoring R1",
+     "op": "monitor"
+    },
+    {
+     "name": "See every watched address, incl. unscheduled",
+     "who": "member",
+     "src": "monitoring R32 (not yet met)"
+    },
+    {
+     "name": "Adopt a proposal to watch a finding's sources",
+     "who": "owning members",
+     "src": "monitoring R33 (not yet met)"
+    },
+    {
+     "name": "Pause the daemon",
+     "who": "administrator",
+     "src": "monitoring R30 (not yet met)"
+    }
+   ],
+   "shownAs": [
+    "source-modified / source-removed FINDING; archive-fallback-eligible / monitoring-recheck-due CONDITION (R31; producer pending N229)"
+   ],
+   "maturity": "built, gaps",
+   "src": "monitoring Purpose, Terms, R1-R35, R45; scheduler Purpose"
+  },
+  {
+   "id": "queue-item",
+   "name": "Queue item (and task)",
+   "plainDefinition": "One thing that wants this member's attention, grouped under every case it belongs to: an obligation a person must do, a finding nobody has judged, or a condition about the copy's own machinery.",
+   "layer": 11,
+   "module": "queue, affordances",
+   "states": [
+    {
+     "name": "OBLIGATION task: open → forwarded → resolved",
+     "meaning": "assigned work"
+    },
+    {
+     "name": "FINDING: open → decided (per project or per flow stage)",
+     "meaning": "leaves only by a recorded disposition"
+    },
+    {
+     "name": "CONDITION",
+     "meaning": "status signal; only muted"
+    },
+    {
+     "name": "muted / snoozed",
+     "meaning": "personal, not a record act"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "open",
+     "to": "forwarded",
+     "act": "forward",
+     "who": "assignee, anyone if unassigned, or administrator (machine refused)",
+     "src": "queue R25"
+    },
+    {
+     "from": "open / forwarded",
+     "to": "resolved",
+     "act": "resolve",
+     "who": "same",
+     "src": "queue R25"
+    },
+    {
+     "from": "open finding",
+     "to": "decided",
+     "act": "defer / dismiss with reason",
+     "who": "joined participant of the project (per project)",
+     "src": "queue R27; inquiry R39"
+    },
+    {
+     "from": "shown",
+     "to": "muted",
+     "act": "mute item or case kinds",
+     "who": "the member (not obligations)",
+     "src": "queue R19-R20"
+    }
+   ],
+   "keyFields": [
+    "class and kind",
+    "home cases (ancestors to depth 6)",
+    "summary, detail, basis",
+    "age",
+    "assignee",
+    "options (acts with rung and weight)",
+    "disposition"
+   ],
+   "acts": [
+    {
+     "name": "Resolve / forward an obligation (set form)",
+     "who": "see transitions",
+     "src": "queue R25",
+     "op": "taskresolve / taskforward"
+    },
+    {
+     "name": "Defer / dismiss a finding (set form)",
+     "who": "joined member",
+     "src": "queue R27",
+     "op": "proposedispose"
+    },
+    {
+     "name": "Mute an item or a case's kinds",
+     "who": "member",
+     "src": "queue R19-R20",
+     "op": "queuemute"
+    },
+    {
+     "name": "Snooze a case",
+     "who": "member",
+     "src": "queue R21",
+     "op": "queuesnooze"
+    },
+    {
+     "name": "Act on the subject directly",
+     "who": "per option",
+     "src": "queue R12, R17"
+    }
+   ],
+   "shownAs": [
+    "out_of_view / undetermined home set (R7)",
+    "'resolved by X on date' (R39, not yet met)",
+    "snoozed marker (R40, not yet met)",
+    "FINDING never reads as an obligation (R16)"
+   ],
+   "maturity": "built, gaps",
+   "src": "queue Purpose, Terms, R1-R29, R39-R40; Interaction Constructs §QUEUE, DEC-10, DEC-16, DEC-36"
+  },
+  {
+   "id": "ai-run",
+   "name": "Assistant run (AI run)",
+   "plainDefinition": "A bounded, attributed working session a member opens for the assistant over a question or project, in which it searches, pursues, extracts and checks but never concludes.",
+   "layer": 6,
+   "module": "ai-runs, run-productions, skills, agent-worker",
+   "states": [
+    {
+     "name": "running",
+     "meaning": "working within its budget"
+    },
+    {
+     "name": "finished",
+     "meaning": "completed or cancelled"
+    },
+    {
+     "name": "stopped",
+     "meaning": "a bound ran out"
+    },
+    {
+     "name": "never-started",
+     "meaning": "mode not deployed"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "(none)",
+     "to": "running",
+     "act": "open (bounds, skill version)",
+     "who": "member holding an ai credential; objective runs only by a member",
+     "src": "ai-runs R9-R10; intent R18"
+    },
+    {
+     "from": "running",
+     "to": "finished / stopped",
+     "act": "close through one exit",
+     "who": "run's principal",
+     "src": "ai-runs R14"
+    }
+   ],
+   "keyFields": [
+    "mode (check / investigate / extract; only check deployed)",
+    "context",
+    "principals (who authorised, who pays)",
+    "budget and bounds",
+    "lens at open",
+    "log of where it looked",
+    "suggestions and proposed readings"
+   ],
+   "acts": [
+    {
+     "name": "Open a run",
+     "who": "member via an ai credential",
+     "src": "ai-runs R9",
+     "op": "airunopen"
+    },
+    {
+     "name": "Read the run, its log and lens",
+     "who": "member who can see its context",
+     "src": "ai-runs R19-R24"
+    },
+    {
+     "name": "Suggest basis versions",
+     "who": "run (investigate)",
+     "src": "run-productions Purpose"
+    },
+    {
+     "name": "Propose readings of a document",
+     "who": "run (extract), within mints",
+     "src": "run-productions R10-R11"
+    },
+    {
+     "name": "Surface a question",
+     "who": "run within surfaces bound",
+     "src": "ai-runs R25-R26"
+    },
+    {
+     "name": "Request a capture",
+     "who": "run",
+     "src": "capture-requests Purpose"
+    }
+   ],
+   "shownAs": [
+    "machine-work label",
+    "bias debt when lens moved",
+    "terminal rollup of looks"
+   ],
+   "maturity": "built, gaps",
+   "src": "ai-runs Purpose, Terms, R9-R44; run-productions Purpose; AI Roles §2-§3"
+  },
+  {
+   "id": "capture-request",
+   "name": "Capture request",
+   "plainDefinition": "The assistant's request for a public document; the copy's daemon fetches it under stated conduct, naming both who asked and who paid.",
+   "layer": 6,
+   "module": "capture-requests",
+   "states": [
+    {
+     "name": "requested",
+     "meaning": "filed; no bytes"
+    },
+    {
+     "name": "draining",
+     "meaning": "being fetched"
+    },
+    {
+     "name": "captured",
+     "meaning": "filed at collected"
+    },
+    {
+     "name": "refused",
+     "meaning": "source or conduct refused; reason login/paywall/user-agent/other"
+    },
+    {
+     "name": "expired",
+     "meaning": "released unfilled"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "requested",
+     "to": "captured / refused / expired",
+     "act": "drain",
+     "who": "daemon",
+     "src": "capture-requests Terms, R14-R20, R38"
+    },
+    {
+     "from": "refused",
+     "to": "requested",
+     "act": "retry after member supplies a credential",
+     "who": "member with contribute",
+     "src": "capture-requests R42"
+    }
+   ],
+   "keyFields": [
+    "address",
+    "question it serves",
+    "purpose",
+    "attribution sentence",
+    "state and reason"
+   ],
+   "acts": [
+    {
+     "name": "Request a capture",
+     "who": "run; member with contribute",
+     "src": "capture-requests R30",
+     "op": "capturerequest"
+    },
+    {
+     "name": "Retry a refused request",
+     "who": "member with contribute",
+     "src": "capture-requests R42",
+     "op": "capturerequestretry"
+    },
+    {
+     "name": "Read requests",
+     "who": "member",
+     "src": "capture-requests R23-R25",
+     "op": "capturerequests"
+    }
+   ],
+   "shownAs": [
+    "render deferred: content undetermined (R25)",
+    "capture-completed-unattended CONDITION (queue R10)"
+   ],
+   "maturity": "built",
+   "src": "capture-requests Purpose, Terms, R14-R42"
+  },
+  {
+   "id": "credentials",
+   "name": "Keys and credentials (signing key, AI credential, source login)",
+   "plainDefinition": "The secrets that let a member sign publications, let the assistant work on the group's or a member's behalf, or let a refused source be fetched.",
+   "layer": 2,
+   "module": "membership, capture-sources",
+   "states": [
+    {
+     "name": "signing key: active / revoked",
+     "meaning": "attests only when key and its member are both active"
+    },
+    {
+     "name": "AI credential: live / revoked",
+     "meaning": "organisation-scoped or member-scoped"
+    },
+    {
+     "name": "source credential: held / withdrawn",
+     "meaning": "encrypted; ends on member revocation"
+    }
+   ],
+   "transitions": [
+    {
+     "from": "active",
+     "to": "revoked",
+     "act": "revoke key",
+     "who": "administrator",
+     "src": "membership R26"
+    },
+    {
+     "from": "live",
+     "to": "revoked",
+     "act": "revoke AI credential",
+     "who": "member",
+     "src": "membership R30"
+    },
+    {
+     "from": "held",
+     "to": "withdrawn",
+     "act": "withdraw",
+     "who": "supplier or administrator",
+     "src": "capture-sources R63"
+    }
+   ],
+   "keyFields": [
+    "key and owning member",
+    "attests (yes/no, why)",
+    "principal kind (organisation / member)",
+    "task scope",
+    "host and scope of a source credential"
+   ],
+   "acts": [
+    {
+     "name": "Register a signing key",
+     "who": "administrator, for an enrolled active member",
+     "src": "membership R25",
+     "op": "signerAdd"
+    },
+    {
+     "name": "Mint an AI credential",
+     "who": "member (org-wide: administrator only)",
+     "src": "membership R28-R29, R62",
+     "op": "aiCredentialMint"
+    },
+    {
+     "name": "Supply a source credential",
+     "who": "member (own) ",
+     "src": "capture-sources R55-R63",
+     "op": "capturecredentialsupply"
+    }
+   ],
+   "shownAs": [
+    "attests_why: key_revoked / member_absent / member_<status>"
+   ],
+   "maturity": "built",
+   "src": "membership R25-R30, R62; capture-sources Terms, R63"
+  }
+ ],
+ "relationships": [
+  {
+   "from": "group-instance",
+   "to": "member",
+   "verb": "enrols",
+   "cardinality": "1 to many",
+   "note": "a founder plus members; ordinary members only after two administrators",
+   "src": "membership R12-R14"
+  },
+  {
+   "from": "member",
+   "to": "administrator",
+   "verb": "may be",
+   "cardinality": "0..1",
+   "note": "founder is the root of trust; cannot be voted out",
+   "src": "membership R5-R8, R64"
+  },
+  {
+   "from": "member",
+   "to": "capability",
+   "verb": "holds",
+   "cardinality": "many to many",
+   "note": "administrators hold all; expertise grants none",
+   "src": "membership R3-R4, R24"
+  },
+  {
+   "from": "invitation",
+   "to": "member",
+   "verb": "enrols",
+   "cardinality": "1 to 1",
+   "note": "one-time; spent on use",
+   "src": "membership R13, R16"
+  },
+  {
+   "from": "member",
+   "to": "project",
+   "verb": "participates in (invited/joined/leaving; owner flag)",
+   "cardinality": "many to many",
+   "note": "sight and every in-project act follow participation, never admin status",
+   "src": "membership R31-R55"
+  },
+  {
+   "from": "project",
+   "to": "objective",
+   "verb": "states",
+   "cardinality": "1 to 1",
+   "note": "objective required; condition optional",
+   "src": "intent R1-R3"
+  },
+  {
+   "from": "aspiration-goal",
+   "to": "objective",
+   "verb": "decomposes into",
+   "cardinality": "many to many",
+   "note": "a goal links objectives as the author's dated claim",
+   "src": "intent R8"
+  },
+  {
+   "from": "objective",
+   "to": "queue-item",
+   "verb": "raises gaps as",
+   "cardinality": "1 to many",
+   "note": "kind objective-gap",
+   "src": "intent R6; queue R1"
+  },
+  {
+   "from": "document",
+   "to": "passage",
+   "verb": "is pointed into by",
+   "cardinality": "1 to many",
+   "note": "content is a part of a captured document",
+   "src": "content Purpose"
+  },
+  {
+   "from": "reading",
+   "to": "passage",
+   "verb": "gives text to",
+   "cardinality": "1 to many",
+   "note": "a re-read can make passages stale",
+   "src": "content R22"
+  },
+  {
+   "from": "document",
+   "to": "entity",
+   "verb": "names / concerns",
+   "cardinality": "many to many",
+   "note": "graded resolution A-D",
+   "src": "entities Purpose, R9"
+  },
+  {
+   "from": "entity",
+   "to": "connection",
+   "verb": "links two documents through",
+   "cardinality": "1 to many",
+   "note": "grade = weaker end",
+   "src": "connections Purpose"
+  },
+  {
+   "from": "entity",
+   "to": "progression",
+   "verb": "threads documents for (instance)",
+   "cardinality": "many to many",
+   "note": "instance = flow + subject",
+   "src": "progressions Terms, R6"
+  },
+  {
+   "from": "inquiry",
+   "to": "leg",
+   "verb": "rests on",
+   "cardinality": "1 to many",
+   "note": "legs target documents, passages or other inquiries",
+   "src": "inquiry Terms, R4"
+  },
+  {
+   "from": "leg",
+   "to": "passage",
+   "verb": "points at",
+   "cardinality": "many to 0..1",
+   "note": "document legs carry a content row",
+   "src": "inquiry R12"
+  },
+  {
+   "from": "leg",
+   "to": "inquiry",
+   "verb": "may target (recursive)",
+   "cardinality": "many to 1",
+   "note": "no cycles; strength walks to depth 6",
+   "src": "inquiry R11; strength R2"
+  },
+  {
+   "from": "inquiry",
+   "to": "basis-version",
+   "verb": "holds alternative accounts",
+   "cardinality": "1 to many",
+   "note": "frozen once written",
+   "src": "basis-versions Purpose"
+  },
+  {
+   "from": "project",
+   "to": "basis-version",
+   "verb": "stands on one CURRENT per question",
+   "cardinality": "1 to 1 per inquiry",
+   "note": "project must cite the question",
+   "src": "basis-versions R13"
+  },
+  {
+   "from": "project",
+   "to": "inquiry",
+   "verb": "concludes (adopts a claim) per project",
+   "cardinality": "many to many",
+   "note": "one question may be concluded by one project and not another",
+   "src": "basis-versions R16-R18; inquiry R39"
+  },
+  {
+   "from": "inquiry",
+   "to": "strength",
+   "verb": "is measured by",
+   "cardinality": "1 to 1 (pair)",
+   "note": "capture, connection, testimony never composed",
+   "src": "strength Purpose"
+  },
+  {
+   "from": "project",
+   "to": "strength",
+   "verb": "declares a bar for",
+   "cardinality": "1 to 0..1",
+   "note": "group default seeds new projects",
+   "src": "strength R14-R16"
+  },
+  {
+   "from": "bias-set",
+   "to": "project",
+   "verb": "lens in force for (instance or project scope)",
+   "cardinality": "many to many",
+   "note": "adoption pins a revision",
+   "src": "bias R11-R16"
+  },
+  {
+   "from": "bias-set",
+   "to": "case",
+   "verb": "travels with (bias acknowledgement)",
+   "cardinality": "1 to many",
+   "note": "required at publication",
+   "src": "case-authoring R3; Publication §2"
+  },
+  {
+   "from": "ai-run",
+   "to": "bias-debt",
+   "verb": "raises when lens moved",
+   "cardinality": "1 to 0..1",
+   "note": "disclosed, never blocking",
+   "src": "bias R33"
+  },
+  {
+   "from": "project",
+   "to": "case",
+   "verb": "produces",
+   "cardinality": "1 to many",
+   "note": "a case is a production of one project (DEC-72)",
+   "src": "publication Terms; Case Making §Naming amendment"
+  },
+  {
+   "from": "case",
+   "to": "inquiry",
+   "verb": "pins findings (load-bearing / supporting) at a version",
+   "cardinality": "many to many",
+   "note": "a finding may serve many cases",
+   "src": "publication Terms; case-authoring R5, R13"
+  },
+  {
+   "from": "review-copy",
+   "to": "case",
+   "verb": "drafts",
+   "cardinality": "many to 1",
+   "note": "never leaves the instance",
+   "src": "review Purpose"
+  },
+  {
+   "from": "firsthand-observation",
+   "to": "case",
+   "verb": "is attributed within",
+   "cardinality": "many to many",
+   "note": "per edition, by its author",
+   "src": "publication R17"
+  },
+  {
+   "from": "determination",
+   "to": "case",
+   "verb": "rests on published findings of",
+   "cardinality": "many to many",
+   "note": "same project's published editions only",
+   "src": "conformance R2"
+  },
+  {
+   "from": "determination",
+   "to": "standard",
+   "verb": "judges an act against",
+   "cardinality": "many to many",
+   "note": "outcome per standard",
+   "src": "conformance R3-R4"
+  },
+  {
+   "from": "determination",
+   "to": "inquiry",
+   "verb": "sends unclear questions back to",
+   "cardinality": "1 to many",
+   "note": "opened in the same act",
+   "src": "conformance R6"
+  },
+  {
+   "from": "consequence",
+   "to": "determination",
+   "verb": "measures harm of (noncompliant)",
+   "cardinality": "many to 1",
+   "note": "",
+   "src": "consequences R1"
+  },
+  {
+   "from": "action",
+   "to": "determination",
+   "verb": "rests on (breach actions)",
+   "cardinality": "many to 1..many",
+   "note": "breach: true requires a live determination",
+   "src": "actions R8"
+  },
+  {
+   "from": "filing",
+   "to": "action",
+   "verb": "prepares what is sent for",
+   "cardinality": "many to 1",
+   "note": "tier governs draft vs counsel packet",
+   "src": "filings Purpose"
+  },
+  {
+   "from": "escalation",
+   "to": "determination",
+   "verb": "is opened from (live noncompliant)",
+   "cardinality": "1 to 1",
+   "note": "one open escalation per determination",
+   "src": "escalation R1; escalation Decided by BOB"
+  },
+  {
+   "from": "escalation",
+   "to": "action",
+   "verb": "attaches breach actions at stages 2, 5, 7",
+   "cardinality": "1 to many",
+   "note": "",
+   "src": "escalation R9"
+  },
+  {
+   "from": "escalation",
+   "to": "consequence",
+   "verb": "ends only when addressed",
+   "cardinality": "many to many",
+   "note": "plus compliance restored",
+   "src": "escalation R14; consequences R9"
+  },
+  {
+   "from": "monitoring",
+   "to": "document",
+   "verb": "watches (per address)",
+   "cardinality": "many to many",
+   "note": "",
+   "src": "monitoring R15"
+  },
+  {
+   "from": "monitoring",
+   "to": "action",
+   "verb": "marks overdue clock entries of",
+   "cardinality": "many to many",
+   "note": "not yet met",
+   "src": "monitoring R34"
+  },
+  {
+   "from": "reevaluation",
+   "to": "inquiry",
+   "verb": "tells dependents a target changed",
+   "cardinality": "many to many",
+   "note": "nothing changes by itself",
+   "src": "reevaluation Purpose"
+  },
+  {
+   "from": "queue-item",
+   "to": "inquiry",
+   "verb": "is filed under every ancestor case (inquiry or project)",
+   "cardinality": "many to many",
+   "note": "one event, many homes; one resolution settles all",
+   "src": "queue R7; DEC-16"
+  },
+  {
+   "from": "ai-run",
+   "to": "inquiry",
+   "verb": "works a question or project; suggests versions",
+   "cardinality": "many to 1",
+   "note": "never accepts",
+   "src": "ai-runs Terms; run-productions Purpose"
+  },
+  {
+   "from": "ai-run",
+   "to": "capture-request",
+   "verb": "files",
+   "cardinality": "1 to many",
+   "note": "daemon fetches",
+   "src": "capture-requests Purpose"
+  },
+  {
+   "from": "capture-request",
+   "to": "document",
+   "verb": "becomes (at collected)",
+   "cardinality": "1 to 0..1",
+   "note": "",
+   "src": "capture-requests R38"
+  },
+  {
+   "from": "lead",
+   "to": "project",
+   "verb": "is shared to",
+   "cardinality": "many to many",
+   "note": "never evidence",
+   "src": "observation-log R16"
+  },
+  {
+   "from": "observation",
+   "to": "document",
+   "verb": "records looks at (4 levels)",
+   "cardinality": "many to many",
+   "note": "append-only",
+   "src": "observation-log Purpose"
+  },
+  {
+   "from": "credentials",
+   "to": "case",
+   "verb": "signing key attests signatures on",
+   "cardinality": "1 to many",
+   "note": "key and member both active",
+   "src": "membership R27; ratification R3"
+  }
+ ],
+ "roles": [
+  {
+   "name": "Founder (root of trust)",
+   "can": [
+    "claim the copy",
+    "everything an administrator can",
+    "deliver a signed case from own session",
+    "seed the group slug"
+   ],
+   "cannot": [
+    "be voted out by administrators (hosting account is the remedy)",
+    "act inside a project without participation"
+   ],
+   "src": "membership R1, R3, R7; instance-setup R4; ratification R3"
+  },
+  {
+   "name": "Administrator",
+   "can": [
+    "add, revoke, reactivate members",
+    "set capabilities",
+    "vote on administrators",
+    "confirm expertise",
+    "register signing keys",
+    "mint organisation AI credentials",
+    "set group bar, instance bias, group aspirations, profiles, identity",
+    "rescue an ownerless project",
+    "forward any task",
+    "pause monitoring (not yet met)"
+   ],
+   "cannot": [
+    "publish or ratify a project's case as administrator",
+    "set project visibility or answer join requests",
+    "see a hidden project's contents unless participant (sight: admins see projects; acts need participation)"
+   ],
+   "src": "membership R3-R14, R20-R22, R41, R43, R55, R62; strength R15; bias R11; intent R9; case-authoring R2"
+  },
+  {
+   "name": "Member (with contribute)",
+   "can": [
+    "capture, cite, open and work questions",
+    "declare subjects, flows, themes",
+    "record observations and leads",
+    "act on queue items",
+    "request captures, supply source credentials"
+   ],
+   "cannot": [
+    "act without the needed capability (absent from interface)"
+   ],
+   "src": "membership R4; control-plane R13; capture-requests R30, R42"
+  },
+  {
+   "name": "Project participant (joined)",
+   "can": [
+    "make a version current",
+    "conclude / withdraw for the project",
+    "set the objective condition",
+    "record determinations, consequences, escalation acts",
+    "decide project-scoped findings",
+    "edit drafts"
+   ],
+   "cannot": [
+    "invite, remove, change visibility, prepare or sign the case (owners only)"
+   ],
+   "src": "membership R54-R55, R66; basis-versions R13, R20; intent R2; conformance R1; queue R27; review R2"
+  },
+  {
+   "name": "Project owner",
+   "can": [
+    "invite/remove participants (with recorded reason)",
+    "vote owners in/out",
+    "set visibility",
+    "answer join requests",
+    "prepare the case",
+    "grant/revoke review copies",
+    "adopt project bias",
+    "sign the case (with attesting key)"
+   ],
+   "cannot": [
+    "leave as last committed owner",
+    "bypass the bar on load-bearing findings"
+   ],
+   "src": "membership R32-R51; case-authoring R2, R6; review R2; bias R11; membership R56"
+  },
+  {
+   "name": "Review recipient (outsider with a grant)",
+   "can": [
+    "read the review copy",
+    "comment",
+    "acknowledge the statement"
+   ],
+   "cannot": [
+    "see anything the last editor could not",
+    "see after revocation or publication"
+   ],
+   "src": "review R6-R12, R18; case-authoring R19"
+  },
+  {
+   "name": "Anyone (no account)",
+   "can": [
+    "knock (hand over material)",
+    "read and verify the published record"
+   ],
+   "cannot": [
+    "read unpublished material"
+   ],
+   "src": "capture R30; publication Purpose, R8-R13"
+  },
+  {
+   "name": "Assistant / AI run (ai credential)",
+   "can": [
+    "find, pursue, extract, check",
+    "suggest basis versions",
+    "propose readings, standards, comparisons, laws, tiers, theories, filings",
+    "surface questions within a bound",
+    "request captures"
+   ],
+   "cannot": [
+    "conclude, accept, reject or make current",
+    "ratify or sign",
+    "set a tier, state a law, determine, file",
+    "choose the question or set an objective",
+    "travel on a member's token",
+    "write a member's reason"
+   ],
+   "src": "AI Roles §2-§3; affordances R7; basis-versions R12, R16; actions R1, R5, R23; conformance R1; filings R6-R8; intent R2, R18; ratification R2, R4"
+  },
+  {
+   "name": "Daemon / plane (machine)",
+   "can": [
+    "fetch requested captures",
+    "run monitoring ticks",
+    "mark overdue clocks (not yet met)",
+    "age surfaced questions",
+    "derive findings, connections, strength"
+   ],
+   "cannot": [
+    "release, conclude or decide anything",
+    "enable monitoring on its own"
+   ],
+   "src": "capture-requests Purpose; monitoring Purpose, R33-R34; intent R17; DEC-24 via System Design §1"
+  },
+  {
+   "name": "Named counsel",
+   "can": [
+    "receive a counsel packet the group assembles"
+   ],
+   "cannot": [
+    "be reached by publication; packet is never filed as is"
+   ],
+   "src": "filings R8-R11"
+  }
+ ],
+ "journeys": [
+  {
+   "name": "(a) A group sets up and invites members",
+   "steps": [
+    {
+     "actor": "group operator",
+     "act": "install the signed release into the group's account",
+     "construct": "group-instance",
+     "result": "copy running, unclaimed",
+     "src": "installer Purpose"
+    },
+    {
+     "actor": "founder",
+     "act": "open the setup page and claim with the one-time password",
+     "construct": "group-instance",
+     "result": "copy claimed",
+     "src": "membership R1; instance-setup R20-R21"
+    },
+    {
+     "actor": "founder",
+     "act": "set display name, domain, jurisdiction profiles",
+     "construct": "group-instance",
+     "result": "group identified; local facts chosen",
+     "src": "instance-setup R5-R8, R14-R15"
+    },
+    {
+     "actor": "founder",
+     "act": "add a second administrator (direct while fewer than two)",
+     "construct": "administrator",
+     "result": "invitation issued",
+     "src": "membership R12-R13"
+    },
+    {
+     "actor": "group",
+     "act": "record who holds hosting access",
+     "construct": "administrator",
+     "result": "answer kept",
+     "src": "membership R11"
+    },
+    {
+     "actor": "administrator",
+     "act": "add members with capabilities (default contribute)",
+     "construct": "member",
+     "result": "one-time invitation link",
+     "src": "membership R12-R13"
+    },
+    {
+     "actor": "invitee",
+     "act": "open link, choose handle and password",
+     "construct": "invitation",
+     "result": "member active",
+     "src": "membership R15-R16; instance-setup R21"
+    },
+    {
+     "actor": "member with create_projects",
+     "act": "create a project with an objective",
+     "construct": "project",
+     "result": "sole owner",
+     "src": "promotion R19; membership R71; intent R1"
+    },
+    {
+     "actor": "owner",
+     "act": "invite participants",
+     "construct": "project",
+     "result": "participants invited",
+     "src": "membership R32"
+    },
+    {
+     "actor": "participant",
+     "act": "join",
+     "construct": "project",
+     "result": "joined",
+     "src": "membership R34"
+    },
+    {
+     "actor": "owner",
+     "act": "make the project discoverable (optional)",
+     "construct": "project",
+     "result": "outsiders see its name",
+     "src": "membership R45, R48"
+    },
+    {
+     "actor": "outside member",
+     "act": "request to join; owner grants",
+     "construct": "project",
+     "result": "requester invited, then joins",
+     "src": "membership R49-R51"
+    }
+   ]
+  },
+  {
+   "name": "(b) From a question to a published case",
+   "steps": [
+    {
+     "actor": "member",
+     "act": "capture a public document",
+     "construct": "document",
+     "result": "collected, with provenance",
+     "src": "capture Purpose"
+    },
+    {
+     "actor": "member",
+     "act": "release it",
+     "construct": "document",
+     "result": "verified (signed release)",
+     "src": "promotion R31"
+    },
+    {
+     "actor": "member",
+     "act": "resolve its references to subjects",
+     "construct": "entity",
+     "result": "graded matches; connections derived",
+     "src": "entities R9; connections Purpose"
+    },
+    {
+     "actor": "member (or assistant, surfaced)",
+     "act": "open a question",
+     "construct": "inquiry",
+     "result": "open / surfaced",
+     "src": "intent R16; ai-runs R25"
+    },
+    {
+     "actor": "member",
+     "act": "cite documents, passages or questions as supporting / cutting against",
+     "construct": "leg",
+     "result": "legs with earned grades",
+     "src": "citation R1-R2; inquiry R13"
+    },
+    {
+     "actor": "member",
+     "act": "open an assistant run to check or investigate",
+     "construct": "ai-run",
+     "result": "suggested versions, capture requests",
+     "src": "ai-runs R9; run-productions Purpose"
+    },
+    {
+     "actor": "member",
+     "act": "accept a version (affirming shared-origin check)",
+     "construct": "basis-version",
+     "result": "accepted",
+     "src": "basis-versions R12-R14"
+    },
+    {
+     "actor": "joined participant",
+     "act": "make it CURRENT for the project",
+     "construct": "basis-version",
+     "result": "project stands on it",
+     "src": "basis-versions R13"
+    },
+    {
+     "actor": "joined participant",
+     "act": "conclude with falsifier (or stated none)",
+     "construct": "inquiry",
+     "result": "finding for this project",
+     "src": "basis-versions R16-R18"
+    },
+    {
+     "actor": "owner",
+     "act": "check strength against the bar; clear hunches",
+     "construct": "strength",
+     "result": "load-bearing findings meet bar",
+     "src": "case-authoring R6, R12"
+    },
+    {
+     "actor": "editor / owner",
+     "act": "draft a review copy; grant outside reviewers",
+     "construct": "review-copy",
+     "result": "comments, missing list",
+     "src": "review R3-R13"
+    },
+    {
+     "actor": "owner",
+     "act": "prepare the case (scope, statement, exclusions, bias acknowledgement)",
+     "construct": "case",
+     "result": "unsigned case document",
+     "src": "case-authoring R1-R17"
+    },
+    {
+     "actor": "members / reviewers",
+     "act": "acknowledge the statement",
+     "construct": "case",
+     "result": "acknowledgements recorded",
+     "src": "case-authoring R19-R20"
+    },
+    {
+     "actor": "owner (own session, attesting key)",
+     "act": "sign the case",
+     "construct": "case",
+     "result": "ratified edition",
+     "src": "ratification R2-R3"
+    },
+    {
+     "actor": "signer with case authority",
+     "act": "ratify each finding and its evidence",
+     "construct": "case",
+     "result": "published; irreversible",
+     "src": "ratification R4-R6"
+    },
+    {
+     "actor": "anyone",
+     "act": "read and verify by hash",
+     "construct": "case",
+     "result": "verified without the copy's help",
+     "src": "publication R8-R13"
+    }
+   ]
+  },
+  {
+   "name": "(c) Acting on a finding",
+   "steps": [
+    {
+     "actor": "member",
+     "act": "declare the standard (or adopt a proposal)",
+     "construct": "standard",
+     "result": "standard held with its text",
+     "src": "standards R1-R10"
+    },
+    {
+     "actor": "joined member",
+     "act": "record a determination on the government act",
+     "construct": "determination",
+     "result": "noncompliant / compliant / unclear per standard",
+     "src": "conformance R1-R7"
+    },
+    {
+     "actor": "joined member",
+     "act": "record consequences (computed, assessed or undetermined)",
+     "construct": "consequence",
+     "result": "harm stated",
+     "src": "consequences R1-R4"
+    },
+    {
+     "actor": "joined member",
+     "act": "open an escalation",
+     "construct": "escalation",
+     "result": "stage 1",
+     "src": "escalation R1"
+    },
+    {
+     "actor": "member",
+     "act": "create a breach action to the office; set risk tier",
+     "construct": "action",
+     "result": "planned",
+     "src": "actions R8, R23"
+    },
+    {
+     "actor": "member (machine may prepare)",
+     "act": "prepare, approve and record the filing sent",
+     "construct": "filing",
+     "result": "sent entry on the action",
+     "src": "filings R1-R7"
+    },
+    {
+     "actor": "member",
+     "act": "state the deadline with its legal basis",
+     "construct": "action",
+     "result": "clock entry pending",
+     "src": "escalation R6; actions R32"
+    },
+    {
+     "actor": "plane",
+     "act": "mark overdue / see response; propose next stage",
+     "construct": "monitoring",
+     "result": "stage proposed, never advanced",
+     "src": "monitoring R34-R35 (not yet met); escalation R2"
+    },
+    {
+     "actor": "member",
+     "act": "evaluate the response",
+     "construct": "escalation",
+     "result": "complied / partial / denied / none",
+     "src": "escalation R10"
+    },
+    {
+     "actor": "member",
+     "act": "advance to legal tools or political accountability",
+     "construct": "escalation",
+     "result": "counsel packet or accountability action",
+     "src": "escalation R12-R13; filings R8"
+    },
+    {
+     "actor": "member",
+     "act": "record consequences addressed; end escalation",
+     "construct": "escalation",
+     "result": "ended only if compliance restored and consequences addressed",
+     "src": "consequences R9; escalation R14"
+    }
+   ]
+  },
+  {
+   "name": "(d) The daily queue",
+   "steps": [
+    {
+     "actor": "member",
+     "act": "open the queue",
+     "construct": "queue-item",
+     "result": "obligations, then findings, then conditions, grouped by case",
+     "src": "queue R6-R7"
+    },
+    {
+     "actor": "member",
+     "act": "see each item's options with rung and weight, pre-flighted",
+     "construct": "queue-item",
+     "result": "acts that exist for this caller only",
+     "src": "queue R12, R17; affordances R11"
+    },
+    {
+     "actor": "assignee",
+     "act": "resolve or forward obligations (as a set)",
+     "construct": "queue-item",
+     "result": "resolved / forwarded, attributed",
+     "src": "queue R25; record-core R50-R52"
+    },
+    {
+     "actor": "joined member",
+     "act": "defer or dismiss a finding with a reason, per project",
+     "construct": "queue-item",
+     "result": "leaves that project's list, recorded",
+     "src": "queue R13, R27"
+    },
+    {
+     "actor": "member",
+     "act": "take up an objective gap or proposal: adopt, open question, defer, dismiss",
+     "construct": "objective",
+     "result": "triaged",
+     "src": "intent R16"
+    },
+    {
+     "actor": "member",
+     "act": "adopt newer or keep earlier document version on a notice",
+     "construct": "reevaluation",
+     "result": "reference updated or kept",
+     "src": "reevaluation R15"
+    },
+    {
+     "actor": "recipient",
+     "act": "resolve a bias debt with reason",
+     "construct": "bias-debt",
+     "result": "settled",
+     "src": "bias R35"
+    },
+    {
+     "actor": "member",
+     "act": "mute a condition or snooze a case",
+     "construct": "queue-item",
+     "result": "personal only",
+     "src": "queue R19-R21"
+    }
+   ]
+  },
+  {
+   "name": "(e) Delegating looking to the assistant",
+   "steps": [
+    {
+     "actor": "member",
+     "act": "mint a member-scoped AI credential",
+     "construct": "credentials",
+     "result": "credential live",
+     "src": "membership R28-R29"
+    },
+    {
+     "actor": "member",
+     "act": "work the objective (opens a run with gaps as instructions)",
+     "construct": "ai-run",
+     "result": "running",
+     "src": "intent R18"
+    },
+    {
+     "actor": "run",
+     "act": "request captures of public addresses",
+     "construct": "capture-request",
+     "result": "requested",
+     "src": "capture-requests Purpose"
+    },
+    {
+     "actor": "daemon",
+     "act": "drain requests under conduct rules",
+     "construct": "capture-request",
+     "result": "captured at collected / refused with reason",
+     "src": "capture-requests R14, R38, R40"
+    },
+    {
+     "actor": "member",
+     "act": "supply a source login for a refused request and retry",
+     "construct": "credentials",
+     "result": "request retried",
+     "src": "capture-requests R42; capture-sources R63"
+    },
+    {
+     "actor": "run",
+     "act": "suggest versions; surface questions",
+     "construct": "basis-version",
+     "result": "suggested (labelled)",
+     "src": "run-productions Purpose; ai-runs R25"
+    },
+    {
+     "actor": "member",
+     "act": "accept or reject; the run never does",
+     "construct": "basis-version",
+     "result": "member-authored state",
+     "src": "basis-versions R12"
+    }
+   ]
+  }
+ ],
+ "displayPrimitives": [
+  {
+   "name": "UNDETERMINED",
+   "meaning": "what we do not know and why; first-class, never an error, one treatment everywhere",
+   "src": "Interaction Constructs §U; System Design §1",
+   "where": "legs, strength axes, capture route, risk tier, standard source and in-force, consequences, home sets, deliverer, profiles"
+  },
+  {
+   "name": "Grade letters A-D",
+   "meaning": "how directly something is established; separate scales for capture, connection, testimony; never composed",
+   "src": "System Design §4; entities R9; provenance R24-R27",
+   "where": "captures, entity matches, connections, legs, flow instances"
+  },
+  {
+   "name": "Strength pair",
+   "meaning": "weakest capture and weakest connection, testimony beside; graded / unrated / undetermined; no single score",
+   "src": "strength R1-R10; publication R11",
+   "where": "questions, versions, published cases, determinations"
+  },
+  {
+   "name": "Rung ladder",
+   "meaning": "every act's weight: reversible < reasoned < terminal < attested < irreversible",
+   "src": "affordances R2-R3, R27; Interaction Constructs §revised set",
+   "where": "every act option"
+  },
+  {
+   "name": "Set weight",
+   "meaning": "refuse (all or nothing), report (proceed, say what moved), per-item (each applied or kept with reason), single",
+   "src": "affordances R1; record-core R50-R52",
+   "where": "bulk acts on selections and queue sets"
+  },
+  {
+   "name": "Look states: NEVER_LOOKED ('nobody looked'), LOOKED_ABSENT, LOOKED_INDETERMINATE, partial, PRESENT",
+   "meaning": "which absence is true, at which of four levels",
+   "src": "observation-log R1-R3; skills R19; case-authoring R17",
+   "where": "frontier, leads, run logs, searched section of a case"
+  },
+  {
+   "name": "Content-axis states",
+   "meaning": "indexed full / partial / none, not extracted, undetermined",
+   "src": "observation-log R1, R12",
+   "where": "documents and passages"
+  },
+  {
+   "name": "Machine-work label / proposal label",
+   "meaning": "marks anything a machine proposed; never evidence until a member acts",
+   "src": "AI Roles §3 rule 3; filings R5; standards R9",
+   "where": "suggested versions, proposed readings, standards, comparisons, laws, tiers, filings, contradictions"
+  },
+  {
+   "name": "Agent-surfaced marker",
+   "meaning": "this question was raised by the assistant",
+   "src": "System Design §3 row 12 (D-82); ai-runs R27",
+   "where": "wherever a question is listed or shown"
+  },
+  {
+   "name": "Withheld / out of view",
+   "meaning": "something exists you may not see: stated as incompleteness, never identity or count",
+   "src": "queue R7 (DEC-36); strength R6; reevaluation R3; observation-log R13",
+   "where": "queue homes, strength members, re-evaluation dependents, observation rows"
+  },
+  {
+   "name": "Existence-only project",
+   "meaning": "you see the name of a discoverable project, nothing inside",
+   "src": "membership R44, R48, R77",
+   "where": "project directory, acts naming a project"
+  },
+  {
+   "name": "Stale / newer version notice",
+   "meaning": "a passage was cited under an earlier reading or a newer capture exists (affected / undetermined)",
+   "src": "content R22; reevaluation R14",
+   "where": "legs, cites, claims"
+  },
+  {
+   "name": "basis_changed flag",
+   "meaning": "something a determination, consequence or packet rests on moved; nothing recomputed",
+   "src": "conformance R10; consequences R8; filings R12",
+   "where": "layer 9 objects"
+  },
+  {
+   "name": "Notable departure",
+   "meaning": "a project departs from a group aspiration, with reason",
+   "src": "intent R10",
+   "where": "wherever project aspirations are read"
+  },
+  {
+   "name": "Not a publication marking",
+   "meaning": "review copy is unsigned and never leaves",
+   "src": "review R11",
+   "where": "review copy"
+  },
+  {
+   "name": "Counsel marking and [UNFILLED: name]",
+   "meaning": "not legal advice, not for filing; blank the record could not fill",
+   "src": "filings R3, R10",
+   "where": "filings"
+  },
+  {
+   "name": "Truncated / bound",
+   "meaning": "a list was cut at a stated bound",
+   "src": "membership R48; queue R6; intent Bounds",
+   "where": "every list"
+  },
+  {
+   "name": "Refusal with reason and translation",
+   "meaning": "every refusal names its reason in plain words before anything runs",
+   "src": "membership Provides; affordances Purpose (pre-flight, DEC-8); AI Roles §3 rule 10",
+   "where": "every act"
+  },
+  {
+   "name": "Ballot arithmetic",
+   "meaning": "votes needed, eligible, have, awaiting",
+   "src": "membership R5-R7, R38-R40",
+   "where": "administrator and owner votes"
+  },
+  {
+   "name": "Mute / snooze (personal) vs dispose (record)",
+   "meaning": "personal quieting never changes the record; dispositions are attributed",
+   "src": "queue Purpose, R14, R20",
+   "where": "queue"
+  }
+ ],
+ "inFlux": [
+  {
+   "what": "Hunch debt does not yet block publishing, and hunches still count at their stated grade",
+   "why": "UNCLEARED_HUNCH and hunch-inert strength not met",
+   "ids": "case-authoring R12; strength R5; REC-15; DEC-33"
+  },
+  {
+   "what": "Queue: 'resolved by X on date' block and snoozed marker not built",
+   "why": "not yet met",
+   "ids": "queue R39, R40 (K102)"
+  },
+  {
+   "what": "Queue gains re-evaluation notices (adopt/keep) and objective-gap items; monitoring's four item kinds have no producer",
+   "why": "T11 entries",
+   "ids": "N172, N229; queue R1"
+  },
+  {
+   "what": "Lead items offer document-grain acts instead of 'take up into the question / set aside'",
+   "why": "not yet met",
+   "ids": "queue R18 (REC-202)"
+  },
+  {
+   "what": "Monitoring: in-process ticks, pause, due slate, named requests, watching finding sources, overdue clock marks, escalation prompts",
+   "why": "not yet met",
+   "ids": "monitoring R23, R28-R35, R45; N222, N230"
+  },
+  {
+   "what": "Assistant: only CHECK mode deployed; investigate and extract refused as not deployed; assistant pilot flow absent",
+   "why": "deployment order",
+   "ids": "ai-runs R40, R44; AI Roles §2, §8"
+  },
+  {
+   "what": "Contradictions: never shown to members; PRESENT and RESOLVE undesigned",
+   "why": "design gap",
+   "ids": "contradiction Purpose; System Design §3 row 8"
+  },
+  {
+   "what": "Layer 9 (standards to escalation) built in T8 but requirement files still carry 'not yet met: new module' marks; fixes pending",
+   "why": "stale marks; T11 fixes incl. a member session unable to record a breach action through promote",
+   "ids": "T8 archive close; N233, N246, N257, N261, N271, N269, N220"
+  },
+  {
+   "what": "Action kinds offered from jurisdiction profiles not yet live in affordances vocabularies",
+   "why": "not yet met",
+   "ids": "affordances R26; N65, N231"
+  },
+  {
+   "what": "Evidence published after its finding not yet linked as a served edge",
+   "why": "not yet met",
+   "ids": "publication R35; ratification R16; N256"
+  },
+  {
+   "what": "Attribution in force per case edition read for review copy",
+   "why": "not yet met",
+   "ids": "publication R39 (K240)"
+  },
+  {
+   "what": "'Weakened' re-evaluation cause when a published finding's live pair falls below its frozen pair",
+   "why": "not yet met",
+   "ids": "reevaluation R17"
+  },
+  {
+   "what": "Bias: override/interaction listing, strictest-applies, findings as work products carrying debt",
+   "why": "not yet met / deferred",
+   "ids": "bias R24-R26, R40"
+  },
+  {
+   "what": "Leads list and member-facing words for look states",
+   "why": "not yet met",
+   "ids": "observation-log R20-R21 (D-681, D-682)"
+  },
+  {
+   "what": "Jurisdiction profile choice at install and per namespace",
+   "why": "not yet met",
+   "ids": "instance-setup R13, R16; N10"
+  },
+  {
+   "what": "Rungs of 57 ops graded 'undetermined' to be reassigned (incl. versionaccept, resolve, forward, action acts)",
+   "why": "R27 rule",
+   "ids": "affordances R27 (K102, K264, K309)"
+  },
+  {
+   "what": "Release and retire of a document have no owning module's requirements (still in legacy-store)",
+   "why": "extraction gap",
+   "ids": "affordances R1; build/extraction/retrieval.md"
+  },
+  {
+   "what": "Project lifecycle (forming→investigating→matured→closed) and work-product readiness exist in canon only",
+   "why": "no requirement holds them",
+   "ids": "State Rules §4.3; intent Decided by BOB (C-2.9 other arms stay in legacy-checks)"
+  },
+  {
+   "what": "Member surfaces absent: publish/ratify, start a CHECK run, frontier, bias, transcription, AI readings",
+   "why": "legacy UI being replaced",
+   "ids": "System Design §3 rows 4, 7, 9, 11, 12, 13"
+  },
+  {
+   "what": "Publication ceremony pre-flight (op=publishpreflight) deferred",
+   "why": "DEC-33",
+   "ids": "Interaction Constructs §RULED 2026-08-01; case-authoring R12"
+  },
+  {
+   "what": "How a knock becomes record is not designed",
+   "why": "design gap",
+   "ids": "Intake Doctrine §2a status"
+  },
+  {
+   "what": "Discovery: an assistant that searches for what is working and what is not",
+   "why": "beyond MVP; not in modules.json",
+   "ids": "layers.md layer 7"
+  },
+  {
+   "what": "Cross-group rerun, regrade under another lens, directory and cross-group discussion",
+   "why": "absent",
+   "ids": "System Design §3 rows 7, 13"
+  }
+ ],
+ "contradictions": [
+  {
+   "what": "'Rung ladder' names two different things",
+   "canon": "System Design §3 row 12 and Publication §1: release → stand behind → ground → conclude → accept → ratify (→ publish), a sequence of authored acts",
+   "requirements": "affordances R2: reversible, reasoned, terminal, attested, irreversible, a property of each act (Interaction Constructs agrees)",
+   "src": "System Design §3 row 12; Publication §1; affordances R2"
+  },
+  {
+   "what": "'Finding' is overloaded",
+   "canon": "Case Making: a finding is a concluded inquiry",
+   "requirements": "queue R1: FINDING is a queue class for something the record noticed that nobody judged",
+   "src": "Case Making §Naming; queue R1"
+  },
+  {
+   "what": "Capture grade A",
+   "canon": "Intake Doctrine §3 defines Grade A evidentiary raw capture",
+   "requirements": "provenance R24-R25: direct fetch earns at most B, archive C; nothing earns capture A",
+   "src": "Intake Doctrine §3; provenance R24-R25"
+  },
+  {
+   "what": "Legacy 'focus/problem' and case-as-phase",
+   "canon": "Case Making §Naming (pre-DEC-72 text): inquiry → finding → case as phases of one object",
+   "requirements": "publication Terms: a case is a production of a project (DEC-72); amendment present in canon",
+   "src": "Case Making §Naming amendment; publication Terms"
+  },
+  {
+   "what": "Layer-9 status marks",
+   "canon": "T8 archive: six layer-9 modules built and merged",
+   "requirements": "standards/conformance/consequences/filings/escalation still mark every id 'not yet met: new module'",
+   "src": "build/plan/archive/T8.md close; standards.md, conformance.md status"
+  }
+ ],
+ "legacyUiDivergence": [
+  "legacy app.html routes: #inquiry/, project workspace, #versions/, #draft/, #action/, #published, #session/ (civicos-ui/app.html)",
+  "no member surface for aspirations/goals, standards, determinations, consequences, escalation, filings (mentions only)",
+  "members cannot publish/ratify or start a CHECK run from it (System Design §3 row 12)",
+  "project workspace shows no grades by design (UI-16 note in app.html)"
+ ],
+ "sources": [
+  "build/layers.md",
+  "build/modules.json",
+  "build/manifest.md",
+  "build/requirements/{membership,record-core,promotion,provenance,capture-sources,capture,calibration,extraction,content,entities,connections,progressions,bias,observation-log,query-language,retrieval,inquiry,citation,basis-versions,strength,contradiction,ai-runs,run-productions,capture-requests,skills,intent,reevaluation,publication,ratification,case-authoring,review,standards,conformance,consequences,actions,filings,escalation,monitoring,scheduler,affordances,queue,instance-setup,control-plane,installer,jurisdictions}.md (Public parts; Open for Bob of several)",
+  "docs/architecture/BIO_System_Design.md §1-§4",
+  "requirements/README.md",
+  "docs/architecture/BIO_Interaction_Constructs_v0_1.md (status, revised set, §U)",
+  "docs/architecture/BIO_Case_Making_v0_1.md §Naming, §Claim",
+  "docs/architecture/BIO_Publication_v0_1.md §1-§2, §6",
+  "docs/architecture/BIO_Assistant_and_AI_Roles_v0_1.md §1-§3",
+  "docs/architecture/BIO_Declared_Bias_v0_1.md statement kinds, hunch debt",
+  "docs/architecture/BIO_Membership_Architecture_v2.md §5 and status",
+  "docs/architecture/BIO_Intake_Doctrine_v1_1.md status, §3 (grep)",
+  "docs/architecture/BIO_State_Rules_Consistency_v1_5.md §4.1, §4.3, §4.4",
+  "build/plan/draft-T11.md",
+  "build/plan/next.md (N entries cited)",
+  "build/plan/current.md (head)",
+  "build/plan/archive/T8.md, T9.md (status and close)",
+  "build/jobs/T8/*.bob.md heads",
+  "civicos-ui/app.html (routes only)"
+ ]
+}

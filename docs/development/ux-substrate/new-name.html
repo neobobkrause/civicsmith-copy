@@ -1,0 +1,386 @@
+<title>A New Name for CivicOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;500&display=swap">
+<style>
+/* Layout: the design-phase reading document; criteria, six candidates as cards with a mock credit line each, names set aside, the recommendation, then what follows a choice. */
+:root {
+  --bg:#EDEFE8; --sheet:#FBFBF8; --ink:#16232E; --soft:#38474F; --muted:#5C6B66;
+  --rule:#C6CBBF; --accent:#2F6F62; --accent-tint:#E3EEE9; --signal:#8E3416; --signal-tint:#F8EFE9;
+  --f-rec:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-ui:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-fact:"Source Code Pro",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#11181D; --sheet:#182128; --ink:#E4E9E3; --soft:#C2CBC5; --muted:#8F9C96;
+  --rule:#2E3A41; --accent:#74B9A7; --accent-tint:#1C2E2A; --signal:#E3936E; --signal-tint:#33231C; color-scheme:dark } }
+:root[data-theme="dark"] {
+  --bg:#11181D; --sheet:#182128; --ink:#E4E9E3; --soft:#C2CBC5; --muted:#8F9C96;
+  --rule:#2E3A41; --accent:#74B9A7; --accent-tint:#1C2E2A; --signal:#E3936E; --signal-tint:#33231C; color-scheme:dark }
+body { background:var(--bg); color:var(--ink); font:16px/1.6 var(--f-ui) }
+.wrap { max-width:960px; margin:0 auto; padding-inline:20px; padding-block:32px 72px }
+h1,h2,h3 { font-family:var(--f-rec); font-weight:600; text-wrap:balance; line-height:1.2; margin:0 }
+h1 { font-size:clamp(30px,5vw,42px); letter-spacing:-0.012em }
+h2 { font-size:25px; margin-top:52px; padding-top:14px; border-top:2px solid var(--ink) }
+p { margin:0; max-width:68ch }
+.eyebrow { font:500 12px var(--f-fact); letter-spacing:.08em; text-transform:uppercase; color:var(--accent) }
+.lede { font-size:18px; color:var(--soft); margin-top:10px }
+.meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:12px; margin-top:22px }
+.meta div { background:var(--sheet); border:1px solid var(--rule); padding:12px 14px }
+.meta b { display:block; font-family:var(--f-rec); font-size:17px; margin-bottom:2px }
+.bar { position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--bg); border-bottom:1px solid var(--rule); padding-block:10px; margin-top:26px; display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; font-size:14px; font-weight:600 }
+.bar a { color:var(--accent); text-decoration:none } .bar a:hover,.bar a:focus-visible { text-decoration:underline }
+.bar label { margin-left:auto; font-weight:400; color:var(--muted); display:flex; gap:6px; align-items:center; cursor:pointer }
+.fam-intro { color:var(--soft); margin-top:6px }
+ol.pr { list-style:none; padding:0; margin:18px 0 0; display:grid; gap:10px; counter-reset:p }
+ol.pr > li { background:var(--sheet); border:1px solid var(--rule); padding:14px 16px; display:grid; grid-template-columns:auto 1fr; gap:2px 12px; counter-increment:p }
+ol.pr > li::before { content:attr(data-n); grid-row:1 / span 3; font:500 13px var(--f-fact); color:var(--accent); padding-top:3px; font-variant-numeric:tabular-nums }
+.name { font-family:var(--f-rec); font-weight:600; font-size:18px; line-height:1.3 }
+.say { color:var(--ink) }
+.eg { color:var(--muted); font-size:15px } .eg::before { content:"In practice: "; font-weight:600; color:var(--soft) }
+q { quotes:"\201C" "\201D" }
+.src { font:12.5px/1.45 var(--f-fact); color:var(--muted); grid-column:2; margin-top:4px }
+body:not(.show-src) .src { display:none }
+.gap { background:var(--sheet); border:1px solid var(--rule); border-left:4px solid var(--signal); padding:16px 18px; margin-top:16px; display:grid; gap:10px }
+.gap h3 { font-size:20px }
+.opts { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr)); gap:10px }
+.opt { border:1px solid var(--rule); padding:10px 12px; background:var(--bg) } .opt b { display:block; font-family:var(--f-rec) }
+.rec { background:var(--accent-tint); padding:10px 12px; max-width:none }
+.answer { font:14px var(--f-fact); color:var(--soft) }
+ul.say-list { margin:6px 0 0; padding-left:20px; display:grid; gap:4px }
+.foot { margin-top:48px; padding-top:14px; border-top:1px solid var(--rule); color:var(--muted); font-size:14px }
+a:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:2px }
+@media (max-width:560px) { .bar label { margin-left:0 } ol.pr > li { grid-template-columns:1fr } ol.pr > li::before { grid-row:auto } .src { grid-column:1 } }
+</style>
+<style>
+.cands { display:grid; gap:14px; margin-top:18px }
+.cand { background:var(--sheet); border:1px solid var(--rule); padding:16px 18px; display:grid; gap:10px; min-width:0 }
+.cand.pick { border-color:var(--accent); box-shadow:inset 4px 0 0 var(--accent) }
+.cand-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 14px }
+.cand-name { font-family:var(--f-rec); font-weight:600; font-size:28px; line-height:1.1 }
+.say-it { font:13px var(--f-fact); color:var(--muted) }
+.tag { font:500 11.5px var(--f-fact); letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border:1px solid currentColor }
+.tag.clear { color:var(--accent) } .tag.some { color:var(--soft) } .tag.close { color:var(--signal) }
+.tag.rec { color:var(--sheet); background:var(--accent); border-color:var(--accent) }
+.cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr)); gap:10px 18px }
+.cols h4 { font:500 11.5px var(--f-fact); letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:0 0 3px }
+.cols p { font-size:15px }
+.credit { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px 16px; border-top:1px solid var(--rule); padding-top:8px; font:12.5px var(--f-fact); color:var(--muted) }
+.credit b { font-family:var(--f-ui); font-weight:600; color:var(--ink); letter-spacing:-0.01em }
+.crit { margin:14px 0 0; padding-left:20px; display:grid; gap:6px; max-width:72ch }
+table.aside { width:100%; border-collapse:collapse; font-size:15px; margin-top:14px; background:var(--sheet) }
+table.aside th, table.aside td { text-align:left; vertical-align:top; padding:9px 10px; border-bottom:1px solid var(--rule) }
+table.aside thead th { font:500 12px var(--f-fact); letter-spacing:.06em; text-transform:uppercase; color:var(--muted) }
+table.aside td:first-child { font-family:var(--f-rec); font-weight:600; width:18% }
+.tw { overflow-x:auto; margin-top:8px }
+a { color:var(--accent) }
+.parts { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:12px; margin-top:14px }
+.parts div { background:var(--sheet); border:1px solid var(--rule); padding:12px 14px; min-width:0 }
+.parts h3 { font-size:18px; margin-bottom:6px }
+.parts ul { margin:0; padding-left:18px; display:grid; gap:4px }
+.note { color:var(--soft); font-size:15px; margin-top:12px }
+</style>
+<style>
+.find { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr)); gap:8px }
+.find div { border:1px solid var(--rule); background:var(--bg); padding:8px 10px; font-size:14.5px; min-width:0 }
+.find b { display:block; font:500 11.5px var(--f-fact); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:2px }
+.ok::before { content:"Passes · "; font-weight:600; color:var(--accent) }
+.warn::before { content:"Caution · "; font-weight:600; color:var(--signal) }
+.no::before { content:"Fails · "; font-weight:600; color:var(--signal) }
+.steps { list-style:none; padding:0; margin:16px 0 0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr)); gap:10px; counter-reset:s }
+.steps li { background:var(--sheet); border:1px solid var(--rule); padding:12px 14px; counter-increment:s; min-width:0 }
+.steps li::before { content:"Step " counter(s); display:block; font:500 12px var(--f-fact); letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin-bottom:4px }
+.steps b { display:block; font-family:var(--f-rec); font-size:17px; margin-bottom:2px }
+.walk { background:var(--sheet); border:1px solid var(--rule); padding:14px 16px; margin-top:14px; display:grid; gap:8px }
+.walk h3 { font-size:18px }
+.taken { font:13.5px/1.7 var(--f-fact); color:var(--soft); margin-top:10px; max-width:none }
+</style>
+<style>
+table.aud { width:100%; border-collapse:collapse; font-size:14.5px; margin-top:14px; background:var(--sheet) }
+table.aud th, table.aud td { text-align:left; vertical-align:top; padding:9px 10px; border-bottom:1px solid var(--rule) }
+table.aud thead th { font:500 12px var(--f-fact); letter-spacing:.06em; text-transform:uppercase; color:var(--muted) }
+table.aud td:first-child { font-weight:600; width:19% }
+table.aud .ex { font-family:var(--f-rec); color:var(--ink) } table.aud .ex::before { content:"\201C" } table.aud .ex::after { content:"\201D" }
+.verdicts { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:10px; margin-top:14px }
+.verdicts div { background:var(--sheet); border:1px solid var(--rule); padding:12px 14px; min-width:0 }
+.verdicts b { display:block; font-family:var(--f-rec); font-size:18px; margin-bottom:4px }
+.verdicts .lvl { font:500 11.5px var(--f-fact); letter-spacing:.06em; text-transform:uppercase; color:var(--accent); display:block; margin-bottom:4px }
+.verdicts .lvl.mid { color:var(--signal) }
+ol.script { margin:10px 0 0; padding-left:22px; display:grid; gap:6px; max-width:72ch }
+</style>
+<div class="wrap">
+<header>
+<p class="eyebrow">Design phase · before step 2 · DECIDED by Bob, 3 October 2026: Civicsmith (DEC-124)</p>
+<h1>A new name for CivicOS</h1>
+<p class="lede">CivicOS is already the name of other projects, among them <a href="https://swiftlet.technology/2020/03/06/civic-os-open-source-software-to-empower-open-governance/">an open-source "operating system" for government bodies</a>. The first round's favourite, Plumb, turned out to be in use by several software products too. This second round starts from your question: when someone hears about a civic accountability tool called X, how do they use that name to find it? Six names pass that test, one of them yours. <b>You chose Civicsmith on 3 October 2026 (DEC-124).</b></p>
+<div class="meta">
+<div><b>How it was checked</b>About 150 names were screened for whether their web addresses are free. The 27 strongest, including the seven you suggested, were then searched for every existing use: software, companies, publications, politics. All of this was done on 3 October 2026.</div>
+<div><b>What this is not</b>A trademark search. A lawyer's clearance search comes before the name is registered or announced.</div>
+<div><b>Decided</b>"Civicsmith it is. I'll get the domains." (Bob, 3 October 2026). The text people read is renamed; code names go to the development process as one handoff.</div>
+</div>
+</header>
+<nav class="bar" aria-label="Sections">
+<a href="#finding">How people find it</a><a href="#cands">Candidates</a><a href="#aside">Set aside</a><a href="#rec">Recommendation</a><a href="#brand">Brand check</a><a href="#wild">Before the mailing list</a><a href="#after">After you choose</a>
+</nav>
+
+<section id="finding">
+<h2>How someone finds the tool from its name</h2>
+<p class="fam-intro">A person hears "a tool for civic accountability called X" at a meeting, on a podcast or from a friend. They have only the sound of the name, and they take four steps. A name has to survive all four.</p>
+<ol class="steps">
+<li><b>Hear it, spell it</b>They write down what they heard. A name with one obvious spelling, no silent letters and no sound-alike word survives.</li>
+<li><b>Search for it</b>They type it into a search engine. If the name is an ordinary word, laboratories, plumbers or another company fill the first page. If nobody else uses it, our pages come first.</li>
+<li><b>Type the address</b>Many people simply try "name.org" or "name.com". The project needs to own the obvious address.</li>
+<li><b>Look in a store or on GitHub</b>Technical members look for it on GitHub and phones look in app stores. Nobody else's software should come up.</li>
+</ol>
+<p class="note">One more signpost works for any name: the credit line at the foot of every published case ("Made with …") can link to the project's home. Then every case a group publishes is a way in.</p>
+<div class="walk">
+<h3>Assay, walked through</h3>
+<div class="find">
+<div><b>Hear it</b><span class="no">most people write "essay".</span></div>
+<div><b>Search it</b><span class="no">laboratory assays fill the results.</span></div>
+<div><b>Address</b><span class="no">assay.org is a toxicology lab; .com, .app and .dev are all taken.</span></div>
+<div><b>Software</b><span class="no">laboratory software already carries the name.</span></div>
+</div>
+</div>
+<p class="fam-intro" style="margin-top:18px">What the search showed: almost every real word that fits the work is taken, its .com and .org both registered. That includes Probative, Sentry, Waymark, Forthright, Corroborate, Candour, Fair Witness, Open Record, Duly, Countersign, Undersigned and Mandamus. The names that pass are new words made from two plain ones. That is also good news for protection: invented words make the strongest trademarks.</p>
+</section>
+
+<section id="cands">
+<h2>Six candidates</h2>
+<p class="fam-intro">In the order I'd rank them. Each card runs the four steps. No candidate is spotless, so each card says where it needs care.</p>
+<div class="cands">
+
+<article class="cand pick" id="civicsmith">
+<div class="cand-head"><span class="cand-name">Civicsmith</span><span class="say-it">civic + smith · your suggestion</span><span class="tag rec">Recommended</span><span class="tag clear">All addresses free</span></div>
+<div class="find">
+<div><b>Hear it</b><span class="ok">one obvious spelling. Some people will write "Civic Smith" as two words, and search engines join them.</span></div>
+<div><b>Search it</b><span class="ok">nothing else uses the name. The only exact match is one username on a Honda Civic car forum.</span></div>
+<div><b>Address</b><span class="ok">civicsmith.com, .org, .app and .net are all free. It is the only candidate whose .com is free as well.</span></div>
+<div><b>Software</b><span class="ok">no product, app or code project found.</span></div>
+</div>
+<div class="cols">
+<div><h4>What it says</h4><p>A smith works by hand, with skill and patience, and this is the workshop where groups do civic work: records, findings, cases. The name says what the tool is for, so a hearer remembers it with its purpose already attached.</p></div>
+<div><h4>Costs</h4><p>Many products start with "civic", so someone who half-remembers "Civic-something" lands among them. The full name is unique. Early searches may show Honda Civic pages until ours rank.</p></div>
+</div>
+<div class="credit"><span>Lakeshore Tenants · The Coliseum lease · Edition 2</span><span>Made with <b>Civicsmith</b></span></div>
+</article>
+
+
+<article class="cand" id="heedwork">
+<div class="cand-head"><span class="cand-name">Heedwork</span><span class="say-it">heed + work</span><span class="tag clear">Runner-up</span></div>
+<div class="find">
+<div><b>Hear it</b><span class="warn">it may be heard as "headwork". Say "heed, as in pay heed" when introducing it.</span></div>
+<div><b>Search it</b><span class="ok">nothing else uses the name. Today's results are the dictionary word "heed" and companies called Heed.</span></div>
+<div><b>Address</b><span class="ok">heedwork.org, .app and .net are free. The .com is registered, but its owner and content couldn't be seen.</span></div>
+<div><b>Software</b><span class="ok">no product, app or code project found.</span></div>
+</div>
+<div class="cols">
+<div><h4>What it says</h4><p>The work of paying attention. "Heed" carries the first value ("held accountable only when we are paying sustained attention"). "Work" carries "Show your work" and "Credibility is demonstrated by the work".</p></div>
+<div><h4>Costs</h4><p>The "headwork" sound-alike. "Heed" is a little old-fashioned, though everyone knows it. One unrelated company, a staff-messaging tool, is called plain "Heed".</p></div>
+</div>
+<div class="credit"><span>Lakeshore Tenants · The Coliseum lease · Edition 2</span><span>Made with <b>Heedwork</b></span></div>
+</article>
+
+<article class="cand" id="factstand">
+<div class="cand-head"><span class="cand-name">Factstand</span><span class="say-it">fact + stand</span><span class="tag clear">All addresses free</span></div>
+<div class="find">
+<div><b>Hear it</b><span class="warn">said quickly, it can sound like FactSet, a large financial-data company.</span></div>
+<div><b>Search it</b><span class="warn">nothing else uses the name, but search engines first suggest "FactSet" until our pages exist.</span></div>
+<div><b>Address</b><span class="ok">factstand.com, .org, .app and .net are all free, which is rare.</span></div>
+<div><b>Software</b><span class="ok">no product, app or code project found.</span></div>
+</div>
+<div class="cols">
+<div><h4>What it says</h4><p>Where the facts stand, and taking a stand on them. "Accountability is built on credible facts. Nothing else holds up."</p></div>
+<div><h4>Costs</h4><p>The FactSet sound-alike, which is the kind of confusion we're trying to escape, even though FactSet works in a different field. Also "fax stand".</p></div>
+</div>
+<div class="credit"><span>Lakeshore Tenants · The Coliseum lease · Edition 2</span><span>Made with <b>Factstand</b></span></div>
+</article>
+
+<article class="cand" id="casesmith">
+<div class="cand-head"><span class="cand-name">Casesmith</span><span class="say-it">case + smith</span><span class="tag some">Small unrelated uses</span></div>
+<div class="find">
+<div><b>Hear it</b><span class="warn">often written as two words, "Case Smith".</span></div>
+<div><b>Search it</b><span class="warn">shared with small businesses that build musicians' equipment cases and phone cases.</span></div>
+<div><b>Address</b><span class="warn">casesmith.org and .net are free; .com and .app are taken.</span></div>
+<div><b>Software</b><span class="ok">no product, app or code project found.</span></div>
+</div>
+<div class="cols">
+<div><h4>What it says</h4><p>A smith makes things by hand, with skill. Groups make cases, one finding at a time, so it names the heart of the product.</p></div>
+<div><h4>Costs</h4><p>"Case" also means luggage and phone cases. It hints that the tool makes the case, when your principles say members conclude and the machine only helps.</p></div>
+</div>
+<div class="credit"><span>Lakeshore Tenants · The Coliseum lease · Edition 2</span><span>Made with <b>Casesmith</b></span></div>
+</article>
+
+<article class="cand" id="heedfast">
+<div class="cand-head"><span class="cand-name">Heedfast</span><span class="say-it">heed + fast, as in "hold fast"</span><span class="tag clear">All addresses free</span></div>
+<div class="find">
+<div><b>Hear it</b><span class="warn">could be heard as "heedful", or read as "heed, quickly".</span></div>
+<div><b>Search it</b><span class="ok">nothing else uses the name.</span></div>
+<div><b>Address</b><span class="ok">heedfast.com, .org, .app and .net are all free.</span></div>
+<div><b>Software</b><span class="ok">no product, app or code project found.</span></div>
+</div>
+<div class="cols">
+<div><h4>What it says</h4><p>Attention that holds fast, as in steadfast and holdfast. "We pursue accountability to completion."</p></div>
+<div><h4>Costs</h4><p>"Fast" reads as speed before it reads as firmness. An empty Instagram account holds the handle under a crude display name.</p></div>
+</div>
+<div class="credit"><span>Lakeshore Tenants · The Coliseum lease · Edition 2</span><span>Made with <b>Heedfast</b></span></div>
+</article>
+
+<article class="cand" id="casestead">
+<div class="cand-head"><span class="cand-name">Casestead</span><span class="say-it">case + stead, as in "homestead"</span><span class="tag clear">All addresses free</span></div>
+<div class="find">
+<div><b>Hear it</b><span class="warn">could be heard as "Chasestead", the name of a UK metalwork firm.</span></div>
+<div><b>Search it</b><span class="ok">nothing else uses the name.</span></div>
+<div><b>Address</b><span class="ok">casestead.com, .org, .app and .net are all free.</span></div>
+<div><b>Software</b><span class="ok">no product, app or code project found.</span></div>
+</div>
+<div class="cols">
+<div><h4>What it says</h4><p>A steady home for a group's cases. "Stead" is a place, as in homestead, and it suggests steadfastness.</p></div>
+<div><h4>Costs</h4><p>The most abstract of the five: it needs explaining. It shares the "case" ambiguity with Casesmith.</p></div>
+</div>
+<div class="credit"><span>Lakeshore Tenants · The Coliseum lease · Edition 2</span><span>Made with <b>Casestead</b></span></div>
+</article>
+</div>
+</section>
+
+<section id="aside">
+<h2>Checked and set aside</h2>
+<p class="fam-intro">Each of these failed at least one step. The worst clashes are software in our own field.</p>
+<div class="tw"><table class="aside">
+<thead><tr><th>Name</th><th>Why not</th></tr></thead>
+<tbody>
+<tr><td>Civicwatch</td><td>Taken in our own field: <a href="https://www.civicwatch.app">CivicWatch</a> is a live accountability platform, along with <a href="https://2ndlifemediaalamogordo.town.news/g/alamogordo-nm/n/372195/local-resident-launches-civicwatch-open-source-tool-boost-transparency">an open-source city vote tracker</a> and many code projects of the same name.</td></tr>
+<tr><td>Civiceyes</td><td><a href="https://civiceye.com">CivicEye</a> is established evidence and case software for police and prosecutors. It sounds identical.</td></tr>
+<tr><td>Civicworks</td><td><a href="https://civicworks.com">Civic Works</a> is a large Baltimore nonprofit, and two civic-tech groups use the name. It also sounds like Cityworks, government asset software.</td></tr>
+<tr><td>Civicfacts</td><td>The matching code organisation hosts <a href="https://github.com/civicfacts/yegfacts">YEGFacts</a>, which checks Edmonton's city government against the public record: our own concept. civicfacts.com is taken.</td></tr>
+<tr><td>Civication</td><td>Used by civic-education nonprofits and by two teachers' unions' legislative-advocacy programmes. It is easily heard as "CivicAction".</td></tr>
+<tr><td>Civicize</td><td>Nothing uses it, but it is an old dictionary verb ("to infuse with civic consciousness"). It has two spellings (-ize, -ise), is easily heard as "civilize", and is hard to protect. Its .com and .org are taken.</td></tr>
+<tr><td>Plumb</td><td>At least five software products already use it, among them <a href="https://github.com/getplumb/plumb">memory for AI agents</a> (which owns plumb.dev) and <a href="https://github.com/dbreunig/plumb">"a tool for keeping things true"</a>. Every obvious address is taken. It also has a silent b.</td></tr>
+<tr><td>Proofkeep</td><td><a href="https://www.proofkeep.com">ProofKeep</a> is evidence and chain-of-custody software, with a registered US software trademark.</td></tr>
+<tr><td>Factward</td><td><a href="https://www.factward.com/">Factward</a> is live fact-checking software for journalists.</td></tr>
+<tr><td>Firmfact</td><td><a href="https://firmfact.com/">Compliance and audit software</a>, plus <a href="https://firmfact.co.uk/">a UK service</a> that turns public records into evidence reports.</td></tr>
+<tr><td>Factkeep</td><td><a href="https://www.factkeep.io/">FactKeep</a> is archive-search software, and the near-identical <a href="https://factkeepers.com/">Factkeepers</a> is a partisan political site.</td></tr>
+<tr><td>Plainfact, Plainproof</td><td>The plural <a href="https://www.plainfacts.org/">PlainFacts</a> is a news platform and a tobacco-industry campaign. <a href="https://www.plainproof.com/">PlainProof</a> is compliance software for nursing homes.</td></tr>
+<tr><td>Proofstead</td><td><a href="https://proofstead.com">A 2026 home-services platform</a> selling "verifiable outcome records".</td></tr>
+<tr><td>Heedline</td><td>A browser security extension adopted the name on 27 September, and it is easily heard as "headline".</td></tr>
+<tr><td>Duewatch</td><td><a href="https://duewatch.com/">Bill-tracking software</a>, plus the due/dew sound-alike and watch brands.</td></tr>
+<tr><td>Intervenor</td><td>A real legal term. Search results will always be regulatory filings, and it has two spellings.</td></tr>
+<tr><td>Factstead</td><td>Nothing uses it, but it sounds even more like FactSet than Factstand does.</td></tr>
+<tr><td>Steadwork, Recordsmith, Proofhold</td><td>Each is held by an unrelated business that owns the .com: an office-space company, two record shops, and a "launching soon" page. None says much about the work.</td></tr>
+<tr><td>Assay, Steadfact</td><td>Assay fails all four steps (above). Steadfact's addresses were all registered in 2021 by one owner.</td></tr>
+<tr><td>From round one</td><td>Plumbline, Cairn, Footnote, Probity, Vigil, Holdfast, Stet, Standing, Heed, Ledger and Audit are all used nearby, too common to find, or tied to a political funder.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="rec">
+<h2>Recommendation</h2>
+<div class="gap" style="border-left-color:var(--accent)">
+<h3>Civicsmith</h3>
+<p>Your suggestion is the strongest name in either round. It passes all four steps, and it is the only candidate with every address free, the .com included. It also says what the tool is for, which matters for finding it: someone told about "a civic accountability tool called Civicsmith" remembers the word "civic" because it is the point. It reads well where it will most often appear: "Made with Civicsmith", "your group's copy of Civicsmith". Heedwork is the runner-up if you would rather the name carry a value than the field.</p>
+<p><b>To secure it, before anyone outside hears it:</b></p>
+<ul class="say-list">
+<li>Register civicsmith.org and civicsmith.com, with civicsmith.app and civicsmith.net.</li>
+<li>Have a lawyer run a trademark clearance search for software (US classes 9 and 42), then decide whether to file.</li>
+<li>Claim the name on GitHub and the main social networks. I couldn't check GitHub from here.</li>
+</ul>
+<p class="note">Registering addresses and filing a trademark are acts only you can take. When you choose, I'll walk you through them step by step.</p>
+</div>
+</section>
+
+
+<section id="brand">
+<h2>Brand check: Civicsmith</h2>
+<p class="fam-intro">Your question: is it too long, will the people who use it relate to it, and will they happily say "I use Civicsmith to do this"? What follows is reasoned judgement, not research with real people. A ten-minute test you can run yourself is at the end of this section.</p>
+
+<div class="verdicts">
+<div><span class="lvl">Fine</span><b>Length</b>Three syllables (CIV-ic-smith) and ten letters, like Salesforce or WordPress. It is short enough that people will say it whole. The shortenings, "Civic" and "Smith", are both awkward (Honda, a surname), which keeps the full name in use.</div>
+<div><span class="lvl">Strong</span><b>Powerful</b>A smith forges durable things by hand: strength without aggression. It sounds like building, not attacking, in line with your choice of "pressure" over "attacks".</div>
+<div><span class="lvl">Good</span><b>Welcoming</b>Plain English with no technical jargon (the "OS" goes). "Civic" includes everyone. It sounds human, more like a trade than an app.</div>
+<div><span class="lvl mid">Watch</span><b>Easy</b>The name promises craft, not ease. A newcomer may hear "for skilled people". Ease has to come from the product (wizards, the plain voice), and the name shouldn't promise what the product must show.</div>
+</div>
+
+<h3 style="margin-top:22px;font-size:20px">What the name brings to mind</h3>
+<ul class="say-list" style="max-width:72ch">
+<li><b>"-smith" works by analogy.</b> Wordsmith, locksmith, blacksmith: someone skilled at a craft. People understand "civicsmith" on first hearing as someone skilled at civic work, or the tool they use for it.</li>
+<li><b>Smith is also everyone's surname.</b> For American ears it echoes <i>Mr. Smith Goes to Washington</i>, the ordinary citizen who stands up to a corrupt machine. That suits a tool for ordinary people.</li>
+<li><b>"Civic" is shared ground.</b> Civic duty, civic centre, civics class: used across the political spectrum, so the name takes no side. Its weak points are a whiff of school homework, and the car.</li>
+<li><b>It names no place,</b> so it travels to any city, as your rule requires.</li>
+</ul>
+
+<h3 style="margin-top:22px;font-size:20px">Audience by audience</h3>
+<div class="tw"><table class="aud">
+<thead><tr><th>Who</th><th>What they hear</th><th>Would they say it?</th><th>Watch for</th></tr></thead>
+<tbody>
+<tr><td>A newcomer member, a community activist with no technical background (the interface is designed around them)</td><td>A civic craft they can learn. Plain words.</td><td><span class="ex">I'm learning Civicsmith so I can help with the rent-board case.</span></td><td>"Smith" can sound expert-only. The first screens and the onboarding wizard must show it is easy.</td></tr>
+<tr><td>An experienced investigator</td><td>A workshop for doing it properly.</td><td><span class="ex">We built the whole case in Civicsmith. Every finding links to its source.</span></td><td>Nothing significant.</td></tr>
+<tr><td>Professional members: lawyers, accountants, auditors, engineers, journalists</td><td>Rigour and craft, like "wordsmith". Nothing partisan to explain to colleagues or an employer.</td><td><span class="ex">I check the budget findings in our group's Civicsmith.</span></td><td>Professionals avoid tools branded as activism, and this name isn't.</td></tr>
+<tr><td>The founder, the person who installs it, the administrators</td><td>Something sturdy that belongs to the group. Easy to pitch at a meeting.</td><td><span class="ex">Let's set up Civicsmith for the association. It's free and it's ours.</span></td><td>They still have to explain "your group's copy". The name doesn't get in the way.</td></tr>
+<tr><td>Someone handing the group material, possibly a whistleblower</td><td>Neutral, civic, not alarming.</td><td>Sees it on the page where material is handed in.</td><td>The name says nothing about safety. That page's own words must.</td></tr>
+<tr><td>A public reader of a published case</td><td>A maker's mark at the foot of the page.</td><td><span class="ex">Made with Civicsmith.</span></td><td>"Made with Civic Smith" could be misread as a firm or a person who helped write the case. The credit must show it is software (step 2 will handle this).</td></tr>
+<tr><td>Journalists receiving a case</td><td>A tool whose cases can be checked. Neutral.</td><td><span class="ex">The tenants' case, made with Civicsmith, checks out against the records.</span></td><td>A neutral name lets them mention it without seeming to take sides.</td></tr>
+<tr><td>Partner groups and the network</td><td>A shared craft across cities.</td><td><span class="ex">Are you on Civicsmith? Import our case.</span></td><td>Nothing significant: it names no place.</td></tr>
+<tr><td>Government offices and officials receiving requests, filings or a case</td><td>Builders, not attackers.</td><td>Sees the credit on a case or filing.</td><td>A constructive name lowers defensiveness, which helps the group get answers.</td></tr>
+<tr><td>Oversight bodies, the group's lawyer, outside reviewers</td><td>Orderly, professional work.</td><td><span class="ex">The referral packet was prepared in Civicsmith.</span></td><td>Nothing significant.</td></tr>
+<tr><td>The group's future members</td><td>A lasting workshop and record.</td><td><span class="ex">The 2026 lease work is all in Civicsmith.</span></td><td>Nothing significant.</td></tr>
+</tbody></table></div>
+
+<h3 style="margin-top:22px;font-size:20px">Weak points, and what handles each</h3>
+<ul class="say-list" style="max-width:72ch">
+<li><b>Promises craft more than ease.</b> The product carries ease: wizards, the plain voice, the first screens. Don't add "easy" to the name.</li>
+<li><b>Could read as a person or a firm in the credit.</b> Write it as one word with no space, and make the credit link to a short page that says "Civicsmith is free software for civic groups".</li>
+<li><b>Earnest for the youngest organisers.</b> Accepted. Earnest is right for a tool whose output must persuade journalists and officials.</li>
+<li><b>Searches for "civic" alone land elsewhere.</b> The full word is unique. Every published case's credit points home.</li>
+<li><b>Outside English.</b> "Civic" is close to cívico, civique and civico; "smith" is a well-known English surname. Translating the interface, which comes later, doesn't depend on the name.</li>
+</ul>
+<p class="note">Next to the runner-up: Heedwork carries a value more warmly but has to be explained, and it sounds like "headwork". Civicsmith is understood on first hearing.</p>
+
+<h3 style="margin-top:22px;font-size:20px">A ten-minute test before you commit</h3>
+<p style="max-width:72ch">Real reactions beat my judgement. Try this with five to eight people from different audiences: a member, a professional, a journalist friend, someone outside civic work.</p>
+<ol class="script">
+<li>Say, without showing it written: "There's a free tool for civic accountability called Civicsmith."</li>
+<li>Ask them to write the name down.</li>
+<li>Ask what they think it does, and who it's for.</li>
+<li>Ask whether they'd be comfortable saying "I use Civicsmith to…" to a colleague or an official.</li>
+<li>Repeat with Heedwork, for comparison.</li>
+</ol>
+<p class="note">If most people spell it right, guess roughly what it does, and would say it without hesitation, the name passes.</p>
+</section>
+
+
+<section id="wild">
+<h2>Before the mailing list</h2>
+<p class="fam-intro">You plan to test the name on a broad Berkeley list (3 October). You agreed that "smith" points at the destination, expert civic accountability tools, so the path to it must be wide and welcoming for every audience. That carries into the journeys (step 3).</p>
+<h3 style="margin-top:18px;font-size:20px">Lock down first</h3>
+<ol class="script">
+<li><b>Before sending:</b> register civicsmith.org and civicsmith.com, ideally with .net and .app (about $10–20 a year each). Turn on auto-renew and privacy, under an account the project controls. A published name is what address speculators look for.</li>
+<li><b>Before sending:</b> create a free GitHub organisation called civicsmith.</li>
+<li><b>Nice to have:</b> a one-line holding page at civicsmith.org, so anyone who types the address finds the project and not a parking page. Also the social handles you would actually use.</li>
+<li><b>Can wait for the replies:</b> the trademark clearance search, and a filing if you want one (US classes 9 and 42). Talking about a name on a mailing list carries little risk to it.</li>
+</ol>
+<h3 style="margin-top:18px;font-size:20px">The post</h3>
+<div class="walk">
+<p><b>Subject:</b> Gut check on a name</p>
+<p>Hi all, I'm helping build a free tool that helps community groups hold local government to its own rules, with public records and evidence anyone can check. Working name: <b>Civicsmith</b>.</p>
+<p>What's your first reaction? And would you be comfortable saying "I use Civicsmith to…"? One line is plenty. Thanks!</p>
+<p>Bob</p>
+</div>
+</section>
+
+<section id="after">
+<h2>What follows a choice</h2>
+<p class="fam-intro">Two separate pieces of work, as you set out.</p>
+<div class="parts">
+<div><h3>Text people read: the design session</h3><ul>
+<li>The design-phase pages, the canon documents, the "Made with …" credit and the principles page change to the new name.</li>
+<li>Recorded as one decision, with your words.</li>
+<li>Brand and voice is revised around the name, including the question of a symbol or a wordmark.</li>
+</ul></div>
+<div><h3>Code names: the development process</h3><ul>
+<li>The interface folder, the program's identifying string, the web address, the process repository's name, and the type labels written into new signed records.</li>
+<li>Sent to the development process as one handoff. It decides how and when.</li>
+<li>Records already signed keep their old labels, so their signatures still verify.</li>
+</ul></div>
+</div>
+</section>
+
+<p class="foot">Drawn from the Roadmap's values and operational principles, your rulings on brand (the group leads, the tool credited quietly) and on naming no place, and searches and address checks made on 3 October 2026. Kept as the reasoning behind DEC-124, in docs/development/ux-substrate/new-name.html.</p>
+</div>

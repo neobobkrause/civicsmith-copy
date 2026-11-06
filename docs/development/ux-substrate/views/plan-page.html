@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action Plan Page</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<style>
+/* A working page, not a document: header, a checks strip, then four stacked parts. Tokens from build/layers-view.html. */
+:root{
+  --bg:#F4F6F8; --panel:#FFFFFF; --ink:#18202B; --muted:#5B6676; --rule:#D8DEE6; --chip:#E9EEF3;
+  --accent:#1D6A86; --accent-bg:#D7EAF1;
+  --ok:#2F6B3A; --ok-bg:#DCEEDD; --warn:#8A5A12; --warn-bg:#F5E6C8; --bad:#9A3B2E; --bad-bg:#F6E0DA; --ai:#5B45A8; --ai-bg:#E7E2F6;
+  --serif:"Source Serif 4",Georgia,serif; --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#11161D; --panel:#18202A; --ink:#E4E9EF; --muted:#9AA6B5; --rule:#2B3542; --chip:#222C38;
+  --accent:#5FB3CF; --accent-bg:#16394A; --ok:#8FD19B; --ok-bg:#1C3822; --warn:#E0B060; --warn-bg:#43341A; --bad:#F09A86; --bad-bg:#472019; --ai:#A895F0; --ai-bg:#2C2550;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#11161D; --panel:#18202A; --ink:#E4E9EF; --muted:#9AA6B5; --rule:#2B3542; --chip:#222C38;
+  --accent:#5FB3CF; --accent-bg:#16394A; --ok:#8FD19B; --ok-bg:#1C3822; --warn:#E0B060; --warn-bg:#43341A; --bad:#F09A86; --bad-bg:#472019; --ai:#A895F0; --ai-bg:#2C2550;
+}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:grid;gap:18px}
+.banner{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ai);background:var(--ai-bg);border-radius:6px;padding:6px 10px}
+header{display:grid;gap:6px}
+.crumbs{font-size:13px;color:var(--muted)}
+h1{font:600 clamp(24px,3.4vw,30px)/1.2 var(--serif);margin:0;text-wrap:balance}
+h2{font:600 18px/1.3 var(--serif);margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.pill{display:inline-block;font:500 12px/1.3 var(--mono);padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.pill.open{background:var(--ok-bg);color:var(--ok)}
+.checks{background:var(--warn-bg);color:var(--ink);border-radius:8px;padding:10px 14px;display:grid;gap:6px;font-size:14px}
+.checks b{color:var(--warn);font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase}
+.checks li{margin-left:18px}
+section{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;display:grid;gap:12px;min-width:0}
+.sechead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.subject{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--rule)}
+.subject:first-of-type{border-top:0}
+.num{font:500 13px var(--mono);color:var(--muted);padding-top:2px}
+.subject .line{font-weight:500}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font:500 11.5px/1.3 var(--mono);padding:3px 7px;border-radius:5px;background:var(--chip)}
+.tag.bad{background:var(--bad-bg);color:var(--bad)} .tag.ok{background:var(--ok-bg);color:var(--ok)} .tag.warn{background:var(--warn-bg);color:var(--warn)} .tag.acc{background:var(--accent-bg);color:var(--accent)} .tag.ai{background:var(--ai-bg);color:var(--ai)}
+.small{font-size:13px;color:var(--muted)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,button,input[type=text]{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:6px 10px}
+button{cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.opts{display:grid;gap:0}
+.opt{border-top:1px solid var(--rule)}
+.opt summary{list-style:none;display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;cursor:pointer}
+.opt summary::-webkit-details-marker{display:none}
+.opt .sum{font-weight:500}
+.opt .detail{padding:0 0 12px 34px;display:grid;gap:6px;font-size:14px}
+.opt .detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;margin:0}
+.opt .detail dt{color:var(--muted)} .opt .detail dd{margin:0}
+.disp{font:500 12px var(--mono);white-space:nowrap}
+.disp.chosen{color:var(--ok)} .disp.declined{color:var(--bad)} .disp.open{color:var(--muted)}
+.tray{border:1.5px dashed var(--ai);border-radius:8px;padding:10px 12px;display:grid;gap:8px;background:color-mix(in srgb,var(--ai-bg) 45%,var(--panel))}
+.tray .head{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ai)}
+.sugg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start}
+.decline{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.decline input{flex:1 1 220px;min-width:0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button[aria-selected=true]{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.phases{display:grid;gap:10px}
+.phase{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;border-left:3px solid var(--accent);padding:6px 0 6px 12px}
+@media (max-width:620px){.phase{grid-template-columns:1fr;gap:4px}}
+.phase .when{font:500 12.5px var(--mono);color:var(--muted)}
+.phase .name{font-weight:600}
+.checkpoint{font-size:14px;margin-top:4px}
+.checkpoint b{font-weight:500}
+.branch{font-size:13.5px;color:var(--muted);margin-top:2px}
+.started{display:grid;gap:8px}
+.act{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;border-top:1px solid var(--rule);padding-top:8px}
+.act:first-child{border-top:0;padding-top:0}
+.foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center}
+.toast{font-size:13px;color:var(--ok)}
+[hidden]{display:none!important}
+.act>.tag{align-self:start}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="banner">Design view · sample data · ACTION_DESIGN #1 · nothing here is saved</div>
+
+  <header>
+    <div class="crumbs">Project: School bond measure · Plans</div>
+    <h1>Bond measure: certification and proceeds</h1>
+    <div class="meta"><span class="pill open">open</span><span>opened 3 Aug by a joined participant, when the inquiry began</span><span>· project's kind of work: <b>fixing</b></span></div>
+  </header>
+
+  <div class="checks" role="status">
+    <b>Checks · 2</b>
+    <ul style="margin:0;padding:0">
+      <li>Scenario A: the court petition's filing window ends 20 Nov, before its phase can start (week 12).</li>
+      <li>Scenario A: no branch answers a hostile response (refusal, obstruction, retaliation) to the mitigation demands.</li>
+    </ul>
+  </div>
+
+  <section aria-labelledby="h-subj">
+    <div class="sechead"><h2 id="h-subj">Subjects</h2><button type="button" id="addSubject">Add subject</button></div>
+    <div class="subject"><div class="num">1</div><div>
+      <div class="line">The city's certification of the bond measure as passed, against the two-thirds vote requirement</div>
+      <div class="tags"><span class="tag bad">noncompliant</span><span class="tag ok">established</span><span class="tag acc">escalation: stage 2, notification</span></div>
+      <div class="small">From the inquiry "Was the measure properly certified?" (suspected, 3 Aug); determined 22 Sep.</div>
+    </div></div>
+    <div class="subject"><div class="num">2</div><div>
+      <div class="line">The deposit of bond proceeds into the general fund, against the voter-approved purpose</div>
+      <div class="tags"><span class="tag bad">noncompliant</span><span class="tag ok">established</span><span class="tag acc">escalation: stage 1, documentation</span></div>
+      <div class="small">Determined 22 Sep. Depends on subject 1: if the certification is voided, the proceeds question changes.</div>
+    </div></div>
+  </section>
+
+  <section aria-labelledby="h-opt">
+    <div class="sechead"><h2 id="h-opt">Options</h2>
+      <div class="toolbar">
+        <label class="small" for="sort">Sort by</label>
+        <select id="sort"><option value="category">category</option><option value="date">regulated end date</option><option value="subject">subject</option><option value="disp">disposition</option></select>
+        <button type="button" id="addOption">Add option</button>
+      </div>
+    </div>
+
+    <div class="tray" aria-label="Suggestions from the assistant">
+      <div class="head">Suggested by the assistant · for a fixing project · not yet in the plan</div>
+      <div id="suggs"></div>
+    </div>
+
+    <div class="toolbar"><span class="small" id="selcount">0 selected</span><button type="button" class="primary" id="choose" disabled>Choose</button><button type="button" id="declineBtn" disabled>Decline</button></div>
+    <div class="decline" id="declineRow" hidden><input type="text" id="declineReason" placeholder="Why the group declines these (one line)" aria-label="Reason for declining"><button type="button" id="declineGo">Decline with reason</button></div>
+    <div class="opts" id="opts"></div>
+  </section>
+
+  <section aria-labelledby="h-scn">
+    <div class="sechead"><h2 id="h-scn">Scenarios</h2><div class="tabs" role="tablist" id="tabs"></div></div>
+    <div class="phases" id="phases"></div>
+  </section>
+
+  <section aria-labelledby="h-st">
+    <div class="sechead"><h2 id="h-st">Started</h2></div>
+    <div class="started">
+      <div class="act"><div><b>Demand to rescind the certification</b> · to the Office of the City Clerk<div class="small">Sent 25 Sep by the group's contact · awaiting response · response due 9 Oct (the group's stated window; basis: DEC-13 precedent)</div></div><span class="tag acc">awaiting response</span></div>
+      <div class="act"><div><b>Demand to move the proceeds to a restricted account</b> · to the Finance Department<div class="small">Planned · not yet sent</div></div><span class="tag">planned</span></div>
+    </div>
+  </section>
+
+  <div class="foot"><span class="toast" id="toast" aria-live="polite"></span><button type="button" id="closePlan">Close plan…</button></div>
+</div>
+
+<script>
+const OPTIONS=[
+ {id:1,sum:"Demand the city rescind the certification",cat:"mitigation",subj:[1],to:"Office of the City Clerk (office)",dates:[],disp:"chosen",origin:"member",detail:"A letter asking the clerk and council to rescind the certification and restate the result, citing the canvass figures."},
+ {id:2,sum:"Demand the proceeds be moved to a restricted account",cat:"mitigation",subj:[2],to:"Finance Department (office)",dates:[],disp:"chosen",origin:"member",detail:"Ask that the proceeds be held apart until the certification question is settled."},
+ {id:3,sum:"Petition the court to set aside the certification",cat:"legal",tier:3,subj:[1],to:"Superior court, by named counsel",dates:[{d:"2026-11-20",basis:"the election-contest window (from the profile)"}],disp:"chosen",origin:"member",detail:"Tier 3: a counsel packet is prepared for counsel the group names. Exhibits: canvass report (co-attested B), certification resolution (co-attested B)."},
+ {id:4,sum:"Complaint to the county civil grand jury",cat:"legal",tier:1,subj:[1,2],to:"Civil Grand Jury (office, oversight)",dates:[],disp:"open",origin:"assistant",detail:"Tier 1: filed freely; the profile's template, each blank naming its source."},
+ {id:5,sum:"Public awareness campaign for district voters",cat:"awareness",subj:[1,2],to:"Voters in the school district (audience)",dates:[],disp:"chosen",origin:"member",detail:"Flyers and a short explainer drawn from the published case; the assistant drafts, a member approves."},
+ {id:6,sum:"Briefing for local reporters",cat:"journalistic",subj:[1,2],to:"Education reporters, local outlets (press)",dates:[],disp:"chosen",origin:"member",detail:"A briefing note and the published case; an embargoed copy is a review copy that never leaves the instance."},
+ {id:7,sum:"Ask the state controller to audit the fund",cat:"other",subj:[2],to:"State Controller (office)",dates:[],disp:"declined",reason:"Wait for the grand jury's response first.",origin:"member",detail:"An oversight request (escalation stage 7 purpose: audit request)."},
+ {id:8,sum:"Neighbourhood meetings with parents",cat:"grassroots",subj:[1,2],to:"Parents at the district's schools (audience)",dates:[],disp:"open",origin:"member",detail:"Two evening meetings to explain the findings and hear from families."}
+];
+const SUGGS=[
+ {sum:"Request the canvass records and the certification resolution",cat:"legal",why:"Both determinations cite the canvass summary; the underlying tallies would move subject 1 from co-attested B toward stronger evidence."},
+ {sum:"Public comment at the next council meeting",cat:"awareness",why:"The council certified the result; public comment puts the finding on the council's own record."}
+];
+const SCEN={
+ A:{name:"Negotiate first",phases:[
+   {when:"at the start",name:"Mitigation",opts:[1,2],cp:"8 weeks in: the city shows earnest commitment",met:"stay in Mitigation",notmet:"Awareness"},
+   {when:"if not met",name:"Awareness",opts:[5,6]},
+   {when:"after Awareness, week 12",name:"Legal preparation",opts:[3]}]},
+ B:{name:"File now",phases:[
+   {when:"at the start",name:"Legal and press",opts:[3,6]},
+   {when:"at the start",name:"Mitigation in parallel",opts:[1,2],cp:"6 weeks in: the city shows earnest commitment",met:"Awareness paused",notmet:"Awareness"},
+   {when:"if not met",name:"Awareness",opts:[5]}]}
+};
+const CAT_ORDER=["mitigation","legal","awareness","journalistic","grassroots","other"];
+const sel=new Set(); let scen="A";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function sorted(){
+  const k=$("sort").value, o=[...OPTIONS];
+  const endDate=x=>x.dates.length?x.dates[0].d:"9999";
+  o.sort((a,b)=>k==="category"?CAT_ORDER.indexOf(a.cat)-CAT_ORDER.indexOf(b.cat):
+    k==="date"?endDate(a).localeCompare(endDate(b)):
+    k==="subject"?a.subj[0]-b.subj[0]||a.subj.length-b.subj.length:
+    ["chosen","open","declined"].indexOf(a.disp)-["chosen","open","declined"].indexOf(b.disp));
+  return o;
+}
+function renderOpts(){
+  $("opts").innerHTML=sorted().map(o=>`
+   <details class="opt"><summary>
+     <input type="checkbox" aria-label="Select: ${esc(o.sum)}" data-id="${o.id}" ${sel.has(o.id)?"checked":""} onclick="event.stopPropagation()">
+     <div><div class="sum">${esc(o.sum)}</div><div class="tags"><span class="tag">${o.cat}</span>${o.tier?`<span class="tag warn">tier ${o.tier}</span>`:""}<span class="tag">serves ${o.subj.join(" and ")}</span>${o.dates.map(d=>`<span class="tag bad">ends ${d.d}</span>`).join("")}${o.origin==="assistant"?'<span class="tag ai">adopted from a suggestion</span>':""}</div></div>
+     <span class="disp ${o.disp}">${o.disp}</span></summary>
+     <div class="detail"><div>${esc(o.detail)}</div><dl>
+       <dt>Addressed to</dt><dd>${esc(o.to)}</dd>
+       <dt>Regulated dates</dt><dd>${o.dates.length?o.dates.map(d=>`${d.d}, basis: ${esc(d.basis)}`).join("; "):"none"}</dd>
+       ${o.reason?`<dt>Declined because</dt><dd>${esc(o.reason)}</dd>`:""}
+       <dt>History</dt><dd>added by a member · ${o.disp}</dd></dl>
+       ${o.disp==="chosen"?'<div><button type="button" class="startBtn" data-id="'+o.id+'">Start…</button></div>':""}</div></details>`).join("");
+  document.querySelectorAll('#opts input[type=checkbox]').forEach(cb=>cb.addEventListener("change",e=>{const id=+e.target.dataset.id; e.target.checked?sel.add(id):sel.delete(id); updSel();}));
+  document.querySelectorAll('.startBtn').forEach(b=>b.addEventListener("click",()=>toast("Start opens the ACT motion: what the action will say, what it rests on, and what it would refuse, before anything runs.")));
+}
+function updSel(){ $("selcount").textContent=sel.size+" selected"; $("choose").disabled=$("declineBtn").disabled=!sel.size; if(!sel.size) $("declineRow").hidden=true; }
+function renderSuggs(){
+  $("suggs").innerHTML=SUGGS.map((s,i)=>`<div class="sugg"><div><b>${esc(s.sum)}</b> <span class="tag">${s.cat}</span><div class="small">Why: ${esc(s.why)}</div></div><button type="button" data-i="${i}" class="adopt">Adopt</button></div>`).join("");
+  document.querySelectorAll(".adopt").forEach(b=>b.addEventListener("click",()=>{const s=SUGGS.splice(+b.dataset.i,1)[0]; OPTIONS.push({id:OPTIONS.length+1,sum:s.sum,cat:s.cat,subj:[1],to:"to be stated",dates:[],disp:"open",origin:"assistant",detail:s.why}); renderSuggs(); renderOpts(); toast("Adopted as an option. It stays undecided until a member chooses it.");}));
+  if(!SUGGS.length) $("suggs").innerHTML='<div class="small">No suggestions waiting.</div>';
+}
+function renderScen(){
+  $("tabs").innerHTML=Object.entries(SCEN).map(([k,v])=>`<button type="button" role="tab" aria-selected="${k===scen}" data-k="${k}">${k} · ${esc(v.name)}</button>`).join("")+'<button type="button" disabled title="A plan holds at most three scenarios">+ scenario</button>';
+  document.querySelectorAll('#tabs [data-k]').forEach(b=>b.addEventListener("click",()=>{scen=b.dataset.k; renderScen();}));
+  const name=id=>OPTIONS.find(o=>o.id===id)?.sum||"";
+  $("phases").innerHTML=SCEN[scen].phases.map(p=>`<div class="phase"><div class="when">${esc(p.when)}</div><div><div class="name">${esc(p.name)}</div><div class="small">${p.opts.map(name).map(esc).join(" · ")}</div>${p.cp?`<div class="checkpoint">Checkpoint, <b>${esc(p.cp)}</b> · judged by a member, never by the system</div><div class="branch">met → ${esc(p.met)} · not met → ${esc(p.notmet)}</div>`:""}</div></div>`).join("");
+}
+function toast(t){ $("toast").textContent=t; }
+$("sort").addEventListener("change",renderOpts);
+$("choose").addEventListener("click",()=>{OPTIONS.forEach(o=>{if(sel.has(o.id)){o.disp="chosen";delete o.reason;}}); toast(sel.size+" chosen."); sel.clear(); updSel(); renderOpts(); renderScen();});
+$("declineBtn").addEventListener("click",()=>{$("declineRow").hidden=false; $("declineReason").focus();});
+$("declineGo").addEventListener("click",()=>{const r=$("declineReason").value.trim(); if(!r){toast("Declining needs a short reason; undecided options need none."); return;} OPTIONS.forEach(o=>{if(sel.has(o.id)){o.disp="declined";o.reason=r;}}); toast(sel.size+" declined, with the reason kept."); sel.clear(); $("declineReason").value=""; updSel(); renderOpts();});
+$("addOption").addEventListener("click",()=>toast("Add option asks: summary, category, the subjects it serves, addressee, regulated dates with their basis, and a tier for legal options. Or describe it to the assistant, which fills the form for you to check."));
+$("addSubject").addEventListener("click",()=>toast("Add subject: an open inquiry, or an outcome of a live determination, with a reason."));
+$("closePlan").addEventListener("click",()=>toast("Closing asks for a reason. A plan never closes itself; closed, it stays readable."));
+renderSuggs(); renderOpts(); renderScen();
+</script>

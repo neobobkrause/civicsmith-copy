@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starting and Sending</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<style>
+/* Two panels in sequence: the ACT preview when an option starts, then the draft that leaves by a member's hand. */
+:root{
+  --bg:#F4F6F8; --panel:#FFFFFF; --ink:#18202B; --muted:#5B6676; --rule:#D8DEE6; --chip:#E9EEF3;
+  --accent:#1D6A86; --accent-bg:#D7EAF1;
+  --ok:#2F6B3A; --ok-bg:#DCEEDD; --warn:#8A5A12; --warn-bg:#F5E6C8; --bad:#9A3B2E; --bad-bg:#F6E0DA; --ai:#5B45A8; --ai-bg:#E7E2F6;
+  --serif:"Source Serif 4",Georgia,serif; --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#11161D; --panel:#18202A; --ink:#E4E9EF; --muted:#9AA6B5; --rule:#2B3542; --chip:#222C38;
+  --accent:#5FB3CF; --accent-bg:#16394A; --ok:#8FD19B; --ok-bg:#1C3822; --warn:#E0B060; --warn-bg:#43341A; --bad:#F09A86; --bad-bg:#472019; --ai:#A895F0; --ai-bg:#2C2550;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#11161D; --panel:#18202A; --ink:#E4E9EF; --muted:#9AA6B5; --rule:#2B3542; --chip:#222C38;
+  --accent:#5FB3CF; --accent-bg:#16394A; --ok:#8FD19B; --ok-bg:#1C3822; --warn:#E0B060; --warn-bg:#43341A; --bad:#F09A86; --bad-bg:#472019; --ai:#A895F0; --ai-bg:#2C2550;
+}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+[hidden]{display:none!important}
+.wrap{max-width:900px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:grid;gap:18px}
+.banner{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ai);background:var(--ai-bg);border-radius:6px;padding:6px 10px}
+h1{font:600 clamp(22px,3.2vw,28px)/1.2 var(--serif);margin:0;text-wrap:balance}
+h2{font:600 18px/1.3 var(--serif);margin:0}
+.step{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+section{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;margin:0}
+dt{color:var(--muted)} dd{margin:0;min-width:0}
+@media (max-width:560px){dl{grid-template-columns:1fr} dt{margin-top:6px}}
+.tag{display:inline-block;font:500 11.5px/1.3 var(--mono);padding:3px 7px;border-radius:5px;background:var(--chip)}
+.tag.bad{background:var(--bad-bg);color:var(--bad)} .tag.ok{background:var(--ok-bg);color:var(--ok)} .tag.warn{background:var(--warn-bg);color:var(--warn)} .tag.ai{background:var(--ai-bg);color:var(--ai)}
+.refuse{background:var(--bad-bg);border-radius:8px;padding:10px 12px;display:grid;gap:6px}
+.refuse b{color:var(--bad);font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+label{font-size:14px}
+input[type=text],textarea,select,button{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:6px 10px}
+textarea{width:100%;min-height:150px;resize:vertical;box-sizing:border-box;line-height:1.5}
+input[type=text]{flex:1 1 260px;min-width:0}
+button{cursor:pointer} button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)} button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.disclose{background:var(--warn-bg);border-radius:8px;padding:10px 12px;font-size:14px}
+.draft{border:1.5px dashed var(--ai);border-radius:8px;padding:12px;display:grid;gap:8px;background:color-mix(in srgb,var(--ai-bg) 40%,var(--panel))}
+.stamp{font:12px/1.5 var(--mono);color:var(--muted);border-top:1px solid var(--rule);padding-top:8px;overflow-wrap:anywhere}
+.small{font-size:13px;color:var(--muted)}
+.toast{font-size:13px;color:var(--ok)}
+</style>
+
+<div class="wrap">
+  <div class="banner">Design view · sample data · ACTION_DESIGN #1 · nothing here is saved or sent</div>
+  <h1>Starting an option, and sending what it says</h1>
+
+  <section aria-labelledby="h1">
+    <div class="step">Step 1 · Start · the ACT preview</div>
+    <h2 id="h1">Start "Complaint to the county civil grand jury"</h2>
+    <div class="small">Nothing runs until you confirm. This is what the action will say and rest on.</div>
+    <dl>
+      <dt>Kind</dt><dd>complaint to the civil grand jury <span class="tag warn">tier 1</span></dd>
+      <dt>Addressed to</dt><dd>Civil Grand Jury (an office, marked oversight)</dd>
+      <dt>Rests on</dt><dd>Subject 1: certification against the two-thirds requirement <span class="tag bad">noncompliant</span> <span class="tag ok">established</span><br>Subject 3: the fund's audit trail <span class="tag warn">hypothetical: not yet shown</span></dd>
+      <dt>Clock</dt><dd>none regulated for this kind (the profile states none)</dd>
+      <dt>From</dt><dd>Plan "Bond measure: certification and proceeds", option 4</dd>
+      <dt>Group's contact</dt><dd><select id="contact" aria-label="Group's contact"><option>none named</option><option>M. (cover name)</option><option>R. (cover name)</option></select></dd>
+      <dt>Asserts a breach</dt><dd><label><input type="checkbox" id="breach" checked> yes, this action says the city broke a rule</label></dd>
+    </dl>
+
+    <div class="refuse" id="refuse">
+      <b>Would be refused</b>
+      <div>This action asserts a breach, and one of the matters it rests on (subject 3) is not established. The group's standard is that a breach claim rests on a published finding.</div>
+      <div class="small">You can remove subject 3, wait for its determination, untick "asserts a breach", or proceed anyway with a reason. If you proceed, the action and everything prepared from it will say so.</div>
+      <div class="row"><input type="text" id="reason" placeholder="Why the group proceeds before subject 3 is established" aria-label="Reason to proceed"><button type="button" id="override">Proceed with this reason</button></div>
+    </div>
+    <div class="disclose" id="disclosed" hidden></div>
+    <div class="row"><button type="button" class="primary" id="start" disabled>Start the action</button><span class="toast" id="t1" aria-live="polite"></span></div>
+  </section>
+
+  <section aria-labelledby="h2" id="sendsec" hidden>
+    <div class="step">Step 2 · Prepare and send</div>
+    <h2 id="h2">What the group sends</h2>
+    <div class="draft">
+      <div class="row"><span class="tag ai">drafted by the assistant · a proposal until a member approves it</span></div>
+      <label for="text" class="small">The complaint (from the profile's template; each filled blank names its source)</label>
+      <textarea id="text">To the Civil Grand Jury:
+
+We ask the Grand Jury to inquire into the certification of the school bond measure as passed. The official canvass [source: canvass report, capture grade B, co-attested] records 61.8% in favour; the measure required two-thirds [source: standard, the two-thirds requirement]. The city certified it as passed on 18 July [source: certification resolution, capture grade B, co-attested].
+
+Submitted by the group, by its contact.</textarea>
+      <div class="small">Exhibits: 2 at grade B, co-attested. The venue's standard: accepts B co-attested (profile). Nothing is contestable at this venue.</div>
+      <div class="disclose" id="disc2" hidden></div>
+    </div>
+    <div class="row"><button type="button" class="primary" id="approve">Approve this text</button><span class="small">Approving fixes the bytes and adds the stamp. The instance sends nothing.</span></div>
+    <div class="stamp" id="stamp" hidden></div>
+    <div class="row" id="sentrow" hidden><button type="button" id="sent">I have sent it · record the sending</button><span class="small">By the venue's own means: its web form, mail, or in person.</span></div>
+    <span class="toast" id="t2" aria-live="polite"></span>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let overrideReason="";
+function refresh(){
+  const breach=$("breach").checked;
+  const blocked=breach && !overrideReason;
+  $("refuse").hidden=!breach || !!overrideReason;
+  $("start").disabled=blocked;
+  $("disclosed").hidden=!overrideReason || !breach;
+}
+$("breach").addEventListener("change",refresh);
+$("override").addEventListener("click",()=>{
+  const r=$("reason").value.trim();
+  if(!r){$("t1").textContent="Proceeding needs a stated reason.";return;}
+  overrideReason=r;
+  const txt="Rests on an unestablished premise: "+r+" · by M. (cover name) · 30 Sep 2026, 16:52";
+  $("disclosed").textContent=txt; $("disc2").textContent=txt; $("disc2").hidden=false;
+  refresh(); $("t1").textContent="The disclosure will travel with the action and everything prepared from it.";
+});
+$("start").addEventListener("click",()=>{
+  $("t1").textContent="Started. The action records the plan and option it came from.";
+  $("sendsec").hidden=false; $("start").disabled=true; $("sendsec").scrollIntoView({block:"start"});
+});
+$("approve").addEventListener("click",()=>{
+  $("text").readOnly=true; $("approve").disabled=true;
+  $("stamp").textContent="bio-inband/1 · sha256 3f9a…c21e · 30 Sep 2026 · approved by M. (cover name) · bars: sourcing B, reasoning established"+(overrideReason?" · rests on an unestablished premise":"");
+  $("stamp").hidden=false; $("sentrow").hidden=false;
+  $("t2").textContent="Approved. These exact bytes are what the record will say was sent.";
+});
+$("sent").addEventListener("click",()=>{
+  $("sent").disabled=true;
+  $("t2").textContent="Recorded as sent on 30 Sep, with the bytes sent. A reply, when it comes, is recorded as correspondence on the action.";
+});
+refresh();
+</script>

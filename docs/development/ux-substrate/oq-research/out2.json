@@ -1,0 +1,452 @@
+[
+ {
+  "idx": 20,
+  "context": "A hunch is a member's own declared guess that two pieces of evidence are connected before the record can prove it. While a group is still investigating, the hunch lets it tie together material that otherwise would not link up. Before a case is published every hunch must be cleared: the case has to stand on its own without it. Members meet it on evidence legs, the strength panel and at publishing.",
+  "canonSays": [
+   {
+    "source": "DEC-15 (Declared Bias, 'a HUNCH is temporary declared bias')",
+    "says": "A hunch gets 'a temporary high enough grade' to bring disconnected evidence together; 'a published case must pass... without any hunch connections.'"
+   },
+   {
+    "source": "Declared Bias, hunch section",
+    "says": "Visible as a hunch 'on every surface'; clearing means 'the case must still hold when the hunch is removed'; 'During open it composes normally'."
+   },
+   {
+    "source": "strength R5 (K102, not yet met)",
+    "says": "A hunch leg is inert in every strength pair whatever grade it states, and is always named as a hunch."
+   },
+   {
+    "source": "DEC-20; case-authoring R12 (not yet met)",
+    "says": "Only hunch debt blocks publication, refused by name UNCLEARED_HUNCH; ordinary bias debt is disclosed."
+   }
+  ],
+  "whyOpen": "The canon gives a hunch two jobs that pull apart. The Declared Bias text says a hunch 'composes normally' while a question is open, so its grade does count; strength R5, approved by Bob on 2026-09-26 (K102), makes it count for nothing in every strength figure. The design must say where the temporary grade is visible and useful if strength ignores it. Clearing also has no screen: the preflight (REC-15) is deferred by DEC-33.",
+  "todayInOldUI": "It marks a hunch leg 'HUNCH' with author and date and warns on the strength panel that the case cannot publish; strength counts the hunch.",
+  "related": [
+   "Q4 publication ceremony (DEC-33)",
+   "Q5 grades in the project workspace",
+   "Q7 rung ladder",
+   "Q20 declared bias shown to readers",
+   "strength R5, R9",
+   "case-authoring R12",
+   "K356 project stage 'investigating'"
+  ],
+  "options": [
+   {
+    "option": "Two readings side by side: the leg shows its hunch grade in an unmistakable hunch style for linking, and the strength panel shows the pair without hunches plus a line 'N hunches not counted'.",
+    "tradeoffs": "Honest and teaches the rule; a second number could confuse."
+   },
+   {
+    "option": "A clearing checklist before publish listing every hunch leg with its two ways out: earn a real grade, or show the case still holds without it.",
+    "tradeoffs": "Makes clearing a concrete task; needs a placeholder until the DEC-33 ceremony exists."
+   }
+  ],
+  "recommendation": "Combine the first and third: show the hunch grade only on the leg, keep strength hunch-free with the count named, and list hunches as a to-do before publishing. Bob should confirm strength R5 overrides the 'composes normally' sentence.",
+  "whoDecides": "Bob for the one doctrinal point (whether a hunch counts in any strength figure while open, R5 versus the Declared Bias text); Design for the visual treatment and the clearing list."
+ },
+ {
+  "idx": 21,
+  "context": "Every published case is held to a 'bar': the standard of evidence it must meet, declared on the project that publishes it. A journalist's project and a lawyer's project may use the same findings but need different bars. The owner declares it at setup; readers see it beside the strength each finding reached.",
+  "canonSays": [
+   {
+    "source": "DEC-72 (1)",
+    "says": "'The bar... is a property of a project, not an inquiry or claim.' Nothing composes across projects: one finding may clear a journalist project's bar and fall short of a lawyer project's, 'and both facts stand.'"
+   },
+   {
+    "source": "Publication §7",
+    "says": "The CATALOGUE OF STANDARDS by audience and output act is owed; 'without it required_strength is a number a project picks.'"
+   },
+   {
+    "source": "Publication §6",
+    "says": "Eight audiences are the professional roles; differences between them belong to the output act (certification, persistence, addressing), never to a field on the case."
+   },
+   {
+    "source": "strength R14-R16",
+    "says": "An undeclared axis is stated in words ('no bar set on the ... axis'), never a default; the group default seeds new projects and gates nothing; only an active administrator may set it (R15, not yet met)."
+   }
+  ],
+  "whyOpen": "The mechanism exists but the content does not: there is no catalogue telling a group what grade a journalist, a court or an auditor actually expects, so the setup screen can only offer bare letters A-D. The Publication table still says 'strictest wins' for the bar while DEC-72 removed composition across projects, a leftover a designer could misread. Certification and persistence differences between audiences are also 'unmade'.",
+  "todayInOldUI": "The old interface only displays the bar on a published case (declared, or 'none was declared' with the explanation that an absent bar is not a bar of zero); it offers no screen to declare one.",
+  "related": [
+   "Q9 action plan (S11)",
+   "Q19 attribution levels",
+   "Q12 trust levels",
+   "UC-071",
+   "DEC-17 (group default half stands)",
+   "DEC-44 (no composed strength)"
+  ],
+  "options": [
+   {
+    "option": "Ship the bar chooser with letters and plain-language meanings only, and a visible note that audience guidance is not yet available.",
+    "tradeoffs": "Buildable now and honest; groups still pick a number without guidance."
+   },
+   {
+    "option": "Commission the catalogue first (research per audience and output act), then design the chooser around audience presets.",
+    "tradeoffs": "Gives the guidance the canon wants; delays the screen and needs research Bob must scope."
+   }
+  ],
+  "recommendation": "Build the first option now, since the bar already works, and put the catalogue on Bob's list as a research item with a named trigger; the chooser gains presets when it lands.",
+  "whoDecides": "Bob: the catalogue is a requirements and doctrine question (what standard each audience needs); Design settles the chooser's wording within it."
+ },
+ {
+  "idx": 22,
+  "context": "Sometimes something a member is looking at rests on, or feeds into, material they are not allowed to see, such as a question in a project they have not joined. The product must tell them the picture is incomplete without revealing anything about the hidden material. Members meet it in the queue, on strength panels and in re-evaluation.",
+  "canonSays": [
+   {
+    "source": "DEC-36 (Interaction Constructs, QUEUE)",
+    "says": "An invisible ancestor 'is stated as an incompleteness and disclosed as nothing else': identity and detail are absolute ('no id, no title, no state, no count'); the fact that something is missing is stated; 'a later session must not... fix it toward silence.'"
+   },
+   {
+    "source": "queue R7",
+    "says": "An ancestor the viewer may not see is not named and adds out_of_view, which makes the case set 'undetermined'."
+   },
+   {
+    "source": "strength R6",
+    "says": "Each hidden bundle id is replaced by null in the members and by 'an object you may not see' in the prose, with out_of_view when anything was withheld."
+   },
+   {
+    "source": "reevaluation R3, R7, R20; connections R20",
+    "says": "A dependent the viewer may not see is 'withheld whole, with no count'; backlinks list only visible citers, 'no count of what was withheld'."
+   }
+  ],
+  "whyOpen": "The requirements do not agree with each other on how to follow DEC-36. The queue and strength state the incompleteness; the re-evaluation and backlink reads withhold silently with no marker, which is exactly the 'silence' DEC-36 forbids. Strength R6 places one 'object you may not see' per hidden member, which lets a reader count them, and DEC-36 forbids counts.",
+  "todayInOldUI": "The old interface shows a sentence such as 'Part of what this is filed under is not visible to this credential, so the list... is incomplete rather than settled' in the queue, and a similar line on strength panels, with no count.",
+  "related": [
+   "Q6 the one treatment of UNDETERMINED versus withheld",
+   "Q24 working versus published side",
+   "DEC-16 completeness",
+   "reevaluation R3",
+   "strength R6",
+   "connections R20"
+  ],
+  "options": [
+   {
+    "option": "One fixed sentence, one visual marker, used everywhere something is hidden: 'Something this rests on is outside what you can see; this list is incomplete.'",
+    "tradeoffs": "Consistent and teachable; requires the re-evaluation and backlink reads to add a marker and strength R6 to drop its per-item placeholders (requirement changes)."
+   },
+   {
+    "option": "Keep each surface's wording but standardise the marker and forbid counts, placeholders and positions.",
+    "tradeoffs": "Smaller change; wording drift continues."
+   },
+   {
+    "option": "Add who to ask ('a member of the project that holds it can see it') to the sentence.",
+    "tradeoffs": "More helpful; may itself reveal that a project exists, which DEC-36 may forbid."
+   }
+  ],
+  "recommendation": "Adopt the single sentence and marker, and have BOB record a ruling that re-evaluation, backlinks and strength R6 conform (state the incompleteness, no counts). Do not add the 'who to ask' hint.",
+  "whoDecides": "Design for the wording and marker; BOB for the requirement corrections, which only apply Bob's existing DEC-36 and need no new policy."
+ },
+ {
+  "idx": 23,
+  "context": "CivicOS holds two kinds of material: the working record (private material the group is still judging) and the published record (cases the group has signed and released, which anyone can read and verify). This 'privacy fence' is built into the system, not just the look of the screens. Members cross between the two constantly.",
+  "canonSays": [
+   {
+    "source": "UI-KICKOFF, 'Constraints that are law'",
+    "says": "'Working-corpus material and published material never share a surface ambiguity. A member always knows which side of the fence they are looking at.'"
+   },
+   {
+    "source": "Publication §6A (DEC-31 as answered 2026-09-17)",
+    "says": "A review copy 'never leaves the instance', is mutable and marked as what it is; an outside recipient reads it through a revocable grant, and it can be exported with an in-band notice on every page."
+   },
+   {
+    "source": "DEC-19; Interaction Constructs rung ladder; K356",
+    "says": "Publishing is the only irreversible act; K356 names the sequence release to publish the 'path to publication'."
+   },
+   {
+    "source": "publication R29",
+    "says": "Working material 'answers an outsider exactly as something that does not exist'."
+   }
+  ],
+  "whyOpen": "The principle is stated but no design says how the two sides look. The review copy blurs the fence: it is working material, yet a person without an account can read it and a member can export it, while the old semantics table defines the working record as 'never served to anyone without a credential'. The canon does not say whether there are two spaces or three (working, review copy, published), or how the path to publication is shown as crossing.",
+  "todayInOldUI": "The old interface uses two separate spaces: the member app has a persistent footer 'Working record · not public', and the published space has its own masthead, with the semantics table defining 'working record' and 'published record'.",
+  "related": [
+   "Q4 publication ceremony",
+   "Q7 rung ladder (publish as irreversible)",
+   "Q18 corrections to editions",
+   "Q30 public reader",
+   "K356 path to publication",
+   "DEC-31"
+  ],
+  "options": [
+   {
+    "option": "Two spaces with distinct frames (colour, masthead, wording), and the review copy shown in the working frame with a 'review copy, not published' band.",
+    "tradeoffs": "Simple and matches the architecture; the recipient's view of a review copy needs its own careful marking."
+   },
+   {
+    "option": "Three named spaces: working, shared for review, published.",
+    "tradeoffs": "Most accurate to what a member can do; adds a concept to learn."
+   },
+   {
+    "option": "Two spaces plus a fence marker on every object showing which side it is on and where it sits on the path to publication.",
+    "tradeoffs": "Strong signal at object level; busier screens."
+   }
+  ],
+  "recommendation": "Use two spaces with distinct frames plus a per-object path-to-publication marker, and treat the review copy as a working-side object with its own band; correct the semantics table's 'never served without a credential' wording.",
+  "whoDecides": "Design, within Bob's stated principle; Bob only if the designer proposes a third space, since that changes how members are taught the fence."
+ },
+ {
+  "idx": 24,
+  "context": "A 'progression' is a declared model of how a public body is supposed to act, for example minutes follow a meeting, an award follows a solicitation. Members thread real documents into it, and the system shows where reality departed: a missing earlier step, a late later step, or too many documents at one stage. Separately, an 'action plan' is the group's own steps and deadlines.",
+  "canonSays": [
+   {
+    "source": "NOTIFICATIONS.md (Bob, 2026-08-01; D-128)",
+    "says": "'The analytic product is the DELTA. Declared flow versus observed flow'; a civic obligation (the body's duty) is not a member task, and 'naming them one thing would have modelled our inbox and called it the institution.'"
+   },
+   {
+    "source": "Case Making, action plan §3",
+    "says": "Plans and progressions 'MUST NOT SHARE AN OBJECT': otherwise 'our own missed deadline would surface as a finding about the record — converting a management fact into evidence.'"
+   },
+   {
+    "source": "queue R8-R9; K356",
+    "says": "Progression divergences reach the queue as FINDING items (shown to members as 'Noticed'); the queue's OBLIGATION class holds member tasks and bias debt."
+   }
+  ],
+  "whyOpen": "The data exists but no design draws it. D-128's 'flow model' home is still open, and there is no module for the action plan (S11), so nothing yet keeps the two visibly apart. The queue's OBLIGATION class holds member tasks while Bob's ruling says OBLIGATION means the body's own duty, so the labels invite the conflation the canon warns against.",
+  "todayInOldUI": "The old interface has a Progressions screen that lists declared stages with threaded documents and text findings; it draws no timeline or declared-versus-observed chart and has no action-plan surface.",
+  "related": [
+   "Q9 action plan surface (S11)",
+   "Q28 queue classes",
+   "Q14 obligations with clocks",
+   "D-128",
+   "progressions R10-R25, R31-R32",
+   "K356 'Noticed'"
+  ],
+  "options": [
+   {
+    "option": "A swim-lane timeline per instance: declared stages as a ghost track, observed documents placed on it, gaps and late steps marked in the record's words.",
+    "tradeoffs": "Makes the delta the picture; needs care with undetermined dates and grades."
+   },
+   {
+    "option": "A table of instances by stage with divergence counts, drilling into a single instance's timeline.",
+    "tradeoffs": "Scales to many instances; the story is less immediate."
+   },
+   {
+    "option": "Keep our own plans on a separate surface with a different visual language (a checklist or task board, never the timeline style).",
+    "tradeoffs": "Guards the doctrine structurally; needs the S11 design to exist."
+   }
+  ],
+  "recommendation": "Use the timeline with a summary table above it for the world, and a visibly different surface for our own plans. Ask Bob whether to relabel the queue's member-task class so it no longer carries the word 'obligation'.",
+  "whoDecides": "Design for the drawing; Bob for any relabelling of the OBLIGATION class, since it is his ruled vocabulary."
+ },
+ {
+  "idx": 25,
+  "context": "The 'doorbell' lets anyone, with no account, hand a group a document (a 'knock'). To stop one sender or a flood filling the group's inbox, the instance limits knocks: 12 per sender and 300 in total in any 10 minutes. The person knocking (the knocker) meets the limit when they are refused; members meet the doorbell when they review the inbox.",
+  "canonSays": [
+   {
+    "source": "Intake Doctrine §2a",
+    "says": "'A 429 tells a member of the public they knocked too often, which is a claim that needs a count behind it'; the bound is published with its method ('at most 12 knocks from one source in any 10 minutes, estimated by a sliding window')."
+   },
+   {
+    "source": "Intake Doctrine status note (D-508)",
+    "says": "RATE_IP and RATE_GLOBAL 'have no member-facing translation yet'."
+   },
+   {
+    "source": "capture R47-R48, R52",
+    "says": "The refusal carries the catalogue row's translation plus the stated bound; nothing is stored or counted. A code without a translation 'never reaches a knocker as a bare code: the doorbell fails as an internal error instead.'"
+   }
+  ],
+  "whyOpen": "The canon is behind the code: the plane's catalogue now has plain-language translations for both refusals, yet the doctrine still says none exist, so what the knocker sees has been drafted by a builder and never reviewed. Nothing on the member side exists: refusals are not stored, so members cannot learn their doorbell is saturated, although the RATE_GLOBAL wording tells the knocker 'the group's members can be told'. There is also no public knock page, only the programme call.",
+  "todayInOldUI": "Nothing for the knocker (no public knock form); members see the inbox list on the setup page with 'Mark as taken up' and 'Set aside', and nothing about refused knocks.",
+  "related": [
+   "Q2 how a knock becomes part of the record",
+   "Q15 empty and waiting states",
+   "UC-012",
+   "capture R30-R32, R47-R56"
+  ],
+  "options": [
+   {
+    "option": "Adopt the plane's existing translations with the stated bound and a 'try again after' hint for the knocker; members see nothing.",
+    "tradeoffs": "Cheap and consistent with 'nothing is counted'; the RATE_GLOBAL wording's promise to members becomes false and should be removed."
+   },
+   {
+    "option": "Record a count-only saturation signal (no fingerprints, no content) and show members a condition 'the doorbell turned people away N times today'.",
+    "tradeoffs": "Members learn of floods or attacks; needs a new requirement and a privacy check that the count reveals nothing."
+   }
+  ],
+  "recommendation": "Review and adopt the existing translations now, with the public page showing the bound, and ask Bob whether members should see a count-only saturation signal; until he rules, drop the 'members can be told' sentence.",
+  "whoDecides": "Design for the knocker's wording and page; Bob for whether refused knocks are recorded at all, which changes what the record holds."
+ },
+ {
+  "idx": 26,
+  "context": "When a group installs CivicOS, the installer produces a one-time password (technically the ADMIN_TOKEN) and the founder uses it to 'claim' the copy and set their own password. Whoever controls the group's hosting account can reset that token and take the instance back, which makes the hosting account the real 'root of trust'.",
+  "canonSays": [
+   {
+    "source": "DEC-2 (deferred)",
+    "says": "What a root of trust should be is deferred until 'a BIO instance running with MULTIPLE MEMBERS' shows what a real group can hold; the alternative is to 'document the limit honestly, which is what is happening by default.'"
+   },
+   {
+    "source": "Membership v2 §4.6",
+    "says": "'Whoever can set ADMIN_TOKEN can take the group over... The holders of ADMIN_TOKEN are the root of trust.'"
+   },
+   {
+    "source": "Membership v2 §4.8",
+    "says": "Hosting access should be separated from administrator status; 'no interface may imply otherwise' than that governance cannot decide who runs the machine."
+   },
+   {
+    "source": "Membership v2 §9",
+    "says": "The token has no custody model, no audit trail and no rotation short of returning the instance to unclaimed; until designed, root of trust means 'whoever controls the hosting account'."
+   }
+  ],
+  "whyOpen": "Bob has deferred the policy, so the design can only explain the current arrangement, but no text decides how much to say or when. The current claim page frames the hosting sign-in only as a reassuring way back in ('you are not locked out'), while §4.6 says the same power lets anyone holding it take the group over, and §4.8 forbids an interface that implies governance controls the machine. What the founder must be told, and whether to acknowledge it, is unwritten.",
+  "todayInOldUI": "The setup page tells the founder that losing the password is recoverable by replacing ADMIN_TOKEN in Cloudflare ('Your Cloudflare sign-in is the way back in'), and says nothing about takeover risk or who should hold hosting access.",
+  "related": [
+   "Q11 onboarding",
+   "Q7 rung ladder (attested acts)",
+   "UC-030 verified export gated on the token",
+   "UC-132 claim",
+   "DEC-2 trigger"
+  ],
+  "options": [
+   {
+    "option": "A short plain explainer at claim: who holds the hosting account holds the group; keep it separate from administrators; what losing or leaking it costs.",
+    "tradeoffs": "Honest and cheap; adds reading at a moment founders want to get started."
+   },
+   {
+    "option": "A standing 'custody' card in administrator settings that restates the risk and shows when the token last changed (the plane can detect a change).",
+    "tradeoffs": "Keeps the fact visible beyond day one; the detected change is only partial evidence."
+   }
+  ],
+  "recommendation": "Adopt the explainer at claim plus the standing custody card, and correct the claim page's one-sided reassurance; leave any acknowledgement act until DEC-2's trigger fires.",
+  "whoDecides": "Bob for what the group is told about a policy he deferred (a doctrine-adjacent disclosure); Design for placement and wording once he agrees."
+ },
+ {
+  "idx": 27,
+  "context": "The queue is the member's daily list of 'things that want me', grouped by the case they belong to. It holds three classes of item: obligations (work assigned to someone), findings (something the system noticed, like a missing step in a declared flow) and conditions (signals about the system's own work, such as a capture waiting). Bob ruled they are one list but deserve different treatment, and each also has a home of its own elsewhere in the product.",
+  "canonSays": [
+   {
+    "source": "NOTIFICATIONS.md, 'Presented and treated differently'",
+    "says": "'The QUEUE stays ONE surface'; findings compose into a case, obligations populate a flow model of the institution, conditions accumulate into a signal history 'mostly read as status on the thing'."
+   },
+   {
+    "source": "NOTIFICATIONS.md, CONDITION dispositions",
+    "says": "Recorded (never surfaces), noticed (surfaces as status where the thing lives), actionable (earns a queue item)."
+   },
+   {
+    "source": "K356 (2026-09-29)",
+    "says": "The queue class FINDING is shown to members as 'Noticed', its code unchanged."
+   },
+   {
+    "source": "queue R6, R8-R10, R12, R16",
+    "says": "Order is obligations, findings, conditions; obligations are member tasks and bias debt; a finding 'never reads as an obligation' and leaves only by a recorded disposition; conditions can only be muted."
+   }
+  ],
+  "whyOpen": "K356 settles the finding class's label but not the treatment of the three. It also creates a word clash: 'noticed' is already the name of the condition disposition that is shown as status and not in the queue. Two of the three homes are not designed (the flow model is D-128, still open; the signal history has no requirement), so the queue cannot yet point into them. And the obligation class holds member tasks while Bob's ruling uses 'obligation' for the body's civic duty.",
+  "todayInOldUI": "The old interface shows one list grouped by case, each item with a raw class chip (OBLIGATION, FINDING, CONDITION) and class-specific buttons (resolve or forward, decide, mute).",
+  "related": [
+   "Q14 queue without nagging (DEC-69)",
+   "Q25 flows and deltas",
+   "Q23 incompleteness phrasing",
+   "K356",
+   "D-128",
+   "queue R6-R17"
+  ],
+  "options": [
+   {
+    "option": "Three plain labels ('To do', 'Noticed', 'Status'), each with its own icon, act row and a link to its home; the condition label avoids the word 'noticed'.",
+    "tradeoffs": "Clear and resolves the clash; condition's 'Status' label must be agreed."
+   },
+   {
+    "option": "Keep one mixed list ordered as today and differentiate only by chip and acts.",
+    "tradeoffs": "Least change; does not meet Bob's 'treated differently' ruling well."
+   }
+  ],
+  "recommendation": "Use distinct labels, icons and act rows with a link to each class's home, and have BOB rename the condition disposition 'noticed' so K356's 'Noticed' is unambiguous.",
+  "whoDecides": "Design for the presentation; BOB for the vocabulary fix, recorded as a ruling; Bob only if the obligation class itself is to be renamed."
+ },
+ {
+  "idx": 28,
+  "context": "The broader Believe in Oakland network expects groups to find each other's published work in a public directory, to discuss across groups in a forum, and to post optional 'working on' signals saying what they are investigating. These sit between groups rather than inside one group's copy of CivicOS.",
+  "canonSays": [
+   {
+    "source": "Design Requirement 9",
+    "says": "A self-hosted Discourse forum 'serves as the operational hub for cross-group discussion'; 'no single platform is essential'; groups host work where they choose."
+   },
+   {
+    "source": "Design Requirement 10",
+    "says": "believeinoakland.org hosts 'a searchable directory of all published work products', with a submission form, no pre-approval, compliance status and visible community flags, and a downloadable mirror."
+   },
+   {
+    "source": "Roadmap §11",
+    "says": "'Working on' signals are 'lightweight directory entries. Optional, anonymous-compatible, no ownership implied'; 'No group owns an issue.'"
+   },
+   {
+    "source": "Publication §9",
+    "says": "The directory and cross-group discussion: 'no built surface serves the directory'."
+   },
+   {
+    "source": "Design Requirement 13 (via UI-KICKOFF, DR-13)",
+    "says": "Acts that are visible outside must say so at the point of the act."
+   }
+  ],
+  "whyOpen": "The requirements place the directory and forum on network sites outside CivicOS, but no module or canon text says whether CivicOS itself submits to, reads from or links to them, so the use cases have no requirement. A 'working on' signal publishes a group's interest, which DR-13's tell discipline treats as an outward act that must be flagged, and 'anonymous-compatible' is undefined for a group identified by its public slug.",
+  "todayInOldUI": "Nothing.",
+  "related": [
+   "Q11 onboarding and starter materials",
+   "Q12 trust levels (flagged)",
+   "Q19 attribution",
+   "Q24 working versus published side",
+   "UC-005, UC-110, UC-125",
+   "Publication §7 public identity"
+  ],
+  "options": [
+   {
+    "option": "Keep all three outside CivicOS; CivicOS only offers a 'submit to directory' link after publishing and a 'find related work' link out.",
+    "tradeoffs": "Respects DR-9 and keeps scope small; the experience is split across sites."
+   },
+   {
+    "option": "CivicOS submits a published case's metadata to the directory itself and shows its directory status and flags inside.",
+    "tradeoffs": "Smooth for members; needs a directory service and requirements, and couples the product to one site."
+   },
+   {
+    "option": "Add an in-product 'working on' act with an explicit tell warning, posting to the directory.",
+    "tradeoffs": "Serves the Roadmap's handoff pattern; publishes interest and needs anonymity rules."
+   }
+  ],
+  "recommendation": "Bob should first decide whether these are in CivicOS's scope at all; the smallest honest step is option one, with a tell warning on any link that submits.",
+  "whoDecides": "Bob: scope and requirements (whether CivicOS owns any of the network's shared functions) are his."
+ },
+ {
+  "idx": 29,
+  "context": "Published cases are read by the public, journalists, officials and other groups, who know the least about CivicOS. A case reports each finding's strength on two separate axes (how directly the documents are held, and how strongly the links between them are established), letter grades A-D, and 'look states' saying what was searched and what nobody looked at. Bob wants this explained in layers on screen, and the printed version must carry the whole story without interactivity.",
+  "canonSays": [
+   {
+    "source": "UI-KICKOFF refinements (Bob, 2026-07-28)",
+    "says": "Interactive story visuals extend to the published surface, 'where readers know the least, so progressive disclosure matters most there. The PRINTED version... is first-class and must carry the full narrative, progressively explained and documented'."
+   },
+   {
+    "source": "DEC-44; publication R26",
+    "says": "No answer composes a case-level strength: every pair is per member and per axis."
+   },
+   {
+    "source": "publication R10, R28",
+    "says": "The published case carries scope, completeness, bias acknowledgement, the bar with its words, each member's pair and grounds; undetermined is stated, never filled."
+   },
+   {
+    "source": "OBSERVATION-LOG-DESIGN §1, §6; Publication §9",
+    "says": "Absence has five states (NEVER_LOOKED, LOOKED_ABSENT, LOOKED_INDETERMINATE, PARTIAL, PRESENT); the completeness statement's search record is designed, not built."
+   }
+  ],
+  "whyOpen": "The canon demands layered explanation and a full printed narrative but defines neither the layers nor the words. Readers expect one overall score, while DEC-44 forbids combining the two axes, so the explanation must teach why there is no single number. The look states cannot yet appear on a published case because the search record is not built, and Bob's principle that print must carry everything that on screen is hidden behind click-overs has no stated order or length limit.",
+  "todayInOldUI": "The old published page opens the strength section with a paragraph explaining the two axes and the weakest-leg rule, and its print stylesheet prints the in-band notice first, expands every collapsed leg and adds full addresses and hashes to links.",
+  "related": [
+   "Q6 UNDETERMINED treatment",
+   "Q12 trust levels",
+   "Q16 accessibility and languages",
+   "Q20 bias shown to readers",
+   "Q21 bars by audience",
+   "Q24 working versus published side"
+  ],
+  "options": [
+   {
+    "option": "Three fixed layers: a one-line verdict per finding in words, then the two-axis pair with a short explanation, then the legs, grades and search record; print renders all three in order with a glossary page.",
+    "tradeoffs": "Predictable for readers and print; long printouts for large cases."
+   },
+   {
+    "option": "Per-term click-overs from the semantics table on screen, printed as footnotes.",
+    "tradeoffs": "Reuses one source of truth; footnote-heavy print."
+   }
+  ],
+  "recommendation": "Use the three layers with semantics-table click-overs, printing all layers plus a one-page glossary; the one-line verdict must state each axis and never a single score.",
+  "whoDecides": "Design, within Bob's stated principles and DEC-44; Bob only if a single summary line per finding is thought to risk composing the pair."
+ }
+]
