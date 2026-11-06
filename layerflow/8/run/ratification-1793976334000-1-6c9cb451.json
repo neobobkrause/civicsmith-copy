@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 8,
+  "module": "ratification",
+  "round": 1,
+  "started": "2026-11-06T14:45:34Z",
+  "ended": "2026-11-06T14:46:51Z",
+  "minutes": 1.3,
+  "tested_on": "3258868d57d0984be91b50ea01ceabc257eaab37",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-06T14:46:51Z"
+}
