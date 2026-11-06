@@ -53,8 +53,7 @@
   ],
   "status": {
     "state": "BLOCKED",
-    "reason": "Routed (BOB 5 Nov 05:22): F1 is done on this branch (e9d3c2ae). The op-declarations job (PR 430, live) adds acceptproposals to ACT_HELP_ABSENT (index.mjs ~2756); then op-declarations merges first and this branch completes and merges second (back to back). Nothing more for investigation until then.",
-    "at": "2026-11-05T05:20:09Z",
-    "owner": "bob"
+    "reason": "R26-R32 and F1's arm are done on the branch (commit after 68addf0d; suite 67/67). layer publish is refused by its record-check: 'CLAUDE.md:1: commit 68addf0d3e changes the approvals but is not neobobkrause's own commit'. 68addf0d is the merge job sync made to bring the branch up to layer/7 (parents 34df18c9, 8754e192); CLAUDE.md at the branch tip is byte-identical to layer/7's (git diff 8754e192e5 HEAD -- CLAUDE.md is empty), the change is layer/7's own approvals arriving through the merge's first-parent diff. A process-tool false positive on a sync merge; not mine to fix (.process) and not fixable on the branch without rewriting history. Needs: the record-check to judge a merge from the layer against its layer parent, or BOB's ruling. Found for op-declarations/affordances: acceptproposals needs ACT_HELP or ACT_HELP_ABSENT (t36/t42 partition test, already red on layer/7 for interpretmark, interpretationwithdraw, aibudgetset, aiprojectbudget, assistantreadiness). screens-inquiry fr28-project 'R10 entry 25' is red on layer/7 without this change.",
+    "at": "2026-11-06T13:01:18Z"
   }
 }
