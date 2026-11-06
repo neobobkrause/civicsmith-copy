@@ -61,6 +61,7 @@ const add = (key, en, prot, source, note) => {
   seen.add(key);
   if (/\b(DEC|K)-?\d{2,4}\b|\bN\d{3}\b/.test(plain(en))) fail(`an internal code in member words: ${key}`);
   if (TEAM_WORD.test(plain(en)) && !GROUP_SENSE.test(key)) fail(`"group" where a member reads "team" (DEC-281, K3472): ${key} (team_words.py rewrites it; a grouping or a kind of organization goes in GROUP_SENSE)`);
+  if (/CivicSmith|Civic Smith|CIVICSMITH/.test(plain(en))) fail(`the name is Civicsmith, one word, only its first letter capital (DEC-124, BD-12): ${key}`);
   words.push({ key, en: plain(en), protected: !!prot, source, ...(note ? { note } : {}) });
 };
 // a phrase written here by hand must appear, word for word, in the source it names (a drift guard)
