@@ -1,0 +1,1701 @@
+{
+  "at": "2026-11-06T19:10:19Z",
+  "by": "session_018BhcecWcETw22rxhPvoZ53",
+  "tranche": "tranche",
+  "tip": "41525e3a6ee9310992fbd14a179c28132b3dcb98",
+  "approvals": "9d44cc6301cc448765dec483a70b191bee8c70b3c2a3b6bdac71778ef5fe946a",
+  "coordinator": "session_018BhcecWcETw22rxhPvoZ53",
+  "addresses": {
+    "root": {
+      "session": "session_018BhceduipEp2mmEFHN9Diu",
+      "at": "2026-11-05T18:41:15Z",
+      "prompt": {
+        "hash": "51cd12044e6ca36a97a710cc76d7a407d15ef643eea22514e4ee54d829ee0196"
+      }
+    },
+    "bob": {
+      "session": "session_018Bhceff4p3dNtYx3XNk4CX",
+      "at": "2026-11-06T12:27:24Z",
+      "prompt": {
+        "hash": "d37635dfe6984c7c97e1247d9127690d23010bbe8a0a03054e73725d27fde8a0",
+        "old_bob": "session_018Bhceddtp3HAmB1Z9LtX2s"
+      }
+    },
+    "watcher": {
+      "session": "session_018BhcefMKiLuojtdyeh1nzG",
+      "at": "2026-11-05T18:47:54Z",
+      "prompt": {
+        "hash": "5a51b73a393ff609fa10831b5d486323a99ab93a549919812346d2566e773ad7"
+      }
+    },
+    "merger": {
+      "session": "session_018BhcefmntMFwp8MDNkzCNL",
+      "at": "2026-11-05T22:05:26Z",
+      "prompt": {
+        "hash": "3e36d606ee856b9ed4774ab823fcce7c6b5746bd3a4aaf294e950f255be1ae13"
+      }
+    },
+    "coordinator": {
+      "session": "session_018BhcecWcETw22rxhPvoZ53",
+      "at": "2026-11-06T15:32:29Z"
+    }
+  },
+  "tasks": [
+    {
+      "id": "trig_01HbdaW3eYvQVZn2p3t9CCkc",
+      "name": "BOB layer 9 check-in",
+      "run_once_at": "2026-11-06T19:11:00Z",
+      "prompt": "BOB check-in (layer flow, SLB-10, layer 9): ... Set the next check-in.",
+      "session": "session_018Bhceff4p3dNtYx3XNk4CX",
+      "role": "bob"
+    },
+    {
+      "id": "trig_01KnhTkpeHhsAJCf1f2Gy4km",
+      "name": "Phase 2 survival read",
+      "run_once_at": "2026-11-18T17:00:00Z",
+      "prompt": "PHASE 2 SURVIVAL READ (Build Plan, metrics survival P3-G5). ...",
+      "session": "session_018BhcecWcETw22rxhPvoZ53",
+      "role": "coordinator"
+    },
+    {
+      "id": "trig_011nK1jS7NwXi19ZT39TStZS",
+      "name": "Phase 1 survival read",
+      "run_once_at": "2026-11-16T17:00:00Z",
+      "prompt": "PHASE 1 SURVIVAL READ (Build Plan, metrics survival P3-G5). ...",
+      "session": "session_018BhcecWcETw22rxhPvoZ53",
+      "role": "coordinator"
+    },
+    {
+      "id": "trig_017zoER3MZgcwCCaPXex3Y4C",
+      "name": "Coordinator hourly flow check",
+      "cron_expression": "51 * * * *",
+      "prompt": "HOURLY FLOW CHECK (coordinator), SLB-10 trial on the shared layer branch. ...",
+      "session": "session_018BhcecWcETw22rxhPvoZ53",
+      "role": "coordinator"
+    },
+    {
+      "id": "trig_01HBGHt8e2s7qwtHsNoiphgs",
+      "name": "sweep",
+      "cron_expression": "48 * * * *",
+      "prompt": "Sweep. First run `git fetch origin tranche` ...",
+      "session": "session_018BhceduipEp2mmEFHN9Diu",
+      "role": "root"
+    },
+    {
+      "id": "trig_01TFNsa6XmoaXvLbTW61KqAj",
+      "name": "watcher",
+      "cron_expression": "17 11 * * *",
+      "prompt": "Watch. Do what your starting prompt's \"When your daily task fires\" says ...",
+      "session": "session_018BhcefMKiLuojtdyeh1nzG",
+      "role": "watcher"
+    },
+    {
+      "id": "trig_01LvNnxKBdB31x23mDSg9XBN",
+      "name": "alpha-pipeline-runner",
+      "run_once_at": "2027-01-01T09:00:00Z",
+      "prompt": "You are the Alpha Pipeline scheduled runner ...",
+      "session": null,
+      "role": "not the process",
+      "fresh": true
+    }
+  ],
+  "jobs": [
+    {
+      "module": "action-holds",
+      "session": "session_018BhceeBpw7terarKNdhfgs",
+      "branch": "job/action-holds",
+      "pr": null,
+      "state": "COMPLETE",
+      "ahead": 2,
+      "release": true
+    },
+    {
+      "module": "action-plans",
+      "session": "session_018BhcecvjozbERNJvaoPtZj",
+      "branch": "job/action-plans",
+      "pr": "merged",
+      "state": "COMPLETE",
+      "ahead": null,
+      "release": true
+    },
+    {
+      "module": "action-records",
+      "session": "session_018BhceemLa7LWFnk9ZmfiV8",
+      "branch": "job/action-records",
+      "pr": "merged",
+      "state": "COMPLETE",
+      "ahead": null,
+      "release": true
+    },
+    {
+      "module": "action-replies",
+      "session": "session_018BhcefrTRiPYguQLKiXgvR",
+      "branch": "job/action-replies",
+      "pr": null,
+      "state": "COMPLETE",
+      "ahead": 2,
+      "release": true
+    },
+    {
+      "module": "actions",
+      "session": "session_018BhcefKZ4Rr7bmQUScpVkF",
+      "branch": "job/actions",
+      "pr": "merged",
+      "state": "COMPLETE",
+      "ahead": null,
+      "release": true
+    },
+    {
+      "module": "ai-catalogue",
+      "session": "session_018BhceeZSCXAGp2gXiqEyMd",
+      "branch": "job/ai-catalogue",
+      "pr": "merged",
+      "state": "COMPLETE",
+      "ahead": null,
+      "release": true
+    },
+    {
+      "module": "filing-templates",
+      "session": "session_018BhcecDsAf6bjB2gmsqByr",
+      "branch": "job/filing-templates",
+      "pr": null,
+      "state": "WORKING",
+      "ahead": 2,
+      "release": true
+    },
+    {
+      "module": "inquiry",
+      "session": "session_018BhcefpqgiG27jKXSKvwgr",
+      "branch": "job/inquiry",
+      "pr": "merged",
+      "state": "COMPLETE",
+      "ahead": null,
+      "release": false
+    }
+  ],
+  "messages": [
+    {
+      "from": "bob",
+      "n": 4,
+      "to": "root",
+      "at": "2026-11-03T05:13:17Z",
+      "text": "Handover acknowledged: ready. No workers live (both job sessions archived, both reviewers done, PR subscriptions and check-in removed). Nothing received to forward to the new BOB session_01RAN5enk3oXY9ZHTVzq8Yk9; my handoff/bob.md on process-state (d7b105a9b6) carries the Phase 2 result and notes."
+    },
+    {
+      "from": "bob",
+      "n": 6,
+      "to": "root",
+      "at": "2026-11-03T08:14:22Z",
+      "text": "BOB session_01RAN5enk3oXY9ZHTVzq8Yk9 ready for handover to session_01RAN5emYLab1pPsNztMwZY2. No workers started, nothing in flight, nothing received to forward. Handoff written to process-state:handoff/bob.md at cae929980d. Note: bob-4 (old BOB's) shows not recorded delivered."
+    },
+    {
+      "from": "bob",
+      "n": 8,
+      "to": "root",
+      "at": "2026-11-03T11:15:46Z",
+      "text": "BOB session_01RAN5emYLab1pPsNztMwZY2 ready: no workers, nothing in flight, nothing received to forward. Handoff for session_01RAN5ekFKrsEYmanVb3Uwx9 at process-state 6cd5ddc7bc."
+    },
+    {
+      "from": "bob",
+      "n": 11,
+      "to": "root",
+      "at": "2026-11-03T13:27:15Z",
+      "text": "BOB session_01RAN5ekFKrsEYmanVb3Uwx9 ready: no workers, nothing in flight, nothing received to forward to session_01RAN5ejqoVHe6homL2SRLK7. Handoff written to process-state:handoff/bob.md at 6c58481df6. bob-4, bob-6, bob-8 undelivered are from earlier BOBs."
+    },
+    {
+      "from": "bob",
+      "n": 12,
+      "to": "root",
+      "at": "2026-11-03T16:14:36Z",
+      "text": "BOB ready: session_01RAN5ejqoVHe6homL2SRLK7 hands over to session_01RAN5ekj2jAByRxSPiPah8a. No workers, nothing in flight, nothing received to forward. Handoff at process-state 4c748f4581."
+    },
+    {
+      "from": "bob",
+      "n": 158,
+      "to": "root",
+      "at": "2026-11-04T23:22:04Z",
+      "text": "x"
+    },
+    {
+      "from": "bob",
+      "n": 159,
+      "to": "root",
+      "at": "2026-11-04T23:22:08Z",
+      "text": "placeholder"
+    },
+    {
+      "from": "bob",
+      "n": 170,
+      "to": "job-screens-publish",
+      "at": "2026-11-05T09:36:54Z",
+      "text": "PR 469 gate red only on revert: case-editor, fr30, fr30b, t50 tests pass with the change reverted (your change moves requirement text, no code). Rerun job complete screens-publish with your same --test args plus --exempt-revert \"requirements consolidation only: no code changed, the id/mark test guards the move\", then wake me."
+    },
+    {
+      "from": "bob",
+      "n": 173,
+      "to": "job-provenance",
+      "at": "2026-11-05T09:38:02Z",
+      "text": "PR 473 gate red on one revert finding only: bio-plane/test/m/provenance/requirements-ids.test.mjs passes with the change reverted. Your change is consolidation only (no code; verified in the PR's files), and this test guards the move, so it cannot fail by design against the pre-move file's ids. Rerun job complete provenance with --exempt-revert \"consolidation only: the id/mark test guards the move and passes on the pre-move file by design\" and wake me."
+    },
+    {
+      "from": "bob",
+      "n": 244,
+      "to": "coordinator",
+      "at": "2026-11-05T23:35:23Z",
+      "text": "x"
+    },
+    {
+      "from": "job-agent-harness",
+      "n": 4,
+      "to": "bob",
+      "at": "2026-11-05T04:33:04Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job agent-harness BLOCKED: run status"
+    },
+    {
+      "from": "job-ai-runs",
+      "n": 8,
+      "to": "bob",
+      "at": "2026-11-04T10:23:29Z",
+      "text": "job ai-runs complete, PR #213 ready: run status"
+    },
+    {
+      "from": "job-ai-runs",
+      "n": 9,
+      "to": "bob",
+      "at": "2026-11-04T10:24:14Z",
+      "text": "job ai-runs complete, PR #213 ready: run status"
+    },
+    {
+      "from": "job-control-plane",
+      "n": 5,
+      "to": "bob",
+      "at": "2026-11-05T22:54:02Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (8 jobs ready). Then: job control-plane complete, PR #549 ready, session session_018BhceeHyXQSm4Ji12ZjKk6: run status"
+    },
+    {
+      "from": "job-corpus-export",
+      "n": 3,
+      "to": "bob",
+      "at": "2026-11-05T14:57:33Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job corpus-export complete, PR #512 ready, session session_018BhcecFcajTdKAm3cmq4PB: run status"
+    },
+    {
+      "from": "job-publish-schedule",
+      "n": 1,
+      "to": "bob",
+      "at": "2026-11-06T16:12:27Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job publish-schedule BLOCKED: run status"
+    },
+    {
+      "from": "job-skills",
+      "n": 2,
+      "to": "bob",
+      "at": "2026-11-05T08:13:44Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job skills complete, PR #457 ready, session session_018Bhcee76BM2vmBdeaGku1D: run status"
+    },
+    {
+      "from": "job-store-assembly",
+      "n": 9,
+      "to": "bob",
+      "at": "2026-11-04T09:02:28Z",
+      "text": "job store-assembly: R95 done (words.test reads modules['store-assembly'], 1102b2b7d, pushed); sweep.test:150 already inserts principal_ai. Waiting for your capture-requests merge message, then job sync and job complete."
+    },
+    {
+      "from": "root",
+      "n": 62,
+      "to": "bob",
+      "at": "2026-11-05T18:43:44Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: Handover: BOB is now session_018Bhceddtp3HAmB1Z9LtX2s. Wait for your workers, forward anything you receive to the new BOB, then report ready to ROOT."
+    },
+    {
+      "from": "job-admission",
+      "n": 5,
+      "to": "bob",
+      "at": "2026-11-04T18:44:36Z",
+      "text": "job admission complete, PR #293 ready, session session_01RAN5eo8adZxA5w8jCdC4oP: run status. Synced with 289 in, suite 82/82. Note: your 'merge row for admission (PR 293)' (4fa2391cc) landed on job/admission while PR 293 is not on tranche; job sync then conflicted in process/metrics/admission.jsonl, which I resolved as the union of both sides' appended rows in time order (no row changed). The tool refused --test notice:op-declarations:289 (my START names no such notice), so the receipt names the test in not-verified instead."
+    },
+    {
+      "from": "job-affordances",
+      "n": 6,
+      "to": "bob",
+      "at": "2026-11-04T14:16:27Z",
+      "text": "job affordances complete, PR #252 ready, session session_01RAN5ekLAKMAaxRiCU7rvhh: run status. Rerun per bob-92: --exempt-revert recorded (receipt 6632948399). The tool said 'the job is COMPLETE: its commands and tests stand as saved; only --exempt-revert and --not-verified amend the receipt', so --test F1=bio-plane/test/m/affordances/f1-retired-help.test.mjs::'F1: no ai-accounts op T53 retired is held in ACT_HELP_OPS, ACT_HELP or ACT_HELP_KEYS' was likely not added. F1 was added already met, so the base had no mark to strike. That test fails with act-help.mjs reverted (checked)."
+    },
+    {
+      "from": "job-affordances",
+      "n": 7,
+      "to": "bob",
+      "at": "2026-11-04T14:53:49Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job affordances complete, PR #252 ready, session session_01RAN5ekLAKMAaxRiCU7rvhh: run status. Per bob-96: synced (tranche + pin f9e82ad, pushed 14e8ecd1), suite 312/313 pass (1 todo), job complete rerun with --exempt-revert; receipt 6633814483."
+    },
+    {
+      "from": "job-agent-model",
+      "n": 2,
+      "to": "bob",
+      "at": "2026-11-05T04:05:17Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (10 jobs ready). Then: job agent-model complete, PR #395 ready, session session_01RAN5enFQNFochCrhxnkDYQ: run status. 45 of 47 marks met (R34 estimate is in: ai-use R10 can restart). R1 and R13 left marked: they rest on agent-worker and agent-steps moving off the reference path's MODEL_FOR_MODE/SUBSESSION_MODEL/MODEL_PRICES (file:lines in the receipt)."
+    },
+    {
+      "from": "job-agent-runner",
+      "n": 5,
+      "to": "bob",
+      "at": "2026-11-05T17:02:34Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: job agent-runner complete, PR #394 ready, session session_018BhcefvqLpUyE8JqHT33Nx: run status. Synced with tranche, dist/image rebuilt; unmet.test.mjs (todos only) exempted from revert. The remaining gate finding (agent-worker REMOTE names RemoteSession, deleted here by migration v3 per your 5 Nov ruling) clears only after agent-worker PR 364 merges: merge 364 first, then resync 394."
+    },
+    {
+      "from": "job-agent-runner",
+      "n": 8,
+      "to": "bob",
+      "at": "2026-11-06T01:07:35Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (9 jobs ready). Then: job agent-runner needs a ruling, PR #394, session session_018BhcedcDrNiu4Cxd3QGMHb: bundles restored to tranche (3ee34e5da8, pushed) but job complete stops at record-check: after the sync R56 found the branch's committed agent-runner/dist/image stale; the rebuild in 3ee34e5da8 writes dist/image/chunks/run.js at 4786908 bytes, over the 1048576-byte limit. Tranche has no dist/image; the branch has committed it since earlier attempts. p3 block refuses (module COMPLETE). Options: (a, recommended) stop committing dist/image, built at deploy/release, and R56 checks a build into a temp dir; (b) a size exemption. The pushed commit cannot be rewritten. Waiting on you."
+    },
+    {
+      "from": "job-agent-steps",
+      "n": 5,
+      "to": "bob",
+      "at": "2026-11-05T05:31:44Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (16 jobs ready). Then: job agent-steps complete, PR #392 ready, session session_01RAN5epLua6YjFZjko6kGrF: run status. Revert check: plan.test now asserts each proposal's idem (R54); t53-world and t53-provider import the module as a namespace, so with src reverted they load and fail by assertion (checked by hand: t53-provider 32 fail, plan 1, readers 2)."
+    },
+    {
+      "from": "job-agent-worker",
+      "n": 11,
+      "to": "bob",
+      "at": "2026-11-05T21:17:06Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: job agent-worker complete, PR #569 ready, session session_018BhcefUru9pvMGNnfcQvJ6: run status. F2: wrangler binds RUNNER -> script agent-runner, class AgentRunner (cross-script Durable Object namespace, not a service entrypoint); no REMOTE binding and no source reads REMOTE, so agent-runner may drop RemoteSession with its v3 migration now. remoteOf answers RUNNER when bound; unbound still ASSISTANT_REMOTE_NOT_READY (why absent). agent-runner side the binding needs (not edited): (1) AgentRunner.fetch answers 410 to every request (agent-runner/src/worker.mjs, its R35), so a bound sign-in reaches it and is refused; sign-in works at deploy only once agent-runner serves /conversation and /signin again, which its T53 requirements retire (R17-R21, R56 no Claude Code). (2) Its fleet-member.json bind names RUNNER into agent-worker, which this binding matches; its R14 control (bind RUNNER fails) and my R109 text (never env.RUNNER) conflict with that and need your ruling. (3) Non-test deploy-fleet leaves script_name as plain agent-runner; only test deploys slug it per environment. F3, F4 already met (circuit.mjs, untested.mjs:31, found-marks tests). F2-F4 moved to own marks and struck. Notices answered in notice-attempt7.test.mjs; agent-steps:392's idem key adapted in requirements.test.mjs (R18, fake plane resubmit key)."
+    },
+    {
+      "from": "job-ai-catalogue",
+      "n": 2,
+      "to": "bob",
+      "at": "2026-11-04T09:02:19Z",
+      "text": "job ai-catalogue complete, PR #194 ready: run status. For signatures (outside my paths): add the development catalogue key's public line to CATALOGUE_KEYS with a comment ending -development. For the dev deploy (yours): sign aiCatalogueStatement(RELEASE_SEED.statement) in NS_AI_CATALOGUE with that key, set vars AI_CATALOGUE_SEED_SIGNATURE (armored) and AI_CATALOGUE_DEVELOPMENT=1. The seed has zero entries at seq 1; the issuer's first payload needs seq 2 or above."
+    },
+    {
+      "from": "job-ai-catalogue",
+      "n": 5,
+      "to": "bob",
+      "at": "2026-11-04T22:23:26Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job ai-catalogue complete, PR #317 ready, session session_01RAN5ekxNfQcC2nLtkWA9N4: run status. Fixed per your defect note at 4c39c13d: the slug is the Worker name (p3dev-t1 targets p3dev-t1), must match ^p3dev-[a-z0-9][a-z0-9-]*$ and equal CIVICSMITH_TEST_INSTANCE; 'wrangler deployments list --name <slug>' must succeed before secret bulk, else NO_SUCH_WORKER and nothing sent. Unverified live: that deployments list exits non-zero for a missing Worker."
+    },
+    {
+      "from": "job-ai-catalogue",
+      "n": 6,
+      "to": "bob",
+      "at": "2026-11-04T22:32:55Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job ai-catalogue complete, PR #317 ready, session session_01RAN5ekxNfQcC2nLtkWA9N4: run status. Revert check fixed at bc774182: notice-signatures-101 now tests R59's addition (development build adds the deployment's own line; public build never does); both test files load without the change and fail per test (checked locally: reverted src -> notice 1/4 fail, dev-key 9/9 fail; with change 139/139 pass)."
+    },
+    {
+      "from": "job-ai-catalogue",
+      "n": 7,
+      "to": "bob",
+      "at": "2026-11-04T22:37:58Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job ai-catalogue complete, PR #317 ready, session session_01RAN5ekxNfQcC2nLtkWA9N4: run status. Your two gate notes were on ed467ba6/a9296a18, before the fix (bc774182). One more fix at fff93574: the gate marks load_only when output holds ERR_MODULE_NOT_FOUND (gate.mjs LOAD_ERROR), so dev-key's lazy import now catches it and fails each test on an assertion. Checked locally with src/ai-catalogue reverted: dev-key 9/9 fail, notice-signatures-101 1/4 fail, no load error in either output; with the change 139/139. Wrangler item dropped from not-verified per your live check."
+    },
+    {
+      "from": "job-ai-catalogue",
+      "n": 10,
+      "to": "bob",
+      "at": "2026-11-05T11:42:06Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job ai-catalogue complete, PR #484 ready, session session_018Bhcee1ueAhRq9VsujWoFz: run status. Re bob-189: the two edited seed test files now each assert the development build's default seed and fail with F2 reverted (checked against 653de8d1's src)."
+    },
+    {
+      "from": "job-ai-gate",
+      "n": 6,
+      "to": "bob",
+      "at": "2026-11-05T05:08:42Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job ai-gate complete, PR #411 ready, session session_01RAN5ejpmjK6UZHPLx1qLLq: run status. Smoke red was mine: F1's DECLARED_OPS entered store-assembly's registration (store-assembly declarations.test.mjs:37 and control-plane t46-app, NEEDS_MISSING). Withdrawn; F1 stays unmet and rests on store-assembly registering ai-gate's rows (with a needs field) and op-grades R57's irreversible hand row for airesultsend. Both smoke files pass locally."
+    },
+    {
+      "from": "job-ai-runs",
+      "n": 13,
+      "to": "bob",
+      "at": "2026-11-04T22:31:23Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job ai-runs complete, PR #323 ready, session session_01RAN5en8ryKt2xa7VntpqVq: run status. Revert exemption added for requirements-ids.test.mjs (tests the requirements file only) and segments.test.mjs (fixture adaptation, no assertion changed); f1-path-closed and f1-aipathready-door are the tests that fail on revert. aipathready serve/declare/door test are in 729f72c3. Still not mine: op-declarations R34/R47 go red until aipathready joins ACT_HELP_ABSENT's read list (src/op-declarations/index.mjs ~2685)."
+    },
+    {
+      "from": "job-ai-runs",
+      "n": 14,
+      "to": "bob",
+      "at": "2026-11-04T23:26:08Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (4 jobs ready). Then: job ai-runs complete, PR #323 ready, session session_01RAN5en8ryKt2xa7VntpqVq: run status. Review of 5f487a65 answered in cd228559 (synced a043d23d): (1) fixture stand-in replaced by a test's own registerPathReady, segments.test.mjs back to start, scheduler notice-ai-runs-96 passes; scheduler plane.test.mjs R12 'reaches expired' fails identically with tranche's ai-runs, base-red. (2) op-declarations 267/270 until PR 321. (3) pathReadyRead checks ai-accounts.accountState; non-seer gets not_ready, reason null, source not asked; door test has bo-on-ann, no-session 401. (4) PATH_REASONS closed set, reset_at instant only. (5) pathState removed, one read; no pair = no_pair, source not asked. (6) notes record ai-runs owns op=aipathready. F2 cite fixed."
+    },
+    {
+      "from": "job-answer-envelope",
+      "n": 2,
+      "to": "bob",
+      "at": "2026-11-04T12:47:16Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: answer-envelope: (b) done and pushed (6b3764ab5): BAD_GRADE re-pinned to C-33.61 with changed.note naming DEC-441/K5303 and your ruling, plus a test of it. Suite 54/60; the 6 left are the totality tests, waiting on PR 237. On your merge message I job sync, list both families (R19), and run job complete."
+    },
+    {
+      "from": "job-case-authoring",
+      "n": 8,
+      "to": "bob",
+      "at": "2026-11-06T18:29:24Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job case-authoring complete, PR #681 ready, session session_018BhcecQoEvEopQw2ySuoYX: run status. Note: F2 was already met on layer/8 (marked met; no open mark struck). store-request at layer/8 has 2 reds, not this module's: recipes-b6 R19 timing bound (120 questions in ~40 s) and world R20 unreachable ops interpretmark, interpretationwithdraw; no UNGRADED_PASSAGES_MISMATCH red."
+    },
+    {
+      "from": "job-case-authoring",
+      "n": 9,
+      "to": "bob",
+      "at": "2026-11-06T18:31:26Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: IDLE CAPACITY: 4 job sessions live of the cap 20, 0 startable, for 57 min; build/requirements/op-capabilities.md: no ledger entry: BOB writes it, then job start --ready starts it; interface-shell, affordances, ai-issuer: held by hold-22 (coordinator 6 Nov 00:10: until layer 6 closes start only layer 6 work); 12 x no startable work: run node .process/tool/p3.mjs job start --ready --live <n>: run status. (The tool also asked this job to tell session_018BhcecWcETw22rxhPvoZ53 the same; a job messages only BOB, so I leave that to you.)"
+    },
+    {
+      "from": "job-case-checker",
+      "n": 5,
+      "to": "bob",
+      "at": "2026-11-04T20:51:59Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: re bob-152, job case-checker, PR 301: STOPPED, need your call. Done: program.mjs restored to the tranche's bytes (f650545d), synced, pushed 0613af03; PR 301's net diff is program.test.mjs only. job complete stops on two things outside my paths. (1) PR 305's program.mjs row does not run for a tracked file. The tool builds only generated files that are not committed (log: rows.mjs, words-reads.json and the bundles are built; program.mjs is not). So the tranche's committed program.mjs stays on disk, and it is stale: sha 98ba996f, a fresh build gives b7290b7e. My R13/R32 test fails on it, which is the stale file it is meant to catch. The other 3 failures are base-red. (2) record-check size: commit f650545d writes program.mjs at 6,945,081 bytes, over the 1,048,576-byte limit, though the net diff against the tranche is nil. Without a force-push I cannot drop that commit. Options: (a) the tool regenerates tracked generated paths before the suites, or the tranche commits a fresh program.mjs and exempts it from the size check; (b) untrack it as attempt 3 did, once the gate accepts a removed generated file; (c) I mark the R13/R32 test as test.todo until the tranche's program is fresh (weakens it). For (a) or (c), restarting from a fresh branch avoids the size-check commit. block refused: the module already reads COMPLETE from my first job complete."
+    },
+    {
+      "from": "job-case-disclosures",
+      "n": 3,
+      "to": "bob",
+      "at": "2026-11-06T14:27:08Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job case-disclosures complete, PR #636 ready, session session_018BhcegkLrB8fjmZqKqzEnp: run status. Met R37, R39 (suite 129/129). Not met, still marked: R38 (case-tensions holds no credit act for a typing; typings credited at the no-choice level meanwhile), R43 (no runtime-limits EXTRACT_ROWS_MAX row), R45 (needs an act holder for mail-name marks; this module has no op), R41/R42 (need your detector choices and the new C-120 rows' drafts), R44 (scenario on R41 and other modules), R40 (not attempted this round). Note: status had flagged this start as pushed with no PR; publish opened #636."
+    },
+    {
+      "from": "job-case-disclosures",
+      "n": 4,
+      "to": "bob",
+      "at": "2026-11-06T14:33:21Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job case-disclosures complete, PR #636 ready, session session_018BhcegkLrB8fjmZqKqzEnp: run status. Re-published on layer/8 91ad402fd4 after case-import's change; same scope as before (R37, R39 met; R38, R40-R45 still marked)."
+    },
+    {
+      "from": "job-inquiry-grammar",
+      "n": 1,
+      "to": "bob",
+      "at": "2026-11-05T05:09:08Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job inquiry-grammar complete, PR #423 ready, session session_01RAN5en5u83FwCirqcF79fZ: run status. Notice for inquiry: bio-plane/test/m/inquiry/grammar.test.mjs:180 (R38 R4) hand-lists inquiry-grammar's rows and goes red with the new row FILE_SAYS_LEG_MALFORMED (C-2.8); add FILE_SAYS_LEG_MALFORMED: 'C-2.8' there, back to back with PR 423. citation can now restart R29's leg arm on fileSaysLeg/readFileSaysLeg/fileSaysLegFindings."
+    },
+    {
+      "from": "job-installer",
+      "n": 3,
+      "to": "bob",
+      "at": "2026-11-05T19:28:47Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: job installer to BOB: received; holding for your PR number. DIST-13 is not in build/requirements/installer.md (it appears only in INTERFACES.md/IC-281, as the BROWSER binding). But R82 (line 135) ends with these exact words: 'control: `newgroup-bundle-fresh` arm (D) reads the committed bundle.' Its body also names 'The installer's bundle (`newgroup/dist/newgroup.bundled.mjs`)'. newgroup/DEPLOY.md lines 24 and 72 tell the operator to paste dist/newgroup.bundled.mjs. Your call: amend R82's control to 'the bundle a build makes from this tree' (it is in my file, so I can do that with your word), or keep it. The bundle commit 3df99b92 is already on job/installer; I will git rm --cached it in the change. My earlier block still stands: job complete counts the split's 16 moved marks (R13, R21, R24, R86-R98) as struck, because installer-check, -copies and -places hold no 'was installer R<n>' line."
+    },
+    {
+      "from": "job-installer",
+      "n": 5,
+      "to": "bob",
+      "at": "2026-11-05T19:44:59Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: job installer: already done, crossed your 19:44. Pushed ab904d14 (R82 control, DEPLOY.md builds, bundle untracked, arms read a build; suite 248/248), blocked for the struckTests fix, MSG 4 sent. Nothing further from me until you restart me for complete."
+    },
+    {
+      "from": "job-interface-shell",
+      "n": 3,
+      "to": "bob",
+      "at": "2026-11-04T14:00:05Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job interface-shell complete, PR #172 ready, session session_01RAN5ekJFivQTYT2LEY7WQL: run status. Re-synced to cab6b703e4 and re-ran with the same flags; here the suite measures 366 pass / 22 fail, all 22 base-red at cab6b703e4 (new receipt 6632566152). If the gate still measures 358/30, the 8 extra are its environment's, not this branch's: tell me which and I will name them."
+    },
+    {
+      "from": "job-interface-shell",
+      "n": 4,
+      "to": "bob",
+      "at": "2026-11-04T14:22:20Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job interface-shell complete, PR #172 ready, session session_01RAN5ekJFivQTYT2LEY7WQL: run status. The 8 the gate measured that this container did not were the real-browser tests (fixround7 G77, phone390 x2, r120 x5): the gate runner has no Chromium. This receipt (6633083398) ran with CHROMIUM at no browser, so it claims the gate's 30 base-red (358/30), named in --not-verified."
+    },
+    {
+      "from": "job-interface-shell",
+      "n": 9,
+      "to": "bob",
+      "at": "2026-11-05T05:26:08Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job interface-shell complete, PR #436 ready, session session_01RAN5enav8g2sC7AedAmjkJ: run status. R120 was no layout fault: its 5 tests were recorded red at PR 172 when the gate had no Chromium ('Chromium is needed'); they pass with Chromium here and at the gate since it installs one (PR 310 run). No code change, no found mark: nothing to record."
+    },
+    {
+      "from": "job-investigation",
+      "n": 2,
+      "to": "bob",
+      "at": "2026-11-06T12:44:42Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (9 jobs ready). Then: investigation (replacement job): synced to layer/7 (68addf0d), suite 39/39 green; now building R26-R32 on job/investigation, so layer 7 is not ready to close for investigation yet. The test tool printed: IDLE CAPACITY, 3 job sessions live of 20, 0 startable; layer 7 ready to close (job start --ready). ACT_HELP_ABSENT acceptproposals still absent on layer/7; I will report it found at publish."
+    },
+    {
+      "from": "job-op-declarations",
+      "n": 9,
+      "to": "bob",
+      "at": "2026-11-04T17:36:28Z",
+      "text": "re bob-114: already done as asked. This attempt made no consolidation (the file was already 65199 bytes, under the cap): only the REAUTH_ACTS fix and its test, commit cd9dcdb3. job complete ran, receipt https://github.com/neobobkrause/civicsmith-copy/pull/289#issuecomment-6637535952, PR #289 ready. Consolidation deferred by BOB to after the first release. Still open for you: admission's doors.test.mjs R19 line 157 (see MSG 8)."
+    },
+    {
+      "from": "job-op-declarations",
+      "n": 11,
+      "to": "bob",
+      "at": "2026-11-04T22:08:37Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job op-declarations: read your 23:20. Already BLOCKED as it says (no fallback, nothing answers ready). Need from ai-runs (PR 323, not on job/ai-runs yet): an aipathready entry in aiRunsOps plus its DECLARED_OPS row (read; classes admin, member; machineClasses []), calling the fail-closed read for (account, entry), with no source answering {ok:true, state:'not_ready', ready:false}. Restart me when it merges; I add the through-the-door test and strike F1."
+    },
+    {
+      "from": "job-op-declarations",
+      "n": 15,
+      "to": "bob",
+      "at": "2026-11-05T05:33:44Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job op-declarations: BOB's addition done at d6232433 (pushed). acceptproposals, interpretmark and interpretationwithdraw join ACT_HELP_ABSENT's last ground only once their owner's DECLARED_OPS row is registered, so ACT_HELP_ABSENT never names an op OPS lacks; F2 names them; test f2-unexplained-once-declared.test.mjs fails with the change reverted. t36's second-load test now registers the same owners' rows. Suite 276/276 on the synced branch, and 276/276 on unpushed scratch merges with job/investigation and with job/extraction. Still BLOCKED as reported: admission t47.test.mjs:126 (R25, needs >=10 REAUTH_ACTS ops with a spec) and signin-door declared-ops.test.mjs:47 (R6, expects my hand row for subscriptionsignin) go red with subscriptionsignin removed; their owners must adapt, and signin-door must retire its own DECLARED_OPS row for R57. Your call: unblock to complete as is, or route those two first."
+    },
+    {
+      "from": "job-plane",
+      "n": 7,
+      "to": "bob",
+      "at": "2026-11-05T03:10:41Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (13 jobs ready). Then: job plane: g55 R88 is not this branch's. Measured, nothing changed. (1) The branch adds no guard: the #firing check (scheduler/index.mjs:781) is already on tranche, and the branch changes test files only, none that g55 or its entry imports. (2) A clean worktree at origin/tranche 3ae19c5fd fails both g55 tests in this container with the same 'fetch failed'. (3) The cause: with Miniflare's debug log, the object's own alarm re-arms each firing and runs one ingest slice per firing. After about 4 slices workerd closes the socket ('other side closed'), at a sampled peak RSS of about 374 MB. Re-arming works; workerd dies mid-ingest (memory likely; no kernel log to confirm). The gate's base-pass/branch-fail is runner memory, not the diff. A door request during a firing not arming is already tested (r8-heal-door control, fails with the guard removed). Ask: rule g55 R88 base-red/flaky, or rerun the gate's base, then I rerun job complete unchanged."
+    },
+    {
+      "from": "job-publication",
+      "n": 5,
+      "to": "bob",
+      "at": "2026-11-06T14:35:47Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job publication complete, PR #632 ready, session session_018Bhced7hcY8A9vCPiMGWfg: run status. Fixes: invariants.test.mjs dropped from the PR (its R30 test.todo is now stale; a follow-up). recordCaseManifest's refusal names field pixels_sha256, asserted. r30 test's SQL reads kept: they check the parts record's informative label. Receipt: https://github.com/neobobkrause/civicsmith-copy/pull/632#issuecomment-6687326949"
+    },
+    {
+      "from": "job-question-explorer",
+      "n": 6,
+      "to": "bob",
+      "at": "2026-11-04T09:18:56Z",
+      "text": "job question-explorer complete, PR #199 ready: run status. Note in not-verified: on real providers no exploring run can open (ai-runs refuses AI_RUN_NOT_A_MEMBER_ACT; ai-use R6 bars member accounts) — needs your ruling."
+    },
+    {
+      "from": "job-question-explorer",
+      "n": 10,
+      "to": "bob",
+      "at": "2026-11-05T01:10:15Z",
+      "text": "question-explorer: already passing enabledBy as the enabling member's id (member:<id>) in PR #346 (commit 3c888ee9). Waiting for your word that PR 348 merged; then job sync and replace the test.todo with a replay on ai-runs' real open."
+    },
+    {
+      "from": "job-ratification",
+      "n": 2,
+      "to": "bob",
+      "at": "2026-11-04T13:01:47Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job ratification complete, PR #234 ready, session session_01RAN5emuZmHbAjiW1p2gw7G: run status. Re bob-75: the missing ungraded_passages block is case-authoring's (document.mjs:183-184, its R89 unmet); details in the receipt. Re bob-78: publication:229 confirmed, test named in the receipt's not-verified (the tool refuses a notice the START did not name)."
+    },
+    {
+      "from": "job-screens-action",
+      "n": 6,
+      "to": "bob",
+      "at": "2026-11-04T15:13:13Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job screens-action complete, PR #94 ready, session session_01RAN5en7DFksm1bUG9qNNfb: run status. After sync, 13 tests went red: interface-shell R20 now reaches the assistant by aipathready, so this module's fixtures were switched from accountreference to aipathready (37abd5e998, tests only); suite 332/332."
+    },
+    {
+      "from": "job-screens-daily",
+      "n": 2,
+      "to": "bob",
+      "at": "2026-11-04T17:40:07Z",
+      "text": "screens-daily receipt vs gate (bob-117), found locally, nothing pushed: the gate's screens-daily base-red list has 29 tests, my receipt 23. The 6 extra are exactly the browser-measured tests (measure.mjs: playwright-core + Chromium at /opt/pw-browsers/chromium): fix10 R92,R106 x2 (pick boxes 44px), fix3 R90 (stage boxes left edge), fix3 R92 (Home 390px), fix4 R95 x2 (bell/sidebar 79). This container has Chromium, so they pass here and job complete did not list them; on the gate runner they fail at the base too. The receipt must name them to agree (gate: every gate base-red test must be in the receipt's claim). A rerun of job complete here will claim 23 again; unless the rerun's base-red list can take the gate's, the receipt will disagree again. Your call: rerun anyway, rerun with CHROMIUM unset/pointing nowhere so these 6 fail locally as on the runner, or a gate/tool fix. I will wait for your revert-pin word before job sync + job complete."
+    },
+    {
+      "from": "job-screens-investigate",
+      "n": 2,
+      "to": "bob",
+      "at": "2026-11-05T10:02:19Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job screens-investigate complete, PR #471 ready, session session_018BhcecmyDDwexMupVb1MQG: run status. bob-172 answered: R2 exploreverify was flaky (raced the check's answer); fixed, 20/20."
+    },
+    {
+      "from": "job-screens-investigate",
+      "n": 3,
+      "to": "bob",
+      "at": "2026-11-05T10:42:21Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job screens-investigate complete, PR #471 ready, session session_018BhcecmyDDwexMupVb1MQG: run status. bob-180 answered: both files are repaired existing tests, no product code changed; rerun with --exempt-revert."
+    },
+    {
+      "from": "job-screens-publish",
+      "n": 3,
+      "to": "bob",
+      "at": "2026-11-06T00:08:44Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job screens-publish complete, PR #607 ready, session session_018BhcegD4AUbhnEjj4C4stE: run status. F1 met (commit 1cae0f1f); job complete did not refuse for the cap. Report on public-read: its Public / Provides does NOT state the publishedcase answer's materials shape. R3 (build/requirements/public-read.md:21) says only that a /6 answer 'carries its method and materials blocks (case-grammar R11, R12) as signed'. R53 (:127) says 'publishedcase answers every evidence row with name, locator and fingerprint'. Neither names the wrapper or the field path. The code answers materials: {materials: [rows], attestations} (bio-plane/src/public-read/index.mjs:1470 keyedMaterialsOf; wrapper from case-grammar materialsOf, bio-plane/src/case-grammar/materials.mjs:215-222), each row with entry {name, locator, fingerprint} (index.mjs:103,106-107). reads.mjs holds none of this. The page must read answer.materials.materials[], and for each row entry.name and entry.fingerprint; it opens bytes by the row's sha only when included is true, by obscured.copy for a copy, and not at all for an extract. A found mark on public-read is warranted. Also: (1) public-read's published fixtures.mjs has no materials-bearing publishedcase answer, so my test builds one through public-read's test world (test/m/public-read/fixture.mjs), using its real code; a published fixture there would be better. (2) F1's control says 'draws the empty evidence section', but R100 says no evidence heading over nothing, and the page draws none, so the control asserts no heading. (3) screens-publish's PUBLISHED_CASE fixture still hand-builds captures: [{title, sha256}], the wrong shape; not changed in this attempt."
+    },
+    {
+      "from": "job-screens-settings",
+      "n": 11,
+      "to": "bob",
+      "at": "2026-11-05T08:22:01Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: screens-settings attempt 8 replacement: cannot consolidate under cap. R/F lines alone verbatim = 84959 bytes > 70000 (file 104980); all non-requirement text already in docs/requirements-notes/screens-settings.md. Needs a split (proposal in that notes file: screens-team takes group/identity/places/security/updates/bias/grouprules) or a cap waiver: your or Bob's call. Base-red: bias R65 and contract pass on job/screens-settings c548f42e with tranche merged (17/17); contract was F1, fixed on PR 437 and not yet merged, so tranche goes green when 437 merges. Gate green on 5cfdd4ae; remaining 5 failures are member-roster's recorded base-red. p3 block refused (module COMPLETE). PR 437 is ready to merge as it is."
+    },
+    {
+      "from": "job-store-assembly",
+      "n": 10,
+      "to": "bob",
+      "at": "2026-11-04T09:02:40Z",
+      "text": "job store-assembly: R95 done (words.test reads modules['store-assembly'], d536358ce3d, pushed); sweep.test:150 already inserts principal_ai. Waiting for your capture-requests merge message, then job sync and job complete."
+    },
+    {
+      "from": "job",
+      "n": 1,
+      "to": "bob",
+      "at": "2026-11-05T12:21:17Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: member-roster (PR 446), replacement job: I synced with tranche 13b925a9. PR 498 grew build/modules.json, so order.mjs was stale again. I regenerated it and pushed ed04d7546; order-build.mjs --check passes, so F3 is met. I cannot run job complete because the suite is 223/226. The 3 red tests come from build/modules.json, which is not mine: (1) R27 'MODULE_ORDER is build/modules.json's module ids in its total order' fails 'modules.json is in layer order': the new layer-2 rows jurisdictions-b and jurisdictions-c sit after the layer-1 row reader-container. (2) F2's test 'R61 R27 the modules tolerated as not yet built...' fails 'jurisdictions-b: docs/requirements-notes/jurisdictions-b.md is on disk'. (3) R25 'listeners are told in the modules' total order' fails for the same layer-order reason. p3 block refused ('member-roster is COMPLETE; it cannot be blocked'). My recommendation: fix those two rows in modules.json (put them in layer 2's place, and either create their paths or drop them), and I regenerate order.mjs. I then rerun job complete with --test F2/F3 and --exempt-revert 'order.mjs is generated data; the existing module-order tests already fail on the reverted file, so no new test is needed'. Waiting on your call."
+    },
+    {
+      "from": "merger",
+      "n": 3,
+      "to": "bob",
+      "at": "2026-11-05T04:45:01Z",
+      "text": "merged PR 416 (job case-disclosures): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 5,
+      "to": "bob",
+      "at": "2026-11-05T05:27:49Z",
+      "text": "PR 364 (job agent-worker) fires a review trigger and has no review recorded for 7cac421b82: review it (node .process/tool/p3.mjs review brief 364), then node .process/tool/p3.mjs merge train note 364 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 6,
+      "to": "bob",
+      "at": "2026-11-05T05:32:43Z",
+      "text": "merged PR 409 (job skills): node .process/tool/p3.mjs notice triage skills:409 (provider notice skills:409; 6 user modules owe a worker's judgment: agent-drafts, agent-worker, answer-envelope, control-plane, investigation, store-request: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 7,
+      "to": "bob",
+      "at": "2026-11-05T05:37:14Z",
+      "text": "merged PR 410 (job strength): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 8,
+      "to": "bob",
+      "at": "2026-11-05T05:42:20Z",
+      "text": "merged PR 412 (job docket): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 9,
+      "to": "bob",
+      "at": "2026-11-05T06:16:40Z",
+      "text": "merged PR 408 (job agent-drafts): node .process/tool/p3.mjs notice triage agent-drafts:408 (provider notice agent-drafts:408; 1 user module owes a worker's judgment: agent-worker: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 11,
+      "to": "bob",
+      "at": "2026-11-05T06:23:22Z",
+      "text": "merged PR 415 (job affordances): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 12,
+      "to": "bob",
+      "at": "2026-11-05T06:28:25Z",
+      "text": "merged PR 407 (job run-rules): node .process/tool/p3.mjs notice triage run-rules:407 (provider notice run-rules:407; 19 user modules owe a worker's judgment: action-plans, agent-drafts, agent-harness, agent-runner, agent-steps, agent-worker, ai-gate, ai-runs, ai-use, answer-envelope, capture-requests, case-disclosures, machinery-producers, question-explorer, run-productions, skills, store-ask, store-assembly, wizard-scripts: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 13,
+      "to": "bob",
+      "at": "2026-11-05T06:29:09Z",
+      "text": "PR 406 (job agent-harness) fires a review trigger and has no review recorded for a8b4a168cb: review it (node .process/tool/p3.mjs review brief 406), then node .process/tool/p3.mjs merge train note 406 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 14,
+      "to": "bob",
+      "at": "2026-11-05T06:32:59Z",
+      "text": "merged PR 391 (job ai-runs): node .process/tool/p3.mjs notice triage ai-runs:391 (provider notice ai-runs:391; 24 user modules owe a worker's judgment: action-plans, agent-steps, agent-worker, ai-gate, capture-requests, case-account, control-plane, instance-reports, instance-setup, intent, op-declarations, op-specs-late, plan-work, plane, question-explorer, queue-producers, run-productions, scheduler, screens-document, store-ask, store-assembly, store-jobs, surface-declarations, wizard-scripts: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 17,
+      "to": "bob",
+      "at": "2026-11-05T07:01:13Z",
+      "text": "PR 406 (job agent-harness) fires a review trigger and has no review recorded for a8b4a168cb: review it (node .process/tool/p3.mjs review brief 406), then node .process/tool/p3.mjs merge train note 406 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 18,
+      "to": "bob",
+      "at": "2026-11-05T07:46:04Z",
+      "text": "merged PR 406 (job agent-harness): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 20,
+      "to": "bob",
+      "at": "2026-11-05T08:23:53Z",
+      "text": "PR 411 (job ai-gate) fires a review trigger and has no review recorded for 2c7224a413: review it (node .process/tool/p3.mjs review brief 411), then node .process/tool/p3.mjs merge train note 411 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 21,
+      "to": "bob",
+      "at": "2026-11-05T08:25:11Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: PR 411 (job ai-gate) fires a review trigger and has no review recorded for 2c7224a413: review it (node .process/tool/p3.mjs review brief 411), then node .process/tool/p3.mjs merge train note 411 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 22,
+      "to": "bob",
+      "at": "2026-11-05T08:25:47Z",
+      "text": "merged PR 429 (job local-facts): node .process/tool/p3.mjs notice triage local-facts:429 (provider notice local-facts:429; 17 user modules owe a worker's judgment: action-clocks, action-holds, action-producers, actions, affordances, answer-envelope, control-plane, duties, filings, money, op-declarations, op-specs-late, progressions, publish-schedule, retrieval, review, store-assembly: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 23,
+      "to": "bob",
+      "at": "2026-11-05T08:41:29Z",
+      "text": "PR 426 (job registers) fires a review trigger and has no review recorded for 39536eb779: review it (node .process/tool/p3.mjs review brief 426), then node .process/tool/p3.mjs merge train note 426 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 24,
+      "to": "bob",
+      "at": "2026-11-05T09:30:37Z",
+      "text": "PR 426 (job registers) fires a review trigger and has no review recorded for 39536eb779: review it (node .process/tool/p3.mjs review brief 426), then node .process/tool/p3.mjs merge train note 426 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 25,
+      "to": "bob",
+      "at": "2026-11-05T09:45:21Z",
+      "text": "merged PR 396 (job action-grammar): node .process/tool/p3.mjs notice triage action-grammar:396 (provider notice action-grammar:396; 10 user modules owe a worker's judgment: action-clocks, action-holds, action-records, action-replies, actions, affordances, answer-envelope, filing-templates, filings, instance-setup: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 26,
+      "to": "bob",
+      "at": "2026-11-05T10:06:42Z",
+      "text": "merged PR 440 (job content): node .process/tool/p3.mjs notice triage content:440 (provider notice content:440; 35 user modules owe a worker's judgment: actions, affordances, answer-envelope, basis-version-grammar, basis-versions, calculations, case-authoring, case-checker, citation, conformance, connections, consequences, contradiction, control-plane, duties, entities, events, filings, inquiry, inquiry-grammar, investigation, leg-earning, lines, local-facts, money, people, publication, query-language, question-explorer, reevaluation, registers, retrieval-browse, run-productions, standards, store-assembly: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 27,
+      "to": "bob",
+      "at": "2026-11-05T10:21:28Z",
+      "text": "merged PR 378 (job ai-use): node .process/tool/p3.mjs notice triage ai-use:378 (provider notice ai-use:378; 16 user modules owe a worker's judgment: agent-worker, ai-gate, ai-runs, answer-envelope, answers, control-plane, instance-updates, notice-producers, op-declarations, op-specs-late, question-explorer, queue-producers, store-ask, store-assembly, store-door, surface-declarations: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 28,
+      "to": "bob",
+      "at": "2026-11-05T10:21:54Z",
+      "text": "PR 479 (plain, queued by session_018BhcefhxhWd9YQkYbKBcTB) was not merged by the train: pull request 479 changes module files, which go through a job: bio-plane/test/m/store-assembly/requirements-split.test.mjs (store-assembly)"
+    },
+    {
+      "from": "merger",
+      "n": 29,
+      "to": "bob",
+      "at": "2026-11-05T10:38:42Z",
+      "text": "merged PR 435 (job store-request): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 30,
+      "to": "bob",
+      "at": "2026-11-05T11:05:55Z",
+      "text": "merged PR 426 (job registers): node .process/tool/p3.mjs notice triage registers:426 (provider notice registers:426; 4 user modules owe a worker's judgment: corpus-export, op-declarations, store-assembly, surface-declarations: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 31,
+      "to": "bob",
+      "at": "2026-11-05T11:26:32Z",
+      "text": "merged PR 392 (job agent-steps): node .process/tool/p3.mjs notice triage agent-steps:392 (provider notice agent-steps:392; 3 user modules owe a worker's judgment: agent-drafts, agent-worker, ai-gate: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 32,
+      "to": "bob",
+      "at": "2026-11-05T11:45:04Z",
+      "text": "merged PR 436 (job interface-shell): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 33,
+      "to": "bob",
+      "at": "2026-11-05T12:18:18Z",
+      "text": "merged PR 438 (job screens-inquiry): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 34,
+      "to": "bob",
+      "at": "2026-11-05T12:34:45Z",
+      "text": "merged PR 414 (job store-assembly): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 36,
+      "to": "bob",
+      "at": "2026-11-05T12:36:50Z",
+      "text": "PR 502 (plain, queued by session_018BhcegsNkx99LYyf1WY2X1) was not merged by the train: cannot read origin's process-state: error: cannot lock ref 'refs/remotes/origin/process-state': is at ae959b7804cfc2e8227761ed8e2c2438e986d073 but expected 645e94ca7eda78ca760980eae9abb1bf39166452"
+    },
+    {
+      "from": "merger",
+      "n": 37,
+      "to": "bob",
+      "at": "2026-11-05T12:43:53Z",
+      "text": "merged PR 422 (job lines): node .process/tool/p3.mjs notice triage lines:422 (provider notice lines:422; 14 user modules owe a worker's judgment: actions, affordances, case-authoring, case-disclosures, corpus-export, duties, escalation, instance-setup, local-facts, money, op-declarations, people, store-assembly, strength: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 38,
+      "to": "bob",
+      "at": "2026-11-05T14:22:03Z",
+      "text": "merged PR 314 (job journey-check): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 39,
+      "to": "bob",
+      "at": "2026-11-05T14:28:17Z",
+      "text": "merged PR 398 (job corpus-export): node .process/tool/p3.mjs notice triage corpus-export:398 (provider notice corpus-export:398; 4 user modules owe a worker's judgment: op-declarations, publication, queue-producers, store-assembly: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 40,
+      "to": "bob",
+      "at": "2026-11-05T15:15:01Z",
+      "text": "merged PR 290 (job control-plane): node .process/tool/p3.mjs notice triage control-plane:290 (provider notice control-plane:290; 3 user modules owe a worker's judgment: control-plane-door-pages, control-plane-door-reading, plane: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 41,
+      "to": "bob",
+      "at": "2026-11-05T15:20:57Z",
+      "text": "merged PR 427 (job publication): node .process/tool/p3.mjs notice triage publication:427 (provider notice publication:427; 19 user modules owe a worker's judgment: answer-envelope, case-authoring, case-check, case-disclosures, case-inputs, conformance, docket, filings, monitoring, network-notices, op-declarations, plane, public-read, publish-schedule, queue-producers, ratification, review, screens-publish, store-assembly: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 42,
+      "to": "bob",
+      "at": "2026-11-05T15:26:36Z",
+      "text": "merged PR 386 (job answer-envelope): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 44,
+      "to": "bob",
+      "at": "2026-11-05T15:32:04Z",
+      "text": "merged PR 443 (job interface-assets): node .process/tool/p3.mjs notice triage interface-assets:443 (provider notice interface-assets:443; 9 user modules owe a worker's judgment: control-plane, installer, interface-shell, journey-check, screens-ai, screens-document, screens-publish, screens-settings, site: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 46,
+      "to": "bob",
+      "at": "2026-11-05T15:37:49Z",
+      "text": "merged PR 346 (job question-explorer): node .process/tool/p3.mjs notice triage question-explorer:346 (provider notice question-explorer:346; 4 user modules owe a worker's judgment: answer-envelope, notice-producers, op-declarations, store-assembly: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 47,
+      "to": "bob",
+      "at": "2026-11-05T15:43:56Z",
+      "text": "merged PR 444 (job capture-requests): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 49,
+      "to": "bob",
+      "at": "2026-11-05T16:28:38Z",
+      "text": "merged PR 439 (job screens-daily): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 51,
+      "to": "bob",
+      "at": "2026-11-05T17:14:41Z",
+      "text": "merged PR 453 (job queue-producers): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 52,
+      "to": "bob",
+      "at": "2026-11-05T17:21:16Z",
+      "text": "merged PR 428 (job mail-door): node .process/tool/p3.mjs notice triage mail-door:428 (provider notice mail-door:428; 4 user modules owe a worker's judgment: answer-envelope, op-declarations, store-assembly, surface-declarations: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 53,
+      "to": "bob",
+      "at": "2026-11-05T17:27:28Z",
+      "text": "merged PR 457 (job skills): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 54,
+      "to": "bob",
+      "at": "2026-11-05T17:33:53Z",
+      "text": "merged PR 458 (job wizard-scripts): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 55,
+      "to": "bob",
+      "at": "2026-11-05T17:47:36Z",
+      "text": "merged PR 437 (job screens-settings): node .process/tool/p3.mjs notice triage screens-settings:437 (provider notice screens-settings:437; 4 user modules owe a worker's judgment: control-plane, journey-check, screens-document, screens-inquiry: a read-only worker judges them now, not in a later batch); then node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 56,
+      "to": "bob",
+      "at": "2026-11-05T17:53:04Z",
+      "text": "PR 542 (plain, queued by session_018BhcedPdKvvqmShgPznx1U) was not merged by the train: gh api -X PUT failed: gh: Repository rule violations found"
+    },
+    {
+      "from": "merger",
+      "n": 59,
+      "to": "bob",
+      "at": "2026-11-05T18:53:39Z",
+      "text": "PR 364 (job agent-worker) fires a review trigger and has no review recorded for d3af394666: review it (node .process/tool/p3.mjs review brief 364), then node .process/tool/p3.mjs merge train note 364 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 60,
+      "to": "bob",
+      "at": "2026-11-05T18:57:06Z",
+      "text": "merged PR 459 (job admission): node .process/tool/p3.mjs job start --ready --live <n> (n: the job sessions list_sessions shows), then create_session with each launch it prints; the lines below after"
+    },
+    {
+      "from": "merger",
+      "n": 61,
+      "to": "bob",
+      "at": "2026-11-05T19:03:17Z",
+      "text": "PR 411 (job ai-gate) fires a review trigger and has no review recorded for 3731383100: review it (node .process/tool/p3.mjs review brief 411), then node .process/tool/p3.mjs merge train note 411 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 62,
+      "to": "bob",
+      "at": "2026-11-05T19:03:36Z",
+      "text": "PR 364 (job agent-worker) fires a review trigger and has no review recorded for d3af394666: review it (node .process/tool/p3.mjs review brief 364), then node .process/tool/p3.mjs merge train note 364 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 63,
+      "to": "bob",
+      "at": "2026-11-05T19:34:53Z",
+      "text": "PR 556 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 556 is closed"
+    },
+    {
+      "from": "merger",
+      "n": 64,
+      "to": "bob",
+      "at": "2026-11-05T19:35:20Z",
+      "text": "PR 556 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 556 is closed"
+    },
+    {
+      "from": "merger",
+      "n": 65,
+      "to": "bob",
+      "at": "2026-11-05T19:36:38Z",
+      "text": "PR 411 (job ai-gate) fires a review trigger and has no review recorded for 3731383100: review it (node .process/tool/p3.mjs review brief 411), then node .process/tool/p3.mjs merge train note 411 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 66,
+      "to": "bob",
+      "at": "2026-11-05T20:13:00Z",
+      "text": "merged PR 364 (job agent-worker): node .process/tool/p3.mjs notice triage agent-worker:364 (provider notice agent-worker:364; 5 user modules owe a worker's judgment: agent-drafts, ai-gate, signin-door, store-ask, store-assembly: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 67,
+      "to": "bob",
+      "at": "2026-11-05T20:20:25Z",
+      "text": "the starter started job agent-worker (PR 569): subscribe_pr_activity to each pull request"
+    },
+    {
+      "from": "merger",
+      "n": 68,
+      "to": "bob",
+      "at": "2026-11-05T20:28:02Z",
+      "text": "merged PR 470 (job screens-intake); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 69,
+      "to": "bob",
+      "at": "2026-11-05T20:32:03Z",
+      "text": "merged PR 472 (job screens-document); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 70,
+      "to": "bob",
+      "at": "2026-11-05T20:35:17Z",
+      "text": "PR 460: job signin-door must sync (node .process/tool/p3.mjs job sync signin-door, then job complete signin-door): pull request 460 conflicts with tranche; nothing was merged"
+    },
+    {
+      "from": "merger",
+      "n": 71,
+      "to": "bob",
+      "at": "2026-11-05T20:42:40Z",
+      "text": "PR 468 (job capture): its merged result is red; the job fixes it: the gate on the merged result is failure (spec PR 571, fffdcae094 on the tranche tip): https://github.com/neobobkrause/civicsmith-copy/actions/runs/42104874478/job/127516920790"
+    },
+    {
+      "from": "merger",
+      "n": 72,
+      "to": "bob",
+      "at": "2026-11-05T20:57:47Z",
+      "text": "merged PR 469 (job screens-publish): node .process/tool/p3.mjs notice triage screens-publish:469 (provider notice screens-publish:469; 1 user module owes a worker's judgment: control-plane: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 73,
+      "to": "bob",
+      "at": "2026-11-05T21:01:11Z",
+      "text": "merged PR 478 (job jurisdictions-c); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 74,
+      "to": "bob",
+      "at": "2026-11-05T21:04:35Z",
+      "text": "merged PR 467 (job acquisition); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 75,
+      "to": "bob",
+      "at": "2026-11-05T21:08:10Z",
+      "text": "merged PR 473 (job provenance); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 76,
+      "to": "bob",
+      "at": "2026-11-05T21:08:43Z",
+      "text": "the starter started job screens-public (PR 598): subscribe_pr_activity to each pull request"
+    },
+    {
+      "from": "merger",
+      "n": 77,
+      "to": "bob",
+      "at": "2026-11-05T21:12:02Z",
+      "text": "merged PR 431 (job actions); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 78,
+      "to": "bob",
+      "at": "2026-11-05T21:15:44Z",
+      "text": "merged PR 420 (job screens-action); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 79,
+      "to": "bob",
+      "at": "2026-11-05T21:19:39Z",
+      "text": "merged PR 441 (job inquiry); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 80,
+      "to": "bob",
+      "at": "2026-11-05T21:22:56Z",
+      "text": "PR 483: job ai-accounts must sync (node .process/tool/p3.mjs job sync ai-accounts, then job complete ai-accounts): pull request 483 conflicts with tranche; nothing was merged"
+    },
+    {
+      "from": "merger",
+      "n": 81,
+      "to": "bob",
+      "at": "2026-11-05T21:30:57Z",
+      "text": "merged PR 486 (job calculations); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 82,
+      "to": "bob",
+      "at": "2026-11-05T21:38:02Z",
+      "text": "the starter started job inquiry (PR 601): subscribe_pr_activity to each pull request"
+    },
+    {
+      "from": "merger",
+      "n": 83,
+      "to": "bob",
+      "at": "2026-11-05T21:42:21Z",
+      "text": "merged PR 494 (job action-records); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 84,
+      "to": "bob",
+      "at": "2026-11-05T21:49:25Z",
+      "text": "merged PR 495 (job case-checker); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 85,
+      "to": "bob",
+      "at": "2026-11-05T21:54:38Z",
+      "text": "merged PR 477 (job jurisdictions-b); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 86,
+      "to": "bob",
+      "at": "2026-11-05T21:55:06Z",
+      "text": "PR 600 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 600 is a draft"
+    },
+    {
+      "from": "merger",
+      "n": 87,
+      "to": "bob",
+      "at": "2026-11-05T21:56:29Z",
+      "text": "PR 484: job ai-catalogue must sync (node .process/tool/p3.mjs job sync ai-catalogue, then job complete ai-catalogue): pull request 484 conflicts with tranche; nothing was merged"
+    },
+    {
+      "from": "merger",
+      "n": 88,
+      "to": "bob",
+      "at": "2026-11-05T22:01:21Z",
+      "text": "merged PR 496 (job registers); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 90,
+      "to": "bob",
+      "at": "2026-11-05T22:13:43Z",
+      "text": "merged PR 488 (job control-plane-door-pages); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 91,
+      "to": "bob",
+      "at": "2026-11-05T22:18:29Z",
+      "text": "merged PR 490 (job acquisition-owed); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 92,
+      "to": "bob",
+      "at": "2026-11-05T22:23:33Z",
+      "text": "merged PR 492 (job held-captures); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 93,
+      "to": "bob",
+      "at": "2026-11-05T22:28:40Z",
+      "text": "PR 462 (job jurisdictions): its merged result is red; the job fixes it: the gate on the merged result is failure: https://github.com/neobobkrause/civicsmith-copy/actions/runs/42121210544/job/127573728564"
+    },
+    {
+      "from": "merger",
+      "n": 94,
+      "to": "bob",
+      "at": "2026-11-05T22:38:35Z",
+      "text": "merged PR 471 (job screens-investigate); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 96,
+      "to": "bob",
+      "at": "2026-11-05T22:48:04Z",
+      "text": "merged PR 487 (job control-plane-door-reading); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 97,
+      "to": "bob",
+      "at": "2026-11-05T22:54:38Z",
+      "text": "merged PR 456 (job case-authoring): node .process/tool/p3.mjs notice triage case-authoring:456 (provider notice case-authoring:456; 7 user modules owe a worker's judgment: affordances, answer-envelope, case-check, op-declarations, op-specs-late, review, store-assembly: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 98,
+      "to": "bob",
+      "at": "2026-11-05T23:00:53Z",
+      "text": "merged PR 455 (job queue): node .process/tool/p3.mjs notice triage queue:455 (provider notice queue:455; 5 user modules owe a worker's judgment: answer-envelope, plane, screens-document, store-assembly, store-door: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 99,
+      "to": "bob",
+      "at": "2026-11-05T23:06:43Z",
+      "text": "merged PR 489 (job screens-document-beta); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 100,
+      "to": "bob",
+      "at": "2026-11-05T23:08:42Z",
+      "text": "the starter started job case-check (PR 603): subscribe_pr_activity to each pull request"
+    },
+    {
+      "from": "merger",
+      "n": 101,
+      "to": "bob",
+      "at": "2026-11-05T23:14:13Z",
+      "text": "merged PR 446 (job member-roster): node .process/tool/p3.mjs notice triage member-roster:446 (provider notice member-roster:446; 9 user modules owe a worker's judgment: acquisition, contradiction, mail-door, membership, op-declarations, queue-producers, store-assembly, store-jobs, surface-declarations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 102,
+      "to": "bob",
+      "at": "2026-11-05T23:18:17Z",
+      "text": "PR 452: job plane must sync (node .process/tool/p3.mjs job sync plane, then job complete plane): job/plane-2 conflicts with tranche; the job must bring itself up to date: node .process/tool/p3.mjs job sync plane, then job complete plane again"
+    },
+    {
+      "from": "merger",
+      "n": 103,
+      "to": "bob",
+      "at": "2026-11-05T23:31:28Z",
+      "text": "the starter started job membership (PR 604): subscribe_pr_activity to each pull request"
+    },
+    {
+      "from": "merger",
+      "n": 104,
+      "to": "bob",
+      "at": "2026-11-05T23:33:29Z",
+      "text": "merged PR 509 (job ratification); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 105,
+      "to": "bob",
+      "at": "2026-11-05T23:39:33Z",
+      "text": "merged PR 512 (job corpus-export); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 106,
+      "to": "bob",
+      "at": "2026-11-05T23:43:52Z",
+      "text": "merged PR 445 (job screens-wizards); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 107,
+      "to": "bob",
+      "at": "2026-11-05T23:58:00Z",
+      "text": "PR 606 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 606 changes generated module files (newgroup/dist/newgroup.bundled.mjs), and the gate on 4bf798b202 is not green"
+    },
+    {
+      "from": "merger",
+      "n": 108,
+      "to": "bob",
+      "at": "2026-11-06T00:03:46Z",
+      "text": "merged PR 514 (job answer-envelope); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 109,
+      "to": "bob",
+      "at": "2026-11-06T00:10:06Z",
+      "text": "PR 541 (job capture-requests) fires a review trigger and has no review recorded for 2aebf6cff6: review it (node .process/tool/p3.mjs review brief 541), then node .process/tool/p3.mjs merge train note 541 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 110,
+      "to": "bob",
+      "at": "2026-11-06T00:10:32Z",
+      "text": "PR 461 (job scheduler) fires a review trigger and has no review recorded for 16205250b8: review it (node .process/tool/p3.mjs review brief 461), then node .process/tool/p3.mjs merge train note 461 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 111,
+      "to": "bob",
+      "at": "2026-11-06T00:15:02Z",
+      "text": "merged PR 520 (job question-explorer): node .process/tool/p3.mjs notice triage question-explorer:520 (provider notice question-explorer:520; 4 user modules owe a worker's judgment: answer-envelope, notice-producers, op-declarations, store-assembly: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 112,
+      "to": "bob",
+      "at": "2026-11-06T00:19:40Z",
+      "text": "PR 606 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 606 changes module files, which go through a job: newgroup/dist/.gitkeep (installer); a plain pull request may change a module's generated files only, and only to their regenerated bytes"
+    },
+    {
+      "from": "merger",
+      "n": 113,
+      "to": "bob",
+      "at": "2026-11-06T00:20:06Z",
+      "text": "PR 609 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 609 changes module files, which go through a job: newgroup/dist/.gitkeep (installer)"
+    },
+    {
+      "from": "merger",
+      "n": 115,
+      "to": "bob",
+      "at": "2026-11-06T00:25:18Z",
+      "text": "merged PR 491 (job acquisition-archives); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 116,
+      "to": "bob",
+      "at": "2026-11-06T00:31:02Z",
+      "text": "merged PR 541 (job capture-requests); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 117,
+      "to": "bob",
+      "at": "2026-11-06T00:32:04Z",
+      "text": "PR 430 (job op-declarations) fires a review trigger and has no review recorded for eecb25a8d8: review it (node .process/tool/p3.mjs review brief 430), then node .process/tool/p3.mjs merge train note 430 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 118,
+      "to": "bob",
+      "at": "2026-11-06T00:37:16Z",
+      "text": "merged PR 461 (job scheduler); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 119,
+      "to": "bob",
+      "at": "2026-11-06T00:43:11Z",
+      "text": "merged PR 546 (job wizard-scripts): node .process/tool/p3.mjs notice triage wizard-scripts:546 (provider notice wizard-scripts:546; 15 user modules owe a worker's judgment: affordances, answer-envelope, control-plane, instance-setup, interface-shell, op-declarations, queue-producers, screens-document, screens-inquiry, screens-matter, screens-plan, screens-publish, store-assembly, store-door, translations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 120,
+      "to": "bob",
+      "at": "2026-11-06T00:48:38Z",
+      "text": "merged PR 547 (job control-plane-store-request); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 121,
+      "to": "bob",
+      "at": "2026-11-06T00:54:27Z",
+      "text": "merged PR 411 (job ai-gate): node .process/tool/p3.mjs notice triage ai-gate:411 (provider notice ai-gate:411; 4 user modules owe a worker's judgment: agent-runner, ai-issuer, op-declarations, surface-declarations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 122,
+      "to": "bob",
+      "at": "2026-11-06T00:59:35Z",
+      "text": "merged PR 538 (job ux-design); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 123,
+      "to": "bob",
+      "at": "2026-11-06T01:07:14Z",
+      "text": "merged PR 551 (job interface-shell); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 124,
+      "to": "bob",
+      "at": "2026-11-06T01:13:06Z",
+      "text": "merged PR 468 (job capture): node .process/tool/p3.mjs notice triage capture:468 (provider notice capture:468; 31 user modules owe a worker's judgment: answer-envelope, capture-requests, case-authoring, case-disclosures, case-tensions, connections, control-plane, doorbell, extraction, file-safety, following, inquiry, instance-reports, instance-setup, link-sweep, machinery-producers, mail-door, monitoring, notice-producers, op-declarations, op-specs-late, plane, ratification, scheduler, screens-publish, standards, store-ask, store-assembly, store-jobs, surface-declarations, tasks: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 125,
+      "to": "bob",
+      "at": "2026-11-06T01:18:14Z",
+      "text": "merged PR 573 (job screens-intake-rounds); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 126,
+      "to": "bob",
+      "at": "2026-11-06T01:24:11Z",
+      "text": "merged PR 601 (job inquiry); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 127,
+      "to": "bob",
+      "at": "2026-11-06T01:29:36Z",
+      "text": "merged PR 497 (job agent-steps): node .process/tool/p3.mjs notice triage agent-steps:497 (provider notice agent-steps:497; 3 user modules owe a worker's judgment: agent-drafts, agent-worker, ai-gate: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 128,
+      "to": "bob",
+      "at": "2026-11-06T01:35:08Z",
+      "text": "merged PR 483 (job ai-accounts): node .process/tool/p3.mjs notice triage ai-accounts:483 (provider notice ai-accounts:483; 20 user modules owe a worker's judgment: agent-worker, ai-runs, ai-use, answer-envelope, answers, credentials, extraction, instance-setup, op-declarations, op-specs-late, question-explorer, queue-producers, run-productions, screens-document, signin-door, store-ask, store-assembly, store-door, translations, wizard-scripts: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 129,
+      "to": "bob",
+      "at": "2026-11-06T01:39:39Z",
+      "text": "merged PR 484 (job ai-catalogue): node .process/tool/p3.mjs notice triage ai-catalogue:484 (provider notice ai-catalogue:484; 12 user modules owe a worker's judgment: agent-model, agent-runner, agent-worker, ai-accounts, ai-gate, ai-issuer, ai-runs, ai-use, answer-envelope, op-declarations, store-assembly, surface-declarations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 130,
+      "to": "bob",
+      "at": "2026-11-06T01:44:01Z",
+      "text": "merged PR 598 (job screens-public); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 131,
+      "to": "bob",
+      "at": "2026-11-06T01:48:19Z",
+      "text": "merged PR 462 (job jurisdictions); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 132,
+      "to": "bob",
+      "at": "2026-11-06T01:49:26Z",
+      "text": "the starter started job ai-catalogue (PR 611): subscribe_pr_activity to each pull request"
+    },
+    {
+      "from": "merger",
+      "n": 133,
+      "to": "bob",
+      "at": "2026-11-06T01:52:16Z",
+      "text": "merged PR 508 (job load-check); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 134,
+      "to": "bob",
+      "at": "2026-11-06T01:57:49Z",
+      "text": "merged PR 603 (job case-check); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 135,
+      "to": "bob",
+      "at": "2026-11-06T02:00:28Z",
+      "text": "merged PR 604 (job membership); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 136,
+      "to": "bob",
+      "at": "2026-11-06T02:06:18Z",
+      "text": "merged PR 519 (job site); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 137,
+      "to": "bob",
+      "at": "2026-11-06T02:06:43Z",
+      "text": "the starter started job ai-use (PR 613): subscribe_pr_activity to each pull request"
+    },
+    {
+      "from": "merger",
+      "n": 138,
+      "to": "bob",
+      "at": "2026-11-06T02:16:44Z",
+      "text": "merged PR 544 (job instance-setup): node .process/tool/p3.mjs notice triage instance-setup:544 (provider notice instance-setup:544; 12 user modules owe a worker's judgment: answer-envelope, control-plane, installer, installer-steps, instance-reports, op-declarations, op-specs-late, plane, screens-document, stewards, store-assembly, store-door: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 139,
+      "to": "bob",
+      "at": "2026-11-06T02:22:51Z",
+      "text": "merged PR 607 (job screens-publish): node .process/tool/p3.mjs notice triage screens-publish:607 (provider notice screens-publish:607; 1 user module owes a worker's judgment: control-plane: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 140,
+      "to": "bob",
+      "at": "2026-11-06T02:54:16Z",
+      "text": "PR 614 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 614 changes module files, which go through a job: build/requirements/op-declarations.md (op-declarations); a plain pull request may only add new unmet found marks to a requirement file (build/requirements/op-declarations.md: it adds a line that is not one unmet found mark: - **F2** (bas"
+    },
+    {
+      "from": "merger",
+      "n": 141,
+      "to": "bob",
+      "at": "2026-11-06T02:55:08Z",
+      "text": "PR 507 (job stewards) fires a review trigger and has no review recorded for e6901805cd: review it (node .process/tool/p3.mjs review brief 507), then node .process/tool/p3.mjs merge train note 507 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 142,
+      "to": "bob",
+      "at": "2026-11-06T02:55:25Z",
+      "text": "PR 513 (job installer-steps) fires a review trigger and has no review recorded for 1353565048: review it (node .process/tool/p3.mjs review brief 513), then node .process/tool/p3.mjs merge train note 513 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 143,
+      "to": "bob",
+      "at": "2026-11-06T02:59:46Z",
+      "text": "merged PR 611 (job ai-catalogue): node .process/tool/p3.mjs notice triage ai-catalogue:611 (provider notice ai-catalogue:611; 12 user modules owe a worker's judgment: agent-model, agent-runner, agent-worker, ai-accounts, ai-gate, ai-issuer, ai-runs, ai-use, answer-envelope, op-declarations, store-assembly, surface-declarations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 144,
+      "to": "bob",
+      "at": "2026-11-06T03:05:57Z",
+      "text": "the starter started job ai-catalogue (PR 615): subscribe_pr_activity to each pull request"
+    },
+    {
+      "from": "merger",
+      "n": 145,
+      "to": "bob",
+      "at": "2026-11-06T03:14:17Z",
+      "text": "first: node .process/tool/p3.mjs job start --ready --live <n> (11 jobs ready). Then: TRAIN WAITING ON A CANCELLED GATE: PR 570 (job agent-drafts): its merged result 52f9b34eb6 was pushed to job/agent-drafts at ~03:03Z and the process-gate run on it reads cancelled; the train has polled it ~25 times over ~10 min and lands nothing else while it holds. A re-run of that gate, or your word on 570, frees the train."
+    },
+    {
+      "from": "merger",
+      "n": 146,
+      "to": "bob",
+      "at": "2026-11-06T03:19:05Z",
+      "text": "merged PR 570 (job agent-drafts): node .process/tool/p3.mjs notice triage agent-drafts:570 (provider notice agent-drafts:570; 1 user module owes a worker's judgment: agent-worker: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 147,
+      "to": "bob",
+      "at": "2026-11-06T03:20:04Z",
+      "text": "PR 569 (job agent-worker) fires a review trigger and has no review recorded for 30aa5466a6: review it (node .process/tool/p3.mjs review brief 569), then node .process/tool/p3.mjs merge train note 569 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 148,
+      "to": "bob",
+      "at": "2026-11-06T03:23:41Z",
+      "text": "merged PR 493 (job member-upload); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 149,
+      "to": "bob",
+      "at": "2026-11-06T03:30:21Z",
+      "text": "merged PR 432 (job extraction): node .process/tool/p3.mjs notice triage extraction:432 (provider notice extraction:432; 27 user modules owe a worker's judgment: answer-envelope, calculations, case-carriage, case-disclosures, connections, content, contradiction, control-plane, duties, entities, events, instance-reports, instance-setup, investigation, observation-log, op-declarations, plane, progressions, retrieval, retrieval-browse, run-productions, screens-document, standards, store-assembly, store-door, store-jobs, translations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 150,
+      "to": "bob",
+      "at": "2026-11-06T03:31:25Z",
+      "text": "PR 610 (job agent-runner) fires a review trigger and has no review recorded for 0ee9bc02d9: review it (node .process/tool/p3.mjs review brief 610), then node .process/tool/p3.mjs merge train note 610 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 151,
+      "to": "bob",
+      "at": "2026-11-06T03:35:09Z",
+      "text": "merged PR 613 (job ai-use): node .process/tool/p3.mjs notice triage ai-use:613 (provider notice ai-use:613; 14 user modules owe a worker's judgment: agent-worker, ai-runs, answer-envelope, answers, instance-updates, notice-producers, op-declarations, op-specs-late, question-explorer, queue-producers, store-ask, store-assembly, store-door, surface-declarations: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 152,
+      "to": "bob",
+      "at": "2026-11-06T03:41:41Z",
+      "text": "merged PR 485 (job ai-runs): node .process/tool/p3.mjs notice triage ai-runs:485 (provider notice ai-runs:485; 22 user modules owe a worker's judgment: action-plans, agent-worker, capture-requests, case-account, control-plane, instance-reports, instance-setup, intent, op-declarations, op-specs-late, plan-work, plane, question-explorer, queue-producers, run-productions, scheduler, screens-document, store-ask, store-assembly, store-jobs, surface-declarations, wizard-scripts: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 153,
+      "to": "bob",
+      "at": "2026-11-06T03:42:49Z",
+      "text": "the starter started job inquiry (PR 617): subscribe_pr_activity to each pull request"
+    },
+    {
+      "from": "merger",
+      "n": 154,
+      "to": "bob",
+      "at": "2026-11-06T03:52:10Z",
+      "text": "PR 616 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: gh api -X PUT failed: gh: Repository rule violations found"
+    },
+    {
+      "from": "merger",
+      "n": 155,
+      "to": "bob",
+      "at": "2026-11-06T03:58:29Z",
+      "text": "PR 610 (job agent-runner) fires a review trigger and has no review recorded for 8fd133edc8: review it (node .process/tool/p3.mjs review brief 610), then node .process/tool/p3.mjs merge train note 610 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"
+    },
+    {
+      "from": "merger",
+      "n": 156,
+      "to": "bob",
+      "at": "2026-11-06T04:07:06Z",
+      "text": "merged PR 610 (job agent-runner): node .process/tool/p3.mjs notice triage agent-runner:610 (provider notice agent-runner:610; 1 user module owes a worker's judgment: agent-worker: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 157,
+      "to": "bob",
+      "at": "2026-11-06T04:33:03Z",
+      "text": "merged PR 569 (job agent-worker): node .process/tool/p3.mjs notice triage agent-worker:569 (provider notice agent-worker:569; 5 user modules owe a worker's judgment: agent-drafts, ai-gate, signin-door, store-ask, store-assembly: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 158,
+      "to": "bob",
+      "at": "2026-11-06T04:41:33Z",
+      "text": "the starter started job agent-worker (PR 619): subscribe_pr_activity to each pull request"
+    },
+    {
+      "from": "merger",
+      "n": 159,
+      "to": "bob",
+      "at": "2026-11-06T05:14:18Z",
+      "text": "merged PR 619 (job agent-worker); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 160,
+      "to": "bob",
+      "at": "2026-11-06T05:15:16Z",
+      "text": "PR 620 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 620 changes module files, which go through a job: docs/development/ux-substrate/HANDOFF.md (ux-design), docs/development/ux-substrate/NEXT-SESSION-PROMPT.md (ux-design), docs/development/ux-substrate/README.md (ux-design), docs/development/ux-substrate/T50-requirements-gaps-2026-10-17.m"
+    },
+    {
+      "from": "merger",
+      "n": 161,
+      "to": "bob",
+      "at": "2026-11-06T05:35:57Z",
+      "text": "merged PR 622 (job ux-design); the MERGER's starter starts the work it freed"
+    },
+    {
+      "from": "merger",
+      "n": 164,
+      "to": "bob",
+      "at": "2026-11-06T11:53:24Z",
+      "text": "PR 625 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: the pull request changes .github/workflows/container-images.yml, .github/workflows/deploy-test.yml, .github/workflows/regression.yml, .github/workflows/release-sign.yml: .github/workflows/container-images.yml is not the process's own shim at 4a85f2621b. A workflow change needs the owner's word: brin"
+    },
+    {
+      "from": "merger",
+      "n": 165,
+      "to": "bob",
+      "at": "2026-11-06T11:54:41Z",
+      "text": "PR 624 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 624 is a pass, and a pass runs while no job holds its modules (P7): installer (job PR 597 is open), plane (job PR 452 is open)"
+    },
+    {
+      "from": "merger",
+      "n": 166,
+      "to": "bob",
+      "at": "2026-11-06T12:09:04Z",
+      "text": "PR 624 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 624 changes generated module files (agent-runner/dist/agent-runner.bundle.json, agent-runner/dist/agent-runner.bundled.mjs, agent-worker/dist/agent-worker.bundle.json, bio-plane/dist/bio-plane.bundle.json, file-scanner/dist/file-scanner.bundle.json): no green process-gate run on 4add3f7"
+    }
+  ],
+  "layers": [
+    9
+  ],
+  "lanes": [
+    {
+      "lane": "investigation",
+      "session": "session_018BhcecAwJP5DnnQjPq4JTZ",
+      "at": "2026-11-06T17:32:19Z"
+    },
+    {
+      "lane": "publication",
+      "session": "session_018BhcecVeBq3c6BYSyTV3Ph",
+      "at": "2026-11-06T17:34:45Z"
+    },
+    {
+      "lane": "ux",
+      "session": "session_018BhcefJXoCL3spfVV8dnjK",
+      "at": "2026-11-06T17:36:16Z"
+    }
+  ],
+  "asks": [
+    {
+      "lane": "ux",
+      "question": "Ratification F1 (BD-3): design the screens and words for the edition's docket entry, from the publication lane's needs sent by BOB with this ask: (1) the ceremony's docket step after the edition commits (screens-publish R13), (2) the 'published; not yet on the docket: <reason>' line and the docket page's due-edition item with its 'post it, signed' act, (3) the not-signer deliverer's line and the owners' To-do notice, (4) the Publish at… notices at scheduling and at publish time (option A, pending Bob). Answer with decision, why, and what changes in docs/development/ux-substrate/; name any words keys and the module entries they need outside your folder.",
+      "at": "2026-11-06T18:01:26Z"
+    }
+  ],
+  "sessions": [
+    "session_018BhceduipEp2mmEFHN9Diu",
+    "session_018Bhceff4p3dNtYx3XNk4CX",
+    "session_018BhcefmntMFwp8MDNkzCNL",
+    "session_018BhcefMKiLuojtdyeh1nzG",
+    "session_018BhcecWcETw22rxhPvoZ53",
+    "session_018BhceeBpw7terarKNdhfgs",
+    "session_018BhcecvjozbERNJvaoPtZj",
+    "session_018BhceemLa7LWFnk9ZmfiV8",
+    "session_018BhcefrTRiPYguQLKiXgvR",
+    "session_018BhcefKZ4Rr7bmQUScpVkF",
+    "session_018BhceeZSCXAGp2gXiqEyMd",
+    "session_018BhcecDsAf6bjB2gmsqByr",
+    "session_018BhcefpqgiG27jKXSKvwgr",
+    "session_018BhcecAwJP5DnnQjPq4JTZ",
+    "session_018BhcecVeBq3c6BYSyTV3Ph",
+    "session_018BhcefJXoCL3spfVV8dnjK"
+  ],
+  "dry_run": true
+}
