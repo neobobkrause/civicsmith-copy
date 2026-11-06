@@ -318,3 +318,4 @@
 {"at":"2026-11-06T05:14:33Z","row":"outcome","n":159,"outcome":"delivered"}
 {"at":"2026-11-06T05:15:16Z","row":"sent","n":160,"to":"bob","text":"PR 620 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 620 changes module files, which go through a job: docs/development/ux-substrate/HANDOFF.md (ux-design), docs/development/ux-substrate/NEXT-SESSION-PROMPT.md (ux-design), docs/development/ux-substrate/README.md (ux-design), docs/development/ux-substrate/T50-requirements-gaps-2026-10-17.m"}
 {"at":"2026-11-06T05:15:42Z","row":"outcome","n":160,"outcome":"delivered"}
+{"at":"2026-11-06T05:35:57Z","row":"sent","n":161,"to":"bob","text":"merged PR 622 (job ux-design); the MERGER's starter starts the work it freed"}
