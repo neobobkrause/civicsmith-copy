@@ -307,3 +307,4 @@
 {"at":"2026-11-06T01:25:30Z","row":"ready","live":0,"parked":2,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-06T01:18:10Z"}
 {"at":"2026-11-06T01:31:04Z","row":"check","by":"send","live":0,"live_at":"2026-11-06T01:25:30Z","job_cap":20,"startable":0,"idle_capacity":{"kind":"empty","since":"2026-11-05T23:43:34Z","min":107,"live":0,"cap":20,"held":0,"startable":0,"empty":20,"alarm":true}}
 {"at":"2026-11-06T01:32:31Z","row":"ready","live":0,"parked":2,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-06T01:24:07Z"}
+{"at":"2026-11-06T01:40:04Z","row":"ready","live":0,"parked":2,"job_cap":20,"started":[],"by":"starter","owed_since":"2026-11-06T01:29:32Z"}
