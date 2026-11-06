@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-/* Write `src/says-words.mjs` (R41): the rows the image reads, `{key: sentence}`, from the plane's word table, as data the
- * image carries because it cannot import `setup-words`. The keys are `src/says.mjs`' `SAYS_KEYS`; a key the table holds
- * (the design's `screen.connect.refused.*` and `refusal.*` rows) is carried as the table holds it, and a code with no row
- * fails the build. The few rows of this module's own (one per arm where R31 requires the detail to name its arm) are
- * written here with `localize`, so the list reads them and the sentence in code is only the fallback while the list is stale.
+/* Write `src/says-words.mjs` (R41): the rows the image reads, `{key: sentence}`, as data the image carries because it
+ * cannot import `setup-words`. The keys are `gate.runner.refused.<CODE>`, one per code of `src/params.mjs`
+ * REFUSAL_CODES. Each sentence is written once here, at its use, with `localize`, so the word table's row wins once the
+ * build step has extracted it, and a code with no row fails the build.
  *
  * Run from the repository root:
  *   node agent-runner/scripts/build-words.mjs            write src/says-words.mjs
@@ -11,53 +10,53 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { WORD_ROWS, localize } from '../../bio-plane/src/setup-words/index.mjs';
-import { SAYS_KEYS } from '../src/says.mjs';
+import { localize } from '../../bio-plane/src/setup-words/index.mjs';
+import { REFUSAL_CODES, RUNNER_DETAIL_CHARS_MAX, wordKey } from '../src/params.mjs';
 
 export const OUT = new URL('../src/says-words.mjs', import.meta.url);
 
-// Each fill that a row names is echoed back, so the row is carried with its `{name}` and the image fills it.
-const OWN = {
-  'agent-runner.signin.your_teams_civicsmith_could_not_2': localize('agent-runner.signin.your_teams_civicsmith_could_not_2', 'Your team\'s Civicsmith could not tell which member this is for. Sign in to Civicsmith again, then connect Claude.'),
-  'agent-runner.signin.your_teams_civicsmith_cannot_start': localize('agent-runner.signin.your_teams_civicsmith_cannot_start', 'Your team\'s Civicsmith cannot start Claude\'s sign-in: Claude Code is missing from it. Tell your team\'s steward.'),
-  'agent-runner.signin.claudes_sign_in_gave_no': localize('agent-runner.signin.claudes_sign_in_gave_no', 'Claude\'s sign-in gave no address within 30 seconds. Wait a minute, then try connecting Claude again.'),
-  'agent-runner.signin.claudes_sign_in_stopped_before': localize('agent-runner.signin.claudes_sign_in_stopped_before', 'Claude\'s sign-in stopped before it gave an address. Wait a minute, then try connecting Claude again.'),
-  'agent-runner.signin.this_claude_sign_in_was': localize('agent-runner.signin.this_claude_sign_in_was', 'This Claude sign-in was ended before it gave an address. Start connecting Claude again.'),
-  'agent-runner.signin.your_teams_civicsmith_could_not_3': localize('agent-runner.signin.your_teams_civicsmith_could_not_3', 'Your team\'s Civicsmith could not run Claude\'s sign-in just now. Wait a minute, then try again.'),
-  'agent-runner.signin.claude_gave_no_answer_within': localize('agent-runner.signin.claude_gave_no_answer_within', 'Claude gave no answer within 60 seconds of the code. Start connecting Claude again and paste the new code.'),
-  'agent-runner.signin.claude_answered_the_code_but': localize('agent-runner.signin.claude_answered_the_code_but', 'Claude answered the code, but not with a token your team\'s Civicsmith can use. Start connecting Claude again.'),
-  'agent-runner.signin.claude_did_not_accept_the': localize('agent-runner.signin.claude_did_not_accept_the', 'Claude did not accept the code{v1}. Start connecting Claude again and paste the new code.', { v1: '{v1}' }),
-  'agent-runner.worker.your_teams_civicsmith_could_not': localize('agent-runner.worker.your_teams_civicsmith_could_not', 'Your team\'s Civicsmith could not start its Claude connection just now. Wait a minute, then try again.'),
+export const OWN = {
+  'gate.runner.refused.BAD_REQUEST': localize('gate.runner.refused.BAD_REQUEST', 'The test run could not read what was sent. Start the test again from your team\'s Civicsmith.'),
+  'gate.runner.refused.BAD_RUN': localize('gate.runner.refused.BAD_RUN', 'The test run was not started: the plan, its tiers or its key are not ones a test run can take. Check the AI you named and try again.'),
+  'gate.runner.refused.CEILING_REQUIRED': localize('gate.runner.refused.CEILING_REQUIRED', 'A test run needs a spending, call and time limit before it starts. Set all three and try again.'),
+  'gate.runner.refused.RUN_IN_PROGRESS': localize('gate.runner.refused.RUN_IN_PROGRESS', 'A test run is already going here. Wait for it to finish, or discard it, before starting another.'),
+  'gate.runner.refused.NO_RUN': localize('gate.runner.refused.NO_RUN', 'There is no test run here: it ended, was discarded, or was lost. Start a new test run.'),
+  'gate.runner.refused.NO_MANIFEST_YET': localize('gate.runner.refused.NO_MANIFEST_YET', 'The test run has not finished, so its list of contents is not ready yet. Check again in a moment.'),
+  'gate.runner.refused.MANIFEST_NOT_SHOWN': localize('gate.runner.refused.MANIFEST_NOT_SHOWN', 'Read and approve the list of what the results file holds before taking the file.'),
+  'gate.runner.refused.ISSUER_UNREACHABLE': localize('gate.runner.refused.ISSUER_UNREACHABLE', 'Civicsmith\'s test service could not be reached, so no test was run and nothing was spent. Try again later.'),
+  'gate.runner.refused.CHALLENGE_REFUSED': localize('gate.runner.refused.CHALLENGE_REFUSED', 'Civicsmith\'s test service would not start this test, so nothing was spent. Check the AI you named and try again.'),
+  'gate.runner.refused.CHALLENGE_INVALID': localize('gate.runner.refused.CHALLENGE_INVALID', 'The test could not start: what Civicsmith\'s test service sent did not match this test version. Nothing was spent. Try again later.'),
+  'gate.runner.refused.CHALLENGE_HAS_ANSWERS': localize('gate.runner.refused.CHALLENGE_HAS_ANSWERS', 'The test could not start: its questions came with answers attached, which a fair test never has. Nothing was spent.'),
+  'gate.runner.refused.NOT_A_SAMPLE_ACCOUNT': localize('gate.runner.refused.NOT_A_SAMPLE_ACCOUNT', 'Civicsmith runs its own tests only on its own sample accounts. Run this test from your team\'s Civicsmith instead.'),
+  'gate.runner.refused.SECRET_IN_PAYLOAD': localize('gate.runner.refused.SECRET_IN_PAYLOAD', 'The test run found your key in its results, so it made no results file and wiped the run. Start a new test run.'),
+  'gate.runner.refused.SEALING_KEY_MISSING': localize('gate.runner.refused.SEALING_KEY_MISSING', 'This test version cannot seal its results yet, so no test was started and nothing was spent. Ask your team\'s steward to update Civicsmith.'),
+  'gate.runner.refused.RUNNER_NOT_STARTED': localize('gate.runner.refused.RUNNER_NOT_STARTED', 'Your team\'s Civicsmith could not start its test runner just now. Wait a minute, then try again.'),
 };
 
-/** The rows the image carries, `[key, sentence]` sorted by key; a key with no row in the list or here throws. */
-export function carriedRows(codes = SAYS_KEYS) {
-  const table = new Map(WORD_ROWS.map((r) => [r[0], r[1]]));
-  const keys = [...new Set(Object.values(codes))].sort();
-  for (const k of Object.keys(OWN)) if (codes === SAYS_KEYS && !keys.includes(k)) throw new Error(`${k} is written here and read nowhere`);
-  return keys.map((k) => {
-    const text = Object.hasOwn(OWN, k) ? OWN[k] : table.get(k);
-    if (typeof text !== 'string') throw new Error(`no row for ${k}: the build fails`);
-    return [k, text];
+/** The rows the image carries, `[key, sentence]` sorted by key; a code with no row throws. */
+export function carriedRows(codes = REFUSAL_CODES) {
+  const keys = [...new Set(codes.map(wordKey))].sort();
+  for (const key of Object.keys(OWN)) if (!keys.includes(key)) throw new Error(`${key} is written here and read nowhere`);
+  return keys.map((key) => {
+    const text = OWN[key];
+    if (typeof text !== 'string') throw new Error(`no row for ${key}: the build fails`);
+    if (text.length > RUNNER_DETAIL_CHARS_MAX) throw new Error(`${key} is longer than ${RUNNER_DETAIL_CHARS_MAX} characters`);
+    return [key, text];
   });
 }
 
 export function saysWordsModule() {
-  const rows = carriedRows().map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`);
+  const rows = carriedRows().map(([key, v]) => `  ${JSON.stringify(key)}: ${JSON.stringify(v)},`);
   return '/* GENERATED by ../scripts/build-words.mjs (agent-runner R41). Do not edit; run `node agent-runner/scripts/build-words.mjs`.\n'
-    + ' * The sentences the image reads by key, as the plane\'s word table holds them, carried because the image cannot import it. */\n'
+    + ' * The sentences the image reads by key, carried because the image cannot import the plane\'s word table. */\n'
     + `export const SAYS_WORDS = Object.freeze({\n${rows.join('\n')}\n});\n`;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const text = saysWordsModule();
   if (process.argv.includes('--check')) {
-    let have = null;
-    try { have = readFileSync(OUT, 'utf8'); } catch { /* absent */ }
-    if (have !== text) { console.error('agent-runner/src/says-words.mjs is stale: run node agent-runner/scripts/build-words.mjs'); process.exit(1); }
-    console.log('agent-runner/src/says-words.mjs is current');
-  } else {
-    writeFileSync(OUT, text);
-    console.log(`agent-runner/src/says-words.mjs written: ${carriedRows().length} rows`);
-  }
+    let now = '';
+    try { now = readFileSync(OUT, 'utf8'); } catch { /* missing is stale */ }
+    if (now !== text) { console.error('agent-runner/src/says-words.mjs is stale: run node agent-runner/scripts/build-words.mjs'); process.exit(1); }
+  } else writeFileSync(OUT, text);
 }
