@@ -307,3 +307,4 @@
 {"at":"2026-11-06T03:52:10Z","row":"sent","n":154,"to":"bob","text":"PR 616 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: gh api -X PUT failed: gh: Repository rule violations found"}
 {"at":"2026-11-06T03:52:34Z","row":"outcome","n":154,"outcome":"delivered"}
 {"at":"2026-11-06T03:58:29Z","row":"sent","n":155,"to":"bob","text":"PR 610 (job agent-runner) fires a review trigger and has no review recorded for 8fd133edc8: review it (node .process/tool/p3.mjs review brief 610), then node .process/tool/p3.mjs merge train note 610 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
+{"at":"2026-11-06T03:58:52Z","row":"outcome","n":155,"outcome":"delivered"}
