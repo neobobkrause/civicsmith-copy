@@ -141,3 +141,4 @@
 {"at":"2026-11-06T02:17:23.490Z","row":"inflight","pr":607,"module":"screens-publish","tip":"0497a59a991306c026380e9f3d94b41feed5d583","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T04:02:23.490Z"}
 {"at":"2026-11-06T02:22:43.023Z","row":"end","pr":607,"tip":"0497a59a991306c026380e9f3d94b41feed5d583","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-06T02:23:30.780Z","row":"inflight","pr":452,"module":"plane","tip":"82cd944ac2d8df5e855cdfd8dbff5c45eb2e4cd7","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T04:08:30.780Z"}
+{"at":"2026-11-06T02:54:03.449Z","row":"end","pr":452,"tip":"82cd944ac2d8df5e855cdfd8dbff5c45eb2e4cd7","cause":"withdrawn: made a draft","session":"session_018BhcefmntMFwp8MDNkzCNL"}
