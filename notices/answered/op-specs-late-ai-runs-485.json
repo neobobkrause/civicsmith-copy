@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-specs-late","by":"triage","evidence":"build/modules.json:179 gives op-specs-late no paths, so no source of it imports ai-runs or calls `openMany`, the only method PR 485 changed (bio-plane/src/ai-runs/index.mjs:1533)","at":"2026-11-06T03:49:58.966Z","key":"ai-runs:485","worker":"a5d93595ce4d26bb8","cost":"unmeasured"}

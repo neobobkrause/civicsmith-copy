@@ -1,0 +1,1 @@
+{"row":"answered","user":"surface-declarations","by":"triage","evidence":"build/modules.json:178 surface-declarations has empty paths and tests (no code yet), so no file of it imports ai-runs or calls openMany","at":"2026-11-06T03:49:58.966Z","key":"ai-runs:485","worker":"aa86e8dc1edf33667","cost":"unmeasured"}

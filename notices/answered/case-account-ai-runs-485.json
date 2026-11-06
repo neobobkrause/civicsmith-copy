@@ -1,0 +1,1 @@
+{"row":"answered","user":"case-account","by":"triage","evidence":"bio-plane/src/case-account/index.mjs:715 uses only ai-runs' runFor(r, viewer) via aiRunsOf (:207); it never calls openMany or reads its estimate, the only behaviour PR 485 changed","at":"2026-11-06T03:49:58.966Z","key":"ai-runs:485","worker":"a565e67bdf9602e78","cost":"unmeasured"}

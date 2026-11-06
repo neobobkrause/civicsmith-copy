@@ -1,0 +1,1 @@
+{"row":"triage","user":"plane","verdict":"not affected","evidence":"bio-plane/src/plane/store.mjs:65 calls only `dispatchMemberRun` (bio-plane/src/ai-runs/index.mjs:2456, via #dispatchMember at :2460), which does not reach `openMany`, the only method PR 485 changed","at":"2026-11-06T03:49:58.966Z","key":"ai-runs:485","worker":"a5d93595ce4d26bb8","cost":"unmeasured"}

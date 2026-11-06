@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-reports","by":"triage","evidence":"build/modules.json:176 instance-reports has \"paths\": [] (no source files), so no file imports ai-runs or calls openMany","at":"2026-11-06T03:49:58.966Z","key":"ai-runs:485","worker":"a986bb04aaa921eb9","cost":"unmeasured"}

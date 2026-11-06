@@ -1,0 +1,1 @@
+{"row":"triage","user":"plan-work","verdict":"not affected","evidence":"bio-plane/src/plan-work/index.mjs:890 calls only ai-runs `open` for one re-examination run; PR 485 changed only `openMany`'s batch estimate (bio-plane/src/ai-runs/index.mjs:1548-1557)","at":"2026-11-06T03:49:58.966Z","key":"ai-runs:485","worker":"a5d93595ce4d26bb8","cost":"unmeasured"}
