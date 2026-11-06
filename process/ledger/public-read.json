@@ -44,7 +44,8 @@
   ],
   "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/public-read.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-06T15:02:44Z"
+    "state": "WORKING",
+    "at": "2026-11-06T18:04:16Z",
+    "reason": "reopened: re-test against the new interface of case-carriage (land aace4c4cf6)"
   }
 }
