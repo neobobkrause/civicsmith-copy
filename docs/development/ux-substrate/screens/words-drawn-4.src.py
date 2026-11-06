@@ -2782,3 +2782,5 @@ wux('screen.document.readway.pictures', 'Read from pictures of its pages, so a w
 wux('screen.document.readway.mixed', 'Read from the text stored in this {kind}, and from pictures of the pages that had none.', 'screens-document-beta R73: a file read partly from its own text and partly from pictures of its pages')
 # R73's fingerprint: drawn as R66's row draws it, a short mark (screen.document.fingerprint) with shell.copy for the whole; no new key
 
+# reading-guides R20 (BOB, 6 Nov; coordinator ruling 04:56): the sole member's guide opt-out; affordances act-help.mjs (T53) reads this row in place of the owner's declared description
+W.append(dict(key='act.guideoptout.does', en="As your team's only member, uses your team's own guide without the professional review and a separate approver. The guide then says it was not reviewed. You can undo this.", protected=False, note="reading-guides R20: guideoptout, a member's reversible act (index.mjs:805); affordances act-help.mjs T53 reads it once the word list holds it"))
