@@ -1,0 +1,36 @@
+{
+  "id": "held-captures",
+  "title": "held-captures: split by copy from capture (R77, R88, R91, R78, R79, R81, R82, R83, R84, R100, R101, R102)",
+  "layer": 4,
+  "paths": [
+    "build/requirements/held-captures.md",
+    "docs/requirements-notes/held-captures.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/held-captures/"
+  ],
+  "requirements": "build/requirements/held-captures.md",
+  "uses": [
+    "capture",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/held-captures.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T11:20:59Z"
+  }
+}

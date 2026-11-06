@@ -1,0 +1,36 @@
+{
+  "id": "acquisition-archives",
+  "title": "acquisition-archives: split by copy from acquisition (R38, R39, R40, R41, R45, R48, R107, R113, R114, R121, R122, R125, R126, R127, R128, R129, R132, R133, R135, R136, R138, R139)",
+  "layer": 4,
+  "paths": [
+    "build/requirements/acquisition-archives.md",
+    "docs/requirements-notes/acquisition-archives.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/acquisition-archives/"
+  ],
+  "requirements": "build/requirements/acquisition-archives.md",
+  "uses": [
+    "acquisition",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/acquisition-archives.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T17:40:50Z"
+  }
+}

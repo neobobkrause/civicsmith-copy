@@ -48,6 +48,12 @@ export const GATE_PARAMS = deepFreeze({
   NAME_HASH_HEX: 8,
   RETRY_ALLOWANCE: 0.1,
   HEALTH_WINDOW_DAYS: 14,
+  /* the module's own run settings, not Bob's figures: a probe's output and time bound, the connect check's fixed
+     public seed, and the collect step's re-read cap (`agent-steps` R8: at most 20 cited addresses) */
+  PROBE_MAX_OUTPUT: 256,
+  PROBE_TIMEOUT_MS: 60000,
+  CONNECT_SEED: "connect",
+  CITATIONS_REREAD_MAX: 20,
 });
 
 /** R36 — the closed list of limit kinds. */

@@ -4,7 +4,8 @@
   "layer": 2,
   "paths": [
     "bio-plane/src/ai-accounts/",
-    "build/requirements/ai-accounts.md"
+    "build/requirements/ai-accounts.md",
+    "docs/requirements-notes/ai-accounts.md"
   ],
   "tests": [
     "bio-plane/test/m/ai-accounts/"
@@ -35,6 +36,6 @@
   "prior_work": "Found work F1 (coordinator, 4 Nov), with priority. ai-accounts' T53 rewrite removed names its users still call, with no provider notice. ai-runs (137/145 tests red), ai-use, question-explorer, op-declarations, and answers' limitsUnreadable fixture (and through it wizard-scripts) are red at tranche. Build one compatibility seam here instead of one fix per user. Export accountReferenceSet, accountReferenceState, groupKeySet, groupKeyState, groupKeySwitches, projectKeySet, subscriptionTokenHold, projectSigninSet, and the old accountUsesOf({owner}) and accountFor {key} forms beside the new ones. Implement each over the T53 model, mark each deprecated in a comment, and give each a test under bio-plane/test/m/ai-accounts/ that its old callers' expectation holds (read the callers in bio-plane/src/ai-runs/, ai-use/, question-explorer/, op-declarations/, answers/ and their test worlds, but edit none of them). Keep the T53 interface unchanged. Strike F1 with --test F1=... when every name is in. If some old name has no faithful T53 meaning, block with the name and why, rather than invent behaviour. Do not consolidate the requirements file (82 KB, over the cap): this job starts with --over-cap for the seam alone. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T22:01:28Z"
+    "at": "2026-11-05T22:05:31Z"
   }
 }

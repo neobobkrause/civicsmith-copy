@@ -1,0 +1,36 @@
+{
+  "id": "acquisition-owed",
+  "title": "acquisition-owed: split by copy from acquisition (R96, R46, R99, R100, R101, R102, R103, R104, R105, R106, R108, R109, R110, R111, R112, R115, R116, R117, R118, R119, R120, R123, R140)",
+  "layer": 4,
+  "paths": [
+    "build/requirements/acquisition-owed.md",
+    "docs/requirements-notes/acquisition-owed.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/acquisition-owed/"
+  ],
+  "requirements": "build/requirements/acquisition-owed.md",
+  "uses": [
+    "acquisition",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/acquisition-owed.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T11:20:53Z"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "jurisdictions-b",
+  "title": "jurisdictions-b: split by copy from jurisdictions (R88, R89, R90, R95, R96, R97, R98, R99, R100, R101, R102, R103, R104, R105, R106, R107, R108, R61, R62, R63, R64, R65, R66, R67, R68, R69, R70, R71, R72, R73, R74, R75, R76, R77, R78, R79, R80, R81, R82, R83, R84, R85, R86, R87, R91, R92, R93, R94, R109, R110)",
+  "layer": 2,
+  "paths": [
+    "build/requirements/jurisdictions-b.md",
+    "docs/requirements-notes/jurisdictions-b.md",
+    "jurisdictions/profiles/layers/us-federal.mjs",
+    "jurisdictions/test/"
+  ],
+  "tests": [
+    "bio-plane/test/m/jurisdictions-b/"
+  ],
+  "requirements": "build/requirements/jurisdictions-b.md",
+  "uses": [
+    "jurisdictions",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/jurisdictions-b.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T11:28:24Z"
+  }
+}
