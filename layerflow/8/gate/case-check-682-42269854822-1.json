@@ -1,0 +1,16 @@
+{
+  "row": "gate",
+  "layer": 8,
+  "module": "case-check",
+  "pr": 682,
+  "sha": "de79b67f302d3b2c547043800d3bfe62ac318231",
+  "run_id": 42269854822,
+  "run_attempt": 1,
+  "at": "2026-11-06T18:21:38Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 2.27,
+  "suite_minutes": 0.05,
+  "record_only": false
+}
