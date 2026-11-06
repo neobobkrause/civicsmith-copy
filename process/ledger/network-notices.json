@@ -44,7 +44,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-06T15:00:15Z"
+    "state": "WORKING",
+    "at": "2026-11-06T15:21:30Z",
+    "reason": "reopened: re-test against the new interface of public-read (land 02a112a634)"
   }
 }
