@@ -127,7 +127,7 @@ test("R47: C-124.30 and C-124.58–.62 take their translations from words.json's
      (R54, T51): a code the design has no row for yet, which keeps its own `localize`d sentence and is reported to BOB;
      SUBJECT_MALFORMED reads its row by key (T51, action-plans words check, K3949) and PLAN_WORDS, which holds only R47's
      rows, does not carry it */
-  const NO_ROW_YET = ["ADDRESSEE_INCOMPLETE"];
+  const NO_ROW_YET = ["ADDRESSEE_INCOMPLETE", "PLAN_PRODUCED_BY_MALFORMED"];
   for (const c of Object.keys(ACTION_PLAN_CHECKS)) assert.ok(`refusal.${c}` in WORDS || NO_ROW_YET.includes(c), c);
   assert.equal(ACTION_PLAN_CHECKS.SUBJECT_MALFORMED.translation, WORDS["refusal.SUBJECT_MALFORMED"]);
   assert.equal("refusal.SUBJECT_MALFORMED" in PLAN_WORDS, false);

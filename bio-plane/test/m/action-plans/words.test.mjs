@@ -78,7 +78,7 @@ test("R36: every refusal this module mints, each detail's variants with it, and 
   /* R11, R31: proposals */
   const prop = (extra = {}) => w.ap.optionPropose({ plan: w.PL, summary: "P", category: "other", subjects: [w.S1], why: "w", ...by("bob"),
                                                     proposer: V("bob"), ...extra }).then(keep);
-  await prop({ proposer: undefined }); await prop({ why: "" });
+  await prop({ proposer: undefined }); await prop({ why: "" }); await prop({ produced_by: "not a list" });
   const p = await prop();
   keep(w.ap.optionAdopt({ proposal: "PLN-x/proposal/9", ...by("bob") }));
   keep(w.ap.optionAdopt({ proposal: p.proposal.id, ...by("bob") }));

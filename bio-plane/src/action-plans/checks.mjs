@@ -312,6 +312,12 @@ export const ACTION_PLAN_CHECKS = Object.freeze({
     check: 'C-124.65', where: at("planClose", "is-close-note"),
     translation: word('refusal.CLOSE_NOTE_TOO_LONG'),
   },
+  /* ---- R56 (T53): who produced a proposal; the number is the next of C-124 at the job's stamp (BOB's), and the
+     design has no words.json row yet, so the sentence is this module's own, as ADDRESSEE_INCOMPLETE's is ---- */
+  PLAN_PRODUCED_BY_MALFORMED: {
+    check: 'C-124.67', where: at("optionPropose", "is-proposal-produced-by"),
+    translation: localize('action-plans.checks.produced_by_malformed', "This proposal named who produced it in a form your team's Civicsmith cannot read, so nothing was written. Send the labels of the conversations that produced it, or none."),
+  },
 });
 
 /** One constructor for every refusal minted here: `reason`, the site's own `detail` and keys, then `code`, `check` and
