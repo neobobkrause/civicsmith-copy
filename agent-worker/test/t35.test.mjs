@@ -19,6 +19,7 @@ import { MODEL_FOR_MODE } from "../../agent-model/src/model.mjs";
 import { ASK_BOUNDS } from "../../bio-plane/src/run-rules/index.mjs";
 import { MEMBER } from "./account.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+import { machineWork, MACHINE_WORK } from "./label.mjs";
 
 let pass = 0, fail = 0;
 const t = (label, got, want) => {
@@ -340,9 +341,9 @@ section("R59 · a draft with no grant: no read tool, only what the member told, 
 {
   const r = await drive("draft", draftBody());
   const req = r.model[0];
-  t("R59: 200 {ok, task, draft: {text}, label: {kind: machine}, usage, calls}",
-    [r.status, Object.keys(r.out || {}), r.out?.task, r.out?.draft, r.out?.label],
-    [200, ["ok", "task", "draft", "label", "usage", "calls"], WH, { text: "A labelled draft in the member's own words." }, { kind: "machine" }]);
+  t("R59, F4: 200 {ok, task, draft: {text}, label: {kind: machine, ai}, usage, calls}",
+    [r.status, Object.keys(r.out || {}), r.out?.task, r.out?.draft, machineWork(r.out?.label)],
+    [200, ["ok", "task", "draft", "label", "usage", "calls"], WH, { text: "A labelled draft in the member's own words." }, MACHINE_WORK]);
   t("R59: usage and calls as agent-model answers them", [r.out?.usage?.input_tokens, r.out?.usage?.output_tokens, r.out?.calls], [2, 1, 1]);
   t("R59: the turns run in mode draft: the model MODEL_FOR_MODE names for it", [req.body.model, req.body.model === MODEL_FOR_MODE.draft], [MODEL_FOR_MODE.draft, true]);
   t("R59: with no grant the model is offered no read tool: only the draft", req.body.tools.map((x) => x.name), ["draft"]);
@@ -358,8 +359,8 @@ section("R59 · a draft with no grant: no read tool, only what the member told, 
   t("R59: with the switch on and no grant, the suggestions layer is loaded and still no read tool",
     [nonToolResultText(on.model[0]).includes("SUGGESTIONS-LAYER-WORDS"), on.model[0].body.tools.map((x) => x.name)], [true, ["draft"]]);
   const g = await drive("draft", draftBody({ task: { op: "groupdescriptiondraft" }, told: GROUP_TOLD }));
-  t("R59: groupdescriptiondraft answers draft {focus, purpose}, labelled machine work",
-    [g.status, Object.keys(g.out?.draft || {}), g.out?.label, g.out?.task], [200, ["focus", "purpose"], { kind: "machine" }, { op: "groupdescriptiondraft" }]);
+  t("R59, F4: groupdescriptiondraft answers draft {focus, purpose}, labelled machine work {kind: machine, ai}",
+    [g.status, Object.keys(g.out?.draft || {}), machineWork(g.out?.label), g.out?.task], [200, ["focus", "purpose"], MACHINE_WORK, { op: "groupdescriptiondraft" }]);
   t("R59: the administrator's answers go in the user turn as they arrived",
     JSON.stringify(g.model[0].body.messages[0].content).includes("Safer streets near the school."), true);
   const second = await drive("draft", draftBody({ told: "A different note entirely." }));

@@ -34,6 +34,6 @@
   "prior_work": "Meet every unmet mark in build/requirements/ai-catalogue.md (R39), each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T23:25:50Z"
+    "at": "2026-11-06T02:09:18Z"
   }
 }

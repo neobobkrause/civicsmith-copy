@@ -10,7 +10,8 @@ import { createHash } from "node:crypto";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { civicsmithUserAgent } from "../../../src/acquisition/index.mjs";
-import { planeEntry } from "./plane-world.mjs";
+import { planeEntry, PLANE_BINDINGS } from "./plane-world.mjs";
+import { PLANS, HOSTS } from "../ai-accounts/catalogue.mjs";
 import { CAPTURE_REQUEST_CHECKS } from "../../../src/capture-requests/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
@@ -34,7 +35,11 @@ const mf = new Miniflare({
               VERSION: "1.0.0", INSTANCE_NAME: "cr-plane", GOVERNOR_APPETITE_PER_MIN: "600000",
               CAPTURE_REQUEST_TICK_MS: "3600000", MONITOR_TICK_MS: "3600000",
               /* N585 (K1614): the seal secret the opener's account reference is kept under (credentials R23) */
-              ACCOUNT_SEAL_SECRET: "cr-plane-seal-secret" },
+              ACCOUNT_SEAL_SECRET: "cr-plane-seal-secret",
+              /* F1: the plane trusts its development catalogue key and holds the test catalogue (plane-world.mjs); and it is a
+                 test instance (store-assembly's testInstanceOf), so a run served on the catalogue's entry is admitted by
+                 run-rules R29's test-instance exception, Gate 1 recording no verdict for it here (ai-runs R78) */
+              ...PLANE_BINDINGS, CIVICSMITH_TEST_INSTANCE: "cr-plane" },
   outboundService(request) {
     SEEN.push(request.url);
     AGENTS.set(request.url, request.headers.get("User-Agent"));
@@ -52,6 +57,14 @@ const mf = new Miniflare({
   },
 });
 after(async () => { await mf.dispose(); PLANE.dispose(); });
+
+/* Coordinator ruling 5 Nov 17:24 (attempt 5): no running plane holds an AI catalogue that lists a plan, so `op=aiownadd`
+   answers CATALOGUE_UNAVAILABLE and `world()` opens no run; every case below then fails on the plane, not on this module.
+   That gap is store-assembly's and ai-catalogue's (found marks in BOB's PR bob/found-marks-1720; ai-catalogue F2 names
+   these tests). Each case is a test.todo naming those marks, its text and body kept, until a plane holds such a catalogue.
+   The requirements these cases measure are met in process by this module's other tests (door, drain, reads, retry,
+   t47, t50 and member-only), but R30 (the ops' classes through the control plane), which only the plane measures. */
+const AWAITS = " (todo: awaits store-assembly's and ai-catalogue's found marks, a plane catalogue listing a plan; ai-catalogue F2)";
 
 const unwrap = (r) => (r && typeof r === "object" && "result" in r ? r.result : r);
 /* admission R20 (T36-36, K2166; C-38.10): a credential is read only from the Authorization header or the body, never
@@ -138,9 +151,15 @@ async function world() {
   const shown = (await call("disclosureshown", RUTH, { member: "member:ruth", version })).body;
   assert.deepEqual([shown.ok, shown.shown], [true, true], JSON.stringify(shown));
   await reauth(RUTH, "ruth");
-  /* ai-accounts T53: her own account, connected by her own session (`aiownadd`; accountreferenceset is retired) */
-  const acct = (await call("aiownadd", RUTH, { provider: "anthropic", plan: "api", means: "apikey", secret: "sk-cr-plane" })).body;
+  /* ai-accounts T53: her own account, connected by her own session (`aiownadd`; accountreferenceset is retired), on a
+     member plan the catalogue lists (F1: the plane's catalogue is ai-accounts' test catalogue, plane-world.mjs) */
+  const acct = (await call("aiownadd", RUTH, { provider: PLANS.provider, plan: PLANS.memberApi, means: "sealed", secret: "sk-ant-zz-cr-plane-0123456789" })).body;
   assert.equal(acct.ok, true, JSON.stringify(acct));
+  /* ai-accounts R38, R51 (as store-assembly's plane-green): the account switched on, and its recipient's notice seen */
+  const on = (await call("aiaccountswitch", RUTH, { account_id: acct.account_id, on: true })).body;
+  assert.equal(on.ok, true, JSON.stringify(on));
+  const seen = (await call("aisend", RUTH, { provider: PLANS.provider, host: HOSTS.main })).body;
+  assert.equal(seen.ok, true, JSON.stringify(seen));
   /* ai-runs R9 (T53; notice ai-runs:96): the run names its paying principal `principalAi` and its member `principalAiRef` */
   const run = (await call("airunopen", RUTH, { run: "RUN-CR-1", contextType: "inquiry", contextId: "INQ-2026-9000-cr",
     label: "cr", mode: "check", principalAi: "member:ruth", principalAiRef: "ruth",
@@ -154,7 +173,7 @@ async function world() {
   return setup;
 }
 
-test("R30 capturerequest: admin, member with contribute and probe; capturerequestdrain: admin, probe and daemon, no member class; capturerequests: admin, member and probe; the daemon reaches no read of the queue; no op admits the ai class by name", async () => {
+test.todo("R30 capturerequest: admin, member with contribute and probe; capturerequestdrain: admin, probe and daemon, no member class; capturerequests: admin, member and probe; the daemon reaches no read of the queue; no op admits the ai class by name" + AWAITS, async () => {
   const { RUTH, MEMBER, NOCON } = await world();
   /* the ai credential is minted here, not in `world()`, and its mint is asserted, so an arm below never runs with no
      credential at all and passes for the wrong reason (the mint waits on credentials' T37-33, plan rule 4) */
@@ -186,7 +205,7 @@ test("R30 capturerequest: admin, member with contribute and probe; capturereques
     assert.equal((await call(op, AI, ask)).status, 403, `ai ${op}`);
 });
 
-test("R16 R31 R14 the spine in the plane: the member's run requests (as civicsmith by default) and nothing is fetched; op=acquire refuses the capture-request arm from every caller; only the daemon's drain fetches, with the Civicsmith agent, and the capture lands", async () => {
+test.todo("R16 R31 R14 the spine in the plane: the member's run requests (as civicsmith by default) and nothing is fetched; op=acquire refuses the capture-request arm from every caller; only the daemon's drain fetches, with the Civicsmith agent, and the capture lands" + AWAITS, async () => {
   const { RUTH } = await world();
   const a = (await call("capturerequest", RUTH, { run: "RUN-CR-1", address: "https://spine.example.org/spine.pdf",
                                                 target: "INQ-2026-9000-cr", purpose: "investigate" })).body;
@@ -208,7 +227,7 @@ test("R16 R31 R14 the spine in the plane: the member's run requests (as civicsmi
     "the agent that left the instance is acquisition's Civicsmith agent");
 });
 
-test("R19 R42 R38 in the plane: a source's 500 holds the row under CAPTURE_FETCH_FAILED (C-28.17), read back through op=capturerequests; op=capturerequestretry refuses it CAPTURE_REQUEST_NOT_RETRYABLE (C-28.18) and writes nothing; a new capture drained is promoted", async () => {
+test.todo("R19 R42 R38 in the plane: a source's 500 holds the row under CAPTURE_FETCH_FAILED (C-28.17), read back through op=capturerequests; op=capturerequestretry refuses it CAPTURE_REQUEST_NOT_RETRYABLE (C-28.18) and writes nothing; a new capture drained is promoted" + AWAITS, async () => {
   const { RUTH } = await world();
   const ask = (address) => call("capturerequest", RUTH, { run: "RUN-CR-1", address, target: "INQ-2026-9000-cr", purpose: "investigate" });
   const down = (await ask("https://down.example.org/gone.pdf")).body;
@@ -236,7 +255,7 @@ test("R19 R42 R38 in the plane: a source's 500 holds the row under CAPTURE_FETCH
   assert.match(promoted.bundle_id, /^INFO-\d{4}-\d{4}-requested$/);
 });
 
-test("R14 in the plane (N295): a member-browser request under an inquiry created through a member's session is fetched with the agent the control plane stamped and inquiry records (its R44), not refused CAPTURE_CONDUCT_UA_UNRECORDED", async () => {
+test.todo("R14 in the plane (N295): a member-browser request under an inquiry created through a member's session is fetched with the agent the control plane stamped and inquiry records (its R44), not refused CAPTURE_CONDUCT_UA_UNRECORDED" + AWAITS, async () => {
   const { RUTH } = await world();
   const address = "https://up.example.org/member-browser.pdf";
   const a = (await call("capturerequest", RUTH, { run: "RUN-CR-1", address, target: "INQ-2026-9001-ua",
@@ -247,7 +266,7 @@ test("R14 in the plane (N295): a member-browser request under an inquiry created
   assert.equal(AGENTS.get(address), MEMBER_UA, "the member's own agent left the instance, verbatim");
 });
 
-test("R48 in the plane: a requested capture, drained and promoted, is listed by capture's op=heldcaptures with the question it was captured for and its asker, read through the reader this module registered (capture R77, R83)", async () => {
+test.todo("R48 in the plane: a requested capture, drained and promoted, is listed by capture's op=heldcaptures with the question it was captured for and its asker, read through the reader this module registered (capture R77, R83)" + AWAITS, async () => {
   const { RUTH } = await world();
   const address = "https://up.example.org/held-for.pdf";
   const a = (await call("capturerequest", RUTH, { run: "RUN-CR-1", address, target: "INQ-2026-9000-cr", purpose: "investigate" })).body;
@@ -285,7 +304,7 @@ async function holdAcquired(tok, locator, over = {}) {
   return cap.sha256;
 }
 
-test("R48 in the plane (T50): a capture a member made with acquire's `for` and no request is listed by op=heldcaptures with the question and its asker, read through this module's reader and capture's asks (capture R83, R94); a `for` naming no question is refused BAD_FOR (control-plane R105, acquisition R47) before any fetch, and nothing is held for it; a capture with no `for` answers questions: []", async () => {
+test.todo("R48 in the plane (T50): a capture a member made with acquire's `for` and no request is listed by op=heldcaptures with the question and its asker, read through this module's reader and capture's asks (capture R83, R94); a `for` naming no question is refused BAD_FOR (control-plane R105, acquisition R47) before any fetch, and nothing is held for it; a capture with no `for` answers questions: []" + AWAITS, async () => {
   const { RUTH } = await world();
   const row = await heldOf(RUTH, await holdAcquired(RUTH, "https://up.example.org/for-ask.pdf", { for: "INQ-2026-9000-cr" }));
   assert.ok(row, "no held row for the acquired capture");
@@ -303,7 +322,7 @@ test("R48 in the plane (T50): a capture a member made with acquire's `for` and n
   assert.deepEqual(n.captured_for, { questions: [], withheld: null });
 });
 
-test("R56 in the plane: a member's session asks for an address with no run (\"Ask for this later\"); the request is hers, drained by the daemon as any is; the same ask through an ai credential is refused CAPTURE_REQUEST_NO_RUN", async () => {
+test.todo("R56 in the plane: a member's session asks for an address with no run (\"Ask for this later\"); the request is hers, drained by the daemon as any is; the same ask through an ai credential is refused CAPTURE_REQUEST_NO_RUN" + AWAITS, async () => {
   const { RUTH } = await world();
   const address = "https://up.example.org/later.pdf";
   const a = (await call("capturerequest", RUTH, { address })).body;

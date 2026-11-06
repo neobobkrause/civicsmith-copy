@@ -9,6 +9,31 @@ export const PUBLISHED_PARTS = Object.freeze({
     return "/app/published/" + encodeURIComponent(sub);
   },
 
+  /* F1 (R19, R76): the edition's evidence rows, read from the shape `publishedcase` answers (`public-read` R3, R53): its
+     `materials` is `{materials: [...], attestations}`, each row with its `entry` `{name, locator, fingerprint}`. A row the case
+     carries whole opens by its own SHA-256; a row carried as its copy opens by the copy's (the original is never served); a row
+     carried in the signed document only (an extract, `included: false`) opens nothing. An answer stating no materials falls back
+     to its `captures:` rows, as before. Each row: `{name, sha, open, grade, axis}`, `sha` the full lowercase fingerprint or "",
+     `open` the hash its bytes open by or "". */
+  evidenceOf: function (e) {
+    const full = function (s) { s = String(s || "").toLowerCase(); return /^[0-9a-f]{64}$/.test(s) ? s : ""; };
+    const block = e && e.materials && typeof e.materials === "object" && !Array.isArray(e.materials) ? e.materials.materials : null;
+    if (Array.isArray(block) && block.length) {
+      return block.filter(function (x) { return x && typeof x === "object"; }).map(function (x) {
+        const en = x.entry && typeof x.entry === "object" ? x.entry : {};
+        const sha = full(en.fingerprint || x.sha);
+        const copy = x.obscured && typeof x.obscured === "object" ? full(x.obscured.copy) : "";
+        return { name: String(en.name || x.title || x.origin || x.ref || ""), sha: sha,
+                 open: copy || (x.included === true ? sha : ""), grade: null, axis: "capture" };
+      });
+    }
+    const rows = e && Array.isArray(e.captures) ? e.captures : e && Array.isArray(e.materials) ? e.materials : [];
+    return rows.filter(function (x) { return x && typeof x === "object"; }).map(function (x) {
+      const sha = full(x.sha256 || x.capture_sha);
+      return { name: String(x.title || x.label || x.locator || ""), sha: sha, open: sha, grade: x.grade || null, axis: x.axis || x.grade_axis || "capture" };
+    });
+  },
+
   /* The answer the screen draws from, once read: the case's (or the finding's) `publishedcase`. */
   answer: function (view) {
     return view.data.edition && view.data.edition.state === "ok" ? view.data.edition.value : null;

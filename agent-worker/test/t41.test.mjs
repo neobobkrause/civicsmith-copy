@@ -1,8 +1,8 @@
 /* agent-worker — T41 (T41-31): a project's account (R71; D34, K2373) through R6, R10, R29, R32, R33 and R57, and the
  * standing path on a member's own sign-in (R57's N796 sentence; Bob K2425, K2472), AT THE MEMBER'S INTERFACE: the pure
  * cascade (`src/cascade.mjs`'s exports) and the default export `fetch(request, env)`, driven in this process with a
- * recording plane binding, the global `fetch` replaced by a scripted model API (agent-model's API-key path) and a fake
- * `RUNNER` namespace (its sign-in path) recording every instance it is asked to name and every conversation sent.
+ * recording plane binding and the global `fetch` replaced by a scripted model API (agent-model's API-key path). No
+ * runner is bound (F2): a sign-in's model turns are refused before any model call or plane write.
  * Nothing here reads the member's source text.
  *
  * Every arm that admits has its refusing counterpart beside it (K874): a project's account naming no project, carrying
@@ -13,7 +13,6 @@
 import worker from "../src/index.mjs";
 import { CASCADE_ORDER, LEVEL_KINDS, resolveClaudeCascade, cascadeToken } from "../src/cascade.mjs";
 import { MEMBER } from "./account.mjs";
-import { remoteBindings } from "./remote.mjs";
 import { word } from "../../bio-plane/src/setup-words/index.mjs";
 
 let pass = 0, fail = 0;
@@ -105,46 +104,27 @@ function model() {
   return { calls, fn };
 }
 
-/* The Container namespace `RUNNER` (agent-runner's wire): each instance named, each conversation's opening recorded. */
-function runner() {
-  const conversations = [], named = [];
-  const connect = async () => {
-    const on = {};
-    const emit = (m) => setTimeout(() => (on.message || []).forEach((f) => f({ data: JSON.stringify(m) })), 0);
-    const ws = {
-      accept() {}, close() {}, addEventListener(type, fn) { (on[type] ||= []).push(fn); },
-      send(text) {
-        const m = JSON.parse(text);
-        if (m.tool_result) return emit({ ok: true, result: "", stop_reason: "end_turn", usage: { input_tokens: 2, output_tokens: 1 }, num_turns: 1 });
-        conversations.push(m);
-        const [name, input] = answerFor((m.tools || []).map((x) => x.name), m.prompt);
-        emit({ tool_use: { id: `t${conversations.length}`, name, input } });
-      } };
-    return { status: 101, webSocket: ws };
-  };
-  return { conversations, named, idFromName: (name) => { named.push(name); return { name }; },
-           newUniqueId: () => { named.push("<unique>"); return { name: "<unique>" }; }, get: () => ({ fetch: connect }) };
-}
-
 async function drive(path, body, { planeCfg = {} } = {}) {
-  const p = plane(planeCfg), m = model(), r = runner();
+  const p = plane(planeCfg), m = model();
   const saved = globalThis.fetch;
   globalThis.fetch = m.fn;
   try {
     const res = await worker.fetch(new Request(`http://agent-worker/${path}`, { method: "POST", body: JSON.stringify(body) }),
-                                   { VERSION: "t41", PLANE: p.binding, ...remoteBindings(r) });
+                                   { VERSION: "t41", PLANE: p.binding });
     const text = await res.text();
     const lines = res.headers.get("content-type") === "application/x-ndjson"
       ? text.trim().split("\n").map((l) => JSON.parse(l)) : null;
     let out = null; if (!lines) try { out = JSON.parse(text); } catch { out = null; }
-    return { status: res.status, text, lines, out, plane: p.calls, model: m.calls, runner: r };
+    return { status: res.status, text, lines, out, plane: p.calls, model: m.calls };
   } finally { globalThis.fetch = saved; }
 }
 const runBody = (account, extra = {}) => ({ run_id: "RUN-41", store: "scratch", credential: AIK, account, ...extra });
 const stubbed = (account, extra) => runBody(account, { judgements: [], ...extra });
 const askBody = (account, extra = {}) => ({ question: "Who held the seat in March?", grant: GRANT, account, ...extra });
 const last = (r) => (r.lines ? r.lines[r.lines.length - 1] : null);
-const credentialsSent = (r) => [...new Set(r.runner.conversations.map((c) => JSON.stringify(c.credential)))];
+/* F2: a sign-in's model path is refused before any model call or plane write (a run reads only `whoami` first, R8). */
+const signinRefused = (r) => [r.status, r.out?.code, r.out?.why, r.model.length, r.plane.map((c) => c.op).filter((op) => op !== "whoami")];
+const SIGNIN_REFUSED = [503, "ASSISTANT_REMOTE_NOT_READY", "absent", 0, []];
 const secretsIn = (r) => [PROJECT_KEY, MEMBER_KEY, SIGNIN_TOKEN].filter((s) => r.text.includes(s));
 
 section("R32, R71 · the cascade judges a project's account at its own level, carrying its project, never a secret");
@@ -260,10 +240,6 @@ section("R26 (ai-runs R72, agent-model R13) · a tick's usage carries agent-mode
   const ku = usageOf(k);
   t("R26: on a project's key every usage entry carries estimated_cost_usd, a number, beside the five figures",
     [ku.length > 0, ku.every((e) => typeof e.usage?.estimated_cost_usd === "number")], [true, true]);
-  const s = await drive("run", runBody(PSIGNIN()));
-  const su = usageOf(s);
-  t("R26 (control): on a project's sign-in every entry carries estimated_cost_usd as null, passed as agent-model answers it",
-    [su.length > 0, su.every((e) => e.usage && "estimated_cost_usd" in e.usage && e.usage.estimated_cost_usd === null)], [true, true]);
 }
 
 section("R26 (T41 B6) · a tick the plane answers `found: false` (no such run) appended nothing: refused, never `logged`");
@@ -285,58 +261,40 @@ section("R26 (T41 B6) · a tick the plane answers `found: false` (no such run) a
     [sent(held) > 0, ho?.logged, tickRefusals(ho).length], [true, sent(held), 0]);
 }
 
-section("R71, R57 · model turns on a project's account: its key to the Messages API, its sign-in as the member's own in that member's runner");
+section("R71, R57, F2 · model turns on a project's account: its key to the Messages API; a sign-in is refused, no runner being bound");
 {
   const k = await drive("run", runBody(PKEY()));
-  t("R71, R57: a run's turns on a project's key go to the Messages API under that key only, and no runner is named",
-    [k.status, k.out?.judgement_source, k.model.length > 0, [...new Set(k.model.map((c) => c.key))], k.runner.named, secretsIn(k)],
-    [200, "model", true, [PROJECT_KEY], [], []]);
-  const s = await drive("run", runBody(PSIGNIN()));
-  t("R71, R57, R82: a run's turns on a project's sign-in run in that member's own runner instance only, each conversation "
-    + "carrying exactly {kind: signin, member, secret}, no project, and no API-key call",
-    [s.status, s.out?.judgement_source, [...new Set(s.runner.named)], credentialsSent(s), s.model.length],
-    [200, "model", [MEMBER], [SIGNIN_CREDENTIAL], 0]);
-  const own = await drive("run", runBody(SIGNIN()));
-  t("R71 (control): the member's own sign-in sends the very same credential to the very same instance",
-    [own.status, [...new Set(own.runner.named)], credentialsSent(own)], [s.status, [...new Set(s.runner.named)], credentialsSent(s)]);
-  const a = await drive("ask", askBody(PSIGNIN()));
-  t("R71, R6: an ask on a project's sign-in is answered, its turns in that member's own runner instance as the member's own",
-    [a.status, last(a)?.event, [...new Set(a.runner.named)], credentialsSent(a), a.model.length],
-    [200, "answer", [MEMBER], [SIGNIN_CREDENTIAL], 0]);
+  t("R71, R57: a run's turns on a project's key go to the Messages API under that key only",
+    [k.status, k.out?.judgement_source, k.model.length > 0, [...new Set(k.model.map((c) => c.key))], secretsIn(k)],
+    [200, "model", true, [PROJECT_KEY], []]);
+  t("F2: a run's turns on a project's sign-in are refused ASSISTANT_REMOTE_NOT_READY (absent), no model call, no plane write",
+    signinRefused(await drive("run", runBody(PSIGNIN()))), SIGNIN_REFUSED);
+  t("R57, F2: an ask on a project's sign-in passes its account checks and is refused the same way, before any model call or plane call",
+    signinRefused(await drive("ask", askBody(PSIGNIN()))), SIGNIN_REFUSED);
 }
 
-section("R57 (N796, K2425, K2472) · a standing question's AI half on its author's own sign-in, the standing use on and off");
+section("R57 (N796, K2425, K2472) · a standing question's AI half: on its author's own reference; on a sign-in, refused (F2)");
 {
-  /* On: credentials R32 minted the author's standing grant (the sign-in's `standing` use on, R55), and answers R19
-     hands the AI half here as an ask under that grant and the author's own sign-in. This module refuses nothing of its
-     own for a sign-in: it answers exactly as it does on the author's own reference. */
-  const on = await drive("ask", askBody(SIGNIN()));
-  t("R57: the standing use on, the author's own sign-in serves the AI half: answered, its turns in the author's own "
-    + "runner instance only, carrying {kind: signin, member, secret}, no API-key call",
-    [on.status, last(on)?.event, last(on)?.ok, [...new Set(on.runner.named)], credentialsSent(on), on.model.length],
-    [200, "answer", true, [MEMBER], [SIGNIN_CREDENTIAL], 0]);
-  t("R57: every plane call of it carries the standing grant and nothing else", [...new Set(on.plane.map((c) => c.token))], [GRANT]);
   const ref = await drive("ask", askBody(MKEY()));
-  t("R57 (control): the author's own reference reaches the same answer by the same reads: a sign-in is never refused "
-    + "for being a sign-in", [last(ref)?.event, ref.plane.map((c) => c.op)], [last(on)?.event, on.plane.map((c) => c.op)]);
+  t("R57: the author's own reference serves the AI half, every plane call carrying the standing grant and nothing else",
+    [ref.status, last(ref)?.event, [...new Set(ref.plane.map((c) => c.token))]], [200, "answer", [GRANT]]);
+  t("R57, F2: the author's own sign-in is taken as an account (never BAD_ACCOUNT for being one), then refused ASSISTANT_REMOTE_NOT_READY (absent), no model call and no plane call",
+    signinRefused(await drive("ask", askBody(SIGNIN()))), SIGNIN_REFUSED);
   /* Off: credentials R32 refuses the grant STANDING_SWITCH_OFF and answers R19 holds the AI half back; no grant exists. */
-  const offNone = await drive("ask", askBody(SIGNIN(), { grant: undefined }));
-  t("R57 (control): the standing use off, no grant was minted: refused NO_GRANT, with no plane call, no model call "
-    + "and no runner named", [offNone.status, offNone.out?.code, offNone.plane.length, offNone.model.length, offNone.runner.named],
-    [401, "NO_GRANT", 0, 0, []]);
-  const offRefused = await drive("ask", askBody(SIGNIN()), { planeCfg: { refuseGrant: STANDING_OFF } });
+  const offNone = await drive("ask", askBody(MKEY(), { grant: undefined }));
+  t("R57 (control): the standing use off, no grant was minted: refused NO_GRANT, with no plane call and no model call",
+    [offNone.status, offNone.out?.code, offNone.plane.length, offNone.model.length], [401, "NO_GRANT", 0, 0]);
+  const offRefused = await drive("ask", askBody(MKEY()), { planeCfg: { refuseGrant: STANDING_OFF } });
   t("R57 (control): the standing use off, a grant the plane refuses STANDING_SWITCH_OFF: the plane's refusal relayed "
-    + "unchanged, no turn taken and no runner named",
-    [offRefused.status, offRefused.out?.code, offRefused.out?.plane?.code, offRefused.model.length, offRefused.runner.named],
-    [403, "PLANE_REFUSED", "STANDING_SWITCH_OFF", 0, []]);
-  /* A standing run (ai-runs, the author's act): the run's record names its author, and the author's own sign-in drives it. */
-  const runOn = await drive("run", runBody(SIGNIN()));
-  t("R57: a standing run whose record names its author drives on the author's own sign-in, in the author's own runner",
-    [runOn.status, runOn.out?.claude_account, [...new Set(runOn.runner.named)]],
-    [200, { available: true, kind: "signin", level: "member", member: MEMBER }, [MEMBER]]);
-  const runOther = await drive("run", runBody(SIGNIN(SAM)));
-  t("R57 (control): another member's sign-in on that run is refused by name, no turn taken and no runner named",
-    [runOther.status, runOther.out?.code, runOther.runner.named, runOther.model.length], [409, "RUN_NAMES_A_DIFFERENT_PAYER", [], 0]);
+    + "unchanged, no turn taken",
+    [offRefused.status, offRefused.out?.code, offRefused.out?.plane?.code, offRefused.model.length],
+    [403, "PLANE_REFUSED", "STANDING_SWITCH_OFF", 0]);
+  const runOn = await drive("run", stubbed(SIGNIN()));
+  t("R57: a standing run whose record names its author is taken on the author's own sign-in (the stubbed path, no turn)",
+    [runOn.status, runOn.out?.claude_account], [200, { available: true, kind: "signin", level: "member", member: MEMBER }]);
+  const runOther = await drive("run", stubbed(SIGNIN(SAM)));
+  t("R57 (control): another member's sign-in on that run is refused by name, no turn taken",
+    [runOther.status, runOther.out?.code, runOther.model.length], [409, "RUN_NAMES_A_DIFFERENT_PAYER", 0]);
 }
 
 console.log(`\nt41: ${pass} pass, ${fail} fail`);

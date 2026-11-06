@@ -15,7 +15,7 @@ import { assertDeclared, assertGiven } from "./tables.mjs";
 const COPY = "https://grp.test.workers.dev";
 const page = (body, title = "Civicsmith") => `<!doctype html><html><head><title>${title}</title><link rel="stylesheet" href="${INTERFACE_MARK}"></head><body>${body}</body></html>`;
 const SECRET = "the-member-password-123";
-const [SHA_A, SHA_B, SHA_C] = ["a", "b", "c"].map((c) => c.repeat(64));
+const [SHA_A, SHA_B, SHA_C, SHA_D] = ["a", "b", "c", "d"].map((c) => c.repeat(64));
 const WORLD = {
   "/app": page(`<main id="cs-main"><p>home</p><script>fetch("/api/?op=queue")</script></main>`),
   "/app/refused": page(`<main id="cs-main"><script>fetch("/api/?op=enroll")</script></main>`),
@@ -24,7 +24,7 @@ const WORLD = {
   "/app/foreign": page(`<main id="cs-main"><img src="https://elsewhere.example/x.png"></main>`),
   "/app/legacy": page(`<main id="cs-main"><img src="https://civicos.grp.workers.dev/app.html"></main>`),
   /* R8: the walk's D1, D3 and D5, each a refusal carried inside an HTTP 200 */
-  "/app/d1": page(`<main id="cs-main"><script>fetch("/api/?op=accountreferenceset")</script></main>`),
+  "/app/d1": page(`<main id="cs-main"><script>fetch("/api/?op=aiownadd")</script></main>`),
   "/app/d3": page(`<main id="cs-main"><script>fetch("/api/?op=airunopen")</script></main>`),
   "/app/d5": page(`<main id="cs-main"><script>fetch("/api/?op=planask")</script></main>`),
   /* R8: a refusal in a stream of JSON lines (an ask's answer) */
@@ -34,13 +34,17 @@ const WORLD = {
   "/app/pending-other": page(`<main id="cs-main"><script>fetch("/api/?op=captureupload&sha=${SHA_A}").then(() => fetch("/api/?op=reading&sha256=${SHA_B}"))</script></main>`),
   "/app/pending-none": page(`<main id="cs-main"><script>fetch("/api/?op=reading&sha256=${SHA_A}")</script></main>`),
   "/app/pending-ended": page(`<main id="cs-main"><script>fetch("/api/?op=captureupload&sha=${SHA_C}").then(() => fetch("/api/?op=reading&sha256=${SHA_C}")).then(() => fetch("/api/?op=reading&sha256=${SHA_C}"))</script></main>`),
+  /* R8: a member's own testimony, recorded by the step (`testify` answering `authored: true` for SHA_D), is never read in: its reading read */
+  "/app/testified": page(`<main id="cs-main"><script>fetch("/api/?op=testify", { method: "POST" }).then(() => fetch("/api/?op=reading&sha256=${SHA_D}"))</script></main>`),
+  "/app/testified-other": page(`<main id="cs-main"><script>fetch("/api/?op=testify", { method: "POST" }).then(() => fetch("/api/?op=reading&sha256=${SHA_B}"))</script></main>`),
+  "/app/testified-none": page(`<main id="cs-main"><script>fetch("/api/?op=reading&sha256=${SHA_D}")</script></main>`),
   "/": `<!doctype html><html><head><title>${SETUP_PAGE_TITLE}</title></head><body>setup</body></html>`,
   "/other": `<!doctype html><html><head><title>x</title></head><body>an old page</body></html>`,
 };
 // fixtures-own: input a route map and answers handed to the walker's own dispatch (K5060), which reads them opaquely
 const API = { queue: { ok: true, items: [] }, enroll: { ok: false, code: "HANDLE_TAKEN" },
-  /* D1: the own key refused, inside a 200 */
-  accountreferenceset: { ok: true, result: { ok: false, code: "NOT_YOUR_ACCOUNT", check: "C-29.14" } },
+  /* D1: the own key refused, inside a 200 (`aiownadd`, which replaced `accountreferenceset` in T53, ai-accounts R35) */
+  aiownadd: { ok: true, result: { ok: false, code: "NOT_YOUR_ACCOUNT", check: "C-29.14" } },
   // fixtures-own: input a route map and answers handed to the walker's own dispatch (K5060), which reads them opaquely
   /* D3: the dock's run not started, said as `started: false` */
   airunopen: { ok: true, result: { started: false, code: "AI_RUN_BOUND_NO_ALLOWANCE", check: "C-22.16" } },
@@ -66,8 +70,14 @@ async function walked(path, { expect = [] } = {}) {
     /* RC-R1: the upload says its reading is pending for the digest it names; a reading of SHA_C is there on its first read, then gone (a record that ended its pending state and lost the reading) */
     if (u.pathname === "/api/" && u.searchParams.get("op") === "captureupload")
       return r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, result: { ok: true, reading_pending: true, document: { capture: { sha256: u.searchParams.get("sha") } } } }) });
+    /* provenance's `testify` answer: an authored document and the digest of its bytes */
+    if (u.pathname === "/api/" && u.searchParams.get("op") === "testify")
+      return r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, result: { ok: true, bundle_id: "INF-1", capture_sha: SHA_D, authored: true, origin: "member" } }) });
     if (u.pathname === "/api/" && u.searchParams.get("op") === "reading") {
       const sha = u.searchParams.get("sha256");
+      /* extraction's `readingFor` for a digest whose reading is not held: `found: false` at the answer's own top */
+      if (sha === SHA_D)
+        return r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, result: { ok: true, found: false, capture_sha: sha, reading: null } }) });
       const there = sha === SHA_C && !readOnce.has(sha) && readOnce.add(sha);
       return r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, result: there ? { ok: true, reading: { found: true } } : { ok: true, reading: { found: false, capture_sha: sha } } }) });
     }
@@ -137,6 +147,14 @@ test("R8: every sign of a refusal, at any depth: ok, started, dispatched or foun
   assert.deepEqual(codes({ ok: true, result: { started: true, found: true, withheld: [], items: [{ ok: true }] } }), []);
   /* one object, one refusal, under its first sign */
   assert.deepEqual(codes({ ok: false, started: false, code: "B" }), ["=B"]);
+});
+
+test("R8: a reading read as `found: false` is excused for the digest of a testimony the step itself recorded, which is never read in; control: another digest's, or with no testimony recorded, stays a refusal", async () => {
+  assert.deepEqual((await walked("/app/testified")).failures, [], "the testimony's own digest");
+  const other = await walked("/app/testified-other");
+  assert.deepEqual(kinds(other), [FAIL.REFUSED], "another digest");
+  assert.match(other.failures[0].detail, /op=reading answered found: false/);
+  assert.deepEqual(kinds(await walked("/app/testified-none")), [FAIL.REFUSED], "no testimony recorded");
 });
 
 test("R8 (K4473): a reading read as `found: false` is excused only while the record states it pending for a capture the step itself made; control: any other `found: false` stays a refusal", async () => {
