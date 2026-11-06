@@ -27,13 +27,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { REQUIREMENT_READS_BY_MARK } from "./words-reads-requirements.mjs";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BUILD = process.argv.includes("--build"); // the gate's and deploy's build: write the file, report problems, exit 0
 const ARG = process.argv.slice(2).find((a) => a !== "--build");
 if (!ARG) { console.error("usage: node words-reads.src.mjs <T49 extract dir, or its bio-plane/src>"); process.exit(2); }
 const SRC = fs.existsSync(path.join(ARG, "bio-plane", "src")) ? path.resolve(ARG, "bio-plane", "src") : path.resolve(ARG);
 const WORDS = path.join(HERE, "words.json");
-const MODULES = ["op-capabilities","op-grades","affordances","setup-words","op-declarations","admission","interface-assets","interface-shell","screens-action","screens-daily","screens-entry","screens-inquiry","screens-intake","screens-investigate","screens-publish","screens-settings","control-plane","plane","store-assembly","site","journey-check"];
+const MODULES = ["op-capabilities","op-grades","affordances","setup-words","op-declarations","admission","interface-assets","interface-shell","screens-action","screens-daily","screens-entry","screens-inquiry","screens-intake","screens-investigate","screens-publish","screens-settings","control-plane","plane","store-assembly","site","journey-check","screens-document-beta"];
 
 // ---------- tokenizer ----------
 const KW_BEFORE_REGEX = new Set(["return","typeof","case","do","else","in","of","new","delete","void","throw","yield","await","instanceof"]);
@@ -385,6 +386,9 @@ const REQUIREMENT_READS = {
   "screens-settings": [...["settings", "account", "connect", "ties", "notes", "recovery", "group", "group-identity", "members",
     "places", "security", "updates", "translations", "wizards"].flatMap((id) => [`screen.${id}.name`, `screen.${id}.purpose`]),
     "connect.ifnot", "screen.connect.refusal.reference"],
+  /* ux-design R2: screens-document-beta's marks whose words are all in the stream, each mark's keys as its requirement names
+     them (build/requirements/screens-document-beta.md). The module has no source of its own yet: these are its reads. */
+  "screens-document-beta": Object.values(REQUIREMENT_READS_BY_MARK["screens-document-beta"]).flat(),
 };
 const RENAMED = {
   "screens-action": { "act.optionpropose.label.plan": "act.planask.label.plan" },
@@ -447,7 +451,14 @@ const out = { _note: "DEC-258 (K3366): each L11 module of T49 reads exactly thes
   + "origin/tranche/T49's bio-plane/src; do not edit by hand.", modules: {} };
 for (const m of MODULES) {
   const dir = path.join(SRC, m);
-  if (!fs.existsSync(dir)) { out.modules[m] = { reads: [], counts: { reads: 0 }, unkeyed: [], note: "not built yet at T49: no source, so it reads no key yet" }; continue; }
+  if (!fs.existsSync(dir)) {
+    /* ux-design R2: a module with no source of its own reads what its requirements name (REQUIREMENT_READS), nothing else */
+    const req = (REQUIREMENT_READS[m] || []).filter((k) => { if (KEYS.has(k)) return true; problems.push(`${m}: its requirements read ${k}, not in words.json`); return false; }).sort();
+    out.modules[m] = req.length
+      ? { reads: req, counts: { reads: req.length, requirementReads: req.length }, unkeyed: [], note: "no source of its own yet: it reads the keys its requirements name" }
+      : { reads: [], counts: { reads: 0 }, unkeyed: [], note: "not built yet at T49: no source, so it reads no key yet" };
+    continue;
+  }
   const reads = new Set(), lits = new Set(), unkeyed = [], retired = new Set(), renamed = {};
   const srcs = [];
   const c = { keyedRows: 0, literalKeys: 0, inline: 0, inlineKeyed: 0, inlineUnkeyed: 0 };
