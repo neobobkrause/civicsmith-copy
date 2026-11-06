@@ -51,7 +51,11 @@ async function walk(profiles) {
   const lawAt = lawsPick(p).findIndex((t) => t.includes(FED));
   await press(p, "actionlaws", { values: { "req-law": String(lawAt) }, reason: "federal" });
   assert.deepEqual(last(p, "actionlaws").body, { target: ACTN, laws: [{ level: "federal", citation: FED }] });
-  assert.deepEqual(x.actions.actionRead({ id: ACTN, viewer: V("olive") }).governing_laws.laws, [{ level: "federal", citation: FED }], "stored");
+  // F-R31 (action-grammar R31, PR 396): governingLawsOf answers {level, citation, layer}, layer null when absent. Where the stored law carries
+  // the layer key it is null (no layer was named); where it does not (the provider before R31) the old shape stands.
+  const stored = x.actions.actionRead({ id: ACTN, viewer: V("olive") }).governing_laws.laws;
+  assert.deepEqual(stored, stored.map((l) => ("layer" in l ? { level: "federal", citation: FED, layer: null } : { level: "federal", citation: FED })), "stored, R31's shape where the layer key is present");
+  assert.deepEqual(stored.map(({ layer, ...l }) => l), [{ level: "federal", citation: FED }], "stored");
   // the text: a plain request prepares although the period, form and cost boxes are filled (the text names no blank for them)
   const boxes = { "req-from": "2024-01-01", "req-to": "2024-12-31", "req-form": "pdf", "req-cost": "$25" };
   await press(p, "communicationprepare", { values: { ...boxes, "send-text-0": "Please send me the records of how the Archives handled federal records requests in 2024." }, reason: "ready" });
