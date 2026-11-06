@@ -304,3 +304,4 @@
 {"at":"2026-11-06T03:42:04Z","row":"outcome","n":152,"outcome":"delivered"}
 {"at":"2026-11-06T03:42:49Z","row":"sent","n":153,"to":"bob","text":"the starter started job inquiry (PR 617): subscribe_pr_activity to each pull request"}
 {"at":"2026-11-06T03:43:38Z","row":"outcome","n":153,"outcome":"delivered"}
+{"at":"2026-11-06T03:52:10Z","row":"sent","n":154,"to":"bob","text":"PR 616 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: gh api -X PUT failed: gh: Repository rule violations found"}
