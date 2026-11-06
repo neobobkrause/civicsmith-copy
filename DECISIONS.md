@@ -68,3 +68,25 @@ Consequences: the publication lane does the tracking as standing research in doc
 Context: the ux lane's Q2.
 Decision: yes (Bob, "agreed", ~18:15Z). A published case discloses its AI use where a reader first meets it. It is framed as human-reviewed and ratified: it leads with who ratified, with AI as a tool. Machine-readable AI-use provenance (the Art 50(2) direction: per passage, AI or human, inside the signed record) is folded into the publication lane's F1(2) signing-at-scheduling design, so the signed format changes once.
 Consequences: the ux lane writes the words and placement (BD-3). The publication lane extends its F1(2) answer with the provenance's place, shape, source and format change. BOB records that answer and places the requirement changes it names.
+
+## BD-8: A published review standard for every edition (BOB, 6 Nov)
+Context: BD-6 makes each voluntary adoption of a trust and transparency development BOB's decision. The publication lane's provenance answer (F1 part 2, 6 Nov) recommends a published review standard, modelled on the EU Code of Practice on transparency (final 10 Jun 2026), Commitment 4, and the Art 50 guidelines C(2026) 7702, paras 134–136 (docs/development/publication-design-research/trust-transparency-tracking.md).
+Decision: adopt it. Every ratified edition is reviewed under one published standard, which states:
+- a named responsible group (the ratifying group);
+- substantive review, with fact-checking each finding against its cited records as the minimum;
+- no AI change after signing (any substantive AI change voids the sign-off);
+- AI critique never counts as review.
+Its id goes in the /11 case document's review.standard. Until the standard is published, standard is null.
+Rejected: no standard. The disclosure (BD-7) would then rest on an unstated bar.
+Consequences: the standard's public contact address is a value Bob gives. Until he does, the standard says "contact: to be named by Bob". The publication lane drafts the standard's text in its folder. The ux lane writes the words that link to it. case-grammar's /11 carries review.standard.
+
+## BD-9: AI help the product cannot see is declared and affirmed; per-sentence provenance is an overlay (Bob, 6 Nov)
+Context: the publication lane's provenance answer (F1 part 2), Bob's call 1. Text pasted from an AI tool outside CivicSmith is not observable, so an unmarked sentence could claim more than the product knows.
+Decision: option C (Bob, ~18:35Z): both. A member may declare outside AI help per field (origin declared_ai). The signer affirms in the ceremony, inside the signed document (review.affirmed), that every AI use in the text is recorded. Display, in Bob's words: "the disclosure of which elements of a published case are produced/edited by AI is an information overlay that isn't visible by default. I believe that this level of disclosure should be available, but not visible by default." The first-exposure note of BD-7 stays visible. The per-sentence marks (ux DEC-492 (e)) are an overlay any reader can open, not drawn by default.
+Rejected: A or B alone; D, recording only what the product observes.
+Consequences: case-inputs records the declaration; case-grammar /11 carries review.affirmed. The ux lane designs the overlay: how it is revealed, how it is labelled, its accessibility and its words. It also writes the declared_ai control and the affirmation sentence (BD-3).
+
+## BD-10: Publishing an AI draft unchanged keeps today's split (Bob, 6 Nov)
+Context: Bob's call 2. An AI draft adopted unchanged is refused for the account (ACCEPT_MUST_REAUTHOR, record-grammar) but allowed for what changed (adopted_as_drafted).
+Decision: option A (Bob, ~18:35Z): keep the split. An unchanged draft of what changed is disclosed as ai_kept under /11.
+Rejected: B, refusing everywhere; C, allowing everywhere.
