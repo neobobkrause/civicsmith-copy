@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "filings",
+  "session": "session_018BhcecNoRqhE43eukKnjdo",
+  "started": "2026-11-06T23:34:05Z",
+  "ended": "2026-11-06T23:36:03Z",
+  "at": "2026-11-06T23:36:03Z",
+  "minutes": 1.97,
+  "result": "fail",
+  "layer": 9,
+  "suite_seconds": 49.394,
+  "tests": {
+    "total": 176,
+    "pass": 136,
+    "fail": 40
+  }
+}
