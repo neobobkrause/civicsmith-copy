@@ -3,7 +3,8 @@
    R23 (the case file's build refusals, G54). Each claim has its negative control. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { groupIdentityRegistrar, assembleCaseContainerRefusal, publishedCaseSeveralCases, docketPublicOfCase } from "./fixtures.mjs";
+import { groupIdentityRegistrar, assembleCaseContainerRefusal, publishedCaseSeveralCases, docketPublicOfCase,
+         publishedCaseWithEvidence } from "./fixtures.mjs";
 
 test("R34 groupIdentityRegistrar answers the real refusals: a malformed registration is PROVIDER_MALFORMED, the first stands, and a second is PROVIDER_DECLARED with the first's group still held", () => {
   const out = groupIdentityRegistrar();
@@ -43,4 +44,24 @@ test("R21 docketPublicOfCase answers the real docket of CASE: its one public ent
   /* negative control: the entry carries the reason posted, so the answer is this docket's, not an empty or another case's */
   assert.equal(out.entries[0].fields.reason, "We no longer stand behind edition 1.");
   assert.notEqual(out.last_entry, null);
+});
+
+test("F1 R3 R53 publishedCaseWithEvidence answers the real publishedcase: its evidence is materials.materials, two rows each with entry {name, locator, fingerprint}, equal to the store's publishedcase for the same edition; an edition with no material answers materials.materials empty", async () => {
+  const out = await publishedCaseWithEvidence();
+  assert.equal(out.answer.ok, true);
+  assert.equal(Array.isArray(out.answer.materials), false, "the evidence is a wrapper, not an array");
+  assert.deepEqual(Object.keys(out.answer.materials).sort(), ["attestations", "materials"]);
+  const rows = out.answer.materials.materials;
+  assert.equal(rows.length, 2);
+  for (const r of rows) {
+    assert.deepEqual(Object.keys(r.entry).sort(), ["fingerprint", "locator", "name"]);
+    assert.deepEqual(r.entry, { name: r.title, locator: r.origin, fingerprint: r.sha }, "the entry is read from the signed row");
+    assert.equal(r.included, true, "its bytes open by its sha");
+  }
+  assert.notDeepEqual(rows[0].entry, rows[1].entry);
+  assert.deepEqual(rows.map((r) => r.entry), out.store.materials.materials.map((r) => r.entry),
+                   "the Worker's answer and the store's are one");
+  /* negative control: an edition listing no material answers the same wrapper, its rows empty */
+  assert.equal(out.none.ok, true);
+  assert.deepEqual(out.none.materials.materials, []);
 });
