@@ -5,7 +5,7 @@
    are test ones, small enough to reason about (the carried ones, SCREEN_REGISTRY and CIVICSMITH_LIBRARY, are tested in
    library.test.mjs), and the jurisdiction profile is a made-up test one (`profiles`), whose records-request template
    filing-templates offers. Every test drives `wizard-scripts` at its interface. */
-import { currentAct } from "../../../src/wizard-scripts/data.mjs";
+import { currentAct, SCREEN_ACTS_ADDED } from "../../../src/wizard-scripts/data.mjs";
 import { DatabaseSync } from "node:sqlite";
 import { createHash } from "node:crypto";
 import { recordOf, RECORD_SCHEMA } from "../../../src/record-core/index.mjs";
@@ -210,7 +210,12 @@ export function discoverable(w, project = w.P, owner = "alice") {
 
 /* ai-accounts R35, R36 (T53; no aliases): a vendored design file as the module reads it, each retired op its T53 op or no act
    (`data.mjs`' RETIRED_ACTS), so a test that holds the carried data equal to the file compares like with like. */
-export const currentRegistry = (file) => ({ ...file, screens: file.screens.map((s) => ({ ...s, acts: (s.acts ?? []).flatMap((a) =>
-  a.status === "owed" ? [a] : currentAct(a.op) === null ? [] : [{ ...a, op: currentAct(a.op) }]) })) });
+/* F2: with the acts this module adds to a screen (`SCREEN_ACTS_ADDED`) after the file's own, as declared acts. */
+export const currentRegistry = (file) => ({ ...file, screens: file.screens.map((s) => {
+  const acts = (s.acts ?? []).flatMap((a) => a.status === "owed" ? [a] : currentAct(a.op) === null ? [] : [{ ...a, op: currentAct(a.op) }]);
+  const added = (Object.hasOwn(SCREEN_ACTS_ADDED, s.id) ? SCREEN_ACTS_ADDED[s.id] : [])
+    .filter((op) => !acts.some((a) => a.status !== "owed" && a.op === op)).map((op) => ({ op, status: "declared", added: "F2" }));
+  return { ...s, acts: [...acts, ...added] };
+}) });
 export const currentLibrary = (file) => ({ ...file, scripts: file.scripts.map((s) => ({ ...s, versions: (s.versions ?? []).map((v) => ({ ...v,
   steps: (v.steps ?? []).map((t) => (typeof t.act === "string" && currentAct(t.act) !== t.act ? { ...t, act: currentAct(t.act) } : t)) })) })) });
