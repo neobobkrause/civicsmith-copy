@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 9,
+  "user": "actions",
+  "provider": "action-records",
+  "provider_pr": 696,
+  "provider_land": "c06702976dce378737b9512763d3cbf5ec176bf3",
+  "at": "2026-11-06T19:15:09Z",
+  "key": "actions<-action-records@c06702976d",
+  "why": "removed ActionRecords.lawEntries; its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/action-records/t53-layer.test.mjs: breaking, added), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}

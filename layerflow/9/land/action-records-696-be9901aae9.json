@@ -1,0 +1,66 @@
+{
+  "row": "land",
+  "layer": 9,
+  "module": "action-records",
+  "pr": 696,
+  "head": "be9901aae9ad8cbc68e03870e31d441ef2dab002",
+  "before": "7623d9796904801881e9b051e7fc8447aa471537",
+  "merge": "c06702976dce378737b9512763d3cbf5ec176bf3",
+  "at": "2026-11-06T19:15:09Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [
+        "ActionRecords.lawEntries"
+      ],
+      "added": [],
+      "changed": [],
+      "kinds": [],
+      "signatures": []
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/action-records/t53-layer.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/action-records/t53-layer.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/action-records/t53-layer.test.mjs",
+        "class": "breaking",
+        "why": "added"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/action-records/t53-layer.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking"
+  },
+  "users_rescheduled": [
+    "action-holds",
+    "actions"
+  ],
+  "users_rescheduled_old_rule": [
+    "action-holds",
+    "actions"
+  ],
+  "users_noticed": [
+    "affordances",
+    "control-plane",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "store-assembly"
+  ]
+}

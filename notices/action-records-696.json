@@ -1,0 +1,31 @@
+{
+  "row": "notice",
+  "at": "2026-11-06T19:15:09Z",
+  "key": "action-records:696",
+  "provider": "action-records",
+  "ids": [],
+  "pr": 696,
+  "users": [
+    "affordances",
+    "control-plane",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "store-assembly"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [
+      "ActionRecords.lawEntries"
+    ],
+    "added": [],
+    "changed": [],
+    "kinds": [],
+    "signatures": []
+  },
+  "layer_flow": {
+    "layer": 9,
+    "provides": false,
+    "rescheduled": true
+  }
+}

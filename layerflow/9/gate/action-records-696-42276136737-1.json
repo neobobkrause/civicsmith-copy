@@ -1,0 +1,16 @@
+{
+  "row": "gate",
+  "layer": 9,
+  "module": "action-records",
+  "pr": 696,
+  "sha": "01626bfedca9246ec168d0d676d9496127c085e2",
+  "run_id": 42276136737,
+  "run_attempt": 1,
+  "at": "2026-11-06T19:03:50Z",
+  "trigger": "draft",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 1.06,
+  "suite_minutes": null,
+  "record_only": false
+}
