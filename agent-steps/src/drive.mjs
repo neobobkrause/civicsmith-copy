@@ -327,7 +327,8 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
   const planMode = FLOW === PLAN_FLOW;
   if (model?.provider) logSeq.partialState = (s) => {
     const p = publishableState(s, AI_RUN_STATE_MAX_BYTES, FLOW);
-    return p.restarted ? null : p.state;
+    /* agent-harness R23 (notice agent-harness:353): a state holding provider-held state is refused, never published. */
+    return p.ok === false || p.restarted ? null : p.state;
   };
   const resumed = resumeFrom(session.state ?? null, FLOW);
   state = resumed.at
@@ -487,7 +488,13 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
     let published = null;
     if (resumeTargets(FLOW).includes(after.step)) {
       published = publishableState(after, AI_RUN_STATE_MAX_BYTES, FLOW);
-      if (published.restarted) {
+      /* R55, agent-harness R23 (notice agent-harness:353): a state holding a provider's session, response, conversation
+         or continuation id is refused by the table, so this tick publishes no state and the refusal is named in
+         `refusals`, never a state quietly dropped; the record keeps the last state it published. */
+      if (published.ok === false) {
+        refusals.push({ at: "airuntick.state", code: published.code, key: published.key ?? null, detail: published.detail ?? null });
+        published = null;
+      } else if (published.restarted) {
         const last = trace[trace.length - 1];
         last.note = localize("agent-steps.drive.v1_the_tables_state_is", "{v1}the table's state is {bytes} bytes, over the {limit} a run's state may hold (ai-runs R45), so this tick publishes the pass restarted at '{at}' and a later segment re-does it rather than resume from a state the record refuses", { v1: String(last.note ? `${last.note}; ` : ""), bytes: String(published.restarted.bytes), limit: String(published.restarted.limit), at: String(published.restarted.at) });
       }

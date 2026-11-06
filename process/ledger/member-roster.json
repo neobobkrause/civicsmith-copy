@@ -32,6 +32,6 @@
   "prior_work": "Found work F1 only, with priority (it keeps store-assembly's R2/R10 store tests red): regenerate bio-plane/src/member-roster/order.mjs with its own order-build.mjs from the current build/modules.json (199 modules now), so `node bio-plane/src/member-roster/order-build.mjs --check` passes and module-order.test.mjs passes. Strike F1 with --test F1=<that test>. The requirements file is over the cap (90 KB); do not consolidate it in this job (started --over-cap for F1 alone). Edit no other module. Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T16:44:48Z"
+    "at": "2026-11-05T12:46:42Z"
   }
 }
