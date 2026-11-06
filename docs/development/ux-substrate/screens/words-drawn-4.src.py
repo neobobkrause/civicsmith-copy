@@ -2983,3 +2983,15 @@ w493('screen.case-editor.declared_ai.help', 'Tick this if you used an AI tool ou
 w493('screen.ceremony.affirm.ai', "I affirm that every use of AI in this case's own writing is recorded here, including any help from AI tools outside Civicsmith.", 'a checkbox in the Sign step, beside the ties confirmation; part of what is signed')
 w493('screen.ceremony.affirm.ai.part', 'Your affirmation is part of what you sign. Readers see that you made it.', 'under it')
 w493('screen.ceremony.affirm.ai.needed', 'Tick the affirmation first.', 'when Sign is pressed without it')
+
+# The ux lane, 6 Nov 2026 (W4 of wcag-gaps.md; WCAG 3.3.1, 3.3.3, 4.1.3): a refused form's summary and each field's line.
+# Drawn with components.css .cs-errsum and .cs-field .refused. The summary takes focus; each item links to its field.
+# The field's own sentence says what to do (the module's refusal row); these are only the frame around it.
+def wform(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='ux lane, W4: ' + note))
+wform('screen.form.refused.heading.one', 'One thing to put right before this can be saved', "the summary's heading, one field")
+wform('screen.form.refused.heading', '{n} things to put right before this can be saved', "the summary's heading, two or more")
+wform('screen.form.refused.nothing', 'Nothing was saved. Your answers are kept here.', "under the heading: what happened, and that nothing typed is lost")
+wform('screen.form.refused.item', '{field}: {what}', "one link in the summary; {field} the field's label, {what} its line")
+wform('screen.form.refused.prefix', 'To put right:', "before each field's line, so it is never colour alone; read by screen readers")
+wform('screen.form.refused.title', 'To put right: {title}', "the page title while the form is refused (WCAG 2.4.2)")

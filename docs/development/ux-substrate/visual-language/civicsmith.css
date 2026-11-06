@@ -212,6 +212,9 @@
 .cs { font: 400 var(--t-md)/var(--lh-ui) var(--f-sans); color: var(--c-ink); background: var(--c-ground);
       font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
 .cs :focus-visible { outline: 2px solid var(--c-focus); outline-offset: 2px; }
+/* W3 (WCAG 2.4.11 Focus not obscured): a control reached by keyboard is scrolled clear of any sticky or fixed bar
+   (a dialog's action row, a sticky row hold, a module's own bar), up to a tap's height and a gap, at both edges. */
+.cs :is(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])) { scroll-margin-block: calc(var(--tap) + var(--s-4)); }
 .cs a { color: var(--c-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .cs a:hover { color: var(--c-accent-strong); }
 .cs svg.i { width: 16px; height: 16px; flex: none; vertical-align: -3px; }
@@ -334,6 +337,21 @@
 .cs-input { width: 100%; min-height: 44px; padding: 9px 11px; font: 400 var(--t-md)/1.4 var(--f-sans); color: var(--c-ink);
             background: var(--c-sheet); border: 1.5px solid var(--c-rule-strong); border-radius: var(--r-1); }
 textarea.cs-input { min-height: 96px; resize: vertical; }
+/* W4 (WCAG 3.3.1, 3.3.3, 4.1.3): a refused form. One summary at the top of the form, before its first field: a
+   heading, then one link per field to put right; it takes focus (tabindex="-1", focused on refusal) and is named by its
+   heading (aria-labelledby). Each field says what to do, its line tied by aria-describedby, the input aria-invalid.
+   Never colour alone: the summary and each line carry the flag icon and the words "To put right". */
+.cs-errsum { display: grid; gap: var(--s-2); padding: var(--s-3) var(--s-4); background: var(--c-signal-tint); color: var(--c-ink);
+  border: 2px solid var(--c-signal); border-radius: var(--r-1); }
+.cs-errsum:focus-visible { outline-offset: 3px; }
+.cs-errsum > h2 { display: flex; align-items: center; gap: var(--s-2); margin: 0; font: 700 var(--t-md)/1.3 var(--f-sans); }
+.cs-errsum > h2 svg { color: var(--c-signal); }
+.cs-errsum ul { margin: 0; padding-left: var(--s-5); display: grid; gap: 4px; }
+.cs-errsum a { color: var(--c-ink); font-weight: 600; }
+.cs-field.is-refused { box-shadow: inset 3px 0 0 var(--c-signal); padding-left: var(--s-3); }
+.cs-field .refused { display: flex; align-items: flex-start; gap: 6px; font: 600 var(--t-sm)/1.4 var(--f-sans); color: var(--c-ink); }
+.cs-field .refused svg { color: var(--c-signal); flex: none; margin-top: 2px; }
+.cs-input[aria-invalid="true"] { border: 2px solid var(--c-signal); }
 .cs-input.rec { font: 400 var(--t-lg)/1.5 var(--f-serif); }
 .cs-draft { border-style: dashed; border-color: var(--c-machine); background: var(--c-machine-tint); }
 .cs-draftlabel { display: inline-flex; align-items: center; gap: 5px; font: 600 var(--t-xs)/1 var(--f-sans); color: var(--c-machine); }
