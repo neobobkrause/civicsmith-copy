@@ -9,3 +9,4 @@
 {"at":"2026-11-06T15:27:13Z","row":"sent","n":5,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job case-disclosures complete, PR #649 ready, session session_018BhcegXFJ4ewPqPqHbaRGf: run status"}
 {"at":"2026-11-06T15:27:24Z","row":"outcome","n":5,"outcome":"delivered"}
 {"at":"2026-11-06T18:26:00Z","row":"sent","n":6,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job case-disclosures complete, PR #680 ready, session session_018Bhcee698PRiZQfEyGkKoR: run status"}
+{"at":"2026-11-06T18:26:12Z","row":"outcome","n":6,"outcome":"delivered"}
