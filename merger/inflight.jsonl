@@ -115,3 +115,4 @@
 {"at":"2026-11-06T01:07:49.550Z","row":"inflight","pr":468,"module":"capture","tip":"dc7d4e92f0c872f6795c37169bac42d5d5af1d52","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T02:52:49.550Z"}
 {"at":"2026-11-06T01:12:59.124Z","row":"end","pr":468,"tip":"dc7d4e92f0c872f6795c37169bac42d5d5af1d52","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-06T01:13:42.113Z","row":"inflight","pr":573,"module":"screens-intake-rounds","tip":"040972aa674081c043406da34ddf80762495532c","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T02:58:42.113Z"}
+{"at":"2026-11-06T01:18:06.192Z","row":"end","pr":573,"tip":"040972aa674081c043406da34ddf80762495532c","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
