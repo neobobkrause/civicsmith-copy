@@ -41,8 +41,8 @@ test("R45 (T51 fix round; K4196, K4197; DEC-374 to DEC-384; K2241; amends R44) t
   const acts = file.screens.flatMap((s) => s.acts);
   const count = (status) => acts.filter((a) => a.status === status).length;
   assert.deepEqual([wz.SCREEN_REGISTRY.length, acts.length, count("declared"), count("function"), count("owed")], [91, 678, 461, 82, 135]);
-  assert.equal(wz.SCREEN_REGISTRY.reduce((n, s) => n + s.acts.length, 0), file.screens.reduce((n, s) => n + new Set(s.acts.filter((a) => a.status !== "owed").map((a) => currentAct(a.op)).filter(Boolean)).size, 0),
-    "registered acts are the declared and function acts, an op two acts of a screen share counted once (members: expertiseconfirm); the owed ones wait for their ops");
+  assert.equal(wz.SCREEN_REGISTRY.reduce((n, s) => n + s.acts.length, 0), file.screens.reduce((n, s) => n + new Set(s.acts.filter((a) => a.status !== "owed").map((a) => currentAct(a.op)).filter(Boolean)).size, 0) + 4,
+    "registered acts are the declared and function acts, an op two acts of a screen share counted once (members: expertiseconfirm), and F2's four added acts; the owed ones wait for their ops");
   assert.equal(new Set(file.screens.find((s) => s.id === "members").acts.map((a) => a.op)).size, file.screens.find((s) => s.id === "members").acts.length, "FR-49: the file at aa8bdcd0b4 lists expertiseconfirm once on members (the duplicate B9 reported is gone)");
   assert.equal(wz.SCREEN_REGISTRY.find((s) => s.id === "members").acts.filter((op) => op === "expertiseconfirm").length, 1, "and the registry carries it once, so the release suite finds no repeated act");
   assert.equal(wz.SCREEN_REGISTRY.reduce((n, s) => n + s.owed.length, 0), count("owed"), "every owed act is carried apart (R13)");

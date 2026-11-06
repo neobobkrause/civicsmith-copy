@@ -200,91 +200,12 @@ test("R5, R9: a promotion that leaves an action holding a past-dated pending clo
   assert.equal("deadlinerecheck" in after, false, "marked, it holds no wake (R15), so it is not due again");
 });
 
-/* ai-accounts T53 (its R35, R61): a member's own account is set by `aiownadd`. In this miniflare plane store-assembly composes
-   ai-accounts without a catalogue, so it answers CATALOGUE_UNAVAILABLE (base-red, store-assembly's); R12 over the real
-   ai-runs and capture-requests is `notice-ai-runs-323.test.mjs`. */
-test("R12: a run waiting on a request that reaches expired is woken on the alarm that expires it, exactly once", async () => {
-  const obj = await store();
-  const add = await POST("op=memberadd&token=adm-sch",
-    { memberId: "ruth", cover: "cover for ruth", role: "admin", capabilities: ["contribute", "publish"] });
-  const en = await POST("op=enroll", { invite: add.invite, handle: "ruth", password: "ruth-passphrase-1" });
-  assert.equal(en.ok, true, JSON.stringify(en));
-  const RUTH = (await POST("op=login", { handle: "ruth", password: "ruth-passphrase-1" })).token;
-  const INQ = "INQ-2026-4200-sched-expiry", C = "2026-09-01T00:00:00Z";
-  const md = ["---", `id: ${INQ}`, "object_type: inquiry", "schema: inquiry@1", `title: "What does ${INQ} rest on?"`,
-    "current_state: open", "prior_state: null", `created: "${C}"`, `last_updated: "${C}"`,
-    "produced_by:", "  mode: agent", "  capability_tier: high", "group: a-group", "references: []", "state_history: []",
-    "annotations_open: 0", "reeval_pending:", "  flag: false", "  since: null", "  source: null", "visuals: []",
-    "surfaced_by: agent", 'disposition_reason: ""', "---", "", "## Question", "", `What does ${INQ} rest on?`, "",
-    word("conformance.rests"), "", "## Conclusion", "", word("conformance.falsify"), "", "## Session Log", "",
-    `### Session ${C} | Formation | agent`, "Trigger: surfacing", "Changes: created.", "", "## Review Notes", ""].join("\n");
-  const pr = await POST(`op=promote&token=${RUTH}`, { bundleId: INQ, base: null, snapKey: `${INQ}-s`, register: [],
-    files: [{ path: "bundle.md", text: md, bytes: md.length, sha256: sha(md) }],
-    meta: { object_type: "inquiry", group: "a-group", current_state: "open", created: C, last_updated: C } });
-  assert.equal(pr.ok, true, JSON.stringify(pr).slice(0, 300));
-
-  /* N585 (K1614; ai-runs R52): a run carries the account of the member whose act opened it, so ruth connects her own
-     account first, through the op the plane routes (credentials R22), the member named, never by writing the store */
-  /* instance-setup R54, ai-accounts R23: the disclosure of what connecting means is shown and recorded first, at the
-     version the plane answers, by her own session */
-  const version = (await POST(`op=disclosureof&token=${RUTH}`, { member: "member:ruth" })).version;
-  const shown = await POST(`op=disclosureshown&token=${RUTH}`, { member: "member:ruth", version });
-  assert.deepEqual([shown.ok, shown.shown], [true, true], JSON.stringify(shown));
-  /* credentials R66, R71 (2): connecting Claude asks for the password again, inside a 5-minute window */
-  const re = await POST(`op=reauth&token=${RUTH}`, { password: "ruth-passphrase-1" });
-  assert.equal(re.ok, true, JSON.stringify(re));
-  /* ai-accounts T53 (its R35 retired accountreferenceset; R61): her own account, connected by her own session (`aiownadd`) */
-  const acct = await POST(`op=aiownadd&token=${RUTH}`, { provider: "anthropic", plan: "api", means: "apikey", secret: "sk-sched-plane" });
-  assert.equal(acct.ok, true, JSON.stringify(acct));
-  /* capture-requests R49 (K1993): ruth captures the index page first, so the address the run asks for is one a held
-     capture links to; only the page itself is fetched, never the address it links to. She files it in a bundle, as a
-     member does, so its task event drains (tasks R1) and leaves no wake of its own in the alarms followed below. */
-  const idx = await POST(`op=acquire&token=${RUTH}`, { locator: "https://index.example.org/list.html", subresources: true });
-  assert.equal(idx.ok, true, JSON.stringify(idx).slice(0, 400));
-  const filed = await fileCapture("INFO-2026-4201-sched-index", idx.document, RUTH);
-  assert.equal(filed.ok, true, JSON.stringify(filed).slice(0, 300));
-  const T0 = Date.now();
-  const RUN = "RUN-2026-0928-sched-expiry";
-  /* ai-runs R9 (T53; notice ai-runs:96): the run names its paying principal `principalAi` and its member `principalAiRef`;
-     the old `principalClaude` arguments are refused AI_RUN_CAPABILITY_UNAVAILABLE */
-  const opened = await POST(`op=airunopen&token=${RUTH}`, { run: RUN, contextType: "inquiry", contextId: INQ,
-    label: "a run waiting on a request that will expire", mode: "check", principalAi: "member:ruth",
-    principalAiRef: "ruth", skillVersion: "investigative-session@1", biasManifest: null,
-    bounds: [{ bound: "fetches", allowed: 5, unit: "requests" }], at: new Date(T0).toISOString(), leaseMs: 3 * 86400000 });
-  assert.equal(opened.started, true, JSON.stringify(opened));
-  /* The one request is at a host the governor holds for longer than the request lives: held on every tick, so
-     nothing completes it until its own expiry releases it (capture-requests R14, R20). */
-  await (await obj.fetch("http://x/governorreport", { method: "POST",
-    body: JSON.stringify({ host: "www.held.example.org", status: 429, retry_after_ms: 3 * 86400000 }) })).json();
-  const rq = await POST(`op=capturerequest&token=${RUTH}`,
-    { target: INQ, run: RUN, purpose: "investigate", address: HELD_DOC });
-  assert.equal(rq.ok, true, JSON.stringify(rq));
-
-  const r1 = await obj.onAlarm(T0 + 1000);
-  assert.deepEqual([r1.capturerequests?.held?.length, r1.airunwake?.woken ?? 0], [1, 0], "held, and nothing to wake yet");
-
-  /* Followed as workerd would, alarm by alarm: the wake's hold keeps the run alive while the daemon owes it an
-     answer, until the drain releases the request at its own 24 h expiry. */
-  let at = r1.nextAt, expiring = null, n = 0;
-  for (; n < 1000 && at !== null && !expiring; n++) {
-    const r = await obj.onAlarm(at);
-    if ((r.capturerequests?.expired || []).length) expiring = r;
-    else { assert.equal(r.airunwake?.woken ?? 0, 0, "nothing is woken before the expiry"); at = r.nextAt; }
-  }
-  assert.ok(expiring, `the request expired within ${n} alarms`);
-  assert.ok(at >= T0 + 86400000, "at its own 24 h");
-  assert.deepEqual(expiring.capturerequests.expired.map((e) => e.request), [rq.request], "released as expired");
-  assert.equal(expiring.airunreap?.reaped?.length ?? 0, 0, "the run was held alive until then");
-  assert.equal(expiring.airunwake?.woken, 1, "woken on the alarm that expired it");
-  assert.equal(expiring.airunwake?.wakes?.[0]?.run, RUN);
-  assert.equal(expiring.airunwake?.wakes?.[0]?.completions, 1, "the expiry told to it as a completion");
-  const again = await obj.onAlarm(at + 1000);
-  assert.equal(again.airunwake?.woken ?? 0, 0, "exactly once");
-  const reqs = await GET(`op=capturerequests&token=adm-sch&run=${RUN}`);
-  const row = (reqs.requests || []).find((q) => q.request === rq.request);
-  assert.equal(row.state, "expired");
-  assert.equal(typeof row.run_woken_at, "string");
-});
+/* R12 is met in-process over the real ai-runs and capture-requests by `notice-ai-runs-323.test.mjs` (coordinator ruling,
+   5 Nov 17:24). Over this running plane it waits on two found marks: no Miniflare plane can connect a member's own
+   account (`op=aiownadd` answers CATALOGUE_UNAVAILABLE) until store-assembly hands assembleStore the catalogue's keys
+   (store-assembly R1, `catalogueKeys`) and ai-catalogue F2 gives a test or development plane a signed catalogue that
+   lists plans. */
+test.todo("R12 in the running plane: a run waiting on a request that reaches expired is woken on the alarm that expires it, exactly once (waits on store-assembly R1 catalogueKeys and ai-catalogue F2)");
 
 test("R9: in the plane, a promotion that ratifies a sweep on an idle instance leaves the alarm armed at the sweep's wake (link-sweep R4, promotion R45); the same sweep unratified arms nothing for it", async () => {
   const obj = await store();
