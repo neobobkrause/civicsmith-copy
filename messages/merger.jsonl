@@ -268,3 +268,4 @@
 {"at":"2026-11-06T01:58:06Z","row":"outcome","n":134,"outcome":"delivered"}
 {"at":"2026-11-06T02:00:28Z","row":"sent","n":135,"to":"bob","text":"merged PR 604 (job membership); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-06T02:00:49Z","row":"outcome","n":135,"outcome":"delivered"}
+{"at":"2026-11-06T02:06:18Z","row":"sent","n":136,"to":"bob","text":"merged PR 519 (job site); the MERGER's starter starts the work it freed"}
