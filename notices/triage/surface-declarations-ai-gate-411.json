@@ -1,0 +1,1 @@
+{"row":"triage","user":"surface-declarations","verdict":"not affected","evidence":"build/modules.json:178 gives surface-declarations no paths (paths: []), so no file of it imports ai-gate or uses the changed behaviour; its declared use of ai-gate is unimplemented at 85f6787dee","at":"2026-11-06T00:56:57.711Z","key":"ai-gate:411","worker":"a57d2a732b45d8930","cost":"unmeasured"}
