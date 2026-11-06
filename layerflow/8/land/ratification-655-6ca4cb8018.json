@@ -1,0 +1,20 @@
+{
+  "row": "land",
+  "layer": 8,
+  "module": "ratification",
+  "pr": 655,
+  "head": "6ca4cb80186d6826610a77ffbf4ef0b879041515",
+  "before": "3e43698c9b641f4b786e8499d72dc3d521c05475",
+  "merge": "c0c4bff3a02b626c19218fb8ae883e9f81ff9ebc",
+  "at": "2026-11-06T15:37:30Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": []
+  },
+  "users_rescheduled": [],
+  "users_noticed": []
+}
