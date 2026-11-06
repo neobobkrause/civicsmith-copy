@@ -29,6 +29,16 @@
       "name": "ux",
       "dir": "docs/development/ux-substrate/",
       "module": "ux-design"
+    },
+    {
+      "name": "investigation",
+      "dir": "docs/development/investigation-design/",
+      "module": "investigation-design"
+    },
+    {
+      "name": "publication",
+      "dir": "docs/development/publication-design/",
+      "module": "publication-design"
     }
   ],
   "cloudflare_account": "20b533579290b9b93168345edd3b7f72",
