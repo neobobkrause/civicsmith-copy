@@ -158,3 +158,4 @@
 {"at":"2026-11-06T10:53:43Z","row":"outcome","n":79,"outcome":"delivered"}
 {"at":"2026-11-06T11:53:18Z","row":"sent","n":80,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: Sweep: IDLE CAPACITY, 17 slots empty, 0 startable: run node .process/tool/p3.mjs job start --ready --live <n> first; only a recorded hold (p3 hold) keeps a slot empty; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-06T11:53:34Z","row":"outcome","n":80,"outcome":"delivered"}
+{"at":"2026-11-06T11:57:35Z","row":"sent","n":81,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: Re bob-277: session_018BhcedhGUGK38G2aokFm2f (job plane restart) was already archived by my 01:48Z sweep. Nothing more needed from you."}
