@@ -44,7 +44,8 @@
   ],
   "prior_work": "This module's code and tests exist (build/modules.json) but it had no ledger entry, so the process never recorded it (found by the publication lane's qualification, 6 Nov). Its requirement file has no unmet mark. Run its suite on its layer. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Edit no other module, and commit no generated file.",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-06T17:53:06Z"
+    "state": "WORKING",
+    "at": "2026-11-06T23:47:27Z",
+    "reason": "reopened: Continue on a new branch: GitHub hides the PR the suspended civicsmith account opened on job/action-holds and refuses a second PR on that head. First merge origin/job/action-holds (4e680ba0ca: attempt 1 already synced with layer/9 at c06702976d plus its job-complete receipt; no action-holds code change; suite 62/62) into your branch (a merge, keeps history), then sync with layer/9 (now at a24b559676 or later) and publish. action-holds does not use ActionRecords.lawEntries; the breaking verdict on action-records was the R8 classifier misreading it."
   }
 }
