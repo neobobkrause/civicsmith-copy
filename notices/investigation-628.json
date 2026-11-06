@@ -1,0 +1,43 @@
+{
+  "row": "notice",
+  "at": "2026-11-06T13:53:29Z",
+  "key": "investigation:628",
+  "provider": "investigation",
+  "ids": [],
+  "pr": 628,
+  "users": [
+    "affordances",
+    "answer-envelope",
+    "control-plane",
+    "monitoring",
+    "notice-producers",
+    "op-declarations",
+    "plane",
+    "queue",
+    "screens-document",
+    "screens-inquiry",
+    "store-assembly"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "FILE_KINDS",
+      "Investigation.acceptProposals",
+      "Investigation.interpretedElsewhere",
+      "Investigation.interpretedFor",
+      "Investigation.markForInterpretation",
+      "Investigation.proposalRates",
+      "Investigation.proposeParts",
+      "MARK_PARTS_MAX",
+      "PROPOSALS_MAX",
+      "PROPOSALS_MEASURED",
+      "PROPOSAL_REVIEW"
+    ],
+    "changed": []
+  },
+  "layer_flow": {
+    "layer": 7,
+    "provides": true
+  }
+}
