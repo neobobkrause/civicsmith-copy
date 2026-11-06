@@ -68,7 +68,9 @@ export async function mastheadLimits(page) {
 }
 
 /* No explanation covers another control (interface-shell R103): each explanation (up to `limit` of them) is opened by focusing
-   what it explains, and its box must overlap no other control. */
+   what it explains, and its box must overlap no other control. Since interface-shell's PR 310 (R145, F3, F4): the rail's width
+   grip (`data-shell="grip"`) is no control an explanation must spare, and "inside the page" is inside the page's client width,
+   so an explanation under the scroll bar runs outside it. */
 export async function coverLimits(page, { limit = 8 } = {}) {
   const out = [];
   const n = await page.evaluate(() => [...document.querySelectorAll("[data-tip]")].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; }).length);
@@ -93,12 +95,14 @@ export async function coverLimits(page, { limit = 8 } = {}) {
       const over = [];
       for (const c of document.querySelectorAll("a[href], button, input, select, textarea, summary, [role=button]")) {
         if (c === explained || (explained && (explained.contains(c) || c.contains(explained))) || tip.contains(c)) continue;
+        if (c.getAttribute("data-shell") === "grip") continue;
         const r = c.getBoundingClientRect();
         if (r.width <= 0 || r.height <= 0) continue;
         const w = Math.min(t.right, r.right) - Math.max(t.left, r.left), h = Math.min(t.bottom, r.bottom) - Math.max(t.top, r.top);
         if (w > 2 && h > 2) over.push((c.getAttribute("data-act") || c.getAttribute("aria-label") || c.id || c.tagName).toString().slice(0, 40));
       }
-      return { over, outside: t.left < -1 || t.right > window.innerWidth + 1, explains: (explained && (explained.getAttribute("data-act") || explained.id || explained.tagName)) || "" , i, els: els.length };
+      const vw = document.documentElement.clientWidth || window.innerWidth;
+      return { over, outside: t.left < -1 || t.right > vw + 1, explains: (explained && (explained.getAttribute("data-act") || explained.id || explained.tagName)) || "" , i, els: els.length };
     }, i);
     await page.keyboard.press("Escape").catch(() => {});
     if (hit && hit.over.length) out.push({ kind: DEC340.COVERS, detail: `the explanation of ${hit.explains} covers ${[...new Set(hit.over)].slice(0, 3).join(", ")}` });

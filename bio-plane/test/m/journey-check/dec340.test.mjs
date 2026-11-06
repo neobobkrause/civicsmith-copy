@@ -64,6 +64,23 @@ a.addEventListener("focus", () => { t.hidden = false; a.setAttribute("aria-descr
   assert.deepEqual(await on(page("left:200px;top:10px;width:80px;height:30px"), (p) => coverLimits(p)), []);
 });
 
+test("R28 (interface-shell PR 310): the rail's width grip is no control an explanation must spare, and one under the scroll bar runs outside the page; control: another control it covers still fails", async () => {
+  const page = (tipCss, second) => `<body style="margin:0;height:3000px;overflow-y:scroll"><button id="a" data-tip="why" style="position:absolute;left:10px;top:10px;width:80px;height:30px">A</button>
+${second}<div id="cs-tip" hidden style="position:absolute;${tipCss}">why</div>
+<script>const a = document.getElementById("a"), t = document.getElementById("cs-tip");
+a.addEventListener("focus", () => { t.hidden = false; a.setAttribute("aria-describedby", "cs-tip"); });</script></body>`;
+  const grip = '<button id="g" data-shell="grip" role="separator" style="position:absolute;left:10px;top:50px;width:80px;height:30px">|</button>';
+  assert.deepEqual(await on(page("left:10px;top:46px;width:80px;height:40px", grip), (p) => coverLimits(p)), []);
+  const other = '<button id="b" style="position:absolute;left:10px;top:50px;width:80px;height:30px">B</button>';
+  assert.match((await on(page("left:10px;top:46px;width:80px;height:40px", other), (p) => coverLimits(p)))[0]?.detail || "", /covers b/);
+  const vw = await on(page("left:0;top:0", ""), (p) => p.evaluate(() => [document.documentElement.clientWidth, window.innerWidth]));
+  if (vw[0] < vw[1]) {
+    const under = await on(page(`left:${vw[1] - 80}px;top:46px;width:78px;height:40px`, ""), (p) => coverLimits(p));
+    assert.match(under[0]?.detail || "", /runs outside the page/, JSON.stringify(under));
+  }
+  assert.deepEqual(await on(page(`left:${vw[0] - 90}px;top:46px;width:80px;height:40px`, ""), (p) => coverLimits(p)), []);
+});
+
 test("R28: Projects' search and filter have accessible names; control: named ones pass", async () => {
   const bad = await on('<main id="cs-main"><input type="search" id="p-search"><select id="p-filter"><option>All</option></select></main>', projectsLimits);
   assert.deepEqual(bad.map((x) => x.kind), [DEC340.NAME, DEC340.NAME]);
