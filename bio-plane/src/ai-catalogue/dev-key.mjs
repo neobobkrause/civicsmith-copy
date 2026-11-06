@@ -9,7 +9,8 @@
  * looked up (`wrangler deployments list --name <slug>`); a Worker that is not there is refused, so the secrets are
  * never what creates one. It:
  *  1. generates an ed25519 key pair in memory, its public line commented `bio-ai-catalogue` + `DEVELOPMENT_KEY_MARK`;
- *  2. signs the seed this release carries (`RELEASE_SEED`, R39) in `NS_AI_CATALOGUE` with it, and checks that the
+ *  2. signs the development seed (`DEVELOPMENT_SEED`, F2), the seed a copy takes where `DEVELOPMENT_VAR` is "1", in
+ *     `NS_AI_CATALOGUE` with it, and checks that the
  *     signature verifies against the keys a development build trusts and is refused by a release build's;
  *  3. hands the plane, as its own variables, `DEVELOPMENT_VAR` = "1", the public line (`DEVELOPMENT_KEY_VAR`) and the
  *     armored signature (`SEED_SIGNATURE_VAR`), and holds the private half (PKCS#8) only as the Worker secret
@@ -27,7 +28,7 @@ import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, resolve, sep } from "node:path";
 import { CATALOGUE_KEYS, NS_AI_CATALOGUE, aiCatalogueStatement, verifyAiCatalogue } from "../sshsig.mjs";
-import { RELEASE_SEED, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_VAR, DEVELOPMENT_KEY_MARK,
+import { DEVELOPMENT_SEED, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_VAR, DEVELOPMENT_KEY_MARK,
   catalogueKeysFor } from "./seed.mjs";
 
 /** The one account a development catalogue key is set in. */
@@ -67,8 +68,8 @@ async function sshsig(privateKey, raw, namespace, message) {
 /* ------------------------------------------------------------------ the key, the signature, the check */
 
 /** A fresh development catalogue key and the seed signed with it: `{line, armored, secret}`, `secret` the private half
- *  as base64 PKCS#8. Nothing leaves memory. `seed` defaults to the seed this release carries. */
-export async function makeDevelopmentKey({ seed = RELEASE_SEED } = {}) {
+ *  as base64 PKCS#8. Nothing leaves memory. `seed` defaults to the development seed (F2). */
+export async function makeDevelopmentKey({ seed = DEVELOPMENT_SEED } = {}) {
   const kp = await webcrypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]);
   const raw = new Uint8Array(await webcrypto.subtle.exportKey("raw", kp.publicKey));
   const line = `ssh-ed25519 ${b64(join(sstr("ssh-ed25519"), sstr(raw)))} ${DEVELOPMENT_KEY_COMMENT}`;
@@ -136,7 +137,7 @@ export function mask(text, vars) {
 /** The command. `argv` its arguments, `env` its environment; `log`/`err` print a line; `wrangler` sets the secrets.
  *  Answers the exit code. */
 export async function main(argv, env = process.env, { log = console.log, err = console.error, wrangler = runWrangler,
-  seed = RELEASE_SEED } = {}) {
+  seed = DEVELOPMENT_SEED } = {}) {
   const dry = argv.includes("--dry-run");
   const [slug, ...extra] = argv.filter((a) => !a.startsWith("--"));
   if (!slug || extra.length || argv.some((a) => a.startsWith("--") && a !== "--dry-run")) {
