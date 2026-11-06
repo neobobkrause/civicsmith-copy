@@ -157,6 +157,16 @@ export const DEVELOPMENT_SEED_PAYLOAD = Object.freeze({
   tested: [], library: [], combined: [],
 });
 
+/** F3: the adapter types the development seed's entries need (R38), one per profile it lists. No module of the product
+ *  registers an adapter type yet, so with nothing registered every entry needs a newer release and a development plane
+ *  could hold the plan `api` yet connect nothing through it (`aiownadd` ENTRIES_EMPTY). Where the development seed is
+ *  the one taken and it verifies, the catalogue registers these itself (`AiCatalogue.start`); a release build, which
+ *  never takes that seed, registers nothing. */
+export const DEVELOPMENT_ADAPTERS = Object.freeze(Object.values(DEVELOPMENT_SEED_PAYLOAD.profiles.reduce((by, p) => {
+  (by[p.adapter_type] ||= { type: p.adapter_type, profiles: {} }).profiles[p.id] = p.version;
+  return by;
+}, {})).map((t) => Object.freeze({ type: t.type, profiles: Object.freeze(t.profiles) })));
+
 /** F2: the development seed, unsigned: a development deployment hands its signature as `SEED_SIGNATURE_VAR`. */
 export const DEVELOPMENT_SEED = seedOf(DEVELOPMENT_SEED_PAYLOAD, null);
 
