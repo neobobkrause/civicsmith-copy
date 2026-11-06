@@ -336,6 +336,22 @@ export const CEREMONY = Object.freeze({
           + cs.act("obscuremark", { label: "screen.ceremony.photo.nothing", data: { capture: sha, index: String(i), nothing: "1" } }) + "</div></div>";
       }).join("") + P.said(view, "obscure"))));
 
+    // R83 (DEC-461, DEC-474 (4); case-authoring A5-R88): the passages this edition rests on that the team has not graded, from the sign
+    // step's `ungraded_passages`, between the photos and the ties and outside the blocking box: a row each with its grade fold
+    // (`leggrade`); never a stop, never the step's first stop; with no row, no section.
+    const ungStep = stepWith("ungraded_passages");
+    const ungraded = ungStep && Array.isArray(ungStep.ungraded_passages) ? ungStep.ungraded_passages.filter(function (r) { return r && typeof r === "object"; }) : [];
+    ui.ungraded = ungraded;
+    if (ungraded.length) out.push(cs.sec("screen.ceremony.ungraded.head", '<p data-ungraded="' + ungraded.length + '">' + cs.w("screen.ceremony.ungraded.lead", { n: String(ungraded.length) }) + "</p>"
+      + ungraded.map(function (r, i) {
+        const passage = [r.title || r.document_title || "", r.role || ""].filter(Boolean).join(", ");
+        return '<details class="cs-sheet" data-ungraded-row="' + i + '"><summary>' + cs.w("screen.ceremony.ungraded.row", { passage: passage, n: String(r.n || r.finding_n || "") })
+          + " · " + cs.w("screen.ceremony.ungraded.grade") + "</summary>"
+          + cs.checks("ce-leggrade-" + i, "", ["A", "B", "C", "D"].map(function (g) { return { value: g, text: g }; }), { radio: true })
+          + cs.field("ce-leggrade-why-" + i, "shell.reason", { area: true, rec: true })
+          + '<div class="mk-acts">' + cs.act("leggrade", { label: "act.leggrade.label.ceremony", data: { index: String(i) } }) + "</div></details>";
+      }).join("") + '<p class="muted">' + cs.w("screen.ceremony.ungraded.note") + "</p>" + P.said(view, "leggrade")));
+
     // R5: the Ties step: the member's own confirmation of no undeclared tie, sent with `publish` as `tieAttested`.
     out.push(cs.sec("screen.ceremony.ties", cs.checks("ce-tie", "screen.ceremony.ties.legend", [["yes", "screen.ceremony.ties.confirm", false]])
       + '<div class="mk-acts">' + cs.act("publish", { tone: "primary", here: "ceremony" }) + "</div><p class=\"muted\">" + cs.w("screen.ceremony.ties.part") + "</p>"
@@ -458,6 +474,23 @@ export const CEREMONY = Object.freeze({
         return { query: { project: String(view.subject || "").split("/")[0] } };
       },
       done: function (view, answer, cs) { return view.parts.pickDraft(view, answer, cs, "ceremony"); },
+    },
+    {
+      // R83: a passage still ungraded is graded from its row; the screen prepares again before signing (a grade changes the finding's version)
+      op: "leggrade", label: "act.leggrade.label.ceremony", reasonField: "reason", rereads: [],
+      send: function (view, el, cs) {
+        const i = String(el.dataset.index || "");
+        const row = (view.ui && view.ui.ungraded || [])[Number(i)];
+        if (!row) return null;
+        const grade = String((cs.value("ce-leggrade-" + i) || [])[0] || "");
+        if (!/^[A-D]$/.test(grade)) return { refuse: "capture.fieldneeded", fills: { field: { html: cs.w("screen.question.leggrade.head") } } };
+        const reason = String(cs.value("ce-leggrade-why-" + i) || "").trim();
+        if (!reason) return { refuse: "shell.reason.needed" };
+        const part = {};
+        for (const k of Object.keys(row)) if (k === "content_id" || /^extent_/.test(k)) if (row[k] !== undefined && row[k] !== null && String(row[k]) !== "") part[k] = String(row[k]);
+        return { body: Object.assign({ project: String(view.subject || "").split("/")[0], target: String(row.target || row.finding || ""), grade: grade, reason: reason }, part) };
+      },
+      done: function (view, answer, cs) { if (!view.parts.refused(cs, view, "leggrade", answer)) view.parts.forget(view); },
     },
     {
       // R3: "Check again": the checks read once more.

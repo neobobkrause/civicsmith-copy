@@ -218,10 +218,13 @@ test("R93 (G80, seam: record-core R89, R90): a write through the record's own pa
   const recent = w.tasks.recentTasks.bind(w.tasks);
   w.tasks.recentTasks = (...a) => { asked += 1; return recent(...a); };
   const count = () => w.q.queueFeed({ ...alice, count: true }).count;
+  /* the first read of a fresh object may run its providers' own migrations (ai-use's ledger rows, steps' repairs): writes of
+     theirs, made while the count is derived, so the count is kept under the counter as it stands after them (R93) */
+  assert.equal(count(), 2);
   const c0 = w.record.writeCount();
   assert.equal(w.record.writeCount(), c0, "a read of the counter does not move it");
   assert.equal(count(), 2); assert.equal(count(), 2);
-  assert.equal(asked, 1, "the second count was kept");
+  assert.equal(asked, 1, "the second and third counts were kept, the first read's own migrations notwithstanding");
   assert.equal(w.record.writeCount(), c0, "and asking for a count wrote nothing");
   // a task resolved through tasks' own path: a write to a table of the record the cache must see
   const resolved = w.tasks.taskResolve({ id: "TASK-2026-0001-a", actor: "alice" });
