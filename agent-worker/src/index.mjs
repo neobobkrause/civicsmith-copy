@@ -692,8 +692,8 @@ async function handleVersion(env) {
  *  `ASSISTANT_REMOTE_NOT_READY`, its `detail` the record's word (DEC-301; R64), `why` `absent`. An API-key account is
  *  unchanged (K3347). Null when the call may go on. Made after R1–R8's shape checks and before any plane write, model
  *  call or segment, so a refused `/run` leaves its run as it was (R57). */
-async function assistantReady(env, account) {
-  if (account?.kind !== "signin" || remoteOf(env)) return null;
+async function assistantReady(env, account, runner = remoteOf(env)) {
+  if (account?.kind !== "signin" || runner) return null;
   return refusal("ASSISTANT_REMOTE_NOT_READY", word("refusal.ASSISTANT_REMOTE_NOT_READY"), 503,
                  { capability: "unavailable", why: "absent" });
 }
@@ -777,6 +777,13 @@ const ASK_DEPS = { refusal, json, askPlane, planeAnswer, publishedPack, accountO
                    loadableLayers, loadLayer, converse, segmentMeter, NAMESPACES, DEFAULT_MAX_SEGMENT_BYTES,
                    assistantReady };
 
+/** F5 (coordinator ruling 5 Nov 20:18, restated 6 Nov 03:33) — THE DRAFT PATHS' GATE. `agent-drafts`' draft paths
+ *  call `converse` naming no runner (its PR 570), so a sign-in there would reach the model with no runner even while
+ *  `RUNNER` is bound. Until they name one, `/draft` judges a sign-in as unbound: refused `ASSISTANT_REMOTE_NOT_READY`
+ *  (`why` `absent`) before any model call. An API-key account is unchanged; `/ask`, `/run`, `/transcribe` and
+ *  `/signin` keep the bound runner. */
+const DRAFT_DEPS = { ...ASK_DEPS, assistantReady: (env, account) => assistantReady(env, account, null) };
+
 /* R58 — ONE TRUTH FOR MODEL TURNS, the sentence this member states about itself on `GET /version`, and the same one its
    header and its `/run` answer state. */
 const MODEL_TURNS = "run through agent-model exactly when the Claude account that serves the member's act (the "
@@ -792,7 +799,7 @@ export default {
     if (req.method === "POST" && (path === "run" || path === "")) return handleRun(req, env);
     /* F3: each request's model paths call `converse` around the circuit (`circuitDeps`). */
     if (req.method === "POST" && path === "ask") return handleAsk(req, env, circuitDeps(env, ASK_DEPS));
-    if (req.method === "POST" && path === "draft") return handleDraft(req, env, circuitDeps(env, ASK_DEPS));
+    if (req.method === "POST" && path === "draft") return handleDraft(req, env, circuitDeps(env, DRAFT_DEPS));
     if (req.method === "POST" && path === "signin") return handleSignin(req, env, ASK_DEPS);
     if (req.method === "POST" && path === "transcribe") return handleTranscribe(req, env, circuitDeps(env, ASK_DEPS));
     return refusal("UNKNOWN", localize("agent-worker.index.post_run_post_ask_post_2", "POST /run, POST /ask, POST /draft, POST /signin, POST /transcribe, GET /version or GET /health only."),

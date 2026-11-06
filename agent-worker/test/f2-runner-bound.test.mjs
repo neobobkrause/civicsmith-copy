@@ -1,12 +1,12 @@
-/* agent-worker — F2 (coordinator ruling 5 Nov 2026, 20:18): the runner is bound.
+/* agent-worker — F2 and F5 (coordinator ruling 5 Nov 2026, 20:18, restated 6 Nov 03:33): the runner is bound.
  *
  * The configuration declares `RUNNER`, `agent-runner`'s class `AgentRunner` cross-script; the source reads it
  * (`remoteOf` answers it when bound). Driven over `agent-runner`'s own wire: its image's real server (`agentRunnerOf`,
  * started in process by its own test helper over a stubbed SDK and Claude binary) stands behind a `RUNNER` namespace
- * that forwards each instance's request to it, a conversation's upgrade as a WebSocket. A sign-in account's draft
- * reaches that member's own instance and its conversation runs there; a sign-in step reaches the runner's `/signin`.
- * Control: with no `RUNNER` bound a sign-in is refused `ASSISTANT_REMOTE_NOT_READY` (`why: "absent"`) before any model
- * call, and `/signin` answers `RUNNER_NOT_CONFIGURED`. */
+ * that forwards each instance's request to it. Bound, a sign-in step reaches that member's own instance's `/signin`.
+ * F5: `agent-drafts`' draft paths name no runner (its PR 570), so bound or not a sign-in account's draft is refused
+ * `ASSISTANT_REMOTE_NOT_READY` (`why: "absent"`) before any model call and names no instance. Control: with no `RUNNER`
+ * bound a sign-in is refused the same way, and `/signin` answers `RUNNER_NOT_CONFIGURED`. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -73,22 +73,22 @@ test("F2: remoteOf answers RUNNER when bound and null otherwise; REMOTE is never
   assert.equal(remoteOf({ RUNNER: {} }), null);
 });
 
-test("F2: bound, a sign-in account's draft reaches the member's own runner instance and its conversation runs there", async () => {
+test("F5 (agent-drafts:570): bound, a sign-in account's draft is refused ASSISTANT_REMOTE_NOT_READY (absent) before any model call", async () => {
   const { calls, sdk } = drafting();
   const r = await startRunner(sdk);
   try {
     const RUNNER = runnerNamespace(r.base);
     const res = await post("draft", draftBody(SIGNIN), { VERSION: "t", PLANE, RUNNER });
     const out = await res.json();
-    assert.notEqual(out.code, "ASSISTANT_REMOTE_NOT_READY");
-    assert.ok(RUNNER.named.length > 0 && RUNNER.named.every((n) => n === MEMBER), "only the member's own instance is named");
-    assert.equal(calls.length, 1, "the conversation ran in the runner");
-    assert.ok(r.lines.some((l) => l.event && /conversation|runner/.test(l.event)), "the runner logged the conversation");
+    assert.equal(res.status, 503);
+    assert.equal(out.code, "ASSISTANT_REMOTE_NOT_READY");
+    assert.equal(out.why, "absent");
+    assert.deepEqual([calls.length, RUNNER.named], [0, []], "no conversation ran and no instance was named");
     assert.ok(!JSON.stringify(out).includes(SIGNIN.secret), "the secret is in no answer");
   } finally { await r.stop(); }
 });
 
-test("F2: bound, a sign-in step reaches the runner's /signin for the member's own instance", async () => {
+test("F2, F5: bound, a sign-in step reaches the runner's /signin for the member's own instance", async () => {
   const r = await startRunner(stubSdk(async () => success()).sdk);
   try {
     const RUNNER = runnerNamespace(r.base);
