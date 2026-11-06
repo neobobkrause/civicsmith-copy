@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-door","verdict":"not affected","evidence":"build/modules.json:183 store-door (bio-plane/src/store-door/) holds no file that imports ai-runs, every code file under its paths read at 874fb36f95","at":"2026-11-06T03:41:22.621Z","key":"ai-runs:485","worker":"merge: imports check","cost":"0"}
