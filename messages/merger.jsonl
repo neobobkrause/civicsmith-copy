@@ -328,3 +328,4 @@
 {"at":"2026-11-06T11:53:40Z","row":"outcome","n":164,"outcome":"delivered"}
 {"at":"2026-11-06T11:54:41Z","row":"sent","n":165,"to":"bob","text":"PR 624 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 624 is a pass, and a pass runs while no job holds its modules (P7): installer (job PR 597 is open), plane (job PR 452 is open)"}
 {"at":"2026-11-06T11:54:59Z","row":"outcome","n":165,"outcome":"delivered"}
+{"at":"2026-11-06T12:09:04Z","row":"sent","n":166,"to":"bob","text":"PR 624 (plain, queued by session_018Bhceddtp3HAmB1Z9LtX2s) was not merged by the train: pull request 624 changes generated module files (agent-runner/dist/agent-runner.bundle.json, agent-runner/dist/agent-runner.bundled.mjs, agent-worker/dist/agent-worker.bundle.json, bio-plane/dist/bio-plane.bundle.json, file-scanner/dist/file-scanner.bundle.json): no green process-gate run on 4add3f7"}
