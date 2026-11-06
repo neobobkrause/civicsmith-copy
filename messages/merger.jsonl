@@ -251,3 +251,4 @@
 {"at":"2026-11-06T01:24:11Z","row":"sent","n":126,"to":"bob","text":"merged PR 601 (job inquiry); the MERGER's starter starts the work it freed"}
 {"at":"2026-11-06T01:25:52Z","row":"outcome","n":126,"outcome":"delivered"}
 {"at":"2026-11-06T01:29:36Z","row":"sent","n":127,"to":"bob","text":"merged PR 497 (job agent-steps): node .process/tool/p3.mjs notice triage agent-steps:497 (provider notice agent-steps:497; 3 user modules owe a worker's judgment: agent-drafts, agent-worker, ai-gate: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-06T01:29:54Z","row":"outcome","n":127,"outcome":"delivered"}
