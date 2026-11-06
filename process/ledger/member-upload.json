@@ -1,0 +1,36 @@
+{
+  "id": "member-upload",
+  "title": "member-upload: split by copy from capture (R86, R92, R93, R103, R107, R108, R109, R110, R111, R113, R114, R116, R117, R118, R119, R120)",
+  "layer": 4,
+  "paths": [
+    "build/requirements/member-upload.md",
+    "docs/requirements-notes/member-upload.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/member-upload/"
+  ],
+  "requirements": "build/requirements/member-upload.md",
+  "uses": [
+    "capture",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/member-upload.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-06T02:16:09Z"
+  }
+}

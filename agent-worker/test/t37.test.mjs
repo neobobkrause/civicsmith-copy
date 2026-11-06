@@ -1,14 +1,14 @@
-/* agent-worker — T37's requirements (T37-17): `POST /signin`, the relay of a member's own Claude sign-in to that
- * member's own runner instance (R66, R67, with R35 and R36 as amended), and `POST /draft` of kind translation (R68–R70),
- * AT THE MEMBER'S INTERFACE: its default export `fetch(request, env)`, driven in this process with a recording `RUNNER`
- * stub (a Container Durable Object namespace: `idFromName`, `get`, each instance's `fetch`), a recording `PLANE` binding
+/* agent-worker — T37's requirements (T37-17): `POST /signin`, which since F2 binds no runner and answers
+ * RUNNER_NOT_CONFIGURED, and `POST /draft` of kind translation (R68–R70),
+ * AT THE MEMBER'S INTERFACE: its default export `fetch(request, env)`, driven in this process with `REMOTE` and `RUNNER`
+ * bound to a namespace that records and throws on any use (none is reached), a recording `PLANE` binding
  * and the global `fetch` replaced by a scripted model API (agent-model's API-key path). Nothing here reads the member's
  * source text. */
 import worker from "../src/index.mjs";
 import { MODEL_FOR_MODE } from "../../agent-model/src/model.mjs";
 import { TRANSLATION_DRAFT_MAX_WORDS } from "../../bio-plane/src/run-rules/index.mjs";
 import { MEMBER } from "./account.mjs";
-import { remoteBindings } from "./remote.mjs";
+import { machineWork, MACHINE_WORK } from "./label.mjs";
 
 let pass = 0, fail = 0;
 const t = (label, got, want) => {
@@ -18,36 +18,22 @@ const t = (label, got, want) => {
 };
 const section = (s) => console.log(`\n--- ${s} ---`);
 
-/* ------------------------------------------------------------------------------------------------- the runner */
+/* ------------------------------------------------------------------------------------------------- /signin, no runner */
 
+/* F2 (coordinator ruling 5 Nov 2026; agent-runner R13, K5576): `agent-runner`'s remote session is gone and this member
+   binds no runner, so `/signin` answers 503 RUNNER_NOT_CONFIGURED to every request, before its body is read. The R66,
+   R67 and R81–R85 tests that drove a stub runner over agent-runner's wire are retired with it; the relay returns as the
+   adapter's connect flow (R66 as T53 amends it). */
 const CODE = "ANTHROPIC-PAGE-CODE-SENTINEL-41c9#state-77";
-const ADDRESS = "https://claude.ai/oauth/authorize?code=true&state=SIGNIN-ADDRESS-SENTINEL";
-const ROUTES = { start: "/signin", code: "/signin/code", state: "/signin/state", signout: "/signout" };
+const STEPS = ["start", "code", "state", "signout"];
 
-/** A recording `RUNNER` namespace. `answer(path, body, instance)` gives the instance's `Response`, or throws. */
-function runner(answer) {
-  const calls = [], named = [];
-  const binding = {
-    idFromName: (name) => { named.push(name); return { name }; },
-    newUniqueId: () => { named.push("<unique>"); return { name: "<unique>" }; },
-    get: (id) => ({
-      fetch: async (url, init = {}) => {
-        const u = new URL(String(url));
-        calls.push({ instance: id.name, path: u.pathname, search: u.search, method: init.method ?? "GET",
-                     headers: init.headers ?? {}, body: init.body ?? null });
-        return answer(u.pathname, JSON.parse(init.body ?? "null"), id.name);
-      },
-    }),
-  };
-  return { calls, named, binding };
+/** A recording namespace whose every use throws: bound as `REMOTE` and `RUNNER`, it shows that nothing is reached. */
+function runner() {
+  const calls = [];
+  const touch = (what) => { calls.push(what); throw new Error(`runner binding touched: ${what}`); };
+  return { calls, binding: { idFromName: () => touch("idFromName"), newUniqueId: () => touch("newUniqueId"), get: () => touch("get"),
+                             fetch: () => touch("fetch") } };
 }
-/** agent-runner R17–R20's answers, as an instance would give them. */
-const honest = (path, body) => {
-  if (path === "/signin") return Response.json({ ok: true, address: ADDRESS });
-  if (path === "/signin/code") return Response.json({ ok: true, connected: true, member: body.member });
-  if (path === "/signin/state") return Response.json({ ok: true, connected: false, member: body.member });
-  return Response.json({ ok: true, connected: false, member: body.member });
-};
 
 /** A recording `PLANE` binding: nothing it answers is used. */
 function planeStub() {
@@ -65,107 +51,39 @@ async function watched(fn, modelFetch = null) {
   finally { for (const k of ["log", "info", "warn", "error", "debug"]) console[k] = saved[k]; globalThis.fetch = saved.fetch; }
 }
 
-async function signin(body, { env = {}, answer = honest, noRunner = false, method = "POST", path = "signin" } = {}) {
-  const r = runner(answer), p = planeStub();
-  const keys = new Set();
-  const base = { VERSION: "t37", PLANE: p.binding, ...(noRunner ? {} : { ...remoteBindings(r.binding) }), ...env };
-  const envProxy = new Proxy(base, { get: (o, k) => { keys.add(String(k)); return o[k]; } });
+async function signin(body, { method = "POST", path = "signin" } = {}) {
+  const r = runner(), p = planeStub();
+  const env = { VERSION: "t37", PLANE: p.binding, REMOTE: r.binding };
   const w = await watched(async () => {
     const res = await worker.fetch(new Request(`http://agent-worker/${path}`, { method,
-      ...(method === "GET" ? {} : { body: typeof body === "string" ? body : JSON.stringify(body) }) }), envProxy);
+      ...(method === "GET" ? {} : { body: typeof body === "string" ? body : JSON.stringify(body) }) }), env);
     const text = await res.text();
     let out = null; try { out = JSON.parse(text); } catch { out = null; }
-    return { status: res.status, text, out, type: res.headers.get("content-type") };
+    return { status: res.status, text, out };
   });
-  return { ...w.result, runner: r.calls, named: r.named, plane: p.calls, lines: w.lines, fetched: w.fetched, keys: [...keys] };
+  return { ...w.result, runner: r.calls, plane: p.calls, lines: w.lines, fetched: w.fetched };
 }
 const codeOf = (r) => [r.status, r.out?.code];
-/* R84 (T47): every /signin answer carries `trace`; this is the answer without it. */
-const bare = (o) => { if (o === null || typeof o !== "object") return o; const { trace: _t, ...rest } = o; return rest; };
 
-section("R66 · POST /signin: refusals before any runner call, in order");
+section("F2 · POST /signin: no runner is bound, so every step answers RUNNER_NOT_CONFIGURED and nothing is reached");
 {
-  const r = await signin({ member: MEMBER, step: "start" }, { noRunner: true });
-  t("R66: no RUNNER binding: 503 RUNNER_NOT_CONFIGURED, nothing sent", [codeOf(r), r.runner.length], [[503, "RUNNER_NOT_CONFIGURED"], 0]);
-  const half = await signin({ member: MEMBER, step: "start" }, { env: { REMOTE: { fetch: async () => Response.json({}) } } });
-  t("R66: a RUNNER that names no instance (no idFromName/get): 503 RUNNER_NOT_CONFIGURED", codeOf(half), [503, "RUNNER_NOT_CONFIGURED"]);
-  const first = await signin("not json", { noRunner: true });
-  t("R66: RUNNER_NOT_CONFIGURED comes before the body is judged", codeOf(first), [503, "RUNNER_NOT_CONFIGURED"]);
+  const drives = [];
+  for (const step of STEPS) {
+    const r = await signin({ member: MEMBER, step, code: CODE });
+    drives.push(r);
+    t(`F2: step ${step}: 503 RUNNER_NOT_CONFIGURED carrying trace and a detail in words`,
+      [codeOf(r), typeof r.out?.trace, typeof r.out?.detail === "string" && r.out.detail.length > 0], [[503, "RUNNER_NOT_CONFIGURED"], "string", true]);
+    t(`F2: step ${step}: neither REMOTE nor RUNNER is touched, no plane call, no fetch`, [r.runner, r.plane.length, r.fetched], [[], 0, []]);
+  }
   const bad = await signin("{not json");
-  t("R66 (as R2): a body not JSON: 400 BAD_BODY, nothing sent", [codeOf(bad), bad.runner.length], [[400, "BAD_BODY"], 0]);
-  const arr = await signin("[]");
-  t("R66 (as R2): a JSON body that is not an object: 400 BAD_BODY", codeOf(arr), [400, "BAD_BODY"]);
-  for (const [label, member] of [["absent", undefined], ["empty", ""], ["blank", "   "], ["201 characters", "m".repeat(201)],
-                                 ["a number", 7], ["an object", { id: MEMBER }], ["null", null]]) {
-    const x = await signin({ member, step: "start" });
-    t(`R66: member ${label}: 400 BAD_MEMBER, nothing sent`, [codeOf(x), x.runner.length], [[400, "BAD_MEMBER"], 0]);
-  }
-  const both = await signin({ step: "nope" });
-  t("R66: BAD_MEMBER is judged before BAD_STEP", codeOf(both), [400, "BAD_MEMBER"]);
-  const max = await signin({ member: "m".repeat(200), step: "state" });
-  t("R66: a member of exactly 200 characters is sent", [max.status, max.runner.length], [200, 1]);
-  for (const step of [undefined, "", "START", "login", "signin", "toString", "__proto__", 1]) {
-    const x = await signin({ member: MEMBER, step });
-    t(`R66: step ${JSON.stringify(step)}: 400 BAD_STEP, nothing sent`, [codeOf(x), x.runner.length], [[400, "BAD_STEP"], 0]);
-  }
-  for (const [label, code] of [["absent", undefined], ["empty", ""], ["a number", 123456], ["null", null], ["a list", [CODE]]]) {
-    const x = await signin({ member: MEMBER, step: "code", code });
-    t(`R66: the code step with code ${label}: 400 BAD_CODE, nothing sent`, [codeOf(x), x.runner.length], [[400, "BAD_CODE"], 0]);
-  }
-}
-
-section("R66 · each step sent to the member's own instance, the runner's answer unchanged");
-{
-  for (const step of Object.keys(ROUTES)) {
-    const body = step === "code" ? { member: MEMBER, step, code: CODE } : { member: MEMBER, step };
-    const r = await signin(body);
-    t(`R66: step ${step} goes to agent-runner's ${ROUTES[step]}, POST, once, on the instance named by member and no other`,
-      [r.runner.map((c) => [c.instance, c.path, c.search, c.method]), r.named],
-      [[[MEMBER, ROUTES[step], "", "POST"]], [MEMBER]]);
-    t(`R66: step ${step}'s request body is ${step === "code" ? "{member, code}" : "{member}"}, nothing else`,
-      JSON.parse(r.runner[0]?.body ?? "null"), step === "code" ? { member: MEMBER, code: CODE } : { member: MEMBER });
-    t(`R66, R84: step ${step} answers the runner's answer (200), unchanged but for trace`, [r.status, bare(r.out)],
-      [200, JSON.parse(await honest(ROUTES[step], { member: MEMBER }).text())]);
-  }
-  const other = await signin({ member: "MEMBER-OTHER", step: "state" });
-  t("R66: another member's step goes to that member's instance", other.runner.map((c) => c.instance), ["MEMBER-OTHER"]);
-
-  /* Refusals and odd bodies from the runner pass through byte for byte, status and body (R43). */
-  const raw = `{"ok":false,"reason":"NOT_THIS_MEMBER","code":"NOT_THIS_MEMBER","detail":"another member's sign-in is held here",  "extra":[1,2]}`;
-  const refused = await signin({ member: MEMBER, step: "start" }, { answer: () => new Response(raw, { status: 409 }) });
-  t("R66, R43, R84: a runner refusal (409 NOT_THIS_MEMBER) is answered unchanged, status and body, its keys in order, but for trace",
-    [refused.status, JSON.stringify(bare(refused.out)), typeof refused.out?.trace], [409, JSON.stringify(JSON.parse(raw)), "string"]);
-  for (const [status, body] of [[409, { ok: false, reason: "NO_SIGNIN_WAITING", code: "NO_SIGNIN_WAITING" }],
-                                [409, { ok: false, reason: "SIGNIN_REFUSED", code: "SIGNIN_REFUSED", detail: "the code was not accepted" }],
-                                [502, { ok: false, reason: "SIGNIN_UNAVAILABLE", code: "SIGNIN_UNAVAILABLE", detail: "no address in 30 s" }],
-                                [502, { ok: false, reason: "SIGNIN_ADDRESS_UNEXPECTED", code: "SIGNIN_ADDRESS_UNEXPECTED" }],
-                                [400, { ok: false, reason: "BAD_CODE", code: "BAD_CODE" }]]) {
-    const x = await signin({ member: MEMBER, step: "code", code: CODE }, { answer: () => Response.json(body, { status }) });
-    t(`R66, R43, R84: the runner's ${status} ${body.code} is answered unchanged but for trace`, [x.status, bare(x.out)], [status, body]);
-  }
-  const scalar = await signin({ member: MEMBER, step: "state" }, { answer: () => new Response("null", { status: 200 }) });
-  t("R84 (T47): a JSON answer that is not an object cannot carry trace, so it is not relayed: 502 RUNNER_SILENT with the runner's status and head",
-    [codeOf(scalar), scalar.out?.runner_status, scalar.out?.runner_text_head], [[502, "RUNNER_SILENT"], 200, "null"]);
-
-  const threw = await signin({ member: MEMBER, step: "start" }, { answer: () => { throw new Error("container is starting"); } });
-  t("R66, R84: a runner that throws: 502 RUNNER_SILENT with the member's words in detail and the binding's own beside them",
-    [codeOf(threw), typeof threw.out?.detail, /container is starting/.test(threw.out?.detail_from_binding)],
-    [[502, "RUNNER_SILENT"], "string", true]);
-  const html = await signin({ member: MEMBER, step: "state" }, { answer: () => new Response("<html>bad gateway</html>", { status: 502 }) });
-  t("R66: a runner that answers no JSON: 502 RUNNER_SILENT with detail", [codeOf(html), typeof html.out?.detail], [[502, "RUNNER_SILENT"], "string"]);
-  const empty = await signin({ member: MEMBER, step: "signout" }, { answer: () => new Response("", { status: 200 }) });
-  t("R66: an empty runner answer: 502 RUNNER_SILENT", codeOf(empty), [502, "RUNNER_SILENT"]);
-}
-
-section("R66, R35 · no plane call, no PLANE binding needed, only the REMOTE binding read");
-{
-  const all = [];
-  for (const step of Object.keys(ROUTES)) all.push(await signin({ member: MEMBER, step, code: step === "code" ? CODE : undefined }));
-  t("R66: no step makes a plane call", all.map((r) => r.plane.length), [0, 0, 0, 0]);
-  t("R66, R35: no step makes a fetch of its own (the model's, the web's, or any other)", all.flatMap((r) => r.fetched), []);
-  const noPlane = await signin({ member: MEMBER, step: "start" }, { env: { PLANE: undefined } });
-  t("R66: with no PLANE binding a step is still sent and answered", [noPlane.status, noPlane.runner.length], [200, 1]);
-  t("R35, R109: the only binding /signin reads from env is REMOTE", [...new Set(all.flatMap((r) => r.keys))].sort(), ["REMOTE"]);
+  drives.push(bad);
+  t("F2: a body not JSON: 503 RUNNER_NOT_CONFIGURED (judged before the body), nothing touched",
+    [codeOf(bad), typeof bad.out?.trace, bad.runner, bad.plane.length], [[503, "RUNNER_NOT_CONFIGURED"], "string", [], 0]);
+  t("F2, R67: the code is in no answer and no log line", [drives.filter((d) => d.text.includes(CODE)).length,
+    drives.flatMap((d) => d.lines).filter((l) => l.includes(CODE)).length], [0, 0]);
+  t("F2, R83: each request writes one signin.worker line, outcome failed, code RUNNER_NOT_CONFIGURED",
+    drives.map((d) => d.lines.map((l) => { try { const j = JSON.parse(l); return [j.event, j.outcome, j.code]; } catch { return null; } })),
+    drives.map(() => [["signin.worker", "failed", "RUNNER_NOT_CONFIGURED"]]));
 }
 
 section("R31 · the route's neighbours");
@@ -174,47 +92,10 @@ section("R31 · the route's neighbours");
   t("R31: GET /signin: 404 UNKNOWN, nothing sent", [codeOf(get), get.runner.length], [[404, "UNKNOWN"], 0]);
   for (const path of ["signin/code", "signin/state", "signout", "Signin"]) {
     const x = await signin({ member: MEMBER, step: "start" }, { path });
-    t(`R31: POST /${path}: 404 UNKNOWN (the runner's own routes are not this member's), nothing sent`,
-      [codeOf(x), x.runner.length], [[404, "UNKNOWN"], 0]);
+    t(`R31: POST /${path}: 404 UNKNOWN, nothing sent`, [codeOf(x), x.runner.length], [[404, "UNKNOWN"], 0]);
   }
   const unk = await signin(null, { method: "GET", path: "nowhere" });
   t("R31: the UNKNOWN refusal names POST /signin among the routes", /POST \/signin/.test(unk.out?.detail ?? ""), true);
-}
-
-section("R67, R36 · the code from Anthropic's page reaches that one request's body and nothing else");
-{
-  /* Every step with the sentinel in the body: only the code step sends it, and only in its body. */
-  const drives = [];
-  for (const step of Object.keys(ROUTES)) drives.push(await signin({ member: MEMBER, step, code: CODE }));
-  const bodiesWith = drives.flatMap((d) => d.runner).filter((c) => String(c.body).includes(CODE));
-  t("R67: across all four steps sent with the code, it is in exactly one request: the code step's, to the member's own instance",
-    bodiesWith.map((c) => [c.instance, c.path]), [[MEMBER, "/signin/code"]]);
-  t("R67: never in a request's address or headers",
-    drives.flatMap((d) => d.runner).filter((c) => (c.path + c.search + JSON.stringify(c.headers)).includes(CODE)).length, 0);
-  t("R67, R36: never in an answer", drives.filter((d) => d.text.includes(CODE)).length, 0);
-  t("R67, R36: never in a log line", drives.flatMap((d) => d.lines).filter((l) => l.includes(CODE)).length, 0);
-  t("R67: never sent to the plane or anywhere else", drives.flatMap((d) => [...d.plane, ...d.fetched]).filter((u) => u.includes(CODE)).length, 0);
-
-  /* Refusals carrying the code in the body echo none of it. */
-  const refusals = [await signin({ member: "", step: "code", code: CODE }), await signin({ member: MEMBER, step: "bad", code: CODE }),
-                    await signin({ member: MEMBER, step: "code", code: CODE }, { noRunner: true }),
-                    await signin(`{"member":"${MEMBER}","step":"code","code":"${CODE}"`)];
-  t("R67: a refused request carrying the code echoes none of it, and sends nothing",
-    [refusals.map(codeOf), refusals.filter((r) => r.text.includes(CODE)).length, refusals.flatMap((r) => r.runner).length],
-    [[[400, "BAD_MEMBER"], [400, "BAD_STEP"], [503, "RUNNER_NOT_CONFIGURED"], [400, "BAD_BODY"]], 0, 0]);
-  /* A binding whose error names the code: the relay's own detail carries none of it. */
-  const leaky = await signin({ member: MEMBER, step: "code", code: CODE },
-    { answer: (p, b) => { throw new Error(`write failed for body ${JSON.stringify(b)}`); } });
-  t("R67: a runner error that quotes the code reaches the answer without it", [codeOf(leaky), leaky.text.includes(CODE)],
-    [[502, "RUNNER_SILENT"], false]);
-
-  /* The sign-in address reaches no answer but the start answer that carries it. */
-  t("R67: the sign-in address is in the start answer, unchanged", bare(drives[0].out), { ok: true, address: ADDRESS });
-  t("R67: the sign-in address is in no other step's answer", drives.slice(1).filter((d) => d.text.includes("SIGNIN-ADDRESS-SENTINEL")).length, 0);
-  t("R67: every step went to the instance named by its member", drives.flatMap((d) => d.named), [MEMBER, MEMBER, MEMBER, MEMBER]);
-  /* Nothing is kept between calls: a state step after a code step sends no code and answers none. */
-  const after = await signin({ member: MEMBER, step: "state" });
-  t("R36: nothing is kept between calls (a later step carries no code)", [String(after.runner[0]?.body).includes(CODE), after.text.includes(CODE)], [false, false]);
 }
 
 /* ------------------------------------------------------------------------------------------------- the translation draft */
@@ -280,11 +161,11 @@ function defaultAnswer(body) {
 }
 
 async function draft(body, { model = {}, noPlane = false, env = {} } = {}) {
-  const p = planeStub(), m = modelApi(model), r = runner(honest);
+  const p = planeStub(), m = modelApi(model), r = runner();
   const w = await watched(async () => {
     const res = await worker.fetch(new Request("http://agent-worker/draft", { method: "POST",
       body: typeof body === "string" ? body : JSON.stringify(body) }),
-      { VERSION: "t37", ...(noPlane ? {} : { PLANE: p.binding }), ...remoteBindings(r.binding), ...env });
+      { VERSION: "t37", ...(noPlane ? {} : { PLANE: p.binding }), REMOTE: r.binding, ...env });
     const text = await res.text();
     let out = null; try { out = JSON.parse(text); } catch { out = null; }
     return { status: res.status, text, out };
@@ -402,12 +283,12 @@ section("R70 · the answer");
   t("R70: draft.words holds one entry per asked key drafted, in the asked order; a key not asked is never answered",
     r.out?.draft, { words: [{ key: "screen.word0", text: "cero" }, { key: "screen.word2", text: "dos" }] });
   t("R70: each asked key not drafted is listed in not_drafted", r.out?.not_drafted, ["screen.word1", "screen.word3"]);
-  t("R70: labelled machine work; usage and calls as agent-model answers them",
-    [r.out?.label, r.out?.usage?.input_tokens, r.out?.calls], [{ kind: "machine" }, 3, 1]);
+  t("R70, F4: labelled machine work {kind: machine, ai}; usage and calls as agent-model answers them",
+    [machineWork(r.out?.label), r.out?.usage?.input_tokens, r.out?.calls], [MACHINE_WORK, 3, 1]);
   t("R70: the task is answered as asked", r.out?.task, { ...TO_LANGUAGE(), words: asked });
   const e = await draft(tdBody({ task: TO_ENGLISH }));
   t("R70: to_english answers draft {key, english} and no not_drafted",
-    [e.status, e.out?.draft, "not_drafted" in (e.out ?? {}), e.out?.label], [200, { key: KEPT.key, english: "To claim" }, false, { kind: "machine" }]);
+    [e.status, e.out?.draft, "not_drafted" in (e.out ?? {}), machineWork(e.out?.label)], [200, { key: KEPT.key, english: "To claim" }, false, MACHINE_WORK]);
   const all = [r, e, await draft(tdBody({ task: TO_LANGUAGE(100) }))];
   t("R70: no plane call at all, and nothing sent to a runner", all.map((x) => [x.plane.length, x.runner.length]), [[0, 0], [0, 0], [0, 0]]);
   t("R70, R36: no secret in any answer or log line", all.filter((x) => x.text.includes(SECRET) || x.lines.some((l) => l.includes(SECRET))).length, 0);

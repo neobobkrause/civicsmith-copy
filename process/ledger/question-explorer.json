@@ -50,6 +50,6 @@
   "prior_work": "Provider notice run-rules:72, judged affected by a read-only triage: bio-plane/src/question-explorer/index.mjs:283 calls this.aiRuns.partAdmitted(part), the run-rules R19/R29 gate (per-AI Gate 1 check, untested label), through ai-runs. run-rules PR 72 added a per-AI Gate 1 check on the deploy gate (R19/R29), a PART_WITHDRAWN refusal (R37) and the named AI_PART_NOT_DEPLOYED refusal (R30). Decide, from your own requirements, what this module must do: adapt or confirm, and add a test of a part withdrawn or not admitted that asserts what your requirements say, failing with the change reverted; if they decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T12:02:37Z"
+    "at": "2026-11-05T16:18:38Z"
   }
 }

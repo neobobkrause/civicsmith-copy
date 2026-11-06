@@ -1,6 +1,13 @@
 #!/usr/bin/env node
-/* bundles.mjs — REBUILD EVERY COMMITTED BUNDLE A SOURCE EDIT HAS STALED, AND SAY
+/* bundles.mjs — BUILD EVERY BUNDLE A SOURCE EDIT HAS STALED (OR NEVER BUILT), AND SAY
  * WHICH ONES IT REBUILT.
+ *
+ * DIST PASS (BOB, 6 Nov 2026): nothing under `<member>/dist/` is committed any more. The
+ * bundles are built at test, deploy and release, by this command; a fresh checkout has no
+ * manifest, so every bundle reads as missing and is built. `--check` no longer surveys
+ * committed files: it builds every bundle into a temp dir, checks it (R6) and builds it a
+ * second time to compare (the build is reproducible), and writes nothing in the tree.
+ * The history below is why the rebuild is shaped as it is.
  *
  * M0-178, 2026-09-24. **The measured failure this closes:** `kickoffs/WORKER.md`
  * step 0 told a worker who touched `bio-plane/src/` to run `npm run build` in
@@ -71,7 +78,8 @@
  *
  * From the repository root (bundler R21; moved from the old process's `tools/` in T19):
  *   node bio-plane/scripts/bundles.mjs              rebuild every stale bundle, say which
- *   node bio-plane/scripts/bundles.mjs --check      report only; write nothing; 0 all fresh, 1 stale
+ *   node bio-plane/scripts/bundles.mjs --check      build each bundle into a temp dir and check it (R6) and that a
+ *                    second build is byte-identical; write nothing in the tree; 0 all build and reproduce, 1 otherwise
  *   node bio-plane/scripts/bundles.mjs --install-dirs
  *                    print, one per line, each directory whose `npm ci` the byte guard needs, the plane's first
  *                    (run after the plane's own `npm ci`): the release-sign workflow's install list (R30, R22)
@@ -90,7 +98,8 @@
  * assembly (`release-assemble.mjs`) then refuses `[CONTAINER_IMAGE_STALE]` for any class still outrun.
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -163,6 +172,39 @@ export function rebuildMember(member, { log = console.log } = {}) {
   return { status: r.status, error: r.error ? r.error.message : null, out };
 }
 
+/** R21's `--check`: every guarded bundle built into a temp dir (never its own `dist/`, which is not committed),
+ *  checked by R6 (`verifyStatic`) and built a second time to compare (`verifyFresh`: the build reproduces, and the
+ *  output imports nothing a one-part upload cannot resolve). Writes nothing in the tree. 0 when every bundle builds
+ *  and reproduces, 1 otherwise, each finding named. */
+export async function checkBuilt(members, { log = console.log } = {}) {
+  const lib = await library();
+  const tmp = mkdtempSync(join(tmpdir(), "bundles-check-"));
+  const bad = [];
+  try {
+    for (const m of members) {
+      const findings = [];
+      if (!m.bundle) findings.push(`${m.name}: declares no \`bundle\` block in fleet-member.json, so there is no artifact to build.`);
+      else {
+        const t = lib.inDir(m, join(tmp, m.name));
+        let built = null;
+        try { ({ built } = await lib.writeMember(t)); }
+        catch (e) { findings.push(`${m.name}: its bundle does not build: ${String(e.message).split("\n").slice(0, 2).join(" ")}`); }
+        if (built) {
+          findings.push(...lib.verifyStatic(t).findings);
+          const again = await lib.verifyFresh(t, built.bytes);
+          if (!again.checked) findings.push(again.reason);
+          else findings.push(...again.findings);
+        }
+      }
+      for (const f of findings) log(`         ! ${f}`);
+      if (findings.length) bad.push(m.name);
+    }
+  } finally { rmSync(tmp, { recursive: true, force: true }); }
+  if (!bad.length) { log(`bundles: --check, every guarded bundle builds and reproduces (built in a temp dir; nothing written here).`); return 0; }
+  log(`bundles: ${bad.length} of ${members.length} bundle(s) do not build reproducibly — ${bad.join(", ")}`);
+  return 1;
+}
+
 export async function run({ repoRoot = null, check = false, plane = true, log = console.log } = {}) {
   const members = await guardedBundles(repoRoot, { plane });
   log(`bundles: ${members.length} guarded bundle(s) — ${members.map((m) => m.name).join(", ")}`);
@@ -170,6 +212,7 @@ export async function run({ repoRoot = null, check = false, plane = true, log = 
   if (listed.length)
     log(`bundles: ${listed.length} container member(s) listed, not bundle-guarded (no Worker bundle) — `
       + listed.map((m) => m.name).join(", "));
+  if (check) return checkBuilt(members, { log });
 
   const before = await survey(members);
   for (const r of before) for (const f of r.findings) log(`         ! ${f}`);
@@ -180,10 +223,6 @@ export async function run({ repoRoot = null, check = false, plane = true, log = 
     return 0;
   }
   log(`bundles: ${stale.length} of ${members.length} bundle(s) are STALE — ${stale.map((r) => r.name).join(", ")}`);
-  if (check) {
-    log(`bundles: --check, so nothing was rebuilt. Run \`node bio-plane/scripts/bundles.mjs\` to rebuild them.`);
-    return 1;
-  }
 
   /* Rebuild, and MEASURE the rebuild: a build command that exits 0 having
      changed nothing has not rebuilt anything, and saying otherwise is the

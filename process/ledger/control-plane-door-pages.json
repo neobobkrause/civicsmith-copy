@@ -1,0 +1,36 @@
+{
+  "id": "control-plane-door-pages",
+  "title": "control-plane-door-pages: split by copy from control-plane (R75, R81, R82, R95, R99, R104, R109, R116, R122, R127, R126)",
+  "layer": 11,
+  "paths": [
+    "build/requirements/control-plane-door-pages.md",
+    "docs/requirements-notes/control-plane-door-pages.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/control-plane-door-pages/"
+  ],
+  "requirements": "build/requirements/control-plane-door-pages.md",
+  "uses": [
+    "control-plane",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/control-plane-door-pages.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T11:21:07Z"
+  }
+}

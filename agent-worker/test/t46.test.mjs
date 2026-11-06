@@ -1,9 +1,9 @@
-/* agent-worker — T46 (T46-19): R6 (a sign-in's own `suggestions` switch), R30 (`/version`'s `runner`), R51 (the closing
+/* agent-worker — T46 (T46-19): R6 (an account's own `suggestions` switch), R30 (`/version`), R51 (the closing
  * notes of a project's closed plans among a planning run's inputs), R76's fourth task (`statusreportdraft`), R80 (a run
  * a member opened on her own sign-in, dispatched as `ai-runs` R18 sends it), AT THE MEMBER'S INTERFACE: the default
  * export `fetch(request, env)`, driven in this process with a recording plane binding, the global `fetch` replaced by a
- * scripted model API (agent-model's API-key path) and a fake `RUNNER` namespace (its sign-in path) recording every
- * instance it is asked to name and every conversation sent. Nothing here reads the member's source text.
+ * scripted model API (agent-model's API-key path). No runner is bound (F2): a sign-in's model turns are refused before
+ * any model call or plane write. Nothing here reads the member's source text.
  *
  * Every arm that admits has its refusing counterpart beside it (K874).
  */
@@ -11,7 +11,7 @@ import worker from "../src/index.mjs";
 import { MODES } from "../../agent-harness/src/harness.mjs";
 import { MEMBER } from "./account.mjs";
 import { untestedLabel } from "../../bio-plane/src/run-rules/index.mjs";
-import { remoteBindings } from "./remote.mjs";
+import { machineWork, MACHINE_WORK } from "./label.mjs";
 import { word, localize } from "../../bio-plane/src/setup-words/index.mjs";
 
 let pass = 0, fail = 0;
@@ -146,43 +146,25 @@ function model() {
   return { calls, fn };
 }
 
-/* The Container namespace `RUNNER` (agent-runner's wire): each instance named, each conversation's opening recorded. */
-function runner() {
-  const conversations = [], named = [];
-  const connect = async () => {
-    const on = {};
-    const emit = (m) => setTimeout(() => (on.message || []).forEach((f) => f({ data: JSON.stringify(m) })), 0);
-    const ws = {
-      accept() {}, close() {}, addEventListener(type, fn) { (on[type] ||= []).push(fn); },
-      send(text) {
-        const m = JSON.parse(text);
-        if (m.tool_result) return emit({ ok: true, result: "", stop_reason: "end_turn", usage: { input_tokens: 2, output_tokens: 1 }, num_turns: 1 });
-        conversations.push(m);
-        const [name, input] = answerFor((m.tools || []).map((x) => x.name), m.prompt, "", m.tools || []);
-        emit({ tool_use: { id: `t${conversations.length}`, name, input } });
-      } };
-    return { status: 101, webSocket: ws };
-  };
-  return { conversations, named, idFromName: (name) => { named.push(name); return { name }; },
-           newUniqueId: () => { named.push("<unique>"); return { name: "<unique>" }; }, get: () => ({ fetch: connect }) };
-}
-
-async function drive(path, body, { planeCfg = {}, method = "POST", noRunner = false } = {}) {
-  const p = plane(planeCfg), m = model(), r = runner();
+async function drive(path, body, { planeCfg = {}, method = "POST" } = {}) {
+  const p = plane(planeCfg), m = model();
   const saved = globalThis.fetch;
   globalThis.fetch = m.fn;
   try {
     const res = await worker.fetch(new Request(`http://agent-worker/${path}`,
       method === "GET" ? { method } : { method, body: typeof body === "string" ? body : JSON.stringify(body) }),
-      { VERSION: "t46", PLANE: p.binding, ...(noRunner ? {} : { ...remoteBindings(r) }) });
+      { VERSION: "t46", PLANE: p.binding });
     const text = await res.text();
     const lines = res.headers.get("content-type") === "application/x-ndjson"
       ? text.trim().split("\n").map((l) => JSON.parse(l)) : null;
     let out = null; if (!lines) try { out = JSON.parse(text); } catch { out = null; }
-    return { status: res.status, text, lines, out, plane: p.calls, S: p.S, model: m.calls, runner: r };
+    return { status: res.status, text, lines, out, plane: p.calls, S: p.S, model: m.calls };
   } finally { globalThis.fetch = saved; }
 }
 const last = (r) => (r.lines ? r.lines[r.lines.length - 1] : null);
+/* F2: a sign-in's model path is refused before any model call or plane write (a run reads only `whoami` first, R8). */
+const signinRefused = (r) => [r.status, r.out?.code, r.out?.why, r.model.length, r.plane.map((c) => c.op).filter((op) => op !== "whoami")];
+const SIGNIN_REFUSED = [503, "ASSISTANT_REMOTE_NOT_READY", "absent", 0, []];
 const layersOffered = (conv) => conv?.tools?.find((x) => x.name === "load_layer")?.input_schema?.properties?.name?.enum ?? null;
 const toolResultText = (req) => (req.body.messages || []).flatMap((m) => (Array.isArray(m.content) ? m.content : []))
   .filter((b) => b.type === "tool_result").map((b) => textOf(b.content)).join("\n");
@@ -194,26 +176,24 @@ async function withPlanDeployed(fn) {
 
 /* ================================================================================================ R6 */
 
-section("R6 (T46) · a sign-in carries its own suggestions switch, honoured as a reference's is (R56)");
+section("R6 (T46) · an account's own suggestions switch is honoured (R56); a sign-in reaches no model (F2)");
 {
-  const on = await drive("ask", { question: "Who held the seat?", grant: GRANT, account: SIGNIN(MEMBER, true) });
-  t("R6: a signin account with suggestions true is served (the ask answers)", [on.status, last(on)?.event, last(on)?.ok], [200, "answer", true]);
-  t("R6: its conversations ran on the member's own runner instance, and no API key was used",
-    [on.runner.named.every((n) => n === MEMBER), on.runner.conversations.length > 0, on.model.length], [true, true, 0]);
-  t("R6, R56: with the sign-in's switch on, the suggestions layer is loadable",
-    on.runner.conversations.every((c) => (layersOffered(c) || []).includes("suggestions")), true);
-  const off = await drive("ask", { question: "Who held the seat?", grant: GRANT, account: SIGNIN(MEMBER, false) });
+  const on = await drive("ask", { question: "Who held the seat?", grant: GRANT, account: { ...KEY, suggestions: true } });
+  t("R6, R56: an account with suggestions true is served (the ask answers), the suggestions layer loadable",
+    [on.status, last(on)?.event, on.model.length > 0, on.model.every((c) => (layersOffered(c.body) || []).includes("suggestions"))],
+    [200, "answer", true, true]);
+  const off = await drive("ask", { question: "Who held the seat?", grant: GRANT, account: { ...KEY, suggestions: false } });
   t("R6, R56 (control): with the switch off the ask is served and the suggestions layer is not loadable",
-    [off.status, last(off)?.event, off.runner.conversations.some((c) => (layersOffered(c) || []).includes("suggestions"))],
-    [200, "answer", false]);
+    [off.status, last(off)?.event, off.model.some((c) => (layersOffered(c.body) || []).includes("suggestions"))], [200, "answer", false]);
+  const signin = await drive("ask", { question: "Who held the seat?", grant: GRANT, account: SIGNIN(MEMBER, true) });
+  t("R6, F2: an ask on a sign-in with suggestions true is taken as an account, then refused ASSISTANT_REMOTE_NOT_READY (absent), no model call and no plane call",
+    signinRefused(signin), SIGNIN_REFUSED);
   const run = await drive("run", { run_id: "RUN-46", store: "scratch", credential: AIK, account: SIGNIN(MEMBER, true) });
-  t("R6: a run on a sign-in with suggestions true is served too, its suggestions layer loadable",
-    [run.status, run.out?.claude_account?.kind, run.runner.conversations.some((c) => (layersOffered(c) || []).includes("suggestions"))],
-    [200, "signin", true]);
+  t("R6, F2: a run's model turns on a sign-in with suggestions true are refused the same way, no plane write", signinRefused(run), SIGNIN_REFUSED);
   const secret = await drive("ask", { question: "Who held the seat?", grant: GRANT, account: { ...SIGNIN(MEMBER, true), secret: 42 } });
   t("R6, R82 (control): a sign-in whose secret is not a string is BAD_ACCOUNT, nothing called",
-    [secret.status, secret.out?.code, secret.plane.length, secret.runner.named.length], [400, "BAD_ACCOUNT", 0, 0]);
-  t("R6, R82: the answers above carry no held token", [on, off, run].some((x) => x.text.includes(SIGNIN_TOKEN)), false);
+    [secret.status, secret.out?.code, secret.plane.length, secret.model.length], [400, "BAD_ACCOUNT", 0, 0]);
+  t("R6, R82: the answers above carry no held token", [signin, run].some((x) => x.text.includes(SIGNIN_TOKEN)), false);
   const odd = await drive("run", { run_id: "RUN-46", store: "scratch", credential: AIK, account: { ...SIGNIN(), suggestions: "yes" } });
   t("R6 (control): a sign-in whose suggestions is not a boolean is BAD_ACCOUNT before any plane call",
     [odd.status, odd.out?.code, odd.plane.length], [400, "BAD_ACCOUNT", 0]);
@@ -221,25 +201,16 @@ section("R6 (T46) · a sign-in carries its own suggestions switch, honoured as a
 
 /* ================================================================================================ R30 */
 
-section("R30, R110 (T50) · GET /version says whether the remote class answers its own version");
+section("R30, F2 · GET /version names the member and its version, and no runner");
 {
-  const withRemote = await drive("version", null, { method: "GET" });
-  t("R30, R110: with REMOTE answering GET /remote/version, runner is true", [withRemote.status, withRemote.out?.runner], [200, true]);
-  t("R30: the answer is {ok, name, version, model_turns, runner}, naming nothing else of the binding",
-    Object.keys(withRemote.out || {}), ["ok", "name", "version", "model_turns", "runner"]);
-  const without = await drive("version", null, { method: "GET", noRunner: true });
-  t("R30, R110 (control): with no REMOTE binding, runner is false", [without.status, without.out?.runner], [200, false]);
-  const bare = await worker.fetch(new Request("http://agent-worker/version"), { REMOTE: { get() {} } });
-  t("R30 (control): a REMOTE that cannot name an instance is not the binding: runner is false", (await bare.json()).runner, false);
-  const silent = await worker.fetch(new Request("http://agent-worker/version"),
-    { REMOTE: { idFromName: (n) => n, get: () => ({ fetch: async () => { throw new Error("down"); } }) } });
-  t("R110: a REMOTE whose version answer throws: runner is false", (await silent.json()).runner, false);
-  const refused = await worker.fetch(new Request("http://agent-worker/version"),
-    { REMOTE: { idFromName: (n) => n, get: () => ({ fetch: async () => Response.json({ ok: false }, { status: 410 }) }) } });
-  t("R110: a REMOTE that answers the version with a refusal: runner is false", (await refused.json()).runner, false);
+  const v = await drive("version", null, { method: "GET" });
+  t("R30, F2: the answer is exactly {ok, name, version, model_turns}: no runner field, no binding read",
+    [v.status, Object.keys(v.out || {}), v.out?.name, v.out?.version], [200, ["ok", "name", "version", "model_turns"], "agent-worker", "t46"]);
   const stale = await worker.fetch(new Request("http://agent-worker/version"),
-    { RUNNER: { idFromName: (n) => n, get: () => ({ fetch: async () => Response.json({ ok: true, version: "v" }) }) } });
-  t("R109 (control): a RUNNER binding alone is not a runner: runner is false", (await stale.json()).runner, false);
+    { VERSION: "t46", RUNNER: { idFromName: (n) => n, get: () => ({ fetch: async () => Response.json({ ok: true, version: "v" }) }) },
+      REMOTE: { idFromName: (n) => n, get: () => ({ fetch: async () => Response.json({ ok: true, version: "v" }) }) } });
+  t("F2 (control): a RUNNER or REMOTE binding changes nothing in GET /version: the same answer, naming no runner",
+    Object.keys(await stale.json()), ["ok", "name", "version", "model_turns"]);
 }
 
 /* ================================================================================================ R51 */
@@ -279,8 +250,8 @@ section("R76 (T46) · POST /draft's fourth task: a plan's status report from the
   t("R76: answers 200 {ok, task, draft, label, usage, calls}", [r.status, Object.keys(r.out || {})],
     [200, ["ok", "task", "draft", "label", "usage", "calls"]]);
   t("R76: the task named is {op, plan}, the items not answered back", r.out?.task, { op: "statusreportdraft", plan: PLAN_ID });
-  t("R76: the draft is {text, sources}, sources among the handed items, labelled machine work",
-    [Object.keys(r.out?.draft || {}), r.out?.draft?.sources, r.out?.label], [["text", "sources"], [0, 1], { kind: "machine" }]);
+  t("R76, F4: the draft is {text, sources}, sources among the handed items, labelled machine work {kind: machine, ai}",
+    [Object.keys(r.out?.draft || {}), r.out?.draft?.sources, machineWork(r.out?.label)], [["text", "sources"], [0, 1], MACHINE_WORK]);
   t("R76: it reads nothing: no plane call, the pack the door sent", r.plane.length, 0);
   const sent = r.model[0]?.body;
   t("R76 (R61): the items reach the model only as the read_facts result; it is offered read_facts and draft only",
@@ -324,17 +295,16 @@ section("R80 (T46) · /run takes a run a member opened on her own sign-in, as ai
   /* ai-runs R18's dispatch body: her principal's `ai` credential and her own sign-in in R6's wire shape. */
   const dispatched = (account) => ({ run_id: "RUN-46", store: "scratch", credential: AIK, account });
   const r = await drive("run", dispatched(SIGNIN(MEMBER, true)), { planeCfg: { payer: MEMBER } });
-  t("R80: her run runs a segment (200, model turns run)", [r.status, r.out?.judgement_source, r.out?.turns_run > 0], [200, "model", true]);
-  t("R80: on her own stub runner instance, and no other", [r.runner.named.length > 0, [...new Set(r.runner.named)]], [true, [MEMBER]]);
-  t("R80, R82: every conversation carries her sign-in with its held token (agent-model R16)",
-    [...new Set(r.runner.conversations.map((c) => JSON.stringify(c.credential)))], [JSON.stringify({ kind: "signin", member: MEMBER, secret: SIGNIN_TOKEN })]);
+  t("F2: her run on her own sign-in is refused ASSISTANT_REMOTE_NOT_READY (absent) before any step: no runner is bound",
+    signinRefused(r), SIGNIN_REFUSED);
   t("R80 (R5): every plane call is made under the credential the dispatch carried, in the header",
     r.plane.every((c) => c.authorization === `Bearer ${AIK}`), true);
-  t("R80 (R29): the account is named hers, at the member level", r.out?.claude_account,
-    { available: true, kind: "signin", level: "member", member: MEMBER });
-  const other = await drive("run", dispatched(SIGNIN(SAM, true)), { planeCfg: { payer: MEMBER } });
-  t("R80 (control): the same run carrying another member's account is RUN_NAMES_A_DIFFERENT_PAYER, no step, no runner",
-    [other.status, other.out?.code, other.out?.recorded, other.out?.supplied, other.plane.map((c) => c.op), other.runner.named.length],
+  const stubbed = await drive("run", { ...dispatched(SIGNIN(MEMBER, true)), judgements: [] }, { planeCfg: { payer: MEMBER } });
+  t("R80 (R29): on the stubbed path (no model turn) the run is taken and the account named hers, at the member level",
+    [stubbed.status, stubbed.out?.claude_account], [200, { available: true, kind: "signin", level: "member", member: MEMBER }]);
+  const other = await drive("run", { ...dispatched(SIGNIN(SAM, true)), judgements: [] }, { planeCfg: { payer: MEMBER } });
+  t("R80 (control): the same run carrying another member's account (stubbed path) is RUN_NAMES_A_DIFFERENT_PAYER, no step",
+    [other.status, other.out?.code, other.out?.recorded, other.out?.supplied, other.plane.map((c) => c.op), other.model.length],
     [409, "RUN_NAMES_A_DIFFERENT_PAYER", MEMBER, SAM, ["whoami", "airun"], 0]);
   const shape = await drive("run", { ...dispatched(SIGNIN(MEMBER, true)), credential: "a".repeat(64) });
   t("R80 (R5, control): a credential not shaped as an ai credential is still refused before any plane call",
@@ -346,33 +316,7 @@ section("R80 (T46) · /run takes a run a member opened on her own sign-in, as ai
 /* A PNG as the transcriber sends it: the signature, then a sentinel standing for the picture's bytes. */
 const PICTURE = "PICTURE-BYTES-T46-SENTINEL";
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from(PICTURE.repeat(4))]).toString("base64");
-/* The member's own instance as agent-runner R24 and R5 answer it: `/version` names `image` when `capable`; each
-   conversation asks `read_page`, then answers `transcription` once the picture came back inside the tool's result. */
-function pictureRunner({ capable = true } = {}) {
-  const named = [], opened = [], results = [], versions = [];
-  const connect = async (url) => {
-    if (String(url).endsWith("/version")) {
-      versions.push(String(url));
-      return Response.json({ ok: true, name: "agent-runner", version: "t46", ...(capable ? { capabilities: ["image"] } : {}) });
-    }
-    const on = {};
-    const emit = (m) => setTimeout(() => (on.message || []).forEach((f) => f({ data: JSON.stringify(m) })), 0);
-    let answered = false;
-    const ws = { accept() {}, close() {}, addEventListener(type, fn) { (on[type] ||= []).push(fn); },
-      send(text) {
-        const m = JSON.parse(text);
-        if (!m.tool_result) { opened.push(m); return emit({ tool_use: { id: "p1", name: "read_page", input: {} } }); }
-        results.push(m.tool_result);
-        if (answered) return emit({ ok: true, result: "", stop_reason: "end_turn", usage: { input_tokens: 2, output_tokens: 1 }, num_turns: 2 });
-        const saw = Array.isArray(m.tool_result.content) && m.tool_result.content.some((b) => b.type === "image" && b.source?.data === PNG);
-        answered = true;
-        emit({ tool_use: { id: "p2", name: "transcription", input: { text: saw ? "the words on the page" : "" } } });
-      } };
-    return { status: 101, webSocket: ws };
-  };
-  return { named, opened, results, versions, idFromName: (n) => { named.push(n); return { n }; }, get: () => ({ fetch: connect }) };
-}
-async function transcribeOn(runner, account) {
+async function transcribeOn(account) {
   const p = plane();
   const saved = globalThis.fetch;
   let modelCalls = 0;
@@ -380,31 +324,21 @@ async function transcribeOn(runner, account) {
   try {
     const res = await worker.fetch(new Request("http://agent-worker/transcribe", { method: "POST",
       body: JSON.stringify({ capture_sha: "c".repeat(64), pages: [{ page: 0, media_type: "image/png", data: PNG }], account }) }),
-      { PLANE: p.binding, ...remoteBindings(runner) });
+      { PLANE: p.binding });
     const text = await res.text();
     return { status: res.status, text, out: JSON.parse(text), plane: p.calls, modelCalls };
   } finally { globalThis.fetch = saved; }
 }
 
-section("R72 (T46) · a sign-in transcribes: the picture relayed to the member's own runner inside read_page's result");
+section("R72, F2 · a sign-in's transcription is refused, no runner being bound; an API key goes to the API");
 {
-  const rn = pictureRunner();
-  const r = await transcribeOn(rn, SIGNIN(MEMBER, false));
-  t("R72: a signin account with a stub runner transcribes the page", [r.status, r.out?.pages], [200, [{ page: 0, text: "the words on the page" }]]);
-  t("R72: on the member's own instance only, and no API call", [[...new Set(rn.named)], r.modelCalls], [[MEMBER], 0]);
-  t("R72 (R73): the picture reached the runner only inside the read_page result",
-    [rn.results.filter((x) => x.id === "p1" && JSON.stringify(x.content).includes(PNG)).length,
-     rn.opened.some((o) => JSON.stringify(o).includes(PNG)), rn.results.filter((x) => x.id !== "p1" && JSON.stringify(x).includes(PNG)).length],
-    [1, false, 0]);
-  t("R72, R75: no plane call, and the answer carries no picture", [r.plane.length, r.text.includes(PNG)], [0, false]);
-  t("R72, R74: the answer is labelled the AI's reading", r.out?.label, { kind: "machine", says: localize("agent-worker.transcribe.the_ais_reading", "the AI's reading") });
-  const old = pictureRunner({ capable: false });
-  const o = await transcribeOn(old, SIGNIN(MEMBER, false));
-  t("R72 (control): a runner that does not relay pictures: the picture is never sent, the page refused, not dropped",
-    [o.status, o.out?.code, o.out?.ending, old.opened.length, old.results.length], [502, "MODEL_REFUSED", "refused", 0, 0]);
-  t("R72 (control): and it is no longer refused TRANSCRIBE_NEEDS_API_KEY", o.text.includes("TRANSCRIBE_NEEDS_API_KEY"), false);
-  const key = await transcribeOn(pictureRunner(), KEY);
-  t("R72 (control): an apikey account goes to the API as before, never to a runner",
+  const r = await transcribeOn(SIGNIN(MEMBER, false));
+  t("F2: a signin account's /transcribe is refused ASSISTANT_REMOTE_NOT_READY (absent), no model call, no plane call",
+    [r.status, r.out?.code, r.out?.why, r.modelCalls, r.plane.length], [503, "ASSISTANT_REMOTE_NOT_READY", "absent", 0, 0]);
+  t("F2, R75: the refusal carries no picture and no held token", [r.text.includes(PNG), r.text.includes(SIGNIN_TOKEN)], [false, false]);
+  t("R72 (control): it is not refused TRANSCRIBE_NEEDS_API_KEY", r.text.includes("TRANSCRIBE_NEEDS_API_KEY"), false);
+  const key = await transcribeOn(KEY);
+  t("R72 (control): an apikey account goes to the API as before",
     [key.modelCalls > 0, key.text.includes("TRANSCRIBE_NEEDS_API_KEY")], [true, false]);
 }
 

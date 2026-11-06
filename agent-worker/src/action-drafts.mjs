@@ -41,7 +41,6 @@
 import { draftMayRead } from "../../bio-plane/src/run-rules/index.mjs";
 import { READ_FACTS } from "../../agent-model/src/model.mjs";
 import { toolContent } from "../../agent-steps/src/index.mjs";
-import { remoteOf } from "./remote.mjs";
 import { machineLabel } from "./untested.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
@@ -264,13 +263,13 @@ export async function actionDraft(body, task, env, deps, shared) {
   const meter = segmentMeter({ turnsBound: ASK_DECLARED.turns, bytesBound: DEFAULT_MAX_SEGMENT_BYTES });
   const read = grantReader({ env, grant, meter, deps });
   const conv = await converse({
-    reference, runner: remoteOf(env), mode: "draft", meter, system, messages, tools, finalTool: "draft",
+    reference, mode: "draft", meter, system, messages, tools, finalTool: "draft",
     maxTurns: ASK_DECLARED.turns, onTool: read, ...traced,
   });
   const spent = { usage: conv.usage ?? null, calls: conv.calls === undefined ? null : conv.calls };
   if (conv.answer !== undefined) {
     const draft = actionDraftOf(task, conv.answer);
-    if (draft) return json({ ok: true, task: taskNamed(task), draft, ...labelled, label: machineLabel(got), ...spent });
+    if (draft) return json({ ok: true, task: taskNamed(task), draft, ...labelled, label: machineLabel(conv), ...spent });
     return refusal("DRAFT_UNFORMED", localize("agent-worker.action-drafts.the_model_answered_without_a", "the model answered without a draft of the task's shape, so nothing is returned."),
       502, { ending: "unformed", ...spent });
   }

@@ -1,0 +1,37 @@
+{
+  "id": "ux-design",
+  "title": "ux-design: the UX design lane under BOB (inventory, wording of blocked keys, module entries)",
+  "layer": 11,
+  "paths": [
+    "docs/development/ux-substrate/",
+    "build/requirements/ux-design.md",
+    "docs/requirements-notes/ux-design.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/ux-design/"
+  ],
+  "requirements": "build/requirements/ux-design.md",
+  "uses": [
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/ux-design.md",
+    "docs/requirements-notes/ux-design.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "You are the UX design lane. CLAUDE.md: design lanes, run under BOB, own the design stream (docs/development/ux-substrate) and, within the product's principles, decide design and wording there; changes land through the gated merge train. Meet R1 (bio-plane/test/m/ux-design/inventory.test.mjs keeps the inventory and words.json in agreement: update the notes in the same commit as any words.json change), R2 (module entries for rows whose keys are in words.json, row by row in the notes) and R3 (settle the wording of the blocked keys, ai-use R13 first). Regenerate with node bio-plane/src/setup-words/build.mjs and node docs/development/ux-substrate/screens/words-reads.src.mjs . --build. Edit no other module's code, and commit no generated file over the size limit.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-06T05:29:36Z"
+  }
+}

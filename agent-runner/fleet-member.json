@@ -4,12 +4,13 @@
   "entry": "src/entry.mjs",
   "testDir": "test",
   "surface": {
-    "GET /version": "R5: 200 {ok: true, name: \"agent-runner\", version, capabilities}",
-    "GET /conversation (WebSocket upgrade)": "R1-R4: one conversation request, its relays and its answer",
-    "POST /signin": "R17, R27, R31: {member} -> 200 {ok: true, address, attempt}, the sign-in address the binary's setup-token states",
-    "POST /signin/code": "R18, R27, R31: {member, code, attempt} -> 200 {ok: true, connected: true, member, attempt, token, valid_for}, or 409 SIGNIN_REFUSED",
-    "POST /signin/state": "R19, R27: {member} -> 200 {ok: true, connected: false, waiting, member}",
-    "POST /signout": "R20, R27: {member} -> 200 {ok: true, connected: false, member}",
+    "GET /version": "R5: 200 {ok: true, name: \"agent-runner\", version, deployment, image_digest_declared, capabilities}",
+    "POST /run": "R43, R44, R45, R47, R49, R57, R58, R60: {declared, key, tiers, parts, ceiling, estimate} -> 202 {ok: true, run, state: \"running\"}",
+    "GET /run/status": "R43, R51: 200 {ok: true, state, tier, items_done, items_total, incomplete_reason?}",
+    "GET /run/manifest": "R43, R53, R54: the plaintext manifest once the run is done or incomplete; 409 NO_MANIFEST_YET before",
+    "POST /run/approve": "R43, R54: 200 {ok: true, state: \"approved\"} once the manifest was shown; 409 MANIFEST_NOT_SHOWN before",
+    "GET /run/bundle": "R43, R52, R53, R54: the sealed bundle bytes after approval; 409 MANIFEST_NOT_SHOWN before, SECRET_IN_PAYLOAD when none was made",
+    "POST /run/discard": "R43, R55: 200 {ok: true, state: \"discarded\"}; the run wiped",
     "anything else": "R6: 404 {ok: false, code: \"UNKNOWN\"}"
   },
   "image": {
@@ -41,19 +42,10 @@
     "dockerfile": "Dockerfile",
     "context": ".",
     "command": "docker build --platform linux/amd64 -t <repository>:<version> agent-runner",
-    "dependencies": "package-lock.json (npm ci --omit=dev --ignore-scripts; the Agent SDK pinned exactly; R16)"
+    "dependencies": "none: the image copies dist/image/ (scripts/build-image.mjs), installs no package and runs no install script (R16)",
+    "machine_run": "docker run --rm --read-only --tmpfs /tmp -e DEPLOYMENT=machine -p 127.0.0.1:8080:8080 <repository>@<digest> (R58: the key goes in the POST /run body, never an environment variable or a mounted file; no volume; one port)"
   },
-  "egress": [
-    "api.anthropic.com",
-    "platform.claude.com"
-  ],
-  "terms": {
-    "condition": [
-      "Unless we've mutually agreed otherwise, preinstalling or running Claude Code in your products or services (e.g. in hosted sandboxes or other agent infrastructure) requires agreeing to our Commercial Terms of Service",
-      "The Claude Code binary must not be modified. Claude Code must be installed and run as published by Anthropic, and customers may not remove, disable, or restrict any authentication method built into it (including methods that permit signing in with a Claude account or the user's own API key)."
-    ],
-    "source": "https://code.claude.com/docs/en/legal-and-compliance",
-    "who_agrees": null
-  },
-  "note": "The fleet-member marker of a container member (R7, R14). `entry` is the image's Node entry; `bundle` is the Worker hosting its class (`src/worker.mjs`, R12), built by `npm run build` and guarded as every member's bundle is. `class_name`, `max_instances` and `bind` (the binding through which its caller reaches it) are copied by bundler into the release's `container.json` part (bundler R25). `image.digest` is written by the release when it publishes the image (T33-D1), with the same digest in `wrangler.jsonc`'s `containers[0].image`; an install names the image only as `repository@digest` (src/manifest.mjs imageReference, R7). `egress` is the container's allow-list, applied by the Worker's class when it starts the container (R10, R13). `egress` names the model API and the host Claude Code's own sign-in reaches from the container to mint its token (platform.claude.com, K2211). `terms` records AT-14's condition for whoever deploys this member, as `build/terms/anthropic.md` AT-14 quotes it (read 2026-10-06); Bob settled U-2 and U-7 (K3061); `who_agrees` stays null until the release names who agrees."
+  "deployment": "team",
+  "egress": [],
+  "note": "The fleet-member marker of a container member (R7, R14). `entry` is the image's Node entry; `bundle` is the Worker hosting its class (`src/worker.mjs`, R12). `image.digest` is written by the release when it publishes the image (T33-D1), with the same digest in `wrangler.jsonc`'s `containers[0].image`. `deployment` is this configuration's (R57): team, machine or civicsmith. `egress` is empty here: the class applies the issuer host alone at rest, read from ai-catalogue's CATALOGUE_ADDRESS, and for a run the issuer and the declared provider host (R45); naming the issuer host here waits on a ruling (R10, R11). `bind` is unchanged until BOB names the binding that replaces agent-worker's retired RUNNER (R14)."
 }

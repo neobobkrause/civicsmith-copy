@@ -47,3 +47,20 @@ Not met here, each waiting on another module:
 - **R46/R81 callers.** The R9 rename refuses `principalClaude`. `action-plans`, `plan-work`, `question-explorer`, `screens-inquiry` and `capture-requests` (which reads `runFor`'s old `principal_claude`) still use the old names and need provider notices.
 - **ai-use** still asks ai-accounts' retired `accountUses({owner})`, so a project's owner cannot set its limit (a `test.todo` in `usage.test.mjs`). ai-use's `by_entry` (its R15) is not built yet; `session.cost` carries it once ai-use answers it.
 - **F1 and `op=aipathready` (coordinator 23:20; BOB 23:30, 4 Nov).** F1 makes ai-runs the owner of `op=aipathready`: the plane's door answers it from ai-runs' `pathReadyRead` (declared in ai-runs' `DECLARED_OPS`, reaching OPS through op-declarations R80), fail closed, to a viewer who can see the account (`ai-accounts`' `accountState`). So the future source of a path's health, `agent-model`'s `health(account, entry)` over the Worker (R95, R97, R98; `agent-model` R35, which names that read `op=aipathready`), must be served under another name and registered with `registerPathReady`; until a module registers one, every dispatch is withheld `AI_PATH_NOT_READY` and the read answers not ready.
+
+## Satisfies (moved from the requirements file, unchanged; job ai-runs, attempt 11)
+
+- `docs/development/INVESTIGATIVE-SESSION.md` §3 (reads, the stated viewer), §11 (the run is an object; item 5 rules 1–3), §14 (bias a fence first), §14a (the cascade, running sessions visible in context), §14b items 3, 6 and 7 (resumable, bounded, the one exit, partial results).
+- `docs/architecture/BIO_Assistant_and_AI_Roles_v0_1.md` §2 (the four roles), §3 rules 1–5, 8 and 10, §6 (the credential cascade, the woken run's caller), §7.3 (the `mints` bound).
+- `docs/development/OBSERVATION-LOG-DESIGN.md` §4.4 (the run's log is the observation log).
+- `docs/architecture/BIO_Content_Framework_v0_10.md` §13 (the lens a run was formed under).
+- `docs/development/SCHEDULER.md` (interval consumers, self-terminating).
+- `docs/architecture/BIO_Membership_Architecture_v2.md` §7 (sight); Bob's DEC-24, DEC-55, DEC-60, DEC-62, DEC-63.
+- `BIO_Action_v0_1.md` §4 rule 1 (the planning run, R46–R47; K660).
+- `BIO_Action_v0_2.md` rule 16 (K2780; T45, N893): a plan re-examined after a recorded response, started within the recording member's act (R46, R77).
+- DEC-152 and DEC-153 (a draft's use and ceiling, R48, R52; T35, N686, K1837). DEC-149 ("your group's Civicsmith"; R54).
+- K2816 (2) (Bob: the deployer-set test-instance exception, every output labelled; R78); K2892 (Bob: a member's own sign-in runs check and plan for that member only; R18).
+- `build/layers.md`, layer 6's contract.
+- (T53) AIR5, AIR7, AIR13, AIR25–AIR28, AIR41, AD7, AD13, AD14, AD36, AD37, BR13, BR18, BR19, BR22, BR27–BR29 (K5457, K5475, K5477, K5489): R9, R10, R12, R18, R19, R28, R40, R52, R54, R72, R75, R76, R78, R83, R84, R88, R90–R105; N1219, DEC-466 U1, U2: R99–R105.
+
+- **Notice ai-use:378 (5 Nov 2026, attempt 12).** `ai-use` R10 now falls back to `agent-model.estimate`'s range for the entry an act is served on when the account has too few measured acts, and `useEstimate` answers a promise when an `entry_id` is named. Adapted: R74's `openMany` names the entry of the account `ai-accounts.accountFor` answers for her act (when that account is the paying owner's) and awaits the answer, so a new account's batch estimate is the entry's range (`price_only` or `measured`) rather than `not_known`. Test `notice-ai-use-378.test.mjs`; R74's test now expects `entry_id` in the asked fields. No requirement text changed.

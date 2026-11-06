@@ -278,9 +278,11 @@ export class QuestionExplorer {
   /** R7, R16: whether an AI part is admitted, `{admitted, untested}`: `ai-runs.partAdmitted` (its R78, the one gate,
    *  `run-rules` R29 on what the record holds, with the deployment's test-instance fact); where that provider is not
    *  in place, R19's gate alone, `run-rules.partDeployableOn`, with no exception. Anything unreadable is not admitted. */
-  #admitted(part, held) {
+  #admitted(part, held, entry = null) {
     if (this.aiRuns && typeof this.aiRuns.partAdmitted === "function") {
-      const a = this.aiRuns.partAdmitted(part);
+      /* ai-runs R75, R78 (PR 391): Gate 1's verdict is per (entry, part), so the part is asked on the paying account's
+         entry (F1) when one is known; with none, as before (only the test-instance exception can admit). */
+      const a = typeof entry === "string" && entry ? this.aiRuns.partAdmitted(part, entry) : this.aiRuns.partAdmitted(part);
       const label = a && a.untested && typeof a.untested === "object" ? a.untested : null;
       return { admitted: !!a && a.admitted === true, untested: a && a.admitted === true ? label : null };
     }
@@ -293,13 +295,15 @@ export class QuestionExplorer {
    *  own bar is not held: then `false_alarm_rate` and `gold_set` are null and `untested` is `explore`'s label. Whenever
    *  the explorer's bar is held, R7's rate applies and no label is carried. The exception lifts only the bar: the
    *  verification chain stands (it is `partAdmitted`'s), and nothing here counts toward any bar. A group's own test
-   *  investigations are never read here (R11). Never throws; anything unreadable shuts it. */
-  gate() {
+   *  investigations are never read here (R11). F1 (ai-runs R75, R78, PR 391): judged on `entry`, the catalogue entry the
+   *  paying account serves the run on, Gate 1's verdict being per (entry, part); with none, no entry is named. Never
+   *  throws; anything unreadable shuts it. */
+  gate({ entry = null } = {}) {
     const shut = (why) => ({ open: false, why, false_alarm_rate: null, gold_set: null, untested: null });
     try {
       if (!this.steps || !this.aiUse) return shut(say("question-explorer.provider_explorer_needs"));
       const held = this.held() || {};
-      const inv = this.#admitted(EXPLORE_MODE, held), use = this.#admitted(EXPLORE_TEST_PART, held);
+      const inv = this.#admitted(EXPLORE_MODE, held, entry), use = this.#admitted(EXPLORE_TEST_PART, held, entry);
       if (!inv.admitted || !use.admitted)
         return shut(say("question-explorer.investigate_mode_explorer"));
       if (use.untested) return { open: true, why: null, false_alarm_rate: null, gold_set: null, untested: use.untested };
@@ -390,15 +394,15 @@ export class QuestionExplorer {
 
   /** R1: for `scheduler`: how many questions a tick would consider now; none while the gate is shut. */
   async exploreDue(now) {
-    try { return this.gate().open ? this.#due(this.#iso(now)).length : 0; } catch { return 0; }
+    try { const iso = this.#iso(now); return this.#anyOpen(iso) ? this.#due(iso).length : 0; } catch { return 0; }
   }
 
   /** R1: when a tick is next worth running: now while any is due; else, while an Ask waits for its approval today,
    *  the hour after it was made; else null. Answered in `now`'s own form (a number of ms, or an instant). */
   async exploreWake(now) {
     try {
-      if (!this.gate().open) return null;
       const iso = this.#iso(now);
+      if (!this.#anyOpen(iso)) return null;
       const t = Date.parse(iso);
       let next = this.#due(iso).length ? t : null;
       if (next === null) {
@@ -427,20 +431,21 @@ export class QuestionExplorer {
 
   async #tick(now) {
     const at = this.#iso(now);
-    const out = { at, gate: "open", opened: [], asked: [], refused: 0, considered: 0 };
-    const g = this.gate();
-    if (!g.open) return { ...out, gate: "closed" };
+    const out = { at, gate: "open", opened: [], asked: [], refused: 0, considered: 0, off: [] };
     const day = this.#day(at);
     const asks = new Map();
-    const accounts = new Map();
-    const accountOf = (owner) => { if (!accounts.has(owner)) accounts.set(owner, this.#accountOf(owner)); return accounts.get(owner); };
-    const idOf = (owner) => { const u = accountOf(owner); return u && typeof u.account_id === "string" && u.account_id ? u.account_id : null; };
+    const { accountOf, idOf, enablerOf, openFor } = this.#ownerReads();
+    if (!this.gate().open && !this.#due(at).some((w) => this.#ownersFor(w).some(openFor))) return { ...out, gate: "closed" };
     for (const w of this.#due(at)) {
       out.considered += 1;
       for (const owner of this.#ownersFor(w)) {
         const prior = this.#considered(w.question, owner, day);
         if (prior && prior.outcome === "refused") continue;
+        /* R7, F1: the gate judged on the entry this owner's run would be served on; shut, nothing is asked or recorded. */
+        if (!openFor(owner)) continue;
         if (this.#switchedOff(owner, accountOf(owner))) { this.#consider(w.question, owner, day, "refused", at); out.refused += 1; continue; }
+        /* F1: exploring off after its accountable member was refused, until a member turns it on again. */
+        if (this.#offFor(owner, enablerOf(owner))) { this.#consider(w.question, owner, day, "refused", at); out.refused += 1; continue; }
         let a;
         try { a = this.aiUse.exploreAllowed({ owner, account_id: idOf(owner), question: w.question, at }); }
         catch { a = { ok: false, code: "EXPLORE_ALLOWED_UNREADABLE" }; }
@@ -456,8 +461,12 @@ export class QuestionExplorer {
           continue;
         }
         const label = (a && a.label) || { kind: "machine", enabled_by: owner };
-        const opened = await this.#open(w, owner, label, at, day);
+        const opened = await this.#open(w, owner, label, at, day, enablerOf(owner), this.#entryFor(enablerOf(owner).member));
         if (opened.ok) { this.#consider(w.question, owner, day, "opened", at); out.opened.push(opened); break; }
+        if (QuestionExplorer.#offRefusal(opened.refused)) {
+          this.#turnOff(owner, idOf(owner), enablerOf(owner), opened.refused, at);
+          out.off.push({ owner, code: opened.refused.code ?? null, detail: opened.refused.detail ?? null });
+        }
         this.#consider(w.question, owner, day, "refused", at);
         out.refused += 1;
       }
@@ -477,14 +486,8 @@ export class QuestionExplorer {
    *  project's first owner; the group's first active administrator, as ai-use reads an account itself), answered here
    *  only to that account's owners (`runCost`). `"not known yet"` when it cannot say. */
   #estimate(owner, count, at) {
-    let as = null;
-    try {
-      as = owner.startsWith("member:") ? owner
-        : owner.startsWith("project:") ? this.membership.projectOwners(owner.slice(8))[0] ?? null
-          : this.membership.activeAdmins()[0] ?? null;
-    } catch { as = null; }
-    if (!as) return say("question-explorer.known");
-    const viewer = as.startsWith("member:") || as === "admin" ? as : `member:${as}`;
+    const viewer = this.#ownerViewer(owner);
+    if (!viewer) return say("question-explorer.known");
     try {
       const e = this.aiUse.estimate({ owner, use: EXPLORE_USE, mode: EXPLORE_MODE, count, viewer, at });
       if (!e || e.ok === false || e.estimate === undefined || e.estimate === null) return say("question-explorer.known");
@@ -496,9 +499,125 @@ export class QuestionExplorer {
     } catch { return say("question-explorer.known"); }
   }
 
+  /** An owner of `owner`'s account, as ai-use reads an account itself: the member; a project's first owner; the group's
+   *  first active administrator. Null when there is none. */
+  #ownerViewer(owner) {
+    let as = null;
+    try {
+      as = owner.startsWith("member:") ? owner
+        : owner.startsWith("project:") ? this.membership.projectOwners(owner.slice(8))[0] ?? null
+          : this.membership.activeAdmins()[0] ?? null;
+    } catch { as = null; }
+    if (!as) return null;
+    return as.startsWith("member:") || as === "admin" ? as : `member:${as}`;
+  }
+
+  /* ---------------------------------------------------------------- F1: the member accountable for exploring */
+
+  /** F1 (K5821, REC-11): the member who turned exploring on for `owner`'s account `account_id`: the latest change of its
+   *  `explore` switch to `yes` or `ask` (ai-accounts R14, R16), read through ai-accounts' `accountHistory` as one of the
+   *  account's owners. `{member, key}`: `member` that member (`member:<id>`), or null when none is found or the history
+   *  cannot be read (fail closed: a run with no enabling member is refused); `key` names that turning-on, so a later one,
+   *  by any member, is told apart. */
+  /** One tick's reads of each owner, each made once: its account id, the member who turned exploring on (F1), and
+   *  whether the gate is open on the entry that member's run would be served on (R7, F1). */
+  #ownerReads() {
+    const accounts = new Map(), enablers = new Map(), opens = new Map();
+    const accountOf = (owner) => { if (!accounts.has(owner)) accounts.set(owner, this.#accountOf(owner)); return accounts.get(owner); };
+    const idOf = (owner) => { const u = accountOf(owner); return u && typeof u.account_id === "string" && u.account_id ? u.account_id : null; };
+    const enablerOf = (owner) => { if (!enablers.has(owner)) enablers.set(owner, this.#enablerOf(owner, idOf(owner))); return enablers.get(owner); };
+    const openFor = (owner) => {
+      if (!opens.has(owner)) opens.set(owner, this.gate({ entry: this.#entryFor(enablerOf(owner).member) }).open === true);
+      return opens.get(owner);
+    };
+    return { accountOf, idOf, enablerOf, openFor };
+  }
+
+  /** R7, F1: whether the gate is open for any run a tick at `iso` could open: with no entry named (the test-instance
+   *  exception), or on the entry some due question's owner would be served on. */
+  #anyOpen(iso) {
+    if (this.gate().open) return true;
+    const { openFor } = this.#ownerReads();
+    return this.#due(iso).some((w) => this.#ownersFor(w).some(openFor));
+  }
+
+  /** F1 (ai-runs R75, R78, PR 391): the catalogue entry the member who turned exploring on would have a run served on,
+   *  as `ai-runs.open` chooses it (`ai-accounts` R11's choice for her act of kind `run`, read in-plane without
+   *  unsealing, its R25 `accountServing`); null when none serves or it cannot be read. */
+  #entryFor(member) {
+    if (!member || !this.aiAccounts || typeof this.aiAccounts.accountServing !== "function") return null;
+    try {
+      const s = this.aiAccounts.accountServing({ member, use: "run", project: null });
+      return s && !s.refusal && typeof s.entry_id === "string" && s.entry_id ? s.entry_id : null;
+    } catch { return null; }
+  }
+
+  #enablerOf(owner, account_id) {
+    const viewer = this.#ownerViewer(owner);
+    if (!viewer || !account_id) return { member: null, key: null };
+    let h = null;
+    try { h = this.aiAccounts.accountHistory({ owner, viewer, limit: 500 }); } catch { h = null; }
+    const ons = (h && Array.isArray(h.changes) ? h.changes : []).filter((c) => c && c.change === "use_set"
+      && c.switch === "explore" && c.account_id === account_id && (c.value === "yes" || c.value === "ask"));
+    const last = ons[ons.length - 1];
+    const by = last ? str(last.by) : null;
+    if (!by) return { member: null, key: ons.length ? `${ons.length}|${last.at ?? ""}|` : null };
+    const member = by.startsWith("member:") ? by : `member:${by}`;
+    return { member, key: `${ons.length}|${last.at ?? ""}|${member}` };
+  }
+
+  /** F1: whether exploring is off for `owner` after a refused run: the row, or null. It stays off until a member turns
+   *  exploring on again (a turning-on other than the one the refused run carried), and is then lifted. */
+  #offFor(owner, enabler) {
+    const off = this.#one(`SELECT * FROM explore_off WHERE owner=?`, owner);
+    if (!off) return null;
+    if (enabler && enabler.key && enabler.key !== off.enabled_key) {
+      this.sql.exec(`DELETE FROM explore_off WHERE owner=?`, owner);
+      return null;
+    }
+    return off;
+  }
+
+  /** F1: exploring turned off for `owner` by a refusal of its accountable member, the refusal kept as given so its
+   *  sentence reaches the account's owners (`exploringOff`). */
+  #turnOff(owner, account_id, enabler, refusal, at) {
+    const r = refusal && typeof refusal === "object" ? refusal : {};
+    this.sql.exec(`INSERT INTO explore_off (owner, project, account_id, enabled_by, enabled_key, code, check_id, translation, detail, at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT(owner) DO UPDATE SET account_id=excluded.account_id, enabled_by=excluded.enabled_by,
+                     enabled_key=excluded.enabled_key, code=excluded.code, check_id=excluded.check_id,
+                     translation=excluded.translation, detail=excluded.detail, at=excluded.at`,
+                  owner, owner.startsWith("project:") ? owner.slice(8) : null, account_id ?? null, enabler?.member ?? null,
+                  enabler?.key ?? null, str(r.code) ?? "AI_RUN_NOT_A_MEMBER_ACT", str(r.check), str(r.translation), str(r.detail), at);
+  }
+
+  /** F1: whether an open's refusal says its accountable member is gone or no longer allowed (`run-rules` R18 as F1 amends
+   *  it: `exploring: "off"`; an exploring run has no other member's act, so its `AI_RUN_NOT_A_MEMBER_ACT` is that). */
+  static #offRefusal(r) {
+    return !!r && typeof r === "object" && (r.exploring === "off" || r.code === "AI_RUN_NOT_A_MEMBER_ACT");
+  }
+
+  /** F1: where exploring is off after a refused run, to the owners of the account only: the refusal's own words
+   *  (`run-rules`' sentence and translation, as given), when, and who had turned it on. It stays until a member turns
+   *  exploring on again. Never throws. */
+  exploringOff({ viewer = null } = {}) {
+    try {
+      const rows = this.#rows(`SELECT * FROM explore_off ORDER BY at DESC, owner LIMIT 1000`);
+      return { ok: true, off: rows.filter((x) => this.#ownsAccount(viewer, x.owner)).map((x) => ({
+        key: `explore-off:${x.owner}:${x.at}`, owner: x.owner, enabled_by: x.enabled_by, code: x.code, check: x.check_id,
+        translation: x.translation, detail: x.detail, at: x.at, exploring: "off" })) };
+    } catch { return { ok: true, off: [] }; }
+  }
+
   /** R3, R12: open one exploring run on a question for an owner: its estimate, then the run, passing the step's place
    *  and work; `ai-runs` opens the run and then creates its system step (its R73, K2490), answering it. */
-  async #open(w, owner, label, at, day) {
+  async #open(w, owner, label, at, day, enabler = { member: null }, entry = null) {
+    /* F1 (K5821): the run is accountable to the member who turned exploring on; with none found, `run-rules` R18 refuses
+       it here, its one site, and nothing is asked of `ai-runs`. */
+    if (!enabler.member) {
+      const refused = runRules.startAllowed({ startedBy: null, mode: EXPLORE_MODE, origin: EXPLORE_ORIGIN, enabledBy: null });
+      return { ok: false, question: w.question, owner, refused };
+    }
     const estimate = this.#estimate(owner, 1, at);
     const run = `XPL-${day}-${sha256HexSync(`${w.question}|${owner}|${at}`).slice(0, 12)}`;
     /* R17: `ai-runs.open` answers asynchronously and is awaited; a run it refuses, or that it fails to open, is no run. */
@@ -509,15 +628,16 @@ export class QuestionExplorer {
                                         mode: EXPLORE_MODE, origin: EXPLORE_ORIGIN, use: EXPLORE_USE,
                                         place: { questions: [w.question] }, work: EXPLORE_WORK,
                                         principalPlane: this.principal, principalAi: owner, principalAiRef: null,
-                                        enabledBy: label, skillVersion: EXPLORE_SKILL, bounds: EXPLORE_BOUNDS.map((b) => ({ ...b })),
+                                        enabledBy: enabler.member, skillVersion: EXPLORE_SKILL, bounds: EXPLORE_BOUNDS.map((b) => ({ ...b })),
                                         at, actor: null, viewer: this.principal });
     } catch { opened = null; }
     if (!opened || opened.ok === false || typeof opened.step !== "string" || !opened.step)
       return { ok: false, question: w.question, owner, refused: opened };
     const step = opened.step;
-    this.sql.exec(`INSERT INTO explore_runs (run, question, owner, step, day, seen, estimate, opened_at)
-                   VALUES (?,?,?,?,?,?,?,?)`, run, w.question, owner, step, day, w.seen, json({ estimate }), at);
-    return { ok: true, run, question: w.question, owner, step, estimate, label };
+    /* F1: the entry the gate was judged on is kept with the run, so its finds are offered on that entry's admission. */
+    this.sql.exec(`INSERT INTO explore_runs (run, question, owner, step, day, seen, estimate, opened_at, entry)
+                   VALUES (?,?,?,?,?,?,?,?,?)`, run, w.question, owner, step, day, w.seen, json({ estimate }), at, entry);
+    return { ok: true, run, question: w.question, owner, step, estimate, label, enabled_by: enabler.member };
   }
 
   /* ---------------------------------------------------------------- R9, R10: persons */
@@ -630,7 +750,7 @@ export class QuestionExplorer {
     const held = this.#one(`SELECT find FROM explore_finds WHERE run=? AND kind=? AND ref=?`, r.run, kind, loc.ref);
     if (held) return { ...this.#findAnswer(held.find, r), already: true };
     const iso = this.#iso(at);
-    const g = this.gate();
+    const g = this.gate({ entry: r.entry ?? null });
     const find = `XFD-${sha256HexSync(`${r.run}|${kind}|${loc.ref}`).slice(0, 16)}`;
     this.sql.exec(`INSERT INTO explore_finds (find, run, question, kind, ref, bundle_id, bundle_b, bearing, how,
                      false_alarm_rate, gold_set, against, untested, owner, at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
@@ -669,7 +789,7 @@ export class QuestionExplorer {
       this.sql.exec(`INSERT INTO explore_finds (find, run, question, kind, ref, bundle_id, bundle_b, bearing, how,
                        false_alarm_rate, gold_set, against, untested, owner, at)
                      VALUES (?,?,?,?,?,NULL,NULL,NULL,NULL,NULL,NULL,NULL,?,?,?) ON CONFLICT(run, kind, ref) DO NOTHING`,
-                    find, r.run, r.question, "page", ref, json(this.gate().untested), r.owner, iso);
+                    find, r.run, r.question, "page", ref, json(this.gate({ entry: r.entry ?? null }).untested), r.owner, iso);
       return { ...asked, named_to_members: true, find };
     }
     return asked;
@@ -829,11 +949,12 @@ export class QuestionExplorer {
     const n = Math.max(1, Math.min(1000, Math.floor(Number(limit)) || 200));
     try {
       const member = bareMember(viewer);
-      if (!member || !this.gate().open) return { ok: true, finds: [], truncated: false };
-      const ctx = { recipients: new Map() };
+      if (!member) return { ok: true, finds: [], truncated: false };
+      const ctx = { recipients: new Map(), gates: new Map() };
       const out = [];
       let truncated = false;
       for (const f of this.#rows(`SELECT * FROM explore_finds ORDER BY at DESC, find LIMIT 5000`)) {
+        if (!this.#findGateOpen(f, ctx)) continue;
         if (this.#doored(f, member)) continue;
         if (!this.#offeredTo(f, member, ctx)) continue;
         if (out.length >= n) { truncated = true; break; }
@@ -841,6 +962,15 @@ export class QuestionExplorer {
       }
       return { ok: true, finds: out, truncated };
     } catch { return { ok: true, finds: [], truncated: false }; }
+  }
+
+  /** R7, F1: whether the gate is open on the entry the find's run was opened on (judged once an entry per `ctx`). */
+  #findGateOpen(f, ctx = { gates: new Map() }) {
+    const r = this.#one(`SELECT entry FROM explore_runs WHERE run=?`, f.run);
+    const entry = r && typeof r.entry === "string" && r.entry ? r.entry : null;
+    const k = entry ?? "";
+    if (!ctx.gates.has(k)) ctx.gates.set(k, this.gate({ entry }).open === true);
+    return ctx.gates.get(k);
   }
 
   /** Whether a member already muted or accepted a find (R6): it is then offered to her no more. */
@@ -859,9 +989,9 @@ export class QuestionExplorer {
 
   #offered(find, question, by) {
     const member = bareMember(by);
-    if (!member || isMachineIdentity(String(by)) || !this.gate().open) return null;
+    if (!member || isMachineIdentity(String(by))) return null;
     const f = typeof find === "string" ? this.#one(`SELECT * FROM explore_finds WHERE find=? AND question=?`, find, String(question ?? "")) : null;
-    if (!f || !this.#offeredTo(f, member, { recipients: new Map() })) return null;
+    if (!f || !this.#findGateOpen(f) || !this.#offeredTo(f, member, { recipients: new Map() })) return null;
     if (this.#doored(f, member)) return null;
     return { f, member };
   }

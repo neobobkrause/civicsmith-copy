@@ -351,9 +351,27 @@ node_modules
 /bio-plane/src/setup-words/rows.mjs
 /bio-plane/src/setup-words/words-unreviewed.json
 /docs/development/ux-substrate/screens/words-reads.json
+/docs/development/ux-substrate/screens/words.json
+/docs/development/ux-substrate/screens/words-drawn.json
 /bio-plane/dist/bio-plane.bundled.mjs
 /pdf-worker/dist/pdf-worker.bundled.mjs
 /agent-worker/dist/agent-worker.bundled.mjs
+/newgroup/dist/newgroup.bundled.mjs
+
+# The dist pass (BOB, 6 Nov 2026): no bundle under a member's dist/ is committed. Each is built at test, deploy and
+# release (bio-plane/scripts/bundles.mjs; npm --prefix newgroup run build). bio-plane/dist/SECRETS.txt is not a build
+# output (the 0.2.0 published-token denylist source, bio-plane/src/tokens.mjs), so it stays tracked.
+/bio-plane/dist/*
+!/bio-plane/dist/SECRETS.txt
+/agent-runner/dist/
+/agent-worker/dist/
+/file-scanner/dist/
+/ocr-worker/dist/
+/pdf-worker/dist/
+/reader-container/dist/
+/sheet-worker/dist/
+/newgroup/dist/
 
 # Built where needed, not committed (over max_file_bytes; BOB 4 Nov): case-checker R32, K1540
 bio-plane/src/case-checker/program.mjs
+/bio-plane/src/case-checker/program.mjs

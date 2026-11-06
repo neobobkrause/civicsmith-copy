@@ -137,11 +137,17 @@ function reset(cfg) {
         state: CFG.state === undefined ? {} : CFG.state };
 }
 reset({});
-/* the canonical bytes \`plane-suggest.mjs\`'s F10 branch keys a verbatim resubmit on */
-const canon = (v) => {
+/* the canonical bytes \`plane-suggest.mjs\`'s F10 branch keys a verbatim resubmit on: the submission without the write's
+   own \`idem\` (agent-steps:392), which names the call, not what is submitted, as the plane's own key leaves it out */
+const canonOf = (v) => {
   if (v === null || typeof v !== "object") return JSON.stringify(v ?? null);
-  if (Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
-  return "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}";
+  if (Array.isArray(v)) return "[" + v.map((x) => canonOf(x)).join(",") + "]";
+  return "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + canonOf(v[k])).join(",") + "}";
+};
+const canon = (v) => {
+  if (v === null || typeof v !== "object" || Array.isArray(v)) return canonOf(v);
+  const { idem, ...rest } = v;
+  return canonOf(rest);
 };
 const runCtx = (CFG) => (CFG.contextType || "inquiry") === "project"
   ? { type: "project", id: CFG.target || "INQ-1", questions: CFG.questions || CFG.cites || [] }
@@ -751,8 +757,12 @@ section("R18 · fanout, the internet level: one op=capturerequest per judged tar
                 { level: "internet", url: "http://localhost/x" }, { level: "meaning", target: "INQ-R18" }] },
     { reports: [] }, { candidates: [] }, {}] });
   const st = await planeState(mf);
+  /* agent-steps:392: each write now carries its own \`idem\` (agent-steps R54), one per call, never repeated. */
+  const capIdem = st.log.filter((l) => l.op === "capturerequest").map((l) => l.body.idem);
+  t("R18 (agent-steps:392): each request carries its own idem, distinct, naming the run",
+    [capIdem.every((x) => typeof x === "string" && x.startsWith("run-1:")), new Set(capIdem).size], [true, 3]);
   t("R18: one request per internet-level target, {run, target, address}, its own target else the run's",
-    st.log.filter((l) => l.op === "capturerequest").map((l) => l.body),
+    st.log.filter((l) => l.op === "capturerequest").map(({ body: { idem, ...rest } }) => rest),
     [{ run: "run-1", target: "INQ-R18", address: "https://example.org/a" },
      { run: "run-1", target: "INQ-R18", address: "https://example.org/b" },
      { run: "run-1", target: "INQ-R18", address: "http://localhost/x" }]);
@@ -1195,10 +1205,11 @@ section("R32, R33 · the cascade: the one account that arrived, at its own level
 
 section("R34 · SURFACE and fleet-member.json");
 {
-  t("R34, R54, R59, R66, R72: SURFACE is {run: POST, ask: POST, draft: POST, signin: POST, transcribe: POST, version: GET}, every one mutating: false (K1601 (5))", SURFACE,
+  t("R34, R54, R59, R66, R72, F3: SURFACE is {run: POST, ask: POST, draft: POST, signin: POST, transcribe: POST, version: GET, health: GET}, every one mutating: false (K1601 (5))", SURFACE,
     { run: { method: "POST", mutating: false }, ask: { method: "POST", mutating: false },
       draft: { method: "POST", mutating: false }, signin: { method: "POST", mutating: false },
-      transcribe: { method: "POST", mutating: false }, version: { method: "GET", mutating: false } });
+      transcribe: { method: "POST", mutating: false }, version: { method: "GET", mutating: false },
+      health: { method: "GET", mutating: false } });
   t("R34: the manifest names the entry, the surface, the test directory and the bundle recipe",
     [MANIFEST.entry, MANIFEST.surface, MANIFEST.testDir, MANIFEST.bundle?.entry, MANIFEST.bundle?.outfile, MANIFEST.bundle?.manifest],
     ["src/index.mjs", "SURFACE", "test", "src/index.mjs", "dist/agent-worker.bundled.mjs", "dist/agent-worker.bundle.json"]);
@@ -1352,13 +1363,14 @@ section("agent-harness R7 · sub-sessions run, one per level, each under its con
 section("R35 · its only binding is PLANE; the plane is reached by no other route");
 {
   /* R91 (R085): and this member's own segment driver, one object per run, holding nothing of the record. */
-  t("R35, R91, R109: wrangler declares exactly one service binding, PLANE, the remote class's DO binding cross-script (REMOTE; no RUNNER), the "
-    + "segment driver SEGMENTS (its own SegmentDriver), and no other Durable Object, R2, KV, D1, queue or secret binding",
+  t("R35, R91, F2, F3: wrangler declares exactly one service binding, PLANE, its own Durable Objects SEGMENTS, CHECKS and HEALTH "
+    + "(no REMOTE; RUNNER the one cross-script binding, to agent-runner's AgentRunner, F2), and no other Durable Object, R2, KV, D1, queue or secret binding",
     [WRANGLER_CFG.services, WRANGLER_CFG.durable_objects, ["r2_buckets", "kv_namespaces", "d1_databases", "queues",
       "secrets_store_secrets", "secrets", "containers"].filter((k) => k in WRANGLER_CFG)],
     [[{ binding: "PLANE", service: "bio-plane" }],
-     { bindings: [{ name: "REMOTE", class_name: "RemoteSession", script_name: "agent-runner" },
-                  { name: "SEGMENTS", class_name: "SegmentDriver" }, { name: "CHECKS", class_name: "CheckRecord" }] }, []]);
+     { bindings: [{ name: "RUNNER", class_name: "AgentRunner", script_name: "agent-runner" },
+                  { name: "SEGMENTS", class_name: "SegmentDriver" }, { name: "CHECKS", class_name: "CheckRecord" },
+                  { name: "HEALTH", class_name: "CircuitState" }] }, []]);
   t("R35: its vars hold no token and no plane URL", Object.keys(WRANGLER_CFG.vars), ["VERSION"]);
   await reset(mf, {});
   await runOp(mf, { ...base, account: ACCOUNTS });

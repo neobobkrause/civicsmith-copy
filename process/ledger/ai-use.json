@@ -42,6 +42,6 @@
   "prior_work": "Found work (question-explorer's job, 4 Nov): ai-accounts' T53 rewrite changed its interface without a provider notice. It removed accountReferenceSet/accountReferenceState, groupKeySet/groupKeyState/groupKeySwitches, projectKeySet, subscriptionTokenHold and projectSigninSet; accountUsesOf (ai-accounts R17) now takes {account_id}; accountFor answers differently. ai-use's suite is red on tranche (w.a.accountReferenceSet is not a function, about 80 failures), and src/ai-use/index.mjs:540 (the exploreAllowed path) still passes {owner}, so every member's account reads unreadable and exploring is refused fail-closed. Adapt this module's code and its test world to the current ai-accounts API (read build/requirements/ai-accounts.md and bio-plane/src/ai-accounts/), restating any ai-use requirement whose mechanism must change to read the account by account_id (keep its purpose), with a test that a member's explore use is read by account_id and fails with the change reverted. Any unmet mark in build/requirements/ai-use.md is yours too. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-05T01:00:54Z"
+    "at": "2026-11-06T02:44:06Z"
   }
 }

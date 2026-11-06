@@ -1,4 +1,4 @@
-node_modules
-test
-dist
-scripts
+# The image is built from dist/image alone (R56).
+*
+!Dockerfile
+!dist/image/
