@@ -53,8 +53,8 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: leg-earning:138 (index.mjs:1588 reads legEarning.earned). For each, decide from your own requirements what this module must do (the T53 ops that replace the retired ones are in ai-accounts' requirements and op-declarations), adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-06T03:40:49Z",
-    "reason": "reopened: meet the unmet requirement marks R31"
+    "state": "BLOCKED",
+    "reason": "R31 cannot be met: nothing defines an opinion case element or its id yet. Checked on tranche c8d9c37a: no id pattern in record-grammar, no element kind, and no requirements file in build/requirements/ defines one (MEMBER-KNOWLEDGE-DESIGN §6 names the decision and leaves the element's layout to Program B). A refusal 'by name' needs a name to refuse. This is K181's standing deferral ('R31 deferred until an opinion element exists'), carried since T7 by grammar.test.mjs's test.todo. Building it here would mean making up another module's element and its id. Nothing changed; the branch is the job-start commit only. To unblock: the owner (case-authoring or publication, through their requirements) defines the opinion element and its id, then restart inquiry for R31. Or the coordinator rules that the reopen was mechanical and leaves R31 deferred under K181.",
+    "at": "2026-11-06T03:45:50Z"
   }
 }
