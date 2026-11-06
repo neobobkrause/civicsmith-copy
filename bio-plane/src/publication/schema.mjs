@@ -569,6 +569,11 @@ const ADDITIVE_COLUMNS = [
      under A when a case holds two captures of one source. NULL says no single capture is named: every row written
      before this, every kind but `attestation`, and a token two different captures share. Never back-filled. */
   ["published_shas", "capture_sha", "TEXT"],
+  /* R30 (D-246; BIO_Publication_v0_1.md §3 rule 16): A PUBLISHED RENDERING IS VERIFIED BY ITS PIXELS. A kind `rendering`
+     row holds `pixels_sha256`, the SHA-256 over its normalised samples taken before any container is built, as the
+     VERIFYING value; its `sha256` is the file's own bytes, informative only (the deflate stream differs by runtime).
+     NULL on every other kind and every row written before; never back-filled. */
+  ["published_shas", "pixels_sha256", "TEXT"],
   /* G54 (K4426, K4565, K4566): THE CASE FILE'S OWN LEDGER on the edition's row, so a complete edition left without a
      (whole) case file is stated, counted and retried and never silent. NULL on every row written before: NULL state
      with a manifest reads `built`, NULL state without one reads never attempted. Never back-filled (R-OLD): the two

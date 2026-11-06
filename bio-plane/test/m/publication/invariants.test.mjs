@@ -1,6 +1,5 @@
 /* publication — the invariants not driven elsewhere: purge (R31) beside corpus-export's (K1024), case-carriage's (N532)
-   and case-tensions' (T33) declarations, the check rows held here (R33), no place named (R34), and the id that does not
-   hold yet (R30). The export and its log are
+   and case-tensions' (T33) declarations, the check rows held here (R33), no place named (R34). The export and its log are
    corpus-export's, written here through it (its R1), never through this module (N483). Driven at the module's
    interface. */
 import { test } from "node:test";
@@ -196,5 +195,5 @@ test("R24 an existing store migrates: every ratified row of the old, edition-les
   assert.ok(st.sql.exec(`PRAGMA table_info(published_case_members)`).toArray().some((c) => c.name === "version_sha"));
 });
 
-test.todo("R30 a published rendering is verified by pixels_sha256 over its normalised samples — NOT YET MET (D-246): nothing in the plane publishes a rendering yet (no `kind: rendering` part is written to published_shas or a container), so there is no rendering to carry the pixel hash; it joins when the rendering path does");
+/* R30 is driven in r30-rendering.test.mjs (a rendering verified by its pixels, its file hash labelled informative). */
 

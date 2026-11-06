@@ -82,7 +82,7 @@ test("R40 R-OLD an old six-column store is migrated: its rows keep the six colum
   migratePublication(sql);
   const after = w.rows(`SELECT * FROM published_shas WHERE sha256=?`, tok("old"));
   assert.deepEqual(after, [{ sha256: tok("old"), bundle_id: DOC, path: `materials/${tok("old")}`, kind: "attestation", bytes: 7,
-                             published: "2026-01-01T00:00:00Z", capture_sha: null }]);
+                             published: "2026-01-01T00:00:00Z", capture_sha: null, pixels_sha256: null }]);
   migratePublication(sql);
   assert.deepEqual(w.rows(`SELECT * FROM published_shas WHERE sha256=?`, tok("old")), after, "a second boot changes nothing");
   commit(w, proj, roles, 1, [att(tok("old"), A)]);
