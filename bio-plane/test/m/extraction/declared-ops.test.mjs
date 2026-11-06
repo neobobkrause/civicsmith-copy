@@ -88,3 +88,25 @@ test("R79 R76 extraction declares reading: its requires alone raise no refusal n
     refusedNaming: (a, f) => f === "sha256" && !!a && a.reason === "NO_SHA",
     same: (x, y) => !!x && !!y && x.ok === y.ok && x.reason === y.reason });
 });
+
+/* F1 (surface-declarations R17, F1; BOB's grade, 5 Nov): the interpretation ops, interpretPart (R114) as `interpretmark` and
+   interpretationWithdraw (R118), are declared reversible, mutating and refused to a machine. No door arm serves either yet, so the
+   row is held against the grade, and against the service's own refusal of a machine identity (R114, R118: MEMBER_SESSION_REQUIRED). */
+test("F1 extraction declares interpretmark and interpretationwithdraw reversible, mutating and refused to a machine", async () => {
+  for (const op of ["interpretmark", "interpretationwithdraw"]) {
+    const d = DECLARED_OPS[op];
+    assert.ok(d, `${op} is declared`);
+    assert.equal(d.weight, "reversible", op);
+    assert.equal(d.mutating, true, op);
+    assert.deepEqual(d.machineClasses, [], op);
+    assert.equal(typeof d.description, "string", op);
+    assert.ok(d.description.length > 0, op);
+    for (const f of d.fields.requires) assert.ok(d.fields.accepts.includes(f), `${op}: ${f} required and accepted`);
+  }
+  assert.deepEqual(DECLARED_OPS.interpretmark.fields.requires, ["capture","part","project","how"]);
+  assert.deepEqual(DECLARED_OPS.interpretationwithdraw.fields.requires, ["id"]);
+  const w = fresh();
+  const machine = "class:admin";
+  assert.equal((await w.x.interpretPart({ capture: "a".repeat(64), part: { kind: "sheet-range", sheet: "S", from_row: 1, to_row: 2 }, project: "P", how: "opened", by: machine })).reason ?? null, "MEMBER_SESSION_REQUIRED");
+  assert.equal((w.x.interpretationWithdraw({ id: "I-1", by: machine })).reason ?? null, "MEMBER_SESSION_REQUIRED");
+});
