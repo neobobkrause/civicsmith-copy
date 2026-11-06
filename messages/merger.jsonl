@@ -219,3 +219,4 @@
 {"at":"2026-11-06T00:10:32Z","row":"sent","n":110,"to":"bob","text":"PR 461 (job scheduler) fires a review trigger and has no review recorded for 16205250b8: review it (node .process/tool/p3.mjs review brief 461), then node .process/tool/p3.mjs merge train note 461 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
 {"at":"2026-11-06T00:10:58Z","row":"outcome","n":110,"outcome":"delivered"}
 {"at":"2026-11-06T00:15:02Z","row":"sent","n":111,"to":"bob","text":"merged PR 520 (job question-explorer): node .process/tool/p3.mjs notice triage question-explorer:520 (provider notice question-explorer:520; 4 user modules owe a worker's judgment: answer-envelope, notice-producers, op-declarations, store-assembly: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
+{"at":"2026-11-06T00:15:17Z","row":"outcome","n":111,"outcome":"delivered"}
