@@ -292,3 +292,4 @@
 {"at":"2026-11-06T03:20:04Z","row":"sent","n":147,"to":"bob","text":"PR 569 (job agent-worker) fires a review trigger and has no review recorded for 30aa5466a6: review it (node .process/tool/p3.mjs review brief 569), then node .process/tool/p3.mjs merge train note 569 --reviewed \"<what>\" --rounds <n> --review-minutes <n> --findings <n> --acted-on <n>; the train merges it then"}
 {"at":"2026-11-06T03:20:56Z","row":"outcome","n":146,"outcome":"delivered"}
 {"at":"2026-11-06T03:21:20Z","row":"outcome","n":147,"outcome":"delivered"}
+{"at":"2026-11-06T03:23:41Z","row":"sent","n":148,"to":"bob","text":"merged PR 493 (job member-upload); the MERGER's starter starts the work it freed"}
