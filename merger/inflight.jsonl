@@ -98,3 +98,4 @@
 {"at":"2026-11-06T00:14:53.861Z","row":"end","pr":520,"tip":"ecf41e1cbfa300ac45b09b2ab1556785181acecd","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
 {"at":"2026-11-06T00:20:52.051Z","row":"inflight","pr":491,"module":"acquisition-archives","tip":"f5a041e1defce886a748a9984d3a2e2b0ce8325f","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T02:05:52.051Z"}
 {"at":"2026-11-06T00:25:07.862Z","row":"end","pr":491,"tip":"f5a041e1defce886a748a9984d3a2e2b0ce8325f","cause":"landed","session":"session_018BhcefmntMFwp8MDNkzCNL"}
+{"at":"2026-11-06T00:25:57.579Z","row":"inflight","pr":541,"module":"capture-requests","tip":"48a5b95f8bda102723ac34b922f3e2e4ea36a2b1","session":"session_018BhcefmntMFwp8MDNkzCNL","until":"2026-11-06T02:10:57.579Z"}
