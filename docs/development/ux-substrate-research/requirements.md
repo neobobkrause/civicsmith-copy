@@ -167,6 +167,7 @@ These marks are still "not yet met" in the requirement files. They have been owe
 | screens-entry | (no mark) | `act.aiaccountadd.does`, `act.aiaccountswitch.does` (in neither) | notes ux-design.md:95 |
 | screens-wizards | (Suggestion) | the Alt+Shift+W setting drawn in `account` | screens-wizards.md:105 |
 | interface-assets | R10 | `i-document`, `i-due`, `i-sever` icons referenced by drawings, absent from icons.svg | interface-assets.md:48 |
+| (correction, 6 Nov, the lane) | R10 | **Not owed.** `i-document`, `i-due` and `i-sever` are in `visual-language/icons.svg` at tranche (50 symbols); interface-assets reads the file at its pinned commit, so its note is stale. | icons.svg |
 | capture-requests | plan K5575 | the Queue item's words when a site asks for a person: "the words are UX-DESIGN's, sent as a need" | build/plan/T53-R1/capture-requests.md:19 |
 | interface-shell | plan W-row | "a signed-out deep link … shows one plain sentence above the sign-in form (words owed)" | build/plan/T53-R1/interface-shell.md:39 |
 | instance-setup | (no mark) | DEC-109's claim-page wording, "BOB's draft, owed to UX-DESIGN to re-word"; the disclosure's words (NOTICE to UX-DESIGN) | instance-setup.md:64,85 |
@@ -204,7 +205,7 @@ Spot checks in the design sources: "Obligation" and "Condition" occur 0 times. "
 - `build/plan/lane-reading-architecture/GAP.md:47,215,230,507`: the sheet preview's "show more" screen, new rows "through one HANDOFF to UX-DESIGN", and DEC-417's retired sentence.
 
 ## Open questions
-1. **Library drift.** wizard-scripts pins `library.json` at `d129238bf3` (6 Oct), but the file has changed since (+451/-79, DEC-281's team words among them). Is that pin deliberate, as R22's "first library" would suggest, or should a library re-take under R42 be owed? journey-check R17 ("group") may also be hit through the library's copy.
+1. **Library drift** (answered 6 Nov, the lane: wizard-scripts' last re-take, `LIBRARY_RETAKEN` in `data.mjs:48`, is `4664e8efd4` of 14 Oct; `library.json` changed six times after it, last `3f8b0d2dc8` of 20 Oct, among them DEC-281's "team" (K3472), DEC-266 and DEC-307: a re-take at `3f8b0d2dc8` is owed, the module's job). wizard-scripts pins `library.json` at `d129238bf3` (6 Oct), but the file has changed since (+451/-79, DEC-281's team words among them). Is that pin deliberate, as R22's "first library" would suggest, or should a library re-take under R42 be owed? journey-check R17 ("group") may also be hit through the library's copy.
 2. **Inventory scope.** R1 says "every words item a job has raised", but section 3B's rows are not in the inventory. Should the lane add them, at least installer R93, R96, R97, screens-settings R86, interface-shell-t53 R147, workbooks R2, file-safety R11, extraction R101 and notice-producers R16?
 3. **Stale lines in the notes.** The counts line (notes :69) and "Still waiting" (:88) predate the 5 Nov settlement. R1's test checks keys, not prose, so it would not catch this.
 4. **Not-met marks.** Who clears the marks in section 3A now that the words are in W? The ledger shows most of those modules COMPLETE while their T53 marks remain. Reopening them is a module-job or coordinator decision.
