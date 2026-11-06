@@ -1,4 +1,4 @@
-/* investigation R26-R32 (T53; N1272; K4636, K5445, K5453, K5495, K5496) and F1's arm: marking, proposing and accepting parts to
+/* investigation R26-R32 (T53; N1272; K4636, K5445, K5453, K5495, K5496): marking, proposing and accepting parts to
    interpret, through the module's interface over the real extraction, reading-pipeline `partsOf` and retrieval search
    (`parts-fixture.mjs`). Each test names the requirement id it checks; no test copies a sentence people read. */
 import { test } from "node:test";
@@ -7,8 +7,7 @@ import { readFileSync } from "node:fs";
 import { world, sha } from "./parts-fixture.mjs";
 import { ANN, BOB, CAT, DAN, AI, P1, P2, PH } from "./fixture.mjs";
 import { MARK_PARTS_MAX, PROPOSALS_MAX, PROPOSALS_MEASURED } from "../../../src/investigation/index.mjs";
-import { investigationOps, DECLARED_OPS, INVESTIGATION_OP_NAMES } from "../../../src/investigation/ops.mjs";
-import { declaredOpHolds } from "../../declared-ops.mjs";
+import { DECLARED_OPS } from "../../../src/investigation/ops.mjs";
 
 const pages = (from, to) => ({ kind: "pdf-page", from, to });
 const rows = (sheet, from_row, to_row) => ({ kind: "sheet-range", sheet, from_row, to_row });
@@ -334,39 +333,10 @@ test("R31 (control): no row of a project the viewer may not see appears in any a
 test("R32: no op of this module lets a machine interpret: every op that interprets is refused to a machine, and the proposals are made by code alone", async () => {
   for (const [op, d] of Object.entries(DECLARED_OPS)) if (/accept|interpret|mark|propos/.test(op)) assert.deepEqual(d.machineClasses, [], op);
   const w = five();
-  const viaDoor = investigationOps(w.inv, new URL(`https://plane.invalid/?op=acceptproposals&by=${encodeURIComponent(AI)}`), { project: P1, proposals: [w.five[0].id] });
-  assert.equal((await viaDoor.acceptproposals()).code, "INVESTIGATION_MEMBER_ONLY");
+  assert.equal((await w.inv.acceptProposals({ project: P1, proposals: [w.five[0].id], by: AI })).code, "INVESTIGATION_MEMBER_ONLY");
+  assert.equal((await w.inv.markForInterpretation({ project: P1, capture: w.d.sha, parts: [pages(0, 1)], by: AI })).code, "INVESTIGATION_MEMBER_ONLY");
   const src = readFileSync(new URL("../../../src/investigation/parts.mjs", import.meta.url), "utf8");
   const imports = [...src.matchAll(/^import .* from "([^"]+)";/gm)].map((m) => m[1]);
   assert.deepEqual(imports, ["../record-grammar/index.mjs"]);
   assert.equal(interpretations(w).length, 0);
-});
-
-/* ------------------------------------------------------------------------------------------- F1, R25: acceptproposals' arm */
-
-test("F1, R28: the ops map serves acceptproposals and answers it as acceptProposals does; the stamp is the query's", async () => {
-  const w = five();
-  assert.ok(INVESTIGATION_OP_NAMES.includes("acceptproposals"));
-  const call = (query, body) => investigationOps(w.inv, new URL(`https://plane.invalid/?op=acceptproposals&${new URLSearchParams(query)}`), body).acceptproposals();
-  assert.equal((await call({ by: DAN }, { project: P1, proposals: [w.five[0].id], by: ANN })).ok, false, "a body's by never wins");
-  const r = await call({ by: ANN, project: P1, proposals: JSON.stringify([w.five[1].id]) }, {});
-  assert.equal(r.ok, true, JSON.stringify(r));
-  assert.deepEqual(interpretations(w).map((x) => [x.basis, x.proposal]), [["accepted", w.five[1].id]]);
-});
-
-const sameCode = (x, y) => x && y && x.ok === y.ok && (x.code ?? x.reason) === (y.code ?? y.reason);
-const named = (codes) => (answer, field) => !!answer && typeof answer === "object"
-  && (codes[field] || []).some((c) => answer.code === c || answer.reason === c);
-const door = async (fields) => {
-  const w = five();
-  const given = { ...fields, ...(fields.project === "sample-project" ? { project: P1 } : {}),
-                  ...(Array.isArray(fields.proposals) && fields.proposals[0] === "sample-proposal" ? { proposals: [w.five[0].id] } : {}) };
-  const q = new URLSearchParams({ op: "acceptproposals", by: ANN, viewer: ANN });
-  return investigationOps(w.inv, new URL(`https://plane.invalid/?${q}`), given).acceptproposals();
-};
-
-test("R25, F1: investigation declares acceptproposals: its requires alone raise no refusal naming a field, each missing one is refused naming it", async () => {
-  await declaredOpHolds({ op: "acceptproposals", declaration: DECLARED_OPS.acceptproposals, call: door,
-    refusedNaming: named({ project: ["NO_SUCH_PROJECT"], proposals: ["NO_PARTS_NAMED"] }),
-    values: { project: "sample-project", proposals: ["sample-proposal"] }, same: sameCode });
 });

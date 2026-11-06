@@ -84,7 +84,7 @@ test("R24: another word is CLOSE_BAD_REASON; a machine, a non-participant and a 
 test("R25: the ops map serves projectclose and answers it as projectClose does", () => {
   const w = openWorld(); const P = w.P;
   const call = (query, body) => investigationOps(w.inv, new URL(`https://plane.invalid/?op=projectclose&${new URLSearchParams(query)}`), body).projectclose();
-  assert.deepEqual(Object.keys(investigationOps(w.inv, new URL("https://plane.invalid/?op=projectclose"), {})), ["projectclose", "acceptproposals"]);
+  assert.deepEqual(Object.keys(investigationOps(w.inv, new URL("https://plane.invalid/?op=projectclose"), {})), ["projectclose"]);
   assert.equal(call({ by: BOB, viewer: BOB }, { project: P, reason: "resolved" }).code, "PROJECT_ACT_NOT_THE_OWNER");
   assert.equal(call({ by: ANN, viewer: ANN }, { project: P, reason: "done" }).code, "CLOSE_BAD_REASON");
   /* the stamp is the query's: a body's copy of `by` never wins */
@@ -121,19 +121,3 @@ test("R25: the declaration states what the screen sends and what the arm reads: 
   assert.equal(d.needs, "contribute");
 });
 
-/* F1 (BOB's grade, surface-declarations R17 and F1; R28): acceptproposals is declared reversible, a member's write refused to
-   a machine, with R28's fields; the declaration registers with op-declarations and op-grades as every owner's does. */
-test("F1: investigation declares acceptproposals reversible, a member's write refused to a machine, with R28's fields", () => {
-  assert.deepEqual(Object.keys(DECLARED_OPS), ["projectclose", "acceptproposals"]);
-  const d = DECLARED_OPS.acceptproposals;
-  assert.deepEqual([d.mutating, d.weight], [true, "reversible"]);
-  assert.deepEqual(d.classes, ["admin", "member"]);
-  assert.deepEqual(d.machineClasses, [], "refused to a machine");
-  assert.deepEqual([[...d.fields.accepts].sort(), [...d.fields.requires].sort()], [["project", "proposals"], ["project", "proposals"]]);
-  assert.deepEqual([...d.stamps].sort(), ["by", "viewer"]);
-  assert.equal(d.needs, "contribute");
-  assert.equal(typeof d.description, "string");
-  assert.ok(d.description.length > 0);
-  const row = declaredRows({ investigation: DECLARED_OPS }).get("acceptproposals");
-  assert.deepEqual([row.owner, [...row.machineClasses], row.mutating], ["investigation", [], true], "op-declarations takes the row as declared");
-});
