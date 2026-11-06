@@ -71,9 +71,9 @@
 import "../stdio.mjs";                 /* D-282: a suite's own exit must not discard the suite's own output */
 import "../sandbox.mjs";               /* D-186: owns $TMPDIR for this process and removes it on exit */
 import { Miniflare } from "miniflare";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { copyFileSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   REPO_ROOT, discoverMembers, buildMember, writeMember, verifyStatic, verifyFresh,
   freshBuildRunnable, unresolvableSpecifiers, sha256, fleetProvenance, memberPaths,
@@ -156,8 +156,10 @@ t("every discovered member declares one — a member with no `bundle` block is N
    reads the copy exactly as it reads the member. The names below still say "committed" where the history does. */
 const BUILT = mkdtempSync(join(tmpdir(), "fleetbundles-"));
 process.on("exit", () => rmSync(BUILT, { recursive: true, force: true }));
-members = members.map((m) => (m.bundle ? inDir(m, join(BUILT, m.name)) : m));
-const builtPlane = inDir(planeMember(REPO_ROOT), join(BUILT, "bio-plane"));
+/* Each member's own outfile, where its module sits beside its upload parts: a boot below names the module there. */
+const ownOutfile = new Map(members.filter((m) => m.bundle).map((m) => [m.name, m.bundle.outfile]));
+members = members.map((m) => (m.bundle ? inDir(m, join(BUILT, m.name, "dist")) : m));
+const builtPlane = inDir(planeMember(REPO_ROOT), join(BUILT, "bio-plane", "dist"));
 const committedOf = new Map();
 for (const m of [...members.filter((x) => x.bundle), builtPlane]) {
   try { await writeMember(m); committedOf.set(m.name, readFileSync(join(m.abs, m.bundle.outfile))); }
@@ -545,7 +547,8 @@ console.log("\n--- 7 · and the committed bytes really are a Worker: each boots 
                                ["sheet-worker", { r2Buckets: ["CAPTURES"] }]]) {
     const m = members.find((x) => x.name === name);
     if (!m || !m.bundle || !committedOf.get(name)) { t(`${name}: present to boot`, false, true); continue; }
-    const p = join(m.abs, m.bundle.outfile);
+    /* The module's NAME is the member's own outfile (its parts' specifiers are relative to it); its bytes the temp build's. */
+    const p = join(m.abs, ownOutfile.get(name));
     /* CPDF-10: A MEMBER WITH UPLOAD PARTS BOOTS WITH THEM, and the modules array
        is how a boot expresses that — `modules:true` cannot. The parts are typed
        the way the PLATFORM types them at upload: `CompiledWasm` (Workers forbid
@@ -663,8 +666,16 @@ console.log("\n--- 9 · R31: every member's SIZE and START-UP against the fleet'
   t("R31: the budget is the one the requirement states — warn past 32 MiB, fail past 48 MiB, warn past 500 ms",
     [BUDGET.sizeWarn, BUDGET.sizeFail, BUDGET.startWarnMs], [32 * 1024 * 1024, 48 * 1024 * 1024, 500]);
   const measured = [];
+  /* A member with upload parts imports them as "../assets/…" from its outfile's directory, so it is measured from a copy
+     of itself rooted at BUILT/<name>, where the temp build sits at dist/ and its parts are copied beside it. */
+  const asBuilt = (m) => {
+    if (!assetsOf(m).length) return m;
+    const abs = join(BUILT, m.name);
+    for (const rel of assetsOf(m)) { mkdirSync(dirname(join(abs, rel)), { recursive: true }); copyFileSync(join(m.abs, rel), join(abs, rel)); }
+    return { ...m, abs, bundle: { ...m.bundle, outfile: ownOutfile.get(m.name) } };
+  };
   for (const m of [...members.filter((x) => x.bundle), builtPlane]) {
-    const r = await budgetReport(m);
+    const r = await budgetReport(asBuilt(m));
     console.log(`        ${r.line}`);
     for (const w of r.warnings) console.log(`  WARN  ${w}`);
     show(r.findings);
