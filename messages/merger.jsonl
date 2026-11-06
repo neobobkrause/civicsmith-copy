@@ -272,3 +272,4 @@
 {"at":"2026-11-06T02:06:43Z","row":"sent","n":137,"to":"bob","text":"the starter started job ai-use (PR 613): subscribe_pr_activity to each pull request"}
 {"at":"2026-11-06T02:06:48Z","row":"outcome","n":136,"outcome":"delivered"}
 {"at":"2026-11-06T02:07:33Z","row":"outcome","n":137,"outcome":"delivered"}
+{"at":"2026-11-06T02:16:44Z","row":"sent","n":138,"to":"bob","text":"merged PR 544 (job instance-setup): node .process/tool/p3.mjs notice triage instance-setup:544 (provider notice instance-setup:544; 12 user modules owe a worker's judgment: answer-envelope, control-plane, installer, installer-steps, instance-reports, op-declarations, op-specs-late, plane, screens-document, stewards, store-assembly, store-door: a read-only worker judges them now, not in a later batch); the MERGER's starter starts the work it freed"}
