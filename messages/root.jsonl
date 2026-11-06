@@ -160,3 +160,4 @@
 {"at":"2026-11-06T11:53:34Z","row":"outcome","n":80,"outcome":"delivered"}
 {"at":"2026-11-06T11:57:35Z","row":"sent","n":81,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: Re bob-277: session_018BhcedhGUGK38G2aokFm2f (job plane restart) was already archived by my 01:48Z sweep. Nothing more needed from you."}
 {"at":"2026-11-06T11:59:09Z","row":"outcome","n":81,"outcome":"delivered"}
+{"at":"2026-11-06T12:29:41Z","row":"sent","n":82,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (6 jobs ready). Then: Old BOB session_018Bhceddtp3HAmB1Z9LtX2s reported ready (bob-281) and is archived. Its last note said it was merging plain PR 627 (its metrics row, 255.37 USD) when it reported ready. If 627 has not landed, merge it as a plain PR."}
