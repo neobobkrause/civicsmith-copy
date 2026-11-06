@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "project-stage",
+  "session": "session_018BhcecWscp1CpvDynRdhY4",
+  "started": "2026-11-06T17:30:02Z",
+  "ended": "2026-11-06T17:32:17Z",
+  "at": "2026-11-06T17:32:17Z",
+  "minutes": 2.25,
+  "result": "pass",
+  "layer": 8,
+  "suite_seconds": 3.953,
+  "tests": {
+    "total": 23,
+    "pass": 23,
+    "fail": 0
+  }
+}
