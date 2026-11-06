@@ -158,3 +158,4 @@
 {"at":"2026-11-05T23:46:56Z","row":"renew","id":"e5e8c59632a1","pr":606}
 {"at":"2026-11-05T23:52:04Z","row":"renew","id":"e5e8c59632a1","pr":606}
 {"at":"2026-11-05T23:57:15Z","row":"renew","id":"e5e8c59632a1","pr":606}
+{"at":"2026-11-06T00:10:23Z","row":"queue","id":"294b867539ce","pr":608,"head":"920d2ac86e7e862d548209518adfb11e263a79be","ref":"bob/public-read-materials-f1","by":"session_018Bhceddtp3HAmB1Z9LtX2s","reviewed":null,"no_review":"one requirement line (found mark F1 on public-read), Bob's word via the coordinator 5 Nov 23:33","rounds":0,"decision":null,"as":"bob","take_by":"2026-11-06T03:20:23.526Z","renews":true}
