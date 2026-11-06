@@ -8,6 +8,13 @@
  * wants them in one place. This command copies, for every guarded bundle, its artifact, its manifest and each declared
  * upload part into the one directory named on its command line, each under its own file name.
  *
+ * THE INSTALLER'S BUNDLE RIDES TOO (the dist pass, BOB 6 Nov 2026). `newgroup/dist/newgroup.bundled.mjs` is no longer
+ * committed, and it is what a manual install pastes (newgroup/DEPLOY.md), so where the repository has the installer
+ * (`newgroup/package.json`) its built bundle is gathered beside the fleet's, under its own name, and its absence is
+ * refused NO_ARTIFACT like any other. It is built by `npm --prefix newgroup run build` (the process builds it before
+ * the assemble, as every untracked generated file); its freshness is installer R82's guard, not R6's, so the survey
+ * below does not read it.
+ *
  * IT SHIPS NOTHING STALE. Before anything is written it asks the fleet gate's own dependency-free freshness check
  * (`bundles.mjs`' `survey`, which is `fleet-bundle.mjs`' `verifyStatic`, R6) about every bundle, and refuses when any
  * artifact, manifest or part is missing or any is stale. It keeps no second copy of that check.
@@ -33,16 +40,23 @@ import { guardedBundles, survey, library } from "./bundles.mjs";
 export const bundleFiles = (member, assetsOf) =>
   member.bundle ? [member.bundle.outfile, member.bundle.manifest, ...assetsOf(member)] : [];
 
+/** The installer's built bundle, repository-relative: gathered when the repository has the installer. */
+export const INSTALLER_BUNDLE = "newgroup/dist/newgroup.bundled.mjs";
+const installerFile = (root) => existsSync(join(root, "newgroup/package.json")) ? join(root, INSTALLER_BUNDLE) : null;
+
 /** What a gather would write: `{ ok: true, files: [{name, member, from}] }` or `{ ok: false, refused, findings }`.
  *  Reads only. */
 export async function planGather({ repoRoot = null } = {}) {
   const members = await guardedBundles(repoRoot);
-  const { assetsOf } = await library();
+  const { assetsOf, REPO_ROOT } = await library();
+  const installer = installerFile(repoRoot || REPO_ROOT);
   const findings = [];
   /* missing first: a missing file is named as missing, and the freshness check then says the same in its words */
   for (const m of members)
     for (const rel of bundleFiles(m, assetsOf))
       if (!existsSync(join(m.abs, rel))) findings.push(`${m.name}: ${m.dir}/${rel} is missing`);
+  if (installer && !existsSync(installer))
+    findings.push(`newgroup: ${INSTALLER_BUNDLE} is missing (built by \`npm --prefix newgroup run build\`)`);
   if (findings.length) return { ok: false, refused: "NO_ARTIFACT", findings };
   for (const r of await survey(members)) findings.push(...r.findings);
   if (findings.length) return { ok: false, refused: "STALE_ARTIFACT", findings };
@@ -56,8 +70,13 @@ export async function planGather({ repoRoot = null } = {}) {
       byName.set(name, { member: m.dir, rel });
       files.push({ name, member: m.name, from });
     }
+  if (installer) {
+    const name = basename(INSTALLER_BUNDLE), was = byName.get(name);
+    if (was) findings.push(`${name}: both ${was.member}/${was.rel} and ${INSTALLER_BUNDLE}`);
+    else files.push({ name, member: "newgroup", from: installer });
+  }
   if (findings.length) return { ok: false, refused: "NAME_CLASH", findings };
-  return { ok: true, files, members: members.map((m) => m.name) };
+  return { ok: true, files, members: members.map((m) => m.name), installer: !!installer };
 }
 
 /** Gathers into `out`. Returns the exit status. */
@@ -86,7 +105,8 @@ export async function gather(out, { repoRoot = null, log = console.log, err = co
     copyFileSync(f.from, join(dest, f.name));
     log(`gathered: ${f.member} ${f.name}`);
   }
-  log(`release-gather: ${plan.files.length} file(s) of ${plan.members.length} guarded bundle(s) (${plan.members.join(", ")}) into ${dest}`);
+  log(`release-gather: ${plan.files.length} file(s) of ${plan.members.length} guarded bundle(s) (${plan.members.join(", ")})`
+    + `${plan.installer ? " and the installer's bundle" : ""} into ${dest}`);
   return 0;
 }
 

@@ -5,6 +5,7 @@
   "scripts": {
     "embed": "node scripts/embed-release.mjs",
     "build": "npm run embed && node scripts/build.mjs",
+    "pretest": "cd .. && node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs && node docs/development/ux-substrate/screens/words-reads.src.mjs . --build && npm --prefix newgroup run build",
     "test": "node test/embed.test.mjs && npm run embed && node test/wizard.test.mjs && node --test test/requirements.test.mjs test/t47.test.mjs test/t48.test.mjs test/t50.test.mjs test/t51.test.mjs test/t51-ascii.test.mjs test/g83-begin.test.mjs test/corpus.test.mjs test/realsize.test.mjs && node --test test/steps/",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev"
