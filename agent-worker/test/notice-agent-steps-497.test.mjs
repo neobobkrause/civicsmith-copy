@@ -1,108 +1,55 @@
 /* agent-worker over agent-steps PR 497 (its source only, no requirement text): `driveHarness` no longer publishes a
- * table state that holds a provider's session, response, conversation or continuation id (agent-harness R23's
- * `STATE_HOLDS_PROVIDER_STATE`); it publishes no state on that tick and names the refusal in its `refusals`, at
- * `airuntick.state`, with its `code`. This member passes `drive.refusals` through as R28's `refusals` and names each
- * `code` once in R91's `segment_end.refusals` (`refusalCodes` reads `code`), so the new entry needs no change here:
- * confirmed, no code change. Driven at the member's interface, `POST /run` over this suite's own fake plane and a model
- * whose every answer carries provider-held ids (`session_id`, `conversation_id`, `previous_response_id`): every state
- * the segment publishes is free of keys shaped as provider-held state, and nothing in R28's answer or the
- * `segment_end` tick reports the state as refused. Control: the segment still ends by the table, its state published.
+ * table state that `agent-harness`' `publishableState` refuses `STATE_HOLDS_PROVIDER_STATE` (its R23); that tick
+ * publishes no state and the refusal is named in `drive.refusals`, `{at: "airuntick.state", code, key, detail}`. This
+ * member answers R28's `refusals` as `drive.refusals` and R91's `segment_end.refusals` as their codes, so no source
+ * change is owed (BOB, 6 Nov 04:42): this test pins the pass-through.
  *
- * A confirmation: agent-steps' change keeps such ids out of the state before they reach this member, so this test
- * passes with PR 497 reverted too (named for the reviewer by `--exempt-revert`). */
-import "../../bio-plane/test/sandbox.mjs";
+ * The refusal is the provider's own: in a child, `agent-harness`' module is its real exports with `publishableState`
+ * wrapped so the state it is handed also holds a provider's `session_id` (the case the real table never builds); the
+ * real `publishableState` refuses it and the real `driveHarness` names it. Driven at the member's interface,
+ * `POST /run` (notice-497-world.mjs: this suite's own fake plane and model). The caller receives that refusal
+ * unchanged, as the real function words it, and the plane's `segment_end` names its code; no tick publishes a state.
+ * With R28's `refusals` or `refusalCodes` broken it fails. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import worker from "../src/index.mjs";
-import { ACCOUNT, MEMBER } from "./account.mjs";
-import { PROVIDER_STATE_KEY } from "../../agent-harness/src/harness.mjs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { join, dirname } from "node:path";
 
-const AIK = "aik-" + "d".repeat(64);
-const RUN = "RUN-notice-497";
-const PACK_VERSION = "investigative-session@n497+0000000000000000";
-const PACK = { id: "investigative-session", edition: "n497", version: PACK_VERSION,
-               resident: { objective: { text: "find what the record holds" }, disclosable: [] }, disclosed: {} };
-const WIDE = [{ bound: "fetches", allowed: 50 }, { bound: "subsessions", allowed: 50 },
-              { bound: "wallclock", allowed: 500000 }, { bound: "runtime", allowed: 5000 }];
-const HELD = { session_id: "sess-PROVIDER-HELD", conversation_id: "conv-PROVIDER-HELD",
-               previous_response_id: "resp-PROVIDER-HELD" };
+const HERE = dirname(fileURLToPath(import.meta.url));
+const HARNESS = join(HERE, "../../agent-harness/src/harness.mjs");
 
-/** This suite's fake plane: it answers the run's ops as the plane's wire does and records every call. */
-function plane(rec) {
-  const ok = (result) => Response.json({ ok: true, result, store: "scratch", tokenClass: "ai", version: "n497" });
-  return { fetch: async (url, init) => {
-    const u = new URL(url);
-    const op = u.searchParams.get("op") || "";
-    const body = init && typeof init.body === "string" ? JSON.parse(init.body) : null;
-    rec.calls.push({ op, body });
-    switch (op) {
-      case "whoami": return ok({ tokenClass: "ai", session: false, member: null });
-      case "airun": return ok({ run: RUN, found: true, session: {
-        id: RUN, mode: "check", status: "running", context: { type: "inquiry", id: "INQ-497" }, max_passes: 1,
-        principal: { plane: MEMBER, claude: MEMBER, ref: MEMBER, skill: PACK_VERSION },
-        state: null, budget: WIDE.map((b) => ({ ...b, consumed: 0, unit: null })) } });
-      case "airunlog": return ok({ run: RUN, found: true, entries: [], limit: 200, truncated: false });
-      case "agentpack": return Response.json({ ok: true, fences: [], pack: PACK, store: "scratch", tokenClass: "ai" });
-      case "airunspawn": return ok({ found: true, half: "search", payload: { run: RUN,
-        context: { type: "inquiry", id: "INQ-497" }, mode: "check", skill: PACK_VERSION, standard_pair: null } });
-      case "meaningrows": return ok({ ok: true, arm: "leg", rows: [], scope: { documents: 3, documents_with_rows: 0, documents_without_rows: 3 }, count: 0 });
-      case "basisversions": return ok({ id: u.searchParams.get("id"), versions: [], limit: 50, truncated: false });
-      case "search": return ok({ hits: [] });
-      case "versionchain": return ok({ address_norm: null, total: 0, truncated: false, versions: [] });
-      case "suggest": return ok({ wrote: true });
-      case "airuntick": return ok({ run: RUN, found: true, ticked: true, status: "running",
-                                    appended: Array.isArray(body?.log) ? body.log.length : 0, refused: [] });
-      case "airunclose": return ok({ terminated: true, bound: body?.bound ?? null });
-      default: return Response.json({ ok: false, error: "unknown op: " + op }, { status: 400 });
-    }
-  } };
+function drive() {
+  const script = `
+    import { mock } from "node:test";
+    const real = { ...(await import(${JSON.stringify("file://" + HARNESS + "?real")})) };
+    const handed = [];
+    mock.module(${JSON.stringify("file://" + HARNESS)}, { namedExports: { ...real,
+      publishableState: (state, ...rest) => { const s = { ...state, session_id: "sess-PROVIDER-HELD" }; const p = real.publishableState(s, ...rest);
+                                              handed.push(p); return p; } } });
+    const { segment } = await import(${JSON.stringify("file://" + join(HERE, "notice-497-world.mjs"))});
+    for (const k of ["log", "info", "warn", "error", "debug"]) console[k] = () => {};
+    const r = await segment();
+    const ticks = r.rec.calls.filter((c) => c.op === "airuntick" && c.body);
+    process.stdout.write("OUT " + JSON.stringify({ status: r.status, out: r.out, handed,
+      states: ticks.filter((c) => c.body.state != null).length, end: ticks.find((c) => c.body.segment_end)?.body.segment_end ?? null }) + "\\n");`;
+  const out = execFileSync(process.execPath, ["--experimental-test-module-mocks", "--no-warnings", "--input-type=module",
+    "-e", script], { encoding: "utf8", cwd: join(HERE, "..") });
+  const m = /^OUT (.*)$/m.exec(out);
+  assert.ok(m, `the child answered: ${out}`);
+  return JSON.parse(m[1]);
 }
 
-/** The model: each sub-session reports an indeterminate look; each judgement row answers its own tool. */
-function answer(sent) {
-  const names = (sent.tools || []).map((x) => x.name);
-  if (names.includes("report"))
-    return [{ type: "tool_use", id: "r", name: "report", input: { state: "LOOKED_INDETERMINATE", summary: "nothing here" } }];
-  const prompt = [...sent.messages].reverse().map((m) => (m.role !== "user" ? "" : typeof m.content === "string"
-    ? m.content : (Array.isArray(m.content) ? m.content.filter((c) => c.type === "text").map((c) => c.text).join("") : "")))
-    .find((c) => /judge_/.test(c)) || "";
-  const step = (/Answer by calling judge_([a-z]+)/.exec(prompt) || [])[1] || "";
-  const input = step === "plan" ? { level: "document", observed: "LOOKED_INDETERMINATE" } : {};
-  return [{ type: "tool_use", id: "j", name: `judge_${step}`, input }];
-}
-
-async function segment() {
-  const rec = { calls: [] };
-  const saved = globalThis.fetch;
-  globalThis.fetch = async (_url, init) => Response.json({ id: "msg", type: "message", role: "assistant", ...HELD,
-    content: answer(JSON.parse(init.body)), stop_reason: "tool_use", usage: { input_tokens: 1, output_tokens: 1 } });
-  try {
-    const res = await worker.fetch(new Request("http://agent-worker/run", { method: "POST", body: JSON.stringify({
-      run_id: RUN, store: "scratch", credential: AIK, account: ACCOUNT }) }), { VERSION: "n497", PLANE: plane(rec) });
-    return { status: res.status, out: await res.json(), rec };
-  } finally { globalThis.fetch = saved; }
-}
-
-const ticks = (rec) => rec.calls.filter((c) => c.op === "airuntick" && c.body);
-const heldKeys = (s) => (s && typeof s === "object" ? Object.keys(s).filter((k) => PROVIDER_STATE_KEY.test(k)) : []);
-
-test("notice agent-steps:497 (R28, R91): over a provider answering session, conversation and response ids, no published state holds one and none is reported refused", async () => {
-  const { status, out, rec } = await segment();
-  assert.equal(status, 200, JSON.stringify(out).slice(0, 400));
-  assert.equal(out.judgement_source, "model");
-  const states = ticks(rec).filter((c) => c.body.state).map((c) => c.body.state);
-  assert.ok(states.length > 0, "the segment published states at its resumable ticks");
-  assert.deepEqual(states.flatMap(heldKeys), [], "no published state holds a key shaped as provider-held state");
-  assert.deepEqual((out.refusals || []).filter((r) => r?.at === "airuntick.state"), [], "R28: no state refused");
-  const end = ticks(rec).find((c) => c.body.segment_end)?.body.segment_end;
-  assert.ok(end, "R91: the segment_end tick was sent");
-  assert.ok(!end.refusals.includes("STATE_HOLDS_PROVIDER_STATE"), "R91: segment_end names no state refusal");
-  assert.ok(!JSON.stringify(rec.calls).includes("PROVIDER-HELD"), "no provider id reached the plane");
-});
-
-test("notice agent-steps:497 (control, R28): the segment ends by the table, every refusal code it reports named once in segment_end", async () => {
-  const { out, rec } = await segment();
-  assert.equal(out.ended?.by ?? null, "the table");
-  const end = ticks(rec).find((c) => c.body.segment_end)?.body.segment_end;
-  assert.deepEqual(end.refusals, [...new Set((out.refusals || []).map((r) => r.code ?? r.reason).filter(Boolean))]);
+test("notice agent-steps:497 (R28, R91): a state refused STATE_HOLDS_PROVIDER_STATE reaches the caller's refusals unchanged and segment_end names its code", () => {
+  const r = drive();
+  assert.equal(r.status, 200, JSON.stringify(r.out).slice(0, 400));
+  assert.equal(r.out.ok, true);
+  const refused = r.handed.filter((p) => p.ok === false);
+  assert.ok(refused.length > 0, "the real publishableState refused a state");
+  const want = refused.map((p) => ({ at: "airuntick.state", code: p.code, key: p.key, detail: p.detail }));
+  const got = (r.out.refusals || []).filter((x) => x?.at === "airuntick.state");
+  assert.deepEqual(got.slice(0, want.length), want.slice(0, got.length), "each refusal as the provider worded it");
+  assert.ok(got.length > 0 && got.every((x) => x.code === "STATE_HOLDS_PROVIDER_STATE" && x.key === "session_id"));
+  assert.equal(r.states, 0, "no tick published a state");
+  assert.ok(r.end && r.end.refusals.includes("STATE_HOLDS_PROVIDER_STATE"), "R91: segment_end names the code");
 });
