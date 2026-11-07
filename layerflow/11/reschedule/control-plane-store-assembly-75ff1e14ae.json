@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "control-plane",
+  "provider": "store-assembly",
+  "provider_pr": 875,
+  "provider_land": "75ff1e14ae2ee0c0364fd16868db405be508f60e",
+  "at": "2026-11-07T19:31:44Z",
+  "key": "control-plane<-store-assembly@75ff1e14ae",
+  "why": "only its own tests changed (bio-plane/test/m/store-assembly/notices.test.mjs): no interface change for its users",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

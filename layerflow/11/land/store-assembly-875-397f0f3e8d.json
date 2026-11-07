@@ -1,0 +1,60 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "store-assembly",
+  "pr": 875,
+  "branch": "job/store-assembly-2",
+  "head": "397f0f3e8dec6ed01e9e6cf57ac2221681e1c3fa",
+  "before": "13ad01e3913dbf2ca8b3769bccd8096eb4d3029d",
+  "merge": "75ff1e14ae2ee0c0364fd16868db405be508f60e",
+  "at": "2026-11-07T19:31:44Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/store-assembly/notices.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/store-assembly/notices.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/store-assembly/notices.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , wholeExportOps"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/store-assembly/notices.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/store-assembly/notices.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "earlier_source": true
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "plane",
+    "store-request"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "plane",
+    "store-request"
+  ],
+  "users_noticed": []
+}
