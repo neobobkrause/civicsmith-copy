@@ -7,3 +7,4 @@
 {"at":"2026-11-07T17:41:27Z","row":"sent","n":4,"to":"bob","text":"job screens-wizards complete, PR #835 ready, session session_018BhcefyP9S2zvtmvqgKD3u: run status"}
 {"at":"2026-11-07T17:41:45Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-07T17:52:15Z","row":"sent","n":5,"to":"bob","text":"job screens-wizards complete, PR #835 ready, session session_018BhcefyP9S2zvtmvqgKD3u: run status. Gate finding cleared: t50.test.mjs was inert (a key swap in two absence controls); it is restored to layer/11's version, so the PR no longer changes it."}
+{"at":"2026-11-07T17:52:34Z","row":"outcome","n":5,"outcome":"delivered"}
