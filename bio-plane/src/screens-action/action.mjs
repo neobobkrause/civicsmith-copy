@@ -60,10 +60,19 @@ export const action = Object.freeze({
       const v = profiles && profiles.view ? profiles.view : {};
       if ((kind === "records_request" || kind === "cpra_request") && Array.isArray(v.records_laws) && v.records_laws.length) {
         const ds = Array.isArray(v.deadlines) ? v.deadlines : [];
-        return v.records_laws.filter(function (l) { return l && typeof l.citation === "string" && l.citation; }).map(function (l) {
-          const d = typeof l.response === "string" ? ds.find(function (x) { return x && x.rule === l.response && x.applies_to === "records_request"; }) : null;
+        const ls = Array.isArray(v.layers) ? v.layers : [];
+        const all = v.records_laws.filter(function (l) { return l && typeof l.citation === "string" && l.citation; }).map(function (l) {
+          const d = typeof l.response === "string" ? (ds.find(function (x) { return x && x.rule === l.response && x.applies_to === "records_request" && (!l.layer || !x.layer || x.layer === l.layer); })
+            || ds.find(function (x) { return x && x.rule === l.response && x.applies_to === "records_request"; })) : null;
+          const layer = typeof l.layer === "string" ? l.layer : "";
+          const lay = layer ? ls.find(function (y) { return y && y.id === layer; }) : null;
           return { citation: l.citation, level: typeof l.level === "string" ? l.level : "", name: typeof l.name === "string" ? l.name : "",
-            amount: d && d.amount ? d.amount : 0, count: d && d.count ? d.count : "" };
+            amount: d && d.amount ? d.amount : 0, count: d && d.count ? d.count : "", layer: layer, place: lay && lay.place ? lay.place : layer };
+        });
+        // R61 (T53): a law whose name or citation two active layers give is told apart by its layer, and its choice names the layer
+        return all.map(function (d) {
+          const shared = !!d.layer && all.some(function (x) { return x !== d && x.layer && x.layer !== d.layer && ((d.name && x.name === d.name) || x.citation === d.citation); });
+          return Object.assign({}, d, { shared: shared, key: shared ? d.citation + "@@" + d.layer : d.citation });
         });
       }
       const seen = new Set();
@@ -495,17 +504,22 @@ export const action = Object.freeze({
       // proposals apart, each marked not the law; and another law proposed.
       const pf = view.data.profiles;
       const offered = P.lawsOf(pf && pf.state === "ok" ? pf.value : null, a.kind);
+      const pfLayers = pf && pf.state === "ok" && pf.value && pf.value.view && Array.isArray(pf.value.view.layers) ? pf.value.view.layers : [];
       const gl = a.governing_laws && typeof a.governing_laws === "object" && !Array.isArray(a.governing_laws) ? a.governing_laws : {};
       const stated = Array.isArray(gl.laws) ? gl.laws : [];
       const LEVELS = ["state", "city", "county", "federal"];
       const lawLine = function (l) {
-        const d = offered.find(function (x) { return x.citation === l.citation; });
+        const d = offered.find(function (x) { return x.citation === l.citation && (!l.layer || !x.layer || x.layer === l.layer); });
+        // R61 (T53): a law stored with its layer is drawn with that layer's place; an unlayered one as before
+        const lay = l.layer ? (Array.isArray(pfLayers) ? pfLayers : []).find(function (y) { return y && y.id === l.layer; }) : null;
         return (LEVELS.includes(l.level) ? cs.w("screen.request.level." + l.level) + " · " : "") + cs.esc(l.citation || "")
+          + (l.layer ? ' · <span data-layer="' + cs.esc(l.layer) + '">' + cs.w("screen.request.law.layer", { place: lay && lay.place ? lay.place : l.layer }) + "</span>" : "")
           + (d && d.amount ? " · " + cs.w("screen.request.window." + (d.count === "business" ? "business" : "calendar"), { n: String(d.amount) }) : "");
       };
       const levels = function (id) { return cs.choice(id, "screen.request.level", LEVELS.map(function (k) { return [k, "screen.request.level." + k]; })); };
       const optionsOf = function (list) {
-        return list.map(function (d) { return { value: d.citation, text: d.citation }; });
+        // R61 (T53): the layer is drawn beside a name two layers share
+        return list.map(function (d) { return d.shared ? { value: d.key, key: "screen.action.law.layered", fills: { citation: d.citation, place: d.place } } : { value: d.key || d.citation, text: d.citation }; });
       };
       const lawsStated = gl.state === "stated" && stated.length
         ? cs.sheet(stated.map(function (l) { return cs.row("", lawLine(l), "", ""); }).join(""))
@@ -668,12 +682,20 @@ export const action = Object.freeze({
         const pf = view.data.profiles;
         const a = view.data.action && view.data.action.state === "ok" ? view.data.action.value : {};
         const offered = view.parts.lawsOf(pf && pf.state === "ok" ? pf.value : null, a.kind);
-        const c = offered.find(function (d) { return d.citation === cs.value("law-pick"); });
+        const c = offered.find(function (d) { return (d.key || d.citation) === cs.value("law-pick"); });
         if (!c) return null;
         const held = a.governing_laws && Array.isArray(a.governing_laws.laws) ? a.governing_laws.laws.find(function (l) { return l.citation === c.citation; }) : null;
-        return { body: { target: view.subject, laws: [{ level: held ? held.level : c.level || cs.value("law-level") || "state", citation: c.citation }] } };
+        const law = { level: held && !c.shared ? held.level : c.level || cs.value("law-level") || "state", citation: c.citation };
+        // R61 (actions R113): the layer chosen is sent where two layers give the law
+        if (c.shared) law.layer = c.layer;
+        return { body: { target: view.subject, laws: [law] } };
       },
       rereads: ["action"],
+      // R61 (T53): two layers give the name and none was stated: drawn by its words, naming the layers, never as "not found"
+      refusals: { NAME_AMBIGUOUS: function (refusal, cs) {
+        const ls = refusal && Array.isArray(refusal.layers) ? refusal.layers : [];
+        return cs.w("screen.request.law.ambiguous", { layers: ls.map(function (l) { return l && (l.place || l.layer) ? String(l.place || l.layer) : ""; }).filter(Boolean).join(", ") });
+      } },
     },
     {
       // R16: "Propose another law…": a proposal beside the list, which it never changes.
@@ -688,7 +710,7 @@ export const action = Object.freeze({
           // R77 (T53): with the citation empty, "Write the law's citation first" beside the field, and nothing is sent
           return named ? { body: { target: view.subject, laws: [{ level: cs.value("law-level") || "state", citation: named }] } } : { refuse: "screen.action.law.citation.needed" };
         }
-        const c = offered.find(function (d) { return d.citation === cs.value("law-pick"); });
+        const c = offered.find(function (d) { return (d.key || d.citation) === cs.value("law-pick"); });
         if (!c) return null;
         return { body: { target: view.subject, laws: [{ level: c.level || cs.value("law-level") || "state", citation: c.citation }] } };
       },
