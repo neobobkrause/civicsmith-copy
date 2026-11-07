@@ -46,6 +46,9 @@
  *   R27 fetch-done              FINDING, capture.fetchesDone           a large capture's fetch delivered, to the member who began it (G2)
  *   R28 ingest-done, ingest-stopped  FINDING, calculations.ingestNotices   a background money ingest finished or stopped, to who ingested (G55)
  *   R29 reading-ended            FINDING, deps.readingsEnded (plane's job table)  a reading that finished, ended in part or was refused, to the member it was made for (G135f)
+ *   R30 register-changed-noticed FINDING, following.registerChanges    a register watch's change with its count, to the watch's author (T53)
+ *   R31 register-import-<done|stopped|failed>  FINDING, deps.importsEnded (registers' R13, injected)  an import's end, to its starter (T53)
+ *       (R32: both built from counts and the register's name only)
  *
  * REACHED as `noticeProducersOf(host, deps)` (K1563 (1)): one instance per Durable Object storage. It registers nothing
  * and holds no check row: it refuses nothing. `deps` (each defaults to its module's instance on the same host, reached
@@ -163,7 +166,24 @@ export const NOTICE_KINDS = Object.freeze({
   "ingest-stopped": "FINDING",
   /* R29 (fix round 9, G135f): a reading ended, in part or refused */
   "reading-ended": "FINDING",
+  /* R30 (T53; N1259; queue R98): a register watch's change, with its count */
+  "register-changed-noticed": "FINDING",
+  /* R31 (T53; N1259; queue R98): an import into a register that finished, stopped or failed */
+  "register-import-done": "FINDING",
+  "register-import-stopped": "FINDING",
+  "register-import-failed": "FINDING",
 });
+/** R30: the window of register changes read (`following.registerChanges`' `since`), the changes one read follows, and its page
+ *  (`following` R43: 1 to 200). */
+export const REGISTER_CHANGE_DAYS = 90;
+export const REGISTER_CHANGES_MAX = 1000;
+export const REGISTER_CHANGES_PAGE = 200;
+/** R31: the window of ended imports read (by `finished_at`), the imports one read follows, and its page (`registers` R13: at most 200). */
+export const REGISTER_IMPORT_DAYS = 90;
+export const REGISTER_IMPORTS_MAX = 1000;
+export const REGISTER_IMPORTS_PAGE = 200;
+/** R31: an ended import's state as `registers` holds it, and the kind it is told by; any other state (still running) is never told. */
+export const REGISTER_IMPORT_STATES = Object.freeze({ indexed: "done", stopped: "stopped", failed: "failed" });
 /** R29: the window of ended readings read, by the row's end, and the rows one read follows (`plane` R98: at most 500 a page). */
 export const READING_ENDED_DAYS = 90;
 export const READING_ENDED_MAX = 1000;
@@ -308,6 +328,8 @@ export class NoticeProducers {
       fetch_done: { bound: FETCH_DONE_MAX, days: FETCH_DONE_DAYS, truncated: false },
       ingest: { bound: INGEST_NOTICE_MAX, days: INGEST_NOTICE_DAYS, truncated: false },
       reading_ended: { bound: READING_ENDED_MAX, days: READING_ENDED_DAYS, truncated: false },
+      register_changed: { bound: REGISTER_CHANGES_MAX, days: REGISTER_CHANGE_DAYS, truncated: false },
+      register_import: { bound: REGISTER_IMPORTS_MAX, days: REGISTER_IMPORT_DAYS, truncated: false },
       failed,
     };
     const run = (provider, fn) => {
@@ -342,6 +364,8 @@ export class NoticeProducers {
       run("capture", () => ({ fact: "fetch_done", ...this.#fetchDone(me, viewer, at) }));
       run("calculations", () => ({ fact: "ingest", ...this.#ingestNotices(me, viewer, at) }));
       run("readings", () => ({ fact: "reading_ended", ...this.#readingsEnded(me, viewer, at) }));
+      run("following", () => ({ fact: "register_changed", ...this.#registerChanged(me, viewer, at) }));
+      run("registers", () => ({ fact: "register_import", ...this.#registerImports(me, viewer, at) }));
       return { items, facts };
     } catch {
       return { items: [], facts: { ...facts, failed: [...new Set([...failed, "notice-producers"])] } };
@@ -1557,6 +1581,148 @@ export class NoticeProducers {
         assignee: null, assignee_role: null,
         recipients: [me],
         options: [...this.#optionsOf(home ? [home] : [])],
+      });
+    }
+    return { items, facts: { truncated } };
+  }
+
+  /* ================================================================== R30, R32 · a register watch's change
+   * (`following.registerChanges`, its R43; N1259, K4403 (7)). One FINDING per entry, keyed `FINDING::register-changed-noticed::
+   * <watch>::<change>` (the entry's `change`, else its instant), to the watch's author while active and while she may see its
+   * project, else the project's active owners (`membership` R65), else the administrators (R86), and to nobody else. Read from
+   * `since` (90 days back) in pages following `cursor` to at most the bound. R32: the item is built from the register's name and
+   * the entry's counts only; no cell, name, amount or row of the register is read or carried. */
+  #registerChanged(me, viewer, now) {
+    const fol = this.#following;
+    if (!fol || typeof fol.registerChanges !== "function") return { items: [], facts: {} };   /* a following with no R43 read tells none */
+    if (!this.#active(me)) return { items: [], facts: {} };
+    const since = instantOf(now - REGISTER_CHANGE_DAYS * DAY_MS);
+    const entries = [];
+    let after = null, truncated = false;
+    for (;;) {
+      if (entries.length >= REGISTER_CHANGES_MAX) { truncated = true; break; }
+      const r = fol.registerChanges({ after, since, limit: Math.min(REGISTER_CHANGES_PAGE, REGISTER_CHANGES_MAX - entries.length), viewer });
+      if (!r || r.ok !== true || r.undetermined === true || r.state === "undetermined" || !Array.isArray(r.changes)) throw failure("following");
+      entries.push(...r.changes);
+      if (!filled(r.cursor) || r.cursor === after || r.changes.length === 0) break;
+      after = r.cursor;
+    }
+    const zone = this.#zone(), today = NoticeProducers.#localDay(now, zone);
+    const count = (v) => (Number.isSafeInteger(Number(v)) && Number(v) >= 0 ? Number(v) : 0);
+    const items = [], seen = new Set();
+    for (const e of entries) {
+      if (!e || e.watch === null || e.watch === undefined || !filled(e.register)) continue;
+      const change = filled(e.change) || Number.isSafeInteger(e.change) ? String(e.change) : filled(e.at) ? e.at : null;
+      if (!change) continue;
+      const id = `FINDING::register-changed-noticed::${e.watch}::${change}`;
+      if (seen.has(id)) continue;
+      const project = filled(e.project) ? e.project : null;
+      if (!this.#watchRecipients(e.author, project).includes(me)) continue;
+      seen.add(id);
+      const c = e.counts && typeof e.counts === "object" ? e.counts : {};
+      const added = count(c.added), changed = count(c.changed), removed = count(c.removed) + count(c.possibly_removed);
+      const fills = { register: String(e.register), count: String(Number.isSafeInteger(Number(e.total)) ? Number(e.total) : added + changed + removed),
+                      added: String(added), changed: String(changed), removed: String(removed),
+                      date: dayInSentence(NoticeProducers.#localDay(e.at, zone), today) ?? "" };
+      const summary = localize("notice-producers.register.changed.summary", "A register you watch changed: {register}", fills);
+      const detail = fills.date
+        ? localize("notice-producers.register.changed.detail", "{register} changed on {date}: {count} rows, {added} added, {changed} changed and {removed} removed. Open it to see them.", fills)
+        : localize("notice-producers.register.changed.detail.undated", "{register} changed: {count} rows, {added} added, {changed} changed and {removed} removed. Open it to see them.", fills);
+      items.push({
+        id, class: "FINDING", kind: "register-changed-noticed",
+        label: NOTICED_LABEL, by: localize("notice-producers.group_civicsmith", "the team's Civicsmith"),
+        case: project ? this.#homesAt([project], viewer) : this.#homesOf([]),
+        subject: { kind: "register", id: String(e.register), watch: e.watch, project },
+        summary, detail, fills,
+        basis: { source: "following.registerChanges", watch: e.watch, watch_kind: filled(e.kind) ? e.kind : null, at: e.at ?? null,
+                 counts: { added, changed, removed }, total: Number(fills.count), zone,
+                 detail: localize("notice-producers.index.a_register_change_is_followings", "a register watch's change is following's (its R43): counts only, told once to the watch's author, and to nobody else.") },
+        age: ageFrom(e.at, now, "no_change_instant"),
+        assignee: null, assignee_role: null,
+        recipients: [me],
+        options: [...this.#optionsOf(project ? [project] : [])],
+      });
+    }
+    return { items, facts: { truncated } };
+  }
+
+  /** R30: who a register watch's change goes to: its author while active and, for a project's watch, while she may see the
+   *  project; else the project's active owners; else the administrators. */
+  #watchRecipients(author, project) {
+    const who = isMachine(author) ? null : bare(author);
+    try {
+      if (who && this.#active(who) && (!project || this.#membership.inSight(project, who))) return [who];
+      const owners = project ? (this.#membership.projectOwners(project) || []).map(bare).filter((m) => m && this.#active(m)) : [];
+      if (owners.length) return owners;
+      return (this.#membership.activeAdmins() || []).map(bare);
+    } catch (e) { if (e && e.provider) throw e; throw failure("membership"); }
+  }
+
+  /* ================================================================== R31, R32 · an import that finished, stopped or failed
+   * (`registers`' `importsEnded`, its R13, handed in as `deps.importsEnded` by the composition root, as `readingsEnded` is (R29),
+   * so this module imports nothing of `registers`). One FINDING per import ended `indexed`, `stopped` or `failed`, keyed
+   * `FINDING::register-import-<done|stopped|failed>::<import>`, to the member who started it (`author`) while active, and to
+   * nobody else; an import of reason `watch` (a refresh, R30's) makes none. Read in pages following the last import read to at
+   * most the bound; the window is 90 days of `finished_at`. R32: built from the register's name and the counts only. With no
+   * `deps.importsEnded` it contributes none and names none. */
+  #registerImports(me, viewer, now) {
+    const ended = this.#deps.importsEnded;
+    if (typeof ended !== "function") return { items: [], facts: {} };
+    if (!this.#active(me)) return { items: [], facts: {} };
+    const since = now - REGISTER_IMPORT_DAYS * DAY_MS;
+    const rows = [];
+    let after = 0, truncated = false;
+    for (;;) {
+      if (rows.length >= REGISTER_IMPORTS_MAX) { truncated = true; break; }
+      const limit = Math.min(REGISTER_IMPORTS_PAGE, REGISTER_IMPORTS_MAX - rows.length);
+      const r = ended({ after, limit });
+      const page = Array.isArray(r) ? r : r && r.ok !== false && Array.isArray(r.imports) ? r.imports : null;
+      if (!page) throw failure("registers");
+      rows.push(...page);
+      const last = page.length ? Number(page[page.length - 1].import) : NaN;
+      if (page.length < limit || !Number.isFinite(last) || last <= after) break;
+      after = last;
+    }
+    const zone = this.#zone(), today = NoticeProducers.#localDay(now, zone);
+    const count = (v) => (Number.isSafeInteger(Number(v)) && Number(v) >= 0 ? Number(v) : null);
+    const items = [], seen = new Set();
+    for (const g of rows) {
+      const state = g ? REGISTER_IMPORT_STATES[g.state] : null;
+      if (!state || g.import === null || g.import === undefined || !filled(g.register) || g.reason === "watch") continue;
+      if (isMachine(g.author) || bare(g.author) !== me) continue;
+      const when = typeof g.finished_at === "number" ? g.finished_at : Date.parse(g.finished_at);
+      if (!(Number.isFinite(when) && when >= since)) continue;
+      const kind = `register-import-${state}`;
+      const id = `FINDING::${kind}::${g.import}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const project = filled(g.project) ? g.project : null;
+      const rowsKept = count(g.rows_out), bytes = count(g.bytes);
+      const fills = { register: String(g.register), rows: rowsKept === null ? "" : String(rowsKept), bytes: bytes === null ? "" : String(bytes),
+                      reason: state === "done" || !filled(g.reason) ? "" : String(g.reason),
+                      date: dayInSentence(NoticeProducers.#localDay(Number.isFinite(when) ? when : null, zone), today) ?? "" };
+      const summary = state === "done" ? localize("notice-producers.register.import.done.summary", "Your import into {register} has finished", fills)
+        : state === "stopped" ? localize("notice-producers.register.import.stopped.summary", "Your import into {register} was stopped", fills)
+          : localize("notice-producers.register.import.failed.summary", "Your import into {register} failed", fills);
+      const detail = state === "done"
+        ? localize("notice-producers.register.import.done.detail", "{register} has been brought in: {rows} rows kept. Open the register to search it.", fills)
+        : state === "stopped"
+          ? localize("notice-producers.register.import.stopped.detail", "Bringing in {register} stopped after {rows} rows were kept: {reason}. The rows kept stay.", fills)
+          : localize("notice-producers.register.import.failed.detail", "Bringing in {register} failed: {reason}. Nothing more was kept.", fills);
+      items.push({
+        id, class: "FINDING", kind,
+        label: NOTICED_LABEL, by: localize("notice-producers.group_civicsmith", "the team's Civicsmith"),
+        case: project ? this.#homesAt([project], viewer) : this.#homesOf([]),
+        subject: { kind: "register", id: String(g.register), import: g.import, project, scope: filled(g.scope) ? g.scope : null },
+        summary, detail, fills,
+        door: localize("notice-producers.register.open", "Open the register"),
+        basis: { source: "registers.importsEnded", import: g.import, state: g.state, reason: filled(g.reason) ? g.reason : null,
+                 rows_out: rowsKept, bytes, finished_at: g.finished_at ?? null, zone,
+                 detail: localize("notice-producers.index.a_register_import_is_registers", "an import's end is registers' (its R13): told once for each import, to the member who began it, and to nobody else.") },
+        age: ageFrom(typeof g.finished_at === "number" ? new Date(g.finished_at).toISOString() : g.finished_at, now, "no_import_instant"),
+        assignee: null, assignee_role: null,
+        recipients: [me],
+        options: [...this.#optionsOf(project ? [project] : [])],
       });
     }
     return { items, facts: { truncated } };
