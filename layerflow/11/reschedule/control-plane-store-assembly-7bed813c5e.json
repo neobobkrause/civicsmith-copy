@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "control-plane",
+  "provider": "store-assembly",
+  "provider_pr": 831,
+  "provider_land": "7bed813c5ee3922220e9fcac060fbadf069db6ff",
+  "at": "2026-11-07T18:53:44Z",
+  "key": "control-plane<-store-assembly@7bed813c5e",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/store-assembly/catalogue.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/store-assembly/found-f1-f4.test.mjs: breaking, added, naming R17, R18, R31, R34, R41, R42, R47, R101 (Provides before this land) while store-assembly's source changed: it may assert a changed answer, bio-plane/test/m/store-assembly/maps.mjs: breaking, added code that is not an object property: , wholeExportOps, bio-plane/test/m/store-assembly/notice-ai-catalogue-317.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/store-assembly/requirements-split.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

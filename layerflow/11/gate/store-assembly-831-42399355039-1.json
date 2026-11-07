@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "store-assembly",
+  "pr": 831,
+  "sha": "e2797b26791963db1c665fb01971992b59e37c0f",
+  "run_id": 42399355039,
+  "run_attempt": 1,
+  "at": "2026-11-07T18:04:34Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": false,
+  "minutes": 8.65,
+  "suite_minutes": 4.36,
+  "record_only": false,
+  "whole": true
+}
