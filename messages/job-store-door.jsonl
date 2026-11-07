@@ -11,3 +11,4 @@
 {"at":"2026-11-07T18:01:14Z","row":"sent","n":6,"to":"bob","text":"job store-door complete, PR #832 ready, session session_018Bhcedz231GawVQvMZrr1u: run status (republished on layer/11 with instance-setup f5828a4d4d)"}
 {"at":"2026-11-07T18:01:29Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-07T18:12:40Z","row":"sent","n":7,"to":"bob","text":"job store-door complete, PR #832 ready, session session_018Bhcedz231GawVQvMZrr1u: run status (republished on layer/11 with admission 346da3bd38, a test-only change; suite 72/72)"}
+{"at":"2026-11-07T18:13:07Z","row":"outcome","n":7,"outcome":"delivered"}
