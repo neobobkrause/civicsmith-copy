@@ -1,0 +1,9 @@
+{
+  "row": "join",
+  "layer": 11,
+  "module": "record-core",
+  "from": 2,
+  "why": "census PR 753: legacy module with 1 unmet mark (T53; PLATFORM); confirm its requirements",
+  "at": "2026-11-07T04:32:09Z",
+  "by": "bob"
+}
