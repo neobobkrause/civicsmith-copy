@@ -31,8 +31,9 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T14:00:00Z"
+    "state": "WORKING",
+    "at": "2026-11-07T16:28:04Z",
+    "reason": "reopened: meet the unmet T53 marks R136-R151 in build/requirements/interface-shell-t53.md, each with a test that fails with the change reverted; the first attempt (job/interface-shell-t53 at 759fb375, 5 Nov) only added a Status line and an open-marks test and never merged: carry over what still applies. Where a mark's code lives in bio-plane/src/interface-shell/ and cannot move within this module's paths, block with the exact words"
   },
   "prior_work": "Coordinator 18:31 (option c): your code lives in bio-plane/src/interface-shell-t53/, which you own; every hook you need inside bio-plane/src/interface-shell/ (index.mjs and the rest) is interface-shell's: name each as a found mark for interface-shell (report it to BOB), never edit it."
 }
