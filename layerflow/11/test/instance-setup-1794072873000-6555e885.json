@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "instance-setup",
+  "session": "session_018Bhceei38tYQhzqmNZ6Kyc",
+  "started": "2026-11-07T17:34:33Z",
+  "ended": "2026-11-07T17:39:03Z",
+  "at": "2026-11-07T17:39:03Z",
+  "minutes": 4.5,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 177.023,
+  "tests": {
+    "total": 274,
+    "pass": 274,
+    "fail": 0
+  }
+}
