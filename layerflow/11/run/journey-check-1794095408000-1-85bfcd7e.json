@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "journey-check",
+  "round": 1,
+  "started": "2026-11-07T23:50:08Z",
+  "ended": "2026-11-07T23:55:41Z",
+  "minutes": 5.6,
+  "tested_on": "5063043e89f7a746b9f87d1ba21931613ee0498b",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-07T23:55:41Z"
+}
