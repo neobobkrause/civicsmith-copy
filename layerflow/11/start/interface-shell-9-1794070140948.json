@@ -1,0 +1,13 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "interface-shell",
+  "attempt": 9,
+  "branch": "job/interface-shell",
+  "early": [
+    "store-request",
+    "queue",
+    "instance-setup"
+  ],
+  "at": "2026-11-07T16:49:00Z"
+}
