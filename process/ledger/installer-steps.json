@@ -33,7 +33,8 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/installer-steps.md, each with a test under newgroup/test/steps/ that fails with the change reverted. newgroup's steps; deploying newgroup is never yours. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T13:20:00Z"
+    "state": "WORKING",
+    "at": "2026-11-07T17:04:38Z",
+    "reason": "reopened: meet the unmet requirement marks in build/requirements/installer-steps.md, each with a test that fails with the change reverted; attempt 2 (job/installer-steps at 13535650, 5 Nov: g83 asserts R46's eu answers STORE_JURISDICTION) completed but never merged: carry over its work where it still applies on layer/11"
   }
 }
