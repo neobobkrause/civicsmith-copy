@@ -196,7 +196,9 @@ export async function walkInstaller(walk, page, installerOrigin) {
     if (await p.locator("#fail:not([hidden])").count())
       throw new Error("the installer stopped: " + (await p.locator("#fail-h").textContent()) + " " + (await p.locator("#fail-p").textContent()));
     const stopped = await p.locator('#log [data-r="no"], #checks [data-r="no"]').allTextContents();
-    if (stopped.length) throw new Error("a step did not finish: " + stopped.join(" | "));
+    /* what the installer names as not confirmed (its list in the final panel) goes with the failure, so the report says which part */
+    const unconfirmed = stopped.length ? await p.locator("#done li").allTextContents() : [];
+    if (stopped.length) throw new Error("a step did not finish: " + stopped.join(" | ") + (unconfirmed.length ? " — not confirmed: " + unconfirmed.map((t) => t.trim()).join(" | ") : ""));
     if (!(await p.locator("#done .okbox").count())) throw new Error("the final panel does not say the copy is running: "
       + (await p.locator("#done").textContent()).slice(0, 300));
     copy = (await p.locator("#out-url").textContent()).trim();
