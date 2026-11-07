@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "surface-declarations",
+  "pr": 811,
+  "sha": "e1d2833fed9d56942dd605d26ede036f017b1f15",
+  "run_id": 42394842657,
+  "run_attempt": 1,
+  "at": "2026-11-07T17:09:37Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 3.06,
+  "suite_minutes": 0.02,
+  "record_only": false,
+  "whole": true
+}

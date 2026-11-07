@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "op-declarations",
+  "provider": "surface-declarations",
+  "provider_pr": 811,
+  "provider_land": "fe7bf45a8723ea0928ab4d5333b7fc44b70781d2",
+  "at": "2026-11-07T17:14:24Z",
+  "key": "op-declarations<-surface-declarations@fe7bf45a87",
+  "why": "added BUDGET_CLASS_ROWS, NOT_FIRST_WAVE, SCREENREAD, SCREENREAD_SPEC, SCREEN_MOVES, budgetFindings, budgetRow, declareScreenReads, moveBudgets, opBudgets, screenBudget, screenHops, screenReadOf, statedBudget; its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/surface-declarations/budgets.test.mjs: breaking, added, naming R9, R12, R13, R14, R15, R16, R17, R18 (Provides before this land) while surface-declarations's source changed: it may assert a changed answer, bio-plane/test/m/surface-declarations/waves.test.mjs: breaking, added, naming R10, R11 (Provides before this land) while surface-declarations's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
