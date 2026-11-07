@@ -3048,15 +3048,19 @@ w495('screen.ai-use.keeping.text', "Civicsmith follows developments in trust and
 # beside it, so a reader trained on other letter scales (Admiralty, 3x5x2) never reads "D" as "unreliable". The letters
 # keep their ruling; the gloss says how the thing was established, never whether it is true (mark.grade.reading). One
 # gloss per letter a scale can show. Sources: capture, BIO_Intake_Doctrine §3 and provenance's captureGrade (A is a
-# chain-of-custody archive no route makes yet, EARNED_CAPTURE_CEILING B a direct fetch, ARCHIVE_CAPTURE_GRADE C an archive's
-# replay); connection, BIO_Content_Framework §8.1 (D's label as corrected by BOB #30); testimony, TESTIMONY_GRADE D only;
+# chain-of-custody archive no route makes yet, EARNED_CAPTURE_CEILING B a direct fetch; BD-18, 7 Nov: an archive's raw replay is B
+# via archive, a rewritten replay and a reference without bytes are C); connection, BIO_Content_Framework §8.1 (D's label as corrected by BOB #30); testimony, TESTIMONY_GRADE D only;
 # subject match, the same resolution ladder as connection. The team's grade for the copy (DEC-461) is a grade the team
 # gives up to the record's ceiling, so it takes the capture glosses with mark.grade.gloss.copy.lead before them.
 def w496(key, en, note):
     W.append(dict(key=key, en=en, protected=False, note='DEC-496: ' + note))
 w496('mark.grade.gloss.capture.a', 'a full archive of the source as it was served, with its chain of custody', 'capture (and the ceiling) A; no route makes one yet')
 w496('mark.grade.gloss.capture.b', 'fetched straight from the source, fingerprinted on arrival', 'capture B, EARNED_CAPTURE_CEILING')
-w496('mark.grade.gloss.capture.c', "taken from someone else's archive, one step further from the source", 'capture C, ARCHIVE_CAPTURE_GRADE')
+w496('mark.grade.gloss.capture.b.archive', 'fetched from the source by an archive, which kept it unchanged until Civicsmith fetched it', 'BD-18 (Bob, 7 Nov): capture B via archive, a replay of the raw bytes (e.g. Wayback\'s unmodified mode)')
+w496('mark.grade.via_archive', 'via archive', 'BD-18: the label beside a B that came through an archive\'s raw replay')
+w496('mark.grade.archive.custody', 'Fetched from {publisher} by {archive} on {date}, and kept unchanged by {archive} until your team\'s Civicsmith fetched it.', 'BD-18: the custody line of a B via archive; {date} the snapshot date, shown as its fetch date; co-attestation as DEC-81 (second archive or trusted timestamp, else self-attested only)')
+w496('mark.grade.gloss.capture.c', 'a reference only: where to find it and how to cite it, with no copy held', 'BD-18 (Bob, 7 Nov): capture C is reference only (Intake Doctrine §3)')
+w496('mark.grade.gloss.capture.c.rewritten', "an archive's altered replay, kept as a reference only", 'BD-18: a rewritten replay (the archive\'s toolbar, altered links) is C')
 w496('mark.grade.gloss.connection.a', 'the source itself links the two, and both are held', 'connection A, CF 8.1')
 w496('mark.grade.gloss.connection.b', 'the same identifier appears in both documents', 'connection B, CF 8.1')
 w496('mark.grade.gloss.connection.c', 'only a name, title or date matches: plausible, not established', 'connection C, CF 8.1')
