@@ -1,0 +1,57 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-intake",
+  "pr": 945,
+  "branch": "job/screens-intake",
+  "head": "931be731ec15a1e96c43f119a078658e958fc4a7",
+  "before": "2914227e8088d00ed3793d20b16ff4e714a29214",
+  "merge": "1995851e1fa5255a64ebf87c73fc32c9d66612c1",
+  "at": "2026-11-07T22:59:20Z",
+  "by": "bob",
+  "gate_runs": 5,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-intake/r73-parted.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-intake/r73-parted.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-intake/r73-parted.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R26, R72, R73, R74 (Provides before this land) while screens-intake's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-intake/r73-parted.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "screens-daily",
+    "screens-document",
+    "screens-inquiry",
+    "screens-intake-rounds"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "screens-daily",
+    "screens-document",
+    "screens-inquiry",
+    "screens-intake-rounds"
+  ],
+  "users_noticed": []
+}

@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "screens-intake-rounds",
+  "provider": "screens-intake",
+  "provider_pr": 945,
+  "provider_land": "1995851e1fa5255a64ebf87c73fc32c9d66612c1",
+  "at": "2026-11-07T22:59:20Z",
+  "key": "screens-intake-rounds<-screens-intake@1995851e1f",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/screens-intake/r73-parted.test.mjs: breaking, added, naming R26, R72, R73, R74 (Provides before this land) while screens-intake's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
