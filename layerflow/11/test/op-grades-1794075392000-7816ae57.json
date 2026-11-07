@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "op-grades",
+  "session": "session_018BhcecvpmPWjwxTgqV61N4",
+  "started": "2026-11-07T18:16:32Z",
+  "ended": "2026-11-07T18:17:44Z",
+  "at": "2026-11-07T18:17:44Z",
+  "minutes": 1.2,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 5.366,
+  "tests": {
+    "total": 176,
+    "pass": 175,
+    "fail": 0
+  }
+}
