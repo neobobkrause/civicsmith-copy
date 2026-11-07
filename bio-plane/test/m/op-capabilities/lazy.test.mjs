@@ -20,7 +20,7 @@ test("R3: the table is built on the first call, never at evaluation — in a fre
   assert.equal(out.afterFirst, 1, "the first call builds one table");
   assert.equal(out.afterAll, out.afterFirst, "a later call builds again");
   assert.equal(out.same, true);
-  assert.equal(out.n, 323);
+  assert.equal(out.n, 323 + 2, "the 323 rows of T49's opening and F1's two");
   assert.equal(out.frozen, true);
 });
 
