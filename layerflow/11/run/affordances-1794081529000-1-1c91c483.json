@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "affordances",
+  "round": 1,
+  "started": "2026-11-07T19:58:49Z",
+  "ended": "2026-11-07T19:59:04Z",
+  "minutes": 0.3,
+  "tested_on": "b52d823b198d8ad5ee9d28c21b88c322663a30ff",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-07T19:59:04Z"
+}
