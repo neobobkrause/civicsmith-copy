@@ -12,8 +12,8 @@ their own for an account's use.
 
 Built and tested, mark kept: R12, R13 (`r12-r13.test.mjs`), R15 (`drawer.test.mjs`). The open part of each is below.
 
-Not served yet: `control-plane`'s `APP_SCREENS` does not import screens-ai's `SCREENS`, so the page does not offer the three screens
-until `control-plane` adds them (outside this module's paths).
+**Found mark for control-plane** (BOB, 7 Nov): `control-plane/index.mjs`'s `APP_SCREENS` does not import screens-ai's `SCREENS`, so
+the served page does not offer the three screens until control-plane adds them. That import is control-plane's, not in this diff.
 
 ## How R2 was read
 
