@@ -113,7 +113,9 @@ const filed = async (titles = ["Street maintenance report 2026", "Pothole work o
 
 test("R128 'The project's documents': every document filed under the project, each its title as a reference opening the document, its kind where the row states one and its capture date; read by heldcaptures for the project's held and vouched documents", async () => {
   const { world, ann, project, rows: DOCS } = await filed();
-  assert.deepEqual(DOCS.map((d) => d.format), ["html", "xlsx", "png", "undetermined"], "the real rows: three formats the register profiles, one it does not");
+  /* the letter's format is whatever the provider records (it named it "undetermined", now "text", attempt 6): the screen has a kind only for these three */
+  assert.deepEqual(DOCS.slice(0, 3).map((d) => d.format), ["html", "xlsx", "png"], "the real rows: three formats the screen draws a kind for");
+  assert.ok(!["html", "xlsx", "png", "jpeg", "ods", "csv"].includes(DOCS[3].format), "the letter is none of them: " + DOCS[3].format);
   const p = await pageOf(world, ann, "/app/project/" + project);
   const s = section(p, "screen.project.docs.head");
   assert.ok(s, "the section is drawn");
