@@ -179,3 +179,4 @@
 {"at":"2026-11-06T23:52:56Z","row":"sent","n":90,"to":"bob","text":"Sweep: 6 job sessions, over the job cap of 3: archive finished ones before starting more; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; op-grades: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-06T23:53:12Z","row":"outcome","n":90,"outcome":"delivered"}
 {"at":"2026-11-07T00:52:49Z","row":"sent","n":91,"to":"bob","text":"Sweep: IDLE CAPACITY, 5 slots empty, 8 startable: run node .process/tool/p3.mjs layer jobs 9, then each job start it lists first; only a recorded hold (p3 hold) keeps a slot empty; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; op-grades: BLOCKED; runtime-limits: BLOCKED."}
+{"at":"2026-11-07T00:53:06Z","row":"outcome","n":91,"outcome":"delivered"}
