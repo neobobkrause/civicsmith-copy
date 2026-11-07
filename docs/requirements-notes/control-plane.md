@@ -97,3 +97,28 @@ None: answered by Bob 2026-09-26 (K102). The draft's two questions were technica
 - `reviewAnswer`, the grant secret and the review door's reader are here, as `build/extraction/review.md` placed them. C-66.6 is here, as `build/extraction/ai-runs.md` placed it.
 - C-61.1 (`requiredArgument`), C-68.1 (`storageAbsent`) and C-68.5 (`publishedStoreAbsent`) are not this module's. Each is raised by handlers that move out (`capture`, `publication`, the knock). The earliest of them holds the row, and later ones import it (K78 (3)).
 - The legacy root query API (`/?op=`, one old deployment) stays until Bob retires that deployment (P1).
+
+## Moved on 7 Nov 2026 (control-plane job, attempt 4)
+
+Moved word for word from `build/requirements/control-plane.md` toward the requirements cap: its former Status line, and each section heading's citations (the heading as it now reads, then as it read). No R or F line changed; `bio-plane/test/m/control-plane/requirements-ids.test.mjs` holds the ids and marks.
+
+- Former Status line: **Status** · In force, with later folds reviewed. Consolidated for size on 5 Nov 2026 (requirements cap 70,000): the status history, Size, the settled readings note (K1396), Uses, Satisfies, Suggestions, Open for Bob and Decided by BOB are in `docs/requirements-notes/control-plane.md`, word for word, and every R line here is kept verbatim with its mark and its indented text.
+- `**The act gate**` was: **The act gate** (moved to `op-declarations` with the tables it reads, K624)
+- `**The Durable Object class**` was: **The Durable Object class** (K93; N348)
+- `**The doorbell's pull**` was: **The doorbell's pull** (N364; DEC-78 item 1)
+- `**T35's ops, the carrier and the tally**` was: **T35's ops, the carrier and the tally** (T35)
+- `**T36's ops and the original's door**` was: **T36's ops and the original's door** (T36; K2092; N714, N707, N710, N721; DEC-169, DEC-172, DEC-173; K1946 T2, K2087)
+- `**T37's routes and the digest's channel**` was: **T37's routes and the digest's channel** (T37; N761, N708, N669, N757, N776; K1874, K2129, K2134, K2175, K2200, K2201, K2206)
+- `**T41's routes**` was: **T41's routes** (T41; N820; `draft-T41-investigation.md` §3.6; K2405, K2417, K2418)
+- `**T42's routes**` was: **T42's routes** (T42; N832; K2611)
+- `**T46's routes: the member interface, the explanation level, a member's own run**` was: **T46's routes: the member interface, the explanation level, a member's own run** (T46; N897 (1), (3); N919; principle 9.6; N559; `draft-T46-interface.md` §1.2, §4 (3))
+- `**T47's routes: the disclosure relayed, T47's ops, a member's run with no page credential, the new screens**` was: **T47's routes: the disclosure relayed, T47's ops, a member's run with no page credential, the new screens** (T47)
+- `#### T47's L11 fold` was: #### T47's L11 fold (K3100)
+- `#### T48` was: #### T48 (T48-77)
+- `**The design walk folded**` was: **The design walk folded** (T48; WALK-084 #2; K3250, K3254)
+- `#### T49` was: #### T49 (T49-29)
+- `#### T49: words by key` was: #### T49: words by key (K3366, K3368; DEC-257, DEC-258)
+- `#### T50: the T50 ops routed, the review copy's matter stake, an unknown address, `acquire`'s `for`, the viewers (N933, N1174, N1186, N1194, N1117; DEC-299, DEC-301; K3627, K3643)` was: #### T50 (T50-35): the T50 ops routed, the review copy's matter stake, an unknown address, `acquire`'s `for`, the viewers (N933, N1174, N1186, N1194, N1117; DEC-299, DEC-301; K3627, K3643)
+- `#### T51: the signing page leaves; the reads T51 adds are routed (K3807, K3814, K3835; K3826, K3829, K3839, K3843, K3852, K3853)` was: #### T51 (T51-123): the signing page leaves; the reads T51 adds are routed (K3807, K3814, K3835; K3826, K3829, K3839, K3843, K3852, K3853)
+- `#### T51 fix round 8` was: #### T51 fix round 8 (K4817; `build/plan/archive/fix-round-8-T51.md`)
+- `#### T51 fix round 9` was: #### T51 fix round 9 (K4831, K4834, K4835, K4837; `build/plan/fix-round-9-T51.md`; GAP-1.4, GAP-1.10)
