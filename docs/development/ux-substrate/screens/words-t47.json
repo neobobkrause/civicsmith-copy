@@ -49,7 +49,7 @@
  },
  {
   "key": "ai.label.untested.writinghelp",
-  "en": "Not yet tested: this help with writing hasn't yet passed Civicsmith's tests on real matters. Read it through before you use any of it.",
+  "en": "Not yet tested: this help with writing has not yet passed Civicsmith's tests on real matters. Read it through before you use any of it.",
   "protected": true,
   "note": "on writinghelp's marked answer on a test instance"
  },
@@ -169,7 +169,7 @@
  },
  {
   "key": "signing.ceremony.declined",
-  "en": "Your device didn't confirm, so nothing was signed or published. Everything is as it was; sign again when you are ready.",
+  "en": "Your device did not confirm, so nothing was signed or published. Everything is as it was; sign again when you are ready.",
   "protected": true,
   "note": "device canceled or failed"
  },
