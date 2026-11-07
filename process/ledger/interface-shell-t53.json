@@ -5,7 +5,9 @@
   "paths": [
     "bio-plane/src/interface-shell-t53/",
     "build/requirements/interface-shell-t53.md",
-    "docs/requirements-notes/interface-shell-t53.md"
+    "docs/requirements-notes/interface-shell-t53.md",
+    "bio-plane/test/m/interface-shell/t53-hook.test.mjs",
+    "bio-plane/test/m/interface-shell/requirements-ids.test.mjs"
   ],
   "tests": [
     "bio-plane/test/m/interface-shell-t53/"
@@ -31,8 +33,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T14:00:00Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T18:47:36Z"
   },
   "prior_work": "Coordinator 18:31 (option c): your code lives in bio-plane/src/interface-shell-t53/, which you own; every hook you need inside bio-plane/src/interface-shell/ (index.mjs and the rest) is interface-shell's: name each as a found mark for interface-shell (report it to BOB), never edit it."
 }

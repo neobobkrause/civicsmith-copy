@@ -4,7 +4,13 @@
   "layer": 11,
   "paths": [
     "build/requirements/installer-places.md",
-    "docs/requirements-notes/installer-places.md"
+    "docs/requirements-notes/installer-places.md",
+    "newgroup/src/ui.mjs",
+    "newgroup/src/index.mjs",
+    "newgroup/src/words.mjs",
+    "newgroup/test/fixture.mjs",
+    "newgroup/test/requirements.test.mjs",
+    "newgroup/test/wizard.test.mjs"
   ],
   "tests": [
     "bio-plane/test/m/installer-places/"
