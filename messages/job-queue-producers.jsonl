@@ -9,3 +9,4 @@
 {"at":"2026-11-05T07:59:19Z","row":"sent","n":5,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (3 jobs ready). Then: job queue-producers complete, PR #453 ready, session session_018Bhced8h9FS1V5AW39XUKj: run status"}
 {"at":"2026-11-05T07:59:30Z","row":"outcome","n":5,"outcome":"delivered"}
 {"at":"2026-11-07T16:50:38Z","row":"sent","n":6,"to":"bob","text":"job queue-producers complete, PR #805 ready, session session_018BhcecmDp7EdFTJX44bB5Q: run status"}
+{"at":"2026-11-07T16:51:00Z","row":"outcome","n":6,"outcome":"delivered"}
