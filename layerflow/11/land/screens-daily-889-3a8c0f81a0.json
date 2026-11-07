@@ -1,0 +1,83 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-daily",
+  "pr": 889,
+  "branch": "job/screens-daily",
+  "head": "3a8c0f81a0944d1748c987d29950aa55722f1e12",
+  "before": "a801611ef09137c6b7facc03f0533378fb53b468",
+  "merge": "99214904ad2bb18a32a238d5ce15fc8746604ad2",
+  "at": "2026-11-07T20:46:44Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-daily/answers.test.mjs",
+      "bio-plane/test/m/screens-daily/browse.test.mjs",
+      "bio-plane/test/m/screens-daily/finder.test.mjs",
+      "bio-plane/test/m/screens-daily/fixtures/registry-43379a1a44.json",
+      "bio-plane/test/m/screens-daily/home.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-daily/answers.test.mjs",
+      "bio-plane/test/m/screens-daily/browse.test.mjs",
+      "bio-plane/test/m/screens-daily/finder.test.mjs",
+      "bio-plane/test/m/screens-daily/fixtures/registry-43379a1a44.json",
+      "bio-plane/test/m/screens-daily/home.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-daily/answers.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: test ( \"\" , async ( ) =>"
+      },
+      {
+        "file": "bio-plane/test/m/screens-daily/browse.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-daily/finder.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-daily/fixtures/registry-43379a1a44.json",
+        "class": "breaking",
+        "why": "added code that is not an object property: , { \"op\" : \"signerknown\" , \"label\" :"
+      },
+      {
+        "file": "bio-plane/test/m/screens-daily/home.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-daily/answers.test.mjs",
+      "bio-plane/test/m/screens-daily/browse.test.mjs",
+      "bio-plane/test/m/screens-daily/finder.test.mjs",
+      "bio-plane/test/m/screens-daily/fixtures/registry-43379a1a44.json",
+      "bio-plane/test/m/screens-daily/home.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "journey-check"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "journey-check"
+  ],
+  "users_noticed": []
+}
