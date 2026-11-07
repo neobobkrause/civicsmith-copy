@@ -3264,3 +3264,21 @@ w498('screen.ceremony.funding.affirm.needed', 'Tick the affirmation first, or le
 w498('refusal.FUNDING_NOT_AFFIRMED', 'Each member who signs affirms that the funding list is complete. Tick the affirmation, or leave funding out of the case. Nothing was signed.', 'PF-5 refusal', True)
 w498('refusal.FUNDING_OMITS_SOURCE', 'The funding list leaves out {source}. A stated list must be complete. Put it back, or leave funding out of the case altogether. Nothing was signed.', 'PF-7 refusal, naming the source', True)
 w498('screen.ceremony.funding.ties', 'Your declared ties print in the same section, each as you chose to be named.', 'PF-2: the signer learns ties now print', True)
+
+# DEC-499 (the ux lane, 7 Nov 2026; BOB's ask for queue-producers R58, R59 and instance-setup R107-R113, DEC-404,
+# K5458): an arriving layer named with its level when two held layers share a place name, and the administrators'
+# item when an update changes a rule the team's chain uses. It names the rules changed, never the text of a team's
+# entry, and points to "The rules each place brings" (screen.layers.head).
+def w499(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-499: ' + note))
+w499('place.level.federal', 'federal', 'a layer\'s level, the {level} fill (instance-setup R108)')
+w499('place.level.state', 'state', 'a layer\'s level')
+w499('place.level.county', 'county', 'a layer\'s level')
+w499('place.level.city', 'city', 'a layer\'s level')
+w499('place.level.district', 'district', 'a layer\'s level: a special district, such as a school or water district')
+w499('queue.place-profile-arrived.summary.level', 'A profile for "{place}" ({level}) is now held: {profile}', 'R59: when two held layers carry the same place name; {level} a place.level.* word, e.g. "Alameda (county)"')
+w499('queue.place-profile-arrived.detail.level', 'An installed update brought a profile that matches the place your team named, "{place}" ({level}): {profile}. An administrator can choose it under Places; the offices your team added stay.', 'R59: the detail with its level')
+w499('queue.layer-rule-changed.summary', 'An update changed rules your team uses, from {layer}', 'R58: one item per update, to administrators; {layer} the layer\'s place and level')
+w499('queue.layer-rule-changed.detail', 'Civicsmith {version} changed these rules in {layer}: {rules}. Your team\'s own entries are unchanged. Clocks already recorded keep what they hold; new ones use the changed rules.', 'R58: {rules} the changed rules by name, joined with commas, never the text of a team entry; instance-setup R111')
+w499('queue.layer-rule-changed.detail.more', 'and {n} more', 'R58: when the list of changed rules is long')
+w499('queue.layer-rule-changed.door', 'See the rules each place brings', 'R58: the act, opening Places at the layer')
