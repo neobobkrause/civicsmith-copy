@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "record-core",
+  "session": "session_018Bhceg5eR3uNytC614Z9jG",
+  "started": "2026-11-07T16:21:46Z",
+  "ended": "2026-11-07T16:24:13Z",
+  "at": "2026-11-07T16:24:13Z",
+  "minutes": 2.45,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 30.886,
+  "tests": {
+    "total": 233,
+    "pass": 233,
+    "fail": 0
+  }
+}
