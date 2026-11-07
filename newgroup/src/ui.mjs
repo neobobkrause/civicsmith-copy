@@ -27,6 +27,8 @@ import { list as heldProfiles } from "../../jurisdictions/index.mjs";
 /* R72: every sentence a key holds is read by key (words.mjs); a sentence no key holds stays here, in "team" words, and is reported. */
 import { word } from "./words.mjs";
 import { guideReady, guideStage, GUIDE_SCRIPT } from "./guide.mjs";
+/* R92: every Cloudflare page a reader follows is held in the installer's two link tables, never here. */
+import { GET_READY_LINKS } from "./ready.mjs";
 /* R23 (T46): the container images the release this installer carries names (recorded by the embed from its signed fleet
    statement), and the one statement of what cannot install yet. */
 import { RELEASE_VERSION, RELEASE_CONTAINERS } from "./release.mjs";
@@ -214,7 +216,7 @@ export const LEFT_OUT = leftOutNotice(RELEASE_CONTAINERS, RELEASE_VERSION);
 const needBlock = () => `<section class="cs-section ng-sec" id="need">
 <h2>${escText(word("installer.need.heading"))}</h2>
 <ul class="ng-list">
-<li>${escText(word("screen.install.need.cloudflare"))} ${escText(word("installer.need.cloudflare.check"))} ${around(word("installer.need.create", { link: SLOT }), `<a href="https://dash.cloudflare.com/sign-up" rel="noopener">${escText(word("installer.need.create.link"))}</a>`)}</li>
+<li>${escText(word("screen.install.need.cloudflare"))} ${escText(word("installer.need.cloudflare.check"))} ${around(word("installer.need.create", { link: SLOT }), `<a href="${GET_READY_LINKS.account.url}" rel="noopener">${escText(word("installer.need.create.link"))}</a>`)}</li>
 <li>${escText(word("screen.install.cf.containers"))}</li>
 <li id="need-claude">${escText(word("screen.install.need.claude"))} ${escText(ASSISTANT_NEEDS)}</li>
 <li>${escText(word("installer.need.time"))}</li>
@@ -296,7 +298,8 @@ ${allowedBlock()}
 ${controlBlock()}
 ${assistantBlock()}
 ${securityBlock()}
-<div class="ng-acts"><button id="cloudflare" class="cs-btn" data-tone="primary">${escText(word("act.bootstrap.label.install"))}</button>
+<p id="check-sub">${escText(word("screen.install.check.sub"))} ${escText(word("screen.install.check.creates"))}</p>
+<div class="ng-acts"><button id="cloudflare" class="cs-btn" data-tone="primary">${escText(word("act.owed_installcheck.label.install"))}</button>
 <button type="button" id="back" class="cs-btn" data-tone="quiet">${escText(word("installer.action.back"))}</button></div>
 <p class="err" id="err2" role="alert"></p>
 <p class="muted ng-small">${escText(word("installer.manual.note"))}</p>
@@ -304,7 +307,7 @@ ${securityBlock()}
 <p class="muted ng-small">${around(word("installer.page.updatelink", { link: SLOT }), `<a href="/update">${escText(word("installer.page.updatelink.link"))}</a>`)}</p>
 ${publisherFooter()}
 </main>
-${pageScript("install")}
+${/* R91: the first page's act begins "Check my account" (R86); the install begins only from the list's "Install now" (R90). */ pageScript("check")}
 ${guideReady() ? GUIDE_SCRIPT : ""}
 </body>
 </html>`;

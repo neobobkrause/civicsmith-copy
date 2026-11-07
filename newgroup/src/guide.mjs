@@ -9,8 +9,14 @@
  * (the sign-in grants the permission, R2).
  *
  * Every sentence is the design's, read by key (`word`, K4947 (3)). The guide is drawn only when the word list holds all of its
- * keys, so a list that does not yet hold the design's rows leaves the first page as it was (the keys are listed in the job record). */
+ * keys, so a list that does not yet hold the design's rows leaves the first page as it was (the keys are listed in the job record).
+ *
+ * R91 (T53; N1265; DEC-430) — "GET READY" IS THIS GUIDE. Each of the first three steps opens its Cloudflare page in a new tab, the page
+ * and its words read from the installer's one table (`GET_READY_LINKS`, ready.mjs, R92), with what the founder will see there; the
+ * last step ends "When these are done, check your account", and its act leads to the short name, whose act begins a check (R86). */
 import { word, hasWord } from "./words.mjs";
+/* R91, R92: each of the first three steps opens its Cloudflare page, read from the installer's one table by the step's id. */
+import { GET_READY_LINKS } from "./ready.mjs";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -25,6 +31,9 @@ export const GUIDE_KEYS = Object.freeze([
   "installer.guide.allow.asks", "installer.guide.allow.never", "installer.guide.checknote",
   ...GUIDE_STEPS.flatMap((s) => STEP_PARTS.map((p) => `installer.guide.${s}.${p}`)),
   ...GUIDE_QUESTIONS.flatMap((q) => [`installer.guide.q.${q}.q`, `installer.guide.q.${q}.a`]),
+  /* R91: the Get-ready buttons, what the founder will see there, and the last step's end, which begins a check. */
+  ...Object.keys(GET_READY_LINKS).flatMap((s) => [GET_READY_LINKS[s].key, `screen.install.getready.${s}.see`]),
+  "screen.install.getready.done", "act.owed_installcheck.label.install",
 ]);
 export const guideReady = () => GUIDE_KEYS.every(hasWord);
 
@@ -38,10 +47,12 @@ const step = (id, i) => `<section class="guide-step" id="guide-${i + 1}" data-st
 <p>${esc(word(`installer.guide.${id}.why`))}</p>
 <p>${esc(word(`installer.guide.${id}.do`))}</p>
 <p class="small guide-cost">${esc(word(`installer.guide.${id}.cost`))}</p>
-${id === "signin" ? `<p>${esc(word("installer.guide.allow.asks"))}</p><p>${esc(word("installer.guide.allow.never"))}</p>` : `<p class="small">${esc(word("installer.guide.checknote"))}</p>`}
+${GET_READY_LINKS[id] ? `<p class="small guide-see">${esc(word(`screen.install.getready.${id}.see`))}</p>
+<div class="ng-acts"><a class="cs-btn" data-tone="quiet" data-getready="${id}" href="${esc(GET_READY_LINKS[id].url)}" target="_blank" rel="noopener noreferrer">${esc(word(GET_READY_LINKS[id].key))}</a></div>` : ""}
+${id === "signin" ? `<p>${esc(word("installer.guide.allow.asks"))}</p><p>${esc(word("installer.guide.allow.never"))}</p><p id="guide-done">${esc(word("screen.install.getready.done"))}</p>` : `<p class="small">${esc(word("installer.guide.checknote"))}</p>`}
 ${faq()}
 <p class="small">${esc(word("installer.guide.resume"))}</p>
-<div class="ng-acts"><button type="button" class="cs-btn" data-tone="primary" data-guide="next">${esc(word("installer.guide.next"))}</button>
+<div class="ng-acts"><button type="button" class="cs-btn" data-tone="primary" data-guide="next">${esc(word(id === "signin" ? "act.owed_installcheck.label.install" : "installer.guide.next"))}</button>
 <button type="button" class="cs-btn" data-tone="quiet" data-guide="back">${esc(word("installer.guide.back"))}</button></div>
 </section>`;
 

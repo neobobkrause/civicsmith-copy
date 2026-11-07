@@ -9,6 +9,7 @@
 import worker, { CFG, ARMED_SIGNERS, planeLimits } from "../src/index.mjs";
 import { RELEASE_VERSION } from "../src/release.mjs";
 import { word } from "../src/words.mjs";
+import { CHECK_COOKIE, checkCookieValue } from "../src/ready.mjs";
 import { RELEASE_SOURCE } from "./release-text.mjs";
 /* The member binding names are instance-setup's (installer R30); the installer holds no table of its own. */
 import { instanceGroupAnswer } from "../../bio-plane/test/m/instance-setup/fixtures.mjs";
@@ -58,13 +59,34 @@ export const scheduleRules = ({ schedules = new Map(), crons = {}, refuse = fals
   } },
 ];
 
+/* R90: an install's `POST /begin` is refused without a passed "Check my account" for its short name (the `chk` cookie). The world
+   stands in for the founder who checked first: every install-mode /begin sent to the Worker, through `begin` or straight, carries a
+   passed check for the short name it names, unless it already carries a `chk` or says it sends none (`NO_CHECK`, the header the
+   gate's own tests set; the Worker never reads it). */
+export const NO_CHECK = "x-fixture-no-check";
+export const passedCheck = (slug, t = Date.now()) => `${CHECK_COOKIE}=${checkCookieValue(slug, t)}`;
+const workerFetch = worker.fetch.bind(worker);
+worker.fetch = async (request, ...rest) => {
+  if (request.method === "POST" && new URL(request.url).pathname === "/begin" && !request.headers.has(NO_CHECK)) {
+    const body = await request.clone().json().catch(() => ({}));
+    const install = !["update", "remove", "removeconfirm", "check"].includes(body && body.mode);
+    const held = request.headers.get("cookie") || "";
+    if (install && body && typeof body.slug === "string" && !new RegExp(`(^|;\\s*)${CHECK_COOKIE}=`).test(held))
+      request.headers.set("cookie", [held, passedCheck(body.slug.trim())].filter(Boolean).join("; "));
+  }
+  return workerFetch(request, ...rest);
+};
 export const req = (path, init) => worker.fetch(new Request(ORIGIN + path, init));
 export const b64url = (s) => Buffer.from(s).toString("base64url");
 export const cookieOf = (r) => (r.headers.get("set-cookie") || "").split(";")[0];
 export const cookieValue = (cookie) => JSON.parse(Buffer.from(cookie.split("=")[1], "base64url").toString());
 
-export async function begin(slug, mode = "install", extra = {}) {
-  const r = await req("/begin", { method: "POST", body: JSON.stringify({ slug, mode, ...extra }) });
+/* `extra.chk`: the check this /begin carries (R90): absent, a passed one for `slug` when installing; `false`, none; a string, that
+   `chk` value as it is. */
+export async function begin(slug, mode = "install", { chk, ...extra } = {}) {
+  const headers = chk === false ? { [NO_CHECK]: "1" } : typeof chk === "string" ? { cookie: `${CHECK_COOKIE}=${chk}` }
+    : mode === "install" ? { cookie: passedCheck(slug) } : {};
+  const r = await req("/begin", { method: "POST", headers, body: JSON.stringify({ slug, mode, ...extra }) });
   const j = await r.json();
   const cookie = cookieOf(r);
   return { r, j, cookie, state: j.ok ? new URL(j.authorize).searchParams.get("state") : null };
