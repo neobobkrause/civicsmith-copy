@@ -45,6 +45,8 @@ const viewOf = (ids) => {
   if (venues.length) want.venues = venues;
   /* (fix round 4, C64-law) records_laws, records_help and name, as combine gives them, absent when it states none */
   for (const f of ["records_laws", "records_help", "name"]) if (c.view[f] !== undefined && !(Array.isArray(c.view[f]) && !c.view[f].length)) want[f] = c.view[f];
+  /* R108 (T53): the chain's layers with their coverage, as combine gives them */
+  if (Array.isArray(c.view.layers) && c.view.layers.length) want.layers = c.view.layers;
   return want;
 };
 
