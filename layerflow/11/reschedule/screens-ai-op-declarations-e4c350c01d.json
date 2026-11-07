@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "screens-ai",
+  "provider": "op-declarations",
+  "provider_pr": 802,
+  "provider_land": "e4c350c01d7372e6b387d10993bf653ee757b137",
+  "at": "2026-11-07T17:04:14Z",
+  "key": "screens-ai<-op-declarations@e4c350c01d",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/op-declarations/bd1-exportwhole.test.mjs: breaking, added, naming R2, R3, R17, R18 (Provides before this land) while op-declarations's source changed: it may assert a changed answer, bio-plane/test/m/op-declarations/layer11-act-help.test.mjs: breaking, added, naming R34 (Provides before this land) while op-declarations's source changed: it may assert a changed answer, bio-plane/test/m/op-declarations/t49.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/op-declarations/tables.test.mjs: breaking, added code that is not an object property: \"exportwhole\" , \"exportwholepart\" ,), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

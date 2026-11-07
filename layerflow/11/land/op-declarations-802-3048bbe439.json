@@ -1,0 +1,113 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "op-declarations",
+  "pr": 802,
+  "branch": "job/op-declarations-2",
+  "head": "3048bbe439d7e711a0ace2ae7ea26d9e31ff13d2",
+  "before": "6830db9cffe8d3f444a381f354d6f303f5a353b8",
+  "merge": "e4c350c01d7372e6b387d10993bf653ee757b137",
+  "at": "2026-11-07T17:04:14Z",
+  "by": "bob",
+  "gate_runs": 5,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/op-declarations/bd1-exportwhole.test.mjs",
+      "bio-plane/test/m/op-declarations/layer11-act-help.test.mjs",
+      "bio-plane/test/m/op-declarations/t49.test.mjs",
+      "bio-plane/test/m/op-declarations/tables.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/op-declarations/bd1-exportwhole.test.mjs",
+      "bio-plane/test/m/op-declarations/layer11-act-help.test.mjs",
+      "bio-plane/test/m/op-declarations/t49.test.mjs",
+      "bio-plane/test/m/op-declarations/tables.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/op-declarations/bd1-exportwhole.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R2, R3, R17, R18 (Provides before this land) while op-declarations's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/op-declarations/layer11-act-help.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R34 (Provides before this land) while op-declarations's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/op-declarations/t49.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/op-declarations/tables.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: \"exportwhole\" , \"exportwholepart\" ,"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/op-declarations/bd1-exportwhole.test.mjs",
+      "bio-plane/test/m/op-declarations/layer11-act-help.test.mjs",
+      "bio-plane/test/m/op-declarations/t49.test.mjs",
+      "bio-plane/test/m/op-declarations/tables.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "admission",
+    "control-plane",
+    "interface-shell",
+    "load-check",
+    "plane",
+    "screens-action",
+    "screens-ai",
+    "screens-daily",
+    "screens-document",
+    "screens-entry",
+    "screens-inquiry",
+    "screens-intake",
+    "screens-investigate",
+    "screens-matter",
+    "screens-plan",
+    "screens-publish",
+    "screens-settings",
+    "screens-wizards",
+    "signin-door",
+    "store-assembly",
+    "store-request"
+  ],
+  "users_rescheduled_old_rule": [
+    "admission",
+    "control-plane",
+    "interface-shell",
+    "load-check",
+    "plane",
+    "screens-action",
+    "screens-ai",
+    "screens-daily",
+    "screens-document",
+    "screens-entry",
+    "screens-inquiry",
+    "screens-intake",
+    "screens-investigate",
+    "screens-matter",
+    "screens-plan",
+    "screens-publish",
+    "screens-settings",
+    "screens-wizards",
+    "signin-door",
+    "store-assembly",
+    "store-request"
+  ],
+  "users_noticed": []
+}
