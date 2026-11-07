@@ -1,0 +1,12 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "admission",
+  "attempt": 8,
+  "branch": "job/admission-2",
+  "early": [
+    "record-core",
+    "setup-words"
+  ],
+  "at": "2026-11-07T16:21:17Z"
+}
