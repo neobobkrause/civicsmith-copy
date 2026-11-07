@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-document",
+  "pr": 923,
+  "branch": "job/screens-document",
+  "head": "fe8c8ada605cf9571ff58b060af49df9092c91b1",
+  "before": "8df681160be26b0fdf5e696918da3e1201918065",
+  "merge": "fd7f69a649d017dd2496e6685e1517b0e3b9bc36",
+  "at": "2026-11-07T21:22:51Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
