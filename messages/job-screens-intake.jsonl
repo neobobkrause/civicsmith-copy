@@ -8,3 +8,4 @@
 {"at":"2026-11-07T22:15:48Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-07T22:22:29Z","row":"sent","n":5,"to":"bob","text":"screens-intake on PR 945: the red is not mine. Every screen load throws 'Error: DECLARED_OP_DISAGREES: courtnoticeset description' (op-grades/declared.mjs:112). ux DEC-501 commit 0b9063e40e changed word row member-roster.declared.courtnoticeset to \"the team's setting: ...\"; op-grades' hand row (bio-plane/src/op-grades/t34.mjs:54) still says \"the group's setting: ...\". Outside my paths: op-grades' row (or the word row) needs to agree. 'p3 block' refuses (job is COMPLETE), so reporting here. Synced to 9099c0faef; I'll republish when you say the row agrees."}
 {"at":"2026-11-07T22:22:44Z","row":"outcome","n":5,"outcome":"delivered"}
+{"at":"2026-11-07T22:49:02Z","row":"sent","n":6,"to":"bob","text":"job screens-intake complete, PR #945 ready, session session_018BhcecJkbYymcLEXDEimcF: run status"}
