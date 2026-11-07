@@ -68,7 +68,7 @@ import { RISK_TIERS, riskTierState, RESOLUTIONS, CORRESPONDENCE_DIRECTIONS, acti
          CITATION_MAX, RISK_TIER_REASON_MAX, RISK_TIER_HISTORY_MAX, riskTierHistoryOf,
          governingLawsOf, requestLifecycleOf, consequenceState, respondsToEdgeFindings, checkActionExtension,
          recordsLawRefusal, recordsLawOf, counterpartyName, counterpartyFindings, actionKinds, addresseeIsOffice,
-         counterpartyOffice,
+         counterpartyOffice, LAW_LAYER_MAX, LAW_LEVELS,
          clockMovesNotMechanical, ACTION_FENCE_CHECKS, ACTION_ACT_CHECKS, GOVERNING_LAW_CHECKS, QUOTE_CHECKS,
          LIFECYCLE_CHECKS, RISK_TIER_REVISION_CHECKS, RECORDS_LAW_FENCE_CHECKS,
          ACTION_CATALOGUE_CHECKS, seeksOf, OVERRIDE_GROUNDS, SUCCESS_RECORD_ID_RE,
@@ -221,36 +221,135 @@ export function zoneOf(place) {
     return typeof v === "string" && v.trim() ? v.trim() : null;
   } catch { return null; }
 }
-/** R100 (T47; N960; K1444 (iii); K3027 doubt 12): the IANA zone an action's clock is read in, the one spelling of it
- *  (`action-clocks` reads it, its R21): for the action whose document is `fm`, the `time_zone` of the active profile that
- *  gives its addressed office (the counterparty's role and body in `view`'s `counterparties`, R9), or, for an action whose
- *  deadlines run at its kind's venue, the profile that gives that kind (`view`'s `action_kinds`); else `view`'s own
- *  `time_zone` (`zoneOf`); null when none is held, and every local day read through it is then undetermined, never the
- *  UTC day. `view` is the view R10 reads. Writes nothing; never throws. */
-export function actionZone(fm, view) {
+/** R113–R115 (T53; N1257; K5458): the layers a list of profile ids stands for, in `combine`'s level order, each the layer's
+ *  own profile (`jurisdictions` R99; a package, R114, expanded into its layers). `resolve` reads a profile by id: jurisdictions'
+ *  `get`, or one a test passes for layers no profile holds. Empty for a list that does not combine or holds no layer (an
+ *  earlier, unlayered profile). Writes nothing; never throws. */
+export function layersOf(ids, resolve = profileOf) {
   try {
-    if (!view || typeof view !== "object") return null;
-    const cp = fm && typeof fm === "object" && fm.counterparty && typeof fm.counterparty === "object" ? fm.counterparty : null;
+    if (!Array.isArray(ids) || !ids.length) return [];
+    const read = (id) => { try { return typeof id === "string" ? profileOf(id) || (resolve !== profileOf ? resolve(id) : null) : id; } catch { return null; } };
+    const list = ids.map((id) => (typeof id === "string" && profileOf(id) ? id : read(id) || id));
+    const c = combine(list);
+    if (!c || !c.ok || !c.view || !Array.isArray(c.view.layers)) return [];
+    const given = new Map(list.filter((p) => p && typeof p === "object").map((p) => [p.id, p]));
+    return c.view.layers.map((l) => given.get(l.id) || read(l.id))
+      .filter((p) => p && typeof p === "object" && p.layer && typeof p.layer === "object");
+  } catch { return []; }
+}
+const layerTag = (l) => ({ layer: l.id, level: l.layer.level ?? null, place: l.layer.place ?? null });
+const ambiguous = (givers) => ({ ok: false, reason: "NAME_AMBIGUOUS", layers: givers.map(layerTag) });
+const UNKNOWN = Object.freeze({ ok: false, reason: "NAME_UNKNOWN" });
+/** R115 (T53; `jurisdictions` R121): the layer that gives an office addressee `cp` and its `counterparties` entry, among
+ *  `layers`: the office's stated `layer` where it states one, else the one layer that gives its role and body. Answers
+ *  `{ok: true, layer, entry}`, or `NAME_AMBIGUOUS` with the layers (two give it: never the first), or `NAME_UNKNOWN`. Pure. */
+export function officeLayer(cp, layers) {
+  try {
+    const o = counterpartyOffice(cp);
+    if (!o || !o.role || !Array.isArray(layers)) return UNKNOWN;
+    const gives = (l) => (Array.isArray(l.counterparties) ? l.counterparties : [])
+      .find((c) => c && c.role === o.role && (o.body === null || c.body === o.body)) || null;
+    const stated = cp && typeof cp.layer === "string" && cp.layer.trim() ? cp.layer.trim() : null;
+    const pool = stated ? layers.filter((l) => l.id === stated) : layers;
+    const givers = pool.filter(gives);
+    if (givers.length === 1) return { ok: true, layer: givers[0].id, entry: gives(givers[0]) };
+    return givers.length > 1 ? ambiguous(givers) : UNKNOWN;
+  } catch { return UNKNOWN; }
+}
+/** R113, R114 (T53; `jurisdictions` R121): the layer that gives a law named `law` (its citation, else its name) among
+ *  `layers`, and its `records_laws` entry: in `layer` where one is stated; else at `level` where one is given; else the one
+ *  layer that gives it. Answers as `officeLayer` does. Pure. */
+export function lawLayer({ law, layer = null, level = null } = {}, layers) {
+  try {
+    const t = typeof law === "string" ? law.trim() : "";
+    if (!t || !Array.isArray(layers)) return UNKNOWN;
+    const pool = layers.filter((l) => (layer ? l.id === layer : true) && (level ? l.layer.level === level : true));
+    for (const key of ["citation", "name"]) {
+      const gives = (l) => (Array.isArray(l.records_laws) ? l.records_laws : []).find((e) => e && e[key] === t) || null;
+      const givers = pool.filter(gives);
+      if (givers.length === 1) return { ok: true, layer: givers[0].id, entry: gives(givers[0]) };
+      if (givers.length > 1) return ambiguous(givers);
+    }
+    return UNKNOWN;
+  } catch { return UNKNOWN; }
+}
+/* R112: a zone value that is an IANA name (`jurisdictions`' own test, through `governingZone`), else null. */
+const zoneValue = (z) => { const v = z && typeof z === "object" ? z.value : z; return typeof v === "string" && governingZone([], v) === v ? v : null; };
+/* R112: the zone of a layer's branch: the layer's own `time_zone`, else the nearest layer above it that states one. */
+function branchZone(id, layers) {
+  const seen = new Set();
+  for (let l = layers.find((x) => x.id === id); l && !seen.has(l.id); l = layers.find((x) => x.id === l.layer.within)) {
+    seen.add(l.id);
+    const z = zoneValue(l.time_zone);
+    if (z) return z;
+  }
+  return null;
+}
+/** R112, R115 (T53; N1257; DEC-404; amends R100): the zone an action's clock is read in, and which zone it is. For an
+ *  office addressee over layered profiles: the zone the office's own entry states (`from: "office"`), else the zone of the
+ *  layer that gives it, read on its branch (`"layer"`), else the team's zone, `view`'s, which `governingView` answers through
+ *  `governingZone` (`"team"`); an office two active layers give with no `layer` stated is `NAME_AMBIGUOUS`, its zone
+ *  undetermined, never the first's. `layers` are the layers active on the action's creation date (`jurisdictions` R121),
+ *  else `view`'s. Otherwise R100's reading: the profile that gives the office or the kind's venue, else the team's.
+ *  Answers `{zone, from, layer, why, says}` (`zone` null, `from` null with none held: never the UTC day; `ambiguous` with
+ *  the layers). Writes nothing; never throws. */
+export function actionZoneRead(fm, view, layers = null) {
+  const out = (zone, from, layer, extra = {}) => {
+    const why = zone ? `actions.zone.${from}` : extra.ambiguous ? "actions.zone.ambiguous" : "actions.zone.undetermined";
+    const says = !zone ? (extra.ambiguous
+        ? localize("actions.zone.ambiguous", "More than one active layer gives this office, and the action does not say which, so the day its clock is read on is undetermined.")
+        : localize("actions.zone.undetermined", "No time zone is held for this action's office or for the team, so the day its clock is read on is undetermined."))
+      : from === "office" ? localize("actions.zone.office", "The clock is read in {zone}, the zone the addressed office states.", { zone })
+      : from === "layer" ? localize("actions.zone.layer", "The clock is read in {zone}, the zone of the layer that gives the addressed office.", { zone })
+      : localize("actions.zone.team", "The clock is read in {zone}, the team's time zone: the addressed office states no zone of its own.", { zone });
+    return { zone, from: zone ? from : null, layer: layer ?? null, why, says, ...extra };
+  };
+  try {
+    const v = view && typeof view === "object" ? view : null;
+    const fmv = fm && typeof fm === "object" ? fm : null;
+    const ls = Array.isArray(layers) ? layers
+      : v && Array.isArray(v.layers) ? v.layers.map((l) => { try { return profileOf(l && l.id); } catch { return null; } })
+        .filter((p) => p && p.layer && typeof p.layer === "object") : [];
+    const cp = fmv && fmv.counterparty && typeof fmv.counterparty === "object" ? fmv.counterparty : null;
+    if (ls.length && counterpartyOffice(cp) && addresseeIsOffice(cp)) {
+      const r = officeLayer(cp, ls);
+      if (r.reason === "NAME_AMBIGUOUS") return out(null, null, null, { ambiguous: r });
+      if (r.ok) {
+        const own = zoneValue(r.entry && r.entry.time_zone);
+        if (own) return out(own, "office", r.layer);
+        const z = branchZone(r.layer, ls);
+        if (z) return out(z, "layer", r.layer);
+        const t = zoneOf(v);
+        return out(t, "team", r.layer);
+      }
+    }
+    if (!v) return out(null, null, null);
     let pid = null;
     if (cp && cp.state === "named" && (cp.kind === undefined || cp.kind === null || cp.kind === "office")
         && typeof cp.role === "string" && cp.role.trim()) {
       const role = cp.role.trim(), body = typeof cp.body === "string" ? cp.body.trim() : null;
-      const c = (Array.isArray(view.counterparties) ? view.counterparties : [])
+      const c = (Array.isArray(v.counterparties) ? v.counterparties : [])
         .find((x) => x && x.role === role && (body === null || x.body === body));
       pid = c && typeof c.profile === "string" ? c.profile : null;
     } else {
-      const k = (Array.isArray(view.action_kinds) ? view.action_kinds : [])
-        .find((x) => x && x.kind === (fm && typeof fm === "object" ? fm.action_kind : null) && x.venue);
+      const k = (Array.isArray(v.action_kinds) ? v.action_kinds : [])
+        .find((x) => x && x.kind === (fmv ? fmv.action_kind : null) && x.venue);
       pid = k && typeof k.profile === "string" ? k.profile : null;
     }
     if (pid) {
       let p = null;
       try { p = profileOf(pid); } catch { p = null; }
       const z = zoneOf(p);
-      if (z) return z;
+      if (z) return out(z, "layer", pid);
     }
-    return zoneOf(view);
-  } catch { return null; }
+    return out(zoneOf(v), "team", null);
+  } catch { return out(null, null, null); }
+}
+/** R100 (T47; N960; K1444 (iii); K3027 doubt 12): the IANA zone an action's clock is read in, the one spelling of it
+ *  (`action-clocks` reads it, its R21): `actionZoneRead`'s `zone` (R112, R115), null when none is held, and every local day
+ *  read through it is then undetermined, never the UTC day. `view` is the view R10 reads. Writes nothing; never throws. */
+export function actionZone(fm, view, layers = null) {
+  return actionZoneRead(fm, view, layers).zone;
 }
 /** R12, R25 (K1444 (iii)): the local day of `nowMs` in `zone`, or null with no zone or an unreadable one. */
 export function localToday(nowMs, zone) {
@@ -281,13 +380,13 @@ function closeOf(fm, day, place) {
  *  overdue from the close of the office's hours that day (`civil-time.overdueOn`, side `body`). `place` is the
  *  view R10 reads (its `counterparties`, `action_kinds` and `time_zone`), read in R100's `actionZone`, or a zone. True,
  *  false, or null when no zone is held or the comparison is undetermined. */
-export function actionOverdue(fm, nowMs, place = null) {
+export function actionOverdue(fm, nowMs, place = null, layers = null) {
   /* R110: an entry stored `overdue` (R33's mechanical recheck; neither met nor waived) makes the clock overdue whatever
      `clock_next` is, and needs no zone to say so. */
   if ((Array.isArray(fm?.clock) ? fm.clock : []).some((e) => e && typeof e === "object" && e.status === "overdue")) return true;
   const next = actionClockNext(fm);
   if (!next) return false;
-  const zone = typeof place === "string" ? zoneOf(place) : actionZone(fm, place);
+  const zone = typeof place === "string" ? zoneOf(place) : actionZone(fm, place, layers);
   if (!zone) return null;
   const at = instantOf(nowMs);
   const entries = (Array.isArray(fm.clock) ? fm.clock : [])
@@ -356,7 +455,7 @@ export class Actions {
   constructor({ storage, record, membership, promotion, host = null, records = null, retrieval = null, content = null,
                 conformance = null, entities = null, lines = null, events = null, standards = null, duties = null,
                 progressions = null, consequences = null, projectRoster = null, localFacts = null, now = null,
-                env = null } = {}) {
+                env = null, profiles = null } = {}) {
     this.sql = storage.sql;
     this.record = record;
     this.membership = membership;
@@ -365,7 +464,11 @@ export class Actions {
                    progressions, consequences, projectRoster, localFacts };
     this.env = env && typeof env === "object" ? env : {};
     this.now = typeof now === "function" ? now : null;
+    /* R113–R115 (T53): the reader of a profile or layer by id, jurisdictions' `get` unless a test passes its own (for
+       layers no held profile gives, such as `jurisdictions`' test forest). */
+    this.#profiles = typeof profiles === "function" ? profiles : profileOf;
   }
+  #profiles;
 
   get retrieval() { return this.#deps.retrieval ||= retrievalOf(this.#deps.host); }
   /* T47 (N961; split map §3): what this module records apart from the action's document, `action-records` (its R15):
@@ -453,8 +556,33 @@ export class Actions {
     try { ids = this.record.getSetting("jurisdiction_profiles"); } catch { ids = null; }
     if (typeof ids === "string") { try { ids = JSON.parse(ids); } catch { ids = null; } }
     if (!Array.isArray(ids) || !ids.length) return null;
-    const c = combine(ids);
+    const c = combine(this.#profileList(ids));
     return c && c.ok ? c.view : null;
+  }
+  /* R113–R115 (T53): the setting's ids as `combine` reads them: a held id as itself, any other as the profile the reader
+     answers for it (none: the id, which `combine` then refuses as before). */
+  #profileList(ids) {
+    if (this.#profiles === profileOf) return ids;
+    return ids.map((id) => { if (typeof id !== "string" || profileOf(id)) return id;
+                             try { return this.#profiles(id) || id; } catch { return id; } });
+  }
+  /** R113–R115 (T53; N1257; `jurisdictions` R121, `record-core` R92): the layers active on the date of the action whose
+   *  document is `fm` (its `created`, read through `getSettingAt`), expanded into layers; with no date, or none set by
+   *  then, the layers active today. Empty with no layered profile. Never throws. */
+  #layersAt(fm = null) {
+    const parse = (v) => { if (typeof v === "string") { try { return JSON.parse(v); } catch { return null; } } return v; };
+    let ids = null;
+    try {
+      const at = fm && typeof fm === "object" && typeof fm.created === "string" ? fm.created.trim() : "";
+      if (at) { const v = parse(this.record.getSettingAt("jurisdiction_profiles", at)); if (Array.isArray(v) && v.length) ids = v; }
+      if (!ids) ids = parse(this.record.getSetting("jurisdiction_profiles"));
+    } catch { ids = null; }
+    return layersOf(Array.isArray(ids) ? ids : [], this.#profiles);
+  }
+  /** R112, R115 (T53): the zone the action whose document is `fm` is read in, and which: R100's `actionZoneRead` over the
+   *  view R10 reads and the layers active on the action's date. Never throws. */
+  zoneRead(fm) {
+    try { return actionZoneRead(fm, this.governingView(), this.#layersAt(fm)); } catch { return actionZoneRead(null, null, []); }
   }
   /** R68 (K1444 (iii); N611, K1681; T47, N960): the active profiles' combined view as they stand at the call (K1649),
    *  the read for a module with no office (its `time_zone` the group's zone, `zoneOf(place())`), or null when none can
@@ -470,7 +598,7 @@ export class Actions {
     try {
       let ids = this.record.getSetting("jurisdiction_profiles");
       if (typeof ids === "string") { try { ids = JSON.parse(ids); } catch { ids = null; } }
-      z = governingZone(ids, this.record.getSetting("team_time_zone"));
+      z = governingZone(Array.isArray(ids) ? this.#profileList(ids) : ids, this.record.getSetting("team_time_zone"));
     } catch { z = null; }
     if (!z || (view && view.time_zone && view.time_zone.value === z)) return view;
     return { ...(view || {}), time_zone: { ...(view && typeof view.time_zone === "object" ? view.time_zone : {}), value: z } };
@@ -499,15 +627,31 @@ export class Actions {
       && (s.applies_to === undefined || s.applies_to === null || s.applies_to === kind)).map((s) => s.status);
     return held.length ? held : null;
   }
-  /* R85 (T45; my reading, J1 7): the stages the governing view's records law for `law` lists (jurisdictions R76): the
-     entry whose citation is `law`, else whose name is; null when none is matched or it lists none. */
-  #lawStages(law) {
-    if (typeof law !== "string" || !law.trim()) return null;
+  /* R85 (T45; my reading, J1 7), R114 (T53; K5458): the stages the records law of the request whose document is `fm` lists
+     (jurisdictions R76), with how the law was found. Over layered profiles: the law in `law_layer` where the request states
+     it (the layer may since have left the active set), else in the layers active on the action's creation date
+     (`jurisdictions` R121): its citation, else its name; two layers giving it is `NAME_AMBIGUOUS`, its stages null
+     (undetermined), never the first's. Otherwise, or where no layer gives it, the governing view's entry whose citation is
+     `law`, else whose name is. `{stages, ambiguous?}`, `stages` null when none is matched or it lists none. */
+  #lawStages(fm) {
+    const law = fm && typeof fm.law === "string" ? fm.law.trim() : "";
+    if (!law) return { stages: null };
+    const stated = fm && typeof fm.law_layer === "string" && fm.law_layer.trim() ? fm.law_layer.trim() : null;
+    let layers = this.#layersAt(fm);
+    if (stated && !layers.some((l) => l.id === stated)) {
+      let extra = null;
+      try { extra = this.#profiles(stated); } catch { extra = null; }
+      if (extra && extra.layer && typeof extra.layer === "object") layers = [...layers, extra];
+    }
+    if (layers.length) {
+      const r = lawLayer({ law, layer: stated }, layers);
+      if (r.ok) return { stages: Array.isArray(r.entry.stages) ? r.entry.stages : null, layer: r.layer };
+      if (r.reason === "NAME_AMBIGUOUS") return { stages: null, ambiguous: r };
+    }
     const v = this.#governing();
     const laws = v && Array.isArray(v.records_laws) ? v.records_laws : [];
-    const t = law.trim();
-    const e = laws.find((l) => l && l.citation === t) || laws.find((l) => l && l.name === t);
-    return e && Array.isArray(e.stages) ? e.stages : null;
+    const e = laws.find((l) => l && l.citation === law) || laws.find((l) => l && l.name === law);
+    return { stages: e && Array.isArray(e.stages) ? e.stages : null };
   }
   /* R9, R93 (T45): the governing view's entry for an action kind, or null. */
   #kindEntry(kind) {
@@ -712,8 +856,11 @@ export class Actions {
   #machineRecordsLawRefusal(heldFm, nextFm, who, creation) {
     const lawOf = (fm) => (fm && typeof fm.law === "string" && fm.law.trim() ? fm.law.trim() : null);
     const was = creation ? null : lawOf(heldFm), now = lawOf(nextFm);
+    /* R114 (T53; K5458): the law's layer is stated by the same member act as the law, so a machine states neither. */
+    const layerOf = (fm) => (fm && fm.law_layer !== undefined && fm.law_layer !== null && fm.law_layer !== "" ? JSON.stringify(fm.law_layer) : null);
+    const layerMoved = (creation ? null : layerOf(heldFm)) !== layerOf(nextFm);
     /* DEC-49 REGION is-machine-state-records-law */
-    if ((!who || isMachineIdentity(who)) && was !== now)
+    if ((!who || isMachineIdentity(who)) && (was !== now || layerMoved))
       return refuse("MACHINE_CANNOT_STATE_RECORDS_LAW",
         "which law governs a records request is a member's statement. A machine credential may write a "
         + "records_request stating no law, and may propose one (op=actionlawspropose); it may not state, change or "
@@ -730,6 +877,20 @@ export class Actions {
     /* R6 (N297; action-grammar R3): the law arm's one refusal, minted by `recordsLawRefusal` alone. */
     const law = recordsLawRefusal(nextFm);
     if (law) return law;
+    /* R114 (T53; K5458; action-grammar R31): `law_layer` names the layer that gave a records request's stated law: a
+       non-empty single-line id of at most LAW_LAYER_MAX characters, on a records_request stating `law`. */
+    const ll = nextFm.law_layer;
+    if (ll !== undefined && ll !== null && ll !== "") {
+      const shape = typeof ll === "string" && ll.trim() && ll.length <= LAW_LAYER_MAX && !/["\\\r\n]/.test(ll);
+      const lawStated = nextFm.action_kind === "records_request" && typeof nextFm.law === "string" && nextFm.law.trim();
+      if (!shape || !lawStated) {
+        const detail = !shape
+          ? localize("actions.index.law_layer_is_not_a", "law_layer is not a layer's id of 1 to {max} characters with no quote, backslash or line break (R114)", { max: String(LAW_LAYER_MAX) })
+          : localize("actions.index.law_layer_is_stated_with", "law_layer names the layer that gave a records request's stated law, and this action states no law or is not a records_request (R114)");
+        return refuse("RECORDS_LAW_REFUSED", `${detail}. Nothing was written.`,
+          { findings: [{ check: "C-2.10", detail, repairs: ["state the law's layer by its id, beside the law", "or remove law_layer"] }] });
+      }
+    }
     /* DEC-49 REGION is-promote-action-kind */
     const kindMoved = creation || !heldFm || heldFm.action_kind !== nextFm.action_kind;
     if (kindMoved) {
@@ -761,6 +922,14 @@ export class Actions {
       /* R9 (K1484 row 5; B1a.14): an office arm's entity id names an office entity the registry holds. */
       else if (!cf.length && eid && addresseeIsOffice(cp) && eidKind !== "office")
         cf.push({ check: "C-2.10", severity: "error", message: localize("actions.index.counterparty_entity_id_eid_names_2", "counterparty.entity_id '{eid}' names {v1}: an office addressee's entity is an office entity (R9, arm: office)", { eid: String(eid.slice(0, 40)), v1: String(eidKind ? `an entity of kind ${eidKind}` : "no entity the subject registry holds") }) });
+      /* R115 (T53; K5458): an office arm may name the layer that gave the office, by its id; no other arm carries one. */
+      const lay = cp && typeof cp === "object" && !Array.isArray(cp) ? cp.layer : undefined;
+      if (!cf.length && lay !== undefined && lay !== null && lay !== "") {
+        if (!addresseeIsOffice(cp))
+          cf.push({ check: "C-2.10", severity: "error", message: localize("actions.index.counterparty_carries_layer_only", "counterparty carries layer: only an office addressee names the layer that gave it (R9, arm: layer)") });
+        else if (typeof lay !== "string" || !lay.trim() || lay.length > LAW_LAYER_MAX || /["\\\r\n]/.test(lay))
+          cf.push({ check: "C-2.10", severity: "error", message: localize("actions.index.counterparty_layer_is_not", "counterparty.layer is not a layer's id of 1 to {max} characters with no quote, backslash or line break (R9, arm: layer)", { max: String(LAW_LAYER_MAX) }) });
+      }
       if (cf.length || office)
         return refuse("COUNTERPARTY_REFUSED", cf.length ? cf[0].message
           : localize("actions.index.a_named_counterparty_is_an", "a named counterparty is an office, stated by its official role and the body it belongs to (R9). Nothing was written."),
@@ -790,7 +959,7 @@ export class Actions {
     /* DEC-49 REGION is-promote-clock-mechanical */
     if (!creation && (!who || isMachineIdentity(who) || writer === "mechanical")) {
       /* R33, R98, R100 (K1444 (iii)): "passed" on the local day of the action's zone; with none held no entry has passed. */
-      const nowMs = this.#nowMs(null), zone = actionZone(heldFm || nextFm, this.governingView());
+      const nowMs = this.#nowMs(null), zone = this.zoneRead(heldFm || nextFm).zone;
       const today = localToday(nowMs, zone) ?? "0000-00-00";
       const heldClock = heldFm && Array.isArray(heldFm.clock) ? heldFm.clock : [];
       const nextClock = Array.isArray(clock) ? clock : [];
@@ -1464,7 +1633,7 @@ export class Actions {
     respondsToEdgeFindings(fm, findings);
     if (fm.object_type === "action")
       /* R51, R100 (K1444 (iii)): the zone of the action's office or venue, as R12 reads it; none held, none handed. */
-      checkActionExtension({ fm, nowMs: this.#nowMs(null), actionKinds: this.kinds(), zone: actionZone(fm, this.governingView()) },
+      checkActionExtension({ fm, nowMs: this.#nowMs(null), actionKinds: this.kinds(), zone: this.zoneRead(fm).zone },
         findings);
     return findings;
   }
@@ -1932,12 +2101,12 @@ export class Actions {
     }
     /* R85 (T45; S1 §C 18, §D 15): a records request's stage is one its law lists, where the profile lists them. */
     if (life.stage !== undefined && fm.action_kind === "records_request") {
-      const inLaw = stageInLaw(life.stage, this.#lawStages(fm.law));
+      const inLaw = stageInLaw(life.stage, this.#lawStages(fm).stages);
       /* DEC-49 REGION is-stage-in-law */
       if (inLaw === "not_in_law") {
         this.#releaseLease(target, who);
         return refuse("STAGE_NOT_IN_LAW", localize("actions.index.stage_stage_is_not_one", "stage '{stage}' is not one the law this request is made under lists, as your team's jurisdiction states it. Nothing was written.", { stage: String(life.stage) }), { target, stage: life.stage,
-            stages: (this.#lawStages(fm.law) || []).map((x) => x && x.stage) });
+            stages: (this.#lawStages(fm).stages || []).map((x) => x && x.stage) });
       }
       /* END DEC-49 REGION is-stage-in-law */
     }
@@ -2183,8 +2352,12 @@ export class Actions {
       return { ok: false, reason: "NO_TARGET", detail: "one action at a time: pass target=<action id>" };
     /* R18 (T47; N961): the list's shape is `action-records.lawEntries` (its R7), the one site of C-73.2–C-73.5. */
     const read = this.records.lawEntries(laws);
+    if (!read.ok && read.reason !== "BAD_CITATION") return read;
+    /* R113 (T53; K5458; `jurisdictions` R121): each entry's layer, judged after its level and before the rest of its shape. */
+    const layered = this.#lawsLayers(laws);
+    if (!layered.ok) return layered;
     if (!read.ok) return read;
-    const entries = read.entries;
+    const entries = read.entries.map((e, i) => (layered.layers[i] ? { ...e, layer: layered.layers[i] } : e));
 
     const gate = viewerPredicate(viewer);
     const b = this.#one(
@@ -2239,6 +2412,43 @@ export class Actions {
              replaced: before.state === "stated" ? before.laws : null, weight: "single" };
   }
 
+  /* R113 (T53; N1257; K5458; `jurisdictions` R121): the layer of each governing law in `laws` (the act's own list). A
+     stated `layer` is a layer today's profiles or the profile reader hold, at the entry's own level, else `BAD_LAW_LEVEL`
+     naming the index; with none stated, a citation two active layers give at that level is `NAME_AMBIGUOUS` naming them
+     (never the first's), and one layer or none giving it is written with no layer. `{ok: true, layers}` (by index, null
+     where none is stated) or the refusal. Writes nothing. */
+  #lawsLayers(laws) {
+    let list = laws;
+    if (typeof list === "string") { try { list = JSON.parse(list); } catch { list = null; } }
+    if (!Array.isArray(list)) return { ok: true, layers: [] };
+    const active = this.#layersAt(null);
+    const out = [];
+    for (let i = 0; i < list.length; i++) {
+      const e = list[i] && typeof list[i] === "object" ? list[i] : {};
+      const level = String(e.level ?? "").trim();
+      const citation = typeof e.citation === "string" ? e.citation.trim() : "";
+      if (e.layer !== undefined && e.layer !== null && e.layer !== "") {
+        const id = typeof e.layer === "string" && e.layer.length <= LAW_LAYER_MAX && !/["\\\r\n]/.test(e.layer) ? e.layer.trim() : "";
+        let l = id ? active.find((x) => x.id === id) : null;
+        if (!l && id) { try { l = this.#profiles(id); } catch { l = null; } }
+        if (!l || !l.layer || typeof l.layer !== "object" || l.layer.level !== level)
+          return refuse("BAD_LAW_LEVEL", localize("actions.index.laws_i_layer_is_not", "laws[{i}].layer is not a layer at the entry's level, {level}", { i: String(i), level }),
+            { index: i, level, layer: typeof e.layer === "string" ? e.layer.slice(0, LAW_LAYER_MAX) : null, legal: [...LAW_LEVELS] });
+        out.push(id);
+        continue;
+      }
+      out.push(null);
+      if (!citation) continue;
+      const r = lawLayer({ law: citation, level }, active);
+      /* DEC-49 REGION is-law-name-ambiguous */
+      if (r.reason === "NAME_AMBIGUOUS")
+        return { ok: false, reason: "NAME_AMBIGUOUS", code: "NAME_AMBIGUOUS", index: i, citation, layers: r.layers,
+                 detail: localize("actions.index.laws_i_citation_is_given", "laws[{i}].citation is given by {n} active layers at that level; name the one it is made under as the entry's layer. Nothing was written.", { i: String(i), n: String(r.layers.length) }) };
+      /* END DEC-49 REGION is-law-name-ambiguous */
+    }
+    return { ok: true, layers: out };
+  }
+
   /* D-149: REPLACE the top-level `governing_laws:` block (the key line and its indented rows) with `entries`,
      or open it before the closing fence when absent — `#spliceCorrespondence`'s grammar, whole-block. Returns
      null for a block it cannot read as that shape (an inline value other than `[]`), refusing rather than
@@ -2252,6 +2462,7 @@ export class Actions {
       `  - level: ${e.level}`,
       `    citation: "${e.citation}"`,
       ...(e.standard ? [`    standard: ${e.standard}`] : []),
+      ...(e.layer ? [`    layer: "${e.layer}"`] : []),
     ])];
     let gi = -1;
     for (let i = 1; i < end; i++) if (/^governing_laws:/.test(lines[i])) { gi = i; break; }
@@ -2628,6 +2839,9 @@ export class Actions {
     const now = this.#nowMs(nowMs);
     /* R25, R100: the clock and the lifecycle day are read in the action's zone. */
     const view = this.governingView();
+    /* R112, R115 (T53): the zone, and which zone, over the layers active on the action's date. */
+    const layersAt = this.#layersAt(fm);
+    const zoneRead = actionZoneRead(fm, view, layersAt);
     /* R111: each row also carries, from the entry as the record holds it (the table keeps none of these), its stage,
        outcome, exemptions, due date and citation and quote, each null when the entry states none. */
     const held = Array.isArray(fm.correspondence) ? fm.correspondence : [];
@@ -2654,7 +2868,9 @@ export class Actions {
       counterparty_state: typeof cp.state === "string" ? cp.state : (row.action_counterparty_state ?? null),
       resolution: typeof fm.resolution === "string" ? fm.resolution : (row.action_resolution ?? null),
       clock_next: actionClockNext(fm),
-      clock_overdue: actionOverdue(fm, now, view),
+      clock_overdue: actionOverdue(fm, now, view, layersAt),
+      /* R112 (T53): the zone the clock is read in and which zone it is, with its sentence; undetermined says so. */
+      clock_zone: zoneRead,
       clock_overdue_cached: row.action_clock_overdue === null || row.action_clock_overdue === undefined
         ? null : !!row.action_clock_overdue,
       as_of: new Date(now).toISOString(),
@@ -2671,7 +2887,7 @@ export class Actions {
       seeks: seeksOf(fm),
       seeks_proposals: this.records.seeksProposalsFor(row.bundle_id),
       records_law: fm.action_kind === "records_request" ? recordsLawOf(fm, this.#lawAuthor(row.bundle_id, fm)) : null,
-      lifecycle: requestLifecycleOf(fm, localToday(now, actionZone(fm, view)) ?? ""),
+      lifecycle: requestLifecycleOf(fm, localToday(now, zoneRead.zone) ?? ""),
       /* R26, DEC-14: the ACTION'S OWN OUTCOME, never the breach's consequence (which `consequences` holds). */
       own_outcome: consequenceState(fm),
       responses: this.#rows(`SELECT bundle_id FROM refs WHERE target_id=? AND kind='responds_to' ORDER BY bundle_id`,
@@ -2698,7 +2914,8 @@ export class Actions {
     const live = dets.filter(({ d }) => d.live !== false && !d.superseded_by);
     const cp = fm.counterparty && typeof fm.counterparty === "object" && !Array.isArray(fm.counterparty) ? fm.counterparty : null;
     const kindEntry = this.#kindEntry(fm.action_kind);
-    const stages = fm.action_kind === "records_request" ? this.#lawStages(fm.law) : null;
+    const inLaw = fm.action_kind === "records_request" ? this.#lawStages(fm) : { stages: null };
+    const stages = inLaw.stages;
     const history = (field) => this.#rows(`SELECT seq, value, reason, by, at FROM action_field_history WHERE bundle_id=? AND field=?
       ORDER BY seq`, id, field).map((r) => { let v = null; try { v = JSON.parse(r.value); } catch { v = null; }
         return { seq: r.seq, value: v, ...(r.reason !== null ? { reason: r.reason } : {}), by: r.by, at: r.at }; });
@@ -2726,7 +2943,8 @@ export class Actions {
                  ...(p.pressure ? { pressure: p.pressure } : {}),
                  ...(p.minutes ? { minutes: p.minutes } : {}),
                  ...(fm.action_kind === "records_request" && typeof p.stage === "string"
-                   ? { stage_in_law: stageInLaw(p.stage, stages) } : {}) };
+                   ? { stage_in_law: stageInLaw(p.stage, stages),
+                       ...(inLaw.ambiguous ? { law_ambiguous: inLaw.ambiguous } : {}) } : {}) };
       }).filter((x) => Object.keys(x).length > 1),
       follows_action: fm.follows_action && typeof fm.follows_action === "object" ? fm.follows_action : null,
       followed_by: this.#followedBy(id, viewer),
@@ -3015,7 +3233,9 @@ export class Actions {
         const r = this.entities.readEntity({ entityId: subj });
         const role = r && r.found && r.entity ? r.entity.label : null;
         const { body, why } = this.#officeBody(subj, at, viewer);
-        const named = body ? [{ addressee: { state: "named", kind: "office", role, body, entity_id: subj }, concerns: subj, line: null }] : [];
+        const r1 = body ? officeLayer({ state: "named", kind: "office", role, body }, this.#layersAt(null)) : null;
+        const named = body ? [{ addressee: { state: "named", kind: "office", role, body, entity_id: subj, layer: r1 && r1.ok ? r1.layer : null },
+                                concerns: subj, line: null }] : [];
         return { ok: true, subject: subj, at, at_basis: basis, offices: named,
                  undetermined: body ? [] : [{ office: subj, concerns: subj, line: null, why }], suggestion: true,
                  says: word("actions.says.offices_record_holds") };
@@ -3032,6 +3252,10 @@ export class Actions {
     const lines = this.lines;
     const offices = [], undetermined = [];
     const seen = new Set();
+    /* R115 (T53): each office answered with the layer that gives it (`officeLayer` over today's layers), null when none
+       or more than one does. */
+    const active = this.#layersAt(null);
+    const withLayer = (a) => { const r = officeLayer(a, active); return { ...a, layer: r.ok ? r.layer : null }; };
     const label = (id) => { let r = null; try { r = this.entities.readEntity({ entityId: id }); } catch { r = null; }
                             return r && r.found && r.entity ? r.entity.label : null; };
     const bodyOf = (office) => this.#officeBody(office, at, viewer);
@@ -3044,7 +3268,7 @@ export class Actions {
         seen.add(`${l.from}|${l.line_id}`);
         const line = { line_id: l.line_id, kind: l.kind, grades: { assertion: l.assertion, ends: l.ends } };
         const b = bodyOf(l.from);
-        if (b.body) offices.push({ addressee: { state: "named", kind: "office", role: label(l.from), body: b.body, entity_id: l.from },
+        if (b.body) offices.push({ addressee: withLayer({ state: "named", kind: "office", role: label(l.from), body: b.body, entity_id: l.from }),
                                    concerns: e, line });
         else undetermined.push({ office: l.from, concerns: e, line, why: b.why });
       }
