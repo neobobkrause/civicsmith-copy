@@ -5,7 +5,9 @@
   "paths": [
     "bio-plane/src/interface-shell-t53/",
     "build/requirements/interface-shell-t53.md",
-    "docs/requirements-notes/interface-shell-t53.md"
+    "docs/requirements-notes/interface-shell-t53.md",
+    "bio-plane/test/m/interface-shell/t53-hook.test.mjs",
+    "bio-plane/test/m/interface-shell/requirements-ids.test.mjs"
   ],
   "tests": [
     "bio-plane/test/m/interface-shell-t53/"
