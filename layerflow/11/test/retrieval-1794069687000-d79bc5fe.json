@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "retrieval",
+  "session": "session_018BhceekSVscu2S35VgBdzS",
+  "started": "2026-11-07T16:41:27Z",
+  "ended": "2026-11-07T16:42:49Z",
+  "at": "2026-11-07T16:42:49Z",
+  "minutes": 1.37,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 9.568,
+  "tests": {
+    "total": 222,
+    "pass": 222,
+    "fail": 0
+  }
+}
