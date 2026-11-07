@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "store-assembly",
+  "pr": 913,
+  "branch": "job/store-assembly-2",
+  "head": "9d544abcd219198f82d404b3b820143d51048a91",
+  "before": "40784379cf6d6a20cdc37c7fe0ff06466eb544e6",
+  "merge": "044731e92cdbf715cb497ce64101d9e029c738f6",
+  "at": "2026-11-07T20:56:29Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
