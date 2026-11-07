@@ -154,7 +154,7 @@ export function account({ slug = "grp", plan = "paid", probeDelete = "ok", r2 = 
   refuseSelf = false, refuseAllPlane = false, refuseRePut = false, refuseVpc = false, refuseSchedules = false, dropObservability = false, logpush = [],
   lookupFail = [], settingsBlind = false, blindAfterPut = false, copy = {}, wakeAfter = 0, silentAddress = false, objects = {}, refuseDelete = [],
   expireAfter = null, cfFlaky = null, refuseSecretDelete = false,
-  pullFails = false, startingFor = 0, memberServes = null } = {}) {
+  pullFails = false, startingFor = 0, memberServes = null, r2Jurisdictions = ["eu", "us"], r2Answers = null } = {}) {
   const scripts = new Map(Object.entries(pre));
   /* G54: what the account holds of each script's `observability`: the upload's own, unless `dropObservability` (a platform that ignores it). */
   const observed = new Map();
@@ -165,7 +165,7 @@ export function account({ slug = "grp", plan = "paid", probeDelete = "ok", r2 = 
   const apps = preApps.map((a) => ({ ...a }));
   const bucketObjects = new Map(Object.entries(objects).map(([b, keys]) => [b, [...keys]]));
   const state = { calls: [], planePuts: [], puts: [], refused: [], rollouts: [], removed: [], schedules: new Map(), enabled: new Set(),
-    secretPuts: [], rolledBack: [], reads: [], appReads: 0, sourceRequests: [], addressRequests: [], scripts, buckets, sources, tags, classes, apps, bucketObjects };
+    secretPuts: [], rolledBack: [], reads: [], appReads: 0, bucketJurisdictions: new Map(), sourceRequests: [], addressRequests: [], scripts, buckets, sources, tags, classes, apps, bucketObjects };
   let prefix = subdomain, cfCalls = 0, flakyLeft = cfFlaky ? cfFlaky.times : 0, sourceFlakyLeft = sourceFlaky, wakeTries = 0;
   const verOf = (b) => (b || []).find((x) => x.name === "VERSION")?.text || null;
   const putScript = async (u, init) => {
@@ -355,8 +355,13 @@ export function account({ slug = "grp", plan = "paid", probeDelete = "ok", r2 = 
     { m: (u, mth) => u.endsWith("/r2/buckets") && mth === "POST", f: async (u, init) => {
       const { name } = JSON.parse(init.body);
       if (r2 === "refused") return cferr("Please enable R2 through the Cloudflare Dashboard.", 403, 10042);
+      /* R47: a bucket asked for in a jurisdiction (header `cf-r2-jurisdiction`) the account cannot create there is refused;
+         `r2Answers` makes the account answer another jurisdiction than the one asked (a platform that ignored the header). */
+      const j = init.headers?.["cf-r2-jurisdiction"] ?? null;
+      if (j && !r2Jurisdictions.includes(j)) return cferr(`The jurisdiction '${j}' is not available on this account.`, 403, 10085);
       if (buckets.has(name)) return cferr("The bucket you tried to create already exists", 409, 10073);
-      buckets.add(name); return cfok({ name });
+      buckets.add(name); state.bucketJurisdictions.set(name, j || "default");
+      return cfok({ name, jurisdiction: r2Answers ?? (j || "default") });
     } },
     { m: (u, mth) => u.endsWith("/workers/subdomain") && mth === "GET", f: () => prefix ? cfok({ subdomain: prefix }) : cferr("You do not have a workers.dev subdomain. Please go to https://dash.cloudflare.com/?to=/:account/workers/workers-and-pages. Opening the Workers & Pages landing page for the first time will create a workers.dev subdomain automatically.", 404, 10007) },
     { m: (u, mth) => u.endsWith("/workers/subdomain") && mth === "PUT", f: (u, init) => {
