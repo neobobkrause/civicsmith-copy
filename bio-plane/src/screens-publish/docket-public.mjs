@@ -4,21 +4,25 @@
  * drawn and no act is offered; members keep `docket` in the working frame. Its way back is the case's public page. Every
  * function is self-contained (interface-shell R21 (1)). */
 import { PARTS } from "./parts.mjs";
+import { PUBLISHED_PARTS } from "./published-parts.mjs";
 
 export const DOCKET_PUBLIC = Object.freeze({
   id: "docket-public",
-  parts: PARTS,
+  parts: Object.freeze({ ...PARTS, pubHead: PUBLISHED_PARTS.pubHead, pubFoot: PUBLISHED_PARTS.pubFoot }),
 
   reads: function (view) {
     if (!view.parts.subject(view, 1)) return {}; // K3171: no subject in the address, no subject read
     // The case is the subject: a case the docket does not know is "Nothing is here" (interface-shell R35).
-    return { docket: { op: "docketpublic", query: { case: String(view.subject || "").split("/")[0] }, subject: true } };
+    // R104: the group's public name for the page's head, read with no credential
+    return { docket: { op: "docketpublic", query: { case: String(view.subject || "").split("/")[0] }, subject: true }, group: { op: "groupidentity" } };
   },
 
   render: function (cs, view) {
     if (!view.parts.subject(view, 1)) return view.parts.nothing(cs, "public"); // the way an outsider can go, never "Go to Home"
     const caseId = String(view.subject || "").split("/")[0];
-    const out = [cs.title(null), '<p class="mk-sub">' + cs.w("screen.docket-public.sub") + "</p>"];
+    const gi = view.data.group && view.data.group.state === "ok" ? view.data.group.value : null;
+    const group = gi ? gi.display_name || gi.group || "" : "";
+    const out = [view.parts.pubHead(cs, group), cs.title(null), '<p class="mk-sub">' + cs.w("screen.docket-public.sub") + "</p>"];
     const entries = function (v) {
       const kinds = ["edition", "correction", "withdrawal", "court-order", "response", "statement", "reaction", "outcome"];
       const list = Array.isArray(v.entries) ? v.entries : [];
@@ -32,6 +36,7 @@ export const DOCKET_PUBLIC = Object.freeze({
     out.push(view.data.docket && view.data.docket.state === "ok" && !(Array.isArray(view.data.docket.value.entries) && view.data.docket.value.entries.length)
       ? '<p class="cs-state" data-state="empty">' + cs.w("state.empty") + "</p>" : cs.state("docket", entries));
     out.push('<p><a class="cs-btn" data-tone="quiet" href="/app/published/' + encodeURIComponent(caseId) + '" data-nav data-public-page>' + cs.w("screen.docket-public.back") + "</a></p>");
+    out.push(view.parts.pubFoot(cs)); // R104
     return out.join("");
   },
 

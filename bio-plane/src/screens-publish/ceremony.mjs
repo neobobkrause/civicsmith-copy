@@ -509,6 +509,19 @@ export const CEREMONY = Object.freeze({
       done: function (view, answer, cs) { return view.parts.pickDraft(view, answer, cs, "ceremony"); },
     },
     {
+      // R83: the registry's `leggrade` on this screen. The sign step's rows name the finding and the leg's place, not the passage's part
+      // (`content_id`, `extent_*`), so a row is graded in its finding's fold (the row's link); a row that names its part is sent here.
+      op: "leggrade", label: "act.leggrade.label.ceremony", reasonField: "reason", rereads: [],
+      send: function (view, el, cs) {
+        const row = (view.ui && view.ui.ungraded || [])[Number(el.dataset.index)];
+        if (!row || !row.target || !row.content_id) return null;
+        const grade = String((cs.value("ce-leggrade-" + el.dataset.index) || [])[0] || "");
+        if (!/^[A-D]$/.test(grade)) return { refuse: "capture.fieldneeded", fills: { field: { html: cs.w("screen.question.leggrade.head") } } };
+        return { body: { project: String(row.finding), target: String(row.target), content_id: String(row.content_id), grade: grade } };
+      },
+      done: function (view, answer, cs) { if (!view.parts.refused(cs, view, "leggrade", answer)) view.parts.forget(view); },
+    },
+    {
       // R3: "Check again": the checks read once more.
       op: "publishpreflight", label: "act.publishpreflight.label.ceremony", rereads: [],
       send: function (view, el, cs) {
