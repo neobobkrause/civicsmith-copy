@@ -2,3 +2,4 @@
 {"at":"2026-11-07T17:25:51Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-07T18:32:19Z","row":"sent","n":2,"to":"bob","text":"job op-specs-late BLOCKED: run status"}
 {"at":"2026-11-07T18:32:35Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-07T18:50:16Z","row":"sent","n":3,"to":"bob","text":"job op-specs-late complete, PR #858 ready, session session_018Bhceeqiyuoz4Sxy6NjiWM: run status"}
