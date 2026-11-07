@@ -1,0 +1,50 @@
+{
+  "id": "retrieval-browse",
+  "title": "retrieval-browse: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/retrieval-browse/",
+    "build/requirements/retrieval-browse.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/retrieval-browse/"
+  ],
+  "requirements": "build/requirements/retrieval-browse.md",
+  "uses": [
+    "setup-words",
+    "civil-time",
+    "calc-grammar",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "capture",
+    "extraction",
+    "content",
+    "entities",
+    "events",
+    "standards",
+    "money",
+    "people",
+    "query-language"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/retrieval-browse.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

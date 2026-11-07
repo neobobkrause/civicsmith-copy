@@ -1,0 +1,39 @@
+{
+  "id": "accepted-work",
+  "title": "accepted-work: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 6,
+  "paths": [
+    "bio-plane/src/accepted-work/",
+    "build/requirements/accepted-work.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/accepted-work/"
+  ],
+  "requirements": "build/requirements/accepted-work.md",
+  "uses": [
+    "record-core",
+    "record-grammar",
+    "membership",
+    "promotion",
+    "inquiry-grammar",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/accepted-work.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}
