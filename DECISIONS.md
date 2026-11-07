@@ -128,7 +128,7 @@ Decision (Bob):
 - Q9.2 Key assumptions, with a CHECK at concluding and before signing: "B".
 - Q9.3 Search parameters recorded on each look: "B". The INV:85 canon amendment still waits on Q7.
 - Q9.4 Independent reading, on by default, with its absence stated: "B".
-- Q9.5 A contrary-recall measure and bar, plus a counter-proposal pass: "as recommended" (B and C).
+- Q9.5 A contrary-recall measure and bar, plus a counter-proposal pass: "as recommended" (B and C). The IV-9 bar is PD-8 (process3 PR 247), on Bob's word of 7 Nov: "I think that IV-9 is a technical decision that should be decided based on existing decisions and UX considerations." From the first Gate 1 run, a reading part fails when its contrary-recall interval lies wholly below its supporting-recall interval (parity, no number). The absolute floor is set after the first measuring run (AD13) and is Bob's unless he delegates it; until then the verdict says no floor is set. Placed as ai-gate F4, which replaces F3's 0.8 / 0.1 figures.
 - Q9.6 An optional reason on a leg, in the member's own words: "B". Funding disclosure goes to the publication lane (BD-13).
 - Q9.7 Keep as ruled, with the word gloss going to the ux lane: "as recommended".
 Bob's caveat: he chose these "without the opportunity for first see whether the resulting UX is rich enough and friendly enough to allow all members using the feature to understand what they're seeing and successfully navigate making their changes".
