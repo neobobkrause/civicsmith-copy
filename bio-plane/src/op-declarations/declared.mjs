@@ -5,6 +5,8 @@
    duplicates, the agreement with the hand rows) and answers the pieces `build()` merges; it reads no table of its own,
    no request, store, clock or environment (R7). `weight` and `description` are `op-grades`' and are not read here. */
 
+import { budgetOf } from "../read-bounds.mjs";
+
 const CLASSES = Object.freeze(["admin", "member", "probe", "daemon"]);
 const STAMPS = Object.freeze(["author", "bodyBy", "by", "country", "member", "owner", "principal", "proposer", "session", "source",
   "viewer"]);
@@ -82,4 +84,88 @@ export const isPublic = (rec) => rec.classes === null;
 /* R80: a mutating op with no hand row names its capability, or is refused: it is the one row with no honest default */
 export function needsRequired(rec, op) {
   if (rec.mutating && !rec.hasNeeds) throw fail(op, "NEEDS_MISSING");
+}
+
+/* ---- surface-declarations R10–R12, R16 (T53; K4354, K4599, K5438, N1264; PL2–PL4, PL10, PL11, PL15) ----
+   The budget classes, the screens' read waves and `screenread`'s answer. Data in, data out: `budgetOf` is
+   `runtime-limits`' frozen table (its R41, R42), and nothing here reads a clock, a request or a store (R7): a read's
+   elapsed time is the caller's measure, handed in. `why` codes are a developer's diagnostic, never a member's sentence. */
+
+const refuse = (name, why) => new TypeError(`op-declarations: ${name}: ${why} (surface-declarations)`);
+
+/* R12: one op's or screen's budget row, a class name or `{class, ceiling_ms}` (or a row already built, `{budget_class, ceiling_ms}`), checked against `runtime-limits`' classes and
+   frozen as `{budget_class, ceiling_ms}`: an unknown class is refused (BAD_BUDGET_CLASS), an override above its class's
+   ceiling is refused (BUDGET_ABOVE_CLASS); with no override the ceiling is the class's. */
+export function budgetRow(name, row) {
+  const cls = typeof row === "string" ? row : row && typeof row === "object" ? row.class ?? row.budget_class : undefined;
+  let base;
+  try { base = budgetOf(cls); } catch { throw refuse(name, "BAD_BUDGET_CLASS"); }
+  if (typeof row === "string" || row.ceiling_ms === undefined) return Object.freeze({ budget_class: cls, ceiling_ms: base.ceiling_ms });
+  try { return Object.freeze({ budget_class: cls, ceiling_ms: budgetOf({ class: cls, ceiling_ms: row.ceiling_ms }).ceiling_ms }); }
+  catch { throw refuse(name, "BUDGET_ABOVE_CLASS"); }
+}
+/* R12: the class an op takes when no row names one: a write the write act's, a read the read act's */
+export const defaultBudgetClass = (spec) => (spec.mutating ? "write_act" : "read_act");
+/* R12: the totality finding: each name of `names` that `rows` gives no class (rows checked as `budgetRow` checks them) */
+export function budgetFindings(names, rows) {
+  for (const [name, row] of Object.entries(rows)) budgetRow(name, row);
+  return Object.freeze([...names].filter((n) => !Object.hasOwn(rows, n)));
+}
+
+/* R10: a screen's reads, a list of `{name, op, args, wave}`. Waves are whole numbers from 1 with none skipped; reads in one
+   wave are independent; an argument `{from: <read name>}` takes an earlier wave's answer. Refused, naming the screen:
+   a read with no name or a name twice (BAD_READ, DUPLICATE_READ), an op `isOp` does not know (UNKNOWN_OP), a write op
+   (WRITE_IN_READS: a write is never batched, R11), an op that is never a first-wave read in wave 1 (NOT_FIRST_WAVE, R16),
+   a bad or skipped wave (BAD_WAVE), and an argument taking the answer of a read in the same or a later wave or of no read
+   (LATER_WAVE_ARG). Answers the frozen list. */
+export function screenReads(screen, reads, { isOp, isWrite, notFirstWave = [] }) {
+  if (!Array.isArray(reads)) throw refuse(screen, "BAD_READS");
+  const waveOf = new Map();
+  for (const r of reads) {
+    if (!r || typeof r !== "object" || typeof r.name !== "string" || !r.name || typeof r.op !== "string") throw refuse(screen, "BAD_READ");
+    if (waveOf.has(r.name)) throw refuse(screen, `${r.name}: DUPLICATE_READ`);
+    if (!Number.isInteger(r.wave) || r.wave < 1) throw refuse(screen, `${r.name}: BAD_WAVE`);
+    waveOf.set(r.name, r.wave);
+  }
+  const waves = new Set(waveOf.values());
+  for (let w = 1; w <= waves.size; w++) if (!waves.has(w)) throw refuse(screen, `wave ${w}: BAD_WAVE`);
+  const kept = reads.map((r) => {
+    if (!isOp(r.op)) throw refuse(screen, `${r.name}: UNKNOWN_OP ${r.op}`);
+    if (isWrite(r.op)) throw refuse(screen, `${r.name}: WRITE_IN_READS ${r.op}`);
+    if (r.wave === 1 && notFirstWave.includes(r.op)) throw refuse(screen, `${r.name}: NOT_FIRST_WAVE ${r.op}`);
+    const args = r.args ?? {};
+    if (!args || typeof args !== "object" || Array.isArray(args)) throw refuse(screen, `${r.name}: BAD_READ`);
+    for (const v of Object.values(args)) {
+      if (v && typeof v === "object" && Object.hasOwn(v, "from") && !(waveOf.get(v.from) < r.wave))
+        throw refuse(screen, `${r.name}: LATER_WAVE_ARG ${String(v.from)}`);
+    }
+    return Object.freeze({ name: r.name, op: r.op, args: Object.freeze({ ...args }), wave: r.wave });
+  });
+  return Object.freeze(kept);
+}
+/* R10: the hop count, derived: one for the session and one for each wave */
+export const hopsOf = (reads) => 1 + new Set(reads.map((r) => r.wave)).size;
+
+/* R11: `screenread`'s answer from each read's outcome, `outcomes[name] = {ok, status, body | refusal, ms}` (`ms` the caller's
+   measure) and each read's declared bound in ms, `boundOf(op)`. A read refused answers `ok: false` with its refusal and the
+   others still answer; a read past its bound, or with no outcome, is cut: `ok: false, status: "slow"` with the bound (PL15);
+   `server_ms` is the sum over waves of the slowest read of each, each read counted at most its bound, so the answer never
+   exceeds the sum of the reads' bounds. */
+export function screenReadAnswer(reads, outcomes, boundOf, stamps = {}) {
+  const out = {};
+  const waveMs = new Map();
+  for (const r of reads) {
+    const bound = boundOf(r.op);
+    const o = outcomes[r.name];
+    let row;
+    let ms;
+    if (!o || !(Number.isFinite(o.ms) && o.ms <= bound)) { row = { ok: false, status: "slow", bound_ms: bound }; ms = bound; }
+    else if (o.ok) { row = { ok: true, status: o.status ?? 200, body: o.body }; ms = o.ms; }
+    else { row = { ok: false, status: o.status, refusal: o.refusal }; ms = o.ms; }
+    out[r.name] = Object.freeze(row);
+    waveMs.set(r.wave, Math.max(waveMs.get(r.wave) ?? 0, ms));
+  }
+  let server_ms = 0;
+  for (const ms of waveMs.values()) server_ms += ms;
+  return Object.freeze({ reads: Object.freeze(out), stamps: Object.freeze({ ...stamps }), server_ms });
 }
