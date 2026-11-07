@@ -35,7 +35,7 @@
     "build/situations/job.md",
     "docs/development/publication-design-research/bd-15-requirements.md"
   ],
-  "prior_work": "New module (BD-15, publication lane PF-6). No code exists yet. Write bio-plane/src/funding-register/ and its tests under bio-plane/test/m/funding-register/, meet R1 and R2 with tests that fail with the change reverted, and strike their marks. Store no amounts. Edit no other module; case-inputs, case-grammar, case-disclosures and public-read carry their own found marks.",
+  "prior_work": "New module (BD-15, publication lane PF-6), a product module with no code yet: its modules.json row has empty paths and tests until this job's COMPLETE fills them (build/layers.md, T53 rule). Create bio-plane/src/funding-register/ and bio-plane/test/m/funding-register/, add both to the module's row in build/modules.json and to this entry, meet R1 and R2 with tests that fail with the change reverted, and strike their marks. Store no amounts. Edit no other module; case-inputs, case-grammar, case-disclosures and public-read carry their own found marks.",
   "status": {
     "state": "OPEN",
     "at": "2026-11-07T15:45:00Z"
