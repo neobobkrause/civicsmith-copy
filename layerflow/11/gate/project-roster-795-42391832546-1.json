@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "project-roster",
+  "pr": 795,
+  "sha": "c477a881b7a97a02c014a812ffc2c9279ec6194b",
+  "run_id": 42391832546,
+  "run_attempt": 1,
+  "at": "2026-11-07T16:33:38Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 3.65,
+  "suite_minutes": 0.05,
+  "record_only": false,
+  "whole": true
+}
