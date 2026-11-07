@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { standard } from "../ai-use/fixture.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
-import { fresh, reader, ofKind } from "./fixture.mjs";
+import { NONE, fresh, reader, ofKind } from "./fixture.mjs";
 
 const AT = "2026-10-09T12:00:00Z";
 const UTC = () => ({ time_zone: { value: "UTC" } });
@@ -52,7 +52,7 @@ test("notice ai-use:105 (R16) a provider limit with no time it lifts reads ai.qu
   const entry = { key: "ai-provider-limit:group:quota:none", owner: "group", scope: "account", kind: "quota", unit: null,
                   period: null, period_start: null, resets_at: null, reached_at: AT, source: "provider" };
   const run = (reached) => ofKind(reader(fresh(w.ctx, { membership: w.m, aiAccounts: w.a, view: UTC,
-    aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached }) } })).read("second", { now: AT }), "ai-limit-reached");
+    aiUse: { ...NONE.aiUse, exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached }) } })).read("second", { now: AT }), "ai-limit-reached");
   /* the entry is ai-use R5's provider shape, as its real `limitsReached` answers it in the test above */
   const unknown = run([entry]);
   assert.equal(unknown.length, 1);
