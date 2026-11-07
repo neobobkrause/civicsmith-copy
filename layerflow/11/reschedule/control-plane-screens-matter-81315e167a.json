@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "control-plane",
+  "provider": "screens-matter",
+  "provider_pr": 860,
+  "provider_land": "81315e167a78b9fdd172e8a7b2c05897bd41c962",
+  "at": "2026-11-07T18:51:20Z",
+  "key": "control-plane<-screens-matter@81315e167a",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/screens-matter/r7-escalation-offer.test.mjs: breaking, added, naming R3, R6, R7 (Provides before this land) while screens-matter's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

@@ -1,0 +1,49 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-matter",
+  "pr": 860,
+  "branch": "job/screens-matter",
+  "head": "b9ea2312690c87bdb774af860fbd92fea87cf12d",
+  "before": "f71b36fc94f298602b8eca0153ec7131e64d513f",
+  "merge": "81315e167a78b9fdd172e8a7b2c05897bd41c962",
+  "at": "2026-11-07T18:51:20Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-matter/r7-escalation-offer.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-matter/r7-escalation-offer.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-matter/r7-escalation-offer.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R3, R6, R7 (Provides before this land) while screens-matter's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-matter/r7-escalation-offer.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "control-plane"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane"
+  ],
+  "users_noticed": []
+}
