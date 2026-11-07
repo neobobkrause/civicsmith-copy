@@ -39,3 +39,4 @@
 {"at":"2026-11-05T13:07:01Z","row":"sent","n":20,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job store-assembly complete, PR #504 ready, session session_018BhcecgKduMigxbovPottU: run status"}
 {"at":"2026-11-05T13:07:18Z","row":"outcome","n":20,"outcome":"delivered"}
 {"at":"2026-11-07T18:04:11Z","row":"sent","n":21,"to":"bob","text":"job store-assembly complete, PR #831 ready, session session_018Bhcee1R7SVcJH4ioMo4N6: run status"}
+{"at":"2026-11-07T18:04:30Z","row":"outcome","n":21,"outcome":"delivered"}
