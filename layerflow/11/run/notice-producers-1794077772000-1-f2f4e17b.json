@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "notice-producers",
+  "round": 1,
+  "started": "2026-11-07T18:56:12Z",
+  "ended": "2026-11-07T18:57:48Z",
+  "minutes": 1.6,
+  "tested_on": "c6a82f12d6f26ed60a8c4ad7654eb408406a4be3",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T18:57:48Z"
+}
