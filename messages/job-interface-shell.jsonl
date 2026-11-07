@@ -23,3 +23,4 @@
 {"at":"2026-11-07T17:06:50Z","row":"sent","n":12,"to":"bob","text":"job interface-shell BLOCKED: run status"}
 {"at":"2026-11-07T17:07:08Z","row":"outcome","n":12,"outcome":"delivered"}
 {"at":"2026-11-07T17:33:04Z","row":"sent","n":13,"to":"bob","text":"job interface-shell complete, PR #810 ready, session session_018Bhceg6wou3koQbzySfc8J: run status"}
+{"at":"2026-11-07T17:33:31Z","row":"outcome","n":13,"outcome":"delivered"}
