@@ -1,2 +1,3 @@
 {"at":"2026-11-07T16:34:09Z","row":"sent","n":1,"to":"bob","text":"job instance-updates BLOCKED: run status"}
 {"at":"2026-11-07T16:34:29Z","row":"outcome","n":1,"outcome":"delivered"}
+{"at":"2026-11-07T18:09:43Z","row":"sent","n":2,"to":"bob","text":"job instance-updates complete, PR #799 ready, session session_018BhcefcQKo9JrbL2QZpfiy: run status"}
