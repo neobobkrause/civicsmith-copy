@@ -238,11 +238,13 @@ export async function registryOver(view, captures = []) {
   const before = new Set(w.rows(`SELECT entity_id FROM entities`).map((r) => r.entity_id));
   const lineBefore = new Set(w.rows(`SELECT line_id FROM lines`).map((r) => r.line_id));
   w.ents.view = () => {
-    const { identifier_schemes: added = [], spaces: more = {} } = view();
+    const { identifier_schemes: added = [], spaces: more = {}, layers = null } = view();
     const names = new Set(added.map((x) => x.scheme));
     const spaces = { ...base.spaces };
     for (const [k, v] of Object.entries(more)) spaces[k] = { ...(spaces[k] || {}), ...v, forms: [...(v.forms || []), ...((spaces[k] || {}).forms || [])] };
-    return { ...base, identifier_schemes: [...base.identifier_schemes.filter((x) => !names.has(x.scheme)), ...added], spaces, conflicts: [] };
+    return { ...base, identifier_schemes: [...base.identifier_schemes.filter((x) => !names.has(x.scheme)), ...added], spaces, conflicts: [],
+             /* R112 (T53): the layers the test's view states, which an office's `layer` names (entities R70) */
+             ...(Array.isArray(layers) ? { layers } : {}) };
   };
   const json = (t) => { try { return JSON.parse(t); } catch { return t; } };
   Object.defineProperties(w.ents, {

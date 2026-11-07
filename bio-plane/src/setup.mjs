@@ -11,7 +11,11 @@
 /* The Civicsmith agent's one composer is acquisition's (its R24), read there and never copied. */
 import { civicsmithUserAgent } from "./acquisition/index.mjs";
 /* R64 (N700): a language tag is read by jurisdictions' `isLocale` (its R37), never by a reading of this module's own. */
-import { list as heldProfiles, get as heldProfile, combine as combineProfiles, governingZone, isLocale } from "../../jurisdictions/index.mjs";
+import { list as heldProfiles, get as heldProfile, combine as combineProfiles, layers as heldLayers, governingZone, isLocale } from "../../jurisdictions/index.mjs";
+/* R107–R113 (T53): the team layer `local-facts` holds (its R30) and its refusal of that id; R114: the mail door's refusal
+   of a switch with no domain (its R12), relayed under its own row. */
+import { localFactsOf, LOCAL_FACTS_CHECKS, TEAM_LAYER } from "./local-facts/index.mjs";
+import { MAIL_CHECKS } from "./mail-door/checks.mjs";
 import { recordOf, stampInstant } from "./record-core/index.mjs";
 import { membershipOf, notAnAdmin } from "./membership/index.mjs";
 import { credentialsOf } from "./credentials/index.mjs";
@@ -307,6 +311,30 @@ export const INSTANCE_SETUP_CHECKS = Object.freeze({
     where: 'src/setup.mjs profilesSet > is-profiles-list',
     translation: word('refusal.PROFILE_IS_TEST'),
   },
+  /* R107 (T53; N1257; DEC-404; K5452): the layers a team chooses; a layer below the federal one needs it, and a county or a
+     city needs the layer it sits within. The next free C-119 numbers, awaiting T54's stamp. */
+  LAYER_NO_FEDERAL: {
+    check: 'C-119.13',
+    where: 'src/setup.mjs layersSet > is-layers-chain',
+    translation: localize('refusal.LAYER_NO_FEDERAL', "A state, county or city layer reads its facts beside the federal layer, so the federal layer stays chosen with it. Nothing was changed."),
+  },
+  LAYER_PARENT_MISSING: {
+    check: 'C-119.14',
+    where: 'src/setup.mjs layersSet > is-layers-chain',
+    translation: localize('refusal.LAYER_PARENT_MISSING', "A county or city layer is read inside the layer it sits within, so that layer is chosen with it. Nothing was changed."),
+  },
+  /* R114 (T53; N824; B1): the mail domain and the switch, an administrator's acts; the next free C-64 numbers, awaiting
+     T54's stamp. A switch turned on with no domain is the mail door's own row (`MAIL_NOT_SET_UP`, C-157.2), relayed. */
+  MAIL_DOMAIN_MALFORMED: {
+    check: 'C-64.34',
+    where: 'src/setup.mjs mailDomainSet > is-mail-domain',
+    translation: localize('refusal.MAIL_DOMAIN_MALFORMED', "A mail domain is its bare name, like mail.example.org: no address, no https://, no path and no port. Nothing was changed."),
+  },
+  MAIL_SWITCH_MALFORMED: {
+    check: 'C-64.35',
+    where: 'src/setup.mjs mailDoorSet > is-mail-switch',
+    translation: localize('refusal.MAIL_SWITCH_MALFORMED', "Email into the record is turned on or off by one of your team's administrators, and this request said neither on nor off. Nothing was changed."),
+  },
   /* R53–R55 (DEC-172; K1957, K2093; D311): the assistant, read from whether the group keeps its material away from AI
      (credentials R52), and each member's disclosure. C-119.6 (`ASSISTANT_SWITCH_MALFORMED`) retired with the switch
      (T36-34); C-119.5 (`ASSISTANT_OFF`) retired in T37 (N765, K231): the gate answers credentials' `AI_KEPT_AWAY` (its
@@ -398,6 +426,12 @@ const refusal = (code, detail, extra) => {
   const row = INSTANCE_SETUP_CHECKS[code];
   return { ok: false, reason: code, code, check: row.check, translation: row.translation, detail, ...(extra || {}) };
 };
+/* R107, R114 (T53): a refusal in another module's row (`local-facts`' `LAYER_NOT_SHIPPED`, `mail-door`'s `MAIL_NOT_SET_UP`),
+   with its check and translation as that module holds them, never a row of this module's own. */
+const relayed = (rows, code, detail, extra) => {
+  const row = rows[code];
+  return { ok: false, reason: code, code, check: row.check, translation: row.translation, detail, ...(extra || {}) };
+};
 /* R64, R85 (T50; K3674, K3696): `LANGUAGE_MALFORMED` (C-119.12) is `translations`' row, built from its export, never a row of
    this module's own. */
 const languageMalformed = (detail) => {
@@ -430,6 +464,28 @@ const projectAccount = (what) => draftUnavailable(localize("instance-setup.setup
 /* R60: the longest name a place is given, in characters. R65: the answers' bounds, and membership R109's limits on
    the focus and the purpose a draft must fit. */
 export const PLACE_NAME_MAX = 200;
+/* R109 (T53): the most places a team names at once. */
+export const PLACE_NAMES_MAX = 20;
+/* R114 (T53): the setting that keeps the mail domain's and the switch's history. */
+export const MAIL_SETUP_SETTING = "mail_setup";
+/* R114: the steps in the team's own Cloudflare account, each by its key, in order. */
+const MAIL_STEPS = () => [
+  { key: "instance-setup.mail.step.add_domain", words: localize("instance-setup.mail.step.add_domain", "Add your team's domain to your team's Cloudflare account.") },
+  { key: "instance-setup.mail.step.routing_rule", words: localize("instance-setup.mail.step.routing_rule", "Add one email routing rule that sends the domain's mail to this Civicsmith.") },
+  { key: "instance-setup.mail.step.test_message", words: localize("instance-setup.mail.step.test_message", "Send a test message to an address at the domain. Mail is shown as receiving once the test message arrives.") },
+];
+/* R114: the four states, each by its key. */
+const MAIL_STATE_WORDS = {
+  not_set_up: () => localize("instance-setup.mail.state.not_set_up", "Not set up: no mail domain is set."),
+  off: () => localize("instance-setup.mail.state.off", "Off: email into the record is turned off."),
+  not_yet_receiving: () => localize("instance-setup.mail.state.not_yet_receiving", "Not yet receiving: no test message has arrived since the domain was set."),
+  receiving: () => localize("instance-setup.mail.state.receiving", "Receiving: a test message arrived."),
+};
+/* R109: a place_wanted row's names: its list, or the one name a row written before the list holds; [] for a clear. */
+const placeNames = (r) => {
+  try { const l = r && r.names ? JSON.parse(r.names) : null; if (Array.isArray(l)) return l.filter((x) => typeof x === "string"); } catch { /* the name below */ }
+  return r && typeof r.name === "string" ? [r.name] : [];
+};
 export const GROUP_DRAFT_ANSWERS_MAX = 20;
 export const GROUP_DRAFT_ANSWER_MAX = 1000;
 export const GROUP_FOCUS_MAX = 1000;
@@ -1051,6 +1107,9 @@ export class InstanceSetup {
     if (!cols.includes("unit")) this.#sql.exec(`ALTER TABLE runtime_observations ADD COLUMN unit TEXT`);
     for (const r of this.#rows(`SELECT metric FROM runtime_observations WHERE unit IS NULL`))
       this.#sql.exec(`UPDATE runtime_observations SET unit = ? WHERE metric = ?`, unitOfMetric(r.metric), r.metric);
+    /* R109 (T53): a place named as a set of names; a row written before holds its one name in `name` alone. */
+    if (!this.#rows(`PRAGMA table_info(place_wanted)`).some((r) => r.name === "names"))
+      this.#sql.exec(`ALTER TABLE place_wanted ADD COLUMN names TEXT`);
     /* R50: a body seeded with its office before the body ledger existed is held there too, so R51 finds it. */
     this.#sql.exec(`INSERT OR IGNORE INTO seed_bodies (profile, role, body, entry, body_entity, seeded_at)
                     SELECT profile, role, body, entry, body_entity, seeded_at FROM seed_offices`);
@@ -1554,6 +1613,115 @@ export class InstanceSetup {
   }
 
   /* =====================================================================
+   * R114 (T53; N824; B1; K5504): THE MAIL DOMAIN AND THE SWITCH. An administrator sets the team's own mail domain and
+   * turns "Email into the record" on or off, each a dated act appended to the setting `mail_setup` (record-core's
+   * `setSetting` with `by`, so each change is dated and attributed and every earlier value stays readable), its value
+   * the whole history `{field, value, set_at, set_by}`, oldest first, as the display name's is (R6). `mailSettings()`
+   * is the reader the mail door is handed (`mail-door` R12's `deps.settings()`). The state reads "receiving" only after a
+   * message the door accepted (`mail-door` R2) since the domain was last set, never on the setting alone. Nothing here
+   * asks for a token or an account id (`installer` R85).
+   * ===================================================================== */
+
+  #mailHistory() {
+    const v = this.#record().getSetting(MAIL_SETUP_SETTING);
+    return v && Array.isArray(v.history) ? v.history.filter((h) => h && typeof h === "object" && ["mail_domain", "mail_door"].includes(h.field)) : [];
+  }
+  #mailLatest(field, history = this.#mailHistory()) {
+    for (let i = history.length - 1; i >= 0; i--) if (history[i].field === field) return history[i];
+    return null;
+  }
+  #mailAppend(field, value, by) {
+    const at = this.#iso();
+    const history = [...this.#mailHistory(), { field, value, set_at: at, set_by: by }];
+    const set = this.#record().setSetting(MAIL_SETUP_SETTING, { history }, by);
+    return set && set.ok === true ? { ok: true, at, history } : set;
+  }
+  /* R114: the instant of the first message the door accepted at or after `sinceIso`, or null: one the door holds, read
+     from its waiting list (`mail-door` R3). No list (the door not made on this store), or a read that fails, is none. */
+  #mailAcceptedSince(sinceIso) {
+    const ms = Date.parse(sinceIso);
+    if (!Number.isFinite(ms)) return null;
+    try {
+      const r = this.#one(`SELECT received FROM mail_waiting WHERE received_ms >= ? ORDER BY received_ms LIMIT 1`, ms);
+      return r ? r.received : null;
+    } catch { return null; }
+  }
+
+  /** R114: the mail door's settings, `{mail_domain, mail_door}` (`mail-door` R12's `deps.settings()`): the domain last set
+   *  (null when none or cleared) and whether the switch is on; the switch reads off with no domain. Never throws. */
+  mailSettings() {
+    try {
+      const h = this.#mailHistory();
+      const d = this.#mailLatest("mail_domain", h), o = this.#mailLatest("mail_door", h);
+      const domain = d && typeof d.value === "string" ? d.value : null;
+      return { mail_domain: domain, mail_door: !!domain && !!o && o.value === true };
+    } catch { return { mail_domain: null, mail_door: false }; }
+  }
+
+  /** R114, op=maildomainset: an administrator sets the team's mail domain (validated as R7 validates a group domain), or
+   *  clears it with `domain: null`. `by` is the control plane's stamp. */
+  mailDomainSet({ domain = undefined, by = null } = {}) {
+    const gate = this.#mailGate(by);
+    if (gate) return gate;
+    let d = null;
+    if (domain !== null) {
+      d = typeof domain === "string" ? domain.trim().toLowerCase().replace(/\.$/, "") : "";
+      /* DEC-49 REGION is-mail-domain */
+      if (!GROUP_DOMAIN_RE.test(d))
+        return refusal("MAIL_DOMAIN_MALFORMED", d
+          ? localize("instance-setup.setup.mail_domain_not_bare_host", "'{domain}' is not a bare domain name (letters, digits, hyphens and dots, with no scheme, path, port or IP address); null clears it. Nothing was changed.", { domain: d.slice(0, 80) })
+          : localize("instance-setup.setup.mail_domain_none_given", "The request names no mail domain. A mail domain is a bare domain name (letters, digits, hyphens and dots, with no scheme, path, port or IP address); null clears it. Nothing was changed."));
+      /* END DEC-49 REGION is-mail-domain */
+    }
+    const r = this.#mailAppend("mail_domain", d, by);
+    if (!r || r.ok !== true) return r;
+    return { ...this.#mailState(), set_by: by, set_at: r.at };
+  }
+
+  /** R114, op=maildoorset: an administrator turns "Email into the record" on or off (`on`, a boolean). With no mail
+   *  domain set it cannot be turned on: the mail door's own `MAIL_NOT_SET_UP` (C-157.2). */
+  mailDoorSet({ on = undefined, by = null } = {}) {
+    const gate = this.#mailGate(by);
+    if (gate) return gate;
+    /* DEC-49 REGION is-mail-switch */
+    if (typeof on !== "boolean")
+      return refusal("MAIL_SWITCH_MALFORMED", localize("instance-setup.setup.mail_switch_not_boolean", "The switch is sent as on: true or on: false. Nothing was changed."));
+    /* END DEC-49 REGION is-mail-switch */
+    if (on && !this.mailSettings().mail_domain)
+      return relayed(MAIL_CHECKS, "MAIL_NOT_SET_UP", localize("instance-setup.setup.mail_switch_needs_domain", "Email into the record is turned on once your team's mail domain is set. Nothing was changed."), { status: 409 });
+    const r = this.#mailAppend("mail_door", on, by);
+    if (!r || r.ok !== true) return r;
+    return { ...this.#mailState(), set_by: by, set_at: r.at };
+  }
+
+  /** R114, op=mailsetup: the mail domain, the switch, the state, the steps in the team's own Cloudflare account by key,
+   *  and the history, to an administrator; `NOT_AN_ADMIN` to anyone else. Writes nothing. */
+  mailSetup({ viewer = null } = {}) {
+    if (typeof viewer !== "string" || !viewer || !this.#membership().isAdministrator(viewer))
+      return notAnAdmin(viewer ?? null, localize("instance-setup.setup.what_reading_mail_setup", "reading how your team's mail is set up"));
+    return this.#mailState();
+  }
+  /* R114: refused as R5 refuses (`GROUP_IDENTITY_NOT_ADMIN`, its row), before anything is read or validated. */
+  #mailGate(by) {
+    if (typeof by !== "string" || !by || !this.#membership().isAdministrator(by))
+      return refusal("GROUP_IDENTITY_NOT_ADMIN",
+        localize("instance-setup.setup.setting_the_mail_domain_is", "setting your team's mail domain or turning email into the record on or off is an administrator's act, and your team's Civicsmith stamps who is asking from the signed-in session. This caller is not one of the active administrators."), { by: by ?? null });
+    return null;
+  }
+  #mailState() {
+    const history = this.#mailHistory();
+    const d = this.#mailLatest("mail_domain", history);
+    const { mail_domain: domain, mail_door: on } = this.mailSettings();
+    const since = domain && on ? this.#mailAcceptedSince(d.set_at) : null;
+    const state = !domain ? "not_set_up" : !on ? "off" : since ? "receiving" : "not_yet_receiving";
+    return { ok: true, domain, on, state, receiving_since: since,
+             state_key: `instance-setup.mail.state.${state}`, state_words: MAIL_STATE_WORDS[state](),
+             intro: localize("instance-setup.mail.intro", "Email into the record uses a domain your team owns, bought by your team (about $10-15 a year), with Cloudflare's free email routing. Nothing here asks for a token or an account id."),
+             intro_key: "instance-setup.mail.intro", steps: MAIL_STEPS(),
+             history: history.map((h) => ({ ...h })) };
+  }
+
+  /* =====================================================================
    * N10 — THE JURISDICTION PROFILES THIS COPY READS ITS LOCAL FACTS FROM (R12–R16). `build/layers.md`, "No
    * jurisdiction in the product", rule 2: an instance setting chosen at install. The list is record-core's setting
    * `jurisdiction_profiles` (its R26), which `extraction`, `monitoring`, `actions` and `standards` read; this module is
@@ -1567,9 +1735,103 @@ export class InstanceSetup {
   #checkProfileList(list) {
     const ids = list.map((v) => (typeof v === "string" ? v.trim() : v));
     const J = this.#juris();
-    const unknown = ids.filter((id) => typeof id !== "string" || !id || !J.get(id));
+    /* R107: the team layer is `local-facts`' (its R30), never a recorded id: `LAYER_NOT_SHIPPED`, asked first */
+    const team = ids.filter((id) => id === TEAM_LAYER);
+    const unknown = ids.filter((id) => id !== TEAM_LAYER && (typeof id !== "string" || !id || !J.get(id)));
     const tests = ids.filter((id) => typeof id === "string" && J.get(id) && J.get(id).test === true);
-    return { ids, unknown, tests };
+    return { ids, unknown, tests, team };
+  }
+  #teamLayerRefusal() {
+    return relayed(LOCAL_FACTS_CHECKS, "LAYER_NOT_SHIPPED",
+      localize("instance-setup.setup.team_layer_not_chosen", "Your team's own layer is always read with the layers you choose, and is edited under Local facts, so it is not chosen here. Nothing was changed."),
+      { profiles: [TEAM_LAYER] });
+  }
+
+  /* =====================================================================
+   * T53 (N1257; DEC-404; K5452, K5458): THE LAYERS. A held id is a layer (`jurisdictions` R99: `{level, place, within,
+   * origin}`), a package of layers (its R114: `oakland-alameda` resolves to four), or a profile of its own (a test
+   * profile). The chain a team reads is the recorded ids, each package read as its layers, and then the team layer
+   * `local-facts` holds (its R30), which is never recorded. Nothing here rewrites the recorded setting (R111).
+   * ===================================================================== */
+
+  /* The held layers, `[{id, name, level, place, origin, within, coverage}]` in level order, or [] when the provider
+     states none (a provider of profiles only). */
+  #heldLayers() {
+    const J = this.#juris();
+    try { return typeof J.layers === "function" ? (J.layers() || []).filter((l) => l && typeof l.id === "string") : []; }
+    catch { return []; }
+  }
+  /* R111, R113: the layer ids one held id stands for: a layer itself; a package its layers, as `combine` answers them in
+     `view.layers`; any other held id (a test profile, or a provider stating no layer) itself. */
+  #layerIdsOf(id, held = this.#heldLayers()) {
+    if (typeof id !== "string" || !id) return [];
+    if (!held.length || held.some((l) => l.id === id)) return [id];
+    let c = null;
+    try { c = this.#juris().combine([id]); } catch { c = null; }
+    const ls = c && c.ok === true && c.view && Array.isArray(c.view.layers) ? c.view.layers.map((l) => l && l.id).filter((x) => typeof x === "string") : [];
+    return ls.length && ls.every((x) => held.some((l) => l.id === x)) ? ls : [id];
+  }
+  #expandIds(ids, held = this.#heldLayers()) {
+    const out = [];
+    for (const id of ids) for (const x of this.#layerIdsOf(id, held)) if (!out.includes(x)) out.push(x);
+    return out;
+  }
+  /* The team layer `local-facts` holds (its R30), read by the plane (no viewer), when it gives at least one fact; else
+     null. A provider that does not answer is no team layer, never a refusal. */
+  #teamLayer() {
+    try {
+      const lf = this.#deps.localFacts !== undefined ? this.#deps.localFacts
+        : localFactsOf(this.#ctx, { record: this.#record(), membership: this.#membership() });
+      const p = lf && typeof lf.teamLayer === "function" ? lf.teamLayer({}) : null;
+      return p && typeof p === "object" && factsIn(p) > 0 ? p : null;
+    } catch { return null; }
+  }
+  /* R108: one layer of the chain as `profiles()` tells it. */
+  #layerEntry(id, p, held) {
+    const h = held.find((l) => l.id === id) || null;
+    const lay = p && p.layer && typeof p.layer === "object" ? p.layer : {};
+    const coverage = h && h.coverage ? h.coverage : (p && p.coverage ? p.coverage : null);
+    return { id, name: p ? p.name ?? null : null, level: (h ? h.level : lay.level) ?? null, place: (h ? h.place : lay.place) ?? null,
+             origin: (h ? h.origin : lay.origin) ?? (id === TEAM_LAYER ? "team" : null), within: (h ? h.within : lay.within) ?? null,
+             coverage: coverage ? { ...coverage } : null, facts: p ? factsIn(p) : 0 };
+  }
+
+  /** R107, op=layersset: an administrator chooses the layers of the places the team's work is focused on. The set is
+   *  recorded as `jurisdiction_profiles` (record-core R26), in level order with each layer after the one it sits within;
+   *  nothing below the federal layer is added, and an empty set (no layer, the federal one removed) is valid. */
+  layersSet({ layers = undefined, by = null } = {}) {
+    if (typeof by !== "string" || !by || !this.#membership().isAdministrator(by))
+      return refusal("PROFILES_NOT_ADMIN",
+        localize("instance-setup.setup.choosing_the_jurisdiction_profiles_is", "choosing the jurisdiction profiles is an administrator's act, and your team's Civicsmith stamps who is asking from the signed-in session. This caller is not one of the active administrators."), { by: by ?? null });
+    if (!Array.isArray(layers))
+      return refusal("NOT_A_LIST", localize("instance-setup.setup.the_layers_are_sent_as", "the layers are sent as a list of layer ids; an empty list chooses none. Nothing was changed."));
+    const { ids, unknown, tests, team } = this.#checkProfileList(layers);
+    if (team.length) return this.#teamLayerRefusal();
+    const held = this.#heldLayers();
+    /* a held id that is no layer (a package, or a profile of its own) is not chosen here: profilesSet records it */
+    const notLayer = ids.filter((id) => typeof id === "string" && !unknown.includes(id) && !tests.includes(id) && !held.some((l) => l.id === id));
+    if (unknown.length || notLayer.length)
+      return refusal("UNKNOWN_PROFILE", localize("instance-setup.setup.your_teams_civicsmith_holds_no_layer", "your team's Civicsmith holds no layer {map}. Nothing was changed.", { map: String([...unknown, ...notLayer].map((x) => JSON.stringify(x)).join(", ")) }), { profiles: [...unknown, ...notLayer] });
+    if (tests.length)
+      return refusal("PROFILE_IS_TEST", localize("instance-setup.setup.profile_made_up_for_testing", "{tests} is a profile made up for testing. Nothing was changed.", { tests: tests.join(", ") }), { profiles: tests });
+    const chosen = held.filter((l) => ids.includes(l.id));
+    /* DEC-49 REGION is-layers-chain */
+    const federal = held.filter((l) => l.level === "federal").map((l) => l.id);
+    const below = chosen.filter((l) => l.level !== "federal");
+    if (federal.length && below.length && !chosen.some((l) => federal.includes(l.id)))
+      return refusal("LAYER_NO_FEDERAL", localize("instance-setup.setup.layer_needs_federal", "These layers sit below the federal layer, which is not in the list: {layers}. Nothing was changed.", { layers: below.map((l) => l.id).join(", ") }),
+        { layers: below.map((l) => l.id), missing: federal });
+    const orphans = chosen.filter((l) => l.within && !chosen.some((x) => x.id === l.within));
+    if (orphans.length)
+      return refusal("LAYER_PARENT_MISSING", localize("instance-setup.setup.layer_parent_missing", "These layers sit within layers that are not in the list: {layers} (missing: {missing}). Nothing was changed.", { layers: orphans.map((l) => l.id).join(", "), missing: [...new Set(orphans.map((l) => l.within))].join(", ") }),
+        { layers: orphans.map((l) => l.id), missing: [...new Set(orphans.map((l) => l.within))] });
+    /* END DEC-49 REGION is-layers-chain */
+    const order = chosen.map((l) => l.id);   /* the held layers' own order: by level, then place, so each after its parent */
+    const set = this.#record().setSetting("jurisdiction_profiles", order, by);
+    if (!set || set.ok !== true) return set;
+    this.#leaveArrivals(word("setup.leave_arrivals.profile_made_active"), this.#iso(), order);
+    return { ...this.profiles(), set_by: by, layers_set: order,
+             note: order.length ? word("setup.note.local_facts_read") : word("setup.note.profile_active_now") };
   }
 
   /* R13: at the first boot, the installer's comma-separated binding, recorded when every id is held and none is a
@@ -1604,11 +1866,18 @@ export class InstanceSetup {
       const p = J.get(id);
       return p ? { id, name: p.name, covers: p.covers } : { id, name: null, covers: null, held: false };
     });
-    const combined = ids.length ? J.combine(ids) : { ok: true, conflicts: [] };
-    const out = { ok: true, profiles: active, conflicts: combined.ok ? combined.conflicts : [],
+    /* R108 (T53): the chain, each recorded id read as its layers (a package as its four, R111), then the team layer
+       `local-facts` holds (its R30), never recorded; combined, conflicts and stage findings read over the whole chain */
+    const held = this.#heldLayers();
+    const team = this.#teamLayer();
+    const chain = [...this.#expandIds(ids, held).map((id) => this.#layerEntry(id, J.get(id), held)),
+                   ...(team ? [this.#layerEntry(TEAM_LAYER, team, held)] : [])];
+    const list = team ? [...ids, team] : ids;
+    const combined = list.length ? J.combine(list) : { ok: true, conflicts: [] };
+    const out = { ok: true, profiles: active, layers: chain, conflicts: combined.ok ? combined.conflicts : [],
                   ...(combined.ok ? {} : { errors: combined.errors }), view: profileView(combined), choices,
                   ...this.#stageFindings(combined) };
-    if (!ids.length) {
+    if (!list.length) {
       out.detail = word("instance-setup.profiles.detail.none_active");
       const note = core.getSetting(InstanceSetup.PROFILES_BOOT_NOTE);
       if (note && note.recorded === false && typeof note.why === "string")
@@ -1653,7 +1922,8 @@ export class InstanceSetup {
     /* DEC-49 REGION is-profiles-list */
     if (!Array.isArray(profiles))
       return refusal("NOT_A_LIST", localize("instance-setup.setup.the_profiles_are_sent_as", "the profiles are sent as a list of profile ids, in the order they are read; an empty list chooses none. Nothing was changed."));
-    const { ids, unknown, tests } = this.#checkProfileList(profiles);
+    const { ids, unknown, tests, team } = this.#checkProfileList(profiles);
+    if (team.length) return this.#teamLayerRefusal();
     if (unknown.length)
       return refusal("UNKNOWN_PROFILE", localize("instance-setup.setup.your_teams_civicsmith_holds_no", "your team's Civicsmith holds no profile {map}. Nothing was changed.", { map: String(unknown.map((x) => JSON.stringify(x)).join(", ")) }), { profiles: unknown });
     if (tests.length)
@@ -1684,7 +1954,7 @@ export class InstanceSetup {
    * entry with no identifier seeds nothing, and a `MemberType` the profile does not map records no holder.
    * ===================================================================== */
 
-  #juris() { return this.#deps.jurisdictions ?? { list: heldProfiles, get: heldProfile, combine: combineProfiles }; }
+  #juris() { return this.#deps.jurisdictions ?? { list: heldProfiles, get: heldProfile, combine: combineProfiles, layers: heldLayers }; }
   #entities() { return this.#deps.entities ?? entitiesOf(this.#ctx); }
   #lines() { return this.#deps.lines ?? linesOf(this.#ctx); }
 
@@ -1692,7 +1962,11 @@ export class InstanceSetup {
   #activeProfiles() {
     const set = this.#record().getSetting("jurisdiction_profiles");
     const ids = Array.isArray(set) ? set.filter((x) => typeof x === "string" && x) : [];
-    return ids.map((id) => ({ id, p: this.#juris().get(id) || null })).filter((x) => x.p);
+    /* R112 (T53; K5458): each active layer as `combine` hands them: a package read as its layers, each seeded under its
+       own id, then the team layer `local-facts` holds (its R30), which this module never records */
+    const team = this.#teamLayer();
+    return [...this.#expandIds(ids).map((id) => ({ id, p: this.#juris().get(id) || null })).filter((x) => x.p),
+            ...(team ? [{ id: TEAM_LAYER, p: team }] : [])];
   }
 
   /* A profile's scheme by name (jurisdictions R52), or null. */
@@ -1723,7 +1997,7 @@ export class InstanceSetup {
   /* One entity found or seeded under one identifier: the entity already holding it (a member's, or this module's from
      an earlier run) is `already`; else it is created, machine-declared, and the identifier held on it with the
      system's row as its basis. Answers `{state: seeded | already | unseeded, entity_id?, why?}`. */
-  #seedEntity({ p, ident, kind, label, note, row, source, sector, forumKind }) {
+  #seedEntity({ p, ident, kind, label, note, row, source, sector, forumKind, layer = null }) {
     const why = InstanceSetup.#identWhy(p, ident, kind);
     if (why) return { state: "unseeded", why };
     const E = this.#entities();
@@ -1740,7 +2014,7 @@ export class InstanceSetup {
     let entityId = mine ? mine.entity_id : null;
     if (!entityId) {
       const made = E.createEntity({ kind, label, note, declaredBy: SEED_MACHINE, ...(sector ? { sector } : {}),
-                                    ...(forumKind ? { forum_kind: forumKind } : {}) });
+                                    ...(forumKind ? { forum_kind: forumKind } : {}), ...(layer ? { layer } : {}) });
       if (!made || made.ok !== true) return { state: "unseeded", why: word("setup.why.registry_refused_entity", { made: String(made && (made.reason || made.detail)) }) };
       entityId = made.entity_id;
       this.#ledgerEntity(ident, entityId, kind, label, source);
@@ -1760,8 +2034,11 @@ export class InstanceSetup {
 
   /* One line recorded once, keyed by its kind, its ends and the source row it rests on (`lines.recordLine`, machine
      from a system rule whose two ends the identifiers name, lines R4). Answers like `#seedEntity`. */
-  #seedLine({ key, kind, from, to, capacity, valid, basis }) {
-    const held = this.#one(`SELECT line_id FROM seed_lines WHERE key = ?`, key);
+  #seedLine({ key, kind, from, to, capacity, valid, basis, anyProfile = false }) {
+    const held = this.#one(`SELECT line_id FROM seed_lines WHERE key = ?`, key)
+      /* R112 (T53; K5458): an office's or a body's line is one line whatever profile key seeded it: a line held for the
+         same kind and the same two ends (a package's, before its layers) is `already` */
+      || (anyProfile ? this.#one(`SELECT line_id FROM seed_lines WHERE kind = ? AND from_entity = ? AND to_entity = ? ORDER BY rowid LIMIT 1`, kind, from, to) : null);
     if (held) return { state: "already", line_id: held.line_id };
     const r = this.#lines().recordLine({ kind, from, to, ...(capacity ? { capacity } : {}), ...(valid ? { valid } : {}),
                                          basis, by: SEED_MACHINE });
@@ -1812,7 +2089,9 @@ export class InstanceSetup {
           this.#sql.exec(`INSERT INTO seed_bodies (profile, role, body, entry, body_entity, seeded_at)
                           VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(profile, role, body) DO NOTHING`,
                          profile, role, body, entry, b.entity_id, this.#iso());
+        /* R112 (`entities` R70): an office seeded from a layer records the layer whose entry it stands for */
         const o = officeId ? this.#seedEntity({ p, ident: officeId, kind: "office", label: `${role}, ${body}`, source,
+          layer: p.layer && typeof p.layer === "object" ? profile : null,
           row: `${profile}/${entry}/office`, note: word("setup.note.office_action_addressed", { cite: String(cite) }) })
           : noIdent("office", "ids.office");
         put(o, { what: "office", ...where, ...(officeId ? { ident: officeId } : {}) });
@@ -1827,7 +2106,7 @@ export class InstanceSetup {
         /* A line needs both its ends held under identifiers. Neither held: the two entities' answers say why, and no
            line is named; one held: the line is answered could-not-be-seeded, naming the end that is missing. */
         if (officeHeld && bodyHeld)
-          put(this.#seedLine({ key: `post_in|${o.entity_id}|${b.entity_id}|${profile}`, kind: "post_in",
+          put(this.#seedLine({ key: `post_in|${o.entity_id}|${b.entity_id}|${profile}`, kind: "post_in", anyProfile: true,
                                from: o.entity_id, to: b.entity_id, valid: zone, basis: rule({ from: officeId, to: bodyId }) }),
               { what: "post_in", ...where });
         else if (officeHeld || bodyHeld)
@@ -1854,7 +2133,7 @@ export class InstanceSetup {
               { what: "part_of", ...where });
           return;
         }
-        put(this.#seedLine({ key: `part_of|${b.entity_id}|${w.entity_id}|${profile}`, kind: "part_of",
+        put(this.#seedLine({ key: `part_of|${b.entity_id}|${w.entity_id}|${profile}`, kind: "part_of", anyProfile: true,
                              from: b.entity_id, to: w.entity_id, valid: zone, basis: rule({ from: bodyId, to: withinId }) }),
             { what: "part_of", ...where });
       });
@@ -1873,7 +2152,7 @@ export class InstanceSetup {
     const listed = [];
     if (!active.length) return listed;
     let combined = null;
-    try { combined = this.#juris().combine(active.map((a) => a.id)); } catch { combined = null; }
+    try { combined = this.#juris().combine(active.map((a) => (a.id === TEAM_LAYER ? a.p : a.id))); } catch { combined = null; }
     const forums = combined && combined.ok === true && combined.view && Array.isArray(combined.view.forums) ? combined.view.forums : [];
     for (const f of forums) {
       if (!f || typeof f.label !== "string" || !f.label.trim() || typeof f.forum_kind !== "string") continue;
@@ -2253,11 +2532,18 @@ export class InstanceSetup {
    * ===================================================================== */
 
   #placeCurrent() {
-    return this.#one(`SELECT seq, name, set_by, set_at FROM place_wanted ORDER BY seq DESC LIMIT 1`) || null;
+    const r = this.#one(`SELECT seq, name, names, set_by, set_at FROM place_wanted ORDER BY seq DESC LIMIT 1`) || null;
+    return r ? { ...r, names: placeNames(r) } : null;
   }
-  /* The held profiles a place can arrive as: every held profile that is not a test profile, by id. */
+  /* The held profiles a place can arrive as: every held profile that is not a test profile, by id, and (R113, T53) every
+     held Civicsmith layer, each by its own id. The team layer is never one: it is no held id. */
   #heldPlaceIds() {
-    return this.#juris().list().filter((p) => p && p.test !== true && typeof p.id === "string").map((p) => p.id);
+    const held = this.#heldLayers();
+    /* a package is no arrival where layers are held: its layers arrive, each once (R113) */
+    const ids = this.#juris().list().filter((p) => p && p.test !== true && typeof p.id === "string").map((p) => p.id)
+      .filter((id) => { const ls = this.#layerIdsOf(id, held); return ls.length === 1 && ls[0] === id; });
+    for (const l of held) if (l.origin !== "team" && l.id !== TEAM_LAYER && !ids.includes(l.id)) ids.push(l.id);
+    return ids;
   }
   #seePlaces(at) {
     this.#sql.exec(`INSERT INTO place_seen (id, profiles, seen_at) VALUES (1, ?, ?)
@@ -2273,38 +2559,47 @@ export class InstanceSetup {
      exactly the name folded the same way. */
   static #placeMatches(p, name) {
     const want = termFold(name);
-    return !!want && [p && p.name, ...(p && Array.isArray(p.covers) ? p.covers : [])]
+    /* R109 (T53): a layer also matches by its `place` (`jurisdictions` R99) */
+    return !!want && [p && p.name, p && p.layer && typeof p.layer === "object" ? p.layer.place : null, ...(p && Array.isArray(p.covers) ? p.covers : [])]
       .some((x) => typeof x === "string" && termFold(x) === want);
   }
 
   /** R60, op=placewanted: an administrator names the place the group works in that no held profile covers, or clears
    *  it with `name: null`. `by` is the control plane's stamp (R29). Each set or clear is appended with who and when. */
-  placeWantedSet({ name = undefined, by = null } = {}) {
+  placeWantedSet({ name = undefined, names = undefined, by = null } = {}) {
     if (typeof by !== "string" || !by || !this.#membership().isAdministrator(by))
       return notAnAdmin(by ?? null, localize("instance-setup.setup.what_naming_place", "naming the place your team works in"));
-    let value = null;
-    if (name !== null) {
-      const s = typeof name === "string" ? name.trim() : "";
-      const chars = [...s].length;
-      /* DEC-49 REGION is-place-name */
-      if (!s || chars > PLACE_NAME_MAX || /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(s))
-        return refusal("PLACE_NAME_MALFORMED", s
-          ? localize("instance-setup.setup.place_not_one_line", "A name of {chars} characters is not one line of 1 to {max} characters with no control characters; null clears it. Nothing was changed.", { chars, max: PLACE_NAME_MAX })
-          : localize("instance-setup.setup.place_none_given", "The request names no place. A place is named in one line of 1 to {max} characters with no control characters; null clears it. Nothing was changed.", { max: PLACE_NAME_MAX }));
-      /* END DEC-49 REGION is-place-name */
-      value = s;
+    /* R109 (T53): a set of names (`names`, or `name` sent as a list), each a state, a county or a city; one name as before */
+    const given = names !== undefined ? names : name;
+    let values = null;
+    if (given !== null && !(Array.isArray(given) && !given.length)) {
+      values = [];
+      for (const one of Array.isArray(given) ? given : [given]) {
+        const s = typeof one === "string" ? one.trim() : "";
+        const chars = [...s].length;
+        /* DEC-49 REGION is-place-name */
+        if (!s || chars > PLACE_NAME_MAX || /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(s))
+          return refusal("PLACE_NAME_MALFORMED", s
+            ? localize("instance-setup.setup.place_not_one_line", "A name of {chars} characters is not one line of 1 to {max} characters with no control characters; null clears it. Nothing was changed.", { chars, max: PLACE_NAME_MAX })
+            : localize("instance-setup.setup.place_none_given", "The request names no place. A place is named in one line of 1 to {max} characters with no control characters; null clears it. Nothing was changed.", { max: PLACE_NAME_MAX }));
+        /* END DEC-49 REGION is-place-name */
+        if (!values.includes(s)) values.push(s);
+      }
+      if (values.length > PLACE_NAMES_MAX)
+        return refusal("PLACE_NAME_MALFORMED", localize("instance-setup.setup.place_too_many", "{n} places were named, and at most {max} are kept. Nothing was changed.", { n: values.length, max: PLACE_NAMES_MAX }));
     }
+    const value = values ? values[0] : null;
     const at = this.#iso();
     const before = this.#placeCurrent();
-    this.#sql.exec(`INSERT INTO place_wanted (name, set_by, set_at) VALUES (?, ?, ?)`, value, by, at);
+    this.#sql.exec(`INSERT INTO place_wanted (name, names, set_by, set_at) VALUES (?, ?, ?, ?)`, value, values ? JSON.stringify(values) : null, by, at);
     /* R62: the open arrivals leave when the name is cleared or changed; the profiles held now are what a later start
        compares against, so a profile already held when the name is set is not an arrival. */
-    if (before && before.name !== null && before.name !== value)
-      this.#leaveArrivals(value === null ? word("setup.leave_arrivals.name_cleared") : word("setup.leave_arrivals.name_changed"), at);
+    if (before && before.names.length && JSON.stringify(before.names) !== JSON.stringify(values || []))
+      this.#leaveArrivals(values === null ? word("setup.leave_arrivals.name_cleared") : word("setup.leave_arrivals.name_changed"), at);
     this.#seePlaces(at);
-    return { ok: true, name: value, set_by: by, set_at: at,
-             history: this.#rows(`SELECT name, set_by, set_at FROM place_wanted ORDER BY seq`).map((r) => ({ ...r })),
-             note: value === null
+    return { ok: true, name: value, names: values || [], set_by: by, set_at: at,
+             history: this.#rows(`SELECT name, names, set_by, set_at FROM place_wanted ORDER BY seq`).map((r) => ({ name: r.name, names: placeNames(r), set_by: r.set_by, set_at: r.set_at })),
+             note: values === null
                ? word("setup.note.place_named_ever")
                : word("setup.note.name_kept_group") };
   }
@@ -2314,7 +2609,7 @@ export class InstanceSetup {
     if (typeof viewer !== "string" || !viewer || !this.#membership().isAdministrator(viewer))
       return notAnAdmin(viewer ?? null, localize("instance-setup.setup.what_reading_place", "reading the place your team named"));
     const cur = this.#placeCurrent();
-    return { ok: true, name: cur ? cur.name : null, set_by: cur ? cur.set_by : null, set_at: cur ? cur.set_at : null,
+    return { ok: true, name: cur ? cur.name : null, names: cur ? cur.names : [], set_by: cur ? cur.set_by : null, set_at: cur ? cur.set_at : null,
              matches: this.placeArrivals({ viewer }).arrivals };
   }
 
@@ -2327,8 +2622,11 @@ export class InstanceSetup {
           && (typeof viewer !== "string" || !viewer || !this.#membership().isAdministrator(viewer))) return { ok: true, arrivals: [] };
       return { ok: true, arrivals: this.#rows(`SELECT name, profile, found_at FROM place_arrivals WHERE left_at IS NULL ORDER BY seq`).map((r) => {
         const p = this.#juris().get(r.profile);
-        return { name: r.name, profile: r.profile, profile_name: p ? p.name ?? null : null,
-                 covers: p && Array.isArray(p.covers) ? [...p.covers] : [], found_at: r.found_at };
+        /* R113 (T53): `layer` is the arriving layer's id, held in `profile` (a row from before the change answers its
+           profile); R109: a team's own entries about the place keep working in its layer, beside the shipped one's */
+        return { name: r.name, profile: r.profile, layer: r.profile, profile_name: p ? p.name ?? null : null,
+                 covers: p && Array.isArray(p.covers) ? [...p.covers] : [], found_at: r.found_at,
+                 note: localize("instance-setup.places.arrival_entries_kept", "Your team's own entries about this place stay in your team's layer and keep working, beside the shipped layer's.") };
       }) };
     } catch { return { ok: true, arrivals: [] }; }
   }
@@ -2338,18 +2636,26 @@ export class InstanceSetup {
      compares against. */
   #comparePlaces() {
     const cur = this.#placeCurrent();
-    if (!cur || cur.name === null) return { compared: false };
+    if (!cur || !cur.names.length) return { compared: false };
     const at = this.#iso();
     const seenRow = this.#one(`SELECT profiles FROM place_seen WHERE id = 1`);
     let seen = null;
     try { seen = seenRow ? JSON.parse(seenRow.profiles) : null; } catch { seen = null; }
-    const active = new Set(this.#activeIds());
+    /* R113 (T53): the last-compared set and the active ids are read as layers, so a layer an already-held or active
+       package stands for (`oakland-alameda`'s four) is held, not found */
+    const held = this.#heldLayers();
+    if (Array.isArray(seen)) seen = [...seen, ...this.#expandIds(seen.filter((x) => typeof x === "string"), held)];
+    const active = new Set([...this.#activeIds(), ...this.#expandIds(this.#activeIds(), held)]);
     let found = 0;
     if (Array.isArray(seen))
       for (const id of this.#heldPlaceIds()) {
-        if (seen.includes(id) || active.has(id) || !InstanceSetup.#placeMatches(this.#juris().get(id), cur.name)) continue;
+        if (seen.includes(id) || active.has(id)) continue;
+        const p = this.#juris().get(id);
+        const matched = cur.names.find((n) => InstanceSetup.#placeMatches(p, n));
+        if (matched === undefined) continue;
+        /* R109: one arrival per layer, under the name it matched */
         const r = this.#rows(`INSERT INTO place_arrivals (place_seq, name, profile, found_at) VALUES (?, ?, ?, ?)
-                              ON CONFLICT(place_seq, profile) DO NOTHING RETURNING seq`, cur.seq, cur.name, id, at);
+                              ON CONFLICT(place_seq, profile) DO NOTHING RETURNING seq`, cur.seq, matched, id, at);
         found += r.length;
       }
     this.#seePlaces(at);
@@ -3066,6 +3372,18 @@ export class InstanceSetup {
    combined `action_kinds` entry that gives one (its R25, R29). A fact no active profile states, or that `combine`
    withholds (a conflict) or cannot give (its errors), is ABSENT, never an empty list: the reader then reads it
    undetermined, which is what it is. Nothing here chooses between profiles or supplies a default. */
+/* R108: the number of facts a layer gives: each entry of a list section, each key of a keyed one, each one-value fact; its
+   own description (`id`, `name`, `covers`, `test`, `layer`, `coverage`, `package`) is no fact. */
+const NOT_FACTS = new Set(["id", "name", "covers", "test", "layer", "coverage", "package"]);
+function factsIn(p) {
+  let n = 0;
+  for (const [k, v] of Object.entries(p && typeof p === "object" ? p : {})) {
+    if (NOT_FACTS.has(k) || v === null || v === undefined) continue;
+    n += Array.isArray(v) ? v.length : typeof v === "object" ? Object.keys(v).length : 1;
+  }
+  return n;
+}
+
 function profileView(combined) {
   const view = {};
   const v = combined && combined.ok === true && combined.view && typeof combined.view === "object" ? combined.view : null;
@@ -3080,6 +3398,8 @@ function profileView(combined) {
   if (Array.isArray(v.records_laws) && v.records_laws.length) view.records_laws = v.records_laws;
   if (v.records_help && typeof v.records_help === "object") view.records_help = v.records_help;
   if (typeof v.name === "string" && v.name) view.name = v.name;
+  /* R108 (T53; `jurisdictions` R108): each layer of the chain with its coverage, as `combine` gives them */
+  if (Array.isArray(v.layers) && v.layers.length) view.layers = v.layers;
   return view;
 }
 
@@ -3119,6 +3439,11 @@ export function instanceSetupOps(m, url, body) {
     groupidentitypublic: () => m.groupIdentityPublic(),
     profiles: () => m.profiles(),
     profilesset: () => m.profilesSet({ ...(body || {}), by: q("by") }),
+    /* R107 (T53): the layers a team chooses; R114: the mail domain, the switch and their state; `by`, `viewer` the stamps */
+    layersset: () => m.layersSet({ ...(body || {}), by: q("by") }),
+    maildomainset: () => m.mailDomainSet({ ...(body || {}), by: q("by") }),
+    maildoorset: () => m.mailDoorSet({ ...(body || {}), by: q("by") }),
+    mailsetup: () => m.mailSetup({ viewer: q("viewer") }),
     runtimeobservations: () => m.runtimeObservations(),
     cpuprobestate: () => m.cpuProbeState(),
     cpuprobestart: () => m.recordCpuProbeStart(body || {}),
@@ -3204,6 +3529,20 @@ export const DECLARED_OPS = Object.freeze({
   memberlanguageset: { classes: STAMPED_ACT, machineClasses: [], mutating: true, weight: "caller-owned",
     description: localize("instance-setup.declared.memberlanguageset", "personal state, keyed by member: the language the interface speaks to them"),
     fields: { accepts: ["language"], requires: ["language"] } },
+  /* R107 (T53): the layers a team chooses, recorded as profilesset's setting. */
+  layersset: { classes: ADMIN_ACT, machineClasses: [], mutating: true, weight: "substrate",
+    description: localize("instance-setup.declared.layersset", "the instance's configuration: the layers of the places the team's work is focused on, recorded as its jurisdiction profiles; an administrator's"),
+    fields: { accepts: ["layers"], requires: ["layers"] } },
+  /* R114 (T53): the mail domain and the switch, an administrator's acts, and their state, an administrator's read. */
+  maildomainset: { classes: ADMIN_ACT, machineClasses: [], mutating: true, weight: "substrate",
+    description: localize("instance-setup.declared.maildomainset", "the instance's configuration: the team's own mail domain for email into the record, or none; an administrator's, every earlier value kept"),
+    fields: { accepts: ["domain"], requires: ["domain"] } },
+  maildoorset: { classes: ADMIN_ACT, machineClasses: [], mutating: true, weight: "substrate",
+    description: localize("instance-setup.declared.maildoorset", "the instance's configuration: email into the record turned on or off; an administrator's, every earlier value kept"),
+    fields: { accepts: ["on"], requires: ["on"] } },
+  mailsetup: { classes: ADMIN_ACT, machineClasses: [], mutating: false, weight: "read",
+    description: localize("instance-setup.declared.mailsetup", "read: the team's mail domain, whether email into the record is on, whether it is receiving, and the steps to set it up"),
+    fields: { accepts: [], requires: [] } },
   officesseed: { classes: ADMIN_ACT, machineClasses: [], mutating: true, weight: "substrate",
     description: localize("instance-setup.declared.officesseed", "the instance's configuration: seeds the active profiles' offices and bodies as entities; an administrator's"),
     fields: { accepts: [], requires: [] } },
