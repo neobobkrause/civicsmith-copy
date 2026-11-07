@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "retrieval",
+  "pr": 804,
+  "branch": "job/retrieval",
+  "head": "5b0662e5e834d7bde7b6738b580395b20362c58b",
+  "before": "d1407e371fb35480d8d35ddd97496e043d277cd1",
+  "merge": "a1c3515e8c903cd1e4cec5e7481adc9c9ab6b89b",
+  "at": "2026-11-07T16:54:09Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
