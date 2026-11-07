@@ -143,8 +143,6 @@ export const T33_RUNG_ABSENT = {
   refreshregister:      { ground: "substrate", is: "captures a gated register afresh with the following member's own credential, marked not reproducible by the public; the capture is the act (following R8)" },
   /* T33's ops in earlier modules */
   lawpropose:           { ground: "undetermined", is: "a machine or a member PROPOSES a law relation, a court link or a treatment with its why, stored apart and labeled; recorded only when a member's act names it (standards R23, R26, R27)" },
-  accountreferenceset:  { ground: "credential", is: "a member sets their own assistant account reference, its secret sealed and never answered (credentials R22, R23)" },
-  accountreferenceremove: { ground: "credential", is: "a member removes their own assistant account reference (credentials R22, R25)" },
   aigrantmint:          { ground: "credential", is: "a member mints a short-lived, read-only ai grant under their own session, for their own account (credentials R27, R28)" },
   keyedserviceset:      { ground: "credential", is: "an administrator sets the group's sealed key for a keyed outside service, off until switched on (credentials R29)" },
   keyedserviceswitch:   { ground: "substrate", is: "an administrator switches a keyed outside service on or off for the copy; it moves no document, claim or grade (credentials R29)" },
@@ -340,13 +338,10 @@ export const T33_NON_ACTS = {
   lawaddresses: R("every key and portion a provision has been held under"),
   stillstanding: R("whether a court decision still stood on a date, or undetermined"),
   citationresolve: R("whether a held capture states a court citation"),
-  /* credentials */
-  accountreferenceset: "credential governance: a member's own assistant account reference, never answered; the subject is a credential, not a bundle",
-  accountreferenceremove: "credential governance: a member removes their own account reference; the subject is a credential, not a bundle",
+  /* credentials ((R57, T53) the account reference's acts and read left with the alpha's AI ops) */
   aigrantmint: "credential governance: a member's own short-lived ai grant; the subject is a credential, not a bundle",
   keyedserviceset: "credential governance: the group's key for a keyed outside service, an administrator's; never answered",
   keyedserviceswitch: "the copy's configuration: whether a keyed outside service is on; an administrator's, not an act on an object",
-  accountreference: R("a member's own account reference state, never its secret"),
   keyedservices: R("each keyed outside service held and switched, never a key"),
   /* sources, entities, inquiry */
   sourcekeyed: "capture-mark: keyed by the member's own capture sha; records the paid source it came from, never the query",
