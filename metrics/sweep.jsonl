@@ -573,3 +573,4 @@
 {"at":"2026-11-07T20:42:33Z","row":"check","by":"layer publish","live":25,"live_at":"2026-11-07T20:16:20Z","live_measured":15,"started_since":10,"job_cap":20,"startable":3}
 {"at":"2026-11-07T20:47:35Z","row":"check","by":"layer land","live":25,"live_at":"2026-11-07T20:16:20Z","live_measured":15,"started_since":10,"job_cap":20,"startable":5}
 {"at":"2026-11-07T20:54:08Z","row":"check","by":"layer publish","live":25,"live_at":"2026-11-07T20:16:20Z","live_measured":15,"started_since":10,"job_cap":20,"startable":5}
+{"at":"2026-11-07T20:59:20Z","row":"check","by":"job start","live":28,"live_at":"2026-11-07T20:16:20Z","live_measured":15,"started_since":13,"job_cap":20,"startable":2}
