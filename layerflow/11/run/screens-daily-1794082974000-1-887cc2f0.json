@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "screens-daily",
+  "round": 1,
+  "started": "2026-11-07T20:22:54Z",
+  "ended": "2026-11-07T20:24:23Z",
+  "minutes": 1.5,
+  "tested_on": "c881e6303efe8ada9b5e3ad3a5363c523d6bcdb4",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T20:24:23Z"
+}
