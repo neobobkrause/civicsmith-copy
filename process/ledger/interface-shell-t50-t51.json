@@ -30,8 +30,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T18:51:42Z",
-    "reason": "reopened: re-test against the new interface of interface-shell (land 49f5b34a88)"
+    "state": "COMPLETE",
+    "at": "2026-11-07T19:00:54Z"
   }
 }
