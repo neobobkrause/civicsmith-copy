@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "interface-shell-t50-t51",
+  "round": 1,
+  "started": "2026-11-07T16:34:19Z",
+  "ended": "2026-11-07T16:35:51Z",
+  "minutes": 1.5,
+  "tested_on": "17352b68c2783c5ad92f27d33be5a04544d2e20d",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T16:35:51Z"
+}
