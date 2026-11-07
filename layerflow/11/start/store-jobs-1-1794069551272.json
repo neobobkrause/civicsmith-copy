@@ -1,0 +1,11 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "store-jobs",
+  "attempt": 1,
+  "branch": "job/store-jobs",
+  "early": [
+    "project-roster"
+  ],
+  "at": "2026-11-07T16:39:11Z"
+}
