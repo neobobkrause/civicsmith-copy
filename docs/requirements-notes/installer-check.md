@@ -21,7 +21,7 @@ Tests: `bio-plane/test/m/installer-check/check.test.mjs`, one per requirement. E
 
 ## Owed by others
 
-- **Installer's tests that pin the old first page.** These assert that the first page's act begins `mode: install`; R91 changes it to begin a check: `newgroup/test/requirements.test.mjs:70` (R1) and about `:1999` (R41), `newgroup/test/t47.test.mjs:76, :94` (R50), and `newgroup/test/wizard.test.mjs:274`. `newgroup/test/realsize-child.mjs:177` posts an install `/begin` without `chk`. Asked of BOB: widen to those files, or give them to installer's job.
+- (Done on this branch, BOB ruling, PR 869.) Installer's tests that pinned the first page's `mode: install` (`requirements.test.mjs` R1 and R41, `t47.test.mjs` R50, `wizard.test.mjs`'s front page) now expect the check and its label. `realsize-child.mjs`'s install `/begin` now carries a passed `chk`. Nothing else in those files changed. With this, installer's full suite passes: 252 tests and 7 todos, plus the wizard at 208/208.
 - **The ux lane:** the `installer` entry of `words-reads.json` comes from `words-reads-mod-5.json`, which is in the design folder. It needs regenerating (`words-reads-mod-5.src.mjs`) to list the new keys.
 - **The ux lane:** the name line's fix button reads `screen.install.check.limits.open` ("Open your Workers"). There is no `screen.install.check.name.open` key yet.
 
