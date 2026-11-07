@@ -1,0 +1,143 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-inquiry",
+  "pr": 902,
+  "branch": "job/screens-inquiry",
+  "head": "08356c95ce08ba9240a27e9b52295549588b2f6e",
+  "before": "f691bca1e4d001cdf30047310a9e0b358915200d",
+  "merge": "6aa18842eac404c34215fb4c1798d10c2d593153",
+  "at": "2026-11-07T21:08:30Z",
+  "by": "bob",
+  "gate_runs": 6,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-inquiry/fr28-project.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr3-project.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr4-document.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr4-project.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr6-seam.test.mjs",
+      "bio-plane/test/m/screens-inquiry/question.test.mjs",
+      "bio-plane/test/m/screens-inquiry/r10-stated.test.mjs",
+      "bio-plane/test/m/screens-inquiry/r45.test.mjs",
+      "bio-plane/test/m/screens-inquiry/r47.test.mjs",
+      "bio-plane/test/m/screens-inquiry/t50.test.mjs",
+      "bio-plane/test/m/screens-inquiry/t51-question.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-inquiry/fr28-project.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr3-project.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr4-document.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr4-project.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr6-seam.test.mjs",
+      "bio-plane/test/m/screens-inquiry/question.test.mjs",
+      "bio-plane/test/m/screens-inquiry/r10-stated.test.mjs",
+      "bio-plane/test/m/screens-inquiry/r45.test.mjs",
+      "bio-plane/test/m/screens-inquiry/r47.test.mjs",
+      "bio-plane/test/m/screens-inquiry/t50.test.mjs",
+      "bio-plane/test/m/screens-inquiry/t51-question.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-inquiry/fr28-project.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: . todo"
+      },
+      {
+        "file": "bio-plane/test/m/screens-inquiry/fr3-project.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-inquiry/fr4-document.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-inquiry/fr4-project.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-inquiry/fr6-seam.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: . todo"
+      },
+      {
+        "file": "bio-plane/test/m/screens-inquiry/question.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      },
+      {
+        "file": "bio-plane/test/m/screens-inquiry/r10-stated.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: === \"ENCRYPTED\" || reason === \"PASSWORD_REQUIRED\" ) assert"
+      },
+      {
+        "file": "bio-plane/test/m/screens-inquiry/r45.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: . todo"
+      },
+      {
+        "file": "bio-plane/test/m/screens-inquiry/r47.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: . todo"
+      },
+      {
+        "file": "bio-plane/test/m/screens-inquiry/t50.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: . todo"
+      },
+      {
+        "file": "bio-plane/test/m/screens-inquiry/t51-question.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-inquiry/fr28-project.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr3-project.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr4-document.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr4-project.test.mjs",
+      "bio-plane/test/m/screens-inquiry/fr6-seam.test.mjs",
+      "bio-plane/test/m/screens-inquiry/question.test.mjs",
+      "bio-plane/test/m/screens-inquiry/r10-stated.test.mjs",
+      "bio-plane/test/m/screens-inquiry/r45.test.mjs",
+      "bio-plane/test/m/screens-inquiry/r47.test.mjs",
+      "bio-plane/test/m/screens-inquiry/t50.test.mjs",
+      "bio-plane/test/m/screens-inquiry/t51-question.test.mjs"
+    ],
+    "triggers": [],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "none",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/screens-inquiry/fr28-project.test.mjs",
+        "bio-plane/test/m/screens-inquiry/fr3-project.test.mjs",
+        "bio-plane/test/m/screens-inquiry/fr4-document.test.mjs",
+        "bio-plane/test/m/screens-inquiry/fr4-project.test.mjs",
+        "bio-plane/test/m/screens-inquiry/fr6-seam.test.mjs",
+        "bio-plane/test/m/screens-inquiry/question.test.mjs",
+        "bio-plane/test/m/screens-inquiry/r10-stated.test.mjs",
+        "bio-plane/test/m/screens-inquiry/r45.test.mjs",
+        "bio-plane/test/m/screens-inquiry/r47.test.mjs",
+        "bio-plane/test/m/screens-inquiry/t50.test.mjs",
+        "bio-plane/test/m/screens-inquiry/t51-question.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "importers": []
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "journey-check"
+  ],
+  "users_noticed": []
+}
