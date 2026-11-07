@@ -13,3 +13,4 @@
 {"at":"2026-11-05T08:25:14Z","row":"sent","n":7,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job admission complete, PR #459 ready, session session_018Bhcee7BdvezNmeNbKGRkC: run status"}
 {"at":"2026-11-05T08:25:35Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-07T16:38:56Z","row":"sent","n":8,"to":"bob","text":"job admission complete, PR #798 ready, session session_018BhcefmVm8NwnNDc4LMupJ: run status"}
+{"at":"2026-11-07T16:39:20Z","row":"outcome","n":8,"outcome":"delivered"}
