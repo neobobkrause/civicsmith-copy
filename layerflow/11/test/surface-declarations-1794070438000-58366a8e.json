@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "surface-declarations",
+  "session": "session_018BhceedV3CeXDqMY2Mpnba",
+  "started": "2026-11-07T16:53:58Z",
+  "ended": "2026-11-07T16:55:31Z",
+  "at": "2026-11-07T16:55:31Z",
+  "minutes": 1.55,
+  "result": "fail",
+  "layer": 11,
+  "suite_seconds": 0,
+  "tests": {
+    "total": 0,
+    "pass": 0,
+    "fail": 0
+  }
+}
