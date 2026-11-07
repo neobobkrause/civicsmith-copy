@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "signin-door",
+  "provider": "admission",
+  "provider_pr": 841,
+  "provider_land": "346da3bd38132a65817405319721f9fbc65cef70",
+  "at": "2026-11-07T18:03:22Z",
+  "key": "signin-door<-admission@346da3bd38",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/admission/notice-op-declarations-802.test.mjs: additive, added: a new test file only adds assertions), which may mean a changed answer shape; additive: each user is retested by its gate alone",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "additive"
+}

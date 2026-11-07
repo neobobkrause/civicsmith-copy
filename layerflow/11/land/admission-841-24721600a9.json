@@ -1,0 +1,61 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "admission",
+  "pr": 841,
+  "branch": "job/admission-2",
+  "head": "24721600a9f14a63da1902cd8095b590c535d2d0",
+  "before": "d52183ed4f75507f897113e302fd725d5c9a6ea2",
+  "merge": "346da3bd38132a65817405319721f9fbc65cef70",
+  "at": "2026-11-07T18:03:22Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/admission/notice-op-declarations-802.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/admission/notice-op-declarations-802.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/admission/notice-op-declarations-802.test.mjs",
+        "class": "additive",
+        "why": "added: a new test file only adds assertions"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/admission/notice-op-declarations-802.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "additive",
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "answer-envelope",
+    "control-plane",
+    "plane",
+    "signin-door",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_rescheduled_old_rule": [
+    "answer-envelope",
+    "control-plane",
+    "plane",
+    "signin-door",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_noticed": []
+}
