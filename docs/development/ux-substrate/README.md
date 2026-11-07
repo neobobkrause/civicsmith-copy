@@ -6,7 +6,8 @@ This folder holds only what the product's build and checks read (Bob, 5 Nov 2026
 
 - `screens/`: the screen registry, the wizard library, the mock scripts, `page.src.html`, and the words. `words-drawn.json`, `words.json` and `words-reads.json` are generated rows in `process/config.json`, built from `words-drawn.src.py`, `build_words.mjs` and `words-reads.src.mjs`. Many `bio-plane` modules read the words and the registry.
 - `layouts.html`: the design mock, built by `screens/build_page.py`. `bio-plane/src/journey-check/design.mjs` reads it from git at the interface's `ASSETS_COMMIT`.
-- `visual-language/`: `civicsmith.css`, `faces.css`, `icons.svg` and `fonts/`, built by `build.py` from `palette.json`, `tokens.head.css` and `components.css`. `site/test/browser.test.mjs` and the interface read them.
+- `visual-language/`: `civicsmith.css`, built by `build.py` from `palette.json`, `tokens.head.css` and `components.css` (it then runs `check_contrast.py`); `faces.css`, `icons.svg` and `fonts/` are hand-kept sources. `site/test/browser.test.mjs` and the interface read them.
+- `screens/check_library.py` builds `registry.json` and `library.json` from their `.src.py` files and checks every act against `origin/main`'s requirements (and the open `origin/tranche`'s, for acts ahead of main); fetch both first, or it falls back to `HEAD` and says so.
 - `marks/`: the Civicsmith mark.
 
 ## Design documents (artifacts)

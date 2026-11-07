@@ -250,3 +250,5 @@ The case document's grammar, one spelling for every module: the formats and thei
 ## Open for Bob
 
 None: the split is BOB's (K617, K651).
+- **F1** *(not yet met: ux lane, DEC-497 and DEC-496, BD-14)* DEC-496: the complete edition (complete.mjs) prints '{letter}: {gloss}' (mark.grade.gloss.form) beside every grade
+- **F2** *(not yet met: publication lane BD-15, docs/development/publication-design-research/bd-15-requirements.md)* PF-1 optional signed funding: block in /11 (rows ord, kind, name, entity, for, role, named_in_case; fundingOf answers stated/not stated/predates, never 'no funding'); PF-2 the complete edition prints 'Who paid for this work, and the members' ties' with the funding rows, the no-influence sentence, 'named in this case', and the declared member_ties at their level and shown; PF-3 review.funding_affirmed when the block is present (BD-15)

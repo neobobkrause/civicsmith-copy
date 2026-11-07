@@ -1,0 +1,34 @@
+{
+  "id": "host-governor",
+  "title": "host-governor: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 3,
+  "paths": [
+    "bio-plane/src/host-governor/",
+    "build/requirements/host-governor.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/host-governor/"
+  ],
+  "requirements": "build/requirements/host-governor.md",
+  "uses": [
+    "record-core"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/host-governor.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

@@ -22,13 +22,21 @@
   ],
   "node": "26.10.0",
   "suite_timeout_minutes": 45,
-  "coordinator": "session_018BhceevG6A8yj9fzc24C89",
+  "coordinator": "session_018BhceejoYb1DR1sDfBk9uU",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
     {
       "name": "ux",
       "dir": "docs/development/ux-substrate/",
       "module": "ux-design"
+    },
+    {
+      "name": "investigation",
+      "dir": "docs/development/investigation-design/"
+    },
+    {
+      "name": "publication",
+      "dir": "docs/development/publication-design/"
     }
   ],
   "cloudflare_account": "20b533579290b9b93168345edd3b7f72",
@@ -47,6 +55,20 @@
   ],
   "modules_file": "build/modules.json",
   "generated": [
+    {
+      "paths": [
+        "bio-plane/src/member-roster/order.mjs"
+      ],
+      "regenerate": [
+        "node",
+        "bio-plane/src/member-roster/order-build.mjs"
+      ],
+      "verify": [
+        "node",
+        "bio-plane/src/member-roster/order-build.mjs",
+        "--check"
+      ]
+    },
     {
       "paths": [
         "docs/development/ux-substrate/screens/words-drawn.json"
@@ -388,5 +410,10 @@
   "release_path": [
     "control-plane",
     "journey-check"
-  ]
+  ],
+  "pacing": {
+    "jobs": 20,
+    "pushes_per_hour": 1000000,
+    "share_s": 900
+  }
 }

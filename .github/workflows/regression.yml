@@ -41,13 +41,29 @@ jobs:
           # Bounded (K3191): run 38522006895 hung after Chromium's download until the job's limit. Without the
           # browser journey-check's arms report their failures and end (K3185), so the rest of the battery still runs.
           (cd bio-plane/src/journey-check && timeout 600 npx playwright-core install --with-deps chromium) || echo "::warning::Chromium not installed; journey-check's browser arms will fail by name"
+      - name: build (the dist pass, 6 Nov 2026; generated files and dist/ are not committed)
+        run: |
+          set -euo pipefail
+          # bundles.mjs builds every guarded member, so each member with a lock file is installed first.
+          node bio-plane/scripts/bundles.mjs --install-dirs | while read -r dir; do
+            [ -d "$dir/node_modules" ] && continue
+            (cd "$dir" && npm ci --no-audit --no-fund --loglevel=error)
+          done
+          node docs/development/ux-substrate/screens/build_words.mjs
+          node bio-plane/src/setup-words/build.mjs
+          node docs/development/ux-substrate/screens/words-reads.src.mjs . --build
+          node bio-plane/src/case-checker/build-program.mjs
+          node bio-plane/scripts/bundles.mjs
+          npm --prefix newgroup run build
       - name: test every package
         run: |
           set -uo pipefail
           failed=""
           # site's browser test launches $CHROMIUM (default /opt/pw-browsers/chromium, absent on the runner):
           # the Chromium journey-check's step installed, same playwright-core 1.56.1 (ONB-6).
-          CHROMIUM="$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux*/chrome 2>/dev/null | head -1)"
+          # `|| true`: with no Chromium, ls exits 2, pipefail keeps it and the runner's bash -e ends the step
+          # before any test (run 42235481917); the warning below names the missing browser instead.
+          CHROMIUM="$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux*/chrome 2>/dev/null | head -1 || true)"
           [ -n "$CHROMIUM" ] && export CHROMIUM || echo "::warning::no installed Chromium found; site's browser test will fail by name"
           for pkg in bio-plane pdf-worker ocr-worker newgroup agent-worker; do
             [ -f "$pkg/package.json" ] || continue

@@ -1,9 +1,9 @@
 /* public-read's published fixtures (fix-round 10, Wave A; K4990, K4993, K5044, K5074): the answers this module gives to
  * its users, made by its real code each time a test calls one, never stored. A user module takes its value from here
  * and never builds one by hand. Each export returns the real answers the module gave, so a user names no code of its own. */
-import { world, stubOf, bucket, publicationT34 } from "./fixture.mjs";
+import { world, stubOf, bucket, publicationT34, publishedSix } from "./fixture.mjs";
 import { seeded, post, CASE as DOCKET_CASE } from "../docket/fixture.mjs";
-import { bindPublishedPlane, assembleCaseContainer } from "../../../src/publication/worker.mjs";
+import { bindPublishedPlane, assembleCaseContainer, publishedRoutes } from "../../../src/publication/worker.mjs";
 import { publicReadOf, publicReadOps } from "../../../src/public-read/index.mjs";
 
 const enc = (s) => new TextEncoder().encode(s);
@@ -100,4 +100,49 @@ export async function docketPublicOfCase() {
   const { w, pr } = docketWorld();
   await post(w, { kind: "withdrawal", edition: 1, reason: "We no longer stand behind edition 1." });
   return readOp(pr, "docketpublic", { case: DOCKET_CASE });
+}
+
+/* F1 (BOB 6 Nov; R3, R53): a published case edition whose evidence is two captured documents, each signed with its
+ * title and origin, as a reader's page asks for it. */
+const DOC2 = "INFO-2026-0002-letter";
+const askPublishedCase = async (w, env, q) => {
+  const url = new URL("https://plane/?op=publishedcase");
+  for (const [k, v] of Object.entries(q)) url.searchParams.set(k, String(v));
+  return (await publishedRoutes({ op: "publishedcase", url, env, stub: stubOf(w) })).json();
+};
+function evidenceScene() {
+  const w = world(), env = { PUBLISHED: bucket() };
+  w.doc(DOC);
+  w.doc(DOC2);
+  w.member("olive");
+  const proj = w.project("Parks", "olive");
+  w.inquiry(F, { legs: [{ target: DOC }, { target: DOC2 }] });
+  const pin = w.head(F);
+  const shaOf = (ref) => w.row(`SELECT capture_sha FROM register WHERE bundle_id=?`, ref).capture_sha;
+  const materials = [
+    { ref: DOC, kind: "document", sha: shaOf(DOC), text_sha: null, origin: "https://parks.example/minutes", archived_copy: null,
+      included: true, rests_under: "load_bearing", title: "Council minutes, 12 March" },
+    { ref: DOC2, kind: "document", sha: shaOf(DOC2), text_sha: null, origin: "https://parks.example/letter", archived_copy: null,
+      included: true, rests_under: "supporting", title: "Letter to the council" }];
+  w.prepare(CASE, 1, { format: "bio-case-document/7", project: proj, roles: [{ target: F, version_sha: pin }], materials });
+  if (w.signCase(CASE, 1, { project: proj, roster: [{ bundle_id: F, version_sha: pin }] }).ok !== true)
+    throw new Error("fixture: the case did not sign");
+  if (w.signFinding(F).ok !== true) throw new Error("fixture: the finding did not sign");
+  env.PUBLISHED.m.set(`bio/published/${pin}`, enc(w.text(F)));
+  for (const ref of [DOC, DOC2]) env.PUBLISHED.m.set(`bio/published/${shaOf(ref)}`, enc(`the text of ${ref}`));
+  return { w, env };
+}
+
+/** F1 (R3, R53): `publishedcase` asked by the finding's id for an edition resting on two captured documents. Its evidence is
+ *  `materials: {materials: [rows], attestations}`; each row carries `entry: {name, locator, fingerprint}` (the signed
+ *  `title`, its `origin`, its capture's SHA-256) beside the signed row, whose bytes open by `sha` when `included` is true.
+ *  `store` is the store's own `publishedcase` for the same edition; `none` the Worker's answer for an edition that lists
+ *  no material (`materials.materials` empty). */
+export async function publishedCaseWithEvidence() {
+  const { w, env } = evidenceScene();
+  const answer = await askPublishedCase(w, env, { id: F });
+  const store = w.read("publishedcase", { id: F });
+  const empty = publishedSix();
+  const none = await askPublishedCase(empty.w, empty.env, { id: empty.F });
+  return { answer, store, none };
 }

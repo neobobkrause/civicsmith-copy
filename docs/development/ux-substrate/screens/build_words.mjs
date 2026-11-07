@@ -61,6 +61,7 @@ const add = (key, en, prot, source, note) => {
   seen.add(key);
   if (/\b(DEC|K)-?\d{2,4}\b|\bN\d{3}\b/.test(plain(en))) fail(`an internal code in member words: ${key}`);
   if (TEAM_WORD.test(plain(en)) && !GROUP_SENSE.test(key)) fail(`"group" where a member reads "team" (DEC-281, K3472): ${key} (team_words.py rewrites it; a grouping or a kind of organization goes in GROUP_SENSE)`);
+  if (/CivicSmith|Civic Smith|CIVICSMITH/.test(plain(en))) fail(`the name is Civicsmith, one word, only its first letter capital (DEC-124, BD-12): ${key}`);
   words.push({ key, en: plain(en), protected: !!prot, source, ...(note ? { note } : {}) });
 };
 // a phrase written here by hand must appear, word for word, in the source it names (a drift guard)
@@ -127,10 +128,10 @@ add('photo.obscured.label', must(scr, 'mock-screens.js', 'Faces, plates and came
 add('photo.published.label', must(scr, 'mock-screens.js', 'Camera details removed for publication; the team holds the original'), true, 'mock-screens.js ceremony', 'the label every other published photo carries (K2248)');
 add('photo.step.gate', must(scr, 'mock-screens.js', 'Every photo the case carries must be checked before signing, including one that only supports a finding: marked, or “nothing to obscure”. A mark that covers the wrong thing is withdrawn with a reason, never erased. Text read from a photo, such as a number plate, is never published with it; a passage you quote in the case still is.'), true, 'mock-screens.js ceremony');
 add('photo.state.nothing', must(scr, 'mock-screens.js', 'nothing to obscure'), true, 'mock-screens.js ceremony');
-add('photo.refused.format', 'This photo\'s format can\'t be obscured: {photo}. Capture it again as an ordinary photo, or stop relying on it.', true, 'DEC-183', 'PHOTO_NOT_COVERABLE');
+add('photo.refused.format', 'This photo\'s format cannot be obscured: {photo}. Capture it again as an ordinary photo, or stop relying on it.', true, 'DEC-183', 'PHOTO_NOT_COVERABLE');
 add('photo.refused.changed', 'A mark changed after this case was prepared. Prepare it again before signing.', true, 'DEC-183', 'PHOTO_MARKS_CHANGED_SINCE');
 add('photo.refused.unchecked', 'Signing waits until every photo in the case is checked, including one that only supports a finding: {photo}.', true, 'DEC-183', 'the Photos step as a gate');
-add('photo.refused.changed.signed', 'This case wasn\'t published: a mark on {photo} changed after it was prepared. Prepare it again, and sign it again.', true, 'DEC-187', 'PHOTO_MARKS_CHANGED_SINCE at the commit or a scheduled stop, after signing');
+add('photo.refused.changed.signed', 'This case was not published: a mark on {photo} changed after it was prepared. Prepare it again, and sign it again.', true, 'DEC-187', 'PHOTO_MARKS_CHANGED_SINCE at the commit or a scheduled stop, after signing');
 add('photo.withdraw.refused.machine', 'Only a member can withdraw a mark; the machine never can.', true, 'DEC-187', 'obscuremarkwithdraw by a machine');
 add('photo.withdraw.refused.nomark', 'There is no such mark on {photo}. Open the photo again to see the marks that stand.', true, 'DEC-187', 'obscuremarkwithdraw: no such mark');
 add('photo.withdraw.refused.already', '{member} already withdrew this mark on {date}.', true, 'DEC-187', 'obscuremarkwithdraw: already withdrawn');
@@ -159,7 +160,7 @@ add('ai.whose.own', 'your own', false, 'DEC-188', 'whose, in the refusals');
 add('ai.refused.limit', 'The assistant stopped here: {whose} {period} limit for {use} is reached. It works again {when}. Everything else works as usual.', true, 'DEC-188', 'AI_LIMIT_REACHED, scope a use; {period} daily or monthly; never a cost');
 add('ai.refused.limit.overall', 'The assistant stopped here: {whose} {period} limit is reached. It works again {when}. Everything else works as usual.', true, 'DEC-188', 'AI_LIMIT_REACHED, scope overall');
 add('ai.refused.limit.member', 'The assistant stopped here: you have used the {period} amount each member may use of {whose} account. It works again {when}. Everything else works as usual.', true, 'DEC-188', 'AI_LIMIT_REACHED, scope per_member');
-add('ai.refused.off', '{Use} is switched off on {whose} account, so the assistant can\'t do this here. {who} can switch it on.', true, 'DEC-188', 'AI_USE_SWITCHED_OFF; {who}: An administrator, An owner of this project, You');
+add('ai.refused.off', '{Use} is switched off on {whose} account, so the assistant cannot do this here. {who} can switch it on.', true, 'DEC-188', 'AI_USE_SWITCHED_OFF; {who}: An administrator, An owner of this project, You');
 add('ai.refused.projectkeptaway', 'This project keeps its material away from AI{for_uses}. {member} set this on {date}: “{reason}”. Everything else in the project works as usual.', true, 'DEC-188', 'PROJECT_AI_KEPT_AWAY; {for_uses} empty, or " for exploring"');
 add('ai.refused.notsole', 'Your own sign-in can be a project\'s account only while you are its only member, and {project} has other members. Add an Anthropic API key for the project instead.', true, 'DEC-188', 'PROJECT_NOT_SOLE_MEMBER');
 add('ai.disclosure.projectkey', must(scr, 'mock-screens.js', 'Your questions in Pothole repairs, and the material read to answer them, go to Anthropic under the project\'s API account. Its owners see how much is used in total, never what you ask or who asked.').replace(/\\'/g, "'").replace('Pothole repairs', '{project}'), true, 'mock-screens.js projectai', 'PROJECT_KEY_NOTICE_DUE shows it before the first act the key pays for');
@@ -185,6 +186,7 @@ add('ai.choice.switch', 'Use another AI account', false, 'UX lane, agent-worker 
 add('ai.choice.without_ai', 'Go on without the assistant', false, 'UX lane, agent-worker R124', 'a choice on an interactive failure');
 add('ai.refused.payernotverified', 'This AI account is stopped: its own key wasn\'t the one that paid for its last call ({cause}). Nothing was used; whoever manages the account can clear it in AI providers.', false, 'UX lane, ai-accounts R75, agent-worker R124', 'PAYER_NOT_VERIFIED, passed through by name; {cause} from screen.aiproviders.stands.*');
 add('ai.refused.partwithdrawn', 'This part of the assistant no longer passes Civicsmith\'s tests on the AI chosen, so it is switched off for that AI. Another AI on the list may still do it; everything else works as usual.', false, 'UX lane, run-rules R37', 'PART_WITHDRAWN (C-22.34), in place of refusal.AI_PART_NOT_DEPLOYED\'s sentence');
+add('ai.refused.aipartnotdeployed', 'This part of the assistant hasn\'t passed Civicsmith\'s tests on the AI chosen, so your team\'s Civicsmith doesn\'t use it there. Another AI on the list may do it; everything else works as usual.', false, 'UX lane, run-rules R30', 'AI_PART_NOT_DEPLOYED (C-22.29), read by key in place of refusal.AI_PART_NOT_DEPLOYED (the ux lane, 6 Nov)');
 // UX lane (5 Nov 2026): agent-runner R41, the sign-in image's own sentences, carried by agent-runner/scripts/build-words.mjs
 add('agent-runner.signin.your_teams_civicsmith_could_not_2', 'Your team\'s Civicsmith could not tell which member this is for. Sign in to Civicsmith again, then connect Claude.', false, 'UX lane, agent-runner R41', 'BAD_MEMBER');
 add('agent-runner.signin.your_teams_civicsmith_cannot_start', 'Your team\'s Civicsmith cannot start Claude\'s sign-in: Claude Code is missing from it. Tell your team\'s steward.', false, 'UX lane, agent-runner R41', 'NO_BINARY: Claude Code is absent from the image; the member is told what to do, not the part\'s name');
@@ -207,7 +209,7 @@ add('ai.until.day', 'tomorrow', false, 'DEC-192', '{when} after "until" in ai.qu
 add('ai.until.month', '{month} 1', false, 'DEC-192', '{when} after "until" in ai.queue.limitreached*, for a monthly limit: "pause until November 1" (DEC-333)');
 ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
   .forEach(m => add(`date.month.${m}`, m[0].toUpperCase() + m.slice(1), false, 'DEC-189', 'a month\'s name in a sentence'));
-add('ai.refused.limit.unjudged', 'The assistant stopped here: your team\'s Civicsmith couldn\'t check the use of {whose} account just now, and it spends nothing it can\'t count. Try again in a moment. Everything else works as usual.', true, 'DEC-189', 'AI_LIMIT_REACHED when the limit can\'t be judged (ai-use R3 failing closed); in place of a {period} and {when}');
+add('ai.refused.limit.unjudged', 'The assistant stopped here: your team\'s Civicsmith could not check the use of {whose} account just now, and it spends nothing it cannot count. Try again in a moment. Everything else works as usual.', true, 'DEC-189', 'AI_LIMIT_REACHED when the limit cannot be judged (ai-use R3 failing closed); in place of a {period} and {when}');
 for (const [k, t] of [
   ['owner', 'it doesn\'t say which account it is for'],
   ['scope', 'that isn\'t something a limit can cover'],
@@ -221,7 +223,7 @@ for (const [k, t] of [
 // 4c'''. ai-use R13's T53 words (design lane, 5 Nov 2026): the provider's own limits, alerts, money not measurable, and
 //     a member's own account. Each placeholder is the one its call site fills (bio-plane/src/ai-use/index.mjs, checks.mjs).
 add('ai.refused.limit.provider', 'The assistant stopped here: the AI provider\'s own limit on {whose} account is reached. It works again {when}. Everything else works as usual.', true, 'ai-use R13', 'AI_LIMIT_REACHED, source provider (ai-use R3, R18); {whose} from ai.whose.*; {when} from ai.when.*, or the day it resets; never a cost or the provider\'s message');
-add('ai.refused.limit.provider.unknown', 'The assistant stopped here: the AI provider\'s own limit on {whose} account is reached, and the provider didn\'t say when it lifts. The assistant tries again after a while. Everything else works as usual.', true, 'ai-use R13', 'AI_LIMIT_REACHED, source provider, resets_at null (ai-use R18: one call is let through after PROVIDER_REPROBE_MS)');
+add('ai.refused.limit.provider.unknown', 'The assistant stopped here: the AI provider\'s own limit on {whose} account is reached, and the provider did not say when it lifts. The assistant tries again after a while. Everything else works as usual.', true, 'ai-use R13', 'AI_LIMIT_REACHED, source provider, resets_at null (ai-use R18: one call is let through after PROVIDER_REPROBE_MS)');
 add('ai.refused.thresholdinvalid', 'That alert can\'t be set: {field}. An alert is a percent of a limit you have set, or an amount in dollars, tokens or calls, for a day or a month.', false, 'ai-use R13', 'AI_THRESHOLD_INVALID (ai-use R23); {field} from ai.limitfield.*, with .kind and .level for an alert');
 add('ai.limitfield.kind', 'a percent alert needs a limit to be a percent of, so set that limit first or alert on an amount', false, 'ai-use R13', '{field} in ai.refused.thresholdinvalid, field kind (also a percent with no matching limit)');
 add('ai.limitfield.level', 'a percent is a whole number from 1 to 99, and an amount is more than zero', false, 'ai-use R13', '{field} in ai.refused.thresholdinvalid, field level; 1 to 99 are THRESHOLD_PERCENT_MIN and _MAX');
@@ -247,7 +249,7 @@ add('ai.scope.own', 'your own questions', false, 'DEC-189', '{scope} in ai.queue
 // UX lane (5 Nov 2026): the queue's AI notices notice-producers R16 (a provider's own limit), R33 (the threshold alert's
 //     fills) and R35 (an account that left a list, a project sign-in that ended) need, and their keys named
 add('ai.queue.limitreached.provider', '{account} reached the AI provider\'s own limit on {date}. The assistant pauses on it until {when}; everything else goes on.', true, 'UX lane, notice-producers R16', 'the told-once Noticed item for a provider limit (ai-use R5, R18, source provider); {account} from ai.account.*; {date} from date.daymonth; {when} from ai.until.*, or date.daymonth for any other day; names no member and no cost');
-add('ai.queue.limitreached.provider.unknown', '{account} reached the AI provider\'s own limit on {date}, and the provider didn\'t say when it lifts. The assistant tries it again after a while; everything else goes on.', true, 'UX lane, notice-producers R16', 'as ai.queue.limitreached.provider when resets_at is null');
+add('ai.queue.limitreached.provider.unknown', '{account} reached the AI provider\'s own limit on {date}, and the provider did not say when it lifts. The assistant tries it again after a while; everything else goes on.', true, 'UX lane, notice-producers R16', 'as ai.queue.limitreached.provider when resets_at is null');
 add('ai.alert.scope.overall', 'everything it pays for', false, 'UX lane, notice-producers R33', '{use} in ai.alert.threshold for a threshold on the overall limit; a use\'s threshold fills ai.use.<use>.inline');
 add('ai.alert.scope.per_member', 'any one member', false, 'UX lane, notice-producers R33', '{use} in ai.alert.threshold for a per-member threshold; names no member');
 add('ai.alert.level.percent', '{n}% of its limit', false, 'UX lane, notice-producers R33', '{level} in ai.alert.threshold, a percent threshold; {n} a whole number');
@@ -318,7 +320,7 @@ add('document.unread.pages', must(scr, 'mock-screens.js', 'are pictures of text 
 // 4d. Supplied documents in a published case (BOB's drafts from T39, adopted as written; DEC-188)
 add('document.cleaned.label', 'Details of who made this file, and of its pictures, removed for publication; the team holds the original', true, 'DEC-188', 'COPY_CLEANED_LABEL');
 add('document.refused.changed', 'A document a member supplied now needs a different publication copy from the one this case was prepared with. Prepare the case again. Nothing was published.', true, 'DEC-188', 'DOCUMENT_COPY_CHANGED_SINCE');
-add('document.refused.clean', 'A document a member supplied can\'t be cleaned of the details that could show who made it: {document}. Capture it from where it was published, supply a plainer copy, or stop relying on it.', true, 'DEC-188', 'DOCUMENT_NOT_CLEANABLE');
+add('document.refused.clean', 'A document a member supplied cannot be cleaned of the details that could show who made it: {document}. Capture it from where it was published, supply a plainer copy, or stop relying on it.', true, 'DEC-188', 'DOCUMENT_NOT_CLEANABLE');
 add('document.refused.pending', 'The publication copy of a document a member supplied is still being made: {document}. Try again in a few minutes.', false, 'DEC-188', 'DOCUMENT_COPY_PENDING');
 
 // 4e. A question a project draws on (DEC-188; Bob's ruling that setting aside is each project's own)

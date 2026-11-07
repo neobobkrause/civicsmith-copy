@@ -175,6 +175,7 @@ export class FilingTemplates {
     this.jur = jurisdictions && typeof jurisdictions === "object" ? jurisdictions : jurisdictionsModule;
     this.now = typeof now === "function" ? now : null;
     this.env = env && typeof env === "object" ? env : {};
+    this.layerCache = new Map();
   }
 
   migrate() { migrateFilingTemplates(this.sql); }
@@ -285,24 +286,55 @@ export class FilingTemplates {
      `jurisdictions` R81, or its single `template`, read as that set of one), each an approved version of origin
      `profile`, scope `group`, its profiles the profile it is in. R26 (T45): its name is its own (R87 (b)); a single
      `template` written without one is named by its kind's label, as before T45. */
+  /* R37 (T53; N1257, K5458): each is read from the layer that holds it (a package's layers each read alone, so two layers'
+     templates of one kind are each read), with `layer` the id of the profile it sits in, and that layer's level and place;
+     a profile that is no layer is its own `layer`, with no level or place. */
   #profileTemplates() {
     const out = [];
     for (const pid of this.#activeIds()) {
-      const p = this.#profile(pid);
-      for (const k of p && Array.isArray(p.action_kinds) ? p.action_kinds : []) {
-        if (!k) continue;
-        const set = Array.isArray(k.templates) ? k.templates : k.template ? [{ ...k.template, purpose: "initial" }] : [];
-        for (const t of set) {
-          if (!t || typeof t !== "object" || typeof t.text !== "string" || !str(t.id)) continue;
-          if (out.some((x) => x.id === t.id)) continue;
-          out.push({ id: t.id, origin: "profile", kind: k.kind, use: t.use, profiles: [pid], name: str(t.name) || str(k.label) || k.kind,
-                     scope: "group", project: null, bundle_id: null, widened: null, retired: null,
-                     created_at: str(t.approved_at) || "", profileTemplate: t, court: !!(k.venue && k.venue.how === "court"),
-                     tier: [1, 2, 3].includes(k.tier) ? k.tier : "undetermined" });
+      const ls = this.#layersOf(pid);
+      const holders = ls.length ? ls.map((l) => ({ ...l, p: this.#profile(l.layer) })) : [{ layer: pid, level: null, place: null, p: this.#profile(pid) }];
+      for (const { layer, level, place, p } of holders) {
+        for (const k of p && Array.isArray(p.action_kinds) ? p.action_kinds : []) {
+          if (!k) continue;
+          const set = Array.isArray(k.templates) ? k.templates : k.template ? [{ ...k.template, purpose: "initial" }] : [];
+          for (const t of set) {
+            if (!t || typeof t !== "object" || typeof t.text !== "string" || !str(t.id)) continue;
+            if (out.some((x) => x.id === t.id)) continue;
+            out.push({ id: t.id, origin: "profile", kind: k.kind, use: t.use, profiles: [pid], name: str(t.name) || str(k.label) || k.kind,
+                       scope: "group", project: null, bundle_id: null, widened: null, retired: null,
+                       created_at: str(t.approved_at) || "", profileTemplate: t, court: !!(k.venue && k.venue.how === "court"),
+                       tier: [1, 2, 3].includes(k.tier) ? k.tier : "undetermined", layer, level, place });
+          }
         }
       }
     }
     return out;
+  }
+  /* R36, R37 (T53; `jurisdictions` R99, R114): the layers a profile id stands for, `[{layer, level, place}]`: a layer
+     itself; a package its layers, in its order; [] for a profile that is no layer, or one not held. Held data is
+     frozen, so each id is read once per instance. */
+  #layersOf(id) {
+    if (typeof id !== "string") return [];
+    if (this.layerCache.has(id)) return this.layerCache.get(id);
+    const p = this.#profile(id);
+    let out = [];
+    if (p && p.layer && typeof p.layer === "object") out = [{ layer: id, level: p.layer.level ?? null, place: p.layer.place ?? null }];
+    else if (p) {
+      const c = this.#call(() => this.jur.combine([id]));
+      const ls = c && c.ok && c.view && Array.isArray(c.view.layers) ? c.view.layers : [];
+      out = ls.filter((l) => l && str(l.id)).map((l) => ({ layer: l.id, level: l.level ?? null, place: l.place ?? null }));
+    }
+    this.layerCache.set(id, out);
+    return out;
+  }
+  /* R36: the layers a group template's `profiles` expand to (a layer id itself, a package id its layers) that are not
+     among the active profiles' layers, in order; [] when every one is active, for `general`, for a profile that is no
+     layer (judged as before T53) and for a profile template. A template with any is not offered. */
+  #layersInactive(t) {
+    if (!t || t.origin === "profile" || !Array.isArray(t.profiles)) return [];
+    const active = new Set(this.#activeIds().flatMap((id) => this.#layersOf(id).map((l) => l.layer)));
+    return [...new Set(t.profiles.flatMap((p) => this.#layersOf(p).map((l) => l.layer)))].filter((id) => !active.has(id));
   }
   /* R28: the first profile, of those a template names (for a `general` one, the active view's), whose venue for the
      kind is filed with a court (`venue.how: court`), or null. */
@@ -319,17 +351,11 @@ export class FilingTemplates {
       { kind, profile, ...extra });
     /* END DEC-49 REGION is-court-petition */
   }
-  /* R15 (T45; v0.2 rule 11): what a profile template's attribution lacks of a named writer, the public sources it was
-     written from, a professional's review with no concerns, and an approver other than its writer. */
+  /* R15, R38 (T53; K5528 T4): what a profile template's attribution lacks is `jurisdictions`' one judge, its R126
+     `attributionLacks`, called as it stands: this module keeps no judge of its own and maps none of its words. */
   static #lacks(p) {
-    const out = [];
-    const writer = str(p.authored_by);
-    if (!writer) out.push("writer");
-    if (!(Array.isArray(p.sources) && p.sources.some((x) => x && str(x.citation)))) out.push("sources");
-    if (!(Array.isArray(p.reviews) && p.reviews.some((r) => r && r.kind === "professional" && r.outcome === "no_concerns" && str(r.reviewer))))
-      out.push("professional_review");
-    if (!str(p.approved_by) || (writer && str(p.approved_by) === writer)) out.push("approver");
-    return out;
+    const l = jurisdictionsModule.attributionLacks(p);
+    return Array.isArray(l) ? l : ["writer", "sources", "professional_review", "second_approval"];
   }
   /* R15, R28: why a profile template is not offered, as a refusal, or null (a group template: null). In order: a blank
      outside FILING_BLANKS (R30, R32's one site), a file template on a court's kind, an attribution that lacks a part. */
@@ -520,6 +546,7 @@ export class FilingTemplates {
   }
   static #head(t, extra = {}) {
     return { id: t.id, kind: t.kind, use: t.use, profiles: t.profiles, name: t.name, scope: t.scope, origin: t.origin,
+             ...(t.origin === "profile" && t.layer ? { layer: t.layer } : {}),
              ...(t.retired ? { retired: t.retired } : {}), ...extra };
   }
 
@@ -1169,7 +1196,7 @@ export class FilingTemplates {
       const stateOf = (n) => (t.origin === "profile" ? "approved" : this.#stateOf(events, n));
       let pick;
       if (!st || st === "offered") {
-        if (t.retired || this.#profileRefusal(t)) continue;
+        if (t.retired || this.#profileRefusal(t) || this.#layersInactive(t).length) continue;
         pick = numbers.filter((n) => OFFERED.includes(stateOf(n)));
       } else if (st === "retired") pick = t.retired ? numbers : [];
       else pick = t.retired ? [] : numbers.filter((n) => stateOf(n) === st);
@@ -1178,6 +1205,16 @@ export class FilingTemplates {
       out.push(FilingTemplates.#head(t, {
         ...(p ? { written_for: t.profiles !== "general" && t.profiles.includes(p) } : {}),
         versions: pick.slice().reverse().map((n) => this.#listed(this.#versionView(t, n, events), n === dflt)) }));
+    }
+    /* R37: a profile template's name is shown with its layer when two offered profile templates share it */
+    if (!st || st === "offered") {
+      const prof = out.filter((x) => x.origin === "profile");
+      const held = new Map(prof.length ? this.#profileTemplates().map((y) => [y.id, y]) : []);
+      for (const x of prof) {
+        const t = held.get(x.id);
+        if (t && t.place && prof.some((y) => y !== x && y.name === x.name))
+          x.name_shown = localize("filing-templates.index.name_in_its_layer", "{name} ({place})", { name: String(x.name), place: String(t.place) });
+      }
     }
     return { ok: true, state: st || "offered", kind: k, profile: p, use: u, templates: out.slice(0, TEMPLATES_FOR_MAX),
              truncated: out.length > TEMPLATES_FOR_MAX };
@@ -1205,9 +1242,11 @@ export class FilingTemplates {
                                  WHERE r.template_id=? AND r.version=? ORDER BY p.proposal_id`, t.id, n)
       .map((x) => ({ id: x.proposal_id, sha: x.sha, why: x.why, at: x.at, label: proposalLabel(x.proposer, "template") }));
     const not = this.#profileRefusal(t);
+    const inactive = this.#layersInactive(t);
     return { ok: true, template: FilingTemplates.#head(t), version: { ...view, proposals_adopted: adopted },
              comments: this.#one(`SELECT COUNT(*) AS c FROM tpl_comments WHERE template_id=? AND version=?`, t.id, n).c,
-             offered: OFFERED.includes(view.state) && !t.retired && !not,
+             offered: OFFERED.includes(view.state) && !t.retired && !not && !inactive.length,
+             ...(inactive.length ? { layers_inactive: inactive } : {}),
              ...(view.state === "approved" && n === this.#latestApproved(t, events) ? { default: true } : {}),
              ...(not ? { not_offered: not } : {}),
              ...(not && not.blank ? { blank_unknown: not } : {}) };
@@ -1232,8 +1271,13 @@ export class FilingTemplates {
     ];
     for (const scope of scopes) {
       const hits = scope.filter(fits);
-      if (hits.length > 1)
-        return refuse("TEMPLATE_NAME_AMBIGUOUS", localize("filing-templates.index.two_templates_you_can_see_go_by_that_name_in_the_same_scope", "two templates you can see go by that name in the same scope, so neither was chosen: name the template by its id"), { name });
+      if (hits.length > 1) {
+        /* R37: profile templates of different layers sharing the handle are named by their layers, neither chosen */
+        const layers = [];
+        for (const h of hits) if (h.origin === "profile" && h.layer && !layers.some((l) => l.layer === h.layer)) layers.push({ layer: h.layer, level: h.level, place: h.place });
+        return refuse("TEMPLATE_NAME_AMBIGUOUS", localize("filing-templates.index.two_templates_you_can_see_go_by_that_name_in_the_same_scope", "two templates you can see go by that name in the same scope, so neither was chosen: name the template by its id"),
+                      { name, ...(layers.length > 1 ? { layers } : {}) });
+      }
       if (hits.length === 1) return { t: hits[0] };
     }
     /* END DEC-49 REGION is-template-ref */
@@ -1267,7 +1311,11 @@ export class FilingTemplates {
     const latest = this.#latestApproved(t, events);
     const n = version === null || version === undefined || version === "" ? latest : this.#versionOf(t, version);
     const state = n === null ? null : t.origin === "profile" ? "approved" : this.#stateOf(events, n);
+    const inactive = this.#layersInactive(t);
     /* DEC-49 REGION is-offered-version */
+    if (n !== null && OFFERED.includes(state) && inactive.length)
+      return refuse("TEMPLATE_NOT_OFFERED", localize("filing-templates.index.the_template_is_written_for_layers_not_active", "the template is written for {layers}, which the team's places do not include", { layers: String(inactive.join(", ")) }),
+        { template: t.id, version: versionId(t.id, n), state, layers_inactive: inactive });
     if (n === null || !OFFERED.includes(state))
       return refuse("TEMPLATE_NOT_OFFERED", n === null ? (version ? localize("filing-templates.index.no_such_version_of_this_template", "no such version of this template") : localize("filing-templates.index.the_template_has_no_approved_version", "the template has no approved version"))
         : localize("filing-templates.index.the_version_is_state_only", "the version is {state}: only an approved or updated version is offered", { state: String(state) }),
@@ -1304,8 +1352,8 @@ export class FilingTemplates {
   }
 
   /** R35 (T51-163, N858 D8; `filings` R65): the profile templates of `kind` in the active view that R15 does not offer
-   *  for want of attribution, each `{handle, name, lacks}`, `lacks` R15's parts (`writer`, `sources`,
-   *  `professional_review`, and `second_approval` for R15's `approver`); a kind whose venue is filed with a court
+   *  for want of attribution, each `{handle, name, lacks}`, `lacks` what `jurisdictions`' `attributionLacks` (its
+   *  R126; R38) answers, in its words and order; a kind whose venue is filed with a court
    *  answers `[]` (R28). A pure read of the view and the attribution: writes nothing and never throws. */
   unofferedFor({ kind = null, viewer = null } = {}) {
     const k = str(kind);
@@ -1313,7 +1361,7 @@ export class FilingTemplates {
     const out = [];
     for (const t of this.#profileTemplates()) {
       if (t.kind !== k || !this.#canSee(t, viewer)) continue;
-      const lacks = FilingTemplates.#lacks(t.profileTemplate).map((p) => (p === "approver" ? "second_approval" : p));
+      const lacks = FilingTemplates.#lacks(t.profileTemplate);
       if (lacks.length) out.push({ handle: templateHandle(t.name), name: t.name, lacks });
     }
     return out;

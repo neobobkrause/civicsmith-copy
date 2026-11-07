@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { seeded, V, TEST, TEXT, PRO_REVIEW, reviewedOf } from "./fixture.mjs";
+import { seeded, V, TEST, TEXT, PRO_REVIEW, proReview, reviewedOf } from "./fixture.mjs";
 import * as ft from "../../../src/filing-templates/index.mjs";
 import * as jurisdictions from "../../../../jurisdictions/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
@@ -25,7 +25,7 @@ const BODY = "To the {{counterparty_role}}: {{group}} asks for your comment on {
 const profileTemplate = (id, use, text) => ({ id, version: 1, use, text, notes: "A made-up template for tests.", authored_by: "Ada Example",
   contributors: [], reviews: [], approved_by: "Cy Example", approved_at: "2026-09-01", basis: "TEST", purpose: "initial", name: id, sources: [] });
 /* attributed whole (R15): reviewedOf attributes before its edit runs, so the edit does it for what it adds */
-const whole = (t) => ({ ...t, sources: [{ citation: "P.E.B.L. § 1" }], reviews: [PRO_REVIEW] });
+const whole = (t) => ({ ...t, sources: [{ citation: "P.E.B.L. § 1" }], reviews: [proReview(t.text)] });
 const withRfc = () => reviewedOf(jurisdictions, (p) => {
   if (p.id !== TEST || p.action_kinds.some((k) => k.kind === RFC)) return;
   p.action_kinds.push({ kind: RFC, label: word("screen.start-send.kind.request_for_comment"), tier: 1, shape: "recognition", basis: "TEST",
@@ -152,4 +152,25 @@ test("R33 R15's other reasons come first: a profile template of the kind lacking
   } } });
   const o = refused(w.ft.offeredVersion({ template: "TPL-test-rfc-bare", viewer: A }), "TEMPLATE_NOT_REVIEWED");
   assert.deepEqual(o.lacks, ["sources", "professional_review"]);
+});
+
+test("R33, R38 a profile template of the kind holding the sentence, whose only professional review names no reviewed_text_sha, is not offered: R126 does not count that review, so it reads TEMPLATE_NOT_REVIEWED lacking professional_review; control: the same review of the text now is offered", () => {
+  const withReview = (review) => seeded({ jur: { ...jurisdictions, get: (id) => {
+    const p = jurisdictions.get(id);
+    if (p && p.id === TEST && !p.action_kinds.some((k) => k.kind === RFC)) {
+      const t = profileTemplate("TPL-test-rfc-unhashed", "file", `${BODY} ${SENTENCE}`);
+      p.action_kinds.push({ kind: RFC, label: word("screen.start-send.kind.request_for_comment"), tier: 1, shape: "recognition", basis: "TEST",
+        venue: { name: "the Harbour District office", how: "mail", basis: "TEST" },
+        templates: [{ ...t, sources: [{ citation: "P.E.B.L. § 1" }], reviews: [review(t.text)] }] });
+    }
+    return p;
+  } } });
+  assert.equal("reviewed_text_sha" in PRO_REVIEW, false, "the review names no hash of the text it read");
+  const w = withReview(() => PRO_REVIEW);
+  const o = refused(w.ft.offeredVersion({ template: "TPL-test-rfc-unhashed", viewer: A }), "TEMPLATE_NOT_REVIEWED");
+  assert.deepEqual(o.lacks, ["professional_review"]);
+  assert.equal(w.ft.templateRead({ template: "TPL-test-rfc-unhashed", viewer: A }).offered, false);
+  /* control: the same review carrying the hash of the text now is counted, and the sentence is held, so it is offered */
+  const ok = withReview((text) => proReview(text)).ft.offeredVersion({ template: "TPL-test-rfc-unhashed", viewer: A });
+  assert.deepEqual([ok.ok, ok.origin], [true, "profile"], JSON.stringify(ok).slice(0, 300));
 });

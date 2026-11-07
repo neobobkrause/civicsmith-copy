@@ -1284,6 +1284,31 @@ w416('check.closed', 'Install now opens when every line is ready.', 'the gate, s
 w416('check.allready', 'Every line is ready.', 'the gate, open')
 w416('refused.rare', 'This is rare: the check before installing should have caught it.', "added to the install's own stop, the second line of defence")
 
+# The ux lane (6 Nov 2026): the words installer R86-R93 need beyond DEC-416's table (R93's "keys the design adds for
+# section 3's needs"; installer-check). Same voice as DEC-416: the founder is told what is true, what to do, and where.
+def winst(key, en, note):
+    W.append(dict(key='screen.install.' + key, en=en, protected=False, note='ux lane, installer ' + note))
+winst('check.unknown', 'Could not tell', 'R87: a checklist line that is unknown (never ready, never zero)')
+winst('check.unknown.fix', "Cloudflare didn't give a clear answer for this one: {cause}. Check again; if it stays like this, open the page and look yourself.", 'R87: any line, unknown; {cause} Cloudflare\'s own words')
+winst('check.unknown.busy', 'Cloudflare is busy and didn\'t answer in time. Try again in a minute.', 'R89: too many requests past the bounded wait; drawn as unknown, never not ready')
+winst('check.account', 'Checked the Cloudflare account {account}.', 'R86: the list names the account it read')
+winst('check.probe', 'To check the plan, the installer makes one test Worker and removes it at once. Nothing else is made.', "R86, R88: the plan line's probe, said where the list is drawn")
+winst('check.probe.left', "The check made one test Worker, {name}, and couldn't remove it. Delete it from your Workers list; nothing else was made.", 'R86: a probe whose delete failed is named, never silent')
+winst('check.card.storage', "Your account is on Workers Paid, but Cloudflare says file storage (R2) isn't turned on for it yet. Turn it on, then check again.", 'R88: card line, not ready when R2 is not entitled; says what was measured, never that a card is missing')
+winst('check.plan.open', 'Open Cloudflare plans', "R92: the plan line's fix button")
+winst('check.containers.open', 'Open Cloudflare containers', "R92: the containers line's fix button")
+winst('check.card.open', 'Open Cloudflare billing', "R92: the card line's fix button")
+winst('check.card.storage.open', 'Open R2 storage', "R92: the card line's fix button when storage is the cause")
+winst('check.now.note', 'Cloudflare asks you to approve once more, then the install begins.', 'R90: said before Install now posts (K5449)')
+winst('getready.account.open', 'Open Cloudflare sign-up', 'R91: the account step\'s button (opens a new tab)')
+winst('getready.account.see', 'Cloudflare asks for an email address and a password, then sends you a link to confirm the address.', 'R91: what the founder will see there')
+winst('getready.plan.open', 'Open Cloudflare plans', "R91: the plan step's button (opens a new tab)")
+winst('getready.plan.see', 'Choose Workers Paid. Cloudflare asks for a payment card before the plan starts.', 'R91: what the founder will see there')
+winst('getready.storage.open', 'Open R2 storage', "R91: the storage step's button (opens a new tab)")
+winst('getready.storage.see', "Turn on R2, Cloudflare's file storage. Your team pays only for what it stores beyond Cloudflare's free amount.", 'R91: what the founder will see there')
+winst('getready.done', 'When these are done, check your account.', "R91: the last step's end, before Check my account")
+W.append(dict(key='refusal.CHECK_NOT_PASSED', en='Check your account first: press Check my account, and install once every line is ready. A check is good for 30 minutes. Nothing was created.', protected=False, note='ux lane, installer R90: install /begin without a passed check for this name, or with an expired one'))
+
 # DEC-417: B477 (K4557, K4559): an invited member's join door, and two reading rows (later-ux.md)
 def w417(key, en, note):
     W.append(dict(key=key, en=en, protected=False, note='DEC-417: B477 ' + note))
@@ -1830,7 +1855,7 @@ w426('screen.install.region.near', 'Near you: {region}', "installer: the region 
 w426('screen.install.region.why', "Your team's record is created in Cloudflare's data centers nearest to where you are installing from, so it answers quickly. It is chosen once, when your team's Civicsmith is installed.", 'installer: under the region shown')
 w426('screen.install.region.legal', 'Our team must keep its record in a particular region', 'installer (K4746 (2)): the fold for a team with a legal requirement')
 w426('screen.install.region.field', 'Keep the record in', "installer: the region picker's label")
-w426('screen.install.region.help', 'Choose a region only if a law or an agreement your team is bound by says where its record must be kept. Only the European Union choice is a guarantee; the other regions are where Cloudflare places it.', "installer: the picker's help; the EU choice is Cloudflare's jurisdiction restriction, the others its location hints")
+w426('screen.install.region.help', 'Choose a region only if a law or an agreement your team is bound by says where its record must be kept. A region kept for a legal reason holds the record and its stored files there; a region chosen for speed is only where Cloudflare starts it.', "installer: the picker's help; the EU choice is Cloudflare's jurisdiction restriction, the others its location hints")
 w426('screen.install.region.wnam', 'Western North America', 'installer: a region name (wnam)')
 w426('screen.install.region.enam', 'Eastern North America', 'installer: a region name (enam)')
 w426('screen.install.region.sam', 'South America', 'installer: a region name (sam)')
@@ -2365,6 +2390,7 @@ w454('capture.index.parted_unavailable', "Your team's Civicsmith can't take a fi
 w454('capture.index.parted_not_begun', "Your team's file storage wouldn't start an upload in parts, so nothing was saved. Try again.", 'capture, parted upload')
 w454('capture.index.parted_not_aborted', "Your team's file storage wouldn't cancel the upload. It stays open until it runs out of time, then it is stopped.", 'capture, parted upload (18 of 18)')
 w454('refusal.WORKBOOK_TOO_LARGE', "This workbook has {cells} cells, more than the {bound_cells} your team's Civicsmith can hold and read, so it wasn't added. Nothing was written.", "workbooks: the refusal (until now only the code's stand-in); {cells} {bound_cells}")
+w454('refusal.WORKBOOK_FILE_TOO_LARGE', "This file is {size} MB, more than the {bound} MB your team's Civicsmith can add as a workbook, so it wasn't added as one. The file itself is unchanged.", "workbooks R2: the file-size refusal, the companion of WORKBOOK_TOO_LARGE (the ux lane, 6 Nov); {size} {bound} in MB")
 w454('file-safety.index.the_file_is_encrypted_so_no_safe_view', 'This file is locked with a password, so no safe view can be made of it.', 'file-safety: a safe view refused for an encrypted file')
 w454('file-safety.checks.the_file_scanner_could_not_read', "The file scanner couldn't read all of this file, so it counts as not checked.", 'file-safety: a partial scan (the reason beside it is still a code: owed)')
 w454('file-safety.index.reading_is_not_gated', "Your team's Civicsmith reads this file without waiting for its safety scan. The scan is a separate check; if it finds a threat, the file stays readable and searchable for now.", 'file-safety: drawn on Document once this row is held (document.mjs:399)')
@@ -2782,3 +2808,477 @@ wux('screen.document.readway.pictures', 'Read from pictures of its pages, so a w
 wux('screen.document.readway.mixed', 'Read from the text stored in this {kind}, and from pictures of the pages that had none.', 'screens-document-beta R73: a file read partly from its own text and partly from pictures of its pages')
 # R73's fingerprint: drawn as R66's row draws it, a short mark (screen.document.fingerprint) with shell.copy for the whole; no new key
 
+
+# DEC-490 (the ux lane, 6 Nov 2026; BOB's ask "Ratification F1", BD-3): the edition's docket entry, needs 1-3 of the
+# publication lane. Recorded in the ux lane's decisions artifact. Plain words; the docket explained, never assumed; no
+# member named in the entry itself (docket R6), "you" on the screen; public and permanent said once, with no second
+# warning (the outward act was acknowledged in the sitting). Need 4 (the Publish at... notices) waits on Bob.
+def w490(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-490: ' + note))
+# 1. The ceremony's docket step (screens-publish R13), after the edition commits, the signer at the screen
+w490('screen.ceremony.docket.heading', 'Recording it on the docket', "the step's heading")
+w490('screen.ceremony.docket.published', 'Edition {edition} is published. This step does not hold it back.', 'the first line: the edition is public whatever this step does')
+w490('screen.ceremony.docket.what', "The docket is the case's public, signed record of what happened to it after it was published: each edition, correction and withdrawal, in order. Anyone reading the case can open it.", 'what the docket is, for a reader who does not know the word')
+w490('screen.ceremony.docket.changed', 'The entry quotes what changed, in your words: "{said}"', "the entry's what-changed text, editions after the first")
+w490('screen.ceremony.docket.first', 'This is the first edition, so the entry records that it was published and says nothing changed.', 'edition 1: no what-changed text')
+w490('screen.ceremony.docket.public', 'The entry is public and permanent: a later entry can correct it, but none can unsay it. It names no member.', 'said once, plainly; not a second warning')
+w490('screen.ceremony.docket.sign', 'It takes one more signature with the same key. What your key signs, exactly:', 'before the statement, drawn as the case statement is (screen.ceremony.signs.exactly)')
+w490('screen.ceremony.docket.signs', 'the docket entry for Edition {edition} of {case}', 'the statement line, as screen.ceremony.signs.case')
+w490('screen.ceremony.docket.device', 'Your device asks you once more to confirm with your signing key. The edition stays published whatever you choose.', 'only when the key needs unlocking; otherwise signing starts by itself')
+w490('screen.ceremony.docket.signing', 'Signing the entry and filing it on the docket now.', 'while the signature and filing run (a silent re-sign on staleness needs no words)')
+w490('screen.ceremony.docket.done', 'Recorded on the docket as entry {seq}.', 'the result')
+w490('screen.ceremony.docket.open', 'Open the docket', "a link to the case's docket")
+# 2. Published; not yet on the docket (the step did not file). Informational, never an error state.
+w490('screen.ceremony.docket.notyet', 'Published; not yet on the docket: {reason}.', 'the end line when the step did not file; {reason} one of .reason.*')
+w490('screen.ceremony.docket.notyet.safe', 'Edition {edition} is published, and nothing about that is in doubt.', 'first: the edition is not in doubt')
+w490('screen.ceremony.docket.reason.declined', 'the signature was not confirmed', 'cause: declined or cancelled at the device')
+w490('screen.ceremony.docket.reason.stale', 'the entry changed twice while it was being signed', 'cause: the second staleness failed')
+w490('screen.ceremony.docket.reason.key', 'your signing key was not accepted for the docket', 'cause: refusal, key not accepted')
+w490('screen.ceremony.docket.reason.noaddress', "your team's Civicsmith has no public address yet", 'cause: refusal, no team slug')
+w490('screen.ceremony.docket.reason.notowner', 'only an owner of the project can sign it', 'cause: refusal, not an owner')
+w490('screen.ceremony.docket.reason.failed', 'the connection failed before it was filed', 'cause: network or server failure')
+w490('screen.ceremony.docket.notyet.waits', "The entry waits on the case's docket among the items due. Any owner of the project can post it there with one signature.", 'where it waits, and who can finish it')
+w490('screen.ceremony.docket.notyet.go', 'Go to the docket item', 'a link straight to the waiting item')
+# The docket page's due item for an edition; its act is docketpost, "Post it, signed" (act.docketpost.label.docket)
+w490('screen.docket.due.heading', 'Waiting to be posted', "the docket page's group of items due")
+w490('screen.docket.due.edition', "Edition {edition}'s entry: published {date}, not yet on the docket", "an edition's due entry, its own label")
+w490('screen.docket.due.edition.help', 'Posting it signs the entry with your key and adds it to the public docket. The edition is already public either way.', "under the edition's due entry, beside Post it, signed")
+# 3. The deliverer is not the owner who signed (REC-128): in place of the docket step
+w490('screen.ceremony.docket.notsigner', "Edition {edition} is published. Its docket entry has to be signed by an owner of the project: {signer}, who signed the edition, or another owner. It waits on the case's docket until then.", 'to the deliverer; {signer} the owner who signed (a screen line, not the entry)')
+w490('queue.docket-edition-due.summary', "Edition {edition} of {case} is published, and its docket entry waits for an owner's signature", "the owners' To-do item, the signer's first")
+w490('queue.docket-edition-due.detail', "Edition {edition} went public on {date}. Its entry on the case's public docket still needs one signature from an owner of the project. Any owner can sign it.", "the item's detail")
+w490('queue.docket-edition-due.door', 'Open the docket item', "the item's door, straight to the waiting entry")
+
+# The ux lane (6 Nov 2026): installer R95-R97's words ("words, ranges and the sentences are UX-DESIGN's, through BOB";
+# runtime-limits PL20-PL29, record-placement PL30-PL57). Figures and prices are never written here: the module fills
+# {members} {record} {upload} {plan} {cost} from the bounds table, and an unmeasured level says so (PL21).
+def wlvl(key, en, note):
+    W.append(dict(key='screen.install.' + key, en=en, protected=False, note='ux lane, installer ' + note))
+# R95: the three levels
+wlvl('level.head', "Choose a size for your team's Civicsmith", 'R95: the level choice')
+wlvl('level.sub', 'Each size is built for how many people work at once and how much your team keeps.', 'R95')
+wlvl('level.team.name', 'Team', 'R95: Level 1')
+wlvl('level.team.for', 'For one team working its own cases, with a handful of people at once.', 'R95: what it is for')
+wlvl('level.institution.name', 'Institution', 'R95: Level 2')
+wlvl('level.institution.for', 'For a larger organization with many projects and many people working at once.', 'R95: what it is for')
+wlvl('level.enterprise.name', 'Enterprise', 'R95: Level 3')
+wlvl('level.enterprise.for', "For an organization that needs Cloudflare's enterprise guarantees and more room than an institution.", 'R95: what it is for')
+wlvl('level.range', 'Up to {members} people working at once, a record of up to {record}, and files of up to {upload} each.', 'R95: the measured range')
+wlvl('level.unmeasured', 'How much it holds is not yet measured.', 'R95, PL21: while measured is null')
+wlvl('level.plan', "Needs Cloudflare's {plan} plan.", 'R95: the plan it needs')
+wlvl('level.cost', "About {cost} a month at Cloudflare's published prices.", 'R95: the monthly cost')
+wlvl('level.cost.quote', 'Cloudflare prices this plan on request.', 'R95: Enterprise, by quote')
+wlvl('level.notyet', 'Not yet available', 'R95: a level whose design stage is not built; shown, not selectable')
+wlvl('level.notyet.why', "It is shown so you can plan for it. It can't be chosen until it is built.", 'R95')
+wlvl('level.updown', "Your team can move up a size later, never down. Moving up is a step your administrator runs on your team's own record.", 'R95, PL24: up, not down, and how')
+wlvl('level.refused.plan', "Your Cloudflare account isn't on the {plan} plan this size needs, so nothing was created. Change the plan at Cloudflare, or choose another size.", 'R95: refused before the room exists, naming the plan')
+# R96: two honest choices of where
+wlvl('region.near.what', 'Near me is faster for people near that place. It is not a promise about where your data is kept.', 'R96: what near me is')
+wlvl('region.near.other', 'Choose another place', 'R96: the list beside the default hint')
+wlvl('region.keep', 'Keep my data in this region', 'R96: the jurisdiction choice')
+wlvl('region.keep.what', "Your team's record and its stored files are kept inside the region you choose. Not everything that runs for your team's Civicsmith runs there.", 'R96: what keeping data in a region is')
+wlvl('region.us', 'Only inside the United States (a legal requirement)', 'R96: jurisdiction us')
+wlvl('region.fedramp', 'Only in data centers authorized for US government work (FedRAMP)', 'R96: jurisdiction fedramp, only where the account has it')
+wlvl('region.final', "You choose this once. It can't be changed later: moving means exporting your team's whole record and importing it into a newly installed Civicsmith.", 'R96, R97: said before the choice')
+# R97: a new install from a whole-record export
+wlvl('move.head', "Move your team's Civicsmith", 'R97: the move path')
+wlvl('move.what', "This installs a new Civicsmith from a whole export of your team's record, in the place you choose. The one you have keeps working until you end it.", 'R97')
+wlvl('move.source', 'Where the export is', 'R97: a link or the files')
+wlvl('move.source.help', 'A link to the export, or its files. Each part checks itself as it arrives.', 'R97')
+wlvl('move.progress', 'Part {n} of {total} imported.', 'R97: progress by part')
+wlvl('move.paused', 'The import paused at part {n} of {total}: {reason}. Nothing is live yet. Resume when that part can be reached.', 'R97: a missing part pauses, resumable')
+wlvl('move.resume', 'Resume the import', 'R97')
+wlvl('move.notcarried.head', 'What was not carried', 'R97')
+wlvl('move.notcarried.none', 'Everything in the export was carried.', 'R97')
+wlvl('move.done', "Your team's record is in its new place. Check it there, then end the old one.", 'R97')
+wlvl('move.end', 'End the old one', "R97: the old one's end act")
+wlvl('move.end.what', 'Ending it stops it for everyone. Do this only after you have checked the new one.', 'R97: said before the end act')
+
+# DEC-491 (the ux lane, 6 Nov 2026; BD-7, BD-6): a published case discloses its AI use at first exposure. Framed as
+# human-reviewed and ratified: it leads with who ratified, AI as a tool. Placement: on `published` and `review-outside`,
+# directly under the edition's dated line and before "How to read a case", the first block a reader meets; on `front`,
+# one short line on each case listed; and in the complete edition's own rendering (DEC-41), in the case's language.
+# Never a claim of compliance (BD-6). True only to the record: the uses named are those the case's record holds.
+def w491(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-491: ' + note))
+w491('screen.published.ai.ratified', 'Reviewed and signed by {ratifiers} for {team} on {date}. They checked each finding against its evidence before signing.', 'first: who ratified; {ratifiers} the signing owners as they are credited (DEC-102)')
+w491('screen.published.ai.tool', '{team} used an AI assistant as a tool in preparing this case: {uses}. A person made every finding, and nothing the assistant drafted was published without being reviewed.', 'second: AI as a tool; {uses} a list of .use.* the record holds')
+w491('screen.published.ai.use.reading', 'reading documents', 'a use: the assistant read or transcribed documents')
+w491('screen.published.ai.use.searching', 'finding sources', 'a use: the assistant searched for material')
+w491('screen.published.ai.use.drafting', 'drafting parts of the account', 'a use: an account or passage began as the assistant\'s draft')
+w491('screen.published.ai.use.translating', 'translating', 'a use: the assistant translated material')
+w491('screen.published.ai.none', 'No AI assistant was used in preparing this case.', 'instead of .tool, only when the record shows no machine work at all')
+w491('screen.published.ai.more', 'How the assistant was used', 'a disclosure that opens below the two lines')
+w491('screen.published.ai.more.text', 'An AI assistant can read, search and draft. It cannot decide what is true: a finding is made only when a member concludes it, and a case is published only when an owner signs it. The signatures above can be checked without trusting anyone.', 'the opened text')
+w491('screen.published.ai.passages', 'You can show who wrote each sentence: the signed record says which began as the assistant\'s drafts. Open “Show who wrote each sentence”.', 'held for the per-passage provenance (BD-7, publication lane F1(2)); drawn only once the signed record carries it')
+w491('screen.front.case.ai', 'Reviewed and signed by people; AI used as a tool', 'one short line under each case listed on the team\'s page, when the record holds machine work')
+
+# DEC-492 (the ux lane, 6 Nov 2026; BOB's ask, F1 need 4 and the AI-use provenance of bio-case-document/11, BD-3, BD-7):
+# (a)-(d) the docket entry when an edition is set to publish at a time; (e) the complete edition's per-sentence marks
+# and legend (frozen with /11 in case-grammar); (f) the ceremony's provenance summary, shown before signing and never
+# blocking (case-authoring R88's pattern). Sentences members wrote stay unmarked and the legend says so; only what began
+# as the assistant's draft is marked. An edition before /11 reads "not stated", never "written by members".
+# (h) the declared-AI control and the signer's affirmation wait on Bob.
+def w492(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-492: ' + note))
+# (a) at scheduling
+w492('screen.ceremony.docket.scheduled.signing', "The edition's docket entry is being signed now, with the same key. It appears on the public docket when the edition publishes, dated {date}.", '(a) once the edition is set to publish; what is signed follows, as in DEC-490 (screen.ceremony.docket.sign, .signs)')
+w492('screen.ceremony.docket.scheduled.done', 'Signed. The entry joins the public docket on {date}, when the edition publishes.', '(a) the result')
+w492('screen.ceremony.docket.scheduled.notyet', "The entry wasn't signed: {reason}. After Edition {edition} publishes, its entry will wait on the case's docket among the items due, and any owner of the project can post it there with one signature.", "(a) the step did not complete; {reason} one of DEC-490's .reason.*")
+# (b) at publish time, in the owner's published notice (publish-schedule R42)
+w492('notice.publishat.docket.with', 'Its docket entry went out with it.', "(b) appended to the published notice when the entry was filed")
+w492('notice.publishat.docket.waits', "Its docket entry wasn't filed with it, so it waits on the case's docket for an owner's signature.", '(b) appended when filing fell back')
+w492('notice.publishat.docket.door', 'Open the docket item', '(b) the door when filing fell back')
+# (c) any docket entry placed while an edition is scheduled
+w492('screen.docket.file.scheduled', "Edition {edition} is set to publish on {date}. Posting this entry also re-signs that edition's waiting entry, so the docket stays in order.", '(c) said on the act; no extra decision is asked')
+# (d) the publishing time moved to another day
+w492('screen.ceremony.publishat.move.docket', "Moving it to another day also re-signs the edition's waiting docket entry with the new day.", '(d) said on Move the publishing time, when the day changes')
+# (e) the complete edition: per-sentence marks and their legend (case-grammar /11)
+w492('case.origin.mark.ai_edited', "assistant's draft, changed", '(e) the mark on a sentence of origin ai_edited')
+w492('case.origin.mark.ai_kept', "assistant's draft, kept", '(e) the mark on a sentence of origin ai_kept')
+w492('case.origin.mark.notstated', 'origin not stated', '(e) a sentence of an edition before /11, when marks are drawn at all')
+w492('case.origin.legend.heading', 'Who wrote each sentence', '(e) the legend, before the case\'s own writing')
+w492('case.origin.legend.human', 'Sentences with no mark were written by members of {team}, with no AI help recorded.', '(e) human: unmarked (DEC-493: with declared outside help marked)')
+w492('case.origin.legend.ai_edited', "Marked “assistant's draft, changed”: the sentence began as the assistant's draft, and a member changed it.", '(e)')
+w492('case.origin.legend.ai_kept', "Marked “assistant's draft, kept”: the assistant's draft, which a member kept word for word.", '(e)')
+w492('case.origin.legend.review', 'Every sentence, however it began, was reviewed and signed by {ratifiers} under {standard}.', '(e) review, stated once per edition: ratified_by, standard')
+w492('case.origin.legend.predates', 'This edition was published before Civicsmith recorded who wrote each sentence, so who wrote them is not stated. That does not mean members wrote them, or that the assistant did.', '(e) editions up to /10: never read as human')
+w492('case.origin.legend.scope', "The marks cover the case's own writing. Quoted passages from documents are the documents' words.", '(e) what the marks do and do not cover')
+# (f) the ceremony: what the signer is about to sign, by origin (shown before signing, never blocking)
+w492('screen.ceremony.origin.heading', "Who wrote the case's sentences", '(f)')
+w492('screen.ceremony.origin.count', "Of the {total} sentences in the case's own writing, members wrote {human}, {edited} began as the assistant's drafts and were changed, and {kept} are the assistant's drafts kept word for word.", '(f) the summary; zero counts are said, never hidden')
+w492('screen.ceremony.origin.none', "Members wrote every sentence in the case's own writing.", '(f) when no sentence began as a machine draft')
+w492('screen.ceremony.origin.signs', 'Your signature records this with the edition, and readers see each sentence marked.', '(f)')
+w492('screen.ceremony.origin.kept.list', "Kept word for word from the assistant's drafts", "(f) the list of ai_kept sentences, each opening to its place; read before signing, never a stop")
+
+# DEC-493 (the ux lane, 6 Nov 2026; Bob's BD-9, BD-10): who wrote each sentence is an overlay any reader can open, never
+# drawn by default; DEC-491's note stays visible and holds its control. The overlay's state is kept for the visit only
+# (each visit opens without it, as Bob asked) and a link to #origins opens with it on. Marks are bracketed words drawn
+# with the machine-work edge (dotted, no hue), real text inside each sentence, never colour alone. The complete edition
+# (DEC-41) carries an appendix that lists every marked sentence, always printed; inline marks print only when shown.
+# Members declare outside AI help per field (declared_ai), and the signer affirms, inside what is signed, that every AI
+# use in the case's own writing is recorded.
+def w493(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-493: ' + note))
+# the overlay's control, in DEC-491's note on published, review-outside and the edition's rendering
+w493('screen.published.origins.show', 'Show who wrote each sentence', 'the control (a button, aria-pressed false); in the AI note, after How the assistant was used')
+w493('screen.published.origins.hide', 'Hide who wrote each sentence', 'the same control when the overlay is on (aria-pressed true)')
+w493('screen.published.origins.shown', "Showing who wrote each sentence: {edited} began as the assistant's drafts and were changed, {kept} were kept as drafted, {declared} had outside AI help, and members wrote the rest.", 'announced in a polite live region when shown, and the line at the legend\'s top')
+w493('screen.published.origins.hidden', 'Who wrote each sentence is hidden.', 'announced when hidden')
+w493('screen.published.origins.next', 'Next marked sentence', 'a keyboard step through the marked sentences while the overlay is on')
+w493('screen.published.origins.visit', 'This stays shown until you leave the page. A link that ends in #origins opens it shown.', 'under the legend: why it is off on the next visit, and how to share it on')
+# a fourth mark (declared_ai) and its legend
+w493('case.origin.mark.declared_ai', 'outside AI help, declared', 'the mark on a sentence of origin declared_ai')
+w493('case.origin.legend.declared_ai', "Marked “outside AI help, declared”: a member declared that an AI tool outside Civicsmith helped write it.", 'the legend line')
+w493('case.origin.legend.affirmed', '{signer} affirmed, in what they signed, that every use of AI in this writing is recorded here.', 'the legend line stating the affirmation, once per edition')
+# the complete edition's appendix (always present, always printed)
+w493('case.origin.appendix.heading', 'Appendix: who wrote each sentence', 'the edition\'s appendix, after the case and before its signatures')
+w493('case.origin.appendix.intro', 'Every sentence of the case\'s own writing that did not come only from its members, by section and number. Every other sentence was written by members.', 'its first line')
+w493('case.origin.appendix.none', "Members wrote every sentence of the case's own writing, with no AI help recorded.", 'when nothing is marked')
+w493('case.origin.appendix.row', 'Section {section}, sentence {n}: {mark}', 'one row; {mark} one of case.origin.mark.*')
+# the declared_ai control, per field in the case editor
+w493('screen.case-editor.declared_ai', 'An AI tool outside Civicsmith helped me write this', 'a checkbox under each field of the case\'s own writing')
+w493('screen.case-editor.declared_ai.help', 'Tick this if you used an AI tool outside Civicsmith, such as a chatbot, to write or rewrite this text. Readers who show who wrote each sentence see it marked. Help from Civicsmith\'s own assistant is recorded without this.', 'beside the checkbox')
+# the signer's affirmation, in the ceremony, part of what is signed
+w493('screen.ceremony.affirm.ai', "I affirm that every use of AI in this case's own writing is recorded here, including any help from AI tools outside Civicsmith.", 'a checkbox in the Sign step, beside the ties confirmation; part of what is signed')
+w493('screen.ceremony.affirm.ai.part', 'Your affirmation is part of what you sign. Readers see that you made it.', 'under it')
+w493('screen.ceremony.affirm.ai.needed', 'Tick the affirmation first.', 'when Sign is pressed without it')
+
+# The ux lane, 6 Nov 2026 (W4 of wcag-gaps.md; WCAG 3.3.1, 3.3.3, 4.1.3): a refused form's summary and each field's line.
+# Drawn with components.css .cs-errsum and .cs-field .refused. The summary takes focus; each item links to its field.
+# The field's own sentence says what to do (the module's refusal row); these are only the frame around it.
+def wform(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='ux lane, W4: ' + note))
+wform('screen.form.refused.heading.one', 'One thing to put right before this can be saved', "the summary's heading, one field")
+wform('screen.form.refused.heading', '{n} things to put right before this can be saved', "the summary's heading, two or more")
+wform('screen.form.refused.nothing', 'Nothing was saved. Your answers are kept here.', "under the heading: what happened, and that nothing typed is lost")
+wform('screen.form.refused.item', '{field}: {what}', "one link in the summary; {field} the field's label, {what} its line")
+wform('screen.form.refused.prefix', 'To put right:', "before each field's line, so it is never colour alone; read by screen readers")
+wform('screen.form.refused.title', 'To put right: {title}', "the page title while the form is refused (WCAG 2.4.2)")
+
+# DEC-495 (the ux lane, 6 Nov 2026; BD-11): "How Civicsmith uses AI" is a static public page on each team's Civicsmith,
+# at /ai, served beside the published cases (no account), versioned with the release so it describes the code that ran.
+# Reached from DEC-491's note on every published case and review copy, and named in the complete edition with its
+# release. Its body is the publication lane's draft, worded here when it arrives; these are its frame and its links.
+def w495(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-495: ' + note))
+w495('screen.ai-use.name', 'How Civicsmith uses AI', "the page's title and its link text")
+w495('screen.ai-use.release', 'This describes Civicsmith {version}, the version {team} runs.', "under the title: which release the page describes")
+w495('screen.ai-use.respond', "To respond to a published case, use its docket: each case's docket is its public record, and the team answers there.", 'BD-11: in place of a contact address')
+w495('screen.published.ai.howpage', 'How Civicsmith uses AI', "a link at the end of DEC-491's note, to this team's /ai page")
+w495('case.edition.ai.howpage', 'How Civicsmith {version} uses AI: {address}', "the complete edition's line naming the page by release and address (DEC-41: the edition stands alone, so it states the version)")
+# DEC-495's body (the publication lane's draft, docs/development/publication-design/how-civicsmith-uses-ai.md, worded by
+# the ux lane): "team" for the people (K3472), "the assistant" for Civicsmith's own AI (DEC-125, DEC-427), the sentence
+# marks as DEC-492/493 name them. Each claim keeps the draft's meaning and the requirement it rests on: ai-runs,
+# text-chain, case-account R4, case-inputs R6, strength MACHINE_CANNOT_DECLARE, wizard-scripts R12/R24.
+w495('screen.ai-use.intro', "Civicsmith helps teams of residents investigate public matters from public records and publish what they find. Members can use an AI assistant for some of that work. This page says where it is used, what it is never allowed to do, how a published case shows where AI was involved, and how to respond to a case.", 'the opening')
+w495('screen.ai-use.direction', "Rules such as the European Union's AI Act set out how AI-made text published on public matters should be disclosed and reviewed. Civicsmith chooses to follow the direction of those rules where it helps readers. This page is not a claim that Civicsmith or any team meets a particular law, and it is not legal advice.", 'BD-6: voluntary, no claim')
+w495('screen.ai-use.where.heading', 'Where AI is used', 'section')
+w495('screen.ai-use.where.tool', 'The assistant is a tool members use. Members do the investigating, decide what the case says, and publish it.', 'section lead')
+w495('screen.ai-use.where.finding', "Finding and reading records. A member can start the assistant to search for records, read documents the team has already collected, and suggest which passages bear on a question. It works within limits the member sets, and its work is recorded under that member's name. Everything it produces is a labeled suggestion, which becomes part of the team's work only when a member accepts it.", 'ai-runs')
+w495('screen.ai-use.where.text', "Turning documents into text. When a record is a scan or a picture, its text may come from character recognition or be cleaned up by the assistant. Each quoted passage keeps a record of how its text was obtained. A machine step never makes that record look more reliable than it is, and a member can check the text against the original and say so.", 'text-chain')
+w495('screen.ai-use.where.drafting', "Drafting. The assistant can draft a first version of a case's account, the “what changed” statement for a new edition, and help with a field members write in their own words. A draft is always labeled as a draft, and it becomes the case's text only when a member takes it. A draft of the case's account cannot be published as drafted: a member must rework it. The “what changed” statement may be kept as drafted, and the case records that it was.", 'case-account R4, case-inputs R6')
+w495('screen.ai-use.where.weighing', "Weighing the evidence. How strong a finding is comes from fixed rules applied to its sources and the links between them. It is never the assistant's judgment, and the assistant cannot set or change a grade.", 'strength MACHINE_CANNOT_DECLARE')
+w495('screen.ai-use.never.heading', 'What the assistant never does', 'section')
+w495('screen.ai-use.never.decide', 'It never decides what a finding concludes, accepts its own suggestions, vouches for a record, approves a case, signs it, or publishes it. Only members can.', 'wizard-scripts R12, R24')
+w495('screen.ai-use.never.review', "Its comments never count as review. It may point out a gap for a member to consider, but checking the case is the members' job.", 'review')
+w495('screen.ai-use.never.change', 'Nothing changes after signing, by the assistant or by anyone else. A correction is a new edition, with its own review and signature.', 'editions')
+w495('screen.ai-use.review.heading', 'Review and signing', 'section')
+w495('screen.ai-use.review.standard', 'Every published edition is reviewed under the published standard {standard}, “How a published case is reviewed”. In short:', '{standard} civicsmith-review/1')
+w495('screen.ai-use.review.who', "Members who know the matter examine the case's substance before it is signed.", 'review, 1')
+w495('screen.ai-use.review.minimum', 'At the least, each finding is checked against the public records it cites, and each quoted passage against its source. The case says where a passage was not checked.', 'review, 2')
+w495('screen.ai-use.review.notreview', 'Spelling and formatting checks, automated checks and anything the assistant produces do not count as review.', 'review, 3')
+w495('screen.ai-use.review.answers', 'The team that published the case answers for it. An owner of the case signs it, and the signature covers its exact text.', 'review, 4')
+w495('screen.ai-use.affirm.heading', 'What the signer affirms', 'section')
+w495('screen.ai-use.affirm.text', 'When an owner signs an edition, they also affirm, inside what they sign, that every use of AI in its writing is recorded. That includes help from AI tools outside Civicsmith, which Civicsmith cannot see and which a member declares.', 'BD-9, DEC-493')
+w495('screen.ai-use.shows.heading', 'How a published case shows where AI was involved', 'section')
+w495('screen.ai-use.shows.first', 'Where you first meet a published case, it tells you who reviewed and signed it, and that the assistant was used as a tool.', 'DEC-491')
+w495('screen.ai-use.shows.sentences', "Each sentence of the case's own writing records who wrote it: a member; the assistant's draft, changed by a member; the assistant's draft, kept as drafted; or a member's own, with outside AI help declared. This record is part of what is signed, so it cannot be changed without breaking the signature. You can show it on any published case with “Show who wrote each sentence”; it is hidden until you do.", 'DEC-492, DEC-493, BD-10')
+w495('screen.ai-use.shows.cautious', "The rule is cautious. If a field began as the assistant's draft, every sentence in it that is not word for word the draft is marked “assistant's draft, changed”, even one a member wrote fresh.", 'case /11')
+w495('screen.ai-use.shows.before', 'Cases published before this record existed say “not stated”. They never claim a member wrote them.', 'DEC-492 (e)')
+w495('screen.ai-use.shows.machine', "The record can be read by software, so other teams' Civicsmith can check it alongside the signature.", 'case /11')
+w495('screen.ai-use.respond.heading', 'How to respond', 'section')
+w495('screen.ai-use.respond.when', 'Respond on the docket when you are named in a case, hold a record it cites, think it is wrong, or think a record of AI use is missing or wrong.', 'BD-11, with screen.ai-use.respond')
+w495('screen.ai-use.respond.after', "The team files responses on the docket and lists them there as the docket's rules say. When the team corrects a case, the new edition and what changed appear on the same docket.", 'docket')
+w495('screen.ai-use.keeping.heading', 'Keeping up', 'section')
+w495('screen.ai-use.keeping.text', "Civicsmith follows developments in trust and transparency, starting with the EU AI Act, and adopts them where they serve readers. When the way Civicsmith uses AI changes, this page changes with it. A change to the review standard comes as a new standard with a new name, and an edition always names the standard it was reviewed under.", 'BD-6')
+
+# DEC-496 (the ux lane, 7 Nov 2026; Bob's Q9.7, BD-14, kept as ruled): each grade letter can carry a short word gloss
+# beside it, so a reader trained on other letter scales (Admiralty, 3x5x2) never reads "D" as "unreliable". The letters
+# keep their ruling; the gloss says how the thing was established, never whether it is true (mark.grade.reading). One
+# gloss per letter a scale can show. Sources: capture, BIO_Intake_Doctrine §3 and provenance's captureGrade (A is a
+# chain-of-custody archive no route makes yet, EARNED_CAPTURE_CEILING B a direct fetch, ARCHIVE_CAPTURE_GRADE C an archive's
+# replay); connection, BIO_Content_Framework §8.1 (D's label as corrected by BOB #30); testimony, TESTIMONY_GRADE D only;
+# subject match, the same resolution ladder as connection. The team's grade for the copy (DEC-461) is a grade the team
+# gives up to the record's ceiling, so it takes the capture glosses with mark.grade.gloss.copy.lead before them.
+def w496(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-496: ' + note))
+w496('mark.grade.gloss.capture.a', 'a full archive of the source as it was served, with its chain of custody', 'capture (and the ceiling) A; no route makes one yet')
+w496('mark.grade.gloss.capture.b', 'fetched straight from the source, fingerprinted on arrival', 'capture B, EARNED_CAPTURE_CEILING')
+w496('mark.grade.gloss.capture.c', "taken from someone else's archive, one step further from the source", 'capture C, ARCHIVE_CAPTURE_GRADE')
+w496('mark.grade.gloss.connection.a', 'the source itself links the two, and both are held', 'connection A, CF 8.1')
+w496('mark.grade.gloss.connection.b', 'the same identifier appears in both documents', 'connection B, CF 8.1')
+w496('mark.grade.gloss.connection.c', 'only a name, title or date matches: plausible, not established', 'connection C, CF 8.1')
+w496('mark.grade.gloss.connection.d', "a member's own account; no captured document", "connection D, CF 8.1 as corrected (BOB #30); the investigation lane's wording")
+w496('mark.grade.gloss.testimony.d', "a member's own account, checked only by asking them", 'testimony D, the only letter; with screen.capture.tip.graded_why')
+w496('mark.grade.gloss.subject.a', "the source's own identifier ties the record to them", 'subject match A')
+w496('mark.grade.gloss.subject.b', 'an identifier they carry appears in the record', 'subject match B')
+w496('mark.grade.gloss.subject.c', 'only a name or date matches: plausible, not established', 'subject match C')
+w496('mark.grade.gloss.subject.d', "a member's own account; no captured document", 'subject match D')
+w496('mark.grade.gloss.copy.lead', "your team's grade, no higher than how well it could be captured:", 'before the capture gloss on the copy scale (DEC-461)')
+w496('mark.grade.gloss.form', '{letter}: {gloss}', 'the letter and its gloss in running text and in the published case; {letter} A to D, {gloss} one of the above')
+
+# DEC-497 (the ux lane, 7 Nov 2026; BD-14 Q9.2-Q9.6, the investigation lane's IV-1 to IV-4, IV-6, IV-10, IV-11): the
+# words of the screens Bob asked the lane to check before any job builds them (bd-14-requirements.md, "Screens owed").
+# Placement is drawn on the ux artifact "Investigation screens (BD-14)". Plain names stand in for the record's terms:
+# an assumption is "what this answer takes for granted", CHECK is "Civicsmith's check", a second reading is "a second
+# member's reading". Refusal translations follow each draft's order; they wait for the module to name its codes.
+def w497(key, en, note, protected=False):
+    W.append(dict(key=key, en=en, protected=protected, note='DEC-497: ' + note))
+# IV-1, IV-2: assumptions on a conclusion
+w497('screen.question.assume.head', 'What this answer takes for granted', 'IV-1: the section under a concluded question')
+w497('screen.question.assume.help', 'Things your answer depends on that no passage shows yet. Writing them down tells the next reader where to look. They never change a grade or the strength.', 'IV-1: its help')
+w497('screen.question.assume.add', 'Add something it takes for granted', 'IV-1: the act')
+w497('screen.question.assume.field', 'In your own words', 'IV-1: the field; at most 500 characters')
+w497('screen.question.assume.unconfirmed', 'Not yet confirmed', 'IV-1: state unconfirmed')
+w497('screen.question.assume.confirmed', 'Confirmed by {leg}', 'IV-1: state confirmed by; {leg} the passage')
+w497('screen.question.assume.contradicted', 'Contradicted by {leg}', 'IV-1: state contradicted by; {leg} the passage')
+w497('screen.question.assume.by', '{member}, {date}', 'IV-1: who wrote it and when')
+w497('screen.question.assume.beside', '{n} things this answer takes for granted are not confirmed', 'IV-1: beside the strength wherever the conclusion shows; with .one and .against')
+w497('screen.question.assume.beside.one', 'One thing this answer takes for granted is not confirmed', 'IV-1: the same, one')
+w497('screen.question.assume.beside.against', 'A passage contradicts something this answer takes for granted', 'IV-1: beside the strength; contradicted outranks unconfirmed')
+w497('screen.question.assume.mark', 'Mark it confirmed or contradicted…', 'IV-1: the act on one assumption; the member names the passage')
+w497('screen.question.assume.find', 'Find the record for it', 'IV-2: open a step from one assumption')
+w497('screen.question.assume.remove', 'Remove it…', 'IV-1: removal is kept in the history with who and when')
+w497('screen.step.assume.serves', 'This step looks for the record behind “{assumption}”.', 'IV-2: on the step it opens')
+w497('screen.step.assume.offer', 'This step ended with {leg}. Does it confirm or contradict “{assumption}”?', 'IV-2: offered at the step\'s end; the member chooses')
+w497('screen.step.assume.offer.confirm', 'It confirms it', 'IV-2: choice')
+w497('screen.step.assume.offer.contradict', 'It contradicts it', 'IV-2: choice')
+w497('screen.step.assume.offer.neither', 'Neither; leave it as it is', 'IV-2: choice; never made for the member')
+w497('refusal.MACHINE_CANNOT_ASSUME', 'Only a member can say what an answer takes for granted. Nothing was written.', 'IV-1 refusal 1')
+w497('refusal.ASSUMPTION_NOT_CONCLUDED', 'This question is not concluded yet, so there is no answer to take anything for granted. Nothing was written.', 'IV-1 refusal 2, NOT_CONCLUDED; the module names its code')
+w497('refusal.ASSUMPTION_EMPTY', 'Write what the answer takes for granted. Nothing was written.', 'IV-1 refusal 3')
+w497('refusal.ASSUMPTION_TOO_LONG', 'Keep it to 500 characters. Nothing was written.', 'IV-1 refusal 4')
+w497('refusal.TOO_MANY_ASSUMPTIONS', 'An answer can list at most 12 things it takes for granted. Remove one first. Nothing was written.', 'IV-1 refusal 5')
+w497('refusal.ASSUMPTION_NO_SUCH_LEG', 'That passage is not one this question cites. Choose one of its passages. Nothing was written.', 'IV-1 refusal 6, NO_SUCH_LEG; the module names its code')
+# IV-3: Civicsmith's check (CHECK)
+w497('screen.question.aicheck.head', "Civicsmith's check", 'IV-3: the section on a conclusion')
+w497('screen.question.aicheck.help', 'When a member concludes, and again before a case is signed, the assistant reads the answer looking for weak points. It only points; it never changes a grade, the strength or the answer.', 'IV-3: its help')
+w497('screen.question.aicheck.none', 'No adversarial check has run.', 'IV-3: while CHECK is unmeasured (ai-runs R75); the requirement\'s own words')
+w497('screen.question.aicheck.none.why', "Civicsmith's check runs only once it has passed Civicsmith's tests on real matters. Nothing waits on it.", 'IV-3: under .none')
+w497('screen.question.aicheck.clear', 'Checked {date}: nothing to point out.', 'IV-3: a run with no signal')
+w497('screen.question.aicheck.rate', 'About {rate} of the points it raises turn out to be nothing, in Civicsmith\'s tests.', 'IV-3: the measured false-alarm rate (INV:108); {rate} a plain fraction, as "1 in 5"')
+w497('screen.question.aicheck.unresolved', '{leg} no longer opens to its passage.', 'IV-3 signal: a leg that no longer resolves')
+w497('screen.question.aicheck.falsifier', 'Something your team holds may be what would change this answer: {leg}.', 'IV-3 signal: a falsifier with evidence')
+w497('screen.question.aicheck.sameorigin', '{legs} are counted as separate supports, but they come from the same source.', 'IV-3 signal: OR-branch legs sharing an origin')
+w497('screen.question.aicheck.assumption', '{leg} seems to contradict something this answer takes for granted: “{assumption}”.', 'IV-3 signal: an assumption the record contradicts')
+w497('screen.question.aicheck.reason', 'The reason given for {leg} may not follow from its passage.', 'IV-3 signal from IV-11: a reason that does not follow')
+w497('screen.question.aicheck.mark', 'Pointed out by the assistant · a lead, not a finding', 'IV-3: the label on every signal')
+w497('screen.ceremony.aicheck.head', "What Civicsmith's check pointed out", 'IV-3: the signing section')
+w497('screen.ceremony.aicheck.lead', 'Read each one before you sign. You can still sign; your acknowledgement is kept with the edition.', 'IV-3: never blocks', True)
+w497('screen.ceremony.aicheck.ack', 'I have read this', 'IV-3: the tick on each signal')
+w497('screen.ceremony.aicheck.note', 'What you made of it (optional)', 'IV-3: an optional note with the acknowledgement')
+w497('screen.ceremony.aicheck.needed', 'Tick each point first: signing says you have read every one.', 'IV-3: when one is unticked', True)
+w497('screen.ceremony.aicheck.none', 'No adversarial check has run on this edition.', 'IV-3: at signing, while CHECK is unmeasured')
+# IV-4: what a look searched
+w497('screen.looked.params.where', 'Searched {where}', 'IV-4: the look\'s where')
+w497('screen.looked.params.query', 'for “{query}”', 'IV-4: the look\'s query as sent')
+w497('screen.looked.params.filter', 'with {filter}', 'IV-4: the portal\'s filters, key and value')
+w497('screen.looked.params.range', 'covering {range}', 'IV-4: dates or items covered')
+w497('screen.looked.params.guide', 'following the reading guide {guide}', 'IV-4: the reading guide that drove it')
+w497('screen.looked.params.unrecorded', 'Where and how it searched was not recorded: this look is from before Civicsmith kept it.', 'IV-4: params unrecorded; never a refusal')
+w497('refusal.PARAMS_NO_WHERE', 'A look that found nothing says where it looked. Name the site, portal or collection. Nothing was written.', 'IV-4 refusal 1')
+w497('refusal.PARAMS_TOO_LONG', 'What you entered for {field} is longer than 2,000 characters. Shorten it. Nothing was written.', 'IV-4 refusal 2')
+w497('refusal.PARAM_LOOKS_SECRET', '{field} looks like a password, token or key, and Civicsmith never keeps one. Leave it out. Nothing was written.', 'IV-4 refusal 3', True)
+# IV-6: a second member's reading
+w497('screen.question.secondread.head', "A second member's reading", 'IV-6: the section on a conclusion')
+w497('screen.question.secondread.help', 'Another member, who neither concluded this nor accepted most of its passages, reads the answer against what it rests on. A reading never changes the answer or its strength.', 'IV-6: its help')
+w497('screen.question.secondread.ask', 'Ask a member to read it', 'IV-6: the act; a queue item for the member asked')
+w497('screen.question.secondread.give', 'Give your reading', 'IV-6: the act for an eligible member')
+w497('screen.question.secondread.read', 'I read it, and it holds', 'IV-6 verdict read')
+w497('screen.question.secondread.concerns', 'It holds, with concerns', 'IV-6 verdict read_with_concerns; a note is required')
+w497('screen.question.secondread.cannot', 'I cannot support it', 'IV-6 verdict cannot_support; a note is required', True)
+w497('screen.question.secondread.note', 'What you found', 'IV-6: the note; required for concerns and cannot support')
+w497('screen.question.secondread.waiting', 'Waiting for a second reading', 'IV-6: no current reading')
+w497('screen.question.secondread.done', 'Read by {member}, {date}: {verdict}', 'IV-6: a current reading')
+w497('screen.question.secondread.cannot.beside', '{member} cannot support this answer: “{note}”', 'IV-6: beside the conclusion until it changes or the reader withdraws it', True)
+w497('screen.question.secondread.earlier', 'A reading of the earlier answer', 'IV-6: a reading of an earlier basis version, in the history')
+w497('screen.question.secondread.again', 'The answer changed, so it needs a new reading.', 'IV-6: when a new basis version is adopted')
+w497('screen.question.secondread.withdraw', 'Take back my reading…', 'IV-6: the reader withdraws their own')
+w497('screen.question.secondread.nobody', 'No member can give an independent reading: every other member concluded this answer or accepted most of the passages it rests on. You can still sign, and the case says so. A member who joins later is asked to read the next edition.', 'IV-6/IV-7 as the investigation lane answered G1 (7 Nov): signing is not refused; the switch stays on')
+w497('screen.ceremony.secondread.head', "Second members' readings", 'IV-7: the signing section; one of the four states below')
+w497('screen.ceremony.secondread.done', 'Every answer in this edition has a current second reading.', 'IV-7: all read')
+w497('screen.ceremony.secondread.off', 'Second readings are switched off for this project ({member}, {date}: “{reason}”). The case says that no second member read its answers, with that reason.', 'IV-7 state: switched off, with its reason', True)
+w497('screen.ceremony.secondread.alone', 'Your team has one member, so no second member could read these answers. The case says so.', 'IV-7 state: a team of one', True)
+w497('screen.ceremony.secondread.nobody', 'No independent second reading was possible for {conclusions}: every other member concluded them or accepted most of their passages. The case says so, naming no one.', 'IV-7 state: no independent reader possible (G1); the case statement is the publication lane\'s', True)
+w497('screen.project.secondread.switch', 'Ask for a second reading of every answer', 'IV-6: the project switch, on by default for a team of two or more')
+w497('screen.project.secondread.off', 'Why you are switching second readings off', 'IV-6: the reason, kept')
+w497('screen.project.secondread.off.note', 'Published cases from this project will say that no second member read their answers, with your reason.', 'IV-6/IV-7: what switching off means', True)
+w497('refusal.MACHINE_CANNOT_READ', 'Only a member can give a reading. Nothing was written.', 'IV-6 refusal 1')
+w497('refusal.READING_NOT_CONCLUDED', 'This question is not concluded yet, so there is no answer to read. Nothing was written.', 'IV-6 refusal 2, NOT_CONCLUDED; the module names its code')
+w497('refusal.READER_NOT_INDEPENDENT.adopted', 'You concluded this answer, so your reading would not be a second one. Ask another member. Nothing was written.', 'IV-6 refusal 3, adopted')
+w497('refusal.READER_NOT_INDEPENDENT.legs', 'You accepted most of the passages this version of the answer rests on, so your reading would not be independent. Ask another member. Nothing was written.', 'IV-6 refusal 3, most legs: counted over the basis version being read, at the moment of reading (the investigation lane, 7 Nov)')
+w497('refusal.READING_NOTE_REQUIRED', 'Say what you found: a reading with concerns, or one that cannot support the answer, gives its reason. Nothing was written.', 'IV-6 refusal 4')
+w497('refusal.READING_SWITCH_NEEDS_REASON', 'Say why you are switching second readings off. Nothing was changed.', 'IV-6 refusal 5')
+w497('refusal.SECOND_READING_MISSING', 'These answers have no second reading yet: {conclusions}. {readers} can give one. Ask them, or an owner can switch second readings off with a reason. Nothing was signed.', 'IV-7: refused only when a qualifying reader exists, and it names them ({readers}); the case statement is the publication lane\'s', True)
+# IV-10: passages against, kept apart
+w497('screen.question.proposed.for', 'Proposed as supporting the answer', 'IV-10: the supporting list')
+w497('screen.question.proposed.against', 'Proposed as cutting against the answer', 'IV-10: the separate list, never mixed in')
+w497('screen.question.proposed.against.none', 'Looked for passages against the answer: none found.', 'IV-10: recorded as a look at the meaning level')
+w497('screen.question.proposed.against.notrun', 'No search for passages against the answer has run.', 'IV-10: before Gate 1, or switched off')
+w497('screen.question.proposed.against.off', 'Your team switched off the search for passages against the answer on {date}: “{reason}”', 'IV-10: switched off, its reason')
+# IV-11: a reason on a leg
+w497('screen.question.legreason.add', 'Say why this passage bears on it', 'IV-11: the act on a cited passage')
+w497('screen.question.legreason.field', 'Why it bears on the question, in your own words (optional)', 'IV-11: the field; one or two sentences, at most 300 characters')
+w497('screen.question.legreason.shown', 'Why it bears on it, by {member}: “{reason}”', 'IV-11: shown under the passage')
+w497('screen.question.legreason.edited', 'Changed by {member}, {date}', 'IV-11: an edit, kept in the leg\'s history')
+w497('refusal.MACHINE_CANNOT_REASON', 'Only a member can say why a passage bears on a question. Nothing was written.', 'IV-11 refusal 1')
+w497('refusal.REASON_EMPTY', 'Write the reason, or leave it out. Nothing was written.', 'IV-11 refusal 2')
+w497('refusal.REASON_TOO_LONG', 'Keep the reason to 300 characters, one or two sentences. Nothing was written.', 'IV-11 refusal 3')
+
+# DEC-498 (the ux lane, 7 Nov 2026; Bob's BD-15, the publication lane's PF-1 to PF-9, bd-15-requirements.md): funding
+# disclosure. The case.funding.* and case.ties.* words are printed in the complete edition and FROZEN with /11
+# (case-grammar R33), so they are written to claim no more than the team states: the no-influence sentence is the
+# team's statement, attributed; an absent block is "not stated", never an accusation (BD-15 1); a funder the case
+# names is a plain fact. No amounts anywhere, and AI credits are not funding (BD-15 4). "Team" for the people (K3472).
+def w498(key, en, note, protected=False):
+    W.append(dict(key=key, en=en, protected=protected, note='DEC-498: ' + note))
+# The complete edition's section (PF-2), frozen with /11
+w498('case.funding.head', "Who paid for this work, and the members' ties", 'PF-2: the section heading', True)
+w498('case.funding.members', "{team}'s members, paying their own costs", 'PF-1 kind members; always a row of a stated block', True)
+w498('case.funding.group_funds', "{team}'s own funds", 'PF-1 kind group_funds', True)
+w498('case.funding.grant', 'A grant from {name}', 'PF-1 kind grant, for general', True)
+w498('case.funding.grant.case', 'A grant from {name}, given for this case', 'PF-1 kind grant, for this_case', True)
+w498('case.funding.donation', 'A donation from {name}', 'PF-1 kind donation, for general', True)
+w498('case.funding.donation.case', 'A donation from {name}, given for this case', 'PF-1 kind donation, for this_case', True)
+w498('case.funding.in_kind', '{what}, given by {name}', 'PF-1 kind in_kind; {what} the register\'s one line', True)
+w498('case.funding.in_kind.case', '{what}, given by {name} for this case', 'PF-1 kind in_kind, for this_case', True)
+w498('case.funding.commissioned', 'Commissioned by {name}', 'PF-1 kind commissioned; its role always follows (role is never none)', True)
+w498('case.funding.role', 'Its part in the work, as {team} states it: {role}', 'PF-1 role in the team\'s own words', True)
+w498('case.funding.role.none', '{team} states that {name} had no part in choosing what to investigate, in the investigation or in its conclusions.', 'PF-2 the fixed no-influence sentence for role none: the team\'s statement, attributed, claiming no more', True)
+w498('case.funding.named', '{name} is also named in this case.', 'PF-4 named_in_case: plain disclosure, no judgement', True)
+w498('case.funding.notstated', 'This case does not state who paid for the work. Stating it is optional.', 'PF-2 a /11 case without the block (BD-15 1): not an accusation', True)
+w498('case.funding.predates', 'This case was published before Civicsmith recorded who paid for the work.', 'PF-1/PF-9 predates: /10 and earlier, its own line', True)
+w498('case.ties.lead', 'Ties the members who signed this case declared to people and organizations it names:', 'PF-2 / R21: the member_ties rows, printed for the first time', True)
+w498('case.ties.none', 'The members who signed this case declared no ties to people or organizations it names.', 'PF-2: no member_ties rows', True)
+w498('case.ties.team', 'A member of {team} who worked on this case is {tie}.', 'R27 level group: no handle (matches screen.ties.says.group.choice)', True)
+w498('case.ties.project', 'A member of the {project} project who worked on this case is {tie}.', 'R27 level project: no handle', True)
+w498('case.ties.handle', '{handle}, who worked on this case, is {tie}.', 'R27 levels cover and name: the handle (matches screen.ties.says.name.choice)', True)
+# The team's funding register (PF-6): team settings, owners act, members read
+w498('screen.funding.head', "Who pays for your team's work", 'PF-6: the register\'s title')
+w498('screen.funding.help', "List who funds your team's investigations, so a published case can say so. No amounts are recorded. Your team's members see this list; the public sees only what a published case states.", 'PF-6: under the title', True)
+w498('screen.funding.owners', 'Only an owner of the team can add or end an entry.', 'PF-6: the members\' view')
+w498('screen.funding.empty', 'No funders are listed. A case can still say its members paid their own costs.', 'PF-6: empty register')
+w498('screen.funding.add', 'Add a funder', 'PF-6: the act')
+w498('screen.funding.kind', 'What kind of funding', 'PF-6: the kind chooser')
+w498('screen.funding.kind.grant', 'A grant', 'kind grant')
+w498('screen.funding.kind.donation', 'A donation', 'kind donation')
+w498('screen.funding.kind.in_kind', 'Something given instead of money', 'kind in_kind')
+w498('screen.funding.kind.commissioned', 'A commission: someone asked for an investigation', 'kind commissioned')
+w498('screen.funding.kind.group_funds', "Your team's own funds", 'kind group_funds; members is never entered, it is implicit')
+w498('screen.funding.name', 'Who gave it', 'PF-6 name; at most 200 characters')
+w498('screen.funding.name.help', 'The name as you would print it in a case. If it is a person or organization Civicsmith already knows, choose it, so a case can tell when it also names them.', 'PF-6 entity; PF-4 needs the entity')
+w498('screen.funding.what', 'What was given', 'PF-6 in_kind what; one line')
+w498('screen.funding.what.help', 'For example: office space, legal advice, printing.', 'in_kind examples')
+w498('screen.funding.for', 'What it is for', 'PF-6 for')
+w498('screen.funding.for.general', "Your team's work in general", 'for general')
+w498('screen.funding.for.case', 'One case: {case}', 'for this_case')
+w498('screen.funding.role', 'Their part in the work', 'PF-6 role')
+w498('screen.funding.role.none', 'They have no part in choosing what to investigate, in the investigation or in its conclusions', 'role none')
+w498('screen.funding.role.some', 'They have a part, in your words:', 'role in the team\'s words; at most 600 characters')
+w498('screen.funding.role.help', 'A commission always says what part they had: what they asked for, and whether they saw or shaped the work before it was published.', 'PF-6 FUNDING_COMMISSION_NO_ROLE, said before the refusal')
+w498('screen.funding.giver', 'Who is giving', 'funding-register R1 (F1 agreed, 7 Nov): asked for every kind except your team\'s own funds, never inferred from the entity; the $5,000 threshold applies only to a person\'s donation')
+w498('screen.funding.giver.org', 'An organization', 'an institution: named at any amount')
+w498('screen.funding.giver.person', 'A person, giving as themselves', 'an individual: named only at the threshold')
+w498('screen.funding.basis', 'Why this gift is listed', 'PF-6 basis, for a donation from a person')
+w498('screen.funding.basis.year', '$5,000 or more a year', 'basis 5000_or_more_a_year')
+w498('screen.funding.basis.case', 'Given for this case', 'basis for_this_case')
+w498('screen.funding.basis.note', "Smaller gifts from people giving as themselves are not listed, so don't enter them here.", 'BD-15 2: below the threshold choice')
+w498('screen.funding.credits', "Credits from an AI company are not funding and are not listed. A member's own AI subscription counts as members paying their own costs.", 'BD-15 4: on the add form; the form offers no AI credits')
+w498('screen.funding.row.added', 'Added by {member}, {date}', 'a live entry')
+w498('screen.funding.end', 'End this entry…', 'PF-6 fundingEnd')
+w498('screen.funding.end.reason', 'Why it ends', 'PF-6 the reason, required')
+w498('screen.funding.end.note', 'An ended entry stays on the list, with who ended it and why. Cases already published keep what they stated.', 'PF-6: nothing is deleted')
+w498('screen.funding.ended', 'Ended by {member}, {date}: “{reason}”', 'an ended entry')
+w498('refusal.MACHINE_CANNOT_RECORD_FUNDING', 'Only a member can record who funds the team. Nothing was written.', 'PF-6 refusal 1')
+w498('refusal.NOT_A_GROUP_OWNER', "Only an owner of the team can change its list of funders. Nothing was written.", 'PF-6 refusal 2')
+w498('refusal.FUNDING_UNKNOWN_KIND', "Choose a kind of funding from the list. Members' own costs are always included, so they are not entered. Nothing was written.", 'PF-6 refusal 3')
+w498('refusal.FUNDING_NO_NAME', 'Say who gave it. Nothing was written.', 'PF-6 refusal 4')
+w498('refusal.FUNDING_FOR_CASE_UNKNOWN', "That case is not one of your team's. Choose one of its cases, or your team's work in general. Nothing was written.", 'PF-6 refusal 5')
+w498('refusal.FUNDING_NO_GIVER', 'Say who is giving: a person, giving as themselves, or an organization. Nothing was written.', 'funding-register R1: FUNDING_NO_GIVER (F1)')
+w498('refusal.FUNDING_GIVER_MISMATCH', 'You chose {name}, whom Civicsmith knows as {known}, but said the gift comes from {giver}. Correct who is giving, or choose another record. Nothing was written.', 'funding-register R1: FUNDING_GIVER_MISMATCH (F1); {known} and {giver} as "a person" or "an organization"')
+w498('screen.funding.giver.person.word', 'a person', 'the {known}/{giver} fill of FUNDING_GIVER_MISMATCH')
+w498('screen.funding.giver.org.word', 'an organization', 'the {known}/{giver} fill of FUNDING_GIVER_MISMATCH')
+w498('refusal.FUNDING_INDIVIDUAL_BELOW_THRESHOLD', 'A gift from a person giving as themselves is listed only if it is $5,000 or more a year or was given for this case. Smaller gifts are not named, so there is nothing to enter. Nothing was written.', 'PF-6 refusal 6 (BD-15 2)')
+w498('refusal.FUNDING_COMMISSION_NO_ROLE', 'Say what part whoever commissioned the work had in it. A commission always states it. Nothing was written.', 'PF-6 refusal 7')
+# The ceremony's funding step (PF-5, PF-7, PF-8)
+w498('screen.ceremony.funding.head', 'Who paid for this work', 'PF-8: the ceremony step')
+w498('screen.ceremony.funding.choice', 'Say who paid for this work in the case', 'PF-7 state true')
+w498('screen.ceremony.funding.leave', 'Leave it out', 'PF-7 state false')
+w498('screen.ceremony.funding.leave.note', 'The case will say that it does not state who paid for the work. Stating it is optional.', 'PF-7 state false: what readers see', True)
+w498('screen.ceremony.funding.proposed', "From your team's list of funders. Every entry for this case, and every institution, commission and gift in kind on the list, must stay in: a list that leaves one out would mislead.", 'PF-7: the proposal, all or nothing', True)
+w498('screen.ceremony.funding.groupfunds', "Add your team's own funds", 'PF-7: the owner may add group_funds')
+w498('screen.ceremony.funding.preview', 'How the case will print it:', 'PF-8: shown before signing (R88\'s pattern)')
+w498('screen.ceremony.funding.affirm', 'I affirm that this list names every institution, commission and gift in kind that funded this work, and every person who gave $5,000 or more a year or gave for this case.', 'PF-5: the affirmation sentence', True)
+w498('screen.ceremony.funding.affirm.needed', 'Tick the affirmation first, or leave funding out of the case.', 'PF-5: before FUNDING_NOT_AFFIRMED', True)
+w498('refusal.FUNDING_NOT_AFFIRMED', 'Each member who signs affirms that the funding list is complete. Tick the affirmation, or leave funding out of the case. Nothing was signed.', 'PF-5 refusal', True)
+w498('refusal.FUNDING_OMITS_SOURCE', 'The funding list leaves out {source}. A stated list must be complete. Put it back, or leave funding out of the case altogether. Nothing was signed.', 'PF-7 refusal, naming the source', True)
+w498('screen.ceremony.funding.ties', 'Your declared ties print in the same section, each as you chose to be named.', 'PF-2: the signer learns ties now print', True)
+
+# DEC-499 (the ux lane, 7 Nov 2026; BOB's ask for queue-producers R58, R59 and instance-setup R107-R113, DEC-404,
+# K5458): an arriving layer named with its level when two held layers share a place name, and the administrators'
+# item when an update changes a rule the team's chain uses. It names the rules changed, never the text of a team's
+# entry, and points to "The rules each place brings" (screen.layers.head).
+def w499(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-499: ' + note))
+w499('place.level.federal', 'federal', 'a layer\'s level, the {level} fill (instance-setup R108)')
+w499('place.level.state', 'state', 'a layer\'s level')
+w499('place.level.county', 'county', 'a layer\'s level')
+w499('place.level.city', 'city', 'a layer\'s level')
+w499('place.level.district', 'district', 'a layer\'s level: a special district, such as a school or water district')
+w499('queue.place-profile-arrived.summary.level', 'A profile for "{place}" ({level}) is now held: {profile}', 'R59: when two held layers carry the same place name; {level} a place.level.* word, e.g. "Alameda (county)"')
+w499('queue.place-profile-arrived.detail.level', 'An installed update brought a profile that matches the place your team named, "{place}" ({level}): {profile}. An administrator can choose it under Places; the offices your team added stay.', 'R59: the detail with its level')
+w499('queue.layer-rule-changed.summary', 'An update changed rules your team uses, from {layer}', 'R58: one item per update, to administrators; {layer} the layer\'s place and level')
+w499('queue.layer-rule-changed.detail', 'Civicsmith {version} changed these rules in {layer}: {rules}. Your team\'s own entries are unchanged. Clocks already recorded keep what they hold; new ones use the changed rules.', 'R58: {rules} the changed rules by name, joined with commas, never the text of a team entry; instance-setup R111')
+w499('queue.layer-rule-changed.detail.more', 'and {n} more', 'R58: when the list of changed rules is long')
+w499('queue.layer-rule-changed.door', 'See the rules each place brings', 'R58: the act, opening Places at the layer')

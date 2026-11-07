@@ -55,6 +55,12 @@
  *  calculations' (R7). This module builds `calculations` itself (`schedulerOf`'s default owners) and registers once
  *  with `calculations.onIngestWork`, whose call arms the alarm (R9) when a record starts.
  *
+ *  T53 (R34, R35; N1259, N824): after `question-explore` stand `register-import` (`registers`' `importDue`, `importWake` and
+ *  `importTick(now, budget, host)`, `host` monitoring's `sweepHost()`, one slice a firing, the slice bound registers'; armed by
+ *  `registers.onImportQueued`, its R11), `discard-clear` (`doorbell`'s `clearDiscarded`, R30; due only while its litigation-hold
+ *  reader lets it clear) and `mail-clear` (`mail-door`'s `clearWaitingMail`, R6). `ingest` (G55, the later ruling) still closes
+ *  the registry, so the T53 four stand together just before it.
+ *
  *  G91, G92, G94, G95, G123g (R28-R33; fix round 9): a firing has a budget (about 10 s) shared by its consumers' ticks, each
  *  awaited for what is left of it; when it is spent the firing starts no further consumer, reconciles and ends, and the
  *  next begins at the consumer after the last one that ran (`rotate_from` in the heartbeat), so none holds the rest. A call
@@ -86,6 +92,9 @@ import { followingOf } from "../following/index.mjs";
 import { publishScheduleOf } from "../publish-schedule/index.mjs";
 import { caseCarriageOf } from "../case-carriage/index.mjs";
 import { calculationsOf } from "../calculations/index.mjs";
+import { registersOf } from "../registers/index.mjs";
+import { doorbellOf } from "../doorbell/index.mjs";
+import { mailDoorOf } from "../mail-door/index.mjs";
 import { recordOf } from "../record-core/index.mjs";
 import { localDay, dayRange } from "../civil-time/index.mjs";
 import { governingZone } from "../../../jurisdictions/index.mjs";
@@ -113,7 +122,7 @@ export const SCHEDULER_ORDER = Object.freeze([
   "group-domain-recheck", "bias-debt", "intent-age", "notice-sweep", "deadline-recheck", "scheduled-publish", "working-on-seal",
   "working-on-attest", "follow", "duty-transitions", "interest-checks", "money-detectors", "standing-questions",
   "dated-waits", "file-scan", "file-render", "file-deeper", "file-forward", "file-reputation", "document-copy", "question-explore",
-  "ingest",
+  "register-import", "discard-clear", "mail-clear", "ingest",
 ]);
 
 /** R2: each consumer's key in `onAlarm`'s answer. The task drain's counts are spread into the answer's own fields. */
@@ -127,7 +136,8 @@ export const SCHEDULER_KEYS = Object.freeze({
   "duty-transitions": "dutytransitions", "interest-checks": "interestchecks", "money-detectors": "moneydetectors",
   "standing-questions": "standingquestions", "dated-waits": "datedwaits",
   "file-scan": "filescan", "file-render": "filerender", "file-deeper": "filedeeper", "file-forward": "fileforward",
-  "file-reputation": "filereputation", "document-copy": "doccopy", "question-explore": "explore", "ingest": "ingest",
+  "file-reputation": "filereputation", "document-copy": "doccopy", "question-explore": "explore",
+  "register-import": "registerfileimport", "discard-clear": "discardclear", "mail-clear": "mailclear", "ingest": "ingest",
 });
 
 /** R6: due at every firing. Every other consumer is due only when its owner says so. */
@@ -479,6 +489,35 @@ export class Scheduler {
       due: async (now) => counted(await o("questionExplorer").exploreDue(now), now),
       wake: async (now) => msOf(await o("questionExplorer").exploreWake(now)),
       tick: async (now) => ({ explore: await o("questionExplorer").exploreTick(now) }) };
+    /* ---- T53 (R34, R35) ---- */
+    /* R34: registers R12's import slices, one a firing, under monitoring's sweep host (its pause, epoch and claim, monitoring
+       R65), handed in so registers reaches no later module. Due while an import is queued or under way and due (registers'
+       `importDue`, false while the host is paused); its wake `importWake`, asked afresh each time, none while the host is
+       paused so a paused instance holds no alarm firing at once (R15). The slice bound is registers' (R7): no budget is passed. */
+    if (this.#owners.registers) {
+      const host = () => { const m = this.#owners.monitoring ? o("monitoring") : null; return m && typeof m.sweepHost === "function" ? m.sweepHost() : null; };
+      const paused = (h) => !!(h && typeof h.paused === "function" && h.paused()?.paused);
+      c["register-import"] = {
+        due: (now) => (o("registers").importDue(now, host()) ? now : null),
+        wake: (now) => { const h = host(); return paused(h) ? null : msOf(o("registers").importWake(now)); },
+        tick: async (now) => ({ registerfileimport: await o("registers").importTick(now, undefined, host()) }) };
+    }
+    /* R35: doorbell R30's discarded knocks, cleared a week after receipt. Its due and wake are `discardClearDue`/`discardClearWake`
+       (an instant), asked afresh; while the doorbell may not clear (`mayClearDiscarded`: no litigation-hold reader, or a hold)
+       its owner is off for this consumer and it wants nothing, so a held knock never keeps the alarm firing (R15). */
+    if (this.#owners.doorbell) {
+      const may = () => { const d = o("doorbell"); return typeof d.mayClearDiscarded !== "function" || d.mayClearDiscarded().may === true; };
+      const at = (now) => (may() ? msOf(o("doorbell").discardClearWake(now)) : null);
+      c["discard-clear"] = {
+        due: (now) => (may() ? msOf(o("doorbell").discardClearDue(now)) : null), wake: at,
+        tick: async (now) => ({ discardclear: await o("doorbell").clearDiscarded({ now }) }) };
+    }
+    /* R35: mail-door R6's waiting mail, removed 14 days after receipt; its answer names each owner (R15 keeps the counts for
+       notice-producers). Due now while `mailClearDue(now)` says one is due, its wake `mailClearWake(now)`. */
+    if (this.#owners.mailDoor) c["mail-clear"] = {
+      due: (now) => (o("mailDoor").mailClearDue(now) === true ? now : null),
+      wake: (now) => (o("mailDoor").mailClearDue(now) === true ? now : msOf(o("mailDoor").mailClearWake(now))),
+      tick: async (now) => ({ mailclear: await o("mailDoor").clearWaitingMail({ now }) }) };
     /* G55 (R7, R24): calculations R14's background ingest. Due while a record is `ingesting` (`ingestDue`), its wake
        `ingestWake`, both asked afresh every time from calculations' own tables, so a restarted instance re-derives them
        (R11) and nothing is kept here (R7, R18). A tick that fails is calculations' to count: after its third failed
@@ -926,7 +965,7 @@ export class Scheduler {
    *  Whether monitoring is configured is asked of the `monitoring` owner when a notice arrives. Answers each
    *  registration's answer by notice; a refused one is also kept as a start-up fault (`faults()`) and logged. */
   listenTo({ retrieval, bias, promotion, capture, progressions, calibration, aiRuns, captureRequests, entities, inquiry, following,
-             publishSchedule, answers, duties, people, moneyChecks, caseCarriage, calculations } = {}) {
+             publishSchedule, answers, duties, people, moneyChecks, caseCarriage, calculations, registers } = {}) {
     const arm = () => this.arm();
     /* A notice its owner tells without awaiting: the arm runs, and a storage that fails it is never an unhandled
        rejection (the act stands, its owner's R27, R71). */
@@ -1000,6 +1039,10 @@ export class Scheduler {
        whose own reconcile stands (R1). An owner that does not offer the notice is not registered with. */
     if (calculations && typeof calculations.onIngestWork === "function")
       out.calculations = calculations.onIngestWork("scheduler", () => (this.#firing ? null : told()));
+    /* R34 (registers R11): an import queued (started, a refresh a follow asked for, following R39), told after the act; arms at
+       once, except inside a firing, whose own reconcile stands (R1). */
+    if (registers && typeof registers.onImportQueued === "function")
+      out.registers = registers.onImportQueued("scheduler", () => (this.#firing ? null : told()));
     for (const [notice, r] of Object.entries(out)) this.#fault(notice, r);
     return out;
   }
@@ -1029,6 +1072,7 @@ export function schedulerOf(ctx, env = null, deps = {}) {
       duties: () => dutiesOf(ctx), people: () => peopleOf(ctx), moneyChecks: () => moneyChecksOf(ctx),
       answers: () => answersOf(ctx), inquiry: () => inquiryOf(ctx), following: () => followingOf(ctx),
       publishSchedule: () => publishScheduleOf(ctx), caseCarriage: () => caseCarriageOf(ctx), calculations: () => calculationsOf(ctx),
+      registers: () => registersOf(ctx), doorbell: () => doorbellOf(ctx), mailDoor: () => mailDoorOf(ctx),
     };
     const zone = deps.zone || (() => viewZone(recordOf(ctx)));
     s = new Scheduler({ storage: deps.storage || ctx.storage, env: e, owners, zone });
@@ -1039,7 +1083,7 @@ export function schedulerOf(ctx, env = null, deps = {}) {
                    captureRequests: captureRequestsOf(ctx), entities: entitiesOf(ctx), inquiry: inquiryOf(ctx),
                    following: followingOf(ctx), publishSchedule: publishScheduleOf(ctx), answers: answersOf(ctx),
                    duties: dutiesOf(ctx), people: peopleOf(ctx), moneyChecks: moneyChecksOf(ctx),
-                   caseCarriage: caseCarriageOf(ctx), calculations: calculationsOf(ctx) });
+                   caseCarriage: caseCarriageOf(ctx), calculations: calculationsOf(ctx), registers: registersOf(ctx) });
   }
   if (deps.fileSafety) s.hand({ fileSafety: deps.fileSafety });
   if (deps.questionExplorer) s.hand({ questionExplorer: deps.questionExplorer });

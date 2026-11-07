@@ -262,7 +262,8 @@ test("R62 addresseeSuggest answers the offices held as custodian_of or responsib
   const s = w.a.addresseeSuggest({ subject: contract, viewer: M });
   assert.equal(s.ok, true, JSON.stringify(s));
   assert.deepEqual(s.offices.map((o) => o.addressee),
-    [{ state: "named", kind: "office", role: "Town Clerk", body: "Town of Port Ellery", entity_id: office }]);
+    /* R115 (T53): with the layer that gives the office, null where no layered profile does */
+    [{ state: "named", kind: "office", role: "Town Clerk", body: "Town of Port Ellery", entity_id: office, layer: null }]);
   assert.deepEqual([s.offices[0].line.line_id, s.offices[0].line.kind, "assertion" in s.offices[0].line.grades, "ends" in s.offices[0].line.grades],
     [lid, "custodian_of", true, true]);
   assert.deepEqual(s.undetermined.map((u) => [u.office, u.why]), [[loose, word("actions.why.line_date_places")]]);
@@ -299,7 +300,8 @@ test("R111 R62 addresseeSuggest given an office entity as the subject answers th
   const named = w.a.addresseeSuggest({ subject: office, viewer: M });
   assert.equal(named.ok, true, JSON.stringify(named));
   assert.deepEqual(named.offices.map((o) => o.addressee),
-    [{ state: "named", kind: "office", role: "Town Clerk", body: "Town of Port Ellery", entity_id: office }]);
+    /* R115 (T53): with the layer that gives the office, null where no layered profile does (this profile has no layers) */
+    [{ state: "named", kind: "office", role: "Town Clerk", body: "Town of Port Ellery", entity_id: office, layer: null }]);
   assert.deepEqual(named.undetermined, []);
   const loose = ent(w, "office", "Harbour Master");
   const u = w.a.addresseeSuggest({ subject: loose, viewer: M });

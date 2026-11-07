@@ -37,7 +37,8 @@
     "retrieval",
     "setup-words",
     "runtime-limits",
-    "registers"
+    "registers",
+    "court-doctypes"
   ],
   "suite": {
     "cwd": "bio-plane",
@@ -55,7 +56,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/following.md, each with a test under bio-plane/test/m/following/ that fails with the change reverted. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T13:20:00Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:46:23Z"
   }
 }

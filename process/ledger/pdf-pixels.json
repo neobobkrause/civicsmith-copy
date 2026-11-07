@@ -1,0 +1,53 @@
+{
+  "id": "pdf-pixels",
+  "title": "pdf-pixels: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "pdf-worker/src/pagepixels.mjs",
+    "pdf-worker/src/imagecrop.mjs",
+    "pdf-worker/src/pagepixels-worker.mjs",
+    "pdf-worker/src/picturepixels.mjs",
+    "build/requirements/pdf-pixels.md"
+  ],
+  "tests": [
+    "pdf-worker/test/pdf-pixels-fixtures.mjs",
+    "pdf-worker/test/pagepixels.test.mjs",
+    "pdf-worker/test/imagecrop.test.mjs",
+    "pdf-worker/test/jbig2.test.mjs",
+    "pdf-worker/test/jpx.test.mjs",
+    "pdf-worker/test/pagepixels-corpus.probe.mjs",
+    "pdf-worker/test/agenda-scan-census.probe.mjs",
+    "pdf-worker/test/fixtures/scan-ccitt-g4-page.pdf",
+    "pdf-worker/test/fixtures/scan-dct-page.pdf",
+    "pdf-worker/test/fixtures/jbig2-scan-page.pdf",
+    "pdf-worker/test/fixtures/jpx-scan-page.pdf",
+    "pdf-worker/test/fixtures/picture-variants.json",
+    "pdf-worker/test/fixtures/make-picture-fixtures.py"
+  ],
+  "requirements": "build/requirements/pdf-pixels.md",
+  "uses": [
+    "pdf-reader",
+    "image-codecs",
+    "test-support",
+    "setup-words",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/pdf-pixels.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}
