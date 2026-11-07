@@ -12,11 +12,13 @@ test("R5: the consumers, in R5's order, each calling its owning module; gatherin
     "ai-run-wake", "calibration-reprobe", "group-domain-recheck", "bias-debt", "intent-age", "notice-sweep",
     "deadline-recheck", "scheduled-publish", "working-on-seal", "working-on-attest", "follow", "duty-transitions", "interest-checks",
     "money-detectors", "standing-questions", "dated-waits", "file-scan", "file-render", "file-deeper", "file-forward", "file-reputation", "document-copy",
-    "question-explore", "ingest"]);
+    "question-explore", "register-import", "discard-clear", "mail-clear", "ingest"]);
   const { s } = world({}, null, { daily: true, files: true, copies: true, explore: true, ingest: true });
+  /* T53's three (R34, R35) call the real registers, doorbell and mail-door, whose places t53.test.mjs checks; this world has none */
+  const present = SCHEDULER_ORDER.filter((n) => !["register-import", "discard-clear", "mail-clear"].includes(n));
   /* registered by the later modules that own them, in an order other than R5's */
   for (const [m, n, key] of [...LATER].reverse()) assert.equal(s.register(m, consumer(n, { key })).ok, true);
-  assert.deepEqual(s.consumers(), [...SCHEDULER_ORDER], "each takes its R5 place");
+  assert.deepEqual(s.consumers(), present, "each takes its R5 place");
   assert.ok(s.consumers().indexOf("capture-request-drain") < s.consumers().indexOf("ai-run-wake"),
     "the drain ticks before the wake");
 });
