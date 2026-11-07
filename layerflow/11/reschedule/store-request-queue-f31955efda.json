@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "store-request",
+  "provider": "queue",
+  "provider_pr": 833,
+  "provider_land": "f31955efda2282beaa278ee58f6d4270c25f30c2",
+  "at": "2026-11-07T18:14:42Z",
+  "key": "store-request<-queue@f31955efda",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/queue/catalogue.test.mjs: breaking, added code that is not an object property: , \"ai-threshold-reached\" , \"ai-terms-notice\" , \"ai-account-left-list\" , \"ai-account-left-project-list\", bio-plane/test/m/queue/notice-kinds-r33-r36.test.mjs: breaking, added, naming R1, R11, R12, R14, R19 (Provides before this land) while queue's source changed: it may assert a changed answer, bio-plane/test/m/queue/notice-notice-producers-211.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/queue/t50.test.mjs: breaking, added code that is not an object property: \"ai-account-left-list\" , \"ai-account-left-project-list\" , \"ai-signin-ended\" , \"ai-terms-notice\" ,), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

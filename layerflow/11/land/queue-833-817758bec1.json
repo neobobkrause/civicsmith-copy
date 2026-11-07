@@ -1,0 +1,87 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "queue",
+  "pr": 833,
+  "branch": "job/queue-2",
+  "head": "817758bec1517fa92f11535aefa41550cadb00af",
+  "before": "a539422a184562d1f16dfa9cc0367e6096e76a84",
+  "merge": "f31955efda2282beaa278ee58f6d4270c25f30c2",
+  "at": "2026-11-07T18:14:42Z",
+  "by": "bob",
+  "gate_runs": 6,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/queue/catalogue.test.mjs",
+      "bio-plane/test/m/queue/notice-kinds-r33-r36.test.mjs",
+      "bio-plane/test/m/queue/notice-notice-producers-211.test.mjs",
+      "bio-plane/test/m/queue/t50.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/queue/catalogue.test.mjs",
+      "bio-plane/test/m/queue/notice-kinds-r33-r36.test.mjs",
+      "bio-plane/test/m/queue/notice-notice-producers-211.test.mjs",
+      "bio-plane/test/m/queue/t50.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/queue/catalogue.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , \"ai-threshold-reached\" , \"ai-terms-notice\" , \"ai-account-left-list\" , \"ai-account-left-project-list\""
+      },
+      {
+        "file": "bio-plane/test/m/queue/notice-kinds-r33-r36.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R1, R11, R12, R14, R19 (Provides before this land) while queue's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/queue/notice-notice-producers-211.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/queue/t50.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: \"ai-account-left-list\" , \"ai-account-left-project-list\" , \"ai-signin-ended\" , \"ai-terms-notice\" ,"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/queue/catalogue.test.mjs",
+      "bio-plane/test/m/queue/notice-kinds-r33-r36.test.mjs",
+      "bio-plane/test/m/queue/notice-notice-producers-211.test.mjs",
+      "bio-plane/test/m/queue/t50.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "answer-envelope",
+    "interface-shell",
+    "plane",
+    "screens-document",
+    "screens-inquiry",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_rescheduled_old_rule": [
+    "answer-envelope",
+    "interface-shell",
+    "plane",
+    "screens-document",
+    "screens-inquiry",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_noticed": []
+}
