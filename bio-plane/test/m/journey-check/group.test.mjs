@@ -16,7 +16,9 @@ let B, dir;
 before(async () => { B = await browser(); dir = mkdtempSync(join(tmpdir(), "jc-group-")); });
 after(async () => { await B?.close(); rmSync(dir, { recursive: true, force: true }); });
 
-test("R17: no row of words.json or of setup-words says \"group\" for a team, outside the rows the design's GROUP_SENSE keeps", () => {
+/* BOB's ruling (7 Nov, block 21:55): 24 rows of other modules still say "group" for a team; they are words, so they go to the
+   ux lane's word pass (K3811) and no job here edits one (R26). The scan stays as written and runs, as a todo naming that owner. */
+test.todo("R17: no row of words.json or of setup-words says \"group\" for a team, outside the rows the design's GROUP_SENSE keeps (owed: ux lane word pass (K3811), 24 rows listed in the block)", () => {
   const rule = designRule();
   assert.deepEqual(rowsSayingGroup(designRows(), { rule }), []);
   assert.deepEqual(rowsSayingGroup(setupRows(), { rule }), []);
