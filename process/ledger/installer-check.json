@@ -4,7 +4,17 @@
   "layer": 11,
   "paths": [
     "build/requirements/installer-check.md",
-    "docs/requirements-notes/installer-check.md"
+    "docs/requirements-notes/installer-check.md",
+    "newgroup/src/ready.mjs",
+    "newgroup/src/guide.mjs",
+    "newgroup/src/ui.mjs",
+    "newgroup/src/index.mjs",
+    "newgroup/src/words.mjs",
+    "newgroup/test/fixture.mjs",
+    "newgroup/test/requirements.test.mjs",
+    "newgroup/test/t47.test.mjs",
+    "newgroup/test/wizard.test.mjs",
+    "newgroup/test/realsize-child.mjs"
   ],
   "tests": [
     "bio-plane/test/m/installer-check/"
