@@ -208,8 +208,9 @@ test("R2 the row acts send their owners' arguments: membercaps, memberset, admin
   assert.deepEqual(await body("adminendorse", { data: { member: "kim" } }), { memberId: "kim" });
   const endorsed = rec.last("adminendorse");
   has(a, "screen.members.invite.shown", { handle: "kim", expires: day(endorsed.expires) });
-  assert.deepEqual(await body("adminremove", { data: { member: "lu" }, values: { "mr-lu": " Moved away " } }), { memberId: "lu", reason: "Moved away" });
+  // the empty reason first: the founder's removal carries alone (member-roster R84), and lu's row then offers none
   assert.deepEqual((await a.press("adminremove", { data: { member: "lu" }, values: { "mr-lu": "" } })).sent, [], "not without a reason");
+  assert.deepEqual(await body("adminremove", { data: { member: "lu" }, values: { "mr-lu": " Moved away " } }), { memberId: "lu", reason: "Moved away" });
   assert.deepEqual(await body("expertiseconfirm", { data: { member: "ana", label: "CPA" } }), { memberId: "ana", label: "CPA" });
   assert.equal((await t.founder.read("expertiselist", { query: { memberId: "ana" } })).expertise[0].state, "confirmed");
   assert.deepEqual(await body("invitewithdraw", { data: { member: "mai-k" } }), { memberId: "mai-k" });
