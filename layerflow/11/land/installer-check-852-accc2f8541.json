@@ -1,0 +1,62 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "installer-check",
+  "pr": 852,
+  "branch": "job/installer-check",
+  "head": "accc2f85415e9e9e1b5fe99595408e0718ae6c0d",
+  "before": "cdf7bd2bd0d378b08bcb63d3da51248527c0a9f4",
+  "merge": "eed7d79baad7f7b99496cc31b87056d807cf2528",
+  "at": "2026-11-07T19:23:35Z",
+  "by": "bob",
+  "gate_runs": 7,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "CHECK_COOKIE",
+        "CHECK_LINES",
+        "CHECK_MAX_AGE_S",
+        "CHECK_STATES",
+        "FIX_LINKS",
+        "GET_READY_LINKS",
+        "NO_CHECK",
+        "checkCookie",
+        "checkCookieCleared",
+        "checkCookieValue",
+        "checkPanel",
+        "checkPassed",
+        "linkButton",
+        "memberNamesOf",
+        "nameTaken",
+        "passedCheck",
+        "runChecks",
+        "slugOk"
+      ],
+      "changed": [
+        {
+          "name": "begin",
+          "before": "function(slug, mode = \"install\", extra = {})",
+          "after": "function(slug, mode = \"install\", { chk, ...extra } = {})"
+        }
+      ],
+      "kinds": [],
+      "signatures": [
+        "begin"
+      ]
+    },
+    "provides": null,
+    "triggers": [
+      "exports"
+    ],
+    "triggers_old": [
+      "exports"
+    ],
+    "class": "additive",
+    "source_changed": true
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
