@@ -590,3 +590,4 @@
 {"at":"2026-11-07T22:26:12Z","row":"check","by":"layer land","live":7,"live_at":"2026-11-07T22:11:53Z","slots_working":6,"published_free":1,"resumed":["screens-intake"],"job_cap":20,"startable":0}
 {"at":"2026-11-07T22:31:14Z","row":"check","by":"layer land","live":7,"live_at":"2026-11-07T22:11:53Z","slots_working":6,"published_free":1,"resumed":["screens-intake"],"job_cap":20,"startable":0}
 {"at":"2026-11-07T22:36:58Z","row":"check","by":"layer publish","live":7,"live_at":"2026-11-07T22:11:53Z","slots_working":5,"published_free":2,"job_cap":20,"startable":0}
+{"at":"2026-11-07T22:45:23Z","row":"check","by":"layer publish","live":7,"live_at":"2026-11-07T22:11:53Z","slots_working":5,"published_free":2,"job_cap":20,"startable":0}
