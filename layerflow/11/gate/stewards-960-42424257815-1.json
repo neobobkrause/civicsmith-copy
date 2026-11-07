@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "stewards",
+  "pr": 960,
+  "sha": "2a5f1cb801487c6daf5816d64a5e15db260b457a",
+  "run_id": 42424257815,
+  "run_attempt": 1,
+  "at": "2026-11-07T23:14:24Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 0.95,
+  "suite_minutes": null,
+  "record_only": true,
+  "whole": false
+}
