@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "control-plane",
+  "provider": "admission",
+  "provider_pr": 798,
+  "provider_land": "a37e42fa054111486b686d286695f3e07480d115",
+  "at": "2026-11-07T16:43:45Z",
+  "key": "control-plane<-admission@a37e42fa05",
+  "why": "added judgedInRoom; changed the parameters of admit function({ url, env, op, spec, method, presented, doAnswer, tables = DECLARED, credential = null, body = null, background = false, reauthActs = declaredReauthActs() }) -> function({ url, env, op, spec, method, presented, doAnswer, tables = DECLARED, credential = null, body = null, background = false, reauthActs = declaredReauthActs(), held = undefined }), doorWindowGate function({ req = null, env = null, spec = null, doAnswer = null, now = null, credential = null, background = null } = {}) -> function({ req = null, env = null, spec = null, doAnswer = null, now = null, credential = null, background = null, held = undefined } = {}) (not a trigger); its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/admission/harness.mjs: breaking, added code that is not an object property: , held, bio-plane/test/m/admission/t53.test.mjs: breaking, added, naming R1, R4, R5, R7, R8, R9, R10, R11, R12, R20, R34, R35 (Provides before this land) while admission's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
