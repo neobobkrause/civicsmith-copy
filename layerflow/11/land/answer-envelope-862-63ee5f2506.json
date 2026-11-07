@@ -1,0 +1,59 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "answer-envelope",
+  "pr": 862,
+  "branch": "job/answer-envelope",
+  "head": "63ee5f2506cfa5dbf16240a6a491a2fc54e2085f",
+  "before": "f71b36fc94f298602b8eca0153ec7131e64d513f",
+  "merge": "bba774302cb0596159fbf9349ea8f415125952f9",
+  "at": "2026-11-07T18:52:18Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/answer-envelope/notice-reopen-a4.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/answer-envelope/notice-reopen-a4.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/answer-envelope/notice-reopen-a4.test.mjs",
+        "class": "additive",
+        "why": "added: a new test file only adds assertions"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/answer-envelope/notice-reopen-a4.test.mjs"
+    ],
+    "triggers": [],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "none",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/answer-envelope/notice-reopen-a4.test.mjs"
+      ],
+      "by_tests": "additive",
+      "importers": []
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "plane",
+    "screens-action",
+    "screens-publish",
+    "signin-door",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_noticed": []
+}
