@@ -31,8 +31,9 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-07T21:49:56Z"
+    "state": "WORKING",
+    "at": "2026-11-07T23:41:24Z",
+    "reason": "reopened: re-test against the new interface of screens-intake (land 1995851e1f)"
   },
   "prior_work": "BOB 5 Nov 20:45, as interface-shell-t53 (coordinator 18:31, option c): your code lives in bio-plane/src/screens-intake-rounds/, which you own; every hook you need inside bio-plane/src/screens-intake/ is screens-intake's: name each as a found mark for screens-intake (report it to BOB), never edit it. Marks resting on other modules (R74 registers' registerList/registerFilter, R83 interface-shell-t53's ceiling scale R140, R94 capture R96/R120) stay open as not-verified until those land."
 }
