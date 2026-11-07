@@ -66,6 +66,38 @@ export const CONNECTION_GROUPS = Object.freeze(Object.fromEntries(
 /** The design's six groups, in the design's order (the Follow choices; R60). */
 export const CONNECTION_GROUP_NAMES = Object.freeze(["pos", "part", "money", "ment", "same", "step_source"]);
 
+/* R72 (T53; N1260, DEC-409 "dimension"): each connection kind's dimension, the kind of thing it leads to, for "Follow from here" (R73):
+ * one of `people`, `organizations`, `money`, `donations`, `events`, `documents` and `law`, or null for a member's `hunch`, which joins any
+ * two things. A frozen map in this module beside the groups, BOB's to re-rule as R59's is; the kinds are the owners'. Every kind the
+ * registry holds is in it (the test is total over the registry), and it changes no group. */
+const DIMENSION_KINDS = {
+  people: ["same_as", "not_same_as", "unsure", "proxy_for", "overlaps", "line:related_to", "line:associate_of", "line:educated_at",
+    "line:credentialed_by"],
+  organizations: ["member_of", "line:part_of", "line:post_in", "line:reports_to", "line:oversees", "line:appoints", "line:seat_on",
+    "line:funds", "line:contracts_with", "line:acts_for", "line:responsible_for", "line:custodian_of", "line:successor_of",
+    "line:belongs_to", "line:owns_interest_in", "line:holds:employee", "line:holds:elected", "line:holds:appointed", "line:holds:acting",
+    "line:holds:interim", "line:holds:ex_officio", "line:holds:board_member", "line:holds:officer_or_director", "line:holds:partner",
+    "line:holds:military_service", "line:holds:volunteer", "line:holds:contractor", "line:holds:other"],
+  money: ["money_transfer", "money_payment", "money_revenue", "money_other"],
+  donations: ["money_contribution"],
+  events: ["event_actor", "event_organizer", "event_mover", "event_seconder", "event_voted", "event_present", "event_speaker",
+    "event_sender", "event_recipient", "event_copied", "event_signatory", "event_decider", "event_author", "event_implementer",
+    "event_party", "event_subject", "event_concerns", "event_authorises", "event_answers", "event_amends", "event_reverses",
+    "event_stated_cause", "event_within", "event_precedes", "placed_on_flow"],
+  documents: ["mentioned_together", "named_in", "step_source", "in_tension_with"],
+  law: ["law_amends", "law_repeals", "law_renumbers", "law_recodifies", "law_refers_to", "law_defines", "law_excepts", "law_implements",
+    "law_incorporates", "court_interprets", "court_applies", "court_holds_invalid", "court_requires", "in_force_at_event", "owes",
+    "owed_to", "holds_power", "met_by", "used_in", "line:party_to", "line:appeal_of", "line:consolidated_with", "line:remanded_to",
+    "line:arises_from"],
+};
+/** R72: the seven dimensions, in the order R72 names them. */
+export const CONNECTION_DIMENSION_NAMES = Object.freeze(["people", "organizations", "money", "donations", "events", "documents", "law"]);
+/** R72: kind to dimension; a `hunch` kind is null. */
+export const CONNECTION_DIMENSIONS = Object.freeze({
+  ...Object.fromEntries(Object.entries(DIMENSION_KINDS).flatMap(([dim, kinds]) => kinds.map((k) => [k, dim]))),
+  hunch: null,
+});
+
 /** A plain word made from a value: `stated_cause` → "stated cause", `procuringEntity` → "procuring entity",
  *  `EventMovedOnline` → "moved online". */
 export const plainWord = (v) => String(v).replace(/^Event(?=[A-Z])/, "").replace(/_/g, " ")
@@ -156,7 +188,9 @@ export function composedVocabularies() {
     const values = [], words = {};
     for (const o of reg) for (const k of o.kinds) {
       values.push(k.kind);
-      words[k.kind] = { word: connectionWord(k.kind, k.word), class: k.class, owner: o.owner, group: CONNECTION_GROUPS[k.kind] ?? null };
+      words[k.kind] = { word: connectionWord(k.kind, k.word), class: k.class, owner: o.owner, group: CONNECTION_GROUPS[k.kind] ?? null,
+                       /* R72: its dimension; null for a hunch kind, or for a kind the map lacks (the test is total) */
+                       dimension: CONNECTION_DIMENSIONS[k.kind] ?? null };
     }
     out.connection_kinds = { values, words };
   }
