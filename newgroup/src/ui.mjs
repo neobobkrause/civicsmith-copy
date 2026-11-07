@@ -23,9 +23,11 @@
  * gives them.
  */
 
-import { list as heldProfiles } from "../../jurisdictions/index.mjs";
+import { layers as heldLayers } from "../../jurisdictions/index.mjs";
 /* R72: every sentence a key holds is read by key (words.mjs); a sentence no key holds stays here, in "team" words, and is reported. */
-import { word } from "./words.mjs";
+import { word, hasWord, localize } from "./words.mjs";
+/* R96: the hints and the jurisdictions a placement may name, `installer-steps`' own lists (its R46), through its barrel (R80). */
+import { LOCATION_HINTS, JURISDICTIONS } from "./steps/index.mjs";
 import { guideReady, guideStage, GUIDE_SCRIPT } from "./guide.mjs";
 /* R92: every Cloudflare page a reader follows is held in the installer's two link tables, never here. */
 import { GET_READY_LINKS } from "./ready.mjs";
@@ -90,20 +92,78 @@ const confirmDialog = () => `<dialog id="confirm" class="cs-dialog" aria-labelle
 <button type="button" class="cs-btn" data-tone="quiet" id="confirm-no">${escText(word("installer.permanent.cancel"))}</button></div>
 </dialog>`;
 
-/* R21 (N10): the jurisdiction profiles an install offers, every held profile but the test ones, each by name and
-   coverage. They are `jurisdictions`' data, shown as data (layers.md, "No jurisdiction in the product", rules 1–2): the
-   installer's own words name no place (R31). */
-export const PROFILE_CHOICES = Object.freeze(heldProfiles().filter((p) => p.test !== true)
-  .map(({ id, name, covers }) => Object.freeze({ id, name, covers: Object.freeze([...covers]) })));
+/* R21 (N10), as R94 (T53; N1257; DEC-404; K5452, K5497) amends it: the install asks where the team's work is focused, a set
+   of places, and offers the held places of every level (`jurisdictions.layers`, Civicsmith's own; a test profile and the team
+   layer are no place offered), each by name and the place it covers, as one list grouped by state. The federal layer is the
+   only one preselected and may be removed; nothing below it is. The places are `jurisdictions`' data, shown as data
+   (layers.md, "No jurisdiction in the product", rules 1-2): the installer's own words name no place (R31). */
+const LAYERS = heldLayers().filter((l) => l.origin === "civicsmith");
+export const PROFILE_CHOICES = Object.freeze(LAYERS.map(({ id, name, level, place, within }) =>
+  Object.freeze({ id, name, level, place, within, covers: Object.freeze([place]) })));
+const PLACE_OF = new Map(PROFILE_CHOICES.map((p) => [p.id, p]));
+/* The one layer preselected: the federal one, which sits within no other. */
+export const FEDERAL = PROFILE_CHOICES.find((p) => p.level === "federal" && !p.within)?.id ?? null;
+/* R94 (`instance-setup` R107): the ids bound for a set chosen, with the layers each sits within added, in `jurisdictions`' order
+   (federal, then each layer after the one it sits within). `ids` are held places (index.mjs refuses any other first). Pure. */
+export function placesBound(ids) {
+  const keep = new Set();
+  for (const id of ids) for (let p = PLACE_OF.get(id); p && !keep.has(p.id); p = PLACE_OF.get(p.within)) keep.add(p.id);
+  return PROFILE_CHOICES.filter((p) => keep.has(p.id)).map((p) => p.id);
+}
+/* The state a place sits in (itself for a state), or null for the federal layer. */
+const stateOf = (p) => { for (let q = p; q; q = PLACE_OF.get(q.within)) if (q.level === "state") return q.id; return null; };
 export const PROFILES_NONE = word("screen.install.places.none");
-const placesBlock = () => `<section class="cs-section ng-sec" id="places">
-<h2>${escText(word("installer.places.heading"))}</h2>
+/* The places in the order the page draws them (the federal layer, then each state's places, then any in no state), and, for each,
+   the position of the place it sits within (-1 for none): the page's script adds a place's parents by position, so it names no
+   place of its own (R31). */
+const DRAWN = [...PROFILE_CHOICES.filter((p) => p.id === FEDERAL),
+  ...PROFILE_CHOICES.filter((p) => p.level === "state").flatMap((s) => PROFILE_CHOICES.filter((p) => stateOf(p) === s.id)),
+  ...PROFILE_CHOICES.filter((p) => p.id !== FEDERAL && !stateOf(p))];
+const AT = new Map(DRAWN.map((p, i) => [p.id, i]));
+const WITHIN_AT = DRAWN.map((p) => (p.within && AT.has(p.within) ? AT.get(p.within) : -1));
+const placeChoice = (p) => `<label class="choice"><input type="checkbox" id="place-${AT.get(p.id)}" name="profile" value="${escText(p.id)}"${p.id === FEDERAL ? " checked" : ""}>`
+  + `<span class="pname">${escText(p.name)}</span> <span class="small pcovers">${escText(word("installer.places.covers", { covers: p.covers.join(", ") }))}</span>`
+  + ` <span class="small added" id="added-${AT.get(p.id)}"></span></label>`;
+const placesBlock = () => {
+  const states = PROFILE_CHOICES.filter((p) => p.level === "state");
+  const loose = PROFILE_CHOICES.filter((p) => p.id !== FEDERAL && !stateOf(p));
+  return `<section class="cs-section ng-sec" id="places">
+<h2>${escText(localize("installer.places.focus", "Where does your work focus?"))}</h2>
 <p>${escText(word("screen.install.places.help"))}</p>
+<p id="places-us">${escText(localize("installer.places.usonly", "Civicsmith ships places in the United States only. If your work is somewhere else, name that place when you set up your team's Civicsmith, and add its offices and rules yourself, each with its source."))}</p>
 <fieldset class="profiles" id="profiles">
 <legend class="muted ng-small">${escText(word("installer.places.legend"))}</legend>
-${PROFILE_CHOICES.map((p) => `<label class="choice"><input type="checkbox" name="profile" value="${escText(p.id)}">`
-  + `<span class="pname">${escText(p.name)}</span> <span class="small pcovers">${escText(word("installer.places.covers", { covers: p.covers.join(", ") }))}</span></label>`).join("\n")}
+${FEDERAL ? `${placeChoice(PLACE_OF.get(FEDERAL))}
+<p class="small" id="places-federal">${escText(localize("installer.places.federal.what", "The federal layer is chosen for you. Remove it only if your team's work is outside the United States: then no place is chosen, and your team enters its own deadlines and offices."))}</p>` : ""}
+${states.map((s) => `<fieldset class="profiles ng-state"><legend class="ng-small pstate">${escText(s.place)}</legend>
+${PROFILE_CHOICES.filter((p) => stateOf(p) === s.id).map(placeChoice).join("\n")}
+</fieldset>`).join("\n")}
+${loose.map(placeChoice).join("\n")}
 <label class="choice"><input type="checkbox" id="profile-none" name="profile-none" value="none"><span class="pname">${escText(PROFILES_NONE)}</span></label>
+</fieldset>
+<p class="small" id="places-team">${escText(localize("installer.places.teamlayer", "After the install, your team can add facts about its own counties and cities, each with its source, to its team layer."))}</p>
+</section>`;
+};
+
+/* R96 (T53; N1273; K5440, K5441, K5443): the region your team's record will use, and two honest choices: near me (the hint
+   `installer-steps` answers from the founder's request by default, a list to pick another) and keep my data in this region (a
+   jurisdiction). Before the choice the page says it is made once and moving later is an export and an import (K5441), and what
+   each choice is. The hints offered are those the word table names a region for. */
+export const REGION_HINTS = Object.freeze(LOCATION_HINTS.filter((h) => hasWord(`screen.install.region.${h}`)));
+export const REGION_JURISDICTIONS = Object.freeze([...JURISDICTIONS]);
+const regionBlock = (hint) => `<section class="cs-section ng-sec" id="region">
+<h2>${escText(word("screen.install.region.head"))}</h2>
+<p id="region-final">${escText(word("screen.install.region.final"))}</p>
+${hint ? `<p id="region-default" data-hint="${escText(hint)}">${escText(word("screen.install.region.near", { region: word(`screen.install.region.${hint}`) }))}</p>` : ""}
+<fieldset class="profiles" id="region-choice">
+<label class="choice"><input type="radio" id="region-mode-near" name="region" value="near" checked><span class="pname">${escText(localize("installer.region.near.label", "Near me"))}</span></label>
+<p class="small">${escText(word("screen.install.region.near.what"))}</p>
+<div class="cs-field"><label for="region-near">${escText(word("screen.install.region.near.other"))}</label>
+<select id="region-near" class="cs-input">${hint ? "" : `<option value=""></option>`}${REGION_HINTS.map((h) => `<option value="${h}"${h === hint ? " selected" : ""}>${escText(word(`screen.install.region.${h}`))}</option>`).join("")}</select></div>
+<label class="choice"><input type="radio" id="region-mode-keep" name="region" value="keep"><span class="pname">${escText(word("screen.install.region.keep"))}</span></label>
+<p class="small">${escText(word("screen.install.region.keep.what"))} ${escText(word("screen.install.region.help"))}</p>
+<div class="cs-field"><label for="region-keep">${escText(word("screen.install.region.field"))}</label>
+<select id="region-keep" class="cs-input"><option value=""></option>${REGION_JURISDICTIONS.map((j) => `<option value="${j}">${escText(word(`screen.install.region.${j}`))}</option>`).join("")}</select></div>
 </fieldset>
 </section>`;
 
@@ -231,18 +291,28 @@ ${LEFT_OUT}
 const pageScript = (mode, version = null) => `<script>
 const $=s=>document.querySelector(s);
 const slugify=v=>v.toLowerCase().replace(/[^a-z0-9-]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);
-const chosen=[];document.querySelectorAll('input[name="profile"]').forEach(b=>b.addEventListener("change",()=>{
-  const i=chosen.indexOf(b.value);if(b.checked&&i<0)chosen.push(b.value);if(!b.checked&&i>=0)chosen.splice(i,1);
-  if(b.checked&&$("#profile-none"))$("#profile-none").checked=false;}));
-if($("#profile-none"))$("#profile-none").addEventListener("change",e=>{if(e.target.checked){chosen.length=0;
-  document.querySelectorAll('input[name="profile"]').forEach(b=>{b.checked=false;});}});
+const WITHIN=${js(WITHIN_AT)};
+const ADDED=${js(localize("installer.places.added", "Added, because a place you chose is within it."))};
+const boxes=()=>[...document.querySelectorAll('input[name="profile"]')];
+const mark=(i,t)=>{const a=$("#added-"+i);if(a)a.textContent=t;};
+const inside=(c,i)=>{for(let p=WITHIN[c];p>=0;p=WITHIN[p])if(p===i)return true;return false;};
+boxes().forEach((b,i)=>b.addEventListener("change",()=>{const all=boxes();
+  if(b.checked){if($("#profile-none"))$("#profile-none").checked=false;
+    for(let p=WITHIN[i];p>=0;p=WITHIN[p])if(all[p]&&!all[p].checked){all[p].checked=true;mark(p,ADDED);}}
+  else{mark(i,"");all.forEach((c,k)=>{if(c.checked&&inside(k,i)){c.checked=false;mark(k,"");}});}}));
+if($("#profile-none"))$("#profile-none").addEventListener("change",e=>{if(e.target.checked)boxes().forEach((b,i)=>{b.checked=false;mark(i,"");});});
+const region=()=>{if(!$("#region-choice"))return {};const r=document.querySelector('input[name="region"]:checked');
+  if(r&&r.value==="keep"){const j=$("#region-keep").value;return j?{region:{jurisdiction:j}}:null;}
+  const h=$("#region-near")?$("#region-near").value:"";return h?{region:{hint:h}}:{};};
 $("#slug").addEventListener("input",e=>{const p=e.target.selectionStart;e.target.value=slugify(e.target.value);
   try{e.target.setSelectionRange(p,p)}catch{}});
 async function begin(slug,btn,err){
+  const rg=region();
+  if(!rg){err.textContent=${js(localize("installer.region.keep.none", "Choose the region your team's record must be kept in."))};return;}
   btn.disabled=true;
   try{
     const r=await fetch("/begin",{method:"POST",headers:{"content-type":"application/json"},
-      body:JSON.stringify({slug,mode:"${mode}",${version ? `version:"${version}",` : ""}...($("#profiles")?{profiles:chosen}:{}),...($("#vpc")&&$("#vpc").value.trim()?{securityVpc:$("#vpc").value.trim()}:{}),...($("#ai")&&$("#ai").value.trim()?{instanceAi:$("#ai").value.trim()}:{})})});
+      body:JSON.stringify({slug,mode:"${mode}",${version ? `version:"${version}",` : ""}...($("#profiles")?{profiles:boxes().filter(b=>b.checked).map(b=>b.value)}:{}),...rg,...($("#vpc")&&$("#vpc").value.trim()?{securityVpc:$("#vpc").value.trim()}:{}),...($("#ai")&&$("#ai").value.trim()?{instanceAi:$("#ai").value.trim()}:{})})});
     const j=await r.json();
     if(!j.ok){err.textContent=j.error||${js(word("installer.shortname.refused"))};return;}
     location.href=j.authorize;
@@ -269,7 +339,9 @@ if(dlg){
 
 /* `GET /`: R50's two stages in one page (the second hidden until the dialog's confirming act), then the publisher's line. */
 export const INSTALL_TITLE = word("screen.install.name");
-export const WIZARD_HTML = `${pageHead(INSTALL_TITLE, { description: DESCRIPTION })}
+/* R96: the page is drawn for the founder's own request: `hint` is the region `installer-steps`' `locationHintFor` answers from its
+   `cf` (null when it answers none: the list then preselects nothing, and an install with no pick has no hint, R83). */
+export const wizardHtml = (hint = null) => `${pageHead(INSTALL_TITLE, { description: DESCRIPTION })}
 <body class="cs">
 <main class="cs-frame ng">
 ${pageMark()}
@@ -287,6 +359,7 @@ ${needBlock()}
 <p class="help" id="slug-hint">${escText(word("installer.shortname.hint"))}</p></div>
 </section>
 ${placesBlock()}
+${regionBlock(REGION_HINTS.includes(hint) ? hint : null)}
 <div class="ng-acts"><button id="go" class="cs-btn" data-tone="primary">${escText(word("installer.action.continue"))}${IRREVERSIBLE}</button></div>
 <p class="err" id="err" role="alert"></p>
 </div>
@@ -311,6 +384,7 @@ ${/* R91: the first page's act begins "Check my account" (R86); the install begi
 ${guideReady() ? GUIDE_SCRIPT : ""}
 </body>
 </html>`;
+export const WIZARD_HTML = wizardHtml(null);
 
 /* R55 (T48; N1047; DEC-226 (4)): the release this page installs is the one chosen in Settings › Updates and no other. Its
    address is `<installer>/update?version=<V>` (`instance-setup` R90); V is of `signatures`' R47 form, digits only, no
