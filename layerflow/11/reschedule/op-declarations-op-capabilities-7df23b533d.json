@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "op-declarations",
+  "provider": "op-capabilities",
+  "provider_pr": 752,
+  "provider_land": "7df23b533d846c8d400ab9e1e5260c151ca1d62e",
+  "at": "2026-11-07T16:26:39Z",
+  "key": "op-declarations<-op-capabilities@7df23b533d",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/op-capabilities/lazy.test.mjs: breaking, added code that is not an object property: + 2 , \"the 323 rows of T49's opening and F1's two\", bio-plane/test/m/op-capabilities/rows.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

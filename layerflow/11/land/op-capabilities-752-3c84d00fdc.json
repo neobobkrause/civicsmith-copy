@@ -1,0 +1,63 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "op-capabilities",
+  "pr": 752,
+  "branch": "job/op-capabilities",
+  "head": "3c84d00fdca0083b136847687f9069e020e0fcf0",
+  "before": "4e44af8436a618d8551ffaaff50416817e9bb3da",
+  "merge": "7df23b533d846c8d400ab9e1e5260c151ca1d62e",
+  "at": "2026-11-07T16:26:39Z",
+  "by": "bob",
+  "gate_runs": 5,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": {
+      "before": "Terms. A **capability** is membership's (its vocabulary); the rows use three of them, `contribute`, `publish` and `create_projects`. A **row** is an op's name and either one capability or `null`: no capability, stated, with its reason in the comment beside it. A **family row** is one `op-declarations` gives from an op's kind (its R19); it is not held here.\n**needsRows() → frozen `{op: capability | null}`**\n- **R1** Answers the 323 hand-written rows exactly as `op-declarations` held them at T49's opening, each with the comment that gives its reason: `contribute` for 185 ops, `publish` for 7 (`ratify`, `caseratify`, `publishat`, `publish`, `reviewgrant`, `reviewrevoke`, `strengthbar`), `create_projects` for `projectfork`, and a present `null` for the other 130. A `null` states that the op needs no capability. That covers a read, a public op, an act bounded by who the session is, and an unattended wake. It is not the same as no row: an op with no row needs none, and the answer has no key for it. No key is an alias (`op-declarations` R21 makes those over the composed table), and no key has a row its family's kind gives (`op-declarations` R19).\n- **R2** The answer is frozen data. The module imports nothing, and neither importing it nor calling `needsRows()` reads or touches a store, the network, a clock, randomness or the environment. No place is named in a row or a comment. Every load of the module answers the same table.\n- **R3** The table is built on the first call to `needsRows()`, never when the module is evaluated: evaluating it freezes no table of a hundred entries or more, the first call builds and freezes the table once, and every later call answers the same object and builds nothing.\n- Errors: it takes no argument and never throws.",
+      "after": "Terms. A **capability** is membership's (its vocabulary); the rows use three of them, `contribute`, `publish` and `create_projects`. A **row** is an op's name and either one capability or `null`: no capability, stated, with its reason in the comment beside it. A **family row** is one `op-declarations` gives from an op's kind (its R19); it is not held here.\n**needsRows() → frozen `{op: capability | null}`**\n- **R1** Answers the 323 hand-written rows exactly as `op-declarations` held them at T49's opening, each with the comment that gives its reason: `contribute` for 185 ops, `publish` for 7 (`ratify`, `caseratify`, `publishat`, `publish`, `reviewgrant`, `reviewrevoke`, `strengthbar`), `create_projects` for `projectfork`, and a present `null` for the other 130. A `null` states that the op needs no capability. That covers a read, a public op, an act bounded by who the session is, and an unattended wake. It is not the same as no row: an op with no row needs none, and the answer has no key for it. No key is an alias (`op-declarations` R21 makes those over the composed table), and no key has a row its family's kind gives (`op-declarations` R19). F1's two rows (`exportwhole`, `exportwholepart`, each a present `null`) are added over that copy: 325 rows in all, 132 of them `null`.\n- **R2** The answer is frozen data. The module imports nothing, and neither importing it nor calling `needsRows()` reads or touches a store, the network, a clock, randomness or the environment. No place is named in a row or a comment. Every load of the module answers the same table.\n- **R3** The table is built on the first call to `needsRows()`, never when the module is evaluated: evaluating it freezes no table of a hundred entries or more, the first call builds and freezes the table once, and every later call answers the same object and builds nothing.\n- Errors: it takes no argument and never throws."
+    },
+    "provides_tests_old": [
+      "bio-plane/test/m/op-capabilities/lazy.test.mjs",
+      "bio-plane/test/m/op-capabilities/rows.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/op-capabilities/lazy.test.mjs",
+      "bio-plane/test/m/op-capabilities/rows.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/op-capabilities/lazy.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: + 2 , \"the 323 rows of T49's opening and F1's two\""
+      },
+      {
+        "file": "bio-plane/test/m/op-capabilities/rows.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/op-capabilities/lazy.test.mjs",
+      "bio-plane/test/m/op-capabilities/rows.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-text",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "op-declarations",
+    "op-specs-late"
+  ],
+  "users_rescheduled_old_rule": [
+    "op-declarations",
+    "op-specs-late"
+  ],
+  "users_noticed": []
+}
