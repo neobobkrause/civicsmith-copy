@@ -120,8 +120,7 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: ai-use:105. For each, decide from your own requirements what this module must do (the T53 ops that replace the retired ones are in ai-accounts' requirements and op-declarations), adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T20:01:12Z",
-    "reason": "reopened: re-test against the new interface of admission (land 6f09192a3e)"
+    "state": "COMPLETE",
+    "at": "2026-11-07T20:11:22Z"
   }
 }
