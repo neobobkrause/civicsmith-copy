@@ -5,3 +5,4 @@
 {"at":"2026-11-05T14:57:33Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job corpus-export complete, PR #512 ready, session session_018BhcecFcajTdKAm3cmq4PB: run status"}
 {"at":"2026-11-06T14:17:51Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (21 jobs ready). Then: job corpus-export BLOCKED: run status"}
 {"at":"2026-11-06T14:19:07Z","row":"outcome","n":4,"outcome":"delivered"}
+{"at":"2026-11-07T17:24:05Z","row":"sent","n":5,"to":"bob","text":"job corpus-export BLOCKED: run status"}
