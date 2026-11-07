@@ -580,9 +580,12 @@ test("R36 F-B14 control: the reasons the size sentence already states draw no se
   assert.equal(main(c.p).querySelectorAll("[data-renderer-reason]").length, 0);
 });
 
+/* A4 (file-safety's picture route): the owner now makes a safe picture of a photograph, so a PNG is no longer a kind with no safe view; R36's
+   control "a PNG draws refusal.NO_SAFE_VIEW" is replaced by R77, not yet met (T53), and named here as owed, never pinned (K208). */
+test.todo("R77 open-file draws a photograph's safe picture (a PNG draws its picture), with what the file says and what was left out");
+
 test("R36 F-B15 a kind the owner makes no safe view of says so once and is not sent to the safe view; every kind it does make one of still is", async () => {
-  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-  const kinds = [["Photo", png, "image/png", false], ["Page", "<html><body>Hello</body></html>", "text/html", false],
+  const kinds = [["Page", "<html><body>Hello</body></html>", "text/html", false],
                  ["Notice", NOTICE, "text/plain", true], ["Form", docm(), DOCM, true], ["Figures", xlsx([["A1", "x"]]), XLSX, true]];
   for (const [name, content, type, has] of kinds) {
     const { t, f, p } = await mine({}, { name, content, type });

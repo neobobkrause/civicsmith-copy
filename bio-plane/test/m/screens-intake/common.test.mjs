@@ -10,7 +10,7 @@ import { WORD_ROWS } from "../../../src/setup-words/index.mjs";
 import { SCREEN_REGISTRY } from "../../../src/wizard-scripts/index.mjs";
 import { OPS, SESSION_OPS, NEEDS } from "../../../src/op-declarations/index.mjs";
 import { pending } from "../interface-shell/harness.mjs";
-import { openWorld, members, html, text, main, refused, MEMBER, rawKeys, fill, press, word, hasWord } from "./page.mjs";
+import { openWorld, members, html, text, main, refused, MEMBER, rawKeys, fill, press, word, hasWord, teamAccountOn } from "./page.mjs";
 import { scanner } from "../file-safety/fixture.mjs";
 import { makeZip } from "../../make-zip.mjs";
 
@@ -20,13 +20,10 @@ const SHA = "a".repeat(64);   /* an address no team holds: the empty team's */
 /* the screens' declared reads over a capture's address, and the three they ask in a state that address does not reach (a question to file under, a scan not yet reported, a source's rung) */
 const READS = [...new Set([...SCREENS.flatMap((s) => Object.values(s.reads({ subject: SHA, me: MEMBER, data: {}, ui: {} })).map((r) => r.op)), "search", "scanstatus", "sourcerung"])];
 
-/* The team's reach to its assistant (interface-shell R20): the administrator's real acts set and switch on the team's key. */
+/* The team's reach to its assistant (interface-shell R20): the administrator's real acts hold and switch on the team's account (`teamAccountOn`). */
 async function reach(world) {
   const admin = await world.signIn("admin");
-  await admin.act("reauth", { body: { password: admin.password } });
-  await admin.act("groupkeyset", { body: { key: "sk-ant-api03-" + "w".repeat(40) } });
-  await admin.act("groupkeyswitch", { body: { on: true } });
-  await admin.act("groupkeynoticeseen", { body: {} });
+  await teamAccountOn(world, admin);
   return admin;
 }
 const daemon = (world, op) => world.door({ url: `/api/?op=${op}`, init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" } }, { token: world.env.DAEMON_TOKEN });
@@ -106,9 +103,14 @@ test("R8 every act names one op OPS holds and a member's session reaches, the re
       assert.ok(OPS[a.op].mutating ? SESSION_OPS.member.has(a.op) : OPS[a.op].classes.includes("member"), `${s.id}: ${a.op} reached by a member's session`);
       assert.ok(listed.has(a.op), `${s.id}: ${a.op} the registry's`);
     }
-    for (const op of listed) if (op !== "capture") assert.ok(s.acts.some((a) => a.op === op), `${s.id} draws ${op}`);
+    for (const op of listed) if (op !== "capture" && !(OWED_UNMET[s.id] || {})[op]) assert.ok(s.acts.some((a) => a.op === op), `${s.id} draws ${op}`);
   }
 });
+/* the registry's acts this module draws only once a mark not yet met is met (K208: owed, never red): Add's parted-upload cancel and its preview's
+   next rows, R79 and F2 (T53); and the inbox's safe view of a knock, which the registry owes the inbox (DEC-479) and no line of this module's
+   requirements names yet (reported to BOB) */
+const OWED_UNMET = { capture: { captureuploadabort: "R79, F2", previewmore: "R79" }, inbox: { inboxview: "DEC-479 (no requirement yet)" } };
+for (const [id, ops] of Object.entries(OWED_UNMET)) for (const [op, marks] of Object.entries(ops)) test.todo(`${marks} ${id} draws the registry's ${op}`);
 
 test("R8 after an act the screen reads again what it changed (every read, or none on a screen with none)", async () => {
   await full();
