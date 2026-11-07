@@ -579,3 +579,4 @@
 {"at":"2026-11-07T21:17:43Z","row":"check","by":"layer publish","live":10,"live_at":"2026-11-07T21:11:53Z","live_measured":9,"started_since":1,"job_cap":20,"startable":1,"idle_capacity":{"kind":"work","since":"2026-11-07T21:14:47Z","min":2,"live":10,"cap":20,"held":0,"startable":1,"empty":10,"alarm":false,"layer":11,"fill":["screens-inquiry"]}}
 {"at":"2026-11-07T21:23:23Z","row":"check","by":"layer land","live":12,"live_at":"2026-11-07T21:11:53Z","live_measured":9,"started_since":3,"job_cap":20,"startable":0}
 {"at":"2026-11-07T21:28:44Z","row":"check","by":"layer land","live":12,"live_at":"2026-11-07T21:11:53Z","live_measured":9,"started_since":3,"job_cap":20,"startable":0}
+{"at":"2026-11-07T21:35:01Z","row":"check","by":"layer land","live":12,"live_at":"2026-11-07T21:11:53Z","live_measured":9,"started_since":3,"job_cap":20,"startable":0}
