@@ -14,3 +14,4 @@
 {"at":"2026-11-07T18:13:07Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-07T18:26:35Z","row":"sent","n":8,"to":"bob","text":"job store-door complete, PR #832 ready, session session_018Bhcedz231GawVQvMZrr1u: run status (republished on layer/11 with queue f31955efda; suite 72/72)"}
 {"at":"2026-11-07T18:26:53Z","row":"outcome","n":8,"outcome":"delivered"}
+{"at":"2026-11-07T20:19:46Z","row":"sent","n":9,"to":"bob","text":"job store-door complete, PR #896 ready, session session_018Bhced2xMsQQakWutta6JK: run status"}
