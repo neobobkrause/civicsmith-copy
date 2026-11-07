@@ -46,3 +46,18 @@ No mark is struck: every one of the 22 is a screen's drawing, and the screens ar
 7. `capture` draws `stepLine` for the job row's `queued` state in place of its fallback (capture.mjs:285) and `partsCancelledLine` after `captureuploadabort` (R78, R79).
 
 Open questions for the design lane: R73 names "the TOO_LARGE sentence (R64)"; R64's reading sentence (`screen.capture.read.refused.TOO_LARGE`) says the file "is kept whole", which contradicts "Nothing was added or read", so the part uses the upload ceiling's figures row, whose own text ends "Nothing was written." and so says it twice beside `nothing_read`. The `registers` screen does not exist yet (screen-registry lists it owed), so R74 (a)'s link target `/app/registers/<key>?project=` is this part's guess, not verified.
+
+## Attempt 2, replacement session (7 Nov 2026): through the screen (BOB ruling (b))
+
+screens-intake (PR 908, land 9ef2c0c752) now draws the DEC-500 too-large refusal, R74's register way, the parted upload's cancel and canceled line, the queued step and R92's inbox rows. This module dropped its duplicates (`limitsSection`, `tooLargeLines`, `registerOfAddress`, `partsCancelledLine`, `stepLine`'s `queued`) and tests those drawings through the served page over the real store (`bio-plane/test/m/screens-intake-rounds/screen.test.mjs`): every answer is the owner's own (the real door's kind limit refuses a 60 MB CSV; acquisition's real `acquire` refuses an address over `CAPTURE_MAX`; the real `registerlist`; the real parted begin, its second part only held at the door until the cancel is pressed; knocks rung at the doorbell's own door).
+
+**Met:** R92 (three titles from what was handed in with the true size, the link to what a pulled knock became, the five rungs each with its own explanation).
+
+Tested through the screen but left open:
+- R73: the 60 MB sheet, the address over the limit and the at-limit control pass. The 120 MB PDF fails: it is over what one request carries, so the screen begins it in parts, and the real `captureuploadbegin` refuses it `TOO_LARGE` with its size and the document limit; `sendInParts`' `ended` draws that through `refusalHtml` as the bare `refusal.TOO_LARGE` (the address's sentence, no figures, no "Nothing was added or read.", no way in). **Found mark for screens-intake**: draw the begin's (and a part's) `TOO_LARGE` with the DEC-500 sentence as the one-request upload does. Also not drawn: a sheet over its rows or a document over its pages by count (no answer carries those yet).
+- R74: (a) and (b) are drawn as the line says; the link's target `/app/registers/<key>?project=` waits on the registers screen and its route.
+- R79: the cancel and its line pass; the next-rows op and `safeViewPagesLine` on `open-file` (screens-intake F4) are owed.
+
+Still owed elsewhere, unchanged: R72 (a read op serving `limitsByKind`), R75 and R76 (`sourceLinksFor`, the doorbell row), R77, R78 (capture.mjs still draws stand-ins for finish, address held, fetch done with no project, `about.one`), R80, R82 (archivelist's counts, the From {parent} row), R83 (interface-shell-t53 R140), R84 (PLATFORM Seed A), R85 to R91 (screens-intake and plane answers; R90 interface-shell R35), R93 (screens-publish's doorbell), R94 (capture R96, R120; interface-shell R144).
+
+Revert check: these tests assert screens-intake's drawing, which landed before this attempt; this attempt's source change only removes duplicate parts, so the new tests pass with it reverted. A `revert exempt` is asked of BOB on the pull request.
