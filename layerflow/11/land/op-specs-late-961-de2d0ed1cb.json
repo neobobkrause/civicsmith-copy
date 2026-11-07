@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "op-specs-late",
+  "pr": 961,
+  "branch": "job/op-specs-late",
+  "head": "de2d0ed1cbaa0d73fd027cb6f360525b8bc3475e",
+  "before": "1995851e1fa5255a64ebf87c73fc32c9d66612c1",
+  "merge": "2ece22c58761d9d6e90ea2455424bc0df449641f",
+  "at": "2026-11-07T23:34:05Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
