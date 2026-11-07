@@ -1,0 +1,12 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "instance-setup",
+  "attempt": 4,
+  "branch": "job/instance-setup",
+  "early": [
+    "queue-producers",
+    "setup-words"
+  ],
+  "at": "2026-11-07T16:38:08Z"
+}
