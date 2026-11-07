@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "stewards",
+  "session": "session_018Bhcec7N12ExbjV7UfP7jC",
+  "started": "2026-11-07T17:08:05Z",
+  "ended": "2026-11-07T17:09:59Z",
+  "at": "2026-11-07T17:09:59Z",
+  "minutes": 1.9,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 1.516,
+  "tests": {
+    "total": 27,
+    "pass": 26,
+    "fail": 0
+  }
+}
