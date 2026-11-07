@@ -4,6 +4,7 @@
   "layer": 11,
   "paths": [
     "bio-plane/src/interface-shell/",
+    "bio-plane/src/interface-shell-t53/index.mjs",
     "build/requirements/interface-shell.md",
     "docs/requirements-notes/interface-shell.md"
   ],
