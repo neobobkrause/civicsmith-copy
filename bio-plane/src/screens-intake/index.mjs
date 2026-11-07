@@ -228,6 +228,7 @@ export const SCREEN_KEYS = Object.freeze({
     "inbox.discard.why", "reference.label", "screen.inbox.alreadyheld", "screen.inbox.alreadyheld.other",
     "screen.inbox.same.date", "shell.card.document", "screen.document.fingerprint", "act.inboxresolve.label.inbox.putback", "shell.reason", "screen.inbox.putback.done", "act.knocksof.label.inbox", "screen.inbox.knocker.heading", "screen.inbox.knocker.same1", "screen.inbox.knocker.same2",
     "screen.inbox.knocker.help1", "screen.inbox.knocker.help2", "screen.inbox.source.line", "screen.about-knocker.name", "size.kb", "size.mb", "size.small",
+    "screen.inbox.row.named", "screen.inbox.row.noted", "screen.inbox.row.unnamed", "screen.inbox.row.became", "screen.inbox.ladder.unknown.means", "screen.inbox.ladder.same.means", "screen.inbox.ladder.partly.means", "screen.inbox.ladder.group.means", "screen.inbox.ladder.public.means",
   ]),
 });
 
