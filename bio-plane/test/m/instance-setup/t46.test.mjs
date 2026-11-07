@@ -150,8 +150,9 @@ test("R81 R82 op=bootstrap answers the parts as three flat scalar keys part_sign
   assert.deepEqual(await partsOf({ AGENT_RUNNER: member({ name: "agent-runner", version: "r" }), AGENT_WORKER: worker(false) }), P(false, false));
   /* could not be read: null, never false */
   assert.deepEqual(await partsOf({ AGENT_WORKER: member({ error: "x" }, 500), FILE_SCANNER: member({ name: "pdf-worker", version: "p" }) }), P(null, null));
-  assert.deepEqual(await partsOf({ AGENT_WORKER: worker(undefined) }), P(null, false), "an agent-worker that says nothing of its runner");
-  assert.deepEqual(await partsOf({ AGENT_WORKER: worker("yes") }), P(null, false));
+  /* F2: agent-worker's /version no longer says runner (its R30 as T53 amends it): serving, the runner is its part */
+  assert.deepEqual(await partsOf({ AGENT_WORKER: worker(undefined) }), P(true, false), "an agent-worker that says nothing of its runner (F2)");
+  assert.deepEqual(await partsOf({ AGENT_WORKER: worker("yes") }), P(true, false));
   /* each part names no reason beyond the part: a scalar, never a nested value */
   for (const v of Object.values(await partsOf({ AGENT_WORKER: worker(true) }))) assert.ok([true, false, null].includes(v));
   /* asked once each, also with members=1 (the members' own answers are read for both) */
@@ -183,8 +184,8 @@ test("R17 (T46) memberVersions reads agent-runner from agent-worker's /version r
   assert.deepEqual([silent.state, silent.binding, silent.via, typeof silent.why], ["SILENT", "AGENT_WORKER", "agent-worker", "string"]);
   assert.deepEqual(await run({ AGENT_WORKER: member({ name: "pdf-worker", version: "p-1", runner: true }) }),
     { binding: "AGENT_WORKER", via: "agent-worker", state: "MISNAMED", name: "pdf-worker", version: "p-1" });
-  const unsaid = await run({ AGENT_WORKER: worker(undefined) });
-  assert.deepEqual([unsaid.state, typeof unsaid.why], ["SILENT", "string"], "served without runner: unread, never SERVING");
+  /* F2: served without runner (agent-worker R30 as T53 amends it), the runner is agent-worker's part, SERVING */
+  assert.deepEqual(await run({ AGENT_WORKER: worker(undefined) }), { binding: "AGENT_WORKER", via: "agent-worker", state: "SERVING", version: "aw-9" });
   /* agent-worker asked once, its own entry unchanged */
   const aw = worker(true);
   const all = await memberVersions({ AGENT_WORKER: aw });
