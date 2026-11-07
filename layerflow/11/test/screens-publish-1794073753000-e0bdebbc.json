@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "screens-publish",
+  "session": "session_018BhcedGQzZzEjSAPCvsaDx",
+  "started": "2026-11-07T17:49:13Z",
+  "ended": "2026-11-07T17:52:23Z",
+  "at": "2026-11-07T17:52:23Z",
+  "minutes": 3.17,
+  "result": "fail",
+  "layer": 11,
+  "suite_seconds": 91.305,
+  "tests": {
+    "total": 355,
+    "pass": 347,
+    "fail": 1
+  }
+}
