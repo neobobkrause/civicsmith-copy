@@ -190,3 +190,16 @@ The coordinator asked attempt 4 (7 Nov 2026) to consolidate the file under the c
 - F1: the fault's description and file locators moved to the notes above; the requirement keeps reading the evidence in the provider's stated shape, its test and control.
 - Uses: the per-module op lists are dropped; each op is named in the requirement that reads or sends it, and the modules are listed.
 - The "T49: words by key" block heading is merged into "T49".
+
+## Open marks and their owners (attempt 4, 7 Nov 2026; BOB's ruling: lands partial)
+
+None of these can be met inside this module's paths. The module reopens once each owner delivers.
+
+- **ux lane (words owed: no key exists):** R97 "Stop sharing with {reader}"; R99 the acknowledged and comment-sent answers and the show-by-name tick; R101 "re-read at {time}" and why printing cannot be done ("Check it"'s too-short sentence is drawn); R103 what a case file looks like (each departure is listed); R104 a screen's own "Made with Civicsmith" (today `case-grammar.text.made`); R105; R106; R88 the field labels of the manager's kinds (correction, withdrawal, court order) and the "archive copy again" control (the kind list follows `docket`'s `kinds`); R91 a refused or declined entry's state.
+- **interface-shell-t53:** R82 the kit's two-scope document picker (its R138).
+- **interface-shell:** R104 the browser tab's title (`page.title.public`); R101 a print that failed (`cs.print` reports none); R89 a case-title breadcrumb on the docket (its path word).
+- **screens-intake:** R85 the Inbox's "Show it safely".
+- **case-disclosures:** R87 `mailnameshow` and `mailnamewithhold`.
+- **screens-investigate:** R89 the project page's Docket link.
+- **docket / publication:** R90 the edition entry on the public docket, with what changed.
+- Also owed, for marks this attempt met: case-authoring's sign-step rows naming the passage's target and part (R83 grades in the finding's fold until then); review's copy carrying grades (DEC-496's gloss on `review-outside`); `.cs-gloss` in interface-assets' served CSS; a provider of CHECK signals and IV-7's other three states (DEC-497).
