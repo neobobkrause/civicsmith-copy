@@ -51,7 +51,8 @@ export function sizeWords(cs, n) {
 
 /** R78 (DEC-454): the line of a step of the reading or of a parted upload, by its own key. `step` is one of `fetching`,
  *  `reading`, `about` (with `minutes`, a whole number above zero; one minute is `.about.one`), `hashing` and `sending` (with
- *  `n` of `m` parts). "" for a step that has no row of its own here (`queued` waits for the design's row, R78). */
+ *  `n` of `m` parts). "" for a step that has no row of its own. The queued state is screens-intake's (capture.mjs draws
+ *  `screen.capture.read.queued` from the job row; BOB, 7 Nov). */
 export function stepLine(cs, step) {
   const s = step && typeof step === "object" ? step : { step };
   const whole = (v) => Number.isInteger(v) && v > 0;
