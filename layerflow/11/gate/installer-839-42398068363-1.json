@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "installer",
+  "pr": 839,
+  "sha": "de908f803b84d34b58568628f4e7b1d04747117b",
+  "run_id": 42398068363,
+  "run_attempt": 1,
+  "at": "2026-11-07T17:48:51Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 4.81,
+  "suite_minutes": 1.23,
+  "record_only": false,
+  "whole": true
+}

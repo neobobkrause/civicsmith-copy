@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "installer-places",
+  "provider": "installer",
+  "provider_pr": 839,
+  "provider_land": "f1dad0cf410258fd24a5026b6a8e5075722b36b0",
+  "at": "2026-11-07T18:04:45Z",
+  "key": "installer-places<-installer@f1dad0cf41",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (newgroup/test/realsize-child.mjs: breaking, added code that is not an object property: observability : meta . observability ,, newgroup/test/t47.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
