@@ -21,3 +21,4 @@
 {"at":"2026-11-05T20:59:54Z","row":"sent","n":11,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job interface-shell complete, PR #551 ready, session session_018BhcecrY3yW5KSKWes4dVg: run status"}
 {"at":"2026-11-05T21:00:11Z","row":"outcome","n":11,"outcome":"delivered"}
 {"at":"2026-11-07T17:06:50Z","row":"sent","n":12,"to":"bob","text":"job interface-shell BLOCKED: run status"}
+{"at":"2026-11-07T17:07:08Z","row":"outcome","n":12,"outcome":"delivered"}
