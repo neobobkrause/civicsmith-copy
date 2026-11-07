@@ -1,0 +1,11 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "record-core",
+  "attempt": 1,
+  "branch": "job/record-core",
+  "early": [
+    "setup-words"
+  ],
+  "at": "2026-11-07T16:14:51Z"
+}
