@@ -44,12 +44,7 @@ test("split: the two files hold together exactly the ids op-grades held at the s
 test("split: the unmet marks across the two files are those of the start commit, each on its own id's line, the met ones struck", () => {
   const marks = marksOf([read(FILE), read(FOLDS)]);
   /* a mark this job meets is struck from op-grades' line (R55–R58); none other changes */
-  /* R55, R57 and R58 still unmet may name what they wait on (attempt 3) and R58 its moved citation; every other mark is unchanged */
-  for (const [id, m] of Object.entries(marks)) {
-    if (/^R5[578]$/.test(id)) assert.match(m, /^T53($|;)/, id);
-    else assert.equal(m, START_UNMET[id], id);
-  }
-  assert.ok(Object.keys(START_UNMET).length > 0);
+  for (const [id, m] of Object.entries(marks)) assert.equal(m, START_UNMET[id], id);
   for (const id of Object.keys(START_UNMET).filter((id) => !(id in marks))) assert.match(id, /^R5[5-8]$/, `${id} was struck`);
 });
 
