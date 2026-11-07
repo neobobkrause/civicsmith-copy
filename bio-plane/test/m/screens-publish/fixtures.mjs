@@ -125,7 +125,8 @@ export const provided = {
   /** wizard-scripts' real `writinghelp` answers (K5212): the draft already held in the field, or the assistant unreachable. It never returns a draft. */
   writinghelp: say(async (which) => { const w = await import("../wizard-scripts/fixtures.mjs"); return which === "unreachable" ? w.writingHelpUnreachable() : w.writingHelpDraftHeld(); }, (r) => r),
   /** case-authoring's real `publishPreflight` answers the ceremony draws: `tension` (TENSION_NOT_DISCLOSED) and `noFinding` (PUBLISH_NO_FINDING). */
-  preflight: say(async (which) => { const f = await import("../case-authoring/fixtures.mjs"); return which === "tension" ? f.preflightTensionRefused().answer : f.preflightNoFinding().answer; }, (r) => r),
+  /* `passes`: a prepared edition whose sign step lists two ungraded passages of one finding (`ungraded_passages`, R88), `finding` its id */
+  preflight: say(async (which) => { const f = await import("../case-authoring/fixtures.mjs"); return which === "tension" ? f.preflightTensionRefused().answer : which === "notOwner" ? f.preflightAnswer().notOwner : which === "passes" ? f.preflightPasses().answer : f.preflightNoFinding().answer; }, (r) => r),
   /** public-read's `publishedcase` refusal for a finding several cases pin. */
   publishedCaseSeveral: say(async () => (await import("../public-read/fixtures.mjs")).publishedCaseSeveralCases(), (r) => r.byFinding),
 };
