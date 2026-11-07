@@ -28,6 +28,7 @@ import { verifyReleaseNotice, RELEASE_KEYS } from "./sshsig.mjs";
 import { localDay, bounds as dayBounds } from "./civil-time/index.mjs";
 import { promotionOf } from "./promotion/index.mjs";
 import { governorOf } from "./host-governor/index.mjs";
+import { aiUseOf } from "./ai-use/index.mjs";
 import { schedulerOf } from "./scheduler/index.mjs";
 import { captureOf } from "./capture/index.mjs";
 import { entitiesOf } from "./entities/index.mjs";
@@ -517,6 +518,11 @@ export const RELEASE_NOTICE_MAX_BYTES = 65536;
    `acquisition` composes, which names the group (R88). */
 export const UPDATE_CHECK_USER_AGENT = "Civicsmith-update-check/1";
 export const UPDATE_CHECK_EVERY_MS = 86_400_000;
+/* instance-updates R7 (T53; AD38; K5487): the issuer's fixed health route (`ai-issuer` R26, `POST /ai/health`, on the
+   issuer host `ai-catalogue`'s CATALOGUE_ADDRESS names), and the one user agent the health sender sends. A report goes
+   with `content-type` and this user agent and nothing else: no cookie, `Authorization`, team name, slug or version. */
+export const HEALTH_ADDRESS = "https://ai-issuer.believeinoakland.workers.dev/ai/health";
+export const HEALTH_SEND_USER_AGENT = "Civicsmith-health/1";
 /* R90 (T48): the installer's update page; `updatestart` answers it with `?version=<version>` and nothing else. A release
    set aside by "Not now" returns after this many days, or at the start of the next local day for a security release. */
 export const INSTALLER_UPDATE_ADDRESS = "https://newgroup.believeinoakland.workers.dev/update";
@@ -543,7 +549,9 @@ export const INSTANCE_SETUP_TABLES = Object.freeze(["instance_group", "group_ide
   "group_logos",
   /* R88–R91 (T48; N1047): the daily update check's slot, the release notices it stored, each check, the releases that
      ran, and each administrator's decision, append-only. */
-  "update_check_slot", "release_notices", "update_checks", "running_releases", "update_decisions"]);
+  "update_check_slot", "release_notices", "update_checks", "running_releases", "update_decisions",
+  /* instance-updates R7 (T53): the health sender's minute of the day, drawn once and kept. */
+  "health_send_slot"]);
 /* Each table's classes, declared explicitly through record-core's `declareTable` (its R21; plan T33, Rules (6)). Every
    one is exempt from purge (R28, R41); none is a cache of anything; the append-only ones keep every version (R26, R53,
    R54). A member's disclosure record is theirs and the group's, never exported (it names who connected an account). */
@@ -575,6 +583,8 @@ const TABLE_CLASSES = Object.freeze({
   update_checks: { export: "admin-only", version_chain: true },
   running_releases: { export: "admin-only", version_chain: true },
   update_decisions: { export: "admin-only", version_chain: true },
+  /* instance-updates R7: a random value never exported, as the check's slot. */
+  health_send_slot: { export: "never", version_chain: false },
 });
 /* R50–R52: the seeding ledgers name entities and lines of the registry (`entities`, `lines`), which a whole-store purge
    clears, so a whole-store purge clears them with it and a later seeding starts afresh; a bundle's purge touches none. */
@@ -783,6 +793,13 @@ CREATE TABLE IF NOT EXISTS group_logos (
 -- R88 (T48; N1047): the minute of the day (UTC, 0 to 1439) the daily check runs at, drawn at random once and kept, never
 -- computed from the slug or anything sent. One row, written once and never updated.
 CREATE TABLE IF NOT EXISTS update_check_slot (
+  id        INTEGER PRIMARY KEY CHECK (id = 1),
+  minute    INTEGER NOT NULL CHECK (minute BETWEEN 0 AND 1439),
+  drawn_at  TEXT NOT NULL
+);
+-- instance-updates R7 (T53): the minute of the day (UTC) the health sender runs at, drawn at random once per store and
+-- kept, as the check's. One row, written once and never updated.
+CREATE TABLE IF NOT EXISTS health_send_slot (
   id        INTEGER PRIMARY KEY CHECK (id = 1),
   minute    INTEGER NOT NULL CHECK (minute BETWEEN 0 AND 1439),
   drawn_at  TEXT NOT NULL
@@ -1073,6 +1090,8 @@ export class InstanceSetup {
   #aiAccounts() { return this.#deps.aiAccounts ?? aiAccountsOf(this.#ctx, { record: this.#record(), membership: this.#membership() }); }
   #promotion() { return this.#deps.promotion ?? promotionOf(this.#ctx); }
   #governor() { return this.#deps.governor ?? governorOf(this.#ctx); }
+  /* instance-updates R7: ai-use's health reports (its R33), read only when the sender runs. */
+  #aiUse() { return this.#deps.aiUse ?? aiUseOf(this.#ctx); }
   #scheduler() { return this.#deps.scheduler ?? schedulerOf(this.#ctx, this.#env); }
   #capture() { return this.#deps.capture ?? captureOf(this.#ctx, { env: this.#env }); }
   #queueProducers() { return this.#deps.queueProducers ?? null; }
@@ -1142,6 +1161,11 @@ export class InstanceSetup {
     /* R88 (T48): the daily update check, one consumer, due at the group's own minute of the day (scheduler R8). */
     out.updateCheck = this.#scheduler().register("instance-setup", { name: "update-check", key: "updatecheck",
       due: () => this.updateCheckWake(), wake: () => this.updateCheckWake(), tick: (now) => this.updateCheckTick(now) });
+    /* instance-updates R7 (T53): the health sender, beside the check, at its own kept minute of the day. */
+    out.healthSend = this.#scheduler().register("instance-setup", { name: "health-send", key: "healthsend",
+      due: (now) => this.healthSendWake(now), wake: (now) => this.healthSendWake(now), tick: (now) => this.healthSendTick(now) });
+    try { out.healthSlot = { minute: this.#healthMinute() }; }
+    catch { out.healthSlot = { drawn: false }; }
     try { out.slot = { minute: this.#checkMinute() }; }   /* the group's minute of the day is drawn at its first start and kept */
     catch (e) { out.slot = { drawn: false, detail: localize("instance-setup.setup.the_minute_of_the_day", "the minute of the day could not be drawn: {reason}", { reason: String(String(e && e.message || e).slice(0, 200)) }) }; }
     try { out.running = this.#recordRunning(); }
@@ -2908,6 +2932,67 @@ export class InstanceSetup {
     this.#sql.exec(`INSERT INTO update_check_slot (id, minute, drawn_at) VALUES (1, ?, ?) ON CONFLICT(id) DO NOTHING`,
                    minute, this.#iso());
     return this.#one(`SELECT minute FROM update_check_slot WHERE id = 1`).minute;
+  }
+
+  /* instance-updates R7: the health sender's minute of the day (UTC), drawn once at random per store and kept, as R88's. */
+  #healthMinute() {
+    const held = this.#one(`SELECT minute FROM health_send_slot WHERE id = 1`);
+    if (held) return held.minute;
+    let minute = null;
+    if (typeof this.#deps.drawHealthMinute === "function") {
+      const d = Number(this.#deps.drawHealthMinute());
+      minute = Number.isInteger(d) && d >= 0 && d < 1440 ? d : null;
+    }
+    const buf = new Uint32Array(1);
+    const limit = Math.floor(2 ** 32 / 1440) * 1440;
+    while (minute === null) { crypto.getRandomValues(buf); if (buf[0] < limit) minute = buf[0] % 1440; }
+    this.#sql.exec(`INSERT INTO health_send_slot (id, minute, drawn_at) VALUES (1, ?, ?) ON CONFLICT(id) DO NOTHING`,
+                   minute, this.#iso());
+    return this.#one(`SELECT minute FROM health_send_slot WHERE id = 1`).minute;
+  }
+
+  /** instance-updates R7, the `health-send` consumer's `due` and `wake`: the next occurrence of the store's minute of the
+   *  day after `now` (the scheduler's, else the instance clock). A day not sent stays in `ai-use` for the next run. */
+  healthSendWake(now) {
+    const from = Number.isFinite(now) ? now : this.#instant();
+    let t = Math.floor(from / UPDATE_CHECK_EVERY_MS) * UPDATE_CHECK_EVERY_MS + this.#healthMinute() * 60_000;
+    if (t <= from) t += UPDATE_CHECK_EVERY_MS;
+    return t;
+  }
+
+  /** instance-updates R7, the consumer's `tick`: one run of the health sender at the alarm's `now`. */
+  async healthSendTick(now) { return { healthsend: await this.#runHealthSend(now) }; }
+
+  /* instance-updates R7: ask `ai-use.healthReport` (its R33); switched off it answers null and nothing is sent. Each report,
+     oldest day first, is POSTed to HEALTH_ADDRESS through the governor with only `content-type` and the fixed user agent,
+     no redirect followed; a 2xx is recorded by `healthSent`. Any other answer stops the run, so that day and the later
+     ones stay for the next run (a later day marked sent would pass over the earlier one). Never throws. */
+  async #runHealthSend(now) {
+    const ms = Number.isFinite(now) ? now : this.#instant();
+    const at = new Date(ms).toISOString();
+    let reports = null;
+    try { reports = this.#aiUse().healthReport({ at: ms }); } catch { reports = null; }
+    if (!Array.isArray(reports)) return { at, on: false, sent: [] };
+    const host = new URL(HEALTH_ADDRESS).host;
+    const sent = [];
+    for (const report of reports) {
+      let g;
+      try { g = this.#governor().governorAdmit({ host }); } catch { g = null; }
+      if (!g || !g.admitted) return { at, on: true, sent, held: { day: report.day, reason: "held" } };
+      if (g.wait_ms) await this.#sleep(g.wait_ms);
+      let res = null;
+      try {
+        res = await this.#fetch(HEALTH_ADDRESS, { method: "POST", redirect: "manual",
+          headers: { "content-type": "application/json", "user-agent": HEALTH_SEND_USER_AGENT }, body: JSON.stringify(report) });
+      } catch { res = null; }
+      if (!res) return { at, on: true, sent, held: { day: report.day, reason: "unreachable" } };
+      const status = res.status;
+      try { this.#governor().governorReport({ host, status }); } catch { /* an unrecorded outcome is not a verdict */ }
+      if (!(status >= 200 && status < 300)) return { at, on: true, sent, held: { day: report.day, status } };
+      try { this.#aiUse().healthSent({ day: report.day, at: ms }); } catch { return { at, on: true, sent, held: { day: report.day, reason: "unrecorded" } }; }
+      sent.push(report.day);
+    }
+    return { at, on: true, sent };
   }
 
   /** R88, the scheduler consumer's `due` and `wake`: the instant of the group's next daily check, the first of its
