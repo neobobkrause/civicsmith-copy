@@ -39,7 +39,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/instance-updates.md, each with a test under bio-plane/test/m/instance-updates/ that fails with the change reverted. Your code is the update-check part of bio-plane/src/setup.mjs (the update-check consumer near :1084, #runUpdateCheck near :2600, updatenotice near :2778, the set-up release near :2705, updatestart/updatelater/updateskip near :2867-2912, the route near :3136), which instance-setup shares: change only those parts. The health sender (R7) is not written yet; ai-use.healthReport stays ai-use's. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T13:20:00Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T18:09:14Z"
   }
 }
