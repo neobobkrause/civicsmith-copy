@@ -1,0 +1,53 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-action",
+  "pr": 910,
+  "branch": "job/screens-action",
+  "head": "f05ed70aabb6c70a15be2ba27993e284bd2a68a2",
+  "before": "e5294eb876aa89cdc70342eb1388924136e0fd49",
+  "merge": "a801611ef09137c6b7facc03f0533378fb53b468",
+  "at": "2026-11-07T20:45:28Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-action/requirements-moved.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-action/requirements-moved.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-action/requirements-moved.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-action/requirements-moved.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "screens-matter",
+    "screens-plan"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "screens-matter",
+    "screens-plan"
+  ],
+  "users_noticed": []
+}
