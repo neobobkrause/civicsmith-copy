@@ -7,8 +7,14 @@
 import "./register.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { interfacePage, interfaceScript, contributionOf, EMPTY_CONTRIBUTION, styleOf } from "../../../src/interface-shell/index.mjs";
-import { CONTRIBUTION } from "../../../src/interface-shell-t53/index.mjs";
+import * as shell from "../../../src/interface-shell/index.mjs";
+/* the hook's names are read from the module, and the t53 file imported only if present, so with the hook reverted the tests run and fail
+   on their assertions, not at load */
+const { interfacePage, interfaceScript } = shell;
+const contributionOf = (c) => { assert.equal(typeof shell.contributionOf, "function", "the shell exports contributionOf"); return shell.contributionOf(c); };
+const styleOf = () => { assert.equal(typeof shell.styleOf, "function", "the shell exports styleOf"); return shell.styleOf(); };
+const EMPTY_CONTRIBUTION = shell.EMPTY_CONTRIBUTION;
+const { CONTRIBUTION } = await import("../../../src/interface-shell-t53/index.mjs").catch(() => ({}));
 import { boot } from "./harness.mjs";
 
 const styleIn = (html) => html.slice(html.indexOf("<style>") + 7, html.indexOf("</style>"));

@@ -8,7 +8,9 @@
 import "./register.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { interfaceScript, GLOSS_CLASS } from "../../../src/interface-shell/index.mjs";
+import { interfaceScript } from "../../../src/interface-shell/index.mjs";
+/* the design's class (`visual-language/components.css`), named here so the test runs, and fails on its assertions, with the code reverted */
+const GLOSS_CLASS = "cs-gloss";
 import { word } from "../../../src/setup-words/index.mjs";
 import { boot } from "./harness.mjs";
 
