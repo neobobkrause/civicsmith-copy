@@ -60,8 +60,11 @@ import { SCREENS as WIZARDS_SCREENS, GUIDE as WIZARD_GUIDE } from "../screens-wi
 import { SCREENS as INVESTIGATE_SCREENS } from "../screens-investigate/index.mjs";
 import { SCREENS as PUBLISH_SCREENS } from "../screens-publish/index.mjs";
 import { SCREENS as ACTION_SCREENS } from "../screens-action/index.mjs";
+/* (BOB's found mark, 7 Nov; screens-ai PR 881) screens-ai's AI screens (`aiproviders`, `aimine`, `aiproject`) are served
+   with the others: screens-settings and screens-inquiry link to them, so a page without them leaves those links dead. */
+import { SCREENS as AI_SCREENS } from "../screens-ai/index.mjs";
 const APP_SCREENS = Object.freeze([...ENTRY_SCREENS, ...SETTINGS_SCREENS, ...INTAKE_SCREENS, ...DAILY_SCREENS, ...INQUIRY_SCREENS,
-  ...WIZARDS_SCREENS, ...INVESTIGATE_SCREENS, ...PUBLISH_SCREENS, ...ACTION_SCREENS]);
+  ...WIZARDS_SCREENS, ...INVESTIGATE_SCREENS, ...PUBLISH_SCREENS, ...ACTION_SCREENS, ...AI_SCREENS]);
 const APP_OPTIONS = Object.freeze({ guide: WIZARD_GUIDE });
 /* (T47; K3167) a member's own Claude sign-in, its disconnection, the revocation's sign-out, a refused held token and the
    test instance's trace are signin-door's (its R1–R5, were this module's R65, R78, R85–R87): the door routes to them. */
