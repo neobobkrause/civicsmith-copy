@@ -316,6 +316,9 @@ export const CONSEQUENCE_STATEMENTS = Object.freeze({
   ...T35_CONSEQUENCE_STATEMENTS,
   /* R24 (DEC-173 (2)): `openwithwarning`'s, written in ./t36.mjs beside its ground. */
   ...T36_CONSEQUENCE_STATEMENTS,
+  /* R55 (T53; BOB C13): removing a register row removes every member's copy from this instance and its future exports,
+     and it cannot be restored (registers R30). */
+  rowexpunge: ENTRY("dialog", "consequence.rowexpunge"),
 });
 
 /* R18 (DEC-122 (1); K1363 B5): THE ACTS KEPT FOR A LARGER SCREEN BEYOND WHAT THE LADDER AND THE IRREVERSIBLE WEIGHT
@@ -929,6 +932,21 @@ const MACHINE_REFUSALS_DATA = {
   /* R38 (T48; affordances R58): the quoting record is an ACTS row on an action, refused a machine by its owner's own code
      (action-replies R10), with no NON_ACTS row. `planask` is none (R41, K3297): a plan act, a NON_ACTS row. */
   ...T48_MACHINE_REFUSALS,
+  /* R55 (T53; N1259; BOB C13): every register write, and `registerofficers` (a read that spends the team's key, registers
+     R46), refused a machine by registers' own code. None is an ACTS row; `affordances` admits a key here that `registers`
+     declares (its F3). The reads stay open to the assistant. */
+  registerfileimport:  "MACHINE_CANNOT_IMPORT_REGISTER",
+  registerpreread:     "MACHINE_CANNOT_IMPORT_REGISTER",
+  registerpropose:     "MACHINE_CANNOT_PROPOSE",
+  registerdefine:      "MACHINE_CANNOT_DEFINE",
+  registerrowcite:     "MACHINE_CANNOT_CITE_ROW",
+  registerinterest:    "MACHINE_CANNOT_STATE_INTEREST",
+  registerwatch:       "MACHINE_CANNOT_FOLLOW",
+  registerrefresh:     "MACHINE_CANNOT_REFRESH_REGISTER",
+  registerimportset:   "MACHINE_CANNOT_SET_IMPORT",
+  registerwatchstop:   "MACHINE_CANNOT_STOP_REGISTER_WATCH",
+  registerofficers:    "MACHINE_CANNOT_LOOK_UP_OFFICERS",
+  rowexpunge:          "MACHINE_CANNOT_EXPUNGE_ROW",
 };
 
 /* (T45; R8, R32; K2885, K2887) The 21 acts `affordances` R51 makes ACTS rows on an action target are named here no
@@ -1598,6 +1616,8 @@ export const IRREVERSIBLE_WEIGHT = Object.freeze([
   /* K2049 (DEC-143 applied): standards R37's release moves a policy to the group's sight and is never undone; its rung
      stays as R3 gives it (`reasoned`) */
   "standardrelease",
+  /* R55's `rowexpunge` waits: affordances' t31 R36 phone test reads only the unregistered tables, so it cannot see the
+     registered op this set would name (reported to BOB, attempt 3) */
 ]);
 
 /* R17 (op-declarations R21): each alias takes its op's very rung, absence and reason, so it never differs from its op. */
