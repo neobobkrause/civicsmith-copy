@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "installer-check",
+  "round": 1,
+  "started": "2026-11-07T19:10:39Z",
+  "ended": "2026-11-07T19:12:37Z",
+  "minutes": 2,
+  "tested_on": "90d315bbf13571041d481f29a7934dea8a3d6db2",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T19:12:37Z"
+}
