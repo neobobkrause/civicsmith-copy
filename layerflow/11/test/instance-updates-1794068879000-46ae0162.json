@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "instance-updates",
+  "session": "session_018BhcedB4HKTSzoMBxd1XYx",
+  "started": "2026-11-07T16:27:59Z",
+  "ended": "2026-11-07T16:29:50Z",
+  "at": "2026-11-07T16:29:50Z",
+  "minutes": 1.85,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 1.184,
+  "tests": {
+    "total": 5,
+    "pass": 5,
+    "fail": 0
+  }
+}
