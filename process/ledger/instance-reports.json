@@ -43,7 +43,7 @@
   ],
   "prior_work": "This module was split by copy from instance-setup on 4 Nov and had no ledger entry, so the process never recorded it (found in the R15 census, 6 Nov). Its modules.json row keeps empty paths and tests until its job's merge (K1043; build/layers.md). Its code is instance-setup's: bio-plane/src/livefire.mjs and the bootstrap, selftest and probe-measure code in bio-plane/src/setup.mjs and setup-fleet.mjs (its Status line), which instance-setup and instance-updates share: change only those parts. Its moved lines R1-R3 (instance-setup R17-R19) are tested today in bio-plane/test/m/instance-setup/reports.test.mjs; bio-plane/test/m/instance-reports/ does not exist yet. Its requirement file has no unmet mark. Run its suite on its layer. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test under bio-plane/test/m/instance-reports/. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Leave instance-setup's requirement lines to its own job, edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-06T18:57:34Z"
+    "state": "WORKING",
+    "at": "2026-11-07T17:29:07Z"
   }
 }
