@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "control-plane",
+  "provider": "screens-plan",
+  "provider_pr": 859,
+  "provider_land": "c6a82f12d6f26ed60a8c4ad7654eb408406a4be3",
+  "at": "2026-11-07T18:53:56Z",
+  "key": "control-plane<-screens-plan@c6a82f12d6",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/screens-plan/t53-plan.test.mjs: breaking, added, naming R8, R9, R10 (Provides before this land) while screens-plan's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
