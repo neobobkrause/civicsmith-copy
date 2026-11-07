@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 11,
+  "module": "signin-door",
+  "cause": 841,
+  "why": "origin's job/signin-door-2 at ecc6267a1f has work layer/11 lacks: a job re-tests it: node .process/tool/p3.mjs job start signin-door --live <n> --reopen \"re-test against the new interface of admission\"",
+  "at": "2026-11-07T18:05:17Z",
+  "by": "bob"
+}
