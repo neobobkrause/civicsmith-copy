@@ -1,0 +1,16 @@
+{
+  "row": "gate",
+  "layer": 9,
+  "module": "action-plans",
+  "pr": 733,
+  "sha": "36d1f4171f864a8b03a73e9cfafe492d81955622",
+  "run_id": 42321831046,
+  "run_attempt": 1,
+  "at": "2026-11-07T01:03:59Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 1.2,
+  "suite_minutes": null,
+  "record_only": true
+}

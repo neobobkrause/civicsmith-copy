@@ -1,0 +1,23 @@
+{
+  "row": "land",
+  "layer": 9,
+  "module": "action-plans",
+  "pr": 733,
+  "head": "902e1d8669c15db622f4267a6e1dadb37463b912",
+  "before": "d5c19874c448aa35f294df1b44dedcedb7469f16",
+  "merge": "58b0a5e734839127a0cc33147e8ebeb1bd638357",
+  "at": "2026-11-07T01:18:06Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none"
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
