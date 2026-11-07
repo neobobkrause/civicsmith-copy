@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "installer-copies",
+  "round": 1,
+  "started": "2026-11-07T23:32:10Z",
+  "ended": "2026-11-07T23:33:56Z",
+  "minutes": 1.8,
+  "tested_on": "1995851e1fa5255a64ebf87c73fc32c9d66612c1",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T23:33:56Z"
+}
