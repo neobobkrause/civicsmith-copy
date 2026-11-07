@@ -1,0 +1,75 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-settings",
+  "pr": 843,
+  "branch": "job/screens-settings",
+  "head": "881fef5985cf0cb1d2bd1681d1c2cad204299859",
+  "before": "81315e167a78b9fdd172e8a7b2c05897bd41c962",
+  "merge": "1a724dc528a0d798d0d77478994b481a3a4e8152",
+  "at": "2026-11-07T18:52:47Z",
+  "by": "bob",
+  "gate_runs": 7,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-settings/group.test.mjs",
+      "bio-plane/test/m/screens-settings/links.test.mjs",
+      "bio-plane/test/m/screens-settings/members.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-settings/group.test.mjs",
+      "bio-plane/test/m/screens-settings/links.test.mjs",
+      "bio-plane/test/m/screens-settings/members.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-settings/group.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      },
+      {
+        "file": "bio-plane/test/m/screens-settings/links.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-settings/members.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-settings/group.test.mjs",
+      "bio-plane/test/m/screens-settings/links.test.mjs",
+      "bio-plane/test/m/screens-settings/members.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "journey-check",
+    "plane",
+    "screens-ai",
+    "screens-document",
+    "screens-inquiry"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "journey-check",
+    "plane",
+    "screens-ai",
+    "screens-document",
+    "screens-inquiry"
+  ],
+  "users_noticed": []
+}

@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "screens-document",
+  "provider": "screens-settings",
+  "provider_pr": 843,
+  "provider_land": "1a724dc528a0d798d0d77478994b481a3a4e8152",
+  "at": "2026-11-07T18:52:47Z",
+  "key": "screens-document<-screens-settings@1a724dc528",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/screens-settings/group.test.mjs: breaking, too large to align, bio-plane/test/m/screens-settings/links.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-settings/members.test.mjs: breaking, too large to align), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
