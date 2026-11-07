@@ -124,24 +124,48 @@ export const dashAction = Object.freeze({
         if (sent && c.date) return cs.w("screen.dash-action.clock.sent", { date: { html: cs.date(sent.at) }, due: { html: cs.date(c.date) } });
         return "";
       };
+      // R72 (T53): THE CLOCK says something true for every action: its first pending date with what it is, else that none is set
+      const clockSays = function (x) {
+        const said = clockOf(x);
+        if (said) return said;
+        const c = P.nextClock(x.v);
+        if (c) return cs.w("screen.dash-action.clock.entry", { date: { html: cs.date(c.date) }, what: String(c.text || c.description || "") });
+        return cs.w("screen.dash-action.clock.none");
+      };
+      // R72 (T53): NEXT names the step that is next for every action: record the reply, approve, give the second approval, record the
+      // sending, prepare the text of one never sent, or that nothing waits until something changes
       const nextOf = function (x) {
         if (x.whose === "theirs") return cs.w("screen.dash-action.next.record");
-        return "";
+        if (x.step === "approve") return cs.w("screen.dash-action.next.approve");
+        if (x.step === "second") return cs.w("screen.dash-action.next.second");
+        if (x.step === "send") return cs.w("screen.dash-action.next.send");
+        const sentAny = (Array.isArray(x.v.correspondence) ? x.v.correspondence : []).some(function (e) { return e.direction === "sent"; });
+        if (!sentAny && x.step !== "sent") return cs.w("screen.dash-action.next.prepare");
+        return cs.w("screen.dash-action.next.none");
       };
+      // R72 (T53): WHOSE MOVE for every action: ours, theirs, or neither (said, never left blank)
+      const whoseSays = function (x) {
+        return x.whose === "theirs" ? cs.w("screen.dash-action.tile.theirs") : x.whose === "ours" ? cs.w("screen.dash-action.tile.ours") : cs.w("screen.dash-action.whose.none");
+      };
+      // R72 (T53): the tier of the actions whose next step is ours, above the rest; not drawn when none waits on us
+      const tier = ours.length ? cs.sec("screen.dash-action.yours.heading", cs.sheet(ours.map(function (x) {
+        return cs.row("", '<a class="cs-ref" href="/app/action/' + encodeURIComponent(x.row.id) + '" data-nav>' + cs.esc(x.v.title || x.row.id) + "</a>"
+          + '<span class="meta">' + nextOf(x) + (clockOf(x) ? " · " + clockOf(x) : "") + "</span>", "", "");
+      }).join("")), { help: "screen.dash-action.yours.help" }) : "";
       const table = move.length ? cs.sec("screen.dash-action.every.heading", '<table class="mk-table"><thead><tr><th>' + cs.w("screen.dash-action.col.action") + "</th><th>"
         + cs.w("screen.dash-action.col.to") + "</th><th>" + cs.w("screen.dash-action.col.whose") + "</th><th>" + cs.w("screen.dash-action.col.clock") + "</th><th>"
         + cs.w("screen.dash-action.col.next") + "</th></tr></thead><tbody>" + move.map(function (x) {
           const kindName = P.kindWord(cs, x.v.kind || "other", false, voc.action_kind_labels);
           return "<tr><td>" + '<a class="cs-ref" href="/app/action/' + encodeURIComponent(x.row.id) + '" data-nav>' + cs.esc(x.v.title || x.row.id) + "</a>" + (kindName ? " · " + kindName : "") + "</td><td>"
-            + whoOf(x.v) + "</td><td>" + (x.whose === "theirs" ? cs.w("screen.dash-action.tile.theirs") : x.whose === "ours" ? cs.w("screen.dash-action.tile.ours") : "")
-            + "</td><td>" + clockOf(x) + "</td><td>" + nextOf(x) + "</td></tr>";
+            + whoOf(x.v) + "</td><td>" + whoseSays(x)
+            + "</td><td>" + clockSays(x) + "</td><td>" + nextOf(x) + "</td></tr>";
         }).join("") + "</tbody></table>", { help: "screen.dash-action.tip.every" }) : "";
 
       // "Start an action" opens the composer on the project the member chooses
       const projects = view.data.projects && view.data.projects.state === "ok" && view.data.projects.value && Array.isArray(view.data.projects.value.bundles) ? view.data.projects.value.bundles : [];
       const start = projects.length ? cs.choice("dash-project", "screen.actionnew.name", projects.map(function (b) { return { value: b.bundle_id, text: b.title || b.bundle_id }; }))
         + '<div class="mk-acts">' + cs.act("actioncreate", { tone: "primary" }) + "</div>" : "";
-      const body = status + needs + table + start;
+      const body = status + tier + needs + table + start;
       return body;
     });
   },
