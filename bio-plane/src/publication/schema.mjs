@@ -490,6 +490,17 @@ CREATE TABLE IF NOT EXISTS edition_stamps (
   stamped_at TEXT NOT NULL,
   PRIMARY KEY (case_id, edition, entry_seq)
 );
+
+-- F1 (citation R29; K5514): the author's switch for a photo's place in a case edition, off unless a row says shown=1.
+-- Written only before signing; cleared with its document, as case_exclusions.
+CREATE TABLE IF NOT EXISTS case_photo_places (
+  case_id     TEXT NOT NULL,
+  edition     INTEGER NOT NULL,
+  capture_sha TEXT NOT NULL,
+  shown       INTEGER NOT NULL CHECK (shown IN (0,1)),
+  set_at      TEXT NOT NULL,
+  PRIMARY KEY (case_id, edition, capture_sha)
+);
 `;
 
 /** R31 (K23): what purge clears, as the store declared it — `published_edges` keyed by either end, the unsigned case
@@ -499,6 +510,7 @@ export const PUBLICATION_TABLES = Object.freeze([
   { name: "published_held_references", keys: ["from_bundle", "to_bundle"] },
   { name: "case_documents", keys: [], whole: "ratified_at IS NULL" },
   { name: "case_exclusions", keys: [], whole: "NOT EXISTS (SELECT 1 FROM case_documents d WHERE d.case_id = case_exclusions.case_id AND d.edition = case_exclusions.edition)" },
+  { name: "case_photo_places", keys: [], whole: "NOT EXISTS (SELECT 1 FROM case_documents d WHERE d.case_id = case_photo_places.case_id AND d.edition = case_photo_places.edition)" },
 ]);
 /** R24, R31: the published bytes, never cleared by any purge. */
 export const PUBLICATION_EXEMPT = Object.freeze([
@@ -557,6 +569,11 @@ const ADDITIVE_COLUMNS = [
      under A when a case holds two captures of one source. NULL says no single capture is named: every row written
      before this, every kind but `attestation`, and a token two different captures share. Never back-filled. */
   ["published_shas", "capture_sha", "TEXT"],
+  /* R30 (D-246; BIO_Publication_v0_1.md §3 rule 16): A PUBLISHED RENDERING IS VERIFIED BY ITS PIXELS. A kind `rendering`
+     row holds `pixels_sha256`, the SHA-256 over its normalised samples taken before any container is built, as the
+     VERIFYING value; its `sha256` is the file's own bytes, informative only (the deflate stream differs by runtime).
+     NULL on every other kind and every row written before; never back-filled. */
+  ["published_shas", "pixels_sha256", "TEXT"],
   /* G54 (K4426, K4565, K4566): THE CASE FILE'S OWN LEDGER on the edition's row, so a complete edition left without a
      (whole) case file is stated, counted and retried and never silent. NULL on every row written before: NULL state
      with a manifest reads `built`, NULL state without one reads never attempted. Never back-filled (R-OLD): the two

@@ -1,0 +1,47 @@
+{
+  "id": "action-records",
+  "title": "action-records: answer provider notice action-grammar:396 (governingLawsOf entries carry layer, R31; C-2.10 judges layer)",
+  "layer": 9,
+  "paths": [
+    "bio-plane/src/action-records/",
+    "build/requirements/action-records.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/action-records/"
+  ],
+  "requirements": "build/requirements/action-records.md",
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "provenance",
+    "action-grammar",
+    "progressions",
+    "standards",
+    "civil-time",
+    "test-support",
+    "project-roster",
+    "promotion",
+    "setup-words",
+    "jurisdictions"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/action-records.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Provider notice action-grammar:396 (PR 396, triage 5 Nov: affected): bio-plane/src/action-records/index.mjs:435 calls governingLawsOf(fm), whose entries now carry layer (action-grammar R31), and :82 loads GOVERNING_LAW_CHECKS (index.mjs:42), whose C-2.10 arm now judges layer. Confirm or adapt this module's use of both, with a notice test naming action-grammar:396; the requirements already met answer as before. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-06T19:11:02Z"
+  }
+}

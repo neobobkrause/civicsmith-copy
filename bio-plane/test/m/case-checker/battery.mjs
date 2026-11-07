@@ -4,7 +4,7 @@
 import * as CC from "../../../src/case-checker/index.mjs";
 import * as CG from "../../../src/case-grammar/index.mjs";
 import { caseFile, caseFiles, gradingFacts, keyFor, sha, A, B, C, GROUP, MINUTES, MEMO, OBS, MEMO_BYTES, MINUTES_BYTES, MINUTES_SHA,
-         CALC, CALC_INPUT, CALC_INPUT_SHA, calcRow, rows } from "./fixture.mjs";
+         CALC, CALC_INPUT, CALC_INPUT_SHA, calcRow, rows, withExtract, extractRow, USE_LIMIT } from "./fixture.mjs";
 import { NS_RELEASE } from "../../../src/sshsig.mjs";
 
 const doc = (t) => t.get(CG.caseFilePath("case_document"));
@@ -109,6 +109,13 @@ export const CASES = [
   ["a case resting on another group's finding", { withImported: true }],
   ["a /8 case document", { format: "bio-case-document/8" }],
   ["a /7 case document", { format: "bio-case-document/7" }],
+  /* R29-R31 (T53): a cited register row carried as its extract */
+  ["a register extract that holds", withExtract()],
+  ["a register extract changed after it was built, a passage quoted where it is not", withExtract({ quoted: "Oak Ltd",
+    rows: [extractRow({}, (r) => ({ ...r, extract: { ...r.extract, row: ["L-17", "Pine Cp"], src_row: 0 } }))] })],
+  ["a limited register's extract without its notice", { ...withExtract({ rows: [extractRow({ use_limit: USE_LIMIT })] }),
+    docEdit: (d) => d.split("\n").filter((l) => !l.includes("extract_use_limit_text_key:")).join("\n") }],
+  ["a register extract whose header is not stated", withExtract({ more: { docEdit: (d) => d.split("\n").filter((l) => !l.includes("extract_header:")).join("\n") } })],
 ];
 
 /* Criteria files and the standards a case measures against (R22): the fixtures of `standards-offline.test.mjs`, shortened. */

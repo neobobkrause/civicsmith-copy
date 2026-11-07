@@ -5,7 +5,7 @@
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { readdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import http from "node:http";
 import https from "node:https";
 import { planeScheduleProblem } from "./account.mjs";
@@ -20,13 +20,54 @@ import { dec340Limits, publicPages } from "./checks.mjs";
 import { escapedOnPage, pseudoRoute } from "./pseudo.mjs";
 import { walkPublished, PUBLISHED_ENV } from "./published.mjs";
 import { walkStates } from "./states.mjs";
-import { PLAN_TITLE, QUESTION, OWN_PROJECT, OWN_QUESTION, OWN_READING, UPLOAD_NAME, UPLOAD_TEXT } from "./investigation.mjs";
+import { PLAN_TITLE, PROJECT_TITLE, QUESTION, OWN_PROJECT, OWN_QUESTION, OWN_READING, UPLOAD_NAME, UPLOAD_TEXT } from "./investigation.mjs";
 import { GROUP_NAME, SLUG } from "./journeys.mjs";
 import { NOTICE_PASSAGE, HEAT_PASSAGE } from "./city.mjs";
 import { designMock, pageLimits, pair, WIDTHS, viewportOf, journeyPairs, JOURNEY_29, stepName } from "./design.mjs";
 import { localize } from "../setup-words/index.mjs";
 
 export const OUT = join(dirname(fileURLToPath(import.meta.url)), "out");
+
+/* F6 (R5): the acts that are a named person's own act on her own roster row, as the plane declares them: op-declarations'
+   `ROSTER_SELF_ACTIONS` (membership R10, R11, R19), read from its file as data (journey-check imports no module). Whether one is
+   drawn follows who the viewer is, not what she may administer: `account`'s "Save my choice" (`memberpairingset`) is drawn only
+   to a member the pairings hold, and the founder holds no cover (screens-settings R67). */
+export const DECLARATIONS_FILE = join(dirname(fileURLToPath(import.meta.url)), "..", "op-declarations", "index.mjs");
+export function selfActs(file = DECLARATIONS_FILE) {
+  const m = /const ROSTER_SELF_ACTIONS = listed\(\[([^\]]*)\]\)/.exec(readFileSync(file, "utf8"));
+  if (!m) throw new Error(`no ROSTER_SELF_ACTIONS in ${file}`);
+  return Object.freeze([...m[1].matchAll(/"([a-z0-9]+)"/g)].map((x) => x[1]));
+}
+
+/* F5: the test page the live arm captures by address, from `JOURNEY_CITY_ORIGIN` (the walk setup hands it over): only a
+   development Worker's own workers.dev address, `https://<slug>-testpage.<subdomain>.workers.dev` (`p3dev-t1-testpage`), never an outside site.
+   Answers `{city}` (null with none given, and the capture is then noted as not walked) or `{problem}`. */
+export const CITY_ENV = "JOURNEY_CITY_ORIGIN";
+export function liveCity(env = process.env) {
+  const v = env[CITY_ENV];
+  if (!v) return { city: null };
+  let u = null;
+  try { u = new URL(v); } catch { /* said below */ }
+  if (!u || u.protocol !== "https:" || u.pathname !== "/" || u.search || !/^p3dev-[a-z0-9-]+-testpage\.[a-z0-9-]+\.workers\.dev$/.test(u.hostname))
+    return { problem: `${CITY_ENV} is not a p3dev- test page's own workers.dev address; the walk captures by address only from a page we control` };
+  return { city: u.origin };
+}
+
+/* R5: the roles compared, screen by screen (`acts.administrator`, `acts.member`: screen id to the acts drawn). The administrator
+   must be drawn every act the member is, except a person's own act (`own`, F6), and somewhere an act the member is not.
+   Answers each failure's detail. */
+export function roleProblems(acts, { own = selfActs() } = {}) {
+  const out = [];
+  if (!acts.administrator.size || !acts.member.size) return out;
+  for (const [id, mine] of acts.member) {
+    const theirs = acts.administrator.get(id) || [];
+    for (const op of mine) if (!theirs.includes(op) && !own.includes(op)) out.push(localize("journey-check.run.id_the_member_is_drawn", "{id}: the member is drawn {op}, the administrator is not", { id: String(id), op: String(op) }));
+  }
+  let only = 0;
+  for (const [id, theirs] of acts.administrator) only += theirs.filter((op) => !(acts.member.get(id) || []).includes(op)).length;
+  if (!only) out.push("no screen draws the administrator an act it does not draw the member: the administrator's walk did not administer");
+  return out;
+}
 
 /* R5: a Chromium that reaches every address directly, through no proxy the environment names. The headless shell
    ignores `--no-proxy-server` alone and follows an environment proxy; `--proxy-server=direct://`, last, holds in both. */
@@ -170,7 +211,7 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
       const profiles = await Promise.all((await readdir(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "jurisdictions", "profiles")))
         .filter((f) => f.endsWith(".mjs")).map(async (f) => (await import(pathToFileURL(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "jurisdictions", "profiles", f)).href)).default?.name));
       const entered = [...profiles.filter(Boolean), PLAN_TITLE, QUESTION, OWN_PROJECT, OWN_QUESTION, OWN_READING, UPLOAD_NAME, UPLOAD_TEXT.trim(), GROUP_NAME, SLUG, NOTICE_PASSAGE, HEAT_PASSAGE,
-        "Roof repairs at 14 Lakeshore Row", "Mai, from flat 4", "Teo, from flat 9", "Interpreting, Spanish and English",
+        PROJECT_TITLE, "Roof repairs at 14 Lakeshore Row", "Mai, from flat 4", "Teo, from flat 9", "Interpreting, Spanish and English",
         "Water has come through the ceiling of flat 4 since Monday; reported twice.", "Flat 4, second floor", "Housing notice 2026-118: repair order, 14 Lakeshore Row",
         "Housing notice 2026-131: heating order, 14 Lakeshore Row", "When did the tenants first report the leak to the landlord?", "The city withdrawing or amending notice",
         "The city's notice orders", "City repair order", "Flat 4, 14 Lakeshore Row", "My note of when the water came through the ceiling.",
@@ -223,7 +264,7 @@ export async function askCode(role, address) {
 
 /* R12: the administrator's journey (R9) and the member's (R10), each signed in by her own credentials on her own device,
    connecting her own subscription through the real sign-in. A journey that stops has said why. */
-async function investigateLive(walk, b, base, { founder, member, codeOf, assistant = false }) {
+async function investigateLive(walk, b, base, { founder, member, codeOf, assistant = false, city = null }) {
   const devices = [];
   const device = async () => {
     const ctx = await b.newContext({ viewport: viewportOf(1280) });
@@ -240,7 +281,7 @@ async function investigateLive(walk, b, base, { founder, member, codeOf, assista
     const made = {};
     await (async () => {
       await signInBy(walk, admin, base, founder, "1 · sign in by her handle");
-      return walkAdministrator(walk, admin, { base, founder, made, assistant, codeOf: (address) => codeOf("administrator", address) });
+      return walkAdministrator(walk, admin, { base, founder, made, assistant, city, codeOf: (address) => codeOf("administrator", address) });
     })().catch(going);
     walk.journey = "R10 as member";
     if (!assistant) {
@@ -299,6 +340,8 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
   try {
     if (!base) throw new WalkRefused("NO_INSTANCE", "the live arm needs the test instance's address (--live <address>)");
     if (missing.length) throw new WalkRefused("NO_CREDENTIALS", `the environment does not hold ${missing.join(", ")}`);
+    const { city, problem } = liveCity(env);
+    if (problem) throw new WalkRefused("NOT_OUR_PAGE", problem);
     await requireTestInstance(base, fetchOf);
     walk.copyHost = new URL(base).host;
     /* the instance's own short name, never to be read on a screen */
@@ -340,7 +383,7 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
             if (!drawn) return;
             for (const width of WIDTHS) {
               if (width !== 1280) { await p.setViewportSize(viewportOf(width)); await p.reload(); await settle(p); }
-              for (const l of await pageLimits(p, { width, slugs })) walk.fail(l.kind, `${s.id} at ${width}px: ${l.detail}`);
+              for (const l of await pageLimits(p, { width, slugs, handles: [...walk.handles] })) walk.fail(l.kind, `${s.id} at ${width}px: ${l.detail}`);
               /* R28 (DEC-340): the screen's title, the explanations, the masthead's name, Projects' controls */
               for (const l of await dec340Limits(p, s.id, { isPublic: false, phone: width <= 390 })) walk.fail(FAIL.DEC340, localize("journey-check.run.id_at_width_px_kind", "{id} at {width}px: {kind}: {detail}", { id: String(s.id), width: String(width), kind: String(l.kind), detail: String(l.detail) }));
               const live = await p.screenshot();
@@ -364,7 +407,7 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
       /* R12: R9 and R10 on the instance, each through its real subscription sign-in, whose code the person types */
       if (investigate) await investigateLive(walk, b, base, {
         founder: { handle: env.JOURNEY_ADMIN_HANDLE, password: env.JOURNEY_ADMIN_PASSWORD },
-        member: { handle: env.JOURNEY_MEMBER_HANDLE, password: env.JOURNEY_MEMBER_PASSWORD }, codeOf, assistant });
+        member: { handle: env.JOURNEY_MEMBER_HANDLE, password: env.JOURNEY_MEMBER_PASSWORD }, codeOf, assistant, city });
       /* R18 (K3747): journey 29's steps the design marks for the assistant, which the walk did not reach while the assistant does
          not work, are reported as not walked, never failed */
       walk.journey = "R18 design journey 29";
@@ -372,15 +415,7 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
         if (st.only === "ai" && !journey29Live(walk, st)) walk.notWalked(stepName(JOURNEY_29, k, st));
       /* R5: the acts only an administrator is drawn */
       walk.journey = "roles";
-      if (acts.administrator.size && acts.member.size) {
-        let only = 0;
-        for (const [id, mine] of acts.member) {
-          const theirs = acts.administrator.get(id) || [];
-          for (const op of mine) if (!theirs.includes(op)) walk.fail(FAIL.ROLE, localize("journey-check.run.id_the_member_is_drawn", "{id}: the member is drawn {op}, the administrator is not", { id: String(id), op: String(op) }));
-        }
-        for (const [id, theirs] of acts.administrator) only += theirs.filter((op) => !(acts.member.get(id) || []).includes(op)).length;
-        if (!only) walk.fail(FAIL.ROLE, "no screen draws the administrator an act it does not draw the member: the administrator's walk did not administer");
-      }
+      for (const d of roleProblems(acts)) walk.fail(FAIL.ROLE, d);
     } finally { if (mock) await mock.close(); await b.close().catch(() => {}); }
   } catch (e) {
     failed(walk, e);

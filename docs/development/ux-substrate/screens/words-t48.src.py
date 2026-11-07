@@ -350,7 +350,7 @@ w('question.relies.title', 'What relies on this', False, 'DEC-235: V5, backlinks
 w('question.relies.help', 'Everything you can see that cites this question. When its strength or its conclusion changes, these are what it touches.', False, 'DEC-235')
 w('question.relies.project', 'project · stands on "{reading}"', False, 'DEC-235')
 w('question.relies.cites', '{kind} · cites this question', False, 'DEC-235')
-w('question.relies.outofview', 'Other work you can\'t see also relies on this question.', True, 'DEC-235: K960 out_of_view; says nothing of what or how many')
+w('question.relies.outofview', 'Other work you cannot see also relies on this question.', True, 'DEC-235: K960 out_of_view; says nothing of what or how many')
 
 # DEC-236: B203 (K3297) and B204 (K3302): keys held inline by T48's L11 jobs; the imported cases' list (N1087); the unnamed node (N1086).
 w('screen.members.count', 'Active members: {members} · Administrators: {administrators}', False, 'DEC-236: B203; screens-settings R29, counts active members only and says so')
@@ -718,7 +718,7 @@ w('level.keep.prompt', 'Keep explaining promptly', False, 'DEC-251: infolevelset
 w('level.keep.pause', 'Only on a longer pause', False, 'DEC-251: infolevelset pause')
 w('level.keep.later', 'You can switch at any time with the Explanations button at the top, or Alt+Shift+I.', False, 'DEC-251')
 w('settings.set.system', 'set by Civicsmith itself', False, 'DEC-251: screens-settings R33, a value written by a seed or a machine credential after setup; settings.set.setup stays "set at setup", now final')
-w('court.statement', "Your team's Civicsmith keeps this from the public and the people the team looks into. A court order your team can't defeat could still require it to be shown. Write accordingly.", True, 'DEC-251: screens-settings R7, membership R108\'s words exactly (DEC-136)')
+w('court.statement', "Your team's Civicsmith keeps this from the public and the people the team looks into. A court order your team cannot defeat could still require it to be shown. Write accordingly.", True, 'DEC-251: screens-settings R7, membership R108\'s words exactly (DEC-136)')
 w('join.cap.says', "On a busy day, the team's join link says this instead", False, 'DEC-251: screens-entry R7; the words are refusal.JOIN_LINK_DAILY_CAP')
 w('project.bar.both', 'Bar: {source}/{connection}', False, 'DEC-251: screens-inquiry R10, both axes declared')
 w('project.bar.source_only', 'Bar: {source} for sources; none for connection', False, 'DEC-251: an undeclared axis in words')

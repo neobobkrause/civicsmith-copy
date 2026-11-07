@@ -10,7 +10,7 @@ import { open, main, text, tipOf, drew, drewIn, day, word, hasWord, ops, press, 
   PREFLIGHT, COPY, DEFAULT, PUBLISHED_CASE, P, DR, C, E1, B1, GRANT_UNTIL } from "./fixtures.mjs";
 
 const PUBLIC = { session: null };
-const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 const edition = (o = {}) => ({ edition: 2, imported_by: "admin", imported_at: "2026-10-01T09:00:00Z", importer: { member: "admin", handle: "rosa", founder: true },
   findings: 3, recreated: 1, recreated_in_part: 1, did_not_recreate: 1, ...o });
 const imp = (id, caseName, group, ed, latest = 2) => ({ import: id, group, case: "CASE-" + id, scope: caseName, latest_edition: latest, editions: [ed] });

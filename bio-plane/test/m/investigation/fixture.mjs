@@ -17,6 +17,7 @@ import { entitiesOf } from "../../../src/entities/index.mjs";
 import { connectionsOf } from "../../../src/connections/index.mjs";
 import { legEarningOf } from "../../../src/leg-earning/index.mjs";
 import { stepsOf } from "../../../src/steps/index.mjs";
+import { retrievalOf } from "../../../src/retrieval/index.mjs";
 import { investigationOf, INVESTIGATION_TABLES } from "../../../src/investigation/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
@@ -80,7 +81,9 @@ export function world(opts = {}) {
   observationLog.migrate();
   const prov = provenanceOf(host, { record, membership, promotion, now });
   prov.migrate();
-  const extraction = extractionOf(host, { record, membership, calibration: { onCalibration() { return { ok: true }; } } });
+  /* R26-R31: `opts.interpreter` is `reading-pipeline.interpretUnits`' seam on extraction, handed as extraction's own tests hand it (R-SEAM) */
+  const extraction = extractionOf(host, { record, membership, calibration: { onCalibration() { return { ok: true }; } },
+                                          ...(opts.interpreter ? { interpreter: opts.interpreter } : {}) });
   extraction.migrate();
   const content = contentOf(host, { record, membership, provenance: prov, extraction, now });
   content.migrate();
@@ -128,8 +131,13 @@ export function world(opts = {}) {
   const personWarning = ({ text, viewer }) => (w.personNamed && String(text).includes(w.personNamed)
     ? { code: "PERSON_IN_NO_PUBLIC_ROLE", key: "k", translation: "t", persons: [{ entity_id: "ENT-2026-0009", label: w.personNamed }], viewer } : null);
   w.intent = intent;          // the stand-in itself, so a test may answer differently (R18's pages, a failing read)
+  /* R27: retrieval's text search, the real module over the same store (`opts.parts`) */
+  const retrieval = opts.parts ? retrievalOf(host, { record, membership, promotion, extraction }) : null;
+  if (retrieval && typeof retrieval.migrate === "function") retrieval.migrate();
+  Object.assign(w, { extraction, retrieval });
   w.inv = investigationOf(host, { record, membership, promotion, steps, legEarning, basisVersions, intent, inquiry, captureRequests,
-                                  provenance: prov, view, now, personWarning });
+                                  provenance: prov, view, now, personWarning, extraction,
+                                  ...(retrieval ? { retrieval } : {}), ...(opts.measured ? { proposalsMeasured: opts.measured } : {}) });
   for (const [m, role] of [["ann", "member"], ["bob", "member"], ["cat", "member"], ["dan", "member"], ["out", "member"], ["boss", "admin"]])
     st.sql.exec(`INSERT INTO members (member_id, cover, handle, role, status, created, updated) VALUES (?, 'c', ?, ?, 'active', '2026-01-01', '2026-01-01')`, m, `${m}-h`, role);
   w.bundle = (id, { type = "inquiry", project = "", title = `t ${id}`, state = "open" } = {}) => {

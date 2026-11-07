@@ -1,0 +1,47 @@
+{
+  "id": "screens-matter",
+  "title": "screens-matter: meet its unmet requirement marks",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/screens-action/matter.mjs",
+    "bio-plane/src/screens-action/words-fix-matter.mjs",
+    "bio-plane/src/screens-action/index.mjs",
+    "build/requirements/screens-matter.md",
+    "docs/requirements-notes/screens-matter.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-matter/"
+  ],
+  "requirements": "build/requirements/screens-matter.md",
+  "uses": [
+    "screens-action",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "conformance",
+    "consequences",
+    "entities",
+    "membership",
+    "project-roster",
+    "wizard-scripts"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/screens-matter.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the unmet requirement marks in build/requirements/screens-matter.md, each with a test under bio-plane/test/m/screens-matter/ that fails with the change reverted. Your code is screens-action's matter.mjs and words-fix-matter.mjs, and the matter entries of screens-action/index.mjs, which screens-action shares: change only those entries. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T18:46:23Z"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "installer",
+  "title": "installer: meet its unmet requirement marks",
+  "layer": 11,
+  "paths": [
+    "newgroup/",
+    "bio-plane/public/newgroup/",
+    "build/requirements/installer.md",
+    "docs/requirements-notes/installer.md"
+  ],
+  "tests": [
+    "newgroup/test/",
+    "bio-plane/test/system/newgroup-bundle-fresh.test.mjs"
+  ],
+  "requirements": "build/requirements/installer.md",
+  "uses": [
+    "credentials",
+    "bundler",
+    "jurisdictions",
+    "signatures",
+    "instance-setup",
+    "test-support",
+    "interface-assets",
+    "setup-words",
+    "installer-steps",
+    "corpus-export",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "newgroup",
+    "command": [
+      "node",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/installer.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the unmet requirement marks in build/requirements/installer.md, each with a test under newgroup/test/ that fails with the change reverted. The installer Worker (newgroup) is a live site: its code and local tests are yours, deploying it never is. Its tests also include newgroup's embed build (npm run embed) before node --test. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T17:58:56Z"
+  }
+}

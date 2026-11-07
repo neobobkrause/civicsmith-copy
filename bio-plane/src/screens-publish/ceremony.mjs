@@ -112,6 +112,7 @@ export const CEREMONY = Object.freeze({
     const mineDraft = all.find(function (x) { return x && x.draft_id === draft; }) || null;
     const objOf = function (v) { return v && typeof v === "object" && !Array.isArray(v) ? v : null; };
     const recd = pre.state === "ok" && objOf(pre.value.editions) ? pre.value.editions : mineDraft && objOf(mineDraft.editions) ? mineDraft.editions : null;
+    out[0] = cs.title(P.caseHeading(cs, copy, recd, "screen.ceremony.heading"), { thing: "case" }); // R95: by the case's title, the edition while unpublished
     out.push(P.noCase(cs, copy, recd)); // R80: not said of a draft the record holds an edition of
     const recPub = recd && objOf(recd.published) && Number(recd.published.edition) > 0 ? recd.published : null;
     // R80: the case the record says the preparation belongs to (`editions.case`, case-authoring R83), else the copy's, else the pre-flight's pinned step
@@ -138,6 +139,11 @@ export const CEREMONY = Object.freeze({
     }
     if (prepared && !ui.prepared) ui.prepared = prepared; // the acts of the Sign step read it from page memory
     const caseId = prepared ? prepared.caseId : caseFor;
+    // R94: the pre-flight's own refusal says the member is not an owner; the edition an owner is asked to sign is the one prepared, else
+    // the one the draft stands at
+    const notOwner = pre.state === "ok" && !!pre.value.first && String(pre.value.first.code || pre.value.first.reason || "") === "NOT_THE_PROJECT_OWNER";
+    const askNo = prepared ? String(prepared.edition) : preparedNo || (c.edition ? String(c.edition) : "");
+    ui.askFor = notOwner && caseId && Number(askNo) > 0 ? { case: caseId, edition: Number(askNo) } : null;
     const sched = caseId ? P.later(cs, view, "schedule", "publishschedule", { query: { case: caseId } },
       function (v) { return !v || !Array.isArray(v.editions) || v.editions.length === 0; }) : null;
     const photoStep = stepWith("photos");
@@ -184,7 +190,17 @@ export const CEREMONY = Object.freeze({
         const gated = code === "GATE_REFUSED" ? P.gateLines(cs, b) : [];
         if (gated.length) { gated.forEach(function (l) { lines.push(l); }); return; }
         const says = b && b.says && typeof b.says.key === "string" ? cs.w(b.says.key, b.says.vars || {}) : P.refusalText(cs, b);
-        lines.push(cs.w("ceremony.gate.other", { what: { html: says.replace(/[.\s]+$/, "") } }));
+        // R93: a later edition refused for a box carried forward unchanged, or for no "what changed", names that box by its own label and
+        // links to it: the case editor's field, or the bias box on this page
+        const BOX = { statement: ["ce-statement", "review.statement.title"], subject_justification: ["ce-posjust", "screen.case-editor.why_the_team_took_this_position"],
+          excluded: ["ce-exwhat", "screen.case-editor.something_else_it_leaves_out"], bias_acknowledgement: ["ce-bias", "screen.case-editor.what_this_bias_means_for_this", true],
+          whatChanged: ["ce-wc", "screen.case-editor.changed.label"] };
+        const boxOf = code === "NO_WHAT_CHANGED" ? BOX.whatChanged : /_CARRIED_FORWARD$/.test(code) ? BOX[String(b.field || (code === "BIAS_ACKNOWLEDGEMENT_CARRIED_FORWARD" ? "bias_acknowledgement" : ""))] : null;
+        const box = boxOf ? ' <a class="cs-btn" data-tone="quiet" data-box="' + boxOf[0] + '" href="' + (boxOf[2] ? "#" + boxOf[0] : "/app/case-editor/" + encodeURIComponent(s[0] + "/" + draft) + "#" + boxOf[0]) + '"' + (boxOf[2] ? "" : " data-nav") + ">"
+          + cs.w(boxOf[1]) + "</a>" : "";
+        // R94: a member who is not an owner is offered, beside that stop, to ask an owner to sign (tasks R19's `signrequest`)
+        const ask = code === "NOT_THE_PROJECT_OWNER" && ui.askFor ? " " + cs.act("signrequest", { data: { asking: "1" } }) : "";
+        lines.push(cs.w("ceremony.gate.other", { what: { html: says.replace(/[.\s]+$/, "") } }) + box + ask);
       });
       // R66 (L16; DEC-384): a draft that names no finding is refused `PUBLISH_NO_FINDING`; the gate says so and offers the door that
       // adds one (the case editor, at "What goes in")
@@ -197,7 +213,7 @@ export const CEREMONY = Object.freeze({
             : '<p data-ready="no">' + cs.w("screen.ceremony.notready") + "</p>");
     }) + '<div class="mk-acts">' + cs.act("publishpreflight") + "</div>"
     // D-M5 (1): a refused confirmation of the ties is said here as well, with the stops it is about, not only at the foot of the page
-    + P.said(view, "stops")));
+    + P.said(view, "stops") + (ui.askFor && !ui.notowner ? P.said(view, "signrequest") : "")));
 
     // R57 (C12; DEC-378): the four details of this work, stated or not stated, never blocking the signing; read once the case has an id.
     if (c.case_id) {
@@ -296,7 +312,9 @@ export const CEREMONY = Object.freeze({
     const heldBias = ui.attested ? mine.bias : (copy.authored && typeof copy.authored.biasAcknowledgement === "string" ? copy.authored.biasAcknowledgement : "");
     out.push(cs.sec("screen.ceremony.step.bias", '<p class="mk-small">' + cs.w("screen.ceremony.the_teams_own_statement_of") + " " + cs.w("screen.ceremony.every_published_case_carries_it") + "</p>"
       + '<p class="mk-small">' + cs.w("screen.ceremony.this_is_the_lens_in", { project: projectTitle }) + " " + cs.w("screen.ceremony.it_is_fixed_into_the") + "</p>"
-      + cs.field("ce-bias", "screen.case-editor.what_this_bias_means_for_this", { area: true, rec: true, value: heldBias, help: ["screen.case-editor.say_what_the_teams_declared_bias", "screen.case-editor.write_it_fresh_each_time_the"] })
+      // R94: a member who is not an owner reads the declared bias and does not write it
+      + (notOwner ? (heldBias ? '<p class="rec" data-bias-read>' + cs.esc(heldBias) + "</p>" : "")
+        : cs.field("ce-bias", "screen.case-editor.what_this_bias_means_for_this", { area: true, rec: true, value: heldBias, help: ["screen.case-editor.say_what_the_teams_declared_bias", "screen.case-editor.write_it_fresh_each_time_the"] }))
       + '<p class="mk-note">' + cs.w("screen.ceremony.declared_bias_never_blocks_publishing") + " " + cs.w("screen.ceremony.if_your_team_declared_none") + "</p>",
     { help: "screen.ceremony.what_the_case_tells_its" }));
 
@@ -336,9 +354,40 @@ export const CEREMONY = Object.freeze({
           + cs.act("obscuremark", { label: "screen.ceremony.photo.nothing", data: { capture: sha, index: String(i), nothing: "1" } }) + "</div></div>";
       }).join("") + P.said(view, "obscure"))));
 
+    // R83 (DEC-461, DEC-474 (4); case-authoring A5-R88): the passages this edition rests on that the team has not graded, from the sign
+    // step's `ungraded_passages`, between the photos and the ties and outside the blocking box: a row each with its grade fold
+    // (`leggrade`); never a stop, never the step's first stop; with no row, no section.
+    const ungStep = stepWith("ungraded_passages");
+    const ugv = ungStep ? ungStep.ungraded_passages : null;
+    // the sign step answers `{rows: [{finding, ord, title, role}], count}`; an older answer listed the rows alone
+    const ungraded = (ugv && Array.isArray(ugv.rows) ? ugv.rows : Array.isArray(ugv) ? ugv : []).filter(function (r) { return r && typeof r === "object" && typeof r.finding === "string" && r.finding; });
+    ui.ungraded = ungraded;
+    // a passage is named by its document's title and its role in the finding, the finding by its place in the edition; never an id alone.
+    // The row's own grade is given in the finding's grading fold (`leggrade` on `question`, citation R24): the sign step's row names the
+    // finding and the leg's place, not the passage's part, so the way to grade it is that fold; coming back reads the step again.
+    const roleWord = function (r) { return r === "supports" ? cs.w("screen.published.leg.supports") : r === "cuts_against" ? cs.w("screen.published.leg.cuts") : ""; };
+    if (ungraded.length) out.push(cs.sec("screen.ceremony.ungraded.head", '<p data-ungraded="' + ungraded.length + '">' + cs.w("screen.ceremony.ungraded.lead", { n: String(ungraded.length) }) + "</p>"
+      + '<ul class="mk-list">' + ungraded.map(function (r, i) {
+        const passage = [typeof r.title === "string" ? r.title.trim() : "", roleWord(r.role)].filter(Boolean).join(", ");
+        const n = found.indexOf(r.finding) + 1;
+        return '<li data-ungraded-row="' + i + '" data-finding="' + cs.esc(r.finding) + '">' + cs.w("screen.ceremony.ungraded.row", { passage: passage || nameOf(r.finding), n: n > 0 ? String(n) : nameOf(r.finding) })
+          + ' <a class="cs-btn" data-tone="quiet" data-grade-it href="/app/question/' + encodeURIComponent(r.finding) + '" data-nav>' + cs.w("screen.ceremony.ungraded.grade") + "</a></li>";
+      }).join("") + "</ul>" + '<p class="muted">' + cs.w("screen.ceremony.ungraded.note") + "</p>"));
+
+    // DEC-497 (BD-14; IV-3): what Civicsmith's check pointed out, at signing. The check runs only once it is measured (ai-runs R75), and
+    // no module answers its signals for an edition yet, so the section says that no adversarial check has run; it never blocks.
+    out.push(cs.sec("screen.ceremony.aicheck.head", '<p class="mk-note" data-aicheck="none">' + cs.w("screen.ceremony.aicheck.none") + "</p>"));
+    // DEC-497 (IV-7): second members' readings. Of its four states the record states one today: a team of one member (the roster,
+    // `memberlist`), where no second member could read the answers. A roster that could not be read, or a team of two or more, draws no
+    // section: no module answers the readings or the project's switch yet, and none of their states is guessed.
+    const memR = P.later(cs, view, "members", "memberlist", {});
+    const roster = memR.state === "ok" && memR.value && Array.isArray(memR.value.members) ? memR.value.members.filter(function (m) { return m && typeof m === "object"; }) : null;
+    if (roster && roster.length === 1) out.push(cs.sec("screen.ceremony.secondread.head", '<p class="mk-note" data-secondread="alone">' + cs.w("screen.ceremony.secondread.alone") + "</p>"));
+
     // R5: the Ties step: the member's own confirmation of no undeclared tie, sent with `publish` as `tieAttested`.
     out.push(cs.sec("screen.ceremony.ties", cs.checks("ce-tie", "screen.ceremony.ties.legend", [["yes", "screen.ceremony.ties.confirm", false]])
-      + '<div class="mk-acts">' + cs.act("publish", { tone: "primary", here: "ceremony" }) + "</div><p class=\"muted\">" + cs.w("screen.ceremony.ties.part") + "</p>"
+      // R94: preparing the edition is an owner's act; a member who is not one confirms her ties and asks an owner (above)
+      + (notOwner ? "" : '<div class="mk-acts">' + cs.act("publish", { tone: "primary", here: "ceremony" }) + "</div>") + "<p class=\"muted\">" + cs.w("screen.ceremony.ties.part") + "</p>"
       + P.said(view, "publish") + (prepared ? '<p class="mk-note" role="status">' + cs.w("screen.ceremony.prepared", { edition: String(prepared.edition) }) + "</p>" : "")));
 
     // R42 (N880; DEC-340; case-authoring R34, R77; case-inputs R8, R19): beside "When it becomes public", the open requests for
@@ -458,6 +507,19 @@ export const CEREMONY = Object.freeze({
         return { query: { project: String(view.subject || "").split("/")[0] } };
       },
       done: function (view, answer, cs) { return view.parts.pickDraft(view, answer, cs, "ceremony"); },
+    },
+    {
+      // R83: the registry's `leggrade` on this screen. The sign step's rows name the finding and the leg's place, not the passage's part
+      // (`content_id`, `extent_*`), so a row is graded in its finding's fold (the row's link); a row that names its part is sent here.
+      op: "leggrade", label: "act.leggrade.label.ceremony", reasonField: "reason", rereads: [],
+      send: function (view, el, cs) {
+        const row = (view.ui && view.ui.ungraded || [])[Number(el.dataset.index)];
+        if (!row || !row.target || !row.content_id) return null;
+        const grade = String((cs.value("ce-leggrade-" + el.dataset.index) || [])[0] || "");
+        if (!/^[A-D]$/.test(grade)) return { refuse: "capture.fieldneeded", fills: { field: { html: cs.w("screen.question.leggrade.head") } } };
+        return { body: { project: String(row.finding), target: String(row.target), content_id: String(row.content_id), grade: grade } };
+      },
+      done: function (view, answer, cs) { if (!view.parts.refused(cs, view, "leggrade", answer)) view.parts.forget(view); },
     },
     {
       // R3: "Check again": the checks read once more.
@@ -676,7 +738,12 @@ export const CEREMONY = Object.freeze({
     {
       // R15: a member who is not an owner asks the owners to sign (tasks R19).
       op: "signrequest", label: "act.signrequest.label.ceremony", rereads: [],
-      send: function (view) { const pr = view.ui.prepared; return pr ? { body: { case: pr.caseId, edition: Number(pr.edition) } } : null; },
+      send: function (view, el) {
+        // R94: asked beside the pre-flight's stop, for the edition the draft stands at; R15: asked at the Sign step, for the prepared one
+        const a = el && el.dataset && el.dataset.asking ? view.ui.askFor : null;
+        const pr = view.ui.prepared;
+        return a ? { body: { case: a.case, edition: a.edition } } : pr ? { body: { case: pr.caseId, edition: Number(pr.edition) } } : null;
+      },
       done: function (view, answer, cs) {
         if (!view.parts.refused(cs, view, "signrequest", answer)) view.parts.say(cs, view, "signrequest", cs.w("screen.ceremony.asked")); // D29
         return { stay: true };

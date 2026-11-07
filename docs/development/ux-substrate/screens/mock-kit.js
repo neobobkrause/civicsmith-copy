@@ -61,7 +61,7 @@ function btn(op, label, o = {}) {
 }
 /* a plain control with no act (navigation, a link) */
 const link = (label, icon, help) => `<a href="#" onclick="return false" class="cs-btn" data-tone="quiet"${help ? ` data-level="2" data-tip="<b>${esc(label)}</b>: ${esc(help)}"` : ''}>${icon ? I(icon) : ''}${esc(label)}</a>`;
-const grade = (scale, l, full) => `<span class="cs-grade" data-scale="${scale}" tabindex="0" aria-label="${scale} ${l}">${I(scale === 'ceiling' ? 'capture' : scale)}${full ? `<span class="sc">${full}</span> ` : ''}${l}</span>`;
+const grade = (scale, l, full, gloss) => `<span class="cs-grade" data-scale="${scale}" tabindex="0" aria-label="${scale} ${l}">${I(scale === 'ceiling' ? 'capture' : scale)}${full ? `<span class="sc">${full}</span> ` : ''}${l}</span>${gloss ? `<span class="cs-gloss">${gloss}</span>` : ''}`;
 // DEC-160: anything the record holds that a screen names is a link: click opens it (here, the screen that shows it), hover
 // or focus shows its card. `go` is the screen it opens.
 const ref = (text, go, tip, cls = '') => `<a href="#" class="cs-ref${cls ? ' ' + cls : ''}" data-goto="${go}" data-tip="${esc(tip)}">${text}</a>`;

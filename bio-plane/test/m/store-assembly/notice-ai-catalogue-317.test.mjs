@@ -4,13 +4,14 @@
    test keys handed and no test instance, a development deployment's seed signed by its own key loads, and a deployment
    that does not set DEVELOPMENT_VAR refuses the same seed. ai-use and ai-runs reach the catalogue without env, so the
    assembly must build it first: the instance they find is the one built with env. The seed and its signature are made
-   by ai-catalogue's own fixture signer over ai-catalogue's own RELEASE_SEED; the key line carries ai-catalogue's mark. */
+   by ai-catalogue's own fixture signer over the seed a development deployment takes (`seedFor`, ai-catalogue PRs 484, 611:
+   DEVELOPMENT_SEED where DEVELOPMENT_VAR is "1"); the key line carries ai-catalogue's mark. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { storage, assembleStore } from "./fixture.mjs";
 import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
-import { aiCatalogueOf, RELEASE_SEED, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_VAR, DEVELOPMENT_KEY_MARK }
+import { aiCatalogueOf, seedFor, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_VAR, DEVELOPMENT_KEY_MARK }
   from "../../../src/ai-catalogue/index.mjs";
 import { NS_AI_CATALOGUE, aiCatalogueStatement } from "../../../src/sshsig.mjs";
 import { newKey, sign } from "../ai-catalogue/fixture.mjs";
@@ -19,7 +20,7 @@ import { PLANS } from "../ai-accounts/catalogue.mjs";
 const SEAL = "a-long-seal-secret-for-the-catalogue-317-test";
 const DEV = await newKey();
 const DEV_LINE = DEV.line.replace(/ throwaway$/, ` bio-ai-catalogue${DEVELOPMENT_KEY_MARK}`);
-const ARMORED = await sign(DEV, NS_AI_CATALOGUE, aiCatalogueStatement(RELEASE_SEED.statement));
+const ARMORED = await sign(DEV, NS_AI_CATALOGUE, aiCatalogueStatement(seedFor({ [DEVELOPMENT_VAR]: "1" }).statement));
 
 /* a deployment's store: assembleStore over its env, nothing else handed (no catalogueKeys, no test instance) */
 async function deployment(env) {

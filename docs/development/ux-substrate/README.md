@@ -1,41 +1,25 @@
-# The UX substrate
+# The UX substrate folder
 
-What a member sees and works with, as the approved requirements and Bob's rulings define it, for Bob's UX redesign. The page opens with the decisions still Bob's to make, each with a brief (background, what is already fixed, the choices, a recommendation and ways to answer), then states what is settled as it now stands.
+This folder holds only what the product's build and checks read (Bob, 5 Nov 2026). The design documents are claude.ai artifacts, kept by the ux lane and recorded with `p3 lane artifact ux`. Their earlier repository copies, the old handoff notes and the archive are in git history, before the commit that removed them.
 
-- `ux-substrate-v2.json`: the inventory (constructs with their acts and act weights, relationships, roles, display primitives, what is decided but not yet built, where canon and requirements disagree, old-interface divergence, working names, glossary, screens, and Bob's other rulings that shape what members see).
-- `ux-experience.json`: audiences, use cases, step-by-step experience, screen rules, and the open questions (numbered; each open one carries a `brief`, each settled one a `ruled` entry stating the design as it stands).
-- `build_ux2.py`: renders both into `ux-substrate.html` (run `python3 docs/development/ux-substrate/build_ux2.py` from the repository root). Published at https://claude.ai/artifact/JsPZAftab91EL9Ut91qWGx with `views/` beside it.
-- `views/`: the Action design's screen sketches (`build/plan/action-design/*.html`), each with a document head so they publish beside the page; `plan-page.html` is approved (K608 (4)).
-- `design-principles.html`: step 1 of the design phase (Bob, 2026-10-02): every ruled UX principle stated once, with the gaps for Bob to rule. Published at https://claude.ai/artifact/MvsMPnJnk3o32FBeqgdxT1.
-- `brand-and-voice.html`: step 2 of the design phase (draft, 2026-10-03): who speaks, how the names are written, Civicsmith's voice and tone, words, and questions V1–V4.
-- `journeys.html`: step 3 of the design phase, SETTLED 2026-10-06 (DEC-128 to DEC-137): the audiences in three rings (newsroom staff a core audience), the wide path's eight rules, where members start, twenty-seven journeys (each with what T33 builds and what is still to come), seventeen wizard outlines (all to be written, DEC-130), the gaps to close, and every question answered. Folded into the screens page on 13 October (DEC-204) and no longer updated; published at https://claude.ai/artifact/SbK4jAc8ZptpE9swYMkF1R with a note saying so.
-- `visual-language.html`: step 4 of the design phase, DECIDED 2026-10-06 (DEC-138): one visual language for every member screen and the published case, built on the plumb bob (type, colour, shape, motion, light and dark, icons, every mark, acts and frames), checked at WCAG 2.2 AA. Built by `visual-language/build_page.py` from `visual-language/page.src.html`. Published at https://claude.ai/artifact/QuvX7DzX7XbxS6SQG4MtT1 with its fonts beside it.
-- `visual-language/`: the visual language's source, for the screens BOB builds: `palette.json` (colours) and `check_contrast.py`; `tokens.head.css` and `components.css`, built by `build.py` into `civicsmith.css`; `faces.css` and `fonts/` (Source Serif 4, Source Sans 3, Source Code Pro, SIL OFL 1.1); `icons.svg` (46 icons).
-- `layouts.html`: step 5 of the design phase, DRAFTED 2026-10-06 (DEC-139), its wizard library APPROVED by Bob (DEC-148): frames, grid, desktop and phone, the assistant panel, and every journey and wizard walked through live mockups, with and without the assistant; questions S1 (releasing a case at a set time) and S2 (approving the wizard library) for Bob. Built by `screens/build_page.py`. Published at https://claude.ai/artifact/4FjPjGmCVppDnMYfM7xkCw, Bob's working page (DEC-204); since 13 October it also holds step 3's journeys material. Earlier copies, frozen: https://claude.ai/artifact/PjJoJCxMe1LHjt3wPq6rfa and https://claude.ai/artifact/WE1RL6GUUZX4dLeSzbFrbv.
-- `dashboards.html`: research and early thinking on dashboard entry points per area (Bob's direction of 2026-10-11, K2803; BOB's B141): what cars, work software and records tools do, three models, a recommendation to try first. No question yet; it comes as S20 after Bob has used the test instance. Published at https://claude.ai/artifact/DTnwQFKMJR2QLkndW716ja (from 2026-10-13; earlier at https://claude.ai/artifact/W1XPnKZA8eRucNseHSLQXa).
-- `screens/`: step 5's source: `registry.src.py` (the screen registry) and `library.src.py` (the Civicsmith wizard library), built and checked by `check_library.py` into `registry.json` and `library.json`; the mockups (`mock-kit.js`, `mock-screens.js`, `mock-shell.js`, `mock-journeys.js`, `page.src.html`, `question.html`); `check_walk.mjs` walks every step in a browser; `check_words_drawn.mjs`, run after it, fails if any screen draws more sentences that are not keyed words than its ratchet in `words-drawn-baseline.json` allows (K3268; `--write-baseline` lowers it, `--list <screen>` names them).
-- `marks/civicsmith-plumb-bob.svg`: Civicsmith's mark (DEC-126), one path, one colour; the source for the browser icon, phone icon and credit mark.
-- `new-name.html`: the search for a name to replace CivicOS (3 October 2026): the four steps by which someone who hears the name finds the tool, both rounds of candidates, every name set aside and why, and the brand check by audience. Bob chose Civicsmith (DEC-124). Published at https://claude.ai/artifact/Fmr6rVd7GMifYDRaWcV7s8.
-- `HANDOFF.md`: the design session's handoff to its successor (who you are, how to record a ruling, where the design phase stands, the pages and their URLs). Rewritten 2026-10-03.
-- `NEXT-SESSION-PROMPT.md`: the opening prompt for the next design session (2026-10-06), for Bob to paste.
-- `measures-map.html`: the approved measures map DEC-82 rests on (rendered at https://claude.ai/artifact/TfqcXNaJQ86SZzUA8Xn6Ni).
-- `ux-substrate.json`, `build_ux.py`: the first inventory and its renderer, kept for reference.
+## What the product reads here
 
-**As of** `main` @ `c1a27e41a5` (T11–T19 built; the Action layer built at the plane, with no member screens yet); Bob's rulings DEC-1–DEC-95 and K-rulings to K859. The open-question briefs were checked against the same commit. The requirements (`build/requirements/`) win over this snapshot. When Bob closes a question the page lists, the page is updated in the same change that records the ruling (K438).
+- `screens/`: the screen registry, the wizard library, the mock scripts, `page.src.html`, and the words. `words-drawn.json`, `words.json` and `words-reads.json` are generated rows in `process/config.json`, built from `words-drawn.src.py`, `build_words.mjs` and `words-reads.src.mjs`. Many `bio-plane` modules read the words and the registry.
+- `layouts.html`: the design mock, built by `screens/build_page.py`. `bio-plane/src/journey-check/design.mjs` reads it from git at the interface's `ASSETS_COMMIT`.
+- `visual-language/`: `civicsmith.css`, built by `build.py` from `palette.json`, `tokens.head.css` and `components.css` (it then runs `check_contrast.py`); `faces.css`, `icons.svg` and `fonts/` are hand-kept sources. `site/test/browser.test.mjs` and the interface read them.
+- `screens/check_library.py` builds `registry.json` and `library.json` from their `.src.py` files and checks every act against `origin/main`'s requirements (and the open `origin/tranche`'s, for acts ahead of main); fetch both first, or it falls back to `HEAD` and says so.
+- `marks/`: the Civicsmith mark.
 
-## Working alongside the development process
+## Design documents (artifacts)
 
-Bob runs two streams of work under two accounts, and neither can reach the other's sessions; they meet only in this repository.
-
-- **The development process** (ROOT, BOB, module jobs, tranches) runs on Bob's **secondary account** (ROOT #3 onward, K742). BOB owns `build/` (requirements, plans, `build/rulings.md`, `next.md`) and records there the answers Bob gives it, as K-rulings; some of those settle UX questions (for example K899 (1) on "record", K903 (4) on hidden dependents).
-- **The UX design session** and its successors run on Bob's **primary account** (this page's session: `session_01EhPoUTrVCgAqw2ktRyKjCU`). It owns this folder and records Bob's UX rulings in `docs/development/DECISIONS.md` (DEC entries, each naming the session and account in its `raised:` line), folds each into the canon document it changes, and updates and republishes this page in the same change.
-
-**The channel between them (PROCESS-MECHANICS §13.1, proposed by BOB #87 and approved by Bob, 2026-10-01).** Each side writes an append-only outbox on its own dedicated mail branch, which never merges into `main`: BOB on `mail/BOB` (`mail/BOB.md`), the design session on `mail/UX-DESIGN` (`mail/UX-DESIGN.md`); the registry of participants is `build/channels.md` on `main`. An outbox starts with a **Writer** line (name, session id, account, since) that a successor rewrites at takeover, carries one **Read** cursor per correspondent, and holds numbered entries (`U1`, `U2`… for the design session, `B1`… for BOB) of kinds NOTICE, QUESTION, ANSWER, DEFER, HANDOFF, MERGE and ACK, posted with `tools/mail.mjs` (`xpost`, `xinbox`, `xdone`, `xcheck`, `xwriter`) from the design session's own clone of `civicos-process`. There is no doorbell across accounts: each side reads the other's outbox at takeover, at each backstop or check-in, before recording any ruling of Bob's, and whenever Bob says "check the channel".
-
-**How the design session records, so the two never collide or contradict:**
-
-1. Before recording a ruling, read BOB's outbox past the cursor and fetch `main` for K-rulings and DEC entries added since the last look. A ruling Bob made through the development process may settle or change the question; if so, the page cites it and says it was made there, and no second, possibly conflicting, ruling is recorded.
-2. DEC numbers are the design session's: the next free number across `main` and its own open branch, each announced in a NOTICE. If `main` gains the same number first, the branch renumbers (K473's practice), never `main`. K numbers are BOB's alone.
-3. The design session never writes `build/` (save its registry row through its PR); BOB never edits `docs/development/ux-substrate/` or `docs/development/DECISIONS.md`, and keeps the design session's text in any merge conflict (K945). A DEC's owed work reaches BOB as a HANDOFF; BOB folds it once the DEC is on `main` and answers with the K that folds it.
-4. The branch merges `main` in often and keeps its pull request mergeable; BOB merges it at a tranche's close.
-5. Questions the development process defers to the design session (for example retraction of a published case, deferred from T21 on 1 October, question 36) arrive as DEFER entries and are taken up here as briefs on this page.
+| document | link |
+| --- | --- |
+| The UX substrate | https://claude.ai/artifact/JsPZAftab91EL9Ut91qWGx |
+| Design principles | https://claude.ai/artifact/MvsMPnJnk3o32FBeqgdxT1 |
+| Brand and voice | https://claude.ai/artifact/EipzYKnNxe5LG3YwWnTkpv |
+| The new name | https://claude.ai/artifact/Fmr6rVd7GMifYDRaWcV7s8 |
+| Journeys | https://claude.ai/artifact/9hNPVCMcT8eyewWqKXfgSu |
+| Visual language | https://claude.ai/artifact/QuvX7DzX7XbxS6SQG4MtT1 |
+| Screens | https://claude.ai/artifact/MjC8pWKDj5PrYwm417GLAV |
+| Questions from the alpha's live walk | https://claude.ai/artifact/KXfceZqCJkEocZFxyrBAkf |
+| Measures map | https://claude.ai/artifact/TfqcXNaJQ86SZzUA8Xn6Ni |

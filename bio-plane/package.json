@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "pretest": "cd .. && node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs && node bio-plane/src/case-checker/build-program.mjs && node bio-plane/scripts/bundles.mjs",
     "test": "node --import ./test/platform-sqlite.mjs --test \"test/m/**/*.test.mjs\"",
     "test:system": "node --test \"test/system/**/*.test.mjs\"",
     "build": "node scripts/build-plane.mjs",

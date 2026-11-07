@@ -15,6 +15,13 @@ import { ROWS_NOW } from "./t45-rows.mjs";
 const S = suite(AG);
 const codes = (list) => list.map((x) => x.code);
 const audit = (fm, o = {}) => pushed((f) => AG.checkActionExtension({ fm, nowMs: NOW, zone: ZONE, ...o }, f));
+/* R31 (T53; K5458): the readers now keep a law's layer; a document written before states none, so each reading is the
+   one before the move with `layer: null` on each governing law and `law_layer: null` on the records law, nothing else. */
+const withLayers = (k, v) => {
+  if (k === "governingLawsOf") return { ...v, laws: v.laws.map((l) => ({ ...l, layer: null })) };
+  if (k === "recordsLawOf") return v.map((r) => ({ ...r, law_layer: null }));
+  return v;
+};
 const TEST_VIEW = (() => { const c = J.combine(["test-port-ellery"]); assert.ok(c.ok); return c.view; })();
 
 /* R13 (T41-46a): the one value changed since the move: CORRESPONDENCE_OUTCOMES gained `none_exists`, appended. */
@@ -70,7 +77,7 @@ test("R1, R11: actionKinds(view) answers the product's kinds, then the view's ac
 test("R3: the records law: C-2.10's law arm and the one site minting RECORDS_LAW_REFUSED (C-73.6), as before the move, over every document", () => {
   for (const id of Object.keys(DOCS)) {
     for (const k of ["recordsLawRefusal", "recordsLawFindings", "recordsLawOf"])
-      assert.deepEqual(S.docs[id][k], GOLDEN.docs[id][k], `${id} ${k}`);
+      assert.deepEqual(S.docs[id][k], withLayers(k, GOLDEN.docs[id][k]), `${id} ${k}`);
   }
 });
 
@@ -242,7 +249,7 @@ test("R7 by hand: a missing counterparty and a pending clock entry past its date
 test("R8: every reader and arm actions calls answers, for every document and scalar, what actions' copy answered before the move", () => {
   for (const id of Object.keys(DOCS))
     for (const k of ["riskTierHistoryOf", "governingLawsOf", "requestLifecycleOf", "consequenceState", "counterpartyFindings", "respondsTo"])
-      assert.deepEqual(S.docs[id][k], GOLDEN.docs[id][k], `${id} ${k}`);
+      assert.deepEqual(S.docs[id][k], withLayers(k, GOLDEN.docs[id][k]), `${id} ${k}`);
   assert.deepEqual(S.scalars.counterparty, GOLDEN.scalars.counterparty);
   assert.deepEqual(S.scalars.clockMoves, GOLDEN.scalars.clockMoves);
   const exported = ["riskTierHistoryOf", "governingLawsOf", "requestLifecycleOf", "consequenceState", "recordsLawOf", "counterpartyOffice",

@@ -1,0 +1,39 @@
+{
+  "id": "installer-steps",
+  "title": "installer-steps: meet its unmet requirement marks",
+  "layer": 11,
+  "paths": [
+    "newgroup/src/steps/",
+    "build/requirements/installer-steps.md",
+    "docs/requirements-notes/installer-steps.md"
+  ],
+  "tests": [
+    "newgroup/test/steps/"
+  ],
+  "requirements": "build/requirements/installer-steps.md",
+  "uses": [
+    "credentials",
+    "signatures",
+    "instance-setup",
+    "setup-words",
+    "runtime-limits",
+    "corpus-export"
+  ],
+  "suite": {
+    "cwd": "newgroup",
+    "command": [
+      "node",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/installer-steps.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the unmet requirement marks in build/requirements/installer-steps.md, each with a test under newgroup/test/steps/ that fails with the change reverted. newgroup's steps; deploying newgroup is never yours. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T18:57:58Z"
+  }
+}

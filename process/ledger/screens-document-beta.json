@@ -1,0 +1,39 @@
+{
+  "id": "screens-document-beta",
+  "title": "screens-document-beta: split by copy from screens-document (R58, R59, R60, R61, R62, R63, R64, R65, R66, R67, R68, R69, R70, R71, R72, R73, R74, R75)",
+  "layer": 11,
+  "paths": [
+    "build/requirements/screens-document-beta.md",
+    "docs/requirements-notes/screens-document-beta.md",
+    "bio-plane/src/screens-inquiry/document.mjs",
+    "bio-plane/test/m/screens-inquiry/r9-document.test.mjs",
+    "bio-plane/test/m/screens-inquiry/fr6-document.test.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-document-beta/"
+  ],
+  "requirements": "build/requirements/screens-document-beta.md",
+  "uses": [
+    "screens-document",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/screens-document-beta.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T12:44:53Z"
+  }
+}

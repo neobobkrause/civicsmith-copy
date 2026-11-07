@@ -56,3 +56,10 @@ Text moved out of `build/requirements/agent-worker.md` on 4 Nov 2026 to bring it
 - **`POST /draft`** (N686; DEC-152, DEC-153; K1837, K1841, K1364, K1755)
 - **`POST /draft` of kind translation** (N669; DEC-127 (5), DEC-157 (2), (4), (6), DEC-179; K1755; K2200, K2201; `run-rules` R22; `skills` R39)
 - **`POST /draft` for an action, and the re-examination run** (T45-15; N861, N887; Actions D11b, D21, D25; `run-rules` R27; `skills` R45; `ai-runs` R77)
+
+## Uses lines of moved requirements (moved from the requirements file, 5 Nov 2026)
+
+The two Uses lines below name only ids now retired here (R76–R78 and R86 moved to `agent-drafts` and `agent-steps`), moved word for word to make room for F2–F4 under the cap.
+
+- (T48) `run-rules`: R33's draft kind `reading` and its reach `none`, for R86; `skills`: the `reading_translation` layer (its R49) read by key in the rendered pack, for R86; `agent-model`: `converse` and `modelCall` taking `trace` and `memberRef` (its R16), for R87.
+- (T45) `run-rules`: R27's draft kinds, their reach and `draftMayRead`, for R76; `skills`: the `action_drafting` layer (its R45) read by key in the rendered pack, for R77; `ai-runs`: a run's `origin` and `response` (its R77) as `op=airun` answers them, over the wire, for R78; `reading-guides` (L6, earlier): over the wire only, `procedureGuidesFor` (its R13) through the op declared for it, for R78 *(not in `modules.json`'s `uses`: a new edge, BOB's)*.

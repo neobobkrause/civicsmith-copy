@@ -11,6 +11,7 @@ import worker from "../src/index.mjs";
 import { PLANE_OPS, ASK_PLANE_OPS, ASK_OPS } from "../src/ops.mjs";
 import { driveOne, driveMember, AIK, GRANT, CLAUDE_TOKEN, PACK_VERSION } from "./inprocess.mjs";
 import { MEMBER } from "./account.mjs";
+import { machineWork, MACHINE_WORK } from "./label.mjs";
 import { PLANE_OPS_PINNED } from "./owners.mjs";
 
 let pass = 0, fail = 0;
@@ -109,8 +110,8 @@ section("R59 · a draft with a grant reads the pack by op=agentpack under it; wi
 {
   t("R59: with a grant, the pack and the read went to the plane under the grant: agentpack, then search",
     [ops(draft), [...new Set(draft.planeCalls.map((c) => c.token))]], [["agentpack", "search"], [GRANT]]);
-  t("R59: …and its draft was made, labelled machine work", [last(draft).out?.draft, last(draft).out?.label],
-    [{ text: "a labelled draft" }, { kind: "machine" }]);
+  t("R59, F4: …and its draft was made, labelled machine work {kind: machine, ai}", [last(draft).out?.draft, machineWork(last(draft).out?.label)],
+    [{ text: "a labelled draft" }, MACHINE_WORK]);
   const { grant: _g, ...noGrant } = draftBody;
   const bare = await driveOne({ mode: "check", ask: true }, "draft", { ...noGrant, account: ACCOUNT, pack: DRAFT_PACK });
   t("R59: without a grant no plane call is made at all: the pack is the one the door sent beside the draft",

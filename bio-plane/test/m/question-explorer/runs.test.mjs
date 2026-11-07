@@ -197,6 +197,7 @@ test("R13: the material limit is read from ai-accounts (its R22's aiKeptAway, as
   const asked = [];
   const stand = { real: null, throws: false,
     accountUsesOf(a) { return stand.real.accountUsesOf(a); },
+    accountHistory(a) { return stand.real.accountHistory(a); },
     aiKeptAway(a) { asked.push(a); if (stand.throws) throw new Error("unreadable"); return stand.real.aiKeptAway(a); } };
   const w = world({ aiAccounts: stand });
   stand.real = w.aiAccounts;

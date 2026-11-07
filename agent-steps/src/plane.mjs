@@ -2,6 +2,7 @@
  * loadable layers (R46) and the model half (R47). Pure. */
 /* Requirement ids in the comments below are `agent-worker`'s, as they stood when this code moved (T51, K3850); `build/requirements/agent-steps.md` maps them to this module's. */
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+import { RUN_RUNTIME, RUN_DATA_HANDLING } from "./talk.mjs";
 
 
 /* -------------------------------------------------- D-276: THE ANSWER, NOT THE WIRE
@@ -96,14 +97,21 @@ export function loadLayer(model, input) {
   return { content: model.pack.disclosed[name] };
 }
 
-/** A segment's or an ask's model half (R54, R58): the reference for the calls it serves (the account that serves the
- *  member's act, R33), the runner binding, the meter, the door's trace and member reference for every conversation
- *  (R87, `{trace?, memberRef?}`), and the usage of each conversation kept until it is reported (ai-runs R48). Nothing
- *  in it outlives the call that made it (R36). */
-export function modelHalf({ reference, runner, meter, suggestions, traced = {} }) {
+/** R47 (T53; BR22, BR29) — A segment's, an ask's or a draft's model half: the account handle that serves the member's
+ *  act (`agent-worker` R33, `{level, account_id, entries, ...}`), the meter, `suggestions`, the door's trace and member
+ *  reference for every conversation (`traced`, `{trace?, memberRef?}`), `pack` null, `layers` and `messages` empty, and
+ *  the usage of each conversation kept until it is reported (`spent`, `drain`; ai-runs R48). Nothing in it outlives the
+ *  call that made it. `reference` and `runner` are gone from it.
+ *
+ *  HOW ITS CONVERSATIONS ARE REACHED is held beside that state, not in it (none of these is an own enumerable key): the
+ *  `provider` the shell bound (`providerFor`, `talk.mjs`), with `runtime` and `data_handling` for its requests (no
+ *  provider-held state unless the shell names otherwise, R55). A shell not yet on T53 hands no provider and its earlier
+ *  `reference` and `runner` instead; they are held only as that route (`legacy`) and every T53 gate is skipped for it. */
+export function modelHalf({ account = null, meter, suggestions, traced = {}, provider = null, runtime = RUN_RUNTIME,
+                            data_handling = RUN_DATA_HANDLING, reference, runner } = {}) {
   const pending = [];
-  return {
-    reference, runner, meter, suggestions: suggestions === true, traced, pack: null, layers: [], messages: [],
+  const half = {
+    account, meter, suggestions: suggestions === true, traced, pack: null, layers: [], messages: [],
     /* R14, R26, R47 (T53; BR22, BR29; ai-runs R72's list): one entry `{mode, entry_id, label, usage, calls}` per
        conversation that states `usage`, `usage` and `calls` exactly as `converse` answers them (`calls` null where it
        states none, which the plane counts as one call), so the plane counts each model call. `entry_id` and `label` are
@@ -116,6 +124,15 @@ export function modelHalf({ reference, runner, meter, suggestions, traced = {} }
     },
     drain() { return pending.splice(0, pending.length); },
   };
+  const held = (k, value) => Object.defineProperty(half, k, { value, enumerable: false, writable: false });
+  held("provider", provider && typeof provider.converse === "function" ? provider : null);
+  held("runtime", runtime);
+  held("data_handling", data_handling);
+  held("legacy", half.provider ? null : { reference: reference ?? null, runner: runner ?? null });
+  /* `agent-worker`'s `/ask` still reads these off the half until it moves to the T53 provider (its R33, R127): kept
+     readable on that route only, as the route, never as the half's state; a half on the T53 provider has neither. */
+  if (!half.provider) { held("reference", reference ?? null); held("runner", runner ?? null); }
+  return half;
 }
 
 /** THE ONE MEANING READER IN THIS MEMBER, AND THE OP IS NAMED IN EXACTLY ONE

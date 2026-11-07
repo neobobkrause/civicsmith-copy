@@ -1,4 +1,6 @@
 {
+  "merge_strategy": "layer",
+  "merge_train_window": 1,
   "tranche": "tranche",
   "record_since": "4250e8860a482bcbebab243e6627ba0cd690e9d7",
   "records": [
@@ -20,12 +22,21 @@
   ],
   "node": "26.10.0",
   "suite_timeout_minutes": 45,
-  "coordinator": "session_018BhcecCMP7CZRbiR8kruPn",
+  "coordinator": "session_018BhceejoYb1DR1sDfBk9uU",
   "process_repo": "https://github.com/neobobkrause/process3",
   "lanes": [
     {
       "name": "ux",
-      "dir": "docs/development/ux-substrate/"
+      "dir": "docs/development/ux-substrate/",
+      "module": "ux-design"
+    },
+    {
+      "name": "investigation",
+      "dir": "docs/development/investigation-design/"
+    },
+    {
+      "name": "publication",
+      "dir": "docs/development/publication-design/"
     }
   ],
   "cloudflare_account": "20b533579290b9b93168345edd3b7f72",
@@ -44,6 +55,48 @@
   ],
   "modules_file": "build/modules.json",
   "generated": [
+    {
+      "paths": [
+        "bio-plane/src/member-roster/order.mjs"
+      ],
+      "regenerate": [
+        "node",
+        "bio-plane/src/member-roster/order-build.mjs"
+      ],
+      "verify": [
+        "node",
+        "bio-plane/src/member-roster/order-build.mjs",
+        "--check"
+      ]
+    },
+    {
+      "paths": [
+        "docs/development/ux-substrate/screens/words-drawn.json"
+      ],
+      "regenerate": [
+        "python3",
+        "docs/development/ux-substrate/screens/words-drawn.src.py"
+      ],
+      "verify": [
+        "node",
+        "bio-plane/src/setup-words/build.mjs",
+        "--check"
+      ]
+    },
+    {
+      "paths": [
+        "docs/development/ux-substrate/screens/words.json"
+      ],
+      "regenerate": [
+        "node",
+        "docs/development/ux-substrate/screens/build_words.mjs"
+      ],
+      "verify": [
+        "node",
+        "bio-plane/src/setup-words/build.mjs",
+        "--check"
+      ]
+    },
     {
       "paths": [
         "bio-plane/src/setup-words/rows.mjs",
@@ -118,7 +171,8 @@
         "--test-force-exit",
         "bio-plane/test/system/fleetbundles.test.mjs"
       ]
-    }
+    },
+    {"paths": ["newgroup/dist/newgroup.bundled.mjs"], "regenerate": ["npm", "--prefix", "newgroup", "run", "build"], "verify": ["node", "--test", "--test-force-exit", "bio-plane/test/system/newgroup-bundle-fresh.test.mjs"]}
   ],
   "deploy": {
     "slug_prefix": "p3dev-",
@@ -328,14 +382,6 @@
         ]
       },
       {
-        "name": "bundles fresh",
-        "argv": [
-          "node",
-          "bio-plane/scripts/bundles.mjs",
-          "--check"
-        ]
-      },
-      {
         "name": "fleet bundles",
         "argv": [
           "node",
@@ -360,26 +406,14 @@
     ],
     "seconds": 120
   },
-  "review_triggers": {
-    "security_paths": [
-      "bio-plane/src/op-declarations/",
-      "bio-plane/src/wizard-scripts/admin.mjs",
-      "bio-plane/src/admission/",
-      "bio-plane/src/store-request/index.mjs",
-      "bio-plane/src/credentials/index.mjs",
-      "bio-plane/src/ai-accounts/index.mjs",
-      "bio-plane/src/signin-door/index.mjs",
-      "bio-plane/src/answers/scope.mjs",
-      "bio-plane/src/member-roster/index.mjs",
-      "bio-plane/src/op-grades/index.mjs",
-      "bio-plane/src/registers/ops.mjs",
-      "bio-plane/src/capture-sources/credentials.mjs",
-      "agent-worker/src/ops.mjs",
-      "agent-worker/src/signin.mjs",
-      "agent-runner/src/signin.mjs",
-      "agent-runner/src/entry.mjs",
-      "agent-harness/src/subsession.mjs"
-    ]
-  },
-  "merge_train": true
+  "merge_train": true,
+  "release_path": [
+    "control-plane",
+    "journey-check"
+  ],
+  "pacing": {
+    "jobs": 20,
+    "pushes_per_hour": 1000000,
+    "share_s": 900
+  }
 }

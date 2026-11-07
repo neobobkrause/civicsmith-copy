@@ -25,6 +25,8 @@ const TEXT = {
   "lines.why.date_unreadable": (v) => localize("lines.why.date_unreadable", "the date could not be read: {refused}", v),
   "lines.why.date_unjudged": (v) => localize("lines.why.date_unjudged", "the date could not be judged: {message}", v),
   "lines.why.stated_current_through": (v) => localize("lines.why.stated_current_through", "{why}; it is stated current through {day}, and the date is after that", { ...v, why: reasonText(v.why) }),
+  "lines.why.row_removed": (v) => localize("lines.why.row_removed", "the register row {content_id} this line cites was removed from the record, so none of it is shown", v),
+  "lines.why.row_unread": (v) => localize("lines.why.row_unread", "the register row {content_id} this line cites could not be read: {reason}", v),
   "lines.why.entity_lines_kinds": (v) => localize("lines.why.entity_lines_kinds", "this entity has more than {hub} lines of the kinds asked, so it is named, never expanded", v),
 };
 

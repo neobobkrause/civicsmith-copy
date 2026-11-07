@@ -41,6 +41,8 @@ export async function runProgram(argv, readFile) {
   if (!parts.length) return { text: usage + "\n", status: 2 };
   const answer = await checkCaseFile({ parts, documents, ...(keys ? { keys } : {}), ...(lens !== undefined ? { lens } : {}) });
   const lines = answer.findings.map((f) => `${f.finding}: ${RESULT_WORDS[f.result] ?? f.result}`);
+  /* R31: what the package cannot show, each extract by its ref, after the findings */
+  for (const u of answer.unverifiable ?? []) lines.push(`${u.ref}: ${u.why}`);
   /* R26: each standards-use departure in the members' words, as the ceremony draws it */
   for (const r of answer.standards_use?.refusals ?? []) { const s = sentenceOf(r.says); if (s) lines.push(s); }
   return { text: [...lines, "", answer.statement, "", JSON.stringify(answer, null, 2), ""].join("\n"), status: 0 };

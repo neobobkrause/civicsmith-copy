@@ -460,8 +460,8 @@ for op, t in [
 ]: w8(f'consequence.{op}', t, True, "op-grades' consequence statement, read by the act's id")
 
 # values shown once (control-plane R-credentials): the review copy's is screen.review-copy.link.once
-w8('credential.token.once', "This is the only time your team's Civicsmith shows this value. It isn't stored and can't be recovered: the record keeps the credential's name and who created it, never the value. If it is lost, withdraw this credential and create another.", True, "control-plane: an agent credential minted")
-w8('template.review.secret.once', "This is the only time your team's Civicsmith shows this value. It is kept only as a fingerprint and can't be recovered. Give it to the reviewer: it lets them read this one template version, comment on it and review it while it is a draft or in review, and nothing else. If it is lost, withdraw this grant and open another.", True, "control-plane: a template review grant")
+w8('credential.token.once', "This is the only time your team's Civicsmith shows this value. It is not stored and cannot be recovered: the record keeps the credential's name and who created it, never the value. If it is lost, withdraw this credential and create another.", True, "control-plane: an agent credential minted")
+w8('template.review.secret.once', "This is the only time your team's Civicsmith shows this value. It is kept only as a fingerprint and cannot be recovered. Give it to the reviewer: it lets them read this one template version, comment on it and review it while it is a draft or in review, and nothing else. If it is lost, withdraw this grant and open another.", True, "control-plane: a template review grant")
 
 # the words a module writes into a project file a member opens; the file's own grammar (front matter, record-grammar's headings,
 # the session log's fields) stays as it is

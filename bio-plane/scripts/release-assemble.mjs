@@ -108,6 +108,9 @@
  *   2. node bio-plane/scripts/bundles.mjs --install-dirs
  *        the directories the byte guard needs installed, one per line, the plane's first (R22)
  *      npm ci                                                  (in each directory it printed after the plane's)
+ *      node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs
+ *        && node bio-plane/src/case-checker/build-program.mjs && node bio-plane/scripts/bundles.mjs
+ *                                                          (the bundles, built: dist/ is not committed)
  *   3. node bio-plane/scripts/release-assemble.mjs --version <V> --dry-run
  *        every R22 check; writes nothing; no seed
  *   4. node bio-plane/scripts/release-assemble.mjs --version <V> --sign
@@ -278,8 +281,9 @@ function committedArtifact(m) {
   const p = join(m.abs, m.bundle.outfile);
   /* The fleet's one rebuild command (N31, bundler R21), as every staleness finding names it: it builds
      each member by its own `npm run build`, pre-steps included, and says which it rebuilt. */
-  if (!existsSync(p)) die("NO_ARTIFACT", `${m.name} has no committed ${m.bundle.outfile}.`,
-    "Run `node bio-plane/scripts/bundles.mjs` from the repository root, and commit the artifacts.");
+  /* dist/ is not committed (the dist pass, BOB 6 Nov 2026): the artifact is the one this checkout's build wrote. */
+  if (!existsSync(p)) die("NO_ARTIFACT", `${m.name} has no built ${m.bundle.outfile}.`,
+    "Run `node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs && node bio-plane/src/case-checker/build-program.mjs && node bio-plane/scripts/bundles.mjs` from the repository root first: the bundles are built at release, never committed.");
   return readFileSync(p);                      // read BEFORE any build runs
 }
 

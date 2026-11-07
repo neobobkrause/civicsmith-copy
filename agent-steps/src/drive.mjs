@@ -2,13 +2,14 @@
 /* Requirement ids in the comments below are `agent-worker`'s, as they stood when this code moved (T51, K3850); `build/requirements/agent-steps.md` maps them to this module's. */
 import { FIRST_STEP, LEVELS, BUDGET_BOUNDS, passLimit, nextStep, stepLog, applyJudgement, runContextTarget, advance, publishableState, resumeFrom, PLAN_FLOW, PLAN_MAX_PASSES, OPTION_KEYS, flowFor, nextPlanStep, planAdvance, applyPlanJudgement, resumeTargets } from "../../agent-harness/src/harness.mjs";
 import { SUBSESSION_OPS } from "../../agent-harness/src/subsession.mjs";
-import { converse, judgeTools, planJudgeTools, LOAD_LAYER, parentSystem, openRow, rowFacts } from "../../agent-model/src/model.mjs";
+import { judgeTools, planJudgeTools, LOAD_LAYER, parentSystem, openRow, rowFacts } from "../../agent-model/src/model.mjs";
 import { AI_RUN_STATE_MAX_BYTES } from "../../bio-plane/src/run-rules/index.mjs";
 import { toolContent, droppedNote } from "./reads.mjs";
 import { SEGMENT_END_BY } from "./names.mjs";
 import { loggable, conditionFault, CONDITIONS, JUDGED_WITH_CONDITION, LOG_DETAIL_MAX } from "./entries.mjs";
 import { planeAnswer, publishedPack, loadableLayers, loadLayer } from "./plane.mjs";
 import { performStep, performPlanStep } from "./work.mjs";
+import { talk, rowRole, gateOne } from "./talk.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
 /* THE ONLY BOUND ON THE DRIVER ITSELF, and it is not the run's budget.
@@ -23,6 +24,49 @@ import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 export const MAX_STEPS = 400;
 
 /* R99 — the clock `wallclock` is measured on: `env.CLOCK` when a function (a test injects one), else `Date.now`. */
+/** R54: a write's `idem`, `<run>:<pass>:<step>:<n>`. `n` is the write's place among the step's writes and, after a dot,
+ *  a digest of what it writes (its body or query less `idem`, `consume` and `usage`, the spend and the clock): a step
+ *  re-run after a stop sends the same writes under the same keys, and a changed write (an adjusted candidate, a later
+ *  visit of the same step in the pass) a new key, never one the plane would read as a repeat. Pure. */
+export function idemKey(run, pass, step, n, content) {
+  const { idem: _i, consume: _c, usage: _u, ...rest } = content && typeof content === "object" ? content : {};
+  return `${run}:${pass}:${step}:${n}.${digest(stable(rest))}`;
+}
+const stable = (v) => (Array.isArray(v) ? `[${v.map(stable).join(",")}]`
+  : v && typeof v === "object" ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stable(v[k])}`).join(",")}}`
+  : JSON.stringify(v ?? null));
+/* FNV-1a, 32 bits, as eight hex digits: a key, not a seal. */
+const digest = (text) => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, "0");
+};
+
+/** R54: the ops whose calls are writes, each carrying its `idem`. */
+export const WRITE_OPS = new Set(["airunspawn", "capturerequest", "suggest", "optionpropose", "airuntick", "airunclose"]);
+
+/** R56 (T53; AIR25, BR29) — the label of the conversation that judged a row, on what that judgement produced: the
+ *  targets a plan names, the candidates a compose forms (those the state did not hold before it) and the submission an
+ *  adjust changes. `produced_by` is deduplicated, in order, each label copied unchanged. A candidate the table makes
+ *  (`level-empty`, made after the judgement by the row's work) is never stamped. Pure. */
+const sameLabel = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+export function withProducer(item, label) {
+  if (!item || typeof item !== "object" || !label) return item;
+  const list = Array.isArray(item.produced_by) ? item.produced_by : [];
+  return list.some((l) => sameLabel(l, label)) ? item : { ...item, produced_by: [...list, label] };
+}
+function producedBy(state, prior, label, judgement) {
+  const out = { ...state };
+  const had = new Set(Array.isArray(prior?.candidates) ? prior.candidates : []);
+  if (judgement && typeof judgement === "object" && Array.isArray(judgement.targets) && Array.isArray(state.targets))
+    out.targets = state.targets.map((t) => withProducer(t, label));
+  if (judgement && typeof judgement === "object" && Array.isArray(judgement.candidates) && Array.isArray(state.candidates))
+    out.candidates = state.candidates.map((c) => (had.has(c) ? c : withProducer(c, label)));
+  if (state.step === "adjust" && state.submission && state.submission !== prior?.submission)
+    out.submission = withProducer(state.submission, label);
+  return out;
+}
+
 export const wallNow = (env) => (typeof env?.CLOCK === "function" ? Number(env.CLOCK()) : Date.now());
 
 /** FL-3's DRIVER. It turns each row of `agent-harness`' table into plane calls
@@ -46,7 +90,19 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
      one exit. Nothing here emits the word. */
   let calls = 0;
   const { askPlane, refusal, planeSilent, planeRefused, modelSilent, modelRefused } = host;
-  const call = (op, query, body) => { calls += 1; return askPlane(env, op, credential, store, query, body); };
+  /* R54 (T53; AIR28, BR27) — RETRIED TURNS NEVER DUPLICATE WRITES. Every write a step makes carries `idem`
+     `<run>:<pass>:<step>:<n>`, `n` its place among the step's writes, so a step re-run after a stop sends the same keys
+     and the plane holds each write once; a write before the first step is the dispatch's. */
+  const idem = { pass: 0, step: "dispatch", n: 0 };
+  const call = (op, query, body) => {
+    calls += 1;
+    if (WRITE_OPS.has(op)) {
+      idem.n += 1;
+      const key = idemKey(runId, idem.pass, idem.step, idem.n, body ?? query);
+      if (body != null) body = { ...body, idem: key }; else query = { ...(query || {}), idem: key };
+    }
+    return askPlane(env, op, credential, store, query, body);
+  };
   /* R114: the plane calls a tick has already spent. A step's own tick spends the rest; a tick sent inside a step (a
      re-read's, R114) spends the calls since the last and moves this on. */
   const accounted = { at: 0 };
@@ -152,6 +208,27 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
                    ...(session.mode === "plan" ? planJudgeTools(OPTION_KEYS) : judgeTools(LEVELS, CONDITIONS))];
   }
 
+  /* R51 (T53; AIR5, AD14) — GATE 1 PER PART, BEFORE ANY TURN: every role the mode's rows converse in has an entry of
+     the account that passed the mode's part and serves the role's need. Refused at dispatch (R34). Only for a model
+     half on the T53 provider: an earlier shell's account carries no entries to hold. */
+  let gateLimits = [];
+  if (model?.provider) {
+    const gate = await gateOne(model, session.mode);
+    if (gate.refused) {
+      const g = gate.refused;
+      const lapse = await settleAtDispatch({ call, runId, session, code: g.code,
+        why: g.code === "PART_NOT_PASSED"
+          ? localize("agent-steps.drive.no_entry_passed_part", "no entry of the account has passed the {part} part", { part: String(g.part) })
+          : localize("agent-steps.drive.no_entry_serves_capability", "no entry of the account that passed the {part} part has {capability}", { part: String(g.part), capability: String(g.capability) }) });
+      return { refusal: refusal(g.code, g.code === "PART_NOT_PASSED"
+          ? localize("agent-steps.drive.part_not_passed_detail", "No entry of the account serving this run has passed the {part} part of the gate, so no turn was taken and nothing was written by this segment.", { part: String(g.part) })
+          : localize("agent-steps.drive.capability_missing_detail", "No entry of the account serving this run that passed the {part} part has {capability}, which the {role} step needs, so no turn was taken.", { part: String(g.part), capability: String(g.capability), role: String(g.role) }),
+        409, { run_id: runId, part: g.part, entries: g.entries, ...(g.capability !== undefined ? { capability: g.capability } : {}),
+               ...(lapse ? { lapse } : {}) }) };
+    }
+    gateLimits = gate.limits;
+  }
+
   /* §14b.7 — A RESUMED RUN READS ITS OWN LOG AND CONTINUES.
      The count is what the table needs; the entries are what a later reader
      needs. Both come from PL-5's `op=airunlog`, in `seq` order, which is why
@@ -183,6 +260,9 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
                    landed: () => { logged += 1; },
                    refused: (named) => { logRefused.push(named); refusals.push(named); },
                    runtimeExtra: 0,
+                   /* R52: a report taken in a step a stop may abandon is ticked with the state that holds it, so a
+                      re-run asks only the levels without one (set below, once the table is known). */
+                   partialState: null,
                    /* R114: one log entry in its own tick, sent the moment it is made, spending the plane calls made since the
                       last tick (itself included) and the wall time since. `{silent}` when the plane did not answer;
                       `{landed}` whether the entry was appended; `{ended}` when the plane ended the run by it. */
@@ -245,6 +325,11 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
      AFTER `resume`, and carries only the table's own fields (`resumeFrom`), never the mode, target, limit or budget. */
   const FLOW = flowFor(session.mode);
   const planMode = FLOW === PLAN_FLOW;
+  if (model?.provider) logSeq.partialState = (s) => {
+    const p = publishableState(s, AI_RUN_STATE_MAX_BYTES, FLOW);
+    /* agent-harness R23 (notice agent-harness:353): a state holding provider-held state is refused, never published. */
+    return p.ok === false || p.restarted ? null : p.state;
+  };
   const resumed = resumeFrom(session.state ?? null, FLOW);
   state = resumed.at
     ? { ...state, ...resumed.state, resumeAt: resumed.at, resumeBasis: null }
@@ -256,7 +341,7 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
      simply carries the state forward — an absent judgement is not an error, it
      is a run whose model had nothing to add. */
   let jx = 0;
-  let ended = null, steps = 0, segmentStopped = null, closeRefused = false;
+  let ended = null, steps = 0, segmentStopped = null, closeRefused = false, aiStop = null;
   /* R91: the run's facts are read and held to the account and the pack: everything a refusal "before the segment
      starts" answers. `preflight` stops here, for `/run` to answer those refusals before it hands the segment over. */
   if (preflight) return { ready: true };
@@ -269,12 +354,15 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
     if (deadline != null && Date.now() >= deadline) { segmentStopped = "wall"; break; }
     steps += 1;
     accounted.at = calls;
+    idem.pass = Number(state.pass) || 0; idem.step = String(state.step); idem.n = 0;
     const row = FLOW[state.step];
 
     /* THE JUDGEMENT, AND THE ONE DOOR IT COMES THROUGH. Supplied by the caller in order, or (R58; agent-model R1) made by
        a model turn at every judged row but `collect`, whose judgements are the sub-sessions' REPORTS (agent-harness R7). */
     let judgement;
     let factsDropped = [];
+    /* R56: the label of the conversation that judged this row, when its provider answered one. */
+    let judgedBy = null;
     if (row && row.judged && model && state.step !== "collect") {
       /* R61 (F5; agent-model R12): THE ROW'S FACTS ARE RECORD TEXT, AND REACH THE MODEL ONLY AS A TOOL'S RESULT.
          `openRow` appends the row's own prompt (the step and the row) and then the facts it judges over as the result of
@@ -282,9 +370,11 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
       const { content: facts, dropped } = toolContent(rowFacts(state, LEVELS));
       factsDropped = dropped;
       openRow(model.messages, state.step, row, facts);
-      const got = await converse({
-        reference: model.reference, runner: model.runner, mode: state.mode, meter: model.meter, system: model.system,
-        messages: model.messages, tools: model.tools, finalTool: `judge_${state.step}`, ...model.traced,
+      /* R50, R52–R55, R57: through the one door, as the row's role (`<mode>:<row>`), its turns keyed by the step (R54). */
+      const got = await talk(model, {
+        role: rowRole(state.mode, state.step), mode: state.mode, system: model.system,
+        messages: model.messages, tools: model.tools, finalTool: `judge_${state.step}`,
+        idem: `${runId}:${Number(state.pass) || 0}:${state.step}:turn`,
         /* R117: a `condition` outside the record's vocabulary is handed back once, on the two rows that carry one. */
         checkFinal: JUDGED_WITH_CONDITION.has(state.step) ? conditionFault : undefined,
         onTool: async (name, input) => {
@@ -292,27 +382,41 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
           return { content: localize("agent-steps.drive.this_step_is_judged_by", "this step is judged by judge_{step}", { step: String(state.step) }), error: true };
         },
       });
-      model.spent(got, state.mode);
+      if (got.roleUnknown)
+        return { refusal: refusal("AI_ROLE_UNKNOWN", localize("agent-steps.drive.ai_role_unknown", "The {role} step names a role the run's table holds no need for, so no model was asked.", { role: String(got.roleUnknown.role) }), 409,
+          { run_id: runId, role: got.roleUnknown.role }) };
+      /* R52: a stop at the step boundary: the step is abandoned before any write of its own and no tick carries it. */
+      if (got.aiStop) { aiStop = got.aiStop; break; }
       if (got.silent) return { refusal: modelSilent(got.silent, runId) };
       if (got.refused) return { refusal: modelRefused(got.refused, runId) };
       if (got.stopped) { segmentStopped = got.stopped; break; }
       if (got.answer) judgement = got.answer;
+      if (got.label && typeof got.label === "object") judgedBy = got.label;
     } else if (row && row.judged && !model && jx < judgements.length) {
       judgement = judgements[jx];
       jx += 1;
     }
     if (judgement !== undefined) {
+      const prior = state;
       const applied = planMode ? applyPlanJudgement(state, judgement) : applyJudgement(state, judgement);
       if (!applied.ok)
         return { refusal: refusal("JUDGEMENT_OVERREACH", applied.detail, 400,
           { step: state.step, fields: applied.overreach }) };
       state = applied.state;
+      /* R56: what this row's conversation produced names it: the targets a plan names (their capture requests), the
+         candidates a compose forms, the submission an adjust changes. A table-made candidate names no AI. */
+      if (judgedBy) state = producedBy(state, prior, judgedBy, judgement);
     }
 
     /* WHAT THE ROW DOES, IN PLANE CALLS. */
     const work = planMode ? await performPlanStep(call, state, runId)
       : await performStep(call, state, runId, model, logSeq);
     if (work.silent) return { refusal: planeSilent(work.silent) };
+    /* R52: a sub-session stopped: the step is abandoned at its boundary (the reports it took stay in the log). */
+    if (work.aiStop) { aiStop = work.aiStop; break; }
+    if (work.roleUnknown)
+      return { refusal: refusal("AI_ROLE_UNKNOWN", localize("agent-steps.drive.ai_role_unknown", "The {role} step names a role the run's table holds no need for, so no model was asked.", { role: String(work.roleUnknown.role) }), 409,
+        { run_id: runId, role: work.roleUnknown.role }) };
     if (work.model?.silent) return { refusal: modelSilent(work.model.silent, runId) };
     if (work.model?.refused) return { refusal: modelRefused(work.model.refused, runId) };
     /* D-611: the segment's turns or bytes ran out inside the step. The SEGMENT stops; the run does not, and what
@@ -384,7 +488,13 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
     let published = null;
     if (resumeTargets(FLOW).includes(after.step)) {
       published = publishableState(after, AI_RUN_STATE_MAX_BYTES, FLOW);
-      if (published.restarted) {
+      /* R55, agent-harness R23 (notice agent-harness:353): a state holding a provider's session, response, conversation
+         or continuation id is refused by the table, so this tick publishes no state and the refusal is named in
+         `refusals`, never a state quietly dropped; the record keeps the last state it published. */
+      if (published.ok === false) {
+        refusals.push({ at: "airuntick.state", code: published.code, key: published.key ?? null, detail: published.detail ?? null });
+        published = null;
+      } else if (published.restarted) {
         const last = trace[trace.length - 1];
         last.note = localize("agent-steps.drive.v1_the_tables_state_is", "{v1}the table's state is {bytes} bytes, over the {limit} a run's state may hold (ai-runs R45), so this tick publishes the pass restarted at '{at}' and a later segment re-does it rather than resume from a state the record refuses", { v1: String(last.note ? `${last.note}; ` : ""), bytes: String(published.restarted.bytes), limit: String(published.restarted.limit), at: String(published.restarted.at) });
       }
@@ -505,6 +615,8 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
     state = { ...after, budget: state.budget, ...look };
   }
 
+  /* R52 (T53; AIR28): `ended.by` names the AI stop; the run itself goes on, resumable, at its last tick's state. */
+  if (aiStop) ended = { bound: null, condition: null, by: SEGMENT_END_BY.ai, ai_stop: aiStop };
   return {
     mode: state.mode, trace, passes: state.pass, ended, logged, submitted,
     /* FL-11: the question this run's readings default to, and WHY — published so a reader can check it
@@ -532,9 +644,14 @@ export async function driveHarness(host, env, { runId, store, credential, judgem
     holdings: state.holdings ?? null,
     budget: BUDGET_BOUNDS.map((b) => ({ bound: b, ...(state.budget[b] || { allowed: 0, consumed: 0 }) })),
     segmentStopped,
+    /* R51: each entry the gate passed with limits, named, for the shell to state. */
+    gateLimits,
+    /* R52: the AI stop that ended the segment at a step boundary, or null. */
+    aiStop,
     /* R91: how this segment ended, for its `segment_end`: the run ended (by the table or the plane's exit), the plane
        refused its close, or (`by` null) the segment met one of its own bounds (turns, bytes, wall, or `max_steps`). */
-    segmentEnd: ended ? { by: ended.by, done: true }
+    segmentEnd: aiStop ? { by: SEGMENT_END_BY.ai, done: false, ai_stop: aiStop }
+      : ended ? { by: ended.by, done: true }
       : closeRefused ? { by: SEGMENT_END_BY.refusal, done: false }
       : { by: null, done: false },
   };

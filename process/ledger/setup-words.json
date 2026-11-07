@@ -1,0 +1,34 @@
+{
+  "id": "setup-words",
+  "title": "setup-words: confirm its requirements on layer 1 (ledger entry written 6 Nov; no unmet mark)",
+  "layer": 1,
+  "paths": [
+    "bio-plane/test/word-rx.mjs",
+    "bio-plane/src/setup-words/",
+    "build/requirements/setup-words.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/setup-words/"
+  ],
+  "requirements": "build/requirements/setup-words.md",
+  "uses": [],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/setup-words.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "This module's code and tests exist (build/modules.json) but it had no ledger entry, so the process never recorded it (found in the lanes' qualification, 6 Nov). Its requirement file has no unmet mark. Run its suite on its layer. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Edit no other module, and commit no generated file.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T16:33:10Z"
+  }
+}

@@ -9,6 +9,88 @@ export const PUBLISHED_PARTS = Object.freeze({
     return "/app/published/" + encodeURIComponent(sub);
   },
 
+  /* F1 (R19, R76): the edition's evidence rows, read from the shape `publishedcase` answers (`public-read` R3, R53): its
+     `materials` is `{materials: [...], attestations}`, each row with its `entry` `{name, locator, fingerprint}`. A row the case
+     carries whole opens by its own SHA-256; a row carried as its copy opens by the copy's (the original is never served); a row
+     carried in the signed document only (an extract, `included: false`) opens nothing. An answer stating no materials falls back
+     to its `captures:` rows, as before. Each row: `{name, sha, open, grade, axis}`, `sha` the full lowercase fingerprint or "",
+     `open` the hash its bytes open by or "". */
+  evidenceOf: function (e) {
+    const full = function (s) { s = String(s || "").toLowerCase(); return /^[0-9a-f]{64}$/.test(s) ? s : ""; };
+    const block = e && e.materials && typeof e.materials === "object" && !Array.isArray(e.materials) ? e.materials.materials : null;
+    if (Array.isArray(block) && block.length) {
+      return block.filter(function (x) { return x && typeof x === "object"; }).map(function (x) {
+        const en = x.entry && typeof x.entry === "object" ? x.entry : {};
+        const sha = full(en.fingerprint || x.sha);
+        const copy = x.obscured && typeof x.obscured === "object" ? full(x.obscured.copy) : "";
+        return { name: String(en.name || x.title || x.origin || x.ref || ""), locator: String(en.locator || x.origin || ""), sha: sha,
+                 open: copy || (x.included === true ? sha : ""), grade: null, axis: "capture" };
+      });
+    }
+    const rows = e && Array.isArray(e.captures) ? e.captures : e && Array.isArray(e.materials) ? e.materials : [];
+    return rows.filter(function (x) { return x && typeof x === "object"; }).map(function (x) {
+      const sha = full(x.sha256 || x.capture_sha);
+      return { name: String(x.title || x.label || x.locator || ""), locator: String(x.locator || x.origin || ""), sha: sha, open: sha, grade: x.grade || null, axis: x.axis || x.grade_axis || "capture" };
+    });
+  },
+
+  /* R100 (public-read R41): one evidence row of the case-level list: the document's name, its locator (a web address is the
+     link to where it can be read), its fingerprint (short), and the way to open its bytes where the case publishes them. */
+  evidenceRow: function (cs, view, x) {
+    const P = view.parts;
+    const web = /^https?:\/\/\S+$/i.test(x.locator || "") ? x.locator : "";
+    const link = function (t) { return '<a href="' + cs.esc(web) + '" rel="noopener noreferrer" data-evidence-link>' + cs.esc(t) + "</a>"; };
+    const name = x.name || x.locator || x.sha;
+    const graded = P.gradeMark(cs, x.axis, x.grade);
+    const where = web && web !== name ? ' <span class="meta" data-evidence-locator>' + link(web) + "</span>"
+      : !web && x.locator && x.locator !== name ? ' <span class="meta" data-evidence-locator>' + cs.esc(x.locator) + "</span>" : "";
+    return cs.row("", '<span class="rec" data-evidence-row>' + (web && web === name ? link(name) : cs.esc(name)) + "</span>" + where
+      + (graded ? ' <span data-evidence-grade>' + graded + "</span>" : ""),
+    x.sha ? '<span class="id">' + cs.esc(x.sha.slice(0, 12)) + "</span>" : "",
+    x.open ? cs.act("publishedcase", { label: "screen.published.evidence.open", data: { sha: x.open } }) : "");
+  },
+
+  /* R100: the signature and the signer's public key the case document carries (`document.sig_armored`, its `attestor.key_b64`),
+     each "" when the answer does not state it. The key is drawn as an OpenSSH line, its type read from its own bytes. */
+  signatureOf: function (e) {
+    const d = e && e.document && typeof e.document === "object" ? e.document : {};
+    const sig = typeof d.sig_armored === "string" && d.sig_armored.trim() ? d.sig_armored.trim() : "";
+    const a = d.attestor && typeof d.attestor === "object" ? d.attestor : {};
+    const key = typeof a.key_b64 === "string" && /^[A-Za-z0-9+/=]+$/.test(a.key_b64) ? a.key_b64 : "";
+    let type = "";
+    try {
+      const raw = key ? atob(key.slice(0, 64).replace(/=+$/, "").slice(0, 48)) : "";
+      const n = raw.length >= 4 ? ((raw.charCodeAt(0) << 24) | (raw.charCodeAt(1) << 16) | (raw.charCodeAt(2) << 8) | raw.charCodeAt(3)) : 0;
+      const t = n > 0 && n < 40 ? raw.slice(4, 4 + n) : "";
+      type = /^[a-z0-9@.-]+$/.test(t) ? t : "";
+    } catch (x) { type = ""; }
+    return { signature: sig, key: key ? (type ? type + " " : "") + key : "" };
+  },
+
+  /* R84 (public-read R46): the edition's own statement of the passages it was published without grading, read from its signed
+     document: the line with how many, and the fold "Which passages" listing each by its document and its finding. An edition of an
+     earlier format states none (`ungraded_passages` null), and one with none ungraded lists none: neither draws anything. */
+  ungradedHead: function (cs, view, e) {
+    const P = view.parts, u = e && e.ungraded_passages && typeof e.ungraded_passages === "object" ? e.ungraded_passages : null;
+    const rows = u && u.stated === true && Array.isArray(u.rows) ? u.rows.filter(function (r) { return r && typeof r === "object"; }) : [];
+    if (!rows.length) return "";
+    const n = rows.length;
+    return '<div data-ungraded-edition="' + n + '"><p class="mk-note">' + cs.w(n === 1 ? "screen.published.ungraded.one" : "screen.published.ungraded", { n: String(n) }) + "</p>"
+      + '<details class="mk-details" data-fold="screen.published.ungraded.which"><summary>' + cs.w("screen.published.ungraded.which") + '</summary><ul class="mk-list">'
+      + rows.map(function (r) {
+        return '<li data-ungraded-row="' + cs.esc(String(r.finding || "") + "/" + String(r.ord === undefined || r.ord === null ? "" : r.ord)) + '">'
+          + cs.w("screen.ceremony.ungraded.row", { passage: String(r.title || r.content_id || ""), n: String(P.placeOf(e, r.finding)) }) + "</li>";
+      }).join("") + "</ul></details></div>";
+  },
+
+  /* R104: the public pages' head, the group's public name, and their foot, "Made with Civicsmith". */
+  pubHead: function (cs, group) {
+    return group ? '<header class="cs-pubhead" data-pubhead><span class="grp">' + cs.esc(group) + "</span></header>" : "";
+  },
+  pubFoot: function (cs) {
+    return '<footer class="cs-pubfoot" data-pubfoot><span class="cs-credit">' + cs.w("case-grammar.text.made", { product: cs.w("shell.mark") }) + "</span></footer>";
+  },
+
   /* The answer the screen draws from, once read: the case's (or the finding's) `publishedcase`. */
   answer: function (view) {
     return view.data.edition && view.data.edition.state === "ok" ? view.data.edition.value : null;
@@ -76,7 +158,8 @@ export const PUBLISHED_PARTS = Object.freeze({
   /* R80 (C47): a finding's role and its two strengths, joined by the separator only between what is stated (no trailing dot) */
   strengthLine: function (cs, view, stand, f) {
     const P = view.parts;
-    const grades = [P.gradeMark(cs, "capture", P.gradeOf(f, "capture")), P.gradeMark(cs, "connection", P.gradeOf(f, "connection"))].filter(Boolean).join(" ");
+    // DEC-496: a finding's capture is the team's grade for the copy (DEC-461), so its gloss takes the copy lead
+    const grades = [P.gradeMark(cs, "capture", P.gradeOf(f, "capture"), { copy: true }), P.gradeMark(cs, "connection", P.gradeOf(f, "connection"))].filter(Boolean).join(" ");
     return [stand.role === "load_bearing" ? cs.w("case-grammar.load_bearing") : "", grades].filter(Boolean).join(" · ");
   },
 
@@ -97,9 +180,16 @@ export const PUBLISHED_PARTS = Object.freeze({
   },
 
   /* A grade as the kit marks it, on the axis the answer names; "" for a grade that is no letter. */
-  gradeMark: function (cs, axis, letter) {
+  gradeMark: function (cs, axis, letter, o) {
     const g = typeof letter === "string" ? letter.trim().toUpperCase() : "";
-    return /^[A-D]$/.test(g) && typeof axis === "string" && axis ? cs.grade(axis, g) : "";
+    if (!(/^[A-D]$/.test(g) && typeof axis === "string" && axis)) return "";
+    // DEC-496: the letter's word gloss beside the chip (`mark.grade.gloss.<scale>.<letter>`, as `mark.grade.gloss.form`); a letter the
+    // word list holds no gloss for draws none (the kit draws a missing key as itself). The team's copy grade leads with its own words.
+    const key = "mark.grade.gloss." + axis + "." + g.toLowerCase(), said = cs.w(key);
+    const lead = o && o.copy && axis === "capture" ? cs.w("mark.grade.gloss.copy.lead") : "";
+    const gloss = said && said !== key ? '<span class="meta" data-gloss="' + cs.esc(axis + "." + g) + '">'
+      + cs.w("mark.grade.gloss.form", { letter: g, gloss: { html: (lead && lead !== "mark.grade.gloss.copy.lead" ? lead + " " : "") + said } }) + "</span>" : "";
+    return cs.grade(axis, g) + gloss;
   },
 
   /* R6, R37–R39: one finding as the case page draws it: its place, its conclusion in the author's words, its two strengths
@@ -122,11 +212,16 @@ export const PUBLISHED_PARTS = Object.freeze({
       + "</p><p>" + line + "</p>"
       // R81 (D-M6 (b)): an axis the frozen pair does not grade as a letter says so by the design's words, never nothing: "Undetermined" when its
       // state is that, else "Not graded yet"
-      + (Array.isArray(f.strength) ? ["capture", "connection"].filter(function (a) { return !P.gradeOf(f, a); }).map(function (a) {
-        const x = f.strength.find(function (y) { return y && y.axis === a; });
-        return '<p class="mk-small" data-ungraded="' + a + '"><b>' + cs.w("mark.scale." + a + ".name") + "</b> "
-          + cs.w(x && x.state === "undetermined" ? "screen.published.strength.undetermined" : "screen.published.strength.unrated") + "</p>";
-      }).join("") : "")
+      + (Array.isArray(f.strength) ? (function () {
+        const open = ["capture", "connection"].filter(function (a) { return !P.gradeOf(f, a); });
+        const stateOf = function (a) { const x = f.strength.find(function (y) { return y && y.axis === a; }); return x && x.state === "undetermined" ? "undetermined" : "unrated"; };
+        // R102: neither axis graded (and neither undetermined) is one short line saying what would grade it
+        if (open.length === 2 && open.every(function (a) { return stateOf(a) === "unrated"; })) return '<p class="mk-small" data-ungraded="both">' + cs.w("screen.published.ungraded.line") + "</p>";
+        return open.map(function (a) {
+          return '<p class="mk-small" data-ungraded="' + a + '"><b>' + cs.w("mark.scale." + a + ".name") + "</b> "
+            + cs.w(stateOf(a) === "undetermined" ? "screen.published.strength.undetermined" : "screen.published.strength.unrated") + "</p>";
+        }).join("");
+      })() : "")
       + (why ? '<p class="mk-small" data-falsifier><b>' + cs.w("screen.published.what.would.overturn.it") + '</b> <span class="rec">' + cs.esc(why) + "</span></p>" : "")
       + (docs.length ? '<p class="mk-small"><b>' + cs.w("screen.published.evidence") + '</b></p><ul class="mk-list" data-evidence-names>'
         + docs.map(function (d) { return "<li>" + d + "</li>"; }).join("") + "</ul>" : "")

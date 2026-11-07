@@ -106,3 +106,28 @@ test("R1 (a), B1: the fake account is ready as a person's is, holding a workers.
   assert.ok(events.some((e) => e.k === "no" || e.k === "fail"), "the installer says it stopped: " + JSON.stringify(events.slice(-3)));
   assert.equal(events.some((e) => e.k === "ok" && e.id === "fleet"), false);
 });
+
+/* A call on the fake account with its own token, got as the installer gets it: the consent page, then the token exchange. */
+async function signedIn(account) {
+  const verifier = "v".repeat(48);
+  const challenge = Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))).toString("base64url");
+  const consent = await (await account.handle(new Request("https://dash.cloudflare.com/oauth2/auth?" + new URLSearchParams({
+    response_type: "code", client_id: "c", redirect_uri: "https://x.example/callback", state: "s", code_challenge: challenge, code_challenge_method: "S256", scope: "workers-scripts.write" })))).text();
+  const code = new URL(/href="([^"]+)"/.exec(consent)[1].replace(/&amp;/g, "&")).searchParams.get("code");
+  const grant = await (await account.handle(new Request("https://dash.cloudflare.com/oauth2/token", { method: "POST",
+    body: new URLSearchParams({ grant_type: "authorization_code", code, code_verifier: verifier, redirect_uri: "https://x.example/callback" }) }))).json();
+  return (path, init = {}) => account.handle(new Request(`${API}/accounts/${account.account}${path}`, { ...init, headers: { authorization: "Bearer " + grant.access_token, ...(init.headers || {}) } }));
+}
+
+test("F8 (installer R40): the fake account's script settings hold the Workers Logs its upload stated, as Cloudflare's do, so the install passes R40's check; control: an upload that states none reads back off", async () => {
+  const { account, events } = await install("fakelogs");
+  assert.ok(!events.some((e) => e.k === "fail"), JSON.stringify(events.filter((e) => e.k === "fail")));
+  const call = await signedIn(account);
+  const settings = async (name) => (await (await call(`/workers/scripts/${name}/settings`)).json()).result;
+  assert.equal((await settings("fakelogs")).observability.enabled, true, "the plane's logs are on, as its upload stated");
+  const fd = new FormData();
+  fd.append("metadata", new Blob([JSON.stringify({ main_module: "index.mjs" })], { type: "application/json" }));
+  fd.append("index.mjs", new Blob(["export default {};"], { type: "application/javascript+module" }), "index.mjs");
+  assert.equal((await call("/workers/scripts/logs-off", { method: "PUT", body: fd })).status, 200);
+  assert.deepEqual((await settings("logs-off")).observability, { enabled: false });
+});

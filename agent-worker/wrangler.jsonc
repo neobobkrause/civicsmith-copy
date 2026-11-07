@@ -62,12 +62,12 @@
   "preview_urls": false,
 
   // THE NARROWEST BINDINGS THAT DO THE JOB (fleet rule 3, I6/I8; R35): the plane,
-  // and the agent runner's Container (below). The member reads and writes nothing
+  // and this member's own Durable Objects (below). The member reads and writes nothing
   // itself: everything it learns, it learns by asking the plane, under a credential
   // the plane hands it per call. So there is:
   //
-  //   NO STORE Durable Object     — it structurally CANNOT write the record (its one
-  //                                Durable Object binding is the runner's container).
+  //   NO STORE Durable Object     — it structurally CANNOT write the record (its Durable
+  //                                Objects are its own: segments, checks, circuit state).
   //   NO r2_buckets              — not CAPTURES, and above all not PUBLISHED.
   //                                Every Worker holding a PUBLISHED binding is one
   //                                more component inside the ratification fence.
@@ -87,29 +87,30 @@
     { "binding": "PLANE", "service": "bio-plane" }
   ],
 
-  // R35, R109 (Q0-4; K1502, K1601 (6); N1196, K3610) — THE REMOTE SESSION'S DURABLE OBJECT: the namespace through which
-  // `agent-model` reaches Claude Code running in a cloud session that `agent-runner`'s second class (`RemoteSession`,
-  // no container) creates on the member's own sign-in. Bound cross-script, so this member defines no class for it and
-  // depends on nothing from npm; the class and its door are declared by the script that serves it. Every path of this
-  // member that reaches a runner reaches this binding and no other: the local container's binding (`RUNNER`) is not
-  // declared here (R109). It is passed no plane binding, credential or address: every tool call it relays is performed
-  // HERE, through `PLANE`, under the call's own credential or grant (agent-model R7). Like `PLANE`, its `script_name` is
-  // templated from the instance by the installer.
+  // F2 (coordinator ruling 5 Nov 2026, 20:18): the runner is bound. `RUNNER` is `agent-runner`'s Container Durable
+  // Object class `AgentRunner`, cross-script, the binding agent-runner's own manifest names (`bind`); each environment's
+  // deploy names the script for itself (p3dev.mjs and deploy-fleet slug `script_name`; the installer binds it from the
+  // release). A member's own sign-in reaches that member's own instance through it (src/remote.mjs). `REMOTE`
+  // (`RemoteSession`) stays unbound: agent-runner R13 deletes that class.
   "durable_objects": {
     "bindings": [
-      { "name": "REMOTE", "class_name": "RemoteSession", "script_name": "agent-runner" },
+      { "name": "RUNNER", "class_name": "AgentRunner", "script_name": "agent-runner" },
       // R91 (R085-8; K3477): this member's OWN Durable Object, one per run, so a segment outlives the request that
       // started it. It holds the segment's inputs in memory only (R36) and runs it from an alarm; it is not a store
       // and writes nothing of the record.
       { "name": "SEGMENTS", "class_name": "SegmentDriver" },
       // R110, R111 (K3693): this member's OWN Durable Object holding each member's last passed `check` and the version it
       // passed at, one object per member. It holds a version and a time, nothing of the record and no secret (R36).
-      { "name": "CHECKS", "class_name": "CheckRecord" }
+      { "name": "CHECKS", "class_name": "CheckRecord" },
+      // R35, F3 (agent-model R35, R53): this member's OWN Durable Object holding `agent-model`'s circuit state, one object
+      // per (account, entry): a state, counts and instants, never content and no secret (R36).
+      { "name": "HEALTH", "class_name": "CircuitState" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["SegmentDriver"] },
-    { "tag": "v2", "new_sqlite_classes": ["CheckRecord"] }
+    { "tag": "v2", "new_sqlite_classes": ["CheckRecord"] },
+    { "tag": "v3", "new_sqlite_classes": ["CircuitState"] }
   ],
 
   "observability": { "enabled": true }

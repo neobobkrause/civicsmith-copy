@@ -74,3 +74,11 @@ test("R12 mail-door declares mailbringin, held at the door: its requires alone r
     refusedNaming: (a, field) => !!a && ((field === "id" && a.reason === "NO_SUCH_MAIL") || (field === "statement" && a.reason === "MAIL_NO_STATEMENT")),
     values: { statement: "forwarded to me" }, same: (x, y) => x && y && x.ok === y.ok && x.reason === y.reason });
 });
+
+/* F1 (surface-declarations R17, BOB's grade, PR 418): mailbringin is graded as captureupload is, read from its owner's
+   declaration (store-assembly), not copied: weight undetermined, never reasoned. */
+test("F1 mailbringin is declared with captureupload's grade, undetermined", async () => {
+  const { DECLARED_OPS: OWNER_DECLARED } = await import("../../../src/store-assembly/owner-ops.mjs");
+  assert.equal(DECLARED_OPS.mailbringin.weight, OWNER_DECLARED.captureupload.weight);
+  assert.equal(DECLARED_OPS.mailbringin.weight, "undetermined");
+});

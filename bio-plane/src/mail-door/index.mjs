@@ -687,7 +687,7 @@ export const DECLARED_OPS = Object.freeze({
   mailread: { classes: ["admin", "member"], machineClasses: [], stamps: ["viewer", "by"], needs: "contribute", mutating: false, weight: "read",
     description: localize("mail-door.declared.mailread", "read: one of the viewer's own waiting messages, its headers as stated, text and attachment list, keyed by id; writes nothing"),
     fields: { accepts: ["id"], requires: ["id"] } },
-  mailbringin: { classes: ["admin", "member"], machineClasses: [], stamps: ["viewer", "by"], needs: "contribute", mutating: true, weight: "reasoned",
+  mailbringin: { classes: ["admin", "member"], machineClasses: [], stamps: ["viewer", "by"], needs: "contribute", mutating: true, weight: "undetermined",
     description: localize("mail-door.declared.mailbringin", "a member brings one of her waiting messages into the record with her statement of where it came from, keyed by id: filed as a capture, whole, headers included"),
     fields: { accepts: ["id", "statement"], requires: ["id", "statement"] } },
   maildelete: { classes: ["admin", "member"], machineClasses: [], stamps: ["viewer", "by"], needs: "contribute", mutating: true, weight: "reversible",

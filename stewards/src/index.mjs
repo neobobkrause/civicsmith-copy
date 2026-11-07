@@ -10,7 +10,7 @@ import * as ui from "./ui.mjs";
 import { StewardsStore } from "./store.mjs";
 
 export { StewardsStore };
-export { KINDS, DECISIONS, SHARED_SERVICES, checkOpen, checkAccount } from "./config.mjs";
+export { KINDS, DECISIONS, SHARED_SERVICES, RULE_PARTS, checkOpen, checkAccount } from "./config.mjs";
 
 const COOKIE = "steward_session";
 const enc = new TextEncoder();
@@ -56,6 +56,10 @@ const WORDS = {
   DECISION_UNKNOWN: localize("stewards.index.decision_unknown", "The decision must be dismiss or withdraw."),
   NO_REASON: localize("stewards.index.reason_required", "A reason is required, at most {max} characters.", { max: CAPS.reason }),
   WITHDRAW_TARGET_INVALID: localize("stewards.index.withdraw_target_invalid", "A withdrawal names one shared service (a shared profile, the template library, a public listing) and its item."),
+  RULE_PART_REQUIRED: localize("stewards.index.rule_part_required", "Withdrawing a public listing names the part of the listing rule it breaks: 1, 2, 3 or 4."),
+  RULE_PART_UNKNOWN: localize("stewards.index.rule_part_unknown", "The listing rule has four parts: 1, 2, 3 or 4. There is no other."),
+  RULE_PART_NOT_APPLICABLE: localize("stewards.index.rule_part_not_applicable", "Only a public listing's withdrawal names a part of the listing rule."),
+  RULE_TEXT_VERSION_UNSET: localize("stewards.index.rule_text_version_unset", "The service's configuration does not say which approved text of the listing rule applies, so a public listing cannot be withdrawn now. Nothing was changed."),
   NOT_WITHDRAWN: localize("stewards.index.not_withdrawn", "No withdrawal of that shared service stands."),
   NOT_FOUND: localize("stewards.index.no_such_page", "There is no such page."),
   METHOD_NOT_ALLOWED: localize("stewards.index.method_not_allowed", "That method is not allowed here."),
@@ -95,9 +99,12 @@ function parseBody(request, text) {
   if (type.startsWith("application/x-www-form-urlencoded")) {
     const out = {};
     for (const [k, v] of new URLSearchParams(text)) out[k] = v;
-    if ("withdraw_service" in out || "withdraw_item" in out) {
-      if (out.withdraw_service || out.withdraw_item) out.withdraw = { service: out.withdraw_service, item: out.withdraw_item };
-      delete out.withdraw_service; delete out.withdraw_item;
+    if ("withdraw_service" in out || "withdraw_item" in out || "withdraw_rule_part" in out) {
+      if (out.withdraw_service || out.withdraw_item || out.withdraw_rule_part) {
+        out.withdraw = { service: out.withdraw_service, item: out.withdraw_item };
+        if (out.withdraw_rule_part) out.withdraw.rule_part = out.withdraw_rule_part;
+      }
+      delete out.withdraw_service; delete out.withdraw_item; delete out.withdraw_rule_part;
     }
     return out;
   }
@@ -268,8 +275,9 @@ async function steward(request, env, cfg, route, url) {
   if (text == null) return refuse(request, 413, "BODY_TOO_LARGE", {}, true);
   const b = parseBody(request, text);
   if (route.path === "/steward/decide") {
-    const r = await call("decide", { ref: b.ref, decision: b.decision, reason: b.reason, withdraw: b.withdraw, steward: name, now });
-    if (r.refused) return refuse(request, r.refused === "NO_SUCH_REPORT" ? 404 : 400, r.refused, {}, true);
+    const r = await call("decide", { ref: b.ref, decision: b.decision, reason: b.reason, withdraw: b.withdraw, steward: name, now,
+      ruleTextVersion: cfg.ruleTextVersion });
+    if (r.refused) return refuse(request, r.refused === "NO_SUCH_REPORT" ? 404 : r.refused === "RULE_TEXT_VERSION_UNSET" ? 503 : 400, r.refused, {}, true);
     return json ? Response.json(r) : new Response(null, { status: 303, headers: { location: `/steward/report/${encodeURIComponent(r.ref)}` } });
   }
   /* /steward/reinstate */

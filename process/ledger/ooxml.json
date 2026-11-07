@@ -1,0 +1,35 @@
+{
+  "id": "ooxml",
+  "title": "ooxml: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "bio-plane/src/ooxml.mjs",
+    "build/requirements/ooxml.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/ooxml/"
+  ],
+  "requirements": "build/requirements/ooxml.md",
+  "uses": [
+    "test-support",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/ooxml.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

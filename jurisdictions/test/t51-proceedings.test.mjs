@@ -47,7 +47,9 @@ test("R51 the first profile's forums include the county's Superior Court and the
 });
 
 test("R93 the first profile carries a records_help block read from the statute, valid, with every citation naming a section", () => {
-  const h = get(FIRST).records_help;
+  /* one block per law (R105): the Public Records Act's, beside the federal layer's FOIA block (R109) */
+  const at = get(FIRST).records_help.findIndex((b) => b.law === "California Public Records Act");
+  const h = get(FIRST).records_help[at];
   assert.ok(h, "records_help present");
   assert.equal(h.law, "California Public Records Act");
   assert.equal(h.days, 10); assert.equal(h.extra_days, 14);
@@ -58,12 +60,12 @@ test("R93 the first profile carries a records_help block read from the statute, 
   assert.match(h.portal.url, /^https:\/\/oaklandca\.nextrequest\.com\/?$/);
   assert.equal(h.faster.citation, "Oakland Mun. Code § 2.20.230(A)");
   assert.ok(validate(get(FIRST)).ok);
-  const broken = structuredClone(get(FIRST)); delete broken.records_help.days;
-  assert.ok(validate(broken).errors.some((e) => e.path === "records_help.days"));
+  const broken = structuredClone(get(FIRST)); delete broken.records_help[at].days;
+  assert.ok(validate(broken).errors.some((e) => e.path === `records_help[${at}].days`));
 });
 
 test("R93 the first profile's block agrees with its records_response deadline and its records_laws entry", () => {
-  const f = get(FIRST), h = f.records_help;
+  const f = get(FIRST), h = f.records_help.find((b) => b.law === "California Public Records Act");
   const rule = f.deadlines.find((d) => d.rule === "records_response");
   assert.equal(h.days, rule.amount); assert.equal(h.extra_days, rule.extension.days);
   assert.ok(f.records_laws.some((l) => l.name === h.law));

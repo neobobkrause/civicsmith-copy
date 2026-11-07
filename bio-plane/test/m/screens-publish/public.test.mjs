@@ -400,7 +400,9 @@ test("R6 (C5 d) the header holds the case id and the manifest's hash; without a 
 
 test("R6 R81 (C5 e, R95 a) the verification explanation is drawn by key with the signature check; an answer without one draws none (control)", async () => {
   const SAID = "tamper-EVIDENT, not tamper-proof; the deliverer is this team's Civicsmith's record, not covered by any signature.";
-  const p = await c5pub({ verification: { container: "x", manifest: "y", case_file: null, findings: [], detail: SAID } });
+  /* R100: the explanation says the signature and key are shown here, so it is drawn with the case document's signature and key */
+  const p = await c5pub({ verification: { container: "x", manifest: "y", case_file: null, findings: [], detail: SAID },
+    document: { sig_armored: "-----BEGIN SSH SIGNATURE-----\nU1NIU0lH\n-----END SSH SIGNATURE-----", attestor: { member: "rosa", key_b64: "AAAAC3NzaC1lZDI1NTE5AAAAIKEY" } } });
   assert.ok(drew(p, "screen.published.verify.detail", {}, main(p).querySelector("[data-verification]")), "by its key");
   assert.ok(!text(p).includes(SAID), "the served sentence is not drawn (R81)");
   const q = await c5pub({});

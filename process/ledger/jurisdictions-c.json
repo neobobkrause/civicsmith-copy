@@ -1,0 +1,36 @@
+{
+  "id": "jurisdictions-c",
+  "title": "jurisdictions-c: split by copy from jurisdictions (R121, R115, R116, R117, R123, R124, R125, R126, R127, R128, R129, R130, R131, R132, R134, R135, R136, R137, R138, R139, R111, R112, R113, R114, R118, R119, R120, R133)",
+  "layer": 2,
+  "paths": [
+    "build/requirements/jurisdictions-c.md",
+    "docs/requirements-notes/jurisdictions-c.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/jurisdictions-c/"
+  ],
+  "requirements": "build/requirements/jurisdictions-c.md",
+  "uses": [
+    "jurisdictions",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/jurisdictions-c.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T09:50:37Z"
+  }
+}

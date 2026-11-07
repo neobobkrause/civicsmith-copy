@@ -198,8 +198,14 @@ export function fakeAccount({ name = "Journey test account", onScript = async ()
       if (sc) sc.bindings = sc.bindings.filter((k) => k.name !== x[2]);
       return ok({});
     }
-    if ((x = /^\/workers\/scripts\/([^/]+)\/settings$/.exec(rest)) && m === "GET")
-      return scripts.has(x[1]) ? ok({ bindings: scripts.get(x[1]).bindings.map(({ text, ...b }) => b) }) : no("not found", 404, 10007);
+    /* F8 (installer R40): the settings hold the script's Workers Logs as its last upload stated them, as Cloudflare's do; an upload
+       that states none leaves them off */
+    if ((x = /^\/workers\/scripts\/([^/]+)\/settings$/.exec(rest)) && m === "GET") {
+      if (!scripts.has(x[1])) return no("not found", 404, 10007);
+      const sc = scripts.get(x[1]);
+      const obs = sc.meta && sc.meta.observability && typeof sc.meta.observability === "object" ? sc.meta.observability : null;
+      return ok({ bindings: sc.bindings.map(({ text, ...b }) => b), observability: obs ? { ...obs, enabled: obs.enabled === true } : { enabled: false } });
+    }
     if ((x = /^\/workers\/scripts\/([^/]+)\/subdomain$/.exec(rest)) && m === "POST") {
       if (!scripts.has(x[1])) return no("not found", 404, 10007);
       enabled.add(x[1]); return ok({ enabled: true });

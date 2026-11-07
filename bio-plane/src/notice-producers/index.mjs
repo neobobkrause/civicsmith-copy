@@ -25,7 +25,11 @@
  *   R16 explore-ask              FINDING ("Ask"), ai-use.exploreAsksPending     an account's daily Ask, to its owners
  *       ai-limit-reached         FINDING, ai-use.limitsReached                  a limit reached this period, to its owners
  *       (project-account-suspended is retired, T53 (K5571 (2); F1): ai-accounts R13 and its projectAccountsSuspended are
- *       gone, so nothing reads it; R35's `signin-ended` tells the owners, once its kind and words are held)
+ *       gone, so nothing reads it; R35's `ai-signin-ended` tells the owners)
+ *   R33 ai-threshold-reached     FINDING, ai-use.thresholdsReached              an alert level crossed, once a period, to its owners
+ *   R34 ai-terms-notice          FINDING, ai-accounts.termsNoticesDue           a plan's dated terms change, to who manages the account
+ *   R35 ai-account-left-list, ai-account-left-project-list, ai-signin-ended
+ *                                FINDING, ai-accounts.accountNoticesFor         an account that left a list, a sign-in ended, to the owners
  *       (each item's sentence and fills read by key from `words.json`, `words.mjs`; DEC-189 (5), (6); `{date}` by
  *       `date.daymonth|daymonthyear`, `{when}` by `ai.until.*`, DEC-191 (3), DEC-192 (3), (5))
  *   R17 the investigation's items, each told once, keyed by its source's own key (N820; K2418, K2484), each kind's summary
@@ -46,6 +50,9 @@
  *   R27 fetch-done              FINDING, capture.fetchesDone           a large capture's fetch delivered, to the member who began it (G2)
  *   R28 ingest-done, ingest-stopped  FINDING, calculations.ingestNotices   a background money ingest finished or stopped, to who ingested (G55)
  *   R29 reading-ended            FINDING, deps.readingsEnded (plane's job table)  a reading that finished, ended in part or was refused, to the member it was made for (G135f)
+ *   R30 register-changed-noticed FINDING, following.registerChanges    a register watch's change with its count, to the watch's author (T53)
+ *   R31 register-import-<done|stopped|failed>  FINDING, deps.importsEnded (registers' R13, injected)  an import's end, to its starter (T53)
+ *       (R32: both built from counts and the register's name only)
  *
  * REACHED as `noticeProducersOf(host, deps)` (K1563 (1)): one instance per Durable Object storage. It registers nothing
  * and holds no check row: it refuses nothing. `deps` (each defaults to its module's instance on the same host, reached
@@ -79,6 +86,7 @@ import { provenanceOf } from "../provenance/index.mjs";
 import { captureOf } from "../capture/index.mjs";
 import { calculationsOf } from "../calculations/index.mjs";
 import { aiUseOf } from "../ai-use/index.mjs";
+import { aiAccountsOf } from "../ai-accounts/index.mjs";
 import { stepsOf } from "../steps/index.mjs";
 import { questionExplorerOf } from "../question-explorer/index.mjs";
 import { investigationOf } from "../investigation/index.mjs";
@@ -143,6 +151,9 @@ export const NOTICE_KINDS = Object.freeze({
   /* R16 (queue R1, T40; K2376 (2), K2394) */
   "explore-ask": "FINDING",
   "ai-limit-reached": "FINDING",
+  /* R33, R34, R35 (T53; K5571 (2)) */
+  "ai-threshold-reached": "FINDING", "ai-terms-notice": "FINDING", "ai-account-left-list": "FINDING",
+  "ai-account-left-project-list": "FINDING", "ai-signin-ended": "FINDING",
   /* R17 (queue R1, T41; K2418, K2484) */
   "question-find": "FINDING",
   "step-later-found": "FINDING",
@@ -163,7 +174,24 @@ export const NOTICE_KINDS = Object.freeze({
   "ingest-stopped": "FINDING",
   /* R29 (fix round 9, G135f): a reading ended, in part or refused */
   "reading-ended": "FINDING",
+  /* R30 (T53; N1259; queue R98): a register watch's change, with its count */
+  "register-changed-noticed": "FINDING",
+  /* R31 (T53; N1259; queue R98): an import into a register that finished, stopped or failed */
+  "register-import-done": "FINDING",
+  "register-import-stopped": "FINDING",
+  "register-import-failed": "FINDING",
 });
+/** R30: the window of register changes read (`following.registerChanges`' `since`), the changes one read follows, and its page
+ *  (`following` R43: 1 to 200). */
+export const REGISTER_CHANGE_DAYS = 90;
+export const REGISTER_CHANGES_MAX = 1000;
+export const REGISTER_CHANGES_PAGE = 200;
+/** R31: the window of ended imports read (by `finished_at`), the imports one read follows, and its page (`registers` R13: at most 200). */
+export const REGISTER_IMPORT_DAYS = 90;
+export const REGISTER_IMPORTS_MAX = 1000;
+export const REGISTER_IMPORTS_PAGE = 200;
+/** R31: an ended import's state as `registers` holds it, and the kind it is told by; any other state (still running) is never told. */
+export const REGISTER_IMPORT_STATES = Object.freeze({ indexed: "done", stopped: "stopped", failed: "failed" });
 /** R29: the window of ended readings read, by the row's end, and the rows one read follows (`plane` R98: at most 500 a page). */
 export const READING_ENDED_DAYS = 90;
 export const READING_ENDED_MAX = 1000;
@@ -186,6 +214,13 @@ const DOOR_OPEN_DOCUMENT = localize("notice-producers.index.open_the_document", 
 /** R16, R17: the items one read answers from each of their sources (as R13's and R14's bounds); `facts` states the
  *  bound and `truncated` when a source answers more. */
 export const ACCOUNT_ITEMS_MAX = 200;
+/** R35: the account notices one read follows (`ai-accounts.accountNoticesFor`, its R72), and how old a notice may be and
+ *  still be told. */
+export const ACCOUNT_NOTICES_MAX = 1000;
+export const ACCOUNT_NOTICE_DAYS = 90;
+/** R35: each kind `ai-accounts.accountNoticesFor` answers, as the queue kind it is told by (`queue` R1's catalogue). */
+export const ACCOUNT_NOTICE_KINDS = Object.freeze({ "left-list": "ai-account-left-list",
+  "left-project-list": "ai-account-left-project-list", "signin-ended": "ai-signin-ended" });
 export const INVESTIGATION_ITEMS_MAX = 200;
 /** R24: the watched items one read follows (`retrieval.browse`'s `next`, its R85: at most 200 a page). */
 export const WATCHED_ITEMS_MAX = 1000;
@@ -263,6 +298,7 @@ export class NoticeProducers {
   get #calculations() { return this.#dep("calculations", () => calculationsOf(this.#host)); }
   get #provenance() { return this.#dep("provenance", () => provenanceOf(this.#host)); }
   get #aiUse() { return this.#dep("aiUse", () => aiUseOf(this.#host)); }
+  get #aiAccounts() { return this.#dep("aiAccounts", () => aiAccountsOf(this.#host)); }
   get #steps() { return this.#dep("steps", () => stepsOf(this.#host)); }
   get #questionExplorer() { return this.#dep("questionExplorer", () => questionExplorerOf(this.#host)); }
   get #investigation() { return this.#dep("investigation", () => investigationOf(this.#host)); }
@@ -296,6 +332,9 @@ export class NoticeProducers {
       security_tool_off: { bound: TOOL_EVENTS_MAX, truncated: false },
       explore_ask: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
       ai_limit: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
+      ai_threshold: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
+      ai_terms: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
+      ai_owner_notice: { bound: ACCOUNT_NOTICES_MAX, days: ACCOUNT_NOTICE_DAYS, truncated: false },
       question_find: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
       step_later_found: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
       step_due: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
@@ -308,6 +347,8 @@ export class NoticeProducers {
       fetch_done: { bound: FETCH_DONE_MAX, days: FETCH_DONE_DAYS, truncated: false },
       ingest: { bound: INGEST_NOTICE_MAX, days: INGEST_NOTICE_DAYS, truncated: false },
       reading_ended: { bound: READING_ENDED_MAX, days: READING_ENDED_DAYS, truncated: false },
+      register_changed: { bound: REGISTER_CHANGES_MAX, days: REGISTER_CHANGE_DAYS, truncated: false },
+      register_import: { bound: REGISTER_IMPORTS_MAX, days: REGISTER_IMPORT_DAYS, truncated: false },
       failed,
     };
     const run = (provider, fn) => {
@@ -330,6 +371,9 @@ export class NoticeProducers {
       run("file-safety", () => ({ fact: "security_tool_off", ...this.#toolsOff(me, viewer, at) }));
       run("ai-use", () => ({ fact: "explore_ask", ...this.#exploreAsks(me, viewer, at) }));
       run("ai-use", () => ({ fact: "ai_limit", ...this.#limitsReached(me, viewer, at) }));
+      run("ai-use", () => ({ fact: "ai_threshold", ...this.#thresholdsReached(me, viewer, at) }));
+      run("ai-accounts", () => ({ fact: "ai_terms", ...this.#termsNotices(me, viewer, at) }));
+      run("ai-accounts", () => ({ fact: "ai_owner_notice", ...this.#accountNotices(me, viewer, at) }));
       run("question-explorer", () => ({ fact: "question_find", ...this.#questionFinds(me, viewer, at) }));
       run("steps", () => ({ fact: "step_later_found", ...this.#laterFound(me, viewer, at) }));
       run("steps", () => ({ fact: "step_due", ...this.#stepsDue(me, viewer, at) }));
@@ -342,6 +386,8 @@ export class NoticeProducers {
       run("capture", () => ({ fact: "fetch_done", ...this.#fetchDone(me, viewer, at) }));
       run("calculations", () => ({ fact: "ingest", ...this.#ingestNotices(me, viewer, at) }));
       run("readings", () => ({ fact: "reading_ended", ...this.#readingsEnded(me, viewer, at) }));
+      run("following", () => ({ fact: "register_changed", ...this.#registerChanged(me, viewer, at) }));
+      run("registers", () => ({ fact: "register_import", ...this.#registerImports(me, viewer, at) }));
       return { items, facts };
     } catch {
       return { items: [], facts: { ...facts, failed: [...new Set([...failed, "notice-producers"])] } };
@@ -1077,22 +1123,30 @@ export class NoticeProducers {
     const ok = [];
     for (const e of r.reached) {
       if (!e || !filled(e.key) || !filled(e.owner) || !filled(e.scope)) continue;
-      /* (ai-use:105, its R5, R18) a provider limit standing (`source: "provider"`, no period, a `resets_at`) is told by no
-         item yet: the words file holds no queue sentence for it (only the refusals' `ai.refused.limit.provider*`), and
-         R16 writes none of its own. Only the account's own limits, by their period, are told here. */
-      if (e.source === "provider" || !LIMIT_PERIODS.includes(e.period)) continue;
       const day = NoticeProducers.#localDay(e.reached_at, zone);
+      /* (ai-use:105, its R5, R18; R16 "one item per entry") a provider limit standing (`source: "provider"`, no period, a
+         `resets_at`) is told by `ai.queue.limitreached.provider`, `{when}` the local day it lifts (as R16's `{date}`), or
+         by `.provider.unknown` when the provider named no time. Its key is the entry's own, as given. */
+      if (e.source === "provider") {
+        const date = dayInSentence(day, today);
+        const lifts = filled(e.resets_at) ? dayInSentence(NoticeProducers.#localDay(e.resets_at, zone), today) : null;
+        if (date && (lifts || !filled(e.resets_at))) ok.push({ e, when: lifts, date, provider: true });
+        continue;
+      }
+      if (!LIMIT_PERIODS.includes(e.period)) continue;
       const when = NoticeProducers.#periodEnd(e.period, e.period_start, day);
       const date = dayInSentence(day, today);
       if (when && date) ok.push({ e, when, date });
     }
     const { list, truncated } = cut(ok, ACCOUNT_ITEMS_MAX);
-    const items = list.map(({ e, when, date }) => {
+    const items = list.map(({ e, when, date, provider = false }) => {
       const o = this.#owner(e.owner, viewer);
-      const use = e.scope !== "overall" && e.scope !== "per_member" && hasWords(`ai.use.${e.scope}.inline`) ? e.scope : null;
-      const word = e.scope === "per_member" ? "ai.queue.limitreached.member" : use ? "ai.queue.limitreached" : "ai.queue.limitreached.overall";
-      const fills = { account: wordsOf(`ai.account.${o.kind}`, { project: o.name }), period: wordsOf(`ai.period.${e.period}`),
-                      ...(use ? { use: wordsOf(`ai.use.${use}.inline`) } : {}), date, when };
+      const use = !provider && e.scope !== "overall" && e.scope !== "per_member" && hasWords(`ai.use.${e.scope}.inline`) ? e.scope : null;
+      const word = provider ? (when ? "ai.queue.limitreached.provider" : "ai.queue.limitreached.provider.unknown")
+        : e.scope === "per_member" ? "ai.queue.limitreached.member" : use ? "ai.queue.limitreached" : "ai.queue.limitreached.overall";
+      const account = wordsOf(`ai.account.${o.kind}`, { project: o.name });
+      const fills = provider ? { account, date, ...(when ? { when } : {}) }
+        : { account, period: wordsOf(`ai.period.${e.period}`), ...(use ? { use: wordsOf(`ai.use.${use}.inline`) } : {}), date, when };
       const text = wordsOf(word, fills);
       return {
         id: keyed("FINDING", "ai-limit-reached", e.key), class: "FINDING", kind: "ai-limit-reached",
@@ -1102,6 +1156,7 @@ export class NoticeProducers {
         summary: text, detail: text, word, fills,
         basis: { source: "ai-use.limitsReached", key: e.key, owner: o.ref, scope: e.scope, unit: e.unit ?? null, period: e.period,
                  period_start: e.period_start ?? null, reached_at: e.reached_at ?? null, zone,
+                 ...(provider ? { limit_source: "provider", limit_kind: e.kind ?? null, resets_at: e.resets_at ?? null } : {}),
                  detail: localize("notice-producers.index.a_limit_first_reached_in", "a limit first reached in its current period is ai-use's (its R5), answered to that account's owners; it is told once a period, and names no member.") },
         age: ageFrom(e.reached_at, now, "no_reached_instant"),
         assignee: null, assignee_role: null,
@@ -1135,6 +1190,138 @@ export class NoticeProducers {
     const row = this.#rows(`SELECT b.title FROM bundles b WHERE b.bundle_id=? AND (${gate.scope === "member" ? "1=1" : gate.sql})`,
       id, ...(gate.scope === "member" ? [] : gate.args))[0];
     return row && filled(row.title) ? row.title : null;
+  }
+
+  /* ================================================================== R33 · a crossed threshold, one alert
+   * (T53; K5571 (2); ai-use R24; BR24). One "Noticed" item per entry `ai-use.thresholdsReached` answers the viewer (only
+   * the accounts she owns), keyed by the entry's own `key` as given, so `queue` mints it once per owner, threshold and
+   * period. Its sentence is `ai.alert.threshold`, every fill by key: `{whose}` from `ai.whose.*`, `{period}` from
+   * `ai.period.*`, `{use}` from `ai.use.<use>.inline` (or `ai.alert.scope.overall|per_member`), `{level}` from
+   * `ai.alert.level.*`; a dollar threshold's detail adds the basis it was judged on (`ai.alert.basis.*`). It names no member
+   * and no cost beyond the level. A read answering `unreadable` is ai-use's failure (R1). */
+  #thresholdsReached(me, viewer, now) {
+    const r = this.#aiUse.thresholdsReached({ viewer, at: instantOf(now) });
+    if (!r || r.ok !== true || r.unreadable === true || !Array.isArray(r.crossed)) throw failure("ai-use");
+    const ok = r.crossed.filter((e) => e && filled(e.key) && filled(e.owner) && filled(e.scope) && LIMIT_PERIODS.includes(e.period)
+      && ["percent", "amount"].includes(e.kind) && Number.isFinite(Number(e.level)));
+    const { list, truncated } = cut(ok, ACCOUNT_ITEMS_MAX);
+    const items = list.map((e) => {
+      const o = this.#owner(e.owner, viewer);
+      const use = e.scope === "overall" || e.scope === "per_member" ? wordsOf(`ai.alert.scope.${e.scope}`) : wordsOf(`ai.use.${e.scope}.inline`);
+      const level = NoticeProducers.#levelWords(e.kind, e.unit, Number(e.level));
+      const fills = { whose: wordsOf(`ai.whose.${o.kind}`), period: wordsOf(`ai.period.${e.period}`), use, level };
+      const text = wordsOf("ai.alert.threshold", fills);
+      const basis = e.unit === "usd" && (e.basis === "reported" || e.basis === "estimated") ? wordsOf(`ai.alert.basis.${e.basis}`) : null;
+      return {
+        id: keyed("FINDING", "ai-threshold-reached", e.key), class: "FINDING", kind: "ai-threshold-reached",
+        label: NOTICED_LABEL, by: localize("notice-producers.group_civicsmith", "the team's Civicsmith"),
+        case: o.project ? this.#homesAt([o.project], viewer) : this.#homesOf([]),
+        subject: { kind: "ai_account", id: o.ref, scope: e.scope, unit: e.unit ?? null, period: e.period, period_start: e.period_start ?? null },
+        summary: text, detail: basis ? `${text} ${basis}` : text, word: "ai.alert.threshold", fills,
+        basis_word: basis ? `ai.alert.basis.${e.basis}` : null,
+        basis: { source: "ai-use.thresholdsReached", key: e.key, owner: o.ref, scope: e.scope, unit: e.unit ?? null, period: e.period,
+                 period_start: e.period_start ?? null, kind: e.kind, level: Number(e.level), judged_on: e.basis ?? null,
+                 crossed_at: e.crossed_at ?? null,
+                 detail: localize("notice-producers.index.a_threshold_crossed_is_ai_uses", "a threshold first crossed in its current period is ai-use's (its R24), answered to that account's owners; it is told once a period, and names no member.") },
+        age: ageFrom(e.crossed_at, now, "no_crossed_instant"),
+        assignee: null, assignee_role: null,
+        recipients: [me],
+        options: this.#optionsOf(o.project ? [o.project] : []),
+      };
+    });
+    return { items, facts: { truncated } };
+  }
+
+  /** R33's `{level}`: a percent threshold `ai.alert.level.percent`; an amount in its unit, dollars to the cent, tokens and
+   *  calls comma-grouped. */
+  static #levelWords(kind, unit, n) {
+    if (kind === "percent") return wordsOf("ai.alert.level.percent", { n: String(Math.round(n)) });
+    if (unit === "usd") return wordsOf("ai.alert.level.usd", { n: n.toFixed(2) });
+    return wordsOf(`ai.alert.level.${unit}`, { n: Math.round(n).toLocaleString("en-US") });
+  }
+
+  /* ================================================================== R34 · a dated terms change, a notice
+   * (T53; K5571 (2); AIR39; K5493; ai-accounts R76). One "Noticed" item per row `ai-accounts.termsNoticesDue` answers the
+   * viewer (the accounts she may manage), keyed by the row's own `key`, so one is raised and no more. `ai.notice.termschange`
+   * fills `{provider}` and `{date}` (the local day `effective_from` names, as R20's day words); the item carries the link
+   * the connect act offers to the plan's terms (`screen.aiconnect.terms.link`). Nothing waits on it: it offers no act but
+   * its disposal, asks no acceptance, and carries no secret. */
+  #termsNotices(me, viewer, now) {
+    const rows = this.#aiAccounts.termsNoticesDue({ viewer, at: instantOf(now) });
+    if (!Array.isArray(rows)) throw failure("ai-accounts");
+    const today = NoticeProducers.#localDay(now, this.#zone());
+    const ok = [];
+    for (const t of rows) {
+      if (!t || !filled(t.key) || !filled(t.account_id)) continue;
+      const date = dayInSentence(dayOf(t.effective_from), today);
+      const acct = this.#aiAccounts.accountState({ account_id: t.account_id, viewer });
+      if (!date || !acct || acct.ok !== true || !filled(acct.provider)) continue;
+      ok.push({ t, date, acct });
+    }
+    const { list, truncated } = cut(ok, ACCOUNT_ITEMS_MAX);
+    const items = list.map(({ t, date, acct }) => {
+      const o = this.#owner(acct.owner, viewer);
+      const fills = { provider: acct.provider, date };
+      const text = wordsOf("ai.notice.termschange", fills);
+      return {
+        id: keyed("FINDING", "ai-terms-notice", t.key), class: "FINDING", kind: "ai-terms-notice",
+        label: NOTICED_LABEL, by: localize("notice-producers.group_civicsmith", "the team's Civicsmith"),
+        case: o.project ? this.#homesAt([o.project], viewer) : this.#homesOf([]),
+        subject: { kind: "ai_account", id: o.ref, account_id: t.account_id, plan: t.plan_id ?? null, doc: t.doc ?? null, version: t.version ?? null },
+        summary: text, detail: text, word: "ai.notice.termschange", fills,
+        link: { label: wordsOf("screen.aiconnect.terms.link", { provider: acct.provider }), word: "screen.aiconnect.terms.link",
+                screen: "aiconnect", provider: acct.provider, plan: t.plan_id ?? null, doc: t.doc ?? null },
+        basis: { source: "ai-accounts.termsNoticesDue", key: t.key, owner: o.ref, account_id: t.account_id, plan: t.plan_id ?? null,
+                 doc: t.doc ?? null, version: t.version ?? null, effective_from: t.effective_from ?? null,
+                 detail: localize("notice-producers.index.a_terms_change_is_ai_accounts", "a binding term of an account's plan that takes effect soon is ai-accounts' (its R76), answered to whoever may manage the account; nothing waits on it.") },
+        age: { state: "determined", since: instantOf(now), ms: 0 },
+        assignee: null, assignee_role: null,
+        recipients: [me],
+        options: this.#optionsOf(o.project ? [o.project] : []),
+      };
+    });
+    return { items, facts: { truncated } };
+  }
+
+  /* ================================================================== R35 · an account that left a list, or a sign-in ended
+   * (T53; K5571 (2); K5457; K5501; ai-accounts R59, R72, R77). One "Noticed" item per entry `ai-accounts.accountNoticesFor`
+   * answers the viewer (only the lists and projects she owns, never the member removed), at most ACCOUNT_NOTICES_MAX of
+   * the last ACCOUNT_NOTICE_DAYS, keyed by the entry's own `key` as given. Its sentence by kind: `ai.queue.leftlist.own|project`,
+   * `ai.queue.leftprojectlist`, `ai.queue.signinended`; `{account}` the account by provider and plan as ai-accounts holds
+   * them (a sign-in that ended has neither: `ai.account.project`), `{project}` the project's name. No secret, digest or key,
+   * and no member, is read into it. */
+  #accountNotices(me, viewer, now) {
+    const after = new Date(now - ACCOUNT_NOTICE_DAYS * DAY_MS).toISOString();
+    const rows = this.#aiAccounts.accountNoticesFor({ viewer, after, limit: ACCOUNT_NOTICES_MAX + 1 });
+    if (!Array.isArray(rows)) throw failure("ai-accounts");
+    const ok = rows.filter((n) => n && filled(n.key) && Object.prototype.hasOwnProperty.call(ACCOUNT_NOTICE_KINDS, n.kind)
+      && (n.kind === "signin-ended" ? filled(n.project) : filled(n.provider) && filled(n.plan)));
+    const { list, truncated } = cut(ok, ACCOUNT_NOTICES_MAX);
+    const items = list.map((n) => {
+      const project = n.kind === "left-list" ? (/^project:(.+)$/.exec(String(n.list_owner ?? "")) || [])[1] ?? null : n.project ?? null;
+      const name = project ? this.#titleOf(project, viewer) ?? project : null;
+      const account = n.kind === "signin-ended" ? wordsOf("ai.account.project", { project: name }) : `${n.provider} ${n.plan}`;
+      const word = n.kind === "left-list" ? (project ? "ai.queue.leftlist.project" : "ai.queue.leftlist.own")
+        : n.kind === "left-project-list" ? "ai.queue.leftprojectlist" : "ai.queue.signinended";
+      const fills = project ? { account, project: name } : { account };
+      const text = wordsOf(word, fills);
+      const kind = ACCOUNT_NOTICE_KINDS[n.kind];
+      return {
+        id: keyed("FINDING", kind, n.key), class: "FINDING", kind,
+        label: NOTICED_LABEL, by: localize("notice-producers.group_civicsmith", "the team's Civicsmith"),
+        case: project ? this.#homesAt([project], viewer) : this.#homesOf([]),
+        subject: { kind: "ai_account", id: project ? `project:${project}` : "own", account_id: n.account_id ?? null,
+                   provider: n.provider ?? null, plan: n.plan ?? null },
+        summary: text, detail: text, word, fills,
+        basis: { source: "ai-accounts.accountNoticesFor", key: n.key, notice: n.kind, project, at: n.at ?? null,
+                 detail: localize("notice-producers.index.an_account_notice_is_ai_accounts", "an account that left a list, or a project sign-in that ended, is ai-accounts' (its R72, R77, R59), answered to the owners it concerns; it is told once.") },
+        age: ageFrom(n.at, now, "no_notice_instant"),
+        assignee: null, assignee_role: null,
+        recipients: [me],
+        options: this.#optionsOf(project ? [project] : []),
+      };
+    });
+    return { items, facts: { truncated } };
   }
 
   /** R16's `{when}` after "until" (DEC-192 (5)): a day's limit `ai.until.day`; a month's `ai.until.month` with `{month}`
@@ -1548,6 +1735,148 @@ export class NoticeProducers {
         assignee: null, assignee_role: null,
         recipients: [me],
         options: [...this.#optionsOf(home ? [home] : [])],
+      });
+    }
+    return { items, facts: { truncated } };
+  }
+
+  /* ================================================================== R30, R32 · a register watch's change
+   * (`following.registerChanges`, its R43; N1259, K4403 (7)). One FINDING per entry, keyed `FINDING::register-changed-noticed::
+   * <watch>::<change>` (the entry's `change`, else its instant), to the watch's author while active and while she may see its
+   * project, else the project's active owners (`membership` R65), else the administrators (R86), and to nobody else. Read from
+   * `since` (90 days back) in pages following `cursor` to at most the bound. R32: the item is built from the register's name and
+   * the entry's counts only; no cell, name, amount or row of the register is read or carried. */
+  #registerChanged(me, viewer, now) {
+    const fol = this.#following;
+    if (!fol || typeof fol.registerChanges !== "function") return { items: [], facts: {} };   /* a following with no R43 read tells none */
+    if (!this.#active(me)) return { items: [], facts: {} };
+    const since = instantOf(now - REGISTER_CHANGE_DAYS * DAY_MS);
+    const entries = [];
+    let after = null, truncated = false;
+    for (;;) {
+      if (entries.length >= REGISTER_CHANGES_MAX) { truncated = true; break; }
+      const r = fol.registerChanges({ after, since, limit: Math.min(REGISTER_CHANGES_PAGE, REGISTER_CHANGES_MAX - entries.length), viewer });
+      if (!r || r.ok !== true || r.undetermined === true || r.state === "undetermined" || !Array.isArray(r.changes)) throw failure("following");
+      entries.push(...r.changes);
+      if (!filled(r.cursor) || r.cursor === after || r.changes.length === 0) break;
+      after = r.cursor;
+    }
+    const zone = this.#zone(), today = NoticeProducers.#localDay(now, zone);
+    const count = (v) => (Number.isSafeInteger(Number(v)) && Number(v) >= 0 ? Number(v) : 0);
+    const items = [], seen = new Set();
+    for (const e of entries) {
+      if (!e || e.watch === null || e.watch === undefined || !filled(e.register)) continue;
+      const change = filled(e.change) || Number.isSafeInteger(e.change) ? String(e.change) : filled(e.at) ? e.at : null;
+      if (!change) continue;
+      const id = `FINDING::register-changed-noticed::${e.watch}::${change}`;
+      if (seen.has(id)) continue;
+      const project = filled(e.project) ? e.project : null;
+      if (!this.#watchRecipients(e.author, project).includes(me)) continue;
+      seen.add(id);
+      const c = e.counts && typeof e.counts === "object" ? e.counts : {};
+      const added = count(c.added), changed = count(c.changed), removed = count(c.removed) + count(c.possibly_removed);
+      const fills = { register: String(e.register), count: String(Number.isSafeInteger(Number(e.total)) ? Number(e.total) : added + changed + removed),
+                      added: String(added), changed: String(changed), removed: String(removed),
+                      date: dayInSentence(NoticeProducers.#localDay(e.at, zone), today) ?? "" };
+      const summary = localize("notice-producers.register.changed.summary", "A register you watch changed: {register}", fills);
+      const detail = fills.date
+        ? localize("notice-producers.register.changed.detail", "{register} changed on {date}: {count} rows, {added} added, {changed} changed and {removed} removed. Open it to see them.", fills)
+        : localize("notice-producers.register.changed.detail.undated", "{register} changed: {count} rows, {added} added, {changed} changed and {removed} removed. Open it to see them.", fills);
+      items.push({
+        id, class: "FINDING", kind: "register-changed-noticed",
+        label: NOTICED_LABEL, by: localize("notice-producers.group_civicsmith", "the team's Civicsmith"),
+        case: project ? this.#homesAt([project], viewer) : this.#homesOf([]),
+        subject: { kind: "register", id: String(e.register), watch: e.watch, project },
+        summary, detail, fills,
+        basis: { source: "following.registerChanges", watch: e.watch, watch_kind: filled(e.kind) ? e.kind : null, at: e.at ?? null,
+                 counts: { added, changed, removed }, total: Number(fills.count), zone,
+                 detail: localize("notice-producers.index.a_register_change_is_followings", "a register watch's change is following's (its R43): counts only, told once to the watch's author, and to nobody else.") },
+        age: ageFrom(e.at, now, "no_change_instant"),
+        assignee: null, assignee_role: null,
+        recipients: [me],
+        options: [...this.#optionsOf(project ? [project] : [])],
+      });
+    }
+    return { items, facts: { truncated } };
+  }
+
+  /** R30: who a register watch's change goes to: its author while active and, for a project's watch, while she may see the
+   *  project; else the project's active owners; else the administrators. */
+  #watchRecipients(author, project) {
+    const who = isMachine(author) ? null : bare(author);
+    try {
+      if (who && this.#active(who) && (!project || this.#membership.inSight(project, who))) return [who];
+      const owners = project ? (this.#membership.projectOwners(project) || []).map(bare).filter((m) => m && this.#active(m)) : [];
+      if (owners.length) return owners;
+      return (this.#membership.activeAdmins() || []).map(bare);
+    } catch (e) { if (e && e.provider) throw e; throw failure("membership"); }
+  }
+
+  /* ================================================================== R31, R32 · an import that finished, stopped or failed
+   * (`registers`' `importsEnded`, its R13, handed in as `deps.importsEnded` by the composition root, as `readingsEnded` is (R29),
+   * so this module imports nothing of `registers`). One FINDING per import ended `indexed`, `stopped` or `failed`, keyed
+   * `FINDING::register-import-<done|stopped|failed>::<import>`, to the member who started it (`author`) while active, and to
+   * nobody else; an import of reason `watch` (a refresh, R30's) makes none. Read in pages following the last import read to at
+   * most the bound; the window is 90 days of `finished_at`. R32: built from the register's name and the counts only. With no
+   * `deps.importsEnded` it contributes none and names none. */
+  #registerImports(me, viewer, now) {
+    const ended = this.#deps.importsEnded;
+    if (typeof ended !== "function") return { items: [], facts: {} };
+    if (!this.#active(me)) return { items: [], facts: {} };
+    const since = now - REGISTER_IMPORT_DAYS * DAY_MS;
+    const rows = [];
+    let after = 0, truncated = false;
+    for (;;) {
+      if (rows.length >= REGISTER_IMPORTS_MAX) { truncated = true; break; }
+      const limit = Math.min(REGISTER_IMPORTS_PAGE, REGISTER_IMPORTS_MAX - rows.length);
+      const r = ended({ after, limit });
+      const page = Array.isArray(r) ? r : r && r.ok !== false && Array.isArray(r.imports) ? r.imports : null;
+      if (!page) throw failure("registers");
+      rows.push(...page);
+      const last = page.length ? Number(page[page.length - 1].import) : NaN;
+      if (page.length < limit || !Number.isFinite(last) || last <= after) break;
+      after = last;
+    }
+    const zone = this.#zone(), today = NoticeProducers.#localDay(now, zone);
+    const count = (v) => (Number.isSafeInteger(Number(v)) && Number(v) >= 0 ? Number(v) : null);
+    const items = [], seen = new Set();
+    for (const g of rows) {
+      const state = g ? REGISTER_IMPORT_STATES[g.state] : null;
+      if (!state || g.import === null || g.import === undefined || !filled(g.register) || g.reason === "watch") continue;
+      if (isMachine(g.author) || bare(g.author) !== me) continue;
+      const when = typeof g.finished_at === "number" ? g.finished_at : Date.parse(g.finished_at);
+      if (!(Number.isFinite(when) && when >= since)) continue;
+      const kind = `register-import-${state}`;
+      const id = `FINDING::${kind}::${g.import}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const project = filled(g.project) ? g.project : null;
+      const rowsKept = count(g.rows_out), bytes = count(g.bytes);
+      const fills = { register: String(g.register), rows: rowsKept === null ? "" : String(rowsKept), bytes: bytes === null ? "" : String(bytes),
+                      reason: state === "done" || !filled(g.reason) ? "" : String(g.reason),
+                      date: dayInSentence(NoticeProducers.#localDay(Number.isFinite(when) ? when : null, zone), today) ?? "" };
+      const summary = state === "done" ? localize("notice-producers.register.import.done.summary", "Your import into {register} has finished", fills)
+        : state === "stopped" ? localize("notice-producers.register.import.stopped.summary", "Your import into {register} was stopped", fills)
+          : localize("notice-producers.register.import.failed.summary", "Your import into {register} failed", fills);
+      const detail = state === "done"
+        ? localize("notice-producers.register.import.done.detail", "{register} has been brought in: {rows} rows kept. Open the register to search it.", fills)
+        : state === "stopped"
+          ? localize("notice-producers.register.import.stopped.detail", "Bringing in {register} stopped after {rows} rows were kept: {reason}. The rows kept stay.", fills)
+          : localize("notice-producers.register.import.failed.detail", "Bringing in {register} failed: {reason}. Nothing more was kept.", fills);
+      items.push({
+        id, class: "FINDING", kind,
+        label: NOTICED_LABEL, by: localize("notice-producers.group_civicsmith", "the team's Civicsmith"),
+        case: project ? this.#homesAt([project], viewer) : this.#homesOf([]),
+        subject: { kind: "register", id: String(g.register), import: g.import, project, scope: filled(g.scope) ? g.scope : null },
+        summary, detail, fills,
+        door: localize("notice-producers.register.open", "Open the register"),
+        basis: { source: "registers.importsEnded", import: g.import, state: g.state, reason: filled(g.reason) ? g.reason : null,
+                 rows_out: rowsKept, bytes, finished_at: g.finished_at ?? null, zone,
+                 detail: localize("notice-producers.index.a_register_import_is_registers", "an import's end is registers' (its R13): told once for each import, to the member who began it, and to nobody else.") },
+        age: ageFrom(typeof g.finished_at === "number" ? new Date(g.finished_at).toISOString() : g.finished_at, now, "no_import_instant"),
+        assignee: null, assignee_role: null,
+        recipients: [me],
+        options: [...this.#optionsOf(project ? [project] : [])],
       });
     }
     return { items, facts: { truncated } };

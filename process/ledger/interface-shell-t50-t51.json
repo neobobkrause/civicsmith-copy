@@ -1,0 +1,36 @@
+{
+  "id": "interface-shell-t50-t51",
+  "title": "interface-shell-t50-t51: split by copy from interface-shell (R73-R111, R117-R120, R122-R125, R128-R135)",
+  "layer": 11,
+  "paths": [
+    "build/requirements/interface-shell-t50-t51.md",
+    "docs/requirements-notes/interface-shell-t50-t51.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/interface-shell-t50-t51/"
+  ],
+  "requirements": "build/requirements/interface-shell-t50-t51.md",
+  "uses": [
+    "interface-shell",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/interface-shell-t50-t51.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T19:00:54Z"
+  }
+}

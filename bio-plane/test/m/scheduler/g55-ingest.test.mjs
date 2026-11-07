@@ -20,7 +20,8 @@ const STARTED = { ok: true, ingest: "ing_1", state: "ingesting", complete: false
 test("R24, R5, R2, R6: ingest closes the registry after question-explore, answers under ingest, is calculations' alone (neither ranked, daily nor always due), and is absent without a calculations owner", () => {
   assert.equal(INGEST_CONSUMER, IN, "the fixture's name is the module's");
   assert.equal(SCHEDULER_ORDER.at(-1), IN);
-  assert.equal(SCHEDULER_ORDER.indexOf(IN), SCHEDULER_ORDER.indexOf("question-explore") + 1);
+  assert.ok(SCHEDULER_ORDER.indexOf(IN) > SCHEDULER_ORDER.indexOf("question-explore"));
+  assert.equal(SCHEDULER_ORDER.indexOf(IN), SCHEDULER_ORDER.indexOf("mail-clear") + 1, "after T53's three (R34, R35), which follow question-explore");
   assert.equal(SCHEDULER_KEYS[IN], "ingest");
   assert.deepEqual([RANKED.includes(IN), DAILY.includes(IN), ALWAYS_DUE.includes(IN)], [false, false, false]);
   assert.equal(world().s.consumers().includes(IN), false, "no calculations owner: absent");

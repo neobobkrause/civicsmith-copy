@@ -371,7 +371,7 @@ export function world({ group = "test-group", provider = true, now = null, recor
   /* A reload: a second host over the same storage, with its own instance of this module (a Durable Object coming up again),
      holding nothing in memory that the first held; the modules it asks keep their one instance and their tables. */
   w.reload = () => chain({ storage: st }, w.cacc, w.ci).ca;
-  Object.assign(w, { events, lines, money, people });
+  Object.assign(w, { events, lines, money, people, inquiry });
   let n = 0;
   Object.assign(w, {
     text: (id) => record.readFile(id, "bundle.md")?.text ?? null,

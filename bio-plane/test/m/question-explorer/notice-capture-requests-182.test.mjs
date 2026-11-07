@@ -52,7 +52,7 @@ test("notice capture-requests:182 (R3; ai-runs R28): the explorer's capture requ
   await r.group("ann"); r.bundle(INQ);
   await r.runs.open(OPEN({ run: "V" }));
   assert.equal(r.runs.verificationRecord({ mode: "check", run: "V", evidence: ["seen live"], by: "member:ann", at: T0 }).ok, true);
-  const x = await r.runs.open({ ...open, contextId: INQ, place: f.place, at: T0, principalAi: "member:ann" });
+  const x = await r.runs.open({ ...open, contextId: INQ, place: f.place, at: T0, principalAi: "member:ann", enabledBy: "member:ann" });
   assert.equal(x.started, true, JSON.stringify(x).slice(0, 300));
   const sight = r.runs.runFor(open.run, EXPLORE_PRINCIPAL);
   assert.equal(sight && sight.principal_ai, "member:ann", JSON.stringify(sight).slice(0, 300));

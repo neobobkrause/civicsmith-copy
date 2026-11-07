@@ -10,7 +10,7 @@ import { boot, ok, refusedIn } from "../interface-shell/harness.mjs";
 import { hasWord } from "../../../src/setup-words/index.mjs";
 import { divideAnswers } from "../inquiry/fixtures.mjs";
 import { BUNDLE_ID_RE } from "../../../src/record-grammar/ids.mjs";
-import { open, storeWorld, WORLD_FOUNDER_HANDLE, main, actsIn, button, fill, press, rawKeys, inquiryMd, INQUIRY_REFS, LEGS, BASIS, plane, says, section, day, word, SCREENS, POLICY, P, Q, D } from "./fixtures.mjs";
+import { open, storeWorld, aiAccounts, main, actsIn, button, fill, press, rawKeys, inquiryMd, INQUIRY_REFS, LEGS, BASIS, plane, says, section, day, word, SCREENS, POLICY, P, Q, D } from "./fixtures.mjs";
 
 /* K4245 (test-support R17): every owner's declarations registered once, before the first read, by the one registrar */
 
@@ -290,16 +290,19 @@ test("R10 question draws exactly its registry acts: each act the registry lists 
   const bare = await stateWorld({ n: 1 });
   const off = await bare.page();
   assert.ok(!actsIn(main(off)).includes("writinghelp"));
-  /* reachable: the team's Claude account set up by the administrator's real acts, and the notice read by the member */
+  /* reachable. T53 retired the door ops that set and switched on the team's key (`groupkeyset`, `groupkeyswitch`,
+     `groupkeynoticeseen`; ai-accounts R35, op-declarations PR 95), and the assembled store holds ai-accounts with no
+     catalogue (t48.test.mjs), so who serves her is ai-accounts' real service's `accountsof` (fixtures.mjs' `aiAccounts`),
+     the team's key on, and the shell's reachability reads (interface-shell R20: `assistantstate`, `aipathready`) answer
+     the assistant on with a ready path, over the world's door; every other read and act is the world's. */
   const world = await storeWorld({ ai: true });
-  const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
-  await admin.act("reauth", { body: { password: admin.password } });
-  await admin.act("groupkeyset", { body: { key: "sk-ant-api03-" + "w".repeat(40) } });
-  await admin.act("groupkeyswitch", { body: { on: true } });
-  await admin.act("groupkeynoticeseen", { body: {} });
   const w = await stateWorld({ n: 1, world });
-  await w.ann.act("groupkeynoticeseen", { body: {} });
-  const on = await w.page();
+  const { accountsOf } = await aiAccounts();
+  const reads = (on, state) => ({ assistantstate: ok({ on }), aipathready: ok({ state }), accountsof: accountsOf() });
+  const on = await w.page({ plane: reads(true, "ready") });
   assert.ok(actsIn(main(on)).includes("writinghelp"), "reachable: the help is drawn");
   assert.deepEqual(rawKeys(on.root()), []);
+  /* control, on the same world with the same accounts: the assistant switched off, or its path not ready, draws no help */
+  for (const [o, st] of [[false, "ready"], [true, "unready"]])
+    assert.ok(!actsIn(main(await w.page({ plane: reads(o, st) }))).includes("writinghelp"), `not reachable (on ${o}, path ${st}): no help`);
 });

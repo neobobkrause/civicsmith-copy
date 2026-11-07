@@ -202,6 +202,15 @@ async function harnessPurity() {
     disagreementKey: () => [{ record: "R", levels: ["meaning", "content"] }, { record: "R", levels: ["content", "meaning"] }]
       .map((p) => H.disagreementKey(p)),
     disagreementsToSettle: () => states.map((x) => H.disagreementsToSettle({ ...x, disagreements: [{ record: "R", levels: ["meaning", "content"] }] })),
+    /* agent-harness R20–R24 (T53) */
+    providerStateKey: () => [...states.map((x) => H.providerStateKey(x)), H.providerStateKey({ session_id: "s" }),
+                             H.providerStateKey(null), H.providerStateKey([1])],
+    resumeAt: () => states.flatMap((x) => [H.resumeAt(x, x.step), H.resumeAt(x, { at: x.step, completed: true }),
+                                           H.resumeAt(x, { at: "compose", completed: true }, H.PLAN_FLOW)]),
+    needOf: () => ["ask", "standing", "enquire", "draft", "draft:case_account", "draft:nope", "read", "extract", "transcribe", "subsession", "check", "plan", "check:judge", "nothing", null, 7].map((r) => H.needOf(r)),
+    partOf: () => ["ask", "standing", "enquire", "draft", "draft:case_account", "draft:nope", "read", "extract", "transcribe", "subsession", "check", "plan", "check:judge", "nothing", null, 7].map((r) => H.partOf(r)),
+    disclosureGate: () => [[{ disclosed: [{ provider: "p", host: "h" }] }, { provider: "p", host: "h" }],
+                           [{ disclosed: [] }, { provider: "p", host: "h" }], [null, null]].map(([a, r]) => H.disclosureGate(a, r)),
   };
   const exported = Object.entries(H).filter(([, v]) => typeof v === "function").map(([k]) => k);
   const uncalled = exported.filter((k) => !corpus[k]);

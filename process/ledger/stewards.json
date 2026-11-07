@@ -1,0 +1,36 @@
+{
+  "id": "stewards",
+  "title": "stewards: meet its unmet requirement marks (R24, R25, R26 and the T46/T47 marks)",
+  "layer": 11,
+  "paths": [
+    "stewards/",
+    "build/requirements/stewards.md",
+    "docs/requirements-notes/stewards.md"
+  ],
+  "tests": [
+    "stewards/test/"
+  ],
+  "requirements": "build/requirements/stewards.md",
+  "uses": [
+    "test-support",
+    "instance-setup",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "stewards",
+    "command": [
+      "node",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/stewards.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the unmet requirement marks in build/requirements/stewards.md, each with a test under stewards/test/ that fails with the change reverted. stewards is a Civicsmith-run Worker (stewards/wrangler.jsonc): its code and local tests (node --test, wrangler or miniflare locally) are yours; deploying it is the coordinator's, so a mark that rests on a live deployment is named in --not-verified, never deployed. Edit no other module, and commit no generated file.",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T18:36:28Z"
+  }
+}

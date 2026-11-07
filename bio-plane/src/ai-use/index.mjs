@@ -20,7 +20,8 @@ import { isMachineIdentity, normalizeType } from "../record-grammar/index.mjs";
 import { localDay } from "../civil-time/index.mjs";
 import { recordOf, stampInstant } from "../record-core/index.mjs";
 import { membershipOf, notAnAdmin, notTheOwner } from "../membership/index.mjs";
-import { aiAccountsOf, KEPT_AWAY_UNREADABLE, USE_KINDS } from "../ai-accounts/index.mjs";
+import { aiAccountsOf, KEPT_AWAY_UNREADABLE, USE_KINDS, PART_OF_KIND } from "../ai-accounts/index.mjs";
+import { estimate as entryEstimate } from "../../../agent-model/src/provider/catalogue.mjs";
 import { aiCatalogueOf } from "../ai-catalogue/index.mjs";
 import { connectionsOf } from "../connections/index.mjs";
 import { retrievalOf } from "../retrieval/index.mjs";
@@ -871,6 +872,27 @@ export class AiUse {
     }
   }
 
+  /** F3 (coordinator 17:24, screens-ai R2, R7; DEC-420's spellings, `draft-assistant-screens.md` §4) `budgetSet({owner,
+   *  scope, unit, period, amount?, inclusive?, kind?, level?, was?, by, at?}, ownerField?)`, the act of `op=aibudgetset`
+   *  (the team's or a member's own account, the screen's "Limits and alerts") and `op=aiprojectbudget` (a project's): with
+   *  `kind`, an alert threshold as R23 sets it (`aiThresholdSet`); without, a limit as R2 sets it (`aiLimitSet`). Either
+   *  way the owner's own act, refused and recorded as those are. An owner that is not one is refused `AI_LIMIT_INVALID`
+   *  naming `ownerField` (`owner`, or `project` for a project's). Never throws. */
+  budgetSet({ owner = null, scope = null, unit = null, period = null, amount = undefined, inclusive = undefined, kind = undefined,
+              level = undefined, was = null, by = null, at = null } = {}, ownerField = "owner") {
+    try {
+      if (!parseOwner(owner)) {
+        const r = this.#invalid("owner", localize("ai-use.index.a_limit_s_owner_is", "a limit's owner is 'group', 'project:<id>' or 'member:<id>'."));
+        return ownerField === "owner" ? r : { ...r, field: ownerField };
+      }
+      return kind !== undefined && kind !== null
+        ? this.aiThresholdSet({ owner, scope, unit, period, kind, level, was, by, at })
+        : this.aiLimitSet({ owner, scope, unit, period, amount, inclusive, by, at });
+    } catch (err) {
+      return this.#invalid("owner", localize("ai-use.index.the_limit_could_not_be", "the limit could not be set ({String}).", { String: String(String(err && err.message || err).slice(0, 200)) }));
+    }
+  }
+
   /** R2, R23: a unit, a period and an amount checked: `{stored}` (whole cents for `usd`, whole numbers otherwise, null to
    *  remove), or `{refusal}` naming the field. */
   #amountOf(unit, period, amount) {
@@ -1257,8 +1279,20 @@ export class AiUse {
 
   /** R10 `useEstimate({owner, use, mode, entry_id?, count?, viewer, at?})` (`estimate` is its older name): before an AI act
    *  or exploring run (or a batch of `count`), a range `{low, high, unit, basis}` from that account's measured acts of that
-   *  use and mode, or `basis: "not_known"`; answered only to the account's owners (R2's refusals otherwise). Writes nothing. */
-  useEstimate({ owner = null, use = null, mode = null, count = 1, viewer = null } = {}) {
+   *  use and mode (`account_measured`); with too few and an `entry_id`, `agent-model.estimate`'s range for the part
+   *  (`PART_OF_KIND[use]`), its `basis` unchanged (`measured` or `price_only`), money shown only where the plan's money
+   *  allows it, else `not_measurable`; with neither, `basis: "not_known"`. Answered only to the account's owners (R2's
+   *  refusals otherwise). Writes nothing, never throws. `agent-model.estimate` is asynchronous, so a call naming an
+   *  `entry_id` answers a promise of the same answer (its refusals too); a call naming none answers at once, as before. */
+  useEstimate({ owner = null, use = null, mode = null, entry_id = null, count = 1, viewer = null } = {}) {
+    const named = entry_id !== null && entry_id !== undefined;
+    const answer = this.#useEstimateNow({ owner, use, mode, entry_id, count, viewer, named });
+    if (!named) return answer;
+    if (!answer.fallback) return Promise.resolve(answer);
+    return this.#entryRange(answer).catch(() => ({ ...answer.result, estimate: { low: null, high: null, unit: null, basis: "not_known" } }));
+  }
+
+  #useEstimateNow({ owner, use, mode, entry_id, count, viewer, named }) {
     const p = parseOwner(owner);
     if (!p) return this.#invalid("owner", localize("ai-use.index.an_estimate_is_for", "an estimate is for 'group', 'project:<id>' or 'member:<id>'."));
     const bar = this.#ownerBar(p, viewer, "read");
@@ -1267,7 +1301,21 @@ export class AiUse {
     const m = typeof mode === "string" && mode.trim() ? mode.trim() : use;
     const n = count === undefined || count === null ? 1 : count;
     if (!Number.isSafeInteger(n) || n < 1) return this.#invalid("count", localize("ai-use.index.an_estimates_count_is_a", "an estimate's count is a whole number of one or more."));
-    return { ok: true, owner: p.owner, use, mode: m, count: n, estimate: this.#estimate(p, use, m, n, viewer) };
+    if (named && !(typeof entry_id === "string" && /^[A-Za-z0-9._:-]{1,96}$/.test(entry_id)))
+      return this.#invalid("entry_id", localize("ai-use.index.an_estimates_entry_is_a", "an estimate's entry_id names a catalogue entry."));
+    const result = { ok: true, owner: p.owner, use, mode: m, count: n, ...(named ? { entry_id } : {}), estimate: this.#estimate(p, use, m, n, viewer) };
+    if (named && result.estimate.basis === "not_known") return { fallback: true, result, p, use, n, entry_id, viewer };
+    return result;
+  }
+
+  /** R10: the entry's range from `agent-model.estimate` (its R34) for the part of `use`, read over this store's catalogue;
+   *  its `basis` kept; money only where the account's plan allows it, else the range withheld as `not_measurable`. */
+  async #entryRange({ result, p, use, n, entry_id, viewer }) {
+    const e = await entryEstimate({ entry_id, task: { kind: PART_OF_KIND[use], count: n } }, { catalogue: this.#catalogue() });
+    if (!e || e.basis === "not_known") return result;
+    const est = { low: e.low ?? null, high: e.high ?? null, unit: e.unit ?? null, basis: e.basis };
+    if (!this.#ownerMoney(p, viewer).allows) return { ...result, estimate: { low: null, high: null, unit: null, basis: e.basis, not_measurable: true } };
+    return { ...result, estimate: est };
   }
   estimate(args = {}) { return this.useEstimate(args); }
 
@@ -1795,8 +1843,14 @@ export function aiUseOf(ctx, deps = {}) {
 
 /** The ops this module answers (`op-declarations` R41): `ailimitset`, `ailimits`, `aiusage` (with `owner` an account's
  *  month, R4; without, the viewer's own), `exploreapprove`, `aiuseovertime` (R14), and (T53) `aiusebymember` (R27),
- *  `airetestset` (R28), `aihealthset` (R32) and `aihealthpreview` (R33). Every identity (`by`, `viewer`) is the control
+ *  `airetestset` (R28), `aihealthset` (R32), `aihealthpreview` (R33), and (F3) `aibudgetset` and `aiprojectbudget`
+ *  (R2's limits and R23's thresholds, the screens' spellings). Every identity (`by`, `viewer`) is the control
  *  plane's stamp, read from the QUERY after the body is spread, so a caller's own copy never wins (D-136). */
+/** F3: the owner `aibudgetset` names: `group` (or `team`, or none given), the member's own from the stamp (`member`), or
+ *  an owner as written (the act's own bar judges it). */
+const budgetOwner = (owner, by) => (owner === undefined || owner === null || owner === "group" || owner === "team" ? "group"
+  : owner === "member" ? (memberIdOf(by) ? `member:${memberIdOf(by)}` : null) : owner);
+
 export function aiUseOps(use, url, body, env = null) {
   /* R17 (K5132): the store's environment is the instance clock's source (`BIO_NOW_MS`), as credentialsOps hands it */
   if (env && typeof env === "object") use.env = env;
@@ -1814,6 +1868,11 @@ export function aiUseOps(use, url, body, env = null) {
     airetestset: () => use.retestSet({ ...b, by: q("by") }),
     aihealthset: () => use.healthShareSet({ ...b, by: q("by") }),
     aihealthpreview: () => use.healthPreview({ viewer: q("viewer") }),
+    /* F3 (screens-ai R2, R7): a limit or (with `kind`) an alert threshold, the team's (`owner` `group`, the default) or the
+       member's own (`member`, the member from the stamp) by `aibudgetset`, a project's by `aiprojectbudget` (`project`) */
+    aibudgetset: () => use.budgetSet({ ...b, owner: budgetOwner(b.owner, q("by")), by: q("by") }),
+    aiprojectbudget: () => use.budgetSet({ ...b, owner: typeof b.project === "string" && b.project ? `project:${b.project}` : null,
+      by: q("by") }, "project"),
   };
 }
 
@@ -1824,4 +1883,19 @@ export const DECLARED_OPS = Object.freeze({
     fields: { accepts: ["owner","scope","unit","period","amount","inclusive"], requires: ["owner","scope","unit","period","amount"] } },
   exploreapprove: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "substrate", description: localize("ai-use.declared.exploreapprove", "the account's configuration: an owner's approval of one day's exploring on that account; moves no document, claim or grade"),
     fields: { accepts: ["owner","day"], requires: ["owner","day"] } },
+  /* F2 (op-grades R57; coordinator ruling 5 Nov 04:19): the assistant's ops this module serves, with R57's grades: the
+     re-tests' switch and caps and the health report's switch reversible (a further set takes each back), the use by
+     member and the health report's preview reads. Classes and stamps agree with op-declarations' hand rows (t48). */
+  airetestset: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-use.declared.airetestset", "the account's configuration: whether an account re-tests its entries and each entry's monthly cap, set by an owner of the paying account; a further set takes it back"),
+    fields: { accepts: ["owner","on","caps"], requires: ["owner"] } },
+  aihealthset: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("ai-use.declared.aihealthset", "the team's configuration: whether the team shares its AI health counts, an administrator's act recorded with who and when; a further set takes it back"),
+    fields: { accepts: ["on"], requires: ["on"] } },
+  aiusebymember: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-use.declared.aiusebymember", "read: each member's use of a team's or a project's account, to that account's owners; writes nothing") },
+  aihealthpreview: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("ai-use.declared.aihealthpreview", "read: the health report the team would share, to an administrator; writes nothing") },
+  /* F3 (coordinator 17:24, screens-ai R2, R7): the screens' limits and alerts, op-grades R57's reversible rows (a further
+     set takes each back), served here (`budgetSet`) and reaching OPS through this declaration (op-declarations R80) */
+  aibudgetset: { classes: ["admin","member"], machineClasses: [], mutating: true, stamps: ["by"], needs: null, weight: "reversible", description: localize("ai-use.declared.aibudgetset", "the account's configuration: a limit or an alert threshold on the team's or the member's own account, set by its owner; a further set takes it back"),
+    fields: { accepts: ["owner","scope","unit","period","amount","inclusive","kind","level","was"], requires: ["scope","unit","period",["amount","level"]] } },
+  aiprojectbudget: { classes: ["admin","member"], machineClasses: [], mutating: true, stamps: ["by"], needs: null, weight: "reversible", description: localize("ai-use.declared.aiprojectbudget", "the project's configuration: a limit or an alert threshold on a project's account, set by an owner of the project; a further set takes it back"),
+    fields: { accepts: ["project","scope","unit","period","amount","inclusive","kind","level","was"], requires: ["project","scope","unit","period",["amount","level"]] } },
 });

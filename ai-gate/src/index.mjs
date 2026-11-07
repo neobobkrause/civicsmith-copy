@@ -18,3 +18,4 @@ export * from "./characterize.mjs";
 export * from "./bundle.mjs";
 export * from "./verify.mjs";
 export * from "./words.mjs";
+export * from "./run.mjs";

@@ -362,6 +362,7 @@ export class Registers {
     const provider = {
       holds: (sha) => this.holdsSegment(sha),
       rowAt: (sha, n) => this.rowAtSegment(sha, n),
+      removed: (sha, n) => this.removedAtSegment(sha, n),
     };
     try { if (this.content && typeof this.content.registerRowContext === "function") this.content.registerRowContext(provider); } catch { /* the slot is taken */ }
     try { if (this.extraction && typeof this.extraction.registerHeldAs === "function") this.extraction.registerHeldAs("registers", { holds: (sha) => this.heldAs(sha) }); } catch { /* the slot is taken */ }

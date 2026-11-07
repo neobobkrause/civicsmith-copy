@@ -202,10 +202,11 @@ test("R113 the shipped layers are checked as chains, every footprint: no conflic
   assert.ok(r.errors.some((e) => e.code === "LAYER_PARENT_MISSING" && Array.isArray(e.branch) && e.branch.includes(COUNTY)));
 });
 
-test("R112 R105 the city layer adds records help for the Public Records Act beside the state's block; the federal layer holds none of its own yet", () => {
+test("R112 R105 the city layer adds records help for the Public Records Act beside the state's block; the federal layer's FOIA block stands beside them", () => {
   const r = combine([PACKAGE]);
   const laws = r.view.records_help.map((h) => h.law);
   assert.ok(laws.includes("California Public Records Act"));
+  assert.ok(laws.includes("Freedom of Information Act"));
   assert.equal(get(STATE).records_help[0].law, "California Public Records Act");
   assert.deepEqual(Object.keys(get(CITY).records_help[0]).sort(), ["basis", "faster", "law", "portal", "status"]);
 });
@@ -227,6 +228,6 @@ test("T53-502 the federal layer holds the street suffixes as data: each with its
 });
 
 /* Not yet met: named here, never red and never a pin of today's behaviour (build/situations/job.md). */
-test.todo("R109 the federal layer's records_help block for FOIA: the statute's figures and the ten citations, read on the text [owed: a reading of 5 U.S.C. § 552 and which kind of day its twenty are shown as]");
+/* R109's federal records_help block for FOIA, read on the text: bio-plane/test/m/jurisdictions-b/federal-layer.test.mjs */
 /* R119 and R120's script: t53-federal-offices.test.mjs */
 test.todo("R120 a release is blocked by the process tool when the federal snapshot's as_of is older than a stated bound [waits: the measured bound, and the process tool's own check]");

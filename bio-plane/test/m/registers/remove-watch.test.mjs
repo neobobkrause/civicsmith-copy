@@ -77,6 +77,46 @@ test("R30 (G4, R69): a removed row is in no table, object, cache or log; searchR
   assert.equal(w.sql(`SELECT COUNT(*) AS n FROM register_cells WHERE scope_key LIKE 'project:%'`)[0].n, 11, "the other keys land in the project's own copy");
 });
 
+test("R30, F1 (citation R28): the row context says which row of a rewritten segment a removal took, by the digest it had then; another row, the new digest and the header are not removed", async () => {
+  const w = seeded();
+  START(w);
+  await w.drain({ [URL_]: served(enc(withSentinel())) });
+  const key = keyOf(w, 6);
+  const oldSha = w.sql(`SELECT sha256 FROM register_segments`)[0].sha256;
+  const cite = w.registers.citeRow({ import: 1, row_key: key, author: V("bob"), viewer: V("bob") });
+  const row = Number(/^A(\d+):/.exec(JSON.parse(w.sql(`SELECT extent FROM content WHERE content_id=?`, cite.content_id)[0].extent).range)[1]);
+  const ctx = w.content.rowContext;
+  assert.equal(typeof ctx.removed, "function", "the provider answers removed beside holds and rowAt");
+  assert.equal(ctx.removed(oldSha, row), false, "control: nothing is removed before the removal");
+  assert.equal((await REMOVE(w, key)).ok, true);
+  const newSha = w.sql(`SELECT sha256 FROM register_segments`)[0].sha256;
+  assert.equal(ctx.removed(oldSha, row), true, "the cited row of the old file is removed");
+  for (const [sha, n] of [[oldSha, row + 1], [oldSha, 1], [newSha, row], ["", row], [oldSha, "2"]]) assert.equal(ctx.removed(sha, n), false, `${String(sha).slice(0, 8)}:${n} is not removed`);
+  assert.equal(ctx.holds(oldSha), false, "the old digest is no longer a held segment");
+});
+
+test("F1 (citation R28; R30): content.cellsAt for a content row over a removed register row answers {cells: null, reason: 'removed'}; control: before the removal it is not removed, and another row cited over the old file is not removed after", async () => {
+  const w = seeded();
+  START(w);
+  await w.drain({ [URL_]: served(enc(withSentinel())) });
+  const key = keyOf(w, 6);
+  const other = keyOf(w, 3);
+  const cite = w.registers.citeRow({ import: 1, row_key: key, author: V("bob"), viewer: V("bob") });
+  const kept = w.registers.citeRow({ import: 1, row_key: other, author: V("bob"), viewer: V("bob") });
+  assert.deepEqual([cite.ok, kept.ok], [true, true]);
+  const before = await w.content.cellsAt(cite.content_id);
+  assert.equal(before.reason, undefined, `control: before the removal the cited row is answered, not refused: ${JSON.stringify(before.reason)}`);
+  assert.ok(Array.isArray(before.cells), "control: before the removal cellsAt answers a cells list");
+  assert.equal((await REMOVE(w, key)).ok, true);
+  const gone = await w.content.cellsAt(cite.content_id);
+  assert.equal(gone.cells, null);
+  assert.equal(gone.reason, "removed");
+  assert.ok(!JSON.stringify(gone).includes(SENT_NAME), "the answer holds none of the row");
+  const still = await w.content.cellsAt(kept.content_id);
+  assert.notEqual(still.reason, "removed", "another row cited over the old file is not removed");
+  assert.equal(w.sql(`SELECT COUNT(*) AS n FROM content WHERE content_id=?`, cite.content_id)[0].n, 1, "the content row over the removed row is kept");
+});
+
 test("R31 control: the other keys of the re-import land; a lawful demand of a kind the profile lists is accepted as a ground", async () => {
   const w = seeded();
   START(w);
@@ -144,6 +184,12 @@ test("R32: the watch of a stated interest can be switched off and on again, by a
   assert.deepEqual(heard.map((h) => h.watch), [true, false, true]);
   const named = w.registers.interestSet({ register: "town_filings", project: w.P, filter: { names: ["Donor Eleven"] }, author: V("bob"), viewer: V("bob") });
   assert.equal(w.registers.watchSet({ interest: named.interest.id, watch: true, author: V("bob"), viewer: V("bob") }).reason, "INTEREST_NOT_WATCHABLE");
+  /* F2 (op-grades R55): a machine is refused each switch by its own code, and nothing is written */
+  const versions = () => w.sql(`SELECT COUNT(*) AS n FROM register_interests`)[0].n;
+  const before = versions();
+  assert.equal(w.registers.watchSet({ interest: a.interest.id, watch: true, author: MACHINE, viewer: MACHINE }).reason, "MACHINE_CANNOT_FOLLOW");
+  assert.equal(w.registers.watchSet({ interest: a.interest.id, watch: false, author: MACHINE, viewer: MACHINE }).reason, "MACHINE_CANNOT_STOP_REGISTER_WATCH");
+  assert.equal(versions(), before);
 });
 
 /* ------------------------------------------------------------------------------------------ refresh */

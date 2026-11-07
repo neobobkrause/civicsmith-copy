@@ -41,6 +41,6 @@
   "prior_work": "Meet R15 only, marked '(not yet met: T53)' in build/requirements/mail-door.md. Turn it into real tests under bio-plane/test/m/mail-door/ (a test.todo for it becomes real tests), make them pass inside bio-plane/src/mail-door/, and when it is met clear its mark yourself (REQ-4); the requirements already met answer as before. If meeting it needs a change in another module, or rests on something not yet recorded, do not edit it: say so in your receipt's not-verified list and leave the mark. If a changed existing test cannot fail with your change reverted, name why with --exempt-revert. Commit no generated file (bio-plane/src/setup-words/rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead. No earlier unmerged work touches this module.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T01:48:15Z"
+    "at": "2026-11-05T05:07:13Z"
   }
 }

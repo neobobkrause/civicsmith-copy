@@ -712,9 +712,10 @@ test("R22 the test profile: test true, every basis TEST, every section and vocab
   /* combining the two gives no conflict: they share nothing */
   assert.deepEqual(combine([FIRST, TEST]).conflicts.filter((c) => !c.at.startsWith("practice") && !["locale", "time_zone", "weekend", "fiscal_year[*]"].includes(c.at) && !c.at.startsWith("records_help[")
     && !c.at.startsWith("action_kinds[records_request]")), []);
-  /* R93, R105: both profiles hold a records_help block, of two different laws (R84), so each stands as its own block and none conflicts */
+  /* R93, R105: both profiles hold records_help blocks, of different laws (R84), so each stands as its own block and none conflicts;
+     the first's are FOIA's (the federal layer, R109) and the Public Records Act's */
   assert.deepEqual(combine([FIRST, TEST]).conflicts.filter((c) => c.at.startsWith("records_help")).length, 0);
-  assert.equal(combine([FIRST, TEST]).view.records_help.length, 2);
+  assert.equal(combine([FIRST, TEST]).view.records_help.length, 3);
   /* R49: both profiles state a year for body *, differing by design (R22), so that one fact is withheld (R15) */
   assert.deepEqual(combine([FIRST, TEST]).conflicts.filter((c) => c.at === "fiscal_year[*]").length, 1);
 });

@@ -59,4 +59,4 @@ Terms. A **private address** is a member's own forwarding address under the team
 - Show "sent to your private address" on each waiting message so a member knows which of her addresses it came to.
 - A team-wide shared inbox (S1) was not taken (K5505).
 - The measurement M1 (can the plane's upload carry an `email()` export, `N824-container-member-job.md` §D) decides R12's entry; uploading a saved `.eml` or `.msg` (`captureupload`) is always available beside the door (K5504).
-- **F1** *(not yet met: BOB grading, coordinator ruling 04:19 5 Nov)* mailbringin is declared weight reasoned (bio-plane/src/mail-door/index.mjs:690), but surface-declarations R17 grades it as captureupload is (undetermined, bio-plane/src/store-assembly/owner-ops.mjs:22): declare it with captureupload's grade
+- **F1** mailbringin is declared weight reasoned (bio-plane/src/mail-door/index.mjs:690), but surface-declarations R17 grades it as captureupload is (undetermined, bio-plane/src/store-assembly/owner-ops.mjs:22): declare it with captureupload's grade

@@ -40,7 +40,7 @@ test("R40 R-OLD in a real Durable Object: the old six-column table is migrated, 
                              durableObjects: { D: { className: "D", useSQLite: true } }, compatibilityDate: "2025-01-01" });
   try {
     const out = await (await mf.dispatchFetch("http://x/")).json();
-    const old = { sha256: "t-old", bundle_id: "REF", path: "materials/t-old", kind: "attestation", bytes: 7, published: "2026-01-01T00:00:00Z", capture_sha: null };
+    const old = { sha256: "t-old", bundle_id: "REF", path: "materials/t-old", kind: "attestation", bytes: 7, published: "2026-01-01T00:00:00Z", capture_sha: null, pixels_sha256: null };
     assert.deepEqual(out.old, [old]);
     assert.deepEqual(out.again, [old], "a second boot changes nothing");
     assert.deepEqual(out.caps, { a: ["A"], shared: [null], old: [null] });

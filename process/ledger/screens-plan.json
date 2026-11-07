@@ -1,0 +1,45 @@
+{
+  "id": "screens-plan",
+  "title": "screens-plan: meet its unmet requirement marks",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/screens-action/plan.mjs",
+    "bio-plane/src/screens-action/words-fix-plan.mjs",
+    "bio-plane/src/screens-action/index.mjs",
+    "build/requirements/screens-plan.md",
+    "docs/requirements-notes/screens-plan.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-plan/"
+  ],
+  "requirements": "build/requirements/screens-plan.md",
+  "uses": [
+    "screens-action",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "action-plans",
+    "membership",
+    "project-roster",
+    "wizard-scripts"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/screens-plan.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the unmet requirement marks in build/requirements/screens-plan.md, each with a test under bio-plane/test/m/screens-plan/ that fails with the change reverted. Your code is screens-action's plan.mjs and words-fix-plan.mjs, and the plan entries of screens-action/index.mjs, which screens-action shares: change only those entries. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T18:49:43Z"
+  }
+}

@@ -316,6 +316,9 @@ export const CONSEQUENCE_STATEMENTS = Object.freeze({
   ...T35_CONSEQUENCE_STATEMENTS,
   /* R24 (DEC-173 (2)): `openwithwarning`'s, written in ./t36.mjs beside its ground. */
   ...T36_CONSEQUENCE_STATEMENTS,
+  /* R55 (T53; BOB C13): removing a register row removes every member's copy from this instance and its future exports,
+     and it cannot be restored (registers R30). */
+  rowexpunge: ENTRY("dialog", "consequence.rowexpunge"),
 });
 
 /* R18 (DEC-122 (1); K1363 B5): THE ACTS KEPT FOR A LARGER SCREEN BEYOND WHAT THE LADDER AND THE IRREVERSIBLE WEIGHT
@@ -666,6 +669,9 @@ const RUNG_ABSENT_DATA = {
   linkproject:          { ground: "substrate", is: "admits an observed link as an edge, keyed by capture" },
   cpuprobe:             { ground: "substrate", is: "the CPU probe — a Worker cannot time itself" },
   export:               { ground: "substrate", is: "writes an export manifest of what is already there" },
+  /* BD-1 (corpus-export R17; op-declarations F3, op-capabilities F1): the whole-record manifest, `export`'s ground; an
+     administrator's act, it appends one `whole-record` row to the export log */
+  exportwhole:          { ground: "substrate", is: "writes a whole-record manifest of what is already there, every stored file listed, and logs who took it" },
   taskdrain:            { ground: "substrate", is: "the task scheduler's own tick" },
   capturerequest:       { ground: "substrate", is: "queues a capture, a run's or (capture-requests R56) a member's own request for later; the capture is the act, this is the request" },
   capturerequestdrain:  { ground: "substrate", is: "the capture-request queue's own tick" },
@@ -929,6 +935,21 @@ const MACHINE_REFUSALS_DATA = {
   /* R38 (T48; affordances R58): the quoting record is an ACTS row on an action, refused a machine by its owner's own code
      (action-replies R10), with no NON_ACTS row. `planask` is none (R41, K3297): a plan act, a NON_ACTS row. */
   ...T48_MACHINE_REFUSALS,
+  /* R55 (T53; N1259; BOB C13): every register write, and `registerofficers` (a read that spends the team's key, registers
+     R46), refused a machine by registers' own code. None is an ACTS row; `affordances` admits a key here that `registers`
+     declares (its F3). The reads stay open to the assistant. */
+  registerfileimport:  "MACHINE_CANNOT_IMPORT_REGISTER",
+  registerpreread:     "MACHINE_CANNOT_IMPORT_REGISTER",
+  registerpropose:     "MACHINE_CANNOT_PROPOSE",
+  registerdefine:      "MACHINE_CANNOT_DEFINE",
+  registerrowcite:     "MACHINE_CANNOT_CITE_ROW",
+  registerinterest:    "MACHINE_CANNOT_STATE_INTEREST",
+  registerwatch:       "MACHINE_CANNOT_FOLLOW",
+  registerrefresh:     "MACHINE_CANNOT_REFRESH_REGISTER",
+  registerimportset:   "MACHINE_CANNOT_SET_IMPORT",
+  registerwatchstop:   "MACHINE_CANNOT_STOP_REGISTER_WATCH",
+  registerofficers:    "MACHINE_CANNOT_LOOK_UP_OFFICERS",
+  rowexpunge:          "MACHINE_CANNOT_EXPUNGE_ROW",
 };
 
 /* (T45; R8, R32; K2885, K2887) The 21 acts `affordances` R51 makes ACTS rows on an action target are named here no
@@ -950,6 +971,10 @@ const NON_ACTS_DATA = {
   linkproject: "substrate: admits an observed link as an edge, keyed by capture",
   /* K4279 (R5): an administrator-session act, not object-directed; the sentence is corpus-export's declared row, word for word (R50 (b)). */
   export: "writes an export manifest of what is already there",
+  /* BD-1 (corpus-export R17, R18): the whole-record export, an administrator-session act as `export`, and one part of its
+     files, read alone (the plane spreads `wholeExportOps`, store-assembly) */
+  exportwhole: "writes a whole-record manifest of what is already there, every stored file listed, and logs who took it",
+  exportwholepart: "read: one part of a whole-record export's files, at most the part bound, checkable alone by its digest; writes nothing",
   /* Capture-directed: their subject is a capture sha, not a bundle's state.
      REC-38: NOT acts here, and their member-facing METADATA is published all
      the same — `affordances`' CAPTURE_ACTS carries the label, decorateAct adds the
@@ -1598,6 +1623,10 @@ export const IRREVERSIBLE_WEIGHT = Object.freeze([
   /* K2049 (DEC-143 applied): standards R37's release moves a policy to the group's sight and is never undone; its rung
      stays as R3 gives it (`reasoned`) */
   "standardrelease",
+  /* R55 (BOB C13; DEC-143): `registers`' row expunge removes every member's copy of the row and cannot be restored; its rung
+     is its owner's declared `reasoned` (R49), so it is named here by hand, as `personexpunge` is (affordances F3 reads the
+     registered tables, so it sees it) */
+  "rowexpunge",
 ]);
 
 /* R17 (op-declarations R21): each alias takes its op's very rung, absence and reason, so it never differs from its op. */

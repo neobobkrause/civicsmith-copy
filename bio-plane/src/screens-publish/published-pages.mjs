@@ -50,11 +50,10 @@ export const PUBLISHED_PAGES = Object.freeze({
     // the sources the case publishes, by their fingerprints and grades where the edition states them; else how many it names only
     const named = {};
     list.forEach(function (f) { P.legs(f).forEach(function (l) { if (l.served !== true && l.target) named[l.target] = true; }); });
-    const evidence = Array.isArray(e.captures) ? e.captures : Array.isArray(e.materials) ? e.materials : [];
-    const rows = evidence.filter(function (x) { return x && /^[0-9a-f]{64}$/.test(String(x.sha256 || x.capture_sha || "").toLowerCase()); }).map(function (x) {
-      const sha = String(x.sha256 || x.capture_sha).toLowerCase();
-      return cs.row("", '<span class="rec">' + cs.esc(x.title || x.label || x.locator || "") + "</span>", '<span class="id">' + cs.esc(sha.slice(0, 12)) + "</span>"
-        + (x.grade ? " " + P.gradeMark(cs, x.grade_axis || "capture", x.grade) : ""));
+    // F1: the rows as `publishedcase` answers them (`materials.materials`), else its `captures:` rows
+    const rows = P.evidenceOf(e).filter(function (x) { return x.sha; }).map(function (x) {
+      return cs.row("", '<span class="rec">' + cs.esc(x.name) + "</span>", '<span class="id">' + cs.esc(x.sha.slice(0, 12)) + "</span>"
+        + (x.grade ? " " + P.gradeMark(cs, x.axis, x.grade) : ""));
     }).join("");
     const nameless = Object.keys(named).length;
     const sources = rows ? P.sec(cs, "screen.published.evidence", cs.sheet(rows))

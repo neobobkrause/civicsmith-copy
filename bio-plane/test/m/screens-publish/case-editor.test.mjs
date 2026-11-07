@@ -74,7 +74,7 @@ test("R1 \"Name with the reason\" sends attribute with the case, the observation
 test("R1 \"Draft what changed\" only while the assistant is reachable, its answer labelled, untested drawn; writing help under scope and what changed only", async () => {
   let p = await open(PATH);
   assert.ok(!ops(p).includes("whatchangedpropose"), "not reachable: absent");
-  const reach = { assistantstate: ok({ on: true }), accountreference: ok({ held: true }) };
+  const reach = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
   p = await open(PATH, { plane: { ...reach, whatchangedpropose: ok({ draft: { id: "WCD-2", text: "x", label: { machine: true } }, untested: true }) } });
   assert.ok(ops(p).includes("whatchangedpropose"));
   fill(p, { "ce-wc": "Adds the 2025 schedules." });

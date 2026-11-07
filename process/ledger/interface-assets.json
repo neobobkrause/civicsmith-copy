@@ -28,6 +28,6 @@
   "prior_work": "Found work (site job, 4 Nov): the design stream's .cs-btn is min-height var(--tap), 44 px at every width, since PR 191 (12d6a810). interface-assets' pinned copy (ASSETS_COMMIT 2a64c5ae77) still says 40px, so site R18 measures 40 px at 1280. Set COMMIT in bio-plane/src/interface-assets/generate.mjs to the current tranche commit and run node bio-plane/src/interface-assets/generate.mjs; the site job measured the diff as .cs-btn min-height and ASSETS_COMMIT only. Keep the module's tests green, with a test that .cs-btn carries var(--tap) failing with the change reverted. Any unmet mark in build/requirements/interface-assets.md is yours too. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T11:45:51Z"
+    "at": "2026-11-05T07:35:36Z"
   }
 }

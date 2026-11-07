@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "embed:tesslib": "node scripts/build.mjs --embed-only",
+    "pretest": "cd .. && node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs && node bio-plane/src/case-checker/build-program.mjs && node bio-plane/scripts/bundles.mjs",
     "test": "node test/ocr-worker.test.mjs"
   },
   "devDependencies": {

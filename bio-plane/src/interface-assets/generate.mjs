@@ -130,7 +130,9 @@ function main() {
 
   const css = show("civicsmith.css").toString("utf8")
     + show("faces.css").toString("utf8").replace(/url\("fonts\/([^"]+)"\)/g, 'url("/app/assets/fonts/$1")');
-  const lit = JSON.stringify;
+  /* R6 (F1): every literal is written in ASCII (a \u escape for any other code unit), so index.mjs's own source is a one-byte
+     string on the heap at import, half the size a single non-Latin-1 character would make it; the values are unchanged. */
+  const lit = (v) => JSON.stringify(v).replace(/[^\x00-\x7f]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
   /* R4, R6: the faces' base64 goes in face modules beside index.mjs, packed in order so each file stays under
      FACE_FILE_BYTES (the process's max_file_bytes is 1 MiB); each face is its own function, read only on a body's read. */
   const b64 = faces.map((f) => show(`fonts/${f}`).toString("base64"));
@@ -147,7 +149,8 @@ function main() {
   files.forEach((fl, n) => { for (const i of fl.ids) part[i] = `faces${n + 1}`; });
   for (const old of readdirSync(HERE)) if (/^faces-\d+\.mjs$/.test(old)) rmSync(join(HERE, old));
   files.forEach((fl, n) => writeFileSync(join(HERE, `faces-${n + 1}.mjs`), FACE_HEAD + fl.lines.join("")));
-  const plain = (type, body) => `Object.freeze({ type: ${lit(type)}, body: ${lit(body)} })`;
+  /* R6 (F1): a text body, like a face's, is built on its first read, so a fresh import holds none of the files' text. */
+  const plain = (type, body) => `text(${lit(type)}, () => ${lit(body)})`;
   const entries = [
     ["civicsmith.css", plain("text/css", css)],
     ["shell.css", plain("text/css", shellCss(at(PAGE).toString("utf8")))],
@@ -158,16 +161,17 @@ function main() {
       [`fonts/OFL-${n}.txt`, plain("text/plain", show(`fonts/OFL-${n}.txt`).toString("utf8"))]),
   ];
 
-  const out = `/* GENERATED: do not edit by hand. interface-assets R1–R10 (DEC-138; N897 (1); N559; N1039; K3254): the visual
+  const out = `/* GENERATED: do not edit by hand. interface-assets R1-R10 (DEC-138; N897 (1); N559; N1039; K3254): the visual
    language's stylesheet, the design page's product rules (shell.css), icons, ${faces.length} faces (base64) and their three
    licences, read from ${DIR}/ and ${PAGE} at ASSETS_COMMIT. civicsmith.css is civicsmith.css followed by faces.css with
-   each url("fonts/<f>") rewritten to url("/app/assets/fonts/<f>") (R1, R2). A face's body is built on its first read,
-   never parsed in the global scope (R6); the faces' base64 lives in the face modules beside this file, each under
-   1 MiB. The map and each entry are frozen (R3); the module imports only those face modules, which import nothing (R4).
+   each url("fonts/<f>") rewritten to url("/app/assets/fonts/<f>") (R1, R2). Every body is built on its first read,
+   never parsed in the global scope, and this file is ASCII (R6, F1); the faces' base64 lives in the face modules
+   beside this file, each under 1 MiB. The map and each entry are frozen (R3); the module imports only those face modules, which import nothing (R4).
    Written by generate.mjs beside this file; bio-plane/test/m/interface-assets/assets.test.mjs checks every entry
    byte for byte against git. */
 ${files.map((_, n) => `import * as faces${n + 1} from "./faces-${n + 1}.mjs";\n`).join("")}export const ASSETS_COMMIT = ${lit(COMMIT)};
 const face = (read) => Object.freeze({ type: "font/woff2", encoding: "base64", get body() { return read(); } });
+const text = (type, read) => Object.freeze({ type, get body() { return read(); } });
 export const ASSET_FILES = Object.freeze({
 ${entries.map(([name, e]) => `  ${lit(name)}: ${e},`).join("\n")}
 });

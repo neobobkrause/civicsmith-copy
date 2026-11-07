@@ -769,6 +769,11 @@ const OPS_HAND = aliasRows({
   export:              { classes: ["admin"],                    mutating: true  },
   /* Read by administrators who cannot export, so they see that one happened. */
   exportlog:           { classes: ["admin", "member", "probe"], mutating: false },
+  /* BD-1 (corpus-export R17, R18; op-capabilities F1): the whole-record export, the founder's session alone as `export`.
+     `exportwhole` writes the export log (mutating); `exportwholepart` reads one part of it and writes nothing, as
+     `exportpage`. Their `NEEDS` rows (present nulls) are op-capabilities'. */
+  exportwhole:         { classes: ["admin"],                    mutating: true  },
+  exportwholepart:     { classes: ["admin"],                    mutating: false },
   /* D-436 / REC-163: the producing group's slug is public (Publication §7 point 1); a credentialed caller gets the
      whole row. RECORDING THE INSTANCE'S PRODUCING GROUP IS THE ROOT OF TRUST'S ACT — THE ADMIN_TOKEN CREDENTIAL HELD
      IN THE HOSTING ACCOUNT, THE CREDENTIAL THE INSTALLER'S OWN CLAIM IS ARMED BY — AND NO SESSION OF ANY ROLE REACHES
@@ -2473,6 +2478,8 @@ const SESSION_OPS = Object.freeze({
                       alone (`SESSION_OPS.admin` is the founder's password session, D-136), so the founder takes one from the
                       screen; a member's set stays without it. Its spec (classes `admin`) and `NEEDS` row are unchanged. */
                    "export",
+                   /* BD-1 (corpus-export R17, R18): the whole-record export and its parts, the founder's session alone, as `export`. */
+                   "exportwhole", "exportwholepart",
                    "casedraft", "reviewgrant", "reviewrevoke"])),
 });
 
@@ -2671,7 +2678,13 @@ const UNATTENDED_BY_DECISION = Object.freeze({
    read ground, until `affordances`' `ACT_HELP` holds a text. money PR 154 (notice money:154; money R27, R40): money serves
    `moneyfiscalyears`, never `fiscalyears`, so `fiscalyears` leaves the read ground (R34: no named op without a spec).
    F1 (walk p3dev-t1, 4 Nov; ai-runs PR 323): ai-runs serves and declares the frame's `aipathready` (surface-declarations R15,
-   a read act; interface-shell R20), so it takes the read ground until `affordances`' `ACT_HELP` holds a text. */
+   a read act; interface-shell R20), so it takes the read ground until `affordances`' `ACT_HELP` holds a text.
+   layer 11 (R34, F2; ai-use F3, PR 613; extraction's interpretation marks; instance-setup R115): the member acts
+   `aibudgetset`, `aiprojectbudget`, `interpretmark` and `interpretationwithdraw` take the unexplained ground and the read
+   `assistantreadiness` the read ground, until `affordances`' `ACT_HELP` holds a text for each.
+   layer 11, attempt 7: affordances (PR 808) explains `aiaccountadd` and `aiaccountswitch`, so they leave the unexplained
+   ground; instance-setup's administrator acts `layersset`, `maildomainset` and `maildoorset` (its R107, R114) take the
+   unexplained ground and its read `mailsetup` the read ground, until `ACT_HELP` holds a text for each. */
 const ACT_HELP_ABSENT = Object.freeze({
   alias: Object.freeze({ ground: localize("op-declarations.index.an_alias_of_a_declared", "An alias of a declared op (R21): its op's explanation serves it."),
     ops: frozenList([
@@ -2684,7 +2697,7 @@ const ACT_HELP_ABSENT = Object.freeze({
       "acceptancecounts", "accounthistory", "accountsof", "accountstate", "accountuses", "actionholdpreview",
       "actionquotes", "adminrecoverystep", "adminremovals", "adminremovalsopen", "advocacychecks", "aiactual",
       "aichecks", "aicredential", "aiestimate", "aihealthpreview", "aikeepawaystate", "ailimits", "aioffered",
-      "aipathready", "airunparts", "aiusage", "aiusebymember", "applicationrecipes", "approvedunsent", "asktallies", "assistantstate", "audit",
+      "aipathready", "airunparts", "aiusage", "aiusebymember", "applicationrecipes", "approvedunsent", "asktallies", "assistantreadiness", "assistantstate", "audit",
       "baseupdates", "bearingnotes", "bindsat", "browse", "bundlehistory", "calculation", "calculationevaluate",
       "capturegrade", "capturerequestplatformhosts", "career", "checkpointsdue", "checkrequests", "checksof",
       "citationresolve", "claims", "clocklateness", "clocksics", "clocksrunning", "coarchivestate", "concerns",
@@ -2699,7 +2712,7 @@ const ACT_HELP_ABSENT = Object.freeze({
       "importedcase", "importedcases", "inbox", "inboxget", "inboxview", "infolevel", "inforceat", "inforcethroughof",
       "inquirypartition", "instances", "interestchecks", "interfacewords", "interview", "interviewform",
       "investigationproposals", "keyedservices", "lawaddresses", "lawrelations", "layerentries", "layerreports", "line",
-      "linesof", "lookedat", "mailread", "mailtally", "mailwaiting", "matterpromiseduties", "matters", "meaningrows",
+      "linesof", "lookedat", "mailread", "mailsetup", "mailtally", "mailwaiting", "matterpromiseduties", "matters", "meaningrows",
       "memberlanguage", "memberties", "milestones", "money", "moneyamountchecks", "moneyby", "moneycheckparams",
       "moneydetectors", "moneyfiscalyears", "moneyingestread", "moneyjunction", "moneynoticed", "moneyof", "moneyset",
       "moneysummable", "narrowcandidates", "notes", "notices", "opencaptures", "originalstate", "overridesof",
@@ -2729,10 +2742,10 @@ const ACT_HELP_ABSENT = Object.freeze({
   unexplained: Object.freeze({ ground: localize("op-declarations.index.an_act_or_a_draft", "An act, or a draft made for a member at their request, that the design has not yet explained; named back to the design stream (DEC-174 (3))."),
     ops: frozenList([
       "actalias", "actionriskpropose", "actionseekspropose", "addressfrequencyset", "adminproposalcancel",
-      "adminresign", "aiaccountadd", "aiaccountremove", "aiaccountswitch", "aicheckset", "aicontinue", "aicredentialmint",
+      "adminresign", "aiaccountremove", "aibudgetset", "aicheckset", "aicontinue", "aicredentialmint",
       "aicredentialrevoke", "aicreditsclear", "aigrantmint", "aihealthset", "aikeycloudflare", "aikeyenter",
       "aikeyseal", "aimemberallow", "aimineuse", "aimycheckset", "aioptinset", "aiorderset", "aiownadd",
-      "aipersonalchoose", "aiprojectcheckset", "aiprojectorder", "aiprojectuse", "airetestset", "airunverify", "aisend",
+      "aipersonalchoose", "aiprojectbudget", "aiprojectcheckset", "aiprojectorder", "aiprojectuse", "airetestset", "airunverify", "aisend",
       "aisendrefuse", "aistop", "aiswitchaccount", "aitermsaccept", "aitermswithdraw", "aiwait", "aiwaitswitch",
       "aiwithout", "approvalruleset", "assessmentrecord", "attesttext", "bearingnote",
       "bindingadopt", "calibrate", "calibrationsignal", "calibrationsubject", "capturerequestplatformmark",
@@ -2745,10 +2758,10 @@ const ACT_HELP_ABSENT = Object.freeze({
       "filemembershipstore", "findaccept", "findmute", "followbody", "followpersonquery", "followportal",
       "grouptestset", "guideadopt", "guidedraft", "guideoffer", "guidepropose", "guideproposetocivicsmith",
       "guideretire", "guidereview", "hypothesissetaside", "hypothesistakeup", "importflagclear", "importunwatch",
-      "interestcheckdefine", "interestcheckgate", "interestcheckswitch", "interviewkeep", "joinlinkoff",
+      "interestcheckdefine", "interestcheckgate", "interestcheckswitch", "interpretationwithdraw", "interpretmark", "interviewkeep", "joinlinkoff",
       "joinlinkreplace", "joinlinkset", "keyedserviceset", "keyedserviceswitch", "lawpropose", "lawwithdraw",
-      "layerentryconfirm", "layerentrydraft", "layerentrywithdraw", "layerreport", "layerreportcarry", "linkproject",
-      "mailaddress", "mailbringin", "maildelete", "milestoneitemremove", "milestonereminder", "milestoneremove",
+      "layerentryconfirm", "layerentrydraft", "layerentrywithdraw", "layerreport", "layerreportcarry", "layersset", "linkproject",
+      "mailaddress", "mailbringin", "maildelete", "maildomainset", "maildoorset", "milestoneitemremove", "milestonereminder", "milestoneremove",
       "milestonerevise", "milestoneset", "moneycheckparam", "moneydetectordefine", "moneydetectorgate",
       "moneydetectorswitch", "moneyfundtype", "moneyingest", "moneysetpropose", "moneywithdraw", "narrativeclaim",
       "noteshare", "noteunshare", "optionrevise", "participantcorrect", "patterngate", "patternswitch",

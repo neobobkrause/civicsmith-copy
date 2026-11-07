@@ -29,11 +29,15 @@ import { createSha256, sha256HexSync } from "../record-grammar/index.mjs";
 import { CORPUS_EXPORT_EXEMPT, migrateCorpusExport } from "./schema.mjs";
 import { TablePager, tableEntry, pageBytes, canonical, PAGE_ROWS, PAGE_BYTES } from "./tables.mjs";
 import { render, itemsOf, FORMATS, STANDARDS } from "./render.mjs";
+import { segmentsOf, isSegmentFile, registersOf, notCarriedOf, signInNotCarried, wholeLayout, readPart, sha256Of, verifyWholePart,
+         WHOLE_PART_BYTES } from "./whole.mjs";
+import { storeHint, storeJurisdiction, storeGeneration } from "../store-place.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
 export { CORPUS_EXPORT_SCHEMA, CORPUS_EXPORT_EXEMPT } from "./schema.mjs";
 export { PAGE_ROWS, PAGE_BYTES, canonical, pageBytes } from "./tables.mjs";
 export { FORMATS, STANDARDS, RENDER_MAX } from "./render.mjs";
+export { WHOLE_PART_BYTES, WHOLE_PART_CEILING, verifyWholePart } from "./whole.mjs";
 
 /* REC-57: `op=exportlog` read the append-only export log at a literal `LIMIT 200` with no parameter and no published
    bound — on the one op whose whole sentence is a completeness claim to administrators (R19). */
@@ -48,9 +52,18 @@ const HEX64 = /^[0-9a-f]{64}$/;
 const te = new TextEncoder();
 
 export class CorpusExport {
-  constructor({ storage, record, now = null, entities = null, events = null, lines = null, money = null, provenance = null } = {}) {
+  constructor({ storage, record, now = null, entities = null, events = null, lines = null, money = null, provenance = null,
+                env = null, placement = null, partBytes = null, ledger = null } = {}) {
     this.sql = storage.sql;
     this.record = record;
+    /* R17: where the copy is placed, from the store's environment (`store-place`), or as given. */
+    this.env = env;
+    this.placementGiven = placement;
+    /* R18: the part bound (a test may lower it; never above WHOLE_PART_BYTES), and a byte ledger counting the bytes a
+       part holds while it is read (runtime-limits' `byteLedger`), when given. */
+    const b = Number(partBytes);
+    this.partBytes = Number.isSafeInteger(b) && b >= 1 ? Math.min(b, WHOLE_PART_BYTES) : WHOLE_PART_BYTES;
+    this.ledger = ledger;
     /* R10's owners: each an instance, or a function answering it on first use. */
     this.owners = { entities, events, lines, money };
     this.dep = { provenance };
@@ -86,6 +99,22 @@ export class CorpusExport {
    * hashed on the way out, so the receiving side can re-derive everything and
    * trust nothing the sender asserts. */
   exportManifest({ note = null } = {}) {
+    const m = this.#manifest();
+    /* The module's clock (`now`), as every instant it writes, so the log row and the answer carry one instant. */
+    const at = this.#when();
+    this.sql.exec(
+      `INSERT INTO export_log (at,scope,bundles,files,note,tables,rows) VALUES (?,'working-corpus',?,?,?,?,?)`,
+      at, m.counts.bundles, m.counts.files, note ? String(note).slice(0, EXPORT_NOTE_MAX) : null, m.counts.tables, m.counts.rows);
+    return { ok: true, at, scope: "working-corpus", ...m,
+      recorded: word("corpus-export.recorded.export_append_export"),
+      verify: word("corpus-export.verify") };
+  }
+
+  /* R1's content, read and never written: the bundles, the declared tables, the register, and (R16, R19) the
+     registers' descriptors and what is not carried. A register's segment (R16) is left out of the bundles and the
+     register, and named by its digest in its import's descriptor. */
+  #manifest() {
+    const seg = segmentsOf(this.sql);
     const bundles = this.#rows(
       `SELECT bundle_id, object_type, title, current_state, bundle_sha, row_version, created, last_updated
        FROM bundles ORDER BY bundle_id`);
@@ -94,7 +123,8 @@ export class CorpusExport {
     const out = bundles.map((b) => {
       const files = this.#rows(
         `SELECT path, sha256, bytes, blob_sha, (content IS NOT NULL) AS inline
-         FROM files WHERE bundle_id=? ORDER BY path`, b.bundle_id);
+         FROM files WHERE bundle_id=? ORDER BY path`, b.bundle_id)
+        .filter((f) => !isSegmentFile(seg, b.bundle_id, { sha256: f.sha256, blob_sha: f.blob_sha, inline: !!f.inline }));
       fileCount += files.length;
       return { ...b,
         files: files.map((f) => ({ path: f.path, sha256: f.sha256, bytes: f.bytes,
@@ -109,34 +139,106 @@ export class CorpusExport {
           `SELECT snap_key, kind, base, author, created, writer, operation
            FROM manifest WHERE bundle_id=? ORDER BY created, rowid`, b.bundle_id),
         snapshots: this.#rows(
-          `SELECT snap_key, path, sha256, created FROM history WHERE bundle_id=? ORDER BY snap_key, path`,
-          b.bundle_id),
+          `SELECT snap_key, path, sha256, created, blob_sha, (content IS NOT NULL) AS inline FROM history WHERE bundle_id=? ORDER BY snap_key, path`,
+          b.bundle_id)
+          .filter((s) => !isSegmentFile(seg, b.bundle_id, { sha256: s.sha256, blob_sha: s.blob_sha, inline: !!s.inline }))
+          .map(({ blob_sha, inline, ...s }) => s),
         /* connections' refs (an instance whose store holds no `refs` table holds no reference) */
         refs: hasRefs ? this.#rows(`SELECT target_id, kind FROM refs WHERE bundle_id=?`, b.bundle_id) : [],
       };
     });
     /* R7–R9: every table record-core's declarations name, read fresh at each export, by class and paged. */
-    const tables = this.#declared().map((d) => tableEntry(this.sql, d, this.record));
+    const declared = this.#declared();
+    const tables = declared.map((d) => tableEntry(this.sql, d, this.record));
     const rowCount = tables.reduce((n, t) => n + (t.rows || 0), 0);
-    /* The module's clock (`now`), as every instant it writes, so the log row and the answer carry one instant. */
-    const at = this.#when();
-    this.sql.exec(
-      `INSERT INTO export_log (at,scope,bundles,files,note,tables,rows) VALUES (?,'working-corpus',?,?,?,?,?)`,
-      at, bundles.length, fileCount, note ? String(note).slice(0, EXPORT_NOTE_MAX) : null, tables.length, rowCount);
-    return { ok: true, at, scope: "working-corpus",
+    const registers = registersOf(this.sql, this.record, declared);
+    return {
       bundles: out,
       tables,
       counts: { bundles: bundles.length, files: fileCount, tables: tables.length, rows: rowCount },
-      register: this.#register(),
-      recorded: word("corpus-export.recorded.export_append_export"),
-      verify: word("corpus-export.verify") };
+      register: this.#register(seg),
+      ...(registers ? { registers } : {}),
+      not_carried: notCarriedOf(tables, this.record),
+      sign_in: signInNotCarried() };
+  }
+
+  /** R17-R20: the whole-record manifest. R1's content, every stored file as an entry (path, SHA-256, bytes, kind, and
+   *  where it is held), the parts the files travel in (each with its index, byte count and SHA-256, fetched alone by
+   *  `exportWholePart`), the copy's `placement` and the counts; one `export_log` row scoped `whole-record`. It is a
+   *  read: the listing and the counts are taken at its instant `at`, before anything is awaited, so a write while
+   *  the parts are hashed changes neither; it takes no lease and holds no more than one part. */
+  async exportWhole({ note = null } = {}) {
+    const at = this.#when();
+    const m = this.#manifest();
+    const captures = new Set(m.register.map((r) => String(r.capture_sha || "").toLowerCase()));
+    const { entries, parts } = wholeLayout(this.sql, segmentsOf(this.sql), this.partBytes, captures);
+    const fileBytes = entries.reduce((n, e) => n + (Number.isSafeInteger(e.bytes) ? e.bytes : 0), 0);
+    const counts = { ...m.counts, stored_files: entries.length, parts: parts.length, bytes: fileBytes };
+    const placement = this.#placement();
+    this.sql.exec(
+      `INSERT INTO export_log (at,scope,bundles,files,note,tables,rows) VALUES (?,'whole-record',?,?,?,?,?)`,
+      at, counts.bundles, entries.length, note ? String(note).slice(0, EXPORT_NOTE_MAX) : null, counts.tables, counts.rows);
+    /* A part cut from a larger file is read and hashed now, one at a time, from the content its file's digest
+       addresses (which no later write changes). */
+    const missing = [];
+    for (const p of parts) {
+      if (p.sha256 !== null) continue;
+      const b = await this.#partBytes(p.file, p.offset, p.bytes);
+      if (!b || b.length !== p.bytes) { missing.push(p.index); continue; }
+      p.sha256 = sha256Of(b);
+      this.#release(b);
+    }
+    return { ok: true, at, taken_at: at, scope: "whole-record", ...m, counts, placement,
+             files: entries, part_bound: this.partBytes, parts,
+             ...(missing.length ? { parts_unread: missing } : {}),
+             recorded: word("corpus-export.recorded.export_append_export"),
+             verify: word("corpus-export.verify") };
+  }
+
+  /** R18: one part of a whole-record export, fetched alone from the manifest's row for it: `bytes` (at most the part
+   *  bound) from `offset` of the stored file whose digest is `file`, with their SHA-256. Writes nothing. Refused
+   *  `EXPORT_PART_MALFORMED` (no digest, or an offset or size that is not a whole number) or `EXPORT_PART_UNKNOWN` (no
+   *  stored file has that digest). */
+  async exportWholePart({ file = null, offset = null, bytes = null } = {}) {
+    const sha = typeof file === "string" ? file.trim().toLowerCase() : "";
+    const at = offset === null || offset === undefined || offset === "" ? 0 : Number(offset);
+    const want = bytes === null || bytes === undefined || bytes === "" ? this.partBytes : Number(bytes);
+    if (!/^[0-9a-f]{64}$/.test(sha) || !Number.isSafeInteger(at) || at < 0 || !Number.isSafeInteger(want) || want < 0)
+      return { ok: false, reason: "EXPORT_PART_MALFORMED", file,
+               detail: localize("corpus-export.index.whole_part_named", "a part is named by its file's digest, a whole-number offset and its size; nothing was read") };
+    const n = Math.min(want, this.partBytes);
+    const b = await this.#partBytes(sha, at, n);
+    if (!b) return { ok: false, reason: "EXPORT_PART_UNKNOWN", file: sha,
+                     detail: localize("corpus-export.index.whole_part_unknown", "nothing stored has that digest; nothing was read") };
+    const answer = { ok: true, file: sha, offset: at, bytes: b, size: b.length, sha256: sha256Of(b) };
+    this.#release(b);
+    return answer;
+  }
+
+  async #partBytes(file, offset, n) {
+    const b = await readPart(this.sql, this.record, file, offset, n);
+    if (b && this.ledger) this.ledger.hold(b.length, "whole-part");
+    return b;
+  }
+  #release(b) { if (b && this.ledger) this.ledger.release(b.length, "whole-part"); }
+
+  /* R17: the copy's region (its location hint), jurisdiction and generation, from the store's environment; each null,
+     and `stated: false`, when this instance was given none. */
+  #placement() {
+    const g = typeof this.placementGiven === "function" ? this.placementGiven() : this.placementGiven;
+    if (g && typeof g === "object") return { region: g.region ?? null, jurisdiction: g.jurisdiction ?? null, generation: g.generation ?? null, stated: true };
+    if (this.env && typeof this.env === "object")
+      return { region: storeHint(this.env), jurisdiction: storeJurisdiction(this.env), generation: storeGeneration(this.env), stated: true };
+    return { region: null, jurisdiction: null, generation: null, stated: false };
   }
 
   /* R1, R13: the register. A capture held in parts has the row of its whole (provenance R72), an identity with no file of
      its bundle: it travels marked `whole` and naming its parts in order (`provenance.partsNamed`), so an import verifies
      it by the parts' concatenation. Every other row is as it was. */
-  #register() {
-    return this.#rows(`SELECT bundle_id, path, capture_sha, bytes, whole FROM register ORDER BY bundle_id`).map(({ whole, ...r }) => {
+  #register(seg) {
+    return this.#rows(`SELECT bundle_id, path, capture_sha, bytes, whole FROM register ORDER BY bundle_id`)
+      .filter((r) => !(seg.bundles.has(r.bundle_id) || seg.shas.has(String(r.capture_sha || "").toLowerCase())))
+      .map(({ whole, ...r }) => {
       if (Number(whole) !== 1) return r;
       const named = this.#provenance()?.partsNamed(r.bundle_id, r.capture_sha);
       return { ...r, whole: 1, parts: named && named.state === "named" ? named.parts.map((p) => p.sha256) : null };
@@ -369,7 +471,12 @@ export function verifyCorpusExport(input) {
     for (const [k, n] of [["bundles", counts.bundles], ["files", fileTotal],
                           ...(Array.isArray(manifest.tables) ? [["tables", counts.tables], ...(rowTotal === null ? [] : [["rows", rowTotal]])] : [])])
       if (stated[k] !== n) failures.push({ reason: "COUNTS_MISMATCH", path: `counts.${k}`, expected: n, found: stated[k] ?? null });
-    return failures.length ? refused(failures, counts) : { ok: true, verified: true, counts };
+    /* R16: a register comes back as its descriptors and the places of its removals, never a row: shown as the manifest
+       lists them, with the statement that the rows are brought in again from the source. */
+    const shown = registersShown(manifest.registers);
+    if (shown && shown.carried_rows) failures.push({ reason: "REGISTER_ROWS_CARRIED", path: "registers", expected: localize("corpus-export.index.register_no_row", "no register row, cell or segment"), found: shown.carried_rows });
+    const extra = shown ? { registers: shown.view } : {};
+    return failures.length ? { ...refused(failures, counts), ...extra } : { ok: true, verified: true, counts, ...extra };
   } catch (e) {
     /* Never a throw: an export this cannot read is not verified, and says why. */
     return refused([...failures, { reason: "MANIFEST_MALFORMED", expected: "a readable export",
@@ -447,6 +554,17 @@ function verifyTables(manifest, held, failures, counts, declared) {
   return sound ? total : null;
 }
 
+/* R16: what an import shows of a register: each descriptor, each tombstone (table, key, ground, instant), no row. A
+   descriptor or tombstone that carries a cell, a row or a segment's bytes is counted, so the import refuses it. */
+function registersShown(r) {
+  if (!r || typeof r !== "object") return null;
+  const descriptors = Array.isArray(r.descriptors) ? r.descriptors : [];
+  const tombstones = (Array.isArray(r.tombstones) ? r.tombstones : []).map((t) => ({ table: t?.table ?? null, key: t?.key ?? null, ground: t?.ground ?? null, at: t?.at ?? null }));
+  const carried_rows = descriptors.filter((d) => d && ("cells" in d || "rows" in d || "segments" in d)).length;
+  return { carried_rows, view: { descriptors, tombstones, rows_restored: 0,
+    said: localize("corpus-export.registers.rows_not_carried", "Rows not carried: bring them in again from the source. Each import is carried as its description, and each removal as where it was.") } };
+}
+
 function refused(failures, counts) { return { ok: false, verified: false, failures, counts }; }
 function lower(v) { return typeof v === "string" ? v.trim().toLowerCase() : ""; }
 function describe(v) {
@@ -482,6 +600,17 @@ export function corpusExportOps(ce, q) {
     /* T33-61 (J1 (3), (4)): one page of a carried table (R8), and a part of a rendering for the stamped viewer (R10, R14). */
     exportpage: () => ce.exportPage({ table: q("table"), index: q("index"), after: q("after") }),
     exportrender: () => ce.exportRendering({ format: q("format"), viewer: q("viewer"), part: q("part") }),
+  };
+}
+
+/** R17, R18 (T53; K5441, K5443): the whole-record arms, `exportwhole` (administrator only, as `export`) and
+ *  `exportwholepart`, in the form of `corpusExportOps`. Kept apart from that map until op-declarations holds their rows
+ *  (its spec check refuses an arm with none; a declared row would join the member session set): the plane spreads
+ *  this map once their rows are there. */
+export function wholeExportOps(ce, q) {
+  return {
+    exportwhole: () => ce.exportWhole({ note: q("note") }),
+    exportwholepart: () => ce.exportWholePart({ file: q("file"), offset: q("offset"), bytes: q("bytes") }),
   };
 }
 

@@ -142,6 +142,8 @@ const TABLE = [
   ["passwordresetlink", "dev"], ["signerset", null], ["signeradd", null],
   ["memberadd", null], ["membercaps", "dev"], ["memberset", "dev"], ["adminendorse", "kim"], ["adminremove", "lu"], ["expertiseconfirm", "ana"],
   ["invitewithdraw", "mai-k"], ["websitekeycreate", null], ["joinlinkenable", null],
+  // R93 (3): the waiting proposal cancelled, drawn to the founder (and the proposer) on the proposed row
+  ["adminproposalcancel", "kim"],
 ];
 
 test("R2 every registry act is drawn for an administrator where it applies, each row's acts in its own panel; none to a member who does not administer", async () => {
@@ -206,8 +208,9 @@ test("R2 the row acts send their owners' arguments: membercaps, memberset, admin
   assert.deepEqual(await body("adminendorse", { data: { member: "kim" } }), { memberId: "kim" });
   const endorsed = rec.last("adminendorse");
   has(a, "screen.members.invite.shown", { handle: "kim", expires: day(endorsed.expires) });
-  assert.deepEqual(await body("adminremove", { data: { member: "lu" }, values: { "mr-lu": " Moved away " } }), { memberId: "lu", reason: "Moved away" });
+  // the empty reason first: the founder's removal carries alone (member-roster R84), and lu's row then offers none
   assert.deepEqual((await a.press("adminremove", { data: { member: "lu" }, values: { "mr-lu": "" } })).sent, [], "not without a reason");
+  assert.deepEqual(await body("adminremove", { data: { member: "lu" }, values: { "mr-lu": " Moved away " } }), { memberId: "lu", reason: "Moved away" });
   assert.deepEqual(await body("expertiseconfirm", { data: { member: "ana", label: "CPA" } }), { memberId: "ana", label: "CPA" });
   assert.equal((await t.founder.read("expertiselist", { query: { memberId: "ana" } })).expertise[0].state, "confirmed");
   assert.deepEqual(await body("invitewithdraw", { data: { member: "mai-k" } }), { memberId: "mai-k" });
@@ -579,12 +582,12 @@ test("R56 a removal under way is drawn from adminremovalsopen alone: who it wait
   await reauth(t.founder);
   assert.deepEqual((await a.press("adminremove", { data: { member: "lu" }, values: { "rm-lu": " we agree " } })).sent[0].body, { memberId: "lu", reason: "we agree" });
   assert.equal((await listed(t.founder)).find((m) => m.member_id === "lu").status, "revoked", "the vote that carries it removes lu");
-  // not drawn on another's row: with four administrators the removal waits for a third vote, and the founder, who has voted, is not offered it
+  // not drawn on another's row: with four administrators a removal the others start waits for a third vote (the founder's would carry it
+  // alone, member-roster R84), and rosa, who has voted, is not offered it
   const four = await admins(4);
-  await reauth(four.founder);
-  const voters = [four.founder, await four.w.signIn("rosa")];
-  for (const v of voters) { await reauth(v); assert.equal((await attempt(four.w, v, "adminremove", { body: { memberId: "ana2", reason: "moved away" } })).reason, "VOTES_SHORT"); }
-  const other = await open("members", { world: four.w, as: four.founder });
+  const [, rosa4, lu4] = four.all;
+  for (const v of [rosa4, lu4]) { await reauth(v); assert.equal((await attempt(four.w, v, "adminremove", { body: { memberId: "ana2", reason: "moved away" } })).reason, "VOTES_SHORT"); }
+  const other = await open("members", { world: four.w, as: rosa4 });
   assert.equal(btn(all(other.tree, (e) => e.attrs["data-removal"] === "ana2")[0], "adminremove").length, 0, "not drawn on another's row");
   // control: none under way, whatever the roster holds, draws nothing
   const fresh = await team();
@@ -723,8 +726,9 @@ test("R72 choosing the grant that includes administering draws the confirmation 
 test("R2 C89: inviting a third administrator is a proposal the plane records: it is drawn as done (not as a refusal) with who must still endorse, the roster is read again and shows the proposed member; control: another refusal is still a refusal, and an invitation that is not for an administrator is unchanged", async () => {
   const t = await team();
   const rec = recorded(t.w);
-  await reauth(t.founder);
-  const a = await open("members", { world: rec.world, as: t.founder });
+  // proposed by rosa, an administrator other than the founder, whose proposal still waits (the founder's does not, member-roster R87)
+  await reauth(t.rosa);
+  const a = await open("members", { world: rec.world, as: t.rosa });
   const idx = [...(await t.founder.read("whoami")).vocabulary, "administer"].indexOf("administer");
   for (const [id, v] of Object.entries({ "mi-id": "lee", "mi-cover": "Lee from 62nd" })) a.b.doc.getElementById(id).value = v;
   await a.tick("mi-caps-" + idx, true);
@@ -746,7 +750,7 @@ test("R2 C89: inviting a third administrator is a proposal the plane records: it
   assert.ok((await listed(t.founder)).some((m) => m.member_id === "lee" && m.status === "proposed"));
   assert.ok(a.text.includes("Lee from 62nd") || rowOf(a.tree, "lee"), "the proposed member is in the roster");
   // control: any other refusal is drawn as one (an id the team already holds, for an administrator)
-  const b = await open("members", { world: t.w, as: t.founder });
+  const b = await open("members", { world: t.w, as: t.rosa });
   for (const [id, v] of Object.entries({ "mi-id": "dev", "mi-cover": "Lee" })) b.b.doc.getElementById(id).value = v;
   await b.tick("mi-caps-" + idx, true);
   await b.tick("mi-ok-0", true);
@@ -754,7 +758,7 @@ test("R2 C89: inviting a third administrator is a proposal the plane records: it
   assert.ok(b.refused && b.refused.key === "refusal.EXISTS", JSON.stringify(b.refused));
   assert.ok(all(b.tree, (e) => e.attrs.role === "alert").length, "drawn as a refusal");
   // control: not for an administrator, sent as before
-  const c = await open("members", { world: t.w, as: t.founder });
+  const c = await open("members", { world: t.w, as: t.rosa });
   const plain = await c.press("memberadd", { values: { "mi-id": "kay", "mi-cover": "Kay", "mi-caps-0": true } });
   assert.deepEqual(plain.sent[0].body, { memberId: "kay", cover: "Kay", capabilities: ["contribute"] });
 });
@@ -762,14 +766,15 @@ test("R2 C89: inviting a third administrator is a proposal the plane records: it
 test("R2 C89: endorsing a proposed administrator while others must still endorse is done, with who must still endorse by handle, and the roster is read again; control: a real refusal of the act is still a refusal", async () => {
   const t = await team();
   const rec = recorded(t.w);
-  await reauth(t.founder);
-  const a = await open("members", { world: rec.world, as: t.founder });
+  // lu endorses: the founder's endorsement would issue it alone (member-roster R87), lu's still waits for hers
+  await reauth(t.lu);
+  const a = await open("members", { world: rec.world, as: t.lu });
   const before = a.p.requests.filter((r) => r.op === "memberlist").length;
   const r = await a.press("adminendorse", { data: { member: "kim" } });
   assert.deepEqual(r.sent.find((x) => x.op === "adminendorse").body, { memberId: "kim" });
   const endorsed = rec.last("adminendorse");
   assert.equal(endorsed.reason, "CONSENSUS_REQUIRED");
-  assert.deepEqual(endorsed.awaiting, ["lu"], "rosa proposed it and the founder endorsed it: lu is awaited");
+  assert.deepEqual(endorsed.awaiting, ["admin"], "rosa proposed it and lu endorsed it: the founder is awaited");
   assert.ok(!all(a.tree, (e) => e.attrs.role === "alert").length, "not drawn as a refusal");
   const note = all(a.tree, (e) => e.attrs["data-state"] === "done" && e.attrs.role === "status")[0];
   assert.ok(note, "drawn as done");

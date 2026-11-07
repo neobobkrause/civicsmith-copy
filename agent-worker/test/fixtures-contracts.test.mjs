@@ -6,7 +6,6 @@
  * checked as present, never copied (K3810). */
 import worker from "../src/index.mjs";
 import { MEMBER } from "./account.mjs";
-import { remoteBindings } from "./remote.mjs";
 
 let pass = 0, fail = 0;
 const t = (label, got, want) => {
@@ -20,7 +19,6 @@ const SHA = "a".repeat(64);
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from("page")]).toString("base64");
 const PAGES = [{ page: 1, media_type: "image/png", data: PNG }];
 const ACCOUNT = { kind: "apikey", level: "member", secret: "sk-ant-contract-fixture-never-echoed", member: MEMBER, suggestions: false };
-const ns = { idFromName: (n) => ({ n }), get: () => ({ fetch: async () => Response.json({}) }) };
 
 /** One POST to the real worker; the model API answers `model` (a scripted global fetch), the plane is never to be called. */
 async function call(path, body, model = async () => new Response("<html>", { status: 502 })) {
@@ -29,7 +27,7 @@ async function call(path, body, model = async () => new Response("<html>", { sta
   globalThis.fetch = model;
   try {
     const res = await worker.fetch(new Request(`http://agent-worker/${path}`, { method: "POST", body: typeof body === "string" ? body : JSON.stringify(body) }),
-      { PLANE: { fetch: async (u) => { planeCalls.push(String(u)); return Response.json({ ok: false }, { status: 500 }); } }, ...remoteBindings(ns) });
+      { PLANE: { fetch: async (u) => { planeCalls.push(String(u)); return Response.json({ ok: false }, { status: 500 }); } } });
     return { status: res.status, body: await res.json(), planeCalls };
   } finally { globalThis.fetch = saved; }
 }

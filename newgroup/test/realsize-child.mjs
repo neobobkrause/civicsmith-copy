@@ -78,7 +78,8 @@ async function putScript(name, init) {
   const meta = JSON.parse(await init.body.get("metadata").text());
   const file = init.body.get("index.mjs");
   await pipeline(Readable.fromWeb(file.stream()), createWriteStream(fileOf(name)));
-  scripts.set(name, { bindings: meta.bindings || [], put: true });
+  /* R40 (installer-steps): the account keeps the upload's `observability` setting and shows it in the script's settings, as Cloudflare does. */
+  scripts.set(name, { bindings: meta.bindings || [], observability: meta.observability, put: true });
   const mig = meta.migrations || {};
   classes.set(name, [...new Set([...(classes.get(name) || []), ...(mig.new_sqlite_classes || []), ...(mig.new_classes || []),
     ...(mig.steps || []).flatMap((st) => [...(st.new_sqlite_classes || []), ...(st.new_classes || [])])])]);
@@ -141,7 +142,7 @@ const rules = [
   { m: (u, mth) => u.includes("/scripts/bio-plan-probe") && mth === "DELETE", f: () => ok({}) },
   { m: (u, mth) => /\/workers\/scripts\/[^/]+\/settings$/.test(u) && mth === "GET", f: (u) => {
     const name = u.split("/workers/scripts/")[1].split("/")[0];
-    return scripts.has(name) ? ok({ bindings: scripts.get(name).bindings.map(({ text, ...b }) => b) }) : bad("not found", 404);
+    return scripts.has(name) ? ok({ bindings: scripts.get(name).bindings.map(({ text, ...b }) => b), ...(scripts.get(name).observability ? { observability: scripts.get(name).observability } : {}) }) : bad("not found", 404);
   } },
   { m: (u, mth) => /\/workers\/scripts\/[^/]+$/.test(u) && mth === "PUT", f: (u, init) => putScript(u.split("/workers/scripts/")[1], init) },
   { m: (u, mth) => /\/workers\/scripts\/[^/]+$/.test(u) && mth === "GET", f: (u) => {
@@ -174,6 +175,8 @@ globalThis.fetch = async (input, init = {}) => {
 
 /* ---- one act ---- */
 const begin = await worker.fetch(new Request(ORIGIN + "/begin", { method: "POST",
+  /* installer-check R90: an install begins after a passed "Check my account" for its short name (the `chk` cookie). */
+  headers: cfg.mode === "install" ? { cookie: "chk=" + Buffer.from(JSON.stringify({ slug, t: Date.now() })).toString("base64url") } : {},
   body: JSON.stringify({ slug, mode: cfg.mode, ...(cfg.mode === "update" ? { version: cfg.chosen } : {}) }) }));
 const j = await begin.json();
 const cookie = (begin.headers.get("set-cookie") || "").split(";")[0];

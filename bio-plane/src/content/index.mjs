@@ -959,6 +959,22 @@ export class Content {
     try { return this.rowContext.holds(sha) === true; } catch { return false; }
   }
 
+  /** F1 (citation R28, registers R30): whether the provider says any row of the cited cells' box was removed from the
+   *  segment `sha`; a provider without `removed`, or one that throws, removes nothing. */
+  #registerRemoved(sha, kind, extentJson) {
+    const removed = this.rowContext && typeof this.rowContext.removed === "function" ? this.rowContext.removed : null;
+    if (!removed || typeof sha !== "string" || !sha) return false;
+    const e = safeJson(extentJson);
+    const box = extentBox({ ...(isObj(e) ? e : {}), kind });
+    if (!box) return false;
+    for (let n = Math.min(box.r0, box.r1); n <= Math.max(box.r0, box.r1); n++) {
+      let gone = false;
+      try { gone = removed.call(this.rowContext, sha, n) === true; } catch { gone = false; }
+      if (gone) return true;
+    }
+    return false;
+  }
+
   #registerRow(sha, n) {
     try { const r = this.rowContext.rowAt(sha, n); return isObj(r) ? r : null; } catch { return null; }
   }
@@ -1517,6 +1533,9 @@ export class Content {
       const r = id ? this.#one(`SELECT content_id, capture_sha, extent_kind, extent, stale, register FROM content WHERE content_id=?`, id)
         : null;
       if (!r) return no("not_held", localize("content.index.no_content_row_by_that", "this record holds no content row by that id"));
+      /* F1 (citation R28, registers R30): a register row an expunge removed is answered removed, never its cells */
+      if (r.register && this.#registerRemoved(r.capture_sha, r.extent_kind, r.extent))
+        return no("removed", localize("content.index.register_row_removed", "this row was removed from the register, so its cells are no longer shown"));
       if (r.stale)
         return no("stale", localize("content.index.row_cited_under_earlier", "the row was cited under an earlier reading of its document, and the cells held now are the newer reading's, which may not be the cells cited"));
       const e = safeJson(r.extent);

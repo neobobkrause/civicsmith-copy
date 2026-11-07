@@ -135,12 +135,12 @@ test("R58: Mark them done sends taskresolve once with the chosen items; the outc
 
 test("R58, C71: a set act over a mix says why for every item it does not handle: a reason key on each kept row, none on a handled one", timeout, async () => {
   const { w, rosa, mai, p1 } = await team();
-  const founder = await w.signIn("founder");
+  const cy = await w.signIn("cy", { admin: true });   // a non-founder administrator proposes: the founder's proposal issues at once (member-roster R87)
   const [doc] = await todos(w, mai, rosa, p1, []).then(async () => [(await w.recipes.page(rosa, "Doc T1", { project: p1 })).bundle]);
   await rosa.act("checkrequest", { body: { target: doc, member: "rosa", note: "please look at T1" } });
   await mai.act("expertisedeclare", { body: { label: "tenant law" } });
-  await founder.act("reauth", { body: { password: w.password } });
-  await founder.act("memberadd", { body: { memberId: "dan", cover: "the world's member dan", role: "admin" } }).catch((e) => { if (!/CONSENSUS_REQUIRED/.test(e.message)) throw e; });
+  await cy.act("reauth", { body: { password: cy.password } });
+  await cy.act("memberadd", { body: { memberId: "dan", cover: "the world's member dan", role: "admin" } }).catch((e) => { if (!/CONSENSUS_REQUIRED/.test(e.message)) throw e; });
   const real = await itemsOf(rosa);
   const t1 = todoOf(real, "Doc T1"), expert = real.find((i) => i.kind === "expertise-confirmation-owed"), endorse = real.find((i) => i.kind === "endorsement-owed");
   assert.ok(t1 && expert && endorse, "the real queue holds a to-do, an expertise to confirm and an endorsement owed");

@@ -11,11 +11,16 @@ import { settle, StepFailed } from "./walker.mjs";
 import { act, control, type, open, requireDrawn, reveal } from "./journeys.mjs";
 import { requireWord, requireAnyWord, byWord, wordPattern, word, drawsWord } from "./words.mjs";
 import { developerWords } from "./design.mjs";
-import { NOTICE_ADDRESS, NOTICE_PASSAGE, HEAT_ADDRESS, HEAT_PASSAGE } from "./city.mjs";
+import { CITY_ORIGIN, NOTICE_PATH, NOTICE_PASSAGE, HEAT_ADDRESS, HEAT_PASSAGE } from "./city.mjs";
 import { localize } from "../setup-words/index.mjs";
 
 export const PLAN_TITLE = "Get the roof repaired";
-const PROJECT_TITLE = "Roof repairs at 14 Lakeshore Row";
+/* F4: the project R9 step 2 starts is titled for this run, so the walk runs again and again on one instance (a fixed title is
+   refused NAME_TAKEN on the second walk). `RUN_MARK` is the run's own, a number a person reads as one. */
+export const PROJECT_BASE = "Roof repairs at 14 Lakeshore Row";
+export const RUN_MARK = String(Date.now() % 1e9).padStart(9, "0").replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3");
+export const projectTitle = (mark = RUN_MARK) => `${PROJECT_BASE}, walk ${mark}`;
+export const PROJECT_TITLE = projectTitle();
 export const QUESTION = "Has the landlord been ordered to repair the roof of 14 Lakeshore Row?";
 /* The file the walk uploads into the question (R9 step 5): a tenant's own note, written by the walk into its output. */
 export const UPLOAD_NAME = "flat-4-ceiling-note.txt";
@@ -113,9 +118,18 @@ async function requireTitle(page, text) {
   if (h !== text) throw new Error(`the title drawn is "${h}", not "${text}"`);
 }
 
-/* Steps 5 and 6: from the question's "Add a document", a capture by address and one by upload, each into the question;
-   both held; one vouched for. Answers the vouched document's address. */
-async function captureAndVouch(walk, page, base, { question, password }) {
+/* F5: what the walk says when it was given no page of ours to capture by address (the live arm with no test page), and the steps
+   that rest on the document that capture holds, each noted, never passed. */
+export const NO_TESTPAGE = "R9 step 5, capture by address: not walked, the walk was given no test page of ours to capture (JOURNEY_CITY_ORIGIN)";
+export const RESTS_ON_CAPTURE = Object.freeze(["R9 step 6, see both held, and vouch for one", "R9 step 7, open the document, see its words, and Find-in a passage",
+  "R9 step 8, cite it with a role", "R9 step 12, accept a reading, stand on it for the project, and conclude"]);
+const restsOn = (label) => `${label}: not walked, it rests on the capture by address, which was not walked`;
+
+/* Steps 5 and 6: from the question's "Add a document", a capture by address (of the notice at `city`, a site the walk
+   controls: the local arm's stub, or the live arm's test page, F5) and one by upload, each into the question; both held; one
+   vouched for. Answers the vouched document's address. */
+async function captureAndVouch(walk, page, base, { question, password, city = CITY_ORIGIN }) {
+  const NOTICE_ADDRESS = city.replace(/\/+$/, "") + NOTICE_PATH;
   await walk.step(page, "5 · capture by address into the question, from its \"Add a document\"", async (p) => {
     await p.goto(question); await settle(p);
     await follow(p, "question.adddoc");
@@ -296,9 +310,9 @@ async function concludeOn(walk, page, { question, project }) {
    in the words of `refusal.AGENT_WORKER_UNBOUND` or `refusal.ASSISTANT_REMOTE_NOT_READY`, never a code. A screen that
    draws an assistant control that cannot work fails by name. */
 /* the acts that connect or run the assistant, by the names the plane declares: `connect` draws the sign-in (`subscriptionsignin`, after
-   `disclosureshown`) and the own key (`accountreferenceset`); the question's dock `airunopen`; the plan `planask`; Ask `ask` */
-export const ASSISTANT_OPS = Object.freeze(["subscriptionsignin", "disclosureshown", "accountreferenceset", "airunopen", "planask", "ask"]);
-export const CONNECT_OPS = Object.freeze(["subscriptionsignin", "disclosureshown", "accountreferenceset"]);
+   `disclosureshown`) and the own key (`aiownadd`, `accountreferenceset` before T53); the question's dock `airunopen`; the plan `planask`; Ask `ask` */
+export const ASSISTANT_OPS = Object.freeze(["subscriptionsignin", "disclosureshown", "accountreferenceset", "aiownadd", "airunopen", "planask", "ask"]);
+export const CONNECT_OPS = Object.freeze(["subscriptionsignin", "disclosureshown", "accountreferenceset", "aiownadd"]);
 export const ASSISTANT_SHELL = Object.freeze(["dock"]);
 export const NOT_READY_KEYS = Object.freeze(["refusal.AGENT_WORKER_UNBOUND", "refusal.ASSISTANT_REMOTE_NOT_READY"]);
 
@@ -356,14 +370,24 @@ async function concludeOwn(walk, page, { label, question, reading, falsifier, co
 /** R9: the administrator's journey, from her claimed group (journey 28 has claimed it and signed her in by her handle,
  *  step 1) to a first conclusion. `codeOf` (live arm, R12) asks the person for the sign-in's code. Answers the
  *  project's and question's addresses. */
-export async function walkAdministrator(walk, page, { base, founder, codeOf = null, made = {}, segments = null, assistant = false }) {
+export async function walkAdministrator(walk, page, { base, founder, codeOf = null, made = {}, segments = null, assistant = false, city = CITY_ORIGIN }) {
   walk.journey = "R9 as administrator";
   const { project, question } = await projectAndQuestion(walk, page, base, { title: PROJECT_TITLE, question: QUESTION });
   /* the project exists from here on: R10 invites a member to it even when a later step of this journey stops (`made`) */
   made.project = project; made.question = question;
   if (assistant) await connectSubscription(walk, page, base, { password: founder.password, codeOf });
   else await notReady(walk, page, base, { label: "assistant not ready: the connect screen", path: "/app/connect", screen: "connect", assistantSignin: true, names: [STEP_NAMES.connect] });
-  const document = await captureAndVouch(walk, page, base, { question, password: founder.password });
+  /* F5: with no page of ours to capture by address, that capture and the steps resting on it are noted, never passed */
+  if (!city) {
+    walk.notes.push(NO_TESTPAGE);
+    for (const l of RESTS_ON_CAPTURE) walk.notes.push(restsOn(l));
+    if (!assistant && question) {
+      await notReady(walk, page, base, { label: "assistant not ready: the question's dock", path: new URL(question).pathname, screen: "question", names: [STEP_NAMES.run, STEP_NAMES.read] });
+      await notReady(walk, page, base, { label: "assistant not ready: the Ask screen", path: "/app/answers", screen: "answers", names: [STEP_NAMES.ask] });
+    }
+    return { project, question };
+  }
+  const document = await captureAndVouch(walk, page, base, { question, password: founder.password, city });
   await firstPage(walk, page, document);
   await readAndCite(walk, page, { document, question });
   if (assistant) {

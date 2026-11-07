@@ -1,19 +1,17 @@
-# agent-runner: the container in which a member's own Claude account runs one model conversation (R1–R31).
+# agent-runner: the gate run container (T53; R43-R60). It runs one gate run per instance against the run's declared
+# provider and seals the results inside; it holds no Claude Code, no Agent SDK and no shell (R56).
 # Build (the release, T33-D1): docker build --platform linux/amd64 -t <repository>:<version> agent-runner
 # The image is then named only by its digest, which the release writes into fleet-member.json and wrangler.jsonc (R7, R13).
-# The base is pinned by digest (R13): node:22-bookworm-slim, its linux/amd64 manifest as read on 2026-10-06.
-FROM node:22-bookworm-slim@sha256:efd0ab5780c2d9ab1f0f869571a00d5edb17793bff4cce4a2792e3eb0ffc7562
-# NODE_EXTRA_CA_CERTS: Cloudflare's container CA, through which the Worker applies R10's egress to HTTPS (src/worker.mjs).
+# The base is pinned by digest (R13, R56): gcr.io/distroless/nodejs22-debian12:nonroot, its linux/amd64 manifest as read
+# on 2026-11-05. It carries the Node runtime alone: no shell, no package manager, no curl or wget.
+FROM gcr.io/distroless/nodejs22-debian12:nonroot@sha256:afa48e2ae1100924bfb069244f4ef70c0f9c061654c669da6b7faa7881c1ec7f
+# NODE_EXTRA_CA_CERTS: Cloudflare's container CA, through which the Worker applies R45's platform list to HTTPS.
 ENV NODE_ENV=production PORT=8080 NODE_EXTRA_CA_CERTS=/etc/cloudflare/certs/cloudflare-containers-ca.crt
 WORKDIR /app
-COPY package.json package-lock.json ./
-# No package's install or lifecycle script runs at build (R16): the lock holds none that needs one.
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
-COPY src/entry.mjs src/runner.mjs src/ws.mjs src/env.mjs src/signin.mjs src/screen.mjs src/waits.mjs src/says.mjs src/says-words.mjs ./src/
-# The member's sign-in (R17-R21, R27) runs the installed binary's own `setup-token`, unchanged, through util-linux
-# `script`, which the base carries (bsdutils): nothing is installed or changed for it (R16, R22).
-# Nothing of the image is writable to the runner but the temporary directory each conversation or sign-in attempt
-# makes and removes; no sign-in is stored (R9, R27).
-USER node
+# The image's code, built by scripts/build-image.mjs at test, deploy and release, never committed: one self-contained entry and the run it loads. It
+# installs no package, so no install or lifecycle script runs (R16).
+COPY dist/image/ ./
+USER nonroot
 EXPOSE 8080
-CMD ["node", "src/entry.mjs"]
+# Exec form (R56): the base's entrypoint is the Node runtime; nothing writable but the temporary directory (R9).
+CMD ["entry.js"]

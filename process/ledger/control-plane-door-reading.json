@@ -1,0 +1,36 @@
+{
+  "id": "control-plane-door-reading",
+  "title": "control-plane-door-reading: split by copy from control-plane (R72, R100, R105, R115, R117, R121, R123, R124, R125, R120, R128, R129, R130, R131, R132, R133, R134, R135)",
+  "layer": 11,
+  "paths": [
+    "build/requirements/control-plane-door-reading.md",
+    "docs/requirements-notes/control-plane-door-reading.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/control-plane-door-reading/"
+  ],
+  "requirements": "build/requirements/control-plane-door-reading.md",
+  "uses": [
+    "control-plane",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/control-plane-door-reading.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T12:06:45Z"
+  }
+}

@@ -612,6 +612,11 @@ export const runnerMethods = {
     const s = typeof sha === "string" ? this.one(`SELECT s.import_id, i.register FROM register_segments s JOIN register_imports i ON i.import_id=s.import_id WHERE s.sha256=? ORDER BY s.import_id LIMIT 1`, sha) : null;
     return s ? { register: s.register, import: s.import_id } : null;
   },
+  /** R30 (citation R28): whether a removal took row `n` (the header is row 1) of the reduced file whose digest was `sha`; never throws */
+  removedAtSegment(sha, n) {
+    if (typeof sha !== "string" || !sha || !Number.isInteger(n) || n < 2) return false;
+    return !!this.one(`SELECT 1 AS x FROM register_segment_removed WHERE sha256=? AND row=?`, sha, n);
+  },
   /** content R65, R67: the reduced file's row `n` (the header is row 1) as the row store holds it, with the reduction it points into */
   rowAtSegment(sha, n) {
     const s = this.one(`SELECT * FROM register_segments WHERE sha256=? ORDER BY import_id LIMIT 1`, sha);

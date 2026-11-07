@@ -1,0 +1,63 @@
+{
+  "id": "monitoring",
+  "title": "monitoring: meet its unmet requirement marks",
+  "layer": 10,
+  "paths": [
+    "bio-plane/src/monitoring/",
+    "build/requirements/monitoring.md",
+    "docs/requirements-notes/monitoring.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/monitoring/"
+  ],
+  "requirements": "build/requirements/monitoring.md",
+  "uses": [
+    "record-grammar",
+    "runtime-limits",
+    "subresources",
+    "jurisdictions",
+    "format-registry",
+    "docprofile",
+    "record-core",
+    "membership",
+    "promotion",
+    "host-governor",
+    "provenance",
+    "capture-sources",
+    "capture",
+    "acquisition",
+    "observation-log",
+    "retrieval",
+    "intent",
+    "reevaluation",
+    "publication",
+    "actions",
+    "action-clocks",
+    "escalation",
+    "credentials",
+    "case-import",
+    "civil-time",
+    "investigation",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/monitoring.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the unmet requirement marks in build/requirements/monitoring.md, each with a test under bio-plane/test/m/monitoring/ that fails with the change reverted. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T03:56:20Z"
+  }
+}

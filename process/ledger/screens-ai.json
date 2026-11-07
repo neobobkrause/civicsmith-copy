@@ -1,0 +1,42 @@
+{
+  "id": "screens-ai",
+  "title": "screens-ai: meet its unmet requirement marks",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/screens-ai/",
+    "build/requirements/screens-ai.md",
+    "docs/requirements-notes/screens-ai.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-ai/"
+  ],
+  "requirements": "build/requirements/screens-ai.md",
+  "uses": [
+    "interface-assets",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "test-support",
+    "store-request",
+    "translations"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/screens-ai.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the unmet requirement marks in build/requirements/screens-ai.md, each with a test under bio-plane/test/m/screens-ai/ that fails with the change reverted. None of the seven screens is built yet; they are registry rows in wizard-scripts/screen-registry.mjs, which stays wizard-scripts'. Build them in bio-plane/src/screens-ai/. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T19:53:38Z"
+  }
+}

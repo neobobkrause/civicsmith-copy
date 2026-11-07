@@ -1,0 +1,36 @@
+{
+  "id": "control-plane-store-request",
+  "title": "control-plane-store-request: split by copy from control-plane (R64, R136, R137, R138, R29)",
+  "layer": 11,
+  "paths": [
+    "build/requirements/control-plane-store-request.md",
+    "docs/requirements-notes/control-plane-store-request.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/control-plane-store-request/"
+  ],
+  "requirements": "build/requirements/control-plane-store-request.md",
+  "uses": [
+    "control-plane",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/control-plane-store-request.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-05T18:21:26Z"
+  }
+}

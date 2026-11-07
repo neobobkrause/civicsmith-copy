@@ -3,7 +3,7 @@
    without it. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { standard, WORDS, ENTRIES, label, usage, PLANS } from "./fixture.mjs";
+import { standard, WORDS, ENTRIES, label, usage, PLANS, TASK_COSTS } from "./fixture.mjs";
 import { ESTIMATE_SAMPLE, aiUseOps } from "../../../src/ai-use/index.mjs";
 
 const AT = "2026-10-09T12:00:00Z";
@@ -232,6 +232,39 @@ test("R10 acts with no cost, or a plan whose money is none, answer tokens and ca
   assert.equal(w.u.useEstimate({ owner: "group", use: "ask", viewer: "ann" }).code, "NOT_AN_ADMIN");
   assert.equal(w.u.useEstimate({ owner: "member:ann", use: "nope", viewer: "ann" }).code, "AI_LIMIT_INVALID");
   assert.equal(w.u.useEstimate({ owner: "member:ann", use: "ask", viewer: "ann", count: 0 }).code, "AI_LIMIT_INVALID");
+});
+
+test("R10 (T53) with fewer than ESTIMATE_MIN_ACTS measured acts and an entry_id, useEstimate answers agent-model.estimate's range for the use's part times count, its basis measured; a priced entry with no measurement answers price_only; a none plan answers not_measurable; with neither entry nor acts, not_known (control: ESTIMATE_MIN_ACTS acts answer the account's own range; a non-owner is refused as R12 refuses)", async () => {
+  const w = await standard();
+  const est = (extra = {}) => w.u.useEstimate({ owner: "project:P", use: "run", mode: "investigate", viewer: "ann", ...extra });
+  const one = ESTIMATE_SAMPLE.min - 1;
+  for (let i = 1; i <= one; i++) w.count("project:P", "bob", "run", { mode: "investigate", act: `R${i}`, cost: i / 10, at: `2026-10-0${i}T12:00:00Z` });
+  /* one fewer act than the minimum and a measured entry: the entry's range for the part of `run`, times count */
+  const got = await est({ entry_id: ENTRIES.measured, count: 2 });
+  assert.equal(got.ok, true);
+  assert.deepEqual(got.estimate, { low: TASK_COSTS.run.low * 2, high: TASK_COSTS.run.high * 2, unit: "usd", basis: "measured" });
+  /* explore's part is run's (PART_OF_KIND), so the same entry answers an exploring run */
+  assert.equal((await w.u.useEstimate({ owner: "project:P", use: "explore", viewer: "ann", entry_id: ENTRIES.measured })).estimate.basis, "measured");
+  /* a priced entry with no measurement: price_only, no figure, never zero */
+  assert.deepEqual((await est({ entry_id: ENTRIES.priced })).estimate, { low: null, high: null, unit: "usd_per_million_tokens", basis: "price_only" });
+  /* neither: not_known, never zero; and a part the entry has not measured (ask) falls to its prices */
+  assert.equal((await est({ entry_id: ENTRIES.unpriced })).estimate.basis, "not_known");
+  assert.equal((await est({ entry_id: "fake-not-in-catalogue" })).estimate.basis, "not_known");
+  assert.equal(est().estimate.basis, "not_known", "no entry named: not_known, answered at once");
+  /* a none plan: the entry's money is withheld, not_measurable */
+  const flat = await w.account("member:cy", "cy", PLANS.none);
+  assert.ok(flat);
+  assert.deepEqual((await w.u.useEstimate({ owner: "member:cy", use: "run", viewer: "cy", entry_id: ENTRIES.measured })).estimate,
+    { low: null, high: null, unit: null, basis: "measured", not_measurable: true });
+  /* control: the minimum reached, the account's own range wins over the entry's */
+  w.count("project:P", "bob", "run", { mode: "investigate", act: "R5", cost: 0.5, at: "2026-10-05T12:00:00Z" });
+  assert.deepEqual((await est({ entry_id: ENTRIES.measured })).estimate, { low: 0.1, high: 0.5, unit: "usd", basis: "account_measured", measured: 5 });
+  /* control: a non-owner is refused as R12 refuses, the entry named or not; a malformed entry_id is refused naming it */
+  assert.equal((await w.u.useEstimate({ owner: "project:P", use: "run", viewer: "cy", entry_id: ENTRIES.measured })).code,
+    w.u.useEstimate({ owner: "project:P", use: "run", viewer: "cy" }).code);
+  assert.notEqual(w.u.useEstimate({ owner: "project:P", use: "run", viewer: "cy" }).ok, true);
+  const bad = await est({ entry_id: "no spaces allowed" });
+  assert.equal([bad.code, bad.field].join(" "), "AI_LIMIT_INVALID entry_id");
 });
 
 test("R11 (T53) actualOf answers a run's actual cost after, cost_reported and cost_estimated apart, only to the paying account's owners; an unpriced act answers not_measurable, never 0; to anyone else, and for an act not measured, found false", async () => {

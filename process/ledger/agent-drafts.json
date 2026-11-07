@@ -40,6 +40,6 @@
   "prior_work": "Meet agent-drafts unmet T53 marks (R1, R4, R7: the /draft answer label is {kind: \"machine\", ai}, the stub adapter label, and a request-body label is ignored), each with a test under agent-worker/test/agent-drafts/ that fails with the change reverted. This module owns agent-worker/src/draft.mjs, action-drafts.mjs and untested.mjs (its header); change no other agent-worker file and leave agent-worker requirement lines to agent-worker own job. Commit no generated file (any dist; restore agent-worker/dist from HEAD if a build rewrites it).",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-05T04:46:48Z"
+    "at": "2026-11-06T02:09:05Z"
   }
 }

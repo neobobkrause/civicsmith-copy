@@ -153,7 +153,10 @@ export class Queue {
     "caseImport", "wizardScripts",
     /* queue-producers R37 (K2484, K2582): publish-schedule's scheduled editions, read there directly since N823's split;
        queue passes it and calls none of its reads. */
-    "publishSchedule"]);
+    "publishSchedule",
+    /* queue-producers R60, R61 (T53; PR 362): ai-accounts' stopped accounts and ai-use's re-testing turned off; queue passes
+       them and calls none of their reads. */
+    "aiAccounts", "aiUse"]);
   get #scheduler() { return this.#dep("scheduler", () => schedulerOf(this.#host, this.#env)); }
   /* R51 (T33-83): `notice-producers`, read beside `queue-producers`. */
   get #notices() { return this.#dep("notices", () => noticeProducersOf(this.#host)); }
@@ -712,7 +715,10 @@ export class Queue {
    *  doors. The contradiction duties' doors are R46's, read off the item's subject (`#contradictionDisposition`); the
    *  bridge (R28), which holds no subject, answers the doors of a duty not yet taken up. A list is copied out
    *  (`doorOf`), never handed out frozen. */
-  static OBLIGATION_DOORS = Object.freeze({ "bias-debt": "biasdebtresolve", "signer-self-registered": "signerset",
+  static OBLIGATION_DOORS = Object.freeze({ "bias-debt": "biasdebtresolve",
+    /* R97 (T53; DEC-462): a signing-key item is answered per key, by the revoke (the door the screen leads with) or by
+       "I know about this key"; the bridge names both. */
+    "signer-self-registered": ["signerset", "signerknown"],
     "plan-checkpoint-due": "checkpointrecord", "escalation-stage-proposed": "escalationadvance",
     "action-reminder": "reminderanswer", "litigation-hold": "actionhold",
     "template-review-requested": "templatereview", "local-fact-due": "factconfirm",
@@ -745,6 +751,33 @@ export class Queue {
   }
   /** The door R12 and R28 name for an OBLIGATION of `kind`: the door its producer declared on the item (`declared`, R12),
    *  else its entry above (a list copied), else `taskresolve`. */
+  /** R97: the keys a signing-key item lists, `basis.keys`' `key_b64` in order, each once; none when the producer listed none. */
+  static signerKeysOf(item) {
+    const listed = item && item.basis && Array.isArray(item.basis.keys) ? item.basis.keys : [];
+    const out = [];
+    for (const k of listed) {
+      const b = k && typeof k === "object" && typeof k.key_b64 === "string" ? k.key_b64.trim() : "";
+      if (b && !out.includes(b)) out.push(b);
+    }
+    return out;
+  }
+  /** R97: a signing-key item's options are the producer's per-key pair (R34), kept only for a key the item lists and only
+   *  the two acts, each once per key, so they number at most twice the keys listed; the revoke states `to: "revoked"`. */
+  static SIGNER_ACTS = Object.freeze(["signerset", "signerknown"]);
+  static signerOptionsOf(item) {
+    const keys = Queue.signerKeysOf(item);
+    const seen = new Set();
+    const out = [];
+    for (const o of Array.isArray(item.options) ? item.options : []) {
+      if (!o || typeof o !== "object" || !Queue.SIGNER_ACTS.includes(o.id) || typeof o.key !== "string" || !keys.includes(o.key)) continue;
+      const k = `${o.id}\u0000${o.key}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(o.id === "signerset" ? { ...o, to: "revoked" } : { ...o });
+    }
+    const at = (o) => keys.indexOf(o.key) * 2 + Queue.SIGNER_ACTS.indexOf(o.id);
+    return out.sort((a, b) => at(a) - at(b));
+  }
   static doorOf(kind, declared) {
     const own = Queue.declaredDoor(declared);
     if (own !== null) return own;
@@ -821,7 +854,11 @@ export class Queue {
   /** R12 (T40; N812, K2376 (2), K2394): the AI accounts' three kinds are told to whom they concern and no team's list
    *  holds them: an explore ask is answered by its own act, the other two are quieted by their recipient. */
   static ACCOUNT_DOORS = Object.freeze({ "explore-ask": "exploreapprove", "ai-limit-reached": "queuemute",
-    "project-account-suspended": "queuemute" });
+    "project-account-suspended": "queuemute",
+    /* T53 (R1, R12; layer 11 reopen; notice-producers R33-R35): a threshold alert, a terms notice, an account that left a
+       list and a project sign-in account that ended are facts about an account, told to whom they concern, as above. */
+    "ai-threshold-reached": "queuemute", "ai-terms-notice": "queuemute", "ai-account-left-list": "queuemute",
+    "ai-account-left-project-list": "queuemute", "ai-signin-ended": "queuemute" });
   /** R12 (T45; action-producers R9, R11; upper doubt 15): FINDINGs that no project-scoped decision answers, quieted by
    *  their recipient for themselves as a CONDITION is: a member who left is told to the project's owners, and its doors
    *  are the take-ups its options lead with. */
@@ -883,12 +920,15 @@ export class Queue {
       ? item.subject.definition_version : null;
     const contradiction = this.#contradictionDisposition(item);
     if (contradiction) return contradiction;
-    /* R96 (fix round 10; DEC-439 to DEC-441, K5303, A-03; credentials R83): an administrator may answer a self-registered
-       key with "I know about this key" (op=signerknown), keyed by the key; revoking it (op=signerset) stays its door. */
+    /* R96, R97 (T53; DEC-462; credentials R7, R83; queue-producers R56): one item per member lists her keys (`basis.keys`);
+       each listed key is answered on its own, by "I know about this key" (op=signerknown) or the revoke (op=signerset), the
+       key named by the field both ops take (`keyB64`). `keys` is one entry per listed key, in the list's order; a key only
+       `basis.keys_more` counts has none. The top-level `acts` names the answer that ends a key (R96). */
     if (item.kind === "signer-self-registered") {
-      const key = pick(item.subject, "id");
-      return { available: key !== null, op: "signerknown", scope: "key", keyed_on: ["keyB64"], key, acts: ["signerknown"],
+      const keys = Queue.signerKeysOf(item);
+      return { available: keys.length > 0, op: "signerknown", scope: "key", keyed_on: ["keyB64"], key: null, acts: ["signerknown"],
                requires: ["keyB64"], instead: Queue.doorOf(item.kind, item.door),
+               keys: keys.map((k) => ({ key_b64: k, acts: ["signerknown"], instead: "signerset" })),
                detail: localize("queue.index.an_administrator_who_knows_this", "an administrator who knows of this key says so (op=signerknown) and it leaves every administrator's list; revoking it (op=signerset) ends it too.") };
     }
     if (item.class === "OBLIGATION")
@@ -925,6 +965,12 @@ export class Queue {
       return { available: false, op: null, scope: null, keyed_on: KEYED_ON, key: null,
                reason: "a_watched_change_is_told_to_you_alone_and_quieted", instead: "queuemute",
                detail: localize("queue.index.something_you_watch_changed_and", "something you watch changed, and you alone are told: no team's list holds it and there is no team for a disposition to speak for. Quiet it for yourself (op=queuemute, naming this item) once you have read it; the watch goes on and a later change is told as a new item.") };
+    /* T53 (R1, R12; layer 11 reopen; notice-producers R36): unconfirmed mail removed is told to its owner alone, as a
+       standing question's answer is: no team's list holds it, so its owner quiets it for themselves (R30). */
+    if (item.kind === "mail-cleared")
+      return { available: false, op: null, scope: null, keyed_on: KEYED_ON, key: null,
+               reason: "a_mail_notice_is_told_to_you_alone_and_quieted", instead: "queuemute",
+               detail: localize("queue.index.unconfirmed_mail_of_yours_was", "unconfirmed mail of yours was removed, and you alone are told: no team's list holds it and there is no team for a disposition to speak for. Quiet it for yourself (op=queuemute, naming this item) once you have read it.") };
     /* R98 (T53; notice-producers R30, R31): a register's change or an import's end, disposed of as R57 gives watched-changed. */
     if (Queue.REGISTER_NOTICES.includes(item.kind))
       return { available: false, op: null, scope: null, keyed_on: KEYED_ON, key: null,
@@ -1309,6 +1355,7 @@ export class Queue {
          is the same argument `suppressedBy` makes one block down. A producer
          computing its own answer would be six copies of the act's key. */
       it.disposition = this.#dispositionOf(it);
+      if (it.kind === "signer-self-registered") it.options = Queue.signerOptionsOf(it);
       /* R56 (N1123): the subject names its title, `null` where it names no bundle the viewer may see or the bundle states none,
          never missing; asked here for every item whatever its producer, so no producer carries a copy. */
       if (it.subject && typeof it.subject === "object" && !Array.isArray(it.subject))
@@ -1543,9 +1590,13 @@ export class Queue {
     if (d === null) {
       d = this.#measured(() => this.#derive({ me, viewer, now, identity }));
       if (d.ok !== true) return d;
-      if (derivedSig !== null) {
+      /* R93: kept under the signature as it stands after the derivation: a provider's first read may write its own
+         migrations (a row in its ledger) while it is read, and those writes are the derivation's own, so the count asked
+         next with nothing written since is the one already made. */
+      const keptSig = derivedSig !== null ? this.#countSignature(now) : null;
+      if (keptSig !== null) {
         if (!this.#derived.has(derivedKey) && this.#derived.size >= Queue.QUEUE_COUNT_VIEWERS_MAX) this.#derived.clear();
-        this.#derived.set(derivedKey, { sig: derivedSig, d });
+        this.#derived.set(derivedKey, { sig: keptSig, d });
       }
     }
     /* R94: what the Server-Timing marks carry (control-plane's phase clock): `queue-count` is `served`, and `rows-queue` the
@@ -2692,7 +2743,13 @@ export function queueAnswer(r, { gate } = {}) {
     return { status: 200, result: r };
   return { status: 200, result: {
     ...r,
-    items: (r.items || []).map((i) => ({ ...i, options: (i.options || []).map((a) => decorate(a, gate)) })),
+    /* R97: a per-key option keeps the key it carries (and the revoke its `to`), which `decorate` does not name. */
+    items: (r.items || []).map((i) => ({ ...i, options: (i.options || []).map((a) => {
+      const d = decorate(a, gate);
+      if (a && typeof a.key === "string") d.key = a.key;
+      if (a && typeof a.to === "string") d.to = a.to;
+      return d;
+    }) })),
   } };
 }
 

@@ -136,7 +136,11 @@ and the version equals `bio-plane/package.json`'s. It also refuses a bundle
 containing any published token value. (Until 2026-09-18 it built the working
 tree instead, so between releases `npm test` replaced the signed embed with an
 unsigned build under the signed version's name.) So the wizard is re-cut only
-AFTER a release is signed: `npm run build` in `newgroup/`.
+AFTER a release is signed: `npm run build` in `newgroup/`. Its output,
+`newgroup/dist/newgroup.bundled.mjs`, is built and never committed: the
+development release carries it as `newgroup.bundled.mjs`, and from the
+repository root the whole build is
+`npm --prefix bio-plane ci && npm --prefix newgroup ci && node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs && node docs/development/ux-substrate/screens/words-reads.src.mjs . --build && npm --prefix newgroup run build`.
 
 ## Order of operations from here
 

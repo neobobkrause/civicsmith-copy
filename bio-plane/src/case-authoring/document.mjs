@@ -20,7 +20,7 @@ import { fmSafe, whatChangedBlockLines, whatChangedSectionLines, lensBlockLines,
 /* N529 (K1333): the disclosure renderers and their fixed sentences are `case-disclosures`' (its R1–R4, R7, R13, R14),
    moved there and imported here, never copied, so the signed document is byte-identical before and after the split. */
 import { FLAG_SENTENCE, tensionFrontmatterLines, tensionBodyLines, tensionSentence, captureBodyLines, carriesBodyLines,
-         acceptedBodyLines, ungradedLines } from "../case-disclosures/index.mjs";
+         acceptedBodyLines, ungradedLines, ungradedBodyLines } from "../case-disclosures/index.mjs";
 import { attributionFrontmatterLines, attributionBodyLines, captureBlockLines,
          sourceBlockLines } from "../publication/index.mjs";
 import { caseConclusionRowLines } from "../ratification/index.mjs";
@@ -344,6 +344,9 @@ export function caseDocumentText({ caseId, edition, project, workingOn = null, s
     ...captureBodyLines(captures, sources),
     ...(materials ? carriesBodyLines(method, materials, group) : []),
     ...acceptedBodyLines(accepted),
+    /* R89 (T53; DEC-461; `case-disclosures` R36): the one fixed sentence that this edition was published with the passages
+       its `ungraded_passages:` block lists not graded by the team, from the same rows; none ungraded, no sentence. */
+    ...(caseDocumentStatesUngradedAndTyped({ format }) ? ungradedBodyLines(ungraded || []) : []),
     ...(attributions.length ? attributionBodyLines(attributions, format) : []),
     ...calculationBodyLines(calculations),
     ...timelineBodyLines(timeline, timelineLeftOut, { cut: timelineCut, unread: timelineUnread, withheld: timelineWithheld }),

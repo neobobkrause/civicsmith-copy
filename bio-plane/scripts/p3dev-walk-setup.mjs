@@ -13,7 +13,8 @@
  *
  * usage, from the repository root, with CLOUDFLARE_API_TOKEN (or CF_TOKEN) for account 20b533579290b9b93168345edd3b7f72:
  *   node bio-plane/scripts/p3dev-walk-setup.mjs <p3dev-slug> [--address https://<slug>.<sub>.workers.dev] [--out <file>] [--walk]
- * `--walk` then runs the live walk with those credentials in its environment (never on its command line). Otherwise:
+ * `--walk` then runs the live walk with those credentials in its environment (never on its command line), and, where the
+ * Worker <slug>-testpage is deployed (journey-check F5), its workers.dev address as JOURNEY_CITY_ORIGIN. Otherwise:
  *   set -a; . ~/.p3dev/<slug>.env; set +a; (cd bio-plane/src/journey-check && npm run journey -- --live <address>)
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, chmodSync, realpathSync } from "node:fs";
@@ -23,6 +24,7 @@ import { join, dirname, resolve, relative, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { isP3devName } from "./p3dev.mjs";
+import { testpageName } from "../src/journey-check/testpage/page.mjs";
 
 export const ACCOUNT = "20b533579290b9b93168345edd3b7f72";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -117,6 +119,24 @@ export async function claimAndJoin({ address, creds, save, fetchOf = fetch, log 
   return c;
 }
 
+/* F5: the walk's fixed test page, `<slug>-testpage` (journey-check/testpage, deployed by `deploy dev`), on the account's
+   workers.dev subdomain: its address when the Worker is deployed, else null, and the walk then reports capture by address as
+   not walked. `settings` reads the script's settings (`{status}`). */
+export async function testpageAddress(slug, subdomain, settings) {
+  const name = testpageName(slug);
+  const r = await settings(name);
+  return r && r.status === 200 && subdomain ? `https://${name}.${subdomain}.workers.dev` : null;
+}
+
+/* The walk's environment: the credentials, and the test page's address (`JOURNEY_CITY_ORIGIN`) where there is one. */
+export function walkEnv(base, creds, city) {
+  const env = { ...base };
+  for (const k of KEYS) env[k] = creds[k];
+  delete env.JOURNEY_CITY_ORIGIN;
+  if (city) env.JOURNEY_CITY_ORIGIN = city;
+  return env;
+}
+
 async function cf(token, path, init = {}) {
   const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}${path}`,
     { ...init, headers: { authorization: `Bearer ${token}`, ...(init.headers || {}) } });
@@ -140,13 +160,16 @@ async function main(argv) {
   if (exists.status === 404) throw new Refused("NO_COPY", `${slug} is not deployed in ${ACCOUNT}; install it first (deploy-test.yml).`);
   if (!exists.ok) throw new Refused("UNREADABLE", `could not read ${slug}'s settings (HTTP ${exists.status}).`);
   let address = flag("--address");
+  const sub = await cf(token, "/workers/subdomain");
+  const subdomain = sub.ok ? sub.j?.result?.subdomain || null : null;
   if (address && !new RegExp(`^https://${slug}\\.[a-z0-9-]+\\.workers\\.dev/?$`).test(address))
     throw new Refused("NOT_THE_COPY", `--address must be the copy's own https://${slug}.<subdomain>.workers.dev; the credentials go nowhere else.`);
   if (!address) {
-    const sub = await cf(token, "/workers/subdomain");
-    if (!sub.ok || !sub.j?.result?.subdomain) throw new Refused("NO_ADDRESS", "could not learn the workers.dev subdomain; pass --address.");
-    address = `https://${slug}.${sub.j.result.subdomain}.workers.dev`;
+    if (!subdomain) throw new Refused("NO_ADDRESS", "could not learn the workers.dev subdomain; pass --address.");
+    address = `https://${slug}.${subdomain}.workers.dev`;
   }
+  const city = await testpageAddress(slug, subdomain, (name) => cf(token, `/workers/scripts/${name}/settings`));
+  console.log(city ? `testpage : ${city} (capture by address walks against it)` : `testpage : ${testpageName(slug)} is not deployed; capture by address will be reported as not walked`);
 
   const creds = credentials(readCreds(file));
   const save = (c) => writeCreds(file, c);
@@ -168,10 +191,9 @@ async function main(argv) {
 
   await claimAndJoin({ address, creds, save });
   console.log(`\nready    : the live walk can run against ${address}`);
-  console.log(`           set -a; . ${file}; set +a; (cd bio-plane/src/journey-check && npm run journey -- --live ${address})`);
+  console.log(`           set -a; . ${file}; set +a;${city ? ` JOURNEY_CITY_ORIGIN=${city}` : ""} (cd bio-plane/src/journey-check && npm run journey -- --live ${address})`);
   if (argv.includes("--walk")) {
-    const env = { ...process.env };
-    for (const k of KEYS) env[k] = creds[k];
+    const env = walkEnv(process.env, creds, city);
     const r = spawnSync("npm", ["run", "journey", "--", "--live", address], { cwd: join(ROOT, "bio-plane", "src", "journey-check"), stdio: "inherit", env });
     process.exit(r.status ?? 1);
   }

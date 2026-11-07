@@ -288,6 +288,9 @@ function render(cs, view) {
   /* R96 (C17; reading-pipeline R35): the reading counts its words, `words_read` of `words_total`; drawn only when it states both */
   const wordsOf = (k) => { const v = rv0 ? (rv0[k] !== undefined ? rv0[k] : rv0.reading && typeof rv0.reading === "object" ? rv0.reading[k] : undefined) : undefined; return Number.isInteger(v) && v >= 0 ? v : null; };
   const wRead = wordsOf("words_read"), wTotal = wordsOf("words_total");
+  /* R72: the reading's own count of words below the reader's measured clarity, and the pages they sit on (`unclear_words: {count, positions: [{page, count}]}`) */
+  const unclear0 = (() => { const u = rv0 ? (rv0.unclear_words || (rv0.reading && typeof rv0.reading === "object" ? rv0.reading.unclear_words : null)) : null; return u && typeof u === "object" ? u : null; })();
+  const unsureN = unclear0 && Number.isInteger(unclear0.count) && unclear0.count > 0 ? unclear0.count : 0;
   /* G13 (R96; extraction R90): a text read in pieces states how far, `read_through` of `total` (bytes of text); the words of the first piece are not the capture's */
   const numOf0 = (v) => (Number.isFinite(v) && v >= 0 ? v : null);
   const readThrough = rv0 ? numOf0(rv0.read_through) : null, readTotal = rv0 ? numOf0(rv0.total) : null;
@@ -362,6 +365,9 @@ function render(cs, view) {
   /* "RTF is not read yet", "email is not read yet", "legacy Word is not read yet", "(type) is not read yet": the key of the kind when the words list holds it, else the
      sentence the reading itself states (the same words, the plane's), else nothing: never a raw key and never a sentence of this module's own */
   const unreadSaid = (k) => {
+    /* R61 (DEC-454, DEC-467): a kind not read is drawn by the Document page's own row `screen.document.unsupported.<kind>` where the words list holds it (`ico`; the
+       rows of the kinds the beta reads are withdrawn, so those draw none of them) */
+    if (k && k !== "undetermined" && heldWord("screen.document.unsupported." + k)) return cs.w("screen.document.unsupported." + k);
     if (k === "undetermined") return basisOf ? cs.esc(basisOf) : "";
     const key = UNREAD_KINDS.includes(k) ? "reading-pipeline.index.unsupported_" + k : "reading-pipeline.index.unsupported_kind";
     return heldWord(key) ? cs.w(key, { kind: k }) : basisOf ? cs.esc(basisOf) : "";
@@ -374,13 +380,15 @@ function render(cs, view) {
     + (letter ? cs.grade(testimony ? "testimony" : "capture", letter) : "")
     + cs.act("gradenote", { label: "act.gradenote.label.document", data: { capture: sha, letter }, tone: "quiet" }) + "</span></div>"
     + (textState && !archive ? `<div><span class="v"><span data-text-state="${textState}"${["full", "none", "stated", "repairable"].includes(textState) ? "" : ' tabindex="0"'} data-level="1" data-tip="${cs.esc(cs.w("screen.document.text.tip"))}">`
-      /* G13: a text still being read says so; the row owed (`screen.document.reading.beingread`) is stood in for by the nearest held row, `state.loading` */
-      + (textState === "partial" ? cs.w("screen.document.text.partial", { pages: pagesText(blind0.map((n) => n + 1)) }) : textState === "unread" ? cs.mark("gap", "undetermined") + " " + cs.w("screen.document.text.unread")
+      /* G13, R61 (DEC-454): a text still being read says so by its own row (`screen.document.reading.beingread`); one page with no text by `.text.partial.one` */
+      + (textState === "partial" ? cs.w(blind0.length === 1 ? "screen.document.text.partial.one" : "screen.document.text.partial", { pages: pagesText(blind0.map((n) => n + 1)) }) : textState === "unread" ? cs.mark("gap", "undetermined") + " " + cs.w("screen.document.text.unread")
         : textState === "cut" ? (comp && comp.why ? cs.esc(String(comp.why)) : cs.mark("gap", "undetermined"))
         : textState === "reading" ? (heldWord("screen.document.reading.progress") && readThrough !== null && readTotal !== null
           ? cs.w("screen.document.reading.progress", { read: sizeWord(readThrough), total: sizeWord(readTotal) })
-          : cs.w("state.loading") + (readThrough !== null && readTotal !== null ? " " + sizeWord(readThrough) + " / " + sizeWord(readTotal) : "")) : "") + "</span>"
-      + (wRead !== null && wTotal !== null && textState !== "reading" ? ` <span class="mk-small" data-words-read="1">${cs.w("screen.document.text.read", { read: String(wRead), total: String(wTotal) })}</span>` : "") + "</span></div>" : "")
+          : cs.w("screen.document.reading.beingread")) : "") + "</span>"
+      + (wRead !== null && wTotal !== null && textState !== "reading" ? ` <span class="mk-small" data-words-read="1">${cs.w("screen.document.text.read", { read: String(wRead), total: String(wTotal) })}</span>` : "")
+      /* R72 (DEC-479 (51)): only where the reader measured each word's clarity (`unclear_words`, reading-pipeline R68; never a model's opinion of itself), how many were hard to make out */
+      + (unsureN > 0 && wRead !== null && wTotal !== null && textState !== "reading" ? ` <span class="mk-small" data-words-unsure="${unsureN}">${cs.w("screen.document.text.unsure", { unsure: String(unsureN) })}</span>` : "") + "</span></div>" : "")
     + (sha ? `<div><span class="k">${cs.w("screen.document.fingerprint")}</span><span class="v"><span class="mk-tag" tabindex="0" data-level="1" data-tip="${cs.esc(cs.w("screen.document.fingerprint.means"))}">${cs.esc(sha.slice(0, 4) + "…" + sha.slice(-4))}</span></span></div>` : "")
     + (sha ? `<div><a class="cs-btn" data-tone="quiet" href="/app/open-file/${cs.esc(sha)}">${cs.w("screen.document.open")}</a></div>` : "") + "</div>");
   /* R133: the archive's own statement: that it is an archive and how many members it holds (`screen.document.archive.says` {n}, the row owed; the Held list's own rows say the same
@@ -553,7 +561,9 @@ function render(cs, view) {
     const sizeSaid = stateReason === "TOO_LARGE" && refusedFig !== null
       ? (boundFig !== null && heldWord("screen.document.reading.toolarge") ? cs.w("screen.document.reading.toolarge", { size: figure(refusedFig, alike), limit: figure(boundFig, alike) })
         : heldWord("screen.document.reading.stated") ? cs.w("screen.document.reading.stated", { size: figure(refusedFig, alike) }) : "") : "";
-    const reasonSaid = stateReason && stateReason !== "TOO_LARGE" && /^[A-Z][A-Z0-9_]*$/.test(stateReason) && heldWord("refusal." + stateReason) ? cs.w("refusal." + stateReason) : "";
+    /* R62 (DEC-467): a file that needs a password says so, and that Civicsmith never asks for it or keeps it */
+    const lockedSaid = stateReason === "PASSWORD_REQUIRED" || stateReason === "ENCRYPTED" ? `<span data-reading-locked="1">${cs.w("screen.document.encrypted")}</span>` : "";
+    const reasonSaid = lockedSaid ? lockedSaid : stateReason && stateReason !== "TOO_LARGE" && /^[A-Z][A-Z0-9_]*$/.test(stateReason) && heldWord("refusal." + stateReason) ? cs.w("refusal." + stateReason) : "";
     const statedSaid = textState === "stated" && tooLarge ? cs.w("screen.document.reading.too_large", { size: sizeWord(tooLarge.bytes), key: tooLarge.key })
       : textState === "stated" && sizeSaid ? sizeSaid
       : textState === "stated" && refusedSaid ? refusedSaid
@@ -561,16 +571,23 @@ function render(cs, view) {
       : textState === "repairable" && heldWord("screen.document.reading.repairable") ? cs.w("screen.document.reading.repairable")
       : comp && typeof comp.why === "string" && comp.why.trim() ? cs.esc(comp.why.trim()) : basisWords ? cs.esc(basisWords) : undetermined("");
     /* T51 fix round 10 (B88): a whole reading that states its own reason (not a size) draws that statement beside its words, as a stated one does */
-    const statedHtml = noReader && unreadNote ? unreadNote : textState === "stated" || textState === "repairable" || (wholeStated && stateReason !== "TOO_LARGE") ? `<p class="mk-note" data-reading="stated">${statedSaid}</p>` : "";
+    /* R62 (DEC-467, DEC-473): a kind kept and not read yet (`held_unread`, reading-pipeline R67) is named by `file.kind.<key>` in the held sentence, never
+       "non-textual or too large" */
+    const hu = statedOf("held_unread");
+    const huKey = hu && typeof hu === "object" && typeof hu.kind_key === "string" && /^file\.kind\.[a-z0-9_]+$/.test(hu.kind_key) && heldWord(hu.kind_key) ? hu.kind_key : "";
+    const heldKindHtml = huKey ? `<p class="mk-note" data-reading="heldkind" data-held-kind="${cs.esc(huKey.slice(10))}">${cs.w("screen.document.held.kind", { kind: T(huKey) })}</p>` : "";
+    const statedHtml = heldKindHtml ? heldKindHtml : noReader && unreadNote ? unreadNote : textState === "stated" || textState === "repairable" || (wholeStated && stateReason !== "TOO_LARGE") ? `<p class="mk-note" data-reading="stated">${statedSaid}</p>` : "";
     /* G13 (R96): a text still being read says how far it has come (R90), and what is drawn of it is never stated as the whole: the passages drawn so far
        ("Passages: N of M", the nearest held words; the row owed is `screen.document.reading.firstn`), with the more act the page bar's own control (the
        choice redraws the page and the next page is read: `op=reading` with `after`). Search and Cite cover what is read, which is what is drawn and stored. */
     const progressSaid = isMore ? (heldWord("screen.document.reading.progress") && readThrough !== null && readTotal !== null
       ? cs.w("screen.document.reading.progress", { read: sizeWord(readThrough), total: sizeWord(readTotal) })
-      : cs.w("state.loading") + (readThrough !== null && readTotal !== null ? " " + sizeWord(readThrough) + " / " + sizeWord(readTotal) : "")) : "";
+      : cs.w("screen.document.reading.beingread")) : "";
     const unitsTotal = rv0 && Number.isInteger(rv0.units_total) && rv0.units_total >= 0 ? rv0.units_total : null;
-    const cutSaid = unitsCut || pagesPending ? `${cs.w("screen.document.passages.head")}: ${allUnits.length}${unitsTotal !== null ? " / " + unitsTotal : ""}` : "";
-    const moreControl = unitsCut && !pagesPending ? cs.checks("document-read-more", "screen.document.passages.head", [{ value: String(wantPages + 1), key: "document.read.next", on: false }], { radio: true, redraw: "readmore" }) : "";
+    /* R61 (DEC-454): "Showing {n} of {m} passages" by its own row where the reading states its total; "More passages" (`document.read.more`), apart from the page bar's "Next page" */
+    const cutSaid = unitsCut || pagesPending ? (unitsTotal !== null ? `<span data-reading-firstn="1">${cs.w("screen.document.reading.firstn", { n: String(allUnits.length), m: String(unitsTotal) })}</span>`
+      : `${cs.w("screen.document.passages.head")}: ${allUnits.length}`) : "";
+    const moreControl = unitsCut && !pagesPending ? cs.checks("document-read-more", "screen.document.passages.head", [{ value: String(wantPages + 1), key: "document.read.more", on: false }], { radio: true, redraw: "readmore" }) : "";
     /* B38 (DEC-418): while a text is being read, "until the whole file is read, searching and citing cover only what has been read so far" beside the progress; once a
        text read in pieces is whole (`more` false, `total` stated), "read in full" (`screen.document.text.full` stands in until the row is held) */
     const partialSaid = isMore && heldWord("screen.document.reading.partial") ? cs.w("screen.document.reading.partial") : "";
@@ -586,7 +603,8 @@ function render(cs, view) {
         + cs.choice("document-cite-role", "screen.document.cite.role",
             [["supports", "screen.question.supports.head"], ["cuts_against", "screen.question.against.head"]], { value: "supports" })
       : `<p class="mk-small">${cs.w("screen.document.cite.noquestion")}</p>`;
-    const pickHelp = askable.length ? `<p class="mk-small">${cs.w("screen.document.cite.question.help")}</p><p class="mk-small">${cs.w("document.read.cite.help")}</p>` : "";
+    /* R74 (answers R-30): the sentence over the control agrees with it: "Set to the question this document was captured for" where one was, else "Choose a question" */
+    const pickHelp = askable.length ? `<p class="mk-small" data-cite-help="${preset ? "set" : "choose"}">${cs.w(preset ? "screen.document.cite.question.help" : "screen.document.cite.choose")}</p><p class="mk-small">${cs.w("document.read.cite.help")}</p>` : "";
     /* R125 (C31): the question chosen (the choice redraws the page: `ui.citeQuestion`), else the one the copy was held for, else the one the last cite
        went into; a passage is marked as cited by it when it holds a leg on this document at that passage. A leg's part is what `citation` writes from
        `found.extent`, each field `f` as `extent_f` (its R1), so a passage's extent is matched field by field to the leg's. */
@@ -631,7 +649,11 @@ function render(cs, view) {
       const named = askable.find((o) => o.value === cd.question);
       const qtitle = qf && qf.title ? String(qf.title) : named ? named.title : "";
       const ref = cs.ref("question", cd.question, qtitle || T("state.undetermined", { reason: "" }), [qtitle]);
-      if (cd.cited.length) return `<p class="mk-note" data-cite-done="cited" role="status"><b>${W("screen.finder.cite.cited")}</b> ${ref}</p>`;
+      /* R74 (answers R-30): the line says which way the passage bears ("Supports" or "Cuts against"), with the question and a link to the passage cited */
+      const roleKey = cd.role === "cuts_against" ? "screen.question.against.head" : "screen.question.supports.head";
+      const at = Number.isInteger(cd.passage) && cd.passage >= 0 ? list[cd.passage] : null;
+      const atLink = at ? ` · <a href="#document-passage-${cd.passage}" data-cite-passage="${cd.passage}">“${cs.esc((() => { const x = String(at.text || "").replace(/\s+/g, " ").trim(); return x.length > 90 ? x.slice(0, 89) + "\u2026" : x; })())}”</a>` : "";
+      if (cd.cited.length) return `<p class="mk-note" data-cite-done="cited" data-cite-role="${cd.role === "cuts_against" ? "cuts_against" : "supports"}" role="status"><b>${W("screen.finder.cite.cited")}</b> <b>${W(roleKey)}</b> ${ref}${atLink}</p>`;
       const places = (qf ? qf.lists.basis || [] : []).filter((l) => l && String(l.target) === id && l.extent_page !== undefined && l.extent_page !== "")
         .map((l) => pg(Number(l.extent_page))).filter((n) => n !== null);
       return `<p class="mk-note" data-cite-done="already" role="status"><b>${W("screen.finder.a17.left_as_it_was")}</b> ${W("screen.finder.a17.the_question_already_cited_it")}`
@@ -675,10 +697,14 @@ function render(cs, view) {
       const extent = p.extent && typeof p.extent === "object" ? p.extent : null;
       /* R78: the record's page 0 is drawn "Page 1"; the extent a citation sends keeps the record's own number */
       const page = extent && Number.isInteger(extent.page) ? pg(extent.page) : null;
-      return `<blockquote class="mk-passage rec" data-passage="${i}">“${cs.esc(String(p.text).trim())}”`
+      /* R72: a page holding words hard to make out is marked, dotted, with the card that says to check them against the original (the reading states a count per page, no offset per word) */
+      const unsureAt = unclear0 && Array.isArray(unclear0.positions) && extent && Number.isInteger(extent.page)
+        ? unclear0.positions.filter((x) => x && x.page === extent.page && Number.isInteger(x.count) && x.count > 0).reduce((n, x) => n + x.count, 0) : 0;
+      const unsureMark = unsureAt > 0 ? ` <span class="mk-small" style="text-decoration:underline dotted" tabindex="0" data-level="1" data-unsure="${unsureAt}" data-tip="${cs.esc(cs.w("screen.document.text.unsure.tip") + " · " + cs.w("screen.document.text.unsure.tip_why"))}">${cs.w("screen.document.text.unsure.tip")}</span>` : "";
+      return `<blockquote class="mk-passage rec" id="document-passage-${i}" data-passage="${i}">“${cs.esc(String(p.text).trim())}”${unsureMark}`
         + (page !== null ? `<span class="mk-small">${cs.w("screen.document.passage.where", { page })}</span>` : "") + partKind(p) + (citedMark(extent) ? "<br>" + citedMark(extent) : "") + "</blockquote>"
         + (extent && askable.length ? cs.act("cite", { label: "document.read.cite",
-            data: { found: JSON.stringify({ capture_sha: sha, extent, kind: "passage" }) } }) : "");
+            data: { found: JSON.stringify({ capture_sha: sha, extent, kind: "passage" }), passage: String(i) } }) : "");
     }).join("") + pick + pickHelp + none + citeDoneHtml() + own("cite");
   }, { help: "document.read.help" });
 
@@ -1684,6 +1710,9 @@ const acts = [
       cs.set("citeNone", false);
       const role = cs.value("document-cite-role") === "cuts_against" ? "cuts_against" : "supports";
       view.ui.citing = question;
+      /* R74: the way it bears and the passage pressed, for the line drawn after the cite */
+      view.ui.citingRole = role;
+      view.ui.citingPassage = /^\d+$/.test(String(el.dataset.passage || "")) ? Number(el.dataset.passage) : null;
       /* R125 (C31; citation R20): the citing object, the role and the passage found go in the body, none in the address; `found` as the object it is */
       let found = el.dataset.found || "";
       try { found = JSON.parse(found); } catch { /* sent as the string it is */ }
@@ -1697,7 +1726,7 @@ const acts = [
       const q = String((r && r.inquiry) || view.ui.citing || "");
       /* the question's bundle is read again, so the passage cited is marked from its legs (R125) */
       if (list(r && r.cited).length) cs.set("later", Object.assign({}, view.ui.later, { ["qimg:" + q]: null }));
-      cs.set("citeDone", { question: q, cited: list(r && r.cited), already: list(r && r.alreadyCited) });
+      cs.set("citeDone", { question: q, cited: list(r && r.cited), already: list(r && r.alreadyCited), role: view.ui.citingRole || "supports", passage: view.ui.citingPassage ?? null });
     } },
   /* reasoned: the member's own acknowledgment is its reason (interface-shell R11, DEC-88), so no second one is asked */
   { op: "release", label: "act.release.label.document", rereads: ["capture"], reasonField: "acknowledgment",
@@ -2047,6 +2076,11 @@ const words = Object.freeze([
   /* FR-28 (R84–R118): the keys the new controls draw */
   "capture.fieldneeded", "shell.reason.needed", "progression.steps", "screen.capture.address.freq", "state.item.retired.means",
   ...["daily", "weekly", "monthly", "hourly", "per_meeting"].map((f) => "screen.capture.address.freq." + f),
+  /* T53 (screens-document-beta R61, R62, R72) */
+  "screen.document.text.partial.one", "screen.document.reading.beingread", "document.read.more", "screen.document.reading.firstn", "screen.document.unsupported.ico",
+  "screen.document.held.kind", "screen.document.encrypted", "screen.document.text.unsure", "screen.document.text.unsure.tip", "screen.document.text.unsure.tip_why",
+  /* R62 (DEC-473): the plain name of each kind, `file.kind.<key>` by files/KIND-TABLE.md's key column */
+  ...["pdf", "docx", "pptx", "xlsx", "xls", "odt", "odp", "ods", "rtf", "csv", "tsv", "text", "html", "json", "xml", "svg", "map", "ics", "vcf", "captions", "picture", "tiff", "email", "mbox", "archive", "pst", "access", "sqlite", "parquet", "xlsb", "maplayer", "wpd", "pages", "numbers", "key", "visio", "pub", "one", "mpp", "cad", "epub", "audio", "video", "other", "rar", "program", "script", "diskimage"].map((k) => "file.kind." + k),
   "screen.document.cite.option", "screen.document.cite.choose", "screen.document.unwatched.head", "screen.document.unwatched",
   "screen.people.more", "shell.more", "screen.document.text.full", "screen.document.passages.head",
   "screen.document.text.tip", "screen.document.text.unread", "screen.document.text.read", "screen.document.text.partial", "screen.document.ocr.says", "screen.document.ocr.refused.capable", "screen.document.ocr.refused.member",

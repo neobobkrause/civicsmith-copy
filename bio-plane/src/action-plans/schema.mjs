@@ -83,7 +83,11 @@ CREATE TABLE IF NOT EXISTS plan_option_proposals (
   at              TEXT NOT NULL,
   adopted_option  TEXT,
   adopted_by      TEXT,
-  adopted_at      TEXT
+  adopted_at      TEXT,
+  idem            TEXT,
+  idem_by         TEXT,
+  answer_json     TEXT,
+  produced_by_json TEXT
 );
 CREATE INDEX IF NOT EXISTS plan_option_proposals_plan ON plan_option_proposals(plan_id, n);
 CREATE INDEX IF NOT EXISTS plan_option_proposals_run ON plan_option_proposals(run, run_ord);
@@ -162,4 +166,10 @@ export const ACTION_PLANS_TABLES = Object.freeze([
 export function migrateActionPlans(sql) {
   const bare = ACTION_PLANS_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
   for (const s of bare.split(";").map((x) => x.trim()).filter(Boolean)) sql.exec(s);
+  /* R55, R56 (T53): a table made before them gains the retried call's `idem` (with the principal that sent it and the
+     first answer) and who produced the proposal; added once, a column already there left as it is. */
+  const have = new Set([...sql.exec(`PRAGMA table_info(plan_option_proposals)`)].map((c) => c.name));
+  for (const [col, type] of [["idem", "TEXT"], ["idem_by", "TEXT"], ["answer_json", "TEXT"], ["produced_by_json", "TEXT"]])
+    if (!have.has(col)) sql.exec(`ALTER TABLE plan_option_proposals ADD COLUMN ${col} ${type}`);
+  sql.exec(`CREATE UNIQUE INDEX IF NOT EXISTS plan_option_proposals_idem ON plan_option_proposals(idem_by, idem) WHERE idem IS NOT NULL`);
 }

@@ -141,7 +141,7 @@ test("R74 (B4 (5); J5 (8), (9), (11)): openMany, a member's batch — no member'
   assert.equal(r.ok, true);
   /* ai-use R10's answer, relayed as it came: what the batch asked is this module's; the estimate itself is ai-use's */
   const { estimate: figures, ...asked } = r.estimate;
-  assert.deepEqual(asked, { ok: true, owner: "member:ann", use: "run", mode: "check", count: 4 }, "ai-use R10, asked once for the batch");
+  assert.deepEqual(asked, { ok: true, owner: "member:ann", use: "run", mode: "check", count: 4, entry_id: ENTRIES.a }, "ai-use R10, asked once for the batch, naming the entry it is served on");
   assert.equal(typeof figures, "object");
   assert.deepEqual(r.runs.map((x) => [x.step, x.run ?? null, x.refusal ? x.refusal.code : null]),
     [[A, `RUN-${A}-1`, null], [H, null, "AI_RUN_STEP_UNKNOWN"], [G, null, "AI_RUN_NO_CONTEXT"], [C, `RUN-${C}-1`, null]]);

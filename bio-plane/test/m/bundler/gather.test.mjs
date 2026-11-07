@@ -78,3 +78,23 @@ test("R44: two members whose files share a name are refused [NAME_CLASH], naming
     assert.equal(existsSync(out), false, "nothing written");
   } finally { rm(root); rmSync(join(out, ".."), { recursive: true, force: true }); }
 });
+
+/* The dist pass (BOB, 6 Nov 2026): the installer's bundle is not committed, so the development release carries it. */
+test("R44: where the repository has the installer, its built bundle is gathered beside the fleet's, and its absence is refused NO_ARTIFACT", async () => {
+  const root = await makeRepo();
+  const out = outDir();
+  try {
+    mkdirSync(join(root, "newgroup/dist"), { recursive: true });
+    writeFileSync(join(root, "newgroup/package.json"), JSON.stringify({ name: "bio-newgroup-wizard", private: true }));
+    const missing = gather(root, [out]);
+    assert.equal(missing.status, 1);
+    assert.match(missing.stderr, /REFUSED \[NO_ARTIFACT\][\s\S]*newgroup: newgroup\/dist\/newgroup\.bundled\.mjs is missing/);
+    assert.equal(existsSync(out), false, "nothing written");
+    writeFileSync(join(root, "newgroup/dist/newgroup.bundled.mjs"), "export default {};\n");
+    const r = gather(root, [out]);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.deepEqual(readFileSync(join(out, "newgroup.bundled.mjs")), readFileSync(join(root, "newgroup/dist/newgroup.bundled.mjs")));
+    assert.equal(readdirSync(out).length, 8);
+    assert.match(r.stdout, /8 file\(s\) of 3 guarded bundle\(s\) \(alpha-worker, beta-worker, bio-plane\) and the installer's bundle/);
+  } finally { rm(root); rmSync(join(out, ".."), { recursive: true, force: true }); }
+});

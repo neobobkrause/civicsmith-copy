@@ -1266,6 +1266,8 @@ export class CaseAuthoring {
        in its one shape (`case-account` R4's `acceptanceRecorded`), inside this act's transaction; none without a draft. */
     if (drafted.draft) A.acceptanceRecorded({ caseId: theCase, edition, drafted, by: who, at: when });
     /* R34's steps read what this act read, from the same values (never a second reading). */
+    /* R88 (T53; DEC-461): the passages this edition would be signed with ungraded (`case-disclosures` R35), for the sign step. */
+    seen.ungraded = findingFacts.ungraded;
     Object.assign(seen, { outcomes, approvals: { ...approvals, digest: approvalDigest }, workingOn, excluded: rows, searched, manifest, bias: back, captures: captureRows, sources: sourceRows,
                           materials: materialBlocks, accepted: accepted.rows, flags: flagRows,
                           tensions: read.entries, memberEditions: [...frozen].map(([target, z]) =>
@@ -1982,6 +1984,12 @@ export class CaseAuthoring {
       /* R34 (T45; N880; Actions D13; v0.2 rule 8): the open requests for comment, in this step and nowhere else, never a
          blocker, never `first`, never `ready` (DEC-13: no reason is asked for signing while a window is open). */
       { step: 8, name: "sign", signer: str(a.author) || null,
+        /* R88 (T53; DEC-461; K5548): every passage the case would be signed with that the team has not graded, from the
+           rolled-back run's read (`case-disclosures` R35), in roster then passage order, with the count; never a blocker,
+           never `first`, never `ready`. */
+        ungraded_passages: ok ? { rows: (seen.ungraded || []).map(({ finding, ord, title, role }) => ({ finding, ord, title, role })),
+                                  count: (seen.ungraded || []).length }
+                              : { stated: notReached },
         open_requests: this.#openRequestsStep(seen.openRequestsAt || null, a.viewer ?? null),
         /* R77 (T51; DEC-340): the minutes beside the group's public comment; never a blocker, never `first`, never `ready`. */
         minutes: this.#minutesStep(seen.openRequestsAt || null, a.viewer ?? null),

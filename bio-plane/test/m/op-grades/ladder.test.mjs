@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as G from "../../../src/op-grades/index.mjs";
-import { reqText, between, ticked, tickedCodes, worded, asksNotTheAccount, declaredSentence } from "./declared.mjs";
+import { reqText, between, ticked, tickedCodes, worded, asksNotTheAccount, declaredSentence, tickedAll } from "./declared.mjs";
 
 const { RUNG_LADDER, RUNGS, RUNG_ABSENT, RUNG_ABSENCE_GROUNDS, JUSTIFICATION_REFUSALS, IRREVERSIBLE_CORRECTION_KEY,
         CONSEQUENCE_STATEMENTS, LARGER_SCREEN_ACTS, MACHINE_REFUSALS, NON_ACTS, OP_ALIASES, phoneOf } = G;
@@ -124,10 +124,10 @@ test("R4 R44: CONSEQUENCE_STATEMENTS maps DEC-88's six judgement calls to {frict
   /* an entry holds no English (R44): control, a copy carrying a sentence is seen */
   for (const e of Object.values(CONSEQUENCE_STATEMENTS)) assert.ok(!Object.hasOwn(e, "statement"));
   assert.ok(Object.hasOwn({ ...CONSEQUENCE_STATEMENTS.attribute, statement: "x" }, "statement"));
-  /* only the six, R8's actionholdrelease, R21's personexpunge and (K2049) standardrelease, and R24's openwithwarning
-     (beside its ground) carry one */
+  /* only the six, R8's actionholdrelease, R21's personexpunge and (K2049) standardrelease, R24's openwithwarning
+     (beside its ground) and (T53) R55's rowexpunge carry one */
   assert.deepEqual(Object.keys(CONSEQUENCE_STATEMENTS).sort(),
-    [...Object.keys(SIX), "actionholdrelease", "personexpunge", "standardrelease", "openwithwarning"].sort());
+    [...Object.keys(SIX), "actionholdrelease", "personexpunge", "standardrelease", "openwithwarning", "rowexpunge"].sort());
 });
 
 /* ---- R5 ------------------------------------------------------------------------------------------------------------ */
@@ -143,7 +143,10 @@ test("R5 (K4279): NON_ACTS.export is corpus-export's declared sentence, word for
 test("R5: MACHINE_REFUSALS maps each act refused a machine by name to its code; NON_ACTS gives the reasons R5 names, "
    + "`capture-directed:` exactly for attest, monitor and attesttext", () => {
   const V = "MACHINE_CANNOT_MOVE_VERSION";
-  assert.deepEqual(MACHINE_REFUSALS, {
+  /* R55's register rows are pinned against R55's own text in r55.test.mjs */
+  const R55_OPS = new Set(tickedAll(between(reqText(55), "`MACHINE_REFUSALS` gains every register WRITE op", "; the reads")));
+  assert.ok(R55_OPS.size >= 12);
+  assert.deepEqual(Object.fromEntries(Object.entries(MACHINE_REFUSALS).filter(([op]) => !R55_OPS.has(op))), {
     release: "MACHINE_CANNOT_RELEASE", conclude: "MACHINE_CANNOT_CONCLUDE", withdrawconclusion: "MACHINE_CANNOT_CONCLUDE",
     reopen: "MACHINE_CANNOT_REOPEN", publish: "MACHINE_CANNOT_PUBLISH", inquirydivide: "MACHINE_CANNOT_DIVIDE",
     inquiryground: "MACHINE_CANNOT_GROUND", actionmove: "MACHINE_CANNOT_MOVE_ACTION",

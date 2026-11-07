@@ -72,7 +72,7 @@ test("R29 C-125.34 TEMPLATE_COURT_PETITION reads words.json's refusal.TEMPLATE_C
 
 test("R29 the refusal is answered by the reads with words.json's sentence and R15's lacks beside it, behaviour unmoved; the control, the same templates with their attribution whole, are offered", () => {
   const w = seeded();
-  const want = { "TPL-test-records-request": ["sources"], "TPL-test-bylaw-complaint": ["sources", "professional_review"],
+  const want = { "TPL-test-records-request": ["sources", "professional_review"], "TPL-test-bylaw-complaint": ["sources", "professional_review"],
                  "TPL-test-commitment-brief": ["sources", "professional_review"], "TPL-test-recognition": ["professional_review"],
                  "TPL-test-recognition-follow-up": ["professional_review"] };
   const before = w.snapshot();
@@ -88,7 +88,7 @@ test("R29 the refusal is answered by the reads with words.json's sentence and R1
   assert.deepEqual(w.snapshot(), before, "the reads write nothing");
   /* by name too */
   const named = w.ft.offeredVersion({ name: "@request-under-the-records-act", viewer: A });
-  assert.deepEqual([named.reason, named.translation, named.lacks], ["TEMPLATE_NOT_REVIEWED", en("refusal.TEMPLATE_NOT_REVIEWED"), ["sources"]]);
+  assert.deepEqual([named.reason, named.translation, named.lacks], ["TEMPLATE_NOT_REVIEWED", en("refusal.TEMPLATE_NOT_REVIEWED"), want["TPL-test-records-request"]]);
   /* no answer carries T45's words */
   assert.ok(!JSON.stringify([named, ...PROFILE_IDS.map((id) => w.ft.offeredVersion({ template: id, viewer: A }))]).includes(T45_NOT_REVIEWED));
   /* the control: each part supplied, each template offered */

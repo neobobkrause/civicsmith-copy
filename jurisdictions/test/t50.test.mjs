@@ -89,9 +89,10 @@ test("R93 the test profile holds a block differing from every value a real block
 test("R93 the first profile gives no default: it holds a block only as researched, and a held block validates with every citation naming a section", () => {
   const f = get(FIRST);
   assert.ok(validate(f).ok);
-  if (f.records_help) {
-    assert.equal(f.records_help.status, "researched");
-    for (const k of RECORDS_HELP_CITATIONS) assert.match(f.records_help.citations[k], /§|section/i, k);
+  /* one block, or one per law (R105) */
+  for (const h of [].concat(f.records_help || [])) {
+    assert.equal(h.status, "researched");
+    for (const k of RECORDS_HELP_CITATIONS) assert.match(h.citations[k], /§|section/i, k);
   }
   const t = get(TEST);
   for (const k of RECORDS_HELP_CITATIONS) assert.match(t.records_help.citations[k], /§/, k);

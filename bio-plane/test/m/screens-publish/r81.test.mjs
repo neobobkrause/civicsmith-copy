@@ -93,7 +93,9 @@ test("R81 D-M6 (b) an axis graded neither A to D draws 'Not graded yet' (unrated
 
 test("R81 D-M6 (a) the signature check's explanation is the key's words in place of the served sentence; an answer stating no verification draws none (control)", async () => {
   const SERVED = "tamper-EVIDENT, not tamper-proof; the sha256 in the manifest covers findings[].";
-  const p = await publish([FINDING(F1)], { verification: { container: "x", manifest: SHA, case_file: null, findings: [], detail: SERVED } });
+  /* R100: the explanation says the signature and key are shown here, so it is drawn with the case document's signature and key */
+  const p = await publish([FINDING(F1)], { verification: { container: "x", manifest: SHA, case_file: null, findings: [], detail: SERVED },
+    document: { sig_armored: "-----BEGIN SSH SIGNATURE-----\nU1NIU0lH\n-----END SSH SIGNATURE-----", attestor: { member: "rosa", key_b64: "AAAAC3NzaC1lZDI1NTE5AAAAIKEY" } } });
   const line = main(p).querySelector("[data-verification]");
   assert.ok(line && drewIn(line, "screen.published.verify.detail"), "by its key");
   assert.ok(!text(p).includes("tamper-EVIDENT"), "the served sentence is not drawn");

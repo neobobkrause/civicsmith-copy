@@ -1,0 +1,38 @@
+{
+  "id": "screens-public",
+  "title": "screens-public: split by copy from screens-publish (R6, R9, R19, R21, R22, R29, R33, R36, R37, R38, R39, R49, R54, R56, R67, R84, R86, R100, R101, R102, R104, R76)",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/screens-public/",
+    "build/requirements/screens-public.md",
+    "docs/requirements-notes/screens-public.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-public/"
+  ],
+  "requirements": "build/requirements/screens-public.md",
+  "uses": [
+    "screens-publish",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/screens-public.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T19:23:45Z"
+  },
+  "prior_work": "BOB 5 Nov 21:37, as interface-shell-t53 and screens-intake-rounds (coordinator 18:31, option c): your code lives in bio-plane/src/screens-public/, which you own; every hook you need inside bio-plane/src/screens-publish/ (published.mjs, published-parts.mjs, docket-public.mjs, review-outside.mjs, keys.mjs) is screens-publish's: name each as a found mark for screens-publish (report it to BOB), never edit it."
+}

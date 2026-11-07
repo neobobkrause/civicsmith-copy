@@ -28,12 +28,15 @@ test("R39 the release carries a seed whose statement binds its bytes and which i
 });
 
 test("R39 a copy with no network loads the release's seed at start and holds a verified catalogue (source seed)", async () => {
-  const { cat } = await world({ keys: KEYS, env: DEV_ENV(await signSeed(DEV)) });
+  const { cat } = await world({ keys: KEYS, env: DEV_ENV(await signSeed(DEV)), seed: RELEASE_SEED });
   const s = cat.catalogueState({ at: AT });
   assert.deepEqual([s.state, s.source, s.seq], ["current", "seed", RELEASE_SEED.statement.seq]);
   assert.equal(offered(cat).ok, true);
   assert.deepEqual(offered(cat).entries, []);
   assert.equal(cat.seedAtStart.outcome, "found");
+  /* F2: handed no seed, a development build takes the development seed, which the release seed's signature does not sign */
+  const unnamed = await world({ keys: KEYS, env: DEV_ENV(await signSeed(DEV)) });
+  assert.ok(unnamed.cat.seedAtStart && unnamed.cat.seedAtStart.ok === false, JSON.stringify(unnamed.cat.seedAtStart));
 });
 
 test("R39 a copy with no network offers the seed's entries, the seed loaded at start", async () => {
@@ -76,9 +79,9 @@ test("R33 the build's keys: development lines only where the deployment says it 
 
 test("R39 a restart re-reads the held seed and writes no second copy of it", async () => {
   const env = DEV_ENV(await signSeed(DEV));
-  const first = await world({ keys: KEYS, env });
+  const first = await world({ keys: KEYS, env, seed: RELEASE_SEED });
   const rows = first.db.prepare("SELECT COUNT(*) AS n FROM ai_catalogue_payloads").get().n;
-  const again = await world({ keys: KEYS, env, db: first.db });
+  const again = await world({ keys: KEYS, env, db: first.db, seed: RELEASE_SEED });
   assert.equal(again.cat.seedAtStart.outcome, "none");
   assert.equal(first.db.prepare("SELECT COUNT(*) AS n FROM ai_catalogue_payloads").get().n, rows);
   assert.equal(again.cat.catalogueState({ at: AT }).source, "seed");
@@ -86,7 +89,7 @@ test("R39 a restart re-reads the held seed and writes no second copy of it", asy
 
 test("R39 control: a seed older than a held pulled payload is not applied at the next start (NOT_NEWER)", async () => {
   const env = DEV_ENV(await signSeed(DEV));
-  const first = await world({ keys: KEYS, env });
+  const first = await world({ keys: KEYS, env, seed: RELEASE_SEED });
   const pub = await publish(payload({ seq: 2, issued_at: "2026-10-02T00:00:00Z" }), { key: DEV });
   assert.equal((await pull(first.cat, pub)).payload.outcome, "found");
   const otherSeed = seedOf({ ...SEED_PAYLOAD, issued_at: "2026-11-05T00:00:00Z" });

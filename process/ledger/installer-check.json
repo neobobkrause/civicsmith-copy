@@ -1,0 +1,49 @@
+{
+  "id": "installer-check",
+  "title": "installer-check: split by copy from installer (R84, R85, R86, R87, R88, R89, R90, R91, R92, R93)",
+  "layer": 11,
+  "paths": [
+    "build/requirements/installer-check.md",
+    "docs/requirements-notes/installer-check.md",
+    "newgroup/src/ready.mjs",
+    "newgroup/src/guide.mjs",
+    "newgroup/src/ui.mjs",
+    "newgroup/src/index.mjs",
+    "newgroup/src/words.mjs",
+    "newgroup/test/fixture.mjs",
+    "newgroup/test/requirements.test.mjs",
+    "newgroup/test/t47.test.mjs",
+    "newgroup/test/wizard.test.mjs",
+    "newgroup/test/realsize-child.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/installer-check/"
+  ],
+  "requirements": "build/requirements/installer-check.md",
+  "uses": [
+    "installer",
+    "installer-steps",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/installer-check.md",
+    "build/requirements/installer.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "Meet the unmet requirement marks in build/requirements/installer-check.md (split by copy from installer, 5 Nov 2026), each with a test under bio-plane/test/m/installer-check/ that fails with the change reverted. Until a job of this module moves the code they rule, it lives in newgroup/, which is installer's; installer.md still holds R84 to R93 until installer's own job removes them (coordinator ruling, 5 Nov 2026 17:20). Its terms are installer's (build/requirements/installer.md). The installer Worker (newgroup) is a live site: deploying it is never yours. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T19:17:29Z"
+  }
+}

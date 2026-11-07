@@ -101,10 +101,18 @@ export function kindsOf(cs, view, lower) {
 export function recordsLawsOf(profiles) {
   const v = profiles && profiles.view ? profiles.view : {};
   const ds = Array.isArray(v.deadlines) ? v.deadlines : [];
+  const ls = Array.isArray(v.layers) ? v.layers : [];
   return (Array.isArray(v.records_laws) ? v.records_laws : []).filter(function (l) { return l && typeof l.citation === "string" && l.citation; }).map(function (l) {
-    const d = typeof l.response === "string" ? ds.find(function (x) { return x && x.rule === l.response && x.applies_to === "records_request"; }) : null;
+    // R61 (T53): a law's window is its own layer's rule where both state a layer
+    const d = typeof l.response === "string" ? (ds.find(function (x) { return x && x.rule === l.response && x.applies_to === "records_request" && (!l.layer || !x.layer || x.layer === l.layer); })
+      || ds.find(function (x) { return x && x.rule === l.response && x.applies_to === "records_request"; })) : null;
+    const layer = typeof l.layer === "string" && l.layer ? l.layer : "";
+    const lay = layer ? ls.find(function (y) { return y && y.id === layer; }) : null;
+    // R60 (T53; jurisdictions R106): whose records the law governs, by level of office; R61: the layer that gives it, and its place's name
     return { citation: l.citation, level: typeof l.level === "string" ? l.level : "", name: typeof l.name === "string" ? l.name : "",
-      rule: d ? d.rule : "", amount: d && d.amount ? d.amount : 0, count: d && d.count ? d.count : "", dcitation: d && d.citation ? d.citation : "" };
+      rule: d ? d.rule : "", amount: d && d.amount ? d.amount : 0, count: d && d.count ? d.count : "", dcitation: d && d.citation ? d.citation : "",
+      governs: Array.isArray(l.governs) ? l.governs.filter(function (g) { return typeof g === "string"; }) : null, layer: layer,
+      place: lay && typeof lay.place === "string" && lay.place ? lay.place : layer };
   });
 }
 
@@ -133,6 +141,16 @@ export function officeLine(ad) {
   const parts = [ad && ad.role, ad && (ad.body || ad.organisation)].filter(function (x) { return typeof x === "string" && x.trim(); })
     .map(function (x) { return x.trim(); });
   return parts.filter(function (x, i) { return parts.findIndex(function (y) { return y.toLowerCase() === x.toLowerCase(); }) === i; }).join(", ");
+}
+
+/** R65 (T53): an addressee that is no office, as the action states it (`counterparty`): a named one by its role and organisation, an audience
+ *  by its description (record data); an undetermined or absent one is none. */
+export function namedOf(cp) {
+  if (!cp || typeof cp !== "object") return "";
+  const t = function (v) { return typeof v === "string" ? v.trim() : ""; };
+  if (cp.state === "audience") return t(cp.description);
+  if (cp.state === "named") return [t(cp.role), t(cp.organisation) || t(cp.body)].filter(Boolean).join(", ") || t(cp.name);
+  return "";
 }
 
 /** C64-template: whether `templatesforaction` offers a template for the action's kind (a version, and no court petition); a read that did

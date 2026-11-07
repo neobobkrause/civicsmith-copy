@@ -37,6 +37,6 @@
   "prior_work": "Answer provider notice case-authoring:228, judged affected by a read-only triage: bio-plane/src/case-check/index.mjs:134 checkAndHold returns publishCase refusal (dry) as its own answer, so the R10 COMPLETENESS_CARRIED_FORWARD / BIAS_ACKNOWLEDGEMENT_CARRIED_FORWARD refusal, its field included (case-authoring R91), reaches the caller (also :141-142). Decide from your own requirements what this module must do, adapt or confirm, and add a test of your own (failing with the change reverted where code changes); where your requirements decide nothing, name the gap in not-verified. Edit no other module and commit no generated file.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T22:37:52Z"
+    "at": "2026-11-06T18:20:40Z"
   }
 }

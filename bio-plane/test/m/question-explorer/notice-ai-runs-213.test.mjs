@@ -5,6 +5,7 @@
    it is held back by a limit on the serving account and starts past a limit on another; and the explorer, handed that
    refusal as ai-runs answered it, opens nothing that day: no run row, no system step, the question and owner considered
    refused (R1, R3, R17: a refused open is no run). */
+/* (F1, ai-runs F2) The replays move the owner, and the member who turned exploring on (dana in the explorer's world), onto ann in ai-runs' world. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, Q } from "./fixture.mjs";
@@ -44,7 +45,7 @@ test("notice ai-runs:213 (R3; ai-runs R52): the explorer's open, on ai-runs' rea
   const { r, f } = await realRuns();
   const [head, other] = r.accountsOf("member:ann");
   assert.equal((await r.served("ann")).account_id, head, "the head serves her act");
-  const moved = { ...open, contextId: INQ, place: f.place, at: T0, principalAi: "member:ann" };
+  const moved = { ...open, contextId: INQ, place: f.place, at: T0, principalAi: "member:ann", enabledBy: "member:ann" };
   assert.equal(limitOn(r, other).ok, true);
   const x = await r.runs.open({ ...moved, run: "XPL-1" });
   assert.deepEqual([x.started, x.origin], [true, "explore"], JSON.stringify(x).slice(0, 300));
@@ -59,7 +60,7 @@ test("notice ai-runs:213 (R1, R3, R17): handed ai-runs' real AI_LIMIT_REACHED re
   const { r, f } = await realRuns();
   const [head] = r.accountsOf("member:ann");
   assert.equal(limitOn(r, head).ok, true);
-  const refusal = await r.runs.open({ ...open, run: "XPL-3", contextId: INQ, place: f.place, at: T0, principalAi: "member:ann" });
+  const refusal = await r.runs.open({ ...open, run: "XPL-3", contextId: INQ, place: f.place, at: T0, principalAi: "member:ann", enabledBy: "member:ann" });
   assert.equal(refusal.code, "AI_LIMIT_REACHED", JSON.stringify(refusal).slice(0, 300));
 
   const w = await world().standard();

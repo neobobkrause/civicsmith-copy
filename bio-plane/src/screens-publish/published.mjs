@@ -33,6 +33,9 @@ export const PUBLISHED = Object.freeze({
     // R37: one finding's own page, from the read asked by its id (public-read R39), at the case and edition the address names
     const L = sub[2] ? P.later(cs, view, "finding", "publishedcase", { query: Object.assign({ id: sub[2], caseId: sub[0] }, sub[1] ? { edition: sub[1] } : {}) }) : null;
     const e = L ? (L.state === "ok" ? L.value : null) : P.answer(view);
+    // R104: the group's public name, as the frame reads it, else as `publishedcase` states it (public-read reads it for a signed-out reader)
+    const pubName = group || (e && e.group_fields && typeof e.group_fields.name === "string" ? e.group_fields.name : "");
+    const framed = function (html) { return P.pubHead(cs, pubName) + html + P.pubFoot(cs); };
     const out = [cs.title(e ? e.scope || e.project_reference || e.caseId || null : null, { thing: "case" })];
     if (L && L.state === "failed" && L.refusal) {
       const code = L.refusal.code, f = L.fields || {};
@@ -45,13 +48,13 @@ export const PUBLISHED = Object.freeze({
         }).join(" · ") + "</p>";
       }
     }
-    if (!e) { out.push(L ? cs.state(L, function () { return ""; }) : cs.state("edition", function () { return ""; })); return out.join(""); }
+    if (!e) { out.push(L ? cs.state(L, function () { return ""; }) : cs.state("edition", function () { return ""; })); return framed(out.join("")); }
     const caseId = String(e.caseId || sub[0]);
 
     // R37: one finding's own page; a finding the edition does not hold is "Nothing is here"
     if (sub[2]) {
       const f = (Array.isArray(e.findings) ? e.findings : []).find(function (x) { return String(x.bundle_id || x.id || "") === sub[2]; });
-      return f ? P.finding(cs, view, e, caseId, f) : P.nothing(cs, "public");
+      return f ? framed(P.finding(cs, view, e, caseId, f)) : P.nothing(cs, "public");
     }
 
     // When it was signed and published, and its other editions.
@@ -61,11 +64,13 @@ export const PUBLISHED = Object.freeze({
     const head = cs.title(e.scope || e.project_reference || e.caseId || null, { thing: "case" }) + dated + "</p>";
     // R39: the print layout, drawn for the printout and put back by `printed`; R38: the reader's own filtered view
     if (ui.print) return P.printLayout(cs, view, e, caseId, head, group);
-    if (P.floorOf(view)) return P.filtered(cs, view, e, caseId, head);
+    if (P.floorOf(view)) return framed(P.filtered(cs, view, e, caseId, head));
     // 10B C5 (R94 k): the case's id and its manifest's hash, as the answer states them, beside the title
     const mani = /^[0-9a-f]{64}$/.test(String(e.manifest_sha || "")) ? String(e.manifest_sha) : "";
     out.push('<p class="mk-small" data-case-head><span class="id" data-case-id>' + cs.esc(caseId) + "</span>"
       + (mani ? ' · <span class="id" data-manifest style="overflow-wrap:anywhere">' + cs.esc(mani) + "</span>" : "") + "</p>");
+    // R84: at the top of the edition, the passages it says it was published without grading, from its signed statement
+    out.push(P.ungradedHead(cs, view, e));
     // R96 (a): beside the pointer to the next edition, its What-changed as that edition states it; a successor an order withholds is pointed to,
     // with the plane's detail and no statement
     const next = e.successor && typeof e.successor === "object" ? e.successor : null;
@@ -88,7 +93,9 @@ export const PUBLISHED = Object.freeze({
     // R81 (D-M6 (c)): a case that declared one says by key what it was held to, in place of the served sentence
     const bare = !e.bar || typeof e.bar !== "object" || e.bar.declared === false || (!e.bar.capture && !e.bar.connection);
     out.push(P.sec(cs, "screen.published.findings", findings.map(function (f, i) { return P.card(cs, view, f, i + 1, e, caseId, { link: true }); }).join("")
-      + (findings.length && bare && typeof e.bar_detail === "string" && e.bar_detail.trim() ? '<p class="mk-note" data-bar-none>' + cs.esc(e.bar_detail) + "</p>" : "")
+      // R102: the long no-bar paragraph is a fold
+      + (findings.length && bare && typeof e.bar_detail === "string" && e.bar_detail.trim() ? '<details class="mk-details" data-fold="screen.published.ungraded.more"><summary>'
+        + cs.w("screen.published.ungraded.more") + '</summary><p class="mk-note" data-bar-none>' + cs.esc(e.bar_detail) + "</p></details>" : "")
       + (findings.length && !bare ? '<p class="mk-note" data-bar-declared>' + cs.w("screen.published.bar.declared") + "</p>" : "")));
 
     // Its timeline, the people it names and its evidence, as the edition carries them.
@@ -175,24 +182,23 @@ export const PUBLISHED = Object.freeze({
         + '<div class="mk-acts">' + cs.act("casedetailspublic") + "</div>"));
     }
 
-    const evidence = Array.isArray(e.captures) ? e.captures : Array.isArray(e.materials) ? e.materials : [];
+    // F1: the rows as `publishedcase` answers them (`materials.materials`), else its `captures:` rows
+    const evidence = P.evidenceOf(e);
     // R19: each piece of evidence with a full SHA-256 opens its bytes by that hash (`publishedbytes`, no credential); a row
-    // with no full hash draws no hash and no link.
-    out.push(P.sec(cs, "screen.published.evidence", evidence.length ? cs.sheet(evidence.map(function (x) {
-      const sha = String(x.sha256 || x.capture_sha || "").toLowerCase();
-      const full = /^[0-9a-f]{64}$/.test(sha);
-      const graded = P.gradeMark(cs, x.axis || "capture", x.grade);
-      return cs.row("", '<span class="rec">' + cs.esc(x.title || x.label || x.locator || (full ? sha : "")) + "</span>" + (graded ? ' <span data-evidence-grade>' + graded + "</span>" : ""),
-        full ? '<span class="id">' + cs.esc(sha.slice(0, 12)) + "</span>" : "",
-        full ? cs.act("publishedcase", { label: "screen.published.evidence.open", data: { sha: sha } }) : "");
-    }).join("")) : ""));
+    // with no full hash draws no hash and no link, and a row whose bytes are not published draws its hash and no link.
+    // R100: each row its name, locator (the link to where it can be read) and short fingerprint; no row, no heading
+    out.push(P.sec(cs, "screen.published.evidence", evidence.length ? cs.sheet(evidence.map(function (x) { return P.evidenceRow(cs, view, x); }).join("")) : ""));
+    // R100: the signature and key the explanation says are shown here, drawn; with either not stated, neither is the explanation
+    const signed = P.signatureOf(e);
 
     out.push('<div class="mk-acts">' + cs.act("verify", { data: { sha: String(e.manifest_sha || "") } }) + cs.act("publishedcase")
       + (/^[0-9a-f]{64}$/.test(String(e.manifest_sha || "")) ? cs.act("publishedcase", { label: "screen.published.download", data: { download: "1", manifest: String(e.manifest_sha) } }) : "")
       + (findings.length ? cs.act("pubprint") : "") + "</div>" + P.said(view, "verify") + P.said(view, "download")
       + (P.casefileSaid(cs, e) ? '<p class="mk-note" role="status" data-casefile-state>' + P.casefileSaid(cs, e) + "</p>" : "")
       // 10B C5 (R95 a), R81 (D-M6 (a)): what the check proves and what it does not, by key, where the answer states a verification
-      + (e.verification && typeof e.verification === "object" ? '<p class="mk-small" data-verification>' + cs.w("screen.published.verify.detail") + "</p>" : ""));
+      + (signed.signature && signed.key ? '<div data-signed><p class="mk-small" data-verification>' + cs.w("screen.published.verify.detail") + "</p>"
+        + '<p class="mk-small"><b>' + cs.w("glossary.term.signature") + '</b></p><pre class="id" data-signature style="white-space:pre-wrap;overflow-wrap:anywhere">' + cs.esc(signed.signature) + "</pre>"
+        + '<p class="mk-small"><span class="id" data-key style="overflow-wrap:anywhere">' + cs.esc(signed.key) + "</span></p></div>" : ""));
     // R38: a minimum strength to read it at, when there is a finding to hold to one
     if (findings.length) out.push(P.minimum(cs, view));
 
@@ -202,7 +208,7 @@ export const PUBLISHED = Object.freeze({
     out.push(cs.sec("published.check.title", cs.field("pb-file", "screen.published.choose_a_file_or_paste", { type: "file", help: "screen.published.the_file_itself_never_leaves" })
       + cs.field("pb-sha", "published.check.field", { rec: true, help: "published.check.field.help" })
       + '<div class="mk-acts">' + cs.act("verify", { label: "published.check.go", data: { check: "1" } }) + "</div>" + P.said(view, "check"), { help: "published.check.help" }));
-    return out.join("");
+    return framed(out.join(""));
   },
 
   // R99 (interface-shell): after printing ends, or is cancelled, the page is drawn as it was

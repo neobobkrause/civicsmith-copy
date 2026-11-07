@@ -40,7 +40,9 @@ import { CF_API, RELEASE_LATEST, RELEASE_TAGGED, Session, patiently, WAIT_BOUND_
   locationHintFor, ARMED_SIGNERS } from "./steps/index.mjs";
 /* R84: the account made ready before anything is created. */
 import { scopesStop, pickAccount, accountPanel, accountSentence, storageReady, containersState, containersStop, limitReached, updateNeeds,
-  addressReady, addressPanel, addressSentence, planeTooBig, leaveOutOversize, SUBDOMAIN_RE, CHECK_AGAIN } from "./ready.mjs";
+  addressReady, addressPanel, addressSentence, planeTooBig, leaveOutOversize, SUBDOMAIN_RE, CHECK_AGAIN,
+  /* R86-R90: "Check my account", the list, and the gate; R87: the one function saying whether the short name is free. */
+  slugOk, memberNamesOf, nameTaken, runChecks, checkPanel, CHECK_COOKIE, checkCookie, checkCookieCleared, checkPassed } from "./ready.mjs";
 /* R63: the words of what a copy already holds. */
 import { describeCopy } from "./held.mjs";
 /* R53 (DEC-122 (3); K3100): interface-assets' stylesheet and faces, carried in this bundle and served at ASSET_PREFIX. */
@@ -267,7 +269,6 @@ const html = (s, status = 200, headers = {}) =>
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-const slugOk = (s) => typeof s === "string" && GROUP_SLUG_RE.test(s) && s !== "newgroup";
 
 const readCookie = (req, name) => {
   const raw = req.headers.get("cookie") || "";
@@ -415,7 +416,19 @@ const jsStr = (s) => jsLit(String(s ?? ""));
 function streamPage(headers, shell, run, again = null) {
   const { readable, writable } = new TransformStream();
   const w = writable.getWriter();
-  const write = (s) => w.write(enc.encode(s));
+  (async () => { await pageRun((s) => w.write(enc.encode(s)), shell, run, again); await w.close(); })();
+  return new Response(readable, { headers: { "content-type": "text/html; charset=utf-8", ...headers } });
+}
+/* R86, R90: the same page, written whole before it is answered, so the answer's headers can carry what the run found (the check's
+   `chk`). `headersOf(result)` answers them from what `run` returned (undefined when the run stopped before its end). */
+async function bufferedPage(headersOf, shell, run, again = null) {
+  const parts = [];
+  const result = await pageRun((s) => { parts.push(s); }, shell, run, again);
+  const headers = new Headers({ "content-type": "text/html; charset=utf-8" });
+  for (const c of headersOf(result)) headers.append("set-cookie", c);
+  return new Response(parts.join(""), { headers });
+}
+async function pageRun(write, shell, run, again) {
   /* R51: the line in progress, which a stop names. */
   const lines = new Map();
   let current = null;
@@ -437,9 +450,10 @@ function streamPage(headers, shell, run, again = null) {
     /* R84: the body a choice begins the run again with: what the run held, and the one thing chosen. */
     body: (extra = {}) => ({ ...(again || {}), ...extra }),
   };
-  (async () => {
+  let result;
+  {
     await write(shell);
-    try { await run(emit); }
+    try { result = await run(emit); }
     catch (e) {
       /* R71 (F6): a permission that expired or was revoked asks for approval again, and the run continues from where it
          stopped (R69). R66: what waiting did not mend is a lasting failure, named, with one action. */
@@ -454,15 +468,15 @@ function streamPage(headers, shell, run, again = null) {
       await emit.fail(word("installer.stopped.unexpected", { said: String(e && e.message || e) }));
     }
     await write("</body></html>");
-    await w.close();
-  })();
-  return new Response(readable, { headers: { "content-type": "text/html; charset=utf-8", ...headers } });
+  }
+  return result;
 }
 
 /* R71 (F6): the one act of the page that asks for approval again: a new `POST /begin` carrying what the run was, after which
    the run continues from where it stopped. It carries the choices the run held, never a credential. */
 function approvePanel(body) {
-  const label = body.mode === "update" ? word("act.bootstrap.label.update") : word("act.bootstrap.label.install");
+  const label = body.mode === "update" ? word("act.bootstrap.label.update") : body.mode === "check" ? word("act.owed_installcheck.label.install")
+    : word("act.bootstrap.label.install");
   return `<div class="ng-acts"><button class="cs-btn" data-tone="primary" data-begin="${esc(JSON.stringify(body))}">${esc(label)}</button></div><p class="err" id="begin-err" role="alert"></p>`;
 }
 
@@ -539,8 +553,6 @@ async function newestVersion() {
   } catch { /* the built-in stands */ }
   return RELEASE_VERSION;
 }
-const memberNamesOf = (release) => [...new Set([...BINDING_OF.keys(), ...RELEASE_MANIFEST.fleet.map((m) => m.member),
-  ...(Array.isArray(release?.man?.fleet) ? release.man.fleet.map((m) => m && m.member).filter((m) => typeof m === "string") : [])])];
 
 /* R74 (N1239; DEC-329 (7); BOB's reading, K3892) — WHAT AN UPDATE STOPS FOR AS FOREIGN. Before any upload, an update lists the
    container applications the account holds on the Durable Object namespaces of the copy's own Workers (the plane's and each
@@ -597,6 +609,42 @@ async function describeHeld(token, acct, inv, memberNames, only = null, onWait =
   return out;
 }
 
+/* ---------------------------------------------------------------- R86: "Check my account" */
+
+/* The check's run: the sign-in, the permission compared (R84 (5)), the account (R84 (6)), then every line of the list at once
+   (`runChecks`), drawn. It takes no lock and keeps nothing; it answers what it found, for the gate's cookie (R90). */
+async function runCheck(emit, code, saved) {
+  const onWait = async (waited) => { if (waited === 0) await emit.wait(word("screen.install.progress.retrying", { minutes: WAIT_BOUND_MINUTES })); };
+  let token, scope;
+  await emit.step("auth", word("installer.step.auth"));
+  try { const ex = await exchange(code, saved.v, onWait); token = new Session(ex.token, onWait); scope = ex.scope; emit.ok("auth"); }
+  catch (e) {
+    emit.no("auth");
+    if (special(e)) throw e;
+    return void emit.fail(word("installer.install.stopped.permission", { said: e.message }));
+  }
+  const lacking = scopesStop(scope, CFG.SCOPES);
+  if (lacking) throw Object.assign(new Error(lacking.said), { approveAgain: true, said: lacking.said });
+  await emit.step("acct", word("installer.step.acct"));
+  let acct;
+  try {
+    const accts = await cf(token, "/accounts");
+    if (!accts?.length) throw new Error(word("installer.account.none"));
+    acct = await accountOf(emit, accts, saved.ac);
+    if (!acct) return;
+  } catch (e) {
+    if (special(e)) throw e;
+    emit.no("acct");
+    return void emit.fail(word("installer.install.stopped.account", { said: e.message }));
+  }
+  await emit.step("check", word("screen.install.check.title"));
+  const result = await runChecks(token, acct, saved.slug, { memberNames: memberNamesOf(null) });
+  if (result.state === "ready") emit.ok("check", word("screen.install.check.allready"));
+  else emit.no("check", word("screen.install.check.closed"));
+  await emit.done(checkPanel(result, emit.body()));
+  return result;
+}
+
 /* ---------------------------------------------------------------- the install */
 
 async function runInstall(emit0, code, saved) {
@@ -616,6 +664,8 @@ async function installRun(emit0, code, saved, guard) {
     if (waited === 0) await emit0.wait(word("screen.install.progress.retrying", { minutes: WAIT_BOUND_MINUTES }));
   };
   const emit = { ...emit0, step: async (id, label) => { if (api) await touchLock(api, saved.lock.id).catch(() => {}); return emit0.step(id, label); } };
+  /* R90: the second line (R84's checks, here) stopping what the first (a passed "Check my account") passed is said to be rare. */
+  const rare = () => (saved.checked ? emit.says(word("screen.install.refused.rare")) : undefined);
 
   await emit.step("auth", word("installer.step.auth"));
   try { const ex = await exchange(code, saved.v, onWait); token = new Session(ex.token, onWait); scope = ex.scope; emit.ok("auth"); }
@@ -653,7 +703,7 @@ async function installRun(emit0, code, saved, guard) {
   await emit.step("ready", word("installer.step.storage"));
   try {
     const stop = await storageReady(token, acct.id);
-    if (stop) return await halt(emit, "ready", stop);
+    if (stop) { if (!stop.approveAgain) await rare(); return await halt(emit, "ready", stop); }
     emit.ok("ready");
   } catch (e) {
     if (special(e)) throw e;
@@ -669,15 +719,15 @@ async function installRun(emit0, code, saved, guard) {
     const inv = await inventory(api, memberNames);
     const ours = inv.planes.find((p) => p.slug === slug);
     const partial = inv.orphans.slugged.has(slug);
-    const taken = new Set([...inv.scripts.keys(), ...inv.planes.map((p) => p.slug), ...inv.orphans.slugged.keys()]);
-    const nametaken = () => { const free = freeName(slug, taken, slugOk);
+    /* R70 (F7), R87: the short name free, judged by the one function the check's `name` line calls too: a Worker by this name that
+       is not a Civicsmith's (the lookup, R5: one that fails is a refusal, caught below), or (R64) a name a copy already holds. */
+    const taken = await nameTaken(token, acct.id, inv, slug, alongside);
+    if (taken) {
       emit.no("fresh");
-      return emit.fail(word("screen.install.stopped.nametaken", { name: slug }), free ? word("screen.install.stopped.nametaken.do", { free }) : ""); };
-    /* A Worker by this name that is not a Civicsmith's (the lookup, R5: one that fails is a refusal, caught below). */
-    if (!ours && (inv.scripts.has(slug) || await scriptExists(token, acct.id, slug))) return nametaken();
-    if (ours && ours.finished) {
-      if (alongside) return nametaken();                                 /* R64: a name a copy already holds */
-    } else if (ours || partial) resumed = true;                          /* R69: begun here under this name, not finished */
+      await rare();
+      return emit.fail(word("screen.install.stopped.nametaken", { name: slug }), taken.free ? word("screen.install.stopped.nametaken.do", { free: taken.free }) : "");
+    }
+    if (!(ours && ours.finished) && (ours || partial)) resumed = true;  /* R69: begun here under this name, not finished */
     if (!resumed && !alongside && (inv.planes.length || inv.orphans.legacy.length || inv.orphans.slugged.size)) {
       /* R62: nothing is created or changed; the page offers the three ways on. */
       emit.no("fresh", word("screen.install.stopped.exists"));
@@ -702,6 +752,7 @@ async function installRun(emit0, code, saved, guard) {
   catch (e) { if (special(e)) throw e; planAnswer = { plan: "unknown", detail: e.message }; }
   if (planAnswer.plan === "free") {
     emit.no("plan");
+    await rare();
     await emit.fail(word("screen.install.stopped.plan") + " " + word("installer.install.stopped.plan.why"), word("screen.install.stopped.plan.do"));
     return emit.retry(word("screen.install.stopped.plan.done"));
   }
@@ -723,7 +774,7 @@ async function installRun(emit0, code, saved, guard) {
       async () => { const limit = await limitReached(api);
         return limit ? { said: word("screen.install.stopped.limit", { limit }), d: word("screen.install.stopped.limit.do"), retry: CHECK_AGAIN() } : null; },
     ];
-    for (const check of stops) { const stop = await check(); if (stop) return await halt(emit, "room", stop); }
+    for (const check of stops) { const stop = await check(); if (stop) { if (!stop.approveAgain) await rare(); return await halt(emit, "room", stop); } }
     /* (4) last, because it is the one check that writes: the name the founder chose with a click is registered before any upload. */
     const address = await addressReady(token, acct.id, slug, saved.sd);
     if (address.ask) {
@@ -1427,7 +1478,7 @@ export default {
        only ever travels back to this same origin. */
     if (req.method === "POST" && url.pathname === "/begin") {
       const body = await req.json().catch(() => ({}));
-      const mode = ["update", "remove", "removeconfirm"].includes(body.mode) ? body.mode : "install";
+      const mode = ["update", "remove", "removeconfirm", "check"].includes(body.mode) ? body.mode : "install";
       /* R2: a slug is a string in the grammar; a number or anything else is refused, never coerced into one. */
       const slug = typeof body.slug === "string" ? body.slug.trim() : "";
       if (!slugOk(slug))
@@ -1468,6 +1519,10 @@ export default {
       const sd = typeof body.subdomain === "string" ? body.subdomain.trim().toLowerCase() : "";
       if (typeof body.subdomain === "string" && body.subdomain.trim() && !SUBDOMAIN_RE.test(sd))
         return json({ ok: false, error: word("installer.begin.subdomain") }, 400);
+      /* R90: an install begins only after a passed "Check my account" for the same short name, at most 30 minutes old; refused
+         by name, before any sign-in, and nothing is created. An update, a removal and a check need none. */
+      if (mode === "install" && !checkPassed(readCookie(req, CHECK_COOKIE), slug))
+        return json({ ok: false, code: "CHECK_NOT_PASSED", error: word("refusal.CHECK_NOT_PASSED") }, 400);
       /* R36, R37 (T36): nothing else /begin is sent is kept: no field carries a Claude credential, and the install takes no
          choice about the assistant (an `assistant` field is taken nowhere). */
       /* R83 (G83; K4746, K4752): the founder's own request says where on the edge they are (`cf`, set by the platform); the hint
@@ -1515,13 +1570,20 @@ export default {
 
       const title = saved.mode === "update" ? UPDATE_WORDS.progressTitle
         : saved.mode === "remove" ? word("screen.install.remove.title") : saved.mode === "removeconfirm" ? word("installer.remove.running.title")
-        : word("screen.install.progress.title");
+        : saved.mode === "check" ? word("screen.install.check.title") : word("screen.install.progress.title");
+      /* R90: whether this browser holds a passed check for the install's short name (the install's stops then say they are rare). */
+      saved.checked = saved.mode === "install" && checkPassed(readCookie(req, CHECK_COOKIE), saved.slug);
       /* R69, R71: this run's own place on the account's lock, and the run it continues when the founder approved again. */
       saved.lock = { id: rand(8), again: typeof saved.lk === "string" && /^[0-9A-Za-z_-]{6,64}$/.test(saved.lk) ? saved.lk : null };
       /* R71 (F6): what a new approval begins again, never a credential. */
       const again = { slug: saved.slug, mode: saved.mode, lock: saved.lock.id, ...(saved.ac ? { account: saved.ac } : {}), ...(saved.sd ? { subdomain: saved.sd } : {}), ...(saved.mode === "update" ? { version: saved.r } : {}),
         ...(saved.al === 1 ? { alongside: true } : {}), ...(saved.p ? { profiles: saved.p } : {}), ...(saved.vpc ? { securityVpc: saved.vpc } : {}),
         ...(saved.mode === "removeconfirm" ? { typed: saved.ty } : {}) };
+      /* R86, R90: a check is answered whole, so its answer sets the gate's cookie when every line is ready (and clears an earlier
+         one when not); the run keeps nothing else. */
+      if (saved.mode === "check")
+        return bufferedPage((r) => [clear["set-cookie"], ...(r ? [r.state === "ready" ? checkCookie(saved.slug) : checkCookieCleared()] : [])],
+          progressShell(title, saved.slug), (emit) => runCheck(emit, code, saved), again);
       return streamPage(clear, progressShell(title, saved.slug, saved.mode === "update" ? `/update?version=${saved.r}` : null),
         (emit) => saved.mode === "update" ? runUpdate(emit, code, saved)
           : saved.mode === "remove" ? runRemoveView(emit, code, saved)

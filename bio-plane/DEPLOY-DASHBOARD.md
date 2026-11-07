@@ -4,7 +4,11 @@ No command line. No API token. Everything below is clicks and pastes in
 `dash.cloudflare.com`.
 
 The artifact you paste is `dist/bio-plane.bundled.mjs`, a single ESM file that
-esbuild produced from the four `src/*.mjs` modules. It is not a rewrite. It has
+esbuild produced from the four `src/*.mjs` modules. It is built, never
+committed: take `bio-plane.bundled.mjs` from the development release (its
+`civicsmith-copy-p3dev-<version>.tar.gz` asset), or build it from the repository
+root with `npm --prefix bio-plane ci && node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs
+&& node bio-plane/src/case-checker/build-program.mjs && node bio-plane/scripts/build-plane.mjs`. It is not a rewrite. It has
 been run through the same livefire battery as the source tree and returns the
 same 16/16 with the same confinement refusal, so what you paste is what was
 tested.
@@ -40,7 +44,7 @@ Workers & Pages, Create, Start with Hello World, name it `bio-plane`, Deploy.
 Accept the placeholder. You are about to replace it.
 
 Then Edit code. Select all in the editor, delete, paste the entire contents of
-`dist/bio-plane.bundled.mjs`. Deploy.
+`dist/bio-plane.bundled.mjs` (built as above). Deploy.
 
 It will fail or warn about missing bindings. Expected. Bindings come next.
 

@@ -19,6 +19,8 @@ const START_IDS = ("R1 R2 R3 R4 R6 R7 R5 R8 R9 R10 R11 R12 R13 R14 R15 R16 R17 R
   "R115 R116 R117 R118 R119 R120 R121 R122 R123 R124 R125 R126 R127 R128 R129 R130 R131 R132 R133 R134 R135 R136 R137 R138 " +
   "R139 R140 R141 R142 R143 R144 R145 R146 R147 R148 R149 R150 R151 R152 R153").split(" ");
 const START_UNMET = Object.fromEntries("R140 R141 R142 R143 R144 R145 R146 R147 R148 R149 R150 R151 R152 R153".split(" ").map((id) => [id, "T53"]));
+/* the found marks this module's jobs have added since the start commit, after the start's ids (F1: attempt 5's base-red R10 test) */
+const FOUND = ["F1"];
 /* the marks this module's jobs have struck since the start commit */
 const STRUCK = ["R153"];
 const START_RETIRED = ("R3 R14 R15 R22 R32 R37 R49 R55 R61 R65 R66 R67 R68 R69 R80 R81 R82 R83 R84 R85 R86 R92 R93 R95 R96 " +
@@ -43,12 +45,12 @@ function parse(text) {
     cur = null;
   }
   const h = createHash("sha256");
-  for (const id of ids) h.update(id + "\n" + blocks[id].join("\n").replace(/ ?\*\(not yet met: [^)]*\)\*/g, "").trimEnd() + "\n\0");
+  for (const id of ids.filter((x) => !FOUND.includes(x))) h.update(id + "\n" + blocks[id].join("\n").replace(/ ?\*\(not yet met: [^)]*\)\*/g, "").trimEnd() + "\n\0");
   return { ids, unmet, retired, hash: h.digest("hex") };
 }
 
 test("consolidation: the requirements file holds exactly the ids it held at the start commit, in the same order", () => {
-  assert.deepEqual(parse(read()).ids, START_IDS);
+  assert.deepEqual(parse(read()).ids, [...START_IDS, ...FOUND]);
 });
 
 test("consolidation: the unmet marks are those of the start commit less the ones struck, each on its own id's line", () => {

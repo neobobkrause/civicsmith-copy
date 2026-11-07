@@ -54,6 +54,7 @@
   ],
   "status": {
     "state": "WORKING",
-    "at": "2026-11-05T08:50:02Z"
+    "at": "2026-11-07T20:11:28Z",
+    "reason": "reopened: re-test against the new interface of op-declarations (land 92f5416be9)"
   }
 }

@@ -7,7 +7,6 @@ import worker, { SURFACE } from "../src/index.mjs";
 import { TRANSCRIBE_PAGES_MAX, TRANSCRIBE_TURNS, TRANSCRIBE_IMAGE_MAX_BYTES } from "../src/ops.mjs";
 import { MODEL_FOR_MODE } from "../../agent-model/src/model.mjs";
 import { MEMBER } from "./account.mjs";
-import { remoteBindings } from "./remote.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
 let pass = 0, fail = 0;
@@ -39,7 +38,7 @@ function planeStub() {
   const calls = [];
   return { calls, binding: { fetch: async (url) => { calls.push(String(url)); return Response.json({ ok: false }, { status: 500 }); } } };
 }
-/** A recording `RUNNER` namespace: an API-key account never reaches it (R72); a sign-in's relay of the picture is t46's (T46). */
+/** F2: a recording tripwire bound as both `REMOTE` and `RUNNER`, names no member binds any longer: nothing may reach it. */
 function runnerStub() {
   const calls = [];
   return { calls, binding: { idFromName: (n) => ({ n }), get: (id) => ({ fetch: async (u) => { calls.push([id.n, String(u)]); return Response.json({}); } }) } };
@@ -109,7 +108,7 @@ async function watched(fn, modelFetch) {
 async function transcribe(b, { model = {}, env = {}, method = "POST", path = "transcribe", noPlane = false } = {}) {
   const p = planeStub(), r = runnerStub(), m = modelApi(model);
   const keys = new Set();
-  const base = { VERSION: "t42", ...(noPlane ? {} : { PLANE: p.binding }), ...remoteBindings(r.binding), ...env };
+  const base = { VERSION: "t42", ...(noPlane ? {} : { PLANE: p.binding }), REMOTE: r.binding, ...env };
   const envProxy = new Proxy(base, { get: (o, k) => { keys.add(String(k)); return o[k]; } });
   const w = await watched(async () => {
     const res = await worker.fetch(new Request(`http://agent-worker/${path}`, { method,
@@ -202,7 +201,7 @@ section("R72 · the refusals, before any model call, in order");
     [codeOf(held), nothingCalled(held)], [[409, "SIGNIN_NOT_HELD"], [0, 0, 0]]);
   const noPlane = await transcribe(body(), { noPlane: true });
   t("R72: no PLANE binding is needed: the pages are transcribed", [noPlane.status, noPlane.out?.pages?.length], [200, 2]);
-  t("R72, R35, R109: the only binding /transcribe reads from env is REMOTE (passed to agent-model as bound)", [...new Set([...ok.keys, ...noPlane.keys])].sort(), ["REMOTE"]);
+  t("R72, R35, F2, F3: the only bindings /transcribe reads from env are HEALTH (the circuit) and RUNNER (F2: the member's own runner); never REMOTE", [...new Set([...ok.keys, ...noPlane.keys])].sort(), ["HEALTH", "RUNNER"]);
   t("R72: no plane call is made", [ok.plane.length, eight.plane.length], [0, 0]);
 }
 
@@ -333,9 +332,9 @@ section("R75 · nothing kept, no secret and no page data in any answer, refusal 
 
 section("R31, R34, R58, R63 · the route among its neighbours, and the one sentence");
 {
-  t("R34: SURFACE is {run, ask, draft, signin, transcribe: POST, version: GET}, none mutating",
+  t("R34, F3: SURFACE is {run, ask, draft, signin, transcribe: POST, version, health: GET}, none mutating",
     Object.entries(SURFACE).map(([k, v]) => [k, v.method, v.mutating]),
-    [["run", "POST", false], ["ask", "POST", false], ["draft", "POST", false], ["signin", "POST", false], ["transcribe", "POST", false], ["version", "GET", false]]);
+    [["run", "POST", false], ["ask", "POST", false], ["draft", "POST", false], ["signin", "POST", false], ["transcribe", "POST", false], ["version", "GET", false], ["health", "GET", false]]);
   const get = await transcribe(null, { method: "GET" });
   t("R31: GET /transcribe: 404 UNKNOWN, nothing called", [codeOf(get), nothingCalled(get)], [[404, "UNKNOWN"], [0, 0, 0]]);
   for (const path of ["transcribe/page", "Transcribe", "transcription"]) {

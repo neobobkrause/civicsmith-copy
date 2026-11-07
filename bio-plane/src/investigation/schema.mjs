@@ -135,6 +135,26 @@ CREATE TABLE IF NOT EXISTS inv_watch_arrivals (
   at            TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS inv_watch_arrivals_project ON inv_watch_arrivals (project_id, seq);
+CREATE TABLE IF NOT EXISTS inv_part_refusals (
+  seq           INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id    TEXT NOT NULL,
+  proposal_id   TEXT NOT NULL,      -- R28: a proposal a member said is not for this investigation
+  capture_sha   TEXT NOT NULL,
+  part_json     TEXT NOT NULL,
+  by_actor      TEXT NOT NULL,
+  at            TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS inv_part_refusals_project ON inv_part_refusals (project_id, proposal_id);
+CREATE TABLE IF NOT EXISTS inv_proposal_acts (
+  seq           INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id    TEXT NOT NULL,
+  proposal_id   TEXT NOT NULL,
+  kind          TEXT NOT NULL,      -- R29: the file kind the proposal was of
+  outcome       TEXT NOT NULL,      -- accepted | chosen_unaided | chose_otherwise
+  by_actor      TEXT NOT NULL,
+  at            TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS inv_proposal_acts_kind ON inv_proposal_acts (kind, seq);
 CREATE TRIGGER IF NOT EXISTS inv_reports_kept BEFORE UPDATE ON inv_reports BEGIN
   SELECT RAISE(ABORT, 'a kept report is never edited');
 END;
@@ -146,5 +166,6 @@ END;
 /* R10: each table, keyed by the project it belongs to, so a project's purge takes it. */
 export const INVESTIGATION_TABLES = Object.freeze([
   "inv_milestones", "inv_milestone_items", "inv_milestone_history", "inv_milestone_reminders", "inv_reports",
-  "inv_interviews", "inv_claims", "inv_plan_proposals", "inv_quiet_spells", "inv_quiet_acts", "inv_watch_arrivals",
+  "inv_interviews", "inv_claims", "inv_plan_proposals", "inv_quiet_spells", "inv_quiet_acts", "inv_watch_arrivals", "inv_part_refusals",
+  "inv_proposal_acts",
 ].map((name) => Object.freeze({ name, keys: Object.freeze(["project_id"]) })));

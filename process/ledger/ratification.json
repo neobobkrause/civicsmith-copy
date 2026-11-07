@@ -60,6 +60,6 @@
   "prior_work": "Answer provider notice case-catalogue:224, judged affected by a read-only triage: index.mjs:1694 registers checkCaseDocument (re-exported by export * at checks.mjs:15) with promotion.registerCaseCatalogue, so the new C-41.18 UNGRADED_PASSAGES_MISMATCH and C-41.19 TYPED_PASSAGES_MISMATCH findings now run in ratification, and the export * also re-exports the new legUngraded. Decide from your own requirements what this module must do, adapt or confirm, and add a test of your own (failing with the change reverted where code changes); where your requirements decide nothing, name the gap in not-verified. Edit no other module and commit no generated file.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T14:30:02Z"
+    "at": "2026-11-06T15:32:07Z"
   }
 }

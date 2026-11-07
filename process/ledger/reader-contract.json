@@ -1,0 +1,51 @@
+{
+  "id": "reader-contract",
+  "title": "reader-contract: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 4,
+  "paths": [
+    "bio-plane/src/reader-contract/",
+    "build/requirements/reader-contract.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/reader-contract/"
+  ],
+  "requirements": "build/requirements/reader-contract.md",
+  "uses": [
+    "jurisdictions",
+    "test-support",
+    "pdf-reader",
+    "format-registry",
+    "text-chain",
+    "docprofile",
+    "pdf-worker",
+    "ocr-worker",
+    "capture-sources",
+    "acquisition",
+    "membership",
+    "doctypes",
+    "court-doctypes",
+    "record-core",
+    "ai-accounts",
+    "setup-words",
+    "runtime-limits",
+    "ooxml"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/reader-contract.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

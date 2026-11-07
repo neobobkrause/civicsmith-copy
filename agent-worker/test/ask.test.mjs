@@ -15,7 +15,6 @@ import { MODEL_ENDPOINT, MODEL_FOR_MODE, USAGE_FIGURES } from "../../agent-model
 import { ESTIMATE } from "../../agent-model/src/outcome.mjs";
 import { ceilingRefusal } from "../../bio-plane/test/m/ai-use/fixtures.mjs";
 import { MEMBER } from "./account.mjs";
-import { remoteBindings } from "./remote.mjs";
 
 let pass = 0, fail = 0;
 const t = (label, got, want) => {
@@ -308,62 +307,15 @@ section("R58, R36 · a run's model half: turns through agent-model, usage report
   t("R26 (N588): `calls` is agent-model R6's, so the calls summed over every entry are the model calls that reached the "
     + "provider (each API-key request one), never a conversation counted as one",
     entries.reduce((n, e) => n + (Number.isInteger(e.calls) ? e.calls : NaN), 0), r.model.length);
-  /* R26's other half, on the sign-in path (T38; R6, R32, R33): `agent-model` R6's `calls` there is the turns the runner
-     states (`agent-runner` R4's `num_turns`), and `null` where it states none, passed through as `null`, never invented.
-     The runner is driven in this process over its own wire (a fake socket on the remote binding `REMOTE`, a
-     namespace recording each instance it is asked to name): each conversation answers its final tool, then ends,
-     stating `num_turns` or not. */
-  const fakeRunner = (numTurns) => {
-    const conversations = [], named = [];
-    const connect = async () => {
-      const on = {};
-      const emit = (m) => setTimeout(() => (on.message || []).forEach((f) => f({ data: JSON.stringify(m) })), 0);
-      const ws = {
-        accept() {}, close() {}, addEventListener(type, fn) { (on[type] ||= []).push(fn); },
-        send(text) {
-          const m = JSON.parse(text);
-          if (m.tool_result) return emit({ ok: true, result: "", stop_reason: "end_turn",
-            usage: { input_tokens: 2, output_tokens: 1 }, ...(numTurns === null ? {} : { num_turns: numTurns }) });
-          conversations.push(m);
-          const names = (m.tools || []).map((x) => x.name);
-          const judge = [...String(m.prompt).matchAll(/calling (judge_\w+)/g)].pop()?.[1];
-          const name = names.includes("report") ? "report"
-            : judge && names.includes(judge) ? judge : names.find((n) => n.startsWith("judge_"));
-          emit({ tool_use: { id: `t${conversations.length}`, name,
-                             input: name === "report" ? { state: "LOOKED_ABSENT", summary: "nothing" } : {} } });
-        } };
-      return { status: 101, webSocket: ws };
-    };
-    return { conversations, named, idFromName: (name) => { named.push(name); return { name }; },
-             newUniqueId: () => { named.push("<unique>"); return { name: "<unique>" }; },
-             get: () => ({ fetch: connect }) };
-  };
-  /* The member's own sign-in, as `credentials.accountFor` answers it and the plane carries it (R6), its `secret` the held
-     token (R82). */
+  /* F2: the sign-in path's half of R26 (the runner's stated turns) went with the runner: no runner is bound, and a run's
+     model turns on the member's own sign-in are refused before any model call or plane write. */
   const SIGNIN = { kind: "signin", level: "member", member: MEMBER, secret: SIGNIN_TOKEN, suggestions: false };
-  const subRun = async (numTurns) => {
-    const runner = fakeRunner(numTurns);
-    const d = await drive("run", { run_id: "RUN-A", store: "scratch", credential: AIK, account: SIGNIN },
-                          { env: { ...remoteBindings(runner) } });
-    TRANSCRIPTS.push(d);
-    return { d, runner, entries: d.plane.filter((x) => x.op === "airuntick").flatMap((x) => x.body?.usage || []) };
-  };
-  const stated = await subRun(3);
-  t("R6, R33, R82 (T47): a run on the member's own sign-in is named as one and its turns go to that member's own runner "
-    + "instance only, each conversation carrying {kind: signin, member, secret}, the held token, in its first frame",
-    [stated.d.status, JSON.parse(stated.d.text).claude_account, [...new Set(stated.runner.named)],
-     [...new Set(stated.runner.conversations.map((c) => JSON.stringify(c.credential)))], stated.d.model.length],
-    [200, { available: true, kind: "signin", level: "member", member: MEMBER }, [MEMBER],
-     [JSON.stringify({ kind: "signin", member: MEMBER, secret: SIGNIN_TOKEN })], 0]);
-  t("R26 (N588): on the sign-in path each entry's `calls` is the turns the runner stated for that conversation",
-    [stated.d.status, stated.runner.conversations.length > 0, stated.entries.length, [...new Set(stated.entries.map((e) => e.calls))]],
-    [200, true, stated.runner.conversations.length, [3]]);
-  const unstatedRun = await subRun(null);
-  t("R26 (N588): where the runner states none, `calls` is passed as null (which the plane counts as one call), never 0 "
-    + "and never invented here",
-    [unstatedRun.d.status, unstatedRun.entries.length, [...new Set(unstatedRun.entries.map((e) => e.calls))],
-     unstatedRun.entries.every((e) => "calls" in e)],
-    [200, unstatedRun.runner.conversations.length, [null], true]);
+  const si = await drive("run", { run_id: "RUN-A", store: "scratch", credential: AIK, account: SIGNIN });
+  TRANSCRIPTS.push(si);
+  t("F2: a run's model turns on the member's own sign-in are refused ASSISTANT_REMOTE_NOT_READY (absent), no model call, "
+    + "no plane write",
+    [si.status, JSON.parse(si.text).code, JSON.parse(si.text).why, si.model.length, si.plane.map((x) => x.op).filter((op) => op !== "whoami")],
+    [503, "ASSISTANT_REMOTE_NOT_READY", "absent", 0, []]);
   t("R26: a tick after no conversation carries no `usage`",
     ticks.filter((x) => !x.body.usage).length > 0 && ticks.filter((x) => x.body.usage).every((x) => x.body.usage.length > 0), true);
   const v = await (await worker.fetch(new Request("http://agent-worker/version"), { VERSION: "ask", PLANE: plane().binding })).json();

@@ -744,22 +744,26 @@ export async function profiles(world, as, ids) {
 }
 
 /** R19 (J5, K5163): `queue(world, {obligations?, findings?, conditions?})` → `{obligations: [ids], findings: [], conditions: []}`: the founder's
- *  queue made to hold that many obligations, by real acts: a member, `ruth`-like and made for the purpose, registers a signing key of
- *  her own for each (`signerregisterown`, which tells every administrator: an OBLIGATION `signer-self-registered`, `queue-producers`
- *  R14). A finding or a condition is raised by acts that need a project's dated actions or a recorded observation, which no act of the
+ *  queue made to hold that many obligations, by real acts: for each, a member made for the purpose registers a signing key of her
+ *  own (`signerregisterown`, which tells every administrator: one OBLIGATION `signer-self-registered` for each member, `queue-producers`
+ *  R14 as its R56 amends it), and the obligation's id is the one the founder's `queue` then answers for that member. A finding or a condition is raised by acts that need a project's dated actions or a recorded observation, which no act of the
  *  door makes alone: asking for one is refused naming it, never guessed (the world's rule for an arm no test needs). */
 export async function queue(world, { obligations = 0, findings = 0, conditions = 0 } = {}) {
   if (findings > 0 || conditions > 0)
     throw new Error(`storeWorld: recipes.queue makes obligations only; ${findings} findings and ${conditions} conditions asked, and no act of the door raises one by itself`);
   const founder = await signIn(world, "admin");
-  const holder = await signIn(world, "queue-member");
   const made = [];
   for (let i = 0; i < obligations; i++) {
+    const n = world.__queueMembers = (world.__queueMembers || 0) + 1;
+    const holder = await signIn(world, n === 1 ? "queue-member" : `queue-member-${n}`);
     const raw = generateKeyPairSync("ed25519").publicKey.export({ format: "der", type: "spki" }).subarray(-32);
     const part = (b) => Buffer.concat([Buffer.from([0, 0, 0, b.length]), b]);
     const keyB64 = Buffer.concat([part(Buffer.from("ssh-ed25519")), part(raw)]).toString("base64");
-    await holder.act("signerregisterown", { body: { keyB64, comment: `key ${i + 1}` } });
-    made.push(`OBLIGATION::signer-self-registered::${keyB64}`);
+    await holder.act("signerregisterown", { body: { keyB64, comment: `key ${n}` } });
+    const items = (await founder.read("queue")).items || [];
+    const item = items.find((it) => it.kind === "signer-self-registered" && it.subject && Array.isArray(it.subject.keys) && it.subject.keys.includes(keyB64));
+    if (!item) throw new Error(`storeWorld: recipes.queue: the founder's queue holds no signer-self-registered item for ${holder.member}'s key`);
+    made.push(item.id);
   }
   return { obligations: made, findings: [], conditions: [] };
 }

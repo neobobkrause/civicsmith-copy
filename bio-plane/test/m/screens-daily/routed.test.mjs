@@ -66,10 +66,11 @@ async function permit(w, as, { title = "Permit application", address = PERMIT } 
   if (!made) throw new Error("taskdrain made no to-do: " + JSON.stringify(resultOf(drained)).slice(0, 300));
   return { bundle, task: made.id };
 }
-/** The administrator proposing `who` as a further administrator (`memberadd`; the team has two or more, so it waits for the others to endorse). */
-async function propose(w, founder, who) {
-  await founder.act("reauth", { body: { password: founder.password } });
-  const r = resultOf(await raw(w, founder, "memberadd", { memberId: who, cover: `the world's member ${who}`, role: "admin" }));
+/** The administrator `by` proposing `who` as a further administrator (`memberadd`; the team has two or more, so it waits for the others to endorse).
+ *  `by` is never the founder: her proposal or endorsement alone issues the invitation (member-roster R87, K5563). */
+async function propose(w, by, who) {
+  await by.act("reauth", { body: { password: by.password } });
+  const r = resultOf(await raw(w, by, "memberadd", { memberId: who, cover: `the world's member ${who}`, role: "admin" }));
   if (!r || r.reason !== "CONSENSUS_REQUIRED") throw new Error("memberadd did not wait for the others: " + JSON.stringify(r).slice(0, 300));
 }
 /** The queue's own item of `kind` for `as`. */
@@ -160,7 +161,7 @@ for (const where of screens) {
 
   test(`R75 (${where}): an endorsement owed names the person with who has agreed and who is awaited and sends adminendorse for her; an expertise item names the member and the label and sends expertiseconfirm`, timeout, async () => {
     const { w, rosa, mai } = await group(["mai"]);
-    await propose(w, await w.signIn("founder"), "ana");
+    await propose(w, await w.signIn("cy", { admin: true }), "ana");
     await mai.act("expertisedeclare", { body: { memberId: "mai", label: "tenant law" } });
     await rosa.act("reauth", { body: { password: rosa.password } });
     const names = await namesOf(rosa);
@@ -196,15 +197,15 @@ for (const where of screens) {
     const { w, rosa } = await group([]);
     const cy = await w.signIn("cy", { admin: true });
     const founder = await w.signIn("founder");
-    await propose(w, founder, "ana");
-    await propose(w, founder, "bo");
-    // cy has endorsed ana, so rosa's endorsement completes it; bo still awaits cy as well
-    await cy.act("reauth", { body: { password: cy.password } });
-    await raw(w, cy, "adminendorse", { memberId: "ana" });
-    await rosa.act("reauth", { body: { password: rosa.password } });   // changing administrators asks her password again
+    await propose(w, cy, "ana");
+    await propose(w, cy, "bo");
+    // cy has endorsed both by proposing them; the founder's endorsement is the last one for ana (member-roster R87: hers alone issues it, R90: she is owed it)
+    await founder.act("reauth", { body: { password: founder.password } });   // changing administrators asks her password again
+    await rosa.act("reauth", { body: { password: rosa.password } });
     // The page's answers to adminendorse are the world's own, kept as they pass (the invitation the last endorsement makes is in them).
-    const door = w.boot(rosa).door, answers = [];
-    const p = await open(w, rosa, at[where], { adminendorse: counted(async (req) => { const a = await door(req); answers.push(resultOf(a)); return a; }) });
+    const kept = (as, answers) => { const door = w.boot(as).door; return { adminendorse: counted(async (req) => { const a = await door(req); answers.push(resultOf(a)); return a; }) }; };
+    const answers = [];
+    const p = await open(w, founder, at[where], kept(founder, answers));
     await settle();
     const buttonFor = (who) => {
       const row = main(p).querySelectorAll(".cs-row").find((r) => r.querySelector('button[data-act="adminendorse"]') && text(p, r).includes(who));
@@ -218,12 +219,16 @@ for (const where of screens) {
     assert.equal(main(p).querySelectorAll("code").filter((c) => c.textContent.endsWith(link)).length, 1, "the link is drawn once");
     assert.ok(text(p).includes(word("screen.members.invite.noemail")), "with the sentence that the group's Civicsmith sends no email");
     assert.ok(text(p).includes(word("screen.members.invite.shown", { handle: "ana", expires: dmy(String(answer.expires).slice(0, 10)) })), "and who it is for and when it expires");
-    // the next endorsement answers with no invitation (bo still awaits cy): the link is not drawn any more
-    await press(p, "adminendorse", { reason: "I know him too" });
-    assert.ok(!answers.at(-1).invite, "the next answer carries no invitation");
-    assert.equal(main(p).querySelectorAll("code").filter((c) => c.textContent.includes("#invite=")).length, 1, "control: an answer with no invite draws no link of its own");
+    // control: rosa's endorsement of bo answers with no invitation (bo still awaits the founder): her page draws no link
+    const theirs = [];
+    const q = await open(w, rosa, at[where], kept(rosa, theirs));
+    await settle();
+    await press(q, "adminendorse", { nth: main(q).querySelectorAll('button[data-act="adminendorse"]').indexOf(main(q).querySelectorAll(".cs-row").find((r) => r.querySelector('button[data-act="adminendorse"]') && text(q, r).includes("bo")).querySelector('button[data-act="adminendorse"]')), reason: "I know him too" });
+    assert.equal(theirs.length, 1, "her endorsement was sent");
+    assert.ok(!(theirs.at(-1) && theirs.at(-1).invite), "the answer carries no invitation");
+    assert.equal(main(q).querySelectorAll("code").filter((c) => c.textContent.includes("#invite=")).length, 0, "control: an answer with no invite draws no link of its own");
     // The record answers a vote short of the last as a refusal (CONSENSUS_REQUIRED), not as an answer with no invite: the page keeps the earlier link until the next visit.
-    const later = await open(w, rosa, at[where]);
+    const later = await open(w, founder, at[where]);
     await settle();
     assert.equal(main(later).querySelectorAll("code").filter((c) => c.textContent.includes("#invite=")).length, 0, "control: the link is not drawn on the next visit");
     assert.ok(!text(later).includes(word("screen.members.invite.noemail")));
@@ -231,7 +236,7 @@ for (const where of screens) {
 
   test(`R75 (${where}): nobody agreed or awaited is "no one yet"; with no handle in fills the member's id is drawn`, timeout, async () => {
     const { w, rosa } = await group([]);
-    await propose(w, await w.signIn("founder"), "ana");
+    await propose(w, await w.signIn("cy", { admin: true }), "ana");
     // No act of the record leaves a proposal with nobody agreed or awaited, so the real item is changed to that state: the one place the queue's answer is not the store's own.
     const real = await itemOf(rosa, "endorsement-owed");
     const none = { ...real, fills: {}, basis: { have: [], awaiting: [] } };

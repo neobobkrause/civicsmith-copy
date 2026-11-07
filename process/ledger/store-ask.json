@@ -1,0 +1,56 @@
+{
+  "id": "store-ask",
+  "title": "store-ask: confirm its requirements on layer 11 (ledger entry written 6 Nov; no unmet mark)",
+  "layer": 11,
+  "paths": [
+    "bio-plane/src/store-assembly/ask.mjs",
+    "bio-plane/src/store-assembly/transcribe.mjs",
+    "bio-plane/src/store-assembly/unpack.mjs",
+    "build/requirements/store-ask.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/store-ask/",
+    "bio-plane/test/m/store-assembly/ask.test.mjs",
+    "bio-plane/test/m/store-assembly/unpack.test.mjs"
+  ],
+  "requirements": "build/requirements/store-ask.md",
+  "uses": [
+    "store-jobs",
+    "acquisition",
+    "ai-accounts",
+    "ai-runs",
+    "ai-use",
+    "answers",
+    "capture",
+    "credentials",
+    "hypotheses",
+    "membership",
+    "network-notices",
+    "record-core",
+    "run-rules",
+    "setup-words",
+    "signin-door",
+    "translations",
+    "agent-worker",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/store-ask.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "This module was split by copy from store-assembly on 4 Nov and had no ledger entry, so the process never recorded it (found in the R15 census, 6 Nov). Its modules.json row keeps empty paths and tests until its job's merge (K1043; build/layers.md). Its code is store-assembly's ask.mjs, transcribe.mjs and unpack.mjs (its Status line), with store-assembly's ask.test.mjs and unpack.test.mjs; no code exists yet under a folder of its own, and bio-plane/test/m/store-ask/ does not exist yet. Change only those files. Its requirement file has no unmet mark. Run its suite on its layer. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test under bio-plane/test/m/store-ask/. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Leave store-assembly's requirement lines to its own job, edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T17:57:46Z"
+  }
+}

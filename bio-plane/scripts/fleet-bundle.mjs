@@ -97,7 +97,7 @@ import { build, version as ESBUILD_VERSION } from "esbuild";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, statSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { parse as acornParse, tokenizer as acornTokenizer, tokTypes as acornTypes } from "../src/setup-words/vendor/acorn.mjs";   /* R38: the parser setup-words reads calls with; R2: its tokenizer finds the characters to escape */
 /* THIS WALK IS GUARDED RATHER THAN NAMED. Found by the census in the old
    `hygiene.test.mjs` (deleted in T20): it went red on this file the first full
@@ -822,9 +822,9 @@ export function fleetProvenance(members, { repoRoot = REPO_ROOT, log = console.l
   const items = [];
   for (const m of members) {
     const p = memberPaths(m, repoRoot);
+    /* The marker only: the artifact and its manifest are built at test, deploy and release, never committed (the dist
+       pass, BOB 6 Nov 2026), so they are not what another checkout could see. */
     items.push({ path: p.marker, what: `${m.name}'s fleet manifest`, counted: "enrolled the member" });
-    if (p.artifact) items.push({ path: p.artifact, what: `${m.name}'s committed artifact`, counted: "guarded as one asset" });
-    if (p.manifest) items.push({ path: p.manifest, what: `${m.name}'s bundle manifest`, counted: "the hashes every arm reads" });
   }
   return reportProvenance({ prov, items, instrument: "the fleet bundle guard",
     corpus: `${members.length} fleet member(s)`, log });
@@ -1247,6 +1247,17 @@ export async function writeMember(member) {
   const manifest = manifestFrom(member, built);
   writeFileSync(join(member.abs, member.bundle.manifest), JSON.stringify(manifest, null, 2) + "\n");
   return { built, manifest };
+}
+
+/** The member, with its artifact and manifest written under `dir` instead of its own `dist/` (the dist pass, BOB
+ *  6 Nov 2026: nothing under dist/ is committed). The paths stay member-relative, as every reader here joins them to
+ *  `member.abs`, so `writeMember`, `verifyStatic` and `verifyFresh` work on the copy unchanged; the recipe (entry,
+ *  externals, assets, absWorkingDir) is the member's own, so the bytes are the ones its own build writes. Used by
+ *  `bundles.mjs --check` and the fleet gate to build into a temp dir and never read a committed file. */
+export function inDir(member, dir) {
+  if (!member.bundle) return member;
+  const to = (rel) => relative(member.abs, join(dir, basename(rel)));
+  return { ...member, bundle: { ...member.bundle, outfile: to(member.bundle.outfile), manifest: to(member.bundle.manifest) } };
 }
 
 /* ------------------------------------------------------------- the specifier

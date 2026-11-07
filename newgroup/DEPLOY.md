@@ -21,7 +21,13 @@ any page of ours can explain it. Deploy the hello-world it offers.
 ## 2. Paste the module
 
 Open the Worker, Edit code. Select everything in the editor, delete it, and
-paste the entire contents of `dist/newgroup.bundled.mjs`. Deploy.
+paste the entire contents of `newgroup.bundled.mjs`. Deploy.
+
+That file is built, never committed. Take it from the development release
+(the `newgroup.bundled.mjs` in its `civicsmith-copy-p3dev-<version>.tar.gz`
+asset), or build it from the repository root with
+`npm --prefix bio-plane ci && npm --prefix newgroup ci && node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs && node docs/development/ux-substrate/screens/words-reads.src.mjs . --build && npm --prefix newgroup run build`,
+which writes `newgroup/dist/newgroup.bundled.mjs`.
 
 ## 3. Verify the page
 
@@ -69,5 +75,7 @@ release (`node bio-plane/scripts/release-assemble.mjs --sign`). Then, in
 refuses to embed it unless it hashes to `RELEASE.json`, its signature
 verifies against the installer's own keys, it names the version
 `bio-plane/package.json` names, and no published token value appears in it,
-and produces a fresh `dist/newgroup.bundled.mjs` to paste. Then paste and deploy as in step 2, and existing groups pick the
+and produces a fresh `dist/newgroup.bundled.mjs` to paste (built, never
+committed: from the repository root the whole build is
+`npm --prefix bio-plane ci && npm --prefix newgroup ci && node docs/development/ux-substrate/screens/build_words.mjs && node bio-plane/src/setup-words/build.mjs && node docs/development/ux-substrate/screens/words-reads.src.mjs . --build && npm --prefix newgroup run build`). Then paste and deploy as in step 2, and existing groups pick the
 release up through the wizard's update option.

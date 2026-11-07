@@ -11,23 +11,22 @@
   "compatibility_flags": ["nodejs_compat"],
 
   // The release's version site (resolve-version ARM 7c), as every member's: a stamp, not a credential or address.
-  "vars": { "VERSION": "0.87.0" },
+  // R57: the deployment, fixed here and never by a request (`team`, `machine` or `civicsmith`), and for `civicsmith`
+  // the sample accounts a run's declared plan must be one of. The class passes these, and nothing else, to the image.
+  "vars": { "VERSION": "0.87.0", "DEPLOYMENT": "team", "SAMPLE_ACCOUNTS": "" },
 
-  // Reachable only through the Durable Object binding of its caller (agent-worker's RUNNER, script `agent-runner`):
-  // no public address of its own.
+  // Reachable only through the Durable Object binding of its caller (R57): no public address of its own.
   "workers_dev": false,
   "preview_urls": false,
 
   // R13: the container behind the class. The image is named only as <repository>@sha256:<64 hex>; the release writes
-  // the digest here and into fleet-member.json's `image.digest` when it publishes the image (T33-D1). Until then it
-  // reads UNPUBLISHED, and bundler's deploy refuses the member (its R25/R26). R10's egress is not a field of this
-  // block (wrangler's container schema is closed): it is declared in fleet-member.json `egress` and applied by the
-  // class (src/worker.mjs).
+  // the digest here and into fleet-member.json's `image.digest` when it publishes the image (T33-D1). R45's egress is
+  // not a field of this block (wrangler's container schema is closed): the class applies it (src/worker.mjs).
   "containers": [
     {
       "class_name": "AgentRunner",
       "image": "docker.io/civicsmith/agent-runner@sha256:4febfa540e99d9c0dbb21482a43f8997c7efce6ca63eaddb2dae9b57a8800415",
-      // R33: 1/2 vCPU, 4 GiB. At the default size (1/16 vCPU, 256 MiB) one conversation's start-up took 27 s (study-assistant-link T1-T2).
+      // R33: RUNNER_INSTANCE_TYPE, standard-1 (1/2 vCPU, 4 GiB), BOB's provisional figure (coordinator ruling, 5 Nov).
       "instance_type": "standard-1",
       "max_instances": 10
     }
@@ -42,7 +41,8 @@
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["AgentRunner"] },
-    // R42: RemoteSession, a class with no container and no binding of its own here (agent-worker's REMOTE names it).
+    // R13: RemoteSession (R42, retired) stays until agent-worker's REMOTE binding names it no more (agent-worker PR 364);
+    // that change adds { "tag": "v3", "deleted_classes": ["RemoteSession"] } here and drops the stub from src/worker.mjs.
     { "tag": "v2", "new_sqlite_classes": ["RemoteSession"] }
   ],
 

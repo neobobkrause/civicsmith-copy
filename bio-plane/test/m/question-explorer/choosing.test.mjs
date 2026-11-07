@@ -97,7 +97,9 @@ test("R3: the run opens through ai-runs in the investigate run path, origin expl
                    ["investigate", "explore", "explore", "group", "inquiry", Q]);
   assert.equal("step" in open, false, "this module passes no step of its own");
   assert.deepEqual([open.place, typeof open.work], [{ questions: [Q] }, "string"], "it passes the step's place and work");
-  assert.deepEqual(open.enabledBy, { kind: "machine", enabled_by: "group" });
+  /* F1 (K5821): the run carries the member who turned exploring on (dana, the group's administrator), not ai-use's label. */
+  assert.equal(open.enabledBy, "member:dana");
+  assert.deepEqual(o.label, { kind: "machine", enabled_by: "group" }, "ai-use R6's label still marks the run's finds");
   assert.deepEqual(open.bounds.map((b) => b.bound), EXPLORE_BOUNDS.map((b) => b.bound));
   assert.ok(open.bounds.some((b) => b.bound === "pages"), "R13's pages bound declared");
   assert.match(o.step, /^STP-/);

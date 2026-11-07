@@ -58,6 +58,7 @@ import {
   weekLeafHash, slotsFor, randomHex, randomPositions, treeOf, rootOf, pathOf, verifyOpening, OPENING_FORMAT,
 } from "./seals.mjs";
 import { word, localize } from "../setup-words/index.mjs";
+import { viewerMember, notAnAdmin, ROOT_ADMIN } from "../member-roster/index.mjs";
 
 export { NETWORK_NOTICE_CHECKS } from "./checks.mjs";
 export { NETWORK_NOTICES_SCHEMA, NETWORK_NOTICES_TABLES } from "./schema.mjs";
@@ -891,7 +892,10 @@ export class NetworkNotices {
     return { ok: true, project: pid, notices, sealed_weeks, methodVersion: ACTIVITY_METHOD_VERSION };
   }
 
-  /** R23: a directory submission's fields, prefilled, for a published case edition the viewer can see. Sends nothing. */
+  /** R23 (T53; K5507, K5527): the fields of a submission of a published case to the network pages (the pages the holder
+   *  of the network domains keeps outside Civicsmith, which read groups' signed notices), prefilled, for a published case
+   *  edition the viewer can see. It is not a listing on civicsmith.org (that request is R32's `listingRequest`). It sends
+   *  nothing and names no network domain; the op name `directorysubmission` is unchanged. */
   directorySubmission({ case: caseArg = null, caseId = null, edition = null, viewer = null } = {}) {
     const id = str(caseArg ?? caseId);
     if (!id) return required("directorysubmission", "case", "a case id");
@@ -910,6 +914,34 @@ export class NetworkNotices {
     const title = (p && p.data && str(p.data.title)) || str(heading) || null;
     return { ok: true, group: this.#slug(), case: id, edition: ed,
              link: `?op=publishedcase&caseId=${encodeURIComponent(id)}&edition=${ed}`, title, summary: str(row.scope) || null,
+             sends: word("network-notices.nothing_copy_fields") };
+  }
+
+  /** R32 (T53; N1110, K5507, K5530 B2, K5532; DEC-132 (3), DEC-247): an administrator's request to be listed on
+   *  civicsmith.org, prefilled with what the group has set public: its display name (instance-setup's, layer 11, handed
+   *  in by that door as `name`), its focus (member-roster's `groupDescription`, only while its visibility is `public`)
+   *  and its published cases as the site's row shows them (`site` R4: how many cases, how many editions, and the date of
+   *  the latest when an edition is a later one). No field of the description holds a place, so `place` is left out
+   *  (UNVERIFIED in R32). `contact` is always empty: the administrator types it, or not, into the request they send the
+   *  stewards; nothing here fills it from a member's account. A group that keeps itself to its members answers
+   *  `{listed: false}` and no field. Sends nothing, calls nothing, records nothing. */
+  listingRequest({ viewer = null, name = null } = {}) {
+    const roster = this.#deps.members || this.membership.members;
+    const who = viewer === ROOT_ADMIN ? ROOT_ADMIN : viewerMember(viewer);
+    if (who === null || !this.#call(() => roster.isAdministrator(who)))
+      return notAnAdmin(viewer, localize("network-notices.index.asking_to_be_listed", "asking for the team to be listed on civicsmith.org"));
+    const shown = this.#call(() => roster.groupDescription({ viewer: null }));   /* the public's view: only what is public */
+    if (!shown || !shown.description) return { ok: true, listed: false };
+    const focus = str(shown.description.focus);
+    const eds = this.#call(() => this.#rows(`SELECT p.case_id, p.ratified_at FROM published_cases p JOIN cases c ON c.case_id = p.case_id
+                                               WHERE p.ratified_at IS NOT NULL ORDER BY p.ratified_at`), []);
+    const cases = new Set(eds.map((e) => e.case_id)).size, editions = eds.length;
+    const display = str(name);
+    return { ok: true, listed: true, ...(display ? { name: display } : {}), ...(focus ? { focus } : {}),
+             cases: { cases, editions, latest: editions > cases ? String(eds.at(-1).ratified_at).slice(0, 10) : null },
+             contact: "",
+             note: localize("listing.contact.note", "Optional: a line the stewards can use to reply to your team, by the stewards' own mail. It goes only in the request you send them, and it is never on the site. Leave it blank if you like; nothing about that is public."),
+             warning: { code: "outward_act", meaning: localize("network-notices.index.listing_outward_act", "Once listed, the people your team examines will see what it is watching.") },
              sends: word("network-notices.nothing_copy_fields") };
   }
 }

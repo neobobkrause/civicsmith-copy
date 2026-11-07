@@ -1,18 +1,20 @@
 /* agent-worker — T48 (T48-37; N670, N1015; K3103, K3190): R86 (`POST /draft`'s `readtranslate`, a passage of the
  * group's own writing translated for one member, reading nothing) and R87 (`/ask`, `/run`, `/draft` and `/transcribe`
- * pass the door's `x-civicsmith-trace` and `x-civicsmith-member-ref` to every `agent-model` conversation, so a member's
- * runner receives them on its upgrade), AT THE MEMBER'S INTERFACE: the default export `fetch(request, env)`, driven in
- * this process with a recording `RUNNER` namespace (each upgrade request's headers and each conversation's first frame
- * recorded), a recording plane binding and the global `fetch` replaced by a scripted model API. Nothing here reads any
- * module's source text.
+ * pass the door's `x-civicsmith-trace` and `x-civicsmith-member-ref` to every `agent-model` conversation), AT THE
+ * MEMBER'S INTERFACE: the default export `fetch(request, env)`, driven in this process with a recording plane binding and
+ * the global `fetch` replaced by a scripted model API. No runner is bound (F2): a sign-in, whose runner received the
+ * headers on its upgrade, is refused before any model call. Nothing here reads any module's source text.
  *
  * Every arm that admits has its refusing counterpart beside it (K874).
  */
 import worker from "../src/index.mjs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { READ_TEXT_MAX } from "../src/draft.mjs";
 import { untestedLabel } from "../../bio-plane/src/run-rules/index.mjs";
 import { MEMBER } from "./account.mjs";
-import { remoteBindings } from "./remote.mjs";
+import { TOKEN, AIK, GRANT, KEY_SECRET, KEY, SIGNIN, LAYER, ABSENT, PACK, PNG, TRACE, REF, DOOR, plane, answerFor, drive, READ, readBody, BODIES, pathOf } from "./door-world.mjs";
+import { machineWork, MACHINE_WORK } from "./label.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
 let pass = 0, fail = 0;
@@ -23,125 +25,6 @@ const t = (label, got, want) => {
 };
 const section = (s) => console.log(`\n--- ${s} ---`);
 
-const TOKEN = "sk-ant-oat01-T48-HELD-TOKEN-SENTINEL-abcdefghijklmnopqrstuvwxyz0123456789";
-const AIK = "aik-" + "8".repeat(64);
-const GRANT = "aig-t48-fixture-grant-never-echoed";
-const KEY_SECRET = "sk-ant-t48-apikey-fixture-never-echoed";
-const KEY = { kind: "apikey", level: "member", secret: KEY_SECRET, member: MEMBER };
-const SIGNIN = { kind: "signin", level: "member", member: MEMBER, secret: TOKEN, suggestions: false };
-const LAYER = (body) => ({ load_when: "when asked", sourcing: "authored", body });
-const ABSENT = { load_when: "never, in this edition", sourcing: "absent", body: {}, absent_because: "not written yet" };
-const PACK = { id: "investigative-session", version: "pack@t48",
-  resident: { objective: { text: "answer from the record" }, disclosable: [] },
-  disclosed: { ask: LAYER("closed book"), suggestions: LAYER("SUGGESTIONS-LAYER-WORDS"),
-               writing_help: LAYER("WRITING-HELP-WORDS"), reading_translation: LAYER("READING-TRANSLATION-WORDS") } };
-const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from("PICTURE-T48".repeat(4))]).toString("base64");
-const TRACE = "trace-t48-door-0001";
-const REF = "a1b2c3d4e5f6";
-const DOOR = { "x-civicsmith-trace": TRACE, "x-civicsmith-member-ref": REF };
-
-function plane() {
-  const calls = [];
-  const ok = (result) => Response.json({ ok: true, result, store: "scratch", tokenClass: "ai", version: "t48" });
-  return { calls, binding: { async fetch(url, init) {
-    const u = new URL(url);
-    const op = u.searchParams.get("op") || "";
-    let body = null; try { body = typeof init?.body === "string" ? JSON.parse(init.body) : null; } catch { body = null; }
-    calls.push({ op, raw: String(url) + JSON.stringify(init?.headers ?? {}) + (typeof init?.body === "string" ? init.body : "") });
-    switch (op) {
-      case "whoami": return ok({ tokenClass: "ai", session: false, member: null });
-      case "agentpack": return Response.json({ ok: true, fences: [], pack: PACK, store: "scratch", tokenClass: "ai" });
-      case "askceiling": return ok({ ok: true, reached: false });
-      case "askcheck": return ok({ ok: true, answer: { ...(body?.answer || {}) }, withheld: [] });
-      case "askusage": return ok({ ok: true });
-      case "airun": return ok({ found: true, session: { id: "RUN-48", mode: "check", status: "running", max_passes: 1,
-        context: { type: "inquiry", id: "INQ-1" }, principal: { plane: `${MEMBER}/TOK`, claude: MEMBER, ref: MEMBER, skill: PACK.version }, state: null,
-        budget: [{ bound: "fetches", allowed: 9 }, { bound: "subsessions", allowed: 9 }, { bound: "wallclock", allowed: 9e5 },
-                 { bound: "runtime", allowed: 5000 }].map((b) => ({ ...b, consumed: 0 })) } });
-      case "airunlog": return ok({ found: true, entries: [], truncated: false });
-      case "airunspawn": return ok({ found: true, half: "search", payload: { run: "RUN-48", context: { type: "inquiry", id: "INQ-1" }, mode: "check", skill: PACK.version, standard_pair: null } });
-      case "basisversions": return ok({ versions: [] });
-      case "airuntick": return ok({ ticked: true, appended: (body?.log || []).length, refused: [] });
-      case "airunclose": return ok({ terminated: true });
-      default: return ok({ op, rows: [{ id: "EVT-1" }] });
-    }
-  } } };
-}
-function answerFor(names, prompt) {
-  if (names.includes("done_reading")) return ["done_reading", { question_as_read: "who held the seat" }];
-  if (names.includes("answer")) return ["answer", { question_as_read: "who held the seat", clarifying: null, summary: "S",
-    sentences: [{ text: "Ruth held it.", kind: "quote", support: ["EVT-1"] }], label: "machine work" }];
-  if (names.includes("report")) return ["report", { state: "LOOKED_ABSENT", summary: "nothing" }];
-  if (names.includes("draft")) return ["draft", { text: "drafted" }];
-  if (names.includes("read_page")) return ["read_page", {}];
-  const judge = [...String(prompt).matchAll(/calling (judge_\w+)/g)].pop()?.[1];
-  return [judge && names.includes(judge) ? judge : names.find((n) => n.startsWith("judge_")), {}];
-}
-/* The Container namespace `RUNNER`: each conversation's upgrade request (its headers) and first frame recorded. */
-function convRunner() {
-  const upgrades = [], firsts = [], named = [];
-  const connect = async (url, init = {}) => {
-    if (String(url).endsWith("/version")) return Response.json({ ok: true, name: "agent-runner", version: "t48", capabilities: ["image"] });
-    upgrades.push({ url: String(url), headers: Object.fromEntries(new Headers(init.headers || {})) });
-    const on = {};
-    const emit = (m) => setTimeout(() => (on.message || []).forEach((f) => f({ data: JSON.stringify(m) })), 0);
-    let first = null, step = 0;
-    const ws = { accept() {}, close() {}, addEventListener(type, fn) { (on[type] ||= []).push(fn); },
-      send(text) {
-        const m = JSON.parse(text);
-        if (!first) {
-          first = m; firsts.push(m);
-          const [name, input] = answerFor((m.tools || []).map((x) => x.name), m.prompt);
-          return emit({ tool_use: { id: "c1", name, input } });
-        }
-        step += 1;
-        if (first.tools?.some((x) => x.name === "transcription") && step === 1)
-          return emit({ tool_use: { id: "c2", name: "transcription", input: { text: "the words" } } });
-        return emit({ ok: true, result: "", stop_reason: "end_turn", usage: { input_tokens: 2, output_tokens: 1 }, num_turns: 1 });
-      } };
-    return { status: 101, webSocket: ws };
-  };
-  return { upgrades, firsts, named, idFromName: (n) => { named.push(n); return { name: n }; },
-           newUniqueId: () => { named.push("<unique>"); return { name: "<unique>" }; }, get: () => ({ fetch: connect }) };
-}
-/** Drives one path. `model(body)` scripts the model API's answer to one request: `[toolName, input]`. */
-async function drive(path, body, headers = {}, model = null) {
-  const p = plane(), r = convRunner();
-  const api = [];
-  const saved = globalThis.fetch;
-  globalThis.fetch = async (url, init) => {
-    api.push({ url: String(url), headers: Object.fromEntries(new Headers(init?.headers || {})), body: String(init?.body ?? "") });
-    const b = JSON.parse(init.body);
-    const [name, input] = model ? model(b, api.length)
-      : answerFor((b.tools || []).map((x) => x.name), JSON.stringify(b.messages));
-    const out = name === "read_page" ? ["transcription", { text: "the words" }] : [name, input];
-    return Response.json({ id: "m", type: "message", role: "assistant", stop_reason: "tool_use",
-      content: [{ type: "tool_use", id: `u${api.length}`, name: out[0], input: out[1] }], usage: { input_tokens: 3, output_tokens: 2 } });
-  };
-  const lines = [], kept = {};
-  for (const k of ["log", "info", "warn", "error", "debug"]) { kept[k] = console[k]; console[k] = (...a) => lines.push(a.map(String).join(" ")); }
-  try {
-    const res = await worker.fetch(new Request(`http://agent-worker/${path}`, { method: "POST", headers, body: JSON.stringify(body) }),
-      { VERSION: "t48", PLANE: p.binding, ...remoteBindings(r) });
-    const text = await res.text();
-    const parsed = text.trim().split("\n").map((l) => { try { return JSON.parse(l); } catch { return null; } });
-    return { status: res.status, text, out: parsed[parsed.length - 1], plane: p.calls, runner: r, api, lines };
-  } finally {
-    globalThis.fetch = saved;
-    for (const k of Object.keys(kept)) console[k] = kept[k];
-  }
-}
-
-const READ = (extra = {}) => ({ op: "readtranslate", language: "es", text: "The group meets on Tuesdays.", ...extra });
-const readBody = (task = READ(), extra = {}) => ({ task, account: KEY, pack: PACK, ...extra });
-const BODIES = {
-  ask: (account) => ({ question: "Who held the seat?", grant: GRANT, account }),
-  run: (account) => ({ run_id: "RUN-48", store: "scratch", credential: AIK, account }),
-  draft: (account) => ({ task: { op: "writinghelp", act: "noteadd", field: "text" }, told: "I saw the vote.", account, pack: PACK }),
-  "draft (readtranslate)": (account) => ({ task: READ(), account, pack: PACK }),
-  transcribe: (account) => ({ capture_sha: "c".repeat(64), pages: [{ page: 0, media_type: "image/png", data: PNG }], account }),
-};
-const pathOf = (k) => k.split(" ")[0];
 
 /* ================================================================================================ R86 */
 
@@ -149,9 +32,9 @@ section("R86 · POST /draft readtranslate: a passage of the team's writing in th
 {
   const said = (from) => (b) => ["draft", { text: "El grupo se reúne los martes.", ...(from === undefined ? {} : { from_language: from }) }];
   const r = await drive("draft", readBody(), {}, said("en"));
-  t("R86: a stub model's translation is answered 200 with its label, the task, usage and calls",
-    [r.status, r.out.ok, r.out.task, r.out.label, typeof r.out.usage, r.out.calls],
-    [200, true, READ(), { kind: "machine" }, "object", 1]);
+  t("R86, F4: a stub model's translation is answered 200 with its label {kind: machine, ai}, the task, usage and calls",
+    [r.status, r.out.ok, r.out.task, machineWork(r.out.label), typeof r.out.usage, r.out.calls],
+    [200, true, READ(), MACHINE_WORK, "object", 1]);
   t("R86: draft is {text, language, from_language}, from_language as the model stated it when none was given",
     r.out.draft, { text: "El grupo se reúne los martes.", language: "es", from_language: "en" });
   const given = await drive("draft", readBody(READ({ from_language: "en-GB" })), {}, said("fr"));
@@ -243,50 +126,17 @@ section("R86 (R79) · the test-instance label is answered unchanged beside the t
    runs; the answers are compared without that one figure. */
 const unmeasured = (text) => String(text).replace(/("bound":"wallclock","allowed":\d+,"consumed":)\d+/g, "$10");
 
-section("R87 · the door's trace and member ref reach the member's runner on every conversation's upgrade");
+section("R87, F2 · on a sign-in no runner is bound: each path is refused before any model call, the headers sent or not");
 {
   for (const [k, body] of Object.entries(BODIES)) {
     const path = pathOf(k);
     const sent = await drive(path, body(SIGNIN), DOOR);
-    const bare = await drive(path, body(SIGNIN));
-    const ups = sent.runner.upgrades;
-    t(`R87 (/${k}): served on the member's own runner, at least one conversation`, [sent.status, ups.length > 0], [200, true]);
-    t(`R87 (/${k}): every upgrade request carries the sent trace and member ref`,
-      [...new Set(ups.map((u) => `${u.headers["x-civicsmith-trace"]}|${u.headers["x-civicsmith-member-ref"]}`))], [`${TRACE}|${REF}`]);
-    t(`R87 (/${k}, control): without the headers, no upgrade carries either`,
-      [bare.status, bare.runner.upgrades.length === ups.length,
-       bare.runner.upgrades.some((u) => "x-civicsmith-trace" in u.headers || "x-civicsmith-member-ref" in u.headers)], [200, true, false]);
-    t(`R87 (/${k}, control): the answer is unchanged by them`, unmeasured(sent.text), unmeasured(bare.text));
-    t(`R87 (/${k}): they reach no plane call and no log line`,
+    t(`F2 (/${k}): a sign-in is refused ASSISTANT_REMOTE_NOT_READY (absent), no model call, no plane write`,
+      [sent.status, sent.out?.code, sent.out?.why, sent.api.length, sent.plane.map((c) => c.op).filter((op) => op !== "whoami")],
+      [503, "ASSISTANT_REMOTE_NOT_READY", "absent", 0, []]);
+    t(`R87 (/${k}): the headers reach no plane call and no log line`,
       [sent.plane.some((c) => c.raw.includes(TRACE) || c.raw.includes(REF)), sent.lines.some((l) => l.includes(TRACE) || l.includes(REF))],
       [false, false]);
-  }
-}
-
-section("R87 · a header absent or not of R83's shape is passed as absent; nothing is minted or refused");
-{
-  const cases = [
-    ["a trace with a space", { "x-civicsmith-trace": "trace with space", "x-civicsmith-member-ref": REF }, { ref: REF }],
-    ["a trace of 129 characters", { "x-civicsmith-trace": "t".repeat(129), "x-civicsmith-member-ref": REF }, { ref: REF }],
-    ["a member ref of 201 characters", { "x-civicsmith-trace": TRACE, "x-civicsmith-member-ref": "r".repeat(201) }, { trace: TRACE }],
-    ["only the trace", { "x-civicsmith-trace": TRACE }, { trace: TRACE }],
-    ["only the member ref", { "x-civicsmith-member-ref": REF }, { ref: REF }],
-  ];
-  for (const [label, headers, want] of cases) {
-    const r = await drive("draft", BODIES.draft(SIGNIN), headers);
-    t(`R87: ${label}: served 200, the upgrade carrying only what was in shape`,
-      [r.status, r.runner.upgrades.map((u) => ({ ...(u.headers["x-civicsmith-trace"] ? { trace: u.headers["x-civicsmith-trace"] } : {}),
-                                                 ...(u.headers["x-civicsmith-member-ref"] ? { ref: u.headers["x-civicsmith-member-ref"] } : {}) }))],
-      [200, [want]]);
-  }
-  const most = await drive("draft", BODIES.draft(SIGNIN), { "x-civicsmith-trace": "t".repeat(128), "x-civicsmith-member-ref": "r".repeat(200) });
-  t("R87: a trace of 128 and a member ref of 200 characters are passed",
-    [most.status, most.runner.upgrades[0]?.headers["x-civicsmith-trace"]?.length, most.runner.upgrades[0]?.headers["x-civicsmith-member-ref"]?.length],
-    [200, 128, 200]);
-  for (const k of ["ask", "run", "transcribe"]) {
-    const r = await drive(k, BODIES[k](SIGNIN), { "x-civicsmith-trace": "bad trace!" });
-    t(`R87 (/${k}, control): a trace out of shape is not refused and no trace is minted`,
-      [r.status, r.runner.upgrades.some((u) => "x-civicsmith-trace" in u.headers)], [200, false]);
   }
 }
 
@@ -296,11 +146,63 @@ section("R87 (control) · on an API key the headers change nothing and reach the
     const path = pathOf(k);
     const sent = await drive(path, body(KEY), DOOR);
     const bare = await drive(path, body(KEY));
-    t(`R87 (/${k}, control): an apikey account answers the same with and without the headers, and no runner is named`,
-      [sent.status, unmeasured(sent.text) === unmeasured(bare.text), sent.runner.named.length], [200, true, 0]);
+    t(`R87 (/${k}, control): an apikey account answers the same with and without the headers`,
+      [sent.status, unmeasured(sent.text) === unmeasured(bare.text)], [200, true]);
+    t(`R87 (/${k}): with the headers, they reach no plane call and no log line`,
+      [sent.plane.some((c) => c.raw.includes(TRACE) || c.raw.includes(REF)), sent.lines.some((l) => l.includes(TRACE) || l.includes(REF))],
+      [false, false]);
     t(`R87 (/${k}, control): neither header reaches a model API request`,
       sent.api.some((a) => JSON.stringify(a).includes(TRACE) || JSON.stringify(a).includes(REF)), false);
   }
+}
+
+
+/* ================================================================================================ R87, by converse */
+
+/* R87 on the API-key path: what every `agent-model` conversation of each path is handed. The headers reached a member's
+   runner only on its upgrade, and no runner is bound (F2), so the requirement is held where this module keeps it:
+   `converse({…, trace, memberRef})`, recorded in a child that wraps the real `converse` (`trace-child.mjs`). */
+function conversed(cases) {
+  const got = execFileSync(process.execPath, ["--experimental-test-module-mocks", "--no-warnings",
+    fileURLToPath(new URL("./trace-child.mjs", import.meta.url)), JSON.stringify(cases)], { encoding: "utf8" });
+  const m = /^OUT (.*)$/m.exec(got);
+  if (!m) throw new Error(`the child answered: ${got}`);
+  return JSON.parse(m[1]);
+}
+const pairs = (seen) => [...new Set(seen.map((x) => `${x.trace ?? "-"}|${x.memberRef ?? "-"}`))];
+
+section("R87 · the door's trace and member ref reach every agent-model conversation, on every path");
+{
+  const keys = Object.keys(BODIES);
+  const sent = conversed(keys.map((k) => ({ k, headers: DOOR })));
+  const bare = conversed(keys.map((k) => ({ k })));
+  for (const [i, k] of keys.entries()) {
+    t(`R87 (/${k}): served, at least one conversation`, [sent[i].status, sent[i].seen.length > 0], [200, true]);
+    t(`R87 (/${k}): every conversation is handed the sent trace and member ref`, pairs(sent[i].seen), [`${TRACE}|${REF}`]);
+    t(`R87 (/${k}, control): without the headers no conversation is handed either, and as many run`,
+      [bare[i].status, bare[i].seen.length === sent[i].seen.length, pairs(bare[i].seen)], [200, true, ["-|-"]]);
+  }
+}
+
+section("R87 · a header absent or not of R83's shape is handed as absent; nothing is minted or refused");
+{
+  const cases = [
+    ["a trace with a space", { "x-civicsmith-trace": "trace with space", "x-civicsmith-member-ref": REF }, `-|${REF}`],
+    ["a trace of 129 characters", { "x-civicsmith-trace": "t".repeat(129), "x-civicsmith-member-ref": REF }, `-|${REF}`],
+    ["a member ref of 201 characters", { "x-civicsmith-trace": TRACE, "x-civicsmith-member-ref": "r".repeat(201) }, `${TRACE}|-`],
+    ["only the trace", { "x-civicsmith-trace": TRACE }, `${TRACE}|-`],
+    ["only the member ref", { "x-civicsmith-member-ref": REF }, `-|${REF}`],
+  ];
+  const got = conversed(cases.map(([, headers]) => ({ k: "draft", headers })));
+  for (const [i, [label, , want]] of cases.entries())
+    t(`R87: ${label}: served 200, each conversation handed only what was in shape`, [got[i].status, pairs(got[i].seen)], [200, [want]]);
+  const [most] = conversed([{ k: "draft", headers: { "x-civicsmith-trace": "t".repeat(128), "x-civicsmith-member-ref": "r".repeat(200) } }]);
+  t("R87: a trace of 128 and a member ref of 200 characters are handed on",
+    [most.status, most.seen[0]?.trace?.length, most.seen[0]?.memberRef?.length], [200, 128, 200]);
+  const odd = conversed(["ask", "run", "transcribe"].map((k) => ({ k, headers: { "x-civicsmith-trace": "bad trace!" } })));
+  for (const r of odd)
+    t(`R87 (/${r.k}, control): a trace out of shape is not refused and no trace is minted`,
+      [r.status, r.seen.length > 0, r.seen.some((x) => "trace" in x)], [200, true, false]);
 }
 
 console.log(`\nt48: ${pass} passed, ${fail} failed`);

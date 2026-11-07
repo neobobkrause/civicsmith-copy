@@ -90,9 +90,12 @@ test("R127 (G31) control: another member signing in over a live session is a new
   assert.ok(p.byOp("groupidentity").length >= 2, "the frame is read again for it");
 });
 
-test("R127 (G31) control: two tabs on one browser: the tab that did not sign in routes once on the sign-in, and the tab that did sends its own set once", async () => {
+test("R127 (G31) control: two tabs on one browser: the tab that did not sign in routes once on the sign-in, and the tab that did sends its own set once", async (t) => {
   const group = tabs();
   const { world } = await founderWorld();
+  /* the page reads the record's expiry against its own clock (R32): the world's clock is pinned (WORLD_NOW), so the page runs on it too; on the
+     machine's clock the record the world wrote expired on 31 Oct 2026 and the other tab took it for none (attempt 8: failing from that day) */
+  t.mock.method(Date, "now", () => world.now());
   const a = await bootAs(world, null, { screens: REAL, guide: GUIDE, path: "/app/queue", session: null, tabs: group });
   const b = await bootAs(world, null, { screens: REAL, guide: GUIDE, path: "/app/queue", session: null, tabs: group });
   typeIn(a);

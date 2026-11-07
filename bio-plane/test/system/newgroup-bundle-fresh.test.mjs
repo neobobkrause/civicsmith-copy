@@ -1,6 +1,11 @@
-/* GATE: reads newgroup/src/index.mjs newgroup/src/ui.mjs newgroup/src/images.mjs newgroup/src/release.mjs newgroup/src/held.mjs newgroup/src/steps/*.mjs newgroup/src/words.mjs newgroup/scripts/build.mjs newgroup/dist/newgroup.bundled.mjs newgroup/package.json bio-plane/src/sshsig.mjs
+/* GATE: reads newgroup/src/index.mjs newgroup/src/ui.mjs newgroup/src/images.mjs newgroup/src/release.mjs newgroup/src/held.mjs newgroup/src/steps/*.mjs newgroup/src/words.mjs newgroup/scripts/build.mjs newgroup/package.json bio-plane/src/sshsig.mjs
  *
- * DIST-13 — THE INSTALLER'S COMMITTED BUNDLE IS FRESH, OR THE GATE SAYS WHICH WAY IT IS NOT.
+ * DIST-13 — THE INSTALLER'S BUNDLE, BUILT HERE, CARRIES ITS SOURCE'S RELEASE AND REPRODUCES, OR THE GATE SAYS WHICH WAY IT DOES NOT.
+ *
+ * DIST PASS (BOB, 6 Nov 2026): `newgroup/dist/` is no longer committed. It is built at test, deploy and release, so this
+ * guard never reads a file under dist/: it builds the bundle into a temp file with the build's own `bundleText`, runs (A),
+ * (B) and (D) on those bytes, and (C) compares a second fresh build with the first (the build is reproducible). The
+ * history below is why the arms exist.
  *
  * `newgroup/dist/newgroup.bundled.mjs` is what `newgroup/DEPLOY.md`'s manual path pastes into a group's dashboard. It is
  * built from `newgroup/src` by `npm run build` and COMMITTED, and nothing checked that it still equals its source: the
@@ -14,7 +19,7 @@
  * Arms: (A) the bundle embeds the RELEASE_VERSION `src/release.mjs` carries; (B) its RELEASE_PACKED literal (the release's gzip as base64, R33), evaluated
  * and expanded, hashes equal to `src/release.mjs`'s RELEASE_PACKED expanded; (C) the WHOLE bundle is byte-identical to a fresh build of
  * `newgroup/src`. (C) implies (A) and (B); they are kept so a failure NAMES which kind of staleness it is.
- * The fix for any failure is one act: `cd newgroup && npm run build`, and commit the bundle.
+ * A failure of (A) or (B) means `src/release.mjs` and the build disagree; (C) means the build is not reproducible.
  *
  * NEGATIVE CONTROL: RUN 2026-09-24 (DIST #6), declared before arming, each ALONE, the bundle restored by cp and verified
  * by sha256 AND cmp after each: (N1) THE ROW'S OWN — the 0.71.0 bundle restored (`git show f9736f5b:newgroup/dist/…`) ->
@@ -25,7 +30,9 @@
  * Restored by cp, sha256 (b190fe6a…) and cmp.
  */
 import "../stdio.mjs";                 /* D-282: a suite's own exit must not discard the suite's own output */
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
@@ -34,7 +41,9 @@ import * as esbuild from "esbuild";
 import { asciiOptions } from "../../scripts/fleet-bundle.mjs";
 
 const NG = fileURLToPath(new URL("../../../newgroup/", import.meta.url));
-const DIST = NG + "dist/newgroup.bundled.mjs";
+/* Built into a temp dir, never read from newgroup/dist/ (not committed: built at test, deploy and release). */
+const TMP = mkdtempSync(join(tmpdir(), "newgroup-bundle-"));
+const DIST = join(TMP, "newgroup.bundled.mjs");
 let pass = 0, fail = 0;
 const t = (name, got, want) => {
   const ok = JSON.stringify(got) === JSON.stringify(want);
@@ -53,8 +62,7 @@ const literal = (src, name) => {
   return vm.runInNewContext(src.slice(j, k + 1));
 };
 
-console.log("\n--- DIST-13: newgroup's committed bundle equals a fresh build of newgroup/src ---");
-const committed = readFileSync(DIST, "utf8");
+console.log("\n--- DIST-13: newgroup's bundle, built into a temp dir, carries its source's release and reproduces ---");
 const releaseSrc = readFileSync(NG + "src/release.mjs", "utf8");
 const want = { version: literal(releaseSrc, "RELEASE_VERSION"), source: shaPacked(literal(releaseSrc, "RELEASE_PACKED")) };
 
@@ -69,9 +77,11 @@ t("PIN: newgroup's build is the script this guard mirrors (scripts/build.mjs: bu
   [true, true, "esm", "neutral", "dist/newgroup.bundled.mjs"]);
 /* G39 (installer R82): the build carries bundler's ASCII recipe, and the committed bundle is pure ASCII (V8 holds a script's source two
    bytes a character once one character is above U+00FF). */
+writeFileSync(DIST, await bundleText(esbuild), "latin1");
+const committed = readFileSync(DIST, "utf8");
 t("PIN: the build carries bundler's ASCII options (R2) and nothing of its own beside them",
   Object.keys(asciiOptions()).map((k) => JSON.stringify(options[k]) === JSON.stringify(asciiOptions()[k])), Object.keys(asciiOptions()).map(() => true));
-t("(D) the committed bundle holds no byte over 0x7F", readFileSync(DIST).filter((b) => b > 0x7f).length, 0);
+t("(D) the built bundle holds no byte over 0x7F", readFileSync(DIST).filter((b) => b > 0x7f).length, 0);
 
 t("(A) the bundle embeds the RELEASE_VERSION src/release.mjs carries",
   literal(committed, "RELEASE_VERSION"), want.version);
@@ -82,9 +92,10 @@ const fresh = await bundleText(esbuild);
 /* N1254: the test closes what it opens. esbuild's service is a child process that holds the suite's stdout pipe: left running it
    keeps a reader of that pipe (a runner, `| tail`) waiting for an end that never comes, though the suite itself has finished. */
 await esbuild.stop();
-t("(C) the WHOLE committed bundle is byte-identical to a fresh build of newgroup/src (catches installer code the bundle lags)",
+rmSync(TMP, { recursive: true, force: true });
+t("(C) a second fresh build of newgroup/src is byte-identical to the first (the build is reproducible)",
   { bytes: committed.length, sha256: sha(committed) }, { bytes: fresh.length, sha256: sha(fresh) });
 
 console.log(`\nnewgroup-bundle-fresh: ${pass} passed, ${fail} failed`);
-if (fail) console.log("  FIX: cd newgroup && npm run build, then commit newgroup/dist/newgroup.bundled.mjs");
+if (fail) console.log("  FIX: (A)/(B): cd newgroup && npm run build (embed, then build) and commit src/release.mjs; (C): find what makes the build differ run to run");
 process.exit(fail ? 1 : 0);

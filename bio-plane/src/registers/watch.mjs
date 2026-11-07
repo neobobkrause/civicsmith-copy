@@ -53,7 +53,9 @@ export const watchMethods = {
   /** R32 (registerwatch, registerwatchstop): the watch of a stated interest switched on or off, the interest and its history staying. */
   watchSet({ interest, watch, author, viewer } = {}) {
     const by = str(author);
-    if (!this.memberOf(by)) return refusal("MACHINE_CANNOT_STATE_INTEREST", localize("registers.refusal.MACHINE_CANNOT_STATE_INTEREST", "an interest is stated by a member; a machine states none"), {});
+    if (!this.memberOf(by)) return watch === true
+      ? refusal("MACHINE_CANNOT_FOLLOW", localize("registers.refusal.MACHINE_CANNOT_FOLLOW", "a watch is switched on by a member; a machine watches nothing of its own accord"), {})
+      : refusal("MACHINE_CANNOT_STOP_REGISTER_WATCH", localize("registers.refusal.MACHINE_CANNOT_STOP_REGISTER_WATCH", "a watch is switched off by a member; a machine stops none"), {});
     const cur = this.one(`SELECT i.* FROM register_interests i WHERE i.interest_id=? AND i.version=(SELECT MAX(version) FROM register_interests WHERE interest_id=i.interest_id)`, Number(interest));
     if (!cur || cur.ended || !this.seesProject(cur.project, str(viewer) || by)) return noSuchProject(cur ? cur.project : null);
     if (watch === true && !autoWatchable(parse(cur.filter))) return refusal("INTEREST_NOT_WATCHABLE", localize("registers.refusal.INTEREST_NOT_WATCHABLE", "a filter naming a person or an organization is re-checked by a member's act, never watched unattended"), {});

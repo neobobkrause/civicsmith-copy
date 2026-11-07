@@ -10,7 +10,8 @@ const OGIS = "Office of Government Information Services";
 const FED = "5 U.S.C. § 552";
 const said = (p, key, vars) => assert.ok(text(p).includes(W(key, vars)), key);
 
-const lawsPick = (q) => q.doc.getElementById("req-law").querySelectorAll("option").map((o) => o.textContent.trim());
+/* R60 (T53): the laws are boxes, none ticked, each labelled with its level, name, citation and window */
+const lawsPick = (q) => q.doc.getElementById("req-law").querySelectorAll("label").map((o) => o.textContent.trim());
 /* The walker's path, by the member's own presses. `profiles` is the op that answers the place's facts: the real `instance-setup` or, while
    its `profiles()` omits the laws (instance-setup R12, INSTANCE-SETUP #27), `jurisdictions.combine`'s view in its place. */
 async function walk(profiles) {
@@ -49,9 +50,13 @@ async function walk(profiles) {
   assert.match(ACTN, /^ACTN-/);
   // the law: the profile's records laws, the Freedom of Information Act with its own level
   const lawAt = lawsPick(p).findIndex((t) => t.includes(FED));
-  await press(p, "actionlaws", { values: { "req-law": String(lawAt) }, reason: "federal" });
+  await press(p, "actionlaws", { values: { [`req-law-${lawAt}`]: true }, reason: "federal" });
   assert.deepEqual(last(p, "actionlaws").body, { target: ACTN, laws: [{ level: "federal", citation: FED }] });
-  assert.deepEqual(x.actions.actionRead({ id: ACTN, viewer: V("olive") }).governing_laws.laws, [{ level: "federal", citation: FED }], "stored");
+  // F-R31 (action-grammar R31, PR 396): governingLawsOf answers {level, citation, layer}, layer null when absent. Where the stored law carries
+  // the layer key it is null (no layer was named); where it does not (the provider before R31) the old shape stands.
+  const stored = x.actions.actionRead({ id: ACTN, viewer: V("olive") }).governing_laws.laws;
+  assert.deepEqual(stored, stored.map((l) => ("layer" in l ? { level: "federal", citation: FED, layer: null } : { level: "federal", citation: FED })), "stored, R31's shape where the layer key is present");
+  assert.deepEqual(stored.map(({ layer, ...l }) => l), [{ level: "federal", citation: FED }], "stored");
   // the text: a plain request prepares although the period, form and cost boxes are filled (the text names no blank for them)
   const boxes = { "req-from": "2024-01-01", "req-to": "2024-12-31", "req-form": "pdf", "req-cost": "$25" };
   await press(p, "communicationprepare", { values: { ...boxes, "send-text-0": "Please send me the records of how the Archives handled federal records requests in 2024." }, reason: "ready" });

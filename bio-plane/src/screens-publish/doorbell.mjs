@@ -14,31 +14,39 @@ export const DOORBELL = Object.freeze({
     const g = view.data.group && view.data.group.state === "ok" ? view.data.group.value : null;
     const group = g ? g.display_name || g.group || "" : "";
     const out = [];
+    /* R49, R67, R86 (DEC-479 (25)): the receipt leads with "What to keep" (only when the answer carried a reference), then the
+       reference, the fingerprint (shortened in the middle) and size, the pseudonym when a secret phrase was used or made, and the
+       made phrase, shown in this answer only; each only when the answer carried it */
+    const receipt = function (rc, sample) {
+      const sz = rc.bytes;
+      const size = sample ? rc.size : typeof sz !== "number" || !(sz >= 0) ? "" : sz < 1000 ? sz + " B" : sz < 1e6 ? (sz / 1e3).toFixed(1) + " kB" : (sz / 1e6).toFixed(1) + " MB";
+      const sha = String(rc.sha256 || "").replace(/^sha256:/, "");
+      return '<div data-receipt' + (sample ? "=\"sample\"" : "") + ">"
+        + (rc.reference ? '<h2 data-keep>' + cs.w("screen.doorbell.after.head") + '</h2><p data-reference>' + cs.w("screen.doorbell.reference", { reference: rc.reference }) + "</p>" : "")
+        + (sha ? '<p data-fingerprint>' + cs.w("screen.doorbell.receipt.fingerprint", { fingerprint: sha.length > 20 ? sha.slice(0, 8) + "…" + sha.slice(-8) : sha })
+        + '</p><p class="mk-small">' + cs.w("screen.doorbell.receipt.fingerprint.help") + "</p>" : "")
+        + (size ? '<p data-size>' + cs.w("screen.doorbell.receipt.size", { size: size }) + "</p>" : "")
+        + (rc.pseudonym ? '<p data-pseudonym>' + cs.w("screen.doorbell.receipt.pseudonym", { pseudonym: rc.pseudonym }) + '</p><p class="mk-small">' + cs.w("screen.doorbell.receipt.pseudonym.help") + "</p>" : "")
+        + (rc.secret ? '<p data-secret>' + cs.w("screen.doorbell.receipt.secret", { secret: rc.secret }) + '</p><p class="mk-note">' + cs.w("screen.doorbell.receipt.secret.note") + "</p>" : "") + "</div>";
+    };
     out.push('<div class="mk-setuphead"><span class="mk-grp">' + cs.esc(group) + "</span></div>");
     out.push(cs.title(group ? cs.w("screen.doorbell.heading", { group: group }) : null));
     out.push('<p class="mk-sub">' + cs.w("screen.doorbell.sub") + "</p>");
     out.push('<ul class="mk-list" data-what-happens>' + ["only", "reads", "phrase", "court"].map(function (k) { return "<li>" + cs.w("screen.doorbell.happens." + k) + "</li>"; }).join("") + "</ul>");
     if (view.ui.received) {
       out.push('<p class="mk-note" role="status" data-received>' + cs.w("screen.doorbell.received", { at: { html: cs.date(view.ui.received.at) } }) + "</p>");
-      // R49 (B420 1; DEC-387): the receipt the answer holds: the fingerprint (shortened in the middle) and size, the pseudonym when a
-      // secret phrase was used or made, and the made phrase, shown in this answer only; each only when the answer carried it.
-      const rc = view.ui.received, sz = rc.bytes;
-      const size = typeof sz !== "number" || !(sz >= 0) ? "" : sz < 1000 ? sz + " B" : sz < 1e6 ? (sz / 1e3).toFixed(1) + " kB" : (sz / 1e6).toFixed(1) + " MB";
-      const sha = String(rc.sha256 || "").replace(/^sha256:/, "");
-      out.push('<div data-receipt>' + (sha ? '<p data-fingerprint>' + cs.w("screen.doorbell.receipt.fingerprint", { fingerprint: sha.length > 20 ? sha.slice(0, 8) + "…" + sha.slice(-8) : sha })
-        + '</p><p class="mk-small">' + cs.w("screen.doorbell.receipt.fingerprint.help") + "</p>" : "")
-        + (size ? '<p data-size>' + cs.w("screen.doorbell.receipt.size", { size: size }) + "</p>" : "")
-        + (rc.pseudonym ? '<p data-pseudonym>' + cs.w("screen.doorbell.receipt.pseudonym", { pseudonym: rc.pseudonym }) + '</p><p class="mk-small">' + cs.w("screen.doorbell.receipt.pseudonym.help") + "</p>" : "")
-        + (rc.secret ? '<p data-secret>' + cs.w("screen.doorbell.receipt.secret", { secret: rc.secret }) + '</p><p class="mk-note">' + cs.w("screen.doorbell.receipt.secret.note") + "</p>" : "") + "</div>");
-      // R67 (I-20; DEC-384): the knock's reference, the `knockId` the doorbell answers (doorbell R11), so the knocker has something to keep; an answer without one draws the receipt as before
-      if (view.ui.received.reference) out.push("<h2>" + cs.w("screen.doorbell.after.head") + "</h2><p data-reference>" + cs.w("screen.doorbell.reference", { reference: view.ui.received.reference }) + "</p>");
+      out.push(receipt(view.ui.received, false));
     }
     out.push(cs.field("db-file", "screen.doorbell.file.label", { type: "file", help: "screen.doorbell.file.help" })
       + cs.field("db-note", "screen.doorbell.note.label", { area: true })
       + cs.field("db-secret", "screen.doorbell.secret.label", { type: "password", autocomplete: "off", help: "screen.doorbell.secret.help" })
       // R49 (B420 1): "Make one for me" is a tick beside the field; ticked, the field stays empty and the doorbell makes the phrase
       + cs.checks("db-make", "screen.doorbell.secret.label", [["make", "screen.doorbell.secret.make", false]]) + '<p class="mk-small">' + cs.w("screen.doorbell.secret.make.help") + "</p>"
-      + '<div class="mk-acts">' + cs.act("knock", { tone: "primary" }) + "</div>" + view.parts.said(view, "knock"));
+      + '<div class="mk-acts">' + cs.act("knock", { tone: "primary" }) + "</div>" + view.parts.said(view, "knock")
+      // R86 (DEC-479 (25)): before sending, the receipt is shown as a sample, folded under "What you get back", below the button;
+      // its values are left as "…" (no sample fact is drawn as if it were one)
+      + (view.ui.received ? "" : '<details class="mk-details" data-receipt-sample><summary>' + cs.w("screen.doorbell.preview.head") + "</summary>"
+        + receipt({ reference: "…", sha256: "…", size: "…", pseudonym: "…", secret: "…" }, true) + "</details>"));
     // R56 (C17; DEC-375): the knocker's own form for what may be published about them: the secret phrase used, the detail's
     // reference, who may be told, and agree or take back. It asks nothing about who they are.
     out.push(cs.sec("screen.doorbell.consent.heading", "<p>" + cs.w("screen.doorbell.consent.intro1") + " " + cs.w("screen.doorbell.consent.intro2") + "</p>"

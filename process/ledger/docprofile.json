@@ -1,0 +1,36 @@
+{
+  "id": "docprofile",
+  "title": "docprofile: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "docprofile/",
+    "build/requirements/docprofile.md"
+  ],
+  "tests": [
+    "docprofile/test/"
+  ],
+  "requirements": "build/requirements/docprofile.md",
+  "uses": [
+    "jurisdictions",
+    "site-profiles",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/docprofile.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

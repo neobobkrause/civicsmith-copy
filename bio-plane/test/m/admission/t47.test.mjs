@@ -116,12 +116,11 @@ test("R24 (credentials R71 (7)): the session read carries background=1 exactly w
 
 /* ---------------------------------------------------------------------------------------------------------------- */
 
-/* op-declarations R58's list, as R62 and R63 shape it (K3143, K3144) admission reads (`A.reauthAsked`), for the ops declared today */
-const R58 = { caseratify: null, publishat: null, publishatmove: null, ratify: null, docketpost: null, adminendorse: null,
-              adminremove: null, memberset: { field: "role", values: null }, memberadd: { field: "role", values: ["admin"] },
-              subscriptionsignin: { field: "step", values: ["start"] }, accountreferenceset: null, groupkeyset: null,
-              projectkeyset: null, projectsigninset: null };
-const ARG = { memberset: { role: "admin" }, memberadd: { role: "admin" }, subscriptionsignin: { step: "start" } };
+/* op-declarations R58's list, as R62 and R63 shape it (K3143, K3144) admission reads (`A.reauthAsked`), read live from
+   op-declarations' `REAUTH_ACTS` as it stands, never hand-listed (F1; K3268; op-grades R57: a retired op is in no table) */
+const R58 = O.REAUTH_ACTS;
+/* each entry's weighty argument, from its own shape: its first value, or (`values: null`, any value at all, R62) role admin */
+const ARG = Object.fromEntries(Object.entries(R58).filter(([, e]) => e?.field).map(([k, e]) => [k, { [e.field]: e.values ? e.values[0] : "admin" }]));
 
 test("R25: an act REAUTH_ACTS names, with its argument, is answered 403 with credentials' reauthDue answer (REAUTH_DUE) as it gives it unless that answer is null — refused outside the window, admitted inside it; asked of the store's reauthdue with the session's token in a header, never the address; control: an act not named, or named without its argument, is not asked", async () => {
   const open = hex64(), shut = hex64(), fOpen = hex64(), fShut = hex64();
@@ -132,9 +131,13 @@ test("R25: an act REAUTH_ACTS names, with its argument, is answered 403 with cre
     [open]: { ...member("ann", caps), administer: true, reauthUntil: later },
     [shut]: { ...member("ann", caps), administer: true, reauthUntil: null },
     [fOpen]: { ...founder(caps), reauthUntil: later }, [fShut]: { ...founder(caps), reauthUntil: gone } } });
+  /* (F1) every act REAUTH_ACTS names that has a spec is driven, counted against the table as it stands, not a literal */
   const declared = Object.keys(R58).filter((k) => OPS[k]);
-  assert.ok(declared.length >= 10, declared.join());
+  assert.ok(declared.length > 0, "REAUTH_ACTS names acts with a spec");
   let refusedCount = 0;
+  /* (F1, 17:20) the acts answered REAUTH_DUE are exactly the acts the table names with a spec, counted per act, never a
+     floor: an act op-declarations adds that this gate does not ask fails here by name */
+  const askedActs = new Set();
   for (const op of declared) for (const [inT, outT] of [[open, shut], [fOpen, fShut]]) {
     const extraBody = ARG[op] ?? {};
     /* inside the window: not REAUTH_DUE */
@@ -149,9 +152,11 @@ test("R25: an act REAUTH_ACTS names, with its argument, is answered 403 with cre
       const asked = env.calls.filter((c) => c.route === "reauthdue");
       assert.deepEqual(asked.map((c) => [c.ns, c.href, c.headers["x-bio-session"]]), [["bio", "http://do/reauthdue", outT]]);
       refusedCount++;
+      askedActs.add(op);
     } else assert.equal(outside.refusal?.body.reason, inside.refusal?.body.reason, `${op}: an earlier gate answers first`);
   }
-  assert.ok(refusedCount >= 8, String(refusedCount));
+  assert.deepEqual([...askedActs].sort(), [...declared].sort(), "every act REAUTH_ACTS names with a spec is asked the password");
+  assert.ok(refusedCount >= declared.length, String(refusedCount));
   /* order: after R11 (a session lacking the capability is told that first), and only for a session: a binding class
      the act admits is not asked (it has no password to give) */
   const bare = hex64();

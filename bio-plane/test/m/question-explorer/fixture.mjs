@@ -221,10 +221,14 @@ export function world({ gateOpen = true, testSet = TEST_SET, migrate = true, aiA
        nothing is admitted unlabelled. `w.servedOn` stands for the entry ai-runs would judge if it named one (its
        `partAdmitted(part, entry)`, ai-runs PR 96), with `w.gateRecords` the Gate 1 records held for it (`w.gate1`), so
        that the bar path R7 and R16 state can be driven at all; null (the default) is tranche's answer. */
-    partAdmitted(part) {
-      note("partAdmitted", { part });
-      return runRules.partAdmittedOn(testSet, part, { verifications: w.verifications, testBars: w.testBars, gateRecords: w.gateRecords },
-        { testInstance: w.testInstance, ...(w.servedOn !== null ? { entry_id: w.servedOn } : {}) });
+    partAdmitted(part, entry = null) {
+      /* (ai-runs PR 391, F1) the module now names the entry the paying account serves the run on; with none named,
+         `w.servedOn` stands for one as before. The Gate 1 records held are those of that entry (`w.gateRecords`). */
+      note("partAdmitted", entry === null ? { part } : { part, entry });
+      const on = entry !== null ? entry : w.servedOn;
+      return runRules.partAdmittedOn(testSet, part,
+        { verifications: w.verifications, testBars: w.testBars, gateRecords: w.gateRecords.filter((g) => g.entry_id === on) },
+        { testInstance: w.testInstance, ...(on !== null ? { entry_id: on } : {}) });
     },
   };
   const connections = {

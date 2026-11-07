@@ -1,0 +1,38 @@
+{
+  "id": "calibration",
+  "title": "calibration: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 4,
+  "paths": [
+    "bio-plane/src/calibration.mjs",
+    "bio-plane/src/calibration/",
+    "build/requirements/calibration.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/calibration/"
+  ],
+  "requirements": "build/requirements/calibration.md",
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/calibration.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

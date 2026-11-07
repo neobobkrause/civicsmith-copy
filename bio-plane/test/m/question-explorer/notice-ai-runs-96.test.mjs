@@ -40,7 +40,7 @@ test("notice ai-runs:96 (R3; ai-runs R9): the exploring run's open names its pay
   const asSent = await r.runs.open({ ...moved, run: "XPL-0" });
   assert.notEqual(asSent.code, "AI_RUN_CAPABILITY_UNAVAILABLE", JSON.stringify(asSent).slice(0, 300));
   /* The owner moved to a member of that world who holds an account: the explorer's open starts on ai-runs' real code. */
-  const x = await r.runs.open({ ...moved, run: "XPL-1", principalAi: "member:ann" });
+  const x = await r.runs.open({ ...moved, run: "XPL-1", principalAi: "member:ann", enabledBy: "member:ann" });
   assert.deepEqual([x.started, x.origin, typeof x.step], [true, "explore", "string"], JSON.stringify(x).slice(0, 400));
   assert.equal(r.row(`SELECT principal_ai FROM ai_runs WHERE run='XPL-1'`).principal_ai, "member:ann");
   /* Control: ai-runs refuses the old names whenever sent, so an explorer still sending them opens nothing. */

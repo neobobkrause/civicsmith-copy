@@ -127,16 +127,17 @@ test("R96 G13 a reading the plane pages (`next`) draws the first page of passage
   const p = await open(at, { plane: { reading: (r) => pages[r.query.after === undefined ? "" : r.query.after] } });
   const m = main(p);
   const said = () => main(p).querySelector('[data-reading="more"]');
-  assert.ok(said() && text(said()).includes(word("screen.document.passages.head") + ": 4 / 6"), "the first four of six, said");
+  /* screens-document-beta R61 (DEC-454): "Showing {n} of {m} passages" by its own row, and "More passages" apart from the page bar's "Next page" */
+  assert.ok(said() && text(said()).includes(word("screen.document.reading.firstn", { n: "4", m: "6" })), "the first four of six, said");
   assert.ok(text(m).includes("Line 3 of the long text.") && !text(m).includes("Line 4 of the long text."), "four passages are drawn");
   assert.equal(p.byOp("reading").filter((r) => r.query.after !== undefined).length, 0, "the rest is not read until she asks");
-  const box = (pg) => pg.doc.getElementById("document-read-more") && pg.doc.getElementById("document-read-more").querySelectorAll("label").find((l) => l.textContent.includes(word("document.read.next"))).querySelector("input");
+  const box = (pg) => pg.doc.getElementById("document-read-more") && pg.doc.getElementById("document-read-more").querySelectorAll("label").find((l) => l.textContent.includes(word("document.read.more"))).querySelector("input");
   assert.ok(box(p), "the more control");
   const b = box(p); b.checked = true; p.fire(b, "change");
   await p.settle();
   assert.deepEqual(p.byOp("reading").filter((r) => r.query.after !== undefined).map((r) => r.query.after), ["4"], "it asks op=reading after the cursor");
   assert.ok(text(main(p)).includes("Line 5 of the long text."), "and the next passages follow");
-  assert.ok(!said() || !text(said()).includes(word("screen.document.passages.head") + ":"), "at the end nothing is said to be cut");
+  assert.ok(!said() || !text(said()).includes(word("screen.document.reading.firstn", { n: "6", m: "6" })), "at the end nothing is said to be cut");
   assert.ok(!p.doc.getElementById("document-read-more"), "and no more control");
 });
 

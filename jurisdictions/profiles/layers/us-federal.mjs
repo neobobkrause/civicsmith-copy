@@ -294,6 +294,41 @@ export default {
       "basis": "D-182"
     }
   ],
+  "records_help": [
+    {
+      "law": "Freedom of Information Act",
+      "days": 20,
+      "extra_days": 10,
+      "extension_reasons": [
+        {
+          "reason": "the records must be searched for and collected from field facilities or other establishments separate from the office processing the request",
+          "citation": "5 U.S.C. § 552(a)(6)(B)(iii)(I)"
+        },
+        {
+          "reason": "a voluminous amount of separate and distinct records demanded in a single request must be searched for, collected and examined",
+          "citation": "5 U.S.C. § 552(a)(6)(B)(iii)(II)"
+        },
+        {
+          "reason": "the agency must consult another agency with a substantial interest in the request, or two or more of its own components",
+          "citation": "5 U.S.C. § 552(a)(6)(B)(iii)(III)"
+        }
+      ],
+      "citations": {
+        "answer": "5 U.S.C. § 552(a)(6)(A)(i)",
+        "extend": "5 U.S.C. § 552(a)(6)(B)(i)",
+        "assist": "5 U.S.C. § 552(a)(6)(B)(ii)",
+        "segregate": "5 U.S.C. § 552(b)",
+        "refuse_in_writing": "5 U.S.C. § 552(a)(6)(A)(i); 5 U.S.C. § 552(a)(6)(C)(i)",
+        "electronic": "5 U.S.C. § 552(a)(3)(B)",
+        "cost": "5 U.S.C. § 552(a)(4)(A)(ii); 5 U.S.C. § 552(a)(4)(A)(iv)",
+        "cost_electronic": "not provided by 5 U.S.C. § 552: no rule of its own for electronic records; read: (a)(3)(B), (a)(4)(A)(ii), (a)(4)(A)(iv)",
+        "inspect_photograph": "not provided by 5 U.S.C. § 552: no right to inspect or photograph requested records in person; read: (a)(2), (a)(3)(A), (a)(3)(B), (a)(4)(A)(ii), (a)(4)(A)(iv)",
+        "purpose": "5 U.S.C. § 552(a)(3)(A); 5 U.S.C. § 552(a)(4)(A)(ii)"
+      },
+      "status": "researched",
+      "basis": "2026-11-05 foia-text"
+    }
+  ],
   "weekend": {
     "days": [
       "sat",

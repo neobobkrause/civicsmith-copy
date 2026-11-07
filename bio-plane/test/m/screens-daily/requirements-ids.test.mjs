@@ -11,9 +11,9 @@ const read = (p) => readFileSync(new URL(p, ROOT), "utf8");
 const lines = (t) => t.split("\n").filter((l) => /^[ \t]*(?:[-*+][ \t]+|\d+\.[ \t]+)?\*\*[RF][\w.-]+\*\*/.test(l));
 const idOf = (l) => l.match(/\*\*([RF][\w.-]+)\*\*/)[1];
 
-const START_IDS = [...Array.from({ length: 35 }, (_, i) => `R${i + 1}`), ...Array.from({ length: 116 - 37 }, (_, i) => `R${i + 38}`), "F2"];
+const START_IDS = [...Array.from({ length: 35 }, (_, i) => `R${i + 1}`), ...Array.from({ length: 116 - 37 }, (_, i) => `R${i + 38}`), "F2", "F3"];
 const START_UNMET = ["R108", "R109", "R110", "R111", "R112", "R113", "R114", "R115", "R116", "F2"];
-// Marks this job struck, each with its own test (F2: ops-held.test.mjs).
+// Marks this job struck, each with its own test (F2: ops-held.test.mjs). F3 (attempt 3) was added met, with its tests in routed.test.mjs.
 const STRUCK = ["F2"];
 
 test("consolidation: the ids are the start commit's, in order, each once", () => {

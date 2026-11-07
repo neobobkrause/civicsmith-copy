@@ -38,9 +38,8 @@
  * project's (R71), or the group's API key, as `credentials.accountFor` answers
  * it, K1755) and the run's mode has turns to run: an API key goes to the
  * Messages API, the member's own sign-in (or a one-member project's, which is
- * that member's own) to Claude Code in a cloud session that `agent-runner`'s remote class creates on it, through
- * the Durable Object binding `REMOTE` (R35, R109); the local container is reached by no path, and until a member's
- * check has passed (R110, R111) a call on a sign-in is refused `ASSISTANT_REMOTE_NOT_READY`. A segment whose caller
+ * that member's own) reaches that member's own `agent-runner` instance through `RUNNER` (F2), and with no runner
+ * bound a call on a sign-in is refused `ASSISTANT_REMOTE_NOT_READY` (R110). A segment whose caller
  * supplied the judgements (`judgements` in the body, the stubbed path) runs no
  * turn. The answer's `turns_run` counts the turns that actually ran and
  * `judgement_source` says whose judgements the table applied (`model` or
@@ -56,7 +55,7 @@
  * picture the plane rendered, as a tool's result, and answers the AI's reading
  * of each page: no plane call. `POST /signin` (R66, R67, R81–R84)
  * relays one step of a member's own Claude sign-in to that member's own
- * remote instance on the same `REMOTE` binding and holds nothing of it:
+ * runner instance through `RUNNER` (F2; unbound, `RUNNER_NOT_CONFIGURED`), and holds nothing of it:
  * no plane call, no model turn; the token the sign-in mints passes to the door
  * once, only under its `hold` (R81), and comes back on each act as the `signin`
  * account's `secret` (R82). (T48; R87) `/ask`, `/run`, `/draft` and
@@ -158,8 +157,11 @@ import { handleDraft } from "./draft.mjs";
 import { handleSignin, doorTrace, TRACE_HEADER, MEMBER_REF_HEADER } from "./signin.mjs";
 /* R72–R75 — `POST /transcribe`, the AI's reading of a page's picture the plane rendered, in its own file. */
 import { handleTranscribe } from "./transcribe.mjs";
-/* R109, R110 — the one road to a runner (`env.REMOTE`), and whether it may be taken yet. */
-import { remoteOf, remoteVersion, remoteReady } from "./remote.mjs";
+/* F2 — the member's own runner, `RUNNER` when bound (remote.mjs). */
+import { remoteOf } from "./remote.mjs";
+/* F3 (agent-model R35, R53) — the circuit kept around each turn, and its health read. */
+import { circuitDeps, circuitRun, handleHealth, CircuitState } from "./circuit.mjs";
+export { CircuitState };
 /* Plan rule 6 — a member-facing sentence is read by key, never written here. */
 import { word, localize } from "../../bio-plane/src/setup-words/index.mjs";
 
@@ -275,6 +277,8 @@ export const SURFACE = {
   /* R34 (T42; N832): the AI's reading of the pages the plane rendered (R72). */
   transcribe: { method: "POST", mutating: false },
   version: { method: "GET",  mutating: false },
+  /* F3 (agent-model R35; ai-runs R97): the health of an (account, entry) path, read over the circuit handle. */
+  health:  { method: "GET",  mutating: false },
 };
 
 /* --------------------------------------------------------------- THE ONE CALL
@@ -550,7 +554,7 @@ async function segmentAnswer(env, checked, body, whoami, traced, deadline, prefl
   /* R58 — MODEL TURNS RUN, through `agent-model`, when the account that serves the member's act arrived (it always has,
      past R6) and the caller supplied no judgements; `judgements` in the body is the stubbed path, in which no turn is taken. The
      reference is handed to `agent-model` for the calls it serves and kept by nothing here (R33, R36). A sign-in's
-     turns reach `agent-runner` through the Container Durable Object binding (R35), passed as it is bound. */
+     turns go to the member's own runner, `RUNNER` (F2); with none bound the gate (R110) has refused a sign-in before this. */
   const bytesBound = Number(env.MAX_SEGMENT_BYTES) > 0 ? Number(env.MAX_SEGMENT_BYTES) : DEFAULT_MAX_SEGMENT_BYTES;
   const meter = segmentMeter({ turnsBound: requested, bytesBound });
   const modelMode = !Array.isArray(body.judgements);
@@ -558,6 +562,14 @@ async function segmentAnswer(env, checked, body, whoami, traced, deadline, prefl
     ? modelHalf({ reference: (await cascadeToken(account)).reference, runner: remoteOf(env), meter,
                   suggestions: account.suggestions, traced })
     : null;
+  /* F3: the agent-model circuit of the account's path, admitted before the segment's first turn and told each
+     conversation's outcome; a pair it does not admit ends the segment before any step, the run as it was (R57). */
+  const circuit = model && !preflight ? await circuitRun(env, account) : null;
+  if (circuit && !circuit.admitted)
+    return { response: refusal("AI_PATH_NOT_READY",
+      localize("agent-worker.circuit.the_ai_path_is_resting", "the AI path of this account is resting after repeated failures, so no model turn was taken and the run is as it was; it is resumable once the path is tried again."), 503,
+      { run_id: runId, class: circuit.class, retry_at: circuit.retry_at }), end: null };
+  if (circuit) circuit.watch(model);
 
   const drive = await driveHarness(STEPS_HOST, env, {
     runId, store, credential, account, model, preflight,
@@ -565,6 +577,7 @@ async function segmentAnswer(env, checked, body, whoami, traced, deadline, prefl
     maxSteps: Number(body.max_steps) > 0 ? Math.min(Number(body.max_steps), MAX_STEPS) : MAX_STEPS,
     deadline, progress,
   });
+  if (circuit) await circuit.settle();
   if (drive.ready) return { ready: true };
   /* R91: a refusal that ended the segment is answered as it always was, and its code ends the segment's `segment_end`.
      One before the first step (R8–R11, R48: the run, its payer, its pack, its log) is a segment that never started, and
@@ -671,22 +684,18 @@ async function segmentAnswer(env, checked, body, whoami, traced, deadline, prefl
    that window is invisible to both. A verification must establish which build
    ANSWERED. This is how this member answers that question about itself. */
 async function handleVersion(env) {
-  return json({ ok: true, name: "agent-worker", version: env.VERSION || "0.0.0", model_turns: MODEL_TURNS,
-                runner: (await remoteVersion(env)).answered });
+  return json({ ok: true, name: "agent-worker", version: env.VERSION || "0.0.0", model_turns: MODEL_TURNS });
 }
 
-/** R110 — THE GATE: until the remote path works on a copy, that copy's assistant does not run (K3610). A member's own
- *  sign-in is the only account that reaches `REMOTE`; for one, the call proceeds only when the remote class answers its
- *  version and the member's last `check` (R111) passed at that version: otherwise 503 `ASSISTANT_REMOTE_NOT_READY`,
- *  its `detail` the record's word (DEC-301; R64), `why` naming `absent`, `silent` or `unchecked`. An API-key account
- *  is unchanged (it never reaches `REMOTE`; K3347). Null when the call may go on. Made after R1–R8's shape checks and
- *  before any plane write, model call or segment, so a refused `/run` leaves its run as it was (R57). */
-async function assistantReady(env, account) {
-  if (account?.kind !== "signin") return null;
-  const got = await remoteReady(env, account.member);
-  if (got.ready) return null;
+/** R110, F2 — THE GATE. A member's own sign-in reaches the assistant only through that member's own `agent-runner`
+ *  instance (`remote.mjs`). With `RUNNER` bound the call goes on to it; unbound, a call on a sign-in is refused 503
+ *  `ASSISTANT_REMOTE_NOT_READY`, its `detail` the record's word (DEC-301; R64), `why` `absent`. An API-key account is
+ *  unchanged (K3347). Null when the call may go on. Made after R1–R8's shape checks and before any plane write, model
+ *  call or segment, so a refused `/run` leaves its run as it was (R57). */
+async function assistantReady(env, account, runner = remoteOf(env)) {
+  if (account?.kind !== "signin" || runner) return null;
   return refusal("ASSISTANT_REMOTE_NOT_READY", word("refusal.ASSISTANT_REMOTE_NOT_READY"), 503,
-                 { capability: "unavailable", why: got.why });
+                 { capability: "unavailable", why: "absent" });
 }
 
 /* R91 (R085-8; K3477; WALK-085 F2) — THE SEGMENT DRIVER: one Durable Object per run (`SEGMENTS`, named by the run id), so
@@ -740,7 +749,8 @@ export class SegmentDriver {
 /* R110, R111 (BOB's K3693) — THE MEMBER'S CHECK RECORD, in this member's own storage: one instance per member (`CHECKS`),
    holding the version at which that member's last `check` passed and the time, and nothing else (R36). `GET /check`
    answers `{ok: true, checked, version}`; `POST /check` with `{version}` records a pass (R111's `check` step makes it).
-   Only the gate reads it (`remoteReady`); it is not a store of the record and writes nothing of it. */
+   No path reads it today (no `check` step runs, R111 is conditional); it is not a store of the record and writes nothing
+   of it. */
 export class CheckRecord {
   constructor(state) { this.state = state; }
 
@@ -767,6 +777,13 @@ const ASK_DEPS = { refusal, json, askPlane, planeAnswer, publishedPack, accountO
                    loadableLayers, loadLayer, converse, segmentMeter, NAMESPACES, DEFAULT_MAX_SEGMENT_BYTES,
                    assistantReady };
 
+/** F5 (coordinator ruling 5 Nov 20:18, restated 6 Nov 03:33) — THE DRAFT PATHS' GATE. `agent-drafts`' draft paths
+ *  call `converse` naming no runner (its PR 570), so a sign-in there would reach the model with no runner even while
+ *  `RUNNER` is bound. Until they name one, `/draft` judges a sign-in as unbound: refused `ASSISTANT_REMOTE_NOT_READY`
+ *  (`why` `absent`) before any model call. An API-key account is unchanged; `/ask`, `/run`, `/transcribe` and
+ *  `/signin` keep the bound runner. */
+const DRAFT_DEPS = { ...ASK_DEPS, assistantReady: (env, account) => assistantReady(env, account, null) };
+
 /* R58 — ONE TRUTH FOR MODEL TURNS, the sentence this member states about itself on `GET /version`, and the same one its
    header and its `/run` answer state. */
 const MODEL_TURNS = "run through agent-model exactly when the Claude account that serves the member's act (the "
@@ -778,12 +795,14 @@ export default {
     const url = new URL(req.url);
     const path = url.pathname.replace(/^\/+/, "");
     if (req.method === "GET" && path === "version") return await handleVersion(env);
+    if (req.method === "GET" && path === "health") return await handleHealth(url, env, { json });
     if (req.method === "POST" && (path === "run" || path === "")) return handleRun(req, env);
-    if (req.method === "POST" && path === "ask") return handleAsk(req, env, ASK_DEPS);
-    if (req.method === "POST" && path === "draft") return handleDraft(req, env, ASK_DEPS);
+    /* F3: each request's model paths call `converse` around the circuit (`circuitDeps`). */
+    if (req.method === "POST" && path === "ask") return handleAsk(req, env, circuitDeps(env, ASK_DEPS));
+    if (req.method === "POST" && path === "draft") return handleDraft(req, env, circuitDeps(env, DRAFT_DEPS));
     if (req.method === "POST" && path === "signin") return handleSignin(req, env, ASK_DEPS);
-    if (req.method === "POST" && path === "transcribe") return handleTranscribe(req, env, ASK_DEPS);
-    return refusal("UNKNOWN", localize("agent-worker.index.post_run_post_ask_post", "POST /run, POST /ask, POST /draft, POST /signin, POST /transcribe or GET /version only."),
+    if (req.method === "POST" && path === "transcribe") return handleTranscribe(req, env, circuitDeps(env, ASK_DEPS));
+    return refusal("UNKNOWN", localize("agent-worker.index.post_run_post_ask_post_2", "POST /run, POST /ask, POST /draft, POST /signin, POST /transcribe, GET /version or GET /health only."),
       404);
   },
 };

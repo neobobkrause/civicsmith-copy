@@ -140,6 +140,13 @@ export const members = {
             if (c) p.push(`<p>${W(S + "status.to." + next, { handle: label })}</p>${c}`);
           }
           if (m.role === "admin" && m.status === "proposed") { const c = cs.act("adminendorse", { data: { member: id } }); if (c) p.push(`<p>${W(S + "endorse.what", { handle: label })}</p>${c}`); }
+          /* R93 (3) (K5563; `member-roster` R89): a waiting proposal is cancelled by the founder or by the administrator who proposed it
+             (`invited_by`), and drawn to no one else; it sends `{memberId}` and asks no reason. Its label is held under the owed act's key
+             in `words.json`, as the registry still marks it owed (`owed:adminproposalcancel K5563`). */
+          if (m.role === "admin" && m.status === "proposed" && (me.member === "admin" || (typeof me.member === "string" && me.member !== "" && m.invited_by === me.member))) {
+            const c = cs.act("adminproposalcancel", { label: "act.owed_adminproposalcancel.label.members", data: { member: id } });
+            if (c) p.push(c);
+          }
           // the founder cannot be removed (membership R64): no act is drawn on her row
           // C90: not drawn where the plane cannot carry a removal (two administrators: no majority leaves the one facing it out); the
           // section below says why. A count that was not read hides nothing.
@@ -375,6 +382,9 @@ export const members = {
       // the public line is not kept in the field once it is registered
       done(view, answer, cs) { cs.fill("ms-line", ""); } },
     { op: "invitewithdraw", rereads: ["roster"],
+      send(view, el) { return { body: { memberId: el.dataset.member } }; } },
+    // R93 (3): a waiting proposal withdrawn, no reason asked; the roster and the recovery count read again
+    { op: "adminproposalcancel", rereads: ["roster", "recovery"],
       send(view, el) { return { body: { memberId: el.dataset.member } }; } },
     { op: "websitekeycreate", rereads: [],
       ready(view, el, cs) { const dailyCap = Number(cs.value("mw-cap")); if (!(Number.isInteger(dailyCap) && dailyCap >= 1)) return { refuse: "screen.members.website.nocap" }; },

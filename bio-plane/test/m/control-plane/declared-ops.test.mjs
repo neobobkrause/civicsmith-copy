@@ -115,10 +115,29 @@ test("R112 (K4210) clockpropose: its target and rule are required, each missing 
     refusedNaming: named({ target: ["NO_TARGET"], rule: ["NO_SUCH_RULE"] }), values: { target: A, rule: "records_answer" }, same: sameCode });
 });
 
-/* the declaration is signin-door's (R6 there, K5052 (4)), read from its own DECLARED_OPS; it declares no `fields` yet, so this is RED BY NAME until signin-door adds them (REPORTed) */
-test("R112 (K4210) subscriptionsignin: its step is required, a step agent-worker does not judge refused naming it by BAD_STEP; a field outside accepts is dropped", async () => {
-  await declaredOpHolds({ op: "subscriptionsignin", declaration: SIGNIN_DECLARED.subscriptionsignin, call: signinOf,
-    refusedNaming: named({ step: ["BAD_STEP"] }), values: { step: "signout" }, same: sameSignin });
+/* the declaration is signin-door's (R6 there, K5052 (4)), read from its own DECLARED_OPS. F1 (coordinator 08:25): signin-door PR 460
+   retires that entry under op-grades R57, so this test holds with or without it: with it, the op holds its declaration through the
+   whole door; without it, this module declares no row of its own in its place, and once no spec is left the door refuses the op as
+   one with no spec (R2), nothing sent to the runner. */
+const signinHolds = async (declared, ops) => {
+  assert.equal(DECLARED_OPS.subscriptionsignin, undefined, "control-plane's owner map holds no row of its own for subscriptionsignin");
+  const declaration = declared?.subscriptionsignin;
+  if (declaration) {
+    await declaredOpHolds({ op: "subscriptionsignin", declaration, call: signinOf,
+      refusedNaming: named({ step: ["BAD_STEP"] }), values: { step: "signout" }, same: sameSignin });
+    return "declared";
+  }
+  if (ops.subscriptionsignin) return "spec only";
+  const r = await signinOf({ step: "signout" });
+  assert.deepEqual([r.status, r.code], [400, "UNKNOWN_OP"]);
+  return "retired";
+};
+
+test("R112 (K4210), F1: subscriptionsignin, while signin-door declares it: its step is required, a step agent-worker does not judge refused naming it by BAD_STEP; a field outside accepts is dropped; with the entry retired (signin-door PR 460) the test still holds", async () => {
+  assert.equal(await signinHolds(SIGNIN_DECLARED, OPS), SIGNIN_DECLARED.subscriptionsignin ? "declared" : OPS.subscriptionsignin ? "spec only" : "retired");
+  /* without the entry, as PR 460 leaves it: the same check passes over signin-door's declarations less subscriptionsignin */
+  const { subscriptionsignin: _gone, ...without } = SIGNIN_DECLARED;
+  assert.notEqual(await signinHolds(without, OPS), "declared");
 });
 
 test("R116, R112 (K4317) interfacewords: it requires nothing (the viewer's own language is the default), `language` and `v` are accepted, a malformed language is refused naming it, and a field outside accepts is dropped", async () => {

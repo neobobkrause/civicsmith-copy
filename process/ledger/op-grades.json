@@ -7,7 +7,13 @@
     "bio-plane/src/op-grades/marks.mjs",
     "bio-plane/src/op-grades/declared.mjs",
     "build/requirements/op-grades.md",
-    "docs/requirements-notes/op-grades.md"
+    "docs/requirements-notes/op-grades.md",
+    "bio-plane/src/op-grades/t33.mjs",
+    "bio-plane/src/op-grades/t34.mjs",
+    "bio-plane/src/op-grades/t35.mjs",
+    "bio-plane/src/op-grades/t36.mjs",
+    "bio-plane/src/op-grades/t37.mjs",
+    "bio-plane/src/op-grades/t41.mjs"
   ],
   "tests": [
     "bio-plane/test/m/op-grades/"
@@ -39,6 +45,6 @@
   ],
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-05T02:03:03Z"
+    "at": "2026-11-07T18:32:51Z"
   }
 }

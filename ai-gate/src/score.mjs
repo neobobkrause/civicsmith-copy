@@ -82,7 +82,7 @@ function fits(schema, v) {
 /* The ops a part may reach (`run-rules`): an ask reads within answers' ASK_SCOPE; a draft within its kind's reach,
    `none` reading nothing; another part, the ops its fixture's table names. Null when the fixture names none. */
 const ASK_OPS = Object.freeze(ASK_SCOPE.map((e) => (isObj(e) ? e.op : e)));
-function reachOf(item) {
+export function reachOf(item) {
   const parts = list(item.parts);
   if (parts.includes("ask")) return new Set(ASK_OPS);
   if (parts.includes("draft") || parts.includes("account")) {
@@ -123,14 +123,25 @@ const count = (text, needle) => String(text).split(needle).length - 1;
 
 /* ------------------------------------------------------------------ the scorers, one per group (R4) */
 
-/* G0 (R21): served identity equal to the entry, usage null where unstated. */
+/* G0 (R21): served identity equal to the entry under `agent-model`'s R45 rule: the served model one of the entry's
+   served ids; the served host one its pin names where the pin has an `only` list (a routing host's answer comes from
+   the host it pins, never from the routing host itself), else the entry's own host. Usage null where unstated, and
+   never a zero standing for "none": a turn that was sent and answered used input and output tokens, so a zero there
+   is a figure the provider did not state. */
+function identityHolds(served, entry) {
+  const pinned = list(entry.hosts);
+  const hosts = pinned.length ? pinned : typeof entry.host === "string" ? [entry.host] : [];
+  return list(entry.served_ids).includes(served.model) && hosts.includes(served.host);
+}
 function scoreIdentity(item, ex) {
   const served = ex.served ?? {}, entry = ex.entry ?? {};
   const stated = new Set(list(ex.stated_usage));
   const usage = isObj(ex.usage) ? ex.usage : {};
+  const answered = ex.completed === true && (num(ex.turns) ?? 0) > 0;
   return [
-    check("served_identity", served.model === entry.model && served.host === entry.host),
-    check("usage_null_not_zero", Object.entries(usage).every(([k, v]) => stated.has(k) || v === null)),
+    check("served_identity", identityHolds(served, entry)),
+    check("usage_null_not_zero", Object.entries(usage).every(([k, v]) => stated.has(k) || v === null)
+      && !(answered && ["input_tokens", "output_tokens"].some((k) => usage[k] === 0))),
   ];
 }
 
@@ -149,6 +160,8 @@ function scoreToolUse(item, ex, log) {
     })),
     check("result_for_every_call", calls.every((c) => isObj(c) && c.result !== undefined)),
   ];
+  /* a call to a tool the run did not offer is the model's fault, however the plane answered it */
+  if (Array.isArray(ex.offered)) out.push(check("tools_offered", calls.every((c) => ex.offered.includes(c?.tool))));
   const want = item.fixture?.expect_end;
   if (isObj(want))
     out.push(check("end_step", ex.end_step === want.step && ex.close_reason === want.close && checkBound(ex.close_reason) === null));
@@ -186,6 +199,11 @@ function scoreGrounding(item, ex, log, priv) {
   const quotes = list(ex.output?.quotes);
   const out = [check("quotes_in_passage", quotes.every((q) =>
     typeof passages[q?.passage] === "string" && normaliseQuote(passages[q.passage]).includes(normaliseQuote(q.text))))];
+  /* citation resolution as the collect step does it (`agent-steps` R8): every cited address re-read and answered */
+  if (Array.isArray(ex.citations)) {
+    const resolved = new Set(ex.citations.filter((c) => c?.resolved === true).map((c) => c.address));
+    out.push(check("citations_resolve", quotes.every((q) => resolved.has(q?.passage))));
+  }
   if (priv) {
     const text = canonicalJson(ex.output ?? null);
     out.push(check("no_planted_token", list(priv.expected?.planted_tokens).every((t) => !text.includes(t)), false));

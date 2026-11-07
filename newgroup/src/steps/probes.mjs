@@ -2,6 +2,8 @@
  * whether storage is on, the buckets and the workers.dev address. */
 import { cf, special } from "./api.mjs";
 import { uploadForm } from "./bytes.mjs";
+import { word } from "../../../bio-plane/src/setup-words/index.mjs";
+import { JURISDICTIONS } from "./bindings.mjs";
 
 async function scriptExists(token, acct, slug) {
   try { await cf(token, `/accounts/${acct}/workers/scripts/${slug}/settings`); return true; }
@@ -53,11 +55,30 @@ async function storageEntitlement(token, acct) {
 /* Both buckets or neither: the fence is a pair. R2's BucketConflict (10073) counts as created, so a re-run after a mid-flight
    failure converges instead of failing on its own earlier success. The names are the copy's own (R2, `namesFor`). Returns the
    buckets that were already there (R6: what an earlier run left). */
-async function ensureBuckets(token, acct, names) {
+/* R47 (T53; N1273, K5440, K5441): with `opts.jurisdiction` (one of `JURISDICTIONS`, R46) both buckets are created in that
+   jurisdiction (Cloudflare's `cf-r2-jurisdiction` header), and a bucket Cloudflare answers as created anywhere else fails the act:
+   the caller creates the room only after this, so a refusal leaves no room. A jurisdiction off the list is refused before any
+   call. R2's bucket jurisdiction cannot be changed afterwards, so nothing here ever moves one. The coded failures are identifiers
+   (K3971); the sentence is a stand-in, `installer.fleet.why.program`, the row owed `installer-steps.storage.jurisdiction`. */
+export const BUCKET_JURISDICTION = "BUCKET_JURISDICTION";
+const r2Jurisdiction = (j) => {
+  if (j == null) return null;
+  if (!JURISDICTIONS.includes(j)) throw Object.assign(new Error(word("installer.fleet.why.program")), { code: BUCKET_JURISDICTION, jurisdiction: j });
+  return j;
+};
+/* R47: where an S3 client reads a bucket of the copy: the jurisdiction's own endpoint, or the account's. */
+const r2Endpoint = (acct, jurisdiction) => `${acct}.${r2Jurisdiction(jurisdiction) ? `${jurisdiction}.` : ""}r2.cloudflarestorage.com`;
+async function ensureBuckets(token, acct, names, opts = {}) {
+  const j = r2Jurisdiction(opts.jurisdiction);
+  const headers = j ? { "cf-r2-jurisdiction": j } : undefined;
   const there = [];
   for (const name of [names.captures, names.published]) {
-    try { await cf(token, `/accounts/${acct}/r2/buckets`, { method: "POST", body: JSON.stringify({ name }), idem: true }); }
-    catch (e) { if (e.code !== R2_BUCKET_CONFLICT) throw e; there.push(name); }
+    let made;
+    try { made = await cf(token, `/accounts/${acct}/r2/buckets`, { method: "POST", body: JSON.stringify({ name }), idem: true, ...(headers ? { headers } : {}) }); }
+    catch (e) { if (e.code !== R2_BUCKET_CONFLICT) throw e; there.push(name); continue; }
+    /* Cloudflare answers the bucket with its jurisdiction; one stated and not the one asked is a bucket in the wrong place */
+    if (j && made && typeof made.jurisdiction === "string" && made.jurisdiction !== j)
+      throw Object.assign(new Error(word("installer.fleet.why.program")), { code: BUCKET_JURISDICTION, jurisdiction: j, bucket: name, said: made.jurisdiction });
   }
   return there;
 }
@@ -97,4 +118,4 @@ const offerSubdomain = async (token, acct, slug) => {
   const { sub, proposed } = await addressState(token, acct, slug);
   return { sub, candidates: proposed ? [proposed] : [] };
 };
-export { scriptExists, PLAN_PROBE, establishPlan, storageEntitlement, ensureBuckets, addressState, registerSubdomain, offerSubdomain, ensureSubdomain };
+export { scriptExists, PLAN_PROBE, establishPlan, storageEntitlement, ensureBuckets, r2Endpoint, addressState, registerSubdomain, offerSubdomain, ensureSubdomain };

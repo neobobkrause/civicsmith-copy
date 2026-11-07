@@ -29,7 +29,8 @@ function blocks(text) {
 const MARK = "*(not yet met";
 const START_UNMET = ["R20", "R136", "R137", "R138", "R139", "R140", "R141", "R142", "R143", "R144", "R145", "R146", "R147", "R148", "R149", "R150", "R151"];
 /* marks this branch met, each struck as " *(not yet met: T53)*" removed */
-const STRUCK = { R20: " *(not yet met: T53)*" };
+/* R138 and R141 struck by interface-shell-t53 attempt 2 (7 Nov; ledger paths widened, PR 851) */
+const STRUCK = { R20: " *(not yet met: T53)*", R138: " *(not yet met: T53)*", R141: " *(not yet met: T53)*" };
 const START_BLOCKS = {
   R1: "a5090be8e683b94c922c748e173c267036f3d774b9360b4fb2891bfa78eb02b0",
   R2: "1d65572987784ee80c4bf337410b563979942aed214f2f565a8497dd0fe112c4",
@@ -182,7 +183,12 @@ const START_BLOCKS = {
   R126: "e2d99cd995732343ca407932a63ebebb4d1201c6c23f687f1e094b4d72249b36",
   R127: "669a7c09febf96e206cd0ba4cee1a9da4844fe23ab111ed0c9e51897f54a5c9a",
 };
-const REQ = read("build/requirements/interface-shell.md");
+/* Attempt 8 (coordinator rulings 5 Nov 2026 17:20, 18:05): R73-R111, R117-R120, R122-R125 and R128-R135 live in
+   interface-shell-t50-t51.md and R136-R151 in interface-shell-t53.md, removed from the parent with one pointer line each.
+   The R blocks are read across the parent and its two split files: same hashes, same id set, same unmet set. */
+const PARENT = read("build/requirements/interface-shell.md");
+const SPLITS = { "interface-shell-t50-t51.md": read("build/requirements/interface-shell-t50-t51.md"), "interface-shell-t53.md": read("build/requirements/interface-shell-t53.md") };
+const REQ = [PARENT, ...Object.values(SPLITS)].join("\n\n");
 const NOTES = read("docs/requirements-notes/interface-shell.md");
 
 const isR = (id) => id.startsWith("R");
@@ -232,4 +238,22 @@ test("the moved text is in the notes word for word: the status, the size, the Us
   for (const head of ["## Status", "## Size", "## Uses", "## Satisfies", "## Suggestions"]) assert.ok(NOTES.includes(head), head);
   for (const l of NOTES.split("\n").filter((x) => x.startsWith("- ") || x.startsWith("**Status**") || x.startsWith("**Size"))) assert.equal(REQ.includes(l), false, "moved, not copied: " + l.slice(0, 60));
   assert.match(NOTES, /^\*\*Status\*\* · Fix round 10 \(T51; K5046 \(c\), \(d\)\)/m);
+});
+
+const SPLIT_IDS = {
+  "interface-shell-t50-t51.md": [[73, 111], [117, 120], [122, 125], [128, 135]],
+  "interface-shell-t53.md": [[136, 151]],
+};
+const ids = (runs) => runs.flatMap(([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => "R" + (a + i)));
+
+test("the split: each split file holds exactly its runs of R ids and no F id; the parent holds none of them, names each split file in one pointer line, and is under the 70000-byte cap", () => {
+  const parent = [...blocks(PARENT).keys()];
+  for (const [file, runs] of Object.entries(SPLIT_IDS)) {
+    const want = ids(runs);
+    assert.deepEqual([...blocks(SPLITS[file]).keys()], want, file + " holds its runs, in order");
+    for (const id of want) assert.equal(parent.includes(id), false, id + " removed from the parent");
+    assert.equal(PARENT.split("\n").filter((l) => l.includes("`build/requirements/" + file + "`")).length, 1, "one pointer line to " + file);
+  }
+  for (const h of ["#### T50 (T50-27)", "#### T51 (T51-113)", "#### T51 fix round 8"]) assert.equal(PARENT.includes(h), false, h + " moved with its run");
+  assert.ok(Buffer.byteLength(PARENT) < 70000, "parent under the cap");
 });

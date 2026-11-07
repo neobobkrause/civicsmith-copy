@@ -3,7 +3,7 @@
    and `roles(kind)` answer them frozen, for `affordances` to publish. */
 
 /* Structure: the bodies and offices, who funds and contracts, who acts for and answers for whom (K1441, K1470). */
-import { word } from "../setup-words/index.mjs";
+import { word, localize } from "../setup-words/index.mjs";
 
 export const STRUCTURE_KINDS = Object.freeze(["part_of", "post_in", "holds", "reports_to", "oversees", "appoints",
   "seat_on", "funds", "contracts_with", "acts_for", "responsible_for", "custodian_of", "successor_of"]);
@@ -63,3 +63,16 @@ export function lineKindOf(ck) {
   }
   return LINE_KINDS.includes(rest) && rest !== "holds" ? { kind: rest, capacity: null } : null;
 }
+
+/* F1 (citation R28; registers R30): the states of the register row a line's passage names by its content id, as
+   `content.cellsAt` answers it. `removed` is a row taken under K1493: the line stands, not withdrawn and counted as
+   before, and shows no byte of the row. `unread` is any other answer that holds no cells (a stale reading, a row not
+   held); `held` answers the cells. The words are new and await review (words-unreviewed). */
+export const ROW_STATES = Object.freeze(["held", "removed", "unread"]);
+export const ROW_STATE_LABELS = Object.freeze({
+  held: () => localize("lines.row.held", "the register row this line cites is held"),
+  removed: () => localize("lines.row.removed", "the register row this line cites was removed from the record; the line stands, and none of the row is shown"),
+  unread: () => localize("lines.row.unread", "the register row this line cites could not be read"),
+});
+/** The members' words for a row state, by its key. */
+export const rowStateLabel = (state) => ROW_STATE_LABELS[state]();

@@ -36,6 +36,6 @@
   "prior_work": "Meet every unmet mark in build/requirements/membership.md (R154), each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-04T22:20:43Z"
+    "at": "2026-11-05T23:42:20Z"
   }
 }

@@ -19,8 +19,13 @@ const START_IDS = ["R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R77
   "R24","R44","R45","R46","R48","R49","R25","R32","R50","R51","R52","R53","R54","R55","R59","R60","R61","R62","R63","R64","R79",
   "R65","R66","R67","R68","R69","R70","R71","R72","R73","R74","R83","R84","R85","R86","R87","R88","R89","R90","R91","R92","R93",
   "R94","R95","R96","R97","R98","R99","R100","R101","R102","R103","R104","R106","R107","R108","R109","R110","R111","R112","R113",
-  "R114","R115","R26","R27","R28","R29","R30","R31","R41","R42","R75","R43","R105"];
+  "R114","R115","F1","R26","R27","R28","R29","R30","R31","R41","R42","R75","R43","R105"];
 const START_UNMET = { R107: "T53", R108: "T53", R109: "T53", R110: "T53", R111: "T53", R112: "T53", R113: "T53", R114: "T53", R115: "T53" };
+/* Since the start commit (attempt 2, 5 Nov 2026): F1, the coordinator's found mark for screens-ai (17:24), added after R115
+   and met with it; R115 and F1 are met by readiness.test.mjs, so neither carries a mark. */
+const ADDED = new Set(["F1"]);
+/* Attempt 4 (7 Nov 2026): R107-R109 and R111-R114 met by t53.test.mjs and seeds.test.mjs (R112), their marks struck. */
+const MET_SINCE = new Set(["R115", "R107", "R108", "R109", "R111", "R112", "R113", "R114"]);
 /* The moved ids and their new ids: instance-updates R1-R7 and instance-reports R1-R21, each in the order of the old ids. */
 const MOVED = {
   R88: "instance-updates:R1", R89: "instance-updates:R2", R90: "instance-updates:R3", R91: "instance-updates:R4",
@@ -37,10 +42,11 @@ test("instance-setup's requirement ids and their order are the start commit's, n
 });
 
 test("every R line not moved is kept byte for byte, and the unmet marks are the start commit's less the moved ones', which their new modules now carry (R110's)", () => {
-  const kept = idLines(FILE).filter((l) => !MOVED[idOf(l)]);
+  const kept = idLines(FILE).filter((l) => !MOVED[idOf(l)] && !ADDED.has(idOf(l)))
+    .map((l) => (MET_SINCE.has(idOf(l)) ? `${l} *(not yet met: ${START_UNMET[idOf(l)]})*` : l));
   assert.equal(createHash("sha256").update(kept.join("\n")).digest("hex"), KEPT_SHA);
   const unmet = Object.fromEntries(idLines(FILE).filter((l) => unmetOf(l)).map((l) => [idOf(l), unmetOf(l)]));
-  const expected = Object.fromEntries(Object.entries(START_UNMET).filter(([id]) => !MOVED[id]));
+  const expected = Object.fromEntries(Object.entries(START_UNMET).filter(([id]) => !MOVED[id] && !MET_SINCE.has(id)));
   assert.deepEqual(unmet, expected);
 });
 

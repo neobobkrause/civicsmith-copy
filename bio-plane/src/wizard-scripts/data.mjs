@@ -96,6 +96,16 @@ export const RETIRED_ACTS = Object.freeze({
 /** The op an act is carried as: a retired op's replacement (or null), else the op itself. */
 export const currentAct = (op) => (typeof op === "string" && Object.hasOwn(RETIRED_ACTS, op) ? RETIRED_ACTS[op] : op);
 
+/** F2 (T53; the coordinator's ruling 17:24 on screens-ai's receipt): acts a screen registers that the design file at
+ *  `SOURCES.registry` does not list, each an op its owner declares: `aioptinset` on `aiproviders` and `aimine`
+ *  (screens-ai R1, R6; ai-accounts' share flag), `projectrequest` and `projectjoin` on `aiproject` (screens-ai R16, as
+ *  `project` registers them). Appended after the file's own acts, once each; the file's owed acts keep their `at`. */
+export const SCREEN_ACTS_ADDED = Object.freeze({
+  aiproviders: Object.freeze(["aioptinset"]),
+  aimine: Object.freeze(["aioptinset"]),
+  aiproject: Object.freeze(["projectrequest", "projectjoin"]),
+});
+
 /** R13 (DEC-139 (5)): the registry's screens as `[{id, name, purpose, acts, owed}]`: `acts` the op of each act marked
  *  `declared` or `function`, in the file's order; `owed` each act marked `owed`, `{op, dec, at}`, `at` the number of
  *  `acts` that precede it, so an owed act whose op is declared is registered in the file's order (R13; DEC-148). */
@@ -111,6 +121,7 @@ export function screensFromFile(file) {
         if (m) owed.push({ op: m[1], dec: m[2] ?? null, at: acts.length });
       }
     }
+    for (const op of Object.hasOwn(SCREEN_ACTS_ADDED, s.id) ? SCREEN_ACTS_ADDED[s.id] : []) if (!acts.includes(op)) acts.push(op);
     out.push({ id: s.id, name: s.name, purpose: s.purpose, acts, owed });
   }
   return out;
