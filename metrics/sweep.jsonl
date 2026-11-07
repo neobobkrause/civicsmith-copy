@@ -482,3 +482,4 @@
 {"at":"2026-11-07T01:49:02Z","row":"check","by":"start check","live":3,"live_at":"2026-11-07T00:52:18Z","job_cap":8,"startable":8}
 {"at":"2026-11-07T01:52:40Z","row":"sweep","session":"session_018BhceduipEp2mmEFHN9Diu","bob_acts":true,"bob_quiet_h":1.2,"root_context":72,"live":3,"job_cap":8,"sessions":12,"startable":8,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":3}
 {"at":"2026-11-07T02:13:50Z","row":"check","by":"setup check","live":3,"live_at":"2026-11-07T01:52:40Z","job_cap":8,"startable":8}
+{"at":"2026-11-07T02:24:05Z","row":"check","by":"send","live":3,"live_at":"2026-11-07T01:52:40Z","job_cap":8,"startable":8}
