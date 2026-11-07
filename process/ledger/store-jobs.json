@@ -7,6 +7,8 @@
     "bio-plane/src/store-assembly/acquire-timings.mjs",
     "bio-plane/src/store-assembly/casesweep.mjs",
     "bio-plane/src/store-assembly/assemble.mjs",
+    "bio-plane/test/m/store-assembly/r9-jobs.test.mjs",
+    "bio-plane/test/m/store-assembly/r10-fixtures-run.test.mjs",
     "build/requirements/store-jobs.md",
     "docs/requirements-notes/store-jobs.md"
   ],
