@@ -1,0 +1,1 @@
+{"at":"2026-11-07T16:20:21Z","module":"observation-log","row":"attempt","event":"start","role":"job","attempt":1,"reading_bytes":32983,"start_bytes":4550,"tool":"d1f266939d00ace67038014dae719aabea17a50b","branch":"job/observation-log","layer":11,"early":["record-core","setup-words"]}
