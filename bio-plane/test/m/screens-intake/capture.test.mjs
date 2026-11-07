@@ -101,10 +101,10 @@ test("R1 R25 acquire sends the address as the locator; an empty address sends no
 
 test("R1 R25 each of acquire's five refusals is drawn by its key beside the address; any other code is the shell's (R13)", async () => {
   const seen = new Set();
-  /* the five are the ones the screen declares by key (BAD_FOR is a function of its own, R29) */
+  /* the four are the ones the screen declares by key (BAD_FOR is a function of its own, R29; TOO_LARGE too, R73 as DEC-500 draws it, in r79-cancel.test.mjs) */
   const own = SCREENS.find((x) => x.id === "capture").acts.find((a) => a.op === "acquire").refusals;
   const codes = Object.keys(own).filter((c) => typeof own[c] === "string");
-  assert.equal(codes.length, 5);
+  assert.equal(codes.length, 4);
   /* four are caused by a real act: a site that refuses (403), no site at all, a site that serves nothing, and a source that declares more than a capture takes (one byte over the owner's `CAPTURE_MAX`). The fifth, BAD_LOCATOR,
      is the owner's refusal of an address that is not a public https one; `heldat`, which the press asks first, refuses such an address before `acquire` is ever sent
      (REQUIRED_ARGUMENT_MISSING), so no real press reaches it: it stays the one scripted answer (a fault) */
@@ -129,7 +129,7 @@ test("R1 R25 each of acquire's five refusals is drawn by its key beside the addr
     if (typeof owner.detail === "string" && owner.detail) assert.ok(!r.slot().textContent.includes(owner.detail), `${code}: the owner's detail is never drawn`);
     seen.add(r.slot().textContent);
   }
-  assert.equal(seen.size, 5, "five distinct sentences");
+  assert.equal(seen.size, 4, "four distinct sentences");
   /* control: a code outside the five is drawn by the shell's rule: the table's word for it (K3810: compared with the row by key). The owner's governor holds
      the host after its refusal (HOST_COOLING_OFF), so the same press again is answered with it */
   const t = await team();

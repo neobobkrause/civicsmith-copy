@@ -7,7 +7,8 @@ import assert from "node:assert/strict";
 import { ok, boot } from "../interface-shell/harness.mjs";
 import { hasWord } from "../../../src/setup-words/index.mjs";
 import { world, V } from "../citation/fixture.mjs";
-import { open, main, fill, press, says, word, plane, READING, SCREENS, D, SHA, Q } from "../screens-inquiry/fixtures.mjs";
+import { provenanceOf } from "../../../src/provenance/index.mjs";
+import { open, main, fill, press, says, word, plane, storeWorld, READING, SCREENS, D, SHA, Q } from "../screens-inquiry/fixtures.mjs";
 
 process.env.TZ = "UTC";
 const at = "/app/document/" + D;
@@ -121,6 +122,48 @@ test("R72 (part): a reading whose reader measured clarity draws how many words w
   assert.ok(!says(plain, "screen.document.text.unsure", { unsure: "7" }) && plain.querySelectorAll("[data-unsure]").length === 0, "control: no measure, no sentence, no mark");
 });
 
+/* ---- R73 (part): the stored sentences of who vouched and of a reading that found no names, drawn in the member's words; the fingerprint is owed (below) ---- */
+const STORED = ["no authority is asserted", "taken from the session at op=testify", "recorded as an empty reading", "text-layer text (tier"];
+const drawsNone = (el) => STORED.filter((x) => text(el).includes(x));
+/** the page `path` as `me`, over the world's door and the session her sign-in made */
+async function pageAs(w, me, path) {
+  const { door, session } = w.boot(me);
+  const p = await boot({ screens: SCREENS, door, session, path });
+  await p.settle();
+  return p;
+}
+
+test("R73 (part): a member's upload and her testimony draw who vouched in the member's words (`screen.document.basis.added`, `.basis.testimony`), never the stored sentence", async () => {
+  const w = await storeWorld();
+  const ann = await w.signIn("ann", { capabilities: ["contribute", "create_projects"] });
+  const project = await w.recipes.project(ann, "Stormwater");
+  const { bundle } = await w.recipes.hold(ann, "Minutes", "The council met on Monday.", project);
+  const up = main(await pageAs(w, ann, "/app/document/" + bundle));
+  const upLine = up.querySelector("[data-authority-basis]");
+  assert.ok(upLine, "the authority's basis is drawn");
+  assert.ok(text(upLine).startsWith(word("screen.document.basis.added", { at: "\u0000" }).split("\u0000")[0]), "an upload: added by a member");
+  assert.deepEqual(drawsNone(up), [], "none of the stored sentences");
+  const testified = await ann.act("testify", { body: { words: "I saw the pothole at 4th and Main.", observedAt: "2026-10-04T09:10:00Z" } });
+  const ts = main(await pageAs(w, ann, "/app/document/" + testified.bundle_id));
+  const tsLine = ts.querySelector("[data-authority-basis]");
+  assert.ok(tsLine && text(tsLine).includes(word("screen.document.basis.testimony", { member: "\u0000", recorded: "" }).split("\u0000")[1].split(".")[0]), "a testimony: her own account");
+  assert.deepEqual(drawsNone(ts), [], "none of the stored sentences");
+  /* control: a member's decision keeps her own words */
+  const { sha: sha2, bundle: b2 } = await w.recipes.hold(ann, "Letter", "Dear council.", project);
+  provenanceOf(w.ctx).declareAuthority({ bundle: b2, capture: sha2, outcome: "undetermined_after_review", basis: "No issuer is named on it.", by: "ann", viewer: "member:ann" });
+  assert.equal(text(main(await pageAs(w, ann, "/app/document/" + b2)).querySelector("[data-authority-basis]")), "No issuer is named on it.", "control: a decision's basis is drawn as stored");
+});
+
+test("R73 (part): a reading that found no names, in a docx's text layer, draws `screen.document.reading.nonames`; one whose text could not be parsed draws `.reading.unparsed`", async () => {
+  const stated = (basis) => reading({ text_units: [], unread_pages: [], reading: { content_type: "generic", found: false, failure: "final", reason: "SOMETHING_ELSE", basis } });
+  const none = main(await open(at, stated(word("reading-pipeline.why.reader_found_entities", { key: "generic", fmt: "docx", wired_tier: "1" }))));
+  assert.ok(says(none, "screen.document.reading.nonames"), "no names found, in the member's words");
+  assert.deepEqual(drawsNone(none), [], "neither 'recorded as an empty reading' nor 'text-layer text (tier 1)'");
+  const bad = main(await open(at, stated(word("reading-pipeline.why.reader_parse_text", { key: "generic", fmt: "docx", parse_error: "x" }))));
+  assert.ok(says(bad, "screen.document.reading.unparsed"), "the text could not be parsed, in the member's words");
+  assert.deepEqual(drawsNone(bad), [], "never the text layer's tier");
+});
+
 /* ---- owed: each waits on a provider this module does not hold ---- */
 test.todo("R58: the door 'A source' for listed members (waits on a route for sources' `sourceLinksFor`, sources R23)");
 test.todo("R59: typed words cited with their label and grade (waits on cite of a typing's handle and the cite picker offering typings)");
@@ -133,8 +176,8 @@ test.todo("R66: the part chooser (waits on `interpretmark`)");
 test.todo("R67: citing or opening a part says it was interpreted (waits on `interpretationOf`)");
 test.todo("R68: the margin bars of what is interpreted (waits on `interpretationOf`)");
 test.todo("R69: the document's chips on the ceiling scale (waits on interface-shell R140)");
-test.todo("R70: the shared document picker (waits on interface-shell R138)");
-test.todo("R71: `heldcaptures` leaves the first wave as the shared picker's read on open (waits on interface-shell R138, and the re-timing on Seed A)");
+test.todo("R70: the shared document picker (interface-shell R138's `cs.picker` is served; switching to it changes the picker's fields and choice memory, which seven screens-inquiry tests outside this module's paths pin: r137-document, fr3-document, fr6-pages, fr28-document-acts, t51-fix12-b90, t51-fix13-b92, t51-fix14-r139)");
+test.todo("R71: `heldcaptures` leaves the first wave as the shared picker's read on open (waits on R70, and the re-timing on Seed A, a live act)");
 test.todo("R72: each hard word underlined dotted (waits on the reading stating each word's position; it states a count per page)");
-test.todo("R73: the five stored strings replaced by the member's sentences (waits on the design's rows, owed)");
-test.todo("R75: 'Go to Home' on a bare document (waits on interface-shell's unavailable page, which draws the screen's place)");
+test.todo("R73: no 64-hex fingerprint printed whole, a short mark with a way to copy the whole (waits on screens-document R66's test, outside this module's paths, which pins the fingerprint drawn in full); a doorbell hand-in's basis");
+test.todo("R75: 'Go to Home' on a bare document (waits on interface-shell: its unavailable page draws the screen's place, Projects, by its R61; the crumbs are links already)");
