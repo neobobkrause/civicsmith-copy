@@ -31,9 +31,9 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T16:28:04Z",
-    "reason": "reopened: meet the unmet T53 marks R136-R151 in build/requirements/interface-shell-t53.md, each with a test that fails with the change reverted; the first attempt (job/interface-shell-t53 at 759fb375, 5 Nov) only added a Status line and an open-marks test and never merged: carry over what still applies. Where a mark's code lives in bio-plane/src/interface-shell/ and cannot move within this module's paths, block with the exact words"
+    "state": "BLOCKED",
+    "reason": "Every T53 mark's code lives in bio-plane/src/interface-shell/ and cannot move within this module's paths. The page's script is composed only of shellProgram (interface-shell/browser.mjs), dataOf's D (interface-shell/index.mjs) and the screens and guide (index.mjs:431-435, release()); nothing in bio-plane/src/interface-shell-t53/ can reach the page without an import or D entry added in interface-shell/. Per mark: R136/R137 the screen-open read path (browser.mjs shellProgram); R138 the kit picker (browser.mjs cs.*); R139 cs.follow (browser.mjs cs.*); R140 cs.grade scale ceiling (browser.mjs:747); R141 the machine label (browser.mjs kit); R142 and R147 the phone/public-frame rules (index.mjs STYLE); R143 the dock's not-ready sentence (browser.mjs; Team/Ask/Plan are screens modules'); R144 the act's pending word (browser.mjs act button); R145 the tip card placement (browser.mjs R15/R16); R146 the skip link and tab stops (browser.mjs frame); R148 data-screen (browser.mjs:1333) and more's tabs sentence; R149 the reason mark (browser.mjs act drawing, R107/R64); R150 the confirm in view (browser.mjs R11/R77); R151 the ready refusal before the reason box (browser.mjs R119/R87). Found mark for interface-shell: a hook letting interface-shell-t53 add kit and frame code to the page (e.g. index.mjs importing bio-plane/src/interface-shell-t53/ into D or the program), or the marks returned to interface-shell. The first attempt (759fb375) holds nothing beyond what tranche already has (the Status line and requirements-split test).",
+    "at": "2026-11-07T16:31:10Z"
   },
   "prior_work": "Coordinator 18:31 (option c): your code lives in bio-plane/src/interface-shell-t53/, which you own; every hook you need inside bio-plane/src/interface-shell/ (index.mjs and the rest) is interface-shell's: name each as a found mark for interface-shell (report it to BOB), never edit it."
 }
