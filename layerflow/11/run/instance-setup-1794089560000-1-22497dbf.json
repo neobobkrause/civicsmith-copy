@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "instance-setup",
+  "round": 1,
+  "started": "2026-11-07T22:12:40Z",
+  "ended": "2026-11-07T22:12:58Z",
+  "minutes": 0.3,
+  "tested_on": "cc7e4d4a4c53ec98efac4a8ff9c394985d5878ce",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-07T22:12:58Z"
+}
