@@ -120,8 +120,10 @@ async function askMemberVersion(env, member, binding) {
 /* R17 (T46; N897 (4); agent-worker R30): `agent-runner` is a Container the plane does not bind; agent-worker does, and
    says so in its `/version` as `runner`. So the runner's state is read from agent-worker's answer: `SERVING` with
    agent-worker's version on `runner: true`, `UNBOUND` on `runner: false`, and agent-worker's own state when it did not
-   serve. An agent-worker that served but said neither (a build before R30) leaves the runner unread: `SILENT`, said so,
-   never `SERVING`. */
+   serve. F2 (journey-check, 7 Nov; agent-worker R30 as T53 amends it): agent-worker's `/version` no longer says `runner`
+   (it answers `{ok, name, version, ai_path_ready}`), so an agent-worker that served without `runner` answers the runner
+   as its own part, `SERVING` with agent-worker's version, never `SILENT` for want of a key the provider dropped; its
+   `ai_path_ready`, when a boolean, is carried as given. Whether the AI path reaches a member is `op=aipathready`'s. */
 const RUNNER_MEMBER = "agent-runner";
 const RUNNER_HOST = "agent-worker";
 function runnerReport(host) {
@@ -130,7 +132,8 @@ function runnerReport(host) {
   const runner = host.body ? host.body.runner : undefined;
   if (runner === true) return { ...via, state: "SERVING", version: host.report.version };
   if (runner === false) return { ...via, state: "UNBOUND" };
-  return { ...via, state: "SILENT", why: localize("instance-setup.setup.runner_host_answered_its_version", "{RUNNER_HOST} answered its version without saying whether the runner is bound", { RUNNER_HOST: String(RUNNER_HOST) }) };
+  const ready = host.body ? host.body.ai_path_ready : undefined;
+  return { ...via, state: "SERVING", version: host.report.version, ...(typeof ready === "boolean" ? { ai_path_ready: ready } : {}) };
 }
 
 export async function memberVersions(env) {
