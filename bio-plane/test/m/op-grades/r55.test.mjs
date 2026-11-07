@@ -84,8 +84,28 @@ test("R55: rowexpunge's rung is its owner's `reasoned`; every other register op 
   assert.equal(R.JUSTIFICATION_REFUSALS.includes("EXPUNGE_GROUND_REFUSED"), false);
 });
 
-test.todo("R55: rowexpunge joins IRREVERSIBLE_WEIGHT, phone false (held: affordances' t31 R36 phone test builds its op list from "
-   + "the unregistered tables, so it does not see the registered op; affordances amends it, as its F3 intends)");
+test("R55: rowexpunge joins IRREVERSIBLE_WEIGHT as personexpunge is, so phoneOf answers false for it while its rung stays its "
+   + "owner's `reasoned`; control: no other register op is in the set, and each answers phone true", () => {
+  const T = between(R55_TEXT, "`IRREVERSIBLE_WEIGHT` gains", ";");
+  const [op] = tickedAll(T);
+  assert.equal(op, "rowexpunge");
+  assert.ok(T.includes("`personexpunge`"));
+  assert.equal(OWNERS[op], "registers");
+  for (const m of [G, R]) {
+    assert.ok(m.IRREVERSIBLE_WEIGHT.includes(op), "in the set");
+    assert.ok(m.IRREVERSIBLE_WEIGHT.includes("personexpunge"));
+    assert.equal(m.phoneOf(op), false, "read on a phone, done on a larger screen");
+  }
+  /* the weight is not a rung: the registered rung is the owner's, and no hand row grades it */
+  assert.equal(R.RUNGS[op], DECLARED[op].weight);
+  assert.equal(R.RUNGS[op], "reasoned");
+  assert.equal(Object.hasOwn(G.RUNGS, op), false);
+  /* control: the other register ops stay phone acts, and none is in the set */
+  for (const other of Object.keys(DECLARED).filter((o) => OWNERS[o] === "registers" && o !== op)) {
+    assert.equal(R.IRREVERSIBLE_WEIGHT.includes(other), false, other);
+    if (R.RUNG_ABSENT[other]?.ground !== "credential") assert.equal(R.phoneOf(other), true, other);
+  }
+});
 test.todo("R55: alertconnect is graded ground `credential` from credentials' row (credentials declares no alertconnect yet)");
 test("R55: CONSEQUENCE_STATEMENTS gains rowexpunge, a dialog read by its key; control: no other register op has an entry", () => {
   assert.ok(R55_TEXT.includes("`CONSEQUENCE_STATEMENTS` gains `rowexpunge` `{friction: \"dialog\", statement}`"));
