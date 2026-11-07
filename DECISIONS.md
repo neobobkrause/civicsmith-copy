@@ -146,3 +146,10 @@ Decision (Bob):
 4. AI vendor credits: "Not counted". They are not funding and are not named.
 5. BD-6 adoption: "Yes" (Bob, later on 7 Nov). IFCN commitment 3's line "funders have no say over the conclusions" is added to civicsmith-review/1 §1.
 Consequences: the lane's design stands, with these values. The signed `funding:` block arrives in case-grammar /11 (so the format changes once). It carries the fixed no-role sentence, or the funder's stated role, and flags a funder that the case also names. The signer affirms it. The complete edition and the public read print it together with the declared member ties. Formats up to /10 read "not stated". Amounts, step costs and AI accounts stay private. Members' own time, money and AI subscriptions are `members`; vendor AI credits are not listed. BOB places the work with /11: case-grammar, case-disclosures, case-inputs and case-authoring, public-read, and a group funding register kept by owners. ux writes the words (BD-3).
+
+## BD-16: Investigation canon amendments and one term per concept (Bob, Q7 and Q8, 7 Nov)
+Context: the investigation lane asked who may amend BIO_Investigation_v0_1.md (Q7) and whether a concept takes one term (Q8). Bob answered through the coordinator on 7 Nov.
+Decision (Bob):
+- Q7 (who amends BIO_Investigation_v0_1.md): "as recommended". The investigation lane drafts each amendment as a claude.ai artifact. Bob approves it, and then the module's job or BOB places it, as at K2417–K2420.
+- Q8 (one term per concept): "every reasonable effort should be made to use one unique term per concept".
+Consequences: open-asks A3, A4 and A5 are unblocked. The lane drafts these for Bob's approval: the canon amendments (INV:85's IV-4 line; the stale INV:5, INV:9, INV:37 and INV:53 lines; Declared Bias :13) and the term fixes. Once Bob approves them, BOB places them. Still open: Q9.1 (Bob first reviews the walkthrough WCzdua7ccBB95KbtwGvatt) and IV-9 (the coordinator is writing the background Bob asked for).
