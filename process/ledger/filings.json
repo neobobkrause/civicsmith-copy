@@ -59,7 +59,8 @@
   ],
   "prior_work": "Provider notice jurisdictions:40, judged affected by a read-only triage: bio-plane/src/filings/index.mjs:2960 matches each determination's actor against view.counterparties by role and body (line 2966). For a federal office actor the match now succeeds, so in_profile is true, level is federal and elected is false, with the \"office in active profile\" wording. Jurisdictions R119 (PR 40) now puts 409 federal FOIA offices into the view's counterparties, each with level federal, elected false, FOIA as its law, contacts and no ids or hours. Decide, from your own requirements, what this module must do with them: adapt the code so it meets them with the federal offices present, or confirm it already does. Either way add a test that loads a view holding a federal office and asserts the behaviour your requirements say; if your requirements say nothing that decides it, name the gap in your receipt's not-verified list instead of inventing a rule. Any unmet mark in build/requirements/filings.md is yours too. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-04T14:49:23Z"
+    "state": "WORKING",
+    "at": "2026-11-07T00:19:54Z",
+    "reason": "reopened: re-test against the new interface of filing-templates (land b17aea0066), actions (land d02c296694)"
   }
 }
