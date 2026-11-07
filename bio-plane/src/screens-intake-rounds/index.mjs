@@ -39,6 +39,92 @@ export function mailboxCountLine(cs, counts) {
   return cs.w("screen.archive.mailbox.count", { n: String(c.n), read: String(c.read), held: String(c.held), refused: String(c.refused) });
 }
 
+/** R79 (DEC-455): after "Cancel sending" (`captureuploadabort`) is answered, "Sending was canceled. Nothing was kept."
+ *  (`screen.capture.file.parts.cancelled`); "" until the abort is answered `ok: true`. */
+export function partsCancelledLine(cs, answer) {
+  return answer && typeof answer === "object" && answer.ok === true ? cs.w("screen.capture.file.parts.cancelled") : "";
+}
+
+/** R72 (N1269; K5446, K5453 point 2): "What can be added", drawn before a file is chosen, from acquisition's `limitsByKind` answer
+ *  (`{kinds: [{kind, bytes, pages?, rows?, how_long}]}`), one row per kind with that kind's one figure (no second or "standard"
+ *  figure), then the background line when any kind is read in the background. A kind missing a figure its row names is not drawn;
+ *  "" when no kind can be drawn. Sizes in MB (GB from 1 GB), as the member reads them. */
+export function limitsSection(cs, answer) {
+  const kinds = answer && typeof answer === "object" && Array.isArray(answer.kinds) ? answer.kinds : [];
+  const sz = (n) => {
+    if (!Number.isFinite(n) || n <= 0) return "";
+    if (n < 1048576) return cs.w("size.kb", { n: String(Math.max(1, Math.round(n / 1024))) });
+    if (n < 1073741824) return cs.w("size.mb", { n: String(Math.round(n / 1048576)) });
+    return cs.w("size.gb", { n: String(Math.round(n / 107374182.4) / 10) });
+  };
+  const count = (n) => (Number.isInteger(n) && n > 0 ? n.toLocaleString("en-US") : "");
+  const rows = [];
+  let background = false;
+  for (const k of kinds) {
+    if (!k || typeof k !== "object") continue;
+    const size = sz(k.bytes);
+    if (!size) continue;
+    let line = "";
+    if (k.kind === "document") { const pages = count(k.pages); line = pages ? cs.w("screen.capture.limits.document", { size, pages }) : ""; }
+    else if (k.kind === "sheet") { const r = count(k.rows); line = r ? cs.w("screen.capture.limits.sheet", { size, rows: r }) : ""; }
+    else if (k.kind === "image") line = cs.w("screen.capture.limits.image", { size });
+    else if (k.kind === "archive") line = cs.w("screen.capture.limits.archive", { size });
+    if (!line) continue;
+    rows.push(`<li data-limit-kind="${k.kind}">${line}</li>`);
+    if (k.how_long === "background") background = true;
+  }
+  if (!rows.length) return "";
+  return `<section class="cs-limits" data-limits><h3 class="mk-small">${cs.w("screen.capture.limits.heading")}</h3><ul>${rows.join("")}</ul>`
+    + (background ? `<p class="mk-small muted">${cs.w("screen.capture.limits.background")}</p>` : "") + `</section>`;
+}
+
+/** R74 (N1259; K5447): the register a refused address is the source of, matched mechanically against `registerList`'s answer
+ *  (`{known, own}`, each entry with `key` and `url`): scheme and host compared without case, the path without a trailing slash,
+ *  the query exactly, the fragment ignored. Never guessed from content: no URL, no match. Answers the register's key, or null. */
+export function registerOfAddress(list, address) {
+  const norm = (u) => {
+    if (typeof u !== "string" || !u.trim()) return null;
+    try { const x = new URL(u.trim()); if (x.protocol !== "https:" && x.protocol !== "http:") return null; return `${x.protocol}//${x.host.toLowerCase()}${x.pathname.replace(/\/+$/, "")}${x.search}`; }
+    catch { return null; }
+  };
+  const want = norm(address);
+  if (!want || !list || typeof list !== "object") return null;
+  for (const group of [list.own, list.known]) {
+    for (const e of Array.isArray(group) ? group : []) {
+      if (e && typeof e === "object" && typeof e.key === "string" && e.key && norm(e.url) === want) return e.key;
+    }
+  }
+  return null;
+}
+
+/** R73, R74 (N1269; K5446, K5447): a file over its kind's limit, refused whole. The size sentence names the file's size and the
+ *  limit (`screen.capture.refusal.upload.TOO_LARGE.figures`, in MB), then "Nothing was added or read."
+ *  (`screen.capture.refusal.toolarge.nothing_read`), then the ways in: (a) when `register` names the register the refused address
+ *  is the source of (`registerOfAddress`), the register line opening `registers` for it with the project's filter prefilled
+ *  (`project`, when named); (b) always, the member's own part. Reading only the first part of a file is never offered. "" when
+ *  the refusal carries no size or no limit (it is never drawn with a hole). */
+export function tooLargeLines(cs, refusal, ways) {
+  const r = refusal && typeof refusal === "object" ? refusal : {};
+  const w = ways && typeof ways === "object" ? ways : {};
+  const sz = (n) => {
+    if (!Number.isFinite(n) || n < 0) return "";
+    if (n < 1024) return cs.w("size.small");
+    if (n < 1048576) return cs.w("size.kb", { n: String(Math.round(n / 1024)) });
+    if (n < 1073741824) return cs.w("size.mb", { n: String(Math.round(n / 1048576)) });
+    return cs.w("size.gb", { n: String(Math.round(n / 107374182.4) / 10) });
+  };
+  const size = sz(r.size), bound = sz(r.bound);
+  if (!size || !bound) return "";
+  const enc = (v) => encodeURIComponent(String(v));
+  const register = typeof w.register === "string" && w.register ? w.register : "";
+  const project = typeof w.project === "string" && w.project ? w.project : "";
+  const a = register
+    ? `<p data-way="register"><a class="cs-ref" href="/app/registers/${enc(register)}${project ? "?project=" + enc(project) : ""}" data-nav>${cs.w("screen.capture.refusal.toolarge.register")}</a></p>`
+    : "";
+  return `<p data-refusal="TOO_LARGE">${cs.w("screen.capture.refusal.upload.TOO_LARGE.figures", { size, bound })} ${cs.w("screen.capture.refusal.toolarge.nothing_read")}</p>`
+    + a + `<p data-way="part">${cs.w("screen.capture.refusal.toolarge.part")}</p>`;
+}
+
 /** R78: a size as the member reads it, in MB from 1 MB up (GB from 1 GB, KB below 1 MB, `size.small` below 1 KB), never a
  *  byte count. "" when `n` is not a size. */
 export function sizeWords(cs, n) {
@@ -51,11 +137,12 @@ export function sizeWords(cs, n) {
 
 /** R78 (DEC-454): the line of a step of the reading or of a parted upload, by its own key. `step` is one of `fetching`,
  *  `reading`, `about` (with `minutes`, a whole number above zero; one minute is `.about.one`), `hashing` and `sending` (with
- *  `n` of `m` parts). "" for a step that has no row of its own here (`queued` waits for the design's row, R78). */
+ *  `n` of `m` parts), and `queued` (its row returned by the design, DEC-456). "" for a step that has no row of its own. */
 export function stepLine(cs, step) {
   const s = step && typeof step === "object" ? step : { step };
   const whole = (v) => Number.isInteger(v) && v > 0;
   switch (s.step) {
+    case "queued": return cs.w("screen.capture.read.queued");
     case "fetching": return cs.w("screen.capture.read.fetching");
     case "reading": return cs.w("screen.capture.read.reading");
     case "about": return !whole(s.minutes) ? "" : s.minutes === 1 ? cs.w("screen.capture.read.about.one") : cs.w("screen.capture.read.about", { minutes: String(s.minutes) });
@@ -146,13 +233,18 @@ export const PART_KEYS = Object.freeze({
   leftOutLine: Object.freeze(["screen.photo.dropped", ...["thumbnail", "maker_note", "profile", "extra_picture", "after_end", "xmp", "credentials", "other_metadata", "unreadable"].map((k) => "screen.photo.dropped." + k)]),
   mailboxCountLine: Object.freeze(["screen.archive.mailbox.count"]),
   sizeWords: Object.freeze(["size.small", "size.kb", "size.mb", "size.gb"]),
-  stepLine: Object.freeze(["screen.capture.read.fetching", "screen.capture.read.reading", "screen.capture.read.about", "screen.capture.read.about.one",
+  stepLine: Object.freeze(["screen.capture.read.queued", "screen.capture.read.fetching", "screen.capture.read.reading", "screen.capture.read.about", "screen.capture.read.about.one",
     "screen.capture.file.parts.hashing", "screen.capture.file.parts.sending"]),
   readRefusedLine: Object.freeze(["ENCRYPTED", "TOO_LARGE", "STRUCTURE_OVER_BOUND", "ENCODING_UNSUPPORTED"].map((c) => "screen.capture.read.refused." + c)
     .concat(["size.small", "size.kb", "size.mb", "size.gb"])),
   uploadTooLargeLine: Object.freeze(["screen.capture.refusal.upload.TOO_LARGE.figures", "size.small", "size.kb", "size.mb", "size.gb"]),
   finishLine: Object.freeze(["screen.capture.finish.pending", "screen.capture.finish.files", "screen.capture.finish.done"]),
   addressHeldLine: Object.freeze(["screen.capture.address.reading.pending", "screen.capture.address.reading.done"]),
+  partsCancelledLine: Object.freeze(["screen.capture.file.parts.cancelled"]),
+  limitsSection: Object.freeze(["screen.capture.limits.heading", "screen.capture.limits.document", "screen.capture.limits.sheet", "screen.capture.limits.image",
+    "screen.capture.limits.archive", "screen.capture.limits.background", "size.kb", "size.mb", "size.gb"]),
+  tooLargeLines: Object.freeze(["screen.capture.refusal.upload.TOO_LARGE.figures", "screen.capture.refusal.toolarge.nothing_read",
+    "screen.capture.refusal.toolarge.register", "screen.capture.refusal.toolarge.part", "size.small", "size.kb", "size.mb", "size.gb"]),
   previewCutLine: Object.freeze(["screen.capture.preview.cut"]),
   safeViewPagesLine: Object.freeze(["file-safety.index.safe_view_first_pages"]),
 });
