@@ -1,0 +1,129 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-intake",
+  "pr": 908,
+  "branch": "job/screens-intake",
+  "head": "2a45eda5407f9339127a1a1b810da337d412ddca",
+  "before": "6aa18842eac404c34215fb4c1798d10c2d593153",
+  "merge": "9ef2c0c75238af465b1124f192c36b5cf00d6065",
+  "at": "2026-11-07T21:12:34Z",
+  "by": "bob",
+  "gate_runs": 8,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "CAPTURE_SCREEN"
+      ],
+      "changed": [
+        {
+          "name": "checkOutcome",
+          "before": "value",
+          "after": "function(cs, answer, title)"
+        },
+        {
+          "name": "supportingReasons",
+          "before": "value",
+          "after": "function(reasons)"
+        }
+      ],
+      "kinds": [
+        "checkOutcome",
+        "supportingReasons"
+      ],
+      "signatures": []
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-intake/capture.test.mjs",
+      "bio-plane/test/m/screens-intake/common.test.mjs",
+      "bio-plane/test/m/screens-intake/inbox.test.mjs",
+      "bio-plane/test/m/screens-intake/open-file.test.mjs",
+      "bio-plane/test/m/screens-intake/page.mjs",
+      "bio-plane/test/m/screens-intake/r79-cancel.test.mjs",
+      "bio-plane/test/m/screens-intake/requirements-ids.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-intake/capture.test.mjs",
+      "bio-plane/test/m/screens-intake/common.test.mjs",
+      "bio-plane/test/m/screens-intake/inbox.test.mjs",
+      "bio-plane/test/m/screens-intake/open-file.test.mjs",
+      "bio-plane/test/m/screens-intake/page.mjs",
+      "bio-plane/test/m/screens-intake/r79-cancel.test.mjs",
+      "bio-plane/test/m/screens-intake/requirements-ids.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-intake/capture.test.mjs",
+        "class": "breaking",
+        "why": "unparsed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/common.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/inbox.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/open-file.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/page.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , \"captureuploadabort\""
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/r79-cancel.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R1, R26, R73, R74, R79 (Provides before this land) while screens-intake's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/requirements-ids.test.mjs",
+        "class": "additive",
+        "why": "added R92, mark, after"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-intake/capture.test.mjs",
+      "bio-plane/test/m/screens-intake/common.test.mjs",
+      "bio-plane/test/m/screens-intake/inbox.test.mjs",
+      "bio-plane/test/m/screens-intake/open-file.test.mjs",
+      "bio-plane/test/m/screens-intake/page.mjs",
+      "bio-plane/test/m/screens-intake/r79-cancel.test.mjs",
+      "bio-plane/test/m/screens-intake/requirements-ids.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "screens-daily",
+    "screens-document",
+    "screens-inquiry",
+    "screens-intake-rounds"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "screens-daily",
+    "screens-document",
+    "screens-inquiry",
+    "screens-intake-rounds"
+  ],
+  "users_noticed": []
+}

@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "screens-document",
+  "provider": "screens-intake",
+  "provider_pr": 908,
+  "provider_land": "9ef2c0c75238af465b1124f192c36b5cf00d6065",
+  "at": "2026-11-07T21:12:34Z",
+  "key": "screens-document<-screens-intake@9ef2c0c752",
+  "why": "changed the kind of checkOutcome value -> function(cs, answer, title), supportingReasons value -> function(reasons); added CAPTURE_SCREEN; its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/screens-intake/capture.test.mjs: breaking, unparsed, bio-plane/test/m/screens-intake/common.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-intake/inbox.test.mjs: breaking, too large to align, bio-plane/test/m/screens-intake/open-file.test.mjs: breaking, too large to align, bio-plane/test/m/screens-intake/page.mjs: breaking, added code that is not an object property: , \"captureuploadabort\", bio-plane/test/m/screens-intake/r79-cancel.test.mjs: breaking, added, naming R1, R26, R73, R74, R79 (Provides before this land) while screens-intake's source changed: it may assert a changed answer, bio-plane/test/m/screens-intake/requirements-ids.test.mjs: additive, added R92, mark, after), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
