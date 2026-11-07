@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "queue-producers",
+  "session": "session_018BhcefEWSkkKHu839pYzUp",
+  "started": "2026-11-07T18:14:33Z",
+  "ended": "2026-11-07T18:16:47Z",
+  "at": "2026-11-07T18:16:47Z",
+  "minutes": 2.23,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 16.142,
+  "tests": {
+    "total": 185,
+    "pass": 185,
+    "fail": 0
+  }
+}
