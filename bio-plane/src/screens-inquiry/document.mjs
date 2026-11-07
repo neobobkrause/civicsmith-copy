@@ -1349,8 +1349,9 @@ function render(cs, view) {
       /* T51 fix round 10 (B89, C-M12): the fold stays open once the other document is chosen or a passage is picked, and each pick is drawn as the member
          left it (read from the page before it is redrawn), so a redraw keeps it */
       ? `<details class="mk-details" data-fold="contradict"${flagPick || pickOpen("flag") || String(cs.value("document-flag-here") || cs.value("document-flag-there") || "") ? " open" : ""}><summary>${W("screen.document.contradict.head")}</summary><p class="mk-note">${W("screen.document.contradict.note1")} ${W("screen.document.contradict.note2")}</p>`
-        + cs.choice("document-flag-here", "screen.document.contradict.here", [{ value: "", text: "" }].concat(flagHere.map((u, i) => ({ value: String(i), text: flagLabel(u) }))), { value: String(cs.value("document-flag-here") || "") })
-        + `<p class="mk-small">${W("screen.document.contradict.here.help")}</p>`
+        /* R71: the passages here are offered once the picker is opened, as the other document's are once it is chosen */
+        + (pickOpen("flag") ? cs.choice("document-flag-here", "screen.document.contradict.here", [{ value: "", text: "" }].concat(flagHere.map((u, i) => ({ value: String(i), text: flagLabel(u) }))), { value: String(cs.value("document-flag-here") || "") })
+          + `<p class="mk-small">${W("screen.document.contradict.here.help")}</p>` : "")
         + picker("flag", "screen.document.contradict.other")
         + (flagPick ? cs.choice("document-flag-there", "screen.document.pick.passage", [{ value: "", text: "" }].concat(flagThere.map((u, i) => ({ value: String(i), text: flagLabel(u) }))), { value: String(cs.value("document-flag-there") || "") }) : "")
         + `<p class="mk-small">${W("screen.document.contradict.other.help")}</p>`
