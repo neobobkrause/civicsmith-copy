@@ -13,7 +13,8 @@
     "newgroup/test/fixture.mjs",
     "newgroup/test/requirements.test.mjs",
     "newgroup/test/t47.test.mjs",
-    "newgroup/test/wizard.test.mjs"
+    "newgroup/test/wizard.test.mjs",
+    "newgroup/test/realsize-child.mjs"
   ],
   "tests": [
     "bio-plane/test/m/installer-check/"
