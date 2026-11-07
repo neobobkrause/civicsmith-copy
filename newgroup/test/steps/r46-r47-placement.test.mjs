@@ -2,8 +2,10 @@
    never both, and travels with every upload; a copy with a jurisdiction creates its buckets in it. The fake account of world.mjs. */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { placementFor, storeLocationBinding, JURISDICTIONS, LOCATION_HINTS, PLACEMENT_CONFLICT, BUCKET_JURISDICTION, uploadInstall, uploadUpdate,
-  planeInSync, heldBindings, ensureBuckets, r2Endpoint, namesFor } from "../../src/steps/index.mjs";
+/* The module as a namespace, so a name it does not (yet) export fails the test that uses it, not the file's load. */
+import * as steps from "../../src/steps/index.mjs";
+const { placementFor, storeLocationBinding, JURISDICTIONS, LOCATION_HINTS, PLACEMENT_CONFLICT, BUCKET_JURISDICTION, uploadInstall, uploadUpdate,
+  planeInSync, heldBindings, ensureBuckets, r2Endpoint, namesFor } = steps;
 import { session, immediateTimers, account, release, chosen, realFetch, CAPABLE_SRC } from "./world.mjs";
 
 let restoreTimers;
