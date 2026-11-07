@@ -149,7 +149,10 @@ export const group = {
     };
     const factsV = data.facts && data.facts.state === "ok" && data.facts.value && Array.isArray(data.facts.value.facts) ? data.facts.value.facts : null;
     const profilesV = data.profiles && data.profiles.state === "ok" && data.profiles.value && Array.isArray(data.profiles.value.profiles) ? data.profiles.value.profiles : [];
-    const profileName = (id) => { const p = profilesV.find((x) => x.id === id); return p ? p.name || p.id : id; };
+    /* a fact's `profile` is a profile or, since the places are layers (T53, R83; `instance-setup` R108), the layer that holds it: either is
+       named by the name `profiles` answers for it, never by its id */
+    const layersV = data.profiles && data.profiles.state === "ok" && data.profiles.value && Array.isArray(data.profiles.value.layers) ? data.profiles.value.layers : [];
+    const profileName = (id) => { const p = profilesV.find((x) => x.id === id) || layersV.find((x) => x.id === id); return p ? p.name || p.id : id; };
     section(S + "timezone", cs.state(data.facts, () => {
       const zf = (factsV || []).filter((f) => f && f.fact && f.fact.fact === "time_zone" && !f.fact.office && f.governs && typeof f.governs.value === "string");
       const distinct = new Set(zf.map((f) => f.governs.value));
