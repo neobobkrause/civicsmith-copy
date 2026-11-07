@@ -65,7 +65,10 @@ const FINDING = ["missing_predecessor", "overdue_successor", "temporal-expectati
   /* T51 fix round 9 (G135f; K4933; notice-producers R29): a reading of a supplied document ended */
   "reading-ended",
   /* T53 (R98; N1259; notice-producers R30, R31): a register watch's change, and an import's end */
-  "register-changed-noticed", "register-import-done", "register-import-stopped", "register-import-failed"];
+  "register-changed-noticed", "register-import-done", "register-import-stopped", "register-import-failed",
+  // layer 11 reopen (notice-producers R33-R36): the AI accounts' and the mail door's notices
+  "ai-threshold-reached", "ai-terms-notice", "ai-account-left-list", "ai-account-left-project-list", "ai-signin-ended",
+  "mail-cleared"];
 /* observation-log's twenty (R5): its twelve, the five sweep kinds (link-sweep R11, queue-producers R26) and the three
    notice kinds (network-notices R12, R13, queue-producers R27) its R33 added in T23 (K1099); and the overdue action
    clock (K611). */
