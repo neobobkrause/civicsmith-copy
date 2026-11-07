@@ -412,7 +412,7 @@
     "journey-check"
   ],
   "pacing": {
-    "jobs": 8,
+    "jobs": 20,
     "pushes_per_hour": 1000000,
     "share_s": 900
   }
