@@ -12,6 +12,9 @@ import { RUNGS, RUNG_ABSENT, IRREVERSIBLE_WEIGHT, MARKS, phoneOf } from "../op-g
 import { SCREEN_REGISTRY, ADMIN_ACTS, ADMIN_SCREENS } from "../wizard-scripts/index.mjs";
 import { sha256HexSync } from "../record-grammar/index.mjs";
 import { shellProgram } from "./browser.mjs";
+/* BOB ruling 7 Nov (from interface-shell-t53's block): the split modules' one way onto the page. `interface-shell-t53` holds its
+   contribution in its own `index.mjs` as `CONTRIBUTION` (`{kit, style, data}`); `contributionOf` checks it and fixes its order. */
+import * as T53 from "../interface-shell-t53/index.mjs";
 
 /* R32 (N999; K3052; replaces setup-page R31): the session record's key in the browser's `localStorage`, this module's:
    `{t, e, d, w}`, `t` the token `login` answered, `e` its expiry in milliseconds (0 when none), `d` the device kind
@@ -228,6 +231,35 @@ export function checkGuide(guide) {
   return true;
 }
 
+/* BOB ruling 7 Nov: the contribution of a split module (`interface-shell-t53`'s `CONTRIBUTION`, or `options.contribution` in its
+   place), checked and put in a fixed order: `kit` its parts by name (`{name: fn(cs, D, ...args)}`, folded into the program as its
+   fifth argument, `KIT`, and added to every kit, the shell's own names winning), `style` its CSS (appended to `STYLE`, after the
+   shell's own rules), `data` its values by key (added to `D` after the shell's own keys). Throws, naming the part, for one that is
+   not of that shape: a kit part that is no function, a style with `@import`, `url(` or `</` (R2: nothing from another origin, and
+   the page's `<style>` is never closed early), or data that is no plain object. An absent contribution is the empty one. */
+export const EMPTY_CONTRIBUTION = Object.freeze({ kit: Object.freeze({}), style: "", data: Object.freeze({}) });
+export function contributionOf(c) {
+  if (c === undefined || c === null) return EMPTY_CONTRIBUTION;
+  if (typeof c !== "object") throw new Error("interface-shell: the t53 contribution is not an object");
+  const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  const kit = c.kit === undefined ? {} : c.kit;
+  if (!plain(kit)) throw new Error("interface-shell: the t53 contribution's kit is not an object of parts");
+  for (const [name, fn] of Object.entries(kit)) {
+    if (!/^[A-Za-z_$][\w$]*$/.test(name)) throw new Error(`interface-shell: the t53 contribution's kit part ${name} is not a name`);
+    if (typeof fn !== "function") throw new Error(`interface-shell: the t53 contribution's kit part ${name} is not a function`);
+  }
+  const style = c.style === undefined ? "" : c.style;
+  if (typeof style !== "string") throw new Error("interface-shell: the t53 contribution's style is not CSS text");
+  if (/@import|url\(|<\//i.test(style)) throw new Error("interface-shell: the t53 contribution's style names an @import, a url( or a </, which the page never carries");
+  const data = c.data === undefined ? {} : c.data;
+  if (!plain(data)) throw new Error("interface-shell: the t53 contribution's data is not an object");
+  const sorted = (o) => Object.fromEntries(Object.keys(o).sort().map((k) => [k, o[k]]));
+  return { kit: sorted(kit), style, data: sorted(data) };
+}
+const isEmptyContribution = (c) => !Object.keys(c.kit).length && !c.style && !Object.keys(c.data).length;
+/* the contribution a page is composed with: `options.contribution` when given, else `interface-shell-t53`'s */
+const contributionFor = (options) => contributionOf(options && Object.hasOwn(options, "contribution") ? options.contribution : T53.CONTRIBUTION);
+
 /* The page's script holds the screens as JavaScript source: each function by its own text, every other value as JSON. */
 export function toSource(v) {
   if (typeof v === "function") {
@@ -272,7 +304,7 @@ export const ABSENCE = /^NO_SUCH_|_NOT_FOUND$|^NOT_FOUND$|^NO_ENTITY$|^NO_CALC$|
 export const NOT_YOURS = Object.freeze(["NOT_VISIBLE", "NOT_A_PARTICIPANT"]);
 export const RETRY_MS = 30 * 1000;
 
-function dataOf(screens, guide) {
+function dataOf(screens, guide, contribution = EMPTY_CONTRIBUTION) {
   const all = guide ? screens.concat([guide]) : screens;
   const ops = new Set(SHELL_OPS);
   for (const s of all) for (const a of s.acts) ops.add(a.op);
@@ -320,8 +352,13 @@ function dataOf(screens, guide) {
     paths: PATHS, placeScreens: PLACE_SCREENS, refScreens: REF_SCREENS, cardWordOnly: CARD_WORD_ONLY, frames: FRAMES, settingsScreens: SETTINGS_SCREENS, addresses: ADDRESSES, publicAddresses: PUBLIC_ADDRESSES, projectPart: PROJECT_PART,
     places: [...Object.keys(PLACE_SCREENS), "more"],
     idleLock: IDLE_LOCK_MS, idleEnd: IDLE_END_MS, notYours: NOT_YOURS, retry: RETRY_MS, absence: ABSENCE.source, adminScreens: ADMIN_SCREENS,
+    /* DEC-496 (BD-14 Q9.7): the class the kit sets a grade's gloss in, the design's `cs-gloss`, while a served stylesheet defines it
+       (R56: never a class no served sheet defines); "" while none does, and no gloss is drawn */
+    gloss: definedClasses(contribution.style).has(GLOSS_CLASS) ? GLOSS_CLASS : "",
   };
 }
+/* DEC-496: the grade gloss's class (`visual-language/components.css`) */
+export const GLOSS_CLASS = "cs-gloss";
 
 /* The shell's own styles (R56, R65: only these two, never a hand copy of a design rule, which `shell.css` carries): the
    page's height settings, so the frame's main column scrolls and the page never does (R57; the frame's own fixed height is
@@ -354,6 +391,9 @@ const STYLE = `html,body.cs{height:100%}body.cs{margin:0;height:100dvh;display:f
 .cs-dock:not(:has(.body>*)),.cs-band:empty{display:none}.cs-tip{max-width:min(300px,calc(100vw - 32px));pointer-events:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}`;
 
+/* BOB ruling 7 Nov: the page's styles, the shell's `STYLE` and then a contribution's frame rules */
+export const styleOf = (contribution = EMPTY_CONTRIBUTION) => (contribution.style ? STYLE + "\n" + contribution.style : STYLE);
+
 /* R56: the script-hook classes, each with what reads it; a class here needs no style. */
 export const HOOK_CLASSES = Object.freeze({
   "cs-crumbs": "the path's element, read by journey-check's walker (its screens.mjs) and the screen modules' tests",
@@ -375,7 +415,11 @@ export function stylesheetClasses(...sheets) {
   return out;
 }
 let DEFINED = null;
-const definedClasses = () => DEFINED || (DEFINED = stylesheetClasses(ASSET_FILES["civicsmith.css"].body, ASSET_FILES["shell.css"].body, STYLE));
+/* R56: with a contribution's frame rules served in the page's `<style>`, the classes they define count as served */
+const definedClasses = (extra = "") => {
+  DEFINED = DEFINED || stylesheetClasses(ASSET_FILES["civicsmith.css"].body, ASSET_FILES["shell.css"].body, STYLE);
+  return extra ? new Set([...DEFINED, ...stylesheetClasses(extra)]) : DEFINED;
+};
 
 /* R56: the classes written as literals in `class` attributes (and the `class` set by `setAttribute` or `classList.add`) in
    a source text. A literal cut by a quote of the program's own string, `${` or a backslash keeps its last word unless
@@ -397,14 +441,15 @@ export function classLiterals(src) {
 }
 /* R56: throws, naming the screen (or the guide, or the shell) and the class, for a class no served stylesheet defines
    that is neither a hook class nor one of `civicsmith.css`' own. */
-export function checkClasses(screens, guide, program) {
-  const defined = definedClasses();
+export function checkClasses(screens, guide, program, contribution = EMPTY_CONTRIBUTION) {
+  const defined = definedClasses(contribution.style);
   const check = (who, src) => {
     for (const c of classLiterals(src)) if (!defined.has(c) && !Object.hasOwn(HOOK_CLASSES, c)) throw new Error(`interface-shell: ${who} draws the class ${c}, which no served stylesheet defines`);
   };
   check("the shell", program);
   for (const s of screens) check(`screen ${s.id}`, toSource(s));
   if (guide) check("the guide", toSource(guide));
+  if (Object.keys(contribution.kit).length) check("the t53 contribution", toSource(contribution.kit));
   return true;
 }
 
@@ -424,16 +469,25 @@ export function pageWork() { return { ...WORK }; }
 let SCRIPT = null;
 function release(screens, options) {
   const guide = options && options.guide ? options.guide : null;
-  if (SCRIPT && SCRIPT.screens === screens && SCRIPT.guide === guide) return SCRIPT;
+  const given = options && Object.hasOwn(options, "contribution") ? options.contribution : T53.CONTRIBUTION;
+  if (SCRIPT && SCRIPT.screens === screens && SCRIPT.guide === guide && SCRIPT.given === given) return SCRIPT;
   WORK.checks++;
   checkScreens(screens);
   checkGuide(guide);
+  const contribution = contributionFor(options);
   const program = shellProgram.toString();
-  checkClasses(screens, guide, program);
-  const D = dataOf(screens, guide);
+  checkClasses(screens, guide, program, contribution);
+  const D = dataOf(screens, guide, contribution);
+  /* BOB ruling 7 Nov: a contribution's data after the shell's own keys, never over one */
+  for (const k of Object.keys(contribution.data)) {
+    if (Object.hasOwn(D, k)) throw new Error(`interface-shell: the t53 contribution's data names ${k}, which the shell's page data holds`);
+    D[k] = contribution.data[k];
+  }
   WORK.scripts++;
-  const source = `(${program})(${toSource(D)}, ${toSource(screens)}, window, ${toSource(guide)}).start();`;
-  return (SCRIPT = { screens, guide, source, hash: null });
+  /* an empty contribution adds no fifth argument, so the script is the shell's alone */
+  const kit = Object.keys(contribution.kit).length ? `, ${toSource(contribution.kit)}` : "";
+  const source = `(${program})(${toSource(D)}, ${toSource(screens)}, window, ${toSource(guide)}${kit}).start();`;
+  return (SCRIPT = { screens, guide, given, contribution, source, hash: null });
 }
 export function interfaceScript(screens = [], options = {}) {
   return release(screens, options).source;
@@ -464,6 +518,7 @@ export function versionOfScriptPath(pathname) {
  */
 export function interfacePage(screens = [], options = {}) {
   const hash = interfaceScriptHash(screens, options);
+  const style = styleOf(release(screens, options).contribution);
   const version = options && typeof options.version === "string" && options.version ? options.version : null;
   /* R58, R67: the band as served: the design's `.cs-band[data-band="test"]`, the machine icon, `instance.test.band` and
      `instance.test.notice`, in the English of their words until the member's words are read (R5) */
@@ -477,7 +532,7 @@ export function interfacePage(screens = [], options = {}) {
 <title></title>
 ${version ? `<meta name="cs-version" content="${escape(version)}">\n` : ""}<link rel="stylesheet" href="${STYLESHEET}">
 <link rel="stylesheet" href="${SHELL_STYLESHEET}">
-<style>${STYLE}</style>
+<style>${style}</style>
 </head>
 <body class="cs">
 ${band}<div id="cs-root"></div>
