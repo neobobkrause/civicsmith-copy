@@ -31,8 +31,9 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T21:04:43Z"
+    "state": "WORKING",
+    "at": "2026-11-07T19:47:47Z",
+    "reason": "reopened: meet the unmet requirement marks R72, R73, R74, R75, R76, R77, R78, R79, R80, R82, R83, R84, R85, R86, R87, R88, R94, R89, R90, R91, R92, R93"
   },
   "prior_work": "BOB 5 Nov 20:45, as interface-shell-t53 (coordinator 18:31, option c): your code lives in bio-plane/src/screens-intake-rounds/, which you own; every hook you need inside bio-plane/src/screens-intake/ is screens-intake's: name each as a found mark for screens-intake (report it to BOB), never edit it. Marks resting on other modules (R74 registers' registerList/registerFilter, R83 interface-shell-t53's ceiling scale R140, R94 capture R96/R120) stay open as not-verified until those land."
 }
