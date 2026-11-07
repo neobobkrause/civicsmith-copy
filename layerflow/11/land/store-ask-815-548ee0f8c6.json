@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "store-ask",
+  "pr": 815,
+  "branch": "job/store-ask",
+  "head": "548ee0f8c68bc97a31129fa4898ea62827af93f4",
+  "before": "fe7bf45a8723ea0928ab4d5333b7fc44b70781d2",
+  "merge": "a3ddf5292324647cf101f10e67eab80438e9b5b4",
+  "at": "2026-11-07T17:15:08Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
