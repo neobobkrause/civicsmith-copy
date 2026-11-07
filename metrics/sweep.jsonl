@@ -484,3 +484,4 @@
 {"at":"2026-11-07T02:13:50Z","row":"check","by":"setup check","live":3,"live_at":"2026-11-07T01:52:40Z","job_cap":8,"startable":8}
 {"at":"2026-11-07T02:24:05Z","row":"check","by":"send","live":3,"live_at":"2026-11-07T01:52:40Z","job_cap":8,"startable":8}
 {"at":"2026-11-07T02:36:50Z","row":"check","by":"address","live":3,"live_at":"2026-11-07T01:52:40Z","job_cap":8,"startable":0,"idle_capacity":{"kind":"empty","since":"2026-11-07T02:24:05Z","min":12,"live":3,"cap":8,"held":0,"startable":0,"empty":5,"alarm":false,"layer":9}}
+{"at":"2026-11-07T02:42:09Z","row":"check","by":"github note","live":3,"live_at":"2026-11-07T01:52:40Z","job_cap":8,"startable":0,"idle_capacity":{"kind":"empty","since":"2026-11-07T02:24:05Z","min":18,"live":3,"cap":8,"held":0,"startable":0,"empty":5,"alarm":false,"layer":9}}
