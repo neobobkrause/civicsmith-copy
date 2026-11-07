@@ -133,8 +133,11 @@ test("R25: an act REAUTH_ACTS names, with its argument, is answered 403 with cre
     [fOpen]: { ...founder(caps), reauthUntil: later }, [fShut]: { ...founder(caps), reauthUntil: gone } } });
   /* (F1) every act REAUTH_ACTS names that has a spec is driven, counted against the table as it stands, not a literal */
   const declared = Object.keys(R58).filter((k) => OPS[k]);
-  assert.ok(declared.length > 0 && declared.length === Object.keys(O.REAUTH_ACTS).filter((k) => OPS[k]).length, declared.join());
+  assert.ok(declared.length > 0, "REAUTH_ACTS names acts with a spec");
   let refusedCount = 0;
+  /* (F1, 17:20) the acts answered REAUTH_DUE are exactly the acts the table names with a spec, counted per act, never a
+     floor: an act op-declarations adds that this gate does not ask fails here by name */
+  const askedActs = new Set();
   for (const op of declared) for (const [inT, outT] of [[open, shut], [fOpen, fShut]]) {
     const extraBody = ARG[op] ?? {};
     /* inside the window: not REAUTH_DUE */
@@ -149,9 +152,11 @@ test("R25: an act REAUTH_ACTS names, with its argument, is answered 403 with cre
       const asked = env.calls.filter((c) => c.route === "reauthdue");
       assert.deepEqual(asked.map((c) => [c.ns, c.href, c.headers["x-bio-session"]]), [["bio", "http://do/reauthdue", outT]]);
       refusedCount++;
+      askedActs.add(op);
     } else assert.equal(outside.refusal?.body.reason, inside.refusal?.body.reason, `${op}: an earlier gate answers first`);
   }
-  assert.ok(refusedCount >= 8, String(refusedCount));
+  assert.deepEqual([...askedActs].sort(), [...declared].sort(), "every act REAUTH_ACTS names with a spec is asked the password");
+  assert.ok(refusedCount >= declared.length, String(refusedCount));
   /* order: after R11 (a session lacking the capability is told that first), and only for a session: a binding class
      the act admits is not asked (it has no password to give) */
   const bare = hex64();
