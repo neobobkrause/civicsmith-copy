@@ -1,0 +1,38 @@
+{
+  "id": "budget-doctypes",
+  "title": "budget-doctypes: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "budget-doctypes/",
+    "build/requirements/budget-doctypes.md"
+  ],
+  "tests": [
+    "budget-doctypes/test/"
+  ],
+  "requirements": "build/requirements/budget-doctypes.md",
+  "uses": [
+    "jurisdictions",
+    "docprofile",
+    "office-readers",
+    "pdf-reader",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/budget-doctypes.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

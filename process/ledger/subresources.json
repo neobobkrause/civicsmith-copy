@@ -1,0 +1,35 @@
+{
+  "id": "subresources",
+  "title": "subresources: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "bio-plane/src/subresources.mjs",
+    "build/requirements/subresources.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/subresources/"
+  ],
+  "requirements": "build/requirements/subresources.md",
+  "uses": [
+    "runtime-limits",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/subresources.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

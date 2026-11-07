@@ -1,0 +1,39 @@
+{
+  "id": "odf-reader",
+  "title": "odf-reader: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "bio-plane/src/odf.mjs",
+    "build/requirements/odf-reader.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/odf-reader/"
+  ],
+  "requirements": "build/requirements/odf-reader.md",
+  "uses": [
+    "subresources",
+    "ooxml",
+    "office-readers",
+    "setup-words",
+    "runtime-limits",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/odf-reader.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}
