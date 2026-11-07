@@ -41,7 +41,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/screens-matter.md, each with a test under bio-plane/test/m/screens-matter/ that fails with the change reverted. Your code is screens-action's matter.mjs and words-fix-matter.mjs, and the matter entries of screens-action/index.mjs, which screens-action shares: change only those entries. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T18:29:55Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T18:46:23Z"
   }
 }
