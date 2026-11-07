@@ -15,6 +15,11 @@ test('its requirements file is under the requirements cap of 70000 bytes', () =>
   assert.ok(Buffer.byteLength(text) < 70000);
 });
 
-test('each of its requirements is unmet, as copied', () => {
-  for (const l of text.split('\n').filter((x) => /^- \*\*R\d+\*\*/.test(x))) assert.ok(l.includes('*(not yet met'), l.slice(0, 12));
+// Attempt 2 (7 Nov 2026) met R138 and R141 through interface-shell's hook (kit.test.mjs); every other one stays unmet, as copied.
+const MET = ['R138', 'R141'];
+test('R138 and R141 are met and struck; each other requirement is unmet, as copied', () => {
+  for (const l of text.split('\n').filter((x) => /^- \*\*R\d+\*\*/.test(x))) {
+    const id = /^- \*\*(R\d+)\*\*/.exec(l)[1];
+    assert.equal(l.includes('*(not yet met'), !MET.includes(id), id);
+  }
 });
