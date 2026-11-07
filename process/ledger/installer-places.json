@@ -36,7 +36,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/installer-places.md (split by copy from installer, 5 Nov 2026), each with a test under bio-plane/test/m/installer-places/ that fails with the change reverted. Until a job of this module moves the code they rule, it lives in newgroup/, which is installer's; installer.md still holds R21, R83 and R94 to R98 until installer's own job removes them (coordinator ruling, 5 Nov 2026 17:20). Its terms are installer's (build/requirements/installer.md). The installer Worker (newgroup) is a live site: deploying it is never yours. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T15:00:00Z"
+    "state": "WORKING",
+    "at": "2026-11-07T18:15:14Z"
   }
 }
