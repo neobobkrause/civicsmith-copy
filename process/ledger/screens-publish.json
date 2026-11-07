@@ -53,7 +53,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-06T00:08:00Z"
+    "state": "WORKING",
+    "at": "2026-11-07T17:26:31Z",
+    "reason": "reopened: re-test against the new interface of op-declarations (land e4c350c01d); and meet the unmet marks R82-R106; plus ux DEC-496/DEC-497 (BD-14): the ceremony shows IV-3 CHECK signals (or 'no adversarial check has run') and IV-7's four states, and the grade gloss mark.grade.gloss.<scale>.<letter> beside grade chips on both published and review-outside; words by key from the design stream"
   }
 }
