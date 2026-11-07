@@ -38,7 +38,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T11:23:35Z"
+    "state": "WORKING",
+    "at": "2026-11-07T20:38:31Z",
+    "reason": "reopened: re-test against the new interface of screens-entry (land 2f62b44722), interface-shell (land 49f5b34a88), installer (land f1dad0cf41), screens-settings (land 1a724dc528), screens-entry (land 5a838745d6)"
   }
 }
