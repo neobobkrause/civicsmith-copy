@@ -1,0 +1,12 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "project-roster",
+  "attempt": 1,
+  "branch": "job/project-roster",
+  "early": [
+    "setup-words",
+    "record-core"
+  ],
+  "at": "2026-11-07T16:18:49Z"
+}
