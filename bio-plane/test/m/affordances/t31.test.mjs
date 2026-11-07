@@ -2,6 +2,10 @@
    (DEC-120, DEC-121) and `case-import`'s watch acts (DEC-101 (3)) held to their op maps and the totality (R12), R37's
    no-target screens and offered scripts, and the watch acts' `reversible` backed at case-import's own interface over
    its fixture (R19), each at the module's exports. Their grades are `op-grades`' (its R11, R12), pinned in its tests. */
+/* (F3; op-grades R55, PR 793; BOB, 7 Nov) the owners' declarations are registered before any table is read, as the plane registers
+   them, so R36's op list is built from the registered tables: a register op op-grades grades (`rowexpunge`, which R55 adds to
+   IRREVERSIBLE_WEIGHT) is in it, and an op no owner declares is not. */
+import { REGISTERED } from "./register-owners.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as A from "../../../src/affordances.mjs";
@@ -56,6 +60,22 @@ test("R36: every op the catalogue grades or names, decorated, carries `phone` ex
   /* an alias decorated as its op: `filingrecordsent` is kept for a larger screen as `filingsent` is */
   assert.equal(G.OP_ALIASES.filingrecordsent, "filingsent");
   assert.equal(decorate({ id: "filingrecordsent", label: "x" }, null).phone, false);
+});
+
+test("R36 F3: the op list R36 is checked over is built from the registered tables, so every IRREVERSIBLE_WEIGHT op is in it and "
+   + "answers phone false; rowexpunge, which `registers` declares, is in it (admitted when op-grades R55 adds it to the set); "
+   + "control: an op no owner declares is not in it, and the check names it", () => {
+  const ops = [...new Set([...Object.keys(RUNGS), ...Object.keys(RUNG_ABSENT), ...Object.keys(NON_ACTS),
+                           ...published().map((a) => a.id)])];
+  const outside = (set) => set.filter((op) => !ops.includes(op));
+  assert.deepEqual(outside([...IRREVERSIBLE_WEIGHT]), []);
+  for (const op of IRREVERSIBLE_WEIGHT) assert.equal(decorate({ id: op, label: "x" }, null).phone, false, op);
+  /* rowexpunge is `registers`' op, graded from its declaration: in the list, so R36's negative control counts it once R55 lands */
+  assert.ok(Object.hasOwn(REGISTERED.registers ?? {}, "rowexpunge"), "registers declares rowexpunge");
+  assert.ok(ops.includes("rowexpunge"), "rowexpunge is in the registered tables");
+  assert.equal(phoneWant("rowexpunge", { irreversibleArm: false }), true, "its other arms answer true, so only R55's set makes it false");
+  /* control: a genuinely unregistered op in the set would be seen */
+  assert.deepEqual(outside([...IRREVERSIBLE_WEIGHT, "nosuchregisterop"]), ["nosuchregisterop"]);
 });
 
 test("R36: (op-grades R18, R26 as T37 amends them; DEC-181) LARGER_SCREEN_ACTS holds filingsent alone, its rung "
