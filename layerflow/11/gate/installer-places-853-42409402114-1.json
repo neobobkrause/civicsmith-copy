@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "installer-places",
+  "pr": 853,
+  "sha": "7d66394968b9d489f3fe64c572c58f00ceac854c",
+  "run_id": 42409402114,
+  "run_attempt": 1,
+  "at": "2026-11-07T20:07:15Z",
+  "trigger": "draft",
+  "suite": "skipped",
+  "ok": false,
+  "minutes": 1.04,
+  "suite_minutes": null,
+  "record_only": false,
+  "whole": false
+}

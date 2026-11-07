@@ -1,0 +1,41 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "installer-places",
+  "pr": 853,
+  "branch": "job/installer-places",
+  "head": "e731ccdd9a542f58cbd4fbdc0b2a2398c0437b88",
+  "before": "ca3e10fbec3a82a0163463f0fab7c564cf716b1b",
+  "merge": "f370f294263e6b76b94ac52d89c02361ae5615e3",
+  "at": "2026-11-07T20:20:15Z",
+  "by": "bob",
+  "gate_runs": 7,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "ALLOWED",
+        "ASSISTANT_NEEDS",
+        "ASSISTANT_OFFER",
+        "SECURITY_TOOLS",
+        "localize"
+      ],
+      "changed": [],
+      "kinds": [],
+      "signatures": []
+    },
+    "provides": null,
+    "triggers": [
+      "exports"
+    ],
+    "triggers_old": [
+      "exports"
+    ],
+    "class": "additive",
+    "source_changed": true
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
