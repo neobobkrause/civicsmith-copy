@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "store-door",
+  "pr": 896,
+  "sha": "e9e4690807023158a30351da0f34c6f451c71492",
+  "run_id": 42409100936,
+  "run_attempt": 1,
+  "at": "2026-11-07T20:03:34Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 0.94,
+  "suite_minutes": null,
+  "record_only": true,
+  "whole": false
+}

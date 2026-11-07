@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "store-door",
+  "pr": 896,
+  "branch": "job/store-door",
+  "head": "e96a8869d6591e4f5e95e7653bb7260988d9e245",
+  "before": "559b5bb4ae6e2fe74bc31f910cfeab83031e3116",
+  "merge": "1be38a45270f0581005769ab8e2282437628705b",
+  "at": "2026-11-07T20:24:33Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
