@@ -159,8 +159,9 @@ export function fakeIndexedDB(dbs = new Map()) {
  * Answers `{doc, win, requests, root, clock, settle, click, choose, fire, back, assigned, store, local, byOp, location, ...}`:
  * `store` is the tab's sessionStorage, `local` its localStorage.
  */
-export async function boot({ screens = [], plane = {}, session = SESSION, path = "/app", hash = "", phone = false, local = {}, localThrows = false, tabStore = null, tabThrows = false, html, run = true, tabs: group = null, idb = new Map(), guide = null, testInstance = false, version = null, door = null, declared = collectOwnerRows() } = {}) {
-  const options = { ...(guide ? { guide } : {}), ...(testInstance ? { testInstance } : {}), ...(version ? { version } : {}) };
+export async function boot({ screens = [], plane = {}, session = SESSION, path = "/app", hash = "", phone = false, local = {}, localThrows = false, tabStore = null, tabThrows = false, html, run = true, tabs: group = null, idb = new Map(), guide = null, testInstance = false, version = null, door = null, declared = collectOwnerRows(), contribution } = {}) {
+  /* `contribution` (BOB ruling 7 Nov): a split module's contribution composed in place of `interface-shell-t53`'s, when given */
+  const options = { ...(guide ? { guide } : {}), ...(testInstance ? { testInstance } : {}), ...(version ? { version } : {}), ...(contribution !== undefined ? { contribution } : {}) };
   html = html || served(interfacePage(screens, options));
   const doc = documentOf(html);
   const requests = [], polls = [];
