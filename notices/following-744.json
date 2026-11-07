@@ -1,0 +1,46 @@
+{
+  "row": "notice",
+  "at": "2026-11-07T04:52:08Z",
+  "key": "following:744",
+  "provider": "following",
+  "ids": [],
+  "pr": 744,
+  "users": [
+    "action-producers",
+    "affordances",
+    "answer-envelope",
+    "control-plane",
+    "notice-producers",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "store-assembly"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "ALERT_PURPOSE",
+      "ALERT_SERVICE",
+      "Following.followChanges",
+      "Following.followRegisterQuery",
+      "Following.followStanding",
+      "Following.registerChanges",
+      "Following.registerInterests",
+      "Following.registerWatchStop",
+      "Following.registers",
+      "REGISTER_CHANGES_MAX",
+      "REGISTER_WATCH_KINDS",
+      "answerChange",
+      "docketEntriesAddress"
+    ],
+    "changed": [],
+    "kinds": [],
+    "signatures": []
+  },
+  "layer_flow": {
+    "layer": 10,
+    "provides": false,
+    "rescheduled": true
+  }
+}

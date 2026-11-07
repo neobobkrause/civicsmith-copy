@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 10,
+  "user": "scheduler",
+  "provider": "following",
+  "provider_pr": 744,
+  "provider_land": "864850f2d9d00d0255814e48410ea6c6180f2597",
+  "at": "2026-11-07T04:52:08Z",
+  "key": "scheduler<-following@864850f2d9",
+  "why": "added ALERT_PURPOSE, ALERT_SERVICE, Following.followChanges, Following.followRegisterQuery, Following.followStanding, Following.registerChanges, Following.registerInterests, Following.registerWatchStop, Following.registers, REGISTER_CHANGES_MAX, REGISTER_WATCH_KINDS, answerChange, docketEntriesAddress; its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/following/checks.test.mjs: breaking, added code that is not an object property: QUERY_NOT_NAMED : async ( w ) => [, bio-plane/test/m/following/fixture.mjs: breaking, too large to align, bio-plane/test/m/following/t53-alerts.test.mjs: breaking, added, naming R5, R13, R41, R42 (Provides before this land) while following's source changed: it may assert a changed answer, bio-plane/test/m/following/t53-registers.test.mjs: breaking, added, naming R1, R8, R32, R34, R37, R38, R39, R40, R43, R44, R46 (Provides before this land) while following's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
