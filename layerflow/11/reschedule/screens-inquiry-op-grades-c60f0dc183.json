@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "screens-inquiry",
+  "provider": "op-grades",
+  "provider_pr": 866,
+  "provider_land": "c60f0dc183f59b512909e30e75beccfbfd3fc6cd",
+  "at": "2026-11-07T20:31:00Z",
+  "key": "screens-inquiry<-op-grades@c60f0dc183",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/op-grades/owners.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/op-grades/r57.test.mjs: breaking, added, naming R49, R57 (Provides before this land) while op-grades's source changed: it may assert a changed answer, bio-plane/test/m/op-grades/t35.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/op-grades/t36.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/op-grades/t37.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/op-grades/t41.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/op-grades/t42.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/op-grades/t46.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/op-grades/t49.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
