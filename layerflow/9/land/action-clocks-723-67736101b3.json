@@ -1,0 +1,23 @@
+{
+  "row": "land",
+  "layer": 9,
+  "module": "action-clocks",
+  "pr": 723,
+  "head": "67736101b358a47d1efe9c545d310c66eb415f56",
+  "before": "13d84e1896d80f8f5cebeaaaadf90e381ddb3fc3",
+  "merge": "2b1b66d1a204622efbda6d367004bf724e500fb4",
+  "at": "2026-11-07T00:37:52Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none"
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
