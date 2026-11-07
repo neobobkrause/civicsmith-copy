@@ -5,10 +5,11 @@
  * off the address on load and hands it in as `view.fragment.grant` (interface-shell R46, R9's route). Every function is
  * self-contained (interface-shell R21 (1)). */
 import { PARTS } from "./parts.mjs";
+import { PUBLISHED_PARTS } from "./published-parts.mjs";
 
 export const REVIEW_OUTSIDE = Object.freeze({
   id: "review-outside",
-  parts: PARTS,
+  parts: Object.freeze({ ...PARTS, pubHead: PUBLISHED_PARTS.pubHead, pubFoot: PUBLISHED_PARTS.pubFoot }),
 
   reads: function (view) {
     // interface-shell R46: the fragment read once on load, removed from the address, handed in as `{grant}`.
@@ -26,8 +27,13 @@ export const REVIEW_OUTSIDE = Object.freeze({
     const c = copy && copy.case ? copy.case : {};
     const gi = view.data.group && view.data.group.state === "ok" ? view.data.group.value : null;
     const group = gi ? gi.display_name || gi.group || "" : "";
-    out.push(cs.title(P.titleOf2(cs, copy, group ? P.plain(cs.w("screen.review-outside.heading", { group: group })) : null), { thing: "case" }));
-    if (!copy) { out.push(cs.state("copy", function () { return ""; })); return out.join(""); }
+    // R98: the heading names the team that shared the draft and the case's title (the copy's short title), each where it is known
+    const from = group ? P.plain(cs.w("screen.review-outside.heading", { group: group })) : "";
+    const named = P.titleOf2(cs, copy, "");
+    out.push(P.pubHead(cs, group)); // R104
+    out.push('<header data-review-head>' + cs.title(named || from || null, { thing: "case" })
+      + (named && from ? '<p class="mk-sub" data-shared-by>' + cs.w("screen.review-outside.heading", { group: group }) + "</p>" : "") + "</header>");
+    if (!copy) { out.push(cs.state("copy", function () { return ""; }), P.pubFoot(cs)); return out.join(""); }
     out.push(P.noCase(cs, copy));
     const g = copy.grant || {};
     const until = typeof g.until === "string" && g.until ? g.until : null; // R18: the recipient's own grant part
@@ -50,6 +56,7 @@ export const REVIEW_OUTSIDE = Object.freeze({
       + '<div class="mk-acts">' + cs.act("statementack", { label: "review.statement.ack", tone: "primary" }) + "</div>" + P.said(view, "statementack"), { help: "review.statement.help" }) : "");
     out.push(cs.sec("screen.review-outside.comment", cs.field("ro-comment", "screen.review-outside.comment.label", { area: true, help: "screen.review-outside.comment.help" })
       + '<div class="mk-acts">' + cs.act("reviewcomment", { tone: "primary" }) + "</div>" + P.said(view, "reviewcomment")));
+    out.push(P.pubFoot(cs)); // R104
     return out.join("");
   },
 
