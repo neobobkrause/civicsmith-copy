@@ -1,0 +1,16 @@
+{
+  "row": "test",
+  "module": "corpus-export",
+  "session": "session_018BhceczznvexoPQrQW8CHN",
+  "started": "2026-11-07T19:48:06Z",
+  "ended": "2026-11-07T19:49:46Z",
+  "at": "2026-11-07T19:49:46Z",
+  "minutes": 1.67,
+  "result": "pass",
+  "suite_seconds": 20.312,
+  "tests": {
+    "total": 47,
+    "pass": 45,
+    "fail": 0
+  }
+}
