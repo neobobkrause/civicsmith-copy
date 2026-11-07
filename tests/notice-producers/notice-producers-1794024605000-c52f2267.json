@@ -1,0 +1,16 @@
+{
+  "row": "test",
+  "module": "notice-producers",
+  "session": "session_018Bhcecct2Ai7Zhx22qRU1W",
+  "started": "2026-11-07T04:10:05Z",
+  "ended": "2026-11-07T04:11:38Z",
+  "at": "2026-11-07T04:11:38Z",
+  "minutes": 1.55,
+  "result": "pass",
+  "suite_seconds": 14.928,
+  "tests": {
+    "total": 160,
+    "pass": 160,
+    "fail": 0
+  }
+}
