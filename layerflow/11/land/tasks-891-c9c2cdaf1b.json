@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "tasks",
+  "pr": 891,
+  "branch": "job/tasks",
+  "head": "c9c2cdaf1b5bc997675e4fd70298eb0e083a13f5",
+  "before": "8a44df02d133fcd808071372e182845492c98d7b",
+  "merge": "c7e8249274c35683f5e0ae119a00e06572f93c71",
+  "at": "2026-11-07T20:14:14Z",
+  "by": "bob",
+  "gate_runs": 1,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
