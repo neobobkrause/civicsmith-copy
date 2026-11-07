@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "installer-copies",
+  "session": "session_018BhcecgzoySBQwFvyzs8WD",
+  "started": "2026-11-07T18:23:14Z",
+  "ended": "2026-11-07T18:24:56Z",
+  "at": "2026-11-07T18:24:56Z",
+  "minutes": 1.7,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 0.142,
+  "tests": {
+    "total": 2,
+    "pass": 2,
+    "fail": 0
+  }
+}
