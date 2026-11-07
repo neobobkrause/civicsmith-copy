@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "observation-log",
+  "session": "session_018Bhcefypgh6hXWFEctc2S4",
+  "started": "2026-11-07T16:25:07Z",
+  "ended": "2026-11-07T16:26:39Z",
+  "at": "2026-11-07T16:26:39Z",
+  "minutes": 1.53,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 2.993,
+  "tests": {
+    "total": 92,
+    "pass": 92,
+    "fail": 0
+  }
+}
