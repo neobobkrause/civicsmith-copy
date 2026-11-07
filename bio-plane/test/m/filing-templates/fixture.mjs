@@ -160,9 +160,12 @@ export function approved(w, x = {}) {
  *  jurisdictions-shaped reader (default the module itself); the profiles are otherwise unchanged. */
 export const PRO_REVIEW = { reviewer: "Dee Example", kind: "professional", organisation: "Marlow Commons Legal Society (test)",
                             credential: "solicitor (test)", scope: "the whole text", outcome: "no_concerns", at: "2026-08-25" };
+/** R38 (T53; `jurisdictions` R126): a professional review counts only of the text as it is now, so it carries the text's
+ *  SHA-256 (`reviewed_text_sha`); `over` changes any field. */
+export const proReview = (text, over = {}) => ({ ...PRO_REVIEW, reviewed_text_sha: sha(text), ...over });
 export function attributed(p) {
   const fix = (t) => ({ ...t, sources: t.sources && t.sources.length ? t.sources : [{ citation: "P.E.B.L. § 1" }],
-                        reviews: [...(t.reviews || []).filter((r) => r.kind !== "professional"), PRO_REVIEW] });
+                        reviews: [...(t.reviews || []).filter((r) => r.kind !== "professional"), proReview(t.text)] });
   for (const k of p.action_kinds || []) {
     if (k.template) k.template = fix(k.template);
     if (Array.isArray(k.templates)) k.templates = k.templates.map(fix);

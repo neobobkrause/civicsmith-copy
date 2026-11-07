@@ -69,7 +69,7 @@ import { actionClocksOf, reminderRefused } from "../action-clocks/index.mjs";
 import { escalationOf } from "../escalation/index.mjs";
 import { filingsOf } from "../filings/index.mjs";
 import { dutiesOf, noSuchDuty, INTERNAL as DUTIES_INTERNAL } from "../duties/index.mjs";
-import { aiRunsOf } from "../ai-runs/index.mjs";
+import { aiRunsOf, AiRuns } from "../ai-runs/index.mjs";
 import { runPrincipalGate } from "../run-rules/index.mjs";
 import { isMachineIdentity, proposalLabel, normalizeType } from "../record-grammar/index.mjs";
 import { ACTION_PLAN, planId, planDoc, appendEntry, logOf, logSection, parseFm, q, tok } from "./doc.mjs";
@@ -817,6 +817,12 @@ export class ActionPlans {
     if (!who)
       return refusal("PROPOSAL_NO_PROPOSER", localize("action-plans.index.a_proposal_names_who_made", "a proposal names who made it, and this one came with no stamped caller. Nothing was written."));
     /* END DEC-49 REGION is-proposer-stamped */
+    /* R55 (T53; agent-steps R54): a call carrying an `idem` its principal has already sent answers the first call's
+       answer verbatim, `repeated: true`, and stores nothing; it is asked before anything else, since the step that
+       re-runs after a stop may find its run stopped. Without an `idem` the call is R11's as before. */
+    const idem = typeof args.idem === "string" && args.idem.trim() ? args.idem.trim() : null;
+    const idemBy = str(principal) || who;
+    if (idem) { const first = this.#repeatedProposal(idemBy, idem); if (first) return first; }
     const p = this.#plan(plan, viewer);
     if (!p) return noSuchPlan(plan);
     if (p.state === "closed") return refusePlanClosed(p.id);
@@ -833,6 +839,14 @@ export class ActionPlans {
       return refusal("PROPOSAL_WHY_REFUSED", `a proposal says why it is offered, in 1 to ${WHY_MAX} characters. Nothing was written.`,
         { max: WHY_MAX });
     /* END DEC-49 REGION is-proposal-why */
+    /* R56 (T53; agent-steps R56): who produced it, the labels of the conversations as agent-model answered them, kept
+       deduplicated in order; absent or null is none. A machine's proposal stores it, a member's own stores null. */
+    const producedBy = producedByOf(args.produced_by);
+    /* DEC-49 REGION is-proposal-produced-by */
+    if (producedBy === undefined)
+      return refusal("PLAN_PRODUCED_BY_MALFORMED", localize("action-plans.index.produced_by_malformed", "produced_by is not a list of the labels of the conversations that produced this proposal, each holding only a label's fields ({fields}). Nothing was written.", { fields: String(AiRuns.LABEL_FIELDS.join(", ")) }),
+        { fields: [...AiRuns.LABEL_FIELDS] });
+    /* END DEC-49 REGION is-proposal-produced-by */
     let srcs = null;
     if (machine) {
       const s = this.#sources(sources, viewer);
@@ -847,6 +861,7 @@ export class ActionPlans {
     const at = this.now();
     const r = this.record.transact(() => {
       /* R31: the run is asked again inside the transaction, so a bound reached meanwhile is not passed. */
+      if (idem) { const first = this.#repeatedProposal(idemBy, idem); if (first) return { ok: true, first }; }
       if (machine) { const again = this.#runGate(run, p, principal, viewer); if (!again.ok) return again; }
       const n = (this.#one(`SELECT COUNT(*) AS n FROM plan_option_proposals WHERE plan_id=?`, p.id) || { n: 0 }).n + 1;
       const id = `${p.id}/proposal/${n}`;
@@ -856,10 +871,22 @@ export class ActionPlans {
         id, p.id, n, JSON.stringify(f.fields), why.trim(), who, machine ? 1 : 0, machine ? gate.run.run : null, skill,
         srcs ? JSON.stringify(srcs) : null, ord, at);
       if (machine) { const c = this.aiRuns.consumeBound(gate.run.run, "proposals", 1); if (c) return c; }
-      return { ok: true, id };
+      if (machine && producedBy !== null)
+        this.sql.exec(`UPDATE plan_option_proposals SET produced_by_json=? WHERE proposal_id=?`, JSON.stringify(producedBy), id);
+      const answer = { ok: true, plan: p.id, proposal: this.#proposalView(this.#proposalRow(id)), says: PROPOSAL_SAYS };
+      if (idem)
+        this.sql.exec(`UPDATE plan_option_proposals SET idem=?, idem_by=?, answer_json=? WHERE proposal_id=?`,
+          idem, idemBy, JSON.stringify(answer), id);
+      return { ok: true, answer };
     });
     if (!r.ok) return r;
-    return { ok: true, plan: p.id, proposal: this.#proposalView(this.#proposalRow(r.id)), says: PROPOSAL_SAYS };
+    return r.first ?? r.answer;
+  }
+  /* R55: the first answer to an `idem` this principal sent, verbatim with `repeated: true`, or null. */
+  #repeatedProposal(by, idem) {
+    const row = this.#one(`SELECT answer_json FROM plan_option_proposals WHERE idem_by=? AND idem=?`, by, idem);
+    if (!row) return null;
+    return { ...unjson(row.answer_json, {}), repeated: true };
   }
 
   /* R31: the run a machine's proposal names, in R31's order; `{ok, run}` or a refusal. `caller` is the `principal`
@@ -932,6 +959,7 @@ export class ActionPlans {
     }
     return { id: r.proposal_id, plan: r.plan_id, ...(see ? see.fields(fields) : fields), why: r.why,
              label: proposalLabel(r.proposer, "plan_option"),
+             produced_by: machine ? unjson(r.produced_by_json, null) : null,
              ...(machine ? { run: r.run, skill_version: r.skill_version ?? null, sources,
                              disclosure: DISCLOSURE(r.run, r.skill_version),
                              work_kinds: kinds && kinds.work_kinds_json !== null && kinds.work_kinds_json !== undefined
@@ -2481,3 +2509,21 @@ export const DECLARED_OPS = Object.freeze({
   planask: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "reversible", description: localize("action-plans.declared.planask", "plan-directed: keyed by a plan; a member asks the assistant for options on it, opening one planning run whose proposals reach the member's tray; writes no option and moves no bundle"),
     fields: { accepts: ["plan"], requires: ["plan"] } },
 });
+
+/** R56 (T53): a `produced_by` as sent: null when absent or null; the list of label objects, each holding only a label's
+ *  fields (`ai-runs`' `LABEL_FIELDS`), with string or null values, deduplicated with the first kept, in order;
+ *  `undefined` when malformed. */
+function producedByOf(v) {
+  if (v === undefined || v === null) return null;
+  if (!Array.isArray(v)) return undefined;
+  const out = [], seen = new Set();
+  for (const l of v) {
+    if (!l || typeof l !== "object" || Array.isArray(l)) return undefined;
+    const keys = Object.keys(l);
+    if (!keys.length || keys.some((k) => !AiRuns.LABEL_FIELDS.includes(k))) return undefined;
+    if (keys.some((k) => l[k] !== null && typeof l[k] !== "string")) return undefined;
+    const key = JSON.stringify(AiRuns.LABEL_FIELDS.filter((k) => k in l).map((k) => [k, l[k]]));
+    if (!seen.has(key)) { seen.add(key); out.push({ ...l }); }
+  }
+  return out;
+}
