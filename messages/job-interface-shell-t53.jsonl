@@ -7,3 +7,4 @@
 {"at":"2026-11-07T16:31:30Z","row":"sent","n":4,"to":"bob","text":"job interface-shell-t53 BLOCKED: run status"}
 {"at":"2026-11-07T16:31:47Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-07T18:09:28Z","row":"sent","n":5,"to":"bob","text":"job interface-shell-t53 BLOCKED: run status"}
+{"at":"2026-11-07T18:09:50Z","row":"outcome","n":5,"outcome":"delivered"}
