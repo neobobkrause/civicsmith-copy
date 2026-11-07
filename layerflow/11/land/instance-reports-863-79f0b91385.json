@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "instance-reports",
+  "pr": 863,
+  "branch": "job/instance-reports",
+  "head": "79f0b913850cb8fbaa191667bb488d4932e50ac5",
+  "before": "c6a82f12d6f26ed60a8c4ad7654eb408406a4be3",
+  "merge": "b70a5619be0a127dd22b96be77b3028e560d0e2e",
+  "at": "2026-11-07T18:57:12Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
