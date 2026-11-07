@@ -1,0 +1,53 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-inquiry",
+  "pr": 936,
+  "branch": "job/screens-inquiry",
+  "head": "e3d356d6060ea634a0e2eafbb238b28b306fa54a",
+  "before": "cc7e4d4a4c53ec98efac4a8ff9c394985d5878ce",
+  "merge": "9b21af87cddfc19460fbe4cb76473b00db6d10e3",
+  "at": "2026-11-07T22:14:52Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-inquiry/r10-stated.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-inquiry/r10-stated.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-inquiry/r10-stated.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: statesItself ( reading ) &&"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-inquiry/r10-stated.test.mjs"
+    ],
+    "triggers": [],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "none",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/screens-inquiry/r10-stated.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "importers": []
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "journey-check"
+  ],
+  "users_noticed": []
+}
