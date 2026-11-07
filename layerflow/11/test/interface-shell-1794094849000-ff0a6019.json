@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "interface-shell",
+  "session": "session_018Bhcec6dbcE476dDsKgcK9",
+  "started": "2026-11-07T23:40:49Z",
+  "ended": "2026-11-07T23:44:56Z",
+  "at": "2026-11-07T23:44:56Z",
+  "minutes": 4.12,
+  "result": "fail",
+  "layer": 11,
+  "suite_seconds": 128.684,
+  "tests": {
+    "total": 408,
+    "pass": 405,
+    "fail": 3
+  }
+}
