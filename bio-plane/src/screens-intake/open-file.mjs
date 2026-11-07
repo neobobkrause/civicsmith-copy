@@ -3,6 +3,8 @@
  * request beyond the op's own, which member opened which file (R9): `ui` lives in page memory only, and every request is
  * one of the ops, carrying the capture's digest and nothing of the member's but the session header. */
 
+import { leftOutLine } from "../screens-intake-rounds/index.mjs";
+
 /* R5: the reads for the capture; `scanstatus` is an administrators' read (file-safety R5), read only for a session that
  * administers (K2996 Q7), as an act refused to the session is not drawn (interface-shell R12). */
 function openFileReads(view) {
@@ -76,6 +78,16 @@ function renderOpenFile(cs, view) {
               + "</tbody></table>") + cut;
       }).join("") + (s.sheets_truncated === true ? said("screen.open-file.safe.sheetscut", { shown: sheets.length, total: s.sheets_total ?? sheets.length }) : "");
     }
+    /* R77, R81 (A4; file-safety R60): a photograph's safe picture is described by the owner's answer; beside it, what was left out of it, each kind by
+       `screen.photo.dropped.<kind>` (screens-intake-rounds' `leftOutLine`), nothing when nothing was left out. The picture itself is drawn once the kit can
+       show a byte answer in the page (R77, owed) */
+    if (s.kind === "picture") {
+      /* the part fills `{what}` with phrases already drawn by `cs.w` (HTML) as a plain string, which the kit would escape again; it is handed a kit that marks
+         that fill as HTML (reported to BOB for screens-intake-rounds) */
+      const kit = Object.assign(Object.create(cs), { w: (k, v) => cs.w(k, v && typeof v.what === "string" ? { ...v, what: { html: v.what } } : v) });
+      const left = view.parts.leftOutLine(kit, s.left_out);
+      return said("screen.open-file.safe.ready") + (left ? `<p class="mk-small" data-leftout="1">${left}</p>` : "");
+    }
     return said("screen.open-file.safe.ready")
       + (Number.isFinite(s.pages) ? said(s.truncated ? "screen.open-file.safe.truncated" : "screen.open-file.safe.pages", { pages: s.pages, total: s.source_pages ?? s.pages }) : "");
   };
@@ -113,7 +125,9 @@ function renderOpenFile(cs, view) {
       : ` <span data-renderer-reason="${cs.esc(r)}">${cs.w("refusal.uncatalogued")} <code>${cs.esc(r)}</code></span>`;
     /* F-B15 (R36): a file of a kind the owner makes no safe view of (`threatof`'s `format`; file-safety R11's routes and R45's text) says so once, in place of the
        act and of every sentence that sends the member to the safe view; the owner's refusal on a plain-text file that is not UTF-8 stays an answer to the press */
-    const hasSafeView = !(typeof t.format === "string" && !["pdf", "docx", "pptx", "odt", "odp", "xlsx", "ods", "csv", "text"].includes(t.format));
+    /* R77 (A4; file-safety R60): a photograph (`image` of a type the owner makes a safe picture of, JPEG or PNG) has a safe view */
+    const picturable = t.format === "image" && t.image && typeof t.image === "object" && ["jpeg", "png"].includes(t.image.type);
+    const hasSafeView = picturable || !(typeof t.format === "string" && !["pdf", "docx", "pptx", "odt", "odp", "xlsx", "ods", "csv", "text"].includes(t.format));
     const safe = !hasSafeView ? cs.sec("screen.open-file.safe", `<p class="mk-small" data-nosafeview="1">${cs.w("refusal.NO_SAFE_VIEW")}</p>`)
       : cs.sec("screen.open-file.safe", `<p class="mk-small">${cs.w("screen.open-file.safe.about")} `
       + `${cs.mark("origin", "machine")} ${cs.w("screen.open-file.safe.origin")}. ${cs.w("screen.open-file.safe.cite")}</p>`
@@ -210,6 +224,8 @@ async function sendSafeView(view, el, cs) {
   const a = j && typeof j === "object" && j.result && typeof j.result === "object" ? j.result : j;
   cs.set("safeRefused", null);
   if (a && a.kind === "data" && a.ok !== false) { cs.set("refused", null); cs.set("safe", a); return null; }
+  /* R77, R81 (file-safety R60): a photograph's safe picture is answered by its description (what the file says, what was left out) */
+  if (a && a.kind === "picture" && a.ok !== false) { cs.set("refused", null); cs.set("safe", { kind: "picture", left_out: Array.isArray(a.left_out) ? a.left_out : [] }); return null; }
   /* R36 (file-safety R45): a plain-text file's safe view is its own characters, drawn as text */
   if (a && a.kind === "text" && a.ok !== false) { cs.set("refused", null); cs.set("safe", { kind: "text", text: String(a.text ?? ""), truncated: a.truncated === true }); return null; }
   /* R36: the safe view draws its result or its refusal, never nothing: `NO_SAFE_VIEW` by its key, another refusal in its own
@@ -257,7 +273,7 @@ export const OPEN_FILE_SCREEN = Object.freeze({
   id: "open-file",
   reads: openFileReads,
   render: renderOpenFile,
-  parts: Object.freeze({ openedAs }),
+  parts: Object.freeze({ openedAs, leftOutLine }),
   acts: Object.freeze([
     Object.freeze({ op: "openoriginal", rereads: Object.freeze([]), label: "act.openoriginal.label.open-file", send: sendOpenOriginal }),
     Object.freeze({ op: "openwithwarning", rereads: Object.freeze([]), label: "act.openwithwarning.label.open-file", send: sendOpenWithWarning }),

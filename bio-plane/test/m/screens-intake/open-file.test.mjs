@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { openWorld, members, html, text, main, btn, fill, press, ok, refused, bytes, rawKeys, word, hasWord, says, saysIn, dayOf } from "./page.mjs";
 import { makeZip } from "../../make-zip.mjs";
+import { fixture as photo } from "../image-cover/answers.mjs";
 
 const sha = (v) => createHash("sha256").update(v).digest("hex");
 const json = (b, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { "content-type": "application/json" } });
@@ -583,6 +584,34 @@ test("R36 F-B14 control: the reasons the size sentence already states draw no se
 /* A4 (file-safety's picture route): the owner now makes a safe picture of a photograph, so a PNG is no longer a kind with no safe view; R36's
    control "a PNG draws refusal.NO_SAFE_VIEW" is replaced by R77, not yet met (T53), and named here as owed, never pinned (K208). */
 test.todo("R77 open-file draws a photograph's safe picture (a PNG draws its picture), with what the file says and what was left out");
+
+/* F1 (screens-intake-rounds R81 on the screen; BOB 5 Nov and PR 888): a photograph's safe view is offered, and beside it what was left out of the safe
+   picture, each kind by `screen.photo.dropped.<kind>` through screens-intake-rounds' `leftOutLine`. The photographs are image-cover's published fixtures;
+   the owner's own batch makes the picture and its description answers `left_out`. */
+test("F1 R81 a photograph's safe view draws what was left out of the safe picture, each kind by key; control: a bare photograph draws no such line", async () => {
+  const t = await team();
+  const full = await upload(t, t.mai, "Photo", photo("photo-full.jpg"), "image/jpeg");
+  await daemon(t, "renderbatch");
+  const bare = await upload(t, t.mai, "Bare", photo("photo-bare.jpg"), "image/jpeg");
+  await daemon(t, "renderbatch");
+  const owner = (await t.world.door({ url: `/api/?${new URLSearchParams({ op: "safeview", capture: full.sha })}` }, t.mai)).json.result;
+  assert.equal(owner.kind, "picture", "the owner made the safe picture: " + JSON.stringify(owner).slice(0, 160));
+  const kinds = [...new Set(owner.left_out.map((x) => x.kind))];
+  assert.ok(kinds.includes("thumbnail"), "the full photograph leaves out its thumbnail: " + kinds.join(","));
+  const p = await at(t, full);
+  assert.ok(btn(p, "safeview"), "a photograph has a safe view");
+  assert.equal(main(p).querySelectorAll("[data-nosafeview]").length, 0);
+  await press(p, "safeview");
+  const line = main(p).querySelector("[data-leftout]");
+  assert.ok(line, "the left-out line is drawn beside the safe picture");
+  for (const k of kinds) assert.ok(line.textContent.includes(word("screen.photo.dropped." + k)), k);
+  assert.ok(hasWord("screen.photo.dropped") && hasWord("screen.photo.dropped.thumbnail"));
+  assert.deepEqual(rawKeys(p), []);
+  const q = await at(t, bare);
+  await press(q, "safeview");
+  assert.equal(main(q).querySelector("[data-leftout]"), null, "nothing left out, no line");
+  assert.ok(says(q, "screen.open-file.safe.ready"), "the safe picture is still said");
+});
 
 test("R36 F-B15 a kind the owner makes no safe view of says so once and is not sent to the safe view; every kind it does make one of still is", async () => {
   const kinds = [["Page", "<html><body>Hello</body></html>", "text/html", false],

@@ -124,7 +124,7 @@ Consequences: each lane works its side. Requests across the border go through BO
 ## BD-14: Investigation best-practice departures (Bob, Q9, 7 Nov)
 Context: the investigation lane's qualification listed seven places where the design departs from investigation best practice (Q9; paper https://claude.ai/artifact/THTtouNJzkhmHqyR4Pfa4g). Bob answered them through the coordinator.
 Decision (Bob):
-- Q9.1 Rival hypotheses: "B": rival sets, marked by members. Bob's condition: "the question of how to support competing hypotheses is influenced not just by which is more powerful/capable. But another factor is whether a UX can be presented to users that they can successfully understand and navigate the UX for that choice. If it's too complex, then what should the fallback choice be?" The fallback is still open with Bob.
+- Q9.1 Rival hypotheses: superseded by BD-17 (Bob, 7 Nov). Option B, its rules-out fallback and the UX check between them no longer stand.
 - Q9.2 Key assumptions, with a CHECK at concluding and before signing: "B".
 - Q9.3 Search parameters recorded on each look: "B". The INV:85 canon amendment still waits on Q7.
 - Q9.4 Independent reading, on by default, with its absence stated: "B".
@@ -132,10 +132,7 @@ Decision (Bob):
 - Q9.6 An optional reason on a leg, in the member's own words: "B". Funding disclosure goes to the publication lane (BD-13).
 - Q9.7 Keep as ruled, with the word gloss going to the ux lane: "as recommended".
 Bob's caveat: he chose these "without the opportunity for first see whether the resulting UX is rich enough and friendly enough to allow all members using the feature to understand what they're seeing and successfully navigate making their changes".
-Later the same day Bob settled the two open Q9.1 points, choosing from options the coordinator offered him:
-- Fallback, if members find B too complex: "Rules-out marks only". Rivals are listed side by side. A member marks a leg only when it cuts against a rival ("rules out X"), with one action per leg and no full consistent/inconsistent grid. The "still standing" list stays.
-- UX check: "Q9.1 only". The ux lane builds a clickable walkthrough of rival-hypothesis marking (B, with the rules-out fallback beside it) and shows it to Bob before any job builds Q9.1. Q9.2, Q9.4 and Q9.6 go ahead, and the ux lane reviews them in its normal course.
-Consequences: no job builds Q9.1's rival-set marking until Bob has seen the ux lane's walkthrough and confirmed B or the rules-out fallback. Q9.2–Q9.7 proceed. The investigation lane drafts their requirements; BOB places them in modules and layers. The ux lane carries the Q9.7 gloss and the Q9.1 walkthrough. The publication lane takes funding disclosure.
+Consequences: Q9.1 is BD-17's. Q9.2–Q9.7 proceed. The investigation lane drafts their requirements; BOB places them in modules and layers. The ux lane carries the Q9.7 gloss. The publication lane takes funding disclosure.
 
 ## BD-15: Funding disclosure in a case (Bob, 7 Nov)
 Context: BD-13 gave funding disclosure to the publication lane, and BD-14 Q9.6 found that a published case names no funder, against IFCN 3. The lane designed a signed `funding:` block for case-grammar /11 (research in docs/development/publication-design-research/funding-in-product.md and funding-disclosure-practice.md) and put four questions to Bob. Bob chose from the lane's options, through the coordinator.
@@ -152,4 +149,15 @@ Context: the investigation lane asked who may amend BIO_Investigation_v0_1.md (Q
 Decision (Bob):
 - Q7 (who amends BIO_Investigation_v0_1.md): "as recommended". The investigation lane drafts each amendment as a claude.ai artifact. Bob approves it, and then the module's job or BOB places it, as at K2417–K2420.
 - Q8 (one term per concept): "every reasonable effort should be made to use one unique term per concept".
-Consequences: open-asks A3, A4 and A5 are unblocked. The lane drafts these for Bob's approval: the canon amendments (INV:85's IV-4 line; the stale INV:5, INV:9, INV:37 and INV:53 lines; Declared Bias :13) and the term fixes. Once Bob approves them, BOB places them. Still open: Q9.1 (Bob first reviews the walkthrough WCzdua7ccBB95KbtwGvatt) and IV-9 (the coordinator is writing the background Bob asked for).
+Consequences: open-asks A3, A4 and A5 are unblocked. The lane drafts these for Bob's approval: the canon amendments (INV:85's IV-4 line; the stale INV:5, INV:9, INV:37 and INV:53 lines; Declared Bias :13) and the term fixes. Once Bob approves them, BOB places them. Q9.1 is settled by BD-17. Still open: IV-9 (the coordinator is writing the background Bob asked for).
+
+## BD-17: Rival explanations are hypotheses; only a conclusion meeting the bar rules one out (Bob, Q9.1, 7 Nov)
+Context: BD-14's Q9.1 (rival hypotheses marked by members, option B, with a rules-out fallback and a UX walkthrough between them). Bob returned to it on 7 Nov through the coordinator. This record supersedes BD-14's Q9.1.
+Decision (Bob, 7 Nov, his words):
+- "the only legitimate reason to stop exploring in a direction is that the evidence not only doesn't support that directions but determines with high confidence that that's not the case."
+- "conclusions [are] based solely on what the evidence supports. If it can't be proven, then it shouldn't be part of the conclusion."
+- He asked that "high confidence" not be a determinant of the system. He was shown that the canon already defines proof as graded evidence meeting the project's bar (INV:28, INV:54, INV:98, INV:119, INV:141). He answered "Yes" to these three points:
+  1. Rival explanations are hypotheses: labelled and never evidence, as the canon holds.
+  2. A member's mark only sets the order in which the group explores directions, and the screen says so when the mark is made.
+  3. No rival is ever set aside by marks. A rival is ruled out only by a conclusion on the question that meets the project's bar; until then it shows "not established".
+Consequences: no change to grades, bars or publication. BD-14's option B, the rules-out fallback and the UX check between them are withdrawn. The ux lane's Q9.1 hold ends: it redesigns the walkthrough to these three points for Bob to try. The investigation lane drafts the requirements. BOB places them in modules and layers once Bob has tried the walkthrough.
