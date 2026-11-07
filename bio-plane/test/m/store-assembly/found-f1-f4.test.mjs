@@ -5,7 +5,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { store } from "./fixture.mjs";
-import { noticeProducerFeeds } from "../../../src/store-assembly/assemble.mjs";
 import { Scheduler, schedulerOf } from "../../../src/scheduler/index.mjs";
 import { followingOf, ALERT_SERVICE, ALERT_PURPOSE } from "../../../src/following/index.mjs";
 import { recordOf } from "../../../src/record-core/index.mjs";
@@ -48,6 +47,9 @@ test("F3 (R101; notice-producers R31): the ended feeds handed to notice-producer
   const x = await store();
   const registers = registersOf(x.ctx);
   const pending = { readingsEnded: (q) => ({ asked: q }) };
+  /* loaded at the test, so with the change reverted the test fails on this assertion, not at import */
+  const { noticeProducerFeeds } = await import("../../../src/store-assembly/assemble.mjs");
+  assert.equal(typeof noticeProducerFeeds, "function", "the assembly exports the ended feeds it hands notice-producers");
   const feeds = noticeProducerFeeds({ pending, registers });
   assert.deepEqual(Object.keys(feeds).sort(), ["importsEnded", "readingsEnded"]);
   assert.deepEqual(feeds.importsEnded({ after: 0, limit: 5 }), registers.importsEnded({ after: 0, limit: 5 }));
