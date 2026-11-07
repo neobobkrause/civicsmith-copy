@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "plane",
+  "provider": "op-grades",
+  "provider_pr": 849,
+  "provider_land": "dfeadc2921640932ed2bc5bf538008052fa4db1d",
+  "at": "2026-11-07T18:40:24Z",
+  "key": "plane<-op-grades@dfeadc2921",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/op-grades/bd1-exportwhole.test.mjs: breaking, added, naming R18 (Provides before this land) while op-grades's source changed: it may assert a changed answer, bio-plane/test/m/op-grades/r55.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/op-grades/t35.test.mjs: breaking, added code that is not an object property: , \"rowexpunge\"), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
