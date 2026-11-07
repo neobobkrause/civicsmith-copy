@@ -1,0 +1,12 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "translations",
+  "attempt": 1,
+  "branch": "job/translations",
+  "early": [
+    "setup-words",
+    "record-core"
+  ],
+  "at": "2026-11-07T16:16:36Z"
+}
