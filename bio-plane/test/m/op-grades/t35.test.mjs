@@ -65,7 +65,7 @@ const B3_WRITES = { standardforce: "reasoned", standardforcewithdraw: "reasoned"
   standardadoption: "reasoned", standardimpose: "reasoned", standardbenchmark: "reasoned", usewithdraw: "reasoned",
   uselink: "reasoned", useunlink: "reasoned", discretionrecord: "undetermined", assessmentrecord: "undetermined",
   usesfreeze: "observational", standardforcepropose: "undetermined", reviewpropose: "undetermined",
-  recordsrequestopen: "undetermined", recordsrequestanswer: "undetermined", subscriptiondisconnect: "credential" };
+  recordsrequestopen: "undetermined", recordsrequestanswer: "undetermined" };
 const B3_CODES = { standardforce: "STANDARD_NO_REASON", standardforcewithdraw: "STANDARD_NO_REASON",
   standardrelease: "STANDARD_NO_REASON", standardadoption: "STANDARD_NO_REASON", standardimpose: "STANDARD_NO_REASON",
   standardbenchmark: "STANDARD_NO_REASON", usewithdraw: "NO_REASON", uselink: "DUTY_NO_REASON",
@@ -122,15 +122,14 @@ test("R22 R3: every op op-declarations R30 declares is graded — coarchiveset `
 
 test("R22 R3 R13 (K2043): every other op op-declarations declares in T35 for L5's and L6's owners is graded by R3's rule "
    + "from its owner — standards' acts, usewithdraw, uselink and useunlink `reasoned` on a code of the family; the event "
-   + "records, the proposals and the records requests `undetermined`; usesfreeze `observational` as recordset; "
-   + "subscriptiondisconnect `credential` — each with its reason, the reads `read:`, none a machine refusal", () => {
+   + "records, the proposals and the records requests `undetermined`; usesfreeze `observational` as recordset "
+   + "(subscriptiondisconnect, retired in T53, R57, in no table) — each with its reason, the reads `read:`, none a machine refusal", () => {
   const got = Object.fromEntries(Object.keys(B3_WRITES).map((op) => [op, gradeOf(op)]));
   assert.deepEqual(got, B3_WRITES);
   assert.deepEqual(Object.keys(got).filter((op) => got[op] === "reasoned").sort(), Object.keys(B3_CODES).sort());
   for (const [op, code] of Object.entries(B3_CODES)) assert.ok(JUSTIFICATION_REFUSALS.includes(code), `${op}: ${code}`);
   for (const [op, like] of [["discretionrecord", "eventcreate"], ["usesfreeze", "recordset"],
-    ["standardforcepropose", "lawpropose"], ["reviewpropose", "dutypropose"], ["subscriptiondisconnect",
-    "accountreferenceremove"]]) assert.equal(gradeOf(op), gradeOf(like), `${op} as ${like}`);
+    ["standardforcepropose", "lawpropose"], ["reviewpropose", "dutypropose"]]) assert.equal(gradeOf(op), gradeOf(like), `${op} as ${like}`);
   for (const op of Object.keys(B3_WRITES)) assert.ok(NON_ACTS[op].length > 30 && !NON_ACTS[op].startsWith("read: "), op);
   for (const op of B3_READS) {
     assert.ok(NON_ACTS[op].startsWith("read: ") && /writes nothing$/.test(NON_ACTS[op]), op);
