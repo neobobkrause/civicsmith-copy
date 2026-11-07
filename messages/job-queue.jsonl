@@ -15,3 +15,4 @@
 {"at":"2026-11-07T17:54:02Z","row":"sent","n":8,"to":"bob","text":"job queue: confirmed (see job-queue-7): notice-notice-producers-211.test.mjs only confirms the provider notice (notice-producers PR 809 tells provider limits again) and needed no queue code change; please record the revert exemption on PR 833. I republish once it is recorded."}
 {"at":"2026-11-07T17:54:15Z","row":"outcome","n":8,"outcome":"delivered"}
 {"at":"2026-11-07T18:05:51Z","row":"sent","n":9,"to":"bob","text":"job queue complete, PR #833 ready, session session_018BhcecWei8XXbbBa5ry2Gc: run status"}
+{"at":"2026-11-07T18:06:13Z","row":"outcome","n":9,"outcome":"delivered"}
