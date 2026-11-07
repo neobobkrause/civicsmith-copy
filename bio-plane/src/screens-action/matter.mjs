@@ -576,6 +576,15 @@ export const matter = Object.freeze({
     {
       // R45: record a determination, or (with the one it replaces) revise it; exactly the fields `determine` declares
       op: "determine",
+      // R81 (T53; interface-shell R119): "Record this determination" pressed with a required choice empty names it before any reason is asked
+      ready: function (view, el, cs) {
+        const k = view.parts.ctx(view);
+        const prior = k.d && k.d.act && Array.isArray(k.d.act.evidence) ? k.d.act.evidence : [];
+        if (!String(cs.value("mt-d-event") || "").trim()) return { refuse: "refusal.NO_SUCH_EVENT" };
+        if (!view.parts.ids(cs.value("mt-d-evidence")).length && !prior.length) return { refuse: "refusal.ACT_INCOMPLETE" };
+        if (!view.parts.ids(cs.value("mt-d-findings")).length) return { refuse: "refusal.NO_FINDINGS" };
+        return null;
+      },
       // R56 (walk E C2a (1)): a standard whose binding on the body is undetermined is the owner's own refusal, drawn in its words with the owner's why
       // (its `detail` names why and that a member settles it in `standards`), the owner's own `detail` (the why); a standard that does not bind keeps the shell's words
       refusals: {
