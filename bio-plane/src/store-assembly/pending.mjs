@@ -13,6 +13,9 @@
      `unpack`        an archive stopped by a budget (acquisition R100), run as the unpack drain does, `op=unpack` as the daemon;
      `fetch`         a large web capture handed to the alarm (fix round 6, G2; acquisition's `owedFetch`), keyed by the capture SESSION as
                      `subresources` is, heavy: its body is read and its document filed by the alarm, never inside the member's request;
+     `member`        (store-jobs R24) one member of a held container (an archive's entry, a message's attachment), keyed by the capture
+                     SESSION `<container>!<index>`, light, run by `acquisition.fileMember(cap, detail)`; it ends `finished` when the member is
+                     `filed`, `already_held` or `not_filed`, `final` on a deterministic refusal, and stays owed on any other answer;
      `scan`, `safe_view`, `grade`, `ingest`  (fix round 9, R97) the job kinds of the safety scan, the safe view, the grade and the money
                      ingest, run by the owner the composition hands for each (`workers`); with none the row stays owed, `NO_OWNER`.
    An entry ends only when its work is done, or when its owner answers a FINAL reason (`final: true`, with its `why`), which the
@@ -95,8 +98,8 @@ export const JOB_BATCHES_DDL = `CREATE TABLE IF NOT EXISTS job_batches (
   sha TEXT NOT NULL, kind TEXT NOT NULL, batch TEXT NOT NULL, landed_at INTEGER NOT NULL,
   PRIMARY KEY (sha, kind, batch))`;
 export const PENDING_NAME = "pending-work";
-/** R97: the job table's kinds: R77's, `fetch` (R81), and the four fix round 9 adds. */
-export const JOB_KINDS = Object.freeze(["keep", "reading", "ocr", "subresources", "unpack", "fetch", "scan", "safe_view", "grade", "ingest"]);
+/** R97: the job table's kinds: R77's, `fetch` (R81), the four fix round 9 adds, and `member` (store-jobs R24, last). */
+export const JOB_KINDS = Object.freeze(["keep", "reading", "ocr", "subresources", "unpack", "fetch", "scan", "safe_view", "grade", "ingest", "member"]);
 export const PENDING_KINDS = JOB_KINDS;
 /** R97: the states of a row; the last three are ends. */
 export const JOB_STATES = Object.freeze(["queued", "fetching", "reading", "partial", "refused", "finished", "final"]);
@@ -115,7 +118,10 @@ export const LAG_EVERY_MS = 10;
 export const ENDED_KEEP_MS = 30 * 24 * 3_600_000;
 const HEAVY = Object.freeze(["keep", "reading", "ocr", "fetch", "scan", "safe_view", "ingest"]);
 /* an entry of these kinds is keyed by its capture SESSION (acquisition R100), the others by a digest */
-const SESSION_KEYED = Object.freeze(["subresources", "fetch"]);
+const SESSION_KEYED = Object.freeze(["subresources", "fetch", "member"]);
+/* store-jobs R24: the outcomes of acquisition R136 that end a `member` row, and its refusals on the row's own facts (deterministic, R76 (3)) */
+const MEMBER_ENDS = Object.freeze(["filed", "already_held", "not_filed"]);
+const MEMBER_FINAL = Object.freeze(["BAD_MEMBER", "NO_SUCH_MEMBER"]);
 /* the kinds whose unit may be a page the reader can leave out (`killedPages`) */
 const PAGED = Object.freeze(["reading", "ocr"]);
 /* G129d: what an `ocr` pass answers when nothing is owed of the digest (no pages left, no reading, the pages the member declined, no OCR
@@ -129,7 +135,7 @@ const why = (e) => String(e && e.message || e).slice(0, 160);
 const memory = () => { try { const m = globalThis.process && typeof globalThis.process.memoryUsage === "function" ? globalThis.process.memoryUsage() : null; const n = m ? Math.round(m.rss || m.heapUsed || 0) : 0; return n > 0 ? n : null; } catch { return null; } };
 /* the service bindings a row's owner awaits: a call through one is `wait_ms` (the worker's time, not the object's thread) */
 const WORKER_BINDINGS = Object.freeze(["PDF_WORKER", "OCR_WORKER", "SHEET_WORKER", "AGENT_WORKER", "FILE_SCANNER", "SELF"]);
-const RANK = { keep: 0, reading: 1, ocr: 2, subresources: 3, unpack: 4, fetch: 5, scan: 6, safe_view: 7, grade: 8, ingest: 9 };
+const RANK = { keep: 0, reading: 1, ocr: 2, subresources: 3, unpack: 4, fetch: 5, scan: 6, safe_view: 7, grade: 8, ingest: 9, member: 10 };
 const json = (v, otherwise) => { try { const o = JSON.parse(v); return o && typeof o === "object" ? o : otherwise; } catch { return otherwise; } };
 const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const count = (v) => (Number.isSafeInteger(v) && v >= 0 ? v : null);
@@ -607,6 +613,24 @@ export function pendingOf(ctx, deps = {}) {
       if (r && r.ok === true && r.done === true) return finish(row);
       if (r && r.ok === true && r.more === true) return settle(row, at, r);   /* the fetch goes on at the next tick, from where it stopped */
       return attempt(row, at, String(r && (r.reason || r.code || r.why) || "NOT_DONE"));
+    },
+    /* store-jobs R24: one member of a held container, by acquisition's `fileMember(cap, {container, container_kind, index, project, within, by, cls})`
+       (R136) with the registrar, so a member that is itself a container registers its own rows. A recorded outcome (`filed`, `already_held`,
+       `not_filed`) ends the row; a refusal on the row's own facts ends it `final` with its code (R76 (3)); anything else (`WAITING`, a store
+       failure) stays owed. */
+    member: async (row, at) => {
+      const acq = acquisitionOf(ctx);
+      const run = acq && typeof acq.fileMember === "function" ? acq.fileMember.bind(acq) : acquisitionModule.fileMember;
+      if (typeof run !== "function") return attempt(row, at, "NO_OWNER");
+      const d = json(row.detail, {});
+      const by = typeof row.member === "string" && row.member ? row.member : null;
+      const args = { container: d.container, container_kind: d.container_kind, index: d.index, project: typeof d.project === "string" ? d.project : null,
+                     within: Number.isSafeInteger(d.within) ? d.within : 0, by, cls: "daemon", registerJob };
+      const r = await call(() => run(captureOf(ctx), args, { storeName: store(), env: timed(row), ...handed() }));
+      if (r && r.ok === true && MEMBER_ENDS.includes(r.outcome)) return finish(row);
+      if (r && r.final === true) return stop(row, at, String(r.reason || r.why || r.code || "FINAL").slice(0, 160), null, "final", r);
+      if (r && r.ok === false && MEMBER_FINAL.includes(r.reason)) return stop(row, at, r.reason, null, "final", r);
+      return attempt(row, at, String(r && (r.reason || r.code || r.why) || "NOT_DONE").slice(0, 160));
     },
     /* the archive-unpack drain's call (plane/unpack.mjs): `op=unpack` as the daemon, through the door. G129e: the project the archive was
        filed under (`detail.project`, given at registration) rides with the call, so a continuation's members land in it; a transient failure
