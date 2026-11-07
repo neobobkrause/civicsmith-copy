@@ -1,0 +1,113 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "ai-issuer",
+  "pr": 774,
+  "branch": "job/ai-issuer",
+  "head": "324cdee0889a43155549fbbb55d486a15be0c257",
+  "before": "ca32d1401e4b2a9574d75e42e3cf163e15278efd",
+  "merge": "4e44af8436a618d8551ffaaff50416817e9bb3da",
+  "at": "2026-11-07T16:25:47Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "IssuerStore",
+        "IssuerStore.advisoriesSince",
+        "IssuerStore.auditRows",
+        "IssuerStore.bundlesToScore",
+        "IssuerStore.challenge",
+        "IssuerStore.combinedFor",
+        "IssuerStore.decide",
+        "IssuerStore.destroyBundle",
+        "IssuerStore.health",
+        "IssuerStore.healthFor",
+        "IssuerStore.libraryRowsFor",
+        "IssuerStore.operator",
+        "IssuerStore.publishAdvisory",
+        "IssuerStore.publishCatalogue",
+        "IssuerStore.publishSealKey",
+        "IssuerStore.receiveBundle",
+        "IssuerStore.recordResult",
+        "IssuerStore.refused",
+        "IssuerStore.registerDigest",
+        "IssuerStore.resultFor",
+        "IssuerStore.sweep",
+        "IssuerStore.withdrawDigest",
+        "IssuerStore.withdrawName",
+        "default",
+        "handle",
+        "nowOf",
+        "privateKeyHeld"
+      ],
+      "changed": [],
+      "kinds": [],
+      "signatures": []
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "ai-issuer/test/bundles.test.mjs",
+      "ai-issuer/test/door.test.mjs",
+      "ai-issuer/test/fixture.mjs",
+      "ai-issuer/test/publishing.test.mjs",
+      "ai-issuer/test/results.test.mjs"
+    ],
+    "provides_tests_named": [
+      "ai-issuer/test/bundles.test.mjs",
+      "ai-issuer/test/door.test.mjs",
+      "ai-issuer/test/fixture.mjs",
+      "ai-issuer/test/publishing.test.mjs",
+      "ai-issuer/test/results.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "ai-issuer/test/bundles.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R9, R10, R11, R12, R13, R14, R15 (Provides before this land) while ai-issuer's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "ai-issuer/test/door.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R14, R17, R19, R26 (Provides before this land) while ai-issuer's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "ai-issuer/test/fixture.mjs",
+        "class": "breaking",
+        "why": "added, naming R2, R26 (Provides before this land) while ai-issuer's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "ai-issuer/test/publishing.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R1, R2, R3, R4, R5, R6, R7, R8, R20 (Provides before this land) while ai-issuer's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "ai-issuer/test/results.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R16, R17, R18, R25 (Provides before this land) while ai-issuer's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "ai-issuer/test/bundles.test.mjs",
+      "ai-issuer/test/door.test.mjs",
+      "ai-issuer/test/fixture.mjs",
+      "ai-issuer/test/publishing.test.mjs",
+      "ai-issuer/test/results.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
