@@ -5,3 +5,4 @@
 {"at":"2026-11-04T11:52:37Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job store-door complete, PR #220 ready: run status"}
 {"at":"2026-11-04T11:52:51Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-07T17:39:16Z","row":"sent","n":4,"to":"bob","text":"job store-door complete, PR #832 ready, session session_018Bhcedz231GawVQvMZrr1u: run status"}
+{"at":"2026-11-07T17:39:33Z","row":"outcome","n":4,"outcome":"delivered"}
