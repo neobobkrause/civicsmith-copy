@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "record-core",
+  "pr": 792,
+  "branch": "job/record-core",
+  "head": "175050e353fe5f07abf4ad59e42c747ee0ee8415",
+  "before": "17352b68c2783c5ad92f27d33be5a04544d2e20d",
+  "merge": "edde8a8b63c88f4a826ffdecde311c0a7bde372c",
+  "at": "2026-11-07T16:36:11Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
