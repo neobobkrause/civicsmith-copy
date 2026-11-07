@@ -39,7 +39,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/screens-plan.md, each with a test under bio-plane/test/m/screens-plan/ that fails with the change reverted. Your code is screens-action's plan.mjs and words-fix-plan.mjs, and the plan entries of screens-action/index.mjs, which screens-action shares: change only those entries. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T13:20:00Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T18:49:43Z"
   }
 }
