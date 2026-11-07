@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "signin-door",
+  "round": 1,
+  "started": "2026-11-07T19:31:04Z",
+  "ended": "2026-11-07T19:32:53Z",
+  "minutes": 1.8,
+  "tested_on": "13ad01e3913dbf2ca8b3769bccd8096eb4d3029d",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T19:32:53Z"
+}
