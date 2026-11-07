@@ -250,3 +250,4 @@ The case document's grammar, one spelling for every module: the formats and thei
 ## Open for Bob
 
 None: the split is BOB's (K617, K651).
+- **F1** *(not yet met: ux lane, DEC-497 and DEC-496, BD-14)* DEC-496: the complete edition (complete.mjs) prints '{letter}: {gloss}' (mark.grade.gloss.form) beside every grade
