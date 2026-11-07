@@ -183,7 +183,9 @@ test("R1 R12: every op T34 declares in op-declarations R22–R24, R26, R28 and R
     const o = ownerOf(op);
     if (o && !T34_LEFT_THE_DOOR.includes(op)) assert.ok(maps[o].includes(op), `${o} serves ${op}`);
   }
-  assert.ok(T34_WRITES.some((op) => ownerOf(op) === "membership") && T34_WRITES.some((op) => ownerOf(op) === "credentials"));
+  /* (BOB, 7 Nov; op-grades R57, PR 866) only membership's half: R57 removes the four group-key rows that were T34's only
+     writes citing credentials; credentials' op is pinned by the keyedserviceset check below */
+  assert.ok(T34_WRITES.some((op) => ownerOf(op) === "membership"));
   for (const op of T34_LEFT_THE_DOOR)
     assert.ok(!maps.credentials.includes(op) && !aiAccounts.includes(op) && !maps.membership.includes(op), `${op} is served by no owner`);
   for (const op of UNGATED_READS) assert.ok(maps.membership.includes(op), `membership serves ${op}`);
