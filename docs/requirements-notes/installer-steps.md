@@ -14,6 +14,8 @@ Job installer-steps, attempt 3 (7 Nov 2026), carrying over attempt 2 (5 Nov). Fo
 
 ## Not met, and why
 
+No `test.todo` names R45, R48 or R49: a test file that only adds todos is inert to the gate's revert check (BOB, 7 Nov), so they are recorded here and in the receipt instead.
+
 - **R45.** `missingScopes` already answers whatever `needed` lacks. The rest of R45 is outside these paths: leaving the two AI Gateway scopes out of `needed` (`installer`'s `CFG.SCOPES`, which has no gateway scope today, and `ready.mjs`'s `neededScopes`), the plain-words line, and the plane registering no gateway port (`ai-accounts` R44/R73 already refuses `GATEWAY_UNAVAILABLE` when no port is registered). Owner: `installer`, together with whatever composes the plane's gateway port.
 - **R48.** Waits on `corpus-export` R17 and R18 (the whole-record manifest and its parts), both still marked not yet met, and on a new `modules.json` edge. Without the provider's real manifest there is nothing to test against (K4990).
 - **R49.** The "What you need" list is drawn by the installer page and by civicsmith.org, not by `steps/`. Owner: `installer` and `site`, with the design's keys.
