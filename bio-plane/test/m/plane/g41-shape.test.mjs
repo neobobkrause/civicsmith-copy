@@ -1,18 +1,19 @@
 /* plane R84 (proposed, fix round 6, G41; K4636, K4639, K4642), THE SHAPE PROOF: a sheet is held, its text read whole, its cells made for a range. A 4 MB CSV, an 8 MB CSV, the largest CSV csv-reader's
-   stated bound takes and a 200,000-row xlsx are uploaded by the member's path and read to the end by the real plane's ledger in a child under TEST-SUPPORT #9's value limit and the cap
+   stated bound takes and an xlsx sized at its declared-text bound (R116) are uploaded by the member's path and read to the end by the real plane's ledger in a child under TEST-SUPPORT #9's value limit and the cap
    `capFor(N)` (the one cap convention, `shape/cap.mjs`, G123a; the `128 + 39 - N` of its first writing is retired). Each: the child alive, every tick within the work budget BY COUNT
    (`shape/bars.mjs`: evidence reads, bytes served, units, statements; never node's wall time, R-CLOCK, G123b, K4843), `readingFor` stating its state at every tick, the first, a middle and the
    last row in the index (in the text rows whose extent holds the row the generator put the mark on) and found by `op=search`, `cellsOf` of the last row giving the generator's cells, the largest
    stored value under 1 MiB. HEAVY: run alone (`node --import $PWD/bio-plane/test/platform-sqlite.mjs --test --test-force-exit bio-plane/test/m/plane/g41-shape.test.mjs`). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runCase, CASES, g41Cap, failures, runRefused, XLSX_ROWS, XLSX_REFUSED_ROWS } from "./shape/g41.probe.mjs";
+import { runCase, CASES, g41Cap, failures, runRefused, XLSX_ROWS, XLSX_REFUSED_ROWS, XLSX_DECLARED_BOUND, XLSX_REFUSED_BOUND, rowsForDeclared, declaredSheetBytes } from "./shape/g41.probe.mjs";
+import { xlsxRowsDoc } from "./shape/harness.mjs";
 import { boundOf } from "../../../src/read-bounds.mjs";
 import { report, capFor, OBJECT_MB, STORED_VALUE_BOUND } from "./shape/harness.mjs";
 import { TICK_COUNT_BARS } from "./shape/bars.mjs";
 
 const WHAT = { csv4: "a 4 MB CSV", csv8: "an 8 MB CSV", csv12: "a 12 MiB CSV", csv16: "a 16 MiB CSV", csvmax: "the largest CSV csv-reader takes (17 MiB, the stated bound)",
-  xlsx: `a ${XLSX_ROWS.toLocaleString("en-US")}-row xlsx of 3 short cells a row (the largest under the alpha's declared-text bound, K4855)` };
+  xlsx: `a ${XLSX_ROWS.toLocaleString("en-US")}-row xlsx of 3 short cells a row (sized at the standard's xlsx declared-text bound, R116)` };
 for (const name of Object.keys(CASES)) {
   test(`R84 G41: ${WHAT[name]} is read whole at the platform's shape: alive, every tick within the count bars, readingFor stated, first, middle and last row found, the last row's cells made, no stored value over 1 MiB`,
     { timeout: 3_600_000 }, async () => {
@@ -23,14 +24,25 @@ for (const name of Object.keys(CASES)) {
       for (const m of Object.keys(out.r.done.gen.markRows)) assert.ok(out.r.done.found[m] >= 1 && out.r.done.search[m].total >= 1, m);
     });
 }
-/* K4855 (P17): the 200,000-row workbook declares 42.66 MiB of sheet text, over the alpha's `xlsx.declared_text` bound: it is refused, final, in one tick, its declared size and the bound stated
-   (docprofile's statement), the child alive. The standard's 50 MB is Stage 3's. */
-test(`R84 G41 K4855: a ${XLSX_REFUSED_ROWS.toLocaleString("en-US")}-row xlsx, over the alpha's declared-text bound, is refused at the platform's shape: final in one tick, its size (the generator's declared sheet text) and the bound stated as data, nothing owed, the child alive`,
+/* R116 (amends R84, K4855): the workbook over the bound office-readers refuses a sheet's text at (`ooxml` R35's streamed bound) is refused, final, in one tick, its
+   declared size and that bound stated (docprofile's statement), the child alive; it is over `xlsx.declared_text` too. */
+test(`R116 R84 G41: a ${XLSX_REFUSED_ROWS.toLocaleString("en-US")}-row xlsx, over office-readers' streamed text bound, is refused at the platform's shape: final in one tick, its size (the generator's declared sheet text) and the bound stated as data, nothing owed, the child alive`,
   { timeout: 3_600_000 }, async () => {
-    const out = await runRefused("xlsx200", { bound: boundOf("xlsx", "declared_text") });
+    assert.ok(XLSX_REFUSED_BOUND > XLSX_DECLARED_BOUND, "the refused case is over the xlsx bound as well");
+    const out = await runRefused("xlsx200", { bound: XLSX_REFUSED_BOUND });
     console.log(report(out.label, out.r));
     assert.deepEqual(out.failed, [], `${out.label} at cap ${out.cap} MB`);
   });
+
+test("R116: the xlsx case read whole is sized from `boundOf(\"xlsx\", \"declared_text\")`: its declared sheet text is at the bound (within 2 % under it), and a different bound sizes a different case", async () => {
+  assert.equal(XLSX_DECLARED_BOUND, boundOf("xlsx", "declared_text"));
+  const declared = await declaredSheetBytes((await xlsxRowsDoc(XLSX_ROWS)).recipe);
+  assert.ok(declared <= XLSX_DECLARED_BOUND && declared >= XLSX_DECLARED_BOUND * 0.98, `${XLSX_ROWS} rows declare ${declared} B against ${XLSX_DECLARED_BOUND} B`);
+  /* control: the figure moves the case (a bound of half sizes about half the rows), and no fixed count stands in for it */
+  const half = await rowsForDeclared(Math.floor(XLSX_DECLARED_BOUND / 2), "under");
+  assert.ok(half < XLSX_ROWS * 0.55 && half > XLSX_ROWS * 0.45, `${half} rows for half the bound against ${XLSX_ROWS}`);
+  assert.notEqual(XLSX_ROWS, 150_000);
+});
 
 test("R84 G123a: the cap is the one convention, `capFor`: the sheet runs' and the PDF runs' are the same function of the held MiB, and a larger file leaves a smaller cap", () => {
   for (const mib of [4, 8, 20]) assert.equal(g41Cap(mib * 1048576), capFor(mib), `${mib} MiB`);
