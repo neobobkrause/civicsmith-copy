@@ -33,8 +33,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T20:10:13Z",
-    "reason": "reopened: re-test against the new interface of op-declarations (land e4c350c01d), store-request (land 967e0117ee), interface-shell (land 49f5b34a88), op-declarations (land 92f5416be9)"
+    "state": "COMPLETE",
+    "at": "2026-11-07T20:26:24Z"
   }
 }
