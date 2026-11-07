@@ -33,8 +33,13 @@ const copies = (m) => Object.fromEntries(idLines(read(m)).map(([, id, rest]) => 
   return x ? [x[2], { id, rest: x[1] + x[3] }] : null;
 }).filter(Boolean));
 
+/* F1-F3 (attempt 10, 7 Nov): found items added after the split, each met; the R ids are the split's own. */
+const FOUND = ["F1", "F2", "F3"];
+
 test("split: the file holds every start-commit id, in the same order, none dropped or added", () => {
-  assert.deepEqual(idLines(read("store-assembly")).map((m) => m[1]), START_IDS);
+  const ids = idLines(read("store-assembly")).map((m) => m[1]);
+  assert.deepEqual(ids.filter((id) => id.startsWith("R")), START_IDS);
+  assert.deepEqual(ids.filter((id) => id.startsWith("F")), FOUND);
 });
 
 test("split: every moved id is retired here naming its new id, and only those besides R48", () => {
