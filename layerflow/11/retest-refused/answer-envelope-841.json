@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 11,
+  "module": "answer-envelope",
+  "cause": 841,
+  "why": "answer-envelope owes a job for admission, instance-setup's breaking change: node .process/tool/p3.mjs job start answer-envelope --live <n> --reopen \"re-test against the new interface of admission, instance-setup\"",
+  "at": "2026-11-07T18:04:06Z",
+  "by": "bob"
+}
