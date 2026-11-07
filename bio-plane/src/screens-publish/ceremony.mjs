@@ -112,6 +112,7 @@ export const CEREMONY = Object.freeze({
     const mineDraft = all.find(function (x) { return x && x.draft_id === draft; }) || null;
     const objOf = function (v) { return v && typeof v === "object" && !Array.isArray(v) ? v : null; };
     const recd = pre.state === "ok" && objOf(pre.value.editions) ? pre.value.editions : mineDraft && objOf(mineDraft.editions) ? mineDraft.editions : null;
+    out[0] = cs.title(P.caseHeading(cs, copy, recd, "screen.ceremony.heading"), { thing: "case" }); // R95: by the case's title, the edition while unpublished
     out.push(P.noCase(cs, copy, recd)); // R80: not said of a draft the record holds an edition of
     const recPub = recd && objOf(recd.published) && Number(recd.published.edition) > 0 ? recd.published : null;
     // R80: the case the record says the preparation belongs to (`editions.case`, case-authoring R83), else the copy's, else the pre-flight's pinned step

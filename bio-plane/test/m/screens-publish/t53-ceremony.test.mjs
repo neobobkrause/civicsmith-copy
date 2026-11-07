@@ -84,3 +84,31 @@ test("R94 control: an owner's ceremony offers no request to an owner and keeps t
   assert.ok(main(p).querySelector("#ce-bias"));
   assert.ok(main(p).querySelector('button[data-act="publish"]'));
 });
+
+/* R95: a draft whose case has published editions, as `review` and `casedrafts` answer it: the identity sentence and the short title
+   name the case by its raw id (review R40), and the record states what is published (`editions`, case-authoring R83) */
+const afterPub = (pub, at) => {
+  const identity = word("review.text.next_edition", { edition: String(at), case_id: C });
+  const draft = { draft_id: DR, case: { case_id: C, edition: at, identity }, created_by: "dev", updated_by: "dev", editions: { prepared: 0, published: { edition: pub } } };
+  return { casedrafts: ok({ kind: "review-drafts", project: P, drafts: [draft] }),
+    reviewcopy: ok(COPY({ case: { case_id: C, edition: at, identity, newCase: false }, title: `Case ${C}, edition ${at}` })) };
+};
+const h1 = (p) => norm(p.doc.querySelector("h1").textContent);
+const SCOPE = COPY().authored.scope;
+
+test("R95 after an edition is published the editor, the ceremony and the review copy are headed by the case's title, never its raw id, and the edition already published is not drawn as the next", async () => {
+  for (const path of [`/app/case-editor/${P}/${DR}`, CER, `/app/review-copy/${P}/${DR}`]) {
+    const one = await open(path, { plane: afterPub(1, 2) });
+    assert.ok(!h1(one).includes("CASE-"), `${path}: ${h1(one)}`);
+    assert.ok(h1(one).includes(SCOPE) || path.includes("review-copy"), `${path} names the case by its title: ${h1(one)}`);
+    assert.ok(drew(one, "screen.ceremony.published.edition", { n: "1" }), `${path}: Published: edition 1`);
+    const two = await open(path, { plane: afterPub(2, 2) });
+    assert.ok(!h1(two).includes("CASE-"), `${path}: ${h1(two)}`);
+    assert.ok(!/\b2\b/.test(h1(two).replace(SCOPE, "")), `${path}: the published edition 2 is not drawn as the next: ${h1(two)}`);
+  }
+});
+
+test("R95 control: a first draft naming no case is headed by its own title", async () => {
+  const p = await open(CER, { plane: { reviewcopy: ok(COPY({ case: { case_id: null, edition: null, identity: "A CASE THIS DRAFT DOES NOT NAME", newCase: true }, title: word("review.title.draft", { title: "Rents" }) })) } });
+  assert.equal(h1(p), norm(word("review.title.draft", { title: "Rents" })));
+});
