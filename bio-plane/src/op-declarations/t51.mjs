@@ -67,4 +67,59 @@ const BROWSER_ACT_ROWS = Object.freeze([
   ["reviewexport", "review-copy", "A81"],
 ]);
 
-export { T51_SHARES, T51_FAMILIES, BROWSER_ACT_ROWS };
+/* surface-declarations R12, R15, R16, R17, R18 (T53; K4354, K5438, K5571 (3); PL1–PL4 of `time-budgets-draft.md`): THE
+   BUDGET CLASSES the ops declare, by name, where a requirement states one. The keys are `runtime-limits`' time classes (its
+   R41, `budgetOf`) and no others. An op named nowhere here takes its kind's class (`declared.mjs`' `defaultBudgetClass`): a
+   write the write act's, a read the read act's. A row is a class name or `{class, ceiling_ms}`, the ceiling an override
+   downward only (R12; `runtime-limits` R42). A name here that `OPS` does not hold yet is kept for the op its owner will
+   declare (R15's and R16's ops that no owner serves today) and is no spec. */
+const SHELL_ACTS = Object.freeze([
+  /* R15, reversible: */ "aiorderset", "aiaccountswitch", "aimemberallow", "aiprojectuse", "aiprojectorder", "aimineuse",
+  "aibudgetset", "aiprojectbudget", "aitermsaccept", "aipersonalchoose", "aicontinue", "aistop", "aisend", "aisendrefuse",
+  "aiwait", "aiwithout", "aiswitchaccount", "aimodelchoose", "aichooseother", "aiaccountpick", "aiaskadmin",
+  "airesultsdecline", "aiwaitswitch", "airetestset", "aihealthset", "aioptinset", "aitermswithdraw", "aicreditsclear",
+  /* R15, reasoned: */ "aicheckset", "aiprojectcheckset", "aimycheckset"]);
+const WRITE_ACTS = Object.freeze([
+  /* R15, terminal: */ "aiaccountremove", /* reversible: */ "aiaccountadd", "aiownadd",
+  /* ground credential: */ "aikeyenter", "aikeyseal", "aikeycloudflare", "aikeyreference", "aisignin", "aitestsetup",
+  /* irreversible: */ "airesultsend"]);
+const READ_ACTS = Object.freeze([
+  /* R15: */ "airesultsread", "airesultown", "aihealthpreview", "aiusebymember", "airunparts", "assistantreadiness", "aipathready",
+  /* R16: */ "interpretationOf", "interpretedFor", "limitsByKind",
+  /* R17 (1): the mail door's three reads take the lightest read class */ "mailaddress", "mailwaiting", "mailread"]);
+/* R18: the ops that send the member's act to the agent Worker and wait for its answer */
+const AI_ACTS = Object.freeze(["ask", "writinghelp", "groupdescriptiondraft", "translationdraft", "textcheck", "infractiondraft",
+  "bearingdraft", "airunstart", "aiconnecttest"]);
+/* R16: the explore class (2.0 s; a search that reaches it stops and says it stopped): the explore reads a member waits on */
+const EXPLORE_OPS = Object.freeze(["explore", "explorepreset", "exploreverify", "exploretimeline", "exploregraph", "exploreall",
+  "explorepath", "exploreshorter", "explorecontinue", "proposeParts"]);
+const BUDGET_CLASS_ROWS = Object.freeze({
+  ...Object.fromEntries(SHELL_ACTS.map((op) => [op, "shell_act"])),
+  ...Object.fromEntries(WRITE_ACTS.map((op) => [op, "write_act"])),
+  ...Object.fromEntries(READ_ACTS.map((op) => [op, "read_act"])),
+  ...Object.fromEntries(AI_ACTS.map((op) => [op, "ai_act"])),
+  ...Object.fromEntries(EXPLORE_OPS.map((op) => [op, "explore"])),
+  /* R18: the capability suite scored by code for one (entry, part) */
+  aitestrun: "gate_run",
+  /* R16: one `followfrom` read */
+  followfrom: "follow",
+  /* R16: `partsOf` is a share of the screen's full load (2.0 s with the screen, derived once per reading version) */
+  partsOf: "screen_load",
+  /* R17 (1): `mailbringin` is classed as `captureupload` is, the acknowledgement of a file up to its kind's bound */
+  captureupload: "file_capture", mailbringin: "file_capture",
+  /* R11: the combined read answers a whole screen's first load */
+  screenread: "screen_load",
+});
+/* R15: the screen moves, no ops: each carries the in-app move class and has no spec */
+const SCREEN_MOVES = Object.freeze({ aiplanconnect: "screen_move", aitestopen: "screen_move", airesultsopen: "screen_move" });
+/* R16: reads never declared in a screen's first wave */
+const NOT_FIRST_WAVE = Object.freeze(["proposeParts"]);
+
+/* surface-declarations R11 (T53; K4599, N1264; PL11): `screenread`, the read op that answers a screen's declared reads
+   together: its input a screen's name and params; its answer `{reads: {name: {ok, status, body | refusal}}, stamps,
+   server_ms}`. A read op: classes `admin`, `member`, `probe`, not mutating, `viewer` stamped, `NEEDS` `null`. */
+const SCREENREAD_SPEC = Object.freeze({ op: "screenread", kind: "read", classes: Object.freeze(["admin", "member", "probe"]),
+  mutating: false, stamps: Object.freeze(["viewer"]), needs: null, budget_class: "screen_load",
+  input: Object.freeze(["screen", "params"]), answer: Object.freeze(["reads", "stamps", "server_ms"]) });
+
+export { T51_SHARES, T51_FAMILIES, BROWSER_ACT_ROWS, BUDGET_CLASS_ROWS, SCREEN_MOVES, NOT_FIRST_WAVE, SCREENREAD_SPEC };
