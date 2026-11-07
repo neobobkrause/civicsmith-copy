@@ -83,38 +83,52 @@ test("R56: 21 keys list 20, keys_more is 1 and the 21st has no option; after one
   assert.equal(it.basis.keys_more, 0);
 });
 
-/* R57 stays not yet met: its keyed sentences (the summary's other form, each key's line) have no words in the design stream's list.
-   What is met is tested: the summary by the list's key with the count as a fill, and each key's local day (R36). */
-test.todo("R57: the summary states how many keys in its one or other form, and each key's line is a keyed sentence with the comment and the added day (words owed)");
+/* R57 (K5456; R43, R36): the summary states the member and how many new keys by key, `.summary` for one and `.other` for
+   more; each key's line is the word list's `.key` filled with the local day it was added (`date.daymonth`), else `.key.undated`
+   with no zone held, then `.key.comment` only when the key carries a comment. No sentence is composed here. */
+const L = (k) => `queue.signer-self-registered.${k}`;
+const dm = (d, m) => word("date.daymonth", { day: d, month: word(`date.month.${m}`) });
 
-test("R56, R36 (R57 in part): each listed key carries the day it was added in the group's zone, never UTC; with no zone held the day is undetermined; the summary is the word list's by key, the count a fill", () => {
-  /* 23:30 on the 4th in Los Angeles is 06:30 UTC on the 5th */
+test("R57: a key added 23:30 local on the 4th, zone known, reads the 4th; the summary states one key, then two in its other form; with no zone held the line says so with no date", () => {
+  /* 23:30 on the 4th of August in Los Angeles is 06:30 UTC on the 5th; NOW is in the same year */
   const added = "2026-08-05T06:30:00Z";
   const w = admins("America/Los_Angeles");
   w.member("sp", { role: "member", handle: "sparky" });
   w.signer("AAAAKEYA", "sp", { added, comment: "laptop" });
   let it = byId(w.read("ada"))["OBLIGATION::signer-self-registered::sp"];
-  assert.deepEqual([it.summary_key, it.summary, it.fills.count], ["queue.signer-self-registered.summary", word("queue.signer-self-registered.summary", { member: "sparky" }), 1]);
-  assert.deepEqual(it.lines, [{ key: "AAAAKEYA", comment: "laptop", added, day: "2026-08-04", day_state: "determined" }], "the 4th, the local day, never the UTC 5th");
-  assert.deepEqual([it.detail_key, it.detail], ["queue.signer-self-registered.detail", said("queue.signer-self-registered.detail")]);
+  assert.deepEqual([it.summary_key, it.summary], [L("summary"), word(L("summary"), { member: "sparky" })], "one key: the one form");
+  assert.deepEqual([it.lines[0].day, it.lines[0].text_key], ["2026-08-04", L("key")], "the 4th, the local day, never the UTC 5th");
+  assert.equal(it.lines[0].text, `${word(L("key"), { date: dm(4, "august") })} ${word(L("key.comment"), { comment: "laptop" })}`);
+  assert.ok(!it.lines[0].text.includes(dm(5, "august")), "never the UTC day");
   w.signer("AAAAKEYB", "sp", { added: iso(NOW) });
   it = byId(w.read("ada"))["OBLIGATION::signer-self-registered::sp"];
-  assert.deepEqual([it.summary_key, it.fills.count], ["queue.signer-self-registered.summary", 2], "two keys: the count travels as a fill");
+  assert.deepEqual([it.summary_key, it.summary], [L("summary.other"), word(L("summary.other"), { member: "sparky", count: 2 })], "two keys: the other form, the count a fill");
+  assert.equal(it.lines.length, 2);
   const bare = admins(null);
-  bare.signer("AAAAKEYA", "alice", { added });
+  bare.signer("AAAAKEYA", "alice", { added, comment: "laptop" });
   const [undated] = byId(bare.read("ada"))["OBLIGATION::signer-self-registered::alice"].lines;
-  assert.deepEqual([undated.day, undated.day_state], [null, "undetermined"], "no zone: no date");
+  assert.deepEqual([undated.day, undated.day_state, undated.text_key], [null, "undetermined", L("key.undated")], "no zone: no date");
+  assert.equal(undated.text, `${word(L("key.undated"))} ${word(L("key.comment"), { comment: "laptop" })}`);
 });
 
-test("R56 (R43): a member the rows do not name reads the unnamed word, for one key and for two (the other form), the count a fill", () => {
+test("R57 control: a key with no comment reads the base line with no blank; no line holds an unfilled placeholder or a doubled space; the word is the list's 'added', not 'made'", () => {
+  const w = admins("America/Los_Angeles");
+  w.signer("AAAAKEYA", "alice", { added: "2026-08-05T06:30:00Z" });
+  const [line] = byId(w.read("ada"))["OBLIGATION::signer-self-registered::alice"].lines;
+  assert.deepEqual([line.comment, line.comment_key, line.text], [null, null, word(L("key"), { date: dm(4, "august") })], "the base line alone");
+  assert.ok(!/\{[a-z_]+\}|  /.test(line.text), line.text);
+});
+
+test("R56, R57 (R43): a member the rows do not name reads the unnamed word, .summary.unnamed for one key and .summary.unnamed.other for two, the count a fill", () => {
   const signers = (n) => Array.from({ length: n }, (_, i) => ({ key_b64: `AAAAKEY${i}`, member_id: "", registered_by: "not recorded", comment: null,
     status: "active", origin: "self", added: iso(NOW - i * H) }));
   for (const n of [1, 2]) {
     const w = world({ credentials: { signerList: () => ({ ok: true, signers: signers(n) }) } });
     w.member("ada", { role: "admin" });
     const [it] = kind(w.read("ada"), "signer-self-registered");
+    const key = `queue.signer-self-registered.summary.unnamed${n === 1 ? "" : ".other"}`;
     assert.deepEqual([it.summary_key, it.summary, it.fills.count, it.basis.keys.length],
-      ["queue.signer-self-registered.summary.unnamed", word("queue.signer-self-registered.summary.unnamed"), n, n], String(n));
+      [key, word(key, { count: n }), n, n], String(n));
   }
 });
 
