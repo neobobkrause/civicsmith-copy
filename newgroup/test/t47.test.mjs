@@ -73,7 +73,7 @@ test("R50 GET / asks only the permanent short name (R41's dialog) and the places
   const control = section(before, "control-before");
   assert.ok(control.includes(`<h2>${escd(BEFORE_CLOUDFLARE_CONTROL)}</h2>`));
   for (const s of HOSTING_CONTROL.sentences) assert.ok(control.includes(`<p>${escd(s)}</p>`), s);
-  assert.ok(before.includes(`<button id="cloudflare" class="cs-btn" data-tone="primary">${escd(word("act.bootstrap.label.install"))}</button>`));
+  assert.ok(before.includes(`<button id="cloudflare" class="cs-btn" data-tone="primary">${escd(word("act.owed_installcheck.label.install"))}</button>`));
   /* The assistant's words (R37) and the optional Workers VPC field (R45) are on the page, folded and closed, never one of the first page's asks. */
   for (const id of ["about-assistant", "security-fold"]) {
     const fold = section(before, id);
@@ -91,7 +91,7 @@ test("R50 GET / asks only the permanent short name (R41's dialog) and the places
   await w.el("confirm-yes").click();
   assert.deepEqual([w.sent, w.el("stage-before").hidden, w.el("stage-choose").hidden], [[], false, true]);
   await w.el("cloudflare").click();
-  assert.deepEqual(w.sent.map((s) => [s.url, s.body.mode, s.body.slug]), [["/begin", "install", "river-keepers"]], "Continue to Cloudflare sends /begin");
+  assert.deepEqual(w.sent.map((s) => [s.url, s.body.mode, s.body.slug]), [["/begin", "check", "river-keepers"]], "Continue to Cloudflare sends /begin");
   assert.deepEqual(w.sent[0].body.profiles, [], "no place chosen for the founder");
   assert.equal(w.location.href, "https://dash.cloudflare.com/oauth2/auth?x=1");
   /* Control: closing the dialog, or Back from Before Cloudflare, sends nothing, and Continue to Cloudflare before a confirmation sends nothing. */
