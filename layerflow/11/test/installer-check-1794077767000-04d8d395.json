@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "installer-check",
+  "session": "session_018BhcedVSZh4GKgeCgn9dVu",
+  "started": "2026-11-07T18:56:07Z",
+  "ended": "2026-11-07T18:57:53Z",
+  "at": "2026-11-07T18:57:53Z",
+  "minutes": 1.77,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 1.564,
+  "tests": {
+    "total": 10,
+    "pass": 10,
+    "fail": 0
+  }
+}
