@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "load-check",
+  "round": 1,
+  "started": "2026-11-07T20:28:38Z",
+  "ended": "2026-11-07T20:30:21Z",
+  "minutes": 1.7,
+  "tested_on": "adb4fb56aa6ce8afa437dc0889c32b6f4373837f",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T20:30:21Z"
+}
