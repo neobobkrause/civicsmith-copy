@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "link-sweep",
+  "session": "session_018BhceeCKxT9sNNpoAVpUcb",
+  "started": "2026-11-07T03:47:13Z",
+  "ended": "2026-11-07T03:48:51Z",
+  "at": "2026-11-07T03:48:51Z",
+  "minutes": 1.63,
+  "result": "pass",
+  "layer": 10,
+  "suite_seconds": 3.113,
+  "tests": {
+    "total": 52,
+    "pass": 52,
+    "fail": 0
+  }
+}
