@@ -61,8 +61,7 @@ export const T35_RUNG_ABSENT = {
      replaced, and no published act takes either back */
   recordsrequestopen:   { ground: "undetermined", is: "a member records that the group is asking the issuer of a policy held only by citation for its text; one open request per standard (capture-requests R51)" },
   recordsrequestanswer: { ground: "undetermined", is: "a member records the issuer's answer to a records request — produced, none exists, withheld or no answer — once, never replaced (capture-requests R52)" },
-  /* credentials R43: the member's own subscription fact cleared, as accountreferenceremove */
-  subscriptiondisconnect: { ground: "credential", is: "a member clears the fact that they are connected through their own subscription; it holds no login (credentials R43)" },
+  /* (R57, T53) `subscriptiondisconnect` (credentials R43) left with the alpha's AI ops. */
 };
 
 /* ---- every op's NON_ACTS reason (R5) ---- */
@@ -120,8 +119,6 @@ export const T35_NON_ACTS = {
     + "moves no bundle",
   recordsrequestanswer: "request-directed: keyed by a records request; its answer recorded once and moves no bundle",
   recordsrequests: R("the records requests whose standard the viewer may see, each with its answer"),
-  subscriptiondisconnect: "credential governance: a member clears their own subscription fact; the subject is a "
-    + "credential, not a bundle",
 };
 
 /* ---- R21 (N623, DEC-142): `personexpunge`'s consequence entry. Its rung stays `reasoned` (people R12 refuses it

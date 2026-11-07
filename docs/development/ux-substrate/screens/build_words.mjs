@@ -391,10 +391,10 @@ for (const [k, en, prot, src, note] of [
   ['screen.capture.limits.sheet', 'Spreadsheets: up to {size}, about {rows} rows', false, 'screens-intake R72', 'figures from limitsByKind (R135)'],
   ['screen.capture.limits.image', 'Pictures: up to {size} each', false, 'screens-intake R72', 'figure from limitsByKind (R135)'],
   ['screen.capture.limits.archive', 'Archives: up to {size} in all, and each file inside within its own kind\'s limit', false, 'screens-intake R72', 'figure from limitsByKind (R135)'],
-  ['screen.capture.limits.background', 'A large file is read in the background; we tell you when it is done.', false, 'screens-intake R72', ''],
+  ['screen.capture.limits.background', 'A large file is read in the background, and you are told when it is done.', false, 'screens-intake R72', 'DEC-125: no "we" (DEC-500)'],
   ['screen.capture.refusal.toolarge.nothing_read', 'Nothing was added or read.', false, 'screens-intake R73', 'after the TOO_LARGE sentence (its size and the kind\'s limit), before R74\'s ways in'],
   ['screen.capture.refusal.toolarge.register', 'This is a public register. Bring in just the rows you need.', false, 'screens-intake R74 (a)', 'opens registers for that register, the project\'s filter prefilled'],
-  ['screen.capture.refusal.toolarge.part', 'Cut out the part you need (for a sheet, the rows and columns; for a document, the pages) and add that. We read what you add in full.', false, 'screens-intake R74 (b)', ''],
+  ['screen.capture.refusal.toolarge.part', 'Cut out the part you need (for a sheet, the rows and columns; for a document, the pages) and add that. Civicsmith reads what you add in full.', false, 'screens-intake R74 (b)', 'DEC-125: no "we" (DEC-500)'],
   ['screen.capture.read.queued', 'Waiting its turn to be read.', false, 'screens-intake R78 (DEC-454)', 'the reading\'s first step, before screen.capture.read.fetching; the design\'s returned row for DEC-456'],
 ]) add(k, en, prot, src + ' (design lane)', note || undefined);
 

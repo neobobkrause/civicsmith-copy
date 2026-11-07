@@ -7,7 +7,15 @@
     "docs/requirements-notes/screens-document-beta.md",
     "bio-plane/src/screens-inquiry/document.mjs",
     "bio-plane/test/m/screens-inquiry/r9-document.test.mjs",
-    "bio-plane/test/m/screens-inquiry/fr6-document.test.mjs"
+    "bio-plane/test/m/screens-inquiry/fr6-document.test.mjs",
+    "bio-plane/test/m/screens-inquiry/r137-document.test.mjs",
+    "bio-plane/test/m/screens-inquiry/fr3-document.test.mjs",
+    "bio-plane/test/m/screens-inquiry/fr6-pages.test.mjs",
+    "bio-plane/test/m/screens-inquiry/fr28-document-acts.test.mjs",
+    "bio-plane/test/m/screens-inquiry/t51-fix12-b90.test.mjs",
+    "bio-plane/test/m/screens-inquiry/t51-fix13-b92.test.mjs",
+    "bio-plane/test/m/screens-inquiry/t51-fix14-r139.test.mjs",
+    "bio-plane/test/m/screens-inquiry/t51-document.test.mjs"
   ],
   "tests": [
     "bio-plane/test/m/screens-document-beta/"
@@ -34,6 +42,6 @@
   ],
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-05T12:44:53Z"
+    "at": "2026-11-07T20:58:00Z"
   }
 }
