@@ -13,3 +13,4 @@
 {"at":"2026-11-07T20:12:06Z","row":"sent","n":7,"to":"bob","text":"job answer-envelope complete, PR #895 ready, session session_018BhcefzjzKoXq7F3tszMMw: run status"}
 {"at":"2026-11-07T20:12:22Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-07T23:36:12Z","row":"sent","n":8,"to":"bob","text":"job answer-envelope complete, PR #963 ready, session session_018Bhced1nvHw5Nzvqq8Tc4L: run status"}
+{"at":"2026-11-07T23:36:29Z","row":"outcome","n":8,"outcome":"delivered"}
