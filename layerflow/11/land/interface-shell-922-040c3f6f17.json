@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "interface-shell",
+  "pr": 922,
+  "branch": "job/interface-shell",
+  "head": "040c3f6f17e8aec75f8f1017ea4f31a28b48ee65",
+  "before": "f015c94c04db4623094312ec5e5708d41a6a6b71",
+  "merge": "7fb60c318cf992ae3a1ef37a2ab4453b992e73e5",
+  "at": "2026-11-07T21:30:44Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
