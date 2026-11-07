@@ -669,6 +669,9 @@ const RUNG_ABSENT_DATA = {
   linkproject:          { ground: "substrate", is: "admits an observed link as an edge, keyed by capture" },
   cpuprobe:             { ground: "substrate", is: "the CPU probe — a Worker cannot time itself" },
   export:               { ground: "substrate", is: "writes an export manifest of what is already there" },
+  /* BD-1 (corpus-export R17; op-declarations F3, op-capabilities F1): the whole-record manifest, `export`'s ground; an
+     administrator's act, it appends one `whole-record` row to the export log */
+  exportwhole:          { ground: "substrate", is: "writes a whole-record manifest of what is already there, every stored file listed, and logs who took it" },
   taskdrain:            { ground: "substrate", is: "the task scheduler's own tick" },
   capturerequest:       { ground: "substrate", is: "queues a capture, a run's or (capture-requests R56) a member's own request for later; the capture is the act, this is the request" },
   capturerequestdrain:  { ground: "substrate", is: "the capture-request queue's own tick" },
@@ -968,6 +971,10 @@ const NON_ACTS_DATA = {
   linkproject: "substrate: admits an observed link as an edge, keyed by capture",
   /* K4279 (R5): an administrator-session act, not object-directed; the sentence is corpus-export's declared row, word for word (R50 (b)). */
   export: "writes an export manifest of what is already there",
+  /* BD-1 (corpus-export R17, R18): the whole-record export, an administrator-session act as `export`, and one part of its
+     files, read alone (the plane spreads `wholeExportOps`, store-assembly) */
+  exportwhole: "writes a whole-record manifest of what is already there, every stored file listed, and logs who took it",
+  exportwholepart: "read: one part of a whole-record export's files, at most the part bound, checkable alone by its digest; writes nothing",
   /* Capture-directed: their subject is a capture sha, not a bundle's state.
      REC-38: NOT acts here, and their member-facing METADATA is published all
      the same — `affordances`' CAPTURE_ACTS carries the label, decorateAct adds the
@@ -1616,8 +1623,10 @@ export const IRREVERSIBLE_WEIGHT = Object.freeze([
   /* K2049 (DEC-143 applied): standards R37's release moves a policy to the group's sight and is never undone; its rung
      stays as R3 gives it (`reasoned`) */
   "standardrelease",
-  /* R55's `rowexpunge` waits: affordances' t31 R36 phone test reads only the unregistered tables, so it cannot see the
-     registered op this set would name (reported to BOB, attempt 3) */
+  /* R55 (BOB C13; DEC-143): `registers`' row expunge removes every member's copy of the row and cannot be restored; its rung
+     is its owner's declared `reasoned` (R49), so it is named here by hand, as `personexpunge` is (affordances F3 reads the
+     registered tables, so it sees it) */
+  "rowexpunge",
 ]);
 
 /* R17 (op-declarations R21): each alias takes its op's very rung, absence and reason, so it never differs from its op. */
