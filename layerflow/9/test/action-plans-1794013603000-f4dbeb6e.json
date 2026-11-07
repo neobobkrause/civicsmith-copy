@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "action-plans",
+  "session": "session_018Bhcef8DRNv8cfZWMfntBP",
+  "started": "2026-11-07T01:06:43Z",
+  "ended": "2026-11-07T01:08:22Z",
+  "at": "2026-11-07T01:08:22Z",
+  "minutes": 1.65,
+  "result": "pass",
+  "layer": 9,
+  "suite_seconds": 9.943,
+  "tests": {
+    "total": 119,
+    "pass": 119,
+    "fail": 0
+  }
+}
