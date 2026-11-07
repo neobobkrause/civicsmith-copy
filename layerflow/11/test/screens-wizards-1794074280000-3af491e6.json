@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "screens-wizards",
+  "session": "session_018BhcefyP9S2zvtmvqgKD3u",
+  "started": "2026-11-07T17:58:00Z",
+  "ended": "2026-11-07T18:00:22Z",
+  "at": "2026-11-07T18:00:22Z",
+  "minutes": 2.37,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 57.087,
+  "tests": {
+    "total": 80,
+    "pass": 80,
+    "fail": 0
+  }
+}
