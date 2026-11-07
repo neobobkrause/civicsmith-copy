@@ -25,6 +25,8 @@ The budget table and the read waves are not `index.mjs` exports. `op-declaration
 
 - `filing-templates:712`: confirmed. This module's only filing-templates row is `templatebyhandle` (a `sessionread` in its family, `t51.mjs`), which `filingTemplatesOps` still serves.
 
+- `notice-producers` (land dbb6ca4edf, layer PR 809), attempt 2: re-tested. The change adds the register-changed and register-import notices and their limits (`REGISTER_CHANGE_*`, `REGISTER_IMPORT_*`, `REGISTER_IMPORT_STATES`); it declares no op and changes no `DECLARED_OPS`, so nothing this module composes moved. The suite (`p3 test surface-declarations`) runs green on a branch holding dbb6ca4edf: 14 pass, 1 todo (the owed marks), 0 fail. No code change.
+
 ## Baseline
 
 `op-declarations`' own suite has 6 failures before and after this change (R34 ai-use/pagetranscribe partitions, R3 NEEDS counts, R6), none touching these files.
