@@ -515,3 +515,4 @@
 {"at":"2026-11-07T15:08:16Z","row":"check","by":"start check","live":"unmeasured","live_at":"2026-11-07T04:55:50Z","job_cap":8,"startable":null}
 {"at":"2026-11-07T15:13:24Z","row":"check","by":"setup check","live":"unmeasured","live_at":"2026-11-07T04:55:50Z","job_cap":8,"startable":null}
 {"at":"2026-11-07T15:18:30Z","row":"check","by":"lane artifact","live":"unmeasured","live_at":"2026-11-07T04:55:50Z","job_cap":8,"startable":null}
+{"at":"2026-11-07T15:26:09Z","row":"check","by":"found","live":"unmeasured","live_at":"2026-11-07T04:55:50Z","job_cap":8,"startable":null}
