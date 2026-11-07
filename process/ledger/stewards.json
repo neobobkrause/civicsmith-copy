@@ -30,7 +30,8 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/stewards.md, each with a test under stewards/test/ that fails with the change reverted. stewards is a Civicsmith-run Worker (stewards/wrangler.jsonc): its code and local tests (node --test, wrangler or miniflare locally) are yours; deploying it is the coordinator's, so a mark that rests on a live deployment is named in --not-verified, never deployed. Edit no other module, and commit no generated file.",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T13:05:00Z"
+    "state": "WORKING",
+    "at": "2026-11-07T17:03:48Z",
+    "reason": "reopened: meet the unmet requirement marks in build/requirements/stewards.md, each with a test that fails with the change reverted; the first attempt (job/stewards at e6901805, 5 Nov: R24-R26, a listing withdrawal's rule part and version, reinstating keeps the history, the steward's sentence for the team) completed but never merged: carry over its work where it still applies on layer/11"
   }
 }
