@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "signin-door",
+  "pr": 880,
+  "branch": "job/signin-door-3",
+  "head": "4f935aea802971de9b3e3d436ad3071e3d3ef160",
+  "before": "b7232d37db1acf75590d9df57a009acc0370be15",
+  "merge": "9d1f44873fdd4b53013b8ceca2943d279b35c344",
+  "at": "2026-11-07T19:41:47Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}

@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "signin-door",
+  "pr": 880,
+  "sha": "d052e065c9f9c4beec30eedd659751d77ad5d505",
+  "run_id": 42405756122,
+  "run_attempt": 1,
+  "at": "2026-11-07T19:21:53Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 1.08,
+  "suite_minutes": null,
+  "record_only": true,
+  "whole": false
+}
