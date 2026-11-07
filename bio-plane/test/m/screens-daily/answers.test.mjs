@@ -216,3 +216,16 @@ test("R6 (K5131): \"Show how this was counted\" is drawn only while answers' rul
     assert.ok(ops(p).includes("search") && ops(p).includes("standingquestionset"), "the rest of the screen is drawn either way");
   }
 });
+
+test("R6 (query-language R35): Ask-as-search draws a hit's excerpt as its words: the search's match marks (U+0001, U+0002) are no text drawn; control: the real answer carries them", async () => {
+  const t = await team();
+  await t.w.recipes.hold(t.rosa, "Parks budget", "The parks budget for the year.", "");
+  const hit = (await t.rosa.read("search", { query: { q: "parks", limit: "50", snippet: "160" } })).hits.find((h) => h.title === "Parks budget");
+  assert.ok(hit && /\u0001parks\u0002/i.test(hit.snippet || ""), "control: the real snippet marks the match: " + JSON.stringify(hit && hit.snippet));
+  const p = await openIn(t, "/app/answers");
+  await press(p, "search", { values: { "answers-q": "parks" }, reason: R });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(text(p).includes("Parks budget"), "the document is found");
+  assert.ok(!/[\u0001\u0002]/.test(main(p).textContent), "no match mark is drawn as text");
+  assert.ok(text(p).includes(hit.snippet.replace(/[\u0001\u0002]/g, "").replace(/\s+/g, " ").trim()), "the excerpt's words");
+});
