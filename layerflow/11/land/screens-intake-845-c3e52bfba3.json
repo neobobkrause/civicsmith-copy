@@ -1,0 +1,128 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-intake",
+  "pr": 845,
+  "branch": "job/screens-intake",
+  "head": "c3e52bfba386fb34da2225d9d280287c6cbc0c7e",
+  "before": "fc102815778584e755d65aea83487d59e8d3c659",
+  "merge": "66b98e66f2445e886bf0d8007940decd2ce9e8d8",
+  "at": "2026-11-07T19:10:23Z",
+  "by": "bob",
+  "gate_runs": 7,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-intake/capture.test.mjs",
+      "bio-plane/test/m/screens-intake/common.test.mjs",
+      "bio-plane/test/m/screens-intake/g44-open-file.test.mjs",
+      "bio-plane/test/m/screens-intake/held.test.mjs",
+      "bio-plane/test/m/screens-intake/open-file.test.mjs",
+      "bio-plane/test/m/screens-intake/page.mjs",
+      "bio-plane/test/m/screens-intake/phone390.test.mjs",
+      "bio-plane/test/m/screens-intake/r9-states.test.mjs",
+      "bio-plane/test/m/screens-intake/t51-common.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-intake/capture.test.mjs",
+      "bio-plane/test/m/screens-intake/common.test.mjs",
+      "bio-plane/test/m/screens-intake/g44-open-file.test.mjs",
+      "bio-plane/test/m/screens-intake/held.test.mjs",
+      "bio-plane/test/m/screens-intake/open-file.test.mjs",
+      "bio-plane/test/m/screens-intake/page.mjs",
+      "bio-plane/test/m/screens-intake/phone390.test.mjs",
+      "bio-plane/test/m/screens-intake/r9-states.test.mjs",
+      "bio-plane/test/m/screens-intake/t51-common.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-intake/capture.test.mjs",
+        "class": "breaking",
+        "why": "unparsed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/common.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/g44-open-file.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/held.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/open-file.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/page.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/phone390.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: const inline = e . matches ( \"#cs-main p a.cs-ref, #cs-main li > a.cs-ref:not(:only-child)\""
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/r9-states.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: \"screen.capture.read.queued\" ) && ! says ( p ,"
+      },
+      {
+        "file": "bio-plane/test/m/screens-intake/t51-common.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-intake/capture.test.mjs",
+      "bio-plane/test/m/screens-intake/common.test.mjs",
+      "bio-plane/test/m/screens-intake/g44-open-file.test.mjs",
+      "bio-plane/test/m/screens-intake/held.test.mjs",
+      "bio-plane/test/m/screens-intake/open-file.test.mjs",
+      "bio-plane/test/m/screens-intake/page.mjs",
+      "bio-plane/test/m/screens-intake/phone390.test.mjs",
+      "bio-plane/test/m/screens-intake/r9-states.test.mjs",
+      "bio-plane/test/m/screens-intake/t51-common.test.mjs"
+    ],
+    "triggers": [],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "none",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/screens-intake/capture.test.mjs",
+        "bio-plane/test/m/screens-intake/common.test.mjs",
+        "bio-plane/test/m/screens-intake/g44-open-file.test.mjs",
+        "bio-plane/test/m/screens-intake/held.test.mjs",
+        "bio-plane/test/m/screens-intake/open-file.test.mjs",
+        "bio-plane/test/m/screens-intake/page.mjs",
+        "bio-plane/test/m/screens-intake/phone390.test.mjs",
+        "bio-plane/test/m/screens-intake/r9-states.test.mjs",
+        "bio-plane/test/m/screens-intake/t51-common.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "importers": []
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "screens-daily",
+    "screens-document",
+    "screens-inquiry",
+    "screens-intake-rounds"
+  ],
+  "users_noticed": []
+}
