@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "record-core",
+  "round": 1,
+  "started": "2026-11-07T17:41:13Z",
+  "ended": "2026-11-07T17:43:03Z",
+  "minutes": 1.8,
+  "tested_on": "f7ad0220d99402fba1e803d42623e82091310c20",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T17:43:03Z"
+}
