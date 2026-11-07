@@ -7,3 +7,4 @@
 {"at":"2026-11-06T14:19:07Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-07T17:24:05Z","row":"sent","n":5,"to":"bob","text":"job corpus-export BLOCKED: run status"}
 {"at":"2026-11-07T17:24:22Z","row":"outcome","n":5,"outcome":"delivered"}
+{"at":"2026-11-07T19:50:31Z","row":"sent","n":6,"to":"bob","text":"job corpus-export BLOCKED: run status"}
