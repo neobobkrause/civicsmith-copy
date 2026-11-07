@@ -34,8 +34,11 @@ async function choose(p, id, value) {
   p.fire(el, "change");
   await p.settle();
 }
-/** the other document chosen in the R137 picker (one radio of the fold `kind`) */
+/** the other document chosen in the shared picker (R137, now screens-document-beta R70) (one radio of the fold `kind`) */
 async function pickDoc(p, kind, value) {
+  /* R70, R71 (screens-document-beta): the shared picker is read once opened; a document of another project is offered once its control is pressed */
+  const offeredNow = () => main(p).querySelectorAll(`[data-picker="${kind}"] input`).some((i) => i.getAttribute("type") === "radio" && i.getAttribute("value") === value);
+  for (const box of [`document-pick-open-${kind}-0`, `${kind}-wide-0`]) if (!offeredNow() && p.doc.getElementById(box)) await p.choose("#" + box);
   const picker = main(p).querySelector(`[data-picker="${kind}"]`);
   const r = picker && picker.querySelectorAll("input").find((i) => i.getAttribute("type") === "radio" && i.getAttribute("value") === value && !i.closest("[data-pick-pages]"));
   if (!r) throw new Error(`${value} is not offered in the ${kind} picker`);

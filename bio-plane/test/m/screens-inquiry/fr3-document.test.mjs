@@ -377,8 +377,11 @@ test("R126 DEC-394 resolvetestify: a name the record matched to no subject is li
 });
 
 /* ---- DEC-394 (3e) R127: contradictionflag ---- */
-/** choose the other document in the R137 picker (one radio of the fold `kind`, not one of its page controls) */
+/** choose the other document in the shared picker (R137, now screens-document-beta R70) (one radio of the fold `kind`, not one of its page controls) */
 async function pickDoc(p, kind, value) {
+  /* R70, R71 (screens-document-beta): the shared picker is read once opened; a document of another project is offered once its control is pressed */
+  const offeredNow = () => main(p).querySelectorAll(`[data-picker="${kind}"] input`).some((i) => i.getAttribute("type") === "radio" && i.getAttribute("value") === value);
+  for (const box of [`document-pick-open-${kind}-0`, `${kind}-wide-0`]) if (!offeredNow() && p.doc.getElementById(box)) await p.choose("#" + box);
   const picker = main(p).querySelector(`[data-picker="${kind}"]`);
   const r = picker && picker.querySelectorAll("input").find((i) => i.getAttribute("type") === "radio" && i.getAttribute("value") === value && !i.closest("[data-pick-pages]"));
   assert.ok(r, `${value} is offered in the ${kind} picker`);
@@ -412,7 +415,9 @@ test("R127 DEC-394 contradictionflag: a passage here and a passage in another do
   }
   const lone = await member();
   const alone = await pageOn(lone.world, lone.ann, lone.at);
-  assert.equal(flagFold(alone), null, "control: no other document to set it beside, no fold");
+  /* R71 (screens-document-beta): the picker is read once opened, so the fold is withdrawn once its read finds nothing to offer */
+  await alone.choose("#document-pick-open-flag-0");
+  assert.ok(!flagFold(alone), "control: no other document to set it beside, no fold");
 });
 
 /* scripted: heldcaptures (needs a recipe that holds a copy whose upload is not whole, `whole: false`) */

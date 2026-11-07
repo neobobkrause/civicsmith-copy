@@ -1183,40 +1183,41 @@ function render(cs, view) {
     }
   }
 
-  /* R137 (T51 fix round 10; DEC-435, DEC-432 (c); K5195; amends R99, R127): ONE document picker for the two folds that choose another document ("Connections you
-     assert", "This contradicts another document"). Every document of the team the member can see, this one excepted, is read by `heldcaptures` (capture R77:
-     `held_and_vouched`, the read that groups an archive's files beside it, `files`), 20 a page by its `next`: this document's project's first (`project`), then
-     every other document sorted by project, a project-less one last; a read whose rows are all excepted is passed over, so no page is drawn empty. The pages
-     are read once each (`later`, shared by both folds). Grouped by project under each project's name (its `image`'s title), this project first; an archive one
-     row with its files indented under it; one radio choice kept in page memory (`view.ui[<choice>]`), so a choice made on another page replaces it; typing in
-     the find box narrows the pages read so far to documents whose name holds the text (the read takes no name filter). The words `screen.document.pick.*`
-     are drawn where the list holds them, else the nearest held row stands in (the rows are owed to the words list). */
-  const pickHeld = () => true; /* B68 (K5197): every screen.document.pick.* key is drawn by key; rows.mjs is regenerated after PLANE #63 Wave B */
-  const pickRead = (phase, after) => later("pick:" + phase + ":" + (after || ""), "heldcaptures",
-    { state: "held_and_vouched", sort: "project", limit: "20", ...(phase === "own" ? { project } : {}), ...(after ? { after } : {}) });
-  const pickKeep = (row, phase) => !!row && typeof row.bundle_id === "string" && row.bundle_id !== id
-    && (!project || (phase === "own" ? String(row.project || "") === project : String(row.project || "") !== project));
-  /* the reads are one stream of rows (this project's, then the rest), cut into pages of 20: page `want` reads until it is full and one row past it is known (the
-     stream's end, or a `next` that stands), never further */
-  const pickPages = (want) => {
+  /* screens-document-beta R70 (T53; DEC-463; interface-shell R138; amends R46): the picker of the two folds that choose another document ("Connections you
+     assert", "This contradicts another document") is the shared one, `cs.picker` (interface-shell-t53's kit part): this document's project is its own project and
+     this document is excepted. Its first scope is this project's documents; its control "Show documents from other projects" adds the member's other projects'
+     documents, each under its project's name (its `image`'s title), a document in no project under `screen.document.pick.noproject`; with no project the list is
+     the second scope alone, each row labelled, and no control; a member whose other projects hold nothing she can see is drawn no control. The rest of R46
+     stands: the kit's find box narrows the pages read so far, the none-found sentence, an archive's row with its files beside it, one radio choice kept in page
+     memory (`view.ui["pick:<kind>"]`, the kit's), 20 a page by `next` in each scope with its showing or more line and previous and next, and no document to
+     offer: the fold is not drawn.
+     R71 (T53; K4354, P24; PL10, PL11): `heldcaptures` (capture R77: `held_and_vouched`, an archive's files grouped beside it, `files`) leaves the screen's first
+     wave: the picker reads it only once the member opens it (`view.ui["pick:<kind>:open"]`, its opener the fold's own label), so the door window never queues
+     behind it. The reads are `later`'s, once each, shared by both folds. */
+  const pickRead = (scope, after) => later("pick:" + scope + ":" + (after || ""), "heldcaptures",
+    { state: "held_and_vouched", sort: "project", limit: "20", ...(scope === "here" ? { project } : {}), ...(after ? { after } : {}) });
+  const pickKeep = (row, scope) => !!row && typeof row.bundle_id === "string" && row.bundle_id !== id
+    && (!project || (scope === "here" ? String(row.project || "") === project : String(row.project || "") !== project));
+  /* a scope's reads are one stream of rows cut into pages of 20: page `want` reads until it is full and one row past it is known (the stream's end, or a
+     `next` that stands), never further; a read whose rows are all excepted is passed over, so no page is drawn empty */
+  const pickPages = (scope, want) => {
     const rows = [], need = 20 * (want + 1);
-    let phase = project ? "own" : "all", after = null, state = "ok", failed = null, end = false, total = null;
+    let after = null, state = "ok", failed = null, end = false, total = null;
     for (let guard = 0; guard < 500; guard++) {
-      const r = pickRead(phase, after);
+      const r = pickRead(scope, after);
       if (r.state === "loading") { state = "loading"; break; }
       if (r.state === "failed") { state = "failed"; failed = r; break; }
       const v = r.state === "ok" && r.value ? r.value : {};
-      rows.push(...(Array.isArray(v.held) ? v.held : []).filter((x) => pickKeep(x, phase)));
-      if (phase === "all" || !project) total = Number.isInteger(v.total) && v.total >= 0 ? v.total : null;
+      rows.push(...(Array.isArray(v.held) ? v.held : []).filter((x) => pickKeep(x, scope)));
+      if (scope === "here" || !project) total = Number.isInteger(v.total) && v.total >= 0 ? v.total : null;
       const next = typeof v.next === "string" && v.next ? v.next : null;
-      if (!next && phase !== "own") { end = true; break; }
-      /* the page is full: a `next` that stands says more follow, unread; past this project's last read, the rest's first read is looked at */
+      if (!next) { end = true; break; }
       if (rows.length > need || (rows.length >= need && next)) break;
-      if (next) after = next; else { phase = "all"; after = null; }
+      after = next;
     }
     const pages = [];
-    for (let i = 0; i < rows.length && pages.length <= want; i += 20) pages.push({ rows: rows.slice(i, i + 20), total });
-    return { pages, more: rows.length > need || (!end && state === "ok" && rows.length >= need), state, failed };
+    for (let i = 0; i < rows.length && pages.length <= want; i += 20) pages.push(rows.slice(i, i + 20));
+    return { pages, more: rows.length > need || (!end && state === "ok" && rows.length >= need), state, failed, total };
   };
   const projName = (pid) => {
     const t = later("project:" + pid, "image", { id: pid });
@@ -1225,75 +1226,79 @@ function render(cs, view) {
     try { if (name.startsWith("\"")) name = JSON.parse(name); } catch { /* raw */ }
     return name ? { text: name } : { key: t && t.state === "loading" ? "state.loading" : "shell.unread" };
   };
-  /* no document to offer (every read answered, none but this one): neither fold is drawn */
-  const offered = pickPages(0).pages.length > 0;
-  /* `kind` names the fold's own memory: the choice (`choice`), its page (`pickpage:<kind>`) and its find text (`pickfind:<kind>`) */
-  const picker = (kind, choice, labelKey) => {
-    const pageKey = "pickpage:" + kind, findKey = "pickfind:" + kind;
-    const page = Math.max(0, Number.isInteger(Number(ui[pageKey])) ? Number(ui[pageKey]) : 0);
-    const got = pickPages(page);
-    const chosen = String(ui[choice] || "");
-    const needle = String(ui[findKey] || "").trim();
-    const low = needle.toLowerCase();
-    const nameOf = (r) => String(r.title || r.bundle_id);
+  const pickOpen = (kind) => {
+    const o = ui["pick:" + kind + ":open"];
+    return (Array.isArray(o) ? o.length > 0 : !!o) || !!ui["pick:" + kind];
+  };
+  const pickScopes = (kind) => {
+    const page = (scope) => { const n = Number(ui["pickpage:" + kind + ":" + scope]); return Number.isInteger(n) && n > 0 ? n : 0; };
+    const here = project ? pickPages("here", page("here")) : null;
+    const others = pickPages("others", page("others"));
+    return { here, others, page };
+  };
+  /* no document to offer (the picker opened, every scope answered, none but this one): the fold is not drawn */
+  const nothingToOffer = (kind) => {
+    if (!pickOpen(kind)) return false;
+    const s = pickScopes(kind);
+    const none = (g) => !g || (g.state === "ok" && g.pages.length === 0);
+    return none(s.here) && none(s.others);
+  };
+  const offered = { connect: !nothingToOffer("connect"), flag: !nothingToOffer("flag") };
+  /* the picker opened and some scope read offers a document */
+  const pickHas = (kind) => {
+    if (!pickOpen(kind)) return false;
+    const s = pickScopes(kind);
+    return [s.here, s.others].some((g) => !!g && g.state === "ok" && g.pages.length > 0);
+  };
+  /* `kind` names the fold's own memory: the kit's (`pick:<kind>`, its find text `pick:<kind>:q`, its control `pick:<kind>:wide`), and its pages
+     (`pickpage:<kind>:<scope>`) */
+  const picker = (kind, labelKey) => {
+    const opener = `<div data-picker="${cs.esc(kind)}" data-pick-closed="1">`
+      + cs.checks("document-pick-open-" + kind, { text: "" }, [{ value: "1", text: T(labelKey), on: false }], { redraw: "pick:" + kind + ":open" }) + "</div>";
+    if (!pickOpen(kind)) return opener;
+    const s = pickScopes(kind);
+    const needle = String(ui["pick:" + kind + ":q"] || "").trim();
     const fileName = (f) => String(f.name || f.document);
-    const has = (t) => !low || t.toLowerCase().includes(low);
-    /* narrowing covers every page read so far; without it, the page asked */
-    const source = needle ? got.pages.slice(0, page + 1).flatMap((p) => p.rows) : (got.pages[page] ? got.pages[page].rows : []);
-    const rows = [];
-    for (const r of source) {
+    const docOf = (r) => {
+      const title = String(r.title || r.bundle_id);
+      const date = r.source && r.source.retrieved ? String(r.source.retrieved) : r.collected_since ? String(r.collected_since) : "";
+      const pid = String(r.project || "");
+      const pn = pid ? projName(pid) : null;
+      const base = { project: pid || null, project_name: pn ? (pn.text || T(pn.key)) : null };
       const files = Array.isArray(r.files) ? r.files.filter((f) => f && f.document && String(f.document) !== id) : null;
-      if (files) {
-        const fs = has(nameOf(r)) ? files : files.filter((f) => has(fileName(f)));
-        if (has(nameOf(r)) || fs.length) rows.push({ r, files: fs });
-      } else if (has(nameOf(r))) rows.push({ r, files: null });
-    }
-    const groups = new Map();
-    for (const x of rows) {
-      const pid = String(x.r.project || "");
-      if (!groups.has(pid)) groups.set(pid, []);
-      groups.get(pid).push(x);
-    }
-    const rank = (p) => (project && p === project ? 0 : p === "" ? 2 : 1);
-    const order = [...groups.keys()].sort((a, b) => rank(a) - rank(b));
-    const opt = (value, text) => ({ value, text, on: value === chosen });
-    let n = 0;
-    const groupHtml = order.map((pid) => {
-      const legend = pid ? projName(pid) : { key: pickHeld("screen.document.pick.noproject") ? "screen.document.pick.noproject" : "screen.held.noproject" };
-      const parts = [];
-      let seg = [];
-      const flush = () => { if (seg.length) parts.push(cs.checks("document-pick-" + kind + "-" + (n++), legend, seg, { radio: true, redraw: choice })); seg = []; };
-      for (const x of groups.get(pid)) {
-        if (!x.files) { seg.push(opt(String(x.r.bundle_id), nameOf(x.r))); continue; }
-        const count = Number.isInteger(x.r.files_total) ? x.r.files_total : x.files.length;
-        const said = pickHeld("screen.document.pick.archive") ? T("screen.document.pick.archive", { n: String(count) }) : T("screen.archive.facts.entries", { entries: String(count) });
-        seg.push(opt(String(x.r.bundle_id), nameOf(x.r) + " · " + said));
-        flush();
-        if (x.files.length) parts.push(`<div data-pick-files="${cs.esc(String(x.r.bundle_id))}" style="margin-left:18px">`
-          + cs.checks("document-pick-" + kind + "-" + (n++), { text: nameOf(x.r) }, x.files.map((f) => opt(String(f.document), fileName(f)
-            + (pickHeld("screen.document.pick.member") ? " · " + T("screen.document.pick.member", { archive: nameOf(x.r) }) : ""))), { radio: true, redraw: choice }) + "</div>");
-      }
-      flush();
-      return `<div data-pick-group="${cs.esc(pid)}">${parts.join("")}</div>`;
-    }).join("");
-    const shown = got.pages.slice(0, page + 1).reduce((s, p) => s + p.rows.reduce((t, r) => t + 1 + (Array.isArray(r.files) ? r.files.length : 0), 0), 0);
-    const total = got.pages[page] ? got.pages[page].total : null;
-    /* R137: while a page is unread, nothing read so far matching the text is not "none found": more follow, and the line says so (never `pick.none`) */
-    const unmatched = !!needle && !rows.length && got.state !== "loading";
-    const saysMore = got.more && (total === null || unmatched);
-    const line = saysMore ? (pickHeld("screen.document.pick.more") ? W("screen.document.pick.more", { count: String(shown) }) : W("screen.people.more", { n: String(shown) }))
-      : total !== null ? W("screen.list.showing", { shown: String(shown), total: String(total) }) : "";
-    const pager = [...(page > 0 ? [{ value: String(page - 1), key: "document.read.prev", on: false }] : []), ...(got.more ? [{ value: String(page + 1), key: "document.read.next", on: false }] : [])];
-    const none = unmatched && !got.more
-      ? `<p class="cs-state" data-state="empty" data-pick-none="1">${pickHeld("screen.document.pick.none") ? W("screen.document.pick.none", { text: needle }) : W("state.empty")}</p>` : "";
-    return `<div data-picker="${cs.esc(kind)}"${chosen ? ` data-chosen="${cs.esc(chosen)}"` : ""}><p><b>${W(labelKey)}</b></p>`
-      + cs.field("document-pick-find-" + kind, pickHeld("screen.document.pick.find") ? "screen.document.pick.find" : "shell.search",
-        { value: needle, typing: (c, v, value) => c.set(findKey, String(value || "")), ...(pickHeld("screen.document.pick.find.help") ? { help: "screen.document.pick.find.help" } : {}) })
-      + none + groupHtml
-      + (got.state === "loading" ? cs.state({ state: "loading" }, () => "") : got.state === "failed" ? cs.state(got.failed, () => "") : "")
-      + (line || pager.length ? `<div class="mk-small" data-pick-pages="${cs.esc(kind)}">${line ? `<p${saysMore ? ` data-pick-more="1"` : ""}>${line}</p>` : ""}`
-        + (pager.length ? cs.checks("document-pick-page-" + kind, "shell.more", pager, { radio: true, redraw: pageKey }) : "") + "</div>" : "")
-      + "</div>";
+      if (!files) return [{ ...base, id: String(r.bundle_id), title, date }];
+      /* an archive: its own row, then its files, each a document labelled with its archive (the kit's) */
+      const count = Number.isInteger(r.files_total) ? r.files_total : files.length;
+      return [{ ...base, id: String(r.bundle_id), title: title + " · " + T("screen.document.pick.archive", { n: String(count) }), date },
+        ...(files.length ? [{ ...base, id: "files:" + String(r.bundle_id), title, files: files.map((f) => ({ id: String(f.document), title: fileName(f) })) }] : [])];
+    };
+    /* narrowing covers every page read so far; without it, the page asked */
+    const valueOf = (g, scope) => {
+      if (!g) return null;
+      if (g.state === "loading") return { state: "loading" };
+      if (g.state === "failed") return g.failed;
+      const rows = needle ? g.pages.slice(0, s.page(scope) + 1).flat() : (g.pages[s.page(scope)] || []);
+      return { state: "ok", value: { items: rows.flatMap(docOf) } };
+    };
+    const wideOn = (() => { const w = ui["pick:" + kind + ":wide"]; return !project || (Array.isArray(w) ? w.length > 0 : !!w); })();
+    let html = cs.picker(view, kind, { project: project || null, here: valueOf(s.here, "here"), others: valueOf(s.others, "others"), label: labelKey,
+      single: !!project && s.others.state === "ok" && s.others.pages.length === 0 });
+    /* R46: while a page of a scope is unread, nothing read so far matching the text is not "none found": more follow, and the line says so */
+    const unread = (s.here && s.here.more) || (wideOn && s.others.more);
+    if (needle && unread) html = html.replace(/<p class="cs-state" data-state="empty" data-none>[\s\S]*?<\/p>/, "");
+    /* R46: each scope's showing or more line, and its previous and next */
+    const pagesOf = (g, scope) => {
+      if (!g || g.state !== "ok") return "";
+      const page = s.page(scope);
+      const shown = g.pages.slice(0, page + 1).reduce((n, rows) => n + rows.reduce((t, r) => t + 1 + (Array.isArray(r.files) ? r.files.length : 0), 0), 0);
+      const saysMore = g.more && (g.total === null || needle);
+      const line = saysMore ? W("screen.document.pick.more", { count: String(shown) })
+        : g.total !== null ? W("screen.list.showing", { shown: String(shown), total: String(g.total) }) : "";
+      const pager = [...(page > 0 ? [{ value: String(page - 1), key: "document.read.prev", on: false }] : []), ...(g.more ? [{ value: String(page + 1), key: "document.read.next", on: false }] : [])];
+      return line || pager.length ? `<div class="mk-small" data-pick-pages="${cs.esc(kind + ":" + scope)}">${line ? `<p${saysMore ? ` data-pick-more="1"` : ""}>${line}</p>` : ""}`
+        + (pager.length ? cs.checks("document-pick-page-" + kind + "-" + scope, "shell.more", pager, { radio: true, redraw: "pickpage:" + kind + ":" + scope }) : "") + "</div>" : "";
+    };
+    return html.replace(/<\/div>$/, "") + pagesOf(s.here, "here") + (wideOn ? pagesOf(s.others, "others") : "") + "</div>";
   };
 
   /* R32, R68: the names it holds, each with its grade as one mark and how it was matched (`resolutions`, entities R14, R58), the
@@ -1319,16 +1324,17 @@ function render(cs, view) {
         + cs.field("document-testify-how", "screen.document.testify.how", { area: true, rec: true, help: ["screen.document.testify.how.help", "screen.document.testify.how.help2"] })
         + cs.act("resolvetestify", { label: "act.resolvetestify.label.document", data: { sha } }) + own("resolvetestify") + "</details>" : "";
     /* R127: a passage of this reading beside a passage of another document the member can see; the other document is chosen (the choice redraws the
-       page, `ui.flagOther`) and its passages are its own reading's */
+       page, `ui["pick:flag"]`, R70) and its passages are its own reading's */
     const flagUnits = (us) => us.filter((u) => u && String(u.text || "").trim() && u.extent && typeof u.extent === "object");
     const flagLabel = (u) => quote(excerpt(u.text)) + (u.extent && u.extent.kind === "pdf-page" && Number.isInteger(u.extent.page) ? " \u00b7 " + T("screen.document.passage.where", { page: u.extent.page + 1 }) : "");
     /* G38 (R127): the passages offered are those of every page of a long reading (`next`), this one's and the other's, read once the fold can be drawn
+       (R71: once its picker is opened and has offered another document)
        (another document exists to set it beside, R137's picker offers one); a page still on its way or not readable is said in the fold, never taken for the end of the reading */
-    const flagPaged = (first, key, shaOf) => (offered && first ? view.parts.readPages(readOf, key, shaOf, first, null)
+    const flagPaged = (first, key, shaOf) => (pickHas("flag") && first ? view.parts.readPages(readOf, key, shaOf, first, null)
       : { units: first && Array.isArray(first.text_units) ? first.text_units : [], state: "ok" });
     const hereRead = flagPaged(rv0, "readafter:", sha);
     const flagHere = flagUnits(hereRead.units);
-    const flagPick = String(ui.flagOther || "");
+    const flagPick = String(ui["pick:flag"] || "");
     const flagImg = flagPick ? later("flagimg:" + flagPick, "image", { id: flagPick }) : null;
     let flagSha = "";
     try { const fp = JSON.parse(String(flagImg && flagImg.state === "ok" && flagImg.value ? flagImg.value["data/provenance.json"] || "" : "")); const c0 = fp && fp.documents && fp.documents[0] && fp.documents[0].capture ? String(fp.documents[0].capture.sha256 || "") : ""; flagSha = /^[0-9a-f]{64}$/.test(c0) ? c0 : ""; } catch { flagSha = ""; }
@@ -1337,15 +1343,15 @@ function render(cs, view) {
     const flagThere = flagUnits(thereRead.units);
     const flagState = [hereRead.state, thereRead.state].includes("failed") ? cs.state({ state: "failed", refusal: null }, () => "")
       : [hereRead.state, thereRead.state].includes("loading") ? cs.state({ state: "loading" }, () => "") : "";
-    /* R137: the other document is chosen through the one picker (its choice `ui.flagOther`); once chosen, its passages (`screen.document.pick.passage`) */
-    const flagHtml = flagHere.length && offered
+    /* R70: the other document is chosen through the shared picker (its choice `ui["pick:flag"]`); once chosen, its passages (`screen.document.pick.passage`) */
+    const flagHtml = flagHere.length && offered.flag
       /* T51 fix round 10 (B89, C-M12): the fold stays open once the other document is chosen or a passage is picked, and each pick is drawn as the member
          left it (read from the page before it is redrawn), so a redraw keeps it */
-      ? `<details class="mk-details" data-fold="contradict"${flagPick || String(cs.value("document-flag-here") || cs.value("document-flag-there") || "") ? " open" : ""}><summary>${W("screen.document.contradict.head")}</summary><p class="mk-note">${W("screen.document.contradict.note1")} ${W("screen.document.contradict.note2")}</p>`
+      ? `<details class="mk-details" data-fold="contradict"${flagPick || pickOpen("flag") || String(cs.value("document-flag-here") || cs.value("document-flag-there") || "") ? " open" : ""}><summary>${W("screen.document.contradict.head")}</summary><p class="mk-note">${W("screen.document.contradict.note1")} ${W("screen.document.contradict.note2")}</p>`
         + cs.choice("document-flag-here", "screen.document.contradict.here", [{ value: "", text: "" }].concat(flagHere.map((u, i) => ({ value: String(i), text: flagLabel(u) }))), { value: String(cs.value("document-flag-here") || "") })
         + `<p class="mk-small">${W("screen.document.contradict.here.help")}</p>`
-        + picker("flag", "flagOther", "screen.document.contradict.other")
-        + (flagPick ? cs.choice("document-flag-there", pickHeld("screen.document.pick.passage") ? "screen.document.pick.passage" : "screen.document.contradict.other", [{ value: "", text: "" }].concat(flagThere.map((u, i) => ({ value: String(i), text: flagLabel(u) }))), { value: String(cs.value("document-flag-there") || "") }) : "")
+        + picker("flag", "screen.document.contradict.other")
+        + (flagPick ? cs.choice("document-flag-there", "screen.document.pick.passage", [{ value: "", text: "" }].concat(flagThere.map((u, i) => ({ value: String(i), text: flagLabel(u) }))), { value: String(cs.value("document-flag-there") || "") }) : "")
         + `<p class="mk-small">${W("screen.document.contradict.other.help")}</p>`
         + flagState + cs.field("document-flag-why", "screen.document.contradict.why", { area: true, rec: true, help: "screen.document.contradict.why.help" })
         + cs.act("contradictionflag", { data: { sha } }) + own("contradictionflag") + "</details>" : "";
@@ -1425,9 +1431,9 @@ function render(cs, view) {
   /* R99 (C29; DEC-375): a member asserts a connection between this document and another one the team holds, by hand (`connectionassert`),
      graded D and under her name; the other document is chosen among the documents she can see */
   {
-    /* R137: the other document through the one picker (its choice `ui.pickConnect`) */
-    if (offered) out.push(cs.sec("screen.document.connect.heading", `<p class="mk-note">${W("screen.document.connect.says")}</p>`
-      + picker("connect", "pickConnect", "screen.document.connect.other")
+    /* R70: the other document through the shared picker (its choice `ui["pick:connect"]`) */
+    if (offered.connect) out.push(cs.sec("screen.document.connect.heading", `<p class="mk-note">${W("screen.document.connect.says")}</p>`
+      + picker("connect", "screen.document.connect.other")
       + `<p class="mk-small">${W("screen.document.connect.other.help")}</p>`
       + cs.field("document-assert-basis", "screen.document.connect.basis", { area: true, rec: true, help: "screen.document.connect.basis.help" })
       + cs.act("connectionassert", { label: "act.connectionassert.label.document", data: { document: id } }) + own("connectionassert")
@@ -1906,8 +1912,8 @@ const acts = [
   { op: "connectionassert", label: "act.connectionassert.label.document", rereads: [], reasonField: "basis",
     refusals: { CONNECTION_ASSERT_NO_BASIS: "screen.document.connect.refused.basis", CONNECTION_ASSERT_BASIS_TOO_LONG: "screen.document.connect.refused.basis", NO_SUCH_BUNDLE: "screen.document.connect.refused.other" },
     send(view, el, cs) {
-      /* R137: the picker's one radio choice, kept in page memory whatever page is drawn */
-      const b = String(view.ui.pickConnect || "");
+      /* R70: the shared picker's one radio choice (`pick:connect`), kept in page memory whatever page or scope is drawn */
+      const b = String(view.ui["pick:connect"] || "");
       const basis = String(cs.value("document-assert-basis") || "").trim();
       if (!b) return { refuse: "screen.document.connect.refused.other" };
       if (!basis) return { refuse: "screen.document.connect.refused.basis" };
@@ -1958,7 +1964,7 @@ const acts = [
         .filter((u) => u && String(u.text || "").trim() && u.extent && typeof u.extent === "object");
       const hereAt = String(cs.value("document-flag-here") || "");
       const here = hereAt !== "" && /^\d+$/.test(hereAt) ? units(L.reading, "readafter:", String(el.dataset.sha || ""))[Number(hereAt)] : null;
-      const otherId = String(view.ui.flagOther || "");
+      const otherId = String(view.ui["pick:flag"] || "");
       let otherSha = "";
       try { const img = L["flagimg:" + otherId]; const pj = JSON.parse(String(img && img.state === "ok" && img.value ? img.value["data/provenance.json"] || "" : "")); const c0 = pj && pj.documents && pj.documents[0] && pj.documents[0].capture ? String(pj.documents[0].capture.sha256 || "") : ""; otherSha = /^[0-9a-f]{64}$/.test(c0) ? c0 : ""; } catch { otherSha = ""; }
       const thereAt = String(cs.value("document-flag-there") || "");

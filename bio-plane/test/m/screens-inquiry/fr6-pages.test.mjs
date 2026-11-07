@@ -79,8 +79,11 @@ test("R2 R34 R96 G38 the words a leg cites on the third page of a long reading a
 
 /* a contradiction flag: a passage of this reading beside a passage of another document, each chosen among the passages the readings hold */
 const OTHER = "INFO-2026-0011", OTHER_SHA = "5".repeat(64);
-/** choose the other document in the R137 picker (one radio of the fold `kind`, not one of its page controls) */
+/** choose the other document in the shared picker (R137, now screens-document-beta R70) (one radio of the fold `kind`, not one of its page controls) */
 async function pickDoc(p, kind, value) {
+  /* R70, R71 (screens-document-beta): the shared picker is read once opened; a document of another project is offered once its control is pressed */
+  const offeredNow = () => main(p).querySelectorAll(`[data-picker="${kind}"] input`).some((i) => i.getAttribute("type") === "radio" && i.getAttribute("value") === value);
+  for (const box of [`document-pick-open-${kind}-0`, `${kind}-wide-0`]) if (!offeredNow() && p.doc.getElementById(box)) await p.choose("#" + box);
   const picker = main(p).querySelector(`[data-picker="${kind}"]`);
   const r = picker && picker.querySelectorAll("input").find((i) => i.getAttribute("type") === "radio" && i.getAttribute("value") === value && !i.closest("[data-pick-pages]"));
   assert.ok(r, `${value} is offered in the ${kind} picker`);
@@ -132,7 +135,9 @@ test("R127 G38 a contradiction flag can be set on a passage of the third page of
   assert.equal(readsOf(q, OTHER_SHA).length, 1);
   /* control: no other document, no fold, and the pages are not read for it */
   const alone = await openWith(docAt, { plane: FLAG_PLANE({ heldcaptures: pickHeld(plane(), []) }) });
-  assert.equal(main(alone).querySelector('[data-fold="contradict"]'), null);
+  /* R71 (screens-document-beta): the picker is read once opened; finding nothing to offer, the fold is withdrawn */
+  await alone.choose("#document-pick-open-flag-0");
+  assert.ok(!main(alone).querySelector('[data-fold="contradict"]'), "no fold");
   assert.equal(readsOf(alone, SHA).length, 1, "no fold is drawn, so no further page is read for it");
 });
 

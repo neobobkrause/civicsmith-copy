@@ -156,8 +156,11 @@ test("R98 the route check sends the bundle and reads the answer back: not shown,
 });
 
 /* ---- R99 ---- */
-/** choose the other document in the R137 picker (one radio of the fold `kind`, not one of its page controls) */
+/** choose the other document in the shared picker (R137, now screens-document-beta R70) (one radio of the fold `kind`, not one of its page controls) */
 async function pickDoc(p, kind, value) {
+  /* R70, R71 (screens-document-beta): the shared picker is read once opened; a document of another project is offered once its control is pressed */
+  const offeredNow = () => main(p).querySelectorAll(`[data-picker="${kind}"] input`).some((i) => i.getAttribute("type") === "radio" && i.getAttribute("value") === value);
+  for (const box of [`document-pick-open-${kind}-0`, `${kind}-wide-0`]) if (!offeredNow() && p.doc.getElementById(box)) await p.choose("#" + box);
   const picker = main(p).querySelector(`[data-picker="${kind}"]`);
   const r = picker && picker.querySelectorAll("input").find((i) => i.getAttribute("type") === "radio" && i.getAttribute("value") === value && !i.closest("[data-pick-pages]"));
   assert.ok(r, `${value} is offered in the ${kind} picker`);
@@ -168,6 +171,9 @@ test("R99 asserting a connection sends this document, the other one chosen and h
   const other = await w.world.recipes.page(w.ann, "2026 performance report", { project: w.project });
   await w.world.recipes.question(w.ann, w.project, { title: "A question", text: "Is it so?", draw: true });
   const p = await pageOn(w.world, w.ann, w.at);
+  /* R71 (screens-document-beta): the shared picker is read once opened */
+  assert.equal(p.byOp("heldcaptures").filter((r) => r.query.sort === "project").length, 0, "nothing is read for the picker before it is opened");
+  await p.choose("#document-pick-open-connect-0");
   const offered = main(p).querySelector('[data-picker="connect"]').querySelectorAll("input").filter((i) => i.getAttribute("type") === "radio" && !i.closest("[data-pick-pages]")).map((i) => i.getAttribute("value"));
   assert.deepEqual(offered, [other.bundle], "only other documents");
   assert.ok(says(await press(p, "connectionassert"), "screen.document.connect.refused.other"));
@@ -185,7 +191,10 @@ test("R99 asserting a connection sends this document, the other one chosen and h
 
 test("R99 control: with no other document to connect to the section is not drawn", async () => {
   const p = await open(at);
-  assert.equal(section(p, "screen.document.connect.heading"), undefined);
+  /* R71 (screens-document-beta): the picker is read once opened; finding nothing to offer, the section is withdrawn */
+  assert.ok(section(p, "screen.document.connect.heading"), "before the picker is read, the section offers it");
+  await p.choose("#document-pick-open-connect-0");
+  assert.ok(!section(p, "screen.document.connect.heading"), "no other document: the section is not drawn");
 });
 
 /* ---- R100 ---- */
