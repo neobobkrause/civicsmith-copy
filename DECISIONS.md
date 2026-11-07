@@ -120,3 +120,19 @@ Decision: the investigation lane's draft with the publication lane's five edits.
 - Case-checker's per-sentence checks against legs are publication's; the leg grades they read are investigation's.
 Rejected: drawing the seam at "conclusion" as one thing (it is two: the project's adoption and a case's claim); publication owning a second grading path for regrade.
 Consequences: each lane works its side. Requests across the border go through BOB. Funding disclosure (the investigation lane's Q9 item 6) belongs to the publication lane.
+
+## BD-14: Investigation best-practice departures (Bob, Q9, 7 Nov)
+Context: the investigation lane's qualification listed seven places where the design departs from investigation best practice (Q9; paper https://claude.ai/artifact/THTtouNJzkhmHqyR4Pfa4g). Bob answered them through the coordinator.
+Decision (Bob):
+- Q9.1 Rival hypotheses: "B": rival sets, marked by members. Bob's condition: "the question of how to support competing hypotheses is influenced not just by which is more powerful/capable. But another factor is whether a UX can be presented to users that they can successfully understand and navigate the UX for that choice. If it's too complex, then what should the fallback choice be?" The fallback is still open with Bob.
+- Q9.2 Key assumptions, with a CHECK at concluding and before signing: "B".
+- Q9.3 Search parameters recorded on each look: "B". The INV:85 canon amendment still waits on Q7.
+- Q9.4 Independent reading, on by default, with its absence stated: "B".
+- Q9.5 A contrary-recall measure and bar, plus a counter-proposal pass: "as recommended" (B and C).
+- Q9.6 An optional reason on a leg, in the member's own words: "B". Funding disclosure goes to the publication lane (BD-13).
+- Q9.7 Keep as ruled, with the word gloss going to the ux lane: "as recommended".
+Bob's caveat: he chose these "without the opportunity for first see whether the resulting UX is rich enough and friendly enough to allow all members using the feature to understand what they're seeing and successfully navigate making their changes".
+Later the same day Bob settled the two open Q9.1 points, choosing from options the coordinator offered him:
+- Fallback, if members find B too complex: "Rules-out marks only". Rivals are listed side by side. A member marks a leg only when it cuts against a rival ("rules out X"), with one action per leg and no full consistent/inconsistent grid. The "still standing" list stays.
+- UX check: "Q9.1 only". The ux lane builds a clickable walkthrough of rival-hypothesis marking (B, with the rules-out fallback beside it) and shows it to Bob before any job builds Q9.1. Q9.2, Q9.4 and Q9.6 go ahead, and the ux lane reviews them in its normal course.
+Consequences: no job builds Q9.1's rival-set marking until Bob has seen the ux lane's walkthrough and confirmed B or the rules-out fallback. Q9.2–Q9.7 proceed. The investigation lane drafts their requirements; BOB places them in modules and layers. The ux lane carries the Q9.7 gloss and the Q9.1 walkthrough. The publication lane takes funding disclosure.
