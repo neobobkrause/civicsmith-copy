@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "stewards",
+  "pr": 856,
+  "branch": "job/stewards-2",
+  "head": "87b74ed9d328a8a8c3474f85019d4d50b1968a42",
+  "before": "dfeadc2921640932ed2bc5bf538008052fa4db1d",
+  "merge": "1c0f295d4ea6942b733a78be930b8afc6dd88dca",
+  "at": "2026-11-07T18:41:31Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
