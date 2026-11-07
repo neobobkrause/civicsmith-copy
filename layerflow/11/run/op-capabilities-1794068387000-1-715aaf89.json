@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "op-capabilities",
+  "round": 1,
+  "started": "2026-11-07T16:19:47Z",
+  "ended": "2026-11-07T16:21:10Z",
+  "minutes": 1.4,
+  "tested_on": "ca32d1401e4b2a9574d75e42e3cf163e15278efd",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T16:21:10Z"
+}
