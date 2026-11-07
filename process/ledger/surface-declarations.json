@@ -51,7 +51,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/surface-declarations.md, each with a test under bio-plane/test/m/surface-declarations/ that fails with the change reverted. Your code is in op-declarations' files t51.mjs, declared.mjs, compose.mjs and the declaration rows of op-declarations/index.mjs (BROWSER_ACTS, registerDeclaredOps, the T51 read ground), which op-declarations shares: change only those rows. screenread, budget classes and read waves are not written yet. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T13:20:00Z"
+    "state": "WORKING",
+    "at": "2026-11-07T16:49:51Z"
   }
 }
