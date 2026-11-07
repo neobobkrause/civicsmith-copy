@@ -109,7 +109,7 @@ test("R8 every act names one op OPS holds and a member's session reaches, the re
 /* the registry's acts this module draws only once a mark not yet met is met (K208: owed, never red): Add's parted-upload cancel and its preview's
    next rows, R79 and F2 (T53); and the inbox's safe view of a knock, which the registry owes the inbox (DEC-479) and no line of this module's
    requirements names yet (reported to BOB) */
-const OWED_UNMET = { capture: { captureuploadabort: "R79, F2", previewmore: "R79" }, inbox: { inboxview: "DEC-479 (no requirement yet)" } };
+const OWED_UNMET = { capture: { previewmore: "R79" }, inbox: { inboxview: "DEC-479 (no requirement yet)" } };
 for (const [id, ops] of Object.entries(OWED_UNMET)) for (const [op, marks] of Object.entries(ops)) test.todo(`${marks} ${id} draws the registry's ${op}`);
 
 test("R8 after an act the screen reads again what it changed (every read, or none on a screen with none)", async () => {
