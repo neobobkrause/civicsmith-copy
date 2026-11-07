@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "control-plane",
+  "provider": "screens-action",
+  "provider_pr": 818,
+  "provider_land": "a539422a184562d1f16dfa9cc0367e6096e76a84",
+  "at": "2026-11-07T18:14:44Z",
+  "key": "control-plane<-screens-action@a539422a18",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/screens-action/action-fix.test.mjs: breaking, added code that is not an object property: const unchained =, bio-plane/test/m/screens-action/actionnew.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-action/fix10-rewalk.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-action/fix4-t51.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-action/help-records.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-action/hold-counsel.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-action/notice-t53.test.mjs: breaking, added, naming R60, R61, R81 (Provides before this land) while screens-action's source changed: it may assert a changed answer, bio-plane/test/m/screens-action/office-t51.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-action/reads-t51.test.mjs: breaking, added code that is not an object property: \"entitieskind\" ,, bio-plane/test/m/screens-action/request-fix.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-action/request.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-action/requirements-ids.test.mjs: breaking, added code that is not an object property: const MET_T53 = [ \"R60\" , \"R61\" ,, bio-plane/test/m/screens-action/seam-t51.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-action/t53-action.test.mjs: breaking, added, naming R19, R62, R63, R64, R65, R66, R77, R79 (Provides before this land) while screens-action's source changed: it may assert a changed answer, bio-plane/test/m/screens-action/t53-hold-dash-new.test.mjs: breaking, added, naming R19, R70, R72, R75, R78, R80, R81 (Provides before this land) while screens-action's source changed: it may assert a changed answer, bio-plane/test/m/screens-action/t53-request.test.mjs: breaking, added, naming R19, R54, R60, R61, R73, R74, R76 (Provides before this land) while screens-action's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

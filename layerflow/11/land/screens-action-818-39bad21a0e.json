@@ -1,0 +1,173 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-action",
+  "pr": 818,
+  "branch": "job/screens-action",
+  "head": "39bad21a0ec73b3832d970a964aed529b8d46c19",
+  "before": "f1dad0cf410258fd24a5026b6a8e5075722b36b0",
+  "merge": "a539422a184562d1f16dfa9cc0367e6096e76a84",
+  "at": "2026-11-07T18:14:44Z",
+  "by": "bob",
+  "gate_runs": 8,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-action/action-fix.test.mjs",
+      "bio-plane/test/m/screens-action/actionnew.test.mjs",
+      "bio-plane/test/m/screens-action/fix10-rewalk.test.mjs",
+      "bio-plane/test/m/screens-action/fix4-t51.test.mjs",
+      "bio-plane/test/m/screens-action/help-records.test.mjs",
+      "bio-plane/test/m/screens-action/hold-counsel.test.mjs",
+      "bio-plane/test/m/screens-action/notice-t53.test.mjs",
+      "bio-plane/test/m/screens-action/office-t51.test.mjs",
+      "bio-plane/test/m/screens-action/reads-t51.test.mjs",
+      "bio-plane/test/m/screens-action/request-fix.test.mjs",
+      "bio-plane/test/m/screens-action/request.test.mjs",
+      "bio-plane/test/m/screens-action/requirements-ids.test.mjs",
+      "bio-plane/test/m/screens-action/seam-t51.test.mjs",
+      "bio-plane/test/m/screens-action/t53-action.test.mjs",
+      "bio-plane/test/m/screens-action/t53-hold-dash-new.test.mjs",
+      "bio-plane/test/m/screens-action/t53-request.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-action/action-fix.test.mjs",
+      "bio-plane/test/m/screens-action/actionnew.test.mjs",
+      "bio-plane/test/m/screens-action/fix10-rewalk.test.mjs",
+      "bio-plane/test/m/screens-action/fix4-t51.test.mjs",
+      "bio-plane/test/m/screens-action/help-records.test.mjs",
+      "bio-plane/test/m/screens-action/hold-counsel.test.mjs",
+      "bio-plane/test/m/screens-action/notice-t53.test.mjs",
+      "bio-plane/test/m/screens-action/office-t51.test.mjs",
+      "bio-plane/test/m/screens-action/reads-t51.test.mjs",
+      "bio-plane/test/m/screens-action/request-fix.test.mjs",
+      "bio-plane/test/m/screens-action/request.test.mjs",
+      "bio-plane/test/m/screens-action/requirements-ids.test.mjs",
+      "bio-plane/test/m/screens-action/seam-t51.test.mjs",
+      "bio-plane/test/m/screens-action/t53-action.test.mjs",
+      "bio-plane/test/m/screens-action/t53-hold-dash-new.test.mjs",
+      "bio-plane/test/m/screens-action/t53-request.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-action/action-fix.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: const unchained ="
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/actionnew.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/fix10-rewalk.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/fix4-t51.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/help-records.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/hold-counsel.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/notice-t53.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R60, R61, R81 (Provides before this land) while screens-action's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/office-t51.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/reads-t51.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: \"entitieskind\" ,"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/request-fix.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/request.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/requirements-ids.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: const MET_T53 = [ \"R60\" , \"R61\" ,"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/seam-t51.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/t53-action.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R19, R62, R63, R64, R65, R66, R77, R79 (Provides before this land) while screens-action's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/t53-hold-dash-new.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R19, R70, R72, R75, R78, R80, R81 (Provides before this land) while screens-action's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/screens-action/t53-request.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R19, R54, R60, R61, R73, R74, R76 (Provides before this land) while screens-action's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-action/action-fix.test.mjs",
+      "bio-plane/test/m/screens-action/actionnew.test.mjs",
+      "bio-plane/test/m/screens-action/fix10-rewalk.test.mjs",
+      "bio-plane/test/m/screens-action/fix4-t51.test.mjs",
+      "bio-plane/test/m/screens-action/help-records.test.mjs",
+      "bio-plane/test/m/screens-action/hold-counsel.test.mjs",
+      "bio-plane/test/m/screens-action/notice-t53.test.mjs",
+      "bio-plane/test/m/screens-action/office-t51.test.mjs",
+      "bio-plane/test/m/screens-action/reads-t51.test.mjs",
+      "bio-plane/test/m/screens-action/request-fix.test.mjs",
+      "bio-plane/test/m/screens-action/request.test.mjs",
+      "bio-plane/test/m/screens-action/requirements-ids.test.mjs",
+      "bio-plane/test/m/screens-action/seam-t51.test.mjs",
+      "bio-plane/test/m/screens-action/t53-action.test.mjs",
+      "bio-plane/test/m/screens-action/t53-hold-dash-new.test.mjs",
+      "bio-plane/test/m/screens-action/t53-request.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "screens-matter",
+    "screens-plan"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "screens-matter",
+    "screens-plan"
+  ],
+  "users_noticed": []
+}
