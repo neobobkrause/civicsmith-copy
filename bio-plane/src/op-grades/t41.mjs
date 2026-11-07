@@ -9,7 +9,8 @@
  * `./index.mjs` spreads the three tables into `RUNGS`, `RUNG_ABSENT` and `NON_ACTS`. This file imports only `word` from `setup-words`, so the
  * spread closes no cycle. None of these ops is in `MACHINE_REFUSALS`, which holds only `affordances`' `ACTS` (R5,
  * `affordances` R20): each owner refuses a machine itself (`membership` R129 refuses every caller `HANDLE_FIXED`; T46, R34). By R18
- * only `projectkeyset`, `projectsigninset` and `projectaccountremove` (ground `credential`) answer `phone: false`. No
+ * every op here answers `phone: true` (R57, T53: the project account's acts, three of them `credential` and off the
+ * phone, left with the alpha's AI ops). No
  * consequence statement, vocabulary or prompt is added. (DEC-188 (8)) `aiceilingset` and `aicopyceilingset` (retired to
  * `ailimitset`) and `accountswitchset` and `groupswitchset` (retired to `accountusesset`) left `./t33.mjs` and
  * `./t34.mjs`, as `assistantset` left them (R25). */
@@ -67,17 +68,12 @@ export const T41_RUNGS = {
 export const T41_RUNG_ABSENT = {
   /* R29, as setpassword (R27); (T46) R34: membership R129 (DEC-197) refuses every change, so the sentence states it */
   handlechange:        { ground: "caller-owned", is: "a member's own handle, fixed at joining: the act stays declared and refuses every change HANDLE_FIXED, whoever asks, writing nothing (membership R129)" },
-  /* credentials R54, as groupkeyset and accountreferenceremove: who pays for a project's assistant */
-  projectkeyset:       { ground: "credential", is: "an owner holds an Anthropic API key as the project's one account, replacing any earlier, never answered (credentials R54)" },
-  projectsigninset:    { ground: "credential", is: "an owner who is the project's sole participant makes their own subscription sign-in the project's account (credentials R54)" },
-  projectaccountremove: { ground: "credential", is: "an owner removes the project's account, a key or a sign-in, recorded with who and when (credentials R54, R61)" },
-  /* credentials R54, R55 and ai-use R2, R9, as groupkeyswitch: an account's settings beneath the record */
-  projectaccountswitch: { ground: "substrate", is: "an owner switches the project's account on or off; it moves no document, claim or grade (credentials R54)" },
+  /* (R57, T53) the project account's acts (credentials R54, R58) left with the alpha's AI ops. credentials R55 and ai-use
+     R2, R9, as keyedserviceswitch: an account's settings beneath the record */
   accountusesset:      { ground: "substrate", is: "an account's owner sets one of its uses' switches (`explore` no, ask or yes); it moves no document, claim or grade (credentials R55)" },
   ailimitset:          { ground: "substrate", is: "an account's owner sets, changes or removes a limit on its assistant use by scope, unit and period; it moves no document, claim or grade (ai-use R2)" },
   exploreapprove:      { ground: "substrate", is: "an account's owner approves exploring for one day on that account; silence means no, and it moves no document, claim or grade (ai-use R9)" },
-  /* the caller's own attention, as reminderset and groupkeynoticeseen */
-  projectkeynoticeseen: { ground: "caller-owned", is: "records that a member saw the notice that a project's account pays for their acts there, for that member alone (credentials R58)" },
+  /* the caller's own attention, as reminderset */
   stepreminder:        { ground: "caller-owned", is: "a member asks to be reminded of a step on a day, answered to her alone (steps R12)" },
   milestonereminder:   { ground: "caller-owned", is: "a member asks to be reminded of a milestone on a day, answered to her alone (investigation R3)" },
   findmute:            { ground: "caller-owned", is: "a follower outside every drawing project mutes one find on a question, a preference about her own feed (question-explorer R6, as queuemute)" },
@@ -117,13 +113,6 @@ export const T41_NON_ACTS = {
     + "writes nothing",
   handlecheck: "read: whether a handle is free, taken or not allowed, never who holds it",
   /* credentials (R41) */
-  projectkeyset: PROJECT_ACCOUNT("an owner holds the project's API key, never answered"),
-  projectsigninset: PROJECT_ACCOUNT("the sole participant's own sign-in made the project's account"),
-  projectaccountremove: PROJECT_ACCOUNT("an owner removes the project's account"),
-  projectaccountswitch: ACCOUNT_SETTING("whether the project's account is on; an owner's"),
-  projectaccountstate: R("a project's account to its owners — held, kind, on, uses and whether it serves — never a key"),
-  projectkeynotice: R("the notice of a project's account for the session's own member"),
-  projectkeynoticeseen: "personal state, keyed (member, project): the notice of the project's account seen by them",
   projectaikeepaway: "setting: whether a project keeps its material away from the assistant, an owner's act with a "
     + "reason; moves no bundle",
   projectaikeepawaystate: R("whether a project keeps its material away from the assistant, with the reason, who set it "
