@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "ai-issuer",
+  "session": "session_018BhceeRiMibMcS46YtPZiQ",
+  "started": "2026-11-07T15:41:09Z",
+  "ended": "2026-11-07T15:43:00Z",
+  "at": "2026-11-07T15:43:00Z",
+  "minutes": 1.85,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 0.915,
+  "tests": {
+    "total": 27,
+    "pass": 27,
+    "fail": 0
+  }
+}
