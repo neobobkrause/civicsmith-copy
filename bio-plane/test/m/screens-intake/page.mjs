@@ -36,8 +36,8 @@ function standInOps() {
   try { registerDeclaredOps({ "screens-intake fixture": Object.fromEntries(NEW_OPS.filter((op) => rows[op]).map((op) => [op, rows[op].mutating && rows[op].needs === undefined ? { ...rows[op], needs: "contribute", stamps: ["author", "viewer"] } : rows[op]])) }); } catch { /* read already */ }
 }
 
-/* The assistant reachable for this member (interface-shell R20): on, with the group's key held and on. */
-const REACH = { assistantstate: ok({ on: true }), groupkeystate: ok({ on: true, held: true }) };
+/* The assistant reachable for this member (interface-shell R20): on, with a ready path (T53: `groupkeystate` is no longer asked). */
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 
 /* A stand-in for the `document` screen (screens-inquiry), so a reference of that kind is drawn as the link it is on the whole
    page; it draws nothing of its own. */
