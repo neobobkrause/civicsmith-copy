@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "control-plane",
+  "provider": "affordances",
+  "provider_pr": 890,
+  "provider_land": "0e72085a6ca38a2bd44c7a51d4a005a830636034",
+  "at": "2026-11-07T20:07:33Z",
+  "key": "control-plane<-affordances@0e72085a6c",
+  "why": "only its own tests changed (bio-plane/test/m/affordances/t34.test.mjs): no interface change for its users",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

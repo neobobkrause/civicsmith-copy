@@ -1,0 +1,68 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "affordances",
+  "pr": 890,
+  "branch": "job/affordances",
+  "head": "551167139712ae7a945e145c783434c615ec3c27",
+  "before": "4ca2e41918f33f9dad599ee3e85449b34dd68f07",
+  "merge": "0e72085a6ca38a2bd44c7a51d4a005a830636034",
+  "at": "2026-11-07T20:07:33Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/affordances/t34.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/affordances/t34.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/affordances/t34.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/affordances/t34.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/affordances/t34.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "earlier_source": true
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "op-declarations",
+    "plane",
+    "queue",
+    "store-door",
+    "store-request",
+    "tasks"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "op-declarations",
+    "plane",
+    "queue",
+    "store-door",
+    "store-request",
+    "tasks"
+  ],
+  "users_noticed": []
+}
