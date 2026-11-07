@@ -1,0 +1,58 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-entry",
+  "pr": 871,
+  "branch": "job/screens-entry",
+  "head": "d3eb065973e547659e19b392ab1c36c2e53f079d",
+  "before": "6f09192a3e5336a8a09771144b19adf59d2937f5",
+  "merge": "5a838745d6223250de9dcaa31159c2077a1d9912",
+  "at": "2026-11-07T19:14:11Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-entry/setup.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-entry/setup.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-entry/setup.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: test ( \"\" , async ( ) =>"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-entry/setup.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/screens-entry/setup.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "earlier_source": true
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "journey-check"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "journey-check"
+  ],
+  "users_noticed": []
+}
