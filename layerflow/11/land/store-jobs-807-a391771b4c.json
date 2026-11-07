@@ -1,0 +1,59 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "store-jobs",
+  "pr": 807,
+  "branch": "job/store-jobs",
+  "head": "a391771b4cdaaa7388dc40043230bff86077c899",
+  "before": "7d4c4fc2ea2ba997bb6dda0ef65d5f94c8790285",
+  "merge": "48fd4da14317eeceac414d35c591fd49c4aed194",
+  "at": "2026-11-07T17:22:09Z",
+  "by": "bob",
+  "gate_runs": 5,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/store-jobs/r24-member.test.mjs",
+      "bio-plane/test/m/store-jobs/r26-size-ceiling.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/store-jobs/r24-member.test.mjs",
+      "bio-plane/test/m/store-jobs/r26-size-ceiling.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/store-jobs/r24-member.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R24 (Provides before this land) while store-jobs's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/store-jobs/r26-size-ceiling.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R16, R24, R26 (Provides before this land) while store-jobs's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/store-jobs/r24-member.test.mjs",
+      "bio-plane/test/m/store-jobs/r26-size-ceiling.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "store-ask",
+    "store-assembly"
+  ],
+  "users_rescheduled_old_rule": [
+    "store-ask",
+    "store-assembly"
+  ],
+  "users_noticed": []
+}

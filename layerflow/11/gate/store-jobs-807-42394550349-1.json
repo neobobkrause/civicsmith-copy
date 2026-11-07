@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "store-jobs",
+  "pr": 807,
+  "sha": "e83c86d48d399a01d9bf2035951b33ff830c28d0",
+  "run_id": 42394550349,
+  "run_attempt": 1,
+  "at": "2026-11-07T17:06:24Z",
+  "trigger": "draft",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 0.98,
+  "suite_minutes": null,
+  "record_only": false,
+  "whole": false
+}
