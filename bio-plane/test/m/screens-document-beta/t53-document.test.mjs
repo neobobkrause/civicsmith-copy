@@ -9,6 +9,7 @@ import { hasWord } from "../../../src/setup-words/index.mjs";
 import { world, V } from "../citation/fixture.mjs";
 import { provenanceOf } from "../../../src/provenance/index.mjs";
 import { open, main, fill, press, says, word, plane, storeWorld, READING, SCREENS, D, SHA, Q } from "../screens-inquiry/fixtures.mjs";
+import { HELD_SCREEN } from "../../../src/screens-intake/held.mjs";
 
 process.env.TZ = "UTC";
 const at = "/app/document/" + D;
@@ -164,6 +165,121 @@ test("R73 (part): a reading that found no names, in a docx's text layer, draws `
   assert.deepEqual(drawsNone(bad), [], "never the text layer's tier");
 });
 
+/* ---- R70, R71: the shared picker (interface-shell R138's `cs.picker`), read once opened ---- */
+const OWN = { capabilities: ["contribute", "create_projects"] };
+const pickerOf = (p, kind) => main(p).querySelector(`[data-picker="${kind}"]`);
+const offeredIn = (p, kind, scope) => pickerOf(p, kind).querySelectorAll(`[data-scope="${scope}"] input`).filter((i) => i.getAttribute("type") === "radio").map((i) => i.getAttribute("value"));
+const listReads = (p) => p.byOp("heldcaptures").filter((r) => !r.query.bundle_id);
+/** ann with a document in project A (this one), another in A and one in B */
+async function twoProjects({ withB = true } = {}) {
+  const w = await storeWorld();
+  const ann = await w.signIn("ann", OWN);
+  const a = await w.recipes.project(ann, "Pothole repairs");
+  const b = withB ? await w.recipes.project(ann, "The Coliseum lease") : null;
+  const here = await w.recipes.page(ann, "Policy memo", { paragraphs: ["The Director shall repair each reported pothole within seven days."], project: a });
+  const inA = await w.recipes.hold(ann, "Work orders 2025", "Closed work orders for the year.", a);
+  const inB = withB ? await w.recipes.hold(ann, "Lease draft", "The draft lease for the Coliseum.", b) : null;
+  return { w, ann, a, b, here: here.bundle, inA: inA.bundle, inB: inB && inB.bundle };
+}
+
+test("R70: the connect fold's picker is the shared one: it lists project A's documents only, and its control adds B's; choosing B's and pressing 'Connections you assert' sends that document", async () => {
+  const t = await twoProjects();
+  const p = await pageAs(t.w, t.ann, "/app/document/" + t.here);
+  await p.choose("#document-pick-open-connect-0");
+  assert.deepEqual(offeredIn(p, "connect", "here"), [t.inA], "A's only, this document excepted");
+  assert.equal(pickerOf(p, "connect").querySelector('[data-scope="others"]'), null, "B's not before the control");
+  const control = p.doc.getElementById("connect-wide-0");
+  assert.ok(control && text(control.parentNode).includes(word("form.choose.widen.documents")), "the kit's control, by its word");
+  await p.choose("#connect-wide-0");
+  assert.deepEqual(offeredIn(p, "connect", "others"), [t.inB], "the control adds B's, A's not repeated");
+  assert.deepEqual(pickerOf(p, "connect").querySelectorAll('[data-scope="others"] legend').map(text), ["The Coliseum lease"], "under its project");
+  const b = pickerOf(p, "connect").querySelectorAll("input").find((i) => i.getAttribute("value") === t.inB);
+  b.checked = true; p.fire(b, "change"); await p.settle();
+  fill(p, { "document-assert-basis": "The lease names the same contractor." });
+  await press(p, "connectionassert");
+  assert.deepEqual(p.byOp("connectionassert")[0].body, { a: t.here, b: t.inB, basis: "The lease names the same contractor." }, "the document chosen from B is sent");
+});
+
+test("R70 control: with documents in one project only, the picker draws no control", async () => {
+  const t = await twoProjects({ withB: false });
+  const p = await pageAs(t.w, t.ann, "/app/document/" + t.here);
+  await p.choose("#document-pick-open-connect-0");
+  assert.deepEqual(offeredIn(p, "connect", "here"), [t.inA]);
+  assert.equal(p.doc.getElementById("connect-wide-0"), null, "no control");
+});
+
+test("R71: the Document screen's first wave reads no list of `heldcaptures`; the picker reads it once opened", async () => {
+  const t = await twoProjects();
+  const p = await pageAs(t.w, t.ann, "/app/document/" + t.here);
+  assert.ok(main(p).querySelector('[data-picker="connect"]'), "the screen is drawn, its picker closed");
+  assert.deepEqual(listReads(p), [], "no `heldcaptures` list read on open");
+  await p.choose("#document-pick-open-connect-0");
+  assert.ok(listReads(p).length >= 1, "read as the picker's read, on open");
+  assert.ok(listReads(p).every((r) => r.query.state === "held_and_vouched"), "the picker's read");
+});
+
+test("R71 control: Held still reads `heldcaptures` on open", async () => {
+  const t = await twoProjects({ withB: false });
+  const { door, session } = t.w.boot(t.ann);
+  const p = await boot({ screens: [HELD_SCREEN], door, session, path: "/app/held" });
+  await p.settle();
+  assert.ok(p.byOp("heldcaptures").length >= 1, "Held reads it on open");
+});
+
+/* ---- R73: the member's words, and no fingerprint printed whole ---- */
+test("R73: documents of four sources (an upload, a testimony, a docx's empty reading, a reading not parsed) draw none of the stored sentences and no 64-hex string; the fingerprint is a short mark whose Copy holds the whole", async () => {
+  const w = await storeWorld();
+  const ann = await w.signIn("ann", OWN);
+  const project = await w.recipes.project(ann, "Stormwater");
+  const { bundle, sha } = await w.recipes.hold(ann, "Minutes", "The council met on Monday.", project);
+  const testified = await ann.act("testify", { body: { words: "I saw the pothole at 4th and Main.", observedAt: "2026-10-04T09:10:00Z" } });
+  const HEX = /[0-9a-f]{64}/;
+  for (const path of ["/app/document/" + bundle, "/app/document/" + testified.bundle_id]) {
+    const m = main(await pageAs(w, ann, path));
+    assert.deepEqual(drawsNone(m), [], path + ": none of the stored sentences");
+    assert.ok(!HEX.test(text(m)), path + ": no 64-hex string printed");
+  }
+  const stated = (basis) => reading({ text_units: [], unread_pages: [], reading: { content_type: "generic", found: false, failure: "final", reason: "SOMETHING_ELSE", basis } });
+  for (const basis of [word("reading-pipeline.why.reader_found_entities", { key: "generic", fmt: "docx", wired_tier: "1" }), word("reading-pipeline.why.reader_parse_text", { key: "generic", fmt: "docx", parse_error: "x" })]) {
+    const m = main(await open(at, stated(basis)));
+    assert.deepEqual(drawsNone(m), []);
+    assert.ok(!HEX.test(text(m)), "no 64-hex string printed");
+  }
+  /* the fingerprint: the short mark, with a way to copy the whole */
+  const p = await pageAs(w, ann, "/app/document/" + bundle);
+  const mark = main(p).querySelector('[data-fingerprint="capture"]');
+  assert.equal(text(mark), sha.slice(0, 8) + "…" + sha.slice(-4), "a short mark");
+  const copied = [];
+  p.win.navigator = { clipboard: { writeText: (t) => copied.push(t) } };
+  await p.click(main(p).querySelector('button[data-act="hashcopy"]'));
+  assert.deepEqual(copied, [sha], "Copy puts the whole on the clipboard");
+  /* control: the stored sentence is unchanged in the record */
+  const prov = JSON.parse((await ann.read("image", { query: { id: bundle } }))["data/provenance.json"]);
+  assert.equal(prov.documents[0].capture.sha256, sha, "the record keeps the whole");
+});
+
+/* ---- R75: a document page with nothing to show has a way out ---- */
+test("R75: `document` with an unknown id, or bare, draws R35's 'Nothing is here' with the way back to its place as R61 draws it, its crumbs links, and no separate 'Go to Home'", async () => {
+  const w = await storeWorld();
+  const ann = await w.signIn("ann", OWN);
+  for (const path of ["/app/document/INFO-2099-9999", "/app/document"]) {
+    const p = await pageAs(w, ann, path);
+    const root = p.doc.querySelector("main") || main(p);
+    const state = root.querySelector('[data-unavailable="nothing"]');
+    assert.ok(state && says(state, "shell.unavailable.nothing.says"), path + ": Nothing is here");
+    const back = root.querySelectorAll("a.cs-btn").find((a) => a.getAttribute("href") === "/app/project");
+    assert.ok(back && text(back).includes(word("rail.projects.name")), path + ": the way back to its place, Projects");
+    assert.ok(!text(root).includes(word("shell.unavailable.home")), path + ": no separate 'Go to Home'");
+    const crumbs = root.querySelector("nav.mk-crumbs");
+    assert.ok(crumbs && crumbs.querySelector('a[href="/app/project"]'), path + ": its crumbs are links");
+  }
+  /* control: a known id is unchanged */
+  const project = await w.recipes.project(ann, "Stormwater");
+  const { bundle } = await w.recipes.hold(ann, "Minutes", "The council met on Monday.", project);
+  const known = await pageAs(w, ann, "/app/document/" + bundle);
+  assert.equal((known.doc.querySelector("main") || main(known)).querySelector("[data-unavailable]"), null, "control: the document is drawn");
+});
+
 /* ---- owed: each waits on a provider this module does not hold ---- */
 test.todo("R58: the door 'A source' for listed members (waits on a route for sources' `sourceLinksFor`, sources R23)");
 test.todo("R59: typed words cited with their label and grade (waits on cite of a typing's handle and the cite picker offering typings)");
@@ -176,8 +292,4 @@ test.todo("R66: the part chooser (waits on `interpretmark`)");
 test.todo("R67: citing or opening a part says it was interpreted (waits on `interpretationOf`)");
 test.todo("R68: the margin bars of what is interpreted (waits on `interpretationOf`)");
 test.todo("R69: the document's chips on the ceiling scale (waits on interface-shell R140)");
-test.todo("R70: the shared document picker (interface-shell R138's `cs.picker` is served; switching to it changes the picker's fields and choice memory, which seven screens-inquiry tests outside this module's paths pin: r137-document, fr3-document, fr6-pages, fr28-document-acts, t51-fix12-b90, t51-fix13-b92, t51-fix14-r139)");
-test.todo("R71: `heldcaptures` leaves the first wave as the shared picker's read on open (waits on R70, and the re-timing on Seed A, a live act)");
 test.todo("R72: each hard word underlined dotted (waits on the reading stating each word's position; it states a count per page)");
-test.todo("R73: no 64-hex fingerprint printed whole, a short mark with a way to copy the whole (waits on screens-document R66's test, outside this module's paths, which pins the fingerprint drawn in full); a doorbell hand-in's basis");
-test.todo("R75: 'Go to Home' on a bare document (waits on interface-shell: its unavailable page draws the screen's place, Projects, by its R61; the crumbs are links already)");

@@ -31,6 +31,9 @@ async function pageOn(world, as, path, screens = SCREENS) {
 }
 /** the other document chosen in the picker of the flag fold (one radio, not one of the page's controls) */
 async function pickDoc(p, value) {
+  /* R70, R71 (screens-document-beta): the shared picker is read once opened; a document of another project is offered once its control is pressed */
+  const offeredNow = () => main(p).querySelectorAll(`[data-picker="flag"] input`).some((i) => i.getAttribute("type") === "radio" && i.getAttribute("value") === value);
+  for (const box of [`document-pick-open-flag-0`, `flag-wide-0`]) if (!offeredNow() && p.doc.getElementById(box)) await p.choose("#" + box);
   const picker = main(p).querySelector('[data-picker="flag"]');
   const r = picker && picker.querySelectorAll("input").find((i) => i.getAttribute("type") === "radio" && i.getAttribute("value") === value && !i.closest("[data-pick-pages]"));
   assert.ok(r, `${value} is offered in the flag picker`);
