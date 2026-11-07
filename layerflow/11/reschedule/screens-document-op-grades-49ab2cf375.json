@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "screens-document",
+  "provider": "op-grades",
+  "provider_pr": 793,
+  "provider_land": "49ab2cf37518718ea63778cd6198ae0854c4e9b6",
+  "at": "2026-11-07T16:56:07Z",
+  "key": "screens-document<-op-grades@49ab2cf375",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/op-grades/ladder.test.mjs: breaking, added code that is not an object property: , tickedAll, bio-plane/test/m/op-grades/r55.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
