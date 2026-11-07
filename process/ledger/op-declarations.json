@@ -110,8 +110,7 @@
   ],
   "prior_work": "First, consolidate build/requirements/op-declarations.md (126484 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/op-declarations.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/op-declarations.md is unchanged by the move (compare against the ids at the start commit). Then do the provider-notice work this START lists: for each notice, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal (new module ids, build/modules.json rows, build/layers.md). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T16:29:21Z",
-    "reason": "reopened: meet BD-1's door rows for op=exportwhole and op=exportwholepart now that op-capabilities F1 (PR 752, 325 present-null rows) is in layer/11: add their OPS specs, add them to the admin session set, bring the counts that read 323 to 325, and add no FOUNDER_SESSION_NEEDS rows of your own for them (those rows are op-capabilities'); this turns green R6 in tables.test.mjs and R3 twice (t49 and the tables census). Also clear the three reds op-declarations already shows on layer/11: R34, R47/R34, and the ai-use:105 notice (affordances ACT_HELP partition), and confirm or adapt to the provider notices filing-templates:712, actions:715, action-plans:726 and filings:727. Each change carries a test that fails with it reverted"
+    "state": "COMPLETE",
+    "at": "2026-11-07T16:49:34Z"
   }
 }
