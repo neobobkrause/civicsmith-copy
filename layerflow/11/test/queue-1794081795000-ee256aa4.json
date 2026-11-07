@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "queue",
+  "session": "session_018Bhcefb7BzaJWFvikuF9US",
+  "started": "2026-11-07T20:03:15Z",
+  "ended": "2026-11-07T20:04:56Z",
+  "at": "2026-11-07T20:04:56Z",
+  "minutes": 1.68,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 29.924,
+  "tests": {
+    "total": 259,
+    "pass": 259,
+    "fail": 0
+  }
+}
