@@ -413,6 +413,7 @@
   ],
   "pacing": {
     "jobs": 8,
-    "pushes_per_hour": 120
+    "pushes_per_hour": 120,
+    "share_s": 900
   }
 }
