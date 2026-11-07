@@ -1,0 +1,97 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "op-declarations",
+  "pr": 847,
+  "branch": "job/op-declarations-2",
+  "head": "65d4228e9a2e072069376241fd62288a71d440a0",
+  "before": "80ba2b2264e97d332eda98d698b0e456d9b6034a",
+  "merge": "92f5416be9dd1cd31c36527d3f439fa235b5856c",
+  "at": "2026-11-07T18:34:53Z",
+  "by": "bob",
+  "gate_runs": 5,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/op-declarations/notice-layer11-providers.test.mjs",
+      "bio-plane/test/m/op-declarations/requirements-ids.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/op-declarations/notice-layer11-providers.test.mjs",
+      "bio-plane/test/m/op-declarations/requirements-ids.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/op-declarations/notice-layer11-providers.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R11, R15, R31, R35, R38, R55, R56 (Provides before this land) while op-declarations's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/op-declarations/requirements-ids.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/op-declarations/notice-layer11-providers.test.mjs",
+      "bio-plane/test/m/op-declarations/requirements-ids.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "admission",
+    "control-plane",
+    "interface-shell",
+    "load-check",
+    "plane",
+    "screens-action",
+    "screens-ai",
+    "screens-daily",
+    "screens-document",
+    "screens-entry",
+    "screens-inquiry",
+    "screens-intake",
+    "screens-investigate",
+    "screens-matter",
+    "screens-plan",
+    "screens-publish",
+    "screens-settings",
+    "screens-wizards",
+    "signin-door",
+    "store-assembly",
+    "store-request"
+  ],
+  "users_rescheduled_old_rule": [
+    "admission",
+    "control-plane",
+    "interface-shell",
+    "load-check",
+    "plane",
+    "screens-action",
+    "screens-ai",
+    "screens-daily",
+    "screens-document",
+    "screens-entry",
+    "screens-inquiry",
+    "screens-intake",
+    "screens-investigate",
+    "screens-matter",
+    "screens-plan",
+    "screens-publish",
+    "screens-settings",
+    "screens-wizards",
+    "signin-door",
+    "store-assembly",
+    "store-request"
+  ],
+  "users_noticed": []
+}
