@@ -1,6 +1,26 @@
-/* screens-action's T51 fix round words, group "plan" (R36–R54; the keys this group's entries read, each one setup-words holds; K3366, K3810).
+/* screens-action's T51 fix round words, group "plan" (R36–R54, and screens-plan R9, R10; the keys this group's entries read, each one setup-words holds; K3366, K3810).
    WORDS: keys added to SCREEN_WORDS. EXTRA: keys a screen draws that do not start with its `screen.<id>.` prefix, by screen id. */
+import { localize } from "../setup-words/index.mjs";
+
+// screens-plan R10 (K3943): a checkpoint's test and where each judgement leads, each sentence written once here at its key.
+const said = [
+  localize("screen.plan.checkpoint.tests", "Tests: {test}", { test: "{test}" }),
+  localize("screen.plan.checkpoint.leads.met", "if met, go to {phase}", { phase: "{phase}" }),
+  localize("screen.plan.checkpoint.leads.not_met", "if not met, go to {phase}", { phase: "{phase}" }),
+  localize("screen.plan.checkpoint.nonext", "no next step set"),
+];
+void said;
+
 export const WORDS = Object.freeze([
+  // screens-plan R9: where an option goes and its tier; "Assumed: not shown yet" explained (the design lane's words, 5 Nov)
+  "screen.plan.option.goes",
+  "screen.plan.option.nooffice",
+  "screen.plan.support.hypothetical.means",
+  // screens-plan R10
+  "screen.plan.checkpoint.tests",
+  "screen.plan.checkpoint.leads.met",
+  "screen.plan.checkpoint.leads.not_met",
+  "screen.plan.checkpoint.nonext",
   "screen.plan.option.unnamed",
   "screen.plan.phase.unnamed",
   "screen.plan.none.this.one.starts.first",

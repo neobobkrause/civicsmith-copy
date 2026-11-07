@@ -206,6 +206,25 @@ export const plan = Object.freeze({
     phName: function (cs, ph, i) {
       return ph && typeof ph.name === "string" && ph.name ? cs.esc(ph.name) : cs.w("screen.plan.phase.unnamed", { n: String(i + 1) });
     },
+    // screens-plan R9: where an option goes and its tier, "Goes to {office} · {tier}"; an option with no addressee goes to "no office chosen".
+    goesTo: function (cs, o) {
+      const a = o && o.addressee && typeof o.addressee === "object" ? o.addressee : null;
+      const said = a ? (a.state === "audience" ? [a.description] : [a.role, a.kind === "office" ? a.body : a.organisation])
+        .filter(function (x) { return typeof x === "string" && x.trim(); }).join(", ") : "";
+      const tier = [1, 2, 3].includes(Number(o && o.tier)) ? String(Number(o.tier)) : "none";
+      return cs.w("screen.plan.option.goes", { office: said ? said : cs.w("screen.plan.option.nooffice"), tier: { html: cs.w("screen.plan.option.tier." + tier) } });
+    },
+    // screens-plan R10: a checkpoint's test, and where each judgement leads ("no next step set" for a judgement that leads nowhere).
+    leadsTo: function (cs, ph, phs, P) {
+      const b = ph && ph.branches && typeof ph.branches === "object" ? ph.branches : {};
+      const to = function (j) {
+        const at = phs.findIndex(function (x) { return x && x.id === b[j]; });
+        return at >= 0 ? cs.w("screen.plan.checkpoint.leads." + j, { phase: { html: P.phName(cs, phs[at], at) } }) : "";
+      };
+      const lines = [to("met"), to("not_met")].filter(Boolean);
+      return (typeof ph.condition === "string" && ph.condition.trim() ? '<span class="meta">' + cs.w("screen.plan.checkpoint.tests", { test: ph.condition }) + "</span>" : "")
+        + '<span class="meta">' + (lines.length ? lines.join(" / ") : cs.w("screen.plan.checkpoint.nonext")) + "</span>";
+    },
     // R44: the second and later phases of a scenario's form carry their own ids, the first keeps the plain ones.
     sfx: function (k) { return k ? "-p" + (k + 1) : ""; },
     // R44: one phase of the scenario form: its name, options, start, check-back days, test and where each judgement goes.
@@ -318,6 +337,8 @@ export const plan = Object.freeze({
           ? cs.act("itemtakeup", { label: "screen.plan.takeup", data: { kind: "escalation_stage", escalation: s.escalation.id, stage: String(s.escalation.stage || "") } }) : "";
         return cs.row("<b>" + cs.w("screen.plan.matter.n", { n: String(i + 1) }) + "</b>", P.matterName(cs, s, titles)
           + '<span class="meta">' + cs.w("screen.plan.support." + (["hypothetical", "established", "short"].includes(s.support) ? s.support : "undetermined"))
+          // screens-plan R9: "Assumed: not shown yet" is explained in a sentence
+          + (s.support === "hypothetical" ? " (" + cs.w("screen.plan.support.hypothetical.means") + ")" : "")
           + (s.why ? " · " + cs.esc(s.why) : "") + live + (esc ? " · " + esc : "") + "</span>", take, "");
       }).join("")) : "")
         + (open ? addMatter : "");
@@ -338,7 +359,8 @@ export const plan = Object.freeze({
           const disp = ["open", "chosen", "declined", "done", "blocked"].includes(o.disposition) ? o.disposition : "open";
           const last = Array.isArray(o.dispositions) && o.dispositions.length ? o.dispositions[o.dispositions.length - 1] : null;
           return [byName.get(o.id),
-            cs.w("screen.plan.category." + (CATS.includes(o.category) ? o.category : "other")),
+            // screens-plan R9: beside its category, where the option goes and its tier
+            cs.w("screen.plan.category." + (CATS.includes(o.category) ? o.category : "other")) + '<span class="meta">' + P.goesTo(cs, o) + "</span>",
             end ? cs.date(end) : cs.w("screen.plan.noend"),
             cs.esc(P.subjectKeys(o).map(titles.ofKey).filter(Boolean).join(", ")),
             cs.w("screen.plan.disposition." + disp) + (last && last.reason ? " · " + cs.esc(last.reason) : "")
@@ -492,7 +514,9 @@ export const plan = Object.freeze({
                 + takeUp
               : "";
             const names = (ph.options || []).map(function (id) { return byName.get(id); }).filter(Boolean).join(", ");
-            return cs.row("<b>" + P.phName(cs, ph, pi) + "</b>", names + (judged ? '<span class="meta">' + judged + "</span>" : ""), due, form);
+            // screens-plan R10: a checkpoint draws its test and where each judgement leads, beside its judge day
+            const leads = ph.checkpoint ? P.leadsTo(cs, ph, s.phases || [], P) : "";
+            return cs.row("<b>" + P.phName(cs, ph, pi) + "</b>", names + (judged ? '<span class="meta">' + judged + "</span>" : "") + leads, due, form);
           }).join(""));
       }).join("") + (open ? cs.field("plan-scen-name", "screen.plan.scenario.name")
         + Array.from({ length: nPhases }, function (_, k) { return P.phaseForm(cs, view, k, nPhases, chosenItems); }).join("")
