@@ -175,3 +175,4 @@ Terms.
 - Open (BOB's): R4's set holder and classes; R5 via `content` or an `office-readers` edge; R22/R23's body-variant map (M-P2 (a)); `proceeding_flows`' shape (T33-2); R14 merging machine rows (proposed yes).
 - (T35-34, N644) `duties` links a use's power. (T36-14; K2079) R35 bounds hubs per kind (`connection-grammar.hubBoundOf`), not `BOUNDS.hub`.
 - Tests: M-V3's 50-event gold set for R23 (DST both offsets); R24's bound unmoved by a republish; R31 across a day band and a minute; R10, R15, R39 negatives; each refusal with a control. (T37-11; K2207) hub votes from the hub's pages.
+- **F1** *(not yet met: job following, PR 744 receipt)* R38 refuses source courtlistener_api, which following's court watches emit: accept it
