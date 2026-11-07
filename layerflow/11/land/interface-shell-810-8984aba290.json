@@ -1,0 +1,128 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "interface-shell",
+  "pr": 810,
+  "branch": "job/interface-shell",
+  "head": "8984aba290b8e011c65917c33947a1aad869747e",
+  "before": "17327a9ed57b35375763a5a9c70d8bc918eb5173",
+  "merge": "49f5b34a889eabb5963a105c87b4cd88be24360b",
+  "at": "2026-11-07T17:52:30Z",
+  "by": "bob",
+  "gate_runs": 7,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "EMPTY_CONTRIBUTION",
+        "GLOSS_CLASS",
+        "contributionOf",
+        "styleOf"
+      ],
+      "changed": [
+        {
+          "name": "checkClasses",
+          "before": "function(screens, guide, program)",
+          "after": "function(screens, guide, program, contribution = EMPTY_CONTRIBUTION)"
+        }
+      ],
+      "kinds": [],
+      "signatures": [
+        "checkClasses"
+      ]
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/interface-shell/gloss.test.mjs",
+      "bio-plane/test/m/interface-shell/harness.mjs",
+      "bio-plane/test/m/interface-shell/notice-wizard-scripts-546.test.mjs",
+      "bio-plane/test/m/interface-shell/t53-hook.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/interface-shell/gloss.test.mjs",
+      "bio-plane/test/m/interface-shell/harness.mjs",
+      "bio-plane/test/m/interface-shell/notice-wizard-scripts-546.test.mjs",
+      "bio-plane/test/m/interface-shell/t53-hook.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/interface-shell/gloss.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R15, R56 (Provides before this land) while interface-shell's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/interface-shell/harness.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , contribution"
+      },
+      {
+        "file": "bio-plane/test/m/interface-shell/notice-wizard-scripts-546.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R21 (Provides before this land) while interface-shell's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/interface-shell/t53-hook.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R56 (Provides before this land) while interface-shell's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/interface-shell/gloss.test.mjs",
+      "bio-plane/test/m/interface-shell/harness.mjs",
+      "bio-plane/test/m/interface-shell/notice-wizard-scripts-546.test.mjs",
+      "bio-plane/test/m/interface-shell/t53-hook.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "interface-shell-t50-t51",
+    "interface-shell-t53",
+    "journey-check",
+    "plane",
+    "screens-action",
+    "screens-ai",
+    "screens-daily",
+    "screens-document",
+    "screens-entry",
+    "screens-inquiry",
+    "screens-intake",
+    "screens-investigate",
+    "screens-matter",
+    "screens-plan",
+    "screens-publish",
+    "screens-settings",
+    "screens-wizards"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "interface-shell-t50-t51",
+    "interface-shell-t53",
+    "journey-check",
+    "plane",
+    "screens-action",
+    "screens-ai",
+    "screens-daily",
+    "screens-document",
+    "screens-entry",
+    "screens-inquiry",
+    "screens-intake",
+    "screens-investigate",
+    "screens-matter",
+    "screens-plan",
+    "screens-publish",
+    "screens-settings",
+    "screens-wizards"
+  ],
+  "users_noticed": []
+}

@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "interface-shell-t50-t51",
+  "provider": "interface-shell",
+  "provider_pr": 810,
+  "provider_land": "49f5b34a889eabb5963a105c87b4cd88be24360b",
+  "at": "2026-11-07T17:52:30Z",
+  "key": "interface-shell-t50-t51<-interface-shell@49f5b34a88",
+  "why": "added EMPTY_CONTRIBUTION, GLOSS_CLASS, contributionOf, styleOf; changed the parameters of checkClasses function(screens, guide, program) -> function(screens, guide, program, contribution = EMPTY_CONTRIBUTION) (not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/interface-shell/gloss.test.mjs: breaking, added, naming R15, R56 (Provides before this land) while interface-shell's source changed: it may assert a changed answer, bio-plane/test/m/interface-shell/harness.mjs: breaking, added code that is not an object property: , contribution, bio-plane/test/m/interface-shell/notice-wizard-scripts-546.test.mjs: breaking, added, naming R21 (Provides before this land) while interface-shell's source changed: it may assert a changed answer, bio-plane/test/m/interface-shell/t53-hook.test.mjs: breaking, added, naming R56 (Provides before this land) while interface-shell's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
