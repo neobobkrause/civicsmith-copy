@@ -38,7 +38,7 @@ const FULL = { other: Array.from({ length: 500 }, (_, i) => `C${i}`) };
 
 /* ------------------------------------------------------------------------------------------------ R86 */
 
-test("R86 \"Check my account\" is a run that makes nothing that stays: /begin takes mode check (slug validated, R2's scopes), the callback draws the list for the account it read, clears its cookie, takes no lock, registers no prefix, makes no bucket, and its only write is the plan probe's upload and delete; a probe it cannot delete is named; control: an install and an update answer as before", async () => {
+test("R86 'Check my account' is a run that makes nothing that stays: /begin takes mode check (slug validated, R2's scopes), the callback draws the list for the account it read, clears its cookie, takes no lock, registers no prefix, makes no bucket, and its only write is the plan probe's upload and delete; a probe it cannot delete is named; control: an install and an update answer as before", async () => {
   /* /begin: the slug is validated as for an install; the scopes asked are exactly R2's. */
   assert.equal((await begin("x", "check")).r.status, 400);
   const b = await begin("river-keepers", "check", { chk: false });
@@ -136,7 +136,7 @@ test("R88 the card line is derived from the plan line and one storage read: free
 
 /* ------------------------------------------------------------------------------------------------ R89 */
 
-test("R89 \"Check again\" re-runs the check from the start with the choices kept, offered with every list; a run depends on no earlier one; a 429 that never mends on one read draws that line unknown with try-again-in-a-minute and the rest as they are; control: a ready account's repeated runs all draw ready", async () => {
+test("R89 'Check again' re-runs the check from the start with the choices kept, offered with every list; a run depends on no earlier one; a 429 that never mends on one read draws that line unknown with try-again-in-a-minute and the rest as they are; control: a ready account's repeated runs all draw ready", async () => {
   const choose = { profiles: [], securityVpc: "0123456789abcdef0123456789abcdef" };
   const first = await check("river-keepers", { plan: "free", choose });
   assert.equal(byId(linesOf(first.page.done)).plan.state, "not_ready");
