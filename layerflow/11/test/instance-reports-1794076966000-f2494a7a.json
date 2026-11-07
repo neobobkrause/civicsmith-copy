@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "instance-reports",
+  "session": "session_018BhcegEZhEqKTSjbFKsdfA",
+  "started": "2026-11-07T18:42:46Z",
+  "ended": "2026-11-07T18:45:03Z",
+  "at": "2026-11-07T18:45:03Z",
+  "minutes": 2.28,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 47.483,
+  "tests": {
+    "total": 7,
+    "pass": 7,
+    "fail": 0
+  }
+}
