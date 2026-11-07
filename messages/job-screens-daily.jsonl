@@ -13,3 +13,4 @@
 {"at":"2026-11-07T20:33:22Z","row":"sent","n":7,"to":"bob","text":"screens-daily: home.test.mjs is a re-test with no code change of mine: it only follows provider answers (ai-use now refuses a usd limit here, so the busy team sets a tokens limit; the security level is credentials' own), so it passes with or without my code by design; please record the exemption on this head"}
 {"at":"2026-11-07T20:33:43Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-07T21:35:16Z","row":"sent","n":8,"to":"bob","text":"job screens-daily complete, PR #933 ready, session session_018Bhceg4RFNSHcH9cCxJWms: run status"}
+{"at":"2026-11-07T21:35:33Z","row":"outcome","n":8,"outcome":"delivered"}
