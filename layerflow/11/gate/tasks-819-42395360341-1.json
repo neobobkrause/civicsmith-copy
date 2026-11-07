@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "tasks",
+  "pr": 819,
+  "sha": "d81e9cd5f800e00fb6968ccb97057ee1ee082c20",
+  "run_id": 42395360341,
+  "run_attempt": 1,
+  "at": "2026-11-07T17:15:52Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 3.07,
+  "suite_minutes": 0.06,
+  "record_only": false,
+  "whole": true
+}
