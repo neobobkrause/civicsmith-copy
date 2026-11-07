@@ -126,7 +126,8 @@ export const answers = Object.freeze({
       else results = cs.state(merged.length ? { state: "ok", value: { hits: merged } } : { state: "empty" }, function (s) {
         return cs.sheet(s.hits.map(function (h) {
           const id = String(h.bundle_id);
-          return cs.row(cs.mark("origin", "search"), cs.ref("document", id, h.title || id, []) + (h.snippet ? '<span class="meta">' + cs.esc(String(h.snippet)) + "</span>" : ""), "", "");
+          // the snippet's match marks (U+0001, U+0002: `query-language` R35) are no text of the record's: drawn as the words alone
+          return cs.row(cs.mark("origin", "search"), cs.ref("document", id, h.title || id, []) + (h.snippet ? '<span class="meta">' + cs.esc(String(h.snippet).replace(/[\u0001\u0002]/g, "")) + "</span>" : ""), "", "");
         }).join(""));
       }, { empty: "screen.finder.none" });
     }
