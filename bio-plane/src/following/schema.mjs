@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS follows (
   last_read   TEXT,
   last_outcome TEXT,
   ended_reason TEXT,
-  body_cursor TEXT
+  body_cursor TEXT,
+  held_until  TEXT,
+  alert_state TEXT
 );
 
 -- R22: a follow's end date, set at the follow, changed by followEnd or R25's answer; appended with who and when and
@@ -143,6 +145,28 @@ CREATE TABLE IF NOT EXISTS watch_marks (
   at          TEXT NOT NULL
 );
 
+-- R38, R43, R46 (T53): each change in what a followed number's answer says, recorded once per read pair (the capture before and
+-- the capture after), with its counts when a content type's assess read it (JSON {added, changed, removed, possibly_removed}),
+-- else null; basis how it was told (assess, normalised, volatility_unknown). Never a meaning. home the follow's.
+CREATE TABLE IF NOT EXISTS register_query_changes (
+  change_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+  follow_id   INTEGER NOT NULL,
+  before_sha  TEXT NOT NULL,
+  after_sha   TEXT NOT NULL,
+  home        TEXT,
+  at          TEXT NOT NULL,
+  counts      TEXT,
+  basis       TEXT NOT NULL
+);
+
+-- R40 (T53): a member's last look at a register watch's changes; the latest governs (changes_since_looked counts after it).
+CREATE TABLE IF NOT EXISTS register_looks (
+  follow_id   INTEGER NOT NULL,
+  member      TEXT NOT NULL,
+  at          TEXT NOT NULL,
+  PRIMARY KEY (follow_id, member)
+);
+
 -- R33: the team's second-look flags, one row per flag; a flag is cleared once, by a field of the same row, and stays.
 -- raised_by and cleared_by are identities (member:<id>, or admin), answered as handles (membership), never as these.
 CREATE TABLE IF NOT EXISTS second_looks (
@@ -175,6 +199,10 @@ export const FOLLOWING_TABLES = Object.freeze([
   t("watch_marks", { keys: ["bundle_id"], sight: "owner", export: "never" }),
   /* R33: seen by every member who may see the item */
   t("second_looks", { keys: ["bundle_id"], sight: "bundle" }),
+  /* R46: a register watch's changes are seen as its follow is, through its project (R17) */
+  t("register_query_changes", { keys: ["home"], sight: "bundle" }),
+  /* R40: a member's own look, read back to her alone */
+  t("register_looks", { keys: [], sight: "owner", export: "never" }),
 ]);
 
 export function migrateFollowing(sql) {
@@ -184,4 +212,8 @@ export function migrateFollowing(sql) {
   if (![...sql.exec(`PRAGMA table_info(follows)`)].some((r) => r.name === "ended_reason")) sql.exec(`ALTER TABLE follows ADD COLUMN ended_reason TEXT`);
   /* G21: a follows table made before the cursor gains it; a body read before it starts its next pass whole */
   if (![...sql.exec(`PRAGMA table_info(follows)`)].some((r) => r.name === "body_cursor")) sql.exec(`ALTER TABLE follows ADD COLUMN body_cursor TEXT`);
+  /* R42 (T53): a follow held back by a keyed service's limits is next due at held_until */
+  if (![...sql.exec(`PRAGMA table_info(follows)`)].some((r) => r.name === "held_until")) sql.exec(`ALTER TABLE follows ADD COLUMN held_until TEXT`);
+  /* R40, R41 (T53): whether a docket's alert was served on its last read ("on") or its page read instead ("off") */
+  if (![...sql.exec(`PRAGMA table_info(follows)`)].some((r) => r.name === "alert_state")) sql.exec(`ALTER TABLE follows ADD COLUMN alert_state TEXT`);
 }

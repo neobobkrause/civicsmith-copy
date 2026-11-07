@@ -95,6 +95,10 @@ const CASES = {
     w.f.secondLookClear({ item: "INFO-2026-9999-none", by: MEMBER, viewer: MEMBER })],
   SECOND_LOOK_NO_NOTE: async (w) => [w.f.secondLook({ item: "INFO-2026-0002-a", note: "  ", by: MEMBER, viewer: MEMBER })],
   SECOND_LOOK_NOT_OPEN: async (w) => [w.f.secondLookClear({ item: "INFO-2026-0002-a", by: MEMBER, viewer: MEMBER })],
+  /* T53 (R37, R41): a register watch by a number, over the test profile's docket template (registers' county_raw) */
+  QUERY_NOT_NAMED: async (w) => [w.f.followRegisterQuery({ register: "county_raw", scheme: "docket", value: "Jane Doe", home: "INFO-2026-0002-a", author: MEMBER, viewer: MEMBER }),
+    w.f.followRegisterQuery({ register: ["county_raw", "town_filings"], scheme: "docket", value: "D123456", home: "INFO-2026-0002-a", author: MEMBER, viewer: MEMBER })],
+  BAD_ALERT: async (w) => [w.f.followRegisterQuery({ register: "county_raw", scheme: "docket", value: "D123456", alert: "courtlistener", home: "INFO-2026-0002-a", author: MEMBER, viewer: MEMBER })],
   BAD_PROCEEDING_DATES: async (w) => {
     const p = w.proceeding("Ellery v. Marlow");
     return [w.f.proceedingDates({ proceeding: p, from: "October", viewer: MEMBER }),
@@ -118,6 +122,11 @@ function watched(w) {
   w.close("PL-C", "2026-10-06T10:00:00Z");
   return (w.watchedSetup = { follow, ended, asked, open, relied });
 }
+
+test("R1 R37 R41 every row this module holds has its case, the T53 register watch's QUERY_NOT_NAMED (C-137.31) and BAD_ALERT (C-137.32) among them, each driven", () => {
+  for (const code of Object.keys(FOLLOWING_CHECKS)) assert.ok(CASES[code], code);
+  assert.deepEqual([FOLLOWING_CHECKS.QUERY_NOT_NAMED?.check, FOLLOWING_CHECKS.BAD_ALERT?.check], ["C-137.31", "C-137.32"]);
+});
 
 for (const [code, row] of Object.entries(FOLLOWING_CHECKS)) {
   test(`R1 ${row.check} ${code}: the refusal carries its code, its row and the member's translation (DEC-49), and writes nothing`, async () => {

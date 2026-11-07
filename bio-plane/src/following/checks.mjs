@@ -9,7 +9,7 @@
  * (`listenerRefusal`), answered through it, never minted here. No translation names a place (R18), and none names the
  * group's own system other than as "your group's Civicsmith" (DEC-149); none needs to. */
 
-import { word } from "../setup-words/index.mjs";
+import { word, localize } from "../setup-words/index.mjs";
 
 const at = (fn, region) => `src/following/index.mjs ${fn} > ${region}`;
 const row = (code, n, fn, region) => Object.freeze({ check: `C-137.${n}`, where: at(fn, region), translation: word(`refusal.${code}`) });
@@ -47,6 +47,11 @@ export const FOLLOWING_CHECKS = Object.freeze({
   MARK_NO_SUCH_ITEM: row("MARK_NO_SUCH_ITEM", 28, "#markRefusal", "is-mark-item-seen"),
   SECOND_LOOK_NO_NOTE: row("SECOND_LOOK_NO_NOTE", 29, "secondLook", "is-second-look-note"),
   SECOND_LOOK_NOT_OPEN: row("SECOND_LOOK_NOT_OPEN", 30, "secondLookClear", "is-second-look-open"),
+  /* T53 (R37, R41): a register watch by a number; its sentences are written here at their use (K3943) */
+  QUERY_NOT_NAMED: Object.freeze({ check: "C-137.31", where: at("followRegisterQuery", "is-query-named"),
+    translation: localize("refusal.QUERY_NOT_NAMED", "A register is watched only for one number you name, of the form its scheme gives, in a scheme the active profiles list for that register; a name, a part of a number, a pattern, a list or two registers are not watched. Nothing was written.") }),
+  BAD_ALERT: Object.freeze({ check: "C-137.32", where: at("followRegisterQuery", "is-alert-docket"),
+    translation: localize("refusal.BAD_ALERT", "Only a followed docket number at the national docket service can carry its daily check of new filings, and \"courtlistener\" is the one check offered. Nothing was written.") }),
 });
 
 /** A refusal answer naming one of this module's rows (DEC-49): `{ok: false, reason, code, check, translation, detail,
