@@ -575,3 +575,4 @@
 {"at":"2026-11-07T20:54:08Z","row":"check","by":"layer publish","live":25,"live_at":"2026-11-07T20:16:20Z","live_measured":15,"started_since":10,"job_cap":20,"startable":5}
 {"at":"2026-11-07T20:59:20Z","row":"check","by":"job start","live":28,"live_at":"2026-11-07T20:16:20Z","live_measured":15,"started_since":13,"job_cap":20,"startable":2}
 {"at":"2026-11-07T21:04:28Z","row":"check","by":"lane artifact","live":15,"live_at":"2026-11-07T20:16:20Z","job_cap":8,"startable":0}
+{"at":"2026-11-07T21:11:53Z","row":"sweep","session":"session_018BhcefMKiLuojtdyeh1nzG","bob_acts":true,"bob_quiet_h":0.4,"root_context":15,"live":9,"live_measured_at":"2026-11-07T21:08:07Z","job_cap":20,"sessions":16,"job_ids":["affordances","control-plane","interface-shell","journey-check","plane","screens-document","screens-intake","screens-matter","screens-plan"],"slots_working":8,"published_free":1,"startable":0,"blocked":1,"blocked_oldest_min":81,"working":6,"waiting":3}
