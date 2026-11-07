@@ -105,8 +105,7 @@
   ],
   "prior_work": "First, consolidate build/requirements/affordances.md (75947 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/affordances.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/affordances.md is unchanged by the move (compare against the ids at the start commit). Then do the provider-notice work this START lists: for each notice, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal (new module ids, build/modules.json rows, build/layers.md). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "BLOCKED",
-    "reason": "layer publish refused: 'p3 layer publish: refused: the publish touches files outside affordances (ARC-2): docs/development/ux-substrate/screens/mock-acts.js; nothing was published'. START had me merge lane/ux-act-help-aiaccount (2b816abc2a, mock-acts.js only) into my PR. Proposal: land the lane branch into layer/11 through the merge tool (a lane-folder-only PR), then I job sync and publish again. Work is done and pushed (suite 334 pass, 0 fail, 2 todo): R72-R74 met and struck; R75 not met (its write half is entities'/screens-investigate's); ACT_HELP holds aiaccountadd/aiaccountswitch; t31 R36 now admits rowexpunge from the registered tables (green with op-grades' R55 in layer/11). Cross-module: op-declarations' ACT_HELP_ABSENT still lists aiaccountadd/aiaccountswitch, so its R34/R75 partition tests go red once this lands.",
-    "at": "2026-11-07T17:02:38Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T17:20:00Z"
   }
 }
