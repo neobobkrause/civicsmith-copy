@@ -1,0 +1,43 @@
+{
+  "id": "funding-register",
+  "title": "funding-register: meet R1 and R2 (new module 7 Nov, BD-15; every requirement not yet met)",
+  "layer": 8,
+  "paths": [
+    "bio-plane/src/funding-register/",
+    "bio-plane/test/m/funding-register/",
+    "build/requirements/funding-register.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/funding-register/"
+  ],
+  "requirements": "build/requirements/funding-register.md",
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "member-roster",
+    "entities",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/funding-register.md",
+    "build/requirements/README.md",
+    "build/situations/job.md",
+    "docs/development/publication-design-research/bd-15-requirements.md"
+  ],
+  "prior_work": "New module (BD-15, publication lane PF-6). No code exists yet. Write bio-plane/src/funding-register/ and its tests under bio-plane/test/m/funding-register/, meet R1 and R2 with tests that fail with the change reverted, and strike their marks. Store no amounts. Edit no other module; case-inputs, case-grammar, case-disclosures and public-read carry their own found marks.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-07T15:45:00Z"
+  }
+}
