@@ -198,3 +198,4 @@
 {"at":"2026-11-07T18:56:59Z","row":"outcome","n":99,"outcome":"delivered"}
 {"at":"2026-11-07T19:08:56Z","row":"sent","n":100,"to":"bob","text":"IDLE CAPACITY: 17 job sessions live of the cap 20, 17 startable, for 175 min; 3 x startable from node .process/tool/p3.mjs layer jobs 11, not started: run node .process/tool/p3.mjs layer jobs 11, then each job start it lists: run status"}
 {"at":"2026-11-07T19:09:22Z","row":"outcome","n":100,"outcome":"delivered"}
+{"at":"2026-11-07T20:16:54Z","row":"sent","n":101,"to":"bob","text":"Sweep: ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; corpus-export: BLOCKED; blocked 21 min; inquiry: BLOCKED; installer-places: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
