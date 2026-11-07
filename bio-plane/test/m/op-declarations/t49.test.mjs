@@ -155,6 +155,13 @@ test("R3 (T49; K3298, K3339): NEEDS is composed from op-capabilities.needsRows()
   const fam = familyRows();
   /* BD-1 (op-capabilities F1, PR 752): exportwhole and exportwholepart, two present-null rows more */
   assert.equal(Object.keys(hand).length, 325);
+  /* every hand-written row is an op with a spec that a session reaches (BD-1: exportwhole and exportwholepart, the
+     founder's session alone), so no row of op-capabilities' is left without its op here */
+  const sessionOps = new Set([...SESSION_OPS.member, ...SESSION_OPS.admin]);
+  for (const op of Object.keys(hand)) {
+    assert.ok(Object.hasOwn(OPS, op), `${op}: op-capabilities holds a row and OPS no spec`);
+    assert.ok(sessionOps.has(op) || OPS[op].classes === null || !OPS[op].mutating || Object.hasOwn(UNATTENDED_BY_DECISION, op), `${op}: a row no session reaches`);
+  }
   /* T53 (BOB, 4 Nov; t53-rows.test.mjs): eventwithdraw, moneyfiscalyears and federaloffices, three family rows more */
   /* T53 (R20, R24, R30, R41 restated; ai-accounts R35, BOB 4 Nov): ai-accounts' family goes from 24 ops to 36, twelve rows
      more (17 retired out; its 5 reads, 3 plane ops and 21 declared acts in); and ai-use's `aiusebymember`, `airetestset`, `aihealthset` and `aihealthpreview` (its R27, R28, R32, R33), four */
