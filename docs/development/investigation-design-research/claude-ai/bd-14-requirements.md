@@ -83,15 +83,16 @@ Funding disclosure (Q9.6) is the publication lane's under BD-13 and is not draft
 - **Recording a reading.** A reading is `readConclusion({inquiry, by, verdict, note?})`:
   - `verdict` is `read`, `read_with_concerns` or `cannot_support`;
   - `note` is required for the last two, and is the member's own words.
-- **Who may read.** The reader must be a joined member who neither adopted the conclusion nor accepted more than half of its legs, so the reading is independent. A machine is refused.
+- **Who may read.** The reader must be a joined member who neither adopted the conclusion nor accepted more than half of its legs, so the reading is independent. A machine is refused. (G1, 7 Nov) "Its legs" are the legs of the basis version being read: legs the member accepted that this version no longer holds do not count. The count is taken when the reading is given.
 - **What a reading never does.** It never moves the conclusion or its strength. `cannot_support` is shown beside the conclusion until the conclusion changes or the reader withdraws it.
 - **When a conclusion changes.** A changed conclusion, meaning a new basis version adopted, asks for a new reading. Earlier readings stay in its history, marked as readings of the earlier version.
 - **Refusals, in order:** `MACHINE_CANNOT_READ`; `NOT_CONCLUDED`; `READER_NOT_INDEPENDENT` (naming why: adopted it, or accepted most legs); `READING_NOTE_REQUIRED`; `READING_SWITCH_NEEDS_REASON` (on the switch).
 
 **IV-7 (ratification, case-grammar). Signing and stating it.**
 
-- **Switch on.** Signing a case edition whose conclusions lack a current reading is refused `SECOND_READING_MISSING`, naming the conclusions.
-- **Switch off, or a group of one.** Signing goes ahead, and the case states it plainly: "No second member read these conclusions", with the reason. This is the pattern for a missing falsifier (CM:694–710).
+- **Switch on, a reader possible.** When at least one joined member qualifies as an independent reader (IV-6), signing a case edition whose conclusions lack a current reading is refused `SECOND_READING_MISSING`, naming the conclusions and the members who could read them.
+- **Switch on, no reader possible** (G1, 7 Nov). When no joined member qualifies, for example in a team of two where the other member accepted most of the legs, signing is not refused. The case states "No independent second reading was possible: every other member adopted this conclusion or accepted most of its legs", naming no one. Owners need not switch second readings off to sign, and the switch stays on, so a member who joins later and qualifies is asked to read the next edition.
+- **Switch off, or a group of one.** Signing goes ahead, and the case states it plainly: "No second member read these conclusions", with the reason. This is the pattern for a missing falsifier (CM:694–710). The three statements stay distinct, so a reader can tell a choice (switch off) from a limit (group of one, or no independent reader).
 - **A `cannot_support` reading.** It does not block signing. The case carries the reading's note, as a reviewer's comment would (INV:171), and the publisher may not leave it out.
 - **The wording** is the publication lane's, under BD-13.
 
