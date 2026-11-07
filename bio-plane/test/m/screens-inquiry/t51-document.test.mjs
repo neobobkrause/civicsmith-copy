@@ -172,10 +172,11 @@ test("R65 a copy that came as a set of files: every file with its digest in the 
 const fingerprints = (p) => section(p, "screen.document.fingerprints.head");
 
 /* BROWSER ACT: `hashcopy` (interface-shell R100) must be admitted for the Copy tests to pass */
-test("R66 the first fingerprint is the capture's digest, drawn in full with its short form beside the title, and Copy puts the full value on the clipboard; sends nothing", async () => {
+test("R66 the first fingerprint is the capture's digest, drawn by its short form beside the title (screens-document-beta R73: never printed whole), and Copy puts the full value on the clipboard; sends nothing", async () => {
   const p = await open(at, withHistory());
   const s = fingerprints(p);
-  assert.equal(s.querySelector('[data-fingerprint="capture"]').textContent, SHA, "the digest `image` states, in full");
+  assert.equal(s.querySelector('[data-fingerprint="capture"]').textContent, SHA.slice(0, 8) + "…" + SHA.slice(-4), "the digest `image` states, by its short mark");
+  assert.ok(!/[0-9a-f]{64}/.test(text(main(p))), "R73: no 64-hex fingerprint printed whole");
   assert.ok(says(s, "screen.document.a26.this_copy_s_words_and_file") && says(s, "screen.document.a26.computed_from_the_exact_bytes_of_this_co"));
   assert.ok(text(s.querySelector(".cs-row b").parentElement).includes(SHA.slice(0, 8) + "…" + SHA.slice(-4)), "its short form beside the title");
   const copied = [];
@@ -197,7 +198,11 @@ test("R66 the first fingerprint is the capture's digest, drawn in full with its 
 test("R66 a copy that came as a set of files draws the second fingerprint, the current revision's sha256, each with Copy, and the note beneath; a document with no digest draws none and no copy", async () => {
   const p = await open(at, withHistory({ set: true }));
   const s = fingerprints(p);
-  assert.equal(s.querySelector('[data-fingerprint="set"]').textContent, "c".repeat(64), "the `bundle_sha` the last promotion left");
+  assert.equal(s.querySelector('[data-fingerprint="set"]').textContent, "cccccccc…cccc", "the `bundle_sha` the last promotion left, by its short mark (R73)");
+  const copied = [];
+  p.win.navigator = { clipboard: { writeText: (t) => copied.push(t) } };
+  await p.click(s.querySelectorAll('button[data-act="hashcopy"]')[1]);
+  assert.deepEqual(copied, ["c".repeat(64)], "its Copy puts the whole on the clipboard");
   assert.ok(says(s, "screen.document.a26.this_copy_and_the_files_captured_with_it") && says(s, "screen.document.a26.computed_from_the_whole_set_so_the_set_c"));
   assert.equal(s.querySelectorAll('button[data-act="hashcopy"]').length, 2);
   assert.ok(says(s, "screen.document.fingerprint.setonly"));
@@ -516,12 +521,13 @@ test("R80 a document of several pages draws the Read it tab and \"Page 1 of m\" 
   assert.ok(bar(p) && says(bar(p), "document.read.tab.page"), "the tab of the reading the screen reads, by its key");
   assert.ok(says(s, "document.read.page", { n: String(one(0)), count: String(units.length) }), "Page 1 of m, from one");
   assert.ok(says(s, "document.read.next") && !says(s, "document.read.prev"), "control: no Previous on the first page");
-  assert.ok(text(main(p)).includes("First page words.") && !text(main(p)).includes("Second page words."), "the page's own words");
+  /* the reading's own section (the contradict fold, drawn until its picker is read, screens-document-beta R71, lists every passage to choose from) */
+  assert.ok(text(s).includes("First page words.") && !text(s).includes("Second page words."), "the page's own words");
   assert.ok(says(main(p).querySelector("blockquote"), "screen.document.passage.where", { page: one(0) }));
   const before = p.requests.length, reads = p.byOp("reading").length;
   const box = nextBox(p); box.checked = true; p.fire(box, "change"); await p.settle();
   assert.ok(says(section(p, "document.read.title"), "document.read.page", { n: String(one(1)), count: String(units.length) }), "Page 2 of m");
-  assert.ok(text(main(p)).includes("Second page words.") && !text(main(p)).includes("First page words."));
+  assert.ok(text(section(p, "document.read.title")).includes("Second page words.") && !text(section(p, "document.read.title")).includes("First page words."));
   assert.ok(says(section(p, "document.read.title"), "document.read.prev"), "Previous is offered from page 2");
   assert.equal(p.requests.length, before, "no request is sent");
   assert.equal(p.byOp("reading").length, reads, "no new read of what is held");

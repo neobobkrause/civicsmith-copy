@@ -1096,12 +1096,13 @@ function render(cs, view) {
     if (body) out.push(cs.sec("screen.document.a27.the_record_of_this_copy", body, { help: "screen.document.a27.who_added_this_copy_who_vouched_for_it_a" }));
   }
 
-  /* R66: the fingerprints, each in full with its short form beside its title and a Copy that puts the full value on the clipboard
-     (nothing is sent). The second, the current revision's `bundle_sha`, is for a copy that came as a set of files only. */
+  /* R66: the fingerprints, each by its short form beside its title and a Copy that puts the full value on the clipboard
+     (nothing is sent). The second, the current revision's `bundle_sha`, is for a copy that came as a set of files only.
+     screens-document-beta R73 (T53; JOURNEYS): no 64-hex fingerprint is printed whole; the short mark is the one shown, and Copy is the way to the whole. */
   if (sha) {
     const setSha = isSet && revs.length && /^[0-9a-f]{64}$/.test(String(revs[0].sha256 || "")) ? String(revs[0].sha256) : "";
-    const fp = (value, titleKey, whyKey, tag) => rowOf("", `<b>${W(titleKey)}</b> <span class="id">${cs.esc(shortOf(value))}</span>`, cs.act("hashcopy", { label: "shell.copy", data: { value }, tone: "quiet" }),
-      `<span class="id" data-fingerprint="${tag}">${cs.esc(value)}</span> · ${W(whyKey)}`);
+    const fp = (value, titleKey, whyKey, tag) => rowOf("", `<b>${W(titleKey)}</b> <span class="id" data-fingerprint="${tag}">${cs.esc(shortOf(value))}</span>`, cs.act("hashcopy", { label: "shell.copy", data: { value }, tone: "quiet" }),
+      W(whyKey));
     out.push(cs.sec("screen.document.fingerprints.head", cs.sheet(fp(sha, "screen.document.a26.this_copy_s_words_and_file", "screen.document.a26.computed_from_the_exact_bytes_of_this_co", "capture")
       + (setSha ? fp(setSha, "screen.document.a26.this_copy_and_the_files_captured_with_it", "screen.document.a26.computed_from_the_whole_set_so_the_set_c", "set") : ""))
       + (setSha ? `<p class="mk-note">${W("screen.document.fingerprint.setonly")}</p>` : "") + `<p class="mk-small">${W("screen.document.a26.anyone_holding_the_same_bytes_computes_t")}</p>`,

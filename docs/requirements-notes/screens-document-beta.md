@@ -1,0 +1,11 @@
+# screens-document-beta — requirements notes
+
+**Status** · Change history of `build/requirements/screens-document-beta.md` from attempt 3 (7 Nov 2026). Earlier history is kept in `docs/requirements-notes/screens-document.md`.
+
+## Attempt 3, 7 Nov 2026 (BOB ruling on the block of 20:50)
+
+- **R75 amended** to the UX lane's decision of 7 Nov 2026: a bare or not-found `document` draws `interface-shell` R35's "Nothing is here" with the way back to its place as `interface-shell` R61 draws it, with no separate "Go to Home"; the crumbs stay links; no new word. The shell already draws exactly this (Projects is the Document page's place), so R75 is met with no change to `document.mjs`: its test is test-only.
+- **R70 met**: the two folds that choose another document ("Connections you assert", "This contradicts another document") draw `interface-shell` R138's `cs.picker` (from `interface-shell-t53`). The choice is now kept as the kit's `view.ui["pick:connect"]` and `view.ui["pick:flag"]` (was `pickConnect`, `flagOther`); the find box is the kit's (`<kind>-q`), the control `<kind>-wide`. The rest of R46 is kept around the kit: pages of 20 by `next` per scope, the showing or more line, previous and next (`[data-pick-pages="<kind>:<scope>"]`), and "none found" withheld while a page is unread. An archive is its own row followed by its files, each labelled with the archive (the kit lists an archive's files only, so the archive's own row is passed beside them).
+- **R71's code part met**: the picker reads `heldcaptures` only once the member opens it (`view.ui["pick:<kind>:open"]`, a box labelled with the fold's own label). The fold can no longer know before that read that there is nothing to offer, so it is drawn closed and withdrawn once its read finds nothing. The one-row read of this copy's own held row (`heldcaptures` with `bundle_id`, for R3, R55 and R74's captured-for question and the uploader) stays at open: it is not the list read that held up the door window. The re-timing on Seed A stays owed (a live act).
+- **R73 met**: the Fingerprints section draws each fingerprint by its short mark only; Copy (`hashcopy`) still puts the whole on the clipboard. `screens-inquiry` t51-document's R66 assertion is updated to the short mark.
+- The open marks (R58–R60, R62–R69, R72) now name their providers.
