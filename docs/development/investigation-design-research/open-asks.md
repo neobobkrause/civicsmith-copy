@@ -1,6 +1,6 @@
 # Investigation lane: open asks at the account switch (2026-11-07)
 
-This is the lane's handoff at Bob's account switch. A successor session reads `index.md`, then this file, then the two design documents below. It holds every ask still open, who owns it, and where its content lives.
+This is the lane's handoff at Bob's account switch. The switch was cancelled on 7 Nov, and work resumed on the same account; the file stays as the list of open asks. A successor session reads `index.md`, then this file, then the two design documents below. It holds every ask still open, who owns it, and where its content lives.
 
 ## Design documents (claude.ai artifacts, recorded with `p3 lane artifact`)
 
@@ -9,7 +9,7 @@ This is the lane's handoff at Bob's account switch. A successor session reads `i
 | Investigation: best-practice departures (Q9) | https://claude.ai/artifact/THTtouNJzkhmHqyR4Pfa4g | The seven departures from best practice, with options and the lane's recommendations. Bob answered it as BD-14. |
 | Investigation: requirements for BD-14 | https://claude.ai/artifact/UgRF58WWCfuDu88ztaKNbL | Draft requirements IV-1 to IV-11, and IV-H1 to IV-H4 (held), with the module and layer for each. It also gives the rival-hypotheses model for the ux lane and the screens owed to the ux lane. |
 
-These artifacts live on the old account. If the new account cannot open them, the successor asks BOB for copies. It does not redraft from memory.
+Snapshots of both are in `claude-ai/` (PR 765). The artifacts remain the working copies.
 
 ## Open asks
 
@@ -22,7 +22,7 @@ These artifacts live on the old account. If the new account cannot open them, th
 | A5 | Q8: one term per concept. "Objective" has three definitions; focus, problem, inquiry and question name one thing. The lane's recommendation: fix one term in the canon, under A3. | Bob, through the coordinator | Sent 7 Nov | `canon.md` §5 |
 | A6 | Placement of IV-1 to IV-11 as found marks by layer. IV-2 rides the steps reopen and IV-4 the observation-log reopen (layer 11). IV-H1 to IV-H4 are placed marked held. | BOB | Paused for the account switch | BD-14 doc, Placement |
 | A7 | IV-5 (a case states each look's parameters) and IV-7 (signing refuses `SECOND_READING_MISSING`, or the case states no second reading) are proposals to the publication lane under BD-13. | BOB, to the publication lane | Sent when placement resumes | BD-14 doc, Q9.3, Q9.4 |
-| A8 | IV-3: CHECK's design (it runs when a conclusion is adopted and before signing; signals only). IV-8 to IV-10: the measures belong to the ai-design lane. | BOB, to the ai-design lane | Not yet sent | BD-14 doc, Q9.2, Q9.5 |
+| A8 | IV-3: CHECK's design (it runs when a conclusion is adopted and before signing; signals only). IV-8 to IV-10: the measures belong to the ai-design lane. | BOB, then the coordinator | Sent to BOB 7 Nov. Held: no ai-design lane exists yet, so the coordinator decides whether to open one or file found marks on ai-runs, ai-gate and contradiction | BD-14 doc, Q9.2, Q9.5 |
 | A9 | Screens owed to the ux lane for each draft. These include the Q9.7 grade-letter gloss and the Q9.1 walkthrough. The ux lane's seven questions on Q9.1 were answered on 7 Nov. | ux lane, through BOB | Answers sent | BD-14 doc, Screens owed |
 | A10 | Found marks on owning modules for the stale references in the qualification record's Q4 list. | BOB | Recorded; filing paused | `qualification-2026-11-07.md` Q4 |
 
