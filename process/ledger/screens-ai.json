@@ -36,7 +36,8 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/screens-ai.md, each with a test under bio-plane/test/m/screens-ai/ that fails with the change reverted. None of the seven screens is built yet; they are registry rows in wizard-scripts/screen-registry.mjs, which stays wizard-scripts'. Build them in bio-plane/src/screens-ai/. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T13:20:00Z"
+    "state": "WORKING",
+    "at": "2026-11-07T19:21:42Z",
+    "reason": "reopened: screens-settings has landed (land 1a724dc528); meet screens-ai's requirements against it; the earlier attempt (job/screens-ai, COMPLETE, never merged) is kept: carry over what still applies"
   }
 }
