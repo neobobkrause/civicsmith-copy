@@ -290,13 +290,15 @@ export function templatesOver(w, profiles, { reviewed: rev = true } = {}) {
 
 /** filing-templates R15 (T45, K2851): a profile template is offered only with a named writer, public sources, a
  *  professional's `no_concerns` review and an approver other than its writer. The test profiles' templates carry the
- *  writer and approver; each read through here gains sources and a professional's review, as filing-templates' own
- *  fixture gives them (its `attributed`). `templatesOver(w, p, {reviewed: false})` reads them as they are. */
+ *  writer and approver; each read through here gains sources and a professional's review of its own text (its
+ *  `reviewed_text_sha`, jurisdictions R126), as filing-templates' own fixture gives them (its `attributed`). `templatesOver(w, p, {reviewed: false})` reads them as they are. */
 export const PRO_REVIEW = Object.freeze({ reviewer: "Dee Example", kind: "professional", organisation: "Marlow Commons Legal Society (test)",
                                           credential: "solicitor (test)", scope: "the whole text", outcome: "no_concerns", at: "2026-08-25" });
 function reviewed(get) {
   const fix = (t) => ({ ...t, sources: t.sources && t.sources.length ? t.sources : [{ citation: "P.E.B.L. § 1" }],
-                        reviews: [...(t.reviews || []).filter((r) => r.kind !== "professional"), PRO_REVIEW] });
+                        reviews: [...(t.reviews || []).filter((r) => r.kind !== "professional"),
+                                  /* jurisdictions R40, R126 (T53): a professional review counts only for the text it read */
+                                  { ...PRO_REVIEW, reviewed_text_sha: sha(String(t.text ?? "")) }] });
   return (id) => {
     const p = get(id);
     if (!p || typeof p !== "object") return p;
