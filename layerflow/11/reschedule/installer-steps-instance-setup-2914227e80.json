@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "installer-steps",
+  "provider": "instance-setup",
+  "provider_pr": 948,
+  "provider_land": "2914227e8088d00ed3793d20b16ff4e714a29214",
+  "at": "2026-11-07T22:58:57Z",
+  "key": "installer-steps<-instance-setup@2914227e80",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/instance-setup/reports.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/instance-setup/requirements-ids.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/instance-setup/t46.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
