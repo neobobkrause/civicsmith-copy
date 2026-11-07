@@ -44,7 +44,11 @@ async function inbox() {
   return { ...t, K1: await after(t, K1), K2: await after(t, K2), K3: await after(t, K3) };
 }
 const day = (k) => dayOf(k.received);
-const handed = (k) => `${word("screen.inbox.knock", { size: sizeOf(k.bytes) })} ${day(k)}`;
+/* R92: a knock is titled by the file's name the sender gave, else the first words of its note, else that it came with neither, with its true size */
+const firstWords = (t) => String(t).trim().split(/\s+/).slice(0, 6).join(" ").slice(0, 60);
+const titled = (k) => k.file_name ? word("screen.inbox.row.named", { name: k.file_name, size: sizeOf(k.bytes) })
+  : k.note ? word("screen.inbox.row.noted", { words: firstWords(k.note), size: sizeOf(k.bytes) }) : word("screen.inbox.row.unnamed", { size: sizeOf(k.bytes) });
+const handed = (k) => `${titled(k)} ${day(k)}`;
 
 test("R7 reads inbox always and inboxget for the knock the address names", async () => {
   const t = await inbox();
@@ -61,7 +65,7 @@ test("R7 each knock: what was handed in, its note, the same-knocker mark and, op
   const t = await inbox();
   const p = await knockPage(t, t.K1);
   const s = text(p);
-  assert.ok(s.includes(`${word("screen.inbox.knock", { size: "3.0 MB" })} ${day(t.K1)}`));
+  assert.ok(s.includes(handed(t.K1)));
   assert.ok(s.includes(word("screen.inbox.note", { note: "The inspection sheets they don't publish." })));
   assert.ok(s.includes(word("screen.inbox.same", { count: 1 })));
   assert.ok(s.includes(word("screen.inbox.nonote")));
@@ -206,7 +210,7 @@ test("R7 R12 sourcelink names the source read and a source chosen among the earl
   const opts = p.doc.getElementById("cx-to").querySelectorAll("option");
   assert.deepEqual(opts.map((o) => o.getAttribute("value")), [five], "its own left out, the same knocker's with it");
   assert.equal(four, own, "the same knocker's source is this knock's own");
-  assert.equal(opts[0].textContent, `${word("screen.inbox.knock", { size: word("size.small") })} ${day(t.K5)}`);
+  assert.equal(opts[0].textContent, handed(t.K5));
   /* a source of the same pseudonym that is not this knock's own cannot be made by a real act (one source for each pseudonym); the screen's "the same knocker's first" is kept on
      the one scripted variation: the real `sourceof` answer for K4's capture with a source id that is not the knock's own */
   const elsewhere = `${four}-elsewhere`;
@@ -215,7 +219,7 @@ test("R7 R12 sourcelink names the source read and a source chosen among the earl
   const vopts = v.doc.getElementById("cx-to").querySelectorAll("option");
   assert.deepEqual(vopts.map((o) => o.getAttribute("value")), [elsewhere, five], "the same knocker's source first");
   assert.equal(vopts[0].textContent, word("screen.inbox.same.date", { date: day(t.K4) }), "R32: the same knocker's, by the day, no id drawn");
-  assert.equal(vopts[1].textContent, `${word("screen.inbox.knock", { size: word("size.small") })} ${day(t.K5)}`);
+  assert.equal(vopts[1].textContent, handed(t.K5));
   fill(p, { "cx-to": five, "cx-evidence": "Same handwriting on the cover note." });
   await press(p, "sourcelink");
   assert.deepEqual(p.byOp("sourcelink")[0].body, { source: own, to: five, evidence: "Same handwriting on the cover note." });
@@ -309,4 +313,47 @@ test("R32 no source id (SRC-…) or knock id (KNOCK-…) is a heading or a sente
   assert.ok(fold.textContent.includes(t.K3.knock_id) && fold.textContent.includes(src), "the ids, for support");
   /* the act still names the source it records, in its data and not in words */
   assert.equal(main(p).querySelector('button[data-act="sourcelink"]').getAttribute("data-source"), src);
+});
+
+/* R92 (T53; JOURNEYS R-57): which knock it is, what it became, and what each state means */
+test("R92 three knocks draw three different titles from what was handed in (a note's first words, or that it came with neither), each with its true size", async () => {
+  const t = await members2();
+  const A = await ring(t, { name: "A", bytes: 2048, note: "Minutes of the closed session on the bridge contract, as kept by the clerk." });
+  const B = await ring(t, { name: "B", bytes: 3 * MB, note: "Inspection sheets." });
+  const C = await ring(t, { name: "C", bytes: 500 });
+  const p = await at(t, "/app/inbox");
+  const titles = [A, B, C].map((k) => titled(k));
+  assert.equal(new Set(titles).size, 3, "three different titles");
+  for (const tt of titles) assert.ok(text(p).includes(tt), tt);
+  assert.ok(text(p).includes(word("screen.inbox.row.noted", { words: "Minutes of the closed session on", size: sizeOf(A.bytes) })), "the note's first words and the true size");
+  assert.ok(text(p).includes(word("screen.inbox.row.unnamed", { size: sizeOf(C.bytes) })), "a knock with neither a name nor a note says so");
+  assert.ok(["screen.inbox.row.named", "screen.inbox.row.noted", "screen.inbox.row.unnamed", "screen.inbox.row.became"].every(hasWord));
+  assert.deepEqual(rawKeys(p), []);
+});
+
+test("R92 a knock moved into the record links the document it made; control: an unmoved knock draws no link", async () => {
+  const t = await members2();
+  const K = await ring(t, { name: "K", bytes: 900, note: "Bridge minutes." });
+  const p = await knockPage(t, K);
+  assert.equal(main(p).querySelector("[data-became]"), null, "an unmoved knock draws no link");
+  await press(p, "inboxpull", { reason: WHY });
+  const made = p.byOp("inboxpull").length ? (await look(t, K.id)).capture_sha : null;
+  assert.ok(made, "the knock was moved into the record");
+  const link = main(p).querySelector("[data-became] a");
+  assert.ok(link, "the moved knock links the document it made");
+  assert.match(link.getAttribute("href") || "", /^\/app\/document\//);
+  assert.ok(main(p).querySelector("[data-became]").textContent.startsWith(word("screen.inbox.row.became", { document: "" }).trim()));
+});
+
+test("R92 each of the five state words is drawn beside its own explanation", async () => {
+  const t = await inbox();
+  const p = await knockPage(t, t.K1);
+  const dl = main(p).querySelector("[data-ladder-means]");
+  assert.ok(dl, "the explanations are drawn with the ladder");
+  const dts = dl.querySelectorAll("dt"), dds = dl.querySelectorAll("dd");
+  const rungs = ["unknown", "same", "partly", "group", "public"];
+  assert.deepEqual(dts.map((x) => x.textContent), rungs.map(rung));
+  assert.deepEqual(dds.map((x) => x.textContent), rungs.map((r) => word(`screen.inbox.ladder.${r}.means`)));
+  assert.ok(rungs.every((r) => hasWord(`screen.inbox.ladder.${r}.means`)));
+  assert.ok(!says(p, "screen.inbox.ladder.basis"), "the run-on basis sentence is replaced");
 });
