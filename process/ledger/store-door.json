@@ -70,7 +70,8 @@
   ],
   "prior_work": "Provider notice answers:103 (answers R1: ASK_SCOPE is now AI_GRANT_OPS minus aicredential), judged affected by triage. Adapt or confirm this module's code, with a test of its own that fails with the change reverted. Meet the module's open requirements as far as they are real now; name any you cannot in --not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-04T11:52:13Z"
+    "state": "WORKING",
+    "at": "2026-11-07T17:20:52Z",
+    "reason": "reopened: re-test against the new interface of admission (land a37e42fa05)"
   }
 }
