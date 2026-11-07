@@ -1,0 +1,75 @@
+{
+  "row": "land",
+  "layer": 9,
+  "module": "action-plans",
+  "pr": 726,
+  "head": "9a5763e4227fc45c8f4b3b6fc655b98650991740",
+  "before": "19dd8818ae4f1af8a88f62c6a67057253927ad47",
+  "merge": "d6c444a5cf1e2c2c9ed7661fbe57568a6c91dfc1",
+  "at": "2026-11-07T00:39:08Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/action-plans/t46.test.mjs",
+      "bio-plane/test/m/action-plans/t53.test.mjs",
+      "bio-plane/test/m/action-plans/words.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/action-plans/t46.test.mjs",
+      "bio-plane/test/m/action-plans/t53.test.mjs",
+      "bio-plane/test/m/action-plans/words.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/action-plans/t46.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , \"PLAN_PRODUCED_BY_MALFORMED\""
+      },
+      {
+        "file": "bio-plane/test/m/action-plans/t53.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R11, R55, R56 (Provides before this land) while action-plans's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/action-plans/words.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: assert . equal ( ( await prop ("
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/action-plans/t46.test.mjs",
+      "bio-plane/test/m/action-plans/t53.test.mjs",
+      "bio-plane/test/m/action-plans/words.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking"
+  },
+  "users_rescheduled": [
+    "plan-work"
+  ],
+  "users_rescheduled_old_rule": [
+    "plan-work"
+  ],
+  "users_noticed": [
+    "action-producers",
+    "affordances",
+    "answer-envelope",
+    "control-plane",
+    "following",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "screens-action",
+    "screens-plan",
+    "store-assembly"
+  ]
+}

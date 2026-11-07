@@ -1,0 +1,27 @@
+{
+  "row": "notice",
+  "at": "2026-11-07T00:39:08Z",
+  "key": "action-plans:726",
+  "provider": "action-plans",
+  "ids": [],
+  "pr": 726,
+  "users": [
+    "action-producers",
+    "affordances",
+    "answer-envelope",
+    "control-plane",
+    "following",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "screens-action",
+    "screens-plan",
+    "store-assembly"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 9,
+    "provides": false,
+    "rescheduled": true
+  }
+}

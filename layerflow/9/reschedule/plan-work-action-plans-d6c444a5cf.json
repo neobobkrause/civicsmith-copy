@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 9,
+  "user": "plan-work",
+  "provider": "action-plans",
+  "provider_pr": 726,
+  "provider_land": "d6c444a5cf1e2c2c9ed7661fbe57568a6c91dfc1",
+  "at": "2026-11-07T00:39:08Z",
+  "key": "plan-work<-action-plans@d6c444a5cf",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/action-plans/t46.test.mjs: breaking, added code that is not an object property: , \"PLAN_PRODUCED_BY_MALFORMED\", bio-plane/test/m/action-plans/t53.test.mjs: breaking, added, naming R11, R55, R56 (Provides before this land) while action-plans's source changed: it may assert a changed answer, bio-plane/test/m/action-plans/words.test.mjs: breaking, added code that is not an object property: assert . equal ( ( await prop (), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
