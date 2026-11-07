@@ -20,3 +20,4 @@
 {"at":"2026-11-07T19:14:20Z","row":"outcome","n":10,"outcome":"delivered"}
 {"at":"2026-11-07T20:23:16Z","row":"sent","n":11,"to":"bob","text":"job store-request complete, PR #898 ready, session session_018BhcedH1iD1m7AaUX2auVg: run status"}
 {"at":"2026-11-07T20:23:35Z","row":"outcome","n":11,"outcome":"delivered"}
+{"at":"2026-11-07T23:51:14Z","row":"sent","n":12,"to":"bob","text":"job store-request complete, PR #966 ready, session session_018BhcedawTfs8D6iJYbesPE: run status"}
