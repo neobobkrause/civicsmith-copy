@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "op-capabilities",
+  "session": "session_018BhceemjPB8xDdfs9a7XxX",
+  "started": "2026-11-07T15:16:12Z",
+  "ended": "2026-11-07T15:17:37Z",
+  "at": "2026-11-07T15:17:37Z",
+  "minutes": 1.42,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 0.28,
+  "tests": {
+    "total": 10,
+    "pass": 10,
+    "fail": 0
+  }
+}
