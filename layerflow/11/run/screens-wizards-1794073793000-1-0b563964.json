@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "screens-wizards",
+  "round": 1,
+  "started": "2026-11-07T17:49:53Z",
+  "ended": "2026-11-07T17:51:54Z",
+  "minutes": 2,
+  "tested_on": "17327a9ed57b35375763a5a9c70d8bc918eb5173",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T17:51:54Z"
+}
