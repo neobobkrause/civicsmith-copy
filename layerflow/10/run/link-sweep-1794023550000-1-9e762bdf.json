@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 10,
+  "module": "link-sweep",
+  "round": 1,
+  "started": "2026-11-07T03:52:30Z",
+  "ended": "2026-11-07T03:52:36Z",
+  "minutes": 0.1,
+  "tested_on": "7f02e010afb169e95e57c7a764faf79b95bf10d5",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-07T03:52:36Z"
+}
