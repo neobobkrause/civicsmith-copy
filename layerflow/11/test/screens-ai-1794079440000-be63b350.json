@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "screens-ai",
+  "session": "session_018Bhceddk92wRKrLdjgKTGa",
+  "started": "2026-11-07T19:24:00Z",
+  "ended": "2026-11-07T19:25:32Z",
+  "at": "2026-11-07T19:25:32Z",
+  "minutes": 1.53,
+  "result": "fail",
+  "layer": 11,
+  "suite_seconds": 0,
+  "tests": {
+    "total": 0,
+    "pass": 0,
+    "fail": 0
+  }
+}
