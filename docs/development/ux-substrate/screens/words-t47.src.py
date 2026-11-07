@@ -28,7 +28,7 @@ w('refusal.SETTING_NOT_JSON', 'That value can\'t be kept as a setting: a setting
 w('refusal.AI_RUN_CREDENTIAL_MALFORMED', 'The run couldn\'t start: the pass it needs to work for you was malformed.' + NS + ' Try again; if it happens again, tell an administrator.', False, 'C-29.41')
 
 # --- Writing help on a test instance (screens-settings R6, N984)
-w('ai.label.untested.writinghelp', 'Not yet tested: this help with writing hasn\'t yet passed Civicsmith\'s tests on real matters. Read it through before you use any of it.', True, 'on writinghelp\'s marked answer on a test instance')
+w('ai.label.untested.writinghelp', 'Not yet tested: this help with writing has not yet passed Civicsmith\'s tests on real matters. Read it through before you use any of it.', True, 'on writinghelp\'s marked answer on a test instance')
 
 # --- The way in (DEC-201; B158, B159): signing in and out, recovery, claiming, joining
 w('refusal.SIGN_IN_REFUSED', 'That handle and password don\'t match. Check both and try again; after several tries, sign-in pauses for a while to keep others from guessing.', False, 'credentials R4; never says which handles exist')
@@ -53,7 +53,7 @@ w('session.shared', 'Shared or public: sign me out after 15 minutes away', False
 # --- Signing inside the ceremony (DEC-207; Bob's D9, K3060; Q4). Protected: words before and around a signed, outward act.
 w('signing.ceremony.who', 'You sign as {signer}, an owner of {project}. The public page will read “Published by {group} · signed by {signer}”. Once public, anyone can read it and check your signature without asking the team; it can be corrected by a new edition, never removed.', True, 'the sign step')
 w('signing.ceremony.device', 'Your device is asking you to confirm with your signing key: its own window asks for your passphrase, fingerprint or device PIN. The key never leaves this device, and Civicsmith never sees it.', True, 'while the device confirms')
-w('signing.ceremony.declined', 'Your device didn\'t confirm, so nothing was signed or published. Everything is as it was; sign again when you are ready.', True, 'device canceled or failed')
+w('signing.ceremony.declined', 'Your device did not confirm, so nothing was signed or published. Everything is as it was; sign again when you are ready.', True, 'device canceled or failed')
 w('signing.ceremony.signedat', 'Signed. Edition {edition} becomes public on {date} at {time} ({zone}). Until then it waits, not public. At that time Civicsmith checks again and publishes only if nothing changed since you signed.', True, 'publishat done')
 w('signing.ceremony.signednow', 'Signed and published. Edition {edition} is public now: anyone can read it and check your signature without the team.', True, 'caseratify done')
 w('signing.ceremony.nokey', 'You have no signing key in this browser. Register one here: it is made on this device and never leaves it, and every use asks you to confirm. Then you come back to this step, with nothing lost.', True, 'NO_ATTESTING_KEY before signing')

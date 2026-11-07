@@ -1921,7 +1921,7 @@
  },
  {
   "key": "question.relies.outofview",
-  "en": "Other work you can't see also relies on this question.",
+  "en": "Other work you cannot see also relies on this question.",
   "protected": true,
   "note": "DEC-235: K960 out_of_view; says nothing of what or how many"
  },
@@ -3937,7 +3937,7 @@
  },
  {
   "key": "court.statement",
-  "en": "Your team's Civicsmith keeps this from the public and the people the team looks into. A court order your team can't defeat could still require it to be shown. Write accordingly.",
+  "en": "Your team's Civicsmith keeps this from the public and the people the team looks into. A court order your team cannot defeat could still require it to be shown. Write accordingly.",
   "protected": true,
   "note": "DEC-251: screens-settings R7, membership R108's words exactly (DEC-136)"
  },

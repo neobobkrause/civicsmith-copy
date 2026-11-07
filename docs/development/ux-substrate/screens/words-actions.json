@@ -223,7 +223,7 @@
  },
  {
   "key": "refusal.PROJECT_SCOPE_KEEPS_HIDDEN",
-  "en": "A counsel matter or a member's own project stays hidden, so it can't be listed for others to find. Remove its scope first if it should be. Nothing was changed.",
+  "en": "A counsel matter or a member's own project stays hidden, so it cannot be listed for others to find. Remove its scope first if it should be. Nothing was changed.",
   "protected": true,
   "note": ""
  },
@@ -241,7 +241,7 @@
  },
  {
   "key": "refusal.PROJECT_GUARD_UNCHECKED",
-  "en": "Your team's Civicsmith couldn't check whether this project's own rules allow that, so nothing was changed. Try again in a moment.",
+  "en": "Your team's Civicsmith could not check whether this project's own rules allow that, so nothing was changed. Try again in a moment.",
   "protected": true,
   "note": ""
  },
@@ -325,7 +325,7 @@
  },
  {
   "key": "refusal.RULE_NEEDS_QUALIFICATION",
-  "en": "A rule for a Tier 2 or Tier 3 matter, or one whose tier isn't known, is confirmed by a professional. State your qualification in your own words, in at most 500 characters. Nothing was written.",
+  "en": "A rule for a Tier 2 or Tier 3 matter, or one whose tier is not known, is confirmed by a professional. State your qualification in your own words, in at most 500 characters. Nothing was written.",
   "protected": true,
   "note": ""
  },
@@ -403,7 +403,7 @@
  },
  {
   "key": "signing.openrequest.unread",
-  "en": "Your team's Civicsmith couldn't read whether any request for comment on this case is still open, so none is listed here.",
+  "en": "Your team's Civicsmith could not read whether any request for comment on this case is still open, so none is listed here.",
   "protected": true,
   "note": ""
  },
@@ -445,7 +445,7 @@
  },
  {
   "key": "case.check.undetermined",
-  "en": "Undetermined, because your team's Civicsmith couldn't read everything the check rests on. It is not treated as held.",
+  "en": "Undetermined, because your team's Civicsmith could not read everything the check rests on. It is not treated as held.",
   "protected": true,
   "note": ""
  },
@@ -529,7 +529,7 @@
  },
  {
   "key": "refusal.BAD_CARRIED_OUTCOME",
-  "en": "An outcome carried into a case needs its kind (a success, a correction by the office, or a harm addressed), your statement on one line with no quotation marks or backslash and at most 2,000 characters, what it cites, and the date it happened. {field} is missing or isn't in that form. Nothing was written.",
+  "en": "An outcome carried into a case needs its kind (a success, a correction by the office, or a harm addressed), your statement on one line with no quotation marks or backslash and at most 2,000 characters, what it cites, and the date it happened. {field} is missing or is not in that form. Nothing was written.",
   "protected": true,
   "note": "DEC-199: a missing or a malformed field"
  },
@@ -583,7 +583,7 @@
  },
  {
   "key": "consequences.success.sequence_not_cause",
-  "en": "This is the order things happened in. It doesn't say one caused the other.",
+  "en": "This is the order things happened in. It does not say one caused the other.",
   "protected": true,
   "note": ""
  },
@@ -619,7 +619,7 @@
  },
  {
   "key": "label.harmaddressed.cannot_be_undone",
-  "en": "Can't be undone",
+  "en": "Cannot be undone",
   "protected": true,
   "note": "never a percentage or score"
  },
@@ -643,13 +643,13 @@
  },
  {
   "key": "refusal.CURE_TARGET_NOT_NONCOMPLIANT",
-  "en": "Only an act found noncompliant with this standard can be corrected by a later one, and this one wasn't. Nothing was written.",
+  "en": "Only an act found noncompliant with this standard can be corrected by a later one, and this one was not. Nothing was written.",
   "protected": true,
   "note": ""
  },
  {
   "key": "refusal.CURE_NOT_COMPLIANT",
-  "en": "The later act must be found compliant with the same standard to count as the correction, and it isn't. Nothing was written.",
+  "en": "The later act must be found compliant with the same standard to count as the correction, and it is not. Nothing was written.",
   "protected": true,
   "note": ""
  },
@@ -661,7 +661,7 @@
  },
  {
   "key": "refusal.CURE_NOT_LATER",
-  "en": "The correcting act must come after the act it corrects, and this one doesn't, or their order isn't known. Nothing was written.",
+  "en": "The correcting act must come after the act it corrects, and this one does not, or their order is not known. Nothing was written.",
   "protected": true,
   "note": ""
  },
@@ -679,7 +679,7 @@
  },
  {
   "key": "refusal.ADDRESSED_WORD_REFUSED",
-  "en": "A harm addressed is described with the words Remedied, Mitigated, Compensated, Acknowledged or Can't be undone, and a harm not addressed takes none of them. Nothing was written.",
+  "en": "A harm addressed is described with the words Remedied, Mitigated, Compensated, Acknowledged or Cannot be undone, and a harm not addressed takes none of them. Nothing was written.",
   "protected": true,
   "note": ""
  },
@@ -763,7 +763,7 @@
  },
  {
   "key": "refusal.SUCCESS_CAUSE_UNCHECKABLE",
-  "en": "Your team's Civicsmith couldn't check whether the cause rests only on your team's own acts, so the success wasn't recorded. Try again in a moment, or leave the cause out.",
+  "en": "Your team's Civicsmith could not check whether the cause rests only on your team's own acts, so the success was not recorded. Try again in a moment, or leave the cause out.",
   "protected": true,
   "note": ""
  },
@@ -877,7 +877,7 @@
  },
  {
   "key": "label.overrideground.irreversible_act",
-  "en": "The act would be done and couldn't be undone",
+  "en": "The act would be done and could not be undone",
   "protected": true,
   "note": "acting before a determination"
  },
@@ -997,7 +997,7 @@
  },
  {
   "key": "refusal.OVERRIDE_NO_GROUND",
-  "en": "Acting before a determination needs one of two grounds: a legal deadline would pass first, or the act would be done and couldn't be undone. Or make a one-finding case first. Nothing was written.",
+  "en": "Acting before a determination needs one of two grounds: a legal deadline would pass first, or the act would be done and could not be undone. Or make a one-finding case first. Nothing was written.",
   "protected": true,
   "note": ""
  },
@@ -1459,13 +1459,13 @@
  },
  {
   "key": "refusal.JOINT_FINGERPRINT_MISMATCH",
-  "en": "The partner's copy isn't the same text your team approved. They sign the same words, or none. Nothing was written.",
+  "en": "The partner's copy is not the same text your team approved. They sign the same words, or none. Nothing was written.",
   "protected": true,
   "note": ""
  },
  {
   "key": "refusal.SECOND_APPROVAL_NEEDED",
-  "en": "This project needs a second member's approval before this is sent, and it hasn't been given. Any other member of the project can give it. Nothing was written.",
+  "en": "This project needs a second member's approval before this is sent, and it has not been given. Any other member of the project can give it. Nothing was written.",
   "protected": true,
   "note": ""
  },
