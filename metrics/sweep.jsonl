@@ -574,3 +574,4 @@
 {"at":"2026-11-07T20:47:35Z","row":"check","by":"layer land","live":25,"live_at":"2026-11-07T20:16:20Z","live_measured":15,"started_since":10,"job_cap":20,"startable":5}
 {"at":"2026-11-07T20:54:08Z","row":"check","by":"layer publish","live":25,"live_at":"2026-11-07T20:16:20Z","live_measured":15,"started_since":10,"job_cap":20,"startable":5}
 {"at":"2026-11-07T20:59:20Z","row":"check","by":"job start","live":28,"live_at":"2026-11-07T20:16:20Z","live_measured":15,"started_since":13,"job_cap":20,"startable":2}
+{"at":"2026-11-07T21:04:28Z","row":"check","by":"lane artifact","live":15,"live_at":"2026-11-07T20:16:20Z","job_cap":8,"startable":0}
