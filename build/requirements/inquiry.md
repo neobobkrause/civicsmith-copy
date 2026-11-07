@@ -243,3 +243,4 @@ Rows C-2.11–C-2.17 (R38; N345), with their translations:
 ## Open for Bob
 
 None: answered by Bob 2026-09-26 (K102).
+- **F2** *(not yet met: BD-17)* Rival explanations (BD-17, Bob 7 Nov; UX check passed on walkthrough v5): meet IV-H3: each rival's standing reads 'not established' until a conclusion on the question that meets the project's bar names it; at concluding the member names, per explanation, is the case / is not the case / neither, and only the explanations a conclusion at the bar names change standing. Exact text: investigation redraft rev 7, https://claude.ai/artifact/B8gA6JgeBfYVYpWSD5j2tm. Screen reference: https://claude.ai/artifact/WCzdua7ccBB95KbtwGvatt (v5).
