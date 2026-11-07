@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "setup-words",
+  "round": 1,
+  "started": "2026-11-07T16:31:12Z",
+  "ended": "2026-11-07T16:31:24Z",
+  "minutes": 0.2,
+  "tested_on": "7df23b533d846c8d400ab9e1e5260c151ca1d62e",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-07T16:31:24Z"
+}
