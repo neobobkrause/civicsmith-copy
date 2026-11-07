@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 11,
+  "module": "installer-places",
+  "cause": 957,
+  "why": "installer-places has unmet requirement marks (R95, R97, R98): a job meets them: node .process/tool/p3.mjs job start installer-places --live <n> --reopen \"meet the unmet requirement marks R95, R97, R98 and re-test against the new interface\"",
+  "at": "2026-11-07T23:42:07Z",
+  "by": "bob"
+}
