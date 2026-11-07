@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "instance-reports",
+  "round": 1,
+  "started": "2026-11-07T23:35:20Z",
+  "ended": "2026-11-07T23:37:15Z",
+  "minutes": 1.9,
+  "tested_on": "af391cf1357a89c1d231f9a3658dbefe3060a200",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T23:37:15Z"
+}
