@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "steps",
+  "pr": 803,
+  "branch": "job/steps",
+  "head": "a23a2fa75b1e9df9eb75b9329ec9c63ed91a2ded",
+  "before": "a37e42fa054111486b686d286695f3e07480d115",
+  "merge": "d1407e371fb35480d8d35ddd97496e043d277cd1",
+  "at": "2026-11-07T16:49:49Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
