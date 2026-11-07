@@ -67,7 +67,7 @@ test("R1 GET / serves the install page and GET /update the update page; any othe
   const hb = seen(await home.text()), ub = seen(await up.text());
   assert.deepEqual([home.status, up.status], [200, 200]);
   assert.match(home.headers.get("content-type"), /text\/html/);
-  assert.ok(hb.includes('mode:"install"') && !hb.includes('mode:"update"'), "the install page begins an install");
+  assert.ok(hb.includes('mode:"check"') && !hb.includes('mode:"update"'), "the install page begins a check (installer-check R91)");
   assert.ok(ub.includes('mode:"update"') && !ub.includes('mode:"install"'), "the update page begins an update");
   for (const [path, init] of [["/nothing", {}], ["/update/x", {}], ["/begin", {}], ["/callback", { method: "POST" }],
                               ["/", { method: "POST" }], ["/favicon.ico", {}], ["/app/assets/nothing", {}], ["/app/assets/", {}],
@@ -1998,7 +1998,7 @@ test("R41 the install page's act that chooses the short name shows the Irreversi
   w.el("slug").value = "something-else";
   await w.el("cloudflare").click();
   assert.equal(w.sent.length, 1, "Continue to Cloudflare, after the confirming act, sends /begin once");
-  assert.deepEqual([w.sent[0].url, w.sent[0].body.slug, w.sent[0].body.mode], ["/begin", "river-keepers", "install"], "the name the dialog named");
+  assert.deepEqual([w.sent[0].url, w.sent[0].body.slug, w.sent[0].body.mode], ["/begin", "river-keepers", "check"], "the name the dialog named");
   assert.equal(w.location.href, "https://dash.cloudflare.com/oauth2/auth?x=1");
   /* A name too short opens nothing. */
   const short = pageWorld(home);
