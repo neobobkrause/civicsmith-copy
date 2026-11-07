@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "op-specs-late",
+  "session": "session_018BhceeM16jy4Uu4rhuh7Db",
+  "started": "2026-11-07T17:09:54Z",
+  "ended": "2026-11-07T17:11:27Z",
+  "at": "2026-11-07T17:11:27Z",
+  "minutes": 1.55,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 3.385,
+  "tests": {
+    "total": 85,
+    "pass": 85,
+    "fail": 0
+  }
+}
