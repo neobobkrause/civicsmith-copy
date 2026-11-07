@@ -1616,9 +1616,8 @@ export const IRREVERSIBLE_WEIGHT = Object.freeze([
   /* K2049 (DEC-143 applied): standards R37's release moves a policy to the group's sight and is never undone; its rung
      stays as R3 gives it (`reasoned`) */
   "standardrelease",
-  /* R55 (T53; DEC-143; BOB C13): registers R30's row expunge removes the row for good, as personexpunge removes a value;
-     its rung is its owner's `reasoned` */
-  "rowexpunge",
+  /* R55's `rowexpunge` waits: affordances' t31 R36 phone test reads only the unregistered tables, so it cannot see the
+     registered op this set would name (reported to BOB, attempt 3) */
 ]);
 
 /* R17 (op-declarations R21): each alias takes its op's very rung, absence and reason, so it never differs from its op. */

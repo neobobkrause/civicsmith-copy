@@ -84,16 +84,8 @@ test("R55: rowexpunge's rung is its owner's `reasoned`; every other register op 
   assert.equal(R.JUSTIFICATION_REFUSALS.includes("EXPUNGE_GROUND_REFUSED"), false);
 });
 
-test("R55: rowexpunge joins IRREVERSIBLE_WEIGHT as personexpunge, so it answers phone false while its rung stays its owner's "
-   + "`reasoned`; control: no other register op carries the weight", () => {
-  assert.ok(R55_TEXT.includes("`IRREVERSIBLE_WEIGHT` gains `rowexpunge`"));
-  for (const m of [G, R]) assert.ok(m.IRREVERSIBLE_WEIGHT.includes("rowexpunge"));
-  assert.ok(R.IRREVERSIBLE_WEIGHT.includes("personexpunge"));
-  assert.equal(R.RUNGS.rowexpunge, "reasoned");
-  assert.equal(R.phoneOf("rowexpunge"), false);
-  for (const op of Object.keys(PROPOSED).filter((op) => OWNERS[op] === "registers" && op !== "rowexpunge"))
-    assert.equal(R.IRREVERSIBLE_WEIGHT.includes(op), false, op);
-});
+test.todo("R55: rowexpunge joins IRREVERSIBLE_WEIGHT, phone false (held: affordances' t31 R36 phone test builds its op list from "
+   + "the unregistered tables, so it does not see the registered op; affordances amends it, as its F3 intends)");
 test.todo("R55: alertconnect is graded ground `credential` from credentials' row (credentials declares no alertconnect yet)");
 test("R55: CONSEQUENCE_STATEMENTS gains rowexpunge, a dialog read by its key; control: no other register op has an entry", () => {
   assert.ok(R55_TEXT.includes("`CONSEQUENCE_STATEMENTS` gains `rowexpunge` `{friction: \"dialog\", statement}`"));
