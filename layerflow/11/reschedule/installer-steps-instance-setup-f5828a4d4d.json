@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "installer-steps",
+  "provider": "instance-setup",
+  "provider_pr": 806,
+  "provider_land": "f5828a4d4d4aaa7890028e680fdfea2100cc1b94",
+  "at": "2026-11-07T17:54:30Z",
+  "key": "installer-steps<-instance-setup@f5828a4d4d",
+  "why": "added InstanceSetup.layersSet, InstanceSetup.mailDomainSet, InstanceSetup.mailDoorSet, InstanceSetup.mailSettings, InstanceSetup.mailSetup, MAIL_SETUP_SETTING, PLACE_NAMES_MAX; changed the parameters of InstanceSetup.placeWantedSet ({ name = undefined, by = null } = {}) -> ({ name = undefined, names = undefined, by = null } = {}) (not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/instance-setup/declared-ops.test.mjs: breaking, too large to align, bio-plane/test/m/instance-setup/exports.test.mjs: breaking, added code that is not an object property: \"layersset\" , \"maildomainset\" , \"maildoorset\" , \"mailsetup\" ,, bio-plane/test/m/instance-setup/fixture.mjs: breaking, added code that is not an object property: , layers = null, bio-plane/test/m/instance-setup/group.test.mjs: breaking, added code that is not an object property: , \"C-64.34\" , \"C-64.35\", bio-plane/test/m/instance-setup/identity.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/instance-setup/places.test.mjs: breaking, added code that is not an object property: , localize, bio-plane/test/m/instance-setup/profiles.test.mjs: breaking, added code that is not an object property: if ( Array . isArray ( c ., bio-plane/test/m/instance-setup/requirements-ids.test.mjs: breaking, added code that is not an object property: , \"R107\" , \"R108\" , \"R109\" , \"R111\", bio-plane/test/m/instance-setup/seeds.test.mjs: breaking, too large to align, bio-plane/test/m/instance-setup/t48.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/instance-setup/t53-notices.test.mjs: breaking, added, naming R77, R78 (Provides before this land) while instance-setup's source changed: it may assert a changed answer, bio-plane/test/m/instance-setup/t53.test.mjs: breaking, added, naming R2, R7, R12, R107, R108, R109, R111, R113, R114 (Provides before this land) while instance-setup's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}

@@ -1,0 +1,195 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "instance-setup",
+  "pr": 806,
+  "branch": "job/instance-setup",
+  "head": "7fc560a86f54fb3635a295fcd44e8118bdc52583",
+  "before": "49f5b34a889eabb5963a105c87b4cd88be24360b",
+  "merge": "f5828a4d4d4aaa7890028e680fdfea2100cc1b94",
+  "at": "2026-11-07T17:54:30Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "InstanceSetup.layersSet",
+        "InstanceSetup.mailDomainSet",
+        "InstanceSetup.mailDoorSet",
+        "InstanceSetup.mailSettings",
+        "InstanceSetup.mailSetup",
+        "MAIL_SETUP_SETTING",
+        "PLACE_NAMES_MAX"
+      ],
+      "changed": [
+        {
+          "name": "InstanceSetup.placeWantedSet",
+          "before": "({ name = undefined, by = null } = {})",
+          "after": "({ name = undefined, names = undefined, by = null } = {})"
+        }
+      ],
+      "kinds": [],
+      "signatures": [
+        "InstanceSetup.placeWantedSet"
+      ]
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/instance-setup/declared-ops.test.mjs",
+      "bio-plane/test/m/instance-setup/exports.test.mjs",
+      "bio-plane/test/m/instance-setup/fixture.mjs",
+      "bio-plane/test/m/instance-setup/group.test.mjs",
+      "bio-plane/test/m/instance-setup/identity.test.mjs",
+      "bio-plane/test/m/instance-setup/places.test.mjs",
+      "bio-plane/test/m/instance-setup/profiles.test.mjs",
+      "bio-plane/test/m/instance-setup/requirements-ids.test.mjs",
+      "bio-plane/test/m/instance-setup/seeds.test.mjs",
+      "bio-plane/test/m/instance-setup/t48.test.mjs",
+      "bio-plane/test/m/instance-setup/t53-notices.test.mjs",
+      "bio-plane/test/m/instance-setup/t53.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/instance-setup/declared-ops.test.mjs",
+      "bio-plane/test/m/instance-setup/exports.test.mjs",
+      "bio-plane/test/m/instance-setup/fixture.mjs",
+      "bio-plane/test/m/instance-setup/group.test.mjs",
+      "bio-plane/test/m/instance-setup/identity.test.mjs",
+      "bio-plane/test/m/instance-setup/places.test.mjs",
+      "bio-plane/test/m/instance-setup/profiles.test.mjs",
+      "bio-plane/test/m/instance-setup/requirements-ids.test.mjs",
+      "bio-plane/test/m/instance-setup/seeds.test.mjs",
+      "bio-plane/test/m/instance-setup/t48.test.mjs",
+      "bio-plane/test/m/instance-setup/t53-notices.test.mjs",
+      "bio-plane/test/m/instance-setup/t53.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/instance-setup/declared-ops.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/exports.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: \"layersset\" , \"maildomainset\" , \"maildoorset\" , \"mailsetup\" ,"
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/fixture.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , layers = null"
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/group.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , \"C-64.34\" , \"C-64.35\""
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/identity.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/places.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , localize"
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/profiles.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: if ( Array . isArray ( c ."
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/requirements-ids.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , \"R107\" , \"R108\" , \"R109\" , \"R111\""
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/seeds.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/t48.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/t53-notices.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R77, R78 (Provides before this land) while instance-setup's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/instance-setup/t53.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R2, R7, R12, R107, R108, R109, R111, R113, R114 (Provides before this land) while instance-setup's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/instance-setup/declared-ops.test.mjs",
+      "bio-plane/test/m/instance-setup/exports.test.mjs",
+      "bio-plane/test/m/instance-setup/fixture.mjs",
+      "bio-plane/test/m/instance-setup/group.test.mjs",
+      "bio-plane/test/m/instance-setup/identity.test.mjs",
+      "bio-plane/test/m/instance-setup/places.test.mjs",
+      "bio-plane/test/m/instance-setup/profiles.test.mjs",
+      "bio-plane/test/m/instance-setup/requirements-ids.test.mjs",
+      "bio-plane/test/m/instance-setup/seeds.test.mjs",
+      "bio-plane/test/m/instance-setup/t48.test.mjs",
+      "bio-plane/test/m/instance-setup/t53-notices.test.mjs",
+      "bio-plane/test/m/instance-setup/t53.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "answer-envelope",
+    "control-plane",
+    "installer",
+    "installer-copies",
+    "installer-steps",
+    "instance-reports",
+    "interface-shell",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "screens-action",
+    "screens-document",
+    "screens-entry",
+    "screens-inquiry",
+    "stewards",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_rescheduled_old_rule": [
+    "answer-envelope",
+    "control-plane",
+    "installer",
+    "installer-copies",
+    "installer-steps",
+    "instance-reports",
+    "interface-shell",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "screens-action",
+    "screens-document",
+    "screens-entry",
+    "screens-inquiry",
+    "stewards",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_noticed": []
+}
