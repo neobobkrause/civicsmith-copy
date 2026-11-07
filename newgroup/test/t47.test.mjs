@@ -43,11 +43,13 @@ test("R50 GET / asks only the permanent short name (R41's dialog) and the places
   const home = await text("/");
   const choose = section(home, "stage-choose"), before = section(home, "stage-before");
   assert.ok(choose && before, "two stages");
-  /* The first stage's asks: the short name and the places, nothing else. */
+  /* The first stage's asks: the short name, the places, and (installer-places R96) the region, nothing else. */
   /* (R72, DEC-257) the places' "none of these" is a choice of its own, `profile-none`. */
-  assert.deepEqual(controls(choose), ["input#slug", ...PROFILE_CHOICES.map(() => "input#[profile]"), "input#profile-none[profile-none]"]);
+  assert.deepEqual(controls(choose), ["input#slug", ...PROFILE_CHOICES.map((_, i) => `input#place-${i}[profile]`), "input#profile-none[profile-none]",
+    "input#region-mode-near[region]", "select#region-near", "input#region-mode-keep[region]", "select#region-keep"]);
   assert.ok(choose.includes(`<h2>${escd(word("screen.install.short.heading"))}</h2>`));
-  assert.ok(choose.includes(`<h2>${escd(word("installer.places.heading"))}</h2>`));
+  /* installer-places R94 amends R21: the places' heading asks where the work focuses. */
+  assert.ok(choose.includes(`<h2>${escd(word("installer.places.focus"))}</h2>`));
   /* What is needed, in one block, before the asks: R23's prerequisites and (T46) the parts the carried release cannot install. */
   assert.equal(home.split(`<h2>${escd(word("installer.need.heading"))}</h2>`).length - 1, 1, "one block");
   const need = section(home, "need");
