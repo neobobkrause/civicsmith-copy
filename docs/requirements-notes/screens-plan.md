@@ -14,3 +14,8 @@
 ## Provider notices
 
 - `action-plans:726` — checked. The plan screen imports no `action-plans` export. It reads the `plan` op's answer, and the fields this job draws (an option's `addressee` and `tier`, a phase's `condition` and `branches`) have the same shape in `bio-plane/src/action-plans/values.mjs` on this branch (`addresseeOf`, `checkPhases`). No change needed.
+
+## Attempt 2 (7 Nov 2026): re-test against screens-action's new interface
+
+- **screens-action, land a801611ef0 (PR 910).** That land changed only screens-action's own move test (`requirements-moved.test.mjs`) and its notes. No file under `bio-plane/src/screens-action/` changed, and neither did the `send-steps.mjs` exports `plan.mjs` imports (`readOnly`, `WRITE_HELP`, `actName`, `citeOf`, `later`). After `job sync` brought in `layer/11`, the module's suite passes with no code change: R9 and R10 pass, and R8 stays a `test.todo`.
+- **R8 is still not met, for the same reason.** `plan-work.takeUpsFor` is still called only by `action-producers`. No op declared in `op-declarations` lets a screen read take-ups, and `itemTakeUp` still takes no target date.
