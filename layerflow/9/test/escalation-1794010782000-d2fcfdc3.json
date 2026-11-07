@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "escalation",
+  "session": "session_018Bhcegrat1rLq6hPkZy7v9",
+  "started": "2026-11-07T00:19:42Z",
+  "ended": "2026-11-07T00:21:10Z",
+  "at": "2026-11-07T00:21:10Z",
+  "minutes": 1.47,
+  "result": "pass",
+  "layer": 9,
+  "suite_seconds": 8.053,
+  "tests": {
+    "total": 104,
+    "pass": 104,
+    "fail": 0
+  }
+}
