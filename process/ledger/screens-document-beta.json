@@ -41,7 +41,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-07T20:58:00Z"
+    "state": "WORKING",
+    "at": "2026-11-07T21:24:13Z",
+    "reason": "reopened: BOB ruling, 7 Nov (your block of 20:50): your paths now include the 8 screens-inquiry document tests (r137-document, fr3-document, fr6-pages, fr28-document-acts, t51-fix12-b90, t51-fix13-b92, t51-fix14-r139, t51-document). Meet R70 (interface-shell R138 cs.picker: the picker's field ids and choice memory), R71's code part (Seed A re-timing stays owed: a live act) and R73's last clause (no 64-hex fingerprint printed whole; update screens-inquiry t51-document's R66 assertion). R75: amend its text first, to the UX lane's decision (7 Nov): document bare or not found draws R35's 'Nothing is here' with the way back to its place as interface-shell R61 draws it (no separate 'Go to Home'); crumbs stay links; no new word; then meet it. Leave R58, R59, R60, R62-R69 and R72 open naming their providers (found marks placed by BOB)."
   }
 }
