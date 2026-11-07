@@ -5,3 +5,4 @@
 {"at":"2026-11-05T19:44:00Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (22 jobs ready). Then: job interface-shell-t53 complete, PR #548 ready, session session_018BhcecH5u4YnUZRULnW32M: run status"}
 {"at":"2026-11-05T19:44:10Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-07T16:31:30Z","row":"sent","n":4,"to":"bob","text":"job interface-shell-t53 BLOCKED: run status"}
+{"at":"2026-11-07T16:31:47Z","row":"outcome","n":4,"outcome":"delivered"}
