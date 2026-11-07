@@ -1,0 +1,16 @@
+{
+  "row": "gate",
+  "layer": 9,
+  "module": "action-holds",
+  "pr": 718,
+  "sha": "ea84a4fb3e60d0fdb8b12d87d5af5d82940c54fe",
+  "run_id": 42315341964,
+  "run_attempt": 1,
+  "at": "2026-11-06T23:59:42Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 3.06,
+  "suite_minutes": 0.2,
+  "record_only": false
+}
