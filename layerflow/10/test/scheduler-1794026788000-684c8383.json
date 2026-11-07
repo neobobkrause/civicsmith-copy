@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "scheduler",
+  "session": "session_018BhceeGFb49WBrDwSiFCbu",
+  "started": "2026-11-07T04:46:28Z",
+  "ended": "2026-11-07T04:48:15Z",
+  "at": "2026-11-07T04:48:15Z",
+  "minutes": 1.78,
+  "result": "pass",
+  "layer": 10,
+  "suite_seconds": 32.868,
+  "tests": {
+    "total": 202,
+    "pass": 200,
+    "fail": 0
+  }
+}
