@@ -1,6 +1,6 @@
 # hypotheses — requirements
 
-**Status** · In force: a new product module, reviewed (K1505; T33-46); a member's own notes as Bob ruled them (DEC-136, DEC-144). Last changed T41 (T41-16: R16–R21 new, the system's proposals and a note's share; R14 amended; as `draft-T41-investigation.md` §3.6, K2405, K2418), not yet met; every other requirement met (K1983). Last changed T42 (T42-13: R22 new, its own codes for C-134.22 and C-134.23, re-coded in place; N843; K2566, K2608), not yet met. T46 (T46-65: R23, migrations only as Durable Object SQLite authorizes; the 0.82.0 cut's fix, K2926).
+**Status** · In force: a new product module, reviewed (K1505; T33-46); a member's own notes as Bob ruled them (DEC-136, DEC-144). Last changed T41 (T41-16: R16–R21 new, the system's proposals and a note's share; R14 amended; as `draft-T41-investigation.md` §3.6, K2405, K2418), met (`t41.test.mjs`); every other requirement met (K1983). Last changed T42 (T42-13: R22 new, its own codes for C-134.22 and C-134.23, re-coded in place; N843; K2566, K2608), met (`t41.test.mjs`). T46 (T46-65: R23, migrations only as Durable Object SQLite authorizes; the 0.82.0 cut's fix, K2926).
 
 **Size (P6).** New. Expected 500–700 lines. It is not added to `inquiry` (3,903 lines, P6).
 
