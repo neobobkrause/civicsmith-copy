@@ -163,7 +163,7 @@ test("R33: 'Prepare the notice' fills the field with the notice as prepared, edi
   const open2 = await noticeAt({ held: false });
   const r = await openIn(open2.world, open2.me, open2.path);
   const b = await press(r, "holdnoticeprepare", { reason: "x" });
-  assert.ok(slot(r, b).includes(W("refusal.HOLD_NOT_IN_PLACE")), "a place with no hold prepares none");
+  assert.ok(slot(r, b).includes(W("screen.holdnotice.needhold")), "a place with no hold prepares none: a hold is needed first (R70)");
   assert.equal(r.doc.getElementById("hold-notice").value, "");
 });
 

@@ -46,7 +46,8 @@ test("R46: a records request that knows no office points to the organization's p
   assert.ok(link, "the reference");
   assert.equal(link.getAttribute("href"), `/app/person/${encodeURIComponent(subject)}`);
   assert.equal(link.textContent.trim(), W("screen.person.name"));
-  for (const k of ["screen.request.nooffice.pointer.a", "screen.request.nooffice.pointer.b", "screen.person.purpose"]) assert.ok(text(p).includes(W(k)), k);
+  // R74 (T53): the pointer reads as one sentence: where to go and what to add there
+  for (const k of ["screen.request.nooffice.pointer.people", "screen.person.purpose"]) assert.ok(text(p).includes(W(k)), k);
   assert.deepEqual((await me.read("addresseesuggest", { query: { subject } })).offices, [], "the store holds no office for that name");
   await officeFor(me, subject, "City Clerk", "Office of the City Clerk");
   const known = await openIn(world, me, at);
@@ -56,8 +57,7 @@ test("R46: a records request that knows no office points to the organization's p
 
 test("R39, R46 (R19): each key the new lines name is a word of setup-words, on the screen that draws it", () => {
   const words = new Set(SCREENS.find((s) => s.id === "request").words);
-  for (const k of ["screen.request.subject.label", "screen.request.subject.help", "screen.request.nooffice.pointer.a",
-    "screen.request.nooffice.pointer.b", "screen.person.name", "screen.person.purpose"]) {
+  for (const k of ["screen.request.subject.label", "screen.request.subject.help", "screen.request.nooffice.pointer.people", "screen.person.name", "screen.person.purpose"]) {
     assert.ok(hasWord(k), `${k} is a word`);
     assert.ok(words.has(k), `request reads ${k}`);
   }

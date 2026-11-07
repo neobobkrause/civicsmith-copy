@@ -61,6 +61,15 @@ export const hold = Object.freeze({
       (Array.isArray(m.from) ? m.from : []).forEach(function (f) { const k = JSON.stringify(f); if (f && !seen[k]) { seen[k] = true; froms.push(f); } });
       return froms.length ? froms.map(function (f) { return Object.assign({}, place, { from: f }); }) : [place];
     },
+    // R70 (T53): the notice's link carries ids, not encoded text: `<action>~<entry>`, `<action>` for a whole action, `<project>` or
+    // `<project>~d.<docket entry>` / `~p.<pressure record>` for a project's hold placed from one
+    linkOf: function (place) {
+      if (!place || typeof place !== "object") return "";
+      if (place.target) return encodeURIComponent(place.target) + (Number.isInteger(place.ord) ? "~" + place.ord : "");
+      if (!place.project) return "";
+      const f = place.from && typeof place.from === "object" ? place.from : null;
+      return encodeURIComponent(place.project) + (f && f.docket_entry ? "~d." + encodeURIComponent(f.docket_entry) : f && f.pressure ? "~p." + encodeURIComponent(f.pressure) : "");
+    },
     // C94 (R56): the member who marked it, by her handle
     who: function (cs, by) { const b = by && typeof by === "object" ? by.handle || by.member : by; const id = String(b || "").replace(/^member:/, ""); return id ? cs.memberName(id) : ""; },
   },
@@ -107,15 +116,23 @@ export const hold = Object.freeze({
         + '<p class="mk-note">' + cs.w("screen.hold.who") + " " + cs.w("screen.hold.who.own") + "</p>"
         + '<div class="mk-acts">' + cs.act("actionhold", { tone: "primary" }) + "</div>") : "";
 
-      // tell members what to keep: the notice is prepared on its own screen
-      const notice = options.length ? cs.sec("screen.hold.tell.heading", '<p class="mk-note">' + cs.w("screen.hold.tell.inside") + " " + cs.w("screen.hold.tell.outside") + "</p>"
-        + '<a class="cs-ref" href="/app/holdnotice/' + encodeURIComponent(pre ? pre.value : options[0].value) + '" data-nav>' + cs.w("screen.hold.notice.link") + "</a>") : "";
+      // tell members what to keep: the notice is prepared on its own screen. R70 (T53): it stays offered once the hold is placed (a place
+      // that holds one first, the subject's where it is one), and its link carries the place's ids, never encoded text
+      const heldNow = view.data.held && view.data.held.state === "ok" && view.data.held.value && Array.isArray(view.data.held.value.items) ? view.data.held.value.items : [];
+      const heldPlaces = [];
+      heldNow.forEach(function (m) { P.heldPlacesOf(m).forEach(function (at) { heldPlaces.push(at); }); });
+      const mine = heldPlaces.find(function (at) { return subject && at.target === subject; }) || heldPlaces[0]
+        || (pre ? P.placeIn(pre.value) : options.length ? P.placeIn(options[0].value) : null);
+      const noticeHref = mine ? P.linkOf(mine) : "";
+      const notice = noticeHref ? cs.sec("screen.hold.tell.heading", '<p class="mk-note">' + cs.w("screen.hold.tell.inside") + " " + cs.w("screen.hold.tell.outside") + "</p>"
+        + '<a class="cs-ref" href="/app/holdnotice/' + noticeHref + '" data-nav data-notice="1">' + cs.w("screen.hold.notice.link") + "</a>") : "";
 
       // pressure that arrived outside any action: evidence wherever it arrives, creating no action
       const helpPress = view.reachable ? cs.act("writinghelp", { data: { field: "pressure", id: "hold-press", forop: "pressurerecord" } }) : "";
       const projectChoice = projects.length ? cs.choice("hold-press-project", "screen.hold.for.label", projects.map(function (b) { return { value: b.bundle_id, text: b.title || b.bundle_id }; })) : "";
       const press = projects.length ? cs.sec("screen.hold.press.heading", projectChoice
-        + cs.choice("hold-press-kind", "screen.action.pressure.kind", ["legal", "retaliation", "discrediting", "other"].map(function (k) { return [k, "screen.action.pressure." + k]; }))
+        // R70 (T53): the kinds in the member's words, with capitals ("Legal", "Retaliation")
+        + cs.choice("hold-press-kind", "screen.action.pressure.kind", ["legal", "retaliation", "discrediting", "other"].map(function (k) { return [k, "screen.hold.kind." + k]; }))
         + cs.field("hold-press", "screen.hold.press.label", { rec: true, max: 500, help: "screen.hold.press.help1" }) + helpOf("screen.hold.press.help2")
         + '<div class="mk-acts">' + cs.act("pressurerecord", {}) + helpPress + "</div>") : "";
 
@@ -130,7 +147,7 @@ export const hold = Object.freeze({
           offer({ value: JSON.stringify(at), text: [typeof m.reason === "string" ? m.reason.trim() : "", dayOf(m.at), cs.w("screen.action.held")].filter(Boolean).join(" \u00b7 ") });
         });
       });
-      options.forEach(function (o) { offer({ value: o.value, text: o.text }); });
+      // R70 (T53): "Release the hold" is offered only for a place that has a hold
       const chosen = view.ui && view.ui.releaseFor && kept.some(function (k) { return k.value === view.ui.releaseFor; }) ? view.ui.releaseFor : "";
       const titleOf = function (id) { const b = projects.find(function (x) { return x.bundle_id === id; }); return b ? b.title || id : id; };
       const prev = view.data.preview;
@@ -194,8 +211,11 @@ export const holdNotice = Object.freeze({
   place: function (view) {
     const rows = view.data.projects && view.data.projects.state === "ok" && view.data.projects.value && Array.isArray(view.data.projects.value.bundles)
       ? view.data.projects.value.bundles : [];
+    // R70 (T53): the subject is the place's ids (`<project>`, `<project>~d.<id>`), or an earlier link's JSON
+    const raw = decodeURIComponent(String(view.subject || ""));
     let place = null;
-    try { place = JSON.parse(decodeURIComponent(String(view.subject || ""))); } catch (e) { place = null; }
+    if (raw.charAt(0) === "{") { try { place = JSON.parse(raw); } catch (e) { place = null; } }
+    else if (raw && !/^ACTN-/.test(raw)) place = { project: raw.split("~")[0] };
     const hit = place && place.project ? rows.find(function (b) { return b.bundle_id === place.project; }) : null;
     return hit ? { project: { id: place.project, title: hit.title || place.project } } : {};
   },
@@ -206,9 +226,18 @@ export const holdNotice = Object.freeze({
 
   parts: {
     readOnly: readOnly,
-    // the place the screen's subject names: the same shape `hold` placed the hold at
+    // the place the screen's subject names: the same shape `hold` placed the hold at. R70 (T53): the subject carries the place's ids
+    // (`<action>~<entry>`, `<action>`, `<project>`, `<project>~d.<docket entry>`, `<project>~p.<pressure record>`); an earlier link's JSON is read too
     placeOf: function (view) {
-      try { const p = JSON.parse(String(view.subject || "")); return p && typeof p === "object" ? p : null; } catch (e) { return null; }
+      const raw = decodeURIComponent(String(view.subject || "")).trim();
+      if (!raw) return null;
+      if (raw.charAt(0) === "{") { try { const p = JSON.parse(raw); return p && typeof p === "object" ? p : null; } catch (e) { return null; } }
+      const parts = raw.split("~");
+      const id = parts[0], rest = parts.slice(1).join("~");
+      if (/^ACTN-/.test(id)) return /^\d+$/.test(rest) ? { target: id, ord: Number(rest) } : { target: id };
+      if (/^d\./.test(rest)) return { project: id, from: { docket_entry: rest.slice(2) } };
+      if (/^p\./.test(rest)) return { project: id, from: { pressure: rest.slice(2) } };
+      return { project: id };
     },
   },
 
@@ -233,8 +262,10 @@ export const holdNotice = Object.freeze({
       + cs.choice("hold-sent-how", "screen.start-send.how", ["email", "message", "person", "other"].map(function (k) { return [k, "screen.holdnotice.how." + k]; }))
       + cs.field("hold-account", "screen.holdnotice.account.label", { area: true, rec: true, help: "screen.holdnotice.account.help" })
       + '<div class="mk-acts">' + cs.act("holdnoticesent", { tone: "primary" }) + helpSent + "</div></div>");
+    const sentDone = view.ui.sentDone && ["email", "message", "person", "other"].indexOf(view.ui.sentDone.how) >= 0
+      ? '<p class="mk-note" role="status" data-sent="1">' + cs.w("screen.holdnotice.sent.done", { date: { html: cs.date(view.ui.sentDone.at) }, how: { html: cs.w("screen.holdnotice.way." + view.ui.sentDone.how) } }) + "</p>" : "";
     const not = cs.sec("screen.holdnotice.not.heading", '<p class="mk-note">' + cs.w("screen.holdnotice.not.records") + " " + cs.w("screen.holdnotice.not.nomember") + "</p>");
-    return head + listed + notice + sentSec + not;
+    return head + listed + notice + sentSec + sentDone + not;
   },
 
   acts: [
@@ -242,10 +273,11 @@ export const holdNotice = Object.freeze({
       // R33: "Prepare the notice": the text assembled from the record for a hold in place, editable; a released hold prepares none.
       op: "holdnoticeprepare",
       send: function (view) {
-        let place = null;
-        try { place = JSON.parse(String(view.subject || "")); } catch (e) { place = null; }
+        const place = view.parts.placeOf(view);
         return place ? { body: { place: place } } : null;
       },
+      // R70 (T53): "Prepare the notice" before a hold is placed says a hold is needed first
+      refusals: { HOLD_NOT_IN_PLACE: "screen.holdnotice.needhold" },
       rereads: [],
       done: function (view, answer, cs) {
         const a = answer && answer.result !== undefined ? answer.result : answer;
@@ -257,14 +289,19 @@ export const holdNotice = Object.freeze({
       // compliance of any member is sent or recorded.
       op: "holdnoticesent", outward: true,
       send: function (view, el, cs) {
-        let place = null;
-        try { place = JSON.parse(String(view.subject || "")); } catch (e) { place = null; }
+        const place = view.parts.placeOf(view);
         const at = String(cs.value("hold-sent-at") || "").trim();
         const account = String(cs.value("hold-account") || "").trim();
         if (!place || !/^\d{4}-\d{2}-\d{2}$/.test(at) || !account) return null;
+        view.ui.sentAs = { at: at, how: String(cs.value("hold-sent-how") || "email") };
         return { body: { place: place, at: at, medium: String(cs.value("hold-sent-how") || "email"), account: account } };
       },
       rereads: [],
+      // R75 (T53): recording ends in a sentence saying it was recorded, how and when ("in person" is a way, never a name), and that no recipient is kept
+      done: function (view, answer, cs) {
+        const r = answer && answer.result !== undefined ? answer.result : answer;
+        if (r && r.ok !== false && view.ui.sentAs) cs.set("sentDone", view.ui.sentAs);
+      },
     },
     WRITE_HELP,
   ],

@@ -532,6 +532,8 @@ export const plan = Object.freeze({
       // R1, R44 (a): "Add an option": the line, its kind, its matter and, as the member gives them, who it is directed to, the
       // dates that bind it (each with its basis), the tier, the seeking-enforcement mark with the requirement it seeks.
       op: "optionadd",
+      // R81 (T53; interface-shell R119): "Add an option" pressed with what the option is empty names the field before any reason is asked
+      ready: function (view, el, cs) { return String(cs.value("plan-opt-summary") || "").trim() ? null : { refuse: "screen.plan.option.needed" }; },
       refusals: {
         OPTION_NO_SUMMARY: function (r, cs) { return cs.w("screen.plan.an.option.needs.a.line.saying") + " " + cs.w("screen.plan.write.one.and.add.it.again"); },
         OPTION_NO_SUBJECT: function (r, cs) { return cs.w("screen.plan.choose.at.least.one.matter.the") + " " + cs.w("screen.plan.an.option.cannot.serve.a.matter"); },
