@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "stewards",
+  "round": 1,
+  "started": "2026-11-07T18:34:46Z",
+  "ended": "2026-11-07T18:36:43Z",
+  "minutes": 2,
+  "tested_on": "92f5416be9dd1cd31c36527d3f439fa235b5856c",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T18:36:43Z"
+}
