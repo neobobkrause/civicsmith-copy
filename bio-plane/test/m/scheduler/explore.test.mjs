@@ -12,7 +12,7 @@ const iso = (ms) => new Date(ms).toISOString();
 /* ---- R26: question-explorer's consumer ---- */
 
 test("R26, R5, R2: question-explore closes the registry after document-copy, answers under explore, is question-explorer's alone, and is neither ranked nor daily", () => {
-  assert.equal(SCHEDULER_ORDER.at(-2), "question-explore", "G55's `ingest` (R24) closes the registry after it");
+  assert.deepEqual(SCHEDULER_ORDER.slice(-5), ["question-explore", "register-import", "discard-clear", "mail-clear", "ingest"], "T53's three (R34, R35) follow it, and G55's `ingest` (R24) closes the registry");
   assert.equal(SCHEDULER_ORDER.indexOf("question-explore"), SCHEDULER_ORDER.indexOf("document-copy") + 1);
   assert.equal(SCHEDULER_KEYS["question-explore"], "explore");
   assert.equal(RANKED.includes("question-explore"), false, "its batch is question-explorer's own (its R2's 200)");

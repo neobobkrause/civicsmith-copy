@@ -8,6 +8,7 @@ Nothing here is read by the build. Sources and generators go in `docs/developmen
 
 | File | What it holds |
 | --- | --- |
+| `open-asks.md` | Every open ask at the account switch (7 Nov): who owns it, its state, and the design documents it lives in. **Read it second.** |
 | `qualification-2026-11-07.md` | The dated qualification record. It covers what was researched and by which workers, the sources (including those that could not be read), the open questions, and the ground truth the lane now holds. |
 | `process-canon.md` | The Process3 rules that govern the lane. Covers the Foundations SES-14 and SES-19 to SES-23 (verbatim), the pinned `.process` lane rows, the gate's lane-only path, how asks arrive and what an answer must hold, and what counts as Bob's decision. Also the earlier lane's history (D, H and K numbering) and eleven conflicts between sources. |
 | `canon.md` | The product's principles that bind investigation design, with their ranking. Has `BIO_Investigation_v0_1.md` summarised section by section, and the other architecture documents that define investigation terms. Ends with conflicts and stale points (Action v0.1 vs v0.2, the three meanings of "objective", the four names for a question, regrade, DEC-84). |

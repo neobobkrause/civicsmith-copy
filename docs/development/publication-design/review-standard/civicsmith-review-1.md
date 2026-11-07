@@ -3,7 +3,7 @@ id: civicsmith-review/1
 title: How a published case is reviewed
 status: draft
 drafted: 2026-11-06
-decision: BD-8 (BOB, 6 Nov 2026), with BD-9, BD-10 and BD-11 (Bob, 6 Nov 2026)
+decision: BD-8 (BOB, 6 Nov 2026), with BD-9, BD-10 and BD-11 (Bob, 6 Nov 2026) and BD-15 item 5 (Bob, 7 Nov 2026)
 ai_page: How Civicsmith uses AI (how-civicsmith-uses-ai.md; its link is set where the ux lane places it)
 ---
 
@@ -20,6 +20,7 @@ Civicsmith adopts this standard voluntarily. It is modelled on the EU Code of Pr
 - The group named on the case as having ratified it holds editorial responsibility for that edition. The group decided what it says and chose to publish it.
 - A member of the group who is an owner of the case signed the edition. The signature covers the exact text of the edition.
 - Members who approved the edition before signing are listed with it.
+- Funders have no say over a case's conclusions. Where a case states who paid for the work, it does so in its funding statement, naming its funders and any part they had. A case that makes no statement says so, and does not claim that no one paid.
 - How Civicsmith uses AI, and how that relates to rules such as the EU AI Act, is explained on the page [How Civicsmith uses AI](../how-civicsmith-uses-ai.md).
 - To respond to a publication, use its docket (section 5).
 

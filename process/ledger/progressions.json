@@ -1,0 +1,49 @@
+{
+  "id": "progressions",
+  "title": "progressions: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/progressions/",
+    "build/requirements/progressions.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/progressions/"
+  ],
+  "requirements": "build/requirements/progressions.md",
+  "uses": [
+    "record-grammar",
+    "civil-time",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "events",
+    "local-facts",
+    "connections",
+    "standards",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/progressions.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "people",
+  "title": "people: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/people/",
+    "build/requirements/people.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/people/"
+  ],
+  "requirements": "build/requirements/people.md",
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "provenance",
+    "content",
+    "sources",
+    "entities",
+    "events",
+    "lines",
+    "money",
+    "duties",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/people.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

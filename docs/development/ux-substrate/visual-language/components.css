@@ -162,6 +162,8 @@ textarea.cs-input { min-height: 96px; resize: vertical; }
 .cs-grade[data-scale="testimony"]  { color: var(--c-testimony);  background: var(--c-testimony-tint); }
 .cs-grade[data-scale="subject"]    { color: var(--c-subject);    background: var(--c-subject-tint); }
 .cs-grade .sc { font-weight: 500; font-size: var(--t-xs); }
+/* DEC-496 (Q9.7): a letter's word gloss sits beside the chip, in running text's ink, never inside its color. */
+.cs-gloss { font: 400 var(--t-sm)/1.4 var(--f-sans); color: var(--c-ink-2); margin-inline-start: 6px; }
 .cs-strength { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .cs-strength .phrase { font-size: var(--t-sm); color: var(--c-ink-2); }
 .cs-strength .phrase b { color: var(--c-ink); }
