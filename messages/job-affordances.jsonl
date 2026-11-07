@@ -18,3 +18,4 @@
 {"at":"2026-11-05T04:46:56Z","row":"outcome","n":9,"outcome":"delivered"}
 {"at":"2026-11-07T17:02:54Z","row":"sent","n":10,"to":"bob","text":"job affordances BLOCKED: run status"}
 {"at":"2026-11-07T17:03:11Z","row":"outcome","n":10,"outcome":"delivered"}
+{"at":"2026-11-07T17:20:29Z","row":"sent","n":11,"to":"bob","text":"job affordances complete, PR #808 ready, session session_018Bhcec82RmNc9PvGb1KG13: run status"}
