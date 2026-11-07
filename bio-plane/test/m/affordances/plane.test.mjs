@@ -529,7 +529,7 @@ test("R17 R37: with no target, the catalogue — each act decorated with applies
   /* R17's six keys, all present; the control plane's door may add its own decoration beside them (`fences`, `pack`:
      control-plane R41, K585 (1), K730) and nothing else */
   const SIX = ["capture_acts", "catalog", "detail", "set_acts", "target", "vocabularies", "screens", "wizard_scripts" /* R37 */,
-    "answer_checks" /* K1601 */, "writing_help_refused" /* R44 */, "act_help" /* R49 */];
+    "answer_checks" /* K1601 */, "writing_help_refused" /* R44 */, "act_help" /* R49 */, "dimension_onward" /* R73 */];
   assert.deepEqual(SIX.filter((k) => !Object.hasOwn(r, k)), []);
   assert.deepEqual(Object.keys(r).filter((k) => !SIX.includes(k) && !["fences", "pack"].includes(k)), []);
   assert.equal(r.target, null);
