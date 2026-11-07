@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "observation-log",
+  "pr": 797,
+  "branch": "job/observation-log",
+  "head": "fd69a06d7243fef6c5ee15807178dd6aa076d89d",
+  "before": "edde8a8b63c88f4a826ffdecde311c0a7bde372c",
+  "merge": "18026ba572a5b745699140f378a359da123aa00d",
+  "at": "2026-11-07T16:37:56Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}

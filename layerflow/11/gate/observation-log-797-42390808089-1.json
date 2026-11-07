@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "observation-log",
+  "pr": 797,
+  "sha": "c66b0f5ee32f118735a10405d3959a6116f57f2e",
+  "run_id": 42390808089,
+  "run_attempt": 1,
+  "at": "2026-11-07T16:21:34Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 1,
+  "suite_minutes": null,
+  "record_only": true,
+  "whole": false
+}
