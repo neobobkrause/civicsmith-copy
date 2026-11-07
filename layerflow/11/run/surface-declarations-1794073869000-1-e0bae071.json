@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "surface-declarations",
+  "round": 1,
+  "started": "2026-11-07T17:51:09Z",
+  "ended": "2026-11-07T17:52:45Z",
+  "minutes": 1.6,
+  "tested_on": "17327a9ed57b35375763a5a9c70d8bc918eb5173",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T17:52:45Z"
+}
