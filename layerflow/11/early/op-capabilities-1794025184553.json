@@ -1,0 +1,10 @@
+{
+  "row": "early",
+  "layer": 11,
+  "module": "op-capabilities",
+  "from": 10,
+  "base": "c4b60fd668cd11962ce513c535470a2b1ee38105",
+  "providers": [],
+  "at": "2026-11-07T04:19:44Z",
+  "by": "bob"
+}
