@@ -565,3 +565,4 @@
 {"at":"2026-11-07T19:57:40Z","row":"check","by":"layer publish","live":28,"live_at":"2026-11-07T18:55:12Z","live_measured":17,"started_since":11,"job_cap":20,"startable":16}
 {"at":"2026-11-07T20:03:09Z","row":"check","by":"github note","live":"unmeasured","live_at":"2026-11-07T18:55:12Z","job_cap":20,"startable":null}
 {"at":"2026-11-07T20:08:55Z","row":"check","by":"job start","live":"unmeasured","live_at":"2026-11-07T18:55:12Z","job_cap":20,"startable":null}
+{"at":"2026-11-07T20:13:59Z","row":"check","by":"job start","live":"unmeasured","live_at":"2026-11-07T18:55:12Z","job_cap":20,"startable":null}
