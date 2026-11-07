@@ -102,3 +102,9 @@ test("R39, R11: a copy in a project the viewer may not see yields no item; the r
   assert.ok(!JSON.stringify(r).includes("PRJ-H"));
   assert.equal(byId(r)["FINDING::wizard-base-updated::WIZ-G::WIZ-B@2::ed"].case.ungrouped, true, "a group copy has no project home");
 });
+
+/* R58, R59 stay not yet met (T53): instance-setup's `placeArrivals` does not yet answer an arrival's `layer` (its R113, not yet
+   met) or level, no provider read states a layer's changed rule keys for `layer-rule-changed`, and the word list holds no
+   `queue.layer-rule-changed.*` words nor a level form of `queue.place-profile-arrived.*`. A test here would hand-build those. */
+test.todo("R58: an update adding a layer of any level raises one arrival to each administrator; a layer whose rule in the active chain changed raises layer-rule-changed once per update (provider read and words owed)");
+test.todo("R59: the arrival item is keyed by the layer id, an item raised before keeps its key, and two layers named alike each name their level (instance-setup R113 and words owed)");
