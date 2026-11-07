@@ -63,8 +63,7 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: capture-requests:182 (index.mjs:710 calls capture-requests leads() and acts on each row's attribution.ok, which now reads the request's principal filled from the run's principal_ai). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T16:37:11Z",
-    "reason": "reopened: meet the unmet requirement marks R57, R58, R59; also confirm or adapt to the provider notice monitoring:743"
+    "state": "COMPLETE",
+    "at": "2026-11-07T16:49:57Z"
   }
 }
