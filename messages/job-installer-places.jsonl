@@ -3,3 +3,4 @@
 {"at":"2026-11-07T20:06:19Z","row":"sent","n":2,"to":"bob","text":"job installer-places BLOCKED: run status"}
 {"at":"2026-11-07T20:06:36Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-07T20:15:07Z","row":"sent","n":3,"to":"bob","text":"job installer-places complete, PR #853 ready, session session_018BhcedJheZGPw97XmzfT9V: run status"}
+{"at":"2026-11-07T20:15:27Z","row":"outcome","n":3,"outcome":"delivered"}
