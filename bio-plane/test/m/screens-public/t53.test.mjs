@@ -1,8 +1,9 @@
-/* screens-public T53 (JOURNEYS, DEC-479): the doorbell's receipt (R86), over the real doorbell's answer.
+/* screens-public T53 (JOURNEYS, DEC-479): the doorbell's receipt (R86), over the real doorbell's answer; R101, R102, R104 on the published page.
  * The code lives in bio-plane/src/screens-publish/ until a job of this module moves it; the drawing is screens-publish's fixture. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { open, openWorld, drew, ok, word, norm, choose as chooseIn, press as pressIn } from "../screens-publish/fixtures.mjs";
+import { open, openWorld, drew, drewIn, main, groupName, ok, word, norm, choose as chooseIn, press as pressIn } from "../screens-publish/fixtures.mjs";
+import { publishedCase } from "./world.mjs";
 
 const choose = (p, id) => chooseIn(p, id, new Uint8Array([111, 107]));
 const press = (p) => pressIn(p, "knock");
@@ -53,10 +54,52 @@ test("R86 control: a receipt with no reference draws no 'What to keep' heading, 
   assert.ok(at(r, "screen.doorbell.receipt.size", { size: "2 B" }) >= 0, "R49's size still drawn");
 });
 
-for (const [id, what] of [
-  ["R84", "on the page: published lists screens-public's ungradedStatement among its parts and draws it at the top of the edition and of a signed case (screens-publish's hook)"],
-  ["R100", "on the page: published draws screens-public's evidenceList and signatureShown in place of its EVIDENCE section and verify.detail (screens-publish's hook)"],
-  ["R101", "'Read the case' (with the time), 'Check it' (short paste) and 'Print the case' each draw a sentence on press; the re-read and print rows are owed, and the acts are screens-publish's"],
-  ["R102", "the unrated line is short and the 'NO BAR IS RECORDED' paragraph folds; words owed"],
-  ["R104", "published, the public docket and review-outside draw the group's name at head, 'Made with Civicsmith' at foot, tab '<case> - <group>'; the foot row is owed, and the screens are screens-publish's"],
-]) test.todo(`${id} ${what}`);
+/* R101, R102, R104 on the public pages themselves (screens-publish's screens, which draw them), over public-read's real answer. */
+const PUBLIC = { session: null };
+const page = (answer, boot = PUBLIC) => open(`/app/published/${answer.caseId}`, { boot, plane: { publishedcase: ok(answer) } });
+
+test("R102: a case whose evidence no member has graded draws one short line saying what would grade it, and the no-bar paragraph folded", async () => {
+  const { byCase } = publishedCase({ ungraded: [0, 1], graded: false });
+  const p = await page(byCase);
+  const card = main(p).querySelector("[data-finding]");
+  const line = card && card.querySelector('[data-ungraded="both"]');
+  assert.ok(line && drewIn(line, "screen.published.ungraded.line"), "the short line");
+  assert.ok(!drewIn(card, "screen.published.strength.unrated"), "not the long axis lines");
+  const fold = main(p).querySelector('details[data-fold="screen.published.ungraded.more"]');
+  assert.ok(fold && !fold.open, "the no-bar paragraph is folded");
+  assert.ok(drewIn(fold.querySelector("summary"), "screen.published.ungraded.more"));
+  assert.ok(fold.querySelector("[data-bar-none]"), "the paragraph is inside the fold");
+});
+
+/* "Neither" read as the ungraded line and its fold: the no-bar paragraph is R6's ("no bar declared"), drawn whenever the edition
+   declares no bar, graded or not, and is folded there too. */
+test("R102 control: a case with graded evidence draws no ungraded line", async () => {
+  const { byCase } = publishedCase({ ungraded: [] });
+  const p = await page(byCase);
+  assert.equal(main(p).querySelectorAll("[data-ungraded]").length, 0);
+  assert.equal(drew(p, "screen.published.ungraded.line"), false);
+});
+
+test("R101: 'Check it' with a short paste says how many characters are needed and sends nothing; a valid paste checks as before (control)", async () => {
+  const { byCase } = publishedCase();
+  const p = await page(byCase);
+  await pressIn(p, "verify", { nth: 1, values: { "pb-sha": "abc123" } });
+  assert.ok(drew(p, "screen.published.choose_a_file_or_paste"), "the sentence naming the 64 characters, by its key");
+  assert.equal(p.byOp("verify").length, 0, "nothing sent");
+  const sha = "b".repeat(64);
+  await pressIn(p, "verify", { nth: 1, values: { "pb-sha": sha } });
+  assert.equal(p.byOp("verify").at(-1).query.sha256, sha);
+});
+test.todo("R101 'Read the case' says it re-read, with the time: owed by screens-publish (the `publishedcase` act has no `done`) and the word table (no row)");
+test.todo("R101 'Print the case' says why it cannot print: owed by interface-shell (`cs.print` answers no failure), screens-publish (`pubprint`) and the word table");
+
+test("R104: with no session, the published case draws the group's public name at the head and 'Made with Civicsmith' at the foot", async () => {
+  const { byCase } = publishedCase();
+  for (const boot of [PUBLIC, {}]) {
+    const p = await page(byCase, boot);
+    const head = main(p).querySelector("[data-pubhead]"), foot = main(p).querySelector("[data-pubfoot]");
+    assert.ok(head && norm(head.textContent) === norm(await groupName()), "the group's name at the head");
+    assert.ok(foot && drewIn(foot, "case-grammar.text.made", { product: word("shell.mark") }), "the foot");
+  }
+});
+test.todo("R104 the browser tab reads '<case title> - <group name>': owed by interface-shell (`page.title.public`)");

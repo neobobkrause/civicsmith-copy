@@ -27,3 +27,19 @@ The module's code lives in `bio-plane/src/screens-public/` (ledger, BOB 5 Nov 21
 - R101: word rows for "read again at {time}" and "cannot print: {why}" (none in the table).
 - R102: the short unrated line and the folded "NO BAR IS RECORDED" paragraph's words (the requirement says words owed).
 - R104: the "Made with Civicsmith" foot row (none in the table), and screens-publish's three screens.
+
+## Attempt 2 (7 Nov 2026), reopened for R101, R102, R104. Reader: BOB.
+
+Since attempt 1, screens-publish wired the public pages for most of these lines; this attempt tests them on the real `published` page, over public-read's real `publishedcase` answer (`world.mjs`, now with `graded` and the case read by `caseId`), in `t53.test.mjs`. Test-only: no source of this module changed.
+
+- **R102 met** (mark struck): a case no member has graded draws one short line (`screen.published.ungraded.line`) in place of the long unrated lines, and the no-bar paragraph folded under `screen.published.ungraded.more`. Control: a graded case draws no ungraded line. Reading: the control's "neither" is taken as the ungraded line; the no-bar paragraph is R6's ("no bar declared") and is drawn, folded, whenever the edition declares no bar, graded or not.
+- **R101 still open**: "Check it" with a short paste names the 64 characters and sends nothing (tested). Owed: "Read the case" saying it re-read with the time (the `publishedcase` act in `published.mjs` has no `done`, and the word table has no row), and "Print the case" saying why it cannot print (`cs.print` in interface-shell's browser kit swallows the failure and always answers true; `pubprint` in `published.mjs` would need to say it; no word row).
+- **R104 still open**: the head (the group's public name) and the foot ("Made with Civicsmith") are drawn on `published` signed in and out (tested here; screens-publish tests the docket and review-outside too). Owed: the tab title "<case title> - <group name>", which is interface-shell's (`page.title.public`).
+
+### Found marks to report
+
+1. screens-publish: `published.mjs`'s `publishedcase` act gets a `done` that says the case was read again, with the time (R101).
+2. screens-publish: `pubprint` says why it cannot print when the kit says so (R101); needs (3).
+3. interface-shell: `cs.print()` answers whether the browser printed, or why not (R101).
+4. interface-shell: the public frame's tab title reads "<case title> - <group name>" (R104).
+5. setup-words (word table): rows for "read again at {time}" and "cannot print: {why}" (R101).

@@ -175,6 +175,8 @@ globalThis.fetch = async (input, init = {}) => {
 
 /* ---- one act ---- */
 const begin = await worker.fetch(new Request(ORIGIN + "/begin", { method: "POST",
+  /* installer-check R90: an install begins after a passed "Check my account" for its short name (the `chk` cookie). */
+  headers: cfg.mode === "install" ? { cookie: "chk=" + Buffer.from(JSON.stringify({ slug, t: Date.now() })).toString("base64url") } : {},
   body: JSON.stringify({ slug, mode: cfg.mode, ...(cfg.mode === "update" ? { version: cfg.chosen } : {}) }) }));
 const j = await begin.json();
 const cookie = (begin.headers.get("set-cookie") || "").split(";")[0];
