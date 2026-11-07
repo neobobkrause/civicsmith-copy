@@ -68,4 +68,19 @@ Four read-only workers (subagents) ran in parallel. Each cloned its own checkout
 ### Lane's own (to settle once asks are open)
 
 - **Q10.** The canon says regrade is not built, but the case checker has lens code, and its requirements carry no "not yet met" mark. The lane will verify this in code and then correct the canon or the requirements.
+  - **Settled 2026-11-07: the canon is the stale side; regrade is built.**
+  - The lens re-check is case-checker R23 (`bio-plane/src/case-checker/lens.mjs`:24; `check.mjs`:824, :907).
+  - Regrading an imported case is case-import R27 and R28, `op=importregrade` (`bio-plane/src/case-import/index.mjs`:146-148, :1146; `checks.mjs`:28). It is tested at the door in `bio-plane/test/m/case-import/regrade.test.mjs`.
+  - Rerun is `op=rerunread`, which `bio-plane/src/screens-inquiry/project.mjs`:50 and :1018 draw.
+  - The stale lines are INV:9 and `BIO_Declared_Bias_v0_1.md`:13. They were reported to BOB with the Q4 list; as canon, they wait on Q7.
+
+## After landing (2026-11-07, BOB's answers)
+
+- **Q1:** keep `module`. BOB creates `investigation-design` (its modules.json row, ledger entry and stub requirements) after layer 9, mirroring ux-design. The lane then owns the requirements text.
+- **Q2:** follow the process. The lane folder's README is rewritten to that.
+- **Q3:** BOB adds ledger entries for steps, hypotheses, observation-log, retrieval and project-roster in the same PR.
+- **Q4:** BOB files each stale reference as a found mark on its owning module. The canon ones wait on Q7. DEC-84's document is `docs/development/CONTRADICTION-PRESENT-RESOLVE-DESIGN.md`, and the canon list is `requirements/README.md`:46.
+- **Q5:** Bob's decisions go in `DECISIONS.md`, quoted with date and source. There is no new numbering.
+- **Q6:** the lane drafted the border and BOB sent it to the publication lane. BOB decides after that lane answers.
+- **Q7–Q9:** sent to Bob through the coordinator. Q9 comes back as one paper with options.
 - **Q11.** Does the explorer's "untested" exception open exploration while the test investigations hold no matters?
