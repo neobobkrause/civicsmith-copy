@@ -9,11 +9,10 @@ import { test } from "node:test";
 import { T48_FAMILIES } from "../../../src/op-declarations/t48.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
 import { M, O, world, call, opCalls, refused, FORGED } from "./harness.mjs";
 import { ok } from "./door-routes.mjs";
-import { membershipOf, membershipOps } from "../../../src/membership/index.mjs";
-import { aiAccountsOf, aiAccountsOps } from "../../../src/ai-accounts/index.mjs";
+import { membershipOps } from "../../../src/membership/index.mjs";
+import { aiAccountsOps } from "../../../src/ai-accounts/index.mjs";
 import { projectRosterOps } from "../../../src/project-roster/index.mjs";
 import { connectionsOps } from "../../../src/connections/index.mjs";
 import { promoteArchive } from "../../../src/control-plane/archive.mjs";
@@ -30,92 +29,57 @@ const noForged = (c, label) => assert.equal(JSON.stringify([c.url.href, c.body, 
 
 /* ================================================================ R96 */
 
-/* The real `ai-accounts` over a real SQLite database beside the real `membership` (a claimed group; members enrolled by
-   membership's own acts), and the harness's store answering the two account routes as plane's store door does: through
-   `aiAccountsOps`, with the request's address and parsed body. */
-function accountsWorld() {
-  const db = new DatabaseSync(":memory:");
-  db.exec(`CREATE TABLE bundles (bundle_id TEXT PRIMARY KEY, object_type TEXT NOT NULL, title TEXT, project TEXT)`);
-  const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
-  const sql = { exec(q, ...args) {
-    const st = db.prepare(q);
-    return st.columns().length ? st.all(...args.map(bind)).map((r) => ({ ...r })) : (st.run(...args.map(bind)), []);
-  } };
-  const core = { bundleInfo: () => null, declarePurge: () => ({ ok: true }), declareTable: () => ({ ok: true }) };
-  const ctx = { storage: { sql } };
-  const m = membershipOf(ctx, { record: core });
-  m.migrate();
-  m.registerClaimed("test-claim", () => true);
-  m.registerPasswordSetter(() => ({ ok: true }), "test-password");
-  const a = aiAccountsOf(ctx, { record: core, membership: m, sealSecret: "t49-door-seal-secret-0123456789" });
-  a.migrate();
-  const enrol = async (id, role = "member") => {
-    const x = await m.memberAdd({ memberId: id, cover: `cover of ${id}`, role, capabilities: null, by: "admin" });
-    assert.equal(x.ok, true, JSON.stringify(x));
-    const e = await m.enroll({ invite: x.invite, handle: id, password: `${id}-passphrase-x` });
-    assert.equal(e.ok, true, JSON.stringify(e));
-  };
-  const snapshot = () => JSON.stringify(sql.exec(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`)
-    .map(({ name }) => [name, sql.exec(`SELECT * FROM "${name}"`)]));
-  const w = world({ answer: async (c) => {
-    if (c.route !== "accountreferenceset" && c.route !== "accountreferenceremove") return null;
-    return ok(await aiAccountsOps(a, c.url, c.body, { VERSION: "t49" })[c.route]());
-  } });
-  return { ...w, a, enrol, snapshot, setup: async () => { await enrol("second", "admin"); await enrol("ann"); await enrol("bea"); } };
-}
+/* (op-grades R57, PR 866; ai-accounts R35, R38, R40) the alpha account-reference ops are retired with their grade rows: a
+   member's own key is now her own AI account, `aiownadd`, whose owner ai-accounts takes from the stamp alone. R96's door
+   half is held on it: the address's `by` is the session's, a caller's stamps never reach the store, the body's key reaches
+   the owner and is never answered, and ai-accounts' own route lands the act on the stamped member whatever the body names. */
+const RETIRED_REFERENCE_OPS = ["accountreference", "accountreferenceset", "accountreferenceremove"];
 
-test("R96 (T49; D1 B, N1095; K3320, K3321 (A); amends R17, R29, R92): through the real door a member connects her own API key (`accountreferenceset`, `member` her own) and removes it, and so does the founder; the body's `member` reaches `ai-accounts` as given and the address's is the session's own", async () => {
-  const x = accountsWorld();
-  await x.setup();
-  for (const [who, token, body, viewer] of [["ann", x.S.ann, "ann", "member:ann"], ["the founder", x.S.founder, "admin", "admin"]]) {
-    x.env.calls.length = 0;
-    const set = await call(x.env, { op: "accountreferenceset", token, method: "POST", params: { ...FORGED_QUERY, member: FORGED },
-                                    body: { member: body, kind: "apikey", secret: SENTINEL } });
-    assert.equal(set.status, 200, `${who}: ${set.text.slice(0, 300)}`);
-    assert.equal(set.json.result.ok, true, `${who} connects: ${set.text.slice(0, 300)}`);
-    assert.equal(set.json.result.kind, "apikey");
-    assert.equal(set.text.includes(SENTINEL), false, `${who}: the key is never answered`);
-    const [inner] = opCalls(x.env).filter((c) => c.route === "accountreferenceset");
-    assert.deepEqual([inner.params.by, inner.params.member], [viewer, viewer], `${who}: the address stamps are the session's`);
-    assert.equal(inner.body.member, body, `${who}: the body's member reaches ai-accounts as given`);
-    assert.equal(JSON.stringify(inner.params).includes(FORGED), false, `${who}: no forged address value`);
-    assert.equal((await x.a.accountReferenceState({ member: body, viewer })).kind, "apikey", `${who}: the reference is held`);
-    const off = await call(x.env, { op: "accountreferenceremove", token, method: "POST", params: { member: FORGED },
-                                    body: { member: body } });
-    assert.equal(off.status, 200, `${who}: ${off.text.slice(0, 300)}`);
-    assert.equal(off.json.result.ok, true, `${who} removes: ${off.text.slice(0, 300)}`);
-    assert.equal(opCalls(x.env).filter((c) => c.route === "accountreferenceremove")[0].body.member, body);
-    assert.notEqual((await x.a.accountReferenceState({ member: body, viewer }))?.kind, "apikey", `${who}: the reference is gone`);
+test("R96, R2 (op-grades R57, PR 866): the retired account-reference ops are declared by no registration and answered as ops with no spec (400 UNKNOWN_OP), nothing asked of the store and the key in no answer", async () => {
+  const w = world();
+  for (const op of RETIRED_REFERENCE_OPS) {
+    assert.equal(Object.hasOwn(OPS, op), false, `${op}: no spec`);
+    w.env.calls.length = 0;
+    const r = await call(w.env, { op, token: w.S.ann, method: "POST", body: { member: "ann", kind: "apikey", secret: SENTINEL } });
+    refused(r, 400, "UNKNOWN_OP", "C-69.1");
+    assert.equal(r.text.includes(SENTINEL), false, op);
+    assert.deepEqual(opCalls(w.env), [], `${op}: nothing asked of the store`);
   }
 });
 
-test("R96 (controls; ai-accounts R38): a body `member` naming another member is dropped by `ai-accounts`: the act lands on the caller's own reference (the stamped `by`), for `accountreferenceset` and `accountreferenceremove` alike, a session's own and the founder's, and no other member's reference is written; a forged `member` in the address is replaced by the session's", async () => {
-  const x = accountsWorld();
-  await x.setup();
-  for (const [who, token, own, viewer] of [["ann", x.S.ann, "ann", "member:ann"], ["the founder", x.S.founder, "admin", "admin"]]) {
-    for (const named of ["bea", "member:bea", ...(who === "ann" ? ["admin"] : ["ann"])]) {
-      x.env.calls.length = 0;
-      const bystander = who === "ann" ? "bea" : "ann";
-      const before = x.snapshot();
-      const set = await call(x.env, { op: "accountreferenceset", token, method: "POST", params: { member: "bea" }, body: { member: named, kind: "apikey", secret: SENTINEL } });
-      assert.equal(set.status, 200, `${who}/set/${named}: ${set.text.slice(0, 200)}`);
-      assert.equal(set.json.result.ok, true, `${who}/set/${named}: the act is the caller's own`);
-      assert.equal(set.text.includes(SENTINEL), false);
-      const [inner] = opCalls(x.env).filter((c) => c.route === "accountreferenceset");
-      assert.equal(inner.params.member, viewer, `${who}/${named}: the address's member is the session's, not the caller's`);
-      assert.equal((await x.a.accountReferenceState({ member: own, viewer })).kind, "apikey", `${who}/${named}: the caller's own reference is held`);
-      if (named !== own) assert.notEqual(x.snapshot(), before, `${who}/${named}: control: the act wrote the caller's own reference`);
-      assert.equal((await x.a.accountReferenceState({ member: bystander, viewer: bystander === "bea" ? "member:bea" : "member:ann" }))?.kind ?? null, null, `${who}/${named}: no other member holds one`);
-      const off = await call(x.env, { op: "accountreferenceremove", token, method: "POST", params: { member: "bea" }, body: { member: named } });
-      assert.equal(off.json.result.ok, true, `${who}/remove/${named}`);
-      assert.notEqual((await x.a.accountReferenceState({ member: own, viewer }))?.kind, "apikey", `${who}/${named}: the caller's own reference is gone`);
-    }
+test("R96 (T53; op-grades R57; ai-accounts R38, R40; R29, R30): through the real door a member's own account act, `aiownadd`, reaches ai-accounts' route with `by` the session's own (a member's and the founder's), no forged stamp in the address or body, the body's key passed and never answered; a machine credential and the retired member key are refused before the store", async () => {
+  const w = world({ answer: (c) => (c.route === "aiownadd" ? ok({ ok: true, route: c.route }) : null) });
+  for (const [who, token, by] of [["ann", w.S.ann, "member:ann"], ["the founder", w.S.founder, "admin"]]) {
+    w.env.calls.length = 0;
+    const set = await call(w.env, { op: "aiownadd", token, method: "POST", params: { ...FORGED_QUERY, member: FORGED },
+                                    body: { owner: "member:bea", provider: "anthropic", plan: "api-member", secret: SENTINEL, by: FORGED } });
+    assert.equal(set.status, 200, `${who}: ${set.text.slice(0, 300)}`);
+    assert.equal(set.text.includes(SENTINEL), false, `${who}: the key is never answered`);
+    const [inner] = opCalls(w.env).filter((c) => c.route === "aiownadd");
+    assert.equal(inner.params.by, by, `${who}: the address's by is the session's`);
+    assert.equal(inner.body.secret, SENTINEL, `${who}: negative control: the body's key reaches the owner`);
+    noForged(inner, `${who}/aiownadd`);
   }
-  /* a machine credential is no member behind the op: refused at the door, nothing sent */
-  x.env.calls.length = 0;
-  const m = await call(x.env, { op: "accountreferenceset", token: x.env.MEMBER_TOKEN, method: "POST", body: { member: "ann", kind: "apikey", secret: SENTINEL } });
-  assert.equal(m.json.ok, false);
-  assert.deepEqual(opCalls(x.env).filter((c) => c.route === "accountreferenceset"), []);
+  for (const token of [w.env.ADMIN_TOKEN, w.env.DAEMON_TOKEN]) {
+    w.env.calls.length = 0;
+    const m = await call(w.env, { op: "aiownadd", token, method: "POST", body: { secret: SENTINEL } });
+    assert.equal(m.status, 403, "a machine credential");
+    assert.deepEqual(opCalls(w.env), []);
+  }
+  w.env.calls.length = 0;
+  refused(await call(w.env, { op: "aiownadd", token: w.env.MEMBER_TOKEN, method: "POST", body: { secret: SENTINEL } }), 401, "MEMBER_TOKEN_RETIRED", "C-38.11");
+  assert.deepEqual(opCalls(w.env), []);
+});
+
+test("R96 (controls; ai-accounts R38, R40): the store's route for `aiownadd`, ai-accounts' own map, lands the act on the stamped member: a body `owner` naming another member is never the account's owner", () => {
+  const asked = [];
+  const a = { accountSet: (args) => { asked.push(args); return { ok: true }; } };
+  for (const [by, own] of [["member:ann", "member:ann"], ["ann", "member:ann"]]) {
+    asked.length = 0;
+    aiAccountsOps(a, new URL(`http://do/aiownadd?by=${encodeURIComponent(by)}`), { owner: "member:bea", secret: SENTINEL }, {}).aiownadd();
+    assert.equal(asked.length, 1);
+    assert.equal(asked[0].owner, own, `${by}: the owner is the stamped member`);
+  }
 });
 
 test("R96 (control): `stepsource` and `stepsourcewithdraw` still take no `member` from the body: a body `member` naming another member is deleted and the session's own is the address's, for a member and the founder", async () => {
@@ -135,12 +99,12 @@ test("R96 (control): `stepsource` and `stepsourcewithdraw` still take no `member
     }
 });
 
-test("R96 (R29): an op that declares `member` in the address has the caller's copy there deleted and the session's set, whether or not its body `member` is kept: `accountreference`, `accountreferenceset`, `accountreferenceremove`, `stepsource`, `stepsourcewithdraw`", async () => {
+test("R96 (R29): an op that declares `member` in the address has the caller's copy there deleted and the session's set, whether or not its body `member` is kept: `stepsource`, `stepsourcewithdraw` (the account-reference ops retired, op-grades R57)", async () => {
   const declared = Object.keys(O.OP_STAMPS).filter((op) => O.OP_STAMPS[op].includes("member"));
-  /* the ops t48.mjs declares with the `member` stamp: ai-accounts' three account-reference ops (`extra`) and connections' two acts (its actor) */
-  const MEMBER_ADDRESSED = [...Object.keys(T48_FAMILIES.find((f) => f.owner === "ai-accounts").extra),
-                            ...Object.keys(T48_FAMILIES.find((f) => f.owner === "connections").ops)];
-  assert.equal(MEMBER_ADDRESSED.length, 5);
+  /* the ops t48.mjs declares with the `member` stamp: connections' two acts (its actor); ai-accounts' three account-reference
+     ops were retired by op-grades R57 */
+  const MEMBER_ADDRESSED = Object.keys(T48_FAMILIES.find((f) => f.owner === "connections").ops);
+  assert.ok(MEMBER_ADDRESSED.length > 0);
   for (const op of MEMBER_ADDRESSED)
     assert.ok(declared.includes(op), `${op} declares the member stamp`);
   const w = world({ answer: (c) => ok({ ok: true, route: c.route }) });
