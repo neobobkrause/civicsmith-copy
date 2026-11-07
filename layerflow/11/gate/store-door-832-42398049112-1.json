@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "store-door",
+  "pr": 832,
+  "sha": "155330dbc6ddcab4b06539cbc855d167f1daa466",
+  "run_id": 42398049112,
+  "run_attempt": 1,
+  "at": "2026-11-07T17:48:33Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 4.51,
+  "suite_minutes": 0.31,
+  "record_only": false,
+  "whole": true
+}

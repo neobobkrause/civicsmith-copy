@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "control-plane",
+  "provider": "store-door",
+  "provider_pr": 832,
+  "provider_land": "80ba2b2264e97d332eda98d698b0e456d9b6034a",
+  "at": "2026-11-07T18:31:33Z",
+  "key": "control-plane<-store-door@80ba2b2264",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/store-door/t53-fold.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
