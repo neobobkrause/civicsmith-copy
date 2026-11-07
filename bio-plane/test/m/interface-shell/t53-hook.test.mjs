@@ -25,14 +25,14 @@ const PLACED = Object.freeze({
   data: { t53Probe: { said: "from-data" } },
 });
 
-test("the hook: interface-shell-t53's index.mjs holds the empty contribution, and an empty contribution changes nothing: the script has no fifth argument, the page's style is the shell's alone, page and script equal across every form of empty", () => {
-  assert.deepEqual(contributionOf(CONTRIBUTION), { kit: {}, style: "", data: {} }, "the file the shell imports is the empty contribution");
+test("the hook: an empty contribution changes nothing: the script has no fifth argument, the page's style is the shell's alone, page and script equal across every form of empty", () => {
   const screens = [HOME(() => "<p>home</p>")];
   const forms = [undefined, null, {}, { kit: {}, style: "", data: {} }, EMPTY_CONTRIBUTION];
   const pages = forms.map((c) => interfacePage(screens, { contribution: c }));
   const scripts = forms.map((c) => interfaceScript(screens, { contribution: c }));
-  for (const p of pages) assert.equal(p, interfacePage(screens), "the page as the shell composes it with the file's contribution");
-  for (const s of scripts) assert.equal(s, interfaceScript(screens));
+  /* interface-shell-t53 attempt 2: the file's CONTRIBUTION is no longer empty, so every empty form equals the page composed with EMPTY_CONTRIBUTION */
+  for (const p of pages) assert.equal(p, interfacePage(screens, { contribution: EMPTY_CONTRIBUTION }), "the page as the shell composes it with the empty contribution");
+  for (const s of scripts) assert.equal(s, interfaceScript(screens, { contribution: EMPTY_CONTRIBUTION }));
   assert.match(scripts[0], /, window, null\)\.start\(\);$/, "no fifth argument: the program is the shell's alone");
   assert.equal(styleIn(pages[0]), styleOf(), "the page's style is the shell's STYLE alone");
 });
