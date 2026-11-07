@@ -10,7 +10,10 @@
     "newgroup/src/ui.mjs",
     "newgroup/src/index.mjs",
     "newgroup/src/words.mjs",
-    "newgroup/test/fixture.mjs"
+    "newgroup/test/fixture.mjs",
+    "newgroup/test/requirements.test.mjs",
+    "newgroup/test/t47.test.mjs",
+    "newgroup/test/wizard.test.mjs"
   ],
   "tests": [
     "bio-plane/test/m/installer-check/"
