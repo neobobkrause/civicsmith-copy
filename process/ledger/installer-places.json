@@ -10,7 +10,8 @@
     "newgroup/src/words.mjs",
     "newgroup/test/fixture.mjs",
     "newgroup/test/requirements.test.mjs",
-    "newgroup/test/wizard.test.mjs"
+    "newgroup/test/wizard.test.mjs",
+    "newgroup/test/t47.test.mjs"
   ],
   "tests": [
     "bio-plane/test/m/installer-places/"
