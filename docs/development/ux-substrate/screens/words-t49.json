@@ -2642,13 +2642,13 @@
   },
   {
    "key": "credential.token.once",
-   "en": "This is the only time your team's Civicsmith shows this value. It isn't stored and can't be recovered: the record keeps the credential's name and who created it, never the value. If it is lost, withdraw this credential and create another.",
+   "en": "This is the only time your team's Civicsmith shows this value. It is not stored and cannot be recovered: the record keeps the credential's name and who created it, never the value. If it is lost, withdraw this credential and create another.",
    "protected": true,
    "note": "DEC-258: control-plane: an agent credential minted"
   },
   {
    "key": "template.review.secret.once",
-   "en": "This is the only time your team's Civicsmith shows this value. It is kept only as a fingerprint and can't be recovered. Give it to the reviewer: it lets them read this one template version, comment on it and review it while it is a draft or in review, and nothing else. If it is lost, withdraw this grant and open another.",
+   "en": "This is the only time your team's Civicsmith shows this value. It is kept only as a fingerprint and cannot be recovered. Give it to the reviewer: it lets them read this one template version, comment on it and review it while it is a draft or in review, and nothing else. If it is lost, withdraw this grant and open another.",
    "protected": true,
    "note": "DEC-258: control-plane: a template review grant"
   },
