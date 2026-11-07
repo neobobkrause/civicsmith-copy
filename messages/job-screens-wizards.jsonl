@@ -4,3 +4,4 @@
 {"at":"2026-11-04T10:27:51Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-05T07:39:37Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job screens-wizards complete, PR #445 ready, session session_018BhcedJgAK7kQRr8BG9NFX: run status"}
 {"at":"2026-11-05T07:39:48Z","row":"outcome","n":3,"outcome":"delivered"}
+{"at":"2026-11-07T17:41:27Z","row":"sent","n":4,"to":"bob","text":"job screens-wizards complete, PR #835 ready, session session_018BhcefyP9S2zvtmvqgKD3u: run status"}
