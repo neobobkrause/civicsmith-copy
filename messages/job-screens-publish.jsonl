@@ -6,3 +6,4 @@
 {"at":"2026-11-06T00:09:02Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-07T17:55:16Z","row":"sent","n":4,"to":"bob","text":"job screens-publish BLOCKED: run status"}
 {"at":"2026-11-07T17:55:32Z","row":"outcome","n":4,"outcome":"delivered"}
+{"at":"2026-11-07T18:06:07Z","row":"sent","n":5,"to":"bob","text":"job screens-publish complete, PR #836 ready, session session_018BhcedGQzZzEjSAPCvsaDx: run status"}
