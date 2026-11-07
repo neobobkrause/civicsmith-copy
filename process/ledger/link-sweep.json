@@ -42,7 +42,7 @@
   ],
   "prior_work": "This module's code and tests exist (build/modules.json) but it had no ledger entry, so the process never recorded it (found in the R15 census, 6 Nov). Its requirement file has no inline unmet mark, but its Status line says the T51 lines R13, R14 (sweepSet and sweepRatify) and R15 (the op declaration) are not yet met; tests naming them exist in bio-plane/test/m/link-sweep/ (contracts.test.mjs, declared-ops.test.mjs). Confirm each of R13-R15 against those tests and, once met, record it in the Status line. Run its suite on its layer. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Edit no other module, and commit no generated file.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T03:43:28Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T03:54:12Z"
   }
 }
