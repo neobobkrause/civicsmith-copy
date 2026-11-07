@@ -16,7 +16,10 @@ import * as G from "../../../src/op-grades/index.mjs";
 import { MEMBERSHIP_CHECKS } from "../../../src/membership/index.mjs";
 import { word, hasWord, WORD_ROWS } from "../../../src/setup-words/index.mjs";
 import { RETIRED_ACTS } from "../../../src/wizard-scripts/data.mjs";
-import { T51_DESIGN_OPS, T51_OWED_OPS, T51_LIST_ONLY_OPS, T51_STANDIN_OPS, T51_STANDIN_HELP, T51_STANDARD_OPS, T53_STANDIN_OPS, T53_AI_ACCOUNT_OPS } from "../../../src/affordances/act-help.mjs";
+import { T51_DESIGN_OPS, T51_OWED_OPS, T51_LIST_ONLY_OPS, T51_STANDIN_OPS, T51_STANDIN_HELP, T51_STANDARD_OPS, T53_STANDIN_OPS } from "../../../src/affordances/act-help.mjs";
+/* T53 (the ux lane, 6 Nov): the two ai-account ops ACT_HELP holds; this module's own ops, so named here and checked against its export
+   (`T53_AI_ACCOUNT_OPS`) in t53.test.mjs */
+const T53_AI_ACCOUNT_OPS = ["aiaccountadd", "aiaccountswitch"];
 import * as READING_GUIDES from "../../../src/reading-guides/index.mjs";
 /* F2 (T53; reading-guides R20): an op its owner declares with no `act.<op>.does` row yet is held under that key, its row's text once the
    list holds it, until then its owner's declared description, read from the owner here as there (never built, K3268) */

@@ -7,10 +7,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { vocabulariesFor } from "../../../src/affordances.mjs";
 import { affordancesAnswer } from "../../../src/affordances/door.mjs";
-import { CONNECTION_GROUPS, CONNECTION_GROUP_NAMES, CONNECTION_DIMENSIONS, CONNECTION_DIMENSION_NAMES }
-  from "../../../src/affordances/words.mjs";
-import { DIMENSION_ONWARD, ONWARD_OTHER, onwardFor } from "../../../src/affordances/onward.mjs";
-import { ACT_HELP, ACT_HELP_KEYS, T53_AI_ACCOUNT_OPS } from "../../../src/affordances/act-help.mjs";
+/* read by namespace (and `onward.mjs` by a dynamic import), so that without the change each test fails at its assertions, not at load */
+import * as WORDS from "../../../src/affordances/words.mjs";
+import * as HELP from "../../../src/affordances/act-help.mjs";
+const ONWARD = await import("../../../src/affordances/onward.mjs").catch(() => ({}));
+const { CONNECTION_GROUPS, CONNECTION_GROUP_NAMES, CONNECTION_DIMENSIONS, CONNECTION_DIMENSION_NAMES } = WORDS;
+const { DIMENSION_ONWARD, ONWARD_OTHER, onwardFor } = ONWARD;
+const { ACT_HELP, ACT_HELP_KEYS, T53_AI_ACCOUNT_OPS } = HELP;
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
 import { owners } from "../../../src/connection-grammar/index.mjs";
 import { NAMED_IN_KIND } from "../../../src/connections/index.mjs";
