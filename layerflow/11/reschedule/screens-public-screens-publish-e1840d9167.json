@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "screens-public",
+  "provider": "screens-publish",
+  "provider_pr": 836,
+  "provider_land": "e1840d9167d38b87fd8c14bc47a079eb3dee1d16",
+  "at": "2026-11-07T18:24:11Z",
+  "key": "screens-public<-screens-publish@e1840d9167",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/screens-publish/fixtures.mjs: breaking, added code that is not an object property: which === \"notOwner\" ? f . preflightAnswer (, bio-plane/test/m/screens-publish/public.test.mjs: breaking, added code that is not an object property: , document : { sig_armored : \"-----BEGIN SSH SIGNATURE-----\\nU1NIU0lH\\n-----END SSH SIGNATURE-----\" ,, bio-plane/test/m/screens-publish/r81.test.mjs: breaking, added code that is not an object property: , document : { sig_armored : \"-----BEGIN SSH SIGNATURE-----\\nU1NIU0lH\\n-----END SSH SIGNATURE-----\" ,, bio-plane/test/m/screens-publish/requirements-ids.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/screens-publish/t53-ceremony.test.mjs: breaking, added, naming R3, R40, R83, R93, R94, R95, R105 (Provides before this land) while screens-publish's source changed: it may assert a changed answer, bio-plane/test/m/screens-publish/t53-imported.test.mjs: breaking, added, naming R1, R103 (Provides before this land) while screens-publish's source changed: it may assert a changed answer, bio-plane/test/m/screens-publish/t53-lines.test.mjs: breaking, added, naming R32, R46, R88, R92, R96 (Provides before this land) while screens-publish's source changed: it may assert a changed answer, bio-plane/test/m/screens-publish/t53-public.test.mjs: breaking, added, naming R24, R84, R98, R100, R101, R102, R104 (Provides before this land) while screens-publish's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
