@@ -41,7 +41,7 @@ test("R31 R5 R18: pagetranscribe is not in MACHINE_REFUSALS and answers phone tr
   assert.ok(!LARGER_SCREEN_ACTS.includes("pagetranscribe"));
   assert.ok(!Object.hasOwn(OP_ALIASES, "pagetranscribe") && !Object.values(OP_ALIASES).includes("pagetranscribe"));
   /* negative control: a credential ground on the same table would answer false */
-  assert.equal(phoneOf("projectkeyset"), false);
+  assert.equal(phoneOf("keyedserviceset"), false);
 });
 
 test("R31: T42's tables hold exactly pagetranscribe, and the module's tables carry those very entries", () => {
