@@ -1,2 +1,3 @@
 {"at":"2026-11-06T19:04:16Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (4 jobs ready). Then: job action-replies complete, PR #700 ready, session session_018BhcefrTRiPYguQLKiXgvR: run status"}
 {"at":"2026-11-06T19:04:29Z","row":"outcome","n":1,"outcome":"delivered"}
+{"at":"2026-11-07T00:30:34Z","row":"sent","n":2,"to":"bob","text":"job action-replies complete, PR #725 ready, session session_018BhcefMsxCkvcNTWkMB9ke: run status"}
