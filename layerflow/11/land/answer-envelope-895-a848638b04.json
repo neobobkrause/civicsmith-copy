@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "answer-envelope",
+  "pr": 895,
+  "branch": "job/answer-envelope",
+  "head": "a848638b04fd9c804a64e8fff178982d41bef1bf",
+  "before": "3d6f411202b79680b9eb32f3153794bbc3fad930",
+  "merge": "adb4fb56aa6ce8afa437dc0889c32b6f4373837f",
+  "at": "2026-11-07T20:26:05Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
