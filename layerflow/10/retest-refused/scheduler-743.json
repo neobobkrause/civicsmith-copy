@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 10,
+  "module": "scheduler",
+  "cause": 743,
+  "why": "scheduler has unmet requirement marks (R34, R35): a job meets them: node .process/tool/p3.mjs job start scheduler --live <n> --reopen \"meet the unmet requirement marks R34, R35 and re-test against the new interface\"",
+  "at": "2026-11-07T04:01:19Z",
+  "by": "bob"
+}
