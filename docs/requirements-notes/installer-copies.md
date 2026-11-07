@@ -18,3 +18,7 @@ R32 (replaced by R62 and R64), R62, R63, R64 and R65 have no mark. Installer's o
 ## Owed elsewhere (not this job's paths)
 
 `newgroup/test/requirements.test.mjs` still holds `test.todo` lines for R13 (line 476) and R24 (line 931), saying "not yet met". They belong to installer's job, which removes R13, R24, R32 and R62 to R65 from `installer.md` in its next attempt.
+
+## Attempt 2: re-tested against instance-setup's new interface (7 Nov 2026)
+
+Instance-setup's change (land 2914227e80, its F2) changes only how `memberVersions` reads `agent-runner` from agent-worker's `/version`. Nothing this module rules reads that: the installer reads a copy's facts through `op=bootstrap` (R63), whose seven facts are unchanged. The suite (`isolation.test.mjs`, `requirements-split.test.mjs`) was run again on a branch that holds 2914227e80: 4 of 4 pass. No code or test changed.
