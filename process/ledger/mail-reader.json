@@ -1,0 +1,38 @@
+{
+  "id": "mail-reader",
+  "title": "mail-reader: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "bio-plane/src/mail-reader/",
+    "build/requirements/mail-reader.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/mail-reader/"
+  ],
+  "requirements": "build/requirements/mail-reader.md",
+  "uses": [
+    "ooxml",
+    "structured-text-reader",
+    "setup-words",
+    "runtime-limits",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/mail-reader.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

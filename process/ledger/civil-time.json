@@ -1,0 +1,36 @@
+{
+  "id": "civil-time",
+  "title": "civil-time: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "bio-plane/src/civil-time/",
+    "build/requirements/civil-time.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/civil-time/"
+  ],
+  "requirements": "build/requirements/civil-time.md",
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/civil-time.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

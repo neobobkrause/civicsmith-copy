@@ -1,0 +1,45 @@
+{
+  "id": "promotion",
+  "title": "promotion: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 2,
+  "paths": [
+    "bio-plane/src/gate.mjs",
+    "bio-plane/src/promotion/",
+    "build/requirements/promotion.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/promotion/",
+    "bio-plane/test/d526-refusal-order.test.mjs",
+    "bio-plane/test/system/row-census.test.mjs",
+    "bio-plane/test/system/row-census.mjs",
+    "bio-plane/test/fixtures/row-census-1.81.0.jsonl"
+  ],
+  "requirements": "build/requirements/promotion.md",
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "test-support",
+    "project-roster"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/promotion.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

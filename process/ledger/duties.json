@@ -1,0 +1,52 @@
+{
+  "id": "duties",
+  "title": "duties: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/duties/",
+    "build/requirements/duties.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/duties/"
+  ],
+  "requirements": "build/requirements/duties.md",
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "calc-grammar",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "provenance",
+    "content",
+    "entities",
+    "events",
+    "lines",
+    "observation-log",
+    "standards",
+    "money",
+    "extraction",
+    "local-facts",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/duties.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}
