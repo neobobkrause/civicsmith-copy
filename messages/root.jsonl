@@ -190,3 +190,4 @@
 {"at":"2026-11-07T04:56:25Z","row":"outcome","n":95,"outcome":"delivered"}
 {"at":"2026-11-07T15:54:20Z","row":"sent","n":96,"to":"bob","text":"Sweep: ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; corpus-export: BLOCKED; inquiry: BLOCKED; op-capabilities: BLOCKED; op-grades: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-07T15:54:47Z","row":"outcome","n":96,"outcome":"delivered"}
+{"at":"2026-11-07T16:55:10Z","row":"sent","n":97,"to":"bob","text":"Sweep: IDLE CAPACITY, 11 slots empty, 36 startable: run node .process/tool/p3.mjs layer jobs 11, then each job start it lists first; only a recorded hold (p3 hold) keeps a slot empty; ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; corpus-export: BLOCKED; inquiry: BLOCKED; instance-updates: BLOCKED; interface-shell-t53: BLOCKED; op-grades: BLOCKED; runtime-limits: BLOCKED."}
