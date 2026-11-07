@@ -12,22 +12,23 @@ For BOB. Plain notes of what the job did and what it could not do inside its pat
 - Tests: `bio-plane/test/m/store-jobs/r24-member.test.mjs`, six, all failing with `pending.mjs` reverted. The seam case uses the real `acquire`
   of a ZIP (acquisition R38 registers the rows) and the real `fileMember`.
 
-## What blocks the merge: tests outside these paths
+## The pinned store-assembly tests (paths widened by BOB, PR 813; replacement session)
 
-R24 says the pinned tests change in the same commit. Two of them are `store-assembly`'s files:
+- `bio-plane/test/m/store-assembly/r9-jobs.test.mjs`: `SESSION_KEYED` and the expected kinds gain `member` (last); the R74 loop now registers and reads back a `member` row.
+- `bio-plane/test/m/store-assembly/r10-fixtures-run.test.mjs`: `KINDS` and `SESSION` gain `member`.
+- `bio-plane/test/job-registrar-stub.mjs` and `test/m/test-support/doubles.test.mjs` already carry `member` (test-support's work).
+- Checked: r9-jobs, r10-fixtures-run, fix6-pending, test-support doubles and acquisition t53-member, 73 pass.
 
-- `bio-plane/test/m/store-assembly/r9-jobs.test.mjs:22` `SESSION_KEYED = ["subresources", "fetch"]` -> add `"member"`;
-  `:41` the expected kinds -> add `"member"` last. With R24's code and this file unchanged, the test
-  "R74 jobRow: one row for each (sha or session, kind) ..." fails (checked: 71 pass, that one fails, over r9-jobs, r10-fixtures-run,
-  fix6-pending, test-support doubles and acquisition t53-member).
-- `bio-plane/test/m/store-assembly/r10-fixtures-run.test.mjs:56` `KINDS` and `SESSION`: add `"member"` (it passes unchanged, but then does not cover the kind).
-- `bio-plane/test/job-registrar-stub.mjs` and `test/m/test-support/doubles.test.mjs` already carry `member` (test-support's work); nothing owed there.
+## R26: met
 
-## R25 and R26: not this module's code
+- The R75 200 MiB parted-upload case in `r9-jobs.test.mjs` (skipped since R104) names `big.zip` and runs; its control names the same size `.pdf`,
+  refused `TOO_LARGE` by capture R119, with no job row and no upload opened. The evidence-key control (`PARTED_UPLOAD_UNAVAILABLE`) stays.
 
-- R25: whether a `safe_view` row is registered is decided by `file-safety`'s `#registerJobs` (`bio-plane/src/file-safety/index.mjs:291`,
+## R25: not this module's code (open)
+
+- Whether a `safe_view` row is registered is decided by `file-safety`'s `#registerJobs` (`bio-plane/src/file-safety/index.mjs:291`,
   `#NO_VIEW` lists `png|jpe?g`); the registrar registers whatever kind it is handed. Meeting R25 is an edit of file-safety's rule, not of `pending.mjs`.
-- R26: a change to the R75 200 MiB case in `store-assembly`'s `r9-jobs.test.mjs` (name the input `.zip`); outside these paths.
+  Left open and named in `--not-verified`.
 
 ## Provider notice scheduler:748
 
