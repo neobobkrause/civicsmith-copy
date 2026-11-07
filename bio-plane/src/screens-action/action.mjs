@@ -7,7 +7,7 @@
    where a reply's date has passed with none recorded, behind a fold on any other. The subject is the action's id. It holds
    no member-facing English (R19). Every function here is self-contained (interface-shell R21 (1)). */
 import { OPS } from "../op-declarations/index.mjs";
-import { draftsOf, stepOf, readOnly, kindWord, later, officeLine, chosenLawOf, joinFirst, JOIN, WRITE_HELP } from "./send-steps.mjs";
+import { draftsOf, stepOf, readOnly, kindWord, later, officeLine, namedOf, chosenLawOf, joinFirst, JOIN, WRITE_HELP } from "./send-steps.mjs";
 
 // R23: `actioninquiry` is an owed act (`interface-shell` R73): it is registered once `op-declarations` declares it, and the
 // shell draws it as it draws every act (R12).
@@ -60,10 +60,19 @@ export const action = Object.freeze({
       const v = profiles && profiles.view ? profiles.view : {};
       if ((kind === "records_request" || kind === "cpra_request") && Array.isArray(v.records_laws) && v.records_laws.length) {
         const ds = Array.isArray(v.deadlines) ? v.deadlines : [];
-        return v.records_laws.filter(function (l) { return l && typeof l.citation === "string" && l.citation; }).map(function (l) {
-          const d = typeof l.response === "string" ? ds.find(function (x) { return x && x.rule === l.response && x.applies_to === "records_request"; }) : null;
+        const ls = Array.isArray(v.layers) ? v.layers : [];
+        const all = v.records_laws.filter(function (l) { return l && typeof l.citation === "string" && l.citation; }).map(function (l) {
+          const d = typeof l.response === "string" ? (ds.find(function (x) { return x && x.rule === l.response && x.applies_to === "records_request" && (!l.layer || !x.layer || x.layer === l.layer); })
+            || ds.find(function (x) { return x && x.rule === l.response && x.applies_to === "records_request"; })) : null;
+          const layer = typeof l.layer === "string" ? l.layer : "";
+          const lay = layer ? ls.find(function (y) { return y && y.id === layer; }) : null;
           return { citation: l.citation, level: typeof l.level === "string" ? l.level : "", name: typeof l.name === "string" ? l.name : "",
-            amount: d && d.amount ? d.amount : 0, count: d && d.count ? d.count : "" };
+            amount: d && d.amount ? d.amount : 0, count: d && d.count ? d.count : "", layer: layer, place: lay && lay.place ? lay.place : layer };
+        });
+        // R61 (T53): a law whose name or citation two active layers give is told apart by its layer, and its choice names the layer
+        return all.map(function (d) {
+          const shared = !!d.layer && all.some(function (x) { return x !== d && x.layer && x.layer !== d.layer && ((d.name && x.name === d.name) || x.citation === d.citation); });
+          return Object.assign({}, d, { shared: shared, key: shared ? d.citation + "@@" + d.layer : d.citation });
         });
       }
       const seen = new Set();
@@ -102,6 +111,40 @@ export const action = Object.freeze({
       }));
     },
     // R38 (B16 b): how a reply came, by the design's tokens (`actions` R13 takes free text of at most 500 characters)
+    namedOf: namedOf,
+    // R62 (T53; reading-guides R19, R20; jurisdictions R126): what a profile text lacks, in words, joined
+    lacksWords: function (cs, lacks) {
+      return (Array.isArray(lacks) ? lacks : []).filter(function (k) { return ["writer", "sources", "professional_review", "second_approval"].includes(k); })
+        .map(function (k) { return cs.w("screen.action.guide.lacks." + k); }).join(", ");
+    },
+    // R62 (T53; K5508, K5512): a text's standing as its owner answers it: "reviewed by {name}, {organisation}, {date}" and, past twelve months,
+    // "last checked {date}" (`statements`, jurisdictions' `textStanding`); a guide opted out of review says "Not reviewed", with who chose it
+    // and when. `text.sourcechanged` is not drawn until the reviewed text's screen is (DEC-478).
+    standing: function (cs, g) {
+      if (!g || typeof g !== "object") return "";
+      const out = [];
+      if (g.not_reviewed && typeof g.not_reviewed === "object") {
+        out.push('<span data-standing="notreviewed">' + cs.w("guide.procedure.notreviewed") + " · " + cs.w("guide.procedure.notreviewed.by", {
+          member: String(g.not_reviewed.member || "").replace(/^member:/, "") ? cs.memberName(String(g.not_reviewed.member).replace(/^member:/, "")) : "",
+          date: { html: g.not_reviewed.at ? cs.date(String(g.not_reviewed.at).slice(0, 10)) : "" } }) + "</span>");
+      } else {
+        const st = Array.isArray(g.statements) ? g.statements : g.reviewed && g.reviewed.name ? [{ key: "text.reviewedby", vars: { name: g.reviewed.name, organisation: g.reviewed.organisation || "", date: g.reviewed.at || "" } }] : [];
+        st.forEach(function (x) {
+          if (!x || typeof x !== "object" || !x.vars) return;
+          if (x.key === "text.reviewedby") out.push('<span data-standing="reviewed">' + cs.w("text.reviewedby", { name: String(x.vars.name || ""), organisation: String(x.vars.organisation || ""), date: { html: x.vars.date ? cs.date(x.vars.date) : "" } }) + "</span>");
+          else if (x.key === "text.lastchecked") out.push('<span data-standing="lastchecked">' + cs.w("text.lastchecked", { date: { html: x.vars.date ? cs.date(x.vars.date) : "" } }) + "</span>");
+        });
+      }
+      return out.length ? '<span class="meta">' + out.join(" · ") + "</span>" : "";
+    },
+    // R79 (T53): "Show the routes" with none says why: no route is known, what is missing and where it is given (the team's rule where
+    // the profile lacks one), never just ending
+    noRoutes: function (cs, subject) {
+      return '<p class="cs-state" data-state="empty">' + cs.w("screen.action.routes.none") + "</p>"
+        + '<p class="mk-note" data-routes="why">' + cs.w("screen.action.routes.why") + "</p>"
+        + '<div class="mk-links" data-list="grouprules"><a class="cs-ref" href="/app/grouprules" data-nav data-screen="grouprules">' + cs.w("screen.grouprules.name")
+        + '</a><span class="mk-small" data-purpose="grouprules">' + cs.w("screen.grouprules.purpose") + "</span></div>";
+    },
     mediums: function () { return ["email", "letter", "portal", "person", "other"]; },
     // R38: the earlier entries a reply may follow (`follows`) or a quote answer or revise: each by its place in the correspondence
     // (the ordinal `actions` declares), a sent entry as the request sent on its day, a received one as its kind of reply on its day
@@ -179,7 +222,9 @@ export const action = Object.freeze({
         + cs.w("screen." + screen + ".name") + '</a><span class="mk-small" data-purpose="' + screen + '">' + cs.w("screen." + screen + ".purpose") + "</span></div>";
     };
     return cs.state("action", function (a) {
-      const office = a.addressee ? P.officeLine(a.addressee) : "";
+      // R65 (T53): the addressee named is the addressee drawn: an office by its role and body, else another named addressee by its role and
+      // organisation, else the audience as the member described it ("Public Works Director"), never left as no addressee
+      const office = a.addressee ? P.officeLine(a.addressee) : P.namedOf(a.counterparty);
       const holder = a.addressee && a.addressee.holder_on_date && a.addressee.holder_on_date.holder ? a.addressee.holder_on_date.holder : "";
       const corr = Array.isArray(a.correspondence) ? a.correspondence : [];
       const sent = corr.filter(function (c) { return c.direction === "sent"; });
@@ -268,7 +313,10 @@ export const action = Object.freeze({
 
       // R5: the replies, each received one markable as pressure (once).
       const entries = Array.isArray(a.entries) ? a.entries : [];
-      const received = corr.filter(function (c) { return c.direction !== "sent"; });
+      // R64 (T53; K5474): the replies listed by the day each arrived, then in the order recorded, and the list says so
+      const received = corr.map(function (c, i) { return { c: c, i: typeof c.ord === "number" ? c.ord : i }; }).filter(function (x) { return x.c.direction !== "sent"; })
+        .sort(function (x, y) { const dx = String(x.c.at || "").slice(0, 10), dy = String(y.c.at || "").slice(0, 10); return dx < dy ? -1 : dx > dy ? 1 : x.i - y.i; })
+        .map(function (x) { return x.c; });
       const helpReply = view.reachable ? cs.act("writinghelp", { data: { field: "account", id: "reply-account", forop: "actioncorrespond" } }) : "";
       // R38: the full reply form (DEC-376, C66): a reply or none, the day, who it came from, what it is recorded from, the kind of
       // reply, what the office decided and the exemptions it cites, the date it says it will answer by and the law that comes
@@ -352,7 +400,7 @@ export const action = Object.freeze({
       const markOf = function (ord) {
         return pvItems.find(function (m) { return m && m.arrived && m.arrived.action === view.subject && Number(m.arrived.ord) === Number(ord); }) || null;
       };
-      const replies = cs.sec("screen.action.replies", (received.length ? cs.sheet(received.map(function (c) {
+      const replies = cs.sec("screen.action.replies", (received.length > 1 ? '<p class="mk-small" data-order="replies">' + cs.w("screen.action.replies.order") + "</p>" : "") + (received.length ? cs.sheet(received.map(function (c) {
         const e = entries.find(function (x) { return x.ord === c.ord; }) || {};
         const stored = markOf(c.ord);
         const kindOf = stored && typeof stored.kind === "string" ? stored.kind : e.pressure ? e.pressure.kind : "";
@@ -413,7 +461,7 @@ export const action = Object.freeze({
         const not = Array.isArray(t.not_offered) ? t.not_offered : [];
         const rows = t.court_petition ? "" : offered.map(function (v) {
           const by = typeof v.approved_by === "string" && v.approved_by ? P.who(cs, v.approved_by) : "";
-          return cs.row("", cs.esc(v.name || v.template || ""), v.approved_at && by
+          return cs.row("", cs.esc(v.name || v.template || "") + P.standing(cs, v), v.approved_at && by
             ? '<span class="meta">' + cs.w("screen.action.templates.approved", { member: by, date: { html: cs.date(v.approved_at) } }) + "</span>" : "", "");
         }).concat(not.map(function (n) {
           return cs.row("", cs.esc(n.handle || n.name || "") + '<span class="meta">' + cs.w("screen.action.templates.notyet") + "</span>", "", "");
@@ -422,7 +470,9 @@ export const action = Object.freeze({
         const lead = t.court_petition ? '<p class="mk-small">' + cs.w("screen.action.templates.nocourt") + "</p>" : '<p class="mk-small">' + cs.w("screen.action.templates.offered") + "</p>";
         templatesSec = rows || t.court_petition ? tips("screen.action.templates.heading", lead + (rows ? cs.sheet(rows) : "")
           + (not.length ? '<p class="mk-note">' + cs.w("screen.action.templates.own") + " " + cs.w("screen.action.templates.never") + "</p>" : "") + prepare,
-        "screen.action.templates.tip1", "screen.action.templates.tip2") : "";
+        "screen.action.templates.tip1", "screen.action.templates.tip2")
+          // R62 (T53): a kind with no template at all says so, and no generic text is offered in its place
+          : tips("screen.action.templates.heading", '<p class="mk-note" data-templates="none">' + cs.w("screen.action.templates.noprofile") + "</p>", "screen.action.templates.tip1", "screen.action.templates.tip2");
       }
 
       // R31 (1): the procedure guide: each route with what to expect and its source, in the profile's order, the group's approved
@@ -435,14 +485,18 @@ export const action = Object.freeze({
           ? cs.w("screen.action.templates.approved", { member: P.who(cs, g.approved_by), date: { html: g.approved_at ? cs.date(g.approved_at) : "" } }) : cs.w("screen.action.profilefact.from");
         return (Array.isArray(g.items) ? g.items : []).map(function (it) {
           return cs.row("", cs.esc(it.route || "") + '<span class="meta">' + (it.expect ? cs.w("screen.action.guide.expect", { expectation: it.expect }) + " · " : "") + (it.citation ? cs.w("screen.action.guide.source", { citation: it.citation }) + " · " : "") + from + "</span>", "", "");
+        }).join("") + P.standing(cs, g);
+      }).join("")
+        // R62 (T53; reading-guides R19): a profile guide not offered is a row saying so, with what it lacks
+        + (gd.state === "ok" && gd.value && Array.isArray(gd.value.not_offered) ? gd.value.not_offered : []).map(function (n) {
+          return cs.row("", '<span data-guide="notyet">' + cs.w("screen.action.guide.notyet", { lacks: { html: P.lacksWords(cs, n && n.lacks) } }) + "</span>", "", "");
         }).join("");
-      }).join("");
       const teamGuides = guides.filter(function (g) { return g.origin === "group"; }).length;
       // R27: a read-only member sees no act of the screen, the routes themselves still read; the act is a member's who may act
       const guideAct = cs.can("actioncorrespond") ? cs.act("procedureguides", {}) : "";
       const guideSec = gd.state === "failed" ? tips("screen.action.guide.heading", cs.state({ state: "failed", refusal: gd.refusal }), "screen.action.guide.tip1", "screen.action.guide.tip2")
         : guideRows || guideAct ? tips("screen.action.guide.heading", '<p class="mk-small">' + cs.w("screen.action.profilefact.from") + " · " + cs.w("screen.action.guide.order") + " · " + cs.w("guide.procedure.legalinfo") + "</p>"
-          + (guideRows ? cs.sheet(guideRows) : gd.state === "ok" ? '<p class="cs-state" data-state="empty">' + cs.w("screen.matter.routes.none") + "</p>" : "") + '<p class="mk-note">' + cs.w("screen.action.guide.sourced") + " " + cs.w("screen.action.guide.team") + " " + (teamGuides ? "" : cs.w("screen.action.guide.teamnone")) + "</p>"
+          + (guideRows ? cs.sheet(guideRows) : gd.state === "ok" ? P.noRoutes(cs, view.subject) : "") + '<p class="mk-note">' + cs.w("screen.action.guide.sourced") + " " + cs.w("screen.action.guide.team") + " " + (teamGuides ? "" : cs.w("screen.action.guide.teamnone")) + "</p>"
           + (guideAct ? '<div class="mk-acts">' + guideAct + "</div>" : ""), "screen.action.guide.tip1", "screen.action.guide.tip2") : "";
 
       // R16: the law it goes under: the laws a member stated (each by level and citation, with the window the group's places
@@ -450,17 +504,22 @@ export const action = Object.freeze({
       // proposals apart, each marked not the law; and another law proposed.
       const pf = view.data.profiles;
       const offered = P.lawsOf(pf && pf.state === "ok" ? pf.value : null, a.kind);
+      const pfLayers = pf && pf.state === "ok" && pf.value && pf.value.view && Array.isArray(pf.value.view.layers) ? pf.value.view.layers : [];
       const gl = a.governing_laws && typeof a.governing_laws === "object" && !Array.isArray(a.governing_laws) ? a.governing_laws : {};
       const stated = Array.isArray(gl.laws) ? gl.laws : [];
       const LEVELS = ["state", "city", "county", "federal"];
       const lawLine = function (l) {
-        const d = offered.find(function (x) { return x.citation === l.citation; });
+        const d = offered.find(function (x) { return x.citation === l.citation && (!l.layer || !x.layer || x.layer === l.layer); });
+        // R61 (T53): a law stored with its layer is drawn with that layer's place; an unlayered one as before
+        const lay = l.layer ? (Array.isArray(pfLayers) ? pfLayers : []).find(function (y) { return y && y.id === l.layer; }) : null;
         return (LEVELS.includes(l.level) ? cs.w("screen.request.level." + l.level) + " · " : "") + cs.esc(l.citation || "")
+          + (l.layer ? ' · <span data-layer="' + cs.esc(l.layer) + '">' + cs.w("screen.request.law.layer", { place: lay && lay.place ? lay.place : l.layer }) + "</span>" : "")
           + (d && d.amount ? " · " + cs.w("screen.request.window." + (d.count === "business" ? "business" : "calendar"), { n: String(d.amount) }) : "");
       };
       const levels = function (id) { return cs.choice(id, "screen.request.level", LEVELS.map(function (k) { return [k, "screen.request.level." + k]; })); };
       const optionsOf = function (list) {
-        return list.map(function (d) { return { value: d.citation, text: d.citation }; });
+        // R61 (T53): the layer is drawn beside a name two layers share
+        return list.map(function (d) { return d.shared ? { value: d.key, key: "screen.action.law.layered", fills: { citation: d.citation, place: d.place } } : { value: d.key || d.citation, text: d.citation }; });
       };
       const lawsStated = gl.state === "stated" && stated.length
         ? cs.sheet(stated.map(function (l) { return cs.row("", lawLine(l), "", ""); }).join(""))
@@ -507,7 +566,8 @@ export const action = Object.freeze({
       // R5: move and scope (R32: the hold is placed on `hold`, not here).
       const moves = P.moves(state);
       const move = moves.length ? cs.choice("move-to", "screen.action.move.to", moves.map(function (m) { return [m, "screen.plan.actionstate." + m]; }))
-        + cs.choice("move-resolution", "screen.action.move.resolution", ["complied", "denied", "escalated", "withdrawn", "completed"].map(function (r) { return [r, "screen.action.resolution." + r]; }))
+        // R63 (T53): no resolution is preselected; the member chooses how it was resolved
+        + cs.choice("move-resolution", "screen.action.move.resolution", [{ value: "", text: "" }].concat(["complied", "denied", "escalated", "withdrawn", "completed"].map(function (r) { return { value: r, key: "screen.action.resolution." + r }; })), { value: "" })
         + cs.act("actionmove", {}) : "";
       const scope = '<p class="mk-note">' + cs.w(a.confidential ? "screen.action.scope.confidential" : "screen.action.scope.open") + "</p>"
         + cs.act("actionscope", { data: { to: a.confidential ? "false" : "true" } });
@@ -539,6 +599,17 @@ export const action = Object.freeze({
         else { if (!account) return { refuse: "screen.action.reply.account.needed" }; q.account = account; }
         const put = function (name, id) { const v = val(id); if (v) q[name] = v; };
         put("medium", "reply-medium"); put("party", "reply-party"); put("stage", "reply-stage"); put("follows", "reply-follows"); put("outcome", "reply-outcome");
+        // R66 (T53; action-grammar R5): every stage after the request names the entry it follows. The first reply to the request follows it
+        // without a choice (the request's own place); a later stage with none chosen says which entry it must follow and sends nothing
+        if (q.stage && q.follows === undefined) {
+          const ad = view.data.action && view.data.action.state === "ok" && view.data.action.value ? view.data.action.value : {};
+          const cr = Array.isArray(ad.correspondence) ? ad.correspondence : [];
+          const ordAt = function (c, i) { return typeof c.ord === "number" ? c.ord : i; };
+          const reqIdx = cr.findIndex(function (c) { return c && c.direction === "sent"; });
+          const replied = cr.some(function (c) { return c && c.direction === "received"; });
+          if (reqIdx >= 0 && !replied) q.follows = String(ordAt(cr[reqIdx], reqIdx));
+          else return { refuse: "screen.action.reply.follows.needed" };
+        }
         put("exemptions", "reply-exemptions"); put("due_cite", "reply-duecite");
         const dueBy = val("reply-dueby");
         if (dueBy) { if (!/^\d{4}-\d{2}-\d{2}$/.test(dueBy)) return { refuse: "screen.action.reply.at.needed" }; q.due_by = dueBy; }
@@ -583,7 +654,12 @@ export const action = Object.freeze({
         const to = cs.value("move-to");
         if (!to) return null;
         const q = { target: view.subject, to: to };
-        if (to === "resolved") q.resolution = cs.value("move-resolution");
+        if (to === "resolved") {
+          // R63 (T53): "Move it to resolved" with no resolution chosen says so and sends nothing
+          const how = String(cs.value("move-resolution") || "");
+          if (!how) return { refuse: "screen.action.move.resolution.needed" };
+          q.resolution = how;
+        }
         return { query: q, raw: "" };
       },
     },
@@ -606,12 +682,20 @@ export const action = Object.freeze({
         const pf = view.data.profiles;
         const a = view.data.action && view.data.action.state === "ok" ? view.data.action.value : {};
         const offered = view.parts.lawsOf(pf && pf.state === "ok" ? pf.value : null, a.kind);
-        const c = offered.find(function (d) { return d.citation === cs.value("law-pick"); });
+        const c = offered.find(function (d) { return (d.key || d.citation) === cs.value("law-pick"); });
         if (!c) return null;
         const held = a.governing_laws && Array.isArray(a.governing_laws.laws) ? a.governing_laws.laws.find(function (l) { return l.citation === c.citation; }) : null;
-        return { body: { target: view.subject, laws: [{ level: held ? held.level : c.level || cs.value("law-level") || "state", citation: c.citation }] } };
+        const law = { level: held && !c.shared ? held.level : c.level || cs.value("law-level") || "state", citation: c.citation };
+        // R61 (actions R113): the layer chosen is sent where two layers give the law
+        if (c.shared) law.layer = c.layer;
+        return { body: { target: view.subject, laws: [law] } };
       },
       rereads: ["action"],
+      // R61 (T53): two layers give the name and none was stated: drawn by its words, naming the layers, never as "not found"
+      refusals: { NAME_AMBIGUOUS: function (refusal, cs) {
+        const ls = refusal && Array.isArray(refusal.layers) ? refusal.layers : [];
+        return cs.w("screen.request.law.ambiguous", { layers: ls.map(function (l) { return l && (l.place || l.layer) ? String(l.place || l.layer) : ""; }).filter(Boolean).join(", ") });
+      } },
     },
     {
       // R16: "Propose another law…": a proposal beside the list, which it never changes.
@@ -623,9 +707,10 @@ export const action = Object.freeze({
         // R59: with no law the places list, the law is the one the member names (its level and citation)
         if (!offered.length) {
           const named = String(cs.value("law-cite") || "").trim();
-          return named ? { body: { target: view.subject, laws: [{ level: cs.value("law-level") || "state", citation: named }] } } : null;
+          // R77 (T53): with the citation empty, "Write the law's citation first" beside the field, and nothing is sent
+          return named ? { body: { target: view.subject, laws: [{ level: cs.value("law-level") || "state", citation: named }] } } : { refuse: "screen.action.law.citation.needed" };
         }
-        const c = offered.find(function (d) { return d.citation === cs.value("law-pick"); });
+        const c = offered.find(function (d) { return (d.key || d.citation) === cs.value("law-pick"); });
         if (!c) return null;
         return { body: { target: view.subject, laws: [{ level: c.level || cs.value("law-level") || "state", citation: c.citation }] } };
       },
