@@ -1,0 +1,16 @@
+{
+  "row": "early",
+  "layer": 11,
+  "module": "ai-issuer",
+  "from": 10,
+  "base": "34a2c413d9ffe03d93c187966b2a1b1b68c991e6",
+  "providers": [
+    "signatures",
+    "record-grammar",
+    "ai-catalogue",
+    "ai-gate",
+    "test-support"
+  ],
+  "at": "2026-11-07T15:24:42Z",
+  "by": "bob"
+}
