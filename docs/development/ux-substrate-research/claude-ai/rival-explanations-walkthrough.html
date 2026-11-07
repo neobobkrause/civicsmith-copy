@@ -1,0 +1,344 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Rival Explanations Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600;700&family=Source+Code+Pro:wght@400;700&display=swap">
+<style>
+/* Layout: Civicsmith's question page (one question, its rival explanations, its evidence) beside a short task list for
+   Bob's test. Civicsmith's visual language: verdigris acts, rust attention only, serif for people's words, sans for
+   Civicsmith's, a dotted edge for machine work, never colour alone. Model: the investigation lane's IV-H1 to IV-H4. */
+:root {
+  --ground: #EDEFE9; --sheet: #FFFFFF; --ink: #1E2622; --ink-2: #4A5651; --rule: #CDD4CF;
+  --act: #2B6A5D; --act-tint: #E2EFEB; --attn: #A23B19; --attn-tint: #F7E7E1; --machine: #5E6A66; --dispute: #6B4E9B; --dispute-tint: #EEE8F6;
+  --serif: "Source Serif 4", Georgia, serif; --sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif; --mono: "Source Code Pro", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #121815; --sheet: #1A221F; --ink: #E3EAE6; --ink-2: #AAB7B1; --rule: #34413C;
+  --act: #74C2AE; --act-tint: #1E3631; --attn: #EE9874; --attn-tint: #3A2219; --machine: #9AA7A2; --dispute: #C3A9EE; --dispute-tint: #2C2340; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --ground: #121815; --sheet: #1A221F; --ink: #E3EAE6; --ink-2: #AAB7B1; --rule: #34413C;
+  --act: #74C2AE; --act-tint: #1E3631; --attn: #EE9874; --attn-tint: #3A2219; --machine: #9AA7A2; --dispute: #C3A9EE; --dispute-tint: #2C2340; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--ink); font: 16px/1.5 var(--sans); margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 56px; }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 20px; }
+header.top { display: grid; gap: 8px; }
+.eyebrow { font: 600 .78rem/1.3 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+h1 { font: 600 1.7rem/1.2 var(--serif); margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--ink-2); max-width: 72ch; }
+.switch { display: flex; flex-wrap: wrap; gap: 8px; }
+.switch a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid var(--rule); border-radius: 2px;
+  color: var(--ink); text-decoration: none; background: var(--sheet); font-weight: 600; }
+.switch a[aria-current="page"] { border: 2px solid var(--act); color: var(--act); background: var(--act-tint); }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .cols { grid-template-columns: minmax(0,1fr); } .tasks { order: -1; } }
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 2px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.q { font: 600 1.25rem/1.3 var(--serif); margin: 0; }
+.qmeta { color: var(--ink-2); font-size: .9rem; margin: 0; }
+h2 { font: 700 .82rem/1.2 var(--sans); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.help { font-size: .92rem; color: var(--ink-2); margin: 0; max-width: 72ch; }
+:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.btn { min-height: 44px; padding: 0 14px; border: 1px solid var(--rule); border-radius: 2px; background: var(--sheet); font-weight: 600; }
+.btn.primary { background: var(--act); color: var(--sheet); border-color: var(--act); }
+.btn.quiet { border-color: transparent; background: transparent; color: var(--act); text-decoration: underline; padding: 0 6px; min-height: 36px; }
+.who { font-size: .82rem; color: var(--ink-2); }
+/* rivals */
+.rivals { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.rival { border: 1px solid var(--rule); border-radius: 2px; padding: 12px; display: grid; gap: 6px; align-content: start; }
+.rival.aside { border-style: dashed; }
+.rival .name { font: 600 1.02rem/1.3 var(--serif); }
+.rival.aside .name { color: var(--ink-2); }
+.state { font: 700 .76rem/1 var(--sans); letter-spacing: .05em; text-transform: uppercase; }
+.state.standing { color: var(--act); } .state.aside { color: var(--ink-2); }
+.against { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: .88rem; }
+.against li { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.reason { font: italic .92rem/1.4 var(--serif); }
+.form { display: grid; gap: 8px; border: 1px solid var(--rule); border-radius: 2px; padding: 10px; }
+.form textarea { font: 1rem/1.4 var(--serif); padding: 8px; border: 1px solid var(--rule); border-radius: 2px; background: var(--sheet); color: var(--ink); min-height: 64px; }
+.form label.ck { display: flex; gap: 8px; align-items: flex-start; min-height: 36px; font-size: .92rem; }
+.form input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--act); flex: none; margin-top: 2px; }
+.err { color: var(--attn); font-weight: 600; font-size: .9rem; }
+.note { font-size: .88rem; color: var(--ink-2); border-left: 3px solid var(--rule); padding-left: 8px; }
+/* evidence and marks */
+.grade { font: 700 .78rem/1 var(--mono); border: 1px solid var(--ink-2); border-radius: 2px; padding: 2px 5px; }
+.quote { font: 1rem/1.45 var(--serif); }
+.src { font-size: .82rem; color: var(--ink-2); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+table.grid { border-collapse: separate; border-spacing: 0; width: 100%; }
+table.grid th, table.grid td { border-bottom: 1px solid var(--rule); padding: 10px 8px; vertical-align: top; text-align: left; }
+table.grid thead th { position: sticky; top: env(safe-area-inset-top, 0px); background: var(--sheet); z-index: 2; font: 600 .95rem/1.25 var(--serif); border-bottom: 2px solid var(--ink-2); }
+table.grid thead th .state { display: block; margin-top: 4px; }
+table.grid thead th.aside { color: var(--ink-2); }
+.cell { width: 100%; min-height: 44px; border: 1px solid var(--rule); border-radius: 2px; background: var(--sheet); display: grid; grid-template-columns: 1.1em 1fr; gap: 2px 6px;
+  align-items: center; padding: 4px 8px; text-align: left; font-size: .9rem; }
+.cell .glyph, .gl { font: 700 1rem/1 var(--mono); text-align: center; }
+.cell .by { grid-column: 2; font-size: .76rem; color: var(--ink-2); }
+.cell[data-m="consistent"] { border-color: var(--act); } .cell[data-m="consistent"] .glyph { color: var(--act); }
+.cell[data-m="inconsistent"] { border: 2px solid var(--attn); background: var(--attn-tint); } .cell[data-m="inconsistent"] .glyph { color: var(--attn); }
+.cell[data-m="not_bearing"] { border-style: dashed; color: var(--ink-2); }
+.cell[data-m="disputed"] { border: 2px double var(--dispute); background: var(--dispute-tint); } .cell[data-m="disputed"] .glyph { color: var(--dispute); }
+.cell[data-m="unmarked"] { color: var(--ink-2); }
+.pop { display: grid; gap: 6px; margin-top: 6px; padding: 8px; border: 1px solid var(--rule); background: var(--sheet); border-radius: 2px; }
+.pop .lbl { font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+.pop .opts { display: grid; gap: 4px; }
+.pop .opts button { min-height: 40px; text-align: left; border: 1px solid var(--rule); background: var(--sheet); padding: 0 8px; display: flex; gap: 8px; align-items: center; border-radius: 2px; }
+.pop .opts button[aria-pressed="true"] { border: 2px solid var(--act); background: var(--act-tint); font-weight: 700; }
+.pop ul { margin: 0; padding-left: 1.1rem; font-size: .88rem; }
+.signal { display: flex; gap: 8px; align-items: flex-start; border: 1px dotted var(--machine); color: var(--machine); padding: 6px 8px; font-size: .85rem; border-radius: 2px; margin-top: 6px; }
+.signal b { color: var(--ink); font-weight: 600; }
+.cards { display: none; gap: 12px; }
+.card { border: 1px solid var(--rule); border-radius: 2px; padding: 12px; display: grid; gap: 10px; }
+.card .row { display: grid; gap: 6px; border-top: 1px solid var(--rule); padding-top: 8px; }
+.card .rname { font: 600 .95rem/1.3 var(--serif); }
+@media (max-width: 700px) { .gridwrap { display: none; } .cards { display: grid; } }
+/* fallback */
+.stickybar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--sheet); padding-block: 8px; border-bottom: 2px solid var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px; }
+.rchip { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--rule); border-radius: 2px; padding: 4px 8px; font: 600 .88rem/1.2 var(--serif); }
+.rchip.aside { border-style: dashed; color: var(--ink-2); }
+.flegs { display: grid; gap: 10px; }
+.fleg { border: 1px solid var(--rule); border-radius: 2px; padding: 12px; display: grid; gap: 8px; }
+.outs { display: grid; gap: 6px; }
+.out { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: .9rem; }
+.chip { display: inline-flex; gap: 6px; align-items: center; border: 2px solid var(--attn); color: var(--attn); background: var(--attn-tint); padding: 2px 8px; border-radius: 2px; font-weight: 600; font-size: .86rem; }
+.chip.disputed { border: 2px double var(--dispute); color: var(--dispute); background: var(--dispute-tint); }
+/* tasks */
+.tasks ol { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 10px; counter-reset: t; }
+.tasks li { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 8px; align-items: start; counter-increment: t; }
+.tasks li::before { content: counter(t); font: 700 .85rem/28px var(--mono); text-align: center; border: 1px solid var(--rule); border-radius: 2px; height: 28px; }
+.tasks li.done::before { content: "\2713"; color: var(--sheet); background: var(--act); border-color: var(--act); }
+.tasks li.done span { color: var(--ink-2); }
+.you { font-size: .88rem; color: var(--ink-2); }
+.foot { font-size: .9rem; color: var(--ink-2); display: grid; gap: 8px; }
+.foot ul { margin: 0; padding-left: 1.2rem; display: grid; gap: 4px; }
+.key { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .86rem; color: var(--ink-2); }
+.key span { display: inline-flex; gap: 4px; align-items: center; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: no-preference) { .cell, .btn, .pop .opts button { transition: background-color .12s, border-color .12s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Walkthrough for Bob · rival explanations (Q9.1, BD-14) · sample data; nothing is saved</span>
+    <h1>Can members follow rival explanations?</h1>
+    <p class="lede">A question can hold rival explanations side by side, and members test each piece of evidence against them. Two ways to do it are shown here, with the same project and the same members. Try the tasks in each, and judge whether a member would understand it and find their way around. If the first is too much, the second is what gets built.</p>
+    <nav class="switch" aria-label="Which way">
+      <a href="#b" id="tab-b">Mark each piece against each explanation</a>
+      <a href="#fallback" id="tab-f">Only mark what rules one out</a>
+    </nav>
+  </header>
+
+  <div class="cols">
+    <main class="panel" id="screen">
+      <div>
+        <p class="q">Why did the district close the Eastside pool in June?</p>
+        <p class="qmeta">A question in the project “Eastside pool closure” · members: you, Rosa M. and Dev K. · 4 pieces of evidence</p>
+      </div>
+      <section aria-labelledby="h-rivals" style="display:grid;gap:10px">
+        <h2 id="h-rivals">The rival explanations</h2>
+        <p class="help" id="rivals-help"></p>
+        <div class="rivals" id="rivals"></div>
+      </section>
+      <section aria-labelledby="h-legs" style="display:grid;gap:10px">
+        <h2 id="h-legs">The evidence</h2>
+        <p class="help" id="legs-help"></p>
+        <div class="key" id="key"></div>
+        <div id="legs"></div>
+      </section>
+      <div class="sr" role="status" id="announce"></div>
+    </main>
+
+    <aside class="panel tasks" aria-labelledby="h-tasks">
+      <h2 id="h-tasks">Try these</h2>
+      <p class="you">You are a member of this project. Rosa and Dev have already made some marks.</p>
+      <ol id="tasklist"></ol>
+      <button class="btn" type="button" id="reset">Start again</button>
+    </aside>
+  </div>
+
+  <section class="panel foot" aria-labelledby="h-rules">
+    <h2 id="h-rules">How it works (the investigation lane's model)</h2>
+    <ul>
+      <li>A mark is one member's judgment. Each member holds one mark per piece and explanation, and changing it keeps the earlier one in the history. No mark ever changes a grade, and Civicsmith never marks.</li>
+      <li>When members agree, the box shows the mark. When they differ, it shows “Disputed” and opens to who marked what.</li>
+      <li>An explanation stays until a member sets it aside, and the reason must name evidence marked against it. Anyone can bring it back.</li>
+      <li>“Doesn't tell them apart” is Civicsmith's own signal, drawn with the dotted edge for machine work. It shows only when every explanation is marked “fits” and none is disputed. The second way has no such signal.</li>
+      <li>In the second way, “rules out” is the same record as “cuts against” in the first, so switching later loses nothing.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const ME = 'you', NAMES = { you: 'You', rosa: 'Rosa M.', dev: 'Dev K.' };
+  const RIVALS = [
+    { id: 'budget', name: 'A budget shortfall', who: "The district's stated cause" },
+    { id: 'safety', name: 'The deck was unsafe', who: 'Raised by Dev K.' },
+    { id: 'use', name: 'Too few people used it', who: 'Raised by Rosa M.' },
+  ];
+  const LEGS = [
+    { id: 'L1', quote: '“Staff recommend closing the Eastside pool to meet the FY26 budget shortfall.”', src: 'Board minutes, 12 May 2026, item 7', grade: 'B' },
+    { id: 'L2', quote: '“Deck condition: unsafe. Close to swimmers until the spalled sections are replaced.”', src: 'Inspection report, 28 April 2026', grade: 'A' },
+    { id: 'L3', quote: '“Average daily swims: 2024, 38; 2025, 41.”', src: 'Aquatics attendance log, final year', grade: 'B' },
+    { id: 'L4', quote: '“Eastside aquatics, $410,000: moved to capital reserve (deck replacement).”', src: 'Adopted budget FY26, line 4.12', grade: 'A' },
+  ];
+  const MARK = {
+    unmarked: { g: '?', w: 'Not yet marked' }, consistent: { g: '+', w: 'Fits' }, inconsistent: { g: '−', w: 'Cuts against it' },
+    not_bearing: { g: '·', w: 'No bearing' }, disputed: { g: '≠', w: 'Disputed' },
+  };
+  const fresh = () => ({
+    marks: {   // leg|rival -> { member: mark }
+      'L1|budget': { rosa: 'consistent' },
+      'L2|safety': { dev: 'consistent' },
+      'L3|use': { rosa: 'inconsistent' },
+      'L4|budget': { rosa: 'inconsistent', dev: 'consistent' },
+    },
+    aside: { use: { by: 'rosa', at: '4 Nov', why: 'Attendance went up in its final year, so low use does not explain the closure.', legs: ['L3'] } },
+    open: null, setting: null, picking: null, err: null, done: {},
+  });
+  let S = fresh();
+  const $ = (s) => document.querySelector(s);
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const mode = () => (location.hash === '#fallback' ? 'f' : 'b');
+  const say = (t) => { const a = $('#announce'); a.textContent = ''; setTimeout(() => { a.textContent = t; }, 30); };
+  const leg = (id) => LEGS.find((l) => l.id === id), rival = (id) => RIVALS.find((r) => r.id === id);
+  const marksOf = (k) => S.marks[k] || {};
+  function state(k) {   // the pair's shown state
+    const vs = Object.values(marksOf(k));
+    if (!vs.length) return 'unmarked';
+    return vs.every((v) => v === vs[0]) ? vs[0] : 'disputed';
+  }
+  const byLine = (k) => Object.entries(marksOf(k)).map(([m, v]) => `${NAMES[m]}: ${MARK[v].w.toLowerCase()}`).join(' · ');
+  const againstLegs = (rid) => LEGS.filter((l) => Object.values(marksOf(l.id + '|' + rid)).includes('inconsistent'));
+  const setMine = (k, v) => { const m = { ...marksOf(k) }; if (v) m[ME] = v; else delete m[ME]; if (Object.keys(m).length) S.marks[k] = m; else delete S.marks[k]; };
+  const allFit = (l) => RIVALS.every((r) => state(l.id + '|' + r.id) === 'consistent');
+
+  const TASKS = {
+    b: [
+      { text: 'Mark the inspection report against all three explanations.', ok: () => RIVALS.every((r) => marksOf('L2|' + r.id)[ME]) },
+      { text: 'Find out who disagrees about the budget line, and what each of them said.', ok: () => S.done.sawDispute },
+      { text: 'Get Civicsmith to say the board minutes don’t tell the explanations apart.', ok: () => allFit(leg('L1')) },
+      { text: 'Set aside “A budget shortfall”, naming the evidence against it.', ok: () => !!S.aside.budget },
+    ],
+    f: [
+      { text: 'Say that the budget line rules out “A budget shortfall”.', ok: () => S.done.ruledBudget || marksOf('L4|budget')[ME] === 'inconsistent' },
+      { text: 'Find out who set aside “Too few people used it”, and why. Then bring it back.', ok: () => !S.aside.use },
+      { text: 'Disagree with a “rules out” that someone else made.', ok: () => Object.keys(S.marks).some((k) => marksOf(k)[ME] === 'consistent' && Object.entries(marksOf(k)).some(([m, v]) => m !== ME && v === 'inconsistent')) },
+      { text: 'Take back a “rules out” of your own.', ok: () => S.done.withdrew },
+    ],
+  };
+
+  function renderRivals() {
+    $('#rivals-help').textContent = 'Each one stays until a member sets it aside, with a reason that names the evidence against it.';
+    $('#rivals').innerHTML = RIVALS.map((r) => {
+      const a = S.aside[r.id], ag = againstLegs(r.id);
+      const list = ag.length ? `<ul class="against" aria-label="The case against it">${ag.map((l) => {
+          const k = l.id + '|' + r.id, st = state(k);
+          return `<li><span class="gl" style="color:var(--${st === 'disputed' ? 'dispute' : 'attn'})" aria-hidden="true">${MARK[st === 'disputed' ? 'disputed' : 'inconsistent'].g}</span><span class="grade">${l.grade}</span><span>${esc(l.src)}</span>${st === 'disputed' ? '<span class="who">(disputed)</span>' : ''}</li>`; }).join('')}</ul>`
+        : `<span class="who">Nothing is marked against it yet.</span>`;
+      let body;
+      if (a) body = `<span class="who">Set aside by ${NAMES[a.by]}, ${esc(a.at)}, naming ${a.legs.map((id) => esc(leg(id).src)).join('; ')}:</span><span class="reason">“${esc(a.why)}”</span>
+          <button type="button" class="btn" data-act="restore" data-r="${r.id}" style="justify-self:start">Bring it back</button>`;
+      else if (S.setting === r.id) {
+        body = ag.length ? `<form class="form" data-form="aside" data-r="${r.id}"><span style="font-weight:600">Which evidence leads you to set it aside?</span>
+            ${ag.map((l) => `<label class="ck"><input type="checkbox" id="as-${r.id}-${l.id}" value="${l.id}"><span>${esc(l.src)}</span></label>`).join('')}
+            <label for="why-${r.id}" style="font-weight:600">Your reason</label><textarea id="why-${r.id}"></textarea>
+            ${S.err ? `<span class="err" role="alert">${esc(S.err)}</span>` : ''}
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" type="submit">Set it aside</button><button class="btn" type="button" data-act="cancel">Cancel</button></div></form>`
+          : `<div class="note">It can be set aside only once some evidence is marked against it. Nothing is yet.</div><button class="btn" type="button" data-act="cancel" style="justify-self:start">Close</button>`;
+      } else body = `<button type="button" class="btn" data-act="aside" data-r="${r.id}" style="justify-self:start">Set aside, with a reason</button>`;
+      return `<div class="rival${a ? ' aside' : ''}"><span class="state ${a ? 'aside' : 'standing'}">${a ? 'Set aside' : 'Still standing'}</span>
+        <span class="name">${esc(r.name)}</span><span class="who">${esc(r.who)}</span>${a ? '' : list}${body}</div>`;
+    }).join('');
+  }
+
+  const head = (l) => `<div class="quote">${esc(l.quote)}</div><div class="src"><span class="grade">${l.grade}</span><span>${esc(l.src)}</span></div>`;
+  const signal = (l) => allFit(l) ? `<div class="signal" role="note"><span aria-hidden="true">⋯</span><span><b>Doesn’t tell them apart.</b> Civicsmith’s signal: every explanation is marked as fitting this, so on its own it favors none.</span></div>` : '';
+  function pop(k) {
+    const mine = marksOf(k)[ME] || null, st = state(k), others = Object.entries(marksOf(k)).filter(([m]) => m !== ME);
+    return `<div class="pop" role="group" aria-label="Marks">${st === 'disputed' || others.length ? `<span class="lbl">Who marked what</span><ul>${Object.entries(marksOf(k)).map(([m, v]) => `<li>${NAMES[m]}: ${MARK[v].w}</li>`).join('')}</ul>` : ''}
+      <span class="lbl">Your mark</span><div class="opts">${['consistent', 'inconsistent', 'not_bearing'].map((v) => `<button type="button" data-act="mine" data-k="${k}" data-v="${v}" aria-pressed="${mine === v}"><span class="gl" aria-hidden="true">${MARK[v].g}</span>${MARK[v].w}</button>`).join('')}
+      ${mine ? `<button type="button" data-act="mine" data-k="${k}" data-v="">Clear your mark</button>` : ''}</div></div>`;
+  }
+  function cell(k, l, r) {
+    const st = state(k), open = S.open === k;
+    const by = st === 'unmarked' ? '' : st === 'disputed' ? 'open to see who' : Object.keys(marksOf(k)).map((m) => NAMES[m]).join(', ');
+    return `<button type="button" class="cell" data-act="open" data-k="${k}" data-m="${st}" aria-expanded="${open}" aria-label="${esc(l.src)}, against ${esc(r.name)}: ${MARK[st].w}${st === 'disputed' ? ' (' + byLine(k) + ')' : ''}">
+      <span class="glyph" aria-hidden="true">${MARK[st].g}</span><span>${MARK[st].w}</span>${by ? `<span class="by">${esc(by)}</span>` : ''}</button>${open ? pop(k) : ''}`;
+  }
+  function renderB() {
+    $('#legs-help').textContent = 'Choose a box to give your own mark. A box shows the mark when members agree, and “Disputed” when they don’t.';
+    $('#key').innerHTML = ['consistent', 'inconsistent', 'not_bearing', 'disputed', 'unmarked'].map((v) => `<span><span class="gl" aria-hidden="true">${MARK[v].g}</span>${MARK[v].w}</span>`).join('');
+    const th = RIVALS.map((r) => `<th scope="col" class="${S.aside[r.id] ? 'aside' : ''}">${esc(r.name)}<span class="state ${S.aside[r.id] ? 'aside' : 'standing'}">${S.aside[r.id] ? 'Set aside' : 'Still standing'}</span></th>`).join('');
+    const rows = LEGS.map((l) => `<tr><th scope="row" style="font-weight:400;max-width:340px">${head(l)}${signal(l)}</th>${RIVALS.map((r) => `<td>${cell(l.id + '|' + r.id, l, r)}</td>`).join('')}</tr>`).join('');
+    const cards = LEGS.map((l) => `<div class="card">${head(l)}${signal(l)}${RIVALS.map((r) => `<div class="row"><span class="rname">${esc(r.name)}${S.aside[r.id] ? ' <span class="state aside">Set aside</span>' : ''}</span>${cell(l.id + '|' + r.id, l, r)}</div>`).join('')}</div>`).join('');
+    $('#legs').innerHTML = `<div class="gridwrap"><table class="grid"><thead><tr><th scope="col">Evidence</th>${th}</tr></thead><tbody>${rows}</tbody></table></div><div class="cards">${cards}</div>`;
+  }
+  function renderF() {
+    $('#legs-help').textContent = 'Mark a piece of evidence only when it rules an explanation out. If someone else’s “rules out” looks wrong to you, say you don’t agree.';
+    $('#key').innerHTML = `<span><span class="gl" aria-hidden="true">−</span>Rules out</span><span><span class="gl" aria-hidden="true">≠</span>Disputed</span>`;
+    const bar = `<div class="stickybar" aria-label="The explanations">${RIVALS.map((r) => `<span class="rchip${S.aside[r.id] ? ' aside' : ''}">${esc(r.name)}<span class="state ${S.aside[r.id] ? 'aside' : 'standing'}">${S.aside[r.id] ? 'set aside' : 'standing'}</span></span>`).join('')}</div>`;
+    const items = LEGS.map((l) => {
+      const outs = RIVALS.filter((r) => Object.values(marksOf(l.id + '|' + r.id)).includes('inconsistent'));
+      const outsHtml = outs.map((r) => {
+        const k = l.id + '|' + r.id, m = marksOf(k), st = state(k), mineOut = m[ME] === 'inconsistent', mineNo = m[ME] === 'consistent';
+        const who = Object.entries(m).filter(([, v]) => v === 'inconsistent').map(([x]) => NAMES[x]).join(', ');
+        const dis = Object.entries(m).filter(([, v]) => v !== 'inconsistent').map(([x]) => NAMES[x]).join(', ');
+        return `<div class="out"><span class="chip${st === 'disputed' ? ' disputed' : ''}"><span aria-hidden="true">${st === 'disputed' ? '≠' : '−'}</span>Rules out: ${esc(r.name)}${st === 'disputed' ? ' (disputed)' : ''}</span>
+          <span class="who">by ${who}${dis ? `; ${dis} ${dis.includes(',') ? 'don’t' : 'doesn’t'} agree` : ''}</span>
+          ${mineOut ? '' : mineNo ? `<button type="button" class="btn quiet" data-act="agree" data-k="${k}">Take back your disagreement</button>` : `<button type="button" class="btn quiet" data-act="disagree" data-k="${k}">I don’t agree</button>`}</div>`;
+      }).join('');
+      const picking = S.picking === l.id;
+      const mine = RIVALS.filter((r) => marksOf(l.id + '|' + r.id)[ME] === 'inconsistent').map((r) => r.id);
+      return `<div class="fleg">${head(l)}<div class="outs">${outsHtml}</div>
+        ${picking ? `<form class="form" data-form="pick" data-l="${l.id}"><span style="font-weight:600">Which explanations does this rule out, in your view?</span>
+            ${RIVALS.map((r) => `<label class="ck"><input type="checkbox" id="pk-${l.id}-${r.id}" value="${r.id}" ${mine.includes(r.id) ? 'checked' : ''}><span>${esc(r.name)}</span></label>`).join('')}
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" type="submit">Save</button><button class="btn" type="button" data-act="cancel">Cancel</button></div></form>`
+          : `<button type="button" class="btn" data-act="pick" data-l="${l.id}" style="justify-self:start">${mine.length ? 'Change what you said it rules out' : 'Rules out…'}</button>`}</div>`;
+    }).join('');
+    $('#legs').innerHTML = bar + `<div class="flegs" style="margin-top:10px">${items}</div>`;
+  }
+  function renderTasks() { $('#tasklist').innerHTML = TASKS[mode()].map((t) => `<li class="${t.ok() ? 'done' : ''}"><span>${esc(t.text)}${t.ok() ? '<span class="sr"> (done)</span>' : ''}</span></li>`).join(''); }
+  function render() {
+    $('#tab-b').setAttribute('aria-current', mode() === 'b' ? 'page' : 'false');
+    $('#tab-f').setAttribute('aria-current', mode() === 'f' ? 'page' : 'false');
+    renderRivals(); mode() === 'b' ? renderB() : renderF(); renderTasks();
+  }
+
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const a = b.dataset.act;
+    if (a === 'open') { S.open = S.open === b.dataset.k ? null : b.dataset.k; if (S.open === 'L4|budget') S.done.sawDispute = true; }
+    else if (a === 'mine') { setMine(b.dataset.k, b.dataset.v || null); const [l, r] = b.dataset.k.split('|'); S.open = null;
+      say(`${leg(l).src}, against ${rival(r).name}: your mark is ${b.dataset.v ? MARK[b.dataset.v].w.toLowerCase() : 'cleared'}. ${MARK[state(b.dataset.k)].w}.`); }
+    else if (a === 'aside') { S.setting = b.dataset.r; S.err = null; }
+    else if (a === 'restore') { delete S.aside[b.dataset.r]; say('Brought back. It is still standing.'); }
+    else if (a === 'cancel') { S.setting = null; S.picking = null; S.err = null; }
+    else if (a === 'pick') { S.picking = b.dataset.l; }
+    else if (a === 'disagree') { setMine(b.dataset.k, 'consistent'); say('Your disagreement is recorded. It now shows as disputed.'); }
+    else if (a === 'agree') { setMine(b.dataset.k, null); say('Your disagreement is taken back.'); }
+    render();
+  });
+  document.addEventListener('submit', (e) => {
+    e.preventDefault(); const f = e.target;
+    if (f.dataset.form === 'aside') {
+      const legs = [...f.querySelectorAll('input:checked')].map((i) => i.value), why = f.querySelector('textarea').value.trim();
+      if (!legs.length) { S.err = 'Choose at least one piece of evidence marked against it.'; render(); return; }
+      if (!why) { S.err = 'Say why, in your own words.'; render(); return; }
+      S.aside[f.dataset.r] = { by: ME, at: 'today', why, legs }; S.setting = null; S.err = null; say('Set aside, with your reason.');
+    } else if (f.dataset.form === 'pick') {
+      const l = f.dataset.l, chosen = [...f.querySelectorAll('input:checked')].map((i) => i.value);
+      RIVALS.forEach((r) => {
+        const k = l + '|' + r.id, had = marksOf(k)[ME] === 'inconsistent';
+        if (chosen.includes(r.id)) { setMine(k, 'inconsistent'); if (k === 'L4|budget') S.done.ruledBudget = true; }
+        else if (had) { setMine(k, null); S.done.withdrew = true; }
+      });
+      S.picking = null; say('Saved.');
+    }
+    render();
+  });
+  $('#reset').addEventListener('click', () => { S = fresh(); render(); say('Started again.'); });
+  window.addEventListener('hashchange', () => { S.open = S.setting = S.picking = null; S.err = null; render(); });
+  render();
+})();
+</script>
+
+</body></html>
