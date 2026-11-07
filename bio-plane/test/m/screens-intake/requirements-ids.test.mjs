@@ -28,7 +28,7 @@ function blocks(text) {
 const MARK = "*(not yet met";
 const START_UNMET = ["R72", "R73", "R74", "R75", "R76", "R77", "R78", "R79", "R80", "R81", "R82", "R83", "R84", "R85", "R86", "R87", "R88", "R94", "R89", "R90", "R91", "R92", "R93"];
 /* marks this branch met: { id: { mark, after } }, the mark's exact text removed from the first line, where it stood right after `after` */
-const STRUCK = {};
+const STRUCK = { R92: { mark: " *(not yet met: T53)*", after: "drawn beside its own explanation. Words owed." } };
 const START_BLOCKS = {
   R1: "08f12af15f1475b91f2874e4617ca8e46059187dbc680c0827a196e5566105dd",
   R2: "aaf5dc39d3700e6b1baee4f9b992be8514f6f553ae38e82403b4f3d913ac46ee",

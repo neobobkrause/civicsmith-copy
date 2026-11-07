@@ -24,7 +24,9 @@ export async function members(spec = {}, opts = {}) {
    mutating rows declare no `needs` (op-declarations R80 refuses a mutating op without one), a defect of that owner's declaration reported
    to BOB (screens-intake record): here they carry the capability the same kind of act names, so the screens' requests are held to the
    fields link-sweep declares. */
-const NEW_OPS = ["capturecredentialsupply", "capturecredentiallist", "capturecredentialwithdraw", "namedrequestset", "namedrequests", "sweepset", "sweepratify"];
+const NEW_OPS = ["capturecredentialsupply", "capturecredentiallist", "capturecredentialwithdraw", "namedrequestset", "namedrequests", "sweepset", "sweepratify",
+  /* R79: the parted upload's cancel, capture's own declaration */
+  "captureuploadabort"];
 /* Fix round 10 (K5054): a screen opened over the real store (`openWorld`) has the owners' own declarations, which the world registers itself
    (store-assembly register.mjs), so this stand-in is registered only by the scripted opener, once, and only where it can still be (a file that
    made a world never calls `open`). It goes with the last scripted table. */
