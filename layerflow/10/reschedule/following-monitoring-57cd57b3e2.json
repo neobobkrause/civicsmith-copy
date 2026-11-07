@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 10,
+  "user": "following",
+  "provider": "monitoring",
+  "provider_pr": 743,
+  "provider_land": "57cd57b3e2cb1c9c47afb8a43dd91a9e9233c4c0",
+  "at": "2026-11-07T04:01:02Z",
+  "key": "following<-monitoring@57cd57b3e2",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/monitoring/pause-reach.test.mjs: additive, added: a new test file only adds assertions), which may mean a changed answer shape; additive: each user is retested by its gate alone",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "additive"
+}

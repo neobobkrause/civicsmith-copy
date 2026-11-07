@@ -1,0 +1,62 @@
+{
+  "row": "land",
+  "layer": 10,
+  "module": "monitoring",
+  "pr": 743,
+  "head": "c8a26484ea809b92453eb7cbd2e0651f947f7e78",
+  "before": "7f02e010afb169e95e57c7a764faf79b95bf10d5",
+  "merge": "57cd57b3e2cb1c9c47afb8a43dd91a9e9233c4c0",
+  "at": "2026-11-07T04:01:02Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/monitoring/pause-reach.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/monitoring/pause-reach.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/monitoring/pause-reach.test.mjs",
+        "class": "additive",
+        "why": "added: a new test file only adds assertions"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/monitoring/pause-reach.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "additive",
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "following",
+    "link-sweep",
+    "scheduler"
+  ],
+  "users_rescheduled_old_rule": [
+    "following",
+    "link-sweep",
+    "scheduler"
+  ],
+  "users_noticed": [
+    "affordances",
+    "answer-envelope",
+    "control-plane",
+    "machinery-producers",
+    "plane",
+    "queue",
+    "queue-producers",
+    "store-assembly",
+    "store-request"
+  ]
+}
