@@ -17,3 +17,7 @@ R1 to R6 were already met (no marks). `words-fix-r56.mjs` was not touched.
 
 - The walk itself (journeys 11 and 22, steps 4 and 8) on a deployed site; the dating half of R-68 is T52-74 (`screens-investigate`).
 - An event recorded but left undated still counts as an event for the picker; whether "no dated event" should also cover a project with only undated events is a question for the design stream, not changed here.
+
+## Layer 11, job screens-matter attempt 2 (7 Nov 2026)
+
+- **Re-tested against screens-action's land a801611ef0 (PR 910).** That land changed only screens-action's own move test (`requirements-moved.test.mjs` now accepts R7 carrying no mark since PR 863 struck it) and its notes. No export this module imports from `send-steps.mjs` (`readOnly`, `WRITE_HELP`, `actName`, `citeOf`, `later`) changed. After `job sync` with layer/11, the suite passes 3/3 with no code change; no mark struck, none open.
