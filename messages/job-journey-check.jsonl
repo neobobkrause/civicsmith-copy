@@ -7,3 +7,4 @@
 {"at":"2026-11-05T16:52:01Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (10 jobs ready). Then: job journey-check complete, PR #511 ready, session session_018BhcegLUeKFhF13BpMvE2M: run status"}
 {"at":"2026-11-05T16:52:14Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-07T21:55:33Z","row":"sent","n":5,"to":"bob","text":"job journey-check BLOCKED: run status"}
+{"at":"2026-11-07T21:55:49Z","row":"outcome","n":5,"outcome":"delivered"}
