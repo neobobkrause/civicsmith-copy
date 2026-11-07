@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "monitoring",
+  "session": "session_018BhcecGwxLpe7SdNrZj73g",
+  "started": "2026-11-07T03:48:42Z",
+  "ended": "2026-11-07T03:50:31Z",
+  "at": "2026-11-07T03:50:31Z",
+  "minutes": 1.82,
+  "result": "pass",
+  "layer": 10,
+  "suite_seconds": 10.254,
+  "tests": {
+    "total": 181,
+    "pass": 181,
+    "fail": 0
+  }
+}
