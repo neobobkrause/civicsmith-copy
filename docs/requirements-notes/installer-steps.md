@@ -1,6 +1,6 @@
 # installer-steps: notes for BOB
 
-Job installer-steps, attempt 1 (5 Nov 2026). For BOB, who merges and routes.
+Job installer-steps, attempt 3 (7 Nov 2026), carrying over attempt 2 (5 Nov). For BOB, who merges and routes.
 
 ## Met on this branch
 
