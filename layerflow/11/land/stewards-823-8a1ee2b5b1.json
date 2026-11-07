@@ -1,0 +1,71 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "stewards",
+  "pr": 823,
+  "branch": "job/stewards-2",
+  "head": "8a1ee2b5b1571fe93a1d6c84ecbcd47e7713f41f",
+  "before": "7d4c4fc2ea2ba997bb6dda0ef65d5f94c8790285",
+  "merge": "5b8c462e5dc71512e81a505d377247e047636e5c",
+  "at": "2026-11-07T17:22:02Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "RULE_PARTS"
+      ],
+      "changed": [],
+      "kinds": [],
+      "signatures": []
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "stewards/test/fixture.mjs",
+      "stewards/test/requirements.test.mjs",
+      "stewards/test/t53-listing.test.mjs"
+    ],
+    "provides_tests_named": [
+      "stewards/test/fixture.mjs",
+      "stewards/test/requirements.test.mjs",
+      "stewards/test/t53-listing.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "stewards/test/fixture.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: LISTING_RULE_TEXT_VERSION : \"2026-10-15\" ,"
+      },
+      {
+        "file": "stewards/test/requirements.test.mjs",
+        "class": "breaking",
+        "why": "unparsed"
+      },
+      {
+        "file": "stewards/test/t53-listing.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R8, R12, R14, R15, R24, R25, R26 (Provides before this land) while stewards's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "stewards/test/fixture.mjs",
+      "stewards/test/requirements.test.mjs",
+      "stewards/test/t53-listing.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
