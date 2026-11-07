@@ -34,7 +34,7 @@ test(`R116 R84 G41: a ${XLSX_REFUSED_ROWS.toLocaleString("en-US")}-row xlsx, ove
     assert.deepEqual(out.failed, [], `${out.label} at cap ${out.cap} MB`);
   });
 
-test("R116: the xlsx case read whole is sized from `boundOf(\"xlsx\", \"declared_text\")`: its declared sheet text is at the bound (within 2 % under it), and a different bound sizes a different case", async () => {
+test("R116: the xlsx case read whole is sized from the xlsx declared_text bound: its declared sheet text is at the bound (within 2 % under it), and a different bound sizes a different case", async () => {
   assert.equal(XLSX_DECLARED_BOUND, boundOf("xlsx", "declared_text"));
   const declared = await declaredSheetBytes((await xlsxRowsDoc(XLSX_ROWS)).recipe);
   assert.ok(declared <= XLSX_DECLARED_BOUND && declared >= XLSX_DECLARED_BOUND * 0.98, `${XLSX_ROWS} rows declare ${declared} B against ${XLSX_DECLARED_BOUND} B`);
