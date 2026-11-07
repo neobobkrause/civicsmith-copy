@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "interface-shell-t50-t51",
+  "pr": 800,
+  "branch": "job/interface-shell-t50-t51",
+  "head": "6fdd91b96c95b18f3511b211196de49eb94fb20e",
+  "before": "75da361bfc5a6c82ddd8e1f95947c35515dd6da1",
+  "merge": "0d3676c3810c07d4b29298c7001bdfce3d1d6831",
+  "at": "2026-11-07T16:39:26Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
