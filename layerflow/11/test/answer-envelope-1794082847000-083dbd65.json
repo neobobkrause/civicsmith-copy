@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "answer-envelope",
+  "session": "session_018BhcefzjzKoXq7F3tszMMw",
+  "started": "2026-11-07T20:20:47Z",
+  "ended": "2026-11-07T20:22:31Z",
+  "at": "2026-11-07T20:22:31Z",
+  "minutes": 1.73,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 7.179,
+  "tests": {
+    "total": 84,
+    "pass": 84,
+    "fail": 0
+  }
+}
