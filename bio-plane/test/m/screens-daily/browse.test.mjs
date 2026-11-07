@@ -203,8 +203,9 @@ test("R46: a search result is a reference of its own kind with its title and a p
   assert.ok(rows.length >= 3 && rows.some((r) => refOf(r) === "/app/question/" + q.id));
   for (const h of hits.filter((x) => x.snippet)) {
     const row = rows.find((r) => refOf(r) === hrefOf[h.object_type] + h.bundle_id);
-    assert.deepEqual(row.querySelectorAll("em").map((e) => e.textContent), [...h.snippet.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]), "the match brackets are emphasis");
-    assert.ok(text(p, row).includes(h.snippet.replace(/[\[\]]/g, "")), "the plain excerpt");
+    // the search marks a match with U+0001 and U+0002 (query-language R35), never brackets
+    assert.deepEqual(row.querySelectorAll("em").map((e) => e.textContent), [...h.snippet.matchAll(/\u0001([^\u0002]+)\u0002/g)].map((m) => m[1]), "the match marks are emphasis");
+    assert.ok(text(p, row).includes(h.snippet.replace(/[\u0001\u0002]/g, "").replace(/\s+/g, " ").trim()), "the plain excerpt");
   }
   assert.ok(!text(p).includes("[repair") && !text(p).includes("[420]"));
   const docRow = every.find((r) => text(p, r).includes("work orders were closed"));
