@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "load-check",
+  "session": "session_018BhcegauKPhkfmaV5Po1KD",
+  "started": "2026-11-07T18:03:41Z",
+  "ended": "2026-11-07T18:05:28Z",
+  "at": "2026-11-07T18:05:28Z",
+  "minutes": 1.78,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 6.338,
+  "tests": {
+    "total": 21,
+    "pass": 21,
+    "fail": 0
+  }
+}
