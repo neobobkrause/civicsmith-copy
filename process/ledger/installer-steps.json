@@ -34,6 +34,6 @@
   "prior_work": "Meet the unmet requirement marks in build/requirements/installer-steps.md, each with a test under newgroup/test/steps/ that fails with the change reverted. newgroup's steps; deploying newgroup is never yours. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-07T17:24:27Z"
+    "at": "2026-11-07T17:31:56Z"
   }
 }
