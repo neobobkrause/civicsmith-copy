@@ -88,11 +88,11 @@ test("R15 choosing a state sends wizards with that state at once, one press, and
   // control: a pending read is drawn as pending, never as "No wizards to show here"
   const p = await open("wizards", { team: lt, as: lt.mai, faults: { wizards: "pending" } });
   has(p, "state.loading");
-  assert.ok(!p.text.includes(squash(word("screen.wizards.empty.offered"))));
+  assert.ok(!p.text.includes(squash(word("screen.wizards.empty"))));
   // control: a refused read is drawn as failed, not as empty
   const refused = await refusalOf(lt, lt.mai, "wizards", { query: { state: "nonsense" } });
   const r = await open("wizards", { team: lt, as: lt.mai, faults: { wizards: refused.result } });
-  assert.ok(!r.text.includes(squash(word("screen.wizards.empty.offered"))));
+  assert.ok(!r.text.includes(squash(word("screen.wizards.empty"))));
 });
 
 test("R15 saving a recording: the guide says the draft was saved, by name, and Drafts lists it once, each recorded step numbered once", async () => {
