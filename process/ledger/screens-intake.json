@@ -41,7 +41,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-07T20:47:04Z"
+    "state": "WORKING",
+    "at": "2026-11-07T21:52:34Z",
+    "reason": "reopened: Found mark from screens-intake-rounds (PR 888, 7 Nov): R73 for a file over the request ceiling. A 120 MB PDF goes through sendInParts; the real captureuploadbegin refuses it TOO_LARGE with its size and the 100 MB limit, but sendInParts' ended path draws it through refusalHtml as the bare refusal.TOO_LARGE (the address sentence: no figures, no toolarge.nothing_read, no ways in). Draw the DEC-500 too-large refusal there exactly as for a single upload (screen.capture.refusal.toolarge.{size,...}, then toolarge.nothing_read, then R74 ways in), with a through-the-screen test on the parted path. Then screens-intake-rounds strikes its R73 todo."
   }
 }
