@@ -1,0 +1,71 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "queue-producers",
+  "pr": 805,
+  "branch": "job/queue-producers-2",
+  "head": "800f589fab15d77ca7af6b8185e6726e67514e4f",
+  "before": "49ab2cf37518718ea63778cd6198ae0854c4e9b6",
+  "merge": "6830db9cffe8d3f444a381f354d6f303f5a353b8",
+  "at": "2026-11-07T17:02:48Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/queue-producers/notice-monitoring-743.test.mjs",
+      "bio-plane/test/m/queue-producers/requirements-ids.test.mjs",
+      "bio-plane/test/m/queue-producers/t53.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/queue-producers/notice-monitoring-743.test.mjs",
+      "bio-plane/test/m/queue-producers/requirements-ids.test.mjs",
+      "bio-plane/test/m/queue-producers/t53.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/queue-producers/notice-monitoring-743.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R2, R30, R40, R45, R48 (Provides before this land) while queue-producers's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/queue-producers/requirements-ids.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , \"R57\""
+      },
+      {
+        "file": "bio-plane/test/m/queue-producers/t53.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/queue-producers/notice-monitoring-743.test.mjs",
+      "bio-plane/test/m/queue-producers/requirements-ids.test.mjs",
+      "bio-plane/test/m/queue-producers/t53.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "instance-setup",
+    "plane",
+    "queue",
+    "store-assembly"
+  ],
+  "users_rescheduled_old_rule": [
+    "instance-setup",
+    "plane",
+    "queue",
+    "store-assembly"
+  ],
+  "users_noticed": []
+}

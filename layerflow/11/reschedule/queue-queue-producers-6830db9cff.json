@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "queue",
+  "provider": "queue-producers",
+  "provider_pr": 805,
+  "provider_land": "6830db9cffe8d3f444a381f354d6f303f5a353b8",
+  "at": "2026-11-07T17:02:48Z",
+  "key": "queue<-queue-producers@6830db9cff",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/queue-producers/notice-monitoring-743.test.mjs: breaking, added, naming R2, R30, R40, R45, R48 (Provides before this land) while queue-producers's source changed: it may assert a changed answer, bio-plane/test/m/queue-producers/requirements-ids.test.mjs: breaking, added code that is not an object property: , \"R57\", bio-plane/test/m/queue-producers/t53.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
