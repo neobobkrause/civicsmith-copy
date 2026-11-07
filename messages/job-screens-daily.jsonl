@@ -10,3 +10,4 @@
 {"at":"2026-11-05T07:52:09Z","row":"outcome","n":5,"outcome":"delivered"}
 {"at":"2026-11-07T20:24:40Z","row":"sent","n":6,"to":"bob","text":"job screens-daily complete, PR #889 ready, session session_018BhcefwNqbuNvJUuQNbpbo: run status"}
 {"at":"2026-11-07T20:25:01Z","row":"outcome","n":6,"outcome":"delivered"}
+{"at":"2026-11-07T20:33:22Z","row":"sent","n":7,"to":"bob","text":"screens-daily: home.test.mjs is a re-test with no code change of mine: it only follows provider answers (ai-use now refuses a usd limit here, so the busy team sets a tokens limit; the security level is credentials' own), so it passes with or without my code by design; please record the exemption on this head"}
