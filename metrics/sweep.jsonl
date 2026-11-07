@@ -586,3 +586,4 @@
 {"at":"2026-11-07T21:59:07Z","row":"check","by":"layer land","live":14,"live_at":"2026-11-07T21:11:53Z","live_measured":9,"started_since":5,"job_cap":20,"startable":0}
 {"at":"2026-11-07T22:04:30Z","row":"check","by":"layer publish","live":14,"live_at":"2026-11-07T21:11:53Z","live_measured":9,"started_since":5,"job_cap":20,"startable":0}
 {"at":"2026-11-07T22:11:53Z","row":"sweep","session":"session_018BhcefMKiLuojtdyeh1nzG","bob_acts":true,"bob_quiet_h":0,"root_context":17,"live":7,"live_measured_at":"2026-11-07T22:08:15Z","job_cap":20,"sessions":12,"job_ids":["control-plane","instance-setup","journey-check","plane","screens-document-beta","screens-inquiry","screens-intake"],"startable":0,"blocked":1,"blocked_oldest_min":141,"working":4,"waiting":3}
+{"at":"2026-11-07T22:20:49Z","row":"check","by":"github push","live":7,"live_at":"2026-11-07T22:11:53Z","slots_working":4,"published_free":3,"job_cap":20,"startable":0}
