@@ -1,0 +1,55 @@
+{
+  "row": "notice",
+  "at": "2026-11-07T00:05:16Z",
+  "key": "actions:715",
+  "provider": "actions",
+  "ids": [],
+  "pr": 715,
+  "users": [
+    "action-producers",
+    "affordances",
+    "control-plane",
+    "following",
+    "machinery-producers",
+    "monitoring",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "queue",
+    "screens-action",
+    "store-assembly"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "Actions.zoneRead",
+      "actionZoneRead",
+      "lawLayer",
+      "layersOf",
+      "officeLayer"
+    ],
+    "changed": [
+      {
+        "name": "actionOverdue",
+        "before": "function(fm, nowMs, place = null)",
+        "after": "function(fm, nowMs, place = null, layers = null)"
+      },
+      {
+        "name": "actionZone",
+        "before": "function(fm, view)",
+        "after": "function(fm, view, layers = null)"
+      }
+    ],
+    "kinds": [],
+    "signatures": [
+      "actionOverdue",
+      "actionZone"
+    ]
+  },
+  "layer_flow": {
+    "layer": 9,
+    "provides": false,
+    "rescheduled": true
+  }
+}

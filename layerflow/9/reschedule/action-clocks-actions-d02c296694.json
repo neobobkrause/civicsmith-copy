@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 9,
+  "user": "action-clocks",
+  "provider": "actions",
+  "provider_pr": 715,
+  "provider_land": "d02c296694f7f774392a034e59bdef59eb6c442c",
+  "at": "2026-11-07T00:05:16Z",
+  "key": "action-clocks<-actions@d02c296694",
+  "why": "added Actions.zoneRead, actionZoneRead, lawLayer, layersOf, officeLayer; changed the parameters of actionOverdue function(fm, nowMs, place = null) -> function(fm, nowMs, place = null, layers = null), actionZone function(fm, view) -> function(fm, view, layers = null) (not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/actions/t33.test.mjs: additive, added layer; layer, bio-plane/test/m/actions/t53.test.mjs: breaking, added), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
