@@ -7,3 +7,4 @@
 {"at":"2026-11-07T18:51:26Z","row":"sent","n":4,"to":"bob","text":"job notice-producers BLOCKED: run status"}
 {"at":"2026-11-07T18:51:43Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-07T18:58:07Z","row":"sent","n":5,"to":"bob","text":"job notice-producers complete, PR #861 ready, session session_018BhcegXKGTEdLpB5uJ6hNM: run status"}
+{"at":"2026-11-07T18:58:28Z","row":"outcome","n":5,"outcome":"delivered"}
