@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "installer-steps",
+  "pr": 867,
+  "branch": "job/installer-steps-2",
+  "head": "449cc5a1fc5e1b517d683fb660b3bef49869c86c",
+  "before": "ccfbe7b32b6a17b7a35ab7dc53d04a014b6e884c",
+  "merge": "fc102815778584e755d65aea83487d59e8d3c659",
+  "at": "2026-11-07T19:03:09Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
