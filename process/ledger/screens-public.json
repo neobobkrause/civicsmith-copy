@@ -31,9 +31,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "layer publish refused by its ledger check, which I cannot fix in my paths. Exact words: 'ledger: process/ledger/admission.json:1: job screens-public may change only its own entry' (same for interface-shell-t50-t51.json, notice-producers.json, screens-intake.json); 'failed (exit 1): p3 ledger check --base fc10281577 --branch job/screens-public --home refs/remotes/origin/tranche'. Those four files on my branch equal origin/layer/11's byte for byte; they differ only from base fc10281577 (tranche, 'Merge layer PR 867'), so they are layer/11's own entries, brought in by publish's merge of layer/11, not my edits. Work done and pushed (c66e69c89, test-only): R102 met and struck; R101 and R104's met halves tested on the page; their owed halves and five found marks (screens-publish x2, interface-shell x2, setup-words) in docs/requirements-notes/screens-public.md. Suite green 16 pass, 3 todo. Ask: a ledger-check base of layer/11 for a layer job, or your ruling; then I rerun layer publish.",
-    "at": "2026-11-07T19:20:36Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T19:23:45Z"
   },
   "prior_work": "BOB 5 Nov 21:37, as interface-shell-t53 and screens-intake-rounds (coordinator 18:31, option c): your code lives in bio-plane/src/screens-public/, which you own; every hook you need inside bio-plane/src/screens-publish/ (published.mjs, published-parts.mjs, docket-public.mjs, review-outside.mjs, keys.mjs) is screens-publish's: name each as a found mark for screens-publish (report it to BOB), never edit it."
 }
