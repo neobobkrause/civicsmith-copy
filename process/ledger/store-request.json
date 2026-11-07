@@ -59,8 +59,7 @@
   ],
   "prior_work": "Found work F1 (screens-action job, 4 Nov), with priority: it keeps screens-action (72 tests) and interface-shell red at tranche. The store world in bio-plane/test/m/store-request/door.mjs signs members in on its fixed clock (1 Oct 2026), and session.e (line 650) is the login's expiry on that clock. interface-shell's readRecord compares e with the real Date.now(), so since about 31 Oct every store-world page opens signed out. Make the world's session not run out against the real clock: a record expiry far in the real future, or none, without changing interface-shell or the plane's own expiry rule. Add a test that a world member's session reads as signed in whatever today's date is, failing with the change reverted. Then check screens-action's suite passes with your change (node --import ./test/platform-sqlite.mjs --test test/m/screens-action/ in bio-plane), but do not edit it, and report its count. Only F1 is this job's; leave the file's other unmet marks. If this module's own suite has red tests at the start commit from other modules (for example ai-accounts' removed names, now restored by job ai-accounts PR 124), name them in --not-verified, and block only if they stop job complete. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T18:59:03Z",
-    "reason": "reopened: re-test against the new interface of affordances (land f7ad0220d9), instance-setup (land f5828a4d4d)"
+    "state": "COMPLETE",
+    "at": "2026-11-07T19:13:29Z"
   }
 }
