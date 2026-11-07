@@ -55,7 +55,15 @@ const call = async (m, path, body) => (await frame(m, new Request(`http://do/${p
 
 test("R88 at start this module registers one scheduler consumer, update-check, under its own key; it draws its minute of the day once and keeps it: a later start records no second draw, and the draw is never computed from the slug (control: many groups of one slug draw different minutes)", async () => {
   const w = await world();
-  assert.deepEqual(w.prov.consumers.map((c) => c.name), ["group-domain-recheck", "update-check"]);
+  /* this module's own consumers are registered, each once; another module's beside them (instance-updates' health-send)
+     is not pinned here. Control: one of them missing, or registered twice, fails the same reading. */
+  const OWN = ["group-domain-recheck", "update-check"];
+  const holdsOwn = (names) => OWN.every((n) => names.filter((x) => x === n).length === 1);
+  const names = w.prov.consumers.map((c) => c.name);
+  assert.equal(holdsOwn(names), true, JSON.stringify(names));
+  for (const gone of OWN) assert.equal(holdsOwn(names.filter((n) => n !== gone)), false, gone);
+  assert.equal(holdsOwn([...names, "update-check"]), false);
+  assert.equal(holdsOwn([...names, "health-send"]), true);
   assert.equal(w.consumer().key, "updatecheck");
   assert.equal(w.started.updateCheck.ok, true);
   const slot = () => w.st.db.prepare(`SELECT minute, drawn_at FROM update_check_slot`).all().map((r) => ({ ...r }));
