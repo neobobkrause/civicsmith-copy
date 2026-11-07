@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "admission",
+  "session": "session_018BhceepZXuXuVHrrX9Vmov",
+  "started": "2026-11-07T17:47:28Z",
+  "ended": "2026-11-07T17:49:52Z",
+  "at": "2026-11-07T17:49:52Z",
+  "minutes": 2.4,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 19.935,
+  "tests": {
+    "total": 87,
+    "pass": 87,
+    "fail": 0
+  }
+}
