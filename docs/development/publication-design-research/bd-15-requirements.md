@@ -57,6 +57,15 @@ Held: the BD-6 line for `civicsmith-review/1` §1 (IFCN 3, "funders have no say 
 
 ## The group's funding register (new; BOB places the module)
 
+> **Amended 7 Nov (ux lane's F1, accepted by BOB; placed as funding-register R1–R2 in PR 780).** PF-6 below inferred "individual" from a missing or person-kind `entity`, which would refuse an organization entered by name only. As placed:
+> - `fundingAdd` takes `giver` (`person` | `organization`), stated by the owner and never inferred. It is required for every kind except `group_funds`, and when `entity` is given its registry kind must agree.
+> - `basis` and the $5,000 threshold apply only to a `donation` whose `giver` is `person`.
+> - Two refusals are added after `FUNDING_UNKNOWN_KIND`: `FUNDING_NO_GIVER` and `FUNDING_GIVER_MISMATCH`.
+> - `fundingOf` answers `giver`.
+> - PF-1 is unchanged: the case prints names, not giver types.
+>
+> `build/requirements/funding-register.md` is authoritative; the text below is the lane's original draft.
+
 - **PF-6 `fundingAdd({group, kind, name, entity?, for, case?, role, basis?, what?, by})` and `fundingEnd({entry, reason, by})`.** By an owner of the group.
   - Refusals, in order, each writing nothing:
     - `MACHINE_CANNOT_RECORD_FUNDING`;
