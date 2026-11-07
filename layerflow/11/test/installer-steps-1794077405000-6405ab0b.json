@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "installer-steps",
+  "session": "session_018BhcegomxhmW8C4fTqg6Dk",
+  "started": "2026-11-07T18:50:05Z",
+  "ended": "2026-11-07T18:51:52Z",
+  "at": "2026-11-07T18:51:52Z",
+  "minutes": 1.78,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 4.832,
+  "tests": {
+    "total": 130,
+    "pass": 128,
+    "fail": 0
+  }
+}
