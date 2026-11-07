@@ -563,3 +563,4 @@
 {"at":"2026-11-07T19:39:14Z","row":"check","by":"layer land","live":22,"live_at":"2026-11-07T18:55:12Z","live_measured":17,"started_since":5,"job_cap":20,"startable":20}
 {"at":"2026-11-07T19:51:10Z","row":"check","by":"layer publish","live":25,"live_at":"2026-11-07T18:55:12Z","live_measured":17,"started_since":8,"job_cap":20,"startable":19}
 {"at":"2026-11-07T19:57:40Z","row":"check","by":"layer publish","live":28,"live_at":"2026-11-07T18:55:12Z","live_measured":17,"started_since":11,"job_cap":20,"startable":16}
+{"at":"2026-11-07T20:03:09Z","row":"check","by":"github note","live":"unmeasured","live_at":"2026-11-07T18:55:12Z","job_cap":20,"startable":null}
