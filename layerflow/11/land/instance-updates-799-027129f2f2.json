@@ -1,0 +1,62 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "instance-updates",
+  "pr": 799,
+  "branch": "job/instance-updates",
+  "head": "027129f2f2aefe8db5a719ea718b917434574304",
+  "before": "a539422a184562d1f16dfa9cc0367e6096e76a84",
+  "merge": "c130d5c26f8dbd69b5153e613b8e107ceea85800",
+  "at": "2026-11-07T18:14:50Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "HEALTH_ADDRESS",
+        "HEALTH_SEND_USER_AGENT",
+        "InstanceSetup.healthSendTick",
+        "InstanceSetup.healthSendWake"
+      ],
+      "changed": [],
+      "kinds": [],
+      "signatures": []
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/instance-updates/health-send.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/instance-updates/health-send.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/instance-updates/health-send.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R7 (Provides before this land) while instance-updates's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/instance-updates/health-send.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "instance-reports"
+  ],
+  "users_rescheduled_old_rule": [
+    "instance-reports"
+  ],
+  "users_noticed": []
+}

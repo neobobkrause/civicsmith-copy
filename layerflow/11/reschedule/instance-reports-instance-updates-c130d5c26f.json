@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "instance-reports",
+  "provider": "instance-updates",
+  "provider_pr": 799,
+  "provider_land": "c130d5c26f8dbd69b5153e613b8e107ceea85800",
+  "at": "2026-11-07T18:14:50Z",
+  "key": "instance-reports<-instance-updates@c130d5c26f",
+  "why": "added HEALTH_ADDRESS, HEALTH_SEND_USER_AGENT, InstanceSetup.healthSendTick, InstanceSetup.healthSendWake; its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/instance-updates/health-send.test.mjs: breaking, added, naming R7 (Provides before this land) while instance-updates's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
