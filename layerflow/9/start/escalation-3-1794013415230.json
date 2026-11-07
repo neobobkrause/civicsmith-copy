@@ -1,0 +1,9 @@
+{
+  "row": "start",
+  "layer": 9,
+  "module": "escalation",
+  "attempt": 3,
+  "branch": "job/escalation",
+  "early": [],
+  "at": "2026-11-07T01:03:35Z"
+}
