@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "installer-copies",
+  "provider": "installer-steps",
+  "provider_pr": 957,
+  "provider_land": "68fee9c6339625a0b2789bf49a6d074694c00151",
+  "at": "2026-11-07T23:40:06Z",
+  "key": "installer-copies<-installer-steps@68fee9c633",
+  "why": "only its own tests changed (newgroup/test/steps/instance-setup-f2.test.mjs): no interface change for its users",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "additive"
+}

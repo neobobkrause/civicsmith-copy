@@ -1,0 +1,62 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "installer-steps",
+  "pr": 957,
+  "branch": "job/installer-steps-2",
+  "head": "c163e84e7d85b9164797a6e6151e88452292e40c",
+  "before": "c6704ec223041f6743cb2700b07072448db33ea9",
+  "merge": "68fee9c6339625a0b2789bf49a6d074694c00151",
+  "at": "2026-11-07T23:40:06Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "newgroup/test/steps/instance-setup-f2.test.mjs"
+    ],
+    "provides_tests_named": [
+      "newgroup/test/steps/instance-setup-f2.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "newgroup/test/steps/instance-setup-f2.test.mjs",
+        "class": "additive",
+        "why": "added: a new test file only adds assertions"
+      }
+    ],
+    "provides_tests": [
+      "newgroup/test/steps/instance-setup-f2.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "additive",
+    "test_only": {
+      "files": [
+        "newgroup/test/steps/instance-setup-f2.test.mjs"
+      ],
+      "by_tests": "additive",
+      "earlier_source": true
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "installer",
+    "installer-check",
+    "installer-copies",
+    "installer-places"
+  ],
+  "users_rescheduled_old_rule": [
+    "installer",
+    "installer-check",
+    "installer-copies",
+    "installer-places"
+  ],
+  "users_noticed": []
+}
