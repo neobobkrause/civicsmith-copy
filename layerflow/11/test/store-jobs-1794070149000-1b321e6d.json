@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "store-jobs",
+  "session": "session_018BhceeB7GjMAKVkW1wtwuZ",
+  "started": "2026-11-07T16:49:09Z",
+  "ended": "2026-11-07T16:50:20Z",
+  "at": "2026-11-07T16:50:20Z",
+  "minutes": 1.18,
+  "result": "fail",
+  "layer": 11,
+  "suite_seconds": 2.456,
+  "tests": {
+    "total": 6,
+    "pass": 0,
+    "fail": 6
+  }
+}
