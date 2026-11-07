@@ -39,7 +39,8 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/instance-updates.md, each with a test under bio-plane/test/m/instance-updates/ that fails with the change reverted. Your code is the update-check part of bio-plane/src/setup.mjs (the update-check consumer near :1084, #runUpdateCheck near :2600, updatenotice near :2778, the set-up release near :2705, updatestart/updatelater/updateskip near :2867-2912, the route near :3136), which instance-setup shares: change only those parts. The health sender (R7) is not written yet; ai-use.healthReport stays ai-use's. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T16:22:06Z"
+    "state": "BLOCKED",
+    "reason": "R7 (health sender) is built and pushed on job/instance-updates (c5f88af8): consumer health-send beside update-check, POST to HEALTH_ADDRESS through host-governor, healthSent on 2xx; 5 tests in bio-plane/test/m/instance-updates/health-send.test.mjs pass. But registering the consumer R7 requires breaks two instance-setup tests that pin the exact consumer list as today's: bio-plane/test/m/instance-setup/identity.test.mjs:258 (prov.starts equals [['group-domain-recheck','update-check']]) and bio-plane/test/m/instance-setup/t48.test.mjs:58 (consumers equal ['group-domain-recheck','update-check']). Those files are instance-setup's, outside my paths, so publish cannot pass the suite. To unblock: either widen my paths to those two lines (each gains 'health-send' as the third name), or have instance-setup's job make that edit. Also for BOB to confirm: HEALTH_ADDRESS was not set at my START; I derived https://ai-issuer.believeinoakland.workers.dev/ai/health (ai-issuer R26's route on CATALOGUE_ADDRESS's host); see docs/requirements-notes/instance-updates.md. Provider notice scheduler:748 confirmed: this module uses register, never listenTo.",
+    "at": "2026-11-07T16:33:44Z"
   }
 }
