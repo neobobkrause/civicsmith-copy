@@ -30,3 +30,14 @@ test("consolidation: the moved-out text is in the notes, not the requirements", 
   for (const s of ["**Size (P6).**", "### Uses", "### Satisfies", "### Suggestions", "New in T47 (T47-62"]) assert.ok(!t.includes(s), s);
   for (const s of ["**Size (P6).**", "## Uses", "## Satisfies", "## Suggestions", "New in T47 (T47-62"]) assert.ok(notes.includes(s), s);
 });
+
+test("consolidation: the requirements file is under the 70,000-byte cap, its sources kept in the notes", () => {
+  const t = readFileSync(new URL(REQ, ROOT));
+  assert.ok(t.length <= 70000, `${REQ} is ${t.length} bytes`);
+  const notes = read(NOTES);
+  assert.ok(notes.includes("## Sources by requirement"));
+  for (const s of ["(T48; N1050; K3177, K3178; `people` R38; amends R12, R13)", "(T53; N1260; DEC-410 (1); DEC-447 (1)-(3); R12, R13, R18 there)"]) {
+    assert.ok(notes.includes(s), s);
+    assert.ok(!read(REQ).includes(s), s);
+  }
+});
