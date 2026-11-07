@@ -1,0 +1,100 @@
+{
+  "row": "land",
+  "layer": 10,
+  "module": "scheduler",
+  "pr": 748,
+  "branch": "job/scheduler-2",
+  "head": "39d40f1c188e9822ef4e81dbfeee452bb6de92ff",
+  "before": "864850f2d9d00d0255814e48410ea6c6180f2597",
+  "merge": "7f8494924d9a9ac0fd60b56ebe9845c5d2a0df44",
+  "at": "2026-11-07T05:00:08Z",
+  "by": "bob",
+  "gate_runs": 5,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [],
+      "changed": [
+        {
+          "name": "Scheduler.listenTo",
+          "before": "({ retrieval, bias, promotion, capture, progressions, calibration, aiRuns, captureRequests, entities, inquiry, following, publishSchedule, answers, duties, people, moneyChecks, caseCarriage, calculations } = {})",
+          "after": "({ retrieval, bias, promotion, capture, progressions, calibration, aiRuns, captureRequests, entities, inquiry, following, publishSchedule, answers, duties, people, moneyChecks, caseCarriage, calculations, registers } = {})"
+        }
+      ],
+      "kinds": [],
+      "signatures": [
+        "Scheduler.listenTo"
+      ]
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/scheduler/explore.test.mjs",
+      "bio-plane/test/m/scheduler/files.test.mjs",
+      "bio-plane/test/m/scheduler/g55-ingest.test.mjs",
+      "bio-plane/test/m/scheduler/registry.test.mjs",
+      "bio-plane/test/m/scheduler/t53.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/scheduler/explore.test.mjs",
+      "bio-plane/test/m/scheduler/files.test.mjs",
+      "bio-plane/test/m/scheduler/g55-ingest.test.mjs",
+      "bio-plane/test/m/scheduler/registry.test.mjs",
+      "bio-plane/test/m/scheduler/t53.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/scheduler/explore.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/scheduler/files.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/scheduler/g55-ingest.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/scheduler/registry.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      },
+      {
+        "file": "bio-plane/test/m/scheduler/t53.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R2, R3, R5, R6, R12, R30, R34, R35 (Provides before this land) while scheduler's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/scheduler/explore.test.mjs",
+      "bio-plane/test/m/scheduler/files.test.mjs",
+      "bio-plane/test/m/scheduler/g55-ingest.test.mjs",
+      "bio-plane/test/m/scheduler/registry.test.mjs",
+      "bio-plane/test/m/scheduler/t53.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": [
+    "instance-setup",
+    "instance-updates",
+    "plane",
+    "queue",
+    "store-assembly",
+    "store-jobs",
+    "tasks"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "row": "notice",
+  "at": "2026-11-07T05:00:08Z",
+  "key": "scheduler:748",
+  "provider": "scheduler",
+  "ids": [],
+  "pr": 748,
+  "users": [
+    "instance-setup",
+    "instance-updates",
+    "plane",
+    "queue",
+    "store-assembly",
+    "store-jobs",
+    "tasks"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [],
+    "changed": [
+      {
+        "name": "Scheduler.listenTo",
+        "before": "({ retrieval, bias, promotion, capture, progressions, calibration, aiRuns, captureRequests, entities, inquiry, following, publishSchedule, answers, duties, people, moneyChecks, caseCarriage, calculations } = {})",
+        "after": "({ retrieval, bias, promotion, capture, progressions, calibration, aiRuns, captureRequests, entities, inquiry, following, publishSchedule, answers, duties, people, moneyChecks, caseCarriage, calculations, registers } = {})"
+      }
+    ],
+    "kinds": [],
+    "signatures": [
+      "Scheduler.listenTo"
+    ]
+  },
+  "layer_flow": {
+    "layer": 10,
+    "provides": false,
+    "rescheduled": true
+  }
+}
