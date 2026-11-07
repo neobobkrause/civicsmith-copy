@@ -1,0 +1,16 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "store-assembly",
+  "attempt": 10,
+  "branch": "job/store-assembly-2",
+  "early": [
+    "tasks",
+    "notice-producers",
+    "queue",
+    "instance-setup",
+    "store-door",
+    "store-jobs"
+  ],
+  "at": "2026-11-07T17:19:21Z"
+}
