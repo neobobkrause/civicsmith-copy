@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "journey-check",
+  "provider": "screens-entry",
+  "provider_pr": 968,
+  "provider_land": "e1ed464a41ed336edac5e99e690709b4307395f5",
+  "at": "2026-11-07T23:57:26Z",
+  "key": "journey-check<-screens-entry@e1ed464a41",
+  "why": "only its own tests changed (bio-plane/test/m/screens-entry/reopen-instance-setup-f2.test.mjs): no interface change for its users",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "additive"
+}
