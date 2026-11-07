@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 10,
+  "module": "link-sweep",
+  "pr": 745,
+  "sha": "9e8327d5940b9a76a9767aa888f27abd33af9d10",
+  "run_id": 42336070336,
+  "run_attempt": 1,
+  "at": "2026-11-07T03:55:16Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 3.58,
+  "suite_minutes": 0.06,
+  "record_only": false,
+  "whole": true
+}
