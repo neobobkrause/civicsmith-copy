@@ -1,0 +1,46 @@
+{
+  "id": "observation-log",
+  "title": "observation-log: confirm its requirements (ledger entry written 7 Nov; no unmet mark)",
+  "layer": 5,
+  "paths": [
+    "bio-plane/src/observation-log/",
+    "build/requirements/observation-log.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/observation-log/"
+  ],
+  "requirements": "build/requirements/observation-log.md",
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "text-chain",
+    "record-core",
+    "membership",
+    "capture",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/observation-log.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "This module's code and tests exist (build/modules.json) but it had no ledger entry, so the process never recorded it (found by the investigation lane's qualification, 7 Nov, Q3). Its requirement file has no unmet mark. Run its suite on its layer. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Edit no other module, and commit no generated file.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-07T03:50:00Z"
+  }
+}
