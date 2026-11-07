@@ -281,3 +281,4 @@ Rows C-120.1–C-120.8 and C-120.10–C-120.13 (R22), with their translations, m
 ## Old ids (case-authoring → this file)
 
 R31 → R1; R35 → R2; R36 → R3; R37 → R4; R43 → R5; R44 → R6; R45 → R7; R46 → R8; R47 → R9; R48 → R10; R49 → R11; R50 → R12; R51 → R13; R52 → R14; R54 → R15; R12 → R16; R33 → R17 (copy); R26 → R18 (copy); R24 → R19 (copy); R22 → R20 (copy); R30 → R21 (copy); R29's C-120 share → R22.
+- **F1** *(not yet met: publication lane BD-15, docs/development/publication-design-research/bd-15-requirements.md)* PF-4 fundingNamedInCase: a funding row's entity matched against entities the case names (R27's resolution); PF-5 the signer affirms a stated block names every source BD-15 requires, else FUNDING_NOT_AFFIRMED (BD-15)
