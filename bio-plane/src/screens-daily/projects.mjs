@@ -45,7 +45,7 @@ export const projects = Object.freeze({
     const themeList = tv && Array.isArray(tv.themes) ? tv.themes : [];
     const themes = cs.sec("theme.section", (themeList.length ? '<p class="mk-small muted">' + cs.w("theme.never.evidence") + "</p>"
       + cs.sheet(themeList.map(function (t) { return cs.row("", cs.ref("theme", String(t.theme_id), String(t.name || t.theme_id), []), "", ""); }).join("")) : "")
-      + '<p class="mk-acts"><a class="cs-ref" data-nav href="/app/theme">' + cs.w("theme.every") + "</a></p>", { help: "theme.across" });
+      + '<div class="mk-acts"><a class="cs-ref" data-nav href="/app/theme">' + cs.w("theme.every") + "</a></div>", { help: "theme.across" });
     // R42: the findable projects (not the member's own), each with "Ask to join", and the request she has open with "Withdraw".
     const dv = ok(view.data.directory);
     const rv = ok(view.data.requests);
@@ -61,7 +61,8 @@ export const projects = Object.freeze({
           : cs.act("projectrequest", { label: "act.projectrequest.label.projects", data: { project: id } })) + "</span>", "", "");
     }).join("")), { help: "projects.findable.says" }) : "";
     // R20 (DEC-228 (4)): the imported cases, a reference opening `imported`.
-    const imported = '<p class="mk-acts"><a class="cs-ref" data-nav href="/app/imported">' + cs.w("screen.imported.name") + "</a></p>";
+    // R92 (C81): a stand-alone link keeps its 44 px target; the design exempts a reference inside a paragraph as running text (DEC-412).
+    const imported = '<div class="mk-acts"><a class="cs-ref" data-nav href="/app/imported">' + cs.w("screen.imported.name") + "</a></div>";
     const pr = view.data.projects;
     // R33 (DEC-245): with no project, its designed empty state, then the act. The first question is the project page's.
     if (pr && pr.state === "empty") {
