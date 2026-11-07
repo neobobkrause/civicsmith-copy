@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "interface-shell-t50-t51",
+  "session": "session_018BhceeaKnNPHbeSbP3Kcaq",
+  "started": "2026-11-07T16:29:32Z",
+  "ended": "2026-11-07T16:31:10Z",
+  "at": "2026-11-07T16:31:10Z",
+  "minutes": 1.63,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 0.159,
+  "tests": {
+    "total": 2,
+    "pass": 2,
+    "fail": 0
+  }
+}
