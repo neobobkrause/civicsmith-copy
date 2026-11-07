@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "translations",
+  "session": "session_018BhcecbQDb5ofpM32DfjKx",
+  "started": "2026-11-07T16:22:15Z",
+  "ended": "2026-11-07T16:24:10Z",
+  "at": "2026-11-07T16:24:10Z",
+  "minutes": 1.92,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 3.945,
+  "tests": {
+    "total": 47,
+    "pass": 47,
+    "fail": 0
+  }
+}
