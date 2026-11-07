@@ -95,6 +95,10 @@ const CASES = {
     w.f.secondLookClear({ item: "INFO-2026-9999-none", by: MEMBER, viewer: MEMBER })],
   SECOND_LOOK_NO_NOTE: async (w) => [w.f.secondLook({ item: "INFO-2026-0002-a", note: "  ", by: MEMBER, viewer: MEMBER })],
   SECOND_LOOK_NOT_OPEN: async (w) => [w.f.secondLookClear({ item: "INFO-2026-0002-a", by: MEMBER, viewer: MEMBER })],
+  /* T53 (R37, R41): a register watch by a number, over the test profile's docket template (registers' county_raw) */
+  QUERY_NOT_NAMED: async (w) => [w.f.followRegisterQuery({ register: "county_raw", scheme: "docket", value: "Jane Doe", home: "INFO-2026-0002-a", author: MEMBER, viewer: MEMBER }),
+    w.f.followRegisterQuery({ register: ["county_raw", "town_filings"], scheme: "docket", value: "D123456", home: "INFO-2026-0002-a", author: MEMBER, viewer: MEMBER })],
+  BAD_ALERT: async (w) => [w.f.followRegisterQuery({ register: "county_raw", scheme: "docket", value: "D123456", alert: "courtlistener", home: "INFO-2026-0002-a", author: MEMBER, viewer: MEMBER })],
   BAD_PROCEEDING_DATES: async (w) => {
     const p = w.proceeding("Ellery v. Marlow");
     return [w.f.proceedingDates({ proceeding: p, from: "October", viewer: MEMBER }),

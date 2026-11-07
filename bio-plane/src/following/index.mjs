@@ -37,6 +37,13 @@
  *                        `notAProceeding`, its R36, R53; R31).
  *   retrieval            `registerBrowseMarks`, the door this module registers its read of watch marks and second-look flags
  *                        with at start (its R86; R34).
+ *   registers            T53 (R37, R39, R43): a register's status and the schemes it issues (`registerFilter`, `registerFor`),
+ *                        a project's stated interest (`onInterest`, registered at start when the host holds registers'
+ *                        tables, so the plane's registers, built before this module, is told), its watched refresh
+ *                        (`refreshImport`) and its changes as counts (`changesSince`).
+ *   keyed                T53 (R41, R42): `{store, capture?}`, acquisition's store for a docket's daily keyed check (its
+ *                        R36, R130, R131, R137: credentials, the call ledger, evidence, provenance) and `keyedCapture`;
+ *                        the store asks `followStanding` here. None: the keyed service is off and a docket is read as a page.
  *   now                  the instance clock in milliseconds.
  *   bytes(sha)           a capture's bytes (default: record-core's evidence store). */
 
@@ -55,7 +62,7 @@ import { actionsOf } from "../actions/index.mjs";
 import { actionClocksOf } from "../action-clocks/index.mjs";
 import { isMachineIdentity, isPublicHttpsLocator } from "../record-grammar/index.mjs";
 import { isCalendarDate, validAt, localDay, dayRange } from "../civil-time/index.mjs";
-import { combine, governingZone } from "../../../jurisdictions/index.mjs";
+import { combine, governingZone, queryAddress } from "../../../jurisdictions/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { boundOf } from "../read-bounds.mjs";
 import { retrievalOf } from "../retrieval/index.mjs";
@@ -65,12 +72,16 @@ import { legistarBodyId, eventsAddress, itemsAddress, votesAddress, mattersAddre
 import { noticeRule, meetingsOf, dueBefore } from "./meetings.mjs";
 import { portalKey, readDataset, diffRows, storedRows } from "./snapshot.mjs";
 import { followRefusal } from "./checks.mjs";
+import { registersOf } from "../registers/index.mjs";
+import { keyedCapture } from "../acquisition/index.mjs";
+import { answerChange, docketEntriesAddress, NO_COUNTS, ALERT_SERVICE, ALERT_PURPOSE, ALERT_KINDS } from "./registerwatch.mjs";
 
 export { FOLLOWING_SCHEMA, FOLLOWING_TABLES, migrateFollowing } from "./schema.mjs";
 export { legistarSystems, bodySchemes, legistarBodyId } from "./legistar.mjs";
 export { noticeRule, meetingsOf, dueBefore, MEETING_HORIZON_MONTHS } from "./meetings.mjs";
 export { portalKey, readDataset, diffRows, storedRows, PORTAL_ROWS_INLINE_MAX, PORTAL_PART_CHARS } from "./snapshot.mjs";
 export { FOLLOWING_CHECKS, followRefusal } from "./checks.mjs";
+export { answerChange, docketEntriesAddress, ALERT_SERVICE, ALERT_PURPOSE } from "./registerwatch.mjs";
 
 export const FOLLOWING_MODULE = "following";
 /** R13: the consumer name under the host's epoch and running set. */
@@ -86,7 +97,13 @@ export const BODY_READ_FETCHES = 200;
 export const PORTAL_PARSE_MAX_BYTES = boundOf("following", "portal_parse_bytes");
 /** R12: the cadences a follow may name: daily (the default) or longer, from monitoring's intervals (its R14). */
 export const FOLLOW_CADENCES = Object.freeze(["daily", "weekly", "monthly"]);
-export const FOLLOW_KINDS = Object.freeze(["body", "register", "person-query", "portal", "policy"]);
+export const FOLLOW_KINDS = Object.freeze(["body", "register", "person-query", "portal", "policy", "register-query", "register-interest"]);
+/** R37, R39: the register watches of T53: a number a member names, and a project's stated interest watched automatically. */
+export const REGISTER_WATCH_KINDS = Object.freeze(["register-query", "register-interest"]);
+/** R8, R37: the kinds a gate keeps from the tick (nothing fetched; `member_act_required`). */
+const GATED_KINDS = Object.freeze(["register", "person-query", "register-query"]);
+/** R43: the most changes one answer gives, and its default. */
+export const REGISTER_CHANGES_MAX = 200;
 /** R20 (K1881, K1941): a policy watch's cadence, every 7 days from its last read; no act shortens it. */
 export const POLICY_WATCH_CADENCE = "weekly";
 /** R20: the access of a policy (standards R41) that is never read on the tick (R8, R15). */
@@ -158,11 +175,13 @@ export function followingOf(host, deps = {}) {
       answers: lazy(deps.answers, () => answersOf(host, { record, membership })),
       actions: lazy(deps.actions, () => actionsOf(host, { record, membership })),
       actionClocks: lazy(deps.actionClocks, () => actionClocksOf(host, { record, membership })),
-      retrieval: lazy(deps.retrieval, () => retrievalOf(host)) });
+      retrieval: lazy(deps.retrieval, () => retrievalOf(host)),
+      registers: lazy(deps.registers, () => registersOf(host)), keyed: deps.keyed || null });
     instances.set(storage, f);
     f.migrate();
     f.registered = f.registerWatches();
     f.marksRegistered = f.registerMarks();
+    f.interestsRegistered = f.registerInterests(!!deps.registers);
   }
   return f;
 }
@@ -171,14 +190,18 @@ export class Following {
   #sql; #declared = false; #listeners = [];
 
   constructor({ storage, record, membership, now, view, bytes, capture, entities, events, standards, monitoring, actionPlans, planWork, duties,
-                answers, actions, actionClocks, retrieval }) {
+                answers, actions, actionClocks, retrieval, registers = null, keyed = null }) {
     this.#sql = storage.sql;
     this.record = record;
     this.membership = membership;
     this.now = typeof now === "function" ? now : () => Date.now();
     this.viewOpt = view;
     this.bytesOpt = bytes;
-    this.dep = { capture, entities, events, standards, monitoring, actionPlans, planWork, duties, answers, actions, actionClocks, retrieval };
+    this.dep = { capture, entities, events, standards, monitoring, actionPlans, planWork, duties, answers, actions, actionClocks, retrieval,
+                 registers: registers || (() => null) };
+    /* R41: the keyed path (`acquisition` R36, R130, R137): `{store, capture?}`, the store a keyed check is made under (its
+       credentials, ledger, evidence and provenance) and `followStanding` answered by this module; none: the service is off */
+    this.keyedOpt = keyed;
   }
 
   #rows(q, ...a) { return [...this.#sql.exec(q, ...a)]; }
@@ -195,6 +218,7 @@ export class Following {
   get actions() { return this.dep.actions(); }
   get actionClocks() { return this.dep.actionClocks(); }
   get retrieval() { return this.dep.retrieval(); }
+  get registers() { return this.dep.registers(); }
   get host() { return this.monitoring.sweepHost(); }
 
   /** R17: the tables, and their declaration with their classes, once. */
@@ -250,7 +274,8 @@ export class Following {
     const f = this.#follow(id);
     if (!f || f.ended_at) return null;
     if (this.#pending(f)) return instant(this.now());
-    const iv = MONITOR_CADENCE_MS[f.cadence] ?? MONITOR_CADENCE_MS.daily;
+    if (f.last_outcome === "rate_held") return f.held_until || instant(this.now());
+    const iv = this.#intervalOf(f);
     return f.last_read ? instant(ms(f.last_read) + iv) : instant(this.now());
   }
   /* G21: a followed body whose read is not yet whole is due again at once. */
@@ -474,6 +499,150 @@ export class Following {
     });
   }
 
+  /** R37 (T53; N1259; K4405 (1)): a register's own answer for one number a member names (a filer, licence, docket or company
+   *  number), at the address the profile's query template composes from the scheme and the value; the member never types an
+   *  address. Refused in order, writing nothing: a machine author, a home the author cannot use; registers' own
+   *  NO_SUCH_REGISTER, REGISTER_NOT_IN_ALPHA and REGISTER_NOT_MEASURED (a gated or fee-bearing register is followed under R8);
+   *  QUERY_NOT_NAMED for a name, a value not of the scheme's form, a scheme not listed for that register, a pattern, a list
+   *  or two registers; NO_SUCH_ENTITY; BAD_FOLLOW_CADENCE; R41's alert on anything but a CourtListener docket, BAD_ALERT;
+   *  WATCH_END_REFUSED. */
+  followRegisterQuery({ register, scheme, value, entity = null, home = null, cadence = null, ends = null, alert = null, name = undefined,
+                        author, viewer = null } = {}) {
+    const r = this.#actorRefusal(author, viewer, home);
+    if (r) return r;
+    /* a follow lives in its author's project (R17): its home is named */
+    if (!said(home)) return refuse("NO_SUCH_HOME", localize("following.index.register_watch_home", "a register watch lives in its author's project: name a home you may see"));
+    const no = (detail) => refuse("QUERY_NOT_NAMED", detail);
+    /* DEC-49 REGION is-query-named */
+    if (Array.isArray(register) || (register && typeof register === "object"))
+      return no(localize("following.index.query_one_register", "a watch names one register; a call across registers is not followed"));
+    const st = this.#registerStatus(register);
+    if (st.refusal) return st.refusal;
+    if (name !== undefined && name !== null)
+      return no(localize("following.index.query_not_by_name", "a register is watched by a number, never by a name"));
+    if (!said(scheme) || typeof value !== "string" || !value.trim() || /[*?%_\[\]{}|,;\s]/.test(value.trim()))
+      return no(localize("following.index.query_one_value", "a watch names one value of its scheme; a pattern, a wildcard or a list is not followed"));
+    const view = this.view();
+    const listed = this.#schemeListed(view, scheme, register);
+    const q = listed ? queryAddress(view, scheme, register, value.trim()) : { ok: false, reason: "NOT_LISTED" };
+    if (!q.ok) return no(q.reason === "VALUE_NOT_OF_FORM"
+      ? localize("following.index.query_value_form", "the value is not a number of that scheme's form; a name or a part of a number is not followed")
+      : localize("following.index.query_scheme_listed", "the scheme is not one the active profiles list for that register"));
+    /* END DEC-49 REGION is-query-named */
+    const ent = entity == null ? null : this.#entitySeen(entity, viewer ?? author);
+    if (ent && ent.refusal) return ent.refusal;
+    const c = this.#cadence(cadence);
+    if (!c) return refuse("BAD_FOLLOW_CADENCE", localize("following.index.a_follow_is_read_daily_5", "a follow is read daily or at a longer cadence: {FOLLOW_CADENCES}", { FOLLOW_CADENCES: String(FOLLOW_CADENCES.join(", ")) }));
+    /* DEC-49 REGION is-alert-docket */
+    if (alert != null && (!ALERT_KINDS.includes(alert) || scheme !== "docket" || !docketEntriesAddress(q.address)))
+      return refuse("BAD_ALERT", localize("following.index.alert_docket_only", "a daily check of new filings is carried only by a docket number followed at the national docket service"));
+    /* END DEC-49 REGION is-alert-docket */
+    const e = this.#endsGiven(ends);
+    if (e.bad) return refuse("WATCH_END_REFUSED", e.bad);
+    return this.#insert("register-query", { kind: "register-query", register, scheme, value: value.trim(), address: q.address,
+      entity: ent ? ent.id : null, entity_kind: ent ? ent.kind : null, ...(alert != null ? { alert } : {}) },
+      { home, author, cadence: c, gated: st.gated, ends: e.ends });
+  }
+  /* R37: a register's status as `registers` answers it (`registerFilter` with no project: a read that writes nothing):
+     `{gated}` (null, or the gate a member's act passes, R8), or `{refusal}`, registers' own. */
+  #registerStatus(register) {
+    let a;
+    try { a = this.registers.registerFilter({ register: typeof register === "string" ? register.trim() : register }); }
+    catch (e) { return { refusal: { ok: false, reason: "NO_REGISTERS", code: "NO_REGISTERS", detail: String((e && e.message) || e).slice(0, 160) } }; }
+    if (a && a.ok === false && a.reason === "member_act_required") return { gated: { kind: a.gate || "account" } };
+    if (!a || a.ok === false) return { refusal: a || { ok: false, reason: "NO_ANSWER" } };
+    return { gated: null };
+  }
+  /* R37: a scheme the profile lists for a register: `registers.registerFor` names it, or a query template pairs them. */
+  #schemeListed(view, scheme, register) {
+    let regs = [];
+    try { const f = this.registers.registerFor({ scheme }); regs = f && Array.isArray(f.registers) ? f.registers : []; } catch { regs = []; }
+    if (regs.includes(register)) return true;
+    return (Array.isArray(view.query_templates) ? view.query_templates : []).some((t) => t && t.scheme === scheme && t.register === register);
+  }
+  /* R37: an entity the author may see (`entities.noSuchEntity` else, as R29). */
+  #entitySeen(value, viewer) {
+    const id = typeof value === "string" ? value.trim() : "";
+    let r = null;
+    if (id && said(viewer) && viewerPredicate(viewer).scope !== "DENY") { try { r = this.entities.readEntity({ entityId: id, viewer }); } catch { r = null; } }
+    return r && r.ok && r.found && r.entity ? { id, kind: r.entity.kind } : { refusal: noSuchEntity(id || null) };
+  }
+
+  /** R45, R46 (T53): a `register-query` or `register-interest` follow stopped now, as `unfollow`, by a member who may see
+   *  it (its author, or for an interest's watch any member of its project); what was brought in stays in the record. */
+  registerWatchStop({ follow, author, viewer = null } = {}) {
+    if (!said(author) || isMachineIdentity(author))
+      return refuse("MACHINE_CANNOT_FOLLOW", localize("following.index.stop_is_member_act", "a watch is stopped by a member's own act"));
+    const row = this.#follow(follow);
+    if (!row || !REGISTER_WATCH_KINDS.includes(row.kind) || !this.#sees(row, viewer ?? author))
+      return refuse("NO_SUCH_FOLLOW", localize("following.index.no_register_watch_seen", "no register watch by that id you may see is held"));
+    if (row.kind === "register-query" && author !== row.author)
+      return refuse("NOT_THE_AUTHOR", localize("following.index.register_watch_author", "a watch of a number is stopped by the member who made it"));
+    if (row.ended_at) return { ok: true, existed: true, follow: Number(row.follow_id), ended_at: row.ended_at };
+    const at = instant(this.now());
+    this.#sql.exec(`UPDATE follows SET ended_at=?, ended_by=?, ended_reason='author' WHERE follow_id=? AND ended_at IS NULL`, at, author, row.follow_id);
+    this.#tell(Number(row.follow_id), null);
+    return { ok: true, follow: Number(row.follow_id), ended_at: at };
+  }
+
+  /** R41 (`acquisition` R130's `followStanding`): whether a member still follows the case a daily keyed check names: a live
+   *  `register-query` follow carrying `alert` for that service. Never throws. */
+  followStanding({ follow, service } = {}) {
+    try {
+      const f = this.#follow(follow);
+      const s = f ? json(f.subject) || {} : {};
+      return !!f && !f.ended_at && f.kind === "register-query" && s.alert === service && service === ALERT_SERVICE;
+    } catch { return false; }
+  }
+
+  /** R39 (T53; K4405 (1), (5)): this module's registration with `registers.onInterest` (its R32), at start: a stated interest
+   *  watched automatically becomes one `register-interest` follow; switched off, forgotten or its project closed, the follow
+   *  ends. Registered when the plane's registers is built on this host (its tables are held) or one is handed in; a
+   *  refused registration is a start-up fault, reported by throwing. */
+  registerInterests(given = false) {
+    if (!given && !this.#one(`SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name='register_interests'`)) return { ok: false, reason: "NO_REGISTERS" };
+    let rg;
+    try { rg = this.registers; } catch (e) { return { ok: false, reason: "NO_REGISTERS", detail: String((e && e.message) || e).slice(0, 160) }; }
+    if (!rg || typeof rg.onInterest !== "function") return { ok: false, reason: "NO_REGISTERS" };
+    const r = rg.onInterest(FOLLOWING_MODULE, (e) => this.#onInterest(e));
+    if (!r || r.ok === false) throw new Error(`following: registers refused its interest listener: ${(r && r.reason) || "no answer"}`);
+    return r;
+  }
+  /* R39: the listener: `{interest, watch}` after registers' act. */
+  #onInterest(e) {
+    const i = e && e.interest;
+    if (!i || i.id == null) return;
+    const live = this.#rows(`SELECT follow_id, subject FROM follows WHERE kind='register-interest' AND ended_at IS NULL`)
+      .filter((x) => String((json(x.subject) || {}).interest) === String(i.id));
+    if (e.watch === true && !i.ended) {
+      if (live.length) return;
+      this.#insert("register-interest", { kind: "register-interest", interest: i.id, project: i.project, register: i.register },
+                   { home: i.project, author: said(i.by) ? i.by : "", cadence: "daily" });
+      return;
+    }
+    for (const x of live) this.#endInterest(Number(x.follow_id), i.ended ? "interest_forgotten" : "interest_unwatched");
+  }
+  #endInterest(id, reason) {
+    this.#sql.exec(`UPDATE follows SET ended_at=?, ended_by=NULL, ended_reason=? WHERE follow_id=? AND ended_at IS NULL`, instant(this.now()), reason, id);
+    this.#tell(id, null);
+  }
+  /* R39: an interest's follow ends with its project: a project bundle closed ends every live interest watch living in it. */
+  #endClosedProjects() {
+    for (const x of this.#rows(`SELECT f.follow_id FROM follows f JOIN bundles b ON b.bundle_id = f.home
+                                WHERE f.kind='register-interest' AND f.ended_at IS NULL AND b.current_state IN ('closed', 'archived')`))
+      this.#endInterest(Number(x.follow_id), "project_closed");
+  }
+  /* R39: a register-interest follow is read no more often than daily, and never faster than its source's stated cadence. */
+  #intervalOf(f) {
+    const iv = MONITOR_CADENCE_MS[f.cadence] ?? MONITOR_CADENCE_MS.daily;
+    if (f.kind !== "register-interest") return iv;
+    try {
+      const d = this.registers.definitionOf((json(f.subject) || {}).register);
+      const h = d && d.definition && d.definition.refresh ? Number(d.definition.refresh.cadence_hours) : NaN;
+      return Number.isFinite(h) && h > 0 ? Math.max(iv, h * 3600000) : iv;
+    } catch { return iv; }
+  }
+
   /** R10: a portal's dataset, keyed to its query, with a declared key field. */
   followPortal({ address, query = null, key, cadence = null, home = null, ends = null, author, viewer = null } = {}) {
     const r = this.#actorRefusal(author, viewer, home);
@@ -553,8 +722,10 @@ export class Following {
   /* R12: each live follow's next read: due daily (or at its longer cadence) from its last read; never read, now. */
   #followPlan(nowMs) {
     return this.#rows(`SELECT * FROM follows WHERE ended_at IS NULL ORDER BY follow_id`).map((f) => {
-      const iv = MONITOR_CADENCE_MS[f.cadence] ?? MONITOR_CADENCE_MS.daily;
-      const due = f.last_read && !this.#pending(f) ? ms(f.last_read) + iv : null;
+      const iv = this.#intervalOf(f);
+      /* R42: a docket held back by the service's limits is due again at once, first among those waiting since its last read */
+      const due = f.last_outcome === "rate_held" ? (f.held_until ? ms(f.held_until) : null)
+        : f.last_read && !this.#pending(f) ? ms(f.last_read) + iv : null;
       return { kind: "follow", follow: f, id: Number(f.follow_id), due_at: due == null ? null : instant(due), dueMs: due ?? 0 };
     });
   }
@@ -564,6 +735,7 @@ export class Following {
     const nowMs = Number.isFinite(now) ? now : this.now();
     this.#syncPolicies(nowMs);
     this.#endExpired(nowMs);
+    this.#endClosedProjects();
     const follows = this.#followPlan(nowMs), meetings = this.#meetingPlan(nowMs);
     const due = [], unscheduled = [];
     let wake = null;
@@ -604,6 +776,9 @@ export class Following {
     const nowMs = Number.isFinite(now) ? now : this.now();
     const at = instant(nowMs);
     const answer = { configured: true, at, epoch: null, read: [], captured: [], unscheduled: [], member_act_required: [], failed: [], paused: h.paused() };
+    /* R42: the poll's lists, present only while a live follow carries an alert (the key set stays as it was otherwise) */
+    const alerting = this.#rows(`SELECT subject FROM follows WHERE kind='register-query' AND ended_at IS NULL`).some((x) => (json(x.subject) || {}).alert);
+    if (alerting) Object.assign(answer, { polled: [], rate_held: [], alert_off: [] });
     if (answer.paused.paused) return { ...answer, note: word("following.note.daemon_paused_administrator") };
     if (h.running.has(FOLLOW_CONSUMER)) return { ...answer, busy: true };
     h.running.add(FOLLOW_CONSUMER);
@@ -623,6 +798,7 @@ export class Following {
           const r = x.kind === "meeting" ? await this.#readMeeting(x, nowMs) : await this.#readFollow(x.follow, nowMs);
           if (r.member_act_required) answer.member_act_required.push(r.member_act_required);
           else answer.read.push(r.read);
+          for (const k of ["polled", "rate_held", "alert_off"]) if (r[k] && answer[k]) answer[k].push(r[k]);
           for (const c of r.captured || []) answer.captured.push(c);
           for (const f of r.failed || []) answer.failed.push(f);
         } catch (e) { answer.failed.push({ subject: key, reason: String((e && e.message) || e).slice(0, 200) }); }
@@ -660,23 +836,29 @@ export class Following {
       /* R20, R8, R15: a policy behind an account or a fee is never read on the tick, nothing fetched */
       r = { member_act_required: { follow: Number(f.follow_id), kind: f.kind, standard: subject.standard, gate: subject.access,
             why: word("following.why.policy_read_member") }, outcome: "member_act_required" };
-    } else if (gated && (f.kind === "register" || f.kind === "person-query")) {
+    } else if (gated && GATED_KINDS.includes(f.kind)) {
       /* R8, R15: never read on the tick, nothing fetched */
       r = { member_act_required: { follow: Number(f.follow_id), kind: f.kind, gate: gated.kind, ...(gated.price ? { price: gated.price } : {}),
             why: word("following.why.register_read_act") }, outcome: "member_act_required" };
     } else if (f.kind === "body") r = await this.#readBody(f, subject, nowMs);
     else if (f.kind === "portal") r = await this.#readPortal(f, subject, nowMs);
     else if (f.kind === "policy") r = await this.#readPolicy(f, subject, nowMs);
+    else if (f.kind === "register-interest") r = await this.#readInterest(f, subject, nowMs);
+    else if (f.kind === "register-query") r = await this.#readQuery(f, subject, nowMs);
     else r = await this.#readRegister(f, subject, nowMs);
     /* a failed read stays due (its epoch stays open, so this tick's retry reads it again only under a fresh epoch); a
        policy watch's failed attempt counts as its read, so its address is fetched at most every 7 days (R20, K1881) */
-    if (r.pending) {
+    if (r.held) {
+      /* R39, R42: held back (the service's limits, the host's pause): nothing was read, and the follow stays due */
+      this.#sql.exec(`UPDATE follows SET last_outcome=?, held_until=? WHERE follow_id=?`, r.outcome, r.held_until || null, f.follow_id);
+      this.#tell(Number(f.follow_id), r.held_until || at);
+    } else if (r.pending) {
       /* G21: a body's read not yet whole goes on at the next tick; its last read is the last whole one */
       this.#sql.exec(`UPDATE follows SET last_outcome=? WHERE follow_id=?`, r.outcome, f.follow_id);
       this.#tell(Number(f.follow_id), at);
     } else if (r.outcome === "failed" && f.kind !== "policy") this.#sql.exec(`UPDATE follows SET last_outcome=? WHERE follow_id=?`, r.outcome, f.follow_id);
     else {
-      this.#sql.exec(`UPDATE follows SET last_read=?, last_outcome=? WHERE follow_id=?`, at, r.outcome, f.follow_id);
+      this.#sql.exec(`UPDATE follows SET last_read=?, last_outcome=?, held_until=NULL WHERE follow_id=?`, at, r.outcome, f.follow_id);
       this.#tell(Number(f.follow_id), this.#nextDue(f.follow_id));
     }
     return r;
@@ -844,6 +1026,112 @@ export class Following {
     return { read: { follow: Number(f.follow_id), kind: f.kind, outcome, capture: t.sha, ...handed, ...form }, captured, ...(failed ? { failed } : {}), outcome };
   }
 
+  /* R37, R38, R41: a number's answer read on the tick: the docket's daily keyed check when its follow carries an alert and the
+     service is on, else the register's own page at the composed address, re-read (and nothing else: no link is followed). */
+  async #readQuery(f, s, nowMs) {
+    if (s.alert) {
+      const p = await this.#poll(f, s, nowMs, null);
+      this.#sql.exec(`UPDATE follows SET alert_state=? WHERE follow_id=?`, p ? "on" : "off", f.follow_id);
+      if (p) return p;
+      const r = await this.#readNumber(f, s.address, nowMs);
+      r.read.alert = "off";
+      r.alert_off = { follow: Number(f.follow_id), why: localize("following.index.alert_off_page", "the docket service is off, holds no key or states no daily limit, so the docket's page was read instead") };
+      return r;
+    }
+    return this.#readNumber(f, s.address, nowMs);
+  }
+  /* R37, R38: one read of a number's page; a capture whose bytes differ from the last is a change when R38 says so. */
+  async #readNumber(f, address, nowMs, { member = null, credential = null, notPublic = false } = {}) {
+    const base = { follow: Number(f.follow_id), kind: f.kind };
+    const prev = this.#one(`SELECT capture_sha FROM follow_reads WHERE follow_id=? AND address=?`, f.follow_id, address);
+    const t = await this.#take(f, address, nowMs, { member, credential, notPublic, title: word("following.title.followed_register", { address }) });
+    if (t.failed) return { read: { ...base, outcome: "failed" }, failed: [{ ...base, ...t.failed }], outcome: "failed" };
+    if (t.same) return { read: { ...base, outcome: "unchanged", capture: t.sha }, outcome: "unchanged" };
+    const change = prev ? await this.#recordChange(f, prev.capture_sha, t.sha, address, t.bytes, nowMs) : null;
+    return { read: { ...base, outcome: "captured", capture: t.sha, ...(change ? { change } : {}) },
+             captured: [{ ...base, address, capture: t.sha, bundle: t.bundle }], outcome: "captured" };
+  }
+  /* R38: two captures of a number's answer compared; a change recorded once for the pair, with its counts, never its meaning.
+     The change, or null. */
+  async #recordChange(f, beforeSha, afterSha, address, afterBytes, nowMs) {
+    if (!beforeSha || beforeSha === afterSha) return null;
+    const before = await this.#bytes(beforeSha), after = afterBytes || await this.#bytes(afterSha);
+    if (!before || !after) return null;
+    const at = instant(nowMs);
+    const c = answerChange({ view: this.view(), address, before, after, at });
+    if (!c.changed) return { recorded: false, basis: c.basis };
+    this.#sql.exec(`INSERT INTO register_query_changes (follow_id, before_sha, after_sha, home, at, counts, basis) VALUES (?,?,?,?,?,?,?)`,
+                   f.follow_id, beforeSha, afterSha, f.home, at, c.counts ? JSON.stringify(c.counts) : null, c.basis);
+    const id = Number(this.#one(`SELECT max(change_id) AS n FROM register_query_changes`).n);
+    return { recorded: true, change: id, counts: c.counts, basis: c.basis };
+  }
+
+  /* R41, R42: a followed docket's check through the keyed service's entries (`acquisition.keyedCapture`, purpose
+     docket-entries, the follow its standing; a member's refresh names the member instead): filed as a capture attributed to
+     the follow, landed, compared with the last (R38), and handed to events when the follow names a proceeding. Null when the
+     service is off, holds no key, or states no daily limit: the follow is then read as a page. Held (`rate_held`, nothing
+     sent) when a limit is reached: due again when it lifts, never a failure. */
+  async #poll(f, s, nowMs, member) {
+    const k = this.keyedOpt;
+    const url = docketEntriesAddress(s.address);
+    if (!k || !k.store || !url) return null;
+    const id = Number(f.follow_id);
+    const base = { follow: id, kind: f.kind, alert: s.alert };
+    let a;
+    try {
+      a = await (k.capture || keyedCapture)(k.store, { service: ALERT_SERVICE, purpose: ALERT_PURPOSE, request: { url, method: "GET" },
+        viewer: member || MACHINE, standing: member ? null : { follow: String(id) }, at: nowMs });
+    } catch (e) { a = { ok: false, reason: String((e && e.message) || e).slice(0, 160) }; }
+    if (!a || a.ok === false) {
+      const why = (a && a.reason) || "NO_ANSWER";
+      if (["KEYED_SERVICE_OFF", "UNKNOWN_KEYED_SERVICE", "NOT_PERMITTED"].includes(why)) return null;
+      if (why === "RATE_HELD") {
+        const until = instant(nowMs + Math.max(Number(a.retry_in_ms) || 0, a.poll ? 3600000 : 1000));
+        return { read: { ...base, outcome: "rate_held", until }, rate_held: { follow: id, ...(a.window ? { window: a.window } : { share: true }), until },
+                 outcome: "rate_held", held: true, held_until: until };
+      }
+      if (why === "ALREADY_CHECKED_TODAY") return { read: { ...base, outcome: "unchanged" }, polled: { follow: id, outcome: "unchanged" }, outcome: "unchanged" };
+      return { read: { ...base, outcome: "failed" }, failed: [{ ...base, address: url, reason: why }], outcome: "failed" };
+    }
+    const sha = a.document && a.document.capture ? a.document.capture.sha256 : a.capture ? a.capture.sha256 : null;
+    const held = this.#one(`SELECT capture_sha, bundle_id FROM follow_reads WHERE follow_id=? AND address=?`, f.follow_id, url);
+    if (a.existed || !a.document || (held && held.capture_sha === sha))
+      return { read: { ...base, outcome: "unchanged", capture: sha }, polled: { follow: id, outcome: "unchanged", capture: sha }, outcome: "unchanged" };
+    const at = instant(nowMs);
+    const landed = this.host.land({ id: `follow ${id}`, bundle: f.home, locators: [url], target: null }, { locator: url, doc: a.document }, at, {
+      title: word("following.title.followed_register", { address: url }),
+      summary: word("following.summary", { address: url, follow_id: id }),
+      notes: word("following.notes", { follow_id: id, kind: f.kind, by: word("following.text.member_standing_act", { author: f.author }), at, not_public: "" }),
+      trigger: `follow ${id}` });
+    if (!landed || !landed.ok) return { read: { ...base, outcome: "failed" }, failed: [{ ...base, address: url, reason: (landed && (landed.reason || landed.detail)) || "NOT_FILED" }], outcome: "failed" };
+    this.#sql.exec(`INSERT OR REPLACE INTO follow_reads (follow_id, address, capture_sha, bundle_id, facts, at) VALUES (?,?,?,?,NULL,?)`, id, url, sha, landed.bundle_id, at);
+    const change = held ? await this.#recordChange(f, held.capture_sha, sha, url, null, nowMs) : null;
+    /* R41, R29: handed to events for the proceeding the follow names; what events answers is said beside the capture (its
+       R38 is owed the entries' type, so a refusal here does not hold the follow back) */
+    const imp = s.entity && s.entity_kind === "proceeding" ? this.#handRegister(sha, s.entity) : null;
+    return { read: { ...base, outcome: "captured", capture: sha, ...(change ? { change } : {}),
+                     ...(imp ? { register_import: imp.ok === false ? { ok: false, reason: imp.reason } : { ok: true, written: Array.isArray(imp.written) ? imp.written.length : 0 } } : {}) },
+             captured: [{ ...base, address: url, capture: sha, bundle: landed.bundle_id }], polled: { follow: id, capture: sha }, outcome: "captured" };
+  }
+
+  /* R39: a stated interest's follow ticks only `registers.refreshImport` (its R33), which fetches by no other path; this
+     module fetches nothing for it. */
+  async #readInterest(f, s, nowMs) {
+    const id = Number(f.follow_id);
+    const base = { follow: id, kind: f.kind, interest: s.interest, register: s.register };
+    let a;
+    try { a = await this.registers.refreshImport({ interest: s.interest, now: nowMs, host: this.host }); }
+    catch (e) { a = { ok: false, reason: String((e && e.message) || e).slice(0, 160) }; }
+    if (a && a.ok !== false) return { read: { ...base, outcome: "refreshed", import: a.import ?? null }, outcome: "refreshed" };
+    const why = (a && a.reason) || "NO_ANSWER";
+    if (why === "REFRESH_UNCHANGED") return { read: { ...base, outcome: "unchanged", reason: why }, outcome: "unchanged" };
+    if (why === "member_act_required")
+      return { member_act_required: { follow: id, kind: f.kind, gate: a.gate || null, why: word("following.why.register_read_act") }, outcome: "member_act_required" };
+    if (why === "HOST_PAUSED") return { read: { ...base, outcome: "host_paused" }, outcome: "host_paused", held: true };
+    if (why === "NO_SUCH_INTEREST") { this.#endInterest(id, "interest_forgotten"); return { read: { ...base, outcome: "ended", reason: why }, outcome: "ended" }; }
+    return { read: { ...base, outcome: "failed" }, failed: [{ ...base, reason: why }], outcome: "failed" };
+  }
+
   /* R10: a portal's answer as a snapshot, a vintage valid at its capture instant. */
   async #readPortal(f, s, nowMs) {
     const t = await this.#take(f, s.address, nowMs, { title: word("following.title.portal_snapshot", { address: s.address }) });
@@ -890,8 +1178,25 @@ export class Following {
   /** R8: a register behind an account or a fee, refreshed only by the act of the member whose credential it uses. */
   async refreshRegister({ follow, author, credential = null, price = null } = {}) {
     const f = this.#follow(follow);
-    if (!f || f.ended_at || !["register", "person-query"].includes(f.kind)) return refuse("NO_SUCH_FOLLOW", localize("following.index.no_live_register_follow", "no live register follow by that id is held"));
+    if (!f || f.ended_at || !GATED_KINDS.includes(f.kind)) return refuse("NO_SUCH_FOLLOW", localize("following.index.no_live_register_follow", "no live register follow by that id is held"));
     const gated = json(f.gated);
+    const sub = json(f.subject) || {};
+    /* R41, R42: a member's refresh of a followed docket carrying an alert: the entries through the keyed service, counted
+       against its limits as any keyed call, the member named; with the service off, the page */
+    if (!gated && f.kind === "register-query" && sub.alert) {
+      if (!said(author) || isMachineIdentity(author) || author !== f.author)
+        return refuse("NOT_THE_FOLLOWER", localize("following.index.only_follower_refreshes_docket", "only the member who follows this docket refreshes it"));
+      const nowMs = this.now();
+      const p = await this.#poll(f, sub, nowMs, author);
+      const r = p || await this.#readNumber(f, sub.address, nowMs, { member: author });
+      if (r.outcome === "rate_held") return { ok: false, reason: "RATE_HELD", code: "RATE_HELD", follow: Number(f.follow_id), until: r.read.until,
+        detail: localize("following.index.refresh_rate_held", "the docket service allows no more calls for now; nothing was sent") };
+      if (r.outcome === "failed") return refuse("NOT_READ", (r.failed && r.failed[0] && r.failed[0].reason) || "failed");
+      this.#sql.exec(`UPDATE follows SET last_read=?, last_outcome=?, held_until=NULL WHERE follow_id=?`, instant(nowMs), r.outcome, f.follow_id);
+      this.#tell(Number(f.follow_id), this.#nextDue(f.follow_id));
+      return { ok: true, follow: Number(f.follow_id), via: p ? "entries" : "page", alert: p ? sub.alert : "off", capture: r.read.capture ?? null,
+               unchanged: r.outcome === "unchanged", ...(r.read.change ? { change: r.read.change } : {}) };
+    }
     if (!gated) return refuse("NOT_GATED", localize("following.index.public_register_read_tick", "a public register is read on the tick; a member's refresh is for one behind an account or a fee"));
     if (!said(author) || isMachineIdentity(author) || author !== f.author)
       return refuse("NOT_THE_FOLLOWER", localize("following.index.only_follower_refreshes", "only the member who follows this register refreshes it, with their own credential"));
@@ -899,7 +1204,16 @@ export class Following {
       return refuse("PRICE_FIRST", localize("following.index.this_register_charges_price_the", "this register charges {price}; the refresh runs only once that price is accepted as shown", { price: String(gated.price) }), { price: gated.price });
     if (gated.kind === "account" && (!credential || typeof credential !== "object"))
       return refuse("NO_CREDENTIAL", localize("following.index.account_gated_member_credential", "an account-gated register is read with the member's own credential"));
-    const s = json(f.subject) || {};
+    const s = sub;
+    if (f.kind === "register-query") {
+      /* R37, R8: a gated number's answer brought in by its member's own act, compared with the last as on the tick (R38) */
+      const r = await this.#readNumber(f, s.address, this.now(), { member: author, credential, notPublic: true });
+      if (r.outcome === "failed") return refuse("NOT_READ", (r.failed && r.failed[0] && r.failed[0].reason) || "failed");
+      this.#sql.exec(`UPDATE follows SET last_read=?, last_outcome=? WHERE follow_id=?`, instant(this.now()), r.outcome, f.follow_id);
+      this.#tell(Number(f.follow_id), this.#nextDue(f.follow_id));
+      return { ok: true, follow: Number(f.follow_id), capture: r.read.capture ?? null, unchanged: r.outcome === "unchanged", reproducible_by_public: false,
+               note: NOT_PUBLIC, ...(r.read.change ? { change: r.read.change } : {}) };
+    }
     const t = await this.#take(f, s.address, this.now(), { render: s.render === true, member: author, credential, notPublic: true,
       title: word("following.title.refreshed_member", { address: s.address }) });
     if (t.failed) return refuse("NOT_READ", t.failed.reason);
@@ -1734,12 +2048,118 @@ export class Following {
              ...(f.ended_at ? { ended_at: f.ended_at, ended_by: f.ended_by ?? null, ended_reason: reason } : {}) };
   }
 
+  /* R40 (T53): a register watch as `follows` shows it: for a number, the register, scheme and value as the member gave them
+     (`watched: "by_number"`); for a stated interest, its project, register and the filter's criteria as registers answers them
+     to the viewer (`watched: "auto"`); both with the changes since the viewer's last look, a docket's alert, and why it is not
+     being read (`not_read`), when it is not. */
+  #registerWatchFields(f, s, gated, viewer) {
+    const looked = this.#lookOf(f.follow_id, viewer);
+    const notRead = gated ? "member_act_required" : ["rate_held", "host_paused", "member_act_required"].includes(f.last_outcome) ? f.last_outcome
+      : s.alert && f.alert_state === "off" ? "alert_off" : null;
+    if (f.kind === "register-query")
+      return { register: s.register, scheme: s.scheme, value: s.value, watched: "by_number", changes_since_looked: this.#queryChangesSince(f.follow_id, looked),
+               ...(s.alert ? { alert: f.alert_state === "off" ? "off" : s.alert } : {}), ...(notRead ? { not_read: notRead } : {}) };
+    let criteria = null;
+    try {
+      const r = this.registers.interestOf({ project: s.project, register: s.register, viewer });
+      const i = r && r.ok && Array.isArray(r.interests) ? r.interests.find((x) => String(x.id) === String(s.interest)) : null;
+      criteria = i ? i.filter : null;
+    } catch { criteria = null; }
+    return { project: s.project, register: s.register, interest: s.interest, criteria, watched: "auto",
+             changes_since_looked: this.#interestChanges(viewer).filter((c) => String(c.interest) === String(s.interest) && (!looked || c.at > looked)).length,
+             ...(notRead ? { not_read: notRead } : {}) };
+  }
+  /* R40: the viewer's last look at a watch's changes, or null. */
+  #lookOf(id, viewer) {
+    const m = this.#memberKey(viewer);
+    if (!m) return null;
+    const r = this.#one(`SELECT at FROM register_looks WHERE follow_id=? AND member=?`, Number(id), m);
+    return r ? r.at : null;
+  }
+  #queryChangesSince(id, looked) {
+    return Number(this.#one(`SELECT count(*) AS n FROM register_query_changes WHERE follow_id=? ${looked ? "AND at > ?" : ""}`, Number(id), ...(looked ? [looked] : [])).n);
+  }
+  /* R39, R43: every change registers answers the viewer (its R34, paged through, bounded), oldest first. */
+  #interestChanges(viewer) {
+    const out = [];
+    let after = 0;
+    try {
+      for (let page = 0; page < 50; page++) {
+        const r = this.registers.changesSince({ after, limit: REGISTER_CHANGES_MAX, viewer });
+        if (!r || r.ok === false || !Array.isArray(r.changes)) break;
+        out.push(...r.changes);
+        if (r.changes.length < REGISTER_CHANGES_MAX || !r.cursor || Number(r.cursor) === Number(after)) break;
+        after = r.cursor;
+      }
+    } catch { /* none read */ }
+    return out;
+  }
+
+  /** R40 (T53): a member's look at one register watch's changes: the changes recorded (a number's, R38; an interest's
+   *  refreshes, `registers` R34), and her look recorded now, so `changes_since_looked` returns to 0. */
+  followChanges({ follow, viewer = null } = {}) {
+    const f = this.#follow(follow);
+    const m = this.#memberKey(viewer);
+    if (!f || !REGISTER_WATCH_KINDS.includes(f.kind) || !m || !this.#sees(f, viewer))
+      return refuse("NO_SUCH_FOLLOW", localize("following.index.no_register_watch_seen_2", "no register watch by that id you may see is held"));
+    const s = json(f.subject) || {};
+    const changes = f.kind === "register-query"
+      ? this.#rows(`SELECT change_id, at, counts, basis FROM register_query_changes WHERE follow_id=? ORDER BY at, change_id`, f.follow_id)
+          .map((c) => ({ at: c.at, counts: json(c.counts) || { ...NO_COUNTS }, basis: c.basis }))
+      : this.#interestChanges(viewer).filter((c) => String(c.interest) === String(s.interest)).map((c) => ({ at: c.at, counts: c.counts }));
+    const at = instant(this.now());
+    this.#sql.exec(`INSERT OR REPLACE INTO register_looks (follow_id, member, at) VALUES (?,?,?)`, Number(f.follow_id), m, at);
+    return { ok: true, follow: Number(f.follow_id), changes, looked_at: at };
+  }
+
+  /** R43 (T53; `notice-producers` R30): one entry per change of a register watch, the read the queue takes: each recorded
+   *  change of a number's follow (R38) and each refresh of an interest's follow that found rows added, changed or removed
+   *  (`registers.changesSince`, its R34), in order of the change's instant after `after`, at most `limit` (1–200, default
+   *  200), with `cursor`; `since` as R21's. `counts` and `total` only: no cell, name or value. A change of a watch the viewer
+   *  may not see, or of an ended watch, is left out whole. Writes nothing. */
+  registerChanges({ after = null, since = null, limit = null, viewer = null } = {}) {
+    const n = limit !== null && limit !== "" && Number.isInteger(Number(limit)) ? Math.min(REGISTER_CHANGES_MAX, Math.max(1, Number(limit))) : REGISTER_CHANGES_MAX;
+    const lo = since === null || since === undefined || since === "" ? null : wholeSecondFrom(since);
+    if (since !== null && since !== undefined && since !== "" && lo === null)
+      return { ok: true, changes: [], cursor: null, since_invalid: true, note: word("following.note.since_instant_policy") };
+    if (!said(viewer) || viewerPredicate(viewer).scope === "DENY") return { ok: true, changes: [], cursor: null };
+    const live = new Map();
+    for (const f of this.#rows(`SELECT * FROM follows WHERE kind IN ('register-query', 'register-interest') AND ended_at IS NULL`))
+      if (this.#sees(f, viewer)) live.set(Number(f.follow_id), f);
+    const all = [];
+    for (const c of this.#rows(`SELECT * FROM register_query_changes ORDER BY at, change_id`)) {
+      const f = live.get(Number(c.follow_id));
+      if (!f) continue;
+      const s = json(f.subject) || {};
+      const counts = json(c.counts) || { ...NO_COUNTS };
+      all.push({ key: `${c.at}|q|${String(c.change_id).padStart(12, "0")}`, at: c.at,
+                 entry: { watch: Number(f.follow_id), kind: f.kind, register: s.register, at: c.at, counts, total: total(counts), ...(s.alert ? { alert: s.alert } : {}) } });
+    }
+    const byInterest = new Map([...live.values()].filter((f) => f.kind === "register-interest").map((f) => [String((json(f.subject) || {}).interest), f]));
+    if (byInterest.size)
+      for (const c of this.#interestChanges(viewer)) {
+        const f = byInterest.get(String(c.interest));
+        if (!f) continue;
+        const at = wholeSecondFrom(c.at) || c.at;
+        const counts = { ...NO_COUNTS, ...(c.counts || {}) };
+        all.push({ key: `${at}|i|${String(c.import ?? 0).padStart(12, "0")}`, at,
+                   entry: { watch: Number(f.follow_id), kind: f.kind, register: c.register, project: c.project, at, counts, total: total(counts) } });
+      }
+    all.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+    const from = said(String(after ?? "")) ? String(after) : null;
+    const rest = all.filter((x) => (!lo || x.at >= lo) && (!from || x.key > from));
+    const page = rest.slice(0, n);
+    return { ok: true, changes: page.map((x) => x.entry), cursor: rest.length > n ? page[page.length - 1].key : null,
+             note: word("following.note.difference_between_two") };
+  }
+
   /** R14: every follow the viewer may see, and every per-meeting watch, with what is not being read and why; each
    *  follow with its end date (R22). Ended follows are listed too when `ended` is set, each with when and why. */
   follows({ viewer = null, now = null, ended = false } = {}) {
     const nowMs = Number.isFinite(Number(now)) && now !== null && now !== "" ? Number(now) : this.now();
     this.#syncPolicies(nowMs);
     this.#endExpired(nowMs);
+    this.#endClosedProjects();
     const plan = this.#followPlan(nowMs);
     if (ended === true || ended === "1" || ended === "true")
       for (const f of this.#rows(`SELECT * FROM follows WHERE ended_at IS NOT NULL ORDER BY follow_id`))
@@ -1761,7 +2181,8 @@ export class Following {
         ...(gated ? { gated, unscheduled: "read only at its member's own act (R8); the tick fetches nothing" } : {}),
         ...(f.kind === "policy" ? { watch: word("following.watch"),
                                     ...(POLICY_GATED_ACCESS.includes(s.access) ? { unscheduled: word("following.unscheduled.read_member_act") } : {}) } : {}),
-        ...(f.kind === "register" && !s.render ? { form: "static", note: STATIC_ONLY } : {}) });
+        ...(f.kind === "register" && !s.render ? { form: "static", note: STATIC_ONLY } : {}),
+        ...(REGISTER_WATCH_KINDS.includes(f.kind) ? this.#registerWatchFields(f, s, gated, viewer) : {}) });
     }
     for (const m of this.#meetingPlan(nowMs)) {
       if (!this.membership.inSight(m.bundle, viewer)) continue;
@@ -1781,6 +2202,9 @@ export function bodyProgress(c) {
   if (c.phase === "matters") return { read: c.meetings, total: c.meetings, more: false, whole: false, phase: "matters" };
   return { read: c.base + c.idx, total: c.base + c.size, more: !!c.more, whole: false, phase: "meetings" };
 }
+
+/* R43: a change's counts summed. */
+const total = (c) => ["added", "changed", "removed", "possibly_removed"].reduce((n, k) => n + (Number(c && c[k]) || 0), 0);
 
 /** R10: a snapshot's validity: the capture instant, at second precision (`civil-time`'s value). */
 export function vintage(at) { const v = String(at).slice(0, 19); return { from: v, to: v, precision: "second", zone: "UTC" }; }
