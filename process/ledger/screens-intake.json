@@ -41,7 +41,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-07T18:55:48Z"
+    "state": "WORKING",
+    "at": "2026-11-07T20:12:46Z",
+    "reason": "reopened: BOB ruling (screens-intake-rounds blocked, PR 888): wire the 7 found marks listed in docs/requirements-notes/screens-intake-rounds.md into the screens (capture lists and draws limitsSection, tooLargeLines/registerOfAddress, stepLine queued at capture.mjs:285, partsCancelledLine; open-file draws leftOutLine and safeViewPagesLine; archive draws mailboxCountLine) using the parts screens-intake-rounds built, and make the screen-layout and plane-answer changes that screens-intake-rounds R85-R92 (build/requirements/screens-intake-rounds.md) describe; each with a test through the screen. screens-intake-rounds strikes those marks afterwards"
   }
 }
