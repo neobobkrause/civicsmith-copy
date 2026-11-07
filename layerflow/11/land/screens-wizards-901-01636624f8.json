@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-wizards",
+  "pr": 901,
+  "branch": "job/screens-wizards",
+  "head": "01636624f84fcb5039da5dd5f8b9e9990cedfcad",
+  "before": "f370f294263e6b76b94ac52d89c02361ae5615e3",
+  "merge": "a287910efe46eebb1bc12da506340317402707fc",
+  "at": "2026-11-07T20:21:58Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
