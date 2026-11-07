@@ -17,3 +17,4 @@
 {"at":"2026-11-07T18:05:51Z","row":"sent","n":9,"to":"bob","text":"job queue complete, PR #833 ready, session session_018BhcecWei8XXbbBa5ry2Gc: run status"}
 {"at":"2026-11-07T18:06:13Z","row":"outcome","n":9,"outcome":"delivered"}
 {"at":"2026-11-07T20:11:28Z","row":"sent","n":10,"to":"bob","text":"job queue complete, PR #892 ready, session session_018Bhcefb7BzaJWFvikuF9US: run status"}
+{"at":"2026-11-07T20:11:59Z","row":"outcome","n":10,"outcome":"delivered"}
