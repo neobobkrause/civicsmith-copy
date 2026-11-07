@@ -36,7 +36,8 @@
   ],
   "prior_work": "Found work F1 at the end of the requirements file, with priority: it keeps store-request red. Meet it with the test it names, failing with the change reverted, and strike F1 with --test F1=.... Other unmet marks in the file are not this job's unless trivially met. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-04T07:13:30Z"
+    "state": "WORKING",
+    "at": "2026-11-07T17:18:12Z",
+    "reason": "reopened: re-test against the new interface of admission (land a37e42fa05), op-declarations (land e4c350c01d)"
   }
 }
