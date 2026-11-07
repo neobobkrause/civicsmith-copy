@@ -1,0 +1,12 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "notice-producers",
+  "attempt": 2,
+  "branch": "job/notice-producers",
+  "early": [
+    "steps",
+    "retrieval"
+  ],
+  "at": "2026-11-07T16:43:00Z"
+}
