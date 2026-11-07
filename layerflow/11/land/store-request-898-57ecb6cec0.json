@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "store-request",
+  "pr": 898,
+  "branch": "job/store-request",
+  "head": "57ecb6cec001022066bb7d8c8ad3a688dd30cdb2",
+  "before": "c60f0dc183f59b512909e30e75beccfbfd3fc6cd",
+  "merge": "3696241bb2203b4decf0937e0e2413ca15bd4f2d",
+  "at": "2026-11-07T20:31:14Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
