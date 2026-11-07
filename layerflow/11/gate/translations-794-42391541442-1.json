@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "translations",
+  "pr": 794,
+  "sha": "cc333109a7efd5f32ed317f2902be21e579cc2f3",
+  "run_id": 42391541442,
+  "run_attempt": 1,
+  "at": "2026-11-07T16:30:25Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 3.7,
+  "suite_minutes": 0.06,
+  "record_only": false,
+  "whole": true
+}

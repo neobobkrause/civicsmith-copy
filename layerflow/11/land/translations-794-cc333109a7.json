@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "translations",
+  "pr": 794,
+  "branch": "job/translations",
+  "head": "cc333109a7efd5f32ed317f2902be21e579cc2f3",
+  "before": "7df23b533d846c8d400ab9e1e5260c151ca1d62e",
+  "merge": "17352b68c2783c5ad92f27d33be5a04544d2e20d",
+  "at": "2026-11-07T16:33:54Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
