@@ -33,9 +33,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "layer publish refused: 'p3 layer publish: refused: the publish touches files outside interface-shell-t53 (ARC-2): bio-plane/test/m/interface-shell/requirements-ids.test.mjs, bio-plane/test/m/interface-shell/t53-hook.test.mjs; nothing was published'. PR 851's widened paths are on origin/tranche's process/ledger/interface-shell-t53.json but not on origin/layer/11's, which publish reads. The work is done on job/interface-shell-t53-2 (commit 729809c14, pushed): R138 and R141 struck (33791d39c, kit.test.mjs); interface-shell's requirements-ids.test.mjs admits R138, R141 to STRUCK; t53-hook.test.mjs drops the empty-contribution assertion and compares every empty form to the page composed with EMPTY_CONTRIBUTION (the default page now carries the t53 contribution). Both tests pass (10 of 10); the module suite passes (12 of 12). Ask: bring the ledger widening into layer/11, then I rerun publish. Separately: interface-shell's R8, R28 and R54 path tests fail on layer/11 without this change (not ours). The other fourteen marks stay unmet, owners as in the previous block.",
-    "at": "2026-11-07T18:36:39Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T18:47:36Z"
   },
   "prior_work": "Coordinator 18:31 (option c): your code lives in bio-plane/src/interface-shell-t53/, which you own; every hook you need inside bio-plane/src/interface-shell/ (index.mjs and the rest) is interface-shell's: name each as a found mark for interface-shell (report it to BOB), never edit it."
 }
