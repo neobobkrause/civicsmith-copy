@@ -23,6 +23,9 @@ For BOB. Plain notes of what the job did and what it could not do inside its pat
 
 - The R75 200 MiB parted-upload case in `r9-jobs.test.mjs` (skipped since R104) names `big.zip` and runs; its control names the same size `.pdf`,
   refused `TOO_LARGE` by capture R119, with no job row and no upload opened. The evidence-key control (`PARTED_UPLOAD_UNAVAILABLE`) stays.
+- The receipt's R26 test is `bio-plane/test/m/store-jobs/r26-size-ceiling.test.mjs` (the receipt takes only this module's tests): the 200 MiB `.zip` begins and its
+  jobs register (`unpack` by digest, `member` by session); the `.pdf` control is refused with no job. R26 itself is a test-only change: the file fails with
+  the change reverted only through its `member` registration (R24's code), which is said here plainly.
 
 ## R25: not this module's code (open)
 
