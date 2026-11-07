@@ -600,10 +600,14 @@ function renderCapture(cs, view) {
       /* capture R113 (fix round 9): a file sent in parts shows where it is: the file being checked (hashed), then part n of m; a refusal that ended it is drawn
          in its words; the nearest held row stands in until the design's (K4269) */
       + (U.parted ? (U.parted.failed ? `<p class="cs-state" data-state="failed" role="alert" data-parted="failed">${U.parted.failed}</p>`
+        /* R79 (DEC-455): after "Cancel sending" is answered, the canceled line; nothing of the file is kept */
+        : U.parted.cancelled ? `<p class="mk-note" role="status" data-parted="cancelled">${cs.w("screen.capture.file.parts.cancelled")}</p>`
         : `<p class="mk-note" role="status" data-parted="${U.parted.phase}">${U.parted.phase === "hashing"
           ? keyedW("screen.capture.file.parts.hashing", {}, () => cs.w("state.loading"))
           : keyedW("screen.capture.file.parts.sending", { n: String(Math.min(U.parted.total, U.parted.done + 1)), m: String(U.parted.total) },
-              () => `${cs.w("state.loading")} ${Math.min(U.parted.total, U.parted.done + 1)} / ${U.parted.total}`)}</p>`) : "")
+              () => `${cs.w("state.loading")} ${Math.min(U.parted.total, U.parted.done + 1)} / ${U.parted.total}`)}</p>`
+          /* R79 (DEC-455): while the parts go, "Cancel sending" (`captureuploadabort`) beside the progress */
+          + (U.parted.phase === "sending" && U.parted.upload ? `<div class="mk-acts">${cs.act("captureuploadabort")}</div>` : "")) : "")
       + (U.uploaded ? said(U.uploaded.existed ? "screen.capture.file.existed" : "screen.capture.file.done", { name: bare(U.uploaded.name) }) + made(U.uploaded) + readLine(U.uploaded) : "")
       + refusedPromotion("file")
       + `<p class="mk-note">${cs.w("screen.capture.file.note")}</p>`;
@@ -1113,7 +1117,8 @@ async function sendInParts(view, cs) {
     if (upload) { try { await k.call("captureuploadabort", { body: { upload } }); } catch (e) { /* the server expires it */ } }
     set({ failed: (a && view.parts.refusalHtml(cs, a)) || cs.w("shell.unread") });
   };
-  const step1 = (n, m, phase) => set({ phase, done: n, total: m });
+  let upload = "";
+  const step1 = (n, m, phase) => set({ phase, done: n, total: m, ...(upload ? { upload } : {}) });
   set({ phase: "hashing", done: 0, total: file.size });
   const whole = view.parts.sha256Hasher();
   const CHUNK = 4 * 1048576;
@@ -1124,10 +1129,11 @@ async function sendInParts(view, cs) {
     if (!alive()) return;
   }
   const wholeHex = whole.hex();
-  let restarts = 0, tries = 0, upload = "", began = null, digests = [], at = 0;
+  let restarts = 0, tries = 0, began = null, digests = [], at = 0;
   const begin = async () => {
     const q = { sha256: wholeHex, bytes: file.size, statement: query.statement, name: query.name, ...(query.type ? { type: query.type } : {}) };
     const a = body(await k.call("captureuploadbegin", { body: q }));
+    if (!alive()) return false;
     if (!a || a.ok === false) { await ended(a, ""); return false; }
     upload = String(a.upload); began = a; digests = []; at = Number.isInteger(a.next) ? a.next : 0; tries = 0;
     return true;
@@ -1144,6 +1150,7 @@ async function sendInParts(view, cs) {
     await step();
     if (!alive()) return;
     const r = body(await k.call("captureuploadpart", { query: { upload, index: String(i), sha256: digest }, raw: slice }));
+    if (!alive()) return;                                         /* R79: canceled (or replaced) while the part was out: nothing more is sent */
     if (r && r.ok !== false) { digests[i] = digest; i++; tries = 0; continue; }
     const code = r && String(r.code || r.reason || "");
     if ((code === "UPLOAD_LOST" || code === "UPLOAD_EXPIRED") && restarts++ < 1) { if (!(await begin())) return; i = 0; digests = []; continue; }
@@ -1157,6 +1164,18 @@ async function sendInParts(view, cs) {
   if (!done || done.ok === false) return ended(done, upload);
   set(null);
   await view.parts.doneUpload(view, done, k);
+}
+
+/* R79 (DEC-455): "Cancel sending" while a file goes in parts: the loop is stopped (the upload it was sending is no longer the page's, so it sends nothing
+ * more and begins nothing again) and `captureuploadabort` discards what was sent; once answered, the canceled line says nothing was kept. */
+function sendUploadAbort(view, el, cs) {
+  const upload = view.ui && view.ui.parted && typeof view.ui.parted.upload === "string" ? view.ui.parted.upload : "";
+  if (!upload) return null;
+  cs.set("sent", null);
+  return { body: { upload } };
+}
+function doneUploadAbort(view, answer, cs) {
+  cs.set("parted", { cancelled: true });
 }
 
 /* R21 (D9; capture R86, control-plane R72): an upload's answer is a provenance document; it is promoted as an information
@@ -1425,18 +1444,23 @@ export const CAPTURE_SCREEN = Object.freeze({
     Object.freeze({ op: "captureupload", label: "act.captureupload.label.capture", send: sendUpload, done: doneUpload, rereads: Object.freeze([]), reasonField: "statement",
                     failed: failedUpload,
                     refusals: Object.freeze({ UPLOAD_NO_STATEMENT: "screen.capture.refusal.UPLOAD_NO_STATEMENT", EMPTY: "screen.capture.refusal.upload.EMPTY",
-                                              /* R64 (G135d): the door's 413 carries the file's size and the limit (`size`, `bound`), and is drawn with them in KB, MB or GB; a refusal with neither is the sentence alone;
-                                                 one that carries `in_parts: true` is capture's cue (R113), answered by the parted upload beginning, so it says the upload goes on */
+                                              /* R64 (G135d); R73, R74 (DEC-500): the door's 413 carries the file's size and the limit (`size`, `bound`); one that carries `in_parts: true` is
+                                                 capture's cue (R113), answered by the parted upload beginning, so it says the upload goes on. Otherwise the refusal keeps nothing (R73) */
                                               TOO_LARGE: function (refusal, cs) {
                                                 const f = refusal || {};
                                                 if (f.in_parts === true) return cs.w("state.loading");
-                                                const base = cs.w("screen.capture.refusal.upload.TOO_LARGE");
-                                                if (!Number.isFinite(f.size) || !Number.isFinite(f.bound)) return base;
+                                                /* R73 (DEC-500): the kind's sentence with the file's figure and its limit, then "Nothing was added or read.", then R74 (b)'s way in, the member's own
+                                                   part (an upload is never a register's source, R74). Sizes in MB (`size.mb`, one decimal). A refusal without its figures keeps the
+                                                   bare sentence: it is never drawn with a hole. Reading only the first part of a file is never offered. */
                                                 const sz = (n) => (n < 1024 ? cs.w("size.small") : n < 1048576 ? cs.w("size.kb", { n: String(Math.round(n / 1024)) }) : n >= 1073741824 ? cs.w("size.gb", { n: (n / 1073741824).toFixed(1) }) : cs.w("size.mb", { n: (n / 1048576).toFixed(1) }));
-                                                const t = cs.w("screen.capture.refusal.upload.TOO_LARGE.figures", { size: sz(f.size), bound: sz(f.bound) });
-                                                return t !== "screen.capture.refusal.upload.TOO_LARGE.figures" ? t : `${base} <span class="mk-data" data-limit>${sz(f.size)} \u00b7 ${sz(f.bound)}</span>`;
+                                                const ARCHIVES = ["zip", "tar", "tgz", "gz", "7z", "mbox", "mailbox", "archive"];
+                                                const line = Number.isFinite(f.size) && f.size >= 0 && Number.isFinite(f.bound) && f.bound >= 0
+                                                  ? cs.w(ARCHIVES.includes(String(f.kind || "").toLowerCase()) ? "screen.capture.refusal.toolarge.archive" : "screen.capture.refusal.toolarge.size", { size: sz(f.size), bound: sz(f.bound) }) : "";
+                                                if (!line) return cs.w("screen.capture.refusal.upload.TOO_LARGE");
+                                                return `<span data-refusal="TOO_LARGE">${line} ${cs.w("screen.capture.refusal.toolarge.nothing_read")}</span> <span data-way="part">${cs.w("screen.capture.refusal.toolarge.part")}</span>`;
                                               },
                                               MEMBER_SESSION_REQUIRED: "screen.capture.refusal.MEMBER_SESSION_REQUIRED" }) }),
+    Object.freeze({ op: "captureuploadabort", label: "act.captureuploadabort.label.capture", send: sendUploadAbort, done: doneUploadAbort, rereads: Object.freeze([]) }),
     Object.freeze({ op: "capturecredentialsupply", label: "act.owed_capturecredentialsupply.label.capture", send: sendCredentialSupply, done: doneCredentialSupply, rereads: Object.freeze(["later"]), refusals: CRED_REFUSALS }),
     Object.freeze({ op: "capturerequestretry", label: "act.capturerequestretry.label.capture", send: sendCredentialRetry, done: doneCredentialRetry, rereads: Object.freeze(["later"]),
                     refusals: Object.freeze({ CAPTURE_REQUEST_NOT_RETRYABLE: function (refusal, cs) { return cs.w("screen.capture.cred.ref.notretry"); } }) }),
