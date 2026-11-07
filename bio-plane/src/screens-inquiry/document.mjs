@@ -171,6 +171,20 @@ function render(cs, view) {
   const dayOf = (iso) => (iso ? cs.date(String(iso), { year: true }) : "");
   const undetermined = (raw) => W("state.undetermined", { reason: raw ? { html: `<span class="id">${cs.esc(String(raw))}</span>` } : "" });
   const shortOf = (h) => String(h).slice(0, 8) + "…" + String(h).slice(-4);
+  /* screens-document-beta R73 (T53; JOURNEYS): a sentence the record stored in the machinery's words is drawn in the member's (`screen.document.basis.*`,
+     `screen.document.reading.*`, the UX lane's rows of 5 Nov); the stored sentence stays as it is in the record. Which one it is, is read from its own fixed
+     words (as `op=testify` is read above): who vouched (a testimony, a doorbell hand-in, a member's upload, "no authority is asserted"), and a reading that found
+     no names or could not parse its text ("recorded as an empty reading", "text-layer text (tier n)"). Any other stored sentence is drawn as stored. */
+  const plainSaid = (s, o = {}) => {
+    const x = String(s == null ? "" : s).trim();
+    if (!x) return "";
+    const when = { html: o.at ? cs.date(String(o.at), { year: true }) : "" };
+    if (/recorded as an empty reading|reader found no entities/.test(x)) return W("screen.document.reading.nonames");
+    if (/could not parse the .*text-layer text/.test(x)) return W("screen.document.reading.unparsed");
+    if (/\bop=testify\b/.test(x)) return W("screen.document.basis.testimony", { member: o.member || T("content.typed.anonymous_member"), recorded: when });
+    if (/no authority is asserted/.test(x)) return W(/doorbell|knocker/.test(x) ? "screen.document.basis.doorbell" : "screen.document.basis.added", { at: when });
+    return cs.esc(x);
+  };
   const text = d.capture && d.capture.state === "ok" ? String(d.capture.value["bundle.md"] || "") : "";
   /* a member's firsthand observation (provenance's `op=testify`): her words, never an address to watch */
   const testimony = /Authored through op=testify/.test(text);
@@ -215,9 +229,12 @@ function render(cs, view) {
   if (au && au.state === "failed") out.push(`<div data-authority="failed">${cs.state(au, () => "")}</div>`);
   else if (standing) {
     const det = standing.authority_state === "determined" && standing.authority;
+    const hist = Array.isArray(standing.history) ? standing.history : [];
+    const decided = hist.length > 0 && hist[hist.length - 1] && hist[hist.length - 1].source === "decision";
     out.push(`<p class="mk-small" data-authority="${det ? "determined" : "undetermined"}"${standing.reviewed === true ? " data-reviewed=\"1\"" : ""}>`
       + (det ? `<b class="rec" data-authority-issuer="1">${cs.esc(String(standing.authority))}</b> ` : cs.mark("gap", "undetermined", { reason: "" }) + " ")
-      + (standing.basis ? `<span class="meta" data-authority-basis="1">${cs.esc(String(standing.basis))}</span>` : "")
+      /* R73: the register's stored basis in the member's words; a member's decision keeps her own words */
+      + (standing.basis ? `<span class="meta" data-authority-basis="1">${decided ? cs.esc(String(standing.basis)) : plainSaid(standing.basis, { at: standing.at, member: uploader ? cs.memberName(uploader) : "" })}</span>` : "")
       + (standing.at ? ` <span class="meta">${cs.date(String(standing.at), { year: true })}</span>` : "") + "</p>");
   }
   const gr = sha ? later("grade", "capturegrade", { capture: sha }) : null;
@@ -368,9 +385,9 @@ function render(cs, view) {
     /* R61 (DEC-454, DEC-467): a kind not read is drawn by the Document page's own row `screen.document.unsupported.<kind>` where the words list holds it (`ico`; the
        rows of the kinds the beta reads are withdrawn, so those draw none of them) */
     if (k && k !== "undetermined" && heldWord("screen.document.unsupported." + k)) return cs.w("screen.document.unsupported." + k);
-    if (k === "undetermined") return basisOf ? cs.esc(basisOf) : "";
+    if (k === "undetermined") return basisOf ? plainSaid(basisOf) : "";
     const key = UNREAD_KINDS.includes(k) ? "reading-pipeline.index.unsupported_" + k : "reading-pipeline.index.unsupported_kind";
-    return heldWord(key) ? cs.w(key, { kind: k }) : basisOf ? cs.esc(basisOf) : "";
+    return heldWord(key) ? cs.w(key, { kind: k }) : basisOf ? plainSaid(basisOf) : "";
   };
   const unreadNote = noReader && unreadSaid(noReader) ? `<p class="mk-note" data-reading="unsupported" data-unsupported-kind="${cs.esc(noReader)}">${unreadSaid(noReader)}</p>` : "";
   let site = ""; if (outside) { try { site = new URL(locator).hostname; } catch { site = ""; } }
@@ -382,7 +399,7 @@ function render(cs, view) {
     + (textState && !archive ? `<div><span class="v"><span data-text-state="${textState}"${["full", "none", "stated", "repairable"].includes(textState) ? "" : ' tabindex="0"'} data-level="1" data-tip="${cs.esc(cs.w("screen.document.text.tip"))}">`
       /* G13, R61 (DEC-454): a text still being read says so by its own row (`screen.document.reading.beingread`); one page with no text by `.text.partial.one` */
       + (textState === "partial" ? cs.w(blind0.length === 1 ? "screen.document.text.partial.one" : "screen.document.text.partial", { pages: pagesText(blind0.map((n) => n + 1)) }) : textState === "unread" ? cs.mark("gap", "undetermined") + " " + cs.w("screen.document.text.unread")
-        : textState === "cut" ? (comp && comp.why ? cs.esc(String(comp.why)) : cs.mark("gap", "undetermined"))
+        : textState === "cut" ? (comp && comp.why ? plainSaid(comp.why) : cs.mark("gap", "undetermined"))
         : textState === "reading" ? (heldWord("screen.document.reading.progress") && readThrough !== null && readTotal !== null
           ? cs.w("screen.document.reading.progress", { read: sizeWord(readThrough), total: sizeWord(readTotal) })
           : cs.w("screen.document.reading.beingread")) : "") + "</span>"
@@ -569,7 +586,7 @@ function render(cs, view) {
       : textState === "stated" && refusedSaid ? refusedSaid
       : textState === "stated" && reasonSaid ? reasonSaid
       : textState === "repairable" && heldWord("screen.document.reading.repairable") ? cs.w("screen.document.reading.repairable")
-      : comp && typeof comp.why === "string" && comp.why.trim() ? cs.esc(comp.why.trim()) : basisWords ? cs.esc(basisWords) : undetermined("");
+      : comp && typeof comp.why === "string" && comp.why.trim() ? plainSaid(comp.why) : basisWords ? plainSaid(basisWords) : undetermined("");
     /* T51 fix round 10 (B88): a whole reading that states its own reason (not a size) draws that statement beside its words, as a stated one does */
     /* R62 (DEC-467, DEC-473): a kind kept and not read yet (`held_unread`, reading-pipeline R67) is named by `file.kind.<key>` in the held sentence, never
        "non-textual or too large" */
@@ -2046,6 +2063,8 @@ const words = Object.freeze([
   "mark.scale.subject.name", "mark.scale.subject.means", "mark.gap.undetermined.name", "mark.gap.undetermined.means",
   "state.empty", "state.loading", "state.failed", "state.undetermined", "shell.reason", "shell.reason.help", "shell.unread", "shell.copy",
   "member.founder.unnamed", "screen.question.supports.head", "screen.question.against.head",
+  /* screens-document-beta R73: a testimony whose author is not known is "a member of the team" */
+  "content.typed.anonymous_member",
   "document.links.title", "document.links.help", "document.links.held",
   "document.names.title", "document.names.help", "document.names.row", "document.names.chosen.record", "document.names.chosen.member",
   /* T51 (R65–R69, R78): the record of this copy, the fingerprints, the links in five groups, the names, "Your citations, leg by leg" */
