@@ -13,3 +13,4 @@
 {"at":"2026-11-07T22:15:33Z","row":"sent","n":7,"to":"bob","text":"job instance-setup complete, PR #948 ready, session session_018BhcefKEDAoyp47VgDHms3: run status"}
 {"at":"2026-11-07T22:15:55Z","row":"outcome","n":7,"outcome":"delivered"}
 {"at":"2026-11-07T22:42:26Z","row":"sent","n":8,"to":"bob","text":"job instance-setup complete, PR #948 ready, session session_018BhcefKEDAoyp47VgDHms3: run status"}
+{"at":"2026-11-07T22:42:46Z","row":"outcome","n":8,"outcome":"delivered"}
