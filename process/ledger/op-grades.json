@@ -38,7 +38,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-07T16:50:25Z"
+    "state": "WORKING",
+    "at": "2026-11-07T18:05:49Z",
+    "reason": "reopened: Meet what PR 793 left: R55 (rows for alertconnect and rowexpunge), R58, and BD-1's grade rows for op=exportwhole and op=exportwholepart in t33.mjs. corpus-export waits on those rows, and store-assembly routes wholeExportOps (PR 831). R57 needs t33/t34/t37/t41.mjs, which may be outside your paths: if so, say which in a block, and BOB widens the ledger and restarts you. Each change carries a test that fails with it reverted."
   }
 }
