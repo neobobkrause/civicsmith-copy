@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "load-check",
+  "pr": 848,
+  "branch": "job/load-check",
+  "head": "716f86b659066db65100c25370851da9944cf9d9",
+  "before": "a539422a184562d1f16dfa9cc0367e6096e76a84",
+  "merge": "d5cc3afbcfed50b480d021b40f96db7b61a63638",
+  "at": "2026-11-07T18:14:34Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}

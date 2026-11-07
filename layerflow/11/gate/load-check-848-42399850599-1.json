@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "load-check",
+  "pr": 848,
+  "sha": "716f86b659066db65100c25370851da9944cf9d9",
+  "run_id": 42399850599,
+  "run_attempt": 1,
+  "at": "2026-11-07T18:10:23Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 4.3,
+  "suite_minutes": 0.13,
+  "record_only": false,
+  "whole": true
+}
