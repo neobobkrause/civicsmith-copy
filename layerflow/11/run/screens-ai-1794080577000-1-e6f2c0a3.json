@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "screens-ai",
+  "round": 1,
+  "started": "2026-11-07T19:42:57Z",
+  "ended": "2026-11-07T19:50:34Z",
+  "minutes": 7.6,
+  "tested_on": "b52d823b198d8ad5ee9d28c21b88c322663a30ff",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-07T19:50:34Z"
+}
