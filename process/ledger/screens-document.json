@@ -56,8 +56,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T20:59:08Z",
-    "reason": "reopened: re-test against the new interface of op-grades (land c60f0dc183)"
+    "state": "COMPLETE",
+    "at": "2026-11-07T21:15:15Z"
   }
 }
