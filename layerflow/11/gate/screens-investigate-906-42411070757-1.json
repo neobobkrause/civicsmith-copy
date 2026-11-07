@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "screens-investigate",
+  "pr": 906,
+  "sha": "429b0f0fdd8be9a8fdef18195624991b95da9cdf",
+  "run_id": 42411070757,
+  "run_attempt": 1,
+  "at": "2026-11-07T20:27:36Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 8.97,
+  "suite_minutes": 4.67,
+  "record_only": false,
+  "whole": true
+}

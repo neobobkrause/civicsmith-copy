@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "control-plane",
+  "provider": "screens-investigate",
+  "provider_pr": 906,
+  "provider_land": "e5294eb876aa89cdc70342eb1388924136e0fd49",
+  "at": "2026-11-07T20:36:52Z",
+  "key": "control-plane<-screens-investigate@e5294eb876",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/screens-investigate/requirements-ids.test.mjs: breaking, added code that is not an object property: test ( \"\" , ( ) => {), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
