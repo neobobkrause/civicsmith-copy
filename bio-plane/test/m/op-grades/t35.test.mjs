@@ -33,7 +33,8 @@ test("R21 R22 R37 (K2049): IRREVERSIBLE_WEIGHT, frozen, holds every op RUNGS gra
   /* R37 (T47): publish, and publishcheck graded as it (K2839), prepare and are `terminal`: neither carries the weight */
   assert.deepEqual(irreversible.sort(), ["publishat", "publishatmove"]);
   for (const op of ["publish", "publishcheck"]) assert.ok(!IRREVERSIBLE_WEIGHT.includes(op), op);
-  assert.deepEqual([...IRREVERSIBLE_WEIGHT].sort(), [...irreversible, "personexpunge", "standardrelease"].sort());
+  /* (T53) R55 adds `registers`' rowexpunge by hand, as personexpunge (BOB C13); its owner grades it, so it is in no hand RUNGS row */
+  assert.deepEqual([...IRREVERSIBLE_WEIGHT].sort(), [...irreversible, "personexpunge", "standardrelease", "rowexpunge"].sort());
   assert.equal(new Set(IRREVERSIBLE_WEIGHT).size, IRREVERSIBLE_WEIGHT.length);
   assert.equal(RUNGS.personexpunge, "reasoned", "the weight is not a rung");
   /* K2049: standardrelease, never undone (standards R37), carries the weight and DEC-143's dialog; its rung stays */
