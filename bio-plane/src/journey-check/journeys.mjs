@@ -10,7 +10,9 @@ import { requireWord, wordPattern, byWord, drawsWord } from "./words.mjs";
 import { localize } from "../setup-words/index.mjs";
 import { pair, WIDTHS, viewportOf } from "./design.mjs";
 import { join, relative } from "node:path";
-import { WAIT_BOUND_MINUTES } from "../../../newgroup/src/steps/api.mjs";
+/* The walk's own patience with the install: an install can wait on Cloudflare (its page says for how long, five minutes today)
+   before it says what is not confirmed. The walk's own figure, not a value read from installer-steps, which it does not use. */
+export const INSTALL_WAIT_MS = 10 * 60000;
 
 const rand = (n) => Buffer.from(crypto.getRandomValues(new Uint8Array(n))).toString("base64url");
 export const SLUG = "lakeshore-tenants";
@@ -185,14 +187,14 @@ export async function walkInstaller(walk, page, installerOrigin) {
   });
   await walk.step(page, "install: Cloudflare's permission, allowed", async (p) => {
     /* the callback answers when the install has run (the local world hands the browser its page whole), which includes any wait
-       on Cloudflare up to the installer's own bound: the step allows that bound and three minutes more */
+       on Cloudflare: the step allows the walk's install wait */
     await p.locator("#allow").click({ noWaitAfter: true });
-    await p.waitForURL(/\/callback\?/, { timeout: (WAIT_BOUND_MINUTES + 3) * 60000, waitUntil: "commit" });
+    await p.waitForURL(/\/callback\?/, { timeout: INSTALL_WAIT_MS, waitUntil: "commit" });
   });
   await walk.step(page, "install: each step finishes, the checks pass", async (p) => {
     /* the install's verification may wait on Cloudflare up to the installer's own bound before it says what is not confirmed,
-       so the walk waits that long and a minute more, and then names what the page says, never a bare timeout */
-    await p.locator("#done:not([hidden]), #fail:not([hidden])").first().waitFor({ timeout: (WAIT_BOUND_MINUTES + 1) * 60000 });
+       so the walk waits its install wait, and then names what the page says, never a bare timeout */
+    await p.locator("#done:not([hidden]), #fail:not([hidden])").first().waitFor({ timeout: INSTALL_WAIT_MS });
     if (await p.locator("#fail:not([hidden])").count())
       throw new Error("the installer stopped: " + (await p.locator("#fail-h").textContent()) + " " + (await p.locator("#fail-p").textContent()));
     const stopped = await p.locator('#log [data-r="no"], #checks [data-r="no"]').allTextContents();
