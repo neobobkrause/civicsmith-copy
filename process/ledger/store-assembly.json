@@ -154,7 +154,8 @@
   ],
   "prior_work": "First, consolidate build/requirements/store-assembly.md (95700 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/store-assembly.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/store-assembly.md is unchanged by the move (compare against the ids at the start commit). Then do the provider-notice work this START lists: for each notice, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal (new module ids, build/modules.json rows, build/layers.md). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T04:54:42Z"
+    "state": "WORKING",
+    "at": "2026-11-07T17:19:18Z",
+    "reason": "reopened: re-test against the new interface of admission (land a37e42fa05), op-grades (land 49ab2cf375), queue-producers (land 6830db9cff), op-declarations (land e4c350c01d); and three found items (each with its own F mark and a test that fails reverted): (a) remove the dead 'register-import' consumer in assemble.mjs:600-604 (scheduler R34 owns re-arm); (b) give following a keyed {store} for following R41; (c) hand deps.importsEnded (registers) to notice-producers beside readingsEnded (assemble.mjs:620) for notice-producers R31"
   }
 }
