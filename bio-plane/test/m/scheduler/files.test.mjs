@@ -29,7 +29,7 @@ const wanting = (wakes) => Object.fromEntries(FIVE.map((n, i) => [n, { wake: wak
 test("R24, R5, R2: the five stand after dated-waits, in R24's order, before R25's document-copy, each answering under its own key (filescan, filerender, filedeeper, fileforward, filereputation); without file-safety they are absent", () => {
   assert.deepEqual([...FILE_SAFETY_CONSUMERS], FIVE);
   assert.deepEqual([...FILE_CONSUMERS], FIVE, "the fixture's list is the module's");
-  assert.deepEqual(SCHEDULER_ORDER.slice(SCHEDULER_ORDER.indexOf("dated-waits")), ["dated-waits", ...FIVE, "document-copy", "question-explore", "ingest"], "then document-copy, then R26's question-explore (T41), then G55's ingest");
+  assert.deepEqual(SCHEDULER_ORDER.slice(SCHEDULER_ORDER.indexOf("dated-waits")), ["dated-waits", ...FIVE, "document-copy", "question-explore", "register-import", "discard-clear", "mail-clear", "ingest"], "then document-copy, then R26's question-explore (T41), then T53's three (R34, R35), then G55's ingest");
   assert.deepEqual(FIVE.map((n) => SCHEDULER_KEYS[n]), KEYS);
   for (const n of FIVE) {
     assert.equal(RANKED.includes(n), false, `${n}: given its now alone`);

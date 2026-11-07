@@ -128,8 +128,8 @@ test("R8: a consumer that is not {name, key, due, wake, tick}, or whose key anot
   assert.equal(s.register("", consumer("a")).reason, "CONSUMER_MALFORMED");
   for (const key of ["swept", "nextAt", "probes", "drained", "biasdebt"])
     assert.equal(s.register("m", consumer(`c-${key}`, { key })).reason, "CONSUMER_MALFORMED", key);
-  assert.equal(s.consumers().length, SCHEDULER_ORDER.length - LATER.length - 3 - 5 - 1 - 1 - 1,
-    "only the module's own consumers (the daily three's owners, file-safety, case-carriage, question-explorer and calculations absent)");
+  assert.equal(s.consumers().length, SCHEDULER_ORDER.length - LATER.length - 3 - 5 - 1 - 1 - 1 - 3,
+    "only the module's own consumers (the daily three's owners, file-safety, case-carriage, question-explorer, calculations, registers, doorbell and mail-door absent)");
 });
 
 test("R8: a consumer R5 does not name is appended in the order the modules register; it inherits R1–R4", async () => {
@@ -153,7 +153,7 @@ test("R13: with SCHED_PROBE unset or unparsable the registry is exactly R5's con
     const r = await s.onAlarm(NOW);
     await s.arm(NOW);
     assert.deepEqual(r.probes, []);
-    assert.equal(s.registry(await s.probeLog()).length, SCHEDULER_ORDER.length - LATER.length - 3 - 5 - 1 - 1 - 1);
+    assert.equal(s.registry(await s.probeLog()).length, SCHEDULER_ORDER.length - LATER.length - 3 - 5 - 1 - 1 - 1 - 3);
     assert.deepEqual(st.log.filter(([m, k]) => m === "put" || k === "sched_probe" && m !== "get"), [], JSON.stringify(env));
     assert.equal(st.kv.size, 0);
   }
