@@ -53,7 +53,7 @@ test("R75 job-registrar: every refusal of the stub is the real registrar's, with
 
 test("R75 job-registrar: a first registration answers {ok: true, existed: false, state: 'queued'} for each kind, a second {existed: true, state: 'queued'}; idempotent on (sha or session, kind); armJobs resolves", async () => {
   const x = await world();
-  const KINDS = ["keep", "reading", "ocr", "subresources", "unpack", "fetch", "scan", "safe_view", "grade", "ingest"], SESSION = ["fetch", "subresources"];
+  const KINDS = ["keep", "reading", "ocr", "subresources", "unpack", "fetch", "scan", "safe_view", "grade", "ingest", "member"], SESSION = ["fetch", "subresources", "member"];
   for (const kind of KINDS) {
     const entry = SESSION.includes(kind) ? { kind, session: `s-${kind}` } : { kind, sha: D, ...(kind === "keep" ? { parts: [P1, P2] } : {}) };
     assert.deepEqual(x.cap.registerJob(entry), { ok: true, existed: false, state: "queued" }, `${kind}: the first registration`);
