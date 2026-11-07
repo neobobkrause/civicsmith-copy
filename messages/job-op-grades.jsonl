@@ -5,3 +5,4 @@
 {"at":"2026-11-05T03:43:27Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (9 jobs ready). Then: job op-grades BLOCKED: run status"}
 {"at":"2026-11-05T03:43:40Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-07T16:40:52Z","row":"sent","n":4,"to":"bob","text":"job op-grades complete, PR #793 ready, session session_018Bhceg9EDxPDWqAbaGpUu6: run status"}
+{"at":"2026-11-07T16:41:18Z","row":"outcome","n":4,"outcome":"delivered"}
