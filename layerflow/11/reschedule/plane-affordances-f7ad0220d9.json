@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "plane",
+  "provider": "affordances",
+  "provider_pr": 808,
+  "provider_land": "f7ad0220d99402fba1e803d42623e82091310c20",
+  "at": "2026-11-07T17:38:59Z",
+  "key": "plane<-affordances@f7ad0220d9",
+  "why": "added T53_AI_ACCOUNT_OPS; its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/affordances/door.test.mjs: breaking, added code that is not an object property: , \"dimension_onward\", bio-plane/test/m/affordances/plane.test.mjs: breaking, added code that is not an object property: , \"dimension_onward\", bio-plane/test/m/affordances/requirements-ids.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/affordances/t31.test.mjs: breaking, added code that is not an object property: { REGISTERED } from \"./register-owners.mjs\" ; import, bio-plane/test/m/affordances/t33.test.mjs: breaking, added code that is not an object property: , dimension : v . connection_kinds . words, bio-plane/test/m/affordances/t36.test.mjs: breaking, too large to align, bio-plane/test/m/affordances/t53.test.mjs: breaking, added, naming R36, R47, R48, R17, R59, R62, R67, R72, R73, R74, R75 (Provides before this land) while affordances's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
