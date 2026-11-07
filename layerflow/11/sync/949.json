@@ -1,0 +1,13 @@
+{
+  "row": "sync",
+  "layer": 11,
+  "pr": 949,
+  "head": "99b5e119ea2244a3d981eb3c08fb6a7abaa50706",
+  "merge": "ec28fb7eff85bd1b34b855db2ff1c0f89245a462",
+  "tranche_tip": "488844ccf1228b54f9e7278f65e9eb55399b51d0",
+  "pin_before": "f390ebe4f1f73b32e8064204d5d3a448a593eeff",
+  "pin_after": "f390ebe4f1f73b32e8064204d5d3a448a593eeff",
+  "resolved": [],
+  "at": "2026-11-07T22:06:30Z",
+  "by": "bob"
+}
