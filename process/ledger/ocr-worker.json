@@ -1,0 +1,42 @@
+{
+  "id": "ocr-worker",
+  "title": "ocr-worker: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "ocr-worker/",
+    "build/requirements/ocr-worker.md"
+  ],
+  "tests": [
+    "ocr-worker/test/",
+    "bio-plane/test/ocr-measure-probe.mjs"
+  ],
+  "requirements": "build/requirements/ocr-worker.md",
+  "uses": [
+    "record-grammar",
+    "pdf-pixels",
+    "bundler",
+    "text-chain",
+    "test-support",
+    "runtime-limits",
+    "setup-words",
+    "pdf-worker"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/ocr-worker.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

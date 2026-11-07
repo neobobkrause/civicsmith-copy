@@ -1,0 +1,47 @@
+{
+  "id": "image-codecs",
+  "title": "image-codecs: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "pdf-worker/src/mq.mjs",
+    "pdf-worker/src/dctdecode.mjs",
+    "pdf-worker/src/jbig2decode.mjs",
+    "pdf-worker/src/jpxdecode.mjs",
+    "pdf-worker/src/ccittdecode.mjs",
+    "pdf-worker/src/pngdecode.mjs",
+    "build/requirements/image-codecs.md"
+  ],
+  "tests": [
+    "pdf-worker/test/codecs/",
+    "pdf-worker/test/fixtures/make-dct-fixtures.py",
+    "pdf-worker/test/fixtures/dct-variants.json",
+    "pdf-worker/test/fixtures/make-jbig2-fixtures.py",
+    "pdf-worker/test/fixtures/jbig2-variants.json",
+    "pdf-worker/test/fixtures/make-jpx-fixtures.py",
+    "pdf-worker/test/fixtures/jpx-variants.json"
+  ],
+  "requirements": "build/requirements/image-codecs.md",
+  "uses": [
+    "test-support",
+    "setup-words",
+    "runtime-limits"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/image-codecs.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}
