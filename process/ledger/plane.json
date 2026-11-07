@@ -168,7 +168,8 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: op-declarations:95 (door.mjs:93 hands ACT_GATE to the affordances) and bundler:140 (deploy.mjs bindings). For each, decide from your own requirements what this module must do (the T53 ops that replace the retired ones are in ai-accounts' requirements and op-declarations), adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T01:45:00Z"
+    "state": "WORKING",
+    "at": "2026-11-07T20:36:52Z",
+    "reason": "reopened: re-test against the new interface of admission (land a37e42fa05), op-grades (land 49ab2cf375), queue-producers (land 6830db9cff), op-declarations (land e4c350c01d), store-request (land 967e0117ee), notice-producers (land dbb6ca4edf), affordances (land f7ad0220d9), interface-shell (land 49f5b34a88), instance-setup (land f5828a4d4d), admission (land 346da3bd38), queue (land f31955efda), store-door (land 80ba2b2264), op-declarations (land 92f5416be9), op-grades (land dfeadc2921), screens-settings (land 1a724dc528), store-assembly (land 7bed813c5e), notice-producers (land 9b90d70e0c), admission (land 6f09192a3e), store-assembly (land 75ff1e14ae), affordances (land b52d823b19), affordances (land 0e72085a6c), queue (land ca3e10fbec)"
   }
 }
