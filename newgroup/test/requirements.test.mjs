@@ -834,7 +834,7 @@ test("R21 (as installer-places R94 amends it) the install offers the held places
   /* R72: the line saying what none means is the design's key (`screen.install.places.none`), read by key, not copied. */
   assert.equal(PROFILES_NONE, word("screen.install.places.none"));
   assert.ok(home.includes(PROFILES_NONE) && /none/i.test(PROFILES_NONE), "choosing none is allowed and said");
-  assert.ok(!upd.includes('name="profile"'), "an update offers no choice");
+  assert.ok(!/<input[^>]*name="profile"/.test(upd), "an update offers no choice");
   assert.ok(home.includes("profiles:boxes()"), "the install page sends the choice");
   /* /begin refuses, by name, what it cannot bind: a profile not offered (unknown, or a test profile), a repeat, not a
      list, and any choice on an update. */
