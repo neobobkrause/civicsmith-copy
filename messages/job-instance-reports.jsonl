@@ -1,3 +1,4 @@
 {"at":"2026-11-07T17:41:34Z","row":"sent","n":1,"to":"bob","text":"job instance-reports complete, PR #837 ready, session session_018BhcefDPxySPAzYdgSaSB1: run status"}
 {"at":"2026-11-07T17:41:52Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-07T18:52:22Z","row":"sent","n":2,"to":"bob","text":"job instance-reports complete, PR #863 ready, session session_018BhcegEZhEqKTSjbFKsdfA: run status"}
+{"at":"2026-11-07T18:52:39Z","row":"outcome","n":2,"outcome":"delivered"}
