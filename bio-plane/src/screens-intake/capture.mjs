@@ -1142,7 +1142,10 @@ async function sendInParts(view, cs) {
   const step = () => new Promise((resolve) => k.later(0, (kk) => { k = kk; resolve(); }));
   const ended = async (a, upload) => {
     if (upload) { try { await k.call("captureuploadabort", { body: { upload } }); } catch (e) { /* the server expires it */ } }
-    set({ failed: (a && view.parts.refusalHtml(cs, a)) || cs.w("shell.unread") });
+    /* R73, R74 (DEC-500): a begin refused TOO_LARGE (a file over the capture ceiling) is drawn exactly as the one-request upload's refusal: its figures, "Nothing was
+       added or read.", then R74 (b)'s way in (`uploadTooLargeHtml`); any other refusal in its words */
+    const code = a && String(a.code || a.reason || "");
+    set({ failed: (code === "TOO_LARGE" && view.parts.uploadTooLargeHtml(cs, a)) || (a && view.parts.refusalHtml(cs, a)) || cs.w("shell.unread") });
   };
   let upload = "";
   const step1 = (n, m, phase) => set({ phase, done: n, total: m, ...(upload ? { upload } : {}) });
@@ -1191,6 +1194,20 @@ async function sendInParts(view, cs) {
   if (!done || done.ok === false) return ended(done, upload);
   set(null);
   await view.parts.doneUpload(view, done, k);
+}
+
+/* R73, R74 (DEC-500): an upload's TOO_LARGE in words, the one-request act's refusal drawn for a parted upload's begin: the kind's sentence with the file's figure and
+ * its limit (`size`, `bound`; sizes in MB, one decimal), then "Nothing was added or read.", then R74 (b)'s way in, the member's own part (an upload is never a
+ * register's source). A refusal without its figures is the bare `screen.capture.refusal.upload.TOO_LARGE`, never a sentence with a hole. Self-contained: the page
+ * serves each function alone. */
+function uploadTooLargeHtml(cs, refusal) {
+  const f = refusal && typeof refusal === "object" ? refusal : {};
+  const sz = (n) => (n < 1024 ? cs.w("size.small") : n < 1048576 ? cs.w("size.kb", { n: String(Math.round(n / 1024)) }) : n >= 1073741824 ? cs.w("size.gb", { n: (n / 1073741824).toFixed(1) }) : cs.w("size.mb", { n: (n / 1048576).toFixed(1) }));
+  const ARCHIVES = ["zip", "tar", "tgz", "gz", "7z", "mbox", "mailbox", "archive"];
+  const line = Number.isFinite(f.size) && f.size >= 0 && Number.isFinite(f.bound) && f.bound >= 0
+    ? cs.w(ARCHIVES.includes(String(f.kind || "").toLowerCase()) ? "screen.capture.refusal.toolarge.archive" : "screen.capture.refusal.toolarge.size", { size: sz(f.size), bound: sz(f.bound) }) : "";
+  if (!line) return cs.w("screen.capture.refusal.upload.TOO_LARGE");
+  return `<span data-refusal="TOO_LARGE">${line} ${cs.w("screen.capture.refusal.toolarge.nothing_read")}</span> <span data-way="part">${cs.w("screen.capture.refusal.toolarge.part")}</span>`;
 }
 
 /* R79 (DEC-455): "Cancel sending" while a file goes in parts: the loop is stopped (the upload it was sending is no longer the page's, so it sends nothing
@@ -1450,7 +1467,7 @@ export const CAPTURE_SCREEN = Object.freeze({
   id: "capture",
   reads: captureReads,
   render: renderCapture,
-  parts: Object.freeze({ bundleFor, checkOutcome, copyOf, doneUpload, estimateOf, filedFor, filedHeld, forOf, heldTitle, homeOf, jobStateOf, notMemberWords, pictureOf, projectOf, promoteDocument, readProjectQuestions, readRefusalHtml, readingOf, refusalHtml, refusedHtml, repairedReading, sendInParts, sha256Hasher, supportingReasons, titleOf, watchFetch, watchReading }),
+  parts: Object.freeze({ bundleFor, checkOutcome, copyOf, doneUpload, estimateOf, filedFor, filedHeld, forOf, heldTitle, homeOf, jobStateOf, notMemberWords, pictureOf, projectOf, promoteDocument, readProjectQuestions, readRefusalHtml, readingOf, refusalHtml, refusedHtml, repairedReading, sendInParts, sha256Hasher, supportingReasons, titleOf, uploadTooLargeHtml, watchFetch, watchReading }),
   acts: Object.freeze([
     Object.freeze({ op: "acquire", label: "act.acquire.label.capture", send: sendAcquire, done: doneAcquire, failed: failedAcquire, rereads: Object.freeze(["open"]),
                     /* G72: a session the plane no longer holds is the end of that capture, not a failure: `done` draws it (its line is the screen's own, so the note beside the act is empty) */
