@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "store-door",
+  "session": "session_018Bhcedz231GawVQvMZrr1u",
+  "started": "2026-11-07T17:47:40Z",
+  "ended": "2026-11-07T17:49:07Z",
+  "at": "2026-11-07T17:49:07Z",
+  "minutes": 1.45,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 11.38,
+  "tests": {
+    "total": 72,
+    "pass": 72,
+    "fail": 0
+  }
+}
