@@ -1,0 +1,11 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "interface-shell-t53",
+  "attempt": 2,
+  "branch": "job/interface-shell-t53-2",
+  "early": [
+    "setup-words"
+  ],
+  "at": "2026-11-07T16:28:07Z"
+}
