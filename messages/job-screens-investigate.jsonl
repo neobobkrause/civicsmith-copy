@@ -4,3 +4,4 @@
 {"at":"2026-11-05T10:02:29Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-05T10:42:21Z","row":"sent","n":3,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (1 job ready). Then: job screens-investigate complete, PR #471 ready, session session_018BhcecmyDDwexMupVb1MQG: run status. bob-180 answered: both files are repaired existing tests, no product code changed; rerun with --exempt-revert."}
 {"at":"2026-11-05T10:43:46Z","row":"outcome","n":3,"outcome":"delivered"}
+{"at":"2026-11-07T18:04:53Z","row":"sent","n":4,"to":"bob","text":"job screens-investigate complete, PR #846 ready, session session_018BhcegLDmsqL4A27sNeqxV: run status"}
