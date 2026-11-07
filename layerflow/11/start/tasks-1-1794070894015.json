@@ -1,0 +1,11 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "tasks",
+  "attempt": 1,
+  "branch": "job/tasks",
+  "early": [
+    "affordances"
+  ],
+  "at": "2026-11-07T17:01:34Z"
+}
