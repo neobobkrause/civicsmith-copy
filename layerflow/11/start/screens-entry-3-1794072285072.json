@@ -1,0 +1,11 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "screens-entry",
+  "attempt": 3,
+  "branch": "job/screens-entry",
+  "early": [
+    "instance-setup"
+  ],
+  "at": "2026-11-07T17:24:45Z"
+}
