@@ -48,7 +48,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/store-jobs.md, each with a test under bio-plane/test/m/store-jobs/ that fails with the change reverted. Your code is store-assembly's pending.mjs (the owed-work ledger, job table, JOB_KINDS, registerJob, the runner), acquire-timings.mjs, casesweep.mjs and the job wiring of assemble.mjs, which store-assembly shares: change only those parts. R24 (coordinator 13:08): 'member' job rows are written by acquisition (member.mjs fileMember) but no runner owns them; JOB_KINDS lacks 'member' (pending.mjs:99) and the registrar refuses it (pending.mjs:265). Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T13:20:00Z"
+    "state": "WORKING",
+    "at": "2026-11-07T16:38:58Z"
   }
 }
