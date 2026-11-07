@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "store-door",
+  "round": 1,
+  "started": "2026-11-07T17:50:36Z",
+  "ended": "2026-11-07T17:50:50Z",
+  "minutes": 0.2,
+  "tested_on": "17327a9ed57b35375763a5a9c70d8bc918eb5173",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-07T17:50:50Z"
+}
