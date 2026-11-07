@@ -1,0 +1,23 @@
+{
+  "row": "land",
+  "layer": 9,
+  "module": "escalation",
+  "pr": 734,
+  "head": "e71c5cbe1067dc43692fd3c6b05f162268135d31",
+  "before": "58b0a5e734839127a0cc33147e8ebeb1bd638357",
+  "merge": "d436748e33bcded5d9a2454f0ab36d0d9ed64dc2",
+  "at": "2026-11-07T01:18:32Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none"
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
