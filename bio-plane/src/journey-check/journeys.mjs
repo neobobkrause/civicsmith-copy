@@ -184,9 +184,10 @@ export async function walkInstaller(walk, page, installerOrigin) {
     await p.waitForURL(/dash\.cloudflare\.com\/oauth2\/auth/, { timeout: 15000 });
   });
   await walk.step(page, "install: Cloudflare's permission, allowed", async (p) => {
-    /* the callback streams the install as it runs: the step ends when the page is the callback's, never waiting for it to load */
+    /* the callback answers when the install has run (the local world hands the browser its page whole), which includes any wait
+       on Cloudflare up to the installer's own bound: the step allows that bound and three minutes more */
     await p.locator("#allow").click({ noWaitAfter: true });
-    await p.waitForURL(/\/callback\?/, { timeout: 180000, waitUntil: "commit" });
+    await p.waitForURL(/\/callback\?/, { timeout: (WAIT_BOUND_MINUTES + 3) * 60000, waitUntil: "commit" });
   });
   await walk.step(page, "install: each step finishes, the checks pass", async (p) => {
     /* the install's verification may wait on Cloudflare up to the installer's own bound before it says what is not confirmed,
