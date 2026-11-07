@@ -59,7 +59,8 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: notice-producers:211 (index.mjs:824 ACCOUNT_DOORS still maps the retired notice kind project-account-suspended to queuemute; bio-plane/src/queuestate.mjs:372 still catalogues it; PR 211 retired that kind and made provider-limit items skip ai-limit-reached). For each, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. notice-producers also reports that its R33, R34, R35 and R36 item kinds are not in queue's catalogue (queue R1, R98), and queue refuses a member's whole feed NO_SUCH_KIND on an unknown kind; meet queue's own unmet marks for them where its requirements say so. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-07T18:05:09Z"
+    "state": "WORKING",
+    "at": "2026-11-07T19:55:19Z",
+    "reason": "reopened: re-test against the new interface of notice-producers (land 9b90d70e0c), affordances (land b52d823b19)"
   }
 }
