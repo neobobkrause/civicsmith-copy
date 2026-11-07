@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "setup-words",
+  "pr": 791,
+  "branch": "job/setup-words",
+  "head": "ef3b7fa27608dc13dd518efab8d77af010ea8ece",
+  "before": "18026ba572a5b745699140f378a359da123aa00d",
+  "merge": "19afb56ea452b00fe943527da93e65c446200dad",
+  "at": "2026-11-07T16:38:38Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
