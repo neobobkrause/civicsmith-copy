@@ -1,0 +1,23 @@
+{
+  "row": "land",
+  "layer": 9,
+  "module": "plan-work",
+  "pr": 732,
+  "head": "6acbf575e91bce445430049364f55c5e9184ca4b",
+  "before": "d7c86d7d91dbb8948414d677a7cbdfb92b963e5c",
+  "merge": "d5c19874c448aa35f294df1b44dedcedb7469f16",
+  "at": "2026-11-07T01:15:38Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none"
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
