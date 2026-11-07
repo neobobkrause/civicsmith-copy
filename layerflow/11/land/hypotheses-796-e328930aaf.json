@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "hypotheses",
+  "pr": 796,
+  "branch": "job/hypotheses",
+  "head": "e328930aafdd3bb94f74e768bfc64f3c38bf726a",
+  "before": "0d3676c3810c07d4b29298c7001bdfce3d1d6831",
+  "merge": "500bbf0b06695ab20caecb249d9a1ec978fc736b",
+  "at": "2026-11-07T16:39:56Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
