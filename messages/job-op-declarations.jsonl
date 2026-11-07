@@ -41,3 +41,4 @@
 {"at":"2026-11-07T18:25:44Z","row":"sent","n":21,"to":"bob","text":"job op-declarations complete, PR #847 ready at head 65d4228e9a2e072069376241fd62288a71d440a0 for the revert exemption, session session_018BhcedSE6FqDsTSk3wks9i: run status"}
 {"at":"2026-11-07T18:26:02Z","row":"outcome","n":21,"outcome":"delivered"}
 {"at":"2026-11-07T20:18:28Z","row":"sent","n":22,"to":"bob","text":"job op-declarations complete, PR #894 ready, session session_018BhcegigNm7ZejquSLxM8g: run status"}
+{"at":"2026-11-07T20:18:56Z","row":"outcome","n":22,"outcome":"delivered"}
