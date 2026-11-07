@@ -2681,7 +2681,10 @@ const UNATTENDED_BY_DECISION = Object.freeze({
    a read act; interface-shell R20), so it takes the read ground until `affordances`' `ACT_HELP` holds a text.
    layer 11 (R34, F2; ai-use F3, PR 613; extraction's interpretation marks; instance-setup R115): the member acts
    `aibudgetset`, `aiprojectbudget`, `interpretmark` and `interpretationwithdraw` take the unexplained ground and the read
-   `assistantreadiness` the read ground, until `affordances`' `ACT_HELP` holds a text for each. */
+   `assistantreadiness` the read ground, until `affordances`' `ACT_HELP` holds a text for each.
+   layer 11, attempt 7: affordances (PR 808) explains `aiaccountadd` and `aiaccountswitch`, so they leave the unexplained
+   ground; instance-setup's administrator acts `layersset`, `maildomainset` and `maildoorset` (its R107, R114) take the
+   unexplained ground and its read `mailsetup` the read ground, until `ACT_HELP` holds a text for each. */
 const ACT_HELP_ABSENT = Object.freeze({
   alias: Object.freeze({ ground: localize("op-declarations.index.an_alias_of_a_declared", "An alias of a declared op (R21): its op's explanation serves it."),
     ops: frozenList([
@@ -2709,7 +2712,7 @@ const ACT_HELP_ABSENT = Object.freeze({
       "importedcase", "importedcases", "inbox", "inboxget", "inboxview", "infolevel", "inforceat", "inforcethroughof",
       "inquirypartition", "instances", "interestchecks", "interfacewords", "interview", "interviewform",
       "investigationproposals", "keyedservices", "lawaddresses", "lawrelations", "layerentries", "layerreports", "line",
-      "linesof", "lookedat", "mailread", "mailtally", "mailwaiting", "matterpromiseduties", "matters", "meaningrows",
+      "linesof", "lookedat", "mailread", "mailsetup", "mailtally", "mailwaiting", "matterpromiseduties", "matters", "meaningrows",
       "memberlanguage", "memberties", "milestones", "money", "moneyamountchecks", "moneyby", "moneycheckparams",
       "moneydetectors", "moneyfiscalyears", "moneyingestread", "moneyjunction", "moneynoticed", "moneyof", "moneyset",
       "moneysummable", "narrowcandidates", "notes", "notices", "opencaptures", "originalstate", "overridesof",
@@ -2739,7 +2742,7 @@ const ACT_HELP_ABSENT = Object.freeze({
   unexplained: Object.freeze({ ground: localize("op-declarations.index.an_act_or_a_draft", "An act, or a draft made for a member at their request, that the design has not yet explained; named back to the design stream (DEC-174 (3))."),
     ops: frozenList([
       "actalias", "actionriskpropose", "actionseekspropose", "addressfrequencyset", "adminproposalcancel",
-      "adminresign", "aiaccountadd", "aiaccountremove", "aiaccountswitch", "aibudgetset", "aicheckset", "aicontinue", "aicredentialmint",
+      "adminresign", "aiaccountremove", "aibudgetset", "aicheckset", "aicontinue", "aicredentialmint",
       "aicredentialrevoke", "aicreditsclear", "aigrantmint", "aihealthset", "aikeycloudflare", "aikeyenter",
       "aikeyseal", "aimemberallow", "aimineuse", "aimycheckset", "aioptinset", "aiorderset", "aiownadd",
       "aipersonalchoose", "aiprojectbudget", "aiprojectcheckset", "aiprojectorder", "aiprojectuse", "airetestset", "airunverify", "aisend",
@@ -2757,8 +2760,8 @@ const ACT_HELP_ABSENT = Object.freeze({
       "guideretire", "guidereview", "hypothesissetaside", "hypothesistakeup", "importflagclear", "importunwatch",
       "interestcheckdefine", "interestcheckgate", "interestcheckswitch", "interpretationwithdraw", "interpretmark", "interviewkeep", "joinlinkoff",
       "joinlinkreplace", "joinlinkset", "keyedserviceset", "keyedserviceswitch", "lawpropose", "lawwithdraw",
-      "layerentryconfirm", "layerentrydraft", "layerentrywithdraw", "layerreport", "layerreportcarry", "linkproject",
-      "mailaddress", "mailbringin", "maildelete", "milestoneitemremove", "milestonereminder", "milestoneremove",
+      "layerentryconfirm", "layerentrydraft", "layerentrywithdraw", "layerreport", "layerreportcarry", "layersset", "linkproject",
+      "mailaddress", "mailbringin", "maildelete", "maildomainset", "maildoorset", "milestoneitemremove", "milestonereminder", "milestoneremove",
       "milestonerevise", "milestoneset", "moneycheckparam", "moneydetectordefine", "moneydetectorgate",
       "moneydetectorswitch", "moneyfundtype", "moneyingest", "moneysetpropose", "moneywithdraw", "narrativeclaim",
       "noteshare", "noteunshare", "optionrevise", "participantcorrect", "patterngate", "patternswitch",
