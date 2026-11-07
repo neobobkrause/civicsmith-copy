@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "screens-plan",
+  "round": 1,
+  "started": "2026-11-07T18:48:10Z",
+  "ended": "2026-11-07T18:49:53Z",
+  "minutes": 1.7,
+  "tested_on": "f71b36fc94f298602b8eca0153ec7131e64d513f",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T18:49:53Z"
+}
