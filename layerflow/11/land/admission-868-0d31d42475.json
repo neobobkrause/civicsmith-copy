@@ -1,0 +1,68 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "admission",
+  "pr": 868,
+  "branch": "job/admission-2",
+  "head": "0d31d42475b4495846b5ae219b13bd4ccaeac149",
+  "before": "90d315bbf13571041d481f29a7934dea8a3d6db2",
+  "merge": "6f09192a3e5336a8a09771144b19adf59d2937f5",
+  "at": "2026-11-07T19:11:44Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/admission/t47.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/admission/t47.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/admission/t47.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/admission/t47.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/admission/t47.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "earlier_source": true
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "answer-envelope",
+    "control-plane",
+    "plane",
+    "signin-door",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_rescheduled_old_rule": [
+    "answer-envelope",
+    "control-plane",
+    "plane",
+    "signin-door",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_noticed": []
+}
