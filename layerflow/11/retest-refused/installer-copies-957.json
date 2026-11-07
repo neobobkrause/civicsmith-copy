@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 11,
+  "module": "installer-copies",
+  "cause": 957,
+  "why": "Cannot read properties of null (reading 'row')",
+  "at": "2026-11-07T23:40:59Z",
+  "by": "bob"
+}
