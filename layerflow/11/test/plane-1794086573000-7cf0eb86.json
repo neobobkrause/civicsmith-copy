@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "plane",
+  "session": "session_018BhcegY7PBEZMCN3X2jAvR",
+  "started": "2026-11-07T21:22:53Z",
+  "ended": "2026-11-07T22:00:28Z",
+  "at": "2026-11-07T22:00:28Z",
+  "minutes": 37.58,
+  "result": "fail",
+  "layer": 11,
+  "suite_seconds": 2176.342,
+  "tests": {
+    "total": 284,
+    "pass": 271,
+    "fail": 4
+  }
+}
