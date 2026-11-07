@@ -123,6 +123,11 @@ function watched(w) {
   return (w.watchedSetup = { follow, ended, asked, open, relied });
 }
 
+test("R1 R37 R41 every row this module holds has its case, the T53 register watch's QUERY_NOT_NAMED (C-137.31) and BAD_ALERT (C-137.32) among them, each driven", () => {
+  for (const code of Object.keys(FOLLOWING_CHECKS)) assert.ok(CASES[code], code);
+  assert.deepEqual([FOLLOWING_CHECKS.QUERY_NOT_NAMED?.check, FOLLOWING_CHECKS.BAD_ALERT?.check], ["C-137.31", "C-137.32"]);
+});
+
 for (const [code, row] of Object.entries(FOLLOWING_CHECKS)) {
   test(`R1 ${row.check} ${code}: the refusal carries its code, its row and the member's translation (DEC-49), and writes nothing`, async () => {
     const w = world();
