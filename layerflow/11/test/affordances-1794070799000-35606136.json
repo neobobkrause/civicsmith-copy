@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "affordances",
+  "session": "session_018Bhcec82RmNc9PvGb1KG13",
+  "started": "2026-11-07T16:59:59Z",
+  "ended": "2026-11-07T17:01:58Z",
+  "at": "2026-11-07T17:01:58Z",
+  "minutes": 1.98,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 55.146,
+  "tests": {
+    "total": 336,
+    "pass": 334,
+    "fail": 0
+  }
+}
