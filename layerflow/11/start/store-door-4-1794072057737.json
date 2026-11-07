@@ -1,0 +1,13 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "store-door",
+  "attempt": 4,
+  "branch": "job/store-door",
+  "early": [
+    "affordances",
+    "queue",
+    "instance-setup"
+  ],
+  "at": "2026-11-07T17:20:57Z"
+}
