@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "surface-declarations",
+  "pr": 840,
+  "branch": "job/surface-declarations",
+  "head": "e5e2a1db4a202038c073504bf3d3cedec45ca801",
+  "before": "f5828a4d4d4aaa7890028e680fdfea2100cc1b94",
+  "merge": "1d436308a9686e2cdf1aaa941ec4d99ba252a3ac",
+  "at": "2026-11-07T17:58:10Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
