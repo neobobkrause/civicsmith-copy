@@ -12,3 +12,4 @@
 {"at":"2026-11-07T16:51:00Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-07T16:58:05Z","row":"sent","n":7,"to":"bob","text":"job queue-producers complete, PR #805 ready, session session_018BhcecmDp7EdFTJX44bB5Q: run status"}
 {"at":"2026-11-07T16:58:34Z","row":"outcome","n":7,"outcome":"delivered"}
+{"at":"2026-11-07T18:18:20Z","row":"sent","n":8,"to":"bob","text":"job queue-producers BLOCKED: run status"}
