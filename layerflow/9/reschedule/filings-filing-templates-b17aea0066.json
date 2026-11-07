@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 9,
+  "user": "filings",
+  "provider": "filing-templates",
+  "provider_pr": 712,
+  "provider_land": "b17aea00663f3be9fb3aff862ac8167db9da1acc",
+  "at": "2026-11-07T00:04:41Z",
+  "key": "filings<-filing-templates@b17aea0066",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/filing-templates/fixture.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/filing-templates/offer.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/filing-templates/r33.test.mjs: breaking, too large to align, bio-plane/test/m/filing-templates/r34.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/filing-templates/reads.test.mjs: breaking, too large to align, bio-plane/test/m/filing-templates/t46-words.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/filing-templates/t53.test.mjs: breaking, added), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

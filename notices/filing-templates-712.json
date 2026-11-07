@@ -1,0 +1,26 @@
+{
+  "row": "notice",
+  "at": "2026-11-07T00:04:41Z",
+  "key": "filing-templates:712",
+  "provider": "filing-templates",
+  "ids": [],
+  "pr": 712,
+  "users": [
+    "action-producers",
+    "affordances",
+    "answer-envelope",
+    "control-plane",
+    "op-declarations",
+    "plane",
+    "screens-action",
+    "store-assembly",
+    "surface-declarations",
+    "wizard-scripts"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 9,
+    "provides": false,
+    "rescheduled": true
+  }
+}
