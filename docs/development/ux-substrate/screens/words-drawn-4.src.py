@@ -3301,3 +3301,15 @@ w500('screen.capture.refusal.toolarge.cells', 'This workbook has {count} cells. 
 w500('screen.capture.refusal.toolarge.pages', 'This document has {count} pages. Documents can have up to {bound} pages.', 'R73: a document over its pages, once its page count is known')
 w500('screen.capture.refusal.toolarge.archive', 'This archive is {size}. Archives can be up to {bound} in all.', 'R64/R73: an archive over its total')
 w500('screen.capture.refusal.toolarge.archive.entry', '{file}, inside this archive, is {size}. Files of its kind can be up to {bound}.', 'R64/R73: an archive with an entry over its kind\'s limit')
+
+# DEC-501 (the ux lane, 7 Nov 2026; BOB's word pass for journey-check R17, K3811, DEC-281, K3472): rows extracted from
+# module code ("code" rows of setup-words) that said "group" for the team. A design row of the same key takes the code
+# row's place (setup-words R15), so each is reworded here with "team" and nothing else changed. Rows using "group" for a
+# grouping (a ground of passages, a citation's ground, a section of a design), or naming the wire value `group` of an
+# account's owner, are added to build_words' GROUP_SENSE instead. *.declared.* rows are NOT overridden here: op-grades
+# requires each to agree with its own hand row (DECLARED_OP_DISAGREES), so they sit in GROUP_SENSE until op-grades and
+# their modules reword them to "team" (BOB's mark, the next layer).
+def w501(key, en):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-501: R17 word pass, "team" for the team (was the code row\'s "group")'))
+w501('run-rules.checks.nothing_was_started_because_none', "Nothing was started, because none of the AI accounts your team's Civicsmith can use has passed the test for this part of the work. Ask whoever looks after your team's AI accounts to add one that has passed it, or do this part without AI.")
+w501('screen.action.routes.why', "None of your places' profiles names a procedure for this kind, and no guide of your team's covers it. A rule or a procedure your profile lacks is drafted under Your team's own rules.")
