@@ -8,7 +8,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 const { record } = await import("./record.mjs");
-const { admitted, runWaves, serverTimingOf, SCREENREAD_OP } = await import("../../../src/store-door/fold.mjs");
+/* the fold is loaded without failing the file: each test asserts it is there, so a missing fold fails on assertions */
+const F = await import("../../../src/store-door/fold.mjs").catch(() => ({}));
+const has = (name) => assert.equal(typeof F[name], "function", `store-door's fold exports ${name}`);
+const admitted = (...a) => F.admitted(...a), runWaves = (...a) => F.runWaves(...a), serverTimingOf = (...a) => F.serverTimingOf(...a);
 const { credentialsOf, credentialsOps } = await import("../../../src/credentials/index.mjs");
 const { membershipOf } = await import("../../../src/membership/index.mjs");
 const { instanceSetupOf, instanceSetupOps } = await import("../../../src/setup.mjs");
@@ -20,6 +23,7 @@ const A = await import("../../../src/admission/index.mjs");
 const { doAnswer } = await import("../../../src/answer-envelope/index.mjs");
 const { dispatch } = await import("../../../src/store-door/dispatch.mjs");
 
+const SCREENREAD_OP = SCREENREAD.op;
 const specOf = (op) => (op === SCREENREAD_OP ? SCREENREAD : OPS[op]);
 const boundOf = (op) => opBudgets()[op].ceiling_ms;
 
@@ -59,6 +63,8 @@ const asked = (op, token, { method = "GET", body, query = "" } = {}) =>
                                                           ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
 
 test("R20 (T53; N1264, K4599 (a); admission R34): one call to the room resolves the session, judges admission with the row the room holds, stamps and runs the op — `whoami`, `groupidentity`, `bootstrap` and `queue` each make exactly one call to the room and no fetch from the Worker to the room beyond it; the session row is read once, in the room; the answer carries `in_ms`, reported as `do-`/`in-` Server-Timing (control: the same `queue` judged at the door, unfolded, crosses to the room for the session and again for the op)", async () => {
+  has("admitted"); has("serverTimingOf");
+  assert.equal(F.SCREENREAD_OP, SCREENREAD_OP);
   const w = await world();
   for (const op of ["whoami", "groupidentity", "bootstrap", "queue"]) {
     w.calls.length = 0; w.crossings.length = 0; w.sessionReads.length = 0;
@@ -95,6 +101,7 @@ test("R20 (T53; N1264, K4599 (a); admission R34): one call to the room resolves 
 });
 
 test("R20 (admission R34, R35): refusals through the room equal the door's, code for code — a member asking the root of trust's `export`, and an unknown token; a bearer (no credential) is judged at the door: the room answers `{atDoor: true}` and reads nothing", async () => {
+  has("admitted");
   const w = await world();
   const judgeAtDoor = async (op, token) => {
     const url = new URL(`http://plane.test/api?op=${op}`);
@@ -116,6 +123,7 @@ test("R20 (admission R34, R35): refusals through the room equal the door's, code
 });
 
 test("R20, R21 (T53; PL14, PL15): `screenread` runs its waves inside the one call — each read judged with the held row (a read the member may not make answers its refusal, the others answer whole), a later wave taking an earlier read's answer — and a read past its declared bound is cut, answered `slow` with the bound, without holding the others", async () => {
+  has("admitted");
   const w = await world({ slow: ["tasks"] });
   /* a read op a member's session is refused, found from the declarations */
   const refusedRead = Object.keys(OPS).find((op) => OPS[op].mutating === false && Array.isArray(OPS[op].classes)
@@ -149,6 +157,7 @@ test("R20, R21 (T53; PL14, PL15): `screenread` runs its waves inside the one cal
 });
 
 test("R21 (PL15): `runWaves` cuts a read at its own bound and holds no other read for it — the fast read answers whole, the slow one `slow` with the bound, a later wave's `{from}` argument gets `null` for a cut read (control: a read within its bound answers whole)", async () => {
+  has("runWaves");
   const reads = declareScreenReads("cut-probe", [
     { name: "fast", op: "queue", wave: 1 }, { name: "never", op: "tasks", wave: 1 },
     { name: "after", op: "queue", args: { of: { from: "never" }, also: { from: "fast" } }, wave: 2 },
