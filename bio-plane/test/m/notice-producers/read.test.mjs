@@ -6,11 +6,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { world } from "../money-checks/fixture.mjs";
 import { homeOfHomed } from "../provenance/fixtures.mjs";
-import { fresh, reader, byId, texts, sentences, snapshot } from "./fixture.mjs";
+import { NONE, fresh, reader, byId, texts, sentences, snapshot } from "./fixture.mjs";
 import { list as profiles } from "../../../../jurisdictions/index.mjs";
 import { NOTICE_KINDS, NOTICE_PROJECTS_MAX, DUTIES_MAX, POLICY_CHANGES_MAX, POLICY_CHANGE_DAYS, SCAN_FINDINGS_MAX, SCAN_FINDINGS_DAYS, TOOL_EVENTS_MAX,
   ACCOUNT_ITEMS_MAX, INVESTIGATION_ITEMS_MAX, WATCHED_ITEMS_MAX, FETCH_DONE_MAX, FETCH_DONE_DAYS, INGEST_NOTICE_MAX, INGEST_NOTICE_DAYS, READING_ENDED_MAX, READING_ENDED_DAYS,
-  REGISTER_CHANGES_MAX, REGISTER_CHANGE_DAYS, REGISTER_IMPORTS_MAX, REGISTER_IMPORT_DAYS } from "../../../src/notice-producers/index.mjs";
+  REGISTER_CHANGES_MAX, REGISTER_CHANGE_DAYS, REGISTER_IMPORTS_MAX, REGISTER_IMPORT_DAYS, ACCOUNT_NOTICES_MAX, ACCOUNT_NOTICE_DAYS } from "../../../src/notice-producers/index.mjs";
 import { SECURITY_DAYS } from "../../../src/credentials/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
@@ -50,7 +50,7 @@ function providers(calls = []) {
       securityTools: () => ({ ok: true, tools: [{ tool_id: "scanii-1", provider_id: "scanii", state: "off", off_reason: "PRIVATE_MODE_NOT_HONOURED" }] }) },
     provenance: homeOfHomed({ ["c".repeat(64)]: "INFO-2026-0001-scan" }),
     /* R16 (ai-use R5, R9) and R17 (steps, question-explorer, investigation, review): one entry each, as each answers */
-    aiUse: { exploreAsksPending: () => ({ ok: true, asks: [{ key: `explore-ask:project:${P}:2026-10-06`, owner: `project:${P}`, day: "2026-10-06",
+    aiUse: { ...NONE.aiUse, exploreAsksPending: () => ({ ok: true, asks: [{ key: `explore-ask:project:${P}:2026-10-06`, owner: `project:${P}`, day: "2026-10-06",
         what: ["What did the council vote?"], asked_at: NOW, estimate: word("question-explorer.known") }] }),
       limitsReached: () => ({ ok: true, reached: [{ key: "ai-limit:group:ask:usd:day:2026-10-06", owner: "group", scope: "ask", unit: "usd",
         period: "day", period_start: "2026-10-06", reached_at: NOW }] }) },
@@ -111,6 +111,8 @@ test("R1: every item R2–R6, R12–R17 and R24 derive for this member and viewe
     security_level: { days: SECURITY_DAYS, truncated: false }, policy_change: { bound: POLICY_CHANGES_MAX, days: POLICY_CHANGE_DAYS, truncated: false },
     scan_found: { bound: SCAN_FINDINGS_MAX, days: SCAN_FINDINGS_DAYS, truncated: false }, security_tool_off: { bound: TOOL_EVENTS_MAX, truncated: false },
     explore_ask: { bound: ACCOUNT_ITEMS_MAX, truncated: false }, ai_limit: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
+    ai_threshold: { bound: ACCOUNT_ITEMS_MAX, truncated: false }, ai_terms: { bound: ACCOUNT_ITEMS_MAX, truncated: false },
+    ai_owner_notice: { bound: ACCOUNT_NOTICES_MAX, days: ACCOUNT_NOTICE_DAYS, truncated: false },
     question_find: { bound: INVESTIGATION_ITEMS_MAX, truncated: false }, step_later_found: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
     step_due: { bound: INVESTIGATION_ITEMS_MAX, truncated: false }, step_cost_shared: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
     step_cost_message: { bound: INVESTIGATION_ITEMS_MAX, truncated: false }, milestone: { bound: INVESTIGATION_ITEMS_MAX, truncated: false },
@@ -139,7 +141,7 @@ test("R1: with no walk and no options passed, an item is ungrouped and carries o
 test("R1: writes nothing and never throws; a provider that throws contributes no item and is named in facts.failed, the others still answer", () => {
   const boom = () => { throw new Error("down"); };
   const { w, read } = setup({ people: { checkResults: boom, listChecks: boom }, inquiry: { datedWaits: boom }, following: { policyChanges: boom },
-    fileSafety: { scanFindings: boom, securityToolEvents: boom }, aiUse: { exploreAsksPending: boom, limitsReached: () => ({ ok: true, reached: [], unreadable: true }) },
+    fileSafety: { scanFindings: boom, securityToolEvents: boom }, aiUse: { ...NONE.aiUse, exploreAsksPending: boom, limitsReached: () => ({ ok: true, reached: [], unreadable: true }) },
     questionExplorer: { findsFor: boom }, steps: { laterFound: boom, stepsDue: boom, costShares: boom, costMessages: boom },
     investigation: { milestonesOverdue: () => null, quietPrompts: boom }, review: { reviewCommentsLeftOut: () => ({ ok: false }) } });
   const before = snapshot((q) => w.st.sql.exec(q));
