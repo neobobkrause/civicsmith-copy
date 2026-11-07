@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "screens-intake-rounds",
+  "session": "session_018BhcefL16N4pgTGPGWKmsy",
+  "started": "2026-11-07T21:38:13Z",
+  "ended": "2026-11-07T21:39:25Z",
+  "at": "2026-11-07T21:39:25Z",
+  "minutes": 1.2,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 8.157,
+  "tests": {
+    "total": 42,
+    "pass": 21,
+    "fail": 0
+  }
+}
