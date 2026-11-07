@@ -221,3 +221,4 @@ Terms. The **document address** is what the record identifies the document by; t
 ## Open for Bob
 
 None: the split is BOB's (K617, K649).
+- **F1** *(not yet met: BD-18)* Archive replays (BD-18, Bob 7 Nov): the archive.org route stops assigning ARCHIVE_CAPTURE_GRADE (C) to every archive capture (index.mjs grade: via === 'archive.org'). A raw-bytes replay (Wayback id_ mode, the publisher's response unmodified) is filed Grade B 'via archive' with the snapshot date as its fetch date and the archive as custodian, co-attested per DEC-81 by a second archive or a trusted timestamp; a rewritten replay is Grade C, reference only. acquire.test.mjs's archive-grade assertion follows provenance's new definition.
