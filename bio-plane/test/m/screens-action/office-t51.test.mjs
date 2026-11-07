@@ -79,11 +79,11 @@ test("R20 (C64): the administrator's wording is unchanged and she keeps Places; 
 
 test("R31 (C66): 'Show the routes' with none says that none is known for the kind, not only 'Nothing here'; control: a kind with routes lists them and says no such thing", async () => {
   const none = await open(`/app/action/${ACTION_ID}`, { ...DATA_PLANE, procedureguides: ok({ ok: true, kind: "records_request", guides: [], withheld: [], label: {} }) });
-  said(none, "screen.matter.routes.none");
+  said(none, "screen.action.routes.none"); // R79 (T53): the action screen's own row, with the cause
   assert.ok(!text(none).includes(W("state.empty")), "no bare 'Nothing here'");
   const some = await open(`/app/action/${ACTION_ID}`, DATA_PLANE);
-  assert.ok(!text(some).includes(W("screen.matter.routes.none")));
+  assert.ok(!text(some).includes(W("screen.action.routes.none")));
   assert.ok(text(some).includes("Ask in writing, naming the records"));
   await press(none, "procedureguides");
-  said(none, "screen.matter.routes.none");
+  said(none, "screen.action.routes.none"); // R79 (T53): the action screen's own row, with the cause
 });
