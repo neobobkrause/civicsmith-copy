@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 11,
+  "module": "store-request",
+  "cause": 841,
+  "why": "store-request owes a job for affordances, instance-setup's breaking change: node .process/tool/p3.mjs job start store-request --live <n> --reopen \"re-test against the new interface of affordances, instance-setup, admission\"",
+  "at": "2026-11-07T18:05:57Z",
+  "by": "bob"
+}
