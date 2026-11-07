@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "store-request",
+  "round": 1,
+  "started": "2026-11-07T20:20:54Z",
+  "ended": "2026-11-07T20:22:59Z",
+  "minutes": 2.1,
+  "tested_on": "f370f294263e6b76b94ac52d89c02361ae5615e3",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T20:22:59Z"
+}
