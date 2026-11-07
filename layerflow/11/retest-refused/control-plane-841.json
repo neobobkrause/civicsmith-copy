@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 11,
+  "module": "control-plane",
+  "cause": 841,
+  "why": "control-plane owes a job for admission, op-grades, op-declarations, store-request, affordances, screens-entry, interface-shell, instance-setup, screens-wizards's breaking change: node .process/tool/p3.mjs job start control-plane --live <n> --reopen \"re-test against the new interface of admission, op",
+  "at": "2026-11-07T18:04:29Z",
+  "by": "bob"
+}
