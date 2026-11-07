@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "notice-producers",
+  "pr": 809,
+  "sha": "29a0be81fa786d95b09532fd129b9f62fe072f86",
+  "run_id": 42392696608,
+  "run_attempt": 1,
+  "at": "2026-11-07T16:44:08Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 0.93,
+  "suite_minutes": null,
+  "record_only": true,
+  "whole": false
+}

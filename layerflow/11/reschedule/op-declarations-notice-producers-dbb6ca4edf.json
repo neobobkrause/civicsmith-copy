@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "op-declarations",
+  "provider": "notice-producers",
+  "provider_pr": 809,
+  "provider_land": "dbb6ca4edf3af4e270e1af6c5caca0ff634960fd",
+  "at": "2026-11-07T17:27:59Z",
+  "key": "op-declarations<-notice-producers@dbb6ca4edf",
+  "why": "added REGISTER_CHANGES_MAX, REGISTER_CHANGES_PAGE, REGISTER_CHANGE_DAYS, REGISTER_IMPORTS_MAX, REGISTER_IMPORTS_PAGE, REGISTER_IMPORT_DAYS, REGISTER_IMPORT_STATES; its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/notice-producers/notice-ai-use-105.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/notice-producers/read.test.mjs: breaking, too large to align, bio-plane/test/m/notice-producers/register-changed.test.mjs: breaking, added, naming R1, R30, R32 (Provides before this land) while notice-producers's source changed: it may assert a changed answer, bio-plane/test/m/notice-producers/register-import.test.mjs: breaking, added, naming R13, R29, R31, R32, R33, R34, R35, R36 (Provides before this land) while notice-producers's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
