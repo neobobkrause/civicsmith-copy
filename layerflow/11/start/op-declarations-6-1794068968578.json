@@ -1,0 +1,21 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "op-declarations",
+  "attempt": 6,
+  "branch": "job/op-declarations-2",
+  "early": [
+    "op-specs-late",
+    "affordances",
+    "hypotheses",
+    "tasks",
+    "retrieval",
+    "instance-setup",
+    "steps",
+    "project-roster",
+    "setup-words",
+    "notice-producers",
+    "surface-declarations"
+  ],
+  "at": "2026-11-07T16:29:28Z"
+}
