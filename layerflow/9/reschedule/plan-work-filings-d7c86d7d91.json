@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 9,
+  "user": "plan-work",
+  "provider": "filings",
+  "provider_pr": 727,
+  "provider_land": "d7c86d7d91dbb8948414d677a7cbdfb92b963e5c",
+  "at": "2026-11-07T00:41:56Z",
+  "key": "plan-work<-filings@d7c86d7d91",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/filings/fixture.mjs: breaking, added code that is not an object property: { ...), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

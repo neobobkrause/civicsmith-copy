@@ -1,0 +1,25 @@
+{
+  "row": "notice",
+  "at": "2026-11-07T00:41:56Z",
+  "key": "filings:727",
+  "provider": "filings",
+  "ids": [],
+  "pr": 727,
+  "users": [
+    "action-producers",
+    "affordances",
+    "answer-envelope",
+    "control-plane",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "screens-action",
+    "store-assembly"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 9,
+    "provides": false,
+    "rescheduled": true
+  }
+}
