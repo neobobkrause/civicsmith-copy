@@ -83,12 +83,13 @@ const drawn = (p, key) => EN.get(key).split(/\{\w+\}/).map((x) => x.trim()).filt
 
 test("R22: a profile with no records help draws none of those sentences and says so; control: a block carries the page and the none line is not drawn beside it", async () => {
   const p = await open("/app/help-records", DATA_PLANE);
-  said(p, "screen.help-records.notheld");
+  // R76 (T53): the none line names the law, or says none is on file
+  assert.ok(p.doc.getElementById("cs-main").querySelector("[data-notheld]"), "the none line");
   for (const key of ["screen.help-records.must.2", "screen.help-records.must.3", "screen.help-records.must.4", "screen.help-records.must.5", "screen.help-records.must.6",
     "screen.help-records.must.7", "screen.help-records.sub", "screen.help-records.faster.what", "screen.help-records.portal.where"]) assert.ok(!drawn(p, key), key);
   assert.doesNotMatch(text(p), /\{\w+\}/);
   const held = await open("/app/help-records", { ...DATA_PLANE, profiles: withHelp(HELP) });
-  unsaid(held, "screen.help-records.notheld");
+  assert.equal(held.doc.getElementById("cs-main").querySelector("[data-notheld]"), null, "control: no none line beside a block");
   for (const key of ["screen.help-records.must.2", "screen.help-records.sub", "screen.help-records.faster.what", "screen.help-records.portal.where"]) assert.ok(drawn(held, key), key);
 });
 

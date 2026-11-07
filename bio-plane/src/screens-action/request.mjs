@@ -93,6 +93,35 @@ export const request = Object.freeze({
     },
     // C64, C64-law: the records laws the active profiles name (`jurisdictions` R7), each with its own first-request window (R96)
     recordsLaws: recordsLawsOf,
+    // R60 (T53; jurisdictions R106): the level of the office the action addresses: the level its addressee states, else the level of the layer
+    // that gives it; null when neither is known (then every records law is offered, as before)
+    officeLevel: function (a, profiles) {
+      const cp = a && a.counterparty && typeof a.counterparty === "object" ? a.counterparty : {};
+      if (typeof cp.level === "string" && cp.level) return cp.level;
+      const ls = profiles && profiles.view && Array.isArray(profiles.view.layers) ? profiles.view.layers : [];
+      const id = typeof cp.layer === "string" ? cp.layer : a && a.addressee && typeof a.addressee.layer === "string" ? a.addressee.layer : "";
+      const l = id ? ls.find(function (x) { return x && x.id === id; }) : null;
+      return l && typeof l.level === "string" ? l.level : null;
+    },
+    // R60: the laws a request can go under: those of the active chain whose `governs` holds the office's level (a law that states no
+    // `governs` is offered to every office); R61: each with its layer where two active layers give its name or citation
+    lawsFor: function (view, a) {
+      const pr = view.data.profiles;
+      const pv = pr && pr.state === "ok" ? pr.value : null;
+      const all = view.parts.recordsLaws(pv);
+      const level = view.parts.officeLevel(a, pv);
+      const out = level ? all.filter(function (d) { return !d.governs || d.governs.indexOf(level) >= 0; }) : all;
+      return out.map(function (d) {
+        const shared = all.some(function (x) { return x !== d && x.layer && x.layer !== d.layer && ((d.name && x.name === d.name) || x.citation === d.citation); });
+        return Object.assign({}, d, { shared: shared && !!d.layer });
+      });
+    },
+    // R60, R61: a law as offered: its level, its name, its citation, its window from its own `response`, and its layer's place where shared
+    lawText: function (cs, d) {
+      return [d.level ? cs.w("screen.request.level." + d.level) : "", d.name ? cs.esc(d.name) : "", cs.esc(d.citation),
+        d.amount ? cs.w("screen.request.window." + (d.count === "business" ? "business" : "calendar"), { n: String(d.amount) }) : "",
+        d.shared ? '<span data-layer="' + cs.esc(d.layer) + '">' + cs.w("screen.request.law.layer", { place: d.place || d.layer }) + "</span>" : ""].filter(Boolean).join(" · ");
+    },
     // C64: where requests go, as `entities` R63 holds it: `{kind: address|email|portal, value}`, by its form; none when left empty
     contactOf: function (where) {
       const v = String(where || "").trim();
@@ -128,7 +157,8 @@ export const request = Object.freeze({
             + '</a><span class="mk-small" data-purpose="places">' + cs.w("screen.places.purpose") + "</span></div>" : "";
         // R46: a request that knows no office points to the page where an organization's records lines are kept (`screens-investigate`
         // C68): the name the member picked, where she picked one
-        const keeper = pointer ? '<p class="mk-note">' + cs.w("screen.request.nooffice.pointer.a") + " " + cs.w("screen.request.nooffice.pointer.b") + "</p>"
+        // R74 (T53): the pointer reads as a sentence: where to go and what to add there
+        const keeper = pointer ? '<p class="mk-note" data-pointer="people">' + cs.w("screen.request.nooffice.pointer.people") + "</p>"
           + '<div class="mk-links" data-list="person"><a class="cs-ref" href="/app/person/' + encodeURIComponent(pointer) + '" data-nav data-screen="person">'
           + cs.w("screen.person.name") + '</a><span class="mk-small" data-purpose="person">' + cs.w("screen.person.purpose") + "</span></div>" : "";
         // C64 (DEC-402): the member may name the office herself: the agency and office, where requests go and the law it goes under
@@ -139,7 +169,9 @@ export const request = Object.freeze({
           + cs.field("req-noff-name", "screen.request.nameoffice.name", { help: "screen.request.nameoffice.name.help" })
           + cs.field("req-noff-role", "screen.request.nameoffice.role", { help: "screen.request.nameoffice.role.help" })
           // R57: the body that holds the office, chosen among the team's bodies (the entity id is what is kept)
-          + cs.choice("req-noff-body", "screen.request.office.body", [{ value: "", text: "" }].concat(P.bodiesOf(view)))
+          // R73 (T53): with no body on file the body is named here, in words, and recorded with the office; never a choice with nothing in it
+          + (P.bodiesOf(view).length ? cs.choice("req-noff-body", "screen.request.office.body", [{ value: "", text: "" }].concat(P.bodiesOf(view)))
+            : cs.field("req-noff-bodyname", "screen.request.office.body", { help: "screen.request.office.body.new" }))
           // re-walk 10 N3: a team with no body is told so, in the design's word for nothing held; the door where one is added is the places door below (an administrator's)
           // R59 (DEC-439 N3): a team with no body says so, and where bodies are listed
           + (P.noBody(view) ? '<p class="cs-state" data-state="empty" data-nobody="1">' + cs.w("screen.request.office.nobody") + "</p>" : "")
@@ -192,17 +224,20 @@ export const request = Object.freeze({
       const pr = view.data.profiles;
       // C64-law (`jurisdictions` R96): the picker lists the profile's records laws, each with the window its own `response` names (never a
       // guessed one, and never the profile's deadlines); the law carries its own level, asked only for one that states none
-      const offered = P.recordsLaws(pr && pr.state === "ok" ? pr.value : null);
+      // R60 (T53): the laws that govern the office's level, each with its level, name and window, none preselected; the member names one or more.
+      // R61: a name two active layers give is drawn with its layer, and the layer is sent
+      const offered = P.lawsFor(view, a);
       const picker = offered.length
-        ? cs.choice("req-law", "screen.request.law", offered.map(function (d, i) {
-          return d.amount ? { value: String(i), key: "screen.request.law.option", fills: { citation: d.citation,
-            window: { html: cs.w("screen.request.window." + (d.count === "business" ? "business" : "calendar"), { n: String(d.amount) }) } } }
-            : { value: String(i), text: d.citation };
-        }))
+        ? cs.checks("req-law", "screen.request.law", offered.map(function (d, i) { return { value: String(i), key: "screen.request.law.pick", fills: { law: { html: P.lawText(cs, d) } } }; }))
           + (offered.some(function (d) { return !d.level; }) ? cs.choice("req-level", "screen.request.level", ["state", "city", "county", "federal"].map(function (k) { return [k, "screen.request.level." + k]; })) : "")
           + '<div class="mk-acts">' + cs.act("actionlaws", {}) + "</div>" : "";
       const lawSec = cs.sec("screen.request.step.law", (laws.length
-        ? cs.sheet(laws.map(function (l) { return cs.row("", cs.esc(l.citation || ""), "", ""); }).join("")) : "")
+        // R61: a law stored with its layer is drawn with that layer's place
+        ? cs.sheet(laws.map(function (l) {
+          const ls = pr && pr.state === "ok" && pr.value && pr.value.view && Array.isArray(pr.value.view.layers) ? pr.value.view.layers : [];
+          const lay = l.layer ? ls.find(function (y) { return y && y.id === l.layer; }) : null;
+          return cs.row("", cs.esc(l.citation || "") + (l.layer ? ' · <span data-layer="' + cs.esc(l.layer) + '">' + cs.w("screen.request.law.layer", { place: lay && lay.place ? lay.place : l.layer }) + "</span>" : ""), "", "");
+        }).join("")) : "")
         + (pr && pr.state === "ok" ? picker : cs.state("profiles"))
         + '<p class="mk-note">' + help + "</p>");
       const send = cs.sec("screen.request.step.text", cs.state("filings", function (f) { return P.sendSteps(cs, view, f, { request: true }); }));
@@ -247,9 +282,11 @@ export const request = Object.freeze({
         const role = within || agency;
         // R57: an office is recorded with the body that holds it; none chosen is refused naming the field
         const holder = String(cs.value("req-noff-body") || "").trim();
-        if (!holder) return { refuse: "findin.fieldneeded", fills: { field: { html: cs.w("screen.request.office.body") } } };
+        // R73 (T53): with no body on file, the body she names is recorded first (in `done`); refused only when neither is given
+        const bodyName = String(cs.value("req-noff-bodyname") || "").replace(/[\r\n]+/g, " ").trim();
+        if (!holder && !bodyName) return { refuse: "findin.fieldneeded", fills: { field: { html: cs.w("screen.request.office.body") } } };
         // what she typed, for `done`: the answer's label is the entity's, which a first naming may have written another way
-        view.ui.officeForm = { agency: agency, role: role, holder: holder, note: String(cs.value("req-noff-note") || "").trim(),
+        view.ui.officeForm = { agency: agency, role: role, holder: holder, bodyName: bodyName, note: String(cs.value("req-noff-note") || "").trim(),
           since: String(cs.value("req-noff-since") || "").trim() || null, until: String(cs.value("req-noff-until") || "").trim() || null };
         const label = within && within.toLowerCase() !== agency.toLowerCase() ? agency + ", " + within : agency;
         const body = { kind: "office", label: label, note: String(cs.value("req-noff-note") || "").trim() };
@@ -269,6 +306,15 @@ export const request = Object.freeze({
         const f = view.ui.officeForm;
         if (!r || typeof r.entity_id !== "string" || !f) return;
         const plain = function (a) { return a && a.result !== undefined ? a.result : a; };
+        // R73 (T53): the body she named is recorded through `entities`, with her note, and the office is placed in it
+        if (!f.holder && f.bodyName) {
+          const b = plain(await cs.call("entitycreate", { body: { kind: "body", label: f.bodyName, note: f.note || f.agency } }).then(function (x) { return x; }, function () { return null; }));
+          if (!b || typeof b.entity_id !== "string") {
+            cs.set("bodyrefused", cs.esc(String((b && (b.translation || b.code || b.reason)) || "")));
+            return;
+          }
+          f.holder = b.entity_id;
+        }
         const held = plain(await cs.call("linesof", { query: { entity: r.entity_id, kinds: "post_in", direction: "from", limit: "20" } }).then(function (x) { return x; }, function () { return null; }));
         const lines = held && Array.isArray(held.lines) ? held.lines.filter(function (l) { return l && !l.withdrawn; }) : null;
         if (lines && !lines.length) {
@@ -314,13 +360,25 @@ export const request = Object.freeze({
       // R4: the law it goes under, from the profile's laws for a records request.
       op: "actionlaws",
       send: function (view, el, cs) {
-        const pr = view.data.profiles;
-        const offered = view.parts.recordsLaws(pr && pr.state === "ok" ? pr.value : null);
-        const d = offered[Number(cs.value("req-law"))];
-        if (!d) return null;
-        return { body: { target: view.subject, laws: [{ level: d.level || cs.value("req-level") || "state", citation: d.citation }] } };
+        const a = view.data.action && view.data.action.state === "ok" ? view.data.action.value : {};
+        const offered = view.parts.lawsFor(view, a);
+        const picked = cs.value("req-law");
+        const ds = (Array.isArray(picked) ? picked : []).map(function (i) { return offered[Number(i)]; }).filter(Boolean);
+        // R60 (T53): no law is preselected; with none named nothing is sent
+        if (!ds.length) return { refuse: "screen.request.law.needed" };
+        return { body: { target: view.subject, laws: ds.map(function (d) {
+          const l = { level: d.level || cs.value("req-level") || "state", citation: d.citation };
+          // R61 (actions R113): the layer of a law two layers give is sent, so the plane never guesses it
+          if (d.shared && d.layer) l.layer = d.layer;
+          return l;
+        }) } };
       },
       rereads: ["action"],
+      // R61 (T53): two layers give the name and none was stated: drawn by its words, naming the layers, the picker still open
+      refusals: { NAME_AMBIGUOUS: function (refusal, cs) {
+        const ls = refusal && Array.isArray(refusal.layers) ? refusal.layers : [];
+        return cs.w("screen.request.law.ambiguous", { layers: ls.map(function (l) { return l && (l.place || l.layer) ? String(l.place || l.layer) : ""; }).filter(Boolean).join(", ") });
+      } },
     },
     Object.assign({}, PREPARE, { rereads: ["filings"] }),
     Object.assign({}, APPROVE, { rereads: ["filings"] }),
