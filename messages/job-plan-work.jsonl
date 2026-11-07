@@ -7,3 +7,4 @@
 {"at":"2026-11-05T04:42:20Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job plan-work complete, PR #413 ready, session session_01RAN5emmUMYWHWNXSTNfius: run status"}
 {"at":"2026-11-05T04:42:32Z","row":"outcome","n":4,"outcome":"delivered"}
 {"at":"2026-11-07T01:11:58Z","row":"sent","n":5,"to":"bob","text":"job plan-work complete, PR #732 ready, session session_018BhceguAQrBH8UUvjgviri: run status"}
+{"at":"2026-11-07T01:12:13Z","row":"outcome","n":5,"outcome":"delivered"}
