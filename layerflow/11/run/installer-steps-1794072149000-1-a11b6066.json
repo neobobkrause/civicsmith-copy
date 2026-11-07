@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "installer-steps",
+  "round": 1,
+  "started": "2026-11-07T17:22:29Z",
+  "ended": "2026-11-07T17:24:42Z",
+  "minutes": 2.2,
+  "tested_on": "48fd4da14317eeceac414d35c591fd49c4aed194",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T17:24:42Z"
+}
