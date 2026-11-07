@@ -27,8 +27,7 @@
   ],
   "prior_work": "This module's code and tests exist (build/modules.json) but it had no ledger entry, so the process never recorded it (found in the R15 census, 6 Nov). Its requirement file has one unmet mark: F1 (not yet met: BD-1, corpus-export R17/R18), golden capability rows exportwhole and exportwholepart, founder-only like export, which corpus-export R17 and R18 need. Meet F1 with a test under bio-plane/test/m/op-capabilities/ that fails with the change reverted. Run its suite on its layer. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Edit no other module, and commit no generated file.",
   "status": {
-    "state": "BLOCKED",
-    "reason": "F1 is done on job/op-capabilities at 8e25a2b0e7 (exportwhole and exportwholepart, each a present null like export; f1.test.mjs fails with the change reverted; own suite 10/10). Not published, because landing it alone on layer/11 turns 3 op-declarations tests red that are green there today: R6 (tables.test.mjs: 'exportwhole has no spec', since OPS has no spec for either op), and R3 twice (t49.test.mjs counts 323 hand rows; tables.test.mjs census: a NEEDS row no session reaches). The reverse order also fails: op-declarations cannot add the specs and the admin session-set entries without NEEDS rows, and rows it put in its own FOUNDER_SESSION_NEEDS would collide with mine in composeNeeds. Ask: sequence the two together. Option A (recommended): op-declarations' F-mark job builds on my branch, or on layer/11 after mine lands, in one merge window, with its count and spec updates. Option B: land mine first and accept op-declarations red until its job lands. Found, not mine: on layer/11 without my change, op-declarations already fails R34, R47/R34 and notice ai-use:105 (affordances ACT_HELP partition).",
-    "at": "2026-11-07T04:35:07Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T16:21:00Z"
   }
 }
