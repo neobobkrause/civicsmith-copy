@@ -40,8 +40,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/installer.md, each with a test under newgroup/test/ that fails with the change reverted. The installer Worker (newgroup) is a live site: its code and local tests are yours, deploying it never is. Its tests also include newgroup's embed build (npm run embed) before node --test. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T17:31:16Z",
-    "reason": "reopened: Attempt 2 (job/installer-2) completed but never merged and has no PR: carry its net work forward where it still applies on today's tranche, then meet installer's unmet requirements, including R48 (C24, pin e779f92d, now counts not-yet-met marks on requirement sub-lines). Publish and get it merged this time."
+    "state": "COMPLETE",
+    "at": "2026-11-07T17:47:41Z"
   }
 }
