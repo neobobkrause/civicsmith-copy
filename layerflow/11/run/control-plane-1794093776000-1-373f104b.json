@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "control-plane",
+  "round": 1,
+  "started": "2026-11-07T23:22:56Z",
+  "ended": "2026-11-07T23:25:21Z",
+  "minutes": 2.4,
+  "tested_on": "1995851e1fa5255a64ebf87c73fc32c9d66612c1",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T23:25:21Z"
+}
