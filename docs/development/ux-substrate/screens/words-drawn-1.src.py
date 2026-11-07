@@ -1088,7 +1088,7 @@ w282(X + 'alongside.what', "For a different team, in this same account. Each has
 w282(X + 'remove.name', 'Remove it, then install')
 w282(X + 'remove.what', 'Only if nobody needs what it holds. The next page lists exactly what would be deleted, and nothing is deleted before you confirm there.', True)
 R = 'screen.install.remove.'
-w282(R + 'title', 'Remove the Civicsmith already here?', True)
+w282(R + 'title', 'Remove your team\'s Civicsmith already here?', True)
 w282(R + 'sub', 'Read what would be deleted. Nothing has been deleted yet.', True)
 w282(R + 'lost.heading', 'What would be deleted, for good', True)
 w282(R + 'lost.records', "Everything {team}'s Civicsmith holds: {holdings}, with every note, question and finding in them.", True)
@@ -2061,7 +2061,7 @@ W.append(dict(key='installer.fallback.note', en="Its own counts weren't availabl
 W.append(dict(key='installer.removed.title', en='Removed', protected=False, note='DEC-329: B303 (7e): ui.mjs:482 removedPanel (today only a button), index.mjs:2539'))
 W.append(dict(key='installer.removed.what', en="{team}'s Civicsmith is gone from this account: its programs, containers and storage are deleted, and nothing was kept.", protected=False, note="DEC-329: B303 (7e): ui.mjs:482 removedPanel; {team} is the team's name, or the short name when not known"))
 W.append(dict(key='installer.removed.next', en="The account is clear. You can set up a new Civicsmith in it now; that begins with a new permission on Cloudflare's page.", protected=False, note='DEC-329: B303 (7e): ui.mjs:482 removedPanel, beside the button act.bootstrap.label.install'))
-W.append(dict(key='installer.remove.running.title', en='Removing the Civicsmith from your account', protected=False, note="DEC-329: B303 (7e): index.mjs:2655 (removeconfirm run's page title; today screen.install.remove.title, which asks a question)"))
+W.append(dict(key='installer.remove.running.title', en='Removing your team\'s Civicsmith from your account', protected=False, note="DEC-329: B303 (7e): index.mjs:2655 (removeconfirm run's page title; today screen.install.remove.title, which asks a question)"))
 W.append(dict(key='installer.parts.heading', en='What was put in place', protected=False, note='DEC-329: B303 (7e): index.mjs:2152 partRows (no heading today); the list of parts with versions, R61'))
 W.append(dict(key='installer.checks.heading', en='What was checked', protected=False, note='DEC-329: B303 (7e): index.mjs:2150 checkRows (no heading today)'))
 
@@ -2438,7 +2438,7 @@ W.append(dict(key='installer.address.prefixtaken', en='no workers.dev prefix is 
 
 # (7) what the install and update steps say when they end well
 W.append(dict(key='installer.account.using', en='Using the account “{account}”', protected=False, note='DEC-331: the installer remaining sentences: newgroup/src/index.mjs:1794; {account}; also index.mjs:2268, 2477, 2510'))
-W.append(dict(key='installer.install.fresh.alongside', en='The name is free; the Civicsmith already in your account is not touched', protected=False, note='DEC-331: the installer remaining sentences: newgroup/src/index.mjs:1833'))
+W.append(dict(key='installer.install.fresh.alongside', en='The name is free. Your team\'s Civicsmith already in your account is not touched', protected=False, note='DEC-331: the installer remaining sentences: newgroup/src/index.mjs:1833'))
 W.append(dict(key='installer.install.inplace', en="Your team's Civicsmith is already in place, exactly as this release has it", protected=False, note='DEC-331: the installer remaining sentences: newgroup/src/index.mjs:1945'))
 W.append(dict(key='installer.install.noschedule', en="Your team's Civicsmith is installed. One optional part, the one that lets it re-check documents on its own schedule, was refused by Cloudflare and left out, so nothing else was held up. Running the updater later turns it on. (Cloudflare said: {said})", protected=False, note='DEC-331: the installer remaining sentences: newgroup/src/index.mjs:1977; {said}'))
 W.append(dict(key='installer.address.prefix', en='Your account had no web address prefix yet, so it is now “{prefix}”. Every future program on this account shares that prefix.', protected=False, note='DEC-331: the installer remaining sentences: newgroup/src/index.mjs:2001; {prefix}'))
