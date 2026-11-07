@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "store-assembly",
+  "session": "session_018BhceeYWPej1HLLejCBjem",
+  "started": "2026-11-07T19:10:13Z",
+  "ended": "2026-11-07T19:15:05Z",
+  "at": "2026-11-07T19:15:05Z",
+  "minutes": 4.87,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 187.312,
+  "tests": {
+    "total": 485,
+    "pass": 482,
+    "fail": 0
+  }
+}
