@@ -35,6 +35,9 @@ export const LIBRARY_KEYS = Object.freeze([
   "screen.wizards.vstate.approved", "screen.wizards.vstate.draft", "screen.wizards.vstate.submitted",
   "screen.wizards.vstate.updated", "screen.wizards.vstate.withdrawn", "screen.wizards.whose.civicsmith",
   "screen.wizards.whose.group", "screen.wizards.whose.widened", "screen.wizards.own.fold", "screen.wizards.own.says",
+  // R23: each filter's own explanation and its own empty line
+  ...["offered", "draft", "submitted", "withdrawn", "retired", "broken", "proposed"].flatMap((k) => [
+    "screen.wizards.state." + k + ".tip", "screen.wizards.empty." + k]),
 ]);
 
 /* the dock's guide, its marks and its subject choice (R2-R7, R10-R12, R16, R17) */
