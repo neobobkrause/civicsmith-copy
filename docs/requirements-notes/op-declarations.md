@@ -145,3 +145,8 @@ Named back to BOB (R21: a function its owner serves through no op has no spec):
 - Four ai-use ops the tranche added with no spec were declared for R19's census, as BOB ruled for T53's other rows:
   `aiusebymember` (ai-use R27) and `aihealthpreview` (R33), owners' reads; `airetestset` (R28) and `aihealthset` (R32),
   administrators' acts.
+
+## Layer 11, job op-declarations attempt 6 (7 Nov 2026)
+
+- **F2 met.** On layer/11, five member ops had neither an `ACT_HELP` text nor a ground: ai-use F3's `aibudgetset` and `aiprojectbudget`, extraction's `interpretmark` and `interpretationwithdraw`, and instance-setup R115's `assistantreadiness`. The four acts take the unexplained ground and the read the read ground, until `affordances`' `ACT_HELP` holds their text. This turns green R34 (t36), R47/R34 (t42) and the ai-use:105 notice. Test: `layer11-act-help.test.mjs`. The design stream still owes texts for all five.
+- **F3 (BD-1).** `exportwhole` and `exportwholepart` are declared now that op-capabilities F1 (PR 752) holds their present-null rows. The hand-written row count goes from 323 to 325 (t49, tables census). This module adds no `FOUNDER_SESSION_NEEDS` row for them. Test: `bd1-exportwhole.test.mjs`. corpus-export still keeps `wholeExportOps` out of the plane's map, so the door does not serve them until corpus-export spreads it (its own job).
