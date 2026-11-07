@@ -69,7 +69,7 @@ test("R1 reads wizards, baseupdates and projectlist; each script a row with its 
   assert.ok(t(rowOf(a.tree, V.draft)).includes(said("screen.wizards.notapproved")));
   // empty: the screen's own sentence, for a state nothing is in
   const e = await open("wizards", { team: lt, as: lt.mai, subject: "withdrawn" });
-  has(e, "screen.wizards.empty");
+  has(e, "screen.wizards.empty.withdrawn");
 });
 
 test("R1 a Civicsmith script's row offers no write act but the copy (WIZARD_NOT_THE_GROUPS)", async () => {
@@ -297,14 +297,14 @@ test("R8 R14 the path Settings › Wizards, the four states of each read, and th
   const pending = await open("wizards", { team: lt, as: lt.rosa, faults: { wizards: "pending" } });
   has(pending, "state.loading");
   const empty = await open("wizards", { team: lt, as: lt.rosa, subject: "withdrawn" });
-  has(empty, "screen.wizards.empty");
+  has(empty, "screen.wizards.empty.withdrawn");
   const refused = await refusalOf(lt, lt.rosa, "wizards", { query: { state: "nonsense" } });
   assert.equal(refused.result.ok, false);
   const f = await open("wizards", { team: lt, as: lt.rosa, faults: { wizards: refused.result } });
   assert.ok(hasWord("refusal." + refused.result.code));
   assert.ok(f.text.includes(said("refusal." + refused.result.code)), "R14: drawn by its key");
   const s = await open("wizards", { team: lt, as: lt.rosa, faults: { wizards: "none" } });
-  lacks(s, "screen.wizards.empty");
+  lacks(s, "screen.wizards.empty.offered");
   assert.ok(all(s.tree, (e) => e.attrs["data-state"] === "failed").length >= 1);
   // a failed read of baseupdates or projectlist leaves the library drawn
   const g = await open("wizards", { team: lt, as: lt.rosa, faults: { baseupdates: "none", projectlist: "none" } });
