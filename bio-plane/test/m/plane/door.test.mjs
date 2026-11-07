@@ -54,6 +54,13 @@ const started = (outs) => outs.filter((x) => x && typeof x === "object" && "star
 /* The instance-setup routes (K1690), each driven with a request that exercises it; the stamps are the ones the Worker
    door sets (R17). Order matters: the writes run before the reads that show them. */
 const DRIVES = [
+  /* T53 (instance-setup R107, R114, R115): the layers, the mail domain and switch, the mail setup read and the assistant's readiness, each driven as a
+     non-administrator (each answers its own refusal or state, which the door relays as it is) */
+  ["layersset?by=member:nobody", "POST", { layers: [] }],
+  ["maildomainset?by=member:nobody", "POST", { domain: null }],
+  ["maildoorset?by=member:nobody", "POST", { on: false }],
+  ["mailsetup?viewer=member:nobody", "GET"],
+  ["assistantreadiness?viewer=member:nobody", "GET"],
   /* T48 (instance-setup R89, R90): the update reads and acts, answered to administrators only (a refusal is an answer) */
   ["updatenotice?viewer=member:nobody", "GET"],
   ["updatestart?by=member:nobody", "POST", { version: "9.9.9" }],
@@ -142,9 +149,10 @@ test("R1: the class whose fetch is control-plane's door: at construction it star
   assert.equal(started(await settle(other))[0].started, true);
 });
 
-test("R1, R5, R67 (K1690, K1870, K2162, K2249, K4124): instance-setup's thirty-seven routes (T48: `updatenotice`, `updatestart`, `updatelater`, `updateskip`, R89, R90; T45: `declaredstakeset`, K2896; T46: `infolevelset`, `infolevel`, K3004; T47: `grouplogoset`, `grouplogo`, `grouplanguagesset`, `grouplanguages`, R48) and translations' nine (R61, R67) are part of the route map beside every module's, and each answers through the door, in the door's envelope, what its own route answers called directly", async () => {
+test("R1, R5, R67 (K1690, K1870, K2162, K2249, K4124): every route instance-setup's own map holds (T53: `layersset`, `maildomainset`, `maildoorset`, `mailsetup`, `assistantreadiness`, R107, R114, R115; T48: `updatenotice`, `updatestart`, `updatelater`, `updateskip`, R89, R90; T45: `declaredstakeset`, K2896; T46: `infolevelset`, `infolevel`, K3004; T47: `grouplogoset`, `grouplogo`, `grouplanguagesset`, `grouplanguages`, R48) and translations' nine (R61, R67) are part of the route map beside every module's, and each answers through the door, in the door's envelope, what its own route answers called directly", async () => {
   const ops = Object.keys(S.instanceSetupOps(null, new URL("http://do/"), null));
-  assert.equal(ops.length, 37);
+  /* the count is instance-setup's own map's, never pinned here (K3268); every one of them is driven below */
+  assert.ok(ops.length > 0);
   const translationOpNames = Object.keys(translationsOps(null, new URL("http://do/"), null));
   assert.equal(translationOpNames.length, 9, "translations' nine routes");
   assert.deepEqual([...new Set(DRIVES.map(([p]) => p.split("?")[0]))].sort(), [...ops, ...translationOpNames].sort(), "every route is driven");
