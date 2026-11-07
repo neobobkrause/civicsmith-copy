@@ -3283,3 +3283,17 @@ w499('queue.layer-rule-changed.summary', 'An update changed rules your team uses
 w499('queue.layer-rule-changed.detail', 'Civicsmith {version} changed these rules in {layer}: {rules}. Your team\'s own entries are unchanged. Clocks already recorded keep what they hold; new ones use the changed rules.', 'R58: {rules} the changed rules by name, joined with commas, never the text of a team entry; instance-setup R111')
 w499('queue.layer-rule-changed.detail.more', 'and {n} more', 'R58: when the list of changed rules is long')
 w499('queue.layer-rule-changed.door', 'See the rules each place brings', 'R58: the act, opening Places at the layer')
+
+# DEC-500 (the ux lane, 7 Nov 2026; BOB's ask from screens-intake-rounds R73): the refusal of a file over its limit
+# at Add. R64's reading sentence (screen.capture.read.refused.TOO_LARGE) is for a file that WAS kept but not read,
+# so it says "kept whole"; R73's refusal keeps nothing, so it has its own sentence, naming the file's figure and the
+# kind's limit and nothing else. It is followed by screen.capture.refusal.toolarge.nothing_read ("Nothing was added or
+# read.") and R74's ways in; it never says "Nothing was written" (the upload figures row) beside it.
+def w500(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-500: ' + note))
+w500('screen.capture.refusal.toolarge.size', 'This file is {size}. Files of this kind can be up to {bound}.', 'R73: a file over its kind\'s size limit; {size} {bound} in MB (size.mb), the bound the one R72 showed')
+w500('screen.capture.refusal.toolarge.rows', 'This spreadsheet has {count} rows. Spreadsheets can have up to about {bound} rows.', 'R73: a sheet over its rows; {count} {bound} comma-grouped')
+w500('screen.capture.refusal.toolarge.cells', 'This workbook has {count} cells. Workbooks can have up to {bound} cells.', 'R64/R73: a workbook over its cells')
+w500('screen.capture.refusal.toolarge.pages', 'This document has {count} pages. Documents can have up to {bound} pages.', 'R73: a document over its pages, once its page count is known')
+w500('screen.capture.refusal.toolarge.archive', 'This archive is {size}. Archives can be up to {bound} in all.', 'R64/R73: an archive over its total')
+w500('screen.capture.refusal.toolarge.archive.entry', '{file}, inside this archive, is {size}. Files of its kind can be up to {bound}.', 'R64/R73: an archive with an entry over its kind\'s limit')
