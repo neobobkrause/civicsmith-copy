@@ -9,6 +9,7 @@ import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { openWorld, members, html, text, main, press, ok, refused, word, says, rawKeys } from "./page.mjs";
 import { makeZip } from "../../make-zip.mjs";
+import { GRADE_READ_MAX } from "../../../src/file-safety/index.mjs";
 
 const MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 const XT = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -112,15 +113,20 @@ test("R5 R36 a cut list of sheets says how many of how many are shown; a sheet t
 
 test("R5 R36 a refusal with a size and a bound draws the no-preview sentence in MB; one without them draws as before", async () => {
   const MIB = 1024 * 1024;
-  const pad = new Uint8Array(21 * MIB);
   const ods = odsDeclaring(600 * MIB);
-  const files = { TOO_LARGE: [xlsxOf([{ name: "S", xml: sheetXml(2) }], [{ name: "xl/media/big.bin", data: pad, method: 0 }]), XT],
-                  PREVIEW_NOT_DRAWN: [ods.bytes, ods.type] };
-  for (const [reason, [bytes, type]] of Object.entries(files)) {
+  /* PREVIEW_NOT_DRAWN is made by a real upload. TOO_LARGE (a sheet over the owner's whole-read bound, file-safety `GRADE_READ_MAX`, now 100 MiB) is past
+     the door's own upload ceiling for a spreadsheet (50 MB, `limit.spreadsheet.bytes`), so no real act reaches it: it is the one scripted fault here, in
+     the owner's shape with the owner's bound, one MiB over it */
+  const over = GRADE_READ_MAX + MIB;
+  const files = { TOO_LARGE: [xlsxOf([{ name: "S", xml: sheetXml(2) }]), XT, { safeview: refused("SAFE_VIEW_FAILED", word("file-safety.index.the_safe_view_could_not_be_made"), 422,
+                    { renderer_reason: "TOO_LARGE", size: over, bound: GRADE_READ_MAX, format: "xlsx" }) }],
+                  PREVIEW_NOT_DRAWN: [ods.bytes, ods.type, {}] };
+  for (const [reason, [bytes, type, plane]] of Object.entries(files)) {
     const t = await held(bytes, type);
-    const p = await drawn(t);
-    /* the figures are the owner's, read from its refusal */
-    const f = (await t.world.door({ url: `/api/?${new URLSearchParams({ op: "safeview", capture: t.sha })}` }, t.mai)).json.result;
+    const p = await drawn(t, plane);
+    /* the figures are the owner's, read from its refusal (or, for the scripted fault, its bound) */
+    const f = plane.safeview ? { renderer_reason: reason, size: over, bound: GRADE_READ_MAX, translation: word("file-safety.index.the_safe_view_could_not_be_made") }
+      : (await t.world.door({ url: `/api/?${new URLSearchParams({ op: "safeview", capture: t.sha })}` }, t.mai)).json.result;
     assert.equal(f.renderer_reason, reason, "the owner refuses it, naming why");
     assert.ok(Number.isFinite(f.size) && Number.isFinite(f.bound), "the owner states the size and the bound");
     assert.ok(says(p, "screen.open-file.safe.notdrawn", { size: MB(f.size), bound: MB(f.bound) }), reason);
