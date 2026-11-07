@@ -38,7 +38,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-07T18:32:51Z"
+    "state": "WORKING",
+    "at": "2026-11-07T18:46:01Z",
+    "reason": "reopened: R57: ledger paths widened (PR 865) to t33, t34, t35, t36, t37 and t41.mjs; remove the old AI ops' rows from the grade tables"
   }
 }
