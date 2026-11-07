@@ -1,0 +1,13 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "store-request",
+  "attempt": 6,
+  "branch": "job/store-request",
+  "early": [
+    "affordances",
+    "queue",
+    "instance-setup"
+  ],
+  "at": "2026-11-07T16:58:16Z"
+}
