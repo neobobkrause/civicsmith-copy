@@ -3,6 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { actionWorld, correspond, openIn } from "./world.mjs";
+import { matterWorld } from "./world-A.mjs";
 import { SCREENS, open, main, text, press, last, ok, refusedIn, W, D, hasWord, DATA_PLANE, ROUTES, ACTION, ACTION_ID, ACTIONS, PLAN_ID, PROJECT } from "./page.mjs";
 
 const slot = (p, b) => text(p, p.root().querySelector(`[data-slot="${b.getAttribute("data-ai")}"]`));
@@ -125,13 +126,12 @@ test("R81: 'Start the action', 'Add an option' and 'Record this determination' p
   const o = await press(pl, "optionadd", { values: { "plan-opt-summary": "" } });
   assert.ok(slot(pl, o).includes(W("screen.plan.option.needed")), "'Add an option' names the option");
   assert.equal(reasonBox(pl), null, "no reason box");
-  const m = await open(ROUTES.matter, { ...DATA_PLANE, determine: ok({}) });
-  const d = main(m).querySelector('button[data-act="determine"]');
-  if (d) {
-    const r = await press(m, d, { values: { "mt-d-event": "" } });
-    assert.ok(slot(m, r).includes(W("refusal.NO_SUCH_EVENT")), "'Record this determination' names the event");
-    assert.equal(reasonBox(m), null, "no reason box");
-  }
+  const w = await matterWorld();
+  const m = await openIn(w.world, w.me, `/app/matter/${w.project}`);
+  const r = await press(m, "determine", { values: { "mt-d-event": "" } });
+  assert.ok(slot(m, r).includes(W("refusal.NO_SUCH_EVENT")), "'Record this determination' names the event");
+  assert.equal(reasonBox(m), null, "no reason box");
+  assert.equal(m.byOp("determine").length, 0);
 });
 
 test("R70, R72, R75, R78, R80, R81 (R19): each key the new lines name is a word of setup-words, on the screen that draws it", () => {
