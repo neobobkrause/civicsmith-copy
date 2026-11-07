@@ -1,0 +1,10 @@
+{
+  "row": "test",
+  "module": "control-plane",
+  "session": "session_018BhceeP57PHjC6ccDoWjAM",
+  "started": "2026-11-07T20:37:55Z",
+  "ended": "2026-11-07T20:40:01Z",
+  "at": "2026-11-07T20:40:01Z",
+  "minutes": 2.1,
+  "result": "build failed"
+}
