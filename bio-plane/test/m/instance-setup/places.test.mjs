@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { boot, frame, providers } from "./fixture.mjs";
 import { INSTANCE_SETUP_CHECKS, INSTANCE_SETUP_TABLE_DECLARATIONS, PLACE_NAME_MAX } from "../../../src/setup.mjs";
-import { word } from "../../../src/setup-words/index.mjs";
+import { word, localize } from "../../../src/setup-words/index.mjs";
 
 const call = async (m, path, body) => (await frame(m, new Request(`http://do/${path}`,
   body === undefined ? undefined : { method: "POST", body: JSON.stringify(body) }))).json();
@@ -60,7 +60,7 @@ test("R60 placeWantedSet is an administrator's act only (NOT_AN_ADMIN, membershi
 
 test("R60 placeWanted answers {name, set_by, set_at, matches} to an administrator and NOT_AN_ADMIN to anyone else; the name is kept only here: no public read carries it, nothing is fetched, and its tables are never exported", async () => {
   const w = await world();
-  assert.deepEqual(w.m.placeWanted({ viewer: "admin" }), { ok: true, name: null, set_by: null, set_at: null, matches: [] });
+  assert.deepEqual(w.m.placeWanted({ viewer: "admin" }), { ok: true, name: null, names: [], set_by: null, set_at: null, matches: [] });
   w.m.placeWantedSet({ name: "Lake Shore", by: "admin" });
   const st = w.m.placeWanted({ viewer: "member:ada" });
   assert.deepEqual([st.name, st.set_by, st.matches], ["Lake Shore", "admin", []]);
@@ -92,8 +92,10 @@ test("R62 at a later start a held non-test profile matching the named place by n
   assert.deepEqual(after.started.places, { compared: true, arrived: 1 });
   const { ok, arrivals: open } = after.m.placeArrivals({ viewer: "admin" });
   assert.equal(ok, true);
-  assert.deepEqual(open, [{ name: "Lake Shore", profile: "p-lake", profile_name: "Lake Shore and Valley",
-                            covers: ["Lake  Shore", "Valley Town"], found_at: "2026-10-06T08:01:00.000Z" }]);
+  /* R113 (T53): each arrival answers its layer beside its profile; R109: and that the team's own entries stay */
+  assert.deepEqual(open, [{ name: "Lake Shore", profile: "p-lake", layer: "p-lake", profile_name: "Lake Shore and Valley",
+                            covers: ["Lake  Shore", "Valley Town"], found_at: "2026-10-06T08:01:00.000Z",
+                            note: localize("instance-setup.places.arrival_entries_kept", "Your team's own entries about this place stay in your team's layer and keep working, beside the shipped layer's.") }]);
   for (const viewer of ["", "ruth", "class:probe"]) assert.deepEqual(after.m.placeArrivals({ viewer }), { ok: true, arrivals: [] }, viewer);
   /* the plane's own in-process read, as queue-producers R38 reads it, answers them for the administrators' item */
   assert.deepEqual(after.m.placeArrivals({ viewer: null }).arrivals, open);
