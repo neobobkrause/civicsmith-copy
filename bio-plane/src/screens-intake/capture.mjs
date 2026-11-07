@@ -570,6 +570,8 @@ function renderCapture(cs, view) {
       + (watch && cs.can("monitorset") ? `<p class="mk-small">${cs.w("screen.capture.address.watchabout")}</p>`
         + cs.choice("ci-freq", "screen.capture.address.freq", freqs.map((f) => [f, `screen.capture.address.freq.${f}`]), { value: U.frequency || "weekly" }) : "")
       + `<div class="mk-acts">${cs.act("acquire", { tone: "primary" })}${cs.act("capturerequest")}${watch ? `${cs.act("monitorset")}${cs.act("monitor")}` : ""}</div>`
+      /* R74 (a): the register a refused address is the source of, opened with the project's filter prefilled (the registers screen's route) */
+      + (U.tooLargeRegister && U.tooLargeRegister.key ? `<p class="mk-small" data-way="register"><a class="cs-ref" href="/app/registers/${encodeURIComponent(U.tooLargeRegister.key)}${U.tooLargeRegister.project ? "?project=" + encodeURIComponent(U.tooLargeRegister.project) : ""}" data-nav>${cs.w("screen.capture.refusal.toolarge.register")}</a></p>` : "")
       + working
       + closedLine
       + result
@@ -713,13 +715,38 @@ async function repairedReading(view, cs, copy) {
 
 /* R50 (C11): a refused or unanswered `acquire` ends the press at once: the working note it raised is cleared, and the refusal the shell
  * draws beside the act is not lost to the redraw that clearing it causes (interface-shell R21). */
-function failedAcquire(view, answer, cs) { cs.set("working", false); }
+async function failedAcquire(view, answer, cs) {
+  cs.set("working", false);
+  cs.set("tooLargeRegister", null);
+  /* R74 (a) (N1259; K5447): an address refused TOO_LARGE that a known register lists as its source (`registerlist`'s `url`, matched mechanically: scheme and
+     host without case, the path without a trailing slash, the query exactly, the fragment ignored; never guessed from content) offers that register, the
+     subject project's filter prefilled. A list that cannot be read offers nothing more than R74 (b). */
+  if (!answer || answer.kind !== "refused" || answer.code !== "TOO_LARGE") return;
+  const norm = (u) => {
+    if (typeof u !== "string" || !u.trim()) return null;
+    try { const x = new URL(u.trim()); if (x.protocol !== "https:" && x.protocol !== "http:") return null; return `${x.protocol}//${x.host.toLowerCase()}${x.pathname.replace(/\/+$/, "")}${x.search}`; }
+    catch { return null; }
+  };
+  const want = norm(String(cs.value("ci-address") || (view.ui && view.ui.address) || ""));
+  if (!want) return;
+  let list = null;
+  try { const got = await cs.call("registerlist", {}); list = got && typeof got.result === "object" && got.result ? got.result : got; } catch { list = null; }
+  if (!list || typeof list !== "object") return;
+  let key = "";
+  for (const group of [list.own, list.known]) for (const e of Array.isArray(group) ? group : []) if (!key && e && typeof e.key === "string" && e.key && norm(e.url) === want) key = e.key;
+  if (!key) return;
+  const at = view.parts.forOf(view);
+  const fq = view.ui && view.ui.forq && view.ui.forq.value && typeof view.ui.forq.value.id === "string" ? view.ui.forq.value.id : "";
+  const project = /^PROJ-/.test(at.id) ? at.id : fq;
+  cs.set("tooLargeRegister", { key, project });
+}
 
 /* R1 (N747; control-plane R58): an answer that carries `promoted` (an archive the door already promoted) is not
  * promoted again; any other new document is promoted here as an information bundle at `collected` (`promoteDocument`,
  * R23's files included), filed under the project the subject names (R22). A refusal of either step is drawn on the tab. */
 async function doneAcquire(view, answer, cs) {
   const a = answer || {}, doc = a.document || {};
+  cs.set("tooLargeRegister", null);
   /* G72 (fix round 7): "Finish it" answered `NO_SUCH_SESSION` (the plane dropped the session when its work ended): the capture is closed. The press ends, the
      session leaves the Unfinished line at once and the line says so; the act's `rereads` ask `opencaptures` again, which no longer lists it. */
   if (a.ok === false && String(a.reason || a.code || "") === "NO_SUCH_SESSION") {
@@ -1437,7 +1464,17 @@ export const CAPTURE_SCREEN = Object.freeze({
                                               /* R29: `BAD_FOR` (not a question of the project's) beside the field, in the fold the design draws it in, open
                                                  whenever drawn, titled `capture.forquestion.refused.summary`; nothing was captured */
                                               BAD_FOR: function (refusal, cs) { return `<details class="mk-details" open><summary>${cs.w("capture.forquestion.refused.summary")}</summary>${cs.w("refusal.BAD_FOR")}</details>`; },
-                                              FETCH_FAILED: "refusal.FETCH_FAILED", EMPTY: "refusal.EMPTY", TOO_LARGE: "refusal.TOO_LARGE" }) }),
+                                              FETCH_FAILED: "refusal.FETCH_FAILED", EMPTY: "refusal.EMPTY",
+                                              /* R73, R74 (DEC-500): the address's figure and the limit (`acquire`'s 413 states them as `bytes` and `maxBytes`), "Nothing was added or
+                                                 read.", then R74 (b)'s part; R74 (a)'s register is drawn under the act row once `registerlist` is read (`failedAcquire`). Without
+                                                 its figures, the bare `refusal.TOO_LARGE` */
+                                              TOO_LARGE: function (refusal, cs) {
+                                                const f = refusal || {};
+                                                const size = Number.isFinite(f.size) ? f.size : f.bytes, bound = Number.isFinite(f.bound) ? f.bound : f.maxBytes;
+                                                if (!(Number.isFinite(size) && size >= 0 && Number.isFinite(bound) && bound >= 0)) return cs.w("refusal.TOO_LARGE");
+                                                const sz = (n) => (n < 1024 ? cs.w("size.small") : n < 1048576 ? cs.w("size.kb", { n: String(Math.round(n / 1024)) }) : n >= 1073741824 ? cs.w("size.gb", { n: (n / 1073741824).toFixed(1) }) : cs.w("size.mb", { n: (n / 1048576).toFixed(1) }));
+                                                return `<span data-refusal="TOO_LARGE">${cs.w("screen.capture.refusal.toolarge.size", { size: sz(size), bound: sz(bound) })} ${cs.w("screen.capture.refusal.toolarge.nothing_read")}</span> <span data-way="part">${cs.w("screen.capture.refusal.toolarge.part")}</span>`;
+                                              } }) }),
     Object.freeze({ op: "capturerequest", label: "act.capturerequest.label.capture", send: sendCaptureRequest, done: doneCaptureRequest, rereads: Object.freeze(["later"]) }),
     Object.freeze({ op: "monitorset", label: "act.monitorset.label.capture", send: sendMonitorSet, done: doneMonitorSet, rereads: Object.freeze([]) }),
     Object.freeze({ op: "monitor", label: "act.monitor.label.capture", send: sendMonitor, done: doneMonitor, rereads: Object.freeze([]) }),

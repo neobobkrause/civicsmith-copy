@@ -92,6 +92,7 @@ export const SCREEN_KEYS = Object.freeze({
     /* G110 (fix round 8): a skipped supporting file is told by its reason's code: the count line and one sentence for each kind of reason */
     "screen.capture.supporting.kept", "screen.capture.supporting.cap", "screen.capture.supporting.toolarge", "screen.capture.supporting.unavailable",
     "screen.capture.refusal.toolarge.size", "screen.capture.refusal.toolarge.archive", "screen.capture.refusal.toolarge.nothing_read", "screen.capture.refusal.toolarge.part", "screen.capture.file.parts.cancelled", "act.captureuploadabort.label.capture",
+    "screen.capture.refusal.toolarge.register",
   ]),
   held: Object.freeze([
     "act.heldcaptures.label.held", "act.heldrestore.label.held", "act.heldsetaside.label.held",

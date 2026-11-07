@@ -3,7 +3,7 @@
  * what the surface keeps are the scripted answers r9-parts.test.mjs names (no test file is that size). Words by key (R26). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { openWorld, members, main, fill, press, idle, says, word, hasWord } from "./page.mjs";
+import { openWorld, members, main, text, fill, press, idle, says, word, hasWord } from "./page.mjs";
 import { PARTED_PART_BYTES } from "../../../src/capture/index.mjs";
 
 const MIB = 1048576;
@@ -91,4 +91,48 @@ test("R73 (DEC-500) an archive over its total is refused by the archive's senten
   await idle(b.p);
   assert.ok(rb.slot().textContent.includes(word("screen.capture.refusal.upload.TOO_LARGE")));
   assert.ok(!rb.slot().textContent.includes(word("screen.capture.refusal.toolarge.nothing_read")));
+});
+
+/* R73, R74 on the address tab: a source that declares more than a capture takes (one byte over acquisition's `CAPTURE_MAX`, as capture.test.mjs's R1 makes it) is refused by
+   the owner's real `acquire`; the register way is matched against the real `registerlist` (registers' shipped list), never guessed */
+const { CAPTURE_MAX } = await import("../../../src/acquisition/index.mjs");
+const { DEF } = await import("../registers/fixture.mjs");
+const huge = (w, url) => w.script(url, async () => new Response("xx", { status: 200, headers: { "content-type": "application/pdf", "content-length": String(CAPTURE_MAX + 1) } }));
+async function addressScene(t, url, path = "/app/capture") {
+  huge(t.world, url);
+  const p = await openWorld(path, { world: t.world, as: t.mai });
+  fill(p, { "ci-address": url });
+  const r = await press(p, "acquire");
+  await idle(p);
+  return { p, r };
+}
+
+test("R73 R74 (DEC-500) an address over the limit is refused with its size and the limit, 'Nothing was added or read.' and the member's own part; an address a register lists also offers that register, the project's filter prefilled", async () => {
+  const t = await members({ mai: ["contribute", "create_projects"] });
+  /* the team's own register, defined by the real act from registers' published definition (its fixture), so `registerlist` lists its address */
+  const def = { ...DEF("town_filings"), key: "our_filings", label: "Our filings" };
+  assert.equal((await t.mai.act("registerdefine", { body: { definition: def, reason: "The town's filings, for our question." } })).ok, true);
+  const list = await t.mai.read("registerlist");
+  const reg = (list.own || []).find((e) => e && e.key === "our_filings");
+  assert.ok(reg && /^https:\/\//.test(reg.url), "the register lists its address");
+  const project = await t.world.recipes.project(t.mai, "Campaign money");
+  const { p, r } = await addressScene(t, reg.url + "/", `/app/capture/address/${project}`);
+  const slot = r.slot().textContent;
+  assert.ok(slot.includes(word("screen.capture.refusal.toolarge.size", { size: word("size.mb", { n: ((CAPTURE_MAX + 1) / MIB).toFixed(1) }), bound: word("size.mb", { n: (CAPTURE_MAX / MIB).toFixed(1) }) })), slot);
+  assert.ok(slot.includes(word("screen.capture.refusal.toolarge.nothing_read")) && slot.includes(word("screen.capture.refusal.toolarge.part")));
+  assert.ok(!slot.includes(word("refusal.TOO_LARGE")), "not the bare sentence once the figures are known");
+  const way = main(p).querySelector('[data-way="register"] a');
+  assert.ok(way, "the register way is offered");
+  assert.equal(way.textContent, word("screen.capture.refusal.toolarge.register"));
+  assert.equal(way.getAttribute("href"), `/app/registers/${encodeURIComponent(reg.key)}?project=${encodeURIComponent(project)}`);
+  assert.equal(p.byOp("registerlist").length, 1, "the list is read once, after the refusal");
+  assert.equal(p.byOp("promote").length, 0, "nothing filed");
+});
+
+test("R74 control: an address no register lists is offered only the member's own part; no way offers 'the first part' of a file", async () => {
+  const t = await members({ mai: ["contribute", "create_projects"] });
+  const { p, r } = await addressScene(t, "https://huge.example/a.pdf");
+  assert.ok(r.slot().textContent.includes(word("screen.capture.refusal.toolarge.part")));
+  assert.equal(main(p).querySelector('[data-way="register"]'), null);
+  assert.ok(!/first part/i.test(text(p)));
 });
