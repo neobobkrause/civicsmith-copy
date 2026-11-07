@@ -105,8 +105,7 @@
   ],
   "prior_work": "First, consolidate build/requirements/affordances.md (75947 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/affordances.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/affordances.md is unchanged by the move (compare against the ids at the start commit). Then do the provider-notice work this START lists: for each notice, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal (new module ids, build/modules.json rows, build/layers.md). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T19:50:09Z",
-    "reason": "reopened: BOB ruling (op-grades R57, PR 866): bio-plane/test/m/affordances/t34.test.mjs:186 still asserts some T34 write is credentials' (ownerOf from T34_RUNG_ABSENT 'is'), but R57 removes the only four group-key rows that cite credentials. Drop the credentials half of that assertion (the keyedserviceset check below covers credentials) so t34 passes both before and after R57. Test-only; one change"
+    "state": "COMPLETE",
+    "at": "2026-11-07T20:00:48Z"
   }
 }
