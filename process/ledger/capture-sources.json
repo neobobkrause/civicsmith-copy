@@ -1,0 +1,44 @@
+{
+  "id": "capture-sources",
+  "title": "capture-sources: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 3,
+  "paths": [
+    "bio-plane/src/render.mjs",
+    "bio-plane/src/browserrender.mjs",
+    "bio-plane/src/cdx.mjs",
+    "bio-plane/src/drive.mjs",
+    "bio-plane/src/capture-sources/",
+    "build/requirements/capture-sources.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/capture-sources/"
+  ],
+  "requirements": "build/requirements/capture-sources.md",
+  "uses": [
+    "subresources",
+    "record-core",
+    "membership",
+    "credentials",
+    "record-grammar",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/capture-sources.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

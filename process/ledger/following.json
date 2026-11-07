@@ -37,7 +37,8 @@
     "retrieval",
     "setup-words",
     "runtime-limits",
-    "registers"
+    "registers",
+    "court-doctypes"
   ],
   "suite": {
     "cwd": "bio-plane",

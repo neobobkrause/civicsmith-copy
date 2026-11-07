@@ -1,0 +1,43 @@
+{
+  "id": "office-readers",
+  "title": "office-readers: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "bio-plane/src/docx.mjs",
+    "bio-plane/src/pptx.mjs",
+    "bio-plane/src/formats-xlsx.mjs",
+    "bio-plane/src/csv.mjs",
+    "bio-plane/src/office-xml.mjs",
+    "build/requirements/office-readers.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/office-readers/"
+  ],
+  "requirements": "build/requirements/office-readers.md",
+  "uses": [
+    "subresources",
+    "ooxml",
+    "csv-reader",
+    "setup-words",
+    "runtime-limits",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/office-readers.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}
