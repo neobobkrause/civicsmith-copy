@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "installer-places",
+  "round": 1,
+  "started": "2026-11-07T20:13:05Z",
+  "ended": "2026-11-07T20:14:52Z",
+  "minutes": 1.8,
+  "tested_on": "8a44df02d133fcd808071372e182845492c98d7b",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T20:14:52Z"
+}
