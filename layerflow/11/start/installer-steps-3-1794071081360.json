@@ -1,0 +1,11 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "installer-steps",
+  "attempt": 3,
+  "branch": "job/installer-steps-2",
+  "early": [
+    "instance-setup"
+  ],
+  "at": "2026-11-07T17:04:41Z"
+}
