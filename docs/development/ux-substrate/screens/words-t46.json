@@ -19,7 +19,7 @@
  },
  {
   "key": "refusal.SIGNIN_ADDRESS_UNEXPECTED",
-  "en": "The sign-in answered with an address that isn't Anthropic's, so your team's Civicsmith didn't open it. Nothing was sent. Tell whoever installed your team's Civicsmith.",
+  "en": "The sign-in answered with an address that is not Anthropic's, so your team's Civicsmith did not open it. Nothing was sent. Tell whoever installed your team's Civicsmith.",
   "protected": true,
   "note": "a safety stop: says what was not opened"
  },
@@ -61,13 +61,13 @@
  },
  {
   "key": "ai.label.untested",
-  "en": "Not yet tested: this part of the assistant hasn't yet passed Civicsmith's tests on real matters. Check what it says against the record.",
+  "en": "Not yet tested: this part of the assistant has not yet passed Civicsmith's tests on real matters. Check what it says against the record.",
   "protected": true,
   "note": "on every assistant output a part makes on a test instance; never removed"
  },
  {
   "key": "instance.test.notice",
-  "en": "This is a test Civicsmith. Parts of its assistant haven't yet passed Civicsmith's tests, and each answer they give says so.",
+  "en": "This is a test Civicsmith. Parts of its assistant have not yet passed Civicsmith's tests, and each answer they give says so.",
   "protected": true,
   "note": "every visitor, first view and healthy panel; no act changes it"
  },
