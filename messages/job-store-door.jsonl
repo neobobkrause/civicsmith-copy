@@ -9,3 +9,4 @@
 {"at":"2026-11-07T17:53:26Z","row":"sent","n":5,"to":"bob","text":"job store-door complete, PR #832 ready, session session_018Bhcedz231GawVQvMZrr1u: run status (republished after layer/11 with affordances f7ad0220d9; t53-fold now fails on assertions, not at import, without the fold)"}
 {"at":"2026-11-07T17:54:08Z","row":"outcome","n":5,"outcome":"delivered"}
 {"at":"2026-11-07T18:01:14Z","row":"sent","n":6,"to":"bob","text":"job store-door complete, PR #832 ready, session session_018Bhcedz231GawVQvMZrr1u: run status (republished on layer/11 with instance-setup f5828a4d4d)"}
+{"at":"2026-11-07T18:01:29Z","row":"outcome","n":6,"outcome":"delivered"}
