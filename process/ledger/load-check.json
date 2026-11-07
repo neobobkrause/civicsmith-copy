@@ -33,6 +33,6 @@
   "prior_work": "Meet the unmet requirement marks in build/requirements/load-check.md, each with a test under bio-plane/test/m/load-check/ that fails with the change reverted. load-check is new, in bio-plane/src/load-check/ (as journey-check is): it uses op-declarations, runtime-limits and test-support only, never journey-check. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-07T18:09:18Z"
+    "at": "2026-11-07T20:30:07Z"
   }
 }
