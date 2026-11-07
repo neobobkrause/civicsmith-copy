@@ -3301,3 +3301,27 @@ w500('screen.capture.refusal.toolarge.cells', 'This workbook has {count} cells. 
 w500('screen.capture.refusal.toolarge.pages', 'This document has {count} pages. Documents can have up to {bound} pages.', 'R73: a document over its pages, once its page count is known')
 w500('screen.capture.refusal.toolarge.archive', 'This archive is {size}. Archives can be up to {bound} in all.', 'R64/R73: an archive over its total')
 w500('screen.capture.refusal.toolarge.archive.entry', '{file}, inside this archive, is {size}. Files of its kind can be up to {bound}.', 'R64/R73: an archive with an entry over its kind\'s limit')
+
+# DEC-501 (the ux lane, 7 Nov 2026; BOB's word pass for journey-check R17, K3811, DEC-281, K3472): rows extracted from
+# module code ("code" rows of setup-words) that said "group" for the team. A design row of the same key takes the code
+# row's place (setup-words R15), so each is reworded here with "team" and nothing else changed. Rows using "group" for a
+# grouping (a ground of passages, a citation's ground, a section of a design), or naming the wire value `group` of an
+# account's owner, are added to build_words' GROUP_SENSE instead.
+def w501(key, en):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-501: R17 word pass, "team" for the team (was the code row\'s "group")'))
+w501('file-safety.declared.deepercheck', "file-directed: keyed by a capture's digest; asks the team's outside tools about this file; records no one")
+w501('file-safety.declared.scanmirror', "setting: the team's file scanner, an administrator's act; asks it to check for new signatures now and answers at once; moves no bundle")
+w501('file-safety.declared.securitytooladd', "setting: the team's security tools, an administrator's act; moves no bundle")
+w501('file-safety.declared.securitytoolremove', "setting: the team's security tools, an administrator's act; moves no bundle")
+w501('file-safety.declared.securitytooltest', "setting: the team's security tools, an administrator's act; moves no bundle")
+w501('instance-setup.declared.declaredstakeset', "setting: the team's declared stake in its own words, carried beside its public identity on what it sends or publishes from then; an administrator's act, every earlier value kept; moves no bundle")
+w501('instance-setup.declared.groupdomainset', "the team's claimed domain — the subject is the instance's identity, not a bundle")
+w501('instance-setup.declared.grouplanguagesset', "setting: the languages the team works in; an administrator's act, a later one replacing it; moves no bundle")
+w501('instance-setup.declared.grouplogoset', "setting: the team's logo, PNG or JPEG, or none; an administrator's act, a later one replacing it; moves no bundle")
+w501('instance-setup.declared.groupnameset', "the team's public display name — the subject is the instance's identity, not a bundle")
+w501('instance-setup.declared.placewanted', "the instance's configuration: the place the team wants its profile for; an administrator's")
+w501('member-roster.declared.courtnoticeset', "the team's setting: whether members are told what a court can reach; an administrator's, not an act on an object")
+w501('member-roster.declared.groupdescriptionset', "the team's description of itself — the subject is the team's identity, not a bundle; an administrator's")
+w501('run-rules.checks.nothing_was_started_because_none', "Nothing was started, because none of the AI accounts your team's Civicsmith can use has passed the test for this part of the work. Ask whoever looks after your team's AI accounts to add one that has passed it, or do this part without AI.")
+w501('store-assembly.declared.readtranslate', "draft: a machine translation of one passage of the team's own writing (a note, question, finding or notice) into the member's language, labeled machine work, the original one tap away; held nowhere and writes nothing (store-assembly R53)")
+w501('translations.declared.interfacewords', "read: every interface word in a language, the team's shown translation or the English, never blank, with the English beside it; writes nothing")
