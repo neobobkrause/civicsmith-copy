@@ -4,3 +4,4 @@
 {"at":"2026-11-05T21:07:26Z","row":"outcome","n":2,"outcome":"delivered"}
 {"at":"2026-11-07T19:59:30Z","row":"sent","n":3,"to":"bob","text":"job screens-intake-rounds BLOCKED: run status"}
 {"at":"2026-11-07T19:59:47Z","row":"outcome","n":3,"outcome":"delivered"}
+{"at":"2026-11-07T21:50:29Z","row":"sent","n":4,"to":"bob","text":"job screens-intake-rounds complete, PR #888 ready, session session_018BhcefL16N4pgTGPGWKmsy: run status"}
