@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "retrieval",
+  "round": 1,
+  "started": "2026-11-07T16:46:53Z",
+  "ended": "2026-11-07T16:47:04Z",
+  "minutes": 0.2,
+  "tested_on": "a37e42fa054111486b686d286695f3e07480d115",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-07T16:47:04Z"
+}
