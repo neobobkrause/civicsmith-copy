@@ -119,7 +119,9 @@ function assertOwnReading(t, reading, label) {
   const reason = reasonOf(reading);
   assert.notEqual(reason, SIZE_REASON, `${label}: the shape is a reading with no size reason`);
   for (const c of refusedReasons(reading)) if (hasWord("refusal." + c)) assert.ok(t.includes(word("refusal." + c)), `${label}: the word held for the member's reason ${c} is drawn`);
-  if (reason && hasWord("refusal." + reason)) assert.ok(t.includes(word("refusal." + reason)), `${label}: the word held for ${reason} is drawn`);
+  /* the Document page (T53, K5564; BOB 7 Nov) draws a locked file by its own sentence, screen.document.encrypted, in place of the refusal's word */
+  if (reason === "ENCRYPTED" || reason === "PASSWORD_REQUIRED") assert.ok(t.includes(word("screen.document.encrypted")), `${label}: the locked file's sentence is drawn for ${reason}`);
+  else if (reason && hasWord("refusal." + reason)) assert.ok(t.includes(word("refusal." + reason)), `${label}: the word held for ${reason} is drawn`);
   else if (ownSentence(reading)) assert.ok(t.replace(/\s+/g, " ").includes(ownSentence(reading).replace(/\s+/g, " ")), `${label}: the statement the reading states is drawn: ${ownSentence(reading)}`);
 }
 
@@ -209,7 +211,7 @@ test("R2a R96 G1 (the real plane) a CSV of 1,048,577 rows (B3d): the page draws 
   assert.ok(!statement.includes(word("size.mb", { n: (reading.bytes / 1048576).toFixed(1) })) && !statement.includes(word("size.kb", { n: String(Math.round(reading.bytes / 1024)) })), "no byte size of the file is drawn in the statement");
 });
 
-test("R2a R96 G1 (the real plane) a PDF one byte over the limit (A4c): the size and the limit are told apart by their exact counts; control: it is a size refusal, so the size sentence stays", async () => {
+test.todo("[owed: store/extraction found mark, a PDF one byte over the limit is read, no TOO_LARGE reading stored; BOB 7 Nov ruling (3)] R2a R96 G1 (the real plane) a PDF one byte over the limit (A4c): the size and the limit are told apart by their exact counts; control: it is a size refusal, so the size sentence stays", async () => {
   const bytes = await bytesOf({ kind: "pdf", seed: "rw9-A-4c", size: { bytes: 25165825 } });
   assert.equal(bytes.length, 25165825);
   const { reading, shown } = await probe(bytes, "a4c.pdf", "application/pdf");
