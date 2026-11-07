@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "store-request",
+  "session": "session_018BhcedH1iD1m7AaUX2auVg",
+  "started": "2026-11-07T20:06:14Z",
+  "ended": "2026-11-07T20:10:09Z",
+  "at": "2026-11-07T20:10:09Z",
+  "minutes": 3.92,
+  "result": "fail",
+  "layer": 11,
+  "suite_seconds": 115.855,
+  "tests": {
+    "total": 132,
+    "pass": 129,
+    "fail": 2
+  }
+}
