@@ -80,6 +80,10 @@ export const CARRIED_STATES = Object.freeze([
 
 /* Each carried state: its design drawing at both widths; paired with the live screen where `reach` puts it in the state.
    `reach` is `{ "<screen>, <state>": async (page, base) => boolean }`. Answers the pairs written (relative to `out`). */
+/* R21 (F10 owed): what the local arm says of a carried state it could not reach, `name` being "<screen>, <state>"; one sentence,
+   so a test can tell this failure from any other of kind `state` (BOB's ruling, 7 Nov) */
+export const unreachedOnLocal = (name) => localize("journey-check.states.name_not_reached_on_the_local", "{name}: not reached on the local arm, which makes its own data", { name: String(name) });
+
 export async function walkStates(walk, b, mock, { out, page = null, base = null, reach = {}, states = CARRIED_STATES }) {
   walk.journey = "R21 the carried states";
   const written = [];
@@ -107,7 +111,7 @@ export async function walkStates(walk, b, mock, { out, page = null, base = null,
       }
       await page.setViewportSize(viewportOf(WIDTHS[0]));
     }
-    if (!ok && walk.arm === "local") { walk.fail(FAIL.STATE, localize("journey-check.states.name_not_reached_on_the_local", "{name}: not reached on the local arm, which makes its own data", { name: String(name) })); continue; }
+    if (!ok && walk.arm === "local") { walk.fail(FAIL.STATE, unreachedOnLocal(name)); continue; }
     if (!ok) { walk.notes.push(localize("journey-check.states.name_not_reached_on_this_instance", "{name}: not reached on this instance", { name: String(name) })); continue; }
     for (const width of WIDTHS)
       written.push(relative(out, await pair(b, livePng[width], design[width], join(out, "pairs", `state-${st.screen}-${(st.state ?? st.option).replace(/[^a-z0-9]+/gi, "-")}-${width}.png`), { title: `${name}, ${width}px` })));
