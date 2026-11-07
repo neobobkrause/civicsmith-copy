@@ -34,7 +34,8 @@
   ],
   "prior_work": "Provider notice wizard-scripts:163 (its source, no requirement text): triage found bio-plane/test/m/screens-wizards/walk.test.mjs:103 walks every CIVICSMITH_LIBRARY wizard, which PR 163 changed. Adapt or confirm the module and its test to wizard-scripts as merged, with a notice test (--test notice:wizard-scripts:163=<file>). Also meet R23 (each wizard filter explains itself) if it is unmet. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T07:38:34Z"
+    "state": "WORKING",
+    "at": "2026-11-07T17:25:32Z",
+    "reason": "reopened: re-test against the new interface of op-declarations (land e4c350c01d); and meet the unmet requirement mark R23"
   }
 }
