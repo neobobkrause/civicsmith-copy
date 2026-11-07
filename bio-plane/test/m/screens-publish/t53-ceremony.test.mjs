@@ -1,7 +1,7 @@
 /* screens-publish T53: the ceremony's marks (R83, R94, R95, R105; DEC-497's IV-3 and IV-7), over the providers' real answers. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { open, ok, provided, COPY, P, DR, C, drew, drewIn, word, norm, main, press, last } from "./fixtures.mjs";
+import { open, ok, provided, COPY, PREFLIGHT, P, DR, C, drew, drewIn, word, norm, main, press, last } from "./fixtures.mjs";
 
 const carries = (body, want) => { for (const [k, v] of Object.entries(want)) assert.deepEqual(body[k], v, k); };
 
@@ -111,4 +111,29 @@ test("R95 after an edition is published the editor, the ceremony and the review 
 test("R95 control: a first draft naming no case is headed by its own title", async () => {
   const p = await open(CER, { plane: { reviewcopy: ok(COPY({ case: { case_id: null, edition: null, identity: "A CASE THIS DRAFT DOES NOT NAME", newCase: true }, title: word("review.title.draft", { title: "Rents" }) })) } });
   assert.equal(h1(p), norm(word("review.title.draft", { title: "Rents" })));
+});
+
+/* case-authoring's refusals of a later edition (its R… C-21.1 and what-changed checks): the box carried forward is named by `field` */
+const refusedFor = (reason, o = {}) => ok({ ...PREFLIGHT(), first: { ok: false, reason, code: reason, check: "C-21.1", edition: 2, prior: 1, ...o }, blockers: [] });
+
+test("R93 a later edition refused for an unchanged box names that box by its label and links to it in the editor; \"what changed\" links to its field; the bias box to its own on this page", async () => {
+  for (const [reason, o, id, label, here] of [["COMPLETENESS_CARRIED_FORWARD", { field: "statement" }, "ce-statement", "review.statement.title", false],
+    ["COMPLETENESS_CARRIED_FORWARD", { field: "subject_justification" }, "ce-posjust", "screen.case-editor.why_the_team_took_this_position", false],
+    ["NO_WHAT_CHANGED", {}, "ce-wc", "screen.case-editor.changed.label", false],
+    ["BIAS_ACKNOWLEDGEMENT_CARRIED_FORWARD", { field: "bias_acknowledgement" }, "ce-bias", "screen.case-editor.what_this_bias_means_for_this", true]]) {
+    const p = await open(CER, { plane: { publishpreflight: refusedFor(reason, o) } });
+    const a = main(p).querySelector(`[data-blockers] a[data-box="${id}"]`);
+    assert.ok(a, `${reason} ${id}: the box is linked beside its stop`);
+    assert.equal(norm(a.textContent), norm(word(label)), "named by its own label");
+    assert.equal(a.getAttribute("href"), here ? `#${id}` : `/app/case-editor/${encodeURIComponent(`${P}/${DR}`)}#${id}`);
+    if (here) assert.ok(p.doc.getElementById(id), "the bias box is on this page");
+  }
+  /* the editor holds the boxes the links name */
+  const ed = await open(`/app/case-editor/${P}/${DR}`);
+  for (const id of ["ce-statement", "ce-posjust"]) assert.ok(ed.doc.getElementById(id), id);
+});
+
+test("R93 control: a first edition's stops name no box", async () => {
+  const p = await open(CER);
+  assert.equal(main(p).querySelector("[data-box]"), null);
 });

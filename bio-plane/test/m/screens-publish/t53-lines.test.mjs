@@ -53,3 +53,15 @@ test("R92 control: the review copy page names the reader as before", async () =>
   const p = await open(`/app/review-copy/${P}`, { plane: { reviewcopy: ok(COPY(ACKS([READER]))) } });
   assert.ok(main(p).querySelector("[data-acked]").textContent.includes("Lee Outsider"));
 });
+
+/* docket R32's `kinds`: what the viewer may file, each with the fields its act needs */
+const DOCKET = (kinds) => ok({ case: C, project: P, entries: [], kinds, wrote: false });
+const kindsOffered = (p) => { const el = p.doc.getElementById("dk-kind"); return el ? [...el.querySelectorAll("option, input")].map((o) => o.getAttribute("value")).filter(Boolean) : []; };
+
+test("R88 (part) the docket's \"Kind of entry\" lists only the kinds the viewer may file; a viewer who may file none is drawn no form (control)", async () => {
+  const p = await open(`/app/docket/${P}/${C}`, { plane: { docket: DOCKET({ file: [{ kind: "response", fields: ["edition"] }, { kind: "outcome", fields: ["edition"] }], place: [] }) } });
+  assert.deepEqual(kindsOffered(p), ["response", "outcome"]);
+  const none = await open(`/app/docket/${P}/${C}`, { plane: { docket: DOCKET({ file: [], place: [] }) } });
+  assert.equal(none.doc.getElementById("dk-kind"), null);
+  assert.equal(main(none).querySelector('button[data-act="docketfile"]'), null);
+});

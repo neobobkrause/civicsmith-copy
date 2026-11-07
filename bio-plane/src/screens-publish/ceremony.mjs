@@ -190,9 +190,17 @@ export const CEREMONY = Object.freeze({
         const gated = code === "GATE_REFUSED" ? P.gateLines(cs, b) : [];
         if (gated.length) { gated.forEach(function (l) { lines.push(l); }); return; }
         const says = b && b.says && typeof b.says.key === "string" ? cs.w(b.says.key, b.says.vars || {}) : P.refusalText(cs, b);
+        // R93: a later edition refused for a box carried forward unchanged, or for no "what changed", names that box by its own label and
+        // links to it: the case editor's field, or the bias box on this page
+        const BOX = { statement: ["ce-statement", "review.statement.title"], subject_justification: ["ce-posjust", "screen.case-editor.why_the_team_took_this_position"],
+          excluded: ["ce-exwhat", "screen.case-editor.something_else_it_leaves_out"], bias_acknowledgement: ["ce-bias", "screen.case-editor.what_this_bias_means_for_this", true],
+          whatChanged: ["ce-wc", "screen.case-editor.changed.label"] };
+        const boxOf = code === "NO_WHAT_CHANGED" ? BOX.whatChanged : /_CARRIED_FORWARD$/.test(code) ? BOX[String(b.field || (code === "BIAS_ACKNOWLEDGEMENT_CARRIED_FORWARD" ? "bias_acknowledgement" : ""))] : null;
+        const box = boxOf ? ' <a class="cs-btn" data-tone="quiet" data-box="' + boxOf[0] + '" href="' + (boxOf[2] ? "#" + boxOf[0] : "/app/case-editor/" + encodeURIComponent(s[0] + "/" + draft) + "#" + boxOf[0]) + '"' + (boxOf[2] ? "" : " data-nav") + ">"
+          + cs.w(boxOf[1]) + "</a>" : "";
         // R94: a member who is not an owner is offered, beside that stop, to ask an owner to sign (tasks R19's `signrequest`)
         const ask = code === "NOT_THE_PROJECT_OWNER" && ui.askFor ? " " + cs.act("signrequest", { data: { asking: "1" } }) : "";
-        lines.push(cs.w("ceremony.gate.other", { what: { html: says.replace(/[.\s]+$/, "") } }) + ask);
+        lines.push(cs.w("ceremony.gate.other", { what: { html: says.replace(/[.\s]+$/, "") } }) + box + ask);
       });
       // R66 (L16; DEC-384): a draft that names no finding is refused `PUBLISH_NO_FINDING`; the gate says so and offers the door that
       // adds one (the case editor, at "What goes in")
