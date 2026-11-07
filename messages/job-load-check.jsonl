@@ -1,3 +1,4 @@
 {"at":"2026-11-05T13:57:04Z","row":"sent","n":1,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job load-check complete, PR #508 ready, session session_018BhcecGn3GR8g1QhxXXRBo: run status"}
 {"at":"2026-11-05T13:57:27Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-07T18:10:02Z","row":"sent","n":2,"to":"bob","text":"job load-check complete, PR #848 ready, session session_018BhcegauKPhkfmaV5Po1KD: run status"}
+{"at":"2026-11-07T18:10:18Z","row":"outcome","n":2,"outcome":"delivered"}
