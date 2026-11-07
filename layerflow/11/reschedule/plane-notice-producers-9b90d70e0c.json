@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "plane",
+  "provider": "notice-producers",
+  "provider_pr": 861,
+  "provider_land": "9b90d70e0c03c6b91dbd24c0d4022cbe60d78cd2",
+  "at": "2026-11-07T19:09:34Z",
+  "key": "plane<-notice-producers@9b90d70e0c",
+  "why": "added ACCOUNT_NOTICES_MAX, ACCOUNT_NOTICE_DAYS, ACCOUNT_NOTICE_KINDS; its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/notice-producers/accounts.test.mjs: breaking, too large to align, bio-plane/test/m/notice-producers/ai-notices-t53.test.mjs: breaking, added, naming R33, R34, R35 (Provides before this land) while notice-producers's source changed: it may assert a changed answer, bio-plane/test/m/notice-producers/fixture.mjs: breaking, added code that is not an object property: import { AiAccounts } from \"../../../src/ai-accounts/index.mjs\" ;, bio-plane/test/m/notice-producers/notice-ai-use-105.test.mjs: breaking, added code that is not an object property: NONE ,, bio-plane/test/m/notice-producers/read.test.mjs: breaking, too large to align, bio-plane/test/m/notice-producers/register-import.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}

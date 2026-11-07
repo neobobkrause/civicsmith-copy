@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "notice-producers",
+  "pr": 861,
+  "sha": "36a4fdef7230982cc652c34c76e182e909feae4e",
+  "run_id": 42404311904,
+  "run_attempt": 1,
+  "at": "2026-11-07T19:04:19Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 4.71,
+  "suite_minutes": 0.41,
+  "record_only": false,
+  "whole": true
+}
