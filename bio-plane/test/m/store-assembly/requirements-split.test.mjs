@@ -33,8 +33,8 @@ const copies = (m) => Object.fromEntries(idLines(read(m)).map(([, id, rest]) => 
   return x ? [x[2], { id, rest: x[1] + x[3] }] : null;
 }).filter(Boolean));
 
-/* F1-F3 (attempt 10, 7 Nov): found items added after the split, each met; the R ids are the split's own. */
-const FOUND = ["F1", "F2", "F3"];
+/* F1-F4 (attempt 10, 7 Nov): found items added after the split, each met; the R ids are the split's own. */
+const FOUND = ["F1", "F2", "F3", "F4"];
 
 test("split: the file holds every start-commit id, in the same order, none dropped or added", () => {
   const ids = idLines(read("store-assembly")).map((m) => m[1]);

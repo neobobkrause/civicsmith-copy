@@ -79,7 +79,7 @@ import { caseCarriageOps } from "../case-carriage/index.mjs";
 import { publicReadOf, publicReadOps } from "../public-read/index.mjs";
 import { projectStageOf, projectStageOps } from "../project-stage/index.mjs";
 import { networkNoticesOf, networkNoticesOps } from "../network-notices/index.mjs";
-import { corpusExportOf, corpusExportOps } from "../corpus-export/index.mjs";
+import { corpusExportOf, corpusExportOps, wholeExportOps } from "../corpus-export/index.mjs";
 import { biasOf, biasOps } from "../bias/index.mjs";
 import { aiRunsOf, aiRunsOps } from "../ai-runs/index.mjs";
 import { aiUseOf, aiUseOps } from "../ai-use/index.mjs";
@@ -884,6 +884,9 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, ca
       ...caseImportOps(caseImportOf(ctx), url, body),
       /* N483 (K1122): `export` and `exportlog` are corpus-export's (its R6), on the one instance publication created. */
       ...corpusExportOps(corpusExportOf(ctx), (k) => url.searchParams.get(k)),
+      /* F4 (corpus-export R17, R18): `exportwhole` and `exportwholepart`, kept apart in corpus-export's `wholeExportOps`,
+         on the same instance. */
+      ...wholeExportOps(corpusExportOf(ctx), (k) => url.searchParams.get(k)),
       /* K1643: `caseflags` and `attribute` are case-tensions', on the one instance publication's factory made. */
       ...caseTensionsOps(caseTensionsOf(ctx), url, body),
       ...publicationOps(publicationOf(ctx), url, body),

@@ -1,6 +1,6 @@
-/* store-assembly F1-F3 (attempt 10, START 7 Nov): the assembly's three found items against its providers' interfaces.
+/* store-assembly F1-F4 (attempt 10, START 7 Nov): the assembly's three found items against its providers' interfaces.
    F1: no `register-import` consumer of the assembly's own (scheduler R34 owns it); F2: `following` built with a keyed
-   store (following R41); F3: `notice-producers` handed `importsEnded` beside `readingsEnded` (notice-producers R31).
+   store (following R41); F3: `notice-producers` handed `importsEnded` beside `readingsEnded` (notice-producers R31); F4: corpus-export's whole-export ops routed (corpus-export R17, R18).
    Every module is the real one over the assembled store. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -52,4 +52,27 @@ test("F3 (R101; notice-producers R31): the ended feeds handed to notice-producer
   assert.deepEqual(Object.keys(feeds).sort(), ["importsEnded", "readingsEnded"]);
   assert.deepEqual(feeds.importsEnded({ after: 0, limit: 5 }), registers.importsEnded({ after: 0, limit: 5 }));
   assert.deepEqual(feeds.readingsEnded({ after: 1 }), { asked: { after: 1 } });
+});
+
+test("F4 (R47; corpus-export R17, R18): a founder's `exportwhole` passes the session gate and is routed to corpus-export through the store's door, never `unknown op`; a member's session is refused SESSION_ROLE_CANNOT_REACH_OP before any store call", async () => {
+  const { world, gate, refused, opCalls } = await import("../admission/harness.mjs");
+  const { corpusExportOf, wholeExportOps } = await import("../../../src/corpus-export/index.mjs");
+  const { env, S } = world();
+  const op = "exportwhole";
+  const admitted = await gate(env, { op, token: S.founder });
+  assert.ok(admitted.caller, "the founder's session is admitted");
+  const x = await store();
+  const u = new URL("http://do/");
+  const map = x.s.routes(u, null);
+  for (const k of Object.keys(wholeExportOps(corpusExportOf(x.ctx), () => null)))
+    assert.ok(Object.hasOwn(map, k), `the route map holds ${k}`);
+  const res = await x.fetch(`/${op}?viewer=admin&by=admin&note=whole`, { method: "POST", body: "{}" });
+  const text = await res.text();
+  assert.doesNotMatch(text, /unknown op/, text.slice(0, 300));
+  assert.equal(JSON.parse(text).ok, true, text.slice(0, 300));
+  for (const t of [S.ann, S.bare]) {
+    const before = opCalls(env).length;
+    refused(await gate(env, { op, token: t }), 403, "SESSION_ROLE_CANNOT_REACH_OP", "C-38.7", [t]);
+    assert.equal(opCalls(env).length, before, "no store call for a refused member");
+  }
 });
