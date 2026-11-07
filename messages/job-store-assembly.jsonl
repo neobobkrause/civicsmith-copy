@@ -47,3 +47,4 @@
 {"at":"2026-11-07T18:48:03Z","row":"sent","n":24,"to":"bob","text":"job store-assembly complete, PR #831 ready, session session_018Bhcee1R7SVcJH4ioMo4N6: run status"}
 {"at":"2026-11-07T18:48:25Z","row":"outcome","n":24,"outcome":"delivered"}
 {"at":"2026-11-07T19:23:12Z","row":"sent","n":25,"to":"bob","text":"job store-assembly complete, PR #875 ready, session session_018BhceeYWPej1HLLejCBjem: run status"}
+{"at":"2026-11-07T19:23:30Z","row":"outcome","n":25,"outcome":"delivered"}
