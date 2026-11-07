@@ -32,6 +32,9 @@ import { occurrences as occurrencesFixture } from "../duties/fixtures.mjs";
 import { watchReaderRegistrar } from "../plan-work/fixtures.mjs";
 import { standingQuestions as standingQuestionsFixture } from "../answers/fixtures.mjs";
 import { monitorAnswer } from "../monitoring/fixtures.mjs";
+import { registersOf } from "../../../src/registers/index.mjs";
+import { acquisitionOf, streamRegister, probeRegister, sourceChanged, keyedFetch } from "../../../src/acquisition/index.mjs";
+import { bucket, captureStore, governor } from "../acquisition/fixture.mjs";
 
 /* The refusals of the providers following's stand-ins answer, each made by the provider's real code (K4990; fix round 10):
    acquire's FETCH_FAILED, standards' NO_SUCH_STANDARD, duties' NO_SUCH_DUTY, plan-work's registration refusals and answers'
@@ -99,11 +102,15 @@ export function testView({ legistar = true } = {}) {
   return view;
 }
 
-/** A fresh world: the real modules, the injected host, monitoring and capture, and `following` over them. */
-export function world({ view = testView(), now = T0, realRetrieval = false, door = null } = {}) {
+/** A fresh world: the real modules, the injected host, monitoring and capture, and `following` over them. T53: the real
+ *  `registers` on the same host (its R1, R32–R34, R44), over the world's view; with `keyed`, acquisition's own store on the
+ *  same record (an evidence bucket, the call ledger of `acquisitionOf`, a governor), `keyed.credentials` its key holder and
+ *  `keyed.profile` the profile it reads limits from, handed to following as its keyed path (R41, R42). */
+export function world({ view = testView(), now = T0, realRetrieval = false, door = null, keyed = null } = {}) {
   const st = storage();
   const host = { storage: st };
-  const record = recordOf(host);
+  const ev = keyed ? bucket() : null;
+  const record = recordOf(host, keyed ? { evidence: ev, evidencePrefix: "bio/captures/" } : undefined);
   record.migrate();
   record.setSetting("jurisdiction_profiles", ["test-port-ellery"], "test");
   const membership = membershipOf(host, { record });
@@ -123,13 +130,13 @@ export function world({ view = testView(), now = T0, realRetrieval = false, door
   let clock = 0;
   /* content's extent context (its R12–R13) for a capture whose container extent this record does not hold */
   const content = { contentContextFor: () => ({ chain: null, pageCount: null, pageBoxes: null, container: { held: false }, format: null, office: null }) };
-  const ev = eventsOf(host, { record, membership, provenance: prov, extraction: x, content, entities: ents,
+  const evs = eventsOf(host, { record, membership, provenance: prov, extraction: x, content, entities: ents,
                               now: () => new Date(Date.UTC(2026, 9, 1, 0, 0, clock++)).toISOString(), view: () => view });
-  ev.migrate();
+  evs.migrate();
   for (const [m, role] of [["alice", "member"], ["bob", "member"], ["outsider", "member"], ["root", "admin"]])
     st.sql.exec(`INSERT OR IGNORE INTO members (member_id, cover, role, status, created, updated) VALUES (?, 'c', ?, 'active', '2026-01-01', '2026-01-01')`, m, role);
 
-  const w = { st, host, record, membership, x, prov, ents, ev, view, mon, promotion, get t() { return w0.t; }, set t(v) { w0.t = v; },
+  const w = { st, host, record, membership, x, prov, ents, ev: evs, view, mon, promotion, get t() { return w0.t; }, set t(v) { w0.t = v; },
     rows: (q, ...a) => [...st.sql.exec(q, ...a)], one: (q, ...a) => [...st.sql.exec(q, ...a)][0] || null };
 
   /* ---- what bytes the network serves, and what capture did ---- */
@@ -372,8 +379,25 @@ export function world({ view = testView(), now = T0, realRetrieval = false, door
           return { ok: true, module };
         } };
   Object.assign(w, { actionPlans, duties, planWork, answers, actions, actionClocks, retrieval });
-  w.f = followingOf(host, { record, membership, capture, entities: ents, events: ev, monitoring, standards, view: () => view,
-                            actionPlans, planWork, duties, answers, actions, actionClocks, retrieval, now: () => w.t, bytes: async (s) => w.store.get(s) || null });
+  /* registers, the real one on this host (T53), reading the world's view and clock; its imports run on its own alarm, never here */
+  const registers = registersOf(host, { record, membership, promotion, entities: ents, view: () => view, now: () => w0.t,
+    acquisition: { streamRegister, probeRegister, sourceChanged, keyedFetch }, store: { core: record, env: {}, provenance: prov } });
+  w.registers = registers;
+  /* the keyed path: acquisition's store over this record and provenance, its ledger acquisition's own instance (R131) */
+  let keyedDep = null;
+  if (keyed) {
+    const profile = keyed.profile || null;
+    const core = { evidenceStore: () => record.evidenceStore(), getSetting: (k, ...a) => (k === "jurisdiction_profiles" && profile ? [profile] : record.getSetting(k, ...a)) };
+    const store = captureStore({ core, env: { INSTANCE_NAME: "inst", VERSION: "9.9.9" }, gov: governor(), prov });
+    store.acquisition = acquisitionOf(host, { record, provenance: prov, membership });
+    if (keyed.credentials) store.credentials = keyed.credentials;
+    store.followStanding = async (a) => w.f.followStanding(a);
+    w.keyedStore = store;
+    keyedDep = { store };
+  }
+  w.f = followingOf(host, { record, membership, capture, entities: ents, events: evs, monitoring, standards, view: () => view,
+                            actionPlans, planWork, duties, answers, actions, actionClocks, retrieval, registers, ...(keyedDep ? { keyed: keyedDep } : {}), now: () => w.t,
+                            bytes: async (s) => w.store.get(s) || (ev ? ev.held.get(`bio/captures/${s}`) || null : null) });
   w.capture = capture;
   w.monitoring = monitoring;
   w.sweepHost = sweepHost;
