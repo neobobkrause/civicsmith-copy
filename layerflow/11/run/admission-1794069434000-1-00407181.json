@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "admission",
+  "round": 1,
+  "started": "2026-11-07T16:37:14Z",
+  "ended": "2026-11-07T16:38:37Z",
+  "minutes": 1.4,
+  "tested_on": "edde8a8b63c88f4a826ffdecde311c0a7bde372c",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T16:38:37Z"
+}
