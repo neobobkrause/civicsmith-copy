@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "installer",
+  "provider": "installer-steps",
+  "provider_pr": 824,
+  "provider_land": "41c4a3ac35b87997e15fec8bf89b63876ee7983d",
+  "at": "2026-11-07T17:35:33Z",
+  "key": "installer<-installer-steps@41c4a3ac35",
+  "why": "added BUCKET_JURISDICTION, JURISDICTIONS, JURISDICTION_BINDING, PLACEMENT_CONFLICT, placementBindings, placementFor, r2Endpoint; changed the parameters of ensureBuckets function(token, acct, names) -> function(token, acct, names, opts = {}) (not a trigger); its tests of Public / Provides requirements changed what they assert (newgroup/test/steps/g83-location.test.mjs: breaking, an existing token changed or was removed, newgroup/test/steps/r46-r47-placement.test.mjs: breaking, added, naming R46, R47 (Provides before this land) while installer-steps's source changed: it may assert a changed answer, newgroup/test/steps/world.mjs: breaking, too large to align), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}

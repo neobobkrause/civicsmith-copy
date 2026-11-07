@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "installer-steps",
+  "pr": 824,
+  "sha": "85a02d4cfc0889e211cc7a070c79191eed4a3eed",
+  "run_id": 42395042791,
+  "run_attempt": 1,
+  "at": "2026-11-07T17:12:05Z",
+  "trigger": "draft",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 0.95,
+  "suite_minutes": null,
+  "record_only": false,
+  "whole": false
+}

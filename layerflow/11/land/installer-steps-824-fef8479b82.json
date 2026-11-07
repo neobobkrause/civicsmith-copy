@@ -1,0 +1,95 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "installer-steps",
+  "pr": 824,
+  "branch": "job/installer-steps-2",
+  "head": "fef8479b8270180a5f46983d923467ea6845c07e",
+  "before": "3f7c11c1a875776ff82a7d2873c2f4b34fb1b338",
+  "merge": "41c4a3ac35b87997e15fec8bf89b63876ee7983d",
+  "at": "2026-11-07T17:35:33Z",
+  "by": "bob",
+  "gate_runs": 5,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "BUCKET_JURISDICTION",
+        "JURISDICTIONS",
+        "JURISDICTION_BINDING",
+        "PLACEMENT_CONFLICT",
+        "placementBindings",
+        "placementFor",
+        "r2Endpoint"
+      ],
+      "changed": [
+        {
+          "name": "ensureBuckets",
+          "before": "function(token, acct, names)",
+          "after": "function(token, acct, names, opts = {})"
+        }
+      ],
+      "kinds": [],
+      "signatures": [
+        "ensureBuckets"
+      ]
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "newgroup/test/steps/g83-location.test.mjs",
+      "newgroup/test/steps/r46-r47-placement.test.mjs",
+      "newgroup/test/steps/world.mjs"
+    ],
+    "provides_tests_named": [
+      "newgroup/test/steps/g83-location.test.mjs",
+      "newgroup/test/steps/r46-r47-placement.test.mjs",
+      "newgroup/test/steps/world.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "newgroup/test/steps/g83-location.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "newgroup/test/steps/r46-r47-placement.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R46, R47 (Provides before this land) while installer-steps's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "newgroup/test/steps/world.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      }
+    ],
+    "provides_tests": [
+      "newgroup/test/steps/g83-location.test.mjs",
+      "newgroup/test/steps/r46-r47-placement.test.mjs",
+      "newgroup/test/steps/world.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "installer",
+    "installer-check",
+    "installer-copies",
+    "installer-places"
+  ],
+  "users_rescheduled_old_rule": [
+    "installer",
+    "installer-check",
+    "installer-copies",
+    "installer-places"
+  ],
+  "users_noticed": []
+}
