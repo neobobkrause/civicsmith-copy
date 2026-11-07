@@ -163,8 +163,23 @@ export async function walkInstaller(walk, page, installerOrigin) {
     await p.locator("#confirm-yes").click();
     await p.locator("#stage-before:not([hidden])").waitFor({ timeout: 10000 });
   });
+  /* installer R86, R90, R91: the page's act begins "Check my account"; the install begins only from the check list's "Install
+     now", once every line is ready, and Cloudflare asks its permission again for it */
   await walk.step(page, "install: before Cloudflare, what it will be asked to allow", async (p) => {
     await p.locator("#cloudflare").click();
+    await p.waitForURL(/dash\.cloudflare\.com\/oauth2\/auth/, { timeout: 15000 });
+  });
+  await walk.step(page, "install: Cloudflare's permission for the check, allowed", async (p) => {
+    await p.locator("#allow").click({ noWaitAfter: true });
+    await p.waitForURL(/\/callback\?/, { timeout: 60000 });
+  });
+  await walk.step(page, "install: the account checked, every line ready", async (p) => {
+    const whole = p.locator("#check-whole");
+    await whole.waitFor({ timeout: 60000 });
+    const state = await whole.getAttribute("data-state");
+    if (state !== "ready") throw new Error(`the check of the account is ${state}, not ready: `
+      + (await p.locator('#check-lines [data-state]:not([data-state="ready"])').allTextContents()).join(" | "));
+    await p.locator("#install-now:not([disabled])").click();
     await p.waitForURL(/dash\.cloudflare\.com\/oauth2\/auth/, { timeout: 15000 });
   });
   await walk.step(page, "install: Cloudflare's permission, allowed", async (p) => {
