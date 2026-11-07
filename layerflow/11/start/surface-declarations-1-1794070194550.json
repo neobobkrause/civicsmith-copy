@@ -1,0 +1,11 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "surface-declarations",
+  "attempt": 1,
+  "branch": "job/surface-declarations",
+  "early": [
+    "notice-producers"
+  ],
+  "at": "2026-11-07T16:49:54Z"
+}
