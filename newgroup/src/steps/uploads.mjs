@@ -5,7 +5,7 @@ import { scriptHash, releaseSha } from "./readback.mjs";
 import { planeCronsOfStream } from "./statements.mjs";
 import { setSchedules } from "./containers.mjs";
 import { word, hasWord } from "../../../bio-plane/src/setup-words/index.mjs";
-import { selfBinding, BROWSER_BINDING, memberBindings, instanceAiBinding, sealBinding, profilesBinding, ownHostsBinding, storeLocationBinding, heldPlace, SEAL_BINDING, PROFILES_BINDING } from "./bindings.mjs";
+import { selfBinding, BROWSER_BINDING, memberBindings, instanceAiBinding, sealBinding, profilesBinding, ownHostsBinding, placementBindings, heldPlace, SEAL_BINDING, PROFILES_BINDING } from "./bindings.mjs";
 
 /* R39 (K4566; fix round 6, G1) — THE PLANE'S SCHEDULE. The plane's one cron is the watchdog that heals a stalled object, and
    nothing in the account sets it but this: a script's upload carries no schedule. It is read from the signed bundle's own
@@ -50,6 +50,8 @@ async function observabilityHeld(token, acct, slug, note) {
    install degrades rather than failing — see the retry in runInstall. */
 async function uploadInstall(token, acct, slug, secrets, release, opts = {}) {
   const names = opts.names;
+  /* R46: a hint and a jurisdiction both given are refused here, before anything is read or written. */
+  const placement = placementBindings(opts.storeLocation, opts.storeJurisdiction);
   const crons = await cronsOf(release);
   const meta = {
     main_module: "index.mjs",
@@ -86,8 +88,9 @@ async function uploadInstall(token, acct, slug, secrets, release, opts = {}) {
       ...sealBinding(secrets.seal),
       /* R21: the chosen jurisdiction profiles, only when some were chosen. */
       ...profilesBinding(opts.profiles),
-      /* R42: where the team's room is created, only when the caller was given a hint (the founder's `cf`); none, none. */
-      ...storeLocationBinding(opts.storeLocation),
+      /* R42, R46: where the team's room is created: the hint (`STORE_LOCATION`) or the jurisdiction (`STORE_JURISDICTION`) the
+         caller was given; neither, none. */
+      ...placement,
       { type: "r2_bucket", name: "CAPTURES", bucket_name: names.captures },
       { type: "r2_bucket", name: "PUBLISHED", bucket_name: names.published },
       ...(opts.noSelf ? [] : [selfBinding(slug)]),
@@ -211,7 +214,7 @@ async function uploadUpdate(token, acct, slug, withR2, release, opts = {}) {
 /* R67 — IS THE PLANE ALREADY AS THIS RELEASE WANTS IT? "Already done" is judged by the whole deployed state: the bytes the
    account holds hash to the release's, the VERSION is the release's, and every binding the install would send is there with
    the kind it would send; any one missing and the plane is uploaded, bytes identical or not (S7). Secrets cannot be read, so a
-   secret counts by its name. R42: a room never moves, so `STORE_LOCATION` and `STORE_GENERATION` are not compared: a held
+   secret counts by its name. R42, R46: a room never moves, so `STORE_LOCATION`, `STORE_JURISDICTION` and `STORE_GENERATION` are not compared: a held
    value that differs from what an install would send, or none, never makes the plane out of sync. */
 async function planeInSync(token, acct, slug, release, held, { names, members, profiles }) {
   const have = new Map(held.map((b) => [b.name, b]));
