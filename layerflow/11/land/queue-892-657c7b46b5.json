@@ -1,0 +1,70 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "queue",
+  "pr": 892,
+  "branch": "job/queue-2",
+  "head": "657c7b46b5ca965d61235146164b2a4da4a7d364",
+  "before": "c7e8249274c35683f5e0ae119a00e06572f93c71",
+  "merge": "ca3e10fbec3a82a0163463f0fab7c564cf716b1b",
+  "at": "2026-11-07T20:15:17Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/queue/noticed.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/queue/noticed.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/queue/noticed.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/queue/noticed.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/queue/noticed.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "earlier_source": true
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "answer-envelope",
+    "interface-shell",
+    "plane",
+    "screens-document",
+    "screens-inquiry",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_rescheduled_old_rule": [
+    "answer-envelope",
+    "interface-shell",
+    "plane",
+    "screens-document",
+    "screens-inquiry",
+    "store-assembly",
+    "store-door",
+    "store-request"
+  ],
+  "users_noticed": []
+}

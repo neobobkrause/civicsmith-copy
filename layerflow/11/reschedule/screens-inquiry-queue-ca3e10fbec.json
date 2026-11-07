@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "screens-inquiry",
+  "provider": "queue",
+  "provider_pr": 892,
+  "provider_land": "ca3e10fbec3a82a0163463f0fab7c564cf716b1b",
+  "at": "2026-11-07T20:15:17Z",
+  "key": "screens-inquiry<-queue@ca3e10fbec",
+  "why": "only its own tests changed (bio-plane/test/m/queue/noticed.test.mjs): no interface change for its users",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
