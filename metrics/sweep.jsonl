@@ -519,3 +519,4 @@
 {"at":"2026-11-07T15:34:58Z","row":"check","by":"github push","live":"unmeasured","live_at":"2026-11-07T04:55:50Z","job_cap":8,"startable":null}
 {"at":"2026-11-07T15:42:00Z","row":"check","by":"lane artifact","live":"unmeasured","live_at":"2026-11-07T04:55:50Z","job_cap":8,"startable":null}
 {"at":"2026-11-07T15:48:08Z","row":"check","by":"found","live":"unmeasured","live_at":"2026-11-07T04:55:50Z","job_cap":8,"startable":null}
+{"at":"2026-11-07T15:53:46Z","row":"sweep","session":"session_018BhceduipEp2mmEFHN9Diu","bob_acts":true,"bob_quiet_h":0.1,"root_context":77,"live":4,"job_cap":8,"sessions":15,"startable":0,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":4}
