@@ -81,6 +81,14 @@ Four read-only workers (subagents) ran in parallel. Each cloned its own checkout
 - **Q3:** BOB adds ledger entries for steps, hypotheses, observation-log, retrieval and project-roster in the same PR.
 - **Q4:** BOB files each stale reference as a found mark on its owning module. The canon ones wait on Q7. DEC-84's document is `docs/development/CONTRADICTION-PRESENT-RESOLVE-DESIGN.md`, and the canon list is `requirements/README.md`:46.
 - **Q5:** Bob's decisions go in `DECISIONS.md`, quoted with date and source. There is no new numbering.
-- **Q6:** the lane drafted the border and BOB sent it to the publication lane. BOB decides after that lane answers.
+- **Q6, decided by BOB as BD-13 (7 Nov):** the border is the lane's draft plus the publication lane's five edits.
+  1. Investigation owns inquiry, leg, basis and the project's conclusion (the member's adoption of a basis version) as records. Publication owns what a case claims from them, and never moves the project conclusion (`CASE_CONCLUSION_MOVED`).
+  2. Publication signs and carries findings pinned, and never alters their bytes.
+  3. Grading arithmetic, including regrade under a lens, is investigation's. Publication owns the reader's re-check flow and its display, and calls investigation's grading.
+  4. Publication raises re-evaluation causes (docket R5, R13), and investigation decides their effect. Actions (plans, outward acts, outcomes) are publication's side. "Objective met" is an input to a case.
+  5. Acceptance records name what they produced: field, draft, and the hash of the resulting text (`record-grammar` R52). Publication states a case text's provenance from them (BD-7, BD-9). Reading and transcription are investigation's. How a case states ungraded or typed passages is publication's.
+
+  Case-checker's per-sentence checks are publication's, and they read investigation's grades.
+- **Q9:** the paper is the Claude Doc "Investigation: best-practice departures (Q9)", https://claude.ai/artifact/THTtouNJzkhmHqyR4Pfa4g, recorded with `lane artifact`. It went to Bob through BOB and the coordinator on 7 Nov.
 - **Q7–Q9:** sent to Bob through the coordinator. Q9 comes back as one paper with options.
 - **Q11.** Does the explorer's "untested" exception open exploration while the test investigations hold no matters?
