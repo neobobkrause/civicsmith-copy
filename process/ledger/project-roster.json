@@ -1,0 +1,40 @@
+{
+  "id": "project-roster",
+  "title": "project-roster: confirm its requirements (ledger entry written 7 Nov; 4 'not yet met' mark(s) in its requirement file)",
+  "layer": 2,
+  "paths": [
+    "bio-plane/src/project-roster/",
+    "build/requirements/project-roster.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/project-roster/"
+  ],
+  "requirements": "build/requirements/project-roster.md",
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "test-support",
+    "jurisdictions"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/project-roster.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "prior_work": "This module's code and tests exist (build/modules.json) but it had no ledger entry, so the process never recorded it (found by the investigation lane's qualification, 7 Nov, Q3). Its requirement file carries 4 'not yet met' mark(s); meet those within your paths or name what blocks each. Run its suite on its layer. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Edit no other module, and commit no generated file.",
+  "status": {
+    "state": "OPEN",
+    "at": "2026-11-07T03:50:00Z"
+  }
+}

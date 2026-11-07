@@ -108,3 +108,15 @@ Consequences: the publication lane writes the content, since it holds the tracki
 Context: Bob's messages today wrote "CivicSmith", while the product's documents use "Civicsmith" (DEC-124: one word, only its first letter capital).
 Decision (Bob, ~19:05Z): "The spell checker keeps replacing civicsmith and Civicsmith with CivicSmith. The correct name is Civicsmith." Where Bob's quoted words read "CivicSmith", that was his spell checker, not a decision. They are recorded here with the correct spelling.
 Consequences: BD-6, BD-9 and BD-11 are corrected in this file. The lanes correct their own folders. The ux lane may add a words check that refuses "CivicSmith". Earlier records stay as they are, as history.
+
+## BD-13: The border between the investigation and publication lanes (BOB, 7 Nov)
+Context: the investigation lane's qualification (Q6, 7 Nov) found the border around case making undrawn. The investigation lane drafted it; the publication lane agreed with five edits.
+Decision: the investigation lane's draft with the publication lane's five edits.
+- Records and claims: investigation owns inquiry, leg, basis and the project's conclusion (the member's adoption of a basis version's claim) as records. Publication owns what a case claims from them, and never moves the project conclusion (ratification's CASE_CONCLUSION_MOVED, ratification R3).
+- Findings: a finding's bundle and its pinned version are investigation's work. Publication signs and carries findings as pinned, and never alters their bytes.
+- Grading: the grading arithmetic, including regrade under a lens, is investigation's. Publication owns the reader's re-check flow and what the case shows of it, and calls investigation's grading; it never computes a grade.
+- Flows back: publication raises re-evaluation causes into investigation (docket R5, R13), and investigation decides their effect on legs. Actions (plans, outward acts, outcomes) are on publication's side. "Objective met" is an input to a case, not an action's state.
+- AI provenance (BD-7, BD-9): investigation's acceptance records name what they produced (the field, the draft and the resulting text's hash; record-grammar R52). Publication states the provenance of a case's text from them. How text is read and transcribed is investigation's; how a case states ungraded and typed passages is publication's (case-grammar R36, R37).
+- Case-checker's per-sentence checks against legs are publication's; the leg grades they read are investigation's.
+Rejected: drawing the seam at "conclusion" as one thing (it is two: the project's adoption and a case's claim); publication owning a second grading path for regrade.
+Consequences: each lane works its side. Requests across the border go through BOB. Funding disclosure (the investigation lane's Q9 item 6) belongs to the publication lane.
