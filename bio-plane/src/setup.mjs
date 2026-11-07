@@ -3529,18 +3529,20 @@ export const DECLARED_OPS = Object.freeze({
   memberlanguageset: { classes: STAMPED_ACT, machineClasses: [], mutating: true, weight: "caller-owned",
     description: localize("instance-setup.declared.memberlanguageset", "personal state, keyed by member: the language the interface speaks to them"),
     fields: { accepts: ["language"], requires: ["language"] } },
-  /* R107 (T53): the layers a team chooses, recorded as profilesset's setting. */
-  layersset: { classes: ADMIN_ACT, machineClasses: [], mutating: true, weight: "substrate",
+  /* R107 (T53): the layers a team chooses, recorded as profilesset's setting. An op with no hand row names its stamps and,
+     being mutating, its capability (`op-declarations`' R80 rule, `surface-declarations` R5): an administrator's act takes
+     no working capability (D-136), a present null, as `export`'s. */
+  layersset: { classes: ADMIN_ACT, machineClasses: [], stamps: ["viewer", "by"], needs: null, mutating: true, weight: "substrate",
     description: localize("instance-setup.declared.layersset", "the instance's configuration: the layers of the places the team's work is focused on, recorded as its jurisdiction profiles; an administrator's"),
     fields: { accepts: ["layers"], requires: ["layers"] } },
   /* R114 (T53): the mail domain and the switch, an administrator's acts, and their state, an administrator's read. */
-  maildomainset: { classes: ADMIN_ACT, machineClasses: [], mutating: true, weight: "substrate",
+  maildomainset: { classes: ADMIN_ACT, machineClasses: [], stamps: ["viewer", "by"], needs: null, mutating: true, weight: "substrate",
     description: localize("instance-setup.declared.maildomainset", "the instance's configuration: the team's own mail domain for email into the record, or none; an administrator's, every earlier value kept"),
     fields: { accepts: ["domain"], requires: ["domain"] } },
-  maildoorset: { classes: ADMIN_ACT, machineClasses: [], mutating: true, weight: "substrate",
+  maildoorset: { classes: ADMIN_ACT, machineClasses: [], stamps: ["viewer", "by"], needs: null, mutating: true, weight: "substrate",
     description: localize("instance-setup.declared.maildoorset", "the instance's configuration: email into the record turned on or off; an administrator's, every earlier value kept"),
     fields: { accepts: ["on"], requires: ["on"] } },
-  mailsetup: { classes: ADMIN_ACT, machineClasses: [], mutating: false, weight: "read",
+  mailsetup: { classes: ADMIN_ACT, machineClasses: [], stamps: ["viewer"], mutating: false, weight: "read",
     description: localize("instance-setup.declared.mailsetup", "read: the team's mail domain, whether email into the record is on, whether it is receiving, and the steps to set it up"),
     fields: { accepts: [], requires: [] } },
   officesseed: { classes: ADMIN_ACT, machineClasses: [], mutating: true, weight: "substrate",
