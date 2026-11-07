@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "project-roster",
+  "session": "session_018BhceeQA6FzhQ5eFBVXHtr",
+  "started": "2026-11-07T16:22:38Z",
+  "ended": "2026-11-07T16:24:48Z",
+  "at": "2026-11-07T16:24:48Z",
+  "minutes": 2.17,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 3.194,
+  "tests": {
+    "total": 129,
+    "pass": 129,
+    "fail": 0
+  }
+}
