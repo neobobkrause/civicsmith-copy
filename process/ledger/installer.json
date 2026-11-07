@@ -40,7 +40,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/installer.md, each with a test under newgroup/test/ that fails with the change reverted. The installer Worker (newgroup) is a live site: its code and local tests are yours, deploying it never is. Its tests also include newgroup's embed build (npm run embed) before node --test. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T13:20:00Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T17:58:56Z"
   }
 }
