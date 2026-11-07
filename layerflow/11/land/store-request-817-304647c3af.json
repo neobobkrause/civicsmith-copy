@@ -1,0 +1,73 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "store-request",
+  "pr": 817,
+  "branch": "job/store-request",
+  "head": "304647c3af2c54677d4624ac0be59c93542cbb62",
+  "before": "a3ddf5292324647cf101f10e67eab80438e9b5b4",
+  "merge": "967e0117ee46bbb02cc5f25044a17cb6163c8512",
+  "at": "2026-11-07T17:19:09Z",
+  "by": "bob",
+  "gate_runs": 1,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/store-request/census.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/store-request/census.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/store-request/census.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/store-request/census.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "interface-shell",
+    "plane",
+    "screens-ai",
+    "screens-daily",
+    "screens-document",
+    "screens-entry",
+    "screens-inquiry",
+    "screens-intake",
+    "screens-investigate",
+    "screens-publish",
+    "screens-settings",
+    "screens-wizards"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "interface-shell",
+    "plane",
+    "screens-ai",
+    "screens-daily",
+    "screens-document",
+    "screens-entry",
+    "screens-inquiry",
+    "screens-intake",
+    "screens-investigate",
+    "screens-publish",
+    "screens-settings",
+    "screens-wizards"
+  ],
+  "users_noticed": []
+}

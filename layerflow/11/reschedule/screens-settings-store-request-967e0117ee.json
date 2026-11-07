@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "screens-settings",
+  "provider": "store-request",
+  "provider_pr": 817,
+  "provider_land": "967e0117ee46bbb02cc5f25044a17cb6163c8512",
+  "at": "2026-11-07T17:19:09Z",
+  "key": "screens-settings<-store-request@967e0117ee",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/store-request/census.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
