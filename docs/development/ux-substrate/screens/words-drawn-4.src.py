@@ -3042,3 +3042,28 @@ w495('screen.ai-use.respond.when', 'Respond on the docket when you are named in 
 w495('screen.ai-use.respond.after', "The team files responses on the docket and lists them there as the docket's rules say. When the team corrects a case, the new edition and what changed appear on the same docket.", 'docket')
 w495('screen.ai-use.keeping.heading', 'Keeping up', 'section')
 w495('screen.ai-use.keeping.text', "Civicsmith follows developments in trust and transparency, starting with the EU AI Act, and adopts them where they serve readers. When the way Civicsmith uses AI changes, this page changes with it. A change to the review standard comes as a new standard with a new name, and an edition always names the standard it was reviewed under.", 'BD-6')
+
+# DEC-496 (the ux lane, 7 Nov 2026; Bob's Q9.7, BD-14, kept as ruled): each grade letter can carry a short word gloss
+# beside it, so a reader trained on other letter scales (Admiralty, 3x5x2) never reads "D" as "unreliable". The letters
+# keep their ruling; the gloss says how the thing was established, never whether it is true (mark.grade.reading). One
+# gloss per letter a scale can show. Sources: capture, BIO_Intake_Doctrine §3 and provenance's captureGrade (A is a
+# chain-of-custody archive no route makes yet, EARNED_CAPTURE_CEILING B a direct fetch, ARCHIVE_CAPTURE_GRADE C an archive's
+# replay); connection, BIO_Content_Framework §8.1 (D's label as corrected by BOB #30); testimony, TESTIMONY_GRADE D only;
+# subject match, the same resolution ladder as connection. The team's grade for the copy (DEC-461) is a grade the team
+# gives up to the record's ceiling, so it takes the capture glosses with mark.grade.gloss.copy.lead before them.
+def w496(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-496: ' + note))
+w496('mark.grade.gloss.capture.a', 'a full archive of the source as it was served, with its chain of custody', 'capture (and the ceiling) A; no route makes one yet')
+w496('mark.grade.gloss.capture.b', 'fetched straight from the source, fingerprinted on arrival', 'capture B, EARNED_CAPTURE_CEILING')
+w496('mark.grade.gloss.capture.c', "taken from someone else's archive, one step further from the source", 'capture C, ARCHIVE_CAPTURE_GRADE')
+w496('mark.grade.gloss.connection.a', 'the source itself links the two, and both are held', 'connection A, CF 8.1')
+w496('mark.grade.gloss.connection.b', 'the same identifier appears in both documents', 'connection B, CF 8.1')
+w496('mark.grade.gloss.connection.c', 'only a name, title or date matches: plausible, not established', 'connection C, CF 8.1')
+w496('mark.grade.gloss.connection.d', "a member's own account; no captured document", "connection D, CF 8.1 as corrected (BOB #30); the investigation lane's wording")
+w496('mark.grade.gloss.testimony.d', "a member's own account, checked only by asking them", 'testimony D, the only letter; with screen.capture.tip.graded_why')
+w496('mark.grade.gloss.subject.a', "the source's own identifier ties the record to them", 'subject match A')
+w496('mark.grade.gloss.subject.b', 'an identifier they carry appears in the record', 'subject match B')
+w496('mark.grade.gloss.subject.c', 'only a name or date matches: plausible, not established', 'subject match C')
+w496('mark.grade.gloss.subject.d', "a member's own account; no captured document", 'subject match D')
+w496('mark.grade.gloss.copy.lead', "your team's grade, no higher than how well it could be captured:", 'before the capture gloss on the copy scale (DEC-461)')
+w496('mark.grade.gloss.form', '{letter}: {gloss}', 'the letter and its gloss in running text and in the published case; {letter} A to D, {gloss} one of the above')
