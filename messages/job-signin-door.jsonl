@@ -6,3 +6,4 @@
 {"at":"2026-11-05T08:23:33Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-05T21:00:51Z","row":"sent","n":4,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job signin-door complete, PR #460 ready, session session_018BhcegVim74bFvpiz2kU9N: run status"}
 {"at":"2026-11-05T21:01:22Z","row":"outcome","n":4,"outcome":"delivered"}
+{"at":"2026-11-07T17:32:56Z","row":"sent","n":5,"to":"bob","text":"job signin-door complete, PR #830 ready, session session_018BhcecN71fCRvoHTPvSMNr: run status"}
