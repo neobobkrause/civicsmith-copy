@@ -128,7 +128,9 @@ test("R55: every kind a member may mute has the plain name the muted list's sent
   /* T51 fix round 7 (G61; K4269): the kinds the catalogue gained (nine at G61, `reading-ended` at G135f) name no plain name yet (`fetch-done`, `ingest-done`, `ingest-stopped` have since gained theirs); the rows are owed to UX-DESIGN
      (T52) and the screen draws its own fallback for a kind with none. This list is exactly the kinds without a row: a row
      arriving for one of them makes this assertion fail until the kind leaves the list. */
-  const OWED = ["edition-published-as-scheduled", "edition-scheduled",
+  /* layer 11 reopen (notice-producers R33-R36): the six kinds catalogued then have no `queue.kind.<kind>` row yet either. */
+  const OWED = ["ai-account-left-list", "ai-account-left-project-list", "ai-signin-ended", "ai-terms-notice",
+    "ai-threshold-reached", "edition-published-as-scheduled", "edition-scheduled", "mail-cleared",
     "place-profile-arrived", "register-changed-noticed", "register-import-done", "register-import-failed",
     "register-import-stopped", "request-unsent", "scheduled-edition-stopped", "wizard-base-updated"];
   assert.deepEqual(mutable.filter((k) => !hasWord(`queue.kind.${k}`)).sort(), OWED);
