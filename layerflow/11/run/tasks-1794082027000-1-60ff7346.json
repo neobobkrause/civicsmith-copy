@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "tasks",
+  "round": 1,
+  "started": "2026-11-07T20:07:07Z",
+  "ended": "2026-11-07T20:07:18Z",
+  "minutes": 0.2,
+  "tested_on": "4ca2e41918f33f9dad599ee3e85449b34dd68f07",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-07T20:07:18Z"
+}
