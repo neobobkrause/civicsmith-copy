@@ -33,8 +33,8 @@
   ],
   "prior_work": "This module's code and tests exist (build/modules.json) but it had no ledger entry, so the process never recorded it (found by BOB's layer-10 early-start census, 7 Nov; coordinator's ruling). Its requirement file carries 1 'not yet met' mark(s); meet those within your paths or name what blocks each. Run its suite on its layer. Where a requirement is met by code and a test, cite that test in publish's --test. Where a test is red or a requirement has no test, fix it within your paths and add the test. Where a requirement cannot be met within your paths, name it in --not-verified, or report it found. Edit no other module, and commit no generated file.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T17:30:01Z",
-    "reason": "reopened: C24 (pin e779f92d) now attributes R92's not-yet-met mark on its Control sub-line to R92: R92 is already met by code and bio-plane/test/m/record-core/t53.test.mjs (PR 792); strike the mark and publish with --test R92=\"<that test>\""
+    "state": "BLOCKED",
+    "reason": "layer publish refused: 'p3 job complete: --test R92: build/requirements/record-core.md has no mark for R92 that this branch struck (struck: none)'. R92's Control mark was already struck on layer/11 by attempt 1 (f42daa4a5f, merged); it is still present on origin/tranche. Suite 233/233 on layer/11 f7ad0220d9; R92 met by bio-plane/test/m/record-core/t53.test.mjs::'R92 control: ...'. My branch carries only a Status-line note (0ccc39b4). Ruling needed: publish without --test (receipt then names no R92 test), or another route to record the attribution C24 asks for.",
+    "at": "2026-11-07T17:40:17Z"
   }
 }
