@@ -53,8 +53,7 @@ test("R72: each connection kind answers its dimension, one of the seven or null 
   assert.deepEqual([...new Set(reg.map((k) => v.words[k].dimension).filter((d) => d !== null))].sort(), [...CONNECTION_DIMENSION_NAMES].sort());
 });
 
-test("R72: money_contribution is dimension donations and group money; the other money kinds dimension money; named_in is group ment; "
-   + "every line:-prefixed kind R72 names is a key of both maps; control: a fixture kind with no entry fails by name", () => {
+test("R72: the money kinds, named_in and the line kinds have their dimensions and groups; an unmapped kind fails by name", () => {
   compose();
   const v = vocabulariesFor(null).connection_kinds;
   assert.equal(v.words.money_contribution.dimension, "donations");
@@ -85,8 +84,7 @@ const entries = (kind) => onwardFor(kind).map((x) => x.entry);
 const WHO = ["who.money", "who.donations", "who.offices", "who.laws", "who.events", "who.docs", "who.rows", "conn"];
 const OWN = { person: "people", donation: "donations", event: "events", document: "documents", fund: "organizations" };
 
-test("R73: DIMENSION_ONWARD equals R73's list, each entry {entry, dimension, op, also?}, frozen; a person has all eight, a fund none of "
-   + "who.offices, who.laws and who.donations; any other record id is offered conn only; the no-target answer carries the table", () => {
+test("R73: DIMENSION_ONWARD equals R73's list and the no-target answer carries it", () => {
   assert.ok(Object.isFrozen(DIMENSION_ONWARD));
   const e = (entry, dimension, op, also) => (also ? { entry, dimension, op, also } : { entry, dimension, op });
   const conn = e("conn", "connections", "explore");
@@ -129,8 +127,7 @@ test("R73 control: on a person, an event, a document, a donation and a fund no e
 });
 
 /* ============================================================ R74, at this module's interface */
-test("R74: named_in, which connections registers, is carried in connection_kinds once, class evidentiary, owner connections, group ment, "
-   + "dimension documents, with a word; from an entity resolved in a document, connections answers a named_in hop to that document", () => {
+test("R74: named_in is carried in connection_kinds and an entity reaches its document by a named_in hop", () => {
   compose();
   const v = vocabulariesFor(null).connection_kinds;
   assert.equal(NAMED_IN_KIND, "named_in");
