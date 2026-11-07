@@ -1,0 +1,51 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-entry",
+  "pr": 834,
+  "branch": "job/screens-entry",
+  "head": "62d9f32848e0b14693c85002fbae597d3f176878",
+  "before": "f7ad0220d99402fba1e803d42623e82091310c20",
+  "merge": "2f62b44722ba2b9f306f8cb2ef8e3fb6d7e435bf",
+  "at": "2026-11-07T17:46:38Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-entry/t53-journeys.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-entry/t53-journeys.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-entry/t53-journeys.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R1, R3, R30, R35, R36 (Provides before this land) while screens-entry's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-entry/t53-journeys.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "control-plane",
+    "journey-check"
+  ],
+  "users_rescheduled_old_rule": [
+    "control-plane",
+    "journey-check"
+  ],
+  "users_noticed": []
+}
