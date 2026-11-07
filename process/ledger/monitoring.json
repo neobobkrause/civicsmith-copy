@@ -57,7 +57,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/monitoring.md, each with a test under bio-plane/test/m/monitoring/ that fails with the change reverted. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-07T03:41:56Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T03:56:20Z"
   }
 }
