@@ -40,9 +40,8 @@ const R30_WRITES = {
   stepsrunai: "reversible", milestoneset: "reversible", milestonerevise: "reversible", hypothesistakeup: "reversible",
   noteshare: "reversible", noteunshare: "reversible", approvalruleset: "reversible", actionseekspropose: "reversible",
   stepoutcome: "reversible", stepbywhen: "reversible",
-  projectkeyset: "credential", projectsigninset: "credential", projectaccountremove: "credential",
-  projectaccountswitch: "substrate", accountusesset: "substrate", ailimitset: "substrate", exploreapprove: "substrate",
-  projectkeynoticeseen: "caller-owned", stepreminder: "caller-owned", milestonereminder: "caller-owned",
+  accountusesset: "substrate", ailimitset: "substrate", exploreapprove: "substrate",
+  stepreminder: "caller-owned", milestonereminder: "caller-owned",
   findmute: "caller-owned",
   readpages: "observational",
   stepdelete: "undetermined", steprefer: "undetermined", stepproduct: "undetermined", costmessage: "undetermined",
@@ -92,8 +91,8 @@ test("R30: every write op-declarations R41, R43 and R45 declares, and actionseek
   }
   for (const [op, e] of Object.entries(T41_RUNG_ABSENT)) assert.ok(e.is.length > 40, op);
   /* each beside the precedent R30 names */
-  for (const [op, like] of [["findmute", "queuemute"], ["projectkeyset", "groupkeyset"], ["accountusesset",
-    "groupkeyswitch"], ["projectkeynoticeseen", "groupkeynoticeseen"], ["actionseekspropose", "actionlawspropose"]])
+  for (const [op, like] of [["findmute", "queuemute"], ["accountusesset", "keyedserviceswitch"],
+    ["actionseekspropose", "actionlawspropose"]])
     assert.equal(gradeOf(op), gradeOf(like), `${op} as ${like}`);
   assert.match(NON_ACTS.actionseekspropose, /^action-directed: a machine \(or a member\) proposes/);
   /* negative controls: a misgrade is seen, and stepdelete, noteunshare and caseapprove are not `reasoned` (K2569) */
@@ -113,19 +112,19 @@ test("R30: every other op of those lists is a read, a NON_ACTS row beginning `re
   assert.ok(!isRead("stepcreate"));
 });
 
-test("R30 R5 R18: none of T41's ops is in MACHINE_REFUSALS; only projectkeyset, projectsigninset and projectaccountremove "
-   + "answer phone false; no statement, weight, larger-screen entry or alias is added", () => {
+test("R30 R5 R18 R57: none of T41's ops is in MACHINE_REFUSALS; every one is a phone act (the project account's credential "
+   + "acts, which answered phone false, left in T53, R57); no statement, weight, larger-screen entry or alias is added", () => {
   const ALL = [...Object.keys(R30_WRITES), ...R30_READS, "handlechange", "handlecheck"];
   assert.deepEqual(ALL.filter((op) => Object.hasOwn(MACHINE_REFUSALS, op)), []);
-  assert.deepEqual(ALL.filter((op) => !phoneOf(op)).sort(), ["projectaccountremove", "projectkeyset", "projectsigninset"]);
+  assert.deepEqual(ALL.filter((op) => !phoneOf(op)).sort(), []);
   for (const op of ALL) {
     assert.ok(!Object.hasOwn(CONSEQUENCE_STATEMENTS, op), op);
     assert.ok(!IRREVERSIBLE_WEIGHT.includes(op), op);
     assert.ok(!LARGER_SCREEN_ACTS.includes(op), op);
     assert.ok(!Object.hasOwn(OP_ALIASES, op) && !Object.values(OP_ALIASES).includes(op), op);
   }
-  /* negative control */
-  assert.equal(phoneOf("projectaccountswitch"), true);
+  /* negative control: a credential ground is off the phone */
+  assert.equal(phoneOf("keyedserviceset"), false);
 });
 
 test("R30 R25 (DEC-188 (8)): aiceilingset, aicopyceilingset, accountswitchset and groupswitchset leave RUNG_ABSENT and "
