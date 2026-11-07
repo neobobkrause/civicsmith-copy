@@ -1,0 +1,36 @@
+{
+  "id": "calc-grammar",
+  "title": "calc-grammar: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "bio-plane/src/calc-grammar/",
+    "build/requirements/calc-grammar.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/calc-grammar/"
+  ],
+  "requirements": "build/requirements/calc-grammar.md",
+  "uses": [
+    "record-grammar",
+    "civil-time",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/calc-grammar.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "sources",
+  "title": "sources: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 3,
+  "paths": [
+    "bio-plane/src/sources/",
+    "build/requirements/sources.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/sources/"
+  ],
+  "requirements": "build/requirements/sources.md",
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "capture",
+    "doorbell",
+    "provenance",
+    "setup-words",
+    "test-support"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/sources.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

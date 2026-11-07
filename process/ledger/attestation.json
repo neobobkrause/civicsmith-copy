@@ -1,0 +1,43 @@
+{
+  "id": "attestation",
+  "title": "attestation: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 3,
+  "paths": [
+    "bio-plane/src/attestation/",
+    "build/requirements/attestation.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/attestation/"
+  ],
+  "requirements": "build/requirements/attestation.md",
+  "uses": [
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "provenance",
+    "test-support",
+    "ooxml",
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/attestation.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}

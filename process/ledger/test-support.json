@@ -1,0 +1,47 @@
+{
+  "id": "test-support",
+  "title": "test-support: recorded 7 Nov from modules.json; legacy module, no ledger entry",
+  "layer": 1,
+  "paths": [
+    "bio-plane/test/sandbox.mjs",
+    "bio-plane/test/stdio.mjs",
+    "pdf-worker/test/make-pdf.mjs",
+    "bio-plane/test/make-zip.mjs",
+    "bio-plane/test/declared-ops.mjs",
+    "bio-plane/test/platform-sqlite.mjs",
+    "bio-plane/test/pdfgen.mjs",
+    "bio-plane/test/imggen.mjs",
+    "bio-plane/test/sheetgen.mjs",
+    "bio-plane/test/docgen.mjs",
+    "bio-plane/test/alarm-double.mjs",
+    "bio-plane/test/job-registrar-stub.mjs",
+    "bio-plane/test/corpus.mjs",
+    "bio-plane/test/seeded.mjs",
+    "build/requirements/test-support.md"
+  ],
+  "tests": [
+    "bio-plane/test/m/test-support/"
+  ],
+  "requirements": "build/requirements/test-support.md",
+  "uses": [
+    "setup-words"
+  ],
+  "suite": {
+    "cwd": "bio-plane",
+    "command": [
+      "node",
+      "--import",
+      "./test/platform-sqlite.mjs",
+      "--test"
+    ]
+  },
+  "reading": [
+    "build/requirements/test-support.md",
+    "build/requirements/README.md",
+    "build/situations/job.md"
+  ],
+  "status": {
+    "state": "COMPLETE",
+    "at": "2026-11-07T04:40:00Z"
+  }
+}
