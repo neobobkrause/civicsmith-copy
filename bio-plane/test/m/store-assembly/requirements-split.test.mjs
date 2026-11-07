@@ -24,6 +24,8 @@ const MOVED = { "store-ask": "R49 R50 R51 R52 R53 R54 R55 R56 R57 R58 R59".split
     "R102 R103 R104").split(" ") };
 const MOVED_LINE = {"R60":"74bd9387aeeaa219","R61":"cbb4116ca50a0420","R62":"69edc83e6dece76d","R63":"203455c0da4a76eb","R64":"61011d756c883558","R65":"6bf99280d1c969d0","R66":"6658472a60e7878b","R67":"96b7cbda762749fe","R68":"3b004d74aa07a437","R69":"75c0e21fd4d0674b","R70":"4dddd72c53bdc75f","R71":"cb5b04a82c5ff743","R72":"aac1377ea7f5d99d","R73":"b06bcade5a15af2a","R74":"64de0ee1b6e2b3e6","R75":"2b48239e4553024d","R76":"baa54c8facb914fb","R77":"71fdc438c5b18e57","R78":"58bdc10712da975e","R79":"15f55d590115edb3","R80":"5486f121d24333a6","R81":"282bad7ac96c6d27","R82":"4529c9a3f1706354","R102":"94c6e3be9e0b3bd4","R103":"4fc3821de6d3e41a","R104":"bb19fcffcba35aae","R49":"2dc34b4e4c0ada90","R50":"4576c76714506bfa","R51":"18598bb03fa85809","R52":"bf4bf55b28cd697f","R53":"f2c79bfab6076c3f","R54":"37a72d135420bd2e","R55":"a87e3182f32ea482","R56":"37e8eaa1c7949c14","R57":"288f154d5c50d865","R58":"81773df3bab72c93","R59":"77f4ec24a4e543e5"};
 
+/* the start-commit lines of the marked ids with ` *(not yet met: <row>)*` taken out, same hash */
+const MOVED_LINE_UNMARKED = { R102: "77df6656da10d3a0", R103: "7cc25d9e84196b35", R104: "59fa50ece2cec20a" };
 const read = (m) => readFileSync(REQ(m), "utf8");
 const idLines = (text) => text.split("\n").map((l) => l.match(/^\s*- \*\*([RF]\d+)\*\*(.*)$/)).filter(Boolean);
 const movedTo = (id) => Object.keys(MOVED).find((m) => MOVED[m].includes(id));
@@ -60,8 +62,11 @@ test("split: every moved id exists in its new module's file, its line verbatim f
     const c = copies(m);
     for (const id of MOVED[m]) {
       assert.ok(c[id], `${id} missing from ${m}`);
-      const h = createHash("sha256").update(c[id].rest).digest("hex").slice(0, 16);
-      assert.equal(h, MOVED_LINE[id], `${m}:${c[id].id} (was ${id}) differs from the start commit's line`);
+      /* a mark the new module's own job struck since (store-jobs R24, R26, PR 809) leaves the line otherwise verbatim:
+         compared with the start-commit line with its mark taken out */
+      const rest = c[id].rest, struck = id in START_UNMET && !/\*\(not yet met:/.test(rest);
+      const h = createHash("sha256").update(rest).digest("hex").slice(0, 16);
+      assert.equal(h, struck ? MOVED_LINE_UNMARKED[id] : MOVED_LINE[id], `${m}:${c[id].id} (was ${id}) differs from the start commit's line`);
     }
   }
 });
@@ -77,7 +82,8 @@ test("split: the unmet marks are the start commit's, each on its own id's line h
     if (u) moved[old] = u[1];
   }
   assert.deepEqual(here, Object.fromEntries(Object.entries(START_UNMET).filter(([id]) => !movedTo(id))));
-  assert.deepEqual(moved, Object.fromEntries(Object.entries(START_UNMET).filter(([id]) => movedTo(id))));
+  /* a moved id's mark is its new module's to strike: each mark still there is the start commit's, and none is added */
+  for (const [id, row] of Object.entries(moved)) assert.equal(row, START_UNMET[id], `${id}'s mark is the start commit's`);
 });
 
 test("split: the requirements file is under the cap", () => {
