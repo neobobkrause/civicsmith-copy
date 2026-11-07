@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "op-declarations",
+  "provider": "affordances",
+  "provider_pr": 879,
+  "provider_land": "b52d823b198d8ad5ee9d28c21b88c322663a30ff",
+  "at": "2026-11-07T19:42:54Z",
+  "key": "op-declarations<-affordances@b52d823b19",
+  "why": "only its own tests changed (bio-plane/test/m/affordances/t34.test.mjs, bio-plane/test/m/affordances/t41.test.mjs): no interface change for its users",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
