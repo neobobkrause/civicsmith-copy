@@ -1,0 +1,12 @@
+{
+  "row": "start",
+  "layer": 10,
+  "module": "scheduler",
+  "attempt": 6,
+  "branch": "job/scheduler-2",
+  "early": [
+    "link-sweep",
+    "following"
+  ],
+  "at": "2026-11-07T04:02:29Z"
+}
