@@ -54,6 +54,11 @@ test("R38: the reply form sends actioncorrespond with each field under the name 
     correspondence_outcomes: ["granted", "denied", "none_exists"] } };
   const q = await open(ROUTES.action, { ...DATA_PLANE, affordances: ok(vocab), actioncorrespond: ok({}) });
   // every declared name the form sends is one `actions` accepts (the guard fails the press otherwise)
+  // R66 (T53): a denial after an earlier reply names the entry it follows; with none chosen the screen says so and sends nothing
+  const unchained = await press(q, "actioncorrespond", { reason: "it came", values: { "reply-dir": "received", "reply-at": "2026-10-11",
+    "reply-account": "A denial citing the investigatory exemption.", "reply-stage": "denial", "reply-follows": "" } });
+  assert.equal(q.byOp("actioncorrespond").length, 0, "a later stage with no entry to follow is not sent");
+  assert.ok(beside(q, unchained).includes(W("screen.action.reply.follows.needed")));
   await press(q, "actioncorrespond", { reason: "it came", values: { "reply-dir": "received", "reply-at": "2026-10-11", "reply-party": "Office of the City Clerk",
     "reply-account": "A denial citing the investigatory exemption.", "reply-stage": "denial", "reply-follows": "1", "reply-outcome": "denied", "reply-exemptions": "Gov. Code 7923.600",
     "reply-dueby": "2026-10-26", "reply-duecite": "Gov. Code § 7922.535(b)" } });
