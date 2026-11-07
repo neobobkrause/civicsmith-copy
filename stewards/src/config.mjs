@@ -6,6 +6,10 @@ export const KINDS = Object.freeze(["fabricated_evidence", "harassment", "impers
 export const DECISIONS = Object.freeze(["dismiss", "withdraw"]);
 export const SHARED_SERVICES = Object.freeze(["shared_profile", "template_library", "public_listing"]);
 export const STATES = Object.freeze(["undecided", "dismissed", "withdrawn"]);
+/* R24: the parts of the approved listing rule (Publication §5E, Bob 2026-10-15), in the order Bob's text gives them; a
+   closed list. 1 not a group using Civicsmith, or advertising or spam; 2 pretending to be another group, person or office;
+   3 published against a court's order or unlawful to publish; 4 aimed at a private person's home, family or private life. */
+export const RULE_PARTS = Object.freeze(["1", "2", "3", "4"]);
 
 export const PINNED_ACCOUNT = "20b533579290b9b93168345edd3b7f72";
 export const OPEN_VARS = Object.freeze(["STEWARDS_ADDRESS", "REPORT_RETENTION_DAYS", "CONTACT_RETENTION_DAYS"]);
@@ -29,6 +33,13 @@ export function retentionDays(v) {
   if (typeof v !== "string" || !/^[1-9][0-9]{0,3}$/.test(v)) return null;
   const n = Number(v);
   return n <= 3650 ? n : null;
+}
+
+/* R24: a calendar date written YYYY-MM-DD. */
+export function validDate(v) {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const d = new Date(`${v}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
 }
 
 /* R10: one line per steward, `name:sha256`; any malformed line makes the whole value unset. */
@@ -56,8 +67,9 @@ export function readConfig(env = {}) {
   const stewards = parseStewardKeys(env.STEWARD_KEYS);
   const sourceKey = typeof env.SOURCE_KEY === "string" && utf8Len(env.SOURCE_KEY) >= 32 ? env.SOURCE_KEY : null;
   const from = validAddress(env.NOTIFY_FROM) ? env.NOTIFY_FROM : null;
+  const ruleTextVersion = validDate(env.LISTING_RULE_TEXT_VERSION) ? env.LISTING_RULE_TEXT_VERSION : null;
   const open = !!(address && reportDays && contactDays && stewards && sourceKey);
-  return { open, address, reportDays, contactDays, stewards, sourceKey, from };
+  return { open, address, reportDays, contactDays, stewards, sourceKey, from, ruleTextVersion };
 }
 
 /* JSONC as wrangler writes it: comments and trailing commas outside strings. */
@@ -132,6 +144,20 @@ export function validConcerns(v) {
 export function validTarget(w) {
   return !!w && typeof w === "object" && SHARED_SERVICES.includes(w.service)
     && typeof w.item === "string" && chars(w.item) >= 1 && chars(w.item) <= CAPS.item;
+}
+
+/* R24: a listing withdrawal's rule part, after R12's refusals. Answers a refusal code, or null. A part may come as the
+   string or the whole number of its place in RULE_PARTS. */
+export const rulePartOf = (w) => {
+  const v = w?.rule_part;
+  if (v === undefined || v === null || v === "") return null;
+  return typeof v === "number" && Number.isInteger(v) ? String(v) : v;
+};
+export function checkRulePart(w) {
+  const part = rulePartOf(w);
+  if (w.service !== "public_listing") return part == null ? null : "RULE_PART_NOT_APPLICABLE";
+  if (part == null) return "RULE_PART_REQUIRED";
+  return typeof part === "string" && RULE_PARTS.includes(part) ? null : "RULE_PART_UNKNOWN";
 }
 
 export const validReason = (r) => typeof r === "string" && r.trim().length > 0 && chars(r) <= CAPS.reason;
