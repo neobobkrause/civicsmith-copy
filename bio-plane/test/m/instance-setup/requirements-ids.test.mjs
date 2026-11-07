@@ -24,7 +24,8 @@ const START_UNMET = { R107: "T53", R108: "T53", R109: "T53", R110: "T53", R111: 
 /* Since the start commit (attempt 2, 5 Nov 2026): F1, the coordinator's found mark for screens-ai (17:24), added after R115
    and met with it; R115 and F1 are met by readiness.test.mjs, so neither carries a mark. */
 const ADDED = new Set(["F1"]);
-const MET_SINCE = new Set(["R115"]);
+/* Attempt 4 (7 Nov 2026): R107-R109 and R111-R114 met by t53.test.mjs and seeds.test.mjs (R112), their marks struck. */
+const MET_SINCE = new Set(["R115", "R107", "R108", "R109", "R111", "R112", "R113", "R114"]);
 /* The moved ids and their new ids: instance-updates R1-R7 and instance-reports R1-R21, each in the order of the old ids. */
 const MOVED = {
   R88: "instance-updates:R1", R89: "instance-updates:R2", R90: "instance-updates:R3", R91: "instance-updates:R4",

@@ -4,8 +4,9 @@
    data (words, the act gate's tables, the grades, the paths, the frames), `SCREENS` the registered screens (R21), `win`
    the window and `GUIDE` the dock's wizard guide (R31) or null. It reads no table and writes nothing of the record: every
    read and act is an op the plane serves, under the session record this module keeps (R32); it keeps no log of reads or
-   of screens visited (R24). */
-export function shellProgram(D, SCREENS, win, GUIDE) {
+   of screens visited (R24). `KIT` (BOB ruling 7 Nov) is the kit parts the split modules contribute (`interface-shell-t53`'s
+   `CONTRIBUTION.kit`, `index.mjs`' `contributionOf`), `{name: fn(cs, D, ...args)}`, each self-contained; absent when none is given. */
+export function shellProgram(D, SCREENS, win, GUIDE, KIT) {
   "use strict";
   const doc = win.document;
   const store = (name) => ({
@@ -538,6 +539,22 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
   const FRESH_MS = 90 * 1000, REFRESH_MS = 45 * 1000;
   const wordOrData = (o) => (o && typeof o === "object" ? (typeof o.key === "string" ? w(o.key, o.fills) : esc(o.text)) : typeof o === "string" ? w(o) : "");
   function kit(inst, bg) {
+    /* DEC-496 (BD-14 Q9.7): the grade's gloss, `mark.grade.gloss.<scale>.<letter>`, set beside the chip as the design's `.cs-gloss`
+       where that grade first appears in this draw (each scale and letter once; later chips of it carry the chip alone, the gloss
+       being said once beside the first). The copy's scale takes the capture gloss after `mark.grade.gloss.copy.lead` (DEC-461), the
+       ceiling's the capture gloss. Drawn only while a served stylesheet defines `.cs-gloss` (`D.gloss`, R56), and only for a letter
+       whose gloss is a word. */
+    const glossSeen = new Set();
+    const glossOf = (scale, letter) => {
+      if (!D.gloss) return "";
+      const s = String(scale == null ? "" : scale), l = String(letter == null ? "" : letter).toLowerCase();
+      const own = s === "copy" || s === "ceiling" ? "capture" : s;
+      const key = "mark.grade.gloss." + own + "." + l;
+      if (!has(key) || glossSeen.has(s + "." + l)) return "";
+      glossSeen.add(s + "." + l);
+      const lead = s === "copy" && has("mark.grade.gloss.copy.lead") ? w("mark.grade.gloss.copy.lead") + " " : "";
+      return '<span class="' + D.gloss + '">' + lead + w(key) + "</span>";
+    };
     const cs = {
       w, esc, date,
       get me() { return ME; },
@@ -746,7 +763,8 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
       },
       grade(scale, letter) {
         const tip = "<b>" + kw("mark.scale." + scale + ".name") + "</b>: " + kw("mark.scale." + scale + ".means") + '<span class="why">' + kw("mark.grade.reading") + "</span>";
-        return '<span class="cs-grade" data-scale="' + esc(scale) + '" tabindex="0"' + tipAttr(tip, 1) + ">" + I(scale) + '<span class="sr">' + kw("mark.scale." + scale + ".name") + "</span>" + esc(letter) + "</span>";
+        return '<span class="cs-grade" data-scale="' + esc(scale) + '" tabindex="0"' + tipAttr(tip, 1) + ">" + I(scale) + '<span class="sr">' + kw("mark.scale." + scale + ".name") + "</span>" + esc(letter) + "</span>"
+          + glossOf(scale, letter);
       },
       due(iso, state) {
         return '<span class="cs-due"' + (state ? ' data-due="' + esc(state) + '"' : "") + ' tabindex="0"' + tipAttr(kw("mark.due.means"), 1) + ">"
@@ -1040,6 +1058,9 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     cs.ring = (op, label) => ring(op, label);
     /* R40–R42, R47: the signer */
     cs.signer = SIGNER;
+    /* BOB ruling 7 Nov: the split modules' kit parts (`KIT`, in the order `contributionOf` fixed: by name), each called with this
+       kit and the page's data `D` (where the contribution's own `data` is) first; the shell's own part of a name wins, so a contribution adds to the kit and never replaces it */
+    if (KIT) for (const name of Object.keys(KIT)) if (!Object.hasOwn(cs, name)) cs[name] = (...args) => KIT[name](cs, D, ...args);
     return cs;
   }
   /* whether `a` comes before `b` in the document's order */
