@@ -1077,22 +1077,30 @@ export class NoticeProducers {
     const ok = [];
     for (const e of r.reached) {
       if (!e || !filled(e.key) || !filled(e.owner) || !filled(e.scope)) continue;
-      /* (ai-use:105, its R5, R18) a provider limit standing (`source: "provider"`, no period, a `resets_at`) is told by no
-         item yet: the words file holds no queue sentence for it (only the refusals' `ai.refused.limit.provider*`), and
-         R16 writes none of its own. Only the account's own limits, by their period, are told here. */
-      if (e.source === "provider" || !LIMIT_PERIODS.includes(e.period)) continue;
       const day = NoticeProducers.#localDay(e.reached_at, zone);
+      /* (ai-use:105, its R5, R18; R16 "one item per entry") a provider limit standing (`source: "provider"`, no period, a
+         `resets_at`) is told by `ai.queue.limitreached.provider`, `{when}` the local day it lifts (as R16's `{date}`), or
+         by `.provider.unknown` when the provider named no time. Its key is the entry's own, as given. */
+      if (e.source === "provider") {
+        const date = dayInSentence(day, today);
+        const lifts = filled(e.resets_at) ? dayInSentence(NoticeProducers.#localDay(e.resets_at, zone), today) : null;
+        if (date && (lifts || !filled(e.resets_at))) ok.push({ e, when: lifts, date, provider: true });
+        continue;
+      }
+      if (!LIMIT_PERIODS.includes(e.period)) continue;
       const when = NoticeProducers.#periodEnd(e.period, e.period_start, day);
       const date = dayInSentence(day, today);
       if (when && date) ok.push({ e, when, date });
     }
     const { list, truncated } = cut(ok, ACCOUNT_ITEMS_MAX);
-    const items = list.map(({ e, when, date }) => {
+    const items = list.map(({ e, when, date, provider = false }) => {
       const o = this.#owner(e.owner, viewer);
-      const use = e.scope !== "overall" && e.scope !== "per_member" && hasWords(`ai.use.${e.scope}.inline`) ? e.scope : null;
-      const word = e.scope === "per_member" ? "ai.queue.limitreached.member" : use ? "ai.queue.limitreached" : "ai.queue.limitreached.overall";
-      const fills = { account: wordsOf(`ai.account.${o.kind}`, { project: o.name }), period: wordsOf(`ai.period.${e.period}`),
-                      ...(use ? { use: wordsOf(`ai.use.${use}.inline`) } : {}), date, when };
+      const use = !provider && e.scope !== "overall" && e.scope !== "per_member" && hasWords(`ai.use.${e.scope}.inline`) ? e.scope : null;
+      const word = provider ? (when ? "ai.queue.limitreached.provider" : "ai.queue.limitreached.provider.unknown")
+        : e.scope === "per_member" ? "ai.queue.limitreached.member" : use ? "ai.queue.limitreached" : "ai.queue.limitreached.overall";
+      const account = wordsOf(`ai.account.${o.kind}`, { project: o.name });
+      const fills = provider ? { account, date, ...(when ? { when } : {}) }
+        : { account, period: wordsOf(`ai.period.${e.period}`), ...(use ? { use: wordsOf(`ai.use.${use}.inline`) } : {}), date, when };
       const text = wordsOf(word, fills);
       return {
         id: keyed("FINDING", "ai-limit-reached", e.key), class: "FINDING", kind: "ai-limit-reached",
@@ -1102,6 +1110,7 @@ export class NoticeProducers {
         summary: text, detail: text, word, fills,
         basis: { source: "ai-use.limitsReached", key: e.key, owner: o.ref, scope: e.scope, unit: e.unit ?? null, period: e.period,
                  period_start: e.period_start ?? null, reached_at: e.reached_at ?? null, zone,
+                 ...(provider ? { limit_source: "provider", limit_kind: e.kind ?? null, resets_at: e.resets_at ?? null } : {}),
                  detail: localize("notice-producers.index.a_limit_first_reached_in", "a limit first reached in its current period is ai-use's (its R5), answered to that account's owners; it is told once a period, and names no member.") },
         age: ageFrom(e.reached_at, now, "no_reached_instant"),
         assignee: null, assignee_role: null,
