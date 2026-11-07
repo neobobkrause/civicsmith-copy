@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "signin-door",
+  "session": "session_018Bhceeo6jZhEZ2VPxoLtKv",
+  "started": "2026-11-07T19:25:36Z",
+  "ended": "2026-11-07T19:26:56Z",
+  "at": "2026-11-07T19:26:56Z",
+  "minutes": 1.33,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 2.087,
+  "tests": {
+    "total": 25,
+    "pass": 25,
+    "fail": 0
+  }
+}
