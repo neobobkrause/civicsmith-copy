@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "journey-check",
+  "session": "session_018BhcegpZqjAT5gEHQJK89B",
+  "started": "2026-11-07T20:53:25Z",
+  "ended": "2026-11-07T21:15:04Z",
+  "at": "2026-11-07T21:15:04Z",
+  "minutes": 21.65,
+  "result": "fail",
+  "layer": 11,
+  "suite_seconds": 1238.352,
+  "tests": {
+    "total": 152,
+    "pass": 129,
+    "fail": 22
+  }
+}
