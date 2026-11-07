@@ -55,12 +55,12 @@ test("R38: the reply form sends actioncorrespond with each field under the name 
   const q = await open(ROUTES.action, { ...DATA_PLANE, affordances: ok(vocab), actioncorrespond: ok({}) });
   // every declared name the form sends is one `actions` accepts (the guard fails the press otherwise)
   await press(q, "actioncorrespond", { reason: "it came", values: { "reply-dir": "received", "reply-at": "2026-10-11", "reply-party": "Office of the City Clerk",
-    "reply-account": "A denial citing the investigatory exemption.", "reply-stage": "denial", "reply-outcome": "denied", "reply-exemptions": "Gov. Code 7923.600",
+    "reply-account": "A denial citing the investigatory exemption.", "reply-stage": "denial", "reply-follows": "1", "reply-outcome": "denied", "reply-exemptions": "Gov. Code 7923.600",
     "reply-dueby": "2026-10-26", "reply-duecite": "Gov. Code § 7922.535(b)" } });
   const r = last(q, "actioncorrespond");
   const sent = Object.fromEntries(Object.entries(r.query).filter(([k]) => k !== "op" && k !== "reason"));
   assert.deepEqual(sent, { target: ACTION_ID, direction: "received", at: "2026-10-11", account: "A denial citing the investigatory exemption.", party: "Office of the City Clerk",
-    stage: "denial", outcome: "denied", exemptions: "Gov. Code 7923.600", due_cite: "Gov. Code § 7922.535(b)", due_by: "2026-10-26" });
+    stage: "denial", follows: "1", outcome: "denied", exemptions: "Gov. Code 7923.600", due_cite: "Gov. Code § 7922.535(b)", due_by: "2026-10-26" });
   for (const name of Object.keys(sent)) assert.ok(DECLARED_FIELDS("actioncorrespond").includes(name), `${name} is declared`);
   // the stage and outcome words are the design's where it holds them
   const stage = q.doc.getElementById("reply-stage").querySelectorAll("option").map((o) => o.textContent.trim());

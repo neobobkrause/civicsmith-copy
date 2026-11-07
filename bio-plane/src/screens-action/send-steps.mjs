@@ -135,6 +135,16 @@ export function officeLine(ad) {
   return parts.filter(function (x, i) { return parts.findIndex(function (y) { return y.toLowerCase() === x.toLowerCase(); }) === i; }).join(", ");
 }
 
+/** R65 (T53): an addressee that is no office, as the action states it (`counterparty`): a named one by its role and organisation, an audience
+ *  by its description (record data); an undetermined or absent one is none. */
+export function namedOf(cp) {
+  if (!cp || typeof cp !== "object") return "";
+  const t = function (v) { return typeof v === "string" ? v.trim() : ""; };
+  if (cp.state === "audience") return t(cp.description);
+  if (cp.state === "named") return [t(cp.role), t(cp.organisation) || t(cp.body)].filter(Boolean).join(", ") || t(cp.name);
+  return "";
+}
+
 /** C64-template: whether `templatesforaction` offers a template for the action's kind (a version, and no court petition); a read that did
  *  not answer offers none (never claimed). */
 export function templateOffered(view) {

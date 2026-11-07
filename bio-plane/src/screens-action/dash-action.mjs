@@ -7,7 +7,7 @@
    after it and the action is not resolved; our move when a prepared or approved text awaits approval or sending; an action
    that is neither says neither, and "overdue" is never drawn before a member determines it. It holds no member-facing English
    (R19). Every function here is self-contained (interface-shell R21 (1)). */
-import { readOnly, kindWord, draftsOf, stepOf, later, officeLine, joinFirst } from "./send-steps.mjs";
+import { readOnly, kindWord, draftsOf, stepOf, later, officeLine, namedOf, joinFirst } from "./send-steps.mjs";
 
 export const dashAction = Object.freeze({
   id: "dash-action",
@@ -27,7 +27,7 @@ export const dashAction = Object.freeze({
   },
 
   parts: {
-    readOnly: readOnly, kindWord: kindWord, draftsOf: draftsOf, stepOf: stepOf, later: later, officeLine: officeLine, joinFirst: joinFirst,
+    readOnly: readOnly, kindWord: kindWord, draftsOf: draftsOf, stepOf: stepOf, later: later, officeLine: officeLine, namedOf: namedOf, joinFirst: joinFirst,
     // R30: an action that is not resolved or abandoned is open
     isOpen: function (state) { return state !== "resolved" && state !== "abandoned"; },
     // R30: whose move it is, from facts the action states: "theirs", "ours" or ""
@@ -110,7 +110,8 @@ export const dashAction = Object.freeze({
       // every open action: to whom, whose move, the clock as a sentence with its rule and date, the next step
       const whoOf = function (v) {
         const ad = v.addressee;
-        return ad ? cs.esc(P.officeLine(ad) || ad.description || "") : "";
+        // R65 (T53): an addressee that is no office (an audience the member described, "Public Works Director") is drawn as named
+        return cs.esc((ad ? P.officeLine(ad) || ad.description || "" : "") || P.namedOf(v.counterparty));
       };
       const clockOf = function (x) {
         const v = x.v, c = P.nextClock(v);
