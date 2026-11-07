@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 9,
+  "module": "escalation",
+  "round": 1,
+  "started": "2026-11-07T00:24:13Z",
+  "ended": "2026-11-07T00:25:35Z",
+  "minutes": 1.4,
+  "tested_on": "1f7a14c9de58f8bc3e4a965ec0403661a10fb6c0",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-07T00:25:35Z"
+}
