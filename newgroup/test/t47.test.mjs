@@ -276,9 +276,10 @@ test("R53 the pages use interface-assets' stylesheet and faces, carried in the i
     const r = await req(path, init);
     assert.equal(r.status, 404, path);
   }
-  /* Carried in the bundle: the committed bundle holds the stylesheet's own text and every face. */
-  const { readFileSync } = await import("node:fs");
-  const bundle = readFileSync(new URL("../dist/newgroup.bundled.mjs", import.meta.url), "utf8");
+  /* Carried in the bundle: the bundle as `npm run build` builds it from this tree (never a committed dist, which can lag the
+     assets it carries) holds the stylesheet's own text and every face. */
+  const { bundleText } = await import("../scripts/build.mjs");
+  const bundle = await bundleText(await import("esbuild"));
   for (const [name, f] of Object.entries(ASSET_FILES)) {
     /* A face is its base64 as written; a text file, its lines as written that need no escaping in a string. */
     const lines = f.encoding === "base64" ? [f.body] : f.body.split("\n").filter((l) => l.length > 40 && !/["'`\\$]|[^\x20-\x7e]/.test(l));
