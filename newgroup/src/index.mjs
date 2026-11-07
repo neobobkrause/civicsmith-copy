@@ -23,7 +23,7 @@
  * on the client, deploy, verify a real run, then remove the old.
  */
 
-import { WIZARD_HTML, updateHtml, publisherFooter, PROFILE_CHOICES, ASSISTANT_OFFER, SECURITY_TOOLS, pageHead, pageMark, around, SLOT,
+import { WIZARD_HTML, wizardHtml, placesBound, REGION_HINTS, REGION_JURISDICTIONS, updateHtml, publisherFooter, PROFILE_CHOICES, ASSISTANT_OFFER, SECURITY_TOOLS, pageHead, pageMark, around, SLOT,
   ASSET_PREFIX, UPDATE_WORDS, versionOk, NO_RELEASE_CHOSEN, NO_RELEASE_BEGIN, existsPanel, removePanel, removedPanel } from "./ui.mjs";
 /* R72: every sentence a key holds is read by key; R66, R71: the way to Cloudflare waits out what waiting can mend. */
 import { word } from "./words.mjs";
@@ -37,7 +37,7 @@ import { CF_API, RELEASE_LATEST, RELEASE_TAGGED, Session, patiently, WAIT_BOUND_
   BINDING_OF, membersPresent, instanceAiOk, SEAL_BINDING, heldBindings, hostOf, planeLimits, reportsBuilds, vpcServiceOk,
   uploadInstall, uploadUpdate, planeInSync, putSecret, rotateSecrets, loadFleet, installFleet, bindMembers, ensureSubdomain,
   verifyInstall, failedLags, verifyServing, confirmContainers, waitForAnswer, currentDeployment, rollBack, withByteLags, logsStep, copyWorkers,
-  locationHintFor, ARMED_SIGNERS } from "./steps/index.mjs";
+  locationHintFor, placementFor, ARMED_SIGNERS } from "./steps/index.mjs";
 /* R84: the account made ready before anything is created. */
 import { scopesStop, pickAccount, accountPanel, accountSentence, storageReady, containersState, containersStop, limitReached, updateNeeds,
   addressReady, addressPanel, addressSentence, planeTooBig, leaveOutOversize, SUBDOMAIN_RE, CHECK_AGAIN,
@@ -332,6 +332,17 @@ function profilesRefusal(v, mode) {
   if (bad.length) return word("installer.profiles.refused.unknown", { list: bad.map((x) => JSON.stringify(x)).join(", ") });
   if (new Set(v).size !== v.length) return word("installer.profiles.refused.twice");
   return null;
+}
+
+/* R96: the region a /begin names, `{hint}` (one of the regions the page offers) or `{jurisdiction}` (one of the three), never both;
+   the refusal for any other value, or null. An update, a removal and a check of a removal move no room: a region there is refused,
+   since a placement is chosen once, at install (K5441). */
+function regionRefusal(v, mode) {
+  if (v === undefined) return null;
+  if (mode !== "install" && mode !== "check") return localize("installer.begin.region.update", "Where your team's record is kept is chosen once, when it is installed; it can't be changed here.");
+  const ok = v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 1
+    && (REGION_HINTS.includes(v.hint) || REGION_JURISDICTIONS.includes(v.jurisdiction));
+  return ok ? null : localize("installer.begin.region", "That is not a region this installer offers. Choose one from the list.");
 }
 
 const lagList = (v) => `<ul>${v.lags.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>`;
@@ -821,7 +832,9 @@ async function installRun(emit0, code, saved, guard) {
      plain terms. */
   await emit.step("r2", word("installer.step.storage"));
   const completed = [];
-  try { const there = await ensureBuckets(token, acct.id, names); if (there.length) completed.push(word("installer.partial.what.storage")); emit.ok("r2", word("screen.install.progress.storage")); }
+  /* R96 (installer-steps R47): a copy kept in a jurisdiction has its buckets made in it, before the room is created. */
+  const inJurisdiction = typeof saved.sj === "string" && saved.sj ? { jurisdiction: saved.sj } : {};
+  try { const there = await ensureBuckets(token, acct.id, names, inJurisdiction); if (there.length) completed.push(word("installer.partial.what.storage")); emit.ok("r2", word("screen.install.progress.storage")); }
   catch (e) {
     if (special(e)) throw e;
     emit.no("r2");
@@ -839,7 +852,9 @@ async function installRun(emit0, code, saved, guard) {
   if (present.length) completed.push(present.length === 1 ? word("installer.partial.what.programs.one") : word("installer.partial.what.programs.other", { n: present.length }));
   const profiles = Array.isArray(saved.p) && !profilesRefusal(saved.p, "install") ? saved.p : [];
   /* R83: the place /begin read from the founder's request, handed to the creating upload (an upload of a script that exists restates the one it holds). */
-  const storeLocation = typeof saved.sl === "string" && saved.sl ? saved.sl : null;
+  /* R96: or the jurisdiction the founder chose to keep the record in, never both (installer-steps R46). */
+  const storeJurisdiction = typeof saved.sj === "string" && saved.sj ? saved.sj : null;
+  const storeLocation = !storeJurisdiction && typeof saved.sl === "string" && saved.sl ? saved.sl : null;
   let selfRefused = false;
   await emit.step("install", word("screen.install.progress.placing"));
   /* R67, R69: the plane is uploaded unless the account already holds exactly this release's deployed state (its bytes, its
@@ -858,7 +873,7 @@ async function installRun(emit0, code, saved, guard) {
       await uploadUpdate(token, acct.id, slug, true, release, { names, members: present, secrets, profiles, note });
       emit.ok("install");
     } else {
-      await uploadInstall(token, acct.id, slug, secrets, release, { members: present, profiles, names, note, storeLocation });
+      await uploadInstall(token, acct.id, slug, secrets, release, { members: present, profiles, names, note, storeLocation, storeJurisdiction });
       emit.ok("install");
     }
   } catch (e) {
@@ -874,7 +889,7 @@ async function installRun(emit0, code, saved, guard) {
     let degraded = false;
     try {
       if (held) await uploadUpdate(token, acct.id, slug, true, release, { names, members: present, secrets, profiles, noSelf: true, note });
-      else await uploadInstall(token, acct.id, slug, secrets, release, { noSelf: true, members: present, profiles, names, note, storeLocation });
+      else await uploadInstall(token, acct.id, slug, secrets, release, { noSelf: true, members: present, profiles, names, note, storeLocation, storeJurisdiction });
       degraded = true;
     } catch (e2) { if (special(e2)) throw e2; /* the original refusal is the one worth reporting */ }
     selfRefused = degraded;
@@ -1460,7 +1475,8 @@ export default {
     const url = new URL(req.url);
 
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === ""))
-      return html(WIZARD_HTML);
+      /* R96: the region the founder's own request is near, shown and preselected; none when the request says none (R83). */
+      return html(wizardHtml(req.cf && typeof req.cf === "object" ? locationHintFor(req.cf) : null));
 
     /* R55: `version` alone is read from the address, and only in the form a release's version has; nothing else, and no
        credential, is read from it. Any other value draws the page that says no release was chosen. */
@@ -1505,7 +1521,13 @@ export default {
       /* R21: the chosen jurisdiction profiles (install only), refused by name when not offered, never silently dropped. */
       const profilesWhy = profilesRefusal(body.profiles, mode);
       if (profilesWhy) return json({ ok: false, error: profilesWhy }, 400);
-      const p = Array.isArray(body.profiles) && body.profiles.length ? body.profiles : null;
+      /* R94: the places chosen, with the layers each sits within added, in order; none chosen (the federal layer removed) binds none. */
+      const bound = Array.isArray(body.profiles) ? placesBound(body.profiles) : [];
+      const p = bound.length ? bound : null;
+      /* R96: the region chosen, refused by name when it is not one offered. */
+      const regionWhy = regionRefusal(body.region, mode);
+      if (regionWhy) return json({ ok: false, error: regionWhy }, 400);
+      const rg = body.region === undefined ? null : body.region.hint ? { hint: body.region.hint } : { jurisdiction: body.region.jurisdiction };
       /* R45 (T36): the Workers VPC service the operator names for a tool reached through a tunnel, optional on the install
          and the update alike; a value present but not a service id is refused by name, never dropped. */
       const vpc = typeof body.securityVpc === "string" ? body.securityVpc.trim().toLowerCase() : "";
@@ -1529,9 +1551,11 @@ export default {
          `installer-steps` answers from it rides the cookie to the install, which hands it to the plane's creating upload so the
          team's room is made near the team. An install only (an update restates the place the copy holds and never moves it); no
          `cf` or no hint writes nothing, and the install is then the install it was. */
-      const sl = mode === "install" && req.cf && typeof req.cf === "object" ? locationHintFor(req.cf) : null;
+      /* R96 (installer-steps R46): a region picked overrides that default, and a jurisdiction carries no hint at all (placementFor). */
+      const place = mode === "install" ? placementFor({ ...(rg || {}), cf: req.cf && typeof req.cf === "object" ? req.cf : undefined }) : {};
+      const sl = place.hint ?? null, sj = place.jurisdiction ?? null;
       const cookie = b64url(enc.encode(JSON.stringify({ v, s, slug, mode, t: Date.now(), ...(ai ? { ai } : {}), ...(p ? { p } : {}),
-        ...(typeof sl === "string" && sl ? { sl } : {}), ...(ac ? { ac } : {}), ...(sd ? { sd } : {}),
+        ...(typeof sl === "string" && sl ? { sl } : {}), ...(sj ? { sj } : {}), ...(rg ? { rg } : {}), ...(ac ? { ac } : {}), ...(sd ? { sd } : {}),
         ...(vpc ? { vpc } : {}), ...(mode === "update" ? { r: chosen } : {}),
         ...(mode === "install" && body.alongside === true ? { al: 1 } : {}), ...(mode === "removeconfirm" ? { ty: body.typed } : {}),
         ...(typeof body.lock === "string" && /^[0-9A-Za-z_-]{6,64}$/.test(body.lock) ? { lk: body.lock } : {}) })));
@@ -1578,6 +1602,7 @@ export default {
       /* R71 (F6): what a new approval begins again, never a credential. */
       const again = { slug: saved.slug, mode: saved.mode, lock: saved.lock.id, ...(saved.ac ? { account: saved.ac } : {}), ...(saved.sd ? { subdomain: saved.sd } : {}), ...(saved.mode === "update" ? { version: saved.r } : {}),
         ...(saved.al === 1 ? { alongside: true } : {}), ...(saved.p ? { profiles: saved.p } : {}), ...(saved.vpc ? { securityVpc: saved.vpc } : {}),
+        ...(saved.rg && (saved.mode === "install" || saved.mode === "check") ? { region: saved.rg } : {}),
         ...(saved.mode === "removeconfirm" ? { typed: saved.ty } : {}) };
       /* R86, R90: a check is answered whole, so its answer sets the gate's cookie when every line is ready (and clears an earlier
          one when not); the run keeps nothing else. */
