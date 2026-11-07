@@ -1,0 +1,13 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "steps",
+  "attempt": 1,
+  "branch": "job/steps",
+  "early": [
+    "record-core",
+    "observation-log",
+    "setup-words"
+  ],
+  "at": "2026-11-07T16:33:15Z"
+}
