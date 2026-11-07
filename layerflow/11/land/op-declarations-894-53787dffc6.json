@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "op-declarations",
+  "pr": 894,
+  "branch": "job/op-declarations-2",
+  "head": "53787dffc6977c3299610dd8b26316e327fd33b9",
+  "before": "a287910efe46eebb1bc12da506340317402707fc",
+  "merge": "c881e6303efe8ada9b5e3ad3a5363c523d6bcdb4",
+  "at": "2026-11-07T20:22:56Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
