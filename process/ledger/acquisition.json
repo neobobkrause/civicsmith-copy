@@ -50,7 +50,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-08T11:45:12Z"
+    "state": "WORKING",
+    "at": "2026-11-08T12:56:03Z",
+    "reason": "reopened: re-test against the new interface of membership (land 6316509c05)"
   }
 }
