@@ -1,0 +1,69 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "plane",
+  "pr": 916,
+  "branch": "job/plane-3",
+  "head": "ac528018c55a46e5383cc0f1bae097f774f75466",
+  "before": "16b8b1970b323ffc48a37c9863816f502c18affd",
+  "merge": "c39397f91ff8b20dbe1dc4fe20cbca12dfbf3ec5",
+  "at": "2026-11-08T01:11:07Z",
+  "by": "bob",
+  "gate_runs": 6,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/plane/door.test.mjs",
+      "bio-plane/test/m/plane/g41-shape.test.mjs",
+      "bio-plane/test/m/plane/maps.mjs",
+      "bio-plane/test/m/plane/shape/g41.probe.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/plane/door.test.mjs",
+      "bio-plane/test/m/plane/g41-shape.test.mjs",
+      "bio-plane/test/m/plane/maps.mjs",
+      "bio-plane/test/m/plane/shape/g41.probe.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/plane/door.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/plane/g41-shape.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/plane/maps.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , wholeExportOps"
+      },
+      {
+        "file": "bio-plane/test/m/plane/shape/g41.probe.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/plane/door.test.mjs",
+      "bio-plane/test/m/plane/g41-shape.test.mjs",
+      "bio-plane/test/m/plane/maps.mjs",
+      "bio-plane/test/m/plane/shape/g41.probe.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
