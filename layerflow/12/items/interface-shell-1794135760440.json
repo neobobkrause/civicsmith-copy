@@ -1,0 +1,15 @@
+{
+  "row": "items",
+  "layer": 12,
+  "module": "interface-shell",
+  "items": [
+    {
+      "id": "CR2-22",
+      "module": "interface-shell",
+      "what": "once CR2-21 lands: draw the update band with its cs- name and drop the mk-updband exemption, so cr2-4.test's every-drawn-class-is-defined check holds with none"
+    }
+  ],
+  "why": "CR2-22: draw the update band as cs-updband and drop the mk-updband exemption, after CR2-21",
+  "at": "2026-11-08T11:02:40Z",
+  "by": "bob"
+}
