@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 11,
+  "user": "screens-matter",
+  "provider": "screens-action",
+  "provider_pr": 969,
+  "provider_land": "ec8685a924c5e856be4ccbb459da470396156d23",
+  "at": "2026-11-07T23:57:28Z",
+  "key": "screens-matter<-screens-action@ec8685a924",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/screens-action/notice-instance-setup-f2.test.mjs: additive, added: a new test file only adds assertions), which may mean a changed answer shape; additive: each user is retested by its gate alone",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "additive"
+}
