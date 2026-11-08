@@ -1405,8 +1405,8 @@ export function shellProgram(D, SCREENS, win, GUIDE, KIT) {
       + '<button type="button" class="cs-btn" data-shell="level-keep" data-level-to="pause">' + w("level.keep.pause") + "</button></div></div>"
       : onHome && KEEP_LATER ? '<div class="cs-reason" role="status" data-level-note="later"><p>' + w("level.keep.later") + "</p></div>" : "";
     /* R92 (A9): a newer version is ready, across the top of the frame, above the masthead and below the test-instance band; the
-       button reloads, nothing reloads by itself */
-    const update = NEWER ? '<div class="cs-testband mk-updband" role="status"><b>' + w("shell.update.title") + "</b><span>" + w("shell.update.says") + '</span><button type="button" class="cs-btn" data-tone="quiet" data-shell="reload"'
+       button reloads, nothing reloads by itself. CR2-22 (F6): the design's own `cs-updband` (civicsmith.css, interface-assets R13) */
+    const update = NEWER ? '<div class="cs-updband" role="status"><b>' + w("shell.update.title") + "</b><span>" + w("shell.update.says") + '</span><button type="button" class="cs-btn" data-tone="quiet" data-shell="reload"'
       + tipAttr("<b>" + w("shell.reload") + "</b>: " + w("shell.update.reload.does") + " " + w("shell.update.reload.warn"), 2) + ">" + w("shell.reload") + "</button></div>" : "";
     return '<div class="cs-frame cs-shell' + (dock ? " with-dock" : "") + (RAILW < 120 ? " rail-icons" : "") + '" data-frame="working" id="cs-frame" style="--rail:' + RAILW + 'px">'
       + update + mastHtml() + band + '<nav class="cs-rail" aria-label="' + w("shell.sections") + '">' + rail + "</nav>"
