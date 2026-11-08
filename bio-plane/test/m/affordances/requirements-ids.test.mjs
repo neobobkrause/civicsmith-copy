@@ -6,6 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import * as HELP from "../../../src/affordances/act-help.mjs";
 
 const FILE = fileURLToPath(new URL("../../../../build/requirements/affordances.md", import.meta.url));
 const CAP = 70000;
@@ -34,4 +35,12 @@ test("consolidation: the unmet marks are those of the start commit, each on its 
 
 test("consolidation: the requirements file is under the cap", () => {
   assert.ok(Buffer.byteLength(read(), "utf8") <= CAP, `${Buffer.byteLength(read(), "utf8")} bytes`);
+});
+
+test("F4: the id added since the start is met at the interface: act help holds each of the four ops F4 names", () => {
+  assert.ok(idLines(read()).some((m) => m[1] === "F4"), "F4 is in the file");
+  for (const op of ["hypothesisrivals", "explorenext", "rivals", "docketrecordedition"]) {
+    assert.ok(HELP.ACT_HELP_OPS.includes(op), `${op} is held`);
+    assert.equal(HELP.ACT_HELP_KEYS[op], `act.${op}.does`, op);
+  }
 });

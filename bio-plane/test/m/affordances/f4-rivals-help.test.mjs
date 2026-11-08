@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
 import * as A from "../../../src/affordances.mjs";
-import { ACT_HELP, ACT_HELP_KEYS, ACT_HELP_OPS, CR2_DESIGN_OPS, CR2_RIVAL_OPS } from "../../../src/affordances/act-help.mjs";
+import * as HELP from "../../../src/affordances/act-help.mjs";
 import { Hypotheses } from "../../../src/hypotheses/index.mjs";
 import * as INQUIRY from "../../../src/inquiry/index.mjs";
 import * as AI_RUNS from "../../../src/ai-runs/index.mjs";
@@ -19,10 +19,14 @@ import * as AI_RUNS from "../../../src/ai-runs/index.mjs";
 const ROOT = new URL("../../../../", import.meta.url);
 const READS = JSON.parse(readFileSync(new URL("docs/development/ux-substrate/screens/words-reads.json", ROOT), "utf8"));
 const MOCK_ACTS = readFileSync(new URL("docs/development/ux-substrate/screens/mock-acts.js", ROOT), "utf8");
+const { ACT_HELP, ACT_HELP_KEYS, ACT_HELP_OPS } = HELP;
+/* the ops F4 names, listed from the requirement, never read from the code under test */
+const CR2_RIVAL_OPS = ["hypothesisrivals", "explorenext", "rivals"];
+const CR2_DESIGN_OPS = [...CR2_RIVAL_OPS, "docketrecordedition"];
 const readsOfThisModule = new Set(READS.modules?.affordances?.reads ?? []);
 
 test("F4: hypothesisrivals, explorenext, rivals and docketrecordedition are each held in ACT_HELP under their own name, read from act.<op>.does", () => {
-  assert.deepEqual([...CR2_DESIGN_OPS].sort(), ["docketrecordedition", "explorenext", "hypothesisrivals", "rivals"]);
+  assert.deepEqual([...(HELP.CR2_DESIGN_OPS ?? [])].sort(), [...CR2_DESIGN_OPS].sort(), "act-help exports the four F4 names");
   for (const op of CR2_DESIGN_OPS) {
     const key = `act.${op}.does`;
     assert.ok(hasWord(key), `${key} is a word`);
