@@ -64,3 +64,18 @@ Not met here, each waiting on another module:
 - (T53) AIR5, AIR7, AIR13, AIR25–AIR28, AIR41, AD7, AD13, AD14, AD36, AD37, BR13, BR18, BR19, BR22, BR27–BR29 (K5457, K5475, K5477, K5489): R9, R10, R12, R18, R19, R28, R40, R52, R54, R72, R75, R76, R78, R83, R84, R88, R90–R105; N1219, DEC-466 U1, U2: R99–R105.
 
 - **Notice ai-use:378 (5 Nov 2026, attempt 12).** `ai-use` R10 now falls back to `agent-model.estimate`'s range for the entry an act is served on when the account has too few measured acts, and `useEstimate` answers a promise when an `entry_id` is named. Adapted: R74's `openMany` names the entry of the account `ai-accounts.accountFor` answers for her act (when that account is the paying owner's) and awaits the answer, so a new account's batch estimate is the entry's range (`price_only` or `measured`) rather than `not_known`. Test `notice-ai-use-378.test.mjs`; R74's test now expects `entry_id` in the asked fields. No requirement text changed.
+
+## Moved at CR2-8 (job ai-runs, attempt 13, 8 Nov 2026)
+
+The heading of "Use and the ceiling" carried: (T33-50; Q0-6; K1450, K1502: the ceiling is per member, set by the member, and an administrator may set a lower one for the copy's own load) (T40; N812: the counter, the ceilings and the reads moved to `ai-use`, which holds each account's limits; K2373).
+
+The Suggestions section, unchanged:
+
+#### Suggestions
+
+- **Factory.** `aiRunsOf(ctx, env)` answers the one instance per Durable Object storage (the resume needs the `AGENT_WORKER` binding, the instance credential's secret and the `STORE` namespace) and reaches its uses through their factories (K61). The op handlers move here (K3); `scheduler` calls R15 and R16.
+- **Registrations offered:** the wait source (R16; `capture-requests` fills it, K71); `onRunOpened` (R43); the open check (R47; `action-plans` fills it for mode `plan`, its R30). **Filled:** promotion's step (R25–R26), observation-log's `run` resolver, retrieval's hidden-run predicate and `surfaced_in` decoration (R36), contradiction's run gate (R37), bias's work products (R30).
+- **For callers.** The control plane stamps `principal` (as `principalPlane` or `caller`), `actor` and `viewer`, deleting a body's.
+
+- **F4 (CR2-8).** interface-shell R20 reads `op=aipathready` with no pair, which answered `no_pair` before F4; screens-inquiry's reachability tests wait on it as `test.todo`. The cascade asks `accountServing` (ai-accounts R25: R11's choice without unsealing) rather than `accountFor`, so a read never unseals a secret. A member's joined projects are read from `project_participants` (state `joined`), as `investigation` reads them; membership offers no such read.
+- **F5 (IV-8).** ai-gate builds the recall figures (its F3, not yet met); ai-runs writes them. Civicsmith's own set's answer keys are run-rules' data; the team's own set's keys are this module's (`groupTestSet`).
