@@ -1,0 +1,16 @@
+{
+  "row": "join",
+  "layer": 12,
+  "module": "store-assembly",
+  "from": 11,
+  "why": "CR2-30 (build/plan/completion-round-2.md)",
+  "at": "2026-11-08T12:39:22Z",
+  "by": "bob",
+  "items": [
+    {
+      "id": "CR2-30",
+      "module": "store-assembly",
+      "what": "assemble.mjs (line 357) passes steps to hypothesesOf ({ explore, steps: stepsOf(ctx) }), so hypotheses reads a rival's legs from the real steps (IV-H2; hypotheses CR2-19; uses edge hypotheses → steps added beside this line, steps R31)"
+    }
+  ]
+}
