@@ -30,7 +30,7 @@ import { CONDITION_KINDS } from "../observation-log/vocabulary.mjs";
 import { promotionOf } from "../promotion/index.mjs";
 import { normalizeType, OBJECT_TYPES, isMachineIdentity, MACHINE_CLASS_PREFIX } from "../record-grammar/index.mjs";
 import { credentialsOf } from "../credentials/index.mjs";
-import { aiAccountsOf } from "../ai-accounts/index.mjs";
+import { aiAccountsOf, USE_KINDS } from "../ai-accounts/index.mjs";
 import { aiCatalogueOf, EFFORT_WORD_MAX } from "../ai-catalogue/index.mjs";
 import { inquiryOf } from "../inquiry/index.mjs";
 import { sha256hex, instanceAiCredential } from "../tokens.mjs";
@@ -108,6 +108,47 @@ function runSight(col, viewer) {
  *  legacy-store's `ai_run_bounds` count) it is the same predicate and args over that column naming a run id; the
  *  column must be a plain identifier, and anything else is refused by the tail that keeps nothing, never
  *  interpolated. Pure over its arguments; never throws (a failure is the fail-closed tail). */
+/** F5 (IV-8, BD-14 Q9.5): what an answer key's mark says of a passage: `against` cuts against the conclusion (contrary,
+ *  exculpatory included), `for` supports it. Frozen. */
+export const ANSWER_MARKS = Object.freeze(["against", "for"]);
+
+/** F5 (IV-8): THE ANSWER KEY'S CONTRARY MARKS. An answer key that marks its passages is an object carrying `conclusions`, a
+ *  list of `{conclusion, passages}`, `conclusion` a non-blank string and `passages` a list of `{passage, cuts}`,
+ *  `passage` a non-blank string and `cuts` one of ANSWER_MARKS. Answers `{marked, contrary, supporting}`: the counts
+ *  of passages marked `against` and `for`, `marked` true when at least one is `against` (a key with none contributes to
+ *  neither recall figure, IV-8); a key that is a string, or an object with no `conclusions`, is unmarked (all zero);
+ *  a malformed one answers `{field}`, the first unfit (`conclusions`, `conclusion`, `passages`, `passage`, `cuts`).
+ *  Pure; never throws. */
+export function answerKeyMarks(answers) {
+  const none = { marked: false, contrary: 0, supporting: 0 };
+  if (!answers || typeof answers !== "object" || Array.isArray(answers) || !("conclusions" in answers)) return none;
+  const cs = answers.conclusions;
+  if (!Array.isArray(cs)) return { field: "conclusions" };
+  const nonBlank = (v) => typeof v === "string" && v.trim() !== "";
+  let contrary = 0, supporting = 0;
+  for (const c of cs) {
+    if (!c || typeof c !== "object" || !nonBlank(c.conclusion)) return { field: "conclusion" };
+    if (!Array.isArray(c.passages)) return { field: "passages" };
+    for (const p of c.passages) {
+      if (!p || typeof p !== "object" || !nonBlank(p.passage)) return { field: "passage" };
+      if (!ANSWER_MARKS.includes(p.cuts)) return { field: "cuts" };
+      if (p.cuts === "against") contrary++; else supporting++;
+    }
+  }
+  return { marked: contrary > 0, contrary, supporting };
+}
+
+/** F5 (IV-8): IS A GATE 1 RECORD'S `recall` AS IV-8 STATES IT? Absent is fit (a record built before ai-gate reports it).
+ *  Present, it is `{contrary: {proposed, marked}, supporting: {proposed, marked}, matters_marked, matters_unmarked}`, each
+ *  a whole number, each `proposed` at most its `marked`. Answers true when fit. Pure; never throws. */
+function recallFit(rec) {
+  if (!Object.prototype.hasOwnProperty.call(rec, "recall")) return true;
+  const r = rec.recall, whole = (v) => Number.isSafeInteger(v) && v >= 0;
+  const pair = (p) => !!p && typeof p === "object" && whole(p.proposed) && whole(p.marked) && p.proposed <= p.marked;
+  return !!r && typeof r === "object" && !Array.isArray(r) && pair(r.contrary) && pair(r.supporting)
+    && whole(r.matters_marked) && whole(r.matters_unmarked);
+}
+
 export function hiddenRuns(viewer, column = undefined) {
   const byColumn = column !== undefined;
   const closed = byColumn ? { sql: " AND 0=1", args: [] } : { sql: " AND COALESCE(authority_kind, '') <> 'run'", args: [] };
@@ -416,6 +457,8 @@ export class AiRuns {
       ? given.record : given;
     let field;
     try { field = checkGateRecord(rec); } catch { field = "record"; }
+    /* F5 (IV-8): the contrary and supporting recall figures, when the record carries them, are counts as IV-8 states */
+    if (field === null && !recallFit(rec)) field = "recall";
     if (field !== null)
       return this.#refuse("AI_TEST_BAR_UNFIT", localize("ai-runs.index.gate_record_unfit", "this Gate 1 record is not well formed (its {field} is not as ai-gate's record states it). Nothing was recorded.", { field: String(field) }), { field });
     try {
@@ -3703,6 +3746,10 @@ export class AiRuns {
     if (!p || !m || !a || !active)
       return this.#refuse("AI_GROUP_TEST_INVALID", !active ? localize("ai-runs.index.a_teams_test_investigation_is", "a team's test investigation is added by one of its active members. Nothing was added.") : localize("ai-runs.index.a_teams_test_investigation_names", "a team's test investigation names its part, its matter and the answers your members wrote (missing: {filter}). Nothing was added.", { filter: String([!p && "part", !m && "matter", !a && "answers"].filter(Boolean).join(", ")) }));
     /* END DEC-49 REGION is-ai-group-test */
+    /* F5 (IV-8): an answer key that marks its passages marks each as IV-8 states, else nothing is added */
+    const marks = answerKeyMarks(answers);
+    if (marks.field)
+      return this.#refuse("AI_GROUP_TEST_INVALID", localize("ai-runs.index.group_test_marks_unfit", "a team's test investigation marks each passage of each conclusion as cutting against it or supporting it ({field} is not so marked). Nothing was added.", { field: String(marks.field) }), { field: marks.field });
     const now = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
     this.#transact(() => this.sql.exec(
       `INSERT INTO ai_group_tests (part, matter, answers, by, at) VALUES (?, ?, ?, ?, ?)
@@ -3718,14 +3765,17 @@ export class AiRuns {
     const p = typeof part === "string" ? part.trim() : "";
     let active = false;
     try { const f = who ? this.#membership().memberFacts(who) : null; active = !!f && f.status === "active"; } catch { active = false; }
-    if (!active || !p) return { ok: true, part: p || null, matters: 0, results: [] };
+    if (!active || !p) return { ok: true, part: p || null, matters: 0, matters_marked: 0, results: [] };
     const matters = this.#one(`SELECT count(*) c FROM ai_group_tests WHERE part = ?`, p).c;
+    /* F5 (IV-8): how many of the part's matters carry contrary marks (the rest contribute to neither recall figure) */
+    const matters_marked = this.#rows(`SELECT answers FROM ai_group_tests WHERE part = ?`, p)
+      .filter((r) => answerKeyMarks(safeJson(r.answers)).marked === true).length;
     /* R75 (T53; AD7, AD13): shown per (entry, part), each result naming the entry it measured (null before T53) */
     const results = this.#rows(`SELECT set_version, false_alarm_rate, passed, at, entry_id FROM ai_test_bar
                                  WHERE set_name = 'group' AND part = ? ORDER BY seq`, p)
       .map((r) => ({ entry_id: typeof r.entry_id === "string" ? r.entry_id : null, part: p, set_version: r.set_version,
                      false_alarm_rate: Number(r.false_alarm_rate), passed: r.passed === 1, at: r.at }));
-    return { ok: true, part: p, matters: Number(matters), results };
+    return { ok: true, part: p, matters: Number(matters), matters_marked, results };
   }
 
   /* ---- R83, R84, R91–R98, R101–R103, R105 (T53; K5457): SEGMENTS, HOPS AND A STOP AT THE STEP BOUNDARY -----------
@@ -3798,12 +3848,19 @@ export class AiRuns {
   /** F1 (coordinator 23:20; BOB 23:30): `op=aipathready`, the one read of the AI path, which this module owns. Answers a
    *  declared read answer `{ok: true, state: "ready" | "not_ready", ready, reason, reset_at}` by `#pathReady`'s fail-closed
    *  rule, the same rule the dispatch reads (R97). Not ready, and the source never asked, when: the door stamped no
-   *  viewer (`reason` `no_viewer`); no pair is named (`no_pair`); or the viewer cannot see the account (`ai-accounts`'
-   *  `accountState` refuses her: `reason` null, nothing about the account answered). Never throws; writes nothing. */
+   *  viewer (`reason` `no_viewer`); one half of a pair is named without the other (`no_pair`); or the viewer cannot see
+   *  the account (`ai-accounts`' `accountState` refuses her: `reason` null, nothing about the account answered). With no
+   *  pair named at all it is F4's cascade read (`#cascadeReady`). Never throws; writes nothing. */
   async pathReadyRead({ viewer, account_id, entry_id } = {}) {
     const closed = (reason) => ({ ok: true, state: "not_ready", ready: false, reason, reset_at: null });
     if (typeof viewer !== "string" || !viewer) return closed("no_viewer");
-    if (typeof account_id !== "string" || !account_id || typeof entry_id !== "string" || !entry_id) return closed("no_pair");
+    const named = (v) => typeof v === "string" && v !== "";
+    if (!named(account_id) && !named(entry_id)) {
+      let c = null;
+      try { c = await this.#cascadeReady(viewer); } catch { c = null; }
+      return c || closed("unknown");
+    }
+    if (!named(account_id) || !named(entry_id)) return closed("no_pair");
     let seen = null;
     try { seen = this.#aiAccounts().accountState({ account_id, viewer }); } catch { seen = null; }
     if (!seen || seen.ok !== true) return closed(null);
@@ -3811,6 +3868,50 @@ export class AiRuns {
     try { p = await this.#pathReady(account_id, entry_id); } catch { p = null; }
     if (!p) return closed("unknown");
     return { ok: true, state: p.ready ? "ready" : "not_ready", ready: !!p.ready, reason: p.state, reset_at: p.reset_at };
+  }
+
+  /** F4: the most distinct (account, entry) pairs one cascade read asks the path source about. */
+  static CASCADE_PAIRS_MAX = 10;
+
+  /** F4 (CR2-8; interface-shell R20): THE PAIRLESS READ. Whether the AI path is ready for SOME act of the viewer on any
+   *  account the cascade can choose for it: for each use kind `ai-accounts` R11 takes (every `USE_KINDS` entry but
+   *  `explore`), in the act's level with no project (her own, else the team's) and then in each project she has joined
+   *  (in id order), the head account and entry `ai-accounts`' `accountServing` chooses (R11's choice, R25: no secret
+   *  unsealed); each distinct pair is asked of the path source (`#pathReady`), at most `CASCADE_PAIRS_MAX`, in that
+   *  order, until one answers ready. Answers `{ok, state, ready, reason, reset_at}` and never names an account: ready
+   *  with the ready pair's state; else not ready with the first pair's reason, or `no_account` when no act of hers is
+   *  served (a machine viewer, keep-away, no account on at any level, a project not joined). Writes nothing. */
+  async #cascadeReady(viewer) {
+    const closed = (reason) => ({ ok: true, state: "not_ready", ready: false, reason, reset_at: null });
+    const member = memberIdOf(viewer);
+    if (!member) return closed("no_account");
+    let projects = [];
+    try {
+      projects = this.#rows(`SELECT project_id FROM project_participants WHERE member_id = ? AND state = 'joined'
+                             ORDER BY project_id`, member).map((r) => String(r.project_id));
+    } catch { projects = []; }
+    const pairs = [], seen = new Set();
+    const accounts = this.#aiAccounts();
+    for (const project of [null, ...projects]) {
+      for (const use of USE_KINDS) {
+        if (use === "explore") continue;
+        let s = null;
+        try { s = accounts.accountServing({ member: `member:${member}`, use, project }); } catch { s = null; }
+        if (!s || s.refusal || typeof s.account_id !== "string" || typeof s.entry_id !== "string" || !s.entry_id) continue;
+        const key = `${s.account_id}\u0000${s.entry_id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pairs.push([s.account_id, s.entry_id]);
+      }
+    }
+    if (pairs.length === 0) return closed("no_account");
+    let first = null;
+    for (const [account_id, entry_id] of pairs.slice(0, AiRuns.CASCADE_PAIRS_MAX)) {
+      const p = await this.#pathReady(account_id, entry_id);
+      if (p.ready) return { ok: true, state: "ready", ready: true, reason: p.state, reset_at: p.reset_at };
+      if (!first) first = p;
+    }
+    return { ok: true, state: "not_ready", ready: false, reason: first.state, reset_at: first.reset_at };
   }
 
   /** R91: a run's segments, oldest first; `[]` when none. */
