@@ -17,7 +17,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const MODULE = join(ROOT, "bio-plane/src/interface-assets/index.mjs");
 const DIR = "docs/development/ux-substrate/visual-language";
 const PAGE = "docs/development/ux-substrate/screens/page.src.html";
-const COMMIT = "1b6f2bc383"; // R10 (T51): the design commit the START names (tranche head holding PR 191, DEC-412); 2a64c5ae77 before it, R9 named 7be06eb4cb and R8 f498560a37 before it
+const COMMIT = "cd2d2030de"; // R12 (CR2-3): the design commit the START names (ux lane PR 996's merge); 1b6f2bc383 before it (PR 191, DEC-412), 2a64c5ae77 before that, R9 named 7be06eb4cb and R8 f498560a37 before it
 const R9_COMMIT = "7be06eb4cb";
 const R10_COMMIT = "2a64c5ae77"; // the commit R10 was met at, before PR 191
 const git = (args) => execFileSync("git", args, { cwd: ROOT, maxBuffer: 1 << 26 });
@@ -151,7 +151,7 @@ function faceModuleFailures(path) {
   return out;
 }
 
-test("R1, R5, R8, R9, R10: ASSETS_COMMIT is 1b6f2bc383 and ASSET_FILES holds exactly R1's 20 files and R7's shell.css, each equal byte for byte to git at the commit", () => {
+test("R1, R5, R8, R9, R10, R12: ASSETS_COMMIT is cd2d2030de and ASSET_FILES holds exactly R1's 20 files and R7's shell.css, each equal byte for byte to git at the commit", () => {
   const { faces } = expected();
   assert.equal(faces.length, 15);
   assert.equal(Object.keys(ASSET_FILES).length, 21);
@@ -289,7 +289,7 @@ function r5Failures(css) {
   return out;
 }
 
-test("R5, R8, R9, R10: civicsmith.css at 1b6f2bc383 holds no cursor: help, no cursor in .cs-card, and the three kind tokens light and dark", () => {
+test("R5, R8, R9, R10: civicsmith.css at cd2d2030de holds no cursor: help, no cursor in .cs-card, and the three kind tokens light and dark", () => {
   assert.equal(ASSETS_COMMIT, COMMIT);
   const css = ASSET_FILES["civicsmith.css"].body;
   assert.deepEqual(r5Failures(css), []);
@@ -479,7 +479,7 @@ function r9Failures(civicsmith) {
   return R9_CLASSES.filter((c) => !namedBy(named, c)).map((c) => `civicsmith.css: no rule for ${c}`);
 }
 
-test("R9, R10: ASSETS_COMMIT is 1b6f2bc383, the design commit the START names; civicsmith.css names each class DEC-280, DEC-249 and DEC-279 added; each served file is R1's bytes and R7's transform", () => {
+test("R9, R10: ASSETS_COMMIT is cd2d2030de, the design commit the START names; civicsmith.css names each class DEC-280, DEC-249 and DEC-279 added; each served file is R1's bytes and R7's transform", () => {
   assert.equal(ASSETS_COMMIT, COMMIT);
   const civ = ASSET_FILES["civicsmith.css"].body;
   assert.deepEqual(r9Failures(civ), []);
@@ -503,7 +503,7 @@ test("R9 control: another commit, a hand edit of a served file, and a stylesheet
    except the markers and mock-only classes R10 lists. */
 const SCREENS = "docs/development/ux-substrate/screens/";
 const DRAWINGS = ["mock-screens.js", "mock-shell.js", "mock-kit.js", "mock-acts.js", "mock-refs.js"];
-/* Found at 1b6f2bc383 by R10's scan (its control's purpose): drawn, in neither stylesheet and not in R10's marker list.
+/* Found at 1b6f2bc383, and still at cd2d2030de, by R10's scan (its control's purpose): drawn, in neither stylesheet and not in R10's marker list.
    mk-det (mock-screens.js cdPart's <div>) and mk-widen (a hook mock-screens.js's querySelector toggles with hidden).
    Whether each is a marker or owes a style is UX-DESIGN's, reported to BOB; the scan stays exact, so any other new class fails. */
 const R10_FOUND = ["mk-det", "mk-widen"];
@@ -549,7 +549,7 @@ test("R10: ASSETS_COMMIT is the START's design commit; the visual files are R9's
   assert.equal(ASSET_FILES["shell.css"].body, shellCss(git(["show", `${ASSETS_COMMIT}:${PAGE}`]).toString("utf8")));
 });
 
-test.todo("R10 at 1b6f2bc383: mk-det and mk-widen, drawn since 2a64c5ae77, are styled or named markers (UX-DESIGN, reported to BOB)");
+test.todo("R10 at cd2d2030de: mk-det and mk-widen, drawn since 2a64c5ae77, are styled or named markers (UX-DESIGN, reported to BOB)");
 
 test("R10 control: a drawn class with no style fails the scan, so a later design commit's new class is found; a hand edit of a served file or R9's commit is refused", () => {
   const files = ASSET_FILES;
@@ -645,4 +645,29 @@ test("R4, R6: index.mjs and each face module are under 1,048,576 bytes, and toge
 test("R4, R6 control: a file over the cap is refused", () => {
   assert.equal(oversize([MODULE], () => MAX_FILE_BYTES + 1).length, 1);
   assert.deepEqual(oversize([MODULE], () => MAX_FILE_BYTES), []);
+});
+
+/* R12 (CR2-3): the ux lane's PR 996 (cd2d2030de) gives the product's own names to the crumbs and the row table: shell.css
+   carries .cs-crumbs, .cs-rows with its rows tr.cs-r and its opened panel tr.cs-panel, at every width and inside the 760 px
+   query, each beside its mk- drawing's rule. Read from the served stylesheet, so the pin before it (1b6f2bc383) fails here. */
+const R12_CLASSES = ["cs-crumbs", "cs-rows", "cs-r", "cs-panel"];
+function r12Failures(shell) {
+  const all = rules(shell);
+  const names = (r, c) => sels(r).some((s) => new RegExp(`\\.${c}(?![\\w-])`).test(s));
+  const out = [];
+  for (const c of R12_CLASSES) {
+    if (!all.some((r) => !r.media && names(r, c))) out.push(`.${c}: no rule at every width`);
+    if (!all.some((r) => /max-width:\s*760px/.test(r.media ?? "") && names(r, c))) out.push(`.${c}: no phone rule`);
+  }
+  return out;
+}
+
+test("R12: ASSETS_COMMIT is cd2d2030de, and shell.css carries .cs-crumbs, .cs-rows, .cs-r and .cs-panel at every width and in the 760 px query", () => {
+  assert.equal(ASSETS_COMMIT, "cd2d2030de");
+  assert.deepEqual(r12Failures(ASSET_FILES["shell.css"].body), []);
+});
+
+test("R12 control: shell.css as the transform makes it at 1b6f2bc383 (before PR 996) lacks all four classes", () => {
+  const before = shellCss(git(["show", `1b6f2bc383:${PAGE}`]).toString("utf8"));
+  assert.equal(r12Failures(before).length, 2 * R12_CLASSES.length);
 });
