@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "control-plane-door-reading",
+  "session": "session_018Bhcecv5cWJPoyB1rUuBhq",
+  "started": "2026-11-08T01:33:44Z",
+  "ended": "2026-11-08T01:40:51Z",
+  "at": "2026-11-08T01:40:51Z",
+  "minutes": 7.12,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 315.923,
+  "tests": {
+    "total": 94,
+    "pass": 94,
+    "fail": 0
+  }
+}
