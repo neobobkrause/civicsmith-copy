@@ -14,8 +14,8 @@ import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { settle } from "./walker.mjs";
-import { act, type, reveal, requireDrawn, inviteMember } from "./journeys.mjs";
-import { requireWord, wordPattern } from "./words.mjs";
+import { act, type, reveal, requireDrawn, inviteMember, signInBy } from "./journeys.mjs";
+import { requireWord, wordPattern, word } from "./words.mjs";
 import { readAndCite, UPLOAD_TEXT } from "./investigation.mjs";
 
 /* The carried states the local copy cannot draw, by key, each with why (reported to BOB; never passed). */
@@ -32,6 +32,8 @@ export const UNREACHABLE = Object.freeze({
   "group-identity:an": "the installer records the team's short name at first boot, so no installation of this release lacks it",
   "updates:the same,": "needs a newer release notice signed by Civicsmith's release keys",
   "open-file:a file held": "a hold is placed only on a scanner's finding, and the local world's file scanner finds nothing",
+  "places:a state with no": "the United States (federal law) profile stays active whatever the team chooses on Places, so the team always holds a non-test profile and Places never draws its no-profile state",
+  "queue:an all-clear": "every feed of the local copy answers, so an empty queue says nothing is waiting (the queue's other state, walked); the two cannot both be drawn",
 });
 
 const once = (fn) => { let p = null; return () => (p ||= fn()); };
@@ -92,8 +94,17 @@ export function localReach(ctx) {
   const projectId = () => idOf(project);
 
   /* ---- setups, each done once ---- */
+  /* Mai on her own computer, signed in (journey 28 signed her out there; R10 signs her in only when it is walked) */
+  const maiIn = once(() => signInBy(walk, M, base, who.member, "R21 · Mai signs in on her own computer"));
+  const asMai = async () => { await maiIn(); return M; };
+  /* a member's row opened on Members, its acts and capability boxes drawn (interface-shell's row panel) */
+  const openRow = async (p, id) => {
+    const ctl = p.locator(`#cs-main [data-shell="row"][data-id="${id}"]`).first();
+    if ((await ctl.getAttribute("aria-expanded").catch(() => null)) !== "true") { await ctl.click(); await settle(p); }
+  };
   /* Mai joined the walk's project and seated as its second owner (the owner standing down needs two) */
   const maiOwner = once(async () => {
+    await maiIn();
     await go(F, project);
     await act(F, "projectinvite", { fields: { "project-invite": who.member.handle }, reason: "She lives in flat 4." });
     await go(M, project);
@@ -114,9 +125,16 @@ export function localReach(ctx) {
     await F.waitForURL((u) => u.pathname.startsWith("/app/question/"), { timeout: 15000 });
     return F.url();
   });
-  const deferQ = freshQuestion("Will the city inspect the roof again this winter?");
-  const dismissQ = freshQuestion("Did the landlord's insurer pay for the last repair?");
-  const askQ = freshQuestion("Does the notice set a date for the roof repair?");
+  /* a fresh question citing the walk's vouched notice: a question's set-aside fold, its plan and state b are drawn only once it cites */
+  const citedQ = (title) => once(async () => {
+    const q = await freshQuestion(title)();
+    if (!ctx.made.document) throw new Error("the walk holds no vouched document to cite (R9 step 6 did not record one)");
+    await readAndCite(walk, F, { document: ctx.made.document, question: q, prefix: "R21 · " });
+    return q;
+  });
+  const deferQ = citedQ("Will the city inspect the roof again this winter?");
+  const dismissQ = citedQ("Did the landlord's insurer pay for the last repair?");
+  const askQ = citedQ("Does the notice set a date for the roof repair?");
   /* an action in the walk's project, its date passed with no reply */
   const action = once(async () => {
     await go(F, at(`/app/actionnew/${encodeURIComponent(projectId())}`));
@@ -133,6 +151,8 @@ export function localReach(ctx) {
   });
   /* an ordinance and an office the record follows, made on People (each lands on its own page) */
   const other = (name, kind, note) => once(async () => {
+    /* People draws its "Show" choice once the record follows someone */
+    await landlord();
     await go(F, at("/app/people"));
     await F.locator("#people-show").selectOption(kind === "office" ? "offices" : "ordinances");
     await act(F, "search");
@@ -171,7 +191,9 @@ export function localReach(ctx) {
     await go(F, at("/app/members"));
     const box = F.locator('input[name="mi-caps"][value="administer"]');
     await reveal(box); await box.check(); await settle(F);
-    await type(F, "mi-id", id); await type(F, "mi-cover", cover); await settle(F);
+    await type(F, "mi-id", id); await type(F, "mi-cover", cover);
+    /* a grant that includes administering is confirmed first (R72): the first press asks, nothing is sent until yes */
+    await act(F, "memberadd", { reason: "The team shares the administration." });
     const yes = F.locator('input[name="mi-ok"][value="yes"]');
     await yes.first().waitFor({ state: "visible", timeout: 10000 }); await yes.first().check(); await settle(F);
     await act(F, "memberadd", { reason: "The team shares the administration." });
@@ -197,6 +219,7 @@ export function localReach(ctx) {
   });
   const lea = newMember("lea", "Lea, from flat 2", "lea-m", true);
   const ned = newMember("ned", "Ned, from flat 7", "ned-o", false);
+  const leaHome = firstHome(lea), nedHome = firstHome(ned);
   /* her first Home: from the join screen's own link, once */
   const firstHome = (who) => once(async () => {
     const { page } = await who();
@@ -206,6 +229,7 @@ export function localReach(ctx) {
   });
   /* Mai's own projects: one hidden from the founder, one to which she invites the founder (the founder's queue then holds it) */
   const maiProject = (title, invite) => once(async () => {
+    await maiIn();
     await go(M, at("/app/projects"));
     const v = M.locator("#projects-visibility-hidden");
     await reveal(v); await v.check();
@@ -219,6 +243,7 @@ export function localReach(ctx) {
   const maiInvites = maiProject("Library branch hours on Lakeshore", who.founder.handle);
   /* Mai asks to join the findable project and the founder answers yes from her queue (a join answer: what she answered) */
   const joinAnswered = once(async () => {
+    await maiIn();
     await ownFindable();
     await go(M, ctx.own.project);
     await act(M, "projectrequest", { reason: "I live in flat 6 and the heating is out." });
@@ -233,6 +258,7 @@ export function localReach(ctx) {
     await go(T, project);
     await act(T, "projectjoin", { reason: "I was invited." });
     await go(F, at("/app/members"));
+    await openRow(F, "teo");
     const box = F.locator("#mc-teo-contribute");
     await reveal(box); await box.uncheck();
     await act(F, "membercaps", { which: '[data-member="teo"]', password: who.founder.password, reason: "He reads for now." });
@@ -240,6 +266,7 @@ export function localReach(ctx) {
   /* Teo may start a hidden project, starts one, and is then removed from the team: no owner of it is active (the rescue) */
   const orphaned = once(async () => {
     await go(F, at("/app/members"));
+    await openRow(F, "teo");
     const box = F.locator("#mc-teo-create_projects");
     await reveal(box); await box.check();
     await act(F, "membercaps", { which: '[data-member="teo"]', password: who.founder.password, reason: "He runs the flat 9 work." });
@@ -250,16 +277,16 @@ export function localReach(ctx) {
     await T.waitForURL((u) => u.pathname.startsWith("/app/project/"), { timeout: 15000 });
     const url = T.url();
     await go(F, at("/app/members"));
+    await openRow(F, "teo");
     await act(F, "memberset", { which: '[data-member="teo"][data-status="revoked"]', password: who.founder.password, reason: "He moved out." });
     return url;
   });
-  /* the team's places: no profile chosen and a place asked for that none covers; put back after */
+  /* the team's places: no profile chosen (Elsewhere then lists nothing); put back after */
   const noPlaces = once(async () => {
     await go(F, at("/app/places"));
     const ticked = [];
     for (const box of await F.locator("#cs-main input[data-profile]").all()) if (await box.isChecked()) { ticked.push(await box.getAttribute("id")); await box.uncheck(); }
     if (ticked.length) await act(F, "profilesset", { password: who.founder.password, reason: "The walk asks for a place none covers." });
-    await act(F, "placewanted", { fields: { "pl-want": "Reno, Nevada" }, password: who.founder.password });
     return ticked;
   });
   const restorePlaces = async () => {
@@ -291,6 +318,9 @@ export function localReach(ctx) {
   const MAI_NOTE = Buffer.from("Flat 4, 14 Lakeshore Row. The stairwell light has been out since 3 October 2026.\n");
   const maiUpload = once(async () => { await maiOwner(); return upload(M, who.member.password, async () => question, "flat-4-stairwell.txt", MAI_NOTE, "My note on the stairwell light.")(); });
 
+  /* the welcome on a first Home: offered to continue, or running (screens-wizards' guide) */
+  const WELCOME = '[data-guide="start"], [data-guide-state="running"]';
+
   /* ---- the states ---- */
   const R = {};
   R["document:held"] = { reach: state({ sel: ['#cs-main [data-held="1"]'], words: ["document.held.says"] }, async (p) => {
@@ -306,26 +336,22 @@ export function localReach(ctx) {
     await go(p, project);
     await act(p, "noticeprepare", { which: '[data-mode="open"]' });
   }) };
-  R["project:isn't in this project"] = { page: () => M, reach: state({ words: ["screen.project.notjoined"] }, async (p) => { await ownFindable(); await go(p, ctx.own.project); }) };
+  R["project:isn't in this project"] = { page: asMai, reach: state({ words: ["screen.project.notjoined"] }, async (p) => { await ownFindable(); await go(p, ctx.own.project); }) };
   R["project:every owner is gone"] = { rank: 3, expect: [/^PROJECT_SEEN_NOT_A_PARTICIPANT$/], reach: state({ sel: ["#state-rescue", '[data-act="projectownerrescue"]'] }, async (p) => go(p, await orphaned())) };
   R["question:deferred"] = { reach: state({ sel: ['[data-aside="deferred"]'] }, async (p) => {
     await go(p, await deferQ());
-    await reveal(p.locator('details[data-aside="set"] summary'));
-    await p.locator('details[data-aside="set"]').first().evaluate((d) => { d.open = true; });
+    await reveal(p.locator("#question-aside-0"));
     await p.locator("#question-aside-0").check();
     await act(p, "proposedispose", { fields: { "question-aside-why": "The inspection is not due until spring." }, which: '[data-which="1"]' });
   }) };
   R["question:dismissed"] = { reach: state({ sel: ['[data-aside="dismissed"]'] }, async (p) => {
     await go(p, await dismissQ());
-    await p.locator('details[data-aside="set"]').first().evaluate((d) => { d.open = true; });
+    await reveal(p.locator("#question-aside-1"));
     await p.locator("#question-aside-1").check();
     await act(p, "proposedispose", { fields: { "question-aside-why": "The insurer is not part of this project." }, which: '[data-which="1"]' });
   }) };
   R["question:each passage is asked"] = { reach: state({ sel: ["#state-b"] }, async (p) => {
-    const q = await askQ();
-    if (!ctx.made.document) throw new Error("the walk holds no vouched document to cite (R9 step 6 did not record one)");
-    await readAndCite(walk, p, { document: ctx.made.document, question: q, prefix: "R21 · " });
-    await go(p, q);
+    await go(p, await askQ());
   }) };
   R["question:own reading"] = { reach: state({ sel: ['[data-reading="member"]'], words: ["question.reading.by.member"] }, async (p) => go(p, ctx.own.question)) };
   R["review-copy:as a file"] = { reach: state({ sel: ["[data-recall]"] }, async (p) => {
@@ -335,10 +361,11 @@ export function localReach(ctx) {
     await act(p, "reviewexport");
   }) };
   R["plan:several plans"] = { reach: state({ words: ["screen.plan.list.title"], sel: ['#cs-main a[href^="/app/plan/"] >> nth=1'] }, async (p) => {
-    for (const title of ["Get the roof repaired before winter", "Keep a record of every leak"]) {
-      await go(p, project);
-      await act(p, "planopen", { fields: { "project-plan": title }, reason: "The tenants want the repair made." });
-    }
+    /* one open plan for the project's own matter (a second is refused SUBJECT_IN_ACTIVE_PLAN), one from a question of it */
+    await go(p, project);
+    await act(p, "planopen", { fields: { "project-plan": "Get the roof repaired before winter" }, reason: "The tenants want the repair made." });
+    await go(p, await askQ());
+    await act(p, "planopen", { fields: { "question-plan": "Get a date for the repair" }, reason: "The tenants want a date." });
     await go(p, at(`/app/plan/${encodeURIComponent(projectId())}`));
   }) };
   R["plan:no plan"] = { reach: state({ words: ["screen.plan.none"] }, async (p) => go(p, at(`/app/plan/${encodeURIComponent(idOf(ctx.own.project))}`))) };
@@ -366,16 +393,16 @@ export function localReach(ctx) {
   R["person:office"] = { reach: state({ words: ["screen.person.ties.none.office"] }, async (p) => go(p, await office())) };
   /* Home's first visits, each on the new member's own device; Teo's Home before he is in any project or a project is findable */
   R["home:on a new member's first visit \\(one who may start"] = { page: async () => (await lea()).page,
-    reach: state({ sel: ['[data-guide-state="running"]'], none: ["screen.home.needsyou", "screen.home.since"] }, async () => firstHome(lea)()) };
+    reach: state({ sel: [WELCOME], none: ["screen.home.needsyou", "screen.home.since"] }, async () => leaHome()) };
   R["home:on a new member's first visit \\(one who may not"] = { page: async () => (await ned()).page,
-    reach: state({ sel: ['[data-guide-state="running"]'], words: ["screen.home.join.heading"] }, async () => {
+    reach: state({ sel: [WELCOME], words: ["screen.home.join.heading"] }, async () => {
       await ownFindable();
       await go(F, project);
       await act(F, "projectinvite", { fields: { "project-invite": "ned-o" }, reason: "He lives in flat 7." });
-      await firstHome(ned)();
+      await nedHome();
     }) };
   R["home:for a member who"] = { rank: -1, page: () => T, reach: state({ words: ["screen.home.join.heading", "screen.home.join.none"] }, async (p) => go(p, at("/app"))) };
-  R["members:as a member"] = { page: () => M, reach: state({ sel: ['table[data-list="members"]'], words: ["screen.members.member.note"] }, async (p) => go(p, at("/app/members"))) };
+  R["members:as a member"] = { page: asMai, reach: state({ sel: ['table[data-list="members"]'], words: ["screen.members.member.note"] }, async (p) => go(p, at("/app/members"))) };
   R["members:an administrator's"] = { reach: state({ sel: ["#cs-main [data-removal]"] }, async (p) => { await removalOpen(); await go(p, at("/app/members")); }) };
   R["security:an"] = { reach: state({ sel: ['[data-risk="ordinary"]'], words: ["screen.security.ordinary.head"] }, async (p) => go(p, at("/app/security"))) };
   R["account:a newer"] = { note: "account, a newer version: the copy's /version answer was given by the walk's own route (no newer release is installed locally)",
@@ -397,24 +424,22 @@ export function localReach(ctx) {
   }) };
   R["updates:nothing"] = { reach: state({ sel: ['#cs-main [data-state="none"]'], words: ["updates.none"] }, async (p) => go(p, at("/app/updates"))) };
   R["translations:a"] = { reach: state({ sel: ['[data-state="nolanguages"]'] }, async (p) => go(p, at("/app/translations"))) };
-  R["projects:a new"] = { page: async () => (await lea()).page, reach: state({ words: ["projects.empty.note"] }, async (p) => { await firstHome(lea)(); await go(p, at("/app/projects")); }) };
+  R["projects:a new"] = { page: async () => (await lea()).page, reach: state({ words: ["projects.empty.note"] }, async (p) => { await leaHome(); await go(p, at("/app/projects")); }) };
   R["projects:for"] = { page: () => T, reach: state({ words: ["screen.projects.nocreate"] }, async (p) => go(p, at("/app/projects"))) };
   R["unavailable:something"] = { expect: [/^PROJECT_SEEN_NOT_A_PARTICIPANT$/, /^NOT_A_PARTICIPANT$/, /^NOT_VISIBLE$/],
     reach: state({ sel: ['#cs-main [data-unavailable="notyours"]'] }, async (p) => go(p, await maiHidden())) };
   const WHOAMI = (u) => /[?&]op=whoami(&|$)/.test(String(u));
-  R["unavailable:your"] = { note: "unavailable, out of reach: the copy's whoami was answered 503 by the walk's own route", expect: [503],
+  R["unavailable:your"] = { note: "unavailable, out of reach: the copy's whoami was answered 503 by the walk's own route", expect: [503, "ok: false"],
     reach: state({ sel: ['#cs-main [data-unavailable="unreachable"]'] }, async (p) => {
       await p.route(WHOAMI, (r) => r.fulfill({ status: 503, contentType: "application/json", body: '{"ok":false}' }));
       await go(p, at("/app"));
     }),
     after: async (p) => { await p.unroute(WHOAMI).catch(() => {}); await go(p, at("/app")); } };
   /* the team's places last: what they cover is put back after Elsewhere */
-  R["places:a state with no"] = { rank: 4, reach: state({ sel: ['[data-state="noprofile"]'], words: ["screen.places.noprofile.heading"] }, async (p) => { await noPlaces(); await go(p, at("/app/places")); }) };
   R["elsewhere:a place"] = { rank: 4, reach: state({ words: ["elsewhere.none.head"] }, async (p) => { await noPlaces(); await go(p, at("/app/elsewhere")); }), after: restorePlaces };
-  /* the queue: an empty one, or one that cannot say so, on Teo's page (whichever the copy's feeds answer: the other is reported) */
+  /* the queue with nothing waiting, on Teo's page (his queue holds nothing) */
   R["queue:the queue"] = { rank: 1, page: () => T, reach: state({ words: ["screen.queue.uptodate"] }, async (p) => go(p, at("/app/queue"))) };
-  R["queue:an all-clear"] = { rank: 1, page: () => T, reach: state({ words: ["queue.allclear.withheld"] }, async (p) => go(p, at("/app/queue"))) };
-  R["queue:an invitation"] = { reach: state({ sel: ['#cs-main [data-act="projectjoin"]'] }, async (p) => { await maiInvites(); await go(p, at("/app/queue")); }) };
+    R["queue:an invitation"] = { reach: state({ sel: ['#cs-main [data-act="projectjoin"]'] }, async (p) => { await maiInvites(); await go(p, at("/app/queue")); }) };
   R["queue:choosing"] = { reach: state({ sel: ['#cs-main .cs-hold [data-act="taskresolve"][data-multi="1"]'] }, async (p) => {
     await maiInvites();
     await go(p, at("/app/queue/choose"));
@@ -435,9 +460,14 @@ export function localReach(ctx) {
   R["finder:Find"] = { reach: state({ words: ["find.browse.says"] }, async (p) => go(p, at("/app/finder"))) };
   R["finder:citing"] = { reach: state({ sel: ["#finder-cite-q"] }, async (p) => {
     await go(p, at("/app/finder"));
-    const picks = p.locator('#cs-main input.mk-pick[id^="finder-pick-"]');
-    const n = Math.min(await picks.count(), 3);
-    for (let i = 0; i < n; i += 1) await picks.nth(i).check();
+    /* "Hold these together" holds documents: the rows Find marks as one (find.row.kind.document) */
+    const kind = word("find.row.kind.document");
+    const ids = await p.evaluate((kind) => [...document.querySelectorAll('#cs-main input.mk-pick[id^="finder-pick-"]')].filter((b) => {
+      for (let e = b.parentElement; e && e.id !== "cs-main"; e = e.parentElement) if (e.querySelector("a")) return new RegExp(`(^|\\s)${kind}(\\s|$)`).test(e.innerText);
+      return false;
+    }).map((b) => b.id).slice(0, 2), kind);
+    if (ids.length < 2) throw new Error(`Find lists ${ids.length} documents to hold together, not two`);
+    for (const id of ids) { await p.locator(`[id="${id}"]`).check(); await settle(p); }
     await act(p, "select");
     await act(p, "cite", { which: ":not([data-cite])" });
   }) };
