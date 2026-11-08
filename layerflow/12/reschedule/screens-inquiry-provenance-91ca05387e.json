@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "screens-inquiry",
+  "provider": "provenance",
+  "provider_pr": 1002,
+  "provider_land": "91ca05387e413c347ee7cc316511287a67de63cc",
+  "at": "2026-11-08T11:04:40Z",
+  "key": "screens-inquiry<-provenance@91ca05387e",
+  "why": "added REWRITTEN_REPLAY_GRADE, rawReplayOf; its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/provenance/archive-replay.test.mjs: breaking, added, naming R15, R59 (Provides before this land) while provenance's source changed: it may assert a changed answer, bio-plane/test/m/provenance/dec149.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/provenance/email.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/provenance/grade-origin.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/provenance/requirements-ids.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/provenance/unpacked.test.mjs: breaking, too large to align, bio-plane/test/m/provenance/upload.test.mjs: breaking, too large to align), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
