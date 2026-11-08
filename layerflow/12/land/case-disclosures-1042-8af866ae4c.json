@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "case-disclosures",
+  "pr": 1042,
+  "branch": "job/case-disclosures",
+  "head": "8af866ae4cdf186466b617f09e9d5cf35da58970",
+  "before": "23524f572a52a830952aaf1d999d9188c02e843e",
+  "merge": "f6943079cff268bf4bb0d2cfd9de32ead2cae5e3",
+  "at": "2026-11-08T13:51:57Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
