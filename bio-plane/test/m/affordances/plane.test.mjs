@@ -426,6 +426,34 @@ test("R13 R14 R16 R18 (D54): an administrator neither invited nor joined to a hi
   assert.ok((await offered(W.RUTH, PH)).includes("projectjoin"));
 });
 
+/* Provider notice membership (land 6316509c05; its F1, CR2-28, K5563): `isAdministrator` now answers an administrator's
+   `member:<id>` stamp for the member it names. `rescue_open` is asked through membership's `rescueRefusal` with `by` as
+   the caller stamps it, so an administrator stamped `member:<id>` is now offered the rescue, as she is by her bare id,
+   exactly where the act accepts it (R18). Before the change the fact answered false for that spelling while the act's own
+   `by` reading was the same predicate: re-tested here, fails with membership's change reverted. Controls: an ordinary
+   member's `member:<id>`, a carried-project spelling and a credential stamp open no rescue, and the act refuses them. */
+test("R14 R15 R18 (membership CR2-28): an administrator's `member:<id>` stamp opens the rescue as her bare id does, "
+   + "offered where the act accepts it; an ordinary member, a carried project and a credential do not", async () => {
+  const who = { viewer: "member:ruth", identity: "member:ruth", author: "member:ruth" };
+  const bare = await facts(W.PR, { ...who, by: "ruth" });
+  const stamped = await facts(W.PR, { ...who, by: "member:ruth" });
+  assert.equal(bare.roster.rescue_open, true);
+  assert.equal(stamped.roster.rescue_open, true, "the administrator's member:<id> stamp is answered for the member it names");
+  assert.deepEqual(deriveActs(stamped).map((a) => a.id), deriveActs(bare).map((a) => a.id));
+  assert.ok(deriveActs(stamped).some((a) => a.id === "projectownerrescue"));
+  /* the act agrees (R18): past the administrator check, refused only on the handle parameter */
+  assert.equal(codeOf(await DO(`projectownerrescue?projectId=${W.PR}&handle=__nobody__&reason=stranded&by=${E("member:ruth")}&viewer=${E("member:ruth")}`,
+    { reason: "stranded" })), "NO_SUCH_HANDLE");
+  /* controls: no administrator by any other spelling */
+  for (const by of ["member:ruth@P-1", "member:nell", "class:admin"]) {
+    const f = await facts(W.PR, { ...who, by });
+    assert.ok(f.roster === null || f.roster.rescue_open === false, by);
+    assert.ok(!deriveActs(f).some((a) => a.id === "projectownerrescue"), by);
+  }
+  assert.equal(codeOf(await DO(`projectownerrescue?projectId=${W.PR}&handle=__nobody__&reason=stranded&by=${E("member:nell")}&viewer=${E("member:ruth")}`,
+    { reason: "stranded" })), "NOT_AN_ADMIN");
+});
+
 /* citeproject-inquiry's share (T18 convert): sever and reinstate on a QUESTION, offered on the case citations the
    facts count (`cited_by_case`), never on a citation by another question, and each offer agreeing with the act.
    Re-stated for citation R15 (T47; K3102, CITATION #12 J2 (2)): a question's own leg on another question is now severed
