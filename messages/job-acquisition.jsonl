@@ -5,3 +5,4 @@
 {"at":"2026-11-08T11:30:03Z","row":"sent","n":3,"to":"bob","text":"job acquisition complete, PR #1024 ready, session session_018BhcegFMLC6xN7puaaSJT2: run status"}
 {"at":"2026-11-08T11:30:27Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-08T11:45:50Z","row":"sent","n":4,"to":"bob","text":"job acquisition complete, PR #1024 ready, session session_018BhcegFMLC6xN7puaaSJT2: run status. Revert check: unpack.test R39 now also acquires a ZIP through the archive arm and asserts via_archive, custodian, fetched_at and the archive letter on its files; checked locally that all three F1 tests fail on layer/12's acquisition source."}
+{"at":"2026-11-08T11:46:07Z","row":"outcome","n":4,"outcome":"delivered"}
