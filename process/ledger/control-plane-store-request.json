@@ -30,8 +30,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "BLOCKED",
-    "reason": "layer publish refused: 'p3 layer publish: refused: the publish touches files outside control-plane-store-request (ARC-2): .process; nothing was published'. job sync merged tranche, whose PR 980 moved the .process pin to ed90bd95d2; layer/11 still pins f390ebe4f1. The suite passes 6/6 against control-plane at 25c1342cbc (R29, R64 and the split test); no file of mine changed. Needs layer/11 brought up to tranche's pin, or your ruling.",
-    "at": "2026-11-08T01:46:35Z"
+    "state": "COMPLETE",
+    "at": "2026-11-08T01:58:39Z"
   }
 }
