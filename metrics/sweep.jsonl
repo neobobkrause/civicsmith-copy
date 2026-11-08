@@ -754,3 +754,4 @@
 {"at":"2026-11-08T21:02:54Z","row":"check","by":"layer land","live":12,"live_at":"2026-11-08T20:08:40Z","live_measured":2,"started_since":10,"job_cap":20,"startable":0}
 {"at":"2026-11-08T21:09:16Z","row":"sweep","session":"session_018Bhceg3m4o8qXzgi9JC4Ux","bob_acts":true,"bob_quiet_h":0.8,"root_context":18,"live":5,"live_measured_at":"2026-11-08T21:05:10Z","job_cap":20,"sessions":9,"job_ids":["affordances","op-declarations","plane","screens-inquiry","store-assembly"],"startable":0,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":5}
 {"at":"2026-11-08T21:23:24Z","row":"check","by":"layer land","live":5,"live_at":"2026-11-08T21:09:16Z","job_cap":20,"startable":0}
+{"at":"2026-11-08T21:41:26Z","row":"check","by":"layer land","live":5,"live_at":"2026-11-08T21:09:16Z","job_cap":20,"startable":0}
