@@ -38,8 +38,9 @@ test("F1 (coordinator 23:20; R97): with no path source registered the path reads
   assert.equal(added.length, 1);
   assert.match(added[0].detail, /still resumable/);
   assert.equal((await w.runs.read({ run: "R1", viewer: "member:ann" })).session.status, "running", "the run stays resumable");
-  /* a malformed read answers not ready, never ready */
-  assert.deepEqual(await read({}), { ok: true, state: "not_ready", ready: false, reason: "no_pair", reset_at: null });
+  /* a malformed read (half a pair) answers not ready, never ready; (F4) the pairless cascade read with no source is not ready */
+  assert.deepEqual(await read({ entry_id }), { ok: true, state: "not_ready", ready: false, reason: "no_pair", reset_at: null });
+  assert.deepEqual(await read({}), { ok: true, state: "not_ready", ready: false, reason: "unregistered", reset_at: null });
 
   /* control: a registered source answering ok */
   const said = { state: "ok" };
