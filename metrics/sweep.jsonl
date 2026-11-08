@@ -620,3 +620,4 @@
 {"at":"2026-11-08T01:38:10Z","row":"check","by":"layer publish","live":8,"live_at":"2026-11-08T01:12:22Z","live_measured":3,"started_since":5,"job_cap":20,"startable":0}
 {"at":"2026-11-08T01:43:44Z","row":"check","by":"layer publish","live":8,"live_at":"2026-11-08T01:12:22Z","live_measured":3,"started_since":5,"job_cap":20,"startable":0}
 {"at":"2026-11-08T01:54:28Z","row":"check","by":"layer publish","live":8,"live_at":"2026-11-08T01:12:22Z","live_measured":3,"started_since":5,"job_cap":20,"startable":0}
+{"at":"2026-11-08T01:59:42Z","row":"check","by":"layer land","live":8,"live_at":"2026-11-08T01:12:22Z","live_measured":3,"started_since":5,"job_cap":20,"startable":0}
