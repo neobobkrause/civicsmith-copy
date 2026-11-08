@@ -246,3 +246,4 @@
 {"at":"2026-11-08T20:09:10Z","row":"sent","n":124,"to":"bob","text":"Sweep: runtime-limits: BLOCKED."}
 {"at":"2026-11-08T20:09:26Z","row":"outcome","n":124,"outcome":"delivered"}
 {"at":"2026-11-08T21:09:53Z","row":"sent","n":125,"to":"bob","text":"Sweep: ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
+{"at":"2026-11-08T21:10:11Z","row":"outcome","n":125,"outcome":"delivered"}
