@@ -33,7 +33,7 @@ const WEIGHT = {
   standardadopt:2, lawrelate:2, casedraft:2, reopen:2, whatchangedpropose:1, statementack:2, attribute:2, reviewgrant:2, reviewcomment:1, caseimport:2,
   testify:2, acquire:1, captureupload:2, capturerequest:1, capturerequests:1, hypothesishold:1, themeread:1, instance:1, progression:1, captureprogressions:1, thread:1, progressiondefine:2, discharge:2, themedeclare:1, themeplace:1, themepropose:1, themewithdraw:2, connectionassert:2, projectinvite:2, adoptversion:2, reminderanswer:2,
   standardadopt:2, lawrelate:2, casedraft:2, whatchangedpropose:1, statementack:2, attribute:2, reviewgrant:2, reviewcomment:1, caseimport:2,
-  testify:2, acquire:1, captureupload:2, capturerequest:1, capturerequests:1, hypothesishold:1, hypothesisrevise:2, hypothesiswithdraw:3, inquirydivide:3, reevaluationrecord:2, reevaluations:1, standardinforce:1, themeread:1, instance:1, progression:1, captureprogressions:1, thread:1, progressiondefine:2, discharge:2, themedeclare:1, themeplace:1, themepropose:1, themewithdraw:2, connectionassert:2, projectinvite:2, adoptversion:2, reminderanswer:2,
+  testify:2, acquire:1, captureupload:2, capturerequest:1, capturerequests:1, hypothesishold:1, hypothesisrivals:2, explorenext:1, rivals:1, hypothesisrevise:2, hypothesiswithdraw:3, inquirydivide:3, reevaluationrecord:2, reevaluations:1, standardinforce:1, themeread:1, instance:1, progression:1, captureprogressions:1, thread:1, progressiondefine:2, discharge:2, themedeclare:1, themeplace:1, themepropose:1, themewithdraw:2, connectionassert:2, projectinvite:2, adoptversion:2, reminderanswer:2,
   taskresolve:2, groupnameset:2, groupdomainset:2, profilesset:2, officesseed:2, assistantset:2, hostingaccessset:2, grouplanguagesset:2, grouplogoset:2, passwordreset:2, signrequest:1, publishatmove:2, publishatcancel:2, enroll:2,
   bootstrap:5, selftest:1, setpassword:2, accountreferenceset:2, projectcreated:2, wizarddraft:2, wizardrevise:1, wizardsubmit:2, wizardapprove:2,
   filingrecordsent:2, owed_groupprofileset:2, owed_groupprofilevisibility:2, memberlanguageset:1, owed_websitekeymint:2, owed_joinlinkset:2,
@@ -45,10 +45,10 @@ const WEIGHT = {
   retire:3, planclose:3, filingapprove:3, personexpunge:5, adminremove:3, accountreferenceremove:3, subscriptiondisconnect:3, reviewrevoke:3, escalationend:3, escalationresume:1, wizardretire:3,
   signerrevokeown:3, importacceptwithdraw:3,
   knocksof:1, knockerconsent:3, sourcedisclose:2, sourceconsent:3, sourceconsentwithdraw:2, sourcepersonlink:2, lead:1, leadread:1, leadlook:2, leadshare:3, monitoring:1, monitorpause:1, monitorslate:1, sweeps:1,
-  release:4, attest:4, caseratify:4, docketpost:4, signerregisterown:4, claim:4, docketfile:2,
+  release:4, attest:4, caseratify:4, docketpost:4, docketrecordedition:4, signerregisterown:4, claim:4, docketfile:2,
   publish:5, publishat:5, findin:1, securitymap:1, archivelist:1, openoriginal:1, safeview:1, deepercheck:1, releasescanhold:2, securitytooladd:2, securitytooltest:1, securitytoolremove:2, aikeepaway:2, openwithwarning:2,
 };
-const OUTWARD = new Set(['owed_aisend', 'owed_airesultsend', 'filingrecordsent', 'reviewgrant', 'knock', 'owed_groupprofilevisibility', 'disclosureshown', 'accountreferenceset', 'docketpost', 'publish', 'publishat', 'owed_websitekeymint', 'owed_joinlinkset']);
+const OUTWARD = new Set(['owed_aisend', 'owed_airesultsend', 'filingrecordsent', 'reviewgrant', 'knock', 'owed_groupprofilevisibility', 'disclosureshown', 'accountreferenceset', 'docketpost', 'docketrecordedition', 'publish', 'publishat', 'owed_websitekeymint', 'owed_joinlinkset']);
 const key = op => op.startsWith('owed:') ? 'owed_' + op.slice(5).split(' ')[0] : op;
 /* a button carrying its act and weight. o: {tone, icon, out, quiet, id, help}. S26, Bob's A (DEC-295): only an act heavier than
    Reversible shows its mark; a button without one does something you can undo. */
