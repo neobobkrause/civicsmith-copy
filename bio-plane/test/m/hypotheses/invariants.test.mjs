@@ -6,12 +6,12 @@ import { hypothesesOps, HYPOTHESES_CHECKS, HYPOTHESES_TABLES } from "../../../sr
 
 const url = (op, q = {}) => { const u = new URL(`https://plane.example/?op=${op}`); for (const [k, v] of Object.entries(q)) u.searchParams.set(k, v); return u; };
 
-test("R7 hypothesesOps answers route arms for hypothesishold, hypothesisrevise, hypothesiswithdraw and hypotheses (and the notes' notewrite, noterevise, notes, noteturn, notedelete; since T41 hypothesistakeup, hypothesissetaside, noteshare, noteunshare, shares); a read's viewer comes from the query, never the body", () => {
+test("R7 hypothesesOps answers route arms for hypothesishold, hypothesisrevise, hypothesiswithdraw and hypotheses (and the notes' notewrite, noterevise, notes, noteturn, notedelete; since T41 hypothesistakeup, hypothesissetaside, noteshare, noteunshare, shares; since layer 12, F1, hypothesisrivals, explorenext, rivals); a read's viewer comes from the query, never the body", () => {
   const w = world();
   w.bundle(INQ);
   const hidden = w.fenced("INQ-2026-0009-hidden");
   const arms = hypothesesOps(w.h, url("x"), {});
-  assert.deepEqual(Object.keys(arms).sort(), ["hypotheses", "hypothesishold", "hypothesisrevise", "hypothesissetaside", "hypothesistakeup", "hypothesiswithdraw", "notedelete", "noterevise", "notes", "noteshare", "noteturn", "noteunshare", "notewrite", "shares"]);
+  assert.deepEqual(Object.keys(arms).sort(), ["explorenext", "hypotheses", "hypothesishold", "hypothesisrevise", "hypothesisrivals", "hypothesissetaside", "hypothesistakeup", "hypothesiswithdraw", "notedelete", "noterevise", "notes", "noteshare", "noteturn", "noteunshare", "notewrite", "rivals", "shares"]);
   const held = hypothesesOps(w.h, url("hypothesishold"), { inquiry: INQ, kind: "identity", statement: "Same person.", about: { from: E1, to: E2 }, by: ANN }).hypothesishold();
   assert.equal(held.ok, true);
   const id = held.hypothesis_id;

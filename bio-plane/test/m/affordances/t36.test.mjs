@@ -352,7 +352,9 @@ test("R48 R53 R61 R65: no key is an alias or a retired op; every alias the list 
     /* T53: ai-accounts' two ops the alpha screens send, graded at the plane's registration (R49), not in these tables */
     ...T53_AI_ACCOUNT_OPS,
     /* T53: filings' read, declared by op-declarations and graded at the plane's registration (R49), not in these tables */
-    "counselpacketread"];
+    "counselpacketread",
+    /* F4 (layer 12, CR2-16): the rival ops and docketrecordedition, graded from their owners' declared rows (R49), not in these tables */
+    "hypothesisrivals", "explorenext", "rivals", "docketrecordedition"];
   /* R69: the browser acts are no ops, so op-grades neither grades nor names them */
   for (const k of keys.filter((k) => !NOT_YET_GRADED.includes(k) && !R69_ACTS.includes(k)))
     assert.ok(gradedOrPublished(k) || UNGATED.includes(k), `${k} is an op op-grades grades or names`);
