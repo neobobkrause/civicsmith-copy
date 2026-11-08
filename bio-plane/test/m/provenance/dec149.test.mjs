@@ -6,7 +6,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, sha, V } from "./fixture.mjs";
 import { PROVENANCE_ACT_CHECKS } from "../../../src/provenance/checks.mjs";
-import { ARCHIVE_VIA, ARCHIVE_CAPTURE_GRADE, DOORBELL_VIA } from "../../../src/provenance/index.mjs";
+import { ARCHIVE_VIA, DOORBELL_VIA } from "../../../src/provenance/index.mjs";
+import * as P from "../../../src/provenance/index.mjs";
 import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
@@ -29,13 +30,18 @@ test("R24, DEC-149 (index.mjs:899): 'your group's Civicsmith fetched these bytes
   assert.doesNotMatch(why, OLD);
 });
 
-test("R25, DEC-149 (index.mjs:905): 'your group's Civicsmith fetched these bytes only through an archive replay (…), …'", () => {
+test("R25, R85, DEC-149: an archive replay's why names your team's Civicsmith, the archive as custodian and the snapshot as fetch date", () => {
   const w = world();
-  const s = sha("archived");
-  w.prov.recordReceipt({ addressNorm: "e.org/a", captureSha: s, retrieved: T, via: ARCHIVE_VIA });
-  const why = w.prov.captureGrade(s).why;
-  assert.equal(why, word("provenance.why.group_civicsmith_fetched_bytes", { archive_via: ARCHIVE_VIA, archive_capture_grade: ARCHIVE_CAPTURE_GRADE }));
-  assert.doesNotMatch(why, OLD);
+  const s = sha("archived"), r = sha("archived rewritten");
+  w.prov.recordReceipt({ addressNorm: "e.org/a", captureSha: s, retrieved: T, via: ARCHIVE_VIA,
+                         retrievalLocator: "https://web.archive.org/web/20240102030405id_/https://e.org/a" });
+  w.prov.recordReceipt({ addressNorm: "e.org/b", captureSha: r, retrieved: T, via: ARCHIVE_VIA });
+  for (const why of [w.prov.captureGrade(s).why, w.prov.captureGrade(r).why]) {
+    assert.match(why, /your team's Civicsmith/);
+    assert.doesNotMatch(why, OLD);
+  }
+  assert.match(w.prov.captureGrade(s).why, /web\.archive\.org.*2024-01-02T03:04:05Z/);
+  assert.match(w.prov.captureGrade(r).why, new RegExp(`\\b${P.REWRITTEN_REPLAY_GRADE}\\b`));
 });
 
 test("R51, DEC-149 (index.mjs:923): '… is proven by the receipt your group's Civicsmith itself made at ${address}'", () => {

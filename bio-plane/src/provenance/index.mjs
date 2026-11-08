@@ -169,14 +169,40 @@ function bundleGate(col, viewer) {
 /** The receipt `via` of a capture read through an archive replay (D-96's split; ARCHIVE-FALLBACK.md). */
 export const ARCHIVE_VIA = "archive.org";
 
-/** R25 · D-693 (BOB #35, 2026-09-25 07:55Z): what a capture whose only recorded source is an archive replay earns on
- *  the capture axis, DERIVED rather than typed: one rank below the direct ceiling in the same BASIS_GRADES array a
- *  leg is compared against, because grade tracks directness and the archive hop is one more party between the
- *  record and the publisher (AUTHORITY-AND-TRUST's transitive trust "with disclosure and grade adjustment";
- *  ARCHIVE-FALLBACK.md's two-hop chain). Move the ceiling and this letter moves with it; null rather than a lie if
- *  the ceiling were ever the weakest letter. The one definition, exported for every reader (op=acquire's stamp on
- *  an archive capture, the earned registry). */
-export const ARCHIVE_CAPTURE_GRADE = BASIS_GRADES[BASIS_GRADES.indexOf(EARNED_CAPTURE_CEILING) + 1] ?? null;
+/** R25, R85 · BD-18 (Bob, 7 Nov 2026; Intake Doctrine §3, "Archive replays"): what a capture read through a replay of
+ *  the archive's RAW bytes earns on the capture axis. A web archive fetched the document from its publisher and held
+ *  it before serving it to the group, so a replay of the publisher's response exactly as the archive fetched it (the
+ *  Wayback Machine's unmodified `id_` mode, the mode `cdx.mjs` and `capture-sources/memento.mjs` ask for) is the
+ *  ceiling, labelled "via archive", its snapshot date its fetch date and the archive its custodian. It replaces
+ *  D-693's "one rank below the ceiling for every archive replay", which BD-18 overrules. DERIVED, never typed: move
+ *  the ceiling and this letter moves with it. The one definition, exported for every reader (op=acquire's stamp on
+ *  an archive capture, the earned registry). DEC-81's co-attestation of a B (a second archive or a trusted
+ *  timestamp, since the archive cannot co-attest its own copy) is the case's and attestation's, not this letter's. */
+export const ARCHIVE_CAPTURE_GRADE = EARNED_CAPTURE_CEILING;
+
+/** R85 · BD-18: what a REWRITTEN replay earns (the archive's toolbar, its rewritten links: any replay whose receipt
+ *  does not name the raw mode). It is not the publisher's document: the Intake Doctrine's Grade C, reference only,
+ *  the letter one rank below the ceiling in BASIS_GRADES (null rather than a lie if the ceiling were ever the weakest
+ *  letter). The one definition, exported. */
+export const REWRITTEN_REPLAY_GRADE = BASIS_GRADES[BASIS_GRADES.indexOf(EARNED_CAPTURE_CEILING) + 1] ?? null;
+
+/** R85: the raw replay of a Wayback-style archive: `<scheme>://<archive host>/[web/]<14-digit snapshot>id_/<original>`.
+ *  The `id_` flag is the archive's own mark that the body is the publisher's response unmodified; any other flag, or
+ *  none, is a rewritten replay. Read from the receipt's retrieval locator, which no caller writes (R15). */
+const RAW_REPLAY_LOCATOR = /^https?:\/\/([^/?#]+)\/(?:web\/)?(\d{14})id_\/(\S+)$/i;
+
+/** R85: the receipt's retrieval locator read as a raw replay, `{custodian, snapshot_at, locator, original}`, or null
+ *  for a rewritten replay, a locator of no known form, or none. `snapshot_at` is the archive's snapshot instant, a
+ *  whole-second UTC instant (R48's spelling); a snapshot that is no real instant is no raw replay. Pure. */
+export function rawReplayOf(locator) {
+  const m = RAW_REPLAY_LOCATOR.exec(typeof locator === "string" ? locator.trim() : "");
+  if (!m) return null;
+  const t = m[2];
+  const at = `${t.slice(0, 4)}-${t.slice(4, 6)}-${t.slice(6, 8)}T${t.slice(8, 10)}:${t.slice(10, 12)}:${t.slice(12, 14)}Z`;
+  const d = new Date(at);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 19) + "Z" !== at) return null;
+  return { custodian: m[1].toLowerCase(), snapshot_at: at, locator: locator.trim(), original: m[3] };
+}
 
 /** R51 · N364 (Bob, K509 (3)): the receipt `via` of material handed to the group through the doorbell and brought in
  *  by a member's pull (`capture.pullKnock`, its R65), at the address `knock:<knockId>`. The material was RECEIVED,
@@ -1289,11 +1315,10 @@ class Provenance {
     if (vias.includes("direct"))
       answers.push({ grade: EARNED_CAPTURE_CEILING, route: "direct", determined: true, basis: "measured",
                      why: word("provenance.why.group_civicsmith_fetched", { earned_capture_ceiling: String(EARNED_CAPTURE_CEILING) }) });
-    /* R25 · D-693: read only through an archive replay: one rank below, measured. */
-    if (vias.includes(ARCHIVE_VIA))
-      answers.push({ grade: ARCHIVE_CAPTURE_GRADE, route: "archive", determined: ARCHIVE_CAPTURE_GRADE !== null,
-                     basis: "measured",
-                     why: word("provenance.why.group_civicsmith_fetched_bytes", { archive_via: String(ARCHIVE_VIA), archive_capture_grade: String(ARCHIVE_CAPTURE_GRADE) }) });
+    /* R25, R85 · BD-18: read through an archive replay. A replay of the archive's raw bytes earns the ceiling "via
+       archive", its snapshot date as its fetch date and the archive named as custodian; a rewritten replay, or one
+       whose receipt does not show the raw mode, earns Grade C, reference only. Measured either way. */
+    if (vias.includes(ARCHIVE_VIA)) answers.push(this.#archive(f));
     /* R59 · N688 (K1852 (1)): a file cut out of an archive the record holds: one answer per receipt, each its
        archive's, in the receipts' locator order so that between two equal archives the answer is always the same. */
     if (vias.includes(UNPACKED_VIA))
@@ -1324,6 +1349,32 @@ class Provenance {
     return { grade: null, route: vias.join(","), determined: false, basis: "CAPTURE_GRADE_VIA_UNRULED",
              ceiling: EARNED_CAPTURE_CEILING,
              why: word("provenance.why.bytes_served_route", { vias: String(vias.join(", ")) }) };
+  }
+
+  /* R85 · BD-18: the answer of a capture read through an archive replay. Of its `archive.org` receipts, a raw replay
+     (R85's locator) stands over a rewritten one; among raw replays the earliest snapshot, then the locator, so the
+     answer is always the same. `replay` names what the grade was read from: `raw`, and for a raw replay the archive
+     as `custodian`, the snapshot instant as `fetched_at` and the replay's locator; for a rewritten one the locator it
+     was served at (null when none was recorded) and `reference_only: true`. */
+  #archive(f) {
+    const locs = f.locs.filter((l) => l.via === ARCHIVE_VIA);
+    const raw = locs.map((l) => rawReplayOf(l.retrieval_locator)).filter(Boolean)
+      .sort((x, y) => cmp(x.snapshot_at, y.snapshot_at) || cmp(x.locator, y.locator))[0];
+    if (raw)
+      return { grade: ARCHIVE_CAPTURE_GRADE, route: "archive", determined: ARCHIVE_CAPTURE_GRADE !== null, basis: "measured",
+               via_archive: true,
+               replay: { raw: true, custodian: raw.custodian, fetched_at: raw.snapshot_at, locator: raw.locator },
+               why: localize("provenance.why.archive_raw_replay",
+                 "your team's Civicsmith read these bytes through an archive's replay of the publisher's own response, unmodified: {custodian} fetched them from their publisher at {fetched_at} and held them before serving them, so their capture grade is {grade}, via archive, with {fetched_at} as their fetch date and {custodian} as their custodian",
+                 { custodian: String(raw.custodian), fetched_at: String(raw.snapshot_at), grade: String(ARCHIVE_CAPTURE_GRADE) }) };
+    const shown = locs.map((l) => (typeof l.retrieval_locator === "string" && l.retrieval_locator ? l.retrieval_locator : null))
+      .filter(Boolean).sort(cmp)[0] ?? null;
+    return { grade: REWRITTEN_REPLAY_GRADE, route: "archive", determined: REWRITTEN_REPLAY_GRADE !== null, basis: "measured",
+             via_archive: true, reference_only: true,
+             replay: { raw: false, locator: shown },
+             why: localize("provenance.why.archive_rewritten_replay",
+               "your team's Civicsmith read these bytes only through an archive replay that is not the publisher's raw response (the archive's own page around it, or its rewritten links), so they are not the publisher's document: their capture grade is {grade}, reference only, never the backing of a load-bearing claim",
+               { grade: String(REWRITTEN_REPLAY_GRADE) }) };
   }
 
   /* R51, R63: the answer of material RECEIVED by route `via` (`doorbell` or `upload`), never fetched: no letter, the
