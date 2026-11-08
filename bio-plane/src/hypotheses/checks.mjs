@@ -8,7 +8,8 @@
  * `noteRevise` and `noteDelete` too, with no new code. Rows changed or added in T34 and T35 await
  * `promotion`'s next stamp; (T41) C-134.20–C-134.28 the system's proposals and a note's share, awaiting the stamp too;
  * (T42, R22; N843, K2566) C-134.22 and C-134.23 re-coded in place under codes of their own, numbers and translations
- * kept, so this module never answers action-plans' `PROPOSAL_NO_RUN` or intent's `NO_SUCH_PROPOSAL`. No translation
+ * kept, so this module never answers action-plans' `PROPOSAL_NO_RUN` or intent's `NO_SUCH_PROPOSAL`; (layer 12, F1)
+ * C-134.29–C-134.33 the rival explanations' refusals, awaiting the stamp too. No translation
  * names a place. This file imports nothing. */
 
 import { word, localize } from "../setup-words/index.mjs";
@@ -75,4 +76,17 @@ export const HYPOTHESES_CHECKS = {
     translation: word("refusal.NO_SUCH_SHARE") },
   NARRATIVE_NOT_A_LEG: { check: "C-134.28", where: `${leg} > is-narrative-leg`,
     translation: word("refusal.NARRATIVE_NOT_A_LEG") },
+  /* F1 (layer 12, CR2-19; BD-17, IV-H1, IV-H2; the ux lane's DEC-502 words, keyed by code): the rivals and the mark, awaiting
+     promotion's stamp. The machine's refusal is this module's own `MACHINE_CANNOT_MARK_RIVAL` (C-134.32), never sources'
+     `MACHINE_CANNOT_MARK` (C-121.7), whose word names a paid service. */
+  RIVALS_TOO_FEW: { check: "C-134.29", where: act("hypothesisRivals"),
+    translation: word("refusal.RIVALS_TOO_FEW") },
+  RIVALS_TOO_MANY: { check: "C-134.30", where: act("hypothesisRivals"),
+    translation: word("refusal.RIVALS_TOO_MANY") },
+  NOT_IN_INQUIRY: { check: "C-134.31", where: act("hypothesisRivals"),
+    translation: word("refusal.NOT_IN_INQUIRY") },
+  MACHINE_CANNOT_MARK_RIVAL: { check: "C-134.32", where: act("exploreNext"),
+    translation: word("refusal.MACHINE_CANNOT_MARK_RIVAL") },
+  NOT_A_RIVAL: { check: "C-134.33", where: act("exploreNext"),
+    translation: word("refusal.NOT_A_RIVAL") },
 };
