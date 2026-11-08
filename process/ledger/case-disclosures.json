@@ -66,7 +66,8 @@
   ],
   "prior_work": "Answer this module's provider notices (decide from your own requirements what this module must do, adapt or confirm, with a test of your own failing with the change reverted where code changes) and meet any unmet mark in build/requirements/case-disclosures.md. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-06T18:24:11Z"
+    "state": "WORKING",
+    "at": "2026-11-08T11:15:05Z",
+    "reason": "reopened: CR2-13: BD-18 follow-up to provenance CR2-6 (PR 1002): captures.test R2 pinned archive = C, and follows the archive-replay grade (raw replay B via archive, rewritten replay C)"
   }
 }
