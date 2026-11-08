@@ -1,0 +1,9 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "control-plane-door-reading",
+  "attempt": 2,
+  "branch": "job/control-plane-door-reading",
+  "early": [],
+  "at": "2026-11-08T01:25:29Z"
+}
