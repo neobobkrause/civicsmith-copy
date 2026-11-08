@@ -178,6 +178,14 @@ const t53Standin = (op) => hasWord(`act.${op}.does`) ? word(`act.${op}.does`) : 
  *  the tests can name them. */
 export const T53_AI_ACCOUNT_OPS = Object.freeze(["aiaccountadd", "aiaccountswitch"]);
 
+/** CR2-16 (layer 12; F4; hypotheses F1, BD-17; the ux lane's DEC-502, DEC-504, lane PR 1015): the rival explanations' three ops
+ *  (`hypothesisrivals`, `explorenext`, `rivals`) and the docket's `docketrecordedition`, each under its own `act.<op>.does` word the
+ *  design's reads list for this module now gives (`mock-acts.js`), held before their owners declare them (K4248: this module cannot
+ *  read op-declarations), so the door rows `hypotheses` adds find an explanation (`op-declarations` R34). Their grades are their
+ *  owners' declared rows (`op-grades` R49), so R12's totality needs no row here. Exported so the tests can name them. */
+export const CR2_RIVAL_OPS = Object.freeze(["hypothesisrivals", "explorenext", "rivals"]);
+export const CR2_DESIGN_OPS = Object.freeze([...CR2_RIVAL_OPS, "docketrecordedition"]);
+
 /** The ops held, in the design's order (R48, R61). F1 (T53; ai-accounts R35, wizard-scripts' `RETIRED_ACTS`): the twelve ai-accounts ops
  *  T53 retired (the group key's four, the account reference's two, `subscriptiondisconnect`, the project account's five) are not held. */
 export const ACT_HELP_OPS = Object.freeze([
@@ -237,6 +245,7 @@ export const ACT_HELP_OPS = Object.freeze([
   /* T53 (R48, R62): the design's reads list now gives this module these three `does` words */
   "counselpacketexport", "counselpacketread", "linecurrentthrough",
   ...T53_AI_ACCOUNT_OPS,
+  ...CR2_DESIGN_OPS,
   ...T51_DESIGN_OPS,
   ...T51_OWED_OPS,
   ...T51_STANDARD_OPS,
