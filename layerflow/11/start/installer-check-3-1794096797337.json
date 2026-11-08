@@ -1,0 +1,9 @@
+{
+  "row": "start",
+  "layer": 11,
+  "module": "installer-check",
+  "attempt": 3,
+  "branch": "job/installer-check",
+  "early": [],
+  "at": "2026-11-08T00:13:17Z"
+}
