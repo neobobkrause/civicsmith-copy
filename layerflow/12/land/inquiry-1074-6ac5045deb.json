@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "inquiry",
+  "pr": 1074,
+  "branch": "job/inquiry-2",
+  "head": "6ac5045debf78c393b08dffcfc2a70fd68eb27de",
+  "before": "b68da05ec2482a52204320792c308601f624585c",
+  "merge": "6100abb63cf229cb88c6c855f50abd121d3bca0e",
+  "at": "2026-11-08T20:36:12Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
