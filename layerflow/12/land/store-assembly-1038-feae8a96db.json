@@ -1,0 +1,49 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "store-assembly",
+  "pr": 1038,
+  "branch": "job/store-assembly-2",
+  "head": "feae8a96db9fda487cd44b83875e984c5cb48609",
+  "before": "f6943079cff268bf4bb0d2cfd9de32ead2cae5e3",
+  "merge": "7d5b1ca260238cd0c61e8c536f6ccd53a84d5233",
+  "at": "2026-11-08T14:07:16Z",
+  "by": "bob",
+  "gate_runs": 6,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/store-assembly/cr2-30-hypotheses-steps.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/store-assembly/cr2-30-hypotheses-steps.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/store-assembly/cr2-30-hypotheses-steps.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R21, R27, R31 (Provides before this land) while store-assembly's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/store-assembly/cr2-30-hypotheses-steps.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "plane"
+  ],
+  "users_rescheduled_old_rule": [
+    "plane"
+  ],
+  "users_noticed": []
+}

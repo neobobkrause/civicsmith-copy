@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "plane",
+  "provider": "store-assembly",
+  "provider_pr": 1038,
+  "provider_land": "7d5b1ca260238cd0c61e8c536f6ccd53a84d5233",
+  "at": "2026-11-08T14:07:16Z",
+  "key": "plane<-store-assembly@7d5b1ca260",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/store-assembly/cr2-30-hypotheses-steps.test.mjs: breaking, added, naming R21, R27, R31 (Provides before this land) while store-assembly's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
