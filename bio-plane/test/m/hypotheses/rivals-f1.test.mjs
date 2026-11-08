@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { world, ANN, OUTSIDER, BOSS, INQ, E1, E2, E3 } from "./fixture.mjs";
 import { RIVALS_MIN, RIVALS_MAX, RIVAL_CODES, RIVALS_TABLES, EXPLORE_NEXT_NOTICE_KEY, exploreNextNotice,
-         SYSTEM_LABEL, HYPOTHESIS_LABEL, HYPOTHESES_CHECKS } from "../../../src/hypotheses/index.mjs";
+         SYSTEM_LABEL, HYPOTHESIS_LABEL, HYPOTHESES_CHECKS, hypothesesOps } from "../../../src/hypotheses/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
 const PROJ = "PROJ-2026-0001";
@@ -15,9 +15,11 @@ const OTHER = "INQ-2026-0003-other";
 const MACHINES = ["class:ai", "class:daemon"];
 const everything = (w) => w.rows(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`)
   .map((t) => `${t.name}:${JSON.stringify(w.rows(`SELECT * FROM "${t.name}"`))}`).join("\n");
+/* CR2-19: each rival refusal is its row of C-134 (C-134.29–.33), its translation the ux lane's `refusal.<CODE>` (DEC-502) */
 const refusedBare = (r, code) => {
-  assert.deepEqual([r.ok, r.reason, r.code, r.check], [false, code, code, null], JSON.stringify(r).slice(0, 200));
-  assert.ok(typeof r.translation === "string" && r.translation.length > 10 && typeof r.detail === "string");
+  assert.deepEqual([r.ok, r.reason, r.code, r.check], [false, code, code, HYPOTHESES_CHECKS[code].check], JSON.stringify(r).slice(0, 200));
+  assert.equal(r.translation, word(`refusal.${code}`));
+  assert.ok(typeof r.detail === "string" && r.detail.length > 0);
 };
 
 /** An open question with three hypotheses Ann holds (A, B, C), a fourth in another question, a withdrawn one, an open
@@ -183,7 +185,7 @@ test("F1 IV-H2 the order: rivals ordered by how many members currently mark each
   assert.equal(w.rows(`SELECT COUNT(*) AS n FROM hypothesis_rival_marks WHERE rival_id = ?`, B)[0].n, 0);
 });
 
-test("F1 IV-H2 the mark's refusals, each writing nothing: NO_SUCH_BUNDLE (unseen as absent), MACHINE_CANNOT_MARK (the system never marks, INV:108), NOT_A_RIVAL (a hypothesis held but not a rival, another question's rival, none named)", () => {
+test("F1 IV-H2 the mark's refusals, each writing nothing: NO_SUCH_BUNDLE (unseen as absent), MACHINE_CANNOT_MARK_RIVAL (the system never marks, INV:108; never sources' MACHINE_CANNOT_MARK), NOT_A_RIVAL (a hypothesis held but not a rival, another question's rival, none named)", () => {
   const { w, A, B, C } = setup();
   assert.equal(w.h.hypothesisRivals({ inquiry: INQ, rivals: [A, B], by: ANN }).ok, true);
   const hiddenA = w.hold({ inquiry: HIDDEN });
@@ -193,14 +195,15 @@ test("F1 IV-H2 the mark's refusals, each writing nothing: NO_SUCH_BUNDLE (unseen
   assert.equal(w.h.exploreNext({ inquiry: HIDDEN, rival: hiddenA, by: OUTSIDER }).reason, "NO_SUCH_BUNDLE");
   assert.equal(w.h.rivalsOf({ inquiry: HIDDEN, viewer: OUTSIDER }).reason, "NO_SUCH_BUNDLE");
   assert.equal(w.h.rivalHistory({ inquiry: HIDDEN, viewer: OUTSIDER }).reason, "NO_SUCH_BUNDLE");
-  for (const m of MACHINES) refusedBare(w.h.exploreNext({ inquiry: INQ, rival: "nonsense", by: m }), "MACHINE_CANNOT_MARK");
+  for (const m of MACHINES) refusedBare(w.h.exploreNext({ inquiry: INQ, rival: "nonsense", by: m }), "MACHINE_CANNOT_MARK_RIVAL");
   for (const bad of [C, hiddenA, null, "HYP-2026-0404"]) refusedBare(w.h.exploreNext({ inquiry: INQ, rival: bad, by: ANN }), "NOT_A_RIVAL");
   assert.equal(everything(w), snap);
   /* the control: a rival of this question, marked by a member */
   assert.equal(w.h.exploreNext({ inquiry: INQ, rival: A, by: ANN }).ok, true);
   assert.notEqual(everything(w), snap);
-  assert.deepEqual([...RIVAL_CODES].sort(), ["MACHINE_CANNOT_MARK", "NOT_A_RIVAL", "NOT_IN_INQUIRY", "RIVALS_TOO_FEW", "RIVALS_TOO_MANY"]);
-  for (const code of RIVAL_CODES) assert.equal(Object.hasOwn(HYPOTHESES_CHECKS, code), false, `${code} holds no row of this family`);
+  assert.deepEqual([...RIVAL_CODES].sort(), ["MACHINE_CANNOT_MARK_RIVAL", "NOT_A_RIVAL", "NOT_IN_INQUIRY", "RIVALS_TOO_FEW", "RIVALS_TOO_MANY"]);
+  assert.deepEqual(RIVAL_CODES.map((c) => HYPOTHESES_CHECKS[c].check), ["C-134.29", "C-134.30", "C-134.31", "C-134.32", "C-134.33"]);
+  assert.equal(Object.hasOwn(HYPOTHESES_CHECKS, "MACHINE_CANNOT_MARK"), false, "sources' C-121.7 is never this module's");
 });
 
 test("F1 IV-H2 what a mark never does: it touches no hypothesis, statement, history or proposal of this module, nor any other module's table; only the marks and their history move", () => {
@@ -223,3 +226,50 @@ test("F1 the rivals' tables are declared with the inquiry's sight, purged with i
   assert.deepEqual(declared.map((d) => d.name).sort(), [...RIVALS_TABLES].sort());
   for (const d of declared) assert.deepEqual([d.purge, d.export, d.sight, d.keys], ["clear", "yes", "bundle", ["bundle_id"]], JSON.stringify(d));
 });
+
+const opUrl = (op, q = {}) => { const u = new URL(`https://plane.example/?op=${op}`); for (const [k, v] of Object.entries(q)) u.searchParams.set(k, v); return u; };
+
+test("F1 R7 (CR2-19) the door: op=hypothesisrivals and op=explorenext drive the acts from the body, the member the body's stamp; op=rivals reads the rivals, and with history every change, the viewer the query's stamp; a machine's stamp and an empty body are refused, never thrown, writing nothing", () => {
+  const { w, A, B } = setup();
+  const snap = everything(w);
+  refusedBare(hypothesesOps(w.h, opUrl("explorenext"), { inquiry: INQ, rival: A, by: "class:ai" }).explorenext(), "MACHINE_CANNOT_MARK_RIVAL");
+  assert.equal(hypothesesOps(w.h, opUrl("hypothesisrivals"), { inquiry: INQ, rivals: [A, B], by: "class:ai" }).hypothesisrivals().reason, "MACHINE_CANNOT_HYPOTHESISE");
+  assert.equal(hypothesesOps(w.h, opUrl("hypothesisrivals"), null).hypothesisrivals().reason, "NO_SUCH_BUNDLE");
+  assert.equal(hypothesesOps(w.h, opUrl("explorenext"), null).explorenext().reason, "NO_SUCH_BUNDLE");
+  assert.equal(everything(w), snap);
+  const set = hypothesesOps(w.h, opUrl("hypothesisrivals"), { inquiry: INQ, rivals: [A, B], by: ANN, extra: "dropped" }).hypothesisrivals();
+  assert.deepEqual([set.ok, set.rivals], [true, [A, B]]);
+  const mark = hypothesesOps(w.h, opUrl("explorenext"), { inquiry: INQ, rival: B, by: ANN }).explorenext();
+  assert.deepEqual([mark.ok, mark.notice], [true, exploreNextNotice()]);
+  const read = hypothesesOps(w.h, opUrl("rivals", { inquiry: INQ, viewer: ANN }), {}).rivals();
+  assert.deepEqual(read.rivals.map((r) => [r.rival, r.your_next]), [[B, true], [A, false]]);
+  const hist = hypothesesOps(w.h, opUrl("rivals", { inquiry: INQ, viewer: ANN, history: "1" }), {}).rivals();
+  assert.deepEqual(hist.history.map((h) => h.act), ["add", "add", "mark"]);
+  assert.equal(hypothesesOps(w.h, opUrl("rivals", { inquiry: HIDDEN, viewer: OUTSIDER }), {}).rivals().reason, "NO_SUCH_BUNDLE");
+  /* the read's viewer is the query's stamp, never the body's */
+  assert.equal(hypothesesOps(w.h, opUrl("rivals", { inquiry: HIDDEN }), { viewer: ANN }).rivals().reason, "NO_SUCH_BUNDLE");
+});
+
+test("F1 (steps R31) isRival, what this module registers with steps: true only for a rival in the question's set and a viewer who sees the question; false for a held hypothesis not in the set, another question, an unseen question, no viewer and malformed input, never thrown", () => {
+  const { w, A, B, C } = setup();
+  assert.equal(w.h.hypothesisRivals({ inquiry: INQ, rivals: [A, B], by: ANN }).ok, true);
+  const hiddenA = w.hold({ inquiry: HIDDEN });
+  const hiddenB = w.hold({ inquiry: HIDDEN, statement: "Other." });
+  assert.equal(w.h.hypothesisRivals({ inquiry: HIDDEN, rivals: [hiddenA, hiddenB], by: ANN }).ok, true);
+  assert.equal(w.h.isRival({ question: INQ, rival: A, viewer: ANN }), true);
+  assert.equal(w.h.isRival({ question: HIDDEN, rival: hiddenA, viewer: ANN }), true);
+  for (const a of [{ question: INQ, rival: C, viewer: ANN }, { question: OTHER, rival: A, viewer: ANN },
+                   { question: HIDDEN, rival: hiddenA, viewer: OUTSIDER }, { question: INQ, rival: A, viewer: null },
+                   { question: INQ, rival: null, viewer: ANN }, {}, undefined])
+    assert.equal(w.h.isRival(a), false, JSON.stringify(a));
+});
+
+test("F1 IV-H2 with no steps bound, each rival lists no legs and says it could not read them (legs_read false), never a guess; a binding that is not a steps instance is refused, binding nothing", () => {
+  const { w, A, B } = setup();
+  assert.equal(w.h.hypothesisRivals({ inquiry: INQ, rivals: [A, B], by: ANN }).ok, true);
+  for (const r of w.h.rivalsOf({ inquiry: INQ, viewer: ANN }).rivals) assert.deepEqual([r.legs, r.legs_read], [[], false]);
+  for (const bad of [null, {}, { registerRivalSource: 1 }]) assert.equal(w.h.bindSteps(bad).reason, "STEPS_NOT_A_STEPS");
+  for (const r of w.h.rivalsOf({ inquiry: INQ, viewer: ANN }).rivals) assert.equal(r.legs_read, false);
+});
+
+test.todo("F1 IV-H2 'Evidence found while exploring' over steps' real module (steps R31): a step opened from a rival records it, and the rival lists the question's legs whose target a step opened from it produced, each with its grades and its role, in the basis's order; a leg on another product, and a step on another rival, list nothing; a mark writes no leg. Owed: build/modules.json gives hypotheses no `uses` edge to steps, so neither this module nor its tests may import steps or its published fixtures (ARC-1)");
