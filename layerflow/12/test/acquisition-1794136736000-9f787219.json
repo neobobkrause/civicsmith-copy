@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "acquisition",
+  "session": "session_018BhcegFMLC6xN7puaaSJT2",
+  "started": "2026-11-08T11:18:56Z",
+  "ended": "2026-11-08T11:22:28Z",
+  "at": "2026-11-08T11:22:28Z",
+  "minutes": 3.53,
+  "result": "pass",
+  "layer": 12,
+  "suite_seconds": 144.844,
+  "tests": {
+    "total": 403,
+    "pass": 403,
+    "fail": 0
+  }
+}
