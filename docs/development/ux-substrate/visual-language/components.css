@@ -304,6 +304,15 @@ ol.cs-ladder { list-style: none; margin: 0; padding: 0; }
 .cs-testband span { font-weight: 400; }
 .cs-shell > .cs-testband { grid-column: 1 / -1; }
 .cs-shell:has(> .cs-testband) { grid-template-rows: auto auto auto minmax(0,1fr); }
+/* DEC-503: the update band (interface-shell R92, R101): a newer version is ready. News, not a warning, so accent rather than
+   the test band's signal; it can stand beside the test band on a test deployment, each its own full-width row. */
+.cs-updband { display: flex; gap: var(--s-2); align-items: baseline; flex-wrap: wrap; padding: 6px var(--s-3); background: var(--c-accent-tint); color: var(--c-ink); border-bottom: 2px solid var(--c-accent); font: 600 var(--t-sm)/1.35 var(--f-sans); }
+.cs-updband b { color: var(--c-accent-strong); text-transform: uppercase; letter-spacing: .04em; font-size: var(--t-xs); }
+.cs-updband span { font-weight: 400; flex: 1 1 32ch; }
+.cs-updband .cs-btn { margin-left: auto; }
+.cs-shell > .cs-updband { grid-column: 1 / -1; }
+.cs-shell:has(> .cs-updband) { grid-template-rows: auto auto auto minmax(0,1fr); }
+.cs-shell:has(> .cs-testband):has(> .cs-updband) { grid-template-rows: auto auto auto auto minmax(0,1fr); }
 .cs-rail { position: relative; border-right: var(--hair); padding: var(--s-3) var(--s-2); display: grid; gap: 2px; align-content: start; background: var(--c-ground); min-width: 0; }
 /* DEC-155: the rail's width is the member's: drag its edge, or focus the edge and use the arrow keys; double-click or Home
    resets it. Narrower than 120px it becomes icons only, each with its name on hover and focus. */

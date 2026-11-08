@@ -177,7 +177,7 @@ screen('published', 'Published case', 'published', 'The public page: findings, s
 screen('imported', 'Another team\'s case', 'imported', 'An imported case in its read-only project, recreated finding by finding.',
   [('caseimport','Import a case'),('importaccept','Accept what recreated'),('importflag','Flag an issue'),('importwatch','Watch the publisher\'s docket'),('importacceptwithdraw','Withdraw an acceptance, with a reason'),('owed:importregrade K4169','View under another lens'),('owed:rerunstart K4169','Re-run this work in your own project'),('owed:citeimported DEC-382','Rest one of our questions on this'),('writinghelp','Help me write this')], [25])
 screen('docket', 'Docket', 'working', 'The case\'s public docket: corrections, withdrawals, court orders.',
-  [('docketfile','File a docket entry'),('docketpost','Post it'),('casedraft','Start the next edition'),('writinghelp','Help me write this')], [23,24])
+  [('docketfile','File a docket entry'),('docketpost','Post it'),('docketrecordedition','Post an edition\'s entry, signed'),('casedraft','Start the next edition'),('writinghelp','Help me write this')], [23,24])
 screen('docket-public', 'A case\'s docket, from outside', 'published', 'A published case\'s docket, read without an account (DEC-313; public-read R21).',
   [], [26])
 
