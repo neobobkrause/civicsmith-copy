@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 12,
+  "module": "ai-runs",
+  "round": 1,
+  "started": "2026-11-08T20:13:27Z",
+  "ended": "2026-11-08T20:17:46Z",
+  "minutes": 4.3,
+  "tested_on": "86bdfbd98fdf97d71bde5bd6b4a7e39dac3c1461",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-08T20:17:46Z"
+}
