@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 12,
+  "module": "op-declarations",
+  "cause": 1073,
+  "why": "origin's job/op-declarations at eecb25a8d8 has work layer/12 lacks: a job re-tests it: node .process/tool/p3.mjs job start op-declarations --sessions <file> --reopen \"re-test against the new interface of ai-runs\"",
+  "at": "2026-11-08T20:24:59Z",
+  "by": "bob"
+}
