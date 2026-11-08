@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "case-authoring",
+  "provider": "inquiry",
+  "provider_pr": 1028,
+  "provider_land": "7403f3ced096888c5cfd1f05182d10aa5f3aabae",
+  "at": "2026-11-08T11:41:58Z",
+  "key": "case-authoring<-inquiry@7403f3ced0",
+  "why": "added INQUIRY_RIVAL_CHECKS, Inquiry.onRivalsListed; its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/inquiry/rivals.test.mjs: breaking, too large to align), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}

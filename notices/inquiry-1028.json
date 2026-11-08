@@ -1,0 +1,49 @@
+{
+  "row": "notice",
+  "at": "2026-11-08T11:41:58Z",
+  "key": "inquiry:1028",
+  "provider": "inquiry",
+  "ids": [],
+  "pr": 1028,
+  "users": [
+    "action-plans",
+    "actions",
+    "answer-envelope",
+    "case-account",
+    "conformance",
+    "consequences",
+    "control-plane",
+    "docket",
+    "intent",
+    "investigation",
+    "notice-producers",
+    "op-specs-late",
+    "project-stage",
+    "publication",
+    "queue",
+    "queue-producers",
+    "ratification",
+    "reevaluation",
+    "scheduler",
+    "screens-document",
+    "store-assembly",
+    "store-door",
+    "store-jobs"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "INQUIRY_RIVAL_CHECKS",
+      "Inquiry.onRivalsListed"
+    ],
+    "changed": [],
+    "kinds": [],
+    "signatures": []
+  },
+  "layer_flow": {
+    "layer": 12,
+    "provides": true,
+    "rescheduled": true
+  }
+}
