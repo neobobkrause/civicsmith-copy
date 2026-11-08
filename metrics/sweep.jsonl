@@ -671,3 +671,4 @@
 {"at":"2026-11-08T11:25:49Z","row":"check","by":"layer publish","live":13,"live_at":"2026-11-08T11:12:40Z","live_measured":6,"started_since":7,"slots_working":11,"published_free":2,"job_cap":20,"startable":0}
 {"at":"2026-11-08T11:35:56Z","row":"check","by":"layer publish","live":14,"live_at":"2026-11-08T11:12:40Z","live_measured":6,"started_since":8,"slots_working":11,"published_free":3,"job_cap":20,"startable":0}
 {"at":"2026-11-08T11:41:43Z","row":"check","by":"layer publish","live":14,"live_at":"2026-11-08T11:12:40Z","live_measured":6,"started_since":8,"slots_working":13,"published_free":1,"resumed":["interface-shell"],"job_cap":20,"startable":0}
+{"at":"2026-11-08T11:48:19Z","row":"check","by":"layer publish","live":14,"live_at":"2026-11-08T11:12:40Z","live_measured":6,"started_since":8,"slots_working":13,"published_free":1,"job_cap":20,"startable":0}
