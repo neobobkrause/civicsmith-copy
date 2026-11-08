@@ -8,6 +8,7 @@ import { REGISTERED } from "./register-owners.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as A from "../../../src/affordances.mjs";
+import * as HELP from "../../../src/affordances/act-help.mjs";
 import * as G from "../../../src/op-grades/index.mjs";
 import { T33_NON_ACTS } from "../../../src/op-grades/t33.mjs";
 import { composedVocabularies, plainWord } from "../../../src/affordances/words.mjs";
@@ -145,13 +146,17 @@ const T48_ADDS = { following: ["proceedingdates"] };
 /* T50 (`following` R32–R34, N1092, DEC-238 S23; K3630): the member marks `watchitem`, `secondlook` and `secondlookclear`, graded by op-grades
    in T50 (T50-18); pinned here so following's map stays closed (the grades are op-grades' tests'). */
 const T50_ADDS = { following: ["watchitem", "secondlook", "secondlookclear"] };
+/* F4 (layer 12, CR2-16; hypotheses F1, BD-17): the rival explanations' ops hypotheses adds to its map, each graded by the row its
+   owner declares (op-grades R49), never by a hand row; held here once hypotheses declares it, so the map stays closed before and after. */
+const CR2_16_ADDS = { hypotheses: ["hypothesisrivals", "explorenext", "rivals"] };
+const cr2Declared = (name) => (CR2_16_ADDS[name] ?? []).filter((op) => Object.hasOwn(REGISTERED[name] ?? {}, op));
 
 /* The reads are not listed: an owner's reads are the ops of its own op map that no rung or absence grades and that no later
    tranche's list above adds as a write; of an earlier module's map (`part`), only those op-grades' T33 table names (T33_NON_ACTS),
    since the rest of that map is other tranches' (a new op of a whole module's map is seen at once; a write is stated above with its grade). */
 const LATER_ADDS = new Set([...Object.values(T35_ADDS).flat(), ...Object.values(T36_ADDS).flatMap((o) => Object.keys(o)),
   ...Object.values(T41_ADDS).flatMap((o) => Object.keys(o)), ...Object.values(T45_ADDS).flat(), ...Object.values(T47_ADDS).flat(),
-  ...Object.values(T48_ADDS).flat(), ...Object.values(T50_ADDS).flat()]);
+  ...Object.values(T48_ADDS).flat(), ...Object.values(T50_ADDS).flat(), ...Object.values(CR2_16_ADDS).flat()]);
 for (const m of Object.values(T33))
   m.reads = keysOf(m.map).filter((op) => !isMutating(op) && !LATER_ADDS.has(op) && !UNGRADED_SINCE.includes(op) && (!m.part || Object.hasOwn(T33_NON_ACTS, op)));
 /* The reads T33 grades whose owners are not among the maps above (capture-requests, instance-setup, standards' layer 9, ai-use's
@@ -166,7 +171,7 @@ test("R12: each new module's op map holds exactly the ops graded for it — T33'
     const keys = keysOf(m.map).filter((op) => !UNGRADED_SINCE.includes(op));
     const mine = [...Object.keys(m.writes), ...m.reads, ...(T35_ADDS[name] ?? []), ...Object.keys(T36_ADDS[name] ?? {}),
       ...Object.keys(T41_ADDS[name] ?? {}), ...(T45_ADDS[name] ?? []), ...(T47_ADDS[name] ?? []), ...(T48_ADDS[name] ?? []),
-      ...(T50_ADDS[name] ?? [])];
+      ...(T50_ADDS[name] ?? []), ...cr2Declared(name)];
     assert.deepEqual(Object.keys(m.writes).filter((op) => !isMutating(op)), [], `${name}: a write is graded`);
     if (m.part) assert.deepEqual(mine.filter((op) => !keys.includes(op)), [], name);
     else assert.deepEqual([...keys].sort(), [...mine].sort(), name);
@@ -177,6 +182,15 @@ test("R12: each new module's op map holds exactly the ops graded for it — T33'
                     ...Object.values(T41_ADDS).flatMap((ops) => Object.keys(ops)), ...Object.values(T45_ADDS).flat(),
                     ...Object.values(T47_ADDS).flat(), ...Object.values(T48_ADDS).flat(), ...Object.values(T50_ADDS).flat()])
     assert.ok(Object.hasOwn(NON_ACTS, op) && !published().has(op), op);
+  /* F4 (CR2-16): each rival op hypotheses declares is graded from its declared row (a write by its weight, a read named in NON_ACTS)
+     and is no act of this module */
+  for (const op of Object.values(CR2_16_ADDS).flat())
+    assert.equal(HELP.ACT_HELP_KEYS[op], `act.${op}.does`, `${op}: admitted with its help (R48), declared or not`);
+  for (const name of Object.keys(CR2_16_ADDS)) for (const op of cr2Declared(name)) {
+    const row = REGISTERED[name][op];
+    assert.ok(row.mutating ? isMutating(op) : Object.hasOwn(NON_ACTS, op), `${op}: graded from ${name}'s declared row`);
+    assert.ok(!published().has(op), op);
+  }
   /* retired: served by no owner's map (op-grades' tests hold them graded and named nowhere) */
   for (const op of RETIRED) assert.ok(!keysOf(credentialsOps).includes(op) && !keysOf(aiRunsOps).includes(op)
     && !keysOf(aiAccountsOps).includes(op), op);
