@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 11,
+  "module": "screens-plan",
+  "cause": 969,
+  "why": "Cannot read properties of null (reading 'row')",
+  "at": "2026-11-08T00:01:04Z",
+  "by": "bob"
+}
