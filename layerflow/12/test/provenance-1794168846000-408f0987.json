@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "provenance",
+  "session": "session_018BhcefLrgytSgUgJAbVFyV",
+  "started": "2026-11-08T20:14:06Z",
+  "ended": "2026-11-08T20:16:03Z",
+  "at": "2026-11-08T20:16:03Z",
+  "minutes": 1.95,
+  "result": "pass",
+  "layer": 12,
+  "suite_seconds": 25.258,
+  "tests": {
+    "total": 221,
+    "pass": 221,
+    "fail": 0
+  }
+}
