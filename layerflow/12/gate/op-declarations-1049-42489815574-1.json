@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 12,
+  "module": "op-declarations",
+  "pr": 1049,
+  "sha": "65b6310314eb4480895e0529d7892799647b0a27",
+  "run_id": 42489815574,
+  "run_attempt": 1,
+  "at": "2026-11-08T14:27:25Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 6.68,
+  "suite_minutes": 0.39,
+  "record_only": false,
+  "whole": true
+}
