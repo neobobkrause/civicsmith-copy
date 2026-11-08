@@ -30,7 +30,7 @@ const ELEMENTS = {
 };
 
 const FRAME_ANSWERS = await frameAnswers();
-test("R65 the shell draws its own elements with the design's classes: the member menu (mk-menuwrap, mk-menu over a cs-dialog), an act with its slot (mk-actwrap, mk-slot), a row's name cell (mk-rowname), the scrim behind a dialog (mk-scrim), an image (mk-image), areas on it (mk-imgareas, mk-imgarea), the avatar as a button, the group's name (mk-grp) and the explanation-level control (mk-lvlbtn); none of the replaced classes is drawn or styled", async () => {
+test("R65 the shell draws its own elements with the design's classes: the member menu (mk-menuwrap, mk-menu over a cs-dialog), an act with its slot (mk-actwrap, mk-slot), a row's name cell (mk-rowname), the scrim behind a dialog (mk-scrim), an image (mk-image), areas on it (mk-imgareas, mk-imgarea), the avatar as a button, the group's name (mk-grp) and the explanation-level control (the design's quiet cs-btn, CR2-4); none of the replaced classes is drawn or styled", async () => {
   const p = await boot({ screens: [...ALL, ELEMENTS], path: "/app/ceremony/c1", plane: { ...FRAME_ANSWERS, openoriginal: bytes(new Uint8Array([1]), "image/png") } });
   const root = p.root();
   assert.ok(root.querySelector(".mk-menuwrap > button.mk-avatar"));
@@ -40,7 +40,8 @@ test("R65 the shell draws its own elements with the design's classes: the member
   assert.ok(root.querySelector("img.mk-image"));
   assert.ok(root.querySelector(".mk-imgareas > .mk-imgarea"));
   assert.ok(root.querySelector(".cs-mast a.mk-grp"));
-  assert.ok(root.querySelector(".cs-mast button.mk-lvlbtn"));
+  assert.ok(root.querySelector('.cs-mast button.cs-btn[data-shell="level"][data-tone="quiet"]'));
+  assert.equal(root.querySelector(".mk-lvlbtn") === null, true, "the level control draws no mk-lvlbtn, which no loaded sheet defines (CR2-4)");
   const seen = classesOf(root);
   for (const c of REPLACED) assert.ok(!seen.has(c), c + " is drawn");
   /* the program and the page as served name none of them either */

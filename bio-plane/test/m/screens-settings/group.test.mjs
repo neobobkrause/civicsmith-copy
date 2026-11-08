@@ -186,9 +186,17 @@ test("R40 declaredstakeset saves the statement; an emptied field clears it (null
   const long = await open("group", { world: t.w, as: t.founder });
   await long.press("declaredstakeset", { values: { "gr-stake": "x".repeat(1001) } });
   assert.ok(long.refused.text.includes(said("refusal.STAKE_MALFORMED")), "STAKE_MALFORMED");
+  // CR2-33 (membership CR2-28, canon §4.7 and §6: powers begin at enrolment): rosa, an enrolled administrator who is not the founder, saves
   const r = await open("group", { world: t.w, as: t.rosa });
-  await r.press("declaredstakeset", { values: { "gr-stake": "x" } });
-  assert.ok(r.refused.text.includes(said("refusal.NOT_AN_ADMIN")), "NOT_AN_ADMIN");
+  assert.deepEqual((await r.press("declaredstakeset", { values: { "gr-stake": "We meet on Thursdays." } })).sent[0].body, { stake: "We meet on Thursdays." });
+  assert.equal(r.refused, null, "rosa is not refused");
+  assert.equal((await t.founder.read("groupidentity")).declared_stake.stake, "We meet on Thursdays.");
+  // a member who does not administer (dev) is refused by the owner. Dev is drawn no act (the R40 test above), so the page is drawn with an
+  // administrator's frame (WORLD GAP: a page drawn before dev's powers ended; whoami as rosa's) while every act is sent as dev's own session
+  const d = await open("group", { world: t.w, as: t.dev, table: { whoami: await t.rosa.read("whoami") } });
+  await d.press("declaredstakeset", { values: { "gr-stake": "x" } });
+  assert.ok(d.refused && d.refused.text.includes(said("refusal.NOT_AN_ADMIN")), "NOT_AN_ADMIN");
+  assert.equal((await t.founder.read("groupidentity")).declared_stake.stake, "We meet on Thursdays.", "nothing was saved");
 });
 
 test("R40 writinghelp under the field only while the assistant is reachable; its draft in the field, labeled, untested where the answer says so, kept only by the administrator's own save", async () => {

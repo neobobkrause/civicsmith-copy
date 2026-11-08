@@ -200,9 +200,10 @@ test("the consolidation keeps the set of requirement ids: every R id at the star
 /* this branch's found marks (attempt 4, walk p3dev-t1; F4 at BOB's word after the review), pinned as the R ids are: each held, in this order, and the unmet ones exactly these,
    each with its mark; a later found mark is admitted after them (F5 on), numbered on with no gap */
 const BRANCH_F = ["F1", "F2", "F3", "F4"];
-const BRANCH_F_UNMET = { F2: "*(not yet met: walk p3dev-t1 4 Nov)*", F4: "*(not yet met: walk p3dev-t1 4 Nov; R103 placement has no clear place)*" };
+/* CR2-4 (live walk p3dev-l11, 8 Nov): F2 met (cr2-4.test.mjs) */
+const BRANCH_F_UNMET = { F4: "*(not yet met: walk p3dev-t1 4 Nov; R103 placement has no clear place)*" };
 
-test("this branch's found marks F1-F4 are each held, in order, and only F2 and F4 are unmet, each with its mark; a later F id is admitted after them, numbered on from F5 with no gap, and an unmet one carries a mark of the form `*(not yet met: <where>)*`", () => {
+test("this branch's found marks F1-F4 are each held, in order, and only F4 is unmet (F2 met at CR2-4), each with its mark; a later F id is admitted after them, numbered on from F5 with no gap, and an unmet one carries a mark of the form `*(not yet met: <where>)*`", () => {
   const fs = [...blocks(REQ)].filter(([id]) => !isR(id));
   const ids = fs.map(([id]) => id);
   assert.deepEqual(ids.slice(0, BRANCH_F.length), BRANCH_F, "F1-F4 held, in order");
