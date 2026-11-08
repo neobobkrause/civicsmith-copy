@@ -1,0 +1,15 @@
+{
+  "row": "items",
+  "layer": 12,
+  "module": "hypotheses",
+  "items": [
+    {
+      "id": "CR2-19",
+      "module": "hypotheses",
+      "what": "re-pass of CR2-9 once CR2-16/17/18 land: add the arms for the three ops and the rival's legs, meet F1"
+    }
+  ],
+  "why": "CR2-19: re-pass of CR2-9 once CR2-16/17/18 land: the three ops' arms, the rival's legs, MACHINE_CANNOT_MARK_RIVAL (DEC-502), meet F1",
+  "at": "2026-11-08T10:57:45Z",
+  "by": "bob"
+}
