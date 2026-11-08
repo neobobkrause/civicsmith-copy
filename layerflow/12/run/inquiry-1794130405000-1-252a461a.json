@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 12,
+  "module": "inquiry",
+  "round": 1,
+  "started": "2026-11-08T09:33:25Z",
+  "ended": "2026-11-08T09:35:14Z",
+  "minutes": 1.8,
+  "tested_on": "f43ce326eb96e9b460c53f3c7be7e33777a51ba9",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-08T09:35:14Z"
+}
