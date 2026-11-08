@@ -8,6 +8,7 @@ import { boot, ok, textNodes, counted } from "../interface-shell/harness.mjs";
 /* K4245, K5054: the op declarations are registered once, by the world (store-assembly R83: every owner's, op-declarations and op-grades), which
    this module's tests import for the acts they seed (op-tables §5.3) */
 import { storeWorld as requestWorld, WORLD_FOUNDER_HANDLE } from "../store-request/fixtures.mjs";
+import { aiRunsOf } from "../../../src/ai-runs/index.mjs";
 /* the answers inquiry and case-import publish (K4990, K4993, K4995, K5200): made by their real code, never typed here */
 import { questionWaitsSetAside, readRefusals } from "../inquiry/fixtures.mjs";
 import { importedCasesAnswer } from "../case-import/fixtures.mjs";
@@ -16,6 +17,16 @@ import { groupIdentityAnswer } from "../instance-setup/fixtures.mjs";
 
 export { SCREENS, word, WORLD_FOUNDER_HANDLE };
 export const storeWorld = requestWorld;
+/** CR2-14: a world the team's Claude account can be set up in (`storeWorld({ ai: true })`) whose AI path answers ready, so the assistant is reachable as `interface-shell` R20 states it
+ *  (`assistantstate` on, and the pairless `aipathready` (ai-runs F4) ready) once an account serves the member. ai-runs reads a path through the source the plane registers
+ *  (`registerPathReady`, ai-runs R97, R98), and no module registers one in the world yet (ai-runs' known gap, f1-aipathready-door.test.mjs), so the world registers the plane's
+ *  source answering `ok`, through ai-runs' own registration; the account, the act served and the cascade stay ai-runs' and ai-accounts' real code. */
+export const aiWorld = async (o = {}) => {
+  const world = await requestWorld({ ...o, ai: true });
+  const done = aiRunsOf(world.ctx).registerPathReady("plane", () => ({ state: "ok" }));
+  if (!done || done.ok !== true) throw new Error("aiWorld: the path source was refused: " + JSON.stringify(done));
+  return world;
+};
 /** strength's batch (fix round 6, G12c) around a function giving one question's answer: `ids` answers `results`, keyed by id, each the single read's answer */
 export const batchStrength = (one) => (r) => ok(r.query.ids ? { ok: true, results: Object.fromEntries(String(r.query.ids).split(",").map((id) => [id, one(id)])) } : one(r.query.id));
 export const Q2 = "INQ-2026-0002-closed";
