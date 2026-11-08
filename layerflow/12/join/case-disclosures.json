@@ -1,0 +1,16 @@
+{
+  "row": "join",
+  "layer": 12,
+  "module": "case-disclosures",
+  "from": 8,
+  "why": "CR2-13: BD-18 follow-up to provenance CR2-6 (captures R2 archive grade)",
+  "at": "2026-11-08T10:29:00Z",
+  "by": "bob",
+  "items": [
+    {
+      "id": "CR2-13",
+      "module": "case-disclosures",
+      "what": "BD-18 follow-up to provenance CR2-6 (PR 1002): captures.test R2 pinned archive = C, and follows the archive-replay grade (raw replay B via archive, rewritten replay C)"
+    }
+  ]
+}
