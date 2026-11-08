@@ -207,3 +207,4 @@
 {"at":"2026-11-07T23:13:06Z","row":"outcome","n":104,"outcome":"delivered"}
 {"at":"2026-11-08T00:11:54Z","row":"sent","n":105,"to":"bob","text":"Sweep: IDLE CAPACITY, 15 slots empty, 4 startable: run node .process/tool/p3.mjs layer jobs 11, then each job start it lists first; only a recorded hold (p3 hold) keeps a slot empty; ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; journey-check: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED; screens-intake-rounds: BLOCKED."}
 {"at":"2026-11-08T00:12:20Z","row":"outcome","n":105,"outcome":"delivered"}
+{"at":"2026-11-08T01:12:45Z","row":"sent","n":106,"to":"bob","text":"Sweep: ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
