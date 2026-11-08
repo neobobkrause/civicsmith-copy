@@ -744,3 +744,4 @@
 {"at":"2026-11-08T19:38:13Z","row":"check","by":"send","live":"unmeasured","live_at":"2026-11-08T17:15:41Z","job_cap":20,"startable":null}
 {"at":"2026-11-08T19:45:17Z","row":"check","by":"metrics","live":"unmeasured","live_at":"2026-11-08T17:15:41Z","job_cap":20,"startable":null}
 {"at":"2026-11-08T20:08:40Z","row":"sweep","session":"session_018Bhceg3m4o8qXzgi9JC4Ux","bob_acts":true,"bob_quiet_h":0.2,"root_context":16,"live":2,"live_measured_at":"2026-11-08T20:02:14Z","job_cap":20,"sessions":6,"job_ids":["journey-check","plane"],"startable":0,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":2}
+{"at":"2026-11-08T20:13:56Z","row":"check","by":"send","live":7,"live_at":"2026-11-08T20:08:40Z","live_measured":2,"started_since":5,"job_cap":20,"startable":0}
