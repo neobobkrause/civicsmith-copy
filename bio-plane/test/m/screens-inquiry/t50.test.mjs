@@ -6,6 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { boot } from "../interface-shell/harness.mjs";
 import { storeWorld, WORLD_FOUNDER_HANDLE, main, actsIn, press, fill, says, section, word, SCREENS } from "./fixtures.mjs";
+import { noticeSeen } from "../store-request/recipes.mjs";
 
 /** A project with `n` held documents and a question in it resting on them, drawn into the project: all by real acts over the world.
  *  Answers `{world, ann, project, docs, id, page(opts)}`; `page` boots the question's page over the world (`plane` overrides only the ops it names). */
@@ -25,19 +26,17 @@ const stateWorld = async ({ n = 1, world = null } = {}) => {
   };
   return { world, ann, project, docs, id, page };
 };
-/** the team's Claude account, by the administrator's real acts (the world made with `storeWorld({ ai: true })`): her password again, the team's key set and switched on, its notice read */
+/** the team's Claude account, by the administrator's real acts (the world made with `storeWorld({ ai: true })`; T53's `aiaccountadd` and `aiaccountswitch`, its notice read by `aisend`,
+ *  as store-request's `recipes.assistant` makes them, F1: never the retired `groupkey*` ops) */
 const aiTeam = async (world) => {
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
-  await admin.act("reauth", { body: { password: admin.password } });
-  await admin.act("groupkeyset", { body: { key: "sk-ant-api03-" + "w".repeat(40) } });
-  await admin.act("groupkeyswitch", { body: { on: true } });
-  await admin.act("groupkeynoticeseen", { body: {} });
+  await world.recipes.assistant(admin);
   return admin;
 };
 /** a run of the member's own over the question, opened by her real act (`airunopen`: running, before anything dispatches it); the member reads the team's notice first */
 let runs = 0;
 const openRun = async (w, who = w.ann, run = "RUN-" + String(++runs).padStart(16, "c")) => {
-  await who.act("groupkeynoticeseen", { body: {} });
+  await noticeSeen(who);
   await who.act("airunopen", { body: { run, contextType: "inquiry", contextId: w.id, skillVersion: "investigative-session@1", principalAi: `member:${who.member}`, mode: "check" } });
   return run;
 };
@@ -120,7 +119,7 @@ test("R62 a concluded question offers a case: casedraft with the project and the
   assert.deepEqual([b.project, b.targets, "caseId" in b, "newCase" in b], [w.project, [w.id], false, false]);
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R57 a run ends in the ending's own words, never its code; the cost to the owner only; a stopped run says what was kept", async () => {
+test("R57 a run ends in the ending's own words, never its code; the cost to the owner only; a stopped run says what was kept", async () => {
   /* a run ending with a code the words do not know cannot exist: airunclose refuses a bound that names none (AI_RUN_BOUND_UNNAMED, run-rules/rules.mjs:485-489; ai-runs/index.mjs:590-593) */
   for (const [bound, key] of [["wallclock", "ai.run.ending.wallclock"], ["cancelled", "ai.run.ending.cancelled"]]) {
     /* the real state: her run opened and closed with the ending, by the acts the page makes */
@@ -156,12 +155,12 @@ test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interfac
   assert.equal(main(other).querySelector('[data-run="cost"]'), null, "no cost line for a member who does not own the account");
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R58 airunopen carries the question's project", async () => {
+test("R58 airunopen carries the question's project", async () => {
   /* a log whose rows carry the progress fields (read, found, checked) cannot exist: the entries the run's log holds carry seq, at, level, subject, state, governed, condition, bound, terminal, detail, result_kind, result_ref and coverage only (ai-runs/index.mjs:3094-3118) */
   const world = await storeWorld({ ai: true });
   await aiTeam(world);
   const w = await stateWorld({ world, n: 0 });
-  await w.ann.act("groupkeynoticeseen", { body: {} });
+  await noticeSeen(w.ann);
   const o = await w.page();
   await press(o, "airunopen");
   assert.equal(o.byOp("airunopen")[0].body.project, w.project);

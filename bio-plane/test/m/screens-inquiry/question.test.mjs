@@ -7,6 +7,7 @@ import { boot, ok, refusedIn } from "../interface-shell/harness.mjs";
 import { holdRefusals } from "../hypotheses/fixtures.mjs";
 import { open, storeWorld, WORLD_FOUNDER_HANDLE, main, actsIn, button, fill, press, rawKeys, inquiryMd, INQUIRY_REFS, LEGS, BASIS, plane, says, section, lead, word, day, POLICY,
   SCREENS, P, Q, D, ASIDE_TITLE, HUNCH, HUNCH_BY, HUNCHES } from "./fixtures.mjs";
+import { noticeSeen } from "../store-request/recipes.mjs";
 
 /* K4245 (test-support R17): every owner's declarations registered once, before the first read, by the one registrar */
 
@@ -40,16 +41,14 @@ const severLeg = async (w, target, reason = "the wrong year's orders") => {
 };
 /** the partition held, by the act the page's "Save the answers" makes (`grounds` are `{ground, legs: [ordinals]}`) */
 const ground = (w, grounds, reason = "my reading") => w.ann.act("inquiryground", { body: { target: w.id, grounds, reason } });
-/** the team's Claude account, by the administrator's real acts (the world made with `storeWorld({ ai: true })`): her password again, the team's key set and switched on, its notice read */
+/** the team's Claude account, by the administrator's real acts (the world made with `storeWorld({ ai: true })`; T53's `aiaccountadd` and `aiaccountswitch`, its notice read by `aisend`,
+ *  as store-request's `recipes.assistant` makes them, F1: never the retired `groupkey*` ops) */
 const aiTeam = async (world) => {
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
-  await admin.act("reauth", { body: { password: admin.password } });
-  await admin.act("groupkeyset", { body: { key: "sk-ant-api03-" + "w".repeat(40) } });
-  await admin.act("groupkeyswitch", { body: { on: true } });
-  await admin.act("groupkeynoticeseen", { body: {} });
+  await world.recipes.assistant(admin);
 };
-/** the member reads the team's notice (`groupkeynoticeseen`), as each member must before the assistant answers her */
-const readNotice = (w) => w.ann.act("groupkeynoticeseen", { body: {} });
+/** the member reads the account's recipient notice (`aisend`, ai-accounts R51), as each member must before the assistant answers her */
+const readNotice = (w) => noticeSeen(w.ann);
 /** a run of the member's own over the question, opened by her real act (`airunopen`: running, as the page's own press opens one, before anything dispatches it) */
 const openRun = async (w, run = "RUN-" + "c".repeat(16)) => {
   await w.ann.act("airunopen", { body: { run, contextType: "inquiry", contextId: w.id, skillVersion: "investigative-session@1", principalAi: `member:${w.ann.member}`, mode: "check" } });
@@ -290,17 +289,18 @@ test("R25 readings: three drawn with their states, one a what-if, stands on the 
   assert.equal(p.byOp("versionreject")[0].body.reason, "not enough on its own");
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R25 controls: a machine-authored reading is drawn only while the assistant is reachable; a refusal is drawn by its words", async () => {
+test("R25 controls: a machine-authored reading is drawn only while the assistant is reachable; a refusal is drawn by its words", async () => {
   const world = await storeWorld({ ai: true });
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
   const ann = await world.signIn("ann", { capabilities: ["contribute", "create_projects"] });
   const project = await world.recipes.project(ann, "Stormwater");
   /* a reading suggested by the machine under a run (the world's recipe), the team's Claude account then switched off and on */
   const machine = await world.recipes.machineReading(admin, ann, project);
-  await admin.act("groupkeyswitch", { body: { on: false } });
+  const { account } = await world.recipes.assistant(admin);
+  await admin.act("aiaccountswitch", { body: { account_id: account.account_id, on: false } });
   const off = await pageOf(world, ann, machine.question);
   assert.equal(main(off).querySelector(`[data-reading="${machine.version}"]`), null);
-  await admin.act("groupkeyswitch", { body: { on: true } });
+  await admin.act("aiaccountswitch", { body: { account_id: account.account_id, on: true } });
   const on = await pageOf(world, ann, machine.question);
   const row = section(on, "question.readings.title").querySelector(`[data-reading="${machine.version}"]`);
   assert.ok(row && row.querySelector('.cs-origin[data-origin="machine"]'));
@@ -386,7 +386,7 @@ test("R41 conclude's controls: an empty falsifier with the box unticked sends no
   assert.equal(p.byOp("conclude")[0].query.no_falsifier, "1");
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R41 state c, new and empty: nothing cited yet, the three ways in; the capture link carries the question (R38)", async () => {
+test("R41 state c, new and empty: nothing cited yet, the three ways in; the capture link carries the question (R38)", async () => {
   const world = await storeWorld({ ai: true });
   await aiTeam(world);
   const w = await stateWorld({ world, n: 0 });
@@ -401,7 +401,7 @@ test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interfac
   assert.deepEqual(actsIn(section(off, "question.empty.heading")), ["search"]);
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R41 state d: a run of hers at work, the run's words and Stop the run", async () => {
+test("R41 state d: a run of hers at work, the run's words and Stop the run", async () => {
   const world = await storeWorld({ ai: true });
   await aiTeam(world);
   const w = await stateWorld({ world, n: 1 });
@@ -414,7 +414,7 @@ test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interfac
   assert.deepEqual(p.byOp("airunclose")[0].body, { run, bound: "cancelled" });
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R41 controls (D29): a run opened and withheld is never drawn at work; the withholding is said by its words", async () => {
+test("R41 controls (D29): a run opened and withheld is never drawn at work; the withholding is said by its words", async () => {
   const world = await storeWorld({ ai: true });
   await aiTeam(world);
   const w = await stateWorld({ world, n: 0 });
@@ -425,7 +425,7 @@ test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interfac
   assert.ok(says(main(p).querySelector('[data-refusal="airundispatch"]'), "dock.withheld.AGENT_WORKER_UNBOUND"));
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R41 state e: the assistant's proposal, machine work, accepted or declined with a reason", async () => {
+test("R41 state e: the assistant's proposal, machine work, accepted or declined with a reason", async () => {
   const world = await storeWorld({ ai: true });
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
   const ann = await world.signIn("ann", { capabilities: ["contribute", "create_projects"] });
@@ -447,7 +447,7 @@ test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interfac
   assert.deepEqual([p.byOp("versionreject")[0].body.version, p.byOp("versionreject")[0].body.reason], [machine.version, "it skips the audit"]);
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R41 R42 state f: the limit's words naming no cost, the note, and the other reasons; control: a reachable assistant draws none", async () => {
+test("R41 R42 state f: the limit's words naming no cost, the note, and the other reasons; control: a reachable assistant draws none", async () => {
   const world = await storeWorld({ ai: true });
   await aiTeam(world);
   const w = await stateWorld({ world, n: 0 });
@@ -510,7 +510,7 @@ test("R36 C63 after planopen, the question opens its plan page (fix round 3; it 
   assert.ok(JSON.stringify(held).includes(plan) && JSON.stringify(held).includes("Ask the committee"), "the plan the page opened is the one the plane holds: " + JSON.stringify(held).slice(0, 300));
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R31 Read in my language sends the question as subject, the answer drawn in place and labeled, the original back by one press", async () => {
+test("R31 Read in my language sends the question as subject, the answer drawn in place and labeled, the original back by one press", async () => {
   const world = await storeWorld({ ai: true });
   await aiTeam(world);
   const w = await stateWorld({ world, n: 1 });
