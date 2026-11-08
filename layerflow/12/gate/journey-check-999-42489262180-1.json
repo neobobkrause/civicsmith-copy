@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 12,
+  "module": "journey-check",
+  "pr": 999,
+  "sha": "6500ecfe60039ef8ac443e0165cb123571d6b3a6",
+  "run_id": 42489262180,
+  "run_attempt": 1,
+  "at": "2026-11-08T14:20:48Z",
+  "trigger": "draft",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 1.01,
+  "suite_minutes": null,
+  "record_only": false,
+  "whole": false
+}
