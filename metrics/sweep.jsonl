@@ -699,3 +699,4 @@
 {"at":"2026-11-08T14:24:27Z","row":"check","by":"layer publish","live":9,"live_at":"2026-11-08T14:14:41Z","live_measured":6,"started_since":3,"job_cap":20,"startable":0}
 {"at":"2026-11-08T14:31:00Z","row":"check","by":"layer land","live":9,"live_at":"2026-11-08T14:14:41Z","live_measured":6,"started_since":3,"job_cap":20,"startable":0}
 {"at":"2026-11-08T14:36:04Z","row":"check","by":"layer land","live":9,"live_at":"2026-11-08T14:14:41Z","live_measured":6,"started_since":3,"job_cap":20,"startable":0}
+{"at":"2026-11-08T14:47:04Z","row":"check","by":"layer land","live":9,"live_at":"2026-11-08T14:14:41Z","live_measured":6,"started_since":3,"slots_working":8,"published_free":1,"job_cap":20,"startable":0}
