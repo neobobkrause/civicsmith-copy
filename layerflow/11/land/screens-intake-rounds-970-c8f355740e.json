@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-intake-rounds",
+  "pr": 970,
+  "branch": "job/screens-intake-rounds",
+  "head": "c8f355740efb281bb70e89843a4e4cb099d6e0ad",
+  "before": "859dfa857c3c898e2fdc7060f0898ae6feb8633c",
+  "merge": "ea196c49fa89862f19f71903875b7ab4df56cd40",
+  "at": "2026-11-08T00:11:22Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
