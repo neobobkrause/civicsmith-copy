@@ -1,0 +1,86 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "affordances",
+  "pr": 1020,
+  "branch": "job/affordances",
+  "head": "6c40d2fb17d0bf85d62fbc43ef26ca659499758b",
+  "before": "3976dfac908c854a5965a7a4689c39089232bc04",
+  "merge": "e0d12cbc9d1ab32aef708af41c1a7ce2d9cd940b",
+  "at": "2026-11-08T12:32:37Z",
+  "by": "bob",
+  "gate_runs": 6,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "CR2_DESIGN_OPS",
+        "CR2_RIVAL_OPS"
+      ],
+      "changed": [],
+      "kinds": [],
+      "signatures": []
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/affordances/f4-rivals-help.test.mjs",
+      "bio-plane/test/m/affordances/requirements-ids.test.mjs",
+      "bio-plane/test/m/affordances/t33.test.mjs",
+      "bio-plane/test/m/affordances/t36.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/affordances/f4-rivals-help.test.mjs",
+      "bio-plane/test/m/affordances/requirements-ids.test.mjs",
+      "bio-plane/test/m/affordances/t33.test.mjs",
+      "bio-plane/test/m/affordances/t36.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/affordances/f4-rivals-help.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R6, R48, R49, R62 (Provides before this land) while affordances's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/affordances/requirements-ids.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      },
+      {
+        "file": "bio-plane/test/m/affordances/t33.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      },
+      {
+        "file": "bio-plane/test/m/affordances/t36.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , \"hypothesisrivals\" , \"explorenext\" , \"rivals\" , \"docketrecordedition\""
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/affordances/f4-rivals-help.test.mjs",
+      "bio-plane/test/m/affordances/requirements-ids.test.mjs",
+      "bio-plane/test/m/affordances/t33.test.mjs",
+      "bio-plane/test/m/affordances/t36.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "op-declarations",
+    "plane"
+  ],
+  "users_rescheduled_old_rule": [
+    "op-declarations",
+    "plane"
+  ],
+  "users_noticed": []
+}

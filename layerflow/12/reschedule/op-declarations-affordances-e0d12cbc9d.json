@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "op-declarations",
+  "provider": "affordances",
+  "provider_pr": 1020,
+  "provider_land": "e0d12cbc9d1ab32aef708af41c1a7ce2d9cd940b",
+  "at": "2026-11-08T12:32:37Z",
+  "key": "op-declarations<-affordances@e0d12cbc9d",
+  "why": "added CR2_DESIGN_OPS, CR2_RIVAL_OPS; its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/affordances/f4-rivals-help.test.mjs: breaking, added, naming R6, R48, R49, R62 (Provides before this land) while affordances's source changed: it may assert a changed answer, bio-plane/test/m/affordances/requirements-ids.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/affordances/t33.test.mjs: breaking, too large to align, bio-plane/test/m/affordances/t36.test.mjs: breaking, added code that is not an object property: , \"hypothesisrivals\" , \"explorenext\" , \"rivals\" , \"docketrecordedition\"), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
