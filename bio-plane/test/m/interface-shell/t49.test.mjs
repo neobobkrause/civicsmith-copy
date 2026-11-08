@@ -41,6 +41,7 @@ test("R65 the shell draws its own elements with the design's classes: the member
   assert.ok(root.querySelector(".mk-imgareas > .mk-imgarea"));
   assert.ok(root.querySelector(".cs-mast a.mk-grp"));
   assert.ok(root.querySelector('.cs-mast button.cs-btn[data-shell="level"][data-tone="quiet"]'));
+  assert.equal(root.querySelector(".mk-lvlbtn") === null, true, "the level control draws no mk-lvlbtn, which no loaded sheet defines (CR2-4)");
   const seen = classesOf(root);
   for (const c of REPLACED) assert.ok(!seen.has(c), c + " is drawn");
   /* the program and the page as served name none of them either */
