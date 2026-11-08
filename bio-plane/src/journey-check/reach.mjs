@@ -429,12 +429,14 @@ export function localReach(ctx) {
      (reported to BOB, 8 Nov, as a finding for membership and screens-settings) */
   R["members:an administrator's"] = { expect: [/^REAUTH_DUE$/, /^VOTES_SHORT$/, /^NOT_AN_ADMIN$/], reach: state({ sel: ["#cs-main [data-removal]"] }, async (p) => { await removalOpen(); await go(p, at("/app/members")); }) };
   R["security:an"] = { reach: state({ sel: ['[data-risk="ordinary"]'], words: ["screen.security.ordinary.head"] }, async (p) => go(p, at("/app/security"))) };
+  /* the shell's update band, by what it holds (its reload control), not by the class it is drawn with (renamed by CR2-22) */
+  const UPDATE_BAND = '[role="status"]:has([data-shell="reload"])';
   R["account:a newer"] = { note: "account, a newer version: the copy's /version answer was given by the walk's own route (no newer release is installed locally)",
-    reach: state({ sel: [".mk-updband"] }, async (p) => {
+    reach: state({ sel: [UPDATE_BAND] }, async (p) => {
       await go(p, at("/app/account"));
       await p.route((u) => new URL(u).pathname === "/version", (r) => r.fulfill({ status: 200, contentType: "text/plain", body: "walk-newer" }));
       await p.clock.fastForward("05:01");
-      await p.locator(".mk-updband").first().waitFor({ state: "attached", timeout: 15000 }).catch(() => {});
+      await p.locator(UPDATE_BAND).first().waitFor({ state: "attached", timeout: 15000 }).catch(() => {});
     }),
     after: async (p) => { await p.unroute((u) => new URL(u).pathname === "/version").catch(() => {}); await p.unrouteAll({ behavior: "ignoreErrors" }).catch(() => {}); } };
   R["account:making"] = { reach: state({ words: ["screen.account.key.make.heading"], sel: ['[data-act="signerregisterown"]'] }, async (p) => {
