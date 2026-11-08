@@ -53,8 +53,7 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: leg-earning:138 (index.mjs:1588 reads legEarning.earned). For each, decide from your own requirements what this module must do (the T53 ops that replace the retired ones are in ai-accounts' requirements and op-declarations), adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-08T11:15:12Z",
-    "reason": "reopened: CR2-20: re-pass of CR2-10 once CR2-16/17/18 land: wire the bar check, the catalogue wording and the rivals list (IV-H3 standing, F2)"
+    "state": "COMPLETE",
+    "at": "2026-11-08T11:31:33Z"
   }
 }
