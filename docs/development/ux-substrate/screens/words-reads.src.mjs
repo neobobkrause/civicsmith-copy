@@ -159,7 +159,7 @@ function analyse(toks, inherited, emit, stats) {
     if (top && top.idx === 0 && t.t === "id" && toks[k+1] && toks[k+1].v === "+") { /* prefix + "x.y" */ }
     if (t.t === "id" && /(WORDS|ROWS|^rows)$/.test(t.v) && toks[k+1] && toks[k+1].v === "=") pendingWords = true;
     if (t.t === "punct" && t.v === ";") pendingWords = false;
-    if (t.t === "str" && top && top.idx === 0 && top.open === "(" && /(^|\.)row$/.test(top.callee)) top.firstKey = true;
+    if (t.t === "str" && top && top.idx === 0 && top.open === "(" && /(^|\.)(row|localize)$/.test(top.callee)) top.firstKey = true;
     if (t.t !== "str" && t.t !== "tpl") { if (top) top.elemFirst = false; continue; }
     if (consumed.has(k)) continue;
     // build chain
@@ -189,7 +189,7 @@ function analyse(toks, inherited, emit, stats) {
     else if (ctxDev()) form = "dev";
     else if ((prev && prev.t === "punct" && /^[!=]==?$/.test(prev.v)) || (toks[k2+1] && toks[k2+1].t === "punct" && /^[!=]==?$/.test(toks[k2+1].v))) form = "compare";
     else if (stack.some((f) => f.wordsDecl)) form = "keyed-row";
-    else if (top && top.idx === 1 && top.firstKey && (top.open === "[" || (top.open === "(" && /(^|\.)row$/.test(top.callee)))) form = "keyed-row";
+    else if (top && top.idx === 1 && top.firstKey && (top.open === "[" || (top.open === "(" && /(^|\.)(row|localize)$/.test(top.callee)))) form = "keyed-row";
     else if (top && top.open === "{" && top.propKey && KEYRE.test(top.propKey) && /[a-z]\.[a-z]/.test(top.propKey)) form = "keyed-map";
     for (const c of candidates(text)) {
       const raw = c; const cl = clean(c.replace(new RegExp(PH + "\\d+" + PH, "g"), PH + "0" + PH)).replace(new RegExp(PH + "0" + PH, "g"), "${…}");
