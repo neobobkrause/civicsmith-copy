@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "plane",
+  "pr": 1066,
+  "branch": "job/plane-3",
+  "head": "35f5e6143f6b744d8e4f1a347afbc7f7f3fd9923",
+  "before": "2bc2965010804390796b7e9dd06346d17fee46d1",
+  "merge": "86dcc01835c124ec017279b1b4dd93c4f2f3624e",
+  "at": "2026-11-08T19:40:46Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
