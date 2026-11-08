@@ -47,12 +47,14 @@ const DESIGN = () => stylesheetClasses(ASSET_FILES["civicsmith.css"].body, ASSET
 const unpartnered = (src, defined) => classAttrs(src).filter((ws) => ws.some((c) => Object.hasOwn(HOOK_CLASSES, c)))
   .filter((ws) => !ws.some((c) => !Object.hasOwn(HOOK_CLASSES, c) && defined.has(c))).map((ws) => ws.join(" "));
 
-test("F2 R56 every hook class the shell draws sits beside a design partner a served stylesheet defines: the walk's cs-crumbs, cs-rows, cs-r and cs-panel and the newer-version band among them", () => {
+test("F2 R56 every hook class the shell draws sits beside a design partner a served stylesheet defines: the walk's cs-crumbs, cs-rows, cs-r and cs-panel (the newer-version band is now the design's cs-updband, F6)", () => {
   const defined = DESIGN();
   const src = shellProgram.toString();
   const drawn = new Set(classAttrs(src).flat());
-  for (const c of ["cs-crumbs", "cs-rows", "cs-r", "cs-panel", "mk-updband"]) assert.ok(drawn.has(c), c + " is drawn by the shell");
+  for (const c of ["cs-crumbs", "cs-rows", "cs-r", "cs-panel"]) assert.ok(drawn.has(c), c + " is drawn by the shell");
   assert.equal(drawn.has("mk-lvlbtn"), false, "mk-lvlbtn, which no loaded sheet defines, is no longer drawn (CR2-4)");
+  assert.ok(drawn.has("cs-updband"), "the newer-version band is the design's cs-updband (CR2-22, F6)");
+  assert.equal(drawn.has("mk-updband"), false, "mk-updband, a hook with no partner of its own, is no longer drawn (F6)");
   assert.deepEqual(unpartnered(src, defined), []);
 });
 
