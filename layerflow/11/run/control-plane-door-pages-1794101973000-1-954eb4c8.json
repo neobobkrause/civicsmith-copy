@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "control-plane-door-pages",
+  "round": 1,
+  "started": "2026-11-08T01:39:33Z",
+  "ended": "2026-11-08T01:41:01Z",
+  "minutes": 1.5,
+  "tested_on": "8d55931075ac53dac4a4b120b4c1f939bb9dc6df",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-08T01:41:01Z"
+}
