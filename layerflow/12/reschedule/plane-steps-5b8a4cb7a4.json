@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "plane",
+  "provider": "steps",
+  "provider_pr": 1023,
+  "provider_land": "5b8a4cb7a4c8a1665fdead14a80f63b2674bb5e9",
+  "at": "2026-11-08T11:47:02Z",
+  "key": "plane<-steps@5b8a4cb7a4",
+  "why": "added RIVAL_CODES, Steps.registerRivalSource, Steps.stepsOfRival; changed the parameters of Steps.stepCreate ({ place = null, work = null, byWhen = null, project = null, by = null, run = null } = {}) -> ({ place = null, work = null, byWhen = null, project = null, by = null, run = null, rival = null } = {}) (not a trigger); its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/steps/create.test.mjs: breaking, added code that is not an object property: \"rival\" ,, bio-plane/test/m/steps/rivals.test.mjs: breaking, added, naming R9 (Provides before this land) while steps's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}

@@ -1,0 +1,41 @@
+{
+  "row": "notice",
+  "at": "2026-11-08T11:47:02Z",
+  "key": "steps:1023",
+  "provider": "steps",
+  "ids": [],
+  "pr": 1023,
+  "users": [
+    "action-clocks",
+    "answer-envelope",
+    "control-plane",
+    "investigation",
+    "notice-producers",
+    "store-assembly"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "RIVAL_CODES",
+      "Steps.registerRivalSource",
+      "Steps.stepsOfRival"
+    ],
+    "changed": [
+      {
+        "name": "Steps.stepCreate",
+        "before": "({ place = null, work = null, byWhen = null, project = null, by = null, run = null } = {})",
+        "after": "({ place = null, work = null, byWhen = null, project = null, by = null, run = null, rival = null } = {})"
+      }
+    ],
+    "kinds": [],
+    "signatures": [
+      "Steps.stepCreate"
+    ]
+  },
+  "layer_flow": {
+    "layer": 12,
+    "provides": true,
+    "rescheduled": true
+  }
+}
