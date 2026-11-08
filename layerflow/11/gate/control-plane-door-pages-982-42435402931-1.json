@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "control-plane-door-pages",
+  "pr": 982,
+  "sha": "79c9029e764bd2c7a06ba347e8539d9367e1de3f",
+  "run_id": 42435402931,
+  "run_attempt": 1,
+  "at": "2026-11-08T01:43:31Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 3.54,
+  "suite_minutes": 0,
+  "record_only": false,
+  "whole": true
+}
