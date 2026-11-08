@@ -47,8 +47,7 @@
   ],
   "prior_work": "Answer this module's provider notices, judged affected by a read-only triage: leg-earning:138 (index.mjs:416, :540 earned). For each, decide from your own requirements what this module must do (the T53 ops that replace the retired ones are in ai-accounts' requirements and op-declarations), adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes; where your requirements decide nothing, name the gap in not-verified. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist; restore dist/*.bundle.json from HEAD if a build rewrites them). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-08T12:41:36Z",
-    "reason": "reopened: CR2-32: register inquiry's bar judgment at start (inquiry R91: Inquiry.onBarJudged(module, fn), PR 1006, layer/12 inquiry/index.mjs:1213): strength answers fn({question, project, viewer}) with whether the question's conclusion meets the project's bar now, so a rival case reads at-bar against the real wiring; today none registers it and rivalStanding never reads at bar; a test against the real wiring; IV-1 (key assumptions, F3) deferred with a reason (coordinator ruling 8 Nov)"
+    "state": "COMPLETE",
+    "at": "2026-11-08T13:01:02Z"
   }
 }
