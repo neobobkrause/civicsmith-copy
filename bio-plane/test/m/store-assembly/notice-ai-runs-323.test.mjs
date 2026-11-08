@@ -3,13 +3,13 @@
    (declarations.mjs), so the store now serves `op=aipathready`, ai-runs' read of the AI path, through the door, once in the
    route map, with ai-runs' own declared row in the assembled table. The totals and op lists this module's tests check
    (declarations.test.mjs) are read from the owners' exports, so they count it with no change. Asked with nothing to ask it
-   fails closed (ai-runs' ruled rule, read here, not restated). Fails with `aipathready` dropped from ai-runs' ops. */
+   fails closed (ai-runs' ruled rule, read here from its instance, not restated; adapted for ai-runs:1004). Fails with `aipathready` dropped from ai-runs' ops. */
 import "../../../src/store-assembly/register.mjs";   /* the start's registration first, as declarations.test.mjs */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { store } from "./fixture.mjs";
 import { OWNERS } from "../../../src/store-assembly/declarations.mjs";
-import { aiRunsOps, DECLARED_OPS as AI_RUNS_DECLARED_OPS } from "../../../src/ai-runs/index.mjs";
+import { aiRunsOf, aiRunsOps, DECLARED_OPS as AI_RUNS_DECLARED_OPS } from "../../../src/ai-runs/index.mjs";
 
 const OP = "aipathready";
 
@@ -35,5 +35,10 @@ test("notice ai-runs:323 (ai-runs F1, R97): through the door the store serves ai
     assert.deepEqual([got.state, got.ready], ["not_ready", false], `${qs}: fails closed`);
   }
   assert.equal((await ask("")).reason, "no_viewer");
-  assert.equal((await ask("viewer=member:ada")).reason, "no_pair");
+  /* ai-runs:1004 (ai-runs F4, the pairless read): the reason is ai-runs' own answer for the same ask, read from its
+     instance on this store, never restated here (it moved from `no_pair` to F4's `no_account`). */
+  const runs = aiRunsOf(x.ctx);
+  assert.equal((await ask("viewer=member:ada")).reason, (await runs.pathReadyRead({ viewer: "member:ada" })).reason);
+  assert.equal((await ask("viewer=member:ada&account_id=a1")).reason,
+    (await runs.pathReadyRead({ viewer: "member:ada", account_id: "a1" })).reason);
 });
