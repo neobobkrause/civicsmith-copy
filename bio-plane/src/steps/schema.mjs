@@ -190,6 +190,22 @@ CREATE TRIGGER IF NOT EXISTS steps_gone_proposals AFTER DELETE ON steps BEGIN
   UPDATE step_proposals SET step_id = NULL WHERE step_id = OLD.step_id;
 END;
 UPDATE step_proposals SET step_id = NULL WHERE step_id IS NOT NULL AND step_id NOT IN (SELECT step_id FROM steps);
+-- R31 (CR2-18, BD-17): the rival a step was opened from, fixed at creation; one row a step at most, keyed by the
+-- question whose rival it is, so it goes with that question's reference, and with the step
+CREATE TABLE IF NOT EXISTS step_rivals (
+  step_id       TEXT PRIMARY KEY,
+  question_id   TEXT NOT NULL,      -- the referring question whose rival it is
+  rival_id      TEXT NOT NULL,      -- the rival's id, as hypotheses holds it
+  by_actor      TEXT NOT NULL,
+  at            TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS step_rivals_rival ON step_rivals (question_id, rival_id, step_id);
+CREATE TRIGGER IF NOT EXISTS steps_gone_rivals AFTER DELETE ON steps BEGIN
+  DELETE FROM step_rivals WHERE step_id = OLD.step_id;
+END;
+CREATE TRIGGER IF NOT EXISTS step_refs_gone_rivals AFTER DELETE ON step_refs BEGIN
+  DELETE FROM step_rivals WHERE step_id = OLD.step_id AND question_id = OLD.question_id;
+END;
 `;
 
 /* R22: each table with how a purge reaches it. `keys` names the column that ties its rows to a bundle; `[]` is reached
@@ -201,6 +217,7 @@ export const STEPS_TABLES = Object.freeze([
       "step_later_found", "step_cost_messages", "step_cost_message_to"].map((name) => Object.freeze({ name, keys: [] })),
   Object.freeze({ name: "step_proposal_refs", keys: ["question_id"] }),
   Object.freeze({ name: "step_proposals", keys: ["project_id"] }),
+  Object.freeze({ name: "step_rivals", keys: ["question_id"] }),
 ]);
 /* R16, R22: a member's follows, hers alone. */
 export const FOLLOWS_TABLE = "question_follows";

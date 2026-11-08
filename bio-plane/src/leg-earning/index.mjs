@@ -607,7 +607,7 @@ export class LegEarning {
       JSON.stringify(ids), JSON.stringify(ids))) {
       if (!r.bundle_id) continue;
       if (!perBundle.has(r.bundle_id))
-        perBundle.set(r.bundle_id, { n: 0, bound: null, transcribed: 0, authored: 0, byteBest: null, unruled: 0,
+        perBundle.set(r.bundle_id, { n: 0, bound: null, transcribed: 0, authored: 0, byteBest: null, routeWhy: null, unruled: 0,
                                      measured: 0, authoredRoutes: [], authoredVias: [] });
       const e = perBundle.get(r.bundle_id);
       /* MK-1 / D-184: A MEMBER'S AUTHORED WORDS ARE NOT A CAPTURE ON THIS AXIS.
@@ -627,15 +627,20 @@ export class LegEarning {
          does not know that an unmeasured transcription is null rather than
          "fine", and it must not learn: DEC-4's arithmetic has one home. */
       /* One capture's letter, by the one rule `#captureLetter` holds (R8 reads a standard's text by it too). */
-      const { byteGrade, authoredRoute, authoredVia, transcribed, bound: b } = this.#captureLetter(r.capture_sha, r.chain);
+      const { byteGrade, authoredRoute, authoredVia, transcribed, bound: b, why: routeWhy } = this.#captureLetter(r.capture_sha, r.chain);
       if (byteGrade == null) { e.unruled++; if (transcribed) e.transcribed++; continue; }
       if (authoredRoute) {
         if (!e.authoredRoutes.includes(authoredRoute)) e.authoredRoutes.push(authoredRoute);
         if (!e.authoredVias.includes(authoredVia)) e.authoredVias.push(authoredVia);
       }
       else e.measured++;
-      e.byteBest = e.byteBest == null ? byteGrade
-        : (BASIS_GRADES.indexOf(byteGrade) < BASIS_GRADES.indexOf(e.byteBest) ? byteGrade : e.byteBest);
+      /* CR2-7 (BD-18): provenance's own sentence for the strongest capture's route travels with its letter, so a
+         ceiling the route binds says what provenance says of that route (the least such sentence between equal
+         letters, so the answer never depends on row order). */
+      const ri = BASIS_GRADES.indexOf(byteGrade), bi = e.byteBest == null ? Infinity : BASIS_GRADES.indexOf(e.byteBest);
+      if (ri < bi || (ri === bi && typeof routeWhy === "string" && (e.routeWhy == null || routeWhy < e.routeWhy)))
+        e.routeWhy = typeof routeWhy === "string" ? routeWhy : null;
+      e.byteBest = ri < bi ? byteGrade : e.byteBest;
       if (transcribed) e.transcribed++;
       if (b == null) continue;          /* undetermined contributes no letter; `e.bound` stays null unless another capture supplies one */
       /* THE STRONGEST OVER THE DOCUMENT'S CAPTURES, which is the collapse this
@@ -766,11 +771,13 @@ export class LegEarning {
         continue;
       }
       if (!e.transcribed || e.bound === e.byteBest) {
-        /* N82: the ROUTE binds (an archive replay, provenance R25), not the transcription. */
+        /* N82: the ROUTE binds, not the transcription. CR2-7 (BD-18): what that route earns is provenance's to say
+           (an archive replay of the publisher's raw bytes and a rewritten one earn different letters), so the
+           sentence states provenance's own answer for the strongest capture's route and restates no rule of it. */
         out.earned.capture[bundleId] = {
           mode: "ceiling", grade: e.bound, captures: e.n,
           bounded_by: "CAPTURE_BOUNDED_BY_ROUTE",
-          why: word("leg-earning.why.strongest_route_group", { capture_word: String(captureWord), bound: String(e.bound) }),
+          why: localize("leg-earning.why.strongest_route_follows_provenance", "{captureWord}, and the strongest route by which your team's Civicsmith received them earns {bound} on the capture axis, as provenance answers for that route: {routeWhy}. So the strongest capture grade this document can earn is {bound}.", { captureWord: String(captureWord), bound: String(e.bound), routeWhy: String(e.routeWhy ?? "") }),
           ceiling };
         continue;
       }
@@ -821,7 +828,7 @@ export class LegEarning {
     return { byteGrade, authoredRoute: authored ? cg.basis : null,
              authoredVia: authored ? (cg.basis === "CAPTURE_ROUTE_UNRECORDED" ? "unrecorded" : cg.route) : null,
              transcribed: isTranscribed(chain),
-             bound: byteGrade == null ? null : captureBound(chain, byteGrade) };
+             bound: byteGrade == null ? null : captureBound(chain, byteGrade), why: cg.why ?? null };
   }
 
   /* R15 (D21; D4): a content row cited as text whose chain holds an `ai_transcription` step covering the row's

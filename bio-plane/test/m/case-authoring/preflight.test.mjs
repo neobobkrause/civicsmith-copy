@@ -9,7 +9,7 @@ import { world, V, T0, sha, WHAT_CHANGED } from "./fixture.mjs";
 import { caseAuthoringOps, CASE_DISCLOSURE_CHECKS, SELF_ATTESTED_SENTENCE } from "../../../src/case-authoring/index.mjs";
 import * as DISCLOSURES from "../../../src/case-disclosures/index.mjs";
 import { caseDocumentBlocks, unnamedSourceStatement, sourceStatement } from "../../../src/publication/index.mjs";
-import { ARCHIVE_VIA, ARCHIVE_CAPTURE_GRADE } from "../../../src/provenance/index.mjs";
+import { ARCHIVE_VIA, ARCHIVE_CAPTURE_GRADE, REWRITTEN_REPLAY_GRADE } from "../../../src/provenance/index.mjs";
 import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
 import { readFileSync } from "node:fs";
 import { localize, word as listed } from "../../../src/setup-words/index.mjs";
@@ -189,25 +189,45 @@ test("R55 (case-disclosures R2): the co-attestation recorded at capture is read 
   void b;
 });
 
-test("R55 (case-disclosures R2): the grade that needs co-attestation or an acknowledgement is EARNED_CAPTURE_CEILING, provenance R24's one definition (capture R18): the refusal names it, and a load-bearing capture below it (an archive replay's ARCHIVE_CAPTURE_GRADE) that is not co-attested needs none", () => {
+test("R55 (case-disclosures R2): the grade that needs co-attestation or an acknowledgement is EARNED_CAPTURE_CEILING, provenance R24's one definition (capture R18): the refusal names it, and an archive replay follows BD-18 (provenance R85): a raw replay is ARCHIVE_CAPTURE_GRADE, the ceiling via archive, so not co-attested it is refused like any other; a rewritten replay is REWRITTEN_REPLAY_GRADE, below the ceiling, stated and never asked to be acknowledged", () => {
   assert.equal(EARNED_CAPTURE_CEILING, "B");
   const { w, P, b } = setup();
   const r = w.publish(P, "alice", [Q]);
   refused(r, "CO_ATTESTATION_UNACKNOWLEDGED");
   assert.deepEqual([r.unacknowledged.map((u) => u.grade), w.prov.captureGrade(b).grade], [[EARNED_CAPTURE_CEILING], EARNED_CAPTURE_CEILING]);
   assert.match(r.detail, new RegExp(`load-bearing Grade ${EARNED_CAPTURE_CEILING} document`));
-  /* an archive replay earns the letter below the ceiling: stated, never asked to be acknowledged */
+  /* BD-18: a raw (`id_`) replay of the publisher's bytes is the ceiling, via archive: load-bearing and not co-attested,
+     it needs the acknowledgement like any other capture at the ceiling, and nothing is written */
+  const w1 = world(); w1.member("alice");
+  const raw = w1.graded(DOC3, {}, { receipt: false });
+  w1.prov.recordReceipt({ address: `https://example.org/${DOC3}`, addressNorm: `example.org/${DOC3}`, captureSha: raw,
+                          retrieved: T0, via: ARCHIVE_VIA,
+                          retrievalLocator: `https://web.archive.org/web/20260101000000id_/https://example.org/${DOC3}` });
+  const rawGrade = w1.prov.captureGrade(raw);
+  assert.deepEqual([rawGrade.grade, rawGrade.via_archive, rawGrade.replay.raw, rawGrade.replay.custodian],
+    [ARCHIVE_CAPTURE_GRADE, true, true, "web.archive.org"]);
+  assert.equal(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING);
+  w1.finding(Q, [{ target: DOC3 }]);
+  const P1 = w1.project("Raw", "alice", [Q]);
+  const r1 = w1.publish(P1, "alice", [Q]);
+  refused(r1, "CO_ATTESTATION_UNACKNOWLEDGED");
+  assert.deepEqual(r1.unacknowledged.map((u) => [u.capture, u.grade]), [[raw, ARCHIVE_CAPTURE_GRADE]]);
+  assert.equal(w1.row(`SELECT COUNT(*) AS n FROM case_documents`).n, 0);
+  /* BD-18: a rewritten replay (no raw locator) is reference only, the letter below the ceiling: stated, never asked
+     to be acknowledged */
   const w2 = world(); w2.member("alice");
   const c = w2.graded(DOC3, {}, { receipt: false });
   w2.prov.recordReceipt({ address: `https://example.org/${DOC3}`, addressNorm: `example.org/${DOC3}`, captureSha: c,
-                          retrieved: T0, via: ARCHIVE_VIA });
-  assert.equal(w2.prov.captureGrade(c).grade, ARCHIVE_CAPTURE_GRADE);
-  assert.notEqual(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING);
+                          retrieved: T0, via: ARCHIVE_VIA,
+                          retrievalLocator: `https://web.archive.org/web/20260101000000/https://example.org/${DOC3}` });
+  const rewritten = w2.prov.captureGrade(c);
+  assert.deepEqual([rewritten.grade, rewritten.reference_only, rewritten.replay.raw], [REWRITTEN_REPLAY_GRADE, true, false]);
+  assert.notEqual(REWRITTEN_REPLAY_GRADE, EARNED_CAPTURE_CEILING);
   w2.finding(Q, [{ target: DOC3 }]);
   const ok = w2.publish(w2.project("Arc", "alice", [Q]), "alice", [Q]);
   assert.equal(ok.ok, true, JSON.stringify(ok).slice(0, 300));
   const row = caseDocumentBlocks(docOf(w2, ok).text).captures.find((x) => x.capture === c);
-  assert.deepEqual([row.grade, row.co_attested, row.self_attested_only], [ARCHIVE_CAPTURE_GRADE, false, false]);
+  assert.deepEqual([row.grade, row.co_attested, row.self_attested_only], [REWRITTEN_REPLAY_GRADE, false, false]);
   /* the document's words name the ceiling from the same definition */
   const acked = w.publish(P, "alice", [Q], { selfAttested: [{ capture: b, reason: REASON }] });
   assert.ok(bodyOf(docOf(w, acked).text).includes(listed("case-disclosures.document.each_document_this_cases_findings",

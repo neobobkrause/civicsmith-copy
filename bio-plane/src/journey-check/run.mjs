@@ -16,10 +16,11 @@ import { ABSENCE, walkInstaller, walkFounder, inviteMember, walkMember, walkWelc
   signInBy, sweepAsFounder, walkSite, walkDashboards, walkSignGone } from "./journeys.mjs";
 import { walkAdministrator, walkMemberJourney, walkUnassisted, journey29Live, notReady, STEP_NAMES } from "./investigation.mjs";
 import { sweepScreens, addressOf, registryScreens } from "./screens.mjs";
-import { dec340Limits, publicPages } from "./checks.mjs";
+import { dec340Limits, publicPages, DEC340 } from "./checks.mjs";
 import { escapedOnPage, pseudoRoute } from "./pseudo.mjs";
 import { walkPublished, PUBLISHED_ENV } from "./published.mjs";
 import { walkStates } from "./states.mjs";
+import { localReach } from "./reach.mjs";
 import { PLAN_TITLE, PROJECT_TITLE, QUESTION, OWN_PROJECT, OWN_QUESTION, OWN_READING, UPLOAD_NAME, UPLOAD_TEXT } from "./investigation.mjs";
 import { GROUP_NAME, SLUG } from "./journeys.mjs";
 import { NOTICE_PASSAGE, HEAT_PASSAGE } from "./city.mjs";
@@ -169,8 +170,9 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
     const mai = await device(walk, b, route);
     const phone = await device(walk, b, route, { width: 390, height: 844 });
     await walkMember(walk, mai.page, { base: copy, invite, member: who.member, phone: phone.page });
+    let teo = null;
     if (parts.includes("journey 3")) {
-      const teo = await device(walk, b, route);
+      teo = await device(walk, b, route);
       walk.journey = "journey 3";
       const second = await inviteMember(walk, founder.page, copy, { id: "teo", cover: "Teo, from flat 9" });
       await walkWelcome(walk, teo.page, { base: copy, link: second, member: who.newcomer });
@@ -193,7 +195,7 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
       })().catch(going);
     }
     /* R16: journey 29's search path, with no assistant, to a conclusion on her own reading */
-    if (parts.includes("R16")) await walkUnassisted(walk, founder.page, { base: copy, founder: who.founder }).catch(going);
+    const own = parts.includes("R16") ? await walkUnassisted(walk, founder.page, { base: copy, founder: who.founder }).catch(going) : null;
     /* R22, R25: the dashboards from Home's doors, and the old signing page gone */
     if (parts.includes("sweep")) {
       walk.journey = "R22 the dashboards";
@@ -202,7 +204,7 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
       await walkSignGone(walk, founder.page, copy).catch(going);
     }
     /* the sweep with her handle held (a founder who could not choose one was swept handleless above) */
-    if (parts.includes("sweep") && who.founder.handle) await sweepAsFounder(walk, founder.page, copy, { handle: who.founder.handle });
+    if (parts.includes("sweep") && who.founder.handle) await localSweep(walk, b, founder.page, copy, { handle: who.founder.handle, route });
     /* R27: every screen at both widths drawn with the pseudo rows, any sentence that escaped the list reported */
     if (parts.includes("R27")) {
       walk.journey = "R27 the pseudo-locale walk";
@@ -232,7 +234,11 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
     if (parts.includes("R13")) {
       walk.journey = "R13 design journey 29";
       const design = await mockOf();
-      for (const f of await walkStates(walk, b, design, { out, page: founder.page, base: copy })) walk.pairs.push(f);
+      /* R21 (F10): each carried state put on the screen by the walk's own acts or the data the arm made (reach.mjs) */
+      const reach = made.project && made.question && own && teo ? localReach({ walk, base: copy, who, founder: founder.page, teo: teo.page, made, own,
+        device: async () => (await device(walk, b, route)).page }) : {};
+      if (!made.project || !own || !teo) walk.notes.push("R21: the carried states have no walk of their own: R9, R16 or journey 3 stopped or was not walked before them");
+      for (const f of await walkStates(walk, b, design, { out, page: founder.page, base: copy, reach })) walk.pairs.push(f);
       walk.journey = "R13 design journey 29";
       for (const f of await journeyPairs(walk, b, design, { out, notWalked: !assistant, liveOf: (st) => journey29Live(walk, st) })) walk.pairs.push(relative(out, f));
     }
@@ -302,14 +308,61 @@ async function investigateLive(walk, b, base, { founder, member, codeOf, assista
   } finally { for (const c of devices) await c.close().catch(() => {}); }
 }
 
-/* R28 (interface-shell R102): the nine named public pages, opened with no session at 1280 and 390 px, each drawn page's title the
-   word of its screen and no weight mark in it; a page that needs a subject the instance does not name here draws its
-   "Nothing is here" at its bare address and is noted, never passed. */
-export async function publicPass(walk, b, base, { pages = publicPages(), registry = registryScreens() } = {}) {
-  walk.journey = "R28 the public pages";
+/* R6, R28: the instance's own short name, never to be read on a screen (its address's first label; none for a bare host) */
+export const instanceSlugs = (host) => [String(host).split(":")[0].split(".")[0]].filter((x) => x && !/^\d+$/.test(x) && x !== "localhost");
+
+/* R6, R28 (DEC-340), both arms (PD-11): a drawn screen measured at 1280 and 390 px against the page's limits (`pageLimits`: wider
+   than the viewport, tabs, the test band, an undefined class, a slug or code) and DEC-340's (`dec340Limits`); each limit a failure
+   naming the screen and width. `each(width)` runs at each width after the checks (the live arm's pair). Leaves the page at 1280. */
+/* BOB's ruling (session_018BhcegCnnPxsYfe31RVw9N, 8 Nov): a screen that draws its absence state ("Can't open this", "Nothing is
+   here": interface-shell's `[data-unavailable]`) for a viewer with no subject is the designed absence, and its tab title is that
+   state's, not the screen's: the title check is skipped there and noted, and kept for every screen that draws its subject. */
+export const ABSENT_TITLE_NOTE = (id) => localize("journey-check.run.id_draws_its_absence_state", "{id}: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)", { id: String(id) });
+export async function screenLimits(walk, p, id, { slugs = [], each = null } = {}) {
+  for (const width of WIDTHS) {
+    if (width !== WIDTHS[0]) { await p.setViewportSize(viewportOf(width)); await p.reload(); await settle(p); }
+    for (const l of await pageLimits(p, { width, slugs, handles: [...walk.handles] })) walk.fail(l.kind, `${id} at ${width}px: ${l.detail}`);
+    const absent = (await p.locator("#cs-main [data-unavailable]").count().catch(() => 0)) > 0;
+    if (absent && width === WIDTHS[0]) walk.notes.push(ABSENT_TITLE_NOTE(id));
+    for (const l of (await dec340Limits(p, id, { isPublic: false, phone: width <= 390 })).filter((x) => !(absent && x.kind === DEC340.TITLE))) walk.fail(FAIL.DEC340, localize("journey-check.run.id_at_width_px_kind", "{id} at {width}px: {kind}: {detail}", { id: String(id), width: String(width), kind: String(l.kind), detail: String(l.detail) }));
+    if (each) await each(width);
+  }
+  await p.setViewportSize(viewportOf(WIDTHS[0]));
+}
+
+/* PD-11: the local arm's last sweep, as the founder with her handle held (R7), measures each drawn screen of frame `working` or
+   `dock` as the live arm does (`screenLimits`, R6 and R28; the public frame is `publicPass`'s, signed out), then walks the named public pages signed out (`publicPass`, R28), so a class or DEC-340 fault in the
+   copy the local arm installed fails the walk. `route(context)` is the world's; `screens` and `pages` narrow the walk. */
+export async function localSweep(walk, b, page, base, { handle, route = null, screens = undefined, pages = undefined } = {}) {
+  const slugs = instanceSlugs(new URL(base).host);
+  await sweepAsFounder(walk, page, base, { handle, ...(screens ? { screens } : {}), also: (p, s) => (s.frame === "working" || s.frame === "dock" ? screenLimits(walk, p, s.id, { slugs }) : null) });
+  await publicPass(walk, b, base, { route, ...(pages ? { pages } : {}) });
+}
+
+/* R22 (CR2-5): the live arm's dashboards, as the administrator signed in on a device of her own, after the journeys that make
+   the team's work (R9). */
+export async function dashboardsLive(walk, b, base, { handle, password }) {
+  walk.journey = "R22 the dashboards";
   const ctx = await b.newContext({ viewport: viewportOf(1280) });
   try {
     await ctx.route("**/*", (r) => (new URL(r.request().url()).host === walk.copyHost ? r.continue() : (walk.foreign(r.request().url()), r.abort("blockedbyclient"))));
+    const page = walk.watch(await ctx.newPage());
+    await signInBy(walk, page, base, { handle, password }, "she signs in to open the dashboards");
+    await walkDashboards(walk, page, base);
+  } catch (e) { if (!(e instanceof StepFailed)) throw e; }
+  finally { await ctx.close().catch(() => {}); }
+}
+
+/* R28 (interface-shell R102): the nine named public pages, opened with no session at 1280 and 390 px, each drawn page's title the
+   word of its screen and no weight mark in it; a page that needs a subject the instance does not name here draws its
+   "Nothing is here" at its bare address and is noted, never passed. */
+export async function publicPass(walk, b, base, { pages = publicPages(), registry = registryScreens(), route = null } = {}) {
+  walk.journey = "R28 the public pages";
+  const ctx = await b.newContext({ viewport: viewportOf(1280) });
+  try {
+    /* `route(context)` sends the context's requests where the arm says (the local arm's world); else straight to the instance */
+    if (route) await route(ctx);
+    else await ctx.route("**/*", (r) => (new URL(r.request().url()).host === walk.copyHost ? r.continue() : (walk.foreign(r.request().url()), r.abort("blockedbyclient"))));
     const page = walk.watch(await ctx.newPage());
     for (const id of pages) {
       await walk.step(page, `public page ${id}`, async (p) => {
@@ -345,7 +398,7 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
     await requireTestInstance(base, fetchOf);
     walk.copyHost = new URL(base).host;
     /* the instance's own short name, never to be read on a screen */
-    const slugs = [walk.copyHost.split(".")[0]].filter((x) => !/^\d+$/.test(x) && x !== "localhost");
+    const slugs = instanceSlugs(walk.copyHost);
     const b = await launch({ direct: true });
     let mock = null;
     try {
@@ -375,24 +428,19 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
           }
           if (administer) {
             walk.journey = `as ${role}`;
-            await walkDashboards(walk, page, base).catch((e) => { if (!(e instanceof StepFailed)) throw e; });
             await walkSignGone(walk, page, base).catch((e) => { if (!(e instanceof StepFailed)) throw e; });
           }
           await sweep(walk, page, base, { screens: working, journey: `as ${role}`, each: async (p, s, drawn) => {
             acts[role].set(s.id, await drawnActs(p));
             if (!drawn) return;
-            for (const width of WIDTHS) {
-              if (width !== 1280) { await p.setViewportSize(viewportOf(width)); await p.reload(); await settle(p); }
-              for (const l of await pageLimits(p, { width, slugs, handles: [...walk.handles] })) walk.fail(l.kind, `${s.id} at ${width}px: ${l.detail}`);
-              /* R28 (DEC-340): the screen's title, the explanations, the masthead's name, Projects' controls */
-              for (const l of await dec340Limits(p, s.id, { isPublic: false, phone: width <= 390 })) walk.fail(FAIL.DEC340, localize("journey-check.run.id_at_width_px_kind", "{id} at {width}px: {kind}: {detail}", { id: String(s.id), width: String(width), kind: String(l.kind), detail: String(l.detail) }));
+            /* R6, R28 (DEC-340): the page's limits at each width, then the pair beside the design's drawing */
+            await screenLimits(walk, p, s.id, { slugs, each: async (width) => {
               const live = await p.screenshot();
               const design = await mock.draw(s.id, width);
               if (!design) walk.fail(FAIL.DESIGN, localize("journey-check.run.id_the_design_mock_at", "{id}: the design mock at {commit} draws no such screen", { id: String(s.id), commit: String(mock.commit) }));
               else walk.pairs.push(relative(out, await pair(b, live, design, join(out, "pairs", `${role}-${s.id}-${width}.png`),
                 { title: `${s.id}, ${width}px, as ${role}` })));
-            }
-            await p.setViewportSize(viewportOf(1280));
+            } });
           } });
         } catch (e) { if (!(e instanceof StepFailed)) throw e; }
         finally { await ctx.close().catch(() => {}); }
@@ -408,6 +456,9 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
       if (investigate) await investigateLive(walk, b, base, {
         founder: { handle: env.JOURNEY_ADMIN_HANDLE, password: env.JOURNEY_ADMIN_PASSWORD },
         member: { handle: env.JOURNEY_MEMBER_HANDLE, password: env.JOURNEY_MEMBER_PASSWORD }, codeOf, assistant, city });
+      /* R22 (CR2-5): the dashboards from Home's doors, walked after R9 has made the team's project, so Home's Investigation door
+         is there to test (screens-daily R17, R51: a team with no project has none); a session of the administrator's own */
+      await dashboardsLive(walk, b, base, { handle: env.JOURNEY_ADMIN_HANDLE, password: env.JOURNEY_ADMIN_PASSWORD });
       /* R18 (K3747): journey 29's steps the design marks for the assistant, which the walk did not reach while the assistant does
          not work, are reported as not walked, never failed */
       walk.journey = "R18 design journey 29";

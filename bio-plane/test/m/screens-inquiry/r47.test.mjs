@@ -3,13 +3,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { boot, ok } from "../interface-shell/harness.mjs";
-import { storeWorld, WORLD_FOUNDER_HANDLE, main, actsIn, button, says, section, word, BASIS, SCREENS } from "./fixtures.mjs";
+import { storeWorld, aiWorld, WORLD_FOUNDER_HANDLE, main, actsIn, button, says, section, word, BASIS, SCREENS } from "./fixtures.mjs";
 
 /* the real world (store-assembly's store with the real door; the state is made by real acts, K5054): the team's Claude account is set up by its administrator's acts, a project and a
    question of ann's (with `n` documents it rests on) are made by hers, and the page is read over the world's door, `plane` scripting only the ops it names */
 const OWN = { capabilities: ["contribute", "create_projects"] };
 const stateWorld = async ({ n = 0 } = {}) => {
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
   const ann = await world.signIn("ann", OWN);
   const project = await world.recipes.project(ann, "Pothole repairs");
@@ -36,7 +36,7 @@ const joined = async (w, handle) => {
   const other = await w.world.signIn(handle, OWN);
   await w.ann.act("projectinvite", { query: { projectId: w.project, handle }, body: {} });
   await other.act("projectjoin", { query: { projectId: w.project }, body: {} });
-  await other.act("groupkeynoticeseen", { body: {} });
+  await w.world.recipes.assistant(w.admin, { readers: [other] });
   return other;
 };
 
@@ -46,7 +46,7 @@ const withProposal = { basisversions: (r) => ok({ ...BASIS(), versions: [...BASI
   ...(r.query.project ? { current: { project: r.query.project, version: "main", at: "2026-10-06T09:00:00Z", by: "dev" } } : {}) }) };
 
 /* the machine's proposal is scripted over the world (needed: a question holding a suggested machine reading, with its run) */
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R47 an ended run with proposals waiting draws the ending and the ask above them", async () => {
+test("R47 an ended run with proposals waiting draws the ending and the ask above them", async () => {
   const w = await stateWorld({ n: 1 });
   await (await openRun(w)).end("wallclock");
   const p = await w.page({ plane: withProposal });
@@ -66,7 +66,7 @@ test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interfac
   assert.ok(says(section(c, "question.empty.heading"), "screen.assistant.run.ended", { why: word("ai.run.ending.wallclock") }));
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R47 a running run found on load, not pressed on this page, draws state d and is read again until it ends", async () => {
+test("R47 a running run found on load, not pressed on this page, draws state d and is read again until it ends", async () => {
   const w = await stateWorld({ n: 1 });
   const run = await openRun(w);
   const p = await w.page();
@@ -98,7 +98,7 @@ test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interfac
   assert.equal(section(other, "question.run.heading"), undefined);
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R47 control: no run, with proposals pending, draws the proposals as before and no ending", async () => {
+test("R47 control: no run, with proposals pending, draws the proposals as before and no ending", async () => {
   const w = await stateWorld({ n: 1 });
   const p = await w.page({ plane: withProposal });
   assert.ok(section(p, "question.proposal.heading"));
@@ -115,7 +115,7 @@ async function dock(w) {
 }
 const panel = (p) => p.root().querySelector(".cs-dock");
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R48 two ended runs draw the later's ending, not \"No run yet\"; the ask is offered", async () => {
+test("R48 two ended runs draw the later's ending, not \"No run yet\"; the ask is offered", async () => {
   const w = await stateWorld({ n: 1 });
   await (await openRun(w)).end("cancelled");
   /* a run is stamped to the second by the wall clock, which the world does not move: the later run waits a second */
@@ -134,7 +134,7 @@ test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interfac
   assert.ok(says(panel(other), "screen.assistant.run.none"));
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R48 control: no run of hers draws \"No run yet\"", async () => {
+test("R48 control: no run of hers draws \"No run yet\"", async () => {
   const w = await stateWorld({ n: 1 });
   const p = await dock(w);
   assert.ok(says(panel(p), "screen.assistant.run.none"));

@@ -257,6 +257,8 @@ export class Walk {
      only where its path in the answer matches `at`) or HTTP statuses it expects. The page is
      screenshotted when it settles, whether the step held or not; a step that throws stops the journey. */
   async step(page, label, fn, { expect = [] } = {}) {
+    /* a step taken inside another (a carried state's setup, R21) gives the outer step back its label when it ends */
+    const outer = this.current;
     this.current = { label, expect };
     const n = String(++this.n).padStart(2, "0");
     const file = `${n}-${this.arm}-${slugOf(this.journey)}-${slugOf(label)}.png`;
@@ -271,7 +273,7 @@ export class Walk {
     const failed = this.failures.filter((f) => f.step === label && f.journey === this.journey);
     if (error) this.fail(FAIL.STEP, error.message.split("\n")[0]);
     this.steps.push({ journey: this.journey, label, screenshot: file, ok: !error && failed.length === 0 });
-    this.current = null;
+    this.current = outer;
     if (error) throw new StepFailed(label, error);
   }
 

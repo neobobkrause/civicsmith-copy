@@ -11,6 +11,8 @@ import { browser } from "../../../src/journey-check/run.mjs";
 import { Walk, FAIL } from "../../../src/journey-check/walker.mjs";
 import { designMock, WIDTHS } from "../../../src/journey-check/design.mjs";
 import { CARRIED_STATES, walkStates } from "../../../src/journey-check/states.mjs";
+import { stateKey, unreachedOnLocal, liveArmOnly, knownGap } from "../../../src/journey-check/states.mjs";
+import { localReach, LIVE_ARM, KNOWN_GAPS, overlappingZip } from "../../../src/journey-check/reach.mjs";
 import { walkPublished, NO_PUBLISHED_NOTE } from "../../../src/journey-check/published.mjs";
 import { walkDashboards } from "../../../src/journey-check/journeys.mjs";
 import { fakePlane, publishedPage } from "./fake-plane.mjs";
@@ -62,6 +64,61 @@ test("R21: on the local arm a state that cannot be reached fails by its name, on
   assert.deepEqual(local.notes, []);
   assert.deepEqual(live.failures, []);
   assert.equal(live.notes.length, 1);
+});
+
+test("R21, F10: a reach entry keyed by its state is walked on its own page as a named step of each width, in the order of its rank, and puts back what it changed; a reach that cannot draw its state fails the state by name and says why; control: a reached state is paired", { timeout: 300000 }, async () => {
+  const states = CARRIED_STATES.filter((s) => s.screen === "project").slice(0, 3);
+  const order = [], undone = [];
+  const ctx = await B.newContext(); const founder = await ctx.newPage(); const other = await ctx.newPage();
+  const reach = {
+    [stateKey(states[0])]: { reach: async (p) => { order.push(0); await p.setContent("<main>the first state</main>"); return true; }, after: async (p) => undone.push(p === other) , page: () => other },
+    [stateKey(states[1])]: { rank: -1, reach: async () => { order.push(1); throw new Error("the second state's setup refused"); } },
+    [stateKey(states[2])]: { reach: async (p) => { order.push(2); await p.setContent("<main>the third state</main>"); return true; } },
+  };
+  const walk = new Walk({ out: join(dir, "f10"), arm: "local" });
+  const wrote = await walkStates(walk, B, mock, { out: walk.out, page: founder, base: "http://x", states, reach, liveArm: {}, gaps: {} });
+  await ctx.close();
+  assert.deepEqual(order, [1, 0, 0, 2, 2], "rank -1 first, then the list's order, once per width (the failed one stops at its first)");
+  assert.deepEqual(undone, [true], "after ran once, on the state's own page");
+  assert.equal(wrote.length, 4, "two states reached, each at both widths");
+  const name1 = `${states[1].screen}, ${states[1].state}`;
+  assert.ok(walk.steps.some((s) => s.label === `R21 ${name1} at 1280px` && !s.ok), walk.steps.map((s) => s.label).join(" | "));
+  assert.ok(walk.failures.some((f) => f.kind === FAIL.STEP && /the second state's setup refused/.test(f.detail)), "the step says why");
+  assert.ok(walk.failures.some((f) => f.kind === FAIL.STATE && f.detail === unreachedOnLocal(name1)), "the state fails by name");
+  assert.equal(walk.failures.length, 2, JSON.stringify(walk.failures));
+});
+
+test("R21, F10: the local arm has a reach for every carried state but those the local copy cannot draw, each the live arm's (with its means there) or a known gap, with why; connect's and teamai's retired states are gone; the crafted archive's directory lists one entry twice over the same bytes", () => {
+  const R = localReach({ walk: {}, base: "http://x/", who: { founder: {}, member: {}, newcomer: {} },
+    made: { project: "http://x/app/project/P", question: "http://x/app/question/Q" }, own: { project: "http://x/app/project/O", question: "http://x/app/question/O" } });
+  const keys = CARRIED_STATES.map(stateKey);
+  for (const k of [...Object.keys(R), ...Object.keys(LIVE_ARM), ...Object.keys(KNOWN_GAPS)]) assert.ok(keys.includes(k), `${k} is no carried state`);
+  for (const k of keys) assert.equal([R, LIVE_ARM, KNOWN_GAPS].filter((m) => Object.hasOwn(m, k)).length, 1, `${k}: a reach, the live arm's or a known gap, exactly one`);
+  for (const { why, means } of Object.values(LIVE_ARM)) assert.ok(why.length > 20 && means.length > 20);
+  for (const why of Object.values(KNOWN_GAPS)) assert.ok(why.length > 20);
+  assert.ok(!CARRIED_STATES.some((s) => ["connect", "teamai"].includes(s.screen)), "retired with their screens (T53)");
+  const z = overlappingZip();
+  const end = z.length - 22;
+  assert.equal(z.readUInt32LE(end), 0x06054b50);
+  assert.equal(z.readUInt16LE(end + 10), 2, "two entries listed");
+  const dir0 = z.readUInt32LE(end + 16), size = z.readUInt32LE(end + 12);
+  assert.deepEqual(z.subarray(dir0, dir0 + size / 2), z.subarray(dir0 + size / 2, dir0 + size), "the same entry twice");
+});
+
+test("R21, CR2-2: a state the live arm walks is noted on the local arm with its means there, and a known gap on both arms, neither failed nor paired; control: an unlisted state the local arm cannot reach still fails by name", { timeout: 300000 }, async () => {
+  const states = CARRIED_STATES.filter((s) => s.screen === "project").slice(0, 3);
+  const name = (st) => `${st.screen}, ${st.state}`;
+  const liveArm = { [stateKey(states[0])]: { why: "the local copy holds no key", means: "the deployment's key" } };
+  const gaps = { [stateKey(states[1])]: "nothing draws it" };
+  const local = new Walk({ out: join(dir, "g"), arm: "local" });
+  const wrote = await walkStates(local, B, mock, { out: local.out, base: "http://x", states, liveArm, gaps });
+  assert.deepEqual(wrote, []);
+  assert.deepEqual(local.notes, [liveArmOnly(name(states[0]), "the local copy holds no key", "the deployment's key"), knownGap(name(states[1]), "nothing draws it")]);
+  assert.deepEqual(local.failures.map((f) => [f.kind, f.detail]), [[FAIL.STATE, unreachedOnLocal(name(states[2]))]]);
+  const live = new Walk({ out: join(dir, "h"), arm: "live" });
+  await walkStates(live, B, mock, { out: live.out, base: "http://x", states: states.slice(0, 2), liveArm, gaps });
+  assert.deepEqual(live.failures, []);
+  assert.ok(live.notes.includes(knownGap(name(states[1]), "nothing draws it")), live.notes.join(" | "));
 });
 
 /* a fixture instance holding a published case (fake-plane.mjs `publishedPage`, drawn as the screen draws it); `bad` makes the minimum a request */

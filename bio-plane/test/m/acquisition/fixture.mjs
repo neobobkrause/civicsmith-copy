@@ -15,7 +15,6 @@ import { acquire, archiveLookup, acquisitionOf } from "../../../src/acquisition/
 import { acceptDatetime } from "../../../src/capture-sources/memento.mjs";
 import { PROVENANCE_SCHEMA } from "../../../src/provenance/schema.mjs";
 import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
-import { ARCHIVE_CAPTURE_GRADE } from "../../../src/provenance/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 import { registeredHomes } from "../provenance/fixtures.mjs";
 
@@ -137,7 +136,9 @@ export function provenance({ registered = [], acquired = [], sql = null, homes =
     captureGrade(s, depth = 0) {
       const v = vias(s);
       if (v.includes("direct")) return { grade: EARNED_CAPTURE_CEILING, route: "direct", determined: true, basis: "measured" };
-      if (v.includes("archive.org")) return { grade: ARCHIVE_CAPTURE_GRADE, route: "archive", determined: true, basis: "measured" };
+      /* F1 (BD-18): an archive replay is graded by provenance's own rule over the receipts recorded (a raw replay the
+         archive letter, a rewritten one the reference-only letter), the provider's real answer, never a letter typed here */
+      if (v.includes("archive.org")) return real.provenance.captureGrade(s);
       if (v.includes("unpacked")) {
         const r = receipts.find((x) => x.captureSha === s && x.via === "unpacked");
         const m = /^zip:([0-9a-f]{64})!(\d+)$/.exec(r.retrievalLocator || "");
