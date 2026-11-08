@@ -1,0 +1,550 @@
+journey-check (live): 157 steps, 178 failures
+ok   as administrator · administrator: open / and sign in (01-live-as-administrator-administrator-open-and-sign-in.png)
+ok   as administrator · sign: /sign answers the nothing-is-here page (02-live-as-administrator-sign-sign-answers-the-nothing-is-here-page.png)
+FAIL as administrator · screen group-identity (03-live-as-administrator-screen-group-identity.png)
+FAIL as administrator · screen home (04-live-as-administrator-screen-home.png)
+FAIL as administrator · screen members (05-live-as-administrator-screen-members.png)
+FAIL as administrator · screen security (06-live-as-administrator-screen-security.png)
+FAIL as administrator · screen account (07-live-as-administrator-screen-account.png)
+FAIL as administrator · screen connect (08-live-as-administrator-screen-connect.png)
+FAIL as administrator · screen teamai (09-live-as-administrator-screen-teamai.png)
+FAIL as administrator · screen bias (10-live-as-administrator-screen-bias.png)
+FAIL as administrator · screen places (11-live-as-administrator-screen-places.png)
+FAIL as administrator · screen recovery (12-live-as-administrator-screen-recovery.png)
+FAIL as administrator · screen group (13-live-as-administrator-screen-group.png)
+FAIL as administrator · screen settings (14-live-as-administrator-screen-settings.png)
+ok   as administrator · screen more (15-live-as-administrator-screen-more.png)
+FAIL as administrator · screen updates (16-live-as-administrator-screen-updates.png)
+FAIL as administrator · screen ties (17-live-as-administrator-screen-ties.png)
+FAIL as administrator · screen notes (18-live-as-administrator-screen-notes.png)
+FAIL as administrator · screen translations (19-live-as-administrator-screen-translations.png)
+FAIL as administrator · screen wizards (20-live-as-administrator-screen-wizards.png)
+FAIL as administrator · screen projects (21-live-as-administrator-screen-projects.png)
+FAIL as administrator · screen theme (22-live-as-administrator-screen-theme.png)
+FAIL as administrator · screen dash-action (23-live-as-administrator-screen-dash-action.png)
+FAIL as administrator · screen dash-project (24-live-as-administrator-screen-dash-project.png)
+FAIL as administrator · screen unavailable (25-live-as-administrator-screen-unavailable.png)
+FAIL as administrator · screen elsewhere (26-live-as-administrator-screen-elsewhere.png)
+FAIL as administrator · screen queue (27-live-as-administrator-screen-queue.png)
+FAIL as administrator · screen finder (28-live-as-administrator-screen-finder.png)
+FAIL as administrator · screen capture (29-live-as-administrator-screen-capture.png)
+FAIL as administrator · screen held (30-live-as-administrator-screen-held.png)
+ok   as administrator · screen archive (31-live-as-administrator-screen-archive.png)
+ok   as administrator · screen open-file (32-live-as-administrator-screen-open-file.png)
+FAIL as administrator · screen document (33-live-as-administrator-screen-document.png)
+FAIL as administrator · screen contradiction (34-live-as-administrator-screen-contradiction.png)
+FAIL as administrator · screen find-in (35-live-as-administrator-screen-find-in.png)
+FAIL as administrator · screen project (36-live-as-administrator-screen-project.png)
+FAIL as administrator · screen objective (37-live-as-administrator-screen-objective.png)
+FAIL as administrator · screen projectai (38-live-as-administrator-screen-projectai.png)
+FAIL as administrator · screen question (39-live-as-administrator-screen-question.png)
+FAIL as administrator · screen answers (40-live-as-administrator-screen-answers.png)
+FAIL as administrator · screen assistant (41-live-as-administrator-screen-assistant.png)
+FAIL as administrator · screen people (42-live-as-administrator-screen-people.png)
+FAIL as administrator · screen person (43-live-as-administrator-screen-person.png)
+FAIL as administrator · screen timeline (44-live-as-administrator-screen-timeline.png)
+FAIL as administrator · screen money (45-live-as-administrator-screen-money.png)
+FAIL as administrator · screen calculation (46-live-as-administrator-screen-calculation.png)
+FAIL as administrator · screen help-records (47-live-as-administrator-screen-help-records.png)
+FAIL as administrator · screen help (48-live-as-administrator-screen-help.png)
+FAIL as administrator · screen explore (49-live-as-administrator-screen-explore.png)
+FAIL as administrator · screen proceeding (50-live-as-administrator-screen-proceeding.png)
+FAIL as administrator · screen due-date (51-live-as-administrator-screen-due-date.png)
+FAIL as administrator · screen standard (52-live-as-administrator-screen-standard.png)
+FAIL as administrator · screen plan (53-live-as-administrator-screen-plan.png)
+FAIL as administrator · screen start-send (54-live-as-administrator-screen-start-send.png)
+FAIL as administrator · screen glossary (55-live-as-administrator-screen-glossary.png)
+FAIL as administrator · screen actionnew (56-live-as-administrator-screen-actionnew.png)
+FAIL as administrator · screen request (57-live-as-administrator-screen-request.png)
+FAIL as administrator · screen action (58-live-as-administrator-screen-action.png)
+FAIL as administrator · screen hold (59-live-as-administrator-screen-hold.png)
+FAIL as administrator · screen holdnotice (60-live-as-administrator-screen-holdnotice.png)
+FAIL as administrator · screen counsel (61-live-as-administrator-screen-counsel.png)
+FAIL as administrator · screen grouprules (62-live-as-administrator-screen-grouprules.png)
+FAIL as administrator · screen matter (63-live-as-administrator-screen-matter.png)
+ok   as administrator · screen case-editor (64-live-as-administrator-screen-case-editor.png)
+ok   as administrator · screen review-copy (65-live-as-administrator-screen-review-copy.png)
+FAIL as administrator · screen ceremony (66-live-as-administrator-screen-ceremony.png)
+ok   as administrator · screen docket (67-live-as-administrator-screen-docket.png)
+FAIL as administrator · screen inbox (68-live-as-administrator-screen-inbox.png)
+ok   as administrator · screen about-knocker (69-live-as-administrator-screen-about-knocker.png)
+FAIL as administrator · screen leads (70-live-as-administrator-screen-leads.png)
+FAIL as administrator · screen watching (71-live-as-administrator-screen-watching.png)
+FAIL as administrator · screen registers (72-live-as-administrator-screen-registers.png)
+FAIL as administrator · screen aiproviders (73-live-as-administrator-screen-aiproviders.png)
+FAIL as administrator · screen aiconnect (74-live-as-administrator-screen-aiconnect.png)
+FAIL as administrator · screen aimine (75-live-as-administrator-screen-aimine.png)
+FAIL as administrator · screen aiproject (76-live-as-administrator-screen-aiproject.png)
+FAIL as administrator · screen aimoments (77-live-as-administrator-screen-aimoments.png)
+FAIL as administrator · screen aitest (78-live-as-administrator-screen-aitest.png)
+FAIL as administrator · screen airesults (79-live-as-administrator-screen-airesults.png)
+ok   as member · member: open / and sign in (80-live-as-member-member-open-and-sign-in.png)
+FAIL as member · screen group-identity (81-live-as-member-screen-group-identity.png)
+FAIL as member · screen home (82-live-as-member-screen-home.png)
+FAIL as member · screen members (83-live-as-member-screen-members.png)
+FAIL as member · screen security (84-live-as-member-screen-security.png)
+FAIL as member · screen account (85-live-as-member-screen-account.png)
+FAIL as member · screen connect (86-live-as-member-screen-connect.png)
+FAIL as member · screen teamai (87-live-as-member-screen-teamai.png)
+FAIL as member · screen bias (88-live-as-member-screen-bias.png)
+FAIL as member · screen places (89-live-as-member-screen-places.png)
+FAIL as member · screen recovery (90-live-as-member-screen-recovery.png)
+FAIL as member · screen group (91-live-as-member-screen-group.png)
+FAIL as member · screen settings (92-live-as-member-screen-settings.png)
+FAIL as member · screen more (93-live-as-member-screen-more.png)
+FAIL as member · screen updates (94-live-as-member-screen-updates.png)
+FAIL as member · screen ties (95-live-as-member-screen-ties.png)
+FAIL as member · screen notes (96-live-as-member-screen-notes.png)
+FAIL as member · screen translations (97-live-as-member-screen-translations.png)
+FAIL as member · screen wizards (98-live-as-member-screen-wizards.png)
+FAIL as member · screen projects (99-live-as-member-screen-projects.png)
+FAIL as member · screen theme (100-live-as-member-screen-theme.png)
+FAIL as member · screen dash-action (101-live-as-member-screen-dash-action.png)
+FAIL as member · screen dash-project (102-live-as-member-screen-dash-project.png)
+FAIL as member · screen unavailable (103-live-as-member-screen-unavailable.png)
+FAIL as member · screen elsewhere (104-live-as-member-screen-elsewhere.png)
+FAIL as member · screen queue (105-live-as-member-screen-queue.png)
+FAIL as member · screen finder (106-live-as-member-screen-finder.png)
+FAIL as member · screen capture (107-live-as-member-screen-capture.png)
+FAIL as member · screen held (108-live-as-member-screen-held.png)
+FAIL as member · screen archive (109-live-as-member-screen-archive.png)
+FAIL as member · screen open-file (110-live-as-member-screen-open-file.png)
+FAIL as member · screen document (111-live-as-member-screen-document.png)
+FAIL as member · screen contradiction (112-live-as-member-screen-contradiction.png)
+FAIL as member · screen find-in (113-live-as-member-screen-find-in.png)
+FAIL as member · screen project (114-live-as-member-screen-project.png)
+FAIL as member · screen objective (115-live-as-member-screen-objective.png)
+FAIL as member · screen projectai (116-live-as-member-screen-projectai.png)
+FAIL as member · screen question (117-live-as-member-screen-question.png)
+FAIL as member · screen answers (118-live-as-member-screen-answers.png)
+FAIL as member · screen assistant (119-live-as-member-screen-assistant.png)
+FAIL as member · screen people (120-live-as-member-screen-people.png)
+FAIL as member · screen person (121-live-as-member-screen-person.png)
+FAIL as member · screen timeline (122-live-as-member-screen-timeline.png)
+FAIL as member · screen money (123-live-as-member-screen-money.png)
+FAIL as member · screen calculation (124-live-as-member-screen-calculation.png)
+FAIL as member · screen help-records (125-live-as-member-screen-help-records.png)
+FAIL as member · screen help (126-live-as-member-screen-help.png)
+FAIL as member · screen explore (127-live-as-member-screen-explore.png)
+FAIL as member · screen proceeding (128-live-as-member-screen-proceeding.png)
+FAIL as member · screen due-date (129-live-as-member-screen-due-date.png)
+FAIL as member · screen standard (130-live-as-member-screen-standard.png)
+FAIL as member · screen plan (131-live-as-member-screen-plan.png)
+FAIL as member · screen start-send (132-live-as-member-screen-start-send.png)
+FAIL as member · screen glossary (133-live-as-member-screen-glossary.png)
+FAIL as member · screen actionnew (134-live-as-member-screen-actionnew.png)
+FAIL as member · screen request (135-live-as-member-screen-request.png)
+FAIL as member · screen action (136-live-as-member-screen-action.png)
+FAIL as member · screen hold (137-live-as-member-screen-hold.png)
+FAIL as member · screen holdnotice (138-live-as-member-screen-holdnotice.png)
+FAIL as member · screen counsel (139-live-as-member-screen-counsel.png)
+FAIL as member · screen grouprules (140-live-as-member-screen-grouprules.png)
+FAIL as member · screen matter (141-live-as-member-screen-matter.png)
+FAIL as member · screen case-editor (142-live-as-member-screen-case-editor.png)
+FAIL as member · screen review-copy (143-live-as-member-screen-review-copy.png)
+FAIL as member · screen ceremony (144-live-as-member-screen-ceremony.png)
+FAIL as member · screen docket (145-live-as-member-screen-docket.png)
+FAIL as member · screen inbox (146-live-as-member-screen-inbox.png)
+FAIL as member · screen about-knocker (147-live-as-member-screen-about-knocker.png)
+FAIL as member · screen leads (148-live-as-member-screen-leads.png)
+FAIL as member · screen watching (149-live-as-member-screen-watching.png)
+FAIL as member · screen registers (150-live-as-member-screen-registers.png)
+FAIL as member · screen aiproviders (151-live-as-member-screen-aiproviders.png)
+FAIL as member · screen aiconnect (152-live-as-member-screen-aiconnect.png)
+FAIL as member · screen aimine (153-live-as-member-screen-aimine.png)
+FAIL as member · screen aiproject (154-live-as-member-screen-aiproject.png)
+FAIL as member · screen aimoments (155-live-as-member-screen-aimoments.png)
+FAIL as member · screen aitest (156-live-as-member-screen-aitest.png)
+FAIL as member · screen airesults (157-live-as-member-screen-airesults.png)
+  dec340: as administrator · screen group-identity: group-identity at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen home: home at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen home: home at 390px: covers: the explanation of BUTTON covers BUTTON
+  dec340: as administrator · screen home: home at 390px: covers: the explanation of SPAN covers BUTTON
+  dec340: as administrator · screen home: home at 390px: covers: the explanation of H1 covers BUTTON, A
+  dec340: as administrator · screen home: home at 390px: covers: the explanation of BUTTON covers A
+  dec340: as administrator · screen members: members at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen security: security at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen security: security at 390px: covers: the explanation of SPAN covers A
+  dec340: as administrator · screen account: account at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen account: account at 390px: covers: the explanation of SPAN covers A
+  dec340: as administrator · screen connect: connect at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen teamai: teamai at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen bias: bias at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen places: places at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen places: places at 390px: covers: the explanation of SPAN covers A
+  dec340: as administrator · screen recovery: recovery at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen recovery: recovery at 390px: covers: the explanation of SPAN covers A
+  dec340: as administrator · screen group: group at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen group: group at 390px: covers: the explanation of SPAN covers A
+  dec340: as administrator · screen settings: settings at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen settings: settings at 390px: covers: the explanation of BUTTON covers A
+  dec340: as administrator · screen settings: settings at 390px: covers: the explanation of A covers A
+  dec340: as administrator · screen updates: updates at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen updates: updates at 390px: covers: the explanation of BUTTON covers BUTTON
+  dec340: as administrator · screen updates: updates at 390px: covers: the explanation of SPAN covers A, BUTTON
+  dec340: as administrator · screen ties: ties at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen ties: ties at 390px: covers: the explanation of BUTTON covers BUTTON
+  dec340: as administrator · screen ties: ties at 390px: covers: the explanation of SPAN covers A, BUTTON
+  dec340: as administrator · screen notes: notes at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen translations: translations at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen translations: translations at 390px: covers: the explanation of BUTTON covers BUTTON
+  dec340: as administrator · screen translations: translations at 390px: covers: the explanation of SPAN covers A, BUTTON
+  dec340: as administrator · screen wizards: wizards at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen projects: projects at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen theme: theme at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen dash-action: dash-action at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen dash-project: dash-project at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen unavailable: unavailable at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen elsewhere: elsewhere at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen queue: queue at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen finder: finder at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen capture: capture at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen capture: capture at 390px: covers: the explanation of BUTTON covers BUTTON
+  dec340: as administrator · screen capture: capture at 390px: covers: the explanation of SPAN covers BUTTON
+  dec340: as administrator · screen capture: capture at 390px: covers: the explanation of H1 covers BUTTON
+  dec340: as administrator · screen capture: capture at 390px: covers: the explanation of BUTTON covers A
+  dec340: as administrator · screen held: held at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen held: held at 390px: covers: the explanation of SPAN covers A
+  dec340: as administrator · screen document: document at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen contradiction: contradiction at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen find-in: find-in at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen project: project at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen objective: objective at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen projectai: projectai at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen question: question at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen answers: answers at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen answers: answers at 390px: covers: the explanation of BUTTON covers BUTTON
+  dec340: as administrator · screen assistant: assistant at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen people: people at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen person: person at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen timeline: timeline at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen money: money at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen calculation: calculation at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen help-records: help-records at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen help: help at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen explore: explore at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen proceeding: proceeding at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen due-date: due-date at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen standard: standard at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen standard: standard at 390px: covers: the explanation of SPAN covers A
+  dec340: as administrator · screen plan: plan at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen start-send: start-send at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen glossary: glossary at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen actionnew: actionnew at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen request: request at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen action: action at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen hold: hold at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen holdnotice: holdnotice at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen counsel: counsel at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen grouprules: grouprules at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen matter: matter at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen ceremony: ceremony at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen inbox: inbox at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen leads: leads at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen leads: leads at 390px: covers: the explanation of SPAN covers A
+  dec340: as administrator · screen watching: watching at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen watching: watching at 390px: covers: the explanation of SPAN covers A
+  dec340: as administrator · screen registers: registers at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen aiproviders: aiproviders at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen aiconnect: aiconnect at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen aimine: aimine at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen aiproject: aiproject at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen aimoments: aimoments at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen aitest: aitest at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as administrator · screen airesults: airesults at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen group-identity: group-identity at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen home: home at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen home: home at 390px: covers: the explanation of SPAN covers BUTTON
+  dec340: as member · screen members: members at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen security: security at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen account: account at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen account: account at 390px: covers: the explanation of SPAN covers A
+  dec340: as member · screen connect: connect at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen teamai: teamai at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen bias: bias at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen places: places at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen places: places at 390px: covers: the explanation of SPAN covers A
+  dec340: as member · screen recovery: recovery at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt
+  dec340: as member · screen recovery: recovery at 390px: covers: the explanation of SPAN covers A
+  step: as member · screen group: page.goto: Target page, context or browser has been closed
+  step: as member · screen settings: page.goto: Target page, context or browser has been closed
+  step: as member · screen more: page.goto: Target page, context or browser has been closed
+  step: as member · screen updates: page.goto: Target page, context or browser has been closed
+  step: as member · screen ties: page.goto: Target page, context or browser has been closed
+  step: as member · screen notes: page.goto: Target page, context or browser has been closed
+  step: as member · screen translations: page.goto: Target page, context or browser has been closed
+  step: as member · screen wizards: page.goto: Target page, context or browser has been closed
+  step: as member · screen projects: page.goto: Target page, context or browser has been closed
+  step: as member · screen theme: page.goto: Target page, context or browser has been closed
+  step: as member · screen dash-action: page.goto: Target page, context or browser has been closed
+  step: as member · screen dash-project: page.goto: Target page, context or browser has been closed
+  step: as member · screen unavailable: page.goto: Target page, context or browser has been closed
+  step: as member · screen elsewhere: page.goto: Target page, context or browser has been closed
+  step: as member · screen queue: page.goto: Target page, context or browser has been closed
+  step: as member · screen finder: page.goto: Target page, context or browser has been closed
+  step: as member · screen capture: page.goto: Target page, context or browser has been closed
+  step: as member · screen held: page.goto: Target page, context or browser has been closed
+  step: as member · screen archive: page.goto: Target page, context or browser has been closed
+  step: as member · screen open-file: page.goto: Target page, context or browser has been closed
+  step: as member · screen document: page.goto: Target page, context or browser has been closed
+  step: as member · screen contradiction: page.goto: Target page, context or browser has been closed
+  step: as member · screen find-in: page.goto: Target page, context or browser has been closed
+  step: as member · screen project: page.goto: Target page, context or browser has been closed
+  step: as member · screen objective: page.goto: Target page, context or browser has been closed
+  step: as member · screen projectai: page.goto: Target page, context or browser has been closed
+  step: as member · screen question: page.goto: Target page, context or browser has been closed
+  step: as member · screen answers: page.goto: Target page, context or browser has been closed
+  step: as member · screen assistant: page.goto: Target page, context or browser has been closed
+  step: as member · screen people: page.goto: Target page, context or browser has been closed
+  step: as member · screen person: page.goto: Target page, context or browser has been closed
+  step: as member · screen timeline: page.goto: Target page, context or browser has been closed
+  step: as member · screen money: page.goto: Target page, context or browser has been closed
+  step: as member · screen calculation: page.goto: Target page, context or browser has been closed
+  step: as member · screen help-records: page.goto: Target page, context or browser has been closed
+  step: as member · screen help: page.goto: Target page, context or browser has been closed
+  step: as member · screen explore: page.goto: Target page, context or browser has been closed
+  step: as member · screen proceeding: page.goto: Target page, context or browser has been closed
+  step: as member · screen due-date: page.goto: Target page, context or browser has been closed
+  step: as member · screen standard: page.goto: Target page, context or browser has been closed
+  step: as member · screen plan: page.goto: Target page, context or browser has been closed
+  step: as member · screen start-send: page.goto: Target page, context or browser has been closed
+  step: as member · screen glossary: page.goto: Target page, context or browser has been closed
+  step: as member · screen actionnew: page.goto: Target page, context or browser has been closed
+  step: as member · screen request: page.goto: Target page, context or browser has been closed
+  step: as member · screen action: page.goto: Target page, context or browser has been closed
+  step: as member · screen hold: page.goto: Target page, context or browser has been closed
+  step: as member · screen holdnotice: page.goto: Target page, context or browser has been closed
+  step: as member · screen counsel: page.goto: Target page, context or browser has been closed
+  step: as member · screen grouprules: page.goto: Target page, context or browser has been closed
+  step: as member · screen matter: page.goto: Target page, context or browser has been closed
+  step: as member · screen case-editor: page.goto: Target page, context or browser has been closed
+  step: as member · screen review-copy: page.goto: Target page, context or browser has been closed
+  step: as member · screen ceremony: page.goto: Target page, context or browser has been closed
+  step: as member · screen docket: page.goto: Target page, context or browser has been closed
+  step: as member · screen inbox: page.goto: Target page, context or browser has been closed
+  step: as member · screen about-knocker: page.goto: Target page, context or browser has been closed
+  step: as member · screen leads: page.goto: Target page, context or browser has been closed
+  step: as member · screen watching: page.goto: Target page, context or browser has been closed
+  step: as member · screen registers: page.goto: Target page, context or browser has been closed
+  step: as member · screen aiproviders: page.goto: Target page, context or browser has been closed
+  step: as member · screen aiconnect: page.goto: Target page, context or browser has been closed
+  step: as member · screen aimine: page.goto: Target page, context or browser has been closed
+  step: as member · screen aiproject: page.goto: Target page, context or browser has been closed
+  step: as member · screen aimoments: page.goto: Target page, context or browser has been closed
+  step: as member · screen aitest: page.goto: Target page, context or browser has been closed
+  step: as member · screen airesults: page.goto: Target page, context or browser has been closed
+  step: R28 the public pages · between steps: browser.newContext: Target page, context or browser has been closed
+    at async publicPass (/tmp/p3-round-1vLIkP/w/bio-plane/src/journey-check/run.mjs:361:15)
+    at async runLive (/tmp/p3-round-1vLIkP/w/bio-plane/src/journey-check/run.mjs:451:7)
+    at async file:///tmp/p3-round-1vLIkP/w/bio-plane/src/journey-check/journey.mjs:25:13
+note: connect: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: teamai: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: dash-project: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: unavailable: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: archive: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: open-file: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: document: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: project: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: objective: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: projectai: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: question: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: assistant: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: person: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: timeline: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: money: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: calculation: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: due-date: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: plan: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: start-send: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: actionnew: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: action: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: counsel: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: matter: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: case-editor: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: review-copy: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: ceremony: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: docket: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: about-knocker: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: registers: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: aiconnect: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: aiproject: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: aimoments: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: aitest: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: airesults: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: connect: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+note: teamai: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)
+174 pairs, LIVE beside DESIGN, for BOB's comparison (R6):
+  pairs/administrator-group-identity-1280.png
+  pairs/administrator-group-identity-390.png
+  pairs/administrator-home-1280.png
+  pairs/administrator-home-390.png
+  pairs/administrator-members-1280.png
+  pairs/administrator-members-390.png
+  pairs/administrator-security-1280.png
+  pairs/administrator-security-390.png
+  pairs/administrator-account-1280.png
+  pairs/administrator-account-390.png
+  pairs/administrator-connect-1280.png
+  pairs/administrator-connect-390.png
+  pairs/administrator-teamai-1280.png
+  pairs/administrator-teamai-390.png
+  pairs/administrator-bias-1280.png
+  pairs/administrator-bias-390.png
+  pairs/administrator-places-1280.png
+  pairs/administrator-places-390.png
+  pairs/administrator-recovery-1280.png
+  pairs/administrator-recovery-390.png
+  pairs/administrator-group-1280.png
+  pairs/administrator-group-390.png
+  pairs/administrator-settings-1280.png
+  pairs/administrator-settings-390.png
+  pairs/administrator-more-1280.png
+  pairs/administrator-more-390.png
+  pairs/administrator-updates-1280.png
+  pairs/administrator-updates-390.png
+  pairs/administrator-ties-1280.png
+  pairs/administrator-ties-390.png
+  pairs/administrator-notes-1280.png
+  pairs/administrator-notes-390.png
+  pairs/administrator-translations-1280.png
+  pairs/administrator-translations-390.png
+  pairs/administrator-wizards-1280.png
+  pairs/administrator-wizards-390.png
+  pairs/administrator-projects-1280.png
+  pairs/administrator-projects-390.png
+  pairs/administrator-theme-1280.png
+  pairs/administrator-theme-390.png
+  pairs/administrator-dash-action-1280.png
+  pairs/administrator-dash-action-390.png
+  pairs/administrator-dash-project-1280.png
+  pairs/administrator-dash-project-390.png
+  pairs/administrator-unavailable-1280.png
+  pairs/administrator-unavailable-390.png
+  pairs/administrator-elsewhere-1280.png
+  pairs/administrator-elsewhere-390.png
+  pairs/administrator-queue-1280.png
+  pairs/administrator-queue-390.png
+  pairs/administrator-finder-1280.png
+  pairs/administrator-finder-390.png
+  pairs/administrator-capture-1280.png
+  pairs/administrator-capture-390.png
+  pairs/administrator-held-1280.png
+  pairs/administrator-held-390.png
+  pairs/administrator-archive-1280.png
+  pairs/administrator-archive-390.png
+  pairs/administrator-open-file-1280.png
+  pairs/administrator-open-file-390.png
+  pairs/administrator-document-1280.png
+  pairs/administrator-document-390.png
+  pairs/administrator-contradiction-1280.png
+  pairs/administrator-contradiction-390.png
+  pairs/administrator-find-in-1280.png
+  pairs/administrator-find-in-390.png
+  pairs/administrator-project-1280.png
+  pairs/administrator-project-390.png
+  pairs/administrator-objective-1280.png
+  pairs/administrator-objective-390.png
+  pairs/administrator-projectai-1280.png
+  pairs/administrator-projectai-390.png
+  pairs/administrator-question-1280.png
+  pairs/administrator-question-390.png
+  pairs/administrator-answers-1280.png
+  pairs/administrator-answers-390.png
+  pairs/administrator-assistant-1280.png
+  pairs/administrator-assistant-390.png
+  pairs/administrator-people-1280.png
+  pairs/administrator-people-390.png
+  pairs/administrator-person-1280.png
+  pairs/administrator-person-390.png
+  pairs/administrator-timeline-1280.png
+  pairs/administrator-timeline-390.png
+  pairs/administrator-money-1280.png
+  pairs/administrator-money-390.png
+  pairs/administrator-calculation-1280.png
+  pairs/administrator-calculation-390.png
+  pairs/administrator-help-records-1280.png
+  pairs/administrator-help-records-390.png
+  pairs/administrator-help-1280.png
+  pairs/administrator-help-390.png
+  pairs/administrator-explore-1280.png
+  pairs/administrator-explore-390.png
+  pairs/administrator-proceeding-1280.png
+  pairs/administrator-proceeding-390.png
+  pairs/administrator-due-date-1280.png
+  pairs/administrator-due-date-390.png
+  pairs/administrator-standard-1280.png
+  pairs/administrator-standard-390.png
+  pairs/administrator-plan-1280.png
+  pairs/administrator-plan-390.png
+  pairs/administrator-start-send-1280.png
+  pairs/administrator-start-send-390.png
+  pairs/administrator-glossary-1280.png
+  pairs/administrator-glossary-390.png
+  pairs/administrator-actionnew-1280.png
+  pairs/administrator-actionnew-390.png
+  pairs/administrator-request-1280.png
+  pairs/administrator-request-390.png
+  pairs/administrator-action-1280.png
+  pairs/administrator-action-390.png
+  pairs/administrator-hold-1280.png
+  pairs/administrator-hold-390.png
+  pairs/administrator-holdnotice-1280.png
+  pairs/administrator-holdnotice-390.png
+  pairs/administrator-counsel-1280.png
+  pairs/administrator-counsel-390.png
+  pairs/administrator-grouprules-1280.png
+  pairs/administrator-grouprules-390.png
+  pairs/administrator-matter-1280.png
+  pairs/administrator-matter-390.png
+  pairs/administrator-case-editor-1280.png
+  pairs/administrator-case-editor-390.png
+  pairs/administrator-review-copy-1280.png
+  pairs/administrator-review-copy-390.png
+  pairs/administrator-ceremony-1280.png
+  pairs/administrator-ceremony-390.png
+  pairs/administrator-docket-1280.png
+  pairs/administrator-docket-390.png
+  pairs/administrator-inbox-1280.png
+  pairs/administrator-inbox-390.png
+  pairs/administrator-about-knocker-1280.png
+  pairs/administrator-about-knocker-390.png
+  pairs/administrator-leads-1280.png
+  pairs/administrator-leads-390.png
+  pairs/administrator-watching-1280.png
+  pairs/administrator-watching-390.png
+  pairs/administrator-registers-1280.png
+  pairs/administrator-registers-390.png
+  pairs/administrator-aiproviders-1280.png
+  pairs/administrator-aiproviders-390.png
+  pairs/administrator-aiconnect-1280.png
+  pairs/administrator-aiconnect-390.png
+  pairs/administrator-aimine-1280.png
+  pairs/administrator-aimine-390.png
+  pairs/administrator-aiproject-1280.png
+  pairs/administrator-aiproject-390.png
+  pairs/administrator-aimoments-1280.png
+  pairs/administrator-aimoments-390.png
+  pairs/administrator-aitest-1280.png
+  pairs/administrator-aitest-390.png
+  pairs/administrator-airesults-1280.png
+  pairs/administrator-airesults-390.png
+  pairs/member-group-identity-1280.png
+  pairs/member-group-identity-390.png
+  pairs/member-home-1280.png
+  pairs/member-home-390.png
+  pairs/member-members-1280.png
+  pairs/member-members-390.png
+  pairs/member-security-1280.png
+  pairs/member-security-390.png
+  pairs/member-account-1280.png
+  pairs/member-account-390.png
+  pairs/member-connect-1280.png
+  pairs/member-connect-390.png
+  pairs/member-teamai-1280.png
+  pairs/member-teamai-390.png
+  pairs/member-bias-1280.png
+  pairs/member-bias-390.png
+  pairs/member-places-1280.png
+  pairs/member-places-390.png
+  pairs/member-recovery-1280.png
+  pairs/member-recovery-390.png

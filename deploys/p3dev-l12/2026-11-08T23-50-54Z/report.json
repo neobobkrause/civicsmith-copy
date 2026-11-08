@@ -1,0 +1,2231 @@
+{
+ "arm": "live",
+ "steps": [
+  {
+   "journey": "as administrator",
+   "label": "administrator: open / and sign in",
+   "screenshot": "01-live-as-administrator-administrator-open-and-sign-in.png",
+   "ok": true
+  },
+  {
+   "journey": "as administrator",
+   "label": "sign: /sign answers the nothing-is-here page",
+   "screenshot": "02-live-as-administrator-sign-sign-answers-the-nothing-is-here-page.png",
+   "ok": true
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen group-identity",
+   "screenshot": "03-live-as-administrator-screen-group-identity.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen home",
+   "screenshot": "04-live-as-administrator-screen-home.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen members",
+   "screenshot": "05-live-as-administrator-screen-members.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen security",
+   "screenshot": "06-live-as-administrator-screen-security.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen account",
+   "screenshot": "07-live-as-administrator-screen-account.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen connect",
+   "screenshot": "08-live-as-administrator-screen-connect.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen teamai",
+   "screenshot": "09-live-as-administrator-screen-teamai.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen bias",
+   "screenshot": "10-live-as-administrator-screen-bias.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen places",
+   "screenshot": "11-live-as-administrator-screen-places.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen recovery",
+   "screenshot": "12-live-as-administrator-screen-recovery.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen group",
+   "screenshot": "13-live-as-administrator-screen-group.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen settings",
+   "screenshot": "14-live-as-administrator-screen-settings.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen more",
+   "screenshot": "15-live-as-administrator-screen-more.png",
+   "ok": true
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen updates",
+   "screenshot": "16-live-as-administrator-screen-updates.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen ties",
+   "screenshot": "17-live-as-administrator-screen-ties.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen notes",
+   "screenshot": "18-live-as-administrator-screen-notes.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen translations",
+   "screenshot": "19-live-as-administrator-screen-translations.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen wizards",
+   "screenshot": "20-live-as-administrator-screen-wizards.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen projects",
+   "screenshot": "21-live-as-administrator-screen-projects.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen theme",
+   "screenshot": "22-live-as-administrator-screen-theme.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen dash-action",
+   "screenshot": "23-live-as-administrator-screen-dash-action.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen dash-project",
+   "screenshot": "24-live-as-administrator-screen-dash-project.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen unavailable",
+   "screenshot": "25-live-as-administrator-screen-unavailable.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen elsewhere",
+   "screenshot": "26-live-as-administrator-screen-elsewhere.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen queue",
+   "screenshot": "27-live-as-administrator-screen-queue.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen finder",
+   "screenshot": "28-live-as-administrator-screen-finder.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen capture",
+   "screenshot": "29-live-as-administrator-screen-capture.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen held",
+   "screenshot": "30-live-as-administrator-screen-held.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen archive",
+   "screenshot": "31-live-as-administrator-screen-archive.png",
+   "ok": true
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen open-file",
+   "screenshot": "32-live-as-administrator-screen-open-file.png",
+   "ok": true
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen document",
+   "screenshot": "33-live-as-administrator-screen-document.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen contradiction",
+   "screenshot": "34-live-as-administrator-screen-contradiction.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen find-in",
+   "screenshot": "35-live-as-administrator-screen-find-in.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen project",
+   "screenshot": "36-live-as-administrator-screen-project.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen objective",
+   "screenshot": "37-live-as-administrator-screen-objective.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen projectai",
+   "screenshot": "38-live-as-administrator-screen-projectai.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen question",
+   "screenshot": "39-live-as-administrator-screen-question.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen answers",
+   "screenshot": "40-live-as-administrator-screen-answers.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen assistant",
+   "screenshot": "41-live-as-administrator-screen-assistant.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen people",
+   "screenshot": "42-live-as-administrator-screen-people.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen person",
+   "screenshot": "43-live-as-administrator-screen-person.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen timeline",
+   "screenshot": "44-live-as-administrator-screen-timeline.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen money",
+   "screenshot": "45-live-as-administrator-screen-money.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen calculation",
+   "screenshot": "46-live-as-administrator-screen-calculation.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen help-records",
+   "screenshot": "47-live-as-administrator-screen-help-records.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen help",
+   "screenshot": "48-live-as-administrator-screen-help.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen explore",
+   "screenshot": "49-live-as-administrator-screen-explore.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen proceeding",
+   "screenshot": "50-live-as-administrator-screen-proceeding.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen due-date",
+   "screenshot": "51-live-as-administrator-screen-due-date.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen standard",
+   "screenshot": "52-live-as-administrator-screen-standard.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen plan",
+   "screenshot": "53-live-as-administrator-screen-plan.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen start-send",
+   "screenshot": "54-live-as-administrator-screen-start-send.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen glossary",
+   "screenshot": "55-live-as-administrator-screen-glossary.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen actionnew",
+   "screenshot": "56-live-as-administrator-screen-actionnew.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen request",
+   "screenshot": "57-live-as-administrator-screen-request.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen action",
+   "screenshot": "58-live-as-administrator-screen-action.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen hold",
+   "screenshot": "59-live-as-administrator-screen-hold.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen holdnotice",
+   "screenshot": "60-live-as-administrator-screen-holdnotice.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen counsel",
+   "screenshot": "61-live-as-administrator-screen-counsel.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen grouprules",
+   "screenshot": "62-live-as-administrator-screen-grouprules.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen matter",
+   "screenshot": "63-live-as-administrator-screen-matter.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen case-editor",
+   "screenshot": "64-live-as-administrator-screen-case-editor.png",
+   "ok": true
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen review-copy",
+   "screenshot": "65-live-as-administrator-screen-review-copy.png",
+   "ok": true
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen ceremony",
+   "screenshot": "66-live-as-administrator-screen-ceremony.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen docket",
+   "screenshot": "67-live-as-administrator-screen-docket.png",
+   "ok": true
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen inbox",
+   "screenshot": "68-live-as-administrator-screen-inbox.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen about-knocker",
+   "screenshot": "69-live-as-administrator-screen-about-knocker.png",
+   "ok": true
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen leads",
+   "screenshot": "70-live-as-administrator-screen-leads.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen watching",
+   "screenshot": "71-live-as-administrator-screen-watching.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen registers",
+   "screenshot": "72-live-as-administrator-screen-registers.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen aiproviders",
+   "screenshot": "73-live-as-administrator-screen-aiproviders.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen aiconnect",
+   "screenshot": "74-live-as-administrator-screen-aiconnect.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen aimine",
+   "screenshot": "75-live-as-administrator-screen-aimine.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen aiproject",
+   "screenshot": "76-live-as-administrator-screen-aiproject.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen aimoments",
+   "screenshot": "77-live-as-administrator-screen-aimoments.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen aitest",
+   "screenshot": "78-live-as-administrator-screen-aitest.png",
+   "ok": false
+  },
+  {
+   "journey": "as administrator",
+   "label": "screen airesults",
+   "screenshot": "79-live-as-administrator-screen-airesults.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "member: open / and sign in",
+   "screenshot": "80-live-as-member-member-open-and-sign-in.png",
+   "ok": true
+  },
+  {
+   "journey": "as member",
+   "label": "screen group-identity",
+   "screenshot": "81-live-as-member-screen-group-identity.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen home",
+   "screenshot": "82-live-as-member-screen-home.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen members",
+   "screenshot": "83-live-as-member-screen-members.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen security",
+   "screenshot": "84-live-as-member-screen-security.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen account",
+   "screenshot": "85-live-as-member-screen-account.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen connect",
+   "screenshot": "86-live-as-member-screen-connect.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen teamai",
+   "screenshot": "87-live-as-member-screen-teamai.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen bias",
+   "screenshot": "88-live-as-member-screen-bias.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen places",
+   "screenshot": "89-live-as-member-screen-places.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen recovery",
+   "screenshot": "90-live-as-member-screen-recovery.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen group",
+   "screenshot": "91-live-as-member-screen-group.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen settings",
+   "screenshot": "92-live-as-member-screen-settings.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen more",
+   "screenshot": "93-live-as-member-screen-more.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen updates",
+   "screenshot": "94-live-as-member-screen-updates.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen ties",
+   "screenshot": "95-live-as-member-screen-ties.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen notes",
+   "screenshot": "96-live-as-member-screen-notes.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen translations",
+   "screenshot": "97-live-as-member-screen-translations.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen wizards",
+   "screenshot": "98-live-as-member-screen-wizards.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen projects",
+   "screenshot": "99-live-as-member-screen-projects.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen theme",
+   "screenshot": "100-live-as-member-screen-theme.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen dash-action",
+   "screenshot": "101-live-as-member-screen-dash-action.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen dash-project",
+   "screenshot": "102-live-as-member-screen-dash-project.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen unavailable",
+   "screenshot": "103-live-as-member-screen-unavailable.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen elsewhere",
+   "screenshot": "104-live-as-member-screen-elsewhere.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen queue",
+   "screenshot": "105-live-as-member-screen-queue.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen finder",
+   "screenshot": "106-live-as-member-screen-finder.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen capture",
+   "screenshot": "107-live-as-member-screen-capture.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen held",
+   "screenshot": "108-live-as-member-screen-held.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen archive",
+   "screenshot": "109-live-as-member-screen-archive.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen open-file",
+   "screenshot": "110-live-as-member-screen-open-file.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen document",
+   "screenshot": "111-live-as-member-screen-document.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen contradiction",
+   "screenshot": "112-live-as-member-screen-contradiction.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen find-in",
+   "screenshot": "113-live-as-member-screen-find-in.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen project",
+   "screenshot": "114-live-as-member-screen-project.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen objective",
+   "screenshot": "115-live-as-member-screen-objective.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen projectai",
+   "screenshot": "116-live-as-member-screen-projectai.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen question",
+   "screenshot": "117-live-as-member-screen-question.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen answers",
+   "screenshot": "118-live-as-member-screen-answers.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen assistant",
+   "screenshot": "119-live-as-member-screen-assistant.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen people",
+   "screenshot": "120-live-as-member-screen-people.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen person",
+   "screenshot": "121-live-as-member-screen-person.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen timeline",
+   "screenshot": "122-live-as-member-screen-timeline.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen money",
+   "screenshot": "123-live-as-member-screen-money.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen calculation",
+   "screenshot": "124-live-as-member-screen-calculation.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen help-records",
+   "screenshot": "125-live-as-member-screen-help-records.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen help",
+   "screenshot": "126-live-as-member-screen-help.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen explore",
+   "screenshot": "127-live-as-member-screen-explore.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen proceeding",
+   "screenshot": "128-live-as-member-screen-proceeding.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen due-date",
+   "screenshot": "129-live-as-member-screen-due-date.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen standard",
+   "screenshot": "130-live-as-member-screen-standard.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen plan",
+   "screenshot": "131-live-as-member-screen-plan.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen start-send",
+   "screenshot": "132-live-as-member-screen-start-send.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen glossary",
+   "screenshot": "133-live-as-member-screen-glossary.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen actionnew",
+   "screenshot": "134-live-as-member-screen-actionnew.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen request",
+   "screenshot": "135-live-as-member-screen-request.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen action",
+   "screenshot": "136-live-as-member-screen-action.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen hold",
+   "screenshot": "137-live-as-member-screen-hold.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen holdnotice",
+   "screenshot": "138-live-as-member-screen-holdnotice.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen counsel",
+   "screenshot": "139-live-as-member-screen-counsel.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen grouprules",
+   "screenshot": "140-live-as-member-screen-grouprules.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen matter",
+   "screenshot": "141-live-as-member-screen-matter.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen case-editor",
+   "screenshot": "142-live-as-member-screen-case-editor.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen review-copy",
+   "screenshot": "143-live-as-member-screen-review-copy.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen ceremony",
+   "screenshot": "144-live-as-member-screen-ceremony.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen docket",
+   "screenshot": "145-live-as-member-screen-docket.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen inbox",
+   "screenshot": "146-live-as-member-screen-inbox.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen about-knocker",
+   "screenshot": "147-live-as-member-screen-about-knocker.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen leads",
+   "screenshot": "148-live-as-member-screen-leads.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen watching",
+   "screenshot": "149-live-as-member-screen-watching.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen registers",
+   "screenshot": "150-live-as-member-screen-registers.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen aiproviders",
+   "screenshot": "151-live-as-member-screen-aiproviders.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen aiconnect",
+   "screenshot": "152-live-as-member-screen-aiconnect.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen aimine",
+   "screenshot": "153-live-as-member-screen-aimine.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen aiproject",
+   "screenshot": "154-live-as-member-screen-aiproject.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen aimoments",
+   "screenshot": "155-live-as-member-screen-aimoments.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen aitest",
+   "screenshot": "156-live-as-member-screen-aitest.png",
+   "ok": false
+  },
+  {
+   "journey": "as member",
+   "label": "screen airesults",
+   "screenshot": "157-live-as-member-screen-airesults.png",
+   "ok": false
+  }
+ ],
+ "failures": [
+  {
+   "journey": "as administrator",
+   "step": "screen group-identity",
+   "kind": "dec340",
+   "detail": "group-identity at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen home",
+   "kind": "dec340",
+   "detail": "home at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen home",
+   "kind": "dec340",
+   "detail": "home at 390px: covers: the explanation of BUTTON covers BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen home",
+   "kind": "dec340",
+   "detail": "home at 390px: covers: the explanation of SPAN covers BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen home",
+   "kind": "dec340",
+   "detail": "home at 390px: covers: the explanation of H1 covers BUTTON, A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen home",
+   "kind": "dec340",
+   "detail": "home at 390px: covers: the explanation of BUTTON covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen members",
+   "kind": "dec340",
+   "detail": "members at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen security",
+   "kind": "dec340",
+   "detail": "security at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen security",
+   "kind": "dec340",
+   "detail": "security at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen account",
+   "kind": "dec340",
+   "detail": "account at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen account",
+   "kind": "dec340",
+   "detail": "account at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen connect",
+   "kind": "dec340",
+   "detail": "connect at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen teamai",
+   "kind": "dec340",
+   "detail": "teamai at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen bias",
+   "kind": "dec340",
+   "detail": "bias at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen places",
+   "kind": "dec340",
+   "detail": "places at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen places",
+   "kind": "dec340",
+   "detail": "places at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen recovery",
+   "kind": "dec340",
+   "detail": "recovery at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen recovery",
+   "kind": "dec340",
+   "detail": "recovery at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen group",
+   "kind": "dec340",
+   "detail": "group at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen group",
+   "kind": "dec340",
+   "detail": "group at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen settings",
+   "kind": "dec340",
+   "detail": "settings at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen settings",
+   "kind": "dec340",
+   "detail": "settings at 390px: covers: the explanation of BUTTON covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen settings",
+   "kind": "dec340",
+   "detail": "settings at 390px: covers: the explanation of A covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen updates",
+   "kind": "dec340",
+   "detail": "updates at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen updates",
+   "kind": "dec340",
+   "detail": "updates at 390px: covers: the explanation of BUTTON covers BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen updates",
+   "kind": "dec340",
+   "detail": "updates at 390px: covers: the explanation of SPAN covers A, BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen ties",
+   "kind": "dec340",
+   "detail": "ties at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen ties",
+   "kind": "dec340",
+   "detail": "ties at 390px: covers: the explanation of BUTTON covers BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen ties",
+   "kind": "dec340",
+   "detail": "ties at 390px: covers: the explanation of SPAN covers A, BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen notes",
+   "kind": "dec340",
+   "detail": "notes at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen translations",
+   "kind": "dec340",
+   "detail": "translations at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen translations",
+   "kind": "dec340",
+   "detail": "translations at 390px: covers: the explanation of BUTTON covers BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen translations",
+   "kind": "dec340",
+   "detail": "translations at 390px: covers: the explanation of SPAN covers A, BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen wizards",
+   "kind": "dec340",
+   "detail": "wizards at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen projects",
+   "kind": "dec340",
+   "detail": "projects at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen theme",
+   "kind": "dec340",
+   "detail": "theme at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen dash-action",
+   "kind": "dec340",
+   "detail": "dash-action at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen dash-project",
+   "kind": "dec340",
+   "detail": "dash-project at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen unavailable",
+   "kind": "dec340",
+   "detail": "unavailable at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen elsewhere",
+   "kind": "dec340",
+   "detail": "elsewhere at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen queue",
+   "kind": "dec340",
+   "detail": "queue at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen finder",
+   "kind": "dec340",
+   "detail": "finder at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen capture",
+   "kind": "dec340",
+   "detail": "capture at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen capture",
+   "kind": "dec340",
+   "detail": "capture at 390px: covers: the explanation of BUTTON covers BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen capture",
+   "kind": "dec340",
+   "detail": "capture at 390px: covers: the explanation of SPAN covers BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen capture",
+   "kind": "dec340",
+   "detail": "capture at 390px: covers: the explanation of H1 covers BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen capture",
+   "kind": "dec340",
+   "detail": "capture at 390px: covers: the explanation of BUTTON covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen held",
+   "kind": "dec340",
+   "detail": "held at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen held",
+   "kind": "dec340",
+   "detail": "held at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen document",
+   "kind": "dec340",
+   "detail": "document at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen contradiction",
+   "kind": "dec340",
+   "detail": "contradiction at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen find-in",
+   "kind": "dec340",
+   "detail": "find-in at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen project",
+   "kind": "dec340",
+   "detail": "project at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen objective",
+   "kind": "dec340",
+   "detail": "objective at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen projectai",
+   "kind": "dec340",
+   "detail": "projectai at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen question",
+   "kind": "dec340",
+   "detail": "question at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen answers",
+   "kind": "dec340",
+   "detail": "answers at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen answers",
+   "kind": "dec340",
+   "detail": "answers at 390px: covers: the explanation of BUTTON covers BUTTON"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen assistant",
+   "kind": "dec340",
+   "detail": "assistant at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen people",
+   "kind": "dec340",
+   "detail": "people at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen person",
+   "kind": "dec340",
+   "detail": "person at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen timeline",
+   "kind": "dec340",
+   "detail": "timeline at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen money",
+   "kind": "dec340",
+   "detail": "money at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen calculation",
+   "kind": "dec340",
+   "detail": "calculation at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen help-records",
+   "kind": "dec340",
+   "detail": "help-records at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen help",
+   "kind": "dec340",
+   "detail": "help at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen explore",
+   "kind": "dec340",
+   "detail": "explore at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen proceeding",
+   "kind": "dec340",
+   "detail": "proceeding at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen due-date",
+   "kind": "dec340",
+   "detail": "due-date at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen standard",
+   "kind": "dec340",
+   "detail": "standard at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen standard",
+   "kind": "dec340",
+   "detail": "standard at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen plan",
+   "kind": "dec340",
+   "detail": "plan at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen start-send",
+   "kind": "dec340",
+   "detail": "start-send at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen glossary",
+   "kind": "dec340",
+   "detail": "glossary at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen actionnew",
+   "kind": "dec340",
+   "detail": "actionnew at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen request",
+   "kind": "dec340",
+   "detail": "request at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen action",
+   "kind": "dec340",
+   "detail": "action at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen hold",
+   "kind": "dec340",
+   "detail": "hold at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen holdnotice",
+   "kind": "dec340",
+   "detail": "holdnotice at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen counsel",
+   "kind": "dec340",
+   "detail": "counsel at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen grouprules",
+   "kind": "dec340",
+   "detail": "grouprules at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen matter",
+   "kind": "dec340",
+   "detail": "matter at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen ceremony",
+   "kind": "dec340",
+   "detail": "ceremony at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen inbox",
+   "kind": "dec340",
+   "detail": "inbox at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen leads",
+   "kind": "dec340",
+   "detail": "leads at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen leads",
+   "kind": "dec340",
+   "detail": "leads at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen watching",
+   "kind": "dec340",
+   "detail": "watching at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen watching",
+   "kind": "dec340",
+   "detail": "watching at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen registers",
+   "kind": "dec340",
+   "detail": "registers at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen aiproviders",
+   "kind": "dec340",
+   "detail": "aiproviders at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen aiconnect",
+   "kind": "dec340",
+   "detail": "aiconnect at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen aimine",
+   "kind": "dec340",
+   "detail": "aimine at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen aiproject",
+   "kind": "dec340",
+   "detail": "aiproject at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen aimoments",
+   "kind": "dec340",
+   "detail": "aimoments at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen aitest",
+   "kind": "dec340",
+   "detail": "aitest at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as administrator",
+   "step": "screen airesults",
+   "kind": "dec340",
+   "detail": "airesults at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen group-identity",
+   "kind": "dec340",
+   "detail": "group-identity at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen home",
+   "kind": "dec340",
+   "detail": "home at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen home",
+   "kind": "dec340",
+   "detail": "home at 390px: covers: the explanation of SPAN covers BUTTON"
+  },
+  {
+   "journey": "as member",
+   "step": "screen members",
+   "kind": "dec340",
+   "detail": "members at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen security",
+   "kind": "dec340",
+   "detail": "security at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen account",
+   "kind": "dec340",
+   "detail": "account at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen account",
+   "kind": "dec340",
+   "detail": "account at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as member",
+   "step": "screen connect",
+   "kind": "dec340",
+   "detail": "connect at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen teamai",
+   "kind": "dec340",
+   "detail": "teamai at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen bias",
+   "kind": "dec340",
+   "detail": "bias at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen places",
+   "kind": "dec340",
+   "detail": "places at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen places",
+   "kind": "dec340",
+   "detail": "places at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as member",
+   "step": "screen recovery",
+   "kind": "dec340",
+   "detail": "recovery at 390px: covers: the explanation of SPAN covers A, Search, Explanations: prompt"
+  },
+  {
+   "journey": "as member",
+   "step": "screen recovery",
+   "kind": "dec340",
+   "detail": "recovery at 390px: covers: the explanation of SPAN covers A"
+  },
+  {
+   "journey": "as member",
+   "step": "screen group",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen settings",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen more",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen updates",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen ties",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen notes",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen translations",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen wizards",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen projects",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen theme",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen dash-action",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen dash-project",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen unavailable",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen elsewhere",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen queue",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen finder",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen capture",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen held",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen archive",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen open-file",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen document",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen contradiction",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen find-in",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen project",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen objective",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen projectai",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen question",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen answers",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen assistant",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen people",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen person",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen timeline",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen money",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen calculation",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen help-records",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen help",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen explore",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen proceeding",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen due-date",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen standard",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen plan",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen start-send",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen glossary",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen actionnew",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen request",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen action",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen hold",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen holdnotice",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen counsel",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen grouprules",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen matter",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen case-editor",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen review-copy",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen ceremony",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen docket",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen inbox",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen about-knocker",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen leads",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen watching",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen registers",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen aiproviders",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen aiconnect",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen aimine",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen aiproject",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen aimoments",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen aitest",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "as member",
+   "step": "screen airesults",
+   "kind": "step",
+   "detail": "page.goto: Target page, context or browser has been closed"
+  },
+  {
+   "journey": "R28 the public pages",
+   "step": null,
+   "kind": "step",
+   "detail": "browser.newContext: Target page, context or browser has been closed\n    at async publicPass (/tmp/p3-round-1vLIkP/w/bio-plane/src/journey-check/run.mjs:361:15)\n    at async runLive (/tmp/p3-round-1vLIkP/w/bio-plane/src/journey-check/run.mjs:451:7)\n    at async file:///tmp/p3-round-1vLIkP/w/bio-plane/src/journey-check/journey.mjs:25:13"
+  }
+ ],
+ "pairs": [
+  "pairs/administrator-group-identity-1280.png",
+  "pairs/administrator-group-identity-390.png",
+  "pairs/administrator-home-1280.png",
+  "pairs/administrator-home-390.png",
+  "pairs/administrator-members-1280.png",
+  "pairs/administrator-members-390.png",
+  "pairs/administrator-security-1280.png",
+  "pairs/administrator-security-390.png",
+  "pairs/administrator-account-1280.png",
+  "pairs/administrator-account-390.png",
+  "pairs/administrator-connect-1280.png",
+  "pairs/administrator-connect-390.png",
+  "pairs/administrator-teamai-1280.png",
+  "pairs/administrator-teamai-390.png",
+  "pairs/administrator-bias-1280.png",
+  "pairs/administrator-bias-390.png",
+  "pairs/administrator-places-1280.png",
+  "pairs/administrator-places-390.png",
+  "pairs/administrator-recovery-1280.png",
+  "pairs/administrator-recovery-390.png",
+  "pairs/administrator-group-1280.png",
+  "pairs/administrator-group-390.png",
+  "pairs/administrator-settings-1280.png",
+  "pairs/administrator-settings-390.png",
+  "pairs/administrator-more-1280.png",
+  "pairs/administrator-more-390.png",
+  "pairs/administrator-updates-1280.png",
+  "pairs/administrator-updates-390.png",
+  "pairs/administrator-ties-1280.png",
+  "pairs/administrator-ties-390.png",
+  "pairs/administrator-notes-1280.png",
+  "pairs/administrator-notes-390.png",
+  "pairs/administrator-translations-1280.png",
+  "pairs/administrator-translations-390.png",
+  "pairs/administrator-wizards-1280.png",
+  "pairs/administrator-wizards-390.png",
+  "pairs/administrator-projects-1280.png",
+  "pairs/administrator-projects-390.png",
+  "pairs/administrator-theme-1280.png",
+  "pairs/administrator-theme-390.png",
+  "pairs/administrator-dash-action-1280.png",
+  "pairs/administrator-dash-action-390.png",
+  "pairs/administrator-dash-project-1280.png",
+  "pairs/administrator-dash-project-390.png",
+  "pairs/administrator-unavailable-1280.png",
+  "pairs/administrator-unavailable-390.png",
+  "pairs/administrator-elsewhere-1280.png",
+  "pairs/administrator-elsewhere-390.png",
+  "pairs/administrator-queue-1280.png",
+  "pairs/administrator-queue-390.png",
+  "pairs/administrator-finder-1280.png",
+  "pairs/administrator-finder-390.png",
+  "pairs/administrator-capture-1280.png",
+  "pairs/administrator-capture-390.png",
+  "pairs/administrator-held-1280.png",
+  "pairs/administrator-held-390.png",
+  "pairs/administrator-archive-1280.png",
+  "pairs/administrator-archive-390.png",
+  "pairs/administrator-open-file-1280.png",
+  "pairs/administrator-open-file-390.png",
+  "pairs/administrator-document-1280.png",
+  "pairs/administrator-document-390.png",
+  "pairs/administrator-contradiction-1280.png",
+  "pairs/administrator-contradiction-390.png",
+  "pairs/administrator-find-in-1280.png",
+  "pairs/administrator-find-in-390.png",
+  "pairs/administrator-project-1280.png",
+  "pairs/administrator-project-390.png",
+  "pairs/administrator-objective-1280.png",
+  "pairs/administrator-objective-390.png",
+  "pairs/administrator-projectai-1280.png",
+  "pairs/administrator-projectai-390.png",
+  "pairs/administrator-question-1280.png",
+  "pairs/administrator-question-390.png",
+  "pairs/administrator-answers-1280.png",
+  "pairs/administrator-answers-390.png",
+  "pairs/administrator-assistant-1280.png",
+  "pairs/administrator-assistant-390.png",
+  "pairs/administrator-people-1280.png",
+  "pairs/administrator-people-390.png",
+  "pairs/administrator-person-1280.png",
+  "pairs/administrator-person-390.png",
+  "pairs/administrator-timeline-1280.png",
+  "pairs/administrator-timeline-390.png",
+  "pairs/administrator-money-1280.png",
+  "pairs/administrator-money-390.png",
+  "pairs/administrator-calculation-1280.png",
+  "pairs/administrator-calculation-390.png",
+  "pairs/administrator-help-records-1280.png",
+  "pairs/administrator-help-records-390.png",
+  "pairs/administrator-help-1280.png",
+  "pairs/administrator-help-390.png",
+  "pairs/administrator-explore-1280.png",
+  "pairs/administrator-explore-390.png",
+  "pairs/administrator-proceeding-1280.png",
+  "pairs/administrator-proceeding-390.png",
+  "pairs/administrator-due-date-1280.png",
+  "pairs/administrator-due-date-390.png",
+  "pairs/administrator-standard-1280.png",
+  "pairs/administrator-standard-390.png",
+  "pairs/administrator-plan-1280.png",
+  "pairs/administrator-plan-390.png",
+  "pairs/administrator-start-send-1280.png",
+  "pairs/administrator-start-send-390.png",
+  "pairs/administrator-glossary-1280.png",
+  "pairs/administrator-glossary-390.png",
+  "pairs/administrator-actionnew-1280.png",
+  "pairs/administrator-actionnew-390.png",
+  "pairs/administrator-request-1280.png",
+  "pairs/administrator-request-390.png",
+  "pairs/administrator-action-1280.png",
+  "pairs/administrator-action-390.png",
+  "pairs/administrator-hold-1280.png",
+  "pairs/administrator-hold-390.png",
+  "pairs/administrator-holdnotice-1280.png",
+  "pairs/administrator-holdnotice-390.png",
+  "pairs/administrator-counsel-1280.png",
+  "pairs/administrator-counsel-390.png",
+  "pairs/administrator-grouprules-1280.png",
+  "pairs/administrator-grouprules-390.png",
+  "pairs/administrator-matter-1280.png",
+  "pairs/administrator-matter-390.png",
+  "pairs/administrator-case-editor-1280.png",
+  "pairs/administrator-case-editor-390.png",
+  "pairs/administrator-review-copy-1280.png",
+  "pairs/administrator-review-copy-390.png",
+  "pairs/administrator-ceremony-1280.png",
+  "pairs/administrator-ceremony-390.png",
+  "pairs/administrator-docket-1280.png",
+  "pairs/administrator-docket-390.png",
+  "pairs/administrator-inbox-1280.png",
+  "pairs/administrator-inbox-390.png",
+  "pairs/administrator-about-knocker-1280.png",
+  "pairs/administrator-about-knocker-390.png",
+  "pairs/administrator-leads-1280.png",
+  "pairs/administrator-leads-390.png",
+  "pairs/administrator-watching-1280.png",
+  "pairs/administrator-watching-390.png",
+  "pairs/administrator-registers-1280.png",
+  "pairs/administrator-registers-390.png",
+  "pairs/administrator-aiproviders-1280.png",
+  "pairs/administrator-aiproviders-390.png",
+  "pairs/administrator-aiconnect-1280.png",
+  "pairs/administrator-aiconnect-390.png",
+  "pairs/administrator-aimine-1280.png",
+  "pairs/administrator-aimine-390.png",
+  "pairs/administrator-aiproject-1280.png",
+  "pairs/administrator-aiproject-390.png",
+  "pairs/administrator-aimoments-1280.png",
+  "pairs/administrator-aimoments-390.png",
+  "pairs/administrator-aitest-1280.png",
+  "pairs/administrator-aitest-390.png",
+  "pairs/administrator-airesults-1280.png",
+  "pairs/administrator-airesults-390.png",
+  "pairs/member-group-identity-1280.png",
+  "pairs/member-group-identity-390.png",
+  "pairs/member-home-1280.png",
+  "pairs/member-home-390.png",
+  "pairs/member-members-1280.png",
+  "pairs/member-members-390.png",
+  "pairs/member-security-1280.png",
+  "pairs/member-security-390.png",
+  "pairs/member-account-1280.png",
+  "pairs/member-account-390.png",
+  "pairs/member-connect-1280.png",
+  "pairs/member-connect-390.png",
+  "pairs/member-teamai-1280.png",
+  "pairs/member-teamai-390.png",
+  "pairs/member-bias-1280.png",
+  "pairs/member-bias-390.png",
+  "pairs/member-places-1280.png",
+  "pairs/member-places-390.png",
+  "pairs/member-recovery-1280.png",
+  "pairs/member-recovery-390.png"
+ ],
+ "notes": [
+  "connect: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "teamai: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "dash-project: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "unavailable: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "archive: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "open-file: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "document: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "project: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "objective: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "projectai: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "question: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "assistant: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "person: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "timeline: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "money: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "calculation: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "due-date: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "plan: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "start-send: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "actionnew: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "action: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "counsel: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "matter: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "case-editor: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "review-copy: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "ceremony: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "docket: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "about-knocker: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "registers: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "aiconnect: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "aiproject: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "aimoments: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "aitest: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "airesults: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "connect: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)",
+  "teamai: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)"
+ ]
+}
