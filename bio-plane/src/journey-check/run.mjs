@@ -324,12 +324,12 @@ export async function screenLimits(walk, p, id, { slugs = [], each = null } = {}
   await p.setViewportSize(viewportOf(WIDTHS[0]));
 }
 
-/* PD-11: the local arm's last sweep, as the founder with her handle held (R7), measures each drawn screen as the live arm does
-   (`screenLimits`, R6 and R28), then walks the named public pages signed out (`publicPass`, R28), so a class or DEC-340 fault in the
+/* PD-11: the local arm's last sweep, as the founder with her handle held (R7), measures each drawn screen of frame `working` or
+   `dock` as the live arm does (`screenLimits`, R6 and R28; the public frame is `publicPass`'s, signed out), then walks the named public pages signed out (`publicPass`, R28), so a class or DEC-340 fault in the
    copy the local arm installed fails the walk. `route(context)` is the world's; `screens` and `pages` narrow the walk. */
 export async function localSweep(walk, b, page, base, { handle, route = null, screens = undefined, pages = undefined } = {}) {
   const slugs = instanceSlugs(new URL(base).host);
-  await sweepAsFounder(walk, page, base, { handle, ...(screens ? { screens } : {}), also: (p, s) => screenLimits(walk, p, s.id, { slugs }) });
+  await sweepAsFounder(walk, page, base, { handle, ...(screens ? { screens } : {}), also: (p, s) => (s.frame === "working" || s.frame === "dock" ? screenLimits(walk, p, s.id, { slugs }) : null) });
   await publicPass(walk, b, base, { route, ...(pages ? { pages } : {}) });
 }
 

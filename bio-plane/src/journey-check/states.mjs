@@ -110,7 +110,7 @@ export async function walkStates(walk, b, mock, { out, page = null, base = null,
     const entry = reach[name] ? (typeof reach[name] === "function" ? { reach: reach[name] } : reach[name]) : entryOf(st);
     let ok = false;
     const livePng = {};
-    const pg = entry && (entry.page ? await entry.page().catch(() => null) : page);
+    const pg = entry && (entry.page ? await Promise.resolve().then(() => entry.page()).catch(() => null) : page);
     if (entry && pg) {
       for (const width of WIDTHS) {
         await pg.setViewportSize(viewportOf(width));
