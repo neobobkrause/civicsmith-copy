@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "strength",
+  "session": "session_018Bhcef7aynUDLrBefKFBqG",
+  "started": "2026-11-08T12:46:44Z",
+  "ended": "2026-11-08T12:48:40Z",
+  "at": "2026-11-08T12:48:40Z",
+  "minutes": 1.93,
+  "result": "pass",
+  "layer": 12,
+  "suite_seconds": 6.585,
+  "tests": {
+    "total": 207,
+    "pass": 207,
+    "fail": 0
+  }
+}
