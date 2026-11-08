@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "installer-copies",
+  "pr": 977,
+  "branch": "job/installer-copies",
+  "head": "1ce9eeff50c831d5590a9ac86fcb7879f5a502ec",
+  "before": "dcd9adc9c321ce08fb44636ec31661e064401ab0",
+  "merge": "dec32ae6441b0b53b224d3feb293a6a6875bc8c3",
+  "at": "2026-11-08T00:31:44Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}

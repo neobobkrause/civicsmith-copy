@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "installer-copies",
+  "pr": 977,
+  "sha": "7e07dea6e22612b1c792083e6edec37a5f05d7dd",
+  "run_id": 42429071330,
+  "run_attempt": 1,
+  "at": "2026-11-08T00:18:16Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 0.88,
+  "suite_minutes": null,
+  "record_only": true,
+  "whole": false
+}
