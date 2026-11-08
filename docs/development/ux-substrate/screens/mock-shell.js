@@ -222,7 +222,7 @@ function render(screenId, c) { return decorate(renderFrame(screenId, c), screenI
 /* DEC-249: the test-copy band (interface-shell R36, R53, R58), its words instance.test.band and instance.test.notice. */
 const testBand = c => c.test ? `<div class="cs-testband" role="note"><b>Test Civicsmith</b><span>This is a test Civicsmith. Parts of its assistant haven't yet passed Civicsmith's tests, and each answer they give says so.</span></div>` : '';
 /* DEC-330 (B306, census A9): the "newer version" band. It sits across the top of every page when the program in the browser is older than the live one; shown here on Your account, state "a newer version is live". */
-const updBand = `<div class="cs-testband mk-updband" role="status" style="display:none"><b>A newer version is ready</b><span style="display:block">Your team's Civicsmith has been updated since this page opened. Reload when you are ready: nothing reloads by itself.</span><button type="button" class="cs-btn" data-tone="quiet" data-tip="<b>Reload</b>: brings in the newest version of Civicsmith. Anything you have typed and not saved is lost, so save it first.">Reload</button></div>`;
+const updBand = `<div class="cs-updband" role="status" style="display:none"><b>A newer version is ready</b><span style="display:block">Your team's Civicsmith has been updated since this page opened. Reload when you are ready: nothing reloads by itself.</span><button type="button" class="cs-btn" data-tone="quiet" data-tip="<b>Reload</b>: brings in the newest version of Civicsmith. Anything you have typed and not saved is lost, so save it first.">Reload</button></div>`;
 function renderFrame(screenId, c) {
   WRITE_ON = !!c.ai;
   const s = SCR[screenId](c);
