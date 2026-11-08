@@ -40,7 +40,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-08T10:54:13Z"
+    "state": "WORKING",
+    "at": "2026-11-08T20:09:57Z",
+    "reason": "reopened: layer 12 gate on PR 1072: provenance's last green run (PR 1002, 9e2a28cec9) did not hold the interface change of membership (PR 1030). Sync to layer/12, re-run the suite against it, adapt if any answer changed, and publish again."
   }
 }
