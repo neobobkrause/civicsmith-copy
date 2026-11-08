@@ -235,7 +235,7 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
       walk.journey = "R13 design journey 29";
       const design = await mockOf();
       /* R21 (F10): each carried state put on the screen by the walk's own acts or the data the arm made (reach.mjs) */
-      const reach = made.project && made.question && own && teo ? localReach({ walk, base: copy, who, founder: founder.page, mai: mai.page, teo: teo.page, made, own,
+      const reach = made.project && made.question && own && teo ? localReach({ walk, base: copy, who, founder: founder.page, teo: teo.page, made, own,
         device: async () => (await device(walk, b, route)).page }) : {};
       if (!made.project || !own || !teo) walk.notes.push("R21: the carried states have no walk of their own: R9, R16 or journey 3 stopped or was not walked before them");
       for (const f of await walkStates(walk, b, design, { out, page: founder.page, base: copy, reach })) walk.pairs.push(f);

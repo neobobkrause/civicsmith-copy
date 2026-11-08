@@ -84,19 +84,24 @@ export function overlappingZip() {
 }
 export const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 
-/* ctx: { walk, base, who: {founder, member, newcomer}, founder, mai, teo (pages), device() (a new browser context's page),
+/* ctx: { walk, base, who: {founder, member, newcomer}, founder, teo (pages), device() (a new browser context's page),
    made: {project, question, document}, own: {project, question} } */
 export function localReach(ctx) {
   const { walk, base, who } = ctx;
-  const F = ctx.founder, M = ctx.mai, T = ctx.teo;
+  const F = ctx.founder, T = ctx.teo;
+  let M = null;
   const at = (path) => new URL(path, base).href;
   const go = async (p, url) => { await p.goto(url); await settle(p); };
   const project = ctx.made.project, question = ctx.made.question;
   const projectId = () => idOf(project);
 
   /* ---- setups, each done once ---- */
-  /* Mai on her own computer, signed in (journey 28 signed her out there; R10 signs her in only when it is walked) */
-  const maiIn = once(() => signInBy(walk, M, base, who.member, "R21 · Mai signs in on her own computer"));
+  /* Mai signed in on a device of her own for these states, whatever journey 28 and R10 left on hers (signed out, or in) */
+  const maiIn = once(async () => {
+    const p = await ctx.device();
+    await signInBy(walk, p, base, who.member, "R21 · Mai signs in on another device");
+    M = p;
+  });
   const asMai = async () => { await maiIn(); return M; };
   /* a member's row opened on Members, its acts and capability boxes drawn (interface-shell's row panel) */
   const openRow = async (p, id) => {
