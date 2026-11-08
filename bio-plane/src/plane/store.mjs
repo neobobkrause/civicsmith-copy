@@ -10,6 +10,7 @@ import { schedulerOf } from "../scheduler/index.mjs";
 import { aiRunsOf } from "../ai-runs/index.mjs";
 import { publicReadOf } from "../public-read/index.mjs";
 import { deliverOwedRender } from "../control-plane/index.mjs";
+import { registerPathSource } from "./path-source.mjs";
 
 /** R78 (K4530, B34; fix round 6, G12e): the response header `server-timing: object;dur=<ms>`, the milliseconds of I/O time the object spent on a
  *  route; control-plane reads it and adds `in-<route>` beside its `do-<route>`. It is I/O time and nothing more: workerd freezes `Date.now()` during
@@ -39,6 +40,10 @@ export class Store extends DurableObject {
        fires and every request is refused, its data left as it is (removing the generation makes it the current room again). */
     if (this.#isRetired()) { this.#retired = true; return; }
     this.#assembled = assembleStore(ctx, env, { deliver: deliverOwedRender });
+    /* CR2-29 (ai-runs R97, R98, F1): the plane serves `op=aipathready`'s source, agent-model's health read over the Worker,
+       registered once at start with this object's ai-runs; without it the path reads `unregistered` and the assistant is never
+       reachable. */
+    registerPathSource(aiRunsOf(ctx, env), env);
   }
 
   /* B2 (K1674, K1684): `op=ask`'s work on the `bio` object, reached over the object's RPC from the door's arm (no route:
