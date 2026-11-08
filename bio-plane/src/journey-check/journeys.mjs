@@ -474,13 +474,15 @@ export const credentials = () => ({
 
 /* R7: the sweep as the founder, her handle held or with none: no screen draws `admin` as a person's name or handle. With
    no handle, DEC-230's own words are excepted (they say she signs in as admin until she chooses); with one, nothing is. */
-export function sweepAsFounder(walk, page, base, { handle, screens = undefined }) {
+export function sweepAsFounder(walk, page, base, { handle, screens = undefined, also = null }) {
   const except = handle ? [] : ADMIN_WORDS.map((k) => wordPattern(k));
   return sweep(walk, page, base, { ...(screens ? { screens } : {}), journey: handle ? "R7 as the founder, her handle held" : "R7 as the founder, with no handle",
     each: async (p, s, drawn) => {
       if (!drawn) return;
       const at = adminAsName(await p.locator("body").innerText(), { except });
       if (at.length) walk.fail(FAIL.ADMIN_NAME, localize("journey-check.journeys.id_draws_admin_as_a", "{id} draws admin as a name: {map}", { id: String(s.id), map: String(at.map((a) => `…${a.at}…`).join(" | ")) }));
+      /* `also(page, screen)`: what else the arm measures on each drawn screen (PD-11: the page's limits) */
+      if (also) await also(p, s);
     } });
 }
 

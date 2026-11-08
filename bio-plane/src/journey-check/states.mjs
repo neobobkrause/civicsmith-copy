@@ -9,7 +9,8 @@ import { join, relative } from "node:path";
 import { FAIL } from "./walker.mjs";
 import { localize } from "../setup-words/index.mjs";
 import { pair, WIDTHS, viewportOf } from "./design.mjs";
-import { settle } from "./walker.mjs";
+import { settle, StepFailed } from "./walker.mjs";
+import { LIVE_ARM, KNOWN_GAPS } from "./reach.mjs";
 
 export const CARRIED_STATES = Object.freeze([
   { screen: "document", state: "the held copy", control: "mk-dst", option: "held" },
@@ -42,13 +43,7 @@ export const CARRIED_STATES = Object.freeze([
   { screen: "security", control: "mk-secst", option: "an" },
   { screen: "account", control: "mk-eacct", option: "a newer" },
   { screen: "account", control: "mk-eacct", option: "making" },
-  { screen: "connect", control: "mk-st", option: "connected" },
-  { screen: "connect", control: "mk-st", option: "signed in" },
-  { screen: "connect", control: "mk-st", option: "your own Claude sign-in" },
-  { screen: "connect", control: "mk-st", option: "a team that doesn't" },
-  { screen: "connect", control: "mk-st", option: "a team that keeps" },
-  { screen: "teamai", control: "mk-gex", option: "Ask" },
-  { screen: "teamai", control: "mk-gex", option: "Yes" },
+  /* connect's and teamai's states retired with their screens (T53; CR2-2, the coordinator's ruling of 8 Nov) */
   { screen: "places", control: "mk-plst", option: "a state with no" },
   { screen: "recovery", control: "mk-rst", option: "new" },
   { screen: "group-identity", control: "mk-gist", option: "an" },
@@ -78,16 +73,30 @@ export const CARRIED_STATES = Object.freeze([
   { screen: "counsel", control: "mk-cpst", option: "defense" },
 ]);
 
+/* A carried state's key in a `reach` map: its screen and the mock option it names, as CARRIED_STATES holds them */
+export const stateKey = (st) => `${st.screen}:${st.option}`;
+
 /* Each carried state: its design drawing at both widths; paired with the live screen where `reach` puts it in the state.
-   `reach` is `{ "<screen>, <state>": async (page, base) => boolean }`. Answers the pairs written (relative to `out`). */
+   `reach` maps a state, by its name "<screen>, <state>" or its key (`stateKey`), to `async (page, base) => boolean`, or to an
+   entry `{ reach, page?, rank?, expect?, after?, note? }` (reach.mjs): `page()` the page the state is drawn to (else `page`),
+   `rank` the order its setup needs (lower first, the list's order within a rank), `expect` the refusals its acts expect, `after`
+   what puts back what it changed, `note` written when it is paired. Each width's reach is a step of the walk ("R21 <name> at
+   <width>px"), so a setup that fails says why by name. Answers the pairs written (relative to `out`). */
 /* R21 (F10 owed): what the local arm says of a carried state it could not reach, `name` being "<screen>, <state>"; one sentence,
    so a test can tell this failure from any other of kind `state` (BOB's ruling, 7 Nov) */
 export const unreachedOnLocal = (name) => localize("journey-check.states.name_not_reached_on_the_local", "{name}: not reached on the local arm, which makes its own data", { name: String(name) });
 
-export async function walkStates(walk, b, mock, { out, page = null, base = null, reach = {}, states = CARRIED_STATES }) {
+/* CR2-2: what the walk says of a carried state the local copy cannot draw: one the live arm walks (`LIVE_ARM`, with its means there),
+   or a known gap neither arm can draw (`KNOWN_GAPS`, PD-10), each with its reason; neither is a pass or a failure */
+export const liveArmOnly = (name, why, means) => localize("journey-check.states.name_walked_on_the_live_arm", "{name}: walked on the live arm only ({why}); there: {means}", { name: String(name), why: String(why), means: String(means) });
+export const knownGap = (name, why) => localize("journey-check.states.name_known_gap_pd_10", "{name}: a known gap (PD-10), drawn on neither arm: {why}", { name: String(name), why: String(why) });
+
+export async function walkStates(walk, b, mock, { out, page = null, base = null, reach = {}, states = CARRIED_STATES, liveArm = LIVE_ARM, gaps = KNOWN_GAPS }) {
   walk.journey = "R21 the carried states";
   const written = [];
-  for (const st of states) {
+  const entryOf = (st) => { const e = reach[`${st.screen}, ${st.state ?? st.option}`] ?? reach[stateKey(st)]; return typeof e === "function" ? { reach: e } : e || null; };
+  const rankOf = (st) => entryOf(st)?.rank ?? 0;
+  for (const st of [...states].sort((a, b) => rankOf(a) - rankOf(b))) {
     /* a state without a name of its own is named by the label the mock gives its option, read at the draw */
     let name = `${st.screen}, ${st.state ?? st.option}`;
     const design = {};
@@ -98,20 +107,29 @@ export async function walkStates(walk, b, mock, { out, page = null, base = null,
       design[width] = d.png;
     }
     if (!design[WIDTHS[0]] || !design[WIDTHS[1]]) continue;
-    const reached = reach[name];
+    if (Object.hasOwn(gaps, stateKey(st))) { walk.notes.push(knownGap(name, gaps[stateKey(st)])); continue; }
+    if (walk.arm === "local" && Object.hasOwn(liveArm, stateKey(st))) { walk.notes.push(liveArmOnly(name, liveArm[stateKey(st)].why, liveArm[stateKey(st)].means)); continue; }
+    const entry = reach[name] ? (typeof reach[name] === "function" ? { reach: reach[name] } : reach[name]) : entryOf(st);
     let ok = false;
     const livePng = {};
-    if (reached && page) {
+    const pg = entry && (entry.page ? await Promise.resolve().then(() => entry.page()).catch(() => null) : page);
+    if (entry && pg) {
       for (const width of WIDTHS) {
-        await page.setViewportSize(viewportOf(width));
-        ok = await reached(page, base);
+        await pg.setViewportSize(viewportOf(width));
+        try {
+          await walk.step(pg, `R21 ${name} at ${width}px`, async (p) => { if (!(await entry.reach(p, base))) throw new Error(`${name}: not drawn`); }, { expect: entry.expect || [] });
+          ok = true;
+        } catch (e) { if (!(e instanceof StepFailed)) throw e; ok = false; }
         if (!ok) break;
-        await settle(page);
-        livePng[width] = await page.screenshot();
+        await settle(pg);
+        livePng[width] = await pg.screenshot();
       }
-      await page.setViewportSize(viewportOf(WIDTHS[0]));
+      await pg.setViewportSize(viewportOf(WIDTHS[0])).catch(() => {});
+      if (entry.after) await entry.after(pg).catch(() => {});
+      if (ok && entry.note) walk.notes.push(entry.note);
     }
-    if (!ok && walk.arm === "local") { walk.fail(FAIL.STATE, unreachedOnLocal(name)); continue; }
+    /* the failure carries the state's key, so a reader can tell which state the local arm failed to draw */
+    if (!ok && walk.arm === "local") { walk.fail(FAIL.STATE, unreachedOnLocal(name)).state = stateKey(st); continue; }
     if (!ok) { walk.notes.push(localize("journey-check.states.name_not_reached_on_this_instance", "{name}: not reached on this instance", { name: String(name) })); continue; }
     for (const width of WIDTHS)
       written.push(relative(out, await pair(b, livePng[width], design[width], join(out, "pairs", `state-${st.screen}-${(st.state ?? st.option).replace(/[^a-z0-9]+/gi, "-")}-${width}.png`), { title: `${name}, ${width}px` })));

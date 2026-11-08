@@ -209,7 +209,7 @@ export async function firstPage(walk, page, document) {
 /* Steps 7 and 8: the document opened and its words seen in its Passages (extraction R76, K3399); the passage found with
    Find-in (from the document's own "Find in this"), for the question, and cited from the result as supporting it
    (screens-daily R24: the role chosen, none preselected). The question then holds the passage. */
-async function readAndCite(walk, page, { document, question, phrase = FIND_PHRASE, passage = NOTICE_PASSAGE, prefix = "" }) {
+export async function readAndCite(walk, page, { document, question, phrase = FIND_PHRASE, passage = NOTICE_PASSAGE, prefix = "" }) {
   await walk.step(page, localize("journey-check.investigation.v1_open_the_document_see", "{v1}open the document, see its words, and Find-in a passage", { v1: String(prefix ? prefix : "7 · ") }), async (p) => {
     await p.goto(document); await settle(p);
     await requireDrawn(walk, p, "document");
@@ -388,6 +388,8 @@ export async function walkAdministrator(walk, page, { base, founder, codeOf = nu
     return { project, question };
   }
   const document = await captureAndVouch(walk, page, base, { question, password: founder.password, city });
+  /* the vouched document, for the steps after this journey that cite it again (R21's carried states) */
+  made.document = document;
   await firstPage(walk, page, document);
   await readAndCite(walk, page, { document, question });
   if (assistant) {
