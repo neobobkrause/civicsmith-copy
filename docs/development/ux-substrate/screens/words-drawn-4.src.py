@@ -3313,3 +3313,14 @@ def w501(key, en):
     W.append(dict(key=key, en=en, protected=False, note='DEC-501: R17 word pass, "team" for the team (was the code row\'s "group")'))
 w501('run-rules.checks.nothing_was_started_because_none', "Nothing was started, because none of the AI accounts your team's Civicsmith can use has passed the test for this part of the work. Ask whoever looks after your team's AI accounts to add one that has passed it, or do this part without AI.")
 w501('screen.action.routes.why', "None of your places' profiles names a procedure for this kind, and no guide of your team's covers it. A rule or a procedure your profile lacks is drafted under Your team's own rules.")
+
+# DEC-502 (BD-17, completion round 2; BOB's ask of 8 Nov): the refusals of the rival explanations (hypotheses, PR 1005),
+# keyed by code as every C-134 row is. The machine's refusal is the module's own code, MACHINE_CANNOT_MARK_RIVAL:
+# MACHINE_CANNOT_MARK is sources' C-121.7 and its word says a paid or account-gated service, so it cannot be shared.
+def w502(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-502: ' + note))
+w502('refusal.RIVALS_TOO_FEW', 'A question weighs 2 to 6 rival explanations, and this names fewer than 2. Add another before saving. Nothing was written.', "hypotheses' translation, keyed by its code; hypothesisRivals, RIVALS_MIN 2")
+w502('refusal.RIVALS_TOO_MANY', 'A question weighs 2 to 6 rival explanations, and this names more than 6. Take one out before saving. Nothing was written.', "hypotheses' translation, keyed by its code; hypothesisRivals, RIVALS_MAX 6")
+w502('refusal.NOT_IN_INQUIRY', 'A rival explanation is a hunch held in this question, or one the system proposed in it. Hold it in this question first. Nothing was written.', "hypotheses' translation, keyed by its code; hypothesisRivals, the id named in detail")
+w502('refusal.MACHINE_CANNOT_MARK_RIVAL', 'Only a member, acting for themselves, marks which explanation to explore next. No assistant, scheduled task or unattended process can. Nothing was written.', "hypotheses' translation, keyed by its code (INV:108); exploreNext")
+w502('refusal.NOT_A_RIVAL', "That is not one of this question's rival explanations. It may have been taken out since you opened the page. Nothing was written.", "hypotheses' translation, keyed by its code; exploreNext")
