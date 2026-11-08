@@ -22,3 +22,5 @@
 - [ ] CR2-18 · steps · a step opened from a rival records that rival (BD-17), so a rival lists the legs its steps found (hypotheses CR2-9 F1)
 - [ ] CR2-19 · hypotheses · re-pass of CR2-9 once CR2-16/17/18 land: add the arms for the three ops and the rival's legs, meet F1
 - [ ] CR2-20 · inquiry · re-pass of CR2-10 once CR2-16/17/18 land: wire the bar check, the catalogue wording and the rivals list (IV-H3 standing, F2)
+- [ ] CR2-21 · interface-assets · define the update band, the newer-version band interface-shell R92/R101 (interface-shell-t50-t51.md) require, under a cs- name with the ux lane's look; today mk-updband is drawn with no stylesheet defining it (interface-shell CR2-4's one remaining exemption)
+- [ ] CR2-22 · interface-shell · once CR2-21 lands: draw the update band with its cs- name and drop the mk-updband exemption, so cr2-4.test's every-drawn-class-is-defined check holds with none
