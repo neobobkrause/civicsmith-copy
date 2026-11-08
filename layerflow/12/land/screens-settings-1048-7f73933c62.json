@@ -1,0 +1,62 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "screens-settings",
+  "pr": 1048,
+  "branch": "job/screens-settings",
+  "head": "7f73933c626ae9a0309cd6cbf7c2ce4ada2e995a",
+  "before": "7d5b1ca260238cd0c61e8c536f6ccd53a84d5233",
+  "merge": "0f38ac6c4391988710533e7f8d2895bcc3b443b1",
+  "at": "2026-11-08T14:11:41Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-settings/contract.test.mjs",
+      "bio-plane/test/m/screens-settings/group.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-settings/contract.test.mjs",
+      "bio-plane/test/m/screens-settings/group.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-settings/contract.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: import { CR2_DESIGN_OPS } from \"../../../src/affordances/act-help.mjs\" ;"
+      },
+      {
+        "file": "bio-plane/test/m/screens-settings/group.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-settings/contract.test.mjs",
+      "bio-plane/test/m/screens-settings/group.test.mjs"
+    ],
+    "triggers": [],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "none",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/screens-settings/contract.test.mjs",
+        "bio-plane/test/m/screens-settings/group.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "importers": []
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [
+    "plane",
+    "screens-inquiry"
+  ],
+  "users_noticed": []
+}
