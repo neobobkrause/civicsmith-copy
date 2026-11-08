@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "affordances",
+  "pr": 1079,
+  "branch": "job/affordances",
+  "head": "e7312082210774a3a7608a154637e7f4c474bc5d",
+  "before": "56783197822b2c82427003e5e0beb27026ae0771",
+  "merge": "b22bcec2dd9988c5cda8fc7485777326ba15ae6d",
+  "at": "2026-11-08T21:27:05Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
