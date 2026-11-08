@@ -17,3 +17,8 @@
 - [ ] CR2-13 · case-disclosures · BD-18 follow-up to provenance CR2-6 (PR 1002): captures.test R2 pinned archive = C, and follows the archive-replay grade (raw replay B via archive, rewritten replay C)
 - [ ] CR2-14 · screens-inquiry · turn on the 24 reachability tests held as test.todo, now reachable through ai-runs CR2-8 F4 (the pairless aipathready cascade read); coordinator ruling: this round's work
 - [ ] CR2-15 · screens-daily · split build/requirements/screens-daily.md under the requirements cap (BOB's, REQ-6) · deferred: REQ-6 split of screens-daily (82,647 bytes; R56/R58/R108/R48/R55 largest), owed before its next job; cap number set before the second tranche
+- [ ] CR2-16 · affordances · admit hypothesisrivals, explorenext and rivals (hypotheses CR2-9 F1, BD-17): R12 list rows, with the ux lane's ACT_HELP words (ACT_HELP_ABSENT only if the lane says no help text fits); hypotheses' attempt turned 3 affordances tests red
+- [ ] CR2-17 · op-declarations · admit hypothesisrivals, explorenext and rivals with their DECLARED_OPS rows (R34 ground if ACT_HELP_ABSENT), and the ux lane's sentences and C-134 rows for hypotheses' five new refusal codes; hypotheses' attempt turned 3 op-declarations tests red
+- [ ] CR2-18 · steps · a step opened from a rival records that rival (BD-17), so a rival lists the legs its steps found (hypotheses CR2-9 F1)
+- [ ] CR2-19 · hypotheses · re-pass of CR2-9 once CR2-16/17/18 land: add the arms for the three ops and the rival's legs, meet F1
+- [ ] CR2-20 · inquiry · re-pass of CR2-10 once CR2-16/17/18 land: wire the bar check, the catalogue wording and the rivals list (IV-H3 standing, F2)
