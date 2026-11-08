@@ -209,7 +209,10 @@ export function localReach(ctx) {
     if (await page.locator("#jn-lang").count()) await page.locator("#jn-lang").selectOption({ index: 0 });
     await act(page, "enroll", { fields: { "jn-handle": handle, "jn-pw": pw, "jn-pw2": pw } });
     await page.locator('[data-state="joined"]').first().waitFor({ state: "visible", timeout: 15000 });
-    return { page, password: pw };
+    /* her role is her session's from her next sign-in: she signs in on a device of her own */
+    const own = await ctx.device();
+    await signInBy(walk, own, base, { handle, password: pw }, `R21 · ${handle} signs in as an administrator`);
+    return { page: own, password: pw };
   });
   /* with three administrators, Ana proposes Dev's removal: two of three needed, the founder's vote still awaited */
   const removalOpen = once(async () => {
@@ -270,16 +273,17 @@ export function localReach(ctx) {
     await openRow(F, "teo");
     for (const cap of ["contribute", "create_projects"]) { const box = F.locator(`#mc-teo-${cap}`); await reveal(box); await box.check(); }
     await act(F, "membercaps", { which: '[data-member="teo"]', password: who.founder.password, reason: "He runs the flat 9 work." });
-    /* what he may do is his session's from his next sign-in */
-    await signInBy(walk, T, base, who.newcomer, "R21 · Teo signs in again");
-    await go(T, at("/app/projects"));
-    const v = T.locator("#projects-visibility-hidden");
+    /* what he may do is his session's from his next sign-in: on another device of his */
+    const T2 = await ctx.device();
+    await signInBy(walk, T2, base, who.newcomer, "R21 · Teo signs in on another device");
+    await go(T2, at("/app/projects"));
+    const v = T2.locator("#projects-visibility-hidden");
     try { await v.first().waitFor({ state: "attached", timeout: 15000 }); }
-    catch { throw new Error(`Teo's Projects offers him no project to start after he was let start projects: ${(await T.locator("#cs-main").innerText().catch(() => "")).slice(0, 200)}`); }
+    catch { throw new Error(`Teo's Projects offers him no project to start after he was let start projects: ${(await T2.locator("#cs-main").innerText().catch(() => "")).slice(0, 200)}`); }
     await reveal(v); await v.check();
-    await act(T, "promote", { fields: { "projects-title": "Flat 9 window frames" }, reason: "Recorded by the release walk." });
-    await T.waitForURL((u) => u.pathname.startsWith("/app/project/"), { timeout: 15000 });
-    const url = T.url();
+    await act(T2, "promote", { fields: { "projects-title": "Flat 9 window frames" }, reason: "Recorded by the release walk." });
+    await T2.waitForURL((u) => u.pathname.startsWith("/app/project/"), { timeout: 15000 });
+    const url = T2.url();
     await go(F, at("/app/members"));
     await openRow(F, "teo");
     await act(F, "memberset", { which: '[data-member="teo"][data-status="revoked"]', password: who.founder.password, reason: "He moved out." });
@@ -410,7 +414,7 @@ export function localReach(ctx) {
     }) };
   R["home:for a member who"] = { rank: -1, page: () => T, reach: state({ words: ["screen.home.join.heading", "screen.home.join.none"] }, async (p) => go(p, at("/app"))) };
   R["members:as a member"] = { page: asMai, reach: state({ sel: ['table[data-list="members"]'], words: ["screen.members.member.note"] }, async (p) => go(p, at("/app/members"))) };
-  R["members:an administrator's"] = { reach: state({ sel: ["#cs-main [data-removal]"] }, async (p) => { await removalOpen(); await go(p, at("/app/members")); }) };
+  R["members:an administrator's"] = { expect: [/^REAUTH_DUE$/], reach: state({ sel: ["#cs-main [data-removal]"] }, async (p) => { await removalOpen(); await go(p, at("/app/members")); }) };
   R["security:an"] = { reach: state({ sel: ['[data-risk="ordinary"]'], words: ["screen.security.ordinary.head"] }, async (p) => go(p, at("/app/security"))) };
   R["account:a newer"] = { note: "account, a newer version: the copy's /version answer was given by the walk's own route (no newer release is installed locally)",
     reach: state({ sel: [".mk-updband"] }, async (p) => {
