@@ -18,6 +18,7 @@ import { createHash } from "node:crypto";
 import { planeOptions } from "../../../src/journey-check/local.mjs";
 import { STEP_NAMES } from "../../../src/journey-check/investigation.mjs";
 import { CARRIED_STATES, unreachedOnLocal } from "../../../src/journey-check/states.mjs";
+import { UNREACHABLE } from "../../../src/journey-check/reach.mjs";
 import { localize } from "../../../src/setup-words/index.mjs";
 
 const DIR = join(import.meta.dirname, "..", "..", "..", "src", "journey-check");
@@ -102,13 +103,13 @@ const stepsOf = (r, journey) => r.walk.steps.filter((s) => s.journey === journey
 const numbered = (r, journey) => stepsOf(r, journey).filter((s) => /^\d+ · /.test(s.label));
 
 const NOT_READY = /draws an assistant control that cannot work while the assistant does not/;
-/* BOB's ruling (7 Nov): F10 (a reach for each of R21's carried states on the local arm) is owed, so R1 (a) leaves out a failure
-   only when it is states.mjs' own unreached sentence for a carried screen's state; any other `state` failure, and every other kind,
-   still fails R1 (a). The todo below asserts none of those either, so F10 stays visible. */
+/* BOB's ruling (7 Nov), F10: R1 (a) leaves out a failure only when it is states.mjs' own unreached sentence for a carried state the
+   local copy cannot draw (reach.mjs UNREACHABLE, each with its reason, put to BOB); any other `state` failure, and every other kind,
+   still fails R1 (a). The F10 test below asserts every other carried state reached; the todo keeps the rest visible. */
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const [UNREACHED_HEAD, UNREACHED_TAIL] = unreachedOnLocal("\u0000").split("\u0000");
 const UNREACHED = new RegExp(`^${esc(UNREACHED_HEAD)}(${[...new Set(CARRIED_STATES.map((s) => s.screen))].map(esc).join("|")}), .+${esc(UNREACHED_TAIL)}$`);
-const unreached = (f) => f.kind === FAIL.STATE && UNREACHED.test(f.detail);
+const unreached = (f) => f.kind === FAIL.STATE && UNREACHED.test(f.detail) && Object.hasOwn(UNREACHABLE, f.state);
 const noted = (r, name) => r.walk.notes.includes(localize("journey-check.walker.name_not_walked_the_assistant", "{name}: not walked, the assistant does not work (K3717)", { name }));
 /* R20: the walk's steps that fail are only a screen that draws an assistant control that cannot work, by name */
 const stepFailures = (r) => r.walk.failures.filter((f) => f.kind === FAIL.STEP);
@@ -122,7 +123,14 @@ test("R1 (a): the local arm, with no account: the installer over its fake accoun
   for (const j of ["journey 28", "journey 3", "R9 as administrator", "R10 as member", "R7 as the founder, her handle held"]) assert.ok(stepsOf(r, j).length, j);
 });
 
-test.todo("R21/F10: every carried state reached on the local arm (owed: F10)", { timeout: 2400000 }, async () => {
+test("R21/F10: every carried state the local copy can draw is reached on the local arm and paired at both widths; control: those it cannot draw each fail by name", { timeout: 2400000 }, async () => {
+  const { r } = await local();
+  assert.deepEqual(r.walk.failures.filter((f) => f.kind === FAIL.STATE && !Object.hasOwn(UNREACHABLE, f.state)).map((f) => f.detail), [], r.report);
+  assert.equal(r.walk.pairs.filter((p) => /^pairs\/state-/.test(p)).length, 2 * (CARRIED_STATES.length - Object.keys(UNREACHABLE).length), r.report);
+  assert.deepEqual(r.walk.failures.filter(unreached).map((f) => f.state).sort(), Object.keys(UNREACHABLE).sort());
+});
+
+test.todo("R21/F10: the carried states the local copy cannot draw (reach.mjs UNREACHABLE, put to BOB) reached, or retired from the list", { timeout: 2400000 }, async () => {
   const { r } = await local();
   assert.deepEqual(r.walk.failures.filter(unreached).map((f) => f.detail), []);
 });

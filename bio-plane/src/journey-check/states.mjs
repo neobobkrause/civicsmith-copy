@@ -126,7 +126,8 @@ export async function walkStates(walk, b, mock, { out, page = null, base = null,
       if (entry.after) await entry.after(pg).catch(() => {});
       if (ok && entry.note) walk.notes.push(entry.note);
     }
-    if (!ok && walk.arm === "local") { walk.fail(FAIL.STATE, unreachedOnLocal(name)); continue; }
+    /* the failure carries the state's key, so a reader can tell a state the local copy cannot draw (reach.mjs UNREACHABLE) from another */
+    if (!ok && walk.arm === "local") { walk.fail(FAIL.STATE, unreachedOnLocal(name)).state = stateKey(st); continue; }
     if (!ok) { walk.notes.push(localize("journey-check.states.name_not_reached_on_this_instance", "{name}: not reached on this instance", { name: String(name) })); continue; }
     for (const width of WIDTHS)
       written.push(relative(out, await pair(b, livePng[width], design[width], join(out, "pairs", `state-${st.screen}-${(st.state ?? st.option).replace(/[^a-z0-9]+/gi, "-")}-${width}.png`), { title: `${name}, ${width}px` })));
