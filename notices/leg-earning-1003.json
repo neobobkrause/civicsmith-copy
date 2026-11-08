@@ -1,0 +1,21 @@
+{
+  "row": "notice",
+  "at": "2026-11-08T09:31:58Z",
+  "key": "leg-earning:1003",
+  "provider": "leg-earning",
+  "ids": [],
+  "pr": 1003,
+  "users": [
+    "action-plans",
+    "investigation",
+    "op-declarations",
+    "plane",
+    "store-assembly"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 12,
+    "provides": true,
+    "rescheduled": true
+  }
+}

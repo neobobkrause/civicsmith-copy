@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 12,
+  "module": "leg-earning",
+  "pr": 1003,
+  "sha": "7c7d4d5890608d1ad2c3e11bda072450da1d45b0",
+  "run_id": 42466367703,
+  "run_attempt": 1,
+  "at": "2026-11-08T09:16:07Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 1.18,
+  "suite_minutes": null,
+  "record_only": true,
+  "whole": false
+}
