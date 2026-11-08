@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "interface-assets",
+  "session": "session_018BhcedoBAeMV1BJywPWax4",
+  "started": "2026-11-08T09:16:18Z",
+  "ended": "2026-11-08T09:17:23Z",
+  "at": "2026-11-08T09:17:23Z",
+  "minutes": 1.08,
+  "result": "pass",
+  "layer": 12,
+  "suite_seconds": 3.491,
+  "tests": {
+    "total": 31,
+    "pass": 30,
+    "fail": 0
+  }
+}
