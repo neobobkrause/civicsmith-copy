@@ -1,0 +1,11 @@
+{
+  "row": "start",
+  "layer": 12,
+  "module": "journey-check",
+  "attempt": 6,
+  "branch": "job/journey-check-2",
+  "early": [
+    "screens-daily"
+  ],
+  "at": "2026-11-08T09:06:07Z"
+}
