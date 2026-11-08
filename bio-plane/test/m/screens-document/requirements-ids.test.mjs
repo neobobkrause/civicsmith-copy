@@ -18,7 +18,7 @@ const NOTES = at("docs/requirements-notes/screens-document.md");
 const START_IDS = Array.from({ length: 75 }, (_, i) => `R${i + 1}`);
 const KEPT_IDS = START_IDS.slice(0, 57);
 const BETA_IDS = START_IDS.slice(57);
-const START_UNMET = Object.fromEntries(START_IDS.map((id) => [id, "T53"]));
+const START_UNMET = Object.fromEntries(KEPT_IDS.map((id) => [id, "T53"]));
 
 const read = (f) => readFileSync(f, "utf8");
 const idLines = (text) => text.split("\n").map((l) => l.match(/^\s*- \*\*([RF]\d+)\*\*(.*)$/)).filter(Boolean);
@@ -32,9 +32,10 @@ test("split: the requirements file is under the cap", () => {
   assert.ok(Buffer.byteLength(read(FILE), "utf8") <= CAP, `${Buffer.byteLength(read(FILE), "utf8")} bytes`);
 });
 
+// Only this module's own file: the beta file's marks are screens-document-beta's own to change (its job amended R60's).
 test("consolidation: every unmet mark is that of the start commit, on its own id's line", () => {
   const marks = {};
-  for (const [, id, rest] of [...idLines(read(FILE)), ...idLines(read(BETA))]) {
+  for (const [, id, rest] of idLines(read(FILE))) {
     const m = rest.match(/not yet met: ([^)]*)\)\*/);
     if (m) marks[id] = m[1];
   }
