@@ -5,11 +5,11 @@
 import { test } from "node:test";
 import { localize, word } from "../../../src/setup-words/index.mjs";
 import assert from "node:assert/strict";
-import { world, run, sha, text } from "./fixture.mjs";
+import { world, run, sha, text, wayback, eligible } from "./fixture.mjs";
 import { makeZip } from "../../make-zip.mjs";
 import { unpack, ARCHIVE_CHECKS, firstHopWho } from "../../../src/acquisition/index.mjs";
 import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
-import { ARCHIVE_CAPTURE_GRADE } from "../../../src/provenance/index.mjs";
+import { ARCHIVE_CAPTURE_GRADE, REWRITTEN_REPLAY_GRADE } from "../../../src/provenance/index.mjs";
 import { ARCHIVE_LIMITS } from "../../../src/ooxml.mjs";
 
 const URL1 = "https://files.example/bundle.zip";
@@ -133,15 +133,36 @@ test("R38 R39 R26: each file is cut out exactly, stored under its own digest, re
   assert.deepEqual(recorded(w, archiveSha).map((x) => [x.idx, x.state]), [[-1, "opened"], [0, "filed"], [1, "filed"]]);
 });
 
-test("R39: a file of an archive captured from a web archive carries that archive's letter, never stronger or weaker", async () => {
+test("R39 F1 (BD-18): a file of an archive captured from a web archive carries that archive's letter, never stronger or weaker: a raw replay's archive letter, a rewritten replay's reference-only letter", async () => {
+  const cases = [
+    /* the archive's receipt says archive.org at a raw (`id_`) replay: the archive letter, via archive */
+    ["https://web.archive.org/web/20250101000000id_/https://a.example/x.zip", ARCHIVE_CAPTURE_GRADE, "makes-raw.txt"],
+    /* at a rewritten replay: the rewritten letter, reference only */
+    ["https://web.archive.org/web/20250101000000/https://a.example/x.zip", REWRITTEN_REPLAY_GRADE, "makes-rewritten.txt"]];
+  for (const [retrievalLocator, letter, name] of cases) {
+    const w = world();
+    const z = makeZip([{ name, data: "x" }]);
+    w.prov.recordReceipt({ address: URL1, addressNorm: URL1, captureSha: sha(z), retrieved: "2026-01-01T00:00:00Z", via: "archive.org", retrievalLocator });
+    await w.b.put(`bio/captures/${sha(z)}`, z);
+    const u = await unpack(w.store, { archiveSha: sha(z), by: "m1", cls: "member" });
+    assert.equal(u.documents[0].capture.grade, letter, retrievalLocator);
+  }
+  assert.equal(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING);
+  assert.notEqual(REWRITTEN_REPLAY_GRADE, ARCHIVE_CAPTURE_GRADE);
+  /* through the archive arm itself: a ZIP read from a raw replay is filed via archive at the archive letter, its
+     snapshot its fetch date and the archive its custodian, and each file opened from it carries that letter */
   const w = world();
-  const z = makeZip([{ name: "x.txt", data: "x" }]);
-  /* the archive's receipt says archive.org: the letter one rank below the ceiling */
-  w.prov.recordReceipt({ address: URL1, addressNorm: URL1, captureSha: sha(z), retrieved: "2026-01-01T00:00:00Z", via: "archive.org", retrievalLocator: "https://web.archive.org/x" });
-  await w.b.put(`bio/captures/${sha(z)}`, z);
-  const u = await unpack(w.store, { archiveSha: sha(z), by: "m1", cls: "member" });
-  assert.equal(u.documents[0].capture.grade, ARCHIVE_CAPTURE_GRADE);
-  assert.notEqual(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING);
+  const addr = "https://gone.example/bundle.zip";
+  const z = makeZip([{ name: "via-archive.txt", data: "kept by the archive" }]);
+  await eligible(w, addr);
+  const r = await run(w, wayback([{ ts: "20250101000000", body: z, ct: "application/zip" }], { address: addr }),
+                      { via: "archive.org", address: addr }, { cls: "admin", member: false });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  const c = r.body.document.capture;
+  assert.deepEqual([c.grade, c.via_archive, c.custodian, c.fetched_at, "reference_only" in c],
+                   [ARCHIVE_CAPTURE_GRADE, true, "web.archive.org", "2025-01-01T00:00:00Z", false]);
+  const u = r.body.unpack && r.body.unpack.documents ? r.body.unpack : await unpack(w.store, { archiveSha: sha(z), by: "m1", cls: "member" });
+  assert.deepEqual(u.documents.map((d) => d.capture.grade), [ARCHIVE_CAPTURE_GRADE], "each file at its archive's letter");
 });
 
 test("R38: the same bytes twice in one archive, and bytes the register already holds, are filed once: each later sighting is `already_held` with its receipt, never a second document", async () => {
