@@ -1,0 +1,12 @@
+{
+  "row": "start",
+  "layer": 12,
+  "module": "plane",
+  "attempt": 9,
+  "branch": "job/plane-3",
+  "early": [
+    "affordances",
+    "case-disclosures"
+  ],
+  "at": "2026-11-08T11:36:41Z"
+}
