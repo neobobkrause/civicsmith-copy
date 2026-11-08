@@ -124,3 +124,38 @@ export const NOTES_TABLES = Object.freeze(["member_notes", "member_note_turns", 
 /* R14 (T36): each member's high-water mark, exempt from purge as `record-core`'s id counter is (its R23), so a number
    once taken is never taken again, purged store or not. */
 export const NOTE_NUMBERS_TABLE = "member_note_numbers";
+
+/* Rival explanations (F1; BD-17; IV-H1, IV-H2 of the investigation lane's redraft rev 7). A question (an inquiry) holds
+   2 to 6 rivals, each a hypothesis held in it (R1) or a proposal of the system's in it (R16), keyed by the inquiry's
+   `bundle_id` (purged with it, sight the inquiry's). `hypothesis_rival_marks` holds each member's one current
+   "Explore this next" mark in an inquiry; a new mark replaces the member's own earlier one. `hypothesis_rival_history`
+   keeps every change to the set and every mark, with who and when, appended. A mark orders the exploring and nothing
+   else: no column here is read by a grade, a strength, a leg or a conclusion. */
+export const RIVALS_SCHEMA = `
+CREATE TABLE IF NOT EXISTS hypothesis_rivals (
+  bundle_id     TEXT NOT NULL,      -- the inquiry (question) holding the set
+  rival_id      TEXT NOT NULL,      -- a HYP- id: a held hypothesis, or a proposal of the system's
+  source        TEXT NOT NULL,      -- member | system
+  added_by      TEXT NOT NULL,
+  added_at      TEXT NOT NULL,
+  added_seq     INTEGER NOT NULL,   -- the history row of its adding; breaks ties in the order
+  PRIMARY KEY (bundle_id, rival_id)
+);
+CREATE TABLE IF NOT EXISTS hypothesis_rival_marks (
+  bundle_id     TEXT NOT NULL,
+  member        TEXT NOT NULL,
+  rival_id      TEXT NOT NULL,
+  at            TEXT NOT NULL,
+  PRIMARY KEY (bundle_id, member)
+);
+CREATE TABLE IF NOT EXISTS hypothesis_rival_history (
+  seq           INTEGER PRIMARY KEY AUTOINCREMENT,
+  bundle_id     TEXT NOT NULL,
+  rival_id      TEXT NOT NULL,
+  act           TEXT NOT NULL,      -- add | remove | mark
+  by_actor      TEXT NOT NULL,
+  at            TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS hypothesis_rival_history_bundle ON hypothesis_rival_history (bundle_id, seq);
+`;
+export const RIVALS_TABLES = Object.freeze(["hypothesis_rivals", "hypothesis_rival_marks", "hypothesis_rival_history"]);
