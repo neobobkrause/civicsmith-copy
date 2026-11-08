@@ -2,3 +2,4 @@
 {"at":"2026-11-05T18:22:16Z","row":"outcome","n":1,"outcome":"delivered"}
 {"at":"2026-11-08T01:46:52Z","row":"sent","n":2,"to":"bob","text":"job control-plane-store-request BLOCKED: run status"}
 {"at":"2026-11-08T01:47:10Z","row":"outcome","n":2,"outcome":"delivered"}
+{"at":"2026-11-08T01:59:18Z","row":"sent","n":3,"to":"bob","text":"job control-plane-store-request complete, PR #983 ready, session session_018BhceeS3TdGdRPzystvpGs: run status"}
