@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 12,
+  "module": "screens-settings",
+  "round": 1,
+  "started": "2026-11-08T14:42:15Z",
+  "ended": "2026-11-08T14:47:43Z",
+  "minutes": 5.5,
+  "tested_on": "75d6531c71066b537fea9025141210327d186fb3",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-08T14:47:43Z"
+}
