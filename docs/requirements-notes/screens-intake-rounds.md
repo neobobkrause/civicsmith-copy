@@ -61,3 +61,9 @@ Tested through the screen but left open:
 Still owed elsewhere, unchanged: R72 (a read op serving `limitsByKind`), R75 and R76 (`sourceLinksFor`, the doorbell row), R77, R78 (capture.mjs still draws stand-ins for finish, address held, fetch done with no project, `about.one`), R80, R82 (archivelist's counts, the From {parent} row), R83 (interface-shell-t53 R140), R84 (PLATFORM Seed A), R85 to R91 (screens-intake and plane answers; R90 interface-shell R35), R93 (screens-publish's doorbell), R94 (capture R96, R120; interface-shell R144).
 
 Revert check: these tests assert screens-intake's drawing, which landed before this attempt; this attempt's source change only removes duplicate parts, so the new tests pass with it reverted. A `revert exempt` is asked of BOB on the pull request.
+
+## Attempt 3 (7 Nov 2026): re-test against screens-intake's new interface (land 1995851e1f)
+
+screens-intake (PR 945, DEC-500) now draws a parted upload's begin refused `TOO_LARGE` as the one-request upload does (`uploadTooLargeHtml`: its figures, "Nothing was added or read.", R74 (b)'s part). The found mark of attempt 2 is met: the R73 todo for the 120 MB PDF is now a test through the served page over the real store (the real `captureuploadbegin` refuses it with its size and the document limit from `limitsByKind`; no part is sent, nothing is filed or held). Revert check: with `capture.mjs` at the land's first parent the test fails; with the land it passes. The whole suite passes against the new interface (22 pass, 20 todo).
+
+R73 stays open: a sheet over its rows and a document over its pages by count are still not drawn (no answer carries those figures yet). No other line changes.
