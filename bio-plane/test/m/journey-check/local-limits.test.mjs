@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { localSweep, browser } from "../../../src/journey-check/run.mjs";
+import { localSweep, browser, ABSENT_TITLE_NOTE } from "../../../src/journey-check/run.mjs";
 import { FAIL, Walk } from "../../../src/journey-check/walker.mjs";
 import { sweepScreens } from "../../../src/journey-check/screens.mjs";
 import { open, act, requireDrawn } from "../../../src/journey-check/journeys.mjs";
@@ -58,4 +58,13 @@ test("PD-11: a local-arm screen whose tab title is not its screen's word fails D
   const walk = await swept({ flaws: { members: "title" } }, only("members"));
   const dec = walk.failures.filter((f) => f.kind === FAIL.DEC340);
   assert.deepEqual([...new Set(dec.map((f) => f.detail.replace(/: .*/, "")))].sort(), ["members at 1280px", "members at 390px"], JSON.stringify(walk.failures));
+});
+
+test("PD-11, BOB 8 Nov: a screen that draws its absence state at its bare address (\"Can't open this\") is not failed on its tab title, and the skip is noted; control: a screen that draws its subject with a wrong title still fails (above)", { timeout: 300000 }, async () => {
+  const walk = await swept({ flaws: { members: "absent" } }, only("members"));
+  assert.deepEqual(walk.failures.filter((f) => f.kind === FAIL.DEC340), [], JSON.stringify(walk.failures));
+  assert.ok(walk.notes.includes(ABSENT_TITLE_NOTE("members")), walk.notes.join(" | "));
+  const titled = await swept({ flaws: { members: "title" } }, only("members"));
+  assert.ok(titled.failures.some((f) => f.kind === FAIL.DEC340 && /^members at 1280px: title/.test(f.detail)), JSON.stringify(titled.failures));
+  assert.ok(!titled.notes.includes(ABSENT_TITLE_NOTE("members")));
 });

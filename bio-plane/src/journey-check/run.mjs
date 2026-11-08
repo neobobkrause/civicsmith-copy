@@ -16,7 +16,7 @@ import { ABSENCE, walkInstaller, walkFounder, inviteMember, walkMember, walkWelc
   signInBy, sweepAsFounder, walkSite, walkDashboards, walkSignGone } from "./journeys.mjs";
 import { walkAdministrator, walkMemberJourney, walkUnassisted, journey29Live, notReady, STEP_NAMES } from "./investigation.mjs";
 import { sweepScreens, addressOf, registryScreens } from "./screens.mjs";
-import { dec340Limits, publicPages } from "./checks.mjs";
+import { dec340Limits, publicPages, DEC340 } from "./checks.mjs";
 import { escapedOnPage, pseudoRoute } from "./pseudo.mjs";
 import { walkPublished, PUBLISHED_ENV } from "./published.mjs";
 import { walkStates } from "./states.mjs";
@@ -314,11 +314,17 @@ export const instanceSlugs = (host) => [String(host).split(":")[0].split(".")[0]
 /* R6, R28 (DEC-340), both arms (PD-11): a drawn screen measured at 1280 and 390 px against the page's limits (`pageLimits`: wider
    than the viewport, tabs, the test band, an undefined class, a slug or code) and DEC-340's (`dec340Limits`); each limit a failure
    naming the screen and width. `each(width)` runs at each width after the checks (the live arm's pair). Leaves the page at 1280. */
+/* BOB's ruling (session_018BhcegCnnPxsYfe31RVw9N, 8 Nov): a screen that draws its absence state ("Can't open this", "Nothing is
+   here": interface-shell's `[data-unavailable]`) for a viewer with no subject is the designed absence, and its tab title is that
+   state's, not the screen's: the title check is skipped there and noted, and kept for every screen that draws its subject. */
+export const ABSENT_TITLE_NOTE = (id) => localize("journey-check.run.id_draws_its_absence_state", "{id}: draws its absence state at its bare address, so its tab title is not checked (the designed absence, BOB, 8 Nov)", { id: String(id) });
 export async function screenLimits(walk, p, id, { slugs = [], each = null } = {}) {
   for (const width of WIDTHS) {
     if (width !== WIDTHS[0]) { await p.setViewportSize(viewportOf(width)); await p.reload(); await settle(p); }
     for (const l of await pageLimits(p, { width, slugs, handles: [...walk.handles] })) walk.fail(l.kind, `${id} at ${width}px: ${l.detail}`);
-    for (const l of await dec340Limits(p, id, { isPublic: false, phone: width <= 390 })) walk.fail(FAIL.DEC340, localize("journey-check.run.id_at_width_px_kind", "{id} at {width}px: {kind}: {detail}", { id: String(id), width: String(width), kind: String(l.kind), detail: String(l.detail) }));
+    const absent = (await p.locator("#cs-main [data-unavailable]").count().catch(() => 0)) > 0;
+    if (absent && width === WIDTHS[0]) walk.notes.push(ABSENT_TITLE_NOTE(id));
+    for (const l of (await dec340Limits(p, id, { isPublic: false, phone: width <= 390 })).filter((x) => !(absent && x.kind === DEC340.TITLE))) walk.fail(FAIL.DEC340, localize("journey-check.run.id_at_width_px_kind", "{id} at {width}px: {kind}: {detail}", { id: String(id), width: String(width), kind: String(l.kind), detail: String(l.detail) }));
     if (each) await each(width);
   }
   await p.setViewportSize(viewportOf(WIDTHS[0]));
