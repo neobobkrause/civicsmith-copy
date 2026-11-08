@@ -310,3 +310,19 @@ test("R20 control: a screen that draws an assistant control while the assistant 
   assert.deepEqual(good.failures, [], JSON.stringify(good.failures));
   assert.ok(good.steps.some((s) => s.label === "assistant not ready: the Ask screen" && s.ok));
 });
+
+test("R22, CR2-5 (live arm): the dashboards are walked after R9 has made the team's project, so Home's door to dash-project is tested where the team holds one; control: the same Home with no project made draws no door, and that fails by name", { timeout: 300000 }, async () => {
+  const fp = await fakePlane({ admins: { ada: true }, doors: "afterproject" });
+  try {
+    const r = await runLive({ base: fp.base, env: ENV, out: join(dir, String(Math.random()).slice(2)), commit: COMMIT, screens: only("members") });
+    const dash = r.walk.steps.filter((s) => /^dashboard dash-/.test(s.label));
+    assert.equal(dash.length, 2, r.report);
+    assert.ok(dash.every((s) => s.ok), r.report);
+    assert.ok(!r.walk.failures.some((f) => /Home draws no door to dash-project/.test(f.detail)), r.report);
+    /* after R9's second step (the project started) */
+    const started = r.walk.steps.findIndex((s) => s.label.startsWith("2 · start a project"));
+    assert.ok(started >= 0 && started < r.walk.steps.indexOf(dash[0]), r.report);
+  } finally { await fp.close(); }
+  const none = await walked({ admins: { ada: true }, doors: "afterproject" }, { screens: only("members") });
+  assert.ok(none.walk.failures.some((f) => /Home draws no door to dash-project/.test(f.detail)), none.report);
+});

@@ -9,7 +9,7 @@
    Anthropic's page, then the code typed), each drawing the words the walk asserts, through `word`. `codes` records each
    code the plane was sent. R20: `connect` draws that sign-in only with `assistantControls: true` (the assistant works);
    otherwise it draws no assistant control, as the interface does while the assistant is not reachable. R22: Home draws the
-   doors to `dash-project` and `dash-action` (`doors: false` draws none; `doors: "project"` draws no Action block, as Home does for a team holding no action, DEC-219 (3); `doors: "blockonly"` draws the Action block without its door). R22: `dashNothing: true` draws "Nothing is here" on `dash-project`. R25: `/sign` answers 404 with the interface's
+   doors to `dash-project` and `dash-action` (`doors: false` draws none; `doors: "afterproject"` draws them only once a project was started (`promote`), as Home draws no Investigation door for a team with no project (CR2-5); `doors: "project"` draws no Action block, as Home does for a team holding no action, DEC-219 (3); `doors: "blockonly"` draws the Action block without its door). R22: `dashNothing: true` draws "Nothing is here" on `dash-project`. R25: `/sign` answers 404 with the interface's
    nothing-is-here page, or, with `signPage: true`, a page holding a form. R24: `published: true` serves a published case at `PUBLISHED_PATH`, signed out. R20: `askControl: true` draws the Ask act on `answers`, an assistant control that cannot work while the assistant does not. */
 import { createServer } from "node:http";
 import { word } from "../../../src/setup-words/index.mjs";
@@ -51,7 +51,7 @@ const FLAW = {
 
 // fixtures-own: harness journey-check walks a served plane and imports no module (K3100, K5062); the ops and codes of this table are held equal to the real ones by tables.mjs
 export async function fakePlane({ admins = {}, flaws = {}, adminActs = true, assistantControls = false, doors = true, signPage = false, dashNothing = false, published = false, askControl = false } = {}) {
-  const seen = [], codes = [];
+  const seen = [], codes = [], projects = [];
   const sessions = new Map();
   const page = (body) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>Civicsmith</title><link rel="stylesheet" href="/app/assets/civicsmith.css"></head><body>${body}</body></html>`;
@@ -71,12 +71,14 @@ export async function fakePlane({ admins = {}, flaws = {}, adminActs = true, ass
   if (f !== "title") document.title = ${JSON.stringify(TITLES)}[id] || document.title;
   const acts = '<button class="cs-btn" data-act="testify" type="button">Testify</button>'
     + (${JSON.stringify(adminActs)} && who.result.administer && id === "members" ? '<button class="cs-btn" data-act="memberadd" type="button">Invite a member</button>' : "");
+  const doorsNow = ${JSON.stringify(doors)} !== "afterproject" || (await (await fetch("/api/?op=projectlist")).json()).result.projects.length > 0;
   document.getElementById("root").innerHTML = '<div class="cs-frame" id="cs-frame">'
     + '<div class="cs-testband' + (f === "band" ? " cs-narrow" : "") + '" role="note">A test instance</div>'
-    + '<main class="cs-main" id="cs-main" data-screen="' + id + '">' + (STEPS[id] ? STEPS[id]() : '<h1 class="t-title">A screen</h1>' + acts + (id === "home" && ${JSON.stringify(doors)} ? '<div data-area="investigation"><a href="/app/dash-project">Investigation</a></div>' + (${JSON.stringify(doors)} === "project" ? "" : ${JSON.stringify(doors)} === "blockonly" ? '<div data-area="action"><b>Action</b></div>' : '<div data-area="action"><a href="/app/dash-action">Action</a></div>') : "") + (FLAW[f] || "")) + '</main>'
+    + '<main class="cs-main" id="cs-main" data-screen="' + id + '">' + (STEPS[id] ? STEPS[id]() : '<h1 class="t-title">A screen</h1>' + acts + (id === "home" && ${JSON.stringify(doors)} && doorsNow ? '<div data-area="investigation"><a href="/app/dash-project">Investigation</a></div>' + (${JSON.stringify(doors)} === "project" ? "" : ${JSON.stringify(doors)} === "blockonly" ? '<div data-area="action"><b>Action</b></div>' : '<div data-area="action"><a href="/app/dash-action">Action</a></div>') : "") + (FLAW[f] || "")) + '</main>'
     + '<nav class="cs-tabs' + (f === "tabs" ? " cs-flow" : "") + '"><a class="cs-tab" href="/app">Home</a><a class="cs-tab" href="/app/queue">Queue</a></nav></div>';
   const on = (op, fn) => { for (const b of document.querySelectorAll('[data-act="' + op + '"]')) b.onclick = fn; };
-  on("promote", () => { const t = document.querySelector("#projects-title, #project-question");
+  on("promote", async () => { const t = document.querySelector("#projects-title, #project-question");
+    await fetch("/api/?op=promote", { method: "POST", body: JSON.stringify({ field: t.id, title: t.value }) });
     sessionStorage.setItem(t.id, t.value); location.href = t.id === "projects-title" ? "/app/project/P1" : "/app/question/Q1"; });
   on("subscriptionsignin", async (e) => {
     const code = document.getElementById("mc-code0").value;
@@ -115,6 +117,9 @@ var STEPS = {
       codes.push(JSON.parse(await bodyOf(req)).code);
       return json({ ok: true, result: { connected: true } });
     },
+    /* CR2-5: the projects started, so a Home drawn with `doors: "afterproject"` knows whether the team holds one */
+    promote: async (req, json) => { const { field, title } = JSON.parse(await bodyOf(req) || "{}"); if (field === "projects-title") projects.push(title); return json({ ok: true }); },
+    projectlist: async (req, json) => json({ ok: true, result: { projects: projects.map((title, i) => ({ project: `P${i + 1}`, title })) } }),
     whoami: async (req, json) => {
       const handle = sessions.get((req.headers.authorization || "").replace(/^Bearer /, ""));
       return json({ ok: true, result: { session: true, member: "m-" + handle, handle, administer: !!admins[handle] } });

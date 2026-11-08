@@ -333,6 +333,20 @@ export async function localSweep(walk, b, page, base, { handle, route = null, sc
   await publicPass(walk, b, base, { route, ...(pages ? { pages } : {}) });
 }
 
+/* R22 (CR2-5): the live arm's dashboards, as the administrator signed in on a device of her own, after the journeys that make
+   the team's work (R9). */
+export async function dashboardsLive(walk, b, base, { handle, password }) {
+  walk.journey = "R22 the dashboards";
+  const ctx = await b.newContext({ viewport: viewportOf(1280) });
+  try {
+    await ctx.route("**/*", (r) => (new URL(r.request().url()).host === walk.copyHost ? r.continue() : (walk.foreign(r.request().url()), r.abort("blockedbyclient"))));
+    const page = walk.watch(await ctx.newPage());
+    await signInBy(walk, page, base, { handle, password }, "she signs in to open the dashboards");
+    await walkDashboards(walk, page, base);
+  } catch (e) { if (!(e instanceof StepFailed)) throw e; }
+  finally { await ctx.close().catch(() => {}); }
+}
+
 /* R28 (interface-shell R102): the nine named public pages, opened with no session at 1280 and 390 px, each drawn page's title the
    word of its screen and no weight mark in it; a page that needs a subject the instance does not name here draws its
    "Nothing is here" at its bare address and is noted, never passed. */
@@ -408,7 +422,6 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
           }
           if (administer) {
             walk.journey = `as ${role}`;
-            await walkDashboards(walk, page, base).catch((e) => { if (!(e instanceof StepFailed)) throw e; });
             await walkSignGone(walk, page, base).catch((e) => { if (!(e instanceof StepFailed)) throw e; });
           }
           await sweep(walk, page, base, { screens: working, journey: `as ${role}`, each: async (p, s, drawn) => {
@@ -437,6 +450,9 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
       if (investigate) await investigateLive(walk, b, base, {
         founder: { handle: env.JOURNEY_ADMIN_HANDLE, password: env.JOURNEY_ADMIN_PASSWORD },
         member: { handle: env.JOURNEY_MEMBER_HANDLE, password: env.JOURNEY_MEMBER_PASSWORD }, codeOf, assistant, city });
+      /* R22 (CR2-5): the dashboards from Home's doors, walked after R9 has made the team's project, so Home's Investigation door
+         is there to test (screens-daily R17, R51: a team with no project has none); a session of the administrator's own */
+      await dashboardsLive(walk, b, base, { handle: env.JOURNEY_ADMIN_HANDLE, password: env.JOURNEY_ADMIN_PASSWORD });
       /* R18 (K3747): journey 29's steps the design marks for the assistant, which the walk did not reach while the assistant does
          not work, are reported as not walked, never failed */
       walk.journey = "R18 design journey 29";
