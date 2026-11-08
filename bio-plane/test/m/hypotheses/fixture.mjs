@@ -7,7 +7,7 @@ import { recordOf, RECORD_SCHEMA } from "../../../src/record-core/index.mjs";
 import { membershipOf } from "../../../src/membership/index.mjs";
 import { promotionOf } from "../../../src/promotion/index.mjs";
 import { createRegistry } from "../../../src/connection-grammar/index.mjs";
-import { hypothesesOf, HYPOTHESES_TABLES, NOTES_TABLES, NOTE_NUMBERS_TABLE, PROPOSALS_TABLE, SHARES_TABLE } from "../../../src/hypotheses/index.mjs";
+import { hypothesesOf, HYPOTHESES_TABLES, NOTES_TABLES, NOTE_NUMBERS_TABLE, PROPOSALS_TABLE, SHARES_TABLE, RIVALS_TABLES } from "../../../src/hypotheses/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
@@ -106,7 +106,7 @@ export function world(deps = {}) {
     others() {
       const names = w.rows(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name`).map((r) => r.name)
         .filter((t) => !HYPOTHESES_TABLES.includes(t) && !NOTES_TABLES.includes(t) && t !== NOTE_NUMBERS_TABLE && t !== "seq"
-                       && t !== PROPOSALS_TABLE && t !== SHARES_TABLE);
+                       && t !== PROPOSALS_TABLE && t !== SHARES_TABLE && !RIVALS_TABLES.includes(t));
       return Object.fromEntries(names.map((t) => [t, JSON.stringify(w.rows(`SELECT * FROM ${t}`))]));
     },
   };

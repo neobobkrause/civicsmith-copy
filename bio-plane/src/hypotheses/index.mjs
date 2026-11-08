@@ -31,12 +31,12 @@ import { exploreOf } from "../explore/index.mjs";
 import { calculationsOf } from "../calculations/index.mjs";
 import { inquiryOf, personWarning as inquiryPersonWarning } from "../inquiry/index.mjs";
 import { HYPOTHESES_SCHEMA, HYPOTHESES_TABLES, NOTES_SCHEMA, NOTES_TABLES, NOTES_ADDED_COLUMNS, NOTE_NUMBERS_TABLE,
-         PROPOSALS_SCHEMA, PROPOSALS_TABLE, SHARES_SCHEMA, SHARES_TABLE } from "./schema.mjs";
+         PROPOSALS_SCHEMA, PROPOSALS_TABLE, SHARES_SCHEMA, SHARES_TABLE, RIVALS_SCHEMA, RIVALS_TABLES } from "./schema.mjs";
 import { HYPOTHESES_CHECKS } from "./checks.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
 export { HYPOTHESES_SCHEMA, HYPOTHESES_TABLES, NOTES_SCHEMA, NOTES_TABLES, NOTE_NUMBERS_TABLE, HYPOTHESES_CHECKS,
-         PROPOSALS_TABLE, SHARES_TABLE };
+         PROPOSALS_TABLE, SHARES_TABLE, RIVALS_TABLES };
 
 /** The module's name: its tables' declarer, its promotion step and the connection owner of `hunch` (R4, R10). */
 export const OWNER = "hypotheses";
@@ -80,6 +80,14 @@ export const SHARE_KIND = "narrative";
 export const SHARES_MAX = 200;
 /** R19: a share's id, opaque and never a record id (`record-grammar` holds no prefix for it). */
 export const SHARE_ID_RE = /^share:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/** F1 (BD-17; IV-H1): a question holds 2 to 6 rival explanations. */
+export const RIVALS_MIN = 2;
+export const RIVALS_MAX = 6;
+/** F1 (IV-H2): the sentence the screen shows where a member marks a rival "Explore this next" (the ux lane's v5). */
+export const EXPLORE_NEXT_NOTICE_KEY = "hypotheses.rivals.explore_next_notice";
+/** F1 (IV-H1, IV-H2): the codes answered for the rivals and the mark. Each is answered with its translation and no
+ *  catalogue row (`check: null`; Provides: a refusal with a row carries one): none is held in this module's family. */
+export const RIVAL_CODES = Object.freeze(["RIVALS_TOO_FEW", "RIVALS_TOO_MANY", "NOT_IN_INQUIRY", "MACHINE_CANNOT_MARK", "NOT_A_RIVAL"]);
 const UTF8 = new TextEncoder();
 const HUNCH_VALID = Object.freeze({ from: null, to: null, precision: "day", zone: "UTC" });
 
@@ -94,6 +102,20 @@ function refuse(code, detail, extra = {}) {
   const row = HYPOTHESES_CHECKS[code];
   return { ok: false, reason: code, code, check: row.check, translation: row.translation, detail, ...extra };
 }
+
+/* F1 (IV-H1, IV-H2): the rivals' and the mark's refusals, each with its translation and no catalogue row. */
+const RIVAL_WORDS = {
+  RIVALS_TOO_FEW: () => localize("hypotheses.rivals.too_few", "A question holds at least 2 rival explanations, each a hypothesis held in it. Nothing was written."),
+  RIVALS_TOO_MANY: () => localize("hypotheses.rivals.too_many", "A question holds at most 6 rival explanations. Nothing was written."),
+  NOT_IN_INQUIRY: () => localize("hypotheses.rivals.not_in_inquiry", "A rival explanation is a hypothesis already held in this question, or one the system proposed in it. Nothing was written."),
+  MACHINE_CANNOT_MARK: () => localize("hypotheses.rivals.machine_cannot_mark", "Only a member marks which explanation to explore next. Nothing was written."),
+  NOT_A_RIVAL: () => localize("hypotheses.rivals.not_a_rival", "That is not one of this question's rival explanations. Nothing was written."),
+};
+function refuseBare(code, detail, extra = {}) {
+  return { ok: false, reason: code, code, check: null, translation: RIVAL_WORDS[code](), detail, ...extra };
+}
+/** F1 (IV-H2): the not-evidence sentence, answered where a mark is made and beside the rivals for the dialog. */
+export const exploreNextNotice = () => localize("hypotheses.rivals.explore_next_notice", "This sets the order your team explores in. It is not evidence and changes no grade.");
 
 const instances = new WeakMap();
 /* K1563 (1): every instance made in this isolate, so the owner registered at load finds the one there is. */
@@ -160,7 +182,7 @@ export class Hypotheses {
   /** The tables and their declaration (R10), and, for a registry other than the default (a test's), the owner bound to
    *  this instance (R4). Idempotent; a refused declaration is a defect of the wiring and throws. */
   migrate() {
-    const bare = (HYPOTHESES_SCHEMA + NOTES_SCHEMA + PROPOSALS_SCHEMA + SHARES_SCHEMA).split("\n").map((l) => l.replace(/--.*$/, "")).join("\n");
+    const bare = (HYPOTHESES_SCHEMA + NOTES_SCHEMA + PROPOSALS_SCHEMA + SHARES_SCHEMA + RIVALS_SCHEMA).split("\n").map((l) => l.replace(/--.*$/, "")).join("\n");
     for (const st of bare.split(";")) { const t = st.trim(); if (t) this.#sql.exec(t); }
     /* A copy whose notes table predates a column gains it here (`revised`, T35). */
     for (const [table, column, decl] of NOTES_ADDED_COLUMNS) {
@@ -180,7 +202,8 @@ export class Hypotheses {
                                                 ...NOTES_TABLES.map((name) => ({ ...notes, name })),
                                                 { ...notes, name: NOTE_NUMBERS_TABLE, purge: "exempt" },
                                                 { ...base, name: PROPOSALS_TABLE },
-                                                { ...shares, name: SHARES_TABLE }]);
+                                                { ...shares, name: SHARES_TABLE },
+                                                ...RIVALS_TABLES.map((name) => ({ ...base, name }))]);
     if (d && d.ok === false) throw new Error(`hypotheses: declareTable refused: ${d.reason}`);
     if (this.#registry !== defaultRegistry && !this.#registry.owners().some((o) => o.owner === OWNER)) {
       const r = this.#registry.registerOwner({ owner: OWNER, kinds: [...HUNCH_KINDS], neighbours: (a) => this.neighbours(a) });
@@ -481,6 +504,125 @@ export class Hypotheses {
       this.#sql.exec(`UPDATE ${PROPOSALS_TABLE} SET state = 'set_aside', acted_by = ?, acted_at = ?, reason = ? WHERE proposal_id = ?`, by, at, why, p.proposal_id);
       return { ok: true, proposal: p.proposal_id, label: SYSTEM_LABEL, set_aside: { by, at, reason: why } };
     });
+  }
+
+  /* ---- rival explanations (F1; BD-17; IV-H1, IV-H2) ---- */
+
+  /* What `id` names as a rival in `inquiry`: a live hypothesis held in it, or an open proposal of the system's in it;
+     else null. */
+  #rivalSource(inquiry, id) {
+    if (!isHypothesisId(id)) return null;
+    const h = this.#one(`SELECT withdrawn FROM hypotheses WHERE hypothesis_id = ? AND bundle_id = ?`, id, inquiry);
+    if (h) return h.withdrawn ? null : "member";
+    const p = this.#one(`SELECT state FROM ${PROPOSALS_TABLE} WHERE proposal_id = ? AND bundle_id = ?`, id, inquiry);
+    return p && p.state === "open" ? "system" : null;
+  }
+
+  #rivalRows(inquiry) {
+    return this.#rows(`SELECT r.rival_id, r.source, r.added_at, r.added_seq,
+                              (SELECT COUNT(*) FROM hypothesis_rival_marks m WHERE m.bundle_id = r.bundle_id AND m.rival_id = r.rival_id) AS marks
+                       FROM hypothesis_rivals r WHERE r.bundle_id = ? ORDER BY marks DESC, r.added_seq`, inquiry);
+  }
+
+  #history(inquiry, rival, act, by, at) {
+    this.#sql.exec(`INSERT INTO hypothesis_rival_history (bundle_id, rival_id, act, by_actor, at) VALUES (?,?,?,?,?)`, inquiry, rival, act, by, at);
+    return Number(this.#one(`SELECT MAX(seq) AS s FROM hypothesis_rival_history`).s);
+  }
+
+  /** F1 (IV-H1): `hypothesisRivals({inquiry, rivals, by})`, a member's act: the question's rival explanations become
+   *  exactly `rivals`, 2 to 6 distinct ids, each a hypothesis held in it (R1) or a proposal of the system's in it (R16).
+   *  Every rival added or removed is kept in the history with who and when; a removed rival's marks go with it. Refusals
+   *  in order, each writing nothing: `NO_SUCH_BUNDLE` (absent or unseen, one answer), `NOT_AN_INQUIRY`,
+   *  `MACHINE_CANNOT_HYPOTHESISE`, `RIVALS_TOO_FEW` / `RIVALS_TOO_MANY` (naming 2 and 6), `NOT_IN_INQUIRY` (naming the id).
+   *  Answers `{ok, inquiry, rivals, added, removed, at}`. */
+  hypothesisRivals({ inquiry = null, rivals = null, by = null } = {}) {
+    const q = this.#inquiry(inquiry, by);
+    if (q.refusal) return q.refusal;
+    if (isMachineIdentity(by)) return refuse("MACHINE_CANNOT_HYPOTHESISE", "the act's stamp is a machine's; only a member adds or removes a rival explanation (K1473)");
+    const ids = Array.isArray(rivals) ? [...new Set(rivals)] : [];
+    if (ids.length < RIVALS_MIN) return refuseBare("RIVALS_TOO_FEW", `a question holds ${RIVALS_MIN} to ${RIVALS_MAX} rival explanations`, { min: RIVALS_MIN, max: RIVALS_MAX });
+    if (ids.length > RIVALS_MAX) return refuseBare("RIVALS_TOO_MANY", `a question holds ${RIVALS_MIN} to ${RIVALS_MAX} rival explanations`, { min: RIVALS_MIN, max: RIVALS_MAX });
+    const held = new Map(this.#rows(`SELECT rival_id FROM hypothesis_rivals WHERE bundle_id = ?`, inquiry).map((r) => [r.rival_id, true]));
+    const sources = new Map();
+    for (const id of ids) {
+      /* a rival already in the set stays, whatever has since become of it */
+      const s = held.has(id) ? "kept" : this.#rivalSource(inquiry, id);
+      if (!s) return refuseBare("NOT_IN_INQUIRY", "a rival is a hypothesis held in this question, or a proposal of the system's in it", { rival: typeof id === "string" ? id : null });
+      sources.set(id, s);
+    }
+    const added = ids.filter((id) => !held.has(id));
+    const removed = [...held.keys()].filter((id) => !ids.includes(id));
+    const at = this.#now();
+    if (!added.length && !removed.length) return { ok: true, inquiry, rivals: ids, added, removed, at: null, already: true };
+    return this.#record.transact(() => {
+      for (const id of removed) {
+        this.#sql.exec(`DELETE FROM hypothesis_rivals WHERE bundle_id = ? AND rival_id = ?`, inquiry, id);
+        this.#sql.exec(`DELETE FROM hypothesis_rival_marks WHERE bundle_id = ? AND rival_id = ?`, inquiry, id);
+        this.#history(inquiry, id, "remove", by, at);
+      }
+      for (const id of added) {
+        const seq = this.#history(inquiry, id, "add", by, at);
+        this.#sql.exec(`INSERT INTO hypothesis_rivals (bundle_id, rival_id, source, added_by, added_at, added_seq) VALUES (?,?,?,?,?,?)`,
+                       inquiry, id, sources.get(id), by, at, seq);
+      }
+      return { ok: true, inquiry, rivals: this.#rivalRows(inquiry).map((r) => r.rival_id), added, removed, at };
+    });
+  }
+
+  /** F1 (IV-H2): `exploreNext({inquiry, rival, by})`, a member's only act on a rival: "Explore this next". Each member
+   *  holds one such mark in a question at a time; a new mark replaces their own earlier one, and each is kept in the
+   *  history with who and when. It sets the order of exploring and nothing else: it touches no leg, grade, strength,
+   *  conclusion or standing. Refusals in order, each writing nothing: `NO_SUCH_BUNDLE`, `NOT_AN_INQUIRY`,
+   *  `MACHINE_CANNOT_MARK`, `NOT_A_RIVAL`. Answers `{ok, inquiry, rival, replaced, at, notice}`, `notice` the
+   *  not-evidence sentence. */
+  exploreNext({ inquiry = null, rival = null, by = null } = {}) {
+    const q = this.#inquiry(inquiry, by);
+    if (q.refusal) return q.refusal;
+    if (isMachineIdentity(by)) return refuseBare("MACHINE_CANNOT_MARK", "the act's stamp is a machine's; only a member marks what to explore next (INV:108)");
+    const r = filled(rival) ? this.#one(`SELECT rival_id FROM hypothesis_rivals WHERE bundle_id = ? AND rival_id = ?`, inquiry, rival) : null;
+    if (!r) return refuseBare("NOT_A_RIVAL", "the id is not one of this question's rival explanations", { rival: filled(rival) ? rival : null });
+    const prior = this.#one(`SELECT rival_id FROM hypothesis_rival_marks WHERE bundle_id = ? AND member = ?`, inquiry, by);
+    const notice = exploreNextNotice();
+    if (prior && prior.rival_id === rival) return { ok: true, already: true, inquiry, rival, replaced: null, at: null, notice };
+    const at = this.#now();
+    return this.#record.transact(() => {
+      this.#sql.exec(`INSERT INTO hypothesis_rival_marks (bundle_id, member, rival_id, at) VALUES (?,?,?,?)
+                      ON CONFLICT (bundle_id, member) DO UPDATE SET rival_id = excluded.rival_id, at = excluded.at`, inquiry, by, rival, at);
+      this.#history(inquiry, rival, "mark", by, at);
+      return { ok: true, inquiry, rival, replaced: prior ? prior.rival_id : null, at, notice };
+    });
+  }
+
+  /** F1 (IV-H1, IV-H2): `rivalsOf({inquiry, viewer})`: the question's rival explanations in the order of exploring (by
+   *  how many members currently mark each, ties to the one added first), each labelled a hypothesis, never a fact, with
+   *  no grade; the system's labelled the system's. The face names no member and counts nothing: each rival says only
+   *  whether it is the viewer's own mark (`your_next`). `notice` is the sentence the mark's dialog shows. */
+  rivalsOf({ inquiry = null, viewer = null } = {}) {
+    const q = this.#inquiry(inquiry, viewer);
+    if (q.refusal) return q.refusal;
+    const mine = filled(viewer) ? this.#one(`SELECT rival_id FROM hypothesis_rival_marks WHERE bundle_id = ? AND member = ?`, inquiry, viewer) : null;
+    const rivals = this.#rivalRows(inquiry).map((r, i) => {
+      const base = { order: i + 1, rival: r.rival_id, label: HYPOTHESIS_LABEL, fact: false, grade: null, added_at: r.added_at,
+                     your_next: !!mine && mine.rival_id === r.rival_id };
+      if (r.source === "system") {
+        const p = this.#one(`SELECT * FROM ${PROPOSALS_TABLE} WHERE proposal_id = ?`, r.rival_id);
+        return { ...base, source: SYSTEM_LABEL, by: SYSTEM_LABEL, kind: p?.kind ?? null, statement: p?.statement ?? null,
+                 status: p?.state ?? null, how: p?.how ?? null, false_alarm_rate: p ? Number(p.false_alarm_rate) : null };
+      }
+      const h = this.#one(`SELECT * FROM hypotheses WHERE hypothesis_id = ?`, r.rival_id);
+      return { ...base, source: "member", kind: h?.kind ?? null, statement: h?.statement ?? null,
+               status: h ? (h.withdrawn ? "withdrawn" : "live") : null };
+    });
+    return { ok: true, inquiry, label: HYPOTHESIS_LABEL, notice: exploreNextNotice(), rivals };
+  }
+
+  /** F1 (IV-H1, IV-H2): `rivalHistory({inquiry, viewer})`: every change to the question's rivals and every mark, in
+   *  order, `{act, rival, by, at}`, `act` one of `add`, `remove`, `mark`. */
+  rivalHistory({ inquiry = null, viewer = null } = {}) {
+    const q = this.#inquiry(inquiry, viewer);
+    if (q.refusal) return q.refusal;
+    return { ok: true, inquiry, history: this.#rows(`SELECT act, rival_id, by_actor, at FROM hypothesis_rival_history WHERE bundle_id = ? ORDER BY seq`, inquiry)
+      .map((h) => ({ act: h.act, rival: h.rival_id, by: h.by_actor, at: h.at })) };
   }
 
   /* ---- the hunch hops (R4) ---- */
