@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-inquiry",
+  "pr": 973,
+  "branch": "job/screens-inquiry",
+  "head": "95bf4c74206a5ccdae641d5d49b2ae1b7c1ab759",
+  "before": "ddc80568e80be96a307b13a634ac5594632bac5c",
+  "merge": "16b8b1970b323ffc48a37c9863816f502c18affd",
+  "at": "2026-11-08T00:41:39Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
