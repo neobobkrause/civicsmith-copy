@@ -1,0 +1,58 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "affordances",
+  "pr": 1044,
+  "branch": "job/affordances",
+  "head": "6313fec370f88078ee8402cd144fc09daadcc432",
+  "before": "096ea5cff0bc84827e7388965d30ef0e442a1dc7",
+  "merge": "854dda18bb9baf436c7a30b8a65a7f49ff0f2a3c",
+  "at": "2026-11-08T13:42:40Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/affordances/plane.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/affordances/plane.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/affordances/plane.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: \"offered where the act accepts it; an ordinary member, a carried project and a credential do not\" , async ( ) => { const"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/affordances/plane.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/affordances/plane.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "earlier_source": true
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "op-declarations",
+    "plane"
+  ],
+  "users_rescheduled_old_rule": [
+    "op-declarations",
+    "plane"
+  ],
+  "users_noticed": []
+}
