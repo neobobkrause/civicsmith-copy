@@ -1,0 +1,53 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "op-declarations",
+  "pr": 1021,
+  "branch": "job/op-declarations-2",
+  "head": "2812dd552731c23985d8df6166687ef5abf4a00a",
+  "before": "e0d12cbc9d1ab32aef708af41c1a7ce2d9cd940b",
+  "merge": "ae7cbacd0b47ebea9b6fdeeb5ff963bedb265636",
+  "at": "2026-11-08T12:43:22Z",
+  "by": "bob",
+  "gate_runs": 7,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/op-declarations/cr2-17-rivals.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/op-declarations/cr2-17-rivals.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/op-declarations/cr2-17-rivals.test.mjs",
+        "class": "additive",
+        "why": "added: a new test file only adds assertions"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/op-declarations/cr2-17-rivals.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "additive",
+    "source_changed": false
+  },
+  "users_rescheduled": [
+    "plane",
+    "screens-inquiry",
+    "store-assembly"
+  ],
+  "users_rescheduled_old_rule": [
+    "plane",
+    "screens-inquiry",
+    "store-assembly"
+  ],
+  "users_noticed": []
+}

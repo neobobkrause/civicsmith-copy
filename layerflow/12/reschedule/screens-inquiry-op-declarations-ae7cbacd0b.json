@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "screens-inquiry",
+  "provider": "op-declarations",
+  "provider_pr": 1021,
+  "provider_land": "ae7cbacd0b47ebea9b6fdeeb5ff963bedb265636",
+  "at": "2026-11-08T12:43:22Z",
+  "key": "screens-inquiry<-op-declarations@ae7cbacd0b",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/op-declarations/cr2-17-rivals.test.mjs: additive, added: a new test file only adds assertions), which may mean a changed answer shape; additive: each user is retested by its gate alone",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "additive"
+}
