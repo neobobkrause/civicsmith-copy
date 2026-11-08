@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "op-declarations",
+  "provider": "hypotheses",
+  "provider_pr": 1050,
+  "provider_land": "c2e2567196f91a7b77943a2154666e681d799ee1",
+  "at": "2026-11-08T14:49:32Z",
+  "key": "op-declarations<-hypotheses@c2e2567196",
+  "why": "its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/hypotheses/rivals-f1.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}

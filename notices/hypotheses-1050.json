@@ -1,0 +1,20 @@
+{
+  "row": "notice",
+  "at": "2026-11-08T14:49:32Z",
+  "key": "hypotheses:1050",
+  "provider": "hypotheses",
+  "ids": [],
+  "pr": 1050,
+  "users": [
+    "answer-envelope",
+    "control-plane",
+    "screens-document",
+    "store-ask"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 12,
+    "provides": false,
+    "rescheduled": true
+  }
+}
