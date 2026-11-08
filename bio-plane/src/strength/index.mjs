@@ -265,7 +265,8 @@ function appendSessionLog(text, entry) {
 function inquiryReader(earning, inquiry) {
   return { basisFor: (id, o) => earning().basisFor(id, o), earned: (s, t, c) => earning().earned(s, t, c), legCapped,
            restingOn: (id) => earning().restingOn(id),
-           subjectEntityOf: (id) => inquiry().subjectEntityOf(id), onGrounded: (m, fn) => inquiry().onGrounded(m, fn) };
+           subjectEntityOf: (id) => inquiry().subjectEntityOf(id), onGrounded: (m, fn) => inquiry().onGrounded(m, fn),
+           onBarJudged: (m, fn) => inquiry().onBarJudged(m, fn) };
 }
 
 export class Strength {
@@ -332,6 +333,41 @@ export class Strength {
       const s = this.strengthOf(id);
       return { ...Object.fromEntries(STRENGTH_AXES.map((a) => [a, s[a]])), hunches_left_out: s.hunches_left_out };
     });
+  }
+
+  /** R48 (CR2-32; inquiry R91, R92 (3)): inquiry's bar judgment, registered by this module itself when its factory first
+   *  builds, as R17's is. Answers the registration's own answer, or null when the inquiry reached offers no slot. */
+  registerBarJudged() {
+    const k = this.inquiry;
+    if (!k || typeof k.onBarJudged !== "function") return null;
+    return k.onBarJudged("strength", (a) => this.barJudged(a));
+  }
+
+  /** R48 (CR2-32; inquiry R91; DEC-72): whether question `question`'s live strength meets project `project`'s own bar
+   *  now: `true` only when the project is one the viewer may see, it declares a bar (R14), and on every axis it declares
+   *  the question's derived grade (R1–R5) is at or above it; a null grade (unrated, undetermined) meets no declared bar.
+   *  An absent bar is not a bar of zero, so a project declaring none answers `false`. Key assumptions (IV-1, F3) are not
+   *  yet read. Writes nothing; never throws (`false` on any failure). */
+  barJudged({ question = null, project = null, viewer = null } = {}) {
+    try {
+      const id = typeof question === "string" ? question.trim() : "";
+      const pid = typeof project === "string" ? project.trim() : "";
+      if (!id || !pid || this.#projectUnseen(pid, viewer)) return false;
+      const bar = this.projectBar(pid);
+      if (!bar || bar.declared !== true) return false;
+      const pair = this.strengthOf(id);
+      if (!pair || pair.ok === false) return false;
+      const rank = (g) => BASIS_GRADES.indexOf(g);
+      let asked = 0;
+      for (const axis of STRENGTH_AXES) {
+        const want = bar[axis];
+        if (!BASIS_GRADES.includes(want)) continue;
+        asked++;
+        const got = pair[axis] && pair[axis].grade;
+        if (!BASIS_GRADES.includes(got) || rank(got) > rank(want)) return false;
+      }
+      return asked > 0;
+    } catch { return false; }
   }
 
   migrate() { migrateStrength(this.sql); }
@@ -1904,6 +1940,7 @@ export function strengthOf(host, deps) {
     if (!declared || declared.ok === false) throw new Error(`strength's tables could not be declared: ${JSON.stringify(declared)}`);
     promotion.registerStep("strength", { project: (c) => s.project(c) });
     s.registerGrounded();
+    s.registerBarJudged();
   }
   if (deps && deps.retrieval) s.joinRetrieval(deps.retrieval);
   return s;
