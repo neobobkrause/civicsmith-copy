@@ -759,3 +759,4 @@
 {"at":"2026-11-08T22:14:24Z","row":"check","by":"layer land","live":1,"live_at":"2026-11-08T22:08:07Z","job_cap":20,"startable":0}
 {"at":"2026-11-08T22:19:37Z","row":"check","by":"send","live":1,"live_at":"2026-11-08T22:08:07Z","job_cap":20,"startable":0}
 {"at":"2026-11-08T22:25:21Z","row":"check","by":"layer land","live":1,"live_at":"2026-11-08T22:08:07Z","job_cap":20,"startable":0}
+{"at":"2026-11-08T22:30:56Z","row":"check","by":"layer merge","live":1,"live_at":"2026-11-08T22:08:07Z","job_cap":20,"startable":0,"idle_capacity":{"kind":"empty","since":"2026-11-08T22:25:21Z","min":5,"live":1,"cap":20,"held":0,"startable":0,"empty":19,"alarm":false,"layer":12}}
