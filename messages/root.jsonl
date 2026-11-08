@@ -213,3 +213,4 @@
 {"at":"2026-11-08T02:13:26Z","row":"outcome","n":107,"outcome":"delivered"}
 {"at":"2026-11-08T03:13:47Z","row":"sent","n":108,"to":"bob","text":"Sweep: ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-08T03:14:04Z","row":"outcome","n":108,"outcome":"delivered"}
+{"at":"2026-11-08T04:13:35Z","row":"sent","n":109,"to":"bob","text":"Sweep: ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; inquiry: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
