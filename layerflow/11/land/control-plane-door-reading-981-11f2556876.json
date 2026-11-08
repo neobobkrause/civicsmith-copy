@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "control-plane-door-reading",
+  "pr": 981,
+  "branch": "job/control-plane-door-reading",
+  "head": "11f2556876e96621cca39aa75624fcb359f45313",
+  "before": "09ed7dfc42621a6417f97a179944fdb103270816",
+  "merge": "d04db802aca7b7b949f269bb3b5633afca4d1184",
+  "at": "2026-11-08T02:04:17Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}

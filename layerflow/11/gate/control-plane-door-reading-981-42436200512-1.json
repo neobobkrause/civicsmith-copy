@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "control-plane-door-reading",
+  "pr": 981,
+  "sha": "11f2556876e96621cca39aa75624fcb359f45313",
+  "run_id": 42436200512,
+  "run_attempt": 1,
+  "at": "2026-11-08T01:54:59Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 9.69,
+  "suite_minutes": 5.46,
+  "record_only": false,
+  "whole": true
+}
