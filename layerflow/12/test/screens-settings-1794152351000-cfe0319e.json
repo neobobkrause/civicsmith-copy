@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "screens-settings",
+  "session": "session_018Bhceg22PP6xGd6ARoTetL",
+  "started": "2026-11-08T15:39:11Z",
+  "ended": "2026-11-08T15:43:15Z",
+  "at": "2026-11-08T15:43:15Z",
+  "minutes": 4.07,
+  "result": "pass",
+  "layer": 12,
+  "suite_seconds": 155.443,
+  "tests": {
+    "total": 242,
+    "pass": 242,
+    "fail": 0
+  }
+}
