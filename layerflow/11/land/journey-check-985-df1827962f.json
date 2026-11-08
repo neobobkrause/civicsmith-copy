@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "journey-check",
+  "pr": 985,
+  "branch": "job/journey-check-2",
+  "head": "df1827962f78d110bfe3a18f758ff2f22077f888",
+  "before": "d04db802aca7b7b949f269bb3b5633afca4d1184",
+  "merge": "69f51d0a78bbd4d6b61624f3625ccb83157d33a0",
+  "at": "2026-11-08T03:00:52Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
