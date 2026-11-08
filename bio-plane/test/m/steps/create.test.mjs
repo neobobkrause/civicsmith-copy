@@ -114,7 +114,7 @@ test("R4: the reads answer the step's fields, stepsOn's header the question's pr
   const next = w.s.stepsOn({ question: Q, viewer: ANN, limit: 2, after: page.next.after });
   assert.equal(next.steps[0].step > page.steps[1].step, true);
   assert.deepEqual(Object.keys(page.steps[0]).sort(),
-    ["at", "byWhen", "by_when_held", "cost", "doer", "learned", "later_found", "outcomes", "place", "state", "step", "taken_in", "waits", "work"].sort());
+    ["at", "byWhen", "by_when_held", "cost", "doer", "learned", "later_found", "outcomes", "place", "rival", "state", "step", "taken_in", "waits", "work"].sort());
   assert.equal(w.s.stepsOn({ question: Q, viewer: ANN }).limit, 200, "default 200");
   assert.equal(w.s.stepsOn({ question: Q, viewer: ANN, limit: 5000 }).limit, 1000, "at most 1,000");
   assert.equal(w.s.stepsOn({ question: QH, viewer: ANN }).code, "NO_SUCH_BUNDLE");
