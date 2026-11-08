@@ -10,3 +10,4 @@
 {"at":"2026-11-07T19:50:31Z","row":"sent","n":6,"to":"bob","text":"job corpus-export BLOCKED: run status"}
 {"at":"2026-11-07T19:50:49Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-08T07:27:51Z","row":"sent","n":7,"to":"bob","text":"job corpus-export complete, PR #825 ready, session session_018BhcefuBsdqA1CMGtFX8Yu: run status"}
+{"at":"2026-11-08T07:28:07Z","row":"outcome","n":7,"outcome":"delivered"}
