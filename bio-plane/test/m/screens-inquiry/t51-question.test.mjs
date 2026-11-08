@@ -8,7 +8,7 @@ import { registerDeclaredOps as registerOps } from "../../../src/op-declarations
 import { boot, ok, refusedIn, counted } from "../interface-shell/harness.mjs";
 import { hasWord } from "../../../src/setup-words/index.mjs";
 import { emptyFeed } from "../queue/fixtures.mjs";
-import { open, storeWorld, WORLD_FOUNDER_HANDLE, main, actsIn, press, fill, plane, inquiryMd, INQUIRY_REFS, DOCUMENT_MD, provenanceOf, SHA, POLICY, LEGS, says, section, lead, word, day, SCREENS, P, Q, D } from "./fixtures.mjs";
+import { open, storeWorld, aiWorld, WORLD_FOUNDER_HANDLE, main, actsIn, press, fill, plane, inquiryMd, INQUIRY_REFS, DOCUMENT_MD, provenanceOf, SHA, POLICY, LEGS, says, section, lead, word, day, SCREENS, P, Q, D } from "./fixtures.mjs";
 
 /* K4245 (test-support R17): every owner's declarations registered once, before the first read, by the one registrar */
 
@@ -19,7 +19,7 @@ const A = { images: { [Q]: { "bundle.md": grouped() } } };
 /** the assistant's reads (`assistantstate`, `aipathready`, `agentpack`, `airuns`) as the team's Claude account answers them: a world whose team has set it up and switched it on, and a member
  *  who has read its notice (the world's recipe), the world's door answering each request as she does */
 const ASSISTANT = await (async () => {
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
   const member = await world.signIn("mai", { capabilities: ["contribute"] });
   await world.recipes.assistant(admin, { readers: [member] });
@@ -424,7 +424,7 @@ test("R74 on a reading the assistant composed that is not yet accepted: the bias
 
 test("R74 an accept, a weigh and a reject sent from the fold carry the version; a run answering found: false is undetermined, never 'has not moved'; controls: a member-written or an accepted reading draws no fold", async () => {
   /* a reading suggested by the machine under its run (the world's recipe): the real acts, from the fold */
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
   const ann = await world.signIn("ann", OWN);
   const project = await world.recipes.project(ann, "Pothole repairs");

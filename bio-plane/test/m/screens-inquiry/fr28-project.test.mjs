@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { boot, ok, refused, refusedIn } from "../interface-shell/harness.mjs";
 import { BUNDLE_ID_RE } from "../../../src/record-grammar/index.mjs";
 import { hasWord } from "../../../src/setup-words/index.mjs";
-import { open, storeWorld, main, actsIn, button, fill, press, says, section, word, projectWith, SCREENS, P, Q } from "./fixtures.mjs";
+import { open, storeWorld, aiWorld, main, actsIn, button, fill, press, says, section, word, projectWith, SCREENS, P, Q } from "./fixtures.mjs";
 
 /* every owner's declarations, registered once before the first read (test-support R17, K4245) */
 /* the weights of the two owners whose acts these tests press (registering every owner's weights is refused today by `accountusesset`'s row, an owner's defect reported to BOB) */
@@ -24,7 +24,7 @@ const SERVED = { boot: { screens: [...SCREENS, stub("matter"), stub("calculation
  *  `ai` makes the world the team's Claude account can be set up in (`recipes.assistant`). */
 const OWN = { capabilities: ["contribute", "create_projects"] };
 const team = async ({ ai = false } = {}) => {
-  const world = await storeWorld({ ai });
+  const world = ai ? await aiWorld() : await storeWorld();
   const ann = await world.signIn("ann", OWN);
   const mai = await world.signIn("mai", { capabilities: ["contribute"] });
   const project = await world.recipes.project(ann, "Pothole repairs");

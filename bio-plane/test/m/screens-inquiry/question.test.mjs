@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { registerDeclaredOps as registerOps } from "../../../src/op-declarations/index.mjs";
 import { boot, ok, refusedIn } from "../interface-shell/harness.mjs";
 import { holdRefusals } from "../hypotheses/fixtures.mjs";
-import { open, storeWorld, WORLD_FOUNDER_HANDLE, main, actsIn, button, fill, press, rawKeys, inquiryMd, INQUIRY_REFS, LEGS, BASIS, plane, says, section, lead, word, day, POLICY,
+import { open, storeWorld, aiWorld, WORLD_FOUNDER_HANDLE, main, actsIn, button, fill, press, rawKeys, inquiryMd, INQUIRY_REFS, LEGS, BASIS, plane, says, section, lead, word, day, POLICY,
   SCREENS, P, Q, D, ASIDE_TITLE, HUNCH, HUNCH_BY, HUNCHES } from "./fixtures.mjs";
 import { noticeSeen } from "../store-request/recipes.mjs";
 
@@ -290,7 +290,7 @@ test("R25 readings: three drawn with their states, one a what-if, stands on the 
 });
 
 test("R25 controls: a machine-authored reading is drawn only while the assistant is reachable; a refusal is drawn by its words", async () => {
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
   const ann = await world.signIn("ann", { capabilities: ["contribute", "create_projects"] });
   const project = await world.recipes.project(ann, "Stormwater");
@@ -387,9 +387,10 @@ test("R41 conclude's controls: an empty falsifier with the box unticked sends no
 });
 
 test("R41 state c, new and empty: nothing cited yet, the three ways in; the capture link carries the question (R38)", async () => {
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   await aiTeam(world);
   const w = await stateWorld({ world, n: 0 });
+  await readNotice(w);
   const p = await w.page();
   const s = section(p, "question.empty.heading");
   for (const k of ["question.empty.note", "question.empty.capture", "question.empty.find", "question.empty.ask"]) assert.ok(says(s, k), k);
@@ -402,7 +403,7 @@ test("R41 state c, new and empty: nothing cited yet, the three ways in; the capt
 });
 
 test("R41 state d: a run of hers at work, the run's words and Stop the run", async () => {
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   await aiTeam(world);
   const w = await stateWorld({ world, n: 1 });
   await readNotice(w);
@@ -415,7 +416,7 @@ test("R41 state d: a run of hers at work, the run's words and Stop the run", asy
 });
 
 test("R41 controls (D29): a run opened and withheld is never drawn at work; the withholding is said by its words", async () => {
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   await aiTeam(world);
   const w = await stateWorld({ world, n: 0 });
   await readNotice(w);
@@ -426,7 +427,7 @@ test("R41 controls (D29): a run opened and withheld is never drawn at work; the 
 });
 
 test("R41 state e: the assistant's proposal, machine work, accepted or declined with a reason", async () => {
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
   const ann = await world.signIn("ann", { capabilities: ["contribute", "create_projects"] });
   const project = await world.recipes.project(ann, "Stormwater");
@@ -448,7 +449,7 @@ test("R41 state e: the assistant's proposal, machine work, accepted or declined 
 });
 
 test("R41 R42 state f: the limit's words naming no cost, the note, and the other reasons; control: a reachable assistant draws none", async () => {
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   await aiTeam(world);
   const w = await stateWorld({ world, n: 0 });
   await readNotice(w);
@@ -511,7 +512,7 @@ test("R36 C63 after planopen, the question opens its plan page (fix round 3; it 
 });
 
 test("R31 Read in my language sends the question as subject, the answer drawn in place and labeled, the original back by one press", async () => {
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   await aiTeam(world);
   const w = await stateWorld({ world, n: 1 });
   await readNotice(w);

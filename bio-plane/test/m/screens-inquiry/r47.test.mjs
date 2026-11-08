@@ -3,13 +3,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { boot, ok } from "../interface-shell/harness.mjs";
-import { storeWorld, WORLD_FOUNDER_HANDLE, main, actsIn, button, says, section, word, BASIS, SCREENS } from "./fixtures.mjs";
+import { storeWorld, aiWorld, WORLD_FOUNDER_HANDLE, main, actsIn, button, says, section, word, BASIS, SCREENS } from "./fixtures.mjs";
 
 /* the real world (store-assembly's store with the real door; the state is made by real acts, K5054): the team's Claude account is set up by its administrator's acts, a project and a
    question of ann's (with `n` documents it rests on) are made by hers, and the page is read over the world's door, `plane` scripting only the ops it names */
 const OWN = { capabilities: ["contribute", "create_projects"] };
 const stateWorld = async ({ n = 0 } = {}) => {
-  const world = await storeWorld({ ai: true });
+  const world = await aiWorld();
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);
   const ann = await world.signIn("ann", OWN);
   const project = await world.recipes.project(ann, "Pothole repairs");
