@@ -2,8 +2,7 @@
    reaches them. The session gate admits a founder and refuses a member before any store call (admission's harness); the
    assembled store routes the founder's `exportwhole` to this module, which logs it `whole-record`, and each part the
    manifest names, fetched through `exportwholepart`, verifies alone (`verifyWholePart`). Every module is the real one.
-   Written as test.todo while the tranche lacks store-assembly's spread of `wholeExportOps` (layer 11, PR 875): on layer/11 both
-   pass; once that layer merges, each becomes a test and R17, R18 are struck (K208: an id not yet met is named in a todo). */
+   Store-assembly spreads `wholeExportOps` on the tranche since layer 11 merged (PR 875), so both are tests and R17, R18 are met. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { store } from "../store-assembly/fixture.mjs";
@@ -29,7 +28,7 @@ const seeded = async () => {
   return x;
 };
 
-test.todo("R17 through the door: a member's exportwhole is refused SESSION_ROLE_CANNOT_REACH_OP before any store call; the founder's is admitted and answers the whole-record manifest, logged whole-record", async () => {
+test("R17 through the door: a member's exportwhole is refused SESSION_ROLE_CANNOT_REACH_OP before any store call; the founder's is admitted and answers the whole-record manifest, logged whole-record", async () => {
   const { env, S } = world();
   for (const t of [S.ann, S.bare]) {
     const before = opCalls(env).length;
@@ -48,7 +47,7 @@ test.todo("R17 through the door: a member's exportwhole is refused SESSION_ROLE_
   assert.deepEqual([log.scope, log.note, log.files], ["whole-record", "through the door", m.files.length]);
 });
 
-test.todo("R18 through the door: each part the founder's exportwhole names, fetched alone through exportwholepart, verifies; a malformed part is refused by name", async () => {
+test("R18 through the door: each part the founder's exportwhole names, fetched alone through exportwholepart, verifies; a malformed part is refused by name", async () => {
   const x = await seeded();
   const m = await door(x, "/exportwhole?viewer=admin&by=admin");
   assert.ok(m.parts.length > 0, "control: the assembled copy holds files, so the manifest names parts");
