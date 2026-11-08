@@ -44,3 +44,7 @@ None: answered by Bob 2026-09-26 (K102).
 - The NEEDS/NON_ACTS and rung totality becomes a service (`unaccounted`, R12) the control plane's test calls with its table; the source-reading suite retires.
 - Uses corrected to what the code calls: add `record-core`, `promotion`, `connections`, `basis-versions`, `progressions`, `entities`, `actions`, `content`; drop `review` and `legacy-store`.
 - `PER_ITEM_MAX` moves with the set helper to `record-core` (see `queue`'s map §5.2) and is re-exported here.
+
+## F4 (layer 12, CR2-16; attempt 13)
+
+The ux lane's `mock-acts.js` gives `act.<op>.does` for `hypothesisrivals`, `explorenext` and `rivals` (DEC-502) and `docketrecordedition` (DEC-504), and the reads list gives them to this module, so the reads-list tests went red until they were held. They are held before their owners declare them (K4248: this module cannot read op-declarations). R12 needs no row here: an owner's `DECLARED_OPS` is graded by `op-grades` R49 and registered by `register-owners.mjs`. Provider notices ai-runs:1004, hypotheses:1005, inquiry:1006: confirmed, no code change (`f4-rivals-help.test.mjs`). The 45 commits the tool moved aside to `aside/job/affordances-20261108T105428Z` are an older local state (attempt 8 and tranche merges) and hold no affordances change origin's branch lacks; none was brought in.

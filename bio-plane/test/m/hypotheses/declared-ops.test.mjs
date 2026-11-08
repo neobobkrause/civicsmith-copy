@@ -70,3 +70,33 @@ test("R24 hypotheses declares notedelete: its requires alone raise no refusal na
   await declaredOpHolds({ op: "notedelete", declaration: DECLARED_OPS["notedelete"], call: mk("notedelete", {}, null, null, (fields, env) => (seeded(fields, env))),
     refusedNaming: named({"note":["NO_SUCH_NOTE"]}, true), same: sameCode });
 });
+
+/* F1 (layer 12, CR2-19; op-declarations F4, R80): the rival explanations' three ops, over a question holding two of ann's
+   hypotheses set as its rivals (the mark's world) or not yet set (the set's world) */
+const rivalWorld = (set) => async () => {
+  const env = await mkWorld();
+  const h2 = env.h.hold({ inquiry: INQ, kind: "other", statement: "Another.", about: [E1], by: ANN });
+  assert.equal(h2.ok, true, JSON.stringify(h2));
+  if (set) assert.equal(env.h.hypothesisRivals({ inquiry: INQ, rivals: [env.hyp, h2.hypothesis_id], by: ANN }).ok, true);
+  return { ...env, hyp2: h2.hypothesis_id };
+};
+const withRivals = (fields, env) => ("rivals" in fields ? { ...fields, rivals: [env.hyp, env.hyp2] } : fields);
+const withRival = (fields, env) => ("rival" in fields ? { ...fields, rival: env.hyp } : fields);
+
+test("F1 R24 hypotheses declares hypothesisrivals: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
+  assert.deepEqual([DECLARED_OPS.hypothesisrivals.needs, [...DECLARED_OPS.hypothesisrivals.stamps].sort(), DECLARED_OPS.hypothesisrivals.mutating], ["contribute", ["by", "viewer"], true]);
+  await declaredOpHolds({ op: "hypothesisrivals", declaration: DECLARED_OPS["hypothesisrivals"], call: mk("hypothesisrivals", {}, rivalWorld(false), null, withRivals),
+    refusedNaming: named({"inquiry":["NO_SUCH_BUNDLE"],"rivals":["RIVALS_TOO_FEW"]}, true), values: { inquiry: INQ, rivals: ["set"] }, same: sameCode });
+});
+
+test("F1 R24 hypotheses declares explorenext: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
+  assert.deepEqual([DECLARED_OPS.explorenext.needs, [...DECLARED_OPS.explorenext.stamps].sort(), DECLARED_OPS.explorenext.mutating], ["contribute", ["by", "viewer"], true]);
+  await declaredOpHolds({ op: "explorenext", declaration: DECLARED_OPS["explorenext"], call: mk("explorenext", {}, rivalWorld(true), null, withRival),
+    refusedNaming: named({"inquiry":["NO_SUCH_BUNDLE"],"rival":["NOT_A_RIVAL"]}, true), values: { inquiry: INQ, rival: "set" }, same: sameCode });
+});
+
+test("F1 R24 hypotheses declares rivals, a session read: its requires alone raise no refusal naming a field, a call without the question is refused naming it, and a field outside accepts is dropped or refused", async () => {
+  assert.deepEqual([DECLARED_OPS.rivals.mutating, Object.hasOwn(DECLARED_OPS.rivals, "needs"), DECLARED_OPS.rivals.classes !== null], [false, false, true]);
+  await declaredOpHolds({ op: "rivals", declaration: DECLARED_OPS["rivals"], call: mk("rivals", { viewer: ANN }, rivalWorld(true)),
+    refusedNaming: named({"inquiry":["NO_SUCH_BUNDLE"]}, true), values: { inquiry: INQ, history: "1" }, same: sameCode });
+});
