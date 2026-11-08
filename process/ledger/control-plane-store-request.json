@@ -30,7 +30,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T18:21:26Z"
+    "state": "WORKING",
+    "at": "2026-11-08T01:31:37Z",
+    "reason": "reopened: re-test against the new interface of control-plane (land 25c1342cbc)"
   }
 }
