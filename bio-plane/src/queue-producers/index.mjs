@@ -2115,9 +2115,9 @@ export class QueueProducers {
       const more = all.length - listed.length;
       const earliest = listed[0];
       const name = member ? this.#memberName(member) : "";
-      /* R43: the summary is the word list's own sentence, by key, and nothing is composed here. The list holds the one form
-         alone; R57's other form (how many keys) has no word yet, so the count travels as a fill (`count`) beside it. */
-      const summaryKey = `queue.signer-self-registered.summary${member ? "" : ".unnamed"}`;
+      /* R57 (R43): the summary is the word list's own sentence, by key, and nothing is composed here: the member (or the
+         unnamed form) and how many new keys she holds, `.summary` for one and `.other` for more, the count a fill. */
+      const summaryKey = `queue.signer-self-registered.summary${member ? "" : ".unnamed"}${all.length === 1 ? "" : ".other"}`;
       const fills = { member: name, count: all.length };
       const lines = listed.map((k) => this.#signerKeyLine(k));
       return {
@@ -2148,13 +2148,19 @@ export class QueueProducers {
     });
   }
 
-  /** R56, R36: one listed key's facts for its line: the key, its comment, and `added` as a local day in the group's zone, never
-   *  UTC; with no zone held the day is undetermined (null). R57's keyed line sentence has no word yet, so no sentence is made here. */
+  /** R56, R57, R36: one listed key's line: the key, its comment, and `added` as a local day in the group's zone, never UTC;
+   *  with no zone held (or an `added` no day can be read from) the day is undetermined (null). Its `text` is the word list's
+   *  by key: `queue.signer-self-registered.key` filled with the day (`date.daymonth`, or `.daymonthyear` outside the current
+   *  local year), else `.key.undated`, then the comment's own optional sentence `.key.comment` only when the key carries one. */
   #signerKeyLine(k) {
     const zone = this.#zoneNow();
     const day = zone ? localDayOf(k.added, zone) : null;
     const comment = typeof k.comment === "string" && k.comment.trim() ? k.comment.trim() : null;
-    return { key: k.key_b64, comment, added: k.added ?? null, day, day_state: day ? "determined" : "undetermined" };
+    const textKey = day ? "queue.signer-self-registered.key" : "queue.signer-self-registered.key.undated";
+    const text = joined(day ? say(textKey, { date: dayText(day, this.#todayIn(zone)) }) : say(textKey),
+                        comment ? say("queue.signer-self-registered.key.comment", { comment }) : "");
+    return { key: k.key_b64, comment, added: k.added ?? null, day, day_state: day ? "determined" : "undetermined",
+             text, text_key: textKey, comment_key: comment ? "queue.signer-self-registered.key.comment" : null };
   }
 
   /* ======================================================================

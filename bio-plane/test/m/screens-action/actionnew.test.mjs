@@ -105,7 +105,7 @@ test("R24: refusals in place send nothing: an undetermined addressee with no bas
   said(p, "screen.actionnew.to.undetermined");
   const a = await press(p, "actioncreate", { values: { "an-ask": "Tell the story" }, reason: "x" });
   assert.equal(p.byOp("actioncreate").length, 0);
-  assert.ok(text(p, p.root().querySelector(`[data-slot="${a.getAttribute("data-ai")}"]`)).includes(W("refusal.COUNTERPARTY_REFUSED")));
+  assert.ok(text(p, p.root().querySelector(`[data-slot="${a.getAttribute("data-ai")}"]`)).includes(W("screen.actionnew.refused.addressee")), "R80 (T53): in the member's words");
   await press(p, "actioncreate", { values: { "an-basis": "A reporter, not yet chosen", "an-due-text": "Story runs", "an-due-date": "2026-11-01" }, reason: "x" });
   assert.equal(p.byOp("actioncreate").length, 0, "a date with no basis is refused in place");
   assert.deepEqual((await actionsOf(me)).filter((x) => x.kind === "media"), [], "control: the store holds none");

@@ -1,5 +1,5 @@
 /* screens-settings R39 (T49; K3366, K3368; DEC-257, DEC-258): the keys of the words this module reads, and no word. They are
-   the `reads` list for it in docs/development/ux-substrate/screens/words-reads.json (1,955 keys at the merged design commit, and the keys it gained when `wizard-scripts` R54 re-took the registry at 30af4350f2) with the keys
+   the `reads` list for it in docs/development/ux-substrate/screens/words-reads.json (1,955 keys at the merged design commit, and the keys it gained when `wizard-scripts` R54 re-took the registry at 30af4350f2, and the seven of the design lane's AI act help, 7 Nov, PR 822) with the keys
    its requirements name besides (R34–R38: `refusal.UPDATE_SKIP_NO_REASON`, `member.founder.unnamed` and its help,
    `connect.ifnot`, `connect.notnow`, the password asked again, the install with no member behind it). Every sentence a
    screen draws is read through the shell's `w(key, fills)`, which reads `setup-words`' `word`. */
@@ -34,6 +34,8 @@ export const KEYS = Object.freeze([
   "act.adminremove.label.members",
   "act.adoptversion.does",
   "act.advocacycheck.does",
+  "act.aiaccountadd.does",
+  "act.aiaccountswitch.does",
   "act.aikeepaway.does",
   "act.aikeepaway.label.setup",
   "act.ailimitset.does",
@@ -192,6 +194,7 @@ export const KEYS = Object.freeze([
   "act.groupnameset.does",
   "act.groupnameset.label.group",
   "act.groupnameset.label.setup",
+  "act.guideoptout.does",
   "act.handlechange.does",
   "act.handlecheck.does",
   "act.heldcaptures.does",
@@ -610,6 +613,8 @@ export const KEYS = Object.freeze([
   "ai.limitfield.amount",
   "ai.limitfield.count",
   "ai.limitfield.inclusive",
+  "ai.limitfield.kind",
+  "ai.limitfield.level",
   "ai.limitfield.owner",
   "ai.limitfield.period",
   "ai.limitfield.scope",
@@ -815,6 +820,7 @@ export const KEYS = Object.freeze([
   "screen.action.purpose",
   "screen.actionnew.name",
   "screen.actionnew.purpose",
+  "screen.ai-use.name",
   "screen.aimine.name",
   "screen.aimine.purpose",
   "screen.aiproviders.name",
@@ -1102,6 +1108,7 @@ export const KEYS = Object.freeze([
   "screen.forgot.purpose",
   "screen.front.name",
   "screen.front.purpose",
+  "screen.funding.name",
   "screen.glossary.documentterms",
   "screen.glossary.help",
   "screen.glossary.honest.fingerprint",

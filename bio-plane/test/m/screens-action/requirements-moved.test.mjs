@@ -27,8 +27,11 @@ for (const [mod, ids] of Object.entries(SPLITS)) {
   });
 }
 
-test("split: R71's unmet mark travelled with it to screens-matter:R7", () => {
-  assert.match(line(read("build/requirements/screens-matter.md"), "R7"), /\*\(not yet met: T53\)\*/);
+/* R71's mark travelled with it; screens-matter may since have met R7 and struck it (PR 863). A moved id's mark is the
+   one it had here or none, never another. */
+test("split: R71's unmet mark travelled with it to screens-matter:R7, or screens-matter struck it", () => {
+  const marks = line(read("build/requirements/screens-matter.md"), "R7").match(/\*\(not yet met:[^)]*\)\*/g) ?? [];
+  assert.ok(marks.length === 0 || (marks.length === 1 && marks[0] === "*(not yet met: T53)*"), `R7 marks: ${marks}`);
 });
 
 test("split: each moved id is retired here, naming its new id, and keeps no requirement text", () => {

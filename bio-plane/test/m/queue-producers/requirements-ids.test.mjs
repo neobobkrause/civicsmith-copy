@@ -16,7 +16,7 @@ const START_IDS = ("R8 R1 R2 R3 R9 R10 R14 R15 R16 R17 R18 R19 R29 R30 R31 R20 R
   "R61 R36 R11 R12 R13 R55").split(" ");
 const START_UNMET = Object.fromEntries("R56 R57 R58 R59 R60 R61".split(" ").map((id) => [id, "T53"]));
 /* The marks this module's jobs have struck since the start commit. */
-const STRUCK = ["R56", "R60", "R61"];
+const STRUCK = ["R56", "R60", "R61", "R57"];
 const START_RETIRED = "R3 R15 R16 R17 R18 R19 R29 R20 R21 R22 R26 R27".split(" ");
 
 const read = () => readFileSync(FILE, "utf8");

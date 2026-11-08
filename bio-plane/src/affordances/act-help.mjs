@@ -173,6 +173,11 @@ const T53_DECLARED_BY_OWNER = Object.freeze({ guideoptout: READING_GUIDES.DECLAR
 export const T53_STANDIN_OPS = Object.freeze(Object.keys(T53_DECLARED_BY_OWNER).filter((op) => T53_DECLARED_BY_OWNER[op]));
 const t53Standin = (op) => hasWord(`act.${op}.does`) ? word(`act.${op}.does`) : T53_DECLARED_BY_OWNER[op].description;
 
+/** T53 (R48, R62; the ux lane, 6 Nov; `ai-accounts` R5, R40): the two ops the alpha screens send for an AI account (screens-entry), each
+ *  under its own `act.<op>.does` word the design now gives (`mock-acts.js`), so no screen sends either with no explanation. Exported so
+ *  the tests can name them. */
+export const T53_AI_ACCOUNT_OPS = Object.freeze(["aiaccountadd", "aiaccountswitch"]);
+
 /** The ops held, in the design's order (R48, R61). F1 (T53; ai-accounts R35, wizard-scripts' `RETIRED_ACTS`): the twelve ai-accounts ops
  *  T53 retired (the group key's four, the account reference's two, `subscriptiondisconnect`, the project account's five) are not held. */
 export const ACT_HELP_OPS = Object.freeze([
@@ -231,6 +236,7 @@ export const ACT_HELP_OPS = Object.freeze([
   "holdnoticeprepare", "counselpacket", "noticeprepare", "noticepost", "signeradd", "versionnotice", "actionholdrelease",
   /* T53 (R48, R62): the design's reads list now gives this module these three `does` words */
   "counselpacketexport", "counselpacketread", "linecurrentthrough",
+  ...T53_AI_ACCOUNT_OPS,
   ...T51_DESIGN_OPS,
   ...T51_OWED_OPS,
   ...T51_STANDARD_OPS,

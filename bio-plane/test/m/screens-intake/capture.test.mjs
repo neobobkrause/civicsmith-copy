@@ -8,9 +8,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { openWorld, members, dayOf, html, text, main, btn, fill, press, idle, ok, refused, refusedIn, rawKeys, word, hasWord, says, saysIn, DOCUMENT_STUB } from "./page.mjs";
+import { openWorld, members, dayOf, html, text, main, btn, fill, press, idle, ok, refused, refusedIn, rawKeys, word, hasWord, says, saysIn, DOCUMENT_STUB, teamAccountOn } from "./page.mjs";
 import { silent, pending } from "../interface-shell/harness.mjs";
 import { SCREENS } from "../../../src/screens-intake/index.mjs";
+import { CAPTURE_MAX } from "../../../src/acquisition/index.mjs";
 import { generate } from "../../pdfgen.mjs";
 
 const CAN = ["contribute", "create_projects"];
@@ -100,18 +101,18 @@ test("R1 R25 acquire sends the address as the locator; an empty address sends no
 
 test("R1 R25 each of acquire's five refusals is drawn by its key beside the address; any other code is the shell's (R13)", async () => {
   const seen = new Set();
-  /* the five are the ones the screen declares by key (BAD_FOR is a function of its own, R29) */
+  /* the four are the ones the screen declares by key (BAD_FOR is a function of its own, R29; TOO_LARGE too, R73 as DEC-500 draws it, in r79-cancel.test.mjs) */
   const own = SCREENS.find((x) => x.id === "capture").acts.find((a) => a.op === "acquire").refusals;
   const codes = Object.keys(own).filter((c) => typeof own[c] === "string");
-  assert.equal(codes.length, 5);
-  /* four are caused by a real act: a site that refuses (403), no site at all, a site that serves nothing, and a source that declares more than a capture takes. The fifth, BAD_LOCATOR,
+  assert.equal(codes.length, 4);
+  /* four are caused by a real act: a site that refuses (403), no site at all, a site that serves nothing, and a source that declares more than a capture takes (one byte over the owner's `CAPTURE_MAX`). The fifth, BAD_LOCATOR,
      is the owner's refusal of an address that is not a public https one; `heldat`, which the press asks first, refuses such an address before `acquire` is ever sent
      (REQUIRED_ARGUMENT_MISSING), so no real press reaches it: it stays the one scripted answer (a fault) */
   const NOWHERE = "https://nowhere.example/a.pdf", FORBIDDEN = "https://forbidden.example/a.pdf", EMPTY = "https://empty.example/a.pdf", HUGE = "https://huge.example/a.pdf";
   const sites = (w) => {
     serve(w, FORBIDDEN, "no", "text/plain", 403);
     serve(w, EMPTY, "", "application/pdf");
-    w.script(HUGE, async () => new Response("xx", { status: 200, headers: { "content-type": "application/pdf", "content-length": String(400 * 1024 * 1024) } }));
+    w.script(HUGE, async () => new Response("xx", { status: 200, headers: { "content-type": "application/pdf", "content-length": String(CAPTURE_MAX + 1) } }));
   };
   const causes = { BAD_LOCATOR: ADDRESS, SOURCE_REFUSED: FORBIDDEN, FETCH_FAILED: NOWHERE, EMPTY, TOO_LARGE: HUGE };
   for (const code of codes) {
@@ -128,7 +129,7 @@ test("R1 R25 each of acquire's five refusals is drawn by its key beside the addr
     if (typeof owner.detail === "string" && owner.detail) assert.ok(!r.slot().textContent.includes(owner.detail), `${code}: the owner's detail is never drawn`);
     seen.add(r.slot().textContent);
   }
-  assert.equal(seen.size, 5, "five distinct sentences");
+  assert.equal(seen.size, 4, "four distinct sentences");
   /* control: a code outside the five is drawn by the shell's rule: the table's word for it (K3810: compared with the row by key). The owner's governor holds
      the host after its refusal (HOST_COOLING_OFF), so the same press again is answered with it */
   const t = await team();
@@ -693,15 +694,10 @@ test("R3 testify sends the member's words with where, and when as observedAt; ne
   assert.equal(q.byOp("testify").length, 0);
 });
 
-/* The assistant reachable for this member (interface-shell R20), by the real acts: the administrator sets and switches on the team's Claude key and reads its notice
-   (`reauth`, `groupkeyset`, `groupkeyswitch`, `groupkeynoticeseen`); the member reads it too */
+/* The assistant reachable for this member (interface-shell R20), by the real acts: the administrator holds and switches on the team's Claude account
+   (`teamAccountOn`; T53 retired the group key's ops), and the member reads its host's notice */
 async function reachable(t) {
-  const admin = await t.world.signIn("admin");
-  await admin.act("reauth", { body: { password: admin.password } });
-  await admin.act("groupkeyset", { body: { key: "sk-ant-api03-" + "w".repeat(40) } });
-  await admin.act("groupkeyswitch", { body: { on: true } });
-  await admin.act("groupkeynoticeseen", { body: {} });
-  await t.mai.act("groupkeynoticeseen", { body: {} });
+  await teamAccountOn(t.world, await t.world.signIn("admin"), { readers: [t.mai] });
 }
 const assisted = () => team({ mai: CAN }, { ai: true });
 

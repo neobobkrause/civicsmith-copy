@@ -43,11 +43,13 @@ test("R50 GET / asks only the permanent short name (R41's dialog) and the places
   const home = await text("/");
   const choose = section(home, "stage-choose"), before = section(home, "stage-before");
   assert.ok(choose && before, "two stages");
-  /* The first stage's asks: the short name and the places, nothing else. */
+  /* The first stage's asks: the short name, the places, and (installer-places R96) the region, nothing else. */
   /* (R72, DEC-257) the places' "none of these" is a choice of its own, `profile-none`. */
-  assert.deepEqual(controls(choose), ["input#slug", ...PROFILE_CHOICES.map(() => "input#[profile]"), "input#profile-none[profile-none]"]);
+  assert.deepEqual(controls(choose), ["input#slug", ...PROFILE_CHOICES.map((_, i) => `input#place-${i}[profile]`), "input#profile-none[profile-none]",
+    "input#region-mode-near[region]", "select#region-near", "input#region-mode-keep[region]", "select#region-keep"]);
   assert.ok(choose.includes(`<h2>${escd(word("screen.install.short.heading"))}</h2>`));
-  assert.ok(choose.includes(`<h2>${escd(word("installer.places.heading"))}</h2>`));
+  /* installer-places R94 amends R21: the places' heading asks where the work focuses. */
+  assert.ok(choose.includes(`<h2>${escd(word("installer.places.focus"))}</h2>`));
   /* What is needed, in one block, before the asks: R23's prerequisites and (T46) the parts the carried release cannot install. */
   assert.equal(home.split(`<h2>${escd(word("installer.need.heading"))}</h2>`).length - 1, 1, "one block");
   const need = section(home, "need");
@@ -73,7 +75,7 @@ test("R50 GET / asks only the permanent short name (R41's dialog) and the places
   const control = section(before, "control-before");
   assert.ok(control.includes(`<h2>${escd(BEFORE_CLOUDFLARE_CONTROL)}</h2>`));
   for (const s of HOSTING_CONTROL.sentences) assert.ok(control.includes(`<p>${escd(s)}</p>`), s);
-  assert.ok(before.includes(`<button id="cloudflare" class="cs-btn" data-tone="primary">${escd(word("act.bootstrap.label.install"))}</button>`));
+  assert.ok(before.includes(`<button id="cloudflare" class="cs-btn" data-tone="primary">${escd(word("act.owed_installcheck.label.install"))}</button>`));
   /* The assistant's words (R37) and the optional Workers VPC field (R45) are on the page, folded and closed, never one of the first page's asks. */
   for (const id of ["about-assistant", "security-fold"]) {
     const fold = section(before, id);
@@ -91,7 +93,7 @@ test("R50 GET / asks only the permanent short name (R41's dialog) and the places
   await w.el("confirm-yes").click();
   assert.deepEqual([w.sent, w.el("stage-before").hidden, w.el("stage-choose").hidden], [[], false, true]);
   await w.el("cloudflare").click();
-  assert.deepEqual(w.sent.map((s) => [s.url, s.body.mode, s.body.slug]), [["/begin", "install", "river-keepers"]], "Continue to Cloudflare sends /begin");
+  assert.deepEqual(w.sent.map((s) => [s.url, s.body.mode, s.body.slug]), [["/begin", "check", "river-keepers"]], "Continue to Cloudflare sends /begin");
   assert.deepEqual(w.sent[0].body.profiles, [], "no place chosen for the founder");
   assert.equal(w.location.href, "https://dash.cloudflare.com/oauth2/auth?x=1");
   /* Control: closing the dialog, or Back from Before Cloudflare, sends nothing, and Continue to Cloudflare before a confirmation sends nothing. */
@@ -276,9 +278,10 @@ test("R53 the pages use interface-assets' stylesheet and faces, carried in the i
     const r = await req(path, init);
     assert.equal(r.status, 404, path);
   }
-  /* Carried in the bundle: the committed bundle holds the stylesheet's own text and every face. */
-  const { readFileSync } = await import("node:fs");
-  const bundle = readFileSync(new URL("../dist/newgroup.bundled.mjs", import.meta.url), "utf8");
+  /* Carried in the bundle: the bundle as `npm run build` builds it from this tree (never a committed dist, which can lag the
+     assets it carries) holds the stylesheet's own text and every face. */
+  const { bundleText } = await import("../scripts/build.mjs");
+  const bundle = await bundleText(await import("esbuild"));
   for (const [name, f] of Object.entries(ASSET_FILES)) {
     /* A face is its base64 as written; a text file, its lines as written that need no escaping in a string. */
     const lines = f.encoding === "base64" ? [f.body] : f.body.split("\n").filter((l) => l.length > 40 && !/["'`\\$]|[^\x20-\x7e]/.test(l));

@@ -86,7 +86,20 @@ export const helpRecords = Object.freeze({
     const must = musts.length ? cs.sec("screen.help-records.must", '<ul class="mk-list">' + musts.join("") + "</ul>") : "";
     const sub = block && said("screen.help-records.sub", { law: text(block.law), place: place })
       ? '<p class="mk-sub">' + said("screen.help-records.sub", { law: text(block.law), place: place }) + "</p>" : "";
-    const notheld = pr && pr.state === "ok" && !block ? '<p class="mk-note" role="status">' + cs.w("screen.help-records.notheld") + "</p>" : "";
+    // R76 (T53): "The law's own text is the place to look" names the law: each records law the active profiles list, by its name and citation,
+    // a link to its text where the profile gives one; with none on file, the sentence says so and where an administrator adds a place's rules
+    const recLaws = pr && pr.state === "ok" && pr.value && pr.value.view && Array.isArray(pr.value.view.records_laws)
+      ? pr.value.view.records_laws.filter(function (l) { return l && text(l.citation); }) : [];
+    const lawNames = recLaws.map(function (l) {
+      const words = cs.esc([text(l.name), text(l.citation)].filter(Boolean).join(", "));
+      const url = text(l.url) || text(l.text_url);
+      return /^https:\/\//.test(url || "") ? '<a class="cs-ref" href="' + cs.esc(url) + '" rel="noopener" data-law="' + cs.esc(l.citation) + '">' + words + "</a>" : '<span data-law="' + cs.esc(l.citation) + '">' + words + "</span>";
+    });
+    const notheld = pr && pr.state === "ok" && !block ? (lawNames.length
+      ? '<p class="mk-note" role="status" data-notheld="law">' + cs.w("screen.help-records.notheld.law", { laws: { html: lawNames.join("; ") } }) + "</p>"
+      : '<p class="mk-note" role="status" data-notheld="nolaw">' + cs.w("screen.help-records.notheld.nolaw") + "</p>"
+        + '<div class="mk-links" data-list="places"><a class="cs-ref" href="/app/places" data-nav data-screen="places">' + cs.w("screen.places.name")
+        + '</a><span class="mk-small" data-purpose="places">' + cs.w("screen.places.purpose") + "</span></div>") : "";
     const fasterWhat = fast ? said("screen.help-records.faster.what", { place: place, ordinance: text(fast.ordinance), request: text(fast.request), window: text(fast.window), cite: text(fast.citation) }) : "";
     const portalWhere = portalOf ? said("screen.help-records.portal.where", { place: place, portal: text(portalOf.name) }) : "";
     const faster = none && !fasterWhat ? "" : cs.sec("screen.help-records.faster", (none ? "" : cs.state("profiles", function (p) {

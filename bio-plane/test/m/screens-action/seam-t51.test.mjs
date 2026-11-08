@@ -10,7 +10,8 @@ const OGIS = "Office of Government Information Services";
 const FED = "5 U.S.C. § 552";
 const said = (p, key, vars) => assert.ok(text(p).includes(W(key, vars)), key);
 
-const lawsPick = (q) => q.doc.getElementById("req-law").querySelectorAll("option").map((o) => o.textContent.trim());
+/* R60 (T53): the laws are boxes, none ticked, each labelled with its level, name, citation and window */
+const lawsPick = (q) => q.doc.getElementById("req-law").querySelectorAll("label").map((o) => o.textContent.trim());
 /* The walker's path, by the member's own presses. `profiles` is the op that answers the place's facts: the real `instance-setup` or, while
    its `profiles()` omits the laws (instance-setup R12, INSTANCE-SETUP #27), `jurisdictions.combine`'s view in its place. */
 async function walk(profiles) {
@@ -49,7 +50,7 @@ async function walk(profiles) {
   assert.match(ACTN, /^ACTN-/);
   // the law: the profile's records laws, the Freedom of Information Act with its own level
   const lawAt = lawsPick(p).findIndex((t) => t.includes(FED));
-  await press(p, "actionlaws", { values: { "req-law": String(lawAt) }, reason: "federal" });
+  await press(p, "actionlaws", { values: { [`req-law-${lawAt}`]: true }, reason: "federal" });
   assert.deepEqual(last(p, "actionlaws").body, { target: ACTN, laws: [{ level: "federal", citation: FED }] });
   // F-R31 (action-grammar R31, PR 396): governingLawsOf answers {level, citation, layer}, layer null when absent. Where the stored law carries
   // the layer key it is null (no layer was named); where it does not (the provider before R31) the old shape stands.

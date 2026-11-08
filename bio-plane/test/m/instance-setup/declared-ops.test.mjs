@@ -13,7 +13,7 @@ import { NS_RELEASE_NOTICE, releaseNoticeStatement } from "../../../src/sshsig.m
 import { signSshsig, signerPublicLine } from "../../../scripts/sign-sshsig.mjs";
 
 const OPS = ["assistantreadiness", "declaredstakeset", "disclosureshown", "groupdomainset", "grouplanguagesset", "grouplogoset", "groupnameset", "infolevelset",
-  "memberlanguageset", "officesseed", "placewanted", "profilesset", "runtime", "selftest", "updatelater", "updateskip", "updatestart"];
+  "layersset", "maildomainset", "maildoorset", "mailsetup", "memberlanguageset", "officesseed", "placewanted", "profilesset", "runtime", "selftest", "updatelater", "updateskip", "updatestart"];
 
 /* a refusal names a field by its code, where the code is the field's own refusal, or by the field as a whole word of its detail */
 const words = (v) => (v == null ? "" : typeof v === "string" ? v : JSON.stringify(v));
@@ -76,8 +76,8 @@ test("R101 instance-setup declares exactly the ops the screens send that it serv
     for (const r of row.fields.requires) for (const f of Array.isArray(r) ? r : [r]) assert.ok(row.fields.accepts.includes(f), `${op}: ${f}`);
   }
   /* an op that writes nothing is a read and a writing act is not (op-grades R49) */
-  assert.deepEqual(OPS.filter((op) => DECLARED_OPS[op].mutating === false), ["assistantreadiness", "runtime", "selftest"]);
-  assert.deepEqual(OPS.filter((op) => DECLARED_OPS[op].weight === "read"), ["assistantreadiness", "runtime", "selftest"]);
+  assert.deepEqual(OPS.filter((op) => DECLARED_OPS[op].mutating === false), ["assistantreadiness", "mailsetup", "runtime", "selftest"]);
+  assert.deepEqual(OPS.filter((op) => DECLARED_OPS[op].weight === "read"), ["assistantreadiness", "mailsetup", "runtime", "selftest"]);
 });
 
 test("R101 each description is read by its key, instance-setup.declared.<op>, written once with localize (K874: every new id is named)", () => {
@@ -155,6 +155,16 @@ test("R101 instance-setup declares updatelater: its requires alone raise no refu
 
 test("R101 instance-setup declares updateskip: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
   await holds("updateskip", route("updateskip", { by: "admin" }, readyWorld), { values: { version: "0.85.0", reason: "We wait for the next one." } });
+});
+
+test("R107 instance-setup declares layersset: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {
+  await holds("layersset", route("layersset", { by: "admin" }), { values: { layers: [] } });
+});
+
+test("R114 instance-setup declares maildomainset, maildoorset and mailsetup: the requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped", async () => {
+  await holds("maildomainset", route("maildomainset", { by: "admin" }), { values: { domain: "mail.example.org" }, refusedNaming: named({ domain: ["MAIL_DOMAIN_MALFORMED"] }) });
+  await holds("maildoorset", route("maildoorset", { by: "admin" }), { values: { on: false }, refusedNaming: named({ on: ["MAIL_SWITCH_MALFORMED"] }) });
+  await holds("mailsetup", route("mailsetup", { viewer: "admin" }));
 });
 
 test("F1 instance-setup declares assistantreadiness (R115): it reads no field from the request, the viewer being the stamp, so a field outside accepts is dropped", async () => {

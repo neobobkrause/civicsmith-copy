@@ -271,7 +271,7 @@ console.log("\n--- front page and begin ---");
   const homeBody = await home.text();
   t("GET / is the wizard", homeBody.includes(word("screen.install.name")), true);
   t("the front page offers no mode choice", homeBody.includes('name="mode"'), false);
-  t("the front page is hard-wired to install", homeBody.includes('mode:"install"'), true);
+  t("the front page is hard-wired to check the account first (installer-check R91)", homeBody.includes('mode:"check"'), true);
   t("it points elsewhere for updates", homeBody.includes('href="/update"'), true);
 
   const up = await req("/update?version=" + CUR_VER);

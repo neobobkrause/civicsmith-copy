@@ -923,5 +923,11 @@ function build() {
   renderbatch:           null,
   deeperbatch:           null,
   securityforward:       null,
+  /* F1 (BD-1; corpus-export R17, R18): the whole-record export, its manifest and each of its parts, the founder's alone
+     as `export` is. Each takes NO WORKING CAPABILITY, an administrator's act (D-136), and is PRESENT, null, as `export`'s
+     row is: a session reaches it (the founder's), and the census reads a row for each mutating op a session reaches. A
+     member is refused at the door because neither op is in the member's session set, never by a capability here. */
+  exportwhole:           null,
+  exportwholepart:       null,
   });
 }

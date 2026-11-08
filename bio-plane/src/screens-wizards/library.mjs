@@ -68,8 +68,18 @@ export const library = {
     const updates = data.updates && data.updates.state === "ok" ? (data.updates.value.entries || []) : [];
     const out = [cs.title(), `<p>${W("screen.wizards.purpose")}</p>`];
 
-    // R15: choosing a state reads it at once, one press; "See the whole library" is the list again
-    const choice = STATES.map((k) => cs.act("wizards", { label: k === "offered" ? S + "act.seeall" : S + "state." + k, data: { state: k }, tone: k === state ? "primary" : "quiet" })).join("");
+    // R15: choosing a state reads it at once, one press; "See the whole library" is the list again. R23: each filter's tip is
+    // its own `state.<k>.tip`, in place of the library's (`act.wizards.does`, which stays on the screen's other `wizards` acts)
+    const libraryTip = E(W("act.wizards.does"));
+    const ownTip = (button, k) => {
+      const own = E(W(S + "state." + k + ".tip"));
+      return button.includes(libraryTip) ? button.split(libraryTip).join(own)
+        : button.replace(/<button /, '<button data-level="2" data-tip="' + own + '" ');
+    };
+    const choice = STATES.map((k) => {
+      const b = cs.act("wizards", { label: k === "offered" ? S + "act.seeall" : S + "state." + k, data: { state: k }, tone: k === state ? "primary" : "quiet" });
+      return b ? ownTip(b, k) : "";
+    }).join("");
     if (choice) out.push(`<div class="mk-acts" role="group" aria-label="${W(S + "state.field")}">${choice}</div>`);
 
     // one version's steps, opened from its row (`wizardread`)
@@ -206,7 +216,7 @@ export const library = {
     };
 
     // the wizards in use, first (R16)
-    out.push(cs.sec(S + "showing", cs.state(data.list, (v) => rowsOf(v, false), { empty: S + "empty" }), { fills: { state: { html: W(S + "state." + state) } } }));
+    out.push(cs.sec(S + "showing", cs.state(data.list, (v) => rowsOf(v, false), { empty: S + "empty." + state }), { fills: { state: { html: W(S + "state." + state) } } }));
 
     // R16: writing, revising, approving and retiring fold together, closed, `own.says` first; R3: a recording is made on the real screens
     const record = cs.act("wizarddraft", { data: { mode: "record" } });

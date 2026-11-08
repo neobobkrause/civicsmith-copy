@@ -176,7 +176,8 @@ test("R65 each state of a read is drawn from the job row: queued, being fetched,
   assert.equal(p.byOp("reading").length, 1, "the row is asked for the capture's digest at once");
   assert.equal(p.byOp("reading")[0].query.sha256, cur.sha);
   assert.equal(jobMark(p), "queued");
-  assert.ok(says(p, "screen.capture.reading.pending"));
+  /* the queued state by its own row (R78, DEC-454), now in the word table, not the stand-in */
+  assert.ok(says(p, "screen.capture.read.queued") && !says(p, "screen.capture.reading.pending"));
   const step = async (answer) => { cur.answer = answer; await p.clock.tick(20000); await idle(p); };
   await step(row({ state: "fetching", written: 0, owed: 0, skipped: 0, failed: 0 }));
   assert.equal(jobMark(p), "fetching");

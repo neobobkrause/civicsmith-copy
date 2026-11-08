@@ -317,7 +317,7 @@ const COMPARED = (a, b) => ok({ ok: true, a, b, differs: 4, of: 5, legs: { taken
 const withVersions = (o = {}) => reach({ ...A, images: { ...A.images, ...DOCS }, ...o, plane: { basisversions: bv(VERSIONS), ...(o.plane || {}) } });
 const fold73 = (p) => main(p).querySelector("details[data-compare-fold]");
 
-test("R73 compare two readings: choosing one sends versioncompare (a: the reading chosen, b: the reading shown, the project) and nothing is written; the reasons taken up, let go and kept; the five dimensions in the answer's order", async () => {
+test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R73 compare two readings: choosing one sends versioncompare (a: the reading chosen, b: the reading shown, the project) and nothing is written; the reasons taken up, let go and kept; the five dimensions in the answer's order", async () => {
   const p = await open(at, withVersions({ plane: { versioncompare: (r) => COMPARED(r.query.a, r.query.b) } }));
   const f = fold73(p);
   assert.ok(says(f.querySelector("summary"), "screen.question.say022") && says(f, "screen.question.say023") && says(f, "screen.question.say024") && says(f, "screen.question.say025"));
@@ -353,7 +353,7 @@ test("R73 compare two readings: choosing one sends versioncompare (a: the readin
   assert.deepEqual(p.requests.filter((r) => r.method !== "GET").map((r) => r.op).filter((op) => op !== "subscriptionsignin"), [], "comparing is reading: nothing is written");
 });
 
-test("R73 where each reading came from: a tree by derived_from and origin, the roots first, each child indented under its source, the one read marked, a hidden reading held back, an orphan drawn first with its source", async () => {
+test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R73 where each reading came from: a tree by derived_from and origin, the roots first, each child indented under its source, the one read marked, a hidden reading held back, an orphan drawn first with its source", async () => {
   const orphan = { name: "Orphan", state: "suggested", author: "member:mai", derived_from: "Lost", legs: L(AUD) };
   const p = await open(at, withVersions({ plane: { basisversions: bv(VERSIONS.concat([orphan])) } }));
   const f = fold73(p);
@@ -399,7 +399,7 @@ test("R73 the three refusals are drawn by their words in the place of the answer
 const BIAS = (bias) => (r) => ok({ ok: true, found: true, session: { id: r.query.run, status: "completed", principal: { plane: "member:mai" }, created: "2026-10-08T09:00:00Z", bias } });
 const biasFold = (p, name = "The audit alone") => main(p).querySelector(`details[data-bias-fold="${name}"]`);
 
-test("R74 on a reading the assistant composed that is not yet accepted: the bias its own run was composed under, before she accepts it; the three answers and the no-manifest answer each draw their sentence", async () => {
+test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R74 on a reading the assistant composed that is not yet accepted: the bias its own run was composed under, before she accepts it; the three answers and the no-manifest answer each draw their sentence", async () => {
   const cases = [
     [{ in_force: true, moved: true, moved_basis: "at_open" }, "moved", ["screen.question.say013"], ["screen.question.say017", "screen.question.say019", "screen.question.say021"]],
     [{ in_force: true, moved: false, moved_basis: "at_open" }, "notmoved", ["screen.question.say017", "screen.question.say018"], ["screen.question.say013", "screen.question.say019", "screen.question.say021"]],
@@ -422,7 +422,7 @@ test("R74 on a reading the assistant composed that is not yet accepted: the bias
   }
 });
 
-test("R74 an accept, a weigh and a reject sent from the fold carry the version; a run answering found: false is undetermined, never 'has not moved'; controls: a member-written or an accepted reading draws no fold", async () => {
+test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R74 an accept, a weigh and a reject sent from the fold carry the version; a run answering found: false is undetermined, never 'has not moved'; controls: a member-written or an accepted reading draws no fold", async () => {
   /* a reading suggested by the machine under its run (the world's recipe): the real acts, from the fold */
   const world = await storeWorld({ ai: true });
   const admin = await world.signIn(WORLD_FOUNDER_HANDLE);

@@ -56,7 +56,8 @@ const MEMBERS = FLEET_BINDINGS.map(([m]) => m), BINDINGS = FLEET_BINDINGS.map(([
    exactly the rendered name and coverage of each choice is taken out before they read a page. */
 const withoutChoices = (page) => page.replace(/<span class="pname">[^<]*<\/span>/g, "")
   .replace(/<span class="small pcovers">[^<]*<\/span>/g, "")
-  .replace(/<input type="checkbox" name="profile" value="[^"]*">/g, "");
+  .replace(/<legend class="ng-small pstate">[^<]*<\/legend>/g, "")
+  .replace(/<input type="checkbox" id="place-\d+" name="profile" value="[^"]*"( checked)?>/g, "");
 const INVITATION = readFileSync(new URL("../../bio-plane/public/newgroup/index.html", import.meta.url), "utf8");
 
 /* ------------------------------------------------------------------------------------------------ the routes */
@@ -67,7 +68,7 @@ test("R1 GET / serves the install page and GET /update the update page; any othe
   const hb = seen(await home.text()), ub = seen(await up.text());
   assert.deepEqual([home.status, up.status], [200, 200]);
   assert.match(home.headers.get("content-type"), /text\/html/);
-  assert.ok(hb.includes('mode:"install"') && !hb.includes('mode:"update"'), "the install page begins an install");
+  assert.ok(hb.includes('mode:"check"') && !hb.includes('mode:"update"'), "the install page begins a check (installer-check R91)");
   assert.ok(ub.includes('mode:"update"') && !ub.includes('mode:"install"'), "the update page begins an update");
   for (const [path, init] of [["/nothing", {}], ["/update/x", {}], ["/begin", {}], ["/callback", { method: "POST" }],
                               ["/", { method: "POST" }], ["/favicon.ico", {}], ["/app/assets/nothing", {}], ["/app/assets/", {}],
@@ -814,26 +815,27 @@ test("R20 the plane's limits are read from the signed release R8 chose and sent 
   assert.ok(w.page.label("fleet").startsWith(headOf("installer.fleet.done.other", { n: MEMBERS.length })));
   restoreSigners();
 });
-test("R21 the install offers the held non-test jurisdiction profiles by name and coverage, none preselected, and binds the chosen ids as JURISDICTION_PROFILES; choosing none is allowed and said; an update never changes them", async () => {
-  /* The offer: every held profile but the test ones, each by name and coverage, none checked; and what none means. */
+test("R21 (as installer-places R94 amends it) the install offers the held places, every level, by name and the place each covers, only the federal layer preselected, and binds the chosen ids as JURISDICTION_PROFILES; choosing none is allowed and said; an update never changes them", async () => {
+  /* The offer: every held Civicsmith layer (no test profile, no team layer), each by name and the place it covers; only the
+     federal layer checked; and what none means. */
   const held = jurisdictions.list();
-  const offered = held.filter((p) => !p.test);
+  const offered = jurisdictions.layers().filter((p) => p.origin === "civicsmith");
   assert.ok(offered.length > 0 && held.some((p) => p.test), "both kinds are held, so the filter is exercised");
-  assert.deepEqual(PROFILE_CHOICES.map((p) => [p.id, p.name, [...p.covers]]), offered.map((p) => [p.id, p.name, p.covers]));
+  assert.deepEqual(PROFILE_CHOICES.map((p) => [p.id, p.name, [...p.covers]]), offered.map((p) => [p.id, p.name, [p.place]]));
   const home = await text("/"), upd = await text(UPDATE_PATH);
-  const boxes = [...home.matchAll(/<input type="checkbox" name="profile" value="([^"]*)"([^>]*)>/g)];
-  assert.deepEqual(boxes.map((m) => m[1]), offered.map((p) => p.id));
-  assert.ok(boxes.every((m) => !/checked/.test(m[2])), "none preselected");
+  const boxes = [...home.matchAll(/<input type="checkbox" id="place-\d+" name="profile" value="([^"]*)"([^>]*)>/g)];
+  assert.deepEqual(boxes.map((m) => m[1]).sort(), offered.map((p) => p.id).sort());
+  assert.deepEqual(boxes.filter((m) => /checked/.test(m[2])).map((m) => m[1]), offered.filter((p) => p.level === "federal").map((p) => p.id), "only the federal layer preselected");
   for (const p of offered) {
-    assert.ok(home.includes(`<span class="pname">${p.name}</span>`), p.id);
-    assert.ok(home.includes(`<span class="small pcovers">covers ${p.covers.join(", ")}</span>`), p.id);
+    assert.ok(home.includes(`<span class="pname">${h(p.name)}</span>`), p.id);
+    assert.ok(home.includes(`<span class="small pcovers">${h(word("installer.places.covers", { covers: p.place }))}</span>`), p.id);
   }
   for (const p of held.filter((x) => x.test)) assert.ok(!home.includes(p.id) && !home.includes(p.name), `${p.id} not offered`);
   /* R72: the line saying what none means is the design's key (`screen.install.places.none`), read by key, not copied. */
   assert.equal(PROFILES_NONE, word("screen.install.places.none"));
   assert.ok(home.includes(PROFILES_NONE) && /none/i.test(PROFILES_NONE), "choosing none is allowed and said");
-  assert.ok(!upd.includes('type="checkbox" name="profile"'), "an update offers no choice");
-  assert.ok(home.includes("profiles:chosen"), "the install page sends the choice");
+  assert.ok(!/<input[^>]*name="profile"/.test(upd), "an update offers no choice");
+  assert.ok(home.includes("profiles:boxes()"), "the install page sends the choice");
   /* /begin refuses, by name, what it cannot bind: a profile not offered (unknown, or a test profile), a repeat, not a
      list, and any choice on an update. */
   const ids = offered.map((p) => p.id);
@@ -1998,7 +2000,7 @@ test("R41 the install page's act that chooses the short name shows the Irreversi
   w.el("slug").value = "something-else";
   await w.el("cloudflare").click();
   assert.equal(w.sent.length, 1, "Continue to Cloudflare, after the confirming act, sends /begin once");
-  assert.deepEqual([w.sent[0].url, w.sent[0].body.slug, w.sent[0].body.mode], ["/begin", "river-keepers", "install"], "the name the dialog named");
+  assert.deepEqual([w.sent[0].url, w.sent[0].body.slug, w.sent[0].body.mode], ["/begin", "river-keepers", "check"], "the name the dialog named");
   assert.equal(w.location.href, "https://dash.cloudflare.com/oauth2/auth?x=1");
   /* A name too short opens nothing. */
   const short = pageWorld(home);

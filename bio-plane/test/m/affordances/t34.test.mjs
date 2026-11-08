@@ -183,12 +183,16 @@ test("R1 R12: every op T34 declares in op-declarations R22–R24, R26, R28 and R
     const o = ownerOf(op);
     if (o && !T34_LEFT_THE_DOOR.includes(op)) assert.ok(maps[o].includes(op), `${o} serves ${op}`);
   }
-  assert.ok(T34_WRITES.some((op) => ownerOf(op) === "membership") && T34_WRITES.some((op) => ownerOf(op) === "credentials"));
+  /* (BOB, 7 Nov; op-grades R57, PR 866) only membership's half: R57 removes the four group-key rows that were T34's only
+     writes citing credentials; credentials' op is pinned by the keyedserviceset check below */
+  assert.ok(T34_WRITES.some((op) => ownerOf(op) === "membership"));
   for (const op of T34_LEFT_THE_DOOR)
     assert.ok(!maps.credentials.includes(op) && !aiAccounts.includes(op) && !maps.membership.includes(op), `${op} is served by no owner`);
   for (const op of UNGATED_READS) assert.ok(maps.membership.includes(op), `membership serves ${op}`);
-  /* the credentials reads T34 grades are still graded as reads; since K5457 no owner serves them (above) */
-  for (const op of ["groupkeystate", "groupkeynotice"]) assert.ok(T34_READS.includes(op), op);
+  /* (BOB, 7 Nov; op-grades R57) the group key's reads leave op-grades' T34 table, so whether it still grades them is not
+     pinned here; the credential key T34 cites "as keyedserviceset" stays credentials' op at its `credential` ground */
+  assert.ok(maps.credentials.includes("keyedserviceset"), "credentials serves keyedserviceset");
+  assert.equal(G.RUNG_ABSENT.keyedserviceset?.ground, "credential");
   for (const op of T34_RETIRED) {
     assert.ok(!maps.credentials.includes(op), `credentials no longer serves ${op}`);
     /* op-grades' content its own tests do not yet pin (N877; reported to BOB): T34's table names it no longer */

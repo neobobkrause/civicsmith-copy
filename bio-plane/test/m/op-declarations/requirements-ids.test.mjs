@@ -117,6 +117,22 @@ const START_LINES = {
   R93: "9282814274fe4b2d1542fe6c3e24a7cdf6fd9a1c75c55e09bea7331652bbbe63",
 };
 const START_UNMET = { R93: "T53" };
+/* A moved id's mark is its new owner's to strike (surface-declarations struck R10, R12, R16 and R18's and reworded
+   R11's at d9a45aba8): the moved line is compared with its mark removed, against these hashes of the start lines with
+   their marks removed (taken from the moved lines while they still matched START_LINES with their marks). */
+const STRIPPED = {
+  R84: "a2ec45a9271af9f05cced661d10d50204d18d6ef493327814a31d75d49361ea5",
+  R85: "03e7545bac2c005ea8d50f1f44267501e8fa1db8a377903073f7a5a2abdc4ae2",
+  R86: "39c32f260aae32deb70353fcffc5833a0aaf28df260fa55c3c18768a5c621ff2",
+  R87: "5ef557131fff19ae214ce56d0d436aa00f838963664c5ecedb5815e55d457628",
+  R88: "9cb73888dca3a22f5c0975ce88e68cad3a28c7b6ca261ff69a12ebacaeb12f5c",
+  R89: "c3248ecdbca1cb9fa5581fa3f94168b5beaa052cdcf010d066aa40570bd7c1de",
+  R90: "44a48e1fb63f83737fa69b94833d9db2f31bb9f322c1ad4236aac92f3cae3011",
+  R91: "883ee870db2e9e2b85f3db164911646e2fdff6bd6cd25f98203dd130d611b4d8",
+  R92: "837d1395b15362575a364ff06e4c87b62c799abaad9aa5bd7d42dab0682d23f1",
+  R93: "555d49e062c834639663cecbaa9d86f13ef05eca7d89d3a8260c6714464b2b04",
+};
+const stripMark = (l) => l.replace(/ \*\(not yet met: .*?\)\*/, "");
 const MOVED = Object.fromEntries([
   ...Array.from({ length: 27 }, (_, i) => [`R${49 + i}`, ["op-specs-late", `R${1 + i}`]]),
   ...Array.from({ length: 18 }, (_, i) => [`R${76 + i}`, ["surface-declarations", `R${1 + i}`]]),
@@ -152,8 +168,13 @@ test("every kept id's line is the start commit's, word for word, and the unmet m
     if (m) unmet[id] = m[1];
   }
   for (const [id, mark] of Object.entries(START_UNMET)) {
-    const now = MOVED[id] ? MARK.exec(there(MOVED[id]) ?? "")?.[1] : unmet[id];
-    assert.equal(now, mark, `${id}'s mark`);
+    if (MOVED[id]) {
+      /* moved: the mark is unchanged or struck by its new owner, never another mark */
+      const now = /\*\(not yet met: (.*?)\)\*/.exec(there(MOVED[id]) ?? "")?.[1];
+      assert.ok(now === undefined || now === mark, `${id}'s mark`);
+      continue;
+    }
+    assert.equal(unmet[id], mark, `${id}'s mark`);
   }
   for (const id of Object.keys(unmet)) assert.ok(START_UNMET[id] !== undefined, `${id} gained a mark`);
 });
@@ -166,6 +187,6 @@ test("every retired id here names its new id, and that id exists in its new modu
     const note = ` (moved from op-declarations:${old})`;
     assert.ok(l.includes(note), `${neu} does not say it moved from ${old}`);
     const back = l.replace(note, "").replace(`- **${neu}**`, `- **${old}**`);
-    assert.equal(sha(back), START_LINES[old], `${neu} is not ${old} verbatim`);
+    assert.equal(sha(stripMark(back)), STRIPPED[old] ?? START_LINES[old], `${neu} is not ${old} verbatim`);
   }
 });

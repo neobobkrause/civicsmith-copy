@@ -98,7 +98,9 @@ export function createDeclaredOps({ ladder, grounds, rungs, absent, nonActs, mac
       if (r.refusal !== undefined && (r.weight !== "reasoned" || typeof r.refusal !== "string" || !CODE.test(r.refusal))) {
         throw fail("DECLARED_OP_BAD_REFUSAL", op, "refusal");
       }
-      const handHolds = has(rungs, op) || has(absent, op) || has(nonActs, op) || has(machine, op);
+      /* R55 (T53; BOB C13): a hand row in MACHINE_REFUSALS alone grades nothing (R50 (b): it states no weight), and R49
+         leaves that table to the hand, so an op held only there is still graded from its owner's row */
+      const handHolds = has(rungs, op) || has(absent, op) || has(nonActs, op);
       if (!handHolds) {
         if (sentence.startsWith("capture-directed:")) throw fail("DECLARED_OP_BAD_DESCRIPTION", op, "capture-prefix");
         plan.push({ op, kind, weight: r.weight, sentence, refusal: r.refusal });

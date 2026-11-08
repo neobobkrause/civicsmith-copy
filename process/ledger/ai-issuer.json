@@ -32,7 +32,7 @@
   ],
   "prior_work": "Meet the unmet requirement marks in build/requirements/ai-issuer.md, each with a test under ai-issuer/test/ that fails with the change reverted. ai-issuer is a new Civicsmith-run Worker in ai-issuer/ (its own wrangler.jsonc, like site/ and stewards/); its code and local tests are yours, deploying it is the coordinator's: a mark resting on a live deployment goes in --not-verified. Edit no other module's code, and commit no generated file (rows.mjs, words-unreviewed.json, any dist).",
   "status": {
-    "state": "OPEN",
-    "at": "2026-11-05T13:20:00Z"
+    "state": "COMPLETE",
+    "at": "2026-11-07T16:16:44Z"
   }
 }

@@ -33,6 +33,10 @@ Text moved out of `build/requirements/affordances.md` to bring that file under t
 
 None: answered by Bob 2026-09-26 (K102).
 
+- (job affordances, attempt 8, 7 Nov) R73's control ("no entry points back into the item's own dimension except `conn`") disagrees with R73's own list in two places: an `organization` offers `who.offices` (dimension `organizations`) and a `payment` offers `money.more` (dimension `money`). The table follows the list; the control is tested on `person`, `fund`, `donation`, `event` and `document`. BOB's to re-rule.
+- (job affordances, attempt 8) R75's read half is R67's (`proceeding_kinds` `[]` with no profile, tested in `profiles.test.mjs`); its write half, a typed kind accepted with no profile, is `entities`' (`PROCEEDING_KIND_UNKNOWN` today) and the screen's (`screens-investigate` R36, R47). Its mark stays until those land.
+- (job affordances, attempt 8) `aiaccountadd` and `aiaccountswitch`, now held in `ACT_HELP`, are still named in `op-declarations`' `ACT_HELP_ABSENT` (`unexplained`); its partition tests (R34, R75) go red until that module drops them.
+
 ## Decided by BOB (for the rulings)
 
 - `from` is `legacy-store` and `legacy-index`: `decorateAct` and the `op=affordances` composition move here; the control plane keeps routing, the four stamps, the store-silence answer and the envelope (K3).

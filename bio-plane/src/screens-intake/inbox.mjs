@@ -15,8 +15,18 @@ function renderInbox(cs, view) {
   /* R32 (3), R35: a size by `size.mb`, `size.kb` or `size.small`, never a byte count */
   const size = (n) => !Number.isFinite(n) ? "" : n >= 1048576 ? cs.w("size.mb", { n: (n / 1048576).toFixed(1) }) : n >= 1024 ? cs.w("size.kb", { n: String(Math.round(n / 1024)) }) : cs.w("size.small");
   const plain = (t) => String(t).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
-  /* R32 (3): a knock is named by what was handed in and when, never by its id */
-  const handed = (k) => `${cs.w("screen.inbox.knock", { size: size(k.bytes) })} ${k.received ? cs.date(k.received) : ""}`.trim();
+  /* R32 (3), R92: a knock is named by what was handed in (the file's name as the sender gave it, else the first words of its note, else that it came with
+     neither) with its true size, and when; never by its id */
+  const firstWords = (t) => { const w = String(t).trim().split(/\s+/).filter(Boolean); return w.slice(0, 6).join(" ").slice(0, 60); };
+  const title = (k) => typeof k.file_name === "string" && k.file_name.trim() ? cs.w("screen.inbox.row.named", { name: k.file_name.trim(), size: size(k.bytes) })
+    : typeof k.note === "string" && k.note.trim() ? cs.w("screen.inbox.row.noted", { words: firstWords(k.note), size: size(k.bytes) })
+    : cs.w("screen.inbox.row.unnamed", { size: size(k.bytes) });
+  const handed = (k) => `${title(k)} ${k.received ? cs.date(k.received) : ""}`.trim();
+  /* R92: a knock moved into the record in this visit links the document it made (`inboxpull`'s `bundle`); none on a knock not moved */
+  const became = (k) => {
+    const b = L.became && typeof L.became === "object" ? L.became[k.knock_id] : null;
+    return b && b.id && k.status !== "new" ? `<span class="meta" data-became="1">${cs.w("screen.inbox.row.became", { document: { html: cs.ref("document", b.id, b.title || plain(title(k)), []) } })}</span>` : "";
+  };
   const all = D.list && D.list.state === "ok" && Array.isArray(D.list.value.inbox) ? D.list.value.inbox : [];
   const same = (k) => k.pseudonym ? all.filter((x) => x.knock_id !== k.knock_id && x.pseudonym === k.pseudonym).length : 0;
   /* R12: a read that follows from another's answer (`sourceof` by a pulled knock's capture digest, then `sourcerung`),
@@ -46,7 +56,8 @@ function renderInbox(cs, view) {
      secret proved it (a pseudonym), else "Unknown" */
   const ladder = (at) => `<div class="cs-ladder" data-ladder="ident" role="list" aria-label="${cs.w("screen.inbox.ladder")}">`
     + rungs.map((r, i) => `<span role="listitem" class="${i <= at ? "on" : ""}"${i === at ? ' aria-current="step"' : ""}>${cs.w(`screen.inbox.ladder.${r}`)}</span>`).join("")
-    + `</div><p class="mk-small muted">${cs.w("screen.inbox.ladder.basis")}</p>`;
+    /* R92: each of the five state words beside its own explanation (`screen.inbox.ladder.<rung>.means`), in place of the one run-on basis sentence */
+    + `</div><dl class="mk-small muted" data-ladder-means="1">${rungs.map((r) => `<dt>${cs.w(`screen.inbox.ladder.${r}`)}</dt><dd>${cs.w(`screen.inbox.ladder.${r}.means`)}</dd>`).join("")}</dl>`;
   /* C28 (R7; doorbell R27): what the sender stated of the file, drawn as stated (never a type check), in the list, the detail and the knocker's
      other material alike; nothing, not an empty label, for a knock stating neither */
   const stated = (k) => [k.file_name, k.media_type].filter((x) => typeof x === "string" && x).map((x) => `<span class="mk-data">${cs.esc(x)}</span>`).join(" · ");
@@ -62,7 +73,7 @@ function renderInbox(cs, view) {
      stands in; owed: a row for knocks) */
   const more = D.list && D.list.state === "ok" && D.list.value && D.list.value.truncated === true ? said("screen.held.more", { count: String(all.length) }) : "";
   const list = cs.state(D.list, (v) => `<div class="cs-sheet" role="list">${v.inbox.map((k) => `<div class="cs-row" role="listitem"${k.knock_id === id ? ' aria-current="true"' : ""}>`
-      + `<span><span style="display:inline-flex;align-items:center;max-width:100%">${cs.ref("knock", k.knock_id, plain(handed(k)), card(k))}</span>${facts(k)}</span></div>`).join("")}</div>`,
+      + `<span><span style="display:inline-flex;align-items:center;max-width:100%">${cs.ref("knock", k.knock_id, plain(handed(k)), card(k))}</span>${facts(k)}${became(k)}</span></div>`).join("")}</div>`,
     { empty: "screen.inbox.empty" });
   const one = !id ? "" : cs.state(D.knock, (v) => {
     const k = v.item || {};
@@ -105,7 +116,7 @@ function renderInbox(cs, view) {
     /* C28 (R7, R32): the knock's fingerprint, labelled, shown before the member decides what to do with it */
     const print = typeof k.sha256 === "string" && k.sha256 ? `<p class="mk-small"><span class="meta">${cs.w("screen.document.fingerprint")}</span> <span class="mk-data">${cs.esc(k.sha256)}</span></p>` : "";
     /* C28 (doorbell R27, B20): what the sender stated of the file, drawn as stated (never a type check) */
-    return `<section class="cs-section mk-sec"><h2>${handed(k)}</h2>${facts(k)}${print}${ladder(at)}`
+    return `<section class="cs-section mk-sec"><h2>${handed(k)}</h2>${facts(k)}${became(k)}${print}${ladder(at)}`
       + (k.status === "new" ? `<div class="mk-acts">${cs.act("inboxpull", { tone: "primary" })}</div>`
         /* R32 (1): discarding asks why first (`inbox.discard.why`), the words sent as `reason` */
         + cs.field("cx-why", "inbox.discard.why", { area: true, rec: true, value: L.why || "" })
@@ -133,6 +144,10 @@ function sendPull(view) {
 async function donePull(view, answer, cs) {
   const a = answer || {};
   cs.set("discarded", false);
+  /* R92: the document the knock became (store-door's pull answers `bundle.bundleId`), kept in page memory for its row; bytes the record already held made
+     none (R32 (2) names their holder) */
+  const made = a.bundle && typeof a.bundle === "object" && typeof a.bundle.bundleId === "string" && a.bundle.bundleId ? a.bundle.bundleId : "";
+  if (made && a.existed !== true && typeof view.subject === "string" && view.subject) cs.set("became", { ...((view.ui && view.ui.became) || {}), [view.subject]: { id: made } });
   /* R32 (2) (doorbell R13): `existed` with a `holder` key is bytes the record held; `holder` null when the viewer may not see it */
   if (a.existed === true && Object.prototype.hasOwnProperty.call(a, "holder")) {
     let title = "";

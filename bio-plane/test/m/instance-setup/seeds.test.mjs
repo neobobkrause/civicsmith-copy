@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import { boot, frame, registryOver, providers, storage, applyRecordSchema } from "./fixture.mjs";
 import { recordOf } from "../../../src/record-core/index.mjs";
 import { InstanceSetup } from "../../../src/setup.mjs";
-import { get as heldProfile, list as heldList } from "../../../../jurisdictions/index.mjs";
+import { get as heldProfile, list as heldList, combine as realCombine } from "../../../../jurisdictions/index.mjs";
 import { INSTANCE_SETUP_CHECKS, LEGISTAR_SCHEMES, SEED_MACHINE } from "../../../src/setup.mjs";
 import { word, localize } from "../../../src/setup-words/index.mjs";
 import { BASIS as LEGISTAR_BASIS } from "../../../../legistar-reader/index.mjs";
@@ -386,13 +386,20 @@ test("R50 R51 R52 on the first profile as held (N613), measured: each body the p
   w.record.setSetting("jurisdiction_profiles", [real.id], "test");
   const o = w.m.officesSeed({ by: "admin" });
   /* R50: a body is seeded under the profile's own identifier for it, an office only under its own, never by a name */
+  /* R112 (T53): the package is seeded as its layers, each entry under its own layer's id and index */
+  const layerIds = realCombine([real.id]).view.layers.map((l) => l.id);
+  const cpOf = (x) => heldProfile(x.profile).counterparties[Number(/\d+/.exec(x.entry)[0])];
+  const listed = [...o.seeded, ...o.already, ...o.unseeded].filter((x) => /^counterparties\[\d+\]$/.test(x.entry ?? ""));
+  assert.ok(listed.length && listed.every((x) => layerIds.includes(x.profile)), "every entry is a layer's");
   /* R107 (jurisdictions R119): the package's federal records offices are not seeded and not listed */
-  const own = held.counterparties.filter((c) => c.level !== "federal");
-  assert.deepEqual([...o.seeded, ...o.already, ...o.unseeded].filter((x) => /^counterparties\[\d+\]$/.test(x.entry ?? "") && held.counterparties[Number(/\d+/.exec(x.entry)[0])].level === "federal"), []);
+  assert.deepEqual(listed.filter((x) => cpOf(x).level === "federal" || heldProfile(x.profile).layer.level === "federal"), []);
+  const own = layerIds.flatMap((id) => heldProfile(id).layer.level === "federal" ? []
+    : heldProfile(id).counterparties.filter((c) => c.level !== "federal"));
+  assert.equal(own.length, held.counterparties.filter((c) => c.level !== "federal").length, "the layers hold the package's own entries");
   const withBody = own.filter((c) => c.ids && c.ids.body);
   assert.deepEqual(o.seeded.map((x) => [x.what, x.body, x.ident.id]), withBody.map((c) => ["body", c.body, c.ids.body.id]));
   for (const x of o.seeded) assert.deepEqual(reg.entities.idents.find((i) => i.entity_id === x.entity_id).basis,
-    { system: held.identifier_schemes.find((sc) => sc.scheme === "legistar_body_id").systems[0], row: `${real.id}/${x.entry}/body` });
+    { system: held.identifier_schemes.find((sc) => sc.scheme === "legistar_body_id").systems[0], row: `${x.profile}/${x.entry}/body` });
   const un = o.unseeded.map((x) => `${x.what}:${x.role}`);
   for (const c of own) {
     assert.ok(un.includes(`office:${c.role}`), `${c.role}: no ids.office, so no office`);
@@ -560,4 +567,60 @@ test("notice jurisdictions:40 (R107; jurisdictions R119) officesSeed seeds no fe
   assert.deepEqual(all.filter((x) => x.role === "FOIA Office"), [], "a federal-level office is not seeded");
   assert.deepEqual(whats(r.seeded), whats(alone.seeded), "the profile's own offices seed as before");
   assert.deepEqual(whats(r.unseeded), whats(alone.unseeded));
+});
+
+/* ---- R112 (T53; N1257; K5458): seeding under a layer finds what a package already seeded ---- */
+
+/* The test profile as a package of one layer, the provider's split as `jurisdictions` R114 makes it: before the split the
+   package is a profile of its own (no `layers`); after, `combine` of the package answers its layer in `view.layers`, and
+   the layer holds the same counterparties with its `layer` description. */
+const LAYER = { level: "city", place: "Port Ellery", origin: "civicsmith" };
+const splitOver = (views, layerIds) => ({
+  ...jurisOver(views),
+  layers: () => layerIds().map((id) => ({ id, name: views()[id].name, level: LAYER.level, place: views()[id].layer.place,
+                                          origin: "civicsmith", within: null })),
+  combine: (ids) => ({ ok: true, conflicts: [], view: { layers: ids.length === 1 && ids[0] === PID ? [{ id: "t-ellery" }] : ids.map((id) => ({ id })) } }),
+});
+
+test("R112 after the split, officesSeed on the package's layer writes no line and no entity the package's seeding wrote and answers each already; a line is found by its kind and its two ends under any profile key (control: a new layer's offices are seeded once, each office recording its layer)", async () => {
+  const pkg = profileView();
+  const layer = { ...clone(pkg), id: "t-ellery", layer: { ...LAYER } };
+  let views = { [PID]: pkg, "t-ellery": layer };
+  let layerIds = ["t-ellery"];
+  const reg = await registryOver(() => ({ ...viewOf([pkg]), layers: layerIds.map((id) => ({ id, level: views[id].layer.level, place: views[id].layer.place })) }), []);
+  const prov = providers({ admins: ["admin"] });
+  let juris = jurisOver(() => views);
+  const more = () => ({ jurisdictions: juris, entities: reg.entities, lines: reg.lines });
+  const w = await boot({ prov, now: () => Date.parse("2026-10-06T12:00:00Z"), more: more() });
+  w.record.setSetting("jurisdiction_profiles", [PID], "test");
+  /* before the split: the package seeds under its own id */
+  const before = w.m.officesSeed({ by: "admin" });
+  assert.ok(before.seeded.some((x) => x.what === "post_in") && before.seeded.some((x) => x.what === "part_of"), JSON.stringify(before.counts));
+  assert.deepEqual([...new Set(before.seeded.map((x) => x.profile))], [PID]);
+  const ents = reg.entities.ents.size, lines = reg.lines.lines.length;
+  /* after the split, the same store and the same setting: the package reads as its layer */
+  juris = splitOver(() => views, () => layerIds);
+  const after = await boot({ st: w.st, prov, now: () => Date.parse("2026-10-07T12:00:00Z"), more: more() });
+  const again = after.m.officesSeed({ by: "admin" });
+  assert.deepEqual(again.seeded, [], JSON.stringify(again.seeded));
+  assert.deepEqual([reg.entities.ents.size, reg.lines.lines.length], [ents, lines], "no entity and no line written twice");
+  assert.deepEqual([...new Set(again.already.map((x) => x.profile))], ["t-ellery"], "each answered under the layer's id");
+  for (const what of ["post_in", "part_of", "office", "body"])
+    assert.equal(again.already.filter((x) => x.what === what).length, before.seeded.filter((x) => x.what === what).length, what);
+  /* each already line is the package's own line */
+  const lineIds = (o, what) => o.filter((x) => x.what === what).map((x) => x.line_id).sort();
+  assert.deepEqual(lineIds(again.already, "post_in"), lineIds(before.seeded, "post_in"));
+  /* the ledger's new rows take the layer id */
+  assert.ok(w.st.db.prepare(`SELECT COUNT(*) AS n FROM seed_offices WHERE profile = 't-ellery'`).get().n > 0);
+  /* control: a new county layer with an office of its own is seeded once, the office recording its layer */
+  views = { ...views, "t-marlow": { ...clone(layer), id: "t-marlow", layer: { level: "county", place: "Marlow County", origin: "civicsmith" },
+    counterparties: [{ role: "Recorder", body: "Marlow County Recorder", level: "county", elected: false, basis: "TEST",
+      ids: { office: { scheme: "ellery_office", id: "O-9" }, body: { scheme: "ellery_body", id: "B-9" } } }] } };
+  layerIds = ["t-ellery", "t-marlow"];
+  w.record.setSetting("jurisdiction_profiles", [PID, "t-marlow"], "test");
+  const fresh = after.m.officesSeed({ by: "admin" });
+  assert.deepEqual(whats(fresh.seeded), ["body:Recorder", "office:Recorder", "post_in:Recorder"], JSON.stringify(fresh.unseeded));
+  const office = reg.entities.ents.get(fresh.seeded.find((x) => x.what === "office").entity_id);
+  assert.equal(office.layer, "t-marlow");
+  assert.equal(after.m.officesSeed({ by: "admin" }).seeded.length, 0, "once");
 });

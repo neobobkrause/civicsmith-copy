@@ -3,7 +3,7 @@
    control (K874). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { O, world, call, opCalls, FORGED, aik, cred } from "./harness.mjs";
+import { O, world, call, opCalls, refused, FORGED, aik, cred } from "./harness.mjs";
 import { callers, ok, routesForSessions } from "./door-routes.mjs";
 import { ownerOps as controlPlaneOwnerOps } from "../../../src/store-assembly/owner-ops.mjs";
 import { aiAccountsOps } from "../../../src/ai-accounts/index.mjs";
@@ -40,19 +40,30 @@ const R69_OPS = [...Object.keys(aiAccountsOps(null, new URL("http://do/"), null,
 
 test("R69 (op-declarations R41; K2373, K2488): credentials' project-account ops and ai-use's `aiUseOps` reach their owners' maps for a member's session only, each declared stamp from the session and none from the caller; every machine credential is refused before any store request", async () => {
   await routesForSessions(R69_OPS, (op) => ({ project: "prj-1", owner: "project:prj-1",
-                                              ...(op === "projectkeyset" ? { key: "sk-body-key" } : {}) }));
+                                              }));
 });
 
-test("R69, R30 (credentials R54): a project key passes from the body alone: one in the address never reaches the store's address or body, the body's reaches the owner, and no answer echoes either (negative control: the body's key is passed)", async () => {
-  const { env, S } = world({ answer: (c) => (c.route === "projectkeyset" ? ok({ ok: true, project: "prj-1", account: "api_key" }) : null) });
-  const r = await call(env, { op: "projectkeyset", token: S.ann, method: "POST", params: { key: "sk-in-the-address" },
-                              body: { project: "prj-1", key: "sk-in-the-body" } });
+/* op-grades R57 (PR 866) retired `projectkeyset` with its grade row; a project's key is now a project's AI account, held by
+   ai-accounts' `aiaccountadd` with the key as the body's `secret` (its R40). R69's body-only rule is held on that act. */
+test("R69, R30, R2 (op-grades R57; ai-accounts R40; admission R20): the retired `projectkeyset` is an op with no spec (400 UNKNOWN_OP, nothing asked of the store); a project's key, now `aiaccountadd`'s `secret` for `project:<id>`, passes from the body alone: in the address it is refused CREDENTIAL_IN_ADDRESS before any store request, in the body it reaches the owner with no key in the store's address, and no answer echoes it (negative control: the body's key is passed)", async () => {
+  const { env, S } = world({ answer: (c) => (c.route === "aiaccountadd" ? ok({ ok: true, account_id: "acct-1", owner: "project:prj-1" }) : null) });
+  assert.equal(Object.hasOwn(OPS, "projectkeyset"), false, "projectkeyset has no spec");
+  env.calls.length = 0;
+  refused(await call(env, { op: "projectkeyset", token: S.ann, method: "POST", body: { project: "prj-1", key: "sk-in-the-body" } }),
+          400, "UNKNOWN_OP", "C-69.1");
+  assert.deepEqual(opCalls(env), [], "nothing asked of the store for the retired op");
+  const q = await call(env, { op: "aiaccountadd", token: S.ann, method: "POST", params: { secret: "sk-in-the-address" },
+                              body: { owner: "project:prj-1", provider: "anthropic", plan: "api-team" }, secretIn: "query" });
+  refused(q, 400, "CREDENTIAL_IN_ADDRESS", "C-38.10");
+  assert.equal(q.text.includes("sk-in-the-address"), false);
+  assert.deepEqual(opCalls(env), [], "nothing asked of the store for a key in the address");
+  const r = await call(env, { op: "aiaccountadd", token: S.ann, method: "POST",
+                              body: { owner: "project:prj-1", provider: "anthropic", plan: "api-team", secret: "sk-in-the-body" } });
   assert.equal(r.status, 200, r.text);
-  const [inner] = opCalls(env).filter((c) => c.route === "projectkeyset");
-  assert.equal(Object.hasOwn(inner.params, "key"), false, "no key in the store's address");
-  assert.equal(inner.url.search.includes("sk-in"), false);
-  assert.equal(inner.body.key, "sk-in-the-body", "negative control: the body's key reaches the owner");
-  assert.equal(r.text.includes("sk-in-the-body") || r.text.includes("sk-in-the-address"), false, "no answer carries the key");
+  const [inner] = opCalls(env).filter((c) => c.route === "aiaccountadd");
+  assert.equal(inner.url.search.includes("sk-in"), false, "no key in the store's address");
+  assert.equal(inner.body.secret, "sk-in-the-body", "negative control: the body's key reaches the owner");
+  assert.equal(r.text.includes("sk-in-the-body"), false, "no answer carries the key");
 });
 
 test("R69 (K2373): a stamp the caller sends with an AI-use op is not taken: `by` on `ailimitset` and `viewer` on `ailimits` are the session's (negative control: a body's `owner`, which is no stamp, reaches the owner)", async () => {

@@ -23,7 +23,7 @@
  * on the client, deploy, verify a real run, then remove the old.
  */
 
-import { WIZARD_HTML, updateHtml, publisherFooter, PROFILE_CHOICES, ASSISTANT_OFFER, SECURITY_TOOLS, pageHead, pageMark, around, SLOT,
+import { WIZARD_HTML, wizardHtml, placesBound, REGION_HINTS, REGION_JURISDICTIONS, updateHtml, publisherFooter, PROFILE_CHOICES, ASSISTANT_OFFER, SECURITY_TOOLS, pageHead, pageMark, around, SLOT,
   ASSET_PREFIX, UPDATE_WORDS, versionOk, NO_RELEASE_CHOSEN, NO_RELEASE_BEGIN, existsPanel, removePanel, removedPanel } from "./ui.mjs";
 /* R72: every sentence a key holds is read by key; R66, R71: the way to Cloudflare waits out what waiting can mend. */
 import { word } from "./words.mjs";
@@ -37,10 +37,12 @@ import { CF_API, RELEASE_LATEST, RELEASE_TAGGED, Session, patiently, WAIT_BOUND_
   BINDING_OF, membersPresent, instanceAiOk, SEAL_BINDING, heldBindings, hostOf, planeLimits, reportsBuilds, vpcServiceOk,
   uploadInstall, uploadUpdate, planeInSync, putSecret, rotateSecrets, loadFleet, installFleet, bindMembers, ensureSubdomain,
   verifyInstall, failedLags, verifyServing, confirmContainers, waitForAnswer, currentDeployment, rollBack, withByteLags, logsStep, copyWorkers,
-  locationHintFor, ARMED_SIGNERS } from "./steps/index.mjs";
+  locationHintFor, placementFor, ARMED_SIGNERS } from "./steps/index.mjs";
 /* R84: the account made ready before anything is created. */
 import { scopesStop, pickAccount, accountPanel, accountSentence, storageReady, containersState, containersStop, limitReached, updateNeeds,
-  addressReady, addressPanel, addressSentence, planeTooBig, leaveOutOversize, SUBDOMAIN_RE, CHECK_AGAIN } from "./ready.mjs";
+  addressReady, addressPanel, addressSentence, planeTooBig, leaveOutOversize, SUBDOMAIN_RE, CHECK_AGAIN,
+  /* R86-R90: "Check my account", the list, and the gate; R87: the one function saying whether the short name is free. */
+  slugOk, memberNamesOf, nameTaken, runChecks, checkPanel, CHECK_COOKIE, checkCookie, checkCookieCleared, checkPassed } from "./ready.mjs";
 /* R63: the words of what a copy already holds. */
 import { describeCopy } from "./held.mjs";
 /* R53 (DEC-122 (3); K3100): interface-assets' stylesheet and faces, carried in this bundle and served at ASSET_PREFIX. */
@@ -267,7 +269,6 @@ const html = (s, status = 200, headers = {}) =>
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-const slugOk = (s) => typeof s === "string" && GROUP_SLUG_RE.test(s) && s !== "newgroup";
 
 const readCookie = (req, name) => {
   const raw = req.headers.get("cookie") || "";
@@ -331,6 +332,17 @@ function profilesRefusal(v, mode) {
   if (bad.length) return word("installer.profiles.refused.unknown", { list: bad.map((x) => JSON.stringify(x)).join(", ") });
   if (new Set(v).size !== v.length) return word("installer.profiles.refused.twice");
   return null;
+}
+
+/* R96: the region a /begin names, `{hint}` (one of the regions the page offers) or `{jurisdiction}` (one of the three), never both;
+   the refusal for any other value, or null. An update, a removal and a check of a removal move no room: a region there is refused,
+   since a placement is chosen once, at install (K5441). */
+function regionRefusal(v, mode) {
+  if (v === undefined) return null;
+  if (mode !== "install" && mode !== "check") return localize("installer.begin.region.update", "Where your team's record is kept is chosen once, when it is installed; it can't be changed here.");
+  const ok = v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 1
+    && (REGION_HINTS.includes(v.hint) || REGION_JURISDICTIONS.includes(v.jurisdiction));
+  return ok ? null : localize("installer.begin.region", "That is not a region this installer offers. Choose one from the list.");
 }
 
 const lagList = (v) => `<ul>${v.lags.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>`;
@@ -415,7 +427,19 @@ const jsStr = (s) => jsLit(String(s ?? ""));
 function streamPage(headers, shell, run, again = null) {
   const { readable, writable } = new TransformStream();
   const w = writable.getWriter();
-  const write = (s) => w.write(enc.encode(s));
+  (async () => { await pageRun((s) => w.write(enc.encode(s)), shell, run, again); await w.close(); })();
+  return new Response(readable, { headers: { "content-type": "text/html; charset=utf-8", ...headers } });
+}
+/* R86, R90: the same page, written whole before it is answered, so the answer's headers can carry what the run found (the check's
+   `chk`). `headersOf(result)` answers them from what `run` returned (undefined when the run stopped before its end). */
+async function bufferedPage(headersOf, shell, run, again = null) {
+  const parts = [];
+  const result = await pageRun((s) => { parts.push(s); }, shell, run, again);
+  const headers = new Headers({ "content-type": "text/html; charset=utf-8" });
+  for (const c of headersOf(result)) headers.append("set-cookie", c);
+  return new Response(parts.join(""), { headers });
+}
+async function pageRun(write, shell, run, again) {
   /* R51: the line in progress, which a stop names. */
   const lines = new Map();
   let current = null;
@@ -437,9 +461,10 @@ function streamPage(headers, shell, run, again = null) {
     /* R84: the body a choice begins the run again with: what the run held, and the one thing chosen. */
     body: (extra = {}) => ({ ...(again || {}), ...extra }),
   };
-  (async () => {
+  let result;
+  {
     await write(shell);
-    try { await run(emit); }
+    try { result = await run(emit); }
     catch (e) {
       /* R71 (F6): a permission that expired or was revoked asks for approval again, and the run continues from where it
          stopped (R69). R66: what waiting did not mend is a lasting failure, named, with one action. */
@@ -454,15 +479,15 @@ function streamPage(headers, shell, run, again = null) {
       await emit.fail(word("installer.stopped.unexpected", { said: String(e && e.message || e) }));
     }
     await write("</body></html>");
-    await w.close();
-  })();
-  return new Response(readable, { headers: { "content-type": "text/html; charset=utf-8", ...headers } });
+  }
+  return result;
 }
 
 /* R71 (F6): the one act of the page that asks for approval again: a new `POST /begin` carrying what the run was, after which
    the run continues from where it stopped. It carries the choices the run held, never a credential. */
 function approvePanel(body) {
-  const label = body.mode === "update" ? word("act.bootstrap.label.update") : word("act.bootstrap.label.install");
+  const label = body.mode === "update" ? word("act.bootstrap.label.update") : body.mode === "check" ? word("act.owed_installcheck.label.install")
+    : word("act.bootstrap.label.install");
   return `<div class="ng-acts"><button class="cs-btn" data-tone="primary" data-begin="${esc(JSON.stringify(body))}">${esc(label)}</button></div><p class="err" id="begin-err" role="alert"></p>`;
 }
 
@@ -539,8 +564,6 @@ async function newestVersion() {
   } catch { /* the built-in stands */ }
   return RELEASE_VERSION;
 }
-const memberNamesOf = (release) => [...new Set([...BINDING_OF.keys(), ...RELEASE_MANIFEST.fleet.map((m) => m.member),
-  ...(Array.isArray(release?.man?.fleet) ? release.man.fleet.map((m) => m && m.member).filter((m) => typeof m === "string") : [])])];
 
 /* R74 (N1239; DEC-329 (7); BOB's reading, K3892) — WHAT AN UPDATE STOPS FOR AS FOREIGN. Before any upload, an update lists the
    container applications the account holds on the Durable Object namespaces of the copy's own Workers (the plane's and each
@@ -597,6 +620,42 @@ async function describeHeld(token, acct, inv, memberNames, only = null, onWait =
   return out;
 }
 
+/* ---------------------------------------------------------------- R86: "Check my account" */
+
+/* The check's run: the sign-in, the permission compared (R84 (5)), the account (R84 (6)), then every line of the list at once
+   (`runChecks`), drawn. It takes no lock and keeps nothing; it answers what it found, for the gate's cookie (R90). */
+async function runCheck(emit, code, saved) {
+  const onWait = async (waited) => { if (waited === 0) await emit.wait(word("screen.install.progress.retrying", { minutes: WAIT_BOUND_MINUTES })); };
+  let token, scope;
+  await emit.step("auth", word("installer.step.auth"));
+  try { const ex = await exchange(code, saved.v, onWait); token = new Session(ex.token, onWait); scope = ex.scope; emit.ok("auth"); }
+  catch (e) {
+    emit.no("auth");
+    if (special(e)) throw e;
+    return void emit.fail(word("installer.install.stopped.permission", { said: e.message }));
+  }
+  const lacking = scopesStop(scope, CFG.SCOPES);
+  if (lacking) throw Object.assign(new Error(lacking.said), { approveAgain: true, said: lacking.said });
+  await emit.step("acct", word("installer.step.acct"));
+  let acct;
+  try {
+    const accts = await cf(token, "/accounts");
+    if (!accts?.length) throw new Error(word("installer.account.none"));
+    acct = await accountOf(emit, accts, saved.ac);
+    if (!acct) return;
+  } catch (e) {
+    if (special(e)) throw e;
+    emit.no("acct");
+    return void emit.fail(word("installer.install.stopped.account", { said: e.message }));
+  }
+  await emit.step("check", word("screen.install.check.title"));
+  const result = await runChecks(token, acct, saved.slug, { memberNames: memberNamesOf(null) });
+  if (result.state === "ready") emit.ok("check", word("screen.install.check.allready"));
+  else emit.no("check", word("screen.install.check.closed"));
+  await emit.done(checkPanel(result, emit.body()));
+  return result;
+}
+
 /* ---------------------------------------------------------------- the install */
 
 async function runInstall(emit0, code, saved) {
@@ -616,6 +675,8 @@ async function installRun(emit0, code, saved, guard) {
     if (waited === 0) await emit0.wait(word("screen.install.progress.retrying", { minutes: WAIT_BOUND_MINUTES }));
   };
   const emit = { ...emit0, step: async (id, label) => { if (api) await touchLock(api, saved.lock.id).catch(() => {}); return emit0.step(id, label); } };
+  /* R90: the second line (R84's checks, here) stopping what the first (a passed "Check my account") passed is said to be rare. */
+  const rare = () => (saved.checked ? emit.says(word("screen.install.refused.rare")) : undefined);
 
   await emit.step("auth", word("installer.step.auth"));
   try { const ex = await exchange(code, saved.v, onWait); token = new Session(ex.token, onWait); scope = ex.scope; emit.ok("auth"); }
@@ -653,7 +714,7 @@ async function installRun(emit0, code, saved, guard) {
   await emit.step("ready", word("installer.step.storage"));
   try {
     const stop = await storageReady(token, acct.id);
-    if (stop) return await halt(emit, "ready", stop);
+    if (stop) { if (!stop.approveAgain) await rare(); return await halt(emit, "ready", stop); }
     emit.ok("ready");
   } catch (e) {
     if (special(e)) throw e;
@@ -669,15 +730,15 @@ async function installRun(emit0, code, saved, guard) {
     const inv = await inventory(api, memberNames);
     const ours = inv.planes.find((p) => p.slug === slug);
     const partial = inv.orphans.slugged.has(slug);
-    const taken = new Set([...inv.scripts.keys(), ...inv.planes.map((p) => p.slug), ...inv.orphans.slugged.keys()]);
-    const nametaken = () => { const free = freeName(slug, taken, slugOk);
+    /* R70 (F7), R87: the short name free, judged by the one function the check's `name` line calls too: a Worker by this name that
+       is not a Civicsmith's (the lookup, R5: one that fails is a refusal, caught below), or (R64) a name a copy already holds. */
+    const taken = await nameTaken(token, acct.id, inv, slug, alongside);
+    if (taken) {
       emit.no("fresh");
-      return emit.fail(word("screen.install.stopped.nametaken", { name: slug }), free ? word("screen.install.stopped.nametaken.do", { free }) : ""); };
-    /* A Worker by this name that is not a Civicsmith's (the lookup, R5: one that fails is a refusal, caught below). */
-    if (!ours && (inv.scripts.has(slug) || await scriptExists(token, acct.id, slug))) return nametaken();
-    if (ours && ours.finished) {
-      if (alongside) return nametaken();                                 /* R64: a name a copy already holds */
-    } else if (ours || partial) resumed = true;                          /* R69: begun here under this name, not finished */
+      await rare();
+      return emit.fail(word("screen.install.stopped.nametaken", { name: slug }), taken.free ? word("screen.install.stopped.nametaken.do", { free: taken.free }) : "");
+    }
+    if (!(ours && ours.finished) && (ours || partial)) resumed = true;  /* R69: begun here under this name, not finished */
     if (!resumed && !alongside && (inv.planes.length || inv.orphans.legacy.length || inv.orphans.slugged.size)) {
       /* R62: nothing is created or changed; the page offers the three ways on. */
       emit.no("fresh", word("screen.install.stopped.exists"));
@@ -702,6 +763,7 @@ async function installRun(emit0, code, saved, guard) {
   catch (e) { if (special(e)) throw e; planAnswer = { plan: "unknown", detail: e.message }; }
   if (planAnswer.plan === "free") {
     emit.no("plan");
+    await rare();
     await emit.fail(word("screen.install.stopped.plan") + " " + word("installer.install.stopped.plan.why"), word("screen.install.stopped.plan.do"));
     return emit.retry(word("screen.install.stopped.plan.done"));
   }
@@ -723,7 +785,7 @@ async function installRun(emit0, code, saved, guard) {
       async () => { const limit = await limitReached(api);
         return limit ? { said: word("screen.install.stopped.limit", { limit }), d: word("screen.install.stopped.limit.do"), retry: CHECK_AGAIN() } : null; },
     ];
-    for (const check of stops) { const stop = await check(); if (stop) return await halt(emit, "room", stop); }
+    for (const check of stops) { const stop = await check(); if (stop) { if (!stop.approveAgain) await rare(); return await halt(emit, "room", stop); } }
     /* (4) last, because it is the one check that writes: the name the founder chose with a click is registered before any upload. */
     const address = await addressReady(token, acct.id, slug, saved.sd);
     if (address.ask) {
@@ -770,7 +832,9 @@ async function installRun(emit0, code, saved, guard) {
      plain terms. */
   await emit.step("r2", word("installer.step.storage"));
   const completed = [];
-  try { const there = await ensureBuckets(token, acct.id, names); if (there.length) completed.push(word("installer.partial.what.storage")); emit.ok("r2", word("screen.install.progress.storage")); }
+  /* R96 (installer-steps R47): a copy kept in a jurisdiction has its buckets made in it, before the room is created. */
+  const inJurisdiction = typeof saved.sj === "string" && saved.sj ? { jurisdiction: saved.sj } : {};
+  try { const there = await ensureBuckets(token, acct.id, names, inJurisdiction); if (there.length) completed.push(word("installer.partial.what.storage")); emit.ok("r2", word("screen.install.progress.storage")); }
   catch (e) {
     if (special(e)) throw e;
     emit.no("r2");
@@ -788,7 +852,9 @@ async function installRun(emit0, code, saved, guard) {
   if (present.length) completed.push(present.length === 1 ? word("installer.partial.what.programs.one") : word("installer.partial.what.programs.other", { n: present.length }));
   const profiles = Array.isArray(saved.p) && !profilesRefusal(saved.p, "install") ? saved.p : [];
   /* R83: the place /begin read from the founder's request, handed to the creating upload (an upload of a script that exists restates the one it holds). */
-  const storeLocation = typeof saved.sl === "string" && saved.sl ? saved.sl : null;
+  /* R96: or the jurisdiction the founder chose to keep the record in, never both (installer-steps R46). */
+  const storeJurisdiction = typeof saved.sj === "string" && saved.sj ? saved.sj : null;
+  const storeLocation = !storeJurisdiction && typeof saved.sl === "string" && saved.sl ? saved.sl : null;
   let selfRefused = false;
   await emit.step("install", word("screen.install.progress.placing"));
   /* R67, R69: the plane is uploaded unless the account already holds exactly this release's deployed state (its bytes, its
@@ -807,7 +873,7 @@ async function installRun(emit0, code, saved, guard) {
       await uploadUpdate(token, acct.id, slug, true, release, { names, members: present, secrets, profiles, note });
       emit.ok("install");
     } else {
-      await uploadInstall(token, acct.id, slug, secrets, release, { members: present, profiles, names, note, storeLocation });
+      await uploadInstall(token, acct.id, slug, secrets, release, { members: present, profiles, names, note, storeLocation, storeJurisdiction });
       emit.ok("install");
     }
   } catch (e) {
@@ -823,7 +889,7 @@ async function installRun(emit0, code, saved, guard) {
     let degraded = false;
     try {
       if (held) await uploadUpdate(token, acct.id, slug, true, release, { names, members: present, secrets, profiles, noSelf: true, note });
-      else await uploadInstall(token, acct.id, slug, secrets, release, { noSelf: true, members: present, profiles, names, note, storeLocation });
+      else await uploadInstall(token, acct.id, slug, secrets, release, { noSelf: true, members: present, profiles, names, note, storeLocation, storeJurisdiction });
       degraded = true;
     } catch (e2) { if (special(e2)) throw e2; /* the original refusal is the one worth reporting */ }
     selfRefused = degraded;
@@ -1409,7 +1475,8 @@ export default {
     const url = new URL(req.url);
 
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === ""))
-      return html(WIZARD_HTML);
+      /* R96: the region the founder's own request is near, shown and preselected; none when the request says none (R83). */
+      return html(wizardHtml(req.cf && typeof req.cf === "object" ? locationHintFor(req.cf) : null));
 
     /* R55: `version` alone is read from the address, and only in the form a release's version has; nothing else, and no
        credential, is read from it. Any other value draws the page that says no release was chosen. */
@@ -1427,7 +1494,7 @@ export default {
        only ever travels back to this same origin. */
     if (req.method === "POST" && url.pathname === "/begin") {
       const body = await req.json().catch(() => ({}));
-      const mode = ["update", "remove", "removeconfirm"].includes(body.mode) ? body.mode : "install";
+      const mode = ["update", "remove", "removeconfirm", "check"].includes(body.mode) ? body.mode : "install";
       /* R2: a slug is a string in the grammar; a number or anything else is refused, never coerced into one. */
       const slug = typeof body.slug === "string" ? body.slug.trim() : "";
       if (!slugOk(slug))
@@ -1454,7 +1521,13 @@ export default {
       /* R21: the chosen jurisdiction profiles (install only), refused by name when not offered, never silently dropped. */
       const profilesWhy = profilesRefusal(body.profiles, mode);
       if (profilesWhy) return json({ ok: false, error: profilesWhy }, 400);
-      const p = Array.isArray(body.profiles) && body.profiles.length ? body.profiles : null;
+      /* R94: the places chosen, with the layers each sits within added, in order; none chosen (the federal layer removed) binds none. */
+      const bound = Array.isArray(body.profiles) ? placesBound(body.profiles) : [];
+      const p = bound.length ? bound : null;
+      /* R96: the region chosen, refused by name when it is not one offered. */
+      const regionWhy = regionRefusal(body.region, mode);
+      if (regionWhy) return json({ ok: false, error: regionWhy }, 400);
+      const rg = body.region === undefined ? null : body.region.hint ? { hint: body.region.hint } : { jurisdiction: body.region.jurisdiction };
       /* R45 (T36): the Workers VPC service the operator names for a tool reached through a tunnel, optional on the install
          and the update alike; a value present but not a service id is refused by name, never dropped. */
       const vpc = typeof body.securityVpc === "string" ? body.securityVpc.trim().toLowerCase() : "";
@@ -1468,15 +1541,21 @@ export default {
       const sd = typeof body.subdomain === "string" ? body.subdomain.trim().toLowerCase() : "";
       if (typeof body.subdomain === "string" && body.subdomain.trim() && !SUBDOMAIN_RE.test(sd))
         return json({ ok: false, error: word("installer.begin.subdomain") }, 400);
+      /* R90: an install begins only after a passed "Check my account" for the same short name, at most 30 minutes old; refused
+         by name, before any sign-in, and nothing is created. An update, a removal and a check need none. */
+      if (mode === "install" && !checkPassed(readCookie(req, CHECK_COOKIE), slug))
+        return json({ ok: false, code: "CHECK_NOT_PASSED", error: word("refusal.CHECK_NOT_PASSED") }, 400);
       /* R36, R37 (T36): nothing else /begin is sent is kept: no field carries a Claude credential, and the install takes no
          choice about the assistant (an `assistant` field is taken nowhere). */
       /* R83 (G83; K4746, K4752): the founder's own request says where on the edge they are (`cf`, set by the platform); the hint
          `installer-steps` answers from it rides the cookie to the install, which hands it to the plane's creating upload so the
          team's room is made near the team. An install only (an update restates the place the copy holds and never moves it); no
          `cf` or no hint writes nothing, and the install is then the install it was. */
-      const sl = mode === "install" && req.cf && typeof req.cf === "object" ? locationHintFor(req.cf) : null;
+      /* R96 (installer-steps R46): a region picked overrides that default, and a jurisdiction carries no hint at all (placementFor). */
+      const place = mode === "install" ? placementFor({ ...(rg || {}), cf: req.cf && typeof req.cf === "object" ? req.cf : undefined }) : {};
+      const sl = place.hint ?? null, sj = place.jurisdiction ?? null;
       const cookie = b64url(enc.encode(JSON.stringify({ v, s, slug, mode, t: Date.now(), ...(ai ? { ai } : {}), ...(p ? { p } : {}),
-        ...(typeof sl === "string" && sl ? { sl } : {}), ...(ac ? { ac } : {}), ...(sd ? { sd } : {}),
+        ...(typeof sl === "string" && sl ? { sl } : {}), ...(sj ? { sj } : {}), ...(rg ? { rg } : {}), ...(ac ? { ac } : {}), ...(sd ? { sd } : {}),
         ...(vpc ? { vpc } : {}), ...(mode === "update" ? { r: chosen } : {}),
         ...(mode === "install" && body.alongside === true ? { al: 1 } : {}), ...(mode === "removeconfirm" ? { ty: body.typed } : {}),
         ...(typeof body.lock === "string" && /^[0-9A-Za-z_-]{6,64}$/.test(body.lock) ? { lk: body.lock } : {}) })));
@@ -1515,13 +1594,21 @@ export default {
 
       const title = saved.mode === "update" ? UPDATE_WORDS.progressTitle
         : saved.mode === "remove" ? word("screen.install.remove.title") : saved.mode === "removeconfirm" ? word("installer.remove.running.title")
-        : word("screen.install.progress.title");
+        : saved.mode === "check" ? word("screen.install.check.title") : word("screen.install.progress.title");
+      /* R90: whether this browser holds a passed check for the install's short name (the install's stops then say they are rare). */
+      saved.checked = saved.mode === "install" && checkPassed(readCookie(req, CHECK_COOKIE), saved.slug);
       /* R69, R71: this run's own place on the account's lock, and the run it continues when the founder approved again. */
       saved.lock = { id: rand(8), again: typeof saved.lk === "string" && /^[0-9A-Za-z_-]{6,64}$/.test(saved.lk) ? saved.lk : null };
       /* R71 (F6): what a new approval begins again, never a credential. */
       const again = { slug: saved.slug, mode: saved.mode, lock: saved.lock.id, ...(saved.ac ? { account: saved.ac } : {}), ...(saved.sd ? { subdomain: saved.sd } : {}), ...(saved.mode === "update" ? { version: saved.r } : {}),
         ...(saved.al === 1 ? { alongside: true } : {}), ...(saved.p ? { profiles: saved.p } : {}), ...(saved.vpc ? { securityVpc: saved.vpc } : {}),
+        ...(saved.rg && (saved.mode === "install" || saved.mode === "check") ? { region: saved.rg } : {}),
         ...(saved.mode === "removeconfirm" ? { typed: saved.ty } : {}) };
+      /* R86, R90: a check is answered whole, so its answer sets the gate's cookie when every line is ready (and clears an earlier
+         one when not); the run keeps nothing else. */
+      if (saved.mode === "check")
+        return bufferedPage((r) => [clear["set-cookie"], ...(r ? [r.state === "ready" ? checkCookie(saved.slug) : checkCookieCleared()] : [])],
+          progressShell(title, saved.slug), (emit) => runCheck(emit, code, saved), again);
       return streamPage(clear, progressShell(title, saved.slug, saved.mode === "update" ? `/update?version=${saved.r}` : null),
         (emit) => saved.mode === "update" ? runUpdate(emit, code, saved)
           : saved.mode === "remove" ? runRemoveView(emit, code, saved)

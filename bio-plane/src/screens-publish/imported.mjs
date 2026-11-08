@@ -162,6 +162,11 @@ export const IMPORTED = Object.freeze({
     {
       // R7: "Import a case": the case file the member chose, its bytes sent as one part.
       op: "caseimport", label: "act.caseimport.label.imported", rereads: [],
+      // R103: a file that is not a case file is followed by each way it departs from the format, as case-import names them (data)
+      refusals: { IMPORT_NOT_A_CASE_FILE: function (r, cs) {
+        const dep = (Array.isArray(r.departures) ? r.departures : []).filter(function (d) { return typeof d === "string" && d.trim(); });
+        return cs.w("refusal.IMPORT_NOT_A_CASE_FILE") + dep.map(function (d) { return '<br><span class="rec" data-departure>' + cs.esc(d.trim()) + "</span>"; }).join("");
+      } },
       send: async function (view, el, cs) {
         const f = cs.file("im-file");
         if (!f) return { refuse: "screen.imported.file.needed" };

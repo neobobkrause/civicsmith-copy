@@ -25,6 +25,8 @@ import { ARCHIVE_SCREEN } from "./archive.mjs";
 import { ABOUT_KNOCKER_SCREEN } from "./about-knocker.mjs";
 import { LEADS_SCREEN } from "./leads.mjs";
 import { WATCHING_SCREEN } from "./watching.mjs";
+/* the parts screens-intake-rounds builds for the T53 lines, which these screens draw: their keys join the screen's words (R26) */
+import { PART_KEYS } from "../screens-intake-rounds/index.mjs";
 
 /* R36 (fix round 10, G7): the sentences reading-pipeline holds for a file kind it does not read (`UNSUPPORTED_FORMAT {kind}`), and its general one with the kind filled */
 const UNSUPPORTED = ["rtf", "email", "legacy_word", "legacy_excel", "legacy_powerpoint", "legacy_office", "tiff", "gif", "webp", "heic", "avif", "bmp", "jp2", "ico", "kind"]
@@ -89,6 +91,8 @@ export const SCREEN_KEYS = Object.freeze({
     "refusal.NO_SUCH_SESSION", "project.notmember", "refusal.PROMOTE_NOT_A_PARTICIPANT",
     /* G110 (fix round 8): a skipped supporting file is told by its reason's code: the count line and one sentence for each kind of reason */
     "screen.capture.supporting.kept", "screen.capture.supporting.cap", "screen.capture.supporting.toolarge", "screen.capture.supporting.unavailable",
+    "screen.capture.refusal.toolarge.size", "screen.capture.refusal.toolarge.archive", "screen.capture.refusal.toolarge.nothing_read", "screen.capture.refusal.toolarge.part", "screen.capture.file.parts.cancelled", "act.captureuploadabort.label.capture",
+    "screen.capture.refusal.toolarge.register",
   ]),
   held: Object.freeze([
     "act.heldcaptures.label.held", "act.heldrestore.label.held", "act.heldsetaside.label.held",
@@ -128,6 +132,7 @@ export const SCREEN_KEYS = Object.freeze({
     "state.undetermined",
   ]),
   "open-file": Object.freeze([
+    ...PART_KEYS.leftOutLine,
     "act.deepercheck.label.open-file", "act.openoriginal.label.open-file", "act.openwithwarning.label.open-file",
     "act.releasescanhold.label.open-file", "act.safeview.label.open-file", "mark.origin.machine.means",
     "mark.origin.machine.name", "screen.open-file.checks", "screen.open-file.checks.none", "screen.open-file.closed",
@@ -224,6 +229,7 @@ export const SCREEN_KEYS = Object.freeze({
     "inbox.discard.why", "reference.label", "screen.inbox.alreadyheld", "screen.inbox.alreadyheld.other",
     "screen.inbox.same.date", "shell.card.document", "screen.document.fingerprint", "act.inboxresolve.label.inbox.putback", "shell.reason", "screen.inbox.putback.done", "act.knocksof.label.inbox", "screen.inbox.knocker.heading", "screen.inbox.knocker.same1", "screen.inbox.knocker.same2",
     "screen.inbox.knocker.help1", "screen.inbox.knocker.help2", "screen.inbox.source.line", "screen.about-knocker.name", "size.kb", "size.mb", "size.small",
+    "screen.inbox.row.named", "screen.inbox.row.noted", "screen.inbox.row.unnamed", "screen.inbox.row.became", "screen.inbox.ladder.unknown.means", "screen.inbox.ladder.same.means", "screen.inbox.ladder.partly.means", "screen.inbox.ladder.group.means", "screen.inbox.ladder.public.means",
   ]),
 });
 

@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { standard, WORDS } from "../ai-use/fixture.mjs";
-import { fresh, reader, ofKind, sentences, texts, byId, dayOn } from "./fixture.mjs";
+import { NONE, fresh, reader, ofKind, sentences, texts, byId, dayOn } from "./fixture.mjs";
 import { NOTICE_KINDS, NOTICED_LABEL, ASK_LABEL, EXPLORE_APPROVE, ACCOUNT_ITEMS_MAX } from "../../../src/notice-producers/index.mjs";
 
 const AT = "2026-10-09T12:00:00Z";
@@ -120,7 +120,7 @@ test("R16 a limit's {date} is the profile's local day reached_at falls on, never
   const entry = (x) => ({ key: "ai-limit:group:ask:calls:day:2026-10-09", owner: "group", scope: "ask", unit: "calls", period: "day",
     period_start: "2026-10-09", reached_at: at, ...x });
   const run = (reached, view = () => ({ time_zone: { value: "America/Los_Angeles" } })) => ofKind(reader(fresh(w.ctx, { membership: w.m, aiAccounts: w.a, view,
-    aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached }) } })).read("second", { now: AT }), "ai-limit-reached");
+    aiUse: { ...NONE.aiUse, exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached }) } })).read("second", { now: AT }), "ai-limit-reached");
   assert.ok(run([entry()])[0].detail.includes(` on ${dayOn(9, "october")}.`), "the local day in the profile's zone");
   assert.ok(run([entry()], UTC)[0].detail.includes(` on ${dayOn(10, "october")}.`), "negative control: in UTC it is the 10th");
   for (const use of ["ask", "draft", "run", "standing", "transcribe", "explore", "enquire", "read", "account"]) {
@@ -167,7 +167,7 @@ test("R16 one Ask item per entry of ai-use.exploreAsksPending, keyed by its own 
   w.u.exploreApprove({ owner: "project:P", day: "2026-10-09", by: "ann", at: AT });
   assert.deepEqual(items("ann", "explore-ask"), [], "approved: no longer asked");
   /* the group's and a member's own account (ai-use's entries, as it answers them) */
-  const asks = (owner) => ofKind(reader(fresh(w.ctx, { membership: w.m, aiAccounts: w.a, view: UTC, aiUse: { limitsReached: () => ({ ok: true, reached: [] }),
+  const asks = (owner) => ofKind(reader(fresh(w.ctx, { membership: w.m, aiAccounts: w.a, view: UTC, aiUse: { ...NONE.aiUse, limitsReached: () => ({ ok: true, reached: [] }),
     exploreAsksPending: () => ({ ok: true, asks: [{ key: `explore-ask:${owner}:2026-10-09`, owner, day: "2026-10-09", what: ["Q?"], asked_at: AT }] }) } }))
     .read("ann", { now: AT }), "explore-ask")[0];
   assert.equal(asks("group").detail, say("ai.queue.exploreask", { scope: say("ai.scope.group"), what: "Q?", account: say("ai.account.group.inline") }));
@@ -188,8 +188,8 @@ test("F1 (T53; K5571 (2)) project-account-suspended is retired: ai-accounts R13'
   assert.equal("project-account-suspended" in NOTICE_KINDS, false, "the kind is no longer raised here");
   /* control: an ai-accounts that still answered the retired read is not read */
   let asked = 0;
-  const old = reader(fresh(w.ctx, { membership: w.m, aiUse: w.u, view: UTC, aiAccounts: { projectAccountsSuspended: () => {
-    asked += 1; return [{ project: "S", since: "2026-10-01T00:00:00Z", key: "S|cy|2026-10-01T00:00:00Z" }]; } } })).read("cy", { now: AT });
+  const old = reader(fresh(w.ctx, { membership: w.m, aiUse: w.u, view: UTC, aiAccounts: Object.assign(Object.create(NONE.aiAccounts), { projectAccountsSuspended: () => {
+    asked += 1; return [{ project: "S", since: "2026-10-01T00:00:00Z", key: "S|cy|2026-10-01T00:00:00Z" }]; } }) })).read("cy", { now: AT });
   assert.equal(asked, 0);
   assert.deepEqual(ofKind(old, "project-account-suspended"), []);
   assert.deepEqual(old.facts.failed, []);
@@ -199,12 +199,12 @@ test("R16 R1 a read that does not answer is its provider's failure, named in fac
   const { w } = await setup();
   const run = (deps) => reader(fresh(w.ctx, { membership: w.m, aiUse: w.u, aiAccounts: w.a, view: UTC, ...deps })).read("ann", { now: AT });
   const boom = () => { throw new Error("down"); };
-  for (const [deps, name] of [[{ aiUse: { exploreAsksPending: () => ({ ok: true, asks: [], unreadable: true }), limitsReached: () => ({ ok: true, reached: [] }) } }, "ai-use"],
-                              [{ aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: boom } }, "ai-use"]])
+  for (const [deps, name] of [[{ aiUse: { ...NONE.aiUse, exploreAsksPending: () => ({ ok: true, asks: [], unreadable: true }), limitsReached: () => ({ ok: true, reached: [] }) } }, "ai-use"],
+                              [{ aiUse: { ...NONE.aiUse, exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: boom } }, "ai-use"]])
     assert.deepEqual(run(deps).facts.failed, [name], name);
   const many = Array.from({ length: ACCOUNT_ITEMS_MAX + 1 }, (_, i) => ({ key: `ai-limit:member:ann:ask:calls:day:k${i}`, owner: "member:ann",
     scope: "ask", unit: "calls", period: "day", period_start: "2026-10-09", reached_at: AT }));
-  const r = run({ aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached: many }) } });
+  const r = run({ aiUse: { ...NONE.aiUse, exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached: many }) } });
   assert.equal(ofKind(r, "ai-limit-reached").length, ACCOUNT_ITEMS_MAX);
   assert.deepEqual(r.facts.ai_limit, { bound: ACCOUNT_ITEMS_MAX, truncated: true });
   assert.deepEqual(run({}).facts.ai_limit, { bound: ACCOUNT_ITEMS_MAX, truncated: false }, "negative control: within the bound");
@@ -222,7 +222,7 @@ test("R16 (T44) {date}: reached_at on 7 October local reads \"7 October\" (date.
   const LA = () => ({ time_zone: { value: "America/Los_Angeles" } });
   const entry = (x) => ({ key: "ai-limit:group:ask:calls:day:k", owner: "group", scope: "ask", unit: "calls", period: "day", ...x });
   const run = (reached, now, view = LA) => ofKind(reader(fresh(w.ctx, { membership: w.m, aiAccounts: w.a, view,
-    aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached }) } })).read("second", { now }), "ai-limit-reached")[0];
+    aiUse: { ...NONE.aiUse, exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached }) } })).read("second", { now }), "ai-limit-reached")[0];
   const fills = (date, when = say("ai.until.day")) => ({ account: say("ai.account.group"), period: say("ai.period.day"), use: say("ai.use.ask.inline"), date, when });
   /* 7 October, 08:00 local */
   const seventh = run([entry({ period_start: "2026-10-07", reached_at: "2026-10-07T15:00:00Z" })], "2026-10-07T20:00:00Z");

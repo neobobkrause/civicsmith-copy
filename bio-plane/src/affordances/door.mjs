@@ -16,6 +16,7 @@
  * TOTAL: every op the control plane declares mutating carries a rung or is named with the GROUND on which it has none
  * (R12, R24), so `rung: null` is always accompanied by a non-null `rung_absence`. */
 
+import { DIMENSION_ONWARD } from "./onward.mjs";
 import { ACTS, CAPTURE_ACTS, PER_ITEM_ACTS, PER_ITEM_MAX, deriveActs, decorate, vocabulariesFor } from "../affordances.mjs";
 /* K1601 (SKILLS #12 J1 (1)): `answers`' check family, which skills' `ask` layer carries in the pack. */
 import { ANSWERS_CHECKS } from "../answers/index.mjs";
@@ -69,6 +70,9 @@ export function affordancesAnswer({ target = null, facts = null, kinds, gate, sc
     /* R49 (N726; DEC-174 (3), DEC-99): what each act does, one explanation per op, as `ACT_HELP` (R48), the very object,
        so every surface reads it from one place and holds no copy (R21); a targeted answer does not carry it. */
     act_help: ACT_HELP,
+    /* R73 (T53; DEC-410, DEC-447): what "Follow from here" offers on each kind of item, `DIMENSION_ONWARD` itself, so no surface
+       keeps a copy (R21); a targeted answer does not carry it. */
+    dimension_onward: DIMENSION_ONWARD,
   };
   if (!facts || facts.ok !== true) return { ok: false, ...facts };
   return { target: facts.target, object_type: facts.object_type, current_state: facts.current_state,

@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { openWorld, members, idle, html, text, main, btn, fill, press, ok, refused, rawKeys, word, hasWord, says, saysIn, dayOf } from "./page.mjs";
+import { openWorld, members, idle, html, text, main, btn, fill, press, ok, refused, rawKeys, word, hasWord, says, saysIn, dayOf, teamAccountOn } from "./page.mjs";
 import { SCREENS } from "../../../src/screens-intake/index.mjs";
 import { makeZip } from "../../make-zip.mjs";
 
@@ -282,13 +282,10 @@ test("R4 release sends nothing with a field missing, or a field outside ratifica
 });
 
 /* The team's Claude account, by an administrator's real acts (the recipes' own steps), so that the assistant is reachable for the members: her password again,
-   the team's key set and switched on, its notice read. The key is a stand-in no call ever sends. */
+   the team's account held and switched on (`teamAccountOn`; T53 retired the group key's ops). The key is a stand-in no call ever sends. */
 const assistant = async (t) => {
   const ada = await t.world.signIn("ada", { admin: true });
-  await ada.act("reauth", { body: { password: ada.password } });
-  await ada.act("groupkeyset", { body: { key: "sk-ant-api03-" + "w".repeat(40) } });
-  await ada.act("groupkeyswitch", { body: { on: true } });
-  await ada.act("groupkeynoticeseen", { body: {} });
+  await teamAccountOn(t.world, ada);
   return ada;
 };
 const asideOf = async (as, ids) => rowsOf(as, ids, { state: "set_aside" });
@@ -296,7 +293,7 @@ const asideOf = async (as, ids) => rowsOf(as, ids, { state: "set_aside" });
 test("R4 R13 heldsetaside: one reason (the shell's reason field, no writing help) for every picked row; they move to the Set aside list", async () => {
   const t = await desk(SPEC, { ai: true });
   await assistant(t);
-  assert.deepEqual([(await t.mai.read("assistantstate")).on, (await t.mai.read("groupkeystate")).on], [true, true], "the assistant is reachable for her");
+  assert.equal((await t.mai.read("assistantstate")).on, true, "the assistant is on for her");
   const pothole = await t.world.recipes.project(t.mai, "Pothole repairs");
   /* a document a question of hers waits on, and one that nothing waits on */
   const budget = await asked(t, t.mai, pothole, { title: "Were the transfers authorised?", pageTitle: "City budget" });
@@ -398,15 +395,15 @@ test("R4 heldcaptures (\"See held captures\") asks the list again", async () => 
 });
 
 test("R23 a held row's refusal is drawn by its words, never the catalogue's text; a crucial capture is still refused, in words", async () => {
-  /* the owner's own refusals: a document declaring itself crucial (CRUCIAL_IN_BATCH), a member's own words with none of what a document needs (ENTRY_REQUIREMENTS), and a
-     document a contradiction touches (CONTESTED_IN_BATCH, made by an administrator's run) */
+  /* the owner's own refusals: a document declaring itself crucial (CRUCIAL_IN_BATCH) and a document a contradiction touches (CONTESTED_IN_BATCH, made by an
+     administrator's run). A member's own words (`testify`) are now eligible (R85's owners: a testimony is held as ready to vouch), so no real act makes an
+     ENTRY_REQUIREMENTS row any more and none is scripted (fix round 10, K5245) */
   const t = await desk({ mai: CAN }, { ai: true });
   t.ada = await t.world.signIn("ada", { admin: true });
   const crucial = await hold(t, t.mai, { name: "Lease amendment", criticality: "crucial" });
-  const incomplete = (await t.mai.act("testify", { body: { words: "I saw the pothole.", observedAt: "2026-10-04T09:10:00Z" } })).bundle_id;
   const contested = (await t.world.recipes.contradiction(t.ada)).documents[0];
-  const rows = await rowsOf(t.ada, [crucial.bundle, incomplete, contested]);
-  assert.deepEqual([rows[crucial.bundle].class, rows[incomplete].class, rows[contested].class], ["CRUCIAL_IN_BATCH", "ENTRY_REQUIREMENTS", "CONTESTED_IN_BATCH"]);
+  const rows = await rowsOf(t.ada, [crucial.bundle, contested]);
+  assert.deepEqual([rows[crucial.bundle].class, rows[contested].class], ["CRUCIAL_IN_BATCH", "CONTESTED_IN_BATCH"]);
   const CAT = rows[crucial.bundle].reason;
   assert.ok(CAT && CAT !== word("screen.held.ineligible.crucial"), "the owner's catalogue sentence is its own");
   /* a class the page does not know and a refusal naming no class are not made by the owner: the two scripted rows of this test are removed (fix round 10, K5245) */
@@ -415,7 +412,7 @@ test("R23 a held row's refusal is drawn by its words, never the catalogue's text
   assert.ok(!text(p).includes(CAT), "no row draws the catalogue's text");
   assert.ok(saysIn(row(crucial.bundle), "screen.held.ineligible.crucial"));
   assert.ok(saysIn(row(contested), "screen.held.ineligible.contested"));
-  for (const id of [crucial.bundle, incomplete, contested]) {
+  for (const id of [crucial.bundle, contested]) {
     assert.ok(row(id).querySelector('[data-gap="refused"]'), id);
     assert.ok(saysIn(row(id), "screen.held.ineligible.alone"), id);
   }
@@ -431,15 +428,7 @@ test("R23 a held row's refusal is drawn by its words, never the catalogue's text
   assert.ok(saysIn(r.slot(), "refusal.CRUCIAL_IN_BATCH", { count: refused1.offenders.length }), r.slot().textContent);
   assert.ok(!r.slot().textContent.includes("{count}"));
   assert.ok(!r.slot().textContent.includes(CAT));
-  /* ENTRY_REQUIREMENTS names each offender with what it lacks */
-  const e = await everyone(await open(t, "/app/held", t.mai));
-  await pick(e, incomplete);
-  fill(e, { "ch-ack": "a", "ch-mitigation": "b" });
-  const s = await press(e, "release");
-  const lacking = (await t.world.door({ url: `/api/?op=release&handle=${encodeURIComponent(e.byOp("release")[0].query.handle)}&acknowledgment=a&mitigation=b`, init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" } }, t.mai)).json.result;
-  assert.equal(lacking.reason, "ENTRY_REQUIREMENTS");
-  const named = lacking.offenders.map((o) => `${o.id} (${o.missing.join(", ")})`).join("; ");
-  assert.ok(saysIn(s.slot(), "refusal.ENTRY_REQUIREMENTS", { offenders: named }), s.slot().textContent);
+  /* ENTRY_REQUIREMENTS: no real act makes a held document that lacks what `verified` needs (a testimony now meets it), so its drawing is R85's, owed */
   /* control: any other code is the shell's (R13): the answer's own words. The owner refuses a release with no other code from this page: the one scripted answer */
   const o = await open(t, "/app/held", t.mai, { plane: { release: refused("SOMETHING_ELSE", "The owner's own words.") } });
   await pick(o, crucial.bundle);

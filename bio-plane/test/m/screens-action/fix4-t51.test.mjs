@@ -129,20 +129,23 @@ const REQUEST = `/app/request/${ACTION_ID}`;
 const said = (p, key, vars) => assert.ok(text(p).includes(W(key, vars)), key);
 const unsaid = (p, key, vars) => assert.ok(!text(p).includes(W(key, vars)), key);
 const optionTexts = (p, id) => p.doc.getElementById(id).querySelectorAll("option").map((o) => o.textContent.replace(/\s+/g, " ").trim());
+/* R60 (T53): the request's laws are boxes, each labelled with its level, name, citation and window */
+const boxTexts = (p, id) => p.doc.getElementById(id).querySelectorAll("label").map((o) => o.textContent.replace(/\s+/g, " ").trim());
 
 test("R4, R9 (C64-law): the law picker lists the profile's records laws, each with its own first-request window, never the deadlines; the federal law goes with its level", async () => {
   const p = await open(REQUEST, fedPlane({ actionlaws: ok({}) }));
-  const texts = optionTexts(p, "req-law");
-  assert.deepEqual(texts, [
+  const texts = boxTexts(p, "req-law");
+  const tail = (t) => t.split(" · ").slice(-2).join(" · ");
+  assert.deepEqual(texts.map(tail), [
     `Gov. Code § 7922.535(b) · ${W("screen.request.window.calendar", { n: "10" })}`,
     `Mun. Code § 2.20.230 · ${W("screen.request.window.business", { n: "3" })}`,
     `${FED} · ${W("screen.request.window.business", { n: "20" })}`], "records_laws, not deadlines: the appeal and the other rules are not laws");
   assert.ok(!texts.some((t) => t.includes(FED_APPEAL)));
-  await press(p, "actionlaws", { values: { "req-law": "2" } });
+  await press(p, "actionlaws", { values: { "req-law-2": true } });
   assert.deepEqual(last(p, "actionlaws").body, { target: ACTION_ID, laws: [{ level: "federal", citation: FED }] }, "the law's own level, not a default");
   // control: a law with no window of its own is offered by its citation alone, never with a guessed window
   const bare = await open(REQUEST, fedPlane({ profiles: ok({ ...PROFILES, view: { ...FED_VIEW(), records_laws: [{ level: "federal", name: "Freedom of Information Act", citation: FED }] } }) }));
-  assert.deepEqual(optionTexts(bare, "req-law"), [FED]);
+  assert.deepEqual(boxTexts(bare, "req-law"), [`${W("screen.request.level.federal")} · Freedom of Information Act · ${FED}`]);
 });
 
 test("R9 (C64-law): the help for a federal request names 5 U.S.C. § 552(a)(6)(A)(i) and its 20 business days, no state or city statute and no 'the city'; control: a California request keeps its statute and window", async () => {

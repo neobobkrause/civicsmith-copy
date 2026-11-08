@@ -117,7 +117,12 @@ export const queue = Object.freeze({
           + cs.act(op, { label: "screen.queue.defer", data: Object.assign({}, data, { to: "deferred" }) });
       }
       // R107: the act that ends the signing-key item is labelled by the item's own word.
-      if (op === "signerknown") return own(cs.act(op, { label: "queue.signer-self-registered.known", data: data }));
+      // The producer's item names the member as its subject and carries each listed key on its own option (`queue-producers`
+      // R56): one act for each key, sending that key and no other.
+      if (op === "signerknown") {
+        const keys = (it && Array.isArray(it.options) ? it.options : []).filter(function (o) { return o && (o.id || o.op) === op && typeof o.key === "string" && o.key; });
+        return keys.map(function (o) { return own(cs.act(op, { label: "queue.signer-self-registered.known", data: Object.assign({}, data, { key: o.key }) })); }).join("");
+      }
       const fields = FIELDS[op];
       if (!fields) return OWN.indexOf(op) >= 0 ? own(cs.act(op, { label: "act." + op + ".label.queue", data: data })) : cs.act(op, { label: "act." + op + ".label.queue", data: data });
       const f = "qa-" + (seq++);
@@ -529,7 +534,7 @@ export const queue = Object.freeze({
     ...OWED({ op: "signerknown", label: "queue.signer-self-registered.known", rereads: ["queue"],
       send: function (view, el) {
         view.ui.doneFor = { op: "signerknown", label: "queue.signer-self-registered.known" };
-        return el.dataset.subject ? { body: { keyB64: el.dataset.subject } } : null;
+        return el.dataset.key ? { body: { keyB64: el.dataset.key } } : null;
       },
       done: function (view, answer, cs) { cs.set("done", "signerknown"); } }),
     { op: "updatelater", label: "act.owed_updatelater.label.queue", rereads: ["queue"],

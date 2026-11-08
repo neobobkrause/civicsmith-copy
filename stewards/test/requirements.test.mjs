@@ -254,6 +254,8 @@ test("R6: any other path or method answers 404 or 405 with a plain page", async 
   }
 });
 
+test.todo("R7 (T46 amendment, not yet met: T47): the shared guide words are read from newgroup/README.md's third part, once installer R48 writes it (waits on the stewards' address Bob names, K2799, K2878); until then the interim copy stewards/guide.md stands");
+
 test("R7: /guide serves the shared guide words byte for byte as stewards/guide.md, then what this service holds and who could be compelled, and no legal advice", async () => {
   const shared = readFileSync(join(ROOT, "guide.md"), "utf8");
   assert.equal(GUIDE_TEXT, shared);
@@ -430,7 +432,7 @@ test("R12: decisions dismiss or withdraw a shared service, with a reason; refusa
   const d1 = await decide(env, s.cookie, { ref, decision: "dismiss", reason: "x".repeat(4000) });
   assert.equal(d1.status, 200);
   for (const service of W.SHARED_SERVICES) {
-    const w = await decide(env, s.cookie, { ref, decision: "withdraw", reason: "fabricated", withdraw: { service, item: "i".repeat(512) } });
+    const w = await decide(env, s.cookie, { ref, decision: "withdraw", reason: "fabricated", withdraw: { service, item: "i".repeat(512), ...(service === "public_listing" ? { rule_part: "3" } : {}) } });
     assert.equal(w.data.already, false);
   }
   const again = await decide(env, s.cookie, { ref: ref2, decision: "withdraw", reason: "same", withdraw: { service: "shared_profile", item: "i".repeat(512) } });
@@ -445,7 +447,7 @@ test("R12: decisions dismiss or withdraw a shared service, with a reason; refusa
   assert.equal((await call(env, `/steward/report/${ref}`, { cookie: s.cookie })).data.report.state, "dismissed");
   assert.equal(env.STORE.db.prepare("SELECT COUNT(*) AS n FROM withdrawals").get().n, 3);
   /* as a form, with withdraw_service and withdraw_item */
-  const f = await call(env, "/steward/decide", { method: "POST", form: { ref: ref2, decision: "withdraw", reason: "form", withdraw_service: "public_listing", withdraw_item: "listing-9" }, cookie: s.cookie, json: false });
+  const f = await call(env, "/steward/decide", { method: "POST", form: { ref: ref2, decision: "withdraw", reason: "form", withdraw_service: "public_listing", withdraw_item: "listing-9", withdraw_rule_part: "1" }, cookie: s.cookie, json: false });
   assert.equal(f.status, 303);
   assert.ok(env.STORE.db.prepare("SELECT 1 FROM withdrawals WHERE item = 'listing-9'").get());
 });
@@ -529,7 +531,7 @@ test("R15: the purge erases the contact and deletes the report on time, keeps a 
   await decide(env, s.cookie, { ref: dismissed, decision: "dismiss", reason: "r" });
   await decide(env, s.cookie, { ref: withdrawn, decision: "withdraw", reason: "r", withdraw: { service: "shared_profile", item: "p1" } });
   await decide(env, s.cookie, { ref: withdrawn, decision: "dismiss", reason: "second thought, kept standing" });
-  await decide(env, s.cookie, { ref: reinstated, decision: "withdraw", reason: "r", withdraw: { service: "public_listing", item: "l1" } });
+  await decide(env, s.cookie, { ref: reinstated, decision: "withdraw", reason: "r", withdraw: { service: "public_listing", item: "l1", rule_part: "1" } });
   const purge = async () => { LOGS.length = 0; await worker.scheduled({}, env); return LOGS.join("\n"); };
   const get = async (ref) => { const sess = await signIn(env, ALICE, { ip: "9.9.9.9" }); return call(env, `/steward/report/${ref}`, { cookie: sess.cookie }); };
   clk.tick(89 * DAY);
@@ -597,7 +599,7 @@ test("R16: exactly the store, the mail binding, variables and two secrets; no ou
     for (const m of src.matchAll(/\benv\.([A-Z_]+)/g)) envNames.add(m[1]);
     for (const m of src.matchAll(/\benv\[/g)) assert.fail(`${f}: a computed binding read`);
   }
-  assert.deepEqual([...envNames].sort(), ["CONTACT_RETENTION_DAYS", "NOTIFY", "NOTIFY_FROM", "REPORT_RETENTION_DAYS", "SOURCE_KEY", "STEWARDS_ADDRESS", "STEWARD_KEYS", "STORE"]);
+  assert.deepEqual([...envNames].sort(), ["CONTACT_RETENTION_DAYS", "LISTING_RULE_TEXT_VERSION", "NOTIFY", "NOTIFY_FROM", "REPORT_RETENTION_DAYS", "SOURCE_KEY", "STEWARDS_ADDRESS", "STEWARD_KEYS", "STORE"]);
   /* behaviour: a full run of every route makes no outbound request */
   const env = makeEnv();
   const s = await signIn(env);
@@ -716,7 +718,7 @@ test("R23: no page or answer outside /steward/ names a steward; the public pages
   const env = makeEnv();
   const s = await signIn(env, BOB);
   const ref = (await report(env)).data.ref;
-  await decide(env, s.cookie, { ref, decision: "withdraw", reason: "r", withdraw: { service: "public_listing", item: "pl" } });
+  await decide(env, s.cookie, { ref, decision: "withdraw", reason: "r", withdraw: { service: "public_listing", item: "pl", rule_part: "1" } });
   const pub = [];
   for (const p of ["/", "/guide", "/withdrawals"]) for (const json of [true, false]) pub.push((await call(env, p, { json })).text);
   pub.push((await report(env, {}, { ip: "6.6.6.6" })).text, ...env.sent.map((m) => m.raw));

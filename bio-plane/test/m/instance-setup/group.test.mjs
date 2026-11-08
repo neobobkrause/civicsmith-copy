@@ -142,7 +142,9 @@ test("R29 by, author and origin are the control plane's stamps: a body naming it
 test("R30 C-64.2, C-64.3, C-64.5, C-64.6 and C-64.7 are this module's rows, each raised here with its check and translation, beside T34's C-64.8 (R60) and C-64.9, C-64.10 (R65), and T37's C-64.11–C-64.26 (R67–R73) but C-64.18, dropped and never reused (R75; T38, N793), T45's C-64.27 (R77), and T46's C-64.28, C-64.29 (R79; K2996), and T47's C-64.30 (R84), and T48's C-64.31–C-64.33 (R87, R90)", async () => {
   const rows = Object.values(INSTANCE_SETUP_CHECKS).filter((r) => r.check.startsWith("C-64."));
   assert.deepEqual(rows.map((r) => r.check).sort(), ["C-64.10", "C-64.2", "C-64.3", "C-64.5", "C-64.6", "C-64.7", "C-64.8", "C-64.9",
-    "C-64.27", "C-64.28", "C-64.29", "C-64.30", "C-64.32", "C-64.33"].sort());
+    "C-64.27", "C-64.28", "C-64.29", "C-64.30", "C-64.32", "C-64.33",
+    /* T53's C-64.34, C-64.35 (R114: the mail domain and the switch) */
+    "C-64.34", "C-64.35"].sort());
   for (const r of rows) {
     assert.match(r.where, /^src\/setup\.mjs /);
     /* BOB's drafts for T48's three rows (R87, R90) are shorter sentences; each still says what was not done */

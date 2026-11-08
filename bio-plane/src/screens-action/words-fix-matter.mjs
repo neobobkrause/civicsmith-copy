@@ -1,6 +1,20 @@
 /* screens-action's T51 fix-round words, group "matter" (R36–R54; the keys this group's entries read, each one setup-words holds; K3366, K3810).
    WORDS: keys added to SCREEN_WORDS. EXTRA: keys a screen draws that do not start with its `screen.<id>.` prefix, by screen id. */
+import { localize } from "../setup-words/index.mjs";
+
+// R7 (T53; R-68, matter half; K3943): what "Not available yet" waits on gives the step that clears it, each sentence written once here as
+// `localize(id, en)` so the build extracts it into the word table, and the table wins
+const steps = [
+  localize("screen.matter.unavailable.step.determine", "To clear it: record a determination below that finds the act did not comply with a rule."),
+  localize("screen.matter.unavailable.step.consequences", "To clear it: record that determination first, then record what the breach did."),
+  localize("screen.matter.unavailable.step.escalation", "To clear it: record that determination first, then open an escalation."),
+];
+void steps;
+
 export const WORDS = Object.freeze([
+  "screen.matter.unavailable.step.determine",
+  "screen.matter.unavailable.step.consequences",
+  "screen.matter.unavailable.step.escalation",
   "screen.matter.the_rule_it_is_measured_against",
   "screen.matter.record_the_revised_determination",
   "screen.matter.the_earlier_determination_stays_readable_with_a",
@@ -127,6 +141,8 @@ export const WORDS = Object.freeze([
 ]);
 export const EXTRA = Object.freeze({
   matter: Object.freeze([
+    // R7 (T53): the way to record a dated event, the project's Timeline
+    "screen.timeline.name",
     "screen.actionnew.rests",
     "screen.held.more",
     "screen.explore.from",

@@ -67,11 +67,12 @@ test("R90, R1: storeWorld forwards `catalogueKeys`, so a test-instance world see
    seed's signature by that key); the assembled store's catalogue then loads the seed at start. */
 test("R1 (ai-catalogue R33, R39): the assembled catalogue is built with the store's env, so a development deployment's AI_CATALOGUE_SEED_SIGNATURE loads the release seed when AI_CATALOGUE_DEVELOPMENT is \"1\"; control: without it the development-signed seed is refused and the catalogue holds none", async () => {
   const { NS_AI_CATALOGUE, aiCatalogueStatement } = await import("../../../src/sshsig.mjs");
-  const { RELEASE_SEED, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_MARK } = await import("../../../src/ai-catalogue/index.mjs");
+  const { seedFor, SEED_SIGNATURE_VAR, DEVELOPMENT_VAR, DEVELOPMENT_KEY_MARK } = await import("../../../src/ai-catalogue/index.mjs");
   const { newKey, sign } = await import("../ai-catalogue/fixture.mjs");
   const DEV = await newKey();
   const devLine = DEV.line.replace(/ throwaway$/, ` bio-ai-catalogue${DEVELOPMENT_KEY_MARK}`);
-  const armored = await sign(DEV, NS_AI_CATALOGUE, aiCatalogueStatement(RELEASE_SEED.statement));
+  /* the seed a development deployment takes (`seedFor`, ai-catalogue PRs 484, 611: its development seed) */
+  const armored = await sign(DEV, NS_AI_CATALOGUE, aiCatalogueStatement(seedFor({ [DEVELOPMENT_VAR]: "1" }).statement));
   const state = async (env) => {
     const x = await plane({ ...TEST_INSTANCE, [SEED_SIGNATURE_VAR]: armored, ...env }, { catalogueKeys: [devLine] });
     await aiCatalogueOf(x.ctx).ready;

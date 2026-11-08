@@ -13,7 +13,8 @@ const CAP = 70000;
 const START_IDS = ("R1 R2 R3 R27 R31 R4 R5 R28 R29 R6 R7 R30 R32 R33 R34 R35 R36 R37 R38 R39 R40 R42 R43 R44 R46 R47 R45 R41 " +
   "R48 R53 R49 R50 R51 R52 R54 R55 R8 R9 R10 R11 R12 R13 R14 R15 R16 R26 R17 R56 R57 R58 R59 R60 R61 R62 R63 R64 R65 R66 " +
   "R67 R68 R69 R70 R72 R73 R74 R75 R18 R19 R20 R21 R22 R23 R24 R25 R71 F1 F2 F3").split(" ");
-const START_UNMET = { R72: "T53", R73: "T53", R74: "T53", R75: "T53" };
+/* attempt 8 met R72, R73 and R74 (t53.test.mjs) and struck their marks; R75's write half is entities' and the screen's */
+const START_UNMET = { R75: "T53" };
 
 const read = () => readFileSync(FILE, "utf8");
 const idLines = (text) => text.split("\n").map((l) => l.match(/^\s*- \*\*([RF]\d+)\*\*(.*)$/)).filter(Boolean);

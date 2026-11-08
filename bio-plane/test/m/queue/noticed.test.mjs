@@ -8,6 +8,7 @@ import { world, NOW, iso, byId } from "./world.mjs";
 import { Queue, QUEUE_MINT_CHECKS } from "../../../src/queue/index.mjs";
 import { classOfKind, QUEUE_OBLIGATION_KINDS, QUEUE_FINDING_KINDS } from "../../../src/queuestate.mjs";
 import { noticeProducersOf } from "../../../src/notice-producers/index.mjs";
+import { NONE } from "../notice-producers/fixture.mjs";
 import { checkResults } from "../people/fixtures.mjs";
 import { noticed } from "../money-checks/fixtures.mjs";
 import { dutiesForViewer } from "../duties/fixtures.mjs";
@@ -280,14 +281,8 @@ test("R22: a date's snooze lapses for the consumer at that local day's start, no
 
 /* notice-producers R16, R17 (K2586): the AI accounts' and the investigation's providers, each answering nothing, so this
    test reads R4's and R6's items alone and every producer is read (none named in `facts.failed`). */
-const QUIET_T40_T41 = {
-  aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached: [] }) },
-  steps: { laterFound: () => ({ ok: true, found: [] }), stepsDue: () => ({ ok: true, due: [] }),
-           costShares: () => ({ ok: true, shares: [] }), costMessages: () => ({ ok: true, messages: [] }) },
-  questionExplorer: { findsFor: () => ({ ok: true, finds: [] }) },
-  investigation: { milestonesOverdue: () => ({ ok: true, due: [] }), quietPrompts: () => ({ ok: true, prompts: [] }) },
-  review: { reviewCommentsLeftOut: () => ({ ok: true, items: [] }) },
-};
+/* notice-producers' own published fixture answers every read it makes empty (its R16's ai-use reads, its R33
+   `thresholdsReached` included since layer 11), so this test lays only the providers it means over it (K4990). */
 
 test("R51, R7, R11, R12, R14, R49: the real notice-producers' items (its R4, R6) reach the feed, homed, minted, offered, muted and sorted by due", async () => {
   const asked = {};
@@ -296,7 +291,7 @@ test("R51, R7, R11, R12, R14, R49: the real notice-producers' items (its R4, R6)
   const dated = datedWaitOf({ viewer: "member:alice", date: "2026-08-31" });
   const Q = dated.question;
   const run = held.entries[0];
-  const w = world({}, { notices: (host, { membership }) => noticeProducersOf(host, { membership, ...QUIET_T40_T41,
+  const w = world({}, { notices: (host, { membership }) => noticeProducersOf(host, { ...NONE, membership,
     people: checkResults,
     moneyChecks: { noticed: () => noticed() },
     duties: { dutiesOf: () => duties.none, occurrencesOf: () => duties.heldOccurrences },

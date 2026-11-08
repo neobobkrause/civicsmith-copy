@@ -15,6 +15,7 @@ import { dispatch, controlPlaneRoutes } from "../../../src/store-door/dispatch.m
 import { recordOf } from "../../../src/record-core/index.mjs";
 import { membershipOf, MODULE_ORDER } from "../../../src/membership/index.mjs";
 import { credentialsOf } from "../../../src/credentials/index.mjs";
+import { catalogueFor } from "../ai-accounts/catalogue.mjs";
 import { promotionOf } from "../../../src/promotion/index.mjs";
 import { provenanceOf } from "../../../src/provenance/index.mjs";
 import { provenanceOps } from "../../../src/provenance/ops.mjs";
@@ -94,7 +95,13 @@ export async function record({ step = false, probes = {}, sealSecret = null } = 
   const record = recordOf(ctx, { evidence: bucket, evidencePrefix: () => "bio/captures/" });
   const promotion = step ? promotionOf(ctx, { order: STEP_ORDER }) : promotionOf(ctx);
   /* T34 (R57): credentials built first with a seal secret when a suite asks for one, so accounts can be held */
-  if (sealSecret) credentialsOf(ctx, { record, sealSecret });
+  /* (T53; ai-accounts R32, R59; op-grades R57) and with ai-catalogue's real service, seeded as ai-accounts' tests seed it, since
+     an account is now held on a catalogue plan; the seed awaited before any act (store-door's record does the same) */
+  if (sealSecret) {
+    const catalogue = catalogueFor(ctx, { record });
+    credentialsOf(ctx, { record, sealSecret, catalogue });
+    await catalogue.seeded;
+  }
   observationLogOf(ctx, { extraction: null, provenance: provenanceOf(ctx, { signingKey: null, instanceName: "test" }) });
   /* N512: provenance's split, each built after provenance in the module order */
   attestationOf(ctx, { record, provenance: provenanceOf(ctx), signingKey: null });

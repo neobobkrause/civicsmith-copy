@@ -6,11 +6,11 @@
 
 **The install** (steps `auth`, `acct`, `fresh`, `plan`, `r2`, `rel`, `gen`, `install`, `fleet`, `bind`, `ai`, `addr`, `verify`)
 
-- **R13** Each member that reads captured bytes is bound to the instance's `CAPTURES` bucket. *(not yet met: MULTI-INSTANCE-ISOLATION row 6; installed members get no R2 binding today)*
+- **R13** Each member that reads captured bytes is bound to the instance's `CAPTURES` bucket.
 
 **Custody and the release**
 
-- **R24** An install never shares another copy's buckets and never overwrites its fleet workers in the same account. *(not yet met: MULTI-INSTANCE-ISOLATION; K102)*
+- **R24** An install never shares another copy's buckets and never overwrites its fleet workers in the same account.
 - **R32** Until installs are isolated (R24), an install into an account that already holds a copy (either evidence bucket, or a fleet worker, present) is refused before anything is created, saying that one installation of Civicsmith per Cloudflare account is supported for now (R40).
 
 #### T50 (T50-78): the binding, the sizes, an account that already holds a copy, the situations (N1148, N1150, N1157, N1162, N1170; DEC-282; `build/plan/install-situations.md`)

@@ -27,8 +27,13 @@ const live = [];
 after(() => Promise.all(live.map((m) => m.dispose().catch(() => {}))));
 const world = (persist, gate) => {
   const mf = boot(persist, gate); live.push(mf);
+  /* The namespace and the stub are got once per world and held: got afresh per step, the namespace proxy was left with no
+     reference once `get` returned, and when it was collected while a `state` request waited behind an alarm slice, Miniflare
+     released its handle and the request was cut ("fetch failed: other side closed"), the R88 reds of PR 916 and 984. */
+  let held = null;
+  const objectStub = () => (held ??= mf.getDurableObjectNamespace("STORE").then((ns) => ({ ns, stub: ns.get(ns.idFromName("bio")) })));
   const step = async (name, body) => {
-    const ns = await mf.getDurableObjectNamespace("STORE"), stub = ns.get(ns.idFromName("bio"));
+    const { stub } = await objectStub();
     const r = await stub.fetch(`http://do/g55/${name}`, { method: "POST", body: JSON.stringify(body || {}) });
     const j = await r.json(); assert.equal(r.status, 200, j.error); return j;
   };

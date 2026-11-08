@@ -10,6 +10,8 @@ import { SCREENS as WIZARDS, GUIDE } from "../../../src/screens-wizards/index.mj
 import { SCREENS as INVESTIGATE } from "../../../src/screens-investigate/index.mjs";
 import { SCREENS as PUBLISH } from "../../../src/screens-publish/index.mjs";
 import { SCREENS as ACTION } from "../../../src/screens-action/index.mjs";
+/* (BOB's found mark, 7 Nov; screens-ai PR 881) the door serves screens-ai's screens after the nine */
+import { SCREENS as AI } from "../../../src/screens-ai/index.mjs";
 
-export const APP_SCREENS = Object.freeze([...ENTRY, ...SETTINGS, ...INTAKE, ...DAILY, ...INQUIRY, ...WIZARDS, ...INVESTIGATE, ...PUBLISH, ...ACTION]);
+export const APP_SCREENS = Object.freeze([...ENTRY, ...SETTINGS, ...INTAKE, ...DAILY, ...INQUIRY, ...WIZARDS, ...INVESTIGATE, ...PUBLISH, ...ACTION, ...AI]);
 export { GUIDE };

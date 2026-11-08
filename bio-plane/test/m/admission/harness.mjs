@@ -136,11 +136,12 @@ export function requestOf({ token, params = {}, via = "header", method = "POST",
   return { url, req, body };
 }
 
+/** (T53; R34) `held`, passed on to `admit` as the session row the room holds (the fold); absent, the door's read. */
 /** The gates in the door's order, for a request naming `op` with `token` and `params`. Answers one of
  *  `{ refusal }`, `{ silent }`, `{ public: true, url }` (a public op past R1–R3) or `{ caller, url, credential }`.
  *  `via` sends the credential: "header" by default, "body", or "query" (refused by R20's gate). */
 export async function gate(env, { op, token, params = {}, method = "POST", tables, via = "header", extraBody = {},
-                                  reauthActs, background }) {
+                                  reauthActs, background, held }) {
   const { url, req, body } = requestOf({ token, params, via, method, extraBody });
   const spec = Object.hasOwn(O.OPS, op) ? O.OPS[op] : undefined;
   assert.ok(spec, `test asks an op with a spec: ${op}`);
@@ -158,7 +159,8 @@ export async function gate(env, { op, token, params = {}, method = "POST", table
   if (pinned) return { refusal: pinned };
   if (spec.classes === null) return { public: true, url, credential };
   const a = await A.admit({ url, env, op, spec, method, presented, doAnswer, credential, body, ...(tables ? { tables } : {}),
-                           ...(reauthActs ? { reauthActs } : {}), ...(background !== undefined ? { background } : {}) });
+                           ...(reauthActs ? { reauthActs } : {}), ...(background !== undefined ? { background } : {}),
+                           ...(held !== undefined ? { held } : {}) });
   if (!a.caller) return a;
   const fence = A.bearerFence(op, a.caller);
   if (fence) return { refusal: fence };

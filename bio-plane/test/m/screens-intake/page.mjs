@@ -24,7 +24,9 @@ export async function members(spec = {}, opts = {}) {
    mutating rows declare no `needs` (op-declarations R80 refuses a mutating op without one), a defect of that owner's declaration reported
    to BOB (screens-intake record): here they carry the capability the same kind of act names, so the screens' requests are held to the
    fields link-sweep declares. */
-const NEW_OPS = ["capturecredentialsupply", "capturecredentiallist", "capturecredentialwithdraw", "namedrequestset", "namedrequests", "sweepset", "sweepratify"];
+const NEW_OPS = ["capturecredentialsupply", "capturecredentiallist", "capturecredentialwithdraw", "namedrequestset", "namedrequests", "sweepset", "sweepratify",
+  /* R79: the parted upload's cancel, capture's own declaration */
+  "captureuploadabort"];
 /* Fix round 10 (K5054): a screen opened over the real store (`openWorld`) has the owners' own declarations, which the world registers itself
    (store-assembly register.mjs), so this stand-in is registered only by the scripted opener, once, and only where it can still be (a file that
    made a world never calls `open`). It goes with the last scripted table. */
@@ -36,8 +38,8 @@ function standInOps() {
   try { registerDeclaredOps({ "screens-intake fixture": Object.fromEntries(NEW_OPS.filter((op) => rows[op]).map((op) => [op, rows[op].mutating && rows[op].needs === undefined ? { ...rows[op], needs: "contribute", stamps: ["author", "viewer"] } : rows[op]])) }); } catch { /* read already */ }
 }
 
-/* The assistant reachable for this member (interface-shell R20): on, with the group's key held and on. */
-const REACH = { assistantstate: ok({ on: true }), groupkeystate: ok({ on: true, held: true }) };
+/* The assistant reachable for this member (interface-shell R20): on, with a ready path (T53: `groupkeystate` is no longer asked). */
+const REACH = { assistantstate: ok({ on: true }), aipathready: ok({ state: "ready" }) };
 
 /* A stand-in for the `document` screen (screens-inquiry), so a reference of that kind is drawn as the link it is on the whole
    page; it draws nothing of its own. */
@@ -75,11 +77,31 @@ export async function open(path, { plane = {}, me = MEMBER, reachable = false, s
   return p;
 }
 
+/* The team's own Claude account, held and switched on by an administrator's real acts (T53 retired `groupkeyset`, `groupkeyswitch` and
+   `groupkeynoticeseen`: ai-accounts R35, op-declarations PR 95): store-request's own recipe (`recipes.assistant`: `reauth`, `aiaccountadd`,
+   `aiaccountswitch`, `aisend`), with each of `readers` (members) having read the host's notice (`aisend`, ai-accounts R51). `on: false` switches the
+   account off again by `aiaccountswitch`. The world must be made with `ai: true`. Answers the account's id. */
+const ACCOUNT_ON = Symbol("screens-intake: the team's account on");
+export async function teamAccountOn(world, admin, { on = true, readers = [] } = {}) {
+  if (on) await world.recipes.assistant(admin, { readers });
+  else {
+    await admin.act("reauth", { body: { password: admin.password } });
+    const sw = await admin.act("aiaccountswitch", { body: { account_id: world.__aiAccount, on: false } });
+    if (!sw || sw.ok !== true) throw new Error("aiaccountswitch: " + JSON.stringify(sw));
+  }
+  world[ACCOUNT_ON] = on;
+  return world.__aiAccount;
+}
+
 /* Fix round 10 (K5054; store-request R16-R19): a screen opened over the REAL store. `world` is `storeWorld()` (store-request's fixtures) and `as` a
    member `world.signIn(...)` made; the page's door is the world's, so every op the test's own `plane` table does not name is answered by the
    real modules from what real acts made. `plane` keeps only faults (a refusal, a silence, a delay) a real act cannot make. A test
    makes its state by `as.act(op, {query, body})` or a recipe, and reads values from those answers, never from a literal. */
 export async function openWorld(path, { world, as, plane = {}, screens = SCREENS, ...rest } = {}) {
+  /* WORLD GAP (as screens-settings' kit): the shell reaches the assistant on `assistantstate` and `aipathready` (interface-shell R20); `aipathready`
+     is read over the agent Worker and no store answers it (the world's door says UNKNOWN_OP), so here it answers `ready` while the team's own account
+     is on by the real acts (`teamAccountOn`), else `no_account`. A test's own `plane` entry wins. */
+  if (!plane.aipathready) plane = { ...plane, aipathready: async () => ok({ state: world[ACCOUNT_ON] === true ? "ready" : "no_account" }) };
   const { door: worlds, session } = world.boot(as);
   /* the sign-in is the member's `as` (a member who signed in again, `lapse`, goes on as hers): the page's own header is dropped and the door adds hers */
   const dropAuth = (h) => (h && !(h instanceof Headers) ? Object.fromEntries(Object.entries(h).filter(([k]) => k.toLowerCase() !== "authorization")) : h);

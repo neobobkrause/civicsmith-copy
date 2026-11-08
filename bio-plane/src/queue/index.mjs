@@ -854,7 +854,11 @@ export class Queue {
   /** R12 (T40; N812, K2376 (2), K2394): the AI accounts' three kinds are told to whom they concern and no team's list
    *  holds them: an explore ask is answered by its own act, the other two are quieted by their recipient. */
   static ACCOUNT_DOORS = Object.freeze({ "explore-ask": "exploreapprove", "ai-limit-reached": "queuemute",
-    "project-account-suspended": "queuemute" });
+    "project-account-suspended": "queuemute",
+    /* T53 (R1, R12; layer 11 reopen; notice-producers R33-R35): a threshold alert, a terms notice, an account that left a
+       list and a project sign-in account that ended are facts about an account, told to whom they concern, as above. */
+    "ai-threshold-reached": "queuemute", "ai-terms-notice": "queuemute", "ai-account-left-list": "queuemute",
+    "ai-account-left-project-list": "queuemute", "ai-signin-ended": "queuemute" });
   /** R12 (T45; action-producers R9, R11; upper doubt 15): FINDINGs that no project-scoped decision answers, quieted by
    *  their recipient for themselves as a CONDITION is: a member who left is told to the project's owners, and its doors
    *  are the take-ups its options lead with. */
@@ -961,6 +965,12 @@ export class Queue {
       return { available: false, op: null, scope: null, keyed_on: KEYED_ON, key: null,
                reason: "a_watched_change_is_told_to_you_alone_and_quieted", instead: "queuemute",
                detail: localize("queue.index.something_you_watch_changed_and", "something you watch changed, and you alone are told: no team's list holds it and there is no team for a disposition to speak for. Quiet it for yourself (op=queuemute, naming this item) once you have read it; the watch goes on and a later change is told as a new item.") };
+    /* T53 (R1, R12; layer 11 reopen; notice-producers R36): unconfirmed mail removed is told to its owner alone, as a
+       standing question's answer is: no team's list holds it, so its owner quiets it for themselves (R30). */
+    if (item.kind === "mail-cleared")
+      return { available: false, op: null, scope: null, keyed_on: KEYED_ON, key: null,
+               reason: "a_mail_notice_is_told_to_you_alone_and_quieted", instead: "queuemute",
+               detail: localize("queue.index.unconfirmed_mail_of_yours_was", "unconfirmed mail of yours was removed, and you alone are told: no team's list holds it and there is no team for a disposition to speak for. Quiet it for yourself (op=queuemute, naming this item) once you have read it.") };
     /* R98 (T53; notice-producers R30, R31): a register's change or an import's end, disposed of as R57 gives watched-changed. */
     if (Queue.REGISTER_NOTICES.includes(item.kind))
       return { available: false, op: null, scope: null, keyed_on: KEYED_ON, key: null,

@@ -150,10 +150,18 @@ test("R72, R34 (T49): projectownervotes is named in ACT_HELP_ABSENT under the re
 const familyRows = () => Object.fromEntries(Object.values(OP_FAMILIES).flatMap((f) => Object.entries(f.kinds)
   .filter(([, k]) => OP_KINDS[k].needs !== undefined).map(([op, k]) => [op, OP_KINDS[k].needs])));
 
-test("R3 (T49; K3298, K3339): NEEDS is composed from op-capabilities.needsRows() (323 hand-written rows) and each family op's row from its kind (534 rows), the aliases applied over the whole — 882 keys, the 848 it held before the split, the two T49 family ops, the 15 T50 adds (R73) and the 16 T51 adds (R77 to R79, R22 `holdsplaced`) — every hand-written row and every family row answered as given, every alias row equal to its op's, the table frozen and the same on every read", () => {
+test("R3 (T49; K3298, K3339): NEEDS is composed from op-capabilities.needsRows() (325 hand-written rows; BD-1's exportwhole and exportwholepart, op-capabilities F1) and each family op's row from its kind (534 rows), the aliases applied over the whole — 882 keys, the 848 it held before the split, the two T49 family ops, the 15 T50 adds (R73) and the 16 T51 adds (R77 to R79, R22 `holdsplaced`) — every hand-written row and every family row answered as given, every alias row equal to its op's, the table frozen and the same on every read", () => {
   const hand = needsRows();
   const fam = familyRows();
-  assert.equal(Object.keys(hand).length, 323);
+  /* BD-1 (op-capabilities F1, PR 752): exportwhole and exportwholepart, two present-null rows more */
+  assert.equal(Object.keys(hand).length, 325);
+  /* every hand-written row is an op with a spec that a session reaches (BD-1: exportwhole and exportwholepart, the
+     founder's session alone), so no row of op-capabilities' is left without its op here */
+  const sessionOps = new Set([...SESSION_OPS.member, ...SESSION_OPS.admin]);
+  for (const op of Object.keys(hand)) {
+    assert.ok(Object.hasOwn(OPS, op), `${op}: op-capabilities holds a row and OPS no spec`);
+    assert.ok(sessionOps.has(op) || OPS[op].classes === null || !OPS[op].mutating || Object.hasOwn(UNATTENDED_BY_DECISION, op), `${op}: a row no session reaches`);
+  }
   /* T53 (BOB, 4 Nov; t53-rows.test.mjs): eventwithdraw, moneyfiscalyears and federaloffices, three family rows more */
   /* T53 (R20, R24, R30, R41 restated; ai-accounts R35, BOB 4 Nov): ai-accounts' family goes from 24 ops to 36, twelve rows
      more (17 retired out; its 5 reads, 3 plane ops and 21 declared acts in); and ai-use's `aiusebymember`, `airetestset`, `aihealthset` and `aihealthpreview` (its R27, R28, R32, R33), four */
@@ -163,9 +171,9 @@ test("R3 (T49; K3298, K3339): NEEDS is composed from op-capabilities.needsRows()
   const aliasRows = Object.entries(OP_ALIASES).filter(([, op]) => Object.hasOwn(NEEDS, op)).map(([al]) => al);
   assert.equal(aliasRows.length, 26);
   /* R83 (K4237): and `export`'s row, the founder's session act that is no family op */
-  assert.equal(Object.keys(NEEDS).length, 323 + 537 + 12 + 4 + 26 + 1);
+  assert.equal(Object.keys(NEEDS).length, 325 + 537 + 12 + 4 + 26 + 1);
   /* T53: ai-accounts' family twelve rows more and ai-use's four (R20, R24, R30, R41 restated) */
-  assert.equal(Object.keys(NEEDS).length, 848 + 2 + 15 + 16 + 1 + 1 + 1 + 3 + 12 + 4, "848 before the split, founderhandleset and projectownervotes (T49), R73's 15 (T50), T51's 16, export (R83), moneysets (T51 fix round 3) and moneyingestread (T51 fix round 6)");
+  assert.equal(Object.keys(NEEDS).length, 848 + 2 + 15 + 16 + 1 + 1 + 1 + 3 + 12 + 4 + 2, "848 before the split, BD-1's exportwhole and exportwholepart (op-capabilities F1), founderhandleset and projectownervotes (T49), R73's 15 (T50), T51's 16, export (R83), moneysets (T51 fix round 3) and moneyingestread (T51 fix round 6)");
   for (const [op, row] of Object.entries(hand)) assert.equal(NEEDS[op], row, `${op}: the hand-written row`);
   for (const [op, row] of Object.entries(fam)) assert.equal(NEEDS[op], row, `${op}: the family row`);
   for (const al of aliasRows) assert.equal(NEEDS[al], NEEDS[OP_ALIASES[al]], `${al}: an alias row equals its op's`);

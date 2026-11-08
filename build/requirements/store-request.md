@@ -57,7 +57,7 @@ Terms. **Stamp**, **declared stamps**, `OP_STAMPS` and the **families** (`EDGE_A
 ### Invariants
 
 - **R21** (K5052 (1); P4) It imports only modules earlier than itself in `build/modules.json` (`op-declarations`, `record-grammar`, `admission`, `subresources`, and for the world the modules of Uses) and no module of the platform; an import it would need from a later module is reported by the job and never added. It holds no member-facing English and names no place. Test: a census of its imports against the file's order.
-- **R22** *(not yet met: T52)* (K624) The split is by copy, then delete: when the job closes `control-plane/index.mjs` holds none of the rules of R2 to R13 and R23, R23 and R24 and calls `innerRequest` for every store request, and the constants of R24 and `promotedTypeOf` are imported from here by what still reads them.
+- **R22** (K624) The split is by copy, then delete: when the job closes `control-plane/index.mjs` holds none of the rules of R2 to R13 and R23, R23 and R24 and calls `innerRequest` for every store request, and the constants of R24 and `promotedTypeOf` are imported from here by what still reads them.
 
 ### Satisfies
 

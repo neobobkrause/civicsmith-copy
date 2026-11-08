@@ -11,9 +11,12 @@ import { all, open, SCREENS } from "./kit.mjs";
 import { teamNamed } from "./seed-common.mjs";
 
 const ROOT = new URL("../../../../", import.meta.url);
-const SERVED = JSON.parse(readFileSync(new URL("build/modules.json", ROOT), "utf8")).modules.filter((m) => /^screens-/.test(m.id) && m.paths.length > 0);
+/* a module the plane serves has a source folder; one whose only path is its requirements file (screens-intake-rounds, screens-public,
+   screens-document-beta) has no code yet and registers no screen */
+const SOURCE = (m) => m.paths.find((p) => /^bio-plane\/src\/.+\/$/.test(p));
+const SERVED = JSON.parse(readFileSync(new URL("build/modules.json", ROOT), "utf8")).modules.filter((m) => /^screens-/.test(m.id) && SOURCE(m));
 const ALL = [];
-for (const m of SERVED) ALL.push(...(await import(new URL(m.paths[0] + "index.mjs", ROOT))).SCREENS);
+for (const m of SERVED) ALL.push(...(await import(new URL(SOURCE(m) + "index.mjs", ROOT))).SCREENS);
 const REGISTERED = new Set(ALL.map((s) => s.id));
 const stub = (id, op) => ({ id, reads: () => ({}), render: () => "", acts: [{ op, send: () => null }], words: [], parts: {} });
 const PAGE = [...SCREENS, stub("watching", "monitoring"), stub("leads", "lead")];

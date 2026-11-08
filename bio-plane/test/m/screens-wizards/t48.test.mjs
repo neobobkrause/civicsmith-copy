@@ -152,7 +152,7 @@ test("R12 the module\'s real SCREENS and GUIDE compose under interface-shell R56
 test("R12 over an empty list the library draws no empty section and no zero; a failed read is drawn failed, never as empty", async () => {
   const t = await team();
   const a = await open("wizards", { team: t, as: t.ivy, subject: "withdrawn" });
-  has(a, "screen.wizards.empty");
+  has(a, "screen.wizards.empty.withdrawn");
   assert.ok(!/\b0\b/.test(a.text.replace(/[^\n]*Alt\+Shift\+W/, "")), "no zero drawn");
   assert.equal((a.html.match(/<section/g) || []).length, (a.html.match(/<h2/g) || []).length);
   assert.ok(!a.html.includes('id="wz-project"'), "no project chooser with no project");
@@ -162,5 +162,5 @@ test("R12 over an empty list the library draws no empty section and no zero; a f
   // a failed read is drawn failed
   const f = await open("wizards", { team: t, as: t.rosa, faults: { wizards: "none" } });
   assert.ok(f.html.includes('data-state="failed"'));
-  lacks(f, "screen.wizards.empty");
+  lacks(f, "screen.wizards.empty.offered");
 });

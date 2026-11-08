@@ -18,7 +18,7 @@ const OWN = {
   action: ["action", "affordances", "filingsfor", "heldcaptures", "list", "memberlist", "pressurefor", "procedureguides", "profiles", "projectlist", "remindersfor", "templatesforaction"],
   matter: ["consequencesof", "determination", "escalation", "escalationstatus", "list", "standards"],
   "help-records": ["profiles"],
-  actionnew: ["affordances", "list", "projectquestions"],
+  actionnew: ["affordances", "entitieskind", "list", "projectquestions"],
   hold: ["action", "holdsdue", "holdsplaced", "list", "memberlist", "projectlist"],
   holdnotice: ["list"],
   counsel: ["action", "list"],
