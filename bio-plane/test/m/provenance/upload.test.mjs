@@ -6,8 +6,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, sha, V, infoMd } from "./fixture.mjs";
 import * as provenance from "../../../src/provenance/index.mjs";
-import { registerChecks, ARCHIVE_VIA, REWRITTEN_REPLAY_GRADE, DOORBELL_VIA, UPLOAD_VIA, UNPACKED_VIA, FETCHED_VIAS,
+import { registerChecks, ARCHIVE_VIA, DOORBELL_VIA, UPLOAD_VIA, UNPACKED_VIA, FETCHED_VIAS,
          RECEIVED_NOT_FETCHED, UPLOAD_ORIGIN, UPLOADED_METHOD } from "../../../src/provenance/index.mjs";
+import * as P from "../../../src/provenance/index.mjs";
 import { EARNED_CAPTURE_CEILING, parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 import { migrateProvenance } from "../../../src/provenance/schema.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
@@ -71,7 +72,7 @@ test("R63: a later fetch of the same bytes writes its own receipt beside the upl
   const s = sha("uploaded, then found online");
   uploaded(w, s);
   w.prov.recordReceipt({ addressNorm: "e.org/h", captureSha: s, retrieved: T, via: ARCHIVE_VIA });
-  assert.deepEqual([w.prov.captureGrade(s).route, w.prov.captureGrade(s).grade], ["archive", REWRITTEN_REPLAY_GRADE]);
+  assert.deepEqual([w.prov.captureGrade(s).route, w.prov.captureGrade(s).grade], ["archive", P.REWRITTEN_REPLAY_GRADE]);
   w.prov.recordReceipt({ addressNorm: "e.org/h", captureSha: s, retrieved: T });
   assert.deepEqual([w.prov.captureGrade(s).route, w.prov.captureGrade(s).grade], ["direct", EARNED_CAPTURE_CEILING]);
   /* The upload's receipt stays; nothing is regraded or removed. */
@@ -189,7 +190,7 @@ test("R63, R59: among equal answers an upload stands where the doorbell stands; 
   assert.deepEqual(route(m), ["upload", null, RECEIVED_NOT_FETCHED]);
   /* Negative control: any measured letter outranks it. */
   w.prov.recordReceipt({ addressNorm: "e.org/m2", captureSha: m, retrieved: T, via: ARCHIVE_VIA });
-  assert.deepEqual(route(m), ["archive", REWRITTEN_REPLAY_GRADE, "measured"]);
+  assert.deepEqual(route(m), ["archive", P.REWRITTEN_REPLAY_GRADE, "measured"]);
 });
 
 /* ---- R63, R42: C-18.1's upload document ---- */

@@ -6,7 +6,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, sha, V } from "./fixture.mjs";
 import { PROVENANCE_ACT_CHECKS } from "../../../src/provenance/checks.mjs";
-import { ARCHIVE_VIA, REWRITTEN_REPLAY_GRADE, DOORBELL_VIA } from "../../../src/provenance/index.mjs";
+import { ARCHIVE_VIA, DOORBELL_VIA } from "../../../src/provenance/index.mjs";
+import * as P from "../../../src/provenance/index.mjs";
 import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
@@ -40,7 +41,7 @@ test("R25, R85, DEC-149: an archive replay's why names your team's Civicsmith, t
     assert.doesNotMatch(why, OLD);
   }
   assert.match(w.prov.captureGrade(s).why, /web\.archive\.org.*2024-01-02T03:04:05Z/);
-  assert.match(w.prov.captureGrade(r).why, new RegExp(`\\b${REWRITTEN_REPLAY_GRADE}\\b`));
+  assert.match(w.prov.captureGrade(r).why, new RegExp(`\\b${P.REWRITTEN_REPLAY_GRADE}\\b`));
 });
 
 test("R51, DEC-149 (index.mjs:923): '… is proven by the receipt your group's Civicsmith itself made at ${address}'", () => {

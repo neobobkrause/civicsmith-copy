@@ -4,8 +4,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, sha } from "./fixture.mjs";
-import { ARCHIVE_VIA, ARCHIVE_CAPTURE_GRADE, REWRITTEN_REPLAY_GRADE, UNPACKED_VIA, UNPACKED_FROM_ARCHIVE,
-         rawReplayOf } from "../../../src/provenance/index.mjs";
+import { ARCHIVE_VIA, ARCHIVE_CAPTURE_GRADE, UNPACKED_VIA, UNPACKED_FROM_ARCHIVE } from "../../../src/provenance/index.mjs";
+import * as P from "../../../src/provenance/index.mjs";
 import { EARNED_CAPTURE_CEILING, BASIS_GRADES } from "../../../src/record-grammar/index.mjs";
 
 const T = "2026-09-27T01:00:00Z";
@@ -17,8 +17,8 @@ const archived = (w, s, retrievalLocator, norm = "e.org/report.pdf") =>
 
 test("R85: the two letters have one definition each, derived from the ceiling", () => {
   assert.equal(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING, "a raw replay is the ceiling, via archive");
-  assert.equal(BASIS_GRADES.indexOf(REWRITTEN_REPLAY_GRADE), BASIS_GRADES.indexOf(EARNED_CAPTURE_CEILING) + 1);
-  assert.equal(REWRITTEN_REPLAY_GRADE, "C", "the Intake Doctrine's Grade C, reference only");
+  assert.equal(BASIS_GRADES.indexOf(P.REWRITTEN_REPLAY_GRADE), BASIS_GRADES.indexOf(EARNED_CAPTURE_CEILING) + 1);
+  assert.equal(P.REWRITTEN_REPLAY_GRADE, "C", "the Intake Doctrine's Grade C, reference only");
 });
 
 test("R85: a raw replay is B via archive, its snapshot date its fetch date and the archive its custodian", () => {
@@ -51,9 +51,9 @@ test("R85: a rewritten replay, or one whose receipt does not show the raw mode, 
     archived(w, s, loc, `e.org/${name}`);
     const g = w.prov.captureGrade(s);
     assert.deepEqual({ ...g, why: undefined }, {
-      grade: REWRITTEN_REPLAY_GRADE, route: "archive", determined: true, basis: "measured", via_archive: true,
+      grade: P.REWRITTEN_REPLAY_GRADE, route: "archive", determined: true, basis: "measured", via_archive: true,
       reference_only: true, replay: { raw: false, locator: loc ?? null }, why: undefined }, name);
-    assert.match(g.why, new RegExp(`\\b${REWRITTEN_REPLAY_GRADE}\\b`), name);
+    assert.match(g.why, new RegExp(`\\b${P.REWRITTEN_REPLAY_GRADE}\\b`), name);
   }
 });
 
@@ -61,7 +61,7 @@ test("R85: of one capture's archive receipts the raw replay stands, the earliest
   const w = world();
   const s = sha("served both ways");
   archived(w, s, REWRITTEN, "e.org/a");
-  assert.equal(w.prov.captureGrade(s).grade, REWRITTEN_REPLAY_GRADE);
+  assert.equal(w.prov.captureGrade(s).grade, P.REWRITTEN_REPLAY_GRADE);
   archived(w, s, "https://web.archive.org/web/20250101000000id_/https://e.org/report.pdf", "e.org/b");
   archived(w, s, RAW, "e.org/c");
   const g = w.prov.captureGrade(s);
@@ -82,10 +82,10 @@ test("R85, R59: a file cut out of a raw-replayed archive earns B via archive, th
                    [ARCHIVE_CAPTURE_GRADE, "unpacked", UNPACKED_FROM_ARCHIVE, true, "web.archive.org", "archive"]);
 });
 
-test("R85: rawReplayOf reads a raw replay's custodian and snapshot, and nothing else", () => {
-  assert.deepEqual(rawReplayOf(RAW), { custodian: "web.archive.org", snapshot_at: "2024-01-02T03:04:05Z", locator: RAW,
+test("R85: P.rawReplayOf reads a raw replay's custodian and snapshot, and nothing else", () => {
+  assert.deepEqual(P.rawReplayOf(RAW), { custodian: "web.archive.org", snapshot_at: "2024-01-02T03:04:05Z", locator: RAW,
                                        original: "https://e.org/report.pdf" });
-  assert.equal(rawReplayOf("https://archive.example/20240102030405id_/https://e.org/x").custodian, "archive.example");
+  assert.equal(P.rawReplayOf("https://archive.example/20240102030405id_/https://e.org/x").custodian, "archive.example");
   for (const no of [REWRITTEN, "https://web.archive.org/web/2024010203id_/https://e.org/x", "", null, 7, "zip:ab!1"])
-    assert.equal(rawReplayOf(no), null, String(no));
+    assert.equal(P.rawReplayOf(no), null, String(no));
 });

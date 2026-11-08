@@ -4,9 +4,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, sha, V, infoMd } from "./fixture.mjs";
-import { registerChecks, ARCHIVE_VIA, REWRITTEN_REPLAY_GRADE, DOORBELL_VIA, UPLOAD_VIA, UNPACKED_VIA, FETCHED_VIAS,
+import { registerChecks, ARCHIVE_VIA, DOORBELL_VIA, UPLOAD_VIA, UNPACKED_VIA, FETCHED_VIAS,
          EMAIL_VIA, EMAIL_ATTACHMENT_VIA, ATTACHMENT_OF_MESSAGE, ATTACHMENT_UNRESOLVED, RECEIVED_NOT_FETCHED,
          EMAIL_ORIGIN, EMAILED_METHOD, EMAILED_ATTACHMENT_METHOD } from "../../../src/provenance/index.mjs";
+import * as P from "../../../src/provenance/index.mjs";
 import { ARCHIVE_DEPTH_MAX } from "../../../src/ooxml.mjs";
 import { EARNED_CAPTURE_CEILING, parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
@@ -54,7 +55,7 @@ test("R82: the sender's claim adds no letter and removes none; a later fetch of 
   assert.equal(JSON.stringify(w.prov.captureGrade(a)), before);
   assert.deepEqual([w.prov.captureGrade(a).grade, w.prov.captureGrade(b).grade], [null, null]);
   w.prov.recordReceipt({ addressNorm: "e.org/h", captureSha: a, retrieved: T, via: ARCHIVE_VIA });
-  assert.deepEqual([w.prov.captureGrade(a).route, w.prov.captureGrade(a).grade], ["archive", REWRITTEN_REPLAY_GRADE]);
+  assert.deepEqual([w.prov.captureGrade(a).route, w.prov.captureGrade(a).grade], ["archive", P.REWRITTEN_REPLAY_GRADE]);
   w.prov.recordReceipt({ addressNorm: "e.org/h", captureSha: a, retrieved: T });
   assert.deepEqual([w.prov.captureGrade(a).route, w.prov.captureGrade(a).grade], ["direct", EARNED_CAPTURE_CEILING]);
   assert.deepEqual(w.rows(`SELECT via FROM captured_locators WHERE capture_sha = ? ORDER BY via`, a).map((r) => r.via),

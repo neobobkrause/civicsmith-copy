@@ -7,6 +7,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import * as provenance from "../../../src/provenance/index.mjs";
+import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
 
 const FILE = fileURLToPath(new URL("../../../../build/requirements/provenance.md", import.meta.url));
 const CAP = 70000;
@@ -35,4 +37,14 @@ test("consolidation: the unmet marks are those of the start commit, each on its 
 
 test("consolidation: the requirements file is under the cap", () => {
   assert.ok(Buffer.byteLength(read(), "utf8") <= CAP, `${Buffer.byteLength(read(), "utf8")} bytes`);
+});
+
+test("R85 (added after the start, CR2-6): each name it says the module exports is exported, and ARCHIVE_CAPTURE_GRADE is the ceiling as it states", () => {
+  const line = idLines(read()).find((m) => m[1] === "R85");
+  assert.ok(line, "R85 is in the file");
+  for (const name of ["ARCHIVE_CAPTURE_GRADE", "REWRITTEN_REPLAY_GRADE", "rawReplayOf"]) {
+    assert.match(line[2], new RegExp(`\x60${name}[\x60(]`), `R85 names ${name}`);
+    assert.notEqual(provenance[name], undefined, `the module exports ${name}`);
+  }
+  assert.equal(provenance.ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING);
 });
