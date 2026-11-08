@@ -1,0 +1,16 @@
+{
+  "row": "join",
+  "layer": 12,
+  "module": "membership",
+  "from": 2,
+  "why": "CR2-28: one answer to whether a just-joined administrator administers (roster, adminremove, vote count, screens-settings), canon first (K5563)",
+  "at": "2026-11-08T11:08:29Z",
+  "by": "bob",
+  "items": [
+    {
+      "id": "CR2-28",
+      "module": "membership",
+      "what": "a just-joined administrator (invited with administer, issued at once per K5563) is told NOT_AN_ADMIN by the roster (setup.mjs adminRecoveryStep via isAdministrator) while the same session draws adminremove and counts her vote (journey-check walk): read the canon first; one authority answers for every reader (roster, adminremove, vote count, screens-settings members.mjs:35), with a test that a just-joined administrator gets the same answer from each; if screens-settings must change, that is CR2-29 after this lands; if the canon is silent or contradictory on when a new administrator's powers begin, stop and send BOB the passages (REQ-5, Bob's)"
+    }
+  ]
+}
