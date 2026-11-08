@@ -12,6 +12,8 @@ const { credentialsOf, credentialsOps } = await import("../../../src/credentials
 const { membershipOf, membershipOps } = await import("../../../src/membership/index.mjs");
 const { instanceSetupOf } = await import("../../../src/setup.mjs");
 const { aiUseOf } = await import("../../../src/ai-use/index.mjs");
+const { aiAccountsOf } = await import("../../../src/ai-accounts/index.mjs");
+const { PLANS: ACCOUNT_PLANS, HOSTS: ACCOUNT_HOSTS } = await import("../ai-accounts/catalogue.mjs");
 const { wizardScriptsOf } = await import("../../../src/wizard-scripts/index.mjs");
 const CHECKS = await import("../../../src/answer-envelope/checks.mjs");
 const { word, hasWord, WORD_ROWS } = await import("../../../src/setup-words/index.mjs");
@@ -150,34 +152,48 @@ test("R55 (op-declarations R23; tasks R13–R16): tasks' five check-request ops 
   }
 });
 
-test("R56, R30 (credentials R33, R34, R36; admission R19): the group key's six ops reach credentials' map from a session only (`groupswitchset` retired, T41: R56's clause, tested in `t41-door`), `groupkeyset`'s key from the body alone — one sent in the query never reaches the store's address — and no answer or refusal carries the key, `groupkeyset`'s own included (negative control: the key is looked for in every answer and inner request)", async () => {
+/* op-grades R57 (PR 866) retired the alpha group key's six ops (R56's) with their grade rows; the credential act that stands
+   in their place is credentials' `keyedserviceset` (R29 there), the precedent op-grades used. R56's intent is held on it:
+   a session's act only, its key from the body reaching the owner, a caller's stamps never, and no answer carrying the key.
+   The six retired names are R56's own, asserted as ops with no spec (R2). */
+const RETIRED_GROUP_KEY_OPS = ["groupkeyset", "groupkeyremove", "groupkeyswitch", "groupkeystate", "groupkeynotice", "groupkeynoticeseen"];
+
+test("R56, R2 (op-grades R57, PR 866): the group key's six retired ops are declared by no registration and answered as ops with no spec (400 UNKNOWN_OP), nothing asked of the store and the key in no answer", async () => {
   const { env, S } = world();
-  const ops = familyOps("ai-accounts", (op) => op.startsWith("groupkey"));
-  assert.equal(ops.length, 6, "ai-accounts declares the group key's six ops");
-  for (const op of ops) {
-    assert.deepEqual(OPS[op]?.machineClasses, [], op);
+  for (const op of RETIRED_GROUP_KEY_OPS) {
+    assert.equal(Object.hasOwn(OPS, op), false, `${op}: no spec`);
     env.calls.length = 0;
-    const r = await call(env, { op, token: S.founder, method: OPS[op].mutating ? "POST" : "GET",
-                                params: { key: "sk-in-the-query", by: FORGED, viewer: FORGED },
-                                body: OPS[op].mutating ? { key: "sk-in-the-body", by: FORGED } : undefined });
-    assert.equal(r.status, 200, `${op}: ${r.text.slice(0, 200)}`);
-    const [inner] = opCalls(env);
-    assert.equal(inner.route, op);
-    assert.equal(Object.hasOwn(inner.params, "key") && op === "groupkeyset", false, `${op}: no key in the address`);
-    assert.equal(JSON.stringify(inner.params).includes(FORGED), false, op);
-    if (op === "groupkeyset") assert.equal(inner.body.key, "sk-in-the-body");
-    for (const token of [env.ADMIN_TOKEN, env.DAEMON_TOKEN]) {
-      env.calls.length = 0;
-      const m = await call(env, { op, token, method: OPS[op].mutating ? "POST" : "GET", body: OPS[op].mutating ? {} : undefined });
-      assert.equal(m.status, 403, `${op}: a machine credential`);
-      assert.deepEqual(opCalls(env), []);
-    }
-    /* admission R5 (T36, K2166): the retired shared member key is refused by name, and carries no key either */
+    const r = await call(env, { op, token: S.founder, method: "POST", body: { key: "sk-in-the-body" } });
+    refused(r, 400, "UNKNOWN_OP", "C-69.1");
+    assert.equal(r.text.includes("sk-in-the-body"), false, op);
+    assert.deepEqual(opCalls(env), [], `${op}: nothing asked of the store`);
+  }
+});
+
+test("R56, R30 (credentials R29; admission R19; op-grades R57's precedent): the standing credential act `keyedserviceset` reaches credentials' route from a session only, its key from the body, a caller's `by` and `viewer` never; machine credentials and the retired member key are refused before the store; and through the record store's door no answer or refusal carries the key (negative control: the body's key is passed)", async () => {
+  const { env, S } = world();
+  const op = "keyedserviceset";
+  assert.deepEqual(OPS[op]?.machineClasses, [], op);
+  env.calls.length = 0;
+  const r = await call(env, { op, token: S.founder, method: "POST", params: { by: FORGED, viewer: FORGED },
+                              body: { service: "svc", key: "sk-in-the-body", by: FORGED } });
+  assert.equal(r.status, 200, r.text.slice(0, 200));
+  const [inner] = opCalls(env);
+  assert.equal(inner.route, op);
+  assert.equal(JSON.stringify(inner.params).includes(FORGED), false, "no forged stamp in the address");
+  assert.equal(JSON.stringify(inner.body).includes(FORGED), false, "no forged stamp in the body");
+  assert.equal(inner.body.key, "sk-in-the-body", "the body's key is passed");
+  assert.equal(r.text.includes("sk-in-the-body"), false, "the key is in no answer");
+  for (const token of [env.ADMIN_TOKEN, env.DAEMON_TOKEN]) {
     env.calls.length = 0;
-    const retired = await call(env, { op, token: env.MEMBER_TOKEN, method: OPS[op].mutating ? "POST" : "GET", body: OPS[op].mutating ? {} : undefined });
-    refused(retired, 401, "MEMBER_TOKEN_RETIRED", "C-38.11");
+    const m = await call(env, { op, token, method: "POST", body: {} });
+    assert.equal(m.status, 403, `${op}: a machine credential`);
     assert.deepEqual(opCalls(env), []);
   }
+  /* admission R5 (T36, K2166): the retired shared member key is refused by name */
+  env.calls.length = 0;
+  refused(await call(env, { op, token: env.MEMBER_TOKEN, method: "POST", body: {} }), 401, "MEMBER_TOKEN_RETIRED", "C-38.11");
+  assert.deepEqual(opCalls(env), []);
   /* through the record store's door over credentials' map, as plane composes it: the key set, refused to a member who is
      no administrator, and read back, never in an answer */
   const { ctx } = await record({ sealSecret: "control-plane-test-seal-secret-0001" });
@@ -188,12 +204,35 @@ test("R56, R30 (credentials R33, R34, R36; admission R19): the group key's six o
     const res = await D.dispatch(new Request(`http://do/${path}`, body === undefined ? { method } : { method, body: JSON.stringify(body) }), store);
     return { status: res.status, json: await res.json() };
   };
-  const secret = "sk-ant-the-group-key-0123456789";
-  const answers = [await go("groupkeyset?by=admin", "POST", { key: secret }), await go("groupkeyset?by=member:nobody", "POST", { key: secret }),
-                   await go("groupkeystate?viewer=admin"), await go("groupkeyset?by=admin", "POST", { key: "" })];
-  assert.deepEqual(answers.map((a) => a.json.result.ok), [true, false, true, false], JSON.stringify(answers.map((a) => a.json)).slice(0, 600));
+  const secret = "sk-ant-the-service-key-0123456789";
+  const answers = [await go("keyedserviceset?by=admin", "POST", { service: "courtlistener", key: secret }),
+                   await go("keyedserviceset?by=member:nobody", "POST", { service: "courtlistener", key: secret }),
+                   await go("keyedservices?viewer=admin")];
+  assert.deepEqual([answers[0].json.result.ok, answers[1].json.result.ok, Array.isArray(answers[2].json.result.services)], [true, false, true],
+                   JSON.stringify(answers.map((a) => a.json)).slice(0, 600));
   for (const a of answers) assert.equal(JSON.stringify(a.json).includes(secret), false);
 });
+
+/* (op-grades R57, PR 866; ai-accounts R40, R5, R51) accounts are held through ai-accounts' own T53 acts, the retired group-key and
+   account-reference forms gone: a member's own API account or the team's, of the catalogue fixture's plans, its key sealed
+   and switched on; a member's recipient notice for the plan's host seen. */
+const NOTICE_DUE = "RECIPIENT_NOTICE_DUE";
+async function holdAccount(ctx, owner, plan, secret, by) {
+  const AA = aiAccountsOf(ctx);
+  const set = await AA.accountSet({ owner, provider: ACCOUNT_PLANS.provider, plan, means: "sealed", secret, by });
+  assert.equal(set.ok, true, JSON.stringify(set));
+  const sw = AA.accountSwitch({ account_id: set.account_id, on: true, by });
+  assert.equal(sw.ok, true, JSON.stringify(sw));
+}
+const ownAccount = async (ctx, member, secret) => {
+  await holdAccount(ctx, `member:${member}`, ACCOUNT_PLANS.memberApi, secret, `member:${member}`);
+  noticeSeen(ctx, member);
+};
+const teamAccount = (ctx, secret) => holdAccount(ctx, "group", ACCOUNT_PLANS.teamApi, secret, "admin");
+function noticeSeen(ctx, member) {
+  const r = aiAccountsOf(ctx).recipientNoticeSeen({ member: `member:${member}`, provider: ACCOUNT_PLANS.provider, host: ACCOUNT_HOSTS.main, by: `member:${member}` });
+  assert.equal(r.ok, true, JSON.stringify(r));
+}
 
 /* A record with a claimed founder, the members `ann` (an administrator) and `bea` and `cal` (members), and the two drafts'
    handlers replaced by recorders, so what the door hands each is seen whatever its owner answers. */
@@ -237,7 +276,7 @@ test("R57 (instance-setup R55, R65; run-rules R20; ai-use R3; credentials R35, R
   assert.equal(code(await gdd("member:ann")), "NO_ACCOUNT");
   assert.equal(code(await help("member:bea")), "NO_ACCOUNT");
   /* the member's own account, then its own limit */
-  assert.equal((await C.accountReferenceSet({ member: "member:bea", kind: "apikey", secret: "sk-bea-own", by: "member:bea" })).ok, true);
+  await ownAccount(r.ctx, "bea", "sk-bea-own");
   /* (T41; K2488, rule 4 (10)) the retired ceilings are ai-use's limits: the paying account's own limit, reached, is
      `AI_LIMIT_REACHED` (ai-use R3, `useCheck`), then removed */
   const use = aiUseOf(r.ctx);
@@ -247,14 +286,13 @@ test("R57 (instance-setup R55, R65; run-rules R20; ai-use R3; credentials R35, R
   assert.equal(code(await help("member:bea")), "AI_LIMIT_REACHED");
   assert.equal(limit(null).ok, true);
   /* the group's key held and on, its notice unread by ann: credentials' own refusal, relayed with its row */
-  assert.equal((await C.groupKeySet({ key: "sk-group-key", by: "admin" })).ok, true);
-  assert.equal(C.groupKeySwitch({ on: true, by: "admin" }).ok, true);
+  await teamAccount(r.ctx, "sk-group-key");
   const due = await gdd("member:ann");
-  assert.equal(code(due), "GROUP_KEY_NOTICE_DUE");
+  assert.equal(code(due), NOTICE_DUE);
   assert.equal(typeof due.json.result.translation, "string");
   assert.deepEqual(seen, [], "no handler was asked");
   /* every refusal cleared: the handlers are reached */
-  assert.equal(C.groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" }).ok, true);
+  noticeSeen(r.ctx, "ann");
   assert.equal(code(await gdd("member:ann")), "ASSISTANT_DRAFT_UNAVAILABLE");
   assert.equal(code(await help("member:bea")), "ASSISTANT_DRAFT_UNAVAILABLE");
   assert.deepEqual(seen.map(([op]) => op), ["groupdescriptiondraft", "writinghelp"]);
@@ -263,10 +301,9 @@ test("R57 (instance-setup R55, R65; run-rules R20; ai-use R3; credentials R35, R
 test("R57, R29, R30 (K1755): a draft's handler receives `assistant` as the door resolved it — `{on: true, account: {kind, level}}`, the member's own account or the group's key, never the key — its own arguments from the body and `by` and `viewer` as stamped; a caller's `assistant` is never read (negative control: no secret appears in anything handed over or answered)", async () => {
   const { r, C, seen } = await drafts();
   assert.equal(C.aiKeepAwaySet({ on: false, by: "admin" }).ok, true);   /* the assistant on: nothing kept away (K2162) */
-  assert.equal((await C.accountReferenceSet({ member: "member:bea", kind: "apikey", secret: "sk-bea-own-secret", by: "member:bea" })).ok, true);
-  assert.equal((await C.groupKeySet({ key: "sk-group-key-secret", by: "admin" })).ok, true);
-  assert.equal(C.groupKeySwitch({ on: true, by: "admin" }).ok, true);
-  assert.equal(C.groupKeyNoticeSeen({ member: "member:ann", by: "member:ann" }).ok, true);
+  await ownAccount(r.ctx, "bea", "sk-bea-own-secret");
+  await teamAccount(r.ctx, "sk-group-key-secret");
+  noticeSeen(r.ctx, "ann");
   const forged = { on: true, account: { kind: "apikey", level: "member", key: "sk-forged" } };
   const a = await r.go("groupdescriptiondraft?by=member:ann&viewer=member:ann", "POST",
                        { answers: [{ question: "Who are you?", text: "Tenants" }], assistant: forged });
@@ -378,7 +415,7 @@ test("R55 (op-declarations R21; K1863 (7)): every alias `OP_ALIASES` declares is
   refused(await call(env, { op: "nosuchaliasorop", token: S.ann }), 400, "UNKNOWN_OP", "C-69.1");
 });
 
-test("R28, R54, R56 (admission R17, R19; K1861 (6)): admission's query gate runs after R1 and before anything reads the URL — a public door's `token` is never looked up and its key, link and cover never reach the store from the query; `groupkeyset`'s key in the query never does — and a `store=` naming no namespace is still R1's refusal first (negative control: the session's token on `groupkeyset` is still read)", async () => {
+test("R28, R54, R56 (admission R17, R19; K1861 (6)): admission's query gate runs after R1 and before anything reads the URL — a public door's `token` is never looked up and its key, link and cover never reach the store from the query; and a `store=` naming no namespace is still R1's refusal first (negative control: the session's token on a credential act, `keyedserviceset` since op-grades R57 retired `groupkeyset`, is still read)", async () => {
   const { env, S } = world();
   env.calls.length = 0;
   const d = await call(env, { op: "websiteinvite", token: S.ann, method: "POST", params: { key: "q-key", cover: "q-cover" }, body: {} });
@@ -386,11 +423,11 @@ test("R28, R54, R56 (admission R17, R19; K1861 (6)): admission's query gate runs
   assert.deepEqual(env.calls.map((c) => c.route), ["websiteinvite"], "no session lookup for a public door's token");
   assert.deepEqual(env.calls[0].body, {});
   env.calls.length = 0;
-  const g = await call(env, { op: "groupkeyset", token: S.founder, method: "POST", params: { key: "q-key" }, body: { key: "b-key" } });
+  const g = await call(env, { op: "keyedserviceset", token: S.founder, method: "POST", body: { service: "svc", key: "b-key" } });
   assert.equal(g.status, 200);
   assert.ok(env.calls.some((c) => c.route === "session"), "the session is read");
   const [inner] = opCalls(env);
-  assert.deepEqual([Object.hasOwn(inner.params, "key"), inner.body.key], [false, "b-key"]);
-  refused(await call(env, { op: "groupkeyset", token: S.founder, method: "POST", params: { store: "nowhere", key: "q" }, body: {} }),
+  assert.equal(inner.body.key, "b-key");
+  refused(await call(env, { op: "keyedserviceset", token: S.founder, method: "POST", params: { store: "nowhere", key: "q" }, body: {} }),
           400, "NAMESPACE_UNKNOWN", "C-78.1");
 });

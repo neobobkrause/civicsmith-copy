@@ -122,7 +122,7 @@ export const ACCEPTED = Object.freeze({
   "newgroup/src/ready.mjs::WORKER_SIZE_LIMIT": "Cloudflare's uncompressed Worker size limit, checked against the release before an install (installer R6); a deploy limit, no file's reading (K5000)",
   "ocr-worker/scripts/embed-tesslib.mjs::VENDOR_BYTES": "a build script's expected size of a vendored library, an integrity pin",
   "agent-model/src/model.mjs::DEFAULT_MAX_SEGMENT_BYTES": "how much agent transcript one re-serialising segment holds (a CPU pacing figure), no file's reading",
-  "agent-runner/src/ws.mjs::MAX_MESSAGE": "the largest websocket frame the agent runner accepts, a transport bound",
+  /* F2: `agent-runner/src/ws.mjs::MAX_MESSAGE` removed with the file (agent-runner PR 610 deleted `ws.mjs`) */
   "agent-worker/src/ops.mjs::TRANSCRIBE_IMAGE_MAX_BYTES": "the AI provider's per-image request limit (5 MB), a provider fact about what is sent, not a reading ceiling",
   "bio-plane/src/store-assembly/transcribe.mjs::TRANSCRIBE_IMAGE_MAX_BYTES": "the same provider per-image limit, held equal to agent-worker's by its test (the plane's copy moved to the assembly with the transcription)",
   "bio-plane/src/case-carriage/index.mjs::NATIVE_DIGEST_MIN_BYTES": "the size from which a document's bytes are digested by the platform's native SHA-256 and not the pure-JS hash, a policy threshold of the digest (case-carriage R15)",
