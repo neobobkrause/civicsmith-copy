@@ -18,6 +18,8 @@
  *   stepPropose, stepAccept, stepProposals, acceptanceCounts      a proposed step, accepted by a member
  *   (R24, R26)
  *   check, resolveStepAuthority (R18)                             registered with `promotion` and `observation-log`
+ *   registerRivalSource, stepsOfRival (R31)                       a step opened from a rival, and the steps a rival
+ *                                                                 opened, with what they produced (BD-17)
  *
  * SHAPE (K61). `stepsOf(host, deps)` answers the one instance per host; making it creates and declares the tables
  * (R22), registers the leg check with `promotion` (its R39), the authority resolver and the later-found listener with
@@ -94,6 +96,14 @@ function refuse(code, detail, extra = {}) {
   const row = STEPS_CHECKS[code];
   return { ...extra, ok: false, reason: code, code, check: row.check, translation: row.translation, detail };
 }
+/* R31 (CR2-18, BD-17): the one refusal of a rival on a step. It has no row of C-142 (`check: null`), so no census
+   of the family moves; its sentence is written here, once. */
+export const RIVAL_CODES = Object.freeze(["STEP_NOT_A_RIVAL"]);
+function refuseRival(detail, extra = {}) {
+  return { ...extra, ok: false, reason: "STEP_NOT_A_RIVAL", code: "STEP_NOT_A_RIVAL", check: null,
+           translation: localize("steps.rivals.not_a_rival", "That is not one of this question's rival explanations, so no step was opened from it. Nothing was written."),
+           detail };
+}
 /** One finding as `inquiry` R11 carries them inside `BASIS_REFUSED` (R18). */
 function finding(code, detail, extra = {}) {
   const row = STEPS_CHECKS[code];
@@ -153,6 +163,7 @@ export class Steps {
   #dueHolder = null;                 // R29: {module, fn({step, byWhen, waits}) → {entry} | null}
   #arrivals = new Map();             // R11: kind → {module, read(id)}
   #productSight = new Map();         // R9: id prefix → {module, fn(id, viewer)}
+  #rivalSource = null;               // R31: {module, fn({question, rival, viewer}) → true when a rival of the question}
   #declared = false;
 
   constructor(storage, { record, membership, observationLog, legEarning = null, host = null, view = null, now = null }) {
@@ -244,6 +255,26 @@ export class Steps {
     if (refused) return refused;
     this.#productSight.set(prefix, { module, fn });
     return { ok: true, prefix };
+  }
+
+  /** R31 (CR2-18, BD-17): `hypotheses` registers, once, whether an id is one of a question's rival explanations for a
+   *  viewer: `fn({question, rival, viewer})` answers true, or anything else (not a rival). */
+  registerRivalSource(module, fn) {
+    const refused = listenerRefusal(this.#rivalSource ? { module: this.#rivalSource.module } : null, module, fn);
+    if (refused) return refused;
+    this.#rivalSource = { module, fn };
+    return { ok: true, module };
+  }
+  /* R31: whether `rival` is one of `question`'s rivals for `viewer`, by the registered source; false when none is
+     registered, or it throws or answers anything but true. */
+  #isRival(question, rival, viewer) {
+    if (!this.#rivalSource) return false;
+    try { return this.#rivalSource.fn({ question, rival, viewer }) === true; } catch { return false; }
+  }
+  /* R31: the rival a step was opened from, `{question, rival}`, shown only while the viewer sees that question. */
+  #rivalOf(stepId, viewer) {
+    const r = this.#one(`SELECT question_id, rival_id FROM step_rivals WHERE step_id = ?`, stepId);
+    return r && this.#membership.inSight(r.question_id, viewer) ? { question: r.question_id, rival: r.rival_id } : null;
   }
 
   /* ---- who is asking ---- */
@@ -486,7 +517,7 @@ export class Steps {
       ...(row.doer_member ? {} : { enabled_by: row.enabled_by }),
       taken_in: this.#takenIn(row, viewer), state: this.#readState(row, waits), outcomes: this.#outcomes(row, viewer),
       byWhen: this.#byWhenView(row, today), by_when_held: this.#heldBy(row), waits, learned: this.#learned(row.step_id), cost: this.#cost(row.step_id),
-      later_found: this.#laterFoundOf(row.step_id, viewer), at: row.at,
+      later_found: this.#laterFoundOf(row.step_id, viewer), rival: this.#rivalOf(row.step_id, viewer), at: row.at,
     };
   }
 
@@ -602,18 +633,27 @@ export class Steps {
 
   /** R1: `stepCreate({place, work, byWhen?, project?, by, run?})` records a step at `planned`. A machine names the run
    *  it holds (`run`). A member is answered R7's matches beside her new step (R8). */
-  stepCreate({ place = null, work = null, byWhen = null, project = null, by = null, run = null } = {}) {
+  stepCreate({ place = null, work = null, byWhen = null, project = null, by = null, run = null, rival = null } = {}) {
     if (!filled(work) || chars(work.trim()) > WORK_MAX) return refuse("STEP_NO_WORK", `the work is the doer's words, 1–${WORK_MAX} characters`);
     const c = this.#creator(by, run);
     if (c.refusal) return c.refusal;
-    return this.#create({ place, work: work.trim(), byWhen, project, creator: c });
+    return this.#create({ place, work: work.trim(), byWhen, project, creator: c, rival });
   }
 
-  #create({ place, work, byWhen, project, creator }) {
+  #create({ place, work, byWhen, project, creator, rival = null }) {
     const { actor, viewer } = creator;
     const p = this.#place(place, viewer, "stepCreate");
     if (p.refusal) return p.refusal;
     if (filled(project)) { const bad = this.#projectRefusal(project, viewer, "stepCreate"); if (bad) return bad; }
+    /* R31: a step opened from a rival is placed on the question whose rival it is; the first of its questions (in id
+       order) the registered source confirms is recorded with it. */
+    let rivalOn = null;
+    if (rival !== undefined && rival !== null) {
+      if (!filled(rival)) return refuseRival("a rival is named by its id", { rival: null });
+      if (p.kind !== "questions") return refuseRival("only a step on a question is opened from one of its rivals", { rival });
+      rivalOn = p.questions.find((q) => this.#isRival(q, rival.trim(), viewer)) ?? null;
+      if (!rivalOn) return refuseRival("the id is not one of the step's questions' rival explanations", { rival });
+    }
     const w = Steps.#byWhen(byWhen);
     if (w.refusal) return w.refusal;
     const norm = normaliseWork(work);
@@ -637,14 +677,17 @@ export class Steps {
         w.value ? json(w.value) : null, w.value && actor.member ? actor.member : null, at);
       for (const q of p.questions ?? [])
         this.#sql.exec(`INSERT INTO step_refs (step_id, question_id, by_actor, at) VALUES (?,?,?,?)`, id.id, q, actor.by, at);
+      if (rivalOn)
+        this.#sql.exec(`INSERT INTO step_rivals (step_id, question_id, rival_id, by_actor, at) VALUES (?,?,?,?,?)`, id.id, rivalOn, rival.trim(), actor.by, at);
       this.#event(id.id, "create", null, "planned", null, actor.by, at);
       return { ok: true, step: id.id };
     });
     if (!made || made.ok !== true) return made;
     const placeOut = p.kind === "project" ? { project: p.project } : p.kind === "group" ? { group: true } : { questions: p.questions };
-    if (actor.machine) return { ok: true, step: made.step, place: placeOut, at };
+    const rivalOut = rivalOn ? { rival: { question: rivalOn, rival: rival.trim() } } : {};
+    if (actor.machine) return { ok: true, step: made.step, place: placeOut, ...rivalOut, at };
     const alike = this.stepsLike({ work, questions: p.questions ?? null, viewer }).steps.filter((s) => s.step !== made.step);
-    return { ok: true, step: made.step, place: placeOut, at, alike };
+    return { ok: true, step: made.step, place: placeOut, ...rivalOut, at, alike };
   }
 
   #event(stepId, act, from, to, reason, by, at) {
@@ -954,6 +997,23 @@ export class Steps {
                          : r.place_kind === "project" ? { project: r.project_id } : { group: true }) }));
       return { ok: true, record: { kind: p.kind, id: p.id }, steps };
     } catch { return { ok: true, record: { kind: p.kind, id: p.id }, steps: [] }; }
+  }
+
+  /** R31 (CR2-18, BD-17): `stepsOfRival({question, rival, viewer, after?, limit?})`: the steps opened from `rival` on
+   *  `question` that the viewer sees, each as R4 reads it with `products`, what it produced that the viewer may see
+   *  (R9's `productsOf`), so the rival lists the legs those steps found. Bounded as R4's reads. A question the viewer may
+   *  not see answers `NO_SUCH_BUNDLE`; a rival no step was opened from answers none. Writes nothing; never throws. */
+  stepsOfRival({ question = null, rival = null, viewer = null, after = null, limit = undefined } = {}) {
+    try {
+      if (!this.#questionSeen(question, viewer))
+        return refuse("NO_SUCH_BUNDLE", "no question by that id is held, or it is not one you may see", { question: filled(question) ? question : null });
+      const rows = filled(rival)
+        ? this.#rows(`SELECT s.* FROM steps s JOIN step_rivals v ON v.step_id = s.step_id WHERE v.question_id = ? AND v.rival_id = ? ORDER BY s.step_id`, question, rival)
+        : [];
+      const page = this.#page(rows, viewer, { state: null, after, limit });
+      const steps = page.steps.map((v) => { const pr = this.productsOf({ step: v.step, viewer }); return { ...v, products: pr.ok ? pr.products : [] }; });
+      return { ok: true, question, rival: filled(rival) ? rival : null, ...page, steps };
+    } catch { return refuse("NO_SUCH_BUNDLE", "the rival's steps could not be read", { question: filled(question) ? question : null }); }
   }
 
   /* ---- waits and dates (R11, R12) ---- */
