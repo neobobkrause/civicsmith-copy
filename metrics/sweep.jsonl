@@ -715,3 +715,4 @@
 {"at":"2026-11-08T16:20:33Z","row":"check","by":"layer land","live":3,"live_at":"2026-11-08T16:14:50Z","slots_working":2,"published_free":1,"job_cap":20,"startable":0}
 {"at":"2026-11-08T16:26:04Z","row":"check","by":"layer land","live":3,"live_at":"2026-11-08T16:14:50Z","slots_working":1,"published_free":2,"job_cap":20,"startable":0}
 {"at":"2026-11-08T16:37:16Z","row":"check","by":"revert exempt","live":3,"live_at":"2026-11-08T16:14:50Z","slots_working":2,"published_free":1,"resumed":["interface-shell"],"job_cap":20,"startable":0}
+{"at":"2026-11-08T16:42:55Z","row":"check","by":"setup check","live":3,"live_at":"2026-11-08T16:14:50Z","slots_working":1,"published_free":2,"job_cap":20,"startable":0}
