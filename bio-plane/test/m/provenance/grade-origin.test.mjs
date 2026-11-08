@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, sha, V, infoMd } from "./fixture.mjs";
-import { ARCHIVE_CAPTURE_GRADE, ARCHIVE_VIA, DOORBELL_VIA } from "../../../src/provenance/index.mjs";
+import { ARCHIVE_CAPTURE_GRADE, REWRITTEN_REPLAY_GRADE, ARCHIVE_VIA, DOORBELL_VIA } from "../../../src/provenance/index.mjs";
 import { EARNED_CAPTURE_CEILING, BASIS_GRADES, TESTIMONY_GRADE } from "../../../src/record-grammar/index.mjs";
 import { PROVENANCE_ACT_CHECKS } from "../../../src/provenance/checks.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
@@ -21,14 +21,19 @@ test("R24: a capture this instance fetched directly earns the ceiling, measured"
   assert.equal(w.prov.captureGrade(`sha256:${s.toUpperCase()}`).grade, EARNED_CAPTURE_CEILING);
 });
 
-test("R25: an archive-only capture earns the letter one rank below the ceiling, from its one definition", () => {
-  assert.equal(rank(ARCHIVE_CAPTURE_GRADE), rank(EARNED_CAPTURE_CEILING) + 1);
-  assert.equal(ARCHIVE_CAPTURE_GRADE, "C", "the ruled letter (BOB #35, D-693)");
+test("R25, R85: an archive-only capture earns, from its one definition, the ceiling for a raw replay and one rank below for a rewritten one", () => {
+  assert.equal(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING, "BD-18: a raw replay is B via archive");
+  assert.equal(rank(REWRITTEN_REPLAY_GRADE), rank(EARNED_CAPTURE_CEILING) + 1);
+  assert.equal(REWRITTEN_REPLAY_GRADE, "C", "BD-18: a rewritten replay is Grade C, reference only");
   const w = world();
-  const s = sha("archived");
-  w.prov.recordReceipt({ addressNorm: "e.org/a", captureSha: s, retrieved: T, via: ARCHIVE_VIA });
-  const g = w.prov.captureGrade(s);
+  const raw = sha("archived raw"), rew = sha("archived rewritten");
+  w.prov.recordReceipt({ addressNorm: "e.org/a", captureSha: raw, retrieved: T, via: ARCHIVE_VIA,
+                         retrievalLocator: "https://web.archive.org/web/20240102030405id_/https://e.org/a" });
+  w.prov.recordReceipt({ addressNorm: "e.org/b", captureSha: rew, retrieved: T, via: ARCHIVE_VIA,
+                         retrievalLocator: "https://web.archive.org/web/20240102030405/https://e.org/b" });
+  const g = w.prov.captureGrade(raw), r = w.prov.captureGrade(rew);
   assert.deepEqual([g.grade, g.route, g.determined, g.basis], [ARCHIVE_CAPTURE_GRADE, "archive", true, "measured"]);
+  assert.deepEqual([r.grade, r.route, r.determined, r.basis, r.reference_only], [REWRITTEN_REPLAY_GRADE, "archive", true, "measured", true]);
 });
 
 test("R26: no recorded route is stated as unrecorded, and a via no ruling names is undetermined", () => {
@@ -90,7 +95,7 @@ test("R51: a capture received through the doorbell earns no fetched letter; its 
                      at: "2026-09-26T00:00:00Z" });
   /* A route this instance fetched is measured and answers first; the doorbell never raises or lowers it. */
   w.prov.recordReceipt({ addressNorm: "e.org/h", captureSha: s, retrieved: T, via: ARCHIVE_VIA });
-  assert.deepEqual([w.prov.captureGrade(s).route, w.prov.captureGrade(s).grade], ["archive", ARCHIVE_CAPTURE_GRADE]);
+  assert.deepEqual([w.prov.captureGrade(s).route, w.prov.captureGrade(s).grade], ["archive", REWRITTEN_REPLAY_GRADE]);
   w.prov.recordReceipt({ addressNorm: "e.org/h", captureSha: s, retrieved: T });
   assert.deepEqual([w.prov.captureGrade(s).route, w.prov.captureGrade(s).grade], ["direct", EARNED_CAPTURE_CEILING]);
   /* The doorbell is a ruled route: beside a via no ruling names, it still answers as received. */

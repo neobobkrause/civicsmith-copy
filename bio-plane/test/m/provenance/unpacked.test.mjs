@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, sha, V, provDoc, infoMd } from "./fixture.mjs";
 import { ARCHIVE_VIA, DOORBELL_VIA, UPLOAD_VIA, UNPACKED_VIA, UNPACKED_METHOD, UNPACKED_FROM_ARCHIVE, UNPACKED_UNRESOLVED,
-         ARCHIVE_CAPTURE_GRADE, registerChecks, withRegisterChecks } from "../../../src/provenance/index.mjs";
+         REWRITTEN_REPLAY_GRADE, registerChecks, withRegisterChecks } from "../../../src/provenance/index.mjs";
 import { ARCHIVE_DEPTH_MAX } from "../../../src/ooxml.mjs";
 import { EARNED_CAPTURE_CEILING, TESTIMONY_GRADE, parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
@@ -75,7 +75,7 @@ test("R59: a file earns exactly what its archive earns, every field passed throu
   });
   /* The letters, never stronger and never weaker. */
   assert.equal(w.prov.captureGrade(sha("file of direct")).grade, EARNED_CAPTURE_CEILING);
-  assert.equal(w.prov.captureGrade(sha("file of archive")).grade, ARCHIVE_CAPTURE_GRADE);
+  assert.equal(w.prov.captureGrade(sha("file of archive")).grade, REWRITTEN_REPLAY_GRADE);
   assert.equal(w.prov.captureGrade(sha("file of authored")).testimony, TESTIMONY_GRADE);
   assert.deepEqual(w.prov.captureGrade(sha("file of doorbell")).received,
                    { address: "knock:KNOCK-20260927-0a1b2c3d", address_norm: "knock:KNOCK-20260927-0a1b2c3d", at: T(1) });
@@ -140,7 +140,7 @@ test("R59: with several routes the strongest answer stands; a later direct captu
   /* K1852 (3): a file cut out of a replayed archive (C), then fetched directly: the direct letter beside it. */
   const f1 = sha("f1");
   cut(w, replay, 0, f1, { norm: "e.org/r.zip" });
-  assert.deepEqual(route(f1), ["unpacked", ARCHIVE_CAPTURE_GRADE, replay]);
+  assert.deepEqual(route(f1), ["unpacked", REWRITTEN_REPLAY_GRADE, replay]);
   w.prov.recordReceipt({ addressNorm: "e.org/f1.pdf", captureSha: f1, retrieved: T(3) });
   assert.deepEqual(route(f1), ["direct", EARNED_CAPTURE_CEILING, null]);
   assert.equal(w.rows(`SELECT * FROM captured_locators WHERE capture_sha = ?`, f1).length, 2, "both receipts stand");
@@ -160,7 +160,7 @@ test("R59: with several routes the strongest answer stands; a later direct captu
   const f3 = sha("f3");
   cut(w, knock, 0, f3, { norm: "knock:KNOCK-20260927-00000001" });
   w.prov.recordReceipt({ addressNorm: "e.org/f3", captureSha: f3, retrieved: T(1), via: ARCHIVE_VIA });
-  assert.deepEqual(route(f3), ["archive", ARCHIVE_CAPTURE_GRADE, null]);
+  assert.deepEqual(route(f3), ["archive", REWRITTEN_REPLAY_GRADE, null]);
   /* Between equal (undetermined) answers the order direct, archive.org, unpacked, doorbell: unpacked before doorbell. */
   const f4 = sha("f4");
   w.prov.recordReceipt({ addressNorm: "knock:KNOCK-20260927-00000002", captureSha: f4, retrieved: T(1), via: DOORBELL_VIA });
