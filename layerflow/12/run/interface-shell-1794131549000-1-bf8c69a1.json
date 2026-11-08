@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 12,
+  "module": "interface-shell",
+  "round": 1,
+  "started": "2026-11-08T09:52:29Z",
+  "ended": "2026-11-08T09:53:55Z",
+  "minutes": 1.4,
+  "tested_on": "50e7eefd55071777b85e8003c452193ba65909d9",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-08T09:53:55Z"
+}
