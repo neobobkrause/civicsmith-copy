@@ -1,0 +1,69 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "journey-check",
+  "pr": 917,
+  "branch": "job/journey-check-2",
+  "head": "48746ed01c5ff194dcc910c6c1527a35445d9d6e",
+  "before": "25c1342cbc340c39f1b7d4b50939aaa991725866",
+  "merge": "8d55931075ac53dac4a4b120b4c1f939bb9dc6df",
+  "at": "2026-11-08T01:14:23Z",
+  "by": "bob",
+  "gate_runs": 14,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/journey-check/account-installer.test.mjs",
+      "bio-plane/test/m/journey-check/check-first.mjs",
+      "bio-plane/test/m/journey-check/journey.test.mjs",
+      "bio-plane/test/m/journey-check/plane-cron.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/journey-check/account-installer.test.mjs",
+      "bio-plane/test/m/journey-check/check-first.mjs",
+      "bio-plane/test/m/journey-check/journey.test.mjs",
+      "bio-plane/test/m/journey-check/plane-cron.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/journey-check/account-installer.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: passedCheck } from \"./check-first.mjs\" ; import {"
+      },
+      {
+        "file": "bio-plane/test/m/journey-check/check-first.mjs",
+        "class": "breaking",
+        "why": "added, naming R1 (Provides before this land) while journey-check's source changed: it may assert a changed answer"
+      },
+      {
+        "file": "bio-plane/test/m/journey-check/journey.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: CARRIED_STATES , unreachedOnLocal } from \"../../../src/journey-check/states.mjs\" ; import"
+      },
+      {
+        "file": "bio-plane/test/m/journey-check/plane-cron.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: passedCheck } from \"./check-first.mjs\" ; import {"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/journey-check/account-installer.test.mjs",
+      "bio-plane/test/m/journey-check/check-first.mjs",
+      "bio-plane/test/m/journey-check/journey.test.mjs",
+      "bio-plane/test/m/journey-check/plane-cron.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
