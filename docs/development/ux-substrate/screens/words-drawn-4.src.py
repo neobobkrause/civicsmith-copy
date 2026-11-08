@@ -3313,3 +3313,28 @@ def w501(key, en):
     W.append(dict(key=key, en=en, protected=False, note='DEC-501: R17 word pass, "team" for the team (was the code row\'s "group")'))
 w501('run-rules.checks.nothing_was_started_because_none', "Nothing was started, because none of the AI accounts your team's Civicsmith can use has passed the test for this part of the work. Ask whoever looks after your team's AI accounts to add one that has passed it, or do this part without AI.")
 w501('screen.action.routes.why', "None of your places' profiles names a procedure for this kind, and no guide of your team's covers it. A rule or a procedure your profile lacks is drafted under Your team's own rules.")
+
+# DEC-502 (BD-17, completion round 2; BOB's ask of 8 Nov): the refusals of the rival explanations (hypotheses, PR 1005),
+# keyed by code as every C-134 row is. The machine's refusal is the module's own code, MACHINE_CANNOT_MARK_RIVAL:
+# MACHINE_CANNOT_MARK is sources' C-121.7 and its word says a paid or account-gated service, so it cannot be shared.
+def w502(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-502: ' + note))
+w502('refusal.RIVALS_TOO_FEW', 'A question weighs 2 to 6 rival explanations, and this names fewer than 2. Add another before saving. Nothing was written.', "hypotheses' translation, keyed by its code; hypothesisRivals, RIVALS_MIN 2")
+w502('refusal.RIVALS_TOO_MANY', 'A question weighs 2 to 6 rival explanations, and this names more than 6. Take one out before saving. Nothing was written.', "hypotheses' translation, keyed by its code; hypothesisRivals, RIVALS_MAX 6")
+w502('refusal.NOT_IN_INQUIRY', 'A rival explanation is a hunch held in this question, or one the system proposed in it. Hold it in this question first. Nothing was written.', "hypotheses' translation, keyed by its code; hypothesisRivals, the id named in detail")
+w502('refusal.MACHINE_CANNOT_MARK_RIVAL', 'Only a member, acting for themselves, marks which explanation to explore next. No assistant, scheduled task or unattended process can. Nothing was written.', "hypotheses' translation, keyed by its code (INV:108); exploreNext")
+w502('refusal.NOT_A_RIVAL', "That is not one of this question's rival explanations. It may have been taken out since you opened the page. Nothing was written.", "hypotheses' translation, keyed by its code; exploreNext")
+
+# DEC-504 (Ratification F1, BD-3; BOB's re-send of the ux ask of 6 Nov 18:01Z, 8 Nov): what the publication lane's part-2
+# decision (6 Nov 18:32Z) adds to DEC-490 and DEC-492. A scheduled edition's signed entry is discarded on cancel or stop;
+# a move to another day that is not re-signed discards it, so the entry falls due after publication; and docket's
+# DOCKET_HELD_EDITION_UNSIGNED gets its sentence. DEC-490 and DEC-492's words are now drawn on the Screens page.
+def w504(key, en, note, protected=False):
+    W.append(dict(key=key, en=en, protected=protected, note='DEC-504: ' + note))
+w504('screen.ceremony.publishat.cancel.docket', "Cancelling also discards the edition's signed docket entry. Nothing reaches the docket.", '(c) of the 18:32Z decision: said on Cancel publishing; a stop at publish time discards it the same way, with the stop notice\'s words')
+w504('screen.ceremony.publishat.move.docket.notsigned', "The waiting docket entry wasn't signed again, so it was discarded. After Edition {edition} publishes, its entry waits on the case's docket among the items due, and any owner of the project can post it there with one signature.", '(d): a move to another day whose re-signing was not confirmed; {edition}')
+w504('refusal.DOCKET_HELD_EDITION_UNSIGNED', "A scheduled edition's docket entry is waiting to go public, and posting this entry has to sign that one again too, so the docket stays in order. Sign both together. Nothing was written.", "docket's translation, keyed by its code (the 18:32Z decision: writes nothing)", True)
+w504('screen.ceremony.publishat.move.docket.notsigned.head', 'If the entry is not signed again', '(d): the fold over .move.docket.notsigned')
+w504('screen.ceremony.docket.notyet.other', 'Other reasons it is not on the docket yet', "need (2): the fold listing DEC-490's other .reason.* (the Screens page only)")
+w504('screen.docket.due.head', 'Due on the docket', "need (2): the docket page's section of items due (docket R9)")
+w504('screen.docket.file.refused.head', 'When it cannot be posted', "the docket page's fold of refusals beside Post it, signed")
