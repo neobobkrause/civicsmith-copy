@@ -1,0 +1,55 @@
+{
+  "row": "notice",
+  "at": "2026-11-08T09:42:50Z",
+  "key": "inquiry:1006",
+  "provider": "inquiry",
+  "ids": [],
+  "pr": 1006,
+  "users": [
+    "action-plans",
+    "actions",
+    "affordances",
+    "answer-envelope",
+    "case-account",
+    "case-authoring",
+    "case-disclosures",
+    "conformance",
+    "consequences",
+    "control-plane",
+    "docket",
+    "intent",
+    "investigation",
+    "notice-producers",
+    "op-declarations",
+    "op-specs-late",
+    "plane",
+    "project-stage",
+    "publication",
+    "queue",
+    "queue-producers",
+    "ratification",
+    "reevaluation",
+    "scheduler",
+    "screens-document",
+    "screens-inquiry",
+    "store-assembly",
+    "store-door",
+    "store-jobs"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "Inquiry.onBarJudged",
+      "Inquiry.rivalStanding"
+    ],
+    "changed": [],
+    "kinds": [],
+    "signatures": []
+  },
+  "layer_flow": {
+    "layer": 12,
+    "provides": true,
+    "rescheduled": true
+  }
+}
