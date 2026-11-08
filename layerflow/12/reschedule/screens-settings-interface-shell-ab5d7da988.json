@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "screens-settings",
+  "provider": "interface-shell",
+  "provider_pr": 1052,
+  "provider_land": "ab5d7da988ad2d90ee69262d16a955798502fd9d",
+  "at": "2026-11-08T15:26:47Z",
+  "key": "screens-settings<-interface-shell@ab5d7da988",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/interface-shell/cr2-4.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/interface-shell/t51.test.mjs: breaking, too large to align, bio-plane/test/m/interface-shell/walk-p3dev-t1.test.mjs: breaking, an existing token changed or was removed), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
