@@ -34,3 +34,4 @@
 {"at":"2026-11-05T04:59:04Z","row":"outcome","n":18,"outcome":"delivered"}
 {"at":"2026-11-05T11:11:46Z","row":"sent","n":19,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (2 jobs ready). Then: job ai-runs complete, PR #485 ready, session session_018BhceeGmr4CpyN1p4wTtgg: run status"}
 {"at":"2026-11-05T11:12:18Z","row":"outcome","n":19,"outcome":"delivered"}
+{"at":"2026-11-08T09:34:56Z","row":"sent","n":20,"to":"bob","text":"job ai-runs complete, PR #1004 ready, session session_018BhcecZqDE7tQk2hw6LU8E: run status"}
