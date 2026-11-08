@@ -26,6 +26,11 @@ page = P(HERE, 'page.src.html')
 page = page.replace('{{FACES}}', P(VL, 'faces.css').replace('url("fonts/', 'url("visual-language/fonts/')).replace('{{CSS}}', P(VL, 'civicsmith.css'))
 page = page.replace('{{SPRITE}}', P(VL, 'icons.svg')).replace('{{REGSUMMARY}}', summary).replace('{{QUESTION}}', P(HERE, 'question.html'))
 page = page.replace('{{LIB}}', json.dumps(lib, ensure_ascii=False)).replace('{{REG}}', json.dumps(reg['screens'], ensure_ascii=False)).replace('{{JS}}', js)
+import datetime
+_commit = subprocess.run(['git', 'rev-parse', '--short=10', 'HEAD'], cwd=HERE, capture_output=True, text=True).stdout.strip() or 'unknown'
+_decs = [int(n) for f in os.listdir(HERE) if f.endswith('.src.py') for n in re.findall(r'DEC-(\d+)', P(HERE, f))]
+version = f"Version: built from tranche {_commit} on {datetime.date.today().isoformat()}, through DEC-{max(_decs)}"
+page = page.replace('{{VERSION}}', version)
 assert '{{' not in page.replace('${{', '')
 assert not re.search(r'viewBox="20 2 60 90"[^>]*>\s*<use href="#i-mark"', page), 'an <svg> using the plumb bob must take viewBox="0 0 60 90"'
 open(os.path.join(HERE, '..', 'layouts.html'), 'w').write(page)
