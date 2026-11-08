@@ -113,12 +113,14 @@ export function ending(cs, bound, left) {
 
 /** R57: the cost line, to the account's owners only (`session.cost` is absent for anyone else, and before anything is
  *  reported): `so far` while it works, `final` once it has ended; money where the account reports it, tokens and calls
- *  otherwise; never a zero for a figure not reported. */
+ *  otherwise; never a zero for a figure not reported. The money is `ai-use` R11's `cost_reported` `{amount, unit}` in `usd`
+ *  (T53, CR2-14: `actualOf` answers it in place of the retired `cost.usd`); an estimate is never drawn as what was reported. */
 export function costLine(cs, session, ended) {
   const c = session && session.cost;
   if (!c || typeof c !== "object") return "";
   const calls = Number(c.calls);
-  const usd = c.cost && Number.isFinite(Number(c.cost.usd)) ? Number(c.cost.usd) : null;
+  const r = c.cost_reported;
+  const usd = r && typeof r === "object" && r.unit === "usd" && r.amount !== null && Number.isFinite(Number(r.amount)) ? Number(r.amount) : null;
   const tokens = Number(c.tokens);
   const owner = String(c.owner || "");
   let amount;
