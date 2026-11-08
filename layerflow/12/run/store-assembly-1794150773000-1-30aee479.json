@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 12,
+  "module": "store-assembly",
+  "round": 1,
+  "started": "2026-11-08T15:12:53Z",
+  "ended": "2026-11-08T15:16:22Z",
+  "minutes": 3.5,
+  "tested_on": "adf1a3cb8df742dc3fcc6434524259bae5aaef12",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-08T15:16:22Z"
+}
