@@ -219,6 +219,11 @@ export function localReach(ctx) {
     const ana = await newAdmin("ana", "Ana, from flat 3", "ana-p")();
     await newAdmin("dev", "Dev, from flat 5", "dev-s")();
     await go(ana.page, at("/app/members"));
+    await openRow(ana.page, "dev");
+    if (!(await ana.page.locator("#mr-dev").count())) {
+      const rows = (await ana.page.locator("#cs-main").innerText().catch(() => "")).split("\n").filter((l) => /ana-p|dev-s|admin/i.test(l)).slice(0, 8).join(" / ");
+      throw new Error(`Ana's Members draws no removal of Dev (her acts: ${(await ana.page.locator("#cs-main [data-act]").evaluateAll((es) => [...new Set(es.map((e) => e.dataset.act))].join(","))) || "none"}; rows: ${rows})`);
+    }
     await act(ana.page, "adminremove", { fields: { "mr-dev": "Dev has moved away and no longer takes part." }, which: '[data-member="dev"]', password: ana.password, reason: "Dev has moved away." });
   });
   const lea = newMember("lea", "Lea, from flat 2", "lea-m", true);
