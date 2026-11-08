@@ -14,6 +14,7 @@ import { open, said, day, storeWorld } from "./kit.mjs";
 import { interfacePage, interfaceScript, interfaceScriptHash, checkScreens, RE_POINTS } from "../../../src/interface-shell/index.mjs";
 import { teamNamed } from "./seed-common.mjs";
 import { R95_RETIRED } from "./r95.mjs";
+import { CR2_DESIGN_OPS } from "../../../src/affordances/act-help.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const PATH = "docs/development/ux-substrate/screens/registry.json";
@@ -82,7 +83,10 @@ test("R39 words by key: the module holds no row, every key it reads is a word of
      a key of the list that `KEYS` lacks must be of that kind, and every other key of the list is in `KEYS` */
   /* (R95) and the acts of the retired `connect` and `teamai`, and every key naming an alpha AI op, which this module no longer draws */
   const NOT_DRAWN_HERE = [/^act\.captureupload[a-z]+\.does$/, /^act\.owed_(ai|install)[a-z]+\.does$/, /^screen\.ai[a-z]+\.(name|purpose)$/, /^act\.writinghelp\.label\.plan$/,
-    /^act\.[a-z_]+\.label\.(connect|teamai)$/, new RegExp(`^act\\.(${R95_RETIRED.join("|")})\\.`)];
+    /^act\.[a-z_]+\.label\.(connect|teamai)$/, new RegExp(`^act\\.(${R95_RETIRED.join("|")})\\.`),
+    /* CR2-16 (layer 12): the rival explanations' ops and the docket's, which the design's list for this module now names; affordances holds
+       their `act.<op>.does` words and names the ops (its exported CR2_DESIGN_OPS); none is drawn here */
+    new RegExp(`^act\\.(${CR2_DESIGN_OPS.join("|")})\\.does$`)];
   const elsewhere = (k) => NOT_DRAWN_HERE.some((re) => re.test(k));
   for (const k of reads.reads) assert.ok(KEYS.includes(k) || elsewhere(k), `${k} is a key this module reads, or one of another module's`);
   for (const k of KEYS) assert.ok(hasWord(k), `${k} is a word`);
