@@ -1,0 +1,11 @@
+{
+  "row": "start",
+  "layer": 12,
+  "module": "op-declarations",
+  "attempt": 11,
+  "branch": "job/op-declarations-2",
+  "early": [
+    "affordances"
+  ],
+  "at": "2026-11-08T10:55:06Z"
+}
