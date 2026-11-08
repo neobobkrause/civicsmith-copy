@@ -272,4 +272,4 @@ test("F1 IV-H2 with no steps bound, each rival lists no legs and says it could n
   for (const r of w.h.rivalsOf({ inquiry: INQ, viewer: ANN }).rivals) assert.equal(r.legs_read, false);
 });
 
-test.todo("F1 IV-H2 'Evidence found while exploring' over steps' real module (steps R31): a step opened from a rival records it, and the rival lists the question's legs whose target a step opened from it produced, each with its grades and its role, in the basis's order; a leg on another product, and a step on another rival, list nothing; a mark writes no leg. Owed: build/modules.json gives hypotheses no `uses` edge to steps, so neither this module nor its tests may import steps or its published fixtures (ARC-1)");
+/* F1 IV-H2 'Evidence found while exploring' over steps' real module (steps R31; CR2-31) is rivals-legs.test.mjs. */
