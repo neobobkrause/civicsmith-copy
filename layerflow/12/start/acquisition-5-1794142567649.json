@@ -1,0 +1,9 @@
+{
+  "row": "start",
+  "layer": 12,
+  "module": "acquisition",
+  "attempt": 5,
+  "branch": "job/acquisition",
+  "early": [],
+  "at": "2026-11-08T12:56:07Z"
+}
