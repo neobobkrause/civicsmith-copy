@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { world, V, T0, sha } from "./fixture.mjs";
 import { CASE_DISCLOSURE_CHECKS, SELF_ATTESTED_SENTENCE, captureBodyLines } from "../../../src/case-disclosures/index.mjs";
 import { unnamedSourceStatement, sourceStatement } from "../../../src/publication/index.mjs";
-import { ARCHIVE_VIA, ARCHIVE_CAPTURE_GRADE } from "../../../src/provenance/index.mjs";
+import { ARCHIVE_VIA, ARCHIVE_CAPTURE_GRADE, REWRITTEN_REPLAY_GRADE } from "../../../src/provenance/index.mjs";
 import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
 import { word, localize } from "../../../src/setup-words/index.mjs";
 import { sourceOfReads } from "../sources/fixtures.mjs";
@@ -156,17 +156,43 @@ test("R2 (C-120.4): a load-bearing Grade B capture not co-attested and not liste
   void c;
 });
 
-test("R2: the grade that needs it is EARNED_CAPTURE_CEILING; a load-bearing capture below it (an archive replay's) needs no acknowledgement", () => {
-  assert.equal(EARNED_CAPTURE_CEILING, "B");
+/* BD-18 (provenance R85, CR2-6): a raw `id_` replay of the publisher's response is the ceiling "via archive"; any other
+   replay is rewritten, one rank below, reference only. R2 states provenance's letter and why as they are. */
+const RAW_REPLAY = `https://web.archive.org/web/20240102030405id_/https://example.org/${DOC3}`;
+const REWRITTEN = `https://web.archive.org/web/20240102030405/https://example.org/${DOC3}`;
+function archived(locator) {
   const w = world(); w.member("alice");
   const c = w.doc(DOC3);
   w.prov.recordReceipt({ address: `https://example.org/${DOC3}`, addressNorm: `example.org/${DOC3}`, captureSha: c,
-                         retrieved: T0, via: ARCHIVE_VIA });
-  assert.equal(w.prov.captureGrade(c).grade, ARCHIVE_CAPTURE_GRADE);
-  assert.notEqual(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING);
+                         retrieved: T0, via: ARCHIVE_VIA, retrievalLocator: locator });
   w.finding(Q, [{ target: DOC3 }]);
+  return { w, c };
+}
+
+test("R2 (BD-18): a raw archive replay's capture is Grade B via archive, at EARNED_CAPTURE_CEILING, so a load-bearing one not co-attested is C-120.4's to acknowledge; its why is provenance's", () => {
+  assert.equal(EARNED_CAPTURE_CEILING, "B");
+  assert.equal(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING);
+  const { w, c } = archived(RAW_REPLAY);
+  const g = w.prov.captureGrade(c);
   const { facts, j } = judge(w, [Q], null);
-  assert.deepEqual([j.refusals, facts.get(c).grade, facts.get(c).co_attested], [[], ARCHIVE_CAPTURE_GRADE, false]);
+  const f = facts.get(c);
+  assert.deepEqual([f.grade, f.grade_why, f.co_attested], ["B", g.why, false]);
+  assert.ok(g.via_archive && g.replay.raw);
+  refused(j.refusals[0], "CO_ATTESTATION_UNACKNOWLEDGED");
+  assert.deepEqual(j.refusals[0].unacknowledged.map((u) => [u.capture, u.grade]), [[c, "B"]]);
+  assert.deepEqual(judge(w, [Q], [{ capture: c, reason: REASON }]).j.refusals, [], "acknowledged, it passes as any B");
+});
+
+test("R2 (BD-18): a rewritten archive replay's capture is Grade C, reference only, below EARNED_CAPTURE_CEILING, and needs no acknowledgement; control: none recorded is rewritten too", () => {
+  assert.equal(REWRITTEN_REPLAY_GRADE, "C");
+  for (const locator of [REWRITTEN, null]) {
+    const { w, c } = archived(locator);
+    const g = w.prov.captureGrade(c);
+    assert.ok(g.reference_only && !g.replay.raw);
+    const { facts, j } = judge(w, [Q], null);
+    assert.deepEqual([j.refusals, facts.get(c).grade, facts.get(c).grade_why, facts.get(c).co_attested],
+      [[], REWRITTEN_REPLAY_GRADE, g.why, false]);
+  }
 });
 
 test("R2 (C-120.5, C-120.6): an empty reason is SELF_ATTESTED_NO_REASON; a listed capture co-attested or not in the case is SELF_ATTESTATION_NOT_STANDING; in that order after C-120.4; a malformed list is BAD_COMPLETENESS naming the field, alone; listed twice, its first reason kept", () => {

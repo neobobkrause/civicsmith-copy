@@ -54,11 +54,11 @@ import { notADisposition, DISPOSITIONS } from "../progressions/index.mjs";
 import { INQUIRY_TABLES, INQUIRY_DECLARATIONS, migrateInquiry, BUNDLE_FACTS, LEGS_RELATION } from "./schema.mjs";
 import { localDay, dayRange, isCalendarDate } from "../civil-time/index.mjs";
 import { combine as combineProfiles, governingZone } from "../../../jurisdictions/index.mjs";
-import { INQUIRY_CONTRADICTION_CHECKS, INQUIRY_SURFACE_CHECKS, INQUIRY_BIAS_CHECKS, INQUIRY_PASSAGE_CHECKS, QUESTION_WORDS,
+import { INQUIRY_CONTRADICTION_CHECKS, INQUIRY_SURFACE_CHECKS, INQUIRY_BIAS_CHECKS, INQUIRY_PASSAGE_CHECKS, INQUIRY_RIVAL_CHECKS, QUESTION_WORDS,
          INQUIRY_WARNINGS } from "./checks.mjs";
 import { checkInquiryEntry, inquiryQuestionOf } from "./grammar.mjs";
 import { contradictionFindings, candidateOf, readResolution, exploresOf, CANDIDATE_RE } from "./contradiction.mjs";
-import { rivalsNamedOf, rivalsNamedFindings, RIVALS_MAX } from "./rivals.mjs";
+import { rivalsNamedOf, rivalsNamedFindings, rivalsListOf, RIVALS_MAX } from "./rivals.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { partitionOfDoc, loggedChanges } from "./partition.mjs";
 import { setScalar, setOrAddScalar, appendStateHistory, removeBlock, setOrAddBlock, setSection, appendSessionLog,
@@ -67,7 +67,7 @@ import { setScalar, setOrAddScalar, appendStateHistory, removeBlock, setOrAddBlo
 export { INQUIRY_SCHEMA, INQUIRY_TABLES, INQUIRY_DECLARATIONS, BUNDLE_FACTS, LEGS_RELATION, SUBJECT_COLUMN, moveBundleFacts, moveSubjectEntity }
   from "./schema.mjs";
 export * from "./grammar.mjs";
-export { INQUIRY_CONTRADICTION_CHECKS, INQUIRY_SURFACE_CHECKS, INQUIRY_BIAS_CHECKS, INQUIRY_PASSAGE_CHECKS, QUESTION_WORDS,
+export { INQUIRY_CONTRADICTION_CHECKS, INQUIRY_SURFACE_CHECKS, INQUIRY_BIAS_CHECKS, INQUIRY_PASSAGE_CHECKS, INQUIRY_RIVAL_CHECKS, QUESTION_WORDS,
          INQUIRY_WARNINGS } from "./checks.mjs";
 export { CONTRADICTION_COORDINATES, PLURALITY_DIFFERENCES, DISSOLVED_BY, NORM_CANONS, RESOLUTION_KINDS, resolutionFamily,
          resolutionLines, CANDIDATE_RE, QUALIFIER_MAX, HYPOTHESIS_MAX } from "./contradiction.mjs";
@@ -139,7 +139,7 @@ const unreferenced = (t) => isImportedRef(t) || (typeof t === "string"
 
 /** The catalogue row a refusal code has, if any: its check id and canned translation travel with it (DEC-49). */
 const ROW_FAMILIES = [INQUIRY_ROWS, SHARED_ACT_CHECKS, INQUIRY_DISPOSE_CHECKS, INQUIRY_CONTRADICTION_CHECKS,
-                      INQUIRY_SURFACE_CHECKS, INQUIRY_BIAS_CHECKS, INQUIRY_PASSAGE_CHECKS];
+                      INQUIRY_SURFACE_CHECKS, INQUIRY_BIAS_CHECKS, INQUIRY_PASSAGE_CHECKS, INQUIRY_RIVAL_CHECKS];
 function withRow(answer) {
   if (!answer || answer.ok !== false || typeof answer.reason !== "string" || answer.check) return answer;
   const row = ROW_FAMILIES.map((f) => f && f[answer.reason]).find((r) => r && r.check);
@@ -343,6 +343,7 @@ export class Inquiry {
   #onWaitSet = null;     // {module, fn}: scheduler's arming notice (R54; scheduler R9)
   #onMachinePassage = null; // {module, fn}: whether a member may cite as hers a passage a machine proposed (R62)
   #onBarJudged = null;   // {module, fn}: whether a question's conclusion meets a project's bar now (R91)
+  #onRivalsListed = null; // {module, fn}: a question's rival explanations, for a read that names none (R92)
   #subjectAct = null;    // R87: {bundleId, text} while setSubject's own revision is promoted (R64's arm lets it through)
   #view;                 // R55, R57: the active jurisdiction view, whose time_zone is the profile's
   #deps;
@@ -668,8 +669,10 @@ export class Inquiry {
       const cf = contradictionFindings(docFm);
       if (cf.length) return { ok: false, reason: "BASIS_REFUSED", findings: cf };
       /* R91 (F2, IV-H3): the rivals a conclusion names, judged at every state as `resolution` is */
+      /* DEC-49 REGION is-rivals-named — R92: C-2.21 */
       const rf = rivalsNamedFindings(docFm);
       if (rf.length) return { ok: false, reason: "BASIS_REFUSED", findings: rf };
+      /* END DEC-49 REGION is-rivals-named */
       /* DEC-49 REGION is-candidate-taken-up — C-2.17: one candidate has one contradiction inquiry. */
       const candidate = candidateOf(docFm);
       const holder = candidate ? this.inquiryOfCandidate(candidate, bundleId) : null;
@@ -1214,6 +1217,16 @@ export class Inquiry {
     return { ok: true, module };
   }
 
+  /** R92 (CR2-20; IV-H1): the list of a question's rival explanations, read by `rivalStanding` when its caller names
+   *  none. One registration, by any module (membership's `listenerRefusal`, its R81): `hypotheses` (its F1).
+   *  `fn({question, viewer})` answers synchronously a list of at most `RIVALS_MAX` distinct `HYP-` ids, in its order. */
+  onRivalsListed(module, fn) {
+    const refused = listenerRefusal(this.#onRivalsListed, module, fn);
+    if (refused) return refused;
+    this.#onRivalsListed = { module, fn };
+    return { ok: true, module };
+  }
+
   /** R19 (D-592): the inquiry's state transitions from its own `state_history`, each with who took it and when (a
    *  reopening is written there by promotion's `reopen`). */
   stateHistory(id, viewer = undefined) {
@@ -1261,10 +1274,25 @@ export class Inquiry {
       const info = this.record.bundleInfo(id);
       if (!info) return { ok: false, reason: "NO_SUCH_BUNDLE", target: id };
       if (normalizeType(info.type) !== "inquiry") return { ok: false, reason: "NOT_AN_INQUIRY", target: id };
-      const asked = Array.isArray(rivals) ? rivals.map((r) => (typeof r === "string" ? r.trim() : r)) : null;
-      if (!asked || asked.length > RIVALS_MAX || asked.some((r) => !isHypothesisId(r)) || new Set(asked).size !== asked.length)
-        return { ok: false, reason: "RIVALS_MALFORMED", target: id,
-                 detail: localize("inquiry.index.rivals_malformed", "a rival's standing is asked of the question's rivals: a list of at most {max} hypotheses, each a HYP- id named once.", { max: String(RIVALS_MAX) }) };
+      /* R92: a read that names no rivals asks the registered list; a list that cannot be read is refused, never empty */
+      let asked;
+      if (rivals === null || rivals === undefined) {
+        /* DEC-49 REGION is-rivals-listed */
+        let listed = null;
+        if (this.#onRivalsListed) { try { listed = rivalsListOf(this.#onRivalsListed.fn({ question: id, viewer })); } catch { listed = null; } }
+        if (!listed)
+          return withRow({ ok: false, reason: "RIVALS_UNREAD", code: "RIVALS_UNREAD", target: id,
+                           detail: localize("inquiry.index.rivals_unread", "the question's rival explanations could not be read: none is registered, or the list answered is not at most {max} hypotheses, each a HYP- id named once.", { max: String(RIVALS_MAX) }) });
+        asked = listed;
+        /* END DEC-49 REGION is-rivals-listed */
+      } else {
+        /* DEC-49 REGION is-rivals-asked */
+        asked = rivalsListOf(rivals);
+        if (!asked)
+          return withRow({ ok: false, reason: "RIVALS_MALFORMED", code: "RIVALS_MALFORMED", target: id,
+                           detail: localize("inquiry.index.rivals_malformed", "a rival's standing is asked of the question's rivals: a list of at most {max} hypotheses, each a HYP- id named once.", { max: String(RIVALS_MAX) }) });
+        /* END DEC-49 REGION is-rivals-asked */
+      }
       const md = this.record.readFile(id, "bundle.md");
       const fm = md && typeof md.text === "string" ? (parseFrontmatter(md.text).data || {}) : {};
       const concluded = fm.current_state === "concluded";
