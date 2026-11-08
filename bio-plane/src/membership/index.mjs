@@ -1332,7 +1332,15 @@ export class Membership {
   registerClaimed(...a) { return this.members.registerClaimed(...a); }
   registerPasswordSetter(...a) { return this.members.registerPasswordSetter(...a); }
   registerHandleGuard(...a) { return this.members.registerHandleGuard(...a); }
-  isAdministrator(...a) { return this.members.isAdministrator(...a); }
+  /* CR2-28 (Membership v2 §4.7, §6; K5563): one answer to whether a member administers. The roster decides
+     (`member-roster`'s, over a member id); an enrolled administrator's session is stamped `member:<id>` (§4.7), so a
+     reader handing that viewer in (`instance-setup`'s `adminRecoveryStep`) is answered for the member it names (R73's
+     `viewerMember`), as `sessionRights` (what `whoami` serves) and `activeAdmins` (what the votes count) answer her.
+     A viewer carrying a project is a run's reach, never a person's session, and is passed through unread (no row). */
+  isAdministrator(who, ...a) {
+    const id = typeof who === "string" && who.startsWith("member:") && carriedProject(who) === null ? viewerMember(who) : who;
+    return this.members.isAdministrator(id, ...a);
+  }
   activeAdmins(...a) { return this.members.activeAdmins(...a); }
   memberFacts(...a) { return this.members.memberFacts(...a); }
   memberStatusSince(...a) { return this.members.memberStatusSince(...a); }
