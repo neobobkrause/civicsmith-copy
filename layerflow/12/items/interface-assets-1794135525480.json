@@ -1,0 +1,15 @@
+{
+  "row": "items",
+  "layer": 12,
+  "module": "interface-assets",
+  "items": [
+    {
+      "id": "CR2-21",
+      "module": "interface-assets",
+      "what": "define the update band, the newer-version band interface-shell R92/R101 (interface-shell-t50-t51.md) require, under a cs- name with the ux lane's look; today mk-updband is drawn with no stylesheet defining it (interface-shell CR2-4's one remaining exemption)"
+    }
+  ],
+  "why": "CR2-21: repin the design commit to lane PR 1012's merge f1eb53ce10 (cs-updband, DEC-503)",
+  "at": "2026-11-08T10:58:45Z",
+  "by": "bob"
+}
