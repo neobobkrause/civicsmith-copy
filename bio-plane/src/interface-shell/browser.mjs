@@ -2319,12 +2319,15 @@ export function shellProgram(D, SCREENS, win, GUIDE, KIT) {
     el.setAttribute("aria-describedby", "cs-tip");
     if (el.getBoundingClientRect && t.style) placeTip(el, t);
   }
-  /* R103 (R84; T-10), R145, F3 (walk p3dev-t1, 4 Nov): below what it explains, else above it, the first place that covers no control (the one it
-     explains included, and any control holding it, so the rail's next place, a list's next row) and stays inside the page. Where neither is
-     clear at the explained thing's own left edge, it is slid along the row just below, then the row just above, to the nearest place clear of
-     every control and inside the page, so long as it still spans part of what it explains (below or above it, never beside it). Where no place
-     qualifies, R103's first choice stands: below at its left edge (above, where below runs out of the page), though it covers a control. The
-     rail's width grip, a thin separator the height of the rail, is no control an explanation must spare. */
+  /* R103 (R84; T-10), R145, F3 (walk p3dev-t1, 4 Nov), F7 (CR2-27): below what it explains, else above it, the first place that covers
+     no control (the one it explains included, and any control holding it, so the rail's next place, a list's next row, the rail's width
+     grip) and stays inside the page. Where neither is clear at the explained thing's own left edge, it is slid along the row just below,
+     then the row just above, to the nearest place clear of every control and inside the page, so long as it still spans part of what it
+     explains; the row just below (above) is also tried past the controls the first place there meets, so a masthead's mark is explained
+     beneath the masthead's row. Where no place below or above is clear (the rail's places stand closer than an explanation is tall, and
+     the width grip runs the rail's height), it opens beside what it explains, after it and then before it, level with it and past any
+     control in the way, clear of every control and inside the page (F7). Where no place qualifies, R103's first choice stands: below at
+     its left edge (above, where below runs out of the page), though it covers a control. */
   function placeTip(el, t) {
     /* measured where nothing narrows it: a tip measured at the page's right edge shrinks to what is left, and then runs taller (F3) */
     t.style.left = "0px"; t.style.top = "0px";
@@ -2337,14 +2340,13 @@ export function shellProgram(D, SCREENS, win, GUIDE, KIT) {
     for (const c of doc.getElementById("cs-root").querySelectorAll(["a[href]", "button", "input", "select", "textarea", "summary", "[role=button]", "[tabindex]:not([tabindex='-1'])"].join(","))) {
       if (typeof c.getBoundingClientRect !== "function" || c === t || (t.contains && t.contains(c)) || (el.contains && el.contains(c) && c !== el)) continue;
       const mine = c === el || (c.contains && c.contains(el));
-      if (!mine && c.getAttribute && c.getAttribute("data-shell") === "grip") continue;
       const b = c.getBoundingClientRect();
       if (!b || !(b.right > b.left && b.bottom > b.top)) continue;
       if (vh && (b.bottom < 0 || b.top > vh)) continue;
       (mine ? own : others).push(b);
     }
     own.push(r);
-    const area = (c, list) => list.reduce((n, b) => n + Math.max(0, Math.min(c.left + tw, b.right) - Math.max(c.left, b.left)) * Math.max(0, Math.min(c.top + th, b.bottom) - Math.max(c.top, b.top)), 0);
+    const meets = (c, b) => Math.min(c.left + tw, b.right) > Math.max(c.left, b.left) && Math.min(c.top + th, b.bottom) > Math.max(c.top, b.top);
     const hi = vw ? Math.max(edge, vw - tw - edge) : Infinity;
     const clampX = (x) => Math.round(Math.min(hi, Math.max(edge, x)));
     const x0 = clampX(r.left);
@@ -2353,9 +2355,22 @@ export function shellProgram(D, SCREENS, win, GUIDE, KIT) {
     const xs = [...new Set([r.left, r.right - tw, ...others.flatMap((b) => [b.right + gap, b.left - gap - tw])].map(clampX))]
       .filter(spans).sort((a, b) => Math.abs(a - r.left) - Math.abs(b - r.left));
     const below = Math.round(r.bottom + gap), above = Math.round(r.top - gap - th);
+    /* the row just below (above) taken past the controls its first place meets: still below (above) what it explains */
+    const past = (top, down) => [...new Set(others.filter((b) => meets({ left: x0, top }, b)).map((b) => Math.round(down ? Math.max(top, b.bottom + gap) : Math.min(top, b.top - gap - th))))]
+      .sort((a, b) => Math.abs(a - top) - Math.abs(b - top));
     const inside = (c) => c.left >= 0 && c.top >= 0 && (!vw || c.left + tw <= vw) && (!vh || c.top + th <= vh);
-    const clear = (c) => inside(c) && !area(c, own) && !area(c, others);
-    const tries = [{ left: x0, top: below }, { left: x0, top: above }, ...[below, above].flatMap((top) => xs.map((left) => ({ left, top })))];
+    const clear = (c) => inside(c) && !own.some((b) => meets(c, b)) && !others.some((b) => meets(c, b));
+    /* F7: beside, level with what it explains (its top, else its bottom, else slid up or down past a control in the way while it still
+       shares part of its height), after it and then before it, past any control in the way */
+    const level = (top) => top < r.bottom && top + th > r.top;
+    const levels = [...new Set([r.top, r.bottom - th, ...others.flatMap((b) => [b.top - gap - th, b.bottom + gap])].map(Math.round))]
+      .filter(level).sort((a, b) => Math.abs(a - r.top) - Math.abs(b - r.top));
+    const after = [r.right + gap, ...others.filter((b) => b.right > r.right).map((b) => b.right + gap)].map(Math.round).sort((a, b) => a - b);
+    const before = [r.left - gap - tw, ...others.filter((b) => b.left < r.left).map((b) => b.left - gap - tw)].map(Math.round).sort((a, b) => b - a);
+    const tries = [{ left: x0, top: below }, { left: x0, top: above },
+      ...[below, above].flatMap((top) => xs.map((left) => ({ left, top }))),
+      ...[...past(below, true), ...past(above, false)].flatMap((top) => [x0, ...xs].map((left) => ({ left, top }))),
+      ...[...after, ...before].flatMap((left) => levels.map((top) => ({ left, top })))];
     const pick = tries.find(clear) || [{ left: x0, top: below }, { left: x0, top: above }].find(inside) || { left: x0, top: below };
     t.style.left = pick.left + "px";
     t.style.top = pick.top + "px";

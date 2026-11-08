@@ -81,8 +81,9 @@ const SCREEN = {
 };
 
 /* opens every visible explanation in turn as the walk does (scrolled to the centre, focused, hovered) and answers each one that does not open,
-   is not below or above what it explains (spanning part of it: never beside it), covers what it explains or another control, or runs outside the
-   page. The rail's width grip (`data-shell="grip"`), a thin separator the height of the rail, is no control an explanation must spare (F3). */
+   is not below or above what it explains (spanning part of it), covers what it explains or another control, or runs outside the page. F7
+   (CR2-27): outside the screen's column an explanation may open beside what it explains where no place below or above is clear, and it covers
+   no control anywhere, the rail's width grip included. */
 async function coverings(page) {
   const out = [];
   const n = await page.evaluate(() => [...document.querySelectorAll("[data-tip]")].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; }).length);
@@ -105,26 +106,22 @@ async function coverings(page) {
       const hits = (r) => Math.min(t.right, r.right) - Math.max(t.left, r.left) > 2 && Math.min(t.bottom, r.bottom) - Math.max(t.top, r.top) > 2;
       if (hits(e)) over.push("itself");
       for (const c of document.querySelectorAll("a[href], button, input, select, textarea, summary, [role=button]")) {
-        if (c === ex || ex.contains(c) || c.contains(ex) || tip.contains(c) || c.getAttribute("data-shell") === "grip") continue;
+        if (c === ex || ex.contains(c) || c.contains(ex) || tip.contains(c)) continue;
         const r = c.getBoundingClientRect();
         if (r.width > 0 && r.height > 0 && hits(r)) over.push(c.tagName + ":" + (c.getAttribute("aria-label") || c.textContent || "").trim().slice(0, 16));
       }
       const W = document.documentElement.clientWidth, H = document.documentElement.clientHeight;
-      /* R103's first choice: below at its own left edge (kept inside the page), or above where below runs out of it */
-      const x0 = Math.min(Math.max(8, W - t.width - 8), Math.max(8, e.left));
-      const first = Math.abs(t.left - x0) <= 1 && (Math.abs(t.top - (e.bottom + 6)) <= 1 || Math.abs(t.bottom - (e.top - 6)) <= 1);
-      return { over, outside: t.left < -1 || t.top < -1 || t.right > W + 1 || t.bottom > H + 1, first, main: !!ex.closest("#cs-main"),
+      return { over, outside: t.left < -1 || t.top < -1 || t.right > W + 1 || t.bottom > H + 1, main: !!ex.closest("#cs-main"),
         place: t.top >= e.bottom - 1 ? "below" : t.bottom <= e.top + 1 ? "above" : "level", spans: t.left < e.right && t.right > e.left };
     });
     await page.keyboard.press("Escape");
     if (!hit) { out.push(name + " opens no explanation"); continue; }
     const bad = [];
-    if (hit.place === "level" || !hit.spans) bad.push("is beside it (" + hit.place + (hit.spans ? "" : ", clear of its width") + ")");
-    /* F3: never over what it explains. F4 (unmet): where no place below or above spans it and covers nothing (the rail's places stand closer
-       than an explanation is tall), R103's first choice stands though it covers the next control; in the screen's own column there is room,
-       and nothing is covered */
+    if (hit.main && (hit.place === "level" || !hit.spans)) bad.push("is beside it (" + hit.place + (hit.spans ? "" : ", clear of its width") + ")");
+    /* F3: never over what it explains. F7 (CR2-27; meets F4): where no place below or above spans it and covers nothing (the rail's places
+       stand closer than an explanation is tall, and the width grip runs the rail's height) it opens beside it; nothing is covered anywhere */
     if (hit.over.includes("itself")) bad.push("covers what it explains");
-    if (hit.over.length && (!hit.first || hit.main)) bad.push("covers " + hit.over.join(", ") + (hit.first ? "" : ", away from R103's first place"));
+    if (hit.over.length) bad.push("covers " + hit.over.join(", "));
     if (hit.outside) bad.push("runs outside the page");
     if (bad.length) out.push(name + ": " + bad.join("; "));
   }
@@ -132,7 +129,7 @@ async function coverings(page) {
 }
 
 for (const width of [1280, 390]) {
-  test(`F3 R103 R145 at ${width} px every explanation opens below or above what it explains, spanning it, inside the page; in the screen's column it covers no control, and elsewhere it covers one only at R103's first place`, { timeout: 120000 }, async () => {
+  test(`F3 R103 R145 at ${width} px every explanation opens inside the page and covers no control; in the screen's column it opens below or above what it explains, spanning it (F7: elsewhere beside it where neither is clear)`, { timeout: 120000 }, async () => {
     const found = await inChromium([SCREEN], { width, path: "/app/home" }, coverings);
     assert.deepEqual(found, []);
   });
