@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 12,
+  "module": "acquisition",
+  "pr": 1040,
+  "sha": "4bba9849a3cb7c7972ac78540ebd04dbe606f600",
+  "run_id": 42483922645,
+  "run_attempt": 1,
+  "at": "2026-11-08T13:14:35Z",
+  "trigger": "code",
+  "suite": "pass",
+  "ok": true,
+  "minutes": 8.98,
+  "suite_minutes": 2.52,
+  "record_only": false,
+  "whole": true
+}

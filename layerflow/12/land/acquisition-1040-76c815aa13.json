@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "acquisition",
+  "pr": 1040,
+  "branch": "job/acquisition",
+  "head": "76c815aa13f56f37a3632b322b274fce8b50c794",
+  "before": "b1a7e53a617ba9e15dabe1e03ae0c1154f436ccd",
+  "merge": "0f986146f4b9d09db5e8ffc2a5034e8491c74337",
+  "at": "2026-11-08T13:43:52Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
