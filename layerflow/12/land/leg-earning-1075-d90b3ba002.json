@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "leg-earning",
+  "pr": 1075,
+  "branch": "job/leg-earning",
+  "head": "d90b3ba00209a9db92029b5bae3119f0821e6857",
+  "before": "27370c6ec9e13fc8d4f2c02f0c9b2464b22c5e82",
+  "merge": "b68da05ec2482a52204320792c308601f624585c",
+  "at": "2026-11-08T20:35:11Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
