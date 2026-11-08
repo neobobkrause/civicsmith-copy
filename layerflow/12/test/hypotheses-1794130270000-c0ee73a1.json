@@ -1,0 +1,11 @@
+{
+  "row": "test",
+  "module": "hypotheses",
+  "session": "session_018BhcefiG4JTTmxpqNWYXGS",
+  "started": "2026-11-08T09:31:10Z",
+  "ended": "2026-11-08T09:32:25Z",
+  "at": "2026-11-08T09:32:25Z",
+  "minutes": 1.25,
+  "result": "build failed",
+  "layer": 12
+}
