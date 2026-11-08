@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 12,
+  "module": "plane",
+  "cause": 1073,
+  "why": "plane has unmet requirement marks (R1, R111, R112, R113, R114, R115, R117, R118, R119, R9): a job meets them: node .process/tool/p3.mjs job start plane --sessions <file> --reopen \"meet the unmet requirement marks R1, R111, R112, R113, R114, R115, R117, R118, R119, R9 and re-test against the new inte",
+  "at": "2026-11-08T20:25:15Z",
+  "by": "bob"
+}
