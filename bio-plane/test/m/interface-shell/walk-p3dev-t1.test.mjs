@@ -53,6 +53,8 @@ test("F2 R56 every hook class the shell draws sits beside a design partner a ser
   const drawn = new Set(classAttrs(src).flat());
   for (const c of ["cs-crumbs", "cs-rows", "cs-r", "cs-panel"]) assert.ok(drawn.has(c), c + " is drawn by the shell");
   assert.equal(drawn.has("mk-lvlbtn"), false, "mk-lvlbtn, which no loaded sheet defines, is no longer drawn (CR2-4)");
+  assert.ok(drawn.has("cs-updband"), "the newer-version band is the design's cs-updband (CR2-22, F6)");
+  assert.equal(drawn.has("mk-updband"), false, "mk-updband, a hook with no partner of its own, is no longer drawn (F6)");
   assert.deepEqual(unpartnered(src, defined), []);
 });
 
