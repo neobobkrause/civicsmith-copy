@@ -193,10 +193,10 @@ export function localReach(ctx) {
     await reveal(box); await box.check(); await settle(F);
     await type(F, "mi-id", id); await type(F, "mi-cover", cover);
     /* a grant that includes administering is confirmed first (R72): the first press asks, nothing is sent until yes */
-    await act(F, "memberadd", { reason: "The team shares the administration." });
+    await act(F, "memberadd", { reason: "The team shares the administration.", password: who.founder.password });
     const yes = F.locator('input[name="mi-ok"][value="yes"]');
     await yes.first().waitFor({ state: "visible", timeout: 10000 }); await yes.first().check(); await settle(F);
-    await act(F, "memberadd", { reason: "The team shares the administration." });
+    await act(F, "memberadd", { reason: "The team shares the administration.", password: who.founder.password });
     const shownLink = F.locator('[data-shown="invite"] code').first();
     await shownLink.waitFor({ state: "visible", timeout: 15000 });
     const link = walk.keepSecret((await shownLink.textContent()).trim());
@@ -267,11 +267,14 @@ export function localReach(ctx) {
   const orphaned = once(async () => {
     await go(F, at("/app/members"));
     await openRow(F, "teo");
-    const box = F.locator("#mc-teo-create_projects");
-    await reveal(box); await box.check();
+    for (const cap of ["contribute", "create_projects"]) { const box = F.locator(`#mc-teo-${cap}`); await reveal(box); await box.check(); }
     await act(F, "membercaps", { which: '[data-member="teo"]', password: who.founder.password, reason: "He runs the flat 9 work." });
+    /* what he may do is his session's from his next sign-in */
+    await signInBy(walk, T, base, who.newcomer, "R21 · Teo signs in again");
     await go(T, at("/app/projects"));
     const v = T.locator("#projects-visibility-hidden");
+    try { await v.first().waitFor({ state: "attached", timeout: 15000 }); }
+    catch { throw new Error(`Teo's Projects offers him no project to start after he was let start projects: ${(await T.locator("#cs-main").innerText().catch(() => "")).slice(0, 200)}`); }
     await reveal(v); await v.check();
     await act(T, "promote", { fields: { "projects-title": "Flat 9 window frames" }, reason: "Recorded by the release walk." });
     await T.waitForURL((u) => u.pathname.startsWith("/app/project/"), { timeout: 15000 });
@@ -321,6 +324,9 @@ export function localReach(ctx) {
   /* the welcome on a first Home: offered to continue, or running (screens-wizards' guide) */
   const WELCOME = '[data-guide="start"], [data-guide-state="running"]';
 
+  /* what a project answers a person who is not its participant: its designed absence (membership §7.9), what these states draw */
+  const NOT_HERS = [/^PROJECT_SEEN_NOT_A_PARTICIPANT$/, /^NO_SUCH_PROJECT$/, /^NOT_A_PARTICIPANT$/, /^NOT_VISIBLE$/];
+
   /* ---- the states ---- */
   const R = {};
   R["document:held"] = { reach: state({ sel: ['#cs-main [data-held="1"]'], words: ["document.held.says"] }, async (p) => {
@@ -336,8 +342,8 @@ export function localReach(ctx) {
     await go(p, project);
     await act(p, "noticeprepare", { which: '[data-mode="open"]' });
   }) };
-  R["project:isn't in this project"] = { page: asMai, reach: state({ words: ["screen.project.notjoined"] }, async (p) => { await ownFindable(); await go(p, ctx.own.project); }) };
-  R["project:every owner is gone"] = { rank: 3, expect: [/^PROJECT_SEEN_NOT_A_PARTICIPANT$/], reach: state({ sel: ["#state-rescue", '[data-act="projectownerrescue"]'] }, async (p) => go(p, await orphaned())) };
+  R["project:isn't in this project"] = { page: asMai, expect: NOT_HERS, reach: state({ words: ["screen.project.notjoined"] }, async (p) => { await ownFindable(); await go(p, ctx.own.project); }) };
+  R["project:every owner is gone"] = { rank: 3, expect: NOT_HERS, reach: state({ sel: ["#state-rescue", '[data-act="projectownerrescue"]'] }, async (p) => go(p, await orphaned())) };
   R["question:deferred"] = { reach: state({ sel: ['[data-aside="deferred"]'] }, async (p) => {
     await go(p, await deferQ());
     await reveal(p.locator("#question-aside-0"));
@@ -426,7 +432,7 @@ export function localReach(ctx) {
   R["translations:a"] = { reach: state({ sel: ['[data-state="nolanguages"]'] }, async (p) => go(p, at("/app/translations"))) };
   R["projects:a new"] = { page: async () => (await lea()).page, reach: state({ words: ["projects.empty.note"] }, async (p) => { await leaHome(); await go(p, at("/app/projects")); }) };
   R["projects:for"] = { page: () => T, reach: state({ words: ["screen.projects.nocreate"] }, async (p) => go(p, at("/app/projects"))) };
-  R["unavailable:something"] = { expect: [/^PROJECT_SEEN_NOT_A_PARTICIPANT$/, /^NOT_A_PARTICIPANT$/, /^NOT_VISIBLE$/],
+  R["unavailable:something"] = { expect: NOT_HERS,
     reach: state({ sel: ['#cs-main [data-unavailable="notyours"]'] }, async (p) => go(p, await maiHidden())) };
   const WHOAMI = (u) => /[?&]op=whoami(&|$)/.test(String(u));
   R["unavailable:your"] = { note: "unavailable, out of reach: the copy's whoami was answered 503 by the walk's own route", expect: [503, "ok: false"],
@@ -451,7 +457,7 @@ export function localReach(ctx) {
     await p.locator('#cs-main input.mk-pick[data-table="queue"]').first().check();
     await act(p, "taskresolve", { which: '[data-multi="1"]', reason: "Recorded by the release walk." });
   }) };
-  R["queue:what you"] = { reach: state({ words: ["queue.answered.title", "queue.answered.heading"] }, async (p) => { await joinAnswered(); await go(p, at("/app/queue/answered")); }) };
+  R["queue:what you"] = { expect: NOT_HERS, reach: state({ words: ["queue.answered.title", "queue.answered.heading"] }, async (p) => { await joinAnswered(); await go(p, at("/app/queue/answered")); }) };
   /* Find */
   R["finder:a search with"] = { reach: state({ sel: ['#cs-main .mk-note[data-state="empty"]'] }, async (p) => {
     await go(p, at("/app/finder"));
