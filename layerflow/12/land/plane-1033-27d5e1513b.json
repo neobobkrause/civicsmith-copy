@@ -1,0 +1,45 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "plane",
+  "pr": 1033,
+  "branch": "job/plane-3",
+  "head": "27d5e1513b2b47f7c1b3355ac0e17e31b00c1e5a",
+  "before": "544a4b9ffcc382e3b493af76e79f72fc09988cf7",
+  "merge": "ee2ef88f73210b610e0cf22847c32c7f8dc9a70a",
+  "at": "2026-11-08T16:24:18Z",
+  "by": "bob",
+  "gate_runs": 5,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/plane/cr2-29-path-source.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/plane/cr2-29-path-source.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/plane/cr2-29-path-source.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R97, R98 (Provides before this land) while plane's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/plane/cr2-29-path-source.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
