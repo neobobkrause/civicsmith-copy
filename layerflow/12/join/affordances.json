@@ -1,0 +1,16 @@
+{
+  "row": "join",
+  "layer": 12,
+  "module": "affordances",
+  "from": 11,
+  "why": "CR2-16: admit hypothesisrivals, explorenext, rivals with ux DEC-502 ACT_HELP; ACT_HELP docketrecordedition (DEC-504)",
+  "at": "2026-11-08T10:30:01Z",
+  "by": "bob",
+  "items": [
+    {
+      "id": "CR2-16",
+      "module": "affordances",
+      "what": "admit hypothesisrivals, explorenext and rivals (hypotheses CR2-9 F1, BD-17): R12 list rows, with the ux lane's ACT_HELP words (ACT_HELP_ABSENT only if the lane says no help text fits); hypotheses' attempt turned 3 affordances tests red"
+    }
+  ]
+}
