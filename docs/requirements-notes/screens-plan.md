@@ -19,3 +19,7 @@
 
 - **screens-action, land a801611ef0 (PR 910).** That land changed only screens-action's own move test (`requirements-moved.test.mjs`) and its notes. No file under `bio-plane/src/screens-action/` changed, and neither did the `send-steps.mjs` exports `plan.mjs` imports (`readOnly`, `WRITE_HELP`, `actName`, `citeOf`, `later`). After `job sync` brought in `layer/11`, the module's suite passes with no code change: R9 and R10 pass, and R8 stays a `test.todo`.
 - **R8 is still not met, for the same reason.** `plan-work.takeUpsFor` is still called only by `action-producers`. No op declared in `op-declarations` lets a screen read take-ups, and `itemTakeUp` still takes no target date.
+
+## Attempt 3 (8 Nov 2026): re-test against screens-action's new interface
+
+- **screens-action, land ec8685a924 (PR 969).** That land added one test (`notice-instance-setup-f2.test.mjs`) and screens-action's ledger and metrics rows. No file under `bio-plane/src/screens-action/` changed, so the `send-steps.mjs` exports `plan.mjs` imports are the same. On `job/screens-plan`, which already holds `layer/11`, the module's suite passes with no code change: R9 and R10 pass, and R8 stays a `test.todo` for the reason above (no op reads take-ups back; `itemTakeUp` takes no target date).
