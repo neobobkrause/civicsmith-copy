@@ -6,3 +6,4 @@
 {"at":"2026-11-04T11:46:27Z","row":"outcome","n":3,"outcome":"delivered"}
 {"at":"2026-11-05T07:36:23Z","row":"sent","n":4,"to":"bob","text":"job interface-assets complete, PR #443 ready, session session_018BhcegsUULhNrxd1gfTkcG: run status"}
 {"at":"2026-11-05T07:36:35Z","row":"outcome","n":4,"outcome":"delivered"}
+{"at":"2026-11-08T09:21:40Z","row":"sent","n":5,"to":"bob","text":"job interface-assets complete, PR #1000 ready, session session_018BhcedoBAeMV1BJywPWax4: run status"}
