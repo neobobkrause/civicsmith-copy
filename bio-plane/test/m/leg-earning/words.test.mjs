@@ -16,6 +16,8 @@ const FORBIDDEN = /\b(this|the) (instance|copy|plane)\b/i;
 const captureWord = (id) => word("leg-earning.capture_word", { bundle_id: id, n: "1" });
 const ocr = (cap) => [{ step: "pixels" }, { step: "ocr", engine: "tesseract", version: "5.3.4", cap, confidence: { basis: "none" } }];
 const below = (g) => BASIS_GRADES[BASIS_GRADES.indexOf(g) + 1];
+/* CR2-7 (BD-18): the route-bound sentence, filled with provenance's own answer for the route, compared by its id. */
+const routeBound = (cw, bound, routeWhy) => localize("leg-earning.why.strongest_route_follows_provenance", "{captureWord}, and the strongest route by which your team's Civicsmith received them earns {bound} on the capture axis, as provenance answers for that route: {routeWhy}. So the strongest capture grade this document can earn is {bound}.", { captureWord: cw, bound: String(bound), routeWhy: String(routeWhy) });
 const words = (e) => Object.values(e).filter((v) => typeof v === "string").join("\n");
 
 test("R1 DEC-149: every capture entry names the group's Civicsmith as your group's Civicsmith, never this instance or this plane — the fetched ceiling, the byte-bound measured transcription, the route-bound replay, the fidelity-bound transcription, and the unreachable grade", () => {
@@ -24,7 +26,7 @@ test("R1 DEC-149: every capture entry names the group's Civicsmith as your group
         OCR_C = "INFO-2026-8903-ocr-c";
   w.doc(PLAIN, ["publisher-typed"], { chain: null });
   w.doc(OCR_A, ["ocr at A"], { chain: ocr("A") });
-  w.doc(REPLAY, ["replayed"], { via: ARCHIVE_VIA });
+  const [replaySha] = w.doc(REPLAY, ["replayed"], { via: ARCHIVE_VIA });
   w.doc(OCR_C, ["ocr at C"], { chain: ocr("C") });
   const cap = w.k.earned(null, [PLAIN, OCR_A, REPLAY, OCR_C]).earned.capture;
   const fetched = (id) => word("leg-earning.why.strongest_capture_grade", { capture_word: captureWord(id), earned_capture_ceiling: String(EARNED_CAPTURE_CEILING) });
@@ -34,7 +36,7 @@ test("R1 DEC-149: every capture entry names the group's Civicsmith as your group
   /* the route binds: an archive replay, one rank below the ceiling */
   const R = below(EARNED_CAPTURE_CEILING);
   assert.deepEqual([cap[REPLAY].grade, cap[REPLAY].bounded_by], [R, "CAPTURE_BOUNDED_BY_ROUTE"]);
-  assert.equal(cap[REPLAY].why, word("leg-earning.why.strongest_route_group", { capture_word: captureWord(REPLAY), bound: String(R) }));
+  assert.equal(cap[REPLAY].why, routeBound(captureWord(REPLAY), R, w.prov.captureGrade(replaySha).why));
   /* the fidelity binds */
   assert.equal(cap[OCR_C].bounded_by, "CAPTURE_BOUNDED_BY_FIDELITY");
   assert.equal(cap[OCR_C].why, localize("leg-earning.index.fidelity_bound_bytes_fetched", "{captureWord}, and the bytes as your team's Civicsmith fetched them would be worth {EARNED_CAPTURE_CEILING} — but this document's TEXT was derived by a machine and that derivation is measured at {bound}. The capture axis is bounded by the weakest link of byte provenance and transcription fidelity, with no third scale (DEC-4), so the strongest capture grade this document can earn is {bound}. Transcription never RAISES a capture grade, and it is not a separate measurement a member can cite instead.", { captureWord: captureWord(OCR_C), EARNED_CAPTURE_CEILING: String(EARNED_CAPTURE_CEILING), bound: "C" }));
@@ -65,4 +67,22 @@ test("R8 DEC-149: a held standard's capture ceiling names the group's Civicsmith
     assert.equal(e.ceiling, ceiling);
     assert.doesNotMatch(words(e), FORBIDDEN);
   }
+});
+
+test("R1 CR2-7 (BD-18): a ceiling the route binds states provenance's own answer for that route, never a fixed account of an archive replay — the replay's letter and sentence are provenance's, the document's sentence follows them", () => {
+  const w = world();
+  const REPLAY = "INFO-2026-8910-replay", BOTH = "INFO-2026-8911-both";
+  const [replaySha] = w.doc(REPLAY, ["replayed only"], { via: ARCHIVE_VIA });
+  const cg = w.prov.captureGrade(replaySha);
+  assert.equal(typeof cg.why, "string");
+  const cap = w.k.earned(null, [REPLAY]).earned.capture[REPLAY];
+  assert.deepEqual([cap.grade, cap.bounded_by], [cg.grade, "CAPTURE_BOUNDED_BY_ROUTE"]);
+  assert.equal(cap.why, routeBound(captureWord(REPLAY), cg.grade, cg.why));
+  assert.ok(cap.why.includes(cg.why), "the document's sentence carries provenance's sentence for the route");
+  /* control: a document also fetched direct earns the ceiling, and the route-bound sentence is not used */
+  w.doc(BOTH, ["fetched direct"]);
+  const direct = w.k.earned(null, [BOTH]).earned.capture[BOTH];
+  assert.equal(direct.grade, EARNED_CAPTURE_CEILING);
+  assert.equal(direct.bounded_by, undefined);
+  assert.equal(direct.why, word("leg-earning.why.strongest_capture_grade", { capture_word: captureWord(BOTH), earned_capture_ceiling: String(EARNED_CAPTURE_CEILING) }));
 });
