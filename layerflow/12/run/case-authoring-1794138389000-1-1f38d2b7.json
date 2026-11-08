@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 12,
+  "module": "case-authoring",
+  "round": 1,
+  "started": "2026-11-08T11:46:29Z",
+  "ended": "2026-11-08T11:49:05Z",
+  "minutes": 2.6,
+  "tested_on": "a77735ceb977e57f108fb8f6111e44f84c98d415",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-08T11:49:05Z"
+}
