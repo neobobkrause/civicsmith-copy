@@ -1,0 +1,54 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "case-authoring",
+  "pr": 1026,
+  "branch": "job/case-authoring-2",
+  "head": "30008ada6fcf71f596d8efef3b1177f095d9f400",
+  "before": "5b8a4cb7a4c8a1665fdead14a80f63b2674bb5e9",
+  "merge": "57136557333b9c0a8de862967e28391c01e8f0db",
+  "at": "2026-11-08T11:56:42Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/case-authoring/preflight.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/case-authoring/preflight.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/case-authoring/preflight.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/case-authoring/preflight.test.mjs"
+    ],
+    "triggers": [],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "none",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/case-authoring/preflight.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "importers": []
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [
+    "affordances",
+    "op-declarations",
+    "plane"
+  ],
+  "users_noticed": []
+}

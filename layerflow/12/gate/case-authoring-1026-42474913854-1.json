@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 12,
+  "module": "case-authoring",
+  "pr": 1026,
+  "sha": "74c09ff053ded3d0fd8c73fa9163bba40820e03a",
+  "run_id": 42474913854,
+  "run_attempt": 1,
+  "at": "2026-11-08T11:16:14Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 1.03,
+  "suite_minutes": null,
+  "record_only": true,
+  "whole": false
+}
