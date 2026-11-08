@@ -655,3 +655,4 @@
 {"at":"2026-11-08T09:34:45Z","row":"check","by":"setup check","live":9,"live_at":"2026-11-08T09:13:19Z","live_measured":2,"started_since":7,"slots_working":6,"published_free":3,"resumed":["provenance"],"job_cap":20,"startable":0}
 {"at":"2026-11-08T09:40:01Z","row":"check","by":"setup check","live":9,"live_at":"2026-11-08T09:13:19Z","live_measured":2,"started_since":7,"slots_working":6,"published_free":3,"resumed":["provenance"],"job_cap":20,"startable":0}
 {"at":"2026-11-08T09:48:48Z","row":"check","by":"send","live":9,"live_at":"2026-11-08T09:13:19Z","live_measured":2,"started_since":7,"slots_working":7,"published_free":2,"resumed":["provenance"],"job_cap":20,"startable":0}
+{"at":"2026-11-08T09:54:00Z","row":"check","by":"layer land","live":9,"live_at":"2026-11-08T09:13:19Z","live_measured":2,"started_since":7,"slots_working":7,"published_free":2,"resumed":["provenance"],"job_cap":20,"startable":0}
