@@ -405,7 +405,7 @@ proposals into tasks would present machine findings as obligations, which is exa
 the drowning failure D-79 warns of: one check across 58 contracts is ONE proposal with
 58 instances, never 58 tasks.
 
-**Three affordances, and only three:** adopt (into an objective, a focus, a problem),
+**Three affordances, and only three:** adopt (into an objective or a question),
 defer with a recorded reason, dismiss with a recorded reason. Nothing is adopted
 automatically and nothing disappears silently.
 
