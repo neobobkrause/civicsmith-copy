@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "hypotheses",
+  "session": "session_018BhcegRfwMC1Qoaqqy4Gd4",
+  "started": "2026-11-08T11:25:21Z",
+  "ended": "2026-11-08T11:26:36Z",
+  "at": "2026-11-08T11:26:36Z",
+  "minutes": 1.25,
+  "result": "fail",
+  "layer": 12,
+  "suite_seconds": 10.429,
+  "tests": {
+    "total": 85,
+    "pass": 83,
+    "fail": 1
+  }
+}
