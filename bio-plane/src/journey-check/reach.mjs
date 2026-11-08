@@ -8,8 +8,8 @@
    - `rank` orders the states whose setup would change what an earlier state draws (a member removed, the team's places);
    - `after(page)` puts back what the state changed;
    - `note` is written beside the pair where the arm stood in for the world (an answer the walk's own route gave).
-   A carried state with no entry here is one the local copy cannot draw (`UNREACHABLE`, with its reason); it still fails by its
-   name on the local arm (R21), and is reported to BOB with that reason. */
+   A carried state with no entry here is one the local copy cannot draw: the live arm's (`LIVE_ARM`, with its means there) or a
+   known gap neither arm can draw (`KNOWN_GAPS`, PD-10), each with its reason. */
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -18,22 +18,23 @@ import { act, type, reveal, requireDrawn, inviteMember, signInBy } from "./journ
 import { requireWord, wordPattern, word } from "./words.mjs";
 import { readAndCite, UPLOAD_TEXT } from "./investigation.mjs";
 
-/* The carried states the local copy cannot draw, by key, each with why (reported to BOB; never passed). */
-export const UNREACHABLE = Object.freeze({
-  "project:notice is published": "a notice is signed with the instance's key, and the installer binds none (RECEIPT_SIGNING_KEY): noticeprepare is refused NOTICE_NO_INSTANCE_KEY",
-  "home:for the": "the founder of a new team: drawn only before a second member or a project exists, long before the carried states are walked",
-  "connect:connected": "connect is retired (T53): /app/connect draws \"Nothing is here\"",
-  "connect:signed in": "connect is retired (T53): /app/connect draws \"Nothing is here\"",
-  "connect:your own Claude sign-in": "connect is retired (T53): /app/connect draws \"Nothing is here\"",
-  "connect:a team that doesn't": "connect is retired (T53): /app/connect draws \"Nothing is here\"",
-  "connect:a team that keeps": "connect is retired (T53): /app/connect draws \"Nothing is here\"",
-  "teamai:Ask": "teamai is retired (T53): /app/teamai draws \"Nothing is here\"",
-  "teamai:Yes": "teamai is retired (T53): /app/teamai draws \"Nothing is here\"",
+/* CR2-2 (the coordinator's ruling, 8 Nov): the carried states the local copy cannot draw, by key. `LIVE_ARM`: those a development
+   deployment can draw, each with why the local copy cannot and the means on the live arm (walked there; on the local arm a note,
+   never a pass or a failure). `KNOWN_GAPS`: those neither arm can draw, each with why: reported as a known gap (PD-10) and kept
+   open in F10, never passed. */
+export const LIVE_ARM = Object.freeze({
+  "project:notice is published": { why: "a notice is signed with the instance's key, and the local install binds none (RECEIPT_SIGNING_KEY): noticeprepare is refused NOTICE_NO_INSTANCE_KEY",
+    means: "a deployment holding its instance signing key, an owner who registered her own signing key on Account, a notice prepared, previewed and posted on the project" },
+  "home:for the": { why: "the founder of a new team is drawn only before a project or a second member exists, long before the carried states are walked",
+    means: "a development deployment freshly installed for the walk, opened as its founder before she invites anyone or starts a project" },
+  "open-file:a file held": { why: "a hold is placed only on a scanner's finding, and the local world's file scanner finds nothing",
+    means: "the EICAR test file uploaded into a question; the deployment's file scanner (ClamAV) finds it and holds the copy" },
+});
+export const KNOWN_GAPS = Object.freeze({
   "group-identity:an": "the installer records the team's short name at first boot, so no installation of this release lacks it",
-  "updates:the same,": "needs a newer release notice signed by Civicsmith's release keys",
-  "open-file:a file held": "a hold is placed only on a scanner's finding, and the local world's file scanner finds nothing",
-  "places:a state with no": "the United States (federal law) profile stays active whatever the team chooses on Places, so the team always holds a non-test profile and Places never draws its no-profile state",
-  "queue:an all-clear": "every feed of the local copy answers, so an empty queue says nothing is waiting (the queue's other state, walked); the two cannot both be drawn",
+  "places:a state with no": "the United States (federal law) profile stays active whatever the team chooses on Places, so a team always holds a non-test profile and Places never draws its no-profile state",
+  "queue:an all-clear": "every feed of the copy answers, so an empty queue says nothing is waiting (the queue's other state, walked); a feed that fails cannot be made to by the screens",
+  "updates:the same,": "needs a release notice newer than the running release and signed by Civicsmith's release keys, which no development deployment is given",
 });
 
 const once = (fn) => { let p = null; return () => (p ||= fn()); };

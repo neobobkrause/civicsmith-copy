@@ -10,6 +10,7 @@ import { FAIL } from "./walker.mjs";
 import { localize } from "../setup-words/index.mjs";
 import { pair, WIDTHS, viewportOf } from "./design.mjs";
 import { settle, StepFailed } from "./walker.mjs";
+import { LIVE_ARM, KNOWN_GAPS } from "./reach.mjs";
 
 export const CARRIED_STATES = Object.freeze([
   { screen: "document", state: "the held copy", control: "mk-dst", option: "held" },
@@ -42,13 +43,7 @@ export const CARRIED_STATES = Object.freeze([
   { screen: "security", control: "mk-secst", option: "an" },
   { screen: "account", control: "mk-eacct", option: "a newer" },
   { screen: "account", control: "mk-eacct", option: "making" },
-  { screen: "connect", control: "mk-st", option: "connected" },
-  { screen: "connect", control: "mk-st", option: "signed in" },
-  { screen: "connect", control: "mk-st", option: "your own Claude sign-in" },
-  { screen: "connect", control: "mk-st", option: "a team that doesn't" },
-  { screen: "connect", control: "mk-st", option: "a team that keeps" },
-  { screen: "teamai", control: "mk-gex", option: "Ask" },
-  { screen: "teamai", control: "mk-gex", option: "Yes" },
+  /* connect's and teamai's states retired with their screens (T53; CR2-2, the coordinator's ruling of 8 Nov) */
   { screen: "places", control: "mk-plst", option: "a state with no" },
   { screen: "recovery", control: "mk-rst", option: "new" },
   { screen: "group-identity", control: "mk-gist", option: "an" },
@@ -91,7 +86,12 @@ export const stateKey = (st) => `${st.screen}:${st.option}`;
    so a test can tell this failure from any other of kind `state` (BOB's ruling, 7 Nov) */
 export const unreachedOnLocal = (name) => localize("journey-check.states.name_not_reached_on_the_local", "{name}: not reached on the local arm, which makes its own data", { name: String(name) });
 
-export async function walkStates(walk, b, mock, { out, page = null, base = null, reach = {}, states = CARRIED_STATES }) {
+/* CR2-2: what the walk says of a carried state the local copy cannot draw: one the live arm walks (`LIVE_ARM`, with its means there),
+   or a known gap neither arm can draw (`KNOWN_GAPS`, PD-10), each with its reason; neither is a pass or a failure */
+export const liveArmOnly = (name, why, means) => localize("journey-check.states.name_walked_on_the_live_arm", "{name}: walked on the live arm only ({why}); there: {means}", { name: String(name), why: String(why), means: String(means) });
+export const knownGap = (name, why) => localize("journey-check.states.name_known_gap_pd_10", "{name}: a known gap (PD-10), drawn on neither arm: {why}", { name: String(name), why: String(why) });
+
+export async function walkStates(walk, b, mock, { out, page = null, base = null, reach = {}, states = CARRIED_STATES, liveArm = LIVE_ARM, gaps = KNOWN_GAPS }) {
   walk.journey = "R21 the carried states";
   const written = [];
   const entryOf = (st) => { const e = reach[`${st.screen}, ${st.state ?? st.option}`] ?? reach[stateKey(st)]; return typeof e === "function" ? { reach: e } : e || null; };
@@ -107,6 +107,8 @@ export async function walkStates(walk, b, mock, { out, page = null, base = null,
       design[width] = d.png;
     }
     if (!design[WIDTHS[0]] || !design[WIDTHS[1]]) continue;
+    if (Object.hasOwn(gaps, stateKey(st))) { walk.notes.push(knownGap(name, gaps[stateKey(st)])); continue; }
+    if (walk.arm === "local" && Object.hasOwn(liveArm, stateKey(st))) { walk.notes.push(liveArmOnly(name, liveArm[stateKey(st)].why, liveArm[stateKey(st)].means)); continue; }
     const entry = reach[name] ? (typeof reach[name] === "function" ? { reach: reach[name] } : reach[name]) : entryOf(st);
     let ok = false;
     const livePng = {};
@@ -126,7 +128,7 @@ export async function walkStates(walk, b, mock, { out, page = null, base = null,
       if (entry.after) await entry.after(pg).catch(() => {});
       if (ok && entry.note) walk.notes.push(entry.note);
     }
-    /* the failure carries the state's key, so a reader can tell a state the local copy cannot draw (reach.mjs UNREACHABLE) from another */
+    /* the failure carries the state's key, so a reader can tell which state the local arm failed to draw */
     if (!ok && walk.arm === "local") { walk.fail(FAIL.STATE, unreachedOnLocal(name)).state = stateKey(st); continue; }
     if (!ok) { walk.notes.push(localize("journey-check.states.name_not_reached_on_this_instance", "{name}: not reached on this instance", { name: String(name) })); continue; }
     for (const width of WIDTHS)

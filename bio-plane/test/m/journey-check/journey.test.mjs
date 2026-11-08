@@ -17,8 +17,9 @@ import { RELEASE_MANIFEST } from "../../../../newgroup/src/release.mjs";
 import { createHash } from "node:crypto";
 import { planeOptions } from "../../../src/journey-check/local.mjs";
 import { STEP_NAMES } from "../../../src/journey-check/investigation.mjs";
-import { CARRIED_STATES, unreachedOnLocal } from "../../../src/journey-check/states.mjs";
-import { UNREACHABLE } from "../../../src/journey-check/reach.mjs";
+import { CARRIED_STATES } from "../../../src/journey-check/states.mjs";
+import { LIVE_ARM, KNOWN_GAPS } from "../../../src/journey-check/reach.mjs";
+import { stateKey } from "../../../src/journey-check/states.mjs";
 import { localize } from "../../../src/setup-words/index.mjs";
 
 const DIR = join(import.meta.dirname, "..", "..", "..", "src", "journey-check");
@@ -103,37 +104,32 @@ const stepsOf = (r, journey) => r.walk.steps.filter((s) => s.journey === journey
 const numbered = (r, journey) => stepsOf(r, journey).filter((s) => /^\d+ · /.test(s.label));
 
 const NOT_READY = /draws an assistant control that cannot work while the assistant does not/;
-/* BOB's ruling (7 Nov), F10: R1 (a) leaves out a failure only when it is states.mjs' own unreached sentence for a carried state the
-   local copy cannot draw (reach.mjs UNREACHABLE, each with its reason, put to BOB); any other `state` failure, and every other kind,
-   still fails R1 (a). The F10 test below asserts every other carried state reached; the todo keeps the rest visible. */
-const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const [UNREACHED_HEAD, UNREACHED_TAIL] = unreachedOnLocal("\u0000").split("\u0000");
-const UNREACHED = new RegExp(`^${esc(UNREACHED_HEAD)}(${[...new Set(CARRIED_STATES.map((s) => s.screen))].map(esc).join("|")}), .+${esc(UNREACHED_TAIL)}$`);
-const unreached = (f) => f.kind === FAIL.STATE && UNREACHED.test(f.detail) && Object.hasOwn(UNREACHABLE, f.state);
+/* The coordinator's ruling (8 Nov; CR2-2, F10): R1 (a) is strict, a carried state the local arm does not reach failing it like any
+   other; the states the local copy cannot draw are the live arm's (LIVE_ARM) or known gaps (KNOWN_GAPS), each noted with its
+   reason, never failed. */
 const noted = (r, name) => r.walk.notes.includes(localize("journey-check.walker.name_not_walked_the_assistant", "{name}: not walked, the assistant does not work (K3717)", { name }));
 /* R20: the walk's steps that fail are only a screen that draws an assistant control that cannot work, by name */
 const stepFailures = (r) => r.walk.failures.filter((f) => f.kind === FAIL.STEP);
 
 test("R1 (a): the local arm, with no account: the installer over its fake account, the hand-over into a plane under Miniflare, journey 28, journey 3, the journeys to a conclusion and every registry screen drawn; each step screenshotted", { timeout: 2400000 }, async () => {
   const { r, shots } = await local();
-  assert.deepEqual(r.walk.failures.filter((f) => !(f.kind === FAIL.STEP && NOT_READY.test(f.detail)) && !unreached(f)), [], r.report);
+  assert.deepEqual(r.walk.failures.filter((f) => !(f.kind === FAIL.STEP && NOT_READY.test(f.detail))), [], r.report);
   assert.equal(shots.length, r.walk.steps.length);
   const first = stepsOf(r, "journey 28").slice(0, 3).map((s) => s.label);
   assert.ok(/^civicsmith\.org: /.test(first[0]) && /^civicsmith\.org: /.test(first[1]) && /^install: /.test(first[2]), "journey 28 starts at civicsmith.org: " + first.join(" | "));
   for (const j of ["journey 28", "journey 3", "R9 as administrator", "R10 as member", "R7 as the founder, her handle held"]) assert.ok(stepsOf(r, j).length, j);
 });
 
-test("R21/F10: every carried state the local copy can draw is reached on the local arm and paired at both widths; control: those it cannot draw each fail by name", { timeout: 2400000 }, async () => {
+test("R21/F10: every carried state the local copy can draw is reached on the local arm and paired at both widths; those it cannot are noted, the live arm's with its means there and the known gaps (PD-10) with their reasons, never failed", { timeout: 2400000 }, async () => {
   const { r } = await local();
-  assert.deepEqual(r.walk.failures.filter((f) => f.kind === FAIL.STATE && !Object.hasOwn(UNREACHABLE, f.state)).map((f) => f.detail), [], r.report);
-  assert.equal(r.walk.pairs.filter((p) => /^pairs\/state-/.test(p)).length, 2 * (CARRIED_STATES.length - Object.keys(UNREACHABLE).length), r.report);
-  assert.deepEqual(r.walk.failures.filter(unreached).map((f) => f.state).sort(), Object.keys(UNREACHABLE).sort());
+  assert.deepEqual(r.walk.failures.filter((f) => f.kind === FAIL.STATE).map((f) => f.detail), [], r.report);
+  const skipped = { ...LIVE_ARM, ...KNOWN_GAPS };
+  assert.equal(r.walk.pairs.filter((p) => /^pairs\/state-/.test(p)).length, 2 * CARRIED_STATES.filter((s) => !Object.hasOwn(skipped, stateKey(s))).length, r.report);
+  const named = (st) => r.walk.notes.find((n) => n.startsWith(`${st.screen}, `) && (n.includes(LIVE_ARM[stateKey(st)]?.means ?? "\u0000") || n.includes(KNOWN_GAPS[stateKey(st)] ?? "\u0000")));
+  for (const st of CARRIED_STATES.filter((s) => Object.hasOwn(skipped, stateKey(s)))) assert.ok(named(st), `${stateKey(st)}: ${r.walk.notes.join(" | ")}`);
 });
 
-test.todo("R21/F10: the carried states the local copy cannot draw (reach.mjs UNREACHABLE, put to BOB) reached, or retired from the list", { timeout: 2400000 }, async () => {
-  const { r } = await local();
-  assert.deepEqual(r.walk.failures.filter(unreached).map((f) => f.detail), []);
-});
+test.todo("R21/F10: the known gaps (reach.mjs KNOWN_GAPS, PD-10) drawn on an arm, or retired from the list", () => {});
 
 test("R1 (a), G1: the local arm's install leaves the plane's script holding the watchdog cron its signed statement states; a plane without it fails the walk by name (red until the installer sets it and the release carries the statement)", { timeout: 2400000 }, async () => {
   const { r } = await local();
