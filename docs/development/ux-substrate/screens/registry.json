@@ -5712,6 +5712,15 @@
      ]
     },
     {
+     "op": "docketrecordedition",
+     "label": "Post an edition's entry, signed",
+     "status": "declared",
+     "onTranche": "origin/tranche",
+     "modules": [
+      "docket"
+     ]
+    },
+    {
      "op": "casedraft",
      "label": "Start the next edition",
      "status": "declared",

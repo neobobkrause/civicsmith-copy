@@ -332,8 +332,7 @@ const SCREEN_REFS = {
     ["meets the bar",null,"<b>The project's bar</b> · B/B · the least copy and connection grades a finding needs to be relied on","Every finding meets it, so none is published as weaker than the team claims."],
     ["An unresolved contradiction","timeline","<b>Two dates for the rent notice</b> · two documents disagree · in tension, not resolved · both dated only by month","Disclosed with the case, so readers see it; it does not stop publishing."],
     ["The timeline, frozen at signing","timeline","<b>Timeline of The Coliseum lease</b> · 9 events · fixed as it stands when you sign","Events recorded after you sign go into the next edition, not this one."],
-    ["the key registered in this browser",null,"<b>Your signing key</b> · registered in this browser for Dev · anyone can check the signature on the public page","Signing from another device needs that device's key registered first."],
-    ["owner of the project",null,"<b>Owner of The Coliseum lease</b> · Dev · only an owner signs the project's cases","Your signature stands for the team; readers see “signed by an owner of the project”."]
+    ["the key registered in this browser",null,"<b>Your signing key</b> · registered in this browser for Dev · anyone can check the signature on the public page","Signing from another device needs that device's key registered first."]
   ],
   "published": [
     ["Edition 2",null,"<b>Edition 2</b> · the current edition of this case · published September 18, 2026 · corrects Edition 1, which stays readable","Corrections, if any, come as a new edition listed on the case's public docket."],
