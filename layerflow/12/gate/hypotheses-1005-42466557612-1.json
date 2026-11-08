@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 12,
+  "module": "hypotheses",
+  "pr": 1005,
+  "sha": "5f7068e69d595a4c4477cccb2f3926cc9cb69c39",
+  "run_id": 42466557612,
+  "run_attempt": 1,
+  "at": "2026-11-08T09:18:47Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 1.18,
+  "suite_minutes": null,
+  "record_only": true,
+  "whole": false
+}

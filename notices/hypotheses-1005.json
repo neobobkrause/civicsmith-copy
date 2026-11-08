@@ -1,0 +1,43 @@
+{
+  "row": "notice",
+  "at": "2026-11-08T09:51:24Z",
+  "key": "hypotheses:1005",
+  "provider": "hypotheses",
+  "ids": [],
+  "pr": 1005,
+  "users": [
+    "affordances",
+    "answer-envelope",
+    "control-plane",
+    "op-declarations",
+    "plane",
+    "screens-document",
+    "screens-inquiry",
+    "store-ask",
+    "store-assembly"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "EXPLORE_NEXT_NOTICE_KEY",
+      "Hypotheses.exploreNext",
+      "Hypotheses.hypothesisRivals",
+      "Hypotheses.rivalHistory",
+      "Hypotheses.rivalsOf",
+      "RIVALS_MAX",
+      "RIVALS_MIN",
+      "RIVALS_TABLES",
+      "RIVAL_CODES",
+      "exploreNextNotice"
+    ],
+    "changed": [],
+    "kinds": [],
+    "signatures": []
+  },
+  "layer_flow": {
+    "layer": 12,
+    "provides": false,
+    "rescheduled": true
+  }
+}
