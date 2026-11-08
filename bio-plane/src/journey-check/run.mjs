@@ -202,7 +202,7 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
       await walkSignGone(walk, founder.page, copy).catch(going);
     }
     /* the sweep with her handle held (a founder who could not choose one was swept handleless above) */
-    if (parts.includes("sweep") && who.founder.handle) await sweepAsFounder(walk, founder.page, copy, { handle: who.founder.handle });
+    if (parts.includes("sweep") && who.founder.handle) await localSweep(walk, b, founder.page, copy, { handle: who.founder.handle, route });
     /* R27: every screen at both widths drawn with the pseudo rows, any sentence that escaped the list reported */
     if (parts.includes("R27")) {
       walk.journey = "R27 the pseudo-locale walk";
@@ -302,14 +302,41 @@ async function investigateLive(walk, b, base, { founder, member, codeOf, assista
   } finally { for (const c of devices) await c.close().catch(() => {}); }
 }
 
+/* R6, R28: the instance's own short name, never to be read on a screen (its address's first label; none for a bare host) */
+export const instanceSlugs = (host) => [String(host).split(":")[0].split(".")[0]].filter((x) => x && !/^\d+$/.test(x) && x !== "localhost");
+
+/* R6, R28 (DEC-340), both arms (PD-11): a drawn screen measured at 1280 and 390 px against the page's limits (`pageLimits`: wider
+   than the viewport, tabs, the test band, an undefined class, a slug or code) and DEC-340's (`dec340Limits`); each limit a failure
+   naming the screen and width. `each(width)` runs at each width after the checks (the live arm's pair). Leaves the page at 1280. */
+export async function screenLimits(walk, p, id, { slugs = [], each = null } = {}) {
+  for (const width of WIDTHS) {
+    if (width !== WIDTHS[0]) { await p.setViewportSize(viewportOf(width)); await p.reload(); await settle(p); }
+    for (const l of await pageLimits(p, { width, slugs, handles: [...walk.handles] })) walk.fail(l.kind, `${id} at ${width}px: ${l.detail}`);
+    for (const l of await dec340Limits(p, id, { isPublic: false, phone: width <= 390 })) walk.fail(FAIL.DEC340, localize("journey-check.run.id_at_width_px_kind", "{id} at {width}px: {kind}: {detail}", { id: String(id), width: String(width), kind: String(l.kind), detail: String(l.detail) }));
+    if (each) await each(width);
+  }
+  await p.setViewportSize(viewportOf(WIDTHS[0]));
+}
+
+/* PD-11: the local arm's last sweep, as the founder with her handle held (R7), measures each drawn screen as the live arm does
+   (`screenLimits`, R6 and R28), then walks the named public pages signed out (`publicPass`, R28), so a class or DEC-340 fault in the
+   copy the local arm installed fails the walk. `route(context)` is the world's; `screens` and `pages` narrow the walk. */
+export async function localSweep(walk, b, page, base, { handle, route = null, screens = undefined, pages = undefined } = {}) {
+  const slugs = instanceSlugs(new URL(base).host);
+  await sweepAsFounder(walk, page, base, { handle, ...(screens ? { screens } : {}), also: (p, s) => screenLimits(walk, p, s.id, { slugs }) });
+  await publicPass(walk, b, base, { route, ...(pages ? { pages } : {}) });
+}
+
 /* R28 (interface-shell R102): the nine named public pages, opened with no session at 1280 and 390 px, each drawn page's title the
    word of its screen and no weight mark in it; a page that needs a subject the instance does not name here draws its
    "Nothing is here" at its bare address and is noted, never passed. */
-export async function publicPass(walk, b, base, { pages = publicPages(), registry = registryScreens() } = {}) {
+export async function publicPass(walk, b, base, { pages = publicPages(), registry = registryScreens(), route = null } = {}) {
   walk.journey = "R28 the public pages";
   const ctx = await b.newContext({ viewport: viewportOf(1280) });
   try {
-    await ctx.route("**/*", (r) => (new URL(r.request().url()).host === walk.copyHost ? r.continue() : (walk.foreign(r.request().url()), r.abort("blockedbyclient"))));
+    /* `route(context)` sends the context's requests where the arm says (the local arm's world); else straight to the instance */
+    if (route) await route(ctx);
+    else await ctx.route("**/*", (r) => (new URL(r.request().url()).host === walk.copyHost ? r.continue() : (walk.foreign(r.request().url()), r.abort("blockedbyclient"))));
     const page = walk.watch(await ctx.newPage());
     for (const id of pages) {
       await walk.step(page, `public page ${id}`, async (p) => {
@@ -345,7 +372,7 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
     await requireTestInstance(base, fetchOf);
     walk.copyHost = new URL(base).host;
     /* the instance's own short name, never to be read on a screen */
-    const slugs = [walk.copyHost.split(".")[0]].filter((x) => !/^\d+$/.test(x) && x !== "localhost");
+    const slugs = instanceSlugs(walk.copyHost);
     const b = await launch({ direct: true });
     let mock = null;
     try {
@@ -381,18 +408,14 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
           await sweep(walk, page, base, { screens: working, journey: `as ${role}`, each: async (p, s, drawn) => {
             acts[role].set(s.id, await drawnActs(p));
             if (!drawn) return;
-            for (const width of WIDTHS) {
-              if (width !== 1280) { await p.setViewportSize(viewportOf(width)); await p.reload(); await settle(p); }
-              for (const l of await pageLimits(p, { width, slugs, handles: [...walk.handles] })) walk.fail(l.kind, `${s.id} at ${width}px: ${l.detail}`);
-              /* R28 (DEC-340): the screen's title, the explanations, the masthead's name, Projects' controls */
-              for (const l of await dec340Limits(p, s.id, { isPublic: false, phone: width <= 390 })) walk.fail(FAIL.DEC340, localize("journey-check.run.id_at_width_px_kind", "{id} at {width}px: {kind}: {detail}", { id: String(s.id), width: String(width), kind: String(l.kind), detail: String(l.detail) }));
+            /* R6, R28 (DEC-340): the page's limits at each width, then the pair beside the design's drawing */
+            await screenLimits(walk, p, s.id, { slugs, each: async (width) => {
               const live = await p.screenshot();
               const design = await mock.draw(s.id, width);
               if (!design) walk.fail(FAIL.DESIGN, localize("journey-check.run.id_the_design_mock_at", "{id}: the design mock at {commit} draws no such screen", { id: String(s.id), commit: String(mock.commit) }));
               else walk.pairs.push(relative(out, await pair(b, live, design, join(out, "pairs", `${role}-${s.id}-${width}.png`),
                 { title: `${s.id}, ${width}px, as ${role}` })));
-            }
-            await p.setViewportSize(viewportOf(1280));
+            } });
           } });
         } catch (e) { if (!(e instanceof StepFailed)) throw e; }
         finally { await ctx.close().catch(() => {}); }

@@ -3,7 +3,7 @@
    tabs pinned to the viewport's foot, every class defined by its stylesheet) after `whoami`, which answers each handle's
    `administer` as `admins` says. The administrator is drawn `memberadd` on Members; both roles are drawn `testify`.
    `adminActs: false` draws the administrator nothing more than the member. `flaws` puts one flaw on one screen:
-   {screen: "wide" | "tabs" | "band" | "class" | "words"}.
+   {screen: "wide" | "tabs" | "band" | "class" | "words" | "title"} ("title": the tab keeps its page's own title, not its screen's word, R28).
    R12: `projects`, `project`, `question` and `connect` draw just enough of R9's steps 2 to 4 to reach the sign-in:
    a project (after the visibility choice screens-daily's "Start a project" asks, which the walk makes) and a question opened by `promote`, and the subscription's sign-in (`subscriptionsignin`: a link to
    Anthropic's page, then the code typed), each drawing the words the walk asserts, through `word`. `codes` records each
@@ -67,8 +67,8 @@ export async function fakePlane({ admins = {}, flaws = {}, adminActs = true, ass
   const id = location.pathname === "/app" ? "home" : location.pathname.slice(5).split("/")[0];
   const who = await (await fetch("/api/?op=whoami", { headers: { authorization: "Bearer " + sessionStorage.getItem("t") } })).json();
   const flaws = ${JSON.stringify(flaws)}, FLAW = ${JSON.stringify(FLAW)};
-  document.title = ${JSON.stringify(TITLES)}[id] || document.title;
   const f = flaws[id];
+  if (f !== "title") document.title = ${JSON.stringify(TITLES)}[id] || document.title;
   const acts = '<button class="cs-btn" data-act="testify" type="button">Testify</button>'
     + (${JSON.stringify(adminActs)} && who.result.administer && id === "members" ? '<button class="cs-btn" data-act="memberadd" type="button">Invite a member</button>' : "");
   document.getElementById("root").innerHTML = '<div class="cs-frame" id="cs-frame">'
