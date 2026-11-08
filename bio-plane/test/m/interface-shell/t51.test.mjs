@@ -677,7 +677,8 @@ test("R103 an explanation opens below what it explains, else above: the first th
   rail[0].getBoundingClientRect = rect(300, 200, 400, 230);
   assert.deepEqual(open(), { left: "300px", top: "104px" }, "below holds a control: above, not beside");
   rail[1].getBoundingClientRect = rect(290, 90, 420, 140);
-  assert.deepEqual(open(), { left: "300px", top: "176px" }, "above holds one too: the first inside the page, below");
+  /* F7 (CR2-27): the row just below is taken past the control its first place meets, still below what it explains */
+  assert.deepEqual(open(), { left: "300px", top: "236px" }, "above holds one too: below, past the control there, not over it");
   rail[0].getBoundingClientRect = rect(0, 0, 0, 0); rail[1].getBoundingClientRect = rect(0, 0, 0, 0);
   assert.deepEqual(open(), { left: "300px", top: "176px" }, "control: with room below it opens below");
   p.fire(p.doc.body, "pointerdown");
