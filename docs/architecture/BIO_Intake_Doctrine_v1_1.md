@@ -384,6 +384,19 @@ layer:
     > archive), with the reason recorded. A Grade C source cannot back a
     > load-bearing claim in an externally distributed work product.
 
+**Archive replays (Bob, 2026-11-07; BD-18).** A web archive fetched the
+document from its publisher and held it before serving it to the group. A
+replay of the archive's RAW bytes, meaning the publisher's response exactly
+as the archive fetched it (for the Wayback Machine, its unmodified mode), is
+therefore a Grade B capture, labelled "via archive". It records the snapshot
+date as its fetch date and names the archive as custodian. DEC-81 applies as
+to any Grade B: the archive cannot co-attest its own copy, so co-attestation
+comes from a second archive or a trusted timestamp, and otherwise from the
+owner's attributed acknowledgement, with the case marking the document
+"self-attested only". A rewritten replay (the archive's toolbar, altered
+links) is not the publisher's document. Where the raw bytes are not
+available, it is Grade C, reference only.
+
 An Information bundle's verified state requires Grade B or better on
 every attesting document. Grade upgrades (B to A) are accretive adds:
 the new capture lands beside the old, never replacing it.

@@ -1139,10 +1139,11 @@ CONNECT to them rather than to invent a parallel set:
 
 - an **objective** is what a `project` carries; the catalogue already gives a project
   an `objective` field and the states `forming → investigating → matured → closed`
-- an open question is a `focus`, with `surfaced → elevated → deferred → dismissed`
-- a discovered obstacle is a `problem`, with the same states
-- a step someone takes is an `action`, with `planned → active → awaiting_response →
-  resolved → abandoned`
+- an open question is a **question** (the `inquiry` record, `BIO_Case_Making_v0_1.md`),
+  with its states;
+- a discovered obstacle is recorded as a question about it, not as a separate kind;
+- a step someone takes is a **step** (`BIO_Investigation_v0_1.md` §3); an **action** is
+  an act the group takes outward (`BIO_Action_v0_2.md`).
 
 **Aspiration and goal are the two that do not exist yet.** Everything below them does.
 That is the honest summary of the gap: this framework was written for six sections
@@ -1191,8 +1192,8 @@ flowchart TD
     REC -->|"junction checks,<br/>monitoring, ageing"| FIND["FINDING<br/><i>unasked for</i>"]
     FIND -->|"proposal:<br/>never an assertion"| TRIAGE{"a member<br/>decides"}
     TRIAGE -->|"adopt"| OBJ
-    TRIAGE -->|"it is a question,<br/>not yet work"| FOC["FOCUS"]
-    TRIAGE -->|"it is an obstacle"| PRB["PROBLEM"]
+    TRIAGE -->|"it is a question,<br/>not yet work"| QUE["QUESTION"]
+    TRIAGE -->|"it is an obstacle"| QUE
     TRIAGE -->|"defer, with a reason<br/>that is recorded"| DEF["deferred"]
     REC -->|"measured against the<br/>satisfaction condition"| PROG["PROGRESS<br/><i>computed, not reported</i>"]
     PROG --> OBJ
@@ -1201,7 +1202,7 @@ flowchart TD
     classDef found fill:#fff,stroke:#b08968,color:#6b4a32
     class ASP,GOAL,OBJ intent
     class REC,WORK,PROG rec
-    class FIND,TRIAGE,FOC,PRB,DEF found
+    class FIND,TRIAGE,QUE,DEF found
 ```
 
 The rules that make the loop safe:
