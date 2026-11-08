@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "case-authoring",
+  "session": "session_018BhcecX7zq8nfTiZyzDUwB",
+  "started": "2026-11-08T13:08:05Z",
+  "ended": "2026-11-08T13:11:20Z",
+  "at": "2026-11-08T13:11:20Z",
+  "minutes": 3.25,
+  "result": "pass",
+  "layer": 12,
+  "suite_seconds": 52.638,
+  "tests": {
+    "total": 281,
+    "pass": 281,
+    "fail": 0
+  }
+}
