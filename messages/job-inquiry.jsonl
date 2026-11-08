@@ -9,3 +9,4 @@
 {"at":"2026-11-06T03:46:28Z","row":"sent","n":5,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (14 jobs ready). Then: job inquiry BLOCKED: run status"}
 {"at":"2026-11-06T03:46:40Z","row":"outcome","n":5,"outcome":"delivered"}
 {"at":"2026-11-08T09:35:44Z","row":"sent","n":6,"to":"bob","text":"job inquiry complete, PR #1006 ready, session session_018Bhceer5ZuSBMkeXJ5GHV2: run status"}
+{"at":"2026-11-08T09:36:05Z","row":"outcome","n":6,"outcome":"delivered"}
