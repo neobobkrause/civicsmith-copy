@@ -59,3 +59,4 @@
 {"at":"2026-11-08T15:32:47Z","row":"sent","n":30,"to":"bob","text":"job store-assembly complete, PR #1055 ready, session session_018BhcecvBp5ENWH4SW6Y1kM: run status"}
 {"at":"2026-11-08T15:33:06Z","row":"outcome","n":30,"outcome":"delivered"}
 {"at":"2026-11-08T20:56:32Z","row":"sent","n":31,"to":"bob","text":"job store-assembly complete, PR #1078 ready, session session_018BhcecbtUsnXa8JL2KT3yT: run status"}
+{"at":"2026-11-08T20:56:50Z","row":"outcome","n":31,"outcome":"delivered"}
