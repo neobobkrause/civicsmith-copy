@@ -146,6 +146,15 @@ export function hypothesesOf(host, deps = {}) {
     const r = promotion.registerStep(OWNER, { check: (c) => h.check(c) });
     if (r && r.ok === false) throw new Error(`hypotheses: registerStep refused: ${r.reason}`);
     if (deps.steps) h.bindSteps(deps.steps);
+    /* F1 (layer 12, CR2-19; inquiry R92, CR2-20): the question's rivals, registered with inquiry at start, so a standing
+       read that names none reads this module's list. An inquiry that cannot be reached, or one with no such
+       registration, is left unregistered: its read then refuses RIVALS_UNREAD, never answers as no rivals. */
+    let inq = null;
+    try { inq = deps.inquiry ?? inquiryOf(host); } catch { inq = null; }
+    if (inq && typeof inq.onRivalsListed === "function") {
+      const l = inq.onRivalsListed(OWNER, (a) => h.rivalsListed(a));
+      if (l && l.ok === false) throw new Error(`hypotheses: onRivalsListed refused: ${l.reason}`);
+    }
   }
   return h;
 }
@@ -634,6 +643,16 @@ export class Hypotheses {
                        step: from.get(l.target_id) }));
       return { legs, legs_read: true };
     } catch { return { legs: [], legs_read: false }; }
+  }
+
+  /** F1 (inquiry R92): `rivalsListed({question, viewer})`, what this module registers with inquiry's `onRivalsListed`:
+   *  the question's rival ids in `rivalsOf`'s order (of exploring), at most `RIVALS_MAX`, each a `HYP-` id; null when
+   *  the viewer may not see the question (inquiry answers that before it asks). Writes nothing; never throws. */
+  rivalsListed({ question = null, viewer = null } = {}) {
+    try {
+      if (this.#inquiry(question, viewer).refusal) return null;
+      return this.#rivalRows(question).map((r) => r.rival_id);
+    } catch { return null; }
   }
 
   /** F1 (IV-H1, IV-H2): `rivalsOf({inquiry, viewer})`: the question's rival explanations in the order of exploring (by
