@@ -1,0 +1,52 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "screens-document",
+  "pr": 974,
+  "branch": "job/screens-document",
+  "head": "eb3fe5c4a6c151d52b4c38a911f16462fa44eea8",
+  "before": "505d5214375c23734c125dd16f60012dd0a59e7b",
+  "merge": "31a87d79810c6d8e45a1c2f607472ab9332f4b1b",
+  "at": "2026-11-08T00:27:02Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/screens-document/requirements-ids.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/screens-document/requirements-ids.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/screens-document/requirements-ids.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/screens-document/requirements-ids.test.mjs"
+    ],
+    "triggers": [],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "none",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/screens-document/requirements-ids.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "importers": []
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [
+    "screens-document-beta"
+  ],
+  "users_noticed": []
+}
