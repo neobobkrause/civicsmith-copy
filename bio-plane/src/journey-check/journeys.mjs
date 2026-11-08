@@ -10,6 +10,9 @@ import { requireWord, wordPattern, byWord, drawsWord } from "./words.mjs";
 import { localize } from "../setup-words/index.mjs";
 import { pair, WIDTHS, viewportOf } from "./design.mjs";
 import { join, relative } from "node:path";
+/* The walk's own patience with the install: an install can wait on Cloudflare (its page says for how long, five minutes today)
+   before it says what is not confirmed. The walk's own figure, not a value read from installer-steps, which it does not use. */
+export const INSTALL_WAIT_MS = 10 * 60000;
 
 const rand = (n) => Buffer.from(crypto.getRandomValues(new Uint8Array(n))).toString("base64url");
 export const SLUG = "lakeshore-tenants";
@@ -163,21 +166,41 @@ export async function walkInstaller(walk, page, installerOrigin) {
     await p.locator("#confirm-yes").click();
     await p.locator("#stage-before:not([hidden])").waitFor({ timeout: 10000 });
   });
+  /* installer R86, R90, R91: the page's act begins "Check my account"; the install begins only from the check list's "Install
+     now", once every line is ready, and Cloudflare asks its permission again for it */
   await walk.step(page, "install: before Cloudflare, what it will be asked to allow", async (p) => {
     await p.locator("#cloudflare").click();
     await p.waitForURL(/dash\.cloudflare\.com\/oauth2\/auth/, { timeout: 15000 });
   });
-  await walk.step(page, "install: Cloudflare's permission, allowed", async (p) => {
-    /* the callback answers when the install has run, which can take longer than a click waits */
+  await walk.step(page, "install: Cloudflare's permission for the check, allowed", async (p) => {
     await p.locator("#allow").click({ noWaitAfter: true });
-    await p.waitForURL(/\/callback\?/, { timeout: 180000 });
+    await p.waitForURL(/\/callback\?/, { timeout: 60000 });
+  });
+  await walk.step(page, "install: the account checked, every line ready", async (p) => {
+    const whole = p.locator("#check-whole");
+    await whole.waitFor({ timeout: 60000 });
+    const state = await whole.getAttribute("data-state");
+    if (state !== "ready") throw new Error(`the check of the account is ${state}, not ready: `
+      + (await p.locator('#check-lines [data-state]:not([data-state="ready"])').allTextContents()).join(" | "));
+    await p.locator("#install-now:not([disabled])").click();
+    await p.waitForURL(/dash\.cloudflare\.com\/oauth2\/auth/, { timeout: 15000 });
+  });
+  await walk.step(page, "install: Cloudflare's permission, allowed", async (p) => {
+    /* the callback answers when the install has run (the local world hands the browser its page whole), which includes any wait
+       on Cloudflare: the step allows the walk's install wait */
+    await p.locator("#allow").click({ noWaitAfter: true });
+    await p.waitForURL(/\/callback\?/, { timeout: INSTALL_WAIT_MS, waitUntil: "commit" });
   });
   await walk.step(page, "install: each step finishes, the checks pass", async (p) => {
-    await p.locator("#done:not([hidden]), #fail:not([hidden])").first().waitFor({ timeout: 120000 });
+    /* the install's verification may wait on Cloudflare up to the installer's own bound before it says what is not confirmed,
+       so the walk waits its install wait, and then names what the page says, never a bare timeout */
+    await p.locator("#done:not([hidden]), #fail:not([hidden])").first().waitFor({ timeout: INSTALL_WAIT_MS });
     if (await p.locator("#fail:not([hidden])").count())
       throw new Error("the installer stopped: " + (await p.locator("#fail-h").textContent()) + " " + (await p.locator("#fail-p").textContent()));
     const stopped = await p.locator('#log [data-r="no"], #checks [data-r="no"]').allTextContents();
-    if (stopped.length) throw new Error("a step did not finish: " + stopped.join(" | "));
+    /* what the installer names as not confirmed (its list in the final panel) goes with the failure, so the report says which part */
+    const unconfirmed = stopped.length ? await p.locator("#done li").allTextContents() : [];
+    if (stopped.length) throw new Error("a step did not finish: " + stopped.join(" | ") + (unconfirmed.length ? " — not confirmed: " + unconfirmed.map((t) => t.trim()).join(" | ") : ""));
     if (!(await p.locator("#done .okbox").count())) throw new Error("the final panel does not say the copy is running: "
       + (await p.locator("#done").textContent()).slice(0, 300));
     copy = (await p.locator("#out-url").textContent()).trim();

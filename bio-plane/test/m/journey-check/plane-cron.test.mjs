@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import worker from "../../../../newgroup/src/index.mjs";
 import { RELEASE_MANIFEST } from "../../../../newgroup/src/release.mjs";
+import { passedCheck } from "./check-first.mjs";
 import { fakeAccount, planeScheduleProblem, statedCrons, WATCHDOG_CRON, API } from "../../../src/journey-check/account.mjs";
 
 const ORIGIN = "https://newgroup.believeinoakland.workers.dev";
@@ -99,8 +100,10 @@ async function run(account, slug, mode = "install") {
   };
   try {
     const req = (p, i) => worker.fetch(new Request(ORIGIN + p, i));
-    const begun = await req("/begin", { method: "POST", body: JSON.stringify({ slug, mode, ...(mode === "update" ? { version: RELEASE_MANIFEST.version } : {}) }) });
-    const cookie = (begun.headers.get("set-cookie") || "").split(";")[0];
+    /* installer R90: an install begins only after a passed check, run for real (check-first.mjs); an update needs none */
+    const chk = mode === "install" ? await passedCheck(req, account, slug) : "";
+    const begun = await req("/begin", { method: "POST", headers: chk ? { cookie: chk } : {}, body: JSON.stringify({ slug, mode, ...(mode === "update" ? { version: RELEASE_MANIFEST.version } : {}) }) });
+    const cookie = [(begun.headers.get("set-cookie") || "").split(";")[0], chk].filter(Boolean).join("; ");
     const consent = await (await account.handle(new Request((await begun.json()).authorize))).text();
     const back = new URL(/href="([^"]+)"/.exec(consent)[1].replace(/&amp;/g, "&"));
     const raw = await (await req("/callback" + back.search, { headers: { cookie } })).text();
