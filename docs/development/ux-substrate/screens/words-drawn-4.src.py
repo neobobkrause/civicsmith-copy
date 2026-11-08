@@ -3338,3 +3338,12 @@ w504('screen.ceremony.publishat.move.docket.notsigned.head', 'If the entry is no
 w504('screen.ceremony.docket.notyet.other', 'Other reasons it is not on the docket yet', "need (2): the fold listing DEC-490's other .reason.* (the Screens page only)")
 w504('screen.docket.due.head', 'Due on the docket', "need (2): the docket page's section of items due (docket R9)")
 w504('screen.docket.file.refused.head', 'When it cannot be posted', "the docket page's fold of refusals beside Post it, signed")
+
+# DEC-505 (BD-17, completion round 2; BOB's ask of 8 Nov, inquiry CR2-20, PR 1028): the refusals of a rival explanation's
+# standing, C-2.21 to C-2.23, keyed by code as DEC-502's are. A conclusion says of each rival it names that it is the case,
+# that it is not, or neither; a read refused or unread shows no standing rather than a wrong one.
+def w505(key, en, note):
+    W.append(dict(key=key, en=en, protected=True, note='DEC-505: ' + note))
+w505('refusal.RIVALS_NAMED_MALFORMED', "A conclusion names up to 6 of the question's rival explanations, each once, and says of each that it is the case, that it is not, or neither. This conclusion's list does not. Nothing was written.", "inquiry's translation, keyed by its code (C-2.21); the conclusion's rivals_named")
+w505('refusal.RIVALS_MALFORMED', "Standing is shown for up to 6 of this question's rival explanations, each named once, and this asked for something else. No standing is shown.", "inquiry's translation, keyed by its code (C-2.22); rivalStanding's read, which writes nothing")
+w505('refusal.RIVALS_UNREAD', "This question's rival explanations could not be read just now, so no standing is shown rather than a wrong one. Try again in a moment.", "inquiry's translation, keyed by its code (C-2.23); the job's draft kept, its close made plainer")
