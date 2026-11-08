@@ -114,7 +114,7 @@ test("R18: a plain OpenDocument file on an ordinary host grades as a direct fetc
   assert.deepEqual([w.prov.receipts[0].address, w.prov.receipts[0].retrievalLocator], ["https://city.example/notice.odt", "https://city.example/notice.odt"]);
 });
 
-test("R18 R3: an archive-sourced OpenDocument replay grades the archive letter, one below the ceiling, with the archive's hop and no Google hop", async () => {
+test("R18 R3 F1 (BD-18): an archive-sourced OpenDocument raw replay grades the archive letter, via archive, the ceiling, with the archive's hop and no Google hop", async () => {
   const w = world();
   const addr = "https://city.example/minutes.odt";
   const replayed = odf("odt", "<office:text><text:p>Archived minutes of the committee.</text:p></office:text>");
@@ -123,8 +123,9 @@ test("R18 R3: an archive-sourced OpenDocument replay grades the archive letter, 
   assert.equal(r.status, 200);
   const doc = r.body.document;
   assert.equal(doc.capture.grade, ARCHIVE_CAPTURE_GRADE, "provenance's one definition");
-  assert.equal(ARCHIVE_CAPTURE_GRADE, "C");
-  assert.notEqual(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING);
+  assert.equal(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING, "a raw replay is the publisher's response: the ceiling (BD-18)");
+  assert.deepEqual([doc.capture.via_archive, doc.capture.custodian, doc.capture.fetched_at, "reference_only" in doc.capture],
+                   [true, "web.archive.org", "2024-01-15T12:00:00Z", false], "via archive, the snapshot its fetch date, the archive its custodian");
   assert.equal(doc.capture.sha256, sha(replayed));
   assert.deepEqual(doc.provenance_chain.map((h) => h.via), ["archive.org", "archive.org"], "a two-hop chain, both through the archive");
   assert.ok(!doc.provenance_chain.some((h) => "export_format" in h), "a replay is not a conversion");
@@ -149,7 +150,7 @@ test("R1: a daemon is refused NOT_PERMITTED on a direct capture, and the refusal
   }
 });
 
-test("R1 R18: the daemon is admitted on the archive arm, files the capture as the daemon with the two-hop chain, and it grades the archive letter; a member still cannot take that arm", async () => {
+test("R1 R18 F1 (BD-18): the daemon is admitted on the archive arm, files the capture as the daemon with the two-hop chain, and its raw replay grades the archive letter via archive; a member still cannot take that arm", async () => {
   const w = world();
   const addr = "https://city.example/agenda.pdf";
   const archived = new Uint8Array(6000).map((_, i) => (i * 17 + 3) % 256);
@@ -157,8 +158,8 @@ test("R1 R18: the daemon is admitted on the archive arm, files the capture as th
   const r = await run(w, archive(addr, archived, "application/pdf"), { via: "archive.org", address: addr }, { cls: "daemon", member: false, sessMember: null });
   assert.equal(r.status, 200);
   const doc = r.body.document;
-  assert.equal(doc.capture.grade, ARCHIVE_CAPTURE_GRADE, "grade tracks directness: an archive hop is one more party");
-  assert.equal(doc.capture.grade, "C");
+  assert.equal(doc.capture.grade, ARCHIVE_CAPTURE_GRADE, "a raw replay: the archive letter (BD-18)");
+  assert.deepEqual([doc.capture.grade, doc.capture.via_archive, doc.capture.custodian], [EARNED_CAPTURE_CEILING, true, "web.archive.org"]);
   assert.deepEqual([doc.capture.actor_class, doc.capture.actor], ["daemon", null]);
   assert.equal(doc.provenance_chain.length, 2);
   assert.equal(doc.capture.sha256, sha(archived));
