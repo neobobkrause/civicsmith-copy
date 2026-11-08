@@ -1,0 +1,55 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "case-authoring",
+  "pr": 1043,
+  "branch": "job/case-authoring-2",
+  "head": "9040dfa3d4091fd8468a91431f33a51cd7fd48e7",
+  "before": "0f986146f4b9d09db5e8ffc2a5034e8491c74337",
+  "merge": "23524f572a52a830952aaf1d999d9188c02e843e",
+  "at": "2026-11-08T13:45:15Z",
+  "by": "bob",
+  "gate_runs": 3,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/case-authoring/notice-membership-1030.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/case-authoring/notice-membership-1030.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/case-authoring/notice-membership-1030.test.mjs",
+        "class": "additive",
+        "why": "added: a new test file only adds assertions"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/case-authoring/notice-membership-1030.test.mjs"
+    ],
+    "triggers": [],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "none",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/case-authoring/notice-membership-1030.test.mjs"
+      ],
+      "by_tests": "additive",
+      "importers": []
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [
+    "affordances",
+    "op-declarations",
+    "plane",
+    "store-assembly"
+  ],
+  "users_noticed": []
+}
