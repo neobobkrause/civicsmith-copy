@@ -1,0 +1,16 @@
+{
+  "row": "join",
+  "layer": 12,
+  "module": "screens-inquiry",
+  "from": 11,
+  "why": "CR2-14: turn on the 24 reachability tests made reachable by ai-runs CR2-8 F4",
+  "at": "2026-11-08T10:29:32Z",
+  "by": "bob",
+  "items": [
+    {
+      "id": "CR2-14",
+      "module": "screens-inquiry",
+      "what": "turn on the 24 reachability tests held as test.todo, now reachable through ai-runs CR2-8 F4 (the pairless aipathready cascade read); coordinator ruling: this round's work"
+    }
+  ]
+}
