@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 12,
+  "module": "leg-earning",
+  "round": 1,
+  "started": "2026-11-08T09:25:42Z",
+  "ended": "2026-11-08T09:25:58Z",
+  "minutes": 0.3,
+  "tested_on": "a2a7c296bf61191b9b331c87684d125db6442c7a",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-08T09:25:58Z"
+}
