@@ -1,0 +1,40 @@
+{
+  "row": "notice",
+  "at": "2026-11-08T13:12:51Z",
+  "key": "strength:1037",
+  "provider": "strength",
+  "ids": [],
+  "pr": 1037,
+  "users": [
+    "action-plans",
+    "answer-envelope",
+    "case-catalogue",
+    "case-checker",
+    "case-grammar",
+    "case-import",
+    "conformance",
+    "consequences",
+    "control-plane",
+    "filings",
+    "ratification",
+    "reevaluation",
+    "review",
+    "screens-document"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "Strength.barJudged",
+      "Strength.registerBarJudged"
+    ],
+    "changed": [],
+    "kinds": [],
+    "signatures": []
+  },
+  "layer_flow": {
+    "layer": 12,
+    "provides": true,
+    "rescheduled": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "store-assembly",
+  "provider": "strength",
+  "provider_pr": 1037,
+  "provider_land": "6c4a5ae14486d94343b7e5019adadd98c5552b97",
+  "at": "2026-11-08T13:12:51Z",
+  "key": "store-assembly<-strength@6c4a5ae144",
+  "why": "added Strength.barJudged, Strength.registerBarJudged; its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/strength/barjudged.test.mjs: additive, added: a new test file only adds assertions), which may mean a changed answer shape; additive: each user is retested by its gate alone",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "additive"
+}
