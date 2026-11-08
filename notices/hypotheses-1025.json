@@ -1,0 +1,31 @@
+{
+  "row": "notice",
+  "at": "2026-11-08T12:58:13Z",
+  "key": "hypotheses:1025",
+  "provider": "hypotheses",
+  "ids": [],
+  "pr": 1025,
+  "users": [
+    "answer-envelope",
+    "control-plane",
+    "screens-document",
+    "store-ask"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "Hypotheses.bindSteps",
+      "Hypotheses.isRival",
+      "Hypotheses.rivalsListed"
+    ],
+    "changed": [],
+    "kinds": [],
+    "signatures": []
+  },
+  "layer_flow": {
+    "layer": 12,
+    "provides": false,
+    "rescheduled": true
+  }
+}

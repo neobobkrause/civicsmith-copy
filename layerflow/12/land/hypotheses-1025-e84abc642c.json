@@ -1,0 +1,82 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "hypotheses",
+  "pr": 1025,
+  "branch": "job/hypotheses",
+  "head": "e84abc642c786b0293df25a61c3e743814321975",
+  "before": "6316509c05b43b934756d41f2d6348de92ae1c00",
+  "merge": "7c906cfdfcad8663225c10bdaa53eb9632b32e01",
+  "at": "2026-11-08T12:58:13Z",
+  "by": "bob",
+  "gate_runs": 5,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "Hypotheses.bindSteps",
+        "Hypotheses.isRival",
+        "Hypotheses.rivalsListed"
+      ],
+      "changed": [],
+      "kinds": [],
+      "signatures": []
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/hypotheses/invariants.test.mjs",
+      "bio-plane/test/m/hypotheses/rivals-f1.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/hypotheses/invariants.test.mjs",
+      "bio-plane/test/m/hypotheses/rivals-f1.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/hypotheses/invariants.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: \"explorenext\" ,"
+      },
+      {
+        "file": "bio-plane/test/m/hypotheses/rivals-f1.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/hypotheses/invariants.test.mjs",
+      "bio-plane/test/m/hypotheses/rivals-f1.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [
+    "affordances",
+    "op-declarations",
+    "plane",
+    "screens-inquiry",
+    "store-assembly"
+  ],
+  "users_rescheduled_old_rule": [
+    "affordances",
+    "op-declarations",
+    "plane",
+    "screens-inquiry",
+    "store-assembly"
+  ],
+  "users_noticed": [
+    "answer-envelope",
+    "control-plane",
+    "screens-document",
+    "store-ask"
+  ]
+}
