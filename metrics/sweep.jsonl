@@ -644,3 +644,4 @@
 {"at":"2026-11-08T07:21:30Z","row":"check","by":"found","live":0,"live_at":"2026-11-08T07:14:02Z","job_cap":20,"startable":0}
 {"at":"2026-11-08T07:35:04Z","row":"check","by":"layer land","live":0,"live_at":"2026-11-08T07:14:02Z","job_cap":20,"startable":0}
 {"at":"2026-11-08T07:41:17Z","row":"check","by":"github note","live":0,"live_at":"2026-11-08T07:14:02Z","job_cap":20,"startable":0}
+{"at":"2026-11-08T08:13:45Z","row":"sweep","session":"session_018BhcefMKiLuojtdyeh1nzG","bob_acts":true,"bob_quiet_h":0.4,"root_context":31,"live":0,"live_measured_at":"2026-11-08T08:10:20Z","job_cap":20,"sessions":2,"job_ids":[],"startable":0,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":0}
