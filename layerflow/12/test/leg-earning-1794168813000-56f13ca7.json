@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "leg-earning",
+  "session": "session_018BhcefgNwGqSdPaZqjkMqe",
+  "started": "2026-11-08T20:13:33Z",
+  "ended": "2026-11-08T20:15:09Z",
+  "at": "2026-11-08T20:15:09Z",
+  "minutes": 1.6,
+  "result": "pass",
+  "layer": 12,
+  "suite_seconds": 2.73,
+  "tests": {
+    "total": 67,
+    "pass": 67,
+    "fail": 0
+  }
+}
