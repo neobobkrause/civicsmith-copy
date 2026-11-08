@@ -9,7 +9,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { FAIL } from "./walker.mjs";
-import { localize } from "../setup-words/index.mjs";
+import { localize, WORD_ROWS } from "../setup-words/index.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 export const MOCK_PATH = "docs/development/ux-substrate/layouts.html";
@@ -48,6 +48,24 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
    are words. F2: `handles` are the handles the store returned as content (a member's own, the roster's; walker.mjs
    `handlesIn`): a person's handle may hold digits and hyphens, and drawn it is her name, not a slug. The instance's own
    `slugs` are still caught when one is also given as a handle. */
+/* (A), BOB 8 Nov: the team's short name drawn on purpose. A keyed word that places the instance's short name through its own
+   `{short}` slot (today `screen.group.name.help`, DEC-259: "Your short name, {short}, stays fixed") draws it as content, not a
+   leak; the words holding that slot are read from the word list, never listed here. `shortPlaced(text, s)` answers the
+   positions in `text` where such a word, drawn whole, holds `s` in that slot; the same name anywhere else still counts. */
+export const SHORT_SLOT = "short";
+let slotted = null;
+export const shortSlotWords = () => (slotted ??= WORD_ROWS.filter((r) => typeof r[1] === "string" && r[1].includes(`{${SHORT_SLOT}}`)).map((r) => [r[0], r[1]]));
+export function shortPlaced(text, s) {
+  const at = new Set();
+  for (const [, en] of shortSlotWords()) {
+    const src = en.trim().split(/(\{[A-Za-z0-9_]+\})/).map((part) => (part === `{${SHORT_SLOT}}` ? `(${esc(s)})`
+      : /^\{[A-Za-z0-9_]+\}$/.test(part) ? "[^\\n]+?" : esc(part).replace(/\s+/g, "\\s+"))).join("");
+    if (!src.includes(`(${esc(s)})`)) continue;
+    for (const m of String(text).matchAll(new RegExp(src, "gd"))) at.add(m.indices[1][0]);
+  }
+  return at;
+}
+
 export function developerWords(text, { slugs = [], handles = [] } = {}) {
   const content = new Set([...handles].filter((h) => typeof h === "string" && h && !slugs.includes(h)));
   const t = String(text);
@@ -59,7 +77,10 @@ export function developerWords(text, { slugs = [], handles = [] } = {}) {
   const within = (m) => [...found.values()].some((f) => f.word.includes(m[0]));
   for (const m of t.matchAll(SLUG))
     if (/[a-z]/.test(m[0]) && (/\d/.test(m[0]) || (m[0].split("-").length >= 3 && !COMPOUNDS.includes(m[0]))) && !inAddress(m) && !within(m) && !content.has(m[0])) add("a slug", m[0]);
-  for (const s of slugs.filter(Boolean)) for (const m of t.matchAll(new RegExp(`(?<![\\w-])${esc(s)}(?![\\w-])`, "g"))) if (!inAddress(m)) add("a slug", m[0]);
+  for (const s of slugs.filter(Boolean)) {
+    const placed = shortPlaced(t, s);
+    for (const m of t.matchAll(new RegExp(`(?<![\\w-])${esc(s)}(?![\\w-])`, "g"))) if (!inAddress(m) && !placed.has(m.index)) add("a slug", m[0]);
+  }
   return [...found.values()];
 }
 

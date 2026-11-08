@@ -186,6 +186,18 @@ async function investigated(codeOf, env = ENV) {
   } finally { await fp.close(); }
 }
 
+test("R6, (A): the team's short name drawn through a keyed word's own {short} slot (screen.group.name.help, DEC-259) is not a slug; control: the same name as bare text, in another word's slot, or in part of that word still fails", async () => {
+  const { word } = await import("../../../src/journey-check/words.mjs");
+  const { shortSlotWords } = await import("../../../src/journey-check/design.mjs");
+  const s = "lakeshore-tenants";
+  const slugsIn = (text) => developerWords(text, { slugs: [s] }).filter((w) => w.what === "a slug").map((w) => w.word);
+  assert.ok(shortSlotWords().some(([k]) => k === "screen.group.name.help"), "the slot is read from the word list");
+  assert.deepEqual(slugsIn(`Name\n${word("screen.group.name.help", { short: s })}\nSave`), []);
+  assert.deepEqual(slugsIn(`${word("screen.group.name.help", { short: s })}\nYour team: ${s}`), [s], "a bare one beside it");
+  assert.deepEqual(slugsIn(word("page.title", { screen: s, team: "Lakeshore Tenants" })), [s], "another word's slot");
+  assert.deepEqual(slugsIn(`Your short name, ${s}.`), [s], "part of the word");
+});
+
 test("R12 (with the assistant working, R20's switch set): with no sign-in completed, step 4 fails by name before any later act", { timeout: 300000 }, async () => {
   const asked = [];
   const { r, fp } = await investigated(async (role, address) => { asked.push([role, new URL(address).host]); return null; });
