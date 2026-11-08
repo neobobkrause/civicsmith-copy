@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { world, run, lookup, network, sha, HTML, page, text, wayback, WB, eligible, rendererEnv } from "./fixture.mjs";
 import { RENDER_DEFAULTS, renderLocaleFor } from "../../../src/render.mjs";
 import { EARNED_CAPTURE_CEILING, UNREACHABLE_CAPTURE_GRADE } from "../../../src/record-grammar/index.mjs";
-import { ARCHIVE_CAPTURE_GRADE } from "../../../src/provenance/index.mjs";
+import { ARCHIVE_CAPTURE_GRADE, REWRITTEN_REPLAY_GRADE } from "../../../src/provenance/index.mjs";
 import { combine } from "../../../../jurisdictions/index.mjs";
 import { DRIVE_CAPTURE_CHECKS, RENDER_CAPTURE_CHECKS, CAPTURE_REQUEST_ARM_CHECKS, acquireGradeNote, ACQUIRE_GRADE_NOTE,
          civicsmithUserAgent, CAPTURE_MAX, MULTIPART_KEEP_MAX } from "../../../src/acquisition/index.mjs";
@@ -548,15 +548,35 @@ test("R17: the profile is docprofile's over what was fetched, under the combined
   assert.equal(g.status, 200); assert.equal(g.body.document.profile.profiled_from_text, false);
 });
 
-test("R18: the grade is the ceiling for a direct fetch and the archive letter for the archive arm, each read from its one definition", async () => {
+test("R18 F1 (BD-18): the grade is the ceiling for a direct fetch; on the archive arm a raw replay is the archive letter via archive and a rewritten replay the rewritten letter, reference only, each read from its one definition", async () => {
   const w = world();
   const d = await run(w, { "https://a.example/x": text("x") }, { locator: "https://a.example/x" });
   assert.equal(d.body.document.capture.grade, EARNED_CAPTURE_CEILING);
+  assert.ok(!("via_archive" in d.body.document.capture) && !("reference_only" in d.body.document.capture), "a direct fetch states neither");
   await eligible(w);
   const addr = "https://gone.example/doc";
+  /* a raw replay: the `id_` form, the publisher's response unmodified */
   const a = await run(w, wayback([{ ts: "20250101000000", body: "a" }]), { via: "archive.org", address: addr }, { cls: "admin" });
-  assert.equal(a.body.document.capture.grade, ARCHIVE_CAPTURE_GRADE, "provenance's one definition");
-  assert.notEqual(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING);
+  assert.equal(a.status, 200);
+  const ac = a.body.document.capture;
+  assert.equal(ac.grade, ARCHIVE_CAPTURE_GRADE, "provenance's one definition");
+  assert.deepEqual([ac.via_archive, ac.custodian, ac.fetched_at, "reference_only" in ac],
+                   [true, "web.archive.org", "2025-01-01T00:00:00Z", false], "via archive, the snapshot its fetch date, the archive its custodian");
+  assert.equal(w.prov.receipts.at(-1).retrievalLocator, `${WB}20250101000000id_/${addr}`);
+  /* a rewritten replay: the archive answers the raw form with a redirect to its rewritten page, and that is what is served */
+  await eligible(w);
+  const rewritten = `${WB}20250101000000/${addr}`;
+  const r = await run(w, wayback([{ ts: "20250101000000", body: "a" }], { over: {
+    [`${WB}20250101000000id_/${addr}`]: () => new Response("", { status: 302, headers: { location: rewritten } }),
+    [rewritten]: () => new Response("<html>toolbar a</html>", { headers: { "content-type": "text/html", "memento-datetime": "Wed, 01 Jan 2025 00:00:00 GMT",
+                                                                            link: `<${addr}>; rel="original"` } }) } }),
+    { via: "archive.org", address: addr }, { cls: "admin" });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  const rc = r.body.document.capture;
+  assert.equal(rc.grade, REWRITTEN_REPLAY_GRADE, "provenance's one definition of a rewritten replay");
+  assert.notEqual(REWRITTEN_REPLAY_GRADE, ARCHIVE_CAPTURE_GRADE);
+  assert.deepEqual([rc.via_archive, rc.reference_only, "custodian" in rc, "fetched_at" in rc], [true, true, false, false]);
+  assert.equal(w.prov.receipts.at(-1).retrievalLocator, rewritten);
 });
 
 test("R18 (N80): every success answer carries the note composed from the enforced ceiling and the letter above it; no refusal carries one; the composer refuses a sentence it cannot make true", async () => {
