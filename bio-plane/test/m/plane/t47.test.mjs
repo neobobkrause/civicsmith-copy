@@ -80,11 +80,13 @@ test("R43 (T47; N993; bundler R31; K3147): the plane's global scope is measured 
 
 /* ===== R48 (T47; N1002; DEC-201; control-plane R81, R82; interface-shell R28): the composed page ===== */
 
-/* The nine screen modules whose `SCREENS` the page the plane serves is composed from (`screens-entry` among them). */
+/* The nine screen modules whose `SCREENS` the page the plane serves is composed from (`screens-entry` among them), and,
+   since control-plane's land 25c1342cbc (BOB's found mark, 7 Nov; screens-ai PR 881), screens-ai's AI screens after them:
+   screens-settings and screens-inquiry link to them. The order is the page's, so the shell's script hash matches. */
 const SCREEN_MODULES = ["screens-entry", "screens-settings", "screens-intake", "screens-daily", "screens-inquiry",
-                        "screens-wizards", "screens-investigate", "screens-publish", "screens-action"];
+                        "screens-wizards", "screens-investigate", "screens-publish", "screens-action", "screens-ai"];
 
-test("R48 (T47; N1002; DEC-201; control-plane R81, R82): the page the plane's Worker serves at /app and at / is composed from the nine screen modules' screens, screens-entry among them: every screen of each is drawn by the page (its render carried in the page's script); control: a screen of no module is not", async () => {
+test("R48 (T47; N1002; DEC-201; control-plane R81, R82): the page the plane's Worker serves at /app and at / is composed from the nine screen modules' screens, screens-entry among them, and screens-ai's after them: every screen of each is drawn by the page (its render carried in the page's script); control: a screen of no module is not", async () => {
   const worker = (await import("../../../src/plane/index.mjs")).default;
   const env = { STORE: { idFromName: (n) => n, get: () => ({}) }, VERSION: "t47" };
   const pages = {};
