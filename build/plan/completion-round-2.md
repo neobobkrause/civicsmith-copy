@@ -12,3 +12,6 @@
 - [ ] CR2-8 · ai-runs · the pairless aipathready cascade read (interface-shell R20) that screens-inquiry's 24 reachability tests wait on as test.todo; IV-8, the answer-key contrary marks format carried to Gate 1 (BD-14 Q9.5)
 - [ ] CR2-9 · hypotheses · IV-H F1 (BD-17): rival explanations are hypotheses; "Explore this next" orders exploring; the Rival Explanations Walkthrough v5 is the screen reference
 - [ ] CR2-10 · inquiry · IV-H F2 (BD-17): standing changes only when a conclusion at the bar names an explanation
+- [ ] CR2-11 · acquisition · BD-18 follow-up to provenance CR2-6 (PR 1002, ARCHIVE_CAPTURE_GRADE now B, a raw id_ replay via archive; REWRITTEN_REPLAY_GRADE C, reference only): its F1, so the archive.org route files raw replays at B "via archive" and rewritten replays at C; and the tests pinned to archive = C follow: acquire.test (R1, R18), grades.test (R18, two tests), unpack.test (R39)
+- [ ] CR2-12 · case-authoring · BD-18 follow-up to provenance CR2-6 (PR 1002): preflight.test R55 pinned archive = C, and follows the archive-replay grade (raw replay B via archive, rewritten replay C)
+- [ ] CR2-13 · case-disclosures · BD-18 follow-up to provenance CR2-6 (PR 1002): captures.test R2 pinned archive = C, and follows the archive-replay grade (raw replay B via archive, rewritten replay C)
