@@ -22,3 +22,7 @@ R32 (replaced by R62 and R64), R62, R63, R64 and R65 have no mark. Installer's o
 ## Attempt 2: re-tested against instance-setup's new interface (7 Nov 2026)
 
 Instance-setup's change (land 2914227e80, its F2) changes only how `memberVersions` reads `agent-runner` from agent-worker's `/version`. Nothing this module rules reads that: the installer reads a copy's facts through `op=bootstrap` (R63), whose seven facts are unchanged. The suite (`isolation.test.mjs`, `requirements-split.test.mjs`) was run again on a branch that holds 2914227e80: 4 of 4 pass. No code or test changed.
+
+## Attempt 3: re-tested against installer-steps' new interface (8 Nov 2026)
+
+Installer-steps' change (land 68fee9c633, PR 957, marked additive) adds one test, `newgroup/test/steps/instance-setup-f2.test.mjs`. It covers how the serving verdict reads `agent-runner`'s version through agent-worker, after instance-setup's F2. It changes no installer code: `newgroup/` on this branch is identical to 68fee9c633. Nothing this module rules reads the serving verdict. R13 and R24 rest on per-slug bucket and worker names, and R62 to R65 on the existing-copy page and removal. The suite was run again on this branch, which holds layer/11 at 505d52143 and so holds 68fee9c633: 4 of 4 pass. No code or test changed.
