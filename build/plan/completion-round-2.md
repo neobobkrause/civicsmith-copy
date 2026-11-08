@@ -16,3 +16,4 @@
 - [ ] CR2-12 · case-authoring · BD-18 follow-up to provenance CR2-6 (PR 1002): preflight.test R55 pinned archive = C, and follows the archive-replay grade (raw replay B via archive, rewritten replay C)
 - [ ] CR2-13 · case-disclosures · BD-18 follow-up to provenance CR2-6 (PR 1002): captures.test R2 pinned archive = C, and follows the archive-replay grade (raw replay B via archive, rewritten replay C)
 - [ ] CR2-14 · screens-inquiry · turn on the 24 reachability tests held as test.todo, now reachable through ai-runs CR2-8 F4 (the pairless aipathready cascade read); coordinator ruling: this round's work
+- [ ] CR2-15 · screens-daily · split build/requirements/screens-daily.md under the requirements cap (BOB's, REQ-6) · deferred: REQ-6 split of screens-daily (82,647 bytes; R56/R58/R108/R48/R55 largest), owed before its next job; cap number set before the second tranche
