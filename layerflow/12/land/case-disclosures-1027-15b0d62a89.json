@@ -1,0 +1,53 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "case-disclosures",
+  "pr": 1027,
+  "branch": "job/case-disclosures",
+  "head": "15b0d62a8943f121923cfda458383e1fb4874b62",
+  "before": "57136557333b9c0a8de862967e28391c01e8f0db",
+  "merge": "30943b5bd3740ec678ec4cc0bd7f17d4e15d26cc",
+  "at": "2026-11-08T11:58:09Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/case-disclosures/captures.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/case-disclosures/captures.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/case-disclosures/captures.test.mjs",
+        "class": "breaking",
+        "why": "too large to align"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/case-disclosures/captures.test.mjs"
+    ],
+    "triggers": [],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "none",
+    "test_only": {
+      "files": [
+        "bio-plane/test/m/case-disclosures/captures.test.mjs"
+      ],
+      "by_tests": "breaking",
+      "importers": []
+    },
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [
+    "case-authoring",
+    "plane"
+  ],
+  "users_noticed": []
+}
