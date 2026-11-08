@@ -61,7 +61,7 @@ import { caseImportOf, caseImportOps } from "../../../src/case-import/index.mjs"
 import { publicReadOf, publicReadOps } from "../../../src/public-read/index.mjs";
 import { projectStageOf, projectStageOps } from "../../../src/project-stage/index.mjs";
 import { networkNoticesOf, networkNoticesOps } from "../../../src/network-notices/index.mjs";
-import { corpusExportOf, corpusExportOps } from "../../../src/corpus-export/index.mjs";
+import { corpusExportOf, corpusExportOps, wholeExportOps } from "../../../src/corpus-export/index.mjs";
 import { biasOf, biasOps } from "../../../src/bias/index.mjs";
 import { aiRunsOf, aiRunsOps } from "../../../src/ai-runs/index.mjs";
 import { contentOf, contentOps } from "../../../src/content/index.mjs";
@@ -155,6 +155,8 @@ export const MODULE_MAPS = [
   ["ratification", (c, u, b) => ratificationOps(ratificationOf(c), u, b)],
   ["case-import", (c, u, b) => caseImportOps(caseImportOf(c), u, b)],
   ["corpus-export", (c, u) => corpusExportOps(corpusExportOf(c), (k) => u.searchParams.get(k))],
+  /* notice store-assembly:93 (F4, corpus-export R17, R18): the whole-record arms, spread beside `export` from corpus-export's own `wholeExportOps` */
+  ["corpus-export", (c, u) => wholeExportOps(corpusExportOf(c), (k) => u.searchParams.get(k))],
   ["case-tensions", (c, u, b) => caseTensionsOps(caseTensionsOf(c), u, b)],
   ["publication", (c, u, b) => publicationOps(publicationOf(c), u, b)],
   /* plane R18 (T37; K2226): case-carriage's map, over the one instance publication's factory made */
