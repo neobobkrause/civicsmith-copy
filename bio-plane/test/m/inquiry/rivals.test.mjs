@@ -6,6 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { world, inquiryMd } from "./fixture.mjs";
 import { RIVAL_NAMINGS, RIVAL_STANDINGS, RIVALS_MAX } from "../../../src/inquiry/rivals.mjs";
+import { INQUIRY_RIVAL_CHECKS } from "../../../src/inquiry/checks.mjs";
 
 const A = "INFO-2026-0001-a";
 const Q = "INQ-2026-0001-q";
@@ -121,9 +122,75 @@ test("R91 refusals: an absent or unseen question answers one way, a bundle that 
   assert.equal(w.k.rivalStanding({ question: "INQ-2026-0099-none", rivals: RIVALS, viewer: "admin" }).reason, "NO_SUCH_BUNDLE");
   assert.equal(w.k.rivalStanding({ question: Q, rivals: RIVALS, viewer: null }).reason, "NO_SUCH_BUNDLE");
   assert.equal(w.k.rivalStanding({ question: A, rivals: RIVALS, viewer: "admin" }).reason, "NOT_AN_INQUIRY");
-  for (const rivals of [null, "HYP-2026-0001", [A], [H1, H1], Array.from({ length: 7 }, (_, i) => `HYP-2026-000${i + 1}`)])
+  for (const rivals of ["HYP-2026-0001", [A], [H1, H1], Array.from({ length: 7 }, (_, i) => `HYP-2026-000${i + 1}`)])
     assert.equal(w.k.rivalStanding({ question: Q, rivals, viewer: "admin" }).reason, "RIVALS_MALFORMED", JSON.stringify(rivals));
   assert.equal(w.k.rivalStanding({ question: Q, rivals: [], viewer: "admin" }).ok, true, "a question with no rivals asked answers none");
   assert.equal(w.k.onBarJudged("strength", () => true).ok, true);
   assert.equal(w.k.onBarJudged("other", () => true).ok, false, "one registration");
+});
+
+/* R92 (CR2-20): the rivals list read from its one registration when a read names none, and each rival refusal with its
+   own catalogue row. The list's source is a stand-in the test controls, as the bar judgment is above. */
+const ROWS = INQUIRY_RIVAL_CHECKS;
+
+test("R92 a read naming no rivals asks the registered list, in its order, and stands each as R91 does", () => {
+  const w = setup();
+  judge(w, true);
+  const asked = [];
+  assert.equal(w.k.onRivalsListed("hypotheses", (a) => { asked.push(a); return [H3, ` ${H1} `]; }).ok, true);
+  land(w, doc(naming([[H1, "case"], [H2, "not_case"]])));
+  for (const rivals of [undefined, null]) {
+    const r = w.k.rivalStanding({ question: Q, project: "PRJ-x", viewer: "admin", ...(rivals === undefined ? {} : { rivals }) });
+    assert.equal(r.ok, true, JSON.stringify(r));
+    assert.deepEqual(r.standings.map((s) => [s.rival, s.standing]), [[H3, "not_established"], [H1, "concluded_at_bar"]],
+      "the registered list's rivals, in its order; a named rival not on it is not shown");
+  }
+  assert.deepEqual(asked, [{ question: Q, viewer: "admin" }, { question: Q, viewer: "admin" }]);
+  /* negative control: a list the caller names wins, and the registered one is not asked */
+  const r = standing(w);
+  assert.deepEqual(by(r), { [H1]: "concluded_at_bar", [H2]: "ruled_out_at_bar", [H3]: "not_established" });
+  assert.equal(asked.length, 2);
+  assert.equal(w.k.onRivalsListed("other", () => []).ok, false, "one registration");
+});
+
+test("R92 a list that cannot be read is refused RIVALS_UNREAD with its row, never answered as no rivals", () => {
+  const nothing = setup();
+  const r0 = nothing.k.rivalStanding({ question: Q, viewer: "admin" });
+  assert.equal(r0.reason, "RIVALS_UNREAD", "none registered");
+  assert.equal(r0.check, ROWS.RIVALS_UNREAD.check);
+  assert.equal(r0.translation, ROWS.RIVALS_UNREAD.translation);
+  for (const answer of [new Error("hypotheses unavailable"), null, "HYP-2026-0001", [A], [H1, H1], { rivals: [H1] },
+                        Array.from({ length: 7 }, (_, i) => `HYP-2026-000${i + 1}`)]) {
+    const w = setup();
+    w.k.onRivalsListed("hypotheses", () => { if (answer instanceof Error) throw answer; return answer; });
+    const r = w.k.rivalStanding({ question: Q, viewer: "admin" });
+    assert.equal(r.ok, false, String(answer));
+    assert.equal(r.reason, "RIVALS_UNREAD", String(answer));
+    assert.equal(r.check, ROWS.RIVALS_UNREAD.check);
+  }
+  /* negative control: an empty list is a list, and answers no standings */
+  const w = setup();
+  w.k.onRivalsListed("hypotheses", () => []);
+  const ok = w.k.rivalStanding({ question: Q, viewer: "admin" });
+  assert.equal(ok.ok, true);
+  assert.deepEqual(ok.standings, []);
+});
+
+test("R92 each rival refusal carries its own C-2 row: the naming C-2.21, a malformed list C-2.22, an unread list C-2.23", () => {
+  assert.deepEqual(Object.fromEntries(Object.entries(ROWS).map(([k, v]) => [k, v.check])),
+    { RIVALS_NAMED_MALFORMED: "C-2.21", RIVALS_MALFORMED: "C-2.22", RIVALS_UNREAD: "C-2.23" });
+  for (const v of Object.values(ROWS)) assert.ok(typeof v.translation === "string" && v.translation.length > 0);
+  const w = setup();
+  const bad = w.promote(Q, doc(naming([[H1, "probably"]])));
+  assert.equal(bad.reason, "BASIS_REFUSED");
+  assert.equal(bad.findings[0].check, ROWS.RIVALS_NAMED_MALFORMED.check);
+  assert.equal(bad.findings[0].translation, ROWS.RIVALS_NAMED_MALFORMED.translation);
+  const m = w.k.rivalStanding({ question: Q, rivals: [H1, H1], viewer: "admin" });
+  assert.equal(m.reason, "RIVALS_MALFORMED");
+  assert.equal(m.check, ROWS.RIVALS_MALFORMED.check);
+  assert.equal(m.translation, ROWS.RIVALS_MALFORMED.translation);
+  /* negative control: a well-formed list is not refused and carries no row */
+  const ok = w.k.rivalStanding({ question: Q, rivals: [H1], viewer: "admin" });
+  assert.equal(ok.ok, true);
+  assert.equal("check" in ok, false);
 });
