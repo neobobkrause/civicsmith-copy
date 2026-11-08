@@ -4,7 +4,8 @@
    with no path source registered it answers a declared read answer `{ok: true, state: "not_ready", ready: false}` (fail
    closed), never UNKNOWN_OP and never the store's "unknown op"; with a registered source answering ready it answers ready
    to the account's owner; a member who cannot see the account is answered not ready with no reason and the source is never
-   asked for it; a request with no session is refused before the arm. Control: an undeclared op name still answers
+   asked for it; a request with no session is refused before the arm; (F4) a read naming no pair is the cascade read.
+   Control: an undeclared op name still answers
    UNKNOWN_OP. */
 import "../../sandbox.mjs";
 import test from "node:test";
@@ -39,9 +40,12 @@ test("F1 (BOB 23:30): op=aipathready is a declared read at the door — no sourc
   const n = await ann.read("aipathready", { query: q });
   assert.deepEqual([n.ok, n.state, n.ready, n.reason], [true, "not_ready", false, "unregistered"]);
 
-  /* no pair named: not ready, the source never asked */
+  /* half a pair named: not ready, the source never asked */
+  const half = await ann.read("aipathready", { query: { entry_id: "entry-1" } });
+  assert.deepEqual([half.ok, half.state, half.ready, half.reason], [true, "not_ready", false, "no_pair"]);
+  /* (F4) no pair named: the cascade read; ann's account, set and never switched on, serves no act of hers */
   const bare = await ann.read("aipathready");
-  assert.deepEqual([bare.ok, bare.state, bare.ready, bare.reason], [true, "not_ready", false, "no_pair"]);
+  assert.deepEqual([bare.ok, bare.state, bare.ready, bare.reason], [true, "not_ready", false, "no_account"]);
 
   /* a registered source answering ready (the plane's path source, which no module registers yet) */
   const asked = [];
