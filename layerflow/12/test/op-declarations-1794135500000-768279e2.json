@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "op-declarations",
+  "session": "session_018Bhceg3MGDw93mzMGcNbfY",
+  "started": "2026-11-08T10:58:20Z",
+  "ended": "2026-11-08T11:00:39Z",
+  "at": "2026-11-08T11:00:39Z",
+  "minutes": 2.32,
+  "result": "pass",
+  "layer": 12,
+  "suite_seconds": 18.367,
+  "tests": {
+    "total": 278,
+    "pass": 278,
+    "fail": 0
+  }
+}
