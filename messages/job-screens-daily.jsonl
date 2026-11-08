@@ -16,3 +16,4 @@
 {"at":"2026-11-07T21:35:33Z","row":"outcome","n":8,"outcome":"delivered"}
 {"at":"2026-11-08T00:02:27Z","row":"sent","n":9,"to":"bob","text":"job screens-daily complete, PR #971 ready, session session_018BhcefmYztLMQEPTscr3Vh: run status"}
 {"at":"2026-11-08T00:02:44Z","row":"outcome","n":9,"outcome":"delivered"}
+{"at":"2026-11-08T09:22:43Z","row":"sent","n":10,"to":"bob","text":"job screens-daily BLOCKED: run status"}
