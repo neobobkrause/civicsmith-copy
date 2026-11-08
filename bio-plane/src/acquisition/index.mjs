@@ -55,7 +55,7 @@ import { WAYBACK_MEMENTO, mementoEndpoints, acceptDatetime, parseTimeMap, timeMa
 import { RENDER_DEFAULTS, RENDERED_METHOD, completenessReading, keepRenderBodies, renderAllowanceMs, renderConcurrencyCap,
          renderReserveMs, renderBlock, renderedAuthority, rendererFor, renderLocaleFor } from "../render.mjs";
 import { governedFetch as hostGovernedFetch, retryAfterMs } from "../host-governor/index.mjs";
-import { ARCHIVE_CAPTURE_GRADE } from "../provenance/index.mjs";
+import { ARCHIVE_CAPTURE_GRADE, REWRITTEN_REPLAY_GRADE, rawReplayOf } from "../provenance/index.mjs";
 import { attest } from "../attestation/index.mjs";
 import { decodeText } from "../ooxml.mjs";
 import { isOwnHost } from "../capture-sources/own-hosts.mjs";
@@ -1921,6 +1921,8 @@ async function acquireRun(cap, body0, opts0, t) {
     }).catch(() => {});
   }
 
+  /* F1 (BD-18): the archive arm's replay read as raw or rewritten from the locator this call fetched, never a body. */
+  const archiveRaw = via === "archive.org" ? rawReplayOf(locator) : null;
   const document = {
     file: `snapshots/${name}`, locator, retrieved,
     title,
@@ -1951,9 +1953,14 @@ async function acquireRun(cap, body0, opts0, t) {
       method: renderRecorded ? RENDERED_METHOD : multipart
         ? localize("acquisition.index.bio_plane_acquire_https_fetch", "bio-plane acquire, https fetch, streamed in {length} parts, hashed at receipt", { length: String(parts.length) })
         : localize("acquisition.index.bio_plane_acquire_hashed_at_receipt", "bio-plane acquire, https fetch, hashed at receipt"),
-      /* R18 (D-698): provenance's rule, each letter read from its one definition, never typed here. */
-      grade: via === "archive.org" ? ARCHIVE_CAPTURE_GRADE : EARNED_CAPTURE_CEILING,
-      ...(via === "archive.org" ? { authority: word("acquisition.authority.internet_archive") } : {}),
+      /* R18 (D-698) · F1, BD-18: provenance's rule, each letter read from its one definition, never typed here. On the
+         archive arm the replay fetched decides it (provenance R85's `rawReplayOf` over the retrieval locator): a raw
+         replay (`id_`, the publisher's response unmodified) is ARCHIVE_CAPTURE_GRADE "via archive", its snapshot its
+         fetch date and the archive its custodian; a rewritten replay is REWRITTEN_REPLAY_GRADE, reference only. */
+      grade: via === "archive.org" ? (archiveRaw ? ARCHIVE_CAPTURE_GRADE : REWRITTEN_REPLAY_GRADE) : EARNED_CAPTURE_CEILING,
+      ...(via === "archive.org" ? { authority: word("acquisition.authority.internet_archive"), via_archive: true,
+                                    ...(archiveRaw ? { custodian: archiveRaw.custodian, fetched_at: archiveRaw.snapshot_at }
+                                                   : { reference_only: true }) } : {}),
       actor_class: member ? "member" : (cls === "probe" ? "session" : "daemon"),
       /* R16 (N364): which member captured it, the member stamp of a member session, else null (capture R69 reads it). */
       actor,

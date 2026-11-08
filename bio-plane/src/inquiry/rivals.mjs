@@ -11,6 +11,7 @@
 
 import { isHypothesisId } from "../record-grammar/index.mjs";
 import { localize } from "../setup-words/index.mjs";
+import { INQUIRY_RIVAL_CHECKS } from "./checks.mjs";
 
 /** R91: what a conclusion says of one rival: that it is the case, that it is not, or neither. */
 export const RIVAL_NAMINGS = Object.freeze(["case", "not_case", "neither"]);
@@ -43,14 +44,27 @@ export function rivalsNamedOf(fm) {
   } catch { return null; }
 }
 
-/** R91, R11: the grammar's arm over `rivals_named`, one finding (code `RIVALS_NAMED_MALFORMED`) when the block is not a
+/** R91, R11, R92: the grammar's arm over `rivals_named`, one finding (code `RIVALS_NAMED_MALFORMED`, C-2.21) when the block is not a
  *  list of at most six `{rival, named}` entries, each rival a `HYP-` id named once, each `named` one of
  *  `RIVAL_NAMINGS`; none otherwise. Judged at every state, so a reopened question keeps the naming its conclusion
  *  carried with no edit. Never throws. */
 export function rivalsNamedFindings(fm) {
   if (rivalsNamedOf(fm) !== null) return [];
-  return [{ check: "C-2.8", code: "RIVALS_NAMED_MALFORMED",
+  /* DEC-49 REGION is-rivals-named-shape — R92: C-2.21, its own row */
+  const row = INQUIRY_RIVAL_CHECKS.RIVALS_NAMED_MALFORMED;
+  return [{ check: row.check, code: "RIVALS_NAMED_MALFORMED", translation: row.translation,
             detail: localize("inquiry.rivals.rivals_named_malformed",
               "`rivals_named` lists the rival explanations this conclusion names, at most {max}: each entry names one hypothesis of the question (`rival`, a HYP- id, named once) and says whether the conclusion finds it the case, not the case, or neither (`named`: {namings}), and nothing else.",
               { max: String(RIVALS_MAX), namings: RIVAL_NAMINGS.join(", ") }) }];
+  /* END DEC-49 REGION is-rivals-named-shape */
+}
+
+/** R92: a list of a question's rivals, as `rivalStanding` asks of it: at most `RIVALS_MAX` distinct `HYP-` ids, each
+ *  trimmed; null for anything else. Pure; never throws. */
+export function rivalsListOf(list) {
+  try {
+    if (!Array.isArray(list) || list.length > RIVALS_MAX) return null;
+    const out = list.map((r) => (typeof r === "string" ? r.trim() : r));
+    return out.every((r) => isHypothesisId(r)) && new Set(out).size === out.length ? out : null;
+  } catch { return null; }
 }
