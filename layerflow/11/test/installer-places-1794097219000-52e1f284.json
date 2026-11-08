@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "installer-places",
+  "session": "session_018BhcegWe65N4ytihiXoo7M",
+  "started": "2026-11-08T00:20:19Z",
+  "ended": "2026-11-08T00:21:52Z",
+  "at": "2026-11-08T00:21:52Z",
+  "minutes": 1.55,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 2.295,
+  "tests": {
+    "total": 14,
+    "pass": 14,
+    "fail": 0
+  }
+}
