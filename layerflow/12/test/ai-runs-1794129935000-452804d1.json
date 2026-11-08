@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "ai-runs",
+  "session": "session_018BhcecZqDE7tQk2hw6LU8E",
+  "started": "2026-11-08T09:25:35Z",
+  "ended": "2026-11-08T09:27:27Z",
+  "at": "2026-11-08T09:27:27Z",
+  "minutes": 1.87,
+  "result": "pass",
+  "layer": 12,
+  "suite_seconds": 24.32,
+  "tests": {
+    "total": 194,
+    "pass": 193,
+    "fail": 0
+  }
+}
