@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "control-plane-store-request",
+  "round": 1,
+  "started": "2026-11-08T01:56:12Z",
+  "ended": "2026-11-08T01:56:31Z",
+  "minutes": 0.3,
+  "tested_on": "f06a93eae0448c4b6a3117b9d29282c88f9f8cb6",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-08T01:56:31Z"
+}
