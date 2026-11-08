@@ -1,0 +1,16 @@
+{
+  "row": "join",
+  "layer": 12,
+  "module": "steps",
+  "from": 6,
+  "why": "CR2-18: a step opened from a rival records that rival (BD-17)",
+  "at": "2026-11-08T10:34:32Z",
+  "by": "bob",
+  "items": [
+    {
+      "id": "CR2-18",
+      "module": "steps",
+      "what": "a step opened from a rival records that rival (BD-17), so a rival lists the legs its steps found (hypotheses CR2-9 F1)"
+    }
+  ]
+}
