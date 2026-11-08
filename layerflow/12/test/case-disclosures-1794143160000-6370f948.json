@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "case-disclosures",
+  "session": "session_018Bhcef5m5jEbJWaCejGCam",
+  "started": "2026-11-08T13:06:00Z",
+  "ended": "2026-11-08T13:08:02Z",
+  "at": "2026-11-08T13:08:02Z",
+  "minutes": 2.03,
+  "result": "pass",
+  "layer": 12,
+  "suite_seconds": 12.822,
+  "tests": {
+    "total": 130,
+    "pass": 130,
+    "fail": 0
+  }
+}
