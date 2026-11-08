@@ -219,7 +219,7 @@ export function localReach(ctx) {
   });
   const lea = newMember("lea", "Lea, from flat 2", "lea-m", true);
   const ned = newMember("ned", "Ned, from flat 7", "ned-o", false);
-  const leaHome = firstHome(lea), nedHome = firstHome(ned);
+  const leaHome = once(() => firstHome(lea)()), nedHome = once(() => firstHome(ned)());
   /* her first Home: from the join screen's own link, once */
   const firstHome = (who) => once(async () => {
     const { page } = await who();
