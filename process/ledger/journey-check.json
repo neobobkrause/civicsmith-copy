@@ -38,8 +38,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-08T09:06:03Z",
-    "reason": "reopened: CR2-2: F10: the R21 carried states the local arm does not reach (63 internal-walk failures at layer merge 11); and PD-11: the local arm (run.mjs runLocal) runs pageLimits (design.mjs CLASS), dec340Limits and publicPass on the pages it serves, as runLive does at run.mjs:386/388/403, so a class or DEC-340 fault fails the internal walk at layer merge. Test: a local-arm fixture page drawing an undefined class fails the walk, and passes once reverted. Runs first."
+    "state": "COMPLETE",
+    "at": "2026-11-08T15:09:57Z"
   }
 }
