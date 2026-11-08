@@ -1,0 +1,16 @@
+{
+  "row": "join",
+  "layer": 12,
+  "module": "plane",
+  "from": 11,
+  "why": "CR2-29: register ai-runs' aipathready path source at start (ai-runs R97/R98), with a test against the real wiring",
+  "at": "2026-11-08T11:29:15Z",
+  "by": "bob",
+  "items": [
+    {
+      "id": "CR2-29",
+      "module": "plane",
+      "what": "register ai-runs' path source at start (ai-runs R97/R98 registerPathReady: \"the plane's op=aipathready, agent-model's health(account, entry) read over the Worker, registered once at start by the module that serves it\"); today no module registers it, so the real product's pairless aipathready answers not_ready \"unregistered\" and the assistant is never reachable (screens-inquiry CR2-14 found it; its fixture registers it); a test against the real wiring that a ready path answers ok"
+    }
+  ]
+}
