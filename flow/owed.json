@@ -1,1 +1,1 @@
-{"since":"2026-11-08T01:40:53Z","acts":[{"at":"2026-11-08T01:40:53Z","act":"job complete control-plane-door-pages"},{"at":"2026-11-08T01:46:38Z","act":"block control-plane-store-request"}]}
+{"since":"2026-11-08T01:40:53Z","acts":[{"at":"2026-11-08T01:40:53Z","act":"job complete control-plane-door-pages"},{"at":"2026-11-08T01:46:38Z","act":"block control-plane-store-request"},{"at":"2026-11-08T01:48:57Z","act":"job complete control-plane-door-reading"}]}
