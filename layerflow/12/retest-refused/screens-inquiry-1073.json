@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 12,
+  "module": "screens-inquiry",
+  "cause": 1073,
+  "why": "screens-inquiry has unmet requirement marks (R140, R141, R142, R143, R144, R145, R146, R147, R148, R149, R150, R151, R152): a job meets them: node .process/tool/p3.mjs job start screens-inquiry --sessions <file> --reopen \"meet the unmet requirement marks R140, R141, R142, R143, R144, R145, R146, R14",
+  "at": "2026-11-08T20:25:32Z",
+  "by": "bob"
+}
