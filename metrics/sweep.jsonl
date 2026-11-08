@@ -678,3 +678,4 @@
 {"at":"2026-11-08T12:13:34Z","row":"sweep","session":"session_018BhcefMKiLuojtdyeh1nzG","bob_acts":true,"bob_quiet_h":0,"root_context":38,"live":8,"live_measured_at":"2026-11-08T12:09:57Z","job_cap":20,"sessions":11,"job_ids":["affordances","hypotheses","interface-shell","journey-check","membership","op-declarations","plane","screens-inquiry"],"slots_working":7,"published_free":1,"startable":0,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":8}
 {"at":"2026-11-08T12:19:15Z","row":"check","by":"address","live":8,"live_at":"2026-11-08T12:13:34Z","slots_working":7,"published_free":1,"job_cap":20,"startable":0}
 {"at":"2026-11-08T12:24:56Z","row":"check","by":"layer publish","live":8,"live_at":"2026-11-08T12:13:34Z","slots_working":7,"published_free":1,"job_cap":20,"startable":0}
+{"at":"2026-11-08T12:30:03Z","row":"check","by":"send","live":8,"live_at":"2026-11-08T12:13:34Z","slots_working":7,"published_free":1,"job_cap":20,"startable":0}
