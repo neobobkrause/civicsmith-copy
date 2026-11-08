@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 12,
+  "module": "affordances",
+  "cause": 1073,
+  "why": "affordances has unmet requirement marks (R75): a job meets them: node .process/tool/p3.mjs job start affordances --sessions <file> --reopen \"meet the unmet requirement marks R75 and re-test against the new interface\"",
+  "at": "2026-11-08T20:24:42Z",
+  "by": "bob"
+}
