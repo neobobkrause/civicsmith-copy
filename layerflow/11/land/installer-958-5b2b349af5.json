@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "installer",
+  "pr": 958,
+  "branch": "job/installer-3",
+  "head": "5b2b349af5f3e574c2fd1c6749937fa9ce05614a",
+  "before": "5063043e89f7a746b9f87d1ba21931613ee0498b",
+  "merge": "853b3e1560f8ade65cfd0b132462877456f2f16c",
+  "at": "2026-11-08T00:00:25Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
