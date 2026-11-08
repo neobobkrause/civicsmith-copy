@@ -248,7 +248,7 @@ fieldset.mk-checks label > span { flex: 1 1 0; min-width: 0; }  /* DEC-316: a ch
 .mk-table th[aria-sort="ascending"] .mk-sort::after { content: " \2191"; opacity: 1; }
 .mk-table th[aria-sort="descending"] .mk-sort::after { content: " \2193"; opacity: 1; }
 .mk-table th[aria-sort="ascending"], .mk-table th[aria-sort="descending"] { color: var(--c-ink); }
-.mk-rows .mk-pickc { width: 36px; padding-right: 0; } .mk-rows .mk-pick { width: 18px; height: 18px; margin: 2px 0 0; }
+.mk-rows .mk-pickc, .cs-rows .mk-pickc { width: 36px; padding-right: 0; } .mk-rows .mk-pick, .cs-rows .mk-pick { width: 18px; height: 18px; margin: 2px 0 0; }
 /* DEC-176: a row opens its own panel beneath it */
 .mk-open { all: unset; cursor: pointer; display: inline-flex; gap: 6px; align-items: flex-start; font-weight: 600; color: var(--c-ink); }
 .mk-open::before { content: "▸"; color: var(--c-accent); width: 10px; flex: none; }
@@ -257,29 +257,30 @@ fieldset.mk-checks label > span { flex: 1 1 0; min-width: 0; }  /* DEC-316: a ch
 .mk-open:hover { color: var(--c-accent-strong); text-decoration: underline; }
 .mk-gapbtn { all: unset; cursor: pointer; }
 .mk-gapbtn .cs-gap { white-space: nowrap; }
-.mk-rows tr.mk-r:has(+ tr.mk-detail:not([hidden])) td { background: var(--c-accent-tint); border-bottom-color: transparent; }
-.mk-rows tr.mk-r:has(.mk-pick:checked) td { background: var(--c-ground-2); }
-.mk-detail > td { padding: 0 9px 12px; background: var(--c-accent-tint); border-bottom: 2px solid var(--c-accent); }
+.mk-rows tr.mk-r:has(+ tr.mk-detail:not([hidden])) td, .cs-rows tr.cs-r:has(+ tr.cs-panel:not([hidden])) td { background: var(--c-accent-tint); border-bottom-color: transparent; }
+.mk-rows tr.mk-r:has(.mk-pick:checked) td, .cs-rows tr.cs-r:has(.mk-pick:checked) td { background: var(--c-ground-2); }
+.mk-detail > td, .cs-panel > td { padding: 0 9px 12px; background: var(--c-accent-tint); border-bottom: 2px solid var(--c-accent); }
 .mk-detailbox { position: sticky; left: 9px; max-width: min(760px, calc(100vw - 72px)); display: grid; gap: 10px; padding: 12px 14px; background: var(--c-sheet); border: var(--hair); border-left: 3px solid var(--c-accent); }
 .mk-gapblock { display: grid; gap: 6px; padding: 10px 12px; border: var(--hair); background: var(--c-surface); }
 .mk-tablebar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .mk-gapfilter[aria-pressed="true"] { background: var(--c-accent-tint); box-shadow: inset 0 0 0 1.5px var(--c-accent); }
-.mk-rows.only-gaps tr.mk-r:not([data-gaps]), .mk-rows.only-gaps tr.mk-r:not([data-gaps]) + tr.mk-detail { display: none; }
+.mk-rows.only-gaps tr.mk-r:not([data-gaps]), .mk-rows.only-gaps tr.mk-r:not([data-gaps]) + tr.mk-detail, .cs-rows.only-gaps tr.cs-r:not([data-gaps]), .cs-rows.only-gaps tr.cs-r:not([data-gaps]) + tr.cs-panel { display: none; }
 .mk-rowhold { position: sticky; bottom: 0; z-index: 3; }
 .mk-rowhold[hidden] { display: none; }
 /* DEC-176 on a phone: each row is a card; the headings wrap above it as sort buttons */
-.mk-device[data-device="phone"] .mk-rows, .mk-device[data-device="phone"] .mk-rows tbody { display: block; }
-.mk-device[data-device="phone"] .mk-rows thead tr { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 6px 0 8px; }
-.mk-device[data-device="phone"] .mk-rows thead th { border: 0; padding: 0; } .mk-device[data-device="phone"] .mk-rows thead th.mk-pickc { display: none; }
-.mk-device[data-device="phone"] .mk-rows tr.mk-r { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 4px 6px; padding: 10px 12px; border: var(--hair); border-bottom: 0; background: var(--c-surface); }
-.mk-device[data-device="phone"] .mk-rows tr.mk-r td { display: block; padding: 0; border: 0; background: none; text-align: left; }
-.mk-device[data-device="phone"] .mk-rows tr.mk-r td[data-label] { grid-column: 1 / -1; display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 8px; }
-.mk-device[data-device="phone"] .mk-rows tr.mk-r td[data-label]::before { content: attr(data-label); font: 600 var(--t-xs)/1.5 var(--f-sans); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--c-muted); }
-.mk-device[data-device="phone"] .mk-rows tr.mk-detail { display: block; } .mk-device[data-device="phone"] .mk-rows tr.mk-detail[hidden] { display: none; }
-.mk-device[data-device="phone"] .mk-rows tr.mk-detail > td { display: block; padding: 0 0 10px; border: var(--hair); border-top: 0; }
-.mk-device[data-device="phone"] .mk-rows tbody > tr:last-child { border-bottom: var(--hair); }
+.mk-device[data-device="phone"] .mk-rows, .mk-device[data-device="phone"] .mk-rows tbody, /* DEC-176 on a phone: each row is a card; the headings wrap above it as sort buttons */
+.mk-device[data-device="phone"] .cs-rows, .mk-device[data-device="phone"] .cs-rows tbody { display: block; }
+.mk-device[data-device="phone"] .mk-rows thead tr, .mk-device[data-device="phone"] .cs-rows thead tr { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 6px 0 8px; }
+.mk-device[data-device="phone"] .mk-rows thead th, .mk-device[data-device="phone"] .cs-rows thead th { border: 0; padding: 0; } .mk-device[data-device="phone"] .mk-rows thead th.mk-pickc, .mk-device[data-device="phone"] .cs-rows thead th.mk-pickc { display: none; }
+.mk-device[data-device="phone"] .mk-rows tr.mk-r, .mk-device[data-device="phone"] .cs-rows tr.cs-r { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 4px 6px; padding: 10px 12px; border: var(--hair); border-bottom: 0; background: var(--c-surface); }
+.mk-device[data-device="phone"] .mk-rows tr.mk-r td, .mk-device[data-device="phone"] .cs-rows tr.cs-r td { display: block; padding: 0; border: 0; background: none; text-align: left; }
+.mk-device[data-device="phone"] .mk-rows tr.mk-r td[data-label], .mk-device[data-device="phone"] .cs-rows tr.cs-r td[data-label] { grid-column: 1 / -1; display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 8px; }
+.mk-device[data-device="phone"] .mk-rows tr.mk-r td[data-label]::before, .mk-device[data-device="phone"] .cs-rows tr.cs-r td[data-label]::before { content: attr(data-label); font: 600 var(--t-xs)/1.5 var(--f-sans); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--c-muted); }
+.mk-device[data-device="phone"] .mk-rows tr.mk-detail, .mk-device[data-device="phone"] .cs-rows tr.cs-panel { display: block; } .mk-device[data-device="phone"] .mk-rows tr.mk-detail[hidden], .mk-device[data-device="phone"] .cs-rows tr.cs-panel[hidden] { display: none; }
+.mk-device[data-device="phone"] .mk-rows tr.mk-detail > td, .mk-device[data-device="phone"] .cs-rows tr.cs-panel > td { display: block; padding: 0 0 10px; border: var(--hair); border-top: 0; }
+.mk-device[data-device="phone"] .mk-rows tbody > tr:last-child, .mk-device[data-device="phone"] .cs-rows tbody > tr:last-child { border-bottom: var(--hair); }
 .mk-device[data-device="phone"] .mk-detailbox { position: static; max-width: none; border-left-width: 3px; margin: 0 8px; }
-.mk-device[data-device="phone"] .mk-rows tr.mk-r:has(+ tr.mk-detail:not([hidden])) { background: var(--c-accent-tint); }
+.mk-device[data-device="phone"] .mk-rows tr.mk-r:has(+ tr.mk-detail:not([hidden])), .mk-device[data-device="phone"] .cs-rows tr.cs-r:has(+ tr.cs-panel:not([hidden])) { background: var(--c-accent-tint); }
 .mk-draftcell { background: var(--c-machine-tint); }
 .mk-lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
 .mk-lanehead { font: 700 var(--t-xs) var(--f-sans); letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--c-muted); border-bottom: 2px solid var(--c-ink); padding-bottom: 4px; }
@@ -360,7 +361,7 @@ button.mk-avatar { border: 0; padding: 0; flex: none; } .mk-grp { min-width: 0; 
 .mk-msg { padding: 8px 10px; border: var(--hair); background: var(--c-sheet); font-size: var(--t-sm); }
 .mk-msg.me { justify-self: end; max-width: 85%; }
 .cs-dock .cs-machinework p { margin: 0; font-size: var(--t-sm); }
-.mk-crumbs { display: block; font-size: var(--t-sm); color: var(--c-muted); margin: 0 0 6px; } .mk-crumbs i { font-style: normal; padding: 0 2px; } .mk-crumbs a { color: var(--c-ink-2); text-decoration: none; } .mk-crumbs a:hover { text-decoration: underline; } .mk-crumbs b { color: var(--c-ink); font-weight: 600; }
+.mk-crumbs, .cs-crumbs { display: block; font-size: var(--t-sm); color: var(--c-muted); margin: 0 0 6px; } .mk-crumbs i, .cs-crumbs i { font-style: normal; padding: 0 2px; } .mk-crumbs a, .cs-crumbs a { color: var(--c-ink-2); text-decoration: none; } .mk-crumbs a:hover, .cs-crumbs a:hover { text-decoration: underline; } .mk-crumbs b, .cs-crumbs b { color: var(--c-ink); font-weight: 600; }
 .mk-more { font-weight: 600; font-size: var(--t-sm); }
 .mk-morerows { display: grid; border-top: var(--hair); } .mk-morerow { padding: 12px 4px; border-bottom: var(--hair); } .mk-morerow .cs-ref { display: inline-flex; gap: 10px; align-items: center; font-weight: 600; font-size: var(--t-md); } .mk-morerow p { margin: 4px 0 0 30px; color: var(--c-ink-2); font-size: var(--t-sm); }
 .mk-links { display: grid; gap: 6px; } .mk-links a { display: inline-flex; gap: 8px; align-items: center; }
@@ -397,9 +398,9 @@ button.mk-avatar { border: 0; padding: 0; flex: none; } .mk-grp { min-width: 0; 
 .mk-device[data-device="phone"] .cs-row > a.cs-ref, .mk-device[data-device="phone"] .cs-row > span > a.cs-ref:only-child, .mk-device[data-device="phone"] .cs-row > span > :is(b, span.mk-data, span.rec):first-child > a.cs-ref:only-child, .mk-device[data-device="phone"] .mk-sec > h2 > a.cs-ref, .mk-device[data-device="phone"] .mk-strip-sum > a.cs-ref, .mk-device[data-device="phone"] .mk-ablock > .h > a.cs-ref, .mk-device[data-device="phone"] .cs-path a.cs-ref { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
 .mk-device[data-device="phone"] .mk-pagebar a.cs-ref, .mk-device[data-device="phone"] .mk-versions .mk-ev > b > a.cs-ref:only-child { display: inline-flex; align-items: center; min-height: 44px; }
 .mk-device[data-device="phone"] .mk-sec { grid-template-columns: minmax(0, 1fr); } .mk-device[data-device="phone"] .cs-origin { white-space: normal; max-width: 100%; box-sizing: border-box; flex-wrap: wrap; } .mk-device[data-device="phone"] .mk-sortrow { flex-wrap: wrap; }
-.mk-device[data-device="phone"] .mk-crumbs { display: flex; flex-wrap: wrap; align-items: center; }
-.mk-device[data-device="phone"] .mk-crumbs a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
-.mk-device[data-device="phone"] .mk-rows td > a.cs-ref:only-child, .mk-device[data-device="phone"] .mk-acts > a.cs-ref, .mk-device[data-device="phone"] td > a:only-child, .mk-device[data-device="phone"] td > b > a.cs-ref:only-child, .mk-device[data-device="phone"] .mk-steps li > a.cs-ref:only-child, .mk-device[data-device="phone"] .cs-row > span > a.cs-ref.mk-data:only-child, .mk-device[data-device="phone"] .cs-due > a.cs-ref, .mk-device[data-device="phone"] p.mk-small > a.cs-ref:only-child { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+.mk-device[data-device="phone"] .mk-crumbs, .mk-device[data-device="phone"] .cs-crumbs { display: flex; flex-wrap: wrap; align-items: center; }
+.mk-device[data-device="phone"] .mk-crumbs a, .mk-device[data-device="phone"] .cs-crumbs a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+.mk-device[data-device="phone"] .mk-rows td > a.cs-ref:only-child, .mk-device[data-device="phone"] .mk-acts > a.cs-ref, .mk-device[data-device="phone"] td > a:only-child, .mk-device[data-device="phone"] td > b > a.cs-ref:only-child, .mk-device[data-device="phone"] .mk-steps li > a.cs-ref:only-child, .mk-device[data-device="phone"] .cs-row > span > a.cs-ref.mk-data:only-child, .mk-device[data-device="phone"] .cs-due > a.cs-ref, .mk-device[data-device="phone"] p.mk-small > a.cs-ref:only-child, .mk-device[data-device="phone"] .cs-rows td > a.cs-ref:only-child { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
 .mk-device[data-device="phone"] fieldset.mk-checks label { min-height: 44px; box-sizing: border-box; }
 .mk-device[data-device="phone"] fieldset.mk-checks input:is([type="checkbox"],[type="radio"]) { width: 24px; height: 24px; flex: none; }
 .mk-device[data-device="phone"] .mk-plain .cs-dock { border-left: 0; border-top: 3px solid var(--c-ink); max-height: 300px; }
