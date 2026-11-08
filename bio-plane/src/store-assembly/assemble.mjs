@@ -353,8 +353,10 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, ca
   /* R21 (T33-44, K1619): leg-earning, before inquiry's factory reaches it, with the standards and duties above. */
   legEarningOf(ctx, { standards, duties });
   /* R21 (K1607): hypotheses at boot, so its leg check joins the promotion (its R5, R6) and the `hunch` owner, which
-     registered at load, finds its one instance; explore is the instance above (its R6 rederives through it). */
-  hypothesesOf(ctx, { explore: explore });
+     registered at load, finds its one instance; explore is the instance above (its R6 rederives through it).
+     F5 (CR2-30; hypotheses F1, IV-H2; steps R31): handed `steps`, the one instance built above, so it registers its
+     rival source with it and reads a rival's legs from the real steps (the edge hypotheses -> steps). */
+  hypothesesOf(ctx, { explore: explore, steps: stepsOf(ctx) });
   /* R21 (K1609; answers R7–R12, R15–R21): the owners its rule services read, the saved query's runner (retrieval,
      whose `relations()` and `zone()` answers reads itself, K1788, K1803) and the account reads. R33 (K2500): no
      `ceilingRefusal`: answers judges a limit through ai-use's `useCheck` on its own host (its R30). */
