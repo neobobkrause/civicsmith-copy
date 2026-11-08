@@ -1,0 +1,9 @@
+{
+  "row": "retest-refused",
+  "layer": 12,
+  "module": "store-assembly",
+  "cause": 1021,
+  "why": "this clone is shallow and cannot tell whether ae7cbacd0b47ebea9b6fdeeb5ff963bedb265636 holds 657a26d07b48de846160e3510bee29297ed48ea9 without more history; that history could not be fetched (git fetch: error: cannot lock ref 'refs/remotes/origin/process-state': is at 81aaf5603638d522a017d1f275ba8df0",
+  "at": "2026-11-08T12:45:19Z",
+  "by": "bob"
+}
