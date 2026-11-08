@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 11,
+  "module": "control-plane-store-request",
+  "pr": 983,
+  "branch": "job/control-plane-store-request",
+  "head": "9cb61e7db885e962e990ffe94bf61d074f952af0",
+  "before": "b7e908f7e7053757f16f623ac4dcd87c947de349",
+  "merge": "09ed7dfc42621a6417f97a179944fdb103270816",
+  "at": "2026-11-08T02:03:31Z",
+  "by": "bob",
+  "gate_runs": 5,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}

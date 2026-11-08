@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 11,
+  "module": "control-plane-store-request",
+  "pr": 983,
+  "sha": "64d34f9dc880ba412d70c3568ff4460198b3bc73",
+  "run_id": 42434640404,
+  "run_attempt": 1,
+  "at": "2026-11-08T01:33:01Z",
+  "trigger": "record",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 1.17,
+  "suite_minutes": null,
+  "record_only": true,
+  "whole": false
+}
