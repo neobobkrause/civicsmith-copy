@@ -50,7 +50,8 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-05T09:51:45Z"
+    "state": "WORKING",
+    "at": "2026-11-08T11:10:04Z",
+    "reason": "reopened: CR2-11: BD-18 follow-up to provenance CR2-6 (PR 1002, ARCHIVE_CAPTURE_GRADE now B, a raw id_ replay via archive; REWRITTEN_REPLAY_GRADE C, reference only): its F1, so the archive.org route files raw replays at B \"via archive\" and rewritten replays at C; and the tests pinned to archive = C follow: acquire.test (R1, R18), grades.test (R18, two tests), unpack.test (R39)"
   }
 }
