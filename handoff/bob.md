@@ -1,22 +1,24 @@
-# Handoff for bob, 2026-11-06T12:24:10Z
-tranche f6b3977e2f95d0a2c3cd65d33db824b3cb16c469 Merge PR 624: pass/dist into tranche
+# Handoff for bob, 2026-11-08T11:48:19Z
+tranche f9a87b76ee11c8827394bfe7ce85a5df113f0ea8 Merge PR 1031: bob/completion-round-2-cr29 into tranche
 
-starts owed since 2026-11-06T05:29:42Z (layer close 6; merge 623; merge 624): run job start --ready
-starter: NOT RUNNING (last pass 2026-11-06T05:38:07Z): BOB runs node .process/tool/p3.mjs job start --ready (deliver what it prints) and tells ROOT the starter is down; owed to started: median 11.4 min, p90 23.6 min, last 9.2 min (9 starts in 24 h); starts owed now for 411 min
-holds: 7 live, 12 expired (only a recorded hold holds startable work below the cap)
-- hold-18 layer:7, by session_018Bhceddtp3HAmB1Z9LtX2s, 715 min to expiry: coordinator 6 Nov 00:10: until layer 6 closes start only layer 6 work; after it product work pauses for the layer-branch pin; ends when the coordinator says
-- hold-19 layer:8, by session_018Bhceddtp3HAmB1Z9LtX2s, 715 min to expiry: coordinator 6 Nov 00:10: until layer 6 closes start only layer 6 work (public-read F1 job waits for the new pin); ends when the coordinator says
-- hold-20 layer:9, by session_018Bhceddtp3HAmB1Z9LtX2s, 715 min to expiry: coordinator 6 Nov 00:10: until layer 6 closes start only layer 6 work; ends when the coordinator says
-- hold-21 layer:10, by session_018Bhceddtp3HAmB1Z9LtX2s, 716 min to expiry: coordinator 6 Nov 00:10: until layer 6 closes start only layer 6 work; ends when the coordinator says
-- hold-22 layer:11, by session_018Bhceddtp3HAmB1Z9LtX2s, 716 min to expiry: coordinator 6 Nov 00:10: until layer 6 closes start only layer 6 work; ends when the coordinator says
-- hold-23 module:ai-catalogue, by session_018Bhceddtp3HAmB1Z9LtX2s, 888 min to expiry: coordinator ruling (bob-25x, 6 Nov): ai-catalogue F4 goes after the pause in layer 11's round with op-declarations, store-assembly and signin-door, as part of the reschedule check; the starter's 03:06 reopen (PR 615) is deferred BLOCKED
-- hold-24 module:inquiry, by session_018Bhceddtp3HAmB1Z9LtX2s, 929 min to expiry: inquiry reopen (PR 617, 03:43) BLOCKED on R31 (no opinion element exists; K181's standing deferral); closed unmerged at layer 6 close with 379/380/615; restart when case-authoring or publication defines the element
-- hold-5 module:acquisition-archives, by session_018BhcefhxhWd9YQkYbKBcTB: expired 1378 min ago, holds nothing: R126 waits on measure M-R7 (runtime-limits READ_BOUNDS rows, R47 blocked on the same); asked the coordinator 11:25 (bob-185)
-(763 more status lines: status --role bob lists them all)
+replay: `node .process/tool/p3.mjs state replay` (2 state write(s) held in this clone since a refused push: starts owed: steps landed (PR 803); github: 4 minute(s) of use (rows to 1794070208090))
+starts owed since 2026-11-08T11:30:55Z (job complete inquiry; job complete affordances; merge 1031): run status --role bob, then each `job start` its `jobs to start` lists (layer jobs <n>)
+acts now: 0
+holds: none
+process/config.json: pacing.jobs (PD-6: no session cap set as GitHub pacing) ignored; the job cap now comes from P3_JOB_CAP (default 20)
+job cap 20 (default)
+ledger on origin/tranche: 220 entries
+addresses: ROOT session_018BhcefMKiLuojtdyeh1nzG (2026-11-07T19:06:51Z); BOB session_018Bhceff4p3dNtYx3XNk4CX (2026-11-06T12:27:24Z)
+red gates: act now:
+- suite budget: plane's gate suite took 33.3 min, 74% of suite_timeout_minutes 45 (over 70%; PR 175, gate row 2026-11-05T04:46:45Z): speed or split its suite before it times out
+blocked:
+- ai-catalogue: BLOCKED (Deferred (coordinator ruling 6 Nov): F4 goes after the pause in layer 11's round with op-declarations, store-assembly and signin-door, as part of the reschedule check. Restart then.); PR merged, last activity unknown; BLOCKED
+- citation: BLOCKED (Deferred (coordinator ruling 5 Nov 04:18): R28 waits on registers F1/R30 (content.cellsAt answers {cells:null, reason:'removed'}; no new leg state; citation reads it at cite time, words via words-unreviewed) and a found mark on lines (interest-line arm, bio-plane/src/lines/vocab.mjs); R29 waits on publication F1 (photo-place switch) and inquiry-grammar F1 (file_says leg). Restart by uses when they land.); PR merged, last activity unknown; BLOCKED
+(839 more status lines: status --role bob lists them all)
 
 notes:
-- Pause: pin 4a85f26 (layer flow) landed at e24aef852f; pass/dist PR 624 merged at f6b3977e2f. Layer 7 opens ONLY on the coordinator's word. Holds 18-24 stand until layer open 7 lifts hold-18 (hold-23 ai-catalogue F4, hold-24 inquiry R31 BLOCKED under K181). The coordinator stopped the MERGER's train (SLB-8): layer flow alone. Start no jobs before that word.
-- Waiting on Bob: copy PR 625 (bob/dist-workflows: build steps in release-sign, regression, deploy-test, container-images; the tool refused it as a workflow change needing the owner's word) and process3 PR 188. Until 625 lands those workflows lack the build steps that the untracked dist/ now needs.
-- Base-red at e24aef852f (PR 624 gate): bundler 5 (R25, R38, notice-signatures:101, p3dev, R28 thirdparty), installer R33 realsize 4, plane 4 (door R1/R5/R67, g41-shape R84, g55-alarm-l R88 x2).
-- Layer 11 round: 460 signin-door / 430 op-declarations / 504 store-assembly with op-declarations F2, control-plane F2, ai-catalogue F4 and the triage follow-ups; 597 (installer) and 452 (plane) closed unmerged 11:56 and restart fresh; drafts 507, 513 and ux 620 re-enter. Also: public-read F1; the layouts.html journey-check job; the R109/R35 entry goes into the triage register once process3 PR 181 lands.
-- PR 626 (found: bundler F3, fleetbundles.control.mjs arms 1/2/3/6 need a redesign) was queued to merge plain; if it has not landed, merge it plain. agent-runner R56 stays option A (01:08); agent-worker R45/R65 left.
+- Layer 12 (completion round 2). Landed: interface-assets, leg-earning, ai-runs 1004, inquiry 1006, hypotheses 1005, screens-daily 1001, provenance 1002. In land loops: 1008 interface-shell, 1020 affordances (asked to add hypothesisrivals/explorenext/rivals to t33 R12 table, then republish), 1023 steps, 1024 acquisition, 1026 case-authoring, 1027 case-disclosures, 1028 inquiry CR2-20, 1029 interface-assets CR2-21. Merging: PR 1032 (hypotheses uses steps + CR2-30/31).
+- Held: 1019 screens-inquiry (done; ledger-check base defect, waits C36 pin); 1021 op-declarations (no source change, revert check fails on its notes file; my revert exempt was refused by my permission check; coordinator choosing exemption-by-allowed-reviewer vs drop notes); 1025 hypotheses CR2-19 (holds until 1020 lands); 999 journey-check (holds until 1008 lands, then job sync + re-measure; dec340 residue -> CR2-27).
+- To start: plane CR2-29 (join+start was running, check PR); CR2-22 interface-shell (after 1008 + 1029 land; carry CR2-27 after journey-check re-measure); CR2-30 store-assembly and CR2-31 hypotheses after PR 1032 merges (31 after 18, edge, 30 land). Deferred: CR2-15, CR2-23..26. membership CR2-28 PR 1030 working (canon first; silent canon -> Bob, REQ-5).
+- Rulings: R1(a) strict; slug false positive fixed in journey-check; start every startable job at once (R10); hypotheses answers MACHINE_CANNOT_MARK_RIVAL; graph edges that add no layer/module are BOB's. Gotchas: main clone /home/user/civicsmith-copy is on old pin 0590382 - run p3 from a tranche checkout (wt-j4); GitHub hook not loaded - pipe connector JSON to .process/tool/hook.mjs and run github note before writes; after a pin move run layer sync 12 and have open jobs job sync + republish; strip the tool's trailing '(...)' note from layer jobs lines before eval.
+- Last ROOT sweep answered: 116 (msg 302). Running notes: BOB scratchpad layer11-brief.md.
