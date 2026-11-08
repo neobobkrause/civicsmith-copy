@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { boot, ok, refused, refusedIn } from "../interface-shell/harness.mjs";
 import { BUNDLE_ID_RE } from "../../../src/record-grammar/index.mjs";
 import { hasWord } from "../../../src/setup-words/index.mjs";
-import { open, storeWorld, main, actsIn, button, fill, press, says, section, word, projectWith, SCREENS, P, Q } from "./fixtures.mjs";
+import { open, storeWorld, aiWorld, main, actsIn, button, fill, press, says, section, word, projectWith, SCREENS, P, Q } from "./fixtures.mjs";
 
 /* every owner's declarations, registered once before the first read (test-support R17, K4245) */
 /* the weights of the two owners whose acts these tests press (registering every owner's weights is refused today by `accountusesset`'s row, an owner's defect reported to BOB) */
@@ -24,7 +24,7 @@ const SERVED = { boot: { screens: [...SCREENS, stub("matter"), stub("calculation
  *  `ai` makes the world the team's Claude account can be set up in (`recipes.assistant`). */
 const OWN = { capabilities: ["contribute", "create_projects"] };
 const team = async ({ ai = false } = {}) => {
-  const world = await storeWorld({ ai });
+  const world = ai ? await aiWorld() : await storeWorld();
   const ann = await world.signIn("ann", OWN);
   const mai = await world.signIn("mai", { capabilities: ["contribute"] });
   const project = await world.recipes.project(ann, "Pothole repairs");
@@ -212,7 +212,7 @@ test("R117 a refused act whose answer carries findings draws the first finding's
      a question whose leg names an action is `BASIS_REFUSED` (inquiry-grammar/grammar.mjs:648). That case is not tested here. */
 });
 
-test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R10 entry 25 the project draws exactly its registry acts, writing help under the stake field only while the assistant is reachable", async () => {
+test("R10 entry 25 the project draws exactly its registry acts, writing help under the stake field only while the assistant is reachable", async () => {
   const REGISTRY = JSON.parse(readFileSync(new URL("../../../../docs/development/ux-substrate/screens/registry.json", import.meta.url), "utf8"));
   const reg = REGISTRY.screens.find((s) => s.id === "project").acts.map((a) => a.op.replace(/^owed:(\S+)( .*)?$/, "$1")).sort();
   assert.deepEqual(PROJECT.acts.map((a) => a.op).sort(), reg, "exactly the registry's acts");
