@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ai-issuer",
+  // Civicsmith's own Cloudflare account, PINNED (R21): the repository, not the machine's sign-in, decides where this
+  // Worker goes. `node scripts/check.mjs` (src/deploy-check.mjs) refuses any other account or binding.
+  "account_id": "20b533579290b9b93168345edd3b7f72",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-07-01",
+
+  // Exactly these bindings (R21, R24): the one SQLite-backed store, the public documents bucket (served without the
+  // store, R20) and the sealed-bundle bucket. The operator credential is a secret set with `wrangler secret put
+  // OPERATOR_CREDENTIAL_SHA256` (its SHA-256 only, R19). No private key and no catalogue signing key, ever (R15).
+  "durable_objects": { "bindings": [{ "name": "STORE", "class_name": "IssuerStore" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["IssuerStore"] }],
+  "r2_buckets": [
+    { "binding": "DOCS", "bucket_name": "ai-issuer-documents" },
+    { "binding": "BLOBS", "bucket_name": "ai-issuer-bundles" }
+  ],
+  // R18: the daily sweep.
+  "triggers": { "crons": ["41 4 * * *"] },
+  // R2, R25: a request to the public documents or a result leaves no record, so no request log either.
+  "observability": { "enabled": false }
+}

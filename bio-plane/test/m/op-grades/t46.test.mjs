@@ -114,7 +114,7 @@ test("R33 R5 R18 R21 R4: of T46's ops MACHINE_REFUSALS holds exactly the two esc
     assert.ok(!(NON_ACTS[op] ?? "").startsWith("capture-directed:"), op);
   }
   /* negative control: a credential ground is off the phone */
-  assert.equal(phoneOf("projectkeyset"), false);
+  assert.equal(phoneOf("keyedserviceset"), false);
 });
 
 test("R33: T46's tables hold exactly these ops, the module's tables carrying those very entries; none both graded and "

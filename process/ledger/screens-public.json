@@ -32,7 +32,7 @@
   ],
   "status": {
     "state": "COMPLETE",
-    "at": "2026-11-05T22:12:25Z"
+    "at": "2026-11-07T19:23:45Z"
   },
   "prior_work": "BOB 5 Nov 21:37, as interface-shell-t53 and screens-intake-rounds (coordinator 18:31, option c): your code lives in bio-plane/src/screens-public/, which you own; every hook you need inside bio-plane/src/screens-publish/ (published.mjs, published-parts.mjs, docket-public.mjs, review-outside.mjs, keys.mjs) is screens-publish's: name each as a found mark for screens-publish (report it to BOB), never edit it."
 }

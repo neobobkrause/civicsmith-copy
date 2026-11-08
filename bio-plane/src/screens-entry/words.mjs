@@ -32,7 +32,9 @@ const labels = (screen, ops) => ops.flatMap((op) => [`act.${op}.label.${screen}`
 export const READS = Object.freeze({
   front: Object.freeze([...STATES, "screen.front.name", "screen.front.purpose",
     ...["published", "edition", "edition.nosigner", "untitled", "doorbell", "doorbell.what", "doorbell.go", "how", "how.what", "how.go",
-      "members", "handle", "device", "incomplete", "forgot", "notmember", "welcomeback", "notyou", "other", "nopassword"].map((k) => "screen.front." + k),
+      "members", "handle", "device", "incomplete", "forgot", "notmember", "welcomeback", "notyou", "other", "nopassword",
+      /* R35: the page as a signed-in member sees it */
+      "signedin", "home"].map((k) => "screen.front." + k),
     "screen.entry.uses", "screen.entry.group", "screen.entry.logo", "screen.entry.password", "signin.handle.help",
     "session.keep", "session.shared", "session.signedout", "session.ended", "session.locked",
     "refusal.SIGN_IN_REFUSED", "refusal.SIGN_IN_PAUSED", ...labels("front", ["login", "unlock"])]),

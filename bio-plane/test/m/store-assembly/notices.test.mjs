@@ -11,7 +11,7 @@ import { recordOf } from "../../../src/record-core/index.mjs";
 import { publicReadOf } from "../../../src/public-read/index.mjs";
 import { schedulerOf } from "../../../src/scheduler/index.mjs";
 import { networkNoticesOf, networkNoticesOps, NETWORK_NOTICES_TABLES } from "../../../src/network-notices/index.mjs";
-import { corpusExportOf, corpusExportOps } from "../../../src/corpus-export/index.mjs";
+import { corpusExportOf, corpusExportOps, wholeExportOps } from "../../../src/corpus-export/index.mjs";
 
 const tableNames = (x) => [...x.ctx.storage.sql.exec(`SELECT name FROM sqlite_master WHERE type='table'`)].map((r) => r.name);
 const json = async (res) => ({ status: res.status, body: await res.json() });
@@ -120,9 +120,12 @@ test("R6 (N483, K1122, K1640): `op=export`, `op=exportlog`, `op=exportpage` and 
   const u = new URL("http://do/");
   const arms = ["export", "exportlog", "exportpage", "exportrender"];
   assert.deepEqual(Object.keys(corpusExportOps(null, () => null)), arms);
+  /* F4 (corpus-export R17, R18): the whole-record arms, spread beside them from `wholeExportOps`, are pinned too */
+  const whole = ["exportwhole", "exportwholepart"];
+  assert.deepEqual(Object.keys(wholeExportOps(null, () => null)), whole);
   const x = await store();
   const map = x.s.routes(u, null);
-  for (const op of arms) assert.ok(Object.hasOwn(map, op), `the route map holds ${op}`);
+  for (const op of [...arms, ...whole]) assert.ok(Object.hasOwn(map, op), `the route map holds ${op}`);
   /* each arm in the map is the one corpus-export's own map answers on the plane's instance */
   const own = corpusExportOps(corpusExportOf(x.ctx), (k) => u.searchParams.get(k));
   for (const op of ["exportpage", "exportrender"])

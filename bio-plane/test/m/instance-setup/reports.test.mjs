@@ -53,9 +53,8 @@ test("R17 op=bootstrap: service, this isolate's version (0.0.0 unset), bootstrap
     "pdf-worker": { binding: "PDF_WORKER", state: "MISNAMED", name: "ocr-worker", version: "o-1" },
     "ocr-worker": { binding: "OCR_WORKER", state: "UNBOUND" },
     "sheet-worker": { binding: "SHEET_WORKER", state: "SERVING", version: "s-1" },
-    /* T46 (R17): read through agent-worker's /version, which here says nothing of its runner, so the runner is unread */
-    "agent-runner": { binding: "AGENT_WORKER", via: "agent-worker", state: "SILENT",
-                      why: "agent-worker answered its version without saying whether the runner is bound" },
+    /* T46 (R17), F2: read through agent-worker's /version, which no longer says runner (agent-worker R30, T53): its part */
+    "agent-runner": { binding: "AGENT_WORKER", via: "agent-worker", state: "SERVING", version: "a-1" },
     "file-scanner": { binding: "FILE_SCANNER", state: "SERVING", version: "f-1" } });
   assert.equal("memberVersions" in (await read(await bootstrapReport(env, "x", { stub, ...io }))).body, false);
   const silent = await read(await bootstrapReport(env, "x", { stub: { fetch: async () => new Response("x", { status: 500 }) }, ...io }));

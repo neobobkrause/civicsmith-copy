@@ -71,8 +71,9 @@ test("R3: SESSION_OPS is {member, admin}, two sets of op names each with a spec;
       `${kind}: ${op}'s classes do not admit a ${kind} session`);
   }
   /* The founder's set holds every member act and adds only the founder's own (T49, R71: `founderhandleset`, the
-     founder's choice of their handle, beside `governorconfig`; T51 fix round, R83: `export`, the copy of the group's records). */
-  assert.deepEqual([...SESSION_OPS.admin].filter((op) => !SESSION_OPS.member.has(op)).sort(), ["export", "founderhandleset", "governorconfig"]);
+     founder's choice of their handle, beside `governorconfig`; T51 fix round, R83: `export`, the copy of the group's records; BD-1: `exportwhole` and `exportwholepart`, the
+     whole-record copy and its parts, corpus-export R17, R18). */
+  assert.deepEqual([...SESSION_OPS.admin].filter((op) => !SESSION_OPS.member.has(op)).sort(), ["export", "exportwhole", "exportwholepart", "founderhandleset", "governorconfig"]);
   assert.deepEqual([...SESSION_OPS.member].filter((op) => !SESSION_OPS.admin.has(op)).sort(), []);
   for (const [op, need] of Object.entries(NEEDS)) {
     assert.ok(Object.hasOwn(OPS, op), `${op} has no spec`);

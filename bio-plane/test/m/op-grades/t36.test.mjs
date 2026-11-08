@@ -67,7 +67,7 @@ test("R24 R35: the 23 ops of file-safety — releasescanhold `reasoned` on HOLD_
   assert.notEqual("HOLD_NO_REASON", "HOLD_REFUSED");
   /* each beside the op R24 names as its precedent */
   for (const [op, like] of [["renderbatch", "taskdrain"], ["securityforward", "taskdrain"],
-    ["securitytooladd", "keyedserviceset"], ["securitytooladd", "groupkeyset"], ["securitytoolremove", "groupkeyremove"],
+    ["securitytooladd", "keyedserviceset"], ["securitytoolremove", "keyedserviceset"],
     ["securitytooltest", "keyedserviceswitch"]]) assert.equal(gradeOf(op), gradeOf(like), `${op} as ${like}`);
   for (const [op, e] of Object.entries(T36_RUNG_ABSENT)) assert.ok(e.is.length > 40, op);
   assert.deepEqual(Object.keys(R24_REASONS).sort(), Object.keys(R24_WRITES).sort());

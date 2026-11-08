@@ -229,7 +229,9 @@ export const matter = Object.freeze({
       if (tl.state === "failed") return cut + cs.state(tl);
       // R58 (DEC-438 C2a (1)): a project with no dated event says so, and where one is recorded
       return opts.length ? cs.choice("mt-d-event", "screen.matter.the_event_it_was_part_of", [{ value: "", text: "" }].concat(opts), { value: current }) + cut
-        : cut + '<p class="mk-small">' + cs.w("screen.matter.the_event_it_was_part_of") + '</p><p class="cs-state" data-state="empty">' + cs.w("screen.matter.event.none") + "</p>";
+        : cut + '<p class="mk-small">' + cs.w("screen.matter.the_event_it_was_part_of") + '</p><p class="cs-state" data-state="empty">' + cs.w("screen.matter.event.none") + "</p>"
+          // R7 (T53): the way to record one, the project's Timeline
+          + (k.project ? '<p class="mk-small"><a class="cs-ref" data-nav data-way="timeline" href="/app/timeline/' + encodeURIComponent(k.project) + '">' + cs.w("screen.timeline.name") + "</a></p>" : "");
     },
     // R45 (C6): the passages that show the act, chosen among the project's documents (a passage is a whole document, as `docChoice` offers it)
     passageChoice: function (cs, view, k) {
@@ -415,11 +417,32 @@ export const matter = Object.freeze({
         + P.note(cs, "screen.matter.a_reading_of_complied_does_not_end") + P.note(cs, "screen.matter.it_ends_only_when_compliance_is_restored")
         + '<div class="mk-acts">' + cs.act("escalationevaluate", { tone: "primary" }) + "</div>");
     },
-    // R45 (b): no determination yet: the acts that need one, each saying why
+    // R45 (b): no determination yet: the acts that need one, each saying why; R7 (T53): and the step that clears it
     unavailable: function (cs, view) {
-      return cs.sec("screen.matter.unavailable", cs.sheet(cs.row("", "<b>" + cs.w("act.escalationopen.label.matter") + "</b>", "", cs.w("screen.matter.needs_a_recorded_determination_that_the_act"))
-        + cs.row("", "<b>" + cs.w("screen.matter.saying_what_the_breach_did") + "</b>", "", cs.w("screen.matter.needs_the_same_determination"))
-        + cs.row("", "<b>" + cs.w("screen.matter.attaching_an_action_holding_at_a_stage") + "</b>", "", cs.w("screen.matter.needs_an_escalation_which_needs_the_same"))));
+      const why = function (reason, step) { return cs.w(reason) + '<br><span class="meta" data-step>' + cs.w(step) + "</span>"; };
+      return cs.sec("screen.matter.unavailable", cs.sheet(cs.row("", "<b>" + cs.w("act.escalationopen.label.matter") + "</b>", "", why("screen.matter.needs_a_recorded_determination_that_the_act", "screen.matter.unavailable.step.determine"))
+        + cs.row("", "<b>" + cs.w("screen.matter.saying_what_the_breach_did") + "</b>", "", why("screen.matter.needs_the_same_determination", "screen.matter.unavailable.step.consequences"))
+        + cs.row("", "<b>" + cs.w("screen.matter.attaching_an_action_holding_at_a_stage") + "</b>", "", why("screen.matter.needs_an_escalation_which_needs_the_same", "screen.matter.unavailable.step.escalation"))));
+    },
+    // R7 (T53; R-68, matter half): a determination's escalation as `escalationstatus` answers it: the escalations opened, the team's live decline, and,
+    // with none open, "Open an escalation" and "Decline to escalate" on a determination that found the act noncompliant, each with what it does
+    // (the acts carry the determination, so a project's matter offers them too); a determination with no noncompliant outcome draws what waits on one.
+    offer: function (cs, view, det, status, nc) {
+      const P = view.parts;
+      const escs = status && Array.isArray(status.escalations) ? status.escalations : [];
+      const live = escs.find(function (e) { return e.state !== "ended"; });
+      const list = escs.length ? cs.sheet(escs.map(function (x) {
+        return cs.row("", '<a class="cs-ref" href="/app/matter/' + encodeURIComponent(det + "~" + x.id) + '" data-nav>' + cs.w("screen.matter.openesc") + "</a>",
+          '<span class="meta">' + cs.w("screen.matter.stage." + (Number(x.stage) || 1)) + "</span>", "");
+      }).join("")) : "";
+      const declined = status && Array.isArray(status.declines) ? status.declines.filter(function (x) { return !x.superseded_by; }) : [];
+      const said = declined.length ? '<p class="mk-note">' + cs.w("screen.matter.declined", { reason: declined[declined.length - 1].reason || "" }) + "</p>" : "";
+      if (live) return list + said;
+      if (!nc) return list + said + P.unavailable(cs, view);
+      const data = { determination: det };
+      const does = function (op) { return "<li><b>" + cs.w("act." + op + ".label.matter") + "</b> · " + cs.w("act." + op + ".does") + "</li>"; };
+      return list + said + '<div class="mk-acts">' + cs.act("escalationopen", { data: data }) + cs.act("declinetoescalate", { data: data }) + "</div>"
+        + '<ul class="mk-list" data-list="escalation-does">' + does("escalationopen") + does("declinetoescalate") + "</ul>";
     },
     // the chosen form, under the choice of what to do
     doing: function (cs, view, k, first) {
@@ -453,8 +476,16 @@ export const matter = Object.freeze({
         }).join("<br>");
         return cs.row("", '<a class="cs-ref" href="/app/matter/' + encodeURIComponent(x.id) + '" data-nav>' + (cs.esc(P.actName(cs, x)) || cs.w("screen.matter.name")) + "</a>", outs, "");
       }).join("")) : "";
+      // R7 (T53): each live determination's escalation, read by `escalationstatus`, offered here as on the determination's own page
+      const escs = live.map(function (x) {
+        const st = P.later(cs, view, "status:" + x.id, "escalationstatus", { determination: x.id }, "");
+        if (st.state === "loading") return "";
+        if (st.state !== "ok") return cs.state(st);
+        const nc = (Array.isArray(x.outcomes) ? x.outcomes : []).some(function (o) { return o && o.outcome === "noncompliant"; });
+        return (live.length > 1 ? '<p class="mk-small">' + (cs.esc(P.actName(cs, x)) || cs.w("screen.matter.name")) + "</p>" : "") + P.offer(cs, view, x.id, st.value, nc);
+      }).join("");
       return head + cs.sec("screen.matter.where_this_matter_stands", (live.length ? "" : P.note(cs, "screen.matter.your_team_has_not_yet_said_whether") + P.note(cs, "screen.matter.what_a_breach_did_and_every_stage"))
-        + links + (live.length ? "" : P.unavailable(cs, view)) + P.doing(cs, view, k, true));
+        + links + escs + (live.length ? "" : P.unavailable(cs, view)) + P.doing(cs, view, k, true));
     }, { empty: "state.empty" });
     return cs.state("determination", function (d) {
       const act = d.act || {};
@@ -487,8 +518,6 @@ export const matter = Object.freeze({
       // R6: the escalation.
       const st = view.data.status;
       const status = st && st.state === "ok" ? st.value : null;
-      const escs = status && Array.isArray(status.escalations) ? status.escalations : [];
-      const live = escs.find(function (e) { return e.state !== "ended"; });
       const e = view.data.escalation;
       let escSec;
       if (e) {
@@ -526,17 +555,9 @@ export const matter = Object.freeze({
             + (actions ? "<h3>" + cs.w("screen.matter.actions") + "</h3>" + actions : "") + avail;
         });
       } else {
-        escSec = cs.state("status", function () {
-          const list = escs.length ? cs.sheet(escs.map(function (x) {
-            return cs.row("", '<a class="cs-ref" href="/app/matter/' + encodeURIComponent(det + "~" + x.id) + '" data-nav>' + cs.w("screen.matter.openesc") + "</a>",
-              '<span class="meta">' + cs.w("screen.matter.stage." + (Number(x.stage) || 1)) + "</span>", "");
-          }).join("")) : "";
-          const declined = status && Array.isArray(status.declines) ? status.declines.filter(function (x) { return !x.superseded_by; }) : [];
-          return list + (declined.length ? '<p class="mk-note">' + cs.w("screen.matter.declined", { reason: declined[declined.length - 1].reason || "" }) + "</p>" : "")
-            // re-walk 10 N8: an escalation is opened, or declined, only on a determination that found an act noncompliant (the row `unavailable` states);
-            // a determination of compliant outcomes alone offers neither, and says what they need
-            + (live ? "" : P.ctx(view).nc.length ? '<div class="mk-acts">' + cs.act("escalationopen", {}) + cs.act("declinetoescalate", {}) + "</div>" : P.unavailable(cs, view));
-        });
+        // re-walk 10 N8: an escalation is opened, or declined, only on a determination that found an act noncompliant (the row `unavailable` states);
+        // a determination of compliant outcomes alone offers neither, and says what they need (R7: `offer`, shared with the project's matter)
+        escSec = cs.state("status", function () { return P.offer(cs, view, det, status, P.ctx(view).nc.length > 0); });
       }
       const k = P.ctx(view);
       const doing = P.doing(cs, view, k, false);
@@ -547,9 +568,13 @@ export const matter = Object.freeze({
   acts: [
     {
       // R6: open an escalation of this determination, with the member's reason (asked by the shell).
+      // R7 (T53): the determination the button carries (a project's matter offers it for each of its determinations), else the page's own
       op: "escalationopen",
-      send: function (view) { return { body: { determination: view.parts.det(view) } }; },
-      done: function (view, answer, cs) { if (answer && answer.id) cs.go("matter", view.parts.det(view) + "~" + answer.id); return { stay: true }; },
+      send: function (view, el) { return { body: { determination: (el && el.dataset && el.dataset.determination) || view.parts.det(view) } }; },
+      done: function (view, answer, cs) {
+        if (answer && answer.id) cs.go("matter", (typeof answer.determination === "string" && answer.determination ? answer.determination : view.parts.det(view)) + "~" + answer.id);
+        return { stay: true };
+      },
     },
     {
       op: "escalationadvance",
@@ -557,7 +582,7 @@ export const matter = Object.freeze({
     },
     {
       op: "declinetoescalate",
-      send: function (view) { return { body: { determination: view.parts.det(view) } }; },
+      send: function (view, el) { return { body: { determination: (el && el.dataset && el.dataset.determination) || view.parts.det(view) } }; },
     },
     {
       // R6: terminal; its dialog states what ending does (`act.escalationend.does`).
@@ -576,6 +601,15 @@ export const matter = Object.freeze({
     {
       // R45: record a determination, or (with the one it replaces) revise it; exactly the fields `determine` declares
       op: "determine",
+      // R81 (T53; interface-shell R119): "Record this determination" pressed with a required choice empty names it before any reason is asked
+      ready: function (view, el, cs) {
+        const k = view.parts.ctx(view);
+        const prior = k.d && k.d.act && Array.isArray(k.d.act.evidence) ? k.d.act.evidence : [];
+        if (!String(cs.value("mt-d-event") || "").trim()) return { refuse: "refusal.NO_SUCH_EVENT" };
+        if (!view.parts.ids(cs.value("mt-d-evidence")).length && !prior.length) return { refuse: "refusal.ACT_INCOMPLETE" };
+        if (!view.parts.ids(cs.value("mt-d-findings")).length) return { refuse: "refusal.NO_FINDINGS" };
+        return null;
+      },
       // R56 (walk E C2a (1)): a standard whose binding on the body is undetermined is the owner's own refusal, drawn in its words with the owner's why
       // (its `detail` names why and that a member settles it in `standards`), the owner's own `detail` (the why); a standard that does not bind keeps the shell's words
       refusals: {

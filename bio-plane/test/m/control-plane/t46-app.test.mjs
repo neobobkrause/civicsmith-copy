@@ -19,8 +19,10 @@ const { SCREENS: W, GUIDE } = await import("../../../src/screens-wizards/index.m
 const { SCREENS: I } = await import("../../../src/screens-investigate/index.mjs");
 const { SCREENS: P } = await import("../../../src/screens-publish/index.mjs");
 const { SCREENS: A } = await import("../../../src/screens-action/index.mjs");
+const { SCREENS: AI } = await import("../../../src/screens-ai/index.mjs");
 /* R81 (T47; K3137, K3169): the five screen modules T47 adds, and screens-wizards' guide (interface-shell R31) */
-const NINE = [...E, ...S1, ...S2, ...S3, ...S4, ...W, ...I, ...P, ...A];
+/* and screens-ai's, which the door serves after them (BOB's found mark, 7 Nov; screens-ai PR 881) */
+const NINE = [...E, ...S1, ...S2, ...S3, ...S4, ...W, ...I, ...P, ...A, ...AI];
 
 const { interfaceScript, interfaceScriptHash, scriptPath } = await import("../../../src/interface-shell/index.mjs");
 const SCRIPT = /<script\b[^>]*>/gi;

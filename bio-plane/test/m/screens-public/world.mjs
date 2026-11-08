@@ -1,7 +1,7 @@
 /* screens-public: a published case edition as public-read's real code answers it (`publishedcase`), for the parts' tests.
  * Built as public-read's own T53 world builds it (test/m/public-read/t53.test.mjs): a /10 case document over one finding resting
  * on two passages of a captured document and one leg on working material, signed by its owner and read as a stranger reads it.
- * `ungraded` lists the ords published without a grade; `format` the document's format (an earlier one states no statement).
+ * `ungraded` lists the ords published without a grade; `format` the document's format (an earlier one states no statement); `graded` whether the case states its frozen pair.
  * Nothing here is a hand-built answer: every value a test reads comes from `w.read("publishedcase", ...)`. */
 import assert from "node:assert/strict";
 import { world, caseDoc, V, NOW, sha } from "../public-read/fixture.mjs";
@@ -16,7 +16,7 @@ export const TITLE = "Council minutes, 12 March";
 export const ORIGIN = "https://example.org/m";
 
 /** The `publishedcase` answer for the finding (`id: F`) and for the case (`id: CASE`), with the world. */
-export function publishedCase({ format = CASE_DOCUMENT_FORMAT, ungraded = [0, 1], materials: withMaterials = true } = {}) {
+export function publishedCase({ format = CASE_DOCUMENT_FORMAT, ungraded = [0, 1], materials: withMaterials = true, graded = true } = {}) {
   const w = world({});
   w.member("mem-4821", { handle: "olive" });
   const proj = w.project("Minutes", "mem-4821");
@@ -38,7 +38,7 @@ export function publishedCase({ format = CASE_DOCUMENT_FORMAT, ungraded = [0, 1]
     { finding: F, ord: 2, content_id: "c-2", capture_sha: capOf(WORK), extent: { kind: "document" }, chain: null, quoted: "noted" }];
   const text = caseDoc(CASE, 1, { format, project: proj, method: { grading: "bio-grading/1", checks: "1.57.0" }, materials,
     attestations: [], roles: [{ target: F, version_sha: pin, role: "load_bearing" }],
-    strength: [{ target: F, axis: "capture", grade: "B" }, { target: F, axis: "connection", grade: "C" }],
+    strength: graded ? [{ target: F, axis: "capture", grade: "B" }, { target: F, axis: "connection", grade: "C" }] : [],
     ...(ungraded.length ? { ungraded: ungraded.map((o) => ({ finding: F, ord: o, content_id: `c-${o}` })) } : {}) });
   const lines = text.split("\n"), close = lines.indexOf("---", 1);
   const doc = [...lines.slice(0, close), ...gradingFactsLines(grading), ...passagesLines(passages), ...lines.slice(close)].join("\n");
@@ -49,5 +49,7 @@ export function publishedCase({ format = CASE_DOCUMENT_FORMAT, ungraded = [0, 1]
   assert.equal(w.signFinding(F, { signer: "mem-4821" }).ok, true);
   const answer = w.read("publishedcase", { id: F });
   assert.equal(answer.ok, true, JSON.stringify(answer).slice(0, 300));
-  return { w, answer, docSha };
+  const byCase = w.read("publishedcase", { caseId: CASE });
+  assert.equal(byCase.ok, true, JSON.stringify(byCase).slice(0, 300));
+  return { w, answer, byCase, docSha };
 }

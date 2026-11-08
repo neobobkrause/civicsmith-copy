@@ -1819,6 +1819,14 @@
      "modules": [
       "op-declarations"
      ]
+    },
+    {
+     "op": "signerknown",
+     "label": "I know about this key",
+     "status": "declared",
+     "modules": [
+      "credentials"
+     ]
     }
    ],
    "journeys": [

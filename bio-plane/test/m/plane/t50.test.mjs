@@ -108,12 +108,12 @@ test("R62 (T50; N933; control-plane R102; public-read R36; amends R114): the Sto
 /* ===== R63: parallel reads answer, none a 503 (V3 B-24; M-T50-7) ===== */
 
 /* The widest screen's reads: each screen's `reads` function names the ops it reads (`cs.call`); the ops it names that
-   `OPS` declares, counted per screen over the nine screen modules. */
+   `OPS` declares, counted per screen over the screen modules the page serves (screens-ai's since control-plane's land 25c1342cbc). */
 async function widestScreen() {
   const { OPS } = await import("../../../src/op-declarations/index.mjs");
   let best = { n: 0, id: null, ops: [] };
   for (const m of ["screens-entry", "screens-settings", "screens-intake", "screens-daily", "screens-inquiry", "screens-wizards",
-                   "screens-investigate", "screens-publish", "screens-action"]) {
+                   "screens-investigate", "screens-publish", "screens-action", "screens-ai"]) {
     const { SCREENS } = await import(`../../../src/${m}/index.mjs`);
     for (const s of SCREENS) {
       const set = new Set();

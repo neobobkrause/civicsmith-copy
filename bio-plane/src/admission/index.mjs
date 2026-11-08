@@ -381,6 +381,25 @@ export function resolveSession(sess) {
   };
 }
 
+/* R34 (T53; PL12) — THE SESSION ROW THE ROOM HOLDS, read as `sessionPresented` answers one: a row object is the
+   session; anything else (`null`, absent) is no session, so an unknown or ended token is answered as at the door. */
+function heldSession(held) {
+  return { sess: held && typeof held === "object" && !Array.isArray(held) ? held : null };
+}
+
+/* R34, R35 (T53; PL12, PL13) — WHO IS JUDGED IN THE ROOM. Only a caller presenting a session (R20's `token` of a
+   session's shape, 64 hex) that is no binding token (R5, the retired member key included) is judged in the room, where
+   the session rows are; every bearer (no credential, a binding token, an `aik-` credential, a grant) is judged at the
+   door as before and the fold makes no call for it. `credential` is the door's `presentedCredential` answer. Never
+   throws; reads nothing from the store. */
+export async function judgedInRoom(credential, env) {
+  try {
+    const t = credential && typeof credential === "object" ? credential.token : null;
+    if (typeof t !== "string" || !SESSION_TOKEN_SHAPE.test(t)) return false;
+    return (await bindingOf(t, env)) === null;
+  } catch { return false; }
+}
+
 /* ===================================================================================================================
  * THE AGENT CREDENTIAL'S REACH (R10, R13)
  * =================================================================================================================== */
@@ -664,9 +683,14 @@ export function projectCreationGate(caps) {
    after the session resolves: a locked session asking any op but `unlock`, `reauth` and `signout` is answered
    credentials' `SESSION_LOCKED` (R24), before `export`'s refusal and the session gate; after the capability (R11), an
    act `reauthActs` names with its argument is answered credentials' `REAUTH_DUE` unless the session's re-ask window is
-   open (R25), asked of the store as `reauthdue` with the token in a header, a silence when it does not answer. */
+   open (R25), asked of the store as `reauthdue` with the token in a header, a silence when it does not answer.
+   T53 (R34; N1264, K4599 (a); PL12): `held` is the session row the room already holds for the presented token, when
+   `store-door` calls this from inside the room (the fold): the row as credentials' `session` answers it, or `null` for
+   none. Given, the session is not read again (no `session` call); every other step, the binding comparison first, and
+   every refusal (code, status, `check`, `translation`) and its order are the same as at the door. Absent (`undefined`),
+   the session is read through the store as before. */
 export async function admit({ url, env, op, spec, method, presented, doAnswer, tables = DECLARED, credential = null,
-                              body = null, background = false, reauthActs = declaredReauthActs() }) {
+                              body = null, background = false, reauthActs = declaredReauthActs(), held = undefined }) {
   const t = credentialOf(credential, url).token;
   const bound = await bindingOf(t, env);
   let cls = bound === RETIRED ? null : bound;
@@ -696,7 +720,7 @@ export async function admit({ url, env, op, spec, method, presented, doAnswer, t
       const dueAsked = reauthAsked(reauthActs, op, { url, body }) && !administratorsOwnActs().has(op)
         ? reauthDuePresented(t, env, doAnswer) : null;
       if (dueAsked) dueAsked.catch(() => {});
-      const looked = await sessionRead(credential, t, env, doAnswer, background);
+      const looked = held !== undefined ? heldSession(held) : await sessionRead(credential, t, env, doAnswer, background);
       if (looked.silent) return { silent: looked.silent };
       if (looked.sess) {
         const kind = looked.sess.role === "admin" ? "admin" : "member";
@@ -1042,12 +1066,12 @@ async function storeSource(address, env) {
 const backgroundOf = (req) => {
   try { return new URL(req.url).searchParams.get("background") === "1"; } catch { return false; }
 };
-async function liveSessionDigest({ req, env, doAnswer, credential, background }) {
+async function liveSessionDigest({ req, env, doAnswer, credential, background, held = undefined }) {
   const t = (credential && typeof credential === "object" ? credential : presentedCredential({ req })).token;
-  if (typeof t !== "string" || !SESSION_TOKEN_SHAPE.test(t) || typeof doAnswer !== "function") return null;
+  if (typeof t !== "string" || !SESSION_TOKEN_SHAPE.test(t) || (held === undefined && typeof doAnswer !== "function")) return null;
   try {
     if ((await bindingOf(t, env)) !== null) return null;
-    const looked = await sessionRead(credential, t, env, doAnswer, background === null ? backgroundOf(req) : background === true);
+    const looked = held !== undefined ? heldSession(held) : await sessionRead(credential, t, env, doAnswer, background === null ? backgroundOf(req) : background === true);
     if (looked.silent) {
       console.warn(`admission: the session was not read for the door's window; the request is counted by source (correlation ${
         typeof looked.silent.correlation === "string" ? looked.silent.correlation : "none"})`);
@@ -1067,16 +1091,18 @@ async function liveSessionDigest({ req, env, doAnswer, credential, background })
    other op is never counted or refused here. Answers `{ refusal }` (R21's or R27's 429, nothing of the op read or
    written) or `{ source }` (the fingerprint the store answered, for the door's stamps; `null` when it could not be
    read). A window that cannot be read or written ADMITS the request (it fails open, so a fault in it never refuses a
-   caller) and is named in the log by its correlation id only. `credential` and `background`, the door's (R27). */
+   caller) and is named in the log by its correlation id only. `credential` and `background`, the door's (R27).
+   (T53; R35, PL13) `held`, as `admit`'s: on the folded path the session row the room holds stands for the session read,
+   so the request is counted in the same window, by the same digest, as on the unfolded one, and nothing is read again. */
 export async function doorWindowGate({ req = null, env = null, spec = null, doAnswer = null, now = null,
-                                       credential = null, background = null } = {}) {
+                                       credential = null, background = null, held = undefined } = {}) {
   if (!spec || spec.classes !== null) return { source: null };
   let out = null;
   try {
     const body = { address: connectingAddress(req) };
     if (now !== null) body.now = now;
     if (spec.mutating === false) {
-      const digest = await liveSessionDigest({ req, env, doAnswer, credential, background });
+      const digest = await liveSessionDigest({ req, env, doAnswer, credential, background, held });
       if (digest !== null) body.session = digest;
     }
     const asked = bioStore(env).fetch(new Request("http://do/doorwindow", {

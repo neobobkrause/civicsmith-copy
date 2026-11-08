@@ -20,7 +20,7 @@ Eleven drafts across eleven modules, plus three held. IV-5 and IV-7 are proposal
 | IV-6 | A second reading of a conclusion, on by default | investigation (7) | — |
 | IV-7 | Signing refuses when the second reading is missing; a missing reading is stated | ratification (8), case-grammar (8) | IV-6 |
 | IV-8 | Contrary recall measured on the test investigations | ai-gate (6), ai-runs (6) | — |
-| IV-9 | A bar a reading part must meet before release | ai-gate (6) | IV-8, and Bob's number for the bar |
+| IV-9 | Contrary recall may not trail supporting recall (parity rule, PD-8) | ai-gate (6), as ai-gate F4 | IV-8 |
 | IV-10 | A counter-proposal pass at reading time | contradiction (6) | IV-8 |
 | IV-11 | An optional reason on a leg | inquiry-grammar (6) | — |
 | IV-H1 to IV-H4 | Rival hypotheses: B's full marks (IV-H2) or the rules-out fallback (IV-H4) | hypotheses (6), inquiry (6) | **HELD**: Bob's UX check and fallback |
@@ -105,7 +105,7 @@ Funding disclosure (Q9.6) is the publication lane's under BD-13 and is not draft
 
 Each comes with the counts behind it. A test investigation without contrary marks contributes to neither figure, and the record says how many did.
 
-**IV-9 (ai-gate). A release bar on contrary recall.** A reading part passes Gate 1 only if its contrary recall meets the bar. It must also not trail its supporting recall by more than the gap the bar names. The bar and the gap are Civicsmith's published numbers, with their dates, shown wherever the gate's verdict is shown. **The numbers are Bob's.** The lane recommends 0.8 contrary recall and a gap of at most 0.1, to be confirmed once the first measurement exists. Until Bob sets them, the measure is recorded and the bar is not enforced, and the verdict says so.
+**IV-9 (ai-gate). Contrary recall may not trail supporting recall.** (Decided as PD-8, 7 Nov, on Bob's word that IV-9 is a technical decision; placed as ai-gate F4.) From the first Gate 1 run, a reading part fails Gate 1 when its contrary-recall interval lies wholly below its supporting-recall interval. This is a parity rule with no number: it uses the gate's own interval comparison (ai-gate R33, R52). The absolute floor on contrary recall is unset (AD13). It is set after the first measuring run, and it is Bob's to set unless he delegates it. Until it is set, the gate's verdict says "no floor is set for contrary recall".
 
 **IV-10 (contradiction). A counter-proposal pass at reading time.**
 

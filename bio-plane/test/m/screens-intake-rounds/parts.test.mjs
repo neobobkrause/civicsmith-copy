@@ -41,7 +41,7 @@ test("R78 (its parts) each step is drawn by its own key; a step with no row of i
   assert.equal(stepLine(cs, { step: "about", minutes: 1 }), word("screen.capture.read.about.one"));
   assert.equal(stepLine(cs, { step: "hashing" }), word("screen.capture.file.parts.hashing"));
   assert.equal(stepLine(cs, { step: "sending", n: 2, m: 7 }), word("screen.capture.file.parts.sending", { n: "2", m: "7" }));
-  for (const none of [{ step: "queued" }, { step: "about" }, { step: "about", minutes: 0 }, { step: "sending", n: 8, m: 7 }, null]) assert.equal(stepLine(cs, none), "");
+  for (const none of [{ step: "queued" }, { step: "waiting" }, { step: "about" }, { step: "about", minutes: 0 }, { step: "sending", n: 8, m: 7 }, null]) assert.equal(stepLine(cs, none), "");
 });
 
 test("R78 (its parts) the reading's refusals are drawn by code with their figures, a size in MB; a figure missing draws nothing", () => {
@@ -92,25 +92,25 @@ test("the parts are self-contained (interface-shell R21 (1)), and every key a pa
   for (const keys of Object.values(PART_KEYS)) for (const k of keys) assert.ok(hasWord(k), k);
 });
 
-test.todo("R72 the add screen states the limit for each kind before a file is added (the screen-limits rows and the limits read are owed)");
-test.todo("R73 a file over its limit is refused with its size, the limit and a way in, never half-read (the toolarge rows are owed)");
-test.todo("R74 the ways in after a refusal: a register by filter, else the member's own part (registers' registerList and registerFilter)");
+/* The marks below stay open, each naming what it waits on (BOB ruling (b), 7 Nov). The through-the-screen tests of what screens-intake now draws are in
+   screen.test.mjs; R92 is met there. */
+test.todo("R72 the add screen states the limit for each kind before a file is added (a read op serving acquisition's limitsByKind to the screen is owed; screens-intake draws it)");
+test.todo("R74 (a)'s link opens the registers screen with the project's filter (the registers screen and its route are owed; the link /app/registers/<key>?project= is screens-intake's guess)");
 test.todo("R75 'A source' for listed members; the others are told how the file came (sourceLinksFor; the doorbell row is BOB's)");
-test.todo("R76 a source's page opened by address by an unlisted viewer draws 'Nothing is here'");
-test.todo("R77 open-file shows a photograph's safe picture and what the file says");
-test.todo("R78 Add draws its own words for each state, in capture.mjs (the parts above; capture's hook and the queued row are owed)");
-test.todo("R79 a preview says where it was cut and can show more; a parted upload can be canceled (the next-rows op and capture's hook are owed)");
-test.todo("R80 Add says what happens to each kind of file (the kept and refused sentences' rows are owed)");
-test.todo("R82 the archive screen states a mailbox's messages and a member file's parent (archive's hook and the parent row are owed)");
+test.todo("R76 a source's page opened by address by an unlisted viewer draws 'Nothing is here' (sourceLinksFor)");
+test.todo("R77 open-file shows a photograph's safe picture and what the file says (screens-intake: the picture and the file-says lines)");
+test.todo("R78 Add draws its own words for each state (screens-intake: finish, address held, fetch done with no project and about.one still draw stand-ins)");
+test.todo("R79 a preview says where it was cut and can show more; a long document's safe view says how much (the next-rows op; screens-intake F4: safeViewPagesLine)");
+test.todo("R80 Add says what happens to each kind of file (screens-intake: the kept-not-read and refused sentences and the folded list)");
+test.todo("R82 the archive screen states a mailbox's messages and a member file's parent (archivelist's counts; the From {parent} row; screens-intake F3)");
 test.todo("R83 the Held list draws a document's chip on the ceiling scale (interface-shell-t53 R140)");
-test.todo("R84 heldcaptures leaves Add's first wave");
-test.todo("R85 a document from any source can be vouched, read and cited from the screens");
-test.todo("R86 a held capture can be found the day after");
-test.todo("R87 one archive, one account of it, on both screens");
-test.todo("R88 a refusal of setting aside says what to do");
-test.todo("R89 a testimony filed from a project is shown under that project");
-test.todo("R90 a record that is not yours is not called damaged");
-test.todo("R91 at 390 no word breaks and a row has no empty square");
-test.todo("R92 an inbox row says which knock it is, links what it became, and explains each state");
-test.todo("R93 the doorbell's receipt is in view and the form is clean after a send");
-test.todo("R94 after a failed upload or promote the Add door says whether the file was kept, and offers a retry (capture R96, R120)");
+test.todo("R84 heldcaptures leaves Add's first wave (screens-intake; PLATFORM's Seed A timing)");
+test.todo("R85 a document from any source can be vouched, read and cited from the screens (plane answers; screens-intake)");
+test.todo("R86 a held capture can be found the day after (screens-intake: held's project filter, the confirmation link)");
+test.todo("R87 one archive, one account of it, on both screens (screens-intake: held and archive)");
+test.todo("R88 a refusal of setting aside says what to do (screens-intake: the MACHINE_CANNOT_SET_ASIDE next-step row)");
+test.todo("R89 a testimony filed from a project is shown under that project (capture's filing; screens-intake)");
+test.todo("R90 a record that is not yours is not called damaged (interface-shell R35; screens-intake)");
+test.todo("R91 at 390 no word breaks and a row has no empty square (screens-intake's layout)");
+test.todo("R93 the doorbell's receipt is in view and the form is clean after a send (screens-publish's doorbell)");
+test.todo("R94 after a failed upload or promote the Add door says whether the file was kept, and offers a retry (capture R96, R120; interface-shell R144)");

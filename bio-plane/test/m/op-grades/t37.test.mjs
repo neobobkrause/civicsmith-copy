@@ -41,7 +41,7 @@ test("R27 (T38: R28; T48: R39): T37's ops — translationmark `undetermined`, tr
   const got = Object.fromEntries(Object.keys(R27_WRITES).map((op) => [op, gradeOf(op)]));
   assert.deepEqual(got, R27_WRITES);
   /* each beside the op R27 names as its precedent */
-  for (const [op, like] of [["setpassword", "signout"], ["subscriptionsignin", "subscriptiondisconnect"],
+  for (const [op, like] of [["setpassword", "signout"], ["subscriptionsignin", "keyedserviceset"],
     ["translationgrant", "wizardeditorgrant"], ["translationdraft", "memberlanguageset"]])
     assert.equal(gradeOf(op), gradeOf(like), `${op} as ${like}`);
   for (const [op, e] of Object.entries(T37_RUNG_ABSENT)) assert.ok(typeof e.is === "string" && e.is.length > 40, op);

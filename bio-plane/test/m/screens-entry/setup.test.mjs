@@ -1003,3 +1003,22 @@ test("R34 the step sits in part 3, 'Where your team works', so skipping that par
   assert.equal(partOf(o, "places").attrs["data-skipped"], "true");
   assert.equal(o.requests.length, before, "skipping sends nothing");
 });
+
+/* R22, re-tested against `instance-setup`'s T53 `profiles()` (its R108, R111; land f5828a4d4d): the answer now also lists the chain
+   as `layers`, a chosen package read as its layers, while `profiles` stays the places the team chose. Part 3 draws and marks the
+   team's choice, never the chain: one chosen place is named once, by its name, and the part is done; none chosen leaves it optional. */
+test("R22 part 3 reads the team's chosen place from profiles(), never the chain of layers the provider now answers beside it", async () => {
+  const placed = await returned({ after: ({ world, as }) => act(world, as, "profilesset", { body: { profiles: [PLACE] } }) });
+  const answer = placed.requests.find((r) => r.op === "profiles").answer.value;
+  assert.equal(answer.profiles.length, 1);
+  assert.ok(Array.isArray(answer.layers) && answer.layers.length > 1, "the provider answers the chosen package as its layers");
+  const name = answer.profiles[0].name || PLACE;
+  assert.equal(stateOf(placed, "places"), "done");
+  has(placed, "screen.setup.places.chosen", { place: name });
+  for (const l of answer.layers) if (l.id !== PLACE) assert.ok(!textOf(partOf(placed, "places")).includes(said("screen.setup.places.chosen", { place: [name, l.name || l.id].join(", ") })), "no layer is named as a chosen place");
+  // control: with no place chosen, a held chain or none, the part is optional and names no choice
+  const none = await returned({});
+  assert.deepEqual(none.requests.find((r) => r.op === "profiles").answer.value.profiles, []);
+  assert.equal(stateOf(none, "places"), "optional");
+  lacks(none, "screen.setup.places.chosen", { place: name });
+});

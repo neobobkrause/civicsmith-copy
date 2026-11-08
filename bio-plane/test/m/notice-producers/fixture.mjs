@@ -9,6 +9,7 @@ import { noticeProducersOf, NoticeProducers } from "../../../src/notice-producer
 import { securityMapRefusal } from "../credentials/fixtures.mjs";
 import { standardReadWorld } from "../standards/fixtures.mjs";
 import { homeOfEmpty } from "../provenance/fixtures.mjs";
+import { AiAccounts } from "../../../src/ai-accounts/index.mjs";
 
 /** The refusals and the empty reads below are each provider's own, from its published fixtures (K4990): made by the real
  *  code, the world built on first use. */
@@ -16,6 +17,7 @@ const once = (make) => { let v; return () => (v ??= make()); };
 const securityRefusals = await securityMapRefusal();
 const standardsWorld = once(standardReadWorld);
 const emptyProvenance = once(homeOfEmpty);
+const noAccounts = new AiAccounts({ sql: null });
 
 /** Providers answering nothing, each in its requirements' shape. */
 export const NONE = Object.freeze({
@@ -42,7 +44,11 @@ export const NONE = Object.freeze({
   /* R28 (G55): calculations' finished or stopped background ingests */
   calculations: { ingestNotices: () => ({ ok: true, items: [], next: null }) },
   /* R16 (ai-use R5, R9; ai-accounts R13's suspended sign-ins retired, T53), R17 (steps, question-explorer, investigation, review), T41 */
-  aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached: [] }) },
+  aiUse: { exploreAsksPending: () => ({ ok: true, asks: [] }), limitsReached: () => ({ ok: true, reached: [] }),
+           /* R33 (ai-use R24) */
+           thresholdsReached: () => ({ ok: true, crossed: [] }) },
+  /* R34, R35 (ai-accounts R76, R72): the real module over no store answers each read empty, as it does when unreadable */
+  aiAccounts: noAccounts,
   steps: { laterFound: () => ({ ok: true, found: [] }), stepsDue: () => ({ ok: true, due: [] }),
            costShares: () => ({ ok: true, shares: [] }), costMessages: () => ({ ok: true, messages: [] }) },
   questionExplorer: { findsFor: () => ({ ok: true, finds: [], truncated: false }) },

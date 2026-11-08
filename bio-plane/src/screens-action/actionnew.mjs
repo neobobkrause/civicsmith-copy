@@ -27,13 +27,32 @@ export const actionNew = Object.freeze({
       questions: { op: "projectquestions", query: { project: view.subject, limit: "200" }, subject: true, empty: function () { return false; } },
       projects: { op: "list", query: { type: "project", limit: "500" } },
       vocab: { op: "affordances", query: {}, empty: function () { return false; } },
+      // R78 (T53): the offices the team holds (`entities` R51), offered from the start, before any question is picked
+      teamoffices: { op: "entitieskind", query: { kind: "office", limit: "200" }, empty: function () { return false; } },
     };
   },
 
   parts: {
     readOnly: readOnly, kindWord: kindWord, kindsOf: kindsOf, officeLine: officeLine,
-    // R24: the offices a suggestion answered, else none
-    officesOf: function (view) { return Array.isArray(view.ui.offices) ? view.ui.offices : []; },
+    // R24: the offices a suggestion answered; R78 (T53): then the offices the team holds that are placed in a body (each an office addressee by
+    // its label and body), each once
+    officesOf: function (view) {
+      const out = Array.isArray(view.ui.offices) ? view.ui.offices.slice() : [];
+      const o = view.data.teamoffices;
+      const held = o && o.state === "ok" && o.value && Array.isArray(o.value.entities) ? o.value.entities : [];
+      held.forEach(function (e) {
+        const body = e && typeof e.body === "string" && e.body.trim() ? e.body.trim() : e && typeof e.office_body === "string" && e.office_body.trim() ? e.office_body.trim() : "";
+        if (!e || typeof e.entity_id !== "string" || typeof e.label !== "string" || !e.label || !body) return;
+        if (out.some(function (x) { return x && x.addressee && x.addressee.entity_id === e.entity_id; })) return;
+        out.push({ addressee: { state: "named", kind: "office", role: e.label, body: body, entity_id: e.entity_id } });
+      });
+      return out;
+    },
+    // R78: whether the team's offices were read whole and hold none (then the add is drawn)
+    noOffice: function (view) {
+      const o = view.data.teamoffices;
+      return !!o && o.state === "ok" && view.parts.officesOf(view).length === 0;
+    },
     // R24: a leg's two ways of linking, each worded by its key where the design holds one
     legKinds: function (cs, view) {
       const v = view.data.vocab && view.data.vocab.state === "ok" && view.data.vocab.value && view.data.vocab.value.vocabularies ? view.data.vocab.value.vocabularies : {};
@@ -75,12 +94,18 @@ export const actionNew = Object.freeze({
       const leg = view.ui["choice:an-leg"] || "";
       const offices = P.officesOf(view);
       const suggest = leg ? cs.act("addresseesuggest", { data: { subject: leg } }) : "";
-      const officeChoice = offices.length ? cs.choice("an-office", "screen.actionnew.to.who", [{ value: "", text: "" }].concat(offices.map(function (o, i) {
+      // R78 (T53): "Choose the office" is drawn from the start: the offices the team holds (and any a suggestion answered), or, with none, the
+      // sentence and the add (the office's name, the body that holds it and its role, recorded through `entities`)
+      const officeChoice = offices.length ? cs.choice("an-office", "screen.request.office", [{ value: "", text: "" }].concat(offices.map(function (o, i) {
         const a = o.addressee || {};
         return { value: String(i), text: P.officeLine(a) };
-      }))) : "";
+      })), { value: view.ui.anNamed ? String(offices.findIndex(function (o) { return o && o.addressee && o.addressee.entity_id === view.ui.anNamed; })) : "" }) : "";
+      // the add itself is `request`'s (the registry lists `entitycreate` there and not here): with no office on file the sentence and the door to it
+      const addOffice = P.noOffice(view) ? '<p class="mk-note" role="status" data-nooffice="1">' + cs.w("screen.actionnew.office.none") + "</p>"
+        + '<div class="mk-links" data-list="request"><a class="cs-ref" href="/app/request/' + encodeURIComponent(project) + '" data-nav data-screen="request">' + cs.w("screen.request.name")
+        + '</a><span class="mk-small" data-purpose="request">' + cs.w("screen.request.purpose") + "</span></div>" : "";
       const whoSec = cs.sec("screen.actionnew.to", to + (named
-        ? cs.field("an-who", "screen.actionnew.to.who") + officeChoice + (suggest ? '<div class="mk-acts">' + suggest + "</div>" : "")
+        ? officeChoice + addOffice + cs.field("an-who", "screen.actionnew.to.who") + (suggest ? '<div class="mk-acts">' + suggest + "</div>" : "")
         : '<p class="mk-small">' + cs.w("screen.actionnew.to.undetermined") + "</p>" + cs.field("an-basis", "screen.actionnew.to.basis", { area: true })
           + '<p class="mk-note">' + cs.w("screen.actionnew.to.unsent") + "</p>"));
 
@@ -122,6 +147,12 @@ export const actionNew = Object.freeze({
     {
       // R24: "Start the action": the document composed as `request` composes its own, the author set by the door and never the body.
       op: "actioncreate",
+      // R81 (T53; interface-shell R119): pressed with what it asks empty, the field is named before any reason is asked
+      ready: function (view, el, cs) {
+        const kind = String(cs.value("an-kind") || "");
+        if (kind && kind !== "records_request" && !String(cs.value("an-ask") || "").trim()) return { refuse: "screen.actionnew.asks.needed" };
+        return null;
+      },
       send: function (view, el, cs) {
         const kind = String(cs.value("an-kind") || "");
         if (!kind || kind === "records_request") return null;
@@ -133,17 +164,18 @@ export const actionNew = Object.freeze({
         const named = (view.ui["choice:an-to"] || "named") === "named";
         let cp;
         if (named) {
-          const offices = Array.isArray(view.ui.offices) ? view.ui.offices : [];
+          const offices = view.parts.officesOf(view);
           const chosen = cs.value("an-office") !== "" && cs.value("an-office") !== null ? offices[Number(cs.value("an-office"))] : null;
           const who = line(cs.value("an-who"));
           if (chosen && chosen.addressee) {
             const ad = chosen.addressee;
             cp = Object.keys(ad).filter(function (k) { return ad[k] !== null && ad[k] !== undefined; }).map(function (k) { return "  " + k + ": " + q(ad[k]); });
           } else if (who) cp = ["  state: \"audience\"", "  description: " + q(who.slice(0, 500))];
-          else return { refuse: "refusal.COUNTERPARTY_REFUSED" };
+          // R78 (T53): a press with no office known says so; R80: the addressee's refusal in the member's words
+          else return { refuse: view.parts.noOffice(view) ? "screen.actionnew.office.noneknown" : "screen.actionnew.refused.addressee" };
         } else {
           const basis = line(cs.value("an-basis"));
-          if (!basis) return { refuse: "refusal.COUNTERPARTY_REFUSED" };
+          if (!basis) return { refuse: "screen.actionnew.refused.addressee" };
           cp = ["  state: \"undetermined\"", "  basis: " + q(basis)];
         }
         // what it rests on
@@ -152,7 +184,8 @@ export const actionNew = Object.freeze({
         // when things are due: a date with no basis is a deadline the record invented
         const dtext = line(cs.value("an-due-text")), ddate = String(cs.value("an-due-date") || "").trim(), dbasis = line(cs.value("an-due-because"));
         const dated = dtext || ddate || dbasis;
-        if (dated && (!dtext || !/^\d{4}-\d{2}-\d{2}$/.test(ddate) || !dbasis)) return { refuse: "refusal.CLOCK_REFUSED" };
+        // R80 (T53): the deadline's refusal in the member's words, never the plane's grammar
+        if (dated && (!dtext || !/^\d{4}-\d{2}-\d{2}$/.test(ddate) || !dbasis)) return { refuse: "screen.actionnew.refused.deadline" };
         // R56 (walk E K-new): no local pre-check of a request for comment's basis; the plane's refusal and its findings are drawn (`refusals` below)
         const clock = dated ? ["  - text: " + q(dtext), "    description: " + q(dtext), "    date: " + ddate, "    basis: " + q(dbasis), "    status: pending"] : [];
         const tier = String(cs.value("an-tier") || "");
@@ -167,7 +200,8 @@ export const actionNew = Object.freeze({
       done: function (view, answer, cs) { if (answer && answer.id) cs.go("action", answer.id); return { stay: true }; },
       // L20 (K4195): a refusal that carries `findings[]` draws each finding's own `detail` after the code's sentence ("an action cannot
       // rest on another action" was drawn for a target that was not a canonical id); one with none draws the code's sentence alone.
-      refusals: { ACTION_KIND_UNKNOWN: "refusal.ACTION_KIND_UNKNOWN", COUNTERPARTY_REFUSED: "refusal.COUNTERPARTY_REFUSED", CLOCK_REFUSED: "refusal.CLOCK_REFUSED",
+      // R80 (T53): the deadline's and the addressee's refusals are short sentences in the member's words; the code stays in the answer
+      refusals: { ACTION_KIND_UNKNOWN: "refusal.ACTION_KIND_UNKNOWN", COUNTERPARTY_REFUSED: "screen.actionnew.refused.addressee", CLOCK_REFUSED: "screen.actionnew.refused.deadline",
         ACTION_BASIS_REFUSED: function (refusal, cs) {
           const found = refusal && Array.isArray(refusal.findings) ? refusal.findings : [];
           const lines = found.map(function (f) { return f && typeof f.detail === "string" && f.detail.trim() ? "<li>" + cs.esc(f.detail.trim()) + "</li>" : ""; }).join("");

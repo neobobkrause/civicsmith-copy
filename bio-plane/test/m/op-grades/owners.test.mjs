@@ -152,7 +152,6 @@ const T33_WRITES = {
   followbody: "reversible", unfollow: "reversible", followregister: "reversible", followpersonquery: "reversible",
   followportal: "reversible", permeetingbody: "reversible", refreshregister: "substrate",
   lawrelate: "reasoned", lawwithdraw: "reasoned", lawpropose: "undetermined", courtlink: "reasoned", courttreat: "reasoned",
-  accountreferenceset: "credential", accountreferenceremove: "credential",
   aigrantmint: "credential", keyedserviceset: "credential", keyedserviceswitch: "substrate",
   sourcekeyed: "undetermined", entityidentify: "reasoned", waitlook: "caller-owned", exportrender: "substrate",
   clockadopt: "undetermined", airunverify: "reasoned",
@@ -290,8 +289,7 @@ const T34_WRITES = {
   joinlinkenable: "credential", joinlinkset: "credential", joinlinkreplace: "credential", joinlinkoff: "credential",
   websiteinvite: "credential", joinlinkinvite: "credential", courtnoticeset: "substrate", groupdescriptionset: "substrate",
   checkrequest: "undetermined", checktake: "undetermined", checkrecord: "reasoned",
-  groupkeyset: "credential", groupkeyremove: "credential", groupkeyswitch: "substrate",
-  groupkeynoticeseen: "caller-owned", placewanted: "substrate", memberlanguageset: "caller-owned",
+  placewanted: "substrate", memberlanguageset: "caller-owned",
 };
 /* a read its owner words without the "read: " lead holds the owner's sentence (K4168): startfrom */
 const T34_READS = [...readRows(T34_NON_ACTS), ...Object.keys(T34_NON_ACTS).filter((op) => T34_NON_ACTS[op] === doesSentence(op))];
@@ -301,9 +299,9 @@ test("R17: every op T34 declares carries the grade read from its owner, each gat
   assert.deepEqual(grades(T34_WRITES), T34_WRITES);
   assert.deepEqual([...Object.keys(T34_RUNGS), ...Object.keys(T34_RUNG_ABSENT)].sort(), Object.keys(T34_WRITES).sort());
   for (const [op, e] of Object.entries(T34_RUNG_ABSENT)) assert.ok(e.is.length > 40, op);
-  for (const [op, like] of [["groupkeyset", "keyedserviceset"], ["groupkeyswitch", "keyedserviceswitch"],
+  for (const [op, like] of [
     ["courtnoticeset", "groupnameset"], ["placewanted", "officesseed"], ["websiteinvite", "knock"],
-    ["groupkeynoticeseen", "disclosureshown"], ["memberlanguageset", "standingset"]])
+    ["memberlanguageset", "standingset"]])
     assert.equal(gradeOf(op), gradeOf(like), op);
   /* `startfrom` is declared in its owner's words, which do not lead with "read: " (K4168) */
   for (const op of T34_READS) { assert.ok(op === "startfrom" ? NON_ACTS[op] === doesSentence(op) : isRead(op), op); assert.equal(gradeOf(op), null, op); }

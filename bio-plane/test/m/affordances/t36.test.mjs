@@ -17,6 +17,9 @@ import { MEMBERSHIP_CHECKS } from "../../../src/membership/index.mjs";
 import { word, hasWord, WORD_ROWS } from "../../../src/setup-words/index.mjs";
 import { RETIRED_ACTS } from "../../../src/wizard-scripts/data.mjs";
 import { T51_DESIGN_OPS, T51_OWED_OPS, T51_LIST_ONLY_OPS, T51_STANDIN_OPS, T51_STANDIN_HELP, T51_STANDARD_OPS, T53_STANDIN_OPS } from "../../../src/affordances/act-help.mjs";
+/* T53 (the ux lane, 6 Nov): the two ai-account ops ACT_HELP holds; this module's own ops, so named here and checked against its export
+   (`T53_AI_ACCOUNT_OPS`) in t53.test.mjs */
+const T53_AI_ACCOUNT_OPS = ["aiaccountadd", "aiaccountswitch"];
 import * as READING_GUIDES from "../../../src/reading-guides/index.mjs";
 /* F2 (T53; reading-guides R20): an op its owner declares with no `act.<op>.does` row yet is held under that key, its row's text once the
    list holds it, until then its owner's declared description, read from the owner here as there (never built, K3268) */
@@ -79,7 +82,8 @@ const OWED_HELD = [...OWED_NOW, ...OWED_NOW_T50, "aliaswithdraw", ...R69_ACTS, .
 /* T51 (B14, K4376): the ops op-declarations' registration left without an explanation. `T51_LIST_ONLY_OPS` reads a key the reads list
    does not give; `T51_STANDIN_OPS` reads a `localize` default, the word list holding no sentence for them yet (one QUESTION to BOB). */
 /* R71 (K5303): the five Standard acts, words the list holds that its reads list (a generation behind) does not yet give */
-const B14_KEYS = [...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS, ...T51_STANDARD_OPS, ...T53_STANDIN_OPS].map((op) => `act.${op}.does`);
+/* T53 (the ux lane, 6 Nov): the two ai-account ops the alpha screens send, words the list holds that the reads list does not yet give */
+const B14_KEYS = [...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS, ...T51_STANDARD_OPS, ...T53_STANDIN_OPS, ...T53_AI_ACCOUNT_OPS].map((op) => `act.${op}.does`);
 /* the reads list's act keys this module holds */
 /* F1 (T53; ai-accounts R35): R48 holds no retired op, so the reads list's words for the ai-accounts ops T53 retired are not held; the
    retired ops are wizard-scripts' own `RETIRED_ACTS`, never listed here */
@@ -92,7 +96,7 @@ const expected = () => {
     const op = opOf(key);
     if (!out.has(op)) out.set(op, word(key));
   }
-  for (const op of [...T51_LIST_ONLY_OPS, ...T51_STANDARD_OPS]) out.set(op, word(`act.${op}.does`));
+  for (const op of [...T51_LIST_ONLY_OPS, ...T51_STANDARD_OPS, ...T53_AI_ACCOUNT_OPS]) out.set(op, word(`act.${op}.does`));
   for (const op of T51_STANDIN_OPS) out.set(op, T51_STANDIN_HELP[op]);
   for (const op of T53_STANDIN_OPS) out.set(op, t53Want(op));
   out.set("handlechange", HANDLE_REFUSAL);
@@ -345,6 +349,8 @@ test("R48 R53 R61 R65: no key is an alias or a retired op; every alias the list 
   /* T51 (B14, K4376): the owed and stand-in ops are declared by op-declarations and graded at the plane's registration likewise (R49) */
   const NOT_YET_GRADED = ["founderhandleset", ...OWED_NOW_T50, "secondlookclear", ...T51_DESIGN_OPS, ...T51_OWED_OPS,
     ...T51_LIST_ONLY_OPS, ...T51_STANDIN_OPS, ...T53_STANDIN_OPS,
+    /* T53: ai-accounts' two ops the alpha screens send, graded at the plane's registration (R49), not in these tables */
+    ...T53_AI_ACCOUNT_OPS,
     /* T53: filings' read, declared by op-declarations and graded at the plane's registration (R49), not in these tables */
     "counselpacketread"];
   /* R69: the browser acts are no ops, so op-grades neither grades nor names them */

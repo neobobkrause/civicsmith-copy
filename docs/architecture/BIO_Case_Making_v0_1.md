@@ -1232,7 +1232,9 @@ composition is sound and R2 does not forbid it.**
 What R2 forbids is narrower and must be named precisely, because the first version did
 not: **CAPTURE grade must never be composed with CONNECTION grade.** Capture grade
 measures directness of acquisition (A is a WACZ chain of custody and is out of a Worker's
-reach; B is a direct fetch; C is via an archive). Connection grade measures what would be
+reach; B is a direct fetch, or an archive replay of the publisher's raw bytes, labelled "via
+archive"; C is reference only, a locator without archived bytes or a rewritten replay; the
+Intake Doctrine §3 defines them). Connection grade measures what would be
 needed to check an inference. They answer different questions and the Intake Doctrine
 rules neither substitutes for the other — but they share the letters A–D, which is what
 makes the error easy and invisible.

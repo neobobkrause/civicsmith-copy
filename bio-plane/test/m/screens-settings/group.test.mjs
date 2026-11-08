@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { acts, all, day, has, lacks, open, said, squash, textOf, SCREENS } from "./kit.mjs";
 import { team, eastoak, site, fileOf, handleOf, enrolled, invited, hostedBy, namedBy, stakeBy, copyOf, holdKey, without,
-         SEAL, PROFILE, ZONE_PATH, WRITING_HELP } from "./seed-group.mjs";
+         SEAL, PROFILE, WRITING_HELP } from "./seed-group.mjs";
 
 const ops = (o) => [...new Set(acts(o.tree).map((b) => b.attrs["data-act"]))].sort();
 // the acts the screen draws: its own declaration (contract.test holds it to the registry's)
@@ -246,19 +246,24 @@ async function zoned() {
 test("R45 the zone that governs is shown by its name, never its id: the design's seven by label.timezones.*, any other by its generic name and its city", async () => {
   const t = await zoned();
   const { w, rosa, dev, founder } = t;
-  const correct = async (z) => { const r = await founder.act("factconfirm", { body: { act: "correct", value: z, how: "read on the city's site", source: "oaklandca.gov", path: ZONE_PATH, reason: "r" } }); assert.ok(r.ok !== false, "the owner takes the correction"); };
-  const place = (await rosa.read("profiles")).profiles.find((p) => p.id === PROFILE).name;
-  const held = (await rosa.read("factstatus")).facts.find((f) => f.path === ZONE_PATH);
+  // the profile's own `time_zone` fact as `factstatus` lists it (since T53 the layer that holds it, `us-california`), named by its layer's name
+  const zoneFact = (facts) => facts.find((f) => f.fact && f.fact.fact === "time_zone" && !f.fact.office);
+  const held = zoneFact((await rosa.read("factstatus")).facts);
+  const correct = async (z) => { const r = await founder.act("factconfirm", { body: { act: "correct", value: z, how: "read on the city's site", source: "oaklandca.gov", path: held.path, reason: "r" } }); assert.ok(r.ok !== false, "the owner takes the correction"); };
+  const answer = await rosa.read("profiles");
+  const place = [...answer.profiles, ...(answer.layers ?? [])].find((p) => p.id === held.fact.profile).name;
   assert.equal(held.governs.origin, "profile");
+  assert.ok(place && place !== held.fact.profile, "control: the place has a name of its own");
   // the profile's own zone, followed by the setup line
   const own = await open("group", { world: w, as: dev });
   has(own, "screen.group.timezone.governs.profile", { zone: said(`label.timezones.${held.governs.value}`), profile: place });
   has(own, "settings.set.line.setup");
   assert.ok(!own.text.includes(held.governs.value) && !/\bUTC\b/.test(own.text), "no id, no UTC");
+  assert.ok(!own.text.includes(held.fact.profile), "the place by its name, never its id");
   // a correction (the latest governs): every zone of the design, then one the design does not name
   for (const z of ZONES7.filter((z) => z !== held.governs.value)) {
     await correct(z);
-    assert.equal((await rosa.read("factstatus")).facts.find((f) => f.path === ZONE_PATH).governs.value, z);
+    assert.equal(zoneFact((await rosa.read("factstatus")).facts).governs.value, z);
     const a = await open("group", { world: w, as: dev });
     has(a, "screen.group.timezone.governs.local", { zone: said(`label.timezones.${z}`) });
     assert.ok(!a.text.includes(z) && !/\bUTC\b/.test(a.text), `${z}: no id, no UTC`);

@@ -17,6 +17,7 @@ import { RELEASE_MANIFEST } from "../../../../newgroup/src/release.mjs";
 import { createHash } from "node:crypto";
 import { planeOptions } from "../../../src/journey-check/local.mjs";
 import { STEP_NAMES } from "../../../src/journey-check/investigation.mjs";
+import { CARRIED_STATES, unreachedOnLocal } from "../../../src/journey-check/states.mjs";
 import { localize } from "../../../src/setup-words/index.mjs";
 
 const DIR = join(import.meta.dirname, "..", "..", "..", "src", "journey-check");
@@ -101,17 +102,29 @@ const stepsOf = (r, journey) => r.walk.steps.filter((s) => s.journey === journey
 const numbered = (r, journey) => stepsOf(r, journey).filter((s) => /^\d+ · /.test(s.label));
 
 const NOT_READY = /draws an assistant control that cannot work while the assistant does not/;
+/* BOB's ruling (7 Nov): F10 (a reach for each of R21's carried states on the local arm) is owed, so R1 (a) leaves out a failure
+   only when it is states.mjs' own unreached sentence for a carried screen's state; any other `state` failure, and every other kind,
+   still fails R1 (a). The todo below asserts none of those either, so F10 stays visible. */
+const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const [UNREACHED_HEAD, UNREACHED_TAIL] = unreachedOnLocal("\u0000").split("\u0000");
+const UNREACHED = new RegExp(`^${esc(UNREACHED_HEAD)}(${[...new Set(CARRIED_STATES.map((s) => s.screen))].map(esc).join("|")}), .+${esc(UNREACHED_TAIL)}$`);
+const unreached = (f) => f.kind === FAIL.STATE && UNREACHED.test(f.detail);
 const noted = (r, name) => r.walk.notes.includes(localize("journey-check.walker.name_not_walked_the_assistant", "{name}: not walked, the assistant does not work (K3717)", { name }));
 /* R20: the walk's steps that fail are only a screen that draws an assistant control that cannot work, by name */
 const stepFailures = (r) => r.walk.failures.filter((f) => f.kind === FAIL.STEP);
 
 test("R1 (a): the local arm, with no account: the installer over its fake account, the hand-over into a plane under Miniflare, journey 28, journey 3, the journeys to a conclusion and every registry screen drawn; each step screenshotted", { timeout: 2400000 }, async () => {
   const { r, shots } = await local();
-  assert.deepEqual(r.walk.failures.filter((f) => !(f.kind === FAIL.STEP && NOT_READY.test(f.detail))), [], r.report);
+  assert.deepEqual(r.walk.failures.filter((f) => !(f.kind === FAIL.STEP && NOT_READY.test(f.detail)) && !unreached(f)), [], r.report);
   assert.equal(shots.length, r.walk.steps.length);
   const first = stepsOf(r, "journey 28").slice(0, 3).map((s) => s.label);
   assert.ok(/^civicsmith\.org: /.test(first[0]) && /^civicsmith\.org: /.test(first[1]) && /^install: /.test(first[2]), "journey 28 starts at civicsmith.org: " + first.join(" | "));
   for (const j of ["journey 28", "journey 3", "R9 as administrator", "R10 as member", "R7 as the founder, her handle held"]) assert.ok(stepsOf(r, j).length, j);
+});
+
+test.todo("R21/F10: every carried state reached on the local arm (owed: F10)", { timeout: 2400000 }, async () => {
+  const { r } = await local();
+  assert.deepEqual(r.walk.failures.filter(unreached).map((f) => f.detail), []);
 });
 
 test("R1 (a), G1: the local arm's install leaves the plane's script holding the watchdog cron its signed statement states; a plane without it fails the walk by name (red until the installer sets it and the release carries the statement)", { timeout: 2400000 }, async () => {

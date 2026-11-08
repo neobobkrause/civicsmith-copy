@@ -29,7 +29,8 @@ function blocks(text) {
 const MARK = "*(not yet met";
 const START_UNMET = ["R20", "R136", "R137", "R138", "R139", "R140", "R141", "R142", "R143", "R144", "R145", "R146", "R147", "R148", "R149", "R150", "R151"];
 /* marks this branch met, each struck as " *(not yet met: T53)*" removed */
-const STRUCK = { R20: " *(not yet met: T53)*" };
+/* R138 and R141 struck by interface-shell-t53 attempt 2 (7 Nov; ledger paths widened, PR 851) */
+const STRUCK = { R20: " *(not yet met: T53)*", R138: " *(not yet met: T53)*", R141: " *(not yet met: T53)*" };
 const START_BLOCKS = {
   R1: "a5090be8e683b94c922c748e173c267036f3d774b9360b4fb2891bfa78eb02b0",
   R2: "1d65572987784ee80c4bf337410b563979942aed214f2f565a8497dd0fe112c4",

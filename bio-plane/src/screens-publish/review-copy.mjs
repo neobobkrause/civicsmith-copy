@@ -39,7 +39,9 @@ export const REVIEW_COPY = Object.freeze({
     const copy = chosen ? P.later(cs, view, "copy", "reviewcopy", { query: { draft: chosen.draft_id } }) : null;
     const held = copy && copy.state === "ok" ? copy.value : null;
     // R60, R63: the heading is the title `review` answers; the identity sentence is body text, drawn where no case is named
-    const out = [cs.title(P.titleOf2(cs, held, c.identity ? P.plain(cs.w("screen.review-copy.heading", { case: c.identity, edition: String(c.edition || "") })) : null), { thing: "case" })];
+    // R95: a draft naming a case is headed by the case's title, never its raw id
+    const out = [cs.title(held && held.case && held.case.case_id ? P.caseHeading(cs, held, chosen && chosen.editions, "screen.review-copy.heading")
+      : P.titleOf2(cs, held, c.identity ? P.plain(cs.w("screen.review-copy.heading", { case: c.identity, edition: String(c.edition || "") })) : null), { thing: "case" })];
     if (!chosen) {
       // R64 (I-29): beside "There is no draft to share yet", the door that makes one: the case editor
       out.push(cs.state("drafts", function () { return ""; }, { empty: "screen.review-copy.nodraft" }));
@@ -115,7 +117,7 @@ export const REVIEW_COPY = Object.freeze({
           + cs.act("reviewcomment", { data: { index: String(i) } }) + "</div>" : "");
     }).join("")) : "")
       + (acks.length ? '<ul class="mk-list" data-acked>' + acks.map(function (a) {
-        return "<li>" + cs.w("screen.review-copy.acked", { who: a.recipient || (a.by ? cs.memberName(a.by) : ""), date: { html: a.at ? cs.date(a.at) : "" } }) + "</li>"; }).join("") + "</ul>" : "")
+        return "<li>" + cs.w("screen.review-copy.acked", { who: P.ackerName(cs, a), date: { html: a.at ? cs.date(a.at) : "" } }) + "</li>"; }).join("") + "</ul>" : "")
       + P.said(view, "reviewcomment")));
     return out.join("");
   },

@@ -57,8 +57,9 @@ test("R57, R20, R59 (re-walk 10 N3; DEC-439 N3): the fold that names an office s
   await press(p, "addresseesuggest", { values: { "req-subject": org } });
   const none = await answerOf(world, me, "addresseesuggest", { query: { subject: org } });
   assert.equal(none.result.offices.length, 0, "the owner knows no office for the name");
-  const fold = await until(p, () => p.doc.getElementById("req-noff-body"), "the fold");
-  assert.deepEqual(optionTexts(p, "req-noff-body").filter(Boolean), [], "no body to choose");
+  // R73 (T53): with no body to choose, the body is named in words, never offered as an empty choice
+  const fold = await until(p, () => p.doc.getElementById("req-noff-bodyname"), "the fold");
+  assert.equal(p.doc.getElementById("req-noff-body"), null, "no empty choice of body");
   assert.ok(main(p).querySelector("[data-nobody]"), "the screen says none is held");
   assert.equal(text(p, main(p).querySelector("[data-nobody]")), W("screen.request.office.nobody"), "in the design's words for a team with no body");
   assert.ok(main(p).querySelector('a[href="/app/places"]'), "with the door where one is added (this member administers the team)");

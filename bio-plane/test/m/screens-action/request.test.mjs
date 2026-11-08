@@ -87,10 +87,12 @@ test("R20, R39: with no office known the request says so and points an administr
 
 test("R4: the law it goes under is chosen among the laws the profile names for a records request, each with its window", async () => {
   const p = await open(AT, { ...DATA_PLANE, actionlaws: ok({}) });
-  const opts = p.doc.getElementById("req-law").querySelectorAll("option").map((o) => o.textContent);
-  assert.deepEqual(opts, [W("screen.request.law.option", { citation: "Gov. Code § 7922.535(b)", window: W("screen.request.window.calendar", { n: "10" }) }),
-    W("screen.request.law.option", { citation: "Mun. Code § 2.20.230", window: W("screen.request.window.business", { n: "3" }) })]);
-  await press(p, "actionlaws", { values: { "req-law": "1" } });
+  // R60 (T53): each law a box, none ticked, labelled with its level, name, citation and window
+  const opts = p.doc.getElementById("req-law").querySelectorAll("label").map((o) => o.textContent.replace(/\s+/g, " ").trim());
+  assert.equal(opts.length, 2);
+  assert.ok(opts[0].includes("Gov. Code § 7922.535(b)") && opts[0].includes(W("screen.request.window.calendar", { n: "10" })));
+  assert.ok(opts[1].includes("Mun. Code § 2.20.230") && opts[1].includes(W("screen.request.window.business", { n: "3" })));
+  await press(p, "actionlaws", { values: { "req-law-1": true } });
   assert.deepEqual(last(p, "actionlaws").body, { target: ACTION_ID, laws: [{ level: "city", citation: "Mun. Code § 2.20.230" }] });
   assert.ok(main(p).querySelector(`a[href="/app/help-records/${ACTION_ID}"]`), "R9: help-records is reached from request, for this action's law");
   // the laws a member stated are `action`'s `governing_laws.laws` (actions R25), drawn above the choice

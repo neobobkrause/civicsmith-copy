@@ -311,6 +311,29 @@ export const PARTS = Object.freeze({
   titleOf2: function (cs, copy, fallback) {
     return copy && typeof copy.title === "string" && copy.title ? copy.title : fallback;
   },
+  /* R95: a draft that names a case is headed by the case's title, never its raw id: the short title `review` answers where it holds no
+     id, else the draft's own scope; the edition is said only while it is not yet published (`editions.published`, case-authoring R83).
+     `key` is the screen's heading sentence (`{case}`, `{edition}`), or none for the name alone. A draft that names no case keeps R63. */
+  /* R92: who acknowledged what a case leaves out: an outside reader by the name their grant states (`recipient`), never the grant's id
+     read as a member's; a member of the team by `cs.memberName` */
+  ackerName: function (cs, a) {
+    if (!a || typeof a !== "object") return "";
+    const reader = a.author_kind === "recipient" || a.kind === "recipient" || (!a.author_kind && typeof a.recipient === "string" && a.recipient.trim());
+    if (reader) return String(a.author || a.recipient || "").trim();
+    const m = a.author_kind === "member" && a.author ? a.author : a.by;
+    return m ? cs.memberName(m) : "";
+  },
+  caseHeading: function (cs, copy, editions, key) {
+    const c = copy && copy.case ? copy.case : {};
+    const id = typeof c.case_id === "string" ? c.case_id : "";
+    const clean = function (t) { return typeof t === "string" && t.trim() && (!id || t.indexOf(id) < 0) ? t.trim() : ""; };
+    if (!id) return this.titleOf2(cs, copy, c.identity && key ? this.plain(cs.w(key, { case: c.identity, edition: String(c.edition || "") })) : null);
+    const pub = editions && editions.published && Number(editions.published.edition) > 0 ? Number(editions.published.edition) : 0;
+    if (clean(copy.title)) return copy.title.trim();
+    const name = clean(c.identity) || clean(copy.authored && copy.authored.scope);
+    const ed = Number(c.edition) > pub ? String(Number(c.edition)) : "";
+    return !name ? null : key && ed ? this.plain(cs.w(key, { case: name, edition: ed })) : name;
+  },
   noCase: function (cs, copy, editions) {
     const c = copy && copy.case ? copy.case : {};
     // R80: a draft the record holds an edition of (prepared or published) is no draft that names no case

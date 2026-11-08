@@ -19,7 +19,7 @@ import { pendingOf, pendingOps, administersOf, JOB_KINDS, JOB_STATES, WATCHDOG_F
   from "../../../src/store-assembly/pending.mjs";
 
 const sha = (b) => createHash("sha256").update(b).digest("hex");
-const SESSION_KEYED = ["subresources", "fetch"];
+const SESSION_KEYED = ["subresources", "fetch", "member"];
 const keyOf = (kind, s) => (SESSION_KEYED.includes(kind) ? { session: `s-${s}` } : { sha: sha(s) });
 const rowsOf = (x) => [...x.ctx.storage.sql.exec(`SELECT * FROM keeps_pending ORDER BY registered_at, sha, kind`)];
 let began = () => {};
@@ -38,7 +38,7 @@ async function world(db, { readAnswer = null, workers = null } = {}) {
 
 test("R74 jobRow: one row for each (sha or session, kind), for every kind of the table, reads back every column, `queued` at its registration", async () => {
   const x = await world();
-  assert.deepEqual([...JOB_KINDS], ["keep", "reading", "ocr", "subresources", "unpack", "fetch", "scan", "safe_view", "grade", "ingest"]);
+  assert.deepEqual([...JOB_KINDS], ["keep", "reading", "ocr", "subresources", "unpack", "fetch", "scan", "safe_view", "grade", "ingest", "member"]);
   assert.deepEqual([...JOB_STATES], ["queued", "fetching", "reading", "partial", "refused", "finished", "final"]);
   const part = sha("part 1");
   for (const kind of JOB_KINDS) {
@@ -478,23 +478,28 @@ test("R78: each run of the ledger states `max_stretch_ms`, `rows_read`, `rows_wr
 
 /* ---- capture R113 (K4899): the composition's evidence key ---- */
 
-/* store-jobs R26 (was this module's R104; the coordinator: left to store-jobs): a 200 MiB .pdf is refused TOO_LARGE by capture
-   R119 before any job is registered, so this case names a kind whose bound permits the size by store-jobs' own job. */
-test.todo("R75 R2 (capture R113, K4899): the parted upload's begin through the assembled store, at a kind whose bound permits 200 MiB. Owed by store-jobs R26");
-test.skip("R75 R2 (capture R113, K4899): the composition assigns capture's `evidenceKey`, record-core's key for a digest, so through the assembled store a parted upload's begin answers `ok` with its parts, never PARTED_UPLOAD_UNAVAILABLE", async () => {
+/* store-jobs R26 (was this module's R104): a test of the job table that needs 200 MiB names an input whose bound permits it, an archive
+   (`.zip`); a 200 MiB `.pdf` is refused TOO_LARGE by capture R119 before any job is registered, and that refusal is the right answer. */
+test("R75 R2 (capture R113, K4899; store-jobs R26): the composition assigns capture's `evidenceKey`, record-core's key for a digest, so through the assembled store a 200 MiB `.zip`'s parted upload begins `ok` with its parts, never PARTED_UPLOAD_UNAVAILABLE; the same bytes named `.pdf` are refused TOO_LARGE and register no job", async () => {
   const opened = [];
   const bucket = bucketStandIn();
   bucket.createMultipartUpload = async (key) => { opened.push(key); return { uploadId: "u-1", key }; };
   bucket.resumeMultipartUpload = (key, id) => ({ key, uploadId: id, uploadPart: async () => ({}), complete: async () => ({}), abort: async () => {} });
   const x = await store({ env: { CAPTURES: bucket } });
   const d = sha("a file past the request-body ceiling");
-  const r = await x.call("/captureuploadbegin?by=member:ann", { sha256: d, bytes: 200 * 1048576, statement: "handed to me", name: "big.pdf", type: "application/pdf" });
+  const r = await x.call("/captureuploadbegin?by=member:ann", { sha256: d, bytes: 200 * 1048576, statement: "handed to me", name: "big.zip", type: "application/zip" });
   assert.equal(r.ok, true, JSON.stringify(r).slice(0, 300));
   assert.ok(r.parts >= 2, `in parts: ${r.parts}`);
   assert.deepEqual(opened, [`bio/captures/${d}`], "the key the evidence store reads the whole by");
+  /* control (store-jobs R26): the same size named as a document is refused by capture R119's bound, and no job row is written */
+  const pdf = sha("the same size as a document");
+  const p = await x.call("/captureuploadbegin?by=member:ann", { sha256: pdf, bytes: 200 * 1048576, statement: "handed to me", name: "big.pdf", type: "application/pdf" });
+  assert.equal(p.reason, "TOO_LARGE", JSON.stringify(p).slice(0, 300));
+  assert.deepEqual([...x.ctx.storage.sql.exec(`SELECT kind FROM keeps_pending WHERE sha = ?`, pdf)], [], "a refused begin registers no job");
+  assert.deepEqual(opened, [`bio/captures/${d}`], "and opens no upload");
   /* control: without the key the begin is unavailable, as capture states it */
   captureOf(x.ctx).evidenceKey = null;
-  const n = await x.call("/captureuploadbegin?by=member:ann", { sha256: sha("another"), bytes: 200 * 1048576, statement: "handed to me", name: "b.pdf", type: "application/pdf" });
+  const n = await x.call("/captureuploadbegin?by=member:ann", { sha256: sha("another"), bytes: 200 * 1048576, statement: "handed to me", name: "b.zip", type: "application/zip" });
   assert.equal(n.reason, "PARTED_UPLOAD_UNAVAILABLE");
 });
 

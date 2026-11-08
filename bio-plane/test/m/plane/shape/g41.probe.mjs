@@ -10,11 +10,32 @@ import { shapeRun, csvDoc, xlsxRowsDoc, report, capFor, STORED_VALUE_BOUND } fro
 import { generate as sheetGenerate } from "../../../sheetgen.mjs";
 import { tickCountFailures, markExtentFailures } from "./bars.mjs";
 import { MEASURED_CSV_TEXT_BOUND_BYTES } from "../../../../src/csv-reader/index.mjs";
+import { boundOf } from "../../../../src/read-bounds.mjs";
+import { STREAMED_TEXT_BOUND_BYTES } from "../../../../src/ooxml.mjs";
 
-/* K4855 (P17): the 200,000-row workbook declares 42.66 MiB of sheet text, over the alpha's `xlsx.declared_text` (32 MiB), so its refusal is correct (K4831 (3)): the case is two,
-   the largest sheetgen workbook under the bound (150,000 rows of 3 cells declare 31.84 MiB) read whole, and the 200,000-row one refused with its size and the limit stated */
-export const XLSX_ROWS = 150_000;
-export const XLSX_REFUSED_ROWS = 200_000;
+/* plane R116 (T53; K5655, K5648; amends R84): THE XLSX CASES ARE SIZED FROM THE BOUNDS, never from a fixed row count (the 150,000 and 200,000 rows of K4855 were sized
+   for the alpha's 32 MiB and exceed the standard's 25 MB). The case read whole is the most rows of sheetgen's 3-cell workbook whose declared sheet text is at
+   `runtime-limits`' `boundOf("xlsx", "declared_text")` (within 2 % under it); the refused case is the fewest rows over the bound office-readers refuses a sheet's
+   text at, final (`ooxml`'s `STREAMED_TEXT_BOUND_BYTES`, its R35: the readers take the standard since runtime-limits T53-511, so a workbook between the two is read
+   in pieces, not refused). Each count is measured from the generator's own central directory (`declaredSheetBytes`), so a bound changed in its table changes the case. */
+export const XLSX_DECLARED_BOUND = boundOf("xlsx", "declared_text");
+export const XLSX_REFUSED_BOUND = STREAMED_TEXT_BOUND_BYTES;
+const declaredOf = async (rows) => declaredSheetBytes((await xlsxRowsDoc(rows)).recipe);
+/** R116: the row count of sheetgen's 3-cell workbook whose declared sheet text is at `bound` (`"under"`: the most rows at or under it, within 2 %) or just over it (`"over"`) */
+export async function rowsForDeclared(bound, side = "under") {
+  const sample = 40_000, per = (await declaredOf(sample)) / sample;
+  if (side === "under") {
+    let n = Math.floor(bound / per), d = await declaredOf(n);
+    while (d > bound) { n = Math.floor(n * bound / d) - 100; d = await declaredOf(n); }
+    if (d < bound * 0.98) throw new Error(`R116: ${n} rows declare ${d} B, not within 2 % under ${bound} B`);
+    return n;
+  }
+  let n = Math.ceil(bound / per * 1.01), d = await declaredOf(n);
+  while (d <= bound) { n = Math.ceil(n * 1.02); d = await declaredOf(n); }
+  return n;
+}
+export const XLSX_ROWS = await rowsForDeclared(XLSX_DECLARED_BOUND, "under");
+export const XLSX_REFUSED_ROWS = await rowsForDeclared(XLSX_REFUSED_BOUND, "over");
 /** the marks of a document: the CSV generator's three, or sheetgen's `<seed>-R<row>-C<col>` (G123e) */
 export const marksOf = (doc) => doc.marks;
 /** the cap for a file of `bytes` (N MB = MiB the bytes take in the object): the one convention, `capFor` (G123a) */
@@ -30,7 +51,7 @@ export const CASES = {
 };
 /** K4855: the cases that are refused at the alpha's bound, their refusal stated */
 export const REFUSED_CASES = {
-  xlsx200: async () => ({ label: `G41 ${XLSX_REFUSED_ROWS}-row xlsx (over the alpha's declared-text bound)`, doc: await xlsxRowsDoc(XLSX_REFUSED_ROWS) }),
+  xlsx200: async () => ({ label: `G41 ${XLSX_REFUSED_ROWS}-row xlsx (over office-readers' streamed text bound)`, doc: await xlsxRowsDoc(XLSX_REFUSED_ROWS) }),
 };
 
 /** K4855: the sheet text a generated workbook declares, from its own central directory (the worksheets' uncompressed sizes): the generator's figure, not the reader's */

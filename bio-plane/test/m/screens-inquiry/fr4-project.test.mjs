@@ -184,8 +184,10 @@ test("R5 C81 the project page at 390 px: nothing past the screen and every butto
   /* control: the desktop page keeps everything inside the viewport, and the controls whose rows were not touched are where they were (their left edge and height) */
   const wide = await onPhone({ path, o: BUSY, width: 1280, controls: [word("act.planopen.label.project"), word("act.projectinvite.label.project"), word("act.projectbarset.label.project")] });
   assert.deepEqual(wide.over, [], "at 1280 nothing is past the viewport");
-  assert.deepEqual([wide.boxes[word("act.planopen.label.project")], wide.boxes[word("act.projectinvite.label.project")], wide.boxes[word("act.projectbarset.label.project")]].map((b) => [b[0].left, b[0].height]),
-    [[208, 40], [208, 40], [208, 40]], "plan, invite and bar keep their left edge and height");
+  /* the height is the shell's control height (40 px until interface-shell drew every control 44 px, attempt 6): the three keep their left edge and share the shell's one height */
+  const kept = [wide.boxes[word("act.planopen.label.project")], wide.boxes[word("act.projectinvite.label.project")], wide.boxes[word("act.projectbarset.label.project")]].map((b) => [b[0].left, b[0].height]);
+  assert.deepEqual(kept.map(([l]) => l), [208, 208, 208], "plan, invite and bar keep their left edge");
+  assert.ok(kept.every(([, h]) => h === kept[0][1] && h >= 40), "plan, invite and bar keep the shell's one control height: " + JSON.stringify(kept));
 });
 
 /* ------------------------------------------------------------------------------------------------------------------ K4370 */

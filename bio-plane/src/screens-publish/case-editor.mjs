@@ -47,8 +47,11 @@ export const CASE_EDITOR = Object.freeze({
     // C49: the copy of the chosen draft is read first, so a draft that names no case is headed by its own title (`review` R63), as the review
     // copy and the ceremony head it, not by the project's
     const chosenR = chosen ? P.later(cs, view, "copy", "reviewcopy", { query: { draft: chosen.draft_id } }) : null;
-    out.push(cs.title(named ? caseOf.identity + (edition ? " · " + edition : "")
-      : chosen ? P.titleOf2(cs, chosenR && chosenR.state === "ok" ? chosenR.value : null, P.plain(cs.w("case.draft.untitled", { project: projectTitle }))) : null, { thing: "case" }));
+    // R95: by the case's title, never its raw id, with the edition only while it is not yet published
+    const pubEd = chosen && chosen.editions && chosen.editions.published && Number(chosen.editions.published.edition) > 0 ? Number(chosen.editions.published.edition) : 0;
+    const caseName = named ? P.caseHeading(cs, { case: caseOf, authored: chosenR && chosenR.state === "ok" && chosenR.value ? chosenR.value.authored : null }, null, null) : "";
+    out.push(cs.title(named && caseName ? caseName + (edition && Number(edition) > pubEd ? " · " + edition : "")
+      : chosen ? (named ? P.plain(cs.w("case.draft.untitled", { project: projectTitle })) : P.titleOf2(cs, chosenR && chosenR.state === "ok" ? chosenR.value : null, P.plain(cs.w("case.draft.untitled", { project: projectTitle })))) : null, { thing: "case" }));
     out.push('<span id="what-goes-in"></span>');
     if (settled && chosen) out.push(P.editionsLine(cs, view, chosen));
     if (settled) out.push(P.draftHead(cs, view, "case-editor", P.draftCopies(cs, view, drafts, chosen ? chosen.draft_id : "", chosenR), chosen ? chosen.draft_id : "", projectTitle));
@@ -171,7 +174,7 @@ export const CASE_EDITOR = Object.freeze({
           typeof e === "object" && e.reason ? '<span class="meta">' + cs.esc(e.reason) + "</span>" : "");
       }).join("")) : "")
         + (acks.length ? cs.sheet(acks.map(function (a) {
-          return cs.row("", cs.w("screen.case-editor.ack.by", { who: a.by ? cs.memberName(a.by) : a.recipient || "" }), '<span class="rec">' + cs.esc(a.reason || "") + "</span>", a.at ? cs.date(a.at) : "");
+          return cs.row("", cs.w("screen.case-editor.ack.by", { who: P.ackerName(cs, a) }), '<span class="rec">' + cs.esc(a.reason || "") + "</span>", a.at ? cs.date(a.at) : "");
         }).join("")) : "")
         + cs.field("ce-exwhat", "screen.case-editor.something_else_it_leaves_out", { help: "screen.case-editor.name_a_document_in_your_record", typing: edited })
         + cs.field("ce-exwhy", "screen.case-editor.why_it_is_left_out", { help: ["screen.case-editor.required_for_each_item", "screen.case-editor.what_is_left_out_and_why"], typing: edited })

@@ -79,7 +79,7 @@ import { caseCarriageOps } from "../case-carriage/index.mjs";
 import { publicReadOf, publicReadOps } from "../public-read/index.mjs";
 import { projectStageOf, projectStageOps } from "../project-stage/index.mjs";
 import { networkNoticesOf, networkNoticesOps } from "../network-notices/index.mjs";
-import { corpusExportOf, corpusExportOps } from "../corpus-export/index.mjs";
+import { corpusExportOf, corpusExportOps, wholeExportOps } from "../corpus-export/index.mjs";
 import { biasOf, biasOps } from "../bias/index.mjs";
 import { aiRunsOf, aiRunsOps } from "../ai-runs/index.mjs";
 import { aiUseOf, aiUseOps } from "../ai-use/index.mjs";
@@ -202,6 +202,13 @@ const captureClockOf = (ctx, env) => {
  *  product's (`RELEASE_KEYS`): the Durable Object class hands none. The
  *  migration and the starts are work handed to `ctx.blockConcurrencyWhile`, so they run before any request; a module that
  *  fails to build throws here, and the class that called it answers nothing. */
+/** R101 (F3; notice-producers R29, R31): the ended feeds `notice-producers` reads, injected as callbacks so it imports
+ *  neither (a lower module reaches a higher one only so, as `updateNotice`, R39): `readingsEnded`, the job table's ended
+ *  rows, and `importsEnded`, `registers`' finished, stopped and failed imports (its R13). */
+export function noticeProducerFeeds({ pending, registers }) {
+  return { readingsEnded: (q) => pending.readingsEnded(q), importsEnded: (q) => registers.importsEnded(q) };
+}
+
 export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, catalogueKeys = null } = {}) {
   env = env || {};
   const sql = ctx.storage.sql;
@@ -572,8 +579,15 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, ca
      plan-work R9), once. */
   /* R58 (T50; following R34, retrieval R86): handed the one retrieval instance above, so its start registers its watch
      marks with `retrieval.registerBrowseMarks` before the first request; the plane makes no second registration. */
+  /* following R41, R42 (F2): the keyed store a followed docket's daily check is made under (`acquisition` R36, R130, R131,
+     R137): the group's credentials (the key, off when none), acquisition's call ledger, record-core's evidence and
+     settings, provenance and the governor, and `followStanding` answered by following itself, asked at each call. */
   followingOf(ctx, { monitoring, events, entities: entitiesOf(ctx), capture, retrieval, actionPlans: actionPlansOf(ctx),
-                     planWork: planWorkOf(ctx), duties, answers: answersOf(ctx), standards });
+                     planWork: planWorkOf(ctx), duties, answers: answersOf(ctx), standards,
+                     keyed: { store: { core: recordOf(ctx), env, governor: governorOf(ctx, { env }), provenance,
+                                       get credentials() { return credentialsOf(ctx); },
+                                       get acquisition() { return acquisitionOf(ctx); },
+                                       followStanding: (a) => followingOf(ctx).followStanding(a) } } });
   /* R19 (N528; DEC-120, DEC-121): wizard-scripts, first in layer 11, built here before every layer-11 reader
      (affordances, queue-producers, control-plane). At creation it creates its tables, declares them to purge (K23) and
      registers its ids' seed; it is then registered, once and before the first request, with the bundle's screens and
@@ -597,11 +611,8 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, ca
   schedulerOf(ctx, env).register("plane", pending.consumer());   /* R75: `pending-work`, before the scheduler's start so its alarm is re-derived at a restart (scheduler R11) */
   /* R87 (fix round 6, G54): the case-file sweep, ratification's, a second consumer of the plane's, registered at the same place so a restart re-derives its alarm */
   schedulerOf(ctx, env).register("plane", casefileSweepConsumer(ratificationOf(ctx)));
-  /* R101 (registers R12): the import's slices run on the alarm as the consumer `register-import`, under monitoring's sweep
-     host (its one pause, epoch and claim, monitoring R65), one slice a firing. */
-  schedulerOf(ctx, env).register("registers", { name: "register-import",
-    due: (now) => registers.importDue(now, monitoring.sweepHost()), wake: (now) => registers.importWake(now),
-    tick: async (now) => ({ "register-import": await registers.importTick(now, undefined, monitoring.sweepHost()) }) });
+  /* R101 (F1): the import's slices run as `scheduler`'s own consumer `register-import` (its R34), reached through its
+     owners under monitoring's sweep host; the assembly registers none (a second would be refused CONSUMER_DECLARED). */
   /* R3: the migration pass, then scheduler's start. */
   ctx.blockConcurrencyWhile(async () => { migrate(); registerExtractionOwe(); });
   ctx.blockConcurrencyWhile(async () => schedulerOf(ctx, env).start());
@@ -616,8 +627,8 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, ca
     answers: answersOf(ctx), inquiry: inquiryOf(ctx), credentials: credentialsOf(ctx), following: followingOf(ctx), standards,
     fileSafety, provenance, aiUse: aiUseOf(ctx), steps: stepsOf(ctx), questionExplorer, investigation: investigationOf(ctx),
     review: reviewOf(ctx),
-    /* R98 (fix round 9): the job table's ended rows, a callback (a lower module reaches a higher one only so, as `updateNotice`, R52) */
-    readingsEnded: (q) => pending.readingsEnded(q) });
+    /* R98 (fix round 9) and R101 (F3): the ended feeds, callbacks (noticeProducerFeeds) */
+    ...noticeProducerFeeds({ pending, registers }) });
   /* K1868 (2): queue-producers' one instance per storage, built here with the providers queue would hand it
      (`Queue.PRODUCER_DEPS`), since its factory reads its deps on the first call only; handed to queue as its producers
      and to instance-setup, whose start registers `placeArrivals` through it (instance-setup R62, queue-producers R38),
@@ -873,6 +884,9 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null, ca
       ...caseImportOps(caseImportOf(ctx), url, body),
       /* N483 (K1122): `export` and `exportlog` are corpus-export's (its R6), on the one instance publication created. */
       ...corpusExportOps(corpusExportOf(ctx), (k) => url.searchParams.get(k)),
+      /* F4 (corpus-export R17, R18): `exportwhole` and `exportwholepart`, kept apart in corpus-export's `wholeExportOps`,
+         on the same instance. */
+      ...wholeExportOps(corpusExportOf(ctx), (k) => url.searchParams.get(k)),
       /* K1643: `caseflags` and `attribute` are case-tensions', on the one instance publication's factory made. */
       ...caseTensionsOps(caseTensionsOf(ctx), url, body),
       ...publicationOps(publicationOf(ctx), url, body),

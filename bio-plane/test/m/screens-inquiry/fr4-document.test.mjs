@@ -232,7 +232,9 @@ test("R5 C81 at 390 px the document's route and OCR controls lie inside the scre
   const wide = await onPhone({ path: at, o, width: 1280, controls: [...labels, word("document.read.cite")] });
   for (const l of labels) for (const b of wide.boxes[l]) assert.ok(b.right <= 1280 && b.left >= 0, `control: ${l} inside at 1280: ${JSON.stringify(b)}`);
   const cite = wide.boxes[word("document.read.cite")][0];
-  assert.deepEqual([cite.width, cite.height], [86, 40], "control: an untouched control keeps its 1280 px box");
+  /* the height is the shell's one control height (40 px until interface-shell drew every control 44 px, attempt 6) */
+  assert.equal(cite.width, 86, "control: an untouched control keeps its 1280 px width");
+  assert.ok(cite.height >= 40 && wide.boxes[labels[0]].every((b) => b.height === cite.height), "control: and the shell's one control height: " + JSON.stringify([cite, wide.boxes[labels[0]]]));
 });
 
 /* ---- interface-shell R113 ---- */

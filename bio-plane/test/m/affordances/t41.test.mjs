@@ -48,11 +48,13 @@ test("R12 (DEC-188 (8)): the four retired ops are named in no table — no grade
 const ROWS_OF = { INVESTIGATION_NO_REASON: { check: "C-146.1", translation: "Say why." } };
 const rowOf = (c) => ROWS_OF[c] ?? null;
 test("R41: a refusal of a T41 op is explained with that op's rung or stated absence, never a bare null: milestoneremove's "
-   + "reason refusal at `reasoned`, projectkeyset at its `credential` ground, a read at neither; a retired op explains as "
-   + "an op the catalogue does not grade", () => {
+   + "reason refusal at `reasoned`, a credential op (keyedserviceset) at its `credential` ground, a read at neither; a retired "
+   + "op explains as an op the catalogue does not grade", () => {
   const e = A.explainRefusal({ op: "milestoneremove", code: "INVESTIGATION_NO_REASON", rowOf });
   assert.deepEqual([e.translation, e.check, e.rung, e.rung_absence, e.acts], ["Say why.", "C-146.1", "reasoned", null, null]);
-  const k = A.explainRefusal({ op: "projectkeyset", code: "NOT_THE_OWNER", rowOf });
+  /* (BOB, 7 Nov; op-grades R57) projectkeyset's row retires with the alpha AI ops; keyedserviceset (t33) is the standing
+     `credential` op, as op-grades' own tests use it, so this holds before and after R57 */
+  const k = A.explainRefusal({ op: "keyedserviceset", code: "NOT_THE_OWNER", rowOf });
   assert.deepEqual([k.rung, k.rung_absence, k.translation], [null, "credential", null]);
   for (const op of writes) {
     const x = A.explainRefusal({ op, code: "X", rowOf });

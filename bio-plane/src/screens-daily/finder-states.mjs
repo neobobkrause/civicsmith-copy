@@ -150,10 +150,12 @@ export function finderStates() {
     // Fields: "In titles, notes and details".
     const hs = hits(view);
     const ftotal = f && f.state === "ok" ? (typeof f.value.total === "number" ? f.value.total : hs.length) : 0;
+    // R46: a match is drawn as emphasis. The snippet opens a match with U+0001 and closes it with U+0002 (`query-language` R35), never
+    // brackets: a bracket is the stored text's own and drawn as text; a mark left unpaired is dropped.
     const excerpt = function (text) {
-      return String(text).split(/(\[[^\]]*\])/).map(function (part) {
-        const m = /^\[([^\]]*)\]$/.exec(part);
-        return m ? "<em>" + cs.esc(m[1]) + "</em>" : cs.esc(part);
+      return String(text).split(/(\u0001[^\u0001\u0002]*\u0002)/).map(function (part) {
+        const m = /^\u0001([^\u0001\u0002]*)\u0002$/.exec(part);
+        return m ? "<em>" + cs.esc(m[1]) + "</em>" : cs.esc(part.replace(/[\u0001\u0002]/g, ""));
       }).join("");
     };
     const fieldRows = cs.sheet(hs.map(function (h) {

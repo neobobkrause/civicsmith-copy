@@ -79,7 +79,7 @@ test("N348 this module holds no Durable Object door or class of its own: its rou
   const ops = S.instanceSetupOps(null, new URL("http://do/"), null);
   assert.deepEqual(Object.keys(ops).sort(), ["adminrecoverystep", "assistantreadiness", "assistantstate", "cpuprobeend", "cpuprobestart", "cpuprobestate", "disclosureof",
     "disclosureshown", "groupdomainset", "groupidentity", "groupidentitypublic",
-    "groupnameset", "instancegroup", "instancegrouppublic", "instancegroupseed", "memberlanguage",
+    "groupnameset", "instancegroup", "instancegrouppublic", "instancegroupseed", "layersset", "maildomainset", "maildoorset", "mailsetup", "memberlanguage",
     "memberlanguageset", "officesseed", "placewanted", "placewantedstate", "profiles", "profilesset",
     "recordcpuprobestep", "runtimeobservations", "seatsseed",
     /* T45 (R77): the administrators' act setting the group's declared stake */

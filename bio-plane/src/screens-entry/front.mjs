@@ -5,7 +5,8 @@
    shell (`cs.signin`, interface-shell R32); the signed-out, ended and locked states from the record the shell reads
    (`view.session`), the lock's `unlock` and its "Not <handle>?" sign-out (`cs.signout`, interface-shell R47). R16: the
    handle's help is `signin.handle.help`, never a founder hint. R18: a founder signed in with no handle held is taken to
-   `setup`, which asks it, before Home. Every function is self-contained (interface-shell R21). */
+   `setup`, which asks it, before Home. R35: a live session draws the page with "You're signed in as {name}." and "Go to
+   Home" in place of the sign-in panel. Every function is self-contained (interface-shell R21). */
 
 export const front = {
   id: "front",
@@ -71,6 +72,18 @@ export const front = {
     }));
     const door = cs.sec(S + "doorbell", `<p class="mk-note">${W(S + "doorbell.what")}</p><div class="mk-acts"><a class="cs-btn" href="/app/doorbell" data-nav>${W(S + "doorbell.go")}</a></div>`);
     const how = cs.sec(S + "how", `<p class="mk-note">${W(S + "how.what")}</p><div class="mk-acts"><a class="cs-btn" href="/app/tour" data-nav>${W(S + "how.go")}</a></div>`);
+
+    // R35 (DEC-472 (5)): a reader with a live session is not shown the sign-in form or "Not a member yet?": the card
+    // says who is signed in and offers the way to Home
+    if (session.state === "live") {
+      const me = view.me || {};
+      const name = String(me.handle || session.handle || me.member || "");
+      const card = `<p class="cs-row" data-state="live">${W(S + "signedin", { name })}</p>`
+        + `<div class="mk-acts"><a class="cs-btn" data-tone="primary" href="/app" data-nav>${W(S + "home")}</a></div>`;
+      out.push(`<div class="mk-frontgrid"><div>${pub}${door}${how}</div><div class="mk-signin">${card}</div></div>`);
+      out.push(`<p class="mk-small">${W("screen.entry.uses", { group })}</p>`);
+      return out.join("");
+    }
 
     // the sign-in panel (R2): the states the record left, the handle, the password and the device
     const said = session.state === "signedout" ? `<p class="cs-row" data-state="signedout">${W("session.signedout")}</p>`

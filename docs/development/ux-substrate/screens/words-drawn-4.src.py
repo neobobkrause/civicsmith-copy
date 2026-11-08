@@ -3048,15 +3048,19 @@ w495('screen.ai-use.keeping.text', "Civicsmith follows developments in trust and
 # beside it, so a reader trained on other letter scales (Admiralty, 3x5x2) never reads "D" as "unreliable". The letters
 # keep their ruling; the gloss says how the thing was established, never whether it is true (mark.grade.reading). One
 # gloss per letter a scale can show. Sources: capture, BIO_Intake_Doctrine §3 and provenance's captureGrade (A is a
-# chain-of-custody archive no route makes yet, EARNED_CAPTURE_CEILING B a direct fetch, ARCHIVE_CAPTURE_GRADE C an archive's
-# replay); connection, BIO_Content_Framework §8.1 (D's label as corrected by BOB #30); testimony, TESTIMONY_GRADE D only;
+# chain-of-custody archive no route makes yet, EARNED_CAPTURE_CEILING B a direct fetch; BD-18, 7 Nov: an archive's raw replay is B
+# via archive, a rewritten replay and a reference without bytes are C); connection, BIO_Content_Framework §8.1 (D's label as corrected by BOB #30); testimony, TESTIMONY_GRADE D only;
 # subject match, the same resolution ladder as connection. The team's grade for the copy (DEC-461) is a grade the team
 # gives up to the record's ceiling, so it takes the capture glosses with mark.grade.gloss.copy.lead before them.
 def w496(key, en, note):
     W.append(dict(key=key, en=en, protected=False, note='DEC-496: ' + note))
 w496('mark.grade.gloss.capture.a', 'a full archive of the source as it was served, with its chain of custody', 'capture (and the ceiling) A; no route makes one yet')
 w496('mark.grade.gloss.capture.b', 'fetched straight from the source, fingerprinted on arrival', 'capture B, EARNED_CAPTURE_CEILING')
-w496('mark.grade.gloss.capture.c', "taken from someone else's archive, one step further from the source", 'capture C, ARCHIVE_CAPTURE_GRADE')
+w496('mark.grade.gloss.capture.b.archive', 'fetched from the source by an archive, which kept it unchanged until Civicsmith fetched it', 'BD-18 (Bob, 7 Nov): capture B via archive, a replay of the raw bytes (e.g. Wayback\'s unmodified mode)')
+w496('mark.grade.via_archive', 'via archive', 'BD-18: the label beside a B that came through an archive\'s raw replay')
+w496('mark.grade.archive.custody', 'Fetched from {publisher} by {archive} on {date}, and kept unchanged by {archive} until your team\'s Civicsmith fetched it.', 'BD-18: the custody line of a B via archive; {date} the snapshot date, shown as its fetch date; co-attestation as DEC-81 (second archive or trusted timestamp, else self-attested only)')
+w496('mark.grade.gloss.capture.c', 'a reference only: where to find it and how to cite it, with no copy held', 'BD-18 (Bob, 7 Nov): capture C is reference only (Intake Doctrine §3)')
+w496('mark.grade.gloss.capture.c.rewritten', "an archive's altered replay, kept as a reference only", 'BD-18: a rewritten replay (the archive\'s toolbar, altered links) is C')
 w496('mark.grade.gloss.connection.a', 'the source itself links the two, and both are held', 'connection A, CF 8.1')
 w496('mark.grade.gloss.connection.b', 'the same identifier appears in both documents', 'connection B, CF 8.1')
 w496('mark.grade.gloss.connection.c', 'only a name, title or date matches: plausible, not established', 'connection C, CF 8.1')
@@ -3283,3 +3287,29 @@ w499('queue.layer-rule-changed.summary', 'An update changed rules your team uses
 w499('queue.layer-rule-changed.detail', 'Civicsmith {version} changed these rules in {layer}: {rules}. Your team\'s own entries are unchanged. Clocks already recorded keep what they hold; new ones use the changed rules.', 'R58: {rules} the changed rules by name, joined with commas, never the text of a team entry; instance-setup R111')
 w499('queue.layer-rule-changed.detail.more', 'and {n} more', 'R58: when the list of changed rules is long')
 w499('queue.layer-rule-changed.door', 'See the rules each place brings', 'R58: the act, opening Places at the layer')
+
+# DEC-500 (the ux lane, 7 Nov 2026; BOB's ask from screens-intake-rounds R73): the refusal of a file over its limit
+# at Add. R64's reading sentence (screen.capture.read.refused.TOO_LARGE) is for a file that WAS kept but not read,
+# so it says "kept whole"; R73's refusal keeps nothing, so it has its own sentence, naming the file's figure and the
+# kind's limit and nothing else. It is followed by screen.capture.refusal.toolarge.nothing_read ("Nothing was added or
+# read.") and R74's ways in; it never says "Nothing was written" (the upload figures row) beside it.
+def w500(key, en, note):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-500: ' + note))
+w500('screen.capture.refusal.toolarge.size', 'This file is {size}. Files of this kind can be up to {bound}.', 'R73: a file over its kind\'s size limit; {size} {bound} in MB (size.mb), the bound the one R72 showed')
+w500('screen.capture.refusal.toolarge.rows', 'This spreadsheet has {count} rows. Spreadsheets can have up to about {bound} rows.', 'R73: a sheet over its rows; {count} {bound} comma-grouped')
+w500('screen.capture.refusal.toolarge.cells', 'This workbook has {count} cells. Workbooks can have up to {bound} cells.', 'R64/R73: a workbook over its cells')
+w500('screen.capture.refusal.toolarge.pages', 'This document has {count} pages. Documents can have up to {bound} pages.', 'R73: a document over its pages, once its page count is known')
+w500('screen.capture.refusal.toolarge.archive', 'This archive is {size}. Archives can be up to {bound} in all.', 'R64/R73: an archive over its total')
+w500('screen.capture.refusal.toolarge.archive.entry', '{file}, inside this archive, is {size}. Files of its kind can be up to {bound}.', 'R64/R73: an archive with an entry over its kind\'s limit')
+
+# DEC-501 (the ux lane, 7 Nov 2026; BOB's word pass for journey-check R17, K3811, DEC-281, K3472): rows extracted from
+# module code ("code" rows of setup-words) that said "group" for the team. A design row of the same key takes the code
+# row's place (setup-words R15), so each is reworded here with "team" and nothing else changed. Rows using "group" for a
+# grouping (a ground of passages, a citation's ground, a section of a design), or naming the wire value `group` of an
+# account's owner, are added to build_words' GROUP_SENSE instead. *.declared.* rows are NOT overridden here: op-grades
+# requires each to agree with its own hand row (DECLARED_OP_DISAGREES), so they sit in GROUP_SENSE until op-grades and
+# their modules reword them to "team" (BOB's mark, the next layer).
+def w501(key, en):
+    W.append(dict(key=key, en=en, protected=False, note='DEC-501: R17 word pass, "team" for the team (was the code row\'s "group")'))
+w501('run-rules.checks.nothing_was_started_because_none', "Nothing was started, because none of the AI accounts your team's Civicsmith can use has passed the test for this part of the work. Ask whoever looks after your team's AI accounts to add one that has passed it, or do this part without AI.")
+w501('screen.action.routes.why', "None of your places' profiles names a procedure for this kind, and no guide of your team's covers it. A rule or a procedure your profile lacks is drafted under Your team's own rules.")

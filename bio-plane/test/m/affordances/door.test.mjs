@@ -23,7 +23,8 @@ test("R17 R37: with no target, the catalogue — every act decorated through the
   const r = affordancesAnswer({ kinds: KINDS, gate: GATE });
   assert.deepEqual(Object.keys(r).sort(), ["answer_checks" /* K1601 */, "capture_acts", "catalog", "detail", "screens",
                                            "set_acts", "target", "vocabularies", "wizard_scripts",
-                                           "writing_help_refused" /* R44 */, "act_help" /* R49 */].sort());
+                                           "writing_help_refused" /* R44 */, "act_help" /* R49 */,
+                                           "dimension_onward" /* R73 */].sort());
   /* R49: what each act does, ACT_HELP itself (R48) */
   assert.equal(r.act_help, ACT_HELP);
   /* K1601: answers' check family, the very object its table holds */

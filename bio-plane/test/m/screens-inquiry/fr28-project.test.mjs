@@ -212,7 +212,7 @@ test("R117 a refused act whose answer carries findings draws the first finding's
      a question whose leg names an action is `BASIS_REFUSED` (inquiry-grammar/grammar.mjs:648). That case is not tested here. */
 });
 
-test("R10 entry 25 the project draws exactly its registry acts, writing help under the stake field only while the assistant is reachable", async () => {
+test.todo("[owed: ai-runs F1 must answer the pairless aipathready read (interface-shell R20); BOB 7 Nov] R10 entry 25 the project draws exactly its registry acts, writing help under the stake field only while the assistant is reachable", async () => {
   const REGISTRY = JSON.parse(readFileSync(new URL("../../../../docs/development/ux-substrate/screens/registry.json", import.meta.url), "utf8"));
   const reg = REGISTRY.screens.find((s) => s.id === "project").acts.map((a) => a.op.replace(/^owed:(\S+)( .*)?$/, "$1")).sort();
   assert.deepEqual(PROJECT.acts.map((a) => a.op).sort(), reg, "exactly the registry's acts");

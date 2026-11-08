@@ -43,3 +43,17 @@ Moved here verbatim from `build/requirements/screens-intake.md` by the screens-i
 Under Invariants, after R71, at the move (nothing followed it before Satisfies):
 
 **Proposed requirement lines (BOB writes them):**
+
+## Attempt 3 (7 Nov 2026): the found marks and R85–R92, for BOB
+
+Done, each tested through the screen: F1 (`open-file` offers a JPEG or PNG photograph's safe view and draws `leftOutLine` beside it from the answer's `left_out`; its keys join the screen's words from `PART_KEYS`); R92 (inbox rows titled by the sender's file name, else the note's first words, else "handed in without a name or note", each with its true size; "Became {document}" after a pull in the visit; the five rungs each beside its own `.means` line); R79's "Cancel sending" (`captureuploadabort`) and its canceled line; R73's too-large refusal as DEC-500 draws it, for an upload (`toolarge.size` or `.archive`, then `nothing_read`, then R74 (b)'s part; never the figures row) and for an address (from `acquire`'s `bytes` and `maxBytes`); R74 (a)'s register way, matched mechanically against the real `registerlist` and linking `/app/registers/<key>?project=<project>`. `screen.capture.read.queued` was already drawn by key (r9-states R65) now that its row is held.
+
+Not done, and why (each a REPORT, nothing invented):
+- The parts limitsSection, tooLargeLines, registerOfAddress, partsCancelledLine and stepLine's `queued` are on job/screens-intake-rounds only (blocked, unmerged); BOB ruled (a), 7 Nov: they are drawn here instead, by the same keys, and screens-intake-rounds drops its duplicates when it reopens.
+- `leftOutLine` passes `{what}` (phrases already HTML) as a plain string, so the kit escapes it again; `open-file` hands it a kit marking that fill as HTML. screens-intake-rounds should pass `{what: {html}}`.
+- F2 in part: R72's limits section needs a read op serving `limitsByKind` (op-declarations t51 names it among the read acts, but no op row serves it); R74 (a)'s link names the route `/app/registers/<key>?project=`, and no screen module serves `registers` yet; R79's cut sentence needs `previewmore`.
+- F3: `archivelist` answers no mailbox counts (`acquisition`), so `mailboxCountLine` has nothing to draw from.
+- F4: a PDF safe view's `pages`/`source_pages` ride only in the `x-file-safety` header, and `cs.download` answers `{type, size}` (`interface-shell`): `safeViewPagesLine` has nothing to draw from.
+- R92 across visits: `inbox`'s rows carry no bundle id (`doorbell`'s list joins `bundles` but does not select `bundle_id`), so only a knock pulled in this visit links what it became.
+- R85–R91: R85, R87, R89 and R90 change plane answers (`capture`, `acquisition`, `provenance`, the not-yours refusal codes `interface-shell` R35 reads); R86 (held's project filter), R88 (a next-step row for `MACHINE_CANNOT_SET_ASIDE`) and R91 (390 layout) have no design rows or shell styles yet.
+- The requirement file is over the cap (93,635 bytes against 70,000): consolidation is BOB's (REQ-6).

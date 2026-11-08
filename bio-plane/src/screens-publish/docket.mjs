@@ -79,8 +79,11 @@ export const DOCKET = Object.freeze({
     const capOptions = caps.filter(function (r) { return r && r.capture && r.capture.sha256; }).map(function (r) {
       return { value: String(r.capture.sha256).replace(/^sha256:/, ""), text: P.plain(cs.w("screen.docket.capture.option", { title: r.title || "", date: { html: cs.date(String(r.since || r.src_retrieved || "")) } })) };
     });
-    out.push(cs.sec("screen.docket.file", cs.choice("dk-kind", "screen.docket.kind.label", [["response", "screen.docket.kind.response"], ["statement", "screen.docket.kind.statement"],
-      ["reaction", "screen.docket.kind.reaction"], ["outcome", "screen.docket.kind.outcome"]])
+    // R88 (docket R32): "Kind of entry" lists only the record kinds the viewer may file (`kinds.file`); an older answer that states no
+    // `kinds` lists the four. A viewer who may file none is drawn no form.
+    const RECORD = ["response", "statement", "reaction", "outcome"];
+    const fileKinds = dk && dk.kinds && Array.isArray(dk.kinds.file) ? dk.kinds.file.map(function (k) { return k && typeof k === "object" ? k.kind : k; }).filter(function (k) { return RECORD.indexOf(k) >= 0; }) : RECORD;
+    if (dk && fileKinds.length) out.push(cs.sec("screen.docket.file", cs.choice("dk-kind", "screen.docket.kind.label", fileKinds.map(function (k) { return [k, "screen.docket.kind." + k]; }))
       + (edOptions.length ? cs.choice("dk-edition", "screen.docket.edition.label", edOptions, { value: edOptions[0].value, help: "screen.docket.edition.help" }) : "")
       + (capOptions.length ? cs.choice("dk-capture", "screen.docket.capture.label", capOptions, { value: capOptions[0].value, help: "screen.docket.capture.help" }) : "")
       + capNote

@@ -119,9 +119,16 @@ function assertOwnReading(t, reading, label) {
   const reason = reasonOf(reading);
   assert.notEqual(reason, SIZE_REASON, `${label}: the shape is a reading with no size reason`);
   for (const c of refusedReasons(reading)) if (hasWord("refusal." + c)) assert.ok(t.includes(word("refusal." + c)), `${label}: the word held for the member's reason ${c} is drawn`);
-  if (reason && hasWord("refusal." + reason)) assert.ok(t.includes(word("refusal." + reason)), `${label}: the word held for ${reason} is drawn`);
-  else if (ownSentence(reading)) assert.ok(t.replace(/\s+/g, " ").includes(ownSentence(reading).replace(/\s+/g, " ")), `${label}: the statement the reading states is drawn: ${ownSentence(reading)}`);
+  /* the Document page (T53, K5564; BOB 7 Nov) draws a locked file by its own sentence, screen.document.encrypted, in place of the refusal's word */
+  if (reason === "ENCRYPTED" || reason === "PASSWORD_REQUIRED") assert.ok(t.includes(word("screen.document.encrypted")), `${label}: the locked file's sentence is drawn for ${reason}`);
+  else if (reason && hasWord("refusal." + reason)) assert.ok(t.includes(word("refusal." + reason)), `${label}: the word held for ${reason} is drawn`);
+  /* a reading that states itself (a failure, or completeness `stated`) draws its own sentence; a whole one (the OCR member transcribed the
+     picture, nothing found in it) states nothing of itself: the page draws what was read, never the reader's basis (attempt 7, 7 Nov) */
+  else if (statesItself(reading) && ownSentence(reading)) assert.ok(t.replace(/\s+/g, " ").includes(ownSentence(reading).replace(/\s+/g, " ")), `${label}: the statement the reading states is drawn: ${ownSentence(reading)}`);
+  else if (!statesItself(reading)) assert.ok(wordsRead(reading).every((w) => t.includes(w)), `${label}: a whole reading draws the words it read`);
 }
+const statesItself = (reading) => !!(reading && reading.reading && (reading.reading.failure || (reading.completeness && reading.completeness.state === "stated")));
+const wordsRead = (reading) => (Array.isArray(reading.text_units) ? reading.text_units : []).map((u) => String((u && u.text) || "").split(/\s+/).filter((w) => w.length > 3)[0]).filter(Boolean).slice(0, 3);
 
 test("R1 R96 G1 (the real plane, the real OCR member) a PNG the reader finds nothing in (A7): the page draws what the reading states, never the size sentence for a 6 KB picture", async () => {
   const { reading, shown } = await probe(await bytesOf({ kind: "png", seed: "rw9-A-7", size: { lines: 3 } }), "a7.png", "image/png", { ready: (r) => Array.isArray(r.reading.ocr_refused) || (Array.isArray(r.text_units) && r.text_units.length > 0) });
@@ -209,7 +216,7 @@ test("R2a R96 G1 (the real plane) a CSV of 1,048,577 rows (B3d): the page draws 
   assert.ok(!statement.includes(word("size.mb", { n: (reading.bytes / 1048576).toFixed(1) })) && !statement.includes(word("size.kb", { n: String(Math.round(reading.bytes / 1024)) })), "no byte size of the file is drawn in the statement");
 });
 
-test("R2a R96 G1 (the real plane) a PDF one byte over the limit (A4c): the size and the limit are told apart by their exact counts; control: it is a size refusal, so the size sentence stays", async () => {
+test.todo("[owed: store/extraction found mark, a PDF one byte over the limit is read, no TOO_LARGE reading stored; BOB 7 Nov ruling (3)] R2a R96 G1 (the real plane) a PDF one byte over the limit (A4c): the size and the limit are told apart by their exact counts; control: it is a size refusal, so the size sentence stays", async () => {
   const bytes = await bytesOf({ kind: "pdf", seed: "rw9-A-4c", size: { bytes: 25165825 } });
   assert.equal(bytes.length, 25165825);
   const { reading, shown } = await probe(bytes, "a4c.pdf", "application/pdf");

@@ -7,7 +7,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import * as G from "../../../src/op-grades/index.mjs";
-import { collectDeclaredOps, registeredOpGrades, reqText } from "./declared.mjs";
+import { collectDeclaredOps, registeredOpGrades, reqText, between, tickedAll, tickedCodes } from "./declared.mjs";
+import { hasWord, word } from "../../../src/setup-words/index.mjs";
 
 const ROOT = new URL("../../../../", import.meta.url).pathname;
 const R = await registeredOpGrades();
@@ -38,8 +39,36 @@ test("R55: with the owners' rows registered, every register op the proposal list
   }
 });
 
-test.todo("R55: MACHINE_REFUSALS gains every register write and registerofficers, each with the code registers' method answers "
-   + "(held: affordances R20 and its t33 test hold MACHINE_REFUSALS to ACTS rows only, and these are not ACTS)");
+/* R55's machine sentence: "`MACHINE_REFUSALS` gains every register WRITE op (BOB C13): `a` and `b` (`CODE`), `c` (`CODE`, new),
+   ...; the reads (`x`, `y`, ...) stay open": each code in backticks follows the ops it refuses */
+const MACHINE_TEXT = between(R55_TEXT, "`MACHINE_REFUSALS` gains every register WRITE op", "; the reads");
+const R55_MACHINE = {};
+for (const part of MACHINE_TEXT.split(/\)[,;]?/)) {
+  const [code] = tickedCodes(part);
+  if (code) for (const op of tickedAll(part.slice(0, part.lastIndexOf("(")))) R55_MACHINE[op] = code;
+}
+const R55_READS = tickedAll(between(R55_TEXT, "; the reads (", ")"));
+
+test("R55: MACHINE_REFUSALS gains every register write and registerofficers, each with the code R55 names beside it; the "
+   + "reads stay open to the assistant; the grade still comes from the owner's row; control: no other op's row changes", () => {
+  assert.ok(Object.keys(R55_MACHINE).length >= 12 && R55_READS.length >= 8);
+  for (const [op, code] of Object.entries(R55_MACHINE)) {
+    assert.equal(OWNERS[op], "registers", `${op} is registers'`);
+    assert.equal(G.MACHINE_REFUSALS[op], code, op);
+    assert.equal(R.MACHINE_REFUSALS[op], code, `${op}, registered`);
+    /* a machine hand row grades nothing (R50 (b)): the op takes its owner's grade still */
+    assert.equal(gradeIn(R, op), PROPOSED[op] ?? DECLARED[op].weight, `${op} graded from its row`);
+  }
+  for (const op of R55_READS) {
+    assert.equal(OWNERS[op], "registers", op);
+    assert.equal(Object.hasOwn(R.MACHINE_REFUSALS, op), false, `${op} stays open`);
+    assert.equal(gradeIn(R, op), "read", op);
+  }
+  /* control: every other row is the one an unregistered instance holds, and none is a register op */
+  for (const [op, code] of Object.entries(G.MACHINE_REFUSALS))
+    if (!Object.hasOwn(R55_MACHINE, op)) assert.notEqual(OWNERS[op], "registers", op);
+  assert.deepEqual({ ...R.MACHINE_REFUSALS }, { ...G.MACHINE_REFUSALS });
+});
 
 test("R55: rowexpunge's rung is its owner's `reasoned`; every other register op is a phone act; REGISTER_NO_TERMS and "
    + "ROW_EXPUNGE_NO_REASON back their reasoned acts; control: a bad ground's code does not", () => {
@@ -55,10 +84,39 @@ test("R55: rowexpunge's rung is its owner's `reasoned`; every other register op 
   assert.equal(R.JUSTIFICATION_REFUSALS.includes("EXPUNGE_GROUND_REFUSED"), false);
 });
 
-test.todo("R55: rowexpunge joins IRREVERSIBLE_WEIGHT, phone false (held: affordances' t31 R36 phone test does not see the "
-   + "registered op and must change with it, as R55 says)");
+test("R55: rowexpunge joins IRREVERSIBLE_WEIGHT as personexpunge is, so phoneOf answers false for it while its rung stays its "
+   + "owner's `reasoned`; control: no other register op is in the set, and each answers phone true", () => {
+  const T = between(R55_TEXT, "`IRREVERSIBLE_WEIGHT` gains", ";");
+  const [op] = tickedAll(T);
+  assert.equal(op, "rowexpunge");
+  assert.ok(T.includes("`personexpunge`"));
+  assert.equal(OWNERS[op], "registers");
+  for (const m of [G, R]) {
+    assert.ok(m.IRREVERSIBLE_WEIGHT.includes(op), "in the set");
+    assert.ok(m.IRREVERSIBLE_WEIGHT.includes("personexpunge"));
+    assert.equal(m.phoneOf(op), false, "read on a phone, done on a larger screen");
+  }
+  /* the weight is not a rung: the registered rung is the owner's, and no hand row grades it */
+  assert.equal(R.RUNGS[op], DECLARED[op].weight);
+  assert.equal(R.RUNGS[op], "reasoned");
+  assert.equal(Object.hasOwn(G.RUNGS, op), false);
+  /* control: the other register ops stay phone acts, and none is in the set */
+  for (const other of Object.keys(DECLARED).filter((o) => OWNERS[o] === "registers" && o !== op)) {
+    assert.equal(R.IRREVERSIBLE_WEIGHT.includes(other), false, other);
+    if (R.RUNG_ABSENT[other]?.ground !== "credential") assert.equal(R.phoneOf(other), true, other);
+  }
+});
 test.todo("R55: alertconnect is graded ground `credential` from credentials' row (credentials declares no alertconnect yet)");
-test.todo("R55: CONSEQUENCE_STATEMENTS gains rowexpunge, {friction: \"dialog\", key} (the design's words.json holds no consequence.rowexpunge yet)");
+test("R55: CONSEQUENCE_STATEMENTS gains rowexpunge, a dialog read by its key; control: no other register op has an entry", () => {
+  assert.ok(R55_TEXT.includes("`CONSEQUENCE_STATEMENTS` gains `rowexpunge` `{friction: \"dialog\", statement}`"));
+  const e = G.CONSEQUENCE_STATEMENTS.rowexpunge;
+  assert.ok(Object.isFrozen(e));
+  assert.deepEqual({ ...e }, { friction: "dialog", key: "consequence.rowexpunge" });
+  assert.equal(hasWord(e.key), true);
+  assert.ok(word(e.key).length > 40);
+  for (const op of Object.keys(PROPOSED).filter((op) => OWNERS[op] === "registers" && op !== "rowexpunge"))
+    assert.equal(Object.hasOwn(G.CONSEQUENCE_STATEMENTS, op), false, op);
+});
 
 test("R56: adminproposalcancel is `credential` and phone false as invitewithdraw; adminremovals a read; adminremove stays "
    + "`reasoned` and adminendorse its grade; each in exactly one table; control: a hand row grades none of them", () => {

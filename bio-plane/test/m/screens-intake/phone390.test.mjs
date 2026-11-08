@@ -127,7 +127,10 @@ async function measure(path, width, interact = async () => {}, at = null) {
         if (e.matches("a, button, input, select, textarea, summary, [role=tab]")) {
           out.controls++;
           const t = e.matches("input[type=checkbox], input[type=radio]") && e.closest("label") ? e.closest("label").getBoundingClientRect() : r;
-          if (t.height < 43.5 || t.width < 43.5) out.small.push(e.localName + "." + (e.className || "") + " " + Math.round(t.width) + "x" + Math.round(t.height) + " " + (e.textContent || "").slice(0, 24));
+          /* DEC-412 (C81; WCAG 2.5.8's inline exception, the design's components.css): a link inside running text (a `p`, or an `li` it does not
+             fill) is held to 24 px, not 44, since a 44 px box would overlap the lines around it; every other control keeps 44 px */
+          const inline = e.matches("#cs-main p a.cs-ref, #cs-main li > a.cs-ref:not(:only-child)");
+          if (inline ? t.height < 23.5 : t.height < 43.5 || t.width < 43.5) out.small.push(e.localName + "." + (e.className || "") + " " + Math.round(t.width) + "x" + Math.round(t.height) + " " + (e.textContent || "").slice(0, 24));
         }
       }
       for (const t of document.querySelectorAll("#cs-main .mk-thumb")) { const r = t.getBoundingClientRect(); out.thumbs.push({ w: Math.round(r.width), h: Math.round(r.height), text: t.textContent.trim().length }); }

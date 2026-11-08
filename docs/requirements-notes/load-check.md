@@ -23,3 +23,7 @@ Screens are each a list of their declared reads, sent together. When surface-dec
 ## Not verified here
 
 No run against a deployed copy: no live latency, cost, door wait or gauge. The tests speak through a fixture door (`bio-plane/test/m/load-check/fixture-copy.mjs`) that stands for a deployed Civicsmith. The first live run is BOB's, on a `p3dev-` scratch copy in the permitted account, starting with the dry run on the smallest record that the Suggestions ask for.
+
+## Attempt 2 (7 Nov 2026): re-tested against op-declarations e4c350c01d
+
+op-declarations' layer PR 802 (e4c350c01d) only adds op specs (`exportwhole`, `exportwholepart`) and moves five member ops under `ACT_HELP_ABSENT` grounds. load-check reads only `OPS` and each spec's `mutating` flag (`guard.mjs` `declaredOp`, `run.mjs` `itemsOf`), and both still have the same shape. The suite (21 tests, R1 to R7) passes on job/load-check, which includes e4c350c01d. No code or test change: a test that only confirms passes with nothing reverted, so the gate's revert check would refuse it.

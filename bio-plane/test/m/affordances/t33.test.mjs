@@ -292,7 +292,9 @@ test("R39 R4: each vocabulary's values are the very objects its owner answers â€
     return hasWord(key) ? word(key) : null;
   };
   assert.deepEqual(v.connection_kinds.words, Object.fromEntries(listed.map(([k, e]) =>
-    [k, { ...e, word: designWord(k) ?? e.word, group: v.connection_kinds.words[k].group }])));
+    [k, { ...e, word: designWord(k) ?? e.word, group: v.connection_kinds.words[k].group,
+          /* R72 (T53): each kind's dimension, checked for totality in t53.test.mjs */
+          dimension: v.connection_kinds.words[k].dimension }])));
   /* the design keys a word for these, and it is read by key, not the owner's (control: a registered word that differs is not answered) */
   const keyedKinds = listed.filter(([k]) => designWord(k) !== null);
   assert.ok(keyedKinds.length >= 19, "the design keys the connection kinds it names (DEC-253)");

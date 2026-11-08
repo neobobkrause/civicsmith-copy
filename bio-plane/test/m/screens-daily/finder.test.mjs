@@ -11,9 +11,10 @@ import { storeWorld } from "../store-request/fixtures.mjs";
 import { open as openRaw, ok, refused, text, ops, button, press, beside, last, main, screen, word, hasWord, settle } from "./page.mjs";
 import { SESSION_OPS } from "../../../src/op-declarations/index.mjs";
 import { SCREENS } from "./page.mjs";
+import { MARK_OPEN, MARK_CLOSE } from "../../../src/query.mjs";
 
 const HITS = ok({ total: 3, hits: [
-  { bundle_id: "INF-1", title: "Public Works work orders, FY2025", grade: "B", snippet: "pothole [work orders]" },
+  { bundle_id: "INF-1", title: "Public Works work orders, FY2025", grade: "B", snippet: `pothole ${MARK_OPEN}work orders${MARK_CLOSE} [sic]` },   // the match marked as the search marks it (query-language R35); a bracket is text
   { bundle_id: "INF-2", title: "Memo 88-31 on stormwater", snippet: "within seven calendar days" },
   { bundle_id: "INF-3", title: "Report to council", grade: "C" },
 ] });
@@ -80,7 +81,7 @@ test("R4: each result with its grade and where it matched (Found by search), a r
   assert.deepEqual(main(p).querySelectorAll(".cs-grade").map((g) => g.textContent.slice(-1)), ["B", "C"]);
   // R46: the match brackets are drawn as emphasis, never as raw brackets.
   assert.match(text(p), /pothole work orders/);
-  assert.ok(!text(p).includes("[work orders]"));
+  assert.ok(!text(p).includes(MARK_OPEN) && !text(p).includes(MARK_CLOSE) && text(p).includes("pothole work orders [sic]"), "the marks are no text; the stored bracket is");
   assert.deepEqual(main(p).querySelectorAll("em").map((e) => e.textContent), ["work orders"]);
   assert.ok(main(p).querySelectorAll(".cs-card, a.cs-ref").some((a) => a.textContent === "Memo 88-31 on stormwater"));
   assert.equal(p.doc.getElementById("finder-pick-INF-1").getAttribute("aria-label"), word("screen.finder.pick", { title: "Public Works work orders, FY2025" }));

@@ -159,9 +159,35 @@ function locationHintFor(cf) {
     default: return null;
   }
 }
-const storeLocationBinding = (h) => typeof h === "string" && LOCATION_HINTS.includes(h) ? [{ type: "plain_text", name: LOCATION_BINDING, text: h }] : [];
+/* R46 (T53; N1273, K5440, K5441): the room's placement is a hint or a jurisdiction, never both. A jurisdiction is Cloudflare's
+   `eu`, `us` or `fedramp`; `JURISDICTIONS` is this module's own copy of `runtime-limits`' `STORE_JURISDICTIONS` (R35: no import), kept
+   equal by a parity test. The two lists share no value, so one binding function answers either. */
+export const JURISDICTION_BINDING = "STORE_JURISDICTION";
+export const JURISDICTIONS = Object.freeze(["eu", "us", "fedramp"]);
+const storeLocationBinding = (h) => typeof h !== "string" ? []
+  : LOCATION_HINTS.includes(h) ? [{ type: "plain_text", name: LOCATION_BINDING, text: h }]
+  : JURISDICTIONS.includes(h) ? [{ type: "plain_text", name: JURISDICTION_BINDING, text: h }] : [];
 
-/* The place the held plane script carries, as the bindings to restate: the values of `STORE_LOCATION` and `STORE_GENERATION` it
+/* R46: the placement an install carries, from the founder's choice: `{hint}` (a hint picked from the list, else the default
+   `locationHintFor(cf)`), `{jurisdiction}` (and then no hint, not even the default), or `{}` when neither is chosen nor known.
+   A hint and a jurisdiction both chosen are refused with a coded Error (`PLACEMENT_CONFLICT`, an identifier, K3971) before the
+   caller creates anything; a value off its list counts as not chosen. Pure. */
+export const PLACEMENT_CONFLICT = "PLACEMENT_CONFLICT";
+function placementFor({ hint, jurisdiction, cf } = {}) {
+  const h = typeof hint === "string" && LOCATION_HINTS.includes(hint) ? hint : null;
+  const j = typeof jurisdiction === "string" && JURISDICTIONS.includes(jurisdiction) ? jurisdiction : null;
+  if (h && j) throw Object.assign(new Error(PLACEMENT_CONFLICT), { code: PLACEMENT_CONFLICT });
+  if (j) return { jurisdiction: j };
+  const d = h || locationHintFor(cf);
+  return d ? { hint: d } : {};
+}
+/* R46: the placement bindings of one upload: the hint's or the jurisdiction's, refused when both are given. */
+const placementBindings = (hint, jurisdiction) => {
+  if (hint != null && jurisdiction != null) throw Object.assign(new Error(PLACEMENT_CONFLICT), { code: PLACEMENT_CONFLICT });
+  return jurisdiction != null ? (JURISDICTIONS.includes(jurisdiction) ? storeLocationBinding(jurisdiction) : []) : (LOCATION_HINTS.includes(hint) ? storeLocationBinding(hint) : []);
+};
+
+/* The place the held plane script carries, as the bindings to restate: the values of `STORE_LOCATION`, `STORE_JURISDICTION` (R46) and `STORE_GENERATION` it
    holds, as they are (none held, none restated). A script that does not exist holds none (404). A script whose settings cannot
    be read refuses the act here, before anything is uploaded, since a value not restated is dropped; an `approveAgain` or a
    `lasting` error is rethrown. Stand-in for the sentence: `installer.fleet.why.program`; the row owed is `installer-steps.plane.heldplace`, one line
@@ -176,7 +202,7 @@ async function heldPlace(token, acct, slug) {
   }
   if (!s || !Array.isArray(s.bindings))
     throw new Error(word("installer.fleet.why.program"));
-  return s.bindings.filter((b) => b && b.type === "plain_text" && typeof b.text === "string" && (b.name === LOCATION_BINDING || b.name === GENERATION_BINDING))
+  return s.bindings.filter((b) => b && b.type === "plain_text" && typeof b.text === "string" && (b.name === LOCATION_BINDING || b.name === GENERATION_BINDING || b.name === JURISDICTION_BINDING))
     .map((b) => ({ type: "plain_text", name: b.name, text: b.text }));
 }
 
@@ -186,4 +212,4 @@ function copyWorkers(slug, release, names) {
   for (const m of Array.isArray(release.man?.fleet) ? release.man.fleet : []) if (m && typeof m.member === "string") out.push(names.member(m.member));
   return [...new Set(out)];
 }
-export { selfBinding, BINDING_OF, memberBindings, membersPresent, instanceAiBinding, sealBinding, heldBindings, ownHostsBinding, hostOf, profilesBinding, copyWorkers, locationHintFor, storeLocationBinding, heldPlace };
+export { selfBinding, BINDING_OF, memberBindings, membersPresent, instanceAiBinding, sealBinding, heldBindings, ownHostsBinding, hostOf, profilesBinding, copyWorkers, locationHintFor, storeLocationBinding, placementFor, placementBindings, heldPlace };

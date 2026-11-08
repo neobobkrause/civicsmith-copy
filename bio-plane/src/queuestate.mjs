@@ -439,6 +439,23 @@ export const QUEUE_FINDING_KINDS = {
   "register-import-stopped":    "an import into a register you began was stopped before it finished "
                               + "— notice-producers R31",
   "register-import-failed":     "an import into a register you began failed — notice-producers R31",
+  /* T53 (R1, layer 11 reopen; notice-producers R33-R36): what the AI accounts and the mail door tell a member once, each a
+     FINDING its recipient disposes of. Named nowhere here, the first such item minted would refuse the member's whole Queue
+     `NO_SUCH_KIND` (R11). Code-origin stand-ins; the words members see are the design stream's (`ai.alert.threshold`,
+     `ai.notice.termschange`, `ai.queue.leftlist.*`, `ai.queue.leftprojectlist`, `ai.queue.signinended`), read by
+     notice-producers; no `queue.kind.<kind>` plain name is held yet for any of the six, nor any word for mail-cleared. */
+  "ai-threshold-reached":       "an alert you set on an AI account's use was reached; the assistant keeps working "
+                              + "— notice-producers R33",
+  "ai-terms-notice":            "a provider of an AI account you own changes its terms on a date; read what changes "
+                              + "before then — notice-producers R34",
+  "ai-account-left-list":       "an AI account has left a list of yours because its owner stopped sharing it "
+                              + "— notice-producers R35",
+  "ai-account-left-project-list": "an AI account has left a project's list you own because the member who held it was "
+                              + "removed — notice-producers R35",
+  "ai-signin-ended":            "a project's sign-in account you own ended when accounts were moved to the new form "
+                              + "— notice-producers R35",
+  "mail-cleared":               "mail of yours that was never confirmed was removed; how many messages and their dates "
+                              + "are told to you alone — notice-producers R36",
 };
 
 /* THE N-NUMBERS — the catalogue's STABLE IDS, allocated when a generator is built and not before
