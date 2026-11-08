@@ -56,8 +56,7 @@
     "build/situations/job.md"
   ],
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-08T00:09:05Z",
-    "reason": "reopened: re-test against the new interface of instance-setup (land 2914227e80), screens-intake (land 1995851e1f)"
+    "state": "COMPLETE",
+    "at": "2026-11-08T00:21:02Z"
   }
 }
