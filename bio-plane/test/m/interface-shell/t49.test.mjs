@@ -16,8 +16,8 @@ import { inWorld, bootAs } from "./world.mjs";
 
 const styleOf = (html) => /<style>([\s\S]*?)<\/style>/.exec(html)[1];
 const REPLACED = ["cs-menuwrap", "cs-menu", "cs-actwrap", "cs-slot", "cs-rowname", "cs-overlay", "cs-image", "cs-areas-box", "cs-area"];
-/* R67 retired the test band's own `cs-testband`; R92 draws the newer-version band with the design's `cs-testband` and its hook
-   `mk-updband`, so the class is written in the program for that band alone and no rule of it is carried in STYLE */
+/* R67 retired the test band's own `cs-testband`; no rule of it is carried in STYLE (the newer-version band is the design's
+   `cs-updband`, F6) */
 const classesOf = (root) => { const out = new Set(); for (const el of root.querySelectorAll("[class]")) for (const c of el.getAttribute("class").split(/\s+/)) if (c) out.add(c); return out; };
 const fn = (body) => new Function("cs", "view", body);
 const HEX = "9f8e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a39281706f5e4d3c2b1a0";

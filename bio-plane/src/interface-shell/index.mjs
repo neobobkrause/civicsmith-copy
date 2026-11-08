@@ -400,7 +400,6 @@ export const HOOK_CLASSES = Object.freeze({
   "cs-rows": "the kit's table of rows (R19), read by the screen modules' tests",
   "cs-r": "a row of `cs.rows`, read by the screen modules' tests",
   "cs-panel": "a row's panel, read by the shell's ring (R31) and `cs.fieldOf`, and by the screen modules' tests",
-  "mk-updband": "the newer-version band (R92): the design's `cs-testband` with this hook, read by the shell's tests and journey-check (`mock-shell.js` `updBand`)",
 });
 
 /* R56: every class a served stylesheet defines: `civicsmith.css` (whose own elements' classes count with it), `shell.css`
@@ -413,9 +412,10 @@ export function stylesheetClasses(...sheets) {
   }
   return out;
 }
-/* CR2-4: the hook classes the shell itself draws that no loaded stylesheet defines, each because a requirement names it:
-   `mk-updband` (R92, R101) beside the design's `cs-testband`. Every other class the shell draws is a loaded stylesheet's. */
-export const SHELL_HOOKS_UNSTYLED = Object.freeze(["mk-updband"]);
+/* CR2-4: the hook classes the shell itself draws that no loaded stylesheet defines, each because a requirement names it.
+   CR2-22 (F6): none; the newer-version band is the design's `cs-updband` (interface-assets R13), so every class the shell draws
+   is a loaded stylesheet's. */
+export const SHELL_HOOKS_UNSTYLED = Object.freeze([]);
 let DEFINED = null;
 /* R56: with a contribution's frame rules served in the page's `<style>`, the classes they define count as served */
 const definedClasses = (extra = "") => {
