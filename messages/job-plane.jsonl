@@ -52,3 +52,4 @@
 {"at":"2026-11-08T15:32:39Z","row":"outcome","n":26,"outcome":"delivered"}
 {"at":"2026-11-08T17:50:02Z","row":"sent","n":27,"to":"bob","text":"job plane complete, PR #1066 ready, session session_018BhcegLqE4f5QKyqvSyAqK: run status"}
 {"at":"2026-11-08T17:50:18Z","row":"outcome","n":27,"outcome":"delivered"}
+{"at":"2026-11-08T19:03:42Z","row":"sent","n":28,"to":"bob","text":"job plane complete, PR #1066 ready, session session_018BhcegLqE4f5QKyqvSyAqK: run status. Gate finding: not my diff (branch vs base 659c9d7364 differs only in process/ledger, process/metrics; bio-plane/ byte-identical). R24 b L alone x3 here: p95 38/34/29 ms, max 103/93/90 (bounds 100/250) - runner load. Suite run in session: 278 pass, 0 fail of 287; republished, bounds untouched."}
