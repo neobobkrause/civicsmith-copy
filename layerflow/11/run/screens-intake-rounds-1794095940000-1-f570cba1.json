@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 11,
+  "module": "screens-intake-rounds",
+  "round": 1,
+  "started": "2026-11-07T23:59:00Z",
+  "ended": "2026-11-08T00:00:46Z",
+  "minutes": 1.8,
+  "tested_on": "ec8685a924c5e856be4ccbb459da470396156d23",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-08T00:00:46Z"
+}
