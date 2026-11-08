@@ -51,7 +51,7 @@ test("F2 R56 every hook class the shell draws sits beside a design partner a ser
   const defined = DESIGN();
   const src = shellProgram.toString();
   const drawn = new Set(classAttrs(src).flat());
-  for (const c of ["cs-crumbs", "cs-rows", "cs-r", "cs-panel", "mk-lvlbtn", "mk-updband"]) assert.ok(drawn.has(c), c + " is drawn by the shell");
+  for (const c of ["cs-crumbs", "cs-rows", "cs-r", "cs-panel", "mk-updband"]) assert.ok(drawn.has(c), c + " is drawn by the shell");
   assert.deepEqual(unpartnered(src, defined), []);
 });
 

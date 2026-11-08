@@ -400,7 +400,6 @@ export const HOOK_CLASSES = Object.freeze({
   "cs-rows": "the kit's table of rows (R19), read by the screen modules' tests",
   "cs-r": "a row of `cs.rows`, read by the screen modules' tests",
   "cs-panel": "a row's panel, read by the shell's ring (R31) and `cs.fieldOf`, and by the screen modules' tests",
-  "mk-lvlbtn": "the explanation-level control (R65), read by the design's script and journey-check (`mock-shell.js`:47)",
   "mk-updband": "the newer-version band (R92): the design's `cs-testband` with this hook, read by the shell's tests and journey-check (`mock-shell.js` `updBand`)",
 });
 
@@ -414,6 +413,9 @@ export function stylesheetClasses(...sheets) {
   }
   return out;
 }
+/* CR2-4: the hook classes the shell itself draws that no loaded stylesheet defines, each because a requirement names it:
+   `mk-updband` (R92, R101) beside the design's `cs-testband`. Every other class the shell draws is a loaded stylesheet's. */
+export const SHELL_HOOKS_UNSTYLED = Object.freeze(["mk-updband"]);
 let DEFINED = null;
 /* R56: with a contribution's frame rules served in the page's `<style>`, the classes they define count as served */
 const definedClasses = (extra = "") => {
@@ -440,13 +442,14 @@ export function classLiterals(src) {
   return out;
 }
 /* R56: throws, naming the screen (or the guide, or the shell) and the class, for a class no served stylesheet defines
-   that is neither a hook class nor one of `civicsmith.css`' own. */
+   that is neither a hook class nor one of `civicsmith.css`' own. CR2-4 (live walk p3dev-l11, findings 1 and 2): the shell's own
+   program takes the hook exemption only for `SHELL_HOOKS_UNSTYLED`, so every other class the shell draws is one a loaded stylesheet defines. */
 export function checkClasses(screens, guide, program, contribution = EMPTY_CONTRIBUTION) {
   const defined = definedClasses(contribution.style);
-  const check = (who, src) => {
-    for (const c of classLiterals(src)) if (!defined.has(c) && !Object.hasOwn(HOOK_CLASSES, c)) throw new Error(`interface-shell: ${who} draws the class ${c}, which no served stylesheet defines`);
+  const check = (who, src, hooks = true) => {
+    for (const c of classLiterals(src)) if (!defined.has(c) && !(hooks ? Object.hasOwn(HOOK_CLASSES, c) : SHELL_HOOKS_UNSTYLED.includes(c))) throw new Error(`interface-shell: ${who} draws the class ${c}, which no served stylesheet defines`);
   };
-  check("the shell", program);
+  check("the shell", program, false);
   for (const s of screens) check(`screen ${s.id}`, toSource(s));
   if (guide) check("the guide", toSource(guide));
   if (Object.keys(contribution.kit).length) check("the t53 contribution", toSource(contribution.kit));
