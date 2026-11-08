@@ -1,0 +1,15 @@
+{
+  "row": "items",
+  "layer": 12,
+  "module": "interface-shell",
+  "items": [
+    {
+      "id": "CR2-27",
+      "module": "interface-shell",
+      "what": "the DEC-340 overlaps journey-check's local walk still measures after CR2-4 landed (PR 999 re-measure on layer/12 522c98df37: 518, all interface-shell R103): \"A covers A, Width of the sections list\" x228, \"SPAN covers A, Width of the sections list\" x141, \"SPAN covers A, Search, Explanations: prompt\" x77, \"SPAN covers A\" x41, the rest <=7; placeTip's explanations (browser.mjs placeTip) must not cover their neighbours, with a test that draws a tip beside a section-list link and the search prompt and finds no overlap; carried with CR2-22 in interface-shell's open attempt (PR 1052)"
+    }
+  ],
+  "why": "CR2-27 (build/plan/completion-round-2.md)",
+  "at": "2026-11-08T15:30:17Z",
+  "by": "bob"
+}
