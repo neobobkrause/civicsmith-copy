@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "op-declarations",
+  "provider": "membership",
+  "provider_pr": 1030,
+  "provider_land": "6316509c05b43b934756d41f2d6348de92ae1c00",
+  "at": "2026-11-08T12:47:15Z",
+  "key": "op-declarations<-membership@6316509c05",
+  "why": "changed the parameters of Membership.isAdministrator (...a) -> (who, ...a) (not a trigger); its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/membership/cr2-28-administers.test.mjs: breaking, added, naming R43 (Provides before this land) while membership's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
