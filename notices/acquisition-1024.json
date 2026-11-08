@@ -1,0 +1,43 @@
+{
+  "row": "notice",
+  "at": "2026-11-08T11:58:20Z",
+  "key": "acquisition:1024",
+  "provider": "acquisition",
+  "ids": [],
+  "pr": 1024,
+  "users": [
+    "acquisition-archives",
+    "acquisition-owed",
+    "answer-envelope",
+    "capture-requests",
+    "case-carriage",
+    "content",
+    "control-plane",
+    "docket",
+    "extraction",
+    "following",
+    "instance-setup",
+    "law-relations",
+    "link-sweep",
+    "monitoring",
+    "op-specs-late",
+    "ratification",
+    "reader-contract",
+    "reading-pipeline",
+    "registers",
+    "retrieval",
+    "scheduler",
+    "screens-intake",
+    "standards",
+    "store-ask",
+    "store-assembly",
+    "store-jobs",
+    "store-request"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 12,
+    "provides": true,
+    "rescheduled": true
+  }
+}

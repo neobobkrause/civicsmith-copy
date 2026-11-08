@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "op-declarations",
+  "provider": "acquisition",
+  "provider_pr": 1024,
+  "provider_land": "e9f7b1b4bcc4c735b178e4e7c212d1d02c3db3bc",
+  "at": "2026-11-08T11:58:20Z",
+  "key": "op-declarations<-acquisition@e9f7b1b4bc",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/acquisition/acquire.test.mjs: breaking, too large to align, bio-plane/test/m/acquisition/fixture.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/acquisition/grades.test.mjs: breaking, an existing token changed or was removed, bio-plane/test/m/acquisition/unpack.test.mjs: breaking, too large to align), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
