@@ -1,0 +1,14 @@
+# Completion round 2 (after layer 11)
+
+**Status** · Ruled by the coordinator on 8 Nov 2026 (PD-12): the plan's 11 layers stay as Bob approved them, and the reopens found at and after layer merge 11 run as this completion round (PLN-4), each a `job start <module> --reopen` on the tranche. The round closes when every item is ticked or deferred with a reason. Then come deploy dev, the walk and release dev (PD-10). Live-walk report: deploys/p3dev-l11/2026-11-08T07-20-22Z (p3dev-l11 at 45824bea66).
+
+- [x] CR2-1 · corpus-export · R17, R18 through the door at op=exportwhole (ruling (a), hold-27): met by door-whole.test.mjs, PR 825 merged at e9bf0cb758
+- [ ] CR2-2 · journey-check · F10: the R21 carried states the local arm does not reach (63 internal-walk failures at layer merge 11); and PD-11: the local arm (run.mjs runLocal) runs pageLimits (design.mjs CLASS), dec340Limits and publicPass on the pages it serves, as runLive does at run.mjs:386/388/403, so a class or DEC-340 fault fails the internal walk at layer merge. Test: a local-arm fixture page drawing an undefined class fails the walk, and passes once reverted. Runs first.
+- [ ] CR2-3 · interface-assets · repin the design commit to ux lane PR 996's merge (cd2d2030de: cs-crumbs, cs-rows, cs-r and cs-panel join the visual language) and regenerate shell.css
+- [ ] CR2-4 · interface-shell · live-walk findings 1 and 2: drop mk-lvlbtn from the level button (browser.mjs:1341; cs-btn with data-shell="level" and data-tone="quiet" gives the look) and cs-menu (use mk-menu); add a test that every class the shell draws is defined by a loaded stylesheet; DEC-340 overlaps (1050) are rechecked by the re-walk after the repin, and any left are placeTip's (browser.mjs:2322). After CR2-3.
+- [ ] CR2-5 · screens-daily · live-walk finding 3, journey-check R22 (screens-daily R17): as administrator on the live team, Home draws no door to dash-project; the local walk passed the same step
+- [ ] CR2-6 · provenance · BD-18: an archive replay of the publisher's raw bytes is Grade B "via archive" (snapshot date as fetch date, archive named as custodian); a rewritten replay is Grade C, reference only; redefine ARCHIVE_CAPTURE_GRADE and its why-text, including provenance.why.group_civicsmith_fetched_bytes
+- [ ] CR2-7 · leg-earning · BD-18: leg-earning.why.strongest_route_group (words-mod-3:1381) follows the archive-replay grade
+- [ ] CR2-8 · ai-runs · the pairless aipathready cascade read (interface-shell R20) that screens-inquiry's 24 reachability tests wait on as test.todo; IV-8, the answer-key contrary marks format carried to Gate 1 (BD-14 Q9.5)
+- [ ] CR2-9 · hypotheses · IV-H F1 (BD-17): rival explanations are hypotheses; "Explore this next" orders exploring; the Rival Explanations Walkthrough v5 is the screen reference
+- [ ] CR2-10 · inquiry · IV-H F2 (BD-17): standing changes only when a conclusion at the bar names an explanation

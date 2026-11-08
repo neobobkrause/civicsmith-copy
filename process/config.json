@@ -53,6 +53,7 @@
     "JOURNEY_MEMBER_HANDLE",
     "JOURNEY_MEMBER_PASSWORD"
   ],
+  "completion_file": "build/plan/completion-round-2.md",
   "modules_file": "build/modules.json",
   "generated": [
     {
