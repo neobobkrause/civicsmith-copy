@@ -627,3 +627,4 @@
 {"at":"2026-11-08T02:30:43Z","row":"check","by":"layer publish","live":2,"live_at":"2026-11-08T02:12:39Z","job_cap":20,"startable":0}
 {"at":"2026-11-08T02:41:01Z","row":"check","by":"github note","live":2,"live_at":"2026-11-08T02:12:39Z","slots_working":1,"published_free":1,"job_cap":20,"startable":0}
 {"at":"2026-11-08T02:57:02Z","row":"check","by":"layer land","live":2,"live_at":"2026-11-08T02:12:39Z","slots_working":1,"published_free":1,"job_cap":20,"startable":0}
+{"at":"2026-11-08T03:13:21Z","row":"sweep","session":"session_018BhcefMKiLuojtdyeh1nzG","bob_acts":true,"bob_quiet_h":0.5,"root_context":25,"live":1,"live_measured_at":"2026-11-08T03:10:05Z","job_cap":20,"sessions":3,"job_ids":["plane"],"startable":0,"blocked":1,"blocked_oldest_min":443,"working":0,"waiting":1}
