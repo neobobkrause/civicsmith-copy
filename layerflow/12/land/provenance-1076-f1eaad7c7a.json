@@ -1,0 +1,25 @@
+{
+  "row": "land",
+  "layer": 12,
+  "module": "provenance",
+  "pr": 1076,
+  "branch": "job/provenance",
+  "head": "f1eaad7c7ab16d9ccb3e8792ee7fceee2cc81653",
+  "before": "6100abb63cf229cb88c6c855f50abd121d3bca0e",
+  "merge": "2ecdd660ab754f0becbf88823349cb92aeedd2fe",
+  "at": "2026-11-08T20:40:49Z",
+  "by": "bob",
+  "gate_runs": 2,
+  "interface": {
+    "changed": false,
+    "exports": null,
+    "provides": null,
+    "triggers": [],
+    "triggers_old": [],
+    "class": "none",
+    "source_changed": false
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
