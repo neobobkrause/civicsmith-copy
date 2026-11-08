@@ -52,11 +52,27 @@ test("R73 a 60 MB sheet is refused through the real door with its size and the 5
   assert.deepEqual(await held(t), [], "the record holds no capture for it");
 });
 
-/* R73's 120 MB PDF is over what one request carries, so the screen hashes it and begins it in parts (capture R113). The real `captureuploadbegin` refuses it
-   TOO_LARGE with its size and the document limit, but `sendInParts` draws that refusal through `refusalHtml` as the bare `refusal.TOO_LARGE` (the address's
-   sentence: no figures, no "Nothing was added or read.", no way in). A found mark for screens-intake (capture.mjs, `sendInParts`' `ended`), reported to BOB;
-   R73 stays open until it lands. What is drawn today is pinned nowhere (K208). */
-test.todo("R73 a 120 MB PDF, sent in parts, is refused with its size, the 100 MB document limit, nothing_read and R74 (b)'s part (owed by screens-intake: sendInParts draws the begin's TOO_LARGE bare)");
+/* R73's 120 MB PDF is over what one request carries, so the screen hashes it and begins it in parts (capture R113); the real `captureuploadbegin` refuses it
+   TOO_LARGE with its size and the document limit, and `sendInParts` draws that refusal as the one-request upload's (screens-intake, DEC-500, land 1995851e1f) */
+test("R73 a 120 MB PDF, sent in parts, is refused with its size, the 100 MB document limit R72's figure states, 'Nothing was added or read.' and R74 (b)'s part", async () => {
+  const t = await members({ mai: CAN });
+  const doc = limit("document");
+  const size = 120 * MIB;
+  assert.ok(size > doc.bytes, "the file is over the document's limit");
+  const { p } = await upload(t, sized(size, "packet.pdf", "application/pdf"));
+  for (let i = 0; i < 400 && !main(p).querySelector('[data-refusal="TOO_LARGE"]'); i++) { await p.clock.tick(1); await idle(p); }
+  assert.equal(p.byOp("captureuploadbegin").length, 1, "begun in parts, by the real owner");
+  const drawn = text(p);
+  assert.ok(drawn.includes(word("screen.capture.refusal.toolarge.size", { size: mb(size), bound: mb(doc.bytes) })), drawn);
+  assert.ok(drawn.includes(word("screen.capture.refusal.toolarge.nothing_read")), "nothing was added or read");
+  assert.ok(drawn.includes(word("screen.capture.refusal.toolarge.part")), "R74 (b): the member's own part");
+  assert.equal(main(p).querySelector('[data-way="register"]'), null, "an upload is never a register's source");
+  assert.ok(!/first part/i.test(drawn), "reading only the first part is never offered");
+  /* control: no part of the file is held, read or searched */
+  assert.equal(p.byOp("captureuploadpart").length, 0, "no part sent");
+  assert.equal(p.byOp("promote").length, 0, "nothing filed");
+  assert.deepEqual(await held(t), [], "the record holds no capture for it");
+});
 
 test("R73 control: a sheet exactly at its limit is not refused as too large", async () => {
   const t = await members({ mai: CAN });
