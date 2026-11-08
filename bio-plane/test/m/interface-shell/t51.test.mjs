@@ -162,15 +162,15 @@ test("R92 the shell asks GET /version once on load and every five minutes while 
   const p = await boot({ screens: ALL, plane: { version: versions(["v1\n", "v1\n", "v2\n"]) } });
   const polls = () => p.byOp("version").length;
   assert.equal(polls(), 1, "once on load");
-  assert.equal(p.root().querySelector(".mk-updband"), null);
+  assert.equal(p.root().querySelector(".cs-updband"), null);
   await tick5(p);
   assert.equal(polls(), 2);
-  assert.equal(p.root().querySelector(".mk-updband"), null, "the same version draws nothing");
+  assert.equal(p.root().querySelector(".cs-updband"), null, "the same version draws nothing");
   await tick5(p);
   assert.equal(polls(), 3);
-  const band = p.root().querySelector(".mk-updband");
+  const band = p.root().querySelector(".cs-updband");
   assert.ok(band, "the third answer differs");
-  assert.ok(band.classList.contains("cs-testband"));
+  assert.deepEqual(band.getAttribute("class").split(/\s+/), ["cs-updband"], "the design's own band (CR2-22, F6)");
   assert.equal(band.parentElement, p.root().querySelector(".cs-frame"), "across the top of the frame");
   assert.equal(band.nextElementSibling, p.root().querySelector(".cs-mast"), "above the masthead");
   assert.equal(band.querySelector("b").textContent, word("shell.update.title"));
@@ -183,7 +183,7 @@ test("R92 the shell asks GET /version once on load and every five minutes while 
   await tick5(p);
   assert.equal(reloads, 0, "nothing reloads by itself");
   await p.click('a[href="/app/queue"]');
-  assert.ok(p.root().querySelector(".mk-updband"), "the band stays over redraws and screens");
+  assert.ok(p.root().querySelector(".cs-updband"), "the band stays over redraws and screens");
   const before = p.requests.length;
   await p.click(button.id ? "#" + button.id : '[data-shell="reload"]');
   assert.equal(reloads, 1);
@@ -195,17 +195,17 @@ test("R92 a failed or non-text answer is no answer; a hidden page is not polled;
   const f = await boot({ screens: ALL, plane: { version: versions(["v1\n"]) } });
   f.win.fetch = ((orig) => async (url, init) => (String(url) === "/version" ? Promise.reject(new TypeError("down")) : orig(url, init)))(f.win.fetch);
   await tick5(f); await tick5(f);
-  assert.equal(f.root().querySelector(".mk-updband"), null, "a failed poll draws no band");
+  assert.equal(f.root().querySelector(".cs-updband"), null, "a failed poll draws no band");
   const j = await boot({ screens: ALL, plane: { version: versions(["v1\n"]) } });
   assert.equal(j.byOp("version").length, 1);
   const n = await boot({ screens: ALL, plane: { version: ok({ build: "v2" }) } });
   await tick5(n); await tick5(n);
-  assert.equal(n.root().querySelector(".mk-updband"), null, "a non-text answer is no answer");
+  assert.equal(n.root().querySelector(".cs-updband"), null, "a non-text answer is no answer");
   const hid = await boot({ screens: ALL, plane: { version: versions(["v1\n", "v2\n"]) } });
   hid.doc.hidden = true;
   await tick5(hid);
   assert.equal(hid.byOp("version").length, 1, "not while hidden");
-  assert.equal(hid.root().querySelector(".mk-updband"), null);
+  assert.equal(hid.root().querySelector(".cs-updband"), null);
   const pub = await boot({ screens: [DOORBELL], path: "/app/doorbell", session: null });
   await tick5(pub); await tick5(pub);
   assert.equal(pub.byOp("version").length, 0, "the public frame sends no /version");
@@ -596,7 +596,7 @@ test("R100 a browser act is admitted on the screen BROWSER_ACTS lists it for and
 
 /* ---------- R101 ---------- */
 
-test("R101 PATHS gains glossary, teamai and actionnew; ADMIN_ACTS gains signeradd and instancegroupseed; HOOK_CLASSES holds mk-updband with what reads it; the composed page admits glossary and actionnew; a member sees no signeradd act", async () => {
+test("R101 PATHS gains glossary, teamai and actionnew; ADMIN_ACTS gains signeradd and instancegroupseed; HOOK_CLASSES no longer holds mk-updband (F6); the composed page admits glossary and actionnew; a member sees no signeradd act", async () => {
   assert.deepEqual(PATHS.glossary, ["settings", "screen.glossary.name"]);
   assert.deepEqual(PATHS.teamai, ["settings", "screen.teamai.name"]);
   assert.deepEqual(PATHS.actionnew, ["projects", "@project", "screen.actionnew.name"]);
@@ -604,7 +604,7 @@ test("R101 PATHS gains glossary, teamai and actionnew; ADMIN_ACTS gains signerad
   assert.deepEqual(PATHS["dash-project"], ["projects", "@project"]);
   for (const id of ["theme", "help-records"]) assert.ok(!Object.hasOwn(PATHS, id), id + " is not this entry's");
   assert.ok(ADMIN_ACTS.has("signeradd") && ADMIN_ACTS.has("instancegroupseed"));
-  assert.match(HOOK_CLASSES["mk-updband"], /\S/);
+  assert.ok(!Object.hasOwn(HOOK_CLASSES, "mk-updband"), "F6: the band is the design's cs-updband, no hook");
   for (const id of ["glossary", "teamai", "actionnew"]) {
     assert.ok(SCREEN_REGISTRY.some((r) => r.id === id), id + " is in the regenerated registry");
     const screen = { id, reads: () => ({}), acts: [], render: (cs) => "<p>" + id + "</p>", place: () => ({ project: { id: "P1", title: "Pothole" } }) };

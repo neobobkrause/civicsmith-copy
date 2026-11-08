@@ -1,7 +1,8 @@
 /* interface-shell, completion round 2, CR2-4: the live walk of p3dev-l11 (8 Nov 2026), findings 1 and 2. The explanation-level control
    drew `mk-lvlbtn`, which no loaded stylesheet defines (308 findings); it is now the design's quiet `cs-btn` with `data-shell="level"`.
    The member menu is the design's `mk-menu` (no `cs-menu` class; `#cs-menu` stays its id, read by journey-check). Every class the shell
-   draws is one a loaded stylesheet defines (R56, R65; F2), but `SHELL_HOOKS_UNSTYLED`'s, each named by a requirement (R92's `mk-updband`). */
+   draws is one a loaded stylesheet defines (R56, R65; F2). CR2-22 (F6): with the newer-version band drawn as the design's `cs-updband`
+   (interface-assets R13), `SHELL_HOOKS_UNSTYLED` is empty and the check holds with no exemption. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ASSET_FILES } from "../../../src/interface-assets/index.mjs";
@@ -16,11 +17,11 @@ import { ALL } from "./screens.fixture.mjs";
 const LOADED = () => stylesheetClasses(ASSET_FILES["civicsmith.css"].body, ASSET_FILES["shell.css"].body, styleOf());
 const classesIn = (els) => { const out = new Set(); for (const root of els) for (const el of [root, ...root.querySelectorAll("[class]")]) for (const c of (el.getAttribute("class") || "").split(/\s+/)) if (c) out.add(c); return out; };
 
-test("CR2-4 F2 R56 R65 every class written in the shell's own program is defined by a loaded stylesheet, but the hooks a requirement names (R92's mk-updband)", () => {
+test("CR2-4 CR2-22 F2 F5 F6 R56 R65 every class written in the shell's own program is defined by a loaded stylesheet, with no exemption", () => {
   const defined = LOADED();
   const undefinedOnes = [...classLiterals(shellProgram.toString())].filter((c) => !defined.has(c)).sort();
-  assert.deepEqual(undefinedOnes, [...SHELL_HOOKS_UNSTYLED].sort());
-  assert.deepEqual([...SHELL_HOOKS_UNSTYLED], ["mk-updband"], "no other unstyled hook");
+  assert.deepEqual(undefinedOnes, []);
+  assert.deepEqual([...SHELL_HOOKS_UNSTYLED], [], "no unstyled hook (F6)");
 });
 
 test("CR2-4 F2 every class the shell's frame draws (masthead, band, rail, tabs, member menu, path) at 1280 and 390 px is defined by a loaded stylesheet", async () => {
@@ -55,7 +56,23 @@ test("CR2-4 findings 1 and 2: the explanation-level control is the design's quie
 test("CR2-4 R56 the shell's own program takes no hook exemption: a hook class it drew with no loaded style (as mk-lvlbtn was) is refused at composition, naming it; control: a screen may still draw a hook class, and a defined class passes", () => {
   assert.throws(() => checkClasses([], null, `'<button class="cs-btn mk-lvlbtn">'`), /the shell draws the class mk-lvlbtn/);
   assert.throws(() => checkClasses([], null, `'<p class="cs-nonesuch">'`), /the shell draws the class cs-nonesuch/);
-  assert.equal(checkClasses([], null, `'<button class="cs-btn">' + '<div class="cs-testband mk-updband">'`), true);
+  assert.equal(checkClasses([], null, `'<button class="cs-btn">' + '<div class="cs-updband">'`), true);
+  assert.throws(() => checkClasses([], null, `'<div class="cs-testband mk-updband">'`), /the shell draws the class mk-updband/, "F6: mk-updband takes no exemption");
   const screen = { id: "home", reads: () => ({}), acts: [], render: () => '<nav class="cs-crumbs mk-crumbs"></nav>' };
   assert.equal(checkClasses([screen], null, `'<b class="cs-btn">'`), true);
+});
+
+/* CR2-22 (F6): the newer-version band (R92) as the shell draws it is the design's `cs-updband`, every class of it defined by a
+   loaded stylesheet, with no `mk-updband` and no `cs-testband` */
+test("CR2-22 F6 R92 the newer-version band is drawn as the design's cs-updband, every class it and its parts carry defined by a loaded stylesheet; control: before a newer version, none is drawn", async () => {
+  let n = 0;
+  const p = await boot({ screens: ALL, path: "/app", plane: { version: () => ({ status: 200, text: n++ ? "v2\n" : "v1\n" }) } });
+  assert.equal(p.root().querySelector(".cs-updband"), null, "control: one version, no band");
+  await p.clock.tick(5 * 60 * 1000);
+  const band = p.root().querySelector(".cs-updband");
+  assert.ok(band, "a newer version draws the band");
+  assert.equal(p.root().querySelector(".mk-updband"), null);
+  assert.equal(band.classList.contains("cs-testband"), false);
+  const missing = [...classesIn([band])].filter((c) => !LOADED().has(c));
+  assert.deepEqual(missing, []);
 });
