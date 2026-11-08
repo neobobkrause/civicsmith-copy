@@ -32,7 +32,7 @@
  *   now          the module's clock, an ISO instant at second precision (default: the wall clock). */
 
 import { parseFrontmatter, normalizeType, OBJECT_TYPES, STATES, vocabFor, deriveInquiryTitle, BUNDLE_ID_RE,
-         isMachineIdentity, createSha256,
+         isMachineIdentity, createSha256, isHypothesisId,
          SHARED_ACT_CHECKS } from "../record-grammar/index.mjs";
 import { checkInquiryBasis, checkInquiryExtension, supersedesEdgeFindings, divisionDisclosureFindings, INQUIRY_ROWS }
   from "./grammar.mjs";
@@ -58,6 +58,7 @@ import { INQUIRY_CONTRADICTION_CHECKS, INQUIRY_SURFACE_CHECKS, INQUIRY_BIAS_CHEC
          INQUIRY_WARNINGS } from "./checks.mjs";
 import { checkInquiryEntry, inquiryQuestionOf } from "./grammar.mjs";
 import { contradictionFindings, candidateOf, readResolution, exploresOf, CANDIDATE_RE } from "./contradiction.mjs";
+import { rivalsNamedOf, rivalsNamedFindings, RIVALS_MAX } from "./rivals.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { partitionOfDoc, loggedChanges } from "./partition.mjs";
 import { setScalar, setOrAddScalar, appendStateHistory, removeBlock, setOrAddBlock, setSection, appendSessionLog,
@@ -341,6 +342,7 @@ export class Inquiry {
   #bias = null;          // R53: the lens a finding is made under is read here
   #onWaitSet = null;     // {module, fn}: scheduler's arming notice (R54; scheduler R9)
   #onMachinePassage = null; // {module, fn}: whether a member may cite as hers a passage a machine proposed (R62)
+  #onBarJudged = null;   // {module, fn}: whether a question's conclusion meets a project's bar now (R91)
   #subjectAct = null;    // R87: {bundleId, text} while setSubject's own revision is promoted (R64's arm lets it through)
   #view;                 // R55, R57: the active jurisdiction view, whose time_zone is the profile's
   #deps;
@@ -665,6 +667,9 @@ export class Inquiry {
     if (isInquiry && docFm && !replay) {
       const cf = contradictionFindings(docFm);
       if (cf.length) return { ok: false, reason: "BASIS_REFUSED", findings: cf };
+      /* R91 (F2, IV-H3): the rivals a conclusion names, judged at every state as `resolution` is */
+      const rf = rivalsNamedFindings(docFm);
+      if (rf.length) return { ok: false, reason: "BASIS_REFUSED", findings: rf };
       /* DEC-49 REGION is-candidate-taken-up — C-2.17: one candidate has one contradiction inquiry. */
       const candidate = candidateOf(docFm);
       const holder = candidate ? this.inquiryOfCandidate(candidate, bundleId) : null;
@@ -1199,6 +1204,16 @@ export class Inquiry {
     }
   }
 
+  /** R91 (F2, IV-H3): the judgment whether a question's conclusion meets a project's bar now, its strength against the
+   *  bar and every key assumption confirmed (IV-1). One registration, by any module (membership's `listenerRefusal`,
+   *  its R81). `fn({question, project, viewer})` answers synchronously; only `true` counts as meeting the bar. */
+  onBarJudged(module, fn) {
+    const refused = listenerRefusal(this.#onBarJudged, module, fn);
+    if (refused) return refused;
+    this.#onBarJudged = { module, fn };
+    return { ok: true, module };
+  }
+
   /** R19 (D-592): the inquiry's state transitions from its own `state_history`, each with who took it and when (a
    *  reopening is written there by promotion's `reopen`). */
   stateHistory(id, viewer = undefined) {
@@ -1228,6 +1243,54 @@ export class Inquiry {
       if (!r) return null;
       return { candidate: r.candidate ?? null, resolution: safeJson(r.resolution), explores: safeJson(r.explores) };
     } catch { return null; }
+  }
+
+  /** R91 (F2, IV-H3; BD-17): each rival's standing on question `question`, as `project`'s bar judges its conclusion,
+   *  computed each time it is asked and never stored. `rivals` is the question's rivals (`hypotheses`' list, at most
+   *  `RIVALS_MAX` distinct `HYP-` ids), answered in that order. A rival is `concluded_at_bar` when the question stands
+   *  `concluded`, its conclusion names the rival `case`, and the registered bar judgment (`onBarJudged`) answers `true`;
+   *  `ruled_out_at_bar` the same with `not_case`; every other rival `not_established`: below the bar, with no judgment
+   *  registered, a judgment that throws or answers anything but `true`, a question reopened, deferred, dismissed or
+   *  divided, or a rival the conclusion names `neither` or does not name. A changed standing links to its conclusion:
+   *  the question, when it was concluded, and that conclusion's legs. Refusals: `NO_SUCH_BUNDLE` (absent or not in the
+   *  viewer's sight, one answer), `NOT_AN_INQUIRY`, `RIVALS_MALFORMED`. Writes nothing; never throws. */
+  rivalStanding({ question = null, project = null, rivals = null, viewer = null } = {}) {
+    try {
+      const id = typeof question === "string" ? question.trim() : "";
+      if (!id || !this.membership.inSight(id, viewer)) return { ok: false, reason: "NO_SUCH_BUNDLE", target: id || null };
+      const info = this.record.bundleInfo(id);
+      if (!info) return { ok: false, reason: "NO_SUCH_BUNDLE", target: id };
+      if (normalizeType(info.type) !== "inquiry") return { ok: false, reason: "NOT_AN_INQUIRY", target: id };
+      const asked = Array.isArray(rivals) ? rivals.map((r) => (typeof r === "string" ? r.trim() : r)) : null;
+      if (!asked || asked.length > RIVALS_MAX || asked.some((r) => !isHypothesisId(r)) || new Set(asked).size !== asked.length)
+        return { ok: false, reason: "RIVALS_MALFORMED", target: id,
+                 detail: localize("inquiry.index.rivals_malformed", "a rival's standing is asked of the question's rivals: a list of at most {max} hypotheses, each a HYP- id named once.", { max: String(RIVALS_MAX) }) };
+      const md = this.record.readFile(id, "bundle.md");
+      const fm = md && typeof md.text === "string" ? (parseFrontmatter(md.text).data || {}) : {};
+      const concluded = fm.current_state === "concluded";
+      const named = concluded ? (rivalsNamedOf(fm) || []) : [];
+      const naming = new Map(named.filter((n) => n.named !== "neither").map((n) => [n.rival, n.named]));
+      /* the bar is asked only when the conclusion names a rival either way: a judgment nobody needs is not made */
+      let atBar = null;
+      if (naming.size && this.#onBarJudged) {
+        try { atBar = this.#onBarJudged.fn({ question: id, project, viewer }) === true; } catch { atBar = false; }
+      }
+      let conclusion = null;
+      if (atBar) {
+        const hist = Array.isArray(fm.state_history) ? fm.state_history.filter((r) => r && typeof r === "object") : [];
+        const last = hist.filter((r) => r.to_state === "concluded").pop();
+        const legs = (Array.isArray(fm.basis) ? fm.basis : []).filter((l) => l && typeof l === "object" && typeof l.target === "string")
+          .map((l) => ({ target: l.target, role: l.role ?? null }));
+        conclusion = { question: id, at: last ? last.timestamp ?? null : null, legs };
+      }
+      const standings = asked.map((rival) => {
+        const n = atBar ? naming.get(rival) : undefined;
+        return n === "case" ? { rival, standing: "concluded_at_bar", conclusion }
+             : n === "not_case" ? { rival, standing: "ruled_out_at_bar", conclusion }
+             : { rival, standing: "not_established" };
+      });
+      return { ok: true, question: id, project, state: fm.current_state ?? null, at_bar: atBar, standings };
+    } catch { return { ok: false, reason: "NO_SUCH_BUNDLE", target: typeof question === "string" ? question : null }; }
   }
 
   /** R48 (N345): the one inquiry whose document names `candidate`, or null (`except` leaves one inquiry out: R11's
