@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import { localize, word } from "../../../src/setup-words/index.mjs";
 import assert from "node:assert/strict";
-import { world, run, sha, text } from "./fixture.mjs";
+import { world, run, sha, text, wayback, eligible } from "./fixture.mjs";
 import { makeZip } from "../../make-zip.mjs";
 import { unpack, ARCHIVE_CHECKS, firstHopWho } from "../../../src/acquisition/index.mjs";
 import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
@@ -149,6 +149,20 @@ test("R39 F1 (BD-18): a file of an archive captured from a web archive carries t
   }
   assert.equal(ARCHIVE_CAPTURE_GRADE, EARNED_CAPTURE_CEILING);
   assert.notEqual(REWRITTEN_REPLAY_GRADE, ARCHIVE_CAPTURE_GRADE);
+  /* through the archive arm itself: a ZIP read from a raw replay is filed via archive at the archive letter, its
+     snapshot its fetch date and the archive its custodian, and each file opened from it carries that letter */
+  const w = world();
+  const addr = "https://gone.example/bundle.zip";
+  const z = makeZip([{ name: "via-archive.txt", data: "kept by the archive" }]);
+  await eligible(w, addr);
+  const r = await run(w, wayback([{ ts: "20250101000000", body: z, ct: "application/zip" }], { address: addr }),
+                      { via: "archive.org", address: addr }, { cls: "admin", member: false });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  const c = r.body.document.capture;
+  assert.deepEqual([c.grade, c.via_archive, c.custodian, c.fetched_at, "reference_only" in c],
+                   [ARCHIVE_CAPTURE_GRADE, true, "web.archive.org", "2025-01-01T00:00:00Z", false]);
+  const u = r.body.unpack && r.body.unpack.documents ? r.body.unpack : await unpack(w.store, { archiveSha: sha(z), by: "m1", cls: "member" });
+  assert.deepEqual(u.documents.map((d) => d.capture.grade), [ARCHIVE_CAPTURE_GRADE], "each file at its archive's letter");
 });
 
 test("R38: the same bytes twice in one archive, and bytes the register already holds, are filed once: each later sighting is `already_held` with its receipt, never a second document", async () => {
