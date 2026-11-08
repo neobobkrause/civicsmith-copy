@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 12,
+  "module": "interface-assets",
+  "pr": 1029,
+  "sha": "a474938a4c13f0c8a0fe95f907ac0f414e6d707c",
+  "run_id": 42475540750,
+  "run_attempt": 1,
+  "at": "2026-11-08T11:24:33Z",
+  "trigger": "draft",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 1,
+  "suite_minutes": null,
+  "record_only": false,
+  "whole": false
+}

@@ -1,0 +1,15 @@
+{
+  "row": "reschedule",
+  "layer": 12,
+  "user": "screens-inquiry",
+  "provider": "interface-assets",
+  "provider_pr": 1029,
+  "provider_land": "a77735ceb977e57f108fb8f6111e44f84c98d415",
+  "at": "2026-11-08T11:43:22Z",
+  "key": "screens-inquiry<-interface-assets@a77735ceb9",
+  "why": "its Public / Provides text changed (a notice, not a trigger); its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/interface-assets/assets.test.mjs: breaking, too large to align), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "provides-test"
+  ],
+  "class": "breaking"
+}
