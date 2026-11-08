@@ -9,7 +9,7 @@ import { join, relative } from "node:path";
 import { FAIL } from "./walker.mjs";
 import { localize } from "../setup-words/index.mjs";
 import { pair, WIDTHS, viewportOf } from "./design.mjs";
-import { settle } from "./walker.mjs";
+import { settle, StepFailed } from "./walker.mjs";
 
 export const CARRIED_STATES = Object.freeze([
   { screen: "document", state: "the held copy", control: "mk-dst", option: "held" },
@@ -78,8 +78,15 @@ export const CARRIED_STATES = Object.freeze([
   { screen: "counsel", control: "mk-cpst", option: "defense" },
 ]);
 
+/* A carried state's key in a `reach` map: its screen and the mock option it names, as CARRIED_STATES holds them */
+export const stateKey = (st) => `${st.screen}:${st.option}`;
+
 /* Each carried state: its design drawing at both widths; paired with the live screen where `reach` puts it in the state.
-   `reach` is `{ "<screen>, <state>": async (page, base) => boolean }`. Answers the pairs written (relative to `out`). */
+   `reach` maps a state, by its name "<screen>, <state>" or its key (`stateKey`), to `async (page, base) => boolean`, or to an
+   entry `{ reach, page?, rank?, expect?, after?, note? }` (reach.mjs): `page()` the page the state is drawn to (else `page`),
+   `rank` the order its setup needs (lower first, the list's order within a rank), `expect` the refusals its acts expect, `after`
+   what puts back what it changed, `note` written when it is paired. Each width's reach is a step of the walk ("R21 <name> at
+   <width>px"), so a setup that fails says why by name. Answers the pairs written (relative to `out`). */
 /* R21 (F10 owed): what the local arm says of a carried state it could not reach, `name` being "<screen>, <state>"; one sentence,
    so a test can tell this failure from any other of kind `state` (BOB's ruling, 7 Nov) */
 export const unreachedOnLocal = (name) => localize("journey-check.states.name_not_reached_on_the_local", "{name}: not reached on the local arm, which makes its own data", { name: String(name) });
@@ -87,7 +94,9 @@ export const unreachedOnLocal = (name) => localize("journey-check.states.name_no
 export async function walkStates(walk, b, mock, { out, page = null, base = null, reach = {}, states = CARRIED_STATES }) {
   walk.journey = "R21 the carried states";
   const written = [];
-  for (const st of states) {
+  const entryOf = (st) => { const e = reach[`${st.screen}, ${st.state ?? st.option}`] ?? reach[stateKey(st)]; return typeof e === "function" ? { reach: e } : e || null; };
+  const rankOf = (st) => entryOf(st)?.rank ?? 0;
+  for (const st of [...states].sort((a, b) => rankOf(a) - rankOf(b))) {
     /* a state without a name of its own is named by the label the mock gives its option, read at the draw */
     let name = `${st.screen}, ${st.state ?? st.option}`;
     const design = {};
@@ -98,18 +107,24 @@ export async function walkStates(walk, b, mock, { out, page = null, base = null,
       design[width] = d.png;
     }
     if (!design[WIDTHS[0]] || !design[WIDTHS[1]]) continue;
-    const reached = reach[name];
+    const entry = reach[name] ? (typeof reach[name] === "function" ? { reach: reach[name] } : reach[name]) : entryOf(st);
     let ok = false;
     const livePng = {};
-    if (reached && page) {
+    const pg = entry && (entry.page ? await entry.page().catch(() => null) : page);
+    if (entry && pg) {
       for (const width of WIDTHS) {
-        await page.setViewportSize(viewportOf(width));
-        ok = await reached(page, base);
+        await pg.setViewportSize(viewportOf(width));
+        try {
+          await walk.step(pg, `R21 ${name} at ${width}px`, async (p) => { if (!(await entry.reach(p, base))) throw new Error(`${name}: not drawn`); }, { expect: entry.expect || [] });
+          ok = true;
+        } catch (e) { if (!(e instanceof StepFailed)) throw e; ok = false; }
         if (!ok) break;
-        await settle(page);
-        livePng[width] = await page.screenshot();
+        await settle(pg);
+        livePng[width] = await pg.screenshot();
       }
-      await page.setViewportSize(viewportOf(WIDTHS[0]));
+      await pg.setViewportSize(viewportOf(WIDTHS[0])).catch(() => {});
+      if (entry.after) await entry.after(pg).catch(() => {});
+      if (ok && entry.note) walk.notes.push(entry.note);
     }
     if (!ok && walk.arm === "local") { walk.fail(FAIL.STATE, unreachedOnLocal(name)); continue; }
     if (!ok) { walk.notes.push(localize("journey-check.states.name_not_reached_on_this_instance", "{name}: not reached on this instance", { name: String(name) })); continue; }

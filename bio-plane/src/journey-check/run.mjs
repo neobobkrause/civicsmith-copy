@@ -20,6 +20,7 @@ import { dec340Limits, publicPages } from "./checks.mjs";
 import { escapedOnPage, pseudoRoute } from "./pseudo.mjs";
 import { walkPublished, PUBLISHED_ENV } from "./published.mjs";
 import { walkStates } from "./states.mjs";
+import { localReach } from "./reach.mjs";
 import { PLAN_TITLE, PROJECT_TITLE, QUESTION, OWN_PROJECT, OWN_QUESTION, OWN_READING, UPLOAD_NAME, UPLOAD_TEXT } from "./investigation.mjs";
 import { GROUP_NAME, SLUG } from "./journeys.mjs";
 import { NOTICE_PASSAGE, HEAT_PASSAGE } from "./city.mjs";
@@ -169,8 +170,9 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
     const mai = await device(walk, b, route);
     const phone = await device(walk, b, route, { width: 390, height: 844 });
     await walkMember(walk, mai.page, { base: copy, invite, member: who.member, phone: phone.page });
+    let teo = null;
     if (parts.includes("journey 3")) {
-      const teo = await device(walk, b, route);
+      teo = await device(walk, b, route);
       walk.journey = "journey 3";
       const second = await inviteMember(walk, founder.page, copy, { id: "teo", cover: "Teo, from flat 9" });
       await walkWelcome(walk, teo.page, { base: copy, link: second, member: who.newcomer });
@@ -193,7 +195,7 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
       })().catch(going);
     }
     /* R16: journey 29's search path, with no assistant, to a conclusion on her own reading */
-    if (parts.includes("R16")) await walkUnassisted(walk, founder.page, { base: copy, founder: who.founder }).catch(going);
+    const own = parts.includes("R16") ? await walkUnassisted(walk, founder.page, { base: copy, founder: who.founder }).catch(going) : null;
     /* R22, R25: the dashboards from Home's doors, and the old signing page gone */
     if (parts.includes("sweep")) {
       walk.journey = "R22 the dashboards";
@@ -232,7 +234,11 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
     if (parts.includes("R13")) {
       walk.journey = "R13 design journey 29";
       const design = await mockOf();
-      for (const f of await walkStates(walk, b, design, { out, page: founder.page, base: copy })) walk.pairs.push(f);
+      /* R21 (F10): each carried state put on the screen by the walk's own acts or the data the arm made (reach.mjs) */
+      const reach = made.project && made.question && own && teo ? localReach({ walk, base: copy, who, founder: founder.page, mai: mai.page, teo: teo.page, made, own,
+        device: async () => (await device(walk, b, route)).page }) : {};
+      if (!made.project || !own || !teo) walk.notes.push("R21: the carried states have no walk of their own: R9, R16 or journey 3 stopped or was not walked before them");
+      for (const f of await walkStates(walk, b, design, { out, page: founder.page, base: copy, reach })) walk.pairs.push(f);
       walk.journey = "R13 design journey 29";
       for (const f of await journeyPairs(walk, b, design, { out, notWalked: !assistant, liveOf: (st) => journey29Live(walk, st) })) walk.pairs.push(relative(out, f));
     }
