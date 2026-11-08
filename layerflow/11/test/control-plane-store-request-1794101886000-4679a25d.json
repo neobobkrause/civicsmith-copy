@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "control-plane-store-request",
+  "session": "session_018BhceeS3TdGdRPzystvpGs",
+  "started": "2026-11-08T01:38:06Z",
+  "ended": "2026-11-08T01:40:14Z",
+  "at": "2026-11-08T01:40:14Z",
+  "minutes": 2.13,
+  "result": "pass",
+  "layer": 11,
+  "suite_seconds": 3.906,
+  "tests": {
+    "total": 6,
+    "pass": 6,
+    "fail": 0
+  }
+}
