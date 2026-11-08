@@ -1,0 +1,16 @@
+{
+  "row": "join",
+  "layer": 12,
+  "module": "op-declarations",
+  "from": 11,
+  "why": "CR2-17: admit hypothesisrivals, explorenext, rivals; C-134.29-.33 refusals (DEC-502)",
+  "at": "2026-11-08T10:30:29Z",
+  "by": "bob",
+  "items": [
+    {
+      "id": "CR2-17",
+      "module": "op-declarations",
+      "what": "admit hypothesisrivals, explorenext and rivals with their DECLARED_OPS rows (R34 ground if ACT_HELP_ABSENT), and the ux lane's sentences and C-134 rows for hypotheses' five new refusal codes; hypotheses' attempt turned 3 op-declarations tests red"
+    }
+  ]
+}
