@@ -5,7 +5,7 @@
  * `./grammar.mjs`. Each row here is an invariant of this module with its test (`test/m/inquiry/contradiction.test.mjs`,
  * `surfaced.test.mjs`); promotion stamps them. */
 
-import { word } from "../setup-words/index.mjs";
+import { word, localize } from "../setup-words/index.mjs";
 
 /* N345 (`BIO_Case_Making_v0_1.md` §CONTRADICTION, DEC-76 items 1–3, DEC-84 item 3). A contradiction candidate taken up
  * becomes an inquiry that names it (`contradiction: {candidate}`), and when concluded says what the conflict turned out
@@ -118,3 +118,25 @@ export const INQUIRY_WARNINGS = Object.freeze({
     translation: word('refusal.PERSON_IN_NO_PUBLIC_ROLE', { persons: '{persons}' }),
   }),
 });
+
+/* R92 (CR2-20; R91, F2, IV-H3; BD-17): the rival explanations' rows, the next free numbers of this module's C-2 family
+ * (C-2.20 the last held at the job's START). `RIVALS_NAMED_MALFORMED` leaves C-2.8's general row for its own; the two
+ * read refusals of `rivalStanding` carry theirs. The translations are BOB's draft words, written once here by `localize`
+ * until the ux lane gives each `refusal.<CODE>` its row; the rows await the round's stamp. */
+export const INQUIRY_RIVAL_CHECKS = {
+  RIVALS_NAMED_MALFORMED: {
+    check: 'C-2.21',
+    where: 'src/inquiry/rivals.mjs rivalsNamedFindings > is-rivals-named-shape, reached from check > is-rivals-named',
+    translation: localize("refusal.RIVALS_NAMED_MALFORMED", "This conclusion's list of rival explanations is not in the form a conclusion names them: at most six, each one of the question's explanations named once, and each said to be the case, not the case, or neither. Nothing was written."),
+  },
+  RIVALS_MALFORMED: {
+    check: 'C-2.22',
+    where: 'src/inquiry/index.mjs rivalStanding > is-rivals-asked',
+    translation: localize("refusal.RIVALS_MALFORMED", "A rival explanation's standing is asked of the question's explanations: at most six, each named once. This list is not that."),
+  },
+  RIVALS_UNREAD: {
+    check: 'C-2.23',
+    where: 'src/inquiry/index.mjs rivalStanding > is-rivals-listed',
+    translation: localize("refusal.RIVALS_UNREAD", "This question's rival explanations could not be read just now, so no standing is shown rather than a wrong one. Try again shortly."),
+  },
+};
