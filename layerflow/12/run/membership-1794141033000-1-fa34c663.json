@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 12,
+  "module": "membership",
+  "round": 1,
+  "started": "2026-11-08T12:30:33Z",
+  "ended": "2026-11-08T12:32:22Z",
+  "minutes": 1.8,
+  "tested_on": "3976dfac908c854a5965a7a4689c39089232bc04",
+  "result": "fail",
+  "exit": 1,
+  "at": "2026-11-08T12:32:22Z"
+}
