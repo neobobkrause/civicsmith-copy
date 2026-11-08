@@ -13,6 +13,9 @@
  *   hypothesisPropose, hypothesisTakeUp,                  the system's proposals, stored apart and labelled the
  *   hypothesisSetAside, proposalsOf (R16–R18)             system's; a member takes one up as hers or sets it aside
  *   noteShare, noteUnshare, sharesOf (R19–R21)            a copy of a note's words shared with a project, withdrawable
+ *   hypothesisRivals, exploreNext, rivalsOf,              a question's 2 to 6 rival explanations and the members'
+ *   rivalHistory, bindSteps, isRival (F1)                 "Explore this next" marks; each rival lists the legs its
+ *                                                         steps produced (steps R31, `steps` handed in, never imported)
  *   hypothesesOps (R7)                                    the route arms
  *
  * SHAPE (K61, K1563 (1)). `hypothesesOf(host, deps)` answers the one instance per host; making it creates and declares
@@ -85,9 +88,10 @@ export const RIVALS_MIN = 2;
 export const RIVALS_MAX = 6;
 /** F1 (IV-H2): the sentence the screen shows where a member marks a rival "Explore this next" (the ux lane's v5). */
 export const EXPLORE_NEXT_NOTICE_KEY = "hypotheses.rivals.explore_next_notice";
-/** F1 (IV-H1, IV-H2): the codes answered for the rivals and the mark. Each is answered with its translation and no
- *  catalogue row (`check: null`; Provides: a refusal with a row carries one): none is held in this module's family. */
-export const RIVAL_CODES = Object.freeze(["RIVALS_TOO_FEW", "RIVALS_TOO_MANY", "NOT_IN_INQUIRY", "MACHINE_CANNOT_MARK", "NOT_A_RIVAL"]);
+/** F1 (IV-H1, IV-H2; layer 12, CR2-19): the codes answered for the rivals and the mark, each a row of this module's
+ *  family (C-134.29–C-134.33), its translation the ux lane's `refusal.<CODE>` (DEC-502). The machine's is this module's
+ *  own `MACHINE_CANNOT_MARK_RIVAL` (C-134.32), never sources' `MACHINE_CANNOT_MARK` (C-121.7). */
+export const RIVAL_CODES = Object.freeze(["RIVALS_TOO_FEW", "RIVALS_TOO_MANY", "NOT_IN_INQUIRY", "MACHINE_CANNOT_MARK_RIVAL", "NOT_A_RIVAL"]);
 const UTF8 = new TextEncoder();
 const HUNCH_VALID = Object.freeze({ from: null, to: null, precision: "day", zone: "UTC" });
 
@@ -103,17 +107,6 @@ function refuse(code, detail, extra = {}) {
   return { ok: false, reason: code, code, check: row.check, translation: row.translation, detail, ...extra };
 }
 
-/* F1 (IV-H1, IV-H2): the rivals' and the mark's refusals, each with its translation and no catalogue row. */
-const RIVAL_WORDS = {
-  RIVALS_TOO_FEW: () => localize("hypotheses.rivals.too_few", "A question holds at least 2 rival explanations, each a hypothesis held in it. Nothing was written."),
-  RIVALS_TOO_MANY: () => localize("hypotheses.rivals.too_many", "A question holds at most 6 rival explanations. Nothing was written."),
-  NOT_IN_INQUIRY: () => localize("hypotheses.rivals.not_in_inquiry", "A rival explanation is a hypothesis already held in this question, or one the system proposed in it. Nothing was written."),
-  MACHINE_CANNOT_MARK: () => localize("hypotheses.rivals.machine_cannot_mark", "Only a member marks which explanation to explore next. Nothing was written."),
-  NOT_A_RIVAL: () => localize("hypotheses.rivals.not_a_rival", "That is not one of this question's rival explanations. Nothing was written."),
-};
-function refuseBare(code, detail, extra = {}) {
-  return { ok: false, reason: code, code, check: null, translation: RIVAL_WORDS[code](), detail, ...extra };
-}
 /** F1 (IV-H2): the not-evidence sentence, answered where a mark is made and beside the rivals for the dialog. */
 export const exploreNextNotice = () => localize("hypotheses.rivals.explore_next_notice", "This sets the order your team explores in. It is not evidence and changes no grade.");
 
@@ -152,12 +145,23 @@ export function hypothesesOf(host, deps = {}) {
     h.migrate();
     const r = promotion.registerStep(OWNER, { check: (c) => h.check(c) });
     if (r && r.ok === false) throw new Error(`hypotheses: registerStep refused: ${r.reason}`);
+    if (deps.steps) h.bindSteps(deps.steps);
+    /* F1 (layer 12, CR2-19; inquiry R92, CR2-20): the question's rivals, registered with inquiry at start, so a standing
+       read that names none reads this module's list. An inquiry that cannot be reached, or one with no such
+       registration, is left unregistered: its read then refuses RIVALS_UNREAD, never answers as no rivals. */
+    let inq = null;
+    try { inq = deps.inquiry ?? inquiryOf(host); } catch { inq = null; }
+    if (inq && typeof inq.onRivalsListed === "function") {
+      const l = inq.onRivalsListed(OWNER, (a) => h.rivalsListed(a));
+      if (l && l.ok === false) throw new Error(`hypotheses: onRivalsListed refused: ${l.reason}`);
+    }
   }
   return h;
 }
 
 export class Hypotheses {
   #sql; #record; #membership; #explore; #host; #calculations; #registry; #now; #personWarning; #shareId; #inquiryInst;
+  #steps = null;   // F1 (IV-H2; steps R31): the steps instance handed in (`deps.steps` or `bindSteps`), never imported
 
   constructor(storage, { record, membership, explore = null, host = null, calculations = null, registry = defaultRegistry, now = null,
                          personWarning = null, shareId = null, inquiry = null }) {
@@ -540,14 +544,14 @@ export class Hypotheses {
     if (q.refusal) return q.refusal;
     if (isMachineIdentity(by)) return refuse("MACHINE_CANNOT_HYPOTHESISE", "the act's stamp is a machine's; only a member adds or removes a rival explanation (K1473)");
     const ids = Array.isArray(rivals) ? [...new Set(rivals)] : [];
-    if (ids.length < RIVALS_MIN) return refuseBare("RIVALS_TOO_FEW", `a question holds ${RIVALS_MIN} to ${RIVALS_MAX} rival explanations`, { min: RIVALS_MIN, max: RIVALS_MAX });
-    if (ids.length > RIVALS_MAX) return refuseBare("RIVALS_TOO_MANY", `a question holds ${RIVALS_MIN} to ${RIVALS_MAX} rival explanations`, { min: RIVALS_MIN, max: RIVALS_MAX });
+    if (ids.length < RIVALS_MIN) return refuse("RIVALS_TOO_FEW", `a question holds ${RIVALS_MIN} to ${RIVALS_MAX} rival explanations`, { min: RIVALS_MIN, max: RIVALS_MAX });
+    if (ids.length > RIVALS_MAX) return refuse("RIVALS_TOO_MANY", `a question holds ${RIVALS_MIN} to ${RIVALS_MAX} rival explanations`, { min: RIVALS_MIN, max: RIVALS_MAX });
     const held = new Map(this.#rows(`SELECT rival_id FROM hypothesis_rivals WHERE bundle_id = ?`, inquiry).map((r) => [r.rival_id, true]));
     const sources = new Map();
     for (const id of ids) {
       /* a rival already in the set stays, whatever has since become of it */
       const s = held.has(id) ? "kept" : this.#rivalSource(inquiry, id);
-      if (!s) return refuseBare("NOT_IN_INQUIRY", "a rival is a hypothesis held in this question, or a proposal of the system's in it", { rival: typeof id === "string" ? id : null });
+      if (!s) return refuse("NOT_IN_INQUIRY", "a rival is a hypothesis held in this question, or a proposal of the system's in it", { rival: typeof id === "string" ? id : null });
       sources.set(id, s);
     }
     const added = ids.filter((id) => !held.has(id));
@@ -573,14 +577,14 @@ export class Hypotheses {
    *  holds one such mark in a question at a time; a new mark replaces their own earlier one, and each is kept in the
    *  history with who and when. It sets the order of exploring and nothing else: it touches no leg, grade, strength,
    *  conclusion or standing. Refusals in order, each writing nothing: `NO_SUCH_BUNDLE`, `NOT_AN_INQUIRY`,
-   *  `MACHINE_CANNOT_MARK`, `NOT_A_RIVAL`. Answers `{ok, inquiry, rival, replaced, at, notice}`, `notice` the
+   *  `MACHINE_CANNOT_MARK_RIVAL`, `NOT_A_RIVAL`. Answers `{ok, inquiry, rival, replaced, at, notice}`, `notice` the
    *  not-evidence sentence. */
   exploreNext({ inquiry = null, rival = null, by = null } = {}) {
     const q = this.#inquiry(inquiry, by);
     if (q.refusal) return q.refusal;
-    if (isMachineIdentity(by)) return refuseBare("MACHINE_CANNOT_MARK", "the act's stamp is a machine's; only a member marks what to explore next (INV:108)");
+    if (isMachineIdentity(by)) return refuse("MACHINE_CANNOT_MARK_RIVAL", "the act's stamp is a machine's; only a member marks what to explore next (INV:108)");
     const r = filled(rival) ? this.#one(`SELECT rival_id FROM hypothesis_rivals WHERE bundle_id = ? AND rival_id = ?`, inquiry, rival) : null;
-    if (!r) return refuseBare("NOT_A_RIVAL", "the id is not one of this question's rival explanations", { rival: filled(rival) ? rival : null });
+    if (!r) return refuse("NOT_A_RIVAL", "the id is not one of this question's rival explanations", { rival: filled(rival) ? rival : null });
     const prior = this.#one(`SELECT rival_id FROM hypothesis_rival_marks WHERE bundle_id = ? AND member = ?`, inquiry, by);
     const notice = exploreNextNotice();
     if (prior && prior.rival_id === rival) return { ok: true, already: true, inquiry, rival, replaced: null, at: null, notice };
@@ -591,6 +595,64 @@ export class Hypotheses {
       this.#history(inquiry, rival, "mark", by, at);
       return { ok: true, inquiry, rival, replaced: prior ? prior.rival_id : null, at, notice };
     });
+  }
+
+  /** F1 (IV-H2 "Evidence found while exploring"; steps R31): binds the steps instance, once, and registers with it
+   *  (`registerRivalSource`) whether an id is one of a question's rivals for a viewer: true only when the viewer sees
+   *  the question and `rival` is in its set. `steps` is handed in, never imported (the edge is the wiring's). A second
+   *  binding of the same instance answers `already`; of another, `STEPS_ALREADY_BOUND`. Answers `{ok}` or what
+   *  `registerRivalSource` refused. */
+  bindSteps(steps) {
+    if (!steps || typeof steps.registerRivalSource !== "function" || typeof steps.stepsOfRival !== "function")
+      return { ok: false, reason: "STEPS_NOT_A_STEPS" };
+    if (this.#steps === steps) return { ok: true, already: true };
+    if (this.#steps) return { ok: false, reason: "STEPS_ALREADY_BOUND" };
+    const r = steps.registerRivalSource(OWNER, (a) => this.isRival(a));
+    if (r && r.ok === false) return r;
+    this.#steps = steps;
+    return { ok: true };
+  }
+
+  /** F1 (steps R31): whether `rival` is one of `question`'s rival explanations for `viewer`; false for anything else,
+   *  an unseen question included. Never throws. */
+  isRival({ question = null, rival = null, viewer = null } = {}) {
+    try {
+      if (!filled(question) || !filled(rival) || !filled(viewer) || this.#inquiry(question, viewer).refusal) return false;
+      return !!this.#one(`SELECT 1 AS y FROM hypothesis_rivals WHERE bundle_id = ? AND rival_id = ?`, question, rival);
+    } catch { return false; }
+  }
+
+  /* F1 (IV-H2): the legs the steps opened from `rival` produced: the question's basis legs whose target is a product
+     of such a step that the viewer may see, each with its grades and its role on the question, in the basis's order.
+     No member marks a leg against a rival; nothing here is written. With no steps bound, or a read that fails, none
+     (`legs_read: false`), never a guess. */
+  #rivalLegs(inquiry, rival, viewer) {
+    if (!this.#steps) return { legs: [], legs_read: false };
+    try {
+      const s = this.#steps.stepsOfRival({ question: inquiry, rival, viewer, limit: 1000 });
+      if (!s || s.ok !== true || !Array.isArray(s.steps)) return { legs: [], legs_read: false };
+      const from = new Map();
+      for (const st of s.steps) for (const p of Array.isArray(st.products) ? st.products : [])
+        if (p && filled(p.id) && !from.has(p.id)) from.set(p.id, st.step);
+      if (!from.size) return { legs: [], legs_read: true };
+      const b = this.#inquiryOf().basisFor(inquiry);
+      if (!b || b.ok !== true || !Array.isArray(b.legs)) return { legs: [], legs_read: false };
+      const legs = b.legs.filter((l) => from.has(l.target_id))
+        .map((l) => ({ ord: l.ord, target: l.target_id, target_type: l.target_type, role: l.role,
+                       grade: l.grade ?? null, grade_axis: l.grade_axis ?? null, grade_source: l.grade_source ?? null,
+                       step: from.get(l.target_id) }));
+      return { legs, legs_read: true };
+    } catch { return { legs: [], legs_read: false }; }
+  }
+
+  /** F1 (inquiry R92): `rivalsListed({question, viewer})`, what this module registers with inquiry's `onRivalsListed`:
+   *  the question's rival ids in `rivalsOf`'s order (of exploring), at most `RIVALS_MAX`, each a `HYP-` id; null when
+   *  the viewer may not see the question (inquiry answers that before it asks). Writes nothing; never throws. */
+  rivalsListed({ question = null, viewer = null } = {}) {
+    try {
+      if (this.#inquiry(question, viewer).refusal) return null;
+      return this.#rivalRows(question).map((r) => r.rival_id);
+    } catch { return null; }
   }
 
   /** F1 (IV-H1, IV-H2): `rivalsOf({inquiry, viewer})`: the question's rival explanations in the order of exploring (by
@@ -613,6 +675,8 @@ export class Hypotheses {
       return { ...base, source: "member", kind: h?.kind ?? null, statement: h?.statement ?? null,
                status: h ? (h.withdrawn ? "withdrawn" : "live") : null };
     });
+    /* IV-H2: each rival lists the legs the steps opened from it produced (steps R31) */
+    for (const r of rivals) Object.assign(r, this.#rivalLegs(inquiry, r.rival, viewer));
     return { ok: true, inquiry, label: HYPOTHESIS_LABEL, notice: exploreNextNotice(), rivals };
   }
 
@@ -821,6 +885,12 @@ export class Hypotheses {
                      share, proj, member, n.text, warning ? json(warning) : null, at);
       return { ok: true, share, project: proj, at, by: member, kind: SHARE_KIND, ...(warning ? { warning } : {}) };
     });
+  }
+
+  /* The host's `inquiry` (handed in, else reached when first asked), or null. */
+  #inquiryOf() {
+    if (!this.#inquiryInst && this.#host) this.#inquiryInst = inquiryOf(this.#host);
+    return this.#inquiryInst;
   }
 
   /* R19 (K2479): inquiry R59's warning for `text`: its `personWarning` over the record's facts for the persons the text
@@ -1047,6 +1117,11 @@ export function hypothesesOps(hypotheses, url, body) {
     noteshare: () => hypotheses.noteShare(b),
     noteunshare: () => hypotheses.noteUnshare(b),
     shares: () => hypotheses.sharesOf({ project: q("project"), viewer: q("viewer") }),
+    /* F1 (layer 12, CR2-19): the rival explanations' door, admitted by affordances' CR2-16 and op-declarations' CR2-17 */
+    hypothesisrivals: () => hypotheses.hypothesisRivals({ inquiry: b.inquiry, rivals: b.rivals, by: b.by }),
+    explorenext: () => hypotheses.exploreNext({ inquiry: b.inquiry, rival: b.rival, by: b.by }),
+    rivals: () => (q("history") ? hypotheses.rivalHistory({ inquiry: q("inquiry"), viewer: q("viewer") })
+                                : hypotheses.rivalsOf({ inquiry: q("inquiry"), viewer: q("viewer") })),
   };
 }
 
@@ -1067,4 +1142,12 @@ export const DECLARED_OPS = Object.freeze({
     fields: { accepts: ["note","into","hunch","made"], requires: ["note","into",["made","hunch"]] } },
   notedelete: { classes: ["admin","member"], machineClasses: [], mutating: true, weight: "caller-owned", description: localize("hypotheses.declared.notedelete", "note-directed: a member's own note, keyed by the note and answered to its author alone; never a record id, never cited, published or counted; moves no bundle"),
     fields: { accepts: ["note"], requires: ["note"] } },
+  /* F1 (layer 12, CR2-19; op-declarations F4, R80): the rival explanations' three ops, declared here and nowhere else; the
+     acts stamped `by` and `viewer` (each act reads `by`), `contribute` their capability; the read a session's. */
+  hypothesisrivals: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: "contribute", stamps: ["by","viewer"], weight: "reversible", description: localize("hypotheses.declared.hypothesisrivals", "inquiry-directed: keyed by a question; sets its rival explanations to 2 to 6 hypotheses held in it or proposed by the system in it, each change kept with who and when; never a fact, a leg or a grade"),
+    fields: { accepts: ["inquiry","rivals"], requires: ["inquiry","rivals"] } },
+  explorenext: { classes: ["admin","member"], machineClasses: [], mutating: true, needs: "contribute", stamps: ["by","viewer"], weight: "reversible", description: localize("hypotheses.declared.explorenext", "inquiry-directed: keyed by a question and one of its rivals; the member's one 'Explore this next' mark, replacing their own earlier one; sets the order of exploring and nothing else, not evidence"),
+    fields: { accepts: ["inquiry","rival"], requires: ["inquiry","rival"] } },
+  rivals: { classes: ["admin","member"], machineClasses: [], mutating: false, weight: "read", description: localize("hypotheses.declared.rivals", "read: a question's rival explanations in the order of exploring, each labelled a hypothesis with no grade, with the legs the steps opened from it produced; with history, every add, remove and mark; writes nothing"),
+    fields: { accepts: ["inquiry","history"], requires: ["inquiry"] } },
 });
