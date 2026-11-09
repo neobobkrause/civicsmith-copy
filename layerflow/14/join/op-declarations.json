@@ -1,0 +1,10 @@
+{
+  "row": "join",
+  "layer": 14,
+  "module": "op-declarations",
+  "from": 11,
+  "why": "credentials F1 declares alertconnect: add alertconnect to ACT_HELP_ABSENT.unexplained in src/op-declarations/index.mjs (beside keyedserviceset and the register ops) so t36.test.mjs R34 and R47 pass with credentials' PR 1099",
+  "companion_of": "credentials",
+  "at": "2026-11-09T13:38:33Z",
+  "by": "bob"
+}
