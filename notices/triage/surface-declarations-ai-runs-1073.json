@@ -1,0 +1,1 @@
+{"row":"triage","user":"surface-declarations","verdict":"not affected","evidence":"build/modules.json:178 lists ai-runs in uses but the module has no paths or tests, and PR 1073 changed no ai-runs source","at":"2026-11-09T06:04:00.966Z","key":"ai-runs:1073","worker":"sonnet-ar1073-6","cost":"0.25"}

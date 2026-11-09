@@ -1,0 +1,1 @@
+{"row":"triage","user":"plan-work","verdict":"not affected","evidence":"bio-plane/src/plan-work/index.mjs:894 #openRun only calls aiRuns open (R77); it does not use the administrator's read of team-paid run parts, and PR 1073 changed no source","at":"2026-11-09T06:04:00.966Z","key":"ai-runs:1073","worker":"sonnet-ar1073-4","cost":"0.25"}
