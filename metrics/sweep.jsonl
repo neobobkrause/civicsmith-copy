@@ -803,3 +803,4 @@
 {"at":"2026-11-09T06:04:11Z","row":"check","by":"notice triage","live":1,"live_at":"2026-11-09T05:08:46Z","job_cap":20,"startable":0}
 {"at":"2026-11-09T06:13:32Z","row":"sweep","session":"session_018Bhceg3m4o8qXzgi9JC4Ux","bob_acts":true,"bob_quiet_h":0.7,"root_context":30,"live":0,"live_measured_at":"2026-11-09T06:08:24Z","job_cap":20,"sessions":5,"job_ids":[],"startable":0,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":0}
 {"at":"2026-11-09T06:22:07Z","row":"check","by":"send","live":0,"live_at":"2026-11-09T06:13:32Z","job_cap":20,"startable":0}
+{"at":"2026-11-09T06:27:09Z","row":"check","by":"send","live":0,"live_at":"2026-11-09T06:13:32Z","job_cap":20,"startable":0}
