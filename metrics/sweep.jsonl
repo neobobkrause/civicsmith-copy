@@ -787,3 +787,4 @@
 {"at":"2026-11-09T04:08:57Z","row":"sweep","session":"session_018Bhceg3m4o8qXzgi9JC4Ux","bob_acts":true,"bob_quiet_h":0.1,"root_context":27,"live":1,"live_measured_at":"2026-11-09T04:05:15Z","job_cap":20,"sessions":7,"job_ids":["bundler"],"startable":0,"blocked":0,"blocked_oldest_min":null,"working":1,"waiting":0}
 {"at":"2026-11-09T04:14:49Z","row":"check","by":"address","live":1,"live_at":"2026-11-09T04:08:57Z","job_cap":20,"startable":0}
 {"at":"2026-11-09T04:27:45Z","row":"check","by":"notice triage","live":1,"live_at":"2026-11-09T04:08:57Z","slots_working":1,"published_free":0,"resumed":["bundler"],"job_cap":20,"startable":0}
+{"at":"2026-11-09T04:34:03Z","row":"check","by":"layer land","live":1,"live_at":"2026-11-09T04:08:57Z","slots_working":1,"published_free":0,"resumed":["bundler"],"job_cap":20,"startable":0}
