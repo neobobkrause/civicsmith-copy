@@ -652,3 +652,4 @@
 {"at":"2026-11-09T00:33:03Z","row":"outcome","n":328,"outcome":"delivered"}
 {"at":"2026-11-09T01:12:36Z","row":"sent","n":329,"to":"root","text":"re root-129: five BLOCKED unchanged (rulings hold). Holding round 2 at layer open 13 on the coordinator's ruling until C44 is pinned (pin still a6bd8f11); then interface-shell's DEC-340 reopen and the plane suite job start."}
 {"at":"2026-11-09T01:13:32Z","row":"outcome","n":329,"outcome":"delivered"}
+{"at":"2026-11-09T02:20:38Z","row":"sent","n":330,"to":"root","text":"re root-130: five BLOCKED unchanged. Pin 544f5089 in; opening round 2: interface-shell's DEC-340 recorded (owed reopen, C44), plane F1 PR 1084 merging; then layer open 13 and its jobs."}
