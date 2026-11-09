@@ -281,3 +281,4 @@
 {"at":"2026-11-09T11:22:06Z","row":"outcome","n":141,"outcome":"delivered"}
 {"at":"2026-11-09T12:18:23Z","row":"sent","n":142,"to":"bob","text":"Sweep: IDLE CAPACITY, 18 slots empty, 0 startable: run node .process/tool/p3.mjs layer merge 14 first; only a recorded hold (p3 hold) keeps a slot empty; ai-accounts: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; credentials: BLOCKED; file-scanner: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-09T12:18:42Z","row":"outcome","n":142,"outcome":"delivered"}
+{"at":"2026-11-09T13:10:55Z","row":"sent","n":143,"to":"bob","text":"IDLE CAPACITY: 2 job sessions live of the cap 20, 0 startable, for 62 min; 18 x no startable work: round 2 · layer 2 (internal layer 14) can merge (node .process/tool/p3.mjs layer merge 14): run node .process/tool/p3.mjs layer merge 14: run status"}
