@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "ai-catalogue",
+  "session": "session_018BhceeNFkqQVrmw6ts97ZH",
+  "started": "2026-11-09T09:38:55Z",
+  "ended": "2026-11-09T09:40:39Z",
+  "at": "2026-11-09T09:40:39Z",
+  "minutes": 1.73,
+  "result": "pass",
+  "layer": 14,
+  "suite_seconds": 2.822,
+  "tests": {
+    "total": 147,
+    "pass": 147,
+    "fail": 0
+  }
+}
