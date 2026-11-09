@@ -14,6 +14,7 @@
  * frozen, deterministic value, ordered by provider then entry id. */
 import { canonicalJson, createSha256 } from "../record-grammar/index.mjs";
 import { recordOf } from "../record-core/index.mjs";
+import { localize } from "../setup-words/index.mjs";
 import { CATALOGUE_KEYS, verifyAiCatalogue, verifyAiAdvisory } from "../sshsig.mjs";
 import { CATALOGUE_CHECKS, CATALOGUE_STATES, STATE_WORDS, refusal } from "./checks.mjs";
 import { AI_CATALOGUE_SCHEMA, AI_CATALOGUE_TABLES, AI_CATALOGUE_DECLARATIONS } from "./schema.mjs";
@@ -39,8 +40,10 @@ export const CATALOGUE_MAX_BYTES = 4 * 1024 * 1024;
 export const HELD_VERSIONS = 5;
 export const RESULT_ACTIVE_MONTHS = 6;
 export const CATALOGUE_USER_AGENT = "Civicsmith-catalogue/1";
-/** R34: the fixed address of the index `ai-issuer` serves, the publisher's own; payloads are relative paths beneath it. */
-export const CATALOGUE_ADDRESS = "https://ai-issuer.believeinoakland.workers.dev/catalogue/index.json";
+/** R34: the fixed address of the index `ai-issuer` serves, the publisher's own; payloads are relative paths beneath it.
+ *  F5 (ai-issuer R1): the issuer serves the index at `/ai/index.json` and each payload at `/ai/catalogue/<seq>.json`, the
+ *  index naming it `catalogue/<seq>.json`, so a payload's path resolves beneath `/ai/`. */
+export const CATALOGUE_ADDRESS = "https://ai-issuer.believeinoakland.workers.dev/ai/index.json";
 export const CHECK_TRIGGERS = Object.freeze(["schedule", "manual"]);
 
 /* The store's single value is about 2.1 MB; a payload's text is held in chunks of at most this many UTF-16 units, so no
@@ -264,6 +267,14 @@ export class AiCatalogue {
   #stateOf(kind, id, held, at) {
     const s = effectiveState(held ? { seq: held.seq, state: held.rec.lifecycle } : null, this.#advisoriesFor(`${kind}:${id}`), at);
     return s ? s.state : null;
+  }
+  /* F4: the listing state with its reason: the advisory's reason code that set it, or null where a payload set it */
+  #listingOf(kind, id, held, at) {
+    const advisories = this.#advisoriesFor(`${kind}:${id}`);
+    const s = effectiveState(held ? { seq: held.seq, state: held.rec.lifecycle } : null, advisories, at);
+    if (!s) return null;
+    const by = s.seq === held.seq ? null : advisories.find((a) => a.seq === s.seq);
+    return { state: s.state, reason: by ? by.reason : null, since_seq: s.seq };
   }
 
   /* R38 */
@@ -760,6 +771,78 @@ export class AiCatalogue {
     } catch { return out({ state: "unavailable", word: STATE_WORDS.unavailable }); }
   }
 
+  /** F4 (screens-ai R1, R3, R4): what the screens draw of the catalogue in one read: its state (stale included, R32),
+   *  the providers, the plans by provider (R29), and each entry with its listing state and reason, each check's answer
+   *  with its grade, source and date (R1, R11), the shown answers (R13), the verdict per part with its grade (R14) and,
+   *  per part, whether it is offered under `checksInForce` and why not (R30, R31). Never throws, writes nothing. */
+  catalogueRead(opts) {
+    try {
+      const { checksInForce = [], at } = isObj(opts) ? opts : {};
+      const state = this.catalogueState({ at });
+      const view = this.#fold();
+      if (!view.payload) return out({ ok: true, catalogue: state, providers: [], parts: [], plans: [], entries: [] });
+      const list = Array.isArray(checksInForce) ? checksInForce : [];
+      for (const c of list) if (!CHECK_IDS.includes(c)) return refusal("CHECK_UNKNOWN", { check_id: typeof c === "string" ? c : null });
+      const when = this.#now(at);
+      const parts = view.payload.parts;
+      const claim = (c) => {
+        const ev = isOpen(c) || !isObj(c.ev) || isOpen(c.ev) ? null : c.ev;
+        return { answer: answerOf(c), grade: ev ? ev.grade : null, source: ev ? ev.source : null, date: ev ? ev.date : null,
+          page: ev && ev.page !== undefined ? ev.page : null, quote: ev && ev.quote !== undefined ? ev.quote : null };
+      };
+      const entries = [...view.entries.values()].map((held) => {
+        const e = held.rec;
+        const listing = this.#listingOf("entry", e.entry_id, held, when);
+        const offered = {};
+        for (const part of parts) {
+          const j = this.#judge(held, view, part, list, when);
+          offered[part] = { offered: j.reasons.length === 0, reasons: j.reasons };
+        }
+        return { entry_id: e.entry_id, display_name: e.display_name, provider: e.provider, host: e.host,
+          recipient: { provider: e.provider, host: e.host }, developer: e.developer, plan_ids: e.plan_ids,
+          state: listing.state, listing, watch: listing.state === "watch", omitted_since: held.omitted_since,
+          needs_newer_release: this.#needsRelease(e), zero_retention: valueOf(e.zero_retention),
+          checks: Object.fromEntries(CHECK_IDS.map((c) => [c, claim(e.checks[c])])),
+          shown: Object.fromEntries(SHOWN_IDS.map((c) => [c, e.shown && e.shown[c] !== undefined ? claim(e.shown[c]) : null])),
+          gate: Object.fromEntries(parts.map((part) => {
+            const g = e.gate[part];
+            return [part, g ? { verdict: g.verdict, limits: g.limits, grade: isOpen(g.ev) ? null : g.ev.grade, at: g.at ?? null }
+              : { verdict: "not_yet_rated", limits: [], grade: null, at: null }];
+          })),
+          offered };
+      }).sort(byProviderThenId("entry_id"));
+      const plans = this.plansOf({ at: when }).map((g) => ({ provider: g.provider, plans: g.plans.map((p) => ({ ...p,
+        listing: this.#listingOf("plan", p.plan_id, view.plans.get(p.plan_id), when) })) }));
+      const providers = [...view.providers.values()].map((x) => ({ id: x.id, name: x.name, kind: x.kind }))
+        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      return out({ ok: true, catalogue: state, providers, parts, plans, entries });
+    } catch { return this.#unavailable(); }
+  }
+
+  /** F4 (screens-ai R10): the results library as the screens draw it: the active rows (R45) and the combined records
+   *  (R55), filtered by `subject_id` and `part`, and every subject they name with its name and its place on the list
+   *  (an entry's listing state, or `not_listed` for a tested AI, R54). Never throws, writes nothing. */
+  resultsRead(opts) {
+    try {
+      const { subject_id, part, at } = isObj(opts) ? opts : {};
+      const q = { at, ...(typeof subject_id === "string" ? { subject_id } : {}), ...(typeof part === "string" ? { part } : {}) };
+      const rows = this.libraryRows(q);
+      const combined = this.combinedResults(q);
+      const view = this.#fold();
+      const when = this.#now(at);
+      const ids = [...new Set([...rows, ...combined].map((r) => r.subject_id))].sort();
+      const subjects = ids.map((id) => {
+        const held = view.entries.get(id);
+        if (held) return { subject_id: id, display_name: held.rec.display_name, provider: held.rec.provider, host: held.rec.host,
+          on_list: this.#stateOf("entry", id, held, when) };
+        const t = view.payload ? view.payload.tested.find((x) => x.subject_id === id) : undefined;
+        return { subject_id: id, display_name: t ? t.display_name : null, provider_name: t ? t.provider_name : null,
+          host_name: t ? t.host_name : null, on_list: "not_listed" };
+      });
+      return out({ ok: true, catalogue: this.catalogueState({ at }), subjects, rows, combined });
+    } catch { return this.#unavailable(); }
+  }
+
   /** The checks this copy has recorded (R35), oldest first. */
   checks() { return out(this.#checks.map((c) => ({ at: c.at, trigger: c.trigger, outcome: c.outcome }))); }
 }
@@ -782,3 +865,34 @@ export function aiCatalogueOf(ctx, { record = null, env = {}, clock = null, keys
 
 /* isInstant, isDate: re-exported for the issuer's own checks of what it signs. */
 export { isInstant, isDate };
+
+/* ------------------------------------------------------------------ F4: the ops this module serves */
+
+/* F4 (screens-ai R1, R3, R4, R10; coordinator 17:24, the screens-ai ruling): the screens' two reads of the catalogue, served
+   over the store's one instance (`aiCatalogueOf(ctx)`), each answered once the instance is ready. A query field or, where the
+   door hands one, a body field: `checks` (the checks in force, a comma list or a list), `subject_id`, `part`. Each writes
+   nothing and is a member's or an administrator's read in a session. */
+const listOf = (v) => (Array.isArray(v) ? v : typeof v === "string" && v !== "" ? v.split(",").map((x) => x.trim()) : []);
+export function aiCatalogueOps(cat, url, body) {
+  const b = isObj(body) && !Array.isArray(body) ? body : {};
+  const field = (k) => {
+    const v = url && url.searchParams ? url.searchParams.get(k) : null;
+    return v !== null ? v : b[k] !== undefined ? b[k] : undefined;
+  };
+  const str = (k) => { const v = field(k); return typeof v === "string" && v !== "" ? v : undefined; };
+  const ready = async () => { if (cat && cat.ready) await cat.ready; };
+  return {
+    aicatalogueread: async () => { await ready(); return cat.catalogueRead({ checksInForce: listOf(field("checks")) }); },
+    airesultsread: async () => { await ready(); return cat.resultsRead({ subject_id: str("subject_id"), part: str("part") }); },
+  };
+}
+
+/* F4 (op-declarations R80, op-grades R49): the two reads' declarations, beside the map: reads in a member's or an
+   administrator's session, writing nothing. Held under this name until `store-assembly` takes them into its assembly
+   (its R83 holds every module that exports `DECLARED_OPS` to its own imports), which is store-assembly's change. */
+export const CATALOGUE_DECLARED_OPS = Object.freeze({
+  aicatalogueread: Object.freeze({ classes: Object.freeze(["admin", "member"]), machineClasses: Object.freeze([]), mutating: false,
+    weight: "read", description: localize("ai-catalogue.declared.aicatalogueread", "read: the AI catalogue this copy holds, its providers, plans, entries with each check's answer, grade, source and date, the listing state with its reason, and whether the copy is stale; writes nothing") }),
+  airesultsread: Object.freeze({ classes: Object.freeze(["admin", "member"]), machineClasses: Object.freeze([]), mutating: false,
+    weight: "read", description: localize("ai-catalogue.declared.airesultsread", "read: what every tested AI has shown, the active results library and the combined results, with who tested and when and the grade; writes nothing") }),
+});
