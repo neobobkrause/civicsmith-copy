@@ -700,3 +700,4 @@
 {"at":"2026-11-09T15:00:37Z","row":"outcome","n":353,"outcome":"delivered"}
 {"at":"2026-11-09T15:11:06Z","row":"sent","n":354,"to":"root","text":"root-145: op-declarations' BLOCK was the PD-19 order deadlock; the coordinator ruled PD-19b and C55 is pinned (a7c0c980, PR 1106). Now: layer sync 14 running, then land 1104, 1098, 1099, layer merge 14, round next and start its jobs. Other blocked modules unchanged."}
 {"at":"2026-11-09T15:22:50Z","row":"outcome","n":354,"outcome":"delivered"}
+{"at":"2026-11-09T15:52:53Z","row":"sent","n":355,"to":"root","text":"root-146: op-declarations is no longer BLOCKED: it republished PR 1104 (ready 15:46Z), gate running; 1098 and 1099 landed in layer/14. Next: land 1104, layer merge 14, round next and start its jobs. Others unchanged."}
