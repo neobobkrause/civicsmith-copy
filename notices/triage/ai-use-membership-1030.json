@@ -1,0 +1,1 @@
+{"row":"triage","user":"ai-use","verdict":"not affected","evidence":"bio-plane/src/ai-use/index.mjs:742 its one call, isAdministrator(id), passes a member id already resolved by memberIdOf (index.mjs:739), never a \"member:\" viewer, so the new viewer translation is not reached","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-7","cost":"0.25"}

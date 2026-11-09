@@ -1,0 +1,1 @@
+{"row":"triage","user":"reading-pipeline","verdict":"not affected","evidence":"bio-plane/src/reading-pipeline/hooks.mjs:9 imports only listenerRefusal and MODULE_ORDER; no isAdministrator use in it or its tests (bio-plane/test/m/reading-pipeline/hooks.test.mjs:7)","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-55","cost":"0.25"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"filings","by":"triage","evidence":"bio-plane/src/filings/index.mjs:408 it imports only membershipOf (index.mjs:73) and uses only projectAuthority (:408) and inSight (:476) on it; no isAdministrator call anywhere in the module","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-33","cost":"0.25"}

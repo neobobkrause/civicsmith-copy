@@ -1,0 +1,1 @@
+{"row":"answered","user":"attestation","by":"triage","evidence":"bio-plane/test/m/attestation/fixture.mjs:9 only imports membershipOf (used at :94); no src file under bio-plane/src/attestation/ imports membership and nothing there calls isAdministrator","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-7","cost":"0.25"}

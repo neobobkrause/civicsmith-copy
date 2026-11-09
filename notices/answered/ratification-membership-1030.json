@@ -1,0 +1,1 @@
+{"row":"answered","user":"ratification","by":"triage","evidence":"bio-plane/src/ratification/index.mjs:49 imports only membershipOf and uses existenceAct/inSight/caseAuthority (:458,:459,:647,:1236); no isAdministrator in src/ratification or its tests","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-54","cost":"0.25"}

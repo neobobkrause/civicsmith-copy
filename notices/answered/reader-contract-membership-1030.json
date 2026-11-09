@@ -1,0 +1,1 @@
+{"row":"answered","user":"reader-contract","by":"triage","evidence":"build/modules.json:71 lists membership in its uses, but no file under bio-plane/src/reader-contract/ imports membership or calls isAdministrator (git grep membership at 80290ce680 finds none)","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-54","cost":"0.25"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-specs-late","by":"triage","evidence":"build/modules.json:179 op-specs-late has paths [] and tests [], so no file of it imports membership or calls Membership.isAdministrator","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-43","cost":"0.25"}

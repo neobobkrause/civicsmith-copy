@@ -1,0 +1,1 @@
+{"row":"triage","user":"lines","verdict":"not affected","evidence":"bio-plane/src/lines/index.mjs:15 imports only viewerPredicate; cache.test.mjs:73 and fixture.mjs:11 import only membershipOf and call migrate (:82, :78); no isAdministrator call in the module","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-37","cost":"0.25"}

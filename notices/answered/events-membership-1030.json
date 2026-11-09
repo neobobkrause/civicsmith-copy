@@ -1,0 +1,1 @@
+{"row":"answered","user":"events","by":"triage","evidence":"bio-plane/src/events/index.mjs:365 calls isAdministrator(member) but only with the id after by.replace(/^member:/, '') at :364, so the new member:-prefix resolution never applies and a plain id passes through unchanged","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-29","cost":"0.25"}

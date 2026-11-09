@@ -1,0 +1,1 @@
+{"row":"triage","user":"link-sweep","verdict":"not affected","evidence":"bio-plane/src/link-sweep/index.mjs:24 imports only membershipOf and passes the instance on (:51-:60) without calling isAdministrator; fixture.mjs:12 imports only membershipOf and calls migrate (:117)","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-37","cost":"0.25"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-jobs","by":"triage","evidence":"bio-plane/src/member-roster/order.mjs:185 lists it as a module with no paths of its own; no file imports membership, so nothing calls isAdministrator","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-63","cost":"0.25"}

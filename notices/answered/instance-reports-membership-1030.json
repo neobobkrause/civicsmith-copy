@@ -1,0 +1,1 @@
+{"row":"answered","user":"instance-reports","by":"triage","evidence":"build/modules.json:176 lists instance-reports with paths [] and no tests, so no file of its own imports membership or calls isAdministrator","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-34","cost":"0.25"}

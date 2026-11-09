@@ -1,0 +1,1 @@
+{"row":"answered","user":"answer-envelope","by":"triage","evidence":"bio-plane/src/answer-envelope/families.mjs:18 imports only membership/checks.mjs (rows at :197); no isAdministrator call anywhere in the module","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-7","cost":"0.25"}

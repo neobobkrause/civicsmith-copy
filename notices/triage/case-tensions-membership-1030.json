@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-tensions","verdict":"not affected","evidence":"bio-plane/src/case-tensions/index.mjs:43 imports only membershipOf; its membership calls (200, 478, 620) are projectOwners and memberFacts; no isAdministrator in src or test/m/case-tensions","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-17","cost":"0.25"}

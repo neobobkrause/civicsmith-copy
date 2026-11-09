@@ -1,0 +1,1 @@
+{"row":"answered","user":"query-language","by":"triage","evidence":"bio-plane/src/query.mjs:1039 imports only viewerPredicate and GATE_MARK from membership, re-exported unchanged (statements.test.mjs:82-83); no use of isAdministrator","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-50","cost":"0.25"}

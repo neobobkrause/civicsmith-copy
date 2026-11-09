@@ -1,0 +1,1 @@
+{"row":"triage","user":"sources","verdict":"not affected","evidence":"bio-plane/src/sources/index.mjs:164 its #isAdmin uses membership.activeAdmins() (unchanged), not isAdministrator; line 39 imports only membershipOf and listenerRefusal, test fixture.mjs:14 only membershipOf","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-61","cost":"0.25"}

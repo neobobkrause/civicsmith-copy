@@ -1,0 +1,1 @@
+{"row":"triage","user":"translations","verdict":"affected","evidence":"bio-plane/src/translations/index.mjs:203 and :209 call this.#membership().isAdministrator(id) (the changed Membership.isAdministrator) to decide administrator rights; the argument is a bare member id","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-65","cost":"0.25"}

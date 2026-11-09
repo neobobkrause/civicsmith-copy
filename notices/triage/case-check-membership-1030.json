@@ -1,0 +1,1 @@
+{"row":"triage","user":"case-check","verdict":"not affected","evidence":"bio-plane/src/case-check/index.mjs:36 imports only viewerPredicate from membership (a stamp-shape test, :33); no isAdministrator call (bio-plane/test/m/case-check/fixture.mjs:10 only builds membershipOf)","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-15","cost":"0.25"}

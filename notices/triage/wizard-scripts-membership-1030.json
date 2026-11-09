@@ -1,0 +1,1 @@
+{"row":"triage","user":"wizard-scripts","verdict":"affected","evidence":"bio-plane/src/wizard-scripts/index.mjs:445 #isAdmin calls this.membership.isAdministrator(memberId) (the changed Membership.isAdministrator); the argument is a bare member id","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-65","cost":"0.25"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"corpus-export","by":"triage","evidence":"bio-plane/src/corpus-export/render.mjs:31 imports only viewerPredicate from membership; it never touches Membership.isAdministrator (no isAdministrator reference in the file)","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-25","cost":"0.25"}

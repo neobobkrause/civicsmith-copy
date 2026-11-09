@@ -1,0 +1,1 @@
+{"row":"triage","user":"registers","verdict":"affected","evidence":"bio-plane/src/registers/core.mjs:111 isAdmin calls this.membership.isAdministrator(m) with a member id (the changed export), used by runner.mjs:144 and runner.mjs:575 for administrator checks","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-57","cost":"0.25"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"calibration","verdict":"not affected","evidence":"bio-plane/src/calibration/index.mjs:28 imports only listenerRefusal and MODULE_ORDER from membership (tests notices.test.mjs:6, store.test.mjs:8 the same); no isAdministrator use anywhere in its files","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-11","cost":"0.25"}

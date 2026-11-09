@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-action","verdict":"not affected","evidence":"bio-plane/test/m/screens-action/real.mjs:14 imports only membershipOps (tests notice-membership-77.test.mjs:9 likewise); the module's source has no membership import and no isAdministrator call","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-61","cost":"0.25"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"reading-guides","verdict":"affected","evidence":"bio-plane/src/reading-guides/index.mjs:148 calls this.#membership.isAdministrator(m) with a member id from positionalMember (the changed export, now (who, ...a) with member:<id> viewer resolution)","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-55","cost":"0.25"}

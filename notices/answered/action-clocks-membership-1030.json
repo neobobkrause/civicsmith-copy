@@ -1,0 +1,1 @@
+{"row":"answered","user":"action-clocks","by":"triage","evidence":"bio-plane/src/action-clocks/index.mjs:53 imports membershipOf and viewerPredicate only; membership is passed through to other modules (index.mjs:322) and no isAdministrator call appears in the module or its tests","at":"2026-11-09T06:38:39.300Z","key":"membership:1030","worker":"sonnet-m1030-1","cost":"0.25"}
