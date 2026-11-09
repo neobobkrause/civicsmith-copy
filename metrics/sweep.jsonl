@@ -827,3 +827,4 @@
 {"at":"2026-11-09T11:27:06Z","row":"check","by":"send","live":3,"live_at":"2026-11-09T11:21:17Z","slots_working":2,"published_free":1,"job_cap":20,"startable":0}
 {"at":"2026-11-09T11:33:22Z","row":"check","by":"send","live":3,"live_at":"2026-11-09T11:21:17Z","slots_working":2,"published_free":1,"job_cap":20,"startable":0}
 {"at":"2026-11-09T11:39:47Z","row":"check","by":"layer land","live":3,"live_at":"2026-11-09T11:21:17Z","slots_working":2,"published_free":1,"job_cap":20,"startable":0}
+{"at":"2026-11-09T12:18:02Z","row":"sweep","session":"session_018Bhceg3m4o8qXzgi9JC4Ux","bob_acts":true,"bob_quiet_h":0.5,"root_context":38,"live":2,"live_measured_at":"2026-11-09T12:10:01Z","job_cap":20,"sessions":8,"job_ids":["ai-accounts","credentials"],"startable":0,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":2,"idle_capacity":{"kind":"empty","since":"2026-11-09T11:39:47Z","min":32,"live":2,"cap":20,"held":0,"startable":0,"empty":18,"alarm":true,"layer":14}}
