@@ -1,0 +1,1 @@
+{"row":"triage","user":"ratification","verdict":"not affected","evidence":"bio-plane/src/ratification/index.mjs:491 imports inquiryOf (:52, accessor :146) but calls only inquiry.earned and inquiry.subjectEntityOf, neither of which changed, and no onBarJudged or rivalStanding call","at":"2026-11-09T06:08:51.764Z","key":"inquiry:1006","worker":"sonnet-i1006-9","cost":"0.25"}

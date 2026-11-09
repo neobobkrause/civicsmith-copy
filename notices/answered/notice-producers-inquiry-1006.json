@@ -1,0 +1,1 @@
+{"row":"answered","user":"notice-producers","by":"triage","evidence":"bio-plane/src/notice-producers/index.mjs:771 uses only inquiry.datedWaits (and waitLook in waits.test.mjs:72); neither onBarJudged nor rivalStanding is referenced, nothing removed or changed","at":"2026-11-09T06:08:51.764Z","key":"inquiry:1006","worker":"sonnet-i1006-7","cost":"0.25"}

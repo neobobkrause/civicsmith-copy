@@ -1,0 +1,1 @@
+{"row":"triage","user":"docket","verdict":"not affected","evidence":"bio-plane/src/docket/index.mjs:303 docket only calls inquiry.subjectEntityOf (import at :50, getter at :233); it never uses onBarJudged or rivalStanding, and no export was removed or changed","at":"2026-11-09T06:08:51.764Z","key":"inquiry:1006","worker":"sonnet-i1006-4","cost":"0.25"}

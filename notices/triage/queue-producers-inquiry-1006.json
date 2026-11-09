@@ -1,0 +1,1 @@
+{"row":"triage","user":"queue-producers","verdict":"not affected","evidence":"bio-plane/src/queue-producers/index.mjs:353 no file imports inquiry; its uses of \"inquiry\" are object-type strings and an `inquiry` field on rows (e.g. :1809), and it never calls onBarJudged or rivalStanding","at":"2026-11-09T06:08:51.764Z","key":"inquiry:1006","worker":"sonnet-i1006-9","cost":"0.25"}

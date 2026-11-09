@@ -1,0 +1,1 @@
+{"row":"answered","user":"case-account","by":"triage","evidence":"bio-plane/src/case-account/index.mjs:344 uses only inquiry.basisFor (also :443, :630); fixture.mjs:98 and instance.test.mjs:38 use inquiryOf, earned, legCapped, cyclePath, never onBarJudged or rivalStanding","at":"2026-11-09T06:08:51.764Z","key":"inquiry:1006","worker":"sonnet-i1006-1","cost":"0.25"}

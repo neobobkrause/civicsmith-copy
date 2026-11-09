@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-document","verdict":"not affected","evidence":"build/modules.json:201 lists paths [] and tests [] (no files import inquiry; it uses inquiry-grammar, not inquiry), so it has no code that could call onBarJudged or rivalStanding","at":"2026-11-09T06:08:51.764Z","key":"inquiry:1006","worker":"sonnet-i1006-11","cost":"0.25"}

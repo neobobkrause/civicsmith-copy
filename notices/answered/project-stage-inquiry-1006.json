@@ -1,0 +1,1 @@
+{"row":"answered","user":"project-stage","by":"triage","evidence":"bio-plane/src/project-stage/index.mjs:283 uses only inquiry.basisFor; neither onBarJudged nor rivalStanding is referenced, nothing removed or changed","at":"2026-11-09T06:08:51.764Z","key":"inquiry:1006","worker":"sonnet-i1006-7","cost":"0.25"}
