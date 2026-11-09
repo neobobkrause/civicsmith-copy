@@ -1,0 +1,40 @@
+{
+  "row": "open",
+  "layer": 14,
+  "branch": "layer/14",
+  "tranche": "tranche",
+  "from": "707188f988eecf1a43f649be40dc9eaa641edf55",
+  "at": "2026-11-09T09:30:53Z",
+  "by": "bob",
+  "round": {
+    "n": 2,
+    "of": 2,
+    "mods": [
+      "ai-catalogue",
+      "ai-accounts",
+      "credentials"
+    ],
+    "items": [
+      {
+        "id": "F4",
+        "module": "ai-catalogue",
+        "what": "screens-ai needs airesultsread (R10), not in OPS, and reads of the catalogue: providers, plans, entries, check answers with grade, source and date, the listing word with its reason, and whether the copy is stale (R1, R3, R4); this module routes no op. Declare and serve them; test each through the store. (coordinator 17:24, screens-ai ruling)"
+      },
+      {
+        "id": "F5",
+        "module": "ai-catalogue",
+        "what": "CATALOGUE_ADDRESS names .../catalogue/index.json while ai-issuer R1 serves the catalogue at /ai/index.json, so a team's copy would 404: make the address ai-issuer serves the one ai-catalogue reads (job ai-issuer, PR 774)"
+      },
+      {
+        "id": "F6",
+        "module": "ai-accounts",
+        "what": "screens-ai needs aisignin and aikeyreference (R5, R14), neither in OPS; accountsof and accountstate answer flagged but no flagged_at (R4); and no read answers each account's health (R1). Declare and serve the two ops, add flagged_at, and give health per account a read; test each through the store. (coordinator 17:24, screens-ai ruling)"
+      },
+      {
+        "id": "F1",
+        "module": "credentials",
+        "what": "op-grades R55 (op-grades.md:246): declare the alertconnect op's refusal row in credentials, so op-grades' machine-refusal table reads it from its owner. (op-grades block 5 Nov)"
+      }
+    ]
+  }
+}
