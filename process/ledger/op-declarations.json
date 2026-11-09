@@ -110,8 +110,7 @@
   ],
   "prior_work": "First, consolidate build/requirements/op-declarations.md (126484 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/op-declarations.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/op-declarations.md is unchanged by the move (compare against the ids at the start commit). Then do the provider-notice work this START lists: for each notice, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal (new module ids, build/modules.json rows, build/layers.md). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "BLOCKED",
-    "reason": "PD-19 order deadlock: the companion change (alertconnect, aikeyreference, aisignin in ACT_HELP_ABSENT; aikeyreference, aisignin as 'own' in ai-accounts' family; t48/t49 counts) is pushed at 6d6190b06. Against layer/14 alone it turns 8 op-declarations tests red (R34/R5 'ACT_HELP_ABSENT names no op OPS lacks', R34 partition, R47, R19/R6 'every family op served by its owner', R68 x2, notice money:154, R3), because the three ops exist only in PRs 1098 (ai-accounts) and 1099 (credentials), which PD-19 lands after this one. With 1098 and 1099 merged in locally the suite is 282/282 green. Proposal: land 1098+1099 and this PR together (one train, or merge them into layer/14 first and this right after), or let this PR's gate run against layer/14 + 1098 + 1099. Not published, since its gate cannot pass on layer/14 alone.",
-    "at": "2026-11-09T13:47:51Z"
+    "state": "COMPLETE",
+    "at": "2026-11-09T15:46:14Z"
   }
 }
