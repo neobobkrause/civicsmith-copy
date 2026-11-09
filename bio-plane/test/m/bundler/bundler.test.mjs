@@ -860,9 +860,12 @@ test("R25 (K4094): workerPart states a member's own Durable Objects and migratio
 
 test("R25 (K4094): over the repository's own fleet, each member's Worker part states the Durable Objects its configuration owns: agent-worker its two, agent-runner its one binding and every migration it declares, file-scanner its two", () => {
   const cfgOf = (name) => parseJsonc(readFileSync(join(discoverMembers().find((m) => m.name === name).abs, "wrangler.jsonc"), "utf8"));
-  assert.deepEqual(workerPart(cfgOf("agent-worker")).part.descriptor.durable_objects, {
-    bindings: [{ name: "SEGMENTS", class_name: "SegmentDriver" }, { name: "CHECKS", class_name: "CheckRecord" }],
-    migrations: [{ tag: "v1", classes: ["SegmentDriver"] }, { tag: "v2", classes: ["CheckRecord"] }] });
+  /* read from agent-worker's own configuration, never hand-listed (K3268): the classes it owns (no script_name), HEALTH among them (R43 (b)) */
+  const aw = cfgOf("agent-worker");
+  const awOwn = aw.durable_objects.bindings.filter((d) => !d.script_name).map((d) => ({ name: d.name, class_name: d.class_name }));
+  assert.ok(awOwn.some((d) => d.name === "HEALTH"), "agent-worker owns HEALTH");
+  assert.deepEqual(workerPart(aw).part.descriptor.durable_objects, {
+    bindings: awOwn, migrations: aw.migrations.map((m) => ({ tag: m.tag, classes: m.new_sqlite_classes ?? m.new_classes })) });
   const runner = workerPart(cfgOf("agent-runner")).part.descriptor.durable_objects;
   assert.deepEqual(runner.bindings, [{ name: "AGENT_RUNNER", class_name: "AgentRunner" }]);
   assert.deepEqual(runner.migrations, cfgOf("agent-runner").migrations.map((m) => ({ tag: m.tag, classes: m.new_sqlite_classes })));
@@ -1290,7 +1293,8 @@ test("R38: over the real fleet, each member that builds carries only the rows it
     if (built.words.rows === "all") continue;     /* keeps the whole table for a site of another module: the next test */
     const keys = keptKeys(built.bytes);
     assert.ok(keys && keys.length > 0 && keys.length === built.words.rows, `${m.name}: carries a word table of ${built.words?.rows} rows`);
-    assert.ok(keys.length < 200, `${m.name}: ${keys.length} rows of ${built.words.total}, not the whole table`);
+    /* "not the whole table": a tenth of it at most (a fixed count fell behind as members gained words: agent-runner 270) */
+    assert.ok(keys.length * 10 < built.words.total, `${m.name}: ${keys.length} rows of ${built.words.total}, not the whole table`);
     const table = (await import(`file://${join(m.abs, Object.keys(built.metafile.inputs).find((p) => /setup-words\/rows\.mjs$/.test(p)))}`)).WORD_ROWS;
     assert.deepEqual(keys, table.map((r) => r[0]).filter((k) => new Set(keys).has(k)), `${m.name}: in the table's order`);
     /* independent of the parser: the sources of the member's bundled first-party inputs name every kept key as a
