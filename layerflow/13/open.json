@@ -1,0 +1,41 @@
+{
+  "row": "open",
+  "layer": 13,
+  "branch": "layer/13",
+  "tranche": "tranche",
+  "from": "feb823bc10bbf1efede91752e6a5a1e5f109a88c",
+  "at": "2026-11-09T03:08:05Z",
+  "by": "bob",
+  "round": {
+    "n": 2,
+    "of": 1,
+    "mods": [
+      "bundler",
+      "file-scanner",
+      "reader-container"
+    ],
+    "items": [
+      {
+        "id": "F2",
+        "module": "bundler",
+        "what": "The rollout check in bio-plane/scripts/deploy-fleet.mjs:398-417 polls https://<name>.<sub>.workers.dev/version (15 x 4s) for every member, so a member deployed with workers_dev:false (agent-worker, R47: reachable only through the plane's service binding) can never confirm and reports ROLLOUT NOT CONFIRMED. Read such a member's /version through the plane's service binding, or report it as not reachable by design. Moved from agent-worker F1 (coordinator ruling, 5 Nov). (walk p3dev-l1)"
+      },
+      {
+        "id": "F3",
+        "module": "bundler",
+        "what": "bio-plane/test/fleetbundles.control.mjs no longer controls the fleetbundles suite: arms 1, 2, 3 and 6 edit agent-worker/dist or a source and expect the suite to see a committed artifact go stale, but since the dist pass (PR 624, f6b3977e2f) fleetbundles.test.mjs builds every member into its own temp dir and compares two builds, reading no dist/. Redesign the control so each arm fails the suite as it now runs (a source change that breaks a build or makes two builds differ), and drop the arms that test committed artifacts. Coordinator ruling 6 Nov 11:54: bundler's next layer round. (dist pass PR 624)"
+      },
+      {
+        "id": "F1",
+        "module": "file-scanner",
+        "what": "After a test deploy of release 0.87.0 to the p3dev-l1 copy (4 Nov, 01:04-01:11Z), this container-backed member's /version did not answer 0.87.0 within the 60 s rollout check (ROLLOUT NOT CONFIRMED after 60s). Its /version answers the deployed version within the rollout check, or the check's bound is set from a measured container rollout time. (walk p3dev-l1)"
+      },
+      {
+        "id": "F1",
+        "module": "reader-container",
+        "what": "After a test deploy of release 0.87.0 to the p3dev-l1 copy (4 Nov, 01:04-01:11Z), this container-backed member's /version did not answer 0.87.0 within the 60 s rollout check (ROLLOUT NOT CONFIRMED after 60s). Its /version answers the deployed version within the rollout check, or the check's bound is set from a measured container rollout time. (walk p3dev-l1)"
+      }
+    ],
+    "walk": "p3dev-l12 5bbae4612b"
+  }
+}
