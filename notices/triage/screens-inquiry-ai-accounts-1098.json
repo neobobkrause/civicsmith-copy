@@ -1,0 +1,1 @@
+{"row":"triage","user":"screens-inquiry","verdict":"not affected","evidence":"PR 1098: no requirement id changed; exports read at a787d0110a..74fc385b70 only added (AiAccounts.aiKeyReference, AiAccounts.aiSignin), none removed or changed","at":"2026-11-09T15:34:17.974Z","key":"ai-accounts:1098","worker":"notice triage: no interface change","cost":"0"}
