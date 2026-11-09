@@ -271,3 +271,4 @@
 {"at":"2026-11-09T07:18:19Z","row":"outcome","n":136,"outcome":"delivered"}
 {"at":"2026-11-09T08:18:06Z","row":"sent","n":137,"to":"bob","text":"Sweep: ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; file-scanner: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-09T08:18:33Z","row":"outcome","n":137,"outcome":"delivered"}
+{"at":"2026-11-09T09:22:43Z","row":"sent","n":138,"to":"bob","text":"IDLE CAPACITY: 0 job sessions live of the cap 20, 0 startable, for 44 min; 20 x no startable work: round 2 · layer 2 (internal layer 14) is next and not open (node .process/tool/p3.mjs round next --apply): run node .process/tool/p3.mjs round next --apply (opens layer 14, round 2, and prints its job starts): run status"}
