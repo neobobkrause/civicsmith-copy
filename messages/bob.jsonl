@@ -684,3 +684,4 @@
 {"at":"2026-11-09T08:18:22Z","row":"sent","n":345,"to":"root","text":"root-137: no change. Layer 13 sync PR 1094 gating; then layer merge 13, the coordinator's pin move to 33afe79c, round next, and my handover request."}
 {"at":"2026-11-09T08:18:45Z","row":"outcome","n":345,"outcome":"delivered"}
 {"at":"2026-11-09T10:31:00Z","row":"sent","n":346,"to":"root","text":"BOB session_018Bhcef5L3UCM2sT9Wtb9Aq at 58% context asks for its handover. Handoff on process-state handoff/bob.md. State: layer 13 merged (PR 1095); layer 14 open and pin-synced; ai-catalogue 1097 working, ai-accounts 1098 and credentials 1099 BLOCKED on op-declarations companion edits (layer join refused: no layer after 14; asked the coordinator for a route). All owed notice triage recorded; 4 stale notices withdrawn. Record-only PR bob/record-1 (metrics row + config coordinator) open into tranche for merge --plain."}
+{"at":"2026-11-09T10:40:13Z","row":"outcome","n":346,"outcome":"delivered"}
