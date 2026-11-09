@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 13,
+  "module": "reader-container",
+  "round": 1,
+  "started": "2026-11-09T03:45:10Z",
+  "ended": "2026-11-09T03:47:06Z",
+  "minutes": 1.9,
+  "tested_on": "feb823bc10bbf1efede91752e6a5a1e5f109a88c",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-09T03:47:06Z"
+}
