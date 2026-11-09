@@ -33,8 +33,7 @@
   ],
   "prior_work": "Meet every unmet mark in build/requirements/ai-catalogue.md (R39), each with a test that fails with the change reverted. Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-09T09:34:16Z",
-    "reason": "reopened: F4: screens-ai needs airesultsread (R10), not in OPS, and reads of the catalogue: providers, plans, entries, check answers with grade, source and date, the listing word with its reason, and whether the copy is stale (R1, R3, R4); this module routes no op. Declare and serve them; test each through the store. (coordinator 17:24, screens-ai ruling); F5: CATALOGUE_ADDRESS names .../catalogue/index.json while ai-issuer R1 serves the catalogue at /ai/index.json, so a team's copy would 404: make the address ai-issuer serves the one ai-catalogue reads (job ai-issuer, PR 774)"
+    "state": "COMPLETE",
+    "at": "2026-11-09T10:30:31Z"
   }
 }
