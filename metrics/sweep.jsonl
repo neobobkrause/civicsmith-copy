@@ -784,3 +784,4 @@
 {"at":"2026-11-09T03:36:10Z","row":"check","by":"send","live":3,"live_at":"2026-11-09T03:11:42Z","live_measured":0,"started_since":3,"slots_working":2,"published_free":1,"job_cap":20,"startable":0}
 {"at":"2026-11-09T03:41:18Z","row":"check","by":"send","live":3,"live_at":"2026-11-09T03:11:42Z","live_measured":0,"started_since":3,"slots_working":3,"published_free":0,"resumed":["reader-container"],"job_cap":20,"startable":0}
 {"at":"2026-11-09T03:56:32Z","row":"check","by":"address","live":3,"live_at":"2026-11-09T03:11:42Z","live_measured":0,"started_since":3,"slots_working":2,"published_free":1,"job_cap":20,"startable":0}
+{"at":"2026-11-09T04:08:57Z","row":"sweep","session":"session_018Bhceg3m4o8qXzgi9JC4Ux","bob_acts":true,"bob_quiet_h":0.1,"root_context":27,"live":1,"live_measured_at":"2026-11-09T04:05:15Z","job_cap":20,"sessions":7,"job_ids":["bundler"],"startable":0,"blocked":0,"blocked_oldest_min":null,"working":1,"waiting":0}
