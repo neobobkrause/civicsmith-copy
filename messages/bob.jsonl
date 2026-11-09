@@ -650,3 +650,4 @@
 {"at":"2026-11-09T00:27:59Z","row":"outcome","n":327,"outcome":"delivered"}
 {"at":"2026-11-09T00:32:42Z","row":"sent","n":328,"to":"root","text":"re root-128: five BLOCKED unchanged (rulings hold). Round 1 closed (layer 12 merged; round-close internal walk 96 dec340 on interface-shell). Round 2 held: layer open 13 refuses until the p3dev-l12 run's 274 findings are recorded, and found routes interface-shell's to a job that needs that layer; reported to the coordinator (bob-326), waiting on its call."}
 {"at":"2026-11-09T00:33:03Z","row":"outcome","n":328,"outcome":"delivered"}
+{"at":"2026-11-09T01:12:36Z","row":"sent","n":329,"to":"root","text":"re root-129: five BLOCKED unchanged (rulings hold). Holding round 2 at layer open 13 on the coordinator's ruling until C44 is pinned (pin still a6bd8f11); then interface-shell's DEC-340 reopen and the plane suite job start."}
