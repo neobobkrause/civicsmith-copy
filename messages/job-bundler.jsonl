@@ -12,3 +12,4 @@
 {"at":"2026-11-04T05:41:30Z","row":"outcome","n":6,"outcome":"delivered"}
 {"at":"2026-11-04T06:23:30Z","row":"sent","n":7,"to":"bob","text":"job bundler complete, PR #140 ready: run status"}
 {"at":"2026-11-04T06:23:40Z","row":"outcome","n":7,"outcome":"delivered"}
+{"at":"2026-11-09T04:20:59Z","row":"sent","n":8,"to":"bob","text":"job bundler complete, PR #1086 ready, session session_018BhcedVUZ8kASbrg9WsVRP: run status. bob-336 done: F2 covers every workers_dev:false member (agent-worker, file-scanner, also agent-runner, reader-container), test cites both. Also fixed 5 stale bundler tests broken by other modules (catalogue key count, agent-worker REMOTE/HEALTH, agent-runner lock, R38 row cap). One line for you: fleetbundles.test.mjs dies uncaught at section 2a when agent-worker or ocr-worker cannot build (not bundler's file)."}
