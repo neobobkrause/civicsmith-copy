@@ -1,0 +1,1 @@
+{"row":"answered","user":"agent-worker","by":"triage","evidence":"agent-worker/test/plane-world.mjs:21 imports only the test fixture's KEY and publish (used at :77 and :95). The fixture did not change in PR 1097. No new export is used.","at":"2026-11-09T14:27:38.566Z","key":"ai-catalogue:1097","worker":"af96f849348b1e0e3","cost":"0.7"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"ai-issuer","by":"triage","evidence":"build/modules.json:221 gives ai-issuer `\"paths\": []`, so it has no files of its own and none imports ai-catalogue.","at":"2026-11-09T14:27:38.566Z","key":"ai-catalogue:1097","worker":"af96f849348b1e0e3","cost":"0.7"}
