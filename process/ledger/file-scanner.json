@@ -30,8 +30,8 @@
   ],
   "prior_work": "Meet R37 only, each marked '(not yet met: T53)' in build/requirements/file-scanner.md. Turn each into real tests under file-scanner/test/ (a test.todo for it becomes real tests), make them pass inside file-scanner/, and when a requirement is met clear its mark yourself (REQ-4); the requirements already met answer as before. If meeting one needs a change in another module, or rests on something not yet recorded, do not edit it: say so to your coordinator in your receipt's not-verified list and leave that requirement's mark. Commit no generated file (bio-plane/src/setup-words/rows.mjs, words-unreviewed.json, any dist): the gate refuses it. Where build/situations/job.md names the old tool (proc), follow this START's commands instead. No earlier unmerged work touches this module.",
   "status": {
-    "state": "WORKING",
-    "at": "2026-11-09T03:13:42Z",
-    "reason": "reopened: F1: After a test deploy of release 0.87.0 to the p3dev-l1 copy (4 Nov, 01:04-01:11Z), this container-backed member's /version did not answer 0.87.0 within the 60 s rollout check (ROLLOUT NOT CONFIRMED after 60s). Its /version answers the deployed version within the rollout check, or the check's bound is set from a measured container rollout time. (walk p3dev-l1)"
+    "state": "BLOCKED",
+    "reason": "F1 is not file-scanner's to meet: same cause as agent-worker F1, which the coordinator moved to bundler F2 (5 Nov). file-scanner/wrangler.jsonc sets workers_dev:false (reachable only through the plane's FILE_SCANNER binding, Purpose), and the rollout check in bio-plane/scripts/deploy-fleet.mjs:398-417 polls https://<name>.<sub>.workers.dev/version, an address that cannot answer. /version itself is the Worker's own (src/handler.mjs: two R2 reads, no container call), so container rollout time is not the cause and no file-scanner change can make the check pass without giving the member a public address. Recommend: move file-scanner F1 to bundler F2 as with agent-worker; bundler F2 already covers it. No code changed on job/file-scanner.",
+    "at": "2026-11-09T03:19:42Z"
   }
 }
