@@ -1,0 +1,11 @@
+{
+  "row": "reopen",
+  "tranche": "tranche",
+  "module": "interface-shell",
+  "finding": "DEC-340: at 390 px an act's explanation tip covers other controls on about 70 screens (SPAN covers A, Search, Explanations: prompt x70; SPAN covers A x10; BUTTON covers BUTTON x5; 11 others): placeTip (browser.mjs) places each tip so it covers no control, with a test that the walk's dec340 check on those screens finds none and fails with the change reverted.",
+  "source": "internal walk p3dev-l12 5bbae4612b, covers 96",
+  "pin": "bio-plane/test/m/interface-shell/requirements-ids.test.mjs",
+  "key": "6f049ead4164",
+  "at": "2026-11-09T02:01:26Z",
+  "by": "bob"
+}
