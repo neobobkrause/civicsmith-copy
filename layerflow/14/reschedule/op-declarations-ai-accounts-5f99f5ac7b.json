@@ -1,0 +1,16 @@
+{
+  "row": "reschedule",
+  "layer": 14,
+  "user": "op-declarations",
+  "provider": "ai-accounts",
+  "provider_pr": 1098,
+  "provider_land": "5f99f5ac7bc6fa8c49d6926d5615ee35156b6019",
+  "at": "2026-11-09T15:28:28Z",
+  "key": "op-declarations<-ai-accounts@5f99f5ac7b",
+  "why": "added AiAccounts.aiKeyReference, AiAccounts.aiSignin; its tests of Public / Provides requirements changed what they assert (bio-plane/test/m/ai-accounts/account.test.mjs: breaking, added code that is not an object property: \"flagged_at\" , \"health\" ,, bio-plane/test/m/ai-accounts/f6-screens-ai.test.mjs: breaking, added, naming R1, R4, R5, R14 (Provides before this land) while ai-accounts's source changed: it may assert a changed answer), which may mean a changed answer shape; breaking: each user re-runs in a job",
+  "triggers": [
+    "exports",
+    "provides-test"
+  ],
+  "class": "breaking"
+}
