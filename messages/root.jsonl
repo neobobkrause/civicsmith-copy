@@ -259,3 +259,4 @@
 {"at":"2026-11-09T02:12:42Z","row":"outcome","n":130,"outcome":"delivered"}
 {"at":"2026-11-09T03:06:26Z","row":"sent","n":131,"to":"bob","text":"IDLE CAPACITY: 0 job sessions live of the cap 20, 0 startable, for 65 min; 20 x no startable work: layer 13 is next and not open (node .process/tool/p3.mjs layer open 13): run node .process/tool/p3.mjs layer open 13: run status"}
 {"at":"2026-11-09T03:06:45Z","row":"outcome","n":131,"outcome":"delivered"}
+{"at":"2026-11-09T03:12:05Z","row":"sent","n":132,"to":"bob","text":"Sweep: ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
