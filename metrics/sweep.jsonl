@@ -826,3 +826,4 @@
 {"at":"2026-11-09T11:21:17Z","row":"sweep","session":"session_018Bhceg3m4o8qXzgi9JC4Ux","bob_acts":true,"bob_quiet_h":0.1,"root_context":37,"live":3,"live_measured_at":"2026-11-09T11:12:30Z","job_cap":20,"sessions":10,"job_ids":["ai-accounts","ai-catalogue","credentials"],"slots_working":2,"published_free":1,"startable":0,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":3}
 {"at":"2026-11-09T11:27:06Z","row":"check","by":"send","live":3,"live_at":"2026-11-09T11:21:17Z","slots_working":2,"published_free":1,"job_cap":20,"startable":0}
 {"at":"2026-11-09T11:33:22Z","row":"check","by":"send","live":3,"live_at":"2026-11-09T11:21:17Z","slots_working":2,"published_free":1,"job_cap":20,"startable":0}
+{"at":"2026-11-09T11:39:47Z","row":"check","by":"layer land","live":3,"live_at":"2026-11-09T11:21:17Z","slots_working":2,"published_free":1,"job_cap":20,"startable":0}
