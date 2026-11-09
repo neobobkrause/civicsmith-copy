@@ -1,0 +1,1 @@
+{"row":"answered","user":"reader-contract","by":"triage","evidence":"build/modules.json:71 gives paths [\"bio-plane/src/reader-contract/\"] and no file there imports acquisition, so the archive-arm grade change is not reachable","at":"2026-11-09T06:16:06.151Z","key":"acquisition:1024","worker":"sonnet-a1024-10","cost":"0.25"}

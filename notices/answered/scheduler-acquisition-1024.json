@@ -1,0 +1,1 @@
+{"row":"answered","user":"scheduler","by":"triage","evidence":"bio-plane/test/m/scheduler/consumers.test.mjs:11 imports only the acquireRefusals fixture, and :233 stubs capture.acquire to answer a source_refused refusal, so no archive-arm capture or grade is built or read","at":"2026-11-09T06:16:06.151Z","key":"acquisition:1024","worker":"sonnet-a1024-10","cost":"0.25"}

@@ -1,0 +1,1 @@
+{"row":"triage","user":"reading-pipeline","verdict":"not affected","evidence":"bio-plane/test/tier-pagewise.probe.mjs:75 imports only civicsmithUserAgent (used at :198 to build a user agent); it never calls acquire or reads the archive grade","at":"2026-11-09T06:16:06.151Z","key":"acquisition:1024","worker":"sonnet-a1024-10","cost":"0.25"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-specs-late","by":"triage","evidence":"build/modules.json:179 declares paths [] and tests [], so no file imports acquisition; nothing in the module reads archive-arm capture.grade","at":"2026-11-09T06:16:06.151Z","key":"acquisition:1024","worker":"sonnet-a1024-10","cost":"0.25"}
