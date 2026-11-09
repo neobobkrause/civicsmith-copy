@@ -112,6 +112,12 @@ export function aiAccountsOps(a, url, body, env) {
     aikeyenter: () => a.gatewayKeyEnter({ account_id: s("account_id"), key: b.key, by: by() }),
     aikeycloudflare: () => a.gatewayKeyAttest({ account_id: s("account_id"), by: by() }),
     aikeyseal: () => a.aiKeySeal({ account_id: s("account_id"), secret: b.secret, by: by() }),
+    /* F6 (screens-ai R5): by reference, and by the provider's own sign-in; the token only in the body, never echoed. A
+       new account's owner as `aiaccountadd` reads it, a member's own from the stamp alone (R38) */
+    aikeyreference: () => a.aiKeyReference({ account_id: s("account_id"), reference: b.reference ?? null, by: by() }),
+    aisignin: () => a.aiSignin({ account_id: s("account_id"), token: b.token, valid_until: b.valid_until ?? null,
+      owner: typeof b.owner === "string" && !b.owner.startsWith("member:") && b.owner !== "member" ? (ownerOf(b.owner) ?? b.owner) : me(),
+      provider: s("provider"), plan: s("plan"), by: by() }),
     /* R56, R47: the free tier's warning, a personal subscription chosen */
     aitermsaccept: () => a.freeTierAccept({ account_id: s("account_id"), by: by() }),
     aitermswithdraw: () => a.freeTierWithdraw({ account_id: s("account_id"), by: by() }),
@@ -168,6 +174,8 @@ export const DECLARED_OPS = Object.freeze({
   aikeyenter: D(["account_id", "key"], ["account_id", "key"], { weight: "credential", description: localize("ai-accounts.declared.aikeyenter", "credential governance: a key handed to the gateway and kept nowhere here; never answered") }),
   aikeycloudflare: D(["account_id"], ["account_id"], { weight: "credential", description: localize("ai-accounts.declared.aikeycloudflare", "credential governance: confirms that a key was entered in the Cloudflare dashboard; the key never reaches here") }),
   aikeyseal: D(["account_id", "secret"], ["account_id", "secret"], { weight: "credential", description: localize("ai-accounts.declared.aikeyseal", "credential governance: a key kept sealed in your team's Civicsmith; never answered") }),
+  aikeyreference: D(["account_id", "reference"], ["account_id", "reference"], { weight: "credential", description: localize("ai-accounts.declared.aikeyreference", "credential governance: an account points at a key kept in a store of the team's own; only the pointer is kept here") }),
+  aisignin: D(["account_id", "owner", "provider", "plan", "token", "valid_until"], [["account_id", "plan"], "token"], { weight: "credential", description: localize("ai-accounts.declared.aisignin", "credential governance: the token a provider's own sign-in issued, kept sealed; never answered") }),
   aitermsaccept: D(["account_id"], ["account_id"], { weight: "reversible", description: localize("ai-accounts.declared.aitermsaccept", "the account's configuration: its owner accepts a free plan's warning; recorded with who and when") }),
   aitermswithdraw: D(["account_id"], ["account_id"], { weight: "reversible", description: localize("ai-accounts.declared.aitermswithdraw", "the account's configuration: its owner withdraws a free plan's acceptance") }),
   aipersonalchoose: D(["provider", "plan", "means", "entries", "secret", "reference", "terms_version", "account_id"], ["provider", "plan"], { weight: "reversible", description: localize("ai-accounts.declared.aipersonalchoose", "credential governance: a member chooses to connect their own subscription; recorded with who, when, plan and terms version") }),
