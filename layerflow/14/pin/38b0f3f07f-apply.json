@@ -1,0 +1,16 @@
+{
+  "row": "pin",
+  "layer": 14,
+  "action": "apply",
+  "pin_before": "58f96824765f3d1d5513e1ef5edf03dd2832fcce",
+  "pin_after": "38b0f3f07f40c2d2af821be1d6563894d33724d6",
+  "touched": [
+    "tool/lib/gate.mjs",
+    "tool/lib/layerflow.mjs"
+  ],
+  "at": "2026-11-09T19:05:42Z",
+  "by": "bob",
+  "pr": 1117,
+  "head": "3798784ae821a811abf5812aea7362ad496d9522",
+  "merge": "50d89be71be4ff11eab2fcda34b337f3160fea86"
+}
