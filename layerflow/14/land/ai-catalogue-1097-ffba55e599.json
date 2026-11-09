@@ -1,0 +1,86 @@
+{
+  "row": "land",
+  "layer": 14,
+  "module": "ai-catalogue",
+  "pr": 1097,
+  "branch": "job/ai-catalogue-2",
+  "head": "ffba55e59905f14fed821c29e2ee2b7cc6916855",
+  "before": "5fd73f9b50a05919e6a71e8598680c87d1b27031",
+  "merge": "8ed25f1db7c0780de65eeacd1e8cb7a1a91ae3d0",
+  "at": "2026-11-09T11:46:00Z",
+  "by": "bob",
+  "gate_runs": 6,
+  "interface": {
+    "changed": true,
+    "exports": {
+      "removed": [],
+      "added": [
+        "AiCatalogue.catalogueRead",
+        "AiCatalogue.resultsRead",
+        "CATALOGUE_DECLARED_OPS",
+        "aiCatalogueOps"
+      ],
+      "changed": [],
+      "kinds": [],
+      "signatures": []
+    },
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/ai-catalogue/channel.test.mjs",
+      "bio-plane/test/m/ai-catalogue/invariants.test.mjs",
+      "bio-plane/test/m/ai-catalogue/ops.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/ai-catalogue/channel.test.mjs",
+      "bio-plane/test/m/ai-catalogue/invariants.test.mjs",
+      "bio-plane/test/m/ai-catalogue/ops.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/ai-catalogue/channel.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: assert . equal ( new URL ( pullRequest"
+      },
+      {
+        "file": "bio-plane/test/m/ai-catalogue/invariants.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , \"catalogueRead\" , \"resultsRead\""
+      },
+      {
+        "file": "bio-plane/test/m/ai-catalogue/ops.test.mjs",
+        "class": "breaking",
+        "why": "added, naming R1, R2, R3, R4, R10, R11, R13, R14, R30, R31, R32, R40, R45 (Provides before this land) while ai-catalogue's source changed: it may assert a changed answer"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/ai-catalogue/channel.test.mjs",
+      "bio-plane/test/m/ai-catalogue/invariants.test.mjs",
+      "bio-plane/test/m/ai-catalogue/ops.test.mjs"
+    ],
+    "triggers": [
+      "exports",
+      "provides-test"
+    ],
+    "triggers_old": [
+      "exports",
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": [
+    "agent-model",
+    "agent-runner",
+    "agent-worker",
+    "ai-gate",
+    "ai-issuer",
+    "ai-runs",
+    "ai-use",
+    "answer-envelope",
+    "op-declarations",
+    "store-assembly",
+    "surface-declarations"
+  ]
+}

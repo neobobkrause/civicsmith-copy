@@ -1,0 +1,39 @@
+{
+  "row": "notice",
+  "at": "2026-11-09T11:46:00Z",
+  "key": "ai-catalogue:1097",
+  "provider": "ai-catalogue",
+  "ids": [],
+  "pr": 1097,
+  "users": [
+    "agent-model",
+    "agent-runner",
+    "agent-worker",
+    "ai-gate",
+    "ai-issuer",
+    "ai-runs",
+    "ai-use",
+    "answer-envelope",
+    "op-declarations",
+    "store-assembly",
+    "surface-declarations"
+  ],
+  "source": 1,
+  "exports": {
+    "removed": [],
+    "added": [
+      "AiCatalogue.catalogueRead",
+      "AiCatalogue.resultsRead",
+      "CATALOGUE_DECLARED_OPS",
+      "aiCatalogueOps"
+    ],
+    "changed": [],
+    "kinds": [],
+    "signatures": []
+  },
+  "layer_flow": {
+    "layer": 14,
+    "provides": false,
+    "rescheduled": true
+  }
+}
