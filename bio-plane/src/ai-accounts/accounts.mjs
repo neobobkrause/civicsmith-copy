@@ -54,9 +54,26 @@ export class AiAccountsAccounts extends AiAccountsLimits {
     const flag = AiAccountsAccounts._flagOf(row);
     return { account_id: row.account_id, owner: row.owner, provider: row.provider, plan: row.plan, means: row.means,
              entries: AiAccountsAccounts._entriesOf(row), on: !!row.is_on, held: !!row.held, flagged: !!row.flagged,
+             flagged_at: row.flagged ? row.flagged_at ?? null : null,   /* F6 (screens-ai R4): the instant of the payer stop */
              ...(row.flagged ? { flag_cause: row.flag_cause ?? null } : {}),
+             health: this._healthOf(row),
              opt_in: flag ? { flag, on: !!row.share_flag } : null, set_at: row.set_at,
              personal: !!row.personal, switches: M._usesOf(row) };
+  }
+
+  /* F6 (screens-ai R1): an account's health, from what is stored of it alone, `{state, since}`: the first that holds of
+     `stopped` (the payer flag, R45, since its flag), `failed` (the provider refused or could not resolve its credential,
+     R60, since then), `expired` (an issued token past its `valid_until`, R19, since then), `no_credential` (nothing held:
+     a gateway key not entered, an issued token dropped), `off` (its switch, R5), else `ready`. It reads no provider and
+     never carries a secret; a screen draws it by key. */
+  _healthOf(row) {
+    if (row.flagged) return { state: "stopped", since: row.flagged_at ?? null };
+    if (!row.held && row.refused_at) return { state: "failed", since: row.refused_at };
+    if (row.means === "issued" && row.held && row.valid_until && Date.parse(row.valid_until) <= this._nowMs())
+      return { state: "expired", since: row.valid_until };
+    if (!row.held) return { state: "no_credential", since: null };
+    if (!row.is_on) return { state: "off", since: null };
+    return { state: "ready", since: row.held_since ?? null };
   }
 
   /* R6: an account as a member who is not its owner reads it: the team's `{account_id, provider, plan, entries, on}`, a
@@ -610,6 +627,44 @@ export class AiAccountsAccounts extends AiAccountsLimits {
     if (!r.ok) return r;
     const row = this._account(t.row.account_id);
     return { ok: true, account_id: r.account_id, means: "sealed", held: true, since: row.held_since ?? row.set_at };
+  }
+
+  /* F6 (screens-ai R5, R14; `op=aikeyreference`): aiconnect step 3's way "by reference": replaces the credential of an
+     existing account with a pointer `{store, locator}` (R43), means `reference`; nothing it points at is resolved or stored
+     here. It is `accountSet({account_id, reference, means: "reference", by})` and refuses exactly as it does and in its
+     order (the owner's authority, MEANS_NOT_ALLOWED, REFERENCE_MALFORMED, DISCLOSURE_DUE for a member); an account that does
+     not exist or is another owner's is NOT_YOUR_ACCOUNT. Answers `{ok, account_id, means: "reference", held: true, since}`. */
+  async aiKeyReference({ account_id = null, reference = null, by = null } = {}) {
+    const t = this._accountAct(account_id, by, localize("ai-accounts.index.referencing_an_ai_accounts_key", "pointing an AI account at a key kept elsewhere"), { machineFirst: true });
+    if (t.refusal) return t.refusal;
+    const r = await this.accountSet({ owner: t.row.owner, provider: t.row.provider, plan: t.row.plan, means: "reference",
+      reference: reference ?? {}, account_id: t.row.account_id, by });
+    if (!r.ok) return r;
+    const row = this._account(t.row.account_id);
+    return { ok: true, account_id: r.account_id, means: "reference", held: true, since: row.held_since ?? row.set_at };
+  }
+
+  /* F6 (screens-ai R5, R14; `op=aisignin`): aiconnect step 3's way "the provider's own sign-in": the token the provider's
+     documented sign-in flow issued (the adapter's connect flow behind `agent-model`) is held sealed on an account of means
+     `issued` (R19), never answered, logged or echoed. With `account_id` it replaces that account's credential; without, it
+     sets a new account of `{owner, provider, plan}` (R40; a member's own when `owner` is the member). Either is
+     `accountSet({…, means: "issued", secret: token, by})` and refuses exactly as it does and in its order (the owner's
+     authority, UNKNOWN_PLAN, the scope rules of R42, MEANS_NOT_ALLOWED, NO_SECRET, ISSUED_TOKEN_MALFORMED, DISCLOSURE_DUE for
+     a member). `valid_until` the provider's stated life ("1 year", "30 days"), as R19 reads it. Answers `{ok, account_id,
+     means: "issued", held: true, since}`. */
+  async aiSignin({ account_id = null, owner = null, provider = null, plan = null, token = null, valid_until = null, by = null } = {}) {
+    let target = { owner, provider, plan };
+    if (account_id !== null && account_id !== undefined) {
+      const t = this._accountAct(account_id, by, localize("ai-accounts.index.signing_an_ai_account_in", "signing an AI account in with its provider"), { machineFirst: true });
+      if (t.refusal) return t.refusal;
+      target = { owner: t.row.owner, provider: t.row.provider, plan: t.row.plan, account_id: t.row.account_id };
+    }
+    const r = await this.accountSet({ ...target, means: "issued", secret: typeof token === "string" ? token : "", by });
+    if (!r.ok) return r;
+    const until = AiAccountsAccounts._validUntil(valid_until, this._nowMs());
+    if (until !== null) this.sql.exec(`UPDATE ai_accounts SET valid_until=? WHERE account_id=?`, until, r.account_id);
+    const row = this._account(r.account_id);
+    return { ok: true, account_id: r.account_id, means: "issued", held: true, since: row.held_since ?? row.set_at };
   }
 
   /* ===== R60: a credential that failed ===== */
