@@ -846,3 +846,4 @@
 {"at":"2026-11-09T14:46:12Z","row":"check","by":"send","live":1,"live_at":"2026-11-09T14:18:56Z","job_cap":20,"startable":0}
 {"at":"2026-11-09T14:53:42Z","row":"check","by":"send","live":1,"live_at":"2026-11-09T14:18:56Z","job_cap":20,"startable":0}
 {"at":"2026-11-09T15:06:52Z","row":"sweep","session":"session_018Bhceg3m4o8qXzgi9JC4Ux","bob_acts":true,"bob_quiet_h":0.1,"root_context":43,"live":1,"live_measured_at":"2026-11-09T15:02:49Z","job_cap":20,"sessions":8,"job_ids":["op-declarations"],"startable":0,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":1}
+{"at":"2026-11-09T15:21:21Z","row":"check","by":"send","live":1,"live_at":"2026-11-09T15:06:52Z","job_cap":20,"startable":0}
