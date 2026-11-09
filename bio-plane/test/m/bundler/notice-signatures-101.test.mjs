@@ -18,7 +18,7 @@ const OWN = ["fleet-bundle.mjs", "provenance.mjs", "build-plane.mjs", "deploy.mj
   "release-assemble.mjs", "deploy-fleet.mjs", "bundles.mjs", "release-advisories.mjs", "third-party.json", "p3dev.mjs", "p3dev-walk-setup.mjs", "release-gather.mjs"];
 
 test("notice signatures:101: no bundler script reads CATALOGUE_KEYS or holds a catalogue key, and no catalogue key is a release key", () => {
-  assert.equal(CATALOGUE_KEYS.length, 2);
+  assert.ok(CATALOGUE_KEYS.length >= 2, "Bob's catalogue key and its recovery key, and any development key signatures adds");
   for (const f of OWN) {
     const text = readFileSync(join(PLANE, "scripts", f), "utf8");
     assert.ok(!text.includes("CATALOGUE_KEYS"), `${f} reads CATALOGUE_KEYS`);

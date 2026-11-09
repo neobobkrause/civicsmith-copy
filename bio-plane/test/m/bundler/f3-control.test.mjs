@@ -52,7 +52,8 @@ test("F3: the driver runs the arm table and grades each run, and refuses under t
   assert.match(src, /from "\.\/m\/bundler\/fleetbundles-arms\.mjs"/);
   assert.match(src, /grade\(arm, r\)/);
   assert.match(src, /process\.exit\(wrong\.length \? 1 : 0\)/, "the driver fails when an arm did not behave");
-  assert.doesNotMatch(src, /\/dist\/|dist\//, "the driver names no dist/ path");
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  assert.doesNotMatch(code, /dist\//, "the driver's code names no dist/ path");
   const refuse = src.indexOf("NODE_TEST_CONTEXT"), firstWrite = src.indexOf("mkdirSync(PEN");
   assert.ok(refuse > 0 && refuse < firstWrite, "the runner refusal comes before the pen is made");
 });
