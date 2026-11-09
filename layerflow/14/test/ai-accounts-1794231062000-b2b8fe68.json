@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "ai-accounts",
+  "session": "session_018BhcefaAdmwmni5FwcFD9S",
+  "started": "2026-11-09T13:31:02Z",
+  "ended": "2026-11-09T13:32:33Z",
+  "at": "2026-11-09T13:32:33Z",
+  "minutes": 1.52,
+  "result": "pass",
+  "layer": 14,
+  "suite_seconds": 4.702,
+  "tests": {
+    "total": 126,
+    "pass": 126,
+    "fail": 0
+  }
+}
