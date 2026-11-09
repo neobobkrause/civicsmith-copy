@@ -1,0 +1,1 @@
+{"row":"triage","user":"control-plane","verdict":"not affected","evidence":"build/modules.json:209 lists hypotheses in uses, but no file under bio-plane/src/control-plane/ imports it or references bindSteps, isRival or rivalsListed","at":"2026-11-09T05:37:09.256Z","key":"hypotheses:1025","worker":"sonnet-subagent-hyp-1025","cost":"0.30"}

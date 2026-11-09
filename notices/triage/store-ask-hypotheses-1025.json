@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-ask","verdict":"not affected","evidence":"build/modules.json:186 has paths: [], so no file of the module imports hypotheses","at":"2026-11-09T05:37:09.256Z","key":"hypotheses:1025","worker":"sonnet-subagent-hyp-1025","cost":"0.30"}
