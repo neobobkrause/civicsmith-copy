@@ -1,0 +1,21 @@
+{
+  "row": "notice",
+  "at": "2026-11-09T05:30:25Z",
+  "key": "bundler:1086",
+  "provider": "bundler",
+  "ids": [],
+  "pr": 1086,
+  "users": [
+    "agent-runner",
+    "agent-worker",
+    "case-checker",
+    "installer",
+    "plane"
+  ],
+  "source": 1,
+  "layer_flow": {
+    "layer": 13,
+    "provides": true,
+    "rescheduled": false
+  }
+}
