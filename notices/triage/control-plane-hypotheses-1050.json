@@ -1,0 +1,1 @@
+{"row":"triage","user":"control-plane","verdict":"not affected","evidence":"build/modules.json:209 lists hypotheses in uses, but no file under bio-plane/src/control-plane/ imports it, and PR 1050 changed no hypotheses source","at":"2026-11-09T05:38:29.713Z","key":"hypotheses:1050","worker":"sonnet-subagent-hyp-1050","cost":"0.30"}
