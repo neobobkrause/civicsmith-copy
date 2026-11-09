@@ -1,0 +1,20 @@
+{
+  "row": "pin",
+  "layer": 14,
+  "action": "apply",
+  "pin_before": "a7c0c980bb8d5422a67dcf803a8d25ac844a8996",
+  "pin_after": "71dee7d1f3dfb86dd3104fac58b973b648c1ba79",
+  "touched": [
+    "shims/settings.hooks.json",
+    "tool/lib/gate.mjs",
+    "tool/lib/gateclass.mjs",
+    "tool/lib/layerbase.mjs",
+    "tool/lib/layerflow.mjs",
+    "tool/lib/merge.mjs"
+  ],
+  "at": "2026-11-09T15:57:18Z",
+  "by": "bob",
+  "pr": 1109,
+  "head": "ae3e7ceab20e323338a47ab62d7b28ffb857829a",
+  "merge": "ab04c521988566efb825ab3beed3d7df1de42ff7"
+}
