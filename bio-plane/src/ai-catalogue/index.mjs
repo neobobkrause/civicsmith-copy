@@ -39,8 +39,10 @@ export const CATALOGUE_MAX_BYTES = 4 * 1024 * 1024;
 export const HELD_VERSIONS = 5;
 export const RESULT_ACTIVE_MONTHS = 6;
 export const CATALOGUE_USER_AGENT = "Civicsmith-catalogue/1";
-/** R34: the fixed address of the index `ai-issuer` serves, the publisher's own; payloads are relative paths beneath it. */
-export const CATALOGUE_ADDRESS = "https://ai-issuer.believeinoakland.workers.dev/catalogue/index.json";
+/** R34: the fixed address of the index `ai-issuer` serves, the publisher's own; payloads are relative paths beneath it.
+ *  F5 (ai-issuer R1): the issuer serves the index at `/ai/index.json` and each payload at `/ai/catalogue/<seq>.json`, the
+ *  index naming it `catalogue/<seq>.json`, so a payload's path resolves beneath `/ai/`. */
+export const CATALOGUE_ADDRESS = "https://ai-issuer.believeinoakland.workers.dev/ai/index.json";
 export const CHECK_TRIGGERS = Object.freeze(["schedule", "manual"]);
 
 /* The store's single value is about 2.1 MB; a payload's text is held in chunks of at most this many UTF-16 units, so no
