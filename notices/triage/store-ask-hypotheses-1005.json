@@ -1,0 +1,1 @@
+{"row":"triage","user":"store-ask","verdict":"not affected","evidence":"build/modules.json:186 has empty paths and tests (no code), so nothing there can use the added exports","at":"2026-11-09T05:32:27.052Z","key":"hypotheses:1005","worker":"sonnet-subagent-hyp-1005","cost":"0.30"}

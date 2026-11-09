@@ -1,0 +1,1 @@
+{"row":"answered","user":"control-plane","by":"triage","evidence":"build/modules.json:209 lists hypotheses as a uses edge only; no file under bio-plane/src/control-plane/ mentions hypotheses, so no code there uses the added exports","at":"2026-11-09T05:32:27.052Z","key":"hypotheses:1005","worker":"sonnet-subagent-hyp-1005","cost":"0.30"}
