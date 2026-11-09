@@ -1,0 +1,1 @@
+{"row":"triage","user":"action-plans","verdict":"not affected","evidence":"bio-plane/src/action-plans/index.mjs:253 uses only strength.projectBar (line 148 getter, 2419 strengthOf factory); it never calls barJudged or registerBarJudged, and no export was removed or changed","at":"2026-11-09T06:18:04.026Z","key":"strength:1037","worker":"sonnet-s1037-1","cost":"0.25"}
