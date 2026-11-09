@@ -1,0 +1,1 @@
+{"row":"answered","user":"notice-producers","by":"triage","evidence":"bio-plane/src/notice-producers/index.mjs:771 uses only inquiry.datedWaits (import at :79); no use of INQUIRY_RIVAL_CHECKS or onRivalsListed; the test waits.test.mjs:5 imports only a fixture and uses waitLook (:72)","at":"2026-11-09T06:10:21.481Z","key":"inquiry:1028","worker":"sonnet-i1028-7","cost":"0.25"}

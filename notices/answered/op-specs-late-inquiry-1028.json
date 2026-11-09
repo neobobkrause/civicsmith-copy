@@ -1,0 +1,1 @@
+{"row":"answered","user":"op-specs-late","by":"triage","evidence":"build/modules.json:179 lists empty paths and tests, and no file imports inquiry (build/layers.md:119 says empty until its job's merge)","at":"2026-11-09T06:10:21.481Z","key":"inquiry:1028","worker":"sonnet-i1028-7","cost":"0.25"}

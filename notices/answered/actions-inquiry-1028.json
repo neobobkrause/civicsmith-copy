@@ -1,0 +1,1 @@
+{"row":"answered","user":"actions","by":"triage","evidence":"bio-plane/test/m/actions/fixture.mjs:145 imports only inquiryOf and calls .migrate() to boot the tables; no use of INQUIRY_RIVAL_CHECKS or onRivalsListed (src/actions has no import of inquiry)","at":"2026-11-09T06:10:21.481Z","key":"inquiry:1028","worker":"sonnet-i1028-1","cost":"0.25"}

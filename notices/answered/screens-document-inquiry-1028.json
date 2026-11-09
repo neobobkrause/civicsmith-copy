@@ -1,0 +1,1 @@
+{"row":"answered","user":"screens-document","by":"triage","evidence":"build/modules.json:201 lists it with empty paths and tests, so no file of it imports inquiry and nothing uses the added exports","at":"2026-11-09T06:10:21.481Z","key":"inquiry:1028","worker":"sonnet-i1028-11","cost":"0.25"}

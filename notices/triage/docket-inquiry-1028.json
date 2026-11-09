@@ -1,0 +1,1 @@
+{"row":"triage","user":"docket","verdict":"not affected","evidence":"bio-plane/src/docket/index.mjs:303 it imports only inquiryOf (line 50) and calls only inquiry.subjectEntityOf (R43); it uses neither INQUIRY_RIVAL_CHECKS nor onRivalsListed, and the PR leaves subjectEntityOf unchanged","at":"2026-11-09T06:10:21.481Z","key":"inquiry:1028","worker":"sonnet-i1028-4","cost":"0.25"}

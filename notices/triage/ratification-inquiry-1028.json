@@ -1,0 +1,1 @@
+{"row":"triage","user":"ratification","verdict":"not affected","evidence":"bio-plane/src/ratification/index.mjs:52 imports inquiryOf and uses it only at :146 (accessor) and :491 (this.inquiry.earned and subjectEntityOf), neither changed; no use of INQUIRY_RIVAL_CHECKS or onRivalsListed","at":"2026-11-09T06:10:21.481Z","key":"inquiry:1028","worker":"sonnet-i1028-9","cost":"0.25"}

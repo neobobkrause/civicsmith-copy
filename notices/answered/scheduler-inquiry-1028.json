@@ -1,0 +1,1 @@
+{"row":"answered","user":"scheduler","by":"triage","evidence":"bio-plane/src/scheduler/index.mjs:1016 uses only inquiry's inquiryOf, datedWaitsDue/Wake/Tick (lines 472-475) and onWaitSet; nothing there names INQUIRY_RIVAL_CHECKS or onRivalsListed","at":"2026-11-09T06:10:21.481Z","key":"inquiry:1028","worker":"sonnet-i1028-11","cost":"0.25"}

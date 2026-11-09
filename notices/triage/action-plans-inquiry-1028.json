@@ -1,0 +1,1 @@
+{"row":"triage","user":"action-plans","verdict":"not affected","evidence":"bio-plane/src/action-plans/index.mjs:224 no file imports inquiry; it reads an inquiry's state through record-core (index.mjs:18), never the provider's exports","at":"2026-11-09T06:10:21.481Z","key":"inquiry:1028","worker":"sonnet-i1028-1","cost":"0.25"}

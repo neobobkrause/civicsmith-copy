@@ -1,0 +1,1 @@
+{"row":"answered","user":"project-stage","by":"triage","evidence":"bio-plane/src/project-stage/index.mjs:283 uses only inquiry.basisFor (import at :22); no use of INQUIRY_RIVAL_CHECKS or onRivalsListed","at":"2026-11-09T06:10:21.481Z","key":"inquiry:1028","worker":"sonnet-i1028-7","cost":"0.25"}
