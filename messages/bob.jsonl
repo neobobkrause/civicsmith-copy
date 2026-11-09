@@ -689,3 +689,4 @@
 {"at":"2026-11-09T11:09:30Z","row":"outcome","n":347,"outcome":"delivered"}
 {"at":"2026-11-09T11:26:54Z","row":"sent","n":348,"to":"root","text":"BOB session_018BhceeL7ktcpogArqPTSPB running (replaces session_018Bhcef5L3UCM2sT9Wtb9Aq); start check ok at tranche 820fb85; status running, then starts owed for layer 14."}
 {"at":"2026-11-09T11:32:54Z","row":"sent","n":349,"to":"root","text":"BOB session_018BhceeL7ktcpogArqPTSPB running (replaces session_018Bhcef5L3UCM2sT9Wtb9Aq); start check ok at tranche 820fb85; taking up status: starts owed for layer 14."}
+{"at":"2026-11-09T11:39:10Z","row":"outcome","n":349,"outcome":"delivered"}
