@@ -23,15 +23,30 @@ function namespace() {
   };
 }
 
-test('R8 the Worker passes each of the image\'s routes through to one of the class\'s instances, unchanged', async () => {
+test('R8 the Worker passes each of the image\'s working routes through to one of the class\'s instances, unchanged', async () => {
   const worker = (await loadWorker()).default;
   const ns = namespace();
-  for (const [method, path] of [['POST', '/convert'], ['POST', '/frames'], ['POST', '/archive'], ['GET', '/version']]) {
+  for (const [method, path] of [['POST', '/convert'], ['POST', '/frames'], ['POST', '/archive']]) {
     const r = await worker.fetch(new Request(`https://reader-container${path}?kind=x`, { method, body: method === 'POST' ? 'b' : undefined }), { READER: ns });
     assert.equal(r.status, 200, `${method} ${path}`);
     assert.match(await r.text(), new RegExp(`^reader-[0-${marker.max_instances - 1}]$`));
   }
-  assert.deepEqual(ns.reached.map(([, m, p]) => `${m} ${p}`), ['POST /convert', 'POST /frames', 'POST /archive', 'GET /version']);
+  assert.deepEqual(ns.reached.map(([, m, p]) => `${m} ${p}`), ['POST /convert', 'POST /frames', 'POST /archive']);
+});
+
+test('F1 GET /version answers the deployed VERSION from the Worker itself, waking no instance, so the rollout check reads it at once', async () => {
+  const worker = (await loadWorker()).default;
+  const ns = namespace();
+  const r = await worker.fetch(new Request('https://reader-container/version'), { READER: ns, VERSION: wrangler.vars.VERSION });
+  assert.equal(r.status, 200);
+  const body = await r.json();
+  assert.equal(body.version, wrangler.vars.VERSION, 'the version the rollout check waits for');
+  assert.deepEqual([body.ok, body.name, body.image], [true, marker.name, marker.image.digest]);
+  const pk = JSON.parse(text('packages.json'));
+  for (const p of pk.packages) assert.equal(body.tools[p.name], p.version, p.name);
+  assert.equal(ns.reached.length, 0, 'no instance was woken');
+  const unbound = await worker.fetch(new Request('https://reader-container/version'), { VERSION: '9.9.9' });
+  assert.deepEqual([unbound.status, (await unbound.json()).version], [200, '9.9.9'], 'answered even with no class bound');
 });
 
 test('R8 any other method or path is 404 UNKNOWN, and with no class bound the answer is a stated 503, never a throw', async () => {

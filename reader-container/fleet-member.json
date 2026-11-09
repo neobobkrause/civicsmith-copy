@@ -7,7 +7,7 @@
     "POST /convert?kind=&to=": "R1, R2: a legacy or macro Office file or an RTF converted to docx, xlsx or pptx, macros never run, no link followed",
     "POST /frames?kind=": "R3, R4: a picture decoded to upright PNG frames, then its facts (time, place, orientation)",
     "POST /archive?kind=&name=": "R5: an archive's members as a stream of records within the bounds the caller sends, then its end, or a refusal",
-    "GET /version": "the image's tools and their versions",
+    "GET /version": "F1: answered by the Worker without waking an instance: {ok, name, version (the release's VERSION), image (its digest), tools (the package statement)}",
     "anything else": "404 {ok: false, code: \"UNKNOWN\"}"
   },
   "image": {
