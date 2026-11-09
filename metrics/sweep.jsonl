@@ -791,3 +791,4 @@
 {"at":"2026-11-09T04:42:29Z","row":"check","by":"send","live":1,"live_at":"2026-11-09T04:08:57Z","slots_working":0,"published_free":1,"job_cap":20,"startable":0}
 {"at":"2026-11-09T04:47:33Z","row":"check","by":"send","live":1,"live_at":"2026-11-09T04:08:57Z","slots_working":1,"published_free":0,"resumed":["bundler"],"job_cap":20,"startable":0}
 {"at":"2026-11-09T04:53:27Z","row":"check","by":"notice triage","live":1,"live_at":"2026-11-09T04:08:57Z","slots_working":0,"published_free":1,"job_cap":20,"startable":0}
+{"at":"2026-11-09T04:59:12Z","row":"check","by":"status","live":1,"live_at":"2026-11-09T04:08:57Z","slots_working":0,"published_free":1,"job_cap":20,"startable":0}
