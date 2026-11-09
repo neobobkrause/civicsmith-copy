@@ -286,3 +286,4 @@
 {"at":"2026-11-09T13:35:19Z","row":"sent","n":144,"to":"bob","text":"Sweep: ai-accounts: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; credentials: BLOCKED; file-scanner: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-09T13:35:39Z","row":"outcome","n":144,"outcome":"delivered"}
 {"at":"2026-11-09T14:19:28Z","row":"sent","n":145,"to":"bob","text":"Sweep: citation: BLOCKED; contradiction: BLOCKED; file-scanner: BLOCKED; op-declarations: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
+{"at":"2026-11-09T14:19:50Z","row":"outcome","n":145,"outcome":"delivered"}
