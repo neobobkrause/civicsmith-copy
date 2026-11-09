@@ -27,3 +27,4 @@
 {"at":"2026-11-06T04:38:20Z","row":"sent","n":14,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (11 jobs ready). Then: job ai-catalogue BLOCKED: run status"}
 {"at":"2026-11-06T04:39:30Z","row":"outcome","n":14,"outcome":"delivered"}
 {"at":"2026-11-09T10:31:28Z","row":"sent","n":15,"to":"bob","text":"job ai-catalogue complete, PR #1097 ready, session session_018BhceeNFkqQVrmw6ts97ZH: run status"}
+{"at":"2026-11-09T10:31:45Z","row":"outcome","n":15,"outcome":"delivered"}
