@@ -690,3 +690,4 @@
 {"at":"2026-11-09T11:26:54Z","row":"sent","n":348,"to":"root","text":"BOB session_018BhceeL7ktcpogArqPTSPB running (replaces session_018Bhcef5L3UCM2sT9Wtb9Aq); start check ok at tranche 820fb85; status running, then starts owed for layer 14."}
 {"at":"2026-11-09T11:32:54Z","row":"sent","n":349,"to":"root","text":"BOB session_018BhceeL7ktcpogArqPTSPB running (replaces session_018Bhcef5L3UCM2sT9Wtb9Aq); start check ok at tranche 820fb85; taking up status: starts owed for layer 14."}
 {"at":"2026-11-09T11:39:10Z","row":"outcome","n":349,"outcome":"delivered"}
+{"at":"2026-11-09T12:37:37Z","row":"sent","n":350,"to":"root","text":"root-141: blocked list unchanged; ai-accounts and credentials wait on the coordinator's PD-19 route (companion op-declarations job on layer 14). Landed ai-catalogue PR 1097 into layer/14 (8ed25f1db7) and archived its session. Notice triage bundler:1086 recorded (agent-runner, agent-worker affected); ai-catalogue:1097 triage in progress."}
