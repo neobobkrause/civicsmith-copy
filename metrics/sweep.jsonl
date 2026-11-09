@@ -819,3 +819,4 @@
 {"at":"2026-11-09T09:50:08Z","row":"check","by":"handoff","live":3,"live_at":"2026-11-09T09:36:25Z","live_measured":0,"started_since":3,"job_cap":20,"startable":0}
 {"at":"2026-11-09T10:16:44Z","row":"sweep","session":"session_018Bhceg3m4o8qXzgi9JC4Ux","bob_acts":true,"bob_quiet_h":0.7,"root_context":34,"live":3,"live_measured_at":"2026-11-09T10:08:38Z","job_cap":20,"sessions":8,"job_ids":["ai-accounts","ai-catalogue","credentials"],"startable":0,"blocked":0,"blocked_oldest_min":null,"working":0,"waiting":3}
 {"at":"2026-11-09T10:21:55Z","row":"check","by":"send","live":3,"live_at":"2026-11-09T10:16:44Z","slots_working":2,"published_free":1,"job_cap":20,"startable":0}
+{"at":"2026-11-09T10:31:15Z","row":"check","by":"send","live":3,"live_at":"2026-11-09T10:16:44Z","slots_working":2,"published_free":1,"job_cap":20,"startable":0}
