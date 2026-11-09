@@ -800,3 +800,4 @@
 {"at":"2026-11-09T05:38:44Z","row":"check","by":"notice triage","live":1,"live_at":"2026-11-09T05:08:46Z","job_cap":20,"startable":0,"idle_capacity":{"kind":"empty","since":"2026-11-09T05:26:47Z","min":11,"live":1,"cap":20,"held":0,"startable":0,"empty":19,"alarm":false,"layer":13}}
 {"at":"2026-11-09T05:53:53Z","row":"check","by":"notice triage","live":1,"live_at":"2026-11-09T05:08:46Z","job_cap":20,"startable":0}
 {"at":"2026-11-09T05:59:10Z","row":"check","by":"notice triage","live":1,"live_at":"2026-11-09T05:08:46Z","job_cap":20,"startable":0}
+{"at":"2026-11-09T06:04:11Z","row":"check","by":"notice triage","live":1,"live_at":"2026-11-09T05:08:46Z","job_cap":20,"startable":0}
