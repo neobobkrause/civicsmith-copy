@@ -2062,6 +2062,23 @@ export class Credentials {
     return { ok: true, ...this.#keyedState(service) };
   }
 
+  /* F1 (op-grades R55; N1259-e §1; R84): `alertconnect`, connecting the team's outside alert service, is the keyed-service
+     act under the screens' name: an active administrator's alone (a machine credential is refused `NOT_AN_ADMIN`, as
+     `keyedserviceset` is), the key set or removed (`key`, null removes it) and the service switched (`on`), in that order;
+     with neither, the service's state is answered and nothing is written. Never answers the key. */
+  async alertConnect({ service = null, key, on, by = null } = {}) {
+    const bar = this.#adminBar(by, localize("credentials.index.setting_the_teams_key", "setting the team's key for an outside service"));
+    if (bar) return bar;
+    const unknown = this.#keyedService(service);
+    if (unknown) return unknown;
+    if (key !== undefined) {
+      const set = await this.keyedServiceSet({ service, key, by });
+      if (!set || set.ok === false) return set;
+    }
+    if (typeof on === "boolean") return this.keyedServiceSwitch({ service, on, by });
+    return { ok: true, ...this.#keyedState(service) };
+  }
+
   /* A service is on only while it is switched on AND holds a key. */
   #keyedState(service) {
     const r = this.#one(`SELECT sealed, is_on, set_by, set_at FROM keyed_services WHERE service=?`, service);
@@ -2213,6 +2230,12 @@ export function credentialsOps(c, url, body, env) {
     keyedserviceset: () => c.keyedServiceSet({ ...(body || {}), by: url.searchParams.get("by") }),
     keyedserviceswitch: () => c.keyedServiceSwitch({ ...(body || {}), by: url.searchParams.get("by") }),
     keyedservices: () => c.keyedServices(),
+    /* F1: the screens' alert-connect act, the fields from the body, the administrator from the control plane's stamp */
+    alertconnect: () => {
+      const b = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+      return c.alertConnect({ service: b.service ?? null, ...(Object.hasOwn(b, "key") ? { key: b.key } : {}),
+                              ...(Object.hasOwn(b, "on") ? { on: b.on } : {}), by: url.searchParams.get("by") });
+    },
     /* R50 (N744; K2038): STORE-INTERNAL, no spec (op-declarations R6): R44's write for admission R22, reached from the
        Worker through the store as `doorbellrefused` is. It takes `{kind, country}` from the body and nothing else. */
     securitycount: () => {
@@ -2236,6 +2259,11 @@ export const DECLARED_OPS = Object.freeze({
      `bootstrapOp` (setup.mjs), not by the arm above (K4237, SCREENS-SETTINGS #10); declared here so the screen's field is accepted. */
   bootstrap: { classes: null, mutating: false, weight: "read", description: "act.bootstrap.does",
     fields: { accepts: ["members"], requires: [] } },
+  /* F1 (op-grades R55): graded ground `credential` as `keyedserviceset`; no machine class reaches it (`machineClasses: []`),
+     and the module refuses a machine author itself; an administrator's act, gated by class, so `needs` is null (op-capabilities R4) */
+  alertconnect: { classes: ["admin","member"], machineClasses: [], mutating: true, stamps: ["by","viewer"], needs: null, weight: "credential",
+    budget_ms: 1000, description: localize("credentials.declared.alertconnect", "credential governance: an administrator sets, removes or switches the team's key for an outside alert service; the key is never answered"),
+    fields: { accepts: ["service","key","on"], requires: ["service"] } },
   claim: { classes: null, mutating: true, weight: "credential", description: localize("credentials.declared.claim", "claims an instance at bootstrap"),
     fields: { accepts: ["password","handle"], requires: ["password"] } },
   login: { classes: null, mutating: false, weight: "read", description: "act.login.does",

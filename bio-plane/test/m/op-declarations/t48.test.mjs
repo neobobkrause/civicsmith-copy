@@ -411,7 +411,8 @@ const T53_KIND = { aikeepaway: "admin", aikeepawaystate: "settingread", accountu
 /* R61, R71: the acts the screens send, ai-accounts' DECLARED_OPS, each a session's own act */
 const DECLARED_ACTS = ["aiaccountadd", "aiownadd", "aiaccountremove", "aiaccountswitch", "aiorderset", "aiprojectorder",
   "aimemberallow", "aiprojectuse", "aimineuse", "aicheckset", "aiprojectcheckset", "aimycheckset", "aikeyenter",
-  "aikeycloudflare", "aikeyseal", "aitermsaccept", "aitermswithdraw", "aipersonalchoose", "aicreditsclear", "aioptinset", "aisend"];
+  "aikeycloudflare", "aikeyseal", "aitermsaccept", "aitermswithdraw", "aipersonalchoose", "aicreditsclear", "aioptinset", "aisend",
+  "aikeyreference", "aisignin"];
 for (const op of DECLARED_ACTS) T53_KIND[op] = "own";
 
 test("R68, R24, R33, R41, R20 (N996; K3101; ai-accounts; restated for T53, ai-accounts R35, BOB 4 Nov): ai-accounts' family is its map's ops — the 7 of the 24 moved ops it still serves with their T47 kinds, specs, session sets, NEEDS rows and stamps, its 5 owners' reads, the Worker's 3 plane ops and its 21 declared acts, each act by stamped; the 17 retired ops are in no family and no table; credentials' family holds none of them, aigrantmint stays credentials' (negative control: aigrantmint is credentials', a drifted kind is seen)", () => {

@@ -142,6 +142,13 @@ test("R34 the request for both kinds carries exactly accept and the fixed user a
   assert.equal(index.max_bytes, 64 * 1024);
   assert.equal(p.max_bytes, 4 * 1024 * 1024);
 });
+/* F5 (ai-issuer R1): the issuer serves `GET /ai/index.json`, and its index names a payload `catalogue/<seq>.json`, served at
+   `/ai/catalogue/<seq>.json`; the address this module reads is that one, so a team's copy reaches it and never a 404. */
+test("F5 the index address is the issuer's /ai/index.json, and the index's catalogue/<seq>.json resolves to /ai/catalogue/<seq>.json", () => {
+  assert.equal(new URL(pullRequest("index").url).pathname, "/ai/index.json");
+  assert.equal(new URL(pullRequest("payload", "catalogue/7.json").url).pathname, "/ai/catalogue/7.json");
+  assert.equal(new URL(pullRequest("payload", "advisories/3.json").url).pathname, "/ai/advisories/3.json");
+});
 test("R34 control: a path of ../x or https://other/x is refused CATALOGUE_PATH_INVALID", () => {
   for (const path of ["../x", "https://other/x", "/abs", "a/../b", "A.json", "a//b"])
     assert.equal(pullRequest("payload", path).code, "CATALOGUE_PATH_INVALID", path);

@@ -102,7 +102,7 @@ test("R2 R64: a secret an account holds is stored only encrypted (AES-256-GCM un
   const n = w.row(`SELECT sealed, iv, reference, gateway_id FROM ai_accounts WHERE account_id=?`, none.account_id);
   assert.deepEqual([n.sealed, n.iv, n.reference, n.gateway_id], [null, null, null, null], "a none account stores nothing");
   const st = w.a.accountState({ account_id: sealed.account_id, viewer: "ann" });
-  assert.deepEqual(Object.keys(st).sort(), ["account_id", "entries", "flagged", "held", "ok", "on", "opt_in", "owner", "personal", "plan", "provider", "means", "set_at", "switches"].sort());
+  assert.deepEqual(Object.keys(st).sort(), ["account_id", "entries", "flagged", "flagged_at", "health", "held", "ok", "on", "opt_in", "owner", "personal", "plan", "provider", "means", "set_at", "switches"].sort());
   assert.deepEqual([st.opt_in, st.switches], [{ flag: "share_with_projects", on: false }, DEFAULTS]);
   for (const viewer of ["bob", "second", "admin", "class:ai", null]) assert.deepEqual(shape(w.a.accountState({ account_id: sealed.account_id, viewer })), refusal("NOT_YOUR_ACCOUNT"), String(viewer));
   assert.equal(w.a.accountsOf({ owner: "member:ann", viewer: "bob" }).reason, "NOT_YOUR_ACCOUNT");
