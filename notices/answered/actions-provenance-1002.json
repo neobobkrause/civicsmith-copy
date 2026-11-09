@@ -1,0 +1,1 @@
+{"row":"answered","user":"actions","by":"triage","evidence":"bio-plane/test/m/actions/fixture.mjs:12 imports only provenanceOf, used at :104 and passed as provenance at :139 and :145; the added exports are not used","at":"2026-11-09T06:20:04.720Z","key":"provenance:1002","worker":"sonnet-p1002-1","cost":"0.25"}

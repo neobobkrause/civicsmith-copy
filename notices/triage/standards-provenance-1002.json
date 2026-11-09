@@ -1,0 +1,1 @@
+{"row":"triage","user":"standards","verdict":"not affected","evidence":"build/modules.json:82 gives bio-plane/src/standards/ and no file there imports provenance (git grep of the module's paths finds none), so nothing uses the added exports.","at":"2026-11-09T06:20:04.720Z","key":"provenance:1002","worker":"sonnet-p1002-27","cost":"0.25"}

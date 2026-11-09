@@ -1,0 +1,1 @@
+{"row":"answered","user":"action-holds","by":"triage","evidence":"bio-plane/src/action-holds/index.mjs:31 only mentions provenance's register table (capture_sha) in a comment; no file imports provenance and neither added export appears in the module","at":"2026-11-09T06:20:04.720Z","key":"provenance:1002","worker":"sonnet-p1002-1","cost":"0.25"}

@@ -1,0 +1,1 @@
+{"row":"answered","user":"action-records","by":"triage","evidence":"bio-plane/test/m/action-records/fixture.mjs:13 imports only PROVENANCE_SCHEMA, used at :89 for the register table DDL; the added exports are not used","at":"2026-11-09T06:20:04.720Z","key":"provenance:1002","worker":"sonnet-p1002-1","cost":"0.25"}

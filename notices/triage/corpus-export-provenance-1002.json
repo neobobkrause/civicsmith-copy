@@ -1,0 +1,1 @@
+{"row":"triage","user":"corpus-export","verdict":"not affected","evidence":"bio-plane/src/corpus-export/index.mjs:23 imports only provenanceOf, used at :243 for partsNamed and :644 to build it; no use of grade, archive route, REWRITTEN_REPLAY_GRADE or rawReplayOf","at":"2026-11-09T06:20:04.720Z","key":"provenance:1002","worker":"sonnet-p1002-8","cost":"0.25"}

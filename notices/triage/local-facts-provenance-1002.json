@@ -1,0 +1,1 @@
+{"row":"triage","user":"local-facts","verdict":"not affected","evidence":"bio-plane/src/local-facts/index.mjs:353 uses only provenance.homeOf(sha) (also :31, :349), which PR 1002 did not touch; it neither calls captureGrade nor imports REWRITTEN_REPLAY_GRADE or rawReplayOf","at":"2026-11-09T06:20:04.720Z","key":"provenance:1002","worker":"sonnet-p1002-17","cost":"0.25"}

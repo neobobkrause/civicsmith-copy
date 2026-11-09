@@ -1,0 +1,1 @@
+{"row":"triage","user":"retrieval","verdict":"not affected","evidence":"bio-plane/test/m/retrieval/fixture.mjs:15 imports only provenanceOf to build the world (used at :157); no use of REWRITTEN_REPLAY_GRADE, rawReplayOf or archive-replay grading anywhere in the module's paths.","at":"2026-11-09T06:20:04.720Z","key":"provenance:1002","worker":"sonnet-p1002-27","cost":"0.25"}

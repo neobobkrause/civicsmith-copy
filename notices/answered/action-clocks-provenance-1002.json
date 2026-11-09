@@ -1,0 +1,1 @@
+{"row":"answered","user":"action-clocks","by":"triage","evidence":"bio-plane/test/m/action-clocks/fixture.mjs:20 imports only provenanceOf and calls it at :128 to migrate; neither added export (REWRITTEN_REPLAY_GRADE, rawReplayOf) is imported or used, nothing removed","at":"2026-11-09T06:20:04.720Z","key":"provenance:1002","worker":"sonnet-p1002-1","cost":"0.25"}
