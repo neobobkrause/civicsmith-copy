@@ -1,0 +1,53 @@
+{
+  "row": "land",
+  "layer": 14,
+  "module": "op-declarations",
+  "pr": 1104,
+  "branch": "job/op-declarations-2",
+  "head": "f05c9fd9ef0e9e5ab2e05540e1f49f411cde82a3",
+  "before": "6d1803bf90dba3fe520346ee406a2e8c7e603d31",
+  "merge": "d732fe487ee01e018c435fc36ff7109d69fe6b85",
+  "at": "2026-11-09T15:53:39Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "bio-plane/test/m/op-declarations/t48.test.mjs",
+      "bio-plane/test/m/op-declarations/t49.test.mjs"
+    ],
+    "provides_tests_named": [
+      "bio-plane/test/m/op-declarations/t48.test.mjs",
+      "bio-plane/test/m/op-declarations/t49.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "bio-plane/test/m/op-declarations/t48.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: , \"aikeyreference\" , \"aisignin\""
+      },
+      {
+        "file": "bio-plane/test/m/op-declarations/t49.test.mjs",
+        "class": "breaking",
+        "why": "added code that is not an object property: + 2"
+      }
+    ],
+    "provides_tests": [
+      "bio-plane/test/m/op-declarations/t48.test.mjs",
+      "bio-plane/test/m/op-declarations/t49.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}
