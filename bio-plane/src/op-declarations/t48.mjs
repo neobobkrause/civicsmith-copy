@@ -93,7 +93,7 @@ const T48_FAMILIES = Object.freeze([
     aiprojectorder: "own", aimemberallow: "own", aiprojectuse: "own", aimineuse: "own", aicheckset: "own",
     aiprojectcheckset: "own", aimycheckset: "own", aikeyenter: "own", aikeycloudflare: "own", aikeyseal: "own",
     aitermsaccept: "own", aitermswithdraw: "own", aipersonalchoose: "own", aicreditsclear: "own", aioptinset: "own",
-    aisend: "own" }) }),
+    aisend: "own", aikeyreference: "own", aisignin: "own" }) }),
 ]);
 
 export { T48_SHARES, T48_FAMILIES };
