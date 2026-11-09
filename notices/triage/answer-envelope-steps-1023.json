@@ -1,0 +1,1 @@
+{"row":"triage","user":"answer-envelope","verdict":"not affected","evidence":"bio-plane/src/answer-envelope/families.mjs:93 imports only ../steps/checks.mjs (listed at :234), and PR 1023 changed only steps/index.mjs and steps/schema.mjs","at":"2026-11-09T05:43:12.055Z","key":"steps:1023","worker":"sonnet-steps-1","cost":"0.25"}
