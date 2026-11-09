@@ -275,3 +275,4 @@
 {"at":"2026-11-09T09:23:12Z","row":"outcome","n":138,"outcome":"delivered"}
 {"at":"2026-11-09T09:36:54Z","row":"sent","n":139,"to":"bob","text":"Sweep: IDLE CAPACITY, 20 slots empty, 0 startable: run node .process/tool/p3.mjs round next --apply (opens layer 14, round 2, and prints its job starts) first; only a recorded hold (p3 hold) keeps a slot empty; ai-catalogue: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; file-scanner: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-09T09:37:15Z","row":"outcome","n":139,"outcome":"delivered"}
+{"at":"2026-11-09T10:17:15Z","row":"sent","n":140,"to":"bob","text":"Sweep: ai-accounts: BLOCKED; citation: BLOCKED; contradiction: BLOCKED; credentials: BLOCKED; file-scanner: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
