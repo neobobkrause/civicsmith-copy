@@ -1,0 +1,1 @@
+{"row":"answered","user":"store-door","by":"triage","evidence":"bio-plane/test/m/store-door/record.mjs:37 imports only aiRunsOf to wire the world (lines 113-131); never ANSWER_MARKS, answerKeyMarks, group-test or answer-key behaviour","at":"2026-11-09T05:58:42.460Z","key":"ai-runs:1004","worker":"sonnet-ar1004-6","cost":"0.25"}

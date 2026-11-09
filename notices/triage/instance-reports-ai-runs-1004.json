@@ -1,0 +1,1 @@
+{"row":"triage","user":"instance-reports","verdict":"not affected","evidence":"build/modules.json:176 lists it with paths [] and tests [], so no file imports ai-runs","at":"2026-11-09T05:58:42.460Z","key":"ai-runs:1004","worker":"sonnet-ar1004-2","cost":"0.25"}
