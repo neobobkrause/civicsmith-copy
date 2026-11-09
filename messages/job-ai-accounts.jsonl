@@ -15,3 +15,4 @@
 {"at":"2026-11-05T22:06:16Z","row":"sent","n":8,"to":"bob","text":"first: node .process/tool/p3.mjs job start --ready --live <n> (7 jobs ready). Then: job ai-accounts complete, PR #483 ready, session session_018BhcedncvbJaJz23YdgGGd: run status"}
 {"at":"2026-11-05T22:06:26Z","row":"outcome","n":8,"outcome":"delivered"}
 {"at":"2026-11-09T09:47:39Z","row":"sent","n":9,"to":"bob","text":"job ai-accounts BLOCKED: run status"}
+{"at":"2026-11-09T09:47:57Z","row":"outcome","n":9,"outcome":"delivered"}
