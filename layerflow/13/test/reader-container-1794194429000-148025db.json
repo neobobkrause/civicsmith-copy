@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "reader-container",
+  "session": "session_018BhcedNEyhn6acJVnLCdak",
+  "started": "2026-11-09T03:20:29Z",
+  "ended": "2026-11-09T03:22:58Z",
+  "at": "2026-11-09T03:22:58Z",
+  "minutes": 2.48,
+  "result": "pass",
+  "layer": 13,
+  "suite_seconds": 35.428,
+  "tests": {
+    "total": 74,
+    "pass": 59,
+    "fail": 0
+  }
+}
