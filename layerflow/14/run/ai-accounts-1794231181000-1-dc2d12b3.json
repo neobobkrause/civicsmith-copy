@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 14,
+  "module": "ai-accounts",
+  "round": 1,
+  "started": "2026-11-09T13:33:01Z",
+  "ended": "2026-11-09T13:37:00Z",
+  "minutes": 4,
+  "tested_on": "37b179a60ee9e446b80b38be647ad7da2b8b6386",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-09T13:37:00Z"
+}
