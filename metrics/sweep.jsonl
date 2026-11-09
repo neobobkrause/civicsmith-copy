@@ -783,3 +783,4 @@
 {"at":"2026-11-09T03:25:48Z","row":"check","by":"layer publish","live":3,"live_at":"2026-11-09T03:11:42Z","live_measured":0,"started_since":3,"job_cap":20,"startable":0}
 {"at":"2026-11-09T03:36:10Z","row":"check","by":"send","live":3,"live_at":"2026-11-09T03:11:42Z","live_measured":0,"started_since":3,"slots_working":2,"published_free":1,"job_cap":20,"startable":0}
 {"at":"2026-11-09T03:41:18Z","row":"check","by":"send","live":3,"live_at":"2026-11-09T03:11:42Z","live_measured":0,"started_since":3,"slots_working":3,"published_free":0,"resumed":["reader-container"],"job_cap":20,"startable":0}
+{"at":"2026-11-09T03:56:32Z","row":"check","by":"address","live":3,"live_at":"2026-11-09T03:11:42Z","live_measured":0,"started_since":3,"slots_working":2,"published_free":1,"job_cap":20,"startable":0}
