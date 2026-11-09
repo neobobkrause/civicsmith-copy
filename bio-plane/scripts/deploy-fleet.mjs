@@ -391,6 +391,14 @@ async function subdomain() {
 }
 
 const want = String(cfg.vars?.VERSION ?? "");
+/* F2 (walk p3dev-l1): a member deployed with `workers_dev: false` (agent-worker, reachable only through the plane's
+   service binding) has no workers.dev address, so polling one could never confirm and would cry ROLLOUT NOT CONFIRMED.
+   It is not polled: the rollout is reported as not reachable from here by design, and is read through the plane. */
+if (cfg.workers_dev === false) {
+  console.log(`rollout: ${member} is deployed with workers_dev: false: it is reachable only through the plane's service binding,`);
+  console.log(`         so its /version is not reachable from here by design and is not polled. Confirm ${want || "its VERSION"} through the plane.`);
+  process.exit(0);
+}
 const sub = await subdomain();
 if (!sub || !want) {
   console.log("rollout: cannot confirm what is SERVING (no subdomain or no declared VERSION).");
