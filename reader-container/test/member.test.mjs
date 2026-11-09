@@ -3,10 +3,13 @@
  * internet for the container); a route the image does not answer is 404 here. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { loadWorker } from './workers-runtime.mjs';
 import { parseJsonc } from '../../bio-plane/scripts/jsonc.mjs';
-import { discoverMembers, classPackages, containerClasses, containerSourceHash, containerImageStates } from '../../bio-plane/scripts/fleet-bundle.mjs';
+import { discoverMembers, buildMember, classPackages, containerClasses, containerSourceHash, containerImageStates } from '../../bio-plane/scripts/fleet-bundle.mjs';
 
 const here = (p) => new URL(`../${p}`, import.meta.url);
 const text = (p) => readFileSync(here(p), 'utf8');
@@ -34,8 +37,19 @@ test('R8 the Worker passes each of the image\'s working routes through to one of
   assert.deepEqual(ns.reached.map(([, m, p]) => `${m} ${p}`), ['POST /convert', 'POST /frames', 'POST /archive']);
 });
 
+/* F1 bundles the Worker from its source as the test runs, by the bundler's own recipe, in memory, so the test follows
+ * the code it names: the committed-path bundle may have been built before a change and still answer the old way. */
+async function loadSource() {
+  await loadWorker();   // registers the `cloudflare:workers` hook
+  const built = await buildMember(discoverMembers().find((m) => m.name === 'reader-container'));
+  const dir = mkdtempSync(join(tmpdir(), 'reader-container-f1-'));
+  const file = join(dir, 'worker.bundled.mjs');
+  writeFileSync(file, built.bytes);
+  return import(pathToFileURL(file).href);
+}
+
 test('F1 GET /version answers the deployed VERSION from the Worker itself, waking no instance, so the rollout check reads it at once', async () => {
-  const worker = (await loadWorker()).default;
+  const worker = (await loadSource()).default;
   const ns = namespace();
   const r = await worker.fetch(new Request('https://reader-container/version'), { READER: ns, VERSION: wrangler.vars.VERSION });
   assert.equal(r.status, 200);
