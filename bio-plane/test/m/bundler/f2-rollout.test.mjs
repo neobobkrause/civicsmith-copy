@@ -1,14 +1,15 @@
 /* F2 (walk p3dev-l1; coordinator ruling, 5 Nov): deploy-fleet.mjs's rollout check polled https://<name>.<sub>.workers.dev/version
  * for every member, so a member deployed with `workers_dev: false` (agent-worker: reachable only through the plane's service
- * binding) could never confirm and always reported ROLLOUT NOT CONFIRMED. Such a member is now reported as not reachable
+ * binding; file-scanner the same, PR 1087, BOB bob-336) could never confirm and always reported ROLLOUT NOT CONFIRMED. Such a member is now reported as not reachable
  * from here by design, and is not polled. Driven as p3dev.test.mjs drives the script: a fixture repository over the
  * stubbed account (`stubfetch.mjs`) and the fake wrangler. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { parseJsonc } from "../../../scripts/jsonc.mjs";
-import { makeRepo, run, rm, VERSION } from "./repo.mjs";
+import { makeRepo, run, rm, VERSION, PLANE } from "./repo.mjs";
+import { discoverMembers } from "../../../scripts/fleet-bundle.mjs";
 
 const ACCT = "20b533579290b9b93168345edd3b7f72";
 const SLUG = "p3dev-l1";
@@ -51,5 +52,22 @@ test("F2 control: a member with a workers.dev address is still polled, and confi
       assert.doesNotMatch(r.stdout, /not reachable from here by design/);
       assert.ok(workersDevCalls(r).some((c) => c.url === `https://alpha-worker-${SLUG}.sub.workers.dev/version`), JSON.stringify(r.calls));
     }
+  } finally { rm(root); }
+});
+
+test("F2: every real member deployed with workers_dev: false, agent-worker (its F1) and file-scanner (its F1, PR 1087) among them, gets the not-reachable report", async () => {
+  const REAL = join(PLANE, "..");
+  const off = discoverMembers(REAL).filter((m) => existsSync(join(m.abs, "wrangler.jsonc")))
+    .filter((m) => parseJsonc(readFileSync(join(m.abs, "wrangler.jsonc"), "utf8"), m.name).workers_dev === false).map((m) => m.name);
+  for (const cited of ["agent-worker", "file-scanner"]) assert.ok(off.includes(cited), `${cited} states workers_dev: false`);
+  /* the rule reads the member's own configuration, so one fixture member stated as they state themselves stands for each */
+  const root = await repo();
+  try {
+    setWorkersDev(root, false);
+    const r = deploy(root, STUB);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /not reachable from here by design and is not polled/, `as for ${off.join(", ")}`);
+    assert.doesNotMatch(r.stdout, /ROLLOUT NOT CONFIRMED/);
+    assert.deepEqual(workersDevCalls(r), []);
   } finally { rm(root); }
 });
