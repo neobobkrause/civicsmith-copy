@@ -687,3 +687,4 @@
 {"at":"2026-11-09T10:40:13Z","row":"outcome","n":346,"outcome":"delivered"}
 {"at":"2026-11-09T11:00:17Z","row":"sent","n":347,"to":"root","text":"root-140: ai-accounts and credentials BLOCKED by coordinator ruling PD-19: each waits for a companion op-declarations job joined to open layer 14 (route C51 coming with a pin move); their work stays on their branches. ai-catalogue PR 1097 complete and green; record PR 1101 merged. My handover request bob-346 stands."}
 {"at":"2026-11-09T11:09:30Z","row":"outcome","n":347,"outcome":"delivered"}
+{"at":"2026-11-09T11:26:54Z","row":"sent","n":348,"to":"root","text":"BOB session_018BhceeL7ktcpogArqPTSPB running (replaces session_018Bhcef5L3UCM2sT9Wtb9Aq); start check ok at tranche 820fb85; status running, then starts owed for layer 14."}
