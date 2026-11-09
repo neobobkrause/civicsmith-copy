@@ -1,0 +1,45 @@
+{
+  "row": "land",
+  "layer": 13,
+  "module": "reader-container",
+  "pr": 1088,
+  "branch": "job/reader-container",
+  "head": "5c747742c0e4b90fddfeb1c932fa59982925e8ca",
+  "before": "feb823bc10bbf1efede91752e6a5a1e5f109a88c",
+  "merge": "de0f7dfc07297fc23000aa65af11f92278fe29f6",
+  "at": "2026-11-09T04:00:11Z",
+  "by": "bob",
+  "gate_runs": 4,
+  "interface": {
+    "changed": true,
+    "exports": null,
+    "provides": null,
+    "provides_tests_old": [
+      "reader-container/test/member.test.mjs"
+    ],
+    "provides_tests_named": [
+      "reader-container/test/member.test.mjs"
+    ],
+    "provides_test_changes": [
+      {
+        "file": "reader-container/test/member.test.mjs",
+        "class": "breaking",
+        "why": "an existing token changed or was removed"
+      }
+    ],
+    "provides_tests": [
+      "reader-container/test/member.test.mjs"
+    ],
+    "triggers": [
+      "provides-test"
+    ],
+    "triggers_old": [
+      "provides-test"
+    ],
+    "class": "breaking",
+    "source_changed": true
+  },
+  "users_rescheduled": [],
+  "users_rescheduled_old_rule": [],
+  "users_noticed": []
+}

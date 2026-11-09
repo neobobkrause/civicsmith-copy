@@ -1,0 +1,17 @@
+{
+  "row": "gate",
+  "layer": 13,
+  "module": "reader-container",
+  "pr": 1088,
+  "sha": "3729699751f1074394b36d3f3b3ffaa678083ce3",
+  "run_id": 42556350996,
+  "run_attempt": 1,
+  "at": "2026-11-09T03:26:41Z",
+  "trigger": "draft",
+  "suite": "skipped",
+  "ok": true,
+  "minutes": 0.91,
+  "suite_minutes": null,
+  "record_only": false,
+  "whole": false
+}
