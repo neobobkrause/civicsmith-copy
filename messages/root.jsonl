@@ -290,3 +290,4 @@
 {"at":"2026-11-09T15:07:22Z","row":"sent","n":146,"to":"bob","text":"Sweep: citation: BLOCKED; contradiction: BLOCKED; file-scanner: BLOCKED; op-declarations: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
 {"at":"2026-11-09T15:07:44Z","row":"outcome","n":146,"outcome":"delivered"}
 {"at":"2026-11-09T16:05:48Z","row":"sent","n":147,"to":"bob","text":"Sweep: citation: BLOCKED; contradiction: BLOCKED; file-scanner: BLOCKED; queue-producers: BLOCKED; runtime-limits: BLOCKED."}
+{"at":"2026-11-09T16:06:04Z","row":"outcome","n":147,"outcome":"delivered"}
