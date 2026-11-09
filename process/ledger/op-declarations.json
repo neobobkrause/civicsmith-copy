@@ -110,7 +110,8 @@
   ],
   "prior_work": "First, consolidate build/requirements/op-declarations.md (126484 bytes) under the requirements cap (70000): move non-requirement text (status history, rulings, cross-references, commentary) to docs/requirements-notes/op-declarations.md, which this job owns, and keep every **R<n>** and **F<n>** line and its mark verbatim; add a test under this module's tests that asserts the set of requirement ids and unmet marks in build/requirements/op-declarations.md is unchanged by the move (compare against the ids at the start commit). Then do the provider-notice work this START lists: for each notice, decide from your own requirements what this module must do, adapt or confirm, and add a test of your own for the change, failing with it reverted where code changes. Only if consolidation cannot get the file under the cap, stop and report to BOB with a split proposal (new module ids, build/modules.json rows, build/layers.md). Edit no other module, and commit no generated file (rows.mjs, words-unreviewed.json, any dist). Where build/situations/job.md names the old tool (proc), follow this START's commands instead.",
   "status": {
-    "state": "COMPLETE",
-    "at": "2026-11-08T21:17:09Z"
+    "state": "WORKING",
+    "at": "2026-11-09T13:40:21Z",
+    "reason": "reopened: companion of credentials, ai-accounts (PD-19): credentials needs credentials F1 declares alertconnect: add alertconnect to ACT_HELP_ABSENT.unexplained in src/op-declarations/index.mjs (beside keyedserviceset and the register ops) so t36.test.mjs R34 and R47 pass with credentials' PR 1099; ai-accounts needs ai-accounts F6 declares aikeyreference and aisignin: add both as 'own' to ai-accounts' family in src/op-declarations/t48.mjs, name both in ACT_HELP_ABSENT's unexplained ground (src/op-declarations/index.mjs ~2746), and add both to t48.test.mjs:417's list, so t36:308 R34, t48:417 R68 and R47 pass with ai-accounts' PR 1098"
   }
 }
