@@ -1,0 +1,9 @@
+{
+  "row": "companion",
+  "layer": 14,
+  "module": "op-declarations",
+  "job": "ai-accounts",
+  "why": "ai-accounts F6 declares aikeyreference and aisignin: add both as 'own' to ai-accounts' family in src/op-declarations/t48.mjs, name both in ACT_HELP_ABSENT's unexplained ground (src/op-declarations/index.mjs ~2746), and add both to t48.test.mjs:417's list, so t36:308 R34, t48:417 R68 and R47 pass with ai-accounts' PR 1098",
+  "at": "2026-11-09T13:38:49Z",
+  "by": "bob"
+}
