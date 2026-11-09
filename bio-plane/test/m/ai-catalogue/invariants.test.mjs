@@ -62,13 +62,14 @@ test("R46 control: a table declared twice, or a name that is not one, is refused
 
 const WRITERS = ["loadSeed", "receive", "registerAdapterTypes", "rollback", "unrollback"];
 const READS = ["entryOf", "entriesFor", "whyNotOffered", "plansOf", "profileOf", "testedOf", "libraryRows", "combinedResults",
-  "catalogueState", "checks"];
+  "catalogueState", "checks", /* F4: the screens' two reads */ "catalogueRead", "resultsRead"];
 test("R47 the module's exports hold no writer beyond the seed, receive, registration, rollback and unrollback", () => {
   const methods = Object.getOwnPropertyNames(AiCatalogue.prototype).filter((m) => m !== "constructor").sort();
   assert.deepEqual(methods, [...WRITERS, ...READS, "migrate", "start"].sort());
   const fns = Object.entries(catalogue).filter(([, v]) => typeof v === "function").map(([k]) => k).sort();
   /* pure helpers beside them: the seed's shape and the build's keys (R39; seed.mjs) write nothing */
-  assert.deepEqual(fns, ["AiCatalogue", "aiCatalogueOf", "isDate", "isInstant", "pullRequest", "validatePayload",
+  /* F4: the ops map serves only the two reads above (ops.test.mjs) */
+  assert.deepEqual(fns, ["AiCatalogue", "aiCatalogueOf", "aiCatalogueOps", "isDate", "isInstant", "pullRequest", "validatePayload",
     "catalogueKeysFor", "isDevelopmentKey", "seedOf", "seedFor"].sort());
 });
 test("R47 the reads never throw and write nothing", async () => {
