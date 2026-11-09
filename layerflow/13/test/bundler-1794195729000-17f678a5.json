@@ -1,0 +1,17 @@
+{
+  "row": "test",
+  "module": "bundler",
+  "session": "session_018BhcedVUZ8kASbrg9WsVRP",
+  "started": "2026-11-09T03:42:09Z",
+  "ended": "2026-11-09T03:44:56Z",
+  "at": "2026-11-09T03:44:56Z",
+  "minutes": 2.78,
+  "result": "fail",
+  "layer": 13,
+  "suite_seconds": 79.124,
+  "tests": {
+    "total": 201,
+    "pass": 199,
+    "fail": 2
+  }
+}
