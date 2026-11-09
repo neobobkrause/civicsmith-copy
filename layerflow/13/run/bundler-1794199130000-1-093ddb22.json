@@ -1,0 +1,13 @@
+{
+  "row": "run",
+  "layer": 13,
+  "module": "bundler",
+  "round": 1,
+  "started": "2026-11-09T04:38:50Z",
+  "ended": "2026-11-09T04:41:08Z",
+  "minutes": 2.3,
+  "tested_on": "de0f7dfc07297fc23000aa65af11f92278fe29f6",
+  "result": "pass",
+  "exit": 0,
+  "at": "2026-11-09T04:41:08Z"
+}
