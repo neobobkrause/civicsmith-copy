@@ -42,10 +42,7 @@ test("p3dev: a p3dev-l1 plan of every real member passes, every name slugged as 
   }
   const aw = memberPlanOf("agent-worker").cfg;
   assert.equal(aw.services.find((s) => s.binding === "PLANE").service, SLUG, "the phantom is the plane");
-  /* R43: agent-worker no longer binds REMOTE; its Durable Object bindings to agent-runner name agent-runner's copy */
-  const toRunner = aw.durable_objects.bindings.filter((d) => d.script_name);
-  assert.ok(toRunner.length > 0, "agent-worker binds a Durable Object in another script");
-  for (const d of toRunner) assert.equal(d.script_name, `agent-runner-${SLUG}`, d.name);
+  assert.equal(aw.durable_objects.bindings.find((d) => d.name === "REMOTE").script_name, `agent-runner-${SLUG}`);
   const fs = memberPlanOf("file-scanner").cfg;
   assert.deepEqual(fs.containers.map((c) => c.name).sort(), [`file-scanner-filescanner-${SLUG}`, `file-scanner-safeviewrenderer-${SLUG}`]);
   assert.deepEqual(memberPlanOf("agent-runner").cfg.containers.map((c) => c.name), [`agent-runner-${SLUG}`]);

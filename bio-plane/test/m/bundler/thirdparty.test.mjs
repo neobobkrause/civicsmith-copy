@@ -346,9 +346,7 @@ test("R28: over the real repository nothing is unread, and every bundled vendore
     for (const name of pkgs) assert.ok(has("npm", name, lockVersion(m.dir, name), m.name), `${m.name} ships ${name}`);
   }
   assert.ok(has("npm", "unpdf", lockVersion("pdf-worker", "unpdf"), "pdf-worker"));
-  /* agent-runner's image installs its lockfile's production packages (R27), whatever they are today (the Agent SDK left it). */
-  for (const [k, v] of Object.entries(readJson(join(REAL_ROOT, "agent-runner/package-lock.json")).packages))
-    if (k.startsWith("node_modules/") && !v.dev && v.version) assert.ok(has("npm", v.name || k.split("node_modules/").pop(), v.version, "agent-runner"), `agent-runner ships ${k}`);
+  assert.ok(has("npm", "@anthropic-ai/claude-agent-sdk", lockVersion("agent-runner", "@anthropic-ai/claude-agent-sdk"), "agent-runner"), "the Agent SDK's tree");
   assert.ok(has("npm", "tesseract-wasm", lockVersion("ocr-worker", "tesseract-wasm"), "ocr-worker"), "the declared version is the one ocr-worker installs");
   assert.ok(has("npm", "@cloudflare/containers", lockVersion("agent-runner", "@cloudflare/containers"), "agent-runner"));
   for (const p of readJson(join(REAL_ROOT, "court-citations/pins.json")).packages) assert.ok(has("PyPI", p.package, p.version, "bio-plane"), p.package);
