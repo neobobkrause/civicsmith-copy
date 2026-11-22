@@ -1,0 +1,33 @@
+{
+  "name": "review",
+  "files": [
+    "bio-plane/src/review/"
+  ],
+  "tests": [
+    "bio-plane/test/m/review/"
+  ],
+  "public": [
+    "bio-plane/src/review/checks.mjs",
+    "bio-plane/src/review/index.mjs",
+    "bio-plane/test/m/review/fixture.mjs",
+    "bio-plane/test/m/review/fixtures.mjs"
+  ],
+  "uses": [
+    "record-core",
+    "membership",
+    "basis-versions",
+    "strength",
+    "publication",
+    "case-account",
+    "case-authoring",
+    "record-grammar",
+    "case-tensions",
+    "case-grammar",
+    "ratification",
+    "case-inputs",
+    "local-facts",
+    "jurisdictions",
+    "setup-words",
+    "test-support"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "project-roster",
+  "files": [
+    "bio-plane/src/project-roster/"
+  ],
+  "tests": [
+    "bio-plane/test/m/project-roster/"
+  ],
+  "public": [
+    "bio-plane/src/project-roster/checks.mjs",
+    "bio-plane/src/project-roster/index.mjs",
+    "bio-plane/test/m/project-roster/fixture.mjs",
+    "bio-plane/test/m/project-roster/fixtures.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "test-support",
+    "jurisdictions"
+  ]
+}

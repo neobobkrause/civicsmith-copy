@@ -1,0 +1,34 @@
+{
+  "name": "capture-sources",
+  "files": [
+    "bio-plane/src/render.mjs",
+    "bio-plane/src/browserrender.mjs",
+    "bio-plane/src/cdx.mjs",
+    "bio-plane/src/drive.mjs",
+    "bio-plane/src/capture-sources/"
+  ],
+  "tests": [
+    "bio-plane/test/m/capture-sources/"
+  ],
+  "public": [
+    "bio-plane/src/browserrender.mjs",
+    "bio-plane/src/capture-sources/credentials.mjs",
+    "bio-plane/src/capture-sources/memento.mjs",
+    "bio-plane/src/capture-sources/ops.mjs",
+    "bio-plane/src/capture-sources/own-hosts.mjs",
+    "bio-plane/src/cdx.mjs",
+    "bio-plane/src/drive.mjs",
+    "bio-plane/src/render.mjs",
+    "bio-plane/test/m/capture-sources/fake-binding.mjs",
+    "bio-plane/test/m/capture-sources/fixtures.mjs"
+  ],
+  "uses": [
+    "subresources",
+    "record-core",
+    "membership",
+    "credentials",
+    "record-grammar",
+    "setup-words",
+    "test-support"
+  ]
+}

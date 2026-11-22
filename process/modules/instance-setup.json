@@ -1,0 +1,46 @@
+{
+  "name": "instance-setup",
+  "files": [
+    "bio-plane/src/setup.mjs",
+    "bio-plane/src/setup-fleet.mjs",
+    "bio-plane/src/livefire.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/instance-setup/"
+  ],
+  "public": [
+    "bio-plane/src/setup-fleet.mjs",
+    "bio-plane/src/setup.mjs",
+    "bio-plane/test/m/instance-setup/fixture.mjs",
+    "bio-plane/test/m/instance-setup/fixtures.mjs"
+  ],
+  "uses": [
+    "jurisdictions",
+    "runtime-limits",
+    "legistar-reader",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "host-governor",
+    "provenance",
+    "acquisition",
+    "capture",
+    "extraction",
+    "entities",
+    "lines",
+    "scheduler",
+    "wizard-scripts",
+    "queue-producers",
+    "record-grammar",
+    "action-grammar",
+    "public-read",
+    "ai-runs",
+    "ai-accounts",
+    "signatures",
+    "civil-time",
+    "setup-words",
+    "translations",
+    "test-support"
+  ]
+}

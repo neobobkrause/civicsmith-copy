@@ -1,0 +1,31 @@
+{
+  "name": "agent-steps",
+  "files": [
+    "agent-steps/src/"
+  ],
+  "tests": [
+    "agent-steps/test/"
+  ],
+  "public": [
+    "agent-steps/src/index.mjs",
+    "agent-steps/test/plane-capturerequest.mjs",
+    "agent-steps/test/plane-meaning.mjs",
+    "agent-steps/test/plane-suggest.mjs",
+    "agent-steps/test/plane-versions.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "provenance",
+    "query-language",
+    "retrieval",
+    "basis-versions",
+    "run-rules",
+    "run-productions",
+    "capture-requests",
+    "ai-runs",
+    "agent-harness",
+    "agent-model",
+    "setup-words"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "docket",
+  "files": [
+    "bio-plane/src/docket/"
+  ],
+  "tests": [
+    "bio-plane/test/m/docket/"
+  ],
+  "public": [
+    "bio-plane/src/docket/checks.mjs",
+    "bio-plane/src/docket/feed.mjs",
+    "bio-plane/src/docket/index.mjs",
+    "bio-plane/test/m/docket/fixture.mjs",
+    "bio-plane/test/m/docket/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "provenance",
+    "attestation",
+    "acquisition",
+    "entities",
+    "inquiry",
+    "reevaluation",
+    "case-grammar",
+    "publication",
+    "events",
+    "case-tensions",
+    "project-roster",
+    "setup-words",
+    "test-support"
+  ]
+}

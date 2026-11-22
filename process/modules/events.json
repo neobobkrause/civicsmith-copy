@@ -1,0 +1,33 @@
+{
+  "name": "events",
+  "files": [
+    "bio-plane/src/events/"
+  ],
+  "tests": [
+    "bio-plane/test/m/events/"
+  ],
+  "public": [
+    "bio-plane/src/events/checks.mjs",
+    "bio-plane/src/events/index.mjs",
+    "bio-plane/test/m/events/fixture.mjs",
+    "bio-plane/test/m/events/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "connection-grammar",
+    "legistar-reader",
+    "court-doctypes",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "reading-pipeline",
+    "extraction",
+    "content",
+    "entities",
+    "setup-words",
+    "test-support"
+  ]
+}

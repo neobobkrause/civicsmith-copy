@@ -1,0 +1,32 @@
+{
+  "name": "action-producers",
+  "files": [
+    "bio-plane/src/action-producers/"
+  ],
+  "tests": [
+    "bio-plane/test/m/action-producers/"
+  ],
+  "public": [
+    "bio-plane/src/action-producers/index.mjs",
+    "bio-plane/test/m/action-producers/fixtures.mjs",
+    "bio-plane/test/m/action-producers/world.mjs"
+  ],
+  "uses": [
+    "membership",
+    "civil-time",
+    "jurisdictions",
+    "record-grammar",
+    "record-core",
+    "actions",
+    "action-holds",
+    "action-clocks",
+    "escalation",
+    "action-plans",
+    "plan-work",
+    "filing-templates",
+    "local-facts",
+    "following",
+    "filings",
+    "setup-words"
+  ]
+}

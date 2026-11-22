@@ -1,0 +1,16 @@
+{
+  "name": "text-chain",
+  "files": [
+    "bio-plane/src/textchain.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/text-chain/"
+  ],
+  "public": [
+    "bio-plane/src/textchain.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "setup-words"
+  ]
+}

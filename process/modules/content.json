@@ -1,0 +1,34 @@
+{
+  "name": "content",
+  "files": [
+    "bio-plane/src/content/"
+  ],
+  "tests": [
+    "bio-plane/test/m/content/"
+  ],
+  "public": [
+    "bio-plane/src/content/checks.mjs",
+    "bio-plane/src/content/extent.mjs",
+    "bio-plane/src/content/index.mjs",
+    "bio-plane/src/content/ops.mjs",
+    "bio-plane/src/content/schema.mjs",
+    "bio-plane/test/m/content/fixture.mjs",
+    "bio-plane/test/m/content/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "text-chain",
+    "format-registry",
+    "pdf-pixels",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "reading-pipeline",
+    "setup-words",
+    "test-support",
+    "acquisition",
+    "runtime-limits"
+  ]
+}

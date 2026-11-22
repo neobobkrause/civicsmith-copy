@@ -1,0 +1,25 @@
+{
+  "name": "provenance-routes",
+  "files": [
+    "bio-plane/src/provenance-routes/"
+  ],
+  "tests": [
+    "bio-plane/test/m/provenance-routes/"
+  ],
+  "public": [
+    "bio-plane/src/provenance-routes/checks.mjs",
+    "bio-plane/src/provenance-routes/index.mjs",
+    "bio-plane/src/provenance-routes/ops.mjs",
+    "bio-plane/test/m/provenance-routes/fixture.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "provenance",
+    "test-support",
+    "setup-words"
+  ]
+}

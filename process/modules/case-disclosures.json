@@ -1,0 +1,50 @@
+{
+  "name": "case-disclosures",
+  "files": [
+    "bio-plane/src/case-disclosures/"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-disclosures/"
+  ],
+  "public": [
+    "bio-plane/src/case-disclosures/checks.mjs",
+    "bio-plane/src/case-disclosures/index.mjs",
+    "bio-plane/src/case-disclosures/materials.mjs",
+    "bio-plane/test/m/case-disclosures/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "attestation",
+    "capture",
+    "sources",
+    "extraction",
+    "content",
+    "entities",
+    "events",
+    "lines",
+    "money",
+    "people",
+    "inquiry-grammar",
+    "inquiry",
+    "strength",
+    "contradiction",
+    "case-grammar",
+    "publication",
+    "case-import",
+    "case-carriage",
+    "case-checker",
+    "bias",
+    "run-rules",
+    "setup-words",
+    "civil-time",
+    "retrieval",
+    "image-cover",
+    "doc-clean",
+    "public-read"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "skills",
+  "files": [
+    "bio-plane/src/skilldoctrine.mjs",
+    "bio-plane/src/skillpack.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/skills/"
+  ],
+  "public": [
+    "bio-plane/src/skilldoctrine.mjs",
+    "bio-plane/src/skillpack.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "observation-log",
+    "strength",
+    "contradiction",
+    "ai-runs",
+    "run-rules",
+    "run-productions",
+    "basis-versions",
+    "inquiry-grammar",
+    "reading-guides",
+    "setup-words"
+  ]
+}

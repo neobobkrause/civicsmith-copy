@@ -1,0 +1,29 @@
+{
+  "name": "journey-check",
+  "files": [
+    "bio-plane/src/journey-check/",
+    "docs/",
+    "requirements/",
+    "build/",
+    "README.md",
+    ".gitignore",
+    ".env.example",
+    ".worktreeinclude"
+  ],
+  "tests": [
+    "bio-plane/test/m/journey-check/"
+  ],
+  "public": [],
+  "uses": [
+    "jurisdictions",
+    "setup-words",
+    "file-safety",
+    "interface-assets",
+    "interface-shell",
+    "screens-entry",
+    "screens-settings",
+    "screens-daily",
+    "installer",
+    "screens-inquiry"
+  ]
+}

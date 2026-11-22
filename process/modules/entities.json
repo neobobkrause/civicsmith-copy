@@ -1,0 +1,30 @@
+{
+  "name": "entities",
+  "files": [
+    "bio-plane/src/entities/"
+  ],
+  "tests": [
+    "bio-plane/test/m/entities/"
+  ],
+  "public": [
+    "bio-plane/src/entities/checks.mjs",
+    "bio-plane/src/entities/index.mjs",
+    "bio-plane/test/m/entities/fixture.mjs",
+    "bio-plane/test/m/entities/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "jurisdictions",
+    "civil-time",
+    "connection-grammar",
+    "id-spaces",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "content",
+    "setup-words"
+  ]
+}

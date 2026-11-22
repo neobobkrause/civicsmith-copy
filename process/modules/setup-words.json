@@ -1,0 +1,16 @@
+{
+  "name": "setup-words",
+  "files": [
+    "bio-plane/src/setup-words/"
+  ],
+  "tests": [
+    "bio-plane/test/m/setup-words/"
+  ],
+  "public": [
+    "bio-plane/src/setup-words/build.mjs",
+    "bio-plane/src/setup-words/index.mjs",
+    "bio-plane/src/setup-words/rows.mjs",
+    "bio-plane/src/setup-words/vendor/acorn.mjs"
+  ],
+  "uses": []
+}

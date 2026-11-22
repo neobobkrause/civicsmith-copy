@@ -1,0 +1,29 @@
+{
+  "name": "machinery-producers",
+  "files": [
+    "bio-plane/src/machinery-producers/"
+  ],
+  "tests": [
+    "bio-plane/test/m/machinery-producers/"
+  ],
+  "public": [
+    "bio-plane/src/machinery-producers/index.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "host-governor",
+    "provenance",
+    "capture",
+    "capture-requests",
+    "actions",
+    "monitoring",
+    "link-sweep",
+    "network-notices",
+    "civil-time",
+    "jurisdictions",
+    "run-rules"
+  ]
+}

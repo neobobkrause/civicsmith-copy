@@ -1,0 +1,41 @@
+{
+  "name": "action-plans",
+  "files": [
+    "bio-plane/src/action-plans/"
+  ],
+  "tests": [
+    "bio-plane/test/m/action-plans/"
+  ],
+  "public": [
+    "bio-plane/src/action-plans/checks.mjs",
+    "bio-plane/src/action-plans/index.mjs",
+    "bio-plane/src/action-plans/values.mjs",
+    "bio-plane/test/m/action-plans/fixture.mjs",
+    "bio-plane/test/m/action-plans/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "inquiry",
+    "leg-earning",
+    "strength",
+    "run-rules",
+    "ai-runs",
+    "standards",
+    "conformance",
+    "actions",
+    "action-clocks",
+    "filings",
+    "escalation",
+    "duties",
+    "civil-time",
+    "setup-words",
+    "test-support",
+    "retrieval",
+    "basis-versions"
+  ]
+}

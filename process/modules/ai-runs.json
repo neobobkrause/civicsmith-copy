@@ -1,0 +1,35 @@
+{
+  "name": "ai-runs",
+  "files": [
+    "bio-plane/src/ai-runs/"
+  ],
+  "tests": [
+    "bio-plane/test/m/ai-runs/"
+  ],
+  "public": [
+    "bio-plane/src/ai-runs/index.mjs",
+    "bio-plane/test/m/ai-runs/fixtures.mjs",
+    "bio-plane/test/m/ai-runs/world.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "civil-time",
+    "runtime-limits",
+    "record-core",
+    "membership",
+    "promotion",
+    "connections",
+    "bias",
+    "observation-log",
+    "retrieval",
+    "inquiry",
+    "contradiction",
+    "run-rules",
+    "credentials",
+    "ai-use",
+    "steps",
+    "ai-accounts",
+    "setup-words",
+    "test-support"
+  ]
+}

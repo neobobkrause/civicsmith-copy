@@ -1,0 +1,36 @@
+{
+  "name": "intent",
+  "files": [
+    "bio-plane/src/intent/"
+  ],
+  "tests": [
+    "bio-plane/test/m/intent/"
+  ],
+  "public": [
+    "bio-plane/src/intent/checks.mjs",
+    "bio-plane/src/intent/index.mjs",
+    "bio-plane/test/m/intent/fixture.mjs",
+    "bio-plane/test/m/intent/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "calc-grammar",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "events",
+    "progressions",
+    "money",
+    "retrieval",
+    "inquiry",
+    "ai-runs",
+    "capture-requests",
+    "setup-words"
+  ]
+}

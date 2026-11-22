@@ -1,0 +1,19 @@
+{
+  "name": "run-rules",
+  "files": [
+    "bio-plane/src/run-rules/"
+  ],
+  "tests": [
+    "bio-plane/test/m/run-rules/"
+  ],
+  "public": [
+    "bio-plane/src/run-rules/checks.mjs",
+    "bio-plane/src/run-rules/index.mjs",
+    "bio-plane/src/run-rules/test-bar.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "observation-log",
+    "setup-words"
+  ]
+}

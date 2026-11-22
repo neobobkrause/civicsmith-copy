@@ -1,0 +1,22 @@
+{
+  "name": "ai-accounts",
+  "files": [
+    "bio-plane/src/ai-accounts/"
+  ],
+  "tests": [
+    "bio-plane/test/m/ai-accounts/"
+  ],
+  "public": [
+    "bio-plane/src/ai-accounts/checks.mjs",
+    "bio-plane/src/ai-accounts/index.mjs",
+    "bio-plane/test/m/ai-accounts/fixture.mjs",
+    "bio-plane/test/m/ai-accounts/fixtures.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "test-support",
+    "record-grammar",
+    "record-core",
+    "membership"
+  ]
+}

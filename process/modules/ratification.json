@@ -1,0 +1,51 @@
+{
+  "name": "ratification",
+  "files": [
+    "bio-plane/src/ratification/"
+  ],
+  "tests": [
+    "bio-plane/test/m/ratification/"
+  ],
+  "public": [
+    "bio-plane/src/ratification/checks.mjs",
+    "bio-plane/src/ratification/finding.mjs",
+    "bio-plane/src/ratification/index.mjs",
+    "bio-plane/src/ratification/ops.mjs",
+    "bio-plane/src/ratification/refusals.mjs",
+    "bio-plane/test/m/ratification/fixture.mjs",
+    "bio-plane/test/m/ratification/fixtures.mjs",
+    "bio-plane/test/m/ratification/g54-entry.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "capture",
+    "acquisition",
+    "retrieval",
+    "inquiry",
+    "basis-versions",
+    "strength",
+    "publication",
+    "public-read",
+    "case-grammar",
+    "connections",
+    "credentials",
+    "inquiry-grammar",
+    "contradiction",
+    "reevaluation",
+    "network-notices",
+    "people",
+    "local-facts",
+    "jurisdictions",
+    "money",
+    "case-catalogue",
+    "case-tensions",
+    "publish-schedule",
+    "setup-words",
+    "test-support"
+  ]
+}

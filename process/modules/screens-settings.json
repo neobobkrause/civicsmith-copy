@@ -1,0 +1,28 @@
+{
+  "name": "screens-settings",
+  "files": [
+    "bio-plane/src/screens-settings/"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-settings/"
+  ],
+  "public": [
+    "bio-plane/src/screens-settings/index.mjs",
+    "bio-plane/src/screens-settings/panel.mjs",
+    "bio-plane/test/m/screens-settings/fixtures.mjs",
+    "bio-plane/test/m/screens-settings/kit.mjs",
+    "bio-plane/test/m/screens-settings/register.mjs",
+    "bio-plane/test/m/screens-settings/seed-members.mjs"
+  ],
+  "uses": [
+    "interface-assets",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "test-support",
+    "file-scanner",
+    "file-safety",
+    "store-request",
+    "translations"
+  ]
+}

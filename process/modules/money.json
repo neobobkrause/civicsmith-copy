@@ -1,0 +1,33 @@
+{
+  "name": "money",
+  "files": [
+    "bio-plane/src/money/"
+  ],
+  "tests": [
+    "bio-plane/test/m/money/"
+  ],
+  "public": [
+    "bio-plane/src/money/index.mjs",
+    "bio-plane/src/money/vocab.mjs",
+    "bio-plane/test/m/money/fixture.mjs",
+    "bio-plane/test/m/money/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "calc-grammar",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "entities",
+    "events",
+    "lines",
+    "setup-words",
+    "local-facts",
+    "test-support"
+  ]
+}

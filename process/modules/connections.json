@@ -1,0 +1,33 @@
+{
+  "name": "connections",
+  "files": [
+    "bio-plane/src/connections/"
+  ],
+  "tests": [
+    "bio-plane/test/m/connections/"
+  ],
+  "public": [
+    "bio-plane/src/connections/checks.mjs",
+    "bio-plane/src/connections/index.mjs",
+    "bio-plane/src/connections/ops.mjs",
+    "bio-plane/src/connections/themes.mjs",
+    "bio-plane/test/m/connections/fixture.mjs",
+    "bio-plane/test/m/connections/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "connection-grammar",
+    "subresources",
+    "text-chain",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "capture",
+    "extraction",
+    "content",
+    "entities",
+    "setup-words",
+    "test-support"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "op-grades",
+  "files": [
+    "bio-plane/src/op-grades/"
+  ],
+  "tests": [
+    "bio-plane/test/m/op-grades/"
+  ],
+  "public": [
+    "bio-plane/src/op-grades/index.mjs",
+    "bio-plane/src/op-grades/t33.mjs",
+    "bio-plane/src/op-grades/t34.mjs",
+    "bio-plane/src/op-grades/t35.mjs",
+    "bio-plane/src/op-grades/t36.mjs",
+    "bio-plane/src/op-grades/t38.mjs",
+    "bio-plane/src/op-grades/t41.mjs",
+    "bio-plane/src/op-grades/t45.mjs",
+    "bio-plane/src/op-grades/t46.mjs",
+    "bio-plane/src/op-grades/t47.mjs"
+  ],
+  "uses": [
+    "setup-words"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "escalation",
+  "files": [
+    "bio-plane/src/escalation/"
+  ],
+  "tests": [
+    "bio-plane/test/m/escalation/"
+  ],
+  "public": [
+    "bio-plane/src/escalation/checks.mjs",
+    "bio-plane/src/escalation/index.mjs",
+    "bio-plane/src/escalation/ops.mjs",
+    "bio-plane/test/m/escalation/fixture.mjs",
+    "bio-plane/test/m/escalation/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "record-core",
+    "membership",
+    "promotion",
+    "conformance",
+    "consequences",
+    "actions",
+    "filings",
+    "action-grammar",
+    "entities",
+    "lines",
+    "events",
+    "setup-words",
+    "test-support"
+  ]
+}

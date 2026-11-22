@@ -1,0 +1,42 @@
+{
+  "name": "following",
+  "files": [
+    "bio-plane/src/following/"
+  ],
+  "tests": [
+    "bio-plane/test/m/following/"
+  ],
+  "public": [
+    "bio-plane/src/following/checks.mjs",
+    "bio-plane/src/following/index.mjs",
+    "bio-plane/test/m/following/fixture.mjs",
+    "bio-plane/test/m/following/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "jurisdictions",
+    "civil-time",
+    "legistar-reader",
+    "record-core",
+    "membership",
+    "provenance",
+    "capture",
+    "extraction",
+    "entities",
+    "events",
+    "monitoring",
+    "standards",
+    "acquisition",
+    "content",
+    "action-plans",
+    "plan-work",
+    "duties",
+    "answers",
+    "actions",
+    "action-clocks",
+    "retrieval",
+    "setup-words",
+    "runtime-limits"
+  ]
+}

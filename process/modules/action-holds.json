@@ -1,0 +1,33 @@
+{
+  "name": "action-holds",
+  "files": [
+    "bio-plane/src/action-holds/"
+  ],
+  "tests": [
+    "bio-plane/test/m/action-holds/"
+  ],
+  "public": [
+    "bio-plane/src/action-holds/checks.mjs",
+    "bio-plane/src/action-holds/index.mjs",
+    "bio-plane/test/m/action-holds/fixture.mjs",
+    "bio-plane/test/m/action-holds/fixtures.mjs"
+  ],
+  "uses": [
+    "actions",
+    "record-core",
+    "membership",
+    "provenance",
+    "civil-time",
+    "docket",
+    "publication",
+    "project-roster",
+    "doorbell",
+    "ratification",
+    "action-grammar",
+    "record-grammar",
+    "action-records",
+    "local-facts",
+    "setup-words",
+    "test-support"
+  ]
+}

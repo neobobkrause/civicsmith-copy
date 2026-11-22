@@ -1,0 +1,23 @@
+{
+  "name": "doctypes",
+  "files": [
+    "doctypes/"
+  ],
+  "tests": [
+    "doctypes/test/"
+  ],
+  "public": [
+    "doctypes/index.mjs",
+    "doctypes/test/fixtures.mjs",
+    "doctypes/test/golden-cases.mjs"
+  ],
+  "uses": [
+    "civil-time",
+    "docprofile",
+    "jurisdictions",
+    "site-profiles",
+    "pdf-reader",
+    "text-chain",
+    "setup-words"
+  ]
+}

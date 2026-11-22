@@ -1,0 +1,25 @@
+{
+  "name": "publish-schedule",
+  "files": [
+    "bio-plane/src/publish-schedule/"
+  ],
+  "tests": [
+    "bio-plane/test/m/publish-schedule/"
+  ],
+  "public": [
+    "bio-plane/src/publish-schedule/checks.mjs",
+    "bio-plane/src/publish-schedule/index.mjs",
+    "bio-plane/test/m/publish-schedule/fixture.mjs",
+    "bio-plane/test/m/publish-schedule/fixtures.mjs"
+  ],
+  "uses": [
+    "civil-time",
+    "local-facts",
+    "jurisdictions",
+    "record-core",
+    "membership",
+    "publication",
+    "setup-words",
+    "test-support"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "name": "queue",
+  "files": [
+    "bio-plane/src/queuestate.mjs",
+    "bio-plane/src/queue/"
+  ],
+  "tests": [
+    "bio-plane/test/m/queue/",
+    "bio-plane/test/conclude-project.test.mjs",
+    "bio-plane/test/docdates.mjs"
+  ],
+  "public": [
+    "bio-plane/src/queue/checks.mjs",
+    "bio-plane/src/queue/door.mjs",
+    "bio-plane/src/queue/index.mjs",
+    "bio-plane/test/m/queue/fixtures.mjs"
+  ],
+  "uses": [
+    "duties",
+    "answers",
+    "provenance",
+    "money-checks",
+    "people",
+    "docket",
+    "monitoring",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "connections",
+    "progressions",
+    "bias",
+    "observation-log",
+    "inquiry",
+    "actions",
+    "scheduler",
+    "affordances",
+    "tasks",
+    "queue-producers",
+    "credentials",
+    "test-support",
+    "civil-time",
+    "notice-producers",
+    "investigation",
+    "setup-words",
+    "project-roster"
+  ]
+}

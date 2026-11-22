@@ -1,0 +1,29 @@
+{
+  "name": "tasks",
+  "files": [
+    "bio-plane/src/tasks/"
+  ],
+  "tests": [
+    "bio-plane/test/m/tasks/"
+  ],
+  "public": [
+    "bio-plane/src/tasks/checks.mjs",
+    "bio-plane/src/tasks/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "capture",
+    "connections",
+    "scheduler",
+    "affordances",
+    "credentials",
+    "publication",
+    "setup-words",
+    "test-support",
+    "provenance-routes"
+  ]
+}

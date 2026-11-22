@@ -1,0 +1,40 @@
+{
+  "name": "notice-producers",
+  "files": [
+    "bio-plane/src/notice-producers/"
+  ],
+  "tests": [
+    "bio-plane/test/m/notice-producers/"
+  ],
+  "public": [
+    "bio-plane/src/notice-producers/index.mjs"
+  ],
+  "uses": [
+    "retrieval-browse",
+    "setup-words",
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "membership",
+    "money-checks",
+    "duties",
+    "people",
+    "inquiry",
+    "answers",
+    "credentials",
+    "following",
+    "standards",
+    "file-safety",
+    "provenance",
+    "ai-use",
+    "steps",
+    "question-explorer",
+    "investigation",
+    "review",
+    "entities",
+    "ai-accounts",
+    "retrieval",
+    "capture",
+    "calculations"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "signatures",
+  "files": [
+    "bio-plane/src/sshsig.mjs",
+    "bio-plane/src/tsa.mjs",
+    "bio-plane/scripts/sign-sshsig.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/signatures/"
+  ],
+  "public": [
+    "bio-plane/scripts/sign-sshsig.mjs",
+    "bio-plane/src/sshsig.mjs",
+    "bio-plane/src/tsa.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "setup-words"
+  ]
+}

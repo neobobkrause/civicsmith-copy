@@ -1,0 +1,48 @@
+{
+  "name": "store-request",
+  "files": [
+    "bio-plane/src/store-request/"
+  ],
+  "tests": [
+    "bio-plane/test/m/store-request/"
+  ],
+  "public": [
+    "bio-plane/src/store-request/door-ops.mjs",
+    "bio-plane/src/store-request/index.mjs",
+    "bio-plane/test/m/store-request/door.mjs",
+    "bio-plane/test/m/store-request/fixtures.mjs"
+  ],
+  "uses": [
+    "store-assembly",
+    "record-grammar",
+    "test-support",
+    "signatures",
+    "subresources",
+    "membership",
+    "host-governor",
+    "provenance",
+    "attestation",
+    "capture",
+    "doorbell",
+    "extraction",
+    "connections",
+    "bias",
+    "publication",
+    "public-read",
+    "ratification",
+    "monitoring",
+    "affordances",
+    "queue",
+    "instance-setup",
+    "op-declarations",
+    "admission",
+    "answer-envelope",
+    "signin-door",
+    "acquisition",
+    "setup-words",
+    "skills",
+    "ai-runs",
+    "runtime-limits",
+    "capture-sources"
+  ]
+}

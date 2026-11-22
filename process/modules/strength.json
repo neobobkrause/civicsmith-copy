@@ -1,0 +1,38 @@
+{
+  "name": "strength",
+  "files": [
+    "bio-plane/src/strength/"
+  ],
+  "tests": [
+    "bio-plane/test/m/strength/"
+  ],
+  "public": [
+    "bio-plane/src/strength/arithmetic.mjs",
+    "bio-plane/src/strength/checks.mjs",
+    "bio-plane/src/strength/index.mjs",
+    "bio-plane/src/strength/method.mjs",
+    "bio-plane/test/m/strength/fixture.mjs",
+    "bio-plane/test/m/strength/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "events",
+    "lines",
+    "money",
+    "duties",
+    "people",
+    "retrieval",
+    "calculations",
+    "inquiry-grammar",
+    "accepted-work",
+    "leg-earning",
+    "inquiry",
+    "basis-versions",
+    "setup-words",
+    "test-support"
+  ]
+}

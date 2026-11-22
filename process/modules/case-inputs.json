@@ -1,0 +1,30 @@
+{
+  "name": "case-inputs",
+  "files": [
+    "bio-plane/src/case-inputs/"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-inputs/"
+  ],
+  "public": [
+    "bio-plane/src/case-inputs/checks.mjs",
+    "bio-plane/src/case-inputs/document.mjs",
+    "bio-plane/src/case-inputs/index.mjs",
+    "bio-plane/test/m/case-inputs/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "publication",
+    "publish-schedule",
+    "case-grammar",
+    "case-account",
+    "test-support",
+    "jurisdictions",
+    "setup-words",
+    "public-read",
+    "entities",
+    "promotion"
+  ]
+}

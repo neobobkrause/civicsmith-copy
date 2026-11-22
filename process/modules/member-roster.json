@@ -1,0 +1,20 @@
+{
+  "name": "member-roster",
+  "files": [
+    "bio-plane/src/member-roster/"
+  ],
+  "tests": [
+    "bio-plane/test/m/member-roster/"
+  ],
+  "public": [
+    "bio-plane/src/member-roster/checks.mjs",
+    "bio-plane/src/member-roster/index.mjs",
+    "bio-plane/src/member-roster/words.mjs",
+    "bio-plane/test/m/member-roster/fixtures.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "test-support"
+  ]
+}

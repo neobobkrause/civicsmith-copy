@@ -1,0 +1,19 @@
+{
+  "name": "calc-grammar",
+  "files": [
+    "bio-plane/src/calc-grammar/"
+  ],
+  "tests": [
+    "bio-plane/test/m/calc-grammar/"
+  ],
+  "public": [
+    "bio-plane/src/calc-grammar/decimal.mjs",
+    "bio-plane/src/calc-grammar/figures.mjs",
+    "bio-plane/src/calc-grammar/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "civil-time",
+    "setup-words"
+  ]
+}

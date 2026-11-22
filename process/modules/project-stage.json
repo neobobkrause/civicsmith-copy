@@ -1,0 +1,21 @@
+{
+  "name": "project-stage",
+  "files": [
+    "bio-plane/src/project-stage/"
+  ],
+  "tests": [
+    "bio-plane/test/m/project-stage/"
+  ],
+  "public": [
+    "bio-plane/src/project-stage/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "inquiry",
+    "basis-versions",
+    "publication",
+    "setup-words"
+  ]
+}

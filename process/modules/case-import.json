@@ -1,0 +1,36 @@
+{
+  "name": "case-import",
+  "files": [
+    "bio-plane/src/case-import/"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-import/"
+  ],
+  "public": [
+    "bio-plane/src/case-import/checks.mjs",
+    "bio-plane/src/case-import/index.mjs",
+    "bio-plane/test/m/case-import/fixture.mjs",
+    "bio-plane/test/m/case-import/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "strength",
+    "case-grammar",
+    "case-checker",
+    "inquiry-grammar",
+    "accepted-work",
+    "reevaluation",
+    "signatures",
+    "docket",
+    "calc-grammar",
+    "bias",
+    "setup-words",
+    "test-support",
+    "basis-versions",
+    "public-read",
+    "runtime-limits",
+    "citation"
+  ]
+}

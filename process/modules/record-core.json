@@ -1,0 +1,22 @@
+{
+  "name": "record-core",
+  "files": [
+    "bio-plane/src/record-core/"
+  ],
+  "tests": [
+    "bio-plane/test/m/record-core/",
+    "bio-plane/test/stats-disclosure.test.mjs"
+  ],
+  "public": [
+    "bio-plane/src/record-core/checks.mjs",
+    "bio-plane/src/record-core/index.mjs",
+    "bio-plane/test/m/record-core/fixtures.mjs",
+    "bio-plane/test/m/record-core/storage.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "id-spaces",
+    "test-support",
+    "setup-words"
+  ]
+}

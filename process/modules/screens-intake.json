@@ -1,0 +1,29 @@
+{
+  "name": "screens-intake",
+  "files": [
+    "bio-plane/src/screens-intake/"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-intake/"
+  ],
+  "public": [
+    "bio-plane/src/screens-intake/archive.mjs",
+    "bio-plane/src/screens-intake/capture.mjs",
+    "bio-plane/src/screens-intake/index.mjs"
+  ],
+  "uses": [
+    "file-safety",
+    "provenance",
+    "interface-assets",
+    "wizard-scripts",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "capture",
+    "test-support",
+    "acquisition",
+    "runtime-limits",
+    "store-request",
+    "extraction"
+  ]
+}

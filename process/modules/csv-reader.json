@@ -1,0 +1,18 @@
+{
+  "name": "csv-reader",
+  "files": [
+    "bio-plane/src/csv-reader/"
+  ],
+  "tests": [
+    "bio-plane/test/m/csv-reader/"
+  ],
+  "public": [
+    "bio-plane/src/csv-reader/index.mjs"
+  ],
+  "uses": [
+    "ooxml",
+    "setup-words",
+    "runtime-limits",
+    "test-support"
+  ]
+}

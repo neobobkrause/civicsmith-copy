@@ -1,0 +1,43 @@
+{
+  "name": "test-support",
+  "files": [
+    "bio-plane/test/sandbox.mjs",
+    "bio-plane/test/stdio.mjs",
+    "pdf-worker/test/make-pdf.mjs",
+    "bio-plane/test/make-zip.mjs",
+    "bio-plane/test/declared-ops.mjs",
+    "bio-plane/test/platform-sqlite.mjs",
+    "bio-plane/test/pdfgen.mjs",
+    "bio-plane/test/imggen.mjs",
+    "bio-plane/test/sheetgen.mjs",
+    "bio-plane/test/docgen.mjs",
+    "bio-plane/test/alarm-double.mjs",
+    "bio-plane/test/job-registrar-stub.mjs",
+    "bio-plane/test/corpus.mjs",
+    "bio-plane/test/seeded.mjs",
+    ".github/scripts/",
+    ".github/workflows/regression.yml",
+    ".claude/hooks/"
+  ],
+  "tests": [
+    "bio-plane/test/m/test-support/"
+  ],
+  "public": [
+    "bio-plane/test/alarm-double.mjs",
+    "bio-plane/test/corpus.mjs",
+    "bio-plane/test/declared-ops.mjs",
+    "bio-plane/test/docgen.mjs",
+    "bio-plane/test/imggen.mjs",
+    "bio-plane/test/job-registrar-stub.mjs",
+    "bio-plane/test/make-zip.mjs",
+    "bio-plane/test/pdfgen.mjs",
+    "bio-plane/test/sandbox.mjs",
+    "bio-plane/test/seeded.mjs",
+    "bio-plane/test/sheetgen.mjs",
+    "bio-plane/test/stdio.mjs",
+    "pdf-worker/test/make-pdf.mjs"
+  ],
+  "uses": [
+    "setup-words"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "lines",
+  "files": [
+    "bio-plane/src/lines/"
+  ],
+  "tests": [
+    "bio-plane/test/m/lines/"
+  ],
+  "public": [
+    "bio-plane/src/lines/index.mjs",
+    "bio-plane/test/m/lines/fixture.mjs",
+    "bio-plane/test/m/lines/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "entities",
+    "events",
+    "setup-words",
+    "test-support"
+  ]
+}

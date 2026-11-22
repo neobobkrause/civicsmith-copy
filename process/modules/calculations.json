@@ -1,0 +1,41 @@
+{
+  "name": "calculations",
+  "files": [
+    "bio-plane/src/calculations/"
+  ],
+  "tests": [
+    "bio-plane/test/m/calculations/"
+  ],
+  "public": [
+    "bio-plane/src/calculations/index.mjs",
+    "bio-plane/test/m/calculations/fixture.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "calc-grammar",
+    "civil-time",
+    "id-spaces",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "entities",
+    "events",
+    "lines",
+    "observation-log",
+    "standards",
+    "progressions",
+    "money",
+    "duties",
+    "people",
+    "retrieval",
+    "extraction",
+    "connection-grammar",
+    "csv-reader",
+    "setup-words",
+    "test-support",
+    "runtime-limits"
+  ]
+}

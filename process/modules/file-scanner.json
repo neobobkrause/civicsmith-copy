@@ -1,0 +1,24 @@
+{
+  "name": "file-scanner",
+  "files": [
+    "file-scanner/"
+  ],
+  "tests": [
+    "file-scanner/test/"
+  ],
+  "public": [
+    "file-scanner/src/handler.mjs",
+    "file-scanner/src/limits.mjs",
+    "file-scanner/src/providers/catalogue.mjs",
+    "file-scanner/src/providers/routes.mjs",
+    "file-scanner/test/fixtures.mjs",
+    "file-scanner/test/helpers.mjs",
+    "file-scanner/test/vendors.mjs"
+  ],
+  "uses": [
+    "runtime-limits",
+    "bundler",
+    "test-support",
+    "setup-words"
+  ]
+}

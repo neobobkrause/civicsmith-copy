@@ -1,0 +1,37 @@
+{
+  "name": "standards",
+  "files": [
+    "bio-plane/src/standards/"
+  ],
+  "tests": [
+    "bio-plane/test/m/standards/"
+  ],
+  "public": [
+    "bio-plane/src/standards/checks.mjs",
+    "bio-plane/src/standards/index.mjs",
+    "bio-plane/src/standards/instrument.mjs",
+    "bio-plane/test/m/standards/fixture.mjs",
+    "bio-plane/test/m/standards/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "jurisdictions",
+    "civil-time",
+    "connection-grammar",
+    "id-spaces",
+    "record-core",
+    "membership",
+    "promotion",
+    "acquisition",
+    "extraction",
+    "content",
+    "events",
+    "law-relations",
+    "entities",
+    "calc-grammar",
+    "capture",
+    "provenance",
+    "setup-words"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "retrieval-browse",
+  "files": [
+    "bio-plane/src/retrieval-browse/"
+  ],
+  "tests": [
+    "bio-plane/test/m/retrieval-browse/"
+  ],
+  "public": [
+    "bio-plane/src/retrieval-browse/findin.mjs",
+    "bio-plane/src/retrieval-browse/index.mjs",
+    "bio-plane/test/m/retrieval-browse/fixtures.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "civil-time",
+    "calc-grammar",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "capture",
+    "extraction",
+    "content",
+    "entities",
+    "events",
+    "standards",
+    "money",
+    "people",
+    "query-language"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "name": "filings",
+  "files": [
+    "bio-plane/src/filings/"
+  ],
+  "tests": [
+    "bio-plane/test/m/filings/"
+  ],
+  "public": [
+    "bio-plane/src/filings/checks.mjs",
+    "bio-plane/src/filings/index.mjs",
+    "bio-plane/test/m/filings/fixture.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "attestation",
+    "content",
+    "publication",
+    "standards",
+    "conformance",
+    "consequences",
+    "actions",
+    "action-clocks",
+    "public-read",
+    "strength",
+    "filing-templates",
+    "local-facts",
+    "events",
+    "case-account",
+    "docket",
+    "project-roster",
+    "action-grammar",
+    "action-holds",
+    "case-checker",
+    "case-check",
+    "accepted-work",
+    "case-inputs",
+    "setup-words",
+    "test-support"
+  ]
+}

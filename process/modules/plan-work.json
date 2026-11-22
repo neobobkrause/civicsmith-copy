@@ -1,0 +1,34 @@
+{
+  "name": "plan-work",
+  "files": [
+    "bio-plane/src/plan-work/"
+  ],
+  "tests": [
+    "bio-plane/test/m/plan-work/"
+  ],
+  "public": [
+    "bio-plane/src/plan-work/checks.mjs",
+    "bio-plane/src/plan-work/index.mjs",
+    "bio-plane/test/m/plan-work/fixture.mjs",
+    "bio-plane/test/m/plan-work/fixtures.mjs"
+  ],
+  "uses": [
+    "action-plans",
+    "actions",
+    "action-holds",
+    "action-replies",
+    "action-clocks",
+    "escalation",
+    "filings",
+    "conformance",
+    "duties",
+    "reading-guides",
+    "ai-runs",
+    "civil-time",
+    "membership",
+    "record-core",
+    "record-grammar",
+    "setup-words",
+    "test-support"
+  ]
+}

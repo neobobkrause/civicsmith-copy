@@ -1,0 +1,15 @@
+{
+  "name": "court-citations",
+  "files": [
+    "court-citations/"
+  ],
+  "tests": [
+    "court-citations/test/"
+  ],
+  "public": [
+    "court-citations/index.mjs"
+  ],
+  "uses": [
+    "setup-words"
+  ]
+}

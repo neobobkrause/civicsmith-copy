@@ -1,0 +1,38 @@
+{
+  "name": "consequences",
+  "files": [
+    "bio-plane/src/consequences/"
+  ],
+  "tests": [
+    "bio-plane/test/m/consequences/"
+  ],
+  "public": [
+    "bio-plane/src/consequences/checks.mjs",
+    "bio-plane/src/consequences/index.mjs",
+    "bio-plane/test/m/consequences/fixture.mjs",
+    "bio-plane/test/m/consequences/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "inquiry",
+    "strength",
+    "conformance",
+    "entities",
+    "calc-grammar",
+    "money",
+    "calculations",
+    "people",
+    "civil-time",
+    "case-inputs",
+    "setup-words",
+    "test-support",
+    "retrieval",
+    "sources",
+    "basis-versions"
+  ]
+}

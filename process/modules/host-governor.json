@@ -1,0 +1,15 @@
+{
+  "name": "host-governor",
+  "files": [
+    "bio-plane/src/host-governor/"
+  ],
+  "tests": [
+    "bio-plane/test/m/host-governor/"
+  ],
+  "public": [
+    "bio-plane/src/host-governor/index.mjs"
+  ],
+  "uses": [
+    "record-core"
+  ]
+}

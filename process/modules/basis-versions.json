@@ -1,0 +1,37 @@
+{
+  "name": "basis-versions",
+  "files": [
+    "bio-plane/src/basis-versions/"
+  ],
+  "tests": [
+    "bio-plane/test/m/basis-versions/"
+  ],
+  "public": [
+    "bio-plane/src/basis-versions/checks.mjs",
+    "bio-plane/src/basis-versions/index.mjs",
+    "bio-plane/src/basis-versions/schema.mjs",
+    "bio-plane/test/m/basis-versions/fixture.mjs",
+    "bio-plane/test/m/basis-versions/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "text-chain",
+    "record-core",
+    "membership",
+    "promotion",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "inquiry",
+    "provenance",
+    "retrieval",
+    "inquiry-grammar",
+    "accepted-work",
+    "bias",
+    "setup-words",
+    "connection-grammar",
+    "basis-version-grammar",
+    "test-support"
+  ]
+}

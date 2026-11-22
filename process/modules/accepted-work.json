@@ -1,0 +1,21 @@
+{
+  "name": "accepted-work",
+  "files": [
+    "bio-plane/src/accepted-work/"
+  ],
+  "tests": [
+    "bio-plane/test/m/accepted-work/"
+  ],
+  "public": [
+    "bio-plane/src/accepted-work/checks.mjs",
+    "bio-plane/src/accepted-work/index.mjs"
+  ],
+  "uses": [
+    "record-core",
+    "record-grammar",
+    "membership",
+    "promotion",
+    "inquiry-grammar",
+    "setup-words"
+  ]
+}

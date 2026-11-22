@@ -1,0 +1,13 @@
+{
+  "name": "op-capabilities",
+  "files": [
+    "bio-plane/src/op-capabilities/"
+  ],
+  "tests": [
+    "bio-plane/test/m/op-capabilities/"
+  ],
+  "public": [
+    "bio-plane/src/op-capabilities/index.mjs"
+  ],
+  "uses": []
+}

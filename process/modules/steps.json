@@ -1,0 +1,33 @@
+{
+  "name": "steps",
+  "files": [
+    "bio-plane/src/steps/"
+  ],
+  "tests": [
+    "bio-plane/test/m/steps/"
+  ],
+  "public": [
+    "bio-plane/src/steps/checks.mjs",
+    "bio-plane/src/steps/index.mjs",
+    "bio-plane/test/m/steps/fixture.mjs",
+    "bio-plane/test/m/steps/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "calc-grammar",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "observation-log",
+    "leg-earning",
+    "setup-words"
+  ]
+}

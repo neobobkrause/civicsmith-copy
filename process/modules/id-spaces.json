@@ -1,0 +1,17 @@
+{
+  "name": "id-spaces",
+  "files": [
+    "bio-plane/src/idspaces.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/id-spaces/"
+  ],
+  "public": [
+    "bio-plane/src/idspaces.mjs"
+  ],
+  "uses": [
+    "jurisdictions",
+    "court-citations",
+    "setup-words"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "workbooks",
+  "files": [
+    "bio-plane/src/workbooks/"
+  ],
+  "tests": [
+    "bio-plane/test/m/workbooks/"
+  ],
+  "public": [
+    "bio-plane/src/workbooks/index.mjs",
+    "bio-plane/src/workbooks/ops.mjs",
+    "bio-plane/test/m/workbooks/fixture.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "calc-grammar",
+    "office-readers",
+    "sheet-worker",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "calculations",
+    "setup-words",
+    "test-support",
+    "runtime-limits"
+  ]
+}

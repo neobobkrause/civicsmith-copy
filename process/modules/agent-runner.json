@@ -1,0 +1,16 @@
+{
+  "name": "agent-runner",
+  "files": [
+    "agent-runner/"
+  ],
+  "tests": [
+    "agent-runner/test/"
+  ],
+  "public": [
+    "agent-runner/test/fixtures.mjs"
+  ],
+  "uses": [
+    "bundler",
+    "setup-words"
+  ]
+}

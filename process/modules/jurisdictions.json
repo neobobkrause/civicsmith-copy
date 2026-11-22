@@ -1,0 +1,17 @@
+{
+  "name": "jurisdictions",
+  "files": [
+    "jurisdictions/"
+  ],
+  "tests": [
+    "jurisdictions/test/"
+  ],
+  "public": [
+    "jurisdictions/index.mjs",
+    "jurisdictions/profiles/oakland-alameda.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "setup-words"
+  ]
+}

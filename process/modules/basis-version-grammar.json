@@ -1,0 +1,22 @@
+{
+  "name": "basis-version-grammar",
+  "files": [
+    "bio-plane/src/basis-version-grammar/"
+  ],
+  "tests": [
+    "bio-plane/test/m/basis-version-grammar/"
+  ],
+  "public": [
+    "bio-plane/src/basis-version-grammar/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "text-chain",
+    "record-core",
+    "content",
+    "connections",
+    "inquiry-grammar",
+    "connection-grammar",
+    "setup-words"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "wizard-scripts",
+  "files": [
+    "bio-plane/src/wizard-scripts/"
+  ],
+  "tests": [
+    "bio-plane/test/m/wizard-scripts/"
+  ],
+  "public": [
+    "bio-plane/src/wizard-scripts/checks.mjs",
+    "bio-plane/src/wizard-scripts/index.mjs",
+    "bio-plane/test/m/wizard-scripts/fixture.mjs",
+    "bio-plane/test/m/wizard-scripts/fixtures.mjs"
+  ],
+  "uses": [
+    "answers",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "filing-templates",
+    "ai-runs",
+    "run-rules",
+    "ai-accounts",
+    "setup-words",
+    "project-roster",
+    "test-support"
+  ]
+}

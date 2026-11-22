@@ -1,0 +1,47 @@
+{
+  "name": "scheduler",
+  "files": [
+    "bio-plane/src/scheduler/"
+  ],
+  "tests": [
+    "bio-plane/test/m/scheduler/"
+  ],
+  "public": [
+    "bio-plane/src/scheduler/index.mjs"
+  ],
+  "uses": [
+    "promotion",
+    "capture",
+    "acquisition",
+    "calibration",
+    "entities",
+    "connections",
+    "progressions",
+    "bias",
+    "retrieval",
+    "ai-runs",
+    "capture-requests",
+    "intent",
+    "reevaluation",
+    "monitoring",
+    "link-sweep",
+    "network-notices",
+    "civil-time",
+    "jurisdictions",
+    "record-core",
+    "duties",
+    "people",
+    "money-checks",
+    "answers",
+    "inquiry",
+    "following",
+    "file-safety",
+    "case-carriage",
+    "doc-clean",
+    "publish-schedule",
+    "question-explorer",
+    "setup-words",
+    "calculations",
+    "test-support"
+  ]
+}

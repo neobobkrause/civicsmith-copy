@@ -1,0 +1,29 @@
+{
+  "name": "observation-log",
+  "files": [
+    "bio-plane/src/observation-log/"
+  ],
+  "tests": [
+    "bio-plane/test/m/observation-log/"
+  ],
+  "public": [
+    "bio-plane/src/observation-log/checks.mjs",
+    "bio-plane/src/observation-log/index.mjs",
+    "bio-plane/src/observation-log/vocabulary.mjs",
+    "bio-plane/test/m/observation-log/fixture.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "text-chain",
+    "record-core",
+    "membership",
+    "capture",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "setup-words"
+  ]
+}

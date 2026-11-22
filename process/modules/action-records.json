@@ -1,0 +1,26 @@
+{
+  "name": "action-records",
+  "files": [
+    "bio-plane/src/action-records/"
+  ],
+  "tests": [
+    "bio-plane/test/m/action-records/"
+  ],
+  "public": [
+    "bio-plane/src/action-records/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "provenance",
+    "action-grammar",
+    "progressions",
+    "standards",
+    "civil-time",
+    "test-support",
+    "project-roster",
+    "promotion",
+    "setup-words"
+  ]
+}

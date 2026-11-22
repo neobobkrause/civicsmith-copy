@@ -1,0 +1,28 @@
+{
+  "name": "office-readers",
+  "files": [
+    "bio-plane/src/docx.mjs",
+    "bio-plane/src/pptx.mjs",
+    "bio-plane/src/formats-xlsx.mjs",
+    "bio-plane/src/csv.mjs",
+    "bio-plane/src/office-xml.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/office-readers/"
+  ],
+  "public": [
+    "bio-plane/src/csv.mjs",
+    "bio-plane/src/docx.mjs",
+    "bio-plane/src/formats-xlsx.mjs",
+    "bio-plane/src/pptx.mjs",
+    "bio-plane/test/m/office-readers/fixtures.mjs"
+  ],
+  "uses": [
+    "subresources",
+    "ooxml",
+    "csv-reader",
+    "setup-words",
+    "runtime-limits",
+    "test-support"
+  ]
+}

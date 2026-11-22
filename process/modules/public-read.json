@@ -1,0 +1,37 @@
+{
+  "name": "public-read",
+  "files": [
+    "bio-plane/src/public-read/",
+    "bio-plane/src/publication/worker.mjs",
+    "bio-plane/src/container.mjs",
+    "bio-plane/src/inband.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/public-read/"
+  ],
+  "public": [
+    "bio-plane/src/container.mjs",
+    "bio-plane/src/inband.mjs",
+    "bio-plane/src/public-read/casefile.mjs",
+    "bio-plane/src/public-read/checks.mjs",
+    "bio-plane/src/public-read/door.mjs",
+    "bio-plane/src/public-read/index.mjs",
+    "bio-plane/src/publication/worker.mjs",
+    "bio-plane/test/m/public-read/fixture.mjs",
+    "bio-plane/test/m/public-read/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "signatures",
+    "ooxml",
+    "case-grammar",
+    "publication",
+    "docket",
+    "case-carriage",
+    "record-core",
+    "project-roster",
+    "setup-words",
+    "test-support",
+    "membership"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "site-profiles",
+  "files": [
+    "site-profiles/"
+  ],
+  "tests": [
+    "site-profiles/test/"
+  ],
+  "public": [
+    "site-profiles/index.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "ooxml"
+  ]
+}

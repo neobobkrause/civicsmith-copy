@@ -1,0 +1,33 @@
+{
+  "process": { "repository": "https://github.com/neobobkrause/process4", "version": "4.0.0", "commit": "eeb35f372b6ede18d22e66cc5f9b091d0eec635a" },
+  "tranche_branch": "p4-tranche",
+  "node": "26.10.0",
+  "lock_files": [
+    "agent-runner/package-lock.json",
+    "bio-plane/package-lock.json",
+    "bio-plane/src/journey-check/package-lock.json",
+    "file-scanner/package-lock.json",
+    "newgroup/package-lock.json",
+    "ocr-worker/package-lock.json",
+    "pdf-worker/package-lock.json",
+    "sheet-worker/package-lock.json",
+    "site/package-lock.json"
+  ],
+  "test_command": "node --import ./bio-plane/test/platform-sqlite.mjs --test",
+  "slots": { "default": 8, "share": 8 },
+  "lanes": [ { "name": "ux", "folder": "process/lanes/ux/" } ],
+  "hosting": { "provider": "cloudflare", "development_account": "20b533579290b9b93168345edd3b7f72" },
+  "walks_folder": "process/lanes/ux/walks/",
+  "walk": {
+    "build_and_serve": "npm --prefix bio-plane run build && npm --prefix bio-plane run dev",
+    "run_steps": "node bio-plane/src/journey-check/journey.mjs --live",
+    "most_external_walkers": 1
+  },
+  "deploy": {
+    "deploy": "node bio-plane/scripts/deploy.mjs",
+    "seed": "none: the plane's admin operations instancegroupseed, officesseed, seatsseed (see process/waiting-for-arch.md)",
+    "remove": "none: no current script (see process/waiting-for-arch.md)"
+  },
+  "process_folder": "process/",
+  "language_reader": { "name": "typescript", "version": "5.6.3", "source": ["**/*.mjs"] }
+}

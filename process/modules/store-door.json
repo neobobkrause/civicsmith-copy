@@ -1,0 +1,57 @@
+{
+  "name": "store-door",
+  "files": [
+    "bio-plane/src/store-door/"
+  ],
+  "tests": [
+    "bio-plane/test/m/store-door/"
+  ],
+  "public": [
+    "bio-plane/src/store-door/dispatch.mjs",
+    "bio-plane/src/store-door/pull.mjs",
+    "bio-plane/src/store-door/step.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "provenance",
+    "capture",
+    "sources",
+    "answers",
+    "wizard-scripts",
+    "affordances",
+    "tasks",
+    "queue",
+    "instance-setup",
+    "answer-envelope",
+    "attestation",
+    "provenance-routes",
+    "calibration",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "progressions",
+    "bias",
+    "observation-log",
+    "retrieval",
+    "inquiry-grammar",
+    "inquiry",
+    "basis-versions",
+    "contradiction",
+    "run-productions",
+    "capture-requests",
+    "intent",
+    "file-safety",
+    "ai-use",
+    "ai-runs",
+    "doorbell",
+    "ai-accounts",
+    "translations",
+    "test-support"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "case-catalogue",
+  "files": [
+    "bio-plane/src/case-catalogue/"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-catalogue/"
+  ],
+  "public": [
+    "bio-plane/src/case-catalogue/checks.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "strength",
+    "case-grammar",
+    "setup-words"
+  ]
+}

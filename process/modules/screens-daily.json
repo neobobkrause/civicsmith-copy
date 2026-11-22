@@ -1,0 +1,27 @@
+{
+  "name": "screens-daily",
+  "files": [
+    "bio-plane/src/screens-daily/"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-daily/"
+  ],
+  "public": [
+    "bio-plane/src/screens-daily/index.mjs",
+    "bio-plane/test/m/screens-daily/page.mjs"
+  ],
+  "uses": [
+    "record-core",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "test-support",
+    "interface-assets",
+    "project-roster",
+    "screens-intake",
+    "retrieval",
+    "answers",
+    "store-request",
+    "local-facts"
+  ]
+}

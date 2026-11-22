@@ -1,0 +1,40 @@
+{
+  "name": "reading-pipeline",
+  "files": [
+    "bio-plane/src/reading-pipeline/"
+  ],
+  "tests": [
+    "bio-plane/test/m/reading-pipeline/",
+    "bio-plane/test/d606-perpage-ocr.test.mjs",
+    "bio-plane/test/tier2-wire.test.mjs",
+    "bio-plane/test/tier-pagewise.probe.mjs",
+    "bio-plane/test/system/pdf-worker-binding.test.mjs",
+    "bio-plane/test/fixtures/d460/",
+    "bio-plane/test/fixtures/cpdf20/tier2-recorded.json"
+  ],
+  "public": [
+    "bio-plane/src/reading-pipeline/hooks.mjs",
+    "bio-plane/src/reading-pipeline/index.mjs",
+    "bio-plane/test/m/reading-pipeline/bigpdf.mjs"
+  ],
+  "uses": [
+    "jurisdictions",
+    "test-support",
+    "pdf-reader",
+    "format-registry",
+    "text-chain",
+    "docprofile",
+    "pdf-worker",
+    "ocr-worker",
+    "capture-sources",
+    "acquisition",
+    "membership",
+    "doctypes",
+    "court-doctypes",
+    "record-core",
+    "ai-accounts",
+    "setup-words",
+    "runtime-limits",
+    "ooxml"
+  ]
+}

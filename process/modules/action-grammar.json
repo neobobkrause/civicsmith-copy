@@ -1,0 +1,21 @@
+{
+  "name": "action-grammar",
+  "files": [
+    "bio-plane/src/action-grammar/"
+  ],
+  "tests": [
+    "bio-plane/test/m/action-grammar/"
+  ],
+  "public": [
+    "bio-plane/src/action-grammar/checks.mjs",
+    "bio-plane/src/action-grammar/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "connections",
+    "inquiry-grammar",
+    "setup-words"
+  ]
+}
