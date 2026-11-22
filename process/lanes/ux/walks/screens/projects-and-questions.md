@@ -1,4 +1,4 @@
-Length: <N> lines. Last section: "Changes".
+Length: 420 lines. Last section: "Changes".
 
 # Screens: Projects and questions
 

@@ -4,7 +4,7 @@ Length: <N> lines. Last section: "Changes".
 
 Page `team-and-account` of the Screens document (index: ../index.md). Written 22 Nov 2026 by a worker for civicsmith ux lane #1.
 
-The team, its members and its settings; a member's own account, ties, notes and recovery codes. What binds every screen (frames, rail, dock, refusals, `unavailable`) is on the page "Every screen". Every screen here is in the working frame, under the rail's place Settings, and needs a session.
+The team, its members and its settings; a member's own account, ties, notes and recovery codes. What binds every screen (frames, rail, dock, refusals, `unavailable`) is on the page "Every screen". Every screen here is in the working frame (rail place Settings) and needs a session.
 
 How to read this page:
 - In a screen's section, a key written `.x` means `screen.<id>.x`. A button's words are its `act.<op>.label.<id>` row unless another key is named; the Actions tables give each button's words.
@@ -37,7 +37,7 @@ How to read this page:
 
 ## group-identity: "Who your team is"
 
-- **Address** `/app/group-identity`. **Frame** working. **Who can see it** every member reads; only an administrator sees "Change it".
+- **Address** `/app/group-identity`. **Who can see it** every member reads; only an administrator sees "Change it".
 - **Purpose** Say what kind of team this is, what it focuses on, why it exists, and who sees that.
 - **Entry points** `settings` › "The team's" › "Who your team is". Wizard "Say who your team is".
 
@@ -69,47 +69,47 @@ Content
 
 ## members: "Members"
 
-- **Address** `/app/members`; `/app/members/<handle>` opens that member's row panel. **Frame** working.
+- **Address** `/app/members`; `/app/members/<handle>` opens that member's row panel.
 - **Who can see it** every member reads the roster; invitations, joining, signing keys, administrators' acts and the removal rule are an administrator's.
 - **Purpose** Everyone in the team and what each may do; administrators invite and change what members may do.
 - **Entry points** `settings` › "The team's" › "Members"; any member's name; `security` › "What you can do". Wizard "Invite a member".
 
 Content
 - C1. Heading "Members"; "Active members: {members} · Administrators: {administrators}" (`.count`).
-- C2. Roster, columns "Handle", "Cover", "Role", "May do", "Status", "Expertise" (`.col.*`); founder first. Role "administrator"/"member" (`.role.*`). May do: "add and revise work", "sign and publish cases", "start projects", "look after the team's Civicsmith" (`.cap.*`); an administrator "all of it, as every administrator may" (`.cap.all`). Status: "invited", "proposed as an administrator, awaiting endorsement", "active", "inactive", "status not recorded" (`.status.*`). Expertise: "declared: {label}", "confirmed: {label}", "No expertise declared." (`.expertise.*`). A founder without a handle: "The team's founder" (`member.founder.unnamed`); a member not joined: "Not joined yet" (`.nohandle`).
+- C2. Roster, founder first; columns "Handle", "Cover", "Role", "May do", "Status", "Expertise" (`.col.*`). Roles, capabilities, statuses and expertise in their words: `.role.*`, `.cap.*` (an administrator "all of it, as every administrator may"), `.status.*`, `.expertise.*` (none: "No expertise declared."). A founder without a handle: "The team's founder" (`member.founder.unnamed`); not joined: "Not joined yet" (`.nohandle`).
 - C3. Member's view: under the table, "Administrators add members and change what each may do." (`.member.note`).
-- C4. Administrator, one administrator only: "With one administrator, the team depends on that one person and the hosting account." (`.recovery.one`; with more, `.recovery.many`), "You hold recovery codes ({remaining} left)." or "You hold no recovery codes yet." (`.recovery.codes`, `.recovery.nocodes`); links "Add a second administrator" (`.recovery.add`), "Get your recovery codes" (`.recovery.issue`, without codes).
-- C5. Administrator, a row's panel: an invitation's "invitation not yet used" / "used" / "expired" / "withdrawn" (`.invitation.*`); checkboxes "What {handle} may do" (`.caps.legend`); `.status.to.revoked` or `.status.to.active`; for a proposed administrator `.endorse.what`; field "Why remove their administrator's powers? (every administrator will see this)" (`.remove.reason`); fold "When confirming or withdrawing an expertise is refused" (`.expertise.refused.head`) with three refusals (`.expertise.refused.admin`, `.refused.undeclared`, `.refused.state`, each with its next step).
-- C6. Section "Invite a member" (`.invite.heading`): fields "A short id for this invitation" (`.invite.id`, help `.invite.id.help`), "The cover the team knows them by, not a legal name" (`.invite.cover`); checkboxes "What they may do" (`.invite.caps`); button A1; note `.invite.noemail` "Your team's Civicsmith sends no email. Copy the link and send it yourself. It works once and expires after seven days." Ticking "look after the team's Civicsmith" draws "Propose {who} as an administrator?" (`.cap.administer.confirm.head`), `.cap.administer.confirm` (5 sentences), choices "Propose {who} as an administrator" / "Go back".
-- C7. Shown once after A1: "The invitation for {handle}, shown this once. It works once and expires on {expires}." (`.invite.shown`) and the link. After A2: `.reset.shown` and `.reset.noemail`, and the link.
-- C8. Section "Joining through your website" (`.website.heading`): `.website.what` (2 sentences); fields "How many may join each day" (`.website.cap`), "Days until it expires (1 to 30; seven if left empty)" (`.website.days`); buttons A13, A14; after either, `.website.keyshown` or `.website.linkshown` and the key or link.
+- C4. Administrator, while the step is not met: "With one administrator, the team depends on that one person and the hosting account." (`.recovery.one`; or `.recovery.many`), then `.recovery.codes` or `.recovery.nocodes`; links "Add a second administrator", "Get your recovery codes" (without codes).
+- C5. Administrator, a row's panel: the invitation's state (`.invitation.*`); checkboxes "What {handle} may do"; `.status.to.revoked` or `.status.to.active`; `.endorse.what` for a proposed administrator; field "Why remove their administrator's powers? (every administrator will see this)"; fold "When confirming or withdrawing an expertise is refused" with three refusals (`.expertise.refused.*`).
+- C6. Section "Invite a member" (`.invite.heading`): fields "A short id for this invitation", "The cover the team knows them by, not a legal name"; checkboxes "What they may do"; button A1; note `.invite.noemail` (3 sentences: no email; copy the link; once, seven days). Ticking "look after the team's Civicsmith" draws "Propose {who} as an administrator?", `.cap.administer.confirm` (5 sentences), choices "Propose {who} as an administrator" / "Go back".
+- C7. Shown once: after A1 `.invite.shown` and the link; after A2 `.reset.shown`, `.reset.noemail` and the link.
+- C8. Section "Joining through your website" (`.website.heading`): `.website.what` (2 sentences); fields "How many may join each day", "Days until it expires (1 to 30; seven if left empty)"; buttons A13, A14; then `.website.keyshown` or `.website.linkshown` and the key or link.
 - C9. Section "More for administrators" (`.more.heading`): links "Places and offices", "Security".
-- C10. Section "Signing keys" (`.keys.heading`): 3 sentences (`.a.signing.key.lets.a`, `.civicsmith.holds.only.the.public`, `.use.this.when.a.member`); per member "key registered by {member}, {date}" (`.key.registered.by.rosa.3`) with A3, or "key withdrawn by {member}, {date}" · "it does not sign" with A4, or "no signing key yet" (`.no.signing.key.yet`); note `.key.react.withdraw.a.key.when.a`, `.key.react.a.key.a.member.withdrew`; choice "Whose key" (`.keys.whose`); field "Their public key" (`.keys.public`); button A5; note `.the.record.shows.that.you`, `.they.see.it.under.your`.
-- C11. Section "What removing an administrator takes" (`.what.removing.an.administrator.takes`), help `.the.team.s.own.rule.explain` + "Nothing here changes anything.": with one administrator "With {n} administrator, no administrator can be removed by vote." + 2 sentences; fold "If more administrators can act than the roster lists" (`.founder.if.the.count.is.higher`, 3 sentences); fold "How it changes with the number of administrators" (`.how.it.changes.with.the`): table "Administrators", "Votes it takes", "Who votes" (`.scale.head.*`) for 1 to 7, the team's row "(now)", rows 1 and 2 "not removable", then 3 sentences (`.removal.takes.a.majority.of` …).
+- C10. Section "Signing keys" (`.keys.heading`): 3 sentences (`.a.signing.key.lets.a` …); per member "key registered by {member}, {date}" with A3, "key withdrawn by {member}, {date}" · "it does not sign" with A4, or "no signing key yet"; 2 sentences (`.key.react.withdraw.a.key.when.a` …); choice "Whose key"; field "Their public key"; button A5; 2 sentences (`.the.record.shows.that.you` …).
+- C11. Section "What removing an administrator takes": with one administrator "With {n} administrator, no administrator can be removed by vote." + 2 sentences; "Nothing here changes anything."; fold "If more administrators can act than the roster lists" (3 sentences); fold "How it changes with the number of administrators": table "Administrators", "Votes it takes", "Who votes" for 1 to 7, the team's row "(now)", rows 1 and 2 "not removable", then 3 sentences (`.removal.takes.a.majority.of` …).
 
 | State | When | What shows |
 |---|---|---|
 | S1 As an administrator sees it | session administers | C1, C2, C4 (one administrator), C5 to C11. |
 | S2 As a member sees it | session does not administer | C1; table of member, "May do", "Expertise"; C3. No act. |
-| S3 A removal under way | votes outstanding | "Removing {member} as an administrator" (`.removing.teo.as.an.administrator`); "{n} administrators: {members}."; section "What it takes" (`.removal.heading`): "This takes {n} of {total} administrators' votes.", `.teo.is.counted.but.doesn`; rows "{member} · agreed" + date, "{member} · hasn't voted yet" + "the removal waits for {member}", "{member} · faces removal" + "counted in the {n}, doesn't vote"; "{n} of {total} have agreed so far."; the scale fold. |
+| S3 A removal under way | votes outstanding | "Removing {member} as an administrator"; "{n} administrators: {members}."; section "What it takes": "This takes {n} of {total} administrators' votes.", `.teo.is.counted.but.doesn`; rows "{member} · agreed", "{member} · hasn't voted yet" + "the removal waits for {member}", "{member} · faces removal" + "counted in the {n}, doesn't vote"; "{n} of {total} have agreed so far." |
 | S4 Nobody else yet | only the viewer | "Nobody is in the team yet but you." (`.empty`). |
 
 | Action | When | Leads to |
 |---|---|---|
-| A1. button "Create the invitation link" (`.invite.create`, act `memberadd`) | administrator | Same screen; C7; an "invited" row. An administrator invitation beyond the second is a proposal awaiting endorsement. |
-| A2. button "Make a reset link for a member" (`act.owed_passwordresetlink.label.members`) | administrator, row panel | Same screen; C7's reset link. |
-| A3. button "Withdraw {handle}'s signing key" (`.signer.withdraw`, act `signerset`) | administrator, another's held key | Same screen; the row reads withdrawn. |
-| A4. button "Reactivate {member}'s signing key" (act `signerset`) | withdrawn key, current member | Same screen; the row reads registered. |
-| A5. button "Register a key for this member" (act `signeradd`) | administrator | Same screen; "key registered by {member}, {date}". |
-| A6. button "Change what a member may do" (`membercaps`) | row panel | Same screen; "May do" changes. |
-| A7. button "Change a member's status" (`memberset`) | row panel | Same screen; status "inactive" or "active". |
-| A8. button "Endorse an administrator" (`adminendorse`) | proposed administrator | Same screen; status changes once every administrator endorses. |
+| A1. button "Create the invitation link" (`.invite.create`, `memberadd`) | administrator | C7; an "invited" row (beyond the second administrator, a proposal awaiting endorsement). |
+| A2. button "Make a reset link for a member" (`act.owed_passwordresetlink.label.members`) | row panel | C7's reset link. |
+| A3. button "Withdraw {handle}'s signing key" (`signerset`) | another's held key | The row reads withdrawn. |
+| A4. button "Reactivate {member}'s signing key" (`signerset`) | a current member's withdrawn key | The row reads registered. |
+| A5. button "Register a key for this member" | administrator | "key registered by {member}, {date}". |
+| A6. button "Change what a member may do" | row panel | "May do" changes. |
+| A7. button "Change a member's status" | row panel | Status "inactive" or "active". |
+| A8. button "Endorse an administrator" | proposed administrator | Status changes once every administrator endorses. |
 | A9. button "Remove an administrator" (`adminremove`); in S3 "Agree: remove {member} as an administrator" | administrator, with a reason | S3, counting the vote. |
-| A10. button "Confirm declared expertise" (`expertiseconfirm`) | declared expertise | Same screen; "confirmed: {label}". |
-| A11. button "Withdraw an expertise" (`act.owed_expertisewithdraw.label.members`) | confirmed expertise | Same screen; "No expertise declared." |
-| A12. button "Withdraw an unused invitation" (`invitewithdraw`) | unused invitation | Same screen; "invitation withdrawn". |
-| A13. button "Create a website key" (`websitekeycreate`) | administrator | Same screen; the key, shown once. |
-| A14. button "Turn on the reusable join link" (`joinlinkenable`) | administrator | Same screen; the link, shown once. |
+| A10. button "Confirm declared expertise" | declared expertise | "confirmed: {label}". |
+| A11. button "Withdraw an expertise" (`act.owed_expertisewithdraw.label.members`) | confirmed expertise | "No expertise declared." |
+| A12. button "Withdraw an unused invitation" | unused invitation | "invitation withdrawn". |
+| A13. button "Create a website key" | administrator | The key, shown once. |
+| A14. button "Turn on the reusable join link" | administrator | The link, shown once. |
 | A15. links in C9; "Get your recovery codes" | administrator | `places`, `security`; `recovery`. |
 | A16. a member's name | always | `/app/members/<handle>`, its panel open. |
 
@@ -123,7 +123,7 @@ Content
 
 ## security: "Security"
 
-- **Address** `/app/security`. **Frame** working. **Who can see it** administrators; any other member sees the heading and "Security is set by your team's administrators. Administrators: {admins}. Ask one of them about anything here." (`.admins`) only.
+- **Address** `/app/security`. **Who can see it** administrators; any other member sees the heading and "Security is set by your team's administrators. Administrators: {admins}. Ask one of them about anything here." (`.admins`) only.
 - **Purpose** How hard the team's Civicsmith is being tried, by kind and hour, against its own usual; counts only.
 - **Entry points** `settings` › "The team's" › "Security"; `members` › "More for administrators"; a security notice in an administrator's `queue` (opens at that period).
 
@@ -164,7 +164,7 @@ Content
 
 ## account: "Your account"
 
-- **Address** `/app/account`. **Frame** working. **Who can see it** every member, own account only.
+- **Address** `/app/account`. **Who can see it** every member, own account only.
 - **Purpose** The member's own handle, password, signing key, language, cover name and expertise; signing out.
 - **Entry points** `settings` › "Yours" › "Your account"; `security` › "What you can do".
 
@@ -209,7 +209,7 @@ Content
 
 ## connect: "The assistant"
 
-- **Address** `/app/connect`. **Frame** working. **Who can see it** every member, own account.
+- **Address** `/app/connect`. **Who can see it** every member, own account.
 - **Superseded.** The earlier "connect your Claude account" screen. In the first beta the page `ai` takes its place for AI providers: a member's own AI is `aimine` ("Your AI") and connecting one is `aiconnect` (DEC-420). Described here as built.
 - **Purpose** Whether and how the assistant serves the member: the team's key, their own Claude account, or nothing; their limit and use.
 - **Entry points** `settings` › "Yours" › "The assistant"; `account` › "Elsewhere in your settings". Wizard "Connect your Claude account".
@@ -253,7 +253,7 @@ Content
 
 ## teamai: "The team's assistant"
 
-- **Address** `/app/teamai`. **Frame** working. **Who can see it** administrators; any other member sees the heading and `.purpose` only.
+- **Address** `/app/teamai`. **Who can see it** administrators; any other member sees the heading and `.purpose` only.
 - **Superseded.** In the first beta "AI providers" (`aiproviders`, page `ai`) takes its place (DEC-420). Described here as built.
 - **Purpose** The team's API key, what it pays for, its limits, its use summed over members, keeping material away from AI.
 - **Entry points** `settings` › "The team's" › "The team's assistant".
@@ -296,7 +296,7 @@ Content
 
 ## bias: "Declared bias"
 
-- **Address** `/app/bias`; a work made under an earlier lens `/app/bias/<run>`. **Frame** working.
+- **Address** `/app/bias`; a work made under an earlier lens `/app/bias/<run>`.
 - **Who can see it** every member reads and writes sets; an administrator adopts for the team, a project's owner for the project.
 - **Purpose** The lens the team reads evidence through, stated so a reader can discount it; it never blocks work.
 - **Entry points** `settings` › "For every member" › "Declared bias"; the `queue` when a lens changes under work already made (S4).
@@ -342,7 +342,7 @@ Content
 
 ## places: "Places and offices"
 
-- **Address** `/app/places`. **Frame** working. **Who can see it** every member reads; a member who does not administer sees "Administrators choose these; you can read them here." (`.admins`) and no administrator's act.
+- **Address** `/app/places`. **Who can see it** every member reads; a member who does not administer sees "Administrators choose these; you can read them here." (`.admins`) and no administrator's act.
 - **Purpose** The places whose rules apply, and the offices, seats and courts the team deals with.
 - **Entry points** `settings` › "The team's" › "Places and offices"; `members` › "More for administrators".
 
@@ -379,7 +379,7 @@ Content
 
 ## recovery: "Recovery codes"
 
-- **Address** `/app/recovery`. **Frame** working. **Who can see it** every member, own codes.
+- **Address** `/app/recovery`. **Who can see it** every member, own codes.
 - **Purpose** The member's own one-time recovery codes: how many are left; getting new ones.
 - **Entry points** `settings` › "Yours" › "Recovery codes"; `members` › "Get your recovery codes".
 
@@ -403,7 +403,7 @@ Content
 
 ## group: "Your team"
 
-- **Address** `/app/group`. **Frame** working. **Who can see it** every member reads; a member who does not administer sees "These are your team's settings. Administrators change them; you can read them here." (`.admins`), the values, and no field or act.
+- **Address** `/app/group`. **Who can see it** every member reads; a member who does not administer sees "These are your team's settings. Administrators change them; you can read them here." (`.admins`), the values, and no field or act.
 - **Purpose** The settings chosen at setup, changeable here.
 - **Entry points** `settings` › "The team's" › "Your team".
 
@@ -450,7 +450,7 @@ States: one view; each section shows its value or its "none" line as listed. A m
 
 ## settings: "Settings"
 
-- **Address** `/app/settings`, the rail's place Settings. **Frame** working. **Who can see it** every member; "How full your team's record is" and "The team's" only to an administrator.
+- **Address** `/app/settings`, the rail's place Settings. **Who can see it** every member; "How full your team's record is" and "The team's" only to an administrator.
 - **Purpose** Every setting in one list: the member's own, then the team's.
 - **Entry points** the rail (on a phone, More) › Settings; Home's area block Administration.
 
@@ -474,7 +474,7 @@ Content
 
 ## updates: "Updates"
 
-- **Address** `/app/updates`. **Frame** working. **Who can see it** administrators (listed in `settings` only to them); a member who opens it sees the heading and "Only your team's administrators install updates. Administrators: {admins}. If something needs updating, ask one of them." (`.admins`) only.
+- **Address** `/app/updates`. **Who can see it** administrators (listed in `settings` only to them); a member who opens it sees the heading and "Only your team's administrators install updates. Administrators: {admins}. If something needs updating, ask one of them." (`.admins`) only.
 - **Purpose** The release running, the release ready and what changes in it, and Update, Not now or Skip this version.
 - **Entry points** `settings` › "The team's" › "Updates"; a release item in an administrator's `queue`. Wizard "Update your team's Civicsmith".
 
@@ -505,7 +505,7 @@ Content
 
 ## ties: "Your ties"
 
-- **Address** `/app/ties`. **Frame** working. **Who can see it** every member, own ties; the list is seen only by them and administrators.
+- **Address** `/app/ties`. **Who can see it** every member, own ties; the list is seen only by them and administrators.
 - **Purpose** The member's own ties to people or organizations the team may look into, and how a case would disclose them.
 - **Entry points** `settings` › "Yours" › "Your ties"; `account` › "Elsewhere in your settings". Wizard "Your ties".
 
@@ -533,7 +533,7 @@ Content
 
 ## notes: "Your notes"
 
-- **Address** `/app/notes`. **Frame** working. **Who can see it** every member, own notes; nobody else, administrators included.
+- **Address** `/app/notes`. **Who can see it** every member, own notes; nobody else, administrators included.
 - **Purpose** Private notes, kept, revised, deleted, or turned into an observation, a hunch or a question.
 - **Entry points** `settings` › "Yours" › "Your notes"; `account` › "Elsewhere in your settings".
 
@@ -570,7 +570,7 @@ Content
 
 ## translations: "Translations"
 
-- **Address** `/app/translations`; one language `/app/translations/<tag>`. **Frame** working.
+- **Address** `/app/translations`; one language `/app/translations/<tag>`.
 - **Who can see it** every member reads; a member granted a language translates it; an administrator grants, confirms and undoes.
 - **Purpose** The words members see, in the team's languages.
 - **Entry points** `settings` › "The team's" › "Translations". Wizard "Translate the interface".
@@ -610,7 +610,7 @@ Content
 
 ## wizards: "Wizards"
 
-- **Address** `/app/wizards`. **Frame** working. **Who can see it** every member; a team's own wizards are listed to their projects' owners and to administrators.
+- **Address** `/app/wizards`. **Who can see it** every member; a team's own wizards are listed to their projects' owners and to administrators.
 - **Purpose** The team's wizard library: Civicsmith's own, and the team's drafts, submitted and offered wizards.
 - **Entry points** `settings` › "The team's" › "Wizards".
 

@@ -1,4 +1,4 @@
-Length: <N> lines. Last section: "Changes".
+Length: 444 lines. Last section: "Changes".
 
 # Screens: The record
 
@@ -436,6 +436,7 @@ Paths are under `bio-plane/src/`.
 
 - `screens-investigate/people.mjs:106`: "Explore connections" is drawn only on a row named in at least one document; the design draws it on every row (and in S4 inside "Follow from here").
 - `screens-investigate/people.mjs`, `timeline.mjs`, `money.mjs`, `explore.mjs`: the "Follow from here" buttons for `followfrom` and `registersearch` (owed, DEC-409 and DEC-406) are not drawn; on `explore`, `exploreall`, `explorepath`, `exploreshorter` and `explorecontinue` are not drawn either. Marked `not built` above.
+- `screens-investigate/people.mjs:58-62`: adding a thing that is not a person or organization (S7) ends in "Follow them" (`screen.people.add.submit`); the design draws "Follow it", which has no word row.
 - `screens-action/help-records.mjs:1-8`: no place is named in the screen's words; every fact is filled from the team's places, and a section the profile cannot fill is not drawn. The design mockup draws Oakland's law in full; on the walk's made-up place S2 is expected.
 
 ## Changes
