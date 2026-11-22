@@ -1,0 +1,37 @@
+{
+  "name": "duties",
+  "files": [
+    "bio-plane/src/duties/"
+  ],
+  "tests": [
+    "bio-plane/test/m/duties/"
+  ],
+  "public": [
+    "bio-plane/src/duties/checks.mjs",
+    "bio-plane/src/duties/index.mjs",
+    "bio-plane/src/duties/vocab.mjs",
+    "bio-plane/test/m/duties/fixture.mjs",
+    "bio-plane/test/m/duties/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "calc-grammar",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "provenance",
+    "content",
+    "entities",
+    "events",
+    "lines",
+    "observation-log",
+    "standards",
+    "money",
+    "extraction",
+    "local-facts",
+    "setup-words",
+    "test-support"
+  ]
+}

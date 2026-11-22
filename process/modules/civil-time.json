@@ -1,0 +1,17 @@
+{
+  "name": "civil-time",
+  "files": [
+    "bio-plane/src/civil-time/"
+  ],
+  "tests": [
+    "bio-plane/test/m/civil-time/"
+  ],
+  "public": [
+    "bio-plane/src/civil-time/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "setup-words"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "format-registry",
+  "files": [
+    "bio-plane/src/formats.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/format-registry/"
+  ],
+  "public": [
+    "bio-plane/src/formats.mjs"
+  ],
+  "uses": [
+    "office-readers",
+    "odf-reader",
+    "pdf-reader",
+    "ooxml",
+    "setup-words",
+    "csv-reader"
+  ]
+}

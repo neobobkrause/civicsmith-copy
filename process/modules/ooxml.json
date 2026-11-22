@@ -1,0 +1,16 @@
+{
+  "name": "ooxml",
+  "files": [
+    "bio-plane/src/ooxml.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/ooxml/"
+  ],
+  "public": [
+    "bio-plane/src/ooxml.mjs"
+  ],
+  "uses": [
+    "test-support",
+    "runtime-limits"
+  ]
+}

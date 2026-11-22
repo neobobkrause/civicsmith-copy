@@ -1,0 +1,38 @@
+{
+  "name": "investigation",
+  "files": [
+    "bio-plane/src/investigation/"
+  ],
+  "tests": [
+    "bio-plane/test/m/investigation/"
+  ],
+  "public": [
+    "bio-plane/src/investigation/checks.mjs",
+    "bio-plane/src/investigation/index.mjs",
+    "bio-plane/src/investigation/ops.mjs",
+    "bio-plane/test/m/investigation/fixture.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "observation-log",
+    "leg-earning",
+    "inquiry",
+    "basis-versions",
+    "capture-requests",
+    "steps",
+    "skills",
+    "intent",
+    "setup-words",
+    "test-support"
+  ]
+}

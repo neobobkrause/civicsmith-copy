@@ -1,0 +1,16 @@
+{
+  "name": "legistar-reader",
+  "files": [
+    "legistar-reader/"
+  ],
+  "tests": [
+    "legistar-reader/test/"
+  ],
+  "public": [
+    "legistar-reader/index.mjs"
+  ],
+  "uses": [
+    "docprofile",
+    "setup-words"
+  ]
+}

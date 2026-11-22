@@ -1,0 +1,37 @@
+{
+  "name": "acquisition",
+  "files": [
+    "bio-plane/src/acquisition/"
+  ],
+  "tests": [
+    "bio-plane/test/m/acquisition/"
+  ],
+  "public": [
+    "bio-plane/src/acquisition/checks.mjs",
+    "bio-plane/src/acquisition/index.mjs",
+    "bio-plane/test/m/acquisition/fixture.mjs",
+    "bio-plane/test/m/acquisition/fixtures.mjs"
+  ],
+  "uses": [
+    "file-scanner",
+    "record-grammar",
+    "jurisdictions",
+    "subresources",
+    "odf-reader",
+    "format-registry",
+    "docprofile",
+    "record-core",
+    "host-governor",
+    "provenance",
+    "attestation",
+    "capture-sources",
+    "credentials",
+    "test-support",
+    "ooxml",
+    "membership",
+    "setup-words",
+    "pdf-reader",
+    "member-roster",
+    "runtime-limits"
+  ]
+}

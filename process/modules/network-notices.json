@@ -1,0 +1,33 @@
+{
+  "name": "network-notices",
+  "files": [
+    "bio-plane/src/network-notices/"
+  ],
+  "tests": [
+    "bio-plane/test/m/network-notices/"
+  ],
+  "public": [
+    "bio-plane/src/network-notices/checks.mjs",
+    "bio-plane/src/network-notices/index.mjs",
+    "bio-plane/test/m/network-notices/fixture.mjs",
+    "bio-plane/test/m/network-notices/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "host-governor",
+    "provenance",
+    "attestation",
+    "capture",
+    "publication",
+    "public-read",
+    "project-stage",
+    "docket",
+    "setup-words",
+    "test-support"
+  ]
+}

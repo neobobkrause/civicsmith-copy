@@ -1,0 +1,27 @@
+{
+  "name": "ai-use",
+  "files": [
+    "bio-plane/src/ai-use/"
+  ],
+  "tests": [
+    "bio-plane/test/m/ai-use/"
+  ],
+  "public": [
+    "bio-plane/src/ai-use/checks.mjs",
+    "bio-plane/src/ai-use/index.mjs",
+    "bio-plane/test/m/ai-use/fixture.mjs",
+    "bio-plane/test/m/ai-use/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "civil-time",
+    "record-core",
+    "membership",
+    "connections",
+    "run-rules",
+    "retrieval",
+    "ai-accounts",
+    "setup-words",
+    "test-support"
+  ]
+}

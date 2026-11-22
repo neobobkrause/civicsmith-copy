@@ -1,0 +1,28 @@
+{
+  "name": "local-facts",
+  "files": [
+    "bio-plane/src/local-facts/"
+  ],
+  "tests": [
+    "bio-plane/test/m/local-facts/"
+  ],
+  "public": [
+    "bio-plane/src/local-facts/checks.mjs",
+    "bio-plane/src/local-facts/index.mjs",
+    "bio-plane/src/local-facts/paths.mjs",
+    "bio-plane/test/m/local-facts/fixture.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "lines",
+    "content",
+    "provenance",
+    "setup-words",
+    "test-support"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "action-replies",
+  "files": [
+    "bio-plane/src/action-replies/"
+  ],
+  "tests": [
+    "bio-plane/test/m/action-replies/"
+  ],
+  "public": [
+    "bio-plane/src/action-replies/checks.mjs",
+    "bio-plane/src/action-replies/index.mjs",
+    "bio-plane/test/m/action-replies/fixture.mjs"
+  ],
+  "uses": [
+    "actions",
+    "action-clocks",
+    "action-grammar",
+    "case-authoring",
+    "membership",
+    "record-core",
+    "record-grammar",
+    "case-inputs",
+    "setup-words"
+  ]
+}

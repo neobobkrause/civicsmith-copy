@@ -1,0 +1,24 @@
+{
+  "name": "reading-guides",
+  "files": [
+    "bio-plane/src/reading-guides/"
+  ],
+  "tests": [
+    "bio-plane/test/m/reading-guides/"
+  ],
+  "public": [
+    "bio-plane/src/reading-guides/checks.mjs",
+    "bio-plane/src/reading-guides/index.mjs",
+    "bio-plane/test/m/reading-guides/fixture.mjs"
+  ],
+  "uses": [
+    "doctypes",
+    "test-support",
+    "record-grammar",
+    "civil-time",
+    "record-core",
+    "membership",
+    "jurisdictions",
+    "setup-words"
+  ]
+}

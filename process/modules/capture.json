@@ -1,0 +1,39 @@
+{
+  "name": "capture",
+  "files": [
+    "bio-plane/src/capture/"
+  ],
+  "tests": [
+    "bio-plane/test/m/capture/",
+    "bio-plane/test/cap13-reuse-pages.test.mjs",
+    "bio-plane/test/d57selflink.test.mjs"
+  ],
+  "public": [
+    "bio-plane/src/capture/checks.mjs",
+    "bio-plane/src/capture/index.mjs",
+    "bio-plane/src/capture/ops.mjs",
+    "bio-plane/src/capture/schema.mjs",
+    "bio-plane/test/m/capture/fixture.mjs",
+    "bio-plane/test/m/capture/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "subresources",
+    "odf-reader",
+    "format-registry",
+    "docprofile",
+    "record-core",
+    "membership",
+    "credentials",
+    "host-governor",
+    "provenance",
+    "attestation",
+    "capture-sources",
+    "acquisition",
+    "signatures",
+    "test-support",
+    "setup-words",
+    "runtime-limits"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "leg-earning",
+  "files": [
+    "bio-plane/src/leg-earning/"
+  ],
+  "tests": [
+    "bio-plane/test/m/leg-earning/"
+  ],
+  "public": [
+    "bio-plane/src/leg-earning/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "text-chain",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "standards",
+    "duties",
+    "inquiry-grammar",
+    "setup-words"
+  ]
+}

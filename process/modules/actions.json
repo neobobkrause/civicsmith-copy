@@ -1,0 +1,42 @@
+{
+  "name": "actions",
+  "files": [
+    "bio-plane/src/actions/"
+  ],
+  "tests": [
+    "bio-plane/test/m/actions/"
+  ],
+  "public": [
+    "bio-plane/src/actions/index.mjs",
+    "bio-plane/test/m/actions/fixture.mjs",
+    "bio-plane/test/m/actions/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "content",
+    "connections",
+    "retrieval",
+    "inquiry",
+    "conformance",
+    "entities",
+    "lines",
+    "events",
+    "standards",
+    "duties",
+    "action-grammar",
+    "progressions",
+    "intent",
+    "consequences",
+    "project-roster",
+    "local-facts",
+    "action-records",
+    "setup-words",
+    "test-support"
+  ]
+}

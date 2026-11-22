@@ -1,0 +1,26 @@
+{
+  "name": "case-tensions",
+  "files": [
+    "bio-plane/src/case-tensions/"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-tensions/"
+  ],
+  "public": [
+    "bio-plane/src/case-tensions/checks.mjs",
+    "bio-plane/src/case-tensions/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "capture",
+    "basis-versions",
+    "contradiction",
+    "case-grammar",
+    "setup-words",
+    "test-support"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "people",
+  "files": [
+    "bio-plane/src/people/"
+  ],
+  "tests": [
+    "bio-plane/test/m/people/"
+  ],
+  "public": [
+    "bio-plane/src/people/index.mjs",
+    "bio-plane/test/m/people/fixture.mjs",
+    "bio-plane/test/m/people/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "provenance",
+    "content",
+    "sources",
+    "entities",
+    "events",
+    "lines",
+    "money",
+    "duties",
+    "setup-words",
+    "test-support"
+  ]
+}

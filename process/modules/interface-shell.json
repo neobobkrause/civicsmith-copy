@@ -1,0 +1,31 @@
+{
+  "name": "interface-shell",
+  "files": [
+    "bio-plane/src/interface-shell/"
+  ],
+  "tests": [
+    "bio-plane/test/m/interface-shell/"
+  ],
+  "public": [
+    "bio-plane/src/interface-shell/index.mjs",
+    "bio-plane/test/m/interface-shell/dom.mjs",
+    "bio-plane/test/m/interface-shell/frame-answers.mjs",
+    "bio-plane/test/m/interface-shell/harness.mjs",
+    "bio-plane/test/m/interface-shell/world.mjs"
+  ],
+  "uses": [
+    "interface-assets",
+    "setup-words",
+    "op-declarations",
+    "op-grades",
+    "wizard-scripts",
+    "signatures",
+    "test-support",
+    "record-grammar",
+    "store-request",
+    "queue",
+    "translations",
+    "credentials",
+    "instance-setup"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "subresources",
+  "files": [
+    "bio-plane/src/subresources.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/subresources/"
+  ],
+  "public": [
+    "bio-plane/src/subresources.mjs"
+  ],
+  "uses": [
+    "runtime-limits",
+    "setup-words"
+  ]
+}

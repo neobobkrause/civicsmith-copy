@@ -1,0 +1,26 @@
+{
+  "name": "corpus-export",
+  "files": [
+    "bio-plane/src/corpus-export/"
+  ],
+  "tests": [
+    "bio-plane/test/m/corpus-export/"
+  ],
+  "public": [
+    "bio-plane/src/corpus-export/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "record-core",
+    "membership",
+    "provenance",
+    "entities",
+    "events",
+    "lines",
+    "connections",
+    "money",
+    "people",
+    "setup-words"
+  ]
+}

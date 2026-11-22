@@ -1,0 +1,23 @@
+{
+  "name": "signin-door",
+  "files": [
+    "bio-plane/src/signin-door/"
+  ],
+  "tests": [
+    "bio-plane/test/m/signin-door/"
+  ],
+  "public": [
+    "bio-plane/src/signin-door/index.mjs",
+    "bio-plane/src/signin-door/ops.mjs"
+  ],
+  "uses": [
+    "agent-worker",
+    "credentials",
+    "admission",
+    "answer-envelope",
+    "setup-words",
+    "test-support",
+    "op-declarations",
+    "ai-accounts"
+  ]
+}

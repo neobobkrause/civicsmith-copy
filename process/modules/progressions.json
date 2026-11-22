@@ -1,0 +1,33 @@
+{
+  "name": "progressions",
+  "files": [
+    "bio-plane/src/progressions/"
+  ],
+  "tests": [
+    "bio-plane/test/m/progressions/"
+  ],
+  "public": [
+    "bio-plane/src/progressions/checks.mjs",
+    "bio-plane/src/progressions/index.mjs",
+    "bio-plane/test/m/progressions/fixture.mjs",
+    "bio-plane/test/m/progressions/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "civil-time",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "events",
+    "local-facts",
+    "connections",
+    "standards",
+    "setup-words",
+    "test-support"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "file-safety",
+  "files": [
+    "bio-plane/src/file-safety/"
+  ],
+  "tests": [
+    "bio-plane/test/m/file-safety/"
+  ],
+  "public": [
+    "bio-plane/src/file-safety/checks.mjs",
+    "bio-plane/src/file-safety/index.mjs",
+    "bio-plane/test/m/file-safety/fixture.mjs",
+    "bio-plane/test/m/file-safety/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "pdf-reader",
+    "ooxml",
+    "office-readers",
+    "odf-reader",
+    "file-scanner",
+    "record-core",
+    "membership",
+    "credentials",
+    "provenance",
+    "acquisition",
+    "capture",
+    "setup-words",
+    "runtime-limits"
+  ]
+}

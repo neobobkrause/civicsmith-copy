@@ -1,0 +1,13 @@
+{
+  "name": "interface-assets",
+  "files": [
+    "bio-plane/src/interface-assets/"
+  ],
+  "tests": [
+    "bio-plane/test/m/interface-assets/"
+  ],
+  "public": [
+    "bio-plane/src/interface-assets/index.mjs"
+  ],
+  "uses": []
+}

@@ -1,0 +1,29 @@
+{
+  "name": "citation",
+  "files": [
+    "bio-plane/src/citation/"
+  ],
+  "tests": [
+    "bio-plane/test/m/citation/"
+  ],
+  "public": [
+    "bio-plane/src/citation/checks.mjs",
+    "bio-plane/src/citation/index.mjs",
+    "bio-plane/test/m/citation/fixture.mjs",
+    "bio-plane/test/m/citation/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "content",
+    "retrieval",
+    "inquiry",
+    "provenance",
+    "setup-words",
+    "inquiry-grammar",
+    "accepted-work",
+    "test-support"
+  ]
+}

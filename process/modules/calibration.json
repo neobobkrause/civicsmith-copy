@@ -1,0 +1,21 @@
+{
+  "name": "calibration",
+  "files": [
+    "bio-plane/src/calibration.mjs",
+    "bio-plane/src/calibration/"
+  ],
+  "tests": [
+    "bio-plane/test/m/calibration/"
+  ],
+  "public": [
+    "bio-plane/src/calibration.mjs",
+    "bio-plane/src/calibration/checks.mjs",
+    "bio-plane/src/calibration/index.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "setup-words"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "screens-action",
+  "files": [
+    "bio-plane/src/screens-action/"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-action/"
+  ],
+  "public": [
+    "bio-plane/src/screens-action/index.mjs"
+  ],
+  "uses": [
+    "answer-envelope",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "jurisdictions",
+    "entities",
+    "actions",
+    "filing-templates",
+    "filings",
+    "instance-setup",
+    "action-clocks",
+    "membership",
+    "project-roster",
+    "consequences",
+    "conformance",
+    "action-holds",
+    "record-core",
+    "publication",
+    "wizard-scripts",
+    "action-plans"
+  ]
+}

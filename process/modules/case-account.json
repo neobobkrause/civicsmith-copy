@@ -1,0 +1,34 @@
+{
+  "name": "case-account",
+  "files": [
+    "bio-plane/src/case-account/"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-account/"
+  ],
+  "public": [
+    "bio-plane/src/case-account/checks.mjs",
+    "bio-plane/src/case-account/document.mjs",
+    "bio-plane/src/case-account/index.mjs",
+    "bio-plane/test/m/case-account/fixture.mjs",
+    "bio-plane/test/m/case-account/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "inquiry",
+    "content",
+    "extraction",
+    "publication",
+    "case-grammar",
+    "ai-runs",
+    "case-disclosures",
+    "test-support",
+    "project-roster",
+    "case-checker",
+    "basis-versions",
+    "setup-words",
+    "retrieval"
+  ]
+}

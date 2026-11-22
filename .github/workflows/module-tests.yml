@@ -1,0 +1,133 @@
+# The required test run of Process4 (build text 1, section 5). Copied into a product as
+# .github/workflows/module-tests.yml. GitHub requires the check named `module-tests`.
+# Part one (`scope`) holds the read-only token and runs no product code. Part two
+# (`module-tests`) holds no token: product code runs there with the token variables removed.
+# The tool is fetched at the commit the BASE branch's process.json names, so a pull request
+# cannot move the version that judges it.
+name: module-tests
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review, converted_to_draft]
+permissions:
+  contents: read
+concurrency:
+  group: module-tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      scope: ${{ steps.scope.outputs.scope || '{"scope":"nothing","why":"no process.json in the base or the head"}' }}
+      repository: ${{ steps.pin.outputs.repository }}
+      commit: ${{ steps.pin.outputs.commit }}
+      node: ${{ steps.pin.outputs.node }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: the process version the base names
+        id: pin
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          base=$(git rev-list --parents -n 1 HEAD | awk 'NF==3 {print $2}'); base=${base:-$BASE}
+          if cfg=$(git show "$base:process.json" 2>/dev/null); then :;
+          elif cfg=$(git show "HEAD:process.json" 2>/dev/null); then echo "::notice::the base has no process.json; the head's names the tool's version"
+          else echo "::notice::no process.json in the base or the head: nothing to run"; echo "none=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "repository=$(echo "$cfg" | jq -r '.process.repository')" >> "$GITHUB_OUTPUT"
+          echo "commit=$(echo "$cfg" | jq -r '.process.commit')" >> "$GITHUB_OUTPUT"
+          echo "node=$(echo "$cfg" | jq -r '.node // "22"')" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        if: steps.pin.outputs.none != 'true'
+        with:
+          node-version: ${{ steps.pin.outputs.node }}
+      - name: fetch the tool
+        if: steps.pin.outputs.none != 'true'
+        env:
+          REPO: ${{ steps.pin.outputs.repository }}
+          COMMIT: ${{ steps.pin.outputs.commit }}
+        run: |
+          git clone -q "$REPO" "$RUNNER_TEMP/process4"
+          git -C "$RUNNER_TEMP/process4" checkout -q "$COMMIT"
+          (cd "$RUNNER_TEMP/process4/tool" && npm ci --no-audit --no-fund --loglevel=error)
+      # A job's pull request carries its job block, the comment beginning <!-- process4-job -->
+      # (build text 5, section 5). Read here with this part's read-only token, through gh's REST
+      # interface; the first such comment is taken. Where it cannot be read, run scope is given
+      # none, and a job branch runs its whole module.
+      - name: the job block
+        if: steps.pin.outputs.none != 'true' && startsWith(github.event.pull_request.head.ref, 'job/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if ! gh api --paginate "repos/$REPO/issues/$PR/comments?per_page=100" \
+              --jq '.[] | select(.body | startswith("<!-- process4-job -->")) | .body' > "$RUNNER_TEMP/job-block.txt"; then
+            echo "::notice::the job block could not be read; a job branch runs its whole module"
+            : > "$RUNNER_TEMP/job-block.txt"
+          fi
+      - name: scope
+        id: scope
+        if: steps.pin.outputs.none != 'true'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          node "$RUNNER_TEMP/process4/tool/p4.mjs" run scope --base "$BASE" --base-ref "$BASE_REF" --branch "$HEAD_REF" --draft "$DRAFT" --job-block "$RUNNER_TEMP/job-block.txt" --out "$RUNNER_TEMP/scope.json"
+          echo "scope=$(cat "$RUNNER_TEMP/scope.json")" >> "$GITHUB_OUTPUT"
+  module-tests:
+    needs: scope
+    # Runs when part one failed, so that a failed part one cannot leave the required check
+    # "skipped"; not when the run was cancelled, as `ready`'s newer run cancels the draft's,
+    # so that a cancelled run leaves no failed line on the head commit.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: part one must have succeeded
+        if: needs.scope.result != 'success'
+        run: |
+          echo "::error::the scope job ended ${{ needs.scope.result }}"
+          exit 1
+      - name: nothing to run
+        id: nothing
+        env:
+          SCOPE: ${{ needs.scope.outputs.scope }}
+        run: |
+          if [ "$(echo "$SCOPE" | jq -r .scope)" = nothing ]; then
+            echo "Scope: nothing, because $(echo "$SCOPE" | jq -r .why). Passed at once." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.nothing.outputs.skip != 'true'
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        if: steps.nothing.outputs.skip != 'true'
+        with:
+          node-version: ${{ needs.scope.outputs.node }}
+      - name: install the product's dependencies, and fetch the same tool
+        if: steps.nothing.outputs.skip != 'true'
+        env:
+          REPO: ${{ needs.scope.outputs.repository }}
+          COMMIT: ${{ needs.scope.outputs.commit }}
+        run: |
+          unset GH_TOKEN GITHUB_TOKEN ACTIONS_RUNTIME_TOKEN ACTIONS_ID_TOKEN_REQUEST_TOKEN
+          for lock in $(jq -r '.lock_files[]?' process.json); do (cd "$(dirname "$lock")" && npm ci --no-audit --no-fund --loglevel=error); done
+          git clone -q "$REPO" "$RUNNER_TEMP/process4"
+          git -C "$RUNNER_TEMP/process4" checkout -q "$COMMIT"
+          (cd "$RUNNER_TEMP/process4/tool" && npm ci --no-audit --no-fund --loglevel=error)
+      - name: run the tests in scope
+        if: steps.nothing.outputs.skip != 'true'
+        env:
+          SCOPE: ${{ needs.scope.outputs.scope }}
+        run: |
+          unset GH_TOKEN GITHUB_TOKEN ACTIONS_RUNTIME_TOKEN ACTIONS_ID_TOKEN_REQUEST_TOKEN
+          echo "$SCOPE" > "$RUNNER_TEMP/scope.json"
+          node "$RUNNER_TEMP/process4/tool/p4.mjs" run tests --scope "$RUNNER_TEMP/scope.json"

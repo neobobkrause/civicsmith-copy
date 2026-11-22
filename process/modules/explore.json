@@ -1,0 +1,25 @@
+{
+  "name": "explore",
+  "files": [
+    "bio-plane/src/explore/"
+  ],
+  "tests": [
+    "bio-plane/test/m/explore/"
+  ],
+  "public": [
+    "bio-plane/src/explore/index.mjs",
+    "bio-plane/src/explore/ops.mjs"
+  ],
+  "uses": [
+    "civil-time",
+    "connection-grammar",
+    "events",
+    "observation-log",
+    "money",
+    "duties",
+    "connections",
+    "entities",
+    "setup-words",
+    "test-support"
+  ]
+}

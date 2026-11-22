@@ -1,0 +1,42 @@
+{
+  "name": "inquiry",
+  "files": [
+    "bio-plane/src/inquiry/"
+  ],
+  "tests": [
+    "bio-plane/test/m/inquiry/"
+  ],
+  "public": [
+    "bio-plane/src/inquiry/checks.mjs",
+    "bio-plane/src/inquiry/index.mjs",
+    "bio-plane/test/m/inquiry/fixture.mjs",
+    "bio-plane/test/m/inquiry/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "text-chain",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "extraction",
+    "content",
+    "entities",
+    "connections",
+    "progressions",
+    "observation-log",
+    "standards",
+    "duties",
+    "retrieval",
+    "inquiry-grammar",
+    "leg-earning",
+    "bias",
+    "capture",
+    "calculations",
+    "lines",
+    "setup-words",
+    "test-support"
+  ]
+}

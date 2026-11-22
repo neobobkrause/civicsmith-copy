@@ -1,0 +1,28 @@
+{
+  "name": "doorbell",
+  "files": [
+    "bio-plane/src/doorbell/"
+  ],
+  "tests": [
+    "bio-plane/test/m/doorbell/"
+  ],
+  "public": [
+    "bio-plane/src/doorbell/checks.mjs",
+    "bio-plane/src/doorbell/door.mjs",
+    "bio-plane/src/doorbell/index.mjs",
+    "bio-plane/test/m/doorbell/fixture.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "membership",
+    "credentials",
+    "provenance",
+    "acquisition",
+    "capture",
+    "test-support",
+    "docprofile",
+    "signatures",
+    "setup-words"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "query-language",
+  "files": [
+    "bio-plane/src/query.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/query-language/"
+  ],
+  "public": [
+    "bio-plane/src/query.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "civil-time",
+    "text-chain",
+    "membership",
+    "content",
+    "money",
+    "setup-words"
+  ]
+}

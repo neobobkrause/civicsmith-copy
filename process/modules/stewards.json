@@ -1,0 +1,15 @@
+{
+  "name": "stewards",
+  "files": [
+    "stewards/"
+  ],
+  "tests": [
+    "stewards/test/"
+  ],
+  "public": [],
+  "uses": [
+    "test-support",
+    "instance-setup",
+    "setup-words"
+  ]
+}

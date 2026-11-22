@@ -1,0 +1,32 @@
+{
+  "name": "image-codecs",
+  "files": [
+    "pdf-worker/src/mq.mjs",
+    "pdf-worker/src/dctdecode.mjs",
+    "pdf-worker/src/jbig2decode.mjs",
+    "pdf-worker/src/jpxdecode.mjs",
+    "pdf-worker/src/ccittdecode.mjs",
+    "pdf-worker/src/pngdecode.mjs"
+  ],
+  "tests": [
+    "pdf-worker/test/codecs/",
+    "pdf-worker/test/fixtures/make-dct-fixtures.py",
+    "pdf-worker/test/fixtures/dct-variants.json",
+    "pdf-worker/test/fixtures/make-jbig2-fixtures.py",
+    "pdf-worker/test/fixtures/jbig2-variants.json",
+    "pdf-worker/test/fixtures/make-jpx-fixtures.py",
+    "pdf-worker/test/fixtures/jpx-variants.json"
+  ],
+  "public": [
+    "pdf-worker/src/ccittdecode.mjs",
+    "pdf-worker/src/dctdecode.mjs",
+    "pdf-worker/src/jbig2decode.mjs",
+    "pdf-worker/src/jpxdecode.mjs",
+    "pdf-worker/src/pngdecode.mjs"
+  ],
+  "uses": [
+    "test-support",
+    "setup-words",
+    "runtime-limits"
+  ]
+}

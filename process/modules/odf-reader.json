@@ -1,0 +1,20 @@
+{
+  "name": "odf-reader",
+  "files": [
+    "bio-plane/src/odf.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/odf-reader/"
+  ],
+  "public": [
+    "bio-plane/src/odf.mjs"
+  ],
+  "uses": [
+    "subresources",
+    "ooxml",
+    "office-readers",
+    "setup-words",
+    "runtime-limits",
+    "test-support"
+  ]
+}

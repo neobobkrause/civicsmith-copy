@@ -1,0 +1,30 @@
+{
+  "name": "money-checks",
+  "files": [
+    "bio-plane/src/money-checks/"
+  ],
+  "tests": [
+    "bio-plane/test/m/money-checks/"
+  ],
+  "public": [
+    "bio-plane/src/money-checks/checks.mjs",
+    "bio-plane/src/money-checks/index.mjs",
+    "bio-plane/test/m/money-checks/fixture.mjs",
+    "bio-plane/test/m/money-checks/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "calc-grammar",
+    "connection-grammar",
+    "record-core",
+    "membership",
+    "provenance",
+    "content",
+    "entities",
+    "events",
+    "lines",
+    "progressions",
+    "money",
+    "setup-words"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "name": "answers",
+  "files": [
+    "bio-plane/src/answers/"
+  ],
+  "tests": [
+    "bio-plane/test/m/answers/"
+  ],
+  "public": [
+    "bio-plane/src/answers/check.mjs",
+    "bio-plane/src/answers/checks.mjs",
+    "bio-plane/src/answers/index.mjs",
+    "bio-plane/src/answers/ops.mjs",
+    "bio-plane/src/answers/scope.mjs",
+    "bio-plane/src/answers/sentences.mjs",
+    "bio-plane/test/m/answers/fixture.mjs",
+    "bio-plane/test/m/answers/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "civil-time",
+    "calc-grammar",
+    "record-core",
+    "membership",
+    "credentials",
+    "content",
+    "entities",
+    "events",
+    "lines",
+    "observation-log",
+    "standards",
+    "duties",
+    "people",
+    "query-language",
+    "retrieval",
+    "calculations",
+    "ai-use",
+    "ai-accounts",
+    "setup-words",
+    "test-support"
+  ]
+}

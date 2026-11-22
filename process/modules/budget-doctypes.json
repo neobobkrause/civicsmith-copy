@@ -1,0 +1,20 @@
+{
+  "name": "budget-doctypes",
+  "files": [
+    "budget-doctypes/"
+  ],
+  "tests": [
+    "budget-doctypes/test/"
+  ],
+  "public": [
+    "budget-doctypes/index.mjs",
+    "budget-doctypes/test/helpers.mjs"
+  ],
+  "uses": [
+    "jurisdictions",
+    "docprofile",
+    "office-readers",
+    "pdf-reader",
+    "setup-words"
+  ]
+}

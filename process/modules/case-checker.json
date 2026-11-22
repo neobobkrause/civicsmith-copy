@@ -1,0 +1,30 @@
+{
+  "name": "case-checker",
+  "files": [
+    "bio-plane/src/case-checker/"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-checker/"
+  ],
+  "public": [
+    "bio-plane/src/case-checker/account.mjs",
+    "bio-plane/src/case-checker/index.mjs",
+    "bio-plane/src/case-checker/standards.mjs",
+    "bio-plane/test/m/case-checker/fixture.mjs",
+    "bio-plane/test/m/case-checker/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "signatures",
+    "bundler",
+    "content",
+    "strength",
+    "case-grammar",
+    "public-read",
+    "promotion",
+    "calc-grammar",
+    "case-catalogue",
+    "answers",
+    "setup-words"
+  ]
+}

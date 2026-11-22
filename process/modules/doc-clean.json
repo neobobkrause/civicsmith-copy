@@ -1,0 +1,23 @@
+{
+  "name": "doc-clean",
+  "files": [
+    "bio-plane/src/doc-clean/"
+  ],
+  "tests": [
+    "bio-plane/test/m/doc-clean/"
+  ],
+  "public": [
+    "bio-plane/src/doc-clean/index.mjs",
+    "bio-plane/test/m/doc-clean/fixtures.mjs"
+  ],
+  "uses": [
+    "ooxml",
+    "office-readers",
+    "odf-reader",
+    "pdf-reader",
+    "image-cover",
+    "test-support",
+    "setup-words",
+    "runtime-limits"
+  ]
+}

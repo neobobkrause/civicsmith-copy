@@ -1,0 +1,20 @@
+{
+  "name": "sheet-worker",
+  "files": [
+    "sheet-worker/"
+  ],
+  "tests": [
+    "sheet-worker/test/"
+  ],
+  "public": [
+    "sheet-worker/src/contract.mjs",
+    "sheet-worker/test/fixtures.mjs",
+    "sheet-worker/test/helpers.mjs"
+  ],
+  "uses": [
+    "runtime-limits",
+    "bundler",
+    "test-support",
+    "setup-words"
+  ]
+}

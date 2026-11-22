@@ -1,0 +1,32 @@
+{
+  "name": "provenance",
+  "files": [
+    "bio-plane/src/provenance/"
+  ],
+  "tests": [
+    "bio-plane/test/m/provenance/",
+    "bio-plane/test/mk6-bundle-names-no-author.test.mjs",
+    "bio-plane/test/publishingproject.mjs",
+    "bio-plane/test/adoptable-reading.mjs"
+  ],
+  "public": [
+    "bio-plane/src/provenance/checks.mjs",
+    "bio-plane/src/provenance/index.mjs",
+    "bio-plane/src/provenance/ops.mjs",
+    "bio-plane/src/provenance/register-checks.mjs",
+    "bio-plane/src/provenance/schema.mjs",
+    "bio-plane/test/m/provenance/fixture.mjs",
+    "bio-plane/test/m/provenance/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "record-core",
+    "promotion",
+    "membership",
+    "credentials",
+    "test-support",
+    "ooxml",
+    "setup-words",
+    "runtime-limits"
+  ]
+}

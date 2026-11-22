@@ -1,0 +1,41 @@
+{
+  "name": "bundler",
+  "files": [
+    "bio-plane/scripts/fleet-bundle.mjs",
+    "bio-plane/scripts/provenance.mjs",
+    "bio-plane/scripts/build-plane.mjs",
+    "bio-plane/scripts/deploy.mjs",
+    "bio-plane/scripts/derive-bindings.mjs",
+    "bio-plane/scripts/resolve-version.mjs",
+    "bio-plane/scripts/jsonc.mjs",
+    "bio-plane/scripts/release-assemble.mjs",
+    "bio-plane/scripts/deploy-fleet.mjs",
+    "bio-plane/scripts/bundles.mjs",
+    "bio-plane/scripts/release-advisories.mjs",
+    "bio-plane/scripts/third-party.json",
+    "release/",
+    "bio-plane/dist/",
+    ".github/workflows/deploy-test.yml",
+    ".github/workflows/container-images.yml",
+    ".github/workflows/release-sign.yml"
+  ],
+  "tests": [
+    "bio-plane/test/m/bundler/",
+    "bio-plane/test/system/bundle.test.mjs",
+    "bio-plane/test/system/deploybindings.test.mjs",
+    "bio-plane/test/system/fleetbundles.test.mjs",
+    "bio-plane/test/system/resolveversion.test.mjs",
+    "bio-plane/test/fleetbundles.control.mjs"
+  ],
+  "public": [
+    "bio-plane/scripts/derive-bindings.mjs",
+    "bio-plane/scripts/fleet-bundle.mjs",
+    "bio-plane/scripts/jsonc.mjs"
+  ],
+  "uses": [
+    "signatures",
+    "test-support",
+    "setup-words",
+    "runtime-limits"
+  ]
+}

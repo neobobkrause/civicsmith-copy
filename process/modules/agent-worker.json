@@ -1,0 +1,36 @@
+{
+  "name": "agent-worker",
+  "files": [
+    "agent-worker/"
+  ],
+  "tests": [
+    "agent-worker/test/"
+  ],
+  "public": [
+    "agent-worker/src/ops.mjs"
+  ],
+  "uses": [
+    "ai-use",
+    "provenance",
+    "record-grammar",
+    "test-support",
+    "runtime-limits",
+    "bundler",
+    "credentials",
+    "query-language",
+    "retrieval",
+    "basis-versions",
+    "run-rules",
+    "ai-runs",
+    "run-productions",
+    "capture-requests",
+    "skills",
+    "answers",
+    "agent-harness",
+    "agent-model",
+    "agent-runner",
+    "reading-guides",
+    "setup-words",
+    "agent-steps"
+  ]
+}

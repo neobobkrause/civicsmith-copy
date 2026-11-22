@@ -1,0 +1,26 @@
+{
+  "name": "translations",
+  "files": [
+    "bio-plane/src/translations/"
+  ],
+  "tests": [
+    "bio-plane/test/m/translations/"
+  ],
+  "public": [
+    "bio-plane/src/translations/checks.mjs",
+    "bio-plane/src/translations/index.mjs",
+    "bio-plane/test/m/translations/fixture.mjs",
+    "bio-plane/test/m/translations/fixtures.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "jurisdictions",
+    "record-core",
+    "membership",
+    "ai-accounts",
+    "extraction",
+    "wizard-scripts",
+    "test-support"
+  ]
+}

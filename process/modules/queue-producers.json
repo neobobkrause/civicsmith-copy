@@ -1,0 +1,46 @@
+{
+  "name": "queue-producers",
+  "files": [
+    "bio-plane/src/queue-producers/"
+  ],
+  "tests": [
+    "bio-plane/test/m/queue-producers/"
+  ],
+  "public": [
+    "bio-plane/src/queue-producers/index.mjs"
+  ],
+  "uses": [
+    "escalation",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "provenance",
+    "connections",
+    "progressions",
+    "bias",
+    "inquiry",
+    "basis-versions",
+    "contradiction",
+    "ai-runs",
+    "capture-requests",
+    "intent",
+    "reevaluation",
+    "publication",
+    "monitoring",
+    "credentials",
+    "corpus-export",
+    "docket",
+    "wizard-scripts",
+    "case-import",
+    "civil-time",
+    "machinery-producers",
+    "case-tensions",
+    "publish-schedule",
+    "action-producers",
+    "setup-words",
+    "project-roster",
+    "member-roster",
+    "content",
+    "test-support"
+  ]
+}

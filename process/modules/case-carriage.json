@@ -1,0 +1,33 @@
+{
+  "name": "case-carriage",
+  "files": [
+    "bio-plane/src/case-carriage/"
+  ],
+  "tests": [
+    "bio-plane/test/m/case-carriage/"
+  ],
+  "public": [
+    "bio-plane/src/case-carriage/checks.mjs",
+    "bio-plane/src/case-carriage/index.mjs",
+    "bio-plane/test/m/case-carriage/fixture.mjs",
+    "bio-plane/test/m/case-carriage/fixtures.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "test-support",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "sources",
+    "extraction",
+    "accepted-work",
+    "case-grammar",
+    "image-cover",
+    "acquisition",
+    "doc-clean",
+    "runtime-limits",
+    "capture"
+  ]
+}

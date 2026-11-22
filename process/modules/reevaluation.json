@@ -1,0 +1,38 @@
+{
+  "name": "reevaluation",
+  "files": [
+    "bio-plane/src/reevaluation/"
+  ],
+  "tests": [
+    "bio-plane/test/m/reevaluation/"
+  ],
+  "public": [
+    "bio-plane/src/reevaluation/checks.mjs",
+    "bio-plane/src/reevaluation/index.mjs",
+    "bio-plane/test/m/reevaluation/fixture.mjs",
+    "bio-plane/test/m/reevaluation/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "text-chain",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "sources",
+    "content",
+    "events",
+    "connections",
+    "standards",
+    "retrieval",
+    "calculations",
+    "inquiry-grammar",
+    "accepted-work",
+    "inquiry",
+    "basis-versions",
+    "strength",
+    "contradiction",
+    "setup-words"
+  ]
+}

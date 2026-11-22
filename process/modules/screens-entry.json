@@ -1,0 +1,20 @@
+{
+  "name": "screens-entry",
+  "files": [
+    "bio-plane/src/screens-entry/"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-entry/"
+  ],
+  "public": [
+    "bio-plane/src/screens-entry/index.mjs"
+  ],
+  "uses": [
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "instance-setup",
+    "store-request",
+    "file-safety"
+  ]
+}

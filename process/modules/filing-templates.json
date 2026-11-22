@@ -1,0 +1,22 @@
+{
+  "name": "filing-templates",
+  "files": [
+    "bio-plane/src/filing-templates/"
+  ],
+  "tests": [
+    "bio-plane/test/m/filing-templates/"
+  ],
+  "public": [
+    "bio-plane/src/filing-templates/checks.mjs",
+    "bio-plane/src/filing-templates/index.mjs",
+    "bio-plane/test/m/filing-templates/fixture.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "record-core",
+    "membership",
+    "action-grammar",
+    "setup-words"
+  ]
+}

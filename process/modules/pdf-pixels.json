@@ -1,0 +1,37 @@
+{
+  "name": "pdf-pixels",
+  "files": [
+    "pdf-worker/src/pagepixels.mjs",
+    "pdf-worker/src/imagecrop.mjs",
+    "pdf-worker/src/pagepixels-worker.mjs",
+    "pdf-worker/src/picturepixels.mjs"
+  ],
+  "tests": [
+    "pdf-worker/test/pdf-pixels-fixtures.mjs",
+    "pdf-worker/test/pagepixels.test.mjs",
+    "pdf-worker/test/imagecrop.test.mjs",
+    "pdf-worker/test/jbig2.test.mjs",
+    "pdf-worker/test/jpx.test.mjs",
+    "pdf-worker/test/pagepixels-corpus.probe.mjs",
+    "pdf-worker/test/agenda-scan-census.probe.mjs",
+    "pdf-worker/test/fixtures/scan-ccitt-g4-page.pdf",
+    "pdf-worker/test/fixtures/scan-dct-page.pdf",
+    "pdf-worker/test/fixtures/jbig2-scan-page.pdf",
+    "pdf-worker/test/fixtures/jpx-scan-page.pdf",
+    "pdf-worker/test/fixtures/picture-variants.json",
+    "pdf-worker/test/fixtures/make-picture-fixtures.py"
+  ],
+  "public": [
+    "pdf-worker/src/imagecrop.mjs",
+    "pdf-worker/src/pagepixels.mjs",
+    "pdf-worker/src/picturepixels.mjs",
+    "pdf-worker/test/pdf-pixels-fixtures.mjs"
+  ],
+  "uses": [
+    "pdf-reader",
+    "image-codecs",
+    "test-support",
+    "setup-words",
+    "runtime-limits"
+  ]
+}

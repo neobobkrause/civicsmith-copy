@@ -1,0 +1,30 @@
+{
+  "name": "link-sweep",
+  "files": [
+    "bio-plane/src/link-sweep/"
+  ],
+  "tests": [
+    "bio-plane/test/m/link-sweep/"
+  ],
+  "public": [
+    "bio-plane/src/link-sweep/checks.mjs",
+    "bio-plane/src/link-sweep/index.mjs",
+    "bio-plane/test/m/link-sweep/fixture.mjs"
+  ],
+  "uses": [
+    "acquisition",
+    "record-grammar",
+    "subresources",
+    "format-registry",
+    "record-core",
+    "membership",
+    "promotion",
+    "capture",
+    "observation-log",
+    "capture-requests",
+    "project-stage",
+    "monitoring",
+    "setup-words",
+    "test-support"
+  ]
+}

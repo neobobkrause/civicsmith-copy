@@ -1,0 +1,19 @@
+{
+  "name": "roster-reader",
+  "files": [
+    "roster-reader/"
+  ],
+  "tests": [
+    "roster-reader/test/"
+  ],
+  "public": [
+    "roster-reader/index.mjs",
+    "roster-reader/test/fixtures.mjs",
+    "roster-reader/test/shape-texts.mjs"
+  ],
+  "uses": [
+    "docprofile",
+    "doctypes",
+    "setup-words"
+  ]
+}

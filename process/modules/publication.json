@@ -1,0 +1,44 @@
+{
+  "name": "publication",
+  "files": [
+    "bio-plane/src/deliverer.mjs",
+    "bio-plane/src/publication/"
+  ],
+  "tests": [
+    "bio-plane/test/m/publication/"
+  ],
+  "public": [
+    "bio-plane/src/deliverer.mjs",
+    "bio-plane/src/publication/checks.mjs",
+    "bio-plane/src/publication/door.mjs",
+    "bio-plane/src/publication/index.mjs",
+    "bio-plane/src/publication/schema.mjs",
+    "bio-plane/test/m/publication/fixture.mjs",
+    "bio-plane/test/m/publication/fixtures.mjs"
+  ],
+  "uses": [
+    "retrieval",
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "connections",
+    "inquiry",
+    "basis-versions",
+    "reevaluation",
+    "sources",
+    "case-grammar",
+    "credentials",
+    "corpus-export",
+    "accepted-work",
+    "case-carriage",
+    "case-tensions",
+    "entities",
+    "standards",
+    "content",
+    "project-roster",
+    "setup-words"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "screens-publish",
+  "files": [
+    "bio-plane/src/screens-publish/"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-publish/"
+  ],
+  "public": [
+    "bio-plane/src/screens-publish/doorbell.mjs",
+    "bio-plane/src/screens-publish/index.mjs",
+    "bio-plane/src/screens-publish/parts.mjs",
+    "bio-plane/test/m/screens-publish/fixtures.mjs"
+  ],
+  "uses": [
+    "case-import",
+    "interface-assets",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "test-support",
+    "doorbell",
+    "basis-versions",
+    "case-authoring",
+    "review",
+    "public-read",
+    "record-grammar",
+    "publication",
+    "case-grammar",
+    "case-disclosures",
+    "answer-envelope",
+    "case-inputs",
+    "store-request",
+    "entities",
+    "capture",
+    "citation",
+    "sources",
+    "credentials",
+    "wizard-scripts",
+    "action-holds"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "screens-investigate",
+  "files": [
+    "bio-plane/src/screens-investigate/"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-investigate/"
+  ],
+  "public": [
+    "bio-plane/src/screens-investigate/index.mjs"
+  ],
+  "uses": [
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "test-support",
+    "store-request"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "inquiry-grammar",
+  "files": [
+    "bio-plane/src/inquiry-grammar/"
+  ],
+  "tests": [
+    "bio-plane/test/m/inquiry-grammar/"
+  ],
+  "public": [
+    "bio-plane/src/inquiry-grammar/checks.mjs",
+    "bio-plane/src/inquiry-grammar/grammar.mjs",
+    "bio-plane/src/inquiry-grammar/index.mjs",
+    "bio-plane/test/m/inquiry-grammar/corpus.mjs",
+    "bio-plane/test/m/inquiry-grammar/fixture.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "text-chain",
+    "civil-time",
+    "record-core",
+    "content",
+    "connections",
+    "observation-log",
+    "connection-grammar",
+    "standards",
+    "duties",
+    "setup-words"
+  ]
+}

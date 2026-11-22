@@ -1,0 +1,23 @@
+{
+  "name": "pdf-reader",
+  "files": [
+    "bio-plane/src/pdfstructure.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/pdf-reader/",
+    "bio-plane/test/pdfstructure.test.mjs",
+    "bio-plane/test/fixtures/cpdf20/",
+    "bio-plane/test/fixtures/legistar-agenda-1425405.pdf"
+  ],
+  "public": [
+    "bio-plane/src/pdfstructure.mjs",
+    "bio-plane/test/m/pdf-reader/dense.mjs",
+    "bio-plane/test/m/pdf-reader/fixtures.mjs"
+  ],
+  "uses": [
+    "subresources",
+    "test-support",
+    "setup-words",
+    "runtime-limits"
+  ]
+}

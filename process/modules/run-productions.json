@@ -1,0 +1,34 @@
+{
+  "name": "run-productions",
+  "files": [
+    "bio-plane/src/run-productions/"
+  ],
+  "tests": [
+    "bio-plane/test/m/run-productions/"
+  ],
+  "public": [
+    "bio-plane/src/run-productions/checks.mjs",
+    "bio-plane/src/run-productions/index.mjs",
+    "bio-plane/test/m/run-productions/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "text-chain",
+    "record-core",
+    "membership",
+    "extraction",
+    "content",
+    "connections",
+    "inquiry",
+    "citation",
+    "basis-versions",
+    "strength",
+    "ai-runs",
+    "run-rules",
+    "steps",
+    "leg-earning",
+    "ai-accounts",
+    "setup-words",
+    "test-support"
+  ]
+}

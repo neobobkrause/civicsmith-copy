@@ -1,0 +1,23 @@
+{
+  "name": "pdf-worker",
+  "files": [
+    "pdf-worker/"
+  ],
+  "tests": [
+    "pdf-worker/test/"
+  ],
+  "public": [
+    "pdf-worker/src/index.mjs",
+    "pdf-worker/test/fixtures.mjs",
+    "pdf-worker/test/subject.mjs"
+  ],
+  "uses": [
+    "pdf-reader",
+    "bundler",
+    "test-support",
+    "setup-words",
+    "runtime-limits",
+    "pdf-pixels",
+    "image-codecs"
+  ]
+}

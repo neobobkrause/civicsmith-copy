@@ -1,0 +1,44 @@
+{
+  "name": "screens-inquiry",
+  "files": [
+    "bio-plane/src/screens-inquiry/"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-inquiry/"
+  ],
+  "public": [
+    "bio-plane/src/screens-inquiry/index.mjs",
+    "bio-plane/test/m/screens-inquiry/fixtures.mjs"
+  ],
+  "uses": [
+    "hypotheses",
+    "interface-assets",
+    "signatures",
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "screens-settings",
+    "screens-intake",
+    "test-support",
+    "op-grades",
+    "case-import",
+    "investigation",
+    "provenance",
+    "inquiry-grammar",
+    "record-grammar",
+    "citation",
+    "store-request",
+    "project-roster",
+    "strength",
+    "inquiry",
+    "connections",
+    "wizard-scripts",
+    "instance-setup",
+    "review",
+    "queue",
+    "extraction",
+    "ai-runs",
+    "ai-accounts",
+    "network-notices"
+  ]
+}

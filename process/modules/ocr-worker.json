@@ -1,0 +1,25 @@
+{
+  "name": "ocr-worker",
+  "files": [
+    "ocr-worker/"
+  ],
+  "tests": [
+    "ocr-worker/test/",
+    "bio-plane/test/ocr-measure-probe.mjs"
+  ],
+  "public": [
+    "ocr-worker/src/contract.mjs",
+    "ocr-worker/test/fixtures.mjs",
+    "ocr-worker/test/memberworker.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "pdf-pixels",
+    "bundler",
+    "text-chain",
+    "test-support",
+    "runtime-limits",
+    "setup-words",
+    "pdf-worker"
+  ]
+}

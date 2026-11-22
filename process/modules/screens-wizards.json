@@ -1,0 +1,19 @@
+{
+  "name": "screens-wizards",
+  "files": [
+    "bio-plane/src/screens-wizards/"
+  ],
+  "tests": [
+    "bio-plane/test/m/screens-wizards/"
+  ],
+  "public": [
+    "bio-plane/src/screens-wizards/index.mjs"
+  ],
+  "uses": [
+    "interface-shell",
+    "setup-words",
+    "op-declarations",
+    "wizard-scripts",
+    "store-request"
+  ]
+}

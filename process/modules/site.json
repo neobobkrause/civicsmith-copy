@@ -1,0 +1,16 @@
+{
+  "name": "site",
+  "files": [
+    "site/"
+  ],
+  "tests": [
+    "site/test/"
+  ],
+  "public": [
+    "site/src/index.mjs"
+  ],
+  "uses": [
+    "interface-assets",
+    "setup-words"
+  ]
+}

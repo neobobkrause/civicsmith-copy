@@ -1,0 +1,21 @@
+{
+  "name": "docprofile",
+  "files": [
+    "docprofile/"
+  ],
+  "tests": [
+    "docprofile/test/"
+  ],
+  "public": [
+    "docprofile/classify-view.mjs",
+    "docprofile/doctypes/index.mjs",
+    "docprofile/doctypes/registry.mjs",
+    "docprofile/readtext.mjs",
+    "docprofile/registry.mjs"
+  ],
+  "uses": [
+    "jurisdictions",
+    "site-profiles",
+    "setup-words"
+  ]
+}

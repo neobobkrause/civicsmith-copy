@@ -1,0 +1,28 @@
+{
+  "name": "installer",
+  "files": [
+    "newgroup/",
+    "bio-plane/public/newgroup/",
+    "bio-plane/INSTALLER.md"
+  ],
+  "tests": [
+    "newgroup/test/",
+    "bio-plane/test/system/newgroup-bundle-fresh.test.mjs"
+  ],
+  "public": [
+    "newgroup/src/index.mjs",
+    "newgroup/src/release.mjs"
+  ],
+  "uses": [
+    "credentials",
+    "bundler",
+    "jurisdictions",
+    "signatures",
+    "instance-setup",
+    "test-support",
+    "interface-assets",
+    "setup-words",
+    "installer-steps",
+    "runtime-limits"
+  ]
+}

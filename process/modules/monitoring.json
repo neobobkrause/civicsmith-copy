@@ -1,0 +1,45 @@
+{
+  "name": "monitoring",
+  "files": [
+    "bio-plane/src/monitoring/"
+  ],
+  "tests": [
+    "bio-plane/test/m/monitoring/"
+  ],
+  "public": [
+    "bio-plane/src/monitoring/checks.mjs",
+    "bio-plane/src/monitoring/index.mjs",
+    "bio-plane/test/m/monitoring/fixture.mjs",
+    "bio-plane/test/m/monitoring/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "runtime-limits",
+    "subresources",
+    "jurisdictions",
+    "format-registry",
+    "docprofile",
+    "record-core",
+    "membership",
+    "promotion",
+    "host-governor",
+    "provenance",
+    "capture-sources",
+    "capture",
+    "acquisition",
+    "observation-log",
+    "retrieval",
+    "intent",
+    "reevaluation",
+    "publication",
+    "actions",
+    "action-clocks",
+    "escalation",
+    "credentials",
+    "case-import",
+    "civil-time",
+    "investigation",
+    "setup-words",
+    "test-support"
+  ]
+}

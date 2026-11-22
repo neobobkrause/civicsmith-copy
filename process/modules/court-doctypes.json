@@ -1,0 +1,19 @@
+{
+  "name": "court-doctypes",
+  "files": [
+    "court-doctypes/"
+  ],
+  "tests": [
+    "court-doctypes/test/"
+  ],
+  "public": [
+    "court-doctypes/index.mjs",
+    "court-doctypes/test/helpers.mjs"
+  ],
+  "uses": [
+    "docprofile",
+    "id-spaces",
+    "jurisdictions",
+    "setup-words"
+  ]
+}

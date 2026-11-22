@@ -1,0 +1,31 @@
+{
+  "name": "promotion",
+  "files": [
+    "bio-plane/src/gate.mjs",
+    "bio-plane/src/promotion/"
+  ],
+  "tests": [
+    "bio-plane/test/m/promotion/",
+    "bio-plane/test/d526-refusal-order.test.mjs",
+    "bio-plane/test/system/row-census.test.mjs",
+    "bio-plane/test/system/row-census.mjs",
+    "bio-plane/test/fixtures/row-census-1.80.0.jsonl"
+  ],
+  "public": [
+    "bio-plane/src/gate.mjs",
+    "bio-plane/src/promotion/checks.mjs",
+    "bio-plane/src/promotion/index.mjs",
+    "bio-plane/src/promotion/text.mjs",
+    "bio-plane/test/m/promotion/fixtures.mjs",
+    "bio-plane/test/system/row-census.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "test-support",
+    "project-roster"
+  ]
+}

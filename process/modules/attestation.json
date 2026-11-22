@@ -1,0 +1,27 @@
+{
+  "name": "attestation",
+  "files": [
+    "bio-plane/src/attestation/"
+  ],
+  "tests": [
+    "bio-plane/test/m/attestation/"
+  ],
+  "public": [
+    "bio-plane/src/attestation/checks.mjs",
+    "bio-plane/src/attestation/index.mjs",
+    "bio-plane/src/attestation/ops.mjs",
+    "bio-plane/test/m/attestation/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "signatures",
+    "record-core",
+    "membership",
+    "credentials",
+    "promotion",
+    "provenance",
+    "test-support",
+    "ooxml",
+    "setup-words"
+  ]
+}

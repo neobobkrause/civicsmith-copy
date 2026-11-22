@@ -1,0 +1,43 @@
+{
+  "name": "retrieval",
+  "files": [
+    "bio-plane/src/retrieval/"
+  ],
+  "tests": [
+    "bio-plane/test/m/retrieval/"
+  ],
+  "public": [
+    "bio-plane/src/retrieval/checks.mjs",
+    "bio-plane/src/retrieval/findin.mjs",
+    "bio-plane/src/retrieval/index.mjs",
+    "bio-plane/src/retrieval/schema.mjs",
+    "bio-plane/test/m/retrieval/fixture.mjs",
+    "bio-plane/test/m/retrieval/fixtures.mjs"
+  ],
+  "uses": [
+    "standards",
+    "people",
+    "record-grammar",
+    "jurisdictions",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "provenance-routes",
+    "capture",
+    "extraction",
+    "content",
+    "entities",
+    "events",
+    "local-facts",
+    "connections",
+    "observation-log",
+    "money",
+    "duties",
+    "query-language",
+    "setup-words",
+    "retrieval-browse",
+    "test-support",
+    "acquisition"
+  ]
+}

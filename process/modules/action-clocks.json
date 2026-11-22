@@ -1,0 +1,35 @@
+{
+  "name": "action-clocks",
+  "files": [
+    "bio-plane/src/action-clocks/"
+  ],
+  "tests": [
+    "bio-plane/test/m/action-clocks/"
+  ],
+  "public": [
+    "bio-plane/src/action-clocks/checks.mjs",
+    "bio-plane/src/action-clocks/index.mjs",
+    "bio-plane/test/m/action-clocks/fixture.mjs",
+    "bio-plane/test/m/action-clocks/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "record-core",
+    "membership",
+    "promotion",
+    "provenance",
+    "retrieval",
+    "conformance",
+    "actions",
+    "action-grammar",
+    "local-facts",
+    "civil-time",
+    "standards",
+    "calc-grammar",
+    "steps",
+    "duties",
+    "setup-words",
+    "test-support"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "conformance",
+  "files": [
+    "bio-plane/src/conformance/"
+  ],
+  "tests": [
+    "bio-plane/test/m/conformance/"
+  ],
+  "public": [
+    "bio-plane/src/conformance/checks.mjs",
+    "bio-plane/src/conformance/index.mjs",
+    "bio-plane/test/m/conformance/fixture.mjs",
+    "bio-plane/test/m/conformance/fixtures.mjs"
+  ],
+  "uses": [
+    "basis-versions",
+    "record-grammar",
+    "record-core",
+    "membership",
+    "promotion",
+    "content",
+    "inquiry",
+    "strength",
+    "contradiction",
+    "reevaluation",
+    "publication",
+    "standards",
+    "corpus-export",
+    "entities",
+    "events",
+    "civil-time",
+    "calculations",
+    "case-check",
+    "accepted-work",
+    "case-import",
+    "setup-words",
+    "test-support",
+    "retrieval"
+  ]
+}

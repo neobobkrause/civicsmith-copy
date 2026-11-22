@@ -1,0 +1,27 @@
+{
+  "name": "hypotheses",
+  "files": [
+    "bio-plane/src/hypotheses/"
+  ],
+  "tests": [
+    "bio-plane/test/m/hypotheses/"
+  ],
+  "public": [
+    "bio-plane/src/hypotheses/checks.mjs",
+    "bio-plane/src/hypotheses/index.mjs",
+    "bio-plane/test/m/hypotheses/fixture.mjs",
+    "bio-plane/test/m/hypotheses/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "test-support",
+    "record-core",
+    "membership",
+    "promotion",
+    "connection-grammar",
+    "explore",
+    "calculations",
+    "inquiry",
+    "setup-words"
+  ]
+}

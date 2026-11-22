@@ -1,0 +1,16 @@
+{
+  "name": "agent-model",
+  "files": [
+    "agent-model/"
+  ],
+  "tests": [
+    "agent-model/test/"
+  ],
+  "public": [
+    "agent-model/src/model.mjs",
+    "agent-model/src/outcome.mjs"
+  ],
+  "uses": [
+    "setup-words"
+  ]
+}

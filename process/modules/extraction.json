@@ -1,0 +1,46 @@
+{
+  "name": "extraction",
+  "files": [
+    "bio-plane/src/extractrun.mjs",
+    "bio-plane/src/extraction/"
+  ],
+  "tests": [
+    "bio-plane/test/m/extraction/"
+  ],
+  "public": [
+    "bio-plane/src/extraction/checks.mjs",
+    "bio-plane/src/extraction/filemembership.mjs",
+    "bio-plane/src/extraction/index.mjs",
+    "bio-plane/src/extraction/ops.mjs",
+    "bio-plane/src/extraction/schema.mjs",
+    "bio-plane/src/extractrun.mjs",
+    "bio-plane/test/m/extraction/bigpdf.mjs",
+    "bio-plane/test/m/extraction/fixture.mjs",
+    "bio-plane/test/m/extraction/fixtures.mjs"
+  ],
+  "uses": [
+    "record-grammar",
+    "jurisdictions",
+    "text-chain",
+    "format-registry",
+    "office-readers",
+    "docprofile",
+    "pdf-reader",
+    "pdf-worker",
+    "ocr-worker",
+    "record-core",
+    "membership",
+    "ai-accounts",
+    "capture-sources",
+    "capture",
+    "provenance",
+    "promotion",
+    "calibration",
+    "reading-pipeline",
+    "doctypes",
+    "setup-words",
+    "test-support",
+    "acquisition",
+    "runtime-limits"
+  ]
+}

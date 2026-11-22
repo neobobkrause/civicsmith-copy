@@ -1,0 +1,28 @@
+{
+  "name": "record-grammar",
+  "files": [
+    "bio-plane/src/record-grammar/"
+  ],
+  "tests": [
+    "bio-plane/test/m/record-grammar/"
+  ],
+  "public": [
+    "bio-plane/src/record-grammar/actors.mjs",
+    "bio-plane/src/record-grammar/acts.mjs",
+    "bio-plane/src/record-grammar/bundle.mjs",
+    "bio-plane/src/record-grammar/document.mjs",
+    "bio-plane/src/record-grammar/frontmatter.mjs",
+    "bio-plane/src/record-grammar/grades.mjs",
+    "bio-plane/src/record-grammar/ids.mjs",
+    "bio-plane/src/record-grammar/index.mjs",
+    "bio-plane/src/record-grammar/json.mjs",
+    "bio-plane/src/record-grammar/labels.mjs",
+    "bio-plane/src/record-grammar/locator.mjs",
+    "bio-plane/src/record-grammar/sha256.mjs",
+    "bio-plane/src/record-grammar/types.mjs",
+    "bio-plane/test/m/record-grammar/fixtures/bundles.mjs"
+  ],
+  "uses": [
+    "setup-words"
+  ]
+}
