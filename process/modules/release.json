@@ -1,0 +1,45 @@
+{
+  "name": "release",
+  "files": [
+    "bio-plane/scripts/deploy.mjs",
+    "bio-plane/scripts/deploy-fleet.mjs",
+    "bio-plane/scripts/resolve-version.mjs",
+    "bio-plane/scripts/release-assemble.mjs",
+    "bio-plane/scripts/bundles.mjs",
+    "bio-plane/scripts/release-advisories.mjs",
+    "bio-plane/scripts/third-party.json",
+    "release/",
+    ".github/workflows/deploy-test.yml",
+    ".github/workflows/container-images.yml",
+    ".github/workflows/release-sign.yml"
+  ],
+  "tests": [
+    "bio-plane/test/m/bundler/",
+    "bio-plane/test/system/bundle.test.mjs",
+    "bio-plane/test/system/deploybindings.test.mjs",
+    "bio-plane/test/system/fleetbundles.test.mjs",
+    "bio-plane/test/system/resolveversion.test.mjs",
+    "bio-plane/test/fleetbundles.control.mjs",
+    "bio-plane/test/system/migrate-released.test.mjs"
+  ],
+  "public": [],
+  "uses": [
+    "setup-words",
+    "test-support",
+    "signatures",
+    "runtime-limits",
+    "bundler",
+    "court-citations",
+    "subresources",
+    "pdf-reader",
+    "site-profiles",
+    "pdf-worker",
+    "ocr-worker",
+    "sheet-worker",
+    "file-scanner",
+    "agent-harness",
+    "agent-runner",
+    "agent-worker",
+    "plane"
+  ]
+}

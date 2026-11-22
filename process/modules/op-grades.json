@@ -16,7 +16,8 @@
     "bio-plane/src/op-grades/t41.mjs",
     "bio-plane/src/op-grades/t45.mjs",
     "bio-plane/src/op-grades/t46.mjs",
-    "bio-plane/src/op-grades/t47.mjs"
+    "bio-plane/src/op-grades/t47.mjs",
+    "bio-plane/test/m/op-grades/declared.mjs"
   ],
   "uses": [
     "setup-words"

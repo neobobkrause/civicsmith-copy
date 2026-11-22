@@ -17,7 +17,9 @@
     "bio-plane/test/seeded.mjs",
     ".github/scripts/",
     ".github/workflows/regression.yml",
-    ".claude/hooks/"
+    ".claude/hooks/",
+    "bio-plane/package.json",
+    "bio-plane/package-lock.json"
   ],
   "tests": [
     "bio-plane/test/m/test-support/"
@@ -35,7 +37,8 @@
     "bio-plane/test/seeded.mjs",
     "bio-plane/test/sheetgen.mjs",
     "bio-plane/test/stdio.mjs",
-    "pdf-worker/test/make-pdf.mjs"
+    "pdf-worker/test/make-pdf.mjs",
+    "bio-plane/package.json"
   ],
   "uses": [
     "setup-words"

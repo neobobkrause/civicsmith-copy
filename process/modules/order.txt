@@ -1,3 +1,4 @@
+documents
 setup-words
 record-grammar
 jurisdictions
@@ -33,6 +34,7 @@ pdf-worker
 ocr-worker
 sheet-worker
 file-scanner
+op-grades
 member-roster
 record-core
 membership
@@ -140,7 +142,6 @@ following
 link-sweep
 scheduler
 wizard-scripts
-op-grades
 affordances
 tasks
 machinery-producers
@@ -171,6 +172,7 @@ screens-publish
 screens-action
 control-plane
 plane
+release
 installer-steps
 installer
 site

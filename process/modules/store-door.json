@@ -52,6 +52,7 @@
     "doorbell",
     "ai-accounts",
     "translations",
-    "test-support"
+    "test-support",
+    "op-grades"
   ]
 }

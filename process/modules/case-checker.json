@@ -4,7 +4,8 @@
     "bio-plane/src/case-checker/"
   ],
   "tests": [
-    "bio-plane/test/m/case-checker/"
+    "bio-plane/test/m/case-checker/",
+    "bio-plane/test/m/signatures/signatures.test.mjs"
   ],
   "public": [
     "bio-plane/src/case-checker/account.mjs",
@@ -25,6 +26,7 @@
     "calc-grammar",
     "case-catalogue",
     "answers",
-    "setup-words"
+    "setup-words",
+    "capture"
   ]
 }

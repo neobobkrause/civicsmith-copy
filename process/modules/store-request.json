@@ -43,6 +43,7 @@
     "skills",
     "ai-runs",
     "runtime-limits",
-    "capture-sources"
+    "capture-sources",
+    "doctypes"
   ]
 }

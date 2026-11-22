@@ -5,7 +5,10 @@
   ],
   "tests": [
     "ocr-worker/test/",
-    "bio-plane/test/ocr-measure-probe.mjs"
+    "bio-plane/test/ocr-measure-probe.mjs",
+    "doctypes/test/capture-policies.mjs",
+    "pdf-worker/test/pagepixels-corpus.probe.mjs",
+    "pdf-worker/test/pagepixels.test.mjs"
   ],
   "public": [
     "ocr-worker/src/contract.mjs",
@@ -20,6 +23,8 @@
     "test-support",
     "runtime-limits",
     "setup-words",
-    "pdf-worker"
+    "pdf-worker",
+    "image-codecs",
+    "pdf-reader"
   ]
 }

@@ -6,7 +6,6 @@
   ],
   "tests": [
     "bio-plane/test/m/queue/",
-    "bio-plane/test/conclude-project.test.mjs",
     "bio-plane/test/docdates.mjs"
   ],
   "public": [
@@ -42,6 +41,7 @@
     "notice-producers",
     "investigation",
     "setup-words",
-    "project-roster"
+    "project-roster",
+    "op-grades"
   ]
 }

@@ -4,7 +4,8 @@
     "agent-worker/"
   ],
   "tests": [
-    "agent-worker/test/"
+    "agent-worker/test/",
+    "agent-runner/test/worker.test.mjs"
   ],
   "public": [
     "agent-worker/src/ops.mjs"

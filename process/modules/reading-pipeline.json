@@ -5,12 +5,10 @@
   ],
   "tests": [
     "bio-plane/test/m/reading-pipeline/",
-    "bio-plane/test/d606-perpage-ocr.test.mjs",
-    "bio-plane/test/tier2-wire.test.mjs",
     "bio-plane/test/tier-pagewise.probe.mjs",
-    "bio-plane/test/system/pdf-worker-binding.test.mjs",
     "bio-plane/test/fixtures/d460/",
-    "bio-plane/test/fixtures/cpdf20/tier2-recorded.json"
+    "bio-plane/test/fixtures/cpdf20/tier2-recorded.json",
+    "bio-plane/test/m/pdf-reader/workerd-index.probe.mjs"
   ],
   "public": [
     "bio-plane/src/reading-pipeline/hooks.mjs",

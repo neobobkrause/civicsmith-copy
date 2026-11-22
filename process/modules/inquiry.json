@@ -4,7 +4,8 @@
     "bio-plane/src/inquiry/"
   ],
   "tests": [
-    "bio-plane/test/m/inquiry/"
+    "bio-plane/test/m/inquiry/",
+    "bio-plane/test/m/record-grammar/labels.test.mjs"
   ],
   "public": [
     "bio-plane/src/inquiry/checks.mjs",
@@ -37,6 +38,7 @@
     "calculations",
     "lines",
     "setup-words",
-    "test-support"
+    "test-support",
+    "money"
   ]
 }

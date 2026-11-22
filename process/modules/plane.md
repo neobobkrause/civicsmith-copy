@@ -1,8 +1,8 @@
-Length: 152 lines. Last section: "Suggestions".
+Length: 153 lines. Last section: "Suggestions".
 
 # plane: requirements
 
-Next number: 115
+Next number: 116
 
 **Size (P6).** About 250 lines written and moved (`draft-T19.md`: ~170 of `store.mjs`' composition root, the Worker's entry, the class from `dispatch.mjs`), and the config re-assigned.
 
@@ -51,6 +51,7 @@ The instance's composition root. It builds every module on one Durable Object's 
 - **R112** [not yet met] (was R36, in part) The Worker's gated hook (`gatedOp`, R6) answers `op=pagetranscribe` through `extraction`'s exported `pageTranscribeOp` (`door.mjs`, beside `pdfstructure`'s `extractionOp` arm), with the stamps `store-request` R8 sets. The transcriber it reaches is `store-assembly` R57.
 - **R113** [not yet met] (was R37, in part) The Worker's public door answers `knock` through `doorbell`'s `doorbellPublicOp`, never `capture`'s `capturePublicOp`, so no plane path reaches capture's doorbell copy. Test: `op=knock` at the whole plane's door with no token answers 200, a GET 405, and an empty knock `KNOCK_EMPTY` (C-85.5). The doorbell's composition is `store-assembly` R32.
 - **R114** [not yet met] (was R40, in part) The Store has two RPC methods beside `ask` and `draft` (R111): `dispatchMemberRun(args)`, calling `ai-runs`' `dispatchMemberRun(args)` in the object addressed (R46 states its arguments), and `groupFields()`, answering `public-read`'s `groupFields()` of the `bio` object (R62 adds its project), whose keys are `detail`, `domain`, `domain_verified_at`, `group`, `name` and `stake`. Test: each RPC answers what its owner's function answers in the object addressed.
+- **R115** [met] (moved from bundler R16 with build-plane.mjs, 22 Nov 2026; T51; K3807, K3814 amend) Writes the plane's bundle and manifest by R5, and prints the artifact's size and SHA-256 and the manifest's input counts. The build renders and embeds no signing page: it calls no step that generates a source file, so the bundle is built from the committed sources alone.
 
 ## Private
 

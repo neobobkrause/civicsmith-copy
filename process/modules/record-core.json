@@ -4,8 +4,7 @@
     "bio-plane/src/record-core/"
   ],
   "tests": [
-    "bio-plane/test/m/record-core/",
-    "bio-plane/test/stats-disclosure.test.mjs"
+    "bio-plane/test/m/record-core/"
   ],
   "public": [
     "bio-plane/src/record-core/checks.mjs",

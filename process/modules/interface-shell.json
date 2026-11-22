@@ -11,7 +11,8 @@
     "bio-plane/test/m/interface-shell/dom.mjs",
     "bio-plane/test/m/interface-shell/frame-answers.mjs",
     "bio-plane/test/m/interface-shell/harness.mjs",
-    "bio-plane/test/m/interface-shell/world.mjs"
+    "bio-plane/test/m/interface-shell/world.mjs",
+    "bio-plane/test/m/interface-shell/screens.fixture.mjs"
   ],
   "uses": [
     "interface-assets",

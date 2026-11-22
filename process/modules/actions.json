@@ -4,7 +4,9 @@
     "bio-plane/src/actions/"
   ],
   "tests": [
-    "bio-plane/test/m/actions/"
+    "bio-plane/test/m/actions/",
+    "bio-plane/test/m/action-grammar/t47.test.mjs",
+    "bio-plane/test/m/action-grammar/t48.test.mjs"
   ],
   "public": [
     "bio-plane/src/actions/index.mjs",
