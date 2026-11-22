@@ -45,7 +45,7 @@ The frame is drawn by the shell around the screen. A screen's page names its fra
 | working | every screen not named below | The masthead (section 3.3), the band, the rail (desktop) or the tabs (phone), the path, the screen, and the assistant dock or the wizard guide when one is open. Needs a session: without one the shell shows `front` and keeps the address, opening it after sign-in. |
 | setup | `site`, `install`, `update`, `setup`, `join` | A plain page: no rail, tabs, masthead, member menu or dock. Opens with or without a session. |
 | public | `front`, `tour`, `reset`, `forgot`, `doorbell` | A plain page as the setup frame, drawn without a session. No weight mark is drawn on it. Tab title "{page} · {team}" (`page.title.public`). |
-| published | `published`, `review-outside`, `docket-public` | A plain page drawn without a session, headed by the team's name and ended by a foot: "{short name} · signed by an owner of the project · {fingerprint}" and the credit "Made with Civicsmith" (no word row). No weight mark. |
+| published | `published`, `review-outside`, `docket-public` | A plain page drawn without a session, headed by the team's name and ended by a foot: "{short name} · signed by an owner of the project · {fingerprint}" (new word, key proposed: `shell.pubfoot.line`) and the credit "Made with Civicsmith" (new word, key proposed: `shell.pubfoot.credit`). No weight mark. |
 | dock | `assistant`, `aimoments` | The panel beside a working screen (section 5). Never a page of its own. |
 | imported | `imported` | The working frame, with the band "Another team's case: {group} · Edition {edition} · read-only · {recreated} of {findings} findings recreated" (`screen.imported.band`). |
 
@@ -299,3 +299,4 @@ The rail (section 3) stands as built. The seven navigation categories of the Roa
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: words with no row decided (words-new.md).
