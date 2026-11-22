@@ -1,8 +1,8 @@
-Length: 153 lines. Last section: "Suggestions".
+Length: 156 lines. Last section: "Suggestions".
 
 # plane: requirements
 
-Next number: 116
+Next number: 117
 
 **Size (P6).** About 250 lines written and moved (`draft-T19.md`: ~170 of `store.mjs`' composition root, the Worker's entry, the class from `dispatch.mjs`), and the config re-assigned.
 
@@ -52,6 +52,9 @@ The instance's composition root. It builds every module on one Durable Object's 
 - **R113** [not yet met] (was R37, in part) The Worker's public door answers `knock` through `doorbell`'s `doorbellPublicOp`, never `capture`'s `capturePublicOp`, so no plane path reaches capture's doorbell copy. Test: `op=knock` at the whole plane's door with no token answers 200, a GET 405, and an empty knock `KNOCK_EMPTY` (C-85.5). The doorbell's composition is `store-assembly` R32.
 - **R114** [not yet met] (was R40, in part) The Store has two RPC methods beside `ask` and `draft` (R111): `dispatchMemberRun(args)`, calling `ai-runs`' `dispatchMemberRun(args)` in the object addressed (R46 states its arguments), and `groupFields()`, answering `public-read`'s `groupFields()` of the `bio` object (R62 adds its project), whose keys are `detail`, `domain`, `domain_verified_at`, `group`, `name` and `stake`. Test: each RPC answers what its owner's function answers in the object addressed.
 - **R115** [met] (moved from bundler R16 with build-plane.mjs, 22 Nov 2026; T51; K3807, K3814 amend) Writes the plane's bundle and manifest by R5, and prints the artifact's size and SHA-256 and the manifest's input counts. The build renders and embeds no signing page: it calls no step that generates a source file, so the bundle is built from the committed sources alone.
+
+**Built files (ARCH's decision "Committed built files", 22 Nov 2026)**
+- **R116** [not yet met] `bio-plane/dist/` holds no committed file but a `.gitignore` that ignores everything else in it (`SECRETS.txt` having moved to `bio-plane/SECRETS.txt` by the mechanical edit); the plane's bundle and manifest are built there by `bio-plane/scripts/build-plane.mjs` whenever needed. This module's tests that read a fleet member's bundle (pdf-worker, ocr-worker, agent-worker) build it first through that member's own build script.
 
 ## Private
 

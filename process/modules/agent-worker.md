@@ -1,8 +1,8 @@
-Length: 152 lines. Last section: "Suggestions".
+Length: 155 lines. Last section: "Suggestions".
 
 # agent-worker: requirements
 
-Next number: 120
+Next number: 121
 
 | old | new (`agent-steps`) | |
 | --- | --- | --- |
@@ -85,6 +85,9 @@ The answer:
 - **R87** [met] (T48; N1015; K3103; `agent-model` R16; `control-plane` T48-77) `POST /ask`, `/run`, `/draft` and `/transcribe` read the request's `x-civicsmith-trace` and `x-civicsmith-member-ref` headers when the door sends them, in R83's shapes, and pass both to every `agent-model` call the request makes (`converse({…, trace, memberRef})`, and `modelCall` likewise), so a member's runner receives them on its upgrade (`agent-model` R16). - A header absent or not of R83's shape is passed as absent. Unlike `/signin` (R83), these paths mint no trace and refuse nothing for want of one. - They change no other behaviour, answer or refusal, reach no plane call, and are never logged beside a secret (R36). - Tests: for each of the four paths, a `signin` account and a stub runner, the sent trace and member ref reach the runner's upgrade request; control: without the headers, the upgrade carries neither and the answer is unchanged.
 - **R91** [met] (R085-8; K3477; WALK-085 F2; amends R28's answer timing; `ai-runs` R82, R84) `/run` accepts a segment and answers at once, `202 {accepted: true, run_id}` (refusals before the segment starts still answered as today), and the segment then runs to its end whether or not the caller is still connected: a dropped caller never ends it. When it ends, by any cause (its bound, the run done, the plane's exit, a refusal or an error), it sends one `op=airuntick` carrying `segment_end: {by, done, refusals, error?}` (`by` R28's `ended.by`, null when the segment stopped on its own bound; `done` true when the run's work is finished; `refusals` the codes R28 lists; `error` a code, present only when the segment ended in an error), so the plane learns every segment's end. Test: over the fake plane, a caller that disconnects after the 202 still sees the segment's ticks and its `segment_end`. Control: a segment refused before starting answers its refusal, not 202.
 - **R93** [met] (R085-9; K3486 (A); amends R91; `ai-runs` R84) The `segment_end` tick is sent only after the segment is marked not running, so the next segment the plane dispatches within that tick (`ai-runs` R84's continuation) is accepted, never refused `SEGMENT_RUNNING`. Test: a segment ends on its own bound, the fake plane dispatches the next segment from inside the `segment_end` tick, and that `/run` is answered `202`; control: a `/run` while a segment is still running is refused `409 SEGMENT_RUNNING`.
+
+**Built files (ARCH's decision "Committed built files", 22 Nov 2026)**
+- **R120** [not yet met] `agent-worker/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `agent-worker/scripts/build.mjs` whenever needed, and this module's tests that read them build them first the same way.
 
 ## Private
 

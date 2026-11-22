@@ -1,8 +1,8 @@
-Length: 66 lines. Last section: "Suggestions".
+Length: 69 lines. Last section: "Suggestions".
 
 # sheet-worker: requirements
 
-Next number: 18
+Next number: 19
 
 **Size (P6).** About 800–1,200 lines with tests, plus the vendored wasm (about 2.3 MB raw), which is a generated artifact (PROCESS-MECHANICS §14).
 
@@ -30,6 +30,9 @@ A standalone Cloudflare Worker, reached only through the plane's `SHEET_WORKER` 
 
 **Any other method or path**
 - **R9** [met] Refused `{ok: false, reason: "UNKNOWN"}` with HTTP 404.
+
+**Built files (ARCH's decision "Committed built files", 22 Nov 2026)**
+- **R18** [not yet met] `sheet-worker/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `sheet-worker/scripts/build.mjs` whenever needed, and this module's tests that read them build them first the same way. The engine's generated glue (`src/enginelib.mjs`, `src/enginelib-tz.mjs`) stays committed.
 
 ## Private
 
