@@ -1,4 +1,4 @@
-Length: 220 lines. Last section: "Changes".
+Length: 221 lines. Last section: "Changes".
 
 # Screens: Reading a document
 
@@ -25,7 +25,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 **Content: the head**
 - C1. Heading: the document's title (untitled web page: `document.untitled.web` ["A page from {site}, captured {date}"]); beneath, its issuer, date and "captured by {name} from {source}, {date}" (`.capturedby`) or "uploaded by {member}, {date}" (`document.uploaded.by`).
-- C2. Facts: "Where it stands" (no word row on this screen; a state chip); "This copy" (`.copy`) with the grade and A3; "Fingerprint" (`.fingerprint`), card `.fingerprint.means`; "Its text" (`.text.label`): "Full: every page has text", "Partial: pages {pages} have no text", "None: no page has text", "Unread: this copy has not been read yet" (`.text.full`, `.text.partial`, `.text.none`, `.text.unread`), card `.text.tip`.
+- C2. Facts: "Where it stands" (new word, key proposed: `screen.document.stands`; a state chip); "This copy" (`.copy`) with the grade and A3; "Fingerprint" (`.fingerprint`), card `.fingerprint.means`; "Its text" (`.text.label`): "Full: every page has text", "Partial: pages {pages} have no text", "None: no page has text", "Unread: this copy has not been read yet" (`.text.full`, `.text.partial`, `.text.none`, `.text.unread`), card `.text.tip`.
 - C3. Standing: "Vouched for by {member}, {date}. Your team can use this copy." (`document.vouched`), or in S2 the held banner.
 - C4. Who issued it, where not known: `.basis.added` or `.basis.fetched`.
 - C5. A5.
@@ -41,7 +41,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C13. Compare tab (S3): two columns "The version your question cites" and "This copy" (`document.compare.cited`, `.this`), each "Captured {date} by {who}" (`document.compare.captured`); changed words marked; note `document.compare.same` ["{what}, which your question cites, reads the same in both, letter for letter."], `document.compare.changed` ["{what} changed."], "Your citations stay on the version you cited until you move them." (`document.compare.stay`); A14.
 
 **Content: the sections below**
-- C14. Section "Versions" (`document.versions.title`), help `document.versions.help` [newest first; a newer copy sits beside the older]: rows "Captured {date} by {who}" (`document.versions.captured`), "this copy" (`document.versions.thiscopy`); chip "Changed since the version your question cites" (`document.versions.changed`), card `.changed.tip`, with `document.versions.where` ["{changed} reads differently; {same} does not."] and A15; "The version your question cites" (`document.versions.cited`); "Reads the same as the {date} copy, letter for letter." (`document.versions.same`). A16; fold "If this address isn't being watched" (`.unwatched.head`) with `.unwatched` and A16's "Watch for changes".
+- C14. Section "Its versions" (`screen.document.versions.head`), help `document.versions.help` [newest first; a newer copy sits beside the older]: rows "Captured {date} by {who}" (`document.versions.captured`), "this copy" (`document.versions.thiscopy`); chip "Changed since the version your question cites" (`document.versions.changed`), card `.changed.tip`, with `document.versions.where` ["{changed} reads differently; {same} does not."] and A15; "The version your question cites" (`document.versions.cited`); "Reads the same as the {date} copy, letter for letter." (`document.versions.same`). A16; fold "If this address isn't being watched" (`.unwatched.head`) with `.unwatched` and A16's "Watch for changes".
 - C15. Section "Your citations" (`.a34.your_citations_leg_by_leg`), help `.a34.one_line_for_each_question_that_rests_on`: note "A newer copy never moves a citation by itself." "Each question that rests on this document is asked about on its own." (`.a34.a_newer_copy_never_moves_a_citation_by_i`, `.a34.each_reasoning_that_rests_on_this_docume`); one row per question: its project, "rests on page {page}" (`.place.restson`), and one of "a newer copy exists, captured {date}" (`.a34.a_newer_copy_exists_captured_2_october`), "page {page} reads the same in both" (`.a34.page_same`), "page {page} reads differently" (`.a34.page_differs`), "not yet checked for a newer copy" (`.a34.not_checked_yet`), "no newer copy exists" (`.a34.no_newer`); A14 or A17 per row. Undetermined: `.a34.the_record_could_not_tell_whether_a_newe` "It does not guess." (`.a34.it_does_not_guess`). After A14: `.a34.moved` ["Citations moved to this copy by {member}, {date}: …"] or `.a34.kept` ["Kept citing the earlier version, by {member}, {date}: …"].
 - C16. Section "The record of this copy" (`.a27.the_record_of_this_copy`), help `.a27.who_added_this_copy_who_vouched_for_it_a`: "Recorded by Civicsmith release {version}" (`.record.release`) with `.a27.the_release_of_civicsmith_that_wrote_thi`; note "Everything done to this copy's standing is kept here, oldest first." "None of it is ever changed or removed." (`.a27.everything_done_to_this_copy_s_standing_`, `.a27.none_of_it_is_ever_changed_or_removed`); rows "Added by {member}" (`.record.added`) "held until vouched for" (`.a27.held_until_vouched_for`); "Vouched for by {member}" (`.a27.vouched_for_by_dev`) "now used by the team" (`.a27.now_used_by_the_team`) with what was checked (`.checked.words_and_address`); grade changes. Fold "Earlier revisions of this record" (`.a27.earlier_revisions_of_this_record`): rows "Revision {n}" (`.revision.title`); choices "Compare" and "With" (`.revisions.compare`, `.revisions.with`); A18; side by side "Standing: …", "Grade:", "Vouched for by: …" (`.a27.standing_*`, `.compare.grade`, `.a27.vouched_for_by_*`); `.revisions.truncated`; `.revision.nobytes`; note `.a27.a_copy_that_came_as_a_set_of_files_such_`.
 - C17. Section "Fingerprints" (`.fingerprints.head`), help `.a26.short_codes_computed_from_the_exact_byte`, `.a26.anyone_holding_the_same_bytes_computes_t`: rows "This copy's words and file" (`.a26.this_copy_s_words_and_file`) "computed from the exact bytes of this copy" (`.a26.computed_from_the_exact_bytes_of_this_co`); "This copy and the files captured with it" (`.a26.this_copy_and_the_files_captured_with_it`) "computed from the whole set, so the set can be checked as one" (`.a26.computed_from_the_whole_set_so_the_set_c`); each with A19; note `.fingerprint.setonly`.
@@ -58,8 +58,8 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C28. Section "Steps it is threaded to" (`progression.threadedto`), help `act.captureprogressions.does`; A30.
 - C29. Section "This copy" (`.copyacts.head`), help `document.thiscopy.says`: row "Route to your team: not checked yet." (`.route.standing`) with `.route.says` and A31; fold "What a check can record" (`.route.summary`): `.route.shown`, `.route.notshown`, `.route.same`; fold "When it cannot be checked" (`.route.refused.summary`) with `.route.refused`. Row "Useful when someone may later claim the document was changed after it was captured." (`document.attest.when`) with A32. Fold "Stop using this copy" (`document.retire.fold`): `document.retire.when`; A33.
 - C30. Section "Where this document came from" (`.origin.head`), help `.origin.tip`: field "The system it came from" (`.origin.field`), help "For example, the city's records portal." (`.origin.eg`); A34; "A second declaration is added beside the first." "A second declaration never replaces the first." (`.origin.second1`, `.second2`); rows "Said by {member}, {date}" (`.said_by`).
-- C31. `not built` (decision U9) C2's "This copy" names its two measures apart: the ceiling the record sets as "How well it could be captured" (no word row), never "Capture" alone, and a member's grade as "Your team's grade for the copy" (no word row).
-- C32. `not built` (decision U5) For a document handed in through the doorbell, under C1: for the members the team listed to read about sources, "A source" (`screen.about-knocker.name`) as a link to `about-knocker`; for every other member, "Handed in through the doorbell" (no word row), with no link.
+- C31. `not built` (decision U9) C2's "This copy" names its two measures apart: the ceiling the record sets as "How well it could be captured" (new word, key proposed: `screen.document.copy.ceiling`), never "Capture" alone, and a member's grade as "Your team's grade for the copy" (new word, key proposed: `screen.document.copy.grade`).
+- C32. `not built` (decision U5) For a document handed in through the doorbell, under C1: for the members the team listed to read about sources, "A source" (`screen.about-knocker.name`) as a link to `about-knocker`; for every other member, "Handed in through the doorbell" (new word, key proposed: `screen.document.from.doorbell`), with no link.
 
 **States**
 
@@ -211,10 +211,11 @@ Keys below starting with a dot are under `screen.contradiction.`; most are long,
 
 Read, not run. The design is the authority.
 
-- `document` C14: the code heads the section "Its versions" (`screen.document.versions.head`), not "Versions" (`document.versions.title`) (bio-plane/src/screens-inquiry/document.mjs:797).
 - `document` A37: "Follow this item into another dimension" and "Search the registers" are in the key list only, in no screen (bio-plane/src/screens-settings/keys.mjs).
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

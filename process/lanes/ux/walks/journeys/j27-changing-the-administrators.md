@@ -1,4 +1,4 @@
-Length: 97 lines. Last section: "Changes".
+Length: 98 lines. Last section: "Changes".
 
 # J27: Changing the administrators
 
@@ -14,7 +14,7 @@ Status: walkable · Screens used: `members`, `security`, `home`, `queue`, `setti
 
 1. Rosa (`rosa-l`), the founder and only administrator at the start, signed in.
 2. Mai (`mai-k`), a member at the start, signed in; she becomes the second administrator.
-3. Teo (`teo-r`), a member who may not start projects, as J03 leaves him, signed in; he is made the third administrator, then removed.
+3. Teo (`teo-r`), a member who may not start projects, as J03 leaves him, signed in; he is made the third administrator, then removed, which revokes him (the owner's ruling D-610).
 
 ## Before it starts
 
@@ -27,7 +27,7 @@ Status: walkable · Screens used: `members`, `security`, `home`, `queue`, `setti
 
 | Item | Value |
 |---|---|
-| Rosa's reason for removing Teo | "Teo asked to hand the administrator's work back; he stays a member." |
+| Rosa's reason for removing Teo | "Teo asked to hand the administrator's work back." |
 | Passwords | Rosa's and Mai's, as J28 leaves them; ARCH holds them, never printed |
 
 ## Steps
@@ -66,17 +66,17 @@ Status: walkable · Screens used: `members`, `security`, `home`, `queue`, `setti
 11. Mai opens `members` (or her `home` row for it) and presses "Agree: remove teo-r as an administrator" (A9 in S3), with her own reason, and gives her password.
     - 11.1 The count reaches what "What it takes" names: S3 ends; Teo's row no longer shows him an administrator.
     - 11.2 C1 reads "Administrators: 2".
-    - 11.3 Teo's row reads "Role" "member" (`.role.member`), "Status" "active", and "May do" "add and revise work" (`.cap.contribute`), what he held before step 7 (`members` C12, `not built`: the code marks him "inactive").
+    - 11.3 Teo's row reads "Status" "inactive" (`screen.members.status.revoked`): a removed administrator is revoked, his sessions ended and his signing key withdrawn (the owner's ruling D-610; `members` C12).
 12. Teo reloads `security`.
-    - 12.1 `security` shows S3, naming `rosa-l` and `mai-k` as the administrators.
+    - 12.1 His session has ended: `front` shows, not `security`, and signing in again as `teo-r` is refused beside the button.
 
 ## End state
 
 Checked after a reload.
 
-1. `members`, as Rosa, reads "Administrators: 2"; C2 shows Rosa and Mai as administrators and Teo as a member.
-2. `members`, as Teo, shows S2: the roster, "May do" and "Expertise"; no act.
-3. `security` as Mai shows S1 or S2; as Teo, S3 naming Rosa and Mai.
+1. `members`, as Rosa, reads "Administrators: 2"; C2 shows Rosa and Mai as administrators and Teo "inactive".
+2. Teo cannot sign in.
+3. `security` as Mai shows S1 or S2.
 4. The reason Rosa gave at step 10 is kept with the removal, under her name (`shell.reason.help`): Teo's row panel, as Rosa or Mai opens it, shows the removal, its date, and `rosa-l` and `mai-k` each with her reason (`members` C12, `not built`).
 5. No item about Teo's endorsement or removal is left in Rosa's or Mai's `queue`.
 
@@ -95,3 +95,4 @@ Checked after a reload.
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

@@ -1,4 +1,4 @@
-Length: 590 lines. Last section: "Changes".
+Length: 585 lines. Last section: "Changes".
 
 # Screens: Daily work
 
@@ -18,16 +18,16 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 |---|---|---|---|
 | `home` | the team's name, "Lakeshore Tenants" | `/app` | built |
 | `projects` | "Projects" | `/app/projects` | built |
-| `theme` | "Themes", or one theme's name | `/app/theme[/<theme>]` | built |
-| `dash-action` | "Action" | `/app/dash-action` | built |
+| `theme` | "Themes" | `/app/theme[/<theme>]` | built |
+| `dash-action` | "The Action dashboard" | `/app/dash-action` | built |
 | `dash-project` | the project's title | `/app/dash-project/<project>` | built |
 | `elsewhere` | "Where else to go" | `/app/elsewhere` | built |
 | `queue` | "Your queue" | `/app/queue` | built |
 | `finder` | "Find" | `/app/finder` | built |
-| `capture` | "Add to the record" | `/app/capture` | built |
+| `capture` | "Add" | `/app/capture` | built |
 | `held` | "Held captures" | `/app/held` | built |
-| `archive` | the archive's title | `/app/archive/<archive>` | built |
-| `open-file` | the file's title | `/app/open-file/<file>` | built |
+| `archive` | "Archive" | `/app/archive/<archive>` | built |
+| `open-file` | "Opening a file" | `/app/open-file/<file>` | built |
 | `find-in` | "Find in this" | `/app/find-in/<subject>` | built |
 
 ---
@@ -48,14 +48,14 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C7. Section "Since you last looked" (`.since`), help `.since.holds`; rows `.since.captured`, `.since.events`, `.since.trail`.
 - C8. Heading "What happened?" (`door.front.head`) over the doors A12 and A13.
 - C9. Button A14.
-- C10. On a row of "Getting into a project", "Ask to join" (A8) offers an optional field for a word on why (no word row), sent with the request; the owners see the word on the request's row in their C3. Once an owner declines, the member's row says the owners declined, with their word if they gave one (no word row), and offers "Ask to join" again (`act.projectrequest.does`: "you see their answer"). `not built` (the code sends the request with no word, and draws no answer).
+- C10. On a row of "Getting into a project", "Ask to join" (A8) offers an optional field for a word on why, "Why you'd like to join (optional)" (new word, key proposed: `screen.home.join.why`), sent with the request; the owners see the word on the request's row in their C3. Once an owner declines, the member's row says the owners declined, with their word if they gave one: "Its owners declined your request on {date}." (new word, key proposed: `screen.home.join.declined`) or "Its owners declined your request on {date}: “{word}”" (new word, key proposed: `screen.home.join.declined.word`), and offers "Ask to join" again (`act.projectrequest.does`: "you see their answer"). `not built` (the code sends the request with no word, and draws no answer).
 
 **States**
 
 | State | When | What shows |
 |---|---|---|
 | S1. Busy team | may start projects | C1 to C9. |
-| S2. First visit, may start | first visit after joining | C1, C2; section "Welcome, {name}" (`home.welcome.title`), `.welcome.what` [guided start], A15, link "Not now" (no word row on Home); C4 to C6, C8, C9. No C3, C7. |
+| S2. First visit, may start | first visit after joining | C1, C2; the welcome band "Welcome. Your team's wizard can walk you through your first screens; start it when you are ready." (`screen.guide.welcome`), A15, button "Not now" (`screen.guide.notnow`), and the chip "Show me how ({n})" (`wizard.marks.chip`); C4 to C6, C8, C9. No C3, C7. |
 | S3. First visit, may not start | lacks the right | C1; S2's welcome; section "Getting into a project" (`.join.heading`): `.join.lead` [not in a project yet]; rows with A7, A8; note `.join.nocreate` ["… Administrators: {admins}. …"]; A13 alone. No C8, C9. |
 | S4. May not start, nothing open | nothing to join | C1; "Getting into a project" with `.join.none` ["No project is open to you yet. …"]; A13. |
 | S5. Founder, new team | no members, no projects | C1; section "Your team's Civicsmith is ready" (`home.ready.title`), `.nothingyet`; numbered A18, A19 with `.first.invite` [Civicsmith sends no email], A20 with `.first.identity`, "Open your first project: choose below what happened." (`.first.project`); C8, C9. Nothing else. |
@@ -80,7 +80,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 | A12. door buttons "A problem I live with", "A person", "A payment or contract", "Something I read", "A tip or documents" (`door.front.<door>.name`, `door.front.<door>.hint`; `startfrom`) | S1, S2, S5 | its offer opens in place: suggested wizards, `door.front.matching`, `door.front.blank` ["None of these: start a project from a blank page."] |
 | A13. door "Help for my own situation" (`door.front.elsewhere.name`), hint `door.front.elsewhere.hint` | always | `elsewhere` |
 | A14. button "Start a project" (`act.promote.label.home`), help `act.promote.here.home` | may start | field "The project's title" (`.title`); then `project` |
-| A15. button "Continue the guided welcome" (`.welcome.continue`) | S2, S3 | the wizard "Welcome a new member" |
+| A15. button "Continue: Welcome a new member" (`screen.guide.welcome.continue`) | S2, S3 | the wizard "Welcome a new member" |
 | A16. "Pass it to another member", "Endorse an administrator", "Add an owner", "Confirm expertise" (`act.<op>.label.home`) | routed to-do | row leaves |
 | A17. "Say who issued it, or that you could not tell" (`act.owed_taskdecide.label.home`) | issuer unknown | `not built`; as `queue` A12 |
 | A18. button "Name your team" (`home.first.name`) | S5 | `group` |
@@ -136,7 +136,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C1 (S1). Heading "Themes" (`.name`); beneath `theme.never.evidence` ["A theme gathers documents and passages … It is never evidence …"].
 - C2 (S1). Section "Every theme, newest first" (`theme.list.heading`): field "Words in a theme's name or test" (`theme.q.label`); each theme's name, "Belongs when: {test}", counts, "declared by {who}, {date}" (`.declaredby`).
 - C3 (S1). Fold "Declare a theme" (`theme.declare`): fields "Its name" (`theme.name.label`), "Belongs when" (`theme.test.label`); A3.
-- C4 (S2). Heading the theme's name; "Belongs when: {test}"; note `theme.never.evidence`.
+- C4 (S2). Heading "Themes" (`.name`) and note `theme.never.evidence`, as in S1; "Belongs when: {test}".
 - C5 (S2). Section "Placed in it" (`theme.placed`), help `.tip.placed`: each document, who placed it, when, the note; a confirmed hunch reads `.placed.confirmed` ["Placed by {who}, {date}; confirmed a hunch the assistant proposed: …"]; A5.
 - C6 (S2). Section "Hunches: not yet placed" (`theme.hunches`): "A hunch is not membership. It counts for nothing until a member places it." (`theme.hunch.note`); A4, A5.
 - C7 (S2). Section "Taken out" (`theme.out`), help `.tip.removed`: who, when, why.
@@ -158,14 +158,14 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 ---
 
-## dash-action: "Action"
+## dash-action: "The Action dashboard"
 
 - **Address** `/app/dash-action`. **Frame** working; rail Queue. **Who** every signed-in member.
 - **Purpose** The Action area as a dashboard (`.purpose`).
 - **Entry points** `home` area "Action".
 
 **Content**
-- C1. The strip; heading "Action" (no word row on this screen); beneath `.sub` ["Every clock that is running, …"].
+- C1. The strip; heading "The Action dashboard" (`screen.dash-action.name`); beneath `.sub` ["Every clock that is running, …"].
 - C2. Tiles "Clocks running", "Our move", "Their move", "Replies to read" (`.tile.clocks`, `.ours`, `.theirs`, `.replies`), with `.tile.dueweek`, `.tile.dueday`, `.tile.noreply`, `.tile.came`.
 - C3. Section "Needs you" (`home.needsyou.title`), help `.tip.yours`; rows with A1, A2.
 - C4. Section "Every action" (`.every.heading`), help `.tip.every` [the clock as a sentence]; columns "Action", "To", "Whose move", "The clock", "Next" (`.col.*`); clocks `.clock.due`, `.clock.sent`, `.clock.approve`; next `.next.record`, `.next.escalate`, `.nextready`.
@@ -192,7 +192,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 **States.** One; an empty step or tile is left out. Assistant unreachable: unchanged.
 
-**Actions.** A1 button "Vouch for them": the step leaves. A2 buttons "Adopt it" (no word row), "Keep the version you cited" (`act.keepversion.label.dash-project`): a reason; the step leaves. A3 link "Prepare Edition {n}" (`.next.prepare.label`): `ceremony`. A4 link "Open the timeline" (no word row): `timeline`.
+**Actions.** A1 button "Vouch for them": the step leaves. A2 buttons "Adopt the newer version" (existing row `act.adoptversion.label.dash-project`, as the code draws it; the mockup's "Adopt it" is not kept), "Keep the version you cited" (`act.keepversion.label.dash-project`): a reason; the step leaves. A3 link "Prepare Edition {n}" (`.next.prepare.label`): `ceremony`. A4 link "Open the timeline" (new word, key proposed: `screen.dash-project.story.timeline`): `timeline`.
 
 ---
 
@@ -256,9 +256,9 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 | Control | When | Leads to |
 |---|---|---|
 | A1. "Adopt the newer version", "Keep the version you cited" | newer version | reason "Why adopt the newer version" (`.why`); item leaves |
-| A2. link "Settle it" (no word row) | lens changed | `bias` |
+| A2. link "Settle it" (new word, key proposed: `screen.queue.lens.settle`) | lens changed | `bias` |
 | A3. "Vouch for them" (`release`) | a vouch | item leaves |
-| A4. link "Open both" (no word row) | tension | `contradiction` |
+| A4. link "Open both" (new word, key proposed: `screen.queue.tension.open`) | tension | `contradiction` |
 | A5. "Remind me again on…" (`.remind.button`) | reply due | field "Remind me again on (optional)" (`.reminder.on`) |
 | A6. link "Pick up where you left off" (`.unsent.pickup`); "Keep it for later" (`.unsent.keep`); "Drop the request, with a reason" (`.unsent.drop`) | unsent request | `request`; snoozed; dropped |
 | A7. "Read and approve it" | letter | its approval dialog |
@@ -335,14 +335,14 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 ---
 
-## capture: "Add to the record"
+## capture: "Add"
 
 - **Address** `/app/capture`. **Frame** working; rail Add. **Who** members who may add work.
 - **Purpose** Add a document, a file, or what you saw (`.purpose`).
 - **Entry points** rail "Add"; `finder` A11; a project or question; a wizard step (its act's tab opens).
 
 **Content, every tab**
-- C1. Heading "Add to the record" (`.title`); beneath "A document from an address or a file, a photo, or what you saw yourself." (`.sub`).
+- C1. Heading "Add" (`.name`); beneath "A document from an address or a file, a photo, or what you saw yourself." (`.sub`).
 - C2. From a question: "What you add here is filed under {project}, for the question {question}" (`.forq`).
 - C3. Note `.filing-later.a`, `.filing-later.b` [filed into a project later].
 - C4. Tabs A1.
@@ -363,7 +363,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 **Content, "A file or photo" (S2)**
 - C16. Drop area "Take a photo, or choose a file" (`.file.choose`); the chosen file with `.file.taken`, `.file.location`.
 - C17. Radio "How you got it" (`.file.how`), four options `.file.how.made`, `.handed`, `.sent`, `.downloaded` ["I made it myself: …", "I was handed it: …", "Someone sent it to me", "I downloaded it from a website"]; `.file.downloaded` with A13.
-- C18. Fields "Where and when" (`.file.where`), "What it shows, in your own words" (`.file.what`); choice "For which project" (no word row here); A14; note `.file.note`.
+- C18. Fields "Where and when" (`.file.where`), "What it shows, in your own words" (`.file.what`); choice "For which project" (new word, key proposed: `screen.capture.file.project`); A14; note `.file.note`.
 
 **Content, "What I saw or heard" (S3)**
 - C19. Note `.saw.note` [only what you saw or heard]; `.lead.line` with A15.
@@ -391,19 +391,19 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 | Control | When | Leads to |
 |---|---|---|
 | A1. tabs "From an address", "A file or photo", "What I saw or heard" (`.tab.address`, `.tab.file`, `.tab.saw`) | always | S1, S2, S3 |
-| A2. button "Capture" (no word row; `acquire`) | S1 | S5, S6, or a refusal beside the address |
+| A2. button "Capture from an address" (existing row `act.acquire.label.capture`, as the code draws it; the mockup's "Capture" is not kept; `acquire`) | S1 | S5, S6, or a refusal beside the address |
 | A3. button "Ask for this later" (`.address.later`) | S1 | S7 |
 | A4. buttons "Watch this address for changes" (`.address.watchbutton`), "Check it now" (`act.monitor.label.capture`) | captured | S8; a C9 result |
 | A5. button "Capture the new copy" (`.a64.capture_the_new_copy`); link "Leave it" (`.leaveit`) | C9, C11 | new copy beside the old; nothing changes |
 | A6. link "Open it" (`.openit`) | C11, C13, S6 | `document` |
 | A7. link "Cite a passage" (`capture.cite`) | C9 | `find-in` |
 | A8. button "Finish it" (`capture.finish`) | C10 | attachments fetched |
-| A9. links "See public registers" (`screen.registers.way.link`), "See watched addresses" (no word row) | S1 | `registers` (`not built`); `watching` |
+| A9. links "See public registers" (`screen.registers.way.link`), "See watched addresses" (new word, key proposed: `screen.capture.watching.link`) | S1 | `registers` (`not built`); `watching` |
 | A10. button "Show my requests for later" (`act.capturerequests.label.capture`) | S1 | C13 listed |
 | A11. buttons "Store this login" (`.logins.store`), "Give a login for this source and try again", "Show the stored logins", "Withdraw this login" (`act.owed_capturecredential<supply/list/withdraw>.label.capture`), "Show the logins your team has stored" (`.cred.list`) | S1 | stored, listed, withdrawn; no secret shown |
 | A12. button "Try the request again" (`.cred.retry`) | turned away by its source | back in the queue |
 | A13. link "Capture it from its address" (`.file.toaddress`) | S2 | S1 |
-| A14. button "Capture this file" (no word row; `captureupload`) | S2 | S9 |
+| A14. button "Capture a file or photo" (existing row `act.captureupload.label.capture`, as the code draws it; the mockup's "Capture this file" is not kept; `captureupload`) | S2 | S9 |
 | A15. link "Write down a lead" (`.lead.link`) | S3 | `leads` |
 | A16. button "Record what you saw" (`.saw.record`) | S3 | S10 |
 | A17. button "Help me write this" (`act.writinghelp.label.capture`) | S12 only | `AI`: the draft fills the field |
@@ -443,7 +443,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C8. Setting aside: `.waiting` [whose question waits]; field "Why set it aside?" (`.setaside.why`).
 - C9. Section "Set aside" (`.setaside`): "Set aside by {author}: “{reason}”" (`.asideby`); button "Restore, with a reason" (`held.restore`); none: "Nothing is set aside." (`.asideempty`).
 - C10. Bar: A5 to A7; vouch fields "What you vouch for" (`.ack`), "What you did to check" (`.mitigation`).
-- C11. `not built` (decision U5) A capture handed in through the doorbell is named in C3 by its file's own name, never a machine reference (such as "From knock:…"); beside it, for the members the team listed to read about sources, "A source" (`screen.about-knocker.name`) as a link to `about-knocker`; for every other member, "Handed in through the doorbell" (no word row), with no link.
+- C11. `not built` (decision U5) A capture handed in through the doorbell is named in C3 by its file's own name, never a machine reference (such as "From knock:…"); beside it, for the members the team listed to read about sources, "A source" (`screen.about-knocker.name`) as a link to `about-knocker`; for every other member, "Handed in through the doorbell" (new word, key proposed: `screen.held.from.doorbell`), with no link.
 
 **States.** S1 held: C1 to C10. S2 "Mine", none: `.empty.mine` ["Nothing of yours is held. …"]. S3 "Everyone's", none: `.empty` ["Nothing is held: …"]. S4 after A5: "Vouched for: {count}. They are in the record now." (`.released`). S5 after A6: `.setasidecount` ["Set aside: {count}. …"]. S6 after A7: "Restored: {count}. They wait in Held captures again." (`.restored`). S7 assistant unreachable: unchanged.
 
@@ -461,14 +461,14 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 ---
 
-## archive: the archive's title
+## archive: "Archive"
 
 - **Address** `/app/archive/<archive>`. **Frame** working; rail Add. **Who** members who may see it; a file filed out of sight shows "Filed, in a place you may not see" (`.filedunseen`).
 - **Purpose** One captured archive and each file's fate (`.purpose`).
 - **Entry points** `held` A3.
 
 **Content**
-- C1. Heading the archive's title; "Captured by {name} from {source}, {date}" (`.capturedby`).
+- C1. Heading "Archive" (`screen.archive.name`); "Captured by {name} from {source}, {date}" (`.capturedby`).
 - C2. Grade with A2; "fingerprint {short}" (`.facts`); "{entries} entries" (`.facts.entries`); "No grade note is held for this archive." (`.nonote`).
 - C3. `.summary` ["Opened when it was captured: {filed} files filed …, {notfiled} not filed, …"]; `.gradeabout`; `.samefingerprint`.
 - C4. Section "Files in it" (`.files`), column "File" (`.col`); each file one of: "Filed · held for review beside the archive" (`.filed`), `.alreadyheld`, `.folder`, `.link`, `.samename.each`, `.notfiled.password` [locked: listed, never opened], `.notfiled.size` [over the limit for one file], "Waiting to be filed" (`.waiting`). Note `.names`.
@@ -481,14 +481,14 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 ---
 
-## open-file: the file's title
+## open-file: "Opening a file"
 
 - **Address** `/app/open-file/<file>`. **Frame** working; rail Projects. **Who** members who may see the file.
 - **Purpose** Before a file opens: its risk, safe view, checks and release (`.purpose`).
 - **Entry points** `document` "Open the original file"; `held` A2.
 
 **Content**
-- C1. Heading the file's title; how it came, e.g. "Handed in at the doorbell, {date}" (`.handedin`), "Added by you, {date} · {project}" (`.byyou`).
+- C1. Heading "Opening a file" (`screen.open-file.name`); how it came, e.g. "Handed in at the doorbell, {date}" (`.handedin`), "Added by you, {date} · {project}" (`.byyou`).
 - C2. Risk chip "Low risk", "High risk" or "Held" (`.risk.low`, `.high`, `.held`), card `.risk.<level>.means`; line `.risk.low.short` or `.risk.high.short`.
 - C3. Card "The safe view" (`.safe`): `.safe.about`; mark "Derived · a safe copy of the original" (`.safe.origin`); `.safe.cite` [cite the original]; open: `.safe.ready`, `.safe.pages`.
 - C4. Section "Checks" (`.checks`): `.note.line`, "Built-in scanner" (`.tool.clamav`), `.result.*`, `.checks.none`; "Deeper check: {state}" (`.deeper.state`) with "not asked for yet", "asked for, waiting its turn", "running now", "done" (`.deeper.notasked`, `.queued`, `.running`, `.done`).
@@ -499,7 +499,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 |---|---|---|
 | S1. Low risk | fetched, nothing active | C1, C2, A1, C4; `.weekly` ["Checked again every week, …"]. |
 | S2. High risk | handed in, or active content | C1, C2, A2, A3, C3; section "Ask for a deeper check" (`.deeper`) with `.deeper.about` and C4; section "Or open it now, without a deeper check" (`.warn`): dialog "Open the original on your own device" (`.warn.title`), `.warn.why`, `.warn.ends`; "Before you open it" (`.warn.confirm`) with checkboxes "I will open it on my own device, not a shared one", "I will not enable macros or editing" (`.warn.device`, `.macros`); A4, A5. |
-| S3. Held | a scanner found something | C1, C2 "Held"; `.found.by`, `.findings`, `.found.resembles`; row `queue.scan-found.summary` with `.found.sent`; A2, A3; `.held.about` or `.held.about.outside` [two members' reasons release it]; "The file read whole" (`.whole`), `.flagged`; a reason field (no word row); A6; `.release.waiting`. No A4. |
+| S3. Held | a scanner found something | C1, C2 "Held"; `.found.by`, `.findings`, `.found.resembles`; row `queue.scan-found.summary` with `.found.sent`; A2, A3; `.held.about` or `.held.about.outside` [two members' reasons release it]; "The file read whole" (`.whole`), `.flagged`; a reason field "Why release it?" (new word, key proposed: `screen.open-file.release.why`); A6; `.release.waiting`. No A4. |
 | S4. Added by you | your own upload | C1; "High risk" with `.high.yours`; "What to do next" (`.next.head`) with `.next.yours` [read the safe view; a deeper check first]; A2, A3, C3; `.safetext`; "Checks" with `.check.notyet` ["Not checked yet: …"]. |
 | S5. Opened | after A1 or A4 | "The original was handed to your browser as a file." (`.opened`); `.digest.checked`. |
 | S6. Assistant unreachable | no AI | unchanged. |
@@ -545,7 +545,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 | Control | When | Leads to |
 |---|---|---|
-| A1. button "Find" (no word row; `findin`) | always | results here |
+| A1. button "Find in this" (existing row `act.findin.label.find-in`, as the code draws it; the mockup's "Find" is not kept; `findin`) | always | results here |
 | A2. button "Keep finding this as documents arrive" (`act.standingquestionset.label.find-in`) | question chosen | S5 |
 | A3. "Add a fact from this passage" (`act.recordpersonfact.label.find-in`) | person or office | recorded on `person` |
 | A4. "Record a dated fact" (`act.recorddatedfact.label.find-in`) | a date | recorded |
@@ -573,18 +573,13 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 Read, not run. The design is the authority.
 
-- `home` S2, S3: Home draws no "Welcome, {name}"; the wizard guide draws "Continue: {name}" (`screen.guide.welcome.continue`) (bio-plane/src/screens-wizards/guide.mjs:483).
 - `home` A17, `queue` A12: `taskdecide` is drawn only once its op is declared, and it is not (bio-plane/src/screens-daily/home.mjs:21-22, :438).
-- `dash-action` C1: heading "The Action dashboard" (`screen.dash-action.name`), not "Action" (bio-plane/src/screens-action/dash-action.mjs:53; bio-plane/src/interface-shell/browser.mjs:758-761).
-- `capture` C1: heading "Add" (`screen.capture.name`), not "Add to the record" (bio-plane/src/screens-intake/capture.mjs:627).
-- `archive` C1, `open-file` C1: headings "Archive", "Opening a file", not the archive's or file's title (bio-plane/src/screens-intake/archive.mjs:22; bio-plane/src/screens-intake/open-file.mjs:26).
-- `theme` C4: one heading, "Themes", in both states (bio-plane/src/screens-investigate/theme.mjs:21).
 - `finder` A13: the two acts are in the key list only (bio-plane/src/screens-settings/keys.mjs).
 - `find-in` S7: "Proposed by the assistant" is not drawn (no `screen.find-in.proposed.*` in bio-plane/src/screens-daily/find-in.mjs).
-- `capture` V1: `screen.capture.address.empty` is not drawn; the code refuses with `capture.fieldneeded` (bio-plane/src/screens-intake/capture.mjs:655).
-- `capture` V2, V3: each fetch refusal has two rows, `refusal.<CODE>` and `screen.capture.refusal.<CODE>`, worded differently; the design draws the first; which the code draws was not settled.
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

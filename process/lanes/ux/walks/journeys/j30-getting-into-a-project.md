@@ -1,4 +1,4 @@
-Length: 96 lines. Last section: "Changes".
+Length: 97 lines. Last section: "Changes".
 
 # J30: Getting into a project
 
@@ -75,7 +75,7 @@ Checked after a reload.
 
 1. `projects`, as Teo, lists projects 1 and 3 in its table, project 2 under "Findable" with "Ask to join", and no "Start a project".
 2. Projects 1 and 3, as Teo, show `project` S2 with `teo-r` a member in C12.
-3. Project 2, as Teo, shows S4: its title and line, `project.notmember` and "Ask to join"; no documents, questions or members.
+3. Project 2, as Teo, shows S4: its title and line, `screen.project.notjoined` and "Ask to join" (A18); no documents, questions or members.
 4. Mai's `home` C3 holds no request from Teo.
 5. Project 3 does not show in "Findable" for a member not invited to it (design: hidden, only its invited members know it exists).
 
@@ -94,3 +94,4 @@ Checked after a reload.
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: end state names `project` S4's words as the screen page has them.

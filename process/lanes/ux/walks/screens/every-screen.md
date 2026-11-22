@@ -1,4 +1,4 @@
-Length: 301 lines. Last section: "Changes".
+Length: 297 lines. Last section: "Changes".
 
 # Screens: Every screen
 
@@ -45,9 +45,9 @@ The frame is drawn by the shell around the screen. A screen's page names its fra
 | working | every screen not named below | The masthead (section 3.3), the band, the rail (desktop) or the tabs (phone), the path, the screen, and the assistant dock or the wizard guide when one is open. Needs a session: without one the shell shows `front` and keeps the address, opening it after sign-in. |
 | setup | `site`, `install`, `update`, `setup`, `join` | A plain page: no rail, tabs, masthead, member menu or dock. Opens with or without a session. |
 | public | `front`, `tour`, `reset`, `forgot`, `doorbell` | A plain page as the setup frame, drawn without a session. No weight mark is drawn on it. Tab title "{page} · {team}" (`page.title.public`). |
-| published | `published`, `review-outside`, `docket-public` | A plain page drawn without a session, headed by the team's name and ended by a foot: "{short name} · signed by an owner of the project · {fingerprint}" and the credit "Made with Civicsmith" (no word row). No weight mark. |
+| published | `published`, `review-outside`, `docket-public` | A plain page drawn without a session, headed by the team's name and ended by a foot: "{short name} · signed by an owner of the project · {fingerprint}" (new word, key proposed: `shell.pubfoot.line`) and the credit "Made with Civicsmith" (new word, key proposed: `shell.pubfoot.credit`). No weight mark. |
 | dock | `assistant`, `aimoments` | The panel beside a working screen (section 5). Never a page of its own. |
-| imported | `imported` | The working frame, with the band "Another team's case: {group} · Edition {edition} · read-only · {recreated} of {findings} findings recreated" (`screen.imported.band`). |
+| imported | `imported` | The working frame; the screen draws the band as a note under its heading, when the edition lists findings: "Another team's case: {group} · Edition {edition} · read-only · {recreated} of {findings} findings recreated" (`screen.imported.band`). |
 
 The band under the masthead in the working frame reads "**Working** · not public · seen by your team's members" (`mark.path.working.name`, `shell.band.working`); its explanation is `mark.band.means`. A review copy's band reads "{n} people outside the team can read this until {date}" (`screen.review-copy.band`).
 
@@ -167,7 +167,7 @@ Every act is a button whose words are its label (`act.<op>.label.<screen>`); its
 
 The dots are explained once: "The dots show how much an act weighs, from two to five. A button without dots does something you can undo." (`weight.dots.means`).
 
-An outward act carries the outward icon, and its explanation adds "Outward: this leaves your team's Civicsmith. Someone outside will see it." (`mark.outward.means`).
+An outward act carries the outward icon, and its explanation adds "Outward: this leaves your team's Civicsmith. Someone outside will see it." (`mark.outward.means`). Its friction is its weight's: a Reversible outward act runs on the press.
 
 The reason field, in place beside the act: field "Your reason" (`shell.reason`) with help "It is kept with the act, under your name." (`shell.reason.help`), buttons "Send with this reason" (`shell.reason.send`) and "Cancel" (`shell.cancel`). Sent empty: "Say why first: this act is sent only with your reason." (`shell.reason.needed`), and nothing is sent. Cancel closes it and sends nothing.
 
@@ -233,7 +233,7 @@ The rail (section 3) stands as built. The seven navigation categories of the Roa
 **Entry points.** A mistyped or old address; a link to something deleted or hidden; any screen whose read is refused as not visible to the member; any screen while the team's Civicsmith does not answer.
 
 **Content**
-- C1. Path "Can't open this" (`screen.unavailable.name`), the current page.
+- C1. Path: the state's title, the current page; in S1, after the screen's rail place (for example "Projects › Nothing is here").
 - C2. Heading level 1: the state's title (S1 to S4 below). No heading says "Can't open this" except S4.
 - C3. One sentence under the heading, the state's words.
 - C4. The browser tab: "Can't open this · {team} · Civicsmith".
@@ -243,7 +243,7 @@ The rail (section 3) stands as built. The seven navigation categories of the Roa
 
 | State | When | What shows (exact) |
 |---|---|---|
-| S1 An address that leads nowhere | No such screen, or no such subject | Heading "Nothing is here" (`shell.unavailable.nothing.title`); "This address doesn't lead to anything in your team's Civicsmith. It may have been typed wrong, or the link is old." (`shell.unavailable.nothing.says`); A1 and A2. |
+| S1 An address that leads nowhere | No such screen, or no such subject | Heading "Nothing is here" (`shell.unavailable.nothing.title`); "This address doesn't lead to anything in your team's Civicsmith. It may have been typed wrong, or the link is old." (`shell.unavailable.nothing.says`); A1. |
 | S2 Something you may not see | The read is refused because the member may not see it (for example a hidden project) | Heading "You can't open this" (`shell.unavailable.notyours.title`); "It exists, or it may not: either way it isn't something you can see. A hidden project shows only to its own members; ask its owner if you think you should be in it." (`shell.unavailable.notyours.says`); A1. |
 | S3 Your team's Civicsmith out of reach | No answer, or a server fault, on the session's check | Heading "Your team's Civicsmith can't be reached" (`shell.unavailable.unreachable.title`); as an alert, "Your device is offline, or your team's Civicsmith isn't answering. Nothing you did is lost: what you saved is kept there, and what you were typing is still on this page." (`shell.unavailable.unreachable.says`); note "It tries again by itself every 30 seconds. If it stays out of reach for long, tell whoever holds your team's Cloudflare account." (`screen.unavailable.unreachable.note`). No link. |
 | S4 An address outside the team's pages | Any path outside `/`, `/app`, `/doorbell`, `/tour` | Public frame (no rail, no masthead). Heading "Can't open this" (`screen.unavailable.name`); "Nothing is here. This address doesn't lead to any page of this Civicsmith." (`unavailable.public`); A3. HTTP status 404. |
@@ -252,8 +252,7 @@ The rail (section 3) stands as built. The seven navigation categories of the Roa
 
 | Control | When offered | Leads to |
 |---|---|---|
-| A1. link "Go to Home" (`shell.unavailable.home`) | S1, S2 | `home` |
-| A2. link "Search" (`shell.search`) | S1 | `finder` |
+| A1. link back to the screen's rail place, by its name (`rail.<place>.name`), or "Go to Home" (`shell.unavailable.home`) where it has none | S1, S2 | that place, or `home` |
 | A3. link "Go to the front page" (`unavailable.public.go`) | S4 | `front` at `/` (Home with a live session) |
 | (none) | S3 | The screen is tried again every 30 seconds; when the team's Civicsmith answers, the screen asked for is drawn in place, with what was typed kept. |
 
@@ -288,14 +287,11 @@ The rail (section 3) stands as built. The seven navigation categories of the Roa
 ## Differences seen in the code
 
 - The published frame draws only the screen: no team head, no signature foot, no "Made with Civicsmith" (`bio-plane/src/interface-shell/browser.mjs:1364-1367`).
-- An outward act of Reversible weight runs on the press with no full dialog; only its icon and explanation say it is outward (`bio-plane/src/interface-shell/browser.mjs:2132`).
-- `unavailable` S1 draws no "Search" link; it draws a link back to the screen's rail place by the place's name, or "Go to Home" when there is none (`bio-plane/src/interface-shell/browser.mjs:1189-1191`).
 - `unavailable` S3 does not draw the note `screen.unavailable.unreachable.note` (`bio-plane/src/interface-shell/browser.mjs:1192-1194`).
-- `unavailable`'s path shows the state's title ("Nothing is here", or the rail place then the title), not "Can't open this" (`bio-plane/src/interface-shell/browser.mjs:1148-1152`).
-- The shell menu's sign-out explanation is `shell.menu.signout_does` ("…goes to the sign-in page"), while `shell.signout.does` says "…returns to your team's page"; both rows exist (`bio-plane/src/interface-shell/browser.mjs:1308`).
-- The registry gives `imported` its own frame; the shell draws it as the working frame, the band drawn by the screen as a note (`bio-plane/src/interface-shell/index.mjs:115-121`; `bio-plane/src/screens-publish/imported.mjs:37`).
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

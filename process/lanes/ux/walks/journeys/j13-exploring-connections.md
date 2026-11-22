@@ -1,4 +1,4 @@
-Length: 95 lines. Last section: "Changes".
+Length: 96 lines. Last section: "Changes".
 
 # J13: Exploring connections
 
@@ -48,9 +48,9 @@ Status: walkable · Screens used: `people`, `person`, `explore`, `question` · F
    - 4.2 C1's count of documents naming it is now at least one.
 5. Mai goes back to `people` by the path and presses "Explore connections" (A3) on the official's row.
    - 5.1 `explore` shows state S1: C1 names the official as the start and says as of when.
-   - 5.2 The C2 group "Follow" is offered, with no box ticked (every-screen section 1, rule 1).
+   - 5.2 The C2 group "Follow" is offered with its first three boxes ticked, as C2 says.
    - 5.3 C8's two lines are marked "Comes in the first beta" and are not controls.
-6. Mai ticks the kinds from Test data, chooses the landlord in "To (optional)" (C10) and presses "Explore" (A1).
+6. Mai leaves C2's ticks as they are, ticks any further kind Test data names, chooses the landlord in "To (optional)" (C10) and presses "Explore" (A1).
    - 6.1 C3's graph from the official shows the landlord, joined through Housing notice 2026-118.
    - 6.2 C5 lists a chain from the official to the landlord: each step a link (`person`, `document`), with the chain's grade, its number of steps and its weakest step.
    - 6.3 C1's line names the official as the start and the landlord as the end.
@@ -93,3 +93,4 @@ Checked after a reload, signed in as Mai.
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: steps 5 and 6 follow `explore` C2's three default ticks (decision U13).
