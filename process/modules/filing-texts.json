@@ -1,0 +1,15 @@
+{
+  "name": "filing-texts",
+  "files": [
+    "bio-plane/src/filings/outward.mjs",
+    "bio-plane/src/filings/words.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/filings/outward.mjs",
+    "bio-plane/src/filings/words.mjs"
+  ],
+  "uses": [
+    "setup-words"
+  ]
+}

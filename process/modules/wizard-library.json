@@ -1,0 +1,24 @@
+{
+  "name": "wizard-library",
+  "files": [
+    "bio-plane/src/wizard-scripts/data.mjs",
+    "bio-plane/src/wizard-scripts/build-data.mjs",
+    "bio-plane/src/wizard-scripts/civicsmith-library.mjs",
+    "bio-plane/src/wizard-scripts/screen-registry.mjs",
+    "bio-plane/src/wizard-scripts/front-doors.mjs"
+  ],
+  "tests": [
+    "bio-plane/test/m/wizard-scripts/source/"
+  ],
+  "public": [
+    "bio-plane/src/wizard-scripts/build-data.mjs",
+    "bio-plane/src/wizard-scripts/civicsmith-library.mjs",
+    "bio-plane/src/wizard-scripts/data.mjs",
+    "bio-plane/src/wizard-scripts/front-doors.mjs",
+    "bio-plane/src/wizard-scripts/screen-registry.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "record-grammar"
+  ]
+}

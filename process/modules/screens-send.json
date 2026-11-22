@@ -1,0 +1,25 @@
+{
+  "name": "screens-send",
+  "files": [
+    "bio-plane/src/screens-action/start-send.mjs",
+    "bio-plane/src/screens-action/request.mjs",
+    "bio-plane/src/screens-action/help-records.mjs",
+    "bio-plane/src/screens-action/actionnew.mjs",
+    "bio-plane/src/screens-action/hold.mjs",
+    "bio-plane/src/screens-action/counsel.mjs",
+    "bio-plane/src/screens-action/send-steps.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/screens-action/actionnew.mjs",
+    "bio-plane/src/screens-action/counsel.mjs",
+    "bio-plane/src/screens-action/help-records.mjs",
+    "bio-plane/src/screens-action/hold.mjs",
+    "bio-plane/src/screens-action/request.mjs",
+    "bio-plane/src/screens-action/send-steps.mjs",
+    "bio-plane/src/screens-action/start-send.mjs"
+  ],
+  "uses": [
+    "op-declarations"
+  ]
+}

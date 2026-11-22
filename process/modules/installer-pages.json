@@ -1,0 +1,30 @@
+{
+  "name": "installer-pages",
+  "files": [
+    "newgroup/src/ui.mjs",
+    "newgroup/src/words.mjs",
+    "newgroup/src/guide.mjs",
+    "newgroup/src/held.mjs",
+    "newgroup/src/images.mjs",
+    "newgroup/src/release.mjs",
+    "newgroup/scripts/invite-page.mjs",
+    "bio-plane/public/newgroup/"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/public/newgroup/index.html",
+    "newgroup/scripts/invite-page.mjs",
+    "newgroup/src/guide.mjs",
+    "newgroup/src/held.mjs",
+    "newgroup/src/images.mjs",
+    "newgroup/src/release.mjs",
+    "newgroup/src/ui.mjs",
+    "newgroup/src/words.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "jurisdictions",
+    "instance-setup",
+    "installer-steps"
+  ]
+}

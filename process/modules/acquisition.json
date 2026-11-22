@@ -32,6 +32,7 @@
     "setup-words",
     "pdf-reader",
     "member-roster",
-    "runtime-limits"
+    "runtime-limits",
+    "provenance-register"
   ]
 }

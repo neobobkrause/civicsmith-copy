@@ -1,0 +1,14 @@
+{
+  "name": "act-help",
+  "files": [
+    "bio-plane/src/affordances/act-help.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/affordances/act-help.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "membership"
+  ]
+}

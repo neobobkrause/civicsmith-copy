@@ -7,9 +7,7 @@
     "agent-worker/test/",
     "agent-runner/test/worker.test.mjs"
   ],
-  "public": [
-    "agent-worker/src/ops.mjs"
-  ],
+  "public": [],
   "uses": [
     "ai-use",
     "provenance",
@@ -32,6 +30,7 @@
     "agent-runner",
     "reading-guides",
     "setup-words",
-    "agent-steps"
+    "agent-steps",
+    "agent-worker-routes"
   ]
 }

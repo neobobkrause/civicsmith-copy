@@ -1,0 +1,15 @@
+{
+  "name": "contradiction-words",
+  "files": [
+    "bio-plane/src/contradiction.mjs",
+    "bio-plane/src/contradiction/checks.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/contradiction.mjs",
+    "bio-plane/src/contradiction/checks.mjs"
+  ],
+  "uses": [
+    "setup-words"
+  ]
+}

@@ -7,11 +7,11 @@
     "jurisdictions/test/"
   ],
   "public": [
-    "jurisdictions/index.mjs",
-    "jurisdictions/profiles/oakland-alameda.mjs"
+    "jurisdictions/index.mjs"
   ],
   "uses": [
     "record-grammar",
-    "setup-words"
+    "setup-words",
+    "jurisdiction-profiles"
   ]
 }

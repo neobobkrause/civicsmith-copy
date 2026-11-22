@@ -1,15 +1,12 @@
 {
   "name": "contradiction",
   "files": [
-    "bio-plane/src/contradiction.mjs",
     "bio-plane/src/contradiction/"
   ],
   "tests": [
     "bio-plane/test/m/contradiction/"
   ],
   "public": [
-    "bio-plane/src/contradiction.mjs",
-    "bio-plane/src/contradiction/checks.mjs",
     "bio-plane/src/contradiction/index.mjs",
     "bio-plane/test/m/contradiction/fixture.mjs",
     "bio-plane/test/m/contradiction/fixtures.mjs",
@@ -32,6 +29,7 @@
     "basis-versions",
     "member-roster",
     "setup-words",
-    "test-support"
+    "test-support",
+    "contradiction-words"
   ]
 }

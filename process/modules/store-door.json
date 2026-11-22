@@ -53,6 +53,7 @@
     "ai-accounts",
     "translations",
     "test-support",
-    "op-grades"
+    "op-grades",
+    "provenance-register"
   ]
 }

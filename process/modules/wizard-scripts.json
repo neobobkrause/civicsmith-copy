@@ -23,6 +23,7 @@
     "ai-accounts",
     "setup-words",
     "project-roster",
-    "test-support"
+    "test-support",
+    "wizard-library"
   ]
 }

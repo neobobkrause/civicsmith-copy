@@ -1,4 +1,4 @@
-Length: 284 lines. Last section: "Suggestions".
+Length: 232 lines. Last section: "Suggestions".
 
 # contradiction: requirements
 
@@ -10,21 +10,11 @@ Next number: 63
 
 ### Purpose
 
-Contradiction's IDENTIFY: the plane pairs assertions worth comparing, deterministically, for a viewer, and says at which level a key found nothing; a run's machine judgement over a formed pair enters the record only as a labelled, append-only proposal. It never judges, grades, edits or closes either side.
-
-PRESENT and RESOLVE are held here too. A candidate is shown to a member who may see both of its sides, at the weight its label and key give it. A member's attributed act says what the conflict turned out to be: inline, or by taking it up as a contradiction inquiry whose conclusion records its kind. The machine may recommend only in which respects the sides may differ. Nothing here edits a side. What an act implies (a qualifier, a stale mark, a tension) is read, never written onto the side.
-
-A conflict between projects whose other side a member may not see is told to that member's project on its own side only, never naming the other side or who holds it. Each project may ask to resolve it. When every project holding a side has asked, the projects are named to each other's members, and each project's members may respond; a response reaches the other projects carrying only what its responder chose to share (DEC-85, K456).
+Contradiction's IDENTIFY, PRESENT and RESOLVE: the plane pairs assertions worth comparing, deterministically, for a viewer; a run's judgement over a formed pair (under `contradiction-words`' prompt) enters only as a labelled, append-only proposal; a candidate is shown to a member who may see both of its sides, at the weight its label and key give it, until a member's attributed act says what it turned out to be; and a conflict between projects whose other side a member may not see is told to that member's project on its own side only, until every party asks to resolve it. It never judges, grades, edits or closes either side.
 
 ### Provides
 
 Terms. A **key** is one of `K1` (one inquiry, opposite roles: a `supports` and a `cuts_against` leg of one inquiry, each naming a content row), `K2` (one subject, two held claims: two inquiries with the same subject entity, each with an accepted, unhidden basis version carrying a non-empty claim), `K3` (one referent, two held claims: accepted, unhidden, claimed versions of two different inquiries whose version legs rest on the same content row, or, where neither names one, on the same `information` target), `K4` (one entity, two sources: two cited content rows whose captures both resolve, established, to one entity, told apart by doctype or else by date as their readers state them), `K5` (one question, two projects' conclusions: two projects whose stances on one inquiry are both `concluded` (`basis-versions` R22's `conclusionOf`), adopting claims whose text differs; each side is `{kind: "stance", inquiry, project, version, claim}`; N345, DEC-84 item 3), `K6` (two amounts for one transfer: two money facts naming the same payer and payee entities, the same kind and phase or stage, and periods that overlap, whose amounts `money.reconcile` does not answer `consistent`; each side is `{kind: "money", fact, capture_sha, ref, amount, period, stage}`; ladders §5C.4, T33-48). A **side** is a claim `{kind: "claim", inquiry, version, claim, …}`, a leg `{kind: "leg", inquiry, ord, role, target, content_id, note, capture_sha, ref, extent_kind, stale}` or an extent `{kind: "extent", content_id, capture_sha, ref, extent_kind, doctype, date, read}`. A **label** is one of R1. Every refusal names `reason` and `code`, and carries its catalogue `check` and `translation`. `viewer`, `proposedBy` and `caller` are the control plane's stamps. A **weight** is `lead`, `duty`, `plurality` or `not_shown` (R24). A candidate's **state** is `open`, `dismissed`, `explained_not_shown`, `taken_up` or `resolved` (R26). A **mark** is one of R27's. **Coordinates**, **kinds** and **canons** are `inquiry`'s vocabularies (its R46). An **acceptance basis** is R30's. A candidate's **parties**, a **conflict between projects**, and a viewer who **sees it half** are R49's. A **notice** is R50's, an **opt-in** R51's, the **reveal** R52's, and a **response** and its **relay** R53's and R54's.
-
-**The judgement's words: CONTRADICTION_LABELS, JUDGEMENT_PROMPT, JUDGEMENT_PROMPT_SHA256, judgementSide(side), renderJudgementInput(pairs)** Pure; never throw.
-- **R1** [met] `CONTRADICTION_LABELS` is exactly `world`, `record`, `precision`, `unrelated`, `undetermined`, in that order.
-- **R2** [met] `sha256(JUDGEMENT_PROMPT)` equals `JUDGEMENT_PROMPT_SHA256`, the digest measured on the over-strictness gate (M-162). The prompt changes only with a new measurement that moves the digest in the same change.
-- **R3** [met] `judgementSide` keeps only `text`, `doctype`, `date` and `role`, and omits a field that is null or absent; it never fills one.
-- **R4** [met] `renderJudgementInput` is the prompt, then `PAIRS:`, then each pair numbered from 1 with its key, its context when it has one, and sides A and B through R3. A non-array renders no pairs.
 
 **pairs({key, limit, viewer}) → answer or refusal** (`op=contradictionpairs`) A read; writes nothing.
 - **R5** [met] `key` is trimmed and upper-cased; absent or blank runs every key (five, and `K6` since T33). Any other key is `CONTRADICTION_KEY_UNKNOWN` (C-60.1) naming the keys held.
@@ -135,7 +125,6 @@ Terms. A **key** is one of `K1` (one inquiry, opposite roles: a `supports` and a
 
   All are counts, never a bare percentage. `review_due` is true when `accepted / offered` ≥ 0.95 over at least 30 offered. The threshold is stated `PROVISIONAL`, as IDENTIFY's was. It carries no id, and never throws.
 - **R40** [met] (DEC-76 item 3, DEC-84 item 17). `dismissalMeasure({since?})` answers dismissed leads counted by reason, by key and by label, and `false_conflicts`: the count of `same_fact_different_precision` and `not_same_matter`. `real_conflict_not_pursued` is never counted as one. It carries no id, and never throws.
-- **R41** [not yet met] (K447 (6)). `sha256(RECOMMEND_PROMPT)` equals `RECOMMEND_PROMPT_SHA256`: the digest under which the blind fixture of dissolved pairs was measured and recorded in `MEASUREMENTS.md`. The prompt changes only with a new measurement that moves the digest in the same change.
 
 #### A conflict with a side the member cannot see (DEC-85, as Bob clarified it in K456)
 
@@ -182,13 +171,13 @@ Terms. A **key** is one of `K1` (one inquiry, opposite roles: a `supports` and a
 - `extraction`: `readingOf` for a capture's doctype and date (R9). *(not declared)*
 - `entities`: `resolutions` by its stated read contract (entities' Suggestion); `reportResolutionDefect` (its R38). *(not declared)*
 - `inquiry`, `basis-versions`: the legs, versions and version legs K1–K3 join. `inquiry`: R46–R48. `basis-versions`: `conclude` (R36), `conclusionOf` (K5), `projectsDrawingOn` (R24), and the version legs (R29). *(`basis-versions` not declared)*
+- `contradiction-words`: `CONTRADICTION_LABELS`, `JUDGEMENT_PROMPT` and its digest, `judgementSide`, `renderJudgementInput`, `RECOMMEND_PROMPT` and its digest (R5–R16, R57), and `CONTRADICTION_PAIR_CHECKS` and `CONTRADICTION_CANDIDATE_CHECKS` (every refusal here answers with its row there).
 
 ### Invariants
 
 - **R17** [met] Append-only: nothing updates or deletes a candidate but its bundles' purge (either side's bundle takes it).
 - **R18** [met] The pairing is deterministic: the same record and viewer give the same pairs; keys are added, never widened.
 - **R19** [met] No act here edits, grades or deletes a side, and no act but a member's (R31–R36) says what a candidate turned out to be. A candidate is shown to a member only by R25–R29, only to a viewer who may see both of its sides now (R10), and only at a weight R24 gives it. A conflict between projects that a viewer sees half is told to them only by R50's notice and R27's `unseen_conflict` mark, on their own side, and only when they are a joined participant of a party reached through that side (R49–R55; DEC-85).
-- **R20** [met] Each check moves here as an invariant with its test (K6): C-60.1, C-93.1–C-93.7; and C-60.2, C-60.3 and C-93.8–C-93.42 (N345; translations below).
 - **R21** [met] Whether a run is visible, running and the caller's is asked of a run gate `ai-runs` registers here as `registerRunGate(module, gate)`, `gate(run, viewer, caller) → {found, running, refusal}` (`found` false for blank, absent or invisible alike; `refusal` null or `run-rules` R5's `AI_RUN_NOT_PRINCIPAL`) (K31, K182); with none registered, R13's run checks refuse as C-93.2.
 - **R22** [met] `contradiction_candidates` is declared to record-core's purge by `a_bundle_id` and `b_bundle_id` (K23).
 - **R23** [met] No place is named in this module's behaviour or outward text.
@@ -204,45 +193,6 @@ Terms. A **key** is one of `K1` (one inquiry, opposite roles: a `supports` and a
 - **R48** [met] (DEC-77 item 1). No key pairs an aspiration: aspirations are in contact, never in contradiction.
 - **R55** [met] (DEC-85). Nothing answered to a viewer who sees a conflict half names or counts its other side, that side's kind, bundle, source, project or members, or the number of parties. The two exceptions are the opted-in projects after R52 and what a responder chose to disclose (R53). (T41, D64; amended) R50's named non-hidden parties are a third exception. The machine's reason and a member's explanation are never answered to such a viewer.
 
-Rows C-60.2, C-60.3 (`CONTRADICTION_PAIR_CHECKS`) and C-93.8–C-93.39 (`CONTRADICTION_CANDIDATE_CHECKS`) (R20; N345), with their translations; promotion stamps them:
-
-| row | code | translation |
-|---|---|---|
-| C-60.2 | `CANDIDATES_NO_SUBJECT` | "Candidates are read for one thing at a time: a question, a document part, a subject, a record, a project or one candidate. Name exactly one. Nothing was read." |
-| C-60.3 | `TENSIONS_TOO_MANY` | "At most 200 items can be asked about in one request. Ask about fewer at a time. Nothing was read." |
-| C-93.8 | `NO_CANDIDATE` | "This act is about one contradiction candidate, named by its id, and it names none. Nothing was written." |
-| C-93.9 | `NO_SUCH_CANDIDATE` | "No contradiction you can see answers to that id. One whose side you may not see is answered here exactly as one that does not exist. If it touches your project, it reaches you as a notice about your own side. Nothing was written." |
-| C-93.10 | `MACHINE_CANNOT_ACT_ON_CANDIDATE` | "Saying what a contradiction turned out to be is a member's act, and a machine credential cannot take it. A machine may recommend in which respects the two sides may differ. Nothing was written." |
-| C-93.11 | `CANDIDATE_CLOSED` | "That contradiction has already been dismissed or resolved, by the member named, and it stays as they left it. If something new bears on it, take it up as a question. Nothing was written." |
-| C-93.12 | `CANDIDATE_TAKEN_UP` | "That contradiction has been taken up as a question, which is named, and it is resolved there by the question's conclusion. Nothing was written." |
-| C-93.13 | `RECORD_CANNOT_BE_DISMISSED` | "This conflict is between two things the record itself holds, so it cannot be dismissed. It closes only when a member says how the two differ, which one is wrong, or that they really conflict. Nothing was written." |
-| C-93.14 | `DISMISSAL_REASON_UNKNOWN` | "Dismissing a lead gives one of three reasons: the same fact at different precision, not about the same matter, or a real conflict not pursued now. Choose one. Nothing was written." |
-| C-93.15 | `CLARIFY_NOT_A_TENSION` | "This is a lead the record noticed about the world, not a conflict in the record, so there is nothing to clarify. Take it up as a question, or dismiss it with a reason. Nothing was written." |
-| C-93.16 | `CLARIFY_CHOICE_UNKNOWN` | "That is not one of the answers to 'how do these differ?' for this conflict. The answers are listed with it. Nothing was written." |
-| C-93.17 | `CLARIFY_COORDINATE_UNKNOWN` | "Saying the two differ names at least one respect in which they differ, from the ones listed for this conflict. Nothing was written." |
-| C-93.18 | `CLARIFY_NO_EXPLANATION` | "Saying how the two differ is explained in your own words, unless you are accepting the recommendation shown. Add a sentence. Nothing was written." |
-| C-93.19 | `EVIDENCE_NOT_SEEN` | "Something named as evidence is not one you can see, or is a fact the record does not state. Name only what is shown to you. Nothing was written." |
-| C-93.20 | `WRONG_SIDE_UNNAMED` | "Saying one of them is wrong names which one. Nothing was written." |
-| C-93.21 | `WRONG_SIDE_NO_REASON` | "Saying one side is wrong is a kept decision, and a kept decision says why. Give the reason. Nothing was written." |
-| C-93.22 | `PLURALITY_HAS_NO_WRONG_SIDE` | "These are two projects' own conclusions, and neither is made to adopt the other's answer. Say how they differ, that they really conflict, or take the question up. Nothing was written." |
-| C-93.23 | `TAKE_UP_NO_QUESTION` | "Taking a contradiction up starts a question, and the question is yours to word. Accept the suggested wording or write your own. Nothing was written." |
-| C-93.24 | `TAKE_UP_NO_FRAME` | "The question is asked around one of the two sides. Choose which one. Nothing was written." |
-| C-93.25 | `ACCEPTANCE_NOT_STANDING` | "The recommendation you accepted is no longer standing for this contradiction, or was never made for it. Read it again, and choose. Nothing was written." |
-| C-93.26 | `ACCEPTANCE_VALUE_DIFFERS` | "You accepted a recommendation for something this act does not record. Accept only what you are recording, or record it unaided. Nothing was written." |
-| C-93.27 | `NOT_A_CONTRADICTION_INQUIRY` | "No question you can see answers to that id as one taken up from a contradiction. Nothing was written." |
-| C-93.28 | `RECOMMEND_NO_COORDINATES` | "A recommendation names at least one respect in which the two sides may differ. None was named, so nothing was written." |
-| C-93.29 | `RECOMMEND_COORDINATE_UNKNOWN` | "A recommendation may name only the respects listed for this conflict, never which side is wrong or what kind of conflict it is. Nothing was written." |
-| C-93.30 | `RECOMMEND_NO_REASON` | "Each recommendation says in one sentence why, so the member can see what the machine saw. One had no reason, so nothing was written." |
-| C-93.31 | `RECOMMEND_CANDIDATE_NOT_STANDING` | "That contradiction is not open to recommendation: it has been resolved, dismissed or taken up, or it is not shown. Nothing was written." |
-| C-93.32 | `CANDIDATE_NOT_HELD` | "This question names a contradiction the record does not hold, or one you cannot see both sides of. Take a contradiction up from where it is shown. Nothing was written." |
-| C-93.33 | `WORDS_MALFORMED` | "A piece of text in this act is longer than it may be. The field and its limit are named. Nothing was written." |
-| C-93.34 | `NOT_A_PARTY` | "The project named does not rest on the side of this conflict that you can see, so it cannot ask to resolve it or respond to it. Name the project the notice came to. Nothing was written." |
-| C-93.35 | `NOT_A_PROJECT_CONFLICT` | "This is a lead the record noticed about the world, not a conflict the record holds between projects, so there is nothing to resolve between projects. Take it up as a question, or dismiss it with a reason. Nothing was written." |
-| C-93.36 | `RESPONSE_BEFORE_OPT_IN` | "A project responds to a conflict after it has asked to resolve it. Ask first, on the notice; your response reaches the other projects only once every project holding a side has asked. Nothing was written." |
-| C-93.37 | `RESPONSE_NO_TEXT` | "A response says something in your own words. Write it, and choose separately whether to share your cover or an email address. Nothing was written." |
-| C-93.38 | `DISCLOSURE_MALFORMED` | "What a response shares about you is your cover, an email address, or neither, and nothing else. The address must be one address. The part that is not one of these is named. Nothing was written." |
-| C-93.39 | `DISCLOSURE_NOT_YOURS` | "A response may share only your own cover or your own email address. What was given is someone else's, so it was not shared. Share your own, or nothing. Nothing was written." |
-
 ### Satisfies
 
 - `docs/development/CONTRADICTION-IDENTIFY-DESIGN.md` §2 (the split), §3, §4 (the keys; undetermined not formed), §5 (the labels; no cause), §6 (viewer, bound, the empty level), §7 (the gate, the pinned prompt), §8 (one append site, versions), §9 items 1 and 3.
@@ -252,7 +202,6 @@ Rows C-60.2, C-60.3 (`CONTRADICTION_PAIR_CHECKS`) and C-93.8–C-93.39 (`CONTRAD
 - `build/layers.md`, layer 6's contract: the AI checks and never concludes.
 - N345: `BIO_Case_Making_v0_1.md` §CONTRADICTION, the two RULED 2026-09-29 subsections (DEC-76, DEC-77); DEC-84 items 1–5, 7, 11, 12, 14, 16 and 17; `CONTRADICTION-PRESENT-RESOLVE-DESIGN.md` §4–§9, §11 and §12; `BIO_Assistant_and_AI_Roles_v0_1.md` §3 (DEC-24: the machine recommends, a member disposes); `BIO_Membership_Architecture_v2.md` §7 (and §3, a cover is disclosed only by its member's choice: R53); DEC-85 and K456 (R49–R55; R19's, R25's, R27's and R29's DEC-85 parts).
 - K5's judgement (N345): the judgement over K5 pairs uses R2's pinned prompt unchanged, and R3 renders a stance side as its claim text. A K5 arm (two stances, at least one agreeing pair and one differing wording of one claim) is added to the gate's corpus. It is measured, recorded in `MEASUREMENTS.md` and passing (no false conflict) before any K5 candidate is shown.
-- What the judgement sees (K102): no change. The input stays as measured (R3, R4: each side's text, doctype, date and role, and K3's passage; 0/17 false conflicts, 9/9 recall, M-162), and the canon's text changes: CONTRADICTION-IDENTIFY-DESIGN §5 is amended to say so. The inquiry's question is added only with a new measurement on a corpus of real documents, the binding gap §7 names.
 
 ### Suggestions
 
@@ -264,7 +213,6 @@ Rows C-60.2, C-60.3 (`CONTRADICTION_PAIR_CHECKS`) and C-93.8–C-93.39 (`CONTRAD
 - **For callers (N345).** The control plane stamps `author`, `viewer`, `proposedBy` and `caller`, and routes the thirteen ops (the nine, and R50, R51, R53 and R54's four). A surface that offers "accept" shows the recommendation with its reason before the act, and sends `accepted` only when the member chose it (R44's other half).
 - **Atomicity (R36).** Write the resolution through one `promotion.promote`, then `conclude`, inside one outer `record-core.transact`, as `conformance` R6 does. If `conclude` cannot nest, the job reports it.
 - **R24's reach for `{project}`.** Use `basis-versions.projectQuestions` (its R41) to list the project's inquiries, then the candidates whose side's inquiry, or content row, is among them.
-- **The recommender's prompt** is packaged into the skill pack by `skills`, as the judgement's prompt is.
 - **R49's parties** are read with R24's reach, one query per side, so that a notice, an opt-in and the reveal count the same parties.
 - **R52 in one act.** The opt-in row and the `revealed` row are written inside one `record-core.transact`, after re-reading the parties there, so that two last opt-ins at once record one reveal.
 - **Tests for N345.**

@@ -41,6 +41,7 @@
     "civil-time",
     "setup-words",
     "translations",
-    "test-support"
+    "test-support",
+    "credentials-tables"
   ]
 }

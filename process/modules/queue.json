@@ -1,7 +1,6 @@
 {
   "name": "queue",
   "files": [
-    "bio-plane/src/queuestate.mjs",
     "bio-plane/src/queue/"
   ],
   "tests": [
@@ -42,6 +41,7 @@
     "investigation",
     "setup-words",
     "project-roster",
-    "op-grades"
+    "op-grades",
+    "queue-catalogue"
   ]
 }

@@ -39,6 +39,8 @@
     "extraction",
     "ai-runs",
     "ai-accounts",
-    "network-notices"
+    "network-notices",
+    "screens-document",
+    "screens-question"
   ]
 }

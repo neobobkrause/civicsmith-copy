@@ -28,6 +28,8 @@
     "acquisition",
     "doc-clean",
     "runtime-limits",
-    "capture"
+    "capture",
+    "record-core-tables",
+    "provenance-register"
   ]
 }

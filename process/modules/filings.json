@@ -41,6 +41,7 @@
     "accepted-work",
     "case-inputs",
     "setup-words",
-    "test-support"
+    "test-support",
+    "filing-texts"
   ]
 }

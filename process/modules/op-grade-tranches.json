@@ -1,0 +1,36 @@
+{
+  "name": "op-grade-tranches",
+  "files": [
+    "bio-plane/src/op-grades/marks.mjs",
+    "bio-plane/src/op-grades/t33.mjs",
+    "bio-plane/src/op-grades/t34.mjs",
+    "bio-plane/src/op-grades/t35.mjs",
+    "bio-plane/src/op-grades/t36.mjs",
+    "bio-plane/src/op-grades/t37.mjs",
+    "bio-plane/src/op-grades/t38.mjs",
+    "bio-plane/src/op-grades/t41.mjs",
+    "bio-plane/src/op-grades/t42.mjs",
+    "bio-plane/src/op-grades/t45.mjs",
+    "bio-plane/src/op-grades/t46.mjs",
+    "bio-plane/src/op-grades/t47.mjs",
+    "bio-plane/src/op-grades/t48.mjs",
+    "bio-plane/src/op-grades/t49.mjs",
+    "bio-plane/src/op-grades/t50.mjs",
+    "bio-plane/src/op-grades/t51.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/op-grades/t33.mjs",
+    "bio-plane/src/op-grades/t34.mjs",
+    "bio-plane/src/op-grades/t35.mjs",
+    "bio-plane/src/op-grades/t36.mjs",
+    "bio-plane/src/op-grades/t38.mjs",
+    "bio-plane/src/op-grades/t41.mjs",
+    "bio-plane/src/op-grades/t45.mjs",
+    "bio-plane/src/op-grades/t46.mjs",
+    "bio-plane/src/op-grades/t47.mjs"
+  ],
+  "uses": [
+    "setup-words"
+  ]
+}

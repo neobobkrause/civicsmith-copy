@@ -23,6 +23,7 @@
     "file-scanner",
     "file-safety",
     "store-request",
-    "translations"
+    "translations",
+    "screens-account"
   ]
 }

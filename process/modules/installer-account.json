@@ -1,0 +1,21 @@
+{
+  "name": "installer-account",
+  "files": [
+    "newgroup/src/steps/api.mjs",
+    "newgroup/src/steps/bytes.mjs",
+    "newgroup/src/steps/account.mjs",
+    "newgroup/src/steps/probes.mjs",
+    "newgroup/src/steps/scopes.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "newgroup/src/steps/account.mjs",
+    "newgroup/src/steps/api.mjs",
+    "newgroup/src/steps/bytes.mjs",
+    "newgroup/src/steps/probes.mjs",
+    "newgroup/src/steps/scopes.mjs"
+  ],
+  "uses": [
+    "setup-words"
+  ]
+}

@@ -42,14 +42,8 @@
     "bio-plane/test/m/test-support/declared-ops.test.mjs"
   ],
   "public": [
-    "bio-plane/src/store-assembly/acquire-timings.mjs",
-    "bio-plane/src/store-assembly/ask.mjs",
     "bio-plane/src/store-assembly/index.mjs",
-    "bio-plane/src/store-assembly/owner-ops.mjs",
     "bio-plane/src/store-assembly/owners.mjs",
-    "bio-plane/src/store-assembly/pending.mjs",
-    "bio-plane/src/store-assembly/register.mjs",
-    "bio-plane/src/store-assembly/transcribe.mjs",
     "bio-plane/src/store-assembly/wiring.mjs",
     "bio-plane/test/m/store-assembly/fixture.mjs",
     "bio-plane/test/m/store-assembly/g54-seed.mjs",
@@ -68,7 +62,6 @@
     "court-doctypes",
     "budget-doctypes",
     "pdf-pixels",
-    "member-roster",
     "record-core",
     "membership",
     "project-roster",
@@ -179,9 +172,14 @@
     "connection-grammar",
     "signatures",
     "reading-pipeline",
-    "agent-worker",
+    "agent-worker-routes",
     "action-grammar",
     "affordances",
-    "op-capabilities"
+    "act-help",
+    "op-capabilities",
+    "op-grade-tranches",
+    "contradiction-words",
+    "provenance-register",
+    "store-services"
   ]
 }

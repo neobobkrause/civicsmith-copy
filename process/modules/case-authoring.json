@@ -60,6 +60,7 @@
     "runtime-limits",
     "doc-clean",
     "retrieval",
-    "standards"
+    "standards",
+    "case-document"
   ]
 }

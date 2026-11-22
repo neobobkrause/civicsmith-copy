@@ -46,6 +46,7 @@
     "case-tensions",
     "publish-schedule",
     "setup-words",
-    "test-support"
+    "test-support",
+    "provenance-register"
   ]
 }

@@ -19,7 +19,7 @@
   "uses": [
     "acquisition",
     "monitoring",
-    "agent-worker",
+    "agent-worker-routes",
     "ocr-worker",
     "record-core",
     "runtime-limits",
@@ -93,6 +93,7 @@
     "interface-shell",
     "screens-settings",
     "screens-intake",
+    "screens-capture",
     "screens-daily",
     "screens-inquiry",
     "screens-entry",
@@ -122,10 +123,13 @@
     "ooxml",
     "odf-reader",
     "store-assembly",
+    "store-services",
     "store-request",
     "queue",
     "lines",
     "calculations",
-    "workbooks"
+    "workbooks",
+    "op-grade-tranches",
+    "record-core-tables"
   ]
 }

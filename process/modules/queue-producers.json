@@ -32,7 +32,6 @@
     "docket",
     "wizard-scripts",
     "case-import",
-    "civil-time",
     "machinery-producers",
     "case-tensions",
     "publish-schedule",
@@ -41,6 +40,8 @@
     "project-roster",
     "member-roster",
     "content",
-    "test-support"
+    "test-support",
+    "provenance-register",
+    "queue-words"
   ]
 }
