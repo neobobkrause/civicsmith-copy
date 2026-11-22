@@ -1,5 +1,5 @@
 {
-  "process": { "repository": "https://github.com/neobobkrause/process4", "version": "4.0.0", "commit": "eeb35f372b6ede18d22e66cc5f9b091d0eec635a" },
+  "process": { "repository": "https://github.com/neobobkrause/process4", "version": "4.0.0", "commit": "641fec39336b29f14e7f2bc38adf8376ad1307dc" },
   "tranche_branch": "p4-tranche",
   "node": "26.10.0",
   "lock_files": [
@@ -29,5 +29,5 @@
     "remove": "node bio-plane/scripts/dev-copy.mjs remove"
   },
   "process_folder": "process/",
-  "language_reader": { "name": "typescript", "version": "5.6.3", "source": ["**/*.mjs"] }
+  "language_reader": { "name": "typescript", "version": "5.6.3", "source": ["**/*.mjs"], "exclude": ["**/vendor/**", "**/dist/**", "release/**", "newgroup/src/release.mjs", "bio-plane/src/case-checker/program.mjs"] }
 }
