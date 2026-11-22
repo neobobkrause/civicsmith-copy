@@ -1,8 +1,8 @@
-Length: 106 lines. Last section: "Suggestions".
+Length: 109 lines. Last section: "Suggestions".
 
 # file-scanner: requirements
 
-Next number: 36
+Next number: 37
 
 **Size (P6).** About 600–900 lines with tests for R1–R18, plus two container images (built artifacts, PROCESS-MECHANICS §14); the provider contract and catalogue (R19–R31) add about 1,500–2,500 lines.
 
@@ -72,6 +72,9 @@ A fleet member in the group's own Cloudflare account, reached only through the p
 **The fleet member**
 - **R10** [met] The module defines the Worker hosting two container classes: `FileScanner` (ClamAV; `standard-1`, 4 GiB) and `SafeViewRenderer`; R1–R9 and R19–R31 answer through the binding. Its `fleet-member.json` states `kind:"container"`, each image by a digest-pinned reference with its base pinned by digest, `bundle`, `class_name`s, `max_instances`, `bind` (`FILE_SCANNER`) and the scheduled trigger, as `agent-runner` R13–R14 do, so `bundler` lists, describes and deploys it. It states an optional Workers VPC binding (`SECURITY_VPC`), absent by default, which the installer adds for a `reach:"tunnel"` tool. (T47; N990; K2816 (4), K2912; replaces T36's Docker Hub clause, N773, K1898, K2155) The marker and the configuration name both images by the release's registry rule, as `agent-runner`'s image is named: each a `ghcr.io/believeinoakland/<image>@sha256:<64 hex>` reference, the digest the release published, the same reference in the marker and the configuration, and no other registry named. Cloudflare Containers do not pull from `ghcr.io`, so an instance runs the images copied by digest into its own account's registry, never pulled from `ghcr.io`. (T51; N1242, K3805; amends R10) Each is a `docker.io/civicsmith/<image>@sha256:<64 hex>` reference (`file-scanner-scanner`, `file-scanner-renderer`), the digest the release published, the same in the marker and the configuration; the GitHub copy of the same digest stays published but is not named, and no other registry is named.
 - **R33** [met] (T51 CR-17; FILE-SCANNER #8 J8; K4120; amends R19) **Whose server.** `handling` also carries `on_own`, a boolean: `true` when the recipient is the organization's own server or service (a tool it runs itself), else `false`; stated by the descriptor beside `recipient`, never read from `recipient`'s words, so a page decides "on the organization's own servers" from data in any language. `validateDescriptor` refuses a descriptor whose `handling` lacks a boolean `on_own` (`DESCRIPTOR_MALFORMED`, field `handling.on_own`). Test: every catalogue descriptor's `on_own` agrees with the recipient its English names (the self-run ones `true`); control: one without it refuses.
+
+**Built files (ARCH's decision "Committed built files", 22 Nov 2026)**
+- **R36** [not yet met] `file-scanner/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `file-scanner/scripts/build.mjs` whenever needed, and this module's tests that read them build them first the same way.
 
 ## Private
 

@@ -1,8 +1,8 @@
-Length: 112 lines. Last section: "Suggestions".
+Length: 115 lines. Last section: "Suggestions".
 
 # ocr-worker: requirements
 
-Next number: 32
+Next number: 33
 
 ## Public
 
@@ -51,6 +51,9 @@ engine_loaded, engine_unavailable?}`.
 - **R28** [met] (fix round 9, G132j; N23) **A top-level guard.** Whatever throws inside a call once R1–R5 have accepted it (the renderer, the picture renderer, the PNG reader, the inflater, R2) is answered 200 `ok:false` with the reason `UNEXPECTED_FAILURE`, `stage` (which step) and the error's name, a document-level finding like R7's, never a 5xx and never a thrown error. Test: SCAN D11, a throwing renderer and a throwing R2 each answer 200 with the named reason.
 - **R29** [met] (fix round 9, G125g) An `OCR_PSM` that is set and is not a page-segmentation mode the engine accepts is refused on every call `BAD_PSM` (503), naming the value (truncated to 80 characters), checked with R5 before the body is read; it is never accepted silently.
 - **R30** [met] (fix round 9, G132i; N13) **A page routed here is read though it shows text.** A page the plane sends to this member has been judged to need OCR (a folio on a scanned page, a stamp): the page renderer is asked with `allowTextPage: true`, so it is never refused `PAGE_HAS_TEXT_LAYER` (`pdf-pixels` R16), and the OCR text is returned for the plane to append to the text already held. Test: a scanned page carrying a printed folio is transcribed, not refused.
+
+**Built files (ARCH's decision "Committed built files", 22 Nov 2026)**
+- **R32** [not yet met] `ocr-worker/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `ocr-worker/scripts/build.mjs` whenever needed, and this module's tests that read them (`doctypes/test/capture-policies.mjs` among them) build them first the same way.
 
 ## Private
 

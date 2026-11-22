@@ -1,8 +1,8 @@
-Length: 75 lines. Last section: "Suggestions".
+Length: 78 lines. Last section: "Suggestions".
 
 # pdf-worker: requirements
 
-Next number: 45
+Next number: 46
 
 ## Public
 
@@ -44,6 +44,9 @@ the build actually serving rather than the build that was meant to (D-108).
 (the fleet-coverage instrument that read them, `bio-plane/scripts/coverage.mjs`, retired with `tools/`, K739).
 - **R35** [met] `SURFACE` names exactly `structure` (`POST`) and `version` (`GET`), each `mutating:false` — this member asserts nothing (fleet rule 2).
 - **R36** [met] `fleet-member.json` names `entry` (`src/index.mjs`), `surface` (`"SURFACE"`), `testDir` (`"test"`), and the bundle recipe: `entry`, `outfile: dist/pdf-worker.bundled.mjs`, `manifest: dist/pdf-worker.bundle.json`.
+
+**Built files (ARCH's decision "Committed built files", 22 Nov 2026)**
+- **R45** [not yet met] `pdf-worker/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `pdf-worker/scripts/build.mjs` whenever needed, and this module's tests that read them build them first the same way.
 
 ## Private
 
