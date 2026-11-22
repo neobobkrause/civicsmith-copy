@@ -30,7 +30,7 @@ The member's steps are those of the wizard "Welcome a new member" (7 steps), ope
 |---|---|
 | Invitation | short id `teo`; cover "Teo, from flat 9"; no capability ticked beyond the default |
 | Teo's language | English |
-| Teo's handle | `teo-n` |
+| Teo's handle | `teo-r` |
 | Teo's password | 12 characters or more, chosen by the walking session, never reported |
 | Teo's first step | capture housing notice 2026-118 from its address (served on the development copy where ARCH says) |
 
@@ -46,12 +46,12 @@ The member's steps are those of the wizard "Welcome a new member" (7 steps), ope
    - 3.1 The choice starts from his device's setting and lists each language in its own name.
    - 3.2 After choosing, the page reads in that language.
 4. Teo types his handle and checks it (A1), then his password twice, and joins (A2) (wizard step 2).
-   - 4.1 While he types, C4 says `teo-n` is free in Lakeshore Tenants (S1), under C3's line that a handle can't be changed.
-   - 4.2 After A2, `join` shows S6: joined, signed in as `teo-n` on this device; his ten recovery codes, with the buttons to save and copy them.
+   - 4.1 While he types, C4 says `teo-r` is free in Lakeshore Tenants (S1), under C3's line that a handle can't be changed.
+   - 4.2 After A2, `join` shows S6: joined, signed in as `teo-r` on this device; his ten recovery codes, with the buttons to save and copy them.
 5. Teo saves his ten codes as a file and follows A6, "Go to your team's home" (wizard step 3).
    - 5.1 `home` opens in S4 (may not start projects, nothing open to him): C1 with the team's name and its description; "Getting into a project" with `.join.none`; A13. No "What happened?" doors (C8) and no "Start a project" (C9).
    - 5.2 The guide "Welcome a new member" is open beside Home at step 3 of 7.
-   - 5.3 The masthead shows "You: teo-n" and no "Assistant" button.
+   - 5.3 The masthead shows "You: teo-r" and no "Assistant" button.
 6. Teo goes to the guide's next step (wizard step 4: a question's strength against its bar, and "Undetermined").
    - 6.1 The guide is at step 4 of 7.
    - 6.2 With no question in the team, what the step opens (design silent: lane to confirm; the wizard names "your team's most recent question").
@@ -73,7 +73,7 @@ The member's steps are those of the wizard "Welcome a new member" (7 steps), ope
 
 Checked after a reload.
 
-1. Rosa's `members` shows "Active members: 3 · Administrators: 1", with `teo-n` (cover "Teo, from flat 9"), a member who may contribute, no expertise.
+1. Rosa's `members` shows "Active members: 3 · Administrators: 1", with `teo-r` (cover "Teo, from flat 9"), a member who may contribute, no expertise.
 2. Teo's `home` shows S4 with no guide open (design silent: lane to confirm Home's state once his capture waits; C3 "Needs you" may list it to vouch).
 3. Teo's `held` ("Mine") lists the captured notice; opened (A4), its `document` shows S2, held until he vouches, only he seeing the copy.
 4. Teo's `connect` and `ties` are as before he joined: nothing connected, no tie.

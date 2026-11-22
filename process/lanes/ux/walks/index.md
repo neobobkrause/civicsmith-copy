@@ -1,4 +1,4 @@
-Length: 106 lines. Last section: "6. Changes".
+Length: 127 lines. Last section: "8. Changes".
 
 # civicsmith: the walks' documents — index
 
@@ -95,12 +95,33 @@ One made-up team in one made-up city, the same the product's own walker and mock
 | City | Lakeshore |
 | Team | "Lakeshore Tenants", short name `lakeshore-tenants` |
 | Founder and first administrator | Rosa, handle `rosa-l` |
-| Members | Mai (new member), Dev, Ana (an accountant, who lends expertise), Teo (a reporter) |
+| Members | Mai, handle `mai-k` (made a member by J28); Teo, handle `teo-r` (made a member by J03); Dev, Ana (an accountant, who lends expertise) |
+| Projects | "Roof repairs" (made by J06); "Roof repairs at 14 Lakeshore Row" (made by J15, and by J29 on its own copy) |
 | Question used across journeys | "Has the landlord been ordered to repair the roof of 14 Lakeshore Row?" |
 | The city's document it rests on | Housing notice 2026-118, which orders the roof repair |
 
 A journey page names any further data it creates, in its own "Test data" table. Where a document must be captured from an address, the journey names the document; which address serves it on a development copy is ARCH's to say.
 
-## 6. Changes
+## 6. The order of walking
 
-- 22 Nov 2026: written. The pages are being filled in from the earlier material; until a page exists, its row above names it only.
+Each journey's page names the journeys it follows. On one copy, from a fresh install:
+
+1. J28 makes the team, Rosa and Mai. Then J02, J03 (Teo), J33, J35, J34, J05, J30, J27.
+2. J31, then J06 (the project "Roof repairs"), then J07, J08, J09, J16, J10, J11, J12, J13, J14, J19; with an AI account, J04, J17, J18.
+3. J15 to its step 17, then J21, then J15 from step 18; then J26, J22, J23, J24.
+4. J20 and J25 need what their pages name: a visitor at the doorbell; a second team's copy with a published case.
+
+J01 and J29 each install, so each needs a fresh copy of its own. J32 needs two AI providers' accounts.
+
+## 7. What a walk needs that the pages cannot give
+
+For ARCH, who deploys and names the areas:
+
+1. An address on the development copy's reach serving each document a journey captures: Housing notice 2026-118 (J06, J15, J29), an amended notice at the same address (J23), and the budget, report, court order and register J07, J09, J12, J14 name.
+2. A second team's copy with a published case (J25), and two AI providers' accounts (J32).
+3. Time passing: J18's scheduled re-run, J19's passed due date and ready release, have no designed way to happen within a walk.
+4. The three installing journeys (J01, J28, J29) use the one development account, which must hold no Civicsmith before each install.
+
+## 8. Changes
+
+- 22 Nov 2026: written, with all eleven screen pages and all 35 journey pages. Lines marked "(design silent: lane to confirm)" are the lane's open design work.

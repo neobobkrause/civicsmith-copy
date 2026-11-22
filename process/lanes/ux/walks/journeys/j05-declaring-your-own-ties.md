@@ -14,7 +14,7 @@ Status: walkable · Screens used: `settings`, `account`, `ties` · Follows: J28 
 
 1. Mai (`mai-k`), a member, signed in. Any member may declare ties; only she and the administrators see her list.
 2. Rosa (`rosa-l`), the administrator, signed in, for step 8.
-3. Teo (`teo-n`), a member, for step 9, where J03 has been walked.
+3. Teo (`teo-r`), a member, for step 9, where J03 has been walked.
 
 ## Before it starts
 
@@ -62,7 +62,7 @@ The ties are made up for the walk; the landlord and the housing office are those
    - 7.1 `ties` opens, in S1, listing tie 1: the second way in leads to the same list.
 8. Rosa, an administrator, looks for Mai's ties. (design silent: the screen on which an administrator sees another member's ties; `ties` shows each member their own; lane to confirm)
    - 8.1 Rosa's own `ties` lists none of Mai's ties.
-9. Teo (`teo-n`), a member who is not an administrator, opens `ties`. Walked only where J03 has made him a member on this copy.
+9. Teo (`teo-r`), a member who is not an administrator, opens `ties`. Walked only where J03 has made him a member on this copy.
    - 9.1 Teo's `ties` lists none of Mai's ties.
 
 ## End state
