@@ -1,0 +1,89 @@
+Length: 89 lines. Last section: "Suggestions".
+
+# hypotheses: requirements
+
+Next number: 24
+
+**Size (P6).** New. Expected 500–700 lines. It is not added to `inquiry` (3,903 lines, P6).
+
+## Public
+
+### Purpose
+
+A member's hunches and hypotheses, held as labelled rows of the working inquiry (K1467): never facts, never legs, never moving a grade or a finding. In an exploration they may be hops of that inquiry, and any chain through one is a lead. This module also holds the store-side check that keeps a hypothesis out of a leg. Since T34 it also holds each member's own notes (DEC-136; K1745), seen only by their author and turned into an observation, a hunch or a question only by the author's act.
+
+### Provides
+
+Terms. A **hypothesis** is `HYP-` (`record-grammar`; `isHypothesisId`). A **viewer** is the control plane's stamp; it fails closed when absent. Every refusal is `{ok: false, reason, detail}`; one with a catalogue row carries `code`, `check` and `translation`.
+
+**hold({inquiry, kind, statement, about, by}), revise({hypothesisId, statement?, about?, reason, by}), withdraw({hypothesisId, reason, by}), hypothesesOf({inquiry, viewer}), read({hypothesisId, viewer})** (`op=hypothesishold`, `op=hypothesisrevise`, `op=hypothesiswithdraw`, `op=hypotheses`)
+- **R1** [met] `hold` records one `HYP-` in an inquiry, of kind `cause`, `identity`, `relation`, `flow` or `other`, with the member's statement and the nodes it is about (each an id `record-grammar` knows; for `relation`, `cause` and `identity`, exactly two, `from` and `to`). Refusals, in order: `NO_SUCH_BUNDLE` (an absent or invisible inquiry, one answer), `NOT_AN_INQUIRY`, `MACHINE_CANNOT_HYPOTHESISE` (the stamp is a machine's: only a member holds a hypothesis, K1473), `UNKNOWN_HYPOTHESIS_KIND` (naming the five), `HYPOTHESIS_NO_STATEMENT`, `BAD_ABOUT` (naming the node). It answers `{ok, hypothesis_id, kind, label: "hypothesis", at}`. (N608; K1679; DEC-49 arm A) The statement's code is this module's own, `HYPOTHESIS_NO_STATEMENT`, its row C-134.5 with its number and translation unchanged, where it was `NO_STATEMENT`, a code `case-authoring` (C-33.14) also holds; a revision with an empty statement (R2) is refused by the same code.
+- **R2** [met] A hypothesis is never edited in place: `revise` appends a revision and `withdraw` marks it withdrawn, each with who, when and why (`HYPOTHESIS_NO_REASON`, `NO_SUCH_HYPOTHESIS`); every read shows its history. (N608; K1679) The reason's code is this module's own, `HYPOTHESIS_NO_REASON`, its row C-134.7 with its number and translation unchanged, where it was `NO_REASON`, a code `progressions` and `duties` also held; no refusal of this module answers `NO_STATEMENT` or `NO_REASON`.
+- **R3** [met] Every read answers a hypothesis labelled as a hypothesis, the member's, never a fact, with no grade. A hypothesis in an inquiry the viewer may not see answers exactly as an absent one and is counted nowhere (K1489).
+
+**neighbours({node, kinds, at, page, viewer, scope})** (registered with `connection-grammar`)
+- **R4** [met] At start the module registers as the owner of the kind `hunch` of class `hunch` (`connection-grammar.registerOwner`). `neighbours` answers a hop for each live hypothesis with a `from` and `to` of which `node` is one only when the `scope` passed to the owner (the inquiry's id, explore's `{inquiry}` unwrapped; K1601) is the inquiry holding it and the viewer may see that inquiry; outside that scope it answers none. Each hop is in `connection-grammar`'s shape, labelled `hunch` with no grade (its R1), with the hypothesis as its evidence. It passes `connection-grammar`'s owner-conformance battery.
+
+**The leg check** (registered with `promotion`, its R39; K1467, K1487)
+- **R5** [met] A registered check of every promotion of an inquiry refuses, inside `BASIS_REFUSED`, a leg whose target is a hypothesis id (`HYPOTHESIS_NOT_A_LEG`), naming the leg.
+- **R6** [met] The same check refuses a leg whose target is a derived connection id, or a calculation leg whose inputs name one, when `explore.rederive` answers that its chain carries a declared or hunch hop (`LEAD_NOT_A_LEG`, naming the hop), or cannot re-derive it (refused, never passed). (T34-30; N576, K1601) The calculation arm asks: a leg whose target is a `CALC-` id (either form `record-grammar`'s `idPattern("CALC")` reads, K1728) has its inputs read synchronously through `calculations.gradeFactsOf({calcId, viewer})` (its R30), `viewer` the promotion's author; an input whose reference is a hypothesis id is refused `HYPOTHESIS_NOT_A_LEG` (R5), and an input whose reference is a derived connection id is judged as a leg on it is, an input whose derivation the answer does not carry being one that cannot be re-derived. A calculation the read answers `{found: false}` (not held, or withheld from that viewer), or a read that throws or answers no such shape, is refused `LEG_NOT_REDERIVED`, naming the leg, never passed (fail closed); the arm no longer asks nothing when no read is wired.
+
+**A member's own notes** (T34-30; N558; DEC-136 (2), (3), Bob's; home named by K1745)
+
+Terms. A **note** is a member's own words kept in the group's copy, seen only by that member: never cited, published, counted or shared, and turned into an observation, a hunch or a question only by that member's act (DEC-136 (3)). A note is a row of this module's table keyed by a number of its own, answered to its author alone; it is not a record id (`record-grammar`'s `ID_TABLE` holds no prefix for it), so no leg, reference, citation, connection, search or count names one.
+
+**noteWrite({text, by}), noteRevise({note, text, by}), notesOf({viewer, after?, limit?}), noteTurn({note, into, by, hunch?, made?}), noteDelete({note, by})** (`op=notewrite`, `op=noterevise`, `op=notes`, `op=noteturn`, `op=notedelete`; the last two of each since T35, DEC-144)
+- **R11** [met] `noteWrite` keeps one note in the member's words. Refusals in order, each writing nothing: an empty or machine `by` `MACHINE_CANNOT_NOTE` (only a member keeps a note); `text` absent, not a string or blank once trimmed `NOTE_NO_TEXT`; `text` over 131,072 bytes `NOTE_TOO_LONG`, refused, never cut (`observation-log` R14's bound for a member's own words). It answers `{ok, note, at}`. While `membership.courtNotice().choice` is `tell` (membership R107), the first note a member keeps while it is `tell` answers also `courtStatement`, exactly membership R108's sentence, and no later note of that member answers it; otherwise the key is absent (DEC-136 (1), (3)). (T35; DEC-144) `noteRevise` replaces, in place, the text of one note `by` kept. Refusals in order, each writing nothing: `MACHINE_CANNOT_NOTE`; `NO_SUCH_NOTE` (R13's: a note absent, deleted or kept by another, one answer); `NOTE_NO_TEXT`; `NOTE_TOO_LONG` (the same bound, refused, never cut). It answers `{ok, note, at}`, `at` the revision's instant, and never `courtStatement`. The note keeps its number and its turns (R13); its earlier text is kept nowhere (R14).
+- **R12** [met] `notesOf` answers the viewer's own notes, newest first, each `{note, text, at, revised, turned}`, `revised` the instant of its last revision (R11) or null, `turned` the turns R13 recorded on it (`{into, id, at}`, in order), at most `limit` (default 200, clamped 1…1000) with `truncated` and `next`. Only a viewer naming the member who kept a note is answered it: any other viewer, an administrator, the founder and a machine credential included, and a call without a viewer, read none, answered exactly as a member with no notes, and nothing of this module counts, lists or names another member's notes or how many they keep. (T35; DEC-144) A note is answered with its current text only, and a deleted note (R13) is in no answer.
+- **R13** [met] `noteTurn` records that a note became an observation, a hunch or a question, by its author's own act. Refusals in order, each writing nothing: an empty or machine `by` `MACHINE_CANNOT_NOTE`; `note` absent, or not one `by` kept, `NO_SUCH_NOTE` (one answer for both); `into` not `observation`, `hunch` or `question` `NOTE_TURN_UNKNOWN`. For `hunch` a note longer than R1's statement bound (4,000 characters) is refused `NOTE_TOO_LONG_FOR_HUNCH`, naming the bound, never cut (K1807); otherwise the hypothesis is held here by R1's `hold`, its `statement` the note's text and its `inquiry`, `kind` and `about` from `hunch`, with R1's refusals answered unchanged and nothing recorded on the note when `hold` refuses. For `observation` and `question` the object is made by its owner's own act at the member's choice (`observation-log`; `inquiry`, a question's promotion), and `made` names the id that act answered, a record id `record-grammar` knows (`BAD_ABOUT`'s test; otherwise `NOTE_TURN_NOT_MADE`). The turn is appended to the note with `{into, id, at}`; the note itself is unchanged, stays its author's alone and is never deleted by the turn. What the turn made is an ordinary object of its owner, seen as its owner's sight says, and carries nothing of the note but the words the member chose to put in it. (T35; DEC-144) A turn never deletes the note: after it the note may still be revised (R11) and deleted. `noteDelete` deletes one note `by` kept, for good. Refusals in order, each writing nothing: `MACHINE_CANNOT_NOTE`; `NO_SUCH_NOTE` (absent, already deleted or kept by another, one answer). It answers `{ok, note, deleted: true}`. The note's text and its turns go with it, and nothing marks that it existed (R14); what a turn made stays an ordinary object of its owner, unchanged.
+
+**The ops map**
+- **R7** [met] The module publishes `hypothesesOps(hypotheses, url, body)`, route arms for the ops above, and (T34-30) for R11–R13's `op=notewrite`, `op=notes` and `op=noteturn`, and (T35) for R11's `op=noterevise` and R13's `op=notedelete`, and (K2486, K2508) for R18's `op=hypothesissetaside` (`hypothesisSetAside`, `proposal` and `reason` from the body), and (T41-16; K2651, wording) for R17's `op=hypothesistakeup`, R19's `op=noteshare`, R20's `op=noteunshare` and R21's `op=shares`, each act's member the control plane's stamp, never the body.
+
+**The system's proposals** (T41-16; D33, D46 A, D3)
+- **R16** [met] (D33, D46 A; H30 (6)) `hypothesisPropose({inquiry, kind, statement, about, how, false_alarm_rate, run})`, the machine's only door: stored apart, labelled "the system's" with how it was worked out and its measured false-alarm rate (K1473), answered to everyone who sees the inquiry under a heading of its own and offered with its finds, never in `hypothesesOf` as held, never a fact or a leg.
+- **R17** [met] (D3) `hypothesisTakeUp({proposal, form, statement?, by})`, a member's act (`record-grammar` R52), holds it by R1 as hers, noting it came from the system.
+- **R18** [met] A proposal set aside by a member stays readable with her reason. R1's `MACHINE_CANNOT_HYPOTHESISE` stands for `hold` (K1467).
+
+**A note shared with a project** (T41-16; D18)
+- **R19** [met] (D18) `noteShare({note, project, by})` by the note's author, a joined participant of `project`: copies the note's current words into a share of that project, seen by its participants, labelled as hers and as narrative; never evidence, a leg target, content, published or carried by a case. A note naming a person in no public role carries `inquiry` R59's warning at the act, through `inquiry.personWarning` (answered as `warning` and recorded with the share; never a refusal; K2479).
+- **R20** [met] (D18) `noteUnshare({share, by})` by its author withdraws it: its words leave every answer, and the project's record keeps that a note was shared by her on that date and withdrawn on that date, without its words.
+- **R21** [met] `sharesOf({project, viewer})` answers the project's participants its standing shares, newest first, at most 200.
+
+## Private
+
+### Uses
+
+- `inquiry`: `personWarning` (its R59; R19; K2479). A new `modules.json` edge; `inquiry` is earlier (layer 6).
+- `record-grammar`: `ID_TABLE` (`HYP-`), `idPattern`, `isHypothesisId`.
+- `record-core`: `allocId`, `transact`, `declareTable`.
+- `membership`: `viewerPredicate`, `inSight`; `courtNotice` (its R107) and R108's sentence (R11; T34-30); `positionalMember` (its R76), naming a note's member (since T34; K2136).
+- `promotion`: `registerStep` (R5, R6). *(an edge beyond plan Rule 3's list)*
+- `connection-grammar`: `registerOwner`, the shape, the battery (R4).
+- `explore`: `rederive` (R6). *(an edge beyond plan Rule 3's list)*
+- `calculations`: `gradeFactsOf` (its R30), synchronous (R6; T34-30, N576).
+- `inquiry`: the inquiry's existence, type and visibility (R1, R3).
+
+### Invariants
+- **R23** [met] (T46; K2926) R14's renumbering, and every migration this module runs at boot, uses only statements a Durable Object's SQLite authorizes: no `TEMP` table, view or trigger and no other statement workerd refuses `SQLITE_AUTH`; its working map is an ordinary table created and dropped inside the one transaction. Tested where workerd runs it: a store numbered from the shared sequence, holding notes and turns, renumbered on the plane's own runtime.
+
+- **R8** [met] Never a fact: no hypothesis moves a grade, a strength pair, a basis or a finding; this module writes nothing to any other module's table (K1467).
+- **R9** [met] A hypothesised cause stays a hypothesis: nothing here records a cause as an event relation (`stated_cause` is a source's claim, `events`') (DEC-84 (10), K1461).
+- **R10** [met] Table declaration (`record-core`): `hypotheses` and their revisions keyed by the inquiry's `bundle_id`, purged with it, sight the inquiry's, export `yes`. No place is named in behaviour or outward text.
+- **R14** [met] (DEC-136 (2), (3)) Notes are never cited, published, counted or shared: no read of this module but R12 answers a note or a count of notes; no figure source, tally, `retrieval` registration, `connection-grammar` owner, `bias` work product, queue item or notification is made from one; and a promotion leg, reference or citation naming a note is impossible by its key (R11's Terms). (T35; DEC-144) No history and no marker: after a revision no row, log entry or answer of this module holds the earlier text, and after a deletion none holds the note, its text, its turns or a sign that it existed; a later note never takes a deleted note's number. (T36; N727; K2007, K1489) No note's number is drawn from a sequence shared across members: the numbers a member's notes carry, their order and their gaps depend only on that member's own notes, so they reveal nothing of whether, or how many, notes any other member keeps, kept or deleted; a note kept before this rule is answered by such a number too. (T41, D18; amended) "Never shared" reads "never shared except by its author's R19 act, which shares a copy of its words"; R14's no-history rule holds for the private note, and R20's marker is the share's, never the note's.
+- **R15** [met] (DEC-136 (2), (3); K1489) The notes table is declared through `record-core.declareTable` with `sight: "owner"` and `export: "never"` (as `answers`' standing questions, K1481), `purge` `clear`, `version_chain` `false`; it is held in the group's copy like every other table (reachable as everything in the copy is, the reason for R11's court statement). No place is named in behaviour or outward text. (T35; DEC-144) A revision overwrites the note's row and a deletion removes the row and its turns in the one act; no table this module declares keeps the earlier text or the deleted note.
+- **R22** [met] (T42; N843; K231, K275, K2566) This module's codes name its own conditions. A proposal of the system's with no run (R16) is refused `HYPOTHESIS_PROPOSAL_NO_RUN` (C-134.22), and a proposal absent or unseen at R17's or R18's act is refused `NO_SUCH_HYPOTHESIS_PROPOSAL` (C-134.23). Each row keeps its number and translation. It never answers `PROPOSAL_NO_RUN` (action-plans') or `NO_SUCH_PROPOSAL` (intent's).
+
+### Satisfies
+
+- `docs/architecture/BIO_Capability_Ladders_v0_1.md` §2 CONNECTIONS (item (4) of "What it passes through"), "Cross-cutting rulings" (exploration); §10 rows "Hypotheses have a place, never in findings", "Cause is stated, never inferred", "Machine signals live in the hypothesis layer".
+- Bob's rulings K1467, K1473, K1487, K1489; BOB's K1470 (constructs-2 §4.2 (h), as narrowed by K1487).
+- DEC-136 (2), (3) (R11–R15); DEC-144, decided by the design session beneath DEC-136 (a member revises and deletes their own note; R11–R15 as amended in T35; K1774).
+- DEC-15, DEC-20, DEC-84 (10).
+
+### Suggestions
+
+- **Callers' obligations.** The other store-side refusals of a hypothesis id are the earlier modules' own, through `record-grammar.isHypothesisId`: a total (`calculations` R4), a check (`people` R22), an absence level (`observation-log`, owed). This module cannot be called by them (P4).
+- **A signal taken up.** A member may hold a hypothesis from a "Noticed" item (K1473); the item's id may be one of `about`'s nodes.
+- **Tests.** R4 inside and outside scope; R5 and R6 with negative controls (a leg on an ordinary connection id passes); R3 a hidden inquiry.
+- **T35 (T35-41; DEC-144).** `noteRevise` and `noteDelete` reuse the notes' rows (C-134.13–C-134.16), so those rows' `where` widen to name the new sites, awaiting promotion's stamp (accepted red 2); no new code. Tests: a revision answered by R12 with the new text and no trace of the old (the table read directly); another member's, an administrator's and a machine's revise and delete answered `MACHINE_CANNOT_NOTE` or `NO_SUCH_NOTE` exactly as an absent note, writing nothing; a turned note deleted, its turn gone and the hypothesis it made unchanged; a deleted note's number never answered again. `op-declarations` declares `noterevise` and `notedelete` (T35-70), which the screen registry marks `owed:noterevise DEC-144`, `owed:notedelete DEC-144`; that is its obligation, not this module's.
