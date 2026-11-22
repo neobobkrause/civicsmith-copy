@@ -1,4 +1,4 @@
-Length: 460 lines. Last section: "Changes".
+Length: 462 lines. Last section: "Changes".
 
 # Screens: The record
 
@@ -41,6 +41,7 @@ What the record follows: people and organizations, time, money, calculations, co
 - C4. Heading 2 "In your projects" (`.yours`), then heading 2 "Everyone else the record follows" (`.others`), newest added first in each. Each row: the name as a link to `person`, who they are today, "named in {documents}, {questions} and {projects}" (`.counts.three`; or `.counts.docsonly`, `.counts.none`), "newest added {date}" (`.newest`), and button "Explore connections" (`act.explore.label.people`).
 - C5. Button "Add someone the record follows" (`act.entitycreate.label.people`), Asks for a reason.
 - C6. Over many rows: "The first {n} are shown. Search or filter to find the rest." (`.more`).
+- C7. In S5, as "Their name" is typed, the close names the record already follows, as S7 lists them: `.addother.preflight` ("Nothing the record follows answers to “{name}” yet. Close names are listed here, so you do not make a second page for the same thing.") and each close name as a link to its `person`, with "The same name", "Contains the name you typed" or "Spelled almost the same" (`people.nearmatch.*`). Pressing A5 still follows the name, as a second record; a member says two records are one on `person` (A6). `not built` in S5 (the code lists close names in S7 only).
 
 **States**
 

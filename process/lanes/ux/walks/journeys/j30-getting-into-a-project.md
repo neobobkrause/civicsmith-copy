@@ -1,4 +1,4 @@
-Length: 95 lines. Last section: "Changes".
+Length: 96 lines. Last section: "Changes".
 
 # J30: Getting into a project
 
@@ -48,7 +48,7 @@ Status: walkable · Screens used: `projects`, `project`, `front`, `home`, `membe
 5. Teo presses "Join" (A7) on project 3's row.
    - 5.1 The row leaves "Getting into a project"; Teo is a member of project 3.
    - 5.2 Opening project 3 shows `project` S2 to him, C12 listing `teo-r` as a member, not invited.
-6. Teo presses "Ask to join" (A8) on project 1's row, with a word on why. (design silent: `home` A8 draws no field for a word on why, though the journey's source has one; lane to confirm)
+6. Teo presses "Ask to join" (A8) on project 1's row, writing a word on why in its optional field (`home` C10, `not built`: until it is built, he asks with no word).
    - 6.1 The row reads "You asked to join on {date}. Its owners decide." with today's date, and offers "Withdraw your request".
 7. Teo presses "Ask to join" on project 2's row.
    - 7.1 Project 2's row reads the same line, with "Withdraw your request".
@@ -82,7 +82,7 @@ Checked after a reload.
 ## Ways it can turn aside
 
 1. **Nothing open to him.** If no project is findable and none invites him, `home` shows S4: "Getting into a project" with `.join.none`, and A13 only. The journey ends.
-2. **The owner declines** (step 9). Mai presses "Decline": the row leaves C3; Teo's project 1 row offers "Ask to join" again. (design silent: whether Teo is told it was declined; lane to confirm) The journey resumes at step 12 with project 1 not joined.
+2. **The owner declines** (step 9). Mai presses "Decline": the row leaves C3; Teo's project 1 row says the owners declined, and offers "Ask to join" again (`home` C10, `not built`). The journey resumes at step 12 with project 1 not joined.
 3. **A hidden project by its address.** Teo opens project 3's address before step 3: `unavailable` S2, "You can't open this". Resume at step 3.
 4. **Asking from the project itself.** On project 2's `project` S4, "Ask to join" (A18) does as `home` A8; after asking it reads `projects.request.asked` and offers "Withdraw your request".
 5. **A title left empty** (step 1). Beside A6: V1 "Give the project a title first." Resume at step 1.
@@ -93,3 +93,4 @@ Checked after a reload.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

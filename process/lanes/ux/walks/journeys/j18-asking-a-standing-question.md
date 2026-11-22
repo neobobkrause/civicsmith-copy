@@ -1,4 +1,4 @@
-Length: 88 lines. Last section: "Changes".
+Length: 89 lines. Last section: "Changes".
 
 # J18: Asking a standing question
 
@@ -41,12 +41,12 @@ Walk without the assistant first: `answers` is then in S5. With the assistant, s
    - 1.1 `answers` shows S5: C5's heading and line, C6's field and button, and C7 listing Housing notice 2026-118 as found by search.
    - 1.2 C8 offers "Keep asking this" (A5).
    - With the assistant, `answers` shows S1 after "Ask" (A1), as J17 step 2 states, and C4 offers "Keep asking this".
-2. Mai presses "Keep asking this" (A5), choosing how often and until when from Test data.
+2. Mai presses "Keep asking this" (A5), chooses how often and gives the day until when from Test data (C9, `not built`), and presses it again.
    - 2.1 `answers` shows the kept line with the cadence and the end day (C4's kept line); "Stop asking" (A6) is offered.
-   - 2.2 An end day is required, so no question runs forever (wizard step 1). Where and how the cadence and the end day are chosen is not drawn on `answers` (design silent: lane to confirm).
+   - 2.2 An end day is required, so no question runs forever (wizard step 1): C9's "How often" starts with none chosen and "Until when" empty, and nothing is kept until both are given.
 3. Mai captures the new document from Test data (`capture` S1, A2) and vouches for it (`document` A2).
    - 3.1 `capture` shows S5; `document` then shows S1, vouched for by Mai.
-4. The search runs again at its next scheduled time. (How a walk reaches that time on a development copy is not said by the design: lane to confirm.)
+4. The search runs again at its next scheduled time. How a walk reaches that time on a development copy: ARCH's to say (index, section 7).
    - 4.1 Without the assistant, nothing is read by a machine: the new match goes to Mai's queue as a list.
 5. **AI.** With the assistant, at that run it reads only what is new, on Mai's account and within her limit.
    - What must be present (hard, every run):
@@ -80,9 +80,10 @@ Checked after a reload:
 3. Step 2, no end day given: the shell's message for an empty required field; nothing is kept (`every-screen` section 7). Resumes at step 2.
 4. Step 3, the address cannot be fetched: `capture` V2 or V3. Resumes at step 3 once ARCH's address answers.
 5. Step 4, no new document arrives before the end day: no item reaches the queue; on the end day the question stops by itself. The journey ends at step 7.
-6. Step 5, the assistant unreachable, its limit reached, or a use switched off: the queue item comes as the list without the assistant, as in step 6.2 (design silent on whether the queue says why: lane to confirm). Resumes at step 6.
+6. Step 5, the assistant unreachable, its limit reached, or a use switched off: the queue item comes as the list without the assistant, as in step 6.2, and the item says why in one sentence, in the reason's words (`queue` C15, `not built`). Resumes at step 6.
 7. Step 6, a feed did not answer: `queue` S7, never S2's line; its link to try again. Resumes at step 6.
 
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

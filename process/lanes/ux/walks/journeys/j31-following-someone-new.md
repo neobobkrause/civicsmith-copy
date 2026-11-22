@@ -1,4 +1,4 @@
-Length: 86 lines. Last section: "Changes".
+Length: 87 lines. Last section: "Changes".
 
 # J31: Following someone new
 
@@ -57,7 +57,7 @@ Status: walkable · Screens used: `people`, `person` · Follows: J28 (walked str
 6. Rosa follows the path link "People" back to `people`.
    - 6.1 `people` lists a row "The landlord of 14 Lakeshore Row", with the count line `.counts.none`.
    - 6.2 The row's name is a link (A2) to the `person` page of step 5.
-   - 6.3 Whether `people` still shows S4 or now shows S1 once a member has added someone is not said (design silent: lane to confirm); either way the setup rows of step 1 stay listed.
+   - 6.3 `people` now shows S1: the setup rows of step 1 stay listed beside the new row, each still with `.counts.none` and `.today.seeded`.
 7. Rosa types the search words from Test data and presses A1.
    - 7.1 The rows filter to those matching the words; the row of step 6 is among them.
    - 7.2 No public body added at setup is listed unless its name holds the words.
@@ -78,9 +78,10 @@ Checked after a reload of `people`.
 2. **Empty reason.** At step 5, Rosa sends the reason field empty: the shell's refusal `shell.reason.needed` shows beside the act and nothing is sent. The journey resumes at step 5.
 3. **Cancel.** At step 5, Rosa presses "Cancel": the reason field closes, nothing is followed, and the form keeps its entries. The journey resumes at step 4.
 4. **No match.** At step 7, Rosa searches words no followed name holds: `people` shows state S3, with A4 and the A6 link to `finder`. The journey resumes at step 7 with the words from Test data.
-5. **Followed already.** The record already follows a record of that name (a second walk on the same copy): the design does not say whether a second record is made or the act is refused (design silent: lane to confirm). The walk records what shows and stops.
+5. **Followed already.** The record already follows a record of that name (a second walk on the same copy): at step 3, as the name is typed, S5 lists the record already followed under "The same name" (`people` C7, `not built`: until built, nothing shows); pressing A5 is not refused and makes a second record of that name, which a member can say is the same as the first on `person` (A6). The walk records what shows and stops.
 6. **Team out of reach.** At any step the team's Civicsmith does not answer: `unavailable` shows state S3, and what was typed stays on the page. The journey resumes at the same step once it answers.
 
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

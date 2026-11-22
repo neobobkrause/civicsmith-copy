@@ -1,4 +1,4 @@
-Length: 327 lines. Last section: "Changes".
+Length: 329 lines. Last section: "Changes".
 
 # Screens: The team's AI and yours
 
@@ -56,6 +56,7 @@ Mark: `not built`.
 - C9. Part 2 "Privacy and origin checks" (`.chk.head`), "Seven checks, all required to start with." (`.chk.why`): the seven checks as an administrator's rows; sub-heading "Shown for every AI, never required" (`.chk.extra`) and the two shown; "An AI that fails a required check is not offered. A check you leave unchecked, project owners and members may require for their own work." (`.chk.note`).
 - C10. Part 3 "What members may use" (`.mem.head`), "Members can pick only from what you check here." (`.mem.why`): checkboxes "Providers, plans and models" (`.mem.legend`), one per account, each "Models: {models}" (`.mem.models`); "Model choices are listed exactly as each provider offers them. Members choose among the ones you check." (`.mem.modelnote`); checkboxes "Members and their own accounts" (`.mem.own`): "Members may add their own accounts" (`.mem.ownacc`), "Members may use a personal subscription, for their own work only" (`.mem.personal`).
 - C11. Part 4 "Changes" (`.chg.head`), "Every change, newest first, with who made it, when, and at which level." (`.chg.why`): a list, each "{who} {what} · {date} · {level}" (`.chg.row`), `{level}` team, project or member.
+- C12. Among C11's changes, each time a member's run went on to another account at an `aimoments` moment (S2, S3), a row naming the member, the account it went on to, the date and the level member (`.chg.row`). `not built`.
 
 **States**
 | State | When | What shows (exact) |
@@ -224,6 +225,7 @@ Marks: `not built`; `AI` (every moment needs a connected AI account).
 **Content**
 - C1. On the listing page: heading "When the AI can't go on" (`screen.aimoments.title`); "What the assistant panel shows, one moment at a time. It never changes account, model or provider without telling you, and it waits for your choice." (`.intro`).
 - C2. The panel, headed "The assistant" (`.panel`), showing one moment (S2 to S9). Every moment waits for the member's choice; none changes account, model or provider silently.
+- C3. S9 and every cost line show only to the owners of the account that pays (the assistant's mark 6, page `projects-and-questions`). To any other member, "Ask the assistant to work on this" starts the run at the press, with no estimate and no cost. `not built`.
 
 **States: the moments, each with its exact words**
 | State | When | What shows (exact) |

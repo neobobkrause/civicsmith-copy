@@ -51,7 +51,7 @@ Until the owner connects two providers' accounts, every step marked **AI** is re
 5. Rosa pastes the key into "The key", presses A2 "Store the key in Cloudflare" and sends it with her reason. `not built` **AI**
    - 5.1 The field empties; the key is drawn nowhere, after a reload too.
 6. Rosa ticks "I accept the terms above that bind our use of this plan." and presses A8 "Record my acceptance", with her reason. `not built`
-   - 6.1 The acceptance is recorded with `rosa-l` and today's date. (design silent: the line drawn once recorded; lane to confirm)
+   - 6.1 In step 4, the box "I accept the terms above…" stays ticked and can no longer be changed, with `rosa-l` and today's date beside it (`aiconnect` C9).
 7. **AI** Rosa presses A6 "Test the connection". `not built`
    - Present in any proper result (hard, every run):
      - 7.1 Step 5 shows S5, "Passed in {seconds} seconds." with a number.
@@ -85,13 +85,12 @@ Until the owner connects two providers' accounts, every step marked **AI** is re
     - 14.2 The answer neither concludes the question nor grades it; any reading waits for a member's "Accept this reading".
     - Never: a source the team does not hold; a quotation not found in the cited passage; a cost line shown to Mai, who pays for neither account (projects-and-questions, the assistant's six marks, item 6).
 15. **AI** Mai presses "Ask the assistant to work on this" again. `not built`
-    - Present: 15.1 `aimoments` S9: "Estimated: about {cost} on {account}" naming Provider B, "Start the run" and "Choose another account", and `.h.note`.
-    - 15.2 After "Start the run" (A11) and the run's end: "Cost: {cost}".
-    - (design silent: whether S9's cost lines show to a member who does not pay for the account, given the assistant's mark 6; lane to confirm)
+    - Present: 15.1 No `aimoments` S9 and no cost line show to Mai, who pays for neither account (the assistant's mark 6: cost is shown only to the owners of the account that pays; `aimoments` C3, `not built`). The dock shows S2 as at step 11.1, the run going on Provider B.
+    - 15.2 An owner of the paying account pressing the same button sees S9 first: "Estimated: about {cost} on {account}", "Start the run" and "Choose another account", `.h.note`, and after the run's end "Cost: {cost}".
 16. Rosa opens `aiproviders`, then in part 1 raises Provider A's monthly limit for next month (A8), with her reason. `not built`
     - 16.1 Before the change, C8 shows Provider A's spending at its limit, with its meter, and Provider B's spending this month; C2 and C3 show Provider B "On" and "available".
     - 16.2 After it, C8 shows Provider A's new limit, and C11 lists the change first.
-    - 16.3 (design silent: whether the continuation of step 13 appears among C11's changes; the journey's source says it does; lane to confirm)
+    - 16.3 C11 lists the continuation of step 13 on Provider B among its changes, with `mai-k`, its date and the level member (`.chg.row`; `aiproviders` C12, `not built`).
 17. **Without the assistant.** Rosa opens `aiproviders` with Provider B not tested. `not built`
     - 17.1 C3 lists Provider B, if added, as "Off"; C2 names only the accounts that are on, or shows S3 where none is.
     - 17.2 The order and limits are as Rosa left them; nothing was switched on.
@@ -127,3 +126,4 @@ Checked after a reload.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

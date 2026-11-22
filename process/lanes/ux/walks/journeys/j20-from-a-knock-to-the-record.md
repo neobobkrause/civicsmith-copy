@@ -1,10 +1,10 @@
-Length: 115 lines. Last section: "Changes".
+Length: 117 lines. Last section: "Changes".
 
 # J20: From a knock to the record
 
 Journey page `j20-from-a-knock-to-the-record` (index: ../index.md). Written 22 Nov 2026 by a worker for civicsmith ux lane #1.
 
-Status: walkable (who sees what is known of a source is `waiting A3`) · Screens used: `doorbell`, `queue`, `inbox`, `about-knocker`, `held` · Follows: J28 · Followed by: none
+Status: walkable · Screens used: `doorbell`, `queue`, `inbox`, `about-knocker`, `held` · Follows: J28 · Followed by: none
 
 ## Goal
 
@@ -73,17 +73,18 @@ For the outsider: "I have photographs of the roof at 14 Lakeshore Row and I want
     - 11.1 `inbox` shows S6 for file 2; its status is "In the record".
 12. Rosa opens file 3's knock, writes the discard reason from Test data in V1's field and presses "Discard with a reason" (A2).
     - 12.1 `inbox` shows S9; the status is "Discarded", and C7 shows the reason.
-13. On file 2's knock (now S4), Rosa chooses file 1's source in "The same person as source" (offered as "{source}, the same knocker, who handed in {knock}"), writes the evidence from Test data and presses "Record what is known of the source" (A3). `waiting A3`
+13. On file 2's knock (now S4), Rosa chooses file 1's source in "The same person as source" (offered as "{source}, the same knocker, who handed in {knock}"), writes the evidence from Test data and presses "Record what is known of the source" (A3).
     - 13.1 `inbox` shows `screen.inbox.link.done`.
     - 13.2 The ladder stays at "Same knocker": no name and nothing about who they are is recorded or shown.
-    - 13.3 Who may read this link is not settled (A3, recommendation: the listed members only); the walk records who can see it as an observation, not a flaw.
-14. Rosa follows the link "A source" (C11, A7) on file 2's knock. `waiting A3`
+    - 13.3 File 2's knock shows the link "A source" (C11); recording the link changes no one's right to see a source (decision U5).
+14. Rosa follows the link "A source" (C11, A7) on file 2's knock.
     - 14.1 `about-knocker` shows its C1 and C2, the ladder at "Same knocker".
-    - 14.2 C3 lists a row "A link to another source", or the screen shows S1 with no C3 (design silent: lane to confirm whether the link of step 13 is a row here).
+    - 14.2 C3 lists a row "A link to another source" for the link of step 13, with how it became known.
     - 14.3 No "Help me write this" button is drawn (S4).
 15. Rosa opens `held`, chooses "Everyone's" in "Whose captures", ticks the captures of files 1 and 2, fills the vouch fields from Test data and presses "Vouch for them" (A5).
-    - 15.1 Before vouching, `held` lists both captures (C3).
+    - 15.1 Before vouching, `held` lists both captures (C3), named "roof-1.jpg" and "roof-2.jpg", never by a machine reference (C11, `not built`).
     - 15.2 `held` shows S4, counting 2.
+    - 15.3 Before vouching, beside each capture, C11 (`not built`) shows "A source" as a link if Rosa is among the members the team listed to read about sources, and otherwise "Handed in through the doorbell", with no link.
 
 ## End state
 
@@ -93,7 +94,7 @@ Checked after a reload, signed in as Rosa.
 2. File 2's knock (S4) shows the link "A source"; `about-knocker` shows the ladder at "Same knocker", and no name.
 3. `held` no longer lists files 1 and 2; they are in the record, vouched for by Rosa.
 4. Signed out, `/doorbell` shows S1 again, with nothing of the three knocks on it.
-5. Signed in as Mai, `inbox` lists the same three knocks; whether Mai sees the source link of step 13 is `waiting A3`.
+5. Signed in as Mai, `inbox` lists the same three knocks, and file 2's knock shows the link "A source" as it does for Rosa (C11; decision U5).
 
 ## Ways it can turn aside
 
@@ -113,3 +114,4 @@ Checked after a reload, signed in as Rosa.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

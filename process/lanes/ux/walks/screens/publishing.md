@@ -1,4 +1,4 @@
-Length: 400 lines. Last section: "Changes".
+Length: 407 lines. Last section: "Changes".
 
 # Screens: Publishing
 
@@ -404,3 +404,4 @@ No assistant on this screen.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

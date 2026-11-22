@@ -1,4 +1,4 @@
-Length: 420 lines. Last section: "Changes".
+Length: 426 lines. Last section: "Changes".
 
 # Screens: Projects and questions
 
@@ -331,6 +331,7 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 - C6. A search field and button "Search" (`act.search.label.finder`).
 - C7. Results: one row per document, its title a link to `document`, marked "Found by search" (`mark.origin.search.name`); a count line `.count.line` where a table was counted; with none, `screen.finder.none`.
 - C8. C4's buttons and lines.
+- C9. `not built` Pressing "Keep asking this" (C4, C8) first opens, beside it, a select "How often" (no word row on this screen), offering "every week" (`.cadence.weekly`) and any other cadence the product runs, none chosen, and a field "Until when" (no word row), a day, required; the question is kept only once both are given. Sent without either: `shell.field.needed`, and nothing is kept.
 
 **States**
 
@@ -422,3 +423,4 @@ Paths are under `bio-plane/src/`.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

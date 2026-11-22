@@ -1,4 +1,4 @@
-Length: 586 lines. Last section: "Changes".
+Length: 589 lines. Last section: "Changes".
 
 # Screens: Daily work
 
@@ -48,6 +48,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C7. Section "Since you last looked" (`.since`), help `.since.holds`; rows `.since.captured`, `.since.events`, `.since.trail`.
 - C8. Heading "What happened?" (`door.front.head`) over the doors A12 and A13.
 - C9. Button A14.
+- C10. On a row of "Getting into a project", "Ask to join" (A8) offers an optional field for a word on why (no word row), sent with the request; the owners see the word on the request's row in their C3. Once an owner declines, the member's row says the owners declined, with their word if they gave one (no word row), and offers "Ask to join" again (`act.projectrequest.does`: "you see their answer"). `not built` (the code sends the request with no word, and draws no answer).
 
 **States**
 
@@ -235,6 +236,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C12. The source notices, each kind one item: "A document changed at its source" / "{n} documents changed at their source" (`queue.source-modified.one`, `.many`) and "A document is gone from its source" / "{n} documents are gone from their source" (`queue.source-removed.one`, `.many`), with "Your team's Civicsmith noticed this when it checked. The copies your team holds are unchanged. Open each one to see what changed; nothing has been decided." (`queue.source.detail`); opened in place, the list of its documents, each by its title (or `queue.source.untitled`) as a link to `document`.
 - C13. `not built` (decision U7) A member's new signing keys are one item for that member in the section "Your team", listing each key with when it was made, with A13 "I know about this key"; a further key joins the same item.
 - C14. `not built` A confirmed due date's item, once a reply is recorded by the date, shows the state "met" (`screen.due-date.status.met`) beside "Due {date}" (C5), as facts and never legal advice; no passed-date line shows for it.
+- C15. `not built` A standing question's item that came as a list without the assistant's reading, for a member the assistant serves, says why in one sentence, in the words of the reason (for example `ai.refused.limit`, `ai.refused.off`, `dock.withheld.*`). For a member with no AI account (S8) it says nothing about the assistant.
 
 **States**
 
@@ -441,6 +443,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C8. Setting aside: `.waiting` [whose question waits]; field "Why set it aside?" (`.setaside.why`).
 - C9. Section "Set aside" (`.setaside`): "Set aside by {author}: “{reason}”" (`.asideby`); button "Restore, with a reason" (`held.restore`); none: "Nothing is set aside." (`.asideempty`).
 - C10. Bar: A5 to A7; vouch fields "What you vouch for" (`.ack`), "What you did to check" (`.mitigation`).
+- C11. `not built` (decision U5) A capture handed in through the doorbell is named in C3 by its file's own name, never a machine reference (such as "From knock:…"); beside it, for the members the team listed to read about sources, "A source" (`screen.about-knocker.name`) as a link to `about-knocker`; for every other member, "Handed in through the doorbell" (no word row), with no link.
 
 **States.** S1 held: C1 to C10. S2 "Mine", none: `.empty.mine` ["Nothing of yours is held. …"]. S3 "Everyone's", none: `.empty` ["Nothing is held: …"]. S4 after A5: "Vouched for: {count}. They are in the record now." (`.released`). S5 after A6: `.setasidecount` ["Set aside: {count}. …"]. S6 after A7: "Restored: {count}. They wait in Held captures again." (`.restored`). S7 assistant unreachable: unchanged.
 
