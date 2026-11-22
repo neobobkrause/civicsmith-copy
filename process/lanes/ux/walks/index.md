@@ -68,7 +68,7 @@ The list to use is this one (the owner, 20 Nov 2026: the UX design lane maintain
 | J16 | [A professional lends expertise](journeys/j16-a-professional-lends-expertise.md) | Member with expertise | `account` | — |
 | J17 | [Working with the assistant](journeys/j17-working-with-the-assistant.md) | Member | `question` | AI, with a no-AI path |
 | J18 | [Asking a standing question](journeys/j18-asking-a-standing-question.md) | Member | `answers` | AI, with a no-AI path |
-| J19 | [The daily queue](journeys/j19-the-daily-queue.md) | Member | `queue` | — |
+| J19 | [The daily queue](journeys/j19-the-daily-queue.md) | Member | `queue` | AI hint only, with a no-AI path |
 | J20 | [From a knock to the record](journeys/j20-from-a-knock-to-the-record.md) | Outsider, then member | `doorbell` | — |
 | J21 | [A review copy, out and back](journeys/j21-a-review-copy-out-and-back.md) | Member, then outside reviewer | `review-copy` | — |
 | J22 | [From suspicion to a closed plan](journeys/j22-from-suspicion-to-a-closed-plan.md) | Member | `question` | AI, with a no-AI path |
