@@ -171,7 +171,7 @@ export async function embedRelease({ planeDir, releaseDir, out, signers = ARMED_
 
   /* Refuse to embed a release that still contains any published token value.
      The denylist protects the runtime; this protects the artifact. */
-  for (const s of publishedTokens(readFileSync(path.join(planeDir, "dist/SECRETS.txt"), "utf8"))) {
+  for (const s of publishedTokens(readFileSync(path.join(planeDir, "SECRETS.txt"), "utf8"))) {
     if (src.includes(s)) throw new Error("published token value found in the bundled release; refusing to embed");
   }
 

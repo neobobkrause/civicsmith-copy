@@ -1150,7 +1150,7 @@ section("R30, R31 · GET /version; anything else 404 UNKNOWN");
 /* ============================================================ the cascade, pure */
 section("R32, R33 · the cascade: the one account that arrived, at its own level (project, member or group)");
 {
-  const PUBLISHED_VALUE = readFileSync(fileURLToPath(new URL("../../bio-plane/dist/SECRETS.txt", import.meta.url)), "utf8")
+  const PUBLISHED_VALUE = readFileSync(fileURLToPath(new URL("../../bio-plane/SECRETS.txt", import.meta.url)), "utf8")
     .split("\n").find((l) => l.startsWith("ADMIN_TOKEN=")).split("=")[1].trim();
   const st = async (a) => (await resolveClaudeCascade(a)).levels.map((l) => `${l.level}:${l.state}`);
   t("R32, R71: three levels, a project's, the member's own and the group's, in credentials' order; no instance level is judged, held or answered", [...CASCADE_ORDER], ["project", "member", "group"]);

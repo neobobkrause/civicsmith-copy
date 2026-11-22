@@ -9,6 +9,7 @@
     "bio-plane/DEPLOY-DASHBOARD.md",
     "bio-plane/SETUP.md",
     "bio-plane/scripts/build-plane.mjs",
+    "bio-plane/SECRETS.txt",
     "bio-plane/dist/"
   ],
   "tests": [

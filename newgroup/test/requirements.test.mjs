@@ -1528,7 +1528,7 @@ const planeFiles = (dir, { pkgV = "1.2.3", cfgV = pkgV, secrets = "ADMIN_TOKEN=p
   mkdirSync(join(dir, "plane", "dist"), { recursive: true });
   writeFileSync(join(dir, "plane", "package.json"), JSON.stringify({ name: "bio-plane", version: pkgV }));
   writeFileSync(join(dir, "plane", "wrangler.jsonc"), `{ // the plane\n "vars": { "VERSION": "${cfgV}" } }`);
-  writeFileSync(join(dir, "plane", "dist", "SECRETS.txt"), secrets);
+  writeFileSync(join(dir, "plane", "SECRETS.txt"), secrets);
 };
 
 test("R25 resolveVersion returns package.json's version, and throws naming the files and what to change when it is not semver, when the plane's config declares no VERSION, or when that VERSION differs", () => {

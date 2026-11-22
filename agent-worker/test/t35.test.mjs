@@ -580,7 +580,7 @@ section("R64 · the words members read: your group's Civicsmith, or the thing it
           return (await res.text()).split("\n").filter(Boolean).map((l) => JSON.parse(l)).find((e) => e.event === "refused"); }
     finally { globalThis.fetch = saved; } })();
   rows.push(["ask.mjs:290", unchecked?.detail, cut(localize("agent-worker.ask.the_records_checks_answered_without", "the record's checks answered without a checked answer, so nothing is returned: an unchecked answer is never shown.", { why: "\u0000" }))]);
-  const PUBLISHED_VALUE = readFileSync(join(REPO, "bio-plane/dist/SECRETS.txt"), "utf8").split("\n")
+  const PUBLISHED_VALUE = readFileSync(join(REPO, "bio-plane/SECRETS.txt"), "utf8").split("\n")
     .find((l) => l.startsWith("ADMIN_TOKEN=")).split("=")[1].trim();
   const revoked = await resolveClaudeCascade({ ...ACCOUNT, secret: PUBLISHED_VALUE });
   rows.push(["cascade.mjs:73", revoked.detail, cut(localize("agent-worker.cascade.the_member_connects_a_new", "The member connects a new one; until then the team's API key serves them only while your team's Civicsmith holds it and it is on.", { why: "\u0000" }))]);

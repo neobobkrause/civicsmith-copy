@@ -15,10 +15,10 @@ import { liveToken } from "../../../src/tokens.mjs";
 import { RUNTIME_ASYMMETRY, FLEET_BINDINGS } from "../../../src/setup.mjs";
 
 const SRC = fileURLToPath(new URL("../../../src/plane/index.mjs", import.meta.url));
-const SECRETS = fileURLToPath(new URL("../../../dist/SECRETS.txt", import.meta.url));
+const SECRETS = fileURLToPath(new URL("../../../SECRETS.txt", import.meta.url));
 const published = (name) => {
   const l = readFileSync(SECRETS, "utf8").split("\n").find((x) => x.startsWith(name + "="));
-  if (!l) throw new Error(`dist/SECRETS.txt has no ${name} line`);
+  if (!l) throw new Error(`SECRETS.txt has no ${name} line`);
   return l.slice(name.length + 1).trim();
 };
 const DEAD_A = published("ADMIN_TOKEN"), DEAD_B = published("MEMBER_TOKEN");

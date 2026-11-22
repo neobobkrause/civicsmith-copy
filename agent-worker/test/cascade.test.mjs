@@ -43,7 +43,7 @@ const t = (label, got, want) => {
 /* A value GENUINELY on the denylist, read from the file that put it there —
    DS-3's own discipline: a fabricated "published" value would test the test. */
 const PUBLISHED_VALUE = readFileSync(
-  fileURLToPath(new URL("../../bio-plane/dist/SECRETS.txt", import.meta.url)), "utf8")
+  fileURLToPath(new URL("../../bio-plane/SECRETS.txt", import.meta.url)), "utf8")
   .split("\n").find((l) => l.startsWith("ADMIN_TOKEN=")).split("=")[1].trim();
 
 const KEY = "sk-ant-member-key-fixture-never-echoed";
