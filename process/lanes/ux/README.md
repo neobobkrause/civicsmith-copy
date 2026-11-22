@@ -1,4 +1,4 @@
-Length: 25 lines. Last section: "Settled with ARCH".
+Length: 26 lines. Last section: "Settled with ARCH".
 
 # The UX lane's folder
 
@@ -11,11 +11,12 @@ The UX lane of civicsmith: a standing design responsibility for the user's exper
   - `02-earlier-screens-and-journeys.md`: the earlier material in `docs/development/ux-substrate/` (91 screens in 7 groups; three journey lists of 27, 27 and 32 reconciled to 35 distinct journeys).
   - `03-existing-code.md`: the screens the code serves (84), the first-use door, the walker, the assistant, the word table.
   - `04-best-practice.md`: how to write screen and journey pages a walker can check, with templates.
+- `decisions.md`: the lane's design decisions (U1 to U9), the questions put to the owner (Q1, Q2), and how a line the design is silent on is settled.
 - `walks/`: the walks' documents (the process config's `walks_folder`): an index page, one page for each group of screens, one page for each journey (build text 3, section 2).
 
 ## Design pages
 
-None yet. Their links will be kept here.
+- [Civicsmith UX Lane](https://claude.ai/artifact/CwcPJr9o8tquDJ4B9wecnm): the lane's page for the owner: questions Q1 and Q2 put to him (decisions.md section 2), and the lane's decisions in plain words. Published 22 Nov 2026.
 
 ## Settled with ARCH
 
