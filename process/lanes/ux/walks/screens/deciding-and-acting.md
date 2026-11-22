@@ -539,14 +539,14 @@ Each group of messages sits under a disclosure: "When an option is not added", "
 ## Differences seen in the code
 
 - `plan`, assistant unreachable: the code draws nothing where the design shows the note `.nosuggestions` (bio-plane/src/screens-action/plan.mjs:457).
-- `plan`: the code draws none of the design's explanatory tips `screen.plan.tip.*` and no `.purpose`; several design sentence keys (`.decide.the.options.you.picked`, `.what.to.do.with.them`, `.a.scenario.is.a.story.of`, `.name.of.the.scenario`, the `.when.*.not.*` disclosures) are not read by the screen (bio-plane/src/screens-action/plan.mjs).
+- `plan`: the code draws none of the design's explanatory tips `screen.plan.tip.*` and no `.purpose`; the screen draws no disclosure: the design's "Decide the options you picked", "When an option is not added", "When a decision is not recorded" and "When a scenario is not laid out", with their words (V1 to V12 as listed), are not read (bio-plane/src/screens-action/plan.mjs).
 - `start-send`: the design's `.secondapproval` note and the six later kinds `.kind.records_petition` … `.kind.constitutional_claim` are not read; the template refusal sentences are not read (bio-plane/src/screens-action/start-send.mjs).
 - `action`: the code draws a link to `counsel`, which the design's `action` does not draw (bio-plane/src/screens-action/action.mjs:516).
 - `action`: the design's reply-refusal disclosure "When a reply is not recorded" (V1 to V10) and the "How it ended" words `.ended.*` and `.resolution.said.*` are not read by the screen (bio-plane/src/screens-action/action.mjs).
 - `counsel`: the code has no section "Packets assembled for this action" and no acts "Read this version" or "Save as a file"; only `counselpacket` (bio-plane/src/screens-action/counsel.mjs:84-88).
 - `glossary`: the term names are read from `glossary.term.<t>` keys, not `.money.<t>.name` / `.honest.<t>.name` (same English) (bio-plane/src/screens-settings/glossary.mjs:19).
-- `matter`: the design's refusal disclosures (V1 to V14) and the success heading words are not read by key (bio-plane/src/screens-action/matter.mjs).
-- `request`: the state words `.state.offices`, `.state.nooffice` and `.law.help` are not read (bio-plane/src/screens-action/request.mjs).
+- `matter`: the design's refusal disclosures ("When it cannot be recorded" and the others, V1 to V14) are not drawn; the screen's only disclosures are "If you choose unclear", "If you assess it yourself", "If you say why it happened" and "At the political accountability stage" (bio-plane/src/screens-action/matter.mjs:156, :313, :360, :375).
+- `request`: the law choice's help `.law.help` is not read (bio-plane/src/screens-action/request.mjs).
 
 ## Changes
 
