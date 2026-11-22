@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 103 lines. Last section: "Changes".
 
 # J23: A source changes after publishing
 

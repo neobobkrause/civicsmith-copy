@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 120 lines. Last section: "Changes".
 
 # J22: From suspicion to a closed plan
 
