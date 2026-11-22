@@ -3,6 +3,7 @@
   "files": [
     "bio-plane/scripts/deploy.mjs",
     "bio-plane/scripts/deploy-fleet.mjs",
+    "bio-plane/scripts/dev-copy.mjs",
     "bio-plane/scripts/resolve-version.mjs",
     "bio-plane/scripts/release-assemble.mjs",
     "bio-plane/scripts/bundles.mjs",

@@ -20,13 +20,13 @@
   "walks_folder": "process/lanes/ux/walks/",
   "walk": {
     "build_and_serve": "npm --prefix bio-plane run build && npm --prefix bio-plane run dev",
-    "run_steps": "node bio-plane/src/journey-check/journey.mjs --live",
+    "run_steps": "node bio-plane/src/journey-check/steps.mjs",
     "most_external_walkers": 1
   },
   "deploy": {
-    "deploy": "node bio-plane/scripts/deploy.mjs",
-    "seed": "none: the plane's admin operations instancegroupseed, officesseed, seatsseed (see process/waiting-for-arch.md)",
-    "remove": "none: no current script (see process/waiting-for-arch.md)"
+    "deploy": "node bio-plane/scripts/dev-copy.mjs deploy",
+    "seed": "node bio-plane/scripts/dev-copy.mjs seed",
+    "remove": "node bio-plane/scripts/dev-copy.mjs remove"
   },
   "process_folder": "process/",
   "language_reader": { "name": "typescript", "version": "5.6.3", "source": ["**/*.mjs"] }
