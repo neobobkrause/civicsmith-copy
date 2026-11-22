@@ -1,4 +1,4 @@
-Length: 589 lines. Last section: "Changes".
+Length: 590 lines. Last section: "Changes".
 
 # Screens: Daily work
 
@@ -503,6 +503,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 | S4. Added by you | your own upload | C1; "High risk" with `.high.yours`; "What to do next" (`.next.head`) with `.next.yours` [read the safe view; a deeper check first]; A2, A3, C3; `.safetext`; "Checks" with `.check.notyet` ["Not checked yet: …"]. |
 | S5. Opened | after A1 or A4 | "The original was handed to your browser as a file." (`.opened`); `.digest.checked`. |
 | S6. Assistant unreachable | no AI | unchanged. |
+| S7. A photograph (decision U6) | the file is a picture, such as a member's photo | `not built`: C3 holds a safe picture, redrawn from the photo's pixels alone, with the mark "Derived · a safe copy of the original" (`.safe.origin`); the photo's hidden data (such as where it was taken) is not shown and stays in the record's own copy. Until it is built: "Your team's Civicsmith makes safe views of documents, presentations, spreadsheets and plain text, and this file is none of them, so it has no safe view." (`refusal.NO_SAFE_VIEW`), then how to see it on one's own device (A4's dialog); no sentence says the safe view needs no check. |
 
 **Actions.** A1 button "Open the original" (`act.openoriginal.label.open-file`): S5. A2 button "Show the safe view on this page" (`act.safeview.label.open-file`): C3 opens here. A3 button "Ask for a deeper check" (`.deeper`): "Deeper check: asked for, waiting its turn". A4 button "Open the original, accepting this" (`.warn.accept`), both boxes ticked: S5. A5 link "Cancel" (`shell.cancel`): the dialog closes. A6 button "Release, with a reason" (`act.releasescanhold.label.open-file`): first `.release.pending` [a second member's reason releases it]; second "Released: the original can be opened again." (`.release.done`).
 

@@ -1,4 +1,4 @@
-Length: 36 lines. Last section: "3. How the lane settles a line the design is silent on".
+Length: 39 lines. Last section: "3. How the lane settles a line the design is silent on".
 
 # The UX lane's design decisions
 
@@ -15,6 +15,9 @@ Kept by the UX lane; rank 5 on `process/ranking.md` (design decisions), below th
 - **U7. Signing keys in the queue (the earlier A6).** One queue item per member, listing each new key with when it was made; the box "Keep it on this device" stays unticked, with a sentence beside it saying a key not kept is gone when the browser closes. Grounds: removes the noise without choosing about devices for the member. (22 Nov 2026)
 - **U8. Documents from other projects in pickers (the earlier A7).** A picker shows this project's documents; "Show documents from your other projects" adds the rest, each labelled with its project. Grounds: links across projects stay possible but deliberate. (22 Nov 2026)
 - **U9. Two things called "Capture" (the earlier A5, its words only).** The two measures are named apart: "How well it could be captured" (the ceiling the record sets) and "Your team's grade for the copy" (a member's grade), and the question points the member to where the grade is given. Whether a case may be published with passages ungraded is not decided here: it is put to the owner (section 2). (22 Nov 2026)
+
+- **U10. AI costs are shown to whoever pays.** On the AI screens and in J32, a cost line shows only to the member or administrators whose account pays, as the first beta's AI screens draw it (DEC-420); the earlier journey text that showed costs to every member is replaced. Grounds: the newer ruling stands over the older text; a member who pays nothing has no cost to weigh. (22 Nov 2026)
+- **U11. Settling the design-silent lines.** The 107 lines the first writing left "design silent" are settled by section 3, by three workers for this lane, 22 Nov 2026; the lane reviewed each choice made by section 3's third rule and keeps them as written on the pages. Two code differences they found go to ARCH as candidate flaws: Explore ticks three kinds by default, and a removed administrator is marked inactive (`member-roster/index.mjs:907`).
 
 ## 2. Put to the owner
 
