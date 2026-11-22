@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 116 lines. Last section: "Changes".
 
 # J06: From a problem to a question
 

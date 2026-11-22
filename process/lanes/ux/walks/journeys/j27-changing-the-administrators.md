@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 96 lines. Last section: "Changes".
 
 # J27: Changing the administrators
 
@@ -14,12 +14,12 @@ Status: walkable · Screens used: `members`, `security`, `home`, `queue`, `setti
 
 1. Rosa (`rosa-l`), the founder and only administrator at the start, signed in.
 2. Mai (`mai-k`), a member at the start, signed in; she becomes the second administrator.
-3. Teo (`teo-r`), a member who may not start projects, as J03 leaves him, signed in; he is made the third administrator, then removed.
+3. Teo (`teo-n`), a member who may not start projects, as J03 leaves him, signed in; he is made the third administrator, then removed.
 
 ## Before it starts
 
 1. J28 has been walked on this copy: Rosa is the only administrator; Mai is a member.
-2. J03 has been walked on this copy, making Teo (`teo-r`) a member who is not an administrator. (The product's own walker joins its newcomer as `teo-r`.)
+2. J03 has been walked on this copy, making Teo (`teo-n`) a member who is not an administrator. (The product's own walker joins its newcomer as `teo-n`.)
 3. J30 has been walked, or is walked later on another copy.
 4. `members`, as Rosa, reads "Administrators: 1" in C1.
 
@@ -50,20 +50,20 @@ Status: walkable · Screens used: `members`, `security`, `home`, `queue`, `setti
    - 5.3 (design silent: whether the second administrator needs an endorsement when the only administrator proposes her; `members` A1 asks one only "beyond the second administrator"; lane to confirm)
 6. Mai reloads `security`.
    - 6.1 `security` shows S2 or S1, as the period gives: C1 `.sub`, C2 "From", "To" with A1, C3's mark and its line, C7. Not S3.
-7. Rosa opens Teo's row panel (`/app/members/teo-r`), ticks the capability to look after the team's Civicsmith, presses A6, chooses "Propose teo-r as an administrator", and gives her password again.
+7. Rosa opens Teo's row panel (`/app/members/teo-n`), ticks the capability to look after the team's Civicsmith, presses A6, chooses "Propose teo-n as an administrator", and gives her password again.
    - 7.1 Teo's row shows `.endorse.what`: a proposed administrator, awaiting endorsement; his "Role" is not yet administrator.
    - 7.2 C1 still reads "Administrators: 2".
 8. Mai opens `home`.
-   - 8.1 C3 "Needs you" holds a row for endorsing `teo-r` as an administrator, with "Endorse an administrator" (A16). (The same item is in `queue`, A14.)
+   - 8.1 C3 "Needs you" holds a row for endorsing `teo-n` as an administrator, with "Endorse an administrator" (A16). (The same item is in `queue`, A14.)
 9. Mai presses "Endorse an administrator" on that row.
    - 9.1 The dialog "Enter your password again" opens; Mai types her password and presses "Go on".
    - 9.2 The row leaves C3.
    - 9.3 On `members`, Teo's row shows him an administrator; C1 reads "Administrators: 3"; C11's table marks the row for 3 administrators "(now)".
 10. Rosa opens Teo's row panel, presses A9 "Remove an administrator", and writes her reason from Test data in "Why remove their administrator's powers? (every administrator will see this)".
     - 10.1 A9 carries the weight "Asks for a reason"; nothing is sent until the reason is given.
-    - 10.2 After sending (and the password asked again, as at step 4), `members` shows S3: "Removing teo-r as an administrator", "3 administrators: …", the section "What it takes", a row per administrator, and "{n} of {total} have agreed so far."
+    - 10.2 After sending (and the password asked again, as at step 4), `members` shows S3: "Removing teo-n as an administrator", "3 administrators: …", the section "What it takes", a row per administrator, and "{n} of {total} have agreed so far."
     - 10.3 Rosa's row reads agreed; Mai's reads not yet; Teo's row says he is counted and does not vote on his own removal.
-11. Mai opens `members` (or her `home` row for it) and presses "Agree: remove teo-r as an administrator" (A9 in S3), with her own reason, and gives her password.
+11. Mai opens `members` (or her `home` row for it) and presses "Agree: remove teo-n as an administrator" (A9 in S3), with her own reason, and gives her password.
     - 11.1 The count reaches what "What it takes" names: S3 ends; Teo's row no longer shows him an administrator.
     - 11.2 C1 reads "Administrators: 2".
     - 11.3 (design silent: what Teo "May do" reads after his administrator's powers are removed; lane to confirm)

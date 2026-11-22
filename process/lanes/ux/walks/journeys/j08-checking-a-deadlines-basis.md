@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 81 lines. Last section: "Changes".
 
 # J08: Checking a deadline's basis
 

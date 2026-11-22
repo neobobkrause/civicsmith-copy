@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 85 lines. Last section: "Changes".
 
 # J02: The team says who it is and why
 

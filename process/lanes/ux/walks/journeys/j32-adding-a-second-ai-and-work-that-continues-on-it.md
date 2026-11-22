@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 129 lines. Last section: "Changes".
 
 # J32: Adding a second AI, and work that continues on it
 

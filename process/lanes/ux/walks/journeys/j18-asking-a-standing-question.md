@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 88 lines. Last section: "Changes".
 
 # J18: Asking a standing question
 

@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 100 lines. Last section: "Changes".
 
 # J03: A member joins and finds their footing
 

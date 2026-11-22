@@ -73,7 +73,7 @@ The list to use is this one (the owner, 20 Nov 2026: the UX design lane maintain
 | J21 | [A review copy, out and back](journeys/j21-a-review-copy-out-and-back.md) | Member, then outside reviewer | `review-copy` | — |
 | J22 | [From suspicion to a closed plan](journeys/j22-from-suspicion-to-a-closed-plan.md) | Member | `question` | AI, with a no-AI path |
 | J23 | [A source changes after publishing](journeys/j23-a-source-changes-after-publishing.md) | Member | `queue` | — |
-| J24 | [Complying with a court order](journeys/j24-complying-with-a-court-order.md) | Administrator | `capture` | — |
+| J24 | [Complying with a court order](journeys/j24-complying-with-a-court-order.md) | Project owner | `capture` | — |
 | J25 | [Exchanging cases with other teams](journeys/j25-exchanging-cases-with-other-teams.md) | Member | `imported` | — |
 | J26 | [Reading and checking a case](journeys/j26-reading-and-checking-a-case.md) | Anyone, signed out | `published` | — |
 | J27 | [Changing the administrators](journeys/j27-changing-the-administrators.md) | Administrator | `members` | — |

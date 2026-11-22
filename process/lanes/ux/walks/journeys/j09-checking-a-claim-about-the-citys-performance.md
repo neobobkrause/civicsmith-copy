@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 101 lines. Last section: "Changes".
 
 # J09: Checking a claim about the city's performance
 

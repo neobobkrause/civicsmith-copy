@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 95 lines. Last section: "Changes".
 
 # J17: Working with the assistant
 

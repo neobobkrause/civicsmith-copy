@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 146 lines. Last section: "Changes".
 
 # J04: Connecting your own AI account
 

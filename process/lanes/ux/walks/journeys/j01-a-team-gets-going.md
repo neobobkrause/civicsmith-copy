@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 125 lines. Last section: "Changes".
 
 # J01: A team gets going
 

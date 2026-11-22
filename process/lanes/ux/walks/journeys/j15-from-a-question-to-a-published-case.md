@@ -18,7 +18,7 @@ Status: walkable (steps marked `waiting A1`, `A4` to `A8`) · Screens used: `cap
 
 ## Before it starts
 
-1. J28 has been walked on this copy: team "Lakeshore Tenants" (`lakeshore-tenants`), Rosa (`rosa-l`) its administrator, Mai a member allowed to start projects.
+1. J28 has been walked on this copy: team "Lakeshore Tenants" (`lakeshore-tenants`), Rosa (`rosa-l`) its administrator, Mai (`mai-k`) a member allowed to start projects. J28 leaves Mai signed in on her phone only: she signs in on a computer on `front`, choosing "My own" (`every-screen` section 4).
 2. The copy can capture Housing notice 2026-118 from an address; which address serves it is ARCH's to say (index, section 5). Its text holds the sentence in Test data ("The passage").
 3. The team's time zone is set (`review-copy` S4 and `ceremony` S9 depend on it); if not, see turn-aside 6.
 4. No project titled as in Test data exists; neither browser holds a signing key for Mai.
@@ -50,7 +50,7 @@ Status: walkable (steps marked `waiting A1`, `A4` to `A8`) · Screens used: `cap
 2. Mai types the notice's address in C5 and presses A2.
    - 2.1 `capture` shows S5: `.address.done` naming the notice's title and saying it waits in Held captures.
 3. Mai opens `held`.
-   - 3.1 `held` shows S1 with "Mine" chosen in C2; one row (C3) for the notice, marked "No project yet".
+   - 3.1 `held` shows S1 with "Mine" chosen in C2; a row (C3) for the notice, marked "No project yet", beside any capture of hers J28 left held.
 4. Mai ticks that row, fills the two vouch fields (C10) from Test data, and presses A5.
    - 4.1 `held` shows S4 with a count of 1; the row has left the list.
 5. Mai opens `projects` with the rail, opens the fold C8, types the project title, chooses Hidden, and presses A6.

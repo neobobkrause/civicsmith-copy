@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 132 lines. Last section: "Changes".
 
 # J29: From installing to a first conclusion
 

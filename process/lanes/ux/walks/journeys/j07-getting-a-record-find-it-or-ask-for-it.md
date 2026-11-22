@@ -1,4 +1,4 @@
-Length: N lines. Last section: "Changes".
+Length: 93 lines. Last section: "Changes".
 
 # J07: Getting a record: find it, or ask for it
 
