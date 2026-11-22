@@ -16,7 +16,7 @@ Words are quoted with their key from `words.json`. Values in braces, such as `{n
 
 | id | heading | address | built? |
 |---|---|---|---|
-| `home` | "Lakeshore Tenants" (the team's name; "Your team" before it has one) | `/app` | built |
+| `home` | "Lakeshore Tenants" (the team's name; "Your team", `shell.group.unnamed`, before it has one) | `/app` | built |
 | `projects` | "Projects" | `/app/projects` | built |
 | `theme` | "Themes"; one theme: the theme's name | `/app/theme`, `/app/theme/<theme>` | built |
 | `dash-action` | "Action" | `/app/dash-action` | built |
@@ -29,8 +29,6 @@ Words are quoted with their key from `words.json`. Values in braces, such as `{n
 | `archive` | the archive's title | `/app/archive/<archive>` | built |
 | `open-file` | the file's title | `/app/open-file/<file>` | built |
 | `find-in` | "Find in this" | `/app/find-in/<subject>` | built |
-| `document` | the document's title | on page `reading-a-document` | built |
-| `contradiction` | "Two documents in tension" | on page `reading-a-document` | built |
 
 ---
 
@@ -43,7 +41,7 @@ Words are quoted with their key from `words.json`. Values in braces, such as `{n
 **Entry points.** Rail "Home"; signing in; `elsewhere` link "Back to Home"; `queue` link "Go to Home".
 
 **Content (S1, a busy team)**
-- C1. Heading: the team's name; beneath it the team's own description.
+- C1. Heading: the team's name ("Lakeshore Tenants"); beneath it the team's own description.
 - C2. The strip (the chips of what is due, drawn as on `every-screen`); for example "1 of our own dates passed" (`home.strip.ours_passed.one`), whose card ends "Opens your queue at this item." (`home.strip.ours_passed.opens`).
 - C3. Section "Needs you" (`screen.home.needsyou`), help: `screen.home.needsyou.holds` (what is yours to do, soonest first; not shown when nothing needs you). Rows, each with its act: "Vouch for the {count} copies you captured at {place}" (`screen.home.todo.vouch`; also `.one`, `.noplace`, `.noplace.one`); "Decide on a newer version of {document} you cited" (`screen.home.todo.newer`); "Approve the {kind} to {office}, drafted by {name}" (`screen.home.todo.approve`); "{name} asked you to check a calculation: {calculation}" (`screen.home.todo.check`); a request to join, a project invitation, an update ready ("An update to your team's Civicsmith is ready: release {version}{security}", `home.update.ready`, with ", with a security fix", `home.update.security`).
 - C4. Section "Needs the team" (`screen.home.needsgroup`), help `screen.home.needsgroup.holds`. Rows: "Waiting for a member to look: {held} in Held captures, {inbox} in Inbox." (`screen.home.waiting.counts`); "{office}'s reply to “{action}” was due {date}; no reply recorded" (`screen.home.group.noreply`); "Two documents give different dates for {what}" (`screen.home.group.tension`) with "nobody has judged it" (`screen.home.group.unjudged`); "{office}'s reply to your records request is due {date}" (`screen.home.group.requestdue`). Whose move: "{who}'s move" (`screen.home.move.member`), "an administrator's move" (`screen.home.move.admin`), "any member can take the next step" (`screen.home.move.anyone`).
@@ -62,7 +60,7 @@ Words are quoted with their key from `words.json`. Values in braces, such as `{n
 | S2. New member's first visit, may start projects | First visit after joining | C1, the strip, a section headed "Welcome, {name}" (`home.welcome.title`) with `screen.home.welcome.what` and button "Continue the guided welcome" (`screen.home.welcome.continue`) and link "Not now" (no word row for Home); then C4, C5, C7, C9, C10. No "Needs you", no "Since you last looked". |
 | S3. New member's first visit, may not start projects | As S2, member without the right to start projects | C1, the welcome section of S2; section "Getting into a project" (`screen.home.join.heading`), help `screen.home.join.says`, text "Your team's work happens in projects, and you're not in one yet. Join one you were invited to, or ask to join one the team can find." (`screen.home.join.lead`); rows of invited projects (button "Join") and findable ones (button "Ask to join", or "Withdraw your request" when asked); note "Starting a project of your own is for members your team's administrators allow. Administrators: {admins}. Ask if you have a problem to bring." (`screen.home.join.nocreate`); the door "Help for my own situation" alone. No "What happened?", no "Start a project". |
 | S4. May not start projects, no project open | Nothing to join or ask for | Heading as C1; section "Getting into a project" with "No project is open to you yet. A project's owners can invite you, and your team's administrators can let you start your own. Administrators: {admins}." (`screen.home.join.none`); the door "Help for my own situation". |
-| S5. Founder of a new team | A team with no members or projects yet | Heading "Your team" while unnamed; section "Your team's Civicsmith is ready" (`home.ready.title`, also `screen.home.ready`) with `screen.home.nothingyet`; numbered steps: button "Name your team" (`home.first.name`); button "Invite your first members" (`screen.home.invite`) with "Make an invitation link for each person and send it yourself: Civicsmith sends no email." (`screen.home.first.invite`); button "Say who your team is" (`screen.home.saywho`) with `screen.home.first.identity`; "Open your first project: choose below what happened." (`screen.home.first.project`); then C9 and C10. Nothing else. |
+| S5. Founder of a new team | A team with no members or projects yet | Heading "Your team" (`shell.group.unnamed`) while unnamed; section "Your team's Civicsmith is ready" (`home.ready.title`, also `screen.home.ready`) with `screen.home.nothingyet`; numbered steps: button "Name your team" (`home.first.name`); button "Invite your first members" (`screen.home.invite`) with "Make an invitation link for each person and send it yourself: Civicsmith sends no email." (`screen.home.first.invite`); button "Say who your team is" (`screen.home.saywho`) with `screen.home.first.identity`; "Open your first project: choose below what happened." (`screen.home.first.project`); then C9 and C10. Nothing else. |
 | S6. A read failed | One block's read fails | That block is drawn as failed, never left out as if empty (see `every-screen`). |
 | S7. Assistant unreachable | No AI account | As S1. Home offers no assistant act; nothing changes. |
 
@@ -76,7 +74,7 @@ Words are quoted with their key from `words.json`. Values in braces, such as `{n
 | A4. Button "Read and approve it" (`screen.home.todo.approve.button`) (`filingapprove`) | a letter waits for a second approval | the letter's full approval dialog (`every-screen`) |
 | A5. Button "Open the check" (`screen.queue.check.open`) (`taskresolve`) | a check asked of you | the screen the check concerns |
 | A6. Buttons "Grant" (`screen.home.request.grant`), "Decline" (`screen.home.request.decline`) (`projectrequestanswer`) | a request to join a project you own | the row leaves; the asker is told |
-| A7. Button "Join" (`act.projectjoin.label.home`) | an invitation | you join; the project opens in Projects |
+| A7. Button "Join" (`act.projectjoin.label.home`) | an invitation | you join; the row leaves |
 | A8. Button "Ask to join" (`act.projectrequest.label.home`); "Withdraw your request" (`act.projectrequestwithdraw.label.home`) | S3: a findable project | the row reads "You asked to join on {date}. Its owners decide." (`projects.request.asked`); withdrawing restores "Ask to join" |
 | A9. Link "See what changes" (`queue.update.see`) | administrator, update ready | `updates` |
 | A10. Area names "Investigation", "Action", "Members", "Administration" | always | `dash-project`, `dash-action`, `members`, `settings` |
@@ -201,7 +199,7 @@ Words are quoted with their key from `words.json`. Values in braces, such as `{n
 
 **Content**
 - C1. The strip, as on `home`.
-- C2. Heading "Action"; beneath: "Every clock that is running, whose move it is, replies that came in, and what waits for a second approval." (`screen.dash-action.sub`).
+- C2. Heading "Action" (no word row on this screen; `screen.home.area.action` holds the same word); beneath: "Every clock that is running, whose move it is, replies that came in, and what waits for a second approval." (`screen.dash-action.sub`).
 - C3. Four tiles: "Clocks running" (`screen.dash-action.tile.clocks`) with "{n} due this week" (`.tile.dueweek`); "Our move" (`.tile.ours`) with "due {day}" (`.tile.dueday`); "Their move" (`.tile.theirs`) with "{n} with no reply recorded" (`.tile.noreply`); "Replies to read" (`.tile.replies`) with "came in {date}" (`.tile.came`).
 - C4. Section "Needs you" (`screen.home.needsyou`), help "What is yours in Action: each item with whose move it is and its act." (`screen.dash-action.tip.yours`).
 - C5. Section "Every action" (`screen.dash-action.every.heading`), help `screen.dash-action.tip.every` (the clock as a sentence, never a countdown). Table columns "Action", "To", "Whose move", "The clock", "Next" (`screen.dash-action.col.*`). Clock sentences: "The {office} must answer by {date}: {days} days under the {law}, rolled past a holiday." (`.clock.due`); "Sent {date}; the team gave until {due}." (`.clock.sent`); "Approve by {day}, the plan's checkpoint." (`.clock.approve`). Next: "Record what came back" (`.next.record`), "Escalate, as the plan sets" (`.next.escalate`), "the plan's next step is ready" (`.nextready`).
@@ -724,6 +722,10 @@ The design above is the authority; these are where the built code was seen to di
 - `home` A17 and `queue` A12: `taskdecide` is registered only once its owners declare the op; it is not declared, so neither screen draws it (bio-plane/src/screens-daily/home.mjs:21-22, :438).
 - `finder` A15: "Follow this item into another dimension" and "Search the registers" appear only in the key list, in no screen (bio-plane/src/screens-settings/keys.mjs; not in bio-plane/src/screens-daily/finder.mjs).
 - `find-in` S7: the section "Proposed by the assistant" (`screen.find-in.proposed.*`) is not drawn by the code (no reference in bio-plane/src/screens-daily/find-in.mjs).
+- `dash-action` C2: the code's heading is the screen's name, "The Action dashboard" (`screen.dash-action.name`), not "Action" (bio-plane/src/screens-action/dash-action.mjs:53; the shell's `title` draws `screen.<id>.name` when given no label, bio-plane/src/interface-shell/browser.mjs:758-761).
+- `capture` C1: the code's heading is "Add" (`screen.capture.name`), not "Add to the record" (`screen.capture.title`) (bio-plane/src/screens-intake/capture.mjs:627).
+- `archive` C1, `open-file` C1: the code's heading is the screen's name, "Archive" and "Opening a file", not the archive's or file's title (bio-plane/src/screens-intake/archive.mjs:22, bio-plane/src/screens-intake/open-file.mjs:26).
+- `theme` C4: the code draws one heading, "Themes", for both states; the design heads one theme with its name (bio-plane/src/screens-investigate/theme.mjs:21).
 - `capture` V1: the code refuses an empty address with `capture.fieldneeded`; the word row `screen.capture.address.empty` ("Write the address first: an https address on a public site.") is not drawn (bio-plane/src/screens-intake/capture.mjs:655).
 - `capture` V2 to V7: the word table holds two English versions of each fetch refusal, `refusal.<CODE>` and `screen.capture.refusal.<CODE>`, which differ; the design's drawing uses `refusal.<CODE>`. Which one a refused fetch shows was not settled from the code.
 

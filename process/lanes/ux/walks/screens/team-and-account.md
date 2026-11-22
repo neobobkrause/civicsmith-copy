@@ -4,23 +4,25 @@ Length: <N> lines. Last section: "Changes".
 
 Page `team-and-account` of the Screens document (index: ../index.md). Written 22 Nov 2026 by a worker for civicsmith ux lane #1.
 
-The team, its members and its settings; a member's own account, ties, notes and recovery codes. What binds every screen (the frame, the rail, the assistant dock, refusals, accessibility, `unavailable`) is on the page "Every screen" and is not repeated here. Every screen on this page is in the working frame, opened from the rail's place Settings (`settings`), and needs a session; without one the shell shows `front` and keeps the address to return to.
+The team, its members and its settings; a member's own account, ties, notes and recovery codes. What binds every screen (frames, rail, dock, refusals, `unavailable`) is on the page "Every screen". Every screen here is in the working frame, under the rail's place Settings, and needs a session.
 
-Every screen's heading is its `screen.<id>.name` word, with its `screen.<id>.purpose` word as the heading's explanation. A button's words are `act.<op>.label.<id>` unless another key is named. The test data is the index's (team "Lakeshore Tenants", administrator Rosa, members Mai, Dev, Ana, Teo); names in the states below are examples of that data.
-
-**The walk has no AI account.** On every screen here the assistant dock is absent, not greyed, and each control marked `AI` below is absent too: not drawn, not disabled.
+How to read this page:
+- In a screen's section, a key written `.x` means `screen.<id>.x`. A button's words are its `act.<op>.label.<id>` row unless another key is named; the Actions tables give each button's words.
+- The heading of every screen is its `screen.<id>.name` word; its `.purpose` word is the heading's explanation.
+- Words are quoted for headings, controls, state lines and messages. A longer explanation is named by its key and its length.
+- **The walk has no AI account.** The assistant dock is absent, not greyed, and every control marked `AI` is not drawn.
 
 ## The screens on this page
 
 | id | heading | address | built? |
 |---|---|---|---|
 | `group-identity` | "Who your team is" | `/app/group-identity` | built |
-| `members` | "Members" | `/app/members`, a member `/app/members/<handle>` | built |
+| `members` | "Members" | `/app/members`; a member `/app/members/<handle>` | built |
 | `security` | "Security" | `/app/security` | built, in part |
 | `account` | "Your account" | `/app/account` | built |
 | `connect` | "The assistant" | `/app/connect` | built; superseded in the first beta by page `ai` |
 | `teamai` | "The team's assistant" | `/app/teamai` | built; superseded in the first beta by page `ai` |
-| `bias` | "Declared bias" | `/app/bias`, a work `/app/bias/<run>` | built |
+| `bias` | "Declared bias" | `/app/bias`; a work `/app/bias/<run>` | built |
 | `places` | "Places and offices" | `/app/places` | built |
 | `recovery` | "Recovery codes" | `/app/recovery` | built |
 | `group` | "Your team" | `/app/group` | built |
@@ -28,758 +30,643 @@ Every screen's heading is its `screen.<id>.name` word, with its `screen.<id>.pur
 | `updates` | "Updates" | `/app/updates` | built |
 | `ties` | "Your ties" | `/app/ties` | built |
 | `notes` | "Your notes" | `/app/notes` | built |
-| `translations` | "Translations" | `/app/translations`, a language `/app/translations/<tag>` | built |
+| `translations` | "Translations" | `/app/translations`; a language `/app/translations/<tag>` | built |
 | `wizards` | "Wizards" | `/app/wizards` | built |
 
 ---
 
 ## group-identity: "Who your team is"
 
-- **Address.** `/app/group-identity`. **Frame.** working.
-- **Who can see it.** Every member reads it. Only an administrator sees the form "Change it" and its acts.
-- **Purpose.** Say what kind of team this is, what it focuses on, why it exists, and who sees that.
-- **Entry points.** `settings`, section "The team's", link "Who your team is". The wizard "Say who your team is" starts here.
+- **Address** `/app/group-identity`. **Frame** working. **Who can see it** every member reads; only an administrator sees "Change it".
+- **Purpose** Say what kind of team this is, what it focuses on, why it exists, and who sees that.
+- **Entry points** `settings` › "The team's" › "Who your team is". Wizard "Say who your team is".
 
-**Content**
-- C1. Above the heading, one of: note "Your team's short name was recorded when Civicsmith was installed." (`screen.group-identity.seed.recorded`), or "Your team's short name is not recorded yet. Run the installer again: it asks for it once and records it." (`screen.group-identity.seed.unrecorded`). No field or act for the short name.
-- C2. Heading "Who your team is" (`screen.group-identity.name`).
-- C3. Line "About {name}." (`screen.group-identity.group`), with the team's display name.
-- C4. Once the team has said who it is: section "Who your team is" (`screen.group-identity.now.heading`) with "What kind of team:" (`screen.group-identity.kinds`) and the kinds chosen; "What you focus on" (`screen.group-identity.focus.field`) and its text; "Why the team exists, in your own words" (`screen.group-identity.purpose.field`) and its text; then "Only members see this." (`screen.group-identity.visibility.members`) or "Members and the public see this." (`screen.group-identity.visibility.public`).
-- C5. To an administrator, section "Change it" (`screen.group-identity.edit.heading`):
-  - checkboxes "What kind of team" (`screen.group-identity.kinds.field`): "a professional group", "an issue group", "a community group", "a team for many things", "something else" (`screen.group-identity.kind.professional`, `.issue`, `.community`, `.catch-all`, `.other`);
-  - field "Describe your kind of team, in a few words" (`screen.group-identity.other.field`), help `screen.group-identity.other.help` (examples; "it locks nothing");
-  - field "What you focus on"; field "Why the team exists, in your own words";
-  - radios "Who sees all of this" (`screen.group-identity.visibility.field`): "Members only" (`.visibility.choice.members`), "Also our public page and the network directory" (`.visibility.choice.public`);
-  - button "Save who your team is, and who sees it".
-- C6. `AI` While the assistant is reachable, under the form: explanation `screen.group-identity.ask.intro` (1 sentence: the assistant drafts from your answers; nothing is saved until you save it), fields "What does your team do?", "Who is in it, and who does it work for?", "Why did it start?" (`screen.group-identity.ask.q.what`, `.who`, `.why`), and button "Ask the assistant to help write it". A field it filled is labelled "Draft · the assistant's, asked by {handle}" (`screen.group-identity.draft.label`).
-
-**States**
+Content
+- C1. Above the heading, one note: `.seed.recorded` "Your team's short name was recorded when Civicsmith was installed." or `.seed.unrecorded` (gap, 2 sentences: not recorded; run the installer again). No field or act for the short name.
+- C2. Heading "Who your team is"; line "About {name}." (`.group`).
+- C3. Once said: section "Who your team is" (`.now.heading`): "What kind of team:" (`.kinds`) and the kinds; "What you focus on" (`.focus.field`) and its text; "Why the team exists, in your own words" (`.purpose.field`) and its text; "Only members see this." (`.visibility.members`) or "Members and the public see this." (`.visibility.public`).
+- C4. Administrator: section "Change it" (`.edit.heading`): checkboxes "What kind of team" (`.kinds.field`): "a professional group", "an issue group", "a community group", "a team for many things", "something else" (`.kind.*`); field "Describe your kind of team, in a few words" (`.other.field`, help `.other.help`); fields "What you focus on", "Why the team exists, in your own words"; radios "Who sees all of this" (`.visibility.field`): "Members only", "Also our public page and the network directory" (`.visibility.choice.*`); button A1.
+- C5. `AI` Assistant reachable: `.ask.intro` (1 sentence), fields "What does your team do?", "Who is in it, and who does it work for?", "Why did it start?" (`.ask.q.what`, `.who`, `.why`), button A2. A field it filled is labelled "Draft · the assistant's, asked by {handle}" (`.draft.label`).
 
 | State | When | What shows |
 |---|---|---|
-| S1 Short name recorded | The installer recorded the short name | C1's first note. |
-| S2 Short name not recorded | An older installation | C1's second note, as a gap. |
-| S3 Not said yet | No description saved | No section "Who your team is" (C4). A member who does not administer sees only C1 to C3. |
-| S4 Assistant unreachable | No AI account (the walk) | C6 is absent; the rest as S1 or S2. |
+| S1 Short name recorded | installer recorded it | C1 `.seed.recorded`. |
+| S2 Older installation | no short name | C1 `.seed.unrecorded`. |
+| S3 Not said yet | nothing saved | No C3; a member sees only C1, C2. |
+| S4 Assistant unreachable (the walk) | no AI account | No C5. |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Save who your team is, and who sees it" (`act.groupdescriptionset.label.group-identity`) | administrator | Same screen; C4 shows what was saved; any draft label goes. |
-| A2. `AI` button "Ask the assistant to help write it" (`act.groupdescriptiondraft.label.group-identity`) | administrator, assistant reachable | Same screen; the focus and purpose fields fill, each labelled as C6. Nothing is saved. |
+| A1. button "Save who your team is, and who sees it" | administrator | Same screen; C3 shows what was saved; draft labels go. |
+| A2. `AI` button "Ask the assistant to help write it" | administrator, assistant reachable | Same screen; focus and purpose fields filled and labelled; nothing saved. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. the whole form | no kind ticked and every field empty, on A1 | the shell's "field needed" message naming "What you focus on" (`shell.field.needed`) |
-| V2. the three questions | all empty, on A2 | "Answer at least one question first. Nothing was sent." (`screen.group-identity.ask.none`) |
+| V1. whole form | no kind and every field empty, on A1 | `shell.field.needed`, naming "What you focus on" |
+| V2. the three questions | all empty, on A2 | "Answer at least one question first. Nothing was sent." (`.ask.none`) |
 
 ---
 
 ## members: "Members"
 
-- **Address.** `/app/members`; one member, with their row's panel open, `/app/members/<handle>`. **Frame.** working.
-- **Who can see it.** Every member reads the roster. Only an administrator sees invitations, joining through the website, signing keys, the administrators' acts and the removal rule.
-- **Purpose.** Everyone in the team and what each may do; administrators invite members and change what they may do.
-- **Entry points.** `settings`, section "The team's", link "Members"; a member's name anywhere it is a reference opens `/app/members/<handle>`; `security`'s "What you can do" link "Members". The wizard "Invite a member" starts here.
+- **Address** `/app/members`; `/app/members/<handle>` opens that member's row panel. **Frame** working.
+- **Who can see it** every member reads the roster; invitations, joining, signing keys, administrators' acts and the removal rule are an administrator's.
+- **Purpose** Everyone in the team and what each may do; administrators invite and change what members may do.
+- **Entry points** `settings` › "The team's" › "Members"; any member's name; `security` › "What you can do". Wizard "Invite a member".
 
-**Content**
-- C1. Heading "Members" (`screen.members.name`); line "Active members: {members} · Administrators: {administrators}" (`screen.members.count`).
-- C2. The roster, one row per member, columns "Handle", "Cover", "Role", "May do", "Status", "Expertise" (`screen.members.col.handle`, `.col.cover`, `.col.role`, `.col.caps`, `.col.status`, `.col.expertise`). A member's view shows the member, "May do" and "Expertise" columns. Roles "administrator", "member" (`screen.members.role.admin`, `.role.member`). May do, by capability: "add and revise work", "sign and publish cases", "start projects", "look after the team's Civicsmith" (`screen.members.cap.contribute`, `.cap.publish`, `.cap.create_projects`, `.cap.administer`); for an administrator "all of it, as every administrator may" (`screen.members.cap.all`). Status: "invited", "proposed as an administrator, awaiting endorsement", "active", "inactive", "status not recorded" (`screen.members.status.*`). Expertise: "declared: {label}", "confirmed: {label}", or "No expertise declared." (`screen.members.expertise.*`).
-- C3. The founder's row comes first. Before the founder chooses a handle it reads "The team's founder" (`member.founder.unnamed`); a member who has not joined reads "Not joined yet" (`screen.members.nohandle`).
-- C4. To a member who does not administer, under the table: note "Administrators add members and change what each may do." (`screen.members.member.note`).
-- C5. To an administrator while the team has one administrator: note "With one administrator, the team depends on that one person and the hosting account." (`screen.members.recovery.one`) (or "Your team has {administrators} administrators." `screen.members.recovery.many`), then "You hold recovery codes ({remaining} left)." or "You hold no recovery codes yet." (`screen.members.recovery.codes`, `.recovery.nocodes`), with link "Add a second administrator" (`screen.members.recovery.add`) and, with no codes, link "Get your recovery codes" (`screen.members.recovery.issue`).
-- C6. To an administrator, each row's panel: an invited row's status "invitation not yet used", "invitation used", "invitation expired" or "invitation withdrawn" (`screen.members.invitation.*`); checkboxes "What {handle} may do" (`screen.members.caps.legend`); status sentence "Make {handle} inactive. Their past work stays in the record under their handle." or "Make {handle} active again." (`screen.members.status.to.revoked`, `.status.to.active`); for a proposed administrator "{handle} is proposed as an administrator. Your endorsement counts toward it." (`screen.members.endorse.what`); field "Why remove their administrator's powers? (every administrator will see this)" (`screen.members.remove.reason`). Fold "When confirming or withdrawing an expertise is refused" (`screen.members.expertise.refused.head`) holds three refusals (`screen.members.expertise.refused.admin`, `.refused.undeclared` + `.undeclared.next`, `.refused.state` + `.state.next`).
-- C7. To an administrator, section "Invite a member" (`screen.members.invite.heading`): field "A short id for this invitation" (`screen.members.invite.id`), help `screen.members.invite.id.help`; field "The cover the team knows them by, not a legal name" (`screen.members.invite.cover`); checkboxes "What they may do" (`screen.members.invite.caps`); button "Create the invitation link" (`screen.members.invite.create`); note "Your team's Civicsmith sends no email. Copy the link and send it yourself. It works once and expires after seven days." (`screen.members.invite.noemail`). Ticking "look after the team's Civicsmith" draws the question "Propose {who} as an administrator?" (`screen.members.cap.administer.confirm.head`), explanation `screen.members.cap.administer.confirm` (5 sentences: what an administrator may do; every current administrator must agree), choices "Propose {who} as an administrator" and "Go back" (`.confirm.yes`, `.confirm.no`).
-- C8. After an invitation is made: "The invitation for {handle}, shown this once. It works once and expires on {expires}." (`screen.members.invite.shown`) and the link. After a reset link is made: "The reset link for {handle}, shown this once. It works once and expires on {expires}." (`screen.members.reset.shown`) and "Your team's Civicsmith sends no email: give the link to them yourself, by a way you trust." (`screen.members.reset.noemail`).
-- C9. To an administrator, section "Joining through your website" (`screen.members.website.heading`): explanation `screen.members.website.what` (2 sentences); fields "How many may join each day" (`screen.members.website.cap`) and "Days until it expires (1 to 30; seven if left empty)" (`screen.members.website.days`); buttons "Create a website key", "Turn on the reusable join link". After either: "The website key, shown this once. Put it in your website's settings." (`screen.members.website.keyshown`) or "The join link, shown this once. Anyone with it can ask to join." (`screen.members.website.linkshown`).
-- C10. To an administrator, section "More for administrators" (`screen.members.more.heading`) with links "Places and offices" (`screen.places.name`) and "Security" (`screen.security.name`).
-- C11. To an administrator, section "Signing keys" (`screen.members.keys.heading`): explanation `screen.members.a.signing.key.lets.a`, `.civicsmith.holds.only.the.public`, `.use.this.when.a.member`; one row per member: "key registered by {member}, {date}" (`screen.members.key.registered.by.rosa.3`) with button "Withdraw {handle}'s signing key" (`screen.members.signer.withdraw`); a withdrawn key "key withdrawn by {member}, {date}" · "it does not sign" (`screen.members.key.react.key.withdrawn.by.rosa.12`, `.key.react.it.does.not.sign`) with button "Reactivate {member}'s signing key" (`screen.members.key.react.reactivate.devs.signing.key`); or "no signing key yet" (`screen.members.no.signing.key.yet`). Then note `screen.members.key.react.withdraw.a.key.when.a` + `.key.react.a.key.a.member.withdrew`; choice "Whose key" (`screen.members.keys.whose`); field "Their public key" (`screen.members.keys.public`), help `screen.members.the.one.line.the.member` + `.it.is.the.public.half`; button "Register a key for this member"; note `screen.members.the.record.shows.that.you` + `.they.see.it.under.your`.
-- C12. To an administrator, section "What removing an administrator takes" (`screen.members.what.removing.an.administrator.takes`): with one administrator, "With {n} administrator, no administrator can be removed by vote." + `screen.members.a.majority.that.leaves.out` + `.that.is.the.rule.holding`; fold "If more administrators can act than the roster lists" (`screen.members.founder.if.the.count.is.higher`, 3 sentences on the founder held through the hosting account); fold "How it changes with the number of administrators" (`screen.members.how.it.changes.with.the`) with a table "Administrators", "Votes it takes", "Who votes" (`screen.members.scale.head.*`) for 1 to 7, the team's row marked "(now)" (`screen.members.scale.now`), rows 1 and 2 "not removable" (`screen.members.scale.not_removable`), then the rule `screen.members.removal.takes.a.majority.of` + `.the.one.facing.removal.is` + `.a.lone.administrator.can.never`. Section help: `screen.members.the.team.s.own.rule.explain` + "Nothing here changes anything." (`screen.members.nothing.here.changes.anything.explain`).
-
-**States**
+Content
+- C1. Heading "Members"; "Active members: {members} · Administrators: {administrators}" (`.count`).
+- C2. Roster, columns "Handle", "Cover", "Role", "May do", "Status", "Expertise" (`.col.*`); founder first. Role "administrator"/"member" (`.role.*`). May do: "add and revise work", "sign and publish cases", "start projects", "look after the team's Civicsmith" (`.cap.*`); an administrator "all of it, as every administrator may" (`.cap.all`). Status: "invited", "proposed as an administrator, awaiting endorsement", "active", "inactive", "status not recorded" (`.status.*`). Expertise: "declared: {label}", "confirmed: {label}", "No expertise declared." (`.expertise.*`). A founder without a handle: "The team's founder" (`member.founder.unnamed`); a member not joined: "Not joined yet" (`.nohandle`).
+- C3. Member's view: under the table, "Administrators add members and change what each may do." (`.member.note`).
+- C4. Administrator, one administrator only: "With one administrator, the team depends on that one person and the hosting account." (`.recovery.one`; with more, `.recovery.many`), "You hold recovery codes ({remaining} left)." or "You hold no recovery codes yet." (`.recovery.codes`, `.recovery.nocodes`); links "Add a second administrator" (`.recovery.add`), "Get your recovery codes" (`.recovery.issue`, without codes).
+- C5. Administrator, a row's panel: an invitation's "invitation not yet used" / "used" / "expired" / "withdrawn" (`.invitation.*`); checkboxes "What {handle} may do" (`.caps.legend`); `.status.to.revoked` or `.status.to.active`; for a proposed administrator `.endorse.what`; field "Why remove their administrator's powers? (every administrator will see this)" (`.remove.reason`); fold "When confirming or withdrawing an expertise is refused" (`.expertise.refused.head`) with three refusals (`.expertise.refused.admin`, `.refused.undeclared`, `.refused.state`, each with its next step).
+- C6. Section "Invite a member" (`.invite.heading`): fields "A short id for this invitation" (`.invite.id`, help `.invite.id.help`), "The cover the team knows them by, not a legal name" (`.invite.cover`); checkboxes "What they may do" (`.invite.caps`); button A1; note `.invite.noemail` "Your team's Civicsmith sends no email. Copy the link and send it yourself. It works once and expires after seven days." Ticking "look after the team's Civicsmith" draws "Propose {who} as an administrator?" (`.cap.administer.confirm.head`), `.cap.administer.confirm` (5 sentences), choices "Propose {who} as an administrator" / "Go back".
+- C7. Shown once after A1: "The invitation for {handle}, shown this once. It works once and expires on {expires}." (`.invite.shown`) and the link. After A2: `.reset.shown` and `.reset.noemail`, and the link.
+- C8. Section "Joining through your website" (`.website.heading`): `.website.what` (2 sentences); fields "How many may join each day" (`.website.cap`), "Days until it expires (1 to 30; seven if left empty)" (`.website.days`); buttons A13, A14; after either, `.website.keyshown` or `.website.linkshown` and the key or link.
+- C9. Section "More for administrators" (`.more.heading`): links "Places and offices", "Security".
+- C10. Section "Signing keys" (`.keys.heading`): 3 sentences (`.a.signing.key.lets.a`, `.civicsmith.holds.only.the.public`, `.use.this.when.a.member`); per member "key registered by {member}, {date}" (`.key.registered.by.rosa.3`) with A3, or "key withdrawn by {member}, {date}" · "it does not sign" with A4, or "no signing key yet" (`.no.signing.key.yet`); note `.key.react.withdraw.a.key.when.a`, `.key.react.a.key.a.member.withdrew`; choice "Whose key" (`.keys.whose`); field "Their public key" (`.keys.public`); button A5; note `.the.record.shows.that.you`, `.they.see.it.under.your`.
+- C11. Section "What removing an administrator takes" (`.what.removing.an.administrator.takes`), help `.the.team.s.own.rule.explain` + "Nothing here changes anything.": with one administrator "With {n} administrator, no administrator can be removed by vote." + 2 sentences; fold "If more administrators can act than the roster lists" (`.founder.if.the.count.is.higher`, 3 sentences); fold "How it changes with the number of administrators" (`.how.it.changes.with.the`): table "Administrators", "Votes it takes", "Who votes" (`.scale.head.*`) for 1 to 7, the team's row "(now)", rows 1 and 2 "not removable", then 3 sentences (`.removal.takes.a.majority.of` …).
 
 | State | When | What shows |
 |---|---|---|
-| S1 As an administrator sees it | session administers | C1 to C3, C5 (while one administrator), C6 to C12. |
-| S2 As a member sees it | session does not administer | C1, C2 as a table of member, "May do" and "Expertise", C4. No act. |
-| S3 An administrator's removal under way | a removal has votes outstanding | Heading "Removing {member} as an administrator" (`screen.members.removing.teo.as.an.administrator`), "{n} administrators: {members}." (`screen.members.four.administrators.rosa.dev.ana`); section "What it takes" (`screen.members.removal.heading`): "This takes {n} of {total} administrators' votes." (`screen.members.this.takes.3.of.4`), "{member} is counted but doesn't vote, so the {n} who may vote must all agree." (`screen.members.teo.is.counted.but.doesn`); a row per administrator: "{member} · agreed" and its date, "{member} · hasn't voted yet" with "the removal waits for {member}", "{member} · faces removal" with "counted in the {n}, doesn't vote" (`screen.members.removal.agreed`, `.removal.notyet`, `.the.removal.waits.for.ana`, `.removal.faces`, `.counted.in.the.4.doesn`); "{n} of {total} have agreed so far." (`screen.members.2.of.3.have.agreed`); the scale fold as C12. |
-| S4 Nobody else yet | the roster holds only the viewer | "Nobody is in the team yet but you." (`screen.members.empty`). |
+| S1 As an administrator sees it | session administers | C1, C2, C4 (one administrator), C5 to C11. |
+| S2 As a member sees it | session does not administer | C1; table of member, "May do", "Expertise"; C3. No act. |
+| S3 A removal under way | votes outstanding | "Removing {member} as an administrator" (`.removing.teo.as.an.administrator`); "{n} administrators: {members}."; section "What it takes" (`.removal.heading`): "This takes {n} of {total} administrators' votes.", `.teo.is.counted.but.doesn`; rows "{member} · agreed" + date, "{member} · hasn't voted yet" + "the removal waits for {member}", "{member} · faces removal" + "counted in the {n}, doesn't vote"; "{n} of {total} have agreed so far."; the scale fold. |
+| S4 Nobody else yet | only the viewer | "Nobody is in the team yet but you." (`.empty`). |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Create the invitation link" (`screen.members.invite.create`, act `memberadd`) | administrator | Same screen; C8's invitation sentence and link; a row "invited" in C2. Beyond the second administrator, an administrator invitation is recorded as a proposal awaiting endorsement. |
-| A2. button "Make a reset link for a member" (`act.owed_passwordresetlink.label.members`) | administrator, on a row's panel | Same screen; C8's reset sentences and link. |
-| A3. button "Withdraw {handle}'s signing key" (act `signerset`) | administrator, on another member's held key | Same screen; that row reads "key withdrawn by …" with "Reactivate …". |
-| A4. button "Reactivate {member}'s signing key" (act `signerset`) | administrator, on a withdrawn key of a current member | Same screen; the row reads "key registered …" again. |
-| A5. button "Register a key for this member" (act `signeradd`) | administrator | Same screen; that member's row reads "key registered by {member}, {date}". |
-| A6. button "Change what a member may do" (act `membercaps`) | administrator, on a row's panel | Same screen; the row's "May do" changes. |
-| A7. button "Change a member's status" (act `memberset`) | administrator, on a row's panel | Same screen; the row's status reads "inactive" or "active". |
-| A8. button "Endorse an administrator" (act `adminendorse`) | administrator, on a proposed administrator's row | Same screen; the row's status changes once every administrator has endorsed. |
-| A9. button "Remove an administrator" (act `adminremove`); in S3 button "Agree: remove {member} as an administrator" (`screen.members.agree.remove.teo.as.administrator`) | administrator, with a reason | Same screen; S3 counts the vote. |
-| A10. button "Confirm declared expertise" (act `expertiseconfirm`) | administrator, on a declared expertise | Same screen; the cell reads "confirmed: {label}". |
-| A11. button "Withdraw an expertise" (`act.owed_expertisewithdraw.label.members`), help `screen.members.help.withdraw.what`, `.withdraw.again`, `.withdraw.record` | administrator, on a confirmed expertise | Same screen; the cell reads "No expertise declared." |
-| A12. button "Withdraw an unused invitation" (act `invitewithdraw`) | administrator, on an unused invitation | Same screen; the row reads "invitation withdrawn". |
-| A13. button "Create a website key" (act `websitekeycreate`) | administrator | Same screen; C9's key sentence and the key. |
-| A14. button "Turn on the reusable join link" (act `joinlinkenable`) | administrator | Same screen; C9's link sentence and the link. |
-| A15. links "Places and offices", "Security" (C10) | administrator | `places`, `security`. |
-| A16. link "Get your recovery codes" (C5) | administrator without codes | `recovery`. |
-| A17. a member's name | always | `/app/members/<handle>`, that row's panel open. |
+| A1. button "Create the invitation link" (`.invite.create`, act `memberadd`) | administrator | Same screen; C7; an "invited" row. An administrator invitation beyond the second is a proposal awaiting endorsement. |
+| A2. button "Make a reset link for a member" (`act.owed_passwordresetlink.label.members`) | administrator, row panel | Same screen; C7's reset link. |
+| A3. button "Withdraw {handle}'s signing key" (`.signer.withdraw`, act `signerset`) | administrator, another's held key | Same screen; the row reads withdrawn. |
+| A4. button "Reactivate {member}'s signing key" (act `signerset`) | withdrawn key, current member | Same screen; the row reads registered. |
+| A5. button "Register a key for this member" (act `signeradd`) | administrator | Same screen; "key registered by {member}, {date}". |
+| A6. button "Change what a member may do" (`membercaps`) | row panel | Same screen; "May do" changes. |
+| A7. button "Change a member's status" (`memberset`) | row panel | Same screen; status "inactive" or "active". |
+| A8. button "Endorse an administrator" (`adminendorse`) | proposed administrator | Same screen; status changes once every administrator endorses. |
+| A9. button "Remove an administrator" (`adminremove`); in S3 "Agree: remove {member} as an administrator" | administrator, with a reason | S3, counting the vote. |
+| A10. button "Confirm declared expertise" (`expertiseconfirm`) | declared expertise | Same screen; "confirmed: {label}". |
+| A11. button "Withdraw an expertise" (`act.owed_expertisewithdraw.label.members`) | confirmed expertise | Same screen; "No expertise declared." |
+| A12. button "Withdraw an unused invitation" (`invitewithdraw`) | unused invitation | Same screen; "invitation withdrawn". |
+| A13. button "Create a website key" (`websitekeycreate`) | administrator | Same screen; the key, shown once. |
+| A14. button "Turn on the reusable join link" (`joinlinkenable`) | administrator | Same screen; the link, shown once. |
+| A15. links in C9; "Get your recovery codes" | administrator | `places`, `security`; `recovery`. |
+| A16. a member's name | always | `/app/members/<handle>`, its panel open. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. short id and cover | either empty, on A1 | "Give both a short id and the cover the team knows them by. Nothing was sent." (`screen.members.invite.incomplete`) |
-| V2. "How many may join each day" | not a whole number of one or more, on A13 or A14 | "Say how many may join each day: a whole number, one or more. Nothing was sent." (`screen.members.website.nocap`) |
-| V3. "Why remove their administrator's powers?" | empty or over 2,000 characters, on A9 | "Say why, in your own words, in at most 2,000 characters. Nothing was sent." (`screen.members.remove.noreason`) |
+| V1. short id, cover | either empty, A1 | "Give both a short id and the cover the team knows them by. Nothing was sent." (`.invite.incomplete`) |
+| V2. "How many may join each day" | not a whole number ≥ 1, A13/A14 | "Say how many may join each day: a whole number, one or more. Nothing was sent." (`.website.nocap`) |
+| V3. removal reason | empty or over 2,000 characters, A9 | "Say why, in your own words, in at most 2,000 characters. Nothing was sent." (`.remove.noreason`) |
 
 ---
 
 ## security: "Security"
 
-- **Address.** `/app/security`. **Frame.** working.
-- **Who can see it.** Administrators. A member who does not administer sees the heading and only "Security is set by your team's administrators. Administrators: {admins}. Ask one of them about anything here." (`screen.security.admins`).
-- **Purpose.** How hard the team's Civicsmith is being tried over a period, by kind and by hour, against its own usual; counts only.
-- **Entry points.** `settings`, section "The team's", link "Security"; `members`, "More for administrators"; a security notice in an administrator's `queue` opens this screen at that period.
+- **Address** `/app/security`. **Frame** working. **Who can see it** administrators; any other member sees the heading and "Security is set by your team's administrators. Administrators: {admins}. Ask one of them about anything here." (`.admins`) only.
+- **Purpose** How hard the team's Civicsmith is being tried, by kind and hour, against its own usual; counts only.
+- **Entry points** `settings` › "The team's" › "Security"; `members` › "More for administrators"; a security notice in an administrator's `queue` (opens at that period).
 
-**Content**
-- C1. Heading "Security" (`screen.security.name`); line "How hard your team's Civicsmith is being tried, against its usual. Only administrators see this." (`screen.security.sub`).
-- C2. The period: fields "From" and "To" (`screen.security.from`, `.to`) and button "Show the level for a period"; fold "Dates in the wrong order" (`screen.security.period.bad.summary`) holding V1's message.
-- C3. Section "How hard your team's Civicsmith was tried" (`screen.security.level.heading`): the level mark "Ordinary.", "Raised." or "High." (`screen.security.level.ordinary`, `.raised`, `.high`), its explanation `screen.security.risk.means.ordinary`; "From {from} to {to}." (`screen.security.period`); "{count} attempts, against {usual} usually." (`screen.security.total`).
-- C4. Line "Files are checked. …" (`screen.security.files.on`, 3 sentences: the built-in scanner checks every file on arrival and weekly; a file not fetched by Civicsmith opens in the safe view until a deeper check passes).
-- C5. Fold "The counts, by kind, hour and place" (`screen.security.counts.fold`):
-  - section "By kind and by hour" (`screen.security.heat.heading`): a grid of 24 hours by kind, each square named in words (`screen.security.tip.hour_*`, `.tip.hour_usual`); key "at or below the usual", "up to {n} times the usual" (`screen.security.heat.usual`, `.heat.upto`); note `screen.security.heat.note`;
-  - section "Totals for the period" (`screen.security.totals.heading`): table "Kind", "This period", "Usually" (`screen.security.col.kind`, `.col.count`, `.col.usual`), rows "Refused sign-ins", "Refused keys and links", "Requests over the limit", "Refused hand-overs", "Let through after a check" (`screen.security.kind.*`); note "Counts only. Nothing here says who tried, and nothing your team holds is shown." (`screen.security.totals.note`);
-  - "Where from": bars by country, explained by `screen.security.where.what`; note `screen.security.where.note` (no address is kept; a member's own sign-ins are never placed).
-- C6. Section "When you are told" (`screen.security.told.heading`): an example notice "sign-in refusals far above the usual and still going on, all refused so far" (`screen.security.notice.signin`) · "sent to administrators once, at {time}, when the level became high · not sent again while it lasted" (`screen.security.notice.sent`); note `screen.security.told.note`.
-- C7. Section "What is installed" (`screen.security.parts.heading`): "File scanner", "Safe view" (`screen.security.part.scanner`, `.part.safeview`); "Files waiting to be scanned: {queued}. Files held: {held}." (`screen.security.queue`); button "Check for new signatures now".
-- C8. Section "Your security tools" (`screen.security.tools.heading`): explanation `screen.security.tools.about`; table "Tool", "State", "Added", "What it does" (`screen.security.col.tool`, `.col.state`, `.col.added`, `.col.does`), states "added, not tested", "on", "off: its test failed", "off" (`screen.security.state.*`); or "Your team uses no security tool of its own." (`screen.security.tools.none`). Section "What happened to them" (`screen.security.events.heading`): events (`screen.security.event.*`) or "Nothing yet." (`screen.security.events.none`).
-- C9. Fold "Add another checker (advanced)" (`screen.security.add.fold`) holding section "Tools you can add" (`screen.security.catalogue.heading`), or "No tool can be added just now." (`screen.security.catalogue.none`). Each tool's panel: "What it is sent", "Never sent", "Who receives it", "Where", "How long it keeps files", "How long it keeps results", "Whether it shares them" (`screen.security.h.*`); its config fields; where it keeps files, checkbox "I understand the vendor keeps the files it is sent" (`screen.security.keep`); for a tool on the organization's own servers, checkbox "Check every file, not only those a member asks about" (`screen.security.every`); buttons "Add a security tool", "Test a security tool", "Remove a security tool". Notes `screen.security.adding.private`, `screen.security.notoffered`, `screen.security.logsink`.
-- C10. Section "What you can do" (`screen.security.cando.heading`): `screen.security.cando` (3 sentences), with "Your account" and "Members" as links.
-
-**States**
+Content
+- C1. Heading "Security"; line `.sub` "How hard your team's Civicsmith is being tried, against its usual. Only administrators see this."
+- C2. Fields "From", "To" (`.from`, `.to`); button A1; fold "Dates in the wrong order" (`.period.bad.summary`) holding V1.
+- C3. Section "How hard your team's Civicsmith was tried" (`.level.heading`): mark "Ordinary." / "Raised." / "High." (`.level.*`), explained by `.risk.means.ordinary`; "From {from} to {to}." (`.period`); "{count} attempts, against {usual} usually." (`.total`).
+- C4. `.files.on` (3 sentences: files checked on arrival and weekly; safe view until a deeper check).
+- C5. Fold "The counts, by kind, hour and place" (`.counts.fold`): section "By kind and by hour" (`.heat.heading`), a 24-hour grid by kind, each square named in words (`.tip.hour_*`), key "at or below the usual", "up to {n} times the usual", note `.heat.note`; section "Totals for the period" (`.totals.heading`), table "Kind", "This period", "Usually", rows "Refused sign-ins", "Refused keys and links", "Requests over the limit", "Refused hand-overs", "Let through after a check" (`.kind.*`), note `.totals.note`; where from, by country (`.where.what`, note `.where.note`).
+- C6. Section "When you are told" (`.told.heading`): a notice row (`.notice.signin`, `.notice.sent`); note `.told.note`.
+- C7. Section "What is installed" (`.parts.heading`): "File scanner", "Safe view"; "Files waiting to be scanned: {queued}. Files held: {held}." (`.queue`); button A2.
+- C8. Section "Your security tools" (`.tools.heading`): `.tools.about`; table "Tool", "State", "Added", "What it does", states "added, not tested", "on", "off: its test failed", "off"; or "Your team uses no security tool of its own." (`.tools.none`). Section "What happened to them" (`.events.heading`): events (`.event.*`) or "Nothing yet."
+- C9. Fold "Add another checker (advanced)" (`.add.fold`): section "Tools you can add" (`.catalogue.heading`) or "No tool can be added just now."; each tool's panel: "What it is sent", "Never sent", "Who receives it", "Where", "How long it keeps files", "How long it keeps results", "Whether it shares them" (`.h.*`); its config fields; checkbox "I understand the vendor keeps the files it is sent" (`.keep`) where it keeps files; for an on-premises tool, checkbox "Check every file, not only those a member asks about" (`.every`); buttons A3 to A5. Notes `.adding.private`, `.notoffered`, `.logsink`.
+- C10. Section "What you can do" (`.cando.heading`): `.cando` (3 sentences), "Your account" and "Members" as links.
 
 | State | When | What shows |
 |---|---|---|
-| S1 A week with a hard try | the level was raised or high in the period | C3's mark "Raised." or "High."; "Someone tried hard to sign in on {when}. Every attempt was refused." (`screen.security.summary.signin`) and `screen.security.summary.detail` (3 sentences: how many times the usual, when it was high, nothing new was made). |
-| S2 An ordinary week | around the usual | Mark "Ordinary."; "Nothing unusual. There is nothing for you to do." (`screen.security.ordinary.head`); "In the last {period} every kind of attempt stayed near your team's usual, and no new key, credential or administrator was made." (`screen.security.ordinary.line`). |
-| S3 A member's view | session does not administer | Heading and `screen.security.admins` only. |
-| S4 Scanner holds no signatures | the scan state answers none | C7 says so, with `screen.security.nosignatures.next`. |
+| S1 A week with a hard try | raised or high in the period | Mark "Raised." or "High."; "Someone tried hard to sign in on {when}. Every attempt was refused." (`.summary.signin`); `.summary.detail` (3 sentences). |
+| S2 An ordinary week | near the usual | Mark "Ordinary."; "Nothing unusual. There is nothing for you to do." (`.ordinary.head`); `.ordinary.line`. |
+| S3 A member's view | not an administrator | Heading and `.admins` only. |
+| S4 No signatures | the scanner holds none | C7 says so, with `.nosignatures.next`. |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Show the level for a period" (`act.securitymap.label.security`) | administrator | Same screen; C3 and C5 for the period chosen. |
-| A2. button "Check for new signatures now" (`act.scanmirror.label.security`) | administrator | Same screen; "The scanner has been asked to check for new signatures. The result shows here once it has finished." (`screen.security.mirror.started`). |
-| A3. button "Add a security tool" (`act.securitytooladd.label.security`) | administrator, in a tool's panel | Same screen; the tool's row in C8 "added, not tested"; an event in "What happened to them". |
-| A4. button "Test a security tool" (`act.securitytooltest.label.security`) | administrator, on an added tool | Same screen; "The tool passed its test and is on." or "The tool stays off: {detail}" (`screen.security.tested.on`, `.tested.off`). |
-| A5. button "Remove a security tool" (`act.securitytoolremove.label.security`) | administrator, on a tool held | Same screen; the row goes; an event "{tool} removed". |
-| A6. links "Your account", "Members" (C10) | administrator | `account`, `members`. |
+| A1. button "Show the level for a period" | administrator | Same screen; C3, C5 for that period. |
+| A2. button "Check for new signatures now" | administrator | Same screen; "The scanner has been asked to check for new signatures. The result shows here once it has finished." (`.mirror.started`). |
+| A3. button "Add a security tool" | a catalogue panel | Same screen; the tool "added, not tested"; an event. |
+| A4. button "Test a security tool" | an added tool | Same screen; "The tool passed its test and is on." or "The tool stays off: {detail}" (`.tested.*`). |
+| A5. button "Remove a security tool" | a tool held | Same screen; the row goes; "{tool} removed". |
+| A6. links "Your account", "Members" | administrator | `account`, `members`. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. "From", "To" | an end before the start, on A1 | "Choose a start and an end date, the start first. Nothing was read." (`screen.security.period.bad`) |
-| V2. a tool's config field | empty, on A3 | "Fill in {field} first. Nothing was sent." (`screen.security.config.missing`) |
+| V1. "From", "To" | end before start, A1 | "Choose a start and an end date, the start first. Nothing was read." (`.period.bad`) |
+| V2. a tool's field | empty, A3 | "Fill in {field} first. Nothing was sent." (`.config.missing`) |
 
 ---
 
 ## account: "Your account"
 
-- **Address.** `/app/account`. **Frame.** working.
-- **Who can see it.** Every member, for their own account only.
-- **Purpose.** The member's own settings: handle, password, signing key, language, cover name and expertise; signing out.
-- **Entry points.** `settings`, section "Yours", link "Your account"; `security`'s "What you can do"; the shell's sign-out.
+- **Address** `/app/account`. **Frame** working. **Who can see it** every member, own account only.
+- **Purpose** The member's own handle, password, signing key, language, cover name and expertise; signing out.
+- **Entry points** `settings` › "Yours" › "Your account"; `security` › "What you can do".
 
-**Content**
-- C1. Heading "Your account" (`screen.account.name`).
-- C2. Section "Your handle" (`screen.account.handle.heading`): the handle, and "Your handle can't be changed: it names your work for good, and no one else can ever take it." (`handle.fixed`). No act changes it.
-- C3. Section "Language and appearance" (`screen.account.language.heading`): "Your screens use {language}." or "Your screens follow your device's setting." (`screen.account.language.now`, `.language.device`); choice "Your language" (`screen.account.language.field`), help `screen.account.language.help`; choice "Appearance" (`shell.appearance`): "Follow my device", "Light", "Dark" (`shell.appearance.device`, `.light`, `.dark`); choice "Explanations" (`screen.account.level.field`), help `screen.account.explain.help`; choice "Sounds" (`screen.account.sounds`): "Off", "On" (`screen.account.sounds.off`, `.sounds.on`), help `screen.account.sounds.help`.
-- C4. Section "Your cover name" (`screen.account.pairing.head`): "Your team knows you as {cover}, your cover, and your work shows your handle, {handle}." (`screen.account.pairing.says`), "Choose whether the two are published together." (`screen.account.pairing.choose`); radios "Who can see which cover goes with your handle" (`screen.account.pairing.legend`): `screen.account.pairing.private`, `screen.account.pairing.public`; button "Save my choice" (`screen.account.pairing.save`); note `screen.account.pairing.change` + `screen.account.pairing.undone`.
-- C5. Section "What you know" (`screen.account.expertise.heading`): "You have declared no expertise.", "Declared: {label}" or "Confirmed by an administrator: {label}" (`screen.account.expertise.none`, `.declared`, `.confirmed`); field "Your expertise (optional)" (`screen.account.expertise.field`), help `screen.account.expertise.help`; button "Declare your expertise".
-- C6. Section "Signing out" (`screen.account.signout.heading`): buttons "Sign out on this device", "Sign out everywhere"; note `screen.account.signout.note`.
-- C7. Section "Your password" (`screen.account.password.heading`): fields "Your current password", "A new password" (help "At least 12 characters. A short sentence you can remember works well."), "Type it again" (`screen.account.password.current`, `.password.new`, `.password.help`, `.password.again`); button "Change your password".
-- C8. Section "Your signing key" (`screen.account.key.heading`): "Key ending {key}, registered {date}" (`screen.account.key.held`), or for a key an administrator registered "registered for you by {member}, an administrator, on {date}." and "Only you can sign with it; revoke it here if it isn't yours." (`screen.account.registered.for.you.by.rosa`, `.only.you.can.sign.with`); or "You have no signing key registered." (`screen.account.key.none`). Button "Revoke your signing key" on a held key.
-- C9. With no key: section "Make your signing key" (`screen.account.key.make.heading`): `screen.account.key.help` (3 sentences); checkbox `signing.ceremony.keepkey`; field "A passphrase for the key file (optional)" (`screen.account.key.passphrase`), help `screen.account.key.passphrase.help`; button "Register your signing key".
-- C10. Section "Elsewhere in your settings" (`screen.account.elsewhere.heading`): links "The assistant", "Your ties", "Your notes", "Glossary" (`screen.connect.name`, `screen.ties.name`, `screen.notes.name`, `screen.glossary.name`).
-
-**States**
+Content
+- C1. Heading "Your account".
+- C2. Section "Your handle" (`.handle.heading`): the handle; "Your handle can't be changed: it names your work for good, and no one else can ever take it." (`handle.fixed`). No act changes it.
+- C3. Section "Language and appearance" (`.language.heading`): "Your screens use {language}." or "Your screens follow your device's setting." (`.language.now`, `.language.device`); choice "Your language" (`.language.field`); choice "Appearance" (`shell.appearance`): "Follow my device", "Light", "Dark"; choice "Explanations" (`.level.field`, help `.explain.help`); choice "Sounds": "Off", "On" (`.sounds*`).
+- C4. Section "Your cover name" (`.pairing.head`): `.pairing.says`, `.pairing.choose`; radios "Who can see which cover goes with your handle" (`.pairing.legend`): `.pairing.private`, `.pairing.public`; button "Save my choice" (`.pairing.save`); note `.pairing.change`, `.pairing.undone`.
+- C5. Section "What you know" (`.expertise.heading`): "You have declared no expertise.", "Declared: {label}" or "Confirmed by an administrator: {label}"; field "Your expertise (optional)" (help `.expertise.help`); button A4.
+- C6. Section "Signing out" (`.signout.heading`): buttons A5, A6; note `.signout.note`.
+- C7. Section "Your password" (`.password.heading`): fields "Your current password", "A new password" (help "At least 12 characters. A short sentence you can remember works well."), "Type it again"; button A7.
+- C8. Section "Your signing key" (`.key.heading`): "Key ending {key}, registered {date}" (`.key.held`); for a key an administrator registered, "registered for you by {member}, an administrator, on {date}." and "Only you can sign with it; revoke it here if it isn't yours."; or "You have no signing key registered." (`.key.none`); button A9 on a held key.
+- C9. No key: section "Make your signing key" (`.key.make.heading`): `.key.help` (3 sentences); checkbox `signing.ceremony.keepkey`; field "A passphrase for the key file (optional)" (help `.key.passphrase.help`); button A8.
+- C10. Section "Elsewhere in your settings" (`.elsewhere.heading`): links "The assistant", "Your ties", "Your notes", "Glossary".
 
 | State | When | What shows |
 |---|---|---|
-| S1 The page as usual | always | C1 to C10. |
-| S2 A newer version is live | the release served is newer than the page loaded | The update band, and note "Reloading brings in the newest version. It changes only the program in your browser, never your team's record." (`screen.account.update.note`). |
-| S3 Making your signing key | just after A8 | Section "Your key is made" (`screen.account.key.made.heading`): "Key ending {key}, registered {date}", the public line, `screen.account.key.save` (1 sentence: save the file now; no one can recover it), buttons "Save the key file" and "Copy the public line" (`screen.account.key.savefile`, `.key.copyline`), and `screen.account.key.lost`. |
-| S4 Key declined | the browser made no key | "No key was made, so nothing was registered." (`screen.account.key.declined`). |
+| S1 As usual | always | C1 to C10. |
+| S2 A newer version is live | a newer release is served | The update band; "Reloading brings in the newest version. It changes only the program in your browser, never your team's record." (`.update.note`). |
+| S3 Making your signing key | after A8 | Section "Your key is made" (`.key.made.heading`): "Key ending {key}, registered {date}", the public line, `.key.save` (1 sentence), buttons "Save the key file" and "Copy the public line" (`.key.savefile`, `.key.copyline`), `.key.lost`. |
+| S4 No key made | the browser made none | "No key was made, so nothing was registered." (`.key.declined`). |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Choose your language" (act `memberlanguageset`) | always | Same screen, redrawn in that language; C3's line names it. |
-| A2. "Explanations" choice (act `infolevelset`, "Choose how much is explained") | always | Same screen; explanations open after the chosen pause. |
-| A3. button "Save my choice" (act `memberpairingset`) | always | Same screen; the radio chosen stays ticked after a reload. |
-| A4. button "Declare your expertise" (act `expertisedeclare`) | always | Same screen; C5 reads "Declared: {label}". |
-| A5. button "Sign out on this device" (act `signout`) | always | `front`, signed out. |
-| A6. button "Sign out everywhere" (act `signouteverywhere`) | always | `front`, signed out; every other session of the member ends. |
-| A7. button "Change your password" (act `setpassword`) | always | Same screen; "Your password is changed. Every other session signed in as you has ended." (`screen.account.password.changed`). |
-| A8. button "Register your signing key" (act `signerregisterown`) | no key held | S3. |
-| A9. button "Revoke your signing key" (act `signerrevokeown`) | a key held | Same screen; C8 reads "You have no signing key registered." and C9 shows. |
+| A1. button "Choose your language" (`memberlanguageset`) | always | Same screen, in that language. |
+| A2. "Explanations" (`infolevelset`, "Choose how much is explained") | always | Explanations open after the chosen pause. |
+| A3. button "Save my choice" (`memberpairingset`) | always | Same screen; the choice kept after a reload. |
+| A4. button "Declare your expertise" | always | Same screen; "Declared: {label}". |
+| A5. button "Sign out on this device" | always | `front`, signed out. |
+| A6. button "Sign out everywhere" | always | `front`, signed out; every other session ends. |
+| A7. button "Change your password" | always | Same screen; "Your password is changed. Every other session signed in as you has ended." (`.password.changed`). |
+| A8. button "Register your signing key" | no key | S3. |
+| A9. button "Revoke your signing key" | a key held | Same screen; "You have no signing key registered."; C9. |
 | A10. links in C10 | always | `connect`, `ties`, `notes`, `glossary`. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. "A new password", "Type it again" | not the same, on A7 | "The two new passwords are not the same. Type them again. Nothing was sent." (`screen.account.password.differ`) |
-| V2. "Your expertise (optional)" | empty, on A4 | "Say what you know first. Nothing was sent." (`screen.account.expertise.nolabel`) |
+| V1. new password twice | not the same, A7 | "The two new passwords are not the same. Type them again. Nothing was sent." (`.password.differ`) |
+| V2. expertise | empty, A4 | "Say what you know first. Nothing was sent." (`.expertise.nolabel`) |
 
 ---
 
 ## connect: "The assistant"
 
-- **Address.** `/app/connect`. **Frame.** working.
-- **Superseded.** This is the earlier "connect your Claude account" screen. In the first beta, the page `ai` takes its place for AI providers: a member's own AI is `aimine` ("Your AI"), and connecting an AI is `aiconnect` (DEC-420). This section describes `connect` as built.
-- **Who can see it.** Every member, for their own account.
-- **Purpose.** Whether and how the assistant serves the member: on the team's key, their own Claude account, or not at all; their limit and their use.
-- **Entry points.** `settings`, section "Yours", link "The assistant"; `account`, "Elsewhere in your settings". The wizard "Connect your Claude account" starts here.
+- **Address** `/app/connect`. **Frame** working. **Who can see it** every member, own account.
+- **Superseded.** The earlier "connect your Claude account" screen. In the first beta the page `ai` takes its place for AI providers: a member's own AI is `aimine` ("Your AI") and connecting one is `aiconnect` (DEC-420). Described here as built.
+- **Purpose** Whether and how the assistant serves the member: the team's key, their own Claude account, or nothing; their limit and use.
+- **Entry points** `settings` › "Yours" › "The assistant"; `account` › "Elsewhere in your settings". Wizard "Connect your Claude account".
 
-**Content**
-- C1. Heading "The assistant" (`screen.connect.name`); line "Optional. Everything in your team's Civicsmith works without the assistant." (`screen.connect.optional`).
-- C2. One card saying what serves the member: exactly one of S1 to S6's first lines.
-- C3. Below it, parts that open and close, each with its heading and a line beneath (listed per state).
-- C4. At the foot (every state but S6): fold "Which account pays, and when" (`screen.connect.whopays.summary`) holding `ai.whopays` (3 sentences: a project's account, else the member's own, else the team's key; a limit stops the act and says whose).
-
-**States**
+Content
+- C1. Heading "The assistant"; "Optional. Everything in your team's Civicsmith works without the assistant." (`.optional`).
+- C2. One card saying what serves the member (each state's first line), then parts that open and close, each a heading and a line.
+- C3. Foot, every state but S6: fold "Which account pays, and when" (`.whopays.summary`) holding `ai.whopays` (3 sentences).
 
 | State | When | What shows |
 |---|---|---|
-| S1 The team's key serves you; no account of your own | the team's key is on, the member has none | Card "The assistant serves you on the team's API key." (`screen.connect.group`) and "The team pays, up to {limit} for each member, a limit your administrators set." (`screen.connect.group.allowance`); meter "Today on the team's key, your share of it" (`screen.connect.meter.groupshare`); where a project has its own account "In {project}, the project's own account serves you instead." (`screen.connect.project.serves`). Parts: "Before your first question" · "Read once: what happens to what you ask." (`screen.connect.notice.heading`, `.part.notice.why`) with the mark "Outward · leaves your team's Civicsmith" (`screen.connect.outward`), `screen.connect.notice.group` and button "I have read this" (`screen.connect.read.button`); "Your daily allowance" · "Set by your administrators." (`screen.connect.part.allowance`, `.why`) with `screen.connect.grouplimits`, `screen.connect.group.allowance.reached`, "Suggestions: {suggestions}." (`screen.connect.grouplimits.suggestions`); "Your use" · "Only you see this." (`screen.connect.part.use`, `.why`); "Connect your own account (optional)" (`screen.connect.own.heading`) · `screen.connect.own.instead`, holding the connecting form of S5. |
-| S2 You connected your own API key | the member holds an API key | Card `screen.connect.own.apikey` with mark "Connected" (`screen.connect.connected`); "Connected since {date}." (`screen.connect.own.since`). Parts: "What the assistant may do for you" · "Everyday help is on. Switch off anything you'd rather do yourself." (`screen.connect.part.uses`, `.why`) with switch groups "Everyday help" and "Without being asked" (`screen.connect.uses.everyday`, `.uses.unasked`), help `screen.connect.uses.unasked.help`; "A limit, if you want one" · "None set: only Anthropic's own spending limit on your key applies." (`screen.connect.part.limit`, `.limit.why.apikey`) with the limit form ("Per" "day"/"month", fold "More choices", `screen.connect.limit.*`) and `screen.connect.limit.binds`; "Your use" with table headed "Last 30 days" (`screen.connect.use.last30`), meter "Today on your own account" (`screen.connect.meter.own`), note `screen.connect.use.note`; "Disconnect" (`screen.connect.disconnect.heading`) · "If you disconnect it, the team's API key serves you instead." (`screen.connect.own.thengroup`) with button "Disconnect your API key" (`screen.connect.disconnect.button`). |
-| S3 You signed in with your Claude subscription | the member's subscription is connected | Card `screen.connect.own.subscription` with mark "Connected"; "Anthropic accepts it until {date}." "Then you sign in again here." (`screen.connect.own.until`, `.own.until.again`). Parts as S2, with the limit line "None set: only your plan's own allowance applies." (`screen.connect.part.limit.why.subscription`), units tokens or calls only, use row "On your subscription" (`screen.connect.use.subscription`), and button "Disconnect your subscription" (`screen.connect.disconnect.subscription`). `not built`: button "Check the connection" (`screen.connect.check`), its help and fold "If the check stops" (`screen.connect.check.ifstops`). |
-| S4 Your sign-in has expired | Anthropic stopped accepting it | Card "Your Claude sign-in has expired, on {date}." (`screen.connect.expired`) with mark "Expired" (`screen.connect.expired.state`), `screen.connect.expired.means`, `screen.connect.expired.next`, and button "Open Anthropic's sign-in page". |
-| S5 The team doesn't pay; members bring their own | no team key on, no account of the member's | Card "The assistant isn't serving you yet. Your team doesn't pay for the assistant; if you want it, connect your own account below, or skip it." (`screen.connect.none`). Parts: "Before you connect" · "Read once: what connecting means." (`screen.connect.part.before`, `.why`) with the outward mark, `screen.connect.disclosure.own`, `screen.connect.disclosure.then` and button "I have read this"; then "Connect your own account (optional)": radios "How do you want to connect the assistant?" (`screen.connect.way.field`): "My Claude subscription (Pro or Max)" · "Billed to you by Anthropic, not your team.", "My own Claude API key" · "Anthropic bills you for each use.", "Not now" (`screen.connect.way.*`). Subscription: section "With your Claude subscription (Pro or Max)" (`screen.connect.signin.heading`), four numbered steps (`screen.connect.signin.step1` to `.step4`), button "Open Anthropic's sign-in page", field "The code from Anthropic's page" (`screen.connect.signin.code`), help `screen.connect.signin.help`, button "Connect with this code" (`screen.connect.signin.withcode`), folds "If you signed in a while ago, it asks for your password first" (`screen.connect.reauth.summary`) and the refusals, with `screen.connect.refusal.reference`. API key: section "With your own Claude API key" (`screen.connect.apikey.heading`), field "Your API key" (`screen.connect.apikey.field`), help `screen.connect.apikey.help`, button "Connect with this key" (`screen.connect.apikey.connect`). Not now: "Or skip it: everything in your team's Civicsmith works without the assistant, and you can connect later." (`screen.connect.skip`). |
-| S6 The team keeps its material away from AI | an administrator turned it on | Card `screen.connect.keptaway` with the reason quoted, then `screen.connect.keptaway.ask`. No part, no act. If that setting could not be read: `screen.connect.keptaway.unread`. |
-| S7 Sign-in state unreadable | the sign-in state read failed | `screen.connect.signin.statefailed`; never drawn as not connected. |
-| S8 Without an AI account (the walk) | no team key and no member account | S5. The subscription way is offered only while the sign-in part is installed; otherwise the API key and "Not now" alone. |
+| S1 The team's key serves you | team key on, no own account | "The assistant serves you on the team's API key." (`.group`) + `.group.allowance`; meter "Today on the team's key, your share of it"; `.project.serves` where a project pays. Parts: "Before your first question" · "Read once: what happens to what you ask." with mark "Outward · leaves your team's Civicsmith" (`.outward`), `.notice.group`, button "I have read this" (`.read.button`); "Your daily allowance" · "Set by your administrators." (`.grouplimits`, `.group.allowance.reached`, "Suggestions: {suggestions}."); "Your use" · "Only you see this."; "Connect your own account (optional)" · `.own.instead`, holding S5's form. |
+| S2 Your own API key | member holds a key | `.own.apikey`, mark "Connected"; "Connected since {date}." Parts: "What the assistant may do for you" · `.part.uses.why`, switch groups "Everyday help", "Without being asked" (help `.uses.unasked.help`); "A limit, if you want one" · "None set: only Anthropic's own spending limit on your key applies.", the limit form ("Per" "day"/"month", fold "More choices"), `.limit.binds`; "Your use", table "Last 30 days", meter "Today on your own account", note `.use.note`; "Disconnect" · "If you disconnect it, the team's API key serves you instead.", button "Disconnect your API key" (`.disconnect.button`). |
+| S3 Your Claude subscription | subscription connected | `.own.subscription`, mark "Connected"; "Anthropic accepts it until {date}." "Then you sign in again here." Parts as S2, limit line "None set: only your plan's own allowance applies.", units tokens or calls, use row "On your subscription", button "Disconnect your subscription". `not built`: button "Check the connection" (`.check`) and fold "If the check stops". |
+| S4 Sign-in expired | Anthropic stopped accepting it | "Your Claude sign-in has expired, on {date}." (`.expired`), mark "Expired", `.expired.means`, `.expired.next`, button "Open Anthropic's sign-in page". |
+| S5 Members bring their own | no team key, no own account | "The assistant isn't serving you yet. Your team doesn't pay for the assistant; if you want it, connect your own account below, or skip it." (`.none`). Part "Before you connect" · "Read once: what connecting means.": outward mark, `.disclosure.own`, `.disclosure.then`, button "I have read this". Then radios "How do you want to connect the assistant?": "My Claude subscription (Pro or Max)", "My own Claude API key", "Not now" (`.way.*`). Subscription: "With your Claude subscription (Pro or Max)" (`.signin.heading`), four steps (`.signin.step1`–`4`), button "Open Anthropic's sign-in page", field "The code from Anthropic's page" (help `.signin.help`), button "Connect with this code" (`.signin.withcode`), fold "If you signed in a while ago, it asks for your password first" (`.reauth.summary`), `.refusal.reference`. API key: "With your own Claude API key", field "Your API key" (help `.apikey.help`), button "Connect with this key" (`.apikey.connect`). Not now: `.skip`. |
+| S6 Material kept away from AI | an administrator turned it on | `.keptaway` with the quoted reason, then `.keptaway.ask`. No part, no act. Unreadable: `.keptaway.unread`. |
+| S7 Sign-in state unreadable | that read failed | `.signin.statefailed`; never drawn as not connected. |
+| S8 No AI account (the walk) | no team key, no own account | S5. The subscription way only while the sign-in part is installed. |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "I have read this" (`screen.connect.read.button`, act `groupkeynoticeseen`) | S1, until read | Same screen; the part closes as read. |
-| A2. button "I have read this" (act `disclosureshown`) | S1's own-account part, S5, until read | Same screen; the ways to connect show. |
-| A3. button "Open Anthropic's sign-in page" (`act.subscriptionsignin.label.connect`) | S4, S5's subscription way | Anthropic's sign-in page in a new tab; this screen stays. |
-| A4. button "Connect with this code" (act `subscriptionsignin`) | S5's subscription way | S3. |
-| A5. button "Go on" (`act.reauth.label.connect`) | a password asked again | Does the act asked for, once. |
-| A6. button "Connect with this key" (act `accountreferenceset`) | S5's API-key way | S2. |
-| A7. switches in "What the assistant may do for you" (act `accountusesset`) | S2, S3 | Same screen; the switch shows on or off. |
-| A8. limit form's button (act `ailimitset`, "Set a limit on your account") | S2, S3 | Same screen; the limit is listed. |
-| A9. button "Disconnect your API key" (act `accountreferenceremove`) | S2 | S1 or S5. |
-| A10. button "Disconnect your subscription" (act `subscriptiondisconnect`) | S3 | S1 or S5. |
+| A1. button "I have read this" (`groupkeynoticeseen`) | S1, until read | The part shows read. |
+| A2. button "I have read this" (`disclosureshown`) | S1's own-account part, S5 | The ways to connect show. |
+| A3. button "Open Anthropic's sign-in page" (`subscriptionsignin`) | S4, S5 subscription | Anthropic's page in a new tab; this screen stays. |
+| A4. button "Connect with this code" (`subscriptionsignin`) | S5 subscription | S3. |
+| A5. button "Go on" (`reauth`) | a password asked again | Does the act asked for, once. |
+| A6. button "Connect with this key" (`accountreferenceset`) | S5 API key | S2. |
+| A7. use switches (`accountusesset`) | S2, S3 | The switch shows on or off. |
+| A8. limit button (`ailimitset`) | S2, S3 | The limit listed. |
+| A9. button "Disconnect your API key" (`accountreferenceremove`) | S2 | S1 or S5. |
+| A10. button "Disconnect your subscription" (`subscriptiondisconnect`) | S3 | S1 or S5. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. "The code from Anthropic's page" | empty, on A4 | "Paste the code from Anthropic's page first. Nothing was sent." (`screen.connect.signin.nocode`) |
-| V2. "Your API key" | empty, on A6 | "Paste your API key first. Nothing was sent." (`screen.connect.apikey.nokey`) |
-| V3. the code | refused by the plane | the words of `screen.connect.refused.<CODE>`, one of: `RUNNER_NOT_CONFIGURED`, `RUNNER_NOT_STARTED`, `RUNNER_SILENT`, `AGENT_WORKER_SILENT`, `ATTEMPT_SUPERSEDED`, `NOT_THIS_MEMBER`, `BAD_CODE`, `BAD_REQUEST`, `SIGNIN_NOT_HELD`, `SIGNIN_TOKEN_REFUSED`, `SIGNOUT_FAILED`, `AI_KEPT_AWAY`, with the shell's reference |
+| V1. the code | empty, A4 | "Paste the code from Anthropic's page first. Nothing was sent." (`.signin.nocode`) |
+| V2. the API key | empty, A6 | "Paste your API key first. Nothing was sent." (`.apikey.nokey`) |
+| V3. the code | refused | `.refused.<CODE>` for `RUNNER_NOT_CONFIGURED`, `RUNNER_NOT_STARTED`, `RUNNER_SILENT`, `AGENT_WORKER_SILENT`, `ATTEMPT_SUPERSEDED`, `NOT_THIS_MEMBER`, `BAD_CODE`, `BAD_REQUEST`, `SIGNIN_NOT_HELD`, `SIGNIN_TOKEN_REFUSED`, `SIGNOUT_FAILED`, `AI_KEPT_AWAY`, with the shell's reference |
 
 ---
 
 ## teamai: "The team's assistant"
 
-- **Address.** `/app/teamai`. **Frame.** working.
-- **Superseded.** In the first beta, "AI providers" (`aiproviders`, page `ai`) takes its place (DEC-420). This section describes `teamai` as built.
-- **Who can see it.** Administrators. A member who does not administer sees the heading and only the purpose sentence `screen.teamai.purpose`.
-- **Purpose.** The team's API key, what it pays for, its limits, its use summed over members, and keeping the team's material away from AI.
-- **Entry points.** `settings`, section "The team's", link "The team's assistant".
+- **Address** `/app/teamai`. **Frame** working. **Who can see it** administrators; any other member sees the heading and `.purpose` only.
+- **Superseded.** In the first beta "AI providers" (`aiproviders`, page `ai`) takes its place (DEC-420). Described here as built.
+- **Purpose** The team's API key, what it pays for, its limits, its use summed over members, keeping material away from AI.
+- **Entry points** `settings` › "The team's" › "The team's assistant".
 
-**Content**
-- C1. Heading "The team's assistant" (`screen.teamai.name`); line "The team's API key serves members who have no account of their own." (`screen.teamai.sub`).
-- C2. A card: "The team's API key is held and on." (`screen.teamai.held`) with mark "On" (`screen.teamai.on`) and "{who} set it on {date}." (`screen.teamai.setby`); meter "This month on the team's key" (`ai.usage.meter.month_group`). With a key held and off: "Held · off · set by {by}, {date}" (`screen.members.key.heldoff`).
-- C3. Part "What this account pays for" (`screen.panel.uses.heading`) · "Everyday help is {everyday}; exploring is {explore}." (`screen.teamai.uses.why`): each use with on or off and its switch; choice of exploring.
-- C4. Part "Limits on this account" (`screen.panel.limits.heading`) · "{overall} overall; {each} for each member." or "None set." (`screen.teamai.limits.why`, `.limits.none`): a table of limits and one form.
-- C5. Part "This month's use" (`screen.panel.usage.heading`) · "Summed over members; nobody is named." (`screen.teamai.use.why`).
-- C6. Part "Keeping our material away from AI" (`screen.members.keepaway.heading`) · "Off. Members may use the team's key, a project's account or their own." or "On. {by} turned this on on {date}, and gave this reason:" (`screen.members.keepaway.off`, `.keepaway.on`); explanation `act.aikeepaway.does`; checkboxes "Keep our material away from AI" (`screen.members.keepaway.which`) with "For every use" or "Only for these uses" (`.keepaway.all`, `.keepaway.some`) and "The uses" (`.keepaway.uses`); field "Why (every member will see this)" (`.keepaway.reason`); buttons "Save" and, when on, "Turn it off" (`.keepaway.save`, `.keepaway.turnoff`).
-- C7. Part "The key itself" (`screen.teamai.key`) · "Replace it, switch it off or remove it." (`screen.teamai.key.why`): field "The team's Anthropic API key" (`screen.members.key.field`); buttons "Replace the key" (`screen.members.key.replace`), "Switch it on" or "Switch it off" (`screen.members.key.switchon`, `.key.switchoff`), "Remove the key".
-- C8. Part "Changes" (`screen.panel.changes.heading`) · "Every change, with who made it and when." (`screen.teamai.changes.why`).
-- C9. Fold "Which account pays, and when" (`screen.connect.whopays.summary`) holding `ai.whopays`.
-
-**States**
+Content
+- C1. Heading "The team's assistant"; "The team's API key serves members who have no account of their own." (`.sub`).
+- C2. Card: "The team's API key is held and on." (`.held`), mark "On", "{who} set it on {date}." (`.setby`); meter "This month on the team's key" (`ai.usage.meter.month_group`). Held and off: "Held · off · set by {by}, {date}" (`screen.members.key.heldoff`).
+- C3. Part "What this account pays for" (`screen.panel.uses.heading`) · "Everyday help is {everyday}; exploring is {explore}." (`.uses.why`): each use on/off with its switch; exploring's choice.
+- C4. Part "Limits on this account" (`screen.panel.limits.heading`) · `.limits.why` or "None set.": a table of limits, one form.
+- C5. Part "This month's use" (`screen.panel.usage.heading`) · "Summed over members; nobody is named." (`.use.why`).
+- C6. Part "Keeping our material away from AI" (`screen.members.keepaway.heading`) · "Off. Members may use the team's key, a project's account or their own." or "On. {by} turned this on on {date}, and gave this reason:" (`screen.members.keepaway.off`, `.on`); `act.aikeepaway.does`; checkboxes "Keep our material away from AI": "For every use" / "Only for these uses", "The uses"; field "Why (every member will see this)"; buttons "Save", "Turn it off" (`screen.members.keepaway.*`).
+- C7. Part "The key itself" (`.key`) · "Replace it, switch it off or remove it." (`.key.why`): field "The team's Anthropic API key" (`screen.members.key.field`); buttons A1, A2, A5.
+- C8. Part "Changes" (`screen.panel.changes.heading`) · "Every change, with who made it and when." (`.changes.why`).
+- C9. Fold "Which account pays, and when" holding `ai.whopays`.
 
 | State | When | What shows |
 |---|---|---|
-| S1 Key held and on | the usual state the design draws | C1 to C9. |
-| S2 No key held (the walk) | no team key | Card "No key is held. Members bring their own account, or use your team's Civicsmith without the assistant." (`screen.members.key.none`); C7 offers the field and "Hold the team's API key"; no switch on or off, no "Remove the key". |
-| S3 A member's view | session does not administer | Heading and `screen.teamai.purpose` only. |
-| S4 Keep-away unreadable | that read failed | C6 reads "Whether the team keeps its material away from AI couldn't be read just now." (`screen.members.keepaway.unread`). |
+| S1 Key held and on | the design's usual | C1 to C9. |
+| S2 No key held (the walk) | no team key | Card "No key is held. Members bring their own account, or use your team's Civicsmith without the assistant." (`screen.members.key.none`); C7 offers the field and "Hold the team's API key" only. |
+| S3 A member's view | not an administrator | Heading and `.purpose` only. |
+| S4 Keep-away unreadable | that read failed | "Whether the team keeps its material away from AI couldn't be read just now." (`screen.members.keepaway.unread`). |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Hold the team's API key" (`act.groupkeyset.label.teamai`); with a key held "Replace the key" | administrator | Same screen; C2 reads held; the key is never drawn again. |
-| A2. button "Switch it on" / "Switch it off" (act `groupkeyswitch`) | a key held | Same screen; C2's mark changes. |
-| A3. switches and "Set what the team's key pays for" (act `accountusesset`) | a key held | Same screen; the use reads on or off. |
-| A4. limit form's button "Set a limit on the team's key" (act `ailimitset`) | a key held | Same screen; the limit row is listed; a change in C8. |
-| A5. button "Remove the key" (`act.groupkeyremove.label.teamai`, "Remove the team's key") | a key held | S2. |
-| A6. button "Save" (act `aikeepaway`, "Keep the team's material away from AI, with a reason") | administrator | Same screen; C6 reads "On. …" with the reason; `connect` shows its S6 to every member. |
+| A1. button "Hold the team's API key"; with a key, "Replace the key" (`screen.members.key.replace`) | administrator | C2 reads held; the key never drawn again. |
+| A2. button "Switch it on" / "Switch it off" (`groupkeyswitch`) | a key held | C2's mark changes. |
+| A3. use switches (`accountusesset`, "Set what the team's key pays for") | a key held | The use reads on or off. |
+| A4. limit button (`ailimitset`, "Set a limit on the team's key") | a key held | The limit listed; a change in C8. |
+| A5. button "Remove the key" (`groupkeyremove`) | a key held | S2. |
+| A6. button "Save" (`aikeepaway`) | administrator, with a reason | C6 reads "On. …"; `connect` shows its S6 to every member. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. "The team's Anthropic API key" | empty, on A1 | "Paste the key first. Nothing was sent." (`screen.members.key.nokey`) |
-| V2. "Why (every member will see this)" | empty or over 2,000 characters, on A6 | "Give your reason, in 1 to 2,000 characters. Nothing was sent." (`screen.members.keepaway.noreason`) |
-| V3. "The uses" | "Only for these uses" with none ticked, on A6 | "Choose at least one use, or keep it for every use. Nothing was sent." (`screen.members.keepaway.nouses`) |
-| V4. the limit form | an amount, unit or switch value refused | `ai.refused.limitinvalid`, `ai.refused.unitunavailable`, `ai.refused.switchvalue` |
+| V1. the key | empty, A1 | "Paste the key first. Nothing was sent." (`screen.members.key.nokey`) |
+| V2. the reason | empty or over 2,000 characters, A6 | "Give your reason, in 1 to 2,000 characters. Nothing was sent." (`screen.members.keepaway.noreason`) |
+| V3. "The uses" | "Only for these uses", none ticked | "Choose at least one use, or keep it for every use. Nothing was sent." (`screen.members.keepaway.nouses`) |
+| V4. the limit form | value refused | `ai.refused.limitinvalid`, `ai.refused.unitunavailable`, `ai.refused.switchvalue` |
 
 ---
 
 ## bias: "Declared bias"
 
-- **Address.** `/app/bias`; a work made under an earlier lens, `/app/bias/<run>`. **Frame.** working.
-- **Who can see it.** Every member reads and writes sets. An administrator adopts for the whole team; a project's owner adopts for that project.
-- **Purpose.** The lens the team reads evidence through, stated so a reader can discount it; it never blocks work.
-- **Entry points.** `settings`, section "For every member", link "Declared bias"; the `queue`, when a lens changes under work already made (S4).
+- **Address** `/app/bias`; a work made under an earlier lens `/app/bias/<run>`. **Frame** working.
+- **Who can see it** every member reads and writes sets; an administrator adopts for the team, a project's owner for the project.
+- **Purpose** The lens the team reads evidence through, stated so a reader can discount it; it never blocks work.
+- **Entry points** `settings` › "For every member" › "Declared bias"; the `queue` when a lens changes under work already made (S4).
 
-**Content**
-- C1. Heading "Declared bias" (`screen.bias.name`); line `screen.bias.the_lens_your_team_reads` + "It never blocks work." (`screen.bias.it_never_blocks_work`).
-- C2. Choice "Whose lens" (`screen.bias.lens.label`): "The whole team" (`screen.bias.lens.team`) or a project; button "Show the lens in force".
-- C3. Section "In force for {project}" (`screen.bias.in_force_for_the_coliseum`) or "In force for the whole team" (`screen.bias.head.team`), help `screen.bias.the_statements_in_force_for` + `.a_project_statement_can_replace`: each statement's kind ("Scrutiny", "Inference", "Pattern", `screen.bias.kind.*`), "about {subject}" (`screen.bias.row.about`), the statement, "Why: {reason}" (`screen.bias.row.why`), and "the team's, locked" or "this project's" (`screen.bias.row.team_locked`, `.row.project`). Then "Adopted" lines (`screen.bias.by_admin_for_the_team`, `.by_admin_for_the_team.team`, `.by_admin_for_the_team.project`); "What this set does not enforce" (`screen.bias.what_this_set_does_not`) and its text; "Lens" (`screen.bias.dt.lens`), its number, `screen.bias.the_same_lens_gives_the`.
-- C4. Folds "When a project statement meets a locked one" (`screen.bias.when_a_project_statement_meets`; 2 sentences) and "When an adopted set is only offered" (`screen.bias.when_an_adopted_set_is`; 2 sentences); note `screen.bias.to_adopt_write_or_draft` + `.your_queue_tells_you_when`.
-
-**States**
+Content
+- C1. Heading "Declared bias"; `.the_lens_your_team_reads` + "It never blocks work."
+- C2. Choice "Whose lens" (`.lens.label`): "The whole team" (`.lens.team`) or a project; button A1.
+- C3. Section "In force for {project}" (`.in_force_for_the_coliseum`) or "In force for the whole team" (`.head.team`): each statement's kind "Scrutiny" / "Inference" / "Pattern" (`.kind.*`), "about {subject}", the statement, "Why: {reason}", "the team's, locked" or "this project's" (`.row.*`); "Adopted" lines (`.by_admin_for_the_team*`); "What this set does not enforce" and its text; "Lens" (`.dt.lens`), its number, `.the_same_lens_gives_the`.
+- C4. Folds "When a project statement meets a locked one", "When an adopted set is only offered" (2 sentences each); note `.to_adopt_write_or_draft`, `.your_queue_tells_you_when`.
 
 | State | When | What shows |
 |---|---|---|
-| S1 The lens in force (a project) | a project chosen and a lens adopted | C1 to C4 for the project: the team's statements, then the project's. |
-| S2 Writing and adopting a set | the member writes a set | Heading "Write a set" (`screen.bias.head.write`), `screen.bias.a_set_is_a_list` + `.a_set_stays_a_draft`; fields "Name of the set" (`screen.bias.name_of_the_set`); radios "Kind of statement" (`screen.bias.kind.label`): `screen.bias.scrutiny_how_closely_we_read`, `.inference_what_we_do_not`, `.pattern_how_a_source_has` (help `.a_pattern_statement_must_cite`); "Who or what it is about" (`screen.bias.who_or_what_it_is`); "The statement" (`screen.bias.statement.label`, help `.say_how_you_read_it` + `.do_not_say_a_source`); "Why you read it this way" (`screen.bias.why_you_read_it_this`, help "Required for every statement."); "What it cites" (`screen.bias.cites.label`, help `.required_for_a_pattern_statement`); "What this set does not enforce" (help `.required_before_the_set_is` + `.readers_see_it_beside_the`); button "Save the set and offer it for adoption"; fold "When a set cannot be saved" (`screen.bias.when_a_set_cannot_be`). Section "Adopt it" (`screen.bias.head.adopt`), help `.adopting_puts_a_lens_in` + `.only_a_member_does_it`: radios "Adopt it for" (`screen.bias.adoptfor.label`): "The whole team (an administrator adopts)", "One project: {project} (its owners adopt)"; field "Why you adopt it" (help `.required_up_to_characters` + `.it_is_kept_with_the`); button "Adopt this set"; small print `.adopting_names_the_revision_in`, `.later_changes_to_the_set`, `.adopting_a_different_set_for`; fold "When you cannot adopt it" (`screen.bias.when_you_cannot_adopt_it`). `AI` button "Help me write this" under the statement fields. |
-| S3 A set drafted from an outside policy | the member pastes a policy | Heading "Draft a set from an outside policy" (`screen.bias.draft_a_set_from_an`), `.paste_another_organizations_policy`, `.civicsmith_proposes_statements_from_it`, `.nothing_is_saved_offered_or`; fields "The policy, in its own words", "Where it comes from" (help `.kept_with_the_set_so`), "When you read it"; button "Propose statements from it". After it: section "Proposed statements" (`screen.bias.head.proposed`), each "Proposed, not yet yours." "Choose who it is about and write why."; "It read {read} of {of} sentences." and `.a_pattern_statement_is_never`; button "Start a set from these" (`screen.bias.start_a_set_from_these`); section "Left out" (`screen.bias.head.left_out`): "A bar" / "A verdict" (`screen.bias.dt.bar`, `.dt.verdict`) with why; note `.nothing_was_saved_offered_or` + `.starting_a_set_from_these`. |
-| S4 Work made under an earlier lens | `/app/bias/<run>` | Heading "Work made under an earlier lens" (`screen.bias.work_made_under_an_earlier`), `.your_teams_lens_changed_after`, `.say_whether_the_change_bears`, `.it_is_disclosed_to_readers`; section "Waiting for your word" (`screen.bias.waiting_for_your_word`): the work, `screen.bias.earlier.made`, button "Show its record"; field "Your reason" (help `.required_up_to_characters2`, `.say_why_the_lens_change`, `.this_is_the_whole_of`); button "Settle it, with your reason"; `.this_cannot_be_undone_your`, `.the_assistant_cannot_settle_it`, `.if_you_would_rather_re`; fold "When it cannot be settled"; section "Settled" (`screen.bias.head.settled`): `screen.bias.earlier.settled`. |
-| S5 No lens in force | nothing adopted for the choice | "No lens is in force for {project}." (`screen.bias.no_lens_is_in_force`), "A case published now says that your team declared none." (`screen.bias.a_case_published_now_says`); links "Write a set · …" and "Draft one from an outside policy · …" (`screen.bias.link.write`, `.link.draft`). |
-| S6 The whole team's lens | "The whole team" chosen | C3 headed "In force for the whole team", the team's statements only. |
-| S7 Assistant unreachable (the walk) | no AI account | As above, without "Help me write this". |
+| S1 The lens in force (a project) | project chosen, lens adopted | C1 to C4: the team's statements, then the project's. |
+| S2 Writing and adopting a set | writing | "Write a set" (`.head.write`), `.a_set_is_a_list`, `.a_set_stays_a_draft`; fields "Name of the set"; radios "Kind of statement": "Scrutiny: how closely we read a source", "Inference: what we do not conclude from something", "Pattern: how a source has behaved before"; "Who or what it is about"; "The statement"; "Why you read it this way"; "What it cites"; "What this set does not enforce"; button A2; fold "When a set cannot be saved". Section "Adopt it" (`.head.adopt`): radios "Adopt it for": "The whole team (an administrator adopts)", "One project: {project} (its owners adopt)"; field "Why you adopt it"; button A3; 3 sentences (`.adopting_names_the_revision_in` …); fold "When you cannot adopt it". `AI` "Help me write this" under the statement fields. |
+| S3 Drafted from an outside policy | pasting a policy | "Draft a set from an outside policy", 3 sentences; fields "The policy, in its own words", "Where it comes from", "When you read it"; button A4. After it: "Proposed statements" (`.head.proposed`), each "Proposed, not yet yours." "Choose who it is about and write why."; "It read {read} of {of} sentences."; button "Start a set from these"; "Left out" (`.head.left_out`): "A bar" / "A verdict", each with why; `.nothing_was_saved_offered_or`. |
+| S4 Work made under an earlier lens | `/app/bias/<run>` | "Work made under an earlier lens", 3 sentences; "Waiting for your word": the work, `.earlier.made`, button A5; field "Your reason"; button A6; `.this_cannot_be_undone_your`, "The assistant cannot settle it."; fold "When it cannot be settled"; "Settled" (`.head.settled`): `.earlier.settled`. |
+| S5 No lens in force | nothing adopted | "No lens is in force for {project}." "A case published now says that your team declared none."; links "Write a set · …", "Draft one from an outside policy · …" (`.link.*`). |
+| S6 The whole team's lens | "The whole team" chosen | C3 headed "In force for the whole team". |
+| S7 No AI account (the walk) | assistant unreachable | No "Help me write this". |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Show the lens in force" (`act.biasmanifest.label.bias`) | always | Same screen; S1, S5 or S6 for the choice. |
-| A2. button "Save the set and offer it for adoption" (`act.promote.label.bias`); "Start a set from these" (act `promote`) | S2; S3 after proposals | Same screen; the set is listed as offered, adoptable. |
-| A3. button "Adopt this set" (`act.biasadopt.label.bias`) | an offered set; administrator for the team, owner for a project | S1 or S6 showing the set in force. |
-| A4. button "Propose statements from it" (`act.biasinhale.label.bias`) | S3 | Same screen; "Proposed statements" and "Left out". Nothing saved. |
-| A5. button "Show its record" (`act.biasdebt.label.bias`) | S4 | Same screen; the work's record. |
-| A6. button "Settle it, with your reason" (`act.biasdebtresolve.label.bias`) | S4, with a reason | Same screen; the work moves to "Settled". |
-| A7. `AI` button "Help me write this" (`act.writinghelp.label.bias`) | assistant reachable | Same screen; a draft in the field, labelled. |
-| A8. links "Write a set", "Draft one from an outside policy" | S5 | S2, S3. |
+| A1. button "Show the lens in force" | always | S1, S5 or S6. |
+| A2. button "Save the set and offer it for adoption" (`promote`); "Start a set from these" (`promote`) | S2; S3 | The set listed as offered. |
+| A3. button "Adopt this set" | an offered set; administrator (team) or owner (project) | S1 or S6 with it in force. |
+| A4. button "Propose statements from it" | S3 | Proposals and "Left out"; nothing saved. |
+| A5. button "Show its record" | S4 | The work's record. |
+| A6. button "Settle it, with your reason" | S4 | The work under "Settled". |
+| A7. `AI` button "Help me write this" | assistant reachable | A labelled draft in the field. |
+| A8. links in S5 | S5 | S2, S3. |
 
-**Form messages** (refusals, each in a fold under its act)
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. a statement | says a source is false, calls a speaker a liar, or sets a bar, on A2 | `screen.bias.a_statement_in_it_says` + "Reword that statement to say how you read the source, and offer the set again." (`screen.bias.reword_that_statement_to_say`) |
-| V2. a statement | no reason, or a pattern citing nothing, on A2 | "A statement has no reason, or a pattern statement cites nothing." + "Add what it asks for and offer the set again." (`screen.bias.a_statement_has_no_reason`, `.add_what_it_asks_for`) |
-| V3. "Adopt it for" | the whole team, by a non-administrator, on A3 | "Only an administrator adopts a set for the whole team." "Ask one, or adopt it for a project you own." (`screen.bias.only_an_administrator_adopts_a`, `.ask_one_or_adopt_it`) |
-| V4. "Adopt it for" | a project, by a non-owner | "Only an owner of a project adopts a set for it." "Ask one of its owners: {owners}." (`screen.bias.only_an_owner_of_a`, `.ask_one_of_its_owners`) |
-| V5. the set | not offered yet, on A3 | "The set must be offered for adoption first." "Save it and offer it, then adopt it." (`screen.bias.the_set_must_be_offered`, `.save_it_and_offer_it`) |
-| V6. "Your reason" | empty, on A6 | "You gave no reason." "Write why the change does not bear on this work, then settle it." (`screen.bias.you_gave_no_reason`, `.write_why_the_change_does`) |
-| V7. the work | settled already or not visible, on A6 | `screen.bias.someone_settled_it_already_or` + "Open your queue to see what is left." (`screen.bias.open_your_queue_to_see`) |
+| V1. a statement | a verdict or a bar, A2 | `.a_statement_in_it_says` + "Reword that statement to say how you read the source, and offer the set again." |
+| V2. a statement | no reason, or a pattern citing nothing | "A statement has no reason, or a pattern statement cites nothing." + "Add what it asks for and offer the set again." |
+| V3. "Adopt it for" | the team, not an administrator, A3 | "Only an administrator adopts a set for the whole team." + "Ask one, or adopt it for a project you own." |
+| V4. "Adopt it for" | a project, not an owner | "Only an owner of a project adopts a set for it." + "Ask one of its owners: {owners}." |
+| V5. the set | not offered, A3 | "The set must be offered for adoption first." + "Save it and offer it, then adopt it." |
+| V6. "Your reason" | empty, A6 | "You gave no reason." + "Write why the change does not bear on this work, then settle it." |
+| V7. the work | settled or not visible, A6 | "Someone settled it already, or you cannot open the work it is about." + "Open your queue to see what is left." |
 
 ---
 
 ## places: "Places and offices"
 
-- **Address.** `/app/places`. **Frame.** working.
-- **Who can see it.** Every member reads it; a member who does not administer sees "Administrators choose these; you can read them here." (`screen.places.admins`) under the heading, and no act but those on the team's own rules.
-- **Purpose.** The places whose rules the team's Civicsmith follows, and the offices, seats and courts the team deals with.
-- **Entry points.** `settings`, section "The team's", link "Places and offices"; `members`, "More for administrators".
+- **Address** `/app/places`. **Frame** working. **Who can see it** every member reads; a member who does not administer sees "Administrators choose these; you can read them here." (`.admins`) and no administrator's act.
+- **Purpose** The places whose rules apply, and the offices, seats and courts the team deals with.
+- **Entry points** `settings` › "The team's" › "Places and offices"; `members` › "More for administrators".
 
-**Content**
-- C1. Heading "Places and offices" (`screen.places.name`); line `screen.places.sub`.
-- C2. Section "The places whose rules apply" (`screen.places.profiles.heading`): "The places, read in this order" (`screen.places.profiles.field`), help `screen.places.profiles.help`; warning `screen.places.profiles.warning`; button "Choose the places whose rules apply". With none chosen: `screen.places.profiles.none`. Where places disagree: "The places chosen disagree on {n} facts; each is left unread rather than chosen between." (`screen.places.profiles.conflicts`).
-- C3. Section "A place not listed yet" (`screen.places.wanted.heading`): "You named {name} on {date}." or "No place is named." (`screen.places.wanted.now`, `.wanted.none`); "{profile} is now held and may be the place you named." (`screen.places.wanted.match`); field "A place you want that isn't listed (optional)" (`screen.places.wanted.field`), help `screen.places.wanted.help`; button "Save the place you want".
-- C4. Section "Where else to go" (`places.elsewhere.head`), help `places.elsewhere.help`: `places.elsewhere.says` (2 sentences); link "See the list" (`places.elsewhere.open`). With none listed: `places.elsewhere.none`.
-- C5. Section "Offices and seats" (`screen.places.offices.heading`): each office with its holder, marked "from your places' rules" or "added by your team" (`screen.places.offices.seeded`, `.offices.bygroup`); an office a member named and no administrator confirmed carries its mark and button "Confirm this office"; confirmed: "This office is confirmed." (`screen.places.office.confirmed`). Note `screen.places.offices.note`. Or "No offices are held yet." (`screen.places.offices.none`). Buttons "Fill in the offices again", and under "Change the offices" (`screen.places.add.heading`) fields "The office's name" and "Who or what this office is" (`screen.places.add.label`, `.add.note`; help `.add.help`) with button "Add an office yourself".
-- C6. Section "Courts" (`screen.places.courts`): each court, "from your place's rules" or "added by {name} on {date}" (`screen.places.court.seeded`, `.court.added`).
-- C7. Section "Your team's own rules" (`screen.grouprules.name`): `screen.places.rules.note`; link "Your team's own rules".
-
-**States**
+Content
+- C1. Heading "Places and offices"; `.sub`.
+- C2. Section "The places whose rules apply" (`.profiles.heading`): "The places, read in this order" (`.profiles.field`, help `.profiles.help`); warning `.profiles.warning`; button A1. None chosen: `.profiles.none`. Disagreeing: `.profiles.conflicts`.
+- C3. Section "A place not listed yet" (`.wanted.heading`): "You named {name} on {date}." or "No place is named."; `.wanted.match`; field "A place you want that isn't listed (optional)" (help `.wanted.help`); button A2.
+- C4. Section "Where else to go" (`places.elsewhere.head`): `places.elsewhere.says` (2 sentences); link "See the list" (`places.elsewhere.open`); none listed: `places.elsewhere.none`.
+- C5. Section "Offices and seats" (`.offices.heading`): each office, "from your places' rules" or "added by your team"; one a member named carries its mark and A5; "This office is confirmed." (`.office.confirmed`); note `.offices.note`; or "No offices are held yet."; button A3; "Change the offices" (`.add.heading`): fields "The office's name", "Who or what this office is"; button A4.
+- C6. Section "Courts" (`.courts`): each court, "from your place's rules" or "added by {name} on {date}".
+- C7. Section "Your team's own rules" (`screen.grouprules.name`): `.rules.note`; link "Your team's own rules".
 
 | State | When | What shows |
 |---|---|---|
-| S1 A state with a profile | a held place is chosen | C1 to C7. |
-| S2 A state with no profile | a place named and no profile held | Section "No profile for {state} yet" (`screen.places.noprofile.heading`): `screen.places.noprofile.says`, `.noprofile.offers`, `.noprofile.still` + `.noprofile.asks`; field "Tell us the place you want" (`screen.places.noprofile.want`), help `.noprofile.want.help`; button "Save the place you want"; then C7. No C4, C5, C6. |
-| S3 A member's view | session does not administer | `screen.places.admins`; the sections read-only. |
-| S4 Offices partly read | a later page of offices failed | "The rest of the offices couldn't be read just now." (`screen.places.offices.rest`). |
+| S1 A state with a profile | a held place chosen | C1 to C7. |
+| S2 A state with no profile | a place named, none held | "No profile for {state} yet" (`.noprofile.heading`): `.noprofile.says`, `.noprofile.offers`, `.noprofile.still`, `.noprofile.asks`; field "Tell us the place you want" (help `.noprofile.want.help`); button A2; C7. No C4 to C6. |
+| S3 A member's view | not an administrator | `.admins`; sections read-only. |
+| S4 Offices partly read | a later page failed | "The rest of the offices couldn't be read just now." |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Choose the places whose rules apply" (`act.profilesset.label.places`) | administrator | Same screen; C2 lists the places chosen. |
-| A2. button "Save the place you want" (`act.placewanted.label.places`) | administrator | Same screen; "You named {name} on {date}." |
-| A3. button "Fill in the offices again" (`act.officesseed.label.places`) | administrator | Same screen; "Filled in: {seeded} new, {already} already held, {unseeded} that couldn't be." (`screen.places.seeded`). |
-| A4. button "Add an office yourself" (`act.entitycreate.label.places`) | administrator | Same screen; the office listed "added by your team". Adding a court: "Added the court: {name}." (`screen.places.court.done`). |
-| A5. button "Confirm this office" (`act.officeconfirm.label.places`) | administrator, on an office a member named | Same screen; "This office is confirmed." |
-| A6. link "See the list" | a profile active | `elsewhere`. |
-| A7. link "Your team's own rules" | always | `grouprules`. |
+| A1. button "Choose the places whose rules apply" | administrator | C2 lists the places. |
+| A2. button "Save the place you want" | administrator | "You named {name} on {date}." |
+| A3. button "Fill in the offices again" | administrator | "Filled in: {seeded} new, {already} already held, {unseeded} that couldn't be." (`.seeded`). |
+| A4. button "Add an office yourself" | administrator | The office "added by your team"; a court: "Added the court: {name}." |
+| A5. button "Confirm this office" | an office a member named | "This office is confirmed." |
+| A6. links "See the list"; "Your team's own rules" | as drawn | `elsewhere`; `grouprules`. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. "The office's name", "Who or what this office is" | either empty, on A4 | "Give both the office's name and what it is. Nothing was sent." (`screen.places.add.incomplete`) |
+| V1. office name and what it is | either empty, A4 | "Give both the office's name and what it is. Nothing was sent." (`.add.incomplete`) |
 
 ---
 
 ## recovery: "Recovery codes"
 
-- **Address.** `/app/recovery`. **Frame.** working.
-- **Who can see it.** Every member, for their own codes.
-- **Purpose.** The member's own one-time recovery codes: how many are left, and getting new ones.
-- **Entry points.** `settings`, section "Yours", link "Recovery codes"; `members`, link "Get your recovery codes" (C5 there).
+- **Address** `/app/recovery`. **Frame** working. **Who can see it** every member, own codes.
+- **Purpose** The member's own one-time recovery codes: how many are left; getting new ones.
+- **Entry points** `settings` › "Yours" › "Recovery codes"; `members` › "Get your recovery codes".
 
-**Content**
-- C1. Heading "Recovery codes" (`screen.recovery.name`); line `screen.recovery.sub` (3 sentences: a code sets a new password; each works once; every member has their own).
-- C2. Section "Your codes" (`screen.recovery.held.heading`): "You hold recovery codes: {remaining} of {total} unused, issued {date}." (`screen.recovery.held`), or "Every code issued on {date} is used." (`screen.recovery.spent`), or "You hold no recovery codes yet." (`screen.recovery.none`); then `screen.recovery.onlyyou` (3 sentences: shown once, to you alone; cannot be shown again; get new ones if not kept).
-- C3. Section "New codes" (`screen.recovery.issue.heading`): `screen.recovery.spends` (2 sentences: new codes spend every earlier unused one; shown once); button "Get new recovery codes".
-- C4. Section "If you lose your codes too" (`screen.recovery.lost.heading`): `screen.recovery.lost.what` (2 sentences: a reset link from an administrator; a second administrator is worth having).
-
-**States**
+Content
+- C1. Heading "Recovery codes"; `.sub` (3 sentences).
+- C2. Section "Your codes" (`.held.heading`): "You hold recovery codes: {remaining} of {total} unused, issued {date}." (`.held`), or "Every code issued on {date} is used." (`.spent`), or "You hold no recovery codes yet." (`.none`); `.onlyyou` (3 sentences).
+- C3. Section "New codes" (`.issue.heading`): `.spends` (2 sentences); button A1.
+- C4. Section "If you lose your codes too" (`.lost.heading`): `.lost.what` (2 sentences).
 
 | State | When | What shows |
 |---|---|---|
-| S1 Codes held | the member holds codes | C1 to C4, C2 with the count. |
-| S2 New codes just issued | after A1 | "Save these now: they are shown only this once. Keep them somewhere only you can reach, apart from your password. Civicsmith keeps only a fingerprint of each, so it can never show them again." (`screen.recovery.shown`) and the ten codes. After leaving the screen they are not shown again. |
-| S3 None held | no codes issued, or all used | C2 reads `screen.recovery.none` or `screen.recovery.spent`. |
+| S1 Codes held | codes held | C1 to C4. |
+| S2 New codes just issued | after A1 | "Save these now: they are shown only this once. Keep them somewhere only you can reach, apart from your password. Civicsmith keeps only a fingerprint of each, so it can never show them again." (`.shown`) and ten codes; not shown again after leaving. |
+| S3 None | none issued, or all used | C2 reads `.none` or `.spent`. |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Get new recovery codes" (`act.recoverycodesissue.label.recovery`) | always | S2; C2 then reads "{total} of {total} unused" after a reload. |
+| A1. button "Get new recovery codes" | always | S2. |
 
 ---
 
 ## group: "Your team"
 
-- **Address.** `/app/group`. **Frame.** working.
-- **Who can see it.** Every member reads it; a member who does not administer sees "These are your team's settings. Administrators change them; you can read them here." (`screen.group.admins`) and no act.
-- **Purpose.** The settings chosen at setup, changeable here: name and logo, website, languages, time zone, the court notice, the hosting account's holder, a copy of the record, what the team has at stake, the team's bar.
-- **Entry points.** `settings`, section "The team's", link "Your team".
+- **Address** `/app/group`. **Frame** working. **Who can see it** every member reads; a member who does not administer sees "These are your team's settings. Administrators change them; you can read them here." (`.admins`), the values, and no field or act.
+- **Purpose** The settings chosen at setup, changeable here.
+- **Entry points** `settings` › "The team's" › "Your team".
 
-**Content**
-- C1. Heading "Your team" (`screen.group.name`); line "Administrators only. The settings chosen at setup, all changeable here." (`screen.group.sub`).
-- C2. Section "Name and logo" (`screen.group.name.heading`): "Your team is called {name}." or `screen.group.name.none`; field "The team's name" (`screen.group.name.field`), help `screen.group.name.help`; button "Save the name"; fold "Saving the same name" (`screen.group.name.same.summary`). "Your team has a logo." or "Your team has no logo; its name is shown alone." (`screen.group.logo.set`, `.logo.none`); field "A new logo" (`screen.group.logo.field`), help "A PNG or JPEG image, at most 200 KB." (`screen.group.logo.help`); button "Change the logo".
-- C3. Section "Website" (`screen.group.domain.heading`): "{domain}, verified on {date}.", "{domain}, not verified yet." or "No website is recorded." (`screen.group.domain.verified`, `.unverified`, `.none`); the last check's verdict (`screen.group.domain.verdict.absent`, `.mismatched`, `.undetermined`) and "Checked {date} at {time}." (`screen.group.domain.checked`); field "Your team's web address" (`screen.group.domain.field`), help `screen.group.domain.help`; button "Verify the website".
-- C4. Section "Languages" (`screen.group.languages.heading`): "Your members use: {languages}." or `screen.group.languages.none`; checkboxes "The languages" (`screen.group.languages.field`), help "Tick from 1 to 20 languages your members use."; button "Save the languages".
-- C5. Section "Time zone" (`screen.group.timezone`): "{zone}, from {profile}" or "{zone}, corrected by your team" (`screen.group.timezone.governs.profile`, `.governs.local`); a choice of zone, help `screen.group.timezone.help`; fields "How you checked it" and "Where you checked it" (`screen.group.timezone.how`, `.timezone.source`), each help beginning "Required."; button "Correct the time zone"; folds "When two places give different zones" (`screen.group.timezone.two.summary`, holding `screen.group.timezone.two`) and "When your team's time zone isn't set" (`screen.group.timezone.none.summary`, holding "No time zone is held yet. Choose one below.").
-- C6. Section "The court notice" (`screen.group.court.heading`): `screen.group.court.says`; "Members are told what a court order could reach." or "Members are not told what a court order could reach." (`screen.group.court.tell`, `.court.dont`); checkbox "Show members the notice, before their first note and in their settings" (`screen.group.court.show`); button "Show the court notice".
-- C7. Section "The hosting account" (`screen.group.hosting.heading`): `screen.group.hosting.says`; "Recorded by {by} on {date}:" (or `.hosting.now.setup`, `.hosting.now.system`, `.hosting.now.date`) and the holder, or "Nobody has recorded who holds the hosting account." (`screen.group.hosting.none`); fields "Who holds it", "A note (optional)" (`screen.group.hosting.field`, `.hosting.note`); button "Record who holds the hosting account".
-- C8. Section "A copy of your team's record" (`screen.group.export.head`): `screen.group.export.says`; field "Why you are taking it (optional)" (`screen.group.export.note.label`), help `.export.note.help` + "Anything past 280 characters is cut."; button "Take a copy of the record"; "Taking a copy cannot be undone." + `screen.group.export.undone.why`; fold "When taking a copy is refused" (`screen.group.export.refused.head`): "Only the founder can take a copy." "Ask the founder to take it."; button "Show the list of copies"; the list, newest first, each with date, counts and words, and "Up to 200 are shown; if more exist, the list says so." (`screen.group.export.log.cap`).
-- C9. Section "What the team has at stake" (`stake.group.title`): field "The team's statement" (`stake.group.label`), help `stake.group.help`; button "Save the statement" (`act.declaredstakeset.label.group`).
-- C10. Section "The team's bar" (`screen.group.bar.heading`): "Capture at least {capture}, connection at least {connection}, set on {date}:" or "Your team has set no bar." (`screen.group.bar.now`, `.bar.none`); choices "Capture" and "Connection" (`screen.group.bar.capture`, `.bar.connection`) each with "No bar" (`.bar.unset`); field "Why (every member will see this)" (`screen.group.bar.reason`); button "Set the team's bar".
-- C11. `AI` button "Help me write this" under the statement of C9, while the assistant is reachable.
+Content
+- C1. Heading "Your team"; "Administrators only. The settings chosen at setup, all changeable here." (`.sub`).
+- C2. Section "Name and logo" (`.name.heading`): "Your team is called {name}." or `.name.none`; field "The team's name" (help `.name.help`); button A1; fold "Saving the same name". "Your team has a logo." or "Your team has no logo; its name is shown alone."; field "A new logo" (help "A PNG or JPEG image, at most 200 KB."); button A2.
+- C3. Section "Website" (`.domain.heading`): "{domain}, verified on {date}.", "{domain}, not verified yet." or "No website is recorded."; the last verdict (`.domain.verdict.*`), "Checked {date} at {time}."; field "Your team's web address" (help `.domain.help`); button A3.
+- C4. Section "Languages" (`.languages.heading`): "Your members use: {languages}." or `.languages.none`; checkboxes "The languages" (help "Tick from 1 to 20 languages your members use."); button A4.
+- C5. Section "Time zone" (`.timezone`): "{zone}, from {profile}" or "{zone}, corrected by your team"; a zone choice (help `.timezone.help`); fields "How you checked it", "Where you checked it" (each help starts "Required."); button A5; folds "When two places give different zones" (holding `.timezone.two`), "When your team's time zone isn't set" (holding "No time zone is held yet. Choose one below.").
+- C6. Section "The court notice" (`.court.heading`): `.court.says`; "Members are told what a court order could reach." or "Members are not told what a court order could reach."; checkbox "Show members the notice, before their first note and in their settings" (`.court.show`); button A6.
+- C7. Section "The hosting account" (`.hosting.heading`): `.hosting.says`; "Recorded by {by} on {date}:" (or `.hosting.now.setup`, `.now.system`, `.now.date`) and the holder, or "Nobody has recorded who holds the hosting account."; fields "Who holds it", "A note (optional)"; button A7.
+- C8. Section "A copy of your team's record" (`.export.head`): `.export.says`; field "Why you are taking it (optional)" (help `.export.note.help` + "Anything past 280 characters is cut."); button A8; "Taking a copy cannot be undone." + `.export.undone.why`; fold "When taking a copy is refused": "Only the founder can take a copy." "Ask the founder to take it."; button A9; the copies, newest first; "Up to 200 are shown; if more exist, the list says so."
+- C9. Section "What the team has at stake" (`stake.group.title`): field "The team's statement" (`stake.group.label`, help `stake.group.help`); button A10. `AI` "Help me write this" under it.
+- C10. Section "The team's bar" (`.bar.heading`): "Capture at least {capture}, connection at least {connection}, set on {date}:" or "Your team has set no bar."; choices "Capture", "Connection", each with "No bar"; field "Why (every member will see this)"; button A11.
 
-**States.** One. The screen has no view the design switches between; each section shows its value or its "none" line as listed. Without an AI account (the walk), C11 is absent. A member who does not administer sees `screen.group.admins` and the values, with no field or act.
+States: one view; each section shows its value or its "none" line as listed. A member's view is described under Who can see it. With no AI account (the walk) "Help me write this" is absent.
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Save the name" (`act.groupnameset.label.group`) | administrator | Same screen; "Saved. Your team is now called {name}." (`screen.group.name.saved`); the same name: "That's already your team's name, so nothing changed." (`screen.group.name.same`). |
-| A2. button "Change the logo" (`act.grouplogoset.label.group`) | administrator | Same screen; "Your team has a logo."; the logo in the frame. |
-| A3. button "Verify the website" (`act.groupdomainset.label.group`) | administrator | Same screen; C3's line and verdict. |
-| A4. button "Save the languages" (`act.grouplanguagesset.label.group`) | administrator | Same screen; "Your members use: {languages}." |
-| A5. button "Correct the time zone" (`act.factconfirm.label.group`) | administrator | Same screen; "Your team's time zone is now {zone}." (`screen.group.timezone.saved`). |
-| A6. button "Show the court notice" (`act.courtnoticeset.label.group`) | administrator | Same screen; C6's line changes. |
-| A7. button "Record who holds the hosting account" (`act.hostingaccessset.label.group`) | administrator | Same screen; "Recorded by {by} on {date}:" and the holder. |
-| A8. button "Take a copy of the record" (`act.export.label.group`) | administrator; refused to all but the founder | The copy is saved; a row is added to the list. |
-| A9. button "Show the list of copies" (`act.exportlog.label.group`) | administrator | Same screen; the list. |
-| A10. button "Save the statement" (`act.declaredstakeset.label.group`) | administrator | Same screen; the statement with who set it and when. |
-| A11. button "Set the team's bar" (`act.strengthbarset.label.group`) | administrator, with a reason | Same screen; C10's line. |
-| A12. `AI` button "Help me write this" (`act.writinghelp.label.group`) | assistant reachable | Same screen; a labelled draft in the statement field. |
+| A1. button "Save the name" | administrator | "Saved. Your team is now called {name}." (`.name.saved`); same name: "That's already your team's name, so nothing changed." (`.name.same`). |
+| A2. button "Change the logo" | administrator | "Your team has a logo."; the logo in the frame. |
+| A3. button "Verify the website" | administrator | C3's line and verdict. |
+| A4. button "Save the languages" | administrator | "Your members use: {languages}." |
+| A5. button "Correct the time zone" | administrator | "Your team's time zone is now {zone}." (`.timezone.saved`). |
+| A6. button "Show the court notice" | administrator | C6's line changes. |
+| A7. button "Record who holds the hosting account" | administrator | "Recorded by {by} on {date}:" and the holder. |
+| A8. button "Take a copy of the record" | the founder | A row added to the copies. |
+| A9. button "Show the list of copies" | administrator | The list. |
+| A10. button "Save the statement" | administrator | The statement, with who and when. |
+| A11. button "Set the team's bar" | administrator, with a reason | C10's line. |
+| A12. `AI` button "Help me write this" | assistant reachable | A labelled draft in the statement. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. "The team's name" | empty, on A1 | "Give the name first. Nothing was sent." (`screen.group.name.empty`) |
-| V2. "A new logo" | no file / not PNG or JPEG / over 200 KB, on A2 | "Choose the image first. Nothing was sent." / "That isn't a PNG or JPEG image. Nothing was sent." / "That image is larger than 200 KB. Nothing was sent." (`screen.group.logo.nofile`, `.logo.type`, `.logo.size`) |
-| V3. "Your team's web address" | empty, on A3 | "Give the web address first. Nothing was sent." (`screen.group.domain.empty`) |
-| V4. "The languages" | none or over 20 ticked, on A4 | "Tick from 1 to 20 languages. Nothing was sent." (`screen.group.languages.count`) |
-| V5. "Who holds it" | empty, on A7 | "Say who holds it first. Nothing was sent." (`screen.group.hosting.empty`) |
-| V6. "Capture", "Connection" | neither chosen, on A11 | "Choose a grade for capture, connection or both. Nothing was sent." (`screen.group.bar.nograde`) |
-| V7. "Why (every member will see this)" | empty or over 2,000 characters, on A11 | "Say why, in 1 to 2,000 characters. Nothing was sent." (`screen.group.bar.noreason`) |
+| V1. name | empty, A1 | "Give the name first. Nothing was sent." (`.name.empty`) |
+| V2. logo | none / not PNG or JPEG / over 200 KB, A2 | "Choose the image first. Nothing was sent." / "That isn't a PNG or JPEG image. Nothing was sent." / "That image is larger than 200 KB. Nothing was sent." (`.logo.nofile`, `.logo.type`, `.logo.size`) |
+| V3. web address | empty, A3 | "Give the web address first. Nothing was sent." (`.domain.empty`) |
+| V4. languages | 0 or over 20, A4 | "Tick from 1 to 20 languages. Nothing was sent." (`.languages.count`) |
+| V5. "Who holds it" | empty, A7 | "Say who holds it first. Nothing was sent." (`.hosting.empty`) |
+| V6. bar grades | neither, A11 | "Choose a grade for capture, connection or both. Nothing was sent." (`.bar.nograde`) |
+| V7. bar reason | empty or over 2,000, A11 | "Say why, in 1 to 2,000 characters. Nothing was sent." (`.bar.noreason`) |
 
 ---
 
 ## settings: "Settings"
 
-- **Address.** `/app/settings`; the rail's place Settings. **Frame.** working.
-- **Who can see it.** Every member; the section "The team's" only to an administrator.
-- **Purpose.** Every setting in one list: the member's own first, then the team's.
-- **Entry points.** The rail's (or, on a phone, More's) place Settings; Home's area block Administration.
+- **Address** `/app/settings`, the rail's place Settings. **Frame** working. **Who can see it** every member; "How full your team's record is" and "The team's" only to an administrator.
+- **Purpose** Every setting in one list: the member's own, then the team's.
+- **Entry points** the rail (on a phone, More) › Settings; Home's area block Administration.
 
-**Content**
-- C1. Heading "Settings" (`screen.settings.name`); line "Your own settings first; then the team's, which only administrators change." (`screen.settings.sub`).
-- C2. Section "Yours" (`screen.settings.yours`): links, each its screen's name with its purpose beneath: "Your account", "The assistant", "Your ties", "Your notes", "Recovery codes".
-- C3. To an administrator, section "How full your team's record is" (`screen.settings.storage.head`): "{used} of {limit} ({pct}%)" (`screen.settings.storage.used`) and `screen.settings.storage.what`; from 70%, `screen.settings.storage.warn70`; fold "When it passes 90%, or its size isn't known" (`screen.settings.storage.more`) holding `screen.settings.storage.warn90` and `screen.settings.storage.unknown`; note `screen.settings.storage.factors`.
-- C4. To an administrator, section "The team's" (`screen.settings.groups`): links "Your team", "Who your team is", "Members", "The team's assistant", "Places and offices", "Security", "Updates", "Translations", "Wizards", each with its purpose.
-- C5. Section "For every member" (`screen.settings.everyone`): link "Declared bias" with its purpose.
-
-**States**
+Content
+- C1. Heading "Settings"; "Your own settings first; then the team's, which only administrators change." (`.sub`).
+- C2. Section "Yours" (`.yours`): links "Your account", "The assistant", "Your ties", "Your notes", "Recovery codes", each with its screen's purpose beneath.
+- C3. Administrator: section "How full your team's record is" (`.storage.head`): "{used} of {limit} ({pct}%)" and `.storage.what`; from 70% `.storage.warn70`; fold "When it passes 90%, or its size isn't known" (`.storage.more`) holding `.storage.warn90`, `.storage.unknown`; note `.storage.factors`.
+- C4. Administrator: section "The team's" (`.groups`): links "Your team", "Who your team is", "Members", "The team's assistant", "Places and offices", "Security", "Updates", "Translations", "Wizards", each with its purpose.
+- C5. Section "For every member" (`.everyone`): link "Declared bias" with its purpose.
 
 | State | When | What shows |
 |---|---|---|
-| S1 An administrator's | session administers | C1 to C5. |
-| S2 A member's | session does not administer | C1, C2, C5. No C3, no C4. |
+| S1 An administrator's | administers | C1 to C5. |
+| S2 A member's | does not | C1, C2, C5. |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. each link in C2, C4, C5 | as its section | That screen: `account`, `connect`, `ties`, `notes`, `recovery`; `group`, `group-identity`, `members`, `teamai`, `places`, `security`, `updates`, `translations`, `wizards`; `bias`. |
+| A1. each link | as its section | `account`, `connect`, `ties`, `notes`, `recovery`; `group`, `group-identity`, `members`, `teamai`, `places`, `security`, `updates`, `translations`, `wizards`; `bias`. |
 
 ---
 
 ## updates: "Updates"
 
-- **Address.** `/app/updates`. **Frame.** working.
-- **Who can see it.** Administrators; it is listed in `settings` only to them. A member who opens the address sees the heading and only "Only your team's administrators install updates. Administrators: {admins}. If something needs updating, ask one of them." (`screen.updates.admins`).
-- **Purpose.** The release the team's Civicsmith runs, the release ready to install and what changes in it, and the choice: Update, Not now, or Skip this version.
-- **Entry points.** `settings`, section "The team's", link "Updates"; a new-release item in an administrator's `queue`. The wizard "Update your team's Civicsmith" starts here.
+- **Address** `/app/updates`. **Frame** working. **Who can see it** administrators (listed in `settings` only to them); a member who opens it sees the heading and "Only your team's administrators install updates. Administrators: {admins}. If something needs updating, ask one of them." (`.admins`) only.
+- **Purpose** The release running, the release ready and what changes in it, and Update, Not now or Skip this version.
+- **Entry points** `settings` › "The team's" › "Updates"; a release item in an administrator's `queue`. Wizard "Update your team's Civicsmith".
 
-**Content**
-- C1. Heading "Updates" (`screen.updates.name`); line `updates.says` (2 sentences: checked once a day; nothing installed until an administrator chooses).
-- C2. Section "Running now" (`updates.running.head`), help `screen.updates.tip.running`: "Release {version} · installed {date}, allowed by {who}" (`updates.running.release`; or `.release_setup`, `.release_noactor`); "Last check for a new release: {when}" · "once a day; the check sends nothing about your team" (`updates.running.checked`, `.checked_note`).
-- C3. Section "How your copy is doing" (`screen.updates.health.head`), help `screen.updates.health.help`: button "Check your copy now"; after it, lines "The team's record answers", "A test file was written and read back", "Captured pages are not set up on this copy" (`screen.updates.health.store`, `.file.test`, `.captures.off`); note `screen.updates.health.check.note` + `.check.next`; fold "When the check finds a problem" (`screen.updates.health.refused.head`). Button "Show what each part runs"; after it, a row per part ("The assistant's worker", "Reading PDFs", "Reading text in images", "Reading spreadsheets", "The file scanner", "The assistant's runner", `screen.updates.health.part.*`) with "release {version}" and "answering", "did not answer within 4 seconds", "not connected to your copy" or "answers under another name"; note `.parts.note` + `.parts.next`; fold "Other things a part can show" (`.part.other`). Button "Show what running costs"; after it, "Heaviest so far: {peak} {unit}", "average {mean} {unit}", "measured over {samples} requests" (`.runtime.heaviest`, `.runtime.average`, `.runtime.samples`); note `.runtime.note`.
-- C4. Section "Earlier releases" (`updates.earlier.head`), help `screen.updates.tip.history`: "Release {version} · installed {date}, allowed by {who}" or "Release {version} · skipped {date} by {who}: “{reason}”" (`updates.earlier.installed`, `.earlier.skipped`).
-
-**States**
+Content
+- C1. Heading "Updates"; `updates.says` (2 sentences).
+- C2. Section "Running now" (`updates.running.head`), help `.tip.running`: "Release {version} · installed {date}, allowed by {who}" (`updates.running.release`, or `.release_setup`, `.release_noactor`); "Last check for a new release: {when}" · "once a day; the check sends nothing about your team".
+- C3. Section "How your copy is doing" (`.health.head`): button A5, then "The team's record answers", "A test file was written and read back", "Captured pages are not set up on this copy" (`.health.*`), note `.health.check.note` + `.check.next`, fold "When the check finds a problem"; button A6, then a row per part — "The assistant's worker", "Reading PDFs", "Reading text in images", "Reading spreadsheets", "The file scanner", "The assistant's runner" — with "release {version}" and "answering", "did not answer within 4 seconds", "not connected to your copy" or "answers under another name"; fold "Other things a part can show"; button A7, then "Heaviest so far: {peak} {unit}", "average {mean} {unit}", "measured over {samples} requests", note `.health.runtime.note`.
+- C4. Section "Earlier releases" (`updates.earlier.head`), help `.tip.history`: "Release {version} · installed {date}, allowed by {who}" or "Release {version} · skipped {date} by {who}: “{reason}”".
 
 | State | When | What shows |
 |---|---|---|
-| S1 A release ready; an administrator who does not hold the Cloudflare account | a release ready | Section "Ready to install" (`updates.ready.head`): "Release {version} · {date}" (`updates.ready.release`), for a security fix the mark "Security fix" (`updates.ready.security`, explained by `.security_says`), "signed by Civicsmith · signature checked" (`updates.ready.signed`); notes "For members", "For administrators", "What an administrator must do" (`updates.notes.*`) and `updates.notes.plain`. Then "Pass it to whoever holds your Cloudflare account" (`updates.handoff.head`): `updates.handoff.says`, the link, `updates.handoff.for`, button "Copy the link" (`updates.handoff.copy`); button "Not now"; fold "Skip this version" (`updates.act.skip`): `updates.skip.says`, field "Why skip it? (every administrator will see this)" (`updates.skip.why`), button "Skip this version, with this reason" (`updates.act.skip_with_reason`). |
-| S2 The same, seen by the holder | the administrator holds the Cloudflare account | As S1, with buttons "Update" (help `updates.act.update_does`) and "Not now" (help `updates.act.later_does`) in place of the hand-off. |
-| S3 Nothing ready | the newest release runs | "Ready to install" holds "Nothing to install. Your team's Civicsmith runs the newest release. When a new one is out, it appears here and in every administrator's queue." (`updates.none`). |
-| S4 A member's view | session does not administer | Heading and `screen.updates.admins` only. |
+| S1 A release ready; administrator not holding the Cloudflare account | a release ready | Section "Ready to install" (`updates.ready.head`): "Release {version} · {date}", mark "Security fix" for one (`updates.ready.security`), "signed by Civicsmith · signature checked"; "For members", "For administrators", "What an administrator must do" (`updates.notes.*`) and `updates.notes.plain`. "Pass it to whoever holds your Cloudflare account" (`updates.handoff.head`): `updates.handoff.says`, the link, `updates.handoff.for`, button "Copy the link"; button "Not now"; fold "Skip this version": `updates.skip.says`, field "Why skip it? (every administrator will see this)", button "Skip this version, with this reason". |
+| S2 The same, seen by the holder | holds the Cloudflare account | As S1 with buttons "Update" and "Not now" in place of the hand-off. |
+| S3 Nothing ready | the newest runs | "Ready to install" holds "Nothing to install. Your team's Civicsmith runs the newest release. When a new one is out, it appears here and in every administrator's queue." (`updates.none`). |
+| S4 A member's view | not an administrator | Heading and `.admins` only. |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Update" (`updates.act.update`; registry `act.owed_updatestart.label.updates`) | S2 | The installer's update page (`update`), set to that release, in a new tab. |
-| A2. button "Not now" (`updates.act.later`) | S1, S2 | Same screen; the release is put aside for every administrator. |
-| A3. button "Skip this version, with this reason" (`updates.act.skip_with_reason`) | S1, S2, with a reason | Same screen; S3 or the next release; a "skipped" row in C4. |
-| A4. button "Copy the link" (`updates.handoff.copy`) | S1 | The link is copied; the screen does not change. |
-| A5. button "Check your copy now" (`act.selftest.label.updates`) | always | Same screen; C3's check lines. |
-| A6. button "Show what each part runs" (`act.bootstrap.label.updates`) | always | Same screen; C3's part rows. |
-| A7. button "Show what running costs" (`act.runtime.label.updates`) | always | Same screen; C3's work rows. |
+| A1. button "Update" (`updates.act.update`; act `updatestart`) | S2 | The installer's `update` page, set to that release, in a new tab. |
+| A2. button "Not now" (`updatelater`) | S1, S2 | The release put aside for every administrator. |
+| A3. button "Skip this version, with this reason" (`updateskip`) | S1, S2, with a reason | S3 or the next release; a "skipped" row in C4. |
+| A4. button "Copy the link" | S1 | The link copied. |
+| A5. button "Check your copy now" | always | C3's check lines. |
+| A6. button "Show what each part runs" | always | C3's part rows. |
+| A7. button "Show what running costs" | always | C3's work rows. |
 
 ---
 
 ## ties: "Your ties"
 
-- **Address.** `/app/ties`. **Frame.** working.
-- **Who can see it.** Every member, for their own ties. The list is seen only by the member and the administrators.
-- **Purpose.** The member's own ties to people or organizations the team may look into, and how a case would disclose them.
-- **Entry points.** `settings`, section "Yours", link "Your ties"; `account`, "Elsewhere in your settings". The wizard "Your ties" starts here.
+- **Address** `/app/ties`. **Frame** working. **Who can see it** every member, own ties; the list is seen only by them and administrators.
+- **Purpose** The member's own ties to people or organizations the team may look into, and how a case would disclose them.
+- **Entry points** `settings` › "Yours" › "Your ties"; `account` › "Elsewhere in your settings". Wizard "Your ties".
 
-**Content**
-- C1. Heading "Your ties" (`screen.ties.name`); line `screen.ties.sub`.
-- C2. An open fold "Why you are asked, and who sees it · so readers can trust a case · only you and the administrators see this list" (`screen.ties.summary`): "Why you are asked" (`screen.ties.why`) with four points (`screen.ties.why.1` to `.why.4`); "Who sees it" (`screen.ties.who`) with points `screen.ties.who.1` to `.who.3` and `screen.ties.who.change`.
-- C3. Section "Your ties" (`screen.ties.list`): table "Kind", "Who", "A case would say" (`screen.ties.col.kind`, `.col.who`, `.col.disclosed`); each row "a case would say: “{says}”" or "a case would name me" (`screen.ties.row.says`, `.row.named`).
-- C4. Section "Add a tie" (`screen.ties.add`): choice "Kind" (`screen.ties.kind`): "Employer", "Relative", "A business I have an interest in", "Other" (`screen.ties.kind.*`); field "Who" (`screen.ties.whofield`); field "The tie, in your words" (`screen.ties.note`), help `screen.ties.note.help`; radios "If a case the team publishes concerns them, the case discloses this tie" (`screen.ties.says`): "Naming me by my handle: “{handle}, who worked on this case, is {tie}.”" and "Without naming me: “A member of the team who worked on this case is {tie}.”" (`screen.ties.says.name.choice`, `.says.group.choice`); note `screen.ties.either`; button "Add a tie".
-
-**States**
+Content
+- C1. Heading "Your ties"; `.sub`.
+- C2. Open fold `.summary` "Why you are asked, and who sees it · so readers can trust a case · only you and the administrators see this list": "Why you are asked" (`.why`) with 4 points (`.why.1`–`4`); "Who sees it" (`.who`) with `.who.1`–`3` and `.who.change`.
+- C3. Section "Your ties" (`.list`): table "Kind", "Who", "A case would say"; each row "a case would say: “{says}”" or "a case would name me".
+- C4. Section "Add a tie" (`.add`): choice "Kind": "Employer", "Relative", "A business I have an interest in", "Other"; field "Who" (`.whofield`); field "The tie, in your words" (`.note`, help `.note.help`); radios "If a case the team publishes concerns them, the case discloses this tie": "Naming me by my handle: “{handle}, who worked on this case, is {tie}.”", "Without naming me: “A member of the team who worked on this case is {tie}.”"; note `.either`; button A1.
 
 | State | When | What shows |
 |---|---|---|
-| S1 Ties listed | the member has declared ties | C1 to C4. |
-| S2 None yet | no tie declared | C3 holds "Nothing is listed yet. Start with “Add this tie”: say who it is with, and how you want a case to name it." (`screen.ties.first`). |
+| S1 Ties listed | ties declared | C1 to C4. |
+| S2 None yet | none | C3: "Nothing is listed yet. Start with “Add this tie”: say who it is with, and how you want a case to name it." (`.first`). |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Add a tie" (`act.declaretie.label.ties`) | always | Same screen; the tie is a row of C3. |
-| A2. button "Remove a tie" (`act.withdrawtie.label.ties`) | on a tie's row | Same screen; the row goes. |
+| A1. button "Add a tie" | always | The tie a row of C3. |
+| A2. button "Remove a tie" | a tie's row | The row goes. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. "Who", "The tie, in your words" | empty, on A1 | "Name who the tie is with and describe it." (`screen.ties.add.empty`) |
+| V1. "Who", the tie | empty, A1 | "Name who the tie is with and describe it." (`.add.empty`) |
 
 ---
 
 ## notes: "Your notes"
 
-- **Address.** `/app/notes`. **Frame.** working.
-- **Who can see it.** Every member, for their own notes; nobody else in the team, administrators included.
-- **Purpose.** A member's private notes, kept, revised, deleted, or turned into an observation, a hunch or a question.
-- **Entry points.** `settings`, section "Yours", link "Your notes"; `account`, "Elsewhere in your settings".
+- **Address** `/app/notes`. **Frame** working. **Who can see it** every member, own notes; nobody else, administrators included.
+- **Purpose** Private notes, kept, revised, deleted, or turned into an observation, a hunch or a question.
+- **Entry points** `settings` › "Yours" › "Your notes"; `account` › "Elsewhere in your settings".
 
-**Content**
-- C1. Heading "Your notes" (`screen.notes.name`); line "Only you can see these in your team." (`screen.notes.private`) and link "What this protects, and from whom" (`screen.notes.protects.link`), which shows `screen.notes.protects` (3 sentences).
-- C2. Field "New note" (`screen.notes.new.field`); button "Write a note".
-- C3. Section "Kept" (`screen.notes.kept.heading`): table "Note", "Kept" (`screen.notes.col.note`, `.col.when`); each row's date with "only you" (`screen.notes.onlyyou`), "revised {date}" (`screen.notes.revised`), or "turned into observation {id}", "turned into hunch {id}", "turned into question {id}" (`screen.notes.turned.*`).
-- C4. A row's panel: field "Your note" (`screen.notes.revise.field`), buttons "Revise your note" and "Delete your note"; "Turn it into" (`screen.notes.turn.into`): "an observation", "a hunch", "a question" (`screen.notes.turn.observation`, `.turn.hunch`, `.turn.question`); field "The observation or question you made from it" (`screen.notes.turn.made`, help `.turn.made.help`); for a hunch, "For a hunch: the inquiry it belongs to" (`.turn.inquiry`, help `.turn.inquiry.help`), "For a hunch: what kind" (`.turn.kind`: "a cause", "who someone is", "a relation", "a flow of money or things", "something else"), "For a hunch: what it is about" (`.turn.about`, help `.turn.about.help`); button "Turn a note into an observation, hunch or question".
-- C5. The first time a member keeps a note while the team tells members what a court can reach: `screen.notes.court` (3 sentences).
-- C6. `AI` button "Help me write this" under the note's field, while the assistant is reachable; a draft it writes is labelled "Draft · the assistant's, asked by {handle}" (`screen.notes.draft.label`).
-
-**States**
+Content
+- C1. Heading "Your notes"; "Only you can see these in your team." (`.private`); link "What this protects, and from whom" (`.protects.link`), showing `.protects` (3 sentences).
+- C2. Field "New note" (`.new.field`); button A1.
+- C3. Section "Kept" (`.kept.heading`): table "Note", "Kept"; each row's date with "only you", "revised {date}", or "turned into observation {id}" / "hunch {id}" / "question {id}" (`.turned.*`).
+- C4. A row's panel: field "Your note" (`.revise.field`); buttons A2, A3; "Turn it into": "an observation", "a hunch", "a question"; field "The observation or question you made from it" (help `.turn.made.help`); for a hunch "For a hunch: the inquiry it belongs to", "For a hunch: what kind" ("a cause", "who someone is", "a relation", "a flow of money or things", "something else"), "For a hunch: what it is about"; button A4.
+- C5. The first note kept while the team tells members what a court can reach: `.court` (3 sentences).
+- C6. `AI` "Help me write this" under the note's field; its draft labelled "Draft · the assistant's, asked by {handle}" (`.draft.label`).
 
 | State | When | What shows |
 |---|---|---|
-| S1 Notes kept | the member has notes | C1 to C4. |
-| S2 None yet | no note kept | C3 holds "You have kept no notes yet." (`screen.notes.empty`). |
-| S3 Assistant unreachable (the walk) | no AI account | C6 absent. |
+| S1 Notes kept | notes held | C1 to C4. |
+| S2 None yet | none | C3: "You have kept no notes yet." (`.empty`). |
+| S3 No AI account (the walk) | assistant unreachable | No C6. |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "Write a note" (`act.notewrite.label.notes`) | always | Same screen; the note is the first row of C3; C5 the first time. |
-| A2. button "Revise your note" (`act.noterevise.label.notes`) | a row's panel | Same screen; the row reads "revised {date}". |
-| A3. button "Delete your note" (`act.notedelete.label.notes`) | a row's panel | Same screen; the row goes. |
-| A4. button "Turn a note into an observation, hunch or question" (`act.noteturn.label.notes`) | a row's panel | Same screen; the row reads "turned into … {id}"; the note stays private. |
-| A5. `AI` button "Help me write this" (`act.writinghelp.label.notes`) | assistant reachable | Same screen; a labelled draft in the field. |
+| A1. button "Write a note" | always | The note first in C3; C5 the first time. |
+| A2. button "Revise your note" | row panel | "revised {date}". |
+| A3. button "Delete your note" | row panel | The row goes. |
+| A4. button "Turn a note into an observation, hunch or question" | row panel | "turned into … {id}"; the note stays private. |
+| A5. `AI` button "Help me write this" | assistant reachable | A labelled draft in the field. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. "New note", "Your note" | empty, on A1 or A2 | "Write the note first. Nothing was sent." (`screen.notes.notext`) |
-| V2. "The observation or question you made from it" | empty, on A4 for an observation or question | "Give the id of the observation or question you made. Nothing was sent." (`screen.notes.turn.nomade`) |
-| V3. the hunch fields | no inquiry or nothing it is about, on A4 | "A hunch names its inquiry and what it is about. Nothing was sent." (`screen.notes.turn.incomplete`) |
-| V4. "For a hunch: what it is about" | not two records for a cause, who someone is or a relation | "A cause, who someone is or a relation is about two records, from and to. Nothing was sent." (`screen.notes.turn.pair`) |
+| V1. note | empty, A1/A2 | "Write the note first. Nothing was sent." (`.notext`) |
+| V2. made id | empty, A4 | "Give the id of the observation or question you made. Nothing was sent." (`.turn.nomade`) |
+| V3. hunch | no inquiry or subject, A4 | "A hunch names its inquiry and what it is about. Nothing was sent." (`.turn.incomplete`) |
+| V4. hunch subject | not two records for a cause, identity or relation | "A cause, who someone is or a relation is about two records, from and to. Nothing was sent." (`.turn.pair`) |
 
 ---
 
 ## translations: "Translations"
 
-- **Address.** `/app/translations`; one language, `/app/translations/<tag>`. **Frame.** working.
-- **Who can see it.** Every member reads it. A member given the grant for a language translates it; an administrator grants, confirms and undoes.
-- **Purpose.** The words members see, in the team's languages: translated by granted members, drafted by the assistant where it can, protected words checked twice.
-- **Entry points.** `settings`, section "The team's", link "Translations". The wizard "Translate the interface" starts here.
+- **Address** `/app/translations`; one language `/app/translations/<tag>`. **Frame** working.
+- **Who can see it** every member reads; a member granted a language translates it; an administrator grants, confirms and undoes.
+- **Purpose** The words members see, in the team's languages.
+- **Entry points** `settings` › "The team's" › "Translations". Wizard "Translate the interface".
 
-**Content**
-- C1. Heading "Translations" (`screen.translations.name`).
-- C2. Section "Your team's languages" (`screen.translations.languages.heading`): the team's languages, each a link to its words; "Choose a language to see its words." (`screen.translations.choose`).
-- C3. Section "Who may translate {language}" (`screen.translations.who`): each granted member with "granted by {name}, {date}" (`screen.translations.grantedby`); to an administrator, section "Who may translate" (`screen.translations.grant.heading`): field "The member to grant {language} to (their id)" (`screen.translations.grant.member`), checkbox "Take the grant away instead" (`screen.translations.grant.revoke`), button "Give a member the grant for a language".
-- C4. Section "The words" (`screen.translations.words.heading`): "Shown: {shown} · Awaiting a second check: {awaiting} · Not translated: {missing}" (`screen.translations.counts`); table "English", "State", "Translation" (`screen.translations.col.en`, `.col.state`, `.col.text`); marks "protected" (`screen.translations.protected`); states "not translated", "shown", "awaiting a second check" (`screen.translations.state.*`); "its English changed since" (`screen.translations.changed`); "kept by {by}" (`screen.translations.adopted`); a local name "name kept; explanation translated" (`screen.translations.localname`).
-- C5. A word's panel: field "Your translation" (`screen.translations.text.field`), help "Type the translation, keeping every {name} part as it is." (`screen.translations.text.help`); buttons "Adopt a translation", "Confirm a protected word" (an awaiting protected word, by another granted speaker or an administrator), "Undo a change" (an administrator).
-- C6. Note, without the assistant: `screen.translations.typed.note` (2 sentences). With it: `screen.translations.drafts.note` (3 sentences).
-- C7. Notes `screen.translations.marked.note` (marked wrong by members) and `screen.translations.localnames.note` (local names).
-- C8. `AI` While the assistant is reachable: the words can be picked; button "Ask the assistant to draft the {n} missing" (`screen.translations.draft.missing`); section "The assistant's drafts" (`screen.translations.drafts`), each labelled "Machine work · a draft, asked by {handle}" (`screen.translations.draft.label`), the field help then `screen.translations.text.help.draft`; to an administrator on an awaiting protected word, button "Read it back into English" (`screen.translations.reading.ask`), its answer labelled `screen.translations.reading.label`.
-
-**States**
+Content
+- C1. Heading "Translations".
+- C2. Section "Your team's languages" (`.languages.heading`): each language a link; "Choose a language to see its words." (`.choose`).
+- C3. Section "Who may translate {language}" (`.who`): granted members, "granted by {name}, {date}". Administrator: section "Who may translate" (`.grant.heading`): field "The member to grant {language} to (their id)", checkbox "Take the grant away instead", button A2.
+- C4. Section "The words" (`.words.heading`): "Shown: {shown} · Awaiting a second check: {awaiting} · Not translated: {missing}" (`.counts`); table "English", "State", "Translation"; mark "protected"; states "not translated", "shown", "awaiting a second check"; "its English changed since"; "kept by {by}"; a local name "name kept; explanation translated".
+- C5. A word's panel: field "Your translation" (help "Type the translation, keeping every {name} part as it is."); buttons A3, A4, A5.
+- C6. Without the assistant: note `.typed.note` (2 sentences); with it, `.drafts.note` (3 sentences).
+- C7. Notes `.marked.note` and `.localnames.note`.
+- C8. `AI` Assistant reachable: words can be picked; button "Ask the assistant to draft the {n} missing" (`.draft.missing`); section "The assistant's drafts" (`.drafts`), each "Machine work · a draft, asked by {handle}"; administrator on an awaiting protected word: button "Read it back into English" (`.reading.ask`), its answer "Machine work · read back into English, asked by {handle}".
 
 | State | When | What shows |
 |---|---|---|
-| S1 The screen in use | the team has a language besides English, one chosen | C1 to C7. |
-| S2 A team that uses only English | no other language | "Your team uses no language but English yet." (`screen.translations.languages.none`); no C3 to C7. |
-| S3 Assistant unreachable (the walk) | no AI account | C8 absent; C6 shows `screen.translations.typed.note`. |
+| S1 In use | a language besides English, chosen | C1 to C7. |
+| S2 Only English | no other language | "Your team uses no language but English yet." (`.languages.none`); nothing else. |
+| S3 No AI account (the walk) | assistant unreachable | No C8; C6 shows `.typed.note`. |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. a language in C2 | S1 | `/app/translations/<tag>`, its words. |
-| A2. button "Give a member the grant for a language" (`act.translationgrant.label.translations`) | administrator | Same screen; the member listed in C3 (or removed, with "Take the grant away instead"). |
-| A3. button "Adopt a translation" (`act.translationadopt.label.translations`) | a granted member, on a word | Same screen; the word "shown", or "awaiting a second check" for a protected word changed. |
-| A4. button "Confirm a protected word" (`act.translationconfirm.label.translations`) | another granted speaker or an administrator, on an awaiting protected word | Same screen; the word "shown". |
-| A5. button "Undo a change" (`act.translationrevert.label.translations`) | administrator | Same screen; the word as it was before. |
-| A6. `AI` button "Ask the assistant to draft" (`act.translationdraft.label.translations`; drawn as C8's words) | assistant reachable, words picked | Same screen; drafts listed, shown to no member until adopted. |
+| A1. a language in C2 | S1 | `/app/translations/<tag>`. |
+| A2. button "Give a member the grant for a language" | administrator | The member listed in C3 (or removed). |
+| A3. button "Adopt a translation" | granted member | The word "shown", or "awaiting a second check" for a changed protected word. |
+| A4. button "Confirm a protected word" | another granted speaker or an administrator | The word "shown". |
+| A5. button "Undo a change" | administrator | The word as before. |
+| A6. `AI` button "Ask the assistant to draft" (drawn with `.draft.missing`) | assistant reachable, words picked | Drafts listed, shown to no member until adopted. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. "The member to grant {language} to (their id)" | empty, on A2 | "Name the member first. Nothing was sent." (`screen.translations.grant.nomember`) |
-| V2. "Your translation" | empty and no draft chosen, on A3 | "Type a translation or choose a draft first. Nothing was sent." (`screen.translations.text.none`) |
-| V3. the word list | nothing picked, on A6 | "Pick the words to draft first. Nothing was sent." (`screen.translations.pick`) |
+| V1. member id | empty, A2 | "Name the member first. Nothing was sent." (`.grant.nomember`) |
+| V2. translation | empty, no draft chosen, A3 | "Type a translation or choose a draft first. Nothing was sent." (`.text.none`) |
+| V3. words | none picked, A6 | "Pick the words to draft first. Nothing was sent." (`.pick`) |
 
 ---
 
 ## wizards: "Wizards"
 
-- **Address.** `/app/wizards`. **Frame.** working.
-- **Who can see it.** Every member. A team's own wizards are listed to the owners of their projects and to administrators.
-- **Purpose.** The team's wizard library: Civicsmith's own, and the team's drafts, submitted and offered wizards.
-- **Entry points.** `settings`, section "The team's", link "Wizards".
+- **Address** `/app/wizards`. **Frame** working. **Who can see it** every member; a team's own wizards are listed to their projects' owners and to administrators.
+- **Purpose** The team's wizard library: Civicsmith's own, and the team's drafts, submitted and offered wizards.
+- **Entry points** `settings` › "The team's" › "Wizards".
 
-**Content**
-- C1. Heading "Wizards" (`screen.wizards.name`).
-- C2. Choice "Which wizards" (`screen.wizards.state.field`): "Offered to members", "Drafts", "Submitted for approval", "Withdrawn", "Retired", "Broken: no longer matching the screens", "Open proposals" (`screen.wizards.state.*`); "Showing: {state}" (`screen.wizards.showing`).
-- C3. The library: table "Wizard", "Whose", "Based on", "Approved by", "Finished" (`screen.wizards.col.*`). Whose: "Civicsmith's", "This team's", "This team's, team-wide" (`screen.wizards.whose.*`); "Required" (`screen.wizards.required`); "finished by {n}" (`screen.wizards.finished`); based on: "Not a copy", "based on Civicsmith's “{name}”", "Based on a wizard you cannot see" (`screen.wizards.nobase`, `.basedon`, `.basehidden`); "Not approved yet" (`screen.wizards.notapproved`); version states "Draft", "Submitted", "Approved", "Updated by a newer version", "Withdrawn" (`screen.wizards.vstate.*`); "version {n}"; a broken wizard `screen.wizards.broken`; a retired one "Retired: {reason}"; a copy whose original changed "Civicsmith's original changed since: see what changed" (`screen.wizards.originalchanged`).
-- C4. A wizard's panel: button "See its steps" (`screen.wizards.act.steps`), section "Its steps" (`screen.wizards.steps.head`): "On {screen}", "Why: {why}", "Side trip: {name}", and what a step places (`screen.wizards.steps.where`, `.steps.why`, `.steps.via`, `.steps.draft.*`). For a Civicsmith wizard, `screen.wizards.civicsmith.only` and button "Copy a wizard to change it" (`screen.wizards.act.copy`). For a copy whose original changed: section "What changed in {name}" (`screen.wizards.changes.head`), "Your copy's steps", "The original's newer steps", button "Bring the change across" (`screen.wizards.act.adoptbase`), or for an approved copy `screen.wizards.changes.newdraft` and button "Start a new draft of it" (`screen.wizards.act.newdraft`).
-- C5. Button "See the library".
-- C6. Fold "Writing your own wizards" (`screen.wizards.own.fold`): `screen.wizards.own.says` (2 sentences); section "Record a new wizard" (`screen.wizards.record.head`): `screen.wizards.record.intro` (2 sentences); fields "For which project" (`screen.wizards.project.field`), "Its name" (`screen.wizards.name.field`), "Why" (`screen.wizards.reason.field`); button "Record a new wizard". A draft's panel: section "Change this draft" (`screen.wizards.edit.head`) with "Step {n}: what the member does", "Step {n}: why", "Step {n}: its place in the list", "Remove step {n}" (`screen.wizards.edit.*`), button "Save the changes" (`screen.wizards.act.save`); buttons "Revise a draft", "Submit for approval", "Approve", "Make it team-wide" (`screen.wizards.act.widen`), "Withdraw this version" (`screen.wizards.act.withdraw`), "Retire the wizard" (`screen.wizards.act.retire`). An open proposal: "Proposed: {why}" (`screen.wizards.proposal.by`), buttons "Draft a wizard from these steps" and "Adopt these steps into a draft" (`screen.wizards.act.fromproposal`, `.act.adopt`) with "Into which of your drafts" (`screen.wizards.draftfor.field`).
-- C7. Note `screen.wizards.copy.note` (3 sentences: a copy is the team's own draft; the original stays offered; editors are told when it changes).
-
-**States**
+Content
+- C1. Heading "Wizards".
+- C2. Choice "Which wizards" (`.state.field`): "Offered to members", "Drafts", "Submitted for approval", "Withdrawn", "Retired", "Broken: no longer matching the screens", "Open proposals"; "Showing: {state}".
+- C3. Table "Wizard", "Whose", "Based on", "Approved by", "Finished" (`.col.*`): "Civicsmith's", "This team's", "This team's, team-wide"; "Required"; "finished by {n}"; "Not a copy", "based on Civicsmith's “{name}”", "Based on a wizard you cannot see"; "Not approved yet"; version states "Draft", "Submitted", "Approved", "Updated by a newer version", "Withdrawn"; "version {n}"; `.broken`; "Retired: {reason}"; "Civicsmith's original changed since: see what changed".
+- C4. A wizard's panel: button "See its steps", section "Its steps" ("On {screen}", "Why: {why}", "Side trip: {name}", `.steps.draft.*`). A Civicsmith wizard: `.civicsmith.only` and button "Copy a wizard to change it". A copy whose original changed: "What changed in {name}", "Your copy's steps", "The original's newer steps", button "Bring the change across"; approved: `.changes.newdraft`, button "Start a new draft of it".
+- C5. Button A1.
+- C6. Fold "Writing your own wizards" (`.own.fold`): `.own.says` (2 sentences); "Record a new wizard" (`.record.head`): `.record.intro` (2 sentences); fields "For which project", "Its name", "Why"; button A3. A draft's panel: "Change this draft" with "Step {n}: what the member does", "Step {n}: why", "Step {n}: its place in the list", "Remove step {n}", button "Save the changes"; buttons "Make it team-wide", "Withdraw this version", "Retire the wizard"; and A5 to A8. An open proposal: "Proposed: {why}", buttons "Draft a wizard from these steps", "Adopt these steps into a draft", field "Into which of your drafts".
+- C7. Note `.copy.note` (3 sentences).
 
 | State | When | What shows |
 |---|---|---|
-| S1 Offered to members | the default | C1 to C7 for the wizards offered. |
-| S2 Another state chosen | a choice in C2 | The table for that state; "Showing: {state}". |
-| S3 Nothing to show | no wizard in the state, or none visible | "No wizards to show here. Your team's wizards are listed to the owners of their projects and to administrators." (`screen.wizards.empty`). |
+| S1 Offered to members | default | C1 to C7. |
+| S2 Another state | chosen in C2 | That state's table; "Showing: {state}". |
+| S3 Nothing to show | none in the state, or none visible | "No wizards to show here. Your team's wizards are listed to the owners of their projects and to administrators." (`.empty`). |
 
-**Actions**
-
-| Control | When offered | Leads to |
+| Action | When | Leads to |
 |---|---|---|
-| A1. button "See the library" (`act.wizards.label.wizards`) | always | Same screen; S1. |
-| A2. a choice in "Which wizards" | always | Same screen; S2, read at once. |
-| A3. button "Record a new wizard" (`act.wizarddraft.label.wizards`) | a member who may write wizards, project chosen | The guide in the dock starts recording on the real screens; each act pressed is a step. |
-| A4. button "Copy a wizard to change it" (act `wizarddraft`) | a Civicsmith wizard, or a team wizard | Same screen; a draft "based on Civicsmith's “{name}”" in "Drafts". |
-| A5. button "Revise a draft" / "Save the changes" (act `wizardrevise`) | a draft | Same screen; the draft's steps changed. |
-| A6. button "Submit for approval" (act `wizardsubmit`) | a draft | Same screen; version state "Submitted". |
-| A7. button "Approve" (act `wizardapprove`) | a submitted version, its approver | Same screen; "Approved", offered to members. |
-| A8. button "Retire" / "Retire the wizard" (act `wizardretire`) | a team wizard | Same screen; "Retired: {reason}". |
-| A9. buttons "Bring the change across", "Start a new draft of it" | a copy whose original changed | Same screen; the copy's draft takes the newer steps. |
+| A1. button "See the library" | always | S1. |
+| A2. a choice in "Which wizards" | always | S2, read at once. |
+| A3. button "Record a new wizard" (`wizarddraft`) | a project chosen | The guide in the dock records on the real screens; each act pressed is a step. |
+| A4. button "Copy a wizard to change it" (`wizarddraft`) | a wizard's panel | A draft "based on Civicsmith's “{name}”" under "Drafts". |
+| A5. button "Revise a draft" / "Save the changes" (`wizardrevise`) | a draft | Its steps changed. |
+| A6. button "Submit for approval" | a draft | "Submitted". |
+| A7. button "Approve" | a submitted version, its approver | "Approved"; offered to members. |
+| A8. button "Retire" / "Retire the wizard" (`wizardretire`) | a team wizard | "Retired: {reason}". |
+| A9. buttons "Bring the change across", "Start a new draft of it" | a copy whose original changed | The copy's draft takes the newer steps. |
 
-**Form messages**
-
-| Field | Condition | Message |
+| Form message | Condition | Message |
 |---|---|---|
-| V1. "For which project" | none chosen, on A3 | "Choose the project first. Nothing was sent." (`screen.wizards.project.none`) |
-| V2. "Why" | empty where a reason is asked | "Say why. Nothing was sent." (`screen.wizards.reason.needed`) |
-| V3. "Into which of your drafts" | the member has no draft | "You have no draft to adopt these steps into. Nothing was sent." (`screen.wizards.draftfor.none`) |
-| V4. the draft's steps | every step removed, on A5 | "A wizard needs at least one step. Nothing was sent." (`screen.wizards.edit.nosteps`) |
-| V5. a step | refused by a check | "Step {step}: {words}" (`screen.wizards.refusal.step`) |
+| V1. project | none, A3 | "Choose the project first. Nothing was sent." (`.project.none`) |
+| V2. "Why" | empty | "Say why. Nothing was sent." (`.reason.needed`) |
+| V3. drafts | none to adopt into | "You have no draft to adopt these steps into. Nothing was sent." (`.draftfor.none`) |
+| V4. steps | all removed, A5 | "A wizard needs at least one step. Nothing was sent." (`.edit.nosteps`) |
+| V5. a step | refused by a check | "Step {step}: {words}" (`.refusal.step`) |
 
 ---
 
 ## Differences seen in the code
 
-The design above is the authority; these are where the built code draws something else (`bio-plane/src/`).
+Paths under `bio-plane/src/`. The design above stands; each line is where the code draws otherwise.
 
-- `settings`: the record's size (C3) is drawn on `group`, not on Settings (`screens-settings/group.mjs:254`; `screens-settings/settings.mjs:24-29` has no such section).
+- `settings`: "How full your team's record is" is drawn on `group`, not on Settings (`screens-settings/group.mjs:254`; `screens-settings/settings.mjs:24-29`).
 - `settings`: "For every member" also lists "Your team's own rules", and "Watched addresses" and "Leads" to those who may use them (`screens-settings/settings.mjs:29`).
 - `members`: "More for administrators" links Your team, Places and offices and Recovery codes, not Places and offices and Security (`screens-settings/members.mjs:173`).
-- `members`: a removal under way (S3) is drawn inside "What removing an administrator takes", not as its own view headed "Removing {member} as an administrator" (`screens-settings/members.mjs:274-290`).
-- `group-identity`: with the assistant reachable the code draws the three questions and `ask.intro`, not the explanation `ask.what` (`screens-settings/identity.mjs:59-60`).
-- `security`: no hour grid, totals table, "Where from", "When you are told" or "What you can do" are drawn; only the level, files line, parts, tools and catalogue (`screens-settings/security.mjs`, no use of `heat.*`, `where.*`, `told.*`, `cando`).
+- `members`: a removal under way (S3) is drawn inside "What removing an administrator takes", not as its own view (`screens-settings/members.mjs:274-290`).
+- `group-identity`: with the assistant reachable, the three questions and `.ask.intro` are drawn, not the explanation `.ask.what` (`screens-settings/identity.mjs:59-60`).
+- `security`: no hour grid, totals, where from, "When you are told" or "What you can do" are drawn (`screens-settings/security.mjs`: no `heat.*`, `where.*`, `told.*`, `cando` key used).
 - `connect`: "Check the connection" and its fold are not drawn (`screens-settings/connect.mjs:13-14`).
-- `bias`: the lens, the writing form, the outside-policy form and adoption are one page with four parts, not views of one page; the earlier-lens work is at `/app/bias/<run>` (`screens-settings/bias.mjs:1-8`).
-- `recovery`: no section "If you lose your codes too" (`screens-settings/recovery.mjs`, no use of `lost.*`).
-- `ties`: the line `screen.ties.who.change` and the fold's summary words `screen.ties.summary` are not drawn (`screens-investigate/ties.mjs`, no use of either key).
-- `account`: the mockup draws one section "Password and signing key" (`screen.account.passwordkey.heading`) holding the key and the buttons "Change your password", "Register your signing key", "Revoke your signing key"; the code draws "Your password" and "Your signing key" as two sections (`screens-settings/account.mjs:98`, `:123`). Both headings are design word rows; C7 and C8 above follow the two.
-- `teamai`, `security`, `group`, `places`, `updates`: the code serves them to every member and draws a sentence saying whose screen it is, not the `unavailable` screen (`screens-settings/teamai.mjs:37`, `security.mjs:51`, `group.mjs:67`, `places.mjs:44`, `updates.mjs:34`).
+- `bias`: the four views are drawn as one page of four parts; the earlier-lens work is at `/app/bias/<run>` (`screens-settings/bias.mjs:1-8`).
+- `recovery`: no section "If you lose your codes too" (`screens-settings/recovery.mjs`: no `lost.*` key used).
+- `ties`: `.who.change` and the fold's summary `.summary` are not drawn (`screens-investigate/ties.mjs`: neither key used).
+- `account`: the mockup draws one section "Password and signing key" (`screen.account.passwordkey.heading`) with the three buttons; the code draws "Your password" and "Your signing key" as two sections, both design word rows, which C7 and C8 follow (`screens-settings/account.mjs:98`, `:123`).
+- `teamai`, `security`, `group`, `places`, `updates`: served to every member with a sentence saying whose screen it is, not the `unavailable` screen (`screens-settings/teamai.mjs:37`, `security.mjs:51`, `group.mjs:67`, `places.mjs:44`, `updates.mjs:34`).
 
 ## Changes
 
