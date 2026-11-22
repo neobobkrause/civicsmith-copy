@@ -9,11 +9,8 @@
     "bio-plane/test/adoptable-reading.mjs"
   ],
   "public": [
-    "bio-plane/src/provenance/checks.mjs",
     "bio-plane/src/provenance/index.mjs",
     "bio-plane/src/provenance/ops.mjs",
-    "bio-plane/src/provenance/register-checks.mjs",
-    "bio-plane/src/provenance/schema.mjs",
     "bio-plane/test/m/provenance/fixture.mjs",
     "bio-plane/test/m/provenance/fixtures.mjs"
   ],
@@ -26,6 +23,7 @@
     "test-support",
     "ooxml",
     "setup-words",
-    "runtime-limits"
+    "runtime-limits",
+    "provenance-register"
   ]
 }

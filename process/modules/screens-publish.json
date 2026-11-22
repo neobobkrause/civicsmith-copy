@@ -7,9 +7,7 @@
     "bio-plane/test/m/screens-publish/"
   ],
   "public": [
-    "bio-plane/src/screens-publish/doorbell.mjs",
     "bio-plane/src/screens-publish/index.mjs",
-    "bio-plane/src/screens-publish/parts.mjs",
     "bio-plane/test/m/screens-publish/fixtures.mjs"
   ],
   "uses": [
@@ -37,6 +35,7 @@
     "sources",
     "credentials",
     "wizard-scripts",
-    "action-holds"
+    "action-holds",
+    "screens-public"
   ]
 }

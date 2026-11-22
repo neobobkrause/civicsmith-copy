@@ -1,0 +1,30 @@
+{
+  "name": "agent-worker-routes",
+  "files": [
+    "agent-worker/src/ask.mjs",
+    "agent-worker/src/draft.mjs",
+    "agent-worker/src/action-drafts.mjs",
+    "agent-worker/src/signin.mjs",
+    "agent-worker/src/transcribe.mjs",
+    "agent-worker/src/remote.mjs",
+    "agent-worker/src/untested.mjs",
+    "agent-worker/src/ops.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "agent-worker/src/action-drafts.mjs",
+    "agent-worker/src/ask.mjs",
+    "agent-worker/src/draft.mjs",
+    "agent-worker/src/ops.mjs",
+    "agent-worker/src/remote.mjs",
+    "agent-worker/src/signin.mjs",
+    "agent-worker/src/transcribe.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "run-rules",
+    "answers",
+    "agent-model",
+    "agent-steps"
+  ]
+}

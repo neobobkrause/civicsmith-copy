@@ -14,11 +14,8 @@
   "uses": [
     "record-grammar",
     "text-chain",
-    "record-core",
     "membership",
-    "credentials",
     "promotion",
-    "provenance",
     "attestation",
     "provenance-routes",
     "capture-sources",
@@ -46,7 +43,6 @@
     "citation",
     "basis-versions",
     "strength",
-    "contradiction",
     "run-rules",
     "run-productions",
     "capture-requests",
@@ -101,6 +97,10 @@
     "case-inputs",
     "ai-accounts",
     "translations",
-    "setup-words"
+    "setup-words",
+    "record-core-tables",
+    "contradiction-words",
+    "credentials-tables",
+    "provenance-register"
   ]
 }

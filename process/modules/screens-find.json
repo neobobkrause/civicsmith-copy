@@ -1,0 +1,26 @@
+{
+  "name": "screens-find",
+  "files": [
+    "bio-plane/src/screens-daily/finder.mjs",
+    "bio-plane/src/screens-daily/finder-states.mjs",
+    "bio-plane/src/screens-daily/find-in.mjs",
+    "bio-plane/src/screens-daily/find-in-forms.mjs",
+    "bio-plane/src/screens-daily/answers.mjs",
+    "bio-plane/src/screens-daily/front-title.mjs",
+    "bio-plane/src/screens-daily/projects.mjs",
+    "bio-plane/src/screens-daily/project-rows.mjs",
+    "bio-plane/src/screens-daily/start-project.mjs",
+    "bio-plane/src/screens-daily/participation.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/screens-daily/answers.mjs",
+    "bio-plane/src/screens-daily/find-in.mjs",
+    "bio-plane/src/screens-daily/finder.mjs",
+    "bio-plane/src/screens-daily/participation.mjs",
+    "bio-plane/src/screens-daily/project-rows.mjs",
+    "bio-plane/src/screens-daily/projects.mjs",
+    "bio-plane/src/screens-daily/start-project.mjs"
+  ],
+  "uses": []
+}

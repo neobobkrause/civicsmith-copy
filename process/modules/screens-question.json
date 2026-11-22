@@ -1,0 +1,18 @@
+{
+  "name": "screens-question",
+  "files": [
+    "bio-plane/src/screens-inquiry/question.mjs",
+    "bio-plane/src/screens-inquiry/assistant.mjs",
+    "bio-plane/src/screens-inquiry/common.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/screens-inquiry/assistant.mjs",
+    "bio-plane/src/screens-inquiry/common.mjs",
+    "bio-plane/src/screens-inquiry/question.mjs"
+  ],
+  "uses": [
+    "screens-settings",
+    "screens-document"
+  ]
+}

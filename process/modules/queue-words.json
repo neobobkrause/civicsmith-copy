@@ -1,0 +1,14 @@
+{
+  "name": "queue-words",
+  "files": [
+    "bio-plane/src/queue-producers/words.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/queue-producers/words.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "civil-time"
+  ]
+}

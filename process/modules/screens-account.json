@@ -1,0 +1,21 @@
+{
+  "name": "screens-account",
+  "files": [
+    "bio-plane/src/screens-settings/account.mjs",
+    "bio-plane/src/screens-settings/connect.mjs",
+    "bio-plane/src/screens-settings/teamai.mjs",
+    "bio-plane/src/screens-settings/notes.mjs",
+    "bio-plane/src/screens-settings/recovery.mjs",
+    "bio-plane/src/screens-settings/members.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/screens-settings/account.mjs",
+    "bio-plane/src/screens-settings/connect.mjs",
+    "bio-plane/src/screens-settings/members.mjs",
+    "bio-plane/src/screens-settings/notes.mjs",
+    "bio-plane/src/screens-settings/recovery.mjs",
+    "bio-plane/src/screens-settings/teamai.mjs"
+  ],
+  "uses": []
+}

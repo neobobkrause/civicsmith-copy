@@ -24,6 +24,7 @@
     "test-support",
     "pdf-reader",
     "pdf-worker",
-    "capture"
+    "capture",
+    "credentials-tables"
   ]
 }

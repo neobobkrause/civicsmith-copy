@@ -1,0 +1,23 @@
+{
+  "name": "case-document",
+  "files": [
+    "bio-plane/src/case-authoring/document.mjs",
+    "bio-plane/src/case-authoring/searched.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/case-authoring/document.mjs",
+    "bio-plane/src/case-authoring/searched.mjs"
+  ],
+  "uses": [
+    "setup-words",
+    "observation-log",
+    "strength",
+    "case-grammar",
+    "publication",
+    "ratification",
+    "case-disclosures",
+    "case-account",
+    "case-inputs"
+  ]
+}

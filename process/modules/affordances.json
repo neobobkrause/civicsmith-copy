@@ -8,8 +8,7 @@
     "bio-plane/test/m/affordances/"
   ],
   "public": [
-    "bio-plane/src/affordances.mjs",
-    "bio-plane/src/affordances/act-help.mjs"
+    "bio-plane/src/affordances.mjs"
   ],
   "uses": [
     "action-clocks",
@@ -86,6 +85,8 @@
     "case-inputs",
     "action-records",
     "ai-accounts",
-    "setup-words"
+    "setup-words",
+    "op-grade-tranches",
+    "act-help"
   ]
 }

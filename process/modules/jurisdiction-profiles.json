@@ -1,0 +1,11 @@
+{
+  "name": "jurisdiction-profiles",
+  "files": [
+    "jurisdictions/profiles/"
+  ],
+  "tests": [],
+  "public": [
+    "jurisdictions/profiles/oakland-alameda.mjs"
+  ],
+  "uses": []
+}

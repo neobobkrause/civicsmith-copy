@@ -7,7 +7,6 @@
     "newgroup/test/steps/"
   ],
   "public": [
-    "newgroup/src/steps/api.mjs",
     "newgroup/src/steps/images.mjs",
     "newgroup/src/steps/index.mjs",
     "newgroup/src/steps/signers.mjs"
@@ -18,6 +17,7 @@
     "instance-setup",
     "setup-words",
     "runtime-limits",
-    "plane"
+    "plane",
+    "installer-account"
   ]
 }

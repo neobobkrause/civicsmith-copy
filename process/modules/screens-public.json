@@ -1,0 +1,21 @@
+{
+  "name": "screens-public",
+  "files": [
+    "bio-plane/src/screens-publish/published.mjs",
+    "bio-plane/src/screens-publish/published-parts.mjs",
+    "bio-plane/src/screens-publish/published-pages.mjs",
+    "bio-plane/src/screens-publish/docket-public.mjs",
+    "bio-plane/src/screens-publish/doorbell.mjs",
+    "bio-plane/src/screens-publish/review-outside.mjs",
+    "bio-plane/src/screens-publish/parts.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/screens-publish/docket-public.mjs",
+    "bio-plane/src/screens-publish/doorbell.mjs",
+    "bio-plane/src/screens-publish/parts.mjs",
+    "bio-plane/src/screens-publish/published.mjs",
+    "bio-plane/src/screens-publish/review-outside.mjs"
+  ],
+  "uses": []
+}

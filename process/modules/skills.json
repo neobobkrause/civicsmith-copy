@@ -15,13 +15,13 @@
     "record-grammar",
     "observation-log",
     "strength",
-    "contradiction",
     "ai-runs",
     "run-rules",
     "run-productions",
     "basis-versions",
     "inquiry-grammar",
     "reading-guides",
-    "setup-words"
+    "setup-words",
+    "contradiction-words"
   ]
 }

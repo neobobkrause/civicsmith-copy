@@ -22,6 +22,7 @@
     "retrieval",
     "answers",
     "store-request",
-    "local-facts"
+    "local-facts",
+    "screens-find"
   ]
 }

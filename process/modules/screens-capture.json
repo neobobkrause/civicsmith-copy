@@ -1,0 +1,11 @@
+{
+  "name": "screens-capture",
+  "files": [
+    "bio-plane/src/screens-intake/capture.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/screens-intake/capture.mjs"
+  ],
+  "uses": []
+}

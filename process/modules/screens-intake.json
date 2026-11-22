@@ -8,7 +8,6 @@
   ],
   "public": [
     "bio-plane/src/screens-intake/archive.mjs",
-    "bio-plane/src/screens-intake/capture.mjs",
     "bio-plane/src/screens-intake/index.mjs"
   ],
   "uses": [
@@ -25,6 +24,7 @@
     "runtime-limits",
     "store-request",
     "extraction",
-    "pdf-reader"
+    "pdf-reader",
+    "screens-capture"
   ]
 }

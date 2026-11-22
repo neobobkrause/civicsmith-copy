@@ -1,0 +1,25 @@
+{
+  "name": "screens-people",
+  "files": [
+    "bio-plane/src/screens-investigate/people.mjs",
+    "bio-plane/src/screens-investigate/person.mjs",
+    "bio-plane/src/screens-investigate/explore.mjs",
+    "bio-plane/src/screens-investigate/parts.mjs",
+    "bio-plane/src/screens-investigate/graphwords.mjs",
+    "bio-plane/src/screens-investigate/whywords.mjs",
+    "bio-plane/src/screens-investigate/rereads.mjs"
+  ],
+  "tests": [],
+  "public": [
+    "bio-plane/src/screens-investigate/explore.mjs",
+    "bio-plane/src/screens-investigate/graphwords.mjs",
+    "bio-plane/src/screens-investigate/parts.mjs",
+    "bio-plane/src/screens-investigate/people.mjs",
+    "bio-plane/src/screens-investigate/person.mjs",
+    "bio-plane/src/screens-investigate/rereads.mjs",
+    "bio-plane/src/screens-investigate/whywords.mjs"
+  ],
+  "uses": [
+    "setup-words"
+  ]
+}
