@@ -1,4 +1,4 @@
-Length: 93 lines. Last section: "Changes".
+Length: 94 lines. Last section: "Changes".
 
 # J07: Getting a record: find it, or ask for it
 
@@ -19,7 +19,7 @@ Sources: the wizard "Get a record" (`library.json`, steps 1 to 8; its step 9 is 
 ## Before it starts
 
 1. J06 has been walked on this copy: the project "Roof repairs" exists, Mai is its member, and the team holds Housing notice 2026-118, vouched for.
-2. The team's places, as set when J28 installed and set up the team, hold the office that keeps Lakeshore's housing records and a records law with a response deadline, so `request` opens in S1. Which held place stands for Lakeshore on a development copy is not said by the design (design silent: lane to confirm). Where no office is known, see turn-aside 4.
+2. The team's places, as set when J28 installed and set up the team, hold the office that keeps Lakeshore's housing records and a records law with a response deadline, so `request` opens in S1. ARCH's to say: which held place stands for Lakeshore on the development copy. Where no office is known, see turn-aside 4.
 3. The team holds no copy of the inspection records named in Test data, and they are not public.
 
 ## Test data
@@ -36,7 +36,7 @@ Sources: the wizard "Get a record" (`library.json`, steps 1 to 8; its step 9 is 
 
 ## Steps
 
-The wizard's own guide may be open beside the screens; what it shows is not on any screen page (design silent: lane to confirm). Each step below is walked on the screen it names.
+No wizard guide is open: reaching `request` from the project starts no wizard. Pressing the mark "Get a record" (step 2.1) would open its guide beside the screens, as page "Every screen", section 5, draws it; the walk does not press it. Each step below is walked on the screen it names.
 
 1. Mai looks first: she opens Find (rail "Find"), types the search words from Test data, and presses "Search" (`finder` A1).
    - 1.1 `finder` shows S1, S2 or S6. No result is the inspection records: either S2 (with link "Capture it", A11), or S1 listing only what J06 left (Housing notice 2026-118 and Mai's testimony).
@@ -75,7 +75,7 @@ Checked after a reload, signed in as Mai:
 1. `project` "Roof repairs" C11 "Actions" leads to the action; `action` shows S1 with the office, the sending day, and the due date pending.
 2. `request` at `/app/request/<action id>` shows the approved text, fixed.
 3. The portal's request number from Test data shows with the request.
-4. Signed in as Rosa, who has not joined "Roof repairs", the action's address shows `unavailable` S2, as `deciding-and-acting` ("How to read this page") draws for a member who cannot see the project. (Whether a team member who can see the project only as S4 counts as one who cannot see it: design silent: lane to confirm.)
+4. Signed in as Rosa, who has not joined "Roof repairs" and sees it only as `project` S4 (no documents, questions or members), the action's address shows `unavailable` S2, as `deciding-and-acting` ("How to read this page") draws for a member who cannot see the project.
 
 ## Ways it can turn aside
 
@@ -91,3 +91,4 @@ Checked after a reload, signed in as Mai:
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

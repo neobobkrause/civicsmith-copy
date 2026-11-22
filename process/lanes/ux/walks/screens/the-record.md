@@ -1,4 +1,4 @@
-Length: 444 lines. Last section: "Changes".
+Length: 460 lines. Last section: "Changes".
 
 # Screens: The record
 
@@ -90,6 +90,7 @@ What the record follows: people and organizations, time, money, calculations, co
   - heading 3 "Documents that may name them" (`entity.naming.title`): each passage with buttons "Match it" (`entity.naming.match`) and "I know this is them…" (`entity.naming.testify`); field "How you know (for “I know this is them”)" (`.testify.basis`); button "Connect the documents that name them" (`entity.connect`).
 - C6. Section "Same person?" (`.same`): each claim "claimed the same person, grade {grade}, because …"; fold "Say another record is this person…" (no word row for the fold) with select "The other record" (`.claim.other`), "You say" (`.claim.kind`), "Because" (`.claim.basis`) with `.claim.basis.help`, the two documents (`.claim.sha.a`, `.claim.sha.b`), field "Why, in your words" (`.claim.note`), button "Say another record is this person" (`act.identityclaim.label.person`); fold "Withdraw a same-person claim" with field "Why you withdraw it" (`.claim.withdraw.reason`) and button "Withdraw a same-person claim" (`act.withdrawidentityclaim.label.person`).
 - C7. Section "Correction" (`.expunge.head`): `.expunge.title`; `.expunge.statement`; field "The law or order that requires it" (`.expunge.reason`); button "Remove it for good, with this reason" (`.expunge.button`), Irreversible; link "Cancel" (`shell.cancel`). On a phone: "On a phone this can be read but not done: …" (`.expunge.phone`) and no button. A removed value leaves `.expunge.marker`.
+- C8. In C4, under "Follow a register": each register followed for this entity, its address and the day it was followed, under "Registers followed" (no word row). `not built`
 
 **States**
 
@@ -144,6 +145,8 @@ What the record follows: people and organizations, time, money, calculations, co
 - C5. Buttons "Record an event" (`act.createevent.label.timeline`), "Add who took part" (`act.addparticipant.label.timeline`), "Link events" (`act.relate.label.timeline`), "Record a dated fact" (`act.recorddatedfact.label.timeline`), "Keep a suspected cause as a hunch" (`act.hypothesishold.label.timeline`).
 - C6. Heading 2 "Progressions it follows" (`progression.follows`): each matter as a link to its S2, with its progression and how many steps are threaded.
 - C7. Heading 2 "Dated in the documents" (`timeline.dated.title`): each dated fact, its precision ("To the day", `label.timeprecisions.day`; "Partly known: a month, a year, or about", `label.timeprecisions.edtf`), source and grade.
+- C8. Section "Add to the timeline" (`.record.head`), the form C5's buttons send from: "Which document" (`form.choose.document`), one of the project's documents, with `.doc.noproject`; "Choose the passage on the document" (`form.choose.passage`); select "What happened" (`.evkind`: "A decision", "A vote", "A meeting", "A filing", "A statement", "An award", "Something else"); field "The date, as the passage states it" (`.date`) with "A day (2024-01-12), or a month when that is all it gives (2024-03)." (`.date.help`), left empty for an undated event; select "What the date is" (`.datekind`: "Issued", "Signed", "Adopted", …); for "Add who took part", "The event" (`.event`), "Who took part" (`.who`, the people the record follows), "As" (`.rolepick`: "Decided", "Voted", "Signed", "Acted", "A party", "Present", "Spoke", "Wrote it"), "How they voted (for a vote)" (`.vote`); for "Link events", "The other event" (`.to`) and "How they are linked" (`.rel`: "The first authorized the second", "The first answered the second", "The first amended the second", "The first reversed the second", "A source states the first caused the second", "The first happened within the second"); for the hunch, "Beside which question" (`.question`) and "Your suspected cause" (`.hunch`). A day gives the precision "To the day", a month "Partly known: a month, a year, or about". Refused before sending: `.passage.empty`, `.date.empty`, `.who.empty`, `.relate.empty`, `.hunch.empty`.
+- C9. `not built` On each of two linked events, a line naming the other event and how they are linked, in the words of `.rel` (no word row for the line).
 
 **States**
 
@@ -184,6 +187,9 @@ What the record follows: people and organizations, time, money, calculations, co
 - C6. A figure's buttons: "Compare two sources" (`act.reconcile.label.money`), "What authorized it" (`act.authoritychain.label.money`), "Leave out with a reason" (`act.exclude.label.money`) or "Include with a reason" (`act.include.label.money`), "Why B, and what would raise it" (`act.gradenote.label.money`), "Get the city's own copy" (`act.acquire.label.money`); for an undetermined column, "Look for it in this project" (`act.findin.label.money`), "Read it from another source" (`.readother`), "Ask the city for the record" (`act.actioncreate.label.money`), "Record when it moved" (`act.createevent.label.money`); and "Ask a member who knows budgets" (`act.checkrequest.label.money`), "Keep my reading as a hunch" (`act.hypothesishold.label.money`); and "Follow from here".
 - C7. The picked-figures bar: "{n} figures picked" with buttons "Include with a reason", "Leave out with a reason", "Compare the two" (no word row), "Ask a member who knows budgets", "Unpick all" (`shell.unpick`).
 - C8. A closing note (no word row in this form, 3 sentences): each column is read from the figure's own source; adding evidence never changes a figure; where two sources disagree both stay, in tension.
+- C9. Section "Read a figure, and what the acts ask" (`.form.head`), the figure form: "The amount" (`.f.amount`) with "Exactly as printed, without the currency sign: 1,250,000.00." (`.f.amount.help`); "As the source writes it" (`.f.asread`); "Currency" (`.f.currency`); "Money" (`.f.sign`: "in", "out"); "What kind of figure" (`.f.kind`); "Stage" (`.f.phase`: "Adopted (budgeted)", "Proposed", "Adjusted", "Actual"); "For an actual figure" (`.f.stage`); "Accounting basis" (`.f.basis`); "Period from", "Period to" (`.f.periodfrom`, `.f.periodto`) or "Or its fiscal year (FY2022-23)" (`.f.fiscal`); "Who paid (as the source writes it)", "Who received it (as the source writes it)" (`.f.payer`, `.f.payee`); "Which document" (`form.choose.document`) and "Choose the passage on the document" (`form.choose.passage`); then the fields the other acts read (contract, trail's name, expertise, the city's address, question and hunch). Sent without amount, wording or passage: `.f.empty`.
+- C10. The comparison, under the first figure after "Compare two sources" with "Compare with" (`.with`) chosen: "The two readings agree in every dimension compared." (`.rec.same`) or "The two readings differ in: {dims}. Both stay, compared, never merged." (`.rec.differs`). It is drawn on the screen as read and is not kept: after a reload it is gone until compared again.
+- C11. `not built` A fiscal-year view, offered only where the record knows the government's own fiscal year (from the place's records, or stated by a member with how they checked); where it is not known, one sentence in its place says why the view is missing (no word row). "Period" never prints "*".
 
 **States.** One drawn state (the trail in use). A project with no trail yet shows C1, C2 and an empty table; an unknown trail leads to `unavailable`.
 
@@ -218,6 +224,7 @@ What the record follows: people and organizations, time, money, calculations, co
 - C3. Buttons "Work it out" (`.work`), "Declare the table" (`act.tabledeclare.label.calculation`), "Record a second member's check" (`act.recordcheck.label.calculation`), "Accept the result" (`act.calculationaccept.label.calculation`).
 - C4. Heading 2 "Your own spreadsheet" (`.workbook`): buttons "Bind your spreadsheet" (`act.addworkbook.label.calculation`), "Tie an input to the record" (`act.bind.label.calculation`).
 - C5. Heading 2 "Spot-check" (`.spot`): rows "The draw" (`.draw`), "What members found" (`.found`), "What it estimates" (`.estimate`), with the seed, the counts and the exact range; what it does not say; link "How spot-checks work" (`.help`) to `help`. Buttons "Draw a random sample" (`act.calculationdraw.label.calculation`), "Record what you saw at a report" (`act.testify.label.calculation`), "Count it for the drawn report" (`act.spotcheckvisit.label.calculation`).
+- C6. `not built` Beside each check C2 names, the checker's expertise: confirmed, or declared and not confirmed, as `members` shows it (no word row on this screen).
 
 **States.** One drawn state. Before a sample is drawn, C5 shows only "Draw a random sample".
 
@@ -293,6 +300,10 @@ What the record follows: people and organizations, time, money, calculations, co
 - C7. Heading 2 "A chain you built" (`.shorter.head`): the member's chain; where shorter ones exist, `not built` buttons "See the shorter paths" (`.shorter.see`) and "Keep mine" (`.shorter.keep`); then "Evidenced paths" (`.shorter.evidenced`) and "Leads" (`.shorter.leads`).
 - C8. Two lines marked "Comes in the first beta" (`.later.when`): "Combined walks, such as who gave to the official whose department paid this vendor" (`.later.walks`) and "Ask the assistant to research this" (`.later.assist`). Neither is a control.
 - C9. Button "Open a question from this chain" (`act.promote.label.explore`), Asks for a reason.
+- C10. Beside C2: select "To (optional)" (`.to`), first "Anyone: show where the connections lead" (`.to.any`), then the people and organizations the record follows; the end chosen is named in C1's line. Field "As of" (`.at`) with `.at.help`, holding today until changed; empty: `.at.empty`.
+- C11. After "Check a chain", under that chain: "This chain holds as the record has it now." (`.verify.matches`) or "This chain does not match what the record holds now. {why}" (`.verify.differs`), with "It is a lead: a step in it is declared or suspected." (`.verify.lead`) for a lead; then one line per step: "This step holds as the record has it now." (`.verify.hop.holds`), "This step does not match what the record has now." (`.verify.hop.differs`) or "A step the record cites, not recomputed." (`.verify.cited`).
+- C12. `not built` Beside C9: select "For which project" (no word row on this screen), the member's projects, none chosen; the question opens in that project. Its words are made from the chain: "What does this chain show: {steps}" (`file.chain.title`), each step by its names. What it came from, the chain, is kept with it (`act.promote.does`).
+- C13. After "Attach a source to a declared step", C3 to C7 are redrawn at once: the step reads "stated in a source, attached by {by}, {date}" (`.attached`) with its grade, in place of "declared, not evidenced" (`.declared`), and a chain with no declared or hunch step left is no longer "a lead, not a finding".
 
 **States**
 
@@ -330,6 +341,9 @@ What the record follows: people and organizations, time, money, calculations, co
 - C5. Heading 2 "Dates" (`proceeding.dates.title`): "Now: awaiting the {event}" (`.now`); two lanes "The proceeding" (`proceeding.dates.lane.proceeding`) and "Our deadlines on it" (`proceeding.dates.lane.group`).
 - C6. Heading 2 "Orders, held as obligations" (`.orders`): each obligation as a "To do" with its due date; buttons "Hold an order as obligations" (`act.declare.label.proceeding`), "Link a decision to what it interprets" (`act.courtlink.label.proceeding`).
 - C7. "Procedural facts (which form, which court, which deadline) are facts, never advice on what to file." (`.facts`).
+- C8. In C2, before "Register the proceeding": fields "Its number" (`.number`), "A neutral label" (`.label`) with `.label.help`, and "Where its caption comes from" (`.note`).
+- C9. In C4, before "Follow its register": field "The register's address" (`.register.address`) and the box "Its register" (`.login`) "needs a login" (`.login.yes`), unticked; ticked, the register is followed as needing a login and C4 shows `.login.note`.
+- C10. C5's lanes: "The proceeding" holds the proceeding's own dates, the dates an order sets for a party among them; "Our deadlines on it" holds only the team's own actions' dates (`proceeding.dates.help`).
 
 **States.** One drawn state; the fold in C2 shows when the team holds no court.
 
@@ -361,6 +375,8 @@ What the record follows: people and organizations, time, money, calculations, co
 - C4. Field "Remind me on" (`.on`); button "Remind me" (`act.reminderset.label.due-date`); link "Download to my calendar" (`.download`).
 - C5. "Once confirmed it goes into your queue. If no reply comes by then, the queue says so once." (`.queue`).
 - C6. Folds "When a reminder is set" (`screen.reminder.set.when`), "When your rules state no deadline for this kind of action" (`.rule.summary`), "When your rules list no deadline at all" (`.nodeadlines.summary`).
+- C7. Section "Confirmed due dates" (`.entries`): one row per confirmed date of the action, its date, what it is, "basis: {basis}" (`.basis`), "by {time}, {zone}" (`.at`) where a time is held, and its state "pending", "met", "overdue" or "waived" (`.status.*`); a reminder set shows "We will remind you on {date}." (`screen.reminder.on`) on its row.
+- C8. Where the law leaves the day uncertain: C2's last line is the mark "Undetermined" with its because line (page "Every screen", rule 2), then each candidate date on its own line in the form of `.step.due`. `not built` (the code draws the mark and its reason, not the candidate dates)
 
 **States**
 
@@ -442,3 +458,4 @@ Paths are under `bio-plane/src/`.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

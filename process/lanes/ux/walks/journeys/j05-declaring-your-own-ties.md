@@ -1,4 +1,4 @@
-Length: 88 lines. Last section: "Changes".
+Length: 90 lines. Last section: "Changes".
 
 # J05: Declaring your own ties
 
@@ -50,9 +50,9 @@ The ties are made up for the walk; the landlord and the housing office are those
    - 3.1 A1 carries no weight mark: adding a tie can be undone.
    - 3.2 C3 lists one row: "Employer", the housing office, and in "A case would say" the sentence a case would show for a member not named, with her tie in it.
    - 3.3 `ties` is now in S1; C3's none line is gone.
-   - 3.4 The fields of C4 are empty again. (design silent: whether C4's fields clear after A1; lane to confirm)
+   - 3.4 The fields of C4 are empty again, with no kind and no disclosure chosen (`ties` A1).
 4. In C4 Mai enters tie 2 from Test data, chooses "Naming me by my handle" and presses A1.
-   - 4.1 C3 lists two rows; the new row's "A case would say" shows the form for a tie that names her. (design silent: which of C3's two row forms, "a case would say: “{says}”" or "a case would name me", goes with which choice; lane to confirm)
+   - 4.1 C3 lists two rows; the new row's "A case would say" reads in the form that names her, "a case would name me"; tie 1's row keeps the form for a member not named, "a case would say: “{says}”".
 5. Mai reloads `ties`.
    - 5.1 C3 lists both rows, as at step 4.
 6. Mai presses A2 "Remove a tie" on tie 2's row.
@@ -60,8 +60,9 @@ The ties are made up for the walk; the landlord and the housing office are those
    - 6.2 After a reload, C3 lists tie 1 only.
 7. Mai opens `account` and its link "Your ties" in C10 (A10).
    - 7.1 `ties` opens, in S1, listing tie 1: the second way in leads to the same list.
-8. Rosa, an administrator, looks for Mai's ties. (design silent: the screen on which an administrator sees another member's ties; `ties` shows each member their own; lane to confirm)
+8. Rosa, an administrator, opens `members` and Mai's row panel (A16). `not built`
    - 8.1 Rosa's own `ties` lists none of Mai's ties.
+   - 8.2 Mai's row panel shows her ties (`members` C13): tie 1 only, read-only, as on Mai's own `ties` C3.
 9. Teo (`teo-r`), a member who is not an administrator, opens `ties`. Walked only where J03 has made him a member on this copy.
    - 9.1 Teo's `ties` lists none of Mai's ties.
 
@@ -72,12 +73,12 @@ Checked after a reload.
 1. `ties`, as Mai, is in S1 with one row: tie 1, "Employer", the city's housing office, disclosed without naming her.
 2. Tie 2 is not listed.
 3. No other member's `ties` lists Mai's tie.
-4. Nothing on `home`, `members` or `front` shows Mai's tie (design: only she and the administrators see the list).
+4. Nothing on `home`, `members` or `front` shows Mai's tie to anyone but her and the administrators (on `members`, only an administrator's view of her row panel, C13, lists it).
 
 ## Ways it can turn aside
 
 1. **Who or the tie left empty** (step 3 or 4). Beside A1: V1 "Name who the tie is with and describe it."; nothing is added and C3 is unchanged. Resume at the same step with both filled in.
-2. **No disclosure chosen** (step 3 or 4). Beside A1: the shell's refusal for an empty required choice (page "Every screen", section 7). (design silent: no form message is drawn for this on `ties`; lane to confirm) Resume at the same step.
+2. **No disclosure chosen** (step 3 or 4). Beside A1: `ties` V2, the shell's "Fill in {field} first. Nothing was sent." naming the disclosure choice; nothing is added. Resume at the same step.
 3. **Kind "Other".** Mai may choose "Other" for a tie that is none of the three; the row's "Kind" reads "Other". The journey goes on as from step 3.
 4. **The list cannot be read.** `ties` shows `state.failed` ("Could not read this, because {reason}") in C3, never the none line. Reload and resume at step 2.
 5. **Mai skips.** Declaring ties is optional: Mai may leave `ties` at step 2 and nothing reminds her; the publication ceremony (J15) asks her then.
@@ -86,3 +87,4 @@ Checked after a reload.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

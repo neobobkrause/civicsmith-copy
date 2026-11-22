@@ -1,4 +1,4 @@
-Length: 116 lines. Last section: "Changes".
+Length: 117 lines. Last section: "Changes".
 
 # J06: From a problem to a question
 
@@ -46,10 +46,10 @@ Sources: `mock-journeys.js` journey 6 and `JBRIEF[6]`; `journeys.html` #j6; `bui
    - 2.1 `notes` C1 says only she can see her notes.
    - 2.2 The note is first in C3, its row carrying the only-you mark (C3; state S1).
    - 2.3 The first time, C5 shows under the note.
-3. Mai opens Add, takes the tab for what she saw (`capture` A1, state S3), fills C20's three fields from Test data, adds her photo, and records it (A16). `waiting A4`
+3. Mai opens Add, takes the tab for what she saw (`capture` A1, state S3), fills C20's three fields from Test data, adds her photo, and records it (A16).
    - 3.1 `capture` shows S3 with C19 and C20; no A17 and no draft mark (S11).
    - 3.2 After A16, `capture` shows S10: recorded as her testimony, with its id.
-   - 3.3 Whether Mai can then look at her own photo inside Civicsmith is open question A4; a walk notes what shows and records a difference as an observation.
+   - 3.3 Mai opens her photo: `open-file` shows it in the safe view, a picture Civicsmith redrew from its pixels alone, with none of the photo's hidden data (such as where it was taken) shown (decisions U6). `not built` Until it is built, the screen says the file has no safe view, without the sentence "The safe view needs no check", and says plainly how to see the photo on her own device.
 4. Mai stays on Add, takes the tab "From an address" (A1, state S1), types the notice's address into C5's field, and presses "Capture" (A2).
    - 4.1 `capture` shows S5: captured, with the notice's title, waiting in Held captures.
    - 4.2 Its link "Open it" (A6) leads to `document`.
@@ -76,12 +76,12 @@ Sources: `mock-journeys.js` journey 6 and `JBRIEF[6]`; `journeys.html` #j6; `bui
    - 8.3 Each result was found by search; no section "Proposed by the assistant" shows (S6).
 9. On the passage that orders the roof repair, Mai presses "Hold this as a standard" (`find-in` A5) and fills its three fields from Test data.
    - 9.1 C5 shows the passage marked as held as a standard.
-   - 9.2 The standard opens on `standard` in S1: C1 is the requirement's words and its citation; C2 quotes the passage. (Which project a standard held before any project exists belongs to: design silent: lane to confirm.)
+   - 9.2 The standard opens on `standard` in S1: C1 is the requirement's words and its citation; C2 quotes the passage. It belongs to no project: it is held in the team's record, and once "Roof repairs" exists (step 10) that project's work lists it under its standards (`project` C11).
 10. Mai goes Home and presses "Start a project" (`home` A14), typing "Roof repairs" as its title.
     - 10.1 `project` opens in S2: the title as heading 1, "Opened by" Mai with the day, and the field for a first question with "Open a question".
-11. Mai types the question from Test data and presses "Open a question" (`project` A1), giving the reason from Test data. `waiting A1`
+11. Mai types the question from Test data, leaves "Who is this question about?" empty, and presses "Open a question" (`project` A1), giving the reason from Test data.
     - 11.1 `question` opens in S3: heading 1 the question's words, C2's three steps, the section for bringing in a source, the row to add a document and the button to find one; no row asking the assistant (S13).
-    - 11.2 No screen asks who the question is about (open question A1); a difference is an observation.
+    - 11.2 Beside the question, the optional field "Who is this question about?" offers the people and organizations the team follows, none chosen; `question` says plainly that the question names no one, with the control to name one (decisions U3). `not built`
     - 11.3 Back on `project`, C7 lists the question, marked as resting on nothing yet.
 12. The records behind the notice are not public, so Mai opens the project's link "Records requests" (`project` C11).
     - 12.1 `request` opens in S1 (or S2 when no office is known): C1's heading and its line to look first; the journey goes on in J07.
@@ -114,3 +114,4 @@ Checked after a reload, signed in as Mai:
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

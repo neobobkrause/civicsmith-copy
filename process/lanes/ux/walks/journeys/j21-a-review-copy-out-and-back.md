@@ -43,7 +43,7 @@ Status: walkable · Screens used: `review-copy`, `review-outside`, `case-editor`
 2. Mai presses A1 ("Share with a named reader") and fills the reader's name, role, "Until" and the reason from Test data.
    - 2.1 Before it is done, `act.reviewgrant.does` and `mark.path.shared-for-review.means` show; the button carries "Asks for a reason" and the outward icon.
    - 2.2 After it: C6 shows the reader's link (`…/app/review#grant=…`), `.link.line` naming Noor Hale and the end date, and `.link.once`.
-   - 2.3 C3 lists Noor Hale, her role, and "can read until {until}"; the band reads "1 people outside the team can read this until {date}" (`.band`) (design silent on the count's form at 1: lane to confirm).
+   - 2.3 C3 lists Noor Hale, her role, and "can read until {until}"; the band names one reader and the date, in a form for one (no word row: `.band` has only "{n} people outside the team can read this until {date}") (`not built`: the code draws no band).
 3. Mai presses "Copy the link" and gives the link to the reviewer's browser (Civicsmith sends no email).
    - 3.1 The link is on the clipboard; C6 says it is shown once.
 4. The reviewer opens the link in her browser, with no session.
@@ -52,7 +52,7 @@ Status: walkable · Screens used: `review-copy`, `review-outside`, `case-editor`
 5. The reviewer presses "Read the whole draft" (A3).
    - 5.1 The whole draft shows on the same screen, its scope among it.
 6. The reviewer types her note in C4's "Your note" and presses A2 ("Acknowledge it") with a reason.
-   - 6.1 The acknowledgement is recorded; C4 no longer offers A2 (design silent: lane to confirm).
+   - 6.1 The acknowledgement is recorded: "Sent to the team." (`screen.review-outside.sent`) shows beside A2, "Your note" is emptied, and C4 still offers A2.
 7. The reviewer types her comment in C5 and presses A1 ("Send your comment").
    - 7.1 `review-outside` shows S3: "Sent to the team." (`.sent`).
 8. Mai reloads `review-copy`.
@@ -69,9 +69,9 @@ Status: walkable · Screens used: `review-copy`, `review-outside`, `case-editor`
     - 11.1 Before it is done, the dialog shows `act.reviewrevoke.does`; the button carries "Ends something".
     - 11.2 After it: C3 reads "could read Edition 1 until {until}: ended" (`.reads.ended`); C5 lists no live link.
 12. The reviewer reloads her link.
-    - 12.1 `review-outside` no longer shows the draft: it shows the refusal for a stopped link, as an alert with words, not a code (design silent on its words: lane to confirm).
+    - 12.1 `review-outside` no longer shows the draft: it shows, as an alert, "There is no review copy here for you to read. Ask the owner of the project for a new review link, or join the project if you are a member of the team. The answer is the same whether the link was withdrawn, replaced by a newer edition or never existed." (`refusal.NO_REVIEW_COPY`).
 13. Mai opens `ceremony` from `project` C11 ("Publishing").
-    - 13.1 `ceremony` shows S5, as at J15 step 18.1; its choice "Which draft" (C3) has the newest draft chosen, the one prepared after the review (design silent on whether C3 shows in S5, and on how the edition names the draft that was reviewed: lane to confirm).
+    - 13.1 `ceremony` shows S5, as at J15 step 18.1, with its choice "Which draft" (C3) above it and the newest draft chosen, the one prepared after the review; the edition is published from the draft C3 names.
     - 13.2 The journey goes on at J15 step 18.
 
 ## End state
@@ -97,3 +97,4 @@ Checked after a reload:
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

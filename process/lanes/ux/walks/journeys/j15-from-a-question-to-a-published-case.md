@@ -1,10 +1,10 @@
-Length: 136 lines. Last section: "Changes".
+Length: 141 lines. Last section: "Changes".
 
 # J15: From a question to a published case
 
 Journey page `j15-from-a-question-to-a-published-case` (index: ../index.md). Written 22 Nov 2026 by a worker for civicsmith ux lane #1.
 
-Status: walkable (steps marked `waiting A1`, `A4` to `A8`) · Screens used: `capture`, `held`, `projects`, `project`, `question`, `finder`, `document`, `case-editor`, `queue`, `ceremony`, `published` · Follows: J28 · Followed by: J21 (walked between steps 17 and 18), J26, J22, J23, J24
+Status: walkable (steps marked `waiting Q1`, `waiting Q2`) · Screens used: `capture`, `held`, `projects`, `project`, `question`, `finder`, `document`, `case-editor`, `queue`, `ceremony`, `published` · Follows: J28 · Followed by: J21 (walked between steps 17 and 18), J26, J22, J23, J24
 
 ## Goal
 
@@ -45,7 +45,7 @@ Status: walkable (steps marked `waiting A1`, `A4` to `A8`) · Screens used: `cap
 
 ## Steps
 
-1. Mai opens `capture` with the rail's "Add". `waiting A5`
+1. Mai opens `capture` with the rail's "Add".
    - 1.1 `capture` shows S1: C1, the tabs (A1) with "From an address" current, C5's field "Address" empty.
 2. Mai types the notice's address in C5 and presses A2.
    - 2.1 `capture` shows S5: `.address.done` naming the notice's title and saying it waits in Held captures.
@@ -60,18 +60,21 @@ Status: walkable (steps marked `waiting A1`, `A4` to `A8`) · Screens used: `cap
    - 6.1 C12 lists "rosa-l (invited)".
 7. Rosa, in her browser, opens `projects` and presses A3 on the row in C4 (Invited).
    - 7.1 The project leaves C4 and is listed in the table (C3); its name (A2) opens `project` for Rosa.
-8. Mai types the question in "Your first question" on `project` S2 and presses A1 with its reason. `waiting A1`
+8. Mai types the question in "Your first question" on `project` S2, leaves "Who is this question about?" (C16, `not built`) with none chosen, and presses A1 with its reason.
    - 8.1 `question` shows S3: heading 1 the question's words, C2's three steps, the section "Next: bring in a source".
    - 8.2 No "Ask the assistant to look" row is drawn (S13).
+   - 8.3 Under C1, the question says plainly that it names no one it is about, with the control to name one (C15, `not built`).
 9. Mai presses A3 ("Find another source") on `question`, types the search words in C2 of `finder`, and presses A1.
    - 9.1 `finder` shows S1; a result (C3) is the notice, its passage showing the words around "repair the roof".
 10. Mai opens the notice's title (A2).
     - 10.1 `document` shows S1: C1 the notice's title and "captured by Mai…"; C3 `document.vouched` naming Mai.
-11. Mai selects the passage's words in C8, chooses the question in "Cite in which question", chooses "Supports" in "How it bears on the question", and presses A9. `waiting A7` `waiting A8`
+    - 10.2 C2's "This copy" names the ceiling the record sets as how well it could be captured, not "Capture" alone (C31, `not built`).
+11. Mai selects the passage's words in C8, chooses the question in "Cite in which question", chooses "Supports" in "How it bears on the question", and presses A9. `waiting Q2`
     - 11.1 The citation is made; reopening `question` shows the passage in C4 (Supports) with a link to `document`.
     - 11.2 `question` shows S2: no strength, one passage under "What each passage carries".
 12. Mai answers the passage with "No, my answer falls" and presses "Save the answers" (A5).
     - 12.1 `question` shows S1: C3 shows two grades and the standing against the bar.
+    - 12.2 C3 names the copy's grade as the team's grade for the copy; it is not graded yet, and C3 points to where it is given (C16, `not built`).
 13. Mai opens the fold "Conclude" (C12), chooses "Write the reading yourself", fills "Your reading", "What would change it" and "Why you are concluding it" from Test data, and presses A11.
     - 13.1 `question` shows S8: heading 2 "Concluded", `question.concluded.by` with her reading and "Written by" Mai, and `question.concluded.falsifier`.
     - 13.2 A15's "Prepare a case from this" is offered.
@@ -90,17 +93,18 @@ Status: walkable (steps marked `waiting A1`, `A4` to `A8`) · Screens used: `cap
 19. Mai presses A9 and confirms on her device.
     - 19.1 `ceremony` shows S1 with "Your signing key is registered. Sign again when you are ready."
     - 19.2 C1 heading "Publish {case}, Edition 1" with `.permanent`; C2 lists the ten steps with "Ties" marked.
-20. Rosa opens `queue`. `waiting A6`
-    - 20.1 `queue` shows S3: the section "Your team" with `queue.signer-self-registered.detail` naming Mai, and "I know about this key" (A13).
+    - 19.3 Before the press, S5's box `signing.ceremony.keepkey` is unticked, with the sentence beside it on a key not kept (C13, `not built`).
+20. Rosa opens `queue`.
+    - 20.1 `queue` shows S3: the section "Your team" with one item for Mai (C13, `not built`) listing her new key with when it was made, `queue.signer-self-registered.detail`, and "I know about this key" (A13).
     - 20.2 Rosa presses "I know about this key"; the item leaves her queue (C2).
 21. Mai presses A1 ("Check again") on `ceremony`.
     - 21.1 C4 lists Finding 1 and its strength, then "Every check against the bar holds." (`.ready`).
-    - 21.2 C8 lists no photo. `waiting A4`
-    - 21.3 Where C7 lists the notice as having no second confirmation, Mai ticks "Publish … as self-attested only" with the reason from Test data; C7 then shows it so (design silent: lane to confirm whether a copy captured on a development copy is confirmed).
+    - 21.2 C8 lists no photo.
+    - 21.3 Where C7 lists the notice as having no second confirmation, Mai ticks "Publish … as self-attested only" with the reason from Test data; C7 then shows it so. Whether the development copy's captures get a second confirmation (a trusted time stamp or an outside copy), and so whether C7 lists the notice: ARCH's to say.
 22. Mai ticks the confirmation in C9 and presses A6 ("Confirm your ties and prepare the edition for signing").
     - 22.1 Before the press the button shows "Irreversible" and the outward icon; `.ties.confirm` and `.permanent` show.
     - 22.2 After it: "Edition 1 is prepared for signing. Nothing is published yet." (`.prepared`).
-23. Mai chooses "Now" in C12's "When it becomes public", reads C12, and presses A8 ("Sign and publish now"). `waiting A5`
+23. Mai chooses "Now" in C12's "When it becomes public", reads C12, and presses A8 ("Sign and publish now"). `waiting Q1`
     - 23.1 Before the press C12 shows `signing.ceremony.who` naming Mai, `.signs.count` and `.device.next`.
     - 23.2 The dialog "Enter your password again" opens; after her password and "Go on", S2 shows (the device's confirmation).
     - 23.3 After she confirms on her device: S4, `signing.ceremony.signednow` and the link "Open the public page".
@@ -134,3 +138,4 @@ Checked after a reload:
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

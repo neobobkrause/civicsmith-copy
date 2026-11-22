@@ -58,6 +58,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C28. Section "Steps it is threaded to" (`progression.threadedto`), help `act.captureprogressions.does`; A30.
 - C29. Section "This copy" (`.copyacts.head`), help `document.thiscopy.says`: row "Route to your team: not checked yet." (`.route.standing`) with `.route.says` and A31; fold "What a check can record" (`.route.summary`): `.route.shown`, `.route.notshown`, `.route.same`; fold "When it cannot be checked" (`.route.refused.summary`) with `.route.refused`. Row "Useful when someone may later claim the document was changed after it was captured." (`document.attest.when`) with A32. Fold "Stop using this copy" (`document.retire.fold`): `document.retire.when`; A33.
 - C30. Section "Where this document came from" (`.origin.head`), help `.origin.tip`: field "The system it came from" (`.origin.field`), help "For example, the city's records portal." (`.origin.eg`); A34; "A second declaration is added beside the first." "A second declaration never replaces the first." (`.origin.second1`, `.second2`); rows "Said by {member}, {date}" (`.said_by`).
+- C31. `not built` (decision U9) C2's "This copy" names its two measures apart: the ceiling the record sets as "How well it could be captured" (no word row), never "Capture" alone, and a member's grade as "Your team's grade for the copy" (no word row).
 
 **States**
 

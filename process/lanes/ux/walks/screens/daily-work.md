@@ -1,4 +1,4 @@
-Length: 581 lines. Last section: "Changes".
+Length: 586 lines. Last section: "Changes".
 
 # Screens: Daily work
 
@@ -232,6 +232,9 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C9. Members' to-dos (A14); the assistant's accounts ("told once to the project's owners" `.ai.toldowners`, "nobody is named" `.ai.nobodynamed`; A15).
 - C10. Section "Muted" (`queue.muted.title`), help `queue.muted.help`: "{kind}, in {project}" (`queue.muted.kind`) or "This item only: {item}" (`queue.muted.item`), "muted by you, {date}" (`queue.muted.by`), A16.
 - C11. `.more` ["{n} more items are not shown here; act on these first."]; `.vouchband.apart` ["Captures waiting for a vouch: {n}. …"].
+- C12. The source notices, each kind one item: "A document changed at its source" / "{n} documents changed at their source" (`queue.source-modified.one`, `.many`) and "A document is gone from its source" / "{n} documents are gone from their source" (`queue.source-removed.one`, `.many`), with "Your team's Civicsmith noticed this when it checked. The copies your team holds are unchanged. Open each one to see what changed; nothing has been decided." (`queue.source.detail`); opened in place, the list of its documents, each by its title (or `queue.source.untitled`) as a link to `document`.
+- C13. `not built` (decision U7) A member's new signing keys are one item for that member in the section "Your team", listing each key with when it was made, with A13 "I know about this key"; a further key joins the same item.
+- C14. `not built` A confirmed due date's item, once a reply is recorded by the date, shows the state "met" (`screen.due-date.status.met`) beside "Due {date}" (C5), as facts and never legal advice; no passed-date line shows for it.
 
 **States**
 
@@ -257,7 +260,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 | A5. "Remind me again on…" (`.remind.button`) | reply due | field "Remind me again on (optional)" (`.reminder.on`) |
 | A6. link "Pick up where you left off" (`.unsent.pickup`); "Keep it for later" (`.unsent.keep`); "Drop the request, with a reason" (`.unsent.drop`) | unsent request | `request`; snoozed; dropped |
 | A7. "Read and approve it" | letter | its approval dialog |
-| A8. "Open the check" (`.check.open`); "Pass it to another member" (`act.taskforward.label.queue`) | a check | its screen; field "Forward to (the member's handle)" (`.forward.to`) |
+| A8. "Open the check" (`.check.open`); "Pass it to another member" (`act.taskforward.label.queue`) | a check | its screen; field "Forward to (the member's handle)" (`.forward.to`). The item leaves the queue once the check is recorded on the screen it concerns (`not built`: the mock's "It leaves your queue when done") |
 | A9. "Open a question from this" (`.hint.promote`), "Defer" (`.defer`), "Dismiss with a reason" (`act.proposedispose.label.queue`), "Stop this kind of hint for the project" (`.hint.stop`) | hint | new question, field "The question, in your words" (`.question`); S6; C10 |
 | A10. "Snooze to a date" (`act.queuesnooze.label.queue`); "Mute this kind" (`.mute.kind`) | status item | field "Until which day" (`.snooze.until`); C10 |
 | A11. link "See what changes" (`queue.update.see`); "Not now" (`act.owed_updatelater.label.queue`) | administrator | `updates`; returns later |
@@ -294,6 +297,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C4. "Nobody looked in {place} for this yet." (`.nobody.in`); A7, A8.
 - C5. `.unread` [some documents not read yet].
 - C6. Bar "{n} documents held together" (`.held.many`) "until {time}" (`.until`); A3 to A6.
+- C7. After A8, the counted line "Counted: {result}. The method is kept with the count, so anyone can count again and get the same." (`.counted`), its result a link to the count's `calculation`. The line is built; the link is `not built`.
 
 **States**
 
@@ -579,3 +583,4 @@ Read, not run. The design is the authority.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

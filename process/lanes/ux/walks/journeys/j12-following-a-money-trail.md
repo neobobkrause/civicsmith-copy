@@ -1,10 +1,10 @@
-Length: 94 lines. Last section: "Changes".
+Length: 95 lines. Last section: "Changes".
 
 # J12: Following a money trail
 
 Journey page `j12-following-a-money-trail` (index: ../index.md). Written 22 Nov 2026 by a worker for civicsmith ux lane #1. Steps follow the wizard "Follow the money" (library.json), walked here without its guide.
 
-Status: walkable (the period of a figure is `waiting A2`) · Screens used: `capture`, `held`, `document`, `project`, `money` · Follows: J28, J06 · Followed by: none
+Status: walkable · Screens used: `capture`, `held`, `document`, `project`, `money` · Follows: J28, J06 · Followed by: none
 
 ## Goal
 
@@ -30,7 +30,7 @@ Status: walkable (the period of a figure is `waiting A2`) · Screens used: `capt
 | The figure | The line for housing code inspections (or the nearest line the budget prints for housing enforcement): its amount exactly as printed |
 | Stage, document 1 | adopted |
 | Stage, document 2 | actual (as reported) |
-| Period | The fiscal year the document states for the figure (`waiting A2`: whose fiscal year) |
+| Period | The period the document states for the figure, as printed; a fiscal year is Lakeshore's own (decision U4) |
 | Trail name | "Housing inspections, Lakeshore" |
 | Vouch fields | What you checked: "The address is the city's, and the title page matches." What the team does about what remains: "Nothing remains." |
 | Reasons (acts that ask for one) | Include: "This line pays for the inspections that issue housing notices." Compare: "Two sources of one figure." |
@@ -46,26 +46,26 @@ Status: walkable (the period of a figure is `waiting A2`) · Screens used: `capt
    - 3.1 `document` opens in state S2: the banner `document.held.says` and A2.
 4. Mai presses A2 ("Vouch for this copy"), fills its two fields from Test data and sends.
    - 4.1 `document` shows state S1, with C3 "Vouched for by" Mai and the date.
-   - 4.2 Document 1 is among the project's documents (`project` C5) (design silent: lane to confirm that capturing for the question files it in the project).
+   - 4.2 Document 1 is among the project's documents (`project` C5), filed there because it was captured for the project's question (`capture` C9).
 5. Mai opens the project and follows its C11 link "Money trail".
    - 5.1 `money` shows C1 and C2 and an empty table (no trail yet).
-6. Mai presses "Read a figure" (C2) and reads the figure from document 1: its amount as printed, stage "adopted", and its period. `waiting A2`
-   - 6.1 The figure form asks the figure's kind, its stage, the amount and currency, its period, and the passage it is read from (design silent: lane to confirm the form; the screen page names no field, `find-in` C9 names the like fields).
+6. Mai presses "Read a figure" (C2) and reads the figure from document 1: its amount as printed, stage "adopted", and its period.
+   - 6.1 The figure form is `money` C9: the amount and how the source writes it, currency, kind, stage, period (from and to, or its fiscal year), and the document and passage it is read from.
    - 6.2 C5 gains a row: "Stage" adopted, "Period" as Mai gave it, "Amount" as printed, "Source" document 1.
    - 6.3 A column the document does not state reads "Undetermined: …" with the evidence that would settle it, never a guess.
    - 6.4 Opened, the figure shows who read it from which passage, and the budget note `.budget.about`.
-   - 6.5 Whose fiscal year the period counts in is not settled (A2); the walk records which year the screen shows and how it names it, as an observation, not a flaw.
+   - 6.5 "Period" shows the period as Mai gave it, with no "*". Where the record knows Lakeshore's fiscal year, the fiscal-year view is offered; where it does not, one sentence says why the view is missing (`money` C11, `not built`).
 7. Mai presses "Start a money trail" (C2) and names it from Test data.
    - 7.1 The new trail's `money` page opens with C1 heading "Housing inspections, Lakeshore" and who started it.
 8. Mai opens the figure of step 6, presses "Include with a reason" and sends the reason from Test data.
    - 8.1 The figure's "In this trail?" column shows it included, with the reason.
 9. Mai captures and vouches for document 2 as in steps 1 to 4.
    - 9.1 Document 2 is vouched for and among the project's documents.
-10. On the trail's `money` page Mai presses "Read a figure" and reads the same line from document 2: its amount as printed, stage "actual", and its period. `waiting A2`
+10. On the trail's `money` page Mai presses "Read a figure" and reads the same line from document 2: its amount as printed, stage "actual", and its period.
     - 10.1 C5 gains a second row with document 2 as its source; the row of step 6 is unchanged.
 11. Mai opens the figure of step 6, presses "Compare two sources", chooses the figure of step 10 and sends the reason from Test data.
     - 11.1 The comparison shows on the same screen, naming each figure's source, stage and period.
-    - 11.2 Where the two amounts differ, the difference is named by its kind (basis, period or rounding) or as not explained; where they agree, it says so (design silent: lane to confirm the words).
+    - 11.2 Under the figure, `money` C10: where the two readings differ, its line naming each dimension in which they differ, and that both stay; where they agree, its line saying so.
     - 11.3 Both figures stay in C5; neither replaces the other (C8).
 
 ## End state
@@ -74,7 +74,7 @@ Checked after a reload of the trail's `money` page, signed in as Mai.
 
 1. The trail "Housing inspections, Lakeshore" exists, started by Mai.
 2. C5 holds the two figures, each with its stage, period, amount and source; the first is included with its reason.
-3. The comparison of step 11 can be seen again on the figure (design silent: lane to confirm it is kept).
+3. The comparison of step 11 is not shown (it is not kept, `money` C10); pressing "Compare two sources" with the same figure shows the same result again.
 4. Documents 1 and 2 show `document` S1, vouched for by Mai.
 5. Nothing on the screen carries the machine-work label.
 
@@ -86,9 +86,10 @@ Checked after a reload of the trail's `money` page, signed in as Mai.
 4. **Vouch fields empty.** At step 4: `document` V3; the copy stays held. Resume at step 4.
 5. **Not read yet.** At step 6, the document is still being read (`document` S4): no passage can be cited; wait for `.reading.done`, then resume at step 6.
 6. **Reason empty.** At step 8 or 11: `shell.reason.needed`; nothing changes. Resume at the same step.
-7. **Period undetermined.** At step 6, the budget does not state its period: "Period" reads "Undetermined: …" with what would settle it; the journey goes on. `waiting A2`
+7. **Period undetermined.** At step 6, the budget does not state its period: "Period" reads "Undetermined: …" with what would settle it; the journey goes on.
 8. **Team out of reach.** `unavailable` S3; resume at the same step.
 
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

@@ -47,7 +47,7 @@ Status: walkable · Screens used: `members`, `security`, `home`, `queue`, `setti
 5. Rosa types her password and presses "Go on".
    - 5.1 Mai's row shows her as an administrator in "Role", and "May do" reads "all of it, as every administrator may".
    - 5.2 C1 reads "Administrators: 2"; C4 shows `.recovery.many`.
-   - 5.3 (design silent: whether the second administrator needs an endorsement when the only administrator proposes her; `members` A1 asks one only "beyond the second administrator"; lane to confirm)
+   - 5.3 No endorsement is asked: Rosa, the only current administrator, has agreed by proposing (`.cap.administer.confirm`: "your choice counts as the first agreement"), so Mai is an administrator at once.
 6. Mai reloads `security`.
    - 6.1 `security` shows S2 or S1, as the period gives: C1 `.sub`, C2 "From", "To" with A1, C3's mark and its line, C7. Not S3.
 7. Rosa opens Teo's row panel (`/app/members/teo-r`), ticks the capability to look after the team's Civicsmith, presses A6, chooses "Propose teo-r as an administrator", and gives her password again.
@@ -66,7 +66,7 @@ Status: walkable · Screens used: `members`, `security`, `home`, `queue`, `setti
 11. Mai opens `members` (or her `home` row for it) and presses "Agree: remove teo-r as an administrator" (A9 in S3), with her own reason, and gives her password.
     - 11.1 The count reaches what "What it takes" names: S3 ends; Teo's row no longer shows him an administrator.
     - 11.2 C1 reads "Administrators: 2".
-    - 11.3 (design silent: what Teo "May do" reads after his administrator's powers are removed; lane to confirm)
+    - 11.3 Teo's row reads "Role" "member" (`.role.member`), "Status" "active", and "May do" "add and revise work" (`.cap.contribute`), what he held before step 7 (`members` C12, `not built`: the code marks him "inactive").
 12. Teo reloads `security`.
     - 12.1 `security` shows S3, naming `rosa-l` and `mai-k` as the administrators.
 
@@ -77,7 +77,7 @@ Checked after a reload.
 1. `members`, as Rosa, reads "Administrators: 2"; C2 shows Rosa and Mai as administrators and Teo as a member.
 2. `members`, as Teo, shows S2: the roster, "May do" and "Expertise"; no act.
 3. `security` as Mai shows S1 or S2; as Teo, S3 naming Rosa and Mai.
-4. The reason Rosa gave at step 10 is kept with the removal, under her name (design: `shell.reason.help`); where `members` shows it is (design silent: lane to confirm).
+4. The reason Rosa gave at step 10 is kept with the removal, under her name (`shell.reason.help`): Teo's row panel, as Rosa or Mai opens it, shows the removal, its date, and `rosa-l` and `mai-k` each with her reason (`members` C12, `not built`).
 5. No item about Teo's endorsement or removal is left in Rosa's or Mai's `queue`.
 
 ## Ways it can turn aside
@@ -94,3 +94,4 @@ Checked after a reload.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

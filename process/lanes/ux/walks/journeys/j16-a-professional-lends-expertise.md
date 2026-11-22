@@ -52,7 +52,7 @@ Status: walkable · Screens used: `members`, `join`, `home`, `account`, `project
    - 5.2 After a reload, C5 still shows it.
 6. Rosa opens `members`.
    - 6.1 C2's row for `ana-p` shows the status of a joined member and, under "Expertise", her declared expertise.
-   - 6.2 Rosa's `home` C3 or `queue` holds a routed to-do "Confirm expertise" for it. (design silent: whether declaring raises such a to-do; `home` A16 and `queue` A14 draw one when routed; lane to confirm)
+   - 6.2 Rosa's `home` C3 and her `queue` each hold a routed to-do for Ana's declared expertise (`queue.expertise-confirmation-owed.summary`), with "Confirm expertise" (`home` A16, `queue` A14).
 7. Rosa opens Ana's row panel (A16, `/app/members/ana-p`) and presses A10 "Confirm declared expertise".
    - 7.1 The row's "Expertise" reads "confirmed: Certified public accountant (CPA)".
    - 7.2 Any routed to-do for it has left Rosa's `home` and `queue`.
@@ -64,7 +64,7 @@ Status: walkable · Screens used: `members`, `join`, `home`, `account`, `project
     - 10.1 J09's project leaves "Invited" and is listed in the table (C3).
     - 10.2 Opening it shows `project` S1; C12 lists `ana-p` as a member.
 11. Mai opens J09's question and presses A12 "Ask for a check by expertise", naming the expertise and what to check from Test data, and sends it.
-    - 11.1 The request is sent; `question` shows no refusal. (design silent: the line `question` draws once a check is asked for; lane to confirm)
+    - 11.1 The request is sent; `question` shows no refusal, and C17 (`not built`) says it reached one member, without naming her.
 12. Ana opens `queue` from the rail.
     - 12.1 `queue` is in S1 and lists one item of the kind "To do" for the check, in J09's project's case group or "Not in a case".
     - 12.2 The item offers A8 "Open the check" and "Pass it to another member".
@@ -76,10 +76,10 @@ Status: walkable · Screens used: `members`, `join`, `home`, `account`, `project
 15. Ana presses A2 and sends it with her reason from Test data.
     - 15.1 The reason field opens beside A2 (page "Every screen", section 6); after sending, the button shows done.
     - 15.2 C2 names Ana's check: `ana-p` and today's date.
-    - 15.3 The check's item has left Ana's `queue`. (design silent: whether an act on another screen settles the queue item; lane to confirm)
+    - 15.3 The check's item has left Ana's `queue` (`queue` A8: it leaves once the check is recorded on the screen it concerns; `not built`).
 16. Mai reloads J09's question and opens its calculation.
     - 16.1 `calculation` C2 names Ana's check, by `ana-p`, with today's date.
-    - 16.2 Beside Ana's check her confirmed expertise is shown, on `calculation` and on `question`. (design silent: the part of `question` or `calculation` that shows a checker's expertise; journeys.html J16 says "Their declared expertise shows beside their checks"; lane to confirm)
+    - 16.2 Beside Ana's check in C2, `calculation` shows her confirmed expertise (C6, `not built`). `question` draws no checks, so shows none.
 
 ## End state
 
@@ -100,7 +100,7 @@ Checked after a reload.
 5. **Confirming refused** (step 7). Beside A10, the refusal in the words of the fold "When confirming or withdrawing an expertise is refused" (C5). The expertise stays declared; the journey goes on from step 9, and the end state reads "Declared".
 6. **Not confirmed.** Confirmation gates nothing: without step 7, steps 9 to 16 go on, and the expertise reads declared, not confirmed.
 7. **Check request left empty** (step 11). Beside A12: V5 "Name the expertise needed and say what to check." Resume at step 11.
-8. **Nobody holds that expertise** (step 11). (design silent: what `question` shows when no member has declared the expertise asked for; lane to confirm)
+8. **Nobody holds that expertise** (step 11). `question` C17 (`not built`) says no member who can see the question has declared that expertise, so nobody was asked; no item reaches any queue. Mai asks again with the expertise Ana declared; resume at step 11.
 9. **Ana is the calculation's author.** A2 is not offered on `calculation` (A2: "a member other than its author"); another member must check.
 10. **Ana not in the project** (step 14). `calculation` is not hers to see: `unavailable` S2. Resume at step 9.
 11. **Reason left empty** (step 15). Beside A2: `shell.reason.needed`; nothing is sent. Resume at step 15.
@@ -109,3 +109,4 @@ Checked after a reload.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

@@ -1,4 +1,4 @@
-Length: 498 lines. Last section: "Changes".
+Length: 501 lines. Last section: "Changes".
 
 # Screens: Deciding and acting
 
@@ -51,6 +51,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 - C8. Section "Scenarios" (`.scenarios`): a tab per scenario; each phase "{item} → checkpoint: "{checkpoint}" (judged by a member, once it is due)" (`.phase.checkpoint`) with button "Judge" or "You can judge this checkpoint from {date}." (`.judge.notdue`). Disclosure "Lay out a scenario": "Name of the scenario", and per phase "Name of the phase", "Options in this phase", "When it starts", "Which phase", "Check back after (days)", "What the checkpoint tests", "If the checkpoint is met, go to", "If it is not met, go to"; link "Add another phase".
 - C9. Section "Started" (`.startedsec`), help `.startedsec.holds`: each started option's action with its state (`.actionstate.*`: planned, active, awaiting a response, resolved, abandoned) and "Open the action" (`.openaction`); an untaken checkpoint "nobody has taken it up" (`.item.untaken`) with "Take this up" (`.takeup`).
 - C10. Button "Close plan…" (`.close`).
+- C11. An option adopted from the assistant's tray (A4) keeps, on its row in C4, the origin mark "Machine work" (`mark.origin.machine.name`, explained by `mark.origin.machine.means`). `AI`. `not built` (the code draws the adopted option's row as any other).
 
 **States**
 
@@ -105,6 +106,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 - C10. The outward panel: tag "Outward · seen outside your team" (`.outward`), `.outward.says`; "The day you sent it" (help "Reply deadlines count from this day."), "How you sent it", "The office's reference for it (optional)"; button "I have sent it · record the sending" (`.recordsent`).
 - C11. Once recorded: "Recorded as sent on {date}" (`.sent`), "reference {reference}", `.sent.next`, link "Open the action".
 - C12. Section "Keep this filing as your team's template" (`.template.heading`): `.template.note1`-`3`; "The template's name", "What it is for" ("A filing" / "A brief for counsel"), "Notes for the team (optional)"; button "Keep as a template".
+- C13. Before the start, choice "Kind" (`screen.start-send.kind`): the action kinds the team's profile lists, each by its word (`screen.start-send.kind.*`, for example "records request", `screen.start-send.kind.records_request`); none is chosen until the member chooses one, and the option's category does not choose it. A3 and A2 send the kind chosen. Built, except that the code chooses "records request" beforehand (`bio-plane/src/screens-action/start-send.mjs:162`).
 
 **States**
 
@@ -271,6 +273,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 - C8. Section "Templates for this action" (`.templates.heading`): `.templates.offered` + `.templates.nocourt`; rows "approved by {member}, {date}" or `.templates.notyet`; note `.templates.own` + `.templates.never`; link "Prepare the text" (to `request`).
 - C9. Section "Its risk" (`risk.title`): "Tier {n} · …", who set it and why; button "Revise, with a reason…" (`risk.revise`).
 - C10. Disclosure "How it ended" (`.ended.*`: "The office complied", "The office denied it", "It was escalated", "Your team withdrew it", "Your team carried it out"), "In your own words" (`.ended.own`). Buttons "Move the action", "Remind me", and the confidentiality act.
+- C11. In C3, a date whose reply was recorded after it fell due shows the state "met late" (no word row), beside the other states. `not built`
 
 **States**
 
@@ -495,4 +498,4 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 ## Changes
 
 - 22 Nov 2026: written.
-
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

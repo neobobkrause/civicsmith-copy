@@ -1,4 +1,4 @@
-Length: 85 lines. Last section: "Changes".
+Length: 86 lines. Last section: "Changes".
 
 # J02: The team says who it is and why
 
@@ -40,7 +40,7 @@ The steps are those of the wizard "Say who your team is" (4 steps, all on `group
    - 1.2 `group-identity` opens: C1 and C2; no C3 (S3, nothing said yet); C4, the form "Change it", with A1.
    - 1.3 C1 reads `.seed.recorded` (S1): the short name was recorded at install.
    - 1.4 No C5 is drawn (S4, no assistant), and no greyed control stands in its place.
-   - 1.5 Whether the wizard's guide opens beside the screen when it is reached from Settings (design silent: lane to confirm); the steps below are the same either way.
+   - 1.5 No wizard guide opens beside the screen: following the link from Settings starts no wizard (page "Every screen", section 5).
 2. Rosa chooses what kind of team it is: the two kinds of Test data (wizard step 1).
    - 2.1 Both checkboxes are ticked; none was ticked before she chose (every-screen 1.1).
 3. Rosa types what the team focuses on (wizard step 2).
@@ -83,3 +83,4 @@ The walker does not walk J02: it does not open `group-identity` except in its sw
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).
