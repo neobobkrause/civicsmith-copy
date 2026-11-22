@@ -29,7 +29,7 @@ Status: partly not built (the account check on `install`) · Screens used: `site
 |---|---|
 | Short name | `lakeshore-tenants` |
 | Team's name | "Lakeshore Tenants" |
-| The team's place on `install` | the place the development installer offers for Lakeshore; where it offers none, its last choice, "None of these" (design silent: lane to confirm which ARCH serves) |
+| The team's place on `install` | the place the development installer offers for Lakeshore; where it offers none, its last choice, "None of these". ARCH's to say which the development installer offers |
 | Founder's handle | `rosa-l` |
 | Founder's password | 12 characters or more, chosen by the walking session; kept for later journeys, never written into a report |
 | Invitation for Mai | short id `mai`; cover "Mai, from flat 4"; she may also start projects |
@@ -46,14 +46,14 @@ Status: partly not built (the account check on `install`) · Screens used: `site
    - 1.2 The section "One team's work" names one case with its link (A3).
    - 1.3 No page asks for an account or a sign-in.
 2. Rosa opens that case (A3), reads it, and goes back to `site` S1.
-   - 2.1 The case opens as `published` at its own team's address, in the published frame, with no session (design silent: lane to confirm which case a development site names).
+   - 2.1 The case opens as `published` at its own team's address, in the published frame, with no session. ARCH's to say which published case the development `site` names.
    - 2.2 Going back shows `site` S1 again.
 3. Rosa follows A1 to Start a team.
    - 3.1 `site` shows S2 at `/start`, with its sections in S2's order.
    - 3.2 "What you need" names the Cloudflare account and the time, and says what is not needed.
    - 3.3 A4 and A5 are offered.
 4. Rosa chooses "Create your team" (A4).
-   - 4.1 `install` opens at the installer's address in S1, with A1 and A2 (design silent: lane to confirm; `site` A4 names `install` S3, while `install`'s states and the design journey open on S1).
+   - 4.1 `install` opens at the installer's address in S1, with A1 and A2: the design journey asks first whether she has a Cloudflare account (`mock-journeys.js`, journey 28), and S3 is the first page only while civicsmith.org is not online.
    - 4.2 C2's six questions are offered closed.
 5. Rosa answers that she has a Cloudflare account (A1).
    - 5.1 `install` shows S2: the short name field, the places choice, A3 and A4.
@@ -85,7 +85,7 @@ Status: partly not built (the account check on `install`) · Screens used: `site
     - 12.3 Parts 2 to 8 can now be opened.
 13. Rosa saves her ten codes as a file.
     - 13.1 A file holding the ten codes is saved on her device.
-    - 13.2 After a reload, `setup` S2 no longer shows the codes (design silent: lane to confirm; S2 says "Shown once").
+    - 13.2 After a reload, `setup` S2 no longer shows the codes ("Shown once"): part 1 shows only its claimed line naming `rosa-l`.
 14. Rosa opens part 2, "Your team", types the team's name and presses A4.
     - 14.1 Part 2 shows "Saved. Your team is now called Lakeshore Tenants."
     - 14.2 C1 shows the team's name in place of the short name.
@@ -110,7 +110,7 @@ Status: partly not built (the account check on `install`) · Screens used: `site
     - 20.1 `home` shows S2 for her: the welcome with A15, C8's doors, C9.
     - 20.2 The masthead shows "You: mai-k".
 21. Mai continues the guided welcome (A15).
-    - 21.1 The guide of the wizard "Welcome a new member" opens beside Home (every-screen, section 5). Its steps are J03's; she leaves it here (design silent: lane to confirm how the guide is left).
+    - 21.1 The guide of the wizard "Welcome a new member" opens beside Home (every-screen, section 5). Its steps are J03's; she leaves it here with its button "Stop" (`screen.guide.stop`, "Stops the wizard here. Nothing is sent and nothing on the screen changes."), under "Stopping is fine: nothing is lost, and nobody is told." (`guide.stopping`); the guide closes and Home stays as it was.
 22. Mai opens "Your account" from the shell menu (every-screen 3.4).
     - 22.1 `account` shows S1: C2 shows `mai-k` and that a handle can't be changed.
     - 22.2 C3 shows the language she chose at step 17.
@@ -123,10 +123,10 @@ Status: partly not built (the account check on `install`) · Screens used: `site
     - 25.1 `capture` shows S3: C19 and C20.
     - 25.2 After A16, S10 says it is recorded as her testimony, with its id.
     - 25.3 No "Help me write this" is drawn (S11).
-26. `waiting A4` Mai opens the photo she added, from `held` (its thumbnail, A2), and shows its safe view (A2 on `open-file`).
+26. Mai opens the photo she added, from `held` (its thumbnail, A2), and shows its safe view (A2 on `open-file`).
     - 26.1 `open-file` shows S4: "High risk" with `.high.yours`, and "What to do next".
-    - 26.2 After A2, the safe view (C3) opens on the page, marked derived.
-    - (design silent: lane to confirm that a testimony's photo is listed in `held`.)
+    - 26.2 After A2, the safe view (C3) opens on the page, marked derived: a picture Civicsmith redrew from its pixels alone, with none of the photo's hidden data (such as where it was taken) shown (decisions U6). `not built` Until it is built, the screen says the file has no safe view, without the sentence "The safe view needs no check", and says plainly how to see the photo on her own device.
+    - 26.3 `held` lists the photo: like every file added, it waits in Held captures until a member vouches for it, kept beside her account (`screen.capture.saw.photo.optional`).
 27. Mai signs out from the shell menu ("Sign out").
     - 27.1 `front` shows S4: the panel opens with `session.signedout`.
     - 27.2 Opening `/app` in that browser shows `front`, not `home`.
@@ -169,3 +169,4 @@ The walker (`bio-plane/src/journey-check/journeys.mjs`) does not open the publis
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

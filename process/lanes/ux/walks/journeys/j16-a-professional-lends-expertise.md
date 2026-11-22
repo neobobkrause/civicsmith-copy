@@ -1,4 +1,4 @@
-Length: 111 lines. Last section: "Changes".
+Length: 112 lines. Last section: "Changes".
 
 # J16: A professional lends expertise
 
@@ -31,7 +31,7 @@ Status: walkable · Screens used: `members`, `join`, `home`, `account`, `project
 | Ana's handle | `ana-p` |
 | Ana's password | A password of 12 or more characters ARCH holds, never printed |
 | Ana's expertise | "Certified public accountant (CPA)" |
-| Expertise Mai asks for | "Accounting" |
+| Expertise Mai asks for | "Certified public accountant (CPA)", exactly as Ana declared it (a check reaches the members who declared that same expertise) |
 | What Mai asks to check | "Check the sum and its inputs on J09's calculation." |
 | Ana's reason for her check | "Recomputed from the cited inputs; the sum and the share agree." |
 
