@@ -11,8 +11,9 @@ Rule now: civicsmith moves to the latest Process4 version.
 Shown to the owner: not yet.
 
 ## Slots
-Rule now: no job may run on this product (slot number zero) until PROCESS reports back and the owner gives another number.
+Rule now: the slot number is 8.
 - 22 Nov 2026: "Instruction: set the slot number to zero until PROCESS reports back"
+- 22 Nov 2026: "Instruction: set the slot number to 8"
 Shown to the owner: not yet.
 
 ## The paused tranche T53
