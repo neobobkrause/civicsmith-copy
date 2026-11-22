@@ -17,6 +17,7 @@
     "signatures",
     "instance-setup",
     "setup-words",
-    "runtime-limits"
+    "runtime-limits",
+    "plane"
   ]
 }

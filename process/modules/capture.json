@@ -4,9 +4,7 @@
     "bio-plane/src/capture/"
   ],
   "tests": [
-    "bio-plane/test/m/capture/",
-    "bio-plane/test/cap13-reuse-pages.test.mjs",
-    "bio-plane/test/d57selflink.test.mjs"
+    "bio-plane/test/m/capture/"
   ],
   "public": [
     "bio-plane/src/capture/checks.mjs",

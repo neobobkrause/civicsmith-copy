@@ -25,6 +25,7 @@
     "project-stage",
     "monitoring",
     "setup-words",
-    "test-support"
+    "test-support",
+    "op-grades"
   ]
 }

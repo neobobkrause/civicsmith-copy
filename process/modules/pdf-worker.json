@@ -4,7 +4,10 @@
     "pdf-worker/"
   ],
   "tests": [
-    "pdf-worker/test/"
+    "pdf-worker/test/",
+    "pdf-worker/test/jbig2.test.mjs",
+    "pdf-worker/test/jpx.test.mjs",
+    "budget-doctypes/test/fixtures/build.mjs"
   ],
   "public": [
     "pdf-worker/src/index.mjs",
@@ -18,6 +21,7 @@
     "setup-words",
     "runtime-limits",
     "pdf-pixels",
-    "image-codecs"
+    "image-codecs",
+    "budget-doctypes"
   ]
 }

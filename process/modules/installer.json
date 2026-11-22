@@ -7,7 +7,9 @@
   ],
   "tests": [
     "newgroup/test/",
-    "bio-plane/test/system/newgroup-bundle-fresh.test.mjs"
+    "bio-plane/test/system/newgroup-bundle-fresh.test.mjs",
+    "bio-plane/test/m/bundler/release.test.mjs",
+    "bio-plane/test/m/bundler/thirdparty.test.mjs"
   ],
   "public": [
     "newgroup/src/index.mjs",
@@ -23,6 +25,9 @@
     "interface-assets",
     "setup-words",
     "installer-steps",
-    "runtime-limits"
+    "runtime-limits",
+    "release",
+    "sheet-worker",
+    "plane"
   ]
 }

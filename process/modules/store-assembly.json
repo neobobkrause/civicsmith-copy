@@ -4,7 +4,42 @@
     "bio-plane/src/store-assembly/"
   ],
   "tests": [
-    "bio-plane/test/m/store-assembly/"
+    "bio-plane/test/m/store-assembly/",
+    "bio-plane/test/m/op-declarations/register-owners.mjs",
+    "bio-plane/test/m/op-declarations/browser.mjs",
+    "bio-plane/test/m/op-declarations/fixtures/",
+    "bio-plane/test/m/op-declarations/t23.test.mjs",
+    "bio-plane/test/m/op-declarations/t28.test.mjs",
+    "bio-plane/test/m/op-declarations/t31.test.mjs",
+    "bio-plane/test/m/op-declarations/t33.test.mjs",
+    "bio-plane/test/m/op-declarations/t34.test.mjs",
+    "bio-plane/test/m/op-declarations/t35.test.mjs",
+    "bio-plane/test/m/op-declarations/t36.test.mjs",
+    "bio-plane/test/m/op-declarations/t37.test.mjs",
+    "bio-plane/test/m/op-declarations/t38.test.mjs",
+    "bio-plane/test/m/op-declarations/t42.test.mjs",
+    "bio-plane/test/m/op-declarations/t45.test.mjs",
+    "bio-plane/test/m/op-declarations/t46.test.mjs",
+    "bio-plane/test/m/op-declarations/t47.test.mjs",
+    "bio-plane/test/m/op-declarations/t48.test.mjs",
+    "bio-plane/test/m/op-declarations/t50.test.mjs",
+    "bio-plane/test/m/op-declarations/t51.test.mjs",
+    "bio-plane/test/m/op-grades/cause3.test.mjs",
+    "bio-plane/test/m/op-grades/g55.test.mjs",
+    "bio-plane/test/m/op-grades/k5157.test.mjs",
+    "bio-plane/test/m/op-grades/k5159.test.mjs",
+    "bio-plane/test/m/op-grades/owners.test.mjs",
+    "bio-plane/test/m/op-grades/register.test.mjs",
+    "bio-plane/test/m/op-grades/t48.test.mjs",
+    "bio-plane/test/m/op-grades/t50.test.mjs",
+    "bio-plane/test/m/op-grades/t51.test.mjs",
+    "bio-plane/test/m/op-grades/fixtures/",
+    "bio-plane/test/m/affordances/register-owners.mjs",
+    "bio-plane/test/m/affordances/catalogue.test.mjs",
+    "bio-plane/test/m/affordances/owners-registered.test.mjs",
+    "bio-plane/test/m/answers/declared-ops.test.mjs",
+    "bio-plane/test/m/monitoring/declared-ops.test.mjs",
+    "bio-plane/test/m/test-support/declared-ops.test.mjs"
   ],
   "public": [
     "bio-plane/src/store-assembly/acquire-timings.mjs",
@@ -144,6 +179,9 @@
     "connection-grammar",
     "signatures",
     "reading-pipeline",
-    "agent-worker"
+    "agent-worker",
+    "action-grammar",
+    "affordances",
+    "op-capabilities"
   ]
 }

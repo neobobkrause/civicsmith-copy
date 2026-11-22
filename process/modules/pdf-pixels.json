@@ -8,11 +8,7 @@
   ],
   "tests": [
     "pdf-worker/test/pdf-pixels-fixtures.mjs",
-    "pdf-worker/test/pagepixels.test.mjs",
     "pdf-worker/test/imagecrop.test.mjs",
-    "pdf-worker/test/jbig2.test.mjs",
-    "pdf-worker/test/jpx.test.mjs",
-    "pdf-worker/test/pagepixels-corpus.probe.mjs",
     "pdf-worker/test/agenda-scan-census.probe.mjs",
     "pdf-worker/test/fixtures/scan-ccitt-g4-page.pdf",
     "pdf-worker/test/fixtures/scan-dct-page.pdf",

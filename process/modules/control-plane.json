@@ -4,7 +4,12 @@
     "bio-plane/src/control-plane/"
   ],
   "tests": [
-    "bio-plane/test/m/control-plane/"
+    "bio-plane/test/m/control-plane/",
+    "bio-plane/test/m/interface-shell/declared.test.mjs",
+    "bio-plane/test/m/interface-shell/e12.test.mjs",
+    "bio-plane/test/m/interface-shell/g30.test.mjs",
+    "bio-plane/test/m/interface-shell/g31.test.mjs",
+    "bio-plane/test/m/interface-shell/t50.test.mjs"
   ],
   "public": [
     "bio-plane/src/control-plane/index.mjs",
@@ -117,6 +122,10 @@
     "ooxml",
     "odf-reader",
     "store-assembly",
-    "store-request"
+    "store-request",
+    "queue",
+    "lines",
+    "calculations",
+    "workbooks"
   ]
 }

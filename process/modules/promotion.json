@@ -6,9 +6,6 @@
   ],
   "tests": [
     "bio-plane/test/m/promotion/",
-    "bio-plane/test/d526-refusal-order.test.mjs",
-    "bio-plane/test/system/row-census.test.mjs",
-    "bio-plane/test/system/row-census.mjs",
     "bio-plane/test/fixtures/row-census-1.80.0.jsonl"
   ],
   "public": [

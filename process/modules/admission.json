@@ -4,7 +4,8 @@
     "bio-plane/src/admission/"
   ],
   "tests": [
-    "bio-plane/test/m/admission/"
+    "bio-plane/test/m/admission/",
+    "pdf-worker/test/structure.test.mjs"
   ],
   "public": [
     "bio-plane/src/admission/checks.mjs",
@@ -19,6 +20,10 @@
     "credentials",
     "record-core",
     "doorbell",
-    "setup-words"
+    "setup-words",
+    "test-support",
+    "pdf-reader",
+    "pdf-worker",
+    "capture"
   ]
 }

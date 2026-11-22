@@ -4,13 +4,16 @@
     "bio-plane/src/op-declarations/"
   ],
   "tests": [
-    "bio-plane/test/m/op-declarations/"
+    "bio-plane/test/m/op-declarations/",
+    "bio-plane/test/m/queue/declared-ops.test.mjs",
+    "bio-plane/test/m/case-import/declared-ops.test.mjs"
   ],
   "public": [
     "bio-plane/src/op-declarations/index.mjs",
     "bio-plane/src/op-declarations/t48.mjs",
     "bio-plane/src/op-declarations/t50.mjs",
-    "bio-plane/src/op-declarations/t51.mjs"
+    "bio-plane/src/op-declarations/t51.mjs",
+    "bio-plane/test/m/op-declarations/help.mjs"
   ],
   "uses": [
     "progressions",
@@ -85,6 +88,9 @@
     "basis-versions",
     "member-roster",
     "citation",
-    "test-support"
+    "test-support",
+    "queue",
+    "inquiry-grammar",
+    "op-grades"
   ]
 }

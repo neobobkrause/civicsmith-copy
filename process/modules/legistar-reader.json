@@ -4,13 +4,15 @@
     "legistar-reader/"
   ],
   "tests": [
-    "legistar-reader/test/"
+    "legistar-reader/test/",
+    "jurisdictions/test/t34.test.mjs"
   ],
   "public": [
     "legistar-reader/index.mjs"
   ],
   "uses": [
     "docprofile",
-    "setup-words"
+    "setup-words",
+    "jurisdictions"
   ]
 }

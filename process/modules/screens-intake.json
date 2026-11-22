@@ -24,6 +24,7 @@
     "acquisition",
     "runtime-limits",
     "store-request",
-    "extraction"
+    "extraction",
+    "pdf-reader"
   ]
 }

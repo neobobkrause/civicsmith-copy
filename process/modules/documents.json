@@ -1,0 +1,15 @@
+{
+  "name": "documents",
+  "files": [
+    "docs/",
+    "build/",
+    "requirements/",
+    "README.md",
+    ".gitignore",
+    ".env.example",
+    ".worktreeinclude"
+  ],
+  "tests": [],
+  "public": [],
+  "uses": []
+}

@@ -5,7 +5,6 @@
   ],
   "tests": [
     "bio-plane/test/m/provenance/",
-    "bio-plane/test/mk6-bundle-names-no-author.test.mjs",
     "bio-plane/test/publishingproject.mjs",
     "bio-plane/test/adoptable-reading.mjs"
   ],

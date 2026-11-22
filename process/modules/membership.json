@@ -4,8 +4,7 @@
     "bio-plane/src/membership/"
   ],
   "tests": [
-    "bio-plane/test/m/membership/",
-    "bio-plane/test/members.test.mjs"
+    "bio-plane/test/m/membership/"
   ],
   "public": [
     "bio-plane/src/membership/checks.mjs",
