@@ -1,4 +1,4 @@
-Length: 30 lines. Last section: "Questions with ARCH".
+Length: 25 lines. Last section: "Settled with ARCH".
 
 # The UX lane's folder
 
@@ -17,6 +17,9 @@ The UX lane of civicsmith: a standing design responsibility for the user's exper
 
 None yet. Their links will be kept here.
 
-## Questions with ARCH
+## Settled with ARCH
 
-Put to ARCH 22 Nov 2026, awaiting answer: which navigation the Screens document follows where the mission's seven categories and the approved shell's rail differ; the rank of rulings the earlier design session recorded under delegation; the walk command in the process config (refused before any step runs, research 03 section 3).
+ARCH #1 answered on 22 Nov 2026:
+- No ranking conflict: only the Roadmap's sections 1 to 5 are mission; DEC-139's rail is the owner's ruling at rank 2 and stands. The Screens document describes the rail as built and maps each of the Roadmap's section 12 categories to where it lives (page `every-screen`).
+- The DEC rulings rank 2, as recorded, as the ranking page says.
+- The walk command and the deploy group in the process config are ARCH's to settle before any walk. Each module's requirements are now `process/modules/<name>.md`; `build/requirements/` is history.
