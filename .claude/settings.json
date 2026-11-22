@@ -1,4 +1,5 @@
-"permissions": {
+{
+  "permissions": {
     "deny": [
       "mcp__github__merge_pull_request",
       "Bash(gh pr merge *)",
@@ -21,3 +22,4 @@
       "Bash(gh *)"
     ]
   }
+}
