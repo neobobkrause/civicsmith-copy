@@ -1,10 +1,10 @@
-Length: 141 lines. Last section: "Changes".
+Length: 144 lines. Last section: "Changes".
 
 # J15: From a question to a published case
 
 Journey page `j15-from-a-question-to-a-published-case` (index: ../index.md). Written 22 Nov 2026 by a worker for civicsmith ux lane #1.
 
-Status: walkable (steps marked `waiting Q1`, `waiting Q2`) · Screens used: `capture`, `held`, `projects`, `project`, `question`, `finder`, `document`, `case-editor`, `queue`, `ceremony`, `published` · Follows: J28 · Followed by: J21 (walked between steps 17 and 18), J26, J22, J23, J24
+Status: walkable (step marked `waiting Q2`) · Screens used: `capture`, `held`, `projects`, `project`, `question`, `finder`, `document`, `case-editor`, `queue`, `ceremony`, `published` · Follows: J28 · Followed by: J21 (walked between steps 17 and 18), J26, J22, J23, J24
 
 ## Goal
 
@@ -41,6 +41,7 @@ Status: walkable (steps marked `waiting Q1`, `waiting Q2`) · Screens used: `cap
 | Position; why | "We chose not to give notice"; "The case rests only on the city's own public notice." |
 | What the bias means for this edition | "Our team speaks for tenants; this edition rests on the city's own words only." |
 | The account | "Tenants reported water through the ceilings; the city inspected and ordered the repair in notice 2026-118." |
+| The team's grade for the copy | The highest grade "What this passage earns" offers |
 | Every other reason asked | "For the case on the roof." |
 
 ## Steps
@@ -72,9 +73,9 @@ Status: walkable (steps marked `waiting Q1`, `waiting Q2`) · Screens used: `cap
 11. Mai selects the passage's words in C8, chooses the question in "Cite in which question", chooses "Supports" in "How it bears on the question", and presses A9. `waiting Q2`
     - 11.1 The citation is made; reopening `question` shows the passage in C4 (Supports) with a link to `document`.
     - 11.2 `question` shows S2: no strength, one passage under "What each passage carries".
-12. Mai answers the passage with "No, my answer falls" and presses "Save the answers" (A5).
+12. Mai answers the passage with "No, my answer falls" and presses "Save the answers" (A5); then she opens the fold "What this passage earns", chooses the grade from Test data and presses "Record this grade".
     - 12.1 `question` shows S1: C3 shows two grades and the standing against the bar.
-    - 12.2 C3 names the copy's grade as the team's grade for the copy; it is not graded yet, and C3 points to where it is given (C16, `not built`).
+    - 12.2 Before the grade is recorded, C3 says the team's grade for the copy is not given yet and points to where it is given; after it, C3 shows "Your team's grade for the copy" with Mai's grade (C16, `not built`).
 13. Mai opens the fold "Conclude" (C12), chooses "Write the reading yourself", fills "Your reading", "What would change it" and "Why you are concluding it" from Test data, and presses A11.
     - 13.1 `question` shows S8: heading 2 "Concluded", `question.concluded.by` with her reading and "Written by" Mai, and `question.concluded.falsifier`.
     - 13.2 A15's "Prepare a case from this" is offered.
@@ -104,7 +105,7 @@ Status: walkable (steps marked `waiting Q1`, `waiting Q2`) · Screens used: `cap
 22. Mai ticks the confirmation in C9 and presses A6 ("Confirm your ties and prepare the edition for signing").
     - 22.1 Before the press the button shows "Irreversible" and the outward icon; `.ties.confirm` and `.permanent` show.
     - 22.2 After it: "Edition 1 is prepared for signing. Nothing is published yet." (`.prepared`).
-23. Mai chooses "Now" in C12's "When it becomes public", reads C12, and presses A8 ("Sign and publish now"). `waiting Q1`
+23. Mai chooses "Now" in C12's "When it becomes public", reads C12, and presses A8 ("Sign and publish now").
     - 23.1 Before the press C12 shows `signing.ceremony.who` naming Mai, `.signs.count` and `.device.next`.
     - 23.2 The dialog "Enter your password again" opens; after her password and "Go on", S2 shows (the device's confirmation).
     - 23.3 After she confirms on her device: S4, `signing.ceremony.signednow` and the link "Open the public page".
@@ -134,8 +135,10 @@ Checked after a reload:
 8. Step 23, a wrong password: `session.reauth.wrong`, nothing sent; resume at step 23. She cancels on her device: S2's `.device.cancel` holds, back at the last step with nothing signed; resume at step 23.
 9. Step 18 on a phone (390 px): `ceremony` S6 (`signing.ceremony.phone`), no signing button; resume on a computer at step 18.
 10. Rosa opens `ceremony` instead of Mai: S7 (`signing.ceremony.notowner` naming Mai); "Ask an owner to sign" puts `.asked`, and Mai's queue gets the item; resume at step 18 as Mai.
+11. Step 21, the copy of the notice has no grade from the team (step 12's grade skipped): `ceremony` S8; C4 names Finding 1 and the notice's passage, with "Grade the copy", "Cite a better copy" and "Take the finding out" (C14, `not built`); no signing button is offered. Mai follows "Grade the copy", records the grade as in step 12, and resumes at step 21.
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: the copy is graded at step 12 and turn-aside 11 added, on the owner's decision of Q1 (decisions.md U14).

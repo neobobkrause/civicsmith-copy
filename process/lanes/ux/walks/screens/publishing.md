@@ -1,4 +1,4 @@
-Length: 408 lines. Last section: "Changes".
+Length: 410 lines. Last section: "Changes".
 
 # Screens: Publishing
 
@@ -156,6 +156,7 @@ Preparing a case, sharing a draft for review, the publication ceremony, the publ
 - C11. Section "The minutes beside the team's public comment" (`.minutes.heading`, help `.minutes.says`): the two texts side by side.
 - C12. The signing box "Sign and publish Edition {edition}" (`.sign.edition`, protected): `signing.ceremony.who` (protected: "You sign as {signer}, an owner of {project}. The public page will read “Published by {group} · signed by {signer}”. …"); radio "When it becomes public" (`.when`): "Now" / "At a set time: {date}, {time} ({zone})" (`.when.chosen`, protected); `.when.note` (protected); field "Your password" (`shell.password`, help `session.reauth`, protected); `.signs.count` (protected: "One confirmation signs all {n}: …"); disclosure "What your key signs, exactly" (`.signs.exactly`) with lines and `.signs.lines`, `.signs.linesabout` (protected); disclosure "What you are signing, in plain words" (`.plain.head`, `.plain.1`-`.plain.4`); buttons "Sign and publish at {time} on {date}" (`.publishat.button`, protected), primary, and "Sign and publish now"; `.device.next` ("Next, your device asks you once to confirm with your signing key. Nothing is signed until you do.").
 - C13. `not built` (decision U7) In S5, beside the box `signing.ceremony.keepkey`, which starts unticked: a sentence saying that a key not kept on this device is gone when the browser closes: "A key you do not keep on this device is gone when the browser closes." (new word, key proposed: `signing.ceremony.keepkey.gone`).
+- C14. `not built` (decision U14) In C4, each finding that rests on a cited passage whose copy has no grade from the team, or a grade below the bar the finding is held to, is a stop: one line per passage, "{finding} rests on a passage from {document} whose copy {is not graded yet | is graded below what this finding needs}." (new word, key proposed: `screen.ceremony.checks.copygrade`), with the links "Grade the copy" (to the question's "What this passage earns"), "Cite a better copy" (to `document`) and "Take the finding out" (to `case-editor`). While one stands, C4 shows `.notready`, S8 holds, and A6, A7 and A8 are not offered.
 
 **States**
 
@@ -168,7 +169,7 @@ Preparing a case, sharing a draft for review, the publication ceremony, the publ
 | S5 no signing key in this browser | No key here | Box with `signing.ceremony.nokey` (protected: "You have no signing key in this browser. Register one here: …"), `.nokey.keyfile`; check `signing.ceremony.keepkey` (protected); button "Register a signing key in this browser", primary; button "Use a key file you already have" (`shell.signer.load`); `.nokey.elsewhere`. While registering: `.registering`; after: `.registered`. |
 | S6 on a phone | Phone width | `signing.ceremony.phone` (protected: "Signing and publishing finish on a larger screen. Everything here can be read on a phone. Open {project} on a computer to sign: the ceremony is where you left it."); no signing button. |
 | S7 a member who isn't an owner | Not an owner | `signing.ceremony.notowner` (protected: "Only an owner of {project} signs its cases: {owners}. Everything you prepared stays as it is. Ask one of them to sign."); button "Ask an owner to sign". After: "The owners are asked to sign, in their queues." (`.asked`). |
-| S8 a finding departs from how a standard may be used | Pre-flight fails | Step "Preview"; section "Fix these before you sign" (`ceremony.gate.heading`): `ceremony.gate.notargets`, link "Add a finding" (`.gate.addfinding`), `refusal.PUBLISH_NO_FINDING`, "This stops the signing: {what}. Put it right above, then check again." (`ceremony.gate.other`); "Before publishing" with a finding "not ready" and the refusals (a benchmark that does not bind; a copyrighted passage); button "Check again". |
+| S8 a finding departs from how a standard may be used, or rests on a copy not graded well enough (C14) | Pre-flight fails | Step "Preview"; section "Fix these before you sign" (`ceremony.gate.heading`): `ceremony.gate.notargets`, link "Add a finding" (`.gate.addfinding`), `refusal.PUBLISH_NO_FINDING`, "This stops the signing: {what}. Put it right above, then check again." (`ceremony.gate.other`); "Before publishing" with a finding "not ready" and the refusals (a benchmark that does not bind; a copyrighted passage); button "Check again". |
 | S9 your team's time zone isn't set | No zone | In the signing box: `refusal.PUBLISH_AT_NO_ZONE` ("Your team's time zone isn't set, and a publishing time is counted in it, so only "Sign and publish now" is offered. …"); only "Sign and publish now", primary. |
 | S10 nothing ready to publish | No prepared case | Heading "Publish"; note `.nothing` ("Nothing is ready to publish: this project has no prepared case yet. Prepare one from its concluded questions."); link "The case being prepared" to `case-editor`. |
 | S11 the open requests can't be read | Read fails | Section "Open requests for comment" holds only `signing.openrequest.unread` (protected). |
@@ -406,3 +407,4 @@ No assistant on this screen.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
 - 22 Nov 2026: words with no row decided (words-new.md).
 - 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).
+- 22 Nov 2026: `ceremony` C14 added and S8 widened, on the owner's decision of Q1 (decisions.md U14).

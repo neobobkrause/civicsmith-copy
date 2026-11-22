@@ -1,4 +1,4 @@
-Length: 41 lines. Last section: "3. How the lane settles a line the design is silent on".
+Length: 42 lines. Last section: "3. How the lane settles a line the design is silent on".
 
 # The UX lane's design decisions
 
@@ -20,15 +20,16 @@ Kept by the UX lane; rank 5 on `process/ranking.md` (design decisions), below th
 - **U11. Settling the design-silent lines.** The 107 lines the first writing left "design silent" are settled by section 3, by three workers for this lane, 22 Nov 2026; the lane reviewed each choice made by section 3's third rule and keeps them as written on the pages. Two code differences they found go to ARCH as candidate flaws: Explore ticks three kinds by default, and a removed administrator is marked inactive (`member-roster/index.mjs:907`).
 - **U12. A refusal that has two rows.** Where a screen has its own row for a refusal (`screen.<id>.refusal.<CODE>`, as `capture` has for its fetch refusals), that screen shows its own row; everywhere else the shared row `refusal.<CODE>` shows. Grounds: the screen's own row was written for where the member stands; the shared row is the fallback. (22 Nov 2026)
 - **U13. ARCH's judgment of the code differences applied (22 Nov 2026):** requirements outrank the pages; U11's two candidates corrected (Explore's default groups stand by screens-people R24; a removed administrator is revoked by the owner's ruling D-610); U12 gives way on capture to screens-capture R45.
+- **U14. A case is not signed while a finding rests on a passage whose copy is not shown well enough (Q1, decided by the owner).** On `ceremony`, "Before publishing" stops the signing while any finding rests on a cited passage whose copy has no grade from the team, or a grade below the bar that finding is held to. It names each such finding and passage, with three ways to put it right: grade the copy, cite a better copy, or take the finding out of the case. Nothing is signed or published until every one is put right. The owner's words, 22 Nov 2026: "Decision: Q1,A", choosing option A as the lane put it to him in his session that day ("Block the whole case": a case cannot be signed while any finding rests on a passage ungraded or graded too poor to show what it is cited for). His words just before, in the same session, not marked and so not a decision of themselves: "Q1: a published can must be sufficiently supported by the evidence and mustn't present narrative that the evidence doesn't support." Grounds: his decision. A grade says the copy is faithful, not that the passage proves the finding; that stays the signing member's judgment.
 
 ## 2. Put to the owner
 
 These touch what the product holds as evidence and what it publishes, which are his (Process4 design part 4, section 3). They are put to him on the lane's design page, with options and the lane's recommendation:
 
-- **Q1. Publishing with passages ungraded (the earlier A5's policy part).** Recommendation: the signing screen names every passage still ungraded; the member grades them there or signs anyway, and the edition says it was published with them ungraded.
+- **Q1. Publishing with passages ungraded (the earlier A5's policy part).** Decided by the owner, 22 Nov 2026: "Decision: Q1,A" (U14).
 - **Q2. Citing a typed page once a second member has checked it (the earlier A8).** Recommendation: citable once checked, the citation carrying "typed by …, checked by …", never presented as Civicsmith's reading or the original.
 
-Until he answers, journey steps that rest on them stay marked `waiting Q1` or `waiting Q2`.
+Until he answers Q2, journey steps that rest on it stay marked `waiting Q2`.
 
 ## 3. How the lane settles a line the design is silent on
 
