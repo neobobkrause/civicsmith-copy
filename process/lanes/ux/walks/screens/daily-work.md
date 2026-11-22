@@ -1,4 +1,4 @@
-Length: 591 lines. Last section: "Changes".
+Length: 585 lines. Last section: "Changes".
 
 # Screens: Daily work
 
@@ -18,16 +18,16 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 |---|---|---|---|
 | `home` | the team's name, "Lakeshore Tenants" | `/app` | built |
 | `projects` | "Projects" | `/app/projects` | built |
-| `theme` | "Themes", or one theme's name | `/app/theme[/<theme>]` | built |
-| `dash-action` | "Action" | `/app/dash-action` | built |
+| `theme` | "Themes" | `/app/theme[/<theme>]` | built |
+| `dash-action` | "The Action dashboard" | `/app/dash-action` | built |
 | `dash-project` | the project's title | `/app/dash-project/<project>` | built |
 | `elsewhere` | "Where else to go" | `/app/elsewhere` | built |
 | `queue` | "Your queue" | `/app/queue` | built |
 | `finder` | "Find" | `/app/finder` | built |
-| `capture` | "Add to the record" | `/app/capture` | built |
+| `capture` | "Add" | `/app/capture` | built |
 | `held` | "Held captures" | `/app/held` | built |
-| `archive` | the archive's title | `/app/archive/<archive>` | built |
-| `open-file` | the file's title | `/app/open-file/<file>` | built |
+| `archive` | "Archive" | `/app/archive/<archive>` | built |
+| `open-file` | "Opening a file" | `/app/open-file/<file>` | built |
 | `find-in` | "Find in this" | `/app/find-in/<subject>` | built |
 
 ---
@@ -55,7 +55,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 | State | When | What shows |
 |---|---|---|
 | S1. Busy team | may start projects | C1 to C9. |
-| S2. First visit, may start | first visit after joining | C1, C2; section "Welcome, {name}" (`home.welcome.title`), `.welcome.what` [guided start], A15, link "Not now" (new word, key proposed: `screen.home.welcome.notnow`); C4 to C6, C8, C9. No C3, C7. |
+| S2. First visit, may start | first visit after joining | C1, C2; the welcome band "Welcome. Your team's wizard can walk you through your first screens; start it when you are ready." (`screen.guide.welcome`), A15, button "Not now" (`screen.guide.notnow`), and the chip "Show me how ({n})" (`wizard.marks.chip`); C4 to C6, C8, C9. No C3, C7. |
 | S3. First visit, may not start | lacks the right | C1; S2's welcome; section "Getting into a project" (`.join.heading`): `.join.lead` [not in a project yet]; rows with A7, A8; note `.join.nocreate` ["… Administrators: {admins}. …"]; A13 alone. No C8, C9. |
 | S4. May not start, nothing open | nothing to join | C1; "Getting into a project" with `.join.none` ["No project is open to you yet. …"]; A13. |
 | S5. Founder, new team | no members, no projects | C1; section "Your team's Civicsmith is ready" (`home.ready.title`), `.nothingyet`; numbered A18, A19 with `.first.invite` [Civicsmith sends no email], A20 with `.first.identity`, "Open your first project: choose below what happened." (`.first.project`); C8, C9. Nothing else. |
@@ -80,7 +80,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 | A12. door buttons "A problem I live with", "A person", "A payment or contract", "Something I read", "A tip or documents" (`door.front.<door>.name`, `door.front.<door>.hint`; `startfrom`) | S1, S2, S5 | its offer opens in place: suggested wizards, `door.front.matching`, `door.front.blank` ["None of these: start a project from a blank page."] |
 | A13. door "Help for my own situation" (`door.front.elsewhere.name`), hint `door.front.elsewhere.hint` | always | `elsewhere` |
 | A14. button "Start a project" (`act.promote.label.home`), help `act.promote.here.home` | may start | field "The project's title" (`.title`); then `project` |
-| A15. button "Continue the guided welcome" (`.welcome.continue`) | S2, S3 | the wizard "Welcome a new member" |
+| A15. button "Continue: Welcome a new member" (`screen.guide.welcome.continue`) | S2, S3 | the wizard "Welcome a new member" |
 | A16. "Pass it to another member", "Endorse an administrator", "Add an owner", "Confirm expertise" (`act.<op>.label.home`) | routed to-do | row leaves |
 | A17. "Say who issued it, or that you could not tell" (`act.owed_taskdecide.label.home`) | issuer unknown | `not built`; as `queue` A12 |
 | A18. button "Name your team" (`home.first.name`) | S5 | `group` |
@@ -136,7 +136,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C1 (S1). Heading "Themes" (`.name`); beneath `theme.never.evidence` ["A theme gathers documents and passages … It is never evidence …"].
 - C2 (S1). Section "Every theme, newest first" (`theme.list.heading`): field "Words in a theme's name or test" (`theme.q.label`); each theme's name, "Belongs when: {test}", counts, "declared by {who}, {date}" (`.declaredby`).
 - C3 (S1). Fold "Declare a theme" (`theme.declare`): fields "Its name" (`theme.name.label`), "Belongs when" (`theme.test.label`); A3.
-- C4 (S2). Heading the theme's name; "Belongs when: {test}"; note `theme.never.evidence`.
+- C4 (S2). Heading "Themes" (`.name`) and note `theme.never.evidence`, as in S1; "Belongs when: {test}".
 - C5 (S2). Section "Placed in it" (`theme.placed`), help `.tip.placed`: each document, who placed it, when, the note; a confirmed hunch reads `.placed.confirmed` ["Placed by {who}, {date}; confirmed a hunch the assistant proposed: …"]; A5.
 - C6 (S2). Section "Hunches: not yet placed" (`theme.hunches`): "A hunch is not membership. It counts for nothing until a member places it." (`theme.hunch.note`); A4, A5.
 - C7 (S2). Section "Taken out" (`theme.out`), help `.tip.removed`: who, when, why.
@@ -158,14 +158,14 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 ---
 
-## dash-action: "Action"
+## dash-action: "The Action dashboard"
 
 - **Address** `/app/dash-action`. **Frame** working; rail Queue. **Who** every signed-in member.
 - **Purpose** The Action area as a dashboard (`.purpose`).
 - **Entry points** `home` area "Action".
 
 **Content**
-- C1. The strip; heading "Action" (new word, key proposed: `screen.dash-action.title`); beneath `.sub` ["Every clock that is running, …"].
+- C1. The strip; heading "The Action dashboard" (`screen.dash-action.name`); beneath `.sub` ["Every clock that is running, …"].
 - C2. Tiles "Clocks running", "Our move", "Their move", "Replies to read" (`.tile.clocks`, `.ours`, `.theirs`, `.replies`), with `.tile.dueweek`, `.tile.dueday`, `.tile.noreply`, `.tile.came`.
 - C3. Section "Needs you" (`home.needsyou.title`), help `.tip.yours`; rows with A1, A2.
 - C4. Section "Every action" (`.every.heading`), help `.tip.every` [the clock as a sentence]; columns "Action", "To", "Whose move", "The clock", "Next" (`.col.*`); clocks `.clock.due`, `.clock.sent`, `.clock.approve`; next `.next.record`, `.next.escalate`, `.nextready`.
@@ -335,14 +335,14 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 ---
 
-## capture: "Add to the record"
+## capture: "Add"
 
 - **Address** `/app/capture`. **Frame** working; rail Add. **Who** members who may add work.
 - **Purpose** Add a document, a file, or what you saw (`.purpose`).
 - **Entry points** rail "Add"; `finder` A11; a project or question; a wizard step (its act's tab opens).
 
 **Content, every tab**
-- C1. Heading "Add to the record" (`.title`); beneath "A document from an address or a file, a photo, or what you saw yourself." (`.sub`).
+- C1. Heading "Add" (`.name`); beneath "A document from an address or a file, a photo, or what you saw yourself." (`.sub`).
 - C2. From a question: "What you add here is filed under {project}, for the question {question}" (`.forq`).
 - C3. Note `.filing-later.a`, `.filing-later.b` [filed into a project later].
 - C4. Tabs A1.
@@ -461,14 +461,14 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 ---
 
-## archive: the archive's title
+## archive: "Archive"
 
 - **Address** `/app/archive/<archive>`. **Frame** working; rail Add. **Who** members who may see it; a file filed out of sight shows "Filed, in a place you may not see" (`.filedunseen`).
 - **Purpose** One captured archive and each file's fate (`.purpose`).
 - **Entry points** `held` A3.
 
 **Content**
-- C1. Heading the archive's title; "Captured by {name} from {source}, {date}" (`.capturedby`).
+- C1. Heading "Archive" (`screen.archive.name`); "Captured by {name} from {source}, {date}" (`.capturedby`).
 - C2. Grade with A2; "fingerprint {short}" (`.facts`); "{entries} entries" (`.facts.entries`); "No grade note is held for this archive." (`.nonote`).
 - C3. `.summary` ["Opened when it was captured: {filed} files filed …, {notfiled} not filed, …"]; `.gradeabout`; `.samefingerprint`.
 - C4. Section "Files in it" (`.files`), column "File" (`.col`); each file one of: "Filed · held for review beside the archive" (`.filed`), `.alreadyheld`, `.folder`, `.link`, `.samename.each`, `.notfiled.password` [locked: listed, never opened], `.notfiled.size` [over the limit for one file], "Waiting to be filed" (`.waiting`). Note `.names`.
@@ -481,14 +481,14 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 ---
 
-## open-file: the file's title
+## open-file: "Opening a file"
 
 - **Address** `/app/open-file/<file>`. **Frame** working; rail Projects. **Who** members who may see the file.
 - **Purpose** Before a file opens: its risk, safe view, checks and release (`.purpose`).
 - **Entry points** `document` "Open the original file"; `held` A2.
 
 **Content**
-- C1. Heading the file's title; how it came, e.g. "Handed in at the doorbell, {date}" (`.handedin`), "Added by you, {date} · {project}" (`.byyou`).
+- C1. Heading "Opening a file" (`screen.open-file.name`); how it came, e.g. "Handed in at the doorbell, {date}" (`.handedin`), "Added by you, {date} · {project}" (`.byyou`).
 - C2. Risk chip "Low risk", "High risk" or "Held" (`.risk.low`, `.high`, `.held`), card `.risk.<level>.means`; line `.risk.low.short` or `.risk.high.short`.
 - C3. Card "The safe view" (`.safe`): `.safe.about`; mark "Derived · a safe copy of the original" (`.safe.origin`); `.safe.cite` [cite the original]; open: `.safe.ready`, `.safe.pages`.
 - C4. Section "Checks" (`.checks`): `.note.line`, "Built-in scanner" (`.tool.clamav`), `.result.*`, `.checks.none`; "Deeper check: {state}" (`.deeper.state`) with "not asked for yet", "asked for, waiting its turn", "running now", "done" (`.deeper.notasked`, `.queued`, `.running`, `.done`).
@@ -573,19 +573,13 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 Read, not run. The design is the authority.
 
-- `home` S2, S3: Home draws no "Welcome, {name}"; the wizard guide draws "Continue: {name}" (`screen.guide.welcome.continue`) (bio-plane/src/screens-wizards/guide.mjs:483).
 - `home` A17, `queue` A12: `taskdecide` is drawn only once its op is declared, and it is not (bio-plane/src/screens-daily/home.mjs:21-22, :438).
-- `dash-action` C1: heading "The Action dashboard" (`screen.dash-action.name`), not "Action" (bio-plane/src/screens-action/dash-action.mjs:53; bio-plane/src/interface-shell/browser.mjs:758-761).
-- `capture` C1: heading "Add" (`screen.capture.name`), not "Add to the record" (bio-plane/src/screens-intake/capture.mjs:627).
-- `archive` C1, `open-file` C1: headings "Archive", "Opening a file", not the archive's or file's title (bio-plane/src/screens-intake/archive.mjs:22; bio-plane/src/screens-intake/open-file.mjs:26).
-- `theme` C4: one heading, "Themes", in both states (bio-plane/src/screens-investigate/theme.mjs:21).
 - `finder` A13: the two acts are in the key list only (bio-plane/src/screens-settings/keys.mjs).
 - `find-in` S7: "Proposed by the assistant" is not drawn (no `screen.find-in.proposed.*` in bio-plane/src/screens-daily/find-in.mjs).
-- `capture` V1: `screen.capture.address.empty` is not drawn; the code refuses with `capture.fieldneeded` (bio-plane/src/screens-intake/capture.mjs:655).
-- `capture` V2, V3: each fetch refusal has two rows, `refusal.<CODE>` and `screen.capture.refusal.<CODE>`, worded differently; the design draws the first; which the code draws was not settled.
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
 - 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

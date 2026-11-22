@@ -1,4 +1,4 @@
-Length: 612 lines. Last section: "Changes".
+Length: 607 lines. Last section: "Changes".
 
 # Screens: The team and your account
 
@@ -75,17 +75,17 @@ How to read this page:
 - C6. Section "Invite a member": fields "A short id for this invitation", "The cover the team knows them by, not a legal name"; checkboxes "What they may do"; button A1; note `.invite.noemail` (3 sentences). Ticking "look after the team's Civicsmith" draws "Propose {who} as an administrator?", `.cap.administer.confirm` (5 sentences), choices "Propose {who} as an administrator" / "Go back".
 - C7. Shown once: after A1 `.invite.shown` and the link; after A2 `.reset.shown`, `.reset.noemail` and the link.
 - C8. Section "Joining through your website": `.website.what` (2 sentences); fields "How many may join each day", "Days until it expires (1 to 30; seven if left empty)"; buttons A13, A14; then `.website.keyshown` or `.website.linkshown` and the key or link.
-- C9. Section "More for administrators": links "Places and offices", "Security".
+- C9. Section "More for administrators": links "Your team", "Places and offices", "Recovery codes" (`screen.group.name`, `screen.places.name`, `screen.recovery.name`).
 - C10. Section "Signing keys": 3 sentences (`.a.signing.key.lets.a` …); per member "key registered by {member}, {date}" with A3, "key withdrawn by {member}, {date}" · "it does not sign" with A4, or "no signing key yet"; 2 sentences (`.key.react.withdraw.a.key.when.a` …); choice "Whose key"; field "Their public key"; button A5; 2 sentences (`.the.record.shows.that.you` …).
 - C11. Section "What removing an administrator takes": with one administrator "With {n} administrator, no administrator can be removed by vote." + 2 sentences; "Nothing here changes anything."; folds "If more administrators can act than the roster lists" (3 sentences) and "How it changes with the number of administrators" (a table for 1 to 7 administrators, `.scale.*`, the team's row "(now)"; 3 sentences).
-- C12. Administrator, the row panel (C5) of a member whose administrator's powers were removed: the removal, its date, and each agreeing administrator's handle with the reason they gave: "Administrator's powers removed on {date}." (new word, key proposed: `screen.members.removed.line`), then for each "{member} agreed: “{reason}”" (new word, key proposed: `screen.members.removed.agreed`). The member stays active, with "May do" as it was before they were proposed. `not built` (the code keeps the reasons with the votes and shows none of them after the removal; it marks the removed administrator "inactive", `member-roster/index.mjs:907`).
+- C12. Administrator, the row panel (C5) of a member whose administrator's powers were removed: the removal, its date, and each agreeing administrator's handle with the reason they gave: "Administrator's powers removed on {date}." (new word, key proposed: `screen.members.removed.line`), then for each "{member} agreed: “{reason}”" (new word, key proposed: `screen.members.removed.agreed`). The member is revoked (the owner's ruling D-610): Status "inactive" (`screen.members.status.revoked`), their sessions ended and signing keys withdrawn. `not built` (the code keeps the reasons with the votes and shows none of them after the removal).
 - C13. Administrator, a row's panel: that member's declared ties, read-only, in the form of `ties` C3 ("Kind", "Who", "A case would say"), or `ties`' none line; headed "Their ties" (new word, key proposed: `screen.members.ties.head`). `not built`
 
 | State | When | What shows |
 |---|---|---|
 | S1 As an administrator sees it | session administers | C1, C2, C4 (one administrator), C5 to C11. |
 | S2 As a member sees it | session does not administer | C1; table of member, "May do", "Expertise"; C3. No act. |
-| S3 A removal under way | votes outstanding | "Removing {member} as an administrator"; "{n} administrators: {members}."; section "What it takes": `.this.takes.3.of.4`, `.teo.is.counted.but.doesn`; a row per administrator (`.removal.agreed`, `.removal.notyet` + `.the.removal.waits.for.ana`, `.removal.faces` + `.counted.in.the.4.doesn`); "{n} of {total} have agreed so far." |
+| S3 A removal under way | votes outstanding | Inside C11, not a view of its own: "Removing {member} as an administrator"; "{n} administrators: {members}."; section "What it takes": `.this.takes.3.of.4`, `.teo.is.counted.but.doesn`; a row per administrator (`.removal.agreed`, `.removal.notyet` + `.the.removal.waits.for.ana`, `.removal.faces` + `.counted.in.the.4.doesn`); "{n} of {total} have agreed so far." |
 | S4 Nobody else yet | only the viewer | "Nobody is in the team yet but you." |
 
 | Action | When | Leads to |
@@ -104,7 +104,7 @@ How to read this page:
 | A12. button "Withdraw an unused invitation" | unused invitation | "invitation withdrawn". |
 | A13. button "Create a website key" | admin | The key, shown once. |
 | A14. button "Turn on the reusable join link" | admin | The link, shown once. |
-| A15. links in C9; "Get your recovery codes" | admin | `places`, `security`; `recovery`. |
+| A15. links in C9; "Get your recovery codes" | admin | `group`, `places`, `recovery`; `recovery`. |
 | A16. a member's name | always | `/app/members/<handle>`, its panel open. |
 
 | Form message | Condition | Message |
@@ -122,7 +122,7 @@ How to read this page:
 - C2. Fields "From", "To" (`.from`, `.to`); button A1; fold "Dates in the wrong order" holding V1.
 - C3. Section "How hard your team's Civicsmith was tried": mark "Ordinary." / "Raised." / "High.", explained by `.risk.means.ordinary`; `.period`; `.total`.
 - C4. `.files.on` (3 sentences).
-- C5. Fold "The counts, by kind, hour and place": "By kind and by hour", a 24-hour grid by kind, each square named in words (`.tip.hour_*`, `.heat.*`); "Totals for the period", table "Kind", "This period", "Usually" (`.kind.*`, `.totals.note`); by country (`.where.*`).
+- C5. Fold "The counts, by kind, hour and place": "By kind and by hour", a 24-hour grid by kind, each square named in words (`.tip.hour_*`, `.heat.*`); "Totals for the period", table "Kind", "This period", "Usually" (`.kind.*`, `.totals.note`). No country is named.
 - C6. Section "When you are told": a notice row (`.notice.signin`, `.notice.sent`); `.told.note`.
 - C7. Section "What is installed": "File scanner", "Safe view"; `.queue`; button A2.
 - C8. Section "Your security tools": `.tools.about`; table "Tool", "State", "Added", "What it does", states `.state.*`; or `.tools.none`. Section "What happened to them": events (`.event.*`) or "Nothing yet."
@@ -280,6 +280,7 @@ How to read this page:
 - C2. Choice "Whose lens": "The whole team" or a project; button A1.
 - C3. Section "In force for {project}" or "In force for the whole team": each statement (`.kind.*`, `.row.*`); "Adopted" (`screen.standard.state.adopted`) with `.by_admin_for_the_team*`; "What this set does not enforce" and its text; "Lens", its number, `.the_same_lens_gives_the`.
 - C4. Folds "When a project statement meets a locked one", "When an adopted set is only offered" (2 sentences each); note `.to_adopt_write_or_draft`, `.your_queue_tells_you_when`.
+- C5. One page of four parts, one under another, not separate views: what is in force (S1, S5, S6), writing and adopting (S2), drafting from a policy (S3), a work under an earlier lens (S4).
 
 | State | When | What shows |
 |---|---|---|
@@ -380,6 +381,7 @@ How to read this page:
 - C8. Section "A copy of your team's record": `.export.says`; field "Why you are taking it (optional)"; button A8; `.export.undone` + `.export.undone.why`; fold "When taking a copy is refused" (`.export.refused.founder`, `.refused.next`); button A9; the copies, newest first; `.export.log.cap`.
 - C9. Section "What the team has at stake": field "The team's statement" (`stake.group.*`); button A10; `AI` A12 under it.
 - C10. Section "The team's bar": `.bar.now` or `.bar.none`; choices "Capture", "Connection", each with "No bar"; field "Why (every member will see this)"; button A11.
+- C11. Administrator: section "How full your team's record is" (`screen.settings.storage.head`): "Your team's record holds {used} GB of the {limit} GB one record can hold ({percent}%)." (`screen.group.storage.size`), or `.storage.unstated`; from 70% `.storage.warn1`, from 90% `.storage.warn2`, each with `.storage.factors.lead` and the four `.storage.factors.*`.
 
 States: one view; each section shows its value or its none line as listed. A member's view is described under Who can see it. With no AI account (the walk) "Help me write this" is absent.
 
@@ -410,14 +412,14 @@ States: one view; each section shows its value or its none line as listed. A mem
 
 ## settings: "Settings"
 
-- **Who can see it** every member; "How full your team's record is" and "The team's" only to an administrator.
+- **Who can see it** every member; "The team's" only to an administrator.
 - **Purpose** Every setting in one list: the member's own, then the team's. **Entry points** the rail (on a phone, More) › Settings; Home's area block Administration.
 
 - C1. Under the heading: "Your own settings first; then the team's, which only administrators change."
 - C2. Section "Yours": links "Your account", "The assistant", "Your ties", "Your notes", "Recovery codes", each with its screen's purpose beneath.
-- C3. Administrator: section "How full your team's record is": "{used} of {limit} ({pct}%)" and `.storage.what`; from 70% `.storage.warn70`; fold "When it passes 90%, or its size isn't known" holding `.storage.warn90`, `.storage.unknown`; note `.storage.factors`.
+- C3. "How full your team's record is" is drawn on `group` (C11), not here.
 - C4. Administrator: section "The team's": links "Your team", "Who your team is", "Members", "The team's assistant", "Places and offices", "Security", "Updates", "Translations", "Wizards", each with its purpose.
-- C5. Section "For every member": link "Declared bias" with its purpose.
+- C5. Section "For every member" (`screen.settings.everyone`): links "Declared bias", "Your team's own rules", and, to a member who may use them, "Watched addresses", "Leads", each with its purpose.
 
 | State | When | What shows |
 |---|---|---|
@@ -426,7 +428,7 @@ States: one view; each section shows its value or its none line as listed. A mem
 
 | Action | When | Leads to |
 |---|---|---|
-| A1. each link | as its section | `account`, `connect`, `ties`, `notes`, `recovery`; `group`, `group-identity`, `members`, `teamai`, `places`, `security`, `updates`, `translations`, `wizards`; `bias`. |
+| A1. each link | as its section | `account`, `connect`, `ties`, `notes`, `recovery`; `group`, `group-identity`, `members`, `teamai`, `places`, `security`, `updates`, `translations`, `wizards`; `bias`, `grouprules`, `watching`, `leads`. |
 
 ## updates: "Updates"
 
@@ -592,21 +594,14 @@ States: one view; each section shows its value or its none line as listed. A mem
 
 Paths under `bio-plane/src/screens-settings/` unless longer; the design above stands.
 
-- `settings`: "How full your team's record is" is drawn on `group` instead (`group.mjs:254`).
-- `settings`: "For every member" also lists "Your team's own rules", "Watched addresses" and "Leads" (`settings.mjs:29`).
-- `members`: "More for administrators" links Your team, Places and offices, Recovery codes (`members.mjs:173`).
-- `members`: a removal under way (S3) is drawn inside "What removing an administrator takes", not as its own view (`members.mjs:274-290`).
-- `group-identity`: the three questions and `.ask.intro` are drawn, not `.ask.what` (`identity.mjs:59-60`).
-- `security`: no hour grid, totals, countries, "When you are told" or "What you can do" (`security.mjs`, no such key used).
+- `security`: no hour grid, totals, "When you are told" or "What you can do" (`security.mjs`, no such key used).
 - `connect`: "Check the connection" is not drawn (`connect.mjs:13-14`).
-- `bias`: the four views are one page of four parts (`bias.mjs:1-8`).
 - `recovery`: no "If you lose your codes too" (`recovery.mjs`, no `lost.*` key used).
 - `ties`: `.who.change` and `.summary` are not drawn (`screens-investigate/ties.mjs`).
-- `account`: the mockup has one section "Password and signing key"; the code has two, "Your password" and "Your signing key", both design rows, which C7 and C8 follow (`account.mjs:98`, `:123`).
-- `teamai`, `security`, `group`, `places`, `updates`: served to every member with a sentence saying whose screen it is, not `unavailable` (`teamai.mjs:37`, `security.mjs:51`, `group.mjs:67`, `places.mjs:44`, `updates.mjs:34`).
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
 - 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

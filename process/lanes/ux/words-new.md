@@ -1,4 +1,4 @@
-Length: 105 lines. Last section: "Marks settled by a row the table already holds".
+Length: 101 lines. Last section: "Marks settled by a row the table already holds".
 
 # New words the lane decided
 
@@ -18,8 +18,6 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `screen.home.join.why` | Why you'd like to join (optional) | daily-work / home C10 | lane |
 | `screen.home.join.declined` | Its owners declined your request on {date}. | daily-work / home C10 | lane |
 | `screen.home.join.declined.word` | Its owners declined your request on {date}: “{word}” | daily-work / home C10 | lane |
-| `screen.home.welcome.notnow` | Not now | daily-work / home S2 | mockup |
-| `screen.dash-action.title` | Action | daily-work / dash-action C1 | mockup |
 | `screen.dash-project.story.timeline` | Open the timeline | daily-work / dash-project A4 | mockup |
 | `screen.queue.lens.settle` | Settle it | daily-work / queue A2 | mockup |
 | `screen.queue.tension.open` | Open both | daily-work / queue A4 | mockup |
@@ -34,8 +32,6 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `screen.doorbell.consent.audience.team` | The whole team | outside-the-team / doorbell C8 (Differences) | mockup |
 | `screen.doorbell.consent.audience.public` | Anyone | outside-the-team / doorbell C8 (Differences) | mockup |
 | `screen.doorbell.consent.secret` | Your secret phrase | outside-the-team / doorbell C8 (Differences) | mockup |
-| `screen.doorbell.consent.answer` | Your answer | outside-the-team / doorbell C8 (Differences) | mockup |
-| `screen.doorbell.happens.court.link` | What that means | outside-the-team / doorbell C3 (Differences) | mockup |
 | `screen.project.objective.open` | Open the objective | projects-and-questions / project C6 | mockup |
 | `screen.project.suggested.head` | Suggested questions | projects-and-questions / project C15 | mockup |
 | `screen.project.suggested.open` | Open this question | projects-and-questions / project C15 | mockup |
@@ -81,7 +77,7 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `screen.calculation.expertise.declared` | declared, not confirmed: {label} | the-record / calculation C6 | lane (the words of `members`) |
 | `screen.explore.project` | For which project | the-record / explore C12 | lane (the words of `capture`) |
 
-74 rows: 28 from the mockup, 46 the lane's own, none from the code alone (every place where the code draws words had a row already; see below).
+70 rows: 24 from the mockup, 46 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there), none from the code alone (every place where the code draws words had a row already; see below).
 
 ## Marks settled by a row the table already holds
 

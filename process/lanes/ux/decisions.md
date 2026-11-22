@@ -1,4 +1,4 @@
-Length: 40 lines. Last section: "3. How the lane settles a line the design is silent on".
+Length: 41 lines. Last section: "3. How the lane settles a line the design is silent on".
 
 # The UX lane's design decisions
 
@@ -19,6 +19,7 @@ Kept by the UX lane; rank 5 on `process/ranking.md` (design decisions), below th
 - **U10. AI costs are shown to whoever pays.** On the AI screens and in J32, a cost line shows only to the member or administrators whose account pays, as the first beta's AI screens draw it (DEC-420); the earlier journey text that showed costs to every member is replaced. Grounds: the newer ruling stands over the older text; a member who pays nothing has no cost to weigh. (22 Nov 2026)
 - **U11. Settling the design-silent lines.** The 107 lines the first writing left "design silent" are settled by section 3, by three workers for this lane, 22 Nov 2026; the lane reviewed each choice made by section 3's third rule and keeps them as written on the pages. Two code differences they found go to ARCH as candidate flaws: Explore ticks three kinds by default, and a removed administrator is marked inactive (`member-roster/index.mjs:907`).
 - **U12. A refusal that has two rows.** Where a screen has its own row for a refusal (`screen.<id>.refusal.<CODE>`, as `capture` has for its fetch refusals), that screen shows its own row; everywhere else the shared row `refusal.<CODE>` shows. Grounds: the screen's own row was written for where the member stands; the shared row is the fallback. (22 Nov 2026)
+- **U13. ARCH's judgment of the code differences applied (22 Nov 2026):** requirements outrank the pages; U11's two candidates corrected (Explore's default groups stand by screens-people R24; a removed administrator is revoked by the owner's ruling D-610); U12 gives way on capture to screens-capture R45.
 
 ## 2. Put to the owner
 

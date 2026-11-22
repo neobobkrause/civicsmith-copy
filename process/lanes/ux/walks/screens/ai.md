@@ -42,7 +42,7 @@ Mark: `not built`.
 - **Frame.** Working. Rail place Settings; path "Settings › AI providers".
 - **Who can see it.** Administrators. Anyone else: `unavailable`, in its state for something the member may not see.
 - **Purpose.** The team's AI: the accounts in use in order, limits and alerts, the seven privacy and origin checks, what members may use, and the catalogue of providers and their plans (`screen.aiproviders.purpose`).
-- **Entry points.** `settings` (the design draws no row for it there yet: see Differences); back from `aiconnect`, `aitest`, `airesults` by their paths; direct address.
+- **Entry points.** `settings`, section "The team's": a row "AI providers" (`screen.aiproviders.name`) with its purpose, in place of "The team's assistant" (`not built`); back from `aiconnect`, `aitest`, `airesults` by their paths; direct address.
 
 **Content**
 - C1. Heading "AI providers" (`screen.aiproviders.title`); "Only administrators set this up. Members choose among what is allowed here." (`screen.aiproviders.intro`).
@@ -147,7 +147,7 @@ Mark: `not built`.
 - **Frame.** Working. Rail place Settings; path "Settings › Your AI".
 - **Who can see it.** Every member, each their own.
 - **Purpose.** Your own AI: what serves you now, your choices among what the team allows, your own accounts, the checks in force for you and what you have used (`screen.aimine.purpose`).
-- **Entry points.** `settings` (no row drawn there yet: see Differences); `aiconnect` A9; direct address.
+- **Entry points.** `settings`, section "Yours": a row "Your AI" (`screen.aimine.name`) with its purpose, in place of "The assistant" (`not built`); `aiconnect` A9; direct address.
 
 **Content**
 - C1. Heading "Your AI" (`screen.aimine.title`); "Which AI serves your work, what you may choose, and what it costs. Your team's administrators decide what is offered." (`.intro`).
@@ -185,7 +185,7 @@ Mark: `not built`. Not the alpha's `projectai`, which stays as it is.
 - **Frame.** Working. Rail place Projects; path "<project name> › AI for this project".
 - **Who can see it.** Every member who can see the project; only its owners change it.
 - **Purpose.** The AIs this project uses, its budget and order, and the checks that apply to the work done directly in it (`screen.aiproject.purpose`).
-- **Entry points.** The project (`project`); the design draws no link there yet (see Differences); direct address.
+- **Entry points.** `project` C9: its link "Open AI for this project" (`.account.open`) leads here in place of `projectai` (`not built`); direct address.
 
 **Content**
 - C1. Heading "AI for this project" (`screen.aiproject.title`); "Which of the team's AIs {project} uses, its own limit and its order." (`.intro`).
@@ -321,10 +321,10 @@ Mark: `not built`.
 ## Differences seen in the code
 
 - None of the seven screens has code (`bio-plane/src` names them only in generated data: `setup-words/rows.mjs`, `wizard-scripts/screen-registry.mjs`); each address draws `unavailable` (`interface-shell/browser.mjs:1266`).
-- Design gaps, not code: no row on `settings` leads to `aiproviders` or `aimine`, and no link on `project` leads to `aiproject`; the design reaches them only by their paths. The mockup shows `aimoments` as a page under a project's path while its frame is the dock.
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
 - 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

@@ -1,4 +1,4 @@
-Length: 427 lines. Last section: "Changes".
+Length: 424 lines. Last section: "Changes".
 
 # Screens: Projects and questions
 
@@ -70,7 +70,7 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 | S1 In use | a member of the project, the project holding questions | C1 to C14 as above. |
 | S2 New, no questions | the project holds no question | Heading 1 the title; "Opened by {name} on {date}." (`.opened`); `.questions.empty`; field "Your first question" (`project.firstquestion`) with help (`project.firstquestion.help`); buttons "Open a question" (`act.promote.label.project`) and "Draw on a question from elsewhere" (`act.drawquestion.label.project`). |
 | S3 Every owner gone (an administrator) | every owner has left the team; an administrator opens it | `.rescue.opened`; heading `project.rescue.title` with `project.rescue.says`; field "Why" (`.rescue.why.help`); button "Become its owner" (`project.rescue.go`); `project.rescue.own`. Nothing else of the project. |
-| S4 Not a member | a member of the team who has not joined | Heading 1 and the line it asks; `project.notmember`; button "Ask to join" (`act.projectrequest.label.project`). After asking: "You asked to join on {date}. Its owners decide." (`projects.request.asked`) and button "Withdraw your request" (`act.projectrequestwithdraw.label.project`). No documents, questions or members. |
+| S4 Not a member | a member of the team who has not joined | Heading 1 and the line it asks; "You can see that this project exists, but not its work, until you join it." (`screen.project.notjoined`) and "Ask an owner to invite you: {owners}." (`.notjoined.owners`); button "Ask to join" (`act.projectrequest.label.project`). After asking: "You asked to join on {date}. Its owners decide." (`projects.request.asked`) and button "Withdraw your request" (`act.projectrequestwithdraw.label.project`). No documents, questions or members. |
 | S5 An owner standing down | a vote to end an owner's ownership is open | `.dev.is.standing.down.as`; section "What it takes" (`.standdown.heading`) with `.this.takes.2.of.2`, each owner `.standdown.agreed` or `.standdown.notyet`, `.1.of.2.have.agreed`; button "Agree: {member} stands down as owner" (`.agree.dev.stands.down.as`); table "How it changes with the number of owners" (`.how.it.changes.with.the`); section "Before you vote" (`.standdown.beforevote`) with the `.ownerstand.*` lines and field "Your reason" (`shell.reason`). |
 | S6 Preparing a notice | an owner presses "Tell the network we are working on this" | Heading 1 `.notice.tell.the.network.you.are`; four fields (`.notice.what.the.team.is.working`, `.notice.a.few.words.more.optional`, `.notice.the.matter.it.belongs.to`, `.notice.working.on.it.since`); checkbox `.notice.we.welcome.others.who.want`; button "Preview the notice"; the preview marked `screen.connect.outward`; checkbox `.notice.i.understand.that.this.is`; button "Sign and publish the notice". |
 | S7 Notice published | the notice is signed and published | `.notice.the.notice.is.published.at`; section "The notice" (`.notice.thenotice`) with its wording, `.notice.as.the.teams.civicsmith.worked`, `.notice.the.next.monthly.check.is`; section "Change it or stop it" (`.notice.change.it.or.stop.it`) with buttons "Change the notice" (`.notice.change`) and "Stop the notice…" (`.notice.stop`). |
@@ -328,7 +328,7 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 
 **Content, without the assistant (S5)**
 - C5. Heading 1 "Find and count" (`.offtitle`); `.offsub`.
-- C6. A search field and button "Search" (`act.search.label.finder`).
+- C6. A search field "Your words" (`screen.finder.words`) and button "Search" (`act.search.label.finder`).
 - C7. Results: one row per document, its title a link to `document`, marked "Found by search" (`mark.origin.search.name`); a count line `.count.line` where a table was counted; with none, `screen.finder.none`.
 - C8. C4's buttons and lines.
 - C9. `not built` Pressing "Keep asking this" (C4, C8) first opens, beside it, a select "How often" (new word, key proposed: `screen.answers.often`), offering "every week" (`.cadence.weekly`) and any other cadence the product runs, none chosen, and a field "Until when" (new word, key proposed: `screen.answers.until`), a day, required; the question is kept only once both are given. Sent without either: `shell.field.needed`, and nothing is kept.
@@ -414,14 +414,11 @@ Paths are under `bio-plane/src/`.
 
 - `screens-inquiry/assistant.mjs:236-243`: the dock draws "Ask the assistant to work on this", "Suggest" and "Stop the run", but no field "Ask about this screen" and no "Ask" (registry act `ask` on `assistant`); C7 and A1 above are not built.
 - `screens-inquiry/project.mjs`: no "Suggested questions" section (C15 is `not built`). The mockup's words stand: "Suggested questions" (new word, key proposed: `screen.project.suggested.head`) and "Open this question" (new word, key proposed: `screen.project.suggested.open`).
-- `screens-inquiry/project.mjs:167`: the not-joined state is drawn with "You can see that this project exists, but not its work, until you join it." where the design draws "You aren't in this project. Ask to join, and its owners decide." (`project.notmember`), and adds "Ask an owner to invite you: {owners}." (`screen.project.notjoined.owners`).
 - `screens-daily/answers.mjs:148`: without the assistant, "Show how this was counted" is drawn only after words are searched and while the rule services read on; the design shows it with every count.
-- `screens-daily/answers.mjs:145`: the search field without the assistant is labeled "Your words" (`screen.finder.words`); the design draws no label.
-- `screens-inquiry/question.mjs:145`: "Read in my language" is drawn only while the assistant is reachable; the design's mockup draws it without the assistant too. The page above follows the rule "absent, not greyed" and marks it `AI`.
-- Not the code but the design's own sources: the objective mockup (`docs/development/ux-substrate/screens/mock-screens.js:1557`) draws "Whose it is" and "Put it off"; the word table has "Who holds it" and "Defer it", quoted here.
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
 - 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

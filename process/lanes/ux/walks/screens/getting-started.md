@@ -1,4 +1,4 @@
-Length: 477 lines. Last section: "Changes".
+Length: 472 lines. Last section: "Changes".
 
 # Screens: Getting started
 
@@ -79,7 +79,7 @@ The website and the installer are separate programs from the team's Civicsmith: 
 | State | When | What shows (exact) |
 |---|---|---|
 | S1 Do you already have a Cloudflare account? | `/` opened | Heading "Do you already have a Cloudflare account?" (`installer.guide.ask.title`); `installer.guide.ask.sub`; A1, A2. |
-| S2 The first page | after A1, or the guide's last step | Heading "Create your Civicsmith team" (`screen.install.name`); "Two choices here, then Cloudflare. What your team needs first is on civicsmith.org." (`screen.install.sub`); A3. Section "Your team's short name" (`screen.install.short.heading`): `screen.install.names`; field "Short name" (`installer.shortname.label`), help `installer.shortname.hint`. Section "Your team's places" (`installer.places.heading`): a choice of the places the installer holds, the last "None of these: we enter due dates and offices ourselves" (`screen.install.places.none`), help `screen.install.places.help`. Section "Where your team's record is kept" (`screen.install.region.head`): "Near you: {region}" (`screen.install.region.near`), `screen.install.region.why`, and the option "Our team must keep its record in a particular region" (`screen.install.region.legal`) opening field "Keep the record in" (`screen.install.region.field`, ten regions `screen.install.region.*`) — `not built`. A4. |
+| S2 The first page | after A1, or the guide's last step | Heading "Create your Civicsmith team" (`screen.install.name`); "Two choices here, then Cloudflare. What your team needs first is on civicsmith.org." (`screen.install.sub`); A3. Section "Your team's short name" (`screen.install.short.heading`): `screen.install.names`; field "Short name" (`installer.shortname.label`), help `installer.shortname.hint`. Section "Your team's places" (`installer.places.heading`): a choice "Places this installer holds" (`installer.places.legend`) of the places it holds, the last "None of these: we enter due dates and offices ourselves" (`screen.install.places.none`), help `screen.install.places.help`. Section "Where your team's record is kept" (`screen.install.region.head`): "Near you: {region}" (`screen.install.region.near`), `screen.install.region.why`, and the option "Our team must keep its record in a particular region" (`screen.install.region.legal`) opening field "Keep the record in" (`screen.install.region.field`, ten regions `screen.install.region.*`) — `not built`. A4. |
 | S3 The first page, civicsmith.org not online | as S2, while the site is not published | As S2, with "What you need" in place of A3: `screen.install.need.cloudflare`, "About twenty minutes, at a computer." (existing row `installer.need.time`, as the installer draws it, `newgroup/src/ui.mjs:220`), "No Claude account: the assistant is optional." (`screen.install.need.claude`). |
 | S4 The short name is permanent | A4 pressed with a short name | A full dialog: heading "“{name}” is permanent" (`installer.permanent.heading`); `screen.install.permanent`; A5, A6. |
 | S5 Check my account: lines not ready | A12 | `not built`. Heading "Check my account" (`screen.install.check.title`); `screen.install.check.sub`; one row per line, each "Ready" (`screen.install.check.ready`) or "Not ready yet" (`.notready`) with its words: "Workers Paid", "Containers", "Room under your account's limits", "The short name", "Payment card" (`screen.install.check.*.name`, `.ok`, `.fix`); "Install now opens when every line is ready." (`screen.install.check.closed`); `screen.install.check.creates`; A13. |
@@ -174,7 +174,7 @@ The website and the installer are separate programs from the team's Civicsmith: 
 - C3. Section "What we have published" (`screen.front.published`): one row per published case, its title as a link (or "A published case", `screen.front.untitled`) and "Edition {edition} · {date} · signed by {signer}" (`screen.front.edition`, or `.edition.nosigner`); then link "All our published cases" (`screen.front.allpublished`). With nothing published, no section.
 - C4. Section "Have something for us?" (`screen.front.doorbell`): `screen.front.doorbell.what`; A3.
 - C5. Section "How we work" (`screen.front.how`): `screen.front.how.what`; A4.
-- C6. Section "Members" (`screen.front.members`), the sign-in panel (beside C3 to C5 on a desktop, below them on a phone): field "Your handle" (`screen.front.handle`), help `signin.handle.help`; field "Password" (`screen.entry.password`); choice "This device is" (`screen.front.device`): "My own: keep me signed in (it locks after 30 minutes away; you sign in again after 12 hours)" (`session.keep`, chosen), "Shared or public: sign me out after 15 minutes away" (`session.shared`); A1, A2; "Invited? Open the link you were sent: it brings you here to join." (`screen.front.invited`).
+- C6. Section "Members" (`screen.front.members`), the sign-in panel (beside C3 to C5 on a desktop, below them on a phone): field "Your handle" (`screen.front.handle`), help `signin.handle.help`; field "Password" (`screen.entry.password`); choice "This device is" (`screen.front.device`): "My own: keep me signed in (it locks after 30 minutes away; you sign in again after 12 hours)" (`session.keep`, chosen), "Shared or public: sign me out after 15 minutes away" (`session.shared`); A1, A2; "Not a member yet? Members join by an invitation from one of the team's administrators: open the link you were sent and it brings you to join." (`screen.front.notmember`).
 - C7. At the foot: "{group} uses Civicsmith." (`screen.entry.uses`).
 - C8. Tab title "{team's name} · {team}" (`page.title.public`).
 
@@ -296,7 +296,7 @@ The website and the installer are separate programs from the team's Civicsmith: 
 - C1. Heading level 1 "Forgot your password" (`screen.forgot.name`); "Civicsmith sends no email, so getting back in goes through your team, not a mailbox." (`screen.forgot.lede`).
 - C2. Section "Use one of your recovery codes" (`screen.forgot.codes`): field "Your handle" (`screen.front.handle`), help `forgot.handle.help`; field "One of your recovery codes" (`screen.forgot.code`), help `screen.forgot.code.help`; field "A new password" (`screen.entry.newpassword`), help `screen.entry.twelve`; field "Type it again" (`screen.entry.again`); A1.
 - C3. Section "No codes to hand? Ask an administrator for a reset link" (`screen.forgot.admin`): `screen.forgot.admin.what`.
-- C4. Section "If no administrator can get in" (`screen.forgot.noadmin.heading`): `screen.forgot.noadmin.what`.
+- C4. Section "If you cannot sign in" (`screen.forgot.help.heading`): "Your team's administrators can help you: ask one of them for a reset link." (`.help.s1`) "If none of them can sign in either, whoever holds your team's hosting account can open the way back in for them." (`.help.s2`).
 
 **States**
 
@@ -461,17 +461,12 @@ The website and the installer are separate programs from the team's Civicsmith: 
 
 ## Differences seen in the code
 
-- `front` draws "Not a member yet? …" (`screen.front.notmember`) where the design draws "Invited? Open the link you were sent: it brings you here to join." (`screen.front.invited`) (`bio-plane/src/screens-entry/front.mjs:83`).
-- `forgot` draws a section "If you cannot sign in" (`screen.forgot.help.heading`, `.help.s1`, `.help.s2`) in place of "If no administrator can get in" (`screen.forgot.noadmin.*`) (`bio-plane/src/screens-entry/forgot.mjs:29-32`).
 - The public and setup frames draw no path; the design draws one ("Lakeshore Tenants › Forgot your password" and the like) (`bio-plane/src/interface-shell/browser.mjs:1364-1367`).
-- `install` opens on the guide's question (S1), before the first page (S2); the design's first page is S2 with the guide beside it (`newgroup/src/ui.mjs:274`; `newgroup/src/guide.mjs:61`).
 - `install` draws no "Check my account" (S5, S6, A12 to A14) and no record region (S2) (`newgroup/src/ui.mjs:270-305`).
-- `install` S2's places choice is headed "Places this installer holds" (`installer.places.legend`) where the design draws "The places whose rules apply" (`newgroup/src/ui.mjs:101`).
 - `setup` A1 is drawn "Claim it and become its administrator" (`screen.setup.claim.button`); the registry's label is "Claim with the one-time password" (`bio-plane/src/screens-entry/setup.mjs:166`).
-- `setup` part 8 asks a short id and who the administrator is before inviting; the design draws the button alone (`bio-plane/src/screens-entry/setup.mjs:373-375`).
-- `join`'s design button reads "Join {group}" and the join link's "Continue"; the code draws the registry labels "Join with a handle and password" and "Join through the team's join link" (`bio-plane/src/screens-entry/join.mjs:76`, `:52`).
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

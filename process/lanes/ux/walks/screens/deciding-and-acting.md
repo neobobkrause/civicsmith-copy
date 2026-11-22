@@ -1,4 +1,4 @@
-Length: 502 lines. Last section: "Changes".
+Length: 499 lines. Last section: "Changes".
 
 # Screens: Deciding and acting
 
@@ -62,7 +62,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 | S3 a project with no plan | Address names a project with none | Heading "Action plans"; note "This project has no action plan yet. To start one, choose “Plan what to do” under the project's questions, or on one question's own page." (`.none`). |
 | S4 closed plan | Closed | C1 "Closed" and `.closedwhy`; no add, decide, start, scenario or close control; closed empty: `.empty`. |
 | S5 assistant at work | After A3 | Tray: `.ask.running`; asked twice `.ask.already`; finished `.ask.ended`. `AI` |
-| S6 assistant unreachable | No AI account (the walk) | No tray "Suggested by the assistant · not yet in the plan" (`.suggested`), no "Ask the assistant for options", no "Help me write this"; the design shows the note `.nosuggestions` ("No options are suggested yet: none of this project's matters has a route to suggest from."). |
+| S6 assistant unreachable | No AI account (the walk) | No tray "Suggested by the assistant · not yet in the plan" (`.suggested`), no "Ask the assistant for options", no "Help me write this", and no note in the tray's place. |
 
 **Actions**
 
@@ -144,7 +144,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 | V2 text | empty | "Write what is sent first." (`.text.needed`) |
 | V3 day sent | empty | "Give the day you sent it first." (`.sentat.needed`) |
 | V4 how sent | empty | "Say how you sent it first." (`.how.needed`) |
-| V5 template | not approved; name taken; needs counsel | `.template.refused.unapproved1`; `.template.refused.taken1`; `.template.refused.tier1` (each with its second sentence) |
+| V5 template | not approved; name taken; needs counsel | the shared `refusal.<CODE>` (every-screen section 7) |
 
 ---
 
@@ -158,8 +158,8 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 **Content**
 - C1. Heading "Glossary"; sub-line "What the terms and marks in the record mean." (`.sub`).
 - C2. Paragraph `.intro` ("A term underlined with dots in the record explains itself when you rest on it, and opens this page when you choose it. …").
-- C3. Section "Money and budgets" (`.money.heading`): ACFR, CAFR, GPF, FY (`.money.<t>.name`), each with its meaning (`.money.acfr` etc.).
-- C4. Section "How the record is kept honest" (`.honest.heading`): Fingerprint, Timestamp, Signature, Manifest, Provenance, each with its meaning (`.honest.<t>`).
+- C3. Section "Money and budgets" (`.money.heading`): ACFR, CAFR, GPF, FY (`glossary.term.<t>`), each with its meaning (`.money.acfr` etc.).
+- C4. Section "How the record is kept honest" (`.honest.heading`): Fingerprint, Timestamp, Signature, Manifest, Provenance (`glossary.term.<t>`), each with its meaning (`.honest.<t>`).
 - C5. Section "What each state allows" (`.states.heading`): sixteen rows, each a state chip (review, reviewed, retired, open, concluded, deferred, dismissed, divided, published, waiting, planned, active, resolved, abandoned, flagged, watched) with `state.item.<k>.means`, `.can` and, where held, `.cannot`.
 - C6. Note "A document can bring terms of its own. They open from the word on that document and are kept with it, not listed here." (`.documentterms`).
 
@@ -305,6 +305,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 | A12 button "Remind me" (`act.reminderset.label.action`) | always | Same screen. W1. |
 | A13 button "Make the action confidential, or not" (`act.actionscope.label.action`; mock "Make confidential…") | always | Same screen, C1 shows `.scope.confidential` or `.scope.open`. W3. Before it is done: `act.actionscope.does` (protected). |
 | A14 "Record the reply" (`.minutes.record`) | S5 | Same screen. W2. |
+| A15 link "Brief counsel" (`screen.counsel.name`), its card `screen.counsel.purpose` | always | `counsel` for this action. |
 
 **Form messages** (under "When a reply is not recorded"; each is two keyed sentences): V1 the day not real: `.the.day.is.not.a.real`. V2 both or neither held: `.a.reply.needs.either.the.document`. V3 a silence with a document: `.a.silence.has.no.document.or`. V4 silence where no reply is owed: `.this.action.says.no.reply.is`. V5 kind does not fit: `.that.kind.of.reply.does.not`. V6 outcome: `.a.decision.needs.what.it.decided`. V7 fee: `.a.fee.quote.needs.an.amount`. V8 the office's date without law: `.the.date.the.office.gave.needs`. V9 a quotation mark, backslash, line break or too long: `.a.line.has.a.quotation.mark`. V10 another member recording: `.another.member.is.recording.on.this`. Also: `.reply.at.needed`, `.reply.account.needed`, `.pressure.needed`, `.minutes.notfound`, `.minutes.needed`.
 
@@ -367,7 +368,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 - **Address.** `/app/counsel/<action id>`. **Frame.** Working. Path: Projects › {project} › Action › "Brief counsel".
 - **Who can see it.** A member who can see the action; reading or saving a version needs sight of every project the packet draws on. Anyone else: `unavailable`.
 - **Purpose.** A packet for the team's lawyer on one action, for a claim or a defense (`.purpose`).
-- **Entry points.** Its address (the design draws no link to it on another screen; `start-send` says "A packet for a lawyer to read can be prepared beside this text." `screen.start-send.offer.counsel_packet`).
+- **Entry points.** `action` (A15); its address (`start-send` says "A packet for a lawyer to read can be prepared beside this text." `screen.start-send.offer.counsel_packet`).
 
 **Content (S1, a packet for a claim)**
 - C1. Heading "Brief counsel"; sub-line `.sub` ("… It is never published and never filed.").
@@ -485,18 +486,14 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 
 ## Differences seen in the code
 
-- `plan`, assistant unreachable: the code draws nothing where the design shows the note `.nosuggestions` (bio-plane/src/screens-action/plan.mjs:457).
 - `plan`: the code draws none of the design's explanatory tips `screen.plan.tip.*` and no `.purpose`; the screen draws no disclosure: the design's "Decide the options you picked", "When an option is not added", "When a decision is not recorded" and "When a scenario is not laid out", with their words (V1 to V12 as listed), are not read (bio-plane/src/screens-action/plan.mjs).
-- `start-send`: the design's `.secondapproval` note and the six later kinds `.kind.records_petition` … `.kind.constitutional_claim` are not read; the template refusal sentences are not read (bio-plane/src/screens-action/start-send.mjs).
-- `action`: the code draws a link to `counsel`, which the design's `action` does not draw (bio-plane/src/screens-action/action.mjs:516).
-- `action`: the design's reply-refusal disclosure "When a reply is not recorded" (V1 to V10) and the "How it ended" words `.ended.*` and `.resolution.said.*` are not read by the screen (bio-plane/src/screens-action/action.mjs).
+- `action`: the design's reply-refusal disclosure "When a reply is not recorded" (V1 to V10) and the "How it ended" words `.ended.*` are not read by the screen (bio-plane/src/screens-action/action.mjs).
 - `counsel`: the code has no section "Packets assembled for this action" and no acts "Read this version" or "Save as a file"; only `counselpacket` (bio-plane/src/screens-action/counsel.mjs:84-88).
-- `glossary`: the term names are read from `glossary.term.<t>` keys, not `.money.<t>.name` / `.honest.<t>.name` (same English) (bio-plane/src/screens-settings/glossary.mjs:19).
 - `matter`: the design's refusal disclosures ("When it cannot be recorded" and the rest) are not drawn; its only disclosures are "If you choose unclear", "If you assess it yourself", "If you say why it happened", "At the political accountability stage" (bio-plane/src/screens-action/matter.mjs:156, :313, :360, :375).
-- `request`: the law choice's help `.law.help` is not read (bio-plane/src/screens-action/request.mjs).
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
 - 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

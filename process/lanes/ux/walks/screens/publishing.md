@@ -162,7 +162,7 @@ Preparing a case, sharing a draft for review, the publication ceremony, the publ
 | State | When | What shows |
 |---|---|---|
 | S1 the ceremony, at its last steps | A prepared edition, owner, key in browser, computer | C1 to C12, step "Ties" marked. |
-| S2 your device confirms the signature | After a signing button | Step "Sign"; box "Confirm on your device" (`.device.head`, protected): `signing.ceremony.device` (protected); an example window "Your device's own window (it looks different on each device)" (`.device.example`) with "Use your signing key?"; `.device.cancel` (protected: "If you cancel there, or your device doesn't confirm, nothing is signed or published, and you are back at the last step with everything as it was."). |
+| S2 your device confirms the signature | After a signing button | Step "Sign"; the shell's signing dialog (page "Every screen", section 6): "What your key signs, exactly" (`shell.signer.exactly`), the list, `signing.ceremony.device` (protected), "Sign with my key" (`shell.signer.sign`) and "Don't sign" (`shell.signer.decline`). Declined: nothing is signed or published (`signing.ceremony.declined`). |
 | S3 signed, publishing at the set time | Signed with a set time | Step "Sign" done; `signing.ceremony.signedat` (protected: "Signed. Edition {edition} becomes public on {date} at {time} ({zone}). Until then it waits, not public. …"); rows "Edition {n}", "Findings …", "The {n} pieces of evidence" (`.signed.evidence`) each "signed" (`.signed`); buttons "Move the publishing time", "Cancel publishing"; note `.signedat.note`. |
 | S4 signed and published now | Signed now | `signing.ceremony.signednow` (protected: "Signed and published. Edition {edition} is public now: …") + `.signednow.told`; link "Open the public page" (`.publicpage`) to `published`. |
 | S5 no signing key in this browser | No key here | Box with `signing.ceremony.nokey` (protected: "You have no signing key in this browser. Register one here: …"), `.nokey.keyfile`; check `signing.ceremony.keepkey` (protected); button "Register a signing key in this browser", primary; button "Use a key file you already have" (`shell.signer.load`); `.nokey.elsewhere`. While registering: `.registering`; after: `.registered`. |
@@ -391,7 +391,6 @@ No assistant on this screen.
 
 ## Differences seen in the code
 
-- `ceremony` S2: the device confirmation is drawn by the shell's signing dialog, which reads `signing.ceremony.device` and `shell.signer.*`, not `.device.head`, `.device.example` or `.device.cancel` (bio-plane/src/interface-shell/browser.mjs:1405-1430).
 - `ceremony`: the protected words `.when.note`, `.when.chosen`, `.signs.lines`, `.signs.linesabout`, `.publishat.button` and `.photos.rules` are not read by key in the screen (bio-plane/src/screens-publish/ceremony.mjs).
 - `ceremony`: the refusal disclosures "When a contradiction is refused" and "When these are refused" (`.disc.refused.*`, `.conf.refused.*` except `.conf.refused.noreason1`) are not read (bio-plane/src/screens-publish/ceremony.mjs).
 - `review-copy`: the band `.band` and the link line `.link.line` (both protected) and the live-link counts `.links.shared`, `.links.comments.*` are not read (bio-plane/src/screens-publish/review-copy.mjs).
@@ -406,3 +405,4 @@ No assistant on this screen.
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
 - 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).

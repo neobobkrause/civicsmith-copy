@@ -1,4 +1,4 @@
-Length: 463 lines. Last section: "Changes".
+Length: 462 lines. Last section: "Changes".
 
 # Screens: The record
 
@@ -38,7 +38,7 @@ What the record follows: people and organizations, time, money, calculations, co
 - C1. Heading 1 "People" (`.name`); `.notmembers`; a link "Settings › Members" (`.members`) to `members`.
 - C2. A search field (placeholder "Name or office", `.q`) and button "Search people and organizations" (`act.search.label.people`); selects "Show" (`.show`: "People and organizations", "People", "Organizations", "Offices", "Ordinances", "Contracts", "Funds and programs", "Sources", "Everything the record follows"; `.show.*`), "Holding an office in" (`.office`, first "Any body"), "Named in" (`.named`: "Any project", "Your projects", then each project), "Named recently" (`.since`: "At any time", "In the last 30 days", "In the last 90 days", "In the last year").
 - C3. The count line `.countline` ("The record follows {following} people and organizations; {mine} are named in your projects. …").
-- C4. Heading 2 "In your projects" (`.yours`), then heading 2 "Everyone else the record follows" (`.others`), newest added first in each. Each row: the name as a link to `person`, who they are today, "named in {documents}, {questions} and {projects}" (`.counts.three`; or `.counts.docsonly`, `.counts.none`), "newest added {date}" (`.newest`), and button "Explore connections" (`act.explore.label.people`).
+- C4. Heading 2 "In your projects" (`.yours`), then heading 2 "Everyone else the record follows" (`.others`), newest added first in each. Each row: the name as a link to `person`, who they are today, "named in {documents}, {questions} and {projects}" (`.counts.three`; or `.counts.docsonly`, `.counts.none`), "newest added {date}" (`.newest`), and, on a row named in at least one document, button "Explore connections" (`act.explore.label.people`); a row with `.counts.none` has none.
 - C5. Button "Add someone the record follows" (`act.entitycreate.label.people`), Asks for a reason.
 - C6. Over many rows: "The first {n} are shown. Search or filter to find the rest." (`.more`).
 - C7. In S5, as "Their name" is typed, the close names the record already follows, as S7 lists them: `.addother.preflight` ("Nothing the record follows answers to “{name}” yet. Close names are listed here, so you do not make a second page for the same thing.") and each close name as a link to its `person`, with "The same name", "Contains the name you typed" or "Spelled almost the same" (`people.nearmatch.*`). Pressing A5 still follows the name, as a second record; a member says two records are one on `person` (A6). `not built` in S5 (the code lists close names in S7 only).
@@ -293,7 +293,7 @@ What the record follows: people and organizations, time, money, calculations, co
 
 **Content (S1)**
 - C1. Heading 1 "Explore connections" (`.name`); a line naming the start, the end, what is followed and as of when.
-- C2. Group "Follow" (`.follow.legend`) with checkboxes "Position or membership" (existing row `connection.kind.pos.name`, as the code draws it; the mockup's "Positions and memberships" is not kept), "Money" (`connection.kind.money.name`), "Took part" (`connection.kind.part.name`), "Mentioned together" (`connection.kind.ment.name`), "Same person?" (`connection.kind.same.name`); buttons "Explore" (`act.explore.label.explore`), "Use a preset" (`act.explorepreset.label.explore`), `not built` "List every connection" (`.all.button`) and "Find the most direct path" (`.direct.button`).
+- C2. Group "Follow" (`.follow.legend`) with checkboxes "Position or membership" (existing row `connection.kind.pos.name`, as the code draws it; the mockup's "Positions and memberships" is not kept), "Money" (`connection.kind.money.name`), "Took part" (`connection.kind.part.name`), "Mentioned together" (`connection.kind.ment.name`), "Same person?" (`connection.kind.same.name`), the first three ticked on opening (screens-people R24; every-screen rule 1 gives way here); buttons "Explore" (`act.explore.label.explore`), "Use a preset" (`act.explorepreset.label.explore`), `not built` "List every connection" (`.all.button`) and "Find the most direct path" (`.direct.button`).
 - C3. Heading 2 for the graph from the start, with its legend.
 - C4. Heading 2 "Most direct path" (`.direct.head`): the chain, each step a link (`person`, `document`, `money`), its grade, steps, weakest step and date; a note on how the most direct path is chosen ("a fact about the chains, not a judgment of them").
 - C5. Heading 2 "Every connection between them" (`.all.head`): each chain with grade, steps and weakest step; a chain through a hub "a hub: shown, not walked through"; a chain with a declared step "a lead, not a finding" with button "Attach a source to a declared step" (`act.stepsource.label.explore`); an evidenced chain with button "Check a chain" (`act.exploreverify.label.explore`). If cut short: "The explorer stopped early so as to answer quickly, and shows what it found. More may exist." (`.all.cut`) and `not built` button "Keep looking" (`.all.continue`).
@@ -451,13 +451,12 @@ What the record follows: people and organizations, time, money, calculations, co
 
 Paths are under `bio-plane/src/`.
 
-- `screens-investigate/people.mjs:106`: "Explore connections" is drawn only on a row named in at least one document; the design draws it on every row (and in S4 inside "Follow from here").
 - `screens-investigate/people.mjs`, `timeline.mjs`, `money.mjs`, `explore.mjs`: the "Follow from here" buttons for `followfrom` and `registersearch` (owed, DEC-409 and DEC-406) are not drawn; on `explore`, `exploreall`, `explorepath`, `exploreshorter` and `explorecontinue` are not drawn either. Marked `not built` above.
 - `screens-investigate/people.mjs:58-62`: adding a thing that is not a person or organization (S7) ends in "Follow them" (`screen.people.add.submit`); the design draws "Follow it". The design's words stand: "Follow it" (new word, key proposed: `screen.people.addother.submit`).
-- `screens-action/help-records.mjs:1-8`: no place is named in the screen's words; every fact is filled from the team's places, and a section the profile cannot fill is not drawn. The design mockup draws Oakland's law in full; on the walk's made-up place S2 is expected.
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
 - 22 Nov 2026: words with no row decided (words-new.md).
+- 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).
