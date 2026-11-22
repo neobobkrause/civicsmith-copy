@@ -4,9 +4,9 @@ Length: <N> lines. Last section: "Changes".
 
 Page `the-record` of the Screens document (index: ../index.md). Written 22 Nov 2026 by a worker for civicsmith ux lane #1.
 
-What the record follows: people and organizations, time, money, calculations, connections, proceedings, due dates and standards, with two help pages. What binds every screen is on the page "Every screen" and is not repeated. Words are quoted from the interface word table with their key; a sample value in a quote (a name, a date, a count) stands for the record's own. "(no word row)" marks a sentence the table lacks. In a screen's section, a key starting with a dot stands for `screen.<that id>` followed by it (in `people`, `.none` is `screen.people.none`). A key given alone, in place of words, means the screen shows that row's whole sentence there.
+What the record follows: people and organizations, time, money, calculations, connections, proceedings, due dates and standards, with two help pages. What binds every screen is on the page "Every screen" and is not repeated. Words are quoted from the interface word table with their key; a sample value in a quote (a name, a date, a count) stands for the record's own. "(no word row)" marks a sentence the table lacks. In a screen's section, a key starting with a dot stands for `screen.<that id>` followed by it (in `people`, `.q` is `screen.people.q`). A key given alone, in place of words, means the screen shows that row's whole sentence there.
 
-**The assistant on these screens.** None of these screens needs the assistant. The walk runs with no AI account, and then sees: no "Help me write this" (`act.writinghelp.label.person`) on `person`; on `standard` only proposals members made; on `explore` the line "Ask the assistant to research this" (`.later.assist`) as a thing that "Comes in the first beta" (`.later.when`), not as a control. Anything the assistant made, where shown, carries "Machine work · the assistant, at {who}'s request" (`ai.machine.request`) and is not a standard, a fact or a step until a member adopts it.
+**The assistant on these screens.** None of these screens needs the assistant. The walk runs with no AI account, and then sees: no "Help me write this" (`act.writinghelp.label.person`) on `person`; on `standard` only proposals members made; on `explore` the line "Ask the assistant to research this" (`screen.explore.later.assist`) as a thing that "Comes in the first beta" (`screen.explore.later.when`), not as a control. Anything the assistant made, where shown, carries "Machine work · the assistant, at {who}'s request" (`ai.machine.request`) and is not a standard, a fact or a step until a member adopts it.
 
 **"Follow from here".** Rows on `people`, `timeline`, `money` and `explore` carry a fold "Follow from here" (`screen.follow.label`). Its buttons that follow into another dimension (act "Follow this item into another dimension", `act.owed_followfrom.label.people`) and search the registers (`act.owed_registersearch.label.people`) are `not built`; its "Documents that …" button (act `search`) leads to `finder` with the item's names, and "Connections to…" (`screen.follow.conn`) leads to `explore` from the item.
 
@@ -14,7 +14,7 @@ What the record follows: people and organizations, time, money, calculations, co
 
 | id | heading | address | built? |
 |---|---|---|---|
-| `people` | "People" (`.name`) | `/app/people` | built (`screens-investigate/people.mjs`) |
+| `people` | "People" (`screen.people.name`) | `/app/people` | built (`screens-investigate/people.mjs`) |
 | `person` | the person's or thing's name (screen name "Person") | `/app/person/<entity>` | built (`screens-investigate/person.mjs`) |
 | `timeline` | "Timeline" (`screen.timeline.name`), or the matter's or progression's name | `/app/timeline/<project>[/…]` | built (`screens-investigate/timeline.mjs`) |
 | `money` | the money trail's name (screen name "Money trail") | `/app/money/<project or trail>` | built (`screens-investigate/money.mjs`) |
@@ -96,7 +96,7 @@ What the record follows: people and organizations, time, money, calculations, co
 | State | When | What shows (exact) |
 |---|---|---|
 | S1 A person | an entity of kind person | C1 to C7. |
-| S2 An organization | an organization | C1, C2; an "Offices in it" section (no word row) with each office and its holder; "Same organization?" (`.same.org`); select "What kind of fact" with `.kind.help.org`; section "Records its offices keep" (`.keeper.heading`) with `.keeper.intro.a` `.keeper.intro.b`, each statement with button "Withdraw this statement, with a reason" (`act.linewithdraw.label.person`), the form "The office" (`.keeper.office.label`), "What it does with them" (`.keeper.kind.label`: "Keeps the records on the subject", "Is responsible for the subject"), "The subject" (`.keeper.subject.label`), "What says so" (`.keeper.source.label`: "A document in this project", "It is my own word, from what I know"), "Which document, and where in it" (`.keeper.doc.label`), "Since (optional)", "Until (optional)", button "Record that the office keeps them" (`.keeper.button`); then C5 headed "What the team says about it", with "Connect the documents that name it" (`entity.connect.org`). |
+| S2 An organization | an organization | C1, C2; an "Offices in it" section (no word row) with each office and its holder; "Same organization?" (`.same.org`); select "What kind of fact" with `.kind.help.org`; section "Records its offices keep" (`.keeper.heading`) with `.keeper.intro.a`, `.keeper.intro.b`, each statement with button "Withdraw this statement, with a reason" (`act.linewithdraw.label.person`), the form "The office" (`.keeper.office.label`), "What it does with them" (`.keeper.kind.label`: "Keeps the records on the subject", "Is responsible for the subject"), "The subject" (`.keeper.subject.label`), "What says so" (`.keeper.source.label`: "A document in this project", "It is my own word, from what I know"), "Which document, and where in it" (`.keeper.doc.label`), "Since (optional)", "Until (optional)", button "Record that the office keeps them" (`.keeper.button`); then C5 headed "What the team says about it", with "Connect the documents that name it" (`entity.connect.org`). |
 | S3 No connections yet | a person nothing links yet | C1; section "Connections" with "No connections are recorded yet. One is added when a document names this person beside another, or when you add a fact from a document, below." (`person.graph.none`); C4. |
 | S4 An ordinance (or contract, fund, source) | an entity of such a kind | C1, C2's button; section "Where the record cites it" (`.cited`) with each citing document, section and grade; C5 headed "What the team says about it", ties none: `.ties.none.ordinance`. |
 | S5 An office as a post | an entity of kind office | C1, C2's button; section "Who has held it" (`.holders`), each holder (a link to `person` where followed) with dates, source and grade; C5, ties none: `.ties.none.office`. |
@@ -125,7 +125,7 @@ What the record follows: people and organizations, time, money, calculations, co
 | V2. Register | no address | "Give the register's public address, starting https://." (`.follow.empty`) |
 | V3. Same-person claim | other record or reason empty | fold "The other record or the reason left empty" (`.claim.empty.summary`): "Name the other record and say why." (`.claim.empty`) |
 | V4. Removal | empty | "Choose the value and name the law or order that requires its removal." (`.expunge.empty`); for an order, "Name the court order." (`.expunge.noorder`) |
-| V5. Records its offices keep | refused (fold "When it is refused", `.keeper.refused.summary`) | "No source was named." "Choose a document that says so, or say it is your own word." (`.keeper.refused.nobasis.a`, `.b`); "The office and the subject are the same." "Choose a different subject." (`.keeper.refused.self.a`, `.b`); "The end date is before the start date." "Check the two dates." (`.keeper.refused.dates.a`, `.b`) |
+| V5. Records its offices keep | refused (fold "When it is refused", `.keeper.refused.summary`) | "No source was named." "Choose a document that says so, or say it is your own word." (`.keeper.refused.nobasis.a`, `.keeper.refused.nobasis.b`); "The office and the subject are the same." "Choose a different subject." (`.keeper.refused.self.a`, `.keeper.refused.self.b`); "The end date is before the start date." "Check the two dates." (`.keeper.refused.dates.a`, `.keeper.refused.dates.b`) |
 | V6. Office holder | empty | "Choose who holds it and cite what shows it. Nothing was recorded." (`.holds.empty`) |
 
 ## timeline: "Timeline"
@@ -327,7 +327,7 @@ What the record follows: people and organizations, time, money, calculations, co
 - C2. Selects "The court or tribunal" (`.forum`) and "The kind of proceeding" (`.kind`); fold "When no court is held yet" (`.court.none.summary`): "No court is known for your team's place yet. Add the one this proceeding is in." (`court.none`), field "The court's name" (`court.add.name`), button "Add a court" (`court.add`); button "Register the proceeding" (`.register`).
 - C3. Heading 2 "Parties" (`.parties`): each by role and name; button "Add a party by role" (`act.recordline.label.proceeding`).
 - C4. Heading 2 "The register" (`.register.head`): each filing with its date, the newest marked new; where the register needs a login, "The court's register needs a login, so new filings come only by a member's own capture." (`.login.note`); button "Follow its register" (`act.followregister.label.proceeding`).
-- C5. Heading 2 "Dates" (`proceeding.dates.title`): "Now: {state}" (`.now`); two lanes "The proceeding" (`proceeding.dates.lane.proceeding`) and "Our deadlines on it" (`proceeding.dates.lane.group`).
+- C5. Heading 2 "Dates" (`proceeding.dates.title`): "Now: awaiting the {event}" (`.now`); two lanes "The proceeding" (`proceeding.dates.lane.proceeding`) and "Our deadlines on it" (`proceeding.dates.lane.group`).
 - C6. Heading 2 "Orders, held as obligations" (`.orders`): each obligation as a "To do" with its due date; buttons "Hold an order as obligations" (`act.declare.label.proceeding`), "Link a decision to what it interprets" (`act.courtlink.label.proceeding`).
 - C7. "Procedural facts (which form, which court, which deadline) are facts, never advice on what to file." (`.facts`).
 
@@ -390,7 +390,7 @@ What the record follows: people and organizations, time, money, calculations, co
 
 ## standard: the standard's own words
 
-**Address.** `/app/standard/<standard>`, or `/app/standard/<standard>/<project>` from a project's list. Breadcrumb: Projects › the project › "Standard: {cite}" (`screen.standard.crumb`).
+**Address.** `/app/standard/<standard>`, or `/app/standard/<standard>/<project>` from a project's list. Breadcrumb: Projects › the project › "Standard: {name}" (`screen.standard.crumb`).
 **Frame.** working.
 **Who can see it.** A member who may see it; a standard's text behind a paywall is readable only inside the team (S2).
 **Purpose.** A requirement the city set itself, held and searchable.
