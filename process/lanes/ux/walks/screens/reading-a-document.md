@@ -1,4 +1,4 @@
-Length: 220 lines. Last section: "Changes".
+Length: 221 lines. Last section: "Changes".
 
 # Screens: Reading a document
 
@@ -25,7 +25,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 
 **Content: the head**
 - C1. Heading: the document's title (untitled web page: `document.untitled.web` ["A page from {site}, captured {date}"]); beneath, its issuer, date and "captured by {name} from {source}, {date}" (`.capturedby`) or "uploaded by {member}, {date}" (`document.uploaded.by`).
-- C2. Facts: "Where it stands" (no word row on this screen; a state chip); "This copy" (`.copy`) with the grade and A3; "Fingerprint" (`.fingerprint`), card `.fingerprint.means`; "Its text" (`.text.label`): "Full: every page has text", "Partial: pages {pages} have no text", "None: no page has text", "Unread: this copy has not been read yet" (`.text.full`, `.text.partial`, `.text.none`, `.text.unread`), card `.text.tip`.
+- C2. Facts: "Where it stands" (new word, key proposed: `screen.document.stands`; a state chip); "This copy" (`.copy`) with the grade and A3; "Fingerprint" (`.fingerprint`), card `.fingerprint.means`; "Its text" (`.text.label`): "Full: every page has text", "Partial: pages {pages} have no text", "None: no page has text", "Unread: this copy has not been read yet" (`.text.full`, `.text.partial`, `.text.none`, `.text.unread`), card `.text.tip`.
 - C3. Standing: "Vouched for by {member}, {date}. Your team can use this copy." (`document.vouched`), or in S2 the held banner.
 - C4. Who issued it, where not known: `.basis.added` or `.basis.fetched`.
 - C5. A5.
@@ -58,8 +58,8 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C28. Section "Steps it is threaded to" (`progression.threadedto`), help `act.captureprogressions.does`; A30.
 - C29. Section "This copy" (`.copyacts.head`), help `document.thiscopy.says`: row "Route to your team: not checked yet." (`.route.standing`) with `.route.says` and A31; fold "What a check can record" (`.route.summary`): `.route.shown`, `.route.notshown`, `.route.same`; fold "When it cannot be checked" (`.route.refused.summary`) with `.route.refused`. Row "Useful when someone may later claim the document was changed after it was captured." (`document.attest.when`) with A32. Fold "Stop using this copy" (`document.retire.fold`): `document.retire.when`; A33.
 - C30. Section "Where this document came from" (`.origin.head`), help `.origin.tip`: field "The system it came from" (`.origin.field`), help "For example, the city's records portal." (`.origin.eg`); A34; "A second declaration is added beside the first." "A second declaration never replaces the first." (`.origin.second1`, `.second2`); rows "Said by {member}, {date}" (`.said_by`).
-- C31. `not built` (decision U9) C2's "This copy" names its two measures apart: the ceiling the record sets as "How well it could be captured" (no word row), never "Capture" alone, and a member's grade as "Your team's grade for the copy" (no word row).
-- C32. `not built` (decision U5) For a document handed in through the doorbell, under C1: for the members the team listed to read about sources, "A source" (`screen.about-knocker.name`) as a link to `about-knocker`; for every other member, "Handed in through the doorbell" (no word row), with no link.
+- C31. `not built` (decision U9) C2's "This copy" names its two measures apart: the ceiling the record sets as "How well it could be captured" (new word, key proposed: `screen.document.copy.ceiling`), never "Capture" alone, and a member's grade as "Your team's grade for the copy" (new word, key proposed: `screen.document.copy.grade`).
+- C32. `not built` (decision U5) For a document handed in through the doorbell, under C1: for the members the team listed to read about sources, "A source" (`screen.about-knocker.name`) as a link to `about-knocker`; for every other member, "Handed in through the doorbell" (new word, key proposed: `screen.document.from.doorbell`), with no link.
 
 **States**
 
@@ -218,3 +218,4 @@ Read, not run. The design is the authority.
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: words with no row decided (words-new.md).

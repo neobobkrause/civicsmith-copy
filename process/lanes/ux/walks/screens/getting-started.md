@@ -1,4 +1,4 @@
-Length: 476 lines. Last section: "Changes".
+Length: 477 lines. Last section: "Changes".
 
 # Screens: Getting started
 
@@ -80,7 +80,7 @@ The website and the installer are separate programs from the team's Civicsmith: 
 |---|---|---|
 | S1 Do you already have a Cloudflare account? | `/` opened | Heading "Do you already have a Cloudflare account?" (`installer.guide.ask.title`); `installer.guide.ask.sub`; A1, A2. |
 | S2 The first page | after A1, or the guide's last step | Heading "Create your Civicsmith team" (`screen.install.name`); "Two choices here, then Cloudflare. What your team needs first is on civicsmith.org." (`screen.install.sub`); A3. Section "Your team's short name" (`screen.install.short.heading`): `screen.install.names`; field "Short name" (`installer.shortname.label`), help `installer.shortname.hint`. Section "Your team's places" (`installer.places.heading`): a choice of the places the installer holds, the last "None of these: we enter due dates and offices ourselves" (`screen.install.places.none`), help `screen.install.places.help`. Section "Where your team's record is kept" (`screen.install.region.head`): "Near you: {region}" (`screen.install.region.near`), `screen.install.region.why`, and the option "Our team must keep its record in a particular region" (`screen.install.region.legal`) opening field "Keep the record in" (`screen.install.region.field`, ten regions `screen.install.region.*`) — `not built`. A4. |
-| S3 The first page, civicsmith.org not online | as S2, while the site is not published | As S2, with "What you need" in place of A3: `screen.install.need.cloudflare`, "About twenty minutes at a computer." (no word row), "No Claude account: the assistant is optional." (`screen.install.need.claude`). |
+| S3 The first page, civicsmith.org not online | as S2, while the site is not published | As S2, with "What you need" in place of A3: `screen.install.need.cloudflare`, "About twenty minutes, at a computer." (existing row `installer.need.time`, as the installer draws it, `newgroup/src/ui.mjs:220`), "No Claude account: the assistant is optional." (`screen.install.need.claude`). |
 | S4 The short name is permanent | A4 pressed with a short name | A full dialog: heading "“{name}” is permanent" (`installer.permanent.heading`); `screen.install.permanent`; A5, A6. |
 | S5 Check my account: lines not ready | A12 | `not built`. Heading "Check my account" (`screen.install.check.title`); `screen.install.check.sub`; one row per line, each "Ready" (`screen.install.check.ready`) or "Not ready yet" (`.notready`) with its words: "Workers Paid", "Containers", "Room under your account's limits", "The short name", "Payment card" (`screen.install.check.*.name`, `.ok`, `.fix`); "Install now opens when every line is ready." (`screen.install.check.closed`); `screen.install.check.creates`; A13. |
 | S6 Check my account: every line ready | A12, all ready | `not built`. As S5, every row "Ready", "Every line is ready." (`screen.install.check.allready`); A13, A14. |
@@ -108,7 +108,7 @@ The website and the installer are separate programs from the team's Civicsmith: 
 | A8. button "Back" (`installer.guide.back`) | S7 to S10 | the step before, or S1 |
 | A9. button "Continue to Cloudflare" (`act.bootstrap.label.install`) | S11 | Cloudflare's own permission page; after Allow, S12, S13 or S14 |
 | A10. button "Back" (`installer.action.back`) | S11 | S2 |
-| A11. button "Start again" (no word row) | S15 | S2 |
+| A11. button "Start again" (new word, key proposed: `screen.install.stopped.again`) | S15 | S2 |
 | A12. button "Check my account" (`act.owed_installcheck.label.install`) | S2 | S5 or S6 — `not built` |
 | A13. button "Check again" (`screen.install.check.again`) | S5, S6 | S5 or S6 — `not built` |
 | A14. button "Install now" (`screen.install.check.now`) | S6 | S11 — `not built` |
@@ -125,7 +125,7 @@ The website and the installer are separate programs from the team's Civicsmith: 
 | Field | Condition | Message |
 |---|---|---|
 | V1. "Short name" | already taken in the account | "The short name {name} is already taken, so nothing was created." (`screen.install.stopped.nametaken`) and "{free} is free: use it, or type another." (`.nametaken.do`) |
-| V2. "To confirm, type its short name" | does not match | A19 stays closed (no word row) |
+| V2. "To confirm, type its short name" | does not match | A19 stays closed; if the name is sent, "Nothing was deleted: the short name typed doesn't match. Its short name is {slug}. Typing it makes sure the right Civicsmith is removed." (existing row `installer.remove.refused.typed`, as the installer draws it, `newgroup/src/index.mjs:1356`) |
 
 ---
 
@@ -474,3 +474,4 @@ The website and the installer are separate programs from the team's Civicsmith: 
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: words with no row decided (words-new.md).

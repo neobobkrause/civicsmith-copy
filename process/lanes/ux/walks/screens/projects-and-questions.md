@@ -1,10 +1,10 @@
-Length: 426 lines. Last section: "Changes".
+Length: 427 lines. Last section: "Changes".
 
 # Screens: Projects and questions
 
 Page `projects-and-questions` of the Screens document (index: ../index.md). Written 22 Nov 2026 by a worker for civicsmith ux lane #1.
 
-A project, its objective, who pays for the assistant in it, its questions, asking, and the assistant panel. What binds every screen is on the page "Every screen" and is not repeated. Words are quoted from the interface word table with their key; a sample value in a quote (a name, a date, a count) stands for the record's own. "(no word row)" marks a sentence the table lacks. In a screen's section, a key starting with a dot stands for `screen.<that id>` followed by it (in `project`, `.opened` is `screen.project.opened`). A key given alone, in place of words, means the screen shows that row's whole sentence there.
+A project, its objective, who pays for the assistant in it, its questions, asking, and the assistant panel. What binds every screen is on the page "Every screen" and is not repeated. Words are quoted from the interface word table with their key; a sample value in a quote (a name, a date, a count) stands for the record's own. "(new word, key proposed: …)" marks words the lane decided that the table does not hold yet (`../../words-new.md`). In a screen's section, a key starting with a dot stands for `screen.<that id>` followed by it (in `project`, `.opened` is `screen.project.opened`). A key given alone, in place of words, means the screen shows that row's whole sentence there.
 
 ## The screens on this page
 
@@ -51,17 +51,17 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 - C3. Section "What each stage needs" (`.what.each.stage.needs`): `.the.record.decides.the.stage.by`, `.nothing.here.is.a.button.when`; one line per stage, "{stage} · reached" (`.stage.reached`) or "{stage} · not reached yet" (`.stage.not_reached`), with what it took or needs.
 - C4. Fold "When the stage can't be read" (`.when.the.stage.can.t.be`): `.civicsmith.can.t.read.this.project`.
 - C5. Section "The project's documents" (`.docs.head`): `.docs.about1` `.docs.about2`. One row per document: its title, a link to `document`, its kind ("Web page" `.docs.kind.web`, "Spreadsheet" `.docs.kind.sheet`, "Photo" `.docs.kind.photo`) and "captured" (`.docs.captured`) with the date. With none: `.docs.none1` "Add a document and it appears here." (`.docs.none2`).
-- C6. Section "Objective" (`screen.objective.name`): `.how-far-the-project-has-come-toward-its-objectiv`, with a link to `objective` (link words: no word row).
+- C6. Section "Objective" (`screen.objective.name`): `.how-far-the-project-has-come-toward-its-objectiv`, with a link to `objective`, "Open the objective" (new word, key proposed: `screen.project.objective.open`).
 - C7. Section "Questions" (`.questions.head`): one row per question, its words as a link to `question`, its two grades and its standing against the bar; a question with no citation shows "rests on nothing yet" (`.question.unrated`).
 - C8. Fold "Draw on a question from elsewhere" (`project.draw.head`): a select "Which question" (`project.draw.which`) and button "Draw on it" (`project.draw.go`).
 - C9. Section "What pays for the assistant here" (`.account.head`): one of "Paid for by the project's own API key" (`.account.project`), `.account.member`, `.account.off`; link "Open AI for this project" (`.account.open`) to `projectai`.
 - C10. Section "What the team has at stake here" (`stake.project.title`): the team's own statement; a field "This project's stake (optional)" (`stake.project.label`) and button "Save this project's stake" (`stake.project.save`) `not built` (owed); "{n} earlier statements" (`stake.history`). Fold "When the stake can't be read" (`stake.unreadable.summary`): `stake.unreadable`.
-- C11. Section "This project's work" (`project.work.title`): one link each to `plan` ("Action plan"), `timeline` ("Timeline"), `money` ("Money trail"), `calculation`, `proceeding`, `standard`, `request` ("Records requests"), `matter` ("Matters"), `action` ("Actions"), `case-editor` ("The case being prepared"), `review-copy` ("Review copies"), `ceremony` ("Publishing"), `published`, `docket` ("Docket"); the links to `calculation`, `proceeding`, `standard` and `published` have no word row.
+- C11. Section "This project's work" (`project.work.title`): one link each to `plan` ("Action plan"), `timeline` ("Timeline"), `money` ("Money trail"), `calculation`, `proceeding`, `standard`, `request` ("Records requests"), `matter` ("Matters"), `action` ("Actions"), `case-editor` ("The case being prepared"), `review-copy` ("Review copies"), `ceremony` ("Publishing"), `published`, `docket` ("Docket"); the links to `calculation`, `proceeding`, `standard` and `published` read "Calculation", "Proceeding", "Standard" and "Published case" (existing rows `screen.calculation.name`, `screen.proceeding.name`, `screen.standard.name`, `screen.published.name`, as the code draws every link of this section by `screen.<id>.name`).
 - C12. Section "Members" (`.members.head`): one row per member, an owner marked with "owner since {date}" (`project.member.since`); a pending change `project.owners.pending`; the rule `project.owners.rule`.
 - C13. Section "Telling the network" (`.notice.heading`): `.notice.an.owner.can.publish.a` `.notice.it.is.public.and.it`.
 - C14. Fold "This project's settings" (`project.settings.fold`): section "Who can find it" (`project.visibility.title`) with `project.visibility.discoverable` or the hidden line (`project.visibility.hidden`), and its history (`project.visibility.history`); section "Close this project now" (`.closenow.head`) with `.closenow.open`.
-- C15. `AI` `not built`: a section "Suggested questions" (no word row), each a question the assistant suggested or found while exploring, with its machine-work label and button "Open this question" (no word row). Absent without the assistant.
-- C16. `not built` (decision U3) Beside "Your first question" (S2) and "The question, in plain words" (A1): an optional select "Who is this question about?" (no word row), choosing among the people and organizations the team follows, none chosen.
+- C15. `AI` `not built`: a section "Suggested questions" (new word, key proposed: `screen.project.suggested.head`), each a question the assistant suggested or found while exploring, with its machine-work label and button "Open this question" (new word, key proposed: `screen.project.suggested.open`). Absent without the assistant.
+- C16. `not built` (decision U3) Beside "Your first question" (S2) and "The question, in plain words" (A1): an optional select "Who is this question about?" (new word, key proposed: `screen.project.about.label`), choosing among the people and organizations the team follows, none chosen.
 
 **States**
 
@@ -248,9 +248,9 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 - C12. Section "Concluding" (`.concluding.head`), fold "Conclude": select "The reading you conclude on" (`question.conclude.reading`) with "Write the reading yourself"; fields "Your reading", "What would change it", "Why you are concluding it", "Commentary" (`question.conclude.*`); checkbox `question.conclude.nofalsifier`.
 - C13. Fold "More you can do with this question" (`question.more`); fold "Divide this question into two" (`.divide.summary`), with "This cannot be undone." (`.divide.note3`); fold `.say058` with "What this touches" (`.touches.heading`).
 - C14. "Its plan: {plan}" (`question.plan.link`) linking to `plan`; links "The case being prepared" (`case.links.editor`) → `case-editor`, "Review copies" (`case.links.review`) → `review-copy`, "Publishing" (`case.links.ceremony`) → `ceremony`, "The published case's record" (`case.links.docket`) → `docket`.
-- C15. `not built` (decision U3) Under C1, who the question is about: the person or organization named, as a link to `person`, with a control to change it with a reason kept in the question's history; with none, a plain sentence that the question names no one it is about, and the control to name one (no word rows). In every state but S4 to S6, S9, S10.
-- C16. `not built` (decision U9) In C3, the copy's grade is named "Your team's grade for the copy" (no word row), never "Capture" alone; where it is not graded yet, C3 points the member to where it is given ("What this passage earns", `.leggrade.head`).
-- C17. `not built` After "Ask for a check by expertise" is sent: a line beside A12 saying how many members the request reached, never who (no word row); where it reached none, that no member who can see this question has declared that expertise, so nobody was asked (no word row).
+- C15. `not built` (decision U3) Under C1, who the question is about: the person or organization named, as a link to `person`, with a control to change it with a reason kept in the question's history; with none, a plain sentence that the question names no one it is about, and the control to name one. The words: "About: {name}" (new word, key proposed: `screen.question.about.line`); button "Change who it is about" (new word, key proposed: `screen.question.about.change`) with the reason field "Why you change it" (new word, key proposed: `screen.question.about.why`); with none, "This question does not name anyone it is about." (new word, key proposed: `screen.question.about.none`) and button "Name who it is about" (new word, key proposed: `screen.question.about.name`). In every state but S4 to S6, S9, S10.
+- C16. `not built` (decision U9) In C3, the copy's grade is named "Your team's grade for the copy" (new word, key proposed: `screen.question.leggrade.copy`), never "Capture" alone; where it is not graded yet, C3 points the member to where it is given ("What this passage earns", `.leggrade.head`).
+- C17. `not built` After "Ask for a check by expertise" is sent: a line beside A12 saying how many members the request reached, never who: "The request reached {count} members who declared this expertise." (new word, key proposed: `screen.question.expertise.sent`), or for one, "The request reached 1 member who declared this expertise." (new word, key proposed: `screen.question.expertise.sent.one`); where it reached none, "Nobody was asked: no member who can see this question has declared this expertise." (new word, key proposed: `screen.question.expertise.none`).
 
 **States**
 
@@ -280,7 +280,7 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 | A4. button "Remove" on a passage (act "Remove a citation", `act.sever.label.question`); button "Reinstate" (`act.reinstate.label.question`) | a cited passage; a removed one | same screen; "Removed from the question" (`.leg.severed`) |
 | A5. button "Change what a passage carries…" (`question.rests.change`) (act `act.inquiryground.label.question`); "Save the answers" (`question.ask.save`) | always; S2 | S2; then S1 with the strength |
 | A6. button "Restore it, with a reason" (`.waits.restore`) | a set-aside document | same screen; the document returns to C4 |
-| A7. button "Keep a hunch" (`act.hypothesishold.label.question`); "Revise this hunch" (no word row; act `act.hypothesisrevise.label.question`); "Take this hunch back" (`.hunch.withdraw.button`), Ends something | always | same screen; C7 |
+| A7. button "Keep a hunch" (`act.hypothesishold.label.question`); "Revise a hunch" (existing row `act.hypothesisrevise.label.question`, as the code draws it; the mockup's "Revise this hunch" is not kept); "Take this hunch back" (`.hunch.withdraw.button`), Ends something | always | same screen; C7 |
 | A8. reading buttons "Accept this reading" (`act.versionaccept.label.question`), "Weigh a reading", "Reject a reading", "Undo the decision on a reading", "Hide a reading" (`act.versionconsider/versionreject/versionrevert/versionhide.label.question`), "Stand on this one for {project}…" (`.reading.standfor`) | per reading | same screen; C8 |
 | A9. button "Place a passage in a theme…" (`theme.question.place`) | always | `theme` choice; the theme listed in C9 |
 | A10. button "Record that you looked again" (`act.reevaluationrecord.label.question`); "See what needs a second look" (`act.reevaluations.label.question`) | C11 has an item | same screen; the item becomes "Looked at again by …" |
@@ -331,7 +331,7 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 - C6. A search field and button "Search" (`act.search.label.finder`).
 - C7. Results: one row per document, its title a link to `document`, marked "Found by search" (`mark.origin.search.name`); a count line `.count.line` where a table was counted; with none, `screen.finder.none`.
 - C8. C4's buttons and lines.
-- C9. `not built` Pressing "Keep asking this" (C4, C8) first opens, beside it, a select "How often" (no word row on this screen), offering "every week" (`.cadence.weekly`) and any other cadence the product runs, none chosen, and a field "Until when" (no word row), a day, required; the question is kept only once both are given. Sent without either: `shell.field.needed`, and nothing is kept.
+- C9. `not built` Pressing "Keep asking this" (C4, C8) first opens, beside it, a select "How often" (new word, key proposed: `screen.answers.often`), offering "every week" (`.cadence.weekly`) and any other cadence the product runs, none chosen, and a field "Until when" (new word, key proposed: `screen.answers.until`), a day, required; the question is kept only once both are given. Sent without either: `shell.field.needed`, and nothing is kept.
 
 **States**
 
@@ -413,7 +413,7 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 Paths are under `bio-plane/src/`.
 
 - `screens-inquiry/assistant.mjs:236-243`: the dock draws "Ask the assistant to work on this", "Suggest" and "Stop the run", but no field "Ask about this screen" and no "Ask" (registry act `ask` on `assistant`); C7 and A1 above are not built.
-- `screens-inquiry/project.mjs`: no "Suggested questions" section and no word rows for it (C15 is `not built`).
+- `screens-inquiry/project.mjs`: no "Suggested questions" section (C15 is `not built`). The mockup's words stand: "Suggested questions" (new word, key proposed: `screen.project.suggested.head`) and "Open this question" (new word, key proposed: `screen.project.suggested.open`).
 - `screens-inquiry/project.mjs:167`: the not-joined state is drawn with "You can see that this project exists, but not its work, until you join it." where the design draws "You aren't in this project. Ask to join, and its owners decide." (`project.notmember`), and adds "Ask an owner to invite you: {owners}." (`screen.project.notjoined.owners`).
 - `screens-daily/answers.mjs:148`: without the assistant, "Show how this was counted" is drawn only after words are searched and while the rule services read on; the design shows it with every count.
 - `screens-daily/answers.mjs:145`: the search field without the assistant is labeled "Your words" (`screen.finder.words`); the design draws no label.
@@ -424,3 +424,4 @@ Paths are under `bio-plane/src/`.
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: words with no row decided (words-new.md).

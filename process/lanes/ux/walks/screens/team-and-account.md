@@ -1,4 +1,4 @@
-Length: 611 lines. Last section: "Changes".
+Length: 612 lines. Last section: "Changes".
 
 # Screens: The team and your account
 
@@ -78,8 +78,8 @@ How to read this page:
 - C9. Section "More for administrators": links "Places and offices", "Security".
 - C10. Section "Signing keys": 3 sentences (`.a.signing.key.lets.a` …); per member "key registered by {member}, {date}" with A3, "key withdrawn by {member}, {date}" · "it does not sign" with A4, or "no signing key yet"; 2 sentences (`.key.react.withdraw.a.key.when.a` …); choice "Whose key"; field "Their public key"; button A5; 2 sentences (`.the.record.shows.that.you` …).
 - C11. Section "What removing an administrator takes": with one administrator "With {n} administrator, no administrator can be removed by vote." + 2 sentences; "Nothing here changes anything."; folds "If more administrators can act than the roster lists" (3 sentences) and "How it changes with the number of administrators" (a table for 1 to 7 administrators, `.scale.*`, the team's row "(now)"; 3 sentences).
-- C12. Administrator, the row panel (C5) of a member whose administrator's powers were removed: the removal, its date, and each agreeing administrator's handle with the reason they gave (no word row). The member stays active, with "May do" as it was before they were proposed. `not built` (the code keeps the reasons with the votes and shows none of them after the removal; it marks the removed administrator "inactive", `member-roster/index.mjs:907`).
-- C13. Administrator, a row's panel: that member's declared ties, read-only, in the form of `ties` C3 ("Kind", "Who", "A case would say"), or `ties`' none line; headed "Their ties" (no word row). `not built`
+- C12. Administrator, the row panel (C5) of a member whose administrator's powers were removed: the removal, its date, and each agreeing administrator's handle with the reason they gave: "Administrator's powers removed on {date}." (new word, key proposed: `screen.members.removed.line`), then for each "{member} agreed: “{reason}”" (new word, key proposed: `screen.members.removed.agreed`). The member stays active, with "May do" as it was before they were proposed. `not built` (the code keeps the reasons with the votes and shows none of them after the removal; it marks the removed administrator "inactive", `member-roster/index.mjs:907`).
+- C13. Administrator, a row's panel: that member's declared ties, read-only, in the form of `ties` C3 ("Kind", "Who", "A case would say"), or `ties`' none line; headed "Their ties" (new word, key proposed: `screen.members.ties.head`). `not built`
 
 | State | When | What shows |
 |---|---|---|
@@ -609,3 +609,4 @@ Paths under `bio-plane/src/screens-settings/` unless longer; the design above st
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: words with no row decided (words-new.md).

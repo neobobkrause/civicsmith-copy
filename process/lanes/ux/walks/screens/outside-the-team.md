@@ -1,4 +1,4 @@
-Length: 359 lines. Last section: "Changes".
+Length: 360 lines. Last section: "Changes".
 
 # Screens: Outside the team
 
@@ -221,7 +221,7 @@ No assistant is offered. If the team's Civicsmith cannot be reached, `unavailabl
 | V7. "Which project" | A project the member has not joined | "You can share a lead only to a project you have joined. Sharing it somewhere you are not working would put your words in front of people you are not working with." (`refusal.LEAD_SHARE_NOT_A_PARTICIPANT`) |
 | V8. A4 | The member did not write the lead | "Only the member who wrote a lead can share it. A lead is what one person was told; passing someone else's on is theirs to decide." (`refusal.LEAD_SHARE_NOT_AUTHOR`) |
 | V9. "Why you are sharing it" | Empty or over 2,000 characters | `refusal.LEAD_SHARE_NO_REASON`, 2 sentences, beginning "Say why you are sharing this lead with that project, in no more than 2,000 characters." |
-| V10. "Which project" | Already shared there | "This lead is already shared with that project, by {name}, on {date}." (`screen.leads.share.already1`) followed by "Nothing changed." (no word row of its own) |
+| V10. "Which project" | Already shared there | "This lead is already shared with that project, by {name}, on {date}." (`screen.leads.share.already1`) followed by "Nothing changed." (new word, key proposed: `screen.leads.share.already2`) |
 
 ---
 
@@ -251,7 +251,7 @@ No assistant is offered. If the team's Civicsmith cannot be reached, `unavailabl
 | S1 Running | The watching is not paused | C3 "Watching is running." |
 | S2 Paused | An administrator paused it | C3 "Watching is paused." with who and when |
 | S3 Not an administrator | A member who is not an administrator | Under the fold "If you are not an administrator" (`screen.watching.notadmin.summary`): `refusal.NOT_AN_ADMIN` ("Only an active administrator of this team can do that, and the account asking is not one of them here. The record reads who is asking from the signed-in session, never from the request. Nothing was changed.") |
-| S4 Nothing watched | The team watches no address | No rows in C4 (no word row for an empty list) |
+| S4 Nothing watched | The team watches no address | No rows in C4; in their place "Your team watches no address yet. Capture a document from its address under Add, then choose how often to look." (new word, key proposed: `screen.watching.list.none`) |
 | S5 No sweeps | No sweep is defined | No rows in C6 and C10 |
 | S6 Assistant reachable | Assistant on, an account serves it | Also button "Help me write this" (`act.writinghelp.label.watching`) under "Describe it" |
 | S7 Assistant unreachable | No AI account (the internal walk) | No "Help me write this"; nothing greyed |
@@ -325,7 +325,7 @@ Mark: `not built`. No code draws it; until a module builds it, `/app/registers` 
 | A5. button "Work out what it would add" (`.import.delta.go`) | Always | Same screen; C4's comparison line |
 | A6. button "Search" (`.search.go`) | Always | Same screen; result rows in C5 |
 | A7. button "Cite this row" (`.search.cite`) | On a result row | Same screen; the row shows its extract line |
-| A8. the "Follow" control on a result row (act `followfrom`, no word row) | On a result row | `money` |
+| A8. the fold "Follow from here" on a result row (existing row `screen.follow.label`), its acts by the existing rows `screen.follow.money.*` and `screen.follow.who.*` (act `followfrom`, `act.owed_followfrom.label.registers`) | On a result row | `money` |
 | A9. button "Watch it" (`.watch.go`) | Always | Same screen; a row in C6 |
 | A10. button "Stop watching" (`.watch.stop`) | On a watch | Same screen; the row leaves C6 |
 | A11. button "Connect CourtListener" (`.alerts.connect`) | Always | Asks a reason; the key is sealed |
@@ -337,17 +337,17 @@ No form messages are designed for this screen yet.
 
 ## Differences seen in the code
 
-- `screens-publish/doorbell.mjs:47`: "Who may be told it" offers one choice; the mockup draws three, two of them with no word row ("The whole team", "Anyone").
-- `screens-publish/doorbell.mjs:45`: the answering form's phrase field is labelled "A secret phrase (optional)"; the mockup labels it "Your secret phrase" (no word row).
-- `screens-publish/doorbell.mjs:48`: the answer is a select labelled with the section heading; the mockup draws a radio group "Your answer" (no word row).
+- `screens-publish/doorbell.mjs:47`: "Who may be told it" offers one choice; the mockup draws three. The mockup's words stand: "The whole team" (new word, key proposed: `screen.doorbell.consent.audience.team`) and "Anyone" (new word, key proposed: `screen.doorbell.consent.audience.public`), beside "Only the members listed for it".
+- `screens-publish/doorbell.mjs:45`: the answering form's phrase field is labelled "A secret phrase (optional)"; the mockup labels it "Your secret phrase". The mockup's words stand, since the phrase is not optional there: "Your secret phrase" (new word, key proposed: `screen.doorbell.consent.secret`).
+- `screens-publish/doorbell.mjs:48`: the answer is a select labelled with the section heading; the mockup draws a radio group "Your answer". The mockup's words stand: "Your answer" (new word, key proposed: `screen.doorbell.consent.answer`).
 - `screens-publish/doorbell.mjs:34`: the reference is shown last, under "After you hand it over"; the mockup folds the whole receipt under that summary, reference first.
-- `screens-publish/doorbell.mjs:20`: the mockup's link "What that means" after the court line (no word row) is not drawn.
+- `screens-publish/doorbell.mjs:20`: the mockup's link "What that means" after the court line is not drawn. The mockup's words stand: "What that means" (new word, key proposed: `screen.doorbell.happens.court.link`).
 - `screens-intake/inbox.mjs:52`: the sender's file name and kind are drawn without their labels `screen.inbox.knock.name` and `.type`.
 - `screens-intake/inbox.mjs:63`: more than 200 knocks borrows the Held captures line `screen.held.more`; no inbox row exists.
 - `screens-intake/about-knocker.mjs:72`: "What became known" lacks the choice "A link to another source".
 - `screens-intake/about-knocker.mjs:121`: an empty required field is refused with `capture.fieldneeded` ("This can be captured only once “{field}” is filled in.") before sending, not with `refusal.NO_EVIDENCE` (also :147, :158).
 - `screens-intake/about-knocker.mjs:90`: the two permanence notes `sources.consent_permanent_anything` and `sources.withdrawal_binds_later` are not drawn.
-- `screens-intake/leads.mjs:36`: the row button reads "Open a lead"; the mockup reads "Open it" (no word row).
+- `screens-intake/leads.mjs:36`: the row button reads "Open a lead"; the mockup reads "Open it". The code's words stand: "Open a lead" (existing row `act.leadread.label.leads`); the mockup's "Open it" is not kept.
 - `screens-intake/watching.mjs:130`: no row or link to `registers` (C2).
 - `screens-intake/watching.mjs:26`: pause and resume are not offered to a member who is not an administrator, so the fold of S3 is never drawn.
 - `screens-intake/watching.mjs:84`: no button "Add another place"; places are typed one per line.
@@ -357,3 +357,4 @@ No form messages are designed for this screen yet.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: words with no row decided (words-new.md).

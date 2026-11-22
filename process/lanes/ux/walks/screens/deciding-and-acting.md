@@ -1,4 +1,4 @@
-Length: 501 lines. Last section: "Changes".
+Length: 502 lines. Last section: "Changes".
 
 # Screens: Deciding and acting
 
@@ -273,7 +273,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 - C8. Section "Templates for this action" (`.templates.heading`): `.templates.offered` + `.templates.nocourt`; rows "approved by {member}, {date}" or `.templates.notyet`; note `.templates.own` + `.templates.never`; link "Prepare the text" (to `request`).
 - C9. Section "Its risk" (`risk.title`): "Tier {n} · …", who set it and why; button "Revise, with a reason…" (`risk.revise`).
 - C10. Disclosure "How it ended" (`.ended.*`: "The office complied", "The office denied it", "It was escalated", "Your team withdrew it", "Your team carried it out"), "In your own words" (`.ended.own`). Buttons "Move the action", "Remind me", and the confidentiality act.
-- C11. In C3, a date whose reply was recorded after it fell due shows the state "met late" (no word row), beside the other states. `not built`
+- C11. In C3, a date whose reply was recorded after it fell due shows the state "met late" (new word, key proposed: `screen.action.clock.metlate`), beside the other states. `not built`
 
 **States**
 
@@ -499,3 +499,4 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: words with no row decided (words-new.md).

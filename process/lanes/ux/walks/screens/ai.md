@@ -1,4 +1,4 @@
-Length: 329 lines. Last section: "Changes".
+Length: 330 lines. Last section: "Changes".
 
 # Screens: The team's AI and yours
 
@@ -105,7 +105,7 @@ Mark: `not built`. The test of step 5 needs a provider account: `AI`.
 - C6. Step 4 "Before you switch it on" (`.s4.head`), "What you accept, recorded once." (`.s4.why`): checkboxes "Your acceptance" (`.s4.legend`) with "I accept the terms above that bind our use of this plan." (`.s4.termsbox`); "Your acceptance is recorded with your name and the date. The terms are accepted once for this account, and shown again if they change." (`.s4.recorded`).
 - C7. Step 5 "Test it" (`.s5.head`), "A harmless test that sends none of your team's material." (`.s5.why`); a fold "If the test fails" (`.s5.failhead`); "It stays off until the test passes." (`.s5.note`).
 - C8. Step 6 "Switch it on" (`.s6.head`), "Choose where it comes in the order of accounts." (`.s6.why`): choice "Where it goes in the order" (`.s6.pos`) of "First", "Second", "Third", "Last" (`.s6.first` … `.s6.last`); "You can change its place later on AI providers." (`.s6.note`).
-- C9. Once A8 is recorded, in step 4: the box "I accept the terms above…" stays ticked and can no longer be changed, with the handle of who accepted and the date beside it (no word row).
+- C9. Once A8 is recorded, in step 4: the box "I accept the terms above…" stays ticked and can no longer be changed, with the handle of who accepted and the date beside it: "Accepted by {handle} on {date}." (new word, key proposed: `screen.aiconnect.s4.accepted`).
 
 **States**
 | State | When | What shows (exact) |
@@ -157,15 +157,15 @@ Mark: `not built`.
 - C5. Section "Checks in force for you" (`.chk.head`): the seven checks as a member's rows; "When you work in a project, that project's checks also apply to the work done directly in it." (`.chk.proj`); "You can require any check the team does not. An AI that fails one you require is not used for your work, and you are told why." (`.chk.rule`).
 - C6. Section "Your use and cost" (`.use.head`): a table "Last 30 days" (`.use.th`), "Requests" (`.use.calls`), "Cost" (`.use.cost`), one row per account; a plan with no cost per answer shows "not measurable in money" (`.use.nomoney`); "Only you see this: your own use across every account that served you." (`.use.note`).
 - C7. Section "The first time material goes to a provider" (`.first.head`): "The assistant names the provider and waits for you before material first goes to it, and after any switch to another provider." (`.first.note`); "You can see this notice, and the others like it, on When the AI can't go on." (`.first.see`) with link "When the AI can't go on" (`.first.link`).
-- C8. After A2, in C4: a choice "Which plan" (no word row) of the plans the catalogue offers (as `aiproviders` C4 lists them, each provider · plan · type, alphabetical), none chosen, and button "Connect" (`screen.aiplan.connect`).
+- C8. After A2, in C4: a choice "Which plan" (new word, key proposed: `screen.aimine.own.plan`) of the plans the catalogue offers (as `aiproviders` C4 lists them, each provider · plan · type, alphabetical), none chosen, and button "Connect" (`screen.aiplan.connect`).
 
 **States**
 | State | When | What shows (exact) |
 |---|---|---|
 | S1 Team requires all seven | No check left open by the team | C5: seven rows "Required by the team", no checkboxes |
 | S2 Team left two unchecked | Two checks not required | C5: those two each with checkbox "Require this for my own work" |
-| S3 No AI serves you | No account on, none of your own (the internal walk) | C2 lists no row (no word row for an empty list); C3's choices are empty; C6's table has no rows |
-| S4 Own accounts not allowed | The team unchecked "Members may add their own accounts" | C4 without `.own.team` and without A2 (no word row says so) |
+| S3 No AI serves you | No account on, none of your own (the internal walk) | C2 lists no row, and says "No AI serves your work yet. Your team's administrators decide which accounts are on; where the team allows it, you can add one of your own." (new word, key proposed: `screen.aimine.now.none`); C3's choices are empty; C6's table has no rows |
+| S4 Own accounts not allowed | The team unchecked "Members may add their own accounts" | C4 without `.own.team` and without A2, saying in their place "Your team does not let members add their own accounts. Its administrators decide this on the AI providers page." (new word, key proposed: `screen.aimine.own.notallowed`) |
 
 **Actions**
 | Control | When offered | Where it leads |
@@ -200,7 +200,7 @@ Mark: `not built`. Not the alpha's `projectai`, which stays as it is.
 |---|---|---|
 | S1 The project's owner | The viewer owns the project | C1 to C6 with every control enabled |
 | S2 A member | The viewer does not own it | First "{owner}, the project's owner, decides this. You can ask them to change it." (`.member`); every checkbox, field and save button disabled; no "Move up"/"Move down" |
-| S3 No AI allowed | The team allows no AI (the internal walk) | C2 has no checkboxes and C4 no rows (no word row for either) |
+| S3 No AI allowed | The team allows no AI (the internal walk) | C2 has no checkboxes and says "Your team allows no AI yet, so this project has none to choose from. An administrator can connect one on AI providers." (new word, key proposed: `screen.aiproject.use.none`); C4 has no rows and says "No AI is in this project's order yet: it lists the AIs this project uses, once there are any." (new word, key proposed: `screen.aiproject.order.none`) |
 
 **Actions**
 | Control | When offered | Where it leads |
@@ -309,7 +309,7 @@ Mark: `not built`.
 - C3. One row per AI: its name; "Passed: {parts}.", "Passed with limits: {parts}.", "Not suitable: {parts}."; "Standard jobs: {speed}, {cost}." (`.speed`); "Tested by {who} on {date}." (`.by`); its grade.
 - C4. "A team is named only when it agreed to be. Otherwise it is “a team”." (`.note`).
 
-**States.** One state: the list, narrowed by C2. With no results received (the internal walk), C3 has no rows (no word row for an empty list).
+**States.** One state: the list, narrowed by C2. With no results received (the internal walk), C3 has no rows and says "No other team has sent results yet. A team's results appear here once it tests an AI and chooses to send them." (new word, key proposed: `screen.airesults.none`).
 
 **Actions**
 | Control | When offered | Where it leads |
@@ -327,3 +327,4 @@ Mark: `not built`.
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 22 Nov 2026: words with no row decided (words-new.md).
