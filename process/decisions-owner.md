@@ -7,6 +7,7 @@ is its writer. The dated lines are the owner's exact words, never edited.
 ## Process version
 Rule now: civicsmith moves to the latest Process4 version.
 - 22 Nov 2026: "Instruction: move civicsmith to the latest Process4 version"
+- 22 Nov 2026: "Instruction: move civicsmith to the latest Process4 version"
 Shown to the owner: not yet.
 
 ## Slots
