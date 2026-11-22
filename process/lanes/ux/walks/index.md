@@ -1,4 +1,4 @@
-Length: 105 lines. Last section: "6. Changes".
+Length: 106 lines. Last section: "6. Changes".
 
 # civicsmith: the walks' documents — index
 
@@ -26,14 +26,15 @@ Written 22 Nov 2026 by civicsmith ux lane #1 from the earlier material in `docs/
 7. A step that uses AI never expects exact words. It states what must be present in any proper result, what must never be present, and what a member without the assistant sees instead (build text 3, section 5; the owner's decision of 20 Nov 2026). Every journey with an AI step also gives its path without the assistant, which is walked first: the alpha ships without the assistant (DEC-405), and the assistant is "absent, not greyed" (DEC-139).
 8. What binds every screen is said once, on the page "Every screen", and not repeated.
 
-## 3. The Screens document: ten pages, 91 screens
+## 3. The Screens document: eleven pages, 91 screens
 
 | Page | What its screens are for | Screens |
 |---|---|---|
 | [every-screen](screens/every-screen.md) | The frames, the rail and the phone's tabs, the assistant dock, signing out and the lock, how a refusal is shown, accessibility, and the two screens the frame draws itself | `unavailable`, `more` |
 | [getting-started](screens/getting-started.md) | Before and at the door: the website, the installer and updating, the team's page, the tour, setting up, joining, a forgotten password | `site`, `install`, `update`, `front`, `tour`, `reset`, `forgot`, `setup`, `join` |
 | [team-and-account](screens/team-and-account.md) | The team, its members and its settings; a member's own account, ties, notes and recovery | `group-identity`, `members`, `security`, `account`, `connect`, `teamai`, `bias`, `places`, `recovery`, `group`, `settings`, `updates`, `ties`, `notes`, `translations`, `wizards` |
-| [daily-work](screens/daily-work.md) | Home, the queue, finding and adding material, and reading a document | `home`, `projects`, `theme`, `dash-action`, `dash-project`, `elsewhere`, `queue`, `finder`, `capture`, `held`, `archive`, `open-file`, `document`, `contradiction`, `find-in` |
+| [daily-work](screens/daily-work.md) | Home, the queue, finding and adding material | `home`, `projects`, `theme`, `dash-action`, `dash-project`, `elsewhere`, `queue`, `finder`, `capture`, `held`, `archive`, `open-file`, `find-in` |
+| [reading-a-document](screens/reading-a-document.md) | One captured document, and two documents in tension | `document`, `contradiction` |
 | [projects-and-questions](screens/projects-and-questions.md) | A project, its objective, its questions, asking, and the assistant panel | `project`, `objective`, `projectai`, `question`, `answers`, `assistant` |
 | [the-record](screens/the-record.md) | What the record follows: people, time, money, calculations, connections, proceedings, dates, standards, and help | `people`, `person`, `timeline`, `money`, `calculation`, `help-records`, `help`, `explore`, `proceeding`, `due-date`, `standard` |
 | [deciding-and-acting](screens/deciding-and-acting.md) | Matters, plans and actions: records requests, starting and sending, holds and counsel | `plan`, `start-send`, `glossary`, `actionnew`, `request`, `action`, `hold`, `holdnotice`, `counsel`, `grouprules`, `matter` |
