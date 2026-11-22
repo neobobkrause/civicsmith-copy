@@ -19,7 +19,7 @@ Status: walkable · Screens used: `members`, `security`, `home`, `queue`, `setti
 ## Before it starts
 
 1. J28 has been walked on this copy: Rosa is the only administrator; Mai is a member.
-2. J03 has been walked on this copy, making Teo (`teo-n`) a member who is not an administrator. (The product's own walker joins its newcomer as `teo-n`.)
+2. J03 has been walked on this copy, making Teo (`teo-n`) a member who is not an administrator. (J03's Test data names his handle.)
 3. J30 has been walked, or is walked later on another copy.
 4. `members`, as Rosa, reads "Administrators: 1" in C1.
 

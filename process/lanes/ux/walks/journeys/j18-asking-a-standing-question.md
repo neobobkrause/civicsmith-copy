@@ -35,9 +35,9 @@ Sources: the wizard "Keep asking this" (`library.json`, four steps); `mock-journ
 
 ## Steps
 
-Walk without the assistant first: `answers` is then "Find and count" (S5). With the assistant, steps 1 and 2 are taken on "Ask" (S1) and step 5 is AI.
+Walk without the assistant first: `answers` is then in S5. With the assistant, steps 1 and 2 are taken in S1 and step 5 is AI.
 
-1. Mai opens Find and count (`answers`), types the search words, and presses "Search" (A3).
+1. Mai opens `answers` (S5), types the search words, and presses "Search" (A3).
    - 1.1 `answers` shows S5: C5's heading and line, C6's field and button, and C7 listing Housing notice 2026-118 as found by search.
    - 1.2 C8 offers "Keep asking this" (A5).
    - With the assistant, `answers` shows S1 after "Ask" (A1), as J17 step 2 states, and C4 offers "Keep asking this".
@@ -50,12 +50,12 @@ Walk without the assistant first: `answers` is then "Find and count" (S5). With 
    - 4.1 Without the assistant, nothing is read by a machine: the new match goes to Mai's queue as a list.
 5. **AI.** With the assistant, at that run it reads only what is new, on Mai's account and within her limit.
    - What must be present (hard, every run):
-     - 5.1 The answer reaching the queue is labelled as the assistant's, with the machine-work label, and carries the queue item's "Read by the assistant" mark (`queue` C6, against S8).
+     - 5.1 The answer reaching the queue is labelled as the assistant's, with the machine-work label, and carries the queue item's read-by-the-assistant mark (`screen.queue.standing.read`; absent in S8).
      - 5.2 Every passage it relies on is a link to `document`, checked by Civicsmith before it was shown.
      - 5.3 It reads only the new document, never one already held before the question was kept.
    - What must never be present:
      - 5.4 A reading of what was not new; a conclusion, a citation or anything sent in Mai's name; an answer seen by any member but Mai; a run beyond her limit.
-   - **Without the assistant:** step 6 shows the list as in 6.2, with no "Read by the assistant" mark (`queue` S8).
+   - **Without the assistant:** step 6 shows the list as in 6.2, with no read-by-the-assistant mark (`queue` S8).
 6. Mai opens her queue (rail "Queue").
    - 6.1 `queue` shows S1 with one standing-question item (C6) for the kept search.
    - 6.2 Without the assistant, the item lists the new match (the document from step 3) and has no mark of being read by the assistant (S8).
@@ -81,7 +81,7 @@ Checked after a reload:
 4. Step 3, the address cannot be fetched: `capture` V2 or V3. Resumes at step 3 once ARCH's address answers.
 5. Step 4, no new document arrives before the end day: no item reaches the queue; on the end day the question stops by itself. The journey ends at step 7.
 6. Step 5, the assistant unreachable, its limit reached, or a use switched off: the queue item comes as the list without the assistant, as in step 6.2 (design silent on whether the queue says why: lane to confirm). Resumes at step 6.
-7. Step 6, a feed did not answer: `queue` S7, never "nothing is waiting"; its link to try again. Resumes at step 6.
+7. Step 6, a feed did not answer: `queue` S7, never S2's line; its link to try again. Resumes at step 6.
 
 ## Changes
 

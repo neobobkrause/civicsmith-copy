@@ -45,13 +45,13 @@ Walk the path without the assistant first: at each **AI** step take its step **w
 2. **AI.** Mai opens Ask (`answers`), types the words from Test data in "Your question", and presses "Ask" (A1), giving the reason.
    - What must be present (hard, every run):
      - 2.1 `answers` shows S2 while it works (progress rows, no answer words), then S1.
-     - 2.2 The answer carries the machine-work label; each sentence is followed by links to the passages it rests on, each opening `document` at that passage; "Where it looked" gives its lines; the line that Civicsmith checked it before it was shown (C3).
-     - 2.3 Where it says what the notice requires, the "Legal information, not legal advice." line (C3).
-     - 2.4 Where nothing held answers, the answer says so: the "Not established" line, where it looked, and what would find it.
+     - 2.2 The answer carries the machine-work label; each sentence is followed by links to the passages it rests on, each opening `document` at that passage; its lines for where it looked; the line that Civicsmith checked it before it was shown (C3).
+     - 2.3 Where it says what the notice requires, C3's legal-information line.
+     - 2.4 Where nothing held answers, the answer says so: C3's not-established line, where it looked, and what would find it.
      - 2.5 On a test instance, the untested label.
    - What must never be present:
      - 2.6 A source the team does not hold; a quotation not in the cited passage; legal advice; the answer drawn as Mai's words or as evidence; a single confidence score.
-   - **Without the assistant:** `answers` shows S5, its heading "Find and count". Mai types "roof" and presses "Search" (A3): C7 lists Housing notice 2026-118, its title a link to `document`, marked as found by search. She presses "Show how this was counted" (A4) where a count shows: the value with its basis, or what is not held (A4). No "Ask" and no field "Your question" is drawn.
+   - **Without the assistant:** `answers` shows S5, with C5's heading. Mai types "roof" and presses "Search" (A3): C7 lists Housing notice 2026-118, its title a link to `document`, marked as found by search. She presses "Show how this was counted" (A4) where a count shows: the value with its basis, or what is not held (A4). No "Ask" and no field "Your question" is drawn.
 3. **AI.** `not built` On `project` "Roof repairs", with suggestions turned on, a suggested question shows under "Suggested questions" (C15), with its machine-work label; Mai opens the one that matches Test data's question with "Open this question".
    - What must be present (hard, every run):
      - 3.1 Each suggestion carries the machine-work label and says who asked; it opens a question only on Mai's act.
@@ -60,7 +60,7 @@ Walk the path without the assistant first: at each **AI** step take its step **w
    - **Without the assistant:** Mai types the question from Test data in "The question, in plain words" and presses "Open a question" (`project` A1, Asks for a reason). `question` opens in S3 for it; `project` C7 lists it. No section "Suggested questions" is drawn.
 4. **AI.** On the new question, Mai presses "Ask the assistant to work on this" (`assistant` A2), then "Stop the run" (A4) before it ends.
    - What must be present (hard, every run):
-     - 4.1 After A2: the started line, then S2: "Working on this" with its step count, and the line that the run is hers (C3); "Stop the run" offered.
+     - 4.1 After A2: the started line, then S2: C3's running line with its step count, and the line that the run is hers (C3); "Stop the run" offered.
      - 4.2 To the owner of the paying account only: the daily use line in C1 and the cost so far in C3.
      - 4.3 After A4: S3, the run ended because she stopped it; what it produced stays labelled as its draft (C4). `question` shows S10.
    - What must never be present:

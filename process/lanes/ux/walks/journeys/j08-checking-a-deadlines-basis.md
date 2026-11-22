@@ -56,7 +56,7 @@ Sources: `mock-journeys.js` journey 8 and `JBRIEF[8]`; the wizard "Get a record"
    - 8.2 C4's note says a recorded reply stays and is never edited or removed.
    - 8.3 C3 shows the due date in its met state.
 9. Mai opens her queue again.
-   - 9.1 The queue shows the date as met, as facts and never legal advice; no "no reply recorded" line shows for it. (How the queue draws a met date is not on `queue`'s page: design silent: lane to confirm.)
+   - 9.1 The queue shows the date as met, as facts and never legal advice; no passed-date line shows for it. (How the queue draws a met date is not on `queue`'s page: design silent: lane to confirm.)
 
 ## End state
 

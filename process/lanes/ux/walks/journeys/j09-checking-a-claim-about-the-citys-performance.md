@@ -59,19 +59,19 @@ Sources: the wizard "Check a claim" (`library.json`, nine steps); `mock-journeys
    - 8.1 The count shows on `finder` (A8's counted line).
 9. Mai opens the project's calculation from "This project's work" (`project` C11).
    - 9.1 `calculation` shows its one state: C1 the computed fact's name, the line that it is computed with its method shown, and the result as a number of a total, with its share and what it counts.
-   - 9.2 C2, under "Method": the formula, its input (the list) with its capture date and grade.
-   - 9.3 C5 shows only "Draw a random sample".
+   - 9.2 C2: the formula, its input (the list) with its capture date and grade.
+   - 9.3 C5 offers only "Draw a random sample" (A5).
    - 9.4 That a count made on `finder` opens here is not drawn on either page (design silent: lane to confirm).
 10. Mai presses "Draw a random sample" (`calculation` A5).
-    - 10.1 C5 shows "The draw" with its seed, and which orders were drawn.
+    - 10.1 C5's draw row shows its seed, and which orders were drawn.
     - 10.2 C5's link "How spot-checks work" (A7) leads to `help`, which shows its five headings 2 (C2).
 11. Mai visits one drawn order's address and records what she finds: Add, the tab for what she saw (`capture` S3), C20 filled from Test data with her photo, and "Record what you saw" (A16). `waiting A4`
     - 11.1 `capture` shows S10, her testimony recorded with its id.
     - 11.2 Whether Mai can look at her own photo inside Civicsmith is open question A4; a difference is an observation.
 12. Back on `calculation`, Mai presses "Count it for the drawn report" (A6, Asks for a reason) for that order, with the reason from Test data.
-    - 12.1 C5's rows "What members found" and "What it estimates" are counted again, with the counts and the exact range, and what it does not say.
+    - 12.1 C5's rows for what members found and what it estimates are counted again, with the counts and the exact range, and what it does not say.
 13. On the question from step 3, Mai opens "Conclude" (C12), chooses to write the reading herself, fills the three fields from Test data, and presses "Conclude" (A11, Asks for a reason).
-    - 13.1 `question` shows S8: heading 2 "Concluded", who concluded it and when, the reading marked as written by Mai, and what would change it with its strength.
+    - 13.1 `question` shows S8: its heading 2, who concluded it and when, the reading marked as written by Mai, and what would change it with its strength.
     - 13.2 S7's buttons are offered: "Prepare a case from this", "Plan what to do", "Withdraw the conclusion…".
 
 ## End state

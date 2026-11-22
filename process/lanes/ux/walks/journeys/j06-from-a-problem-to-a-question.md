@@ -44,7 +44,7 @@ Sources: `mock-journeys.js` journey 6 and `JBRIEF[6]`; `journeys.html` #j6; `bui
    - 1.2 The door's offer opens in place on `home`: suggested wizards, the matching line and the blank-page line, as `home` A12 says. Nothing is recorded by opening it.
 2. Mai opens Your notes (Settings) and writes the note from Test data, then presses the button to write it (`notes` A1).
    - 2.1 `notes` C1 says only she can see her notes.
-   - 2.2 The note is first in C3, its row marked "only you" (state S1).
+   - 2.2 The note is first in C3, its row carrying the only-you mark (C3; state S1).
    - 2.3 The first time, C5 shows under the note.
 3. Mai opens Add, takes the tab for what she saw (`capture` A1, state S3), fills C20's three fields from Test data, adds her photo, and records it (A16). `waiting A4`
    - 3.1 `capture` shows S3 with C19 and C20; no A17 and no draft mark (S11).
@@ -55,13 +55,13 @@ Sources: `mock-journeys.js` journey 6 and `JBRIEF[6]`; `journeys.html` #j6; `bui
    - 4.2 Its link "Open it" (A6) leads to `document`.
 5. Mai opens the captured notice (A6), reads it, and vouches for it (`document` A2), filling "What you checked" and "What the team does about what remains".
    - 5.1 Before the vouch, `document` shows S2: C1, C2 and the held banner with A2; no C18.
-   - 5.2 After the vouch, `document` shows S1, C3 reading "Vouched for by" Mai with the day.
+   - 5.2 After the vouch, `document` shows S1, C3 naming Mai as the one who vouched, with the day.
 6. **AI.** Mai opens Ask (`answers`), types the question from Test data in "Your question", and presses "Ask" (A1), giving her reason.
    - What must be present in any proper result (hard, every run):
      - 6.1 `answers` shows S2 while it works (progress rows, no answer words), then S1.
      - 6.2 The answer carries the machine-work label (`answers` C3; `projects-and-questions`, "The assistant on these screens", item 1).
      - 6.3 It cites at least one passage of Housing notice 2026-118, each a link to `document` at that passage, beside the line that Civicsmith checked it before it was shown.
-     - 6.4 It carries C3's "Legal information, not legal advice." line, and its "Where it looked" lines.
+     - 6.4 It carries C3's legal-information line (`screen.answers.legal`) and its lines for where it looked.
      - 6.5 On a test instance it carries the untested label.
    - What must never be present:
      - 6.6 A source the team does not hold; a quotation not found in the notice; advice on what Mai should do in law; a statement that the landlord or the city acted unlawfully; the answer drawn as Mai's words or as evidence; a cost line, unless Mai owns the paying account.
@@ -80,7 +80,7 @@ Sources: `mock-journeys.js` journey 6 and `JBRIEF[6]`; `journeys.html` #j6; `bui
 10. Mai goes Home and presses "Start a project" (`home` A14), typing "Roof repairs" as its title.
     - 10.1 `project` opens in S2: the title as heading 1, "Opened by" Mai with the day, and the field for a first question with "Open a question".
 11. Mai types the question from Test data and presses "Open a question" (`project` A1), giving the reason from Test data. `waiting A1`
-    - 11.1 `question` opens in S3: heading 1 the question's words, C2's three steps, "Next: bring in a source", the row to add a document and the button to find one; no row asking the assistant (S13).
+    - 11.1 `question` opens in S3: heading 1 the question's words, C2's three steps, the section for bringing in a source, the row to add a document and the button to find one; no row asking the assistant (S13).
     - 11.2 No screen asks who the question is about (open question A1); a difference is an observation.
     - 11.3 Back on `project`, C7 lists the question, marked as resting on nothing yet.
 12. The records behind the notice are not public, so Mai opens the project's link "Records requests" (`project` C11).
@@ -92,7 +92,7 @@ Checked after a reload, signed in as Mai:
 
 1. `projects` lists "Roof repairs"; its `project` shows S1 or S2 with the question from Test data under Questions (C7).
 2. `question` for that question shows S3: nothing cited yet.
-3. `notes` C3 lists the note, "only you". Signed in as Rosa, `notes` shows no such note (S2 or her own notes only).
+3. `notes` C3 lists the note with its only-you mark. Signed in as Rosa, `notes` shows no such note (S2 or her own notes only).
 4. Housing notice 2026-118 opens on `document` in S1, vouched for by Mai; `finder` finds it by "roof" for Rosa too.
 5. The standard from step 9 opens on `standard` in S1.
 6. Mai's testimony is held, recorded as hers (it shows by its id where the record lists her captures).

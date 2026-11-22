@@ -39,7 +39,7 @@ Sources: `mock-journeys.js` journey 19 and `JBRIEF[19]`; `journeys.html` #j19; `
 1. Mai opens her queue (rail "Queue").
    - 1.1 `queue` shows S1: C1's heading, the count of items, grouped by case, and the sort choices.
    - 1.2 C4's note on the three kinds shows, marked as shown once.
-   - 1.3 A section for "Roof repairs" (C5); each item shows its kind, one of To do, Noticed and Status, in words, not by colour alone.
+   - 1.3 A section for "Roof repairs" (C5); each item shows its kind in words (C5), not by colour alone.
    - 1.4 The rail's "Queue" carries the count of items waiting (`every-screen` section 3.1).
 2. Mai reloads the queue.
    - 2.1 C4's note no longer shows; every item from step 1 still does.
@@ -53,19 +53,19 @@ Sources: `mock-journeys.js` journey 19 and `JBRIEF[19]`; `journeys.html` #j19; `
 5. **AI.** An item the machine marked worth a look shows; Mai opens "How was this found?" (C7) and presses "Dismiss with a reason" (A9) with the reason from Test data.
    - What must be present (hard, every run):
      - 5.1 The item carries the hint's machine-work mark, how it was found and out of how many (C6, C7), and C7's four parts: what was matched, how it was found, how far to trust it, what it is not.
-     - 5.2 After the reason is sent, the item leaves; it shows under "Set aside" in "What you answered" (S6).
+     - 5.2 After the reason is sent, the item leaves; it shows in S6 ("What you answered", A17), in its set-aside section.
    - What must never be present:
      - 5.3 A hint drawn as a finding, or without its fold; a hint of a kind switched off for the project.
    - **Without the assistant:** no hint item arrives (`queue` S8); Mai goes on to step 6.
 6. On the item for her standing question's answer (from J18), Mai presses "Snooze to a date" (A10) and chooses the day from Test data.
    - 6.1 A10 opens the field "Until which day"; after it is set, the item leaves the queue.
-   - 6.2 Through "What you answered" (A17), S6 shows the item under "Snoozed", with the day it comes back and "Bring back".
+   - 6.2 Through "What you answered" (A17), S6 shows the item in its snoozed section, with the day it comes back and button "Bring back".
 7. Mai signs out (shell menu, "Sign out"); Rosa signs in on `front` and opens her queue.
    - 7.1 `front` shows its signed-out state after Mai's sign-out (`every-screen` section 4).
    - 7.2 Rosa's `queue` shows C8, the section for the team's Civicsmith: an update is ready, with the release and its date; "See what changes" and "Not now" (A11).
    - 7.3 None of Mai's items (her standing question's answer, her newer version) shows in Rosa's queue.
 8. Rosa presses "See what changes" (A11).
-   - 8.1 `updates` shows S2: under "Ready to install" the release and its date, the security mark where the release is a security fix, and the line that the release is signed; its notes in three parts, for members, for administrators, and what an administrator must do.
+   - 8.1 `updates` shows S2: in its ready section the release and its date, the security mark where the release is a security fix, and the line that the release is signed; its notes in three parts, for members, for administrators, and what an administrator must do.
    - 8.2 Buttons "Update" and "Not now" are offered; there is no hand-off of the link (that is S1).
    - 8.3 C2 names the release running now.
 9. Rosa presses "Update" (`updates` A1).
@@ -75,14 +75,14 @@ Sources: `mock-journeys.js` journey 19 and `JBRIEF[19]`; `journeys.html` #j19; `
 
 Checked after a reload:
 
-1. Signed in as Mai, `queue` holds neither the newer-version item nor the standing question's answer; "What you answered" (S6) lists the answer under "Snoozed" with its day, and the adoption under "Answered".
+1. Signed in as Mai, `queue` holds neither the newer-version item nor the standing question's answer; S6 lists the answer in its snoozed section with its day, and the adoption in its answered section.
 2. The claim question's citation is on the newer copy (`document` C15 shows it moved, by Mai, with the day).
 3. Signed in as Rosa, `queue` C8 still shows the release ready (it was not installed), and `updates` shows S2.
 4. Where step 4 was walked, the passed-date item is gone from Mai's queue until the reminder day.
 
 ## Ways it can turn aside
 
-1. Step 1, nothing waits on Mai: `queue` S2, quiet: its line, the three "none here" rows each with its second sentence, the up-to-date line, and the links "Go to Home" and "What you answered". The journey cannot go on; the walk records it.
+1. Step 1, nothing waits on Mai: `queue` S2, quiet: its line, the three rows for the kinds each with its second sentence, the up-to-date line, and the links "Go to Home" and "What you answered". The journey cannot go on; the walk records it.
 2. Step 1, a feed did not answer: `queue` S7, never S2's line; link "Try again". Resumes at step 1.
 3. Step 4, no passed due date on the copy: no such item shows. Resumes at step 5.
 4. Step 3, Mai keeps her version: "Keep the version you cited" (A1); the item leaves; the citation stays on the earlier copy. Resumes at step 4.

@@ -19,7 +19,7 @@ Status: walkable · Screens used: `members`, `join`, `home`, `account`, `project
 ## Before it starts
 
 1. J28 has been walked on this copy: Rosa administers "Lakeshore Tenants"; Mai is a member.
-2. J09 has been walked by Mai on this copy: a project Mai is in holds a question citing a calculation (a computed fact on `calculation`) that Mai made, its result accepted. J09's Test data names the project, the question and the calculation; this page calls them "J09's project", "J09's question" and "J09's calculation".
+2. J09 has been walked by Mai on this copy: a project Mai is in holds a question citing a calculation (a computed fact on `calculation`) that Mai made. The project is "Roof repairs", which Mai started in J06 and owns. J09's Test data names the question and the calculation; this page calls them "J09's project", "J09's question" and "J09's calculation".
 3. Ana is not a member: `members` lists no `ana-p`.
 
 ## Test data

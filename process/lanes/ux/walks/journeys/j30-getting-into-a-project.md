@@ -19,7 +19,7 @@ Status: walkable · Screens used: `projects`, `project`, `front`, `home`, `membe
 ## Before it starts
 
 1. J28 has been walked on this copy: Rosa administers "Lakeshore Tenants"; Mai is a member who may start projects.
-2. J03 has been walked on this copy, making Teo (`teo-n`) a member who may not start projects. (The product's own walker joins its newcomer as `teo-n`, without that right.)
+2. J03 has been walked on this copy, making Teo (`teo-n`) a member who may not start projects. (J03's Test data: no capability ticked beyond the default.)
 3. None of the three projects in Test data exists.
 
 ## Test data
