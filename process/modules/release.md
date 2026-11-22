@@ -1,8 +1,8 @@
-Length: 83 lines. Last section: "Suggestions".
+Length: 88 lines. Last section: "Suggestions".
 
 # release: requirements
 
-Next number: 43
+Next number: 46
 
 ## Public
 
@@ -59,6 +59,11 @@ The release tooling run from an operator's machine, taken from `bundler` with it
 - **R41** [met] (fix round 7 G83; K4752; `runtime-limits` R27) `deploy.mjs` takes `--store-location <hint>` and `--store-generation <n>`, each validated (`runtime-limits.storeHint`'s list; `/^[1-9][0-9]*$/`; `1` means the first room and removes a held `STORE_GENERATION` binding, the rollback), refused by name otherwise (`[BAD_STORE_LOCATION]`, `[BAD_STORE_GENERATION]`) before anything is uploaded, and emits each as a `plain_text` binding; absent, none is emitted, and a held value it does not derive is kept (R34's rule).
 
 - **R42** [met] (fix round 7 G84; K4753, K4755) After the upload's answer, `deploy.mjs` prints one line `test deploy: startup <ms> ms` with the script's start-up figure that Cloudflare's documented upload answer carries (the field named in the code with the page that documents it), or `test deploy: startup unreported` when the answer carries none; it never fails a deploy on it; the line is printed in a test deploy only (R40).
+
+**Development copies (`node bio-plane/scripts/dev-copy.mjs <deploy|seed|remove> <copy>`; ARCH's decision "The walks' commands and development copies", 22 Nov 2026).** Run by ARCH's session from the repository's root with the deploy token in the environment; named in the process config's `deploy` group.
+- **R43** [not yet met] `deploy <copy>` builds the plane and every fleet member from the checkout, unsigned, and puts up a whole working copy in the development account under names made from `<copy>` that no installed site's names can take, with a small documents site of the copy's own serving at fixed addresses each document the walks' journeys capture (`process/lanes/ux/walks/index.md`, section 7, item 1, and the amended notice of J23 at the same address as the first), and prints the copy's address and the documents site's. It acts only in the Cloudflare account the process config's `hosting.development_account` names and refuses `[NOT_DEVELOPMENT_ACCOUNT]`, before any request, when the token's account is another. Any instance value the copy needs is made fresh for that copy, is never printed, never written to the repository and never reused for another copy. A copy already up is replaced in place. Each step prints what it deployed and is within one command of under thirty minutes. Test: against a stub account, the names made from two copies differ from each other and from an installed site's; another account is refused before any request; no instance value appears in the output.
+- **R44** [not yet met] `seed <copy>` gives a deployed copy the starting data the walks' index names (section 5: the city Lakeshore and the documents' addresses), through the plane's own admin operations (`instancegroupseed`, `officesseed`, `seatsseed`), making no member, no sign-in and no team, so that the copy's first-use door is still open after it. It refuses a copy that is not up, and the development-account rule of R43 holds. Test: against a stub plane, seed calls only the admin operations and leaves the first-use door open.
+- **R45** [not yet met] `remove <copy>` deletes every Worker, container application, storage bucket and object, database and documents site named for `<copy>` in the development account, and nothing else, then reads the account back and succeeds only when nothing named for that copy remains; a copy already gone succeeds. The development-account rule of R43 holds. Test: against a stub account holding two copies, removing one leaves the other whole; a leftover in the read-back fails.
 
 ## Private
 

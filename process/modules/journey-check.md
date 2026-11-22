@@ -1,8 +1,8 @@
-Length: 90 lines. Last section: "Suggestions".
+Length: 94 lines. Last section: "Suggestions".
 
 # journey-check: requirements
 
-Next number: 32
+Next number: 33
 
 ## Public
 
@@ -67,6 +67,10 @@ The release check: a Playwright walk of journeys 28 and 3 with screenshots, fail
 
 - **R30** [met] (T51 FR-34; K4161 group E, `build/plan/deadends-T51/walk-E-trace.md`; amends R29 (a)) **Making an answer pseudo is cheap.** Making an answer pseudo costs, for a body shaped like the `interfacewords` answer (about 67,000 strings: rows of `{key, text, en, fallback}`), at most 1,000,000 sentence-pattern tries, none for a string it has already made, and gives the same result as trying every pattern, so the walk's event loop is not held for seconds on each page (the stall that cancelled R1 (a)). Test: a body shaped like `interfacewords` through `pseudoJson`, with `RegExp.prototype.exec` counted for the anchored sentence patterns, tries at most 1,000,000 and a second call tries none and answers the same, and every string of it gets the result of trying every pattern; 300 sampled rows with placeholders, filled with a value, are still made pseudo (`escapedIn` finds nothing). Control: a string that is not a sentence of the list is left as it was.
 - **R31** [met] (T51 fix round 6, G1; K4565, K4566, K4570; amends R1 (a)) After an install and after an update, the plane's script in the walk's fake account holds exactly the cron its signed statement `bio-plane-crons/1 <cron>` states (`*/5 * * * *`); the account reads schedules back; a refused schedule stops the install and the update each in a sentence; the local walk fails by name when the installed plane holds none. Test: the install and update over the account; control: a refused schedule; a plane stating none.
+
+**Running walk steps (ARCH's decision "The walks' commands and development copies", 22 Nov 2026).**
+- **R32** [not yet met] `node bio-plane/src/journey-check/steps.mjs <address> <step file>...` runs the named walk steps (files under a module's `walk/internal/` or `walk/external/`, Process4 build text 3, section 3) against the address, one after another in the order given, and opens nothing else. For each step it prints the step's `requirement`, `follows` and `expects` lines, then `passed` or `failed` with what it saw, any error text exactly; it exits 0 only when every step passed. A sign-in a step makes through the copy's own first-use door is kept only in a folder outside the repository for that run, is never printed, and is used by later steps of the same run; no sign-in is read from the environment. A file without the four header lines is reported as not a step and not run. Test: two fixture steps against a local fixture page, one passing and one failing, print their headers and outcomes and exit 1; a file with no header is reported and not run.
+
 ## Private
 
 ### Uses
