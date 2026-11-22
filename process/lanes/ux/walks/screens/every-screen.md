@@ -1,4 +1,4 @@
-Length: 298 lines. Last section: "Changes".
+Length: 301 lines. Last section: "Changes".
 
 # Screens: Every screen
 
@@ -140,6 +140,8 @@ Password asked again: before signing or publishing a case, changing administrato
 ## 5. The assistant dock, and its absence
 
 The assistant panel (`assistant`, frame `dock`) opens beside a working screen, a complementary region named "Assistant" with a close button "Close the assistant" (`shell.assistant.close`). Its content is on the page `projects-and-questions`. Only one panel shows at a time: while a wizard runs, its guide ("Wizard", `shell.guide`) takes the place.
+
+**The wizard guide.** It opens only when a wizard is started: from the wizard's mark on a screen, from Home, or after joining (`join` A6); following a link to a screen starts none. Its card shows "{wizard} · step {i} of {n}" (`guide.step`) and the step's "what" and "why" from the wizard library; inside a side trip, "Side trip: {wizard}. When it finishes or you stop it, you come back to this step." (`guide.sidetrip`). Buttons "Back" (`screen.guide.back`, from the second step), "Next" (`screen.guide.next`), or "Finish" (`screen.guide.finish`) on the last step; on a step with an act, "Show me where" (`guide.showwhere`, keys Alt+Shift+W, `screen.guide.key`); "Stop" (`screen.guide.stop`), explained by "Stops the wizard here. Nothing is sent and nothing on the screen changes." (`screen.guide.stop.does`); a side trip stopped returns to the step it left. A step with nothing to open stays on the card with that step's own words for none and its button, for example the welcome's step 4 with no question in the team: `wizard.WIZ-7db08189cc0e58c3.step4.none.what`, `.why` and button "Open a question" (`.step4.none.door`). Finished: "Done: {name}. Nothing about who walked it is kept." (`screen.guide.finished`) with "Close" (`screen.guide.close`).
 
 **The assistant is reachable** only when the team has the assistant installed and on, and the member holds an AI account (their own, a project's, or the team's key that is switched on). Then the masthead shows "Assistant".
 
@@ -296,3 +298,4 @@ The rail (section 3) stands as built. The seven navigation categories of the Roa
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

@@ -1,0 +1,39 @@
+Length: 39 lines. Last section: "3. How the lane settles a line the design is silent on".
+
+# The UX lane's design decisions
+
+Kept by the UX lane; rank 5 on `process/ranking.md` (design decisions), below the mission, principles, standards and requirements. Each entry states the decision as it now stands, with its grounds. A later decision rewrites an entry in place. The owner's words, where any decide an entry, are quoted exactly with their date; nothing here is his unless so quoted.
+
+## 1. Decisions
+
+- **U1. Signing out leads to the team's page** (`front`), as `shell.menu.signout_does` says and the code does. The other row's "the sign-in page" is retired. Grounds: the team's page is where signing in starts (`front`), so the two rows meant one place; the code already agrees. (22 Nov 2026, ux lane #1)
+- **U2. The journeys' handles and projects.** Teo's handle is `teo-r`, as the product's walker has it. Two projects exist on one copy: "Roof repairs", started by J06, and "Roof repairs at 14 Lakeshore Row", started by J15 (and by J29 on its own copy). Grounds: the walker and the pages must name the same people; the two projects serve journeys of different shapes and never collide by name. (22 Nov 2026)
+- **U3. Who a question is about (the earlier A1).** When a member opens a question, an optional field asks "Who is this question about?", choosing among the people and organizations the team follows. A member can add or change it later, with a reason kept in the question's history. A question with none says so plainly, with the control to name one. Grounds: the only choice that fixes questions already open, and it keeps the member, not the machine, deciding what a question is about ("the machine looks, the member concludes", design principles). (22 Nov 2026)
+- **U4. Whose fiscal year Money counts in (the earlier A2).** The government's own. Each government's fiscal year comes from the place's records; where they hold none, a member states it for that government, with how they checked it, as the time zone is stated. Money offers the fiscal-year view only for governments whose year is known, never prints "*", and says in one sentence why the view is missing where it is. Grounds: the year belongs to the government whose money it is; the pattern is the one already approved for the time zone. (22 Nov 2026)
+- **U5. Where a handed-in file came from (the earlier A3).** `document` and `held` show "A source" as a link for the members the team listed to read about sources; every other member sees "Handed in through the doorbell", with no link. `held` shows the file's own name, never a machine reference. Grounds: the confidentiality rule the team chose stands exactly as it is; the trail is put where listed members work. This changes no one's right to see a source, so it is design, not a principle. (22 Nov 2026)
+- **U6. A member's own photograph (the earlier A4).** A safe view for pictures: Civicsmith redraws each photograph from its pixels alone and shows that, as it does for documents; the photo's hidden data (such as where it was taken) stays only in the record's own copy. Until it is built, the words are corrected at once: the sentence "The safe view needs no check" is removed under the notice that a file has no safe view, and the screen says plainly how to see the photo on one's own device. Grounds: photographs are evidence members must look at; a redrawn picture keeps the safe-view rule whole. (22 Nov 2026)
+- **U7. Signing keys in the queue (the earlier A6).** One queue item per member, listing each new key with when it was made; the box "Keep it on this device" stays unticked, with a sentence beside it saying a key not kept is gone when the browser closes. Grounds: removes the noise without choosing about devices for the member. (22 Nov 2026)
+- **U8. Documents from other projects in pickers (the earlier A7).** A picker shows this project's documents; "Show documents from your other projects" adds the rest, each labelled with its project. Grounds: links across projects stay possible but deliberate. (22 Nov 2026)
+- **U9. Two things called "Capture" (the earlier A5, its words only).** The two measures are named apart: "How well it could be captured" (the ceiling the record sets) and "Your team's grade for the copy" (a member's grade), and the question points the member to where the grade is given. Whether a case may be published with passages ungraded is not decided here: it is put to the owner (section 2). (22 Nov 2026)
+
+- **U10. AI costs are shown to whoever pays.** On the AI screens and in J32, a cost line shows only to the member or administrators whose account pays, as the first beta's AI screens draw it (DEC-420); the earlier journey text that showed costs to every member is replaced. Grounds: the newer ruling stands over the older text; a member who pays nothing has no cost to weigh. (22 Nov 2026)
+- **U11. Settling the design-silent lines.** The 107 lines the first writing left "design silent" are settled by section 3, by three workers for this lane, 22 Nov 2026; the lane reviewed each choice made by section 3's third rule and keeps them as written on the pages. Two code differences they found go to ARCH as candidate flaws: Explore ticks three kinds by default, and a removed administrator is marked inactive (`member-roster/index.mjs:907`).
+
+## 2. Put to the owner
+
+These touch what the product holds as evidence and what it publishes, which are his (Process4 design part 4, section 3). They are put to him on the lane's design page, with options and the lane's recommendation:
+
+- **Q1. Publishing with passages ungraded (the earlier A5's policy part).** Recommendation: the signing screen names every passage still ungraded; the member grades them there or signs anyway, and the edition says it was published with them ungraded.
+- **Q2. Citing a typed page once a second member has checked it (the earlier A8).** Recommendation: citable once checked, the citation carrying "typed by …, checked by …", never presented as Civicsmith's reading or the original.
+
+Until he answers, journey steps that rest on them stay marked `waiting Q1` or `waiting Q2`.
+
+## 3. How the lane settles a line the design is silent on
+
+Where a walks page marks a line "(design silent: lane to confirm)", the lane settles it in this order, and the page then states the result plainly, without the mark:
+
+1. The design implies it: another screen part, a rule on `every-screen`, the earlier journey or wizard text, or a ruling says it. That is the answer.
+2. The built code draws it, and what it draws keeps every rule on `every-screen` and the principles. That is adopted as the design.
+3. Neither: the plainest choice that keeps the rules: nothing changes silently, the member is told in words, nothing is ticked or chosen for a member by default, an outward or irreversible act is never taken without its warning.
+
+Where settling needs a part the screen does not yet draw, the screen page gains it, marked `not built` until a module draws it. A line that needs a test fixture or a deployment fact is ARCH's, and the page says so instead.

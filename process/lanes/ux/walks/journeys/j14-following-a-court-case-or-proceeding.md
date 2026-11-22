@@ -1,4 +1,4 @@
-Length: 97 lines. Last section: "Changes".
+Length: 98 lines. Last section: "Changes".
 
 # J14: Following a court case or proceeding
 
@@ -53,17 +53,17 @@ Status: walkable · Screens used: `capture`, `held`, `document`, `project`, `pro
 6. In that fold Mai types the court's name from Test data and presses "Add a court" (A1).
    - 6.1 The court is offered in "The court or tribunal"; the fold no longer shows.
 7. Mai chooses the court and the kind, gives the number and the neutral label from Test data, presses "Register the proceeding" (A1) and sends the reason.
-   - 7.1 The fields for the number and the label are not named on the screen page (design silent: lane to confirm).
+   - 7.1 The number and the label go in "Its number" and "A neutral label" (C8).
    - 7.2 C1's heading is the proceeding's name and number; under it the court and the neutral label.
 8. Mai presses "Add a party by role" (A2), names the landlord from Test data in its role, and sends the reason.
    - 8.1 C3 "Parties" lists the landlord by role and name.
    - 8.2 The landlord's name is a link (A6).
-9. Mai presses "Follow its register" (A3), giving the register's address from Test data.
-   - 9.1 C4 "The register" lists the register's filings with their dates, the newest marked new; or, where the register needs a login, the line `.login.note` (design silent: lane to confirm how a member says the register needs a login).
+9. Mai gives the register's address from Test data in "The register's address", ticks "needs a login" only if the register needs one (C9), and presses "Follow its register" (A3).
+   - 9.1 C4 "The register" lists the register's filings with their dates, the newest marked new; or, where the register needs a login, the line `.login.note`.
    - 9.2 New filings found later reach Mai's `queue` (A3).
 10. Mai presses "Hold an order as obligations" (A4) on the order, holds the paragraph from Test data with its date, and sends the reason.
     - 10.1 C6 lists the obligation as a "To do" with its due date.
-    - 10.2 C5 "Dates" shows the date in the lane "The proceeding" or "Our deadlines on it" (design silent: lane to confirm which lane).
+    - 10.2 C5 "Dates" shows the date in the lane "The proceeding", not in "Our deadlines on it" (C10).
     - 10.3 Nothing on the screen advises what to file (C7).
 11. Mai opens `queue` from the rail.
     - 11.1 `queue` shows S1, with an item of the kind "To do" for the obligation, showing "Due {date}" with the order's date (C5).
@@ -95,3 +95,4 @@ Checked after a reload, signed in as Mai.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

@@ -1,4 +1,4 @@
-Length: 125 lines. Last section: "Changes".
+Length: 126 lines. Last section: "Changes".
 
 # J01: A team gets going
 
@@ -30,7 +30,7 @@ The steps are those of the wizard "Set up and claim" (16 steps), walked on the s
 | Short name | `lakeshore-tenants` |
 | Team's name | "Lakeshore Tenants" |
 | Website | none: "No, or not yet" |
-| Place | the place the development installer offers for Lakeshore, or "None of these" (installer) and "Somewhere else" named "Lakeshore" (setup) where it offers none (design silent: lane to confirm which ARCH serves) |
+| Place | the place the development installer offers for Lakeshore, or "None of these" (installer) and "Somewhere else" named "Lakeshore" (setup) where it offers none; ARCH's to say: which of the two the development installer serves |
 | Languages | English |
 | An office the team deals with | "The city's housing office"; what about: "Housing notices, such as notice 2026-118" |
 | Court notice | "Yes, when they join, and the first time they save something not public" |
@@ -67,7 +67,7 @@ The steps are those of the wizard "Set up and claim" (16 steps), walked on the s
     - 10.1 "No, or not yet" is chosen; the address field and A5 are not shown.
 11. In part 3, Rosa chooses the place and the languages and presses A6 (or, with no place listed, chooses "Somewhere else", names Lakeshore and presses A7).
     - 11.1 The places and languages are saved, or "The place you named: Lakeshore".
-    - 11.2 The line "You chose {place} when you installed" names the place chosen at step 3 (design silent: lane to confirm for "None of these").
+    - 11.2 The line "You chose {place} when you installed" names the place chosen at step 3; after "None of these" the line is not shown.
 12. In part 4, Rosa checks the offices filled in and confirms them (A9); with no known place, she adds the city's housing office herself (A10).
     - 12.1 With a known place: the offices listed, each "held by …" and "From …'s roster", recorded after A9.
     - 12.2 With none: `.offices.none` or `.places.none`, then "Added: The city's housing office".
@@ -75,7 +75,7 @@ The steps are those of the wizard "Set up and claim" (16 steps), walked on the s
     - 13.1 Part 6 shows `screen.setup.people.what` and the court explanation; neither choice is chosen.
 14. Rosa opens part 5, "The AI assistant", reads it, chooses "Yes, members may use it" and "Each member, with their own Claude account".
     - 14.1 After "Yes", the choice "Who pays for it?" shows; with "Each member" chosen, no key field shows.
-    - 14.2 Part 5's state afterwards (design silent: lane to confirm whether it reads "Done" with no act pressed).
+    - 14.2 Part 5 still reads "Optional": choosing sends nothing, and no act was pressed.
 15. **AI** Rosa holds the team's API key (A12) and switches it on (A13).
     - Must be present (every run): "The team's key is held and {state}."; the key never shown again on the page.
     - Must never be present: the key's characters after A12; any assistant control on another screen while the key is off.
@@ -99,7 +99,7 @@ The steps are those of the wizard "Set up and claim" (16 steps), walked on the s
 
 Checked after a reload, signed in as Rosa.
 
-1. `setup` shows parts 1, 2, 4, 6 and 8 "Done", part 7 "Skipped", and the team's name in C1; parts 3 and 5 as their saves leave them (design silent: lane to confirm whether part 3 also needs its time zone saved, and part 5 as step 14.2).
+1. `setup` shows parts 1, 2, 4, 6 and 8 "Done", part 7 "Skipped", and the team's name in C1; part 3 "Done" where a listed place was saved at step 11 and "Optional" where only "Somewhere else" was named (its time zone, not saved here, carries no "Done" of its own and does not change part 3's state); part 5 "Optional", as step 14.2.
 2. `group` (Settings › "Your team") shows "Your team is called Lakeshore Tenants.", no website, the languages, the court notice "tell", and the hosting account's holder.
 3. `places` lists the place and the office(s) recorded at steps 11 and 12.
 4. `members`: one active administrator, `rosa-l`; Dev's invitation unused.
@@ -123,3 +123,4 @@ The walker does not walk J01; it walks J28, which uses the same screens and leav
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

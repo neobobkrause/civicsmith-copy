@@ -1,10 +1,10 @@
-Length: 91 lines. Last section: "Changes".
+Length: 92 lines. Last section: "Changes".
 
 # J24: Complying with a court order
 
 Journey page `j24-complying-with-a-court-order` (index: ../index.md). Written 22 Nov 2026 by a worker for civicsmith ux lane #1.
 
-Status: walkable (the edition's stamp is design silent) · Screens used: `capture`, `held`, `docket`, `case-editor`, `ceremony`, `published`, `docket-public` · Follows: J15, J23 · Followed by: none
+Status: walkable · Screens used: `capture`, `held`, `docket`, `case-editor`, `ceremony`, `published`, `docket-public` · Follows: J15, J23 · Followed by: none
 
 ## Goal
 
@@ -12,7 +12,7 @@ Status: walkable (the edition's stamp is design silent) · Screens used: `captur
 
 ## Who
 
-- Mai, the project's owner, signed in on her own device at 1280 px, her signing key in this browser (J15 step 19). The index names an administrator; the design's journey names the project's owner, who alone signs a docket entry and an edition here (design silent on an administrator who is not an owner: lane to confirm).
+- Mai, the project's owner, signed in on her own device at 1280 px, her signing key in this browser (J15 step 19). The index names an administrator; the design's journey names the project's owner, who alone signs a docket entry and an edition here: an administrator who is not an owner of the project is shown `ceremony` S7 at step 10, and asks an owner to sign.
 - Rosa, member of the project, in a second browser, for the acknowledgement.
 - A reader with no session, for the end state.
 - No assistant: no step needs one.
@@ -31,7 +31,7 @@ Status: walkable (the edition's stamp is design silent) · Screens used: `captur
 | How she got it; where and when | "I was handed it"; "Served at the team's address, today" |
 | What it shows | "A court order to remove one sentence from our case's account." |
 | Vouch fields | "The copy is the order as served" / "Read it against the paper copy" |
-| Docket entry | kind Statement; answers Edition 2; rests on the order; from "Lakeshore District Court"; says "A court ordered us to remove one sentence of the case's account. Edition 3 complies."; goes to "Both" |
+| Docket entry | kind Court order, ordering "remove", naming Edition 2 and the sentence about tenants' reports (`docket` C8); answers Edition 2; rests on the order; from "Lakeshore District Court"; says "A court ordered us to remove one sentence of the case's account. Edition 3 complies."; goes to "Both" |
 | What the next edition covers | "Edition 3 complies with the court's order." |
 | The account, after | "The city inspected 14 Lakeshore Row and ordered the repair in notice 2026-118." |
 | What changed | "Removed by court order (see the docket): the sentence about tenants' reports." |
@@ -48,7 +48,7 @@ Status: walkable (the edition's stamp is design silent) · Screens used: `captur
 4. Mai opens `docket` from `project` C11 ("Docket").
    - 4.1 `docket` shows S1; C2 lists the entries J23 posted; C5 shows `.order`.
 5. Mai fills C3 from Test data, choosing the order under "The document it rests on", and presses A1 ("File a docket entry").
-   - 5.1 C2 lists the entry "drafted, not yet posted" (design silent on which of the four kinds an order takes: lane to confirm).
+   - 5.1 C2 lists the entry, kind "Court order" (`screen.docket.kind.court-order`), "drafted, not yet posted" (`docket` C8, `not built`: the form offers four kinds, none for an order).
 6. Mai presses A2 ("Post it") and signs with her key.
    - 6.1 Before it is done, `act.docketpost.does` shows; the button carries "You sign this" and the outward icon.
    - 6.2 After it: "Posted, signed." (`.posted.said`).
@@ -63,7 +63,7 @@ Status: walkable (the edition's stamp is design silent) · Screens used: `captur
 11. Mai presses "Open the public page".
     - 11.1 `published` shows Edition 3: C1 with links "Edition 1" and "Edition 2"; C4 counts the corrections since Edition 1 (S3, `.corrections.some`) and names the latest.
     - 11.2 The account holds no sentence about tenants' reports.
-    - 11.3 The edition is stamped with what was removed and why (design silent on where `published` shows the stamp: lane to confirm).
+    - 11.3 Under C1's dated line, Edition 3's own "What changed" reads "Removed by court order (see the docket): the sentence about tenants' reports." (`published` C13, `not built`). On Edition 2's page the same words stand beside its link "Edition 3" (built).
 12. Mai presses "its docket".
     - 12.1 `docket-public` lists the entry of step 6, dated and "signed", and "Edition 3 published, superseding Edition 2".
 
@@ -84,8 +84,9 @@ Checked after a reload, in a browser with no session:
 4. Step 6, cannot be prepared for signing: V2 (`.prepare.failed`), nothing posted; resume at step 6.
 5. Step 7, no finding or no scope: V3; nothing started; resume at step 7.
 6. Step 10 on a phone: `ceremony` S6; resume on a computer.
-7. The order seals rather than removes, or unseals: the design says an unsealing order is captured and named before the material is used (`journeys.html` 24); no screen part names it (design silent: lane to confirm).
+7. The order seals rather than removes, or unseals: at step 5 Mai files it as a "Court order" ordering "seal" or "unseal", naming the editions and parts it covers (`docket` C8, `not built`); a part an order withholds shows on `published` as "A court order this team complied with keeps this document's contents from being shown. The order and the record entry that names it are public, and nothing was deleted." (`screen.published.finding.withheld`). Not part of this journey; the walk records what shows and stops.
 
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

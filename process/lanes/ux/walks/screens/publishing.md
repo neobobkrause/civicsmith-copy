@@ -1,4 +1,4 @@
-Length: 400 lines. Last section: "Changes".
+Length: 407 lines. Last section: "Changes".
 
 # Screens: Publishing
 
@@ -155,6 +155,7 @@ Preparing a case, sharing a draft for review, the publication ceremony, the publ
 - C10. Section "Open requests for comment" (`.openrequests.heading`, help `.openrequests.says`): one line per open request.
 - C11. Section "The minutes beside the team's public comment" (`.minutes.heading`, help `.minutes.says`): the two texts side by side.
 - C12. The signing box "Sign and publish Edition {edition}" (`.sign.edition`, protected): `signing.ceremony.who` (protected: "You sign as {signer}, an owner of {project}. The public page will read “Published by {group} · signed by {signer}”. …"); radio "When it becomes public" (`.when`): "Now" / "At a set time: {date}, {time} ({zone})" (`.when.chosen`, protected); `.when.note` (protected); field "Your password" (`shell.password`, help `session.reauth`, protected); `.signs.count` (protected: "One confirmation signs all {n}: …"); disclosure "What your key signs, exactly" (`.signs.exactly`) with lines and `.signs.lines`, `.signs.linesabout` (protected); disclosure "What you are signing, in plain words" (`.plain.head`, `.plain.1`-`.plain.4`); buttons "Sign and publish at {time} on {date}" (`.publishat.button`, protected), primary, and "Sign and publish now"; `.device.next` ("Next, your device asks you once to confirm with your signing key. Nothing is signed until you do.").
+- C13. `not built` (decision U7) In S5, beside the box `signing.ceremony.keepkey`, which starts unticked: a sentence saying that a key not kept on this device is gone when the browser closes (no word row).
 
 **States**
 
@@ -258,6 +259,8 @@ The assistant has no part in the ceremony: no state changes without it.
 - C10. Buttons "Check the signature", "Download the complete edition" (`.download`), "Print the case". After checking: "The signature checks: this is what the team published." (`.verify.ok`) / `.verify.no` / `.verify.none`.
 - C11. "Read it at a minimum strength" (`.read.it.at.a.minimum`): note `.choose.the.weakest.strength.you` + `.the.page.then.shows.only`; "How well the documents are held" and "How firmly they are linked", each "No minimum", "C or better", "B or better", "A only" (`.min.*`); button "Show only findings this strong".
 - C12. "Check a file you hold" (`published.check.title`, help `published.check.help`): "Choose the file" with `.your_computer_works_out_the` + `.the_file_itself_never_leaves`; "Its fingerprint, worked out on your computer: {fingerprint}"; "Or paste a fingerprint you already have"; button "Check it" (`published.check.go`); result `published.check.yes` / `published.check.no` (protected) / `published.check.elsewhere`; disclosure "When nothing can be checked yet".
+- C13. Under C1's dated line, what changed in this edition, as its signed document states it (its "What changed", `case-editor` C12), and each court-order stamp on this edition, linked to the docket entry that names its order (no word row). `not built`. Beside C1's link to the next edition, that edition's "What changed" in its own words (built).
+- C14. "Timeline" (`screen.published.timeline`): the events the edition froze at signing, in two lanes, what the people the case concerns did and what the team did (no word rows), each event with its date and its source; with none, "Nothing here" (`state.empty`). `not built` as two lanes: the code draws one list of the events, and no section when there are none. With no person named, C5 likewise shows "Nothing here" (`state.empty`), `not built` (the code draws no C5).
 
 **States**
 
@@ -307,6 +310,8 @@ No assistant on this screen.
 - C6. Section "Re-run this work in your own project": `.rerun_what` + `.rerun_pairing_human`; choice "Which of your team's projects redoes this work" (first option "Choose one of your team's projects"); "Or start one and come back." (link to `project`); button; `.rerun_declares` + `.rerun_nothing` + `.rerun_compare_there`; disclosure "When it is refused".
 - C7. Section "Accepted by your team" (`.accepted.heading`): each "accepted by {name}, {date}" with reason; field "Why your team withdraws its acceptance" (help `.withdraw.help`); button "Withdraw this acceptance, with a reason" (`.withdraw.button`); disclosure "When nothing of it is accepted".
 - C8. Section "Rest one of your team's questions on this" (`.citeimp.head`, help `.citeimp.tip`): "Which of your team's questions", "How it bears on the question" ("It supports the question" / "It cuts against the question"), "A note (optional)"; button; notes `.citeimp.inherit1`, `.citeimp.inherit2`, `.citeimp.already`, `.citeimp.later`; disclosure "When it is refused" (`.citeimp.refd`).
+- C9. Under A4, once a watch is set, a line naming the publisher's address watched for this import, kept after a reload (no word row). `not built` (the code shows only the button's done state).
+- C10. Under C1, where the case document's signature did not check when it was imported, a line saying so (no word row). `not built` (the import records it; the screen does not show it).
 
 **States**
 
@@ -349,6 +354,7 @@ No assistant on this screen.
 - C5. Note "An order is complied with openly: the next edition is stamped with what was sealed and why." (`.order`).
 - C6. Section "Pressure marked on this case" (`.pressure.heading`): each "marked as a legal threat by {member}" with "No hold is placed for it yet."; note `.pressure.counsel`; link "Place a hold" (to `hold`).
 - C7. Section "The next edition" (`.next.heading`): `.next.what`; checks "Findings it rests on"; a reopened question "reopened by {who}: conclude it again before it can go in." (`.next.reopened`); field "What the next edition covers" (help `.next.scope.help`); button "Start the next edition", primary; "The draft opens as the case being prepared." (`.next.opens`, link to `case-editor`).
+- C8. In C3's "Kind of entry", a fifth kind "Court order" (`screen.docket.kind.court-order`), which asks what the order orders ("Remove", "Redact", "Seal", "Unseal"; no word row), the published editions it names and, to redact, seal or unseal, the parts it names; an order missing one is refused with `refusal.DOCKET_ORDER_UNREADABLE`. Posting it (A2) stamps each edition it names. In C2 the entry shows its kind "Court order". `not built` (the form offers Response, Statement, Reaction and Outcome only).
 
 **States.** S1 entries exist (as above). S2 no entry yet: C2 shows `.none`. S3 assistant unreachable: no "Help me write this" under "What it says".
 
@@ -398,3 +404,4 @@ No assistant on this screen.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

@@ -1,4 +1,4 @@
-Length: 100 lines. Last section: "Changes".
+Length: 101 lines. Last section: "Changes".
 
 # J03: A member joins and finds their footing
 
@@ -6,7 +6,7 @@ Journey page `j03-a-member-joins-and-finds-their-footing` (index: ../index.md). 
 
 Status: walkable · Screens used: `members`, `join`, `home`, `question`, `connect`, `ties`, `capture`, the wizard guide (every-screen, section 5) · Follows: J28, J02 · Followed by: none named yet.
 
-The member's steps are those of the wizard "Welcome a new member" (7 steps), opened by `join` A6; the administrator's invitation comes first. The guide shows the step it is on as step {n} of 7 with the library's "what" and "why" for it; its own controls (next, stop, a side trip's skip) are not on a Screens page yet (design silent: lane to confirm their words).
+The member's steps are those of the wizard "Welcome a new member" (7 steps), opened by `join` A6; the administrator's invitation comes first. The guide shows the step it is on as step {n} of 7 with the library's "what" and "why" for it; its own controls are "Next", "Back", "Finish" and "Stop", and a side trip is skipped by stopping it, which returns to the step it left (page "Every screen", section 5, the wizard guide).
 
 ## Goal
 
@@ -54,7 +54,7 @@ The member's steps are those of the wizard "Welcome a new member" (7 steps), ope
    - 5.3 The masthead shows "You: teo-r" and no "Assistant" button.
 6. Teo goes to the guide's next step (wizard step 4: a question's strength against its bar, and "Undetermined").
    - 6.1 The guide is at step 4 of 7.
-   - 6.2 With no question in the team, what the step opens (design silent: lane to confirm; the wizard names "your team's most recent question").
+   - 6.2 With no question in the team, no screen opens: the guide stays on its card with the step's own words for a team with no question and the button "Open a question" (page "Every screen", section 5).
 7. Teo goes on to step 5, the side trip to connect his own Claude account, and skips it.
    - 7.1 The guide is at step 5 of 7 and offers the side trip "Connect your Claude account" as optional (J04).
    - 7.2 Skipping it returns him to the welcome at step 5; nothing is connected; `connect` is not changed.
@@ -74,7 +74,7 @@ The member's steps are those of the wizard "Welcome a new member" (7 steps), ope
 Checked after a reload.
 
 1. Rosa's `members` shows "Active members: 3 · Administrators: 1", with `teo-r` (cover "Teo, from flat 9"), a member who may contribute, no expertise.
-2. Teo's `home` shows S4 with no guide open (design silent: lane to confirm Home's state once his capture waits; C3 "Needs you" may list it to vouch).
+2. Teo's `home` shows S4 with no guide open, and C3 "Needs you" lists one row to vouch for the copy he captured (`.todo.vouch.noplace.one`), with A2.
 3. Teo's `held` ("Mine") lists the captured notice; opened (A4), its `document` shows S2, held until he vouches, only he seeing the copy.
 4. Teo's `connect` and `ties` are as before he joined: nothing connected, no tie.
 5. Teo's `recovery` reads 10 of 10 unused; the walking session holds his codes.
@@ -98,3 +98,4 @@ The walker (`walkWelcome`) types the handle and password together and joins with
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

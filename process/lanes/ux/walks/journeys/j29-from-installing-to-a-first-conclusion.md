@@ -1,4 +1,4 @@
-Length: 132 lines. Last section: "Changes".
+Length: 133 lines. Last section: "Changes".
 
 # J29: From installing to a first conclusion
 
@@ -90,7 +90,7 @@ The path without the assistant is walked first (index, rule 7). Steps marked **A
 17. On `question`, Rosa answers what the passage carries (S2: "No, my answer falls") and saves (A5, "Save the answers").
     - 17.1 Before saving, `question` shows S2 with no strength.
     - 17.2 After saving, S1, with C3's two grades and the standing against the bar.
-    - (design silent: lane to confirm that S2 comes before concluding on a single passage.)
+    - 17.3 S2 comes before concluding with one passage cited as with several: `question` shows S2 while any cited passage is not yet answered.
 18. **AI** Rosa reads what the assistant proposes and accepts it ("Accept this reading", S5).
     - Must be present (every run): S5's heading, the reading quoted, the passages it rests on as links to the notice, the machine-work label, "Checked by Civicsmith before it was shown", on a test instance `ai.label.untested`, and "Legal information, not legal advice." where it says what the notice requires.
     - Must never be present: a passage not cited on the question or not in the notice; a reading marked accepted before her act; the reading drawn as a member's words.
@@ -130,3 +130,4 @@ The walker (`investigation.mjs`, R9 and R16) claims on a copy J28 made, not a fr
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

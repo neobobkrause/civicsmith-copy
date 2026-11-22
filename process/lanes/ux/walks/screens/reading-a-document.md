@@ -1,4 +1,4 @@
-Length: 217 lines. Last section: "Changes".
+Length: 220 lines. Last section: "Changes".
 
 # Screens: Reading a document
 
@@ -58,6 +58,8 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C28. Section "Steps it is threaded to" (`progression.threadedto`), help `act.captureprogressions.does`; A30.
 - C29. Section "This copy" (`.copyacts.head`), help `document.thiscopy.says`: row "Route to your team: not checked yet." (`.route.standing`) with `.route.says` and A31; fold "What a check can record" (`.route.summary`): `.route.shown`, `.route.notshown`, `.route.same`; fold "When it cannot be checked" (`.route.refused.summary`) with `.route.refused`. Row "Useful when someone may later claim the document was changed after it was captured." (`document.attest.when`) with A32. Fold "Stop using this copy" (`document.retire.fold`): `document.retire.when`; A33.
 - C30. Section "Where this document came from" (`.origin.head`), help `.origin.tip`: field "The system it came from" (`.origin.field`), help "For example, the city's records portal." (`.origin.eg`); A34; "A second declaration is added beside the first." "A second declaration never replaces the first." (`.origin.second1`, `.second2`); rows "Said by {member}, {date}" (`.said_by`).
+- C31. `not built` (decision U9) C2's "This copy" names its two measures apart: the ceiling the record sets as "How well it could be captured" (no word row), never "Capture" alone, and a member's grade as "Your team's grade for the copy" (no word row).
+- C32. `not built` (decision U5) For a document handed in through the doorbell, under C1: for the members the team listed to read about sources, "A source" (`screen.about-knocker.name`) as a link to `about-knocker`; for every other member, "Handed in through the doorbell" (no word row), with no link.
 
 **States**
 
@@ -90,7 +92,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 | A13. button "Confirm that this typing matches the page" (`.attest.button`) | a page typed by another member | "Checked by {name}, {date}" (`.attest.checked`) |
 | A14. buttons "Move my citations to this copy" (`act.adoptversion.label.document`), "Keep citing the version I cited" (`act.keepversion.label.document`) | S3, C15 | `.a34.moved` or `.a34.kept` on that row |
 | A15. link "Compare them" (`document.versions.compare`) | changed | S3 |
-| A16. buttons "Check for a new version now" (`act.monitor.label.document`), "Watch for changes" (`act.monitorset.label.document`) | C14 | "Checked for changes just now." (`.monitor.done`); `.monitorset.done` ["Watching this document's address: …"] |
+| A16. buttons "Check for a new version now" (`act.monitor.label.document`), "Watch for changes" (`act.monitorset.label.document`) | C14 | "Checked for changes just now." (`.monitor.done`); a new version found is kept beside the old and listed in C14 (`act.monitor.does`; `not built`: the code captures nothing and says so, `screen.capture.address.checked.modified`); `.monitorset.done` ["Watching this document's address: …"] |
 | A17. button "Ask whether a newer copy exists" (`.a34.ask_whether_a_newer_copy_exists`) | row not yet checked | the row says whether one exists, or that the record could not tell |
 | A18. button "Compare these two" (`.revisions.compare.act`) | two revisions chosen | they show side by side; nothing is sent |
 | A19. button "Copy" (`shell.copy`) | C17 | the fingerprint is copied |
@@ -215,3 +217,4 @@ Read, not run. The design is the authority.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

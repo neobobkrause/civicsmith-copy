@@ -1,4 +1,4 @@
-Length: 324 lines. Last section: "Changes".
+Length: 329 lines. Last section: "Changes".
 
 # Screens: The team's AI and yours
 
@@ -56,6 +56,7 @@ Mark: `not built`.
 - C9. Part 2 "Privacy and origin checks" (`.chk.head`), "Seven checks, all required to start with." (`.chk.why`): the seven checks as an administrator's rows; sub-heading "Shown for every AI, never required" (`.chk.extra`) and the two shown; "An AI that fails a required check is not offered. A check you leave unchecked, project owners and members may require for their own work." (`.chk.note`).
 - C10. Part 3 "What members may use" (`.mem.head`), "Members can pick only from what you check here." (`.mem.why`): checkboxes "Providers, plans and models" (`.mem.legend`), one per account, each "Models: {models}" (`.mem.models`); "Model choices are listed exactly as each provider offers them. Members choose among the ones you check." (`.mem.modelnote`); checkboxes "Members and their own accounts" (`.mem.own`): "Members may add their own accounts" (`.mem.ownacc`), "Members may use a personal subscription, for their own work only" (`.mem.personal`).
 - C11. Part 4 "Changes" (`.chg.head`), "Every change, newest first, with who made it, when, and at which level." (`.chg.why`): a list, each "{who} {what} · {date} · {level}" (`.chg.row`), `{level}` team, project or member.
+- C12. Among C11's changes, each time a member's run went on to another account at an `aimoments` moment (S2, S3), a row naming the member, the account it went on to, the date and the level member (`.chg.row`). `not built`.
 
 **States**
 | State | When | What shows (exact) |
@@ -104,6 +105,7 @@ Mark: `not built`. The test of step 5 needs a provider account: `AI`.
 - C6. Step 4 "Before you switch it on" (`.s4.head`), "What you accept, recorded once." (`.s4.why`): checkboxes "Your acceptance" (`.s4.legend`) with "I accept the terms above that bind our use of this plan." (`.s4.termsbox`); "Your acceptance is recorded with your name and the date. The terms are accepted once for this account, and shown again if they change." (`.s4.recorded`).
 - C7. Step 5 "Test it" (`.s5.head`), "A harmless test that sends none of your team's material." (`.s5.why`); a fold "If the test fails" (`.s5.failhead`); "It stays off until the test passes." (`.s5.note`).
 - C8. Step 6 "Switch it on" (`.s6.head`), "Choose where it comes in the order of accounts." (`.s6.why`): choice "Where it goes in the order" (`.s6.pos`) of "First", "Second", "Third", "Last" (`.s6.first` … `.s6.last`); "You can change its place later on AI providers." (`.s6.note`).
+- C9. Once A8 is recorded, in step 4: the box "I accept the terms above…" stays ticked and can no longer be changed, with the handle of who accepted and the date beside it (no word row).
 
 **States**
 | State | When | What shows (exact) |
@@ -119,12 +121,12 @@ Mark: `not built`. The test of step 5 needs a provider account: `AI`.
 | Control | When offered | Where it leads |
 |---|---|---|
 | A1. link "Open {provider}'s sign-up page" (`.s2.link`) | S1 to S3 | The provider's own page, outside Civicsmith |
-| A2. button "Store the key in Cloudflare" (`.s3.store`); "Asks for a reason" | "Enter it here" | Same screen; the field empties; the key is never shown again |
+| A2. button "Store the key in Cloudflare" (`.s3.store`); "Asks for a reason" | "Enter it here" | After the reason, the password asked again (page "Every screen", section 4); then same screen; the field empties; the key is never shown again |
 | A3. button "I've entered it" (`.s3.entered`); "Asks for a reason"; and link "Open Cloudflare's dashboard" (`.s3.opencf`) | "Enter it yourself in Cloudflare" | Same screen, the key recorded as entered; the link opens Cloudflare's dashboard outside Civicsmith |
 | A4. button "Sign in with {provider}" (`.s3.signin`); "Asks for a reason" | A sign-in plan | The provider's sign-in page, then back here |
 | A5. button "Use this reference" (`.s3.refgo`); "Asks for a reason" | "Point to a key kept elsewhere" | Same screen, the reference recorded |
 | A6. button "Test the connection" (`.s5.go`), `AI` | After the key and the acceptance | Same screen, S5 or S6 |
-| A7. button "Switch it on" (`.s6.go`); "Asks for a reason" | After S5 | `aiproviders`, the account on in the chosen place, a line in Changes |
+| A7. button "Switch it on" (`.s6.go`); "Asks for a reason" | After S5 | `aiproviders`, the account on in the chosen place, a line in Changes; for a member's own account, `aimine`, the account listed in C2 as "Your own account" in the chosen place |
 | A8. button "Record my acceptance" (`.s4.go`); "Asks for a reason" | S1 to S3 | Same screen; the acceptance recorded with name and date |
 | A9. button "Use my subscription" (`.p.go`); "Asks for a reason" | S4 | `aimine`, the subscription listed under "What serves you now" as "Your own account" |
 
@@ -155,6 +157,7 @@ Mark: `not built`.
 - C5. Section "Checks in force for you" (`.chk.head`): the seven checks as a member's rows; "When you work in a project, that project's checks also apply to the work done directly in it." (`.chk.proj`); "You can require any check the team does not. An AI that fails one you require is not used for your work, and you are told why." (`.chk.rule`).
 - C6. Section "Your use and cost" (`.use.head`): a table "Last 30 days" (`.use.th`), "Requests" (`.use.calls`), "Cost" (`.use.cost`), one row per account; a plan with no cost per answer shows "not measurable in money" (`.use.nomoney`); "Only you see this: your own use across every account that served you." (`.use.note`).
 - C7. Section "The first time material goes to a provider" (`.first.head`): "The assistant names the provider and waits for you before material first goes to it, and after any switch to another provider." (`.first.note`); "You can see this notice, and the others like it, on When the AI can't go on." (`.first.see`) with link "When the AI can't go on" (`.first.link`).
+- C8. After A2, in C4: a choice "Which plan" (no word row) of the plans the catalogue offers (as `aiproviders` C4 lists them, each provider · plan · type, alphabetical), none chosen, and button "Connect" (`screen.aiplan.connect`).
 
 **States**
 | State | When | What shows (exact) |
@@ -168,7 +171,7 @@ Mark: `not built`.
 | Control | When offered | Where it leads |
 |---|---|---|
 | A1. button "Use this for my work" (`.choose.go`) | Always | Same screen; C2 reorders to the choice |
-| A2. button "Add an account of my own" (`.own.add`) | The team allows own accounts | `aiconnect` for a member's own account |
+| A2. button "Add an account of my own" (`.own.add`) | The team allows own accounts | Same screen, C8; its "Connect", a plan chosen, leads to `aiconnect` for that plan as a member's own account |
 | A3. button "Save my checks" (`.chk.save`) | S2 | Same screen; the checked rows stay checked after a reload |
 | A4. link "When the AI can't go on" (`.first.link`) | Always | `aimoments` |
 
@@ -222,6 +225,7 @@ Marks: `not built`; `AI` (every moment needs a connected AI account).
 **Content**
 - C1. On the listing page: heading "When the AI can't go on" (`screen.aimoments.title`); "What the assistant panel shows, one moment at a time. It never changes account, model or provider without telling you, and it waits for your choice." (`.intro`).
 - C2. The panel, headed "The assistant" (`.panel`), showing one moment (S2 to S9). Every moment waits for the member's choice; none changes account, model or provider silently.
+- C3. S9 and every cost line show only to the owners of the account that pays (the assistant's mark 6, page `projects-and-questions`). To any other member, "Ask the assistant to work on this" starts the run at the press, with no estimate and no cost. `not built`.
 
 **States: the moments, each with its exact words**
 | State | When | What shows (exact) |
@@ -322,3 +326,4 @@ Mark: `not built`.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

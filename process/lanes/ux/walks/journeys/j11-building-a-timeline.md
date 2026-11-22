@@ -1,4 +1,4 @@
-Length: 87 lines. Last section: "Changes".
+Length: 89 lines. Last section: "Changes".
 
 # J11: Building a timeline
 
@@ -42,18 +42,19 @@ Status: walkable · Screens used: `project`, `timeline`, `document` · Follows: 
    - 1.3 Neither lane holds an event recorded by a member.
    - 1.4 C5's five buttons are offered.
 2. Mai presses "Record an event" (C5) and records event 1 from Test data, citing the notice's passage.
-   - 2.1 The event form asks what happened, when, how precisely the date is known, and the passage it rests on (design silent: lane to confirm the form's fields; the screen page names none).
+   - 2.1 The form is `timeline` C8: the document and its passage, "What happened", the date as the passage states it (a day gives "To the day"), and "What the date is".
    - 2.2 After sending, event 1 is listed in the lane "What they did", with its date, the precision "To the day", and a link to Housing notice 2026-118.
    - 2.3 Event 1 carries a grade and its "Follow from here" fold.
    - 2.4 The lane "What we did" does not hold event 1.
 3. Mai presses "Add who took part" (C5) and adds the official to event 1 with the role "signed".
    - 3.1 Event 1 shows the official as taking part, with the role.
-   - 3.2 The official's name links to their `person` page (design silent: lane to confirm).
+   - 3.2 The official's name links to their `person` page.
 4. Mai presses "Record an event" and records event 2 from Test data, giving no date.
    - 4.1 Event 2 is listed under C4 "Undated", with the line `.undated.apart`.
    - 4.2 Event 2 is in neither lane of C2: it is not placed by guess.
 5. Mai presses "Link events" (C5) and links event 2 to event 1 as "made under".
-   - 5.1 The link shows on event 2 (or on both), naming event 1 and the kind of link (design silent: lane to confirm where it is drawn).
+   - 5.1 Mai chooses event 1 as the event, event 2 as "The other event", and "The first authorized the second" (C8).
+   - 5.2 Both events show the link (C9, `not built`), each naming the other event and how they are linked.
 6. Mai presses "Keep a suspected cause as a hunch" (C5) and keeps the hunch from Test data.
    - 6.1 The hunch is listed, marked as a hunch and as Mai's.
    - 6.2 The hunch is not an event in either lane, and carries no grade.
@@ -75,7 +76,7 @@ Checked after a reload of `timeline`, signed in as Mai.
 
 ## Ways it can turn aside
 
-1. **Not a member of the project.** Mai is not a member: the project shows `project` S4 and its C11 link is not offered; the timeline's address leads to `unavailable` (design silent: lane to confirm which state). Mai asks to join (`project` A18); an owner admits her (J30); resume at step 1.
+1. **Not a member of the project.** Mai is not a member: the project shows `project` S4 and its C11 link is not offered; the timeline's address leads to `unavailable` S2 ("You can't open this"). Mai asks to join (`project` A18); an owner admits her (J30); resume at step 1.
 2. **No passage cited.** At step 2, the event is sent with no passage: the act's refusal shows beside it by its code (every-screen section 7), and nothing is listed. Resume at step 2.
 3. **Empty reason.** An act that asks for a reason is sent with the reason empty: `shell.reason.needed`; nothing is sent. Resume at the same step.
 4. **Event placed in the wrong lane.** Event 1 shows in "What we did": a flaw; the walk records it and goes on.
@@ -85,3 +86,4 @@ Checked after a reload of `timeline`, signed in as Mai.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

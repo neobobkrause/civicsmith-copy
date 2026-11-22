@@ -1,4 +1,4 @@
-Length: 146 lines. Last section: "Changes".
+Length: 147 lines. Last section: "Changes".
 
 # J04: Connecting your own AI account
 
@@ -47,8 +47,8 @@ Status: AI; partly not built (the first beta's path, steps 1 to 12, is on the pa
    - 3.2 C2 lists no account of Mai's own (S3 where no team account is on).
    - 3.3 C4 shows `.own.team` and `.own.personal`, and A2 is offered.
    - 3.4 C5 shows the seven checks as a member's rows, in S1 or S2 as the team left them.
-4. Mai presses A2 "Add an account of my own". `not built`
-   - 4.1 `aiconnect` opens with C1 and C2 naming the plan she connects. (design silent: where a member chooses the plan between `aimine` A2 and `aiconnect`; lane to confirm)
+4. Mai presses A2 "Add an account of my own", chooses the plan from Test data in the choice that opens (`aimine` C8, none chosen), and presses its "Connect". `not built`
+   - 4.1 `aiconnect` opens for that plan, with C1 and C2 naming it.
    - 4.2 `aiconnect` is in S1: C3 to C8, "Enter it here" chosen, the sign-in panel disabled with `.s3.nosignin`.
    - 4.3 C3's table has its six rows, each with an answer and a source and date, or "not stated".
    - 4.4 C3's sub-heading on the terms that bind civic use holds its three rows, each with the provider's words and source.
@@ -58,9 +58,9 @@ Status: AI; partly not built (the first beta's path, steps 1 to 12, is on the pa
 6. Mai pastes the key into the field of C5 ("Enter it here"), presses A2 "Store the key in Cloudflare" and sends it with her reason. `not built` **AI**
    - 6.1 The reason field opens beside A2; after sending, the button shows done.
    - 6.2 The key field is empty, and the key is drawn nowhere on `aiconnect`, after a reload too.
-   - 6.3 (design silent: whether the password is asked again here, as it is for connecting on `connect`; lane to confirm)
+   - 6.3 After the reason is sent, the dialog "Enter your password again" opens (page "Every screen", section 4); the key is stored only after her password and "Go on".
 7. Mai ticks the acceptance checkbox in C6, presses A8 "Record my acceptance" and sends it with her reason. `not built`
-   - 7.1 The acceptance is recorded: C6 shows it with `mai-k` and today's date. (design silent: the exact line drawn once recorded; lane to confirm)
+   - 7.1 The acceptance is recorded: in C6 the box stays ticked and cannot be changed, with `mai-k` and today's date beside it (C9).
 8. **AI** Mai presses A6 "Test the connection". `not built`
    - Present in any proper result (hard, every run):
      - 8.1 Step 5 of `aiconnect` shows S5: `.s5.pass` with a number of seconds.
@@ -71,14 +71,14 @@ Status: AI; partly not built (the first beta's path, steps 1 to 12, is on the pa
      - 8.5 A7 switching the account on before S5.
    - **Without the assistant:** Mai takes step 12 instead.
 9. Mai chooses "First" in C8 and presses A7 "Switch it on", sending it with her reason. `not built` **AI**
-   - 9.1 `aimine` opens. (design silent: A7 leads to `aiproviders`, which a member may not see; for a member's own account the design implies `aimine`; lane to confirm)
+   - 9.1 `aimine` opens: for a member's own account A7 leads there, not to `aiproviders`.
    - 9.2 `aimine` C2 lists her account first, marked "Your own account" and "On", with `.now.note`.
 10. Mai opens `home` and reloads it. `not built` **AI**
     - 10.1 The masthead shows the button "Assistant" (page "Every screen", section 3.3, item 5).
     - 10.2 `aimine` C6, opened again, lists one row for her account.
 11. Rosa opens `aimine`, then `aiproviders`. `not built`
     - 11.1 Rosa's `aimine` C2 does not list Mai's account.
-    - 11.2 `aiproviders` C3 does not list Mai's account, and C8's costs name no member (`.bud.note`). (design silent: whether a member's own account appears on `aiproviders`; lane to confirm)
+    - 11.2 `aiproviders` C3 does not list Mai's account, which serves only her, and C8's costs name no member (`.bud.note`).
 12. **Without the assistant.** At step 4 Mai presses nothing, and opens `home`.
     - 12.1 The masthead shows no button "Assistant", and no dock is drawn beside any screen; nothing greyed stands in their place.
     - 12.2 No row on `home` and no item in `queue` mentions connecting an AI, then or later.
@@ -144,3 +144,4 @@ Checked after a reload.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

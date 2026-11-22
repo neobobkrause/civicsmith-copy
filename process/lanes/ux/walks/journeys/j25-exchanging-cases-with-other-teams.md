@@ -1,4 +1,4 @@
-Length: 85 lines. Last section: "Changes".
+Length: 86 lines. Last section: "Changes".
 
 # J25: Exchanging cases with other teams
 
@@ -21,7 +21,7 @@ The steps are the wizard "Use another team's case" (`library.json`, journey 25),
 ## Before it starts
 
 1. J28 has been walked on this copy; for step 7, J15 too (the team holds a concluded question).
-2. A case file published by another team is on the walker's device: the file that team's `published` A2 ("Download the complete edition") saves. On a development copy this needs a second team's Civicsmith, deployed apart from this one, walked through J28 and J15 with the Test data below, and its published case's address. Where the second copy runs is ARCH's to say (design silent on whether a team may import its own case as a stand-in: lane to confirm).
+2. A case file published by another team is on the walker's device: the file that team's `published` A2 ("Download the complete edition") saves. On a development copy this needs a second team's Civicsmith, deployed apart from this one, walked through J28 and J15 with the Test data below, and its published case's address. Where the second copy runs is ARCH's to say. This team's own published case is no stand-in: `imported` is for another team's case (its purpose, and its band "Another team's case").
 3. No case has been imported on this copy (`imported` S3).
 
 ## Test data
@@ -54,9 +54,9 @@ The steps are the wizard "Use another team's case" (`library.json`, journey 25),
    - 5.1 C7 "Accepted by your team" lists "accepted by" Mai, today, with her reason.
    - 5.2 C3's marks and grades are unchanged (accepting names one edition and changes no grade).
 6. Mai presses A4 ("Watch the publisher's docket") and gives the publisher's address.
-   - 6.1 The watch is recorded on the same screen (design silent on the words that show it: lane to confirm).
+   - 6.1 Under A4, `imported` names the publisher's address now watched (C9, no word row; `not built`: the code shows only the button's done state).
 7. Mai opens C8, "Rest one of your team's questions on this", chooses the J15 question, "It supports the question", and the note, and presses its button (A8).
-   - 7.1 `imported` records that the question rests on the case (design silent on the words that show it: lane to confirm).
+   - 7.1 A8's button shows done (every-screen rule 15); the question's resting on the case is shown on `question` (7.2). Pressing A8 again for the same question and finding shows "This question already rests on that finding." (`.citeimp.already`).
    - 7.2 `question` for that question shows the finding marked "Another team's" (`.citeimp.origin`) with `.citeimp.origin.meta`. The question's own sections to cite or take back another team's finding (C5) are `not built`.
 8. Mai opens `imported` at `/app/imported`.
    - 8.1 `imported` shows S2: one row "Harbour Tenants · Edition 1 · imported by" Mai, today, with its count, as a link to S1; no band.
@@ -67,12 +67,12 @@ Checked after a reload:
 
 1. `imported` S2 lists the import; its S1 shows the band, C3's marks as in step 3, and C7's acceptance by Mai.
 2. `question` for the J15 question shows the finding marked "Another team's".
-3. On the other team's copy nothing has changed: importing sends nothing to the publisher (design: `journeys.html` 25; design silent on how a walk observes it: lane to confirm).
+3. On the other team's copy nothing has changed: its `docket-public` for the case, opened with no session, lists the same entries as before step 2 (importing sends nothing to the publisher, `journeys.html` 25).
 
 ## Ways it can turn aside
 
 1. Step 2, no file chosen: V1 ("Choose the case file first."); resume at step 2.
-2. Step 2, a file that is not a case file, or one whose signature does not check: the refusal beside the act, as an alert with words, nothing imported (design silent on its words: lane to confirm); resume at step 2 with the right file.
+2. Step 2, a file that is not a case file: beside A1, as an alert, "What was given is not a case file your team's Civicsmith can read: each way it departs from the case-file format is named. Nothing was imported." (`refusal.IMPORT_NOT_A_CASE_FILE`), each departure in its words (for example `refusal.IMPORT_NOT_A_CASE_FILE.manifest`); resume at step 2 with the right file. A case file whose signature does not check is imported, and C1 says its signature did not check (C10, no word row; `not built`); the walk records it and resumes at step 2 with the right file.
 3. Step 3, a finding "Did not recreate": it stays shown with that mark; step 5 accepts only what recreated; the journey goes on.
 4. Step 5, "What you checked" empty: V2 ("Say what you checked first."); resume at step 5.
 5. Step 6, not an https address: V4 ("Give the publisher's https address."); resume at step 6.
@@ -83,3 +83,4 @@ Checked after a reload:
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

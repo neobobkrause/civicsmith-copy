@@ -1,4 +1,4 @@
-Length: 98 lines. Last section: "Changes".
+Length: 99 lines. Last section: "Changes".
 
 # J19: The daily queue
 
@@ -22,7 +22,7 @@ Sources: `mock-journeys.js` journey 19 and `JBRIEF[19]`; `journeys.html` #j19; `
 1. J18 has been walked on this copy: Mai's queue holds the item for her standing question's answer.
 2. J09 has been walked: Mai has cited a passage of the city's report to council (the claim) in a question.
 3. ARCH has arranged that the claim's address now serves a changed copy (index, section 5: which address serves it is ARCH's to say).
-4. For step 4: a records request of Mai's whose due date has passed with no reply recorded. J08 recorded a reply, so none exists unless one is made and its date passes; how a walk reaches a passed date on a development copy is not said by the design (design silent: lane to confirm). Without it, step 4 shows no such item (turn-aside 3).
+4. For step 4: a records request of Mai's whose due date has passed with no reply recorded. J08 recorded a reply, so none exists unless one is made and its date passes; how a walk reaches a passed date on a development copy: ARCH's to say (index, section 7). Without it, step 4 shows no such item (turn-aside 3).
 5. For steps 7 to 9: a release newer than the one the copy runs is ready, as a development pre-release ARCH publishes.
 
 ## Test data
@@ -44,7 +44,7 @@ Sources: `mock-journeys.js` journey 19 and `JBRIEF[19]`; `journeys.html` #j19; `
 2. Mai reloads the queue.
    - 2.1 C4's note no longer shows; every item from step 1 still does.
 3. On the claim's `document`, Mai presses "Check for a new version now" (A16); then, in her queue, on the item for the newer version, she presses "Adopt the newer version" (`queue` A1) and gives the reason from Test data.
-   - 3.1 `document` shows its checked line, and C14 lists a newer copy beside the one cited (whether the check captures the newer copy itself is not drawn: design silent: lane to confirm).
+   - 3.1 `document` shows its checked line, and C14 lists a newer copy beside the one cited: the check keeps the newer copy itself (`document` A16, `not built`).
    - 3.2 The queue holds an item for the newer version, with "Adopt the newer version" and "Keep the version you cited" (A1).
    - 3.3 After the reason is sent: C2's done line names what was done, and the item has left the queue.
 4. Where an office's due date has passed with no reply recorded, Mai presses "Remind me again on…" (A5) on its item and chooses the day from Test data.
@@ -96,3 +96,4 @@ Checked after a reload:
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

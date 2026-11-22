@@ -1,4 +1,4 @@
-Length: 120 lines. Last section: "Changes".
+Length: 121 lines. Last section: "Changes".
 
 # J22: From suspicion to a closed plan
 
@@ -46,16 +46,16 @@ This journey absorbs the earlier "Acting on a finding" (DEC-137).
 
 1. Mai opens the question on `question` (S8) and presses "Plan what to do" (A12), giving the plan's title and a reason.
    - 1.1 `plan` shows S1: C1 the title, "Open" and "opened {date} by" Mai.
-   - 1.2 C3 lists one matter, "from the question "{title}" ({status}, {date})" (`.subject.from`) (design silent on whether opening from a question adds it as a matter: lane to confirm; if C3 lists none, Mai adds it with A1 "Add a matter" first).
+   - 1.2 C3 lists one matter, "from the question "{title}" ({status}, {date})" (`.subject.from`): a plan opened from a question holds that question as its matter.
 2. Mai opens "Add an option" (C5), fills option 1 from Test data, ticks the matter under "The matters it serves", and presses A2 with a reason.
-   - 2.1 C4 lists option 1, category Legal, disposition "undecided" (design silent on which kind makes `start-send` a records request, S1: lane to confirm).
+   - 2.1 C4 lists option 1, category Legal, disposition "undecided". The category does not set the action's kind: the kind is chosen on `start-send` (C13).
 3. Mai adds option 2 the same way.
    - 3.1 C4 lists option 2, category Other, "undecided".
 4. **AI.** Mai presses A3 ("Ask the assistant for options"), waits for the tray, and presses A4 ("Adopt") on one suggestion with a reason.
    - Present in any proper result (hard, every run):
      - 4.1 While it works, S5 shows `.ask.running`; then `.ask.ended`.
      - 4.2 A tray "Suggested by the assistant · not yet in the plan" (`.suggested`) holds each suggestion, each with the machine-work label and its own "Adopt"; on a test instance, `ai.label.untested`.
-     - 4.3 After "Adopt", the suggestion is a row of C4, "undecided", labelled as adopted from machine work (design silent on the label's place: lane to confirm).
+     - 4.3 After "Adopt", the suggestion is a row of C4, "undecided", carrying the origin mark "Machine work" on its row (`plan` C11, `not built`).
    - Never present:
      - 4.4 An option in C4 that no member adopted or added; a disposition other than "undecided" set by the assistant; an option directed to a private individual (V6's rule); a sentence that says what the team must do in law; the assistant's cost to anyone but the paying account's owners.
    - **Without the assistant:** Mai takes no step here. `plan` shows S6: no tray, no A3, no "Help me write this", nothing greyed. C4 holds options 1 and 2 only, and the journey goes on at step 5.
@@ -67,7 +67,7 @@ This journey absorbs the earlier "Acting on a finding" (DEC-137).
    - 7.1 C8 shows a tab "Records first"; the phase line `.phase.checkpoint` names the checkpoint, and "You can judge this checkpoint from {date}." (`.judge.notdue`) gives a date 20 days on.
 8. Mai ticks option 1 and presses A6 ("Start…").
    - 8.1 `start-send` shows S1: C1 heading "Start “{option 1}”" and `.nothingruns`; C2 "Step 1 · Start" with "Kind", "Addressed to", "Rests on", "Clock" and "Asserts a breach".
-9. Mai presses A3 ("Start the action") with a reason.
+9. Mai chooses "records request" under "Kind" (`start-send` C13) and presses A3 ("Start the action") with a reason.
    - 9.1 `start-send` shows S3: heading "The action started"; Step 2 open.
 10. Mai presses A4 ("Prepare what is sent"), writes the text from Test data in "What the team sends" (C5), and presses A6 ("Approve this text"), then "Confirm".
     - 10.1 Before it is done, `consequence.filingapprove` and `act.filingapprove.does` show; the button carries "Ends something".
@@ -77,7 +77,7 @@ This journey absorbs the earlier "Acting on a finding" (DEC-137).
     - 11.2 After it: S5, "Recorded as sent on {date}" and the link "Open the action".
 12. Mai presses "Open the action".
     - 12.1 `action` shows S1: C1 the kind and option 1's title, "to {office}", "sent {date} by" Mai; C4 lists no reply.
-    - 12.2 Where C2 of `start-send` named a clock, C2 shows "Response due {date}" and C3 lists that date "pending"; where it showed `.noclock`, C3 lists no date (design silent: lane to confirm what a development copy's profile gives).
+    - 12.2 Where C2 of `start-send` named a clock, C2 shows "Response due {date}" and C3 lists that date "pending"; where it showed `.noclock`, C3 lists no date. ARCH's to say: whether the development copy's place profile gives a records request to the housing department a clock.
 13. Mai fills the reply form (C4) from Test data, with today as its day, and presses A1 ("Record a reply") with a reason.
     - 13.1 C4 lists the reply, dated today, "received".
     - 13.2 Where C3 lists a due date, it shows "met".
@@ -87,7 +87,7 @@ This journey absorbs the earlier "Acting on a finding" (DEC-137).
     - 15.1 `matter` shows S2: "No determination yet" and A1 "Record a determination".
 16. Mai presses A1, fills S3's form (the act from Test data; Finding 1 of the published case under "What it rests on"; the rule the form offers; "Noncompliant"), and presses "Record this determination" with a reason.
     - 16.1 Before it is done, `.this_cannot_be_edited_afterward` shows.
-    - 16.2 `matter` shows S1: C1 "noncompliant · {support} · against {rule}", "Recorded by" Mai, and `.it_is_your_team_s_judgment_not`; C3 the ladder with the current stage marked (design silent on which rule a development copy offers: lane to confirm).
+    - 16.2 `matter` shows S1: C1 "noncompliant · {support} · against {rule}", "Recorded by" Mai, and `.it_is_your_team_s_judgment_not`; C3 the ladder with the current stage marked. ARCH's to say: which rule the development copy's profile offers in S3's form for this act.
 17. Mai presses A4 ("Decline to escalate, with a reason") with the why from Test data.
     - 17.1 C1 shows "The team declined to escalate: {reason}" (`.declined`).
 18. Mai opens `plan` and presses A10 ("Close plan…"), says how it ended, and presses "Confirm".
@@ -118,3 +118,4 @@ Checked after a reload:
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

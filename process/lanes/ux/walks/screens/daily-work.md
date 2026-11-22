@@ -1,4 +1,4 @@
-Length: 581 lines. Last section: "Changes".
+Length: 590 lines. Last section: "Changes".
 
 # Screens: Daily work
 
@@ -48,6 +48,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C7. Section "Since you last looked" (`.since`), help `.since.holds`; rows `.since.captured`, `.since.events`, `.since.trail`.
 - C8. Heading "What happened?" (`door.front.head`) over the doors A12 and A13.
 - C9. Button A14.
+- C10. On a row of "Getting into a project", "Ask to join" (A8) offers an optional field for a word on why (no word row), sent with the request; the owners see the word on the request's row in their C3. Once an owner declines, the member's row says the owners declined, with their word if they gave one (no word row), and offers "Ask to join" again (`act.projectrequest.does`: "you see their answer"). `not built` (the code sends the request with no word, and draws no answer).
 
 **States**
 
@@ -232,6 +233,10 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C9. Members' to-dos (A14); the assistant's accounts ("told once to the project's owners" `.ai.toldowners`, "nobody is named" `.ai.nobodynamed`; A15).
 - C10. Section "Muted" (`queue.muted.title`), help `queue.muted.help`: "{kind}, in {project}" (`queue.muted.kind`) or "This item only: {item}" (`queue.muted.item`), "muted by you, {date}" (`queue.muted.by`), A16.
 - C11. `.more` ["{n} more items are not shown here; act on these first."]; `.vouchband.apart` ["Captures waiting for a vouch: {n}. …"].
+- C12. The source notices, each kind one item: "A document changed at its source" / "{n} documents changed at their source" (`queue.source-modified.one`, `.many`) and "A document is gone from its source" / "{n} documents are gone from their source" (`queue.source-removed.one`, `.many`), with "Your team's Civicsmith noticed this when it checked. The copies your team holds are unchanged. Open each one to see what changed; nothing has been decided." (`queue.source.detail`); opened in place, the list of its documents, each by its title (or `queue.source.untitled`) as a link to `document`.
+- C13. `not built` (decision U7) A member's new signing keys are one item for that member in the section "Your team", listing each key with when it was made, with A13 "I know about this key"; a further key joins the same item.
+- C14. `not built` A confirmed due date's item, once a reply is recorded by the date, shows the state "met" (`screen.due-date.status.met`) beside "Due {date}" (C5), as facts and never legal advice; no passed-date line shows for it.
+- C15. `not built` A standing question's item that came as a list without the assistant's reading, for a member the assistant serves, says why in one sentence, in the words of the reason (for example `ai.refused.limit`, `ai.refused.off`, `dock.withheld.*`). For a member with no AI account (S8) it says nothing about the assistant.
 
 **States**
 
@@ -257,7 +262,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 | A5. "Remind me again on…" (`.remind.button`) | reply due | field "Remind me again on (optional)" (`.reminder.on`) |
 | A6. link "Pick up where you left off" (`.unsent.pickup`); "Keep it for later" (`.unsent.keep`); "Drop the request, with a reason" (`.unsent.drop`) | unsent request | `request`; snoozed; dropped |
 | A7. "Read and approve it" | letter | its approval dialog |
-| A8. "Open the check" (`.check.open`); "Pass it to another member" (`act.taskforward.label.queue`) | a check | its screen; field "Forward to (the member's handle)" (`.forward.to`) |
+| A8. "Open the check" (`.check.open`); "Pass it to another member" (`act.taskforward.label.queue`) | a check | its screen; field "Forward to (the member's handle)" (`.forward.to`). The item leaves the queue once the check is recorded on the screen it concerns (`not built`: the mock's "It leaves your queue when done") |
 | A9. "Open a question from this" (`.hint.promote`), "Defer" (`.defer`), "Dismiss with a reason" (`act.proposedispose.label.queue`), "Stop this kind of hint for the project" (`.hint.stop`) | hint | new question, field "The question, in your words" (`.question`); S6; C10 |
 | A10. "Snooze to a date" (`act.queuesnooze.label.queue`); "Mute this kind" (`.mute.kind`) | status item | field "Until which day" (`.snooze.until`); C10 |
 | A11. link "See what changes" (`queue.update.see`); "Not now" (`act.owed_updatelater.label.queue`) | administrator | `updates`; returns later |
@@ -294,6 +299,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C4. "Nobody looked in {place} for this yet." (`.nobody.in`); A7, A8.
 - C5. `.unread` [some documents not read yet].
 - C6. Bar "{n} documents held together" (`.held.many`) "until {time}" (`.until`); A3 to A6.
+- C7. After A8, the counted line "Counted: {result}. The method is kept with the count, so anyone can count again and get the same." (`.counted`), its result a link to the count's `calculation`. The line is built; the link is `not built`.
 
 **States**
 
@@ -437,6 +443,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 - C8. Setting aside: `.waiting` [whose question waits]; field "Why set it aside?" (`.setaside.why`).
 - C9. Section "Set aside" (`.setaside`): "Set aside by {author}: “{reason}”" (`.asideby`); button "Restore, with a reason" (`held.restore`); none: "Nothing is set aside." (`.asideempty`).
 - C10. Bar: A5 to A7; vouch fields "What you vouch for" (`.ack`), "What you did to check" (`.mitigation`).
+- C11. `not built` (decision U5) A capture handed in through the doorbell is named in C3 by its file's own name, never a machine reference (such as "From knock:…"); beside it, for the members the team listed to read about sources, "A source" (`screen.about-knocker.name`) as a link to `about-knocker`; for every other member, "Handed in through the doorbell" (no word row), with no link.
 
 **States.** S1 held: C1 to C10. S2 "Mine", none: `.empty.mine` ["Nothing of yours is held. …"]. S3 "Everyone's", none: `.empty` ["Nothing is held: …"]. S4 after A5: "Vouched for: {count}. They are in the record now." (`.released`). S5 after A6: `.setasidecount` ["Set aside: {count}. …"]. S6 after A7: "Restored: {count}. They wait in Held captures again." (`.restored`). S7 assistant unreachable: unchanged.
 
@@ -496,6 +503,7 @@ Words: exact words in quotes, keyed to `words.json`. A dot key is under `screen.
 | S4. Added by you | your own upload | C1; "High risk" with `.high.yours`; "What to do next" (`.next.head`) with `.next.yours` [read the safe view; a deeper check first]; A2, A3, C3; `.safetext`; "Checks" with `.check.notyet` ["Not checked yet: …"]. |
 | S5. Opened | after A1 or A4 | "The original was handed to your browser as a file." (`.opened`); `.digest.checked`. |
 | S6. Assistant unreachable | no AI | unchanged. |
+| S7. A photograph (decision U6) | the file is a picture, such as a member's photo | `not built`: C3 holds a safe picture, redrawn from the photo's pixels alone, with the mark "Derived · a safe copy of the original" (`.safe.origin`); the photo's hidden data (such as where it was taken) is not shown and stays in the record's own copy. Until it is built: "Your team's Civicsmith makes safe views of documents, presentations, spreadsheets and plain text, and this file is none of them, so it has no safe view." (`refusal.NO_SAFE_VIEW`), then how to see it on one's own device (A4's dialog); no sentence says the safe view needs no check. |
 
 **Actions.** A1 button "Open the original" (`act.openoriginal.label.open-file`): S5. A2 button "Show the safe view on this page" (`act.safeview.label.open-file`): C3 opens here. A3 button "Ask for a deeper check" (`.deeper`): "Deeper check: asked for, waiting its turn". A4 button "Open the original, accepting this" (`.warn.accept`), both boxes ticked: S5. A5 link "Cancel" (`shell.cancel`): the dialog closes. A6 button "Release, with a reason" (`act.releasescanhold.label.open-file`): first `.release.pending` [a second member's reason releases it]; second "Released: the original can be opened again." (`.release.done`).
 
@@ -579,3 +587,4 @@ Read, not run. The design is the authority.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

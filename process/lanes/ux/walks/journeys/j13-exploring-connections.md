@@ -1,4 +1,4 @@
-Length: 94 lines. Last section: "Changes".
+Length: 95 lines. Last section: "Changes".
 
 # J13: Exploring connections
 
@@ -30,9 +30,9 @@ Status: walkable · Screens used: `people`, `person`, `explore`, `question` · F
 | Other end | "The landlord of 14 Lakeshore Row" (J31) |
 | Another name for the landlord | The landlord's name exactly as Housing notice 2026-118 prints it |
 | Kinds to follow | "Mentioned together", "Took part" |
-| Declared tie | On the official's `person` page: a tie with the landlord, of whichever kind the select "Their tie" offers that fits "issued a notice to" (design silent: lane to confirm the kinds); why: "The official issued Housing notice 2026-118 to the landlord."; where it is said: Housing notice 2026-118 |
+| Declared tie | On the official's `person` page: a tie with the landlord, kind "Overlaps with" (of the three "Their tie" offers, none says "issued a notice to"; this one claims least); why: "The official issued Housing notice 2026-118 to the landlord."; where it is said: Housing notice 2026-118 |
 | Source attached to the declared step | Housing notice 2026-118, the passage ordering the landlord to repair |
-| The new question | "What links the official who issued Housing notice 2026-118 to the landlord of 14 Lakeshore Row?" |
+| The new question | Its words are made from the chain (`explore` C12); its project: "Roof repairs" |
 | Reasons (acts that ask for one) | "As Housing notice 2026-118 states." |
 
 ## Steps
@@ -48,24 +48,24 @@ Status: walkable · Screens used: `people`, `person`, `explore`, `question` · F
    - 4.2 C1's count of documents naming it is now at least one.
 5. Mai goes back to `people` by the path and presses "Explore connections" (A3) on the official's row.
    - 5.1 `explore` shows state S1: C1 names the official as the start and says as of when.
-   - 5.2 The C2 group "Follow" is offered, with no box ticked (every-screen section 1, rule 1) (design silent: lane to confirm none is ticked by default).
+   - 5.2 The C2 group "Follow" is offered, with no box ticked (every-screen section 1, rule 1).
    - 5.3 C8's two lines are marked "Comes in the first beta" and are not controls.
-6. Mai ticks the kinds from Test data and presses "Explore" (A1).
+6. Mai ticks the kinds from Test data, chooses the landlord in "To (optional)" (C10) and presses "Explore" (A1).
    - 6.1 C3's graph from the official shows the landlord, joined through Housing notice 2026-118.
    - 6.2 C5 lists a chain from the official to the landlord: each step a link (`person`, `document`), with the chain's grade, its number of steps and its weakest step.
-   - 6.3 How the other end is chosen is not drawn on the screen page: the walk records whether the chain is listed without an end being named (design silent: lane to confirm).
+   - 6.3 C1's line names the official as the start and the landlord as the end.
 7. Mai presses "Check a chain" (A3) on that chain.
-   - 7.1 The chain's steps are checked against their sources on the same screen; each step shows its result (design silent: lane to confirm the words).
+   - 7.1 Under the chain, C11 shows whether the chain holds as the record has it now, and one line for each step.
 8. Mai follows the official's step link to `person` and, in C5 "Ties a member declared", declares the tie from Test data with "Declare the tie" and its reason.
    - 8.1 The tie is listed, marked "declared, not evidenced".
-9. Mai goes back to `explore` by the path, ticks the same kinds and presses "Explore" again.
+9. Mai goes back to `explore` by the path, ticks the same kinds, chooses the landlord in "To (optional)" and presses "Explore" again.
    - 9.1 C5 also lists a chain through the declared tie, marked "a lead, not a finding", with A4 ("Attach a source to a declared step").
    - 9.2 The chain of step 6 is still listed as before.
 10. Mai presses A4 on that chain, attaches the source from Test data and sends the reason.
-    - 10.1 The step is graded from its source, and the chain no longer reads "a lead, not a finding" (design silent: lane to confirm it is redrawn at once).
-11. Mai chooses the chain of step 6, presses "Open a question from this chain" (A5) and sends the question from Test data with the reason.
-    - 11.1 A new `question` opens: C1 heading the question's words, and "Opened by" Mai with the date and its project.
-    - 11.2 Which project holds it, and whether the chain's steps arrive as cited passages (S1) or the question opens empty (S3), is not said (design silent: lane to confirm).
+    - 10.1 C5 is redrawn at once (C13): the step is marked as stated in a source attached by Mai, with its grade, and the chain no longer reads "a lead, not a finding".
+11. Mai chooses the chain of step 6, chooses "Roof repairs" in "For which project" (C12, `not built`), presses "Open a question from this chain" (A5) and sends the reason.
+    - 11.1 A new `question` opens: C1 heading the words made from the chain (`explore` C12), and "Opened by" Mai with the date and "Roof repairs".
+    - 11.2 The question is in state S3: the chain's steps are not cited passages, and nothing is cited until a member cites it.
     - 11.3 No finding rests on a declared or hunch step: no citation in C4 or C6 comes from the declared tie of step 8.
 
 ## End state
@@ -74,7 +74,7 @@ Checked after a reload, signed in as Mai.
 
 1. The landlord's `person` page lists the other name and links to Housing notice 2026-118 in C2.
 2. The official's `person` page lists the declared tie, with the source attached in step 10.
-3. `explore` from the official, with the same kinds, lists the chains of steps 6 and 9, each step cited and graded.
+3. `explore` from the official to the landlord, with the same kinds, lists the chains of steps 6 and 9, each step cited and graded.
 4. The question of step 11 exists, opened by Mai; it is listed in its project's C7.
 5. Nothing on these screens carries the machine-work label.
 
@@ -92,3 +92,4 @@ Checked after a reload, signed in as Mai.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

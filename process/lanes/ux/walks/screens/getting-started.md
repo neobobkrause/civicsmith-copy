@@ -54,7 +54,7 @@ The website and the installer are separate programs from the team's Civicsmith: 
 | A1. link "Start a team's Civicsmith" (`screen.site.start`) | S1 | S2 |
 | A2. link "See what teams have published" (`screen.site.seegroups`) | S1 | S3 or S4 |
 | A3. link, the case's title | S1 | that case's `published` page, at its team's address |
-| A4. link "Create your team" (`screen.site.create`) | S2 | `install` S3, at the installer's address |
+| A4. link "Create your team" (`screen.site.create`) | S2 | `install` S1, at the installer's address |
 | A5. link "Back to the front page" (`screen.site.back`) | S2, S5 | S1 |
 | A6. link "Visit" (`screen.site.groups.visit`) | S3, each row | that team's `front` |
 | nav links (C2) | always | S1, S2, S3/S4 |

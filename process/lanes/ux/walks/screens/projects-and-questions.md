@@ -1,4 +1,4 @@
-Length: 420 lines. Last section: "Changes".
+Length: 426 lines. Last section: "Changes".
 
 # Screens: Projects and questions
 
@@ -61,6 +61,7 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 - C13. Section "Telling the network" (`.notice.heading`): `.notice.an.owner.can.publish.a` `.notice.it.is.public.and.it`.
 - C14. Fold "This project's settings" (`project.settings.fold`): section "Who can find it" (`project.visibility.title`) with `project.visibility.discoverable` or the hidden line (`project.visibility.hidden`), and its history (`project.visibility.history`); section "Close this project now" (`.closenow.head`) with `.closenow.open`.
 - C15. `AI` `not built`: a section "Suggested questions" (no word row), each a question the assistant suggested or found while exploring, with its machine-work label and button "Open this question" (no word row). Absent without the assistant.
+- C16. `not built` (decision U3) Beside "Your first question" (S2) and "The question, in plain words" (A1): an optional select "Who is this question about?" (no word row), choosing among the people and organizations the team follows, none chosen.
 
 **States**
 
@@ -247,6 +248,9 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 - C12. Section "Concluding" (`.concluding.head`), fold "Conclude": select "The reading you conclude on" (`question.conclude.reading`) with "Write the reading yourself"; fields "Your reading", "What would change it", "Why you are concluding it", "Commentary" (`question.conclude.*`); checkbox `question.conclude.nofalsifier`.
 - C13. Fold "More you can do with this question" (`question.more`); fold "Divide this question into two" (`.divide.summary`), with "This cannot be undone." (`.divide.note3`); fold `.say058` with "What this touches" (`.touches.heading`).
 - C14. "Its plan: {plan}" (`question.plan.link`) linking to `plan`; links "The case being prepared" (`case.links.editor`) → `case-editor`, "Review copies" (`case.links.review`) → `review-copy`, "Publishing" (`case.links.ceremony`) → `ceremony`, "The published case's record" (`case.links.docket`) → `docket`.
+- C15. `not built` (decision U3) Under C1, who the question is about: the person or organization named, as a link to `person`, with a control to change it with a reason kept in the question's history; with none, a plain sentence that the question names no one it is about, and the control to name one (no word rows). In every state but S4 to S6, S9, S10.
+- C16. `not built` (decision U9) In C3, the copy's grade is named "Your team's grade for the copy" (no word row), never "Capture" alone; where it is not graded yet, C3 points the member to where it is given ("What this passage earns", `.leggrade.head`).
+- C17. `not built` After "Ask for a check by expertise" is sent: a line beside A12 saying how many members the request reached, never who (no word row); where it reached none, that no member who can see this question has declared that expertise, so nobody was asked (no word row).
 
 **States**
 
@@ -327,6 +331,7 @@ Every piece of the assistant's work, wherever it is drawn (when an account serve
 - C6. A search field and button "Search" (`act.search.label.finder`).
 - C7. Results: one row per document, its title a link to `document`, marked "Found by search" (`mark.origin.search.name`); a count line `.count.line` where a table was counted; with none, `screen.finder.none`.
 - C8. C4's buttons and lines.
+- C9. `not built` Pressing "Keep asking this" (C4, C8) first opens, beside it, a select "How often" (no word row on this screen), offering "every week" (`.cadence.weekly`) and any other cadence the product runs, none chosen, and a field "Until when" (no word row), a day, required; the question is kept only once both are given. Sent without either: `shell.field.needed`, and nothing is kept.
 
 **States**
 
@@ -418,3 +423,4 @@ Paths are under `bio-plane/src/`.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

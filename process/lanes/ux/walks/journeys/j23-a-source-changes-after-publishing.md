@@ -1,4 +1,4 @@
-Length: 103 lines. Last section: "Changes".
+Length: 104 lines. Last section: "Changes".
 
 # J23: A source changes after publishing
 
@@ -41,14 +41,14 @@ Status: walkable · Screens used: `document`, `queue`, `question`, `docket`, `ca
 
 1. Mai opens the notice on `document` (from `question` C4's link) and presses A16 ("Check for a new version now").
    - 1.1 "Checked for changes just now." (`.monitor.done`).
-   - 1.2 C14 lists two copies, newest first; the newer carries the chip "Changed since the version your question cites" and `document.versions.where` (design silent on whether the check alone captures the new copy: lane to confirm).
+   - 1.2 C14 lists two copies, newest first; the newer carries the chip "Changed since the version your question cites" and `document.versions.where`: the check alone keeps the new copy beside the old (`act.monitor.does`).
 2. Mai opens `queue` with the rail.
    - 2.1 `queue` shows S1; under the case's section (C5) an item for the newer version of the notice, with A1's "Adopt the newer version" and "Keep the version you cited".
 3. Mai presses "Adopt the newer version" and gives "Why adopt the newer version" from Test data.
    - 3.1 C2: "Done: {what}. It has left your queue."
 4. Mai opens the question on `question`.
    - 4.1 C11 "Needs a second look" shows "A newer edition of Housing notice 2026-118 exists" (`.reeval.edition`).
-   - 4.2 C4 lists the passage on the newer copy (design silent on whether C4 or `document` C15 shows the move: lane to confirm).
+   - 4.2 C4 lists the passage on the newer copy; on `document`, C15's row for this question shows `.a34.moved` ("Citations moved to this copy by mai-k, {date}: …").
 5. Mai fills "What you looked at and what you decided" (C11) and presses A10 ("Record that you looked again").
    - 5.1 The item reads "Looked at again by" Mai.
 6. Mai opens the fold "Reopen this finding, with a reason", writes why it no longer holds, and presses its button (A15).
@@ -69,12 +69,12 @@ Status: walkable · Screens used: `document`, `queue`, `question`, `docket`, `ca
 12. Mai fills "What changed" (C12) and "What this bias means for this edition" (C8) from Test data, and presses A2 ("Prepare the draft") with a reason.
     - 12.1 `.prepared` shows.
 13. Rosa opens `case-editor` and presses A3 ("Acknowledge what it leaves out") with a reason.
-    - 13.1 C6 shows "Acknowledged by rosa-l" for Edition 2 (design silent on whether Edition 1's acknowledgement carries over: lane to confirm).
+    - 13.1 C6 shows "Acknowledged by rosa-l" for Edition 2, and only that: Edition 1's acknowledgement belongs to Edition 1 and does not carry over.
 14. Mai opens `ceremony` and walks J15 steps 21 to 23 for Edition 2.
     - 14.1 C1 reads "Publish {case}, Edition 2"; the steps end at S4 with `signing.ceremony.signednow`.
 15. Mai presses "Open the public page".
     - 15.1 `published` shows S2 for Edition 2: C1 "Edition 2 · signed {date} · published {date}" with a link "Edition 1".
-    - 15.2 C4 reads "One since it was published: {kind}, {date}." (`.corrections.some.one`), or S3's `.corrections.some` if the edition and the statement count apart (design silent: lane to confirm); C3's Finding 1 says 14 days.
+    - 15.2 C4 reads "None since it was published." (`.corrections.none`): C4 counts only new editions, withdrawals and court orders dated on a day after the edition's own publishing, so neither the statement of step 10 nor Edition 2 itself is counted. Through C1's link "Edition 1", Edition 1's C4 reads "One since it was published: a new edition, {date}." (`.corrections.some.one`, `.corrections.kind.edition`) where Edition 2 was published on a later day than Edition 1, and "None since it was published." where both were published the same day. C3's Finding 1 says 14 days.
 16. Mai presses the link "its docket" in C4.
     - 16.1 `docket-public` lists the statement of step 10 and "Edition 2 published, superseding Edition 1", each dated and marked "signed".
 
@@ -96,8 +96,9 @@ Checked after a reload, in a browser with no session:
 6. Step 10, the entry cannot be prepared for signing: V2 (`.prepare.failed`), nothing posted; resume at step 10.
 7. Step 11, no finding ticked or no scope: V3 (`.next.refused.nofinding`, `.next.refused.noscope`); nothing started; resume at step 11.
 8. Step 11, the question not concluded again: C7 shows "reopened by Mai: conclude it again before it can go in." (`.next.reopened`); resume at step 7.
-9. The document disappears instead of changing: the design names removal (`journeys.html` 23) but no screen part for it here (design silent: lane to confirm).
+9. The document disappears instead of changing: `queue` shows "A document is gone from its source" (`queue.source-removed.one`) with `queue.source.detail` (`queue` C12); the copy the team holds is unchanged and the case still rests on it. Not part of this journey; the walk records what shows and stops.
 
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

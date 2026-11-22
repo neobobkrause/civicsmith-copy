@@ -1,4 +1,4 @@
-Length: 127 lines. Last section: "8. Changes".
+Length: 128 lines. Last section: "8. Changes".
 
 # civicsmith: the walks' documents — index
 
@@ -124,4 +124,5 @@ For ARCH, who deploys and names the areas:
 
 ## 8. Changes
 
-- 22 Nov 2026: written, with all eleven screen pages and all 35 journey pages. Lines marked "(design silent: lane to confirm)" are the lane's open design work.
+- 22 Nov 2026: written, with all eleven screen pages and all 35 journey pages. 
+- 22 Nov 2026: every line the first writing left "design silent" settled (`../decisions.md` section 3); the earlier open questions decided as U3 to U9, or put to the owner as Q1 and Q2 (steps marked `waiting Q1`, `waiting Q2`).

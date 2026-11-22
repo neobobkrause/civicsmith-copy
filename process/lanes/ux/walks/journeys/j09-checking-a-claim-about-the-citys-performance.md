@@ -1,4 +1,4 @@
-Length: 101 lines. Last section: "Changes".
+Length: 102 lines. Last section: "Changes".
 
 # J09: Checking a claim about the city's performance
 
@@ -41,16 +41,16 @@ Sources: the wizard "Check a claim" (`library.json`, nine steps); `mock-journeys
    - 1.1 `capture` shows S5 with the claim's title, waiting in Held captures; "Open it" (A6) leads to `document`.
 2. Mai opens it, reads it, and vouches for it (`document` A2), filling both fields.
    - 2.1 Before: `document` S2, the held banner with A2. After: S1, C3 naming Mai as voucher with the day.
-3. Mai opens the project "Roof repairs" and opens the question from Test data (`project` A1, Asks for a reason). `waiting A1`
+3. Mai opens the project "Roof repairs" and opens the question from Test data (`project` A1, Asks for a reason), leaving "Who is this question about?" empty.
    - 3.1 `question` opens in S3 for the new question; `project` C7 lists it.
-   - 3.2 No screen asks who the question is about (open question A1); a difference is an observation.
-   - 3.3 The wizard puts this step after citing the claim; `document` refuses a citation while no question is open (its V1), so the question is opened first here (lane to confirm).
+   - 3.2 Beside the question, the optional field "Who is this question about?" offers the people and organizations the team follows, none chosen; `question` says plainly that the question names no one, with the control to name one (decisions U3). `not built`
+   - 3.3 The wizard puts this step after citing the claim; `document` refuses a citation while no question is open (its V1), so the question is opened first here.
 4. On the claim's `document`, Mai selects the words that make the claim, chooses the new question in "Cite in which question" (C8), the role from Test data, and presses "Cite this" (A9).
    - 4.1 The citation points at this copy, its page and the words selected.
    - 4.2 `question` for the question now shows the passage under C4 (Supports): its grade, the quoted words, a link to the claim's `document` at that passage, and Mai as the one who cited it.
 5. On the question, Mai presses "Narrow the question" (`question` A12) and gives the narrower question and reason from Test data.
    - 5.1 A new narrower `question` opens, holding the narrower question's words.
-   - 5.2 Where the report never says what it counts, the question shows its gap as undetermined, with its "because" line (C3; `every-screen` rule 2). How a member records that the city does not define it is not drawn (design silent: lane to confirm).
+   - 5.2 Where the report never says what it counts, the question shows its gap as undetermined, with its "because" line (C3; `every-screen` rule 2). Mai records that the city does not define it as her own reading of the narrower question (C12, "Write the reading yourself"), concluded with a reason; until then the gap stays undetermined.
 6. Mai gets the city's records (the wizard's step through "Get a record", J07): she searches Find for them (`finder` A1), finds none held (S2), follows "Capture it" (A11) to `capture`, and captures the list from its address (A2).
    - 6.1 `finder` S2 offers "Capture it"; `capture` then shows S5 for the list.
 7. Mai opens the list on `document` and vouches for it (A2).
@@ -61,13 +61,13 @@ Sources: the wizard "Check a claim" (`library.json`, nine steps); `mock-journeys
    - 9.1 `calculation` shows its one state: C1 the computed fact's name, the line that it is computed with its method shown, and the result as a number of a total, with its share and what it counts.
    - 9.2 C2: the formula, its input (the list) with its capture date and grade.
    - 9.3 C5 offers only "Draw a random sample" (A5).
-   - 9.4 That a count made on `finder` opens here is not drawn on either page (design silent: lane to confirm).
+   - 9.4 The count made at step 8 is this calculation: `finder`'s counted line links to it (`finder` C7, `not built`), and `project` C11 leads to it.
 10. Mai presses "Draw a random sample" (`calculation` A5).
     - 10.1 C5's draw row shows its seed, and which orders were drawn.
     - 10.2 C5's link "How spot-checks work" (A7) leads to `help`, which shows its five headings 2 (C2).
-11. Mai visits one drawn order's address and records what she finds: Add, the tab for what she saw (`capture` S3), C20 filled from Test data with her photo, and "Record what you saw" (A16). `waiting A4`
+11. Mai visits one drawn order's address and records what she finds: Add, the tab for what she saw (`capture` S3), C20 filled from Test data with her photo, and "Record what you saw" (A16).
     - 11.1 `capture` shows S10, her testimony recorded with its id.
-    - 11.2 Whether Mai can look at her own photo inside Civicsmith is open question A4; a difference is an observation.
+    - 11.2 Mai opens her photo: `open-file` shows it in the safe view, a picture Civicsmith redrew from its pixels alone, with none of the photo's hidden data shown (decisions U6). `not built` Until it is built, the screen says the file has no safe view, without the sentence "The safe view needs no check", and says plainly how to see the photo on her own device.
 12. Back on `calculation`, Mai presses "Count it for the drawn report" (A6, Asks for a reason) for that order, with the reason from Test data.
     - 12.1 C5's rows for what members found and what it estimates are counted again, with the counts and the exact range, and what it does not say.
 13. On the question from step 3, Mai opens "Conclude" (C12), chooses to write the reading herself, fills the three fields from Test data, and presses "Conclude" (A11, Asks for a reason).
@@ -99,3 +99,4 @@ Checked after a reload, signed in as Mai:
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

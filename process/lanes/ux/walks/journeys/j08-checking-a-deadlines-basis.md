@@ -1,4 +1,4 @@
-Length: 81 lines. Last section: "Changes".
+Length: 82 lines. Last section: "Changes".
 
 # J08: Checking a deadline's basis
 
@@ -44,7 +44,7 @@ Sources: `mock-journeys.js` journey 8 and `JBRIEF[8]`; the wizard "Get a record"
    - 3.1 C2 is drawn again; it holds the same basis, counting and date as in step 2. Nothing else changes.
 4. Mai types the reason from Test data in C3's field and presses "Confirm the due date" (A2, Asks for a reason).
    - 4.1 The button is marked busy, then done (`every-screen` section 6).
-   - 4.2 The date is confirmed, and it enters Mai's queue (A2). How `due-date` marks a confirmed date is not drawn (design silent: lane to confirm).
+   - 4.2 The date is confirmed, and it enters Mai's queue (A2); `due-date` lists it under "Confirmed due dates" (C7) with its basis and the state "pending".
 5. Mai presses the link "Download to my calendar" (A4).
    - 5.1 The browser saves a calendar file; `due-date` is unchanged.
 6. Mai types the day from Test data in "Remind me on" (C4) and presses "Remind me" (A3).
@@ -56,7 +56,7 @@ Sources: `mock-journeys.js` journey 8 and `JBRIEF[8]`; the wizard "Get a record"
    - 8.2 C4's note says a recorded reply stays and is never edited or removed.
    - 8.3 C3 shows the due date in its met state.
 9. Mai opens her queue again.
-   - 9.1 The queue shows the date as met, as facts and never legal advice; no passed-date line shows for it. (How the queue draws a met date is not on `queue`'s page: design silent: lane to confirm.)
+   - 9.1 The queue's item for the date shows it "met" beside its due day (`queue` C14), as facts and never legal advice; no passed-date line shows for it. `not built`
 
 ## End state
 
@@ -70,12 +70,13 @@ Checked after a reload, signed in as Mai:
 
 1. Step 2, the places' rules state no deadline for this kind of action: `due-date` S3, with "A deadline your rules list" and "Work out the due date". Mai picks the deadline the rules list and presses it: resumes at step 3. Where the places list no deadline at all: S4; the journey stops (a team rule is drafted and confirmed by a second member on `grouprules`, outside this journey).
 2. Step 2, a needed date is not recorded: S5's line in C2; nothing can be confirmed. The journey stops; the walk records it.
-3. Step 2, the law leaves the day uncertain: the date shows as undetermined, with its "because" line and both candidate dates (`journeys.html` #j8; `every-screen` rule 2). How `due-date` draws the two dates is not on its page (design silent: lane to confirm). Resumes at step 4 on the earlier date.
+3. Step 2, the law leaves the day uncertain: the date shows as undetermined, with its "because" line and both candidate dates (`journeys.html` #j8; `every-screen` rule 2). `due-date` C2 ends with the mark "Undetermined" and its because line, then each candidate date on its own line (C8; `not built`). Resumes at step 4 on the earlier date.
 4. Step 4, the reason left empty: the shell's message for an empty reason; nothing is confirmed. Resumes at step 4.
 5. Step 6, no day chosen: `due-date` V1. Resumes at step 6.
 6. Step 8, the reply form incomplete or inconsistent (for example both a document and none, or the day not a real day): one of `action` V1 to V10 beside the form; nothing is recorded. Resumes at step 8.
-7. Step 8, the due date passes before any reply is recorded: `action` shows S2, with "Open a question from this" (A3); the queue says once that no reply was recorded (J19 step 4). Recording a late reply then shows the date as met late (`journeys.html` #j8; met late is not among `action` C3's states: design silent: lane to confirm). Resumes at step 9.
+7. Step 8, the due date passes before any reply is recorded: `action` shows S2, with "Open a question from this" (A3); the queue says once that no reply was recorded (J19 step 4). Recording a late reply then shows the date as "met late" in `action` C3 (`action` C11; `journeys.html` #j8). `not built` Resumes at step 9.
 
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

@@ -1,4 +1,4 @@
-Length: 124 lines. Last section: "Changes".
+Length: 125 lines. Last section: "Changes".
 
 # J34: Settings and account
 
@@ -45,14 +45,14 @@ From the walk plan's row "Settings and account" (`build/plan/lane-journeys/PLAN.
    - 3.2 C2 shows `mai-k` and `handle.fixed`; no control changes the handle.
 4. Mai opens her menu ("You: mai-k") and chooses "Dark" under "Appearance".
    - 4.1 The screen turns dark at once; "Dark" is the one checked.
-   - 4.2 After a reload, the screen is dark and "Dark" is checked; `account` C3's "Appearance" shows "Dark". (design silent: whether `account` C3 and the menu hold one setting; lane to confirm)
+   - 4.2 After a reload, the screen is dark and "Dark" is checked; `account` C3's "Appearance" shows "Dark": the menu and `account` C3 hold one setting, kept on this device.
 5. Mai chooses "Light", then "Follow my device".
    - 5.1 Each turns the screen at once; the one chosen is the one checked, after a reload too.
    - 5.2 With "Follow my device", the screen follows the device's own light or dark setting.
 6. On `account`, Mai sets "Explanations" to open after a pause (A2, "Choose how much is explained").
    - 6.1 The masthead's button reads "Explanations: on a pause"; after a reload, still.
-7. Mai sets "Sounds" to "On".
-   - 7.1 "On" is chosen after a reload. (design silent: the act that saves "Sounds"; lane to confirm)
+7. Mai presses "On" under "Sounds" (C3).
+   - 7.1 The press saves it at once, on this device, with no other act and nothing sent; "On" is chosen after a reload.
 8. In "Your cover name" (C4), Mai chooses one of the two radios and presses A3 "Save my choice".
    - 8.1 After a reload, the radio she chose is chosen; `.pairing.change` and `.pairing.undone` are shown.
 9. In "Your password" (C7), Mai types her current password and her new one twice, and presses A7 "Change your password".
@@ -108,7 +108,7 @@ Checked after a reload.
 
 1. **Passwords differ** (step 9). Beside A7: V1 "The two new passwords are not the same. Type them again. Nothing was sent." Resume at step 9.
 2. **New password too short** (step 9). Beside A7: `refusal.PASSWORD_TOO_SHORT`. Resume at step 9.
-3. **Current password wrong** (step 9). Beside A7, the refusal for it in words; nothing is changed. (design silent: no form message is named for this on `account`; lane to confirm) Resume at step 9.
+3. **Current password wrong** (step 9). Beside A7: "Your current password isn't right, so it wasn't changed. Check it and try again." (`refusal.CURRENT_PASSWORD_WRONG`); the password fields are cleared and nothing is changed. Resume at step 9.
 4. **Empty note** (step 12 or 13). V1 "Write the note first. Nothing was sent." Resume at the same step.
 5. **The court notice on.** If an administrator shows the court notice (`group` C6), the first note Mai keeps shows `.court` (`notes` C5).
 6. **Empty team name** (step 16). V1 "Give the name first. Nothing was sent."
@@ -122,3 +122,4 @@ Checked after a reload.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

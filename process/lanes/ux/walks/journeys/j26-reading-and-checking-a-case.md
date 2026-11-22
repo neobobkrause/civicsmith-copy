@@ -1,4 +1,4 @@
-Length: 92 lines. Last section: "Changes".
+Length: 93 lines. Last section: "Changes".
 
 # J26: Reading and checking a case
 
@@ -27,7 +27,7 @@ Status: walkable, signed out · Screens used: `published`, `docket-public` · Fo
 |---|---|
 | The case's address | `/app/published/<case id>` from J15 step 24 |
 | Minimum strengths chosen | "How well the documents are held": "A only"; "How firmly they are linked": "A only" |
-| The file to check | the file saved at step 9 |
+| The file to check | Housing notice 2026-118 as the city's address serves it, saved to the reader's folder: the file Finding 1 rests on (ARCH's to say: that the address still serves the bytes J15 captured) |
 
 ## Steps
 
@@ -40,7 +40,7 @@ Status: walkable, signed out · Screens used: `published`, `docket-public` · Fo
    - 2.2 C4: "None since it was published." and `.corrections` with "its docket" as a link.
    - 2.3 C7 holds the statement of what the case leaves out, "Written by {writer} and published by {publisher}, {date}.", and "Who else read this statement" naming Rosa.
    - 2.4 C9 holds the team's lens statement.
-   - 2.5 C5 lists no person (J15 named none) (design silent on its words when none is named: lane to confirm). The design's journey shows the timeline in two lanes; this screen's page names no timeline part (design silent: lane to confirm).
+   - 2.5 C5 "People named" shows "Nothing here" (`state.empty`): J15 named no one (`not built`: the code draws no C5 when none is named). C14 "Timeline" shows the events the edition froze in two lanes, or "Nothing here" where it froze none (C14, `not built`).
    - 2.6 No address or phone number of anyone shows anywhere on the page.
 3. The reader opens "Finding 1" (A7).
    - 3.1 `published` shows S6: heading "Finding 1", the line "{case} · Edition 1 · Back to the whole case", "What would overturn it" with J15's "The city withdrawing or amending notice 2026-118", and "What it rests on" with "Leg 1" · "supports it".
@@ -57,8 +57,8 @@ Status: walkable, signed out · Screens used: `published`, `docket-public` · Fo
    - 8.1 C6 shows the four details, each "Stated" or "Not stated", and `.details.pub.current1`.
 9. The reader presses A2 ("Download the complete edition") and saves the file.
    - 9.1 "The complete edition is downloaded." (`.download.done`); a file is in the folder.
-10. The reader chooses that file in C12 ("Choose the file") and presses A6 ("Check it").
-    - 10.1 C12 shows "Its fingerprint, worked out on your computer: {fingerprint}", then `published.check.yes` (design silent on whether the downloaded edition is the file this check expects: lane to confirm).
+10. The reader chooses the file to check from Test data in C12 ("Choose the file") and presses A6 ("Check it"). The complete edition of step 9 is not checked here: C12 checks a file a finding rests on (`published.check.help`).
+    - 10.1 C12 shows "Its fingerprint, worked out on your computer: {fingerprint}", then "This edition holds it: the evidence for finding 1, "{finding}"." (`published.check.yes`).
 11. The reader presses A5 ("Print the case").
     - 11.1 S7 on screen (`.this.is.what.comes.out`), and the browser's print dialog opens.
     - 11.2 The print preview holds the title, "Edition 1 · published {date} · by Lakeshore Tenants", Finding 1, "Signed for {team} by {member} on {date}, with the key whose fingerprint is …" naming Mai, "Signature: ______" and "Printed in full: no minimum strength was set."
@@ -85,8 +85,9 @@ Checked after a reload, still with no session:
 4. Step 7, the signature does not check: `.verify.no` (or `.verify.none`); record it as a flaw and go on.
 5. Step 10, nothing chosen: V1; a file the browser cannot read: V2; a browser that cannot work out fingerprints: V3 ("paste one instead"); resume at step 10.
 6. Walked after J23: C1 links "Edition 1" and C4 shows S2 (`.corrections.some.one`); the journey goes on, the end state reading Edition 2.
-7. The reader wants to recreate the case without the team, with the open checker: the design names it (`journeys.html` 26), but no part of this screen leads to it (design silent: lane to confirm).
+7. The reader wants to recreate the case without the team, with the open checker: the complete edition saved at step 9 says how, "1. Get the checker, one file, from the publishing team's public read {program}, …" (`case-grammar.p.get_checker_file`), and the page's foot says that anyone can (`shell.pubfoot.signature`; the foot is `not built`, every-screen "Differences seen in the code"). `published` draws no link to the checker. Not part of this journey.
 
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).

@@ -1,4 +1,4 @@
-Length: 117 lines. Last section: "Changes".
+Length: 118 lines. Last section: "Changes".
 
 # J10: Following a person
 
@@ -42,7 +42,7 @@ Status: AI (step 12; its path without the assistant, step 11, is walked first) Â
    - 1.2 C8 shows the page's words; the official's name can be read on them.
 2. Mai presses A21 on `document`.
    - 2.1 C21 lists the names the notice carries, each with its grade and how it was matched; or C20's note shows that it found no name.
-   - 2.2 Nothing is added to `people` by this act (design silent: lane to confirm).
+   - 2.2 Nothing is added to `people` by this act: C21 lists only names the record already follows (`document.names.help`).
 3. Mai opens `people` from the rail and presses A4.
    - 3.1 `people` shows state S5, the form for adding someone, with neither radio chosen.
 4. Mai fills in the official's name, chooses "A person", writes the note from Test data, presses A5 and sends the reason from Test data.
@@ -66,7 +66,7 @@ Status: AI (step 12; its path without the assistant, step 11, is walked first) Â
     - 10.1 `person` shows state S1 (no longer S3).
     - 10.2 C3 or C4 lists the fact of step 8, with Housing notice 2026-118 as its source and a grade.
     - 10.3 The fact's date reads from the notice's date, with no end date.
-11. **Without the assistant** (walked first; it stands for step 12). Mai looks for the official's other posts herself (design silent: lane to confirm; the earlier design gave this step no path without the assistant). She opens `finder` from the rail, types the official's name in "Your words" and presses A1.
+11. **Without the assistant** (walked first; it stands for step 12). Mai looks for the official's other posts herself, with Find. She opens `finder` from the rail, types the official's name in "Your words" and presses A1.
     - 11.1 `finder` shows S1 or S6 with the documents naming the official, or S2 when nothing does.
     - 11.2 No "Assistant" button and no dock are drawn (every-screen section 5).
     - 11.3 Where a result names another post, Mai opens it (A2), uses its A5 "Find in this" and records the post as in steps 7 and 8; it is then listed on `person` as in step 10. Where none does, nothing is recorded.
@@ -86,8 +86,8 @@ Status: AI (step 12; its path without the assistant, step 11, is walked first) Â
     - Trials: pass if 3 of 3 runs pass 12.1 to 12.8, and 12.9 is "yes" in at least 2 of 3.
     - Without the assistant: step 11, which reaches the same end (posts found are recorded by Mai, cited; or none).
 13. On `person`, Mai presses "Follow a register" (A2), gives the register's address from Test data, and sends it.
-    - 13.1 The register is listed as followed on the official's `person` page (design silent: lane to confirm where).
-    - 13.2 Changes the register shows later reach Mai's `queue` (design silent: lane to confirm).
+    - 13.1 The register is listed as followed on the official's `person` page, under "Follow a register" in C4, with its address and the day (`person` C8). `not built`
+    - 13.2 A later change at the register reaches Mai's `queue` as its source notice "A document changed at its source" (C12). ARCH's to say: a register that changes within a walk.
 
 ## End state
 
@@ -115,3 +115,4 @@ Checked after a reload, signed in as Mai.
 ## Changes
 
 - 22 Nov 2026: written.
+- 22 Nov 2026: design-silent lines settled (decisions.md section 3).
