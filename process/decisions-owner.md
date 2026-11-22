@@ -4,6 +4,11 @@ Kept by the coordinator (build text 2, section 8). The first entry was written b
 session (Process4 design part 7, section 4, act 8), as its brief directs; the coordinator, once started,
 is its writer. The dated lines are the owner's exact words, never edited.
 
+## Process version
+Rule now: civicsmith moves to the latest Process4 version.
+- 22 Nov 2026: "Instruction: move civicsmith to the latest Process4 version"
+Shown to the owner: not yet.
+
 ## Slots
 Rule now: no job may run on this product (slot number zero) until PROCESS reports back and the owner gives another number.
 - 22 Nov 2026: "Instruction: set the slot number to zero until PROCESS reports back"
