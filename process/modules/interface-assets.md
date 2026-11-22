@@ -1,0 +1,68 @@
+Length: 68 lines. Last section: "Suggestions".
+
+# interface-assets: requirements
+
+Next number: 12
+
+**Size (P6).** About 120 lines of generated data, about 1.1 MB (the 15 faces as base64; plan T46, M-T46-1), no code.
+
+## Public
+
+### Purpose
+
+The visual language every member screen uses (DEC-138), as frozen data copied from the design stream's files at a named commit: the stylesheet with its faces, the typefaces with their licences, and the icons. Pure data: it imports nothing, reads nothing and writes nothing; `interface-shell` names its files and `control-plane` serves them.
+
+### Provides
+
+**The files: `ASSET_FILES`, `ASSETS_COMMIT`** (DEC-138; DEC-122 (3))
+- **R1** [met] `ASSETS_COMMIT` names the design commit the files are read at: the one commit a job's START names (design branches merge into the tranche branch, K3641), or a later commit only by a later requirement naming it (R9 names T50's). It was the merge of the design stream's PR #28 at T45's close (`3f40899950`, K2904). `ASSET_FILES` maps each published name to `{type, body}` (`body` a string; a face's bytes as base64, with `encoding: "base64"`): `civicsmith.css` (`docs/development/ux-substrate/visual-language/civicsmith.css`'s bytes, followed by `faces.css`'s with each `url("fonts/<f>")` rewritten to `url("/app/assets/fonts/<f>")`), type `text/css`; `icons.svg`, type `image/svg+xml`; `fonts/<f>` for each of the 15 `woff2` faces of `visual-language/fonts/`, type `font/woff2`; and `fonts/OFL-source-serif-4.txt`, `fonts/OFL-source-sans-3.txt`, `fonts/OFL-source-code-pro.txt`, type `text/plain`; and no other name. A test reads each file from git at `ASSETS_COMMIT` and finds each entry equal to it byte for byte (a face base64-decoded; the stylesheet as the two files joined with only the stated rewriting).
+- **R2** [met] No file of `ASSET_FILES` names a resource on another origin in any `url()`, `@import`, `href` or `src`: every resource it names is `/app/assets/…` on the page's own origin (an XML namespace declaration, as `icons.svg`'s, names no resource). A test scans every entry.
+- **R3** [met] `ASSET_FILES` and each of its entries are frozen: no write changes the map, an entry or a field.
+- **R5** [met] (T48; N1048, N1028; DEC-224, DEC-215 (3); K3166; amends R1) `ASSETS_COMMIT` is `4664e8efd4` (`main` at PR #34's merge, whose visual language is PR #33's, `371af128a6`), or the later `main` commit named at the job's START if the visual language changed after. `ASSET_FILES` is read there by R1's rule. By it `civicsmith.css` holds no `cursor: help` anywhere; its `.cs-card` rule carries no `cursor` (DEC-224: the cursor changes only over a control); and it holds `--c-kind-money`, `--c-kind-part` and `--c-kind-mention`, light and dark. Test: R1's byte equality; a scan finds no `cursor: help` and no `cursor` in `.cs-card`; control: `.cs-btn` keeps `cursor: pointer`.
+- **R6** [met] (T48; N1039; K3147; `plane` R43, R54; `bundler` R31) The faces (`fonts/<f>`, the bulk of `ASSET_FILES`) are not evaluated as module code at the plane's start: `ASSET_FILES` holds each face so that the bundle carries its bytes as an upload part (a data module the Worker loads as bytes) or builds it on first read, never as a base64 string literal parsed in the global scope. Every name and every body answered is byte-identical to R1's. Test: R1's equality holds; a fresh import evaluates no face until one is read.
+
+**The design walk folded** (T48; WALK-084 #2; K3250, K3254)
+- **R7** [met] (T48; K3250, K3254 (2); walk C1; amends R1's "no other name", R5) `ASSET_FILES` also holds `shell.css`, of type `text/css`. It holds every product rule of the design's page stylesheet: the `<style>` of `docs/development/ux-substrate/screens/page.src.html` at `ASSETS_COMMIT` (`interface-shell` R56 enforces the emitted side, K3254 (2)). Inside the 760 px query the design's `.mk-device[data-device="phone"] ` prefix becomes `:root:root `, keeping its weight; the rules naming the design's unprefixed product classes that carried `mk-` components draw (the graph's `.e`, `.e-*` and `.gchip` rules, `.cell` and its children, `.st`, `.row`, and `.tw`, the table twelve screens draw, DEC-359) are carried too, listed by name (K3295). `generate.mjs` writes it beside `civicsmith.css`; it is never copied or edited by hand and is regenerated whenever the visual language is. - **Which rules are carried.** A rule is carried when every one of its selectors names an `mk-` or `cs-` class, and none names a mock-only class or one of the page's own. The mock-only classes are `mk-device`'s frame, `mk-scaler`, `mk-mockctl`, `mk-osprompt` and the viewer's controls. The page's own are `anat`, `asfig`, `viewer` and `vlist`. - **How selectors are rewritten.** `.mk-page` becomes `.cs-frame`. A rule under `.mk-device[data-device="phone"]` is carried inside `@media (max-width: 760px)` with that prefix replaced by `:root:root ` (K3295). - **Other rules.** R2 holds for the new file.
+
+  Test: the file equals the generator's transform of the source, read from git at `ASSETS_COMMIT`. It holds `.mk-door`, `.mk-acts`, `.mk-frontgrid` and `.mk-avatar`, and `.cs-tabs` inside the 760 px query. Control: no selector names `mk-device`, `mk-scaler` or `.anat`, and no rule lacks a `cs-` or `mk-` class.
+
+#### T49 (T49-19)
+
+- **R8** [met] (T49; N1090, N1094, N1099; DEC-236 (B204 (1), (3)), DEC-240 (N1049), DEC-241; amends R5, R7) `ASSETS_COMMIT` is the `main` commit named at START (`f498560a37`, PR #37's merge, or later). `ASSET_FILES` is read there by R1's and R7's rules. By them: - `shell.css` carries DEC-236's design classes: `.mk-menuwrap`, `.mk-menu`, `.mk-actwrap`, `.mk-slot`, `.mk-rowname`, `.mk-scrim`, `.mk-image`, `.mk-imgareas`, `.mk-imgarea`, `button.mk-avatar` and `.mk-grp`. It also carries the graph's `.e-step_source` and DEC-241's `.mk-morerows` and `.mk-morerow`; - `civicsmith.css` carries `.cs-band[data-band="test"]`.
+
+  Test: R1's byte equality and R7's transform. A scan finds each named rule. Control: no selector names `mk-device` or `mk-scaler`.
+
+#### T50 (T50-26)
+
+- **R9** [met] (T50; N1106; DEC-249, DEC-279, DEC-280; K3641; amends R1, R5, R7, R8) `ASSETS_COMMIT` is the one design commit the START names (the design branch's last merge into `tranche/T50` at the START: `e5fd78226f`, DEC-327, K3730, or a later one), the same commit `site` takes as its `SITE_COMMIT` (`site` R16), in place of `f498560a37`. `ASSET_FILES` is read there by R1's and R7's rules, so `civicsmith.css` since `f498560a37` also carries `.cs-btn:active`, `.cs-btn[aria-busy]` and `.cs-btn[data-done]` (DEC-280: a pressed button sinks, a working one turns and cannot be pressed again, an answered one shows a check), `.cs-testband` (DEC-249: the band on a test copy, above the masthead), `.cs-part` (DEC-279: a numbered part that opens and closes) and `.cs-choice`; the `.cs-band[data-band="test"]` rule R8 named stays. `shell.css` is regenerated from the page's `<style>` at that commit by R7's transform. Test: R1's byte equality and R7's transform at the new commit; a scan of the served stylesheet finds each named rule. Control: a hand edit of a served file fails the equality.
+
+#### T51 (T51-112)
+
+- **R10** [met] (T51; K3807, K3803; DEC-330 (B306: A11, A14, A27, A58, A61, A77, A79, A81), DEC-331, DEC-332 (1), DEC-333, DEC-334; amends R1, R7, R9) **The design as merged into `tranche/T51`, and no style a screen carries of its own.** `ASSETS_COMMIT` is the one design commit the START names (the design branch's last merge into `tranche/T51` at the START: `89c8969094` when this was written, DEC-334's, or a later one), in place of `7be06eb4cb`, the commit `generate.mjs` holds from R9 (R9 names `e5fd78226f` "or a later one"; the visual files are as at `e5fd78226f`), and the same commit `site` takes (`site` R16). `generate.mjs` is rerun at it and `ASSET_FILES` is read there by R1's and R7's rules. By them, against R9's commit: - `civicsmith.css`, `icons.svg`, the 15 faces and the three licences are byte-identical to R9's (the visual language did not change between the two commits). - `shell.css` differs in two places only. `.mk-sort` also carries `display: inline-block`, `padding: 7px 0`, `min-height: 32px` and `box-sizing: border-box` (DEC-330: the sort buttons of `finder`'s table, A14, are 32 px tall). The state-switching rule also carries `.st-j`, `.st-k` and `.st-l` beside `.st-a` to `.st-i` (the drawings' further states; no product screen draws a `st-` class). - No other rule is owed. Every `mk-` or `cs-` class the merged drawings (`mock-screens.js`, `mock-shell.js`, `mock-kit.js`, `mock-acts.js`, `mock-refs.js`) write in a `class` attribute is defined by `civicsmith.css` or `shell.css`, except the markers and mock-only classes no style is drawn for: `mk-data` (a record's own data), `mk-codes`, `mk-cv`, `mk-unpick`, `mk-updband` (the update band, `interface-shell` R92), `mk-lvlbtn` (a hook class, `interface-shell` R56), `mk-front`, `mk-held`, `mk-used`, `mk-page`, `mk-mockctl` and `mk-osprompt`. So the states of A58 (`queue.multi.*`), A61 (`queue.answered.*`) and A27's record stratum, A11's state chips (`mk-chip`), A77's "A filtered view you built" mark (`cs-gap`), the saved review file's look (A81, `review-copy`) and the C6 ceremony's marks on `project` (`screen.project.notice.*`) are drawn with classes the two stylesheets already define. - **Icons.** `icons.svg` holds `i-group` (`request.mjs`:76 draws it) and holds no `i-document`, `i-due` or `i-sever`, which the drawings reference (`published`'s sources, `plan`'s checkpoint, `question`'s "Reasons let go"). No screen of T51-113 to T51-118 draws one of the three; a screen job that must maps the icon to the one its neighbouring rows use and REPORTs it to BOB for UX-DESIGN (`interface-shell` R56's rule for a class, applied to an icon). - **Print.** Neither `civicsmith.css` nor the page's `<style>` holds an `@media print` rule at the commit, so `ASSET_FILES` carries none and this module adds none by hand (R7). A79's print layout is a state `published` draws (the whole case, every finding open with its sources, the signature line, and a footer saying whether it was printed in full or as a filtered view), printed by the shell's `cs.print` (`interface-shell` R99); no print rule is needed to hide the frame, which `published` does not draw (`interface-shell` R30).
+
+  Its 12 census lines (eleven CSS comments in `civicsmith.css` and the `i-group` icon id in `icons.svg`; no `role="group"` attribute among them) hold no text a member reads: recorded. Test: R1's byte equality and R7's transform at the new commit; a scan finds `.mk-sort` with `min-height: 32px` and the three state selectors; a scan of the drawings' class literals against the two served stylesheets finds none undefined other than the list above. Control: a class outside the list and in neither stylesheet fails the scan, so a later design commit's new class is found at the START; a hand edit of a served file fails the equality. (K4068) The commit taken is `20c8001300`: there `icons.svg` holds `i-document`, `i-due` and `i-sever` (DEC-335 (4)), and `shell.css` differs from R9's also by `.mk-grp`'s wrap (R11), `.mk-screenonly` with its `@media print` rule (DEC-338 (5)) and the 44 px phone rules; where this requirement's text above says otherwise, this sentence governs.
+- **R11** [met] (T51; N1184 B-22; DEC-340, U366; K3935) **The team name wraps.** The masthead's name and the public frame's header name are not truncated or ellipsised by any rule of `civicsmith.css`; a long name wraps to further lines. Test: a 60-character name at 390 px is fully visible in both frames; control: the name's line does not move the rail.
+
+## Private
+
+### Uses
+
+None. It imports nothing. For its tests only: the design stream's files at `ASSETS_COMMIT`, read from git (no module).
+
+### Invariants
+
+- **R4** [met] The module imports nothing and does nothing when loaded beyond defining its two exports: no I/O, no store, no registration, no time or randomness; every read of it answers the same.
+
+### Satisfies
+
+- DEC-138 (the visual language's stylesheet, faces with their licences, and icons, served from the group's own copy; owed since T33, N559): R1–R3.
+- DEC-122 (3) and design principle 9.6 (nothing loaded from outside the group's own Civicsmith): R2.
+- N897 (1) (Bob's K2816: the designed screens built as the real interface, served by each group's own Civicsmith).
+- (T51) DEC-330 (A14: R10's 32 px sort buttons; A11, A58, A61, A27, A77, A79, A81 drawn in classes the two stylesheets define), DEC-331, DEC-332 (1), DEC-333, DEC-334; K3807 (R10).
+
+### Suggestions
+
+- **Generated, never edited by hand,** by a script kept beside the module and not imported (so not bundled), as `setup-words`' generator is; the generated file's header names this module's R1 and its test.
+- **All 15 faces** (Latin, Latin Extended, Vietnamese; DEC-138 (2)): about 0.79 MB, about 1.05 MB as base64, taking the plane bundle from about 13.9 MB to about 15 MB, under `bundler` R31's 32 MiB warning (`draft-T46-interface.md` §7 T3).
+- `check_contrast.py` is the design stream's, run whenever a colour changes (DEC-138's owed item); a new `ASSETS_COMMIT` is the moment to ask for it.
+- The file's path: `bio-plane/src/interface-assets/index.mjs`, the repository's convention for a module.
