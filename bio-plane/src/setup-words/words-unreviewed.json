@@ -26360,812 +26360,812 @@
       "en": "any HTTPS endpoint taking a JSON POST",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 258
+      "line": 325
     },
     {
       "id": "file-scanner.catalogue.any_syslog_collector_rfc_5424",
       "en": "any syslog collector (RFC 5424 over TLS)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 252
+      "line": 319
     },
     {
       "id": "file-scanner.catalogue.azure_storage_account_name",
       "en": "Azure storage account name",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 116
+      "line": 183
     },
     {
       "id": "file-scanner.catalogue.blob_container_the_files_are",
       "en": "Blob container the files are scanned in",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 117
+      "line": 184
     },
     {
       "id": "file-scanner.catalogue.cloud_not_stored_in_private",
       "en": "Cloud: not stored in private mode; the sanitized copy deleted after 24 hours",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 136
+      "line": 203
     },
     {
       "id": "file-scanner.catalogue.cloud_scan_results_remain_limited",
       "en": "Cloud: scan results remain, limited to the submitter",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 137
+      "line": 204
     },
     {
       "id": "file-scanner.catalogue.cloudflare_account_id",
       "en": "Cloudflare account ID",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 201
+      "line": 268
     },
     {
       "id": "file-scanner.catalogue.cloudflare_inc_the_teams_own",
       "en": "Cloudflare, Inc. (the team's own account)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 203
+      "line": 270
     },
     {
       "id": "file-scanner.catalogue.cloudflare_intel_cloudflares_network",
       "en": "Cloudflare's network",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 203
+      "line": 270
     },
     {
       "id": "file-scanner.catalogue.cloudflare_intel_the_teams_own",
       "en": "the team's own Cloudflare account, a token with Intel Read",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 205
+      "line": 272
     },
     {
       "id": "file-scanner.catalogue.connect_over_tls_yes_or",
       "en": "Connect over TLS: yes or no (default no)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 108
+      "line": 175
     },
     {
       "id": "file-scanner.catalogue.data_collection_endpoint_host",
       "en": "Data collection endpoint host",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 227
+      "line": 294
     },
     {
       "id": "file-scanner.catalogue.data_collection_rule_immutable_id",
       "en": "Data collection rule immutable ID",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 228
+      "line": 295
     },
     {
       "id": "file-scanner.catalogue.deep_cdr_metadefender_cloud_or",
       "en": "Deep CDR (MetaDefender Cloud or Core)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 128
+      "line": 195
     },
     {
       "id": "file-scanner.catalogue.deep_cdr_not_stated_cloud",
       "en": "not stated (Cloud); the organization's own servers (Core)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 135
+      "line": 202
     },
     {
       "id": "file-scanner.catalogue.deep_cdr_opswat_inc_cloud_or",
       "en": "OPSWAT, Inc. (Cloud), or the organization's own Core server",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 134
+      "line": 201
     },
     {
       "id": "file-scanner.catalogue.defender_storage_the_blobs_index",
       "en": "the blob's index tag, deleted with it; alerts as the organization's Defender for Cloud keeps them",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 121
+      "line": 188
     },
     {
       "id": "file-scanner.catalogue.defender_storage_the_organizations_own",
       "en": "the organization's own Azure subscription, billed per GB scanned",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 123
+      "line": 190
     },
     {
       "id": "file-scanner.catalogue.defender_storage_the_service_does",
       "en": "the service does not retain the scanned content; this adapter deletes the blob after the result",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 120
+      "line": 187
     },
     {
       "id": "file-scanner.catalogue.defender_storage_the_storage_accounts",
       "en": "the storage account's region; content read within it",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 119
+      "line": 186
     },
     {
       "id": "file-scanner.catalogue.elastic_as_the_organization",
       "en": "as the organization keeps its logs",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 250
+      "line": 317
     },
     {
       "id": "file-scanner.catalogue.elastic_the_organizations_own",
       "en": "the organization's own Elastic deployment",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 249
+      "line": 316
     },
     {
       "id": "file-scanner.catalogue.elastic_the_organizations_own_deployment",
       "en": "the organization's own deployment",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 251
+      "line": 318
     },
     {
       "id": "file-scanner.catalogue.elasticsearch_address_host_or_host",
       "en": "Elasticsearch address (host, or host:port)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 247
+      "line": 314
     },
     {
       "id": "file-scanner.catalogue.endpoint_address_host_or_host",
       "en": "Endpoint address (host, or host:port)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 261
+      "line": 328
     },
     {
       "id": "file-scanner.catalogue.falcon_sandbox_community_access_off",
       "en": "community access off: every upload confidential",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 175
+      "line": 242
     },
     {
       "id": "file-scanner.catalogue.falcon_sandbox_falcon_intelligence",
       "en": "Falcon Sandbox (Falcon Intelligence)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 168
+      "line": 235
     },
     {
       "id": "file-scanner.catalogue.falcon_sandbox_get_settings_before_each",
       "en": "GET /falconx/entities/settings/v1 before each send: community access is off for the API client",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 176
+      "line": 243
     },
     {
       "id": "file-scanner.catalogue.falcon_sandbox_kept_in_the",
       "en": "kept in the Falcon platform",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 178
+      "line": 245
     },
     {
       "id": "file-scanner.catalogue.falcon_sandbox_stored_in_the",
       "en": "stored in the Falcon platform; period not stated",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 178
+      "line": 245
     },
     {
       "id": "file-scanner.catalogue.falcon_sandbox_the_falcon_cloud_chosen",
       "en": "the Falcon cloud chosen",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 177
+      "line": 244
     },
     {
       "id": "file-scanner.catalogue.falcon_sandbox_with_the_organizations",
       "en": "with the organization's Falcon subscription",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 180
+      "line": 247
     },
     {
       "id": "file-scanner.catalogue.glasswall_an_entitlement_to",
       "en": "an entitlement to a number of files or a volume a day",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 147
+      "line": 214
     },
     {
       "id": "file-scanner.catalogue.glasswall_halo_api_address_host",
       "en": "Glasswall Halo API address (host, or host:port)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 143
+      "line": 210
     },
     {
       "id": "file-scanner.catalogue.glasswall_removed_according_to",
       "en": "removed according to the deployment's file retention policy",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 145
+      "line": 212
     },
     {
       "id": "file-scanner.catalogue.glasswall_the_analysis_report",
       "en": "the analysis report, as the deployment keeps it",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 146
+      "line": 213
     },
     {
       "id": "file-scanner.catalogue.glasswall_the_halo_deployment",
       "en": "the Glasswall Halo deployment the organization runs or subscribes to",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 144
+      "line": 211
     },
     {
       "id": "file-scanner.catalogue.glasswall_where_that_deployment_runs",
       "en": "where that deployment runs",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 145
+      "line": 212
     },
     {
       "id": "file-scanner.catalogue.google_cloud_project_id",
       "en": "Google Cloud project ID",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 239
+      "line": 306
     },
     {
       "id": "file-scanner.catalogue.google_llc_the_organizations_own",
       "en": "Google LLC (the organization's own instance)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 241
+      "line": 308
     },
     {
       "id": "file-scanner.catalogue.google_secops_as_the_instance",
       "en": "as the instance keeps its logs",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 242
+      "line": 309
     },
     {
       "id": "file-scanner.catalogue.google_secops_the_instances_region",
       "en": "the instance's region",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 241
+      "line": 308
     },
     {
       "id": "file-scanner.catalogue.google_secops_the_organizations_own_instance",
       "en": "the organization's own instance",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 243
+      "line": 310
     },
     {
       "id": "file-scanner.catalogue.google_security_operations_importlogs",
       "en": "Google Security Operations (ImportLogs)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 233
+      "line": 300
     },
     {
       "id": "file-scanner.catalogue.google_web_risk_no_file",
       "en": "no file is sent; the server sees only a hash prefix on a local match",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 212
+      "line": 279
     },
     {
       "id": "file-scanner.catalogue.google_web_risk_the_organizations_own",
       "en": "the organization's own Google Cloud project; results must not be redistributed",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 214
+      "line": 281
     },
     {
       "id": "file-scanner.catalogue.https_webhook_the_organizations_own_endpoint",
       "en": "the organization's own endpoint",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 264
+      "line": 331
     },
     {
       "id": "file-scanner.catalogue.icap_service_name_default_avscan",
       "en": "ICAP service name (default avscan)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 107
+      "line": 174
     },
     {
       "id": "file-scanner.catalogue.icap_the_organizations_own_server",
       "en": "the organization's own server and licence",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 111
+      "line": 178
     },
     {
       "id": "file-scanner.catalogue.index_the_counts_are_written",
       "en": "Index the counts are written to (default civicsmith-security-counts)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 248
+      "line": 315
     },
     {
       "id": "file-scanner.catalogue.instance_customer_id",
       "en": "Instance (customer) ID",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 240
+      "line": 307
     },
     {
       "id": "file-scanner.catalogue.instance_location",
       "en": "Instance location",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 239
+      "line": 306
     },
     {
       "id": "file-scanner.catalogue.intelix_clean_files_up_to",
       "en": "clean files up to 30 days; malicious files retained indefinitely in the SophosLabs Hub (UK)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 63
+      "line": 129
     },
     {
       "id": "file-scanner.catalogue.intelix_metadata_up_to_6",
       "en": "metadata up to 6 months for research",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 64
+      "line": 130
     },
     {
       "id": "file-scanner.catalogue.intelix_the_organizations_own",
       "en": "the organization's own Intelix account (free monthly allowance, then pay as you go)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 65
+      "line": 131
     },
     {
       "id": "file-scanner.catalogue.intelix_the_region_chosen",
       "en": "the region chosen; dynamic analysis traffic may be routed to another region; malicious files to the SophosLabs Hub (UK)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 62
+      "line": 128
     },
     {
       "id": "file-scanner.catalogue.joe_sandbox_an_edition_of",
       "en": "an edition of Light or above, whose analyses and results are private",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 154
+      "line": 221
     },
     {
       "id": "file-scanner.catalogue.joe_sandbox_cloud_light_and",
       "en": "Joe Sandbox Cloud (Light and above)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 150
+      "line": 217
     },
     {
       "id": "file-scanner.catalogue.joe_sandbox_kept_until_the",
       "en": "kept until the customer deletes it; then securely deleted in near real time",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 157
+      "line": 224
     },
     {
       "id": "file-scanner.catalogue.joe_sandbox_kept_until_the_2",
       "en": "kept until the customer deletes it",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 158
+      "line": 225
     },
     {
       "id": "file-scanner.catalogue.joe_sandbox_post_account_info_before_each",
       "en": "POST /api/v2/account/info before each send: the account is not of the Basic edition",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 155
+      "line": 222
     },
     {
       "id": "file-scanner.catalogue.joe_sandbox_the_organizations_own",
       "en": "the organization's own Light, Pro or Enterprise subscription",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 159
+      "line": 226
     },
     {
       "id": "file-scanner.catalogue.log_type_the_counts_are",
       "en": "Log type the counts are imported as",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 240
+      "line": 307
     },
     {
       "id": "file-scanner.catalogue.metadefender_cloud_file_not",
       "en": "private mode: not stored or shared; permanently removed from storage",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 91
+      "line": 158
     },
     {
       "id": "file-scanner.catalogue.metadefender_cloud_private_mode",
       "en": "MetaDefender Cloud (private mode)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 86
+      "line": 153
     },
     {
       "id": "file-scanner.catalogue.metadefender_cloud_scan_results",
       "en": "scan results remain in the MetaDefender Cloud database, limited to the submitter",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 92
+      "line": 159
     },
     {
       "id": "file-scanner.catalogue.metadefender_cloud_the_organizations_own_paid",
       "en": "the organization's own paid licence; \"solely for Your internal use\" (OPSWAT's written yes needed for product use)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 94
+      "line": 161
     },
     {
       "id": "file-scanner.catalogue.metadefender_core_as_the_organization",
       "en": "as the organization configures its server",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 101
+      "line": 168
     },
     {
       "id": "file-scanner.catalogue.metadefender_core_as_the_organization_2",
       "en": "as the organization configures its server",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 102
+      "line": 169
     },
     {
       "id": "file-scanner.catalogue.metadefender_core_server_address_host",
       "en": "MetaDefender Core server address (host, or host:port)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 99
+      "line": 166
     },
     {
       "id": "file-scanner.catalogue.metadefender_core_server_address_host_2",
       "en": "MetaDefender Core server address (host, or host:port; Core only)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 132
+      "line": 199
     },
     {
       "id": "file-scanner.catalogue.metadefender_core_the_organizations_own",
       "en": "the organization's own MetaDefender Core server",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 100
+      "line": 167
     },
     {
       "id": "file-scanner.catalogue.metadefender_core_the_organizations_own_servers",
       "en": "the organization's own servers",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 101
+      "line": 168
     },
     {
       "id": "file-scanner.catalogue.metadefender_get_v4_apikey_before_each",
       "en": "GET /v4/apikey/ before each send: the key's licence is paid and private processing is on",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 53
+      "line": 119
     },
     {
       "id": "file-scanner.catalogue.microsoft_defender_for_storage",
       "en": "Microsoft Defender for Storage",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 112
+      "line": 179
     },
     {
       "id": "file-scanner.catalogue.microsoft_sentinel_logs_ingestion_api",
       "en": "Microsoft Sentinel (Logs Ingestion API)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 224
+      "line": 291
     },
     {
       "id": "file-scanner.catalogue.microsoft_the_organizations_own_azure",
       "en": "Microsoft (the organization's own Azure storage account)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 118
+      "line": 185
     },
     {
       "id": "file-scanner.catalogue.microsoft_the_organizations_own_workspace",
       "en": "Microsoft (the organization's own workspace)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 229
+      "line": 296
     },
     {
       "id": "file-scanner.catalogue.no_file_is_sent",
       "en": "no file is sent",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 15
+      "line": 81
     },
     {
       "id": "file-scanner.catalogue.palo_alto_networks_inc",
       "en": "Palo Alto Networks, Inc.",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 182
+      "line": 249
     },
     {
       "id": "file-scanner.catalogue.palo_alto_networks_inc_2",
       "en": "Palo Alto Networks, Inc.",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 190
+      "line": 257
     },
     {
       "id": "file-scanner.catalogue.path_on_the_endpoint_default",
       "en": "Path on the endpoint (default /)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 261
+      "line": 328
     },
     {
       "id": "file-scanner.catalogue.private_mode_samplesharing_0",
       "en": "private mode: samplesharing 0 and private processing on every call (paid licence only)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 51
+      "line": 117
     },
     {
       "id": "file-scanner.catalogue.region_one_of_keys",
       "en": "Region: one of {keys}",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 22
+      "line": 88
     },
     {
       "id": "file-scanner.catalogue.sandbox_environment_id_default_160",
       "en": "Sandbox environment ID (default 160, Windows 10 64-bit)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 173
+      "line": 240
     },
     {
       "id": "file-scanner.catalogue.scanii_chosen_by_the_team",
       "en": "chosen by the team: US1, EU1, EU2, AP1, AP2 or CA1; content never leaves it",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 80
+      "line": 147
     },
     {
       "id": "file-scanner.catalogue.scanii_deleted_on_completion",
       "en": "deleted on completion of analysis",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 81
+      "line": 148
     },
     {
       "id": "file-scanner.catalogue.scanii_the_teams_own_key",
       "en": "the team's own key; terms allow use within its own products made available to its clients",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 83
+      "line": 150
     },
     {
       "id": "file-scanner.catalogue.scanii_up_to_400_days",
       "en": "up to 400 days in the processing region",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 81
+      "line": 148
     },
     {
       "id": "file-scanner.catalogue.sentinel_as_the_workspace",
       "en": "as the workspace keeps its logs",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 230
+      "line": 297
     },
     {
       "id": "file-scanner.catalogue.sentinel_the_organizations_own",
       "en": "the organization's own Azure workspace",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 231
+      "line": 298
     },
     {
       "id": "file-scanner.catalogue.sentinel_the_workspaces_region",
       "en": "the workspace's region",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 229
+      "line": 296
     },
     {
       "id": "file-scanner.catalogue.splunk_hec_as_the_organization",
       "en": "as the organization keeps its logs",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 222
+      "line": 289
     },
     {
       "id": "file-scanner.catalogue.splunk_hec_the_organizations_own_splunk",
       "en": "the organization's own Splunk",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 221
+      "line": 288
     },
     {
       "id": "file-scanner.catalogue.splunk_hec_the_organizations_own_splunk_2",
       "en": "the organization's own Splunk",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 223
+      "line": 290
     },
     {
       "id": "file-scanner.catalogue.splunk_http_event_collector",
       "en": "Splunk HTTP Event Collector",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 217
+      "line": 284
     },
     {
       "id": "file-scanner.catalogue.splunk_http_event_collector_address",
       "en": "Splunk HTTP Event Collector address (host:port; the collector listens on 8088 unless changed)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 220
+      "line": 287
     },
     {
       "id": "file-scanner.catalogue.stated_by_the_administrator",
       "en": "stated by the administrator",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 12
+      "line": 78
     },
     {
       "id": "file-scanner.catalogue.stream_name_in_the_rule",
       "en": "Stream name in the rule",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 228
+      "line": 295
     },
     {
       "id": "file-scanner.catalogue.syslog_collector_address_host_or",
       "en": "Syslog collector address (host, or host:port; port 6514 unless named)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 254
+      "line": 321
     },
     {
       "id": "file-scanner.catalogue.syslog_tls_the_organizations_own_collector",
       "en": "the organization's own collector",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 257
+      "line": 324
     },
     {
       "id": "file-scanner.catalogue.the_engines_the_tool_runs",
       "en": "The engines the tool runs, as its maker names them",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 37
+      "line": 103
     },
     {
       "id": "file-scanner.catalogue.the_organizations_own_licence",
       "en": "the organization's own licence",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 17
+      "line": 83
     },
     {
       "id": "file-scanner.catalogue.the_tools_statement_of_what",
       "en": "The tool's statement of what it receives, keeps and shares",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 38
+      "line": 104
     },
     {
       "id": "file-scanner.catalogue.vmray_kept_in_the_account",
       "en": "kept in the account",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 166
+      "line": 233
     },
     {
       "id": "file-scanner.catalogue.vmray_not_stated_beyond",
       "en": "not stated beyond the account",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 166
+      "line": 233
     },
     {
       "id": "file-scanner.catalogue.vmray_the_organizations_own_subscription",
       "en": "the organization's own subscription",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 167
+      "line": 234
     },
     {
       "id": "file-scanner.catalogue.vmray_us_or_germany_as_the",
       "en": "US or Germany, as the account is hosted",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 165
+      "line": 232
     },
     {
       "id": "file-scanner.catalogue.web_risk_update_api",
       "en": "Web Risk (Update API)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 207
+      "line": 274
     },
     {
       "id": "file-scanner.catalogue.where_it_runs",
       "en": "where it runs",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 16
+      "line": 82
     },
     {
       "id": "file-scanner.catalogue.where_that_statement_is_published",
       "en": "Where that statement is published",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 39
+      "line": 105
     },
     {
       "id": "file-scanner.catalogue.wildfire_benign_14_days_malicious",
       "en": "benign 14 days; malicious 10 years",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 192
+      "line": 259
     },
     {
       "id": "file-scanner.catalogue.wildfire_signatures_and_reports",
       "en": "signatures and reports kept indefinitely",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 192
+      "line": 259
     },
     {
       "id": "file-scanner.catalogue.wildfire_the_organizations_own_wildfire_api",
       "en": "the organization's own WildFire API subscription (150 submissions a day base)",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 194
+      "line": 261
     },
     {
       "id": "file-scanner.catalogue.wildfire_the_regional_cloud",
       "en": "the regional cloud chosen; some metadata shared across regional clouds",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/catalogue.mjs",
-      "line": 191
+      "line": 258
     },
     {
       "id": "file-scanner.handler.libreoffice_versionof_poppler_utils_versionof",
       "en": "libreoffice {versionOf}; poppler-utils {versionOf_2}",
       "module": "file-scanner",
       "file": "file-scanner/src/handler.mjs",
-      "line": 27
+      "line": 42
     },
     {
       "id": "file-scanner.render.the_first_page_is_over_the_limit",
@@ -27200,63 +27200,63 @@
       "en": "a test record of zero counts was accepted",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/routes.mjs",
-      "line": 340
+      "line": 428
     },
     {
       "id": "file-scanner.routes.no_safe_view",
       "en": "no safe view",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/routes.mjs",
-      "line": 21
+      "line": 38
     },
     {
       "id": "file-scanner.routes.removed_names",
       "en": "removed: {names}",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/routes.mjs",
-      "line": 325
+      "line": 413
     },
     {
       "id": "file-scanner.routes.the_eicar_test_file_answered",
       "en": "the EICAR test file answered found",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/routes.mjs",
-      "line": 19
+      "line": 35
     },
     {
       "id": "file-scanner.routes.the_eicar_test_file_did",
       "en": "the EICAR test file did not answer found",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/routes.mjs",
-      "line": 22
+      "line": 41
     },
     {
       "id": "file-scanner.routes.the_safe_view_reported_nothing",
       "en": "the safe view reported nothing removed",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/routes.mjs",
-      "line": 326
+      "line": 414
     },
     {
       "id": "file-scanner.routes.the_sandbox_was_still_running",
       "en": "the sandbox was still running after {PROVIDER_TIMEOUT_MS} ms",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/routes.mjs",
-      "line": 318
+      "line": 406
     },
     {
       "id": "file-scanner.routes.the_test_address_answered",
       "en": "the test address answered listed",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/routes.mjs",
-      "line": 337
+      "line": 425
     },
     {
       "id": "file-scanner.routes.the_test_address_did",
       "en": "the test address did not answer listed",
       "module": "file-scanner",
       "file": "file-scanner/src/providers/routes.mjs",
-      "line": 337
+      "line": 425
     },
     {
       "id": "filing-templates.index.a_comment_is_1_to",
@@ -48207,56 +48207,56 @@
       "en": "loading the workbook took longer than the time budget, so evaluation was not started",
       "module": "sheet-worker",
       "file": "sheet-worker/src/contract.mjs",
-      "line": 86
+      "line": 117
     },
     {
       "id": "sheet-worker.contract.no_capture_with_that_sha_in",
       "en": "no capture with that sha in that store",
       "module": "sheet-worker",
       "file": "sheet-worker/src/contract.mjs",
-      "line": 79
+      "line": 110
     },
     {
       "id": "sheet-worker.contract.recompute_is_not_enabled_here",
       "en": "workbook recompute is not enabled on this instance; an administrator enables it after the release deploys this member",
       "module": "sheet-worker",
       "file": "sheet-worker/src/contract.mjs",
-      "line": 80
+      "line": 111
     },
     {
       "id": "sheet-worker.contract.store_must_be_named_this",
       "en": "store must be named: this member reads a capture from one namespace and guesses none",
       "module": "sheet-worker",
       "file": "sheet-worker/src/contract.mjs",
-      "line": 75
+      "line": 106
     },
     {
       "id": "sheet-worker.contract.the_engine_did_not_load",
       "en": "the engine did not load as the pinned build, so no workbook is recomputed",
       "module": "sheet-worker",
       "file": "sheet-worker/src/contract.mjs",
-      "line": 81
+      "line": 112
     },
     {
       "id": "sheet-worker.contract.the_engine_refused_or_failed",
       "en": "the engine refused or failed on this workbook",
       "module": "sheet-worker",
       "file": "sheet-worker/src/contract.mjs",
-      "line": 85
+      "line": 116
     },
     {
       "id": "sheet-worker.contract.the_workbook_is_larger_than",
       "en": "the workbook is larger than this member recomputes; nothing of it was recomputed",
       "module": "sheet-worker",
       "file": "sheet-worker/src/contract.mjs",
-      "line": 83
+      "line": 114
     },
     {
       "id": "sheet-worker.contract.the_workbook_refers_to_other",
       "en": "the workbook refers to other workbooks, whose values are not here",
       "module": "sheet-worker",
       "file": "sheet-worker/src/contract.mjs",
-      "line": 84
+      "line": 115
     },
     {
       "id": "sheet-worker.enginecore.the_engine_module_did_not",
