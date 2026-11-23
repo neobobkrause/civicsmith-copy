@@ -17,12 +17,11 @@ const REASON = "One says November, the other December.";
 const pageHtml = (title, paragraphs) => `<html><head><title>${title}</title></head><body>\n<h1>${title}</h1>\n${paragraphs.map((t) => `<p>${t}</p>`).join("\n")}\n</body></html>`;
 const main = (p) => p.doc.getElementById("cs-main");
 const text = (el) => (el ? el.textContent.replace(/\s+/g, " ").trim() : "");
-/** the word for `key` as the page draws it, its fills given as plain text */
-const plainWord = (key, fills = {}) => {
-  let s = String(word(key));
-  for (const [k, v] of Object.entries(fills)) s = s.split("{" + k + "}").join(v);
-  return s.replace(/\s+/g, " ").trim();
-};
+/** the word for `key`, filled, as the page draws it */
+const plainWord = (key, fills = {}) => String(word(key, fills)).replace(/\s+/g, " ").trim();
+/** a word's text up to its first placeholder, for a sentence filled with drawn markup (a date) */
+const lead = (key) => String(word(key, new Proxy({}, { get: () => "\u0000", has: () => true,
+  getOwnPropertyDescriptor: () => ({ value: "\u0000", configurable: true, enumerable: true, writable: true }) }))).split("\u0000")[0].trim();
 
 /** `ann` with a project holding two read web pages: the one the page opens, and the other it is set beside */
 async function world() {
@@ -43,10 +42,10 @@ async function pageOn({ w, ann, here }) {
   return p;
 }
 const fill = (p, values) => {
-  for (const [name, v] of Object.entries(values)) {
-    const el = main(p).querySelector(`[name="${name}"]`);
-    assert.ok(el, `the control ${name} is drawn`);
-    el.value = v; p.fire(el, "input"); p.fire(el, "change");
+  for (const [id, v] of Object.entries(values)) {
+    const el = p.doc.getElementById(id);
+    assert.ok(el, `the control ${id} is drawn`);
+    el.value = v;
   }
 };
 async function choose(p, other, reason) {
@@ -57,14 +56,14 @@ async function choose(p, other, reason) {
   fill(p, { "document-flag-here": "0", "document-flag-there": "0", "document-flag-why": reason });
 }
 async function press(p) {
-  const b = main(p).querySelector('[data-op="contradictionflag"]');
+  const b = main(p).querySelector('button[data-act="contradictionflag"]');
   assert.ok(b, "the flag act is drawn");
-  p.fire(b, "click"); await p.settle();
+  await p.click(b); await p.settle();
 }
 const outcome = (p) => text(main(p).querySelector('[data-outcome="contradictionflag"]'));
-const flagsSection = (p) => main(p).querySelectorAll("section").find((s) => text(s).startsWith(plainWord("screen.document.flags.head"))) || null;
+const flagsSection = (p) => main(p).querySelectorAll("section").find((s) => s.querySelector("h2") && text(s.querySelector("h2")) === plainWord("screen.document.flags.head")) || null;
 
-test("R138 a new flag draws screen.document.flag.recorded and the flag in the page's list (head, the pair linked to its contradiction, who raised it); control: before any flag, no list and nothing beside the act", async () => {
+test("R138 a new flag draws screen.document.flag.recorded and the flag in the page's list (head, the pair by its two documents, who raised it); control: before any flag, no list and nothing beside the act", async () => {
   const s = await world();
   const p = await pageOn(s);
   assert.equal(flagsSection(p), null, "control: no flag, no list of flags");
@@ -79,10 +78,9 @@ test("R138 a new flag draws screen.document.flag.recorded and the flag in the pa
   const rows = sec.querySelectorAll("[data-flag]");
   assert.equal(rows.length, 1, "one row for the one flag");
   assert.equal(rows[0].getAttribute("data-flag"), a.candidate, "the row is the flag the world wrote");
-  const link = rows[0].querySelector("a");
-  assert.ok(link && link.getAttribute("href").includes("/app/contradiction/") && link.getAttribute("href").includes(a.candidate), "the pair links to its contradiction");
-  assert.equal(text(link), plainWord("screen.document.flags.pair", { a: "Council minutes", b: "Rent notice, October 2026" }), "the pair named by the two documents' titles");
-  assert.ok(text(rows[0]).includes(plainWord("screen.contradiction.flagged.by", { member: "ann" }).split("{date}")[0].trim()), "who raised it, by the word for it");
+  /* the pair is named by the two documents' titles; it is a reference to its contradiction, a screen of a later module (screens-inquiry R139 proves the link) */
+  assert.equal(text(rows[0].querySelector(".cs-card, a")), plainWord("screen.document.flags.pair", { a: "Council minutes", b: "Rent notice, October 2026" }), "the pair named by the two documents' titles");
+  assert.ok(text(rows[0]).includes(lead("screen.contradiction.flagged.by")) && text(rows[0]).includes("ann"), "who raised it, beneath, by the word for it");
 });
 
 test("R138 the same pair flagged again is answered already: true and draws screen.document.flag.already; the list keeps the pair once", async () => {
@@ -109,11 +107,12 @@ test("R138 a refusal of the world's contradictionflag draws the owner's refusal,
   assert.equal(refusal.ok, false, "the world refuses a reason past its bound");
   const code = String(refusal.code || refusal.reason);
   assert.ok(code, "the refusal carries its code");
-  const drawn = text(main(p).querySelector('[data-outcome="contradictionflag"]'));
-  assert.ok(drawn, "the refusal is drawn beside the act");
+  const act = main(p).querySelector('button[data-act="contradictionflag"]');
+  const drawn = text(p.root().querySelector(`[data-slot="${act.getAttribute("data-ai")}"]`));
+  assert.equal(drawn, String(refusal.translation).replace(/\s+/g, " ").trim(), "the owner's refusal, in its own words, beside the act");
   assert.notEqual(drawn, plainWord("screen.document.flag.recorded"), "a refusal is never drawn as recorded");
   assert.notEqual(drawn, plainWord("screen.document.flag.already"));
-  assert.ok(!drawn.includes(code) || drawn !== code, "the refusal is drawn in words, not as its bare code");
+  assert.ok(!drawn.includes(code), "the refusal is drawn in words, never as its bare code");
   assert.equal(flagsSection(p), null, "nothing was written, so no list of flags");
   fill(p, { "document-flag-why": "y".repeat(500) });
   await press(p);
