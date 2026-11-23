@@ -50,6 +50,7 @@ test("R20 R21 R22: disposeAct answers the real dispose over a real selection: do
 test("R49: migratedSurfacing answers the surfacing a migration replay recorded, and null for a question made on this plane", () => {
   const f = migratedSurfacing();
   assert.equal(f.plainAnswer, null);
+  assert.ok(f.migratedAnswer, "a migrated question has its surfacing");
   assert.deepEqual({ ...f.migratedAnswer, migrated: { ...f.migratedAnswer.migrated, at: typeof f.migratedAnswer.migrated.at } },
     { recorded: false, stated: word("inquiry.stated.recorded_migrated_drive"), run: null, lens: null,
       migrated: { capture: "c".repeat(64), promotion: "P-1", at: "string" } });

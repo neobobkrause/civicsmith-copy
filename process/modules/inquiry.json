@@ -17,7 +17,6 @@
     "record-grammar",
     "jurisdictions",
     "civil-time",
-    "text-chain",
     "record-core",
     "membership",
     "promotion",
@@ -38,7 +37,6 @@
     "calculations",
     "lines",
     "setup-words",
-    "test-support",
-    "money"
+    "test-support"
   ]
 }

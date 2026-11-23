@@ -77,7 +77,7 @@ test("R2 the entry requirements judge inquiry@1 and the legacy PROB/focus spelli
   assert.match(focusOpen[0].message, /current_state 'open' is not legal for focus \(legal: surfaced, elevated, deferred, dismissed\)/);
   const robot = await w.k.checkEntry(focusMd("PROB-2026-0711-legacy", { type: "problem", schema: "problem@1" })
     .replace("surfaced_by: agent", "surfaced_by: robot"));
-  assert.deepEqual(checks(robot), ["C-2.8"]); assert.match(robot[0].message, /surfaced_by 'robot' is not one of: agent, human/);
+  assert.deepEqual(checks(robot), ["C-2.8"]); assert.match(robot[0].message, /'robot', which is not one of: agent, human/);
   /* inquiry@1's headings under the focus spelling are judged by focus's heading set, not passed as an inquiry's */
   const crossed = await checkInquiryEntry(fullInquiryMd("FOCUS-2026-0713-crossed").replace("object_type: inquiry", "object_type: focus")
     .replace("schema: inquiry@1", "schema: focus@1"));
@@ -172,6 +172,7 @@ test("R12 R49 a creation admitted as a migration replay records its capture and 
   assert.equal(Object.hasOwn(x, "surfaced_in"), false, "and carries no run");
   assert.equal(w.count("inquiry_migration_replays"), 1, "one migration-replay row");
   const m = w.k.migratedSurfacing(M);
+  assert.ok(m, "a migrated question has its surfacing");
   assert.deepEqual([m.recorded, m.stated, m.run, m.lens, m.migrated.capture, m.migrated.promotion, m.migrated.at],
     [false, word("inquiry.stated.recorded_migrated_drive"), null, null, CAP, "20260707T010000Z_rec17300", x.migration_replay.at]);
   const p = await w.retrieval.projection({ bundleId: M, viewer: "admin" });
@@ -180,7 +181,7 @@ test("R12 R49 a creation admitted as a migration replay records its capture and 
   /* a replay whose promotion key is absent still records the capture, the key null */
   const K = "PROB-2026-9173-no-key";
   assert.equal(w.promote(K, inquiryMd(K), null, { replay: true, migrationReplay: { capture: "d".repeat(64) } }).migration_replay.promotion, null);
-  assert.equal(w.k.migratedSurfacing(K).migrated.promotion, null);
+  assert.equal(w.k.migratedSurfacing(K)?.migrated.promotion, null);
   /* negative controls: none of these writes a row */
   const S = "INQ-2026-9173-surfaced";
   const s = w.promote(S, inquiryMd(S), null, { assistantPrincipal: "class:ai", migrationReplay: { capture: CAP, promotion: "P" } });
@@ -189,7 +190,7 @@ test("R12 R49 a creation admitted as a migration replay records its capture and 
   assert.equal(w.k.migratedSurfacing(S), null);
   const rev = w.promote(M, inquiryMd(M, { question: "Did it happen twice?" }), undefined, { migrationReplay: { capture: "e".repeat(64), promotion: "P2" } });
   assert.equal(rev.ok, true); assert.equal(Object.hasOwn(rev, "migration_replay"), false, "a revision records none");
-  assert.equal(w.k.migratedSurfacing(M).migrated.capture, CAP, "and the creation's row is not overwritten");
+  assert.equal(w.k.migratedSurfacing(M)?.migrated.capture, CAP, "and the creation's row is not overwritten");
   const D = "INFO-2026-9173-doc";
   w.doc(D);
   const plain = "INQ-2026-9173-plain";
