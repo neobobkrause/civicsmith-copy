@@ -93,7 +93,7 @@ test("R123 (promote): a reading the store could not make now (no whole object ye
   }
 });
 
-test("R123 (promote): every document of the promotion with no reading is followed, at most as many as a bundle holds; a promotion the store refuses and one with no documents ask nothing", async () => {
+test("R123 (promote): every document of the promotion with no reading is followed (R133: each one, inline or as a job row); a promotion the store refuses and one with no documents ask nothing", async () => {
   const w = world({ answer: answering(ok({ ok: true, read: true })) });
   await promote(w, promoteBody([provDoc({ sha: SHA }), provDoc({ sha: SHA2, reading: true }), provDoc({ sha: "f".repeat(64) })]));
   assert.deepEqual(asked(w.env, "readheldfor").map((c) => c.params.sha), [SHA, "f".repeat(64)], "the one that carries its reading is left");

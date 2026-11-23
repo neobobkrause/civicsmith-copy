@@ -26,6 +26,12 @@ import { reviewOps } from "../../../src/review/index.mjs";
 import { aiAccountsOps } from "../../../src/ai-accounts/index.mjs";
 import { instanceSetupOps } from "../../../src/setup.mjs";
 import { ownerOps as controlPlaneOwnerOps } from "../../../src/store-assembly/owner-ops.mjs";
+/** op-declarations' T48 family of an owner (t48.mjs) */
+function familyOf(owner) {
+  const f = T48_FAMILIES.find((x) => x.owner === owner);
+  assert.ok(f, `a T48 family for ${owner}`);
+  return f;
+}
 
 const { OPS, OP_STAMPS } = O;
 const U = new URL("http://do/x");
@@ -291,7 +297,7 @@ test("R93 (controls; T48): a request that reaches no ask, run, draft or transcri
 /* ================================================================ R94 */
 
 test("R94 (T48; N996; K3101; amends R53, R56, R63, R69): the 24 account ops `op-declarations` R68 moves are each a route of `ai-accounts`' own map (`aiAccountsOps`), and each reaches the store's route of its own name for a member's session with its declared stamps and none from the caller; `groupkeystate` and `accountreferenceset` answer as before with nothing of `credentials` in the fixture", async () => {
-  const MOVED = Object.keys(T48_FAMILIES.find((f) => f.owner === "ai-accounts").ops);
+  const MOVED = Object.keys(familyOf("ai-accounts").ops);
   assert.equal(new Set(MOVED).size, 24);
   const routes = routesOf(aiAccountsOps, {});
   for (const op of MOVED) {
@@ -351,7 +357,7 @@ test("R95 (T48; K3254): a read of the test-instance fact that throws passes `fal
 /* the owner-ops map is unchanged by T48 (R71, R72): a route of this module's own map is still served */
 test("R90, R91, R92 (T48): this module's own owner-ops map holds none of T48's ops (each is its owner's own arm, R26's pattern)", () => {
   const own = Object.keys(controlPlaneOwnerOps({}, U, null));
-  const T48_OPS = [...Object.values(T48_SHARES).flatMap((x) => Object.keys(x.ops)), ...Object.keys(T48_FAMILIES.find((f) => f.owner === "connections").ops)];
+  const T48_OPS = [...Object.values(T48_SHARES).flatMap((x) => Object.keys(x.ops)), ...Object.keys(familyOf("connections").ops)];
   assert.equal(T48_OPS.length, 16);
   for (const op of T48_OPS)
     assert.equal(own.includes(op), false, `${op}: not this module's arm`);
