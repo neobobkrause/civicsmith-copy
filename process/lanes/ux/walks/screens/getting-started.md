@@ -1,4 +1,4 @@
-Length: 472 lines. Last section: "Changes".
+Length: 473 lines. Last section: "Changes".
 
 # Screens: Getting started
 
