@@ -593,6 +593,20 @@ export const resultOf = (a) => (a && a.json && a.json.result !== undefined ? a.j
 export const refusedAct = (op, a) => Object.assign(new Error(`storeWorld: ${op} was refused: ${JSON.stringify(a && (a.json ?? a.type)).slice(0, 400)}`), { answer: a });
 const passwordOf = (handle) => `${handle}-world-passphrase`;
 
+/** R16, R18: the record `{t, e, d, w}` a page keeps for a session the world issued (interface-shell R32). The world's clock is pinned (`WORLD_NOW`, moved only
+ *  by `tick`) and the page reads `e` against the real clock, so `e` is the time the session has left in the world measured from the real clock, read
+ *  afresh each time: a session live in the world is live on the page, and one the world has moved past (`tick`) is already past on the page. Setting `e`
+ *  (as copying a fresher record onto this one does) takes a page-clock instant back to the world's. A world expiry of none (`0`) stays none.
+ *  @param {{now: () => number}} world @param {string} t @param {number} expires the world's instant, milliseconds; 0 for none
+ *  @param {string} d @param {string} w @returns {{t: string, e: number, d: string, w: string}} */
+function pageSession(world, t, expires, d, w) {
+  let held = expires;
+  const record = { t, e: 0, d, w };
+  return Object.defineProperty(record, "e", { enumerable: true, configurable: true,
+    get: () => (held ? Date.now() + (held - world.now()) : 0),
+    set: (v) => { held = Number(v) ? Number(v) - Date.now() + world.now() : 0; } });
+}
+
 /** R16: `signIn(world, handle, {admin?, capabilities?, device?})` → `{handle, member, token, password, session, act, read}`, by the real acts:
  *  the founder by `login` with the claim's password; any other member by the founder's `memberadd`, the invitation's `enroll` with
  *  her own password, then `login` (with `adminendorse` for `admin: true` and `membercaps` for `capabilities`). */
@@ -647,13 +661,13 @@ export async function signIn(world, handle, { admin = false, capabilities = null
   } else member = handle;
   const signed = await login(isFounder ? (founderHandle || "admin") : handle, isFounder ? world.password : passwords.get(handle));
   const me = { handle, member, token: signed.token, password: isFounder ? world.password : passwords.get(handle),
-               session: { t: signed.token, e: typeof signed.expires === "number" ? signed.expires : Date.parse(signed.expires) || 0, d: device === "own" ? "own" : "shared", w: handle } };
+               session: pageSession(world, signed.token, typeof signed.expires === "number" ? signed.expires : Date.parse(signed.expires) || 0, device === "own" ? "own" : "shared", handle) };
   me.act = (op, { query = {}, body = {} } = {}) => call(op, me, { query, body });
   me.read = (op, { query = {} } = {}) => call(op, me, { query });
   return me;
 }
 
-/** R18: `bootOf(world, as)` → `{door, session}` for interface-shell's `boot({screens, door, session})`. */
+/** R18: `bootOf(world, as)` → `{door, session}` for interface-shell's `boot({screens, door, session})`; `session` is `as.session`, whose `e` is on the page's clock (R16). */
 export function bootOf(world, as) {
   const door = doorOf(world);
   return { door: (req) => door(req, as), session: as ? as.session : null };
@@ -661,7 +675,7 @@ export function bootOf(world, as) {
 
 /** R18 (K5178; SCREENS-INQUIRY #29 J42 (f)): `routeOf(world, as)` → a Playwright route handler for the page's `/api/` requests, answering each from the world's door as `as`
  *  (her token is added when the page sends none), so a browser drawing the screens at a phone's width gets the real store's answers, not a scripted table. The handler fulfils
- *  `route`: a JSON answer as JSON, a byte answer (a served file) with its type. The session the page holds is `world.session(as)`. */
+ *  `route`: a JSON answer as JSON, a byte answer (a served file) with its type. The session the page holds is `world.session(as)`, its `e` on the page's clock (R16). */
 export function routeOf(world, as) {
   const door = doorOf(world);
   return async (route) => {
