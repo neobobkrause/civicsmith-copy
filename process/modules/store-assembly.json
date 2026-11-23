@@ -37,7 +37,6 @@
     "bio-plane/test/m/affordances/register-owners.mjs",
     "bio-plane/test/m/affordances/catalogue.test.mjs",
     "bio-plane/test/m/affordances/owners-registered.test.mjs",
-    "bio-plane/test/m/answers/declared-ops.test.mjs",
     "bio-plane/test/m/monitoring/declared-ops.test.mjs",
     "bio-plane/test/m/test-support/declared-ops.test.mjs"
   ],
