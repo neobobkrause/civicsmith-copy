@@ -22,6 +22,8 @@
     "bio-plane/src/screens-investigate/whywords.mjs"
   ],
   "uses": [
-    "setup-words"
+    "setup-words",
+    "test-support",
+    "interface-shell"
   ]
 }
