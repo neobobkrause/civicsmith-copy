@@ -12,6 +12,7 @@
   "uses": [
     "retrieval-browse",
     "setup-words",
+    "runtime-limits",
     "record-grammar",
     "jurisdictions",
     "civil-time",
