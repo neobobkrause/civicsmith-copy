@@ -25,10 +25,12 @@ import { THEME_SCREEN } from "./theme.mjs";
  * @property {Array<Object>} acts each act's op, label key and the body it sends, or the refusal it draws in place
  * @property {Array<string>} words every word key the screen draws, each read through `setup-words`
  * @property {Object} [parts] the shared readers the screen is handed
+ * @property {ReadonlyArray<string>} [ABSENT_CODES] the refusal codes its subject read answers when the subject is absent (`interface-shell` R61)
+ * @property {Function} [place] names the screen's place in the path from what it reads
  */
 /**
  * interface-shell R21: the twelve registry screens this module draws.
- * @type {ReadonlyArray<Screen>}
+ * @type {Screen[]} frozen: no screen is added or removed
  */
-export const SCREENS = Object.freeze([PEOPLE_SCREEN, PERSON_SCREEN, EXPLORE_SCREEN, TIMELINE_SCREEN, MONEY_SCREEN, CALCULATION_SCREEN,
-  HELP_SCREEN, PROCEEDING_SCREEN, DUE_DATE_SCREEN, STANDARD_SCREEN, TIES_SCREEN, THEME_SCREEN]);
+export const SCREENS = /** @type {Screen[]} */ (Object.freeze([PEOPLE_SCREEN, PERSON_SCREEN, EXPLORE_SCREEN, TIMELINE_SCREEN, MONEY_SCREEN, CALCULATION_SCREEN,
+  HELP_SCREEN, PROCEEDING_SCREEN, DUE_DATE_SCREEN, STANDARD_SCREEN, TIES_SCREEN, THEME_SCREEN]));
