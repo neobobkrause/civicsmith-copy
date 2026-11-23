@@ -9,7 +9,9 @@
     "bio-plane/src/screens-investigate/whywords.mjs",
     "bio-plane/src/screens-investigate/rereads.mjs"
   ],
-  "tests": [],
+  "tests": [
+    "bio-plane/test/m/screens-people/"
+  ],
   "public": [
     "bio-plane/src/screens-investigate/explore.mjs",
     "bio-plane/src/screens-investigate/graphwords.mjs",
