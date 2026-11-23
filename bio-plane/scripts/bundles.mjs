@@ -232,7 +232,7 @@ export async function recordImage(memberName, className, digest, { repoRoot = nu
   const member = lib.discoverMembers(repoRoot || lib.REPO_ROOT).find((m) => m.name === memberName);
   const r = member ? lib.recordContainerDigest(member, className, digest)
     : { refused: "CONTAINER_UNDESCRIBED", message: `${JSON.stringify(memberName)} is not a fleet member` };
-  if (r.refused) { err(`REFUSED [${r.refused}]: ${r.message}`); return 1; }
+  if (r.refused || !r.files) { err(`REFUSED [${r.refused}]: ${r.message}`); return 1; }
   log(`recorded: ${memberName} ${className} ${digest} — ${r.files.join(", ")}`);
   return 0;
 }

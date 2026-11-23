@@ -11,7 +11,24 @@ import { join } from "node:path";
 import { DEFAULT_EXTERNAL, discoverMembers, buildMember, manifestFrom, sha256, isContainer, containerDescriptor, imageReference, containerClasses, containerParts, classPackages, statementPackages, workerPart, WORKER_PART_PATH, BUCKET_ROLES, SOURCE_FIELD, containerSourceHash, containerImageStates, containerImageFindings, recordContainerDigest, bundleExports, bindingFindings } from "../../../scripts/fleet-bundle.mjs";
 import { parseJsonc } from "../../../scripts/jsonc.mjs";
 
+/** @import { Member } from "../../../scripts/fleet-bundle.mjs" */
+
 const hex = (b) => createHash("sha256").update(b).digest("hex");
+/**
+ * A fixture descriptor as a Member: what a test leaves out is filled with values no function under test reads.
+ * @param {Record<string, any>} o
+ * @returns {Member}
+ */
+const asMember = (o) => /** @type {Member} */ ({ dir: o.name, abs: "/nowhere", ...o,
+  bundle: o.bundle ? { outfile: "dist/x.bundled.mjs", manifest: "dist/x.bundle.json", ...o.bundle } : o.bundle });
+/**
+ * A value the test requires to be present, failing by name where it is not.
+ * @template T
+ * @param {T} x
+ * @param {string} [what]
+ * @returns {NonNullable<T>}
+ */
+const must = (x, what = "present") => { assert.ok(x !== null && x !== undefined, what); return /** @type {NonNullable<T>} */ (x); };
 const tmp = (tag) => mkdtempSync(join(tmpdir(), `bundler-${tag}-`));
 
 /** Writes a fixture member under `root/dir`: a two-file first-party source, one
@@ -36,7 +53,7 @@ function fixture(root, dir = "probe", { name = dir, lock = true, vendored = true
   const bundle = { entry: "src/index.mjs", outfile: `dist/${name}.bundled.mjs`, manifest: `dist/${name}.bundle.json` };
   if (external) bundle.external = external;
   writeFileSync(join(abs, "fleet-member.json"), JSON.stringify({ name, entry: "src/index.mjs", bundle }));
-  return discoverMembers(root).find((m) => m.name === name);
+  return must(discoverMembers(root).find((m) => m.name === name), name);
 }
 
 /* ------------------------------------------- container fixtures (R25, R27, R35, R36, R37) */
@@ -55,7 +72,7 @@ function containerFixture(root, dir, { image = IMAGE, noImage = false, kind = "c
 /* ------------------------------------------------------------- R25 (functions) */
 
 test("R25: containerDescriptor writes the part from the marker — class_name, image as <repository>@sha256:<64 hex>, scheduling_policy default, max_instances, bind — and names every field it lacks", () => {
-  const member = (marker, bundle = { entry: "src/index.mjs" }) => ({ name: "runner", bundle, marker });
+  const member = (marker, bundle = { entry: "src/index.mjs" }) => asMember({ name: "runner", bundle, marker });
   const full = { kind: "container", image: IMAGE, class_name: "AgentRunner", max_instances: 4,
     bind: [{ member: "agent-worker", binding: "RUNNER" }] };
   const names = ["agent-worker", "runner"];
@@ -65,7 +82,7 @@ test("R25: containerDescriptor writes the part from the marker — class_name, i
   assert.deepEqual(d.descriptor, want);
   assert.deepEqual(Object.keys(d.descriptor), ["class_name", "image", "scheduling_policy", "max_instances", "bind"]);
   assert.equal(d.bytes.toString("utf8"), JSON.stringify(want, null, 2) + "\n");
-  assert.equal(containerDescriptor(member({ ...full, image: { ...IMAGE, schedulingPolicy: undefined } }), names).descriptor.scheduling_policy,
+  assert.equal(must(containerDescriptor(member({ ...full, image: { ...IMAGE, schedulingPolicy: undefined } }), names).descriptor).scheduling_policy,
     "default", "an unstated policy is default, the only one the part carries");
 
   const lacks = (marker, bundle) => containerDescriptor(member(marker, bundle), names).missing;
@@ -93,10 +110,10 @@ test("R25: imageReference names the image only by digest, in agent-runner R7's f
   assert.deepEqual(imageReference({ ...IMAGE, repository: "registry.example.test:5000/a/b" }),
     { reference: `registry.example.test:5000/a/b@${DIGEST}` });
   assert.deepEqual(imageReference(null), { missing: "image" });
-  assert.deepEqual(imageReference({ ...IMAGE, digest: null }), { missing: "image.digest" });
+  assert.deepEqual(imageReference(/** @type {any} a digest left null on purpose */ ({ ...IMAGE, digest: null })), { missing: "image.digest" });
   assert.deepEqual(imageReference({ ...IMAGE, repository: "runner" }), { missing: "image.repository" });
   /* The repository's own marker states no digest until the release publishes the image (T33-D1). */
-  const runner = discoverMembers().find((m) => m.name === "agent-runner");
+  const runner = must(discoverMembers().find((m) => m.name === "agent-runner"), "agent-runner");
   const own = imageReference(runner.image);
   assert.ok(own.reference ? /@sha256:[0-9a-f]{64}$/.test(own.reference) : own.missing === "image.digest", JSON.stringify(own));
 });
@@ -113,35 +130,35 @@ const TWO = () => [
 
 test("R25: a member with more than one class gets one Container part per class, container/<class>.json, each its own class_name and image, max_instances and bind from the class else the member; one class is container.json as before", () => {
   const names = ["agent-worker", "plane-x"];
-  const member = (marker) => ({ name: "scanner", dir: "scanner", abs: "/nowhere", bundle: { entry: "src/index.mjs" }, marker });
+  const member = (marker) => asMember({ name: "scanner", dir: "scanner", abs: "/nowhere", bundle: { entry: "src/index.mjs" }, marker });
   const top = { kind: "container", containers: TWO(), max_instances: 1, bind: [{ member: "plane-x", binding: "FILE_SCANNER" }] };
   const got = containerParts(member(top), names, { packages: false });
-  assert.deepEqual(got.parts.map((p) => p.path), ["container/FileScanner.json", "container/SafeViewRenderer.json"]);
-  assert.deepEqual(got.parts.map((p) => p.descriptor), [
+  assert.deepEqual(must(got.parts).map((p) => p.path), ["container/FileScanner.json", "container/SafeViewRenderer.json"]);
+  assert.deepEqual(must(got.parts).map((p) => p.descriptor), [
     { class_name: "FileScanner", image: `docker.io/civicos/file-scanner@${DIGEST}`, scheduling_policy: "default", max_instances: 4,
       bind: [{ member: "plane-x", binding: "FILE_SCANNER" }] },
     { class_name: "SafeViewRenderer", image: `docker.io/civicos/safe-view@sha256:${"3e".repeat(32)}`, scheduling_policy: "default",
       max_instances: 1, bind: [{ member: "plane-x", binding: "FILE_SCANNER" }] },
   ], "each class its own image; max_instances from the class where stated, else the member's");
-  for (const p of got.parts) assert.equal(p.bytes.toString("utf8"), JSON.stringify(p.descriptor, null, 2) + "\n");
+  for (const p of must(got.parts)) assert.equal(p.bytes.toString("utf8"), JSON.stringify(p.descriptor, null, 2) + "\n");
   const perClassBind = TWO().map((c, i) => ({ ...c, bind: [{ member: "agent-worker", binding: i ? "RENDER" : "SCAN" }] }));
-  assert.deepEqual(containerParts(member({ ...top, containers: perClassBind }), names, { packages: false }).parts.map((p) => p.descriptor.bind),
+  assert.deepEqual(must(containerParts(member({ ...top, containers: perClassBind }), names, { packages: false }).parts).map((p) => must(p.descriptor).bind),
     [[{ member: "agent-worker", binding: "SCAN" }], [{ member: "agent-worker", binding: "RENDER" }]], "a class's own bind wins");
 
   /* One class, either form: the part is container.json, exactly what containerDescriptor writes. */
   const one = { kind: "container", image: IMAGE, class_name: "Runner", max_instances: 2, bind: [{ member: "agent-worker", binding: "R" }] };
   const single = containerParts(member(one), names, { packages: false });
-  assert.deepEqual(single.parts.map((p) => [p.path, p.bytes.toString()]), [["container.json", containerDescriptor(member(one), names).bytes.toString()]]);
+  assert.deepEqual(must(single.parts).map((p) => [p.path, p.bytes.toString()]), [["container.json", must(containerDescriptor(member(one), names).bytes).toString()]]);
   const listOfOne = { kind: "container", containers: [{ class_name: "Runner", image: IMAGE }], max_instances: 2, bind: one.bind };
-  assert.deepEqual(containerParts(member(listOfOne), names, { packages: false }).parts.map((p) => [p.path, p.bytes.toString()]),
-    single.parts.map((p) => [p.path, p.bytes.toString()]), "a list of one is one class");
+  assert.deepEqual(must(containerParts(member(listOfOne), names, { packages: false }).parts).map((p) => [p.path, p.bytes.toString()]),
+    must(single.parts).map((p) => [p.path, p.bytes.toString()]), "a list of one is one class");
   assert.equal(containerClasses(member(listOfOne)).multi, false);
   assert.equal(containerClasses(member(top)).multi, true);
 });
 
 test("R25: a class lacking a field is refused naming the class and every field; a duplicated class, both forms at once, or no bundle are refused too", () => {
   const names = ["plane-x"];
-  const member = (marker, bundle = { entry: "src/index.mjs" }) => ({ name: "scanner", dir: "scanner", abs: "/nowhere", bundle, marker });
+  const member = (marker, bundle = { entry: "src/index.mjs" }) => asMember({ name: "scanner", dir: "scanner", abs: "/nowhere", bundle, marker });
   const base = { kind: "container", max_instances: 1, bind: [{ member: "plane-x", binding: "FILE_SCANNER" }] };
   const lacks = (containers, extra = {}) => containerParts(member({ ...base, containers, ...extra }), names, { packages: false });
   const [a, b] = TWO();
@@ -152,7 +169,7 @@ test("R25: a class lacking a field is refused naming the class and every field; 
     { missing: ["image.schedulingPolicy", "class_name"], class: "bad-name" }, "every field it lacks");
   assert.deepEqual(lacks([a, { ...b, class_name: undefined }]), { missing: ["class_name"], class: "(unnamed)" });
   assert.deepEqual(lacks([a, { ...b, class_name: "FileScanner" }]), { missing: ["class_name"], class: "FileScanner" }, "two classes, one name");
-  assert.match(lacks([a, b], { image: IMAGE }).missing[0], /^image \(a top-level image beside a `containers` list\)$/);
+  assert.match(must(lacks([a, b], { image: IMAGE }).missing)[0], /^image \(a top-level image beside a `containers` list\)$/);
   assert.deepEqual(containerParts(member({ ...base, containers: TWO() }, null), names), { missing: ["bundle"] });
 });
 
@@ -168,8 +185,8 @@ test("R27: a class naming a package statement reads its packages from it, sorted
     write(st);
     const sorted = [{ name: "bzip2", version: "1.0.8" }, { name: "clamav", version: "1.0.0" }, { name: "clamav", version: "1.4.3" }];
     assert.deepEqual(statementPackages(file, "scanner/img/scan.json", BASE), { ecosystem: "Debian:12", packages: sorted });
-    const m = { name: "scanner", dir: "scanner", abs: dir, bundle: { entry: "src/index.mjs" },
-      marker: { kind: "container", containers: TWO(), max_instances: 1, bind: [{ member: "plane-x", binding: "F" }] } };
+    const m = asMember({ name: "scanner", dir: "scanner", abs: dir, bundle: { entry: "src/index.mjs" },
+      marker: { kind: "container", containers: TWO(), max_instances: 1, bind: [{ member: "plane-x", binding: "F" }] } });
     const [scan, render] = containerClasses(m).classes;
     assert.deepEqual(classPackages(m, scan), { ecosystem: "Debian:12", packages: sorted });
     assert.deepEqual(classPackages(m, render), { unread: "scanner/package-lock.json is missing" },
@@ -177,7 +194,7 @@ test("R27: a class naming a package statement reads its packages from it, sorted
     writeFileSync(join(dir, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages: { "": {}, "node_modules/x": { version: "1.0.0" } } }));
     assert.deepEqual(classPackages(m, render), { ecosystem: "npm", packages: [{ name: "x", version: "1.0.0" }] });
     const parts = containerParts(m, ["plane-x"]);
-    assert.deepEqual(parts.parts.map((p) => p.descriptor.packages), [sorted, [{ name: "x", version: "1.0.0" }]], "each part its own image's list, last");
+    assert.deepEqual(must(parts.parts).map((p) => must(p.descriptor).packages), [sorted, [{ name: "x", version: "1.0.0" }]], "each part its own image's list, last");
 
     const unread = () => statementPackages(file, "scanner/img/scan.json", BASE).unread;
     const cases = [
@@ -196,9 +213,9 @@ test("R27: a class naming a package statement reads its packages from it, sorted
       assert.ok(typeof u === "string" && u.startsWith(named), `${named}: ${u}`);
       write(st);
     }
-    assert.match(statementPackages(file, "scanner/img/scan.json", null).unread, /not the base the marker pins \(none\)/, "a marker pinning no base");
+    assert.match(must(statementPackages(file, "scanner/img/scan.json", null).unread), /not the base the marker pins \(none\)/, "a marker pinning no base");
     const away = { ...scan, image: { ...scan.image, packages: "../elsewhere.json" } };
-    assert.match(classPackages(m, away).unread, /names no package statement for FileScanner as a member-relative path/);
+    assert.match(must(classPackages(m, away).unread), /names no package statement for FileScanner as a member-relative path/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -211,11 +228,11 @@ test("R25: workerPart writes {r2_buckets, crons} from a member's config, each bu
     triggers: { crons: ["17 4 * * *"] }, services: [{ binding: "PLANE", service: "bio-plane" }] };
   const w = workerPart(cfg);
   const want = { r2_buckets: [{ binding: "PUBLISHED", bucket: "published" }, { binding: "CAPTURES", bucket: "captures" }], crons: ["17 4 * * *"] };
-  assert.deepEqual(w.part.descriptor, want, "the config's order, the role for the bucket name");
-  assert.equal(w.part.bytes.toString("utf8"), JSON.stringify(want, null, 2) + "\n");
-  assert.deepEqual(workerPart({ r2_buckets: [{ binding: "CAPTURES", bucket_name: "bio-captures" }] }).part.descriptor,
+  assert.deepEqual(must(w.part).descriptor, want, "the config's order, the role for the bucket name");
+  assert.equal(must(w.part).bytes.toString("utf8"), JSON.stringify(want, null, 2) + "\n");
+  assert.deepEqual(must(workerPart({ r2_buckets: [{ binding: "CAPTURES", bucket_name: "bio-captures" }] }).part).descriptor,
     { r2_buckets: [{ binding: "CAPTURES", bucket: "captures" }], crons: [] });
-  assert.deepEqual(workerPart({ triggers: { crons: ["0 0 * * *"] } }).part.descriptor, { r2_buckets: [], crons: ["0 0 * * *"] });
+  assert.deepEqual(must(workerPart({ triggers: { crons: ["0 0 * * *"] } }).part).descriptor, { r2_buckets: [], crons: ["0 0 * * *"] });
   for (const none of [{}, { r2_buckets: [], triggers: { crons: [] } }, { triggers: {} }, null, undefined])
     assert.deepEqual(workerPart(none), { part: null }, JSON.stringify(none));
 
@@ -237,7 +254,7 @@ test("R25: the repository's own members with buckets or crons carry a Worker par
     return [m.name, cfg];
   }).filter(([, c]) => c));
   for (const [name, cfg] of Object.entries(got)) assert.equal(workerPart(cfg).missing, undefined, `${name}: every bucket has a role`);
-  const scanner = workerPart(got["file-scanner"]).part.descriptor;
+  const scanner = must(workerPart(got["file-scanner"]).part).descriptor;
   assert.deepEqual(scanner.r2_buckets, [{ binding: "CAPTURES", bucket: "captures" }]);
   assert.ok(scanner.crons.length >= 1, "its schedule is stated");
 });
@@ -247,9 +264,9 @@ test("R25 (K4094): workerPart states a member's own Durable Objects and migratio
   const cfg = { durable_objects: { bindings: [{ name: "REMOTE", class_name: "RemoteSession", script_name: "agent-runner" }, ...own] },
     migrations: [{ tag: "v1", new_sqlite_classes: ["SegmentDriver"] }, { tag: "v2", new_sqlite_classes: ["CheckRecord"] }] };
   const w = workerPart(cfg);
-  assert.deepEqual(w.part.descriptor, { r2_buckets: [], crons: [], durable_objects: { bindings: own,
+  assert.deepEqual(must(w.part).descriptor, { r2_buckets: [], crons: [], durable_objects: { bindings: own,
     migrations: [{ tag: "v1", classes: ["SegmentDriver"] }, { tag: "v2", classes: ["CheckRecord"] }] } }, "the member's own objects, the migrations in order");
-  assert.equal(w.part.bytes.toString("utf8"), JSON.stringify(w.part.descriptor, null, 2) + "\n");
+  assert.equal(must(w.part).bytes.toString("utf8"), JSON.stringify(must(w.part).descriptor, null, 2) + "\n");
   assert.deepEqual(workerPart({ durable_objects: { bindings: [{ name: "REMOTE", class_name: "RemoteSession", script_name: "agent-runner" }] } }), { part: null },
     "only another script's object: nothing of this member's to bind");
   assert.deepEqual(workerPart({ durable_objects: { bindings: [] }, migrations: [] }), { part: null }, "stated and empty: none");
@@ -265,14 +282,14 @@ test("R25 (K4094): workerPart states a member's own Durable Objects and migratio
 });
 
 test("R25 (K4094): over the repository's own fleet, each member's Worker part states the Durable Objects its configuration owns: agent-worker its two, agent-runner its one binding and every migration it declares, file-scanner its two", () => {
-  const cfgOf = (name) => parseJsonc(readFileSync(join(discoverMembers().find((m) => m.name === name).abs, "wrangler.jsonc"), "utf8"));
-  assert.deepEqual(workerPart(cfgOf("agent-worker")).part.descriptor.durable_objects, {
+  const cfgOf = (name) => parseJsonc(readFileSync(join(must(discoverMembers().find((m) => m.name === name), name).abs, "wrangler.jsonc"), "utf8"));
+  assert.deepEqual(must(must(workerPart(cfgOf("agent-worker")).part).descriptor.durable_objects), {
     bindings: [{ name: "SEGMENTS", class_name: "SegmentDriver" }, { name: "CHECKS", class_name: "CheckRecord" }],
     migrations: [{ tag: "v1", classes: ["SegmentDriver"] }, { tag: "v2", classes: ["CheckRecord"] }] });
-  const runner = workerPart(cfgOf("agent-runner")).part.descriptor.durable_objects;
-  assert.deepEqual(runner.bindings, [{ name: "AGENT_RUNNER", class_name: "AgentRunner" }]);
-  assert.deepEqual(runner.migrations, cfgOf("agent-runner").migrations.map((m) => ({ tag: m.tag, classes: m.new_sqlite_classes })));
-  assert.deepEqual(workerPart(cfgOf("file-scanner")).part.descriptor.durable_objects.bindings,
+  const runner = must(must(workerPart(cfgOf("agent-runner")).part).descriptor.durable_objects);
+  assert.deepEqual(must(runner).bindings, [{ name: "AGENT_RUNNER", class_name: "AgentRunner" }]);
+  assert.deepEqual(must(runner).migrations, cfgOf("agent-runner").migrations.map((m) => ({ tag: m.tag, classes: m.new_sqlite_classes })));
+  assert.deepEqual(must(must(workerPart(cfgOf("file-scanner")).part).descriptor.durable_objects).bindings,
     [{ name: "SCANNER", class_name: "FileScanner" }, { name: "RENDERER", class_name: "SafeViewRenderer" }]);
 });
 
@@ -297,7 +314,7 @@ test("R35: the real fleet's three container images (agent-runner's, file-scanner
   for (const m of members.filter(isContainer)) {
     const d = containerParts(m, names, { packages: false });
     assert.ok(d.parts, `${m.name}: ${JSON.stringify(d)}`);
-    for (const part of d.parts) assert.match(part.descriptor.image, HUB_IMAGE, `${m.name} ${part.class_name}: no credential is needed to pull it`);
+    for (const part of d.parts) assert.match(must(must(part.descriptor).image), HUB_IMAGE, `${m.name} ${part.class_name}: no credential is needed to pull it`);
   }
 });
 
@@ -309,8 +326,8 @@ test("R35: R24's and R25's fixtures name docker.io/<org>/…@sha256 markers and 
     containerFixture(root, "ghcr", { image: { ...IMAGE, repository: "ghcr.io/believeinoakland/agent-runner" },
       extra: { class_name: "Runner", max_instances: 2, bind: [{ member: "hub", binding: "RUNNER" }], bundle: { entry: "src/entry.mjs", outfile: "dist/a.mjs", manifest: "dist/a.json" } } });
     const [ghcr, hub] = discoverMembers(root);
-    assert.equal(containerDescriptor(hub, ["hub"]).descriptor.image, `docker.io/civicsmith/agent-runner@${DIGEST}`);
-    assert.equal(containerDescriptor(ghcr, ["hub"]).descriptor.image, `ghcr.io/believeinoakland/agent-runner@${DIGEST}`, "emitted as written");
+    assert.equal(must(containerDescriptor(hub, ["hub"]).descriptor).image, `docker.io/civicsmith/agent-runner@${DIGEST}`);
+    assert.equal(must(containerDescriptor(ghcr, ["hub"]).descriptor).image, `ghcr.io/believeinoakland/agent-runner@${DIGEST}`, "emitted as written");
     assert.deepEqual(notOnDockerHub([hub]).length, 0);
     assert.deepEqual(notOnDockerHub([ghcr]), [`ghcr.io/believeinoakland/agent-runner@${DIGEST}`], "the real-fleet test fails on it");
   } finally { rmSync(root, { recursive: true, force: true }); }
@@ -338,7 +355,7 @@ function imageMember(root, dir = "runner", { recorded = true, classes = null } =
   writeFileSync(join(root, dir, "wrangler.jsonc"), `// the container block\n{\n  "containers": [\n`
     + dockerfiles.map((c, i) => `    // ${c.class_name}'s image\n    { "class_name": "${c.class_name}", "image": "ghcr.io/believeinoakland/${dir}${classes ? i : ""}@${DIGEST}", "max_instances": 1 }`).join(",\n")
     + `\n  ]\n}\n`);
-  const member = () => discoverMembers(root).find((m) => m.name === dir);
+  const member = () => must(discoverMembers(root).find((m) => m.name === dir), dir);
   if (recorded) for (const c of dockerfiles) {
     const m = member();
     const r = recordContainerDigest(m, c.class_name, DIGEST);
@@ -416,7 +433,7 @@ test("R36: recording the digest a build produced writes it, and the files it was
     assert.equal(cfg.containers[0].image, `ghcr.io/believeinoakland/runner@${NEW_DIGEST}`, "its own repository, the new digest");
     assert.match(wrangler, /^\/\/ the container block\n/);
     assert.match(wrangler, /\/\/ Runner's image/);
-    assert.equal(imageReference(member().image).reference.split("@")[1], cfg.containers[0].image.split("@")[1], "the two files agree");
+    assert.equal(must(imageReference(member().image).reference).split("@")[1], cfg.containers[0].image.split("@")[1], "the two files agree");
     assert.deepEqual(containerImageStates(member()).map((s) => s.state), ["current"]);
     /* Changing the code again outruns the new digest until it is recorded again. */
     writeFileSync(join(root, "runner/container/app.mjs"), "export const app = 4;\n");
@@ -454,9 +471,9 @@ test("R36: a digest that is not sha256:<64 hex> (CONTAINER_DIGEST_INVALID), a cl
     const before = files();
     const code = (r) => r.refused;
     for (const bad of ["sha256:abc", "abc", `sha256:${"A".repeat(64)}`, undefined, null, 5])
-      assert.equal(code(recordContainerDigest(member(), "Runner", bad)), "CONTAINER_DIGEST_INVALID", String(bad));
+      assert.equal(code(recordContainerDigest(member(), "Runner", /** @type {any} a digest of the wrong kind on purpose */ (bad))), "CONTAINER_DIGEST_INVALID", String(bad));
     assert.equal(code(recordContainerDigest(member(), "NoSuchClass", NEW_DIGEST)), "CONTAINER_UNDESCRIBED");
-    const plain = discoverMembers(root).find((m) => m.name === "plain");
+    const plain = must(discoverMembers(root).find((m) => m.name === "plain"), "plain");
     assert.equal(code(recordContainerDigest(plain, "Runner", NEW_DIGEST)), "CONTAINER_UNDESCRIBED", "a non-container member gets no digest");
     const w = join(root, "runner/wrangler.jsonc");
     const wrangler = readFileSync(w, "utf8");
@@ -527,18 +544,18 @@ test("bundler R38: over the real fleet, each member that builds carries only the
     /* a member whose inputs reach no word table records nothing (`words` null) and carries none of it (agent-runner:
        its Worker's own data holds the rows its image reads, K4011): the control is that no table input is bundled */
     if (built.words === null) {
-      assert.ok(!Object.keys(built.metafile.inputs).some((p) => /setup-words\/rows\.mjs$/.test(p)), `${m.name} bundles the word table and records no rows`);
+      assert.ok(!Object.keys(must(built.metafile).inputs).some((p) => /setup-words\/rows\.mjs$/.test(p)), `${m.name} bundles the word table and records no rows`);
       continue;
     }
     if (built.words.rows === "all") continue;     /* keeps the whole table for a site of another module: the next test */
     const keys = keptKeys(built.bytes);
     assert.ok(keys && keys.length > 0 && keys.length === built.words.rows, `${m.name}: carries a word table of ${built.words?.rows} rows`);
     assert.ok(keys.length < 200, `${m.name}: ${keys.length} rows of ${built.words.total}, not the whole table`);
-    const table = (await import(`file://${join(m.abs, Object.keys(built.metafile.inputs).find((p) => /setup-words\/rows\.mjs$/.test(p)))}`)).WORD_ROWS;
+    const table = (await import(`file://${join(m.abs, Object.keys(must(built.metafile).inputs).find((p) => /setup-words\/rows\.mjs$/.test(p)))}`)).WORD_ROWS;
     assert.deepEqual(keys, table.map((r) => r[0]).filter((k) => new Set(keys).has(k)), `${m.name}: in the table's order`);
     /* independent of the parser: the sources of the member's bundled first-party inputs name every kept key as a
        quoted literal, or begin it with a literal prefix followed by a join (a `+` or a `${`) */
-    const sources = Object.keys(built.metafile.inputs).filter((p) => !p.split("/").includes("node_modules") && /\.(mjs|js)$/.test(p) && !/setup-words\/rows/.test(p))
+    const sources = Object.keys(must(built.metafile).inputs).filter((p) => !p.split("/").includes("node_modules") && /\.(mjs|js)$/.test(p) && !/setup-words\/rows/.test(p))
       .map((p) => readFileSync(join(m.abs, p), "utf8")).join("\n");
     const prefixes = [...sources.matchAll(/["'`]([A-Za-z0-9_.-]+\.)["'`]\s*\+|`([A-Za-z0-9_.-]+\.)\$\{/g)].map((x) => x[1] ?? x[2]);
     for (const k of keys)
@@ -557,8 +574,8 @@ test("bundler R38: over the real fleet, a member whose inputs hold a word read w
     keepsWhole.push(m.name);
     const man = manifestFrom(m, built);
     assert.equal(man.words, "all");
-    assert.ok(man.wordSites.length > 0 && man.wordSites.every((s) => /^\S+\.mjs:\d+$/.test(s)), `${m.name}: each site is a file and a line`);
-    assert.deepEqual(man.wordSites, [...man.wordSites].sort(), "in code-point order");
+    assert.ok(must(man.wordSites).length > 0 && must(man.wordSites).every((s) => /^\S+\.mjs:\d+$/.test(s)), `${m.name}: each site is a file and a line`);
+    assert.deepEqual(man.wordSites, [...must(man.wordSites)].sort(), "in code-point order");
     for (const site of man.wordSites) {
       const [file, line] = [site.slice(0, site.lastIndexOf(":")), Number(site.slice(site.lastIndexOf(":") + 1))];
       assert.ok(readFileSync(join(m.abs, file), "utf8").split("\n").length >= line, `${site} is a line of its file`);

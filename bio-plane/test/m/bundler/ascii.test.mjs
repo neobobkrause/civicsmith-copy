@@ -28,7 +28,9 @@ test("bundler R2 (G39): the plane and every real fleet member build to a pure-AS
 test("bundler R2 (G39): every regex literal of the real plane keeps its pattern and flags once its escapes are read (the sites with a literal non-ASCII character among them)", async () => {
   const on = (await buildMember(planeMember(), { write: false })).bytes.toString("utf8");
   const plane = planeMember();
-  plane.bundle = { ...plane.bundle, ascii: false };
+  const pb = plane.bundle;
+  if (!pb) throw new Error("the plane declares its bundle");
+  plane.bundle = { ...pb, ascii: false };
   const off = (await buildMember(plane, { write: false })).bytes.toString("utf8");
   const regexes = (text) => {
     const out = [];

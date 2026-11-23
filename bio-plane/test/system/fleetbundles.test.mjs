@@ -29,7 +29,8 @@ import {
   DEFAULT_EXTERNAL, BUDGET, MIB, sizeVerdict, startVerdict, measureStart, budgetReport, releaseBindingFindings,
 } from "../../scripts/fleet-bundle.mjs";
 
-const guarded = discoverMembers(REPO_ROOT).filter((m) => m.bundle);
+/* each member that declares a bundle, its `bundle` read once as present */
+const guarded = discoverMembers(REPO_ROOT).flatMap((m) => (m.bundle ? [{ ...m, bundle: m.bundle }] : []));
 /** Each member's own build's output: name -> {artifact, manifest} */
 const built = new Map();
 /** The plane, built in memory: its bytes, and a descriptor whose artifact is those bytes in a temporary directory. */
@@ -89,7 +90,7 @@ test("bundler R6 over the real fleet: each member's fresh build passes the fleet
     assert.ok(built.get(m.name).manifest.inputs.length > 0, `${m.name}: its manifest records its inputs`);
   }
   const p = planeMember(REPO_ROOT);
-  assert.deepEqual(unresolvableSpecifiers(plane.built.bytes.toString("utf8"), p.bundle.external || DEFAULT_EXTERNAL), [],
+  assert.deepEqual(unresolvableSpecifiers(plane.built.bytes.toString("utf8"), (p.bundle && p.bundle.external) || DEFAULT_EXTERNAL), [],
     "bio-plane: imports nothing outside its declared externals");
   assert.ok(plane.built.inputs.length > 100, "bio-plane: built from the whole plane's sources");
 });

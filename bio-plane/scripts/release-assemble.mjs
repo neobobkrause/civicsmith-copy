@@ -151,6 +151,7 @@ import { parseJsonc } from "./jsonc.mjs";
 import { resolveVersion } from "./resolve-version.mjs";
 import { signSshsig, signerPublicLine } from "./sign-sshsig.mjs";   /* signatures' release signer (its R33, R35) */
 import { buildFresh } from "./bundles.mjs";
+/** @import { Member, Manifest, Bytes } from "./fleet-bundle.mjs" */
 
 const argv = process.argv.slice(2);
 const flag = (n) => { const i = argv.indexOf(n); return i === -1 ? null : (argv[i + 1] ?? ""); };
@@ -164,10 +165,12 @@ const RELEASE_DIR = join(REPO_ROOT, "release");
 const RELEASE_JSON = join(RELEASE_DIR, "RELEASE.json");
 const NOTICE_JSON = join(RELEASE_DIR, "NOTICE.json");
 
+/** @type {(code: string, msg: string, detail?: string|null) => never} prints the refusal and exits 1 */
 const die = (code, msg, detail) => {
   console.error(`REFUSED [${code}]: ${msg}`);
   if (detail) console.error(detail);
   process.exit(1);
+  throw new Error("exited");
 };
 
 /* R30: SIGNING HAPPENS IN THE SIGNING ENVIRONMENT ONLY, and this is checked before anything else, the seed
@@ -249,6 +252,8 @@ for (const m of discovered.filter((x) => isContainer(x) && x.bundle)) {
       + "(its packages not marked dev), or, for an image whose packages are not npm's, from the package statement its\n"
       + "class names (`image.packages`), taken against the base digest the marker pins (`image.base.digest`).\n"
       + "Restore or regenerate the file (`npm install --package-lock-only`, or the statement from the pinned base), then assemble again.");
+  if (!full.parts)
+    die("CONTAINER_UNDESCRIBED", `${m.name} is a container member and its fleet-member.json does not state${full.class ? `, for its class ${full.class},` : ""} ${(full.missing || []).join(", ")}.`);
   containerPartsOf.set(m.name, full.parts.map((p) => ({ path: p.path, type: "Container", sha256: sha256(p.bytes),
     bytes: p.bytes.length, data: p.bytes })));
 }
@@ -281,22 +286,27 @@ for (const m of members) {
 /* R46: EVERY ASSET IS BUILT AFRESH FROM THIS CHECKOUT, here, by the member's own build (`npm run build` in its
    directory, pre-steps included), into its own `dist/`, and that build is what the release carries. No bundle is
    committed, and nothing that was in `dist/` before is read: `buildFresh` removes the artifact and manifest first. */
+/**
+ * @param {Member} m
+ * @returns {{artifact: Bytes, manifest: Manifest}}
+ */
 function freshArtifact(m) {
   const res = buildFresh(m, { log: (l) => console.log(l) });
-  if (!res.ok) die(res.code, `${m.name}: ${res.why}.`,
+  if (!res.ok) return die(res.code, `${m.name}: ${res.why}.`,
     "Every asset a release carries is built from the checkout by the member's own build. Make the member build\n"
     + "(`npm run build` in its directory, after `npm ci` there), then assemble again.");
-  return res;
+  return { artifact: res.artifact, manifest: res.manifest };
 }
 
 console.log("assets discovered:");
-for (const m of all) console.log(`   ${m.name.padEnd(14)} ${m.bundle.outfile}`);
+for (const m of all) console.log(`   ${m.name.padEnd(14)} ${m.bundle ? m.bundle.outfile : "(no bundle)"}`);
 
 /* ---- REFUSAL 1: every asset proved fresh, by the landed guard -------------- */
 
 const entries = [];
 const bindingUnits = [];   /* R39: each member's configuration and the names its fresh bundle exports */
 for (const m of all) {
+  if (!m.bundle) die("NO_ARTIFACT", `${m.name} declares no \`bundle\` block, so it has no artifact to release.`);
   const { artifact, manifest } = freshArtifact(m);
 
   const runnable = freshBuildRunnable(m, manifest);
