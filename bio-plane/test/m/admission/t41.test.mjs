@@ -56,7 +56,7 @@ test("R19 (T41, DEC-188 (8)): groupswitchset, retired to accountusesset, is no l
   /* its successor, a session's only (op-declarations R41) */
   const spec = OPS.accountusesset;
   assert.ok(spec, "accountusesset is declared (op-declarations R41)");
-  assert.deepEqual([[...spec.classes].sort(), spec.machineClasses, spec.mutating], [["admin", "member"], [], true]);
+  assert.deepEqual([[...(spec.classes ?? [])].sort(), spec.machineClasses, spec.mutating], [["admin", "member"], [], true]);
   const { env, S } = world();
   for (const [cls, t] of [["admin", env.ADMIN_TOKEN], ["probe", env.PROBE_TOKEN], ["daemon", env.DAEMON_TOKEN]]) {
     env.calls.length = 0;

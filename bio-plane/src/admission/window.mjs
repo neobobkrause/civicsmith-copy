@@ -15,8 +15,39 @@ import { doorbellOf } from "../doorbell/index.mjs";
 import { DOOR_WINDOW, DOOR_WINDOW_STATED, SESSION_WINDOW, SESSION_WINDOW_STATED, UNSTATED_SOURCE, doorWindowEstimate,
          doorRetryAfter } from "./index.mjs";
 
+/**
+ * @typedef {Object} DoorWindowAsk one request to a public op, as the Worker asks the window (R21, R27)
+ * @property {string | null} [address] the connecting address; absent or empty is the shared unstated source
+ * @property {number | string | null} [now] the time asked, in milliseconds; absent is now
+ * @property {boolean} [count] exactly `false` asks the fingerprint alone, counting and writing nothing
+ * @property {string | null} [session] the SHA-256 (64 hex) of a live session's token: counted in that session's window
+ * @bound address: never kept, logged or answered; only its keyed fingerprint is
+ */
+/**
+ * @typedef {Object} DoorWindowAnswer the window's answer
+ * @property {string} source the keyed fingerprint of the address, or `UNSTATED_SOURCE`
+ * @property {boolean} [refused] true when the estimate had reached the bound; nothing was counted
+ * @property {string} [stated] the bound, in words, when refused
+ * @property {number} [retryAfter] whole seconds, when refused
+ * @property {string} [window] `session` when counted in a session's own window
+ */
+/**
+ * @typedef {Object} AdmissionWindow the store side's one instance for a Durable Object's storage
+ * @property {(ask?: DoorWindowAsk) => Promise<DoorWindowAnswer>} doorWindow counts one request, or refuses it
+ * @property {() => void} flush writes the counts changed since the last write, and drops passed buckets; never throws
+ * @property {() => void} migrate makes its two tables
+ */
+/**
+ * @typedef {{
+ *   doorwindow: {req: DoorWindowAsk, res: DoorWindowAnswer}
+ * }} AdmissionOps
+ * @optable
+ */
+
 export { UNSTATED_SOURCE };
+/** @type {string} R21: the table of the per-source counts */
 export const DOOR_WINDOW_TABLE = "admission_door_window";
+/** @type {string} R27: the table of the per-session counts */
 export const SESSION_WINDOW_TABLE = "admission_session_window";
 
 const SCHEMA = `CREATE TABLE IF NOT EXISTS ${DOOR_WINDOW_TABLE} (
@@ -37,6 +68,11 @@ const SESSION_DIGEST = /^[0-9a-f]{64}$/;
 
 /* record-core R21's classes: counts, cleared by no purge (a purge must not reopen a window), exported never, seen by
    no member, stored. */
+/**
+ * @type {readonly Readonly<{name: string, purge: string, expunge: string, export: string, sight: string, derive: string, version_chain: boolean}>[]}
+ * the two tables as declared to record-core (its R21)
+ * @bound purge: exempt; expunge: none; export: never; sight: group; derive: stored; version_chain: false
+ */
 export const ADMISSION_TABLES = Object.freeze([DOOR_WINDOW_TABLE, SESSION_WINDOW_TABLE].map((name) => Object.freeze({
   name, purge: "exempt", expunge: "none", export: "never", sight: "group", derive: "stored", version_chain: false })));
 
@@ -44,6 +80,7 @@ const instances = new WeakMap();
 
 /* R21 (fix round 10, cause 27b): the counts are kept in memory and written to the store at most every this many
    milliseconds, so fifty counts change a row or two, not fifty; an object restarting loses at most this much. */
+/** @type {number} R21: the longest the counts are held in memory before they are written */
 export const WINDOW_FLUSH_MS = 5000;
 
 class DoorWindow {
@@ -147,7 +184,12 @@ class DoorWindow {
 
 /** The one instance for a Durable Object's storage: it migrates its table and declares it (record-core R21). `deps`
  *  may name the record-core instance, and `fingerprint(address)` in place of the doorbell's (its R12) for a host with
- *  none. The doorbell's instance for the storage is reached at the first fingerprint asked, not at creation. */
+ *  none. The doorbell's instance for the storage is reached at the first fingerprint asked, not at creation.
+ * @param {any} ctx the Durable Object's state, or its storage
+ * @param {{record?: any, fingerprint?: (address: string) => any, flushMs?: number}} [deps]
+ * @returns {AdmissionWindow}
+ * @throws {Error} when record-core refuses its tables for any reason but that they are already declared
+ */
 export function admissionOf(ctx, deps = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let a = instances.get(storage);
@@ -169,6 +211,13 @@ export function admissionOf(ctx, deps = {}) {
    (op-declarations R6): the Worker's own count of a request to a public op, the address in the body, never the query;
    with the body's `count: false` (T38; R21), the fingerprint alone, nothing counted or written; with a `session` digest
    (T49; R27), the session's own window. */
+/**
+ * The ops this module answers, as entries of the plane's route map.
+ * @param {AdmissionWindow} a
+ * @param {URL} url
+ * @param {any} body the request's JSON body
+ * @returns {{doorwindow: () => Promise<DoorWindowAnswer>}}
+ */
 export function admissionOps(a, url, body) {
   const b = body && typeof body === "object" && !Array.isArray(body) ? body : {};
   return {

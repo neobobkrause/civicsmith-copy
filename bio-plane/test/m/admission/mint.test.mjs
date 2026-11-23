@@ -48,14 +48,14 @@ test("R13: an agent credential's scope is judged at the mint — AI_SCOPE_UNKNOW
   }
   const seen = new Set();
   for (const confinedTo of ["scratch", undefined]) {
-    const m = await A.aiCredentialMint({ writes: ["promote", " cite"], confinedTo }, "member");
+    const m = /** @type {any} */ (await A.aiCredentialMint({ writes: ["promote", " cite"], confinedTo }, "member"));
     assert.match(m.secret, /^aik-[0-9a-f]{64}$/);
     assert.ok(A.AI_TOKEN_SHAPE.test(m.secret));
     assert.equal(m.secretSha, sha(m.secret));
     assert.deepEqual([m.writes, m.confinedTo], [["cite", "promote"], confinedTo ?? null]);
     seen.add(m.secret);
   }
-  for (const odd of [null, [], "x"]) assert.match((await A.aiCredentialMint(odd, "admin")).secret, /^aik-/);
+  for (const odd of [null, [], "x"]) assert.match(String((await A.aiCredentialMint(odd, "admin")).secret), /^aik-/);
   assert.equal(seen.size, 2, "each mint a fresh value");
   /* a review grant's secret: the same rule */
   const g1 = await A.reviewGrantSecret(), g2 = await A.reviewGrantSecret();
