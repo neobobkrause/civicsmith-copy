@@ -28,7 +28,7 @@ test("R6 reads the member's own notes; states who can see them (protected words)
   has(a, "screen.notes.private");
   // the words that say who can see the notes are protected words of the list (setup-words R1)
   for (const r of ["screen.notes.private", "screen.notes.protects", "screen.notes.court", "screen.notes.draft.label"])
-    assert.equal(WORD_ROWS.find((x) => x[0] === r)[4], true, `${r} is protected`);
+    assert.equal(WORD_ROWS.find((x) => x[0] === r)?.[4], true, `${r} is protected`);
   for (const n of kept) {
     assert.ok(textOf(rowOf(a.tree, String(n.note), n.text)).includes(n.text));
     const panel = panelOf(a.tree, String(n.note));
