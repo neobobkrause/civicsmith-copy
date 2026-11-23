@@ -477,6 +477,17 @@ export class AiRuns {
   static AI_RUNS_LIMIT_MAX = 1000;
 
   static #aiIso(ms) { return stampInstant("second", ms); }
+  /** The instance clock (store-assembly R93; as `ai-use`'s): the environment's `BIO_NOW_MS` where it is a number of
+   *  milliseconds, zero or more, so a world whose "now" is pinned records its runs, their ticks and their spend on that day;
+   *  else the wall clock. Every instant this module records where no `at` is handed reads it. */
+  #nowMs() {
+    const raw = this.env ? this.env.BIO_NOW_MS : undefined;
+    if (raw !== undefined && raw !== null && raw !== "") {
+      const v = Number(raw);
+      if (Number.isFinite(v) && v >= 0) return v;
+    }
+    return Date.now();
+  }
 
   /** Append ONE run-log observation. **THE FOLD** (`OBSERVATION-LOG-DESIGN.md`
    *  §4.4): `ai_run_log`'s rows ARE rows of `observations` with
@@ -1057,7 +1068,7 @@ export class AiRuns {
               /* REC-139: WHOSE SIGHT the report's project count is taken in, stamped server-side
                  beside `actor` and read only by `#aiRunProjectGate`'s stated count. */
               viewer = null } = {}) {
-    const nowMs = at ? Date.parse(at) : Date.now();
+    const nowMs = at ? Date.parse(at) : this.#nowMs();
     const now = AiRuns.#aiIso(nowMs);
     /* `started`, deliberately NOT `opened`. When this was written, REC-58's
        consumer walk (`test/case-opened.test.mjs`, since deleted) swept the
@@ -1642,7 +1653,7 @@ export class AiRuns {
               /* REC-152: the caller's PRINCIPAL, stamped server-side by `control-plane` in the form the open
                  stamps `principal_plane` in — never a caller's word. */
               caller = null } = {}) {
-    const nowMs = at ? Date.parse(at) : Date.now();
+    const nowMs = at ? Date.parse(at) : this.#nowMs();
     const now = AiRuns.#aiIso(nowMs);
     const row = this.#one(`SELECT * FROM ai_runs WHERE run = ?`, run);
     if (!row) return { run: run || null, found: false,
@@ -1842,7 +1853,7 @@ export class AiRuns {
     const row = this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_claude,
                                   principal_claude_ref, step FROM ai_runs WHERE run = ?`, out.run);
     if (!row || row.status !== "running") return out;
-    const iso = AiRuns.#aiIso(args.at ? Date.parse(args.at) : Date.now());
+    const iso = AiRuns.#aiIso(args.at ? Date.parse(args.at) : this.#nowMs());
     let dispatch;
     try {
       const principal = String(row.principal_plane ?? "");
@@ -1896,7 +1907,7 @@ export class AiRuns {
   async close({ run, bound = null, condition = null, at = null, actor = null, viewer = null,
                /* REC-152: the caller's PRINCIPAL, stamped server-side — see `aiRunTick`. */
                caller = null } = {}) {
-    const now = at ? AiRuns.#aiIso(Date.parse(at)) : AiRuns.#aiIso(Date.now());
+    const now = at ? AiRuns.#aiIso(Date.parse(at)) : AiRuns.#aiIso(this.#nowMs());
     /* PL-18 / DEC-63 — THE GATE, AND IT IS HERE RATHER THAN IN
        `#aiRunTerminate` FOR A REASON WORTH STATING: that function is the ONE
        exit and the REAPER goes through it too. A run killed mid-flight is
@@ -2470,7 +2481,7 @@ export class AiRuns {
    * @returns {Promise<*>} `{found: false}`, `{dispatched: false, ...}`, the dispatch's answer, or a refusal
    */
   async dispatchMemberRun({ run = null, by = null, viewer = null, at = null, trace = null, memberRef = null } = {}) {
-    const iso = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
+    const iso = AiRuns.#aiIso(at ? Date.parse(at) : this.#nowMs());
     const id = run == null ? "" : String(run).trim();
     const sight = viewer == null || viewer === "" ? by : viewer;
     const row = id ? this.#one(`SELECT run, status, mode, context_type, context_id, principal_plane, principal_claude,
@@ -3607,7 +3618,7 @@ export class AiRuns {
    * @returns {*} the record's answer, or `run-rules`' refusal (C-22.20)
    */
   verificationRecord({ mode = null, run = null, evidence = null, by = null, at = null } = {}) {
-    const now = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
+    const now = AiRuns.#aiIso(at ? Date.parse(at) : this.#nowMs());
     const who = memberIdOf(by);
     const v = { mode, run, verified_by: who ? `member:${who}` : (by ?? null), at: now, evidence };
     const bad = checkVerification(v);
@@ -3648,7 +3659,7 @@ export class AiRuns {
    */
   testBarRecord({ part = null, set = null, set_version = null, false_alarm_rate = null, passed = null, graded_by = null,
                   at = null } = {}) {
-    const now = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
+    const now = AiRuns.#aiIso(at ? Date.parse(at) : this.#nowMs());
     const record = { part, set, set_version, false_alarm_rate, passed, graded_by, at: now };
     const bad = checkTestBarRecord(record);
     if (bad) return bad;
@@ -3693,7 +3704,7 @@ export class AiRuns {
     if (!p || !m || !a || !active)
       return this.#refuse("AI_GROUP_TEST_INVALID", !active ? localize("ai-runs.index.a_teams_test_investigation_is", "a team's test investigation is added by one of its active members. Nothing was added.") : localize("ai-runs.index.a_teams_test_investigation_names", "a team's test investigation names its part, its matter and the answers your members wrote (missing: {filter}). Nothing was added.", { filter: String([!p && "part", !m && "matter", !a && "answers"].filter(Boolean).join(", ")) }));
     /* END DEC-49 REGION is-ai-group-test */
-    const now = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
+    const now = AiRuns.#aiIso(at ? Date.parse(at) : this.#nowMs());
     this.#transact(() => this.sql.exec(
       `INSERT INTO ai_group_tests (part, matter, answers, by, at) VALUES (?, ?, ?, ?, ?)
        ON CONFLICT(part, matter) DO UPDATE SET answers = excluded.answers, by = excluded.by, at = excluded.at`,
@@ -3794,7 +3805,7 @@ export class AiRuns {
   #surfacingProject(c) {
     if (!AiRuns.#surfacing(c)) return null;
     const run = String(c.pkg.run).trim(), principal = c.pkg.assistantPrincipal.trim();
-    const at = new Date().toISOString();
+    const at = new Date(this.#nowMs()).toISOString();
     this.#transact(() => {
       this.sql.exec(`INSERT INTO inquiry_run_surfacings (bundle_id, run, principal, at) VALUES (?,?,?,?)`,
         c.bundleId, run, principal, at);
