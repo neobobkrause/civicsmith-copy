@@ -478,6 +478,7 @@ test("R8 one mechanical promotion changing only the permitted fields, with a Ses
   assert.equal(fmA.last_updated, r.body.checked);
   assert.equal(fmA.source_status, "unchanged");
   assert.equal(fmA.reeval_pending.flag, false);
+  assert.ok(fmB, "the bundle read before the tick has frontmatter");
   for (const k of Object.keys(fmB)) if (!["last_updated", "monitoring", "source_status", "reeval_pending"].includes(k))
     assert.deepEqual(fmA[k], fmB[k], `${k} unchanged`);
   assert.match(after, /### Session 2026-09-28T12:00:00Z\n\nMonitor tick: the source still serves the captured bytes \(compared raw\)/);

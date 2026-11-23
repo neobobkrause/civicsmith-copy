@@ -7,7 +7,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { world } from "../file-safety/fixture.mjs";
 import { fresh, reader, ofKind } from "./fixture.mjs";
-import { localize } from "../../../src/setup-words/index.mjs";
+import { localize, word } from "../../../src/setup-words/index.mjs";
+import { boundOf } from "../../../src/read-bounds.mjs";
 import { READING_ENDED_MAX, READING_ENDED_DAYS } from "../../../src/notice-producers/index.mjs";
 
 const KIND = "reading-ended";
@@ -60,11 +61,12 @@ test("R29 (seam, real job table): the sentences fill the real rows' counts and r
   const f = by(m1, finished), r = by(m1, refused), p = by(items("m2"), final);
   assert.deepEqual(f.fills, { document: finished.sha, read: "5", total: "5", why: "" });
   assert.equal(f.summary, localize("notice-producers.reading.finished.counted", "{document} has been read: {read} of {total}.", f.fills));
-  assert.deepEqual(r.fills, { document: refused.sha, read: "0", total: "0", why: "pdf.bytes" });
-  assert.equal(r.summary, localize("notice-producers.reading.refused", "{document} was not taken in: {why}", r.fills));
+  assert.deepEqual(r.fills, { document: refused.sha, read: "0", total: "0", why: "pdf.bytes", limit: `${Math.round(boundOf("pdf", "bytes") / 1048576)} MB` });
+  assert.equal(r.summary, localize("notice-producers.reading.refused.limit", "{document} was not taken in: it is larger than this team's limit of {limit}.", r.fills));
   assert.ok(!/\bread\b/i.test(r.summary), "a refused file is never said to be read");
-  assert.equal(p.summary, localize("notice-producers.reading.partial", "{document} was read in part. {why}", p.fills));
-  assert.ok(p.summary.includes("PASSWORD_REQUIRED"));
+  assert.equal(p.summary, localize("notice-producers.reading.stopped", "{document} was stopped before any of it was taken in. {why}", p.fills));
+  assert.ok(!/\bread\b/i.test(p.summary.replace(p.fills.why, "")), "a reading that took in nothing is never said to be read (the reason's own words aside)");
+  assert.ok(p.summary.includes(word("refusal.PASSWORD_REQUIRED")));
   assert.deepEqual([f.subject.state, r.subject.state, p.subject.state], ["finished", "refused", "final"]);
 });
 
@@ -73,7 +75,7 @@ test("R29 (seam, real job table): the real table's cursor is followed to its end
   const { asked, run } = setup(many);
   const r = run("m1");
   assert.equal(ofKind(r, KIND).length, 450);
-  assert.deepEqual(r.facts.reading_ended, { bound: READING_ENDED_MAX, days: READING_ENDED_DAYS, truncated: false });
+  assert.deepEqual(r.facts.reading_ended, { bound: READING_ENDED_MAX, days: READING_ENDED_DAYS, truncated: false, read: 450 });
   assert.deepEqual(asked.map((a) => a.after === null ? null : a.after.split("\u0001")[1]), [null, many[199].sha, many[399].sha], "each page follows `next` from the last row");
   assert.ok(asked.every((a) => a.limit > 0 && a.limit <= 500), "no ask beyond the table's own cap of 500");
   assert.equal(setup(READING_ROWS).asked.length, 0, "nothing is asked until a member is read");

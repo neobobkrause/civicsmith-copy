@@ -40,6 +40,20 @@
 import { crc32 } from "./ooxml.mjs";
 import { localize } from "./setup-words/index.mjs";
 
+/**
+ * Where a container's parts land in its archive (R6), as `layoutOf` reads it off a manifest's `layout` block.
+ * @typedef {Object} ContainerLayout
+ * @property {string} root the directory the parts sit under: "" (a case file's part) or ending "/"
+ * @property {string} manifestAt the manifest's path, relative to the archive root
+ * @property {string} partsAt the manifest's `parts_at`, "path" by default
+ */
+/**
+ * One file of a container, at its path in the archive (R6).
+ * @typedef {Object} ContainerEntry
+ * @property {string} name the path in the archive
+ * @property {Uint8Array} bytes the file's bytes, stored as they are
+ */
+
 /* The bound is on the SERIALISED container, and it is a refusal rather than a
    truncation: a container that came back short would be a container whose
    manifest does not describe it, which is the one thing this artifact may never
@@ -47,6 +61,11 @@ import { localize } from "./setup-words/index.mjs";
    which buffering the whole archive in a Worker's memory stops being obviously
    safe -- and a case that exceeds it is STATED as too large with its own size,
    never silently reduced. */
+/**
+ * The most bytes `serialiseContainer` writes by default (R5, C-98.7).
+ * @type {number}
+ * @bound 64 MiB for one part
+ */
 export const CONTAINER_MAX_BYTES = 64 * 1024 * 1024;
 
 const enc = new TextEncoder();
@@ -66,7 +85,9 @@ function u32(v) { return [v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 
  *  is relative to the archive root, which is what "the zip carries every part at
  *  its own path with this manifest at the root" says. A manifest that carries no
  *  layout gets the format's default rather than an invention, and the default is
- *  the one REC-14 wrote. */
+ *  the one REC-14 wrote. (R6)
+ *  @param {any} manifest the container's manifest, as parsed; anything else gets the default layout
+ *  @returns {ContainerLayout} */
 export function layoutOf(manifest) {
   const l = (manifest && typeof manifest.layout === "object" && manifest.layout) || {};
   /* public-read R6: a case file's part carries its files at their paths under the part's own root (`root: ""`, its
@@ -91,7 +112,13 @@ export function layoutOf(manifest) {
  *  `TOO_LARGE`, a code the plane mints for other conditions too), `DUPLICATE_PATH` for
  *  two parts claiming one path (which would make the archive say two things
  *  about one name and let a reader resolve it either way). Never throws on bad
- *  input, never returns a partial archive presented as whole.
+ *  input, never returns a partial archive presented as whole. (R5, R6)
+ *
+ *  @param {ContainerEntry[]} entries in the order they are written
+ *  @param {{maxBytes?: number}} [opts] `maxBytes` absent is CONTAINER_MAX_BYTES
+ *  @returns {{ok: boolean, bytes?: any, reason?: any, path?: any, maxBytes?: number, detail?: any}}
+ *    `bytes` the archive (a Uint8Array) when ok, the container's size (a number) on CONTAINER_TOO_LARGE
+ *  @bound the same entries in the same order give the same bytes: stored (method 0), DOS date 1980-01-01, no clock read
  */
 export function serialiseContainer(entries, { maxBytes = CONTAINER_MAX_BYTES } = {}) {
   const seen = new Set();
@@ -173,7 +200,12 @@ export function serialiseContainer(entries, { maxBytes = CONTAINER_MAX_BYTES } =
  *
  *  `read(sha)` hands back the bytes for a part, or null when the object is
  *  missing -- a container that cannot be assembled whole is refused with
- *  `PART_MISSING` naming the part, never returned with a hole in it. */
+ *  `PART_MISSING` naming the part, never returned with a hole in it. (R5, R6)
+ *  @param {any} manifest the container's manifest, as parsed; its `parts[]` without a string `path` and `sha256` are skipped
+ *  @param {Uint8Array} manifestBytes the manifest's bytes, written first at the layout's `manifestAt`
+ *  @param {(sha256: string) => any} read a part's bytes by its hash (a Uint8Array, or a Promise of one), or null when missing
+ *  @returns {Promise<{ok: true, entries: ContainerEntry[], layout: ContainerLayout}
+ *    | {ok: false, reason: "PART_MISSING", path: string, sha256: string, detail: string}>} */
 export async function containerEntries(manifest, manifestBytes, read) {
   const layout = layoutOf(manifest);
   const entries = [{ name: layout.manifestAt, bytes: manifestBytes }];

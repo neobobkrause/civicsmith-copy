@@ -11,7 +11,25 @@
 
 import { word } from "../setup-words/index.mjs";
 
-/* C-44.2 — D-309's read (R3). Its family, C-44, is the case identity: the act's half (C-44.1) is case-authoring's. */
+/**
+ * One row of this module's refusals (R17): its catalogue number, where it fires, and the stranger's translation.
+ * @typedef {Object} PublicReadCheckRow
+ * @property {string} check its catalogue number (C-44.2, C-68.5, C-98.n)
+ * @property {string} where the file, function and region that answers it
+ * @property {string} translation the row's words (setup-words)
+ */
+/**
+ * What `rowOf` answers for a code with a row here (R17, DEC-49).
+ * @typedef {Object} PublicReadRefusalRow
+ * @property {any} code the code asked for
+ * @property {string} check its catalogue number
+ * @property {string} translation its canned translation, never empty
+ */
+
+/**
+ * R17, R3: C-44.2 — D-309's read. Its family, C-44, is the case identity: the act's half (C-44.1) is case-authoring's.
+ * @type {Record<string, PublicReadCheckRow>}
+ */
 export const CASE_RESOLUTION_CHECKS = {
   /* UI-81 (2026-09-23) — D-309's OTHER HALF, the READ, given its row. `op=publishedcase` handed a
      finding id that several cases pin refuses and names every case (IC-74), because each case is
@@ -29,7 +47,10 @@ export const CASE_RESOLUTION_CHECKS = {
   },
 };
 
-/* C-68.5 — the published-store complaint (R5), at both public reads. Its family, C-68, is the installation's. */
+/**
+ * R17, R5: C-68.5 — the published-store complaint, at both public reads. Its family, C-68, is the installation's.
+ * @type {Record<string, PublicReadCheckRow>}
+ */
 export const PUBLISHED_STORE_CHECKS = {
   /* D-549. The one row in this family whose reader is most likely NOT whoever installed the copy:
      `publishedbytes` and `publishedcase` are PUBLIC, so the sentence is written for a member of the
@@ -71,6 +92,11 @@ export const PUBLISHED_STORE_CHECKS = {
    part answers to that hash", which was FALSE of it; it now answers OBJECT_MISSING, the code `publishedcase`
    already used for the same condition, minted at one shared site.
    =========================================================================== */
+/**
+ * R17 (R3, R5, R18, R28): D-561, C-98 — the public door's own refusals, C-98.1 to C-98.11, each translated for a stranger
+ * holding no credential (the rules above).
+ * @type {Record<string, PublicReadCheckRow>}
+ */
 export const PUBLISHED_READ_CHECKS = {
   NO_PUBLISHED_PART: {
     check: 'C-98.1',
@@ -139,8 +165,13 @@ export const PUBLISHED_READ_CHECKS = {
   },
 };
 
-/** A refusal from one of this module's rows: `reason` and `code` one literal, with its check and translation (R17). The
- *  code is a string literal at every call site (DEC-49); a code with no row here is a defect and throws, loudly. */
+/**
+ * A refusal from one of this module's rows: `reason` and `code` one literal, with its check and translation (R17). The
+ * code is a string literal at every call site (DEC-49); a code with no row here is a defect and throws, loudly.
+ * @param {any} code a key of `CASE_RESOLUTION_CHECKS`, `PUBLISHED_STORE_CHECKS` or `PUBLISHED_READ_CHECKS`
+ * @returns {PublicReadRefusalRow}
+ * @throws {Error} for a code with no row here, or a row with no canned translation (R17)
+ */
 export function rowOf(code) {
   const row = Object.hasOwn(CASE_RESOLUTION_CHECKS, code) ? CASE_RESOLUTION_CHECKS[code]
     : Object.hasOwn(PUBLISHED_STORE_CHECKS, code) ? PUBLISHED_STORE_CHECKS[code]

@@ -169,7 +169,7 @@ test("R40 (T45) case-check reads cases, published_cases, published_case_members 
   assert.equal(ratified().ratified_at, null, "not ratified until every member is published");
   w.signFinding("INFO-2026-0101-first", { sig: SIG(11) });
   w.signFinding("INFO-2026-0102-second", { sig: SIG(12) });
-  assert.deepEqual(ratified(), { ratified_at: w.p.caseEditionState(CASE, 1).ratified_at, project_id: proj });
+  assert.deepEqual(ratified(), { ratified_at: w.p.caseEditionState(CASE, 1)?.ratified_at, project_id: proj });
   assert.ok(ratified().ratified_at);
   assert.deepEqual(w.rows(`SELECT bundle_id, version_sha, role FROM published_case_members WHERE case_id=? AND edition=1
                            ORDER BY ord`, CASE),
