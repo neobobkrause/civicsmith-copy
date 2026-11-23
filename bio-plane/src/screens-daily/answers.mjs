@@ -133,9 +133,16 @@ export const answers = Object.freeze({
       if (!settled(f) || (p && !settled(p))) results = cs.state(f.state === "loading" ? f : p, null);
       else if (merged.length === 0 && f.state === "failed" && (!p || p.state === "failed")) results = cs.state(f, null);
       else results = cs.state(merged.length ? { state: "ok", value: { hits: merged } } : { state: "empty" }, function (s) {
+        // A snippet marks each match between query-language's MARK_OPEN (\u0001) and MARK_CLOSE (\u0002): drawn as emphasis, a stray mark dropped.
+        const excerpt = function (text) {
+          return String(text).split(/(\u0001[^\u0001\u0002]*\u0002)/).map(function (part) {
+            const m = /^\u0001([^\u0001\u0002]*)\u0002$/.exec(part);
+            return m ? "<em>" + cs.esc(m[1]) + "</em>" : cs.esc(part.replace(/[\u0001\u0002]/g, ""));
+          }).join("");
+        };
         return cs.sheet(s.hits.map(function (h) {
           const id = String(h.bundle_id);
-          return cs.row(cs.mark("origin", "search"), cs.ref("document", id, h.title || id, []) + (h.snippet ? '<span class="meta">' + cs.esc(String(h.snippet)) + "</span>" : ""), "", "");
+          return cs.row(cs.mark("origin", "search"), cs.ref("document", id, h.title || id, []) + (h.snippet ? '<span class="meta">' + excerpt(h.snippet) + "</span>" : ""), "", "");
         }).join(""));
       }, { empty: "screen.finder.none" });
     }
