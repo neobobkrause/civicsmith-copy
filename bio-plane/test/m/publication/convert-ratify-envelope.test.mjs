@@ -96,7 +96,7 @@ test("R15 recorded once: the first record writes only its case row and its hash,
   /* the recorded hash still answers after the refusal, and the refused one never became published */
   assert.deepEqual(rec(body()), retried);
   assert.equal(w.row(`SELECT COUNT(*) AS n FROM published_shas WHERE sha256=?`, OTHER).n, 0);
-  assert.equal(w.p.caseEditionState(CASE, 1).manifest_sha, SHA);
+  assert.equal(w.p.caseEditionState(CASE, 1)?.manifest_sha, SHA);
   /* the refusals after a record, too, answer by name and write nothing */
   for (const b of [...MALFORMED_BODIES, ...NO_SUCH_BODIES]) {
     const r = rec(b);

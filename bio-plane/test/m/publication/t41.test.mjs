@@ -115,7 +115,7 @@ test("R70 R77 at the commit signed_at is the source's signedAtOf for an edition 
   /* publish-schedule's publisher commits a due edition while it still waits (its R2) */
   assert.equal(w.signCase(CASE2, 1, { project: proj, roster, at: "2026-10-01T12:00:05Z" }).ok, true);
   assert.ok(s.calls.some(([door, c, e, open]) => door === "signedAtOf" && c === CASE2 && e === 1 && open), "asked inside the commit");
-  const d2 = w.p.caseEditionState(CASE2, 1).document;
+  const d2 = w.p.caseEditionState(CASE2, 1)?.document;
   assert.deepEqual([d2.signed_at, d2.published_at], ["2026-09-28T01:30:00Z", "2026-10-01T12:00:05Z"]);
   const r2 = w.p.caseDocument(CASE2, 1, null);
   assert.deepEqual([r2.signed_at, r2.published_at], ["2026-09-28T01:30:00Z", "2026-10-01T12:00:05Z"]);
