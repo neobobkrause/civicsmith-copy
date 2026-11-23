@@ -49,6 +49,7 @@ const make = (op, c, o = {}) => innerRequest({ op, url: o.url ?? forgedQuery(op)
 const Q = (r) => new URL(r.url).searchParams;
 const B = (r) => (typeof r.body === "string" ? JSON.parse(r.body) : r.body);
 const declares = (op, k) => (OP_STAMPS[op] || []).includes(k);
+/** @param {readonly string[]} fam @param {readonly string[]} [not] */
 const firstOf = (fam, not = []) => fam.find((o) => !not.includes(o));
 
 test("R1, R14: for every op OPS declares and each kind of caller the answer is made, synchronously, the same for the same arguments, and no forged stamp survives in the address or the body", () => {

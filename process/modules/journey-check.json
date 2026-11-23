@@ -15,7 +15,8 @@
     "docs/development/ux-substrate/screens/mock-shell.js",
     "docs/development/ux-substrate/screens/words-modules.dump.mjs",
     "docs/development/ux-substrate/screens/words-reads-mod-5.src.mjs",
-    "docs/development/ux-substrate/screens/words-reads.src.mjs"
+    "docs/development/ux-substrate/screens/words-reads.src.mjs",
+    "docs/development/ux-substrate/screens/words-reads.json"
   ],
   "tests": [
     "bio-plane/test/m/journey-check/",

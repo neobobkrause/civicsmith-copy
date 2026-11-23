@@ -7,6 +7,15 @@ import { projectRows } from "./project-rows.mjs";
 import { startProject } from "./start-project.mjs";
 import { participation } from "./participation.mjs";
 
+/**
+ * @typedef {Object} ScreenDef
+ * @property {string} id the registry screen's id
+ * @property {Object<string, Function>} parts the screen parts handed to it as `view.parts`
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
+ * @property {(cs: *, view: *) => string} render the screen's markup
+ * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
+ */
+/** @type {Readonly<ScreenDef>} the Projects list */
 export const projects = Object.freeze({
   id: "projects",
   parts: { projectRows, startProject, participation },

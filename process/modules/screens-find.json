@@ -12,7 +12,9 @@
     "bio-plane/src/screens-daily/start-project.mjs",
     "bio-plane/src/screens-daily/participation.mjs"
   ],
-  "tests": [],
+  "tests": [
+    "bio-plane/test/m/screens-find/"
+  ],
   "public": [
     "bio-plane/src/screens-daily/answers.mjs",
     "bio-plane/src/screens-daily/find-in.mjs",
@@ -22,5 +24,9 @@
     "bio-plane/src/screens-daily/projects.mjs",
     "bio-plane/src/screens-daily/start-project.mjs"
   ],
-  "uses": []
+  "uses": [
+    "setup-words",
+    "test-support",
+    "interface-shell"
+  ]
 }

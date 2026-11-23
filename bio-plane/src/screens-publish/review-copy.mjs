@@ -6,9 +6,48 @@
 import { PARTS } from "./parts.mjs";
 import { REVIEW_COPY_FILE } from "./review-copy-file.mjs";
 
+/* The code differences ARCH placed on 22 Nov 2026 (Screens page "Publishing", review-copy C1, C5, C6): the review copy's own parts, beside
+ * the shared ones. Each is self-contained (interface-shell R21 (1)). */
+const REVIEW_COPY_PARTS = Object.freeze({
+  /* C1 (`.band`, protected): how many people outside the team can read the draft shown, and until when: the latest end day among its live
+     links, in the team's zone. Drawn only where some link is live and every live link states its end (a link with no end has no date to say). */
+  band: function (cs, view, copy) {
+    const P = view.parts, live = P.liveGrants(cs, copy);
+    if (!live.length || !live.every(function (g) { return typeof g.until === "string" && g.until; })) return "";
+    const last = live.map(function (g) { return g.until; }).sort().pop();
+    const zone = (live.find(function (g) { return g.until === last && typeof g.zone === "string" && g.zone; }) || {}).zone || P.copyZone(copy).zone;
+    const day = P.localDay(last, zone) || String(last).slice(0, 10);
+    return '<p class="mk-note" role="status" data-band="review">' + cs.w("screen.review-copy.band", { n: String(live.length), date: { html: cs.date(day) } }) + "</p>";
+  },
+  /* C49 (DEC-394) and C5: "Every live review link": the links still working on any draft of the project, each with the draft it is on (by its
+     scope and date), the day it was shared (`.links.shared`), how many comments its reader made (`.links.comments.*`, none drawn at zero), what
+     it lets the reader do, and "Stop sharing". Drawn where the project has several drafts and some link is live: with one draft the roster is
+     the list. In place of the shared `liveLinks`, which says neither the day nor the comments. */
+  liveLinks: function (cs, view, screen, list, projectTitle) {
+    const P = view.parts;
+    if (list.length < 2) return "";
+    const rows = [];
+    list.slice().reverse().forEach(function (e) {
+      if (e.r.state !== "ok") return;
+      const copy = e.r.value, c = copy.case || {}, held = P.copyZone(copy).zone;
+      const comments = Array.isArray(copy.comments) ? copy.comments : [];
+      P.liveGrants(cs, copy).forEach(function (g) {
+        const id = g.grant_id || g.grantId || "", line = P.grantLine(cs, view, g, String(c.edition || ""), held);
+        const n = comments.filter(function (x) { return x && id && x.grant_id === id; }).length;
+        const shared = g.issued_at ? cs.w("screen.review-copy.links.shared", { date: { html: cs.date(g.issued_at) } }) : "";
+        const said = n === 1 ? cs.w("screen.review-copy.links.comments.one") : n > 1 ? cs.w("screen.review-copy.links.comments.other", { n: String(n) }) : "";
+        rows.push(cs.row("", "<b>" + cs.esc(g.recipient || "") + '</b><span class="meta mk-data">' + cs.esc(P.draftLine(cs, view, screen, e, projectTitle)) + "</span>"
+          + (shared ? ' <span class="meta" data-shared>' + shared + "</span>" : "") + (said ? ' <span class="meta" data-comments="' + n + '">' + said + "</span>" : ""),
+        '<span class="meta">' + line.says + "</span>", cs.act("reviewrevoke", { data: { grant: id } })));
+      });
+    });
+    return rows.length ? cs.sec("screen.review-copy.links.heading", cs.sheet(rows.join("")) + '<p class="mk-note">' + cs.w("screen.review-copy.links.note") + "</p>", { help: "screen.review-copy.links.help" }) : "";
+  },
+});
+
 export const REVIEW_COPY = Object.freeze({
   id: "review-copy",
-  parts: Object.freeze({ ...PARTS, ...REVIEW_COPY_FILE }),
+  parts: Object.freeze({ ...PARTS, ...REVIEW_COPY_FILE, ...REVIEW_COPY_PARTS }),
 
   reads: function (view) {
     if (!view.parts.subject(view, 1)) return {}; // K3171: no subject in the address, no subject read
@@ -46,6 +85,7 @@ export const REVIEW_COPY = Object.freeze({
       if (d && d.state === "empty") out.push('<p><a class="cs-btn" data-tone="quiet" data-nodraft-go href="/app/case-editor/' + encodeURIComponent(String(view.subject || "").split("/")[0]) + '" data-nav>' + cs.w("screen.review-copy.nodraft.go") + "</a></p>");
       return out.join("");
     }
+    if (held) out.push(P.band(cs, view, held)); // C1: the band (protected)
     out.push(P.editionsLine(cs, view, chosen));
     out.push(P.noCase(cs, held, chosen.editions));
     // C49 (DEC-394, DEC-395): "Which draft", among the project's drafts; every other draft's copy is read once for its scope and links
@@ -74,8 +114,9 @@ export const REVIEW_COPY = Object.freeze({
       + cs.field("rc-role", "screen.review-copy.role.label", { rec: true, help: "screen.review-copy.role.help" })
       + cs.field("rc-until", "screen.review-copy.until.label", { type: "date", help: "screen.review-copy.until.help" })
       + '<div class="mk-acts">' + grant + file + "</div>" + P.said(view, "reviewgrant")
+      // C6 (protected): for whom, until when, and that Civicsmith sends no email, in the one line the design words (`.link.line`)
       + (view.ui.link ? '<div class="cs-sheet" data-reader-link><span class="id">' + cs.esc(view.ui.link.href) + "</span><p>"
-        + cs.w("screen.review-copy.link.for", { who: view.ui.link.who }) + " <b>" + cs.w("screen.review-copy.noemail") + "</b></p><p class=\"muted\">"
+        + cs.w("screen.review-copy.link.line", { who: view.ui.link.who, until: { html: view.ui.link.until ? cs.date(view.ui.link.until) : "" } }) + "</p><p class=\"muted\">"
         + cs.w("screen.review-copy.link.once") + "</p></div>" : ""))
       : file ? '<div class="mk-acts">' + file + "</div>" : "");
 
@@ -162,13 +203,14 @@ export const REVIEW_COPY = Object.freeze({
         const until = P.endOfDay(day, zone);
         if (!until) return { refuse: "screen.review-copy.reader.needed" };
         view.ui.pendingWho = name;
+        view.ui.pendingUntil = day;
         return { body: { draft: view.ui.draft.draft_id, recipient: name + " · " + role, until: until } };
       },
       done: function (view, answer, cs) {
         if (view.parts.refused(cs, view, "reviewgrant", answer)) return; // D29: a refusal inside a success shows no link
         const r = view.parts.value(answer) || {};
-        view.ui.link = r.secret ? { href: view.origin + "/app/review#grant=" + r.secret, who: view.ui.pendingWho || r.recipient || "" } : null;
-        view.ui.pendingWho = null;
+        view.ui.link = r.secret ? { href: view.origin + "/app/review#grant=" + r.secret, who: view.ui.pendingWho || r.recipient || "", until: view.ui.pendingUntil || "" } : null;
+        view.ui.pendingWho = null; view.ui.pendingUntil = null;
         view.parts.forget(view);
       },
     },

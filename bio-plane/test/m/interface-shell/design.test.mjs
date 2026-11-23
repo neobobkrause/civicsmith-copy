@@ -5,7 +5,7 @@
 import { frameAnswers } from "./frame-answers.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { DESIGN_PATHS } from "./design-paths.fixture.mjs";
 import { readFileSync } from "node:fs";
 import { interfacePage, interfaceScript, checkScreens, classLiterals, stylesheetClasses, HOOK_CLASSES, PATHS, RE_POINTS, SETTINGS_SCREENS } from "../../../src/interface-shell/index.mjs";
 import { ADMIN_SCREENS } from "../../../src/wizard-scripts/index.mjs";
@@ -54,8 +54,7 @@ test("R53 the test-instance band spans the working frame: above the frame, outsi
 });
 
 test("R54 the paths of the screens PR #34's registry adds are mock-shell.js' PATH at its merge (4664e8efd4): elsewhere Home › Where else to go, updates Settings › Updates; each drawn; Updates listed among the Settings sections after Security only for a member who administers (control: a member sees none)", async () => {
-  const src = execFileSync("git", ["show", "4664e8efd4:docs/development/ux-substrate/screens/mock-shell.js"], { encoding: "utf8" });
-  const PATH = new Function(/(const PATH = \{[\s\S]*?\n\};)/.exec(src)[1] + "; return PATH;")();
+  const PATH = DESIGN_PATHS["4664e8efd4"].PATH;
   const step = (k) => (/^screen\./.test(k) ? DESIGN_WORDS.get(k) : DESIGN_WORDS.get("rail." + k + ".name"));
   assert.deepEqual(PATHS.elsewhere.map(step), PATH.elsewhere);
   assert.deepEqual(PATHS.updates.map(step), PATH.updates);
@@ -80,7 +79,7 @@ test("R54 the paths of the screens PR #34's registry adds are mock-shell.js' PAT
 });
 
 test("R55 (amended by R73) the one op a screen needs that the registry does not list stays a named re-point: stepsourcewithdraw on explore; control: a screen naming another unlisted op still throws", () => {
-  assert.deepEqual(RE_POINTS, { explore: ["stepsourcewithdraw"], document: ["readheld", "resolve"], person: ["linecurrentthrough"], setup: ["factconfirm"], question: ["leggrade"], queue: ["signerknown"] });
+  assert.deepEqual(RE_POINTS, { explore: ["stepsourcewithdraw"], document: ["readheld"], person: ["linecurrentthrough"] });
   const r = (id, ...ops) => ({ id, render: () => "", acts: ops.map((op) => ({ op })) });
   assert.equal(checkScreens([r("explore", "stepsourcewithdraw")]), true);
   assert.ok(interfacePage([r("explore", "stepsourcewithdraw")]).length > 1000, "served");
