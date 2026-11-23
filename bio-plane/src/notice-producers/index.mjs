@@ -232,11 +232,95 @@ const ageFrom = (since, now, reason, zone = null) => {
     : undetermined(reason, "the provider states no instant this producer can read");
 };
 
+/**
+ * The providers a `NoticeProducers` instance reads (Uses), each defaulting to its module's instance on the same host,
+ * reached lazily when first asked; `view` is the jurisdiction view (or a function answering it) whose time zone dates are
+ * read in; `readingsEnded` is plane's read of its job table (R29), injected by the composition root and absent elsewhere.
+ * @typedef {Object} NoticeDeps
+ * @property {any} [membership]
+ * @property {any} [people]
+ * @property {any} [moneyChecks]
+ * @property {any} [duties]
+ * @property {any} [entities]
+ * @property {any} [answers]
+ * @property {any} [inquiry]
+ * @property {any} [credentials]
+ * @property {any} [aiAccounts]
+ * @property {any} [retrieval]
+ * @property {any} [following]
+ * @property {any} [standards]
+ * @property {any} [fileSafety]
+ * @property {any} [capture]
+ * @property {any} [calculations]
+ * @property {any} [provenance]
+ * @property {any} [aiUse]
+ * @property {any} [steps]
+ * @property {any} [step]
+ * @property {any} [questionExplorer]
+ * @property {any} [investigation]
+ * @property {any} [review]
+ * @property {any} [view]
+ * @property {(args: {after: any, limit: number}) => any} [readingsEnded] R29: answers `{ok, rows, next}`
+ */
+/**
+ * What `noticeItems` takes (R1): the member read for (`member:<id>` or the bare id; a machine or none answers nothing),
+ * the viewer they read as, the instant read at (epoch milliseconds; now when absent), and queue's homes walk and options,
+ * each closed over the read's viewer and identity.
+ * @typedef {Object} NoticeItemsArgs
+ * @property {any} [member]
+ * @property {any} [viewer]
+ * @property {any} [now]
+ * @property {any} [identity]
+ * @property {((subjectIds: any[]) => any)|null} [homesOf]
+ * @property {((subjectIds: any[]) => any[])|null} [optionsOf]
+ */
+/**
+ * One item a producer derives: its key (`<CLASS>::<kind>::…`), class and kind (one of `NOTICE_KINDS`), its home set
+ * (`case`), subject, words and the facts they rest on, its age, and the members it is told to.
+ * @typedef {Object} NoticeItem
+ * @property {string} id
+ * @property {string} class FINDING, OBLIGATION or CONDITION
+ * @property {string} kind
+ * @property {any} [label]
+ * @property {any} [by]
+ * @property {any} case
+ * @property {any} subject
+ * @property {string} summary
+ * @property {string} detail
+ * @property {any} [summary_key]
+ * @property {any} [detail_key]
+ * @property {any} [fills]
+ * @property {any} [door]
+ * @property {any} [screen]
+ * @property {any} [due]
+ * @property {any} basis
+ * @property {any} age
+ * @property {any} [assignee]
+ * @property {any} [assignee_role]
+ * @property {any[]} recipients
+ * @property {any[]} options
+ */
+/**
+ * `noticeItems`' answer: the items, and `facts`, each producer's bound, window and `truncated` by its name, with
+ * `failed`, the providers that threw or refused (R1). It never throws.
+ * @typedef {Object} NoticeItemsAnswer
+ * @property {NoticeItem[]} items
+ * @property {Object<string, any> & {failed: string[]}} facts
+ * @bound facts: every producer's bound reached is stated as truncated, never silent
+ */
+
 export class NoticeProducers {
   #host; #deps;
-  #homesFn = null; #optionsFn = null;
+  /** @type {((subjectIds: any[]) => any)|null} queue's homes walk, held for one read */
+  #homesFn = null;
+  /** @type {((subjectIds: any[]) => any[])|null} queue's options, held for one read */
+  #optionsFn = null;
   #works = null;          /* R17: each step's work, read once a read (`#workOf`) */
   #zoneRead;              /* R13–R17: the profile's zone, read once a read (`#zone`); undefined until read */
+  /**
+   * One instance over a host's storage; `noticeProducersOf` keeps one per storage.
+   * @param {{host?: any, storage?: any, deps?: NoticeDeps}} [args] `storage` holds `sql`; it is required in practice
+   */
   constructor({ host, storage, deps = {} } = {}) {
     this.#host = host;
     this.sql = storage.sql;
@@ -278,6 +362,12 @@ export class NoticeProducers {
    * queue's ONE read of this module. Each producer reads one provider; a provider that throws contributes no item and
    * is named in `facts.failed` (the read never throws). `facts` states each producer's bound and whether it cut. R13's
    * second provider (`standards`, the declarer) is named for itself when it is the one that fails. */
+  /**
+   * R1: every item this module's producers derive for a member and viewer, each homed and offered through queue's own
+   * walk and options. Writes nothing.
+   * @param {NoticeItemsArgs} [args]
+   * @returns {NoticeItemsAnswer}
+   */
   noticeItems({ member = null, viewer = null, now = null, identity = null, homesOf = null, optionsOf = null } = {}) {
     void identity;        // queue's options are closed over it already (its R12); named here as R1 names it
     const me = isMachine(member) ? null : bare(member);
@@ -1644,7 +1734,13 @@ export class NoticeProducers {
 
 const OF = new WeakMap();
 
-/** The one producers instance for this host's storage (`host`, or the storage itself). It registers nothing. */
+/**
+ * The one producers instance for this host's storage (`host`, or the storage itself). It registers nothing; `deps` is
+ * read only when the instance is first made.
+ * @param {any} host a host with `storage`, or the storage itself
+ * @param {NoticeDeps} [deps]
+ * @returns {NoticeProducers}
+ */
 export function noticeProducersOf(host, deps = {}) {
   const storage = host && host.storage ? host.storage : host;
   let p = OF.get(storage);
