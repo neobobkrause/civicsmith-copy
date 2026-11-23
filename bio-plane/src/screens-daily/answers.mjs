@@ -7,6 +7,15 @@
 
 import { frontTitle } from "./front-title.mjs";
 
+/**
+ * @typedef {Object} ScreenDef
+ * @property {string} id the registry screen's id
+ * @property {Object<string, Function>} parts the screen parts handed to it as `view.parts`
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
+ * @property {(cs: *, view: *) => string} render the screen's markup
+ * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
+ */
+/** @type {Readonly<ScreenDef>} Find › Ask, and "Find and count" while the assistant is not reachable */
 export const answers = Object.freeze({
   id: "answers",
   parts: { frontTitle },
