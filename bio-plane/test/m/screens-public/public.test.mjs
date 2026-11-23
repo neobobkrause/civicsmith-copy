@@ -140,20 +140,22 @@ test("R18 control: a grant with no end draws the ask and the end-of-sharing sent
 });
 
 /* interface-shell R30 (ARCH, 23 Nov 2026): the published frame's foot draws its signature line from what `published` states. */
-const placeOf = (edition, subject = C) => /** @type {(view: *) => {signed: *}} */ (PUBLISHED.place)({ parts: PUBLISHED.parts, subject, ui: {},
-  data: edition === undefined ? {} : { edition: { state: "ok", value: edition } } });
+const TEAM = { state: "ok", value: { ok: true, group: "lakeshore", display_name: GROUP } };
+const placeOf = (edition, o = {}) => /** @type {(view: *) => {signed: *}} */ (PUBLISHED.place)({ parts: PUBLISHED.parts, subject: o.subject ?? C, ui: {},
+  data: Object.assign({ group: o.group === undefined ? TEAM : o.group }, edition === undefined ? {} : { edition: { state: "ok", value: edition } }) });
 
-test("R6 R39 the published case states for its foot the case's name and the signing key's fingerprint, as the edition states them", () => {
+test("R6 R39 the published case states for its foot the team's short name and the signing key's fingerprint, as stated", () => {
   const signed = placeOf(CASE({ signed_by: { member: "Ana Ruiz", fingerprint: "9f2c 41aa" } })).signed;
-  assert.deepEqual(signed, { short: "The Coliseum lease", fingerprint: "9f2c 41aa" });
-  assert.notEqual(signed.short, C, "never the case's id");
-  assert.equal(placeOf(CASE({ scope: "", project_reference: "Coliseum", attestor: { fingerprint: "0b1d 77e2" } })).signed.short, "Coliseum");
+  assert.deepEqual(signed, { short: "lakeshore", fingerprint: "9f2c 41aa" });
+  assert.notEqual(signed.short, GROUP, "the short name, never the team's display name");
+  assert.equal(placeOf(CASE({ attestor: { fingerprint: "0b1d 77e2" } })).signed.fingerprint, "0b1d 77e2", "the attestor's key when no signer is named");
 });
 
-test("R39 control: a fact the edition does not state is left out, never guessed; with no case or no answer nothing is stated", () => {
-  assert.deepEqual(placeOf(CASE({ scope: "" })).signed, { short: "", fingerprint: "" });
+test("R39 control: a fact not stated is left out, never guessed or empty; with no case or no answer nothing is stated", () => {
+  assert.deepEqual(placeOf(CASE()).signed, { short: "lakeshore" }, "no fingerprint stated: none in the foot");
+  assert.deepEqual(placeOf(CASE({ signed_by: { fingerprint: "9f2c 41aa" } }), { group: { state: "failed" } }).signed, { fingerprint: "9f2c 41aa" });
   assert.equal(placeOf(undefined).signed, null);
-  assert.equal(placeOf(CASE(), "").signed, null);
+  assert.equal(placeOf(CASE(), { subject: "" }).signed, null);
 });
 
 test("R17 the draft's opening, then \"Read the whole draft\": a closed fold holding each part the team wrote, in its own words", async () => {

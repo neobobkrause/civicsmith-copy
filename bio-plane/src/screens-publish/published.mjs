@@ -28,16 +28,22 @@ export const PUBLISHED = Object.freeze({
   },
 
   /** interface-shell R30 (ARCH, 23 Nov 2026): what the published frame's foot needs to draw its signature line
-   *  (`shell.pubfoot.line`): the case's short display name, never its id, and the signing key's fingerprint, each as the edition's
-   *  answer states it ("" when it states none; nothing is guessed). No case read, or no answer yet: `signed` is null.
+   *  (`shell.pubfoot.line`): the team's short name (`groupidentity`'s `group`, never its display name) and the signing key's
+   *  fingerprint as the edition's answer states it. A fact not stated is left out of `signed`, never guessed or drawn empty.
+   *  No case read, or no answer yet: `signed` is null.
    *  @param {any} view
-   *  @returns {{signed: ({short: string, fingerprint: string} | null)}} */
+   *  @returns {{signed: ({short?: string, fingerprint?: string} | null)}} */
   place: function (view) {
     const P = view.parts, e = P.subject(view, 1) ? P.answer(view) : null;
     if (!e) return { signed: null };
-    const name = [e.scope, e.project_reference].find(function (x) { return typeof x === "string" && x.trim(); });
-    const fp = P.signerOf(e).fingerprint || (view.ui && view.ui.printFacts && view.ui.printFacts.fingerprint) || "";
-    return { signed: { short: name ? name.trim() : "", fingerprint: String(fp) } };
+    const g = view.data.group && view.data.group.state === "ok" ? view.data.group.value : null;
+    const short = g && typeof g.group === "string" ? g.group.trim() : "";
+    const fp = String(P.signerOf(e).fingerprint || (view.ui && view.ui.printFacts && view.ui.printFacts.fingerprint) || "").trim();
+    /** @type {{short?: string, fingerprint?: string}} */
+    const signed = {};
+    if (short) signed.short = short;
+    if (fp) signed.fingerprint = fp;
+    return { signed: signed };
   },
 
   render: function (cs, view) {
