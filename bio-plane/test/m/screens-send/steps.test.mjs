@@ -88,7 +88,7 @@ test("R4, R9: chosenLawOf is the law the member stated, as the profile lists it 
   const action = (laws, state = "stated") => ({ governing_laws: { state, laws } });
   assert.deepEqual(chosenLawOf(action([{ citation: FOIA.citation }]), profiles),
     { citation: FOIA.citation, level: "federal", name: FOIA.name, rule: "foia_response", amount: 20, count: "business_days", dcitation: FOIA.citation });
-  assert.equal(chosenLawOf(action([{ citation: "Not listed § 1" }, { citation: CPRA.citation }, { citation: FOIA.citation }]), profiles).citation, CPRA.citation,
+  assert.equal(chosenLawOf(action([{ citation: "Not listed § 1" }, { citation: CPRA.citation }, { citation: FOIA.citation }]), profiles)?.citation, CPRA.citation,
     "a stated law the profile does not list is passed over");
   assert.deepEqual(chosenLawOf(action([{ citation: LOCAL.citation }]), profiles), { citation: LOCAL.citation, level: "city", name: LOCAL.name, rule: "", amount: 0, count: "", dcitation: "" },
     "a law with no window carries none");
