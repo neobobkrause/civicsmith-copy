@@ -109,6 +109,7 @@ const ROUTES = {
   "/steward": ["GET"], "/steward/signin": ["POST"], "/steward/signout": ["POST"], "/steward/reports": ["GET"],
   "/steward/decide": ["POST"], "/steward/reinstate": ["POST"], "/steward/withdrawals": ["GET"],
 };
+/** @type {readonly string[]} the paths the Worker answers (R6) */
 export const ROUTE_PATHS = Object.freeze([...Object.keys(ROUTES), "/steward/reports/<n>", "/steward/report/<ref>"]);
 
 function routeOf(path) {
@@ -278,6 +279,11 @@ async function steward(request, env, cfg, route, url) {
   return json ? Response.json(r) : new Response(null, { status: 303, headers: { location: `/steward/report/${encodeURIComponent(r.ref)}` } });
 }
 
+/**
+ * The Worker. `fetch` answers every route (R1, R3–R13, R22); it never throws, answering 500 with plain words instead.
+ * `scheduled` is the daily purge (R15), which does nothing while the service is not yet open.
+ * @type {{ fetch: (request: Request, env: Record<string, any>) => Promise<Response>, scheduled: (event: unknown, env: Record<string, any>) => Promise<void> }}
+ */
 export default {
   async fetch(request, env) {
     try {

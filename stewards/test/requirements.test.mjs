@@ -63,17 +63,22 @@ test("R2: checkOpen answers null only when the deploy configuration would open t
   const secrets = ["STEWARD_KEYS", "SOURCE_KEY"];
   assert.equal(W.checkOpen({ wranglerJsonc: WRANGLER_OPEN(), secretNames: secrets }), null);
   const lacking = W.checkOpen({ wranglerJsonc: WRANGLER_OPEN({ STEWARDS_ADDRESS: undefined }), secretNames: secrets });
+  assert.ok(lacking, "a configuration lacking the address is refused");
   assert.deepEqual(lacking.map((p) => p.name), ["STEWARDS_ADDRESS"]);
   assert.equal(lacking[0].problem, localize("stewards.config.address_not_set", "is not set: the stewards' contact address is missing"));
-  for (const [over, sec, name] of [[{ REPORT_RETENTION_DAYS: "0" }, secrets, "REPORT_RETENTION_DAYS"], [{ CONTACT_RETENTION_DAYS: undefined }, secrets, "CONTACT_RETENTION_DAYS"],
+  /** @type {[Record<string, string | undefined>, string[], string][]} */
+  const gaps = [[{ REPORT_RETENTION_DAYS: "0" }, secrets, "REPORT_RETENTION_DAYS"], [{ CONTACT_RETENTION_DAYS: undefined }, secrets, "CONTACT_RETENTION_DAYS"],
     [{ STEWARDS_ADDRESS: "a@b.example,c@d.example" }, secrets, "STEWARDS_ADDRESS"], [{}, ["SOURCE_KEY"], "STEWARD_KEYS"], [{}, ["STEWARD_KEYS"], "SOURCE_KEY"],
-    [{ SOURCE_KEY: "plain" }, secrets, "SOURCE_KEY"]]) {
+    [{ SOURCE_KEY: "plain" }, secrets, "SOURCE_KEY"]];
+  for (const [over, sec, name] of gaps) {
     const p = W.checkOpen({ wranglerJsonc: WRANGLER_OPEN(over), secretNames: sec });
     assert.ok(p && p.some((x) => x.name === name && x.problem.length > 5), name);
   }
   /* The committed configuration: the address is Bob's, not yet named, so it is refused naming it. */
   const committed = readFileSync(join(ROOT, "wrangler.jsonc"), "utf8");
-  assert.deepEqual(W.checkOpen({ wranglerJsonc: committed, secretNames: secrets }).map((p) => p.name), ["STEWARDS_ADDRESS"]);
+  const committedGaps = W.checkOpen({ wranglerJsonc: committed, secretNames: secrets });
+  assert.ok(committedGaps, "the committed configuration is refused");
+  assert.deepEqual(committedGaps.map((p) => p.name), ["STEWARDS_ADDRESS"]);
 
   /* The deploy script, with a stand-in wrangler that records what it is asked. */
   const dir = mkdtempSync(join(tmpdir(), "stewards-deploy-"));
@@ -683,8 +688,11 @@ test("R21: the configuration pins the project's Cloudflare account", () => {
   const cfg = parseJsonc(readFileSync(join(ROOT, "wrangler.jsonc"), "utf8"));
   assert.equal(cfg.account_id, "20b533579290b9b93168345edd3b7f72");
   assert.equal(W.checkAccount(JSON.stringify(cfg)), null);
-  assert.equal(W.checkAccount(JSON.stringify({ ...cfg, account_id: "x" })).name, "account_id");
-  assert.equal(W.checkAccount(JSON.stringify({ ...cfg, account_id: undefined })).name, "account_id");
+  for (const account_id of ["x", undefined]) {
+    const refused = W.checkAccount(JSON.stringify({ ...cfg, account_id }));
+    assert.ok(refused, "another account is refused");
+    assert.equal(refused.name, "account_id");
+  }
 });
 
 test("R22: /withdrawals serves anyone the standing withdrawals {service, item, since, kind}, newest first, page and canonical JSON; reinstated leave; dismissed never show; no report detail", async () => {
