@@ -34,7 +34,7 @@ test("R2 (N402, K683): every op a fleet member calls is in the op table with the
   for (const op of SUBSESSION_OPS) assert.equal(OPS[op]?.mutating, false, `sub-session ${op} writes`);
   for (const op of ["search", "basisversions", "versionchain"]) {
     assert.equal(OPS[op].mutating, false, op);
-    assert.ok(OPS[op].classes.includes("member"), op);
+    assert.ok((OPS[op].classes ?? []).includes("member"), op);
   }
 });
 

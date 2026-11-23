@@ -379,7 +379,7 @@ async function secretDoorRequest({ op, req, url, credential, reader, narrow = nu
 }
 
 const TEMPLATE_GRANT_DOORS = Object.freeze([...TEMPLATE_DOOR_ACTIONS, ...TEMPLATE_DOOR_READS]);   /* op-declarations R8 */
-const deadTemplateGrant = () => json({ ok: false, ...noTemplateGrant() }, 404);
+const deadTemplateGrant = () => json(noTemplateGrant(), 404);
 async function templateGrantDoor({ req, url, env, op, spec, presentedAi, stub, credential }) {
   /* R138 (R136): the request is `store-request`'s `innerRequest` from the page's, a presented secret's digest its one stamp (store-request R23);
      only the reader's own `viewer` and `author` are set here, from the session `admit` held to a member */
@@ -389,7 +389,7 @@ async function templateGrantDoor({ req, url, env, op, spec, presentedAi, stub, c
                                    method: req.method, presented: presentedAi, doAnswer, credential,
                                    background: url.searchParams.get("background") === "1" });
     if (admitted.silent) return storeSilent(admitted.silent.op, admitted.silent.correlation);
-    if (admitted.refusal || !admitted.caller.viaSession) return deadTemplateGrant();
+    if (admitted.refusal || !admitted.caller || !admitted.caller.viaSession) return deadTemplateGrant();
     reader = { viewer: admitted.caller.viewer, author: admitted.caller.identity };
   }
   const built = await secretDoorRequest({ op, req, url, credential, reader });
@@ -413,13 +413,15 @@ async function templateGrantDoor({ req, url, env, op, spec, presentedAi, stub, c
  * @param {string} storeName
  * @param {any} presentedAi the front door's looked-up agent credential; undefined asks the store
  * @param {any} [credential] the presented credential (admission R20)
- * @returns {Promise<{viewer?: any, cls?: string, silent?: import('../admission/index.mjs').SilentRoute} | {silent: string, correlation: string | undefined}>} the reader, or a silence naming the route asked
+ * @returns {Promise<{viewer: any, cls: string | undefined, silent: string | null, correlation: string | undefined}>} the reader, `viewer` (`""` for no one) and `cls`;
+ *  or, when the store did not answer, `silent` the store route asked and `correlation` its id (`viewer` then `""`)
  */
 async function caseReader(url, env, storeName, presentedAi, credential = null) {
   /* R83 (T47; K3144): a background request's session read is no activity */
   const r = await readerOf(url, env, storeName, presentedAi, doAnswer, credential,
                            { background: url.searchParams.get("background") === "1" });
-  return r.silent ? { silent: r.silent.op, correlation: r.silent.correlation } : r;
+  if (r.silent) return { viewer: "", cls: undefined, silent: r.silent.op, correlation: r.silent.correlation };
+  return { viewer: r.viewer, cls: r.cls, silent: null, correlation: undefined };
 }
 
 /* The R2 key for a capture's bytes (I1 §2): content-addressed under the store
@@ -459,7 +461,8 @@ async function groupRead(op, url, env, presentedAi, credential, stateTiming = un
   const held = credential.token;
   const heldCls = held ? await classify(held, env) : null;
   const heldScope = heldCls ? scopeFor(heldCls, url) : null;
-  const store = heldScope && !heldScope.error ? heldScope.name
+  /* a scope with no error names its namespace (admission's `scopeFor`) */
+  const store = heldScope && typeof heldScope.name === "string" ? heldScope.name
     : (url.searchParams.get("store") === SCRATCH ? SCRATCH : "bio");
   const reader = await caseReader(url, env, store, presentedAi.cred, credential);
   if (reader.silent) return storeSilent(reader.silent, reader.correlation);
@@ -656,7 +659,7 @@ async function grantAdmit(env, url, op, spec, token) {
   if (!out.answered) return { silent: { op: "aigrantadmit", correlation: out.correlation } };
   const g = out.result || {};
   if (g.ok === true) return { caller: { cls: "ai", viaSession: false, member: null, viewer: null, identity: null, rights: null,
-    caps: null, aiCred: { tokenId: "grant", principal: g.viewer, grant: token },
+    caps: null, aiCred: { tokenId: "grant", principal: g.viewer, grant: token, writes: [] },
     storeName: url.searchParams.get("store") === SCRATCH ? SCRATCH : "bio" } };
   return g.reason === "GRANT_OP_REFUSED" ? { refusal: { status: 403, body: g } } : {};
 }
@@ -1260,6 +1263,8 @@ export function makeFetch(hooks = {}) {
     }
     if (admitted.refusal) return refused(admitted.refusal);
     const caller = admitted.caller;
+    /* admission's `admit` answers a caller whenever it answers no refusal and no silence */
+    if (!caller) throw new Error("admission admitted no caller");
     const { cls, viaSession, aiCred, storeName } = caller;
     /* REC-132: the session's two halves, apart: `sessViewer` wherever a VISIBILITY gate is stamped, `sessIdentity`
        wherever the question is WHO; `sessMember` the folded id every author, by and actor stamp carries. */
@@ -1337,7 +1342,7 @@ export function makeFetch(hooks = {}) {
     /* R136 (store-request R1): the store's request is made by `store-request`'s `innerRequest`, below, from the caller admitted and the
        request; this door stamps, strips and carries no credential of its own. `actor` and `stampOf` are the door's reading of who is
        acting, for the arms that follow. */
-    const actor = viaSession ? sessViewer : cls === "ai" ? `${MACHINE_CLASS_PREFIX}ai/${aiCred.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}`;
+    const actor = viaSession ? sessViewer : cls === "ai" ? `${MACHINE_CLASS_PREFIX}ai/${aiCred?.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}`;
     const stampOf = { viewer: viaSession ? sessViewer : cls === "ai" ? aiViewer : actor, by: actor };
     /* R28: admission R12 (`bearerFence`), the bearer fences on the §4 governance acts (C-32.17) and the group-identity
        acts (C-64.4), before any handler: how the caller ARRIVED, never which token it held. */
@@ -1364,8 +1369,7 @@ export function makeFetch(hooks = {}) {
     if (op === "purge") {
       const confirm = url.searchParams.get("confirm");
       if (confirm !== storeName)
-        return json({ ok: false,
-                      ...requiredArgument("purge", "confirm", "<store name>",
+        return json({ ...requiredArgument("purge", "confirm", "<store name>",
                                           "purge requires confirm=<store>"),
                       expected: storeName,
                       got: confirm, tokenClass: cls, store: storeName }, 400);
@@ -1384,9 +1388,9 @@ export function makeFetch(hooks = {}) {
        caller; the archive's project is the request body's `project`, read from a copy before the handler reads the body. */
     const archiveWho = { author: viaSession ? sessMember : `${MACHINE_AUTHOR_PREFIX}${cls}`,
       ...(viaSession ? { actorMemberId: sessMember } : {}),
-      actorIdentity: viaSession ? sessIdentity : cls === "ai" ? aiCred.principal : `${MACHINE_CLASS_PREFIX}${cls}`,
+      actorIdentity: viaSession ? sessIdentity : cls === "ai" ? aiCred?.principal : `${MACHINE_CLASS_PREFIX}${cls}`,
       actorViewer: viaSession ? sessViewer : cls === "ai" ? aiViewer : `${MACHINE_CLASS_PREFIX}${cls}`,
-      ...(viaSession ? {} : { assistantPrincipal: cls === "ai" ? `${aiCred.principal}/${aiCred.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}` }) };
+      ...(viaSession ? {} : { assistantPrincipal: cls === "ai" ? `${aiCred?.principal}/${aiCred?.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}` }) };
     let archiveProject = null, captureStep = null;
     if ((op === "acquire" || op === "unpack") && req.method === "POST")
       try {
@@ -1559,8 +1563,9 @@ export function makeFetch(hooks = {}) {
         if (kept !== "held" && viaSession && reqBody && typeof reqBody === "object" && !Array.isArray(reqBody)
             && await keptInStore(stub, { address: typeof reqBody.locator === "string" ? reqBody.locator : null,
                                          session: typeof reqBody.continue === "string" ? reqBody.continue : null, viewer: sessViewer })) kept = "held";
+        const keptKey = detailKey(kept);
         return json({ ok: false, reason: "ACQUIRE_TIMED_OUT", code: "ACQUIRE_TIMED_OUT", op, store: storeName, tokenClass: cls,
-                      ...(detailKey(kept) ? { detail: word(detailKey(kept)) } : {}), kept, timings: failedTimings(stages) }, 504);
+                      ...(keptKey ? { detail: word(keptKey) } : {}), kept, timings: failedTimings(stages) }, 504);
       }, (e) => { clearTimeout(timer); throw e; });
     };
     /* R120 (fix round 4, C5a/P8; K4434): THE READING THAT WILL NOT FIT THE BOUND FOLLOWS. The handler asks this of the document it has just
@@ -1954,6 +1959,7 @@ export function makeFetch(hooks = {}) {
       /* admission R13: judged before the request was made (above); only the SHA-256 and the NORMALISED declaration crossed to the
          store, in the body store-request made (its R23), never the caller's spelling. */
       const mint = mintPlan;
+      if (!mint || !("secret" in mint)) throw new Error("aicredentialmint without its plan");
       const secret = mint.secret;
       const minted = await doAnswer(stub.fetch(new Request(inner, { method: "POST", body: passBody })));
       if (minted.refused) return storeRefusal(minted, { op, store: storeName, tokenClass: cls });
@@ -1980,6 +1986,7 @@ export function makeFetch(hooks = {}) {
      * unsigned half of `casedocument`. 32 random bytes, base64url, behind a version
      * prefix — not an id, and not derivable from one. */
     if (op === "reviewgrant") {
+      if (!grantSecret) throw new Error(`${op} without its secret`);
       const { secret } = grantSecret;   /* admission R13, made before the request (above) */
       /* R64 (N761): the digest is in the body store-request made (its R23), never the query */
       const issued = await doAnswer(stub.fetch(new Request(inner, { method: "POST", body: passBody })));
@@ -2000,6 +2007,7 @@ export function makeFetch(hooks = {}) {
        filing-templates, and the value returned once, in this answer. It opens the four grant doors (R44) to one version
        while the grant is live, and nothing else. */
     if (op === "templatereviewgrant") {
+      if (!grantSecret) throw new Error(`${op} without its secret`);
       const { secret } = grantSecret;   /* admission R13, made before the request (above) */
       /* R64 (N761): the digest is in the body store-request made (its R23), never the query */
       const issued = await doAnswer(stub.fetch(new Request(inner, { method: "POST", body: passBody })));
