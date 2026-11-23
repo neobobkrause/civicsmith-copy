@@ -3,16 +3,28 @@
    inquiry's grammar at promotion. */
 import { world, sha, MACHINE } from "./fixture.mjs";
 
+/** @import { ContradictionTestWorld } from './fixture.mjs' */
+/** @import { ContradictionRecommended } from '../../../src/contradiction/index.mjs' */
+
+/** @type {string} the run the stand-in gate holds running */
 export const RUN = "RUN-2026-0001";
+/** @type {string} its principal */
 export const PRINCIPAL = "member:m1";
+/** @type {string} */
 export const M1 = "member:m1", M2 = "member:m2", M3 = "member:m3", OUT = "member:outsider";
 
 /* Two inquiries on subject E1 with accepted claims (K2), each resting on its own passage of its own document (K1 and
    K4 material too), and two passages of one inquiry, one supporting and one cutting against it (K1). */
+/** @type {{a: string, b: string, c: string}} */
 export const IQ = { a: "INQ-2026-0001-rose", b: "INQ-2026-0002-fell", c: "INQ-2026-0003-legs" };
+/** @type {{a: string, b: string}} */
 export const INFO = { a: "INFO-2026-0001-rule", b: "INFO-2026-0002-act" };
+/** @type {{a: string, b: string}} */
 export const CID = { a: sha("passage a"), b: sha("passage b") };
 
+/** The world above, laid down over `world(opts)`.
+ *  @param {{gate?: boolean, now?: (() => string)|null, strictConclude?: boolean}} [opts]
+ *  @returns {ContradictionTestWorld} */
 export function seeded(opts = {}) {
   const w = world(opts);
   w.runs.set(RUN, { status: "running", principal: PRINCIPAL });
@@ -30,7 +42,13 @@ export function seeded(opts = {}) {
   return w;
 }
 
-/** Propose the first pair `key` forms (for the machine's sight) with `label`; answers the candidate id. */
+/** Propose the first pair `key` forms (for the machine's sight) with `label`; answers the candidate id.
+ *  @param {ContradictionTestWorld} w
+ *  @param {string} key
+ *  @param {string} label
+ *  @param {{reason?: string, viewer?: string, index?: number}} [opts]
+ *  @returns {string}
+ *  @throws {Error} when no such pair is formed, or the proposal is refused */
 export function cand(w, key, label, { reason = "the machine's reason", viewer = MACHINE, index = 0 } = {}) {
   const p = w.c.pairs({ key, viewer }).pairs[index];
   if (!p) throw new Error(`no ${key} pair formed`);
@@ -40,13 +58,23 @@ export function cand(w, key, label, { reason = "the machine's reason", viewer = 
   return r.candidates[0].candidate;
 }
 
-/** The recommendation door (R37) for a candidate, with the fixture's run. */
+/** The recommendation door (R37) for a candidate, with the fixture's run.
+ *  @param {ContradictionTestWorld} w
+ *  @param {string} candidate
+ *  @param {any} coordinates
+ *  @param {Object<string, any>} [extra] fields that replace the fixture's
+ *  @returns {ContradictionRecommended} */
 export function recommend(w, candidate, coordinates, extra = {}) {
   return w.c.recommend({ run: RUN, candidate, coordinates, proposedBy: "class:ai/tok1", viewer: MACHINE, caller: PRINCIPAL,
                          ...extra });
 }
 
-/** Assert a refusal carries its code and its row. */
+/** Assert a refusal carries its code and its row.
+ *  @param {any} assert node:assert
+ *  @param {Object<string, {check: string, translation: string}>} rows the check rows
+ *  @param {any} r the answer
+ *  @param {string} code
+ *  @returns {void} */
 export function refusedWith(assert, rows, r, code) {
   assert.equal(r.ok, false, JSON.stringify(r).slice(0, 400));
   assert.equal(r.code, code, JSON.stringify(r).slice(0, 400));

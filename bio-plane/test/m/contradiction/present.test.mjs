@@ -108,8 +108,6 @@ test("R24, R25, R19 (N366): a duty's reach names only the projects the viewer ma
   assert.deepEqual(ask(two, { project: PV }).candidates.map((c) => c.candidate).sort(), [two.k1, two.k2, two.k4].sort());
 });
 
-test("R24 (K5): any shown label on K5 is plurality until no_difference, then duty", { todo: "K5 is unshown until its gate arm is measured, and no model is reachable here to measure it (K488; draft-T15 point 5)" }, () => {});
-
 test("R25: exactly one subject, else C-60.2; each of the six subjects answers the candidates naming it", () => {
   const w = seeded();
   w.project("PROJ-2026-0001-a", ["m1"]); w.draws(IQ.a, "PROJ-2026-0001-a");
@@ -117,7 +115,7 @@ test("R25: exactly one subject, else C-60.2; each of the six subjects answers th
   for (const on of [null, undefined, {}, { inquiry: "" }, { inquiry: IQ.a, content: CID.a }, "INQ", [IQ.a]])
     refusedWith(assert, ROWS, w.c.candidatesFor({ on, viewer: M1 }), "CANDIDATES_NO_SUBJECT");
   /* N458: the member reads "record", and the argument keeps its name `bundle` (N71). */
-  assert.match(w.c.candidatesFor({ on: {}, viewer: M1 }).detail, /a record \(bundle\)/);
+  assert.match(String(w.c.candidatesFor({ on: {}, viewer: M1 }).detail), /a record \(bundle\)/);
   const ids = (on) => w.c.candidatesFor({ on, viewer: M1 }).candidates.map((c) => c.candidate).sort();
   assert.deepEqual(ids({ candidate: k2 }), [k2]);
   assert.deepEqual(ids({ inquiry: IQ.a }), [k2]);
@@ -361,8 +359,6 @@ test("R27: a CORRECTED resolution through the inquiry marks its wrong side stale
   assert.match(s3.why, /basis-versions' own door/);
 });
 
-test("R27: plurality marks an open K5 candidate before no_difference", { todo: "K5 is unshown until its gate arm is measured (K488)" }, () => {});
-
 test("R27, R45: not_shown candidates put no mark; more than 200 referents is C-60.3; it writes nothing and never throws", () => {
   const w = seeded();
   cand(w, "K2", "precision");
@@ -462,7 +458,7 @@ test("R29: a case pinning a finding at its bytes discloses each standing duty on
   assert.equal(r.ok, true);
   assert.deepEqual(r.candidates.map((c) => c.candidate).sort(), [duty2, duty4].sort());
   for (const c of r.candidates) { assert.equal(c.depth, 1); assert.equal(c.state, "open"); assert.ok(c.a && c.b); }
-  assert.match(r.says, /deeper findings disclose their own/);
+  assert.match(String(r.says), /deeper findings disclose their own/);
   assert.equal(UNRESOLVED_MAX, 200);
   /* dissolved is no longer disclosed; irreconcilable is */
   w.c.clarify({ candidate: duty4, choice: "differs", coordinates: ["time_or_occasion"], explanation: "dates", evidence: [{ fact: "time_or_occasion" }], viewer: M1, author: M1 });

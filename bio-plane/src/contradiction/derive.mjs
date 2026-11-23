@@ -2,27 +2,38 @@
    candidate's row, its acts, and its inquiry's link as `inquiry` R48 answers it. Every read and every act asks these,
    so no surface and no act holds a second copy of the rule. */
 
-/** R24's weights. */
+/** R24's weights.
+ *  @type {ReadonlyArray<string>} */
 export const WEIGHTS = Object.freeze(["lead", "duty", "plurality", "not_shown"]);
 
-/** R26's states. */
+/** R26's states.
+ *  @type {ReadonlyArray<string>} */
 export const STATES = Object.freeze(["open", "dismissed", "explained_not_shown", "taken_up", "resolved"]);
 
 /** K5 is shown only once the gate's corpus holds a K5 arm, measured and passing (Satisfies: K5's judgement; DEC-84
- *  item 3; draft-T15 point 5). No measured run exists yet, so every K5 candidate is withheld as `not_shown`, and says
- *  why. The rule for a shown K5 candidate (plurality, then duty after `no_difference`) is written below and reached
- *  the day this is true, in the change that records the measurement. */
-export const K5_GATE_MEASURED = false;
+ *  item 3; draft-T15 point 5). Measured 23 Nov 2026 (job/contradiction.1; `test/m/contradiction/gate-k5.mjs`): three
+ *  recorded runs under R2's prompt, unchanged, over seven K5 pairs, no false conflict in any (recall 0 of 2, each
+ *  record pair `undetermined`). So a K5 candidate is shown by the rule below: plurality, then duty after
+ *  `no_difference` (R24, R34). Kept, and named, so that a moved prompt is re-measured before K5 is shown again. */
+/** @type {boolean} */
+export const K5_GATE_MEASURED = true;
+/** @type {string} */
 export const K5_UNSHOWN_WHY = "k5_gate_unmeasured";
 
 /** K6 (T33-48; K1601): the pinned judgement prompt (R2) names K1–K4 and R3 renders no field of a money side, so a run
  *  judging a K6 pair sees no text. K6 pairs are formed and counted, and every K6 candidate is withheld as `not_shown`,
  *  saying why, until its prompt arm is measured (N579), K5's rule. The day that is true, it is weighted as K4's. */
+/** @type {boolean} */
 export const K6_GATE_MEASURED = false;
+/** @type {string} */
 export const K6_UNSHOWN_WHY = "k6_gate_unmeasured";
 
 /** R24: a candidate's weight from its label and key, and whether a member recorded `no_difference` on it (R34). Never
- *  stored. Answers `{weight, why}`; `why` is null except for a withheld K5 candidate. */
+ *  stored. Answers `{weight, why}`; `why` is null except for a withheld K5 or K6 candidate.
+ *  @param {any} label
+ *  @param {any} key
+ *  @param {boolean} [noDifference]
+ *  @returns {{weight: string, why: string|null}} */
 export function weightOf(label, key, noDifference = false) {
   if (label === "precision" || label === "unrelated") return { weight: "not_shown", why: null };
   if (key === "K5") {
@@ -37,8 +48,11 @@ export function weightOf(label, key, noDifference = false) {
 
 /** The families of a resolution kind, as `inquiry` R46 answers them (`resolutionFamily`), read through the function
  *  the caller passes. */
+/** @type {string} */
 export const CORRECTED = "CORRECTED";
+/** @type {string} */
 export const DISSOLVED = "DISSOLVED";
+/** @type {string} */
 export const GENUINE = "GENUINE";
 
 /** R26: the state from the acts (oldest first) and the contradiction inquiry's link (`inquiry` R48's
@@ -49,7 +63,12 @@ export const GENUINE = "GENUINE";
  *  AN INQUIRY OUTRANKS AN INLINE ACT: once taken up, the candidate is the inquiry's, and its conclusion's kind is the
  *  resolution (a reopened inquiry makes it `taken_up` again, since its `resolution` is read only while concluded). With
  *  no inquiry, the latest deciding act says what it is; `no_difference` decides nothing (the candidate stays `open`, at
- *  a weight R24 moves). */
+ *  a weight R24 moves).
+ *  @param {any[]|null|undefined} acts the act rows, oldest first
+ *  @param {any} link
+ *  @param {string|null} [inquiryId]
+ *  @returns {{state: string, kind: string|null, by: string|null, at: string|null, act: any, inquiry: string|null,
+ *    resolution: any}} */
 export function stateOf(acts, link, inquiryId = null) {
   if (inquiryId) {
     const res = link && link.resolution && typeof link.resolution === "object" ? link.resolution : null;
@@ -70,13 +89,16 @@ export function stateOf(acts, link, inquiryId = null) {
   return out;
 }
 
-/** R31's closed states: nothing more is decided on the candidate inline. */
+/** R31's closed states: nothing more is decided on the candidate inline.
+ *  @type {(state: any) => boolean} */
 export const isClosed = (state) => state === "dismissed" || state === "resolved";
 
-/** R49: a conflict between projects is a duty or a plurality still standing. */
+/** R49: a conflict between projects is a duty or a plurality still standing.
+ *  @type {(weight: any, state: any) => boolean} */
 export const isProjectConflict = (weight, state) =>
   (weight === "duty" || weight === "plurality")
   && (state === "open" || state === "explained_not_shown" || state === "taken_up");
 
-/** R37: a recommendation stands while its candidate is open or explained. */
+/** R37: a recommendation stands while its candidate is open or explained.
+ *  @type {(state: any) => boolean} */
 export const isStanding = (state) => state === "open" || state === "explained_not_shown";
