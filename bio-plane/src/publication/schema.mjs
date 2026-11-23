@@ -12,6 +12,8 @@
  * (T34) is `publish-schedule`'s since T41 (its R10; K2438), which creates and declares it with its DDL unchanged.
  */
 
+/** @type {string} the tables' DDL, run at every boot
+ */
 export const PUBLICATION_SCHEMA = `
 -- The published projection: the ONLY tables the public doorbell reads.
 -- Nothing lands here except through ratification, so answering a public
@@ -568,15 +570,23 @@ const ADDITIVE_COLUMNS = [
 ];
 
 /** G47t (K4677): the registration of a kind `attestation` token: a stored capture that differs from the new one is cleared
- *  to NULL (the token is shared), a stored NULL is never rewritten to a value, the same capture again changes nothing. */
+ *  to NULL (the token is shared), a stored NULL is never rewritten to a value, the same capture again changes nothing.
+ *  @type {string}
+ */
 export const ATTESTATION_SHA_UPSERT = `INSERT INTO published_shas (sha256,bundle_id,path,kind,bytes,published,capture_sha) VALUES (?,?,?,?,?,?,?)
   ON CONFLICT(sha256,bundle_id,path) DO UPDATE SET capture_sha = NULL
   WHERE capture_sha IS NOT NULL AND capture_sha IS NOT excluded.capture_sha`;
 
-/* D-734 (BOB #36, D-731 (b)): the path a ratified case document's hash is registered under in `published_shas`. */
+/** D-734 (BOB #36, D-731 (b)): the path a ratified case document's hash is registered under in `published_shas`.
+ *  @param {*} edition
+ *  @returns {string}
+ */
 export const caseDocumentPath = (edition) => `case-document-edition-${Number(edition)}.md`;
 
-/** Creates the tables and runs their migrations; idempotent, every boot. */
+/** Creates the tables and runs their migrations; idempotent, every boot.
+ *  @param {*} sql the storage's `sql`
+ *  @returns {void}
+ */
 export function migratePublication(sql) {
   const rows = (q, ...a) => [...sql.exec(q, ...a)];
   const addColumns = () => {
@@ -628,8 +638,16 @@ export function migratePublication(sql) {
     registerCaseDocumentSha(sql, d.case_id, d.edition, d.doc_sha, d.text, d.ratified_at);
 }
 
-/* D-734: A RATIFIED CASE DOCUMENT'S HASH IS A PUBLISHED HASH, kind `case_document`, `bundle_id` the case, `published`
-   the ratification's own time; `bytes` the UTF-8 length of the text the sha was computed over. Append-only. */
+/** D-734: A RATIFIED CASE DOCUMENT'S HASH IS A PUBLISHED HASH, kind `case_document`, `bundle_id` the case, `published`
+   the ratification's own time; `bytes` the UTF-8 length of the text the sha was computed over. Append-only.
+ *  @param {*} sql the storage's `sql`
+ *  @param {*} caseId
+ *  @param {*} edition
+ *  @param {*} docSha
+ *  @param {*} text the document's text
+ *  @param {*} at the ratification's instant
+ *  @returns {void}
+ */
 export function registerCaseDocumentSha(sql, caseId, edition, docSha, text, at) {
   sql.exec(
     `INSERT INTO published_shas (sha256,bundle_id,path,kind,bytes,published) VALUES (?,?,?,?,?,?)

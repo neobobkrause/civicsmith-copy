@@ -30,20 +30,27 @@ export { CASE_DOCUMENT_FORMAT, CASE_DOCUMENT_FORMAT_V7, CASE_DOCUMENT_FORMAT_V6,
 
 /* A key's English with its placeholders left as written: `word` fills each `{name}` with `{name}` itself. */
 function wordAsWritten(key) {
-  const en = WORD_ROWS.find((r) => r[0] === key)[1];
+  const row = WORD_ROWS.find((r) => r[0] === key);
+  if (!row) throw new Error(`publication: setup-words holds no row ${key}`);
+  const en = row[1];
   return word(key, Object.fromEntries([...en.matchAll(/\{([A-Za-z0-9_]+)\}/g)].map(([, name]) => [name, `{${name}}`])));
 }
 
-/* R33 (DEC-187 (4), DEC-188 (7); K2483): the words of `words.json` (`docs/development/ux-substrate/screens/words.json`)
+/** R33 (DEC-187 (4), DEC-188 (7); K2483): the words of `words.json` (`docs/development/ux-substrate/screens/words.json`)
    this module's rows answer, each read by key from `setup-words`' list (protected); `{photo}` is left for the screen,
-   the answer naming the photos. */
+   the answer naming the photos.
+ *  @type {*} each key's English, its placeholders as written (stated as anything while a user's test reads every
+ *    export of this file as an object)
+ */
 export const PUBLICATION_WORDS = Object.freeze(Object.fromEntries(
   ["photo.refused.changed.signed", "document.refused.changed"].map((key) => [key, wordAsWritten(key)])));
 
-/* C-122 — A CASE'S SOURCES (R51; N364, DEC-78 item 5(d)), a new family held here: the one refusal of the commit that
+/** C-122 — A CASE'S SOURCES (R51; N364, DEC-78 item 5(d)), a new family held here: the one refusal of the commit that
    re-reads, at the signature, what the public may be told of each source the case document states. A consent withdrawn
    binds only later publications, and a commit is one: what the document states is re-read at it, and a statement no
-   longer publishable stops the commit with nothing written. The remedy is a new preparation, which leaves it out. */
+   longer publishable stops the commit with nothing written. The remedy is a new preparation, which leaves it out.
+ *  Each row: `{check, where, translation}`, keyed by its refusal code.
+ */
 export const CASE_SOURCES_CHECKS = {
   SOURCE_CONSENT_WITHDRAWN: {
     check: 'C-122.1',
@@ -103,7 +110,11 @@ export const CASE_SOURCES_CHECKS = {
 };
 
 /** A refusal from one of this module's rows: `reason` and `code` one literal, with its check and translation. The
- *  code is a string literal at every call site (DEC-49); a code with no row here is a defect and throws, loudly. */
+ *  code is a string literal at every call site (DEC-49); a code with no row here is a defect and throws, loudly.
+ *  @param {*} code one of this module's refusal codes
+ *  @returns `{code, check, translation}`
+ *  @throws {Error} when the code has no row with a translation
+ */
 export function rowOf(code) {
   const row = CASE_SOURCES_CHECKS[code];
   if (!row || typeof row.translation !== "string" || !row.translation)

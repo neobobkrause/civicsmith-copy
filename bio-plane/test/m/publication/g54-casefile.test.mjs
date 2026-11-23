@@ -36,7 +36,7 @@ function complete(w, proj, c, { edition = 1, at = NOW } = {}) {
   w.prepare(c.id, edition, { project: proj, roles: c.roles });
   assert.equal(w.signCase(c.id, edition, { project: proj, roster: roster(c.roles), at }).ok, true);
   assert.equal(w.signFinding(c.finding, { at }).ok, true);
-  assert.equal(w.p.caseEditionState(c.id, edition).complete, true);
+  assert.equal(w.p.caseEditionState(c.id, edition)?.complete, true);
 }
 /* the manifest, recorded as the Worker's hop records it */
 const manifest = (w, id, ed = 1) => w.p.recordCaseManifest({ caseId: id, edition: ed, manifest: { files: [] }, manifestSha: sha(`manifest ${id} ${ed}`), bytes: 5 });

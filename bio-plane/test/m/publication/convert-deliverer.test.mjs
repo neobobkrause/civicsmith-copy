@@ -89,7 +89,7 @@ test("R28 R27 a legacy case document committed with no deliverer reads undetermi
   }
   assert.deepEqual(w.op("casedocument", { case: CASE, edition: 1 }).delivered_by, UNDETERMINED);
   /* R28 is stated, never filled: the case edition's own document says the same */
-  assert.deepEqual(w.p.caseEditionState(CASE, 1).document.delivered_by, UNDETERMINED);
+  assert.deepEqual(w.p.caseEditionState(CASE, 1)?.document.delivered_by, UNDETERMINED);
 });
 
 test("R14 R27 a case document's deliverer is read from its stored column alone: founder, a member other than the signer, or undetermined for anything else, never the signer", () => {
