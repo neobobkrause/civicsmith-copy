@@ -63,66 +63,89 @@ export { CONTRADICTION_LABELS, JUDGEMENT_PROMPT, JUDGEMENT_PROMPT_SHA256, judgem
          RECOMMEND_PROMPT, RECOMMEND_PROMPT_SHA256, CONTRADICTION_PAIR_CHECKS, CONTRADICTION_CANDIDATE_CHECKS,
          CONTRADICTION_SCHEMA, WEIGHTS, STATES, K5_GATE_MEASURED, K6_GATE_MEASURED };
 
-/* R22, R47 (K23): the tables this module owns, each keyed to a bundle by both sides' (and, for an opt-in or a
-   response, by its project too). */
+/** R22, R47 (K23): the tables this module owns, each keyed to a bundle by both sides' (and, for an opt-in or a
+ *  response, by its project too).
+ *  @type {ReadonlyArray<string>} */
 export const CONTRADICTION_TABLES = Object.freeze(["contradiction_candidates", "contradiction_acts",
   "contradiction_recommendations", "contradiction_optins", "contradiction_responses"]);
 
 /** R6: the per-key bound. Section 6: *it is bounded, and the bound is stated* — a capped answer that drops its bound
- *  reads as COMPLETENESS. */
+ *  reads as COMPLETENESS.
+ *  @type {number} */
 export const CONTRADICTION_PAIRS_MAX = 50;
 
-/** R15: a proposal's reason, at most. */
+/** R15: a proposal's reason, at most.
+ *  @type {number} */
 export const CANDIDATE_REASON_MAX = 2000;
 
 /** K5's scan: at most this many inquiries are examined for two concluded stances; reaching it with more left is
- *  truncation, stated (R7). */
+ *  truncation, stated (R7).
+ *  @type {number} */
 export const K5_INQUIRIES_EXAMINED = 1000;
 
-/** R24, R49: the reach of a duty and a candidate's parties, bounded per inquiry and per content row. */
+/** R24, R49: the reach of a duty and a candidate's parties, bounded per inquiry and per content row.
+ *  @type {number} the projects read for one inquiry */
 export const REACH_PROJECTS_MAX = 32;
+/** @type {number} the inquiries read for one content row */
 export const REACH_INQUIRIES_MAX = 32;
 
-/** R25, R50, R54: a page of candidates, notices or responses. */
+/** R25, R50, R54: a page of candidates, notices or responses.
+ *  @type {number} */
 export const PAGE_MAX = 50;
-/** R25: the candidates a subject's read examines; reaching it with more left is `truncated`. */
+/** R25: the candidates a subject's read examines; reaching it with more left is `truncated`.
+ *  @type {number} */
 export const CANDIDATES_SCAN_MAX = 2000;
-/** R27: referents in one request. */
+/** R27: referents in one request.
+ *  @type {number} */
 export const TENSIONS_REFERENTS_MAX = 200;
-/** R27 (N368, K544): the candidates one referent's marks are read from; past it the referent says `truncated`. */
+/** R27 (N368, K544): the candidates one referent's marks are read from; past it the referent says `truncated`.
+ *  @type {number} */
 export const TENSIONS_CANDIDATES_MAX = 200;
-/** R28 (N368, K544): each side's resolved entities; past it that fact says `truncated`. */
+/** R28 (N368, K544): each side's resolved entities; past it that fact says `truncated`.
+ *  @type {number} */
 export const FACTS_ENTITIES_MAX = 500;
-/** R29: candidates per finding. */
+/** R29: candidates per finding.
+ *  @type {number} */
 export const UNRESOLVED_MAX = 200;
-/** R30, R51, R53: the caps on a member's free text, by field. */
+/** R30, R51, R53: the caps on a member's free text, by field.
+ *  @type {Readonly<{explanation: number, reason: number, words: number, qualifier: number, question: number, text: number}>} */
 export const TEXT_CAPS = Object.freeze({ explanation: 1000, reason: 500, words: 500, qualifier: 200, question: 500,
                                          text: 2000 });
-/** R53: an email address, at most. */
+/** R53: an email address, at most.
+ *  @type {number} */
 export const EMAIL_MAX = 254;
-/** R54: the relayed responses carried in one notice. */
+/** R54: the relayed responses carried in one notice.
+ *  @type {number} */
 export const NOTICE_RESPONSES_MAX = 20;
-/** R31 (DEC-84 item 17): the three reasons a lead is dismissed for. */
+/** R31 (DEC-84 item 17): the three reasons a lead is dismissed for.
+ *  @type {ReadonlyArray<string>} */
 export const DISMISSAL_REASONS = Object.freeze(["same_fact_different_precision", "not_same_matter",
                                                 "real_conflict_not_pursued"]);
-/** R40: the two that count as a false conflict. */
+/** R40: the two that count as a false conflict.
+ *  @type {ReadonlyArray<string>} */
 export const FALSE_CONFLICT_REASONS = Object.freeze(["same_fact_different_precision", "not_same_matter"]);
-/** R32–R34: the answers to "how do these differ?". */
+/** R32–R34: the answers to "how do these differ?".
+ *  @type {ReadonlyArray<string>} */
 export const CLARIFY_CHOICES = Object.freeze(["differs", "one_wrong", "no_difference"]);
-/** R39: when an acceptance rate is due for review (DEC-77 item 3; §15 point 15). PROVISIONAL, as IDENTIFY's was. */
+/** R39: when an acceptance rate is due for review (DEC-77 item 3; §15 point 15). PROVISIONAL, as IDENTIFY's was.
+ *  @type {Readonly<{rate: number, min_offered: number, status: string}>} */
 export const ACCEPTANCE_REVIEW = Object.freeze({ rate: 0.95, min_offered: 30, status: "PROVISIONAL" });
 /** R61: the key a member's own flag of two documents is held under. It is no pairing key (R5, R18): the plane forms no
- *  pair for it, a member names the two passages, so `pairs` never answers it and R5 refuses it. */
+ *  pair for it, a member names the two passages, so `pairs` never answers it and R5 refuses it.
+ *  @type {string} */
 export const FLAG_KEY = "FLAG";
 /* R61: the pages of a reading's units read to find a flagged passage (a reading is read page by page, never whole). */
 const FLAG_UNIT_PAGES_MAX = 200;
-/** R61: a flag is a source against a source, the `world` label, so it is a lead (R24) and creates no duty of its own. */
+/** R61: a flag is a source against a source, the `world` label, so it is a lead (R24) and creates no duty of its own.
+ *  @type {string} */
 export const FLAG_LABEL = "world";
 
-/** R50: the one sentence a notice carries. */
+/** R50: the one sentence a notice carries.
+ *  @type {string} */
 export const NOTICE_SENTENCE = word("contradiction.notice_sentence");
 /** R50 (T41, D64): the one sentence a notice carries instead when it names another party, a non-hidden project the
- *  viewer may see by name. */
+ *  viewer may see by name.
+ *  @type {string} */
 export const NOTICE_NAMED_SENTENCE = word("contradiction.notice_named_sentence");
 
 /* The viewer the module's own internal reads are made as (a machine credential sees every bundle, membership R43): the
@@ -135,7 +158,8 @@ const MISSING = Symbol("missing");
 /** The keys, section 4, as the VOCABULARY rather than as four spellings in four places (PL-17's rule: the vocabulary
  *  travels with the answer). Section 4: *keys are ADDED, not tuned* (R18) — a fifth key is a design change and a new
  *  row, never a widened join inside an existing key, because a key whose meaning drifts makes the per-key figures
- *  incomparable across runs. */
+ *  incomparable across runs.
+ *  @type {Readonly<Object<string, Readonly<ContradictionKey>>>} K1 to K6 */
 export const CONTRADICTION_KEYS = Object.freeze({
   K1: Object.freeze({ key: "K1", name: word("contradiction.name.inquiry_opposite_roles"), feeds: "world",
         join: "a supports leg and a cuts_against leg of the SAME inquiry, each resting on a passage",
@@ -169,7 +193,8 @@ const LAST_LEVEL = Object.freeze({ K1: "shared_side", K2: "shared_subject", K3: 
                                    K5: "shared_question", K6: "shared_transfer" });
 
 /** R11: the sentence a member reads when a key found nothing. ONE place, so a surface renders what the plane holds
- *  and never composes this itself — the second place a distinction is made is the first place it can drift. */
+ *  and never composes this itself — the second place a distinction is made is the first place it can drift.
+ *  @type {Readonly<Object<string, string>>} by level */
 export const CONTRADICTION_ABSENCE = Object.freeze({
   viewer: word("contradiction.viewer"),
   inquiry: word("contradiction.inquiry.question_scope_all"),
@@ -198,6 +223,570 @@ export const CONTRADICTION_ABSENCE = Object.freeze({
   discriminator: word("contradiction.discriminator"),
 });
 
+/* ================================================================ The interface's kinds (structured comments) */
+
+/**
+ * A refusal this module answers: its row's code (twice), number and canned words, and what was wrong (R20). Nothing
+ * was written. A refusal another module answers (membership's, promotion's, a run gate's) is relayed in its own shape.
+ * @typedef {Object} ContradictionRefusal
+ * @property {boolean} ok false
+ * @property {string} reason the row's code
+ * @property {string} code the row's code, again
+ * @property {string} check its C-60 or C-93 number
+ * @property {string} translation the row's canned words
+ * @property {string} [detail]
+ * @property {string|null} [candidate] `CANDIDATE_NOT_HELD`'s candidate
+ * @property {string|null} [run] the run a run refusal names
+ * @property {number} [index] the proposal or evidence item refused
+ * @property {string[]} [labels] `CANDIDATE_LABEL_UNKNOWN`'s labels
+ * @property {string[]} [choices] `CLARIFY_CHOICE_UNKNOWN`'s choices for the candidate's key
+ * @property {string[]} [coordinates] `CLARIFY_COORDINATE_UNKNOWN`'s vocabulary for the candidate's key
+ * @property {string[]} [cut_keys] the keys whose read was cut at its bound
+ * @property {string} [field] the free-text field over its cap
+ * @property {number} [limit] that field's cap
+ * @property {string} [state] a closed candidate's state
+ * @property {any} [by] who closed it
+ * @property {string|null} [inquiry] the inquiry it was taken up as
+ * @property {string} [weight]
+ * @property {string[]} [reasons] the dismissal reasons
+ * @property {string|null} [recommendation]
+ * @property {string} [coordinate]
+ * @property {string} [default_question]
+ * @property {string} [passage] "here" or "other"
+ * @property {string} [part] the part of a disclosure refused
+ * @property {string} [project]
+ * @property {string} [note]
+ */
+/**
+ * What `contradictionOf` reads on its first call. Each service is its module's instance, or a function answering it;
+ * an absent one is made from `ctx`.
+ * @typedef {Object} ContradictionServices
+ * @property {any} [record] `recordOf(ctx)` by default
+ * @property {any} [extraction]
+ * @property {any} [membership]
+ * @property {any} [promotion]
+ * @property {any} [entities]
+ * @property {any} [basisVersions]
+ * @property {any} [events]
+ * @property {any} [money]
+ * @property {any} [content]
+ * @property {any} [inquiry] inquiry's N345 services, `inquiryServices(ctx)` by default
+ * @property {any} [now] a clock answering an ISO instant; absent is the system clock
+ */
+/**
+ * `inquiry`'s N345 services as this module reads them (its R46–R48). A name inquiry does not export reads undefined.
+ * @typedef {Object} ContradictionInquiryServices
+ * @property {any} CONTRADICTION_COORDINATES
+ * @property {any} PLURALITY_DIFFERENCES
+ * @property {any} DISSOLVED_BY
+ * @property {any} RESOLUTION_KINDS
+ * @property {any} NORM_CANONS
+ * @property {any} resolutionFamily
+ * @property {any} resolutionLines
+ * @property {any} deriveInquiryTitle
+ * @property {(id: any) => any} contradictionLink the link an inquiry holds, or null
+ * @property {(cand: any) => any} inquiryOfCandidate the inquiry a candidate was taken up as, or null
+ */
+/**
+ * One pairing key (section 4): its name, the label it feeds, its join in words and why it pairs.
+ * @typedef {Object} ContradictionKey
+ * @property {string} key
+ * @property {string} name
+ * @property {string} feeds "world" or "record"
+ * @property {string} join
+ * @property {string} why
+ */
+/**
+ * `registerRunGate`'s answer (R21): registered, or `RUN_GATE_MALFORMED` or `RUN_GATE_DECLARED`.
+ * @typedef {Object} ContradictionGateRegistration
+ * @property {boolean} ok
+ * @property {string} [module] the module registered, or the one already registered
+ * @property {string} [reason]
+ * @property {string} [detail]
+ */
+/**
+ * What `pairs` reads (R5, R6). Each is read as text where it is text.
+ * @typedef {Object} ContradictionPairsArgs
+ * @property {any} [key] one key, K1 to K6 in any case; absent or blank runs every key
+ * @property {any} [limit] the per-key bound asked
+ * @property {any} [viewer]
+ */
+/**
+ * `pairs`' answer (R5–R12): the per-key envelopes and the flat pair list, nothing judged and nothing written; or
+ * `CONTRADICTION_KEY_UNKNOWN`, whose `keys` are the key names.
+ * @typedef {Object} ContradictionPairs
+ * @property {boolean} ok
+ * @property {boolean} [wrote] false
+ * @property {number} [pairs_formed]
+ * @property {number} [limit] the bound applied, per key
+ * @property {number} [bound] the published bound
+ * @property {boolean} [bounded] true
+ * @property {string} [viewer_scope]
+ * @property {any} [keys] Object[]: each key's envelope (its spec, `ran`, `formed`, `limit`, `truncated`, `levels`,
+ *   `notes`, `absence`); on the refusal, the key names
+ * @property {any} [pairs] Object[]: each pair `{key, a, b, ...context}`
+ * @property {any} [judgement] `{state: "HELD_APART", read, by, why}`
+ * @property {string} [says]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ */
+/**
+ * What `propose` reads (R13–R16). `run`, `proposedBy` and `caller` are the control plane's stamps.
+ * @typedef {Object} ContradictionProposeArgs
+ * @property {any} [run]
+ * @property {any} [proposals] each `{key, a, b, label, reason}`, `a` and `b` sides as the pairing formed them
+ * @property {any} [proposedBy]
+ * @property {any} [viewer]
+ * @property {any} [caller]
+ * @property {any} [at] the instant, else now
+ */
+/**
+ * `propose`'s answer: the candidates written or already held, or the first refusal (the whole batch is refused).
+ * @typedef {Object} ContradictionProposed
+ * @property {boolean} ok
+ * @property {string|null} [run]
+ * @property {number} [proposed]
+ * @property {number} [written]
+ * @property {number} [unchanged]
+ * @property {any} [candidates] Object[]: each stored row, with `new`
+ * @property {string} [says]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ * @property {number} [index]
+ * @property {string[]} [labels]
+ * @property {string[]} [cut_keys]
+ * @property {string} [note]
+ */
+/**
+ * What `candidatesFor` reads (R25). `on` names exactly one of inquiry, content, entity, bundle, project, candidate.
+ * @typedef {Object} ContradictionCandidatesArgs
+ * @property {any} [on]
+ * @property {any} [label]
+ * @property {any} [weight]
+ * @property {any} [state]
+ * @property {any} [after] the cursor: the last candidate of the page before
+ * @property {any} [limit]
+ * @property {any} [viewer]
+ */
+/**
+ * `candidatesFor`'s answer (R25): a page of the candidates shown, what was not shown and why; `undetermined` when the
+ * index could not be read; or `CANDIDATES_NO_SUBJECT`.
+ * @typedef {Object} ContradictionCandidates
+ * @property {boolean} ok
+ * @property {boolean} [wrote] false
+ * @property {Object<string, string>} [on] the subject read
+ * @property {number} [limit]
+ * @property {boolean} [truncated]
+ * @property {string|null} [cursor]
+ * @property {any} [candidates] Object[]: each candidate as a member reads it
+ * @property {any} [not_shown] `{precision, unrelated}` counts
+ * @property {number} [unmeasured]
+ * @property {any} [unmeasured_why] a reason, or the reasons
+ * @property {any} [unmeasured_by_key]
+ * @property {number} [undated]
+ * @property {number} [order_undetermined]
+ * @property {any} [empty] `{level, says, ...}` when the page is empty, else null
+ * @property {boolean} [undetermined]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ */
+/**
+ * What `tensionsOn` reads (R27).
+ * @typedef {Object} ContradictionTensionsArgs
+ * @property {any} [referents] each `{ref, version}`, or a side as the pairing forms it
+ * @property {any} [viewer]
+ */
+/**
+ * `tensionsOn`'s answer (R27): each referent's marks; `undetermined` when they could not be read; or
+ * `TENSIONS_TOO_MANY`, with `max`.
+ * @typedef {Object} ContradictionTensions
+ * @property {boolean} ok
+ * @property {boolean} [wrote] false
+ * @property {any} [referents] Object[]: each `{referent, marks, truncated}`, or `{referent, marks, undetermined, why}`
+ * @property {number} [limit]
+ * @property {boolean} [truncated]
+ * @property {boolean} [undetermined]
+ * @property {string} [why]
+ * @property {number} [max]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ */
+/**
+ * What `contextFacts` reads (R28).
+ * @typedef {Object} ContradictionFactsArgs
+ * @property {any} [candidate]
+ * @property {any} [viewer]
+ */
+/**
+ * `contextFacts`' answer (R28): the facts bearing on each coordinate, or `NO_SUCH_CANDIDATE`.
+ * @typedef {Object} ContradictionFacts
+ * @property {boolean} ok
+ * @property {boolean} [wrote] false
+ * @property {string} [candidate]
+ * @property {string} [key]
+ * @property {any} [facts] Object[]: each fact, labelled the record's
+ * @property {number} [limit]
+ * @property {boolean} [truncated]
+ * @property {string} [says]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ */
+/**
+ * What `unresolvedRecordOn` reads (R29). `viewer` absent or null reads as the plane.
+ * @typedef {Object} ContradictionUnresolvedArgs
+ * @property {any} [finding]
+ * @property {any} [sha]
+ * @property {any} [viewer]
+ */
+/**
+ * `unresolvedRecordOn`'s answer (R29): the standing duties on what the finding holds at `sha`. Never a refusal.
+ * @typedef {Object} ContradictionUnresolved
+ * @property {boolean} ok true
+ * @property {boolean} wrote false
+ * @property {string|null} [finding]
+ * @property {string|null} [sha]
+ * @property {any} candidates Object[]: each candidate, or with a side withheld `{candidate, unseen_other_side, ...}`
+ * @property {boolean} truncated
+ * @property {number} [bound]
+ * @property {number} [undetermined_legs]
+ * @property {boolean} [undetermined]
+ * @property {string} [why]
+ * @property {string} [says]
+ */
+/**
+ * What `neighbours` reads (R58; connection-grammar's contract). `at` and `scope` change nothing.
+ * @typedef {Object} ContradictionNeighboursArgs
+ * @property {any} [node]
+ * @property {any} [kinds]
+ * @property {any} [at]
+ * @property {any} [page] `{after}`
+ * @property {any} [viewer]
+ * @property {any} [scope]
+ * @property {any} [host] `ownerNeighbours`' only: the host whose instance answers
+ */
+/**
+ * `neighbours`' answer (R58): a page of connections, `hub` past the hub bound, or a refusal `{refused, why}`.
+ * @typedef {Object} ContradictionNeighbours
+ * @property {any} [items] Object[]: each a derived connection "in tension with"
+ * @property {{after: string}} [next]
+ * @property {{set_size: number, why: string}} [hub]
+ * @property {string} [refused] `VIEWER_MISSING` or `OWNER_HOST_AMBIGUOUS`
+ * @property {string} [why]
+ */
+/**
+ * The answer of a member's act on a candidate (R30–R36): what was recorded, or a refusal (this module's, or
+ * promotion's or basis-versions' relayed whole).
+ * @typedef {Object} ContradictionActAnswer
+ * @property {boolean} ok
+ * @property {string} [candidate]
+ * @property {string} [state]
+ * @property {string} [choice]
+ * @property {string[]} [choices] `CLARIFY_CHOICE_UNKNOWN`'s choices for the candidate's key
+ * @property {string[]} [coordinates] `CLARIFY_COORDINATE_UNKNOWN`'s vocabulary for the candidate's key
+ * @property {string} [kind]
+ * @property {string|null} [family]
+ * @property {string} [weight]
+ * @property {any} [wrong_side]
+ * @property {string} [qualifier_standing]
+ * @property {any} [act] the act row as written
+ * @property {boolean} [own_words]
+ * @property {string} [says_words]
+ * @property {any} [defects] the defect reports, K4 `subject`
+ * @property {string|null} [inquiry]
+ * @property {any} [frame]
+ * @property {any} [promoted] `{bundleId, bundleSha}`
+ * @property {any} [conclusion] basis-versions' answer
+ * @property {boolean} [existed]
+ * @property {boolean} [wrote]
+ * @property {string} [says]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ * @property {string} [field]
+ * @property {number} [limit]
+ * @property {any} [by]
+ * @property {string[]} [reasons]
+ * @property {number} [index]
+ * @property {string|null} [recommendation]
+ * @property {string} [coordinate]
+ * @property {string} [default_question]
+ */
+/**
+ * What `dismiss` reads (R31).
+ * @typedef {Object} ContradictionDismissArgs
+ * @property {any} [candidate]
+ * @property {any} [reason] one of `DISMISSAL_REASONS`
+ * @property {any} [words] the member's own words
+ * @property {any} [viewer]
+ * @property {any} [author]
+ * @property {any} [at]
+ */
+/**
+ * What `clarify` reads (R32–R34).
+ * @typedef {Object} ContradictionClarifyArgs
+ * @property {any} [candidate]
+ * @property {any} [choice] one of `CLARIFY_CHOICES`
+ * @property {any} [coordinates]
+ * @property {any} [explanation]
+ * @property {any} [evidence] each `{content}`, `{inquiry, ord}` or `{fact}`
+ * @property {any} [qualifiers] `{a?, b?}`
+ * @property {any} [wrongSide] "a" or "b"
+ * @property {any} [reason]
+ * @property {any} [accepted] the recommendation ids accepted
+ * @property {any} [viewer]
+ * @property {any} [author]
+ * @property {any} [at]
+ */
+/**
+ * What `takeUp` reads (R35).
+ * @typedef {Object} ContradictionTakeUpArgs
+ * @property {any} [candidate]
+ * @property {any} [question]
+ * @property {any} [frame] "a" or "b"
+ * @property {any} [viewer]
+ * @property {any} [author]
+ * @property {any} [at]
+ */
+/**
+ * What `resolve` reads (R36).
+ * @typedef {Object} ContradictionResolveArgs
+ * @property {any} [inquiry]
+ * @property {any} [resolution] `{kind, coordinates?, wrong_side?, reason?, qualifiers?}`
+ * @property {any} [conclusion]
+ * @property {any} [version]
+ * @property {any} [falsifier]
+ * @property {any} [noFalsifier]
+ * @property {any} [accepted]
+ * @property {any} [viewer]
+ * @property {any} [author]
+ * @property {any} [at]
+ */
+/**
+ * What `flag` reads (R61). `here` and `other` are each `{capture, extent}`.
+ * @typedef {Object} ContradictionFlagArgs
+ * @property {any} [here]
+ * @property {any} [other]
+ * @property {any} [reason]
+ * @property {any} [viewer]
+ * @property {any} [author]
+ * @property {any} [at]
+ */
+/**
+ * `flag`'s answer (R61): the candidate written, or the one already held over the two passages, or a refusal.
+ * @typedef {Object} ContradictionFlagged
+ * @property {boolean} ok
+ * @property {boolean} [already]
+ * @property {boolean} [wrote]
+ * @property {string} [candidate]
+ * @property {string} [key] "FLAG"
+ * @property {string} [weight] "lead"
+ * @property {string} [state]
+ * @property {any} [flagged_by] `{member, at, reason}`
+ * @property {string} [says]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ * @property {string} [passage]
+ * @property {string} [field]
+ * @property {number} [limit]
+ */
+/**
+ * What `recommend` reads (R37). `run`, `proposedBy` and `caller` are the control plane's stamps.
+ * @typedef {Object} ContradictionRecommendArgs
+ * @property {any} [run]
+ * @property {any} [candidate]
+ * @property {any} [coordinates] each `{coordinate, reason}`
+ * @property {any} [proposedBy]
+ * @property {any} [viewer]
+ * @property {any} [caller]
+ * @property {any} [at]
+ */
+/**
+ * `recommend`'s answer (R37): the recommendations written or already held, or a refusal.
+ * @typedef {Object} ContradictionRecommended
+ * @property {boolean} ok
+ * @property {string|null} [run]
+ * @property {string} [candidate]
+ * @property {number} [written]
+ * @property {number} [unchanged]
+ * @property {any} [recommendations] Object[]: each row, with `new` and `machine_work`
+ * @property {string} [says]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ * @property {number} [index]
+ * @property {string} [note]
+ */
+/**
+ * One coordinate's acceptance (R39).
+ * @typedef {Object} ContradictionAcceptanceRow
+ * @property {string} coordinate
+ * @property {number} offered
+ * @property {number} accepted
+ * @property {number} chosen_unaided
+ * @property {number} chose_otherwise
+ * @property {boolean} review_due
+ */
+/**
+ * `acceptanceRates`' answer (R39). Never a refusal.
+ * @typedef {Object} ContradictionAcceptance
+ * @property {boolean} ok true
+ * @property {boolean} wrote false
+ * @property {ContradictionAcceptanceRow[]} coordinates
+ * @property {{rate: number, min_offered: number, status: string}} threshold
+ * @property {string} says
+ */
+/**
+ * `dismissalMeasure`'s answer (R40). Never a refusal.
+ * @typedef {Object} ContradictionDismissals
+ * @property {boolean} ok true
+ * @property {boolean} wrote false
+ * @property {number} dismissed
+ * @property {Object<string, number>} by_reason
+ * @property {Object<string, number>} by_key
+ * @property {Object<string, number>} by_label
+ * @property {number} false_conflicts
+ * @property {string} says
+ */
+/**
+ * What `conflictNotices` reads (R50).
+ * @typedef {Object} ContradictionNoticesArgs
+ * @property {any} [project]
+ * @property {any} [after] the cursor: the last candidate of the page before
+ * @property {any} [limit]
+ * @property {any} [viewer]
+ */
+/**
+ * `conflictNotices`' answer (R50): a page of the project's notices; `undetermined` when they could not be read; or
+ * membership's refusal for the project, in its own shape.
+ * @typedef {Object} ContradictionNotices
+ * @property {boolean} ok
+ * @property {boolean} [wrote] false
+ * @property {string} [project]
+ * @property {number} [limit]
+ * @property {boolean} [truncated]
+ * @property {string|null} [cursor]
+ * @property {any} [notices] Object[]: each notice, on the project's own side
+ * @property {boolean} [undetermined]
+ * @property {string} [why]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ */
+/**
+ * What `optIn` reads (R51).
+ * @typedef {Object} ContradictionOptInArgs
+ * @property {any} [candidate]
+ * @property {any} [project]
+ * @property {any} [words]
+ * @property {any} [viewer]
+ * @property {any} [author]
+ * @property {any} [at]
+ */
+/**
+ * `optIn`'s answer (R51, R52): the opt-in recorded, or the one already held, or a refusal.
+ * @typedef {Object} ContradictionOptedIn
+ * @property {boolean} ok
+ * @property {boolean} [already]
+ * @property {boolean} [wrote]
+ * @property {string} [candidate]
+ * @property {string} [project]
+ * @property {any} [opted_in] `{member, at, words}`
+ * @property {boolean} [revealed]
+ * @property {boolean} [reveal_undetermined]
+ * @property {string} [says]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ * @property {string} [field]
+ * @property {number} [limit]
+ */
+/**
+ * What `respond` reads (R53). `disclose` is `{cover?: true | string, email?: string}`.
+ * @typedef {Object} ContradictionRespondArgs
+ * @property {any} [candidate]
+ * @property {any} [project]
+ * @property {any} [text]
+ * @property {any} [disclose]
+ * @property {any} [viewer]
+ * @property {any} [author]
+ * @property {any} [at]
+ */
+/**
+ * `respond`'s answer (R53): the response held, or a refusal.
+ * @typedef {Object} ContradictionResponded
+ * @property {boolean} ok
+ * @property {string} [candidate]
+ * @property {string} [project]
+ * @property {string} [response]
+ * @property {string} [at]
+ * @property {{cover: boolean, email: boolean}} [shared]
+ * @property {string} [email_says]
+ * @property {string} [says]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ * @property {string} [field]
+ * @property {number} [limit]
+ * @property {string} [part]
+ */
+/**
+ * What `conflictResponses` reads (R54).
+ * @typedef {Object} ContradictionResponsesArgs
+ * @property {any} [candidate]
+ * @property {any} [project]
+ * @property {any} [after] the cursor: the last response of the page before
+ * @property {any} [limit]
+ * @property {any} [viewer]
+ */
+/**
+ * `conflictResponses`' answer (R54): this project's responses and, once revealed, the others' as relayed; or a refusal.
+ * @typedef {Object} ContradictionResponses
+ * @property {boolean} ok
+ * @property {boolean} [wrote] false
+ * @property {string} [candidate]
+ * @property {string} [project]
+ * @property {boolean} [revealed]
+ * @property {number} [limit]
+ * @property {boolean} [truncated]
+ * @property {string|null} [cursor]
+ * @property {any} [responses] Object[]: each own (`own: true`, attributed) or relayed (`own: false`)
+ * @property {boolean} [undetermined]
+ * @property {string} [why]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ */
+
 /* R15, R16: a candidate's stored row as every answer gives it. */
 const STORED_ROW = `candidate, key, a_kind, a_ref, a_version, a_bundle_id, b_kind, b_ref, b_version, b_bundle_id, run,
   proposed_by, label, reason, state, origin, at, a_side, b_side`;
@@ -214,7 +803,10 @@ const live = new Set();
  *  (`recordOf(ctx)`), `extraction` (`extractionOf(ctx)`), `membership`, `promotion`, `entities`, `basisVersions`,
  *  `events`, `money`, `content` (each its module's factory), `inquiry` (inquiry's N345 services, R46–R48: by default its module's
  *  exports and its instance's `contradictionLink` and `inquiryOfCandidate`), `now` (a clock). Every service but
- *  `record` is reached on first use. A test may pass its own. The promotion check (R38) is registered here, once. */
+ *  `record` is reached on first use. A test may pass its own. The promotion check (R38) is registered here, once.
+ *  @param {any} ctx the Durable Object's state, or its storage
+ *  @param {ContradictionServices} [opts]
+ *  @returns {Contradiction} */
 export function contradictionOf(ctx, opts = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let c = instances.get(storage);
@@ -244,7 +836,9 @@ export function contradictionOf(ctx, opts = {}) {
 
 /** `inquiry`'s N345 services as this module reads them (its R46–R48): the frozen vocabularies and helpers from its
  *  module, the two reads from its instance. A name inquiry does not yet export reads `undefined`, and every use here
- *  answers what it cannot judge rather than guessing. */
+ *  answers what it cannot judge rather than guessing.
+ *  @param {any} ctx
+ *  @returns {ContradictionInquiryServices} */
 export function inquiryServices(ctx) {
   const m = inquiryModule;
   let k = null;
@@ -262,9 +856,12 @@ export function inquiryServices(ctx) {
 /* ---- R58: the connection owner (connection-grammar R2, R6–R9; K1487) ---- */
 
 /** R58: the owner, its one kind with the members' word (K1486) and its class (K1521). A candidate is the pairing's and a
- *  run's derivation, labelled machine work; it is never evidence, and a chain through it is a lead. */
+ *  run's derivation, labelled machine work; it is never evidence, and a chain through it is a lead.
+ *  @type {string} */
 export const CONNECTION_OWNER = "contradiction";
+/** @type {string} */
 export const CONNECTION_KIND = "in_tension_with";
+/** @type {ReadonlyArray<Readonly<{kind: string, word: string, class: string}>>} */
 export const CONNECTION_KINDS = Object.freeze([Object.freeze({ kind: CONNECTION_KIND, word: word("contradiction.word.tension"), class: "derived" })]);
 /* A candidate states no dates: its `valid` is unstated, so at any date asked it is undetermined, never out. The zone
    names no place (R23); with no bound stated it is never read. */
@@ -272,7 +869,9 @@ const UNDATED = Object.freeze({ from: null, to: null, precision: "day", zone: "U
 const UNDATED_WHY = Object.freeze({ key: "contradiction.undated_why", vars: Object.freeze({}) });
 
 /** R58 (K1563 (1)): the read the owner registers at load. The registry passes `host` through unchanged: with one, that
- *  host's instance answers; without one, the isolate's one instance; otherwise `OWNER_HOST_AMBIGUOUS`. */
+ *  host's instance answers; without one, the isolate's one instance; otherwise `OWNER_HOST_AMBIGUOUS`.
+ *  @param {ContradictionNeighboursArgs} args
+ *  @returns {ContradictionNeighbours} */
 export function ownerNeighbours(args) {
   const a = args && typeof args === "object" && !Array.isArray(args) ? args : {};
   const { host, ...rest } = a;
@@ -284,18 +883,34 @@ export function ownerNeighbours(args) {
                      : word("contradiction.why.contradiction_instances_made", { size: live.size }) };
   return c.neighbours(rest);
 }
-/* R58: registered once, at load, into the registry the plane wires (connection-grammar R5). A refusal leaves the owner
-   unregistered, never the module unloaded. */
+/** R58: registered once, at load, into the registry the plane wires (connection-grammar R5). A refusal leaves the owner
+ *  unregistered, never the module unloaded.
+ *  @type {any} the registry's answer, or `{refused: "OWNER_FAILED", why}` */
 export const OWNER_REGISTRATION = (() => {
   try { return defaultRegistry.registerOwner({ owner: CONNECTION_OWNER, kinds: CONNECTION_KINDS.map((k) => ({ ...k })),
                                                neighbours: ownerNeighbours }); }
   catch (e) { return { refused: "OWNER_FAILED", why: String(e && e.message || e) }; }
 })();
 
+/** K61: the module's one instance per storage, as `contradictionOf` hands it out. Its members are this module's
+ *  services.
+ *  @bound pairs.call: writes nothing
+ *  @bound candidatesFor.call: writes nothing; never throws
+ *  @bound tensionsOn.call: writes nothing; never throws
+ *  @bound contextFacts.call: writes nothing; never throws
+ *  @bound unresolvedRecordOn.call: writes nothing; never throws
+ *  @bound neighbours.call: writes nothing
+ *  @bound candidateSidesSeen.call: writes nothing; never throws
+ *  @bound acceptanceRates.call: writes nothing; never throws
+ *  @bound dismissalMeasure.call: writes nothing; never throws
+ *  @bound conflictNotices.call: writes nothing; never throws
+ *  @bound conflictResponses.call: writes nothing; never throws */
 export class Contradiction {
   #sql; #record; #extraction; #now; #runGate = null; #declared = false;
   #membership; #promotion; #entities; #bv; #inquiry; #events; #money; #content;
 
+  /** @param {any} storage the storage, its `sql` read
+   *  @param {ContradictionServices} [services] */
   constructor(storage, { record, extraction = null, now = null, membership = null, promotion = null, entities = null,
                          basisVersions = null, inquiry = null, events = null, money = null, content = null } = {}) {
     this.#sql = storage.sql;
@@ -335,7 +950,8 @@ export class Contradiction {
   /* ---- boot (K4) ---- */
 
   /** This module's tables at every boot, idempotent (the columns added since a table was first created included),
-   *  and their declaration (R59) once. */
+   *  and their declaration (R59) once.
+   *  @returns {void} */
   migrate() {
     const bare = CONTRADICTION_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
     for (const st of bare.split(";")) { const t = st.trim(); if (t) this.#sql.exec(t); }
@@ -351,7 +967,8 @@ export class Contradiction {
    *  (D-113), and an opt-in and a response also by their project. Each is append-only (`version_chain: true`: nothing
    *  updates or deletes a row but a purge, R17, R42) and seen with the sight of the bundles its keys name (R10: the
    *  sides', and for an opt-in or a response its project's too). The other classes are `declarePurge`'s default form's.
-   *  Once per instance. */
+   *  Once per instance.
+   *  @returns {any} record-core's `declareTable` answer, or `{ok: true, already: true}` */
   declareTables() {
     if (this.#declared) return { ok: true, already: true };
     const both = ["a_bundle_id", "b_bundle_id"];
@@ -367,7 +984,8 @@ export class Contradiction {
     return r;
   }
 
-  /** The name this declaration had before R59; the same act. */
+  /** The name this declaration had before R59; the same act.
+   *  @returns {any} */
   declarePurge() { return this.declareTables(); }
 
   /* ---- the run gate (R21, K31) ---- */
@@ -375,7 +993,10 @@ export class Contradiction {
   /** R21 (K182): the slot `ai-runs` fills (its R37), as `legacy-store` did until then. `gate(run, viewer, caller)` answers
    *  `{found, running, refusal}`: `found` false for a blank, absent or invisible run alike (§7.9); `running` whether
    *  it is still running; `refusal` null, or ai-runs R5's `AI_RUN_NOT_PRINCIPAL` (C-22.12) for a caller who is not
-   *  the run's principal, which R13 relays. One gate: a second registration is refused. */
+   *  the run's principal, which R13 relays. One gate: a second registration is refused.
+   *  @param {any} module the registering module's name
+   *  @param {any} gate `(run, viewer, caller) => {found, running, refusal}`
+   *  @returns {ContradictionGateRegistration} */
   registerRunGate(module, gate) {
     if (typeof module !== "string" || !module.trim() || typeof gate !== "function")
       return { ok: false, reason: RUN_GATE_MALFORMED, detail: "a run gate is registered by a module name and a function" };
@@ -979,7 +1600,10 @@ export class Contradiction {
    *  publishing them from a surface that assigns none would read as a detector that had declined to label.
    *
    *  EACH KEY IS RUN EXACTLY ONCE (R7) and its result feeds both the per-key envelope and the flat pair list: two runs
-   *  of one key over a store written between them would publish a `formed` figure that does not match the pairs. */
+   *  of one key over a store written between them would publish a `formed` figure that does not match the pairs.
+   *  @param {ContradictionPairsArgs} [args]
+   *  @returns {ContradictionPairs}
+   *  @bound limit: per key, at most 50 (`CONTRADICTION_PAIRS_MAX`), clamped and never refused; 50 when absent or not a number of 1 or more */
   pairs({ key = null, limit = null, viewer = null } = {}) {
     const names = Object.keys(CONTRADICTION_KEYS);
     const asked = key == null || String(key).trim() === "" ? null : String(key).trim().toUpperCase();
@@ -1007,7 +1631,7 @@ export class Contradiction {
       if (!run.has(name))
         return { ...spec, ran: false, formed: 0, limit: cap, truncated: false, levels: null, notes: [],
                  absence: { level: "not_run",
-                            says: word("contradiction.says.key_run_request", { asked, name }) } };
+                            says: word("contradiction.says.key_run_request", { asked: String(asked), name }) } };
       const out = denied ? { pairs: [], truncated: false, notes: [] }
         : name === "K1" ? this.#k1(viewer, cap)
         : name === "K2" ? this.#k2(viewer, cap)
@@ -1114,7 +1738,10 @@ export class Contradiction {
    *
    *  THE LABEL IS A PROPOSAL (DEC-24): every row is `origin = 'machine'`, `state = 'proposed'`, and nothing here
    *  grades, edits or closes either side (R19). §7's over-strictness gate is a property of the JUDGEMENT (M-162
-   *  measured the prompt `../contradiction.mjs` pins, R2, R57). */
+   *  measured the prompt `../contradiction.mjs` pins, R2, R57).
+   *  @param {ContradictionProposeArgs} [args]
+   *  @returns {ContradictionProposed}
+   *  @bound reason: trimmed and cut to 2,000 characters (`CANDIDATE_REASON_MAX`) */
   propose({ run, proposals, proposedBy, viewer = null, caller = null, at = null } = {}) {
     const refusal = (code, detail, extra) => {
       const row = CONTRADICTION_CANDIDATE_CHECKS[code];
@@ -1592,7 +2219,12 @@ export class Contradiction {
     return { items: [...line, ...apart, ...undated], undated: undated.length, unordered: apart.length };
   }
 
-  /** op=contradictioncandidates — R25: the candidates shown to a viewer about one thing. */
+  /** op=contradictioncandidates — R25: the candidates shown to a viewer about one thing.
+   *  @param {ContradictionCandidatesArgs} [args]
+   *  @returns {ContradictionCandidates}
+   *  @bound limit: at most 50 (`PAGE_MAX`); 50 when absent or not a number of 1 or more
+   *  @bound scan: the first 2,000 candidates naming the subject are examined; more is `truncated`
+   *  @bound reach: at most 32 inquiries per content row and 32 projects per inquiry (`REACH_INQUIRIES_MAX`, `REACH_PROJECTS_MAX`); past either, `truncated` */
   candidatesFor({ on = null, label = null, weight = null, state = null, after = null, limit = null, viewer = null } = {}) {
     try {
       const subject = this.#subjectOf(on);
@@ -1745,7 +2377,11 @@ export class Contradiction {
   }
 
   /** op=contradictiontensions — R27: each referent's marks, at its version, from every candidate the viewer may see on
-   *  it. Every surface that shows a side reads this, so none holds a copy of the rule. */
+   *  it. Every surface that shows a side reads this, so none holds a copy of the rule.
+   *  @param {ContradictionTensionsArgs} [args]
+   *  @returns {ContradictionTensions}
+   *  @bound referents: at most 200 in one request (`TENSIONS_REFERENTS_MAX`); more is refused, `TENSIONS_TOO_MANY`
+   *  @bound marks: each referent's are read from at most 200 candidates (`TENSIONS_CANDIDATES_MAX`); past it, `truncated` */
   tensionsOn({ referents = null, viewer = null } = {}) {
     try {
       const list = Array.isArray(referents) ? referents : [];
@@ -1872,7 +2508,10 @@ export class Contradiction {
     return facts;
   }
 
-  /** op=contradictionfacts — R28: the facts the record holds that bear on each coordinate, each labelled the record's. */
+  /** op=contradictionfacts — R28: the facts the record holds that bear on each coordinate, each labelled the record's.
+   *  @param {ContradictionFactsArgs} [args]
+   *  @returns {ContradictionFacts}
+   *  @bound entities: each side's resolved entities, at most 500 (`FACTS_ENTITIES_MAX`); past it, that fact says `truncated` */
   contextFacts({ candidate = null, viewer = null } = {}) {
     try {
       const row = this.#candidate(candidate);
@@ -1919,7 +2558,10 @@ export class Contradiction {
     return { refs, undetermined_legs: undetermined };
   }
 
-  /** R29 (in-process; read as the plane): the candidates a case pinning `finding` at `sha` must disclose. */
+  /** R29 (in-process; read as the plane): the candidates a case pinning `finding` at `sha` must disclose.
+   *  @param {ContradictionUnresolvedArgs} [args]
+   *  @returns {ContradictionUnresolved}
+   *  @bound candidates: at most 200 (`UNRESOLVED_MAX`); more is `truncated` */
   unresolvedRecordOn({ finding = null, sha = null, viewer = undefined } = {}) {
     try {
       const f = typeof finding === "string" ? finding.trim() : "";
@@ -1985,7 +2627,9 @@ export class Contradiction {
    *  sides' nodes. It is labelled machine work and graded the lowest grade: a candidate is a proposal, never evidence,
    *  so a chain through it is a lead (connection-grammar R13) and never a basis. A candidate states no dates, so each
    *  item is undetermined at any date asked; it holds no hunch, so `scope` changes nothing. A candidate the viewer may
-   *  not see is neither returned nor counted (connection-grammar R7). Writes nothing and records no reader. */
+   *  not see is neither returned nor counted (connection-grammar R7). Writes nothing and records no reader.
+   *  @param {ContradictionNeighboursArgs} [args]
+   *  @returns {ContradictionNeighbours} */
   neighbours({ node = null, kinds = null, at: _at = null, page = null, viewer = null, scope: _scope = null } = {}) {
     if (viewer === undefined || viewer === null || viewer === "")
       return { refused: "VIEWER_MISSING", why: localize("contradiction.index.read_names_member", "a read names the member reading; an absent viewer is neither an administrator nor the public") };
@@ -2188,7 +2832,10 @@ export class Contradiction {
     return this.#acts(row.candidate).find((a) => a.act_id === id);
   }
 
-  /** op=contradictiondismiss — R31: a lead is dismissed, with one of three reasons. */
+  /** op=contradictiondismiss — R31: a lead is dismissed, with one of three reasons.
+   *  @param {ContradictionDismissArgs} [args]
+   *  @returns {ContradictionActAnswer}
+   *  @bound reason, words: each at most 500 characters (`TEXT_CAPS`); more is refused, `WORDS_MALFORMED` */
   dismiss({ candidate = null, reason = null, words = null, viewer = null, author = null, at = null } = {}) {
     const g = this.#actRefusals({ candidate, author, viewer, texts: { reason, words } });
     if (g.refusal) return g.refusal;
@@ -2241,7 +2888,10 @@ export class Contradiction {
   }
 
   /** op=contradictionclarify — R32–R34: a member says how the two differ, that one is wrong, or (K5) that they found no
-   *  named difference. */
+   *  named difference.
+   *  @param {ContradictionClarifyArgs} [args]
+   *  @returns {ContradictionActAnswer}
+   *  @bound explanation: at most 1,000 characters; reason: 500; each qualifier: 200 (`TEXT_CAPS`); more is refused, `WORDS_MALFORMED` */
   clarify({ candidate = null, choice = null, coordinates = null, explanation = null, evidence = null, qualifiers = null,
             wrongSide = null, reason = null, accepted = null, viewer = null, author = null, at = null } = {}) {
     const q = qualifiers && typeof qualifiers === "object" && !Array.isArray(qualifiers) ? qualifiers : {};
@@ -2387,7 +3037,10 @@ export class Contradiction {
   }
 
   /** op=contradictiontakeup — R35: take a candidate up as a contradiction inquiry, in one act through
-   *  `promotion.promote`. */
+   *  `promotion.promote`.
+   *  @param {ContradictionTakeUpArgs} [args]
+   *  @returns {ContradictionActAnswer}
+   *  @bound question: at most 500 characters (`TEXT_CAPS`); more is refused, `WORDS_MALFORMED` */
   takeUp({ candidate = null, question = null, frame = null, viewer = null, author = null, at = null } = {}) {
     const g = this.#actRefusals({ candidate, author, viewer, texts: { question } });
     if (g.refusal) return g.refusal;
@@ -2451,7 +3104,9 @@ export class Contradiction {
 
   /** R56 (N365; in-process, read as the viewer, for `affordances` R14): whether R36's `NOT_A_CONTRADICTION_INQUIRY`
    *  check passes for this viewer, answered by the very predicate `resolve` applies, so the offer and the act cannot
-   *  disagree. `false` for an absent viewer and for anything it cannot read. Writes nothing; never throws. */
+   *  disagree. `false` for an absent viewer and for anything it cannot read. Writes nothing; never throws.
+   *  @param {{inquiry?: any, viewer?: any}} [args]
+   *  @returns {boolean} */
   candidateSidesSeen({ inquiry = null, viewer = null } = {}) {
     try {
       const id = typeof inquiry === "string" ? inquiry.trim() : "";
@@ -2459,7 +3114,9 @@ export class Contradiction {
     } catch { return false; }
   }
 
-  /** op=contradictionresolve — R36: a contradiction inquiry's conclusion, with its resolution. */
+  /** op=contradictionresolve — R36: a contradiction inquiry's conclusion, with its resolution.
+   *  @param {ContradictionResolveArgs} [args]
+   *  @returns {ContradictionActAnswer} */
   resolve({ inquiry = null, resolution = null, conclusion = null, version = null, falsifier = null, noFalsifier = false,
             accepted = null, viewer = null, author = null, at = null } = {}) {
     const machine = this.#machineRefusal(author);
@@ -2567,7 +3224,10 @@ export class Contradiction {
    *  their project settles, with their reason. It is recorded as a run's judgement would be (R15), under the key `FLAG`,
    *  label `world`, as the member's own act (`origin: "member"`, `proposed_by` the member): never machine work, and a lead
    *  (R24), settled as any candidate (R31–R36). A candidate already held over the same two passages (any key, shown) is
-   *  answered and nothing is written. It never edits a document. */
+   *  answered and nothing is written. It never edits a document.
+   *  @param {ContradictionFlagArgs} [args]
+   *  @returns {ContradictionFlagged}
+   *  @bound reason: at most 500 characters (`TEXT_CAPS`); more is refused, `WORDS_MALFORMED` */
   flag({ here = null, other = null, reason = null, viewer = null, author = null, at = null } = {}) {
     const machine = this.#machineRefusal(author);
     if (machine) return machine;
@@ -2638,7 +3298,10 @@ export class Contradiction {
              says: localize("contradiction.says.flag_written", "these two passages are set side by side as a contradiction for your project to settle: a lead, not a finding. Neither document is changed") };
   }
 
-  /** op=contradictionrecommend — R37: the machine's one act. */
+  /** op=contradictionrecommend — R37: the machine's one act.
+   *  @param {ContradictionRecommendArgs} [args]
+   *  @returns {ContradictionRecommended}
+   *  @bound reason: each recommendation's, trimmed and cut to 2,000 characters (`CANDIDATE_REASON_MAX`) */
   recommend({ run = null, candidate = null, coordinates = null, proposedBy = null, viewer = null, caller = null, at = null } = {}) {
     const gate = this.#runRefusals({ run, proposedBy, viewer, caller });
     if (gate) return gate;
@@ -2728,7 +3391,9 @@ export class Contradiction {
 
   /** R38: the promotion check registered with `promotion` (its R39). A non-replay promotion whose document names a
    *  candidate this module does not hold, or one with a side its author may not see, is refused `CANDIDATE_NOT_HELD`
-   *  (C-93.32): `inquiry` R47's link is enforced at the record's one door. */
+   *  (C-93.32): `inquiry` R47's link is enforced at the record's one door.
+   *  @param {any} c promotion's step context: `docFm`, `pkg`, `author`, `replay`
+   *  @returns {ContradictionRefusal|null} */
   promotionCheck(c) {
     try {
       if (!c || c.replay || (c.pkg && c.pkg.replay)) return null;
@@ -2782,7 +3447,9 @@ export class Contradiction {
    * ===================================================================== */
 
   /** R39: acceptance per coordinate, counted over the acts that record a coordinate (clarify, resolve). Counts only,
-   *  never a bare percentage; `review_due` by `ACCEPTANCE_REVIEW`, PROVISIONAL. Never throws. */
+   *  never a bare percentage; `review_due` by `ACCEPTANCE_REVIEW`, PROVISIONAL. Never throws.
+   *  @param {{coordinate?: any, since?: any}} [args] `since` an instant compared as text
+   *  @returns {ContradictionAcceptance} */
   acceptanceRates({ coordinate = null, since = null } = {}) {
     const per = {};
     const slot = (c) => (per[c] ||= { coordinate: c, offered: 0, accepted: 0, chosen_unaided: 0, chose_otherwise: 0 });
@@ -2816,10 +3483,15 @@ export class Contradiction {
   }
 
   /** R40: dismissed leads, counted by reason, by key and by label; `false_conflicts` counts only the first two reasons.
-   *  Never throws. */
+   *  Never throws.
+   *  @param {{since?: any}} [args]
+   *  @returns {ContradictionDismissals} */
   dismissalMeasure({ since = null } = {}) {
     const byReason = Object.fromEntries(DISMISSAL_REASONS.map((r) => [r, 0]));
-    const byKey = {}, byLabel = {};
+    /** @type {Object<string, number>} */
+    const byKey = {};
+    /** @type {Object<string, number>} */
+    const byLabel = {};
     let total = 0;
     try {
       for (const a of this.#rows(`SELECT a.reason, a.at, c.key, c.label FROM contradiction_acts a
@@ -2885,7 +3557,12 @@ export class Contradiction {
       .map((p) => ({ id: p, name: this.#projectName(p) }));
   }
 
-  /** op=contradictionnotices — R50: the notices to a project's members, on their own side. */
+  /** op=contradictionnotices — R50: the notices to a project's members, on their own side.
+   *  @param {ContradictionNoticesArgs} [args]
+   *  @returns {ContradictionNotices}
+   *  @bound limit: at most 50 (`PAGE_MAX`); 50 when absent or not a number of 1 or more
+   *  @bound responses: each notice relays at most 20 (`NOTICE_RESPONSES_MAX`); more is `responses_truncated`
+   *  @bound reach: at most 32 inquiries per content row and 32 projects per inquiry; past either, `reveal_undetermined` */
   conflictNotices({ project = null, after = null, limit = null, viewer = null } = {}) {
     try {
       const g = this.#projectRefusals(project, viewer);
@@ -2956,7 +3633,10 @@ export class Contradiction {
   }
 
   /** op=contradictionoptin — R51, R52: a project asks to resolve the conflict; the opt-in that leaves every party opted
-   *  in records the reveal in the same act. */
+   *  in records the reveal in the same act.
+   *  @param {ContradictionOptInArgs} [args]
+   *  @returns {ContradictionOptedIn}
+   *  @bound words: at most 500 characters (`TEXT_CAPS`); more is refused, `WORDS_MALFORMED` */
   optIn({ candidate = null, project = null, words = null, viewer = null, author = null, at = null } = {}) {
     const g = this.#partyRefusals({ candidate, project, viewer, author });
     if (g.refusal) return g.refusal;
@@ -3047,7 +3727,11 @@ export class Contradiction {
     return { cover, email: typeof disclose.email === "string" ? disclose.email.trim() : null };
   }
 
-  /** op=contradictionrespond — R53: a member responds to the notice, sharing only what they choose. */
+  /** op=contradictionrespond — R53: a member responds to the notice, sharing only what they choose.
+   *  @param {ContradictionRespondArgs} [args]
+   *  @returns {ContradictionResponded}
+   *  @bound text: at most 2,000 characters (`TEXT_CAPS`); more is refused, `WORDS_MALFORMED`
+   *  @bound email: one address, at most 254 characters (`EMAIL_MAX`); otherwise refused, `DISCLOSURE_MALFORMED` */
   respond({ candidate = null, project = null, text = null, disclose = undefined, viewer = null, author = null, at = null } = {}) {
     const g = this.#partyRefusals({ candidate, project, viewer, author });
     if (g.refusal) return g.refusal;
@@ -3083,7 +3767,10 @@ export class Contradiction {
   }
 
   /** op=contradictionresponses — R54's read: this project's own responses, attributed, and once revealed the other
-   *  parties' as relayed, in the order written. */
+   *  parties' as relayed, in the order written.
+   *  @param {ContradictionResponsesArgs} [args]
+   *  @returns {ContradictionResponses}
+   *  @bound limit: at most 50 (`PAGE_MAX`); 50 when absent or not a number of 1 or more */
   conflictResponses({ candidate = null, project = null, after = null, limit = null, viewer = null } = {}) {
     try {
       const g = this.#projectRefusals(project, viewer);
@@ -3124,6 +3811,19 @@ export class Contradiction {
    caller's; `body` the parsed body, from which each op reads only its own named fields (a stamp in the body is never
    read). `key` and `limit` are the caller's, and both are answered rather than trusted (R5, R6). The control plane
    routes the thirteen N345 ops at layer 11 (control-plane's entry). */
+/**
+ * @param {Contradiction} c
+ * @param {URL} url
+ * @param {any} body
+ * @returns {{contradictionpropose: () => ContradictionProposed, contradictionpairs: () => ContradictionPairs,
+ *   contradictioncandidates: () => ContradictionCandidates, contradictiontensions: () => ContradictionTensions,
+ *   contradictionfacts: () => ContradictionFacts, contradictiondismiss: () => ContradictionActAnswer,
+ *   contradictionclarify: () => ContradictionActAnswer, contradictiontakeup: () => ContradictionActAnswer,
+ *   contradictionflag: () => ContradictionFlagged, contradictionresolve: () => ContradictionActAnswer,
+ *   contradictionrecommend: () => ContradictionRecommended, contradictionnotices: () => ContradictionNotices,
+ *   contradictionoptin: () => ContradictionOptedIn, contradictionrespond: () => ContradictionResponded,
+ *   contradictionresponses: () => ContradictionResponses}}
+ */
 export function contradictionOps(c, url, body) {
   const q = (k) => url.searchParams.get(k);
   const b = body && typeof body === "object" ? body : {};
@@ -3157,8 +3857,9 @@ export function contradictionOps(c, url, body) {
   };
 }
 
-/* R60 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
-   the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
+/** R60 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
+ *  the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads.
+ *  @type {Readonly<Object<string, Object<string, any>>>} by op name */
 export const DECLARED_OPS = Object.freeze({
   contradictionresolve: { classes: ["admin","member","probe"], mutating: true, weight: "reasoned", description: "act.contradictionresolve.label.contradiction",
     fields: { accepts: ["inquiry","resolution","conclusion","version","falsifier","noFalsifier","accepted"], requires: ["inquiry","resolution","conclusion"] } },

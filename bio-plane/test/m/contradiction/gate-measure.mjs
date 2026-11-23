@@ -39,18 +39,21 @@ const CONFLICT = new Set(["world", "record"]);
 export const THRESHOLD = 0;
 
 /* A side's identity in the fixture's terms: a document side by its capture, a
-   claim side by the reading it is held on. Order-free across a and b. */
-export const handleOf = (s) => (s && s.kind === "claim" ? `${s.inquiry}|${s.version}` : String(s?.capture_sha ?? "-"));
+   claim side by the reading it is held on, a stance (K5) by its project's
+   conclusion (R14's referent). Order-free across a and b. */
+export const handleOf = (s) => (s && s.kind === "claim" ? `${s.inquiry}|${s.version}`
+  : s && s.kind === "stance" ? `${s.inquiry}|${s.project}|${s.version}` : String(s?.capture_sha ?? "-"));
 export const pairId = (key, a, b) => `${key}:${[a, b].sort().join(" <> ")}`;
 
 /** measure({ read, gold, sideOf, judge })
  *   read   — the `op=contradictionpairs` answer
  *   gold   — Map(pairId -> { label, shape, id })
  *   sideOf — (pairSide, pair) => { text, doctype?, date?, role? }
- *   judge  — (input) => { label, reason }                                         */
-export function measure({ read, gold, sideOf, judge, context = () => null }) {
+ *   judge  — (input) => { label, reason }
+ *   keys   — the keys measured: K1–K4 for R57's corpus, ["K5"] for K5's arm   */
+export function measure({ read, gold, sideOf, judge, context = () => null, keys = KEYS }) {
   const pairs = Array.isArray(read?.pairs) ? read.pairs : [];
-  const per = Object.fromEntries(KEYS.map((k) => [k, {
+  const per = Object.fromEntries(keys.map((k) => [k, {
     gold: 0, compared: 0, missing: [], unlabelled: [], absent: [],
     negatives: 0, false_conflicts: 0, positives: 0, correct: 0, undetermined: 0, rows: [] }]));
   for (const [id, g] of gold) per[id.slice(0, 2)].gold++;
@@ -71,9 +74,9 @@ export function measure({ read, gold, sideOf, judge, context = () => null }) {
     else { k.positives++; if (label === g.label) k.correct++; }
   }
   for (const [id, g] of gold) if (!seen.has(id)) per[id.slice(0, 2)].missing.push(g.id);
-  const sum = (f) => KEYS.reduce((n, k) => n + per[k][f], 0);
+  const sum = (f) => keys.reduce((n, k) => n + per[k][f], 0);
   const rate = (n, d) => (d ? n / d : null);
-  for (const k of KEYS) {
+  for (const k of keys) {
     per[k].false_conflict_rate = rate(per[k].false_conflicts, per[k].negatives);
     per[k].recall = rate(per[k].correct, per[k].positives);
   }
@@ -96,7 +99,7 @@ export function measure({ read, gold, sideOf, judge, context = () => null }) {
 export function gate(m, threshold = THRESHOLD) {
   const fails = [];
   if (!m || m.all.compared === 0) return { pass: false, fails: ["NOTHING_COMPARED"] };
-  for (const k of KEYS) {
+  for (const k of Object.keys(m.per)) {
     const x = m.per[k];
     if (x.missing.length) fails.push(`KEY_NOT_COMPARED:${k}`);
     if (x.unlabelled.length) fails.push(`UNLABELLED_PAIR:${k}`);

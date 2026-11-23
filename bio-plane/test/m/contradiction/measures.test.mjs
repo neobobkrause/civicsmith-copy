@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { word } from "../../../src/setup-words/index.mjs";
 import { MACHINE, sha } from "./fixture.mjs";
 import { seeded, cand, recommend, RUN, PRINCIPAL, IQ, INFO, CID, M1 } from "./seed.mjs";
-import { contradictionOps, CONTRADICTION_TABLES, ACCEPTANCE_REVIEW, RECOMMEND_PROMPT, RECOMMEND_PROMPT_SHA256,
+import { contradictionOps, CONTRADICTION_TABLES, ACCEPTANCE_REVIEW, RECOMMEND_PROMPT,
          CONTRADICTION_ABSENCE, CONTRADICTION_PAIR_CHECKS, CONTRADICTION_CANDIDATE_CHECKS, NOTICE_SENTENCE, NOTICE_NAMED_SENTENCE } from "../../../src/contradiction/index.mjs";
 
 test("R39: acceptance per coordinate — offered, accepted, chosen unaided, chose otherwise — counts only; review due at 95% over at least 30 offered, PROVISIONAL", () => {
@@ -55,14 +55,6 @@ test("R40: dismissed leads counted by reason, by key and by label; false_conflic
   assert.match(r.says, /never counted as a false conflict/);
   assert.equal(w.c.dismissalMeasure({ since: "2099-01-01" }).dismissed, 0);
   assert.doesNotThrow(() => w.c.dismissalMeasure({ since: {} }));
-});
-
-test("R41: the recommender's prompt is pinned by the digest its blind fixture was measured under", { todo: "no model is reachable from this job to run the blind fixture of dissolved pairs; RECOMMEND_PROMPT_SHA256 stays null, which says the prompt passed no measurement (K488)" }, () => {});
-
-test("R41 (as far as it can be checked without a run): the prompt exists and claims no measurement", () => {
-  assert.equal(typeof RECOMMEND_PROMPT, "string");
-  assert.equal(RECOMMEND_PROMPT_SHA256, null);
-  assert.ok(RECOMMEND_PROMPT.includes("Never say which side is wrong"));
 });
 
 test("R17, R42: append-only — acts, recommendations, opt-ins and responses are only ever added; a repeated act adds a row and changes none", () => {

@@ -38,7 +38,8 @@
 import { readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -80,10 +81,11 @@ const nodeRes = {};
 for (const key of PAGES) nodeRes[key] = await tablesOnPage(bytesOf(key), Number(key.split("#")[1]));
 
 /* ── workerd arm ── */
-const { Miniflare } = await import("miniflare").catch(() =>
-  import(join(HERE, "../../bio-plane/node_modules/miniflare/dist/src/index.js")));
-const { build } = await import("esbuild").catch(() =>
-  import(join(HERE, "../../bio-plane/node_modules/esbuild/lib/main.js")));
+// miniflare and esbuild come only from test-support's manifest (bio-plane/package.json).
+const fromTestSupport = createRequire(join(HERE, "../../bio-plane/package.json"));
+const viaTestSupport = (name) => import(pathToFileURL(fromTestSupport.resolve(name)).href);
+const { Miniflare } = await viaTestSupport("miniflare");
+const { build } = await viaTestSupport("esbuild");
 const WORK = mkdtempSync(join(tmpdir(), "cpdf18-tables-"));
 const bundle = join(WORK, "tables.bundled.mjs");
 await build({ entryPoints: [join(HERE, "table-recognition-worker.mjs")], bundle: true, format: "esm",
