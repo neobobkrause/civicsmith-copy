@@ -16,11 +16,27 @@ import { DOCKET_PUBLIC } from "./docket-public.mjs";
 import { DOORBELL } from "./doorbell.mjs";
 import { REVIEW_OUTSIDE } from "./review-outside.mjs";
 
-/** R24 (K3366): the module holds no sentence of its own, so it has no rows of its own: every word is a key of `setup-words`. */
+/**
+ * One registry screen as interface-shell R21's contract takes it: its id, the parts handed to it as `view.parts`, its reads,
+ * where it sits, its drawing, its acts, and the keys of every word it may draw (R24).
+ * @typedef {Object} ScreenDef
+ * @property {string} id the registry screen's id
+ * @property {Object<string, *>} parts the screen parts handed to it as `view.parts`
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
+ * @property {(view: *) => Object} [place] where the screen sits in the path (its project), for the shell's crumbs
+ * @property {(cs: *, view: *) => string} render the screen's markup
+ * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
+ * @property {readonly string[]} words the keys of every word the screen may draw (R24)
+ */
+
+/** R24 (K3366): the module holds no sentence of its own, so it has no rows of its own: every word is a key of `setup-words`.
+ * @type {readonly string[]} */
 export const SCREEN_WORDS = Object.freeze([]);
 export { SCREEN_KEYS };
 
 /** interface-shell R21, R28: the nine screens, in the order a case travels (prepare, review, publish, read, import, the
- *  docket, the docket from outside, and the two doors from outside). Each screen's `words` is its keys (R24). */
-export const SCREENS = Object.freeze([CASE_EDITOR, REVIEW_COPY, CEREMONY, PUBLISHED, IMPORTED, DOCKET, DOCKET_PUBLIC, DOORBELL, REVIEW_OUTSIDE]
-  .map((s) => Object.freeze({ ...s, words: SCREEN_KEYS[s.id] })));
+ *  docket, the docket from outside, and the two doors from outside). Each screen's `words` is its keys (R24). The list and each
+ *  screen are frozen; the shell's page builders take the list as given (interface-shell R21), so it is stated as a list of screens.
+ */
+export const SCREENS = /** @type {Readonly<ScreenDef>[]} */ (/** @type {unknown} */ (Object.freeze([CASE_EDITOR, REVIEW_COPY, CEREMONY, PUBLISHED, IMPORTED, DOCKET, DOCKET_PUBLIC, DOORBELL, REVIEW_OUTSIDE]
+  .map((s) => Object.freeze({ ...s, words: SCREEN_KEYS[s.id] })))));
