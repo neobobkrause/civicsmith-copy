@@ -92,7 +92,9 @@ import { DECLARED_OPS as instanceSetup } from "../setup.mjs";
 import { DECLARED_OPS as storeDoor } from "../store-door/dispatch.mjs";
 import { DECLARED_OPS as signinDoor } from "../signin-door/index.mjs";
 
-/* module id → that module's `DECLARED_OPS`, in `build/modules.json`'s order */
+/** module id → that module's `DECLARED_OPS`, in `build/modules.json`'s order. A row is as its owner states it; the
+ *  registrations judge each row (op-declarations R80, op-grades R49).
+ *  @type {Readonly<Object<string, Readonly<Object<string, any>>>>} */
 export const OWNERS = Object.freeze({
   "member-roster": memberRoster,
   "record-core": recordCore,
@@ -181,7 +183,11 @@ export const OWNERS = Object.freeze({
 /** R83: every owner's declaration handed to both registrations, in order. `owners` is `{module id: DECLARED_OPS}` (this
  *  module's own `OWNERS` by default); `registrars` the registrations to call (the two above by default; a test hands its
  *  own). Refused before any registration is called, naming the op and both modules, when an op is in two modules' rows;
- *  a registration's own refusal (a disagreement with a hand row, a late call) passes through unchanged. Answers `owners`. */
+ *  a registration's own refusal (a disagreement with a hand row, a late call) passes through unchanged. Answers `owners`.
+ *  @param {Readonly<Object<string, Readonly<Object<string, any>>>>} [owners]
+ *  @param {ReadonlyArray<(owners: Readonly<Object<string, Readonly<Object<string, any>>>>) => unknown>} [registrars]
+ *  @returns {Readonly<Object<string, Readonly<Object<string, any>>>>} `owners`
+ *  @throws {TypeError} when an op is declared by two modules, naming the op and both modules */
 export function assembleDeclaredOps(owners = OWNERS, registrars = [registerOpDeclarations, registerOpGrades]) {
   const held = new Map();
   for (const [id, ops] of Object.entries(owners)) {

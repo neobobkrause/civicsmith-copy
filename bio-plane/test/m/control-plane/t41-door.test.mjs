@@ -110,7 +110,7 @@ test("R70 (membership R124; R17, R29): `handlechange` reaches membership's map f
 /* the door's own map (`controlPlaneOwnerOps`) serves steps', investigation's and question-explorer's ops and the owners'
    that export a service and no arm; the owners' own maps serve the rest of R43's declarations (hypotheses' shares,
    inquiry's waits, run-productions', reading-guides'): every op of those families the T41 grades that a session alone reaches */
-const DOOR_OPS = Object.keys(controlPlaneOwnerOps(null, new URL("http://do/"), null));
+const DOOR_OPS = Object.keys(controlPlaneOwnerOps({}, new URL("http://do/"), null));   /* the arms are listed, none is called: no owner is asked */
 const R71_SESSION_OPS = [...new Set([
   ...DOOR_OPS.filter((op) => kindsOf("steps", "investigation", "question-explorer", "leg-earning", "case-account", "review", "ai-runs", "ai-use").includes(op)),
   ...kindsOf("hypotheses", "inquiry", "run-productions", "reading-guides")])].filter((op) => T41_GRADED.has(op) && sessionOnly(op));
