@@ -22,6 +22,9 @@
     "bio-plane/src/screens-action/start-send.mjs"
   ],
   "uses": [
-    "op-declarations"
+    "setup-words",
+    "op-declarations",
+    "store-request",
+    "interface-shell"
   ]
 }

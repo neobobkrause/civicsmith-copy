@@ -59,33 +59,177 @@ export { START_ROUTES, MATCH_KINDS, MATCHES_MAX, PARTS_MAX, matchesOf, proposeSt
 export { checkDraft, writingHelpAt, helpRefusedActs, isReasonField, factsOf, sentencesOf, FIRSTHAND_ACTS, HELP_NAMED_REFUSED, HELP_SET_TIME_REFUSED,
          WRITING_HELP_NAMED, TOLD_MAX, KEPT_AWAY } from "./writing-help.mjs";
 
+/** @import { RegistryScreen, LibraryScript } from "./data.mjs" */
+/**
+ * @typedef {Set<string> | readonly unknown[] | Object<string, unknown> | null} NameList names: a Set of names, a list (each
+ *  a name, or an object naming one by `op` or `name`) or an object keyed by name; null, or anything else, is no names
+ */
+/**
+ * @typedef {RegistryScreen | Object<string, unknown>} ScreenGiven a screen handed to the registration, in RegistryScreen's
+ *  form; an entry that is not an object with an id is left out
+ */
+/**
+ * @typedef {LibraryScript | object} ScriptGiven a library script handed to the registration, in
+ *  LibraryScript's form; an entry that is not an object with an id is left out
+ */
+/**
+ * @typedef {Object} CanonicalStep a step in canonical form (R1, R2), as stored and hashed
+ * @property {string | null} screen
+ * @property {string | null} act null when none
+ * @property {string} what
+ * @property {string} why
+ * @property {unknown} [draft] present only when given: `{text}`, `{template}` or `{machine}`, or as given when none of them
+ * @property {unknown} [via] present only when given: the side trip's script id
+ */
+/**
+ * @typedef {Object} LibraryVersion one version of a registered library script (R1, R22)
+ * @property {number} version
+ * @property {CanonicalStep[]} steps
+ * @property {string} author
+ * @property {{by: unknown, at: unknown, ruling?: unknown}} approved
+ * @bound version: whole number, 1 or more
+ */
+/**
+ * @typedef {Object} LibraryEntry a registered library script: its latest version's parts, and every version (R1, R22)
+ * @property {string | null} id its id, trimmed (an entry with none is never registered, so never null in fact)
+ * @property {string} name
+ * @property {boolean} required
+ * @property {number} version
+ * @property {CanonicalStep[]} steps
+ * @property {string} author
+ * @property {{by: unknown, at: unknown, ruling?: unknown}} approved
+ * @property {readonly LibraryVersion[]} versions oldest first
+ */
+/**
+ * @typedef {Object} Registration a registration's parts, normalised (R13)
+ * @property {Map<string, Set<string>>} screens each screen's registered acts, by screen id
+ * @property {Set<string> | null} ops the member op table, or null when none was given
+ * @property {Set<string>} machineRefused
+ * @property {Set<string>} machineDrafts
+ * @property {Set<string>} irreversible
+ * @property {LibraryEntry[]} library
+ * @property {Set<string>} adminActs
+ * @property {Set<string>} adminScreens
+ * @property {Set<string>} [helpRefused] the acts the assistant never helps word (R24); set once the parts are normalised,
+ *  always present on what `normaliseRegistration` answers
+ * @property {Set<string>} [withheld] the ids of the library scripts R12 refuses (R11); likewise
+ */
+/**
+ * @typedef {Object} RegistrationParts what a registration is made of (R13)
+ * @property {readonly ScreenGiven[]} [screens]
+ * @property {NameList} [ops] the member op table; null or absent when none
+ * @property {NameList} [machineRefused]
+ * @property {NameList} [machineDrafts]
+ * @property {NameList} [irreversible]
+ * @property {readonly ScriptGiven[]} [library]
+ * @property {NameList} [adminActs]
+ * @property {NameList} [adminScreens]
+ */
+/**
+ * @typedef {Object} OfferedScript an offered script as R12 compares against it, `{id, steps}`; one whose id is not a
+ *  string is left out of the side trips, and steps that are not a list are none
+ * @property {unknown} [id]
+ * @property {unknown} [steps]
+ */
+/**
+ * @typedef {Object} CheckOptions what R12 checks a step list against
+ * @property {Map<string, Set<string>> | readonly ScreenGiven[]} [screens] a registration's screens, or the screens to register
+ * @property {NameList} [ops]
+ * @property {NameList} [machineRefused]
+ * @property {NameList} [machineDrafts]
+ * @property {NameList} [irreversible]
+ * @property {readonly OfferedScript[]} [offered]
+ * @property {((ref: string) => unknown) | null} [templateOffered] true when filing-templates offers the template named
+ * @property {string | null} [self] the id of the script checked
+ */
+/**
+ * @typedef {Object} Finding one refusal or warning of R12, naming its step
+ * @property {string} code
+ * @property {number | null} step from 1; null for the list
+ * @property {string} check
+ * @property {string} translation
+ * @property {string} detail
+ * @property {unknown} [script] `WIZARD_DUPLICATE`'s: the offered script it duplicates
+ */
+/**
+ * @typedef {Object} CheckResult R12's answer
+ * @property {Finding[]} refusals
+ * @property {Finding[]} warnings
+ */
+/**
+ * @typedef {Object} RequiredFailure a required library script R12 refuses (R14)
+ * @property {string | null} id as LibraryEntry's: never null in fact
+ * @property {string} version `<id>@<n>`
+ * @property {string} name
+ * @property {Finding} refusal its first refusal
+ */
+/**
+ * @typedef {{ok: boolean, reason?: string, code?: string, check?: string, translation?: string, detail?: unknown} & Object<string, any>} Answer
+ *  a read's or an act's answer: `{ok: true, ...}`, or a refusal `{ok: false, reason, code, check, translation, detail, ...}`
+ *  (DEC-49); a refusal another module answered passes through as it came
+ */
+/**
+ * @typedef {Object} OpDeclaration one op this module declares (R46)
+ * @property {string[]} classes
+ * @property {string[]} [machineClasses]
+ * @property {boolean} mutating
+ * @property {string} weight
+ * @property {string} description
+ * @property {{accepts: string[], requires: (string | string[])[]}} fields
+ */
+
 /* ---------------------------------------------------------------- the vocabularies */
 
-/** The Terms: a version's states. */
+/** The Terms: a version's states.
+ *  @type {readonly string[]} */
 export const WIZARD_STATES = Object.freeze(["draft", "submitted", "approved", "updated", "withdrawn"]);
-/** R1: where a script comes from (`imported` reserved, never written in this version; DEC-121 (8)). */
+/** R1: where a script comes from (`imported` reserved, never written in this version; DEC-121 (8)).
+ *  @type {readonly string[]} */
 export const WIZARD_ORIGINS = Object.freeze(["civicsmith", "group", "imported"]);
-/** R15: the events counted. There is no abandon event: stopping is a non-event (K1364 B4). */
+/** R15: the events counted. There is no abandon event: stopping is a non-event (K1364 B4).
+ *  @type {readonly string[]} */
 export const WIZARD_EVENTS = Object.freeze(["start", "step", "finish"]);
-/** R10: what `state` may ask for instead of the offered versions. */
+/** R10: what `state` may ask for instead of the offered versions.
+ *  @type {readonly string[]} */
 export const WIZARDS_STATES_LISTED = Object.freeze(["draft", "submitted", "withdrawn", "retired", "broken", "proposed"]);
-/** R2: a draft's three sources. */
+/** R2: a draft's three sources.
+ *  @type {readonly string[]} */
 export const DRAFT_SOURCES = Object.freeze(["text", "template", "machine"]);
-/** R2: a step's keys (`via`, a side trip, since T34; DEC-139 (4)). */
+/** R2: a step's keys (`via`, a side trip, since T34; DEC-139 (4)).
+ *  @type {readonly string[]} */
 export const STEP_KEYS = Object.freeze(["screen", "act", "what", "why", "draft", "via"]);
-/** R13, R24: the two machine drafts whose exception for a refused act R12 does not grant (DEC-153 (4); K1818). */
+/** R13, R24: the two machine drafts whose exception for a refused act R12 does not grant (DEC-153 (4); K1818).
+ *  @type {readonly string[]} */
 export const HELP_DRAFTS = Object.freeze(["writinghelp", "groupdescriptiondraft"]);
 
 /* ---------------------------------------------------------------- bounds */
 
+/** R1: the most characters in a script's name.
+ *  @type {number} */
 export const WIZARD_NAME_MAX = 200;        // R1
+/** R2: the most characters in a step's `what` or `why`.
+ *  @type {number} */
 export const STEP_TEXT_MAX = 300;          // R2: what, why
+/** R2: the most characters in a `{text}` draft.
+ *  @type {number} */
 export const DRAFT_TEXT_MAX = 4000;        // R2: {text}
+/** R2: the most steps a script holds.
+ *  @type {number} */
 export const STEPS_MAX = 200;              // R2: a script's steps (a bound on what is stored)
+/** R5: the most characters in a proposal's `why`.
+ *  @type {number} */
 export const PROPOSAL_WHY_MAX = 1000;      // R5
+/** R9: the most characters in a retirement's or withdrawal's reason.
+ *  @type {number} */
 export const ENDING_REASON_MAX = 500;      // R9
+/** R10: the most scripts `wizards` lists.
+ *  @type {number} */
 export const WIZARDS_MAX = 200;            // R10
+/** R13, R17: the most entries on one page.
+ *  @type {number} */
 export const PAGE_MAX = 500;               // R13, R17
+/** R16: the most drops, and the most refused pairs, `wizardCandidates` answers.
+ *  @type {number} */
 export const CANDIDATES_MAX = 20;          // R16
 const NAME_FIELD_MAX = 200;                // a screen's, an act's, an op's or a code's name
 
@@ -101,10 +245,12 @@ const textUpTo = (v, max, min = 1) => typeof v === "string" && v.trim().length >
 const clamp = (v, dflt, max) => { const n = Math.floor(Number(v)); return v !== null && v !== undefined && v !== "" && Number.isFinite(n) ? Math.min(Math.max(n, 1), max) : dflt; };
 const truthy = (v) => v === true || v === "true" || v === "1" || v === 1;
 const OFFERED = Object.freeze(["approved"]);
-/** R24, R27 (K2592; `ai-accounts` R7): the use a writing-help draft is, as the keep-away is asked of it. */
+/** R24, R27 (K2592; `ai-accounts` R7): the use a writing-help draft is, as the keep-away is asked of it.
+ *  @type {string} */
 export const KEEP_AWAY_USE = "draft";
 /** R34 (T47; N984; `run-rules` R29, `plane` R40's `DRAFT_KIND_OF`): the AI part a writing-help draft is, whose admission
- *  carries the test-instance label. */
+ *  carries the test-instance label.
+ *  @type {string} */
 export const WRITING_HELP_PART = "draft:own_words";
 /* R4: how a revision that took a copy's base's newer version records it in `wiz_revisions.adopted` (a proposal id never
    starts so). */
@@ -112,6 +258,10 @@ const BASE_ADOPTION = "base:";
 
 /* DEC-49: a refusal of this module's own carries its code, its row and the member's translation; one another module
    answered (membership's `NOT_AN_ADMIN`) passes through as it came. */
+/** DEC-49: `r` with its row added when it is a refusal of this module's own (`{ok: false, reason}` with no `check`) whose
+ *  code has a row; anything else, as given. Never throws.
+ *  @param {any} r any answer, or anything else
+ *  @returns {any} */
 export function withRow(r) {
   if (!r || typeof r !== "object" || r.ok !== false || typeof r.reason !== "string" || r.check) return r;
   const row = rowOf(r.reason);
@@ -119,9 +269,14 @@ export function withRow(r) {
 }
 const refuse = (code, detail, extra) => withRow({ ok: false, reason: code, code, detail, ...(extra || {}) });
 
-/** A version's id, `<script>@<version>` (the Terms). */
+/** A version's id, `<script>@<version>` (the Terms).
+ *  @param {unknown} script the script's id
+ *  @param {number | string} version
+ *  @returns {string} */
 export const versionId = (script, version) => `${script}@${version}`;
-/** The parts of a version id, or null. */
+/** The parts of a version id, or null (anything not `<script>@<n>`, `n` a whole number from 1).
+ *  @param {unknown} v
+ *  @returns {{script: string, version: number} | null} */
 export function parseVersionId(v) {
   const m = typeof v === "string" ? VERSION_RE.exec(v.trim()) : null;
   return m ? { script: m[1], version: Number(m[2]) } : null;
@@ -149,9 +304,14 @@ function canonicalStep(s) {
   if (o.via !== undefined && o.via !== null && o.via !== "") out.via = typeof o.via === "string" ? o.via.trim() : o.via;
   return out;
 }
-/** R1: the steps in canonical form, as stored and hashed. */
+/** R1: the steps in canonical form, as stored and hashed; anything not a list is no steps.
+ *  @param {unknown} steps
+ *  @returns {CanonicalStep[]} */
 export function canonicalSteps(steps) { return (Array.isArray(steps) ? steps : []).map(canonicalStep); }
-/** R1: the SHA-256 (lowercase hex) of the steps in canonical form. */
+/** R1: the SHA-256 (lowercase hex) of the steps in canonical form.
+ *  @param {unknown} steps
+ *  @returns {string}
+ *  @bound the result: 64 lower-case hexadecimal characters */
 export function stepsSha(steps) { return sha256HexSync(JSON.stringify(canonicalSteps(steps))); }
 /* A step's `(screen, act)` pair, as a key. */
 const pairKey = (s) => `${isObj(s) && typeof s.screen === "string" ? s.screen : ""}\u0000${isObj(s) && typeof s.act === "string" ? s.act : ""}`;
@@ -221,7 +381,9 @@ function screenActs(s, ops) {
   return nameSet(ops ? acts.filter((a) => ops.has(a)) : acts);
 }
 /** R13: a registration's parts, normalised: the screens by id, the ops (null when none was given), the acts a machine is
- *  refused, the labelled machine drafts and the library. */
+ *  refused, the labelled machine drafts and the library. Never throws: an entry that is not one is left out.
+ *  @param {RegistrationParts} [parts]
+ *  @returns {Registration} */
 export function normaliseRegistration({ screens = [], ops = null, machineRefused = [], machineDrafts = [], irreversible = [],
                                         library = [], adminActs = [], adminScreens = [] } = {}) {
   const opSet = ops === null || ops === undefined ? null : nameSet(ops);
@@ -284,9 +446,14 @@ function viaRefusal(via, self, steps, offered) {
 /** R12 (pure; `op=wizardcheck`): the refusals and warnings of a step list against a registration, each naming its step
  *  (from 1; null for the list). `templateOffered(ref)`, when given, says whether a `{template}` draft names a version
  *  filing-templates offers (its R25); `offered` is the offered scripts, `[{id, steps}]`, for `WIZARD_DUPLICATE` and a
- *  step's side trip (`via`); `self` the id of the script checked, if it has one. Never throws on a list; never writes. */
+ *  step's side trip (`via`); `self` the id of the script checked, if it has one. Never throws on a list; never writes.
+ *  Anything not a non-empty list is refused, `WIZARD_NO_STEPS`.
+ *  @param {unknown} steps
+ *  @param {CheckOptions} [options]
+ *  @returns {CheckResult} */
 export function checkScript(steps, { screens = [], ops = null, machineRefused = [], machineDrafts = [], irreversible = [], offered = [],
                                      templateOffered = null, self = null } = {}) {
+  /** @type {Object<string, any>} the registration's parts as checked here */
   const reg = screens instanceof Map ? { screens, ops: ops instanceof Set || ops === null ? ops : nameSet(ops),
                                          machineRefused: nameSet(machineRefused), machineDrafts: nameSet(machineDrafts) }
     : normaliseRegistration({ screens, ops, machineRefused, machineDrafts, irreversible });
@@ -348,7 +515,9 @@ function safe(fn) { try { return fn(); } catch { return null; } }
 
 /** R14 (pure; the plane's release suite): each required script of the library that R12 refuses, with its first
  *  refusal; `[]` when every one passes. A `{template}` draft is judged by shape only: no filing template is held at
- *  release. */
+ *  release.
+ *  @param {RegistrationParts} [parts]
+ *  @returns {RequiredFailure[]} */
 export function requiredFailures({ screens = [], ops = null, machineRefused = [], machineDrafts = [], irreversible = [], library = [] } = {}) {
   const reg = normaliseRegistration({ screens, ops, machineRefused, machineDrafts, irreversible, library });
   const offered = reg.library.map((e) => ({ id: e.id, steps: e.steps }));
@@ -372,7 +541,13 @@ function pointerOf(v) {
 
 /* ================================================================ the module */
 
+/** The module's one instance per host (K61), reached as `wizardScriptsOf(host, deps)`. Its reads and acts answer refusals
+ *  as values, `{ok: false, ...}` with code, check and translation (DEC-49), and never throw for a refusal. */
 export class WizardScripts {
+  /** @param {{storage?: any, record?: any, membership?: any, filingTemplates?: any, accounts?: any, aiRuns?: any,
+   *           now?: (() => number) | null, env?: any}} [deps] `storage` (its `sql`), `record` and `membership` needed;
+   *  `accounts` and `aiRuns` each the module or a function reaching it on first need; `now` the instance clock in
+   *  milliseconds; `env` the instance's environment (`BIO_NOW_MS`) */
   constructor({ storage, record, membership, filingTemplates = null, accounts = null, aiRuns = null, now = null, env = null } = {}) {
     this.sql = storage.sql;
     this.record = record;
@@ -386,6 +561,8 @@ export class WizardScripts {
     this.door = null;   /* R23: the front door's finder and pointer, handed in at registration */
   }
 
+  /** Creates the module's tables when absent.
+   *  @returns {void} */
   migrate() { migrateWizardScripts(this.sql); }
 
   #rows(q, ...a) { return [...this.sql.exec(q, ...a)]; }
@@ -786,7 +963,10 @@ export class WizardScripts {
   /** R13 (in-process; `plane` R19): the screen registry, the member op table, the acts a machine is refused, the labelled
    *  machine drafts and the Civicsmith library, once per construction, before the first request. Every offered group
    *  script is checked again: one that fails is recorded `broken` with its first refusal, one that passes again is
-   *  recorded as returned. */
+   *  recorded as returned. A second call answers `WIZARD_ALREADY_REGISTERED`. `door` is R23's `{findExisting(message,
+   *  viewer), pointer(viewer)}`, each optional.
+   *  @param {RegistrationParts & {door?: any}} [parts]
+   *  @returns {Answer} `{ok: true, screens, library, broken, returned}` (`broken`, `returned` version ids), or the refusal */
   wizardRegister({ screens = SCREEN_REGISTRY, ops = null, machineRefused = [], machineDrafts = [], irreversible = [],
                    library = CIVICSMITH_LIBRARY, door = null, adminActs = [], adminScreens = [] } = {}) {
     /* DEC-49 REGION is-wizard-register */
@@ -823,7 +1003,8 @@ export class WizardScripts {
   }
 
   /** R13 (for `affordances` R37): the screen registry as registered, `[{id, acts}]` (an owed act among them once its op is
-   *  declared); `[]` before registration. */
+   *  declared); `[]` before registration.
+   *  @returns {{id: string, acts: string[]}[]} */
   registeredScreens() {
     return [...this.#registration().screens].map(([id, acts]) => ({ id, acts: [...acts] }));
   }
@@ -832,7 +1013,10 @@ export class WizardScripts {
    *  the viewer may see, `{script, version, kind, at, name, project, author, refusal}` (`version` the number, `project`
    *  null for a group-wide script, `author` the version's author, `refusal` the first refusal's `{code, check,
    *  translation}` or null for a return), at most 500 per page in (instant, version) order after `after` (a previous
-   *  page's `cursor`). Writes nothing. */
+   *  page's `cursor`). Writes nothing.
+   *  @param {{after?: unknown, limit?: unknown, viewer?: string | null}} [args] `limit` a whole number, else the most
+   *  @returns {Answer} `{ok: true, entries, limit, truncated, cursor}`
+   *  @bound limit: 1 to 500; a page holds at most 500 entries */
   brokenScripts({ after = null, limit = null, viewer = null } = {}) {
     const max = clamp(limit, PAGE_MAX, PAGE_MAX);
     const from = str(after);
@@ -881,7 +1065,13 @@ export class WizardScripts {
   /** R3 (`op=wizarddraft`): a new script and its first draft, from a recording, a proposal or (with a live editor grant)
    *  nothing; or a new draft version of the script `from` names (an approved version, or a proposal for the script); or,
    *  with `copy`, a new script of the project copied from any approved version the author may see, recording its base
-   *  (`based_on`; DEC-158), its pairs the draft's recorded pairs, its base unchanged and still offered. */
+   *  (`based_on`; DEC-158), its pairs the draft's recorded pairs, its base unchanged and still offered. `recorded` is a
+   *  list of `{screen, act}`; anything else is refused, `WIZARD_STEP_REFUSED`.
+   *  @param {{project?: unknown, name?: unknown, recorded?: any, from?: unknown, copy?: unknown, author?: string | null,
+   *           viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, script, version, sha, state: "draft", derived_from?, based_on?, says}`, or a refusal
+   *  @bound name: 1 to 200 characters, one line
+   *  @bound recorded: at most 200 steps */
   wizardDraft({ project = null, name = null, recorded = undefined, from = null, copy = null, author = null, viewer = null } = {}) {
     const machine = this.#machine("draft", author);
     if (machine) return machine;
@@ -956,7 +1146,11 @@ export class WizardScripts {
   /* ================================================================ R4: wizardRevise */
 
   /** R4 (`op=wizardrevise`): a new revision of a draft's steps (or a proposal's, `adopt`), every earlier one kept. Without
-   *  a live editor grant the steps may reword, delete or reorder the version's own pairs, never add one. */
+   *  a live editor grant the steps may reword, delete or reorder the version's own pairs, never add one. `adopt` is a
+   *  proposal's id, or `{base}`, a newer version of a copy's base; steps that are not R2's are refused.
+   *  @param {{version?: unknown, steps?: unknown, adopt?: any, author?: string | null, viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, version, sha, state: "draft", adopted?, adopted_base?, revisions}`, or a refusal
+   *  @bound steps: at most 200; what, why: at most 300 characters each; a {text} draft: 1 to 4000 characters */
   wizardRevise({ version = null, steps = undefined, adopt = null, author = null, viewer = null } = {}) {
     const machine = this.#machine("draft", author);
     if (machine) return machine;
@@ -1007,7 +1201,12 @@ export class WizardScripts {
   /* ================================================================ R5: wizardPropose */
 
   /** R5 (`op=wizardpropose`): any credential proposes steps, for a project or for a named script, stored apart and
-   *  labelled; they are a script's only when a member names the proposal as `from` or adopts it. */
+   *  labelled; they are a script's only when a member names the proposal as `from` or adopts it.
+   *  @param {{project?: unknown, script?: unknown, steps?: unknown, why?: any, proposer?: unknown, viewer?: string | null,
+   *           run?: unknown, model?: unknown}} [args] `why` a text; anything else is refused, `WIZARD_WHY_REFUSED`
+   *  @returns {Answer} `{ok: true, proposal: {id, project, script, sha, why, at, label}, evidence: false, says}`, or a refusal
+   *  @bound why: 1 to 1000 characters
+   *  @bound steps: 1 to 200 */
   wizardPropose({ project = null, script = null, steps = undefined, why = null, proposer = null, viewer = null,
                   run = null, model = null } = {}) {
     const who = str(proposer);
@@ -1046,7 +1245,9 @@ export class WizardScripts {
 
   /* ================================================================ R6: wizardSubmit */
 
-  /** R6 (`op=wizardsubmit`): a draft is submitted, its steps and sha fixed, once R12 passes against the registration. */
+  /** R6 (`op=wizardsubmit`): a draft is submitted, its steps and sha fixed, once R12 passes against the registration.
+   *  @param {{version?: unknown, author?: string | null, viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, version, state: "submitted", sha, warnings}`, or a refusal (R12's with every refusal) */
   wizardSubmit({ version = null, author = null, viewer = null } = {}) {
     const machine = this.#machine("draft", author);
     if (machine) return machine;
@@ -1073,7 +1274,11 @@ export class WizardScripts {
 
   /** R7 (`op=wizardapprove`): an owner of the script's project (an administrator, for a group-wide script) approves a
    *  submitted version, the earlier approved one then `updated`; with `widen`, an administrator makes an approved
-   *  project script group-wide. No review step precedes approval. */
+   *  project script group-wide. No review step precedes approval.
+   *  @param {{version?: unknown, widen?: unknown, by?: string | null, viewer?: string | null}} [args] `widen` true, "true",
+   *  "1" or 1 to widen
+   *  @returns {Answer} `{ok: true, version, state: "approved", approved, updated, warnings, says}`; with `widen`, `{ok:
+   *  true, script, existed, scope: "group", widened}`; or a refusal */
   wizardApprove({ version = null, widen = false, by = null, viewer = null } = {}) {
     const machine = this.#machine("approve", by);
     if (machine) return machine;
@@ -1126,7 +1331,9 @@ export class WizardScripts {
   /* ================================================================ R8: editor grants */
 
   /** R8 (`op=wizardeditorgrant`): an administrator grants a member the advanced editor; a member already holding a live
-   *  grant answers it, `existed: true`. */
+   *  grant answers it, `existed: true`.
+   *  @param {{member?: unknown, by?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, grant, existed, member, by, at}`, or a refusal */
   wizardEditorGrant({ member = null, by = null } = {}) {
     const admin = this.#member(by);
     if (!this.#isAdmin(admin)) return notAnAdmin(str(by), word("wizard-scripts.refusal.grant_admin_action"));
@@ -1149,7 +1356,9 @@ export class WizardScripts {
     });
   }
 
-  /** R8 (`op=wizardeditorrevoke`): an administrator revokes a grant, appended; a second revocation answers the first. */
+  /** R8 (`op=wizardeditorrevoke`): an administrator revokes a grant, appended; a second revocation answers the first.
+   *  @param {{grant?: unknown, by?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, grant, existed, revoked}`, or a refusal */
   wizardEditorRevoke({ grant = null, by = null } = {}) {
     const admin = this.#member(by);
     if (!this.#isAdmin(admin)) return notAnAdmin(str(by), word("wizard-scripts.refusal.revoke_admin_action"));
@@ -1168,7 +1377,10 @@ export class WizardScripts {
   /* ================================================================ R9: wizardRetire */
 
   /** R9 (`op=wizardretire`): without `version`, an approver of its scope retires the whole script; with it, its author
-   *  withdraws a draft or submitted version. Nothing is deleted. */
+   *  withdraws a draft or submitted version. Nothing is deleted. `reason` a text; anything else is refused.
+   *  @param {{script?: unknown, version?: unknown, reason?: any, by?: string | null, viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, script, retired, says}` or `{ok: true, version, state: "withdrawn", withdrawn}`, or a refusal
+   *  @bound reason: 1 to 500 characters */
   wizardRetire({ script = null, version = null, reason = null, by = null, viewer = null } = {}) {
     const machine = this.#machine("approve", by);
     if (machine) return machine;
@@ -1248,7 +1460,11 @@ export class WizardScripts {
    *  the viewer may see, to every member (R39: the Civicsmith library and each approved group script she may run, with
    *  its name, whose, `based_on` and finished count); `state` lists instead drafts, submitted, withdrawn, retired or
    *  broken versions, or open proposals (`proposed`), to the scripts' project owners and the administrators (a member's
-   *  own drafts also to her). Writes nothing. */
+   *  own drafts also to her). Writes nothing.
+   *  @param {{state?: unknown, viewer?: string | null}} [args] `state` "offered" (the default) or one of WIZARDS_STATES_LISTED
+   *  @returns {Answer} `{ok: true, state, scripts, truncated}`, or for `proposed` `{ok: true, state, truncated, proposals,
+   *  says}`, or `WIZARDS_STATE_REFUSED`
+   *  @bound scripts, proposals: at most 200 */
   wizards({ state = null, viewer = null } = {}) {
     const st = str(state);
     /* DEC-49 REGION is-wizards-state */
@@ -1289,7 +1505,9 @@ export class WizardScripts {
   }
 
   /** R10 (`op=wizardread`): one version (the latest approved by default, else the latest) with its steps and its whole
-   *  attribution. Writes nothing. */
+   *  attribution. Writes nothing.
+   *  @param {{script?: unknown, version?: unknown, viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, script, version, offered}`, or `NO_SUCH_WIZARD` */
   wizardRead({ script = null, version = null, viewer = null } = {}) {
     const named = str(script) ?? parseVersionId(version)?.script ?? null;
     const s = this.#script(named, viewer);
@@ -1309,7 +1527,9 @@ export class WizardScripts {
   /* ================================================================ R11: wizardsAt */
 
   /** R11 (`op=wizardsat`): the offered scripts the viewer may see whose first step is on `screen`, and the viewer's own
-   *  drafts that start there (`draft: true`). An unknown screen answers none. Needs no AI credential and no key. */
+   *  drafts that start there (`draft: true`). An unknown screen answers none. Needs no AI credential and no key.
+   *  @param {{screen?: unknown, viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, screen, scripts}` */
   wizardsAt({ screen = null, viewer = null } = {}) {
     const sc = str(screen);
     if (!sc || !this.#registration().screens.has(sc)) return { ok: true, screen: sc, scripts: [] };
@@ -1348,7 +1568,9 @@ export class WizardScripts {
    *  true` for the viewer's own draft), a step's `via` its side trip's script id or null (DEC-139 (4)), its `draft` its
    *  kind alone (`text`, `template` or `machine`), never its words, template or op, and `based_on` R1's with its base's
    *  name or null (DEC-158 (4)). Before registration `{registered: false, screens: []}`. Needs no AI credential and no
-   *  key; runs nothing, records no use and writes nothing. */
+   *  key; runs nothing, records no use and writes nothing.
+   *  @param {{viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, registered, screens}` */
   wizardRegistry({ viewer = null } = {}) {
     if (!this.reg) return { ok: true, registered: false, screens: [] };
     const byStart = new Map();
@@ -1380,7 +1602,10 @@ export class WizardScripts {
    *  (`START_ROUTES`, "not Civicsmith's" carrying the registered pointer for this viewer, `{places, pointers}`, or null); `blank: true` (a blank start is always allowed); `matches`, the
    *  existing work the registered finder answers for `message` as this viewer may see it (`[]` with no message or no
    *  finder); and, when the assistant's reading `parts` of the message is given, `proposal`, R28's. Needs no AI
-   *  credential and no key; starts nothing, records no use, writes nothing. */
+   *  credential and no key; starts nothing, records no use, writes nothing.
+   *  @param {{viewer?: string | null, message?: unknown, parts?: unknown}} [args]
+   *  @returns {Answer} `{ok: true, scripts, doors, routes, blank: true, matches, proposal?}`
+   *  @bound message: the first 4000 characters are read */
   startFrom({ viewer = null, message = null, parts = undefined } = {}) {
     /* R40: a library script whose first step is an administrator's (its act among the registration's `adminActs`, or with
        no act on an `adminScreens` screen) is offered only to a viewer who administers (membership R92) */
@@ -1451,7 +1676,10 @@ export class WizardScripts {
    *  [member ids], steps: {copy, base}}` (`found_at` the instant the pair was first found, the one thing this writes),
    *  each pair once, at most 500 per page in (instant, copy, base version) order after `after` (a previous page's
    *  `cursor`), with `cursor` and `truncated`. Nothing is applied to a copy: the change is brought across only by a
-   *  member's own revision (R4's `adopt: {base}`). */
+   *  member's own revision (R4's `adopt: {base}`).
+   *  @param {{after?: unknown, limit?: unknown, viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, entries, cursor, truncated}`
+   *  @bound limit: 1 to 500; a page holds at most 500 entries */
   baseUpdates({ after = null, limit = null, viewer = null } = {}) {
     const max = clamp(limit, PAGE_MAX, PAGE_MAX);
     const at = this.#when();
@@ -1486,7 +1714,9 @@ export class WizardScripts {
   /** R24 (in-process): whether the assistant may help word `field` of `op` for this viewer, `{offered: true}` or
    *  `{offered: false, code}`: first `AI_KEPT_AWAY` while `ai-accounts.aiKeptAway()` answers its refusal (read here, at
    *  the call; T37, N765), then `AI_NO_ACCOUNT` where `assistant.account` names none, then the registration's refused
-   *  and irreversible acts. Writes nothing; never throws. */
+   *  and irreversible acts. Writes nothing; never throws.
+   *  @param {{op?: unknown, field?: unknown, draftHeld?: unknown, assistant?: unknown} | null} [args]
+   *  @returns {{offered: boolean, code?: string}} */
   writingHelpAt(args = {}) {
     return this.#helpAt(args, this.#keptAway());
   }
@@ -1497,7 +1727,8 @@ export class WizardScripts {
 
   /** R24 (in-process; B3, K1861 (1): `affordances` R44 reads it through `op=affordancescreens`): the acts the assistant
    *  never helps word, `{named, machine_refused, irreversible}`: `named` this module's frozen list, the other two as
-   *  handed to `wizardRegister`, in registration order (`[]` before registration). */
+   *  handed to `wizardRegister`, in registration order (`[]` before registration).
+   *  @returns {{named: readonly string[], machine_refused: string[], irreversible: string[]}} */
   writingHelpRefused() {
     const reg = this.reg;
     return { named: WRITING_HELP_NAMED, machine_refused: reg ? [...reg.machineRefused] : [], irreversible: reg ? [...reg.irreversible] : [] };
@@ -1514,7 +1745,11 @@ export class WizardScripts {
    *  K1837), `ASSISTANT_DRAFT_UNAVAILABLE`, the field unchanged, the answer the door turns into the draft (control-plane
    *  R57). (T47; R34) That answer carries `untested`, the test-instance label as `ai-runs` answers it for the part
    *  `draft:own_words` (`#untested`), when the part is admitted on the exception, and nothing otherwise; no refusal
-   *  carries it. Writes nothing. */
+   *  carries it. Writes nothing.
+   *  @param {any} [args] `{op, field, told, draftHeld, assistant}`, `told` a text or a list of texts; anything not an
+   *  object is read as no fields
+   *  @returns {Answer} always a refusal while the assistant's model turn does not exist
+   *  @bound told: 1 to 4000 characters */
   writingHelp(args = {}) {
     const { op = null, field = null, told = null, draftHeld = false, assistant = null } = isObj(args) ? args : {};
     const away = this.#keptAway();
@@ -1541,7 +1776,9 @@ export class WizardScripts {
     /* END DEC-49 REGION is-writing-help-request */
   }
 
-  /** R12 (`op=wizardcheck`): `checkScript` against the registration, for any credential, `ai` included. Writes nothing. */
+  /** R12 (`op=wizardcheck`): `checkScript` against the registration, for any credential, `ai` included. Writes nothing.
+   *  @param {{steps?: unknown, viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, refusals, warnings}` */
   wizardCheck({ steps = undefined, viewer = null } = {}) {
     return { ok: true, ...this.#check(steps, viewer) };
   }
@@ -1558,7 +1795,11 @@ export class WizardScripts {
   }
 
   /** R15 (`op=wizardprogress`): one count for (version, event, step) on this day, and nothing else of the call. A viewer,
-   *  when stamped, is asked only whether it may see the script, and never kept. */
+   *  when stamped, is asked only whether it may see the script, and never kept.
+   *  @param {{script?: unknown, version?: unknown, event?: any, step?: unknown, viewer?: string | null}} [args] `event`
+   *  one of WIZARD_EVENTS; `step` named only with `step`
+   *  @returns {Answer} `{ok: true}`, or a refusal
+   *  @bound step: whole number, 1 to the number of the script's steps */
   wizardProgress({ script = null, version = null, event = null, step = null, viewer = null } = {}) {
     const h = this.#held(script, version);
     if (!h || (str(viewer) && !this.#canSee(h.s, viewer))) return this.#noWizard(str(script) ?? version);
@@ -1576,7 +1817,9 @@ export class WizardScripts {
   }
 
   /** R15 (`op=wizarduse`): a script's tallies, by version and day, to the owners of its project and its versions'
-   *  authors (each author their own versions'; an administrator's, for a script with no project). */
+   *  authors (each author their own versions'; an administrator's, for a script with no project).
+   *  @param {{script?: unknown, viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, script, use}`, or a refusal */
   wizardUse({ script = null, viewer = null } = {}) {
     const s = this.#script(script, viewer);
     if (!s) return this.#noWizard(script);
@@ -1599,7 +1842,12 @@ export class WizardScripts {
     return { ok: true, script: s.id, use };
   }
 
-  /** R16 (in-process): one count for (op, code) on this day, and nothing else. */
+  /** R16 (in-process): one count for (op, code) on this day, and nothing else; `{ok: false}` and no count when either is
+   *  not a token.
+   *  @param {unknown} op
+   *  @param {unknown} code
+   *  @returns {{ok: boolean}}
+   *  @bound op, code: 1 to 200 characters of letters, digits, `_`, `.`, `:` and `-` */
   tallyRefusal(op, code) {
     if (typeof op !== "string" || !TOKEN_RE.test(op) || typeof code !== "string" || !TOKEN_RE.test(code))
       return { ok: false };
@@ -1608,7 +1856,10 @@ export class WizardScripts {
   }
 
   /** R16 (`op=wizardcandidates`): to project owners and administrators, the steps of offered scripts where the count drops
-   *  most, and the (op, code) pairs most refused; never a member, case, target or project. */
+   *  most, and the (op, code) pairs most refused; never a member, case, target or project.
+   *  @param {{viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, drops, refused}`, or `WIZARD_USE_REFUSED`
+   *  @bound drops, refused: at most 20 each */
   wizardCandidates({ viewer = null } = {}) {
     const me = this.#member(viewer);
     const owner = !!me && this.#rows(`SELECT DISTINCT project FROM wiz_scripts`).some((r) => this.#isOwner(r.project, me));
@@ -1639,7 +1890,10 @@ export class WizardScripts {
    *  approve it (an owner of its project; a group-wide script's administrators), the sole author left out, each
    *  `{script, version, owner, name, author, submitted_at, project}` (`version` the number, `author` the version's,
    *  `project` null for a group-wide script), at most 500 per page in (version, owner) order after `after` (a previous
-   *  page's `cursor`). Writes nothing. */
+   *  page's `cursor`). Writes nothing.
+   *  @param {{after?: unknown, limit?: unknown, viewer?: string | null}} [args]
+   *  @returns {Answer} `{ok: true, entries, limit, truncated, cursor}`
+   *  @bound limit: 1 to 500; a page holds at most 500 entries */
   submittedFor({ after = null, limit = null, viewer = null } = {}) {
     const max = clamp(limit, PAGE_MAX, PAGE_MAX);
     const from = str(after);
@@ -1681,7 +1935,10 @@ for (const m of ["wizardRegister", "brokenScripts", "wizardDraft", "wizardRevise
 const instances = new WeakMap();
 
 /** K61: the one instance per host; at creation it creates and declares its tables with their classes (R18; record-core
- *  R21, plan T33 Rules (6)) and registers its opaque ids' seed (record-core R70). */
+ *  R21, plan T33 Rules (6)) and registers its opaque ids' seed (record-core R70).
+ *  @param {Object<string, any>} host the host: its `storage` and `env` unless `deps` gives them
+ *  @param {Object<string, any> | null} [deps] as the constructor's, each reached through its factory unless given
+ *  @returns {WizardScripts} */
 export function wizardScriptsOf(host, deps) {
   let w = instances.get(host);
   if (!w) {
@@ -1702,7 +1959,9 @@ export function wizardScriptsOf(host, deps) {
   return w;
 }
 
-/** Which purge declaration names one of this module's tables (record-core R21). */
+/** Which purge declaration names one of this module's tables (record-core R21).
+ *  @param {any} t a table's name, or a declaration `{name}`; anything else names none
+ *  @returns {boolean} */
 export function wizardScriptsOwns(t) {
   const name = typeof t === "string" ? t : t && t.name;
   return WIZARD_SCRIPTS_TABLES.includes(name);
@@ -1712,7 +1971,11 @@ export function wizardScriptsOwns(t) {
  *  stands for R3, R4, R6's author, R5's proposer and R7–R9's `by`), read from the query and never from the body, so a
  *  caller's own copy never wins. `op-declarations` declares them (its R15, R28), `control-plane` routes and stamps them
  *  (its R50, R57) and `plane` composes them (its R19). `writinghelp` is not here: the door routes it itself and calls
- *  `writingHelp` with its own `assistant` (R27; B4, K1863 (7)). */
+ *  `writingHelp` with its own `assistant` (R27; B4, K1863 (7)).
+ *  @param {WizardScripts} m
+ *  @param {URL} url the request's, carrying the stamps
+ *  @param {any} body the POST body, read only when an object
+ *  @returns {Object<string, () => Answer>} each op's arm, by op */
 export function wizardScriptsOps(m, url, body) {
   const q = (k) => url.searchParams.get(k);
   const has = (k) => url.searchParams.has(k);
@@ -1747,6 +2010,8 @@ export function wizardScriptsOps(m, url, body) {
    row's (op-declarations); its weight is the op's grade (op-grades); its description is the op's `act.<op>.does` word,
    never a sentence of this module's own; its fields are what the arm reads. `writinghelp` is routed by the door, not
    by `wizardScriptsOps`, and is declared all the same. */
+/** R46: the ops this module declares, by op.
+ *  @type {Readonly<Object<string, OpDeclaration>>} */
 export const DECLARED_OPS = Object.freeze({
   wizards: { classes: ["admin", "member"], machineClasses: [], mutating: false, weight: "read",
     description: word("act.wizards.does"), fields: { accepts: ["state"], requires: [] } },

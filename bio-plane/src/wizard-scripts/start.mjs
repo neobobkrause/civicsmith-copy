@@ -8,6 +8,7 @@
  *  existing question or project (found at the door, R23's `matches`); a lead, optionally watched (`following`), which
  *  may become a project later; a step for understanding (`steps` R1, placed in the group or a project); an action; or
  *  "not Civicsmith's", with a pointer (profile data, handed in at registration, never named here). */
+/** @type {readonly Readonly<StartRoute>[]} */
 export const START_ROUTES = Object.freeze([
   Object.freeze({ route: "project", own_matter: Object.freeze({ visibility: "hidden" }) }),
   Object.freeze({ route: "existing", finds: Object.freeze(["question", "project"]) }),
@@ -16,14 +17,60 @@ export const START_ROUTES = Object.freeze([
   Object.freeze({ route: "action" }),
   Object.freeze({ route: "elsewhere" }),
 ]);
-/** R23: the kinds of existing work the door shows as matching a message. */
+/** R23: the kinds of existing work the door shows as matching a message.
+ *  @type {readonly string[]} */
 export const MATCH_KINDS = Object.freeze(["question", "project", "step"]);
-/** R23: the most matches the door shows. */
+/** R23: the most matches the door shows.
+ *  @type {number} */
 export const MATCHES_MAX = 20;
-/** R28: the most parts of one message read. */
+/** R28: the most parts of one message read.
+ *  @type {number} */
 export const PARTS_MAX = 50;
 
 import { word } from "../setup-words/index.mjs";
+/** @import { CheckRow } from "./checks.mjs" */
+
+/**
+ * @typedef {Object} StartRoute one of the six places a first message leads to (R23)
+ * @property {string} route `project`, `existing`, `lead`, `step`, `action` or `elsewhere`
+ * @property {Readonly<{visibility: string}>} [own_matter]
+ * @property {readonly string[]} [finds]
+ * @property {string} [watch]
+ * @property {readonly string[]} [becomes]
+ * @property {readonly string[]} [placed]
+ */
+/**
+ * @typedef {Object} StartMatch existing work matching a message (R23)
+ * @property {string} kind one of `MATCH_KINDS`
+ * @property {string | null} id
+ * @property {string | null} name
+ * @bound id, name: trimmed, at most 200 characters
+ */
+/**
+ * @typedef {Object} StartProposal one route the assistant proposes for a tangled message (R28)
+ * @property {string} route `project` or `lead`
+ * @property {number} [part] a lead's part, by its place in `parts`
+ * @property {boolean} [watch] a lead's watch, false as proposed
+ * @property {string | null} [subject] a project's subject
+ * @property {number[]} [questions] a project's questions, by their parts' places
+ */
+/**
+ * @typedef {Object} StartProposals the assistant's proposal, labelled the machine's (R28)
+ * @property {true} ok
+ * @property {StartProposal[]} proposals the projects, then the leads
+ * @property {{kind: string}} label `{kind: "machine"}`
+ * @property {string} decides `member`
+ */
+/**
+ * @typedef {Object} StartCheck the door's check of a proposal (R28)
+ * @property {boolean} ok
+ * @property {string} [reason] `START_RUMOUR_AS_QUESTION`
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {number | null} [part] the first rumour part held as a question, or null when the proposal could not be read
+ * @property {string} [detail]
+ */
 import { rowOf } from "./checks.mjs";
 
 const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
@@ -31,6 +78,9 @@ const line = (v, max = 200) => (typeof v === "string" && v.trim() ? v.trim().sli
 
 /** R23: existing work as the registered finder answered it, each `{kind, id, name}` of a kind the door shows, at most
  *  `MATCHES_MAX`, each id once; anything else dropped. */
+/** @param {unknown} found the finder's answer
+ *  @returns {StartMatch[]}
+ *  @bound the result: at most MATCHES_MAX entries */
 export function matchesOf(found) {
   const out = [], seen = new Set();
   for (const m of Array.isArray(found) ? found : []) {
@@ -48,6 +98,9 @@ export function matchesOf(found) {
  *  subject with one question per part, so parts that share a subject are one project with several questions and parts
  *  that do not are separate projects (a part with no subject its own). Parts are named by their place in `parts`, from
  *  0. A proposal, labelled the machine's: the member decides; it writes nothing. */
+/** @param {{parts?: unknown}} [args] `parts` a list of `{text, subject, rumour}`; anything else is read as no parts
+ *  @returns {StartProposals}
+ *  @bound parts: the first PARTS_MAX are read */
 export function proposeStart({ parts = [] } = {}) {
   const list = (Array.isArray(parts) ? parts : []).slice(0, PARTS_MAX);
   const projects = new Map(), leads = [];
@@ -67,6 +120,8 @@ export function proposeStart({ parts = [] } = {}) {
  *  of its questions (a rumour is proposed as a lead, never as a question aimed at a person). A proposal that is not one
  *  answers `{ok: true}` with nothing to check; one that cannot be read through is refused (fail closed). Writes nothing;
  *  never throws. */
+/** @param {{proposal?: unknown, parts?: unknown}} [args]
+ *  @returns {StartCheck} */
 export function checkStartProposal({ proposal = null, parts = [] } = {}) {
   try {
     const list = Array.isArray(parts) ? parts : [];
@@ -81,8 +136,10 @@ export function checkStartProposal({ proposal = null, parts = [] } = {}) {
     return { ok: true };
   } catch { return rumourRefusal(null); }
 }
+/** @param {number | null} part
+ *  @returns {StartCheck} */
 function rumourRefusal(part) {
-  const row = rowOf("START_RUMOUR_AS_QUESTION");
+  const row = /** @type {CheckRow} */ (rowOf("START_RUMOUR_AS_QUESTION"));
   return { ok: false, reason: "START_RUMOUR_AS_QUESTION", code: "START_RUMOUR_AS_QUESTION", check: row.check, translation: row.translation,
            part, detail: word("wizard-scripts.refusal.rumor_as_lead") };
 }

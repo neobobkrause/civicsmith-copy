@@ -6,10 +6,14 @@
 import { OPS } from "../op-declarations/index.mjs";
 import { later, actName, citeOf, languagesOf, marksFields, marksBody, draftsOf, stepOf, sendSteps, draftOf, readFiling, stakeLines, stakeAsk, readOnly, kindWord, kindsOf, officeLine, joinFirst, PREPARE, PREPARE_FILING, APPROVE, STAKE, SECOND, RECORD_SENT, TEMPLATE_SAVE, JOIN, WRITE_HELP } from "./send-steps.mjs";
 
+/** @import { ScreenDef } from "./send-steps.mjs" */
+
 // R21: `actionstake` is an owed act (`interface-shell` R73): it is registered once `op-declarations` declares it, and the
 // shell draws it as it draws every act (R12).
 const OWED = function (spec) { return Object.hasOwn(OPS, spec.op) ? [spec] : []; };
 
+/** Start and send (R2, R3, R21, R47, R48): step 1 `optionstartpreview` and `optionstart`; step 2 the send steps.
+ *  @type {Readonly<ScreenDef>} */
 export const startSend = Object.freeze({
   id: "start-send",
 

@@ -53,7 +53,7 @@
   "wizard": 359,
   "elsewhere": 38,
   "places": 6,
-  "screen": 7931,
+  "screen": 7932,
   "signin": 1,
   "forgot": 1,
   "founder": 6,
@@ -237,7 +237,7 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19530,
+  "total": 19531,
   "protected": 1162
  },
  "words": [
@@ -33154,6 +33154,13 @@
    "protected": true,
    "source": "DEC-259",
    "note": "under the reader's link"
+  },
+  {
+   "key": "screen.review-outside.ask",
+   "en": "Before publishing, the team asks you to read this draft of its case and comment.",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / review-outside C1 (U14) (mockup: the first sentence of screen.review-outside.sub, word for word)"
   },
   {
    "key": "screen.review-outside.sub",

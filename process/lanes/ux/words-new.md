@@ -1,4 +1,4 @@
-Length: 94 lines. Last section: "Marks settled by a row the table already holds".
+Length: 100 lines. Last section: "Marks settled by a row the table already holds".
 
 # New words the lane decided
 
@@ -70,8 +70,14 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `screen.calculation.expertise.confirmed` | confirmed: {label} | the-record / calculation C6 | lane (the words of `members`) |
 | `screen.calculation.expertise.declared` | declared, not confirmed: {label} | the-record / calculation C6 | lane (the words of `members`) |
 | `screen.explore.project` | For which project | the-record / explore C12 | lane (the words of `capture`) |
+| `screen.review-outside.ask` | Before publishing, the team asks you to read this draft of its case and comment. | publishing / review-outside C1 (U14) | mockup (the first sentence of `.sub`, word for word) |
+| `screen.imported.lens_shown.as_published` | Shown here: as the source published it. | publishing / imported C5 (U15) | lane (the words of `.lens_shown` and `.lens_as_published`) |
+| `screen.imported.lens_shown.own` | Shown here: under your team's lens. | publishing / imported C5 (U15) | lane (the words of `.lens_shown` and `.lens_own`) |
+| `screen.imported.lens_moved.own` | Moved: {published} as published, {regraded} under your team's lens. | publishing / imported C5 (U15) | lane (the words of `.lens_moved` and `.lens_own`) |
+| `screen.imported.lens_bar.yes` | yes | publishing / imported C5 (U15) | lane (DEC-378's row note: "the placeholder is yes or no") |
+| `screen.imported.lens_bar.no` | no | publishing / imported C5 (U15) | lane (DEC-378's row note) |
 
-64 rows: 24 from the mockup, 40 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there; six of the lane's rows withdrawn on 23 Nov 2026 where the canon governs: `screen.held.from.doorbell`, `screen.document.from.doorbell` (U5), `screen.question.leggrade.copy`, `screen.document.copy.ceiling`, `screen.document.copy.grade` (U9), `signing.ceremony.keepkey.gone` (U7)), none from the code alone (every place where the code draws words had a row already; see below).
+70 rows: 25 from the mockup, 45 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there; six of the lane's rows withdrawn on 23 Nov 2026 where the canon governs: `screen.held.from.doorbell`, `screen.document.from.doorbell` (U5), `screen.question.leggrade.copy`, `screen.document.copy.ceiling`, `screen.document.copy.grade` (U9), `signing.ceremony.keepkey.gone` (U7)), none from the code alone (every place where the code draws words had a row already; see below).
 
 ## Marks settled by a row the table already holds
 
