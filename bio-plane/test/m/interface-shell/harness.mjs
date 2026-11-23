@@ -12,20 +12,30 @@ import { documentOf, Event, textNodes } from "./dom.mjs";
 export { textNodes, Event };
 
 /* A member's session as whoami answers it (control-plane R18). */
+/** @type {Readonly<Object<string, *>>} */
 export const MEMBER = Object.freeze({ tokenClass: "member", session: true, member: "mai", handle: "mai", administer: false,
   rootOfTrust: false, capabilities: ["contribute"], vocabulary: ["contribute", "create_projects", "publish"], confinedTo: null });
+/** @type {Readonly<Object<string, *>>} */
 export const ADMIN = Object.freeze({ ...MEMBER, member: "rosa", handle: "rosa", administer: true });
 
 /* answers: a value (`ok`), a refusal at the top level (`refused`) or in `result` (`refusedIn`), an HTTP error with no
    JSON (`httpError`), no answer (`silent`: the fetch throws) and never (`pending`) */
+/** @type {function(*, number=): *} an ok answer, `{status, json: {ok: true, result}}` */
 export const ok = (result, status = 200) => ({ status, json: { ok: true, result } });
 // fixtures-own: input the refusal envelope this harness builds for the code a test feeds it: the code is the test's input, not a module's answer
+/** @type {function(string, (string|null)=, number=, Object<string, *>=): *} a refusal at the top level, `{status, json: {ok: false, reason, code, translation?}}` */
 export const refused = (code, translation, status = 400, extra = {}) => ({ status, json: { ok: false, reason: code, code, ...(translation ? { translation } : {}), ...extra } });
+/** @type {function(string, (string|null)=): *} a refusal inside an ok answer's `result` */
 export const refusedIn = (code, translation) => ({ status: 200, json: { ok: true, result: { ok: false, reason: code, code, ...(translation ? { translation } : {}) } } });
+/** @type {function(number=): *} an HTTP error with no answer, `{status, text}` */
 export const httpError = (status = 500) => ({ status, text: "boom" });
+/** @type {Readonly<{silent: boolean}>} no answer at all: the request never returns a response */
 export const silent = Object.freeze({ silent: true });
+/** @type {function(Array<*>, number=): *} a streamed answer, its events one a line */
 export const ndjson = (events, status = 200) => ({ status, ndjson: events });
+/** @type {function(*, string=): *} a byte answer of a content type */
 export const bytes = (data, type = "application/pdf") => ({ status: 200, bytes: data, type });
+/** @type {Readonly<{pending: boolean}>} an answer that never arrives: the read stays loading */
 export const pending = Object.freeze({ pending: true });
 
 /* R104 (K4164 goal 3, K4168): every op request the page makes is compared with the `fields` its owner declares for that op
@@ -35,18 +45,31 @@ export const pending = Object.freeze({ pending: true });
    An op with no owner declaration is let through and counted. The owners' rows are the collector's (`test-support`'s
    `declaredOpsOf`, R16): `collectOwnerRows` is its one seam here, never a second copy of the collection; a test passes
    fixture rows as `boot({declared})`. */
+/**
+ * R104: a request whose fields its owner's declaration does not accept, or that misses a required one; names the op and the field.
+ */
 export class FieldMismatch extends Error {
   constructor(message, detail) { super(message); this.name = "FieldMismatch"; Object.assign(this, detail); }
 }
 const COLLECTED = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)));
 /* the owners' rows, `{op: declaration}`, as `test-support`'s one collector finds them; an op it lists as a duplicate fails (`declared.test.mjs`) */
+/** @type {function(): Array<{op: string, owners: Array<string>}>} */
 export const collectedDuplicates = () => COLLECTED.duplicates.slice();
+/**
+ * @returns {Object<string, Object<string, *>>} the owners' declarations by op, as test-support's collector finds them
+ */
 export function collectOwnerRows() { return COLLECTED.ops; }
 /* a stand-in's `send` for a real op: the fields its owner requires, read through the collector (K3268) and carried into the page as
    data, with `extra` (an expression of view, el and cs) over them. A screen's function is self-contained, so it is built from source. */
+/** @type {function(string, string=): Function} */
 export const fitSend = (op, extra = "{}") => new Function("view", "el", "cs", "extra", `return { body: Object.assign(${JSON.stringify(declaredFit(op))}, ${extra}) };`);
 /* a request body a stand-in screen sends for a real op: exactly the fields its owner requires (the first alternative of a list), read
    through the collector and never copied by hand (K3268), with `extra` over them */
+/**
+ * @param {string} op
+ * @param {Object<string, *>} [extra]
+ * @returns {Object<string, *>} a body with exactly the fields the op's owner requires, `extra` over them
+ */
 export function declaredFit(op, extra = {}) {
   const row = COLLECTED.ops[op];
   const body = {};
@@ -56,6 +79,10 @@ export function declaredFit(op, extra = {}) {
 const isRow = (r) => !!(r && typeof r === "object" && r.fields && typeof r.fields === "object");
 const flat = (list) => (Array.isArray(list) ? list : []).flatMap((x) => (Array.isArray(x) ? x : [x]));
 /* the field names a request carries: its query (less the marks the shell adds) and a JSON object body */
+/**
+ * @param {{query?: Object<string, *>, body?: *}} req
+ * @returns {Set<string>} the field names the request carries
+ */
 export function fieldsOf(req) {
   const names = new Set(Object.keys(req.query || {}).filter((k) => k !== "op" && k !== "background"));
   const b = req.body;
@@ -63,6 +90,11 @@ export function fieldsOf(req) {
   return names;
 }
 /* `[{kind: "unknown" | "missing", field}]` for one request against one owner row */
+/**
+ * @param {*} req
+ * @param {*} row the op's owner's declaration
+ * @returns {Array<{kind: string, field: string}>} each field not accepted, or required and missing
+ */
 export function fieldMismatches(req, row) {
   const sent = fieldsOf(req);
   const accepted = new Set([...flat(row.fields.accepts), ...flat(row.fields.requires)]);
@@ -80,10 +112,13 @@ export function fieldMismatches(req, row) {
 const unsettled = [];
 const undeclared = new Map();
 /* the ops that went out with no owner declaration, counted over the process (R104: `declared N of M ops`) */
+/** @type {function(): Map<string, number>} */
 export const undeclaredOps = () => new Map(undeclared);
 
 /* a plane's `queue` answer for a list of items: the count (R93) when asked for it, else the list, as the queue answers both */
+/** @type {function(Array<*>): function(Object<string, *>): Object<string, *>} */
 export const queueOf = (items) => (req) => (req.query && req.query.count ? ok({ ok: true, member: "mai", count: items.length }) : ok({ items }));
+/** @type {Readonly<Object<string, *>>} */
 export const FRAME = Object.freeze({
   whoami: ok(MEMBER),
   infolevel: ok({ level: "prompt", set_at: null, asked_at: null }),
@@ -94,13 +129,21 @@ export const FRAME = Object.freeze({
   version: { status: 200, text: "build-1\n" },
 });
 /* The session record interface-shell R32 keeps in localStorage under `SESSION_STORE_KEY`: `{t, e, d, w}`. */
+/** @type {Readonly<{t: string, e: number, d: string, w: string}>} */
 export const SESSION = Object.freeze({ t: "tok-1", e: 0, d: "own", w: "mai" });
+/** @type {string} */
 export const STORE_KEY = "bio-session";
 
 /* One response as the door makes it (answer-envelope R6): a fresh nonce in every slot. */
+/**
+ * @param {string} html
+ * @param {string} [nonce]
+ * @returns {string} the page with each nonce slot filled
+ */
 export function served(html, nonce = "n0nce") { return html.split(NONCE_SLOT).join(nonce); }
 /* the shell's script of a page: the external script (R1, fix round 3) is `interfaceScript` over the screens and guide the page was built from;
    a page that still holds an inline script (another module's HTML) gives that text */
+/** @type {function(string, Array<*>=, Object<string, *>=): string} */
 export const scriptOf = (html, screens, options = {}) => {
   if (screens !== undefined) return interfaceScript(screens, options);
   const at = html.lastIndexOf("<script");
@@ -113,7 +156,13 @@ const tick = () => new Promise((r) => setImmediate(r));
    while a `door` call is in flight, and until none was started in the last ten ticks */
 let doorBusy = 0, doorStarted = 0;
 /** A function of the request that reaches a world's door (a test's wrapper of its answer): `settle` waits for it while it works. */
+/** @type {function(Function): function(...*): Promise<*>} */
 export const counted = (f) => async (...args) => { doorBusy++; doorStarted++; try { return await f(...args); } finally { doorBusy--; } };
+/**
+ * @param {number} [n] ticks to wait at least
+ * @returns {Promise<void>}
+ * @throws {FieldMismatch} the first request since the last settle that did not match its owner's declaration
+ */
 export async function settle(n = 40) {
   for (let i = 0; i < n; i++) await tick();
   for (let seen = -1; doorBusy > 0 || seen !== doorStarted;) { seen = doorStarted; for (let i = 0; i < 10; i++) await tick(); }
@@ -123,6 +172,10 @@ export async function settle(n = 40) {
 
 /* A small IndexedDB stand-in (R40): databases kept in `dbs` (a Map shared across boots to stand for a reload), each a
    Map of object stores; values are structured clones, so a CryptoKey is kept as the browser keeps it. */
+/**
+ * @param {Map<string, *>} [dbs] the databases, shared across boots to stand for a reload
+ * @returns {Object<string, *>}
+ */
 export function fakeIndexedDB(dbs = new Map()) {
   const later = (f) => setImmediate(f);
   const request = (fn) => { const r = { result: undefined, onsuccess: null, onerror: null }; later(() => { try { r.result = fn(); if (r.onsuccess) r.onsuccess(); } catch (e) { r.error = e; if (r.onerror) r.onerror(); } }); return r; };
@@ -160,6 +213,9 @@ export function fakeIndexedDB(dbs = new Map()) {
  * among pages, each told of the others' writes by the storage event; `idb` is the IndexedDB stand-in's store.
  * Answers `{doc, win, requests, root, clock, settle, click, choose, fire, back, assigned, store, local, byOp, location, ...}`:
  * `store` is the tab's sessionStorage, `local` its localStorage.
+ * @param {Object<string, *>} [o] the options named above
+ * @returns {Promise<Object<string, *>>} the page
+ * @throws {FieldMismatch} as `settle` does
  */
 export async function boot({ screens = [], plane = {}, session = SESSION, path = "/app", hash = "", phone = false, local = {}, localThrows = false, tabStore = null, tabThrows = false, html, run = true, tabs: group = null, idb = new Map(), guide = null, testInstance = false, version = null, door = null, declared = collectOwnerRows() } = {}) {
   const options = { ...(guide ? { guide } : {}), ...(testInstance ? { testInstance } : {}), ...(version ? { version } : {}) };
@@ -281,13 +337,20 @@ export async function boot({ screens = [], plane = {}, session = SESSION, path =
   return page;
 }
 /* Pages sharing one browser's localStorage, as tabs do (R32). */
+/** @type {function(): {local: Map<string, string>, pages: Array<*>}} */
 export const tabs = () => ({ local: new Map(), pages: [] });
 const safeJson = (s) => { try { return JSON.parse(s); } catch { return s; } };
 
 /* R15: every element carrying an explanation inside another that carries one */
+/** @type {function(*): Array<*>} */
 export const nestedTips = (root) => root.querySelectorAll("[data-tip]").filter((e) => e.parentElement && e.parentElement.closest("[data-tip]"));
 
 /* R22: a control's accessible name: its aria-label, its text, or its label */
+/**
+ * @param {*} el
+ * @param {*} doc
+ * @returns {string}
+ */
 export function accessibleName(el, doc) {
   if (el.getAttribute("aria-label")) return el.getAttribute("aria-label").trim();
   if (el.getAttribute("aria-labelledby")) return el.getAttribute("aria-labelledby").split(/\s+/).map((id) => (doc.getElementById(id) || { textContent: "" }).textContent).join(" ").trim();
@@ -298,4 +361,5 @@ export function accessibleName(el, doc) {
   }
   return (el.textContent || "").trim();
 }
+/** @type {function(*): Array<*>} */
 export const controls = (root) => root.querySelectorAll("a[href], button, input, select, textarea, [role=separator]");

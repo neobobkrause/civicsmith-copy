@@ -270,6 +270,7 @@ test("R9 /app/review maps to review-outside (screens-publish R17), drawn in its 
 });
 
 test("R35 unavailable: an unknown screen or subject draws Nothing is here; NOT_VISIBLE and NOT_A_PARTICIPANT draw You can't open this; no answer or a 5xx draws can't be reached, tried again every 30 seconds in the background, what was typed kept", async () => {
+  /** @type {Array<[string, Object<string, *>, string]>} the path, the plane, the state drawn */
   const states = [["/app/nowhere", {}, "nothing"], ["/app/document/zz", { image: refused("NO_SUCH_CAPTURE") }, "nothing"], ["/app/document/zz", { image: ok(null) }, "nothing"],
     ["/app/document/zz", { image: refused("NOT_VISIBLE", "Not yours.") }, "notyours"], ["/app/document/zz", { image: refused("NOT_A_PARTICIPANT") }, "notyours"],
     ["/app/document/zz", { image: silent }, "unreachable"], ["/app/document/zz", { image: httpError(503) }, "unreachable"]];
