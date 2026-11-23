@@ -159,7 +159,7 @@ function inlineVerdictOf(document) {
  *  true while a row is held for a reading owed, `refused` the digests whose owed reading no row holds. An entry that owes the OCR pass is skipped (a world binds no OCR worker). */
 export async function followReading(world, entries, storeName = "bio") {
   const stub = stubOf(world);
-  const ask = async (route, init) => { try { return await doAnswer(stub.fetch(new Request(`http://do/${route}`, init))); } catch { return { answered: false }; } };
+  const ask = async (route, init) => { try { return await doAnswer(stub.fetch(new Request(`http://do/${route}`, init))); } catch { return { answered: false, result: undefined }; } };
   /* whether the store kept the row (`pendingadd` answers `{ok: true}`); a refusal or a silence is a row not kept */
   const register = async (sha, kind) => {
     const a = await ask(`pendingadd?kind=${kind}&sha=${sha}&store=${encodeURIComponent(storeName)}`, { method: "POST" });
@@ -331,7 +331,7 @@ async function answer(world, stub, env, page) {
   if (op === "purge") {
     const confirm = url.searchParams.get("confirm");
     if (confirm !== storeName)
-      return json({ ok: false, ...requiredArgument("purge", "confirm", "<store name>", "purge requires confirm=<store>"),
+      return json({ ...requiredArgument("purge", "confirm", "<store name>", "purge requires confirm=<store>"),
                     expected: storeName, got: confirm, tokenClass: cls, store: storeName }, 400);
   }
   const extra = { store: storeName, tokenClass: cls };
