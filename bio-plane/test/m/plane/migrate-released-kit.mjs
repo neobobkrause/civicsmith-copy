@@ -7,7 +7,6 @@ import { Miniflare } from "miniflare";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 
-export const SRC = (f) => fileURLToPath(new URL("../../../src/" + f, import.meta.url));
 export const sha = (v) => createHash("sha256").update(v).digest("hex");
 export const NOW = "2026-09-18T00:00:00Z";
 /* the committed stores, one folder for each, named by `slug` of its label (`migrate-released-capture.mjs` writes them) */
@@ -166,8 +165,17 @@ export const boot = (scriptPath, script, persist, version) => new Miniflare({
   bindings: { ...TOK, VERSION: version, INSTANCE_NAME: INSTANCE },
   defaultPersistRoot: persist,
 });
-export const bootCurrent = (persist) =>
-  boot(SRC("rec143-migrate-probe.mjs"), probe("./plane/index.mjs", "./plane/index.mjs"), persist, "current");   /* T12 B6, 2026-09-29 (K414, INSTANCE-SETUP #1 J5): the store as the plane starts it, instance-setup registering promotion's producingGroup */
+/* THE CURRENT PLANE AS IT DEPLOYS: its one bundle, built once from the checkout by bundler's recipe (`buildMember(planeMember())`, what
+   `scripts/build-plane.mjs` writes and a release ships), written to `dir`; each boot of it under miniflare then loads one module instead of
+   walking the plane's sources again (about half a boot's time, measured 23 Nov 2026). */
+export async function buildCurrent(dir) {
+  const { writeFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { buildMember, planeMember } = await import("../../../scripts/fleet-bundle.mjs");
+  writeFileSync(join(dir, "plane.mjs"), (await buildMember(planeMember())).bytes);
+  return dir;
+}
+export const bootBuilt = (dir, persist) => boot(fileURLToPath(new URL("probe.mjs", `file://${dir}/`)), probe("./plane.mjs", "./plane.mjs"), persist, "current");
 
 /* A RESPONSE THAT IS NOT JSON IS AN ANSWER, NOT A CRASH — `content-chain-kind`'s rule:
    a bricked Durable Object answers with an error page, and `.json()` on it would end
@@ -351,8 +359,9 @@ export async function storeCopy(storeDir, persist) {
 
 /* THE CURRENT PLANE on a store somebody else wrote: it answers, it has a fresh
    store's exact shape, the rows survive, and a second boot is clean. */
-/* `t` records each check; `FRESH` is the fresh reference store's shape (the suite's section 0), handed in */
-export const verifyCurrent = async (label, persist, { DOC, served, groupBefore, rows }, t, FRESH) => {
+/* `t` records each check; `FRESH` is the fresh reference store's shape (the suite's section 0) and `bootCurrent(persist)` boots the current
+   plane on a store, both handed in */
+export const verifyCurrent = async (label, persist, { DOC, served, groupBefore, rows }, t, FRESH, bootCurrent) => {
   let mf = bootCurrent(persist);
   let c = client(mf, { current: true });
   const bs = await c.get("bootstrap", "", "");

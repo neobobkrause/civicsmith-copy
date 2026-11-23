@@ -52,7 +52,7 @@ import { tmpdir, availableParallelism } from "node:os";
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { RELEASES, WITHDRAWN, FIXTURES, slug, INSTANCE, bootCurrent, client, groupOf, shapeOf } from "../m/plane/migrate-released-kit.mjs";
+import { RELEASES, WITHDRAWN, FIXTURES, slug, INSTANCE, buildCurrent, bootBuilt, client, groupOf, shapeOf } from "../m/plane/migrate-released-kit.mjs";
 
 let pass = 0, fail = 0;
 const t = (label, got, want) => {
@@ -66,7 +66,9 @@ const t = (label, got, want) => {
  * store must equal.
  * ================================================================== */
 console.log("\n--- 0. the reference shape: a fresh store on the current plane ---");
-const freshMf = bootCurrent(mkdtempSync(join(tmpdir(), "rec143-fresh-")));
+/* the current plane as it deploys: its bundle, built once from the checkout (the kit's `buildCurrent`), booted for the reference and every store */
+const BUILT = await buildCurrent(mkdtempSync(join(tmpdir(), "rec143-current-")));
+const freshMf = bootBuilt(BUILT, mkdtempSync(join(tmpdir(), "rec143-fresh-")));
 const FRESH = await shapeOf(client(freshMf, { current: true }));
 /* D-436's POSITIVE half, on the one store in this suite the current plane is BORN on: its first boot
    records the bound name. Without this, every "records NOTHING" below would pass just as well if the
@@ -130,7 +132,7 @@ const results = new Array(runs.length);
 await Promise.all(parts.map((part, p) => new Promise((done) => {
   const fixtures = part.map(({ label }) => ({ label, dir: FIX[label].dir, cap: FIX[label].cap }));
   const input = join(work, `part-${p}.json`), output = join(work, `result-${p}.json`);
-  writeFileSync(input, JSON.stringify({ fixtures, fresh: join(work, "fresh.json") }));
+  writeFileSync(input, JSON.stringify({ fixtures, fresh: join(work, "fresh.json"), built: BUILT }));
   execFile(process.execPath, ["--import", SQLITE, RUNNER, input, output], { maxBuffer: 256 << 20 }, (err, stdout, stderr) => {
     let got = null;
     try { got = JSON.parse(readFileSync(output, "utf8")); } catch { got = null; }
