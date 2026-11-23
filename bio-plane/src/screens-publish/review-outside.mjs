@@ -38,11 +38,10 @@ export const REVIEW_OUTSIDE = Object.freeze({
     // R35); no UTC is drawn in its place, and with no zone held no end is stated.
     const zone = typeof g.zone === "string" ? g.zone : "";
     const line = until ? P.untilIn(cs, view, until, zone) : cs.w("screen.review-outside.untilstopped");
-    // The page's C1: the protected sub-line `.sub`, with the end day in the team's zone; a link with no end, or no zone held,
-    // has no day to name, so its one line is R27's sentence alone.
-    const endDay = until ? P.localDay(until, zone) : "";
-    if (endDay) out.push('<p class="mk-sub" data-sub>' + cs.w("screen.review-outside.sub", { date: { html: cs.date(endDay) } }) + "</p>");
-    if (line) out.push('<p class="' + (endDay ? "mk-small" : "mk-sub") + '" data-link-end>' + line + "</p>");
+    // The page's C1 (UX lane U14): the sub-line asks the reader to read and comment (`.ask`), and under it the one line that says
+    // who can read the copy and until when (`.until.zone`, or `.untilstopped`). `.sub` is not drawn: it would say that twice.
+    out.push('<p class="mk-sub" data-sub>' + cs.w("screen.review-outside.ask") + "</p>");
+    if (line) out.push('<p class="mk-small" data-link-end>' + line + "</p>");
     out.push('<p class="mk-note">' + cs.w("screen.review-outside.comments.go") + "</p>");
     const a = copy.authored || {};
     const draftTitle = { fills: { case: c.identity || "", edition: String(c.edition || "") } };

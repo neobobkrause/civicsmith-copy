@@ -27,6 +27,25 @@ export const PUBLISHED = Object.freeze({
     };
   },
 
+  /** interface-shell R30 (ARCH, 23 Nov 2026): what the published frame's foot needs to draw its signature line
+   *  (`shell.pubfoot.line`): the team's short name (`groupidentity`'s `group`, never its display name) and the signing key's
+   *  fingerprint as the edition's answer states it. A fact not stated is left out of `signed`, never guessed or drawn empty.
+   *  No case read, or no answer yet: `signed` is null.
+   *  @param {any} view
+   *  @returns {{signed: ({short?: string, fingerprint?: string} | null)}} */
+  place: function (view) {
+    const P = view.parts, e = P.subject(view, 1) ? P.answer(view) : null;
+    if (!e) return { signed: null };
+    const g = view.data.group && view.data.group.state === "ok" ? view.data.group.value : null;
+    const short = g && typeof g.group === "string" ? g.group.trim() : "";
+    const fp = String(P.signerOf(e).fingerprint || (view.ui && view.ui.printFacts && view.ui.printFacts.fingerprint) || "").trim();
+    /** @type {{short?: string, fingerprint?: string}} */
+    const signed = {};
+    if (short) signed.short = short;
+    if (fp) signed.fingerprint = fp;
+    return { signed: signed };
+  },
+
   render: function (cs, view) {
     if (!view.parts.subject(view, 1)) return view.parts.nothing(cs, "public"); // R21: the way an outsider can go, never "Go to Home"
     const P = view.parts, ui = view.ui;
@@ -86,9 +105,10 @@ export const PUBLISHED = Object.freeze({
     const note = function () { return '<p class="mk-note">' + Array.prototype.map.call(arguments, function (k) { return cs.w(k); }).join(" ") + "</p>"; };
 
     // Whose work it is, and how to read a case: "How to read a case" (`.howtoread.link`) explains, on hover or focus, what each of
-    // the two strengths says and what it never says, in the design's own explanations (`.tip.capture`, `.tip.connection`).
+    // the two strengths says, in the design's own explanations (UX lane U14; the page's C2): `.tip.capture` · `.tip.capture_why`,
+    // then `.tip.connection` · `mark.strength.means`. Not `.tip.connection_why`, which explains one grade, not the scale.
     const howto = "<b>" + cs.w("screen.published.tip.capture") + "</b> · " + cs.w("screen.published.tip.capture_why")
-      + "<br><b>" + cs.w("screen.published.tip.connection") + "</b> · " + cs.w("screen.published.tip.connection_why");
+      + "<br><b>" + cs.w("screen.published.tip.connection") + "</b> · " + cs.w("mark.strength.means");
     out.push('<p class="mk-explain">' + cs.w("screen.published.whose", { group: group }) + " " + cs.w("screen.published.howtoread")
       + ' <span class="cs-ref" tabindex="0" data-level="1" data-howtoread data-tip="' + cs.esc(howto) + '">' + cs.w("screen.published.howtoread.link") + "</span></p>");
 
