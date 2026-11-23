@@ -27,3 +27,8 @@ Rule now: DEC-18 (2 Aug 2026) stands, as the UX lane reads the owner's 23 Nov wo
 - 22 Nov 2026: "Decision: Q1,A" (given to the UX lane; relayed by ARCH #7)
 - 23 Nov 2026: "Decision: my answer on whether my choice of option A does not replaces my 2 August ruling" (given to the UX lane; relayed by ARCH #7)
 Shown to the owner: not yet.
+
+## A lane for the plane module's scope
+Rule now: a lane is opened for the plane module's scope, for the owner to understand it and fix it. ARCH opens it.
+- 23 Nov 2026: "Decision: open a lane for the plane module's scope, so I can understand it and fix it"
+Shown to the owner: not yet.
