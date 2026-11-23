@@ -66,8 +66,8 @@ import { GROUP_SLUG_RE, hostingControlBlock } from "../../bio-plane/src/setup-fl
  * @property {number} COOKIE_MAX_AGE_S the cookie's life, in seconds
  * @property {string} RELEASE_LATEST where the newest public release is read
  * @property {(version: string) => string} RELEASE_TAGGED where the release of a version is read
- * @bound SCOPES: exactly the scopes registered on the OAuth client, nothing more (R2)
- * @bound COOKIE_MAX_AGE_S: 900, fifteen minutes (R2, R3)
+ * @bound SCOPES.items: exactly the scopes registered on the OAuth client, nothing more (R2)
+ * @bound COOKIE_MAX_AGE_S.value: 900, fifteen minutes (R2, R3)
  */
 /** @type {InstallerConfig} the installer's fixed settings (R2, R3) */
 export const CFG = {
@@ -1436,8 +1436,8 @@ export function assetResponse(name) {
 /**
  * @typedef {Object} InstallerWorker
  * @property {(req: Request) => Promise<Response>} fetch answers every request the installer's address receives
- * @bound fetch: GET / and GET /update serve their pages, GET /app/assets/<name> interface-assets' files, POST /begin and GET /callback the sign-in and the run; any other request is answered 404 with a plain page; nothing is stored (R1, R54)
- * @bound fetch: POST /begin answers 400 by name for a slug outside GROUP_SLUG_RE or equal to newgroup, and for an instanceAi present but not 16 to 512 printable characters without spaces (R2)
+ * @bound fetch.request: GET / and GET /update serve their pages, GET /app/assets/<name> interface-assets' files, POST /begin and GET /callback the sign-in and the run; any other request is answered 404 with a plain page; nothing is stored (R1, R54)
+ * @bound fetch.request: POST /begin answers 400 by name for a slug outside GROUP_SLUG_RE or equal to newgroup, and for an instanceAi present but not 16 to 512 printable characters without spaces (R2)
  */
 /** @type {InstallerWorker} the installer Worker */
 export default {
