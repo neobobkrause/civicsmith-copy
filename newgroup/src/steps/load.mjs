@@ -7,6 +7,16 @@ import { containerPartsOf, DESCRIPTOR_PARTS, WORKER_PART, containerClasses, work
 import { PART_MIME, fetchVerified } from "./members.mjs";
 import { ARMED_SIGNERS } from "./signers.mjs";
 import { verifySshsig, NS_FLEET, fleetStatement } from "../../../bio-plane/src/sshsig.mjs";
+/** @import { Release, ApproveAgain } from './api.mjs' */
+/** @import { SourceUnavailable } from './members.mjs' */
+
+/**
+ * @typedef {Object} LoadedFleet what `loadFleet` answers and `installFleet` installs: `skip`, or `members` and `fleet`
+ * @property {string} [skip] a sentence saying why no member is installed this time
+ * @property {any} [members] a list, one entry for each member of the statement: `{m, error}` when it is left out, named; else
+ *   `{m, box, limits, own, classes, workerPart, bytes}`, `bytes()` answering `{bundle, partBytes}` fetched again and checked
+ * @property {Set<string>} [fleet] the names of every member the statement states
+ */
 
 /* R61, R71 — THE FLEET OF THE RELEASE R8 CHOSE, VERIFIED AND FETCHED IN FULL BEFORE ANYTHING IS CREATED.
  *
@@ -17,6 +27,13 @@ import { verifySshsig, NS_FLEET, fleetStatement } from "../../../bio-plane/src/s
  * parts are fetched and hashed against it. A source that is slow or down is waited on and then named (`SourceUnavailable`,
  * F5): the caller stops with nothing created. What cannot be loaded for one member leaves that member out, named (R11).
  * Answers `{skip}` (a sentence saying why no member is installed this time) or `{members, fleet}`. */
+/**
+ * @param {Release} release the release R8 chose
+ * @param {((waited: number, bound: number) => any)|null} [onWait] draws each wait on the source, as OnWait
+ * @returns {Promise<LoadedFleet>}
+ * @throws {SourceUnavailable} when the source stays slow or unavailable for the whole bound
+ * @throws {ApproveAgain} when the permission has expired
+ */
 async function loadFleet(release, onWait = null) {
   const man = release.man;
   if (!man) return { skip: word("installer.fleet.skip.unreachable") };

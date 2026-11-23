@@ -4,12 +4,35 @@ import { cf, approve, special, sleep, WAIT_BOUND_MINUTES } from "./api.mjs";
 import { rolloutApp } from "./containers.mjs";
 import { ascii, find } from "./bytes.mjs";
 import { BINDING_OF } from "./bindings.mjs";
+/** @import { Release, Session, Lasting, ApproveAgain } from './api.mjs' */
+
+/**
+ * @typedef {Object} Verdict what the copy serves, read against the release
+ * @property {boolean} confirmed true only when no lag is named
+ * @property {string[]} lags each part not on the release, named in words
+ * @property {boolean} capable whether the release's plane reports its builds
+ */
+/**
+ * @typedef {Object} FleetFailure a member the fleet step could not upload
+ * @property {string} member the member's name
+ * @property {string} why what the upload said
+ * @property {boolean} [out] true when R38 left it out and its upload was never attempted
+ */
 
 /* R15 (T35; F1, K1874): the probe credential travels only in the request's `Authorization: Bearer` header, the form
    admission R20 reads first, so it is in no address this installer makes, logs or shows. */
 /* R66 (S5, S8): a new address takes a while to wake, so the check waits for it within the stated bound, drawing the wait,
    and never reports a not-yet-ready address as failed before the bound has passed. The wait is counted in nominal seconds. */
+/** @type {number} nominal seconds between two asks of a waking address */
 const WAKE_EVERY_S = 3;
+/**
+ * Asks `<base>/api/?op=selftest` with the probe credential until it answers `ok` with the STORE bound.
+ * @param {string} base the copy's address
+ * @param {string} probe the probe credential, sent only in the Authorization header
+ * @param {((waited: number, bound: number) => any)|null} [onWait] drawn every 30 nominal seconds of waiting
+ * @returns {Promise<any>} the selftest's reply, or null when it never answered so within the bound
+ * @bound waits at most WAIT_BOUND_MINUTES minutes, counted in nominal seconds
+ */
 async function verifyInstall(base, probe, onWait = null) {
   const bound = WAIT_BOUND_MINUTES * 60;
   for (let waited = 0; ; waited += WAKE_EVERY_S) {
@@ -48,6 +71,11 @@ const hasWord = (bytes, word) => {
     if (!(i > 0 && WORD_BYTE(bytes[i - 1])) && !(i + pat.length < bytes.length && WORD_BYTE(bytes[i + pat.length]))) return true;
   return false;
 };
+/**
+ * Whether the plane's source names every one of the build fields (`storeVersion`, `memberVersions`) as a whole word.
+ * @param {any} source the plane bytes this act uploaded (a Uint8Array), or its text
+ * @returns {boolean} false for anything that is neither
+ */
 export function reportsBuilds(source) {
   if (source instanceof Uint8Array) return BUILD_FIELDS.every((f) => hasWord(source, f));
   return typeof source === "string" && BUILD_FIELDS.every((f) => new RegExp("\\b" + f + "\\b").test(source));
@@ -58,9 +86,22 @@ export function reportsBuilds(source) {
    build) cannot say that THIS act tried and failed — and on a release that cannot report members it is the only
    place the failure reaches the verdict. A member the plane does not bind is named at the fleet step and not here. A member
    R38 left out (`out`: its upload was never attempted) is named at the fleet step, never a lag here (R15; K3793). */
+/**
+ * @param {FleetFailure[]} [failed] absent is none
+ * @returns {string[]} one lag for each failed member the plane binds and R38 did not leave out
+ */
 const failedLags = (failed = []) => failed.filter((l) => l && !l.out && BINDING_OF.has(l.member))
   .map((l) => word("installer.lag.member.failed", { name: l.member, why: l.why }));
 
+/**
+ * Reads one `op=bootstrap&members=1` reply against the release and names every part that lags.
+ * @param {any} j the reply, or null when there was none
+ * @param {string} want the release's version
+ * @param {string[]} installed the members this act installed
+ * @param {boolean} capable whether the release's plane reports its builds
+ * @param {FleetFailure[]} [failed] the members the fleet step could not upload
+ * @returns {Verdict}
+ */
 function servingVerdict(j, want, installed, capable, failed = []) {
   const lags = [];
   if (!j || typeof j !== "object") {
@@ -91,6 +132,17 @@ function servingVerdict(j, want, installed, capable, failed = []) {
   return { confirmed: lags.length === 0, lags, capable };
 }
 
+/**
+ * Reads the copy's builds until none lags or the bound passes.
+ * @param {string} base the copy's address
+ * @param {string} want the release's version
+ * @param {string[]} installed the members this act installed
+ * @param {boolean} capable whether the release's plane reports its builds
+ * @param {FleetFailure[]} [failed] the members the fleet step could not upload
+ * @param {((waited: number, bound: number) => any)|null} [onWait] drawn every 30 nominal seconds of waiting
+ * @returns {Promise<Verdict>} the last verdict read
+ * @bound waits at most WAIT_BOUND_MINUTES minutes, counted in nominal seconds
+ */
 async function verifyServing(base, want, installed, capable, failed = [], onWait = null) {
   const bound = WAIT_BOUND_MINUTES * 60, every = 2.5;
   let last = null;
@@ -113,6 +165,18 @@ async function verifyServing(base, want, installed, capable, failed = [], onWait
    A member the plane does not report (unbound, silent, not listed) is no reading and is left to the verdict.
    Answers `{confirmed, restarted, lags}`; `lags` are for `withByteLags`. */
 const CONTAINER_WAIT_S = 30, POLL_S = 2.5;
+/**
+ * @param {Session} token the run's Session
+ * @param {string} acct the account's id
+ * @param {string} base the copy's address
+ * @param {Release} release
+ * @param {any} fleetResult the fleet step's result: `containers` ({member, id, appName, config} each) and `done` (member names)
+ * @param {((waited: number, bound: number) => any)|null} [onWait] drawn every 30 nominal seconds of waiting
+ * @returns {Promise<{confirmed: string[], restarted: string[], lags: string[]}>}
+ * @throws {ApproveAgain} when a restart's permission has expired
+ * @throws {Lasting} when a restart never came right within the bound
+ * @bound restarts a member still old after CONTAINER_WAIT_S nominal seconds; waits at most WAIT_BOUND_MINUTES minutes in all
+ */
 async function confirmContainers(token, acct, base, release, fleetResult, onWait = null) {
   const placed = (fleetResult?.containers || []).filter((c) => (fleetResult.done || []).includes(c.member));
   const members = [...new Set(placed.map((c) => c.member))];
@@ -152,7 +216,12 @@ async function confirmContainers(token, acct, base, release, fleetResult, onWait
     lags: still.map(({ name, version }) => word("installer.lag.member.version", { name, version })) };
 }
 
-/* R67 (S9): the new version has to answer at all. Waits within the stated bound; answers the reply or null. */
+/** R67 (S9): the new version has to answer at all. Waits within the stated bound; answers the reply or null.
+ * @param {string} base the copy's address
+ * @param {((waited: number, bound: number) => any)|null} [onWait] drawn every 30 nominal seconds of waiting
+ * @returns {Promise<any>} the reply, an object, or null when none came within the bound
+ * @bound waits at most WAIT_BOUND_MINUTES minutes, counted in nominal seconds
+ */
 async function waitForAnswer(base, onWait = null) {
   const bound = WAIT_BOUND_MINUTES * 60, every = 2.5;
   for (let waited = 0; ; waited += every) {
@@ -162,7 +231,13 @@ async function waitForAnswer(base, onWait = null) {
     await sleep(every * 1000);
   }
 }
-/* The version a Worker runs now, as its deployments list names it (newest first), or null when that cannot be read. */
+/** The version a Worker runs now, as its deployments list names it (newest first), or null when that cannot be read.
+ * @param {Session} token the run's Session
+ * @param {string} acct the account's id
+ * @param {string} slug the Worker's script name
+ * @returns {Promise<string|null>}
+ * @throws {ApproveAgain} when the permission has expired
+ */
 async function currentDeployment(token, acct, slug) {
   try {
     const r = await cf(token, `/accounts/${acct}/workers/scripts/${slug}/deployments`);
@@ -170,7 +245,14 @@ async function currentDeployment(token, acct, slug) {
     return list[0]?.versions?.[0]?.version_id ?? null;
   } catch (e) { if (approve(e)) throw e; return null; }
 }
-/* Puts that version back, at 100%. true when Cloudflare accepted it. */
+/** Puts that version back, at 100%. true when Cloudflare accepted it.
+ * @param {Session} token the run's Session
+ * @param {string} acct the account's id
+ * @param {string} slug the Worker's script name
+ * @param {string} versionId the version to put back
+ * @returns {Promise<boolean>}
+ * @throws {ApproveAgain} when the permission has expired
+ */
 async function rollBack(token, acct, slug, versionId) {
   try {
     await cf(token, `/accounts/${acct}/workers/scripts/${slug}/deployments`, { method: "POST", idem: true,
@@ -181,6 +263,12 @@ async function rollBack(token, acct, slug, versionId) {
 
 /* R33 with R15: the read-back's lags join the serving verdict's, first; a verdict with any is never confirmed. With no
    serving verdict (the address unread) the read-back's lags still make one, so a mismatch is always named. */
+/**
+ * @param {Verdict|null} verdict the serving verdict, or null when the address was not read
+ * @param {string[]} byteLags the read-back's lags
+ * @param {boolean} capable whether the release's plane reports its builds
+ * @returns {Verdict|null} `verdict` itself when there are no byte lags
+ */
 function withByteLags(verdict, byteLags, capable) {
   if (!byteLags.length) return verdict;
   if (!verdict) return { confirmed: false, lags: [...byteLags], capable };

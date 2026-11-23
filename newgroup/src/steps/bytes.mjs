@@ -1,22 +1,56 @@
 /* Bytes and bodies: the hashes and comparisons, the random values, and the multipart upload form the other files share
  * (R12, R13, R14). Pure; nothing here reaches the network. */
 
+/**
+ * The bytes as lower-case hexadecimal, two digits each.
+ * @param {ArrayBuffer|Uint8Array} buf
+ * @returns {string}
+ */
 const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, "0")).join("");
+/**
+ * Compares two dotted versions by their first three numbers: negative when `a` is older, 0 when equal, positive when newer.
+ * @param {any} a
+ * @param {any} b
+ * @returns {number}
+ */
 const vcmp = (a, b) => {
   const A = String(a).split(".").map(Number), B = String(b).split(".").map(Number);
   for (let i = 0; i < 3; i++) { const d = (A[i] || 0) - (B[i] || 0); if (d) return d; }
   return 0;
 };
 
+/** The headers a release is fetched with. @type {Record<string, string>} */
 const relHeaders = { "user-agent": "bio-installer" };
 
+/**
+ * The bytes as unpadded base64url.
+ * @param {ArrayBuffer|Uint8Array} buf
+ * @returns {string}
+ */
 const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+/**
+ * `n` random bytes as unpadded base64url.
+ * @param {number} n the number of bytes
+ * @returns {string}
+ */
 const rand = (n) => b64url(crypto.getRandomValues(new Uint8Array(n)));
 
+/** A line end, and the blank line that ends a part's headers, as bytes. @type {number[]} */
 const CRLF = [13, 10], HEADER_END = [13, 10, 13, 10];
+/**
+ * The string's characters as bytes (each one's code, cut to a byte).
+ * @param {string} s
+ * @returns {Uint8Array}
+ */
 const ascii = (s) => Uint8Array.from(s, (c) => c.charCodeAt(0));
-/* The first offset at or after `from` where `pat` (bytes) occurs in `hay`, or -1; the native scan finds each candidate. */
+/**
+ * The first offset at or after `from` where `pat` (bytes) occurs in `hay`, or -1; the native scan finds each candidate.
+ * @param {Uint8Array} hay
+ * @param {ArrayLike<number>} pat
+ * @param {number} [from]
+ * @returns {number}
+ */
 function find(hay, pat, from = 0) {
   for (let i = hay.indexOf(pat[0], from); i !== -1 && i + pat.length <= hay.length; i = hay.indexOf(pat[0], i + 1)) {
     let k = 1;
@@ -31,11 +65,16 @@ const K256 = Uint32Array.from({ length: 64 }, (_, i) => {
   let n = 2; for (let c = 0; c <= i; n++) { let p = true; for (let d = 2; d * d <= n; d++) if (n % d === 0) { p = false; break; } if (p) c++; }
   return Math.floor((Math.cbrt(n - 1) % 1) * 2 ** 32);
 });
+/** An incremental SHA-256: `update` with each chunk, then `hex` once for the digest. */
 class Sha256 {
   constructor() {
     this.h = Uint32Array.from([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
     this.block = new Uint8Array(64); this.fill = 0; this.length = 0; this.w = new Uint32Array(64);
   }
+  /**
+   * @param {Uint8Array} bytes
+   * @returns {this}
+   */
   update(bytes) {
     this.length += bytes.length;
     let i = 0;
@@ -49,6 +88,11 @@ class Sha256 {
     if (i < bytes.length) { this.block.set(bytes.subarray(i)); this.fill = bytes.length - i; }
     return this;
   }
+  /**
+   * @param {Uint8Array} b
+   * @param {number} o
+   * @returns {void}
+   */
   #compress(b, o) {
     const w = this.w, h = this.h, rotr = (x, n) => (x >>> n) | (x << (32 - n));
     for (let i = 0; i < 16; i++) w[i] = (b[o + 4 * i] << 24) | (b[o + 4 * i + 1] << 16) | (b[o + 4 * i + 2] << 8) | b[o + 4 * i + 3];
@@ -64,6 +108,10 @@ class Sha256 {
     }
     h[0] += a; h[1] += bb; h[2] += c; h[3] += d; h[4] += e; h[5] += f; h[6] += g; h[7] += hh;
   }
+  /**
+   * Ends the hash: pads the input and answers the digest, as 64 lower-case hexadecimal digits.
+   * @returns {string}
+   */
   hex() {
     const bits = this.length * 8, padLen = 1 + ((119 - (this.length % 64)) % 64 + 64) % 64 + 8, pad = new Uint8Array(padLen);
     pad[0] = 0x80;
@@ -73,7 +121,11 @@ class Sha256 {
     return [...this.h].map((x) => x.toString(16).padStart(8, "0")).join("");
   }
 }
-/* The hash of a byte stream, taken as the chunks arrive; the whole is never held. */
+/**
+ * The hash of a byte stream, taken as the chunks arrive; the whole is never held.
+ * @param {any} stream a readable stream of byte chunks
+ * @returns {Promise<string>} the SHA-256 as hexadecimal
+ */
 async function hashStream(stream) {
   const sha = new Sha256(), reader = stream.getReader();
   for (let r = await reader.read(); !r.done; r = await reader.read()) sha.update(r.value);
@@ -82,6 +134,11 @@ async function hashStream(stream) {
 /* The hash of the `index.mjs` part of a multipart body arriving as a stream, or null when there is none: the delimiters are
    found in a window of the last few bytes, and the part's bytes go to the hash as they come (R38). A part the body ends
    inside is hashed as far as it goes. */
+/**
+ * @param {any} stream a readable stream of byte chunks
+ * @param {string} boundary the multipart boundary
+ * @returns {Promise<string|null>} the SHA-256 as hexadecimal, or null
+ */
 async function hashPart(stream, boundary) {
   const delim = ascii("--" + boundary), next = new Uint8Array([...CRLF, ...delim]), reader = stream.getReader();
   let buf = new Uint8Array(0), state = "preamble", sha = null, done = false;
@@ -118,7 +175,13 @@ async function hashPart(stream, boundary) {
   return sha ? sha.hex() : null;
 }
 
-/* `source` is the module as text, or already a Blob (a repository release, R33: made once, shared by every upload). */
+/**
+ * The multipart upload form: a `metadata` part (the JSON of `meta`) and the module as `index.mjs`.
+ * `source` is the module as text, or already a Blob (a repository release, R33: made once, shared by every upload).
+ * @param {Object} meta
+ * @param {string|Blob} source
+ * @returns {FormData}
+ */
 function uploadForm(meta, source) {
   const fd = new FormData();
   fd.append("metadata", new Blob([JSON.stringify(meta)], { type: "application/json" }));

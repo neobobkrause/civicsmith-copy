@@ -3,6 +3,8 @@ import { word } from "../../../bio-plane/src/setup-words/index.mjs";
 import { cf, patiently } from "./api.mjs";
 import { hex, relHeaders } from "./bytes.mjs";
 import { DESCRIPTOR_PARTS } from "./containers.mjs";
+/** @import { Session, Lasting, ApproveAgain } from './api.mjs' */
+/** @import { DurableObjects } from './containers.mjs' */
 
 /* ---------------------------------------------------- the fleet (IC-82/D-297) */
 
@@ -10,6 +12,7 @@ import { DESCRIPTOR_PARTS } from "./containers.mjs";
    the verifier side too: a type this map does not know refuses that member by
    name rather than guessing — an inferred loader is the 3607b5c defect
    arriving inside a team's account. */
+/** @type {Record<string, string>} a part's module type -> the content type it is uploaded with */
 const PART_MIME = { CompiledWasm: "application/wasm", Data: "application/octet-stream",
                     Text: "text/plain", ESModule: "application/javascript+module" };
 
@@ -17,9 +20,27 @@ const PART_MIME = { CompiledWasm: "application/wasm", Data: "application/octet-s
    answer (5xx, rate limit, no answer) is retried within the bound and then ends the run with `screen.install.stopped.source`,
    BEFORE anything is created; an answer that is not transient (not found, bytes that fail their hash) is the member's own
    refusal, as before. `onWait` draws the wait. */
+/**
+ * The software source stayed slow or unavailable for the whole bound (R16, R71): `source` is true and `cause` is the
+ * Lasting failure; the message names `what`.
+ */
 export class SourceUnavailable extends Error {
+  /**
+   * @param {string} what the file asked for (a member, or a member and a part's path)
+   * @param {Error} cause the failure that did not mend
+   */
   constructor(what, cause) { super(`${what}: ${cause.message}`); this.source = true; this.cause = cause; }
 }
+/**
+ * R16: one file of a release, its bytes answered only when their SHA-256 is `wantSha`.
+ * @param {string} url
+ * @param {string} wantSha the SHA-256 (hex) the bytes must have
+ * @param {string} what the name the file's failures carry
+ * @param {((waited: number, bound: number) => any)|null} [onWait] draws each wait, as OnWait
+ * @returns {Promise<Uint8Array>} the verified bytes
+ * @throws {SourceUnavailable} when the source stays slow or unavailable (5xx, 429, no answer) for the whole bound
+ * @throws {Error} an answer that is not ok and not transient (its `status`, `fleetWhy`), or bytes that fail their integrity check
+ */
 async function fetchVerified(url, wantSha, what, onWait = null) {
   let bytes;
   try {
@@ -40,6 +61,11 @@ async function fetchVerified(url, wantSha, what, onWait = null) {
    reads `durable_objects`), and no others. The installer keeps no table of its own: a part that states none deploys none. */
 /* The migration a member's upload carries, given the tag the script holds now (null: it holds none): every step after that
    tag, in order, in one `steps` list ending at the last tag; nothing when it already holds the last. */
+/**
+ * @param {string|null} heldTag the migration tag the script holds now; null when it holds none
+ * @param {DurableObjects|null|undefined} objects the member's own Durable Objects; absent when it states none
+ * @returns {any} `{old_tag?, new_tag, steps: {new_sqlite_classes: string[]}[]}`, or null when there is nothing to migrate
+ */
 export function objectMigrations(heldTag, objects) {
   if (!objects) return null;
   const at = heldTag ? objects.migrations.findIndex((x) => x.tag === heldTag) : -1;
@@ -47,8 +73,30 @@ export function objectMigrations(heldTag, objects) {
   if (!rest.length) return null;
   return { ...(heldTag ? { old_tag: heldTag } : {}), new_tag: rest.at(-1).tag, steps: rest.map((x) => ({ new_sqlite_classes: [...x.classes] })) };
 }
+/**
+ * R37: the bindings of a member's own Durable Objects, as its `Worker` part states them; none when it states none.
+ * @param {DurableObjects|null|undefined} objects
+ * @returns {{type: string, name: string, class_name: string}[]}
+ */
 const objectBindings = (objects) => (objects?.bindings || []).map((b) => ({ type: "durable_object_namespace", name: b.name, class_name: b.class_name }));
 
+/**
+ * R16, R37, R38, R39, R64: one member's upload, PUT as its Worker under the copy's names.
+ * @param {Session} token the run's session
+ * @param {string} acct the account id
+ * @param {string} slug the copy's slug, which the member's `bio-plane` service binding names
+ * @param {any} m the member as the signed fleet statement states it (`member`, `compat`, `services`, `parts`)
+ * @param {string} version the release's version, bound as `VERSION`
+ * @param {Uint8Array} bundle the member's verified module
+ * @param {Record<string, Uint8Array>} partBytes each part's verified bytes, by its path
+ * @param {any} [extra] `{names, heldTag, migrations, objects, limits, fleet, bindings}`: the copy's names (Names,
+ *   required for any upload), the tag the script holds, a migration stated by the caller, the member's own objects
+ *   (DurableObjects) and limits, the fleet's members (a Set of names), and further bindings
+ * @returns {Promise<any>} the API's result
+ * @throws {ApproveAgain} when the permission has expired
+ * @throws {Lasting} when the API stays slow or unavailable for the whole bound
+ * @throws {Error} the platform's refusal
+ */
 async function uploadMember(token, acct, slug, m, version, bundle, partBytes, extra = {}) {
   const names = extra.names;
   /* R37: the member's own Durable Objects, as its Worker part states them, migrated from the tag the script holds. */

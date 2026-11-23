@@ -7,6 +7,24 @@ import { setSchedules } from "./containers.mjs";
 import { word, hasWord } from "../../../bio-plane/src/setup-words/index.mjs";
 import { selfBinding, BROWSER_BINDING, memberBindings, instanceAiBinding, sealBinding, profilesBinding, ownHostsBinding, storeLocationBinding, heldPlace, SEAL_BINDING, PROFILES_BINDING } from "./bindings.mjs";
 
+/** @import { Session, Names, ApproveAgain, Lasting } from './api.mjs' */
+/** @import { Binding } from './bindings.mjs' */
+/**
+ * @typedef {Object} Secrets the credentials a run generated (and the operator's `ai` credential, if supplied)
+ * @property {string} boot the `ADMIN_TOKEN`
+ * @property {string} probe the `PROBE_TOKEN`
+ * @property {string} daemon the `DAEMON_TOKEN`
+ * @property {string} [seal] the `ACCOUNT_SEAL_SECRET`
+ * @property {string} [instanceAi] the organisation `ai` credential
+ */
+/**
+ * @typedef {Object} PlaneRelease what the plane's uploads read of a release
+ * @property {string} version
+ * @property {Blob} blob the plane's exact bytes
+ * @property {Record<string, number>} limits the plane's stated limits
+ * @property {string} [sha] SHA-256 of `blob`, kept once taken
+ */
+
 /* R39 (K4566; fix round 6, G1) — THE PLANE'S SCHEDULE. The plane's one cron is the watchdog that heals a stalled object, and
    nothing in the account sets it but this: a script's upload carries no schedule. It is read from the signed bundle's own
    statement (`bio-plane-crons/1`), streamed, before anything is uploaded, so a release that states none (or unreadably) is
@@ -27,6 +45,7 @@ const setPlaneSchedules = (token, acct, slug, crons) => setSchedules(token, acct
    the account's settings are read back once the script is there: a plane that does not hold `enabled: true` stops the act.
    Stand-in for the sentence: `installer.fleet.why.program`; the row owed is `installer-steps.plane.observability`, one line
    for "your Cloudflare account did not switch on the plane's logs". */
+/** @type {Readonly<{enabled: boolean}>} */
 export const OBSERVABILITY = Object.freeze({ enabled: true });
 /* Refused only when the settings ARE read (they state their bindings) and the setting is not enabled. A read that fails, or
    answers nothing readable, is unknown, never "off" (as `heldBindings`): the act continues and `opts.note` is told, in words,
@@ -48,6 +67,20 @@ async function observabilityHeld(token, acct, slug, note) {
    the script the same PUT creates, and nothing here can prove Cloudflare accepts
    that self-reference without a real install, which is deploy-gated. So the
    install degrades rather than failing — see the retry in runInstall. */
+/**
+ * @param {Session} token the run's session
+ * @param {string} acct the account id
+ * @param {string} slug the plane's script name
+ * @param {Secrets} secrets the credentials to bind
+ * @param {PlaneRelease} release the release chosen
+ * @param {{names: Names, members?: string[], profiles?: string[], noSelf?: boolean, storeLocation?: string, note?: (line: string) => void}|Record<string, never>} [opts]
+ *   the copy's names (which the upload needs: the default `{}` holds none), the members to bind, the profiles chosen, whether to leave out
+ *   `SELF`, a location hint, and where a note is told
+ * @returns {Promise<any>} the API's answer to the PUT
+ * @throws {Error} when the release states no schedule (or unreadably), the account does not hold the logs switched on, or Cloudflare refuses
+ * @throws {ApproveAgain} when the permission has expired
+ * @throws {Lasting} when a wait never mended
+ */
 async function uploadInstall(token, acct, slug, secrets, release, opts = {}) {
   const names = opts.names;
   const crons = await cronsOf(release);
@@ -114,6 +147,19 @@ async function uploadInstall(token, acct, slug, secrets, release, opts = {}) {
    is supplied fresh. No migrations field, because the Store class already
    exists and its storage backend never changes. Updates therefore cannot
    touch passwords or the record, and the success page says so. */
+/**
+ * @param {Session} token the run's session
+ * @param {string} acct the account id
+ * @param {string} slug the plane's script name
+ * @param {boolean} withR2 whether the buckets are bound explicitly (else kept)
+ * @param {PlaneRelease} release the release chosen
+ * @param {{names: Names, members?: string[], noSelf?: boolean, secrets?: Secrets, daemon?: string, instanceAi?: string, seal?: string, profiles?: string[], ownHosts?: string[], note?: (line: string) => void}|Record<string, never>} [opts]
+ *   the copy's names (which the upload needs: the default `{}` holds none) and what this update restates
+ * @returns {Promise<any>} the API's answer to the PUT
+ * @throws {Error} when the release states no schedule (or unreadably), the held place cannot be read, the account does not hold the logs switched on, or Cloudflare refuses
+ * @throws {ApproveAgain} when the permission has expired
+ * @throws {Lasting} when a wait never mended
+ */
 async function uploadUpdate(token, acct, slug, withR2, release, opts = {}) {
   const names = opts.names;
   const crons = await cronsOf(release);
@@ -213,6 +259,15 @@ async function uploadUpdate(token, acct, slug, withR2, release, opts = {}) {
    the kind it would send; any one missing and the plane is uploaded, bytes identical or not (S7). Secrets cannot be read, so a
    secret counts by its name. R42: a room never moves, so `STORE_LOCATION` and `STORE_GENERATION` are not compared: a held
    value that differs from what an install would send, or none, never makes the plane out of sync. */
+/**
+ * @param {Session} token the run's session
+ * @param {string} acct the account id
+ * @param {string} slug the plane's script name
+ * @param {PlaneRelease} release the release chosen
+ * @param {Binding[]} held the bindings the script holds
+ * @param {{names: Names, members?: string[], profiles: string[], [other: string]: any}} opts
+ * @returns {Promise<boolean>} true only when every binding the install would send is held, with its kind, and the bytes are the release's
+ */
 async function planeInSync(token, acct, slug, release, held, { names, members, profiles }) {
   const have = new Map(held.map((b) => [b.name, b]));
   const wants = [["STORE", "durable_object_namespace"], ["VERSION", "plain_text"], ["INSTANCE_NAME", "plain_text"], ["ADMIN_TOKEN", "secret_text"],
@@ -226,9 +281,25 @@ async function planeInSync(token, acct, slug, release, held, { names, members, p
   return (await scriptHash(token, acct, slug)) === (await releaseSha(release));
 }
 /* A secret set on its own, without an upload (R69: a run that resumes states the credentials it has just generated). */
+/**
+ * @param {Session} token the run's session
+ * @param {string} acct the account id
+ * @param {string} slug the plane's script name
+ * @param {string} name the secret's name
+ * @param {string} text its value
+ * @returns {Promise<any>} the API's answer
+ */
 async function putSecret(token, acct, slug, name, text) {
   return cf(token, `/accounts/${acct}/workers/scripts/${slug}/secrets`, { method: "PUT", body: JSON.stringify({ name, text, type: "secret_text" }) });
 }
+/**
+ * @param {Session} token the run's session
+ * @param {string} acct the account id
+ * @param {string} slug the plane's script name
+ * @param {Secrets & {seal: string}} secrets the credentials just generated
+ * @param {Array<{name: string}>} held the bindings the script holds (only their names are read)
+ * @returns {Promise<void>}
+ */
 async function rotateSecrets(token, acct, slug, secrets, held) {
   for (const [name, text] of [["ADMIN_TOKEN", secrets.boot], ["PROBE_TOKEN", secrets.probe], ["DAEMON_TOKEN", secrets.daemon]]) await putSecret(token, acct, slug, name, text);
   if (!held.some((b) => b.name === SEAL_BINDING)) await putSecret(token, acct, slug, SEAL_BINDING, secrets.seal);

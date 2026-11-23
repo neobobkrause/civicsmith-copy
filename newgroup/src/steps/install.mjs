@@ -7,6 +7,8 @@ import { uploadUpdate } from "./uploads.mjs";
 import { uploadMember } from "./members.mjs";
 import { containerPartsOf, lacksFor, WORKER_PART_LACKS, VPC_MEMBER, VPC_BINDING, vpcServiceOk, containerConditions, conditionWhy, placeContainer, setSchedules } from "./containers.mjs";
 import { word } from "../../../bio-plane/src/setup-words/index.mjs";
+/** @import { Emit, Names, Release, Session, Lasting, ApproveAgain } from './api.mjs' */
+/** @import { LoadedFleet } from './load.mjs' */
 
 /* Install (or refresh — the PUT is the same act) every member `loadFleet` verified. DEGRADES PER MEMBER, never fails the
    install: a team's plane must not be lost over a member it can add at the next update, and what was left out is SAID
@@ -22,6 +24,21 @@ function classMigration(heldTag, heldClasses, classes) {
   return { migrations: { ...(heldTag ? { old_tag: heldTag } : {}), new_tag: `v${at ? Number(at[1]) + 1 : 2}`, new_sqlite_classes: missing } };
 }
 
+/**
+ * @param {Emit} emit the progress sink
+ * @param {Session} token the run's session
+ * @param {string} acct the account id
+ * @param {string} slug the copy's slug
+ * @param {Release} release the release whose fleet is installed
+ * @param {LoadedFleet} loaded what `loadFleet` answered
+ * @param {any} [ctx] `{names, vpc, scope, plan}`: the copy's names (Names, required when any member is installed), the
+ *   Workers VPC service named, and the scope and plan `containerConditions` reads
+ * @returns {Promise<any>} `{done, left, imageLags, completed, containers}` (`done`, `completed`: member names; `left`:
+ *   `{member, why, lacks?, out?}`; `imageLags`: sentences; `containers`: `{member, id, appName, config}`), or undefined
+ *   when `loaded` is a skip
+ * @throws {ApproveAgain} when the permission has expired
+ * @throws {Lasting} when the API stays slow or unavailable for the whole bound
+ */
 async function installFleet(emit, token, acct, slug, release, loaded, ctx = {}) {
   await emit.step("fleet", word("installer.step.helpers"));
   if (loaded.skip) { emit.ok("fleet", loaded.skip); return; }
@@ -149,6 +166,18 @@ async function installFleet(emit, token, acct, slug, release, loaded, ctx = {}) 
    against a script that already carries it, which nothing here has established Cloudflare accepts. Nothing to add ->
    no PUT. A refusal DEGRADES, never fails the act: the members stay installed, the step is marked, and the verify step
    names each member the plane cannot reach (servingVerdict) — never a success over it. */
+/**
+ * @param {Emit} emit the progress sink
+ * @param {Session} token the run's session
+ * @param {string} acct the account id
+ * @param {string} slug the copy's slug
+ * @param {Release} release the release installed
+ * @param {string[]} already the members the plane was bound to at step 1
+ * @param {{done?: string[]}|null|undefined} fleet what `installFleet` answered
+ * @param {{withR2: boolean, daemon?: string, noSelf?: boolean, profiles?: any, ownHosts?: string[], names: Names, writeHosts?: boolean}} opts
+ *   what `uploadUpdate` takes, and whether to write the copy's own hosts
+ * @returns {Promise<{bound: string[], unbound: string[], put?: boolean, hosts?: boolean}>}
+ */
 async function bindMembers(emit, token, acct, slug, release, already, fleet, opts) {
   const want = [...BINDING_OF.keys()]
     .filter((m) => already.includes(m) || (fleet?.done || []).includes(m));

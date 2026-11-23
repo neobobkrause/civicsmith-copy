@@ -1,6 +1,7 @@
 /* R30: no Logpush job may keep a record of each request of the copy's Workers. */
 import { word } from "../../../bio-plane/src/setup-words/index.mjs";
 import { cf } from "./api.mjs";
+/** @import { Emit, Session } from './api.mjs' */
 
 /* R46 (T36; K1892 "no log", K1946 T8) — NO LOG OF WHO OPENED WHICH FILE.
  *
@@ -13,7 +14,14 @@ import { cf } from "./api.mjs";
  * `!in` or `!eq` naming them all, or `in` or `eq` naming none of them. Anything else, a filter that does not parse
  * included, does not exclude them. A list the permission cannot read leaves the check UNDETERMINED, said so, never
  * passed (CFG.LOGPUSH_SCOPE: every Logpush API call needs "Logs Write", which R2 does not ask). */
+/** @type {string} the Logpush dataset that records each request a Worker serves */
 export const PER_REQUEST_DATASET = "workers_trace_events";
+/**
+ * Whether a Logpush job's filter leaves out every one of `names` by `ScriptName`.
+ * @param {any} filter the job's filter, as JSON text or already parsed; absent or unparsable excludes nothing
+ * @param {string[]} names the copy's Workers' script names
+ * @returns {boolean}
+ */
 export function filterExcludes(filter, names) {
   if (filter === null || filter === undefined || filter === "") return false;
   let f;
@@ -30,6 +38,14 @@ export function filterExcludes(filter, names) {
     return false;
   });
 }
+/**
+ * Lists the account's Logpush jobs and names each over PER_REQUEST_DATASET that does not exclude `names`.
+ * @param {Session} token the run's Session
+ * @param {string} acct the account's id
+ * @param {string[]} names the copy's Workers' script names
+ * @returns {Promise<{state: "undetermined", why: string, jobs?: undefined} | {state: "named", jobs: any[], why?: undefined} | {state: "clear", why?: undefined, jobs?: undefined}>}
+ *   `why` when the list could not be read; `jobs`, the jobs named, when any is
+ */
 async function logpushCheck(token, acct, names) {
   let jobs;
   try { jobs = await cf(token, `/accounts/${acct}/logpush/jobs`); }
@@ -38,11 +54,22 @@ async function logpushCheck(token, acct, names) {
   const named = jobs.filter((j) => j && j.dataset === PER_REQUEST_DATASET && !filterExcludes(j.filter, names));
   return named.length ? { state: "named", jobs: named } : { state: "clear" };
 }
+/**
+ * @param {any} j a Logpush job as the API lists it
+ * @param {string[]} names the copy's Workers' script names
+ * @returns {string} the job named as a lag, paused or not
+ */
 const logLag = (j, names) => {
   const vars = { name: String(j.name || word("installer.lag.logjob.unnamed")), id: j.id ?? word("installer.lag.logjob.unknownid"), dataset: PER_REQUEST_DATASET, programs: names.join(", ") };
   return j.enabled === false ? word("installer.lag.logjob.paused", vars) : word("installer.lag.logjob", vars);
 };
-/* The step itself: listed, said, and its named jobs returned as lags for the verdict (R15's rule: no success over one). */
+/** The step itself: listed, said, and its named jobs returned as lags for the verdict (R15's rule: no success over one).
+ * @param {Emit} emit
+ * @param {Session} token the run's Session
+ * @param {string} acct the account's id
+ * @param {string[]} names the copy's Workers' script names
+ * @returns {Promise<{lags: string[], state: string}>}
+ */
 async function logsStep(emit, token, acct, names) {
   await emit.step("logs", word("installer.step.logs"));
   const r = await logpushCheck(token, acct, names);

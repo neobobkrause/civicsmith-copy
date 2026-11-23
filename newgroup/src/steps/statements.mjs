@@ -2,6 +2,21 @@
 import { word } from "../../../bio-plane/src/setup-words/index.mjs";
 import { ascii, find } from "./bytes.mjs";
 
+/**
+ * @typedef {Object} StatedLimits what a release's limits statement says
+ * @property {boolean} ok
+ * @property {Readonly<Record<string, number>>|null} [limits] the stated limits (when ok; a member that states none: null)
+ * @property {string} [why] when not ok: `none` or `unreadable` (a member's: the sentence)
+ * @property {string} [detail] what was unreadable
+ */
+/**
+ * @typedef {Object} StatedCrons what a release's schedule statement says
+ * @property {boolean} ok
+ * @property {ReadonlyArray<string>} [crons] the one schedule (when ok)
+ * @property {string} [why] when not ok: `none` or `unreadable`
+ * @property {string} [detail] what was unreadable
+ */
+
 /* R20 (DIST-15, N336) — THE PLANE'S LIMITS, AS THE SIGNED RELEASE STATES THEM.
  *
  * DIST-7 sent a constant pinned to the plane's config, so an installer installing a later release with another ceiling
@@ -41,6 +56,12 @@ function statementBodies(source, tag) {
   for (const m of source.matchAll(re)) bodies.add(m[2]);
   return bodies;
 }
+/**
+ * @param {any} source the module as text or bytes; anything else states nothing
+ * @param {string} tag the statement's tag (`bio-plane-limits/1` or `bio-member-limits/1`)
+ * @returns {StatedLimits}
+ * @bound exactly one distinct statement; each key `[a-z][a-z0-9_]*`, keys in ascending order, each value a whole number from 1 to 999999999
+ */
 function statedLimits(source, tag) {
   const bodies = statementBodies(source, tag);
   if (bodies.size === 0) return { ok: false, why: "none" };
@@ -56,6 +77,10 @@ function statedLimits(source, tag) {
   }
   return { ok: true, limits: Object.freeze(limits) };
 }
+/**
+ * @param {any} source the plane's module as text or bytes
+ * @returns {StatedLimits}
+ */
 export const planeLimits = (source) => statedLimits(source, "bio-plane-limits/1");
 /* R39 (K4566; fix round 6, G1) — THE PLANE'S SCHEDULE, AS THE SIGNED RELEASE STATES IT. control-plane signs the plane's one
  * cron beside its limits, as one quoted string `bio-plane-crons/1 <five fields>`; this reads it from the same verified bytes, as
@@ -70,11 +95,21 @@ function statedCrons(bodies) {
   if (!CRON.test(cron)) return { ok: false, why: "unreadable", detail: `form="${CRONS_TAG}${body}"` };
   return { ok: true, crons: Object.freeze([cron]) };
 }
+/**
+ * @param {any} source the plane's module as text or bytes
+ * @returns {StatedCrons}
+ * @bound exactly one distinct statement of one schedule of five fields
+ */
 export const planeCrons = (source) => statedCrons(statementBodies(source, CRONS_TAG));
 /* The same, read from a stream as it arrives (R38: the plane's 29 MB module is never held whole). A statement is found in the
    window of the last chunk and the tail kept from the one before, long enough for the tag, its quotes and a schedule, so a
    chunk boundary falls anywhere in it without changing the answer. */
 const CARRY_BYTES = 256;
+/**
+ * @param {any} stream the plane's module as it downloads, a stream of byte chunks
+ * @returns {Promise<StatedCrons>}
+ * @bound exactly one distinct statement of one schedule of five fields
+ */
 export async function planeCronsOfStream(stream) {
   const bodies = new Set(), reader = stream.getReader();
   let carry = new Uint8Array(0);
@@ -91,6 +126,7 @@ export async function planeCronsOfStream(stream) {
   return statedCrons(bodies);
 }
 /* The key each `why` of a refused release is said by (the installer, which knows the version, draws the sentence). */
+/** @type {Readonly<{none: string, unreadable: string}>} */
 const LIMITS_NOT_STATED = Object.freeze({ none: "installer.release.nolimits", unreadable: "installer.release.badlimits" });
 
 /* R39 (N621; K1686, K1731; `sheet-worker` R17) — A FLEET MEMBER'S LIMITS, AS ITS SIGNED BUNDLE STATES THEM. A member's
@@ -98,6 +134,10 @@ const LIMITS_NOT_STATED = Object.freeze({ none: "installer.release.nolimits", un
    `bio-member-limits/1 key=n …`, read exactly as R20 reads the plane's. `{ok: true, limits}` (null when it states none:
    uploaded with none, as before), or `{ok: false, why}` in words (the member is left out, named). Nothing is added to the
    fleet statement: the limits ride inside the member bytes the statement's hash already covers. */
+/**
+ * @param {string|Uint8Array} bytes the member's module as text or bytes
+ * @returns {StatedLimits} `{ok: true, limits}` (null when it states none) or `{ok: false, why}` in words
+ */
 export function memberLimits(bytes) {
   const source = typeof bytes === "string" ? bytes : new TextDecoder().decode(bytes);
   const lim = statedLimits(source, "bio-member-limits/1");

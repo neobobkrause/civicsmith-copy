@@ -3,6 +3,25 @@ import { cf, special, sleep, WAIT_BOUND_MINUTES } from "./api.mjs";
 import { establishPlan } from "./probes.mjs";
 import { imageWhy, imageSaid, lacksOf } from "./images.mjs";
 import { word } from "../../../bio-plane/src/setup-words/index.mjs";
+/** @import { Names, Session, Lasting, ApproveAgain } from './api.mjs' */
+
+/**
+ * @typedef {Object} ContainerClass one container class as its checked descriptor states it (R38, R60)
+ * @property {string} class_name
+ * @property {string} image the image, pinned by digest
+ * @property {number} max_instances
+ * @property {{member: string, binding: string}[]} bind the members bound to the class, and the binding name each reads it by
+ * @property {string} [instance_type] the size the member's configuration declares
+ * @bound class_name: a JavaScript identifier of 1 to 64 characters; max_instances: a whole number from 1 to 1000;
+ *   binding: a capital letter, then up to 63 capital letters, digits or underscores; instance_type: a lowercase letter,
+ *   then up to 31 lowercase letters, digits or hyphens
+ */
+/**
+ * @typedef {Object} DurableObjects a member's own Durable Objects, as its `Worker` part states them (R37)
+ * @property {{name: string, class_name: string}[]} bindings
+ * @property {{tag: string, classes: string[]}[]} migrations in order
+ * @bound a tag is `v` and a whole number; names as ContainerClass's class_name and binding
+ */
 
 /* R38 (M-Q8) — THE CONTAINER MEMBER (agent-runner: Claude Code in a container, a member's own subscription path;
  * file-scanner: ClamAV and the safe view, two containers, T36).
@@ -25,6 +44,7 @@ import { word } from "../../../bio-plane/src/setup-words/index.mjs";
  * the class. Any condition failing leaves the member out, named with what the copy then lacks (images.mjs, CONTAINER_LACKS): the
  * install never fails over it. The Containers API calls are wrangler's own (`/accounts/<id>/containers/applications`,
  * `…/rollouts`); like the install's SELF binding, they are confirmed only by a real install, which is deploy-gated. */
+/** @type {string} the part type of a container class's descriptor */
 export const CONTAINER_PART = "Container";
 /* R44 (T36; K2155, N772): a member's own bucket bindings and scheduled triggers, which the fleet statement's `services`
    cannot carry, ride as one more signed part of type `Worker` (`worker.json`, bundler's), read like a container's
@@ -32,10 +52,21 @@ export const CONTAINER_PART = "Container";
      {r2_buckets: [{binding, bucket: "captures" | "published"}], crons: ["<five fields>"]}
    A bucket is named by its role and bound to the copy's own bucket of that role. A member without the part gets
    neither, as before, and the page names what it then lacks. */
+/** @type {string} the part type of a member's description of its own buckets, schedule and objects */
 export const WORKER_PART = "Worker";
+/** @type {Set<string>} the part types that are read, never uploaded as modules */
 const DESCRIPTOR_PARTS = new Set([CONTAINER_PART, WORKER_PART]);
+/**
+ * A member's `Container` parts, one per class.
+ * @param {{parts?: {type: string, path: string}[]}} m the member as the fleet statement states it
+ * @returns {{type: string, path: string}[]}
+ */
 const containerPartsOf = (m) => (m.parts || []).filter((pp) => pp.type === CONTAINER_PART);
 /* R57: what a container member left out then lacks, said after its reason; nothing for a member the assistant does not need. */
+/**
+ * @param {{member: string, parts?: {type: string, path: string}[]}} m the member as the fleet statement states it
+ * @returns {string} what the copy lacks without it; "" for a member that is not a container member or names nothing lacked
+ */
 const lacksFor = (m) => (containerPartsOf(m).length ? lacksOf(m.member) : "");
 const CLASS_NAME = /^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/;
 const BINDING_NAME = /^[A-Z][A-Z0-9_]{0,63}$/;
@@ -43,6 +74,11 @@ const INSTANCE_TYPE = /^[a-z][a-z0-9-]{0,31}$/;
 const CLASS_PATH = /^container\/([A-Za-z_$][A-Za-z0-9_$]{0,63})\.json$/;
 
 /* The descriptor, read and checked; `{ok: true, d}` or `{ok: false, why}` in words. */
+/**
+ * @param {Uint8Array} bytes the `Container` part's verified bytes
+ * @returns {{ok: boolean, d?: any, why?: string}} `d` a ContainerClass when ok; else `why` in words
+ * @bound as ContainerClass states: max_instances a whole number from 1 to 1000; scheduling_policy exactly "default"
+ */
 export function containerDescriptor(bytes) {
   let d;
   try { d = JSON.parse(new TextDecoder().decode(bytes)); } catch { return { ok: false, why: word("installer.fleet.why.container.parse") }; }
@@ -69,6 +105,11 @@ export function containerDescriptor(bytes) {
    `{ok: false, why}`. With two or more, each part's path names its class and the class names differ; any part that
    does not read leaves the whole member out (a member missing a part its statement names never reaches here: the
    part's fetch fails first). Each class's why names the class. */
+/**
+ * @param {{path: string}[]} parts the member's `Container` parts
+ * @param {(path: string) => Uint8Array} bytesOf a part's verified bytes, by its path
+ * @returns {{ok: boolean, classes?: ContainerClass[], why?: string}}
+ */
 export function containerClasses(parts, bytesOf) {
   if (parts.length === 1) return ((r) => r.ok ? { ok: true, classes: [r.d] } : r)(containerDescriptor(bytesOf(parts[0].path)));
   const classes = [];
@@ -87,6 +128,12 @@ export function containerClasses(parts, bytesOf) {
 /* R44 (T36): the `Worker` part, read and checked; `{ok: true, d}` or `{ok: false, why}` in words. */
 const BUCKET_ROLES = Object.freeze({ captures: "bio-captures", published: "bio-published" });
 const CRON = /^(?:[0-9*,/?LW#A-Za-z-]+\s){4}[0-9*,/?LW#A-Za-z-]+$/;
+/**
+ * @param {Uint8Array} bytes the `Worker` part's verified bytes
+ * @returns {{ok: boolean, d?: any, why?: string}} `d` `{r2_buckets: {binding, bucket}[], crons: string[], durable_objects?: DurableObjects}`
+ *   when ok; else `why` in words
+ * @bound at most three crons, each five fields; a bucket is "captures" or "published"
+ */
 export function workerDescriptor(bytes) {
   let d;
   try { d = JSON.parse(new TextDecoder().decode(bytes)); } catch { return { ok: false, why: word("installer.fleet.why.program") }; }
@@ -111,21 +158,36 @@ export function workerDescriptor(bytes) {
 /* R44 (T36): what file-scanner then lacks, when its release carries no `Worker` part. */
 /* R44 (T36): the members that then lack their bucket and schedule, when their release carries no `Worker` part: they get the
    note `installer.fleet.note.scanner`. */
+/** @type {readonly string[]} */
 const WORKER_PART_LACKS = Object.freeze(["file-scanner"]);
 
 /* R45 (T36; K1946 T4): the member a tool reached through a tunnel is called through, and the binding name it reads the
    operator's Workers VPC service by, as R45 names them. */
+/** @type {string} */
 export const VPC_MEMBER = "file-scanner";
+/** @type {string} */
 export const VPC_BINDING = "SECURITY_VPC";
 
 /* R45 (T36): a Workers VPC service is named by its id, 32 hexadecimal digits with or without the dashes of a UUID. */
 const VPC_ID = /^(?:[0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
+/**
+ * @param {any} v the service id the operator named
+ * @returns {boolean} whether it is a Workers VPC service id
+ * @bound 32 hexadecimal digits (lowercase), with or without the dashes of a UUID
+ */
 export const vpcServiceOk = (v) => typeof v === "string" && VPC_ID.test(v);
 
 /* Whether this act may install a container (R38's first two conditions), asked once, only when the release names one.
    `scope` is what the token response stated (null: it stated none, and one read of the Containers API decides). On an
    update the plan is established here as R6 establishes it, and a Free or unknown answer only leaves the container out:
    an update never grows a refusal. */
+/**
+ * @param {Session} token the run's session
+ * @param {string} acct the account id
+ * @param {{scope?: string|null, plan?: any}} conditions the scope the token response stated, and the plan when R6 established it
+ * @returns {Promise<{ok: boolean, code?: string, said?: string, leftover?: boolean}>} `code` one of "nopermission",
+ *   "permissionunknown", "freeplan", "planunknown" when not ok; `leftover` when the plan probe left a script behind
+ */
 async function containerConditions(token, acct, { scope, plan }) {
   if (scope !== null && scope !== undefined) {
     if (!scope.split(/[\s,]+/).includes("containers.write"))
@@ -144,6 +206,10 @@ async function containerConditions(token, acct, { scope, plan }) {
 }
 
 /* Why the conditions failed, as the fragment the left-out list shows. */
+/**
+ * @param {{code?: string}} c the conditions' answer, not ok
+ * @returns {string}
+ */
 function conditionWhy(c) {
   if (c.code === "nopermission") return word("installer.fleet.why.nopermission");
   if (c.code === "permissionunknown") return word("installer.fleet.why.permissionunknown");
@@ -152,6 +218,14 @@ function conditionWhy(c) {
 }
 
 /* A full rollout of one application to `config`: the platform's way to start a new image, and, asked again, to restart. */
+/**
+ * @param {Session} token
+ * @param {string} acct
+ * @param {string} id the application's id
+ * @param {string} appName
+ * @param {Object} config the target configuration (`image`, and `instance_type` when stated)
+ * @returns {Promise<any>} the rollout as the API answers it
+ */
 const rolloutApp = (token, acct, id, appName, config) => cf(token, `/accounts/${acct}/containers/applications/${id}/rollouts`, { method: "POST",
   body: JSON.stringify({ description: "Civicsmith installer: " + appName, strategy: "rolling", kind: "full_auto", step_percentage: 100,
     target_configuration: config }) });
@@ -186,6 +260,19 @@ async function pullFailed(token, acct, id, rolloutId) {
    another (a rollout answered "no changes" and kept the old one), one further rollout is asked, and an image still another is
    returned as a lag, never success. Answers `{action, lag, id, appName, config}`, `lag` null when the image deployed is the release's;
    `id`, `appName` and `config` are what a later restart (S9, `confirmContainers`) needs. */
+/**
+ * @param {Session} token
+ * @param {string} acct
+ * @param {{member: string}} m the member
+ * @param {ContainerClass} d the class
+ * @param {string} appName the application's name under the copy's names
+ * @param {Names} names the copy's names
+ * @returns {Promise<{action: string, lag: string|null, id: any, appName: string, config: {image: string, instance_type?: string}}>}
+ *   `action` "created" or "rolled out"; `id` null when the platform answered none
+ * @throws {Error} when the class's namespace is not there, or the platform could not pull the image
+ * @throws {ApproveAgain} when the permission has expired
+ * @throws {Lasting} when the API stays slow or unavailable for the whole bound
+ */
 async function placeContainer(token, acct, m, d, appName, names) {
   const spaces = await cf(token, `/accounts/${acct}/workers/durable_objects/namespaces?per_page=1000`);
   const script = names.member(m.member);
@@ -212,6 +299,14 @@ async function placeContainer(token, acct, m, d, appName, names) {
 }
 
 /* R44: a member's scheduled triggers, set exactly as its `Worker` part states them. */
+/**
+ * @param {Session} token
+ * @param {string} acct
+ * @param {string} script the member's Worker
+ * @param {string[]} crons
+ * @returns {Promise<any>} the API's result
+ * @throws {Error} the platform's refusal
+ */
 async function setSchedules(token, acct, script, crons) {
   return cf(token, `/accounts/${acct}/workers/scripts/${script}/schedules`,
     { method: "PUT", body: JSON.stringify(crons.map((cron) => ({ cron }))) });

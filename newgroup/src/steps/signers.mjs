@@ -23,4 +23,5 @@
  * verifies a release trust exactly the same keys and a rotation is one edit, there. The array stays an array of its own so
  * that a test can arm another key for one act; the shipped contents are `RELEASE_KEYS`'. */
 import { RELEASE_KEYS } from "../../../bio-plane/src/sshsig.mjs";
+/** @type {string[]} */
 export const ARMED_SIGNERS = [...RELEASE_KEYS];

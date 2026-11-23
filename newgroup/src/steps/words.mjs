@@ -1,6 +1,8 @@
 /* R36: every key installer-steps reads through setup-words' `word`, the list the installer's bundle cuts the word rows to beside its
  * own (`KEYS`); the build also finds each literal `word("…")` call, so this list and the source agree by a test. The sentences it
- * writes first in code are `localize` ids (`installer-steps.<area>.<name>`) and are reported to BOB, not listed here. */
+ * writes first in code are `localize` ids (`installer-steps.<area>.<name>`) and are reported to BOB, not listed here.
+ * @type {readonly string[]}
+ */
 export const STEP_KEYS = Object.freeze([
   "installer.cfsaid",
   "installer.connect.address.done",
