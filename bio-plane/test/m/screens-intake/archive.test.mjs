@@ -2,7 +2,7 @@
  * state, the hold strip's acts, an archive refused whole, and its files opening open-file. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { openWorld, members, text, main, btn, fill, press, ok, refused, rawKeys, word, hasWord, says, saysIn, dayOf } from "./page.mjs";
+import { openWorld, members, text, main, btn, fill, press, ok, refused, rawKeys, word, hasWord, says, saysIn, dayOf, screenOf } from "./page.mjs";
 import { SCREENS } from "../../../src/screens-intake/index.mjs";
 import { makeZip } from "../../make-zip.mjs";
 
@@ -178,7 +178,7 @@ test("R17 R15 a zero count is not drawn: an archive that opened with only filed 
 });
 
 test("R26 every key the archive screen reads is a word of the list, and its states draw word(key, vars)", async () => {
-  for (const k of SCREENS.find((x) => x.id === "archive").words) assert.ok(hasWord(k), k);
+  for (const k of screenOf("archive").words) assert.ok(hasWord(k), k);
   const s = await scene();
   const p = await at(s);
   for (const [k, v] of [["screen.archive.files"], ["screen.archive.facts", { short: `${s.sha.slice(0, 4)}…${s.sha.slice(-4)}` }], ["screen.archive.gradeabout", { grade: (await s.list()).archive.grade }]]) assert.ok(says(p, k, v), k);

@@ -6,7 +6,7 @@
  * is read by BOB from the workflow's log at the redeploy. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { deriveStorePlace } from "../../../scripts/derive-bindings.mjs";
 import { makeRepo, run, rm, VERSION, ACCOUNT, PLANE } from "./repo.mjs";

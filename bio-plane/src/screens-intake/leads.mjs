@@ -33,7 +33,7 @@ function renderLeads(cs, view) {
     + `<div class="mk-acts">${cs.act("lead", { tone: "primary" })}</div>`
     + `<p class="mk-note">${cs.w("screen.leads.write.note1")} ${cs.w("screen.leads.write.note2")}</p></div>`);
   const list = !mine.length ? "" : cs.sec("screen.leads.mine.head", cs.sheet(mine.map((l) =>
-    cs.row(cs.icon("hint"), `<span class="rec">${cs.esc(l.words)}</span>`, cs.act("leadread", { tone: "quiet", data: { id: l.lead_id } }), stateWord(l.state))).join("")),
+    cs.row(cs.icon("hint"), `<span class="rec">${cs.esc(l.words)}</span>`, cs.act("leadread", { tone: "quiet", label: "screen.capture.openit", data: { id: l.lead_id } }), stateWord(l.state))).join("")),
     { help: "screen.leads.list.help" });
   let one = "";
   if (open && typeof open.lead_id === "string") {

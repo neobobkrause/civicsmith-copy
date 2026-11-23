@@ -1,18 +1,18 @@
-/* NEGATIVE CONTROL: (run 2026-07-31) disable the store CAS-on-base inside the SHIPPED artifact dist/bio-plane.bundled.mjs (guard `cur.bundle_sha !== base` with `false`), so the bundled build no longer refuses a stale write -> livefire against the bundle reports 14/19, ok:false, exit 1: 5 self-test assertions fail (STALE/garbage base refused, live/history state, lease base); restored the artifact via git. */
+/* release R22, R46: the plane asset a release carries, built afresh from this checkout by the plane's own recipe (never a
+   committed bundle), boots as one part under workerd, passes its own self-test and live-fire canary, and refuses to
+   promote outside its confinement.
+   NEGATIVE CONTROL: (run 2026-07-31, against the bundle then committed) disable the store CAS-on-base inside the bundle
+   (guard `cur.bundle_sha !== base` with `false`), so the bundled build no longer refuses a stale write -> livefire
+   reports 14/19, ok:false, exit 1: 5 self-test assertions fail (STALE/garbage base refused, live/history state, lease
+   base). */
 import "../stdio.mjs";                 /* D-282: a suite's own exit must not discard the suite's own output */
 import "../sandbox.mjs"; /* D-186: owns $TMPDIR for this process and removes it on exit */
 import { Miniflare } from "miniflare";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-/* Resolved from this file, not from an absolute path. It was
-   `/home/claude/work/bio-plane/dist/...`, a path that exists on one container and
-   nowhere else, so this suite could not run on any other machine — and it had been
-   dropped from the hand-maintained `npm test` chain rather than fixed, which is
-   how it stopped being run by anything without anybody being told.
-   Negative-control detail: disable the store CAS-on-base inside the SHIPPED artifact dist/bio-plane.bundled.mjs (guard `cur.bundle_sha !== base` with `false`), so the bundled build no longer refuses a stale write -> livefire against the bundle reports 14/19, ok:false, exit 1: 5 self-test assertions fail (STALE/garbage base refused, live/history state, lease base); restored the artifact via git. */
-const P = fileURLToPath(new URL("../../dist/bio-plane.bundled.mjs", import.meta.url));
+import { buildMember, planeMember } from "../../scripts/fleet-bundle.mjs";
+/* R46: built here, in memory, by the recipe the plane's own build runs; nothing in dist/ is read. */
+const built = await buildMember(planeMember());
 const mf = new Miniflare({
-  modules: true, modulesRoot: "/", scriptPath: P, script: readFileSync(P, "utf8"),
+  modules: true, modulesRoot: "/", scriptPath: "/bio-plane.bundled.mjs", script: built.bytes.toString("utf8"),
   compatibilityDate: "2026-07-01", compatibilityFlags: ["nodejs_compat"],
   durableObjects: { STORE: { className: "Store", useSQLite: true } },
   r2Buckets: ["CAPTURES", "PUBLISHED"],

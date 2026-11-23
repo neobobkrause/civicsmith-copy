@@ -3,7 +3,7 @@
  * the assertions need are read from those acts' answers. A fault (a refusal the real acts cannot make from this page) is the only scripted answer. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { openWorld as openOver, members, html, text, main, btn, fill, press, ok, refused, rawKeys, word, hasWord, says, saysIn, dayOf, DOCUMENT_STUB } from "./page.mjs";
+import { openWorld as openOver, members, html, text, main, btn, fill, press, ok, refused, rawKeys, word, hasWord, says, saysIn, dayOf, DOCUMENT_STUB, screenOf } from "./page.mjs";
 import { SCREENS } from "../../../src/screens-intake/index.mjs";
 
 /* a document named on the page is a link only where the `document` screen is served: the stand-in serves it */
@@ -240,7 +240,7 @@ test("R7 R12 sourcelink names the source read and a source chosen among the earl
 });
 
 test("R26 every key the inbox screen reads is a word of the list, and its states draw word(key, vars)", async () => {
-  for (const k of SCREENS.find((x) => x.id === "inbox").words) assert.ok(hasWord(k), k);
+  for (const k of screenOf("inbox").words) assert.ok(hasWord(k), k);
   const t = await inbox();
   const p = await at(t, "/app/inbox");
   for (const k of ["screen.inbox.sub", "screen.inbox.status.new", "screen.inbox.status.pulled", "screen.inbox.status.discarded"]) assert.ok(says(p, k), k);
