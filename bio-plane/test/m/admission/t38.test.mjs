@@ -32,7 +32,7 @@ test("R21 (T38, both arms): for one address sourceOf equals the window's source 
       const before = JSON.stringify(w.rows());
       /* setpassword: sourceOf's, the same source, nothing counted */
       env.calls.length = 0;
-      const set = await A.sourceOf(reqFrom(addr), env);
+      const set = String(await A.sourceOf(reqFrom(addr), env));
       assert.equal(set, login.source, `${key ? "bound" : "unbound"}/${addr}: setpassword's source is login's`);
       assert.match(set, /^[0-9a-f]{32}$/);
       assert.equal(set.includes(addr), false);

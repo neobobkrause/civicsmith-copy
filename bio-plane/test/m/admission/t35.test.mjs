@@ -172,6 +172,7 @@ test("R22 (T36: written through credentials' securitycount, its R50): securityTa
   const reqIn = (country) => { const r = new Request("https://plane.example/api"); Object.defineProperty(r, "cf", { value: { country } }); return r; };
   const req = reqIn("NZ");
   const stranger = { token: null };
+  /** @type {[any, string, string | null][]} each refusal, the kind and the country it is counted as */
   const counted = [
     [{ op: "index", answer: { status: 403, body: { ok: false, reason: "AI_CREDENTIAL_REVOKED", code: "AI_CREDENTIAL_REVOKED" } }, presented: { token: aik(), cred: cred({ principal: "class:ai" }) } }, "credential", "NZ"],
     [{ op: "promote", answer: { status: 401, body: { ok: false, code: "AI_CREDENTIAL_EXPIRED" } }, presented: { token: aik(), cred: cred({ principal: "class:ai" }) } }, "credential", "NZ"],
@@ -187,6 +188,7 @@ test("R22 (T36: written through credentials' securitycount, its R50): securityTa
     [{ op: "websiteinvite", answer: { ok: false, code: "WEBSITE_DAILY_CAP" }, presented: stranger }, "rate", "NZ"],
     [{ op: "joinlinkinvite", answer: { ok: false, code: "JOIN_LINK_DAILY_CAP" }, presented: stranger }, "rate", "NZ"],
   ];
+  /** @type {any[]} */
   const notCounted = [
     { op: "index", answer: { status: 401, body: { ok: false, code: "NOT_AUTHENTICATED" } }, presented: { token: hex64() } },
     { op: "index", answer: { status: 401, body: { ok: false, code: "NOT_AUTHENTICATED" } }, presented: { token: aik(), cred: cred() } },

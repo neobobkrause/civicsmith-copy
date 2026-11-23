@@ -188,7 +188,7 @@ test("R12: a bearer asking adminendorse, adminremove or membercaps is refused 40
       assert.deepEqual([body.op, body.tokenClass], [op, c]);
     }
     /* the class is asked of how the caller arrived, never of a list: a class added tomorrow is refused too */
-    assert.equal(A.bearerFence(op, { cls: "tomorrow", viaSession: false }).body.reason, code);
+    assert.equal(A.bearerFence(op, { cls: "tomorrow", viaSession: false })?.body.reason, code);
     /* negative control: the same act from a signed-in session passes the fence */
     for (const t of [S.founder, S.admin]) assert.ok((await gate(env, { op, token: t })).caller, op);
   }
