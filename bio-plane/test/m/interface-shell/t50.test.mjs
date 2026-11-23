@@ -512,7 +512,8 @@ test("R86 a first load settles quickly: the working frame is drawn before the fi
   const slow = (op) => async (req) => { times[op] = p.clock.at(); await new Promise((r) => p.clock.setTimeout(r, 500)); return door(req); };
   const ops = [...SHELL_OPS, "bootstrap", "projectdirectory"];
   p = await bootAs(world, me, { screens: ALL, run: false, plane: Object.fromEntries(ops.map((op) => [op, slow(op)])) });
-  const base = Date.now();
+  /* the page runs on the world's clock, so the session its sign-in made is live (R3) */
+  const base = world.now();
   const FakeDate = class extends Date { static now() { return base + p.clock.at(); } };
   new Function("window", "setTimeout", "clearTimeout", "Date", scriptOf(p.html, ALL))(p.win, p.clock.setTimeout, p.clock.clearTimeout, FakeDate);
   await settle();

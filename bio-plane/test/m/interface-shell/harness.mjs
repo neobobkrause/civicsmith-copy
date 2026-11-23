@@ -209,7 +209,7 @@ export function fakeIndexedDB(dbs = new Map()) {
 
 /**
  * Boot the page at `path` with `screens` registered, over `plane` (an op's answer, or `(req) => answer`).
- * `door` is the world's door (a function of the request); `session` is the record R32 keeps in localStorage (null for none); `testInstance` is `interfacePage`'s option (R58); `tabs` (from `tabs()`) shares one localStorage
+ * `door` is the world's door (a function of the request); `now` the page clock's start in milliseconds (a world's pinned clock; the real time when absent); `session` is the record R32 keeps in localStorage (null for none); `testInstance` is `interfacePage`'s option (R58); `tabs` (from `tabs()`) shares one localStorage
  * among pages, each told of the others' writes by the storage event; `idb` is the IndexedDB stand-in's store.
  * Answers `{doc, win, requests, root, clock, settle, click, choose, fire, back, assigned, store, local, byOp, location, ...}`:
  * `store` is the tab's sessionStorage, `local` its localStorage.
@@ -217,7 +217,7 @@ export function fakeIndexedDB(dbs = new Map()) {
  * @returns {Promise<Object<string, *>>} the page
  * @throws {FieldMismatch} as `settle` does
  */
-export async function boot({ screens = [], plane = {}, session = SESSION, path = "/app", hash = "", phone = false, local = {}, localThrows = false, tabStore = null, tabThrows = false, html, run = true, tabs: group = null, idb = new Map(), guide = null, testInstance = false, version = null, door = null, declared = collectOwnerRows() } = {}) {
+export async function boot({ screens = [], plane = {}, session = SESSION, path = "/app", hash = "", phone = false, local = {}, localThrows = false, tabStore = null, tabThrows = false, html, run = true, tabs: group = null, idb = new Map(), guide = null, testInstance = false, version = null, door = null, now: startAt = null, declared = collectOwnerRows() } = {}) {
   const options = { ...(guide ? { guide } : {}), ...(testInstance ? { testInstance } : {}), ...(version ? { version } : {}) };
   html = html || served(interfacePage(screens, options));
   const doc = documentOf(html);
@@ -324,8 +324,9 @@ export async function boot({ screens = [], plane = {}, session = SESSION, path =
   const page = { doc, win, html, requests, polls, root, clock, settle, click, choose, fire, back, assigned, store, local: localMap, location, objectUrls, files, idb };
   if (group) group.pages.push(page);
   if (run) {
-    /* the page's clock is the fake one: `Date.now()` advances with `clock.tick` (cs.now, K3002) */
-    const base = Date.now();
+    /* the page's clock is the fake one: `Date.now()` advances with `clock.tick` (cs.now, K3002); it starts at `now` where the test gives one (a
+       world's pinned clock, so the session its sign-in made is live in the page, R3), else at the real time */
+    const base = typeof startAt === "number" && Number.isFinite(startAt) ? startAt : Date.now();
     const FakeDate = class extends Date { static now() { return base + clock.at(); } };
     new Function("window", "setTimeout", "clearTimeout", "Date", scriptOf(html, screens, options))(win, clock.setTimeout, clock.clearTimeout, FakeDate);
     await settle();
