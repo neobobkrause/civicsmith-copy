@@ -38,6 +38,7 @@ const both = (op) => SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op);
 const neither = (op) => !SESSION_OPS.member.has(op) && !SESSION_OPS.admin.has(op);
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
 const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v))
+  .map(([k, v]) => /** @type {[string, readonly string[]]} each act list by its name */ ([k, v]))
   .concat([["PLAN_RUN_SCOPE.reads", PLAN_RUN_SCOPE.reads], ["PLAN_RUN_SCOPE.writes", PLAN_RUN_SCOPE.writes]]);
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n)
   .filter((n) => !["FAMILY_OPS", "FAMILY_SESSION_OPS"].includes(n)).sort();
@@ -220,7 +221,7 @@ test("R43 (N820; K2405, K2418, K2486, K2496, K2525, K2529, K2560, K2561, K2569, 
   /* sessions only: every op but the two R43 declares as another's (readpages as extractpropose, actionseekspropose as
      actionlawspropose) refuses every bearer */
   for (const op of Object.keys(R43).filter((o) => !["readpages", "guidepropose", "actionseekspropose"].includes(o)))
-    assert.deepEqual([...OPS[op].machineClasses], [], op);
+    assert.deepEqual(OPS[op].machineClasses, [], op);
   /* acts mutate, reads do not */
   for (const op of Object.keys(R43)) assert.equal(stamps(op).includes("viewer") && !OPS[op].mutating, !OPS[op].mutating, op);
   /* negative control */

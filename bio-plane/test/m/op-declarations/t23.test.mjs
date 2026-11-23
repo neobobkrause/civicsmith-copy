@@ -78,7 +78,7 @@ test("R10, R2: no machine class, agent credential or operator token reaches a no
   const admitsBearer = (op, cls) => Array.isArray(OPS[op].classes)
     && (Array.isArray(OPS[op].machineClasses) ? OPS[op].machineClasses : OPS[op].classes).includes(cls);
   for (const op of ["noticeprepare", "noticepost", "notices", "directorysubmission"]) {
-    assert.deepEqual([...OPS[op].machineClasses], [], op);
+    assert.deepEqual(OPS[op].machineClasses, [], op);
     for (const cls of ["admin", "member", "probe", "daemon"]) assert.equal(admitsBearer(op, cls), false, `${op}: ${cls}`);
     /* An agent credential is admitted only to an op a member reaches with no machineClasses (R2): not these. */
     assert.ok("machineClasses" in OPS[op], op);
