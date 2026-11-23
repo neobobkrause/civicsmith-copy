@@ -2,7 +2,7 @@ Length: 107 lines. Last section: "Uses".
 
 # screens-find: requirements
 
-Next number: 108
+Next number: 109
 
 ## Public
 
@@ -14,8 +14,9 @@ Finding and browsing the record: Find and its browse, Find in this, Ask (`answer
 
 Numbers are `screens-daily`'s, kept when ARCH split it (22 Nov 2026); a bare R<n> not here is that number in `screens-daily`. The tests that prove these requirements boot the whole `SCREENS` through `screens-daily`'s test kit, so they are `screens-daily`'s until this module has a kit of its own (code work for its job).
 
-**finder** (Find; the registry's 6 acts)
+**finder** (Find; the registry's 7 acts)
 - **R4** [met] `search` with the member's words, each result with its grade and where it matched (`mark.origin.search`); `select` holds picked results together (the hold strip shows how many documents are held together and until when, from `selection`); `selectionrelease`; `findin` ("Find in these", opening `find-in` over the selection); `frontier` draws `mark.gap.nobody` where nobody looked; `calculationcreate` "Count" over the held set.
+- **R108** [not yet met] (Screens finder A12; the screens registry's `explore` act on finder) `explore` ("Explore connections", `act.explore.label.finder`) is offered on each Find result that explore can start from: a browse row that is a document, person or organization, a document hit in "In titles, notes and details", and each "Subjects named" row. Pressing it opens `explore` from that item and sends nothing. Questions, actions and plans carry none.
 
 **find-in** (Find in this; the registry's 9 acts; DEC-164; N698)
 - **R5** [met] The scope is set by where it was opened (a document, the held set, a project) and shown under "Look in". The member ticks what to find and an optional term and question; `findin` answers results by kind, each with its words as written, its passage and `mark.origin.search`; a kind with none says "Nothing here" (`state.empty`). Each result offers only the recording act of its kind (`recordpersonfact`, `recorddatedfact`, `standarddeclare`, `recordfact`, `tabledeclare`, `cite`), the chosen question kept beside it; a result already recorded shows who recorded it. `standingquestionset` keeps finding over the scope; `search` is "See all in Find". Finding records nothing (K1468).
