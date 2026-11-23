@@ -77,10 +77,12 @@ const instance = flag("--instance");
    is a NAME IN A FILE and never a worker in an account. */
 const PHANTOM = "bio-plane";
 
+/** @type {(code: string, msg: string, detail?: string|null) => never} prints the refusal and exits 1 */
 const die = (code, msg, detail) => {
   console.error(`REFUSED [${code}]: ${msg}`);
   if (detail) console.error(detail);
   process.exit(1);
+  throw new Error("exited");
 };
 
 if (!member) die("NO_MEMBER", "name the fleet member to deploy.",
@@ -160,7 +162,7 @@ if (TEST && cfg.account_id !== TEST_ACCOUNT)
 let images = [];   /* [{class_name, reference, digest}], one per class */
 let MULTI = false;
 if (CONTAINER) {
-  const { classes, multi, conflict } = containerClasses({ marker });
+  const { classes, multi, conflict } = containerClasses({ marker, name: member, dir: member, abs: memberDir, bundle: null });
   MULTI = multi;
   if (conflict) die("CONTAINER_UNDESCRIBED", `${member} is a container member and its fleet-member.json states ${conflict}.`,
     "A member with several classes names each class's image in its `containers` list, and no top-level image.");
