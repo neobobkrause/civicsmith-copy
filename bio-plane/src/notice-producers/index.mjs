@@ -85,6 +85,7 @@ import { investigationOf } from "../investigation/index.mjs";
 import { reviewOf } from "../review/index.mjs";
 import { wordsOf, hasWords, untilWords, dayInSentence } from "./words.mjs";
 import { localize } from "../setup-words/index.mjs";
+import { boundOf } from "../read-bounds.mjs";
 
 /* The walk queue passes in answers this shape; with none passed, an item is ungrouped rather than given a home. */
 const UNGROUPED = Object.freeze({ state: "determined", ungrouped: true, reasons: [], depth_bound: null, ancestors: [] });
@@ -201,6 +202,19 @@ export const EXPLORE_APPROVE = Object.freeze({ id: "exploreapprove", label: word
 const HOUR_MS = 3600e3, DAY_MS = 24 * HOUR_MS;
 /* A provider's failure, named in `facts.failed` as the provider it came from (R1). */
 const failure = (provider) => Object.assign(new Error(`${provider} did not answer`), { provider });
+/* R29: a job row's `why` in plain words: the reason's own words (`refusal.<code>`) where the word list holds them, else as
+   the row states it (never hidden, R-SILENT). */
+const reasonWords = (why) => (filled(why) && hasWords(`refusal.${why}`) ? wordsOf(`refusal.${why}`) : why);
+/* R29: a refused row whose `why` names a reading ceiling (`<kind>.<name>`, runtime-limits' table) answers that ceiling's
+   active figure, a byte row in whole megabytes (2^20 bytes, K4840 (1)); null for any other reason. */
+const limitOf = (why) => {
+  const x = typeof why === "string" ? /^([a-z_]+)\.([a-z_]+)$/.exec(why) : null;
+  if (!x) return null;
+  let n = null;
+  try { n = boundOf(x[1], x[2]); } catch { return null; }
+  if (!Number.isFinite(n)) return null;
+  return x[2].endsWith("bytes") ? `${Math.round(n / 1048576)} MB` : String(n);
+};
 
 /* R22: the clause `{reason}` leaves behind when it is filled with nothing ("… undetermined, because ."), dropped whole */
 const NO_REASON_CLAUSE = /,\s*because\s+(?=\.)/;
@@ -400,7 +414,7 @@ export class NoticeProducers {
       watched_changed: { bound: WATCHED_ITEMS_MAX, truncated: false },
       fetch_done: { bound: FETCH_DONE_MAX, days: FETCH_DONE_DAYS, truncated: false },
       ingest: { bound: INGEST_NOTICE_MAX, days: INGEST_NOTICE_DAYS, truncated: false },
-      reading_ended: { bound: READING_ENDED_MAX, days: READING_ENDED_DAYS, truncated: false },
+      reading_ended: { bound: READING_ENDED_MAX, days: READING_ENDED_DAYS, truncated: false, read: 0 },
       failed,
     };
     const run = (provider, fn) => {
@@ -1610,7 +1624,8 @@ export class NoticeProducers {
    * `FINDING::reading-ended::<sha>::<state>`: a row that goes on after a stop and ends again earns a fresh key. Each cycle reads from the
    * start and pages by `next` to at most the bound; the window is 90 days of `ended_at`. A row still being read has no ended state and
    * is never told. Its subject is the document (its home as provenance gives it), its door "Open the document"; the words are stand-ins
-   * keyed through `localize`, the rows owed named in the job record. With no `deps.readingsEnded` it contributes none and names none. */
+   * keyed through `localize`, the rows owed named in the job record. A row that took nothing in is never said to be read (R-SILENT); its
+   * `why` is said in `refusal.<code>`'s words where held, and a refusal at a reading ceiling names that ceiling's figure (runtime-limits). With no `deps.readingsEnded` it contributes none and names none. */
   #readingsEnded(me, viewer, now) {
     const ended = this.#deps.readingsEnded;
     if (typeof ended !== "function") return { items: [], facts: {} };
@@ -1641,15 +1656,20 @@ export class NoticeProducers {
       catch { throw failure("provenance"); }
       const read = count(g.written), total = read + count(g.skipped) + count(g.owed) + count(g.failed);
       const counted = total > 0;
+      const why = filled(g.why) ? g.why.trim() : "";
+      const limit = g.state === "refused" ? limitOf(why) : null;
       const fills = { document: (home && this.#titleOf(home, viewer)) || (path && path.split("/").filter(filled).at(-1)) || g.sha,
-                      read: String(read), total: String(total), why: filled(g.why) ? g.why.trim() : "" };
+                      read: String(read), total: String(total), why: reasonWords(why), ...(limit ? { limit } : {}) };
+      /* R-SILENT: a row that read nothing (`written` 0) is never said to be read, in part or whole */
       const sentence = g.state === "finished"
         ? (counted ? localize("notice-producers.reading.finished.counted", "{document} has been read: {read} of {total}.", fills)
                    : localize("notice-producers.reading.finished", "{document} has been read.", fills))
         : g.state === "final"
-          ? (counted ? localize("notice-producers.reading.partial.counted", "{document} was read in part: {read} of {total}. {why}", fills)
-                     : localize("notice-producers.reading.partial", "{document} was read in part. {why}", fills))
-          : localize("notice-producers.reading.refused", "{document} was not taken in: {why}", fills);
+          ? (read === 0 ? localize("notice-producers.reading.stopped", "{document} was stopped before any of it was taken in. {why}", fills)
+            : counted ? localize("notice-producers.reading.partial.counted", "{document} was read in part: {read} of {total}. {why}", fills)
+                      : localize("notice-producers.reading.partial", "{document} was read in part. {why}", fills))
+          : limit ? localize("notice-producers.reading.refused.limit", "{document} was not taken in: it is larger than this team's limit of {limit}.", fills)
+            : localize("notice-producers.reading.refused", "{document} was not taken in: {why}", fills);
       items.push({
         id, class: "FINDING", kind: "reading-ended",
         label: NOTICED_LABEL, by: localize("notice-producers.group_civicsmith", "the team's Civicsmith"),
@@ -1665,7 +1685,7 @@ export class NoticeProducers {
         options: [...this.#optionsOf(home ? [home] : [])],
       });
     }
-    return { items, facts: { truncated } };
+    return { items, facts: { truncated, read: rows.length } };
   }
 
   /** R14: whether this member is active (membership's member facts); a membership that throws is its failure. */

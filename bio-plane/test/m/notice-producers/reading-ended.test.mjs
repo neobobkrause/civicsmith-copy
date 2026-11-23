@@ -6,7 +6,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { world } from "../file-safety/fixture.mjs";
 import { fresh, reader, ofKind } from "./fixture.mjs";
-import { localize } from "../../../src/setup-words/index.mjs";
+import { localize, word, hasWord } from "../../../src/setup-words/index.mjs";
+import { boundOf } from "../../../src/read-bounds.mjs";
 import { NOTICE_KINDS, READING_ENDED_MAX, READING_ENDED_DAYS } from "../../../src/notice-producers/index.mjs";
 
 const KIND = "reading-ended";
@@ -43,7 +44,8 @@ test("R29: the sentences are keyed stand-ins filling the document, read and tota
   assert.deepEqual(fin.fills, { document: sha("a"), read: "12", total: "12", why: "" });
   assert.equal(fin.summary, localize("notice-producers.reading.finished.counted", "{document} has been read: {read} of {total}.", fin.fills));
   assert.equal(part.summary, localize("notice-producers.reading.partial.counted", "{document} was read in part: {read} of {total}. {why}", part.fills));
-  assert.deepEqual([part.fills.read, part.fills.total, part.fills.why], ["3", "12", "PASSWORD_REQUIRED"]);
+  assert.ok(hasWord("refusal.PASSWORD_REQUIRED"));
+  assert.deepEqual([part.fills.read, part.fills.total, part.fills.why], ["3", "12", word("refusal.PASSWORD_REQUIRED")], "a reason the word list holds is said in its words, never as its code");
   assert.equal(refused.summary, localize("notice-producers.reading.refused", "{document} was not taken in: {why}", refused.fills));
   assert.ok(refused.summary.includes("over the limit") && !/\bread\b/i.test(refused.summary), "a refused file is never said to be read");
   assert.equal(bare.summary, localize("notice-producers.reading.finished", "{document} has been read.", bare.fills));
@@ -81,7 +83,7 @@ test("R29 R1: a row older than 90 days is not told, the bound and window are sta
   const r = run("m1");
   assert.deepEqual(ofKind(r, KIND).map((i) => i.id), [`FINDING::reading-ended::${sha("a")}::finished`]);
   assert.ok(asked[0].limit <= READING_ENDED_MAX);
-  assert.deepEqual(r.facts.reading_ended, { bound: READING_ENDED_MAX, days: READING_ENDED_DAYS, truncated: false });
+  assert.deepEqual(r.facts.reading_ended, { bound: READING_ENDED_MAX, days: READING_ENDED_DAYS, truncated: false, read: 2 }, "facts.reading_ended counts what was read");
   for (const readingsEnded of [() => { throw new Error("x"); }, () => ({ ok: false })]) {
     const bad = setup([], { readingsEnded }).run("m1");
     assert.deepEqual(ofKind(bad, KIND), []);
@@ -97,4 +99,24 @@ test("R29 R1: with no readingsEnded handed it contributes none and names none", 
   const r = setup([], { readingsEnded: undefined }).run("m1");
   assert.deepEqual(ofKind(r, KIND), []);
   assert.ok(!r.facts.failed.includes("readings"));
+});
+
+test("R29 (R-SILENT): a reading stopped before anything was taken in is never said to be read; control: one stopped after some pages is read in part", () => {
+  const { items } = setup([row("a", "final", { why: "PASSWORD_REQUIRED", written: 0, owed: 4 }), row("b", "final", { why: "NO_PROGRESS", written: 2, owed: 4 })]);
+  const [none, some] = items("m1");
+  assert.equal(none.summary, localize("notice-producers.reading.stopped", "{document} was stopped before any of it was taken in. {why}", none.fills));
+  assert.ok(!/\bread\b/i.test(none.summary.replace(none.fills.why, "")), "nothing read: the sentence never says it was read (the reason's own words aside)");
+  assert.ok(none.summary.includes(word("refusal.PASSWORD_REQUIRED")));
+  assert.equal(some.summary, localize("notice-producers.reading.partial.counted", "{document} was read in part: {read} of {total}. {why}", some.fills));
+  assert.equal(some.fills.why, "NO_PROGRESS", "a reason the word list lacks is said as the row states it, never hidden");
+});
+
+test("R29: a reading refused at a reading ceiling names that limit in plain words, never the ceiling's key; control: a ceiling the table lacks is said as stated", () => {
+  const { items } = setup([row("a", "refused", { why: "pdf.bytes", written: 0 }), row("b", "refused", { why: "nosuch.bytes", written: 0 })]);
+  const [limited, other] = items("m1");
+  assert.equal(limited.fills.limit, `${Math.round(boundOf("pdf", "bytes") / 1048576)} MB`);
+  assert.equal(limited.summary, localize("notice-producers.reading.refused.limit", "{document} was not taken in: it is larger than this team's limit of {limit}.", limited.fills));
+  assert.ok(!limited.summary.includes("pdf.bytes") && !/\bread\b/i.test(limited.summary));
+  assert.equal(other.fills.limit, undefined);
+  assert.equal(other.summary, localize("notice-producers.reading.refused", "{document} was not taken in: {why}", other.fills));
 });
