@@ -77,7 +77,7 @@ import { word } from "../setup-words/index.mjs";
    knows no wait; the refusal itself (index.mjs `doorRateLimited`) fills it. */
 function worded(rows) {
   for (const code of Object.keys(rows)) {
-    const vars = code === "DOOR_RATE_LIMITED" ? { minutes: "{minutes}" } : {};
+    const vars = code === "DOOR_RATE_LIMITED" ? { minutes: "{minutes}" } : undefined;
     Object.defineProperty(rows[code], "translation", { enumerable: true, get: () => word(`refusal.${code}`, vars) });
   }
   return rows;
