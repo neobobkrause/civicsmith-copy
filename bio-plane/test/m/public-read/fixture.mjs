@@ -16,7 +16,9 @@ export { cursor, V, SIG, NOW, KEY, sha, caseDoc, inquiryMd } from "../publicatio
 /** A docket on its public interface (`docket` R12, R14, R15): `withdrawalOf`, `lastEntryOf`, `docketPublic`, `docketFeed`, over cases
  *  a test declares (`cases`) and the public entries and withdrawals it places (`place`). A case it does not hold answers
  *  null, as an absent one; `calls` records every read, so a test can see what was asked and that nothing was written;
- *  `publicAsked` holds each argument `docketPublic` was handed, whole, so a test sees every key it carried (R25). */
+ *  `publicAsked` holds each argument `docketPublic` was handed, whole, so a test sees every key it carried (R25). Serves the tests of R20, R21, R25 and R37.
+ *  @param {{cases?: string[]}} [opts] the cases the docket holds, with no entries yet
+ *  @returns {any} the docket, with `held`, `calls`, `publicAsked`, `hold(case)` and `place(case, entry)` beside its reads */
 export function docketOn({ cases = [] } = {}) {
   const held = new Map(cases.map((c) => [c, []]));
   const calls = [], publicAsked = [];
@@ -68,7 +70,12 @@ export function docketOn({ cases = [] } = {}) {
 
 /** Court-order stamps through `publication` itself (its R62): `stamp({case, editions, entry, effect, parts?})` posts
  *  the order as `docket` does (R25), its source registered with publication as docket registers it, answering the entry
- *  posted, and stamps the editions with `publication.stampEdition`; the read side is publication's `stampsOf`. */
+ *  posted, and stamps the editions with `publication.stampEdition`; the read side is publication's `stampsOf`. Serves the tests of
+ *  R28 and R37.
+ *  @param {any} w a world of this fixture
+ *  @returns {{posted: any[], stamp: (args: {case: string, editions: any, entry: any, effect: any, parts?: any}) => any}}
+ *    `stamp` throws an Error when publication refuses the stamp
+ *  @throws {Error} when publication refuses to register the order source */
 export function stampsOn(w) {
   const posted = [];
   const reg = w.p.registerOrderSource("docket", { courtOrderOf: (c, entry) => {
@@ -104,7 +111,11 @@ function signAsOfItsFormat(w) {
 
 /** An edition signed before T28 (R58 refuses committing one now), with the signer's key and deliverer a test names:
  *  `signLegacy`'s rows, the case document's `attestor_key` then set to `attestorKey`. `deliveredBy` undefined is a
- *  commit that recorded no deliverer. */
+ *  commit that recorded no deliverer. Serves the tests of R2, R3 and R12 over editions signed before T28.
+ *  @param {any} w a world of this fixture
+ *  @param {{case: string, edition: number, project: any, roster: any, sigArmored: any, attestorKey: any,
+ *    attestorMember: any, deliveredBy?: any, at?: any, completeness?: any, bar?: any}} args
+ *  @returns {any} `signLegacy`'s answer */
 export function legacyCaseCommit(w, { case: caseId, edition, project, roster, sigArmored, attestorKey, attestorMember,
                                       deliveredBy, at, completeness, bar = null }) {
   const r = w.signLegacy(caseId, edition, { project, roster, signer: attestorMember, sig: sigArmored, at, bar,
@@ -117,6 +128,10 @@ export function legacyCaseCommit(w, { case: caseId, edition, project, roster, si
    provides it: its R70 columns `signed_at`, `published_at` on `published_cases` (held never null: the commit's instant
    for both, as an edition published at signing answers), and its R64 `stampedEditions()`, answered from its own
    `stampsOf` over every published case edition, in case and edition order. */
+/** The stand-ins for `publication` T34 (its R70, R64) on a world, each added only where publication lacks it. Serves
+ *  the tests of R29 and R37.
+ *  @param {any} w a world, or `{st, p}`: its storage and its publication
+ *  @returns {void} */
 export function publicationT34(w) {
   const cols = [...w.st.sql.exec(`PRAGMA table_info(published_cases)`)].map((c) => c.name);
   if (!cols.includes("signed_at")) {
@@ -180,15 +195,23 @@ function withRead(w, opts = {}) {
   return w;
 }
 
-/** A world with this module on it (workerd-shaped storage, as publication's own tests use). */
+/** A world with this module on it (workerd-shaped storage, as publication's own tests use). Serves every
+ *  requirement's tests; `opts.docket` and `opts.members` reach `publicReadOf`, the rest `publication`'s world.
+ *  @type {(opts?: Object<string, any>) => any} */
 export const world = (opts = {}) => withRead(planeWorld(opts), opts);
-/** The same over array-answering storage. */
+/** The same over array-answering storage.
+ *  @type {(opts?: Object<string, any>) => any} */
 export const arrayWorld = (opts = {}) => withRead(bareWorld(opts), opts);
 
-/** The plane store's op map, its part here: publication's ops, and this module's beside them (`plane/store.mjs`). */
+/** The plane store's op map, its part here: publication's ops, and this module's beside them (`plane/store.mjs`). Serves the tests of the Worker's relays (R5, R9, R10).
+ *  @type {(w: any, url: URL, body?: any) => Object<string, any>} */
 export const storeOps = (w, url, body = null) => ({ ...publicationOps(w.p, url, body), ...publicReadOps(w.pr, url) });
 
-/** The published store's Durable Object: the op map over this world, in the envelope the plane reads. */
+/** The published store's Durable Object: the op map over this world, in the envelope the plane reads. `silent`
+ *  answers every request 500, a store that does not answer. Serves the tests of R5, R6, R9 and R10.
+ *  @param {any} w a world of this fixture
+ *  @param {{silent?: boolean}} [opts]
+ *  @returns {any} a stub with `fetch(req, init?)`, answering a Promise of a Response */
 export function stubOf(w, { silent = false } = {}) {
   return { async fetch(req, init) {
     if (silent) return new Response("down", { status: 500 });
@@ -202,7 +225,9 @@ export function stubOf(w, { silent = false } = {}) {
   } };
 }
 
-/** The published bucket, in memory. */
+/** The published bucket, in memory: `m` maps each key to its bytes. Serves the tests of R5, R6 and R23.
+ *  @returns {{m: Map<string, any>, get: (k: string) => Promise<any>, head: (k: string) => Promise<any>,
+ *    put: (k: string, v: any) => Promise<void>}} */
 export function bucket() {
   const m = new Map();
   return { m,
@@ -214,7 +239,12 @@ export function bucket() {
 /** T33-65 (R23, R26, R27, R28): a `/6` case edition of `CASE-2026-0001` over F (load-bearing) and G (supporting), signed
  *  and published, its findings' bytes in the published bucket (`env`). `extra` are front-matter lines added to the signed
  *  document (a block in `case-grammar`'s own spelling, `calculationsLines`, `timelineLines`); `opts` reach the world
- *  (`docket`). */
+ *  (`docket`).
+ *  @param {{extra?: string[], edition?: number, [key: string]: any}} [opts] `edition` absent is 1; the last edition
+ *    signed carries `extra`
+ *  @returns {{w: any, env: {PUBLISHED: any}, proj: any, pins: Object<string, any>, text: string, CASE: string,
+ *    F: string, G: string}} `text` the first edition's signed document
+ *  @throws {Error} when a document is not stored, an edition does not sign, or a finding does not sign */
 export function publishedSix({ extra = [], edition = 1, ...opts } = {}) {
   const CASE = "CASE-2026-0001", F = "INQ-2026-0001", G = "INQ-2026-0002";
   const w = world(opts);

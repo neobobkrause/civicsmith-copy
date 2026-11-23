@@ -58,6 +58,65 @@ import { delivererOf } from "../deliverer.mjs";
 import { PUBLIC_READ_NAME, PUBLIC_READ_PARAM, PUBLIC_READ_OWN_OPS, PUBLIC_READ_RESERVED_PARAMS,
          DOCKET_FEED_MEDIA_TYPE } from "./reads.mjs";
 
+/**
+ * What `publicReadOf` and the constructor take (K61): each service may be given, else the host's own is reached.
+ * `record`, `roster` and `members` may each be the service or a function answering it, called at the read (R34, R36, R41).
+ * @typedef {Object} PublicReadDeps
+ * @property {any} [storage] the Durable Object's storage; its `sql` is read, never written (R16)
+ * @property {any} [publication] `publication`'s instance (its R40, R53-R55, R57, R64, R70)
+ * @property {any} [docket] `docket`'s instance (its R12, R14, R15, R24)
+ * @property {any} [record] `record-core`, or a function answering it, for `declared_stake` (R34)
+ * @property {any} [roster] `project-roster`, or a function answering it, for `projectStake` (R36)
+ * @property {any} [members] `membership`, or a function answering it, for `memberFacts` (R41)
+ */
+/**
+ * A registration's answer (R8, R18, R34): `ok: true` with what was registered, or `ok: false` with `reason`
+ * `PROVIDER_MALFORMED` or `PROVIDER_DECLARED` and `detail`; a refused registration registers nothing.
+ * @typedef {Object} RegistrationAnswer
+ * @property {boolean} ok
+ * @property {string} [reason] the refusal's code
+ * @property {string} [detail] the refusal's words
+ * @property {string|null} [module] the registering module, or on `PROVIDER_DECLARED` of R8 the one that holds the block
+ * @property {string} [name] R8: the block's name
+ * @property {string[]} [names] R18: the reads registered
+ * @property {string[]} [problems] R18: what is wrong with a malformed registration
+ * @property {{name: string, module: string}[]} [taken] R18: each name already registered, and by whom
+ */
+/**
+ * A project's matter stake (R36): `project-roster`'s `projectStake` as read; `stake` is `"undetermined"` when it cannot
+ * be read, never null then.
+ * @typedef {Object} MatterStake
+ * @property {any} stake
+ * @property {any} set_by
+ * @property {any} set_at
+ * @property {string} source always "project"
+ */
+/**
+ * The group's per-group fields (R34, R36), stated in words where undetermined or absent (R13).
+ * @typedef {Object} GroupFields
+ * @property {any} group the registered source's answer, else null
+ * @property {any} name its display name, else null
+ * @property {any} domain
+ * @property {any} domain_verified_at
+ * @property {any} stake `declared_stake` as held: null when never set, "undetermined" when it cannot be read
+ * @property {string} detail
+ * @property {MatterStake|null} matter_stake null with no project, or one whose latest entry is none
+ */
+/**
+ * A public answer of this module: a published read's fields, or a refusal `{ok: false, reason, detail, ...}` with its
+ * row's fields (R14, R17). Its fields are named in each method's words.
+ * @typedef {Object<string, any>} PublicAnswer
+ */
+/**
+ * What `publishedCase` and `publishedCaseWithCorrections` read: a case or finding id, an edition, or the bytes' hash.
+ * @typedef {Object} PublishedCaseQuery
+ * @property {any} [id] the case id, or any member finding's bundle id
+ * @property {any} [edition] the edition, read as a whole number
+ * @property {any} [sha256] a published edition's bytes' hash
+ * @property {any} [caseId] the case named outright
+ * @bound sha256: 64 hexadecimal digits, read lowercased
+ */
+
 /* CPDF-10: a column `publication` WROTE as JSON, read back; null rather than a throw on a malformed value. */
 const safeJson = (s) => { try { return s == null ? null : JSON.parse(s); } catch { return null; } };
 const str = (v) => (typeof v === "string" && v.trim() ? v.trim() : "");
@@ -69,16 +128,21 @@ const signedParts = (doc) => {
   try { const p = parseFrontmatter(doc.text); return p.data ? { fm: p.data, body: p.body } : null; }
   catch { return null; }
 };
-/* R3, R35 (T47; N953; `case-grammar` R31): the key a reader's surface shows a copy's label by, chosen by what the signed
+/** R3, R35 (T47; N953; `case-grammar` R31): the key a reader's surface shows a copy's label by, chosen by what the signed
    row states, never by the label's current words. `obscured.kind` (`case-grammar` R31's stored marker) `document` is a
    member document's cleaned copy, `photo` a photo's copy. A row stating no kind (signed before T47) is a cleaned copy
    only when its signed label is, word for word, the cleaned-copy label as worded when the marker was introduced, held
    here frozen and never read from `case-carriage`, so a later re-wording of its `COPY_CLEANED_LABEL` re-keys no
    edition. A photo's copy is keyed by `case-grammar` R12's `marked` (`obscured_marked` when the row states it, else its
-   label: not null is marked), so every earlier edition keys as it labels (K2527). */
+   label: not null is marked), so every earlier edition keys as it labels (K2527).
+   This one is a marked photo's copy's key.
+ * @type {string} */
 export const LABEL_KEY_MARKED = "photo.obscured.label";
+/** @type {string} R3, R35: the key of a photo's copy that is not marked. */
 export const LABEL_KEY_UNMARKED = "photo.published.label";
+/** @type {string} R3, R35: the key of a member document's cleaned copy. */
 export const LABEL_KEY_CLEANED = "document.cleaned.label";
+/** @type {string} R35: the cleaned-copy label as worded when the marker was introduced, held here frozen. */
 export const CLEANED_LABEL_AT_MARKER = word("document.cleaned.label");
 const photoKeyOf = (obscured) => (obscured.marked === true ? LABEL_KEY_MARKED : LABEL_KEY_UNMARKED);
 const labelKeyOf = (obscured) => (obscured.kind === "document" ? LABEL_KEY_CLEANED
@@ -100,15 +164,21 @@ const lensSection = (body) => {
   while (end < lines.length && !lines[end].startsWith("## ")) end++;
   return lines.slice(at, end).join("\n").replace(/\s+$/, "");
 };
-/* R3 (DEC-103): what a document without the lens blocks says instead (R13: stated, never filled). */
+/** R3 (DEC-103): what a document without the lens blocks says instead (R13: stated, never filled).
+ * @type {string} */
 export const LENS_FINGERPRINT_SENTENCE = word("public-read.edition_carries_lens");
+/** @type {string} R3, R13: the lens detail where the document states no lens in force. */
 export const LENS_NONE_IN_FORCE_SENTENCE = word("public-read.edition_carries_lens_fingerprint");
+/** @type {string} R3, R13: the lens detail where the lens fingerprint is undetermined. */
 export const LENS_FINGERPRINT_UNDETERMINED_SENTENCE = word("public-read.edition_carries_lens_fingerprint_bias");
 /* R22: a grade as the signed front matter writes it: the YAML word `null` (or nothing) is no grade. */
 const gradeOf = (g) => (typeof g === "string" && g.trim() && g.trim() !== "null" ? g.trim() : null);
-/* R22 (DEC-112 (4)(1)): each member's standing, from the signed document only: its role (`case_roles`), the bar the
+/** R22 (DEC-112 (4)(1)): each member's standing, from the signed document only: its role (`case_roles`), the bar the
    document records (`required_strength`, an undeclared bar is none) and its frozen pair (`case_strength`, per axis), handed
-   to `case-grammar.standingOf`, the one spelling of the line. A document stating no member blocks answers null. */
+   to `case-grammar.standingOf`, the one spelling of the line. A document stating no member blocks answers null.
+ * Never throws on what it reads.
+ * @param {any} fm the signed document's front matter
+ * @returns {Map<string, any>|null} each member's standing, by its target */
 export function standingsOf(fm) {
   if (!fm || !caseDocumentStatesMemberBlocks(fm)) return null;
   const rs = fm.required_strength && typeof fm.required_strength === "object" ? fm.required_strength : null;
@@ -124,8 +194,11 @@ export function standingsOf(fm) {
   }
   return out;
 }
-/* R39 (C2): the words the signed case document states for each member's finding, `case_conclusions:` by target: its
-   `claim` and its `falsifier`, a string with letters in it or null. Null for a document stating no member blocks. */
+/** R39 (C2): the words the signed case document states for each member's finding, `case_conclusions:` by target: its
+   `claim` and its `falsifier`, a string with letters in it or null. Null for a document stating no member blocks.
+ * Never throws on what it reads.
+ * @param {any} fm the signed document's front matter
+ * @returns {Map<string, {claim: string|null, falsifier: string|null}>|null} by target */
 export function caseWordsOf(fm) {
   if (!fm || !caseDocumentStatesMemberBlocks(fm)) return null;
   const words = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
@@ -172,8 +245,11 @@ function withholdChains(withheld, manifest) {
     }
   }
 }
-/* R21: the fixed address a case's docket is served at (its feed's is `op=docketfeed&case=`). */
+/** R21: the fixed address a case's docket is served at (its feed's is `op=docketfeed&case=`).
+ * @param {string} caseId
+ * @returns {string} */
 export const docketAddress = (caseId) => `op=docketpublic&case=${encodeURIComponent(caseId)}`;
+/** @type {string} R3, R13: the lens detail of an edition with no signed case document held. */
 export const LENS_NO_DOCUMENT_SENTENCE = word("public-read.signed_case_document");
 
 /* R28: a finding row whose bytes an order in force withholds: its id and hash stay (both public), its title, frozen
@@ -191,8 +267,11 @@ function withheldCase(row, index, content) {
   return { ...out, withheld: { whole: true, detail: WITHHELD_SENTENCE } };
 }
 
-/* R31 (`publication` R72): what an edition answers of its criteria, as R53 froze them; never recomputed. */
+/** R31 (`publication` R72): what an edition answers of its criteria, as R53 froze them; never recomputed.
+ * This one is said where an edition recorded none (R13).
+ * @type {string} */
 export const CRITERIA_NOT_RECORDED_SENTENCE = word("public-read.criteria_recorded_edition");
+/** @type {string} R31: the criteria detail of an answer that is not a case. */
 export const CRITERIA_NOT_A_CASE_SENTENCE = word("public-read.case_states_criteria");
 function criteriaOf(state, theCase, whole) {
   if (!theCase) return { criteria: null, criteria_detail: CRITERIA_NOT_A_CASE_SENTENCE };
@@ -203,11 +282,16 @@ function criteriaOf(state, theCase, whole) {
   return { criteria: state.criteria };
 }
 
-/* R26 (D275; `calc-grammar` R10): every calculation output is a computed fact, never a finding. */
+/** R26 (D275; `calc-grammar` R10): every calculation output is a computed fact, never a finding: its label.
+ * @type {string} */
 export const COMPUTED_FACT = "computed fact";
+/** @type {string} R26: beside a differing or unbound calculation whose publisher disclosed it. */
 export const CALC_DISCLOSED_SENTENCE = word("public-read.calculation_agree_recomputed");
+/** @type {string} R26: beside a differing or unbound calculation the signed document states no disclosure of. */
 export const CALC_UNDISCLOSED_SENTENCE = word("public-read.calculation_agree_recomputed_input");
+/** @type {string} R26, R13: beside a share whose row states no denominator. */
 export const SHARE_NO_DENOMINATOR_SENTENCE = word("public-read.signed_document_states");
+/** @type {string} R27: what the timeline is, beside it. */
 export const TIMELINE_SENTENCE = word("public-read.timeline_case_document");
 /* R23: the SHA-256 of each input a `calculations:` row names (`case-grammar` R18: each input's name and hash), whether
    the row lists them as `[{name, sha256}]` or as `{name: sha256}`, in the row's order, each once. */
@@ -234,15 +318,25 @@ function outputOf(key, result) {
   return { key, ...one(result), label: COMPUTED_FACT };
 }
 
-/* R34 (T45; N883, N892 (d); Actions D16, D28d; v0.2 rule 21): the group's per-group fields, stated in words where they
-   are undetermined or absent (R13): never a guess, never an unread stake read as none. */
+/** R34 (T45; N883, N892 (d); Actions D16, D28d; v0.2 rule 21): the group's per-group fields, stated in words where they
+   are undetermined or absent (R13): never a guess, never an unread stake read as none. This one is the name of
+   `record-core`'s setting read for the declared stake.
+ * @type {string} */
 export const DECLARED_STAKE_SETTING = "declared_stake";
+/** @type {string} R34: the fields' detail when nothing is undetermined or absent. */
 export const GROUP_FIELDS_SENTENCE = word("public-read.group_public_identity");
+/** @type {string} R34, R13: said when the group's identity is undetermined. */
 export const GROUP_IDENTITY_UNDETERMINED_SENTENCE = word("public-read.group_public_identity_undetermined");
+/** @type {string} R34, R13: said when no stake was ever declared. */
 export const STAKE_NONE_SENTENCE = word("public-read.group_declared_stake");
+/** @type {string} R34, R13: said when the declared stake cannot be read. */
 export const STAKE_UNDETERMINED_SENTENCE = word("public-read.group_declared_stake_read");
+/** @type {string} R34: beside the fields a published case carries: they are as they stand now. */
 export const GROUP_FIELDS_CURRENT_SENTENCE = word("public-read.group_public_identity_declared");
 
+/** The published record served to anybody without a credential (R1-R4, R8, R18, R20, R21, R23, R26-R28, R31, R34,
+ *  R36-R38, R41, R42). Reads `publication`'s published projection only and writes nothing (R10, R16). Reached as
+ *  `publicReadOf(host, deps)`, one per host. */
 export class PublicRead {
   #evidenceBlock = null; // R8: {module, name, fn}, filled once
   #publicReads = new Map(); // R18: name -> {module, params, read}, each name registered once
@@ -252,6 +346,8 @@ export class PublicRead {
   #roster; // R36: () => project-roster, reached at the read
   #members; // R41: () => membership, reached at the read
 
+  /** @param {PublicReadDeps} [deps] `storage`, `publication` and `docket` are needed; a missing `storage` throws a
+   *  TypeError at its first read */
   constructor({ storage, publication, docket, record = null, roster = null, members = null } = {}) {
     this.sql = storage.sql;
     this.publication = publication;
@@ -269,7 +365,12 @@ export class PublicRead {
   /** R8 (was `publication` R36): a later module fills, once at start, one evidence-package block: `fn({caseId, edition, findings})` answers
    *  the block `publishedCase` (R3) carries under `name` beside the case, computed at the read. `filings` fills the
    *  available-actions block (its R15). Nothing it answers enters the case's own bytes. A second registration is
-   *  refused `PROVIDER_DECLARED`, a malformed one `PROVIDER_MALFORMED`. */
+   *  refused `PROVIDER_DECLARED`, a malformed one `PROVIDER_MALFORMED`. Never throws.
+   *  @param {any} module the registering module's name
+   *  @param {any} name the block's name
+   *  @param {any} fn `({caseId, edition, findings}) => any`
+   *  @returns {RegistrationAnswer}
+   *  @bound name: a lowercase letter, then lowercase letters, digits or underscores, at most 64 characters */
   registerEvidenceBlock(module, name, fn) {
     if (!str(module) || !/^[a-z][a-z0-9_]{0,63}$/.test(String(name ?? "")) || typeof fn !== "function")
       return { ok: false, reason: "PROVIDER_MALFORMED",
@@ -300,7 +401,9 @@ export class PublicRead {
   /** R34: takes, once at start, the one source of the group's public identity: `identity()` answers it as
    *  `instance-setup`'s `groupIdentityPublic` does (its R10: `group`, `display_name`, `domain`, `domain_verified_at`).
    *  A second registration is refused `PROVIDER_DECLARED`, one without the door `PROVIDER_MALFORMED`; each registers
-   *  nothing (`publication` R77's pattern). */
+   *  nothing (`publication` R77's pattern). Never throws.
+   *  @param {{identity?: any}} [source] `identity`, a function of no arguments
+   *  @returns {RegistrationAnswer} */
   registerGroupIdentity({ identity } = {}) {
     if (typeof identity !== "function")
       return { ok: false, reason: "PROVIDER_MALFORMED",
@@ -321,7 +424,9 @@ export class PublicRead {
    *  R36 (T50; N933): with a `project` given it also answers `matter_stake`, the team's own stake for that matter beside
    *  its team-wide `stake`, which it never replaces: `project-roster.projectStake(project)` (its R32) as `{stake, set_by,
    *  set_at, source: "project"}`; null with no project or a project whose latest entry is none; a stake that cannot be
-   *  read is `{stake: "undetermined", ...}`, never null. */
+   *  read is `{stake: "undetermined", ...}`, never null.
+   *  @param {Object<string, any>} [options] `project`, the matter's project id; any other field is ignored
+   *  @returns {GroupFields & Object<string, any>} a plain object, never a promise */
   groupFields({ project = null } = {}) {
     const said = [];
     /* The identity, copied out of the source's answer inside the guard, so an answer that throws when read is an
@@ -381,7 +486,10 @@ export class PublicRead {
    *  checked whole and is all or nothing: a malformed one is refused `PROVIDER_MALFORMED` naming what is wrong (a name
    *  that is not an op's spelling or is this module's own op, a read that is no function, a parameter that is
    *  malformed or carries a credential or a stamp, R10); a name already registered, by any module, is refused
-   *  `PROVIDER_DECLARED` naming who holds it, and the first stands. */
+   *  `PROVIDER_DECLARED` naming who holds it, and the first stands. Never throws.
+   *  @param {any} module the registering module's name
+   *  @param {any} reads name to `fn(args)` or `{params, read}`
+   *  @returns {RegistrationAnswer} */
   registerPublicReads(module, reads) {
     const mod = str(module);
     const entries = reads && typeof reads === "object" && !Array.isArray(reads) ? Object.entries(reads) : [];
@@ -419,7 +527,8 @@ export class PublicRead {
     return { ok: true, module: mod, names: specs.map((s) => s.name) };
   }
 
-  /** R18: every registered read, `{name, module, params}`, in name order. */
+  /** R18: every registered read, `{name, module, params}`, in name order.
+   *  @returns {{name: string, module: string, params: string[]}[]} */
   publicReads() {
     return [...this.#publicReads.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
       .map(([name, r]) => ({ name, module: r.module, params: [...r.params] }));
@@ -430,7 +539,10 @@ export class PublicRead {
    *  `{ok: true, read, module, result}` with the read's answer as `result`; a read that refuses (`ok: false`) is
    *  relayed as its own refusal, naming the read. An unregistered name answers `PUBLIC_READ_NOT_REGISTERED` (C-98.10, its row), saying so.
    *  A read that answers a promise is answered as one; one that throws is not caught here, so the store's own internal
-   *  error answers it and nothing is dressed as an absence. */
+   *  error answers it and nothing is dressed as an absence.
+   *  @param {any} name the read's name
+   *  @param {any} [query] the caller's parameters, by name
+   *  @returns {PublicAnswer|Promise<PublicAnswer>} */
   publicRead(name, query = {}) {
     const n = String(name ?? "");
     const r = this.#publicReads.get(n);
@@ -461,7 +573,10 @@ export class PublicRead {
    *  (absent, or with no ratified edition) is `publishedCase`'s own `NOT_PUBLISHED` answer for an absent case, taken
    *  from `publishedCase` itself, so the two are the same bytes by construction and C-98.8 keeps its one site.
    *  R25 (DEC-101 (3); N534): `captures` exactly `"omit"` is handed on as `captures: "omit"` (`docket` R24: no
-   *  capture's bytes read or answered), for a citing copy's daily read; any other value, or none, hands on nothing. */
+   *  capture's bytes read or answered), for a citing copy's daily read; any other value, or none, hands on nothing.
+   *  @param {any} caseId
+   *  @param {any} [captures] exactly "omit" to leave the captures out
+   *  @returns {Promise<PublicAnswer>} */
   async docketPublic(caseId, captures = null) {
     const c = str(caseId);
     const d = c ? await this.docket.docketPublic({ case: c, ...(captures === "omit" ? { captures: "omit" } : {}) }) : null;
@@ -472,7 +587,9 @@ export class PublicRead {
   /** R21 (DEC-116 item 8): a case's Atom feed, `docket.docketFeed` (its R15), one fixed address per case
    *  (`op=docketfeed&case=<case>`): `{ok: true, case, media_type, feed}`, the door serving `feed` as the response's
    *  bytes under `media_type`; a promise, as the docket's read is. Null from the docket is `NOT_PUBLISHED`, as
-   *  `docketPublic`. */
+   *  `docketPublic`.
+   *  @param {any} caseId
+   *  @returns {Promise<PublicAnswer>} */
   async docketFeed(caseId) {
     const c = str(caseId);
     const feed = c ? await this.docket.docketFeed({ case: c }) : null;
@@ -556,7 +673,9 @@ export class PublicRead {
    *
    *  READS THE PUBLISHED PROJECTION ONLY. That is the entire safety of an open
    *  endpoint: working material is never consulted, so there is nothing to leak,
-   *  exactly as op=verify already works. */
+   *  exactly as op=verify already works.
+   *  R1, R2, R28: `{ok: true, scope: "published", ...}`, every ratified finding with its own frozen pair, and the cases.
+   *  @returns {PublicAnswer} */
   publishedManifest() {
     const byCase = this.#frozenPairsByCase();
     /* R28: what the court orders in force withhold, stated on the rows below (`withheldRow`, `withheldCase`). */
@@ -712,9 +831,13 @@ export class PublicRead {
   }
 
 
-  /* 7a: answers ONLY from the published projection. Working material is not
+  /** 7a: answers ONLY from the published projection. Working material is not
      consulted, so there is nothing to leak: a hash that was never ratified
-     is indistinguishable from a hash that never existed. */
+     is indistinguishable from a hash that never existed.
+     R4, R5, R23: the rows the projection holds for the hash; an original carried as its copy answers as never published.
+   *  @param {any} sha
+   *  @returns {{published: boolean, sha256: any, matches: any[]}}
+   *  @bound sha: 64 hexadecimal digits in any case are read lowercased; anything else is answered as given */
   verifySha(sha) {
     sha = lowerSha(sha);
     const matches = this.#rows(
@@ -757,11 +880,13 @@ export class PublicRead {
     return originals;
   }
 
-  /* REC-14 / DEC-12: the public index ENUMERATES EDITIONS rather than one row
+  /** REC-14 / DEC-12: the public index ENUMERATES EDITIONS rather than one row
      per bundle, because an edition is a separate document and edition 1 keeps
      answering after edition 2 lands. `title` is here — the one deliberate
      divergence from DATA-MODEL 2.4.4 — so a public index is not N+1 reads of
-     the bytes to learn what each case is called. */
+     the bytes to learn what each case is called.
+     R1, R28, R29, R41: `{bundles, cases}`, each finding edition and each case edition.
+   *  @returns {{bundles: any[], cases: any[]}} */
   publishedList() {
     const index = this.#withheldIndex(), handles = new Map(); // R41 (3): members named by handle
     return { bundles: this.#rows(
@@ -800,10 +925,13 @@ export class PublicRead {
         c.case_id, c.edition).map((m) => m.bundle_id) }, index, [])) };
   }
 
-  /* One case, every edition it has ever had, each with its OWN signature,
+  /** One case, every edition it has ever had, each with its OWN signature,
      attestor, time and gate version, and with the frozen assertion and the
      frozen PAIR the group signed. This is what makes "edition 1 still answers"
-     checkable rather than merely stated. */
+     checkable rather than merely stated.
+     R1, R28, R41: `{ok: true, bundleId, editions}`, or `NO_ID` with no id.
+   *  @param {any} bundleId
+   *  @returns {PublicAnswer} */
   publishedEditions(bundleId) {
     if (!bundleId) return { ok: false, reason: "NO_ID", detail: "publishededitions requires ?id=" };
     const rows = this.#rows(
@@ -866,7 +994,10 @@ export class PublicRead {
   /** R42 (fix round 4, C48/N6; RC-R10): the one builder of a published case's public address, `/app/published/<case>/<edition>`
    *  written as the shell's route opens it (the subject one encoded part, as the screens' own links write it). `null` for a case
    *  or an edition that holds no row in the published projection (an edition prepared or signed and not published is none), and
-   *  for a case or edition not named. Reads the projection only (R10). */
+   *  for a case or edition not named. Reads the projection only (R10). Never throws.
+   *  @param {{case?: any, edition?: any}} [address]
+   *  @returns {string|null}
+   *  @bound edition: a whole number, 1 or more */
   publishedAddress({ case: caseId = null, edition = null } = {}) {
     const id = typeof caseId === "string" ? caseId.trim() : "";
     const n = typeof edition === "number" || (typeof edition === "string" && /^\d+$/.test(edition.trim())) ? Number(edition) : NaN;
@@ -889,7 +1020,9 @@ export class PublicRead {
    *  A finding in no case answers `cases: []`; no id is `NO_ID`; an id nothing published answers is `publishedCase`'s
    *  `NOT_PUBLISHED` for an absent case, byte for byte (R14). One set-based read of the pins and one `caseEditionState` per
    *  case edition; no finding's bytes are fetched. Reads the published projection only (R10, R16), writes nothing and
-   *  never throws on what it reads. */
+   *  never throws on what it reads.
+   *  @param {{id?: any}} [query]
+   *  @returns {PublicAnswer} */
   publishedFrozen({ id = null } = {}) {
     const want = str(id);
     if (!want) return { ok: false, reason: "NO_ID", detail: "publishedfrozen requires ?id=" };
@@ -975,7 +1108,7 @@ export class PublicRead {
      an edition that does not exist and an id that never existed, and it is
      identical by construction rather than by care: there is no other table in
      this method to tell them apart with. */
-  /* REC-44 / DEC-44: RESOLUTION NOW HAS A FOURTH ROUTE and the surface answers
+  /** REC-44 / DEC-44: RESOLUTION NOW HAS A FOURTH ROUTE and the surface answers
      with a CASE. `id` may be the CASE identity or the bundle id of any member
      FINDING — a stranger who was handed one finding's id must be able to reach
      the case it was published in, since that case is the artifact the group put
@@ -987,7 +1120,11 @@ export class PublicRead {
      own frozen pair inside findings[]; a case-level letter would be R2's
      forbidden composition arriving at case altitude, and its ABSENCE from this
      answer is asserted by `published.test.mjs`' R3 and R11 arms rather than
-     left to review. */
+     left to review.
+     R3, R8, R14, R19-R22, R26-R29, R31, R34, R39, R41 (and the REC-22 block above): the case edition, or
+     `NOT_PUBLISHED` (C-98.8).
+   *  @param {PublishedCaseQuery} [query]
+   *  @returns {PublicAnswer} */
   publishedCase({ id = null, edition = null, sha256 = null, caseId = null } = {}) {
     let theCase = caseId ? String(caseId).trim() : null, ed = null, asked = null;
     /* CASE-5: the FINDING's own edition, kept apart from `ed` (the CASE's) from
@@ -1416,7 +1553,9 @@ export class PublicRead {
    *  `{count, last}`: the public entries of the case dated after the answered edition's `published_at` (by day) whose
    *  kind is `edition`, `withdrawal` or `court-order`, and the newest of them by (date, seq) as `{seq, kind, date}`;
    *  `{count: null, last: null, undetermined: true}` when the docket cannot be read, never `count: 0`. Never throws, writes
-   *  nothing, and is the same bytes for every caller. */
+   *  nothing, and is the same bytes for every caller.
+   *  @param {PublishedCaseQuery} [query]
+   *  @returns {Promise<PublicAnswer>} */
   async publishedCaseWithCorrections(query = {}) {
     const a = this.publishedCase(query);
     if (!a || a.ok !== true) return a;
@@ -1469,7 +1608,10 @@ export class PublicRead {
    *    from the document (when the row may name one), a `co_attestation` row with each token `publication` held for
    *    that material (its R57: by hash, with its text where held inline).
    *  Anything else (no such edition, not complete, no signed document, a document before `/6`) answers
-   *  `{ok: false, reason}`, so the Worker keeps the container form for an edition prepared before T28. Writes nothing. */
+   *  `{ok: false, reason}`, so the Worker keeps the container form for an edition prepared before T28. Writes nothing.
+   *  @param {any} caseId
+   *  @param {any} edition read as a whole number
+   *  @returns {PublicAnswer} */
   caseFileFacts(caseId, edition) {
     const c = str(caseId), ed = Number(edition);
     const state = c && Number.isInteger(ed) ? this.publication.caseEditionState(c, ed) : null;
@@ -1804,7 +1946,11 @@ export class PublicRead {
    *  docket entry). `{ok: true, withheld: {<sha256>: [order…]}}`; a hash nothing withholds is not listed. Writes nothing.
    *  (K5148) With `zip`, a case edition's manifest hash, the answer is for that case's zip: a hash that another case holds
    *  only as scaffolding counts under that case's orders alone, and material (a finding, a capture, a document) under any
-   *  case's. */
+   *  case's.
+   *  @param {any} shas a list, or a comma-separated text
+   *  @param {any} [zip]
+   *  @returns {{ok: boolean, withheld: Object<string, any[]>}}
+   *  @bound shas: each 64 hexadecimal digits, read lowercased; anything else is left out */
   withheldOf(shas, zip = null) {
     const want = (Array.isArray(shas) ? shas : String(shas ?? "").split(","))
       .map((s) => String(s).trim().toLowerCase()).filter((s) => HEX64.test(s));
@@ -2053,7 +2199,10 @@ export class PublicRead {
 const instances = new WeakMap();
 
 /** The one instance for a host (K61). The first call creates it with `deps` (a test passes its own). It owns no table,
- *  so it creates and declares none (R16). */
+ *  so it creates and declares none (R16).
+ *  @param {any} host
+ *  @param {PublicReadDeps} [deps]
+ *  @returns {PublicRead} */
 export function publicReadOf(host, deps) {
   let r = instances.get(host);
   if (!r) {
@@ -2075,7 +2224,10 @@ export function publicReadOf(host, deps) {
 
 /** The module's ops (K3), as entries of `plane`'s store op map (`../plane/store.mjs`), every one unstamped: each reads the published
  *  projection only (R10), so it answers without a credential; `publicread` serves a registered read under the same terms
- *  (R18). */
+ *  (R18).
+ *  @param {PublicRead} r
+ *  @param {URL} url the request's address, its query read
+ *  @returns {Object<string, () => any>} op name to its arm */
 export function publicReadOps(r, url) {
   const q = (k) => url.searchParams.get(k);
   return {
@@ -2100,8 +2252,10 @@ export function publicReadOps(r, url) {
   };
 }
 
-/* R40 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
-   the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
+/** R40 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
+   the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads.
+ * @type {Readonly<Object<string, {classes: null, mutating: boolean, weight: string, description: string,
+ *   fields: {accepts: string[], requires: string[]}}>>} */
 export const DECLARED_OPS = Object.freeze({
   verify: { classes: null, mutating: false, weight: "read", description: "act.verify.label.published",
     fields: { accepts: ["sha256"], requires: [] } },
