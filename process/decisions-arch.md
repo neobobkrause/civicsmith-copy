@@ -49,3 +49,8 @@ Decision: the composition root no longer hands the screens registry to `answers`
 Why: the module check refuses a provider's input that its stated interface does not name, and nothing in `answers` reads it; removing it changes nothing the product does.
 Decided: 23 Nov 2026.
 
+## Publication R30: a hash of a rendered page
+Decision: publication's R30 (a published rendering carries a pixel hash a verifier can check) waits, out of tranche t1. No module renders a page for publication or re-renders one to verify it: every published item is held and served as the exact bytes the group stands behind, verified by its file hash. ARCH designs, in a later tranche, which module renders a page for a case, where the rendering is held and which module verifies it; until then R30 stays not yet met and publication's job for it stays recorded blocked.
+Why: a column with nothing to fill it would be design ahead of need, as with inquiry R31.
+Decided: 23 Nov 2026.
+
