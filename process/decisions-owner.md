@@ -22,6 +22,7 @@ Rule now: civicsmith's Process4 work starts from main as it is; T53 stays where 
 Shown to the owner: not yet.
 
 ## Publishing a case while cited passages have no grade (the UX lane's question Q1)
-Rule now: option A of the lane's Q1: a case cannot be signed while any finding rests on a passage that is ungraded or graded too poor to show what it is cited for; the signing screen lists each such finding with three fixes (grade the passage, cite a better copy, or take the finding out). On hold: the lane found this conflicts with DEC-18 (2 Aug 2026) and has put that to the owner; nothing is built from it until he answers.
+Rule now: DEC-18 (2 Aug 2026) stands, as the UX lane reads the owner's 23 Nov words: an ungraded passage is named and does not hold up a conclusion that has graded ones; option A adds no rule and nothing is built from Q1. (The reading is the lane's, followed by ARCH; shown to the owner to confirm.)
 - 22 Nov 2026: "Decision: Q1,A" (given to the UX lane; relayed by ARCH #7)
+- 23 Nov 2026: "Decision: my answer on whether my choice of option A does not replaces my 2 August ruling" (given to the UX lane; relayed by ARCH #7)
 Shown to the owner: not yet.
