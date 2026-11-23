@@ -1,0 +1,834 @@
+{
+ "note": "Every tie found between the front door (control-plane) or the launcher (plane) and the UI layer (modules 176-194), as of origin/p4-tranche a26a8da2. Classes: a = data or a builder the door could be handed at start; b = UI logic the door runs itself; c = an agreement held as text on both sides, or something else. Import ties are complete by esbuild's metafile; text ties are those the stated searches found. See ../11-door-and-launcher.md.",
+ "counts": {
+  "import_edges": 13,
+  "import_symbols": 17,
+  "text_ties": 13,
+  "by_class": {
+   "a": [
+    "T02",
+    "T03",
+    "T04",
+    "T05",
+    "T06",
+    "T07",
+    "T08",
+    "T09",
+    "T10",
+    "T11",
+    "T12",
+    "T13",
+    "T14",
+    "T15",
+    "T16",
+    "N02"
+   ],
+   "b": [
+    "T01",
+    "T17"
+   ],
+   "c": [
+    "N01",
+    "N03",
+    "N04",
+    "N05",
+    "N06",
+    "N07",
+    "N08",
+    "N09",
+    "N10",
+    "N11",
+    "N12",
+    "N13"
+   ]
+  }
+ },
+ "plane_direct_ui_imports": 0,
+ "ties": [
+  {
+   "id": "T01",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/app.mjs",
+   "line": 21,
+   "symbol": "versionOfScriptPath",
+   "from_module": "interface-shell",
+   "from_index": 177,
+   "from_file": "bio-plane/src/interface-shell/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/app.mjs",
+     "line": 32,
+     "what": "route recognition: versionOfScriptPath(p) !== null -> \"script\""
+    },
+    {
+     "file": "bio-plane/src/control-plane/app.mjs",
+     "line": 53,
+     "what": "only this release's script is served: versionOfScriptPath(url.pathname) !== here -> 404"
+    }
+   ],
+   "class": "b",
+   "need": "the shell's parser of its own script address, run by the door to route",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T02",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 52,
+   "symbol": "interfacePage",
+   "from_module": "interface-shell",
+   "from_index": 177,
+   "from_file": "bio-plane/src/interface-shell/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 924,
+     "what": "handed to appPage"
+    },
+    {
+     "file": "bio-plane/src/control-plane/app.mjs",
+     "line": 40,
+     "what": "const html = interfacePage(screens, options)"
+    }
+   ],
+   "class": "a",
+   "need": "a page builder: (screens, options) -> HTML",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T03",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 52,
+   "symbol": "interfaceScript",
+   "from_module": "interface-shell",
+   "from_index": 177,
+   "from_file": "bio-plane/src/interface-shell/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "source of GET /app/shell-<version>.js"
+    }
+   ],
+   "class": "a",
+   "need": "the script's source, a string per screens and guide",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T04",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 52,
+   "symbol": "interfaceScriptHash",
+   "from_module": "interface-shell",
+   "from_index": 177,
+   "from_file": "bio-plane/src/interface-shell/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 923,
+     "what": "seen.scriptHashes = [interfaceScriptHash(APP_SCREENS, options)]"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 907,
+     "what": "withPagePolicy(res, { scriptHashes: seen.scriptHashes }) (answer-envelope writes the content-security-policy header)"
+    }
+   ],
+   "class": "a",
+   "need": "the script's hash, a string per screens and guide",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T05",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 52,
+   "symbol": "pageWork",
+   "from_module": "interface-shell",
+   "from_index": 177,
+   "from_file": "bio-plane/src/interface-shell/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 927,
+     "what": "spread into the control-plane.page log line"
+    }
+   ],
+   "class": "a",
+   "need": "a counter getter",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T06",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 53,
+   "symbol": "ASSET_FILES",
+   "from_module": "interface-assets",
+   "from_index": 176,
+   "from_file": "bio-plane/src/interface-assets/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 992,
+     "what": "appAsset(req, url, { assets: ASSET_FILES, version: env.VERSION })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/app.mjs",
+     "line": 93,
+     "what": "lookup by name; type, encoding, body read at lines 93-100"
+    }
+   ],
+   "class": "a",
+   "need": "an asset table: name -> {type, encoding?, body}",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T07",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 54,
+   "symbol": "SCREENS",
+   "from_module": "screens-entry",
+   "from_index": 178,
+   "from_file": "bio-plane/src/screens-entry/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 63,
+     "what": "spread into APP_SCREENS (lines 63-64)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 923,
+     "what": "interfaceScriptHash(APP_SCREENS, options)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 924,
+     "what": "appPage(req, { interfacePage, screens: APP_SCREENS, options, status })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "interfaceScript(APP_SCREENS, appOptions(env))"
+    }
+   ],
+   "class": "a",
+   "need": "a list of screen specs, passed whole to interface-shell's builders; the door reads no field of a screen",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T08",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 55,
+   "symbol": "SCREENS",
+   "from_module": "screens-settings",
+   "from_index": 181,
+   "from_file": "bio-plane/src/screens-settings/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 63,
+     "what": "spread into APP_SCREENS (lines 63-64)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 923,
+     "what": "interfaceScriptHash(APP_SCREENS, options)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 924,
+     "what": "appPage(req, { interfacePage, screens: APP_SCREENS, options, status })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "interfaceScript(APP_SCREENS, appOptions(env))"
+    }
+   ],
+   "class": "a",
+   "need": "a list of screen specs, passed whole to interface-shell's builders; the door reads no field of a screen",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T09",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 56,
+   "symbol": "SCREENS",
+   "from_module": "screens-intake",
+   "from_index": 183,
+   "from_file": "bio-plane/src/screens-intake/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 63,
+     "what": "spread into APP_SCREENS (lines 63-64)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 923,
+     "what": "interfaceScriptHash(APP_SCREENS, options)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 924,
+     "what": "appPage(req, { interfacePage, screens: APP_SCREENS, options, status })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "interfaceScript(APP_SCREENS, appOptions(env))"
+    }
+   ],
+   "class": "a",
+   "need": "a list of screen specs, passed whole to interface-shell's builders; the door reads no field of a screen",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T10",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 57,
+   "symbol": "SCREENS",
+   "from_module": "screens-daily",
+   "from_index": 185,
+   "from_file": "bio-plane/src/screens-daily/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 63,
+     "what": "spread into APP_SCREENS (lines 63-64)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 923,
+     "what": "interfaceScriptHash(APP_SCREENS, options)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 924,
+     "what": "appPage(req, { interfacePage, screens: APP_SCREENS, options, status })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "interfaceScript(APP_SCREENS, appOptions(env))"
+    }
+   ],
+   "class": "a",
+   "need": "a list of screen specs, passed whole to interface-shell's builders; the door reads no field of a screen",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T11",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 58,
+   "symbol": "SCREENS",
+   "from_module": "screens-inquiry",
+   "from_index": 188,
+   "from_file": "bio-plane/src/screens-inquiry/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 63,
+     "what": "spread into APP_SCREENS (lines 63-64)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 923,
+     "what": "interfaceScriptHash(APP_SCREENS, options)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 924,
+     "what": "appPage(req, { interfacePage, screens: APP_SCREENS, options, status })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "interfaceScript(APP_SCREENS, appOptions(env))"
+    }
+   ],
+   "class": "a",
+   "need": "a list of screen specs, passed whole to interface-shell's builders; the door reads no field of a screen",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T12",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 59,
+   "symbol": "SCREENS",
+   "from_module": "screens-wizards",
+   "from_index": 179,
+   "from_file": "bio-plane/src/screens-wizards/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 63,
+     "what": "spread into APP_SCREENS (lines 63-64)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 923,
+     "what": "interfaceScriptHash(APP_SCREENS, options)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 924,
+     "what": "appPage(req, { interfacePage, screens: APP_SCREENS, options, status })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "interfaceScript(APP_SCREENS, appOptions(env))"
+    }
+   ],
+   "class": "a",
+   "need": "a list of screen specs, passed whole to interface-shell's builders; the door reads no field of a screen",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T13",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 60,
+   "symbol": "SCREENS",
+   "from_module": "screens-investigate",
+   "from_index": 190,
+   "from_file": "bio-plane/src/screens-investigate/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 63,
+     "what": "spread into APP_SCREENS (lines 63-64)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 923,
+     "what": "interfaceScriptHash(APP_SCREENS, options)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 924,
+     "what": "appPage(req, { interfacePage, screens: APP_SCREENS, options, status })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "interfaceScript(APP_SCREENS, appOptions(env))"
+    }
+   ],
+   "class": "a",
+   "need": "a list of screen specs, passed whole to interface-shell's builders; the door reads no field of a screen",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T14",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 61,
+   "symbol": "SCREENS",
+   "from_module": "screens-publish",
+   "from_index": 192,
+   "from_file": "bio-plane/src/screens-publish/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 63,
+     "what": "spread into APP_SCREENS (lines 63-64)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 923,
+     "what": "interfaceScriptHash(APP_SCREENS, options)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 924,
+     "what": "appPage(req, { interfacePage, screens: APP_SCREENS, options, status })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "interfaceScript(APP_SCREENS, appOptions(env))"
+    }
+   ],
+   "class": "a",
+   "need": "a list of screen specs, passed whole to interface-shell's builders; the door reads no field of a screen",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T15",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 62,
+   "symbol": "SCREENS",
+   "from_module": "screens-action",
+   "from_index": 194,
+   "from_file": "bio-plane/src/screens-action/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 63,
+     "what": "spread into APP_SCREENS (lines 63-64)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 923,
+     "what": "interfaceScriptHash(APP_SCREENS, options)"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 924,
+     "what": "appPage(req, { interfacePage, screens: APP_SCREENS, options, status })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "interfaceScript(APP_SCREENS, appOptions(env))"
+    }
+   ],
+   "class": "a",
+   "need": "a list of screen specs, passed whole to interface-shell's builders; the door reads no field of a screen",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T16",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 59,
+   "symbol": "GUIDE",
+   "from_module": "screens-wizards",
+   "from_index": 179,
+   "from_file": "bio-plane/src/screens-wizards/index.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 65,
+     "what": "APP_OPTIONS = { guide: WIZARD_GUIDE }"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 162,
+     "what": "appOptions(env) spreads it"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 922,
+     "what": "options of the page"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 991,
+     "what": "options of the script"
+    }
+   ],
+   "class": "a",
+   "need": "the wizard guide spec, passed whole to interface-shell's builders",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "T17",
+   "kind": "import",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 39,
+   "symbol": "CAPTURE_SCREEN",
+   "from_module": "screens-capture",
+   "from_index": 182,
+   "from_file": "bio-plane/src/screens-intake/capture.mjs",
+   "uses": [
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 796,
+     "what": "CAPTURE_SCREEN.parts.titleOf(cs, { reading: answer.reading, doc, address })"
+    },
+    {
+     "file": "bio-plane/src/control-plane/index.mjs",
+     "line": 797,
+     "what": "await CAPTURE_SCREEN.parts.promoteDocument(cs, { doc, title, locator: address, project })"
+    }
+   ],
+   "class": "b",
+   "need": "two screen functions run inside the Durable Object by deliverOwedRender (lines 743-835) over a stand-in kit (lines 787-793)",
+   "tag": "MEASURED (esbuild metafile edge) + READ (uses)"
+  },
+  {
+   "id": "N01",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/app.mjs",
+   "line": 23,
+   "symbol": "\"/app\", \"/app/assets/\" (lines 23-24)",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/interface-shell/index.mjs",
+     "line": 53,
+     "what": "\"/app/assets/\" + name"
+    },
+    {
+     "file": "bio-plane/src/interface-shell/browser.mjs",
+     "line": 1115,
+     "what": "/^\\/app(\\/|$)/"
+    },
+    {
+     "file": "bio-plane/src/interface-assets/index.mjs",
+     "line": 11,
+     "what": "15 /app/assets/fonts/... addresses in the stylesheet text"
+    },
+    {
+     "file": "bio-plane/src/screens-action/request.mjs",
+     "line": 129,
+     "what": "/app/assets/icons.svg"
+    },
+    {
+     "file": "bio-plane/src/screens-settings/settings.mjs",
+     "line": 20,
+     "what": "/app/assets/icons.svg"
+    }
+   ],
+   "class": "c",
+   "what": "the same addresses written on both sides",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N02",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/app.mjs",
+   "line": 67,
+   "symbol": "PUBLIC_ALIASES = [\"/doorbell\", \"/tour\"]",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/interface-shell/index.mjs",
+     "line": 172,
+     "what": "PUBLIC_ADDRESSES = { doorbell, tour }"
+    },
+    {
+     "file": "bio-plane/src/interface-shell/browser.mjs",
+     "line": 1119,
+     "what": "read by the shell's address parser"
+    }
+   ],
+   "class": "a",
+   "what": "the door's own copy of the shell's two public addresses",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N03",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/app.mjs",
+   "line": 108,
+   "symbol": "GROUP_LOGO = \"group-logo\" (served at index.mjs:988-989)",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/screens-entry/front.mjs",
+     "line": 35,
+     "what": "src=\"/app/assets/group-logo\""
+    }
+   ],
+   "class": "c",
+   "what": "an asset name served from the store, not from the table",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N04",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 162,
+   "symbol": "appOptions(env): testInstance, version",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/interface-shell/index.mjs",
+     "line": 585,
+     "what": "options.version, options.testInstance read at lines 585-589"
+    }
+   ],
+   "class": "c",
+   "what": "facts of the environment the door hands the page builder",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N05",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/words-cache.mjs",
+   "line": 90,
+   "symbol": "key <release>~<language>~<words_version>, compared with the request's v at line 91",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/interface-shell/index.mjs",
+     "line": 596,
+     "what": "<meta name=\"cs-version\">"
+    },
+    {
+     "file": "bio-plane/src/interface-shell/browser.mjs",
+     "line": 2764,
+     "what": "r + \"~\" + n.l + \"~\" + n.s"
+    },
+    {
+     "file": "bio-plane/src/interface-shell/browser.mjs",
+     "line": 2777,
+     "what": "call(\"interfacewords\", { query: { v } })"
+    }
+   ],
+   "class": "c",
+   "what": "the cache key's format composed separately on each side",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N06",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 942,
+   "symbol": "background=1",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/interface-shell/browser.mjs",
+     "line": 153,
+     "what": "qs.set(\"background\", \"1\")"
+    }
+   ],
+   "class": "c",
+   "what": "a query parameter",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N07",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 907,
+   "symbol": "hash policy needs a page with no inline script (answer-envelope/index.mjs:136)",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/interface-shell/index.mjs",
+     "line": 604,
+     "what": "<script src=... integrity=...>"
+    }
+   ],
+   "class": "c",
+   "what": "a property of the page the policy depends on",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N08",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/storage-words.mjs",
+   "line": 6,
+   "symbol": "ten screen.group.storage.* sentences (lines 6-15); 100 MB grain at index.mjs:2057",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/screens-settings/group.mjs",
+     "line": 259,
+     "what": "W(S + \"storage.size\", ...) and Math.floor(n / 1e8)"
+    },
+    {
+     "file": "bio-plane/src/setup-words/rows.mjs",
+     "line": 26436,
+     "what": "the rows (lines 26436-26445)"
+    },
+    {
+     "file": "bio-plane/src/screens-settings/keys.mjs",
+     "line": 1267,
+     "what": "nine of the ten keys listed (lines 1267-1275)"
+    }
+   ],
+   "class": "c",
+   "what": "a control-plane file declares words one screen draws",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N09",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 2002,
+   "symbol": "word(\"screen.review-copy.link.once\")",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/screens-publish/review-copy.mjs",
+     "line": 120,
+     "what": "cs.w(\"screen.review-copy.link.once\")"
+    }
+   ],
+   "class": "c",
+   "what": "the door answers a sentence under a key a screen also draws, each through setup-words",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N10",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 176,
+   "symbol": "trace added to a JSON answer",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/interface-shell/browser.mjs",
+     "line": 341,
+     "what": "a.fields.trace"
+    }
+   ],
+   "class": "c",
+   "what": "an answer field",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N11",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/index.mjs",
+   "line": 1567,
+   "symbol": "kept and timings on ACQUIRE_TIMED_OUT (1567-1568); job on op=reading (2085)",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/screens-intake/capture.mjs",
+     "line": 1414,
+     "what": "refusal.kept"
+    },
+    {
+     "file": "bio-plane/src/screens-intake/capture.mjs",
+     "line": 858,
+     "what": "a.job"
+    },
+    {
+     "file": "bio-plane/src/screens-intake/capture.mjs",
+     "line": 1279,
+     "what": "a.job"
+    }
+   ],
+   "class": "c",
+   "what": "answer fields (a sample, not a full list)",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N12",
+   "kind": "text",
+   "file": "bio-plane/src/control-plane/archive.mjs",
+   "line": 22,
+   "symbol": "PROV_EMBED_MAX = INLINE_MAX - 65536",
+   "ui_side": [
+    {
+     "file": "bio-plane/src/screens-intake/capture.mjs",
+     "line": 176,
+     "what": "PROV_EMBED_MAX = 1048576 - 65536"
+    }
+   ],
+   "class": "c",
+   "what": "one bound written on both sides",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  },
+  {
+   "id": "N13",
+   "kind": "text",
+   "file": "bio-plane/dist/bio-plane.bundle.json",
+   "line": null,
+   "symbol": "inputs: 129 files under src/interface-* or src/screens-*",
+   "ui_side": [],
+   "class": "c",
+   "what": "the committed bundle's manifest (a plane file) names UI files",
+   "tag": "READ both sides; found by MEASURED greps M7, M10, M11, M13"
+  }
+ ]
+}
