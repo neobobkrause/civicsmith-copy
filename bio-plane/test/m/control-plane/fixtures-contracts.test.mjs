@@ -37,7 +37,7 @@ test("R2, R28 (contract ask-wire, agent-steps, agent-worker): every op the agent
                       answer: (c) => (c.route === op ? json({ ok: true, result: { ok: true, probe: op } }) : undefined) });
     const r = await call(w.env, { op, token: agent, method: "POST", body: {} });
     if (R.ops.includes(op)) {
-      assert.equal(OPS[op].classes.includes("ai"), false, `${op} admits no ai credential`);
+      assert.equal((OPS[op].classes ?? []).includes("ai"), false, `${op} admits no ai credential`);
       assert.deepEqual([r.status, Object.keys(r.json), r.json.ok, r.json.reason, r.json.check], [R.status, [...R.keys, ...R.more], R.ok, R.reason, R.check], `${op}: ${r.text.slice(0, 200)}`);
       assert.equal(typeof r.json.translation, "string");
       assert.equal(r.json.code, r.json.reason);

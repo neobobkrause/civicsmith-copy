@@ -131,7 +131,7 @@ test("R6: while not reachable the screen is \"Find and count\": search here, and
     ruleanswer: ok({ ok: true, service: "occurrences", value: 812, basis: "903 rows", label: "computed_fact" }),
   });
   assert.equal(main(p).querySelector("h1").textContent, word("screen.answers.offtitle"));
-  assert.deepEqual(ops(p), ["search", "standingquestionset"]);
+  assert.deepEqual(ops(p), ["search", "ruleanswer", "standingquestionset"], "search here, \"Show how this was counted\" and the standing question");
   assert.ok(!ops(p).includes("ask"), "no assistant control drawn (interface-shell R20)");
   await press(p, "search", { values: { "answers-q": "work orders" }, reason: R });
   assert.ok(p.byOp("search").some((r) => r.query.q === "work orders"), "R6: the plain words go to the fields route alone, never joined to a passage: term by OR");

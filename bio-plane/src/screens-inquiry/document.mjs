@@ -2079,7 +2079,12 @@ const words = Object.freeze([
     "monitorset.done", "attest.done", "transcribe.done", "pagetranscribe.done"].map((k) => "screen.document." + k),
 ]);
 
-/** The document screen (interface-shell R21). */
+/**
+ * The document screen (interface-shell R21): its reads, its place, its drawing, its acts and the words it reads by key.
+ * @param {*} parts the parts the screens share (`screens-inquiry`'s kit); `parts.kinds` lists the format ids whose `document.kind.<id>` words the screen
+ *   reads (R82, R83), and the screen carries the parts on with `checkOutcome` (`screens-intake` R42) and `findingsRefusal` (R117) beside them
+ * @returns the frozen screen `document`: `{id, reads, place, render, acts, words, parts}`, `parts.resolve` true only while the registry admits `resolve` (admit.mjs)
+ */
 export function documentScreen(parts) {
   /* R93: the one drawing of what a check found is `screens-intake`'s (its R42), imported and carried as this screen's part; R117: a refusal's
      first finding is drawn by `findingsRefusal` */

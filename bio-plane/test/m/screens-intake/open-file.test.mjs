@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { openWorld, members, html, text, main, btn, fill, press, ok, refused, bytes, rawKeys, word, hasWord, says, saysIn, dayOf } from "./page.mjs";
+import { openWorld, members, html, text, main, btn, fill, press, ok, refused, bytes, rawKeys, word, hasWord, says, saysIn, dayOf, screenOf } from "./page.mjs";
 import { makeZip } from "../../make-zip.mjs";
 
 const sha = (v) => createHash("sha256").update(v).digest("hex");
@@ -387,7 +387,7 @@ test("R39 controls: the safe view is not verified against the original's digest;
 
 test("R26 every key the open-file screen reads is a word of the list, and its three states draw word(key, vars)", async () => {
   const { SCREENS } = await import("../../../src/screens-intake/index.mjs");
-  for (const k of SCREENS.find((x) => x.id === "open-file").words) assert.ok(hasWord(k), k);
+  for (const k of screenOf("open-file").words) assert.ok(hasWord(k), k);
   const t = await team();
   const held = await hold(t, t.mai, { address: "https://city.example/held.txt", bytes: "A file with a finding.\n", name: "held" });
   t.S.verdicts.set(held.sha, { result: "found", findings: ["Eicar-Test-Signature"] });

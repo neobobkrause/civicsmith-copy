@@ -41,6 +41,7 @@ const bigFile = (t, address = ADDRESS) => {
 };
 const fetching = (p) => main(p).querySelectorAll("[data-fetching]").length;
 const size = word_n("15.2");
+/** @type {(n: string) => [string, {n: string}]} a size in MB, as its key and fills */
 function word_n(n) { return ["size.mb", { n }]; }
 const pressCapture = async (p) => { fill(p, { "ci-address": ADDRESS }); await press(p, "acquire"); };
 
@@ -314,9 +315,11 @@ test("R7 R60 (G20) the inbox says when the doorbell stopped at its limit; an unt
   assert.ok(Array.isArray(real.inbox) && real.inbox.length === 1, "the doorbell holds the knock");
   /* the doorbell stops at its limit only past a great many knocks: its own `truncated` and `next` are the one scripted addition */
   const cut = await open(t, "/app/inbox", { inbox: ok({ ...real, truncated: true, next: "c1" }) });
-  assert.ok(says(cut, "screen.held.more", { count: String(real.inbox.length) }));
+  /* the words are true of a list with no next page: never the held list's "More are on the next page" */
+  assert.ok(says(cut, "find.browse.more"));
+  assert.equal(says(cut, "screen.held.more", { count: String(real.inbox.length) }), false);
   const whole = await open(t, "/app/inbox");
-  assert.equal(says(whole, "screen.held.more", { count: String(real.inbox.length) }), false);
+  assert.equal(says(whole, "find.browse.more"), false);
 });
 
 test("R29 R60 (G20) the question chooser says when the search stopped at its limit; and the already-held look reads every page by next", async () => {

@@ -17,7 +17,8 @@ const heads = (p) => main(p).querySelectorAll("section").map((s) => s.querySelec
 function aiUsageBars(cs, view, o) {
   return `<div class="mk-bars" data-owner="${cs.esc(o.owner)}" data-days="${o.value.days.length}" data-meters="${o.value.periods.length}"></div>`;
 }
-const SERVING = SCREENS.map((s) => (s.id === "assistant" ? { ...s, parts: { aiUsageBars } } : s));
+/* the dock keeps its own parts (screens-question's Ask among them); only the bars are the stand-in */
+const SERVING = SCREENS.map((s) => (s.id === "assistant" ? { ...s, parts: { ...s.parts, aiUsageBars } } : s));
 const OWN = { capabilities: ["contribute", "create_projects"] };
 const KEY = "sk-ant-api03-" + "7".repeat(40);
 /** The real state the dock reads (the world made with `storeWorld({ ai: true })`, K5054): the team's Claude account set and switched on by the administrator's acts, `ann` a member

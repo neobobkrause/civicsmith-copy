@@ -12,7 +12,8 @@ const { record } = await import("./record.mjs");
 const D = await import("../../../src/store-door/dispatch.mjs");
 
 const { OPS } = O;
-const MAP = Object.keys(wizardScriptsOps(null, new URL("http://do/"), null));
+/* the map's names only: no arm is called, so no module stands behind it */
+const MAP = Object.keys(wizardScriptsOps(/** @type {any} */ (null), new URL("http://do/"), null));
 /* op-declarations' own lists (wizard-scripts R15, R20, R28), not a copy of them here */
 const AUTHOR = [...O.WIZARD_SCRIPTS_AUTHOR];
 const APPROVER = O.WIZARD_SCRIPTS_BY.filter((op) => !op.startsWith("wizardeditor"));

@@ -5,7 +5,14 @@
    in `op-declarations` and `op-grades`, never chosen; the fields are what the arm reads. `plane` no longer declares them
    (its Wave B, K5201), so this is their one `DECLARED_OPS` (`declarations.mjs` registers it under `store-assembly`). */
 import { localize } from "../setup-words/index.mjs";
+/** @import { OwnerRow, DeclaredFields } from '../op-declarations/index.mjs' */
+/**
+ * One of this module's rows: `op-declarations`' owner row, with its grade's weight and description and its fields always given.
+ * @typedef {OwnerRow & {weight: string, description: string, fields: DeclaredFields}} AssemblyRow
+ */
 
+/** R84: the rows of the ops the assembly answers itself, by op name.
+ *  @type {Readonly<Object<string, AssemblyRow>>} */
 export const DECLARED_OPS = Object.freeze({
   ask: { classes: ["admin", "member"], machineClasses: [], mutating: true, weight: "caller-owned",
     description: localize("store-assembly.declared.ask", "member-directed: a member's own question to the assistant under their own account; no object is before them"),

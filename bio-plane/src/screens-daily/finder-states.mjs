@@ -165,7 +165,10 @@ export function finderStates() {
         : cs.w("queue.source.untitled", { date: { html: cs.date(String(h.last_updated || h.captured || "")) } });
       const grade = h.grade ? cs.grade("capture", String(h.grade)) + " " : "";
       const where = h.snippet ? excerpt(h.snippet) : "";
-      return cs.row(pickBox(id, title), cs.ref(screenOf(h.object_type, id), id, title, []) + '<span class="meta">' + grade + cs.mark("origin", "search") + (where ? " <span>" + where + "</span>" : "") + "</span>", "", "");
+      // R108 (Screens `finder` A12): a document hit offers "Explore connections" from it; a question, action or plan hit none.
+      const sc = screenOf(h.object_type, id);
+      const explore = sc === "document" || sc === "person" ? cs.act("explore", { label: "act.explore.label.finder", data: { from: id } }) : "";
+      return cs.row(pickBox(id, title), cs.ref(sc, id, title, []) + '<span class="meta">' + grade + cs.mark("origin", "search") + (where ? " <span>" + where + "</span>" : "") + "</span>", explore, "");
     }).join(""));
     // G16: a route past its page says so and continues by its cursor (a held row's nearest stand-in: the browse's).
     const moreOf = function (route, r) {
@@ -205,7 +208,8 @@ export function finderStates() {
       const k = KIND[String(x.kind)] || String(x.kind);
       const n = typeof x.documents === "number" ? x.documents : 0;
       return cs.row("", cs.ref("person", String(x.entity_id), String(x.label || ""), []) + '<span class="meta">' + cs.w("find.row.kind." + k) + " · "
-        + (n === 1 ? cs.w("screen.finder.named.nodoc.one") : cs.w("screen.finder.named.nodoc", { n: String(n) })) + "</span>", "", "");
+        + (n === 1 ? cs.w("screen.finder.named.nodoc.one") : cs.w("screen.finder.named.nodoc", { n: String(n) })) + "</span>",
+        cs.act("explore", { label: "act.explore.label.finder", data: { from: String(x.entity_id) } }), "");
     }).join(""));
     const subjectsSec = s && s.state === "ok" && scount > 0
       ? cs.sec("screen.finder.subjects.heading", '<p class="mk-small">' + (scount === 1 ? cs.w("screen.finder.route.subjects.holds.one") : cs.w("screen.finder.route.subjects.holds.other", { n: String(scount) })) + "</p>" + subjectRows + moreOf("subjects", s), { help: "screen.finder.subjects.help" })

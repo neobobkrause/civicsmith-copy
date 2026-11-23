@@ -68,50 +68,75 @@ import { captureOf } from "../capture/index.mjs";
 import { schedulerOf } from "../scheduler/index.mjs";
 import { ROOT_ADMIN, baseViewer, viewerMember } from "../member-roster/index.mjs";
 
+/** R64, R74: the statement that makes the ledger's table, `keeps_pending`, one row for each (digest or session, kind).
+ *  @type {string} */
 export const KEEPS_PENDING_DDL = `CREATE TABLE IF NOT EXISTS keeps_pending (
   sha TEXT NOT NULL, kind TEXT NOT NULL, parts TEXT NOT NULL DEFAULT '[]', detail TEXT NOT NULL DEFAULT '{}',
   attempts INTEGER NOT NULL DEFAULT 0, registered_at INTEGER NOT NULL, due_at INTEGER NOT NULL, last_try INTEGER, last_why TEXT,
   final_why TEXT, started_at INTEGER, interrupted INTEGER NOT NULL DEFAULT 0, last_ms INTEGER, last_mem INTEGER, own_ms INTEGER, wait_ms INTEGER,
   PRIMARY KEY (sha, kind))`;
-/** R97: the job table's own columns, added to a ledger of any earlier shape (additive; a row of the old shape keeps what it had). */
+/** R74: the job table's own columns, added to a ledger of any earlier shape (additive; a row of the old shape keeps what it had).
+ *  @type {ReadonlyArray<string[]>} each `[column, definition]` */
 export const JOB_COLUMNS = Object.freeze([
   ["state", "TEXT NOT NULL DEFAULT 'queued'"], ["verdict", "TEXT"], ["cursor", "TEXT"],
   ["written", "INTEGER NOT NULL DEFAULT 0"], ["skipped", "INTEGER NOT NULL DEFAULT 0"], ["owed", "INTEGER NOT NULL DEFAULT 0"],
   ["failed", "INTEGER NOT NULL DEFAULT 0"], ["failed_why", "TEXT NOT NULL DEFAULT '{ }'"], ["last_progress_at", "INTEGER"],
   ["rate_per_s", "REAL"], ["carrier", "TEXT"], ["reader_version", "TEXT"], ["priority", "TEXT"], ["ended_at", "INTEGER"], ["member", "TEXT"],
 ]);
-/** R92: the last run of each (digest or session, kind), kept after the row has ended. */
+/** R72: the last run of each (digest or session, kind), kept after the row has ended.
+ *  @type {string} */
 export const KEEPS_LAST_DDL = `CREATE TABLE IF NOT EXISTS keeps_last (
   sha TEXT NOT NULL, kind TEXT NOT NULL, last_ms INTEGER, own_ms INTEGER, wait_ms INTEGER, last_mem INTEGER, outcome TEXT NOT NULL, at INTEGER NOT NULL,
   PRIMARY KEY (sha, kind))`;
-/** R105: what a run cost, beside R92's times (NULL when unmeasured). */
+/** R78: what a run cost, beside R72's times (NULL when unmeasured).
+ *  @type {ReadonlyArray<string>} */
 export const TICK_FIGURES = Object.freeze(["max_stretch_ms", "rows_read", "rows_written", "units", "max_run_statements"]);
-/** R97, R101: a unit's attempts, stamped before its reader runs: `tries` counts the runs that died on it. */
+/** R74, R76: a unit's attempts, stamped before its reader runs: `tries` counts the runs that died on it.
+ *  @type {string} */
 export const JOB_UNIT_ATTEMPTS_DDL = `CREATE TABLE IF NOT EXISTS job_unit_attempts (
   sha TEXT NOT NULL, kind TEXT NOT NULL, unit TEXT NOT NULL, tries INTEGER NOT NULL DEFAULT 0, stamped_at INTEGER,
   PRIMARY KEY (sha, kind, unit))`;
-/** R97, R104 (G128): a batch lands once, by (sha, kind, batch). */
+/** R74, R77 (G128): a batch lands once, by (sha, kind, batch).
+ *  @type {string} */
 export const JOB_BATCHES_DDL = `CREATE TABLE IF NOT EXISTS job_batches (
   sha TEXT NOT NULL, kind TEXT NOT NULL, batch TEXT NOT NULL, landed_at INTEGER NOT NULL,
   PRIMARY KEY (sha, kind, batch))`;
+/** The scheduler consumer's name.
+ *  @type {"pending-work"} */
 export const PENDING_NAME = "pending-work";
-/** R97: the job table's kinds: R77's, `fetch` (R81), and the four fix round 9 adds. */
+/** R64, R74: the job table's kinds.
+ *  @type {ReadonlyArray<string>} */
 export const JOB_KINDS = Object.freeze(["keep", "reading", "ocr", "subresources", "unpack", "fetch", "scan", "safe_view", "grade", "ingest"]);
+/** The same kinds, by their earlier name.
+ *  @type {ReadonlyArray<string>} */
 export const PENDING_KINDS = JOB_KINDS;
-/** R97: the states of a row; the last three are ends. */
+/** R74: the states of a row; the last three are ends.
+ *  @type {ReadonlyArray<string>} */
 export const JOB_STATES = Object.freeze(["queued", "fetching", "reading", "partial", "refused", "finished", "final"]);
 const ENDED = Object.freeze(["refused", "finished", "final"]);
+/** R64: the back-off's first step, in milliseconds; it doubles from here.
+ *  @type {number} */
 export const PENDING_RETRY_MS = 15_000;
+/** R64: the back-off's largest step, in milliseconds; retries go on at this rate.
+ *  @type {number} */
 export const PENDING_RETRY_MAX_MS = 3_600_000;
+/** R64: the most light rows a tick runs.
+ *  @type {number} */
 export const PENDING_BATCH = 3;
-/** R101 (2): the kills of one unit after which it is stated unread alone; the run before it is at half the budget. */
+/** R76 (2): the kills of one unit after which it is stated unread alone; the run before it is at half the budget.
+ *  @type {number} */
 export const UNIT_KILLS_MAX = 3;
+/** R76 (2): the reason a unit killed UNIT_KILLS_MAX times is stated unread with.
+ *  @type {"PAGE_KILLED_READER"} */
 export const PAGE_KILLED_READER = "PAGE_KILLED_READER";
-/** R101 (1): the reason a row that advanced nothing ends with. */
+/** R76 (1): the reason a row that advanced nothing ends with.
+ *  @type {"NO_PROGRESS"} */
 export const NO_PROGRESS = "NO_PROGRESS";
-/** R105: the lag meter's interval, milliseconds. */
+/** R78: the lag meter's interval, milliseconds.
+ *  @type {number} */
 export const LAG_EVERY_MS = 10;
-/** an ended row is kept this long for the table's readers, then removed at a tick */
+/** an ended row is kept this long for the table's readers, then removed at a tick
+ *  @type {number} */
 export const ENDED_KEEP_MS = 30 * 24 * 3_600_000;
 const HEAVY = Object.freeze(["keep", "reading", "ocr", "fetch", "scan", "safe_view", "ingest"]);
 /* an entry of these kinds is keyed by its capture SESSION (acquisition R100), the others by a digest */
@@ -133,7 +158,9 @@ const RANK = { keep: 0, reading: 1, ocr: 2, subresources: 3, unpack: 4, fetch: 5
 const json = (v, otherwise) => { try { const o = JSON.parse(v); return o && typeof o === "object" ? o : otherwise; } catch { return otherwise; } };
 const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const count = (v) => (Number.isSafeInteger(v) && v >= 0 ? v : null);
-/* R101: the unit a row's run starts on: the page its cursor names (`p<n>`), else the piece its cursor names, else the whole */
+/** R76: the unit a row's run starts on: the page its cursor names (`p<n>`), else the piece its cursor names (`c<cursor>`), else the whole
+ *  @type {(detail: any) => string}
+ *  @bound a piece's cursor: at most 200 characters after the `c` */
 export const unitOf = (detail) => {
   const d = plain(detail) ? detail : {};
   const page = d.next_page ?? d.page;
@@ -201,11 +228,112 @@ const sumRows = (cursors) => {
   return measured ? { rows_read: read, rows_written: written } : { rows_read: null, rows_written: null };
 };
 
+/**
+ * R75: what a way in registers. Keyed by `sha`, or by `session` for `fetch` and `subresources`.
+ * @typedef {Object} JobEntry
+ * @property {string} kind one of JOB_KINDS
+ * @property {string} [sha] a whole digest, 64 hex characters
+ * @property {string} [session] the capture session
+ * @property {any} [cursor]
+ * @property {number} [owed]
+ * @property {string} [carrier]
+ * @property {string[]} [parts] part digests in order; a `keep` names at least one
+ * @property {Object<string, any>} [detail]
+ * @property {any} [verdict]
+ * @property {string} [priority]
+ * @property {string} [member]
+ * @bound session: 1 to 200 characters
+ */
+/**
+ * R75: what `registerJob` answers: `{ok: true, existed, state}`, or `{ok: false, reason, detail?}`. It never throws.
+ * @typedef {Object} JobRegistration
+ * @property {boolean} ok
+ * @property {boolean} [existed]
+ * @property {string} [state]
+ * @property {string} [reason] JOB_ENTRY_INVALID, JOB_KIND_UNKNOWN, JOB_SESSION_MISSING, JOB_SHA_INVALID or JOB_NOT_KEPT
+ * @property {any} [detail]
+ */
+/**
+ * R64, R74: one entry as `owedwork` lists it: `state` the page's (`owed`, or `final` with its reason), `job_state` the job table's.
+ * @typedef {Object} OwedEntry
+ * @property {string} sha the digest, or the capture session
+ * @property {string} kind
+ * @property {"owed" | "final"} state
+ * @property {string} job_state one of JOB_STATES
+ * @property {number} attempts
+ * @property {number} registered_at
+ * @property {number | null} next_try
+ * @property {number | null} last_try
+ * @property {string | null} why
+ * @property {Object<string, any>} detail
+ * @property {number} interrupted
+ * @property {boolean} running
+ * @property {number | null} last_ms
+ * @property {number | null} own_ms
+ * @property {number | null} wait_ms
+ * @property {number | null} last_mem
+ * @property {number} written
+ * @property {number} skipped
+ * @property {number} owed
+ * @property {number} failed
+ * @property {Object<string, any>} failed_why
+ * @property {string | null} priority
+ * @property {any} cursor the row's cursor, parsed; null when none or unreadable
+ * @property {number | null} last_progress_at
+ * @property {any} verdict the plan step's verdict on the bound, `{ok, size, limit, bound_key}`, parsed; null when none
+ */
+/**
+ * R79, R98: an ended row as `readingsEnded` answers it.
+ * @typedef {Object} EndedRow
+ * @property {string} sha
+ * @property {string} kind
+ * @property {string} state `finished`, `refused` or `final`
+ * @property {string | null} why
+ * @property {number} written
+ * @property {number} skipped
+ * @property {number} owed
+ * @property {number} failed
+ * @property {number} ended_at
+ * @property {string | null} member
+ */
+/**
+ * The scheduler consumer of the ledger (scheduler R8).
+ * @typedef {Object} PendingConsumer
+ * @property {string} name PENDING_NAME
+ * @property {string} key `pendingwork`
+ * @property {(at: number) => (number | null)} due
+ * @property {(at: number) => (number | null)} wake the entry's own due instant, never raised to `at`
+ * @property {(at: number) => Promise<{pendingwork: {asked: number, finished: number, retried: number, final: number, results: Array<{sha: string, kind: string, outcome: any}>}}>} tick
+ * @bound tick: the light kinds, at most PENDING_BATCH, then at most one heavy row
+ */
+/**
+ * The pending-work holder of a host.
+ * @typedef {Object} PendingHolder
+ * @property {() => void} migrate R74: the ledger's tables made, a ledger of an earlier shape carried over
+ * @property {(e: any) => JobRegistration} registerJob R75: synchronous, never throws
+ * @property {() => Promise<void>} armJobs
+ * @property {(entry?: {kind?: any, sha?: any, session?: any, parts?: any, detail?: any}) => Promise<{ok: boolean, reason?: string, detail?: any}>} owe
+ * @property {(entry?: any) => Promise<{ok: boolean, reason?: string, detail?: any}>} owedLater
+ * @property {(entry?: {sha?: any, parts?: any}) => Promise<{ok: boolean, reason?: string, detail?: any}>} keepLater
+ * @property {(entry?: {kind?: any, sha?: any, project?: any}) => Promise<{ok: boolean, reason?: string, detail?: any}>} add R80
+ * @property {(batch?: {sha?: any, kind?: any, batch?: any}) => boolean} landBatch true the first time a batch lands
+ * @property {(key?: {sha?: any, kind?: any}) => (Object<string, any> | null)} jobRow R79: every column of the row, or null
+ * @property {(key?: {sha?: any, kind?: any}) => Array<{unit: string, tries: number, stamped_at: number | null}>} unitAttempts
+ * @property {(of?: {sha?: any, finished?: boolean}) => OwedEntry[]} list the rows still owed or ended for a stated reason; a `finished` row only when `finished` is true
+ * @property {(page?: {after?: any, limit?: any}) => {ok: true, rows: EndedRow[], next: string | null}} readingsEnded
+ * @property {(of?: {sha?: any}) => Array<Object<string, any>>} ledgerLast R72, R78
+ * @property {() => Object<string, {owed: number, final: number}>} summary counts for each kind, no digest
+ * @property {() => PendingConsumer} consumer
+ * @bound readingsEnded: limit 1 to 500, 100 by default
+ */
 /** The pending-work holder of a host (one per storage): `{migrate, registerJob, armJobs, owe, add, list, jobRow, readingsEnded, summary,
  *  consumer, ...}`. `deps`: `env`, `store` (a function answering the object's namespace), `now` (the clock; a test's own), `deliver`
  *  (control-plane's `deliverOwedRender`, handed by the composition), `clock` (the clock durations are measured on, the wall by default; K5132)
  *  and `workers` (kind -> async `(entry, {at}) -> answer`, replacing or
- *  supplying the owner of that kind; a test's, or the composition's for the kinds this module runs no owner of). */
+ *  supplying the owner of that kind; a test's, or the composition's for the kinds this module runs no owner of).
+ *  @param {any} ctx the object's state; its `storage.sql` holds the ledger
+ *  @param {{env?: any, store?: () => string, now?: () => number, deliver?: any, clock?: () => number, workers?: Object<string, any>}} [deps]
+ *  @returns {PendingHolder} */
 export function pendingOf(ctx, deps = {}) {
   let h = HOLDERS.get(ctx);
   if (h) return h;
@@ -653,11 +781,15 @@ export function pendingOf(ctx, deps = {}) {
   /* an end kept a month for the table's readers, then removed */
   const prune = () => { try { sql.exec(`DELETE FROM keeps_pending WHERE state IN ('finished','refused') AND ended_at < ?`, now() - ENDED_KEEP_MS); } catch { /* kept */ } };
 
+  /* R74 (control-plane R135): `cursor`, `last_progress_at` and `verdict` are read as `jobRow` reads them, so `owedwork` lists what
+     `op=reading` answers; a finished row has no next try */
+  const cursorOf = (r) => { if (r.cursor === null || r.cursor === undefined) return null; try { return JSON.parse(r.cursor); } catch { return null; } };
   const view = (r) => ({ sha: r.sha, kind: r.kind, state: r.final_why === null ? "owed" : "final", job_state: r.state, attempts: r.attempts,
-    registered_at: r.registered_at, next_try: r.final_why === null ? r.due_at : null, last_try: r.last_try, why: r.final_why ?? r.last_why,
+    registered_at: r.registered_at, next_try: r.final_why === null && r.state !== "finished" ? r.due_at : null, last_try: r.last_try, why: r.final_why ?? r.last_why,
     detail: json(r.detail, {}), interrupted: r.interrupted, running: r.started_at !== null && running.has(keyOf(r)), last_ms: r.last_ms,
     own_ms: r.own_ms, wait_ms: r.wait_ms, last_mem: r.last_mem, written: r.written, skipped: r.skipped, owed: r.owed, failed: r.failed,
-    failed_why: json(r.failed_why, {}), priority: r.priority ?? null });
+    failed_why: json(r.failed_why, {}), priority: r.priority ?? null, cursor: cursorOf(r), last_progress_at: r.last_progress_at ?? null,
+    verdict: r.verdict === null || r.verdict === undefined ? null : json(r.verdict, null) });
 
   h = {
     /** R75, R77, R97 (and R5's migration pass): the ledger's table; one an earlier release wrote (one row for each digest, a count
@@ -730,14 +862,16 @@ export function pendingOf(ctx, deps = {}) {
       const r = typeof sha === "string" && JOB_KINDS.includes(kind) ? rowOf(sha, kind) : null;
       if (!r) return null;
       return { ...r, parts: json(r.parts, []), detail: json(r.detail, {}), verdict: r.verdict === null ? null : json(r.verdict, null),
-               cursor: r.cursor === null ? null : (() => { try { return JSON.parse(r.cursor); } catch { return null; } })(), failed_why: json(r.failed_why, {}) };
+               cursor: cursorOf(r), failed_why: json(r.failed_why, {}) };
     },
     /** R101: the attempts stamped on a row's units, `[{unit, tries, stamped_at}]` */
     unitAttempts({ sha, kind } = {}) { return all(`SELECT unit, tries, stamped_at FROM job_unit_attempts WHERE sha=? AND kind=? ORDER BY unit`, sha, kind).map((r) => ({ ...r })); },
     /** every entry still owed or ended for a stated reason, or those of one digest, with the state the document's page states: `owed`, or
-     *  `final` with its reason (a `refused` row is `final`); `job_state` is R97's. A row that finished owes nothing and is not listed. */
-    list({ sha } = {}) {
-      const rows = sha === undefined ? all(`SELECT * FROM keeps_pending WHERE state <> 'finished'`) : all(`SELECT * FROM keeps_pending WHERE sha=? AND state <> 'finished'`, sha);
+     *  `final` with its reason (a `refused` row is `final`); `job_state` is R97's. A row that finished owes nothing and is not listed,
+     *  unless `finished` is true (R74; control-plane R135: `owedwork` lists the rows `op=reading` answers, a finished one among them). */
+    list({ sha, finished = false } = {}) {
+      const kept = finished === true ? "" : ` WHERE state <> 'finished'`;
+      const rows = sha === undefined ? all(`SELECT * FROM keeps_pending${kept}`) : all(`SELECT * FROM keeps_pending WHERE sha=?${finished === true ? "" : ` AND state <> 'finished'`}`, sha);
       return rows.sort((a, b) => a.registered_at - b.registered_at || (a.sha < b.sha ? -1 : a.sha > b.sha ? 1 : RANK[a.kind] - RANK[b.kind])).map(view);
     },
     /** R98: the rows that ended (`finished`, `refused`, `final`), after the cursor `after` (the `next` of the page before; none: from the
@@ -809,12 +943,15 @@ export function pendingOf(ctx, deps = {}) {
  *  door's `viewer` stamp, judged by `administers(viewer)` (`administersOf`, below, handed by the composition), never a `cls` the caller
  *  wrote: a member's screen never shows a stall, nor when the watchdog ran (K4565). An administrator whose `health` throws or answers no
  *  object is shown the seven fields as null and a `watchdog_why` (K4566): a stall is never hidden by silence. */
+/** @type {ReadonlyArray<string>} */
 export const WATCHDOG_FIELDS = Object.freeze(["last_run", "alarm_at", "stale", "oldest_overdue", "watchdog_seen", "watchdog_ran", "running_since"]);
 
 /** R90 (G58): who is an administrator, by the spellings the door stamps as `viewer`: the machine credential `class:admin`, the founder's
  *  bare `admin` (`member-roster` R73's root spelling, which the door stamps for the founder's session: admission `resolveSession`), and
  *  `member:<id>` naming an active administrator, which `isAdministrator(id)` (membership's) judges. Any other spelling, and no
- *  viewer, is not one. */
+ *  viewer, is not one.
+ *  @param {any} isAdministrator membership's `(id) => boolean`
+ *  @returns {(viewer: any) => boolean} */
 export function administersOf(isAdministrator) {
   return (viewer) => {
     if (typeof viewer !== "string") return false;
@@ -826,6 +963,11 @@ export function administersOf(isAdministrator) {
 }
 
 const lastOf = (holder, sha) => (typeof holder.ledgerLast === "function" ? holder.ledgerLast({ sha }) : []);
+/** R64 to R66, R79, R80: the store-internal routes `pendingadd` and `jobrow`, and the member's read `owedwork`.
+ *  @param {any} holder a PendingHolder
+ *  @param {URL} url the request's address, holding the door's `viewer` stamp
+ *  @param {{health?: any, administers?: any}} [seen] the scheduler's `health()` and `administersOf`'s judge
+ *  @returns {{pendingadd: () => Promise<any>, jobrow: () => any, owedwork: () => any}} */
 export function pendingOps(holder, url, { health, administers } = {}) {
   const stalled = async (answer) => {
     if (typeof health !== "function" || typeof administers !== "function" || answer.ok !== true) return answer;
@@ -851,9 +993,10 @@ export function pendingOps(holder, url, { health, administers } = {}) {
     owedwork: () => {
       const sha = url.searchParams.get("sha");
       if (sha === null) return stalled({ ok: true, owed: holder.summary() });
-      if (DIGEST.test(sha)) return stalled({ ok: true, sha, owed: holder.list({ sha }), last: lastOf(holder, sha) });
+      /* R74 (control-plane R135): a digest's rows as `op=reading` answers them, a finished row among them */
+      if (DIGEST.test(sha)) return stalled({ ok: true, sha, owed: holder.list({ sha, finished: true }), last: lastOf(holder, sha) });
       /* a `subresources` or `fetch` row is keyed by its capture session (R77, R81): the key is read when a row of those kinds holds it */
-      const owed = holder.list({ sha }).filter((e) => SESSION_KEYED.includes(e.kind));
+      const owed = holder.list({ sha, finished: true }).filter((e) => SESSION_KEYED.includes(e.kind));
       return owed.length ? stalled({ ok: true, sha, owed, last: lastOf(holder, sha) }) : { ok: false, reason: "BAD_SHA" };
     },
   };

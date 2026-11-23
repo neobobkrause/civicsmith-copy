@@ -110,3 +110,44 @@ test("R58 (K1940 (1)): the packages the door builds are ones the record's promot
     assert.ok(rec.bundleInfo(bundleId), bundleId);
   }
 });
+
+/* R72 (fix round 9, DOCS A1): an uploaded archive is opened by the plane's `unpack` job, which names no project. A world whose store answers
+   `heldat` for the archive's digest as `held` says, and a hook answering `unpack` with the files it filed. */
+function unpackWorld(held) {
+  let n = 0;
+  const w = world({ answer: (c) => {
+    if (c.route === "heldat") return reply({ ok: true, result: held });
+    if (c.route === "allocid") return reply({ ok: true, result: { id: `INFO-2026-${String(++n).padStart(4, "0")}` } });
+    if (c.route === "promote") return reply({ ok: true, result: { ok: true, bundleId: c.body.bundleId } });
+    if (c.route === "unpack") { unpacked.push(c.route); return reply({ ok: true, result: { ok: true, archive: { sha256: S("a") }, documents: files } }); }
+    return null;
+  } });
+  const unpacked = [];
+  const hooks = { publicOp: async () => M.json({ ok: true }), publicInstanceGroup: async () => ({ answered: true, result: {} }), gatedOp: async () => undefined };
+  return { ...w, hooks, unpacked };
+}
+
+test("R72 (fix round 9, DOCS A1): the plane's `unpack` job for an uploaded archive no document holds yet is answered ARCHIVE_NOT_FILED, complete: false, nothing unpacked; once a document holds it, its members are filed under that document's project (control: a member's own unpack naming its project is not asked where the archive is held)", async () => {
+  const waiting = unpackWorld({ ok: true, held: false });
+  const r = await call(waiting.env, { op: "unpack", token: waiting.env.DAEMON_TOKEN, method: "POST", hooks: waiting.hooks, body: { archiveSha: S("a") } });
+  assert.equal(r.status, 200, r.text.slice(0, 300));
+  assert.deepEqual(r.json.result, { ok: true, complete: false, waiting_on: { code: "ARCHIVE_NOT_FILED" } });
+  assert.deepEqual(waiting.unpacked, [], "nothing is unpacked");
+  assert.equal(waiting.env.calls.filter((c) => c.route === "promote").length, 0);
+  const heldAsked = waiting.env.calls.find((c) => c.route === "heldat");
+  assert.equal(heldAsked.params.sha256, S("a"), "the record is asked by the archive's digest");
+
+  const filed = unpackWorld({ ok: true, held: true, copy: { project: "PROJ-2026-0042", document: "INFO-2026-0009" } });
+  const f = await call(filed.env, { op: "unpack", token: filed.env.DAEMON_TOKEN, method: "POST", hooks: filed.hooks, body: { archiveSha: S("a") } });
+  assert.equal(f.status, 200, f.text.slice(0, 300));
+  assert.deepEqual(filed.unpacked, ["unpack"]);
+  const promotes = filed.env.calls.filter((c) => c.route === "promote");
+  assert.ok(promotes.length >= files.length, "the members are promoted");
+  for (const p of promotes) assert.match(p.body.files.find((x) => x.path === "bundle.md").text, /^project: "PROJ-2026-0042"$/m);
+
+  /* control: a unpack naming its project files there and asks nothing of where the archive is held */
+  const named = unpackWorld({ ok: true, held: false });
+  await call(named.env, { op: "unpack", token: named.S.ann, method: "POST", hooks: named.hooks, body: { archiveSha: S("a"), project: "PROJ-2026-0001" } });
+  assert.equal(named.env.calls.some((c) => c.route === "heldat"), false);
+  for (const p of named.env.calls.filter((c) => c.route === "promote")) assert.match(p.body.files.find((x) => x.path === "bundle.md").text, /^project: "PROJ-2026-0001"$/m);
+});

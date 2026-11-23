@@ -1,6 +1,7 @@
 /* The `archive` screen (Add › Held captures › Archive; R15; DEC-167, N688's screen part; K1844, K1940), at
  * `/app/archive/<the archive's SHA-256>`. Self-contained functions over the kit `cs` (interface-shell R21 (1)). */
 
+/** @import { ScreenBody } from './index.mjs' */
 import { sendRelease, RELEASE_REFUSALS } from "./held.mjs";
 
 /* R15: `archivelist` for the archive (acquisition R41) and `gradenote` (capture R76), by the archive's digest. */
@@ -137,6 +138,8 @@ function doneArchiveRelease(view, answer, cs) {
   cs.set("only", null);
 }
 
+/** The `archive` screen (R15), without its words; `index.mjs` adds them.
+ * @type {ScreenBody} */
 export const ARCHIVE_SCREEN = Object.freeze({
   id: "archive",
   reads: archiveReads,
