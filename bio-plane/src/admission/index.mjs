@@ -101,6 +101,7 @@ import { ADMISSION_CHECKS, NAMESPACE_CHECKS, AI_SCOPE_CHECKS, OPERATOR_FENCE_CHE
  * @property {string} [expiresAt]
  * @property {string} [run] the one run it writes to (R23)
  * @property {string} [project] the project it was minted in (R30)
+ * @property {string} [grant] an ask's grant, present only on the caller `control-plane` R53 admits under a grant
  */
 /**
  * @typedef {Object} StoreAnswer what the door's reader answers for one store request
