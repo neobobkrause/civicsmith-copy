@@ -199,7 +199,9 @@ export function fakeAccount({ name = "Journey test account", onScript = async ()
       return ok({});
     }
     if ((x = /^\/workers\/scripts\/([^/]+)\/settings$/.exec(rest)) && m === "GET")
-      return scripts.has(x[1]) ? ok({ bindings: scripts.get(x[1]).bindings.map(({ text, ...b }) => b) }) : no("not found", 404, 10007);
+      /* as Cloudflare answers: the bindings without their values, and the logs setting the script's upload stated (installer R40) */
+      return scripts.has(x[1]) ? ok({ bindings: scripts.get(x[1]).bindings.map(({ text, ...b }) => b),
+        ...(scripts.get(x[1]).meta?.observability ? { observability: scripts.get(x[1]).meta.observability } : {}) }) : no("not found", 404, 10007);
     if ((x = /^\/workers\/scripts\/([^/]+)\/subdomain$/.exec(rest)) && m === "POST") {
       if (!scripts.has(x[1])) return no("not found", 404, 10007);
       enabled.add(x[1]); return ok({ enabled: true });
