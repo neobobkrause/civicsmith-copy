@@ -4,9 +4,13 @@
    called by a test of answers' own, `fixtures.test.mjs`, which checks the real answer. */
 import { answersOps } from "../../../src/answers/index.mjs";
 import { answersWorld, V } from "./fixture.mjs";
+/** @import { AskAccount, StandingEntry } from '../../../src/answers/index.mjs' */
 
 /* `askAccount` for a member served by an account whose paying limits cannot be judged (no `useCheck`): the refusal
    `{ok: false, reason: "LIMITS_UNREADABLE", detail}`, writing nothing (R30). */
+/** @param {{member?: string}} [opts] the member's id, `bob` when absent
+ *  @returns {Promise<AskAccount>}
+ *  @throws {Error} when the member's account reference cannot be set */
 export async function limitsUnreadable({ member = "bob" } = {}) {
   const w = answersWorld();
   const set = await w.accounts.accountReferenceSet({ member, kind: "apikey", secret: "sk-fixture-limits", by: V(member) });
@@ -18,6 +22,9 @@ export async function limitsUnreadable({ member = "bob" } = {}) {
 /* The standing questions' refusals, each from `answers`' own act (R16, R34): `noSuch` the end of a question that is not
    the author's (NO_SUCH_STANDING_QUESTION), for `standingQuestionEnd` and for `standingQuestionEndSet`; `ended` the
    end date asked of a question its author ended (STANDING_ENDED); `ending` the end act's own ok answer. */
+/** @param {{author?: string, other?: string}} [opts] the author's and the other member's stamps
+ *  @returns {{id: any, noSuch: any, noSuchEndSet: any, ending: any, ended: any}}
+ *  @throws {Error} when the question cannot be set */
 export function standingQuestions({ author = V("bob"), other = V("carol") } = {}) {
   const w = answersWorld();
   const q = w.a.standingQuestionSet({ author, question: "Anything new on the budget?", query: "title:budget",
@@ -34,6 +41,9 @@ export function standingQuestions({ author = V("bob"), other = V("carol") } = {}
    and title) while the copy's AI switch was off, so the run is held back (R19: `held_back` `{condition: "switch_off",
    switch: "copy"}`) and its entry carries no answer. Made by answers' own acts: the question set by `member`, a first run
    (it finds nothing), the document captured, the switch turned off by an administrator, then the run that finds it. */
+/** @param {{member?: string, finds?: string}} [opts]
+ *  @returns {Promise<{ok: boolean, entries: StandingEntry[], cursor: any}>}
+ *  @throws {Error} when the question cannot be set, the switch cannot be turned off, or the run finds nothing */
 export async function standingAnswersHeldBack({ member = "bob", finds = "Budget held" } = {}) {
   const w = answersWorld();
   const author = V(member);
@@ -52,6 +62,9 @@ export async function standingAnswersHeldBack({ member = "bob", finds = "Budget 
 
 /* `ruleservicesstate` (R7; K5131) as a member reads it: `{ok: true, on}`. A fresh team's rule services are off (K1505 (14));
    `on: true` is the state after the administrator's switch, made by answers' own act. */
+/** @param {{on?: boolean}} [opts]
+ *  @returns {{ok: boolean, on: boolean}}
+ *  @throws {Error} when the administrator's switch is refused */
 export function ruleServicesState({ on = false } = {}) {
   const w = answersWorld({ rules: false });
   const url = (viewer) => new URL(`https://plane.test/?${new URLSearchParams({ viewer })}`);

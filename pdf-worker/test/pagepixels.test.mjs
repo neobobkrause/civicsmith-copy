@@ -16,7 +16,7 @@
  * /Rotate 270) of another page of the same document. */
 import "../../bio-plane/test/sandbox.mjs";
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -32,11 +32,11 @@ import { pixelRefusal, pageRefusal, renderedPage } from "./pdf-pixels-fixtures.m
 import { cropImage } from "../src/imagecrop.mjs";
 import { makePdf, onePage, content, image, readPng, turn, hex, deflateSync, runner } from "./make-pdf.mjs";
 
-const { Miniflare } = await (async () => {
-  try { return await import("miniflare"); } catch { /* fall through */ }
-  const planePkg = fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url));
-  return await import(pathToFileURL(createRequire(planePkg).resolve("miniflare")).href);
-})();
+// miniflare and esbuild come only from test-support's manifest (bio-plane/package.json),
+// never from whichever node_modules folder lies nearest this file.
+const fromTestSupport = createRequire(fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url)));
+const viaTestSupport = (name) => import(pathToFileURL(fromTestSupport.resolve(name)).href);
+const { Miniflare } = await viaTestSupport("miniflare");
 
 const F = (p) => new Uint8Array(readFileSync(fileURLToPath(new URL(p, import.meta.url))));
 const { t, finish } = runner("pagepixels");
@@ -449,11 +449,7 @@ console.log("\n--- R40: pure per call ---");
   /* The decode runs the same in workerd, the runtime the fleet serves in. */
   let bundled = null, why = null;
   try {
-    const esbuild = await (async () => {
-      try { return await import("esbuild"); } catch { /* fall through */ }
-      const planePkg = fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url));
-      return await import(pathToFileURL(createRequire(planePkg).resolve("esbuild")).href);
-    })();
+    const esbuild = await viaTestSupport("esbuild");
     const out = await esbuild.build({
       stdin: {
         contents: `import { renderPageToPixels } from ${JSON.stringify(fileURLToPath(new URL("../src/pagepixels.mjs", import.meta.url)))};
@@ -697,12 +693,8 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
   const bytesOf = (name) => new Uint8Array(Buffer.from(PAGES[name].b64, "base64"));
   const variant = (name) => new Uint8Array(Buffer.from(PV.variants.find((v) => v.name === name).b64, "base64"));
   const FLOOR = 0.9;
-  /* C18 (T51 fix round 2): the walk's hard photograph is a whole page of small print, blurred. `page-hard` is its twin
-     (231 words, 110 dpi, a 2.4 degree tilt, perspective, noise, blur 1.0): measured through the engine, unprepared 2
-     percent, prepared 56 percent (48 with lines enlarged to 40 px, the measure before this entry), so the floor on it is 52 percent. Its blur leaves nothing to read in a smaller page
-     (`page-hard-blur`, under 10 percent: the engine's own legibility is `ocr-worker`'s to state), so no floor is
-     claimed there. */
-  const HARD_FLOOR = 0.52;
+  /* The walk's hard photographs (`page-hard`, `page-hard-blur`, C18) are read through the engine in ocr-worker's own
+     tests (`ocr-worker/test/c18-hard-photo-floor.test.mjs`), not here. */
   /* The engine is the vendor package `ocr-worker` pins, resolved through that module's package.json (as miniflare is
      above, through bio-plane's), and the model is the file that module ships; no source of `ocr-worker` is imported. */
   const ocrPkg = createRequire(fileURLToPath(new URL("../../ocr-worker/package.json", import.meta.url)));
@@ -773,19 +765,14 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
   t("R44 (the fixture set holds the entry's pictures: a 2.4 degree tilt, 110 dpi, noise, and a picture with no text)",
     ["page-tilt-2.4", "page-110dpi", "page-noise-shade", "page-combined-a", "page-combined-b", "page-big-text", "page-blank"].every((n) => PAGES[n]), true);
 
-  const READ_PAGES = PV.pages.filter((p) => p.words);
+  const READ_PAGES = PV.pages.filter((p) => p.words && !p.name.startsWith("page-hard"));
   const shares = {};
   for (const pg of READ_PAGES) {
     const prepared = await photo(pg.name, { prepare: true });
     const raw = await photo(pg.name);
     shares[pg.name] = { prepared: shareRead(pg.words, await readByEngine(prepared.bytes)), raw: shareRead(pg.words, await readByEngine(raw.bytes)) };
-    if (!pg.name.startsWith("page-hard"))
-      t(`R44 the floor: ${pg.name} read through the engine after preparation, at least ${FLOOR * 100} percent of its words`, shares[pg.name].prepared >= FLOOR, true);
+    t(`R44 the floor: ${pg.name} read through the engine after preparation, at least ${FLOOR * 100} percent of its words`, shares[pg.name].prepared >= FLOOR, true);
   }
-  t(`R44 the floor (C18): page-hard, the walk's hard photograph, read through the engine after preparation, at least ${HARD_FLOOR * 100} percent of its words`,
-    shares["page-hard"].prepared >= HARD_FLOOR, true);
-  t("R44 control (C18): page-hard unprepared falls under that floor (the preparation is the cause)", shares["page-hard"].raw < HARD_FLOOR, true);
-  t("R44 control (C18): the preparation never reads fewer of page-hard-blur's words than the unprepared picture", shares["page-hard-blur"].prepared >= shares["page-hard-blur"].raw, true);
   console.log("  (words read, prepared / unprepared: " + Object.entries(shares).map(([n, v]) => `${n} ${Math.round(v.prepared * 100)}/${Math.round(v.raw * 100)}`).join(", ") + ")");
   /* The control: what the preparation fixes is what falls under the floor without it. */
   for (const n of ["page-noise-shade", "page-combined-a", "page-combined-b"])
@@ -1137,7 +1124,7 @@ console.log("\n--- R41: no place named ---");
   const src = (f) => readFileSync(fileURLToPath(new URL(`../src/${f}`, import.meta.url)), "utf8");
   const code = (f) => src(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
   const MINE = ["imagecrop.mjs", "pagepixels-worker.mjs", "pagepixels.mjs", "picturepixels.mjs"];
-  t("R41 (the module's files are all there)", MINE.every((f) => readdirSync(fileURLToPath(new URL("../src", import.meta.url))).includes(f)), true);
+  t("R41 (the module's files are all there)", MINE.every((f) => existsSync(fileURLToPath(new URL(`../src/${f}`, import.meta.url)))), true);
   t("R41 no place is named in the module's code", MINE.filter((f) => PLACES.test(code(f))), []);
   /* The control: the same reading does see a place where one is written. */
   t("R41 (the check sees a place in code)", PLACES.test(code("pagepixels.mjs") + "const x = 'Berkeley';"), true);

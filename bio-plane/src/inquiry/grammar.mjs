@@ -14,10 +14,12 @@ export { BASIS_ROLES, GROUND_LABEL_RE, INQUIRY_TITLE_MAX, deriveInquiryTitle, in
          checkLegExtentGrammar, leadLegFindings, supersedesEdgeFindings, divisionDisclosureFindings, checkInquiryExtension };
 
 /** R1: the inquiry's state machine, `{legal, edges}` — record-grammar's own table, never a copy. */
+/** @type {typeof STATES.inquiry} R1: record-grammar's own table, the same binding */
 export const INQUIRY_MACHINE = STATES.inquiry;
 
 /** R38: the rows this module's acts mint and its grammar raises, by code: `inquiry-grammar`'s (its R7), read, never a
  *  copy. */
+/** @type {typeof INQUIRY_GRAMMAR_CHECKS} R38: inquiry-grammar's rows, the same binding */
 export const INQUIRY_ROWS = INQUIRY_GRAMMAR_CHECKS;
 
 /** R17 (`inquiry-grammar` R1, R2; C-2.8, C-6.1, C-15.1): an inquiry document's entry requirements, judged by
@@ -27,6 +29,12 @@ export const INQUIRY_ROWS = INQUIRY_GRAMMAR_CHECKS;
  *  promotion's gate does; with none named, `inquiry-grammar`'s own (`INQUIRY_GRAMMARS`), so a caller holding no record
  *  still has the inquiry judged. Answers the error findings, each `{check, severity, message, repairs?}`. Never throws:
  *  a document it cannot judge (a malformed grammar list among them) is one C-2.8 error saying so. */
+/**
+ * R17: an inquiry document's entry requirements, judged by record-grammar's `checkBundle`. Never throws.
+ * @param {unknown} bundleMd the document's text; anything else is read as its string
+ * @param {any} [opts] `{publishedRegistry?, earnedRegistry?, grammars?}`; absent is none of them, the grammars then inquiry-grammar's own
+ * @returns {Promise<{check: string, severity: string, message: string, repairs?: string[]}[]>} the error findings only
+ */
 export async function checkInquiryEntry(bundleMd, opts = {}) {
   try {
     const o = opts && typeof opts === "object" ? opts : {};

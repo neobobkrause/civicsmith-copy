@@ -14,6 +14,7 @@ const must = (r, what) => {
 
 /** R16 (leg-earning R4): `basisFor` asked for no question at all, which it cannot read (`NO_ID`), and for one the record
  *  does not hold, which it reads as a question resting on nothing. */
+/** @returns {any} `{noId, absent}`, `basisFor`'s two answers */
 export function basisForUnread() {
   const w = world();
   return { inquiry: w.k, noId: w.k.basisFor(""), unheld: w.k.basisFor("INQ-2026-9099-x"), unheldId: "INQ-2026-9099-x" };
@@ -24,6 +25,7 @@ export function basisForUnread() {
  *  question itself), `basisCycle` (a leg closing a cycle, with the whole `path`) and `machinePassageUnchecked` (the read
  *  that says whether a member may cite a machine's passage fails). `question` is the id the first, second and fourth name,
  *  `cycleQuestion` the one the third does. Nothing is written by any of them. */
+/** @returns {any} the four refusals of R11's check, with `question` and `cycleQuestion` */
 export function basisRefusals() {
   const w = world(); w.member("alice"); w.doc(A); w.doc(B);
   const basisRefused = w.promote(Q, inquiryMd(Q, { legs: [{ target: A, role: "maybe" }] }), null, { author: V("alice") });
@@ -40,6 +42,10 @@ export function basisRefusals() {
 /** R20–R22 (`dispose`): the real act over a real selection and the real promotion. `done` is the answer of deferring two
  *  questions at once; `unknownSelection` and `notYours` the answers for a handle nothing holds and for a selection another
  *  owner made; `dispose(args)` makes the same act again over `handle` with the viewer, owner and author given. */
+/**
+ * @param {{to?: string, reason?: string, author?: string}} [opts]
+ * @returns {any} `{done, unknownSelection, notYours, dispose}`
+ */
 export function disposeAct({ to = "deferred", reason = "later", author = V("alice") } = {}) {
   const w = world(); w.member("alice");
   w.inquiry(Q); w.inquiry(R);
@@ -57,6 +63,10 @@ export function disposeAct({ to = "deferred", reason = "later", author = V("alic
  *  Los Angeles time: `due`), and at one second before it (`before`, `waiting`). `viewer` is a member stamp (`member:<id>`),
  *  `date` a day (`YYYY-MM-DD`). `answer` is the real answer as `datedWaits` gives it: its zone, its waits, each with its
  *  text, description, date, state and `set_by`. `admin` reads none of it. */
+/**
+ * @param {{viewer?: string, date?: string, asOf?: string}} [opts]
+ * @returns {any} the `datedWaits` answers `due`, `before` and `admin`, with `answer`
+ */
 export function datedWaitOf({ viewer = V("alice"), date = "2026-10-10", asOf = `${date}T07:00:00Z` } = {}) {
   const w = world({ view: () => ({ time_zone: { value: "America/Los_Angeles" } }) });
   const member = viewer.slice("member:".length);
@@ -72,6 +82,7 @@ export function datedWaitOf({ viewer = V("alice"), date = "2026-10-10", asOf = `
 
 /** R49 (`migratedSurfacing`): the surfacing a migration replay recorded for `migrated`, and null for `plain`, a question
  *  made on this plane. */
+/** @returns {any} `{inquiry, migrated, plain, migratedAnswer, plainAnswer}` */
 export function migratedSurfacing() {
   const w = world();
   must(w.promote(MIGRATED, inquiryMd(MIGRATED), null, { migrationReplay: { capture: "c".repeat(64), promotion: "P-1" } }), "migrated question");
@@ -83,6 +94,7 @@ export function migratedSurfacing() {
 /** R33, R65: the real refusals of a read of a question (`partitionOf`, `op=inquirypartition`): `NOT_AN_INQUIRY` for a
  *  bundle that is no question, and `NO_SUCH_BUNDLE`, one answer, for an id the record does not hold and for a question the
  *  viewer may not see (`hidden`, read by `outsider`, who is not in the project that holds it). */
+/** @returns {any} `partitionOf`'s refusals: `notAnInquiry`, `absent`, `hidden` */
 export function readRefusals() {
   const w = world(); w.member("alice"); w.member("bob");
   w.doc(A); w.inquiry(Q); w.inquiry(R);
@@ -101,6 +113,10 @@ export function readRefusals() {
  *  set-aside), then after a restore by the asker (`restored`: `document_waits` empty, `history` holding the set-aside and
  *  the restore), and as a viewer who may not see the document reads it (`hiddenFrom`: neither). `asker` and `setter` are
  *  member stamps (`member:<id>`). Made by the real capture module's set-aside and restore. */
+/**
+ * @param {{asker?: string, setter?: string, reason?: string, restoreReason?: string}} [opts]
+ * @returns {any} the `questionWaits` answers `setAside`, `restored` and `hiddenFrom`
+ */
 export function questionWaitsSetAside({ asker = V("alice"), setter = V("bob"), reason = "Not needed yet.",
                                         restoreReason = "The question needs it after all." } = {}) {
   const w = world({ capture: true });
@@ -126,6 +142,7 @@ export function questionWaitsSetAside({ asker = V("alice"), setter = V("bob"), r
  *  take leg 0, so leg 1 is no child's: `NO_APPORTIONMENT`, its `orphans` naming it), `noReason` (`NO_REASON`), `notAnInquiry`
  *  (a document: `NOT_AN_INQUIRY`), `absent` (`NO_SUCH_BUNDLE`) and `machine` (a machine's author: `MACHINE_CANNOT_DIVIDE`,
  *  with its row). A refusal writes nothing, so each is asked before the division that lands. */
+/** @returns {any} `divide`'s answer that lands and its refusals */
 export function divideAnswers() {
   const w = world(); w.member("alice"); w.doc(A); w.doc(B);
   w.inquiry(P, { legs: [{ target: A }, { target: B }] });
@@ -151,6 +168,7 @@ export function divideAnswers() {
  *  `cutsAgainst` (a partition naming the cutting leg: `BASIS_REFUSED`, its finding naming the leg) and `noReason` (a
  *  restructure without its reason: `NO_REASON`). `heldAfterAuthored` and `heldAfterRefusals` are the question's bytes
  *  after the authored act and after every refusal: a refusal writes nothing, so they are equal. */
+/** @returns {any} `ground`'s answer that lands, its refusals and the held bytes after each */
 export function groundAnswers() {
   const w = world(); w.member("alice"); w.doc(A); w.doc(B);
   w.inquiry(G, { legs: [{ target: A }, { target: B, role: "cuts_against" }] });
@@ -171,6 +189,7 @@ export function groundAnswers() {
 /** R55, R58 (`op=questionwaits`): the real `questionWaits` answer for a question nobody has made a wait on, read by its
  *  asker: no dated wait, no set-aside, nothing in its history. The world holds `capture`, which the set-asides are read
  *  from: without it the answer says the set-asides could not be read, which is not what the screen is shown. */
+/** @returns {any} the `questionWaits` answer for a question with no wait */
 export function questionWaitsNone() {
   const w = world({ capture: true }); w.member("alice");
   w.inquiry(Q);
