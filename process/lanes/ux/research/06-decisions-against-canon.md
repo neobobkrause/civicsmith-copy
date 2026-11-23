@@ -22,7 +22,7 @@ UX lane research, 23 Nov 2026, by a worker for civicsmith ux lane #3, after the 
 
 ## 2. What changes
 
-U3, U5, U7, U9, U10, U12 and U13 are rewritten in `../decisions.md`. The screen pages and `../words-new.md` rows they touch change during a tranche only as ARCH passes them.
+U3, U5, U7, U9, U10, U12 and U13 are rewritten in `../decisions.md`; the six word rows they withdraw are taken out of `../words-new.md` (ARCH #7, 23 Nov 2026). The screen and journey parts they touch, all not built, are corrected when tranche t1 ends, with J15's waiting marks. Moving the seven `screen.capture.refusal.*` and one `screen.inbox.refusal.*` rows to `refusal.<CODE>` changes behaviour the code meets today, so ARCH writes it as next-tranche work.
 
 ## 3. Not read
 

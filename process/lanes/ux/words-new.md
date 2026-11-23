@@ -1,4 +1,4 @@
-Length: 101 lines. Last section: "Marks settled by a row the table already holds".
+Length: 95 lines. Last section: "Marks settled by a row the table already holds".
 
 # New words the lane decided
 
@@ -23,7 +23,6 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `screen.queue.tension.open` | Open both | daily-work / queue A4 | mockup |
 | `screen.capture.file.project` | For which project | daily-work / capture C18 | mockup |
 | `screen.capture.watching.link` | See watched addresses | daily-work / capture A9 | mockup |
-| `screen.held.from.doorbell` | Handed in through the doorbell | daily-work / held C11 | lane (U5) |
 | `screen.open-file.release.why` | Why release it? | daily-work / open-file S3 | mockup |
 | `screen.action.clock.metlate` | met late | deciding-and-acting / action C11 | mockup (journeys) |
 | `screen.install.stopped.again` | Start again | getting-started / install A11 | mockup |
@@ -41,13 +40,11 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `screen.question.about.why` | Why you change it | projects-and-questions / question C15 | lane (U3) |
 | `screen.question.about.none` | This question does not name anyone it is about. | projects-and-questions / question C15 | lane (U3) |
 | `screen.question.about.name` | Name who it is about | projects-and-questions / question C15 | lane (U3) |
-| `screen.question.leggrade.copy` | Your team's grade for the copy | projects-and-questions / question C16 | lane (U9) |
 | `screen.question.expertise.sent` | The request reached {count} members who declared this expertise. | projects-and-questions / question C17 | lane |
 | `screen.question.expertise.sent.one` | The request reached 1 member who declared this expertise. | projects-and-questions / question C17 | lane |
 | `screen.question.expertise.none` | Nobody was asked: no member who can see this question has declared this expertise. | projects-and-questions / question C17 | lane |
 | `screen.answers.often` | How often | projects-and-questions / answers C9 | lane |
 | `screen.answers.until` | Until when | projects-and-questions / answers C9 | lane |
-| `signing.ceremony.keepkey.gone` | A key you do not keep on this device is gone when the browser closes. | publishing / ceremony C13 | lane (U7) |
 | `screen.published.changed` | What changed in this edition: “{what}” | publishing / published C13 | lane |
 | `screen.published.order` | Court order of {date}: {order} | publishing / published C13 | lane |
 | `screen.published.lane.world` | What they did | publishing / published C14 | lane (the timeline's lane words) |
@@ -60,9 +57,6 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `screen.docket.order.seal` | Seal | publishing / docket C8 | mockup (journeys) |
 | `screen.docket.order.unseal` | Unseal | publishing / docket C8 | mockup (journeys) |
 | `screen.document.stands` | Where it stands | reading-a-document / document C2 | mockup |
-| `screen.document.copy.ceiling` | How well it could be captured | reading-a-document / document C31 | lane (U9) |
-| `screen.document.copy.grade` | Your team's grade for the copy | reading-a-document / document C31 | lane (U9) |
-| `screen.document.from.doorbell` | Handed in through the doorbell | reading-a-document / document C32 | lane (U5) |
 | `screen.members.removed.line` | Administrator's powers removed on {date}. | team-and-account / members C12 | lane |
 | `screen.members.removed.agreed` | {member} agreed: “{reason}” | team-and-account / members C12 | lane |
 | `screen.members.ties.head` | Their ties | team-and-account / members C13 | lane |
@@ -77,7 +71,7 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `screen.calculation.expertise.declared` | declared, not confirmed: {label} | the-record / calculation C6 | lane (the words of `members`) |
 | `screen.explore.project` | For which project | the-record / explore C12 | lane (the words of `capture`) |
 
-70 rows: 24 from the mockup, 46 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there), none from the code alone (every place where the code draws words had a row already; see below).
+64 rows: 24 from the mockup, 40 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there; six of the lane's rows withdrawn on 23 Nov 2026 where the canon governs: `screen.held.from.doorbell`, `screen.document.from.doorbell` (U5), `screen.question.leggrade.copy`, `screen.document.copy.ceiling`, `screen.document.copy.grade` (U9), `signing.ceremony.keepkey.gone` (U7)), none from the code alone (every place where the code draws words had a row already; see below).
 
 ## Marks settled by a row the table already holds
 
