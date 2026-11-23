@@ -1183,8 +1183,20 @@ import { localize } from "./setup-words/index.mjs";
    CHANGED (12), code and number unmoved: C-113.32, C-140.4, C-140.7, C-146.25, C-146.6, C-146.7, C-33.54, C-87.1,
    C-94.5, C-94.6, C-96.17, C-96.39. THE FAMILIES THAT ARRIVED: none. This module adds no row.
    ROW_CENSUS (R50) re-pinned to this tree: 1971 rows. Rows a T52 job adds or changes are T53's stamp. */
+/* 1.81.0 (promotion's Process4 job #1, tranche t1, 2026-11-23; ARCH's decision "The local walk's unreached states, and a
+   reading not yet held", 23 Nov 2026): MINOR. The stamp of the rows the earlier process's last work changed or added
+   after 1.80.0's tree (the merge of `work/module-splits-1`, PR 1129), as its record names them
+   (`build/plan/row-census-awaiting-p4-t1.md`, written by journey-check's job #1, PR 1282), read by diffing R50's census
+   lines of `p4-tranche` against 1.80.0's own (`test/fixtures/row-census-1.80.0.jsonl`): two arrivals, six changed, no
+   departures, nothing else.
+   ARRIVED (2): C-2.8 CUTTING_LEG_IN_GROUND (inquiry-grammar), C-33.65 WHICH_PASSAGE (citation).
+   CHANGED (6), code, number and `where` unmoved, translation reworded by the word table: C-115.40 TEMPLATE_NOT_NAMED
+   (filings), C-120.4 CO_ATTESTATION_UNACKNOWLEDGED (case-disclosures), C-124.8 SUBJECT_IN_ACTIVE_PLAN (action-plans),
+   C-137.5 BAD_PERIOD (following), C-140.45 SIGNATURES_RUN_UNDER_WAY (file-safety), C-53.13
+   CAPTURE_HELD_BY_ANOTHER_BUNDLE (provenance). This module adds no row.
+   ROW_CENSUS (R50) re-pinned to this tree: 1973 rows. */
 /** @type {string} the catalogue's version (R34): it moves whenever a check is added, removed or changed */
-export const CATALOG_VERSION = "1.80.0";
+export const CATALOG_VERSION = "1.81.0";
 /* D-147 side, kept as history — took 1.30.0 (D-147, 2026-09-25, branch land/worker/D-147): 1.29.0 -> 1.30.0, MINOR — eleven checks ADDED (C-94.1-11, LIFECYCLE_CHECKS, the records-request lifecycle), none changed or removed; the census read from the d470 suite's print (466 -> 477). CONDUCT reconciles the number at integration if another branch takes 1.30.0 first. */
 /* MK-7 side, kept as history — took 1.30.0 (MK-7, 2026-09-25, branch land/worker/MK-7): ONE NEW FAMILY, ATTRIBUTION_CHECKS (C-92.1-.12, the
    attribution act and its gate), and three TESTIMONY_CHECKS rows (C-53.10-.12) re-worded as their fence is narrowed.
@@ -1279,8 +1291,8 @@ export const GATE_VERSION = `plane-gate/1.0 (bio-checks ${CATALOG_VERSION})`;
    re-pins it. */
 /** @type {Readonly<{version: string, rows: number, digest: string}>} the census as the last stamp read it (R50): its
  *  `CATALOG_VERSION`, the count of rows, and the SHA-256 of their sorted lines, lowercase hex */
-export const ROW_CENSUS = Object.freeze({ version: CATALOG_VERSION, rows: 1971,
-  digest: "17406b472cd7001dfef7d6028e0746b51ef7df322d42ad9fff1f2e1af16a5609" });
+export const ROW_CENSUS = Object.freeze({ version: CATALOG_VERSION, rows: 1973,
+  digest: "f897256afee796690152985bdcb74778fdaf519cbe58a09729b6121beacb3a96" });
 
 const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, "0")).join("");
 const te = new TextEncoder();
