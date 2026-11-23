@@ -96,7 +96,7 @@ const absOf = (rel) => path.join(ROOT, rel);
 const relOf = (abs) => path.relative(ROOT, abs).split(path.sep).join('/');
 const host = ts.createCompilerHost({ allowJs: true }, true);
 const program = ts.createProgram(JS_FILES.map(absOf), { allowJs: true, checkJs: false, noLib: true, noResolve: true, target: ts.ScriptTarget.ESNext,
-  module: ts.ModuleKind.ESNext, types: [], noEmit: true }, host);
+  module: ts.ModuleKind.ESNext, moduleDetection: ts.ModuleDetectionKind.Force, types: [], noEmit: true }, host);
 lap('parsed');
 const checker = program.getTypeChecker();
 lap('bound');
@@ -164,7 +164,9 @@ function concat(parts) {
       const v = ps[i];
       if (isText(v)) { acc += v.v; continue; }
       if (type === 'p') return X(acc, 'text');
-      if (type === 'u' || acc.startsWith('file://')) return X(urlToPath(acc) ?? acc, 'text');
+      if (type === 'u' || acc.startsWith('file://')) return /[?#]/.test(acc) ? { t: 'u', v: acc.replace(/[?#].*$/, ''), note: 'the part after "?" is not known' } : X(urlToPath(acc) ?? acc, 'text');
+      if (/^\.\.?\//.test(acc) && /[?#]/.test(acc)) return { t: 's', v: acc.replace(/[?#].*$/, ''), note: 'the part after "?" is not known' };
+      if (acc.startsWith('data:')) return S('data:');
       return null;
     }
     return { t: type === 's' && acc.startsWith('file://') ? 'u' : type, v: acc };
@@ -226,6 +228,7 @@ const skipOuter = (n) => { while (n && (ts.isParenthesizedExpression(n) || ts.is
 const LIST_METHODS = new Set(['map', 'forEach', 'filter', 'flatMap', 'some', 'every', 'find', 'findIndex']);
 
 const evalCache = new Map();
+const STATS_GLOBALS = new Map(); const STATS_GLOBAL_DECL = new Map();
 /** The parameters a failed evaluation ran into (declaration nodes), kept for the reading that is under way. */
 let paramDeps = null;
 /** Where a parameter was looked for and not found, in a reading that carries arguments. */
@@ -281,6 +284,7 @@ function ev0(node, env, depth) {
     case ts.SyntaxKind.ElementAccessExpression: {
       const base = ev(node.expression, env, d); const arg = node.argumentExpression;
       if (!base || !arg) return null;
+      if (base.t === 'g' && base.name === 'process.argv') return X('<argv>/', 'argv');
       if (base.t === 'a' && ts.isNumericLiteral(arg)) { const it = base.items[Number(arg.text)]; return it && !it.spread ? it : null; }
       if (ts.isStringLiteral(arg)) return member(base, arg.text, d);
       return null;
@@ -304,6 +308,7 @@ function ev0(node, env, depth) {
 function member(base, name, d) {
   if (!base) return null;
   if (base.t === 'm') return multi(base.alts.map((a) => member(a, name, d)));
+  if (base.t === 'lib' && base.mod === 'process' && base.path.length === 0) return member({ t: 'g', name: 'process' }, name, d);
   if (base.t === 'lib') {
     if (base.mod === 'fs' && base.path.length === 0 && name === 'promises') return { t: 'lib', mod: 'fs/promises', path: [] };
     if (base.mod === 'path' && base.path.length === 0 && (name === 'posix' || name === 'win32')) return base;
@@ -317,6 +322,8 @@ function member(base, name, d) {
   if (base.t === 'x' && (name === 'pathname' || name === 'href')) return base;
   if (base.t === 'g' && base.name === 'process' && name === 'execPath') return { t: 's', v: 'node', exec: true };
   if (base.t === 'g' && base.name === 'process') return { t: 'g', name: `process.${name}` };
+  if (base.t === 'g' && base.name === 'process.argv') return /^\d+$/.test(name) ? X('<argv>/', 'argv') : null;
+  if (base.t === 'g' && base.name === 'process.env') return ['TMPDIR', 'TMP', 'TEMP', 'RUNNER_TEMP'].includes(name) ? P('<tmp>') : null;
   if (base.t === 'g' && base.name === 'import.meta') {
     return null;
   }
@@ -352,7 +359,10 @@ function evIdent(id, env, d) {
   if (id.text === 'undefined') return null;
   const parent = id.parent;
   const sym = parent && ts.isShorthandPropertyAssignment(parent) && parent.name === id ? checker.getShorthandAssignmentValueSymbol(parent) : checker.getSymbolAtLocation(id);
-  if (!sym || !sym.declarations?.length) {
+  // a name declared in another file reaches this one only as a global (a file's own names never leave it): not a binding here
+  const foreign = !!sym && !!sym.declarations?.length && sym.declarations.every((x) => x.getSourceFile() !== id.getSourceFile());
+  if (foreign) { STATS_GLOBALS.set(id.text, (STATS_GLOBALS.get(id.text) ?? 0) + 1); if (!STATS_GLOBAL_DECL.has(id.text)) STATS_GLOBAL_DECL.set(id.text, `${relOf(sym.declarations[0].getSourceFile().fileName)}:${lineOf(sym.declarations[0])}`); }
+  if (!sym || !sym.declarations?.length || foreign) {
     const file = fileOfNode(id);
     if (id.text === '__dirname') return P(path.dirname(file));
     if (id.text === '__filename') return P(file);
@@ -383,11 +393,11 @@ function evDecl(decl, env, d) {
       const list = decl.parent;
       if (list && list.parent && (ts.isForOfStatement(list.parent)) && list.parent.initializer === list) {
         const arr = ev(list.parent.expression, env, d);
+        if (arr && arr.t === 'g' && arr.name === 'process.argv') return X('<argv>/', 'argv');
         return arr && arr.t === 'a' && arr.items.every((i) => i && !i.spread) ? multi(arr.items) : null;
       }
-      if (!decl.initializer) return null;
-      if (!isConstDecl(decl) && !neverReassigned(decl)) return null;
-      return ev(decl.initializer, env, d);
+      if (!isConstDecl(decl)) return evLet(decl, env, d);
+      return decl.initializer ? ev(decl.initializer, env, d) : null;
     }
     case ts.SyntaxKind.BindingElement: {
       const pattern = decl.parent; const host = pattern.parent;
@@ -402,6 +412,7 @@ function evDecl(decl, env, d) {
         return ts.isIdentifier(key) || ts.isStringLiteral(key) ? member(base, key.text, d) : null;
       }
       if (base.t === 'a') { const it = base.items[pattern.elements.indexOf(decl)]; return it && !it.spread ? it : null; }
+      if (base.t === 'g' && base.name === 'process.argv') return X('<argv>/', 'argv');
       return null;
     }
     case ts.SyntaxKind.Parameter: return ts.isIdentifier(decl.name) ? evParam(decl, env, d) : null;
@@ -425,31 +436,41 @@ function evDecl(decl, env, d) {
     default: return null;
   }
 }
-const writtenNames = new Map();
-/** A `let` or `var` whose name is written nowhere else in its file (by name: a second variable of the same name that
- *  is written counts against it, which only makes the reading more careful). */
-function neverReassigned(decl) {
-  const sf = decl.getSourceFile();
-  let names = writtenNames.get(sf);
-  if (!names) {
-    names = new Set();
-    const stack = [sf];
-    const target = (n) => {
-      if (ts.isIdentifier(n)) names.add(n.text);
-      else if (ts.isArrayLiteralExpression(n)) n.elements.forEach(target);
-      else if (ts.isObjectLiteralExpression(n)) n.properties.forEach((q) => { if (ts.isShorthandPropertyAssignment(q)) names.add(q.name.text); else if (ts.isPropertyAssignment(q)) target(q.initializer); else if (ts.isSpreadAssignment(q)) target(q.expression); });
-      else if (ts.isSpreadElement(n) || ts.isParenthesizedExpression(n)) target(n.expression);
-    };
-    while (stack.length) {
-      const n = stack.pop();
-      if (ts.isBinaryExpression(n) && n.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && n.operatorToken.kind <= ts.SyntaxKind.LastAssignment) target(n.left);
-      else if ((ts.isPrefixUnaryExpression(n) || ts.isPostfixUnaryExpression(n)) && (n.operator === ts.SyntaxKind.PlusPlusToken || n.operator === ts.SyntaxKind.MinusMinusToken)) target(n.operand);
-      else if ((ts.isForInStatement(n) || ts.isForOfStatement(n)) && !ts.isVariableDeclarationList(n.initializer)) target(n.initializer);
-      ts.forEachChild(n, (c) => { stack.push(c); });
-    }
-    writtenNames.set(sf, names);
+const writesByFile = new Map();
+/** The places a file writes a name after declaring it: name → [the value written, or null where it is not a plain "="]. */
+function writesOf(sf) {
+  let names = writesByFile.get(sf);
+  if (names) return names;
+  names = new Map();
+  const add = (id, value) => { if (!names.has(id.text)) names.set(id.text, []); names.get(id.text).push({ id, value }); };
+  const target = (n) => {
+    if (ts.isIdentifier(n)) add(n, null);
+    else if (ts.isArrayLiteralExpression(n)) n.elements.forEach(target);
+    else if (ts.isObjectLiteralExpression(n)) n.properties.forEach((q) => { if (ts.isShorthandPropertyAssignment(q)) add(q.name, null); else if (ts.isPropertyAssignment(q)) target(q.initializer); else if (ts.isSpreadAssignment(q)) target(q.expression); });
+    else if (ts.isSpreadElement(n) || ts.isParenthesizedExpression(n)) target(n.expression);
+  };
+  const stack = [sf];
+  while (stack.length) {
+    const n = stack.pop();
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && n.operatorToken.kind <= ts.SyntaxKind.LastAssignment) {
+      if (ts.isIdentifier(n.left)) add(n.left, n.operatorToken.kind === ts.SyntaxKind.EqualsToken ? n.right : null); else target(n.left);
+    } else if ((ts.isPrefixUnaryExpression(n) || ts.isPostfixUnaryExpression(n)) && (n.operator === ts.SyntaxKind.PlusPlusToken || n.operator === ts.SyntaxKind.MinusMinusToken)) target(n.operand);
+    else if ((ts.isForInStatement(n) || ts.isForOfStatement(n)) && !ts.isVariableDeclarationList(n.initializer)) target(n.initializer);
+    ts.forEachChild(n, (c) => { stack.push(c); });
   }
-  return !names.has(decl.name.text);
+  writesByFile.set(sf, names);
+  return names;
+}
+/** A `let` or `var`: what it is given where it is declared and at each later "=", when there are few and all are known. */
+function evLet(decl, env, d) {
+  const sym = checker.getSymbolAtLocation(decl.name);
+  const writes = (writesOf(decl.getSourceFile()).get(decl.name.text) ?? []).filter((w) => checker.getSymbolAtLocation(w.id) === sym);
+  if (writes.length > 4 || writes.some((w) => !w.value)) return null;
+  const vals = [];
+  if (decl.initializer && decl.initializer.kind !== ts.SyntaxKind.NullKeyword && !(ts.isIdentifier(decl.initializer) && decl.initializer.text === 'undefined')) vals.push(ev(decl.initializer, env, d));
+  for (const w of writes) vals.push(ev(w.value, env, d));
+  if (!vals.length || vals.some((v) => !v)) return null;
+  return vals.length === 1 ? vals[0] : multi(vals);
 }
 function evParam(decl, env, d) {
   if (env && env.has(decl)) {
@@ -511,6 +532,8 @@ function evCall(node, env, d) {
     if (a && a.t === 'u') { const p = urlToPath(a.v); return p ? { t: 'mod', file: p } : null; }
     return null;
   }
+  // process.argv.slice(n) is still the command line
+  if (ts.isPropertyAccessExpression(calleeNode) && calleeNode.name.text === 'slice') { const b = ev(calleeNode.expression, env, d); if (b && b.t === 'g' && b.name === 'process.argv') return b; }
   // text methods that leave a path a path
   if (ts.isPropertyAccessExpression(calleeNode) && ['toString', 'valueOf'].includes(calleeNode.name.text) && node.arguments.length === 0) {
     const b = ev(calleeNode.expression, env, d);
@@ -560,7 +583,8 @@ function libCall(cv, vals, node) {
   }
   if (cv.mod === 'os') { if (fn === 'tmpdir') return P('<tmp>'); if (fn === 'homedir') return P('<home>'); return null; }
   if (cv.mod === 'fs' || cv.mod === 'fs/promises') {
-    if (fn === 'mkdtempSync' || fn === 'mkdtemp') { const v = vals[0]; return v && (v.t === 'p' || v.t === 'x') ? X(v.v, 'mkdtemp') : null; }
+    // a folder made new at run time: inside the folder its argument names when that is known, else in a temporary place
+    if (fn === 'mkdtempSync' || fn === 'mkdtemp') { const v = vals[0]; return v && (v.t === 'p' || v.t === 'x') ? X(v.v, 'mkdtemp') : X('<tmp>/', 'mkdtemp'); }
     if (fn === 'realpathSync' || fn === 'realpath' || fn === 'realpathSync.native') return vals[0] && ['p', 'x', 'm'].includes(vals[0].t) ? vals[0] : null;
     return null;
   }
@@ -671,9 +695,10 @@ function runSink(desc, node, env, give) {
     case 'worker': one('worker', args[0], { asCwd: true, global: desc.global }); return;
     case 'proc': runProc(desc, node, env, give, use); return;
     case 'miniflare': {
-      const o = evd(use(args[0]), env);
-      if (!o || o.t !== 'o') { give({ k: 'worker', node: args[0] ?? node, note: 'Miniflare options the parser cannot read', byName: desc.byName }, null, lastDeps); return; }
-      miniflareOptions(o, give, use, 0);
+      use(args[0]);
+      const alts = args[0] ? objAlts(args[0], env) : { objs: [], unknown: true };
+      if (alts.unknown) give({ k: 'worker', node: args[0] ?? node, note: 'Miniflare options the parser cannot read', byName: desc.byName }, null, lastDeps);
+      for (const o of alts.objs) miniflareOptions(o, give, use, 0);
       return;
     }
     case 'esbuild': {
@@ -706,6 +731,23 @@ function propNode(o, name) {
   }
   return null;
 }
+/** The objects an expression may be: both sides of a condition, the right of "&&". → { objs, unknown }. */
+function objAlts(node, env, depth = 0) {
+  const n = skipOuter(node);
+  if (depth > 6 || !n) return { objs: [], unknown: true };
+  if (ts.isConditionalExpression(n)) { const a = objAlts(n.whenTrue, env, depth + 1); const b = objAlts(n.whenFalse, env, depth + 1); return { objs: [...a.objs, ...b.objs], unknown: a.unknown || b.unknown }; }
+  if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) return objAlts(n.right, env, depth + 1);
+  if (ts.isBinaryExpression(n) && (n.operatorToken.kind === ts.SyntaxKind.BarBarToken || n.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)) {
+    const a = objAlts(n.left, env, depth + 1); const b = objAlts(n.right, env, depth + 1); return { objs: [...a.objs, ...b.objs], unknown: a.unknown && b.unknown };
+  }
+  if (n.kind === ts.SyntaxKind.NullKeyword || (ts.isIdentifier(n) && n.text === 'undefined')) return { objs: [], unknown: false };
+  const v = evd(n, env);
+  if (v && v.t === 'o') {
+    const inner = skipOuter(v.node);
+    return { objs: [v], unknown: false, inner };
+  }
+  return { objs: [], unknown: true };
+}
 const MF_PERSIST = new Set(['d1Persist', 'kvPersist', 'r2Persist', 'durableObjectsPersist', 'cachePersist', 'defaultPersistRoot', 'workflowsPersist', 'analyticsEngineDatasetsPersist']);
 function miniflareOptions(o, give, use, depth) {
   if (depth > 4) return;
@@ -713,8 +755,9 @@ function miniflareOptions(o, give, use, depth) {
   const walkObj = (obj) => {
     for (const p of obj.node.properties) {
       if (ts.isSpreadAssignment(p)) {
-        const s = evd(p.expression, obj.env);
-        if (s && s.t === 'o') walkObj(s); else give({ k: 'worker', node: p.expression, note: 'a spread inside Miniflare options that the parser cannot read' }, null, lastDeps);
+        const alts = objAlts(p.expression, obj.env);
+        for (const s of alts.objs) walkObj(s);
+        if (alts.unknown) give({ k: 'worker', node: p.expression, note: 'a spread inside Miniflare options that the parser cannot read' }, null, lastDeps);
         continue;
       }
       const key = p.name && (ts.isIdentifier(p.name) || ts.isStringLiteral(p.name)) ? p.name.text : null;
@@ -903,7 +946,8 @@ function visit(node, base0, sf) {
       pathExpr(node, rel);
       return;
     }
-    case ts.SyntaxKind.TemplateExpression: case ts.SyntaxKind.PropertyAccessExpression: pathExpr(node, rel); return;
+    case ts.SyntaxKind.TemplateExpression: pathExpr(node, rel); embeddedPaths(node, rel); return;
+    case ts.SyntaxKind.PropertyAccessExpression: pathExpr(node, rel); return;
     case ts.SyntaxKind.BinaryExpression: if (node.operatorToken.kind === ts.SyntaxKind.PlusToken) pathExpr(node, rel); return;
     case ts.SyntaxKind.StringLiteral: case ts.SyntaxKind.NoSubstitutionTemplateLiteral: pathText(node, rel); return;
     default:
@@ -929,6 +973,24 @@ function pathHeld(at, v, rel, node) {
   const got = [];
   record({ f: rel, l: lineOf(node), s: textOf(node) }, { k: 'path' }, v, got);
   for (const r of got) { if (isAnchor(r)) STATS.anchors++; else REFS.push(r); }
+}
+/** A path written into a longer text (a program held as text, a command line): the path a part of the text builds,
+ *  with the plain characters that follow it. */
+function embeddedPaths(node, rel) {
+  steps = 0;
+  if (isPathy(ev(node))) return;
+  for (const span of node.templateSpans) {
+    const tail = /^[\w@.+\-/]*/.exec(span.literal.text)[0].replace(/\.+$/, '');
+    if (!tail || tail === '/') continue;
+    steps = 0;
+    const v = ev(span.expression);
+    if (!v || (v.t !== 'p' && v.t !== 'u')) continue;
+    const base = v.t === 'u' ? urlToPath(v.v) : v.v;
+    if (!base) continue;
+    const got = [];
+    record({ f: rel, l: lineOf(span.expression), s: textOf(span.expression, 80) + tail }, { k: 'path', note: 'written into a longer text' }, P(base + tail), got);
+    for (const r of got) if (REAL.has(r.tk) && !isAnchor(r)) REFS.push(r);
+  }
 }
 const PATH_TEXT = /^[\w@.+\-/]{3,200}$/;
 const TEXT_REFS = [];
@@ -1014,13 +1076,483 @@ for (const pend of PENDING) {
 }
 lap(`callers read: ${VIA.length} references through ${PENDING.length} points of use`);
 
-if (ARGV.has('--stats')) {
-  const by = {};
-  for (const r of REFS) { const k = `${r.k}${r.c ? (r.c === 'x' ? ' [start known]' : ' [computed]') : ''}${r.byName ? ' (by name)' : ''}`; by[k] = (by[k] || 0) + 1; }
-  console.log(Object.entries(by).sort().map(([k, v]) => `${String(v).padStart(7)} ${k}`).join('\n'));
-  const tk = {};
-  for (const r of REFS) if (!r.c) { const k = `${r.k} → ${r.tk}`; tk[k] = (tk[k] || 0) + 1; }
-  console.log(Object.entries(tk).sort().map(([k, v]) => `${String(v).padStart(7)} ${k}`).join('\n'));
-  console.log(STATS.anchors, 'anchors', STATS.stackErrors.length, 'stack errors', STATS.stackErrors.slice(0, 5));
-  fs.writeFileSync('/tmp/claude-0/-home-user-civicsmith-copy/53b72b9b-955f-50e9-89b2-414bb3215ac9/scratchpad/refs.json', JSON.stringify({ REFS, TEXT_REFS, PARTIALS, VIA, UNBOUND }));
+
+// ---------------------------------------------------------------------------------------------------------------
+// 7. Other files that hold code or name files: Python, HTML, package and Worker configuration, programs kept as text
+// ---------------------------------------------------------------------------------------------------------------
+/** Files whose contents are never read here (the repository's rule: never print a secret). */
+const NEVER_READ = /(^|\/)(SECRETS[^/]*|\.dev\.vars[^/]*|\.env[^/]*)$/;
+const EXCLUDED = (() => {
+  const globs = (cfg.language_reader?.exclude ?? []).map((g) => {
+    let re = '';
+    for (let i = 0; i < g.length; i++) {
+      const c = g[i];
+      if (c === '*' && g[i + 1] === '*') { i++; if (g[i + 1] === '/') { i++; re += '(?:.*/)?'; } else re += '.*'; } else if (c === '*') re += '[^/]*'; else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+    }
+    return new RegExp(`^${re}$`);
+  });
+  return (rel) => globs.some((r) => r.test(rel));
+})();
+const OTHER = { python: 0, html: 0, htmlInlineScripts: 0, config: 0, text: 0, byHand: [] };
+const PY_CODE = String.raw`
+import ast, json, sys, html.parser
+out = {}
+class H(html.parser.HTMLParser):
+    def __init__(s):
+        super().__init__(convert_charrefs=True); s.refs = []; s.scripts = []; s.on = False; s.buf = []; s.at = 0
+    def handle_starttag(s, tag, attrs):
+        a = dict(attrs)
+        if tag == 'script':
+            if a.get('src'): s.refs.append([s.getpos()[0], 'script', a['src']])
+            else: s.on = True; s.buf = []; s.at = s.getpos()[0]
+        elif tag == 'link' and a.get('href'): s.refs.append([s.getpos()[0], 'link', a['href']])
+        elif tag in ('img', 'iframe', 'source', 'audio', 'video', 'embed', 'object') and (a.get('src') or a.get('data')): s.refs.append([s.getpos()[0], tag, a.get('src') or a.get('data')])
+    def handle_data(s, d):
+        if s.on: s.buf.append(d)
+    def handle_endtag(s, tag):
+        if tag == 'script' and s.on: s.on = False; s.scripts.append([s.at, ''.join(s.buf)])
+def dotted(n):
+    if isinstance(n, ast.Name): return n.id
+    if isinstance(n, ast.Attribute):
+        b = dotted(n.value); return (b + '.' + n.attr) if b else None
+    if isinstance(n, ast.Call): return dotted(n.func)
+    return None
+for f in json.load(sys.stdin):
+    try: text = open(f, encoding='utf8', errors='replace').read()
+    except Exception as e: out[f] = {'error': str(e)}; continue
+    if f.endswith('.py'):
+        try: tree = ast.parse(text)
+        except Exception as e: out[f] = {'error': str(e)}; continue
+        imports = []; strings = []; calls = []
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Import):
+                for a in n.names: imports.append([n.lineno, a.name, 0])
+            elif isinstance(n, ast.ImportFrom): imports.append([n.lineno, n.module or '', n.level])
+            elif isinstance(n, ast.Constant) and isinstance(n.value, str) and 2 < len(n.value) < 200: strings.append([n.lineno, n.value])
+            elif isinstance(n, ast.Call):
+                name = dotted(n.func)
+                if name: 
+                    a0 = n.args[0] if n.args else None
+                    lit = a0.value if isinstance(a0, ast.Constant) and isinstance(a0.value, str) else None
+                    calls.append([n.lineno, name, lit, ast.unparse(a0)[:120] if a0 is not None else None])
+        out[f] = {'imports': imports, 'strings': strings, 'calls': calls}
+    else:
+        h = H()
+        try: h.feed(text)
+        except Exception as e: out[f] = {'error': str(e)}; continue
+        out[f] = {'refs': h.refs, 'scripts': h.scripts}
+json.dump(out, sys.stdout)
+`;
+function runPython(files) {
+  if (!files.length) return {};
+  const r = spawnSync('python3', ['-I', '-c', PY_CODE], { cwd: ROOT, input: JSON.stringify(files), encoding: 'utf8', maxBuffer: 1 << 30 });
+  if (r.status !== 0) { log(`python3 could not be run (${(r.stderr || r.error || '').toString().slice(0, 200)}): Python and HTML files are not read`); return null; }
+  return JSON.parse(r.stdout);
 }
+const PY_FS = new Map([['open', 'fs-read'], ['os.listdir', 'fs-list'], ['os.walk', 'fs-list'], ['os.scandir', 'fs-list'], ['glob.glob', 'fs-list'], ['os.path.exists', 'fs-stat'], ['os.path.isfile', 'fs-stat'],
+  ['os.path.isdir', 'fs-stat'], ['subprocess.run', 'proc'], ['subprocess.Popen', 'proc'], ['subprocess.check_output', 'proc'], ['subprocess.check_call', 'proc'], ['subprocess.call', 'proc'], ['os.system', 'proc'],
+  ['shutil.copy', 'fs-read'], ['shutil.copyfile', 'fs-read'], ['shutil.copytree', 'fs-read'], ['Path', 'path'], ['pathlib.Path', 'path'], ['Image.open', 'fs-read'], ['json.load', null]]);
+/** A text that may name a path, tried against the file's folder, the top and the file's package folder. */
+function existing(text, rel, { relOnly = false } = {}) {
+  const clean = text.replace(/[?#].*$/, '').replace(/\/+$/, '');
+  if (!clean || /^[a-z][a-z0-9+.-]*:/i.test(clean) || clean.startsWith('//')) return null;
+  const tries = [];
+  if (clean.startsWith('/')) return null;
+  tries.push(pjoin(path.posix.dirname(rel), clean));
+  if (!relOnly && !/^\.\.?\//.test(clean)) { tries.push(pjoin(clean)); const pkg = pkgDirOf(rel); if (pkg) tries.push(pjoin(pkg, clean)); }
+  for (const cand of tries) {
+    if (cand.startsWith('..')) continue;
+    if (FILE_SET.has(cand)) return { tk: 'file', to: cand };
+    if (DIR_SET.has(cand)) return { tk: 'dir', to: `${cand}/` };
+  }
+  return null;
+}
+const withOwner = (r) => { const o = r.to && (r.tk === 'file' || r.tk === 'dir' || r.tk === 'missing') ? ownerOf(r.to) : null; if (o) r.own = o.m; return r; };
+{
+  const pyFiles = OWNED.filter((f) => f.endsWith('.py'));
+  const htmlFiles = OWNED.filter((f) => /\.html?$/.test(f));
+  const parsed = runPython([...pyFiles, ...htmlFiles]);
+  if (parsed) {
+    for (const f of pyFiles) {
+      const d = parsed[f]; if (!d || d.error) { OTHER.byHand.push({ f, why: `Python's parser refused it: ${d?.error}` }); continue; }
+      OTHER.python++;
+      for (const [l, mod, level] of d.imports) {
+        const base = path.posix.dirname(f); const name = mod.split('.').join('/');
+        const cands = level ? [pjoin(base, '../'.repeat(level - 1), `${name}.py`)] : [pjoin(base, `${name}.py`), pjoin(base, name, '__init__.py')];
+        const hit = cands.find((c) => FILE_SET.has(c));
+        if (hit) REFS.push(withOwner({ f, l, k: 'import', s: mod, tk: 'file', to: hit, lang: 'py' }));
+        else REFS.push({ f, l, k: 'import', s: mod, tk: 'package', to: mod.split('.')[0], lang: 'py' });
+      }
+      const seen = new Set();
+      for (const [l, name, lit, expr] of d.calls) {
+        if (!PY_FS.has(name) || !PY_FS.get(name)) continue;
+        const k = PY_FS.get(name);
+        if (lit !== null) { const hit = existing(lit, f); if (hit) { REFS.push(withOwner({ f, l, k, s: lit, ...hit, fn: `py ${name}`, lang: 'py' })); seen.add(`${l}|${lit}`); } else if (k !== 'path' && k !== 'proc') REFS.push({ f, l, k, s: lit, tk: 'cwd-missing', to: lit, fn: `py ${name}`, lang: 'py' }); }
+        else if (expr !== null && k !== 'path') REFS.push({ f, l, k, s: expr, c: 1, fn: `py ${name}`, lang: 'py' });
+      }
+      for (const [l, text] of d.strings) {
+        if (!PATH_TEXT.test(text) || (!text.includes('/') && !/\.[a-z0-9]{1,6}$/i.test(text)) || seen.has(`${l}|${text}`)) continue;
+        const hit = existing(text, f); if (hit) TEXT_REFS.push(withOwner({ f, l, k: 'path-text', s: text, ...hit, lang: 'py' }));
+      }
+    }
+    for (const f of htmlFiles) {
+      const d = parsed[f]; if (!d || d.error) { OTHER.byHand.push({ f, why: `the HTML parser refused it: ${d?.error}` }); continue; }
+      OTHER.html++;
+      for (const [l, tag, v] of d.refs) { const hit = existing(v, f, { relOnly: true }); if (hit) REFS.push(withOwner({ f, l, k: 'html-ref', s: v, ...hit, fn: tag })); }
+      for (const [l0, text] of d.scripts) {
+        if (!text.trim()) continue;
+        OTHER.htmlInlineScripts++;
+        const sf = ts.createSourceFile(`${f}.inline.js`, text, ts.ScriptTarget.ESNext, true, ts.ScriptKind.JS);
+        const stack = [sf];
+        while (stack.length) {
+          const n = stack.pop();
+          let spec = null; let k = null;
+          if ((ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) && n.moduleSpecifier && ts.isStringLiteralLike(n.moduleSpecifier)) { spec = n.moduleSpecifier.text; k = 'import'; }
+          else if (ts.isCallExpression(n) && n.expression.kind === ts.SyntaxKind.ImportKeyword) { k = 'dynamic-import'; const a0 = n.arguments[0]; spec = a0 && ts.isStringLiteralLike(a0) ? a0.text : null; if (spec === null) REFS.push({ f, l: l0 + sf.getLineAndCharacterOfPosition(n.getStart(sf)).line, k, s: (a0?.getText() ?? '').slice(0, 120), c: 1, lang: 'html' }); }
+          if (spec !== null) record({ f, l: l0 + sf.getLineAndCharacterOfPosition(n.getStart(sf)).line, s: spec, lang: 'html' }, { k, asSpec: true }, S(spec), REFS);
+          ts.forEachChild(n, (c) => { stack.push(c); });
+        }
+      }
+    }
+  } else OTHER.byHand.push(...[...pyFiles, ...htmlFiles].map((f) => ({ f, why: 'python3 was not there to parse it' })));
+
+  // package.json and wrangler.jsonc
+  const readJsonc = (rel) => { const r = ts.parseConfigFileTextToJson(rel, fs.readFileSync(absOf(rel), 'utf8')); return r.error ? null : r.config; };
+  const lineIn = (rel, needle) => { const i = fs.readFileSync(absOf(rel), 'utf8').split('\n').findIndex((l) => l.includes(needle)); return i < 0 ? 1 : i + 1; };
+  const wranglers = OWNED.filter((f) => /(^|\/)wrangler\.jsonc?$/.test(f));
+  const workerByName = new Map();
+  for (const f of wranglers) { const j = readJsonc(f); if (j?.name) workerByName.set(j.name, f); }
+  for (const f of wranglers) {
+    const j = readJsonc(f); if (!j) { OTHER.byHand.push({ f, why: 'not read as JSON with comments' }); continue; }
+    OTHER.config++;
+    const dir = path.posix.dirname(f);
+    const fileRef = (k, v, fn) => { if (typeof v !== 'string') return; const to = pjoin(dir, v); const c = classify(absOf(to)); REFS.push(withOwner({ f, l: lineIn(f, v), k, s: v, tk: c.kind, to: c.rel ?? to, fn, lang: 'config' })); };
+    fileRef('worker', j.main, 'wrangler main');
+    if (j.assets?.directory) fileRef('path', j.assets.directory, 'wrangler assets');
+    for (const r of j.rules ?? []) for (const g of r.globs ?? []) REFS.push({ f, l: lineIn(f, g), k: 'worker-module', s: g, c: 1, note: 'a pattern of files wrangler adds to the Worker', lang: 'config' });
+    const names = [...(j.services ?? []).map((x) => x.service), ...(j.durable_objects?.bindings ?? []).map((x) => x.script_name).filter(Boolean), ...(j.tail_consumers ?? []).map((x) => x.service)];
+    for (const n of names) {
+      if (n === j.name) continue;
+      const target = workerByName.get(n);
+      if (target) REFS.push(withOwner({ f, l: lineIn(f, `"${n}"`), k: 'service-binding', s: n, tk: 'file', to: target, lang: 'config' }));
+      else REFS.push({ f, l: lineIn(f, `"${n}"`), k: 'service-binding', s: n, tk: 'outside', to: `a Worker named ${n} with no wrangler file here`, lang: 'config' });
+    }
+    if (j.build?.command) for (const w of String(j.build.command).split(/\s+/)) { const hit = existing(w, f, { relOnly: true }); if (hit) REFS.push(withOwner({ f, l: lineIn(f, w), k: 'proc', s: w, ...hit, fn: 'wrangler build.command', lang: 'config' })); }
+  }
+  for (const f of OWNED.filter((x) => /(^|\/)package\.json$/.test(x))) {
+    let j; try { j = JSON.parse(fs.readFileSync(absOf(f), 'utf8')); } catch { OTHER.byHand.push({ f, why: 'not JSON' }); continue; }
+    OTHER.config++;
+    for (const key of ['main', 'module', 'browser']) if (typeof j[key] === 'string') { const hit = existing(j[key], f, { relOnly: true }); if (hit) REFS.push(withOwner({ f, l: lineIn(f, j[key]), k: 'path', s: j[key], ...hit, fn: `package ${key}`, lang: 'config' })); }
+    for (const [name, cmd] of Object.entries(j.scripts ?? {})) {
+      for (const w0 of String(cmd).split(/[\s"']+/)) {
+        const w = w0.includes('=') && w0.startsWith('-') ? w0.slice(w0.indexOf('=') + 1) : w0;
+        if (!w || w.startsWith('-') || (!w.includes('/') && !CODE_EXT.test(w))) continue;
+        if (w.includes('*')) { const pre = w.slice(0, w.indexOf('*')).replace(/[^/]*$/, ''); const hit = pre ? existing(pre, f, { relOnly: true }) : null; REFS.push({ f, l: lineIn(f, w), k: 'proc', s: w, c: 'x', px: absOf(pjoin(path.posix.dirname(f), pre)), fn: `package script ${name}`, note: 'a pattern of files the command runs', lang: 'config', ...(hit ? {} : {}) }); continue; }
+        const hit = existing(w, f, { relOnly: true });
+        if (hit) REFS.push(withOwner({ f, l: lineIn(f, w), k: 'proc', s: w, ...hit, fn: `package script ${name}`, lang: 'config' }));
+      }
+    }
+    for (const dep of Object.keys({ ...j.dependencies, ...j.devDependencies, ...j.optionalDependencies })) REFS.push({ f, l: lineIn(f, `"${dep}"`), k: 'import', s: dep, tk: 'package', to: dep, fn: 'package dependency', lang: 'config' });
+  }
+  // programs kept as text: a .txt file that parses as a module with imports
+  for (const f of OWNED.filter((x) => x.endsWith('.txt') && !NEVER_READ.test(x) && !x.startsWith('build/') && !x.includes('/vendor/'))) {
+    const text = fs.readFileSync(absOf(f), 'utf8');
+    if (!/^\s*(import|export)\s/m.test(text)) continue;
+    const sf = ts.createSourceFile(`${f}.js`, text, ts.ScriptTarget.ESNext, true, ts.ScriptKind.JS);
+    const imports = sf.statements.filter((n) => (ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) && n.moduleSpecifier && ts.isStringLiteralLike(n.moduleSpecifier));
+    if (!imports.length || sf.parseDiagnostics.length) continue;
+    OTHER.text++;
+    for (const n of imports) record({ f, l: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1, s: n.moduleSpecifier.text, lang: 'text' }, { k: ts.isImportDeclaration(n) ? 'import' : 'export-from', asSpec: true }, S(n.moduleSpecifier.text), REFS);
+  }
+  // what is left that holds code and no parser here reads: named, for the reading by hand
+  for (const f of OWNED) {
+    if (/\.(sh|ya?ml|rs|toml|graphql|css)$/.test(f) || /(^|\/)Dockerfile[^/]*$/.test(f) || /(^|\/)\.dockerignore$/.test(f)) OTHER.byHand.push({ f, why: 'no parser here reads this kind of file' });
+  }
+}
+lap(`other files: ${OTHER.python} Python, ${OTHER.html} HTML (${OTHER.htmlInlineScripts} scripts inside), ${OTHER.config} configuration, ${OTHER.text} programs kept as text, ${OTHER.byHand.length} left to the reading by hand`);
+
+// ---------------------------------------------------------------------------------------------------------------
+// 8. What each computed reference reaches: by the start of its path, by its callers, by the reading by hand, by a run
+// ---------------------------------------------------------------------------------------------------------------
+const readJson = (file, fallback) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; } };
+/** The lane's readings by hand (tools/hand-resolutions.json) and what traced runs saw at each place (tools/runtime-sites.json). */
+const HAND = readJson(path.join(HERE, 'hand-resolutions.json'), { rules: [], files: [] });
+const RUNTIME = readJson(path.join(HERE, 'runtime-sites.json'), { sites: {} });
+const HAND_RULES = (HAND.rules ?? []).map((r) => ({ ...r, fileRe: r.file ? new RegExp(r.file) : null, exprRe: r.expr ? new RegExp(r.expr) : null, kindRe: r.kind ? new RegExp(r.kind) : null, used: 0 }));
+function handRule(r) {
+  for (const h of HAND_RULES) {
+    if (h.fileRe && !h.fileRe.test(r.f)) continue;
+    if (h.lines && !h.lines.includes(r.l)) continue;
+    if (h.kindRe && !h.kindRe.test(r.k)) continue;
+    if (h.exprRe && !h.exprRe.test(r.s ?? '')) continue;
+    h.used++;
+    return h;
+  }
+  return null;
+}
+const OUTSIDE_START = /^(<tmp>|<home>|<cwd-up>|\/tmp\/|\/var\/|\/proc\/|\/dev\/|\/usr\/|\/etc\/|\/opt\/|\/workerd\/)/;
+/** The modules that own a file whose path begins with the text given: Map module → number of files. */
+function ownersUnder(prefixRel) {
+  let lo = 0; let hi = ALL_FILES.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (ALL_FILES[mid] < prefixRel) lo = mid + 1; else hi = mid; }
+  const out = new Map(); let unowned = 0;
+  for (let i = lo; i < ALL_FILES.length && ALL_FILES[i].startsWith(prefixRel); i++) { const o = ownerOf(ALL_FILES[i]); if (o) out.set(o.m, (out.get(o.m) ?? 0) + 1); else unowned++; }
+  return { owners: out, unowned };
+}
+function resolveComputed(r) {
+  const hand = handRule(r);
+  const seen = RUNTIME.sites?.[`${r.f}:${r.l}`] ?? null;
+  const res = {};
+  if (r.c === 'x' && r.px.startsWith('<argv>')) { res.by = 'argv'; res.how = 'the path is given on the command line (process.argv): it reaches what the one who starts the program names'; res.startedBy = STARTS.get(r.f) ?? []; }
+  else if (r.c === 'x') {
+    if (OUTSIDE_START.test(r.px)) { res.by = 'outside'; res.reach = []; res.how = 'its path starts in a folder outside the repository (a temporary folder made at run time, or a system path)'; }
+    else {
+      const rel0 = relOf(r.px); const pre = r.px.endsWith('/') && !rel0.endsWith('/') && rel0 !== '' ? `${rel0}/` : rel0;
+      if (rel0.startsWith('..')) { res.by = 'outside'; res.reach = []; res.how = `its path starts outside the repository (${r.px})`; }
+      else {
+        const { owners, unowned } = ownersUnder(pre);
+        res.px = pre || '.';
+        if (owners.size === 1 && !unowned) { res.by = 'start'; res.reach = [...owners.keys()]; res.how = `every file whose path starts with ${pre} is owned by this one module`; }
+        else if (owners.size === 0 && !unowned) { res.by = 'start'; res.reach = []; const o = ownerOf(pre); res.how = `no file in the repository has a path that starts with ${pre}: a path made at run time${o ? `, in a folder ${o.m} claims` : ''}`; if (o) res.claim = o.m; }
+        else { res.by = 'open'; res.among = [...owners.keys()].sort((a, b) => MOD_INDEX.get(a) - MOD_INDEX.get(b)); res.how = `files of ${owners.size} modules${unowned ? ' and files no module owns' : ''} have paths that start with ${pre || 'the top folder'}`; }
+      }
+    }
+  } else if (r.inst && r.inst.sites > 0 && r.inst.open === 0) { res.by = 'callers'; res.how = `its argument comes from a parameter; every one of the ${r.inst.sites} calls the parser ties to the function was read (the references are listed with "via")`; }
+  else if (/\bprocess\.env\b/.test(r.s ?? '')) { res.by = 'env'; res.how = 'the path is read from an environment variable: it reaches what the one who starts the program sets'; res.startedBy = STARTS.get(r.f) ?? []; }
+  else res.by = 'open';
+  if (r.inst) res.inst = r.inst;
+  if (hand) { res.hand = { rule: hand.id, reach: hand.reach ?? [], how: hand.how, tag: hand.tag, ...(hand.outside ? { outside: 1 } : {}) }; if (res.by === 'open') res.by = 'hand'; }
+  if (seen) { res.seen = seen; if (res.by === 'open') res.by = 'run'; }
+  return res;
+}
+/** The places that start a file as a program (a child process, a Worker, a package script): file → ["file:line", …]. */
+const STARTS = new Map();
+for (const r of [...REFS, ...VIA]) if (!r.c && r.tk === 'file' && /^(proc|worker)$/.test(r.k)) { if (!STARTS.has(r.to)) STARTS.set(r.to, []); const at = `${r.f}:${r.l}`; if (STARTS.get(r.to).length < 6 && !STARTS.get(r.to).includes(at)) STARTS.get(r.to).push(at); }
+const COMPUTED = REFS.filter((r) => r.c);
+for (const r of COMPUTED) r.res = resolveComputed(r);
+for (const v of VIA) if (v.c) v.res = resolveComputed(v);
+
+// ---------------------------------------------------------------------------------------------------------------
+// 9. Module edges, findings, data files
+// ---------------------------------------------------------------------------------------------------------------
+const KINDS = [];
+const kindIdx = (k) => { let i = KINDS.indexOf(k); if (i < 0) { i = KINDS.length; KINDS.push(k); } return i; };
+const EDGES = new Map(); // "from>to" → { counts: Map kind → [code, test], ex: [[file, line, kind]] }
+const TOTALS = { byKind: new Map(), files: new Set(), intra: 0, cross: 0, noOwner: 0 };
+function addEdge(fromFile, toModule, kind, line) {
+  const o = ownerOf(fromFile);
+  if (!o || !toModule) return;
+  if (o.m === toModule) { TOTALS.intra++; return; }
+  TOTALS.cross++;
+  const key = `${o.m}>${toModule}`;
+  let e = EDGES.get(key);
+  if (!e) { e = { from: o.m, to: toModule, counts: new Map(), ex: [] }; EDGES.set(key, e); }
+  if (!e.counts.has(kind)) e.counts.set(kind, [0, 0]);
+  e.counts.get(kind)[o.t ? 1 : 0]++;
+  if (e.ex.length < 5 || !e.ex.some((x) => x[2] === kind)) { if (e.ex.length >= 5) { const i = e.ex.findIndex((x, j) => e.ex.findIndex((y) => y[2] === x[2]) !== j); if (i >= 0) e.ex.splice(i, 1); else return; } e.ex.push([fromFile, line, kind]); }
+}
+const directOwners = new Map();
+/** The modules that own a file directly inside a folder, or claim a folder directly inside it: what a listing of the folder names. */
+function childOwners(dirRel) {
+  if (directOwners.has(dirRel)) return directOwners.get(dirRel);
+  const set = new Set(); const subs = new Set();
+  const pre = dirRel === '.' ? '' : dirRel;
+  for (const f of ALL_FILES) {
+    if (!f.startsWith(pre)) continue;
+    const rest = f.slice(pre.length); const cut = rest.indexOf('/');
+    if (cut < 0) { const o = ownerOf(f); if (o) set.add(o.m); } else subs.add(`${pre}${rest.slice(0, cut + 1)}`);
+  }
+  for (const d of subs) { const o = ownerOf(d); if (o) set.add(o.m); }
+  directOwners.set(dirRel, set);
+  return set;
+}
+const isExcluded = (f) => EXCLUDED(f);
+const countKind = (k) => TOTALS.byKind.set(k, (TOTALS.byKind.get(k) ?? 0) + 1);
+const HAS_TARGET = new Set(['file', 'dir', 'missing', 'untracked']);
+for (const r of REFS) {
+  TOTALS.files.add(r.f);
+  if (r.c) { countKind(`${r.k} [computed]`); continue; }
+  countKind(r.k);
+  if (!HAS_TARGET.has(r.tk)) continue;
+  const kind = r.tk === 'missing' ? `${r.k} (no such file)` : r.k;
+  if (r.own) addEdge(r.f, r.own, kind, r.l); else TOTALS.noOwner++;
+  if (r.k === 'fs-list' && r.tk === 'dir') for (const m of childOwners(r.to)) if (m !== r.own) addEdge(r.f, m, 'fs-list (a file or folder inside the folder listed)', r.l);
+}
+for (const v of VIA) {
+  if (v.c) continue;
+  countKind(`${v.k} (path given by a caller)`);
+  if (HAS_TARGET.has(v.tk) && v.own) addEdge(v.f, v.own, `${v.k} (path given by a caller)`, v.l);
+  if (v.k === 'fs-list' && v.tk === 'dir') for (const m of childOwners(v.to)) if (m !== v.own) addEdge(v.f, m, 'fs-list (a file or folder inside the folder listed)', v.l);
+}
+for (const r of [...COMPUTED, ...VIA.filter((v) => v.c)]) {
+  const res = r.res;
+  if (res.by === 'start') for (const m of res.reach) addEdge(r.f, m, `${r.k} (start of the path known)`, r.l);
+  if (res.hand) for (const m of res.hand.reach) addEdge(r.f, m, `${r.k} (read by hand)`, r.l);
+  if (res.seen) for (const m of Object.keys(res.seen.owners ?? {})) addEdge(r.f, m, `${r.k} (seen in a run)`, r.l);
+}
+const realPairs = new Set(REFS.filter((r) => r.to).map((r) => `${r.f}|${r.to}`));
+const LEADS = TEXT_REFS.filter((r) => !realPairs.has(`${r.f}|${r.to}`) && r.to !== r.f && !isExcluded(r.f));
+for (const r of LEADS) { countKind('path-text (a lead)'); if (r.own) addEdge(r.f, r.own, 'path-text (a lead)', r.l); }
+
+// --- findings ---------------------------------------------------------------------------------------------------
+const edgeList = [...EDGES.values()].sort((a, b) => MOD_INDEX.get(a.from) - MOD_INDEX.get(b.from) || MOD_INDEX.get(a.to) - MOD_INDEX.get(b.to));
+const isUp = (e) => MOD_INDEX.get(e.to) > MOD_INDEX.get(e.from);
+/** Every single reference that goes to a later module, with its place. */
+const UP = [];
+function upRef(r, kind) {
+  const o = ownerOf(r.f); const to = r.own;
+  if (!o || !to || MOD_INDEX.get(to) <= MOD_INDEX.get(o.m)) return;
+  UP.push({ from: o.m, to, side: o.t ? 'test' : 'code', at: `${r.f}:${r.l}`, kind, what: r.to ?? r.s });
+}
+for (const r of REFS) if (!r.c && HAS_TARGET.has(r.tk) && r.own) upRef(r, r.tk === 'missing' ? `${r.k} (no such file)` : r.k);
+for (const v of VIA) if (!v.c && HAS_TARGET.has(v.tk) && v.own) upRef(v, `${v.k} (path given by a caller)`);
+for (const r of LEADS) if (r.own) upRef(r, 'path-text (a lead)');
+const upExtra = (r, m, kind) => { const o = ownerOf(r.f); if (o && MOD_INDEX.get(m) > MOD_INDEX.get(o.m)) UP.push({ from: o.m, to: m, side: o.t ? 'test' : 'code', at: `${r.f}:${r.l}`, kind, what: r.s }); };
+for (const r of REFS) if (!r.c && r.k === 'fs-list' && r.tk === 'dir') for (const m of childOwners(r.to)) if (m !== r.own) upExtra({ ...r, s: r.to }, m, 'fs-list (a file or folder inside the folder listed)');
+for (const v of VIA) if (!v.c && v.k === 'fs-list' && v.tk === 'dir') for (const m of childOwners(v.to)) if (m !== v.own) upExtra({ ...v, s: v.to }, m, 'fs-list (a file or folder inside the folder listed)');
+for (const r of [...COMPUTED, ...VIA.filter((v) => v.c)]) {
+  if (r.res.by === 'start') for (const m of r.res.reach) upExtra(r, m, `${r.k} (start of the path known)`);
+  if (r.res.hand) for (const m of r.res.hand.reach) upExtra(r, m, `${r.k} (read by hand)`);
+  if (r.res.seen) for (const m of Object.keys(r.res.seen.owners ?? {})) upExtra(r, m, `${r.k} (seen in a run)`);
+}
+
+/** Declared uses against the graph, module by module. */
+const IMPORT_KINDS = new Set(['import', 'export-from', 'dynamic-import', 'jsdoc-import', 'require']);
+const USES = MODS.map((m) => {
+  const found = new Map(); // to → Set of kinds
+  for (const e of edgeList) if (e.from === m.name) found.set(e.to, new Set(e.counts.keys()));
+  const declared = new Set(m.uses);
+  const declaredNotFound = m.uses.filter((u) => !found.has(u));
+  const declaredOnlyLead = m.uses.filter((u) => found.has(u) && [...found.get(u)].every((k) => k.startsWith('path-text')));
+  const declaredNoImport = m.uses.filter((u) => found.has(u) && ![...found.get(u)].some((k) => IMPORT_KINDS.has(k)));
+  const foundNotDeclared = [...found.keys()].filter((t) => !declared.has(t)).map((t) => ({ to: t, kinds: [...found.get(t)], later: MOD_INDEX.get(t) > m.index }));
+  const declaredLater = m.uses.filter((u) => !MOD_INDEX.has(u) || MOD_INDEX.get(u) >= m.index);
+  return { module: m.name, index: m.index + 1, declared: m.uses.length, found: found.size, declaredNotFound, declaredNoImport, declaredOnlyLead, foundNotDeclared, declaredLater };
+});
+
+/** Files no module owns; files two claims of the same length both match; files more than one module's claims match. */
+const UNOWNED = ALL_FILES.filter((f) => !ownerOf(f));
+const TIED = OWNED.filter((f) => ownerOf(f).tie.length).map((f) => ({ file: f, owner: ownerOf(f).m, also: ownerOf(f).tie.map((c) => `${c.m}${c.t ? ' (tests)' : ''}`) }));
+const OVERLAP = [];
+for (const f of OWNED) {
+  const o = ownerOf(f); const others = new Set();
+  for (const c of CLAIMS_BY_TOP.get(f.split('/')[0]) ?? []) if (underPath(f, c.p) && c.m !== o.m) others.add(c.m);
+  if (others.size) OVERLAP.push([f, o.m, [...others]]);
+}
+const overlapByPair = new Map();
+for (const [, m, others] of OVERLAP) for (const x of others) { const k = `${m} (owner, the longer path) inside ${x}`; overlapByPair.set(k, (overlapByPair.get(k) ?? 0) + 1); }
+
+// --- writing ----------------------------------------------------------------------------------------------------
+fs.mkdirSync(OUT, { recursive: true });
+const write = (name, obj) => { const text = JSON.stringify(obj); fs.writeFileSync(path.join(OUT, name), `${text}\n`); return text.length + 1; };
+const sizes = {};
+
+// module-edges.json
+{
+  const exFiles = []; const exIdx = new Map();
+  const fi = (f) => { if (!exIdx.has(f)) { exIdx.set(f, exFiles.length); exFiles.push(f); } return exIdx.get(f); };
+  const kinds = []; const ki = (k) => { let i = kinds.indexOf(k); if (i < 0) { i = kinds.length; kinds.push(k); } return i; };
+  const edges = edgeList.map((e) => [MOD_INDEX.get(e.from), MOD_INDEX.get(e.to),
+    [...e.counts].sort((a, b) => a[0].localeCompare(b[0])).flatMap(([k, [c, t]]) => [ki(k), c, t]),
+    e.ex.flatMap(([f, l, k]) => [fi(f), l, ki(k)])]);
+  sizes['module-edges.json'] = write('module-edges.json', {
+    format: 'edges: [from, to, counts, examples]. from and to index `modules` (the order of process/modules/order.txt, 0 first). counts is a flat list of triples kind, n-from-code, n-from-tests (kind indexes `kinds`; code = the referring file is under the from-module\'s `files`, tests = under its `tests`). examples is a flat list of triples file, line, kind (file indexes `files`), at most 5 for a pair, one for each kind first. A pair is listed when at least one reference goes from a file the first module owns to a file or folder the second owns.',
+    modules: ORDER, kinds, files: exFiles, edges });
+}
+// files.json
+{
+  const paths = []; const pidx = new Map();
+  const pi = (f) => { if (!pidx.has(f)) { pidx.set(f, paths.length); paths.push(f); } return pidx.get(f); };
+  const kinds = []; const ki = (k) => { let i = kinds.indexOf(k); if (i < 0) { i = kinds.length; kinds.push(k); } return i; };
+  const byFile = new Map();
+  const entry = (f) => { if (!byFile.has(f)) byFile.set(f, { same: new Map(), out: [] }); return byFile.get(f); };
+  const put = (r, kind, own) => {
+    const o = ownerOf(r.f); if (!o) return;
+    const e = entry(r.f);
+    if (own && own !== o.m) e.out.push([r.l, ki(kind), pi(r.to)]);
+    else { const key = own ? `${kind} → same module` : r.c ? `${kind} [computed]` : `${kind} → ${r.tk ?? 'not known'}`; e.same.set(key, (e.same.get(key) ?? 0) + 1); }
+  };
+  for (const r of REFS) put(r, r.tk === 'missing' ? `${r.k} (no such file)` : r.k, r.c || !HAS_TARGET.has(r.tk) ? null : r.own);
+  for (const v of VIA) if (!v.c) put(v, `${v.k} (path given by a caller)`, HAS_TARGET.has(v.tk) ? v.own : null);
+  for (const r of LEADS) put(r, 'path-text (a lead)', r.own);
+  const codeFiles = new Set([...JS_FILES, ...byFile.keys()]);
+  const files = [...codeFiles].sort().map((f) => { const o = ownerOf(f); const e = byFile.get(f) ?? { same: new Map(), out: [] };
+    return [pi(f), MOD_INDEX.get(o.m), o.t ? 1 : 0, [...e.same].sort().flatMap(([k, n]) => [ki(k), n]), e.out.sort((a, b) => a[0] - b[0]).flat()]; });
+  // every other owned file, as runs: a folder whose files (not counting the code files above) all have one owner and one side
+  const runs = new Map();
+  for (const f of OWNED) { if (codeFiles.has(f)) continue; const o = ownerOf(f); const d = path.posix.dirname(f); const k = `${d}/|${o.m}|${o.t ? 1 : 0}`; runs.set(k, (runs.get(k) ?? 0) + 1); }
+  const folders = [...runs].map(([k, n]) => { const [d, m, t] = k.split('|'); return [d, MOD_INDEX.get(m), Number(t), n]; });
+  sizes['files.json'] = write('files.json', {
+    format: 'files: [path, owner, side, counts, out] for every owned file that holds code or has a reference. path indexes `paths`; owner indexes `modules`; side 0 = under the owner\'s `files` (code), 1 = under its `tests`. counts is a flat list of pairs kind, n for the references that stay inside the module or leave the product (kind indexes `kinds`; the name says where they go). out is a flat list of triples line, kind, target for every reference to a file or folder another module owns (target indexes `paths`). folders: [folder, owner, side, n] counts the other owned files (documents, pictures, fixtures), which hold no code this script reads. The references that stay inside a module are counted here and not listed: run the script with --full <file> for every reference.',
+    modules: ORDER, kinds, paths, files, folders });
+}
+// computed.json
+{
+  const byFile = new Map();
+  const row = (r) => {
+    const res = r.res; const out = { l: r.l, k: r.k, e: (r.s ?? '').slice(0, 110), by: res.by };
+    if (r.in) out.in = r.in;
+    if (r.params) out.params = r.params;
+    if (r.via) out.via = r.via;
+    if (r.note) out.note = r.note;
+    if (r.byName) out.byName = 1;
+    if (res.px !== undefined) out.px = res.px;
+    if (res.reach) out.reach = res.reach;
+    if (res.among) out.among = res.among.length > 12 ? `${res.among.length} modules: ${res.among.slice(0, 4).join(', ')} … ${res.among.slice(-2).join(', ')}` : res.among;
+    if (res.inst) out.callers = res.inst;
+    if (res.startedBy) out.startedBy = res.startedBy;
+    if (res.hand) out.hand = res.hand;
+    if (res.seen) out.seen = res.seen;
+    return out;
+  };
+  for (const r of COMPUTED) { if (!byFile.has(r.f)) byFile.set(r.f, []); byFile.get(r.f).push(row(r)); }
+  const viaByFile = new Map();
+  for (const v of VIA) { if (!viaByFile.has(v.f)) viaByFile.set(v.f, []); viaByFile.get(v.f).push(v.c ? { ...row(v), n: v.viaCount } : { l: v.l, k: v.k, to: v.to, tk: v.tk, own: v.own, via: v.via, n: v.viaCount }); }
+  const classes = {};
+  for (const r of COMPUTED) classes[r.res.by] = (classes[r.res.by] ?? 0) + 1;
+  sizes['computed.json'] = write('computed.json', {
+    format: 'computed: file → every point of use in it whose argument the parser could not settle: l line, k kind, e the expression, in the function it is in, params the parameters it waits on, by how it was resolved (outside: starts outside the repository; start: the start of the path is known and one module owns everything under it; callers: read at every call the parser ties to its function, see via; hand: read by hand, see hand; run: seen in a traced run, see seen; open: not resolved), reach the modules it reaches, among the modules whose files lie under a known start when there are several, hand {rule, reach, how, tag}, seen what traced runs saw at the place. via: file → references made at a point of use with a path given by a caller, n the number of calls that gave it. rules: the readings by hand. unbound: calls by a name Node also uses (readFile, spawn, …) that the parser could not tie to Node, by what they are called on.',
+    classes, computed: Object.fromEntries([...byFile].sort()), via: Object.fromEntries([...viaByFile].sort()),
+    rules: HAND_RULES.map((h) => ({ id: h.id, file: h.file, lines: h.lines, kind: h.kind, expr: h.expr, reach: h.reach ?? [], how: h.how, tag: h.tag, used: h.used })),
+    byHandFiles: HAND.files ?? [], notParsed: OTHER.byHand,
+    unbound: (() => { const g = new Map(); for (const u of UNBOUND) { const on = u.on.replace(/^[\w$]+(\.[\w$#]+)*\.(record|#record|core|world\.record)$/, '….$2'); const k = `${u.name} on ${on}`; if (!g.has(k)) g.set(k, { n: 0, ex: [] }); const x = g.get(k); x.n++; if (x.ex.length < 2) x.ex.push(`${u.f}:${u.l}`); } return Object.fromEntries([...g].sort((a, b) => b[1].n - a[1].n)); })(),
+    partialPaths: PARTIALS.length });
+}
+// findings
+sizes['upward.json'] = write('upward.json', {
+  format: 'Every reference found from a file one module owns to a file or folder a LATER module (in process/modules/order.txt) owns. rows: [from, to, side, at, kind, what]; from and to index `modules`; side 0 = the referring file is code (under `files`), 1 = a test (under `tests`).',
+  modules: ORDER, rows: UP.sort((a, b) => MOD_INDEX.get(a.from) - MOD_INDEX.get(b.from) || a.at.localeCompare(b.at)).map((u) => [MOD_INDEX.get(u.from), MOD_INDEX.get(u.to), u.side === 'test' ? 1 : 0, u.at, u.kind, u.what]) });
+sizes['uses-diff.json'] = write('uses-diff.json', {
+  format: 'For each module: declared = the number of `uses` its entry declares; found = the number of other modules its files refer to in this graph; declaredNotFound = declared with no reference of any kind; declaredNoImport = declared, referred to, but by no import; declaredOnlyLead = declared and found only as a text that names a path; foundNotDeclared = referred to and not declared, with the kinds and whether the module is later in the order; declaredLater = declared uses that are not earlier in the order.',
+  modules: USES });
+sizes['ownership.json'] = write('ownership.json', {
+  format: 'unowned: files no module\'s `files` or `tests` matches. tied: files two claims of the same length match. nested: counts of files matched by more than one module\'s claims, where the longer path wins.',
+  unowned: UNOWNED, tied: TIED, nested: Object.fromEntries([...overlapByPair].sort((a, b) => b[1] - a[1])), nestedFiles: OVERLAP.length });
+
+// summary.json: the numbers 09-graph.md quotes
+const sum = (pred) => edgeList.filter(pred).length;
+const upPairs = new Set(UP.map((u) => `${u.from}>${u.to}`));
+const SUMMARY = {
+  made: 'by tools/graph.mjs', base: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim(),
+  typescript: ts.version, modules: MODS.length, filesInTree: ALL_FILES.length, owned: OWNED.length, unowned: UNOWNED.length, tied: TIED.length, nestedFiles: OVERLAP.length,
+  ownedByExtension: (() => { const m = {}; for (const f of OWNED) { const e = path.extname(f) || '(none)'; m[e] = (m[e] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort((a, b) => b[1] - a[1])); })(),
+  javascriptFiles: JS_FILES.length, javascriptFilesExcludedFromTheProcessReader: JS_FILES.filter(isExcluded).length,
+  codeFilesBySide: (() => { let c = 0; let t = 0; for (const f of JS_FILES) { if (ownerOf(f).t) t++; else c++; } return { code: c, tests: t }; })(),
+  other: { python: OTHER.python, html: OTHER.html, htmlInlineScripts: OTHER.htmlInlineScripts, configuration: OTHER.config, programsKeptAsText: OTHER.text, leftToHand: OTHER.byHand.length },
+  references: REFS.length, referencesByKind: Object.fromEntries([...TOTALS.byKind].sort()),
+  targets: (() => { const m = {}; for (const r of REFS) if (!r.c) { const k = `${r.k} → ${r.tk}`; m[k] = (m[k] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort()); })(),
+  viaCallers: VIA.length, leads: LEADS.length, anchors: STATS.anchors, partialPaths: PARTIALS.length, unbound: UNBOUND.length,
+  computed: COMPUTED.length, computedByClass: (() => { const m = {}; for (const r of COMPUTED) { const k = `${r.res.by}`; m[k] = (m[k] ?? 0) + 1; } return m; })(),
+  computedByKindAndClass: (() => { const m = {}; for (const r of COMPUTED) { const k = `${r.k} | ${r.res.by}`; m[k] = (m[k] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort()); })(),
+  referencesInsideAModule: TOTALS.intra, referencesAcrossModules: TOTALS.cross, referencesToAnUnownedTarget: TOTALS.noOwner,
+  modulePairs: edgeList.length, modulePairsDownward: sum((e) => !isUp(e)), modulePairsUpward: sum(isUp),
+  upward: { references: UP.length, fromCode: UP.filter((u) => u.side === 'code').length, fromTests: UP.filter((u) => u.side === 'test').length, pairs: upPairs.size,
+    byKind: (() => { const m = {}; for (const u of UP) { const k = `${u.side} | ${u.kind}`; m[k] = (m[k] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort()); })() },
+  uses: { declared: USES.reduce((n, u) => n + u.declared, 0), declaredNotFound: USES.reduce((n, u) => n + u.declaredNotFound.length, 0), declaredNoImport: USES.reduce((n, u) => n + u.declaredNoImport.length, 0),
+    foundNotDeclared: USES.reduce((n, u) => n + u.foundNotDeclared.length, 0), modulesWithDeclaredNotFound: USES.filter((u) => u.declaredNotFound.length).length,
+    modulesWithFoundNotDeclared: USES.filter((u) => u.foundNotDeclared.length).length, declaredLater: USES.reduce((n, u) => n + u.declaredLater.length, 0) },
+  stackErrors: STATS.stackErrors, sizes,
+};
+sizes['summary.json'] = write('summary.json', SUMMARY);
+lap(`written: ${Object.entries(sizes).map(([k, v]) => `${k} ${(v / 1024).toFixed(0)} KB`).join(', ')}; total ${(Object.values(sizes).reduce((a, b) => a + b, 0) / 1024).toFixed(0)} KB`);
+if (ARGV.has('--full')) { const to = process.argv[process.argv.indexOf('--full') + 1]; fs.writeFileSync(to, JSON.stringify({ REFS, VIA, LEADS, PARTIALS, UNBOUND })); lap(`every reference written to ${to}`); }

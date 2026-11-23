@@ -2,13 +2,19 @@
 /* signals.mjs: the mechanical signals behind ../10-layers.md, the rule that places each module in a layer, and the table
  * of what was read for each module.
  *
- *   node process/lanes/plane-scope/research/layers/signals.mjs                 the signal table, one row per module
- *   node process/lanes/plane-scope/research/layers/signals.mjs --layers        the placement, one row per module
- *   node process/lanes/plane-scope/research/layers/signals.mjs --order         the layers in the current order, and every inversion
- *   node process/lanes/plane-scope/research/layers/signals.mjs --hits <module> [n]   each signal's first n hits in a module
- *   node process/lanes/plane-scope/research/layers/signals.mjs --write         writes layers.json beside this file
- *   node process/lanes/plane-scope/research/layers/signals.mjs --dump <path>   everything, as JSON (a .json file in this folder,
- *                                                                              or under a scratchpad folder of the temporary directory)
+ *   S = node process/lanes/plane-scope/research/layers/signals.mjs
+ *   S                      the signal table, one row per module
+ *   S --patterns           each pattern whole, with its counts
+ *   S --layers             the placement, one row per module, with the line read (and an ambiguous module's parts)
+ *   S --table              the compact table of ../10-layers.md
+ *   S --importers          for each module placed by its importers (rule P): the layers and modules that import it
+ *   S --fanout [n]         the plane-held files that import from the most other modules
+ *   S --facts              what crosses the layers: who imports the UI, words, HTML, env bindings, platform calls, shared programs
+ *   S --sizes              lines of plane-held code by layer, and each ambiguous module's parts
+ *   S --order              the layers in the current order, and every inversion, by the owner's stacking and by today's
+ *   S --hits <module> [n]  each signal's first n hits in a module
+ *   S --write              writes layers.json beside this file
+ *   S --dump <path>        everything, as JSON (a .json file in this folder, or under a scratchpad folder of the temporary directory)
  *
  * It reads process/modules/order.txt, process/modules/<name>.json, `git ls-files`, and every owned code file. It parses
  * with the repository's own vendored acorn (bio-plane/src/setup-words/vendor/acorn.mjs, 8.18.0), so comments are blanked
@@ -415,9 +421,9 @@ for (const o of OUT) {
 }
 
 /* ---------- 11. the citation ---------- */
-function citeOf(spec) { if (!spec) return null; const m = /^(.*):(\d+)$/.exec(spec); if (!m) return null; return { file: m[1], line: Number(m[2]), text: lineText(m[1], Number(m[2])) }; }
+function citeOf(spec) { if (!spec) return null; const m = /^(.*):(\d+)$/.exec(spec); if (!m) return null; return { file: m[1], line: Number(m[2]), text: lineText(m[1], Number(m[2])), chosen: "by hand" }; }
 function autoCite(o, layer) {
-  const tryKeys = (ks, planeOnly = true) => { for (const k of ks) { const h = firstHit(o, k, planeOnly); if (h) return { ...h, signal: k }; } return null; };
+  const tryKeys = (ks, planeOnly = true) => { for (const k of ks) { const h = firstHit(o, k, planeOnly); if (h) return { ...h, chosen: "first hit of " + k }; } return null; };
   if (layer === "model") return tryKeys(["create_table", "alter_table", "sql_exec", "ops_map"]);
   if (layer === "middleware") return tryKeys(["do_answer", "alarm_set", "new_request", "new_response"]);
   if (layer === "ui") return tryKeys(["screens_export", "asset_bodies", "html_tags"]);
@@ -425,7 +431,7 @@ function autoCite(o, layer) {
   if (layer === "control-plane") return tryKeys(["pathname"]);
   return null;
 }
-const exportCite = (o) => { for (const planeOnly of [true, false]) { const h = firstHit(o, "first_export", planeOnly); if (h) return { ...h, signal: "first_export" }; } return null; };
+const exportCite = (o) => { for (const planeOnly of [true, false]) { const h = firstHit(o, "first_export", planeOnly); if (h) return { ...h, chosen: "first export" }; } return null; };
 const RESULT = OUT.map((o) => {
   const pl = PLACED.get(o.name); const rd = READ[o.name] || {};
   const ambiguous = pl.layers.length > 1;
@@ -433,10 +439,15 @@ const RESULT = OUT.map((o) => {
   const parts = pl.parts ? pl.parts.map((p) => ({ layer: p.layer, what: p.what || null, files: p.files, lines: p.lines, citation: citeOf(p.cite) || autoCite({ ...o, planeFiles: p.files.length ? p.files : o.planeFiles }, p.layer) })) : null;
   return { module: o.name, position: o.pos, layer: ambiguous ? "AMBIGUOUS" : pl.layer, sublayer: pl.sub, ambiguous, candidates: pl.layers, placed_by: pl.rule,
     deciding_signals: pl.claims.length ? Object.fromEntries(pl.claims.map((c) => [c.layer, c.why])) : { importer_layers: pl.importerLayers || [], imported_by_plane_held_code_of: pl.importers || [] },
-    citation: cite, citation_checked: !!rd.cite, parts, plane_held_code_files: o.planeFiles.length, plane_held_lines: o.linesPlane,
+    citation: cite, parts, plane_held_code_files: o.planeFiles.length, plane_held_lines: o.linesPlane,
     files_outside_the_planes_program: o.restFiles.concat(o.skipped), held_by_programs: o.held, note: rd.note || null, signals: row(o) };
 });
 const R = new Map(RESULT.map((r) => [r.module, r]));
+/* a citation is a line of the module's own code: refuse one from a file the module does not own */
+for (const r of RESULT) for (const c of [r.citation, ...(r.parts || []).map((p) => p.citation)]) {
+  if (c && modOf(c.file) !== r.module) { console.error(`signals.mjs: ${r.module} is cited from ${c.file}, which ${modOf(c.file) || "no module"} owns`); process.exit(3); }
+  if (c && !c.text) { console.error(`signals.mjs: ${r.module}'s citation ${c.file}:${c.line} is an empty line`); process.exit(3); }
+}
 
 /* ---------- 12. the layers in the current order ---------- */
 function orderReport(stack) {
@@ -470,6 +481,26 @@ function orderReport(stack) {
   return { stack, spans, inversions, ambiguous_inversions: ambiguousInv };
 }
 
+/** For each pair of layers (lower, higher) of a stacking: how many modules of the lower layer sit after at least one module
+ *  of the higher layer. `strict` counts single-layer modules on both sides; `with_parts` counts every module that has a part
+ *  in the layer (an ambiguous module on each side it has a part in; a module is not set against itself). */
+function pairMatrix(stack) {
+  const out = [];
+  for (let i = 0; i < stack.length; i++) for (let j = i + 1; j < stack.length; j++) {
+    const lo = stack[i], hi = stack[j];
+    const one = (strict) => {
+      const lows = RESULT.filter((r) => (strict ? !r.ambiguous && r.layer === lo : r.candidates.includes(lo)));
+      const highs = RESULT.filter((r) => (strict ? !r.ambiguous && r.layer === hi : r.candidates.includes(hi)));
+      const firstHigh = highs.length ? highs.reduce((a, b) => (a.position < b.position ? a : b)) : null;
+      const after = lows.filter((a) => highs.some((b) => b.position < a.position && b.module !== a.module));
+      return { lower_modules: lows.length, higher_modules: highs.length, lower_after_a_higher: after.length, first_higher: firstHigh ? `${firstHigh.module} (${firstHigh.position})` : null,
+        which: after.length <= 24 ? after.map((a) => `${a.module} (${a.position})`) : [`${after[0].module} (${after[0].position})`, "...", `${after[after.length - 1].module} (${after[after.length - 1].position})`] };
+    };
+    out.push({ lower: lo, higher: hi, strict: one(true), with_parts: one(false) });
+  }
+  return out;
+}
+
 /* ---------- 13. output ---------- */
 const COUNTS = {};
 for (const r of RESULT) { const k = r.ambiguous ? "AMBIGUOUS" : r.layer; COUNTS[k] = (COUNTS[k] || 0) + 1; }
@@ -491,12 +522,94 @@ if (args[0] === "--importers") {
   }
   process.exit(0);
 }
+if (args[0] === "--facts") {
+  const lay = (n) => { const r = R.get(n); return r.ambiguous ? "AMBIGUOUS" : r.layer === "outside" ? "outside/" + r.sublayer : r.layer; };
+  const by = (pred) => { const g = {}; for (const o of OUT) if (pred(o)) (g[lay(o.name)] ??= []).push(o.name); return g; };
+  const show = (title, g, list = true) => { console.log("\n" + title); for (const [k, v] of Object.entries(g)) console.log(`  ${k}: ${v.length}` + (list ? ` (${v.join(", ")})` : "")); };
+  console.log("control-plane's imports of UI modules:");
+  for (const [m, at] of BY.get("control-plane").imp.mods) if (R.get(m).layer === "ui") console.log(`  ${m} (${R.get(m).position}) at ${at.file}:${at.line}: ${lineText(at.file, at.line).slice(0, 120)}`);
+  console.log("UI modules' imports of modules that are not UI:");
+  for (const o of OUT) if (R.get(o.name).layer === "ui") for (const [m, at] of o.imp.mods) if (R.get(m).layer !== "ui") console.log(`  ${o.name} (${o.pos}) imports ${m} (${R.get(m).position}, ${lay(m)}) at ${at.file}:${at.line}`);
+  console.log("modules that import a UI module:"); for (const o of OUT) { const u = [...o.imp.mods.keys()].filter((m) => R.get(m).layer === "ui"); if (u.length && R.get(o.name).layer !== "ui") console.log(`  ${o.name} (${o.pos}, ${lay(o.name)}): ${u.join(", ")}`); }
+  show("modules whose plane-held code calls word()/localize()/hasWord(), by layer:", by((o) => o.sp.word_calls > 0), false);
+  console.log("  word_calls in plane-held code, by layer:", JSON.stringify(Object.fromEntries(Object.entries(by((o) => o.sp.word_calls > 0)).map(([k, v]) => [k, v.reduce((n, m) => n + BY.get(m).sp.word_calls, 0)]))));
+  show("plane-held modules outside the UI layer with HTML tags in their code:", by((o) => o.planeFiles.length && o.sp.html_tags > 0 && R.get(o.name).layer !== "ui"));
+  for (const o of OUT) if (o.planeFiles.length && o.sp.html_tags > 0 && R.get(o.name).layer !== "ui") console.log(`    ${o.name}: ${o.sp.html_tags}; first ${hitsOf({ ...o, code: o.planeFiles }, "html_tags", 1)[0].slice(0, 170)}`);
+  show("plane-held modules that name an env binding (env.NAME), by layer:", by((o) => [...o.env.values()].some((e) => e.plane)), false);
+  for (const o of OUT) { const e = [...o.env].filter(([, v]) => v.plane).map(([k]) => k); if (e.length) console.log(`    ${o.pos} ${o.name} (${lay(o.name)}): ${e.join(" ")}`); }
+  show("plane-held code with cf_import, platform_class, block_start or an alarm call:", by((o) => o.sp.cf_import + o.sp.platform_class + o.sp.block_start + o.sp.alarm_any > 0));
+  show("single-layer model modules that build a Response or a Request:", by((o) => R.get(o.name).layer === "model" && o.sp.new_response + o.sp.new_request > 0));
+  show("plane-held modules that call the network (global fetch) or a fleet member:", by((o) => o.sp.fetch_out + o.sp.fleet_call > 0));
+  console.log("\nfiles of plane-layer modules held by other deployables' programs:");
+  for (const d of Object.keys(CLOSURE)) { if (d === "plane") continue; let files = 0; const mods = new Set(); for (const o of OUT) { if (!o.planeFiles.length || (o.wrangler.length && o.name !== "plane")) continue; const n = o.planeFiles.filter((f) => CLOSURE[d].has(f)).length; if (n) { files += n; mods.add(o.name); } } console.log(`  ${d}: ${files} files of ${mods.size} modules`); }
+  let later = 0; for (const o of OUT) for (const m of o.imp.mods.keys()) if (BY.has(m) && BY.get(m).pos > o.pos) { later++; console.log("  LATER: " + o.name + " imports " + m); }
+  console.log("\nimports of a later module by owned code (static and literal dynamic): " + later);
+  console.log("assembly files (import from 80 or more other modules): " + [...ASSEMBLY_FILES].join(", "));
+  /* cross-check: the committed bundle manifest's first-party inputs against the files this script finds the plane's program to hold */
+  try {
+    const man = JSON.parse(fs.readFileSync(path.join(ROOT, "bio-plane/dist/bio-plane.bundle.json"), "utf8"));
+    const ins = new Set((man.inputs || []).map((x) => path.posix.normalize(path.posix.join("bio-plane", typeof x === "string" ? x : x.path))));
+    const mine = new Set([...CLOSURE.plane]);
+    const onlyMan = [...ins].filter((f) => !mine.has(f)), onlyMine = [...mine].filter((f) => !ins.has(f));
+    console.log(`bundle manifest (bio-plane/dist/bio-plane.bundle.json): ${ins.size} first-party inputs; this script's closure: ${mine.size} files; in the manifest only: ${onlyMan.length} ${onlyMan.slice(0, 6).join(" ")}; in the closure only: ${onlyMine.length} ${onlyMine.slice(0, 6).join(" ")}`);
+  } catch (e) { console.log("bundle manifest not read: " + e.message); }
+  console.log("dynamic imports with a computed address in plane-held files: " + OUT.reduce((n, o) => n + o.planeFiles.reduce((k, f) => k + fileSignals(f).dynamicNonLiteral, 0), 0));
+  console.log("plane-held code files: " + OUT.reduce((n, o) => n + o.planeFiles.length, 0) + " of " + OUT.reduce((n, o) => n + o.code.length, 0) + " scanned; not scanned: " + OUT.reduce((n, o) => n + o.skipped.length, 0) + "; unparsed: " + OUT.flatMap((o) => o.unparsed).join(", "));
+  process.exit(0);
+}
 if (args[0] === "--layers") {
   console.log(JSON.stringify(COUNTS)); console.log(JSON.stringify(SUBCOUNTS, null, 1));
   for (const r of RESULT) {
-    console.log(`${String(r.position).padStart(3)} ${r.module.padEnd(22)} ${(r.ambiguous ? "AMBIGUOUS: " + r.candidates.join(" + ") : r.layer + " / " + r.sublayer).padEnd(46)} ${r.citation_checked ? "R" : "a"} ${r.citation ? r.citation.file.replace("bio-plane/src/", "") + ":" + r.citation.line + ": " + r.citation.text.slice(0, 110) : ""}`);
+    console.log(`${String(r.position).padStart(3)} ${r.module.padEnd(22)} ${(r.ambiguous ? "AMBIGUOUS: " + r.candidates.join(" + ") : r.layer + " / " + r.sublayer).padEnd(46)} ${r.citation && r.citation.chosen === "by hand" ? "h" : "a"} ${r.citation ? r.citation.file.replace("bio-plane/src/", "") + ":" + r.citation.line + ": " + r.citation.text.slice(0, 110) : ""}`);
     if (r.parts) for (const p of r.parts) console.log(`      ${p.layer.padEnd(14)} ${String(p.lines).padStart(5)} lines in ${p.files.length} files; ${p.citation ? p.citation.file.replace("bio-plane/src/", "") + ":" + p.citation.line + ": " + p.citation.text.slice(0, 120) : "NO CITE"}`);
     if (r.placed_by === "importers") console.log(`      by importers: ${r.deciding_signals.importer_layers.join(", ") || "(none)"}`);
+  }
+  process.exit(0);
+}
+if (args[0] === "--sizes") {
+  /* lines of plane-held code by layer: single-layer modules whole, an ambiguous module's files by the part they are in */
+  const lines = {}, files = {};
+  for (const r of RESULT) {
+    const o = BY.get(r.module);
+    if (r.parts) for (const p of r.parts) { lines[p.layer] = (lines[p.layer] || 0) + p.lines; files[p.layer] = (files[p.layer] || 0) + p.files.length; }
+    else { const k = r.layer === "outside" ? "outside/" + r.sublayer : r.layer; lines[k] = (lines[k] || 0) + o.linesPlane; files[k] = (files[k] || 0) + o.planeFiles.length; }
+  }
+  for (const k of Object.keys(lines)) console.log(`${k}: ${lines[k]} lines in ${files[k]} plane-held files`);
+  console.log("ambiguous modules, by part:");
+  for (const r of RESULT) if (r.parts) console.log(`  ${r.position} ${r.module}: ` + r.parts.map((p) => `${p.layer} ${p.lines} lines in ${p.files.length} files`).join("; "));
+  process.exit(0);
+}
+if (args[0] === "--patterns") {
+  /* each pattern with its counts: hits in plane-held files, modules with a hit there, hits in the other scanned files, modules with a hit there */
+  for (const k of SHOWN) {
+    const inP = OUT.reduce((n, o) => n + o.sp[k], 0), modsP = OUT.filter((o) => o.sp[k]).length, inR = OUT.reduce((n, o) => n + o.sr[k], 0), modsR = OUT.filter((o) => o.sr[k]).length;
+    console.log(`${k} | ${P[k].source.length > 150 ? P[k].source.slice(0, 150) + "…" : P[k].source} | ${inP} in ${modsP} | ${inR} in ${modsR}`);
+  }
+  console.log(`env names | ${ENV_NAME.source} | ${OUT.filter((o) => [...o.env.values()].some((e) => e.plane)).length} modules with one in plane-held code`);
+  console.log(`imports other modules' op maps (name ends Ops) | from the parse tree | ${OUT.filter((o) => o.imp.ops.size).map((o) => o.name + " " + o.imp.ops.size).join(", ")}`);
+  console.log(`imports other modules' DECLARED_OPS | from the parse tree | ${OUT.filter((o) => o.imp.declared.size).map((o) => o.name + " " + o.imp.declared.size).join(", ")}`);
+  console.log(`imports other modules' SCREENS | from the parse tree | ${OUT.filter((o) => o.imp.screens.size).map((o) => o.name + " " + o.imp.screens.size).join(", ")}`);
+  console.log(`imports other modules' door handlers (name ends Op or OpResponse) | from the parse tree | ${OUT.filter((o) => o.imp.doorOps.size).map((o) => o.name + " " + o.imp.doorOps.size).join(", ")}`);
+  process.exit(0);
+}
+if (args[0] === "--table") {
+  /* the compact table of 10-layers.md: position, module, layer/sublayer, the signals above zero in plane-held code, the citation */
+  const code = { T: (s) => s.create_table + s.alter_table, R: (s) => s.sql_exec, O: (s) => s.ops_map, A: (s) => s.do_answer, Q: (s) => s.new_response + s.new_request,
+    F: (s) => s.fetch_out + s.fleet_call, S: (s) => s.screens_export, H: (s) => s.html_tags, B: (s) => s.dom, W: (s) => s.word_calls, K: (s) => s.cf_import + s.platform_class + s.block_start + s.alarm_set };
+  const short = (f) => f.replace("bio-plane/src/", "");
+  for (const r of RESULT) {
+    const o = BY.get(r.module);
+    const sig = Object.entries(code).map(([k, f]) => [k, f(o.sp)]).filter(([, v]) => v).map(([k, v]) => k + v).join(" ");
+    const x = o.imp.ops.size + o.imp.declared.size + o.imp.doorOps.size + o.imp.screens.size;
+    const e = [...o.env.values()].filter((v) => v.plane).length;
+    const subs = { "shared-foundation": "shared", "fleet-member": "fleet", "fleet-library": "fleet-lib", "other-deployable": "own-worker" };
+    const lay = r.ambiguous ? "AMBIGUOUS " + r.candidates.map((c) => c === "control-plane" ? "door" : c.slice(0, 3)).join("+")
+      : r.layer === "outside" ? "out/" + (subs[r.sublayer] || r.sublayer)
+      : r.placed_by === "signals" ? r.layer : r.layer + (r.sublayer === "pure" ? "/pure" : "/reach");
+    const c = r.citation || (r.parts && r.parts[0].citation);
+    const held = o.planeFiles.length === o.code.length ? String(o.code.length) : `${o.planeFiles.length}/${o.code.length}`;
+    const where = c ? (short(c.file).startsWith(r.module + "/") ? "~" + short(c.file).slice(r.module.length) : short(c.file)) + ":" + c.line : "";
+    console.log(`${r.position} ${r.module}|${lay}|${held}${sig ? " " + sig : ""}${x ? " X" + x : ""}${e ? " E" + e : ""}|${where}`);
   }
   process.exit(0);
 }
@@ -505,6 +618,7 @@ if (args[0] === "--order") {
     const rep = orderReport(stack);
     console.log("\n== stacking, lowest first: " + stack.join(" < "));
     for (const l of stack) { const s = rep.spans[l]; console.log(`  ${l.padEnd(14)} ${String(s.modules).padStart(3)} modules, positions ${s.lowest}..${s.highest}   (counting ambiguous modules too: ${s.with_ambiguous.modules}, ${s.with_ambiguous.lowest}..${s.with_ambiguous.highest})`); }
+    for (const m of pairMatrix(stack)) console.log(`  ${m.lower} after ${m.higher}: strict ${m.strict.lower_after_a_higher} of ${m.strict.lower_modules} (first ${m.higher}: ${m.strict.first_higher}); with parts ${m.with_parts.lower_after_a_higher} of ${m.with_parts.lower_modules} (first ${m.higher} part: ${m.with_parts.first_higher})` + (m.strict.which.length ? `\n      strict: ${m.strict.which.join(", ")}` : "") + (m.with_parts.which.length ? `\n      with parts: ${m.with_parts.which.join(", ")}` : ""));
     console.log(`  inversions (a single-layer module after a single-layer module of a higher layer): ${rep.inversions.length}`);
     for (const v of rep.inversions) console.log(`    ${v.position} ${v.module} (${v.layer}) sits after ` + Object.entries(v.after).map(([l, x]) => `${x.count} ${l} module(s), first ${x.first}`).join("; "));
     console.log(`  ambiguous modules, taken as each candidate layer, that would sit after a higher layer's module: ${rep.ambiguous_inversions.length}`);
@@ -516,10 +630,16 @@ if (WRITE_TO) {
   const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT }).toString().trim();
   const base = execFileSync("git", ["merge-base", "HEAD", "origin/p4-tranche"], { cwd: ROOT }).toString().trim();
   fs.writeFileSync(WRITE_TO, JSON.stringify({
-    about: "Each of the 204 modules placed in a layer by what its code does. Written by signals.mjs --write; the rules and the reading are in ../10-layers.md.",
+    about: "Each of the 204 modules placed in a layer by what its code does. Written by signals.mjs --write; the rules, the reading and what was not checked are in ../10-layers.md.",
+    how_to_read: {
+      layer: "model | middleware | control-plane | launcher | ui | outside | AMBIGUOUS (its code claims the layers in `candidates`; `parts` says which files and gives a line for each)",
+      placed_by: "signals (the rule over the module's own plane-held code) | importers (rule P: its own code claims no layer; the lowest layer among the plane-held files that import it, or outside/shared-foundation when three or more layers including the model import it) | read (override ...): the rule's claim set aside after reading, with the reason",
+      citation: "one line of the module's own code, read; `chosen` says whether it is the first hit of the deciding pattern or was picked by hand; `text` is the line as it stands in the file",
+      signals: "counts over the module's owned, scanned code files; `a+b` is a in the files the plane's program holds and b in its other files",
+    },
     base: { head, merge_base_with_origin_p4_tranche: base }, modules: RESULT.length, counts: COUNTS, counts_by_sublayer: SUBCOUNTS,
     layers_wanted_lowest_first: WANTED, layers_today_lowest_first: TODAY,
-    order: { wanted: orderReport(WANTED), today: orderReport(TODAY) },
+    order: { wanted: { ...orderReport(WANTED), pairs: pairMatrix(WANTED) }, today: { ...orderReport(TODAY), pairs: pairMatrix(TODAY) } },
     placements: RESULT }, null, 1) + "\n");
   console.log("wrote " + WRITE_TO);
   process.exit(0);
@@ -531,33 +651,117 @@ function readRows() {
   const B = "bio-plane/src/";
   return {
     /* --- modules whose code claims two layers: the files of each part (`rest` takes every file not named), and a line read for each --- */
-    "host-governor": { parts: { model: { rest: true, what: "the class HostGovernor and its table (index.mjs:62-260, schema.mjs)" },
-      middleware: { files: [], cite: B + "host-governor/index.mjs:429", what: "governorOverStub, governorOp and governorOpResponse reach the object through a stub (index.mjs:300-433); the same file as the class" } } },
+    "host-governor": { parts: { model: { rest: true, what: "the class HostGovernor (index.mjs:62) and its table (schema.mjs)" },
+      middleware: { files: [], cite: B + "host-governor/index.mjs:429", what: "governorOverStub (index.mjs:300), governorOp (395) and governorOpResponse (429) reach the object through a stub; the same file as the class" } } },
     "provenance": { parts: { model: { rest: true, what: "index.mjs, and provenanceOps in ops.mjs:24" },
-      middleware: { files: [], cite: B + "provenance/ops.mjs:80", what: "registerAuditOp (ops.mjs:73-93), in the same file as the op map" } } },
+      middleware: { files: [], cite: B + "provenance/ops.mjs:80", what: "registerAuditOp (ops.mjs:73), in the same file as the op map" } } },
     "attestation": { parts: { model: { rest: true, }, middleware: { files: ["attestation/ops.mjs"], cite: B + "attestation/ops.mjs:36", what: "attestOp" } } },
     "capture": { parts: { model: { rest: true, }, middleware: { files: ["capture/ops.mjs"], cite: B + "capture/ops.mjs:230", what: "captureOp, acquireOp, linksOp, archiveLookupOp, captureObjectOp" } } },
     "doorbell": { parts: { model: { rest: true, }, middleware: { files: ["doorbell/door.mjs"], cite: B + "doorbell/door.mjs:124", what: "knockOp, doorbellPublicOp" } } },
     "extraction": { parts: { model: { rest: true, }, middleware: { files: ["extraction/ops.mjs"], cite: B + "extraction/ops.mjs:32", what: "pdfStructureOp, pageTranscribeOp, extractionOp, acquireReadingOp" } } },
     "connections": { parts: { model: { rest: true, }, middleware: { files: ["connections/ops.mjs"], cite: B + "connections/ops.mjs:27", what: "linkProjectOp, connectionsOp" } } },
     "publication": { parts: { model: { rest: true, cite: B + "publication/schema.mjs:82" }, middleware: { files: ["publication/door.mjs"], cite: B + "publication/door.mjs:58", what: "publicationDoorOp" } } },
-    "public-read": { parts: { model: { rest: true, cite: B + "public-read/index.mjs:361" }, middleware: { files: ["public-read/door.mjs", "publication/worker.mjs"], cite: B + "public-read/door.mjs:75", what: "publicReadDoorOp and the published routes (publication/worker.mjs: publishedRoutes, assembleCaseContainer)" } } },
+    "public-read": { parts: { model: { rest: true }, middleware: { files: ["public-read/door.mjs", "publication/worker.mjs"], cite: B + "public-read/door.mjs:75", what: "publicReadDoorOp and the published routes (publication/worker.mjs: publishedRoutes, assembleCaseContainer)" } } },
     "ratification": { parts: { model: { rest: true, }, middleware: { files: ["ratification/ops.mjs", "ratification/finding.mjs", "ratification/casefile.mjs"], cite: B + "ratification/ops.mjs:115", what: "the ratify, case and publish ceremonies run against a stub of the object" } } },
-    "monitoring": { parts: { model: { rest: true, }, middleware: { files: [], cite: B + "monitoring/index.mjs:3904", what: "monitorOp (index.mjs:3904-3934), in the same file as the class" } } },
+    "monitoring": { parts: { model: { rest: true, }, middleware: { files: [], cite: B + "monitoring/index.mjs:3904", what: "monitorOp (index.mjs:3904), in the same file as the class" } } },
     "affordances": { parts: { model: { rest: true, cite: B + "affordances/facts.mjs:96" }, middleware: { files: ["affordances/door.mjs"], cite: B + "affordances/door.mjs:102", what: "affordancesOp" } } },
     "queue": { parts: { model: { rest: true, }, middleware: { files: ["queue/door.mjs"], cite: B + "queue/door.mjs:43", what: "queueFeedOp, queueOp" } } },
-    "instance-setup": { parts: { model: { rest: true, cite: B + "setup.mjs:533", what: "the class InstanceSetup, its tables and op map (setup.mjs:479-3217), and setup-fleet.mjs" },
-      middleware: { files: ["livefire.mjs"], cite: B + "setup.mjs:3220", what: "livefire.mjs, and in setup.mjs the handlers that reach the object through a stub: publicInstanceGroup, instanceGroupOp, groupIdentityOp, groupLogoAsset, bootstrapReport, selftest, runtimeOp, cpuProbeOp, instanceSetupOp, bootstrapOp (setup.mjs:3220-3587)" } } },
+    "instance-setup": { parts: { model: { rest: true, what: "the class InstanceSetup (setup.mjs:1003), its tables (533) and op map (3081), and setup-fleet.mjs" },
+      middleware: { files: ["livefire.mjs"], cite: B + "setup.mjs:3220", what: "livefire.mjs, and in setup.mjs the handlers that reach the object through a stub, among them partsReport (232), publicInstanceGroup (3220), bootstrapReport (3281), instanceSetupOp (3538) and bootstrapOp (3583); the same file as the class" } } },
     "admission": { parts: { middleware: { rest: true, cite: B + "admission/index.mjs:1336", what: "the gates the door calls (index.mjs, checks.mjs)" }, model: { files: ["admission/window.mjs"], cite: B + "admission/window.mjs:53", what: "the door-window and session-window counters, their two tables and admissionOps" } } },
     "signin-door": { layers: ["middleware", "model"], override: "the rule sees only the op map (ops_map=1); index.mjs holds no doAnswer call but is a handler the door calls with its own store function (control-plane/index.mjs:1464) and that sends each step to agent-worker",
       parts: { middleware: { rest: true, cite: B + "signin-door/index.mjs:128", what: "subscriptionSignin, subscriptionDisconnect, signintrace (index.mjs)" }, model: { files: ["signin-door/ops.mjs"], cite: B + "signin-door/ops.mjs:43", what: "five store-internal routes on credentials' instance; no table" } } },
     "store-services": { parts: { middleware: { rest: true, cite: B + "store-assembly/declarations.mjs:191", what: "the owners' declarations assembled (declarations.mjs, declared.mjs, register.mjs, owner-ops.mjs); the ask and the drafts carried to agent-worker (ask.mjs); transcribe.mjs, unpack.mjs, casesweep.mjs" },
       model: { files: ["store-assembly/pending.mjs", "store-assembly/acquire-timings.mjs"], cite: B + "store-assembly/pending.mjs:73", what: "the ledger of owed work and the stage timings: five tables and two op maps" } } },
-    "store-assembly": { parts: { launcher: { files: [], cite: B + "store-assembly/assemble.mjs:584", what: "the start in assembleStore: each module built with the bindings, the migrations and the scheduler's start handed to the platform's start gate (assemble.mjs:220-660)" },
-      middleware: { rest: true, cite: B + "store-assembly/assemble.mjs:781", what: "the one route map and the dispatch (assemble.mjs:764-957), wiring.mjs, wizards.mjs, owners.mjs" },
+    "store-assembly": { parts: { launcher: { files: [], cite: B + "store-assembly/assemble.mjs:584", what: "the start in assembleStore (assemble.mjs:220): each module built with the bindings, then the migrations and the scheduler's start handed to the platform's start gate (584, 585, 645)" },
+      middleware: { rest: true, cite: B + "store-assembly/assemble.mjs:777", what: "the one route map (assemble.mjs:777 on) and the dispatch through store-door, in the same function as the start; wiring.mjs, wizards.mjs, owners.mjs" },
       model: { files: ["store-assembly/stats.mjs"], cite: B + "store-assembly/assemble.mjs:680", what: "SQL of its own: a column added to another module's table (assemble.mjs:680), rows of other modules' tables read (wiring.mjs:61, stats.mjs:90)" } } },
     "control-plane": { parts: { "control-plane": { rest: true, cite: B + "control-plane/index.mjs:957", what: "the router (index.mjs), the pages and assets (app.mjs), phase-clock.mjs, words-cache.mjs" },
-      middleware: { files: ["control-plane/archive.mjs", "control-plane/draft.mjs", "control-plane/jobs.mjs", "control-plane/job-state.mjs", "control-plane/reading-gate.mjs"], cite: B + "control-plane/archive.mjs:102", what: "handling of particular ops beside the router: an archive's documents filed, a draft asked, a reading deferred" } } },
+      middleware: { files: ["control-plane/archive.mjs", "control-plane/draft.mjs", "control-plane/jobs.mjs", "control-plane/job-state.mjs", "control-plane/reading-gate.mjs"], cite: B + "control-plane/archive.mjs:102", what: "handling of particular ops beside the router: an archive's documents filed, a draft asked, a reading deferred; and, inside index.mjs, deliverOwedRender (index.mjs:743), which runs in the object on its alarm" } } },
+    "screens-capture": { note: "its promoteDocument (screens-intake/capture.mjs:144) writes a bundle's text and sends allocid and promote; control-plane runs the same function inside the object (control-plane/index.mjs:797)" },
+    /* --- placed by their importers (rule P): the line read, and what reading adds --- */
+    "setup-words": { cite: B + "setup-words/index.mjs:57", note: "holds the member-facing words (rows.mjs, 27,078 lines) and the function every layer reads them through; build.mjs and vendor/ are its build tool" },
+    "record-grammar": { cite: B + "record-grammar/frontmatter.mjs:83" },
+    "jurisdiction-profiles": { cite: "jurisdictions/profiles/oakland-alameda.mjs:65" },
+    "jurisdictions": { cite: "jurisdictions/index.mjs:277" },
+    "civil-time": { cite: B + "civil-time/days.mjs:16" },
+    "calc-grammar": { cite: B + "calc-grammar/decimal.mjs:24" },
+    "connection-grammar": { cite: B + "connection-grammar/index.mjs:16" },
+    "runtime-limits": { cite: B + "cpu.mjs:63", note: "one of its five files touches the platform: store-place.mjs takes the object's stub from env.STORE (id_from=1)" },
+    "signatures": { cite: B + "sshsig.mjs:119", note: "bio-plane/scripts/sign-sshsig.mjs is a command-line tool, outside the plane's program" },
+    "court-citations": { cite: "court-citations/index.mjs:57", note: "build.mjs and translate.mjs are its build tools" },
+    "id-spaces": { cite: B + "idspaces.mjs:164" },
+    "subresources": { cite: B + "subresources.mjs:446" },
+    "ooxml": { cite: B + "ooxml.mjs:123" },
+    "csv-reader": { cite: B + "csv-reader/index.mjs:145" },
+    "office-readers": { cite: B + "docx.mjs:418", sub: "pure", note: "new_response=1 is `await new Response(out).text()` (formats-xlsx.mjs:739), a stream read, not an answer" },
+    "odf-reader": { cite: B + "odf.mjs:2826" },
+    "pdf-reader": { cite: B + "pdfstructure.mjs:1506" },
+    "format-registry": { cite: B + "formats.mjs:69" },
+    "text-chain": { cite: B + "textchain.mjs:591" },
+    "site-profiles": { cite: "site-profiles/index.mjs:99" },
+    "docprofile": { cite: "docprofile/doctypes/index.mjs:177" },
+    "doctypes": { cite: "doctypes/index.mjs:42" },
+    "legistar-reader": { cite: "legistar-reader/index.mjs:66" },
+    "roster-reader": { cite: "roster-reader/index.mjs:30", layers: ["model"], sub: "pure", override: "its one importer in the plane's program is store-assembly/wiring.mjs:25-32, which registers it in docprofile's registry; the code reads a held document into typed rows, as doctypes does" },
+    "court-doctypes": { cite: "court-doctypes/index.mjs:23", layers: ["model"], sub: "pure", override: "its one importer in the plane's program is store-assembly/wiring.mjs:25-32, which registers it in docprofile's registry; the code reads a held document into typed rows, as doctypes does" },
+    "budget-doctypes": { cite: "budget-doctypes/index.mjs:272", layers: ["model"], sub: "pure", override: "its one importer in the plane's program is store-assembly/wiring.mjs:25-32, which registers it in docprofile's registry; the code reads a held document into typed rows, as doctypes does" },
+    "image-codecs": { cite: "pdf-worker/src/mq.mjs:61", note: "its files lie under pdf-worker/src/; the plane's program holds all six" },
+    "pdf-pixels": { cite: "pdf-worker/src/pagepixels.mjs:357", note: "its files lie under pdf-worker/src/; the plane's program holds three of four (pagepixels-worker.mjs is not held)" },
+    "image-cover": { cite: B + "image-cover/index.mjs:72" },
+    "doc-clean": { cite: B + "doc-clean/index.mjs:44" },
+    "op-grade-tranches": { cite: B + "op-grades/t33.mjs:22" },
+    "op-grades": { cite: B + "op-grades/index.mjs:105", note: "a table keyed by op name: how much each act weighs; read by affordances (model), store-assembly (middleware) and interface-shell (UI)" },
+    "reading-pipeline": { cite: B + "reading-pipeline/index.mjs:152", note: "no table and no op; it calls the pdf-worker and ocr-worker fleet members through env bindings" },
+    "query-language": { cite: B + "query.mjs:52" },
+    "inquiry-grammar": { cite: B + "inquiry-grammar/index.mjs:19" },
+    "accepted-work": { cite: B + "accepted-work/index.mjs:232" },
+    "contradiction-words": { cite: B + "contradiction.mjs:33" },
+    "skills": { cite: B + "skillpack.mjs:374" },
+    "case-grammar": { cite: B + "case-grammar/index.mjs:91", note: "complete.mjs:226 returns one HTML file, the published case's complete edition (html_tags=22): a document, not a screen" },
+    "case-checker": { cite: B + "case-checker/index.mjs:93", note: "build-program.mjs is its build tool; program.mjs (6.8 MB, generated) is not scanned" },
+    "case-document": { cite: B + "case-authoring/document.mjs:72" },
+    "filing-texts": { cite: B + "filings/outward.mjs:20" },
+    "wizard-library": { cite: B + "wizard-scripts/screen-registry.mjs:11", note: "generated data: the design's screen registry (each screen's id, name, purpose and acts) and wizard library; its one importer is wizard-scripts, which hands SCREEN_REGISTRY on to interface-shell" },
+    "act-help": { cite: B + "affordances/act-help.mjs:289", note: "a table keyed by op name of what each act does, each sentence read from setup-words by key" },
+    "queue-words": { cite: B + "queue-producers/words.mjs:10" },
+    "queue-catalogue": { cite: B + "queuestate.mjs:69" },
+    "op-capabilities": { cite: B + "op-capabilities/index.mjs:32" },
+    "op-declarations": { cite: B + "op-declarations/index.mjs:2927", note: "the table of every op (class, grade, fields), filled by the owners' declarations at the start; read by admission, store-request, the control plane, the launcher's door hooks and the UI; no model file imports it" },
+    /* --- single-layer modules whose line was chosen by hand --- */
+    "scheduler": { cite: B + "scheduler/index.mjs:741", note: "no table, no op: it holds the object's one alarm and runs the consumers that 24 other modules register" },
+    "answer-envelope": { cite: B + "answer-envelope/index.mjs:152", note: "families.mjs imports the check tables of 87 other modules" },
+    "store-door": { cite: B + "store-door/dispatch.mjs:413", note: "pull.mjs files a doorbell knock as a bundle and step.mjs is a promotion step: handling of its own beside the dispatch" },
+    "store-request": { cite: B + "store-request/index.mjs:132" },
+    "interface-assets": { cite: B + "interface-assets/index.mjs:11", note: "generate.mjs is its build tool, outside the plane's program" },
+    "interface-shell": { cite: B + "interface-shell/index.mjs:590" },
+    "translations": { note: "seven tables of a team's translated words and an op map: the record of translations, kept as the model keeps anything" },
+    "wizard-scripts": { note: "twelve tables of wizard scripts and an op map; it also hands the design's screen registry on (wizard-library's SCREEN_REGISTRY)" },
+    "promotion": { note: "no SQL of its own: it reaches rows through record-core" },
+    "file-safety": { note: "do_call=2 is a Request built for capture's own function (index.mjs:948), not a call to the object; it answers bytes itself (new_response=4)" },
+    "ai-runs": { note: "do_call=1 is one object asking another (index.mjs:2320); it calls agent-worker from inside the object (index.mjs:2394)" },
+    /* --- outside the five --- */
+    "documents": { cite: "docs/development/ux-substrate/screens/build_words.mjs:17", sub: "documents", note: "4,894 owned files, 4,731 of them .md; its code is scripts kept beside the documents" },
+    "test-support": { cite: "bio-plane/test/platform-sqlite.mjs:28", sub: "tooling" },
+    "bundler": { cite: "bio-plane/scripts/fleet-bundle.mjs:1542", sub: "tooling" },
+    "release": { cite: "bio-plane/scripts/deploy.mjs:190", sub: "tooling" },
+    "journey-check": { cite: B + "journey-check/run.mjs:45", sub: "tooling", note: "its folder is under bio-plane/src/ but the plane's program holds none of it" },
+    "pdf-worker": { cite: "pdf-worker/src/index.mjs:362" },
+    "ocr-worker": { cite: "ocr-worker/src/index.mjs:71" },
+    "sheet-worker": { cite: "sheet-worker/src/index.mjs:22", note: "the plane's program holds one of its files" },
+    "file-scanner": { cite: "file-scanner/src/worker.mjs:21", note: "the plane's program holds four of its files" },
+    "agent-runner": { cite: "agent-runner/src/worker.mjs:90" },
+    "agent-worker": { cite: "agent-worker/src/index.mjs:798" },
+    "agent-harness": { cite: "agent-harness/src/harness.mjs:563" },
+    "agent-model": { cite: "agent-model/src/apikey.mjs:14" },
+    "agent-steps": { cite: "agent-steps/src/index.mjs:4" },
+    "agent-worker-routes": { cite: "agent-worker/src/ask.mjs:73" },
+    "installer-account": { cite: "newgroup/src/steps/account.mjs:28", sub: "installer" },
+    "installer-steps": { sub: "installer" },
+    "installer-pages": { cite: "newgroup/src/ui.mjs:270", sub: "installer" },
+    "installer": { cite: "newgroup/src/index.mjs:1443", sub: "installer" },
+    "site": { cite: "site/src/index.mjs:123", sub: "site" },
+    "stewards": { cite: "stewards/src/index.mjs:281", sub: "other-deployable", note: "a Worker of its own with its own Durable Object, run apart from every team's plane" },
     "plane": { parts: { launcher: { rest: true, cite: B + "plane/store.mjs:27", what: "the Worker's default export and the Durable Object class (index.mjs, store.mjs, watchdog.mjs, arrival.mjs), with bio-plane/wrangler.jsonc" },
       middleware: { files: ["plane/door.mjs"], cite: B + "plane/door.mjs:89", what: "which owner's handler answers which op, and the stamps each is handed (publicOp, gatedOp)" } } },
   };

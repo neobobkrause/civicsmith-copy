@@ -1,0 +1,54 @@
+// The run-time cross-check of the graph: loads a module's main code file in Node under the recorder (trace.mjs) and
+// compares the files Node loaded with the files the graph says its static imports reach.
+//   node crosscheck.mjs <checkout> <full.json from graph.mjs --full> <out.json> <module> [<module> …]
+// A module's main file is index.mjs in the first folder its entry's `files` names, unless given as module=path.
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const [checkout, fullFile, outFile, ...wanted] = process.argv.slice(2);
+const root = path.resolve(checkout);
+const TRACE = fileURLToPath(new URL('./trace.mjs', import.meta.url));
+const { REFS } = JSON.parse(fs.readFileSync(fullFile, 'utf8'));
+const edges = (kinds) => { const m = new Map(); for (const r of REFS) if (!r.c && kinds.includes(r.k) && r.tk === 'file') { if (!m.has(r.f)) m.set(r.f, new Set()); m.get(r.f).add(r.to); } return m; };
+const STATIC = edges(['import', 'export-from']); const WITH_DYNAMIC = edges(['import', 'export-from', 'dynamic-import']);
+const closure = (start, g) => { const seen = new Set([start]); const q = [start]; while (q.length) { const f = q.pop(); for (const t of g.get(f) ?? []) if (!seen.has(t)) { seen.add(t); q.push(t); } } return seen; };
+const fsRefs = new Map(); for (const r of REFS) if (/^(fs-|proc|worker|sqlite)/.test(r.k)) { if (!fsRefs.has(r.f)) fsRefs.set(r.f, []); fsRefs.get(r.f).push(r); }
+const work = fs.mkdtempSync(path.join(path.dirname(path.resolve(outFile)), 'crosscheck-'));
+const results = [];
+for (const w of wanted) {
+  const [mod, given] = w.split('=');
+  const entry = JSON.parse(fs.readFileSync(path.join(root, `process/modules/${mod}.json`), 'utf8'));
+  const main = given ?? `${entry.files[0].replace(/\/?$/, '/')}index.mjs`;
+  const raw = path.join(work, mod); fs.mkdirSync(raw, { recursive: true });
+  const env = { PATH: process.env.PATH, HOME: work, TMPDIR: work, LANG: 'C.UTF-8', NODE_OPTIONS: `--import=${TRACE}`, GRAPH_TRACE_OUT: raw, GRAPH_TRACE_ROOT: root, GRAPH_TRACE_STUB_CF: '1' };
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', `await import(${JSON.stringify(pathToFileURL(path.join(root, main)).href)});`], { cwd: root, env, encoding: 'utf8', timeout: 120000 });
+  const loaded = new Set(); const imports = new Set(); const fsSeen = [];
+  for (const name of fs.readdirSync(raw)) {
+    const d = JSON.parse(fs.readFileSync(path.join(raw, name), 'utf8'));
+    for (const [kind, at, p] of d.records) {
+      // "[eval1]" is this script's own one-line program that imports the main file; "(none)" is Node itself, with no frame of the checkout
+      if (kind === 'load') { if (!p.startsWith('<')) loaded.add(p); } else if (kind === 'import') { if (!p.startsWith('<') && !at.startsWith('(') && !at.startsWith('[eval')) imports.add(`${at} → ${p}`); } else fsSeen.push([kind, at, p]);
+    }
+  }
+  const predicted = closure(main, STATIC); const withDynamic = closure(main, WITH_DYNAMIC);
+  const loadedNotPredicted = [...loaded].filter((f) => !predicted.has(f)).sort();
+  const predictedNotLoaded = [...predicted].filter((f) => !loaded.has(f)).sort();
+  // every import Node resolved, file to file, against the graph's own edges
+  const edgeMissing = [...imports].filter((e) => { const [a, b] = e.split(' → '); return !(WITH_DYNAMIC.get(a)?.has(b)); }).sort();
+  const staticEdgesInLoaded = []; for (const f of loaded) for (const t of STATIC.get(f) ?? []) staticEdgesInLoaded.push(`${f} → ${t}`);
+  const edgeNotSeen = staticEdgesInLoaded.filter((e) => !imports.has(e)).sort();
+  const predictedFs = [...loaded].flatMap((f) => (fsRefs.get(f) ?? []).map((x) => `${x.k} ${f}:${x.l}`));
+  results.push({ module: mod, main, exit: r.status, error: r.status === 0 ? undefined : (r.stderr || '').split('\n').filter(Boolean).slice(-3).join(' | ').slice(0, 300),
+    loaded: loaded.size, predicted: predicted.size, predictedWithLiteralDynamicImports: withDynamic.size, loadedNotPredicted, loadedNotPredictedButInDynamic: loadedNotPredicted.filter((f) => withDynamic.has(f)).length,
+    predictedNotLoaded, importsResolved: imports.size, importsNotInGraph: edgeMissing, graphStaticEdgesAmongLoaded: staticEdgesInLoaded.length, graphEdgesNotSeenAtRunTime: edgeNotSeen,
+    fileSystemCallsByNodeLoadingTheFiles: fsSeen.filter(([, at, p]) => (at === '(none)' || at.startsWith('[eval')) && (loaded.has(p) || p.startsWith('<'))).length,
+    fileSystemCallsFromTheCheckoutsCode: [...new Set(fsSeen.filter(([, at]) => at !== '(none)' && !at.startsWith('[eval')).map((x) => x.join(' ')))].slice(0, 40),
+    fileSystemCallsOther: [...new Set(fsSeen.filter(([, at, p]) => (at === '(none)' || at.startsWith('[eval')) && !(loaded.has(p) || p.startsWith('<'))).map((x) => x.join(' ')))].slice(0, 40),
+    fileSystemReferencesTheGraphHasInTheLoadedFiles: predictedFs.length });
+  const last = results[results.length - 1];
+  console.log(`${mod}: exit ${last.exit}; loaded ${last.loaded}, predicted ${last.predicted}; loaded-not-predicted ${loadedNotPredicted.length}; predicted-not-loaded ${predictedNotLoaded.length}; imports resolved ${imports.size}, not in graph ${edgeMissing.length}; graph edges not seen ${edgeNotSeen.length}; fs calls by Node's loader ${last.fileSystemCallsByNodeLoadingTheFiles}, from the checkout's code ${last.fileSystemCallsFromTheCheckoutsCode.length}, other ${last.fileSystemCallsOther.length}`);
+}
+fs.rmSync(work, { recursive: true, force: true });
+fs.writeFileSync(outFile, `${JSON.stringify({ format: 'One row for each module whose main code file was loaded in Node under tools/trace.mjs. loaded = repository files Node loaded; predicted = the files the graph reaches from the main file by import and export-from. The four lists are the mismatches, each way, by file and by edge.', results }, null, 1)}\n`);
