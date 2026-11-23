@@ -181,6 +181,7 @@ const EXTERNAL_PART = {
 test("R3 (4): EXTERNAL_LINKS for an external-link part, or a formula or defined name that refers to another workbook, naming how many, before the engine loads", async () => {
   const { engine, calls } = spied(realEngine());
   const m = makeMember(engine);
+  /** @type {Array<[Uint8Array, {parts: number, formulas: number, defined_names: number}]>} the workbooks and the counts each names */
   const cases = [
     [small([{ r: "A1", v: 1 }], EXTERNAL_PART), { parts: 1, formulas: 0, defined_names: 0 }],
     [small([{ r: "A1", f: "[1]Other!A1", v: 1 }, { r: "A2", f: "SUM('[2]My Sheet'!B1:B3)", v: 2 }, { r: "A3", f: "A1", v: 1 }]),

@@ -6,16 +6,29 @@ import { fileURLToPath } from "node:url";
 import { makeEngine } from "../src/enginecore.mjs";
 import { makeMember } from "../src/member.mjs";
 
+/** @type {string} the member's folder, ending in a separator */
 export const MEMBER_DIR = fileURLToPath(new URL("..", import.meta.url));
+/** @type {string} the vendored engine's path (R13) */
 export const WASM_PATH = fileURLToPath(new URL("../assets/sheet-engine.wasm", import.meta.url));
+/** @type {Buffer} the vendored engine's bytes */
 export const WASM_FILE = readFileSync(WASM_PATH);
+/** @type {WebAssembly.Module} the vendored engine, compiled */
 export const MODULE = new WebAssembly.Module(WASM_FILE);
+/** A stored fixture's bytes, from `test/fixtures/`.
+ *  @param {string} name the file's name
+ *  @returns {Uint8Array}
+ *  @throws {Error} when no such file is stored */
 export const fixture = (name) => new Uint8Array(readFileSync(fileURLToPath(new URL(`fixtures/${name}`, import.meta.url))));
 
+/** @type {string} a well-formed capture sha
+ *  @bound 64 lower-case hex characters */
 export const SHA = "ab".repeat(32);
+/** A fresh engine over the vendored wasm, as the worker makes one (R13). */
 export const realEngine = () => makeEngine(MODULE);
 
-/** An engine wrapper that counts each call, so a test can say which steps ran. */
+/** An engine wrapper that counts each call, so a test can say which steps ran.
+ *  @param {Record<string, any>} engine an engine as `makeEngine` makes one
+ *  @returns {{engine: Record<string, any>, calls: {open: number, inspect: number, load: number, evaluate: number, close: number}}} */
 export function spied(engine) {
   const calls = { open: 0, inspect: 0, load: 0, evaluate: 0, close: 0 };
   const out = { ...engine };
@@ -23,7 +36,10 @@ export function spied(engine) {
   return { engine: out, calls };
 }
 
-/** An R2 stand-in that records every method called on it and holds `objects` ({key: bytes}). */
+/** An R2 stand-in that records every method called on it and holds `objects` ({key: bytes}). Any method but `get`
+ *  is recorded and then throws, so a write is both seen and refused (R10).
+ *  @param {Record<string, Uint8Array>} [objects] absent is an empty bucket
+ *  @returns {{binding: any, calls: Array<Array<unknown>>, store: Map<string, Uint8Array>}} */
 export function bucket(objects = {}) {
   const calls = [];
   const store = new Map(Object.entries(objects));
@@ -41,8 +57,13 @@ export function bucket(objects = {}) {
   return { binding: new Proxy({}, handler), calls, store };
 }
 
+/** @type {{SHEET_RECOMPUTE: string, VERSION: string}} the instance settings with recompute on (R2) */
 export const ON = { SHEET_RECOMPUTE: "on", VERSION: "test" };
 
+/** A POST to the member.
+ *  @param {unknown} body a string is sent as written, anything else as JSON
+ *  @param {string} [path] absent is "/recompute"
+ *  @returns {Request} */
 export function post(body, path = "/recompute") {
   return new Request(`https://sheet-worker${path}`, {
     method: "POST", headers: { "content-type": "application/json" },
@@ -50,12 +71,21 @@ export function post(body, path = "/recompute") {
   });
 }
 
+/** The member's answer to `req`, its body parsed.
+ *  @param {{fetch: (req: Request, env: unknown) => Promise<Response>}} member
+ *  @param {Request} req
+ *  @param {unknown} env the instance's settings and bindings
+ *  @returns {Promise<{status: number, body: any, type: string | null}>} */
 export async function call(member, req, env) {
   const res = await member.fetch(req, env);
   return { status: res.status, body: await res.json(), type: res.headers.get("content-type") };
 }
 
-/** Recompute `bytes` through the whole HTTP path with recompute switched on. */
+/** Recompute `bytes` through the whole HTTP path with recompute switched on.
+ *  @param {{fetch: (req: Request, env: unknown) => Promise<Response>}} member
+ *  @param {Uint8Array} bytes the workbook's bytes, stored as the capture `SHA` in "bio"
+ *  @param {Record<string, unknown>} [env] settings that replace `ON`'s
+ *  @returns {Promise<{status: number, body: any, type: string | null}>} */
 export async function recomputeVia(member, bytes, env = {}) {
   const r2 = bucket({ [`bio/captures/${SHA}`]: bytes });
   return call(member, post({ capture_sha: SHA, store: "bio" }), { ...ON, CAPTURES: r2.binding, ...env });
