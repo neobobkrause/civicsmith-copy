@@ -1426,6 +1426,7 @@ console.log("\n--- B1 · R11, R12, R13, R19: the bundle built from the source bo
      bundle manifest, which hashes both upload parts (bundler R4, R6). The manifest is built from this checkout by the
      recipe `scripts/build.mjs` uses, never read from a committed copy (R32). */
   const member = discoverMembers().find((m) => m.name === "ocr-worker");
+  if (!member) throw new Error("R19: the bundler found no ocr-worker member to build");
   const manifest = manifestFrom(member, await buildMember(member));
   t("R19 the manifest built from the tree pins both upload parts by their own bytes' digests (a swapped engine is a different pin)",
     (manifest.assets || []).map((a) => [a.path, a.sha256]), [["assets/tesseract-core.wasm", hex(readFileSync(WASM))], ["assets/eng.traineddata", hex(readFileSync(MODEL))]]);
