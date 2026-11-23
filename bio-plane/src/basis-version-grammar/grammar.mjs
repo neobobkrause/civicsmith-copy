@@ -20,6 +20,87 @@ import { BASIS_VERSION_GRAMMAR_CHECKS, VERSION_KIND_CHECKS, VERSION_STATES, VERS
          VERSION_RELATIONSHIPS, VERSION_NAME_RE, SUGGEST_KINDS, SUFFICIENCY_UNCLAIMED, isSufficiencyUnclaimed } from "./checks.mjs";
 import { word, localize } from '../setup-words/index.mjs';
 
+/** @import { CheckRow } from './checks.mjs' */
+/**
+ * A finding: the catalogue's shape.
+ * @typedef {Object} Finding
+ * @property {string} check the C-number
+ * @property {string} severity
+ * @property {string} message the member's sentence
+ * @property {boolean} [repairable] present, true, when repairs are named
+ * @property {string[]} [repairs]
+ * @property {string} [code] the refusal's code
+ */
+/**
+ * A leg of a version as `versionsIn` answers it.
+ * @typedef {Object} VersionLeg
+ * @property {number} src_ord the row's index in `basis_version_legs[]`, outside the composition
+ * @property {string | null} referent the part the leg rests on, or null for the whole document
+ * @property {string} target_id
+ * @property {string} target_type
+ * @property {(string | null)[] | null} derivation a derived connection's five fields, or null
+ * @property {string} role
+ * @property {unknown} grade
+ * @property {unknown} grade_axis
+ * @property {unknown} grade_source
+ * @property {string | null} note
+ * @property {string | null} at
+ * @property {string} ground
+ * @property {string | null} capture
+ * @property {string | null} edition
+ */
+/**
+ * A ground of a version as `versionsIn` answers it.
+ * @typedef {Object} VersionGround
+ * @property {string | null} ground the label; a row with none is left out, so never null in fact
+ * @property {string | null} asserted_by
+ * @property {string | null} at
+ * @property {string | null} statement
+ */
+/**
+ * A version as `versionsIn` answers it, with its composition.
+ * @typedef {Object} Version
+ * @property {string} name
+ * @property {number} ord its index in `basis_versions[]`
+ * @property {string} description
+ * @property {string} relationship
+ * @property {string} state
+ * @property {string | null} derived_from
+ * @property {number} hidden 1 when hidden, else 0
+ * @property {string | null} kind
+ * @property {string | null} claim
+ * @property {string | null} run
+ * @property {string | null} author
+ * @property {string | null} at
+ * @property {string | null} state_by
+ * @property {string | null} state_at
+ * @property {string | null} state_reason
+ * @property {string | null} affirmed_parts
+ * @property {string | null} regroup_by
+ * @property {string | null} regroup_at
+ * @property {string | null} regroup_note
+ * @property {string} composition every field that defines the version, one per line, escaped
+ * @property {VersionLeg[]} legs in document order
+ * @property {VersionGround[]} grounds sorted by label
+ * @bound composition: grounds sorted by label, legs in document order; kind, referent, capture, edition and derivation lines only when present
+ */
+/**
+ * What `versionAsWritten` makes of a submission.
+ * @typedef {Object} WrittenVersion
+ * @property {{name: string, kind: string, description: string, claim: string | null, relationship: string,
+ *   derived_from: string | null, run: string, author: string | null, at: string, level: string | null,
+ *   observed_at: string | null}} version
+ * @property {{ground: string, asserted_by: string, at: string, statement: string | null}[]} grounds
+ * @property {Object[]} legs each frontmatter-safe; `extent_kind: document`, or `target_edition` on an imported leg
+ * @bound every string value is frontmatter-safe (fmSafe)
+ */
+/**
+ * The grammar as record-core's grammar seam takes it.
+ * @typedef {Object} VersionGrammar
+ * @property {readonly string[]} ids `["C-2.8"]`
+ * @property {(ctx: any, findings: Finding[]) => void} arm reads `ctx.fm`
+ */
+
 /* R13: the one way this module names a version leg in a sentence: its place, read by key (`leg_of_version`). */
 const legPlace = (n, name) => localize('basis-version-grammar.grammar.leg_of_version', "Leg {n} of version '{name}'", { n: String(n), name: String(name) });
 
@@ -28,7 +109,9 @@ export { BASIS_VERSION_GRAMMAR_CHECKS, VERSION_KIND_CHECKS, VERSION_STATES, VERS
          SUFFICIENCY_CLAIM_STATES, sufficiencyClaimState, isSufficiencyUnclaimed } from "./checks.mjs";
 
 /** R5: frontmatter-safe text: the restricted grammar has no escapes, so a derived string loses its line breaks, and a
- *  quote or backslash becomes an apostrophe. An authored field is refused by name before it gets here. Idempotent. */
+ *  quote or backslash becomes an apostrophe. An authored field is refused by name before it gets here. Idempotent.
+ *  @param {unknown} s any value; null and undefined are the empty text
+ *  @returns {string} */
 export function fmSafe(s) {
   return String(s ?? "").replace(/[\r\n]+/g, " ").replace(/["\\]/g, "'").trim();
 }
@@ -42,13 +125,17 @@ function f(check, severity, message, repairs, code) {
   return out;
 }
 
-/** R3 (N522): whether a leg's target is an imported finding reference (`inquiry-grammar` R11), never a local id. */
+/** R3 (N522): whether a leg's target is an imported finding reference (`inquiry-grammar` R11), never a local id.
+ *  @param {unknown} t a leg's target
+ *  @returns {boolean} */
 export function isImportedRef(t) {
   return typeof t === "string" && IMPORTED_FINDING_RE.test(t.trim());
 }
 
 /** R3 (K3873): whether a leg's target is a calculation's id, a duty occurrence ref or a derived connection's id: named by
- *  the leg, not a bundle of this record. */
+ *  the leg, not a bundle of this record.
+ *  @param {unknown} t a leg's target
+ *  @returns {boolean} */
 export function isDerivedKindRef(t) {
   return typeof t === "string" && (CALCULATION_REF_RE.test(t) || parseOccurrenceRef(t) !== null || DERIVED_CONNECTION_ID_RE.test(t));
 }
@@ -114,6 +201,10 @@ export function isDerivedKindRef(t) {
  *  and the store supplies it: promote resolves every version leg against
  *  `bundles` and refuses one that points at nothing, which is the resolve-or-refuse
  *  posture `action_basis` and `supersedes` already take.
+ *
+ *  @param {Record<string, any> | null | undefined} fm a document's frontmatter; anything not an object adds nothing
+ *  @param {Finding[]} findings the array the findings are pushed onto
+ *  @returns {void}
  */
 export function basisVersionFindings(fm, findings) {
   const rows = fm?.basis_versions;
@@ -479,7 +570,9 @@ function legTargetType(target) {
  *  ordinal that makes it addressable, so reordering legs IS a change to the composition. What happened TO a version
  *  (state, hidden, who moved it, its affirmation and regroup, author, at, run) is outside the composition, so the
  *  freeze does not shut the state machine. `kind` and a leg's referent are emitted only when present, so every
- *  composition frozen before they existed stays byte-identical. */
+ *  composition frozen before they existed stays byte-identical.
+ *  @param {Record<string, any> | null | undefined} fm a document's frontmatter
+ *  @returns {Version[]} in document order; a row that is not an object, or has no name, is skipped */
 export function versionsIn(fm) {
   const rows = Array.isArray(fm?.basis_versions) ? fm.basis_versions : [];
   const legRows = Array.isArray(fm?.basis_version_legs) ? fm.basis_version_legs : [];
@@ -577,7 +670,10 @@ export function versionsIn(fm) {
 
 /** R6: whether a held composition and an offered one are the same version. A composition stored before the
  *  `leg_capture` line existed (K182) is compared with the offered one's `leg_capture` lines left out: that stored form
- *  never froze the pin, so its first re-projection adds the line instead of freezing the version shut. */
+ *  never froze the pin, so its first re-projection adds the line instead of freezing the version shut.
+ *  @param {unknown} held the stored composition
+ *  @param {unknown} offered the composition offered now
+ *  @returns {boolean} */
 export function sameComposition(held, offered) {
   if (held === offered) return true;
   const h = String(held ?? "");
@@ -591,7 +687,12 @@ export function sameComposition(held, offered) {
  *  and a blank one are different documents); a ground with no label is dropped; a ground is asserted by the author, or
  *  by the explicit no-claim value when the author is a machine (PL-19 / DEC-65: a machine's stamp never stands where a
  *  member's has to); a leg cites the whole document (`extent_kind: document`) and carries its pinned capture when it
- *  names one (D-595). It normalises no further than the document does. */
+ *  names one (D-595). It normalises no further than the document does.
+ *  @param {{kind?: unknown, name?: unknown, description?: unknown, claim?: unknown, relationship?: unknown,
+ *    derived_from?: unknown, run?: unknown, author?: unknown, at?: unknown, level?: unknown, observed_at?: unknown,
+ *    grounds?: Object[], legs?: Object[]}} [submission] absent is an empty submission
+ *  @returns {WrittenVersion}
+ *  @throws {TypeError} when `submission` is null, or `grounds` or `legs` is given and is not an array */
 export function versionAsWritten({ kind, name, description, claim, relationship, derived_from, run, author, at, level,
                                    observed_at, grounds, legs } = {}) {
   const fs = (x) => fmSafe(x);
@@ -619,7 +720,10 @@ export function versionAsWritten({ kind, name, description, claim, relationship,
 }
 
 /** R6: which FIELD moved, for the freeze's refusal — a member told "this changed" without being told what is left to
- *  re-derive the diff the module has already computed. */
+ *  re-derive the diff the module has already computed.
+ *  @param {unknown} before
+ *  @param {unknown} after
+ *  @returns {string} the added or removed sentence by key, `<field> changed`, or `nothing changed` */
 export function compositionDiff(before, after) {
   const a = String(before).split("\n"), b = String(after).split("\n");
   const n = Math.max(a.length, b.length);
@@ -638,7 +742,8 @@ export function compositionDiff(before, after) {
  *  record-core runs it at the sub-slot `inquiry-grammar` R6 offers (`rest()`): for an inquiry, after its entry, division
  *  and subject-entity findings and before its grounds and leg findings, where the catalogue's `checkInquiryBasis` called
  *  `basisVersionFindings`. For any other type it adds nothing, so a claimant left to run after an arm that returned
- *  early (record-core R67) changes no finding. */
+ *  early (record-core R67) changes no finding.
+ *  @type {VersionGrammar} */
 export const BASIS_VERSION_GRAMMAR = Object.freeze({
   ids: Object.freeze(["C-2.8"]),
   arm(ctx, findings) {
@@ -653,7 +758,11 @@ const grammarRegistered = new WeakSet();
  *  the split, so record-core's `module`, `heldBy` and `grammars()` answers stay what they were), once per record, `inquiry-grammar`'s first
  *  (its R6 registration is idempotent), so module order is registration order (K775 (2)) whoever reaches this first. A
  *  record with no seam (a test's stand-in) is left alone; a refusal is a wiring defect and throws, as
- *  `inquiry-grammar`'s does. Answers record-core's answer, or `null` when nothing was registered. */
+ *  `inquiry-grammar`'s does. Answers record-core's answer, or `null` when nothing was registered.
+ *  @param {any} record a record with record-core's `registerGrammar`; anything else registers nothing
+ *  @param {string} [module] the registrant, `basis-versions` when absent
+ *  @returns {Object | null} record-core's answer, or null
+ *  @throws {Error} when record-core refuses the registration, naming the module, the reason and any holder */
 export function registerBasisVersionGrammar(record, module = "basis-versions") {
   if (!record || typeof record.registerGrammar !== "function" || grammarRegistered.has(record)) return null;
   registerInquiryGrammar(record);

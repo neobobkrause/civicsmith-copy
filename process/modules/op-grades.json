@@ -12,6 +12,7 @@
   ],
   "uses": [
     "setup-words",
+    "test-support",
     "op-grade-tranches"
   ]
 }

@@ -17,7 +17,48 @@ import { SENTENCE_KINDS, RULE_LABELS, LEVELS, ABSENCE_TERMS, sentenceShape, cite
 
 export { SENTENCE_KINDS, RULE_LABELS, LEVELS, ABSENCE_TERMS, figuresIn };
 
-/** R3: the answer's fields, in order. */
+/** @import { AnswersRefusal, RefusalFields } from './checks.mjs' */
+/** @import { AnswerSentence, AnswerHolding, AnswerRuleItem, AnswerLook, AnswerWithheld } from './sentences.mjs' */
+
+/**
+ * An answer (R3): every field present, in `ANSWER_FIELDS`' order, and no other. An answer asking a clarifying question
+ * has no summary and no sentences.
+ * @typedef {Object} Answer
+ * @property {string} question_as_read the question as the model read it
+ * @property {string|null} clarifying null, or exactly one question
+ * @property {AnswerSummary|null} summary
+ * @property {AnswerSentence[]} sentences
+ * @property {AnswerHolding[]} holdings
+ * @property {AnswerRuleItem[]} rules
+ * @property {AnswerLook[]} looks
+ * @property {Object<string, any>|null} bound the bounds applied
+ * @property {boolean} truncated
+ * @property {boolean} out_of_view
+ * @property {string|Object<string, any>|null} lens
+ * @property {any[]} not_established
+ * @property {string|null} query the query run, shown
+ * @property {string[]} next_acts acts by their catalogue ids
+ * @property {string} label `ANSWER_LABEL`
+ * @bound clarifying: at most one question mark
+ * @bound next_acts: each a non-empty text
+ */
+/**
+ * An answer's summary: one line, naming the sentences it rests on as `s<i>`.
+ * @typedef {Object} AnswerSummary
+ * @property {string} text
+ * @property {string[]} rests_on
+ * @bound text: one line, not empty
+ * @bound rests_on: one or more, each s<i>, i from 1 to the number of sentences
+ */
+/**
+ * R4's answer: `ok` true with the answer as shown, each withheld sentence, holding, rule item and look in its place as
+ * null (and the summary null when it is withheld), and what was withheld and why; or `ok` false with
+ * `ANSWER_MALFORMED`'s fields, naming the field, and nothing shown.
+ * @typedef {{ok: boolean, answer?: any, withheld?: AnswerWithheld[]} & RefusalFields} CheckedAnswer
+ */
+
+/** R3: the answer's fields, in order.
+ *  @type {readonly string[]} */
 export const ANSWER_FIELDS = Object.freeze(["question_as_read", "clarifying", "summary", "sentences", "holdings", "rules",
   "looks", "bound", "truncated", "out_of_view", "lens", "not_established", "query", "next_acts", "label"]);
 /** R3: the label every answer carries. */
@@ -35,7 +76,9 @@ function onlyKeys(o, keys, field) {
   return null;
 }
 
-/** R3, R6: null for an answer of the contract's shape, else `ANSWER_MALFORMED` naming the field. */
+/** R3, R6: null for an answer of the contract's shape, else `ANSWER_MALFORMED` naming the field.
+ *  @param {any} a the answer
+ *  @returns {AnswersRefusal|null} */
 export function shapeRefusal(a) {
   if (!plain(a)) return malformed("answer", "an answer is an object");
   for (const k of Object.keys(a)) if (!ANSWER_FIELDS.includes(k)) return malformed(k, `the answer carries a field the contract has no place for: ${k}`);
@@ -72,7 +115,10 @@ export function shapeRefusal(a) {
 }
 
 /** R4: `checkAnswer(answer, {readLog, viewer})` → `{ok: true, answer, withheld}`, or `ANSWER_MALFORMED` with nothing
- *  shown. A log asked under another viewer is read as empty (fail closed). Never throws. */
+ *  shown. A log asked under another viewer is read as empty (fail closed). Never throws.
+ *  @param {any} answer
+ *  @param {{readLog?: any, viewer?: string|null}} [opts] the grant's read log, and the viewer it was read for
+ *  @returns {CheckedAnswer} */
 export function checkAnswer(answer, { readLog = null, viewer = null } = {}) {
   try {
     const bad = shapeRefusal(answer);

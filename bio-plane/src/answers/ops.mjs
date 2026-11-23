@@ -7,6 +7,43 @@ import { localize } from "../setup-words/index.mjs";
 const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const q = (url, k) => (url && url.searchParams ? url.searchParams.get(k) : null);
 
+/** @import { Answers } from './index.mjs' */
+
+/**
+ * The arms, each answering what its service answers: `rule` (R7, R35), `answercheck` (R4), `asktallies` (R13),
+ * `ruleservicesstate` and `ruleservicesswitch` (R7; J1 (2)), `standingset` (R15, R28), `standing` (R16: one question
+ * with `id`, else the viewer's own), `standingend` (R16), `standingendset` (R34), `standinganswers` (R20) and
+ * `standingaiswitch` (R19).
+ * @typedef {Object} AnswersOps
+ * @property {() => Promise<any>} rule
+ * @property {() => any} answercheck
+ * @property {() => any} asktallies
+ * @property {() => {ok: boolean, on: boolean}} ruleservicesstate
+ * @property {() => any} ruleservicesswitch
+ * @property {() => any} standingset
+ * @property {() => any} standing
+ * @property {() => any} standingend
+ * @property {() => any} standingendset
+ * @property {() => any} standinganswers
+ * @property {() => any} standingaiswitch
+ */
+/**
+ * One op this module declares (R36): its classes, weight and description, copied from the op's rows, and its fields as
+ * the arm reads them. A `requires` entry that is a list is met by any one of its fields.
+ * @typedef {Object} AnswersDeclaredOp
+ * @property {string[]} classes
+ * @property {string[]} [machineClasses]
+ * @property {boolean} mutating
+ * @property {string} weight
+ * @property {any} description
+ * @property {{accepts: string[], requires: Array<string|string[]>}} fields
+ */
+
+/** The ops map: the stamps (`viewer`, `grant`, `owner`, `use`) from `url`'s query, an act's arguments from the body.
+ *  @param {Answers} a the instance `answersOf` answers
+ *  @param {URL|null} url the request's address
+ *  @param {any} body the parsed body; anything but an object is read as none
+ *  @returns {AnswersOps} */
 export function answersOps(a, url, body) {
   const b = plain(body) ? body : {};
   const viewer = q(url, "viewer");
@@ -40,7 +77,8 @@ export function answersOps(a, url, body) {
 }
 
 /* R36 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
-   the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
+   the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads.
+   Each row is an `AnswersDeclaredOp`. */
 export const DECLARED_OPS = Object.freeze({
   ruleanswer: { classes: ["admin","member","probe"], mutating: false, weight: "read", description: localize("answers.declared.ruleanswer", "read: one rule service's value with its basis, grade and label, or not held; writes nothing"),
     fields: { accepts: ["service","args","at"], requires: ["service"] } },

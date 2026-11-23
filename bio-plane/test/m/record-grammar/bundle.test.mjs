@@ -145,6 +145,28 @@ test("R39 checkBundle: the injected sha256, nowMs and package age are what it re
   assert.ok((await run({ ...young, maxPackageAgeDays: 1 })).findings.some((f) => f.check === "C-16.3"));
 });
 
+test("R39 checkBundle: sha256 may be absent and is asked for only when a byte must be hashed; absent then, it rejects with a TypeError naming input.sha256; the registries reach the arms unchanged", async () => {
+  const without = (b) => { const { sha256: _, ...rest } = b; return rest; };
+  const clean = fixtures()["clean information"];
+  /* The call inquiry's checkInquiryEntry makes: folderName, files, and the two registries, with no sha256. */
+  const published = { "INFO-2026-0001-a": { latest: 1, editions: {} } }, earned = { earned: { connection: {}, capture: {} } };
+  let seen = null;
+  const peek = { module: "peek", ids: ["C-900.1"], arm(ctx) { seen = [ctx.publishedRegistry, ctx.earnedRegistry]; } };
+  const bare = await checkBundle({ ...without(clean), publishedRegistry: published, earnedRegistry: earned }, { grammars: [...STUBS, peek] });
+  assert.deepEqual(bare, await run(clean));
+  assert.equal(seen[0], published);
+  assert.equal(seen[1], earned);
+  await checkBundle({ ...without(clean), publishedRegistry: null, earnedRegistry: null }, { grammars: [...STUBS, peek] });
+  assert.deepEqual(seen, [null, null]);
+  /* A pending package hashes its files and its base: with no sha256 that is a TypeError, never a wrong finding. */
+  for (const name of ["C-17.1 fast-forward", "C-17.1 divergence"])
+    await assert.rejects(run(without(fixtures()[name])), (e) => e instanceof TypeError && /input\.sha256/.test(e.message), name);
+  /* So is a registered grammar that hashes; given a sha256 it runs. */
+  const hashes = { module: "hashes", ids: ["C-900.2"], async arm(ctx) { await ctx.sha256("x"); } };
+  await assert.rejects(checkBundle(without(clean), { grammars: [...STUBS, hashes] }), (e) => e instanceof TypeError && /input\.sha256/.test(e.message));
+  assert.equal((await checkBundle(clean, { grammars: [...STUBS, hashes] })).pass, (await run(clean)).pass);
+});
+
 test("R39 R62 the default knownSchemas are the sixteen stamps, success_record@1 among them; a passed list replaces them; elidedPaths as a Set or a list", async () => {
   const STAMPS = ["information@1", "information@2", "inquiry@1", "focus@1", "problem@1", "project@1", "action@1", "bias@1",
     "standard@1", "determination@1", "consequence@1", "escalation@1", "aspiration@1", "goal@1", "action_plan@1", "success_record@1"];

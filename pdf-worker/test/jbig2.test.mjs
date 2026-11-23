@@ -29,11 +29,11 @@ import { JBIG2_REFUSES } from "../src/jbig2decode.mjs";
 import { cropImage } from "../src/imagecrop.mjs";
 import { onePage, readPng, turn, hex, runner } from "./make-pdf.mjs";
 
-const { Miniflare } = await (async () => {
-  try { return await import("miniflare"); } catch { /* fall through */ }
-  const planePkg = fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url));
-  return await import(pathToFileURL(createRequire(planePkg).resolve("miniflare")).href);
-})();
+// miniflare and esbuild come only from test-support's manifest (bio-plane/package.json),
+// never from whichever node_modules folder lies nearest this file.
+const fromTestSupport = createRequire(fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url)));
+const viaTestSupport = (name) => import(pathToFileURL(fromTestSupport.resolve(name)).href);
+const { Miniflare } = await viaTestSupport("miniflare");
 
 const F = (p) => new Uint8Array(readFileSync(fileURLToPath(new URL(p, import.meta.url))));
 const { t, finish } = runner("jbig2");
@@ -200,11 +200,7 @@ console.log("\n--- R40: pure per call, and the same pixels in workerd ---");
   t("R40 the scanned page: the same answer twice", key(a) === key(b), true);
   let bundled = null, why = null;
   try {
-    const esbuild = await (async () => {
-      try { return await import("esbuild"); } catch { /* fall through */ }
-      const planePkg = fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url));
-      return await import(pathToFileURL(createRequire(planePkg).resolve("esbuild")).href);
-    })();
+    const esbuild = await viaTestSupport("esbuild");
     const out = await esbuild.build({
       stdin: {
         contents: `import { renderPageToPixels } from ${JSON.stringify(fileURLToPath(new URL("../src/pagepixels.mjs", import.meta.url)))};

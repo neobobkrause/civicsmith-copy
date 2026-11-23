@@ -7,8 +7,43 @@
 import { word, localize } from "../setup-words/index.mjs";
 
 const at = (fn, region) => `src/answers/${fn} > ${region}`;
+/** @type {(n: number, fn: string, region: string, translation: any) => Readonly<AnswersCheckRow>} builds a row */
 const row = (n, fn, region, translation) => Object.freeze({ check: `C-135.${n}`, where: at(fn, region), translation });
 
+/**
+ * One row of this module's catalogue family C-135 (R24): its number, where it fires, and the member's words.
+ * @typedef {Object} AnswersCheckRow
+ * @property {string} check its C-135 number
+ * @property {string} where the file, function and region that answers it
+ * @property {any} translation the row's words (setup-words)
+ */
+/**
+ * A refusal this module answers (DEC-49): the row's code twice, its number and words, and what was wrong. Nothing was
+ * written. A refusal may carry more fields beside these, each named where it is answered.
+ * @typedef {Object} AnswersRefusal
+ * @property {boolean} ok false
+ * @property {string} reason the code
+ * @property {string} code an `ANSWERS_CHECKS` key
+ * @property {string|null} check its C-135 number; null for a code this module holds no row of
+ * @property {any} translation the row's words; null for a code this module holds no row of
+ * @property {any} detail what was wrong, in plain words
+ * @property {string} [field] `ANSWER_MALFORMED`'s: the field that is not of the contract's shape
+ * @property {string|null} [id] the standing question a refusal names
+ * @property {string|null} [service] the rule service a refusal names
+ */
+/**
+ * A refusal's fields, each present only when the answer is a refusal (`ok` false): the code twice, the row's number and
+ * words, and what was wrong.
+ * @typedef {Object} RefusalFields
+ * @property {any} [reason]
+ * @property {any} [code]
+ * @property {any} [check]
+ * @property {any} [translation]
+ * @property {any} [detail]
+ * @property {string} [field] `ANSWER_MALFORMED`'s
+ */
+
+/* R24: the module's rows, keyed by code; a change to any moves `CATALOG_VERSION` (rule 17). */
 export const ANSWERS_CHECKS = Object.freeze({
   ANSWER_MALFORMED: row(1, "check.mjs checkAnswer", "is-answer-shape",
     localize("answers.checks.the_assistants_answer_was_not", "The assistant's answer was not in the form every answer must take, so none of it is shown. Ask again; nothing was changed.")),
@@ -44,7 +79,11 @@ export const ANSWERS_CHECKS = Object.freeze({
     word("refusal.STANDING_ENDED")),
 });
 
-/** The row's fields beside a refusal: `{ok: false, reason, code, check, translation, detail, ...extra}`. */
+/** The row's fields beside a refusal: `{ok: false, reason, code, check, translation, detail, ...extra}`.
+ *  @param {string} code an `ANSWERS_CHECKS` key; another code is answered with `check` and `translation` null
+ *  @param {any} detail what was wrong, in plain words
+ *  @param {Object<string, any>} [extra] fields the refusal also carries
+ *  @returns {AnswersRefusal} */
 export function refusal(code, detail, extra = {}) {
   const r = ANSWERS_CHECKS[code];
   return { ok: false, reason: code, code, check: r ? r.check : null, translation: r ? r.translation : null, detail,

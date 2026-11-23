@@ -71,8 +71,7 @@ the build actually serving rather than the build that was meant to (D-108).
 
 - `unpdf` (pdf.js) 1.8.0 is pinned; `Math.sumPrecise` is polyfilled only where the runtime lacks it
   (guards node, not workerd, where the native one runs — CPDF-5).
-- `scripts/build.mjs` inlines `unpdf` and commits `dist/pdf-worker.bundled.mjs` plus its manifest; the
-  guard that the two match source (FL-9) lives in `bio-plane/test/system/fleetbundles.test.mjs`, outside this
-  module's own `test/`.
+- `scripts/build.mjs` inlines `unpdf` and builds `dist/pdf-worker.bundled.mjs` plus its manifest, which are
+  never committed (R45); whatever needs the bundle builds it first.
 
 ---

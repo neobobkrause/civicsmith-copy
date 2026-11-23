@@ -225,8 +225,6 @@ export const CONTRADICTION_ABSENCE = Object.freeze({
 
 /* ================================================================ The interface's kinds (structured comments) */
 
-/** @import { ContradictionCheckRow } from './checks.mjs' */
-
 /**
  * A refusal this module answers: its row's code (twice), number and canned words, and what was wrong (R20). Nothing
  * was written. A refusal another module answers (membership's, promotion's, a run gate's) is relayed in its own shape.

@@ -14,9 +14,19 @@ import { answersOf } from "../../../src/answers/index.mjs";
 import { aiUseOf } from "../../../src/ai-use/index.mjs";
 
 export { V, NOW, PROFILE, saved, R };
+/** @import { Answer } from '../../../src/answers/check.mjs' */
+
+/** The seal secret credentials is built with in this world. */
 export const SEAL = "answers-test-seal-secret-0123456789abcdef";
 
-/** bob and carol members, alice an administrator; answers built with every owner; the rule services on unless `off`. */
+/** bob and carol members, alice an administrator; answers built with every owner; the rule services on unless `rules`
+ *  is false. The world is calculations' test world (`seeded`), with `lines`, `credentials`, `accounts`, `aiUse`,
+ *  `limit` (the limit checks asked), `useCheck`, `reach(owner, use)` and `unreach(owner, use)`, `deps`, `a` (answers)
+ *  and `at(iso)` (sets the clock) added.
+ *  @param {{rules?: boolean, deps?: Object<string, any>, [key: string]: any}} [opts] `deps` added to answers' own;
+ *    the rest are `seeded`'s
+ *  @returns {any}
+ *  @throws {Error} when the world cannot be built as the composition root builds it */
 export function answersWorld({ rules = true, deps: more = {}, ...opts } = {}) {
   const w = seeded(opts);
   w.lines = linesOf(w.host, { record: w.record });
@@ -51,7 +61,9 @@ export function answersWorld({ rules = true, deps: more = {}, ...opts } = {}) {
   return w;
 }
 
-/** A well-formed answer, its fields overridden. */
+/** A well-formed answer, its fields overridden.
+ *  @param {Object<string, any>} [over]
+ *  @returns {Answer} */
 export function answer(over = {}) {
   return { question_as_read: "what did the record say?", clarifying: null, summary: null, sentences: [], holdings: [],
            rules: [], looks: [], bound: null, truncated: false, out_of_view: false, lens: null, not_established: [],
