@@ -180,24 +180,24 @@ test("R15 (DEC-149): at start the module registers casechecker and casefilespec 
   assert.equal(CC.registerCaseCheckerPublicReads(host, { publicRead: pr }), answer);   /* once per host */
   assert.deepEqual(pr.publicReads(), [{ name: "casechecker", module: "case-checker", params: [] },
                                       { name: "casefilespec", module: "case-checker", params: ["version"] }]);
-  const program = pr.publicRead("casechecker", { token: "secret", viewer: "x" });
+  const program = await pr.publicRead("casechecker", { token: "secret", viewer: "x" });
   assert.equal(program.ok, true);
   assert.equal(program.result.program, CC.caseCheckerProgramText().text);
   assert.equal(program.result.sha256, CC.caseCheckerProgramText().sha256);
   for (const v of [V1, V2, V3, V4]) {
-    const spec = pr.publicRead("casefilespec", { version: v });
+    const spec = await pr.publicRead("casefilespec", { version: v });
     assert.deepEqual([spec.ok, spec.result.held, spec.result.version, spec.result.text, spec.result.versions], [true, true, v, CC.CASE_FILE_SPECS[v], [V1, V2, V3, V4]]);
   }
   /* an unknown or absent version is answered with the versions held */
   for (const q of [{ version: "bio-case-file/9" }, {}]) {
-    const r = pr.publicRead("casefilespec", q);
+    const r = await pr.publicRead("casefilespec", q);
     assert.equal(r.ok, true);
     assert.equal(r.result.held, false);
     assert.deepEqual(r.result.versions, [V1, V2, V3, V4]);
     assert.equal("text" in r.result, false);
   }
   /* DEC-149 (T34-87; K1821): the reader has no credential, so the detail speaks of this group's Civicsmith, never "this copy" */
-  const unknown = pr.publicRead("casefilespec", { version: "bio-case-file/9" }).result.detail;
+  const unknown = (await pr.publicRead("casefilespec", { version: "bio-case-file/9" })).result.detail;
   const held = CC.CASE_FILE_SPEC_VERSIONS;
   assert.equal(unknown, W("case-checker.index.holds_several", { reason: W("case-checker.index.no_specification"), head: held.slice(0, -1).join(", "), last: held.at(-1) }));
   assert.equal(CC.caseFileSpec(null).detail, W("case-checker.index.holds_several", { reason: W("case-checker.index.no_version_named"), head: held.slice(0, -1).join(", "), last: held.at(-1) }));

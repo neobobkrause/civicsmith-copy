@@ -172,12 +172,12 @@ const called = new WeakSet();
  *  `upTo`, as for `declaredOpsOf`; every later argument is a registration. A registration already called is skipped;
  *  a registration's own refusal propagates and names what it refused. Test tooling: only tests call it.
  *  @param {string} root the repository's top folder
- *  @param {...(string|function(Array<[string, Object]>): (void|Promise<void>))} rest an optional `upTo`, then the registrations
+ *  @param {...(string|function(Array<[string, any]>): *)} rest an optional `upTo`, then the registrations
  *  @returns {Promise<void>}
  *  @throws {Error} a registration's own refusal, or `upTo` not on the order file */
 export async function registerDeclared(root, ...rest) {
   const upTo = typeof rest[0] === "string" ? rest.shift() : undefined;
-  /** @type {Array<function(Array<[string, Object]>): (void|Promise<void>)>} the registrations not yet called */
+  /** @type {Array<function(Array<[string, any]>): *>} the registrations not yet called */
   const todo = /** @type {any[]} */ ([...new Set(rest)]).filter((registration) => !called.has(registration));
   if (todo.length === 0) return;
   const pairs = await pairsOf(root, upTo);

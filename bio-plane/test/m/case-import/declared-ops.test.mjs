@@ -2,7 +2,6 @@
    the door runs it (test-support R15): only its requires raise no refusal naming a declared field, a call without each
    required one is refused naming it, and a field outside accepts is dropped or refused naming it. */
 import { test } from "node:test";
-import { spawnSync } from "node:child_process";
 import assert from "node:assert/strict";
 import { declaredOpHolds } from "../../declared-ops.mjs";
 import { DECLARED_OPS, CASE_IMPORT_OPS } from "../../../src/case-import/index.mjs";
@@ -114,31 +113,4 @@ test("R33 rerunpair declares its fields: its requires alone raise no refusal nam
 test("R33 rerunread declares its fields: its requires alone raise no refusal naming a declared field, a call without the project is refused naming it, and a field outside accepts is dropped", async () => {
   const { w, as } = await world();
   await hold("rerunread", (f) => door(w, "rerunread", { viewer: as.viewer, ...f }), { project: PROJECT });
-});
-
-test("R33 the declaration is accepted by op-declarations (R80, R81) and op-grades (R49, R50): the five ops with hand rows agree with them, the four new ones register", () => {
-  /* a fresh process, since each registration is once and before the first read of any export */
-  const src = `
-    import { DECLARED_OPS } from ${JSON.stringify(new URL("../../../src/case-import/index.mjs", import.meta.url).href)};
-    const od = await import(${JSON.stringify(new URL("../../../src/op-declarations/index.mjs", import.meta.url).href)});
-    const og = await import(${JSON.stringify(new URL("../../../src/op-grades/index.mjs", import.meta.url).href)});
-    od.registerDeclaredOps({ "case-import": DECLARED_OPS });
-    const r = og.registerDeclaredOps({ "case-import": DECLARED_OPS });
-    console.log(JSON.stringify({ registered: r.registered, agreed: r.agreed, fields: od.declaredFields("rerunpair"), needs: od.NEEDS.rerunstart,
-      stamps: od.OP_STAMPS.rerunpair, mutating: od.OPS.rerunread.mutating, held: od.OPS.caseimport.mutating }));`;
-  const run = spawnSync(process.execPath, ["--input-type=module", "-e", src], { encoding: "utf8" });
-  assert.equal(run.status, 0, run.stderr.slice(0, 400));
-  const out = JSON.parse(run.stdout.trim().split("\n").at(-1));
-  assert.deepEqual(out.registered.sort(), ["importregrade", "rerunpair", "rerunread", "rerunstart"]);
-  assert.deepEqual(out.agreed.sort(), ["caseimport", "importaccept", "importacceptwithdraw", "importflag", "importwatch"]);
-  assert.deepEqual([out.needs, out.stamps, out.mutating, out.held], ["contribute", ["viewer", "by"], false, true]);
-  assert.deepEqual(out.fields.requires, ["project", "source_finding", "own_finding"]);
-  /* control: a row that disagrees with a hand row is refused, naming the op */
-  const bad = `
-    import { DECLARED_OPS } from ${JSON.stringify(new URL("../../../src/case-import/index.mjs", import.meta.url).href)};
-    const og = await import(${JSON.stringify(new URL("../../../src/op-grades/index.mjs", import.meta.url).href)});
-    try { const { refusal, ...row } = DECLARED_OPS.importaccept; og.registerDeclaredOps({ "case-import": { importaccept: { ...row, weight: "terminal" } } }); console.log("accepted"); }
-    catch (e) { console.log(e.message); }`;
-  const refused = spawnSync(process.execPath, ["--input-type=module", "-e", bad], { encoding: "utf8" });
-  assert.match(refused.stdout, /DECLARED_OP_DISAGREES: importaccept/);
 });

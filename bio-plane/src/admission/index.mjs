@@ -65,8 +65,92 @@ import { Credentials } from "../credentials/index.mjs";
 import { notAnAdmin, projectViewer } from "../membership/index.mjs";
 import { ADMISSION_CHECKS, NAMESPACE_CHECKS, AI_SCOPE_CHECKS, OPERATOR_FENCE_CHECKS, GROUP_IDENTITY_FENCE_CHECKS } from "./checks.mjs";
 
+/** @import { CheckRow } from './checks.mjs' */
+/**
+ * @typedef {Object} Refusal a gate's refusal, answered by the door at `status` as given (DEC-49)
+ * @property {number} status the HTTP status
+ * @property {Record<string, any>} body the whole refusal: `ok: false`, the code as `reason`, its row's `code`, `check` and `translation`, and the gate's own fields
+ * @bound body: never names a credential, a session token, a secret or the digest of any (R15)
+ */
+/**
+ * @typedef {Object} Silence a store that did not answer, never a statement about the caller (R6; REC-52)
+ * @property {{op: string, correlation?: string}} silent the store route asked, and its correlation id when it gave one
+ */
+/**
+ * @typedef {{op: string, correlation?: string}} SilentRoute the store route a silence names
+ */
+/**
+ * @typedef {Object} PresentedCredential what a request presents (R20)
+ * @property {string | null} token the `Authorization` header's `Bearer <value>`, else the JSON body's non-empty string `token`
+ * @property {string | null} secret the JSON body's string `secret`
+ * @property {boolean} inAddress true exactly when the address names a `token` or a `secret` parameter
+ * @bound token: never read from the address
+ */
+/** @import { OpSpec } from '../op-declarations/index.mjs' */
+/**
+ * @typedef {Object} AiCredential an agent credential's row, as `credentials.aiCredentialLook` answers it
+ * @property {string} tokenId
+ * @property {any} principal the viewer it is seen as
+ * @property {string} [taskScope]
+ * @property {string[]} writes its declared writes
+ * @property {string | null} [confinedTo] `scratch`, or absent
+ * @property {boolean} [revoked]
+ * @property {string} [revokedAt]
+ * @property {string} [revokedBy]
+ * @property {boolean} [expired]
+ * @property {string} [expiresAt]
+ * @property {string} [run] the one run it writes to (R23)
+ * @property {string} [project] the project it was minted in (R30)
+ * @property {string} [grant] an ask's grant, present only on the caller `control-plane` R53 admits under a grant
+ */
+/**
+ * @typedef {Object} StoreAnswer what the door's reader answers for one store request
+ * @property {boolean} answered false when the store did not answer
+ * @property {any} [result]
+ * @property {string} [correlation]
+ */
+/**
+ * @typedef {(asked: Promise<Response>) => Promise<StoreAnswer>} DoAnswer the door's reader of a store request
+ */
+/**
+ * @typedef {Object} SessionHalves who a session is (REC-132, D-422)
+ * @property {string} viewer what it may see: `admin` for the founder, else `member:<id>`
+ * @property {string} identity who it is: `member:<id>`, the founder's `member:admin`
+ * @property {string} member the folded id
+ */
+/**
+ * @typedef {Object} Caller an admitted caller (R5–R11, R4)
+ * @property {string} cls the class: a binding class, `admin` or `member` for a session, or `ai`
+ * @property {boolean} viaSession true when it arrived by a session
+ * @property {string | null} member
+ * @property {string | null} viewer
+ * @property {string | null} identity
+ * @property {any} rights the session's row, or null
+ * @property {Set<string> | null} caps a session's capabilities; null for any other caller
+ * @property {AiCredential | null} aiCred the agent credential's row, for an `ai` caller only
+ * @property {string | undefined} storeName the namespace it lands in, `bio` or `scratch`
+ */
+/**
+ * @typedef {Object} ReauthArgument an act that asks the password again only for one argument (R25)
+ * @property {string} field the body's field, else the query's
+ * @property {readonly any[] | null} values the values that ask; null is any value given
+ */
+/**
+ * @typedef {Record<string, ReauthArgument | null>} ReauthActs op-declarations' `REAUTH_ACTS`: op to `null` (every call asks) or its argument
+ */
+/**
+ * @typedef {Object} SessionTables op-declarations' session tables, or others of the same shape (R8)
+ * @property {Record<string, ReadonlySet<string>>} SESSION_OPS the ops each session kind reaches, `admin` and `member` (op-declarations' `SessionOps`)
+ * @property {Record<string, any>} UNATTENDED_BY_DECISION op to the recorded decision reserving it to a credential
+ */
+
+/** @type {string} the namespace a confined or probe caller lands in */
 export const SCRATCH = "scratch";
 /* D-456 (C-78.1): the namespaces, exact and case-sensitive (a Durable Object name is an exact string). */
+/**
+ * @type {readonly string[]}
+ * @bound exactly `bio` and `scratch`, matched exactly and case-sensitive
+ */
 export const NAMESPACES = Object.freeze(["bio", SCRATCH]);
 
 /* A row's DEC-49 fields: the code, its check id (the one row, in checks.mjs) and the member's sentence, which is the
@@ -95,6 +179,12 @@ const identityFenceRow = (code) => rowOf(GROUP_IDENTITY_FENCE_CHECKS, "GROUP_IDE
    verification whose no-write guarantee is naming its namespace (D-325) wrote production while believing it was
    elsewhere. This runs once, before a credential is classified, so every class and the no-credential path meet one
    refusal from one governed span. `store=` absent is not a refusal. Nothing is read or written when this answers. */
+/**
+ * R1: a `store=` that is present and names no namespace is refused 400 `NAMESPACE_UNKNOWN` (C-78.1).
+ * @param {URL} url
+ * @returns {Refusal | null} null to admit
+ * @bound asked: the refusal repeats at most 80 characters of the name asked
+ */
 export function namespaceGate(url) {
   if (!url.searchParams.has("store")) return null;
   const asked = url.searchParams.get("store");
@@ -115,9 +205,17 @@ export function namespaceGate(url) {
    website key, join link and description, as it holds its own invitations and identity.
    T41 (T41-59, was T40-18a; N797, K2394; op-declarations R42, membership R123): `handlecheck` joins, since it reads an
    invitation as `invitelook` does, and each namespace holds its own invitations. */
+/** @type {readonly string[]} R3: the public ops that address `scratch`; every other public op is pinned to `bio` */
 export const SCRATCH_ADDRESSING_PUBLIC_OPS = Object.freeze(["invitelook", "enroll", "instancegroup", "groupidentity",
                                                             "websiteinvite", "joinlinkinvite", "groupdescription",
                                                             "handlecheck"]);
+/**
+ * R3: a public op not in `SCRATCH_ADDRESSING_PUBLIC_OPS` refuses `store=scratch` 400 `NAMESPACE_PINNED` (C-78.2).
+ * @param {URL} url
+ * @param {string} op
+ * @param {OpSpec} spec
+ * @returns {Refusal | null} null to admit
+ */
 export function pinnedNamespaceGate(url, op, spec) {
   if (spec.classes !== null || SCRATCH_ADDRESSING_PUBLIC_OPS.includes(op)) return null;
   if (url.searchParams.get("store") !== SCRATCH) return null;
@@ -145,7 +243,9 @@ export function pinnedNamespaceGate(url, op, spec) {
        missing invitation (`NO_SUCH_INVITATION`, its R123), as the doors answer a missing key. A member asking without
        an invitation keeps its session (the token travels in the header or body, R20).
    Every other op's URL is left as it came. */
+/** @type {readonly string[]} R17: the public doors into the group, admitted with no credential */
 export const PUBLIC_DOORS = Object.freeze(["joinlinkinvite", "websiteinvite"]);
+/** @type {Readonly<Record<string, readonly string[]>>} R17, R19, R20: for each op, the fields read from the body only */
 export const BODY_ONLY_FIELDS = Object.freeze({
   websiteinvite: Object.freeze(["cover", "key"]),
   joinlinkinvite: Object.freeze(["cover", "link"]),
@@ -156,6 +256,13 @@ export const BODY_ONLY_FIELDS = Object.freeze({
    (`credentialAddressGate` has refused a request that names one before this runs), so none is kept there for a later
    reader of the URL to read, compare, pass on or log. `credential`, the door's `presentedCredential` answer, is taken
    for the callers that pass it and changes nothing. */
+/**
+ * R17, R19, R20: removes from the address the op's body-only fields and any `token` or `secret`. Never refuses.
+ * @param {URL} url changed in place
+ * @param {string} op
+ * @param {PresentedCredential | null} [credential] taken and unused
+ * @returns {null}
+ */
 export function queryGate(url, op, credential = null) {
   void credential;
   const fields = Object.hasOwn(BODY_ONLY_FIELDS, op) ? BODY_ONLY_FIELDS[op] : [];
@@ -174,6 +281,13 @@ export function queryGate(url, op, credential = null) {
        a bio-pinned public op then meets R3, which is why R2 runs first.
    NOT CONFINED, AND MEASURED SO: the credential's own row and a session are read from `bio` (resolving who a caller is
    is not addressing the record's content), and the four binding classes have no row to carry the property. */
+/**
+ * R2: a credential confined to `scratch` naming another `store=` is refused 403 `NAMESPACE_CONFINED` (C-78.3);
+ * an absent `store=` is set to `scratch` on the address.
+ * @param {URL} url changed in place when `store=` is absent
+ * @param {{confinedTo?: any, tokenId?: any} | null | undefined} cred the agent credential's row
+ * @returns {Refusal | null} null to admit
+ */
 export function confinedNamespaceGate(url, cred) {
   if (!cred || cred.confinedTo !== SCRATCH) return null;
   if (url.searchParams.has("store") && url.searchParams.get("store") !== SCRATCH) {
@@ -195,6 +309,12 @@ export function confinedNamespaceGate(url, cred) {
    for it; every other class lands in `scratch` when `store=scratch` is given, else `bio`. THE DAEMON CLASS IS NOT
    CONFINED, BY DECISION (REC-33): its two verbs write the REAL record's reachability and bytes, so what bounds it is
    the op table, not the namespace. A `store=` naming no namespace is refused here too (D-456), should a caller skip R1. */
+/**
+ * R4: where an admitted caller of class `cls` lands, or why it may not.
+ * @param {string} cls
+ * @param {URL} url
+ * @returns {{name: string, error?: undefined} | {error: string, name?: undefined}} `name` is `bio` or `scratch`
+ */
 export function scopeFor(cls, url) {
   const named = url.searchParams.has("store");
   const asked = url.searchParams.get("store");
@@ -226,6 +346,11 @@ function addressNames(url) {
     return q ? ADDRESS_CREDENTIALS.filter((k) => q.has(k)) : [];
   } catch { return []; }
 }
+/**
+ * R20: the credential a request presents, from its header or body, never its address. Never throws.
+ * @param {{req?: any, url?: any, body?: any}} [request] the request, its address, and the JSON body the door parsed once
+ * @returns {PresentedCredential}
+ */
 export function presentedCredential({ req = null, url = null, body = null } = {}) {
   let token = null, secret = null;
   try {
@@ -246,7 +371,15 @@ export function presentedCredential({ req = null, url = null, body = null } = {}
    up, passed on or logged. The refusal names the parameters the address named (`named`, `token` and/or `secret`) and
    neither the value nor its digest (R15). `credential` is the door's `presentedCredential` answer when it has one;
    either way the address is judged. `null` or the refusal. */
+/** @type {string} R20: the code of C-38.10 */
 export const CREDENTIAL_IN_ADDRESS = "CREDENTIAL_IN_ADDRESS";
+/**
+ * R20: a request whose address names `token` or `secret` is refused 400 `CREDENTIAL_IN_ADDRESS` (C-38.10), naming the
+ * parameters (`named`) and never the value or its digest.
+ * @param {URL} url
+ * @param {PresentedCredential | null} [credential]
+ * @returns {Refusal | null} null to admit
+ */
 export function credentialAddressGate(url, credential = null) {
   const named = addressNames(url);
   if (!named.length && !(credential && typeof credential === "object" && credential.inAddress === true)) return null;
@@ -301,6 +434,13 @@ async function bindingOf(token, env) {
   for (let i = BINDINGS.length - 1; i >= 0; i--) if (verdicts[i]) cls = BINDINGS[i][1];
   return cls;
 }
+/**
+ * R5: the binding class a token gives (`admin`, `probe` or `daemon`), or null. A live `MEMBER_TOKEN` gives none.
+ * @param {any} token any value; only a non-empty string can match
+ * @param {Record<string, any> | null | undefined} env the Worker's bindings
+ * @returns {Promise<string | null>}
+ * @bound the time taken tells neither whether a binding matched, nor which, nor where two values first differ
+ */
 export async function classify(token, env) {
   const b = await bindingOf(token, env);
   return b === RETIRED ? null : b;
@@ -308,6 +448,7 @@ export async function classify(token, env) {
 
 /* The presented shape of an agent credential. Deliberately NOT the 64-hex of a session token, so "an agent credential
    that did not resolve" and "a session that did not resolve" stay two answers. */
+/** @type {RegExp} R6: an agent credential is `aik-` and 64 lower-case hex */
 export const AI_TOKEN_SHAPE = /^aik-[0-9a-f]{64}$/;
 const SESSION_TOKEN_SHAPE = /^[0-9a-f]{64}$/;
 /* G83 (K4746, K4747; runtime-limits R28): the team's room is obtained through the one helper, which passes its location
@@ -327,6 +468,14 @@ const lookup = (env, route, header, value, query = "") =>
    asked. `{ cred }` (null when none is presented or none is known) or `{ silent }` (REC-52: a store that did not
    answer is not "this credential is unknown"). `credential` is the door's `presentedCredential` answer (R20); `op`,
    when given, lets a public door (R17) present nothing: whoever calls it, no credential of theirs is looked up. */
+/**
+ * R6: the presented agent credential, resolved once against `bio`'s rows by its SHA-256.
+ * @param {URL} url
+ * @param {Record<string, any>} env
+ * @param {DoAnswer} doAnswer
+ * @param {{credential?: PresentedCredential | null, op?: string | null}} [options] a public door (R17) presents nothing
+ * @returns {Promise<{cred?: AiCredential | null, silent?: SilentRoute}>} `cred` null when none is presented or known; `silent` when the store did not answer
+ */
 export async function aiCredentialPresented(url, env, doAnswer, { credential = null, op = null } = {}) {
   if (op !== null && PUBLIC_DOORS.includes(op)) return { cred: null };
   const t = credentialOf(credential, url).token;
@@ -370,6 +519,11 @@ function sessionRead(credential, t, env, doAnswer, background) {
    `admin`, `viewerPredicate`'s root-administrator spelling; every other session `member:<id>`); `identity` is WHO it is
    (`member:<id>`, the founder's `member:admin`), for authorship, ownership and positional facts; `member` the folded
    id. The founder is told apart by the session's ROLE, never by the folded name (`memberAdd` reserves the id). */
+/**
+ * The two halves of a session: what it may see and who it is.
+ * @param {{role?: string} | null} sess
+ * @returns {SessionHalves}
+ */
 export function resolveSession(sess) {
   const r = sess && typeof sess.role === "string" ? sess.role : "";
   const member = r.startsWith("member:") ? r.slice(7) : r;
@@ -390,6 +544,13 @@ export function resolveSession(sess) {
    D-586: an act R12 refuses to every bearer (the §4 governance acts, the group-identity acts) is a named
    administrator's own session act, so no agent reaches it. REC-159: a row that bounds machine credentials by
    `machineClasses` hands an agent nothing. A public op (`classes: null`) answers false: the fail-closed direction. */
+/**
+ * R10, R13: true exactly when a member class reaches the op and no `machineClasses` bounds it; never for a governance
+ * or group-identity act, or a public op.
+ * @param {{classes?: readonly string[] | null, machineClasses?: readonly string[]} | null | undefined} spec the op's spec (`OpSpec`); only these two are read
+ * @param {string} op
+ * @returns {boolean}
+ */
 export function aiReachesAsMember(spec, op) {
   if (GOVERNANCE_ACTIONS.includes(op) || IDENTITY_ACTIONS.includes(op)) return false;
   return !!spec && Array.isArray(spec.classes) && spec.classes.includes("member")
@@ -408,6 +569,15 @@ const WHO_A_SOURCE_IS = Object.freeze(["sourceof", "sourcerung"]);
    writes only to that run: a mutating op is admitted only when the request names that run, and every place it names
    one (`named`, the body's `run` and the query's) names the same; a write naming another run, or none, is refused
    AI_BEYOND_TASK_SCOPE. Its reads are the floor above, as every agent's. */
+/**
+ * R10, R23, R26: an `ai` caller's gate on every call: refused `AI_CREDENTIAL_REVOKED` (C-29.7), `AI_CREDENTIAL_EXPIRED`
+ * (401) or `AI_BEYOND_TASK_SCOPE` (C-29.6), else admitted with its viewer.
+ * @param {any} cred the agent credential's row (`AiCredential`)
+ * @param {string} op
+ * @param {OpSpec} spec
+ * @param {{named?: any[]}} [options] the runs the request names (`runsNamed`)
+ * @returns {{refusal?: Refusal, ok?: true, viewer?: any}} `refusal`, or `ok` and `viewer`
+ */
 export function aiTaskScope(cred, op, spec, { named = [] } = {}) {
   /* DEC-49 REGION is-ai-task-scope */
   if (cred.revoked)
@@ -467,6 +637,11 @@ export function aiTaskScope(cred, op, spec, { named = [] } = {}) {
    already carried (R149: a viewer that carries a project is never re-scoped) and keeps a credential row whose principal
    came without it from being read wider than its project. No project, or a principal R149 leaves alone (an
    organisation key's `class:ai`): the principal as it is. */
+/**
+ * R30: the viewer an agent credential is seen with: its principal, carrying its project when it has one.
+ * @param {any} cred the agent credential's row: its `principal`, and its `project` when it has one
+ * @returns {any}
+ */
 export function aiViewerOf(cred) {
   const principal = cred.principal;
   return typeof cred.project === "string" && cred.project !== "" ? projectViewer(principal, cred.project) : principal;
@@ -478,6 +653,11 @@ const boundRun = (cred) => (cred && typeof cred.run === "string" && cred.run !==
 const namesOnly = (named, run) => Array.isArray(named) && named.length > 0 && named.every((n) => n === run);
 /* R23: every run a request names, the body's `run` and the query's (a body's value that is not a string is named
    as itself, so it never equals a run). Absent, null or empty names none. */
+/**
+ * R23: every run a request names, the body's `run` and the query's. Absent, null or empty names none.
+ * @param {{url?: any, body?: any}} [request]
+ * @returns {any[]}
+ */
 export function runsNamed({ url = null, body = null } = {}) {
   const out = [];
   const b = body && typeof body === "object" && !Array.isArray(body) ? body : null;
@@ -494,6 +674,12 @@ export function runsNamed({ url = null, body = null } = {}) {
    leaves one code unreachable). An op no spec declares is a sentence nothing enforces (C-29.8); an op no member
    reaches is outside every scope (C-29.9), the governance and identity acts included. `{ refusal }` or `{ writes }`
    (trimmed, de-duplicated, sorted). The detail for C-29.9 says which property of the op's row refused it (REC-162). */
+/**
+ * R13: an agent credential's declared writes, judged at the mint: refused `AI_SCOPE_UNKNOWN_OP` (C-29.8) or
+ * `AI_SCOPE_BEYOND_MEMBER_REACH` (C-29.9), else trimmed, de-duplicated and sorted.
+ * @param {any} writes
+ * @returns {{refusal?: Refusal, writes?: string[]}} `refusal`, or `writes`
+ */
 export function aiScopeDeclaration(writes) {
   const asked = Array.isArray(writes) ? writes.map((w) => String(w ?? "").trim()).filter(Boolean) : [];
 
@@ -524,6 +710,12 @@ export function aiScopeDeclaration(writes) {
    trimmed or folded); `bio` is refused with the rest, because a row "confined to bio" would be a fence that holds
    nothing. ABSENT (omitted, null, undefined) is the only silence and mints an unconfined credential; a present empty
    string is a value and is refused. `{ refusal }` or `{ confinedTo }`. */
+/**
+ * R13: an agent credential's confinement, judged at the mint: absent is none; anything but exactly `scratch` is refused
+ * `AI_CONFINEMENT_NOT_SCRATCH` (C-29.10).
+ * @param {any} confinedTo
+ * @returns {{refusal?: Refusal, confinedTo?: string | null}} `refusal`, or `confinedTo` (null for none)
+ */
 export function aiConfinementDeclaration(confinedTo) {
   if (confinedTo === null || confinedTo === undefined) return { confinedTo: null };
   const asked = String(confinedTo);
@@ -549,6 +741,13 @@ const hexOf = (raw) => [...raw].map((x) => x.toString(16).padStart(2, "0")).join
    `aik-` and 32 random bytes in hex. The door forwards `secretSha` and the normalised `writes` and `confinedTo` (never
    the caller's spelling) to credentials' mint (its R12) and returns `secret` once, in the minting answer only; the
    store never holds the value. `{ refusal }` (with `op` and `cls`) or `{ secret, secretSha, writes, confinedTo }`. */
+/**
+ * R13: the mint's half that is admission's: the declaration and confinement judged, then the value generated.
+ * @param {any} asked the caller's `{writes, confinedTo}`
+ * @param {string} cls the minting caller's class, named in a refusal
+ * @returns {Promise<{refusal?: Refusal, secret?: string, secretSha?: string, writes?: string[], confinedTo?: string | null}>} `refusal`, or the other four
+ * @bound secret: `aik-` and 64 lower-case hex, returned once; passed on only as its SHA-256
+ */
 export async function aiCredentialMint(asked, cls) {
   const a = asked && typeof asked === "object" && !Array.isArray(asked) ? asked : {};
   const declared = aiScopeDeclaration(a.writes);
@@ -564,6 +763,11 @@ export async function aiCredentialMint(asked, cls) {
 /* R13 (REC-126, DEC-31) — A REVIEW GRANT'S READ SECRET, on the agent credential's rule: 32 random bytes, base64url,
    behind a version prefix; generated here, returned once in the granting answer, passed on only as its SHA-256. It is a
    READ credential only: `classify` never admits it. */
+/**
+ * R13: a review grant's read secret and its SHA-256.
+ * @returns {Promise<{secret: string, secretSha: string}>}
+ * @bound secret: `rv1_` and 32 random bytes in base64url, returned once
+ */
 export async function reviewGrantSecret() {
   const raw = new Uint8Array(32);
   crypto.getRandomValues(raw);
@@ -586,6 +790,16 @@ export async function reviewGrantSecret() {
    the same shape, so an arrangement the declared tables do not hold today (an op only a member's set holds) is still
    driven. */
 const DECLARED = Object.freeze({ SESSION_OPS, UNATTENDED_BY_DECISION });
+/**
+ * R8: a session reaching a mutating op outside its kind's set is refused 403 `SESSION_ROLE_CANNOT_REACH_OP` (C-38.7),
+ * `MACHINE_CREDENTIAL_REQUIRED` (C-38.3) or `SESSION_ROUTE_NOT_RECORDED` (C-38.8). `capture`'s GET is a read.
+ * @param {string} kind `admin` or `member`
+ * @param {string} op
+ * @param {{mutating?: boolean}} spec the op's spec; only `mutating` is read
+ * @param {string} method
+ * @param {SessionTables} [tables]
+ * @returns {Refusal | null} null to admit
+ */
 export function sessionOpGate(kind, op, spec, method, tables = DECLARED) {
   const { SESSION_OPS, UNATTENDED_BY_DECISION } = tables;
   if (!spec.mutating || (op === "capture" && method === "GET") || SESSION_OPS[kind].has(op))
@@ -638,6 +852,11 @@ function notCapable(op, needs, caps, detail) {
 /* R11 (section 5) — A PROJECT IS CREATED BY PROMOTING A BUNDLE WITH NO BASE WHOSE TYPE IS `project`, so there is no op
    for `NEEDS` to name: the door asks this in op=promote's stamp block, from the payload, for a session's creation.
    `caps` is the session's capability set (`caller.caps`). `null` when it holds `create_projects`. */
+/**
+ * R11: creating a project without `create_projects` is refused 403 `NOT_CAPABLE` (C-38.5).
+ * @param {Set<string> | null | undefined} caps the session's capabilities
+ * @returns {Refusal | null} null to admit
+ */
 export function projectCreationGate(caps) {
   if (caps && caps.has("create_projects")) return null;
   return notCapable("promote", "create_projects", caps || [],
@@ -664,6 +883,24 @@ export function projectCreationGate(caps) {
    credentials' `SESSION_LOCKED` (R24), before `export`'s refusal and the session gate; after the capability (R11), an
    act `reauthActs` names with its argument is answered credentials' `REAUTH_DUE` unless the session's re-ask window is
    open (R25), asked of the store as `reauthdue` with the token in a header, a silence when it does not answer. */
+/**
+ * R5–R11, R24, R25, R29, R33: the admission of a gated op, in order. Answers the caller admitted, a refusal, or a store
+ * silence.
+ * @param {Object} asked
+ * @param {URL} asked.url
+ * @param {Record<string, any>} asked.env
+ * @param {string} asked.op
+ * @param {OpSpec} asked.spec
+ * @param {string} asked.method
+ * @param {{cred?: AiCredential | null, silent?: SilentRoute} | null | undefined} asked.presented `aiCredentialPresented`'s answer
+ * @param {DoAnswer} asked.doAnswer
+ * @param {SessionTables} [asked.tables]
+ * @param {PresentedCredential | null} [asked.credential]
+ * @param {any} [asked.body] the request's parsed JSON body
+ * @param {boolean} [asked.background] a request the page makes on its own timer
+ * @param {ReauthActs} [asked.reauthActs]
+ * @returns {Promise<{caller?: Caller, refusal?: Refusal, silent?: SilentRoute}>} exactly one of the three
+ */
 export async function admit({ url, env, op, spec, method, presented, doAnswer, tables = DECLARED, credential = null,
                               body = null, background = false, reauthActs = declaredReauthActs() }) {
   const t = credentialOf(credential, url).token;
@@ -767,6 +1004,7 @@ export async function admit({ url, env, op, spec, method, presented, doAnswer, t
 
 /* R24 — THE OPS A LOCKED SESSION IS ADMITTED TO: its unlocking with the password, the password asked again (which
    also unlocks, credentials R71 (2)) and its signing out. */
+/** @type {readonly string[]} R24: the ops a locked session is admitted to */
 export const LOCKED_SESSION_OPS = Object.freeze(["unlock", "reauth", "signout"]);
 
 /* R25 — WHICH ACTS ASK THE PASSWORD AGAIN: op-declarations' `REAUTH_ACTS` (its R58, R62, R63; K3143), read live from
@@ -787,6 +1025,13 @@ function argumentOf({ url, body }, field) {
 }
 /* R25: true exactly when `acts` names `op` with the request's argument. Never throws: an entry of any other shape asks
    the password (the weighty reading). */
+/**
+ * R25: true exactly when `acts` names `op` with the request's argument. Never throws.
+ * @param {any} acts a `ReauthActs`
+ * @param {any} op
+ * @param {{url?: any, body?: any}} [request]
+ * @returns {boolean}
+ */
 export function reauthAsked(acts, op, { url = null, body = null } = {}) {
   if (!acts || typeof acts !== "object" || typeof op !== "string" || !Object.hasOwn(acts, op)) return false;
   const e = acts[op];
@@ -828,6 +1073,13 @@ async function reauthDuePresented(t, env, doAnswer) {
    list appears here to go stale. A fence and not only the roster's NOT_AN_ADMIN, because that refusal's sentence would
    be false here: a token is not a member who failed to be an administrator. The door asks this after `admit` and
    before any handler (control-plane R28). `null` or a refusal. */
+/**
+ * R12: a caller not arriving by a session asking a governance act is refused 403 `OPERATOR_TOKEN_CANNOT_GOVERN`
+ * (C-32.17), and a group-identity act `GROUP_IDENTITY_NEEDS_SESSION` (C-64.4), each naming its class.
+ * @param {string} op
+ * @param {{viaSession: boolean, cls: string}} caller
+ * @returns {Refusal | null} null to admit
+ */
 export function bearerFence(op, caller) {
   if (caller.viaSession) return null;
   const cls = caller.cls;
@@ -863,6 +1115,13 @@ export function bearerFence(op, caller) {
    agent's stamp is its minter's (`member:<minter>`) and cannot be told from the member by its stamp; ratification R18's
    pre-flight reads `aiCred` and holds the agent to the machine fences. `carry: false` answers the stamp alone (a query
    parameter is a string). */
+/**
+ * The viewer an admitted caller is stamped with: a session's viewer, an agent's principal (carrying its credential
+ * unless `carry` is false), else `class:<cls>`.
+ * @param {Caller} caller
+ * @param {{carry?: boolean}} [options]
+ * @returns {any}
+ */
 export function callerViewer(caller, { carry = true } = {}) {
   if (caller.viaSession) return caller.viewer;
   if (caller.cls === "ai") return carry ? { stamp: aiViewerOf(caller.aiCred), aiCred: caller.aiCred } : aiViewerOf(caller.aiCred);
@@ -878,6 +1137,18 @@ export function callerViewer(caller, { carry = true } = {}) {
    would carry through the gate. The only non-answer is a store silence, `{ silent }`. `presented` is the front door's
    `aiCredentialPresented` answer's `cred` (one lookup, one row); `undefined` asks the store here. `credential`, as
    `admit`'s (R20). */
+/**
+ * R16, R30: who is asking, for a public op that answers working material only to some. Never refuses: anyone without
+ * standing is no one, `""`.
+ * @param {URL} url
+ * @param {Record<string, any>} env
+ * @param {string} storeName the namespace the op reads
+ * @param {AiCredential | null | undefined} presented the front door's looked-up agent credential; undefined asks here
+ * @param {DoAnswer} doAnswer
+ * @param {PresentedCredential | null} [credential]
+ * @param {{background?: boolean}} [options]
+ * @returns {Promise<{viewer?: any, cls?: string, silent?: SilentRoute}>} `viewer` (`""` for no one), or `silent`
+ */
 export async function readerOf(url, env, storeName, presented, doAnswer, credential = null, { background = false } = {}) {
   const c = credentialOf(credential, url);
   const t = c.token;
@@ -888,7 +1159,7 @@ export async function readerOf(url, env, storeName, presented, doAnswer, credent
   const cls = bound;
   if (cls) {
     const scope = scopeFor(cls, url);
-    const inScope = OPS.index.classes.includes(cls) && !scope.error && scope.name === storeName;
+    const inScope = (OPS.index.classes ?? []).includes(cls) && !scope.error && scope.name === storeName;
     return { viewer: inScope ? `${MACHINE_CLASS_PREFIX}${cls}` : "", cls };
   }
   if (AI_TOKEN_SHAPE.test(t)) {
@@ -918,6 +1189,12 @@ export async function readerOf(url, env, storeName, presented, doAnswer, credent
 /* R21 (F4; K1881; DEC-166) — WHO IS CALLING IS KNOWN ONLY AS A COUNTRY AND A KEYED FINGERPRINT. `countryOf` answers
    Cloudflare's two-character label for the request (`request.cf.country`), or `null`; nothing else of where the
    request came from is read. */
+/**
+ * R21: Cloudflare's two-character country label for the request, or null. Never throws.
+ * @param {any} req
+ * @returns {string | null}
+ * @bound two upper-case letters or digits
+ */
 export function countryOf(req) {
   try {
     const c = req && req.cf ? req.cf.country : null;
@@ -928,7 +1205,12 @@ export function countryOf(req) {
 /* R21 — THE WINDOW'S BOUND, BOB's under K1881 (a protective limit that refuses only abuse): at most `limit` requests
    to the public ops per source in any `windowMs`, estimated by `capture` R31's two buckets. `stated` is composed from
    the same constants, so the sentence and the gate cannot drift apart. */
+/**
+ * @type {Readonly<{limit: number, windowMs: number}>} R21: the per-source window over the public ops
+ * @bound limit: 300 requests; windowMs: 10 minutes
+ */
 export const DOOR_WINDOW = Object.freeze({ limit: 300, windowMs: 10 * 60 * 1000 });
+/** @type {string} R21: the bound, in the words the refusal carries as `stated` */
 export const DOOR_WINDOW_STATED =
   `at most ${DOOR_WINDOW.limit} requests from one source in any ${DOOR_WINDOW.windowMs / 60000} minutes`;
 
@@ -938,12 +1220,23 @@ export const DOOR_WINDOW_STATED =
    public reads that a signed-in page makes several times each, and would otherwise meet the source's 300. 3,000 was
    confirmed at START against M-T49-4 (at most 5 public requests per signed-in load; 400 loads in 10 minutes fit
    with room). `stated` is composed from the same constants. */
+/**
+ * @type {Readonly<{limit: number, windowMs: number}>} R27: a signed-in session's own window over the public reads
+ * @bound limit: 3000 requests; windowMs: 10 minutes
+ */
 export const SESSION_WINDOW = Object.freeze({ limit: 3000, windowMs: 10 * 60 * 1000 });
+/** @type {string} R27: the bound, in the words the refusal carries as `stated` */
 export const SESSION_WINDOW_STATED =
   `at most ${SESSION_WINDOW.limit} requests from one signed-in session in any ${SESSION_WINDOW.windowMs / 60000} minutes`;
 
 /* R21: the two-bucket sliding estimate, `prev × (1 − elapsed/W) + cur`, `elapsedFrac` the share of the current
    bucket's window already gone. */
+/**
+ * R21: the two-bucket sliding estimate, `prev × (1 − elapsedFrac) + cur`.
+ * @param {{prev?: number, cur?: number, elapsedFrac?: number}} [counts]
+ * @returns {number}
+ * @bound elapsedFrac: read as 0 to 1
+ */
 export function doorWindowEstimate({ prev = 0, cur = 0, elapsedFrac = 0 } = {}) {
   const f = Math.min(1, Math.max(0, Number(elapsedFrac) || 0));
   return (Number(prev) || 0) * (1 - f) + (Number(cur) || 0);
@@ -952,6 +1245,12 @@ export function doorWindowEstimate({ prev = 0, cur = 0, elapsedFrac = 0 } = {}) 
 /* R21: how long, in whole seconds (at least 1), until a refused source's estimate is under the bound again. A refused
    request is not counted, so the estimate only falls: within this bucket as `prev` ages out, else in the next bucket
    as `cur` (then the previous) ages out. */
+/**
+ * R21: whole seconds until a refused source's estimate is under the bound again.
+ * @param {{prev?: number, cur?: number, elapsedFrac?: number, limit?: number, windowMs?: number}} [counts]
+ * @returns {number}
+ * @bound at least 1
+ */
 export function doorRetryAfter({ prev = 0, cur = 0, elapsedFrac = 0, limit = DOOR_WINDOW.limit,
                                  windowMs = DOOR_WINDOW.windowMs } = {}) {
   const f = Math.min(1, Math.max(0, Number(elapsedFrac) || 0));
@@ -969,6 +1268,13 @@ export function doorRetryAfter({ prev = 0, cur = 0, elapsedFrac = 0, limit = DOO
    credential, and says nothing of who the caller is (R15): the window knows neither. `session` is the session's own
    window (R27); the code and the row are the one row's (C-38.9, K3333), the session's sentence the word
    `refusal.DOOR_RATE_LIMITED.session` (DEC-262). */
+/**
+ * R21, R27: the 429 `DOOR_RATE_LIMITED` refusal (C-38.9), carrying `stated`, `retryAfter` and `minutes`.
+ * @param {any} retryAfter seconds
+ * @param {{session?: boolean}} [options] the session's own window (R27)
+ * @returns {Refusal}
+ * @bound retryAfter: whole seconds, at least 1
+ */
 export function doorRateLimited(retryAfter, { session = false } = {}) {
   const wait = Math.max(1, Math.ceil(Number(retryAfter) || 1));
   const minutes = Math.ceil(wait / 60);
@@ -990,6 +1296,7 @@ export function doorRateLimited(retryAfter, { session = false } = {}) {
    not answer, gives `null`, named in the log by correlation id only; this never throws. A request that states no address
    is one shared source of its own (`UNSTATED_SOURCE`, not a digest, so it never equals one). The address is read here,
    digested or handed to the store in a request's body, and dropped; it is never kept, logged or answered. */
+/** @type {string} R21: the one shared source of the requests that state no address */
 export const UNSTATED_SOURCE = "unstated";
 function connectingAddress(req) {
   try {
@@ -997,6 +1304,14 @@ function connectingAddress(req) {
     return typeof a === "string" && a.trim() !== "" ? a.trim() : null;
   } catch { return null; }
 }
+/**
+ * R21: who is calling, as the keyed fingerprint of the connecting address, `UNSTATED_SOURCE` when it states none, or
+ * null when the store holding the key cannot be asked. Never throws.
+ * @param {any} req
+ * @param {any} env the Worker's bindings
+ * @returns {Promise<string | null>}
+ * @bound the address is never kept, logged or answered
+ */
 export async function sourceOf(req, env) {
   const address = connectingAddress(req);
   if (address === null) return UNSTATED_SOURCE;
@@ -1067,6 +1382,11 @@ async function liveSessionDigest({ req, env, doAnswer, credential, background })
    written) or `{ source }` (the fingerprint the store answered, for the door's stamps; `null` when it could not be
    read). A window that cannot be read or written ADMITS the request (it fails open, so a fault in it never refuses a
    caller) and is named in the log by its correlation id only. `credential` and `background`, the door's (R27). */
+/**
+ * R21, R27: the window, the first gate of the public ops. A request to any other op is never counted. Fails open.
+ * @param {any} [asked] `{req, env, spec, doAnswer, now, credential, background}`: the request, the Worker's bindings, the op's spec (`OpSpec`), the door's reader, the time asked in milliseconds, the door's `PresentedCredential` and its background mark; other members are ignored
+ * @returns {Promise<{refusal?: Refusal, source?: string | null}>} `refusal`, or `source` (null when it could not be read)
+ */
 export async function doorWindowGate({ req = null, env = null, spec = null, doAnswer = null, now = null,
                                        credential = null, background = null } = {}) {
   if (!spec || spec.classes !== null) return { source: null };
@@ -1128,6 +1448,11 @@ function namesMember(presented) {
 }
 
 /* R22: the kind a refusal is counted as, or null for one that is not counted. Pure. */
+/**
+ * R22: the kind a refusal is counted as, `credential` or `rate`, or null for one not counted. Pure.
+ * @param {any} [refused] `{op, answer, presented}`: the op, the refusal as the door holds it, and what the request presented
+ * @returns {string | null}
+ */
 export function securityKindOf({ op = null, answer = null, presented = null } = {}) {
   const code = refusalCode(answer);
   if (!code) return null;
@@ -1151,6 +1476,13 @@ export function securityKindOf({ op = null, answer = null, presented = null } = 
    the Worker's; without a store there is nowhere to write and nothing is sent. It answers `{ kind, country }`, what it
    counted, or `null` for a refusal not counted; a count that cannot be written is dropped (named in the log by
    correlation id only), it never throws and never changes the refusal. */
+/**
+ * R22: one count per refusal in credentials' security tally, through the store's internal route `securitycount`.
+ * Never throws and never changes the refusal.
+ * @param {any} [refused] `{op, answer, presented, req, env, doAnswer}`: as `securityKindOf`'s, with the request, the Worker's bindings and the door's reader
+ * @returns {Promise<{kind: string, country: string | null} | null>} what it counted
+ * @bound country: null when the refused request presents a credential naming a member
+ */
 export async function securityTally({ op = null, answer = null, presented = null, req = null, env = null, doAnswer = null } = {}) {
   let counted = null;
   try {

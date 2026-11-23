@@ -10,17 +10,16 @@ import { boot } from "./harness.mjs";
 
 const screen = (id, op) => ({ id, render: () => "", acts: [{ op }] });
 
-/* R134: each re-point is admitted on its screen, refused on any other, and listed by no registry screen it names */
+/* R134 "each until the registry lists the op on that screen": the registry lists all four on their screens (wizard-library #1, PR 1233), so none
+   is a re-point and each screen naming its op is served by the registry alone; control: the op on a screen the registry does not list it for still throws */
 for (const [id, op, other] of [["setup", "factconfirm", "explore"], ["question", "leggrade", "document"], ["document", "resolve", "explore"], ["queue", "signerknown", "explore"]]) {
-  test(`R134 ${op} is a named re-point of ${id}: ${id} naming it is served; control: ${op} on ${other}, and another unlisted op on ${id}, still throw`, () => {
-    assert.ok(RE_POINTS[id].includes(op), `${op} is a re-point of ${id}`);
+  test(`R134 ${op} left the re-points when the registry listed it on ${id}: ${id} naming it is served; control: ${op} on ${other} still throws`, () => {
+    assert.equal((RE_POINTS[id] || []).includes(op), false, `${op} is no re-point of ${id}`);
     const reg = SCREEN_REGISTRY.find((r) => r.id === id);
-    assert.equal(reg.acts.includes(op) || (reg.owed || []).some((o) => o.op === op), false, "the registry lists it nowhere on this screen, so it is a re-point");
-    /* `leggrade` is declared by op-declarations after citation's merge (citation R24); until then OPS refuses the name, as R21 says */
+    assert.ok(reg.acts.includes(op) || (reg.owed || []).some((o) => o.op === op), "the registry lists it on this screen");
     assert.ok(Object.hasOwn(OPS, op), `${op} is an op OPS holds`);
     assert.equal(checkScreens([screen(id, op)]), true);
     assert.throws(() => checkScreens([screen(other, op)]), new RegExp(other + ".*" + op));
-    assert.throws(() => checkScreens([screen(id, "stepsourcewithdraw")]), new RegExp(id + ".*stepsourcewithdraw"));
   });
 }
 

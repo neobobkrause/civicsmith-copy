@@ -7,6 +7,7 @@
 const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 const RAW = new Set(["script", "style", "textarea", "title"]);
 const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+/** @type {function(string): string} */
 export const decode = (s) => String(s).replace(/&(#x[0-9a-f]+|#\d+|\w+);/gi, (m, e) =>
   e[0] === "#" ? String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : ENT[e] ?? m);
 const escText = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
@@ -57,6 +58,10 @@ class Text extends Node {
   get nodeValue() { return this.data; }
 }
 
+/**
+ * An element of the stand-in's tree: attributes, children, the selectors the pages use, `innerHTML`, events and form properties.
+ * @extends Node
+ */
 export class Element extends Node {
   constructor(doc, tag) { super(doc); this.nodeType = 1; this.localName = tag.toLowerCase(); this.attrs = new Map(); this._props = {}; this.style = makeStyle(); }
   get tagName() { return this.localName.toUpperCase(); }
@@ -121,6 +126,9 @@ export class Element extends Node {
 }
 function makeStyle() { const s = {}; Object.defineProperty(s, "setProperty", { value: (k, v) => { s[k] = v; } }); return s; }
 
+/**
+ * An event as the stand-in dispatches it: its type, the fields `init` gives, `preventDefault` and `stopPropagation`.
+ */
 export class Event {
   constructor(type, init = {}) { Object.assign(this, init); this.type = type; this.defaultPrevented = false; this._stop = false; }
   preventDefault() { this.defaultPrevented = true; }
@@ -134,6 +142,11 @@ function serialize(n) {
 }
 
 /* HTML as the shell writes it: well-formed tags, quoted or bare attributes, entities, void and raw-text elements. */
+/**
+ * @param {*} parent the element the HTML is parsed into
+ * @param {string} html
+ * @returns {void}
+ */
 export function parseInto(parent, html) {
   const doc = parent.ownerDocument;
   const stack = [parent];
@@ -240,6 +253,10 @@ function compound(s) {
   return (e) => tests.every((t) => t(e));
 }
 
+/**
+ * The stand-in's document: `documentElement`, `head`, `body`, `getElementById`, `createElement`, `createTextNode`.
+ * @extends Node
+ */
 export class Document extends Node {
   constructor() {
     super(null);
@@ -260,6 +277,10 @@ export class Document extends Node {
 }
 
 /** A document holding `html`'s body (the served page), with its scripts kept as text. */
+/**
+ * @param {string} html a served page
+ * @returns {Document}
+ */
 export function documentOf(html) {
   const d = new Document();
   const body = /<body[^>]*>([\s\S]*)<\/body>/i.exec(html);
@@ -273,6 +294,10 @@ export function documentOf(html) {
 }
 
 /** Every text node under `root`, with the element it sits in. */
+/**
+ * @param {*} root
+ * @returns {Array<*>} every text node under `root` outside scripts and styles
+ */
 export function textNodes(root) {
   const out = [];
   const walk = (n) => { for (const c of n.childNodes) { if (c.nodeType === 3) out.push(c); else if (c.nodeType === 1 && !["script", "style"].includes(c.localName)) walk(c); } };

@@ -1,7 +1,8 @@
 /* store-assembly's copy of plane's test. plane R68, R71 -> R83, R47 (T51 fix round; K4168, K4189; op-declarations R80, R81; op-grades R49, R50): the assembly assembles every
    module's op declarations at start-up, by its own static imports, and refuses to start on a duplicate or a disagreement;
-   every op served through an owner's map is reachable through the door. (plane R71's other half, an op answered by a Worker arm of `door.mjs`, is the Worker's and stays in plane.) The modules and ops are found from `build/modules.json` and the
-   owners' own exports (`declaredOpsOf`, `maps.mjs`), never listed here (K3268). */
+   every op served through an owner's map is reachable through the door. (plane R71's other half, an op answered by a Worker arm of `door.mjs`, is the Worker's and stays in plane.) The modules and ops are found by test-support's bounded collector
+   (`declaredOpsOf` over this module and those before it on the order file) and the owners' own exports (`maps.mjs`), never
+   listed here (K3268). */
 import "../../../src/store-assembly/register.mjs";   /* the start's registration first: door.mjs' graph reads the op tables when it loads */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -25,32 +26,32 @@ const row = { classes: ["member"], mutating: false, weight: "read", description:
 /* a process of its own: the registrations are once per process, and a disagreement stops the start */
 const child = (code) => spawnSync(process.execPath, ["--input-type=module", "-e", code], { encoding: "utf8", cwd: resolve(import.meta.dirname, "../../..") });
 
-test("R83 the assembly started over the real modules holds, for every module whose source exports DECLARED_OPS, each of its ops in the assembled table with the module's values; a module missing from the assembly is named; the copy window's only one is control-plane, whose four rows store-assembly holds as its own", async () => {
+test("R83 the assembly started over the real modules holds, for every module up to store-assembly whose source exports DECLARED_OPS, each of its ops in the assembled table with the module's values; a module missing from the assembly is named; store-assembly holds the owner map's rows as its own", async () => {
   await store();   /* the start: register.mjs hands the owners' declarations to both registrations at load */
-  const { ops, owners, duplicates } = await declaredOpsOf(ROOT);
+  const found = await declaredOpsOf(ROOT, "store-assembly");
+  const { ops, duplicates } = found;
+  /* the assembly's own rows (declared.mjs) sit in a file the module list gives to store-services, so the collector finds
+     them under that name; the assembly registers them under `store-assembly` (R84), the name read here for them */
+  /** @type {Object<string, string>} builds each op's owner as the assembly names it */
+  const owners = Object.fromEntries(Object.entries(found.owners).map(([op, id]) => [op, id === "store-services" ? "store-assembly" : id]));
   assert.deepEqual(duplicates, [], "no op is declared by two modules");
   assert.ok(Object.keys(ops).length > 0);
   const missing = [...new Set(Object.values(owners))].filter((id) => !Object.hasOwn(OWNERS, id));
-  /* the copy window (K5052 (4)): control-plane still exports DECLARED_OPS (the owner map's four rows) beside store-assembly's copy of them, which is exported as OWNER_MAP_DECLARED_OPS until control-plane's Wave B; plane's are deleted (K5201) and store-assembly's own are DECLARED_OPS */
-  const COPIED_FROM = ["control-plane"];
-  assert.deepEqual(missing.sort(), [...COPIED_FROM].sort(), "modules that export DECLARED_OPS and are not in the assembly (declarations.mjs): exactly control-plane, whose rows are the assembly's own under `store-assembly`");
+  assert.deepEqual(missing, [], "every module up to store-assembly that exports DECLARED_OPS is in the assembly (declarations.mjs)");
   const stray = Object.keys(OWNERS).filter((id) => !Object.values(owners).includes(id));
   assert.deepEqual(stray, [], "every module in the assembly exports DECLARED_OPS, store-assembly's (declared.mjs) among them");
-  /* the copied rows: every op control-plane declares is in store-assembly's row, the same row save its description's wording (the descriptions name store-assembly's ids) */
-  const bare = (d) => ({ ...d, description: undefined });
-  for (const op of Object.keys(ops).filter((o) => COPIED_FROM.includes(owners[o]))) {
-    assert.ok(Object.hasOwn(OWNERS["store-assembly"], op), `${op}: store-assembly holds the row ${owners[op]} declares`);
-    assert.deepEqual(bare(OWNERS["store-assembly"][op]), bare(ops[op]), `${op}: store-assembly's row is ${owners[op]}'s but for its description`);
-  }
-  assert.deepEqual(Object.keys(OWNERS["store-assembly"]).sort(), Object.keys(ops).filter((o) => COPIED_FROM.includes(owners[o]) || owners[o] === "store-assembly").sort(), "and holds no other (its own DECLARED_OPS and control-plane's rows, as the collector finds them)");
+  /* store-assembly's row: its own DECLARED_OPS, as the collector finds them, and the owner map's rows (OWNER_MAP_DECLARED_OPS), and no other */
+  assert.deepEqual(Object.keys(OWNERS["store-assembly"]).sort(),
+    [...new Set([...Object.keys(ops).filter((o) => owners[o] === "store-assembly"), ...Object.keys(OWNER_MAP_DECLARED_OPS)])].sort(),
+    "store-assembly holds its own DECLARED_OPS and the owner map's rows, and no other");
+  for (const op of Object.keys(OWNER_MAP_DECLARED_OPS)) assert.ok(Object.hasOwn(OPS, op), `${op}: the owner map's op is in the assembled table`);
   for (const [op, d] of Object.entries(ops)) {
-    if (COPIED_FROM.includes(owners[op])) { assert.ok(Object.hasOwn(OPS, op), `${op} is in the assembled table`); if (d.fields) assert.deepEqual(declaredFields(op), d.fields, `${op}: the owner's fields are read back`); continue; }
     assert.equal(OWNERS[owners[op]][op], d, `${op}: the assembly holds the owner's own row`);
     assert.ok(Object.hasOwn(OPS, op), `${op} is in the assembled table`);
     assert.deepEqual([OPS[op].classes ?? null, OPS[op].mutating], [d.classes, d.mutating], `${op}: the table agrees with the owner's row`);
     if (d.fields) assert.deepEqual(declaredFields(op), d.fields, `${op}: the owner's fields are read back`);
   }
-  assert.equal(owners.ask, "store-assembly", "the collector finds the assembly's own rows (R84) under store-assembly: plane's copy is deleted (K5201)");
+  assert.equal(found.owners.ask, "store-services", "the collector finds the assembly's own rows (R84) in declared.mjs, whose module is store-services: plane's copy is deleted (K5201)");
   for (const op of Object.keys(ASSEMBLY_DECLARED_OPS)) assert.equal(OWNERS["store-assembly"][op], ASSEMBLY_DECLARED_OPS[op], `${op}: the assembly's own row is store-assembly's`);
   for (const op of Object.keys(OWNER_MAP_DECLARED_OPS)) assert.equal(OWNERS["store-assembly"][op], OWNER_MAP_DECLARED_OPS[op], `${op}: the owner map's row is store-assembly's`);
   /* control: the assembly is the assembly's own static imports, never the test collector */
