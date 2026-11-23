@@ -4,13 +4,22 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handle } from '../src/handler.mjs';
-import { PROVIDERS, engineFamily } from '../src/providers/catalogue.mjs';
+import { PROVIDERS, engineFamily as familyOrNull } from '../src/providers/catalogue.mjs';
 import { callHosts } from '../src/providers/net.mjs';
 import { LOG_COUNT_KINDS, PROVIDER_TIMEOUT_MS, SANDBOX_TIMEOUT_MS, REPUTATION_LIST_MAX_AGE_MS } from '../src/limits.mjs';
 import { makeZip } from '../../bio-plane/test/make-zip.mjs';
 import { memoryBucket, putCapture, putDerived, depsWith, post, enc, EICAR, NOW } from './helpers.mjs';
 import { vendorNet, vendorSockets, specs, infected, has, WEB_RISK_TEST } from './vendors.mjs';
 import { NOT_HONOURED_CODE, EICAR_FOUND, EICAR_NOT_FOUND } from '../src/providers/routes.mjs';
+
+/** R31: an offered provider's engine family; a test names only offered ones.
+ * @param {string} id
+ * @returns {string[]} */
+const engineFamily = (id) => {
+  const f = familyOrNull(id);
+  if (!f) throw new Error(`no engine family for ${id}`);
+  return f;
+};
 
 const SCAN = ['scanii', 'metadefender-cloud', 'metadefender-core', 'icap', 'defender-storage', 'sophos-intelix'];
 const SANDBOX = ['joe-sandbox', 'vmray', 'falcon-sandbox', 'wildfire', 'sophos-intelix'];

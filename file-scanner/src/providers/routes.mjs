@@ -14,11 +14,30 @@ import { SINKS } from './sinks.mjs';
 import { eicar, macroDocument, zeroCounts } from './probes.mjs';
 import { createHash } from 'node:crypto';
 import { localize } from '../../../bio-plane/src/setup-words/index.mjs';
+/** @import { Deps } from '../handler.mjs' */
+/** @import { Descriptor } from './catalogue.mjs' */
+/**
+ * R21: what `checkSpec` answers: `ok` true with the descriptor the call works under (`d`), its adapter and its
+ * `config`; or `ok` false with the refusal's `code`.
+ * @typedef {Object} SpecCheck
+ * @property {boolean} ok
+ * @property {*} [d] the descriptor, when ok
+ * @property {*} [adapter] the tool's adapter, when ok
+ * @property {Object} [config] the spec's `config` as `configOf` keeps it, when ok
+ * @property {string} [code]
+ * @property {string} [provider_id]
+ * @property {string} [field]
+ * @property {string} [reason]
+ */
 
-// What the test probe says of the EICAR test file, for a scan or a sandbox (R28).
+/** R28: what the test probe says of the EICAR test file, for a scan or a sandbox, when it is found.
+ * @type {string} */
 export const EICAR_FOUND = localize('file-scanner.routes.the_eicar_test_file_answered', 'the EICAR test file answered found');
-// What the test probe says of a rebuilding tool that returned no file (R28, R32).
+/** R28, R32: what the test probe says of a rebuilding tool that returned no file.
+ * @type {string} */
 export const NO_SAFE_VIEW = localize('file-scanner.routes.no_safe_view', 'no safe view');
+/** R28: what the test probe says when the EICAR test file is not answered found.
+ * @type {string} */
 export const EICAR_NOT_FOUND = localize('file-scanner.routes.the_eicar_test_file_did', 'the EICAR test file did not answer found');
 
 const ADAPTERS = { scan: SCANNERS, sandbox: SANDBOXES, cdr: CDRS, url_reputation: REPUTATIONS, log_sink: SINKS };
@@ -31,7 +50,17 @@ const refuse = (code, extra = {}) => reply(STATUS[code] || 400, { ok: false, cod
 const isoInstant = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(s) && Number.isFinite(Date.parse(s));
 const TOOL_ID = /^[A-Za-z0-9._-]{1,64}$/;
 
-/** R21: the spec's checks, in order, before anything is read or sent. `{ok:true, d, adapter}` or `{ok:false, code, …}`. */
+/**
+ * R21: the spec's checks, in order, before anything is read or sent. `{ok:true, d, adapter, config}` or
+ * `{ok:false, code, provider_id?, field?, reason?}`: `PROVIDER_UNKNOWN`, `PROVIDER_REFUSED` (with its reason),
+ * `PROVIDER_HELD`, `REGION_UNKNOWN`, `CONFIG_MISSING`, R19's codes for a template, `KIND_NOT_OFFERED`,
+ * `CREDENTIALS_MISSING`, `HANDLING_NOT_CONFIRMED`, `REACH_NOT_BOUND`, `PORT_REFUSED`, `TOOL_SPEC_MALFORMED`,
+ * `MONTHLY_LIMIT_REACHED`.
+ * @param {Deps} deps
+ * @param {*} spec the tool spec
+ * @param {string} kind the endpoint's kind: `scan`, `sandbox`, `cdr`, `url_reputation` or `log_sink`
+ * @returns {SpecCheck}
+ */
 export function checkSpec(deps, spec, kind) {
   if (!spec || typeof spec !== 'object' || typeof spec.provider_id !== 'string') return { ok: false, code: 'PROVIDER_UNKNOWN' };
   const id = spec.provider_id;
@@ -67,7 +96,11 @@ export function checkSpec(deps, spec, kind) {
 const present = (v) => v !== undefined && v !== null && v !== '';
 /** R21 (N777): the spec's `config` as its descriptor's `config` (R19) names it: each `required` field present, else
  *  `{missing}`; a field the list does not name is dropped, so it is never read or sent. `host` and `region` (R19, T38)
- *  are the spec's own fields, checked there (`checkSpec`), never read from or added to its `config`. */
+ *  are the spec's own fields, checked there (`checkSpec`), never read from or added to its `config`.
+ * @param {Descriptor} d
+ * @param {*} spec the tool spec
+ * @returns {{config?: Object, missing?: string}}
+ */
 export function configOf(d, spec) {
   const given = spec.config && typeof spec.config === 'object' && !Array.isArray(spec.config) ? spec.config : {};
   const config = {};
@@ -136,10 +169,17 @@ async function prepare(deps, body, kind) {
   return { c, ctx, sha, started, file, intact };
 }
 
+/** R22: the code an answer that contradicts the required private mode is refused with.
+ * @type {string} */
 export const NOT_HONOURED_CODE = 'PRIVATE_MODE_NOT_HONOURED';
 const notHonoured = (id) => reply(502, { ok: false, code: NOT_HONOURED_CODE, provider_id: id });
 
-/** POST /provider/scan (R5). */
+/**
+ * POST /provider/scan (R5): an outside scanner's verdicts, `{ok:true, verdicts}` or `{ok:false, code}`.
+ * @param {Deps} deps
+ * @param {*} body the request's JSON object, or null
+ * @returns {Promise<Response>}
+ */
 export async function providerScan(deps, body) {
   const p = await prepare(deps, body, 'scan');
   if (p.refusal) return p.refusal;
@@ -157,7 +197,13 @@ export async function providerScan(deps, body) {
   }
 }
 
-/** POST /provider/sandbox (R23). */
+/**
+ * POST /provider/sandbox (R23): a submission, `{ok:true, state:"submitted", vendor_ref, poll_after_ms}` or
+ * `{ok:false, code}`.
+ * @param {Deps} deps
+ * @param {*} body the request's JSON object, or null
+ * @returns {Promise<Response>}
+ */
 export async function sandboxSubmit(deps, body) {
   const p = await prepare(deps, body, 'sandbox');
   if (p.refusal) return p.refusal;
@@ -172,7 +218,12 @@ export async function sandboxSubmit(deps, body) {
   }
 }
 
-/** POST /provider/sandbox/result (R23). */
+/**
+ * POST /provider/sandbox/result (R23): `running`, or `done` with the verdicts, or `{ok:false, code}`.
+ * @param {Deps} deps
+ * @param {*} body the request's JSON object, or null
+ * @returns {Promise<Response>}
+ */
 export async function sandboxResult(deps, body) {
   const c = checkSpec(deps, body && body.tool, 'sandbox');
   if (!c.ok) { const { ok, ...rest } = c; return reply(400, { ok: false, ...rest }); }
@@ -193,7 +244,12 @@ export async function sandboxResult(deps, body) {
   }
 }
 
-/** POST /provider/cdr (R24). */
+/**
+ * POST /provider/cdr (R24): the tool's rebuilt file with its `x-` headers, or `{ok:false, code}`.
+ * @param {Deps} deps
+ * @param {*} body the request's JSON object, or null
+ * @returns {Promise<Response>}
+ */
 export async function providerCdr(deps, body) {
   const p = await prepare(deps, body, 'cdr');
   if (p.refusal) return p.refusal;
@@ -210,7 +266,12 @@ export async function providerCdr(deps, body) {
   }
 }
 
-/** R25: a public `https:` or `http:` address, or null. */
+/**
+ * R25: a public `https:` or `http:` address, normalised, or null: no other scheme, no user name or password, no
+ * local, private, link-local or loopback host.
+ * @param {*} a
+ * @returns {string|null}
+ */
 export function publicAddress(a) {
   if (typeof a !== 'string' || a.length > 8192) return null;
   let u;
@@ -229,7 +290,13 @@ export function publicAddress(a) {
   return u.href;
 }
 
-/** POST /provider/reputation (R25). */
+/**
+ * POST /provider/reputation (R25): `{ok:true, listed, categories, risk, source, lookup_privacy}` or
+ * `{ok:false, code}`.
+ * @param {Deps} deps
+ * @param {*} body the request's JSON object, or null
+ * @returns {Promise<Response>}
+ */
 export async function providerReputation(deps, body) {
   const address = publicAddress(body && body.address);
   if (!address) return refuse('BAD_ADDRESS');
@@ -244,7 +311,12 @@ export async function providerReputation(deps, body) {
   } catch (e) { return refuse(reasonOf(e), detailOf(e) ? { detail: detailOf(e) } : {}); }
 }
 
-/** POST /provider/refresh (R26). */
+/**
+ * POST /provider/refresh (R26): a hash-prefix tool's local list refreshed, `{ok, list_version, fetched_at, error?}`.
+ * @param {Deps} deps
+ * @param {*} body the request's JSON object, or null
+ * @returns {Promise<Response>}
+ */
 export async function providerRefresh(deps, body) {
   const c = checkSpec(deps, body && body.tool, 'url_reputation');
   if (!c.ok) { const { ok, ...rest } = c; return reply(400, { ok: false, ...rest }); }
@@ -253,7 +325,12 @@ export async function providerRefresh(deps, body) {
   return reply(200, await c.adapter.refresh(contextOf(deps, body.tool, c, deps.now())));
 }
 
-/** R27: `{ok:true}` or the key that makes the record invalid. */
+/**
+ * R27: `{ok:true}` or the first key that makes the record invalid (`record`, `period`, `period.from`, `period.to`,
+ * `counts`, `counts.<kind>`, or the stray key itself).
+ * @param {*} record
+ * @returns {{ok: boolean, key?: string}}
+ */
 export function checkRecord(record) {
   if (!record || typeof record !== 'object' || Array.isArray(record)) return { ok: false, key: 'record' };
   for (const k of Object.keys(record)) if (k !== 'period' && k !== 'counts') return { ok: false, key: k };
@@ -271,7 +348,12 @@ export function checkRecord(record) {
   return { ok: true };
 }
 
-/** POST /provider/forward (R27). */
+/**
+ * POST /provider/forward (R27): a counts record forwarded, `{ok:true, sent_at}` or `{ok:false, code}`.
+ * @param {Deps} deps
+ * @param {*} body the request's JSON object, or null
+ * @returns {Promise<Response>}
+ */
 export async function providerForward(deps, body) {
   const v = checkRecord(body && body.record);
   if (!v.ok) return refuse('COUNTS_RECORD_INVALID', { key: v.key });
@@ -284,7 +366,13 @@ export async function providerForward(deps, body) {
   } catch (e) { return refuse(reasonOf(e), detailOf(e) ? { detail: detailOf(e) } : {}); }
 }
 
-/** POST /provider/test (R28): the descriptor's probe through the same adapter. */
+/**
+ * POST /provider/test (R28): the descriptor's probe through the same adapter, `{ok:true, passed, detail}` or
+ * `{ok:false, code}`.
+ * @param {Deps} deps
+ * @param {*} body the request's JSON object, or null
+ * @returns {Promise<Response>}
+ */
 export async function providerTest(deps, body) {
   const spec = body && body.tool;
   const base = spec && providerById(spec.provider_id);
@@ -343,7 +431,10 @@ export async function providerTest(deps, body) {
   }
 }
 
-/** GET /providers (R29). */
+/**
+ * GET /providers (R29): `{ok:true, offered, refused, held, transports}`.
+ * @returns {Response}
+ */
 export function providersList() {
   return reply(200, { ok: true, offered: PROVIDERS, refused: REFUSED_PROVIDERS, held: HELD_PROVIDERS,
     transports: PROVIDERS.filter((d) => GENERIC.includes(d.provider_id)) });

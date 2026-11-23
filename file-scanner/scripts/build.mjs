@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /* Build the Worker that answers file-scanner's binding and hosts its two container classes (R10) into one
- * self-contained module, committed, with the manifest beside it, by bundler's recipe, as every fleet member's bundle is
+ * self-contained module in `dist/`, with the manifest beside it, by bundler's recipe, as every fleet member's bundle is
  * (bundler R24). `@cloudflare/containers` is a devDependency inlined here; neither image installs it.
+ *
+ * R36: nothing it writes is committed; `dist/` keeps only its `.gitignore`. It runs whenever a test, a deployment or
+ * a release needs the bundle; this module's tests that read it build it first through `test/stubs/runtime.mjs`.
  *
  * Run from file-scanner/: `npm run build` (needs `npm ci` here and in bio-plane/, which holds esbuild).
  */
