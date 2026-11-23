@@ -5,7 +5,10 @@
  * off the address on load and hands it in as `view.fragment.grant` (interface-shell R46, R9's route). Every function is
  * self-contained (interface-shell R21 (1)). */
 import { PARTS } from "./parts.mjs";
+/** @import { ScreenDef } from "./parts.mjs" */
 
+/** A review copy from outside (R17, R18, R23, R60, R61): `reviewcopy` and `groupidentity` read with the link's secret in the body; acts `reviewcomment` and `statementack`.
+ *  @type {Readonly<ScreenDef>} */
 export const REVIEW_OUTSIDE = Object.freeze({
   id: "review-outside",
   parts: PARTS,

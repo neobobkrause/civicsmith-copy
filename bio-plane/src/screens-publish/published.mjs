@@ -4,9 +4,12 @@
  * work it is and how to read it; "Check the signature"; "Check a file you hold" (R22). Nothing here needs an account. Every function is
  * self-contained (interface-shell R21 (1)). */
 import { PARTS } from "./parts.mjs";
+/** @import { ScreenDef } from "./parts.mjs" */
 import { PUBLISHED_PARTS } from "./published-parts.mjs";
 import { PUBLISHED_PAGES } from "./published-pages.mjs";
 
+/** A published case (R6, R19, R22, R29, R33, R34, R36 to R39, R47, R54, R76): `publishedcase` and `groupidentity` read as public ops; acts `verify` and `publishedcase`, and the browser acts of R38 and R39.
+ *  @type {Readonly<ScreenDef>} */
 export const PUBLISHED = Object.freeze({
   id: "published",
   parts: Object.freeze({ ...PARTS, ...PUBLISHED_PARTS, ...PUBLISHED_PAGES }),

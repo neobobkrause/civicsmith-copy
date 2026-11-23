@@ -3,7 +3,10 @@
  * note and a secret phrase, each optional but the material; "Hand it over" sends them with no credential. The secret
  * phrase is never kept by the page. Every function is self-contained (interface-shell R21 (1)). */
 import { PARTS } from "./parts.mjs";
+/** @import { ScreenDef } from "./parts.mjs" */
 
+/** The doorbell (R9, R49, R56, R67): `groupidentity` read; acts `knock` and `knockerconsent`, each with no credential.
+ *  @type {Readonly<ScreenDef>} */
 export const DOORBELL = Object.freeze({
   id: "doorbell",
   parts: PARTS,
