@@ -78,7 +78,8 @@ async function putScript(name, init) {
   const meta = JSON.parse(await init.body.get("metadata").text());
   const file = init.body.get("index.mjs");
   await pipeline(Readable.fromWeb(file.stream()), createWriteStream(fileOf(name)));
-  scripts.set(name, { bindings: meta.bindings || [], put: true });
+  /* The account states each script's `observability` as its last upload sent it (installer-steps R40 reads it back). */
+  scripts.set(name, { bindings: meta.bindings || [], put: true, observability: meta.observability });
   const mig = meta.migrations || {};
   classes.set(name, [...new Set([...(classes.get(name) || []), ...(mig.new_sqlite_classes || []), ...(mig.new_classes || []),
     ...(mig.steps || []).flatMap((st) => [...(st.new_sqlite_classes || []), ...(st.new_classes || [])])])]);
@@ -141,7 +142,8 @@ const rules = [
   { m: (u, mth) => u.includes("/scripts/bio-plan-probe") && mth === "DELETE", f: () => ok({}) },
   { m: (u, mth) => /\/workers\/scripts\/[^/]+\/settings$/.test(u) && mth === "GET", f: (u) => {
     const name = u.split("/workers/scripts/")[1].split("/")[0];
-    return scripts.has(name) ? ok({ bindings: scripts.get(name).bindings.map(({ text, ...b }) => b) }) : bad("not found", 404);
+    const held = scripts.get(name);
+    return held ? ok({ ...(held.observability === undefined ? {} : { observability: held.observability }), bindings: held.bindings.map(({ text, ...b }) => b) }) : bad("not found", 404);
   } },
   { m: (u, mth) => /\/workers\/scripts\/[^/]+$/.test(u) && mth === "PUT", f: (u, init) => putScript(u.split("/workers/scripts/")[1], init) },
   { m: (u, mth) => /\/workers\/scripts\/[^/]+$/.test(u) && mth === "GET", f: (u) => {
