@@ -54,6 +54,12 @@ export const SCREEN_KEYS = Object.freeze({
     "act.casedrafts.label.case-editor", "act.casedrafts.does", "screen.case-editor.drafts.help", "screen.case-editor.drafts.choose", "screen.case-editor.drafts.newest", "screen.case-editor.drafts.item", "screen.case-editor.links.live", "review.index.not_concluded_yet",
     // the code differences of 22 Nov 2026 (ARCH), and R24: keys these screens draw
     "screen.case-editor.when_the_roles_cant_be_saved", "screen.case-editor.a_finding_has_no_role_or", "screen.case-editor.choose_a_role_for_every_finding", "screen.case-editor.a_finding_you_rely_on_does", "screen.case-editor.make_it_supporting_or_strengthen_it", "screen.case-editor.when_it_cant_be_saved", "screen.case-editor.an_item_names_nothing_or_has", "screen.case-editor.a_field_is_longer_than_2000", "screen.case-editor.shorten_it_or_reword_it_then", "screen.case-editor.when_the_position_cant_be_saved", "screen.case-editor.no_position_is_chosen_or_it", "screen.case-editor.choose_one_and_say_why", "screen.case-editor.the_acknowledgement_is_missing_or_it", "screen.case-editor.write_it_for_this_edition", "screen.case-editor.when_a_citation_cant_be_moved", "screen.case-editor.you_gave_no_reason_or_you", "screen.case-editor.write_why_or_ask_a_member",
+    // R24: keys these screens draw that the design stream's regenerated reads list names (journey-check, PR 1282)
+    "refusal.NO_ROLE", "refusal.BAD_ROLE", "refusal.BAD_ROLES", "refusal.NO_MEMBER_ROLE",
+    "refusal.BAD_MEMBER_ROLE", "refusal.NO_LOAD_BEARING_MEMBER", "refusal.BELOW_PROJECT_STRENGTH", "refusal.BAD_EXCLUSION",
+    "refusal.NO_EXCLUSION_FIELD", "refusal.BAD_COMPLETENESS", "refusal.NO_SUBJECT_POSITION", "refusal.NO_SUBJECT_JUSTIFICATION",
+    "refusal.NO_BIAS_ACKNOWLEDGEMENT", "refusal.BIAS_ACKNOWLEDGEMENT_CARRIED_FORWARD", "refusal.NO_REASON", "refusal.BAD_REASON",
+    "refusal.NOT_PERMITTED",
   ]),
   "review-copy": Object.freeze([
     "screen.ceremony.published.edition", "screen.ceremony.publicpage", "screen.ceremony.prepared",
@@ -144,6 +150,9 @@ export const SCREEN_KEYS = Object.freeze({
     "act.casedrafts.label.ceremony", "act.casedrafts.does", "screen.ceremony.drafts.help", "screen.ceremony.drafts.choose", "screen.ceremony.drafts.newest", "screen.ceremony.drafts.item", "screen.ceremony.links.live", "case.draft.untitled", "screen.ceremony.signs.count.findings", "screen.ceremony.published.edition",
     // the code differences of 22 Nov 2026 (ARCH), and R24: keys these screens draw
     "screen.ceremony.when.chosen", "screen.ceremony.when.note", "screen.ceremony.signs.lines", "screen.ceremony.publishat.button", "screen.ceremony.photos.rules", "shell.noanswer",
+    // R24: keys these screens draw that the design stream's regenerated reads list names (journey-check, PR 1282)
+    "refusal.TENSION_NOT_DISCLOSED", "refusal.DISCLOSURE_NOT_STANDING", "refusal.TENSIONS_UNDETERMINED", "refusal.CO_ATTESTATION_UNACKNOWLEDGED",
+    "refusal.SELF_ATTESTED_NO_REASON", "refusal.SELF_ATTESTATION_NOT_STANDING",
   ]),
   published: Object.freeze([
     "screen.document.passage.where", "screen.question.leg.paragraph",
@@ -184,6 +193,10 @@ export const SCREEN_KEYS = Object.freeze({
     "screen.published.a.print.made.from.a", "mark.gap.undetermined.name", "mark.gap.undetermined.means", "screen.published.leg", "screen.published.leg.supports", "screen.published.leg.cuts", "screen.published.restson.lead", "screen.published.cutagainstby.lead", "screen.published.min.none", "screen.published.min.c", "screen.published.min.b", "screen.published.min.a", "screen.published.finding.unreadable", "screen.published.finding.withheld", "mark.scale.capture.name", "mark.scale.capture.means",
     "mark.scale.connection.name", "mark.scale.connection.means", "mark.grade.reading",
     "screen.published.what_this_case_leaves_out", "screen.published.written_by_writer_and_published", "screen.published.who_else_read_this_statement", "screen.published.no_one_else_on_the", "screen.published.this_edition_does_not_say", "screen.published.when_the_edition_does_not", "screen.published.contradictions_the_team_disclosed", "screen.published.each_one_names_the_finding", "screen.published.one_side_side", "screen.published.the_other_side_side", "screen.published.read_by_who_on_date", "screen.published.the_team_disclosed_no_contradictions", "screen.published.this_edition_was_signed_before", "screen.published.the_lens_this_team_read", "screen.published.the_lens_this_team_read2", "screen.case-editor.details.area.bodyhint", "screen.case-editor.details.contact.legend", "screen.case-editor.details.contact.doorbell", "screen.case-editor.details.rel.link", "screen.case-editor.details.ties.legend", "screen.case-editor.details.ties.none", "act.owed_casedetailspublic.label.published", "act.owed_casedetailspublic.does", "screen.published.details.pub.current1", "screen.published.details.pub.current2", "screen.person.fact.notstated", "screen.published.choose_a_file_or_paste", "screen.published.the_file_itself_never_leaves", "screen.published.choose_it_again_or_paste",
+    // R24: keys these screens draw that the design stream's regenerated reads list names (journey-check, PR 1282)
+    "mark.strength.means", "screen.published.howtoread.link", "screen.published.tip.capture", "screen.published.tip.capture_why",
+    "screen.published.tip.connection", "screen.published.explained_not_yet_shown_the", "screen.published.it_stands_as_the_team", "screen.published.taken_up_as_a_question",
+    "screen.published.that_is_not_the_same", "screen.published.the_other_things_a_disclosed", "screen.published.when.a.minimum.strength.was", "screen.published.when_no_one_else_has",
   ]),
   imported: Object.freeze([
     "refusal.IMPORT_ACCEPT_NO_REASON", "refusal.IMPORT_NOTHING_ACCEPTED",
@@ -256,6 +269,8 @@ export const SCREEN_KEYS = Object.freeze({
     "screen.doorbell.consent.yes", "screen.doorbell.consent.no", "screen.doorbell.consent.permanent1", "screen.doorbell.consent.permanent2",
     "screen.doorbell.consent.refused.summary", "screen.doorbell.consent.refused.secret", "screen.doorbell.consent.refused.rate",
     "screen.doorbell.consent.refused.rate.next",
+    // R24: keys these screens draw that the design stream's regenerated reads list names (journey-check, PR 1282)
+    "screen.doorbell.consent.audience.public", "screen.doorbell.consent.audience.team", "screen.doorbell.consent.secret",
   ]),
   "review-outside": Object.freeze([
     "question.concluded.falsifier",
@@ -267,5 +282,7 @@ export const SCREEN_KEYS = Object.freeze({
     "screen.review-outside.nolink", "review.body.nocase", "screen.review-outside.sent", "screen.review-outside.until",
     "screen.review-outside.until.zone", "time.clock", "time.am", "time.pm", "screen.review-outside.untilstopped", "review.statement.title", "review.statement.help", "review.statement.note",
     "review.statement.note.help", "review.statement.ack", "refusal.STATEMENT_ACK_NO_REASON", "refusal.NO_REVIEW_COPY", "review.index.not_concluded_yet",
+    // R24: keys these screens draw that the design stream's regenerated reads list names (journey-check, PR 1282)
+    "screen.review-outside.ask", "screen.review-outside.readall",
   ]),
 });
