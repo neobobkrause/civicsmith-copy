@@ -3,6 +3,65 @@
 
 import { word, localize } from '../setup-words/index.mjs';
 
+/**
+ * @typedef {Object} CheckRow one refusal's row: its check number, where in `contradiction` it is asked, and the words a member reads
+ * @property {string} check the check's number, `C-60.<n>` or `C-93.<n>`
+ * @property {string} where the file and predicate in `contradiction` that asks it
+ * @property {string} translation the refusal's words, looked up in `setup-words`
+ * @bound check: `C-60.` or `C-93.` then a whole number; no two rows share one
+ */
+/**
+ * @typedef {Object} ContradictionPairChecks the pairing read's refusals, by code (C-60)
+ * @property {CheckRow} CONTRADICTION_KEY_UNKNOWN
+ * @property {CheckRow} CANDIDATES_NO_SUBJECT
+ * @property {CheckRow} TENSIONS_TOO_MANY
+ */
+/**
+ * @typedef {Object} ContradictionCandidateChecks the candidate door's refusals, by code (C-93)
+ * @property {CheckRow} CANDIDATE_NO_PROPOSER
+ * @property {CheckRow} CANDIDATE_NO_RUN
+ * @property {CheckRow} CANDIDATE_RUN_NOT_RUNNING
+ * @property {CheckRow} CANDIDATE_NO_PROPOSALS
+ * @property {CheckRow} CANDIDATE_LABEL_UNKNOWN
+ * @property {CheckRow} CANDIDATE_NO_REASON
+ * @property {CheckRow} CANDIDATE_PAIR_NOT_FORMED
+ * @property {CheckRow} NO_CANDIDATE
+ * @property {CheckRow} NO_SUCH_CANDIDATE
+ * @property {CheckRow} MACHINE_CANNOT_ACT_ON_CANDIDATE
+ * @property {CheckRow} CANDIDATE_CLOSED
+ * @property {CheckRow} CANDIDATE_TAKEN_UP
+ * @property {CheckRow} RECORD_CANNOT_BE_DISMISSED
+ * @property {CheckRow} DISMISSAL_REASON_UNKNOWN
+ * @property {CheckRow} CLARIFY_NOT_A_TENSION
+ * @property {CheckRow} CLARIFY_CHOICE_UNKNOWN
+ * @property {CheckRow} CLARIFY_COORDINATE_UNKNOWN
+ * @property {CheckRow} CLARIFY_NO_EXPLANATION
+ * @property {CheckRow} EVIDENCE_NOT_SEEN
+ * @property {CheckRow} WRONG_SIDE_UNNAMED
+ * @property {CheckRow} WRONG_SIDE_NO_REASON
+ * @property {CheckRow} PLURALITY_HAS_NO_WRONG_SIDE
+ * @property {CheckRow} TAKE_UP_NO_QUESTION
+ * @property {CheckRow} TAKE_UP_NO_FRAME
+ * @property {CheckRow} ACCEPTANCE_NOT_STANDING
+ * @property {CheckRow} ACCEPTANCE_VALUE_DIFFERS
+ * @property {CheckRow} NOT_A_CONTRADICTION_INQUIRY
+ * @property {CheckRow} RECOMMEND_NO_COORDINATES
+ * @property {CheckRow} RECOMMEND_COORDINATE_UNKNOWN
+ * @property {CheckRow} RECOMMEND_NO_REASON
+ * @property {CheckRow} RECOMMEND_CANDIDATE_NOT_STANDING
+ * @property {CheckRow} CANDIDATE_NOT_HELD
+ * @property {CheckRow} WORDS_MALFORMED
+ * @property {CheckRow} NOT_A_PARTY
+ * @property {CheckRow} NOT_A_PROJECT_CONFLICT
+ * @property {CheckRow} RESPONSE_BEFORE_OPT_IN
+ * @property {CheckRow} RESPONSE_NO_TEXT
+ * @property {CheckRow} DISCLOSURE_MALFORMED
+ * @property {CheckRow} DISCLOSURE_NOT_YOURS
+ * @property {CheckRow} FLAG_NO_PASSAGE
+ * @property {CheckRow} FLAG_SAME_DOCUMENT
+ * @property {CheckRow} FLAG_NO_REASON
+ */
+
 /* REC-146 / C-60 — THE CONTRADICTION PAIRING READ'S REFUSALS
  * (`CONTRADICTION-IDENTIFY-DESIGN.md` section 4, section 9 item 1).
  *
@@ -20,6 +79,7 @@ import { word, localize } from '../setup-words/index.mjs';
  * is that keys are ADDED, never tuned, precisely so the per-key figures stay comparable
  * across runs; a key name that answered from a different key would make them incomparable
  * while looking complete. So the refusal NAMES the keys the record holds. */
+/** @type {ContradictionPairChecks} the pairing read's rows */
 export const CONTRADICTION_PAIR_CHECKS = {
   CONTRADICTION_KEY_UNKNOWN: {
     check: 'C-60.1',
@@ -49,6 +109,7 @@ export const CONTRADICTION_PAIR_CHECKS = {
  * pairs for THIS viewer and writes only a proposal naming one of them, with
  * the referents and versions the PLANE read, never the ones the body sent. The run's principal is REC-152's gate,
  * relayed with its own code, and is not restated here. */
+/** @type {ContradictionCandidateChecks} the candidate door's rows */
 export const CONTRADICTION_CANDIDATE_CHECKS = {
   CANDIDATE_NO_PROPOSER: {
     check: 'C-93.1',
