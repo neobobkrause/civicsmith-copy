@@ -201,7 +201,7 @@ test("R55 a release of V that fails a check is not installed, and the stop names
   cases.push(["a release of V signed by a key outside the release keys", stranger, "installer.update.stopped.wrongsigner"],
     ["no signature", unsigned, "installer.update.stopped.unsigned"], ["a signature in another namespace", wrongNs, "installer.update.stopped.wrongsigner"],
     ["a changed byte", changed, "installer.update.stopped.integrity"], ["limits not stated", unstated, "installer.update.stopped.nolimits"]);
-  for (const [why, rel, m] of cases) {
+  for (const [why, rel, m] of /** @type {[string, any, string][]} */ (cases)) {
     armWith(SIGNER.line);
     const slug = "r55-c" + cases.findIndex((c) => c[0] === why);
     const w = await run({ slug, mode: "update", pre: pre(slug), rel, version: NEXT });

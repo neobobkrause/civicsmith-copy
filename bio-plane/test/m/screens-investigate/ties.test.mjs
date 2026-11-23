@@ -20,7 +20,10 @@ test("R9 reads memberties (her own ties, seen only by her and the administrators
   assert.equal(p.byOp("memberties").length, 1);
   assert.deepEqual(Object.keys(p.byOp("memberties")[0].query), ["op"], "her own, as the door stamps her");
   const m = main(p);
-  for (const k of ["why", "why.1", "who", "who.1"]) drew(m, "screen.ties." + k);
+  const fold = m.querySelector("details");
+  assert.ok(fold && fold.hasAttribute("open"), "why and who sit in one fold, drawn open");
+  drew(fold.querySelector("summary"), "screen.ties.summary");
+  for (const k of ["why", "why.1", "why.2", "why.3", "why.4", "who", "who.1", "who.2", "who.3", "who.change"]) drew(fold, "screen.ties." + k);
   const held = (await me.read("memberties", {})).ties.filter((t) => !t.withdrawn);
   const rows = m.querySelectorAll("tr.cs-r");
   assert.equal(rows.length, held.length);
@@ -44,12 +47,36 @@ test("R9 declaretie \"Add this tie\": its kind, who, her words, and whether a ca
   const held = (await me.read("memberties", {})).ties.filter((t) => !t.withdrawn);
   assert.deepEqual(held.map((t) => [t.entity, t.kind, t.note, t.attribution]), [[co, "business", "member-owner of Lakeshore Hardware Co-op", "name"]], "the world holds the tie");
   const q = await openAs(world, me, at);
-  fill(q, { "tie-who": co, "tie-note": "an interest" });
+  fill(q, { "tie-kind": "employer", "tie-who": co, "tie-note": "an interest", "tie-says": "group" });
   await press(q, "declaretie", { reason: REASON });
   await settled(q);
-  assert.equal(q.byOp("declaretie")[0].body.attribution, "group", "by default a case says \"a member of the group\"");
+  assert.equal(q.byOp("declaretie")[0].body.attribution, "group", "\"Without naming me\" sends a case that says \"a member of the group\"");
   const both = (await me.read("memberties", {})).ties.filter((t) => !t.withdrawn);
   assert.equal(both.find((t) => t.note === "an interest").attribution, "group", "the world holds it so");
+});
+
+test("R9 nothing is chosen for her: the kind and the disclosure open blank, and \"Add this tie\" without either refuses in place, naming the choice, and sends nothing", async () => {
+  const { world, me } = await inWorld();
+  const co = await entity(me, "Lakeshore Hardware Co-op");
+  const p = await openAs(world, me, at);
+  for (const id of ["tie-kind", "tie-says"]) {
+    const sel = p.doc.getElementById(id);
+    const chosen = sel.querySelectorAll("option").find((o) => o.hasAttribute("selected"));
+    assert.equal(chosen ? chosen.getAttribute("value") : sel.querySelectorAll("option")[0].getAttribute("value"), "", id + " opens with nothing chosen");
+  }
+  const field = (key) => word(key);
+  fill(p, { "tie-who": co, "tie-note": "member-owner", "tie-says": "name" });
+  await press(p, "declaretie", { reason: REASON });
+  await settled(p);
+  assert.equal(p.byOp("declaretie").length, 0, "no kind chosen: nothing sent");
+  drew(main(p), "shell.field.needed", { field: field("screen.ties.kind") });
+  const q = await openAs(world, me, at);
+  fill(q, { "tie-kind": "employer", "tie-who": co, "tie-note": "member-owner" });
+  await press(q, "declaretie", { reason: REASON });
+  await settled(q);
+  assert.equal(q.byOp("declaretie").length, 0, "no disclosure chosen: nothing sent, never \"Without naming me\" by default");
+  drew(main(q), "shell.field.needed", { field: field("screen.ties.says") });
+  assert.equal((await me.read("memberties", {})).ties.length, 0, "the world holds no tie");
 });
 
 test("R9 withdrawtie \"Remove a tie\" from its row, with a reason (control: an unnamed tie sends nothing)", async () => {
@@ -73,8 +100,12 @@ test("R9 withdrawtie \"Remove a tie\" from its row, with a reason (control: an u
 test("R34 ties draws its two disclosure choices with every fill answered (the member's handle, the tie she is adding in words), never the braces", async () => {
   const { world, me } = await inWorld();
   const p = await openAs(world, me, "/app/ties");
-  const texts = p.doc.getElementById("tie-says").querySelectorAll("option").map((o) => o.textContent);
+  const texts = () => p.doc.getElementById("tie-says").querySelectorAll("option").map((o) => o.textContent).filter(Boolean);
+  assert.ok(texts().every((t) => !/[{}]/.test(t)), "no braces before a kind is chosen");
+  fill(p, { "tie-kind": "employer" });
+  p.fire(p.doc.getElementById("tie-kind"), "change");
+  await settled(p);
   const tie = word("screen.ties.kind.employer");
-  assert.deepEqual(texts, [word("screen.ties.says.group.choice", { handle: me.handle, tie }), word("screen.ties.says.name.choice", { handle: me.handle, tie })]);
-  assert.ok(texts.every((t) => !/[{}]/.test(t)), "no braces");
+  assert.deepEqual(texts(), [word("screen.ties.says.group.choice", { handle: me.handle, tie }), word("screen.ties.says.name.choice", { handle: me.handle, tie })]);
+  assert.ok(texts().every((t) => !/[{}]/.test(t)), "no braces");
 });

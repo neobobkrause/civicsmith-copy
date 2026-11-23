@@ -21,7 +21,8 @@ any page of ours can explain it. Deploy the hello-world it offers.
 ## 2. Paste the module
 
 Open the Worker, Edit code. Select everything in the editor, delete it, and
-paste the entire contents of `dist/newgroup.bundled.mjs`. Deploy.
+paste the entire contents of `dist/newgroup.bundled.mjs`, which `npm run build` (in
+`newgroup/`) writes there; it is never committed. Deploy.
 
 ## 3. Verify the page
 

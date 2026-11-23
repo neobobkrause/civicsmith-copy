@@ -209,7 +209,36 @@ const WORDS_OF = {
     "ai.progress.checked.all.means", "ai.progress.check.failed", "screen.answers.failed.next", "refusal.ASSISTANT_REMOTE_NOT_READY", "screen.connect.name"],
 };
 
+/**
+ * @typedef {Object} ScreenRead one read a screen asks of the shell: an op, through the plane
+ * @property {string} op the op read
+ * @property {Object<string, string>} [query] the read's query fields
+ * @property {boolean} [refresh] the read is asked afresh each time (interface-shell R93)
+ * @property {(answer: any) => boolean} [empty] true when the answer holds nothing to draw
+ */
+/**
+ * @typedef {Object} ScreenAct one act a screen draws (interface-shell R21): its op, its label's key and what it sends
+ * @property {string} op the op the act sends
+ * @property {string} label the key of the act's label
+ * @property {(cs: any, view: any, el?: any) => any} send builds the request from the page's view: `{body}`, `{query}`, `{refuse}` naming a key, or null to send nothing
+ * @property {(cs: any, view: any, answer?: any) => void} [done] what the page shows after the act's answer
+ * @property {string[]} [rereads] the reads the act changes, asked again after it (R94)
+ * @property {Object<string, any>} [refusals] a refusal's code and the key, or the function giving the words, it is drawn by
+ * @property {string} [reasonField] the field that carries the member's reason
+ */
+/**
+ * @typedef {Object} Screen one registry screen, interface-shell R21's screen contract
+ * @property {string} id the registry's screen id: `home`, `elsewhere`, `projects`, `queue`, `finder`, `find-in` or `answers`
+ * @property {(subject?: any) => Object<string, any>} reads the reads the screen asks, by name, for its subject (a read may be absent)
+ * @property {(cs: any, view: any) => any} render draws the screen with the kit `cs` from the view of its reads' answers
+ * @property {Array<Object>} acts the acts it draws, each a ScreenAct (screens-find states its screens' acts as plain objects)
+ * @property {ReadonlyArray<string>} words the keys of every sentence it draws, each read through setup-words (R34)
+ * @property {Object<string, Function>} [parts] the pieces it is built from, each self-contained, for the shell to ship with it
+ * @property {(subject: any) => any} [place] where a subject sits, for the masthead (`find-in`)
+ * @bound words: every key one setup-words holds (R34); no key twice in one screen
+ */
 /** The seven screens, in the registry's order of the rail (Home and its Where else to go, Projects, Queue, Find, Find in
-    this, Ask). */
+    this, Ask). The array and each screen are frozen.
+    @type {ReadonlyArray<Readonly<Screen>>} */
 export const SCREENS = Object.freeze([home, elsewhere, projects, queue, finder, findIn, answers]
   .map((s) => Object.freeze({ ...s, words: Object.freeze([...new Set([...WORDS_OF[s.id], ...(CUT_EXTRA[s.id] || [])])]) })));

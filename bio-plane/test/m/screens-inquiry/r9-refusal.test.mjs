@@ -10,6 +10,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
+import { ocrWorkerDef } from "../../../../ocr-worker/test/memberworker.mjs";
 import { OPS } from "../../../src/op-declarations/index.mjs";
 import { CAPTURE_SCREEN } from "../../../src/screens-intake/capture.mjs";
 import { boot, counted } from "../interface-shell/harness.mjs";
@@ -17,12 +18,6 @@ import { generate } from "../../imggen.mjs";
 import { SCREENS, main, word } from "./fixtures.mjs";
 
 const SRC = fileURLToPath(new URL("../../../src/plane/index.mjs", import.meta.url));
-/* the member booted from its committed bytes (what ocr-worker's own helper does; ocr-worker is not in this module's `uses`, so the recipe is stated here) */
-const MEMBER = (f) => fileURLToPath(new URL("../../../../ocr-worker/" + f, import.meta.url));
-const ocrWorkerDef = () => ({ name: "ocr-worker", modulesRoot: MEMBER(""), compatibilityDate: "2026-07-01", r2Buckets: ["CAPTURES"], bindings: { VERSION: "test" },
-  modules: [{ type: "ESModule", path: MEMBER("dist/ocr-worker.bundled.mjs"), contents: readFileSync(MEMBER("dist/ocr-worker.bundled.mjs"), "utf8") },
-    { type: "CompiledWasm", path: MEMBER("assets/tesseract-core.wasm"), contents: readFileSync(MEMBER("assets/tesseract-core.wasm")) },
-    { type: "Data", path: MEMBER("assets/eng.traineddata"), contents: readFileSync(MEMBER("assets/eng.traineddata")) }] });
 const ADM = "adm-r9refuse-0123456789abcdef", PASSWORD = "the founder's long password";
 const mf = new Miniflare({ workers: [
   { name: "plane", modules: true, modulesRoot: "/", scriptPath: SRC, script: readFileSync(SRC, "utf8"),
@@ -32,7 +27,7 @@ const mf = new Miniflare({ workers: [
     serviceBindings: { OCR_WORKER: "ocr-worker" },
     bindings: { ADMIN_TOKEN: ADM, MEMBER_TOKEN: "mem-r9refuse-0123456789abcdef", PROBE_TOKEN: "prb-r9refuse-0123456789abcdef", VERSION: "4.6.0", INSTANCE_NAME: "r9refuse-town",
                 GOVERNOR_APPETITE_PER_MIN: "600000", GOVERNOR_SUBRESOURCE_STAGGER_MS: "0" } },
-  ocrWorkerDef(),
+  ocrWorkerDef(), /* ocr-worker R32: built from its source by ocr-worker's own helper; no bundle is read from the checkout */
 ] });
 after(() => mf.dispose());
 const ORIGIN = "https://group.example";

@@ -15,6 +15,22 @@ import { STANDARD_SCREEN } from "./standard.mjs";
 import { TIES_SCREEN } from "./ties.mjs";
 import { THEME_SCREEN } from "./theme.mjs";
 
-/** interface-shell R21: the twelve registry screens this module draws. */
+/**
+ * One screen under `interface-shell` R21's screen contract: its registry id, the reads it asks for, how it draws, the acts
+ * it sends, every word key it draws, and the shared readers it is handed.
+ * @typedef {Object} Screen
+ * @property {string} id the registry screen's id
+ * @property {Function} reads answers the reads the screen asks for, each an op with its query
+ * @property {Function} render draws the screen with the kit `cs` over the view, answering HTML
+ * @property {Array<Object>} acts each act's op, label key and the body it sends, or the refusal it draws in place
+ * @property {Array<string>} words every word key the screen draws, each read through `setup-words`
+ * @property {Object} [parts] the shared readers the screen is handed
+ * @property {ReadonlyArray<string>} [ABSENT_CODES] the refusal codes its subject read answers when the subject is absent (`interface-shell` R61)
+ * @property {Function} [place] names the screen's place in the path from what it reads
+ */
+/**
+ * interface-shell R21: the twelve registry screens this module draws.
+ * Frozen: no screen is added or removed. Each is a `Screen`.
+ */
 export const SCREENS = Object.freeze([PEOPLE_SCREEN, PERSON_SCREEN, EXPLORE_SCREEN, TIMELINE_SCREEN, MONEY_SCREEN, CALCULATION_SCREEN,
   HELP_SCREEN, PROCEEDING_SCREEN, DUE_DATE_SCREEN, STANDARD_SCREEN, TIES_SCREEN, THEME_SCREEN]);

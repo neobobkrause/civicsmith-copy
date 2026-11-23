@@ -20,7 +20,7 @@ import { open as openRaw, main, text, ops, refused, textNodes, wordChecker } fro
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 // The registry is the design's (shell R73, N1122): read from the working copy, never a commit. An owed act (`owed:<op> K…`) is
 // that op once declared (wizard-scripts R13) and is drawn only then (interface-shell R12): until `OPS` holds it, it is left out.
-const REGISTRY = JSON.parse(readFileSync(new URL("./fixtures/registry-43379a1a44.json", import.meta.url), "utf8")).screens
+const REGISTRY = JSON.parse(readFileSync(join(ROOT, "docs/development/ux-substrate/screens/registry.json"), "utf8")).screens
   .map((r) => ({ ...r, acts: r.acts.filter((a) => !String(a.op).startsWith("owed:") || OPS[String(a.op).replace(/^owed:/, "").split(" ")[0]])
     .map((a) => ({ ...a, op: String(a.op).replace(/^owed:/, "").split(" ")[0] })) }));
 const byId = Object.fromEntries(SCREENS.map((s) => [s.id, s]));

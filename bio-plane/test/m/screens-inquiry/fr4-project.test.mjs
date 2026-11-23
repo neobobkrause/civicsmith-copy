@@ -203,7 +203,7 @@ test("R1 R113 every act of the project declares the reads it changes (names in t
   const mai = await w.world.signIn("mai", { capabilities: ["contribute"] });
   await w.ann.act("projectinvite", { query: { projectId: w.project, handle: "mai" }, body: {} });
   await mai.act("projectjoin", { query: { projectId: w.project }, body: {} });
-  const specs = PROJECT.reads({ subject: w.project, me: { member: "ann", handle: "ann" } });
+  const specs = /** @type {Record<string, *>} */ (PROJECT.reads({ subject: w.project, me: { member: "ann", handle: "ann" } }));
   const p = await pageOf(w.world, w.ann, w.at);
   const before = counts(p);
   await press(p, "projectbarset", { reason: "the bar" });
