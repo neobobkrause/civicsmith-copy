@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { acts, all, ancestor, day, has, lacks, open, panelOf, said, textOf, screen, SCREENS } from "./kit.mjs";
 import { env } from "./fixtures.mjs";
-import { scannerTeam, burstTeam, handleOf } from "./seed-security.mjs";
+import { scannerTeam, burstTeam, hardTries, handleOf } from "./seed-security.mjs";
 
 const ops = (o) => [...new Set(acts(o.tree).map((b) => b.attrs["data-act"]))].sort();
 const HOUR = 3600000;
@@ -406,4 +406,100 @@ test("R15 C84: a run asked for inside the minimum gap, or with no scanner bound,
   const dev = await t.w.signIn("dev");
   const m = await open("security", { world: t.w, as: dev });
   assert.deepEqual(ops(m), []);
+});
+
+/* R43 (1): the counts by kind and by hour, folded, and "When you are told". The squares and their words are read back from the owner's own
+   answer (`securitymap`'s buckets, credentials R45); a time of day is `time.clock` and a day `cs.date`'s, both in UTC as the page reads them. */
+const clockOf = (ms) => { const d = new Date(ms), h = d.getUTCHours(); return said("time.clock", { hour: String(h % 12 || 12), minute: String(d.getUTCMinutes()).padStart(2, "0"), ampm: said(h < 12 ? "time.am" : "time.pm") }); };
+const STEP_H = { hour: 1, "six-hours": 6, day: 24 };
+const foldOf = (a) => all(a.tree, (e) => e.tag === "details" && e.attrs["data-fold"] === "counts")[0];
+const sectionIn = (n, key) => all(n, (e) => e.tag === "section" && all(e, (h) => h.tag === "h2").some((h) => textOf(h) === said(key)))[0];
+/** A team whose last whole hour held a burst of hard tries and whose clock has just passed it: the period that ends now is `High` (still going on). */
+async function highTeam() {
+  const s = await scannerTeam({ signatures: HOUR, now: Date.now() - HOUR });
+  await hardTries(s.w, 12);
+  await s.w.tick(HOUR);
+  s.founder = await s.w.signIn("founder");
+  return s;
+}
+
+test("R43 the counts by kind and by hour: one square for each step of the period and each kind counted, its tip its count and the hour's usual from the owner's buckets, shaded against the usual; then the totals by kind with their note; no country is named", async () => {
+  const s = await burstTeam({ signatures: HOUR });
+  const a = await open("security", { world: s.w, as: s.founder });
+  const m = await s.founder.read("securitymap", { query: a.p.requests.find((r) => r.op === "securitymap").query });
+  const fold = foldOf(a);
+  assert.ok(fold, "the counts are folded");
+  const heat = sectionIn(fold, "screen.security.heat.heading");
+  const grid = heat && all(heat, (e) => /\bcs-heat\b/.test(e.attrs.class || ""))[0];
+  assert.ok(grid, "the grid by kind and by hour, inside the fold");
+  assert.equal(grid.attrs.style, `--n:${m.buckets.length}`, "a column for each step of the period");
+  const kinds = ["signin", "credential", "rate", "handover"].filter((k) => m.buckets.some((b) => b.counts[k] > 0 || b.usual[k] > 0));
+  assert.deepEqual(all(grid, (e) => e.tag === "span" && e.attrs.class === "k").map(textOf), kinds.map((k) => said("screen.security.kind." + k)), "a row for each kind counted, in the design's order");
+  const squares = all(grid, (e) => e.tag === "i");
+  assert.equal(squares.length, kinds.length * m.buckets.length);
+  const stepH = STEP_H[m.step];
+  kinds.forEach((k, r) => m.buckets.forEach((b, c) => {
+    const sq = squares[r * m.buckets.length + c], ms = Date.parse(b.start), n = b.counts[k], u = b.usual[k];
+    const words = said("screen.security.tip.hour_" + k, { from: clockOf(ms), to: clockOf(ms + stepH * HOUR), day: day(b.start), n: n.toLocaleString("en") }) + " " + said("screen.security.tip.hour_usual", { n: String(Math.round(u / stepH * 10) / 10) });
+    assert.equal(sq.attrs["aria-label"], words, `${k} at ${b.start}: its words`);
+    assert.equal(Number(sq.attrs["data-x"]), n <= u ? 0 : n <= 5 * Math.max(u, 1) ? 1 : n <= 50 * Math.max(u, 1) ? 2 : 3, `${k} at ${b.start}: its shade`);
+  }));
+  assert.ok(squares.some((x) => x.attrs["data-x"] !== "0"), "the burst is shaded above the usual");
+  for (const k of ["screen.security.heat.usual"]) assert.ok(textOf(heat).includes(said(k)));
+  assert.ok(textOf(heat).includes(said("screen.security.heat.upto", { n: "5" })) && textOf(heat).includes(said("screen.security.heat.upto", { n: "50" })), "the shades' key");
+  has(a, "screen.security.total", { count: m.totals.count.total.toLocaleString("en"), usual: m.totals.usual.total.toLocaleString("en") });
+  assert.ok(!textOf(fold).includes(said("screen.security.total", { count: m.totals.count.total.toLocaleString("en"), usual: m.totals.usual.total.toLocaleString("en") })), "the total under the mark, not in the fold");
+  const totals = sectionIn(fold, "screen.security.totals.heading");
+  assert.ok(totals && all(totals, (e) => e.tag === "table").length === 1 && textOf(totals).includes(said("screen.security.totals.note")), "the totals by kind and their note");
+  // no country, by name or code, and none of the design's words for where from (R15: counts name no country)
+  for (const c of m.countries) assert.ok(!new RegExp(`\\b${c.country}\\b`).test(a.text), `no country: ${c.country}`);
+  for (const k of ["screen.security.where.what", "screen.security.where.note"]) lacks(a, k);
+});
+
+test("R43 the note that each square is one hour is drawn only when it is so: a period of a day is drawn hour by hour with the note; the week opened on is not (control)", async () => {
+  const s = await burstTeam({ signatures: HOUR });
+  const a = await open("security", { world: s.w, as: s.founder });
+  const q = a.p.requests.find((r) => r.op === "securitymap").query;
+  assert.notEqual((await s.founder.read("securitymap", { query: q })).step, "hour");
+  lacks(a, "screen.security.heat.note");
+  const today = new Date(Date.now()).toISOString().slice(0, 10);
+  const r = await a.press("securitymap", { values: { "se-from": today, "se-to": today } });
+  const m = await s.founder.read("securitymap", { query: r.sent[0].query });
+  assert.equal(m.step, "hour");
+  has(a, "screen.security.heat.note");
+});
+
+test("R43 nothing counted draws no counts: no fold, no grid and no totals (R28); a member who does not administer is drawn none of it (control)", async () => {
+  const s = await scannerTeam({ signatures: HOUR });
+  const a = await open("security", { world: s.w, as: s.founder });
+  const m = await s.founder.read("securitymap", { query: a.p.requests.find((r) => r.op === "securitymap").query });
+  assert.equal(m.totals.count.total + m.totals.usual.total, 0, "the owner counts nothing");
+  lacks(a, "screen.security.total", { count: "0", usual: "0" });
+  assert.equal(foldOf(a), undefined);
+  assert.equal(all(a.tree, (e) => /\bcs-heat\b/.test(e.attrs.class || "")).length, 0);
+  const dev = await open("security", { world: s.w, as: await s.w.signIn("dev") });
+  for (const k of ["screen.security.counts.fold", "screen.security.heat.heading", "screen.security.totals.heading", "screen.security.told.heading"]) lacks(dev, k);
+});
+
+test("R43 When you are told: administrators are told only when the level is high; a high period draws the notice, sent once at the time it became high; a period that was raised and is over draws only the rule (control)", async () => {
+  const s = await highTeam();
+  const a = await open("security", { world: s.w, as: s.founder });
+  const m = await s.founder.read("securitymap", { query: a.p.requests.find((r) => r.op === "securitymap").query });
+  assert.equal(m.level, "High");
+  const told = sectionIn(a.tree, "screen.security.told.heading");
+  assert.ok(told, "the section");
+  const row = all(told, (e) => e.attrs["data-state"] === "told")[0];
+  assert.ok(row, "the notice's row");
+  const text = textOf(row).replace(/\s+/g, " ");
+  assert.ok(text.includes(said("screen.security.notice.signin")), "what the notice said");
+  assert.ok(text.includes(said("screen.security.notice.sent", { time: clockOf(Date.parse(m.levelAt)) + ", " + day(m.levelAt) })), "when it was sent");
+  assert.ok(textOf(told).includes(said("screen.security.told.note")));
+  // control: raised and over, no notice was sent
+  const r = await burstTeam({ signatures: HOUR });
+  const b = await open("security", { world: r.w, as: r.founder });
+  assert.notEqual((await r.founder.read("securitymap", { query: b.p.requests.find((x) => x.op === "securitymap").query })).level, "High");
+  const told2 = sectionIn(b.tree, "screen.security.told.heading");
+  assert.ok(told2 && textOf(told2).includes(said("screen.security.told.note")), "the rule, always");
+  assert.equal(all(told2, (e) => e.attrs["data-state"] === "told").length, 0, "no notice");
+  lacks(b, "screen.security.notice.signin");
 });

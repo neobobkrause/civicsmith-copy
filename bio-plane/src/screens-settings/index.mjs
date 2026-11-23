@@ -70,6 +70,8 @@ const WORDS = {
     ...LABELS("group-identity", ["groupdescriptionset", "groupdescriptiondraft"])],
   security: [...STATES, "screen.security.name", ...own("screen.security."), "period.days", "member.founder.unnamed", "instance.part.scanner.present", "instance.part.scanner.absent",
     "instance.part.safeview.present", "instance.part.safeview.absent", "instance.part.unknown", "instance.scanner.absent.step",
+    // the counts by the hour (R43): a time of day and a day without its year, for the squares' tips, the grid's labels and the notice's time
+    "time.clock", "time.am", "time.pm", "date.daymonth", ...["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"].map((m) => "date.month." + m),
     ...own("file-scanner.credential."),
     // the scanner's state when it holds no signatures, under file-safety's keys (DEC-396; R77): the date and the reason each fill their own
     "file-safety.index.no_signatures", "file-safety.index.no_signatures_since", "file-safety.index.signatures_refused", "file-safety.index.signatures_failed", "file-safety.index.signatures_not_fetched", "screen.security.nosignatures.next",
