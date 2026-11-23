@@ -143,7 +143,7 @@ export const STORE_KEY = "bio-session";
 export function served(html, nonce = "n0nce") { return html.split(NONCE_SLOT).join(nonce); }
 /* the shell's script of a page: the external script (R1, fix round 3) is `interfaceScript` over the screens and guide the page was built from;
    a page that still holds an inline script (another module's HTML) gives that text */
-/** @type {function(string, Array<*>=, Object<string, *>=): string} */
+/** @type {function(string, ReadonlyArray<*>=, Object<string, *>=): string} */
 export const scriptOf = (html, screens, options = {}) => {
   if (screens !== undefined) return interfaceScript(screens, options);
   const at = html.lastIndexOf("<script");
@@ -213,7 +213,7 @@ export function fakeIndexedDB(dbs = new Map()) {
  * among pages, each told of the others' writes by the storage event; `idb` is the IndexedDB stand-in's store.
  * Answers `{doc, win, requests, root, clock, settle, click, choose, fire, back, assigned, store, local, byOp, location, ...}`:
  * `store` is the tab's sessionStorage, `local` its localStorage.
- * @param {Object<string, *>} [o] the options named above
+ * @param {{screens?: *, plane?: *, session?: *, path?: *, hash?: *, phone?: boolean, local?: Object<string, *>, localThrows?: boolean, tabStore?: *, tabThrows?: boolean, html?: string, run?: boolean, tabs?: *, idb?: Map<string, *>, guide?: *, testInstance?: boolean, version?: (string|null), door?: (Function|null), now?: (number|null), declared?: Object<string, *>}} [o] the options named above
  * @returns {Promise<Object<string, *>>} the page
  * @throws {FieldMismatch} as `settle` does
  */

@@ -231,7 +231,7 @@ export const SHELL_OPS = Object.freeze(["whoami", "interfacewords", "groupidenti
 /* R21: the screen contract. Throws, naming the screen, for a screen whose id the registry does not hold, an act naming
    an op `OPS` does not hold, or an op that is neither the registry's for that screen nor a named re-point. */
 /**
- * @param {Array<ScreenSpec>} screens the screen modules' `SCREENS`, together
+ * @param {ReadonlyArray<ScreenSpec>} screens the screen modules' `SCREENS`, together
  * @returns {true}
  * @throws {Error} naming the screen, for a screen the registry does not hold, one registered twice, or an act, a `reasonField`, `rereads`, `successCodes`, `words` or `ABSENT_CODES` the contract (R21) refuses
  */
@@ -314,7 +314,7 @@ export function toSource(v) {
 /* R5, R70: every word the page may draw, `[key, en]`: `WORD_ROWS` (the shell's own keys are its rows) and each screen's
    own rows. A screen's own row under a key `WORD_ROWS` holds wins (DEC-149's conformed form, R5). */
 /**
- * @param {Array<(ScreenSpec|GuideSpec)>} screens the screens, and the guide where it is drawn
+ * @param {ReadonlyArray<(ScreenSpec|GuideSpec)>} screens the screens, and the guide where it is drawn
  * @returns {Array<[string, string]>} every word the page may draw, `[key, en]`; a screen's own row wins over `WORD_ROWS`' under the same key
  */
 export function wordsOf(screens) {
@@ -490,7 +490,7 @@ export function classLiterals(src) {
 /* R56: throws, naming the screen (or the guide, or the shell) and the class, for a class no served stylesheet defines
    that is neither a hook class nor one of `civicsmith.css`' own. */
 /**
- * @param {Array<ScreenSpec>} screens
+ * @param {ReadonlyArray<ScreenSpec>} screens
  * @param {(GuideSpec|null|undefined)} guide
  * @param {string} program the shell's own program's source
  * @returns {true}
@@ -538,7 +538,7 @@ function release(screens, options) {
   return (SCRIPT = { screens, guide, source, hash: null });
 }
 /**
- * @param {Array<ScreenSpec>} [screens] the screen modules' `SCREENS`
+ * @param {ReadonlyArray<ScreenSpec>} [screens] the screen modules' `SCREENS`
  * @param {PageOptions} [options]
  * @returns {string} the shell's script, the same for the same screens and guide
  * @throws {Error} as `checkScreens`, `checkGuide` and `checkClasses` do
@@ -549,7 +549,7 @@ export function interfaceScript(screens = [], options = {}) {
 const base64 = (hex) => btoa(hex.match(/../g).map((h) => String.fromCharCode(parseInt(h, 16))).join(""));
 /* R1: the hash the page policy names in place of a nonce (`answer-envelope` R6): `sha256-<base64>` of the script's UTF-8 bytes */
 /**
- * @param {Array<ScreenSpec>} [screens]
+ * @param {ReadonlyArray<ScreenSpec>} [screens]
  * @param {PageOptions} [options]
  * @returns {string} `sha256-<base64>` of the script's UTF-8 bytes
  * @throws {Error} as `interfaceScript` does
@@ -580,7 +580,7 @@ export function versionOfScriptPath(pathname) {
  * stands outside the words. R28: `screens` are the nine screen modules' `SCREENS`; R31: `options.guide` is
  * `screens-wizards`' `GUIDE`, the dock's wizard guide; R58: `options.testInstance` true serves the test band in the page
  * itself, above the frame, from first paint (`control-plane` R95). R56: throws for a class no served stylesheet defines.
- * @param {Array<ScreenSpec>} [screens] the screen modules' `SCREENS`
+ * @param {ReadonlyArray<ScreenSpec>} [screens] the screen modules' `SCREENS`
  * @param {PageOptions} [options]
  * @returns {string} the page's HTML document
  * @throws {Error} as `interfaceScript` does
