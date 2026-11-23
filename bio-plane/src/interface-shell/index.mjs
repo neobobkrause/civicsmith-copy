@@ -63,7 +63,7 @@ export const ICONS = ASSET("icons.svg");
 /* R8 (DEC-154; N672): each screen's path, `mock-shell.js`' `PATH` at 3f40899950, from its rail place to its own name;
    `@project` is the project's step, its title as read (the screen's `place(view)`). R28 (T47): the new screen modules'
    screens from `PATH` at a0fab7abf0, and L11's (R37) from `PATH` at PR #33's head; a step that is not a screen's own name
-   is a `shell.step.*` word. A screen of the public, published or setup frame has no path (R30, R45). R54: the screens
+   is a `shell.step.*` word. R54: the screens
    PR #34's registry adds, from `PATH` at its merge (4664e8efd4): `elsewhere` (Home) and `updates` (Settings). */
 /** @type {Readonly<Object<string, ReadonlyArray<string>>>} */
 export const PATHS = Object.freeze({
@@ -101,6 +101,13 @@ export const PATHS = Object.freeze({
   "dash-action": ["screen.dash-action.name"], "dash-project": ["projects", "@project"],
   group: ["settings", "screen.group.name"], places: ["settings", "screen.places.name"], recovery: ["settings", "screen.recovery.name"],
   unavailable: ["screen.unavailable.name"],
+  /* R8 (Screens page getting-started): the screens of the public, published and setup frames, from `PATH` (`mock-shell.js`): the team's name first
+     (`@team`, a link to the team's page), then the screen's own name; `front` is the team's name alone, and `setup`, made before the team has a
+     name, its own name alone */
+  front: ["@team"], tour: ["@team", "screen.tour.name"], reset: ["@team", "screen.reset.name"], forgot: ["@team", "screen.forgot.name"],
+  doorbell: ["@team", "screen.doorbell.name"], join: ["@team", "screen.join.name"], published: ["@team", "screen.published.name"],
+  "review-outside": ["@team", "screen.review-outside.name"], "docket-public": ["@team", "screen.docket-public.name"],
+  setup: ["screen.setup.name"],
 });
 Object.values(PATHS).forEach(Object.freeze);
 
@@ -319,11 +326,16 @@ export function wordsOf(screens) {
 /* The words the page carries (R70: the keys of `setup-words`' list, read from it, never English held here): the families the shell and its kit draw (R5–R7, R10, R11, R13, R14, R16, R32–R36, R40),
    each act's label and explanation, each registered screen's, and every key a screen (or the guide) names. */
 const FAMILIES = ["shell.", "rail.", "tab.", "state.", "weight.", "mark.", "level.", "date.", "refusal.", "ai.refused.", "session.",
-  "signing.ceremony.", "instance.test.", "page.", "unavailable.", "list.", "form.choose.passage"];
+  "signing.ceremony.", "instance.test.", "page.", "unavailable.", "list.", "form.choose.passage",
+  /* R30: the published frame's foot names the signature by the glossary's word */
+  "glossary.term.signature"];
 function pageWords(screens, ops) {
   const named = new Set(screens.flatMap((s) => (s.words || []).map((x) => (Array.isArray(x) ? x[0] : x))));
-  const ids = screens.map((s) => s.id).filter(Boolean).concat(Object.keys(PATHS), ["unavailable", "more"]);
-  const keep = (k) => named.has(k) || FAMILIES.some((f) => k.startsWith(f))
+  /* every word of a working screen a path names (the kit draws some of them, R74, R95); of a screen of the public, published or setup frame not
+     registered, only the words its path names (R8) */
+  const ids = screens.map((s) => s.id).filter(Boolean).concat(Object.keys(PATHS).filter((id) => !Object.hasOwn(FRAMES, id)), ["unavailable", "more"]);
+  const steps = new Set(Object.values(PATHS).flat().filter((x) => x.includes(".")));
+  const keep = (k) => named.has(k) || steps.has(k) || FAMILIES.some((f) => k.startsWith(f))
     || ids.some((id) => k.startsWith("screen." + id + ".")) || [...ops].some((op) => k.startsWith("act." + op + ".") || k.startsWith("act.owed_" + op + "."));
   return wordsOf(screens).filter(([k]) => keep(k));
 }

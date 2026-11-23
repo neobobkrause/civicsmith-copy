@@ -43,7 +43,7 @@ export const pending = Object.freeze({ pending: true });
    A field the op does not accept, or a required one missing, throws `FieldMismatch` in the page's `fetch` (the shell shows
    "no answer") and fails the test that pressed the act: the next `settle()` (every `click` and `boot` ends in one) rethrows it.
    An op with no owner declaration is let through and counted. The owners' rows are the collector's (`test-support`'s
-   `declaredOpsOf`, R16): `collectOwnerRows` is its one seam here, never a second copy of the collection; a test passes
+   `declaredOpsOf`, R16, bounded to this module and the modules before it on the order file): `collectOwnerRows` is its one seam here, never a second copy of the collection; a test passes
    fixture rows as `boot({declared})`. */
 /**
  * R104: a request whose fields its owner's declaration does not accept, or that misses a required one; names the op and the field.
@@ -51,7 +51,7 @@ export const pending = Object.freeze({ pending: true });
 export class FieldMismatch extends Error {
   constructor(message, detail) { super(message); this.name = "FieldMismatch"; Object.assign(this, detail); }
 }
-const COLLECTED = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)));
+const COLLECTED = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)), "interface-shell");
 /* the owners' rows, `{op: declaration}`, as `test-support`'s one collector finds them; an op it lists as a duplicate fails (`declared.test.mjs`) */
 /** @type {function(): Array<{op: string, owners: Array<string>}>} */
 export const collectedDuplicates = () => COLLECTED.duplicates.slice();
