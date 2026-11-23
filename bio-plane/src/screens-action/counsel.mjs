@@ -5,7 +5,8 @@
    pressure received and the defense deadlines, and marks every section "Prepared for review by …. Not legal advice. Not for
    filing." The packet is never offered for publication. The versions assembled for the action are listed from `filingsfor`
    (filings R13), newest first, each read again exactly as it was made (`counselpacketread`) or saved as a file the record
-   keeps (`counselpacketexport`, filings R11). The subject is the action. It holds no member-facing English (R19).
+   keeps (`counselpacketexport`, filings R11). Each version is headed by its number; one assembled with no counsel named is
+   worded, and its sections marked, as for the team's own review; every cause it is flagged by is said (U16). The subject is the action. It holds no member-facing English (R19).
    Every function here is self-contained (interface-shell R21 (1)). */
 import { readOnly } from "./send-steps.mjs";
 
@@ -52,6 +53,20 @@ export const counsel = Object.freeze({
       const c = p && p.counsel && typeof p.counsel === "object" ? p.counsel : null;
       return c && typeof c.name === "string" && c.name.trim() ? { name: c.name.trim(), organisation: typeof c.organisation === "string" ? c.organisation.trim() : "" } : null;
     },
+    // U16 (3): each cause filings R12 flags on a version (`basis_changed.causes`), as the key of its words and their fills; a cause
+    // of a kind not named here, or missing what its words name, is not one the record states and is left out
+    causesOf: function (p) {
+      const causes = p && p.basis_changed && Array.isArray(p.basis_changed.causes) ? p.basis_changed.causes : [];
+      const text = function (v) { return typeof v === "string" && v ? v : typeof v === "number" && isFinite(v) ? String(v) : null; };
+      return causes.map(function (x) {
+        if (!x || typeof x !== "object") return null;
+        if (x.cause === "determination_superseded" && text(x.determination)) return { key: "filings.determination_superseded", vars: { determination: text(x.determination), then: "" } };
+        if (x.cause === "determination_flagged" && text(x.determination)) return { key: "filings.determination_flagged", vars: { determination: text(x.determination) } };
+        if (x.cause === "finding_later_edition" && text(x.finding) && text(x.later)) return { key: "filings.finding_later_edition", vars: { finding: text(x.finding), later: text(x.later) } };
+        if (x.cause === "standard_superseded" && text(x.standard)) return { key: "filings.standard_superseded", vars: { standard: text(x.standard) } };
+        return null;
+      }).filter(Boolean);
+    },
     mattersOf: function (packet) {
       const s = packet && packet.sections && packet.sections.facts ? packet.sections.facts : null;
       return s && Array.isArray(s.items) ? s.items : [];
@@ -72,20 +87,20 @@ export const counsel = Object.freeze({
       const blocks = P.versionsOf(f).map(function (p) {
         const c = P.counselOf(p);
         const here = function (x) { return x && x.packet === p.packet && Number(x.version) === Number(p.version); };
-        const label = cs.esc(p.packet) + " · " + cs.esc(String(p.version));
-        // the made line names counsel; a version assembled with none named is drawn by who and when alone, as data
+        // U16 (1): each version is headed "Version {n}"; the packet's machine reference is never shown
+        const label = cs.w("screen.counsel.made.version", { n: String(p.version) });
+        // the made line names counsel; U16 (2): a version assembled with none named is for the team's own review (filings R8, R10)
         const by = c ? cs.w(c.organisation ? "screen.counsel.made.by" : "screen.counsel.made.by.noorg", { who: nameOf(p.assembled_by), date: { html: cs.date(p.at) }, counsel: c.name, organization: c.organisation })
-          : cs.esc(nameOf(p.assembled_by)) + " · " + cs.date(p.at);
+          : cs.w("screen.counsel.made.by.nocounsel", { who: nameOf(p.assembled_by), date: { html: cs.date(p.at) } });
         const reason = typeof p.reason === "string" && p.reason.trim() ? '<p class="mk-small"><span class="rec">“' + cs.esc(p.reason.trim()) + "”</span></p>" : "";
-        // what changed since, in the words the record has for it (a superseded determination)
-        const causes = p.basis_changed && Array.isArray(p.basis_changed.causes) ? p.basis_changed.causes : [];
-        const said = causes.filter(function (x) { return x && x.cause === "determination_superseded" && typeof x.determination === "string"; })
-          .map(function (x) { return cs.w("filings.determination_superseded", { determination: x.determination, then: "" }); });
+        // U16 (3): what changed since, every cause filings R12 flags in its own words, lower case, joined by "; "; a cause
+        // withheld from the viewer (filings R27) is absent from the answer and so is left out whole
+        const said = P.causesOf(p).map(function (x) { return cs.w(x.key, x.vars); });
         const changed = said.length ? '<p class="mk-note" data-changed>' + cs.w("screen.counsel.made.changed", { n: String(p.version), what: { html: said.join("; ") } }) + "</p>" : "";
         const exported = (Array.isArray(p.exports) ? p.exports : []).map(function (e) {
           const ec = P.counselOf(e);
           return '<p class="mk-small" data-exported>' + (ec ? cs.w("screen.counsel.made.exported", { who: nameOf(e.exported_by), date: { html: cs.date(e.at) }, counsel: ec.name })
-            : cs.esc(nameOf(e.exported_by)) + " · " + cs.date(e.at)) + "</p>";
+            : cs.w("screen.counsel.made.exported.nocounsel", { who: nameOf(e.exported_by), date: { html: cs.date(e.at) } })) + "</p>";
         }).join("");
         const data = { packet: p.packet, version: String(p.version) };
         const acts = '<div class="mk-acts">' + cs.act("counselpacketread", { data: data }) + cs.act("counselpacketexport", { data: data }) + "</div>";
@@ -94,13 +109,13 @@ export const counsel = Object.freeze({
           + Object.keys(shown.answer.sections || {}).map(function (k) {
             const s = shown.answer.sections[k] || {};
             return '<div class="cs-sheet" data-section="' + cs.esc(k) + '"><b class="mk-small">' + cs.esc(s.title || k) + "</b>"
-              + (s.marking ? '<p class="mk-small">' + cs.esc(s.marking) + "</p>" : "") + (typeof s.says === "string" && s.says ? '<p class="mk-small">' + cs.esc(s.says) + "</p>" : "")
+              + (!c ? '<p class="mk-small">' + cs.w("filings.prepared_group_review") + "</p>" : s.marking ? '<p class="mk-small">' + cs.esc(s.marking) + "</p>" : "") + (typeof s.says === "string" && s.says ? '<p class="mk-small">' + cs.esc(s.says) + "</p>" : "")
               + (typeof s.text === "string" && s.text ? '<p class="mk-data">' + cs.esc(s.text) + "</p>" : "") + "</div>";
           }).join("")
           + '<p class="mk-note">' + (c ? cs.w("screen.counsel.sections.marking", { counsel: c.organisation ? c.name + ", " + c.organisation : c.name })
-            : cs.esc(typeof shown.answer.marking === "string" ? shown.answer.marking : "")) + "</p></details>" : "";
+            : cs.w("filings.prepared_group_review")) + "</p></details>" : "";
         const file = here(saved) && typeof saved.text === "string" ? '<div class="mk-acts" role="status" data-saved>' + cs.save(saved.name, saved.text) + "</div>" : "";
-        return '<div class="cs-sheet" data-packet-version="' + cs.esc(p.packet + "~" + p.version) + '"><p class="mk-data">' + label + "</p><p class=\"mk-small\">" + by + "</p>"
+        return '<div class="cs-sheet" data-packet-version="' + cs.esc(p.packet + "~" + p.version) + '"><p><b>' + label + "</b></p><p class=\"mk-small\">" + by + "</p>"
           + reason + changed + exported + acts + read + file + "</div>";
       }).join("");
       return cs.sec("screen.counsel.made.head", '<p class="mk-small">' + cs.w("screen.counsel.made.lead") + "</p>" + blocks + '<p class="mk-note">' + cs.w("screen.counsel.export.note") + "</p>");
