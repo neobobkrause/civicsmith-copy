@@ -1,4 +1,4 @@
-Length: 499 lines. Last section: "Changes".
+Length: 500 lines. Last section: "Changes".
 
 # Screens: Deciding and acting
 
@@ -378,7 +378,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 - C5. Section "If the action belongs to a counsel matter" (`.matter.heading`): `.matter.seen` + `.matter.hold`; link "Place a hold".
 - C6. Section "How the packet is marked" (`.marked.heading`): "Prepared for review by {name}, {organization}. Not legal advice. Not for filing." (`filings.prepared_review_legal`); note `.marked.every` + `.marked.none`.
 - C7. Button "Assemble the packet, with a reason", primary.
-- C8. Section "Packets assembled for this action" (`.made.head`): `.made.lead`; each "Version {n}" with `.made.by`, the reason, `.made.changed` or `.made.exported`, buttons "Read this version" and "Save as a file"; a disclosure of its sections with `.sections.marking`; note `.export.note`.
+- C8. Section "Packets assembled for this action" (`.made.head`): `.made.lead`; each "Version {n}" (new word, key proposed: `screen.counsel.made.version`; the packet's machine reference is not shown) with `.made.by` (with no counsel named: "Assembled by {who}, {date}, for the team's own review", new word, key proposed: `screen.counsel.made.by.nocounsel`), the reason, `.made.changed` or `.made.exported` (with no counsel named: "Saved as a file by {who}, {date}, for the team's own review.", new word, key proposed: `screen.counsel.made.exported.nocounsel`), buttons "Read this version" and "Save as a file"; a disclosure of its sections with `.sections.marking` (with no counsel named: `filings.prepared_group_review`, `filings` R10); note `.export.note`. `.made.changed`'s `{what}` names every cause `filings` R12 flags, joined by "; ": `filings.determination_superseded`, and the new words "the determination {determination} was flagged: what it rests on has changed" (`filings.determination_flagged`), "finding {finding} was published in a later edition, Edition {later}" (`filings.finding_later_edition`) and "the standard {standard} was superseded" (`filings.standard_superseded`) (U16).
 
 **States**
 
@@ -497,3 +497,4 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
 - 22 Nov 2026: words with no row decided (words-new.md).
 - 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).
+- 23 Nov 2026, tranche t1: ARCH's three word gaps from `screens-send` #1 settled (decisions.md U16): counsel C8's version heading, the made and saved lines with no counsel named, and words for every cause a version is flagged by.
