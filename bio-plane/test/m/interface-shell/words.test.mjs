@@ -97,7 +97,7 @@ test("R6 dates are drawn by date.daymonthyear and date.daymonth with date.month.
   const s = { id: "home", reads: () => ({}), acts: [], render: (cs) => `<p id=a>${cs.date("2026-03-07")}</p><p id=b>${cs.date("2026-12-25T10:00:00Z", { year: false })}</p><p id=c>${cs.due("2026-10-20", "near")}</p><p id=d>${cs.date(Date.UTC(2025, 0, 2))}</p>` };
   const p = await boot({ screens: [s] });
   const t = (id) => p.doc.getElementById(id).textContent;
-  const en = (k) => WORD_ROWS.find((r) => r[0] === k)[1];
+  const en = (k) => String((WORD_ROWS.find((r) => r[0] === k) ?? [k, ""])[1]);
   assert.equal(t("a"), en("date.daymonthyear").replace("{day}", "7").replace("{month}", en("date.month.march")).replace("{year}", "2026"));
   assert.equal(t("b"), en("date.daymonth").replace("{day}", "25").replace("{month}", en("date.month.december")));
   const day = (d, m, y) => en("date.daymonthyear").replace("{day}", d).replace("{month}", en("date.month." + m)).replace("{year}", y);
@@ -130,8 +130,8 @@ test("R10 R61 every read of every screen answered in turn as pending, empty, ref
 });
 
 test("R10 R61 a refusal's words: refusal.<code> when held, else the answer's translation, each alone; else \"could not be read\" with its reference, never the code", async () => {
-  const code = WORD_ROWS.find((r) => r[0].startsWith("refusal.") && !/\{/.test(r[1]))[0].slice(8);
-  const en = WORD_ROWS.find((r) => r[0] === "refusal." + code)[1];
+  const code = String((WORD_ROWS.find((r) => r[0].startsWith("refusal.") && !/\{/.test(r[1])) ?? ["refusal."])[0]).slice(8);
+  const en = String((WORD_ROWS.find((r) => r[0] === "refusal." + code) ?? ["", ""])[1]);
   const st = async (answer) => (await boot({ screens: ALL, path: "/app/held", plane: { heldcaptures: answer } })).root().querySelector('[data-state="failed"]').textContent;
   assert.equal(await st(refused(code, "ignored")), en);
   assert.equal(await st(refused("ZZ_UNHELD", "Its own words.")), "Its own words.");

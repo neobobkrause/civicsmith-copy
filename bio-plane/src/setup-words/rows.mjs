@@ -1,6 +1,6 @@
 /* GENERATED: do not edit by hand. setup-words R10, R15 (R1's rule; DEC-179, DEC-257; K3366, K3930): the interface's word
-   list, docs/development/ux-substrate/screens/words.json (19530 design words, 1162 protected; SHA-256
-   340124cd9038e8a5d44029e6e1e4aa7ec956c5e1402e3b89c43671d6549f0c51) followed by 7515 sentences written first in code, each [key, en, note, means, protected, origin]: key,
+   list, docs/development/ux-substrate/screens/words.json (19542 design words, 1162 protected; SHA-256
+   c497e0d9c68d590bd8790f39902df835ab0e1226d87f5a89052db7daa324f61e) followed by 7519 sentences written first in code, each [key, en, note, means, protected, origin]: key,
    en, note (or null) and protected as the file gives them, means the en of the word's sibling .means or .does entry
    (the nearest dotted prefix of at least two segments holding one), or null, origin "design" (a row of the file) or
    "code" (a localize(id, en) call whose id the file lacks). WORDS_COMMIT is the first 10 hex digits of that SHA-256. The list
@@ -11,7 +11,7 @@
  * @typedef {readonly [string, string, (string | null), (string | null), boolean, ("design" | "code")]} WordRow
  */
 /** @type {string} the list's version: the first 10 hex digits of words.json's SHA-256 (R10) */
-export const WORDS_COMMIT = "340124cd90";
+export const WORDS_COMMIT = "c497e0d9c6";
 /** @type {readonly WordRow[]} the list, frozen with each row (R3) */
 export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["weight.reversible.name","Reversible",null,"Reversible: you can undo this.",true,"design"],
@@ -4810,6 +4810,7 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["screen.review-copy.band","{n} people outside the team can read this until {date}","the band across a draft shared for review (protected: who can see)",null,true,"design"],
   ["screen.review-copy.sub","A named reader gets a view that you can stop at any time.",null,null,false,"design"],
   ["screen.review-copy.link.line","For {who} · works until {until}, or until you stop sharing · Civicsmith sends no email: copy the link and send it yourself.","under the reader's link",null,true,"design"],
+  ["screen.review-outside.ask","Before publishing, the team asks you to read this draft of its case and comment.","process/lanes/ux/words-new.md: publishing / review-outside C1 (U14) (mockup: the first sentence of screen.review-outside.sub, word for word)",null,false,"design"],
   ["screen.review-outside.sub","Before publishing, the team asks you to read this draft of its case and comment. It is not public: only people with this link can read it, until {date}.",null,null,true,"design"],
   ["screen.review-outside.readall","Read the whole draft",null,null,false,"design"],
   ["screen.request.law.help","From your team's places. The faster request suits a small, clearly described set of records.",null,null,false,"design"],
@@ -10025,9 +10026,14 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["screen.imported.lens_removed","With the source's bias removed","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Radio choice, none preselected. Sample names and counts are placeholders.",null,false,"design"],
   ["screen.imported.lens_own","Under your team's lens","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Radio choice, none preselected. Sample names and counts are placeholders.",null,false,"design"],
   ["screen.imported.lens_shown","Shown here: with the source's bias removed.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Caption above the table; the lens named changes with the choice (one of the three radio choices, lower-cased start). Sample names and counts are placeholders.",null,false,"design"],
+  ["screen.imported.lens_shown.as_published","Shown here: as the source published it.","process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_shown and screen.imported.lens_as_published)",null,false,"design"],
+  ["screen.imported.lens_shown.own","Shown here: under your team's lens.","process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_shown and screen.imported.lens_own)",null,false,"design"],
   ["screen.imported.lens_moved","Moved: {published} as published, {regraded} without the source's bias.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row of a finding that moved; both placeholders hold a pair of grades; the lens named follows the choice. Sample names and counts are placeholders.",null,false,"design"],
+  ["screen.imported.lens_moved.own","Moved: {published} as published, {regraded} under your team's lens.","process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_moved and screen.imported.lens_own)",null,false,"design"],
   ["screen.imported.lens_bar_ours","It meets your team's bar: {answer}.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row; the placeholder is yes or no. Sample names and counts are placeholders.",null,false,"design"],
   ["screen.imported.lens_bar_theirs","It met the source's bar: {answer}.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row; the placeholder is yes or no. Sample names and counts are placeholders.",null,false,"design"],
+  ["screen.imported.lens_bar.yes","yes","process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: DEC-378's row note, the placeholder is yes or no)",null,false,"design"],
+  ["screen.imported.lens_bar.no","no","process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: DEC-378's row note, the placeholder is yes or no)",null,false,"design"],
   ["screen.imported.lens_because","Moved by the statement {statement}, which touches the inference {part}.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row; the statement is a lens statement as the case prints it; the touched part is a leg, an inference or a conclusion. Sample names and counts are placeholders.",null,false,"design"],
   ["screen.imported.lens_unmoved","Nothing in this lens touches it.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row of a finding that did not move. Sample names and counts are placeholders.",null,false,"design"],
   ["screen.imported.lens_none_summary","When your team has no lens in force","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Disclosure summary. Sample names and counts are placeholders.",null,false,"design"],
@@ -11961,10 +11967,13 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["screen.case-editor.next.lead","A next edition starts as a draft from Docket, where your team keeps everything filed and received for this case, and is published like any case.","DEC-444: D-K9: above the link to Docket's \"Start the next edition\" (casedraft with the case, R52, DEC-374)",null,false,"design"],
   ["screen.counsel.made.head","Packets assembled for this action","DEC-444: E-K7 (filings R11, R13): the versions made, newest first",null,false,"design"],
   ["screen.counsel.made.lead","Each time a member assembles the packet, a new version is saved from the record as it stands then. Earlier versions stay readable, exactly as they were assembled. Only a member who may see this action and every project the packet draws on can read or save one.","DEC-444: E-K7: filings R11 (who may read), R13 (the versions listed)",null,false,"design"],
+  ["screen.counsel.made.version","Version {n}","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the page's own words)",null,false,"design"],
   ["screen.counsel.made.by","Assembled by {who}, {date}, for {counsel}, {organization}","DEC-444: E-K7: a version's made line beside its id and version; {counsel} the counsel named and {organization} theirs (screen.counsel.made.by.noorg without one); then the reason quoted",null,false,"design"],
   ["screen.counsel.made.by.noorg","Assembled by {who}, {date}, for {counsel}","DEC-444: E-K7: the made line when no organization is named",null,false,"design"],
+  ["screen.counsel.made.by.nocounsel","Assembled by {who}, {date}, for the team's own review","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the words of screen.counsel.made.by and filings.prepared_group_review, filings R10)",null,false,"design"],
   ["screen.counsel.made.changed","The record changed since version {n}: {what}","DEC-444: E-K7: basis_changed, in plain words; absent when nothing changed",null,false,"design"],
   ["screen.counsel.made.exported","Saved as a file by {who}, {date}, for {counsel}.","DEC-444: E-K7: the export record (counselPacketExport); one row per export",null,false,"design"],
+  ["screen.counsel.made.exported.nocounsel","Saved as a file by {who}, {date}, for the team's own review.","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the words of screen.counsel.made.exported and filings.prepared_group_review)",null,false,"design"],
   ["screen.counsel.section.matters","The matters, each as the record stands","DEC-444: E-K7: a section of the packet, with its count",null,false,"design"],
   ["screen.counsel.section.exhibits","Exhibits, with their fingerprints and grades","DEC-444: E-K7: a section of the packet",null,false,"design"],
   ["screen.counsel.section.standards","Standards, candidate theories and remedies","DEC-444: E-K7: a section of the packet",null,false,"design"],
@@ -13899,6 +13908,7 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["filings.point_finding_grade","Point: {claim} (finding {finding}, {kind}; grade {grade}).",null,null,false,"design"],
   ["filings.evidence_capture_grade","Evidence: {locator} (capture grade {grade}).",null,null,false,"design"],
   ["filings.finding_published","finding {finding} is not published",null,null,false,"design"],
+  ["filings.finding_later_edition","finding {finding} was published in a later edition, Edition {later}","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: filings R12)",null,false,"design"],
   ["filings.grade","the grade of {locator}",null,null,false,"design"],
   ["filings.uncertain","Still uncertain: {unsure}.",null,null,false,"design"],
   ["filings.uncertain_nothing_record","Still uncertain: nothing the record marks undetermined.",null,null,false,"design"],
@@ -13933,6 +13943,8 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["filings.action_longer_held","the action is no longer held",null,null,false,"design"],
   ["filings.governing_tier","the governing tier (was {tier}, now {tier_2})",null,null,false,"design"],
   ["filings.determination_superseded","the determination {determination} was superseded{then}",null,null,false,"design"],
+  ["filings.determination_flagged","the determination {determination} was flagged: what it rests on has changed","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: beside filings.determination_superseded; conformance R10)",null,false,"design"],
+  ["filings.standard_superseded","the standard {standard} was superseded","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: beside filings.determination_superseded; filings R12)",null,false,"design"],
   ["filings.the_determination_the_action_rests","the determination the action rests on",null,null,false,"design"],
   ["filings.governing_laws","the governing laws",null,null,false,"design"],
   ["filings.says.approved_member_named","approved by the member named: the text is theirs. Your team's Civicsmith transmits nothing; a member files it by the venue's own means and records that it was sent",null,null,false,"design"],
@@ -20762,7 +20774,9 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["bias.index.each_entry_is_an_adoption_whose","each entry is an adoption whose PINNED REVISION is one the team has offered and not accepted: the member's act REPLACED that scope's lens with those bytes and is not a pre-authorisation of whatever the proposal becomes (BOB #32, 2026-09-24), and such a pin puts no lens in force until the revision it names stands at 'adopted'",null,null,false,"code"],
   ["bias.index.no_bias_debt_is_on","no bias debt is on record for this work: it either never carried one, or it is not one this reader can open",null,null,false,"code"],
   ["bias.index.no_lens_is_in_force","no lens is in force for this work's context, so whether it ran under the current one is undetermined and it discharges nothing",null,null,false,"code"],
+  ["bias.index.overrides_by_effect","each entry is a project statement whose effect loosens a group statement on the same subject: it relaxes the scrutiny that statement raises, or licenses the inference it blocks. It is an override whatever it calls itself, and it must name the statement it loosens; a loosening of a LOCKED group statement is a conformance error; either way the group statement stands (safeguard 1). Effect is judged mechanically only for scrutiny and inference statements, and the group's review finishes the job",null,null,false,"code"],
   ["bias.index.settling_bias_debt_is_a","settling a bias debt is a judgement that the lens change does not bear on the finding, and that is a named member's judgement (DEC-24: derived informs, authored binds). A machine credential may raise the obligation, surface it and prepare what it needs, and may not answer it",null,null,false,"code"],
+  ["bias.index.strictest_applied","each entry is two statements on one subject that conflict with no named override resolving them: the stricter applies, and the one that loosens it is withheld from the statements in force and from their hash (safeguard 2)",null,null,false,"code"],
   ["bias.index.the_not_mechanised_list_is","the not-mechanised list is the more important half: the extractable rules are the countable ones, and in four of five documented verification failures the countable rules were satisfied while the uncountable properties failed (DEC-54).",null,null,false,"code"],
   ["bias.index.there_is_no_description_of","there is no description of the team to start a declared bias from: a member writes the set's statements, each with its subject and justification, from the beginning",null,null,false,"code"],
   ["bias.index.this_debt_was_settled_before","this debt was settled before the record kept which act settled it. The only act there was then is the lens moving back, and naming it here would be attributing the settlement to an act nobody recorded",null,null,false,"code"],
@@ -25112,6 +25126,8 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["notice-producers.reading.partial","{document} was read in part. {why}",null,null,false,"code"],
   ["notice-producers.reading.partial.counted","{document} was read in part: {read} of {total}. {why}",null,null,false,"code"],
   ["notice-producers.reading.refused","{document} was not taken in: {why}",null,null,false,"code"],
+  ["notice-producers.reading.refused.limit","{document} was not taken in: it is larger than this team's limit of {limit}.",null,null,false,"code"],
+  ["notice-producers.reading.stopped","{document} was stopped before any of it was taken in. {why}",null,null,false,"code"],
   ["observation-log.declared.lead","member-directed: a member writes a lead in their own words, keyed by nothing the record holds; writes a `leads` row and no edge, and is never evidence",null,null,false,"code"],
   ["observation-log.declared.leadlist","read: the leads this viewer may read, each once — `leadread`'s fence over a list; writes nothing",null,null,false,"code"],
   ["observation-log.declared.leadlook","lead-directed: a member records following a lead, keyed by lead id; with the looker's words on where they looked and what they found, now required (observation-log R17, C-54.11; DEC-88: `reasoned`); writes one observation_log row under authority_kind lead",null,null,false,"code"],

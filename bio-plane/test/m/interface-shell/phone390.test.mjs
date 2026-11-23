@@ -2,26 +2,14 @@
    the served stylesheets, is drawn in Chromium at the phone width over stand-in screens that draw the constructs the walk found
    overflowing (cards with a long member name, a row with a long action, a table with ticks, the strip, tabs, checkboxes beside
    long words) and their widths and targets are measured. Needs `playwright-core` (found beside the product: `site/node_modules`,
-   the journey check's, or the tools directory) and Chromium (CHROMIUM, or /opt/pw-browsers/chromium); without them the test fails,
-   saying so. */
+   the journey check's, or the tools directory) and Chromium, found or fetched as `chromium.mjs` says; without them the test fails, saying so. */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createRequire } from "node:module";
-import { existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { interfacePage, interfaceScript, scriptPath } from "../../../src/interface-shell/index.mjs";
 import { ASSET_FILES } from "../../../src/interface-assets/index.mjs";
 import { fitSend } from "./harness.mjs";
+import { chromium } from "./chromium.mjs";
 
-const root = (p) => fileURLToPath(new URL("../../../../" + p, import.meta.url));
-function engine() {
-  const homes = ["site/node_modules/", "bio-plane/src/journey-check/node_modules/", "bio-plane/node_modules/"].map(root).concat(["/opt/node-tools/node_modules/"]);
-  for (const home of homes) {
-    try { return createRequire(home + "noop.js")("playwright-core"); } catch { /* the next */ }
-  }
-  return null;
-}
-const EXE = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
 
 const LONG = "A-very-long-member-name-or-digest-that-has-no-break-at-all-0123456789abcdef0123456789abcdef0123456789abcdef";
 /* a working screen (a real registry id, `question`) drawing what the walk found cut: acts in a row, cards, a table with ticks and
@@ -55,9 +43,7 @@ const PROJECT = { id: "project", words: [], reads: () => ({}), acts: [], render:
 const PLANE = { session: true, member: "mai", handle: "mai", tokenClass: "admin", administer: true, capabilities: ["contribute", "create_projects", "publish"], items: [], projects: [], display_name: "A team with a very long name that has to wrap and never be cut however many words it takes", members: [] };
 
 async function measure(width) {
-  const pw = engine();
-  assert.ok(pw && pw.chromium, "playwright-core is needed beside the product (`npm ci` in site/), with Chromium: this test cannot measure without them");
-  assert.ok(existsSync(EXE), "Chromium is needed at CHROMIUM or /opt/pw-browsers/chromium");
+  const { pw, exe: EXE } = chromium();
   const html = interfacePage([STAND_IN, PROJECT]), script = interfaceScript([STAND_IN, PROJECT]);
   const browser = await pw.chromium.launch({ executablePath: EXE });
   try {

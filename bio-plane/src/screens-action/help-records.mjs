@@ -8,6 +8,10 @@
 
 import { chosenLawOf } from "./send-steps.mjs";
 
+/** @import { ScreenDef } from "./send-steps.mjs" */
+
+/** How a records request works (R9, R22): the law's duties from the profile's `records_help`; no acts.
+ *  @type {Readonly<ScreenDef>} */
 export const helpRecords = Object.freeze({
   id: "help-records",
 

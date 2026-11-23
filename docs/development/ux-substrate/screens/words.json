@@ -33,7 +33,7 @@
   "phrasing": 4,
   "assertion": 3,
   "packet": 2,
-  "filings": 261,
+  "filings": 264,
   "pointer": 7,
   "voice": 4,
   "recognition": 1,
@@ -53,7 +53,7 @@
   "wizard": 359,
   "elsewhere": 38,
   "places": 6,
-  "screen": 7931,
+  "screen": 7940,
   "signin": 1,
   "forgot": 1,
   "founder": 6,
@@ -237,7 +237,7 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19530,
+  "total": 19542,
   "protected": 1162
  },
  "words": [
@@ -33154,6 +33154,13 @@
    "protected": true,
    "source": "DEC-259",
    "note": "under the reader's link"
+  },
+  {
+   "key": "screen.review-outside.ask",
+   "en": "Before publishing, the team asks you to read this draft of its case and comment.",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / review-outside C1 (U14) (mockup: the first sentence of screen.review-outside.sub, word for word)"
   },
   {
    "key": "screen.review-outside.sub",
@@ -69609,11 +69616,32 @@
    "note": "DEC-378: B398 C49 (case-import, K4169): the imported-case page: Caption above the table; the lens named changes with the choice (one of the three radio choices, lower-cased start). Sample names and counts are placeholders."
   },
   {
+   "key": "screen.imported.lens_shown.as_published",
+   "en": "Shown here: as the source published it.",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_shown and screen.imported.lens_as_published)"
+  },
+  {
+   "key": "screen.imported.lens_shown.own",
+   "en": "Shown here: under your team's lens.",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_shown and screen.imported.lens_own)"
+  },
+  {
    "key": "screen.imported.lens_moved",
    "en": "Moved: {published} as published, {regraded} without the source's bias.",
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row of a finding that moved; both placeholders hold a pair of grades; the lens named follows the choice. Sample names and counts are placeholders."
+  },
+  {
+   "key": "screen.imported.lens_moved.own",
+   "en": "Moved: {published} as published, {regraded} under your team's lens.",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_moved and screen.imported.lens_own)"
   },
   {
    "key": "screen.imported.lens_bar_ours",
@@ -69628,6 +69656,20 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row; the placeholder is yes or no. Sample names and counts are placeholders."
+  },
+  {
+   "key": "screen.imported.lens_bar.yes",
+   "en": "yes",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: DEC-378's row note, the placeholder is yes or no)"
+  },
+  {
+   "key": "screen.imported.lens_bar.no",
+   "en": "no",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: DEC-378's row note, the placeholder is yes or no)"
   },
   {
    "key": "screen.imported.lens_because",
@@ -83161,6 +83203,13 @@
    "note": "DEC-444: E-K7: filings R11 (who may read), R13 (the versions listed)"
   },
   {
+   "key": "screen.counsel.made.version",
+   "en": "Version {n}",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the page's own words)"
+  },
+  {
    "key": "screen.counsel.made.by",
    "en": "Assembled by {who}, {date}, for {counsel}, {organization}",
    "protected": false,
@@ -83175,6 +83224,13 @@
    "note": "DEC-444: E-K7: the made line when no organization is named"
   },
   {
+   "key": "screen.counsel.made.by.nocounsel",
+   "en": "Assembled by {who}, {date}, for the team's own review",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the words of screen.counsel.made.by and filings.prepared_group_review, filings R10)"
+  },
+  {
    "key": "screen.counsel.made.changed",
    "en": "The record changed since version {n}: {what}",
    "protected": false,
@@ -83187,6 +83243,13 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-444: E-K7: the export record (counselPacketExport); one row per export"
+  },
+  {
+   "key": "screen.counsel.made.exported.nocounsel",
+   "en": "Saved as a file by {who}, {date}, for the team's own review.",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the words of screen.counsel.made.exported and filings.prepared_group_review)"
   },
   {
    "key": "screen.counsel.section.matters",
@@ -96646,6 +96709,13 @@
    "source": "DEC-260"
   },
   {
+   "key": "filings.finding_later_edition",
+   "en": "finding {finding} was published in a later edition, Edition {later}",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: filings R12)"
+  },
+  {
    "key": "filings.grade",
    "en": "the grade of {locator}",
    "protected": false,
@@ -96848,6 +96918,20 @@
    "en": "the determination {determination} was superseded{then}",
    "protected": false,
    "source": "DEC-260"
+  },
+  {
+   "key": "filings.determination_flagged",
+   "en": "the determination {determination} was flagged: what it rests on has changed",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: beside filings.determination_superseded; conformance R10)"
+  },
+  {
+   "key": "filings.standard_superseded",
+   "en": "the standard {standard} was superseded",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: beside filings.determination_superseded; filings R12)"
   },
   {
    "key": "filings.the_determination_the_action_rests",
