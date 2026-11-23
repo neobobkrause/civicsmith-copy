@@ -35,7 +35,7 @@ async function packOf(res) {
  *  and every stamp the door holds: `stamps` = `{env, cls, viaSession, sessMember, sessViewer, sessIdentity, sessRights, sessCaps, aiCred,
  *  aiViewer, storeName, stub, grantMember}`); a refusal or a silence is answered as that handler gives it. */
 /**
- * @param {{url: URL | string, headers: Headers | Record<string, string>, gatedOp?: ((asked: Object) => Promise<Response | undefined>) | null, stamps: {storeName: string, cls: string} & Record<string, unknown>}} args
+ * @param {{url: *, headers: *, gatedOp?: *, stamps: Object<string, *>}} args `stamps` holds `storeName` and `cls` among the door's stamps
  * @returns {Promise<Response>} the pack `{ok: true, fences, pack, pack_absent?, store, tokenClass}`, else the handler's own answer, else the store's silence
  */
 export async function agentPackOp({ url, headers, gatedOp, stamps }) {
@@ -53,7 +53,7 @@ export async function agentPackOp({ url, headers, gatedOp, stamps }) {
 /** R27 (was `control-plane` R77, R80, R93): `op=airundispatch`. `who` is the viewer a session's, else the actor; `at` the door's instant;
  *  `trace` and `memberRef` the door's. A store without `dispatchMemberRun` answers `AGENT_WORKER_UNBOUND`. */
 /**
- * @param {{stub: {dispatchMemberRun?: (asked: Object) => Promise<Object>}, reqBody?: unknown, who: string, at: string, trace?: string, memberRef?: string, storeName: string, cls: string}} args
+ * @param {{stub: *, reqBody?: *, who: *, at: *, trace?: *, memberRef?: *, storeName: *, cls: *}} args
  * @returns {Promise<Response>} 200 with the run's answer; 403 or 400 with the owner's code; 503 `AGENT_WORKER_UNBOUND`; the store's silence
  * @bound reqBody: its `run` is read only when it is text
  */
@@ -81,7 +81,7 @@ const untestedOf = (drafted) => {
  *  alone. `session` is the presented session token, `by` the stamp `tokenRefusedSeen` names, `viewer` the session's viewer (the day the
  *  draft is counted to), `store(path, init)` the store's answered call (`doAnswer` over the object). */
 /**
- * @param {{op: string, stub: {draft?: (asked: Object) => Promise<Response>, fetch: (req: Request) => Promise<Response>}, viaSession: boolean, sessMember?: string, session?: string, reqBody?: unknown, trace?: string, memberRef?: string, by?: string, viewer: string, store: (path: string, init?: Object) => Promise<Object>, storeName: string, cls: string}} args
+ * @param {{op: string, stub: *, viaSession: *, sessMember?: *, session?: *, reqBody?: *, trace?: *, memberRef?: *, by?: *, viewer?: *, store: *, storeName: *, cls: *}} args
  * @returns {Promise<Response>} 200 with the shaped draft; the owner's refusal at its status (502 when below 400); 503 `AGENT_WORKER_UNBOUND`; the store's silence
  * @bound op: `textcheck` or `readtranslate`
  */

@@ -136,7 +136,7 @@ function envOf(world, stub) {
 /* control-plane `unreadDocuments`: the documents a promotion states in its `data/provenance.json` that carry a capture digest and no reading, in the order stated, each once;
    none for a verified replay */
 /**
- * @param {unknown} b a promotion's body
+ * @param {*} b a promotion's body
  * @returns {Array<Object>} the documents owed a reading, in the order stated; none for a body that is not an object or is a replay
  */
 export function unreadDocuments(b) {
@@ -185,7 +185,7 @@ function inlineVerdictOf(document) {
  *  true while a row is held for a reading owed, `refused` the digests whose owed reading no row holds. An entry that owes the OCR pass is skipped (a world binds no OCR worker). */
 /**
  * @param {World} world
- * @param {Array<{sha: string, document?: Object | null}>} entries
+ * @param {Array<Object<string, *>>} entries each `{sha, document?, ocrOnly?}`
  * @param {string} [storeName]
  * @returns {Promise<{pending: boolean, refused: string[]}>}
  */

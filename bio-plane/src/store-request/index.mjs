@@ -153,33 +153,31 @@ const parsed = (text) => { try { return JSON.parse(text); } catch { return undef
  * @property {string} [token] the presented session token
  */
 /**
- * What the door hands in (R1, R23).
+ * What the door hands in (R1, R23). Every field may be absent or none, which reads as none.
  * @typedef {Object} InnerRequestArgs
  * @property {string} op the op's name after alias resolution
- * @property {URL | string} url the page's request address
- * @property {string} [method] absent is `GET`
+ * @property {*} url the page's request address, a `URL` or its text
+ * @property {*} [method] absent is `GET`
  * @property {*} [body] the body as the door read it: text, or the bytes or stream of an upload
- * @property {AdmittedCaller | null} [caller] none for a public op
- * @property {string | null} [source] the keyed digest of the connecting address
- * @property {string | null} [country]
- * @property {string | null} [userAgent]
- * @property {string | null} [origin] scheme and host of the request's own address
- * @property {number | null} [length] the request's `Content-Length`
- * @property {boolean} [resolving] a knock resolved to `pulled`, re-routed as `inboxpull`
- * @property {{asserted?: boolean, proven?: Object | null} | null} [replay] the door's verdict on a promotion's replay
- * @property {boolean} [deferred] a `readheld` reading that will not fit the bound
- * @property {string | null} [secretSha] the SHA-256 of a grant's secret
- * @property {boolean} [bySecret] the caller presented a secret
- * @property {{writes?: unknown, confinedTo?: unknown, secretSha?: string} | null} [mint] `aicredentialmint`'s judged declaration
+ * @property {*} [caller] the admitted caller (AdmittedCaller), or none for a public op
+ * @property {*} [source] the keyed digest of the connecting address
+ * @property {*} [country]
+ * @property {*} [userAgent]
+ * @property {*} [origin] scheme and host of the request's own address
+ * @property {*} [length] the request's `Content-Length`
+ * @property {*} [resolving] true: a knock resolved to `pulled`, re-routed as `inboxpull`
+ * @property {*} [replay] the door's verdict on a promotion's replay, `{asserted, proven}`
+ * @property {*} [deferred] true: a `readheld` reading that will not fit the bound
+ * @property {*} [secretSha] the SHA-256 of a grant's secret
+ * @property {*} [bySecret] true: the caller presented a secret
+ * @property {*} [mint] `aicredentialmint`'s judged declaration `{writes, confinedTo, secretSha}`
  * @bound length: a whole number, else absent
  */
 /**
- * The store's request (R1, R5), or the refusal of R11.
- * @typedef {Object} InnerRequestAnswer
- * @property {string} [url] the store route's in-process address `http://x/<route>`
- * @property {*} [body] absent when none was sent
- * @property {Record<string, string>} [headers] the internal headers `x-bio-session` and `x-bio-grant`, each only when it has a value
- * @property {{status: number, body: Object}} [refusal] a project creation the capability gate refuses, answered as given
+ * The store's request (R1, R5), or the refusal of R11: `url` the store route's in-process address `http://x/<route>`;
+ * `body` absent when none was sent; `headers` the internal headers `x-bio-session` and `x-bio-grant`, each only when it has
+ * a value; `refusal` `{status, body}`, a project creation the capability gate refuses, answered as given.
+ * @typedef {Object<string, *>} InnerRequestAnswer
  */
 /** R1: the store's request `{url, body, headers}` made from a page's, or `{refusal}` for a project creation the capability
  *  gate refuses (R11). Synchronous; never throws; the same answer for the same arguments.
