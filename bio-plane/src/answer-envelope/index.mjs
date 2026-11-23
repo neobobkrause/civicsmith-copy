@@ -15,11 +15,14 @@ import { word, localize } from "../setup-words/index.mjs";
  * @property {*} body its JSON envelope
  */
 /**
- * @typedef {{answered: true, refused?: undefined, result: *, reply: StoreReply, correlation?: undefined}
- *   | {answered: false, refused: true, result: undefined, reply: StoreReply, correlation?: undefined}
- *   | {answered: false, refused?: undefined, result: undefined, reply?: undefined, correlation?: string}} StoreAnswer
- * what `doAnswer` makes of one store reply (R3): an answer; the store's own refusal, below 500; or a silence, carrying
- * the store's correlation id when its internal error gave one
+ * @typedef {Object} StoreAnswer what `doAnswer` makes of one store reply (R3): an answer (`answered` true, with `result`
+ * and `reply`); the store's own refusal below 500 (`refused` true, with `reply`); or a silence (neither, with no `reply`,
+ * carrying `correlation` when the store's internal error gave one)
+ * @property {boolean} answered
+ * @property {boolean} [refused]
+ * @property {*} result the method's answer when answered, else undefined
+ * @property {*} [reply] the `StoreReply` read, absent on a silence
+ * @property {string} [correlation]
  * @bound correlation: a lowercase UUID, 8-4-4-4-12 hex digits
  */
 /**
