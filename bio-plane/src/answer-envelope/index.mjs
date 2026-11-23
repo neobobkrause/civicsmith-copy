@@ -356,6 +356,11 @@ function storeRefusal(out, extra = {}) {
    (the store did not answer), stated inside an answer rather than refused; the DEC-49 guard's arm G declares the two
    spellings one condition by name. The wire only GAINS `code`, `check` and `translation`. */
 /* R5 (N333): `correlation`, when `doAnswer` read one from the store's own internal error, is carried. */
+/**
+ * @param {string} op the op whose store read went silent
+ * @param {string} [correlation] the store's correlation id, as `doAnswer` read it; absent when it gave none
+ * @returns {Response} 502 `STORE_DID_NOT_ANSWER` with its row, the op and the correlation id (R3, R5)
+ */
 function storeSilent(op, correlation = undefined) {
   /* DEC-49 REGION is-store-silent */
   return json({ ok: false, reason: "STORE_DID_NOT_ANSWER", ...dispatchRow("STORE_DID_NOT_ANSWER"),
