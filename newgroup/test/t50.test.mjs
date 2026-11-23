@@ -43,8 +43,6 @@ const TEAM = await bootstrapFacts({ team: "Lakeshore Tenants", members: 6, proje
 
 /* ------------------------------------------------------------------------------------------ the two not yet met */
 
-test.todo("R56 the install and the update bind agent-worker's REMOTE Durable Object and DOOR_ADDRESS, and no RUNNER (not yet met: the remote proof, BOB's K3777)");
-test.todo("R58 verify names the remote Worker among the parts and says whether it answers this release (not yet met: the remote proof, BOB's K3777)");
 
 /* ------------------------------------------------------------------------------------------------ R57 */
 
