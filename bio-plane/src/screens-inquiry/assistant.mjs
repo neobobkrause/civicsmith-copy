@@ -26,10 +26,27 @@
 import * as settingsPanel from "../screens-settings/panel.mjs";
 import { COMMON } from "./common.mjs";
 
+/**
+ * @typedef {Object} RunBound
+ * @property {string} bound the bound's name (`run-rules`)
+ * @property {number} allowed its positive allowance
+ * @property {string} [unit] its unit, where it states one
+ */
+/**
+ * @typedef {Object} DockDef
+ * @property {"assistant"} id the registry screen's id
+ * @property {(view: *) => Object} reads the reads the dock makes, each by its name
+ * @property {(cs: *, view: *) => string} render the dock's markup
+ * @property {ReadonlyArray<Object>} acts its acts, each with its `op`, `label` and `send`
+ * @property {ReadonlyArray<string>} words the keys it may draw (R44)
+ * @property {Readonly<Object<string, *>>} parts the bars, R33's tables and the shared readers, handed to it as `view.parts`
+ */
+
 /** R33: the bounds each mode the dock may open is opened with (`run-rules` `checkConsume`: a declared bound states a
  *  positive allowance; C-109.6: a planning run declares no search allowance). `check` reads and fetches, so it is given
  *  `fetches` (the plane's own figure for a reading run, `question-explorer`'s); it spawns no sub-session, so it declares
- *  none rather than a zero. */
+ *  none rather than a zero.
+ *  @type {Readonly<{check: ReadonlyArray<RunBound>, plan: ReadonlyArray<RunBound>}>} */
 export const MODE_BOUNDS = Object.freeze({
   check: Object.freeze([Object.freeze({ bound: "wallclock", allowed: 1800000, unit: "ms" }), Object.freeze({ bound: "fetches", allowed: 20 })]),
   plan: Object.freeze([Object.freeze({ bound: "wallclock", allowed: 1800000, unit: "ms" })]),
@@ -37,7 +54,9 @@ export const MODE_BOUNDS = Object.freeze({
 
 /** R33: the dispatch's withholdings the design words (`dock.withheld.<CODE>`), and the refusals `words.json` holds as
  *  `refusal.<CODE>` or `ai.refused.*`, each read by key; any other withholding is `dock.withheld.other`. */
+/** @type {ReadonlyArray<string>} the withheld codes drawn as `dock.withheld.<CODE>` */
 export const WITHHELD = Object.freeze(["MEMBER_PRINCIPAL_RUN", "AGENT_WORKER_UNBOUND", "NAMESPACE_UNDETERMINED", "CREDENTIAL_RECORD_SILENT"]);
+/** @type {Readonly<Object<string, string>>} each refusal's or withholding's code, and the key it is drawn by */
 export const REFUSALS = Object.freeze({
   AI_RUN_MODE_NOT_DEPLOYED: "ai.refused.notdeployed", AI_KEPT_AWAY: "ai.refused.keptaway", PROJECT_AI_KEPT_AWAY: "ai.refused.projectkeptaway",
   AI_NO_ACCOUNT: "ai.refused.noaccount", AI_USE_SWITCHED_OFF: "ai.refused.off", AI_LIMIT_REACHED: "ai.refused.limit",
@@ -372,7 +391,8 @@ const words = Object.freeze([
     "checked", "check.failed"].map((k) => "ai.progress." + k), "ai.reading.levels.disagree", "state.undetermined",
 ]);
 
-/** The assistant dock (interface-shell R20, R21), with the screens-settings bars and R33's tables as its parts. */
+/** The assistant dock (interface-shell R20, R21), with the screens-settings bars and R33's tables as its parts.
+ *  @type {Readonly<DockDef>} */
 export const ASSISTANT_SCREEN = Object.freeze({ id: "assistant", reads, render, acts, words,
   parts: Object.freeze({ ...(settingsPanel.aiUsageBars ? { aiUsageBars: settingsPanel.aiUsageBars } : {}),
     bounds: MODE_BOUNDS, refusals: REFUSALS, withheld: WITHHELD, ending: COMMON.ending, costLine: COMMON.costLine, progress: COMMON.progress, refusalWords }) });
