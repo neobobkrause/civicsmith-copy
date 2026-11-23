@@ -62,6 +62,26 @@ const CONVERSATION = {
  *  BAD_MEMBER, NO_SIGNIN_WAITING, BAD_CODE, NOT_THIS_MEMBER, ATTEMPT_SUPERSEDED, SIGNIN_ADDRESS_UNEXPECTED, SIGNIN_UNAVAILABLE,
  *  SIGNIN_REFUSED, NO_CREDENTIAL, SIGNIN_NOT_HELD, SIGNIN_TOKEN_REFUSED, MAX_TURNS, SDK_ERROR. Any other code throws: the runner gives
  *  no such refusal (SIGNOUT_FAILED has no code path in this image, and RUNNER_NOT_STARTED belongs to the Worker's class, not the image). */
+/**
+ * @typedef {Object} RefusalBody
+ * @property {false} ok
+ * @property {string} code the refusal's code, equal to the code asked for
+ * @property {string} detail the member-readable sentence, or the SDK's words for a conversation code
+ * @property {string} [trace] the sign-in routes only
+ * @property {Object} [trace_detail] the sign-in routes only
+ * @bound detail: at most 300 characters
+ */
+/**
+ * @typedef {Object} RunnerRefusal
+ * @property {number | null} status the HTTP status for a sign-in route code; null for a conversation code
+ * @property {RefusalBody} body
+ */
+/**
+ * @param {string} code
+ * @returns {Promise<RunnerRefusal>}
+ * @throws {Error} when the runner gives no refusal with that code, or answers another code
+ * @bound code: one of BAD_REQUEST, BAD_MEMBER, NO_SIGNIN_WAITING, BAD_CODE, NOT_THIS_MEMBER, ATTEMPT_SUPERSEDED, SIGNIN_ADDRESS_UNEXPECTED, SIGNIN_UNAVAILABLE, SIGNIN_REFUSED, NO_CREDENTIAL, SIGNIN_NOT_HELD, SIGNIN_TOKEN_REFUSED, MAX_TURNS, SDK_ERROR
+ */
 export async function runnerRefusal(code) {
   if (Object.hasOwn(SIGNIN, code)) {
     const { mode, step } = SIGNIN[code];
