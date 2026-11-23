@@ -33,8 +33,8 @@ export const WORLD_AI_SECRET = "world-account-seal-secret-3b9d71c4e0a5f628";
  *  `store`, `ctx`, `sql`, `tick(ms)` are the world's own. The world binds `CAPTURES` (store-assembly's) and no `PUBLISHED`: `selftest` reads that as the owner does, one bucket bound without the other, and a test that unbinds
  *  `CAPTURES` leaves neither bound (SCREENS-SETTINGS #20 J37 (1); STORE-REQUEST #6 B15 (4)); `recipes.published` binds the published store when it publishes. */
 /**
- * @param {{claimed?: boolean, now?: number, env?: Record<string, unknown>, ai?: boolean, deliver?: boolean | ((a: Object) => unknown) | null, releaseKeys?: unknown, renderer?: boolean | Object, follow?: boolean} & Record<string, unknown>} [options]
- * @returns {Promise<Object>} the world, with `door`, `signIn`, `plane`, `boot`, `route`, `session`, `admitted` and `recipes` beside its own `store`, `ctx`, `sql` and `tick`
+ * @param {{claimed?: boolean, now?: number, env?: Record<string, *>, ai?: boolean, deliver?: boolean | ((a: Object) => *) | null, releaseKeys?: *, renderer?: boolean | Object, follow?: boolean} & Record<string, *>} [options]
+ * @returns {Promise<*>} the world, with `door`, `signIn`, `plane`, `boot`, `route`, `session`, `admitted` and `recipes` beside its own `store`, `ctx`, `sql` and `tick`
  */
 export async function storeWorld({ env = {}, ai = false, deliver = null, releaseKeys = null, renderer = false, follow = false, ...opts } = {}) {
   const name = WORLD_GROUP;
@@ -121,9 +121,9 @@ export async function storeWorld({ env = {}, ai = false, deliver = null, release
 }
 
 /** R19: an older installation (no producing team recorded: `groupidentity` answers `group: null`): `storeWorld` with a first boot that bound no `INSTANCE_NAME`. */
-/** @type {(opts?: Object) => Promise<Object>} */
+/** @type {(opts?: Object) => Promise<*>} */
 export const olderInstallation = (opts = {}) => olderOf(storeWorld, opts);
 
 /** R19: a founder with no handle: an unclaimed world claimed with a password and no handle; `unnamed` is the founder signed in. */
-/** @type {(opts?: Object) => Promise<Object>} */
+/** @type {(opts?: Object) => Promise<*>} */
 export const unnamedFounderWorld = (opts = {}) => unnamedFounder(storeWorld, opts);

@@ -54,30 +54,23 @@ import { evidenceStorageAbsent } from "../../../src/acquisition/index.mjs";
 import { boundOf, wholeReadRow } from "../../../src/read-bounds.mjs";
 
 /**
- * A world: `store-assembly`'s assembled store over one object, with its clock and its environment (its R90, R92).
- * @typedef {Object} World
- * @property {() => number} now the world's clock, in milliseconds
- * @property {boolean} [claimed] true once the founder has claimed it
- * @property {{handle?: string}} [founder]
+ * A world: `store-assembly`'s assembled store over one object, with its clock (`now`), its environment (`env`), whether it
+ * is claimed (`claimed`) and its founder (`founder`) (its R90, R92); an open object, read as the tests read it.
+ * @typedef {Object<string, *>} World
  */
 /**
- * A signed-in member (R16).
- * @typedef {Object} SignedIn
- * @property {string} handle
- * @property {string} member the member id
- * @property {string} token the session token the real `login` issued
- * @property {string} [password]
- * @property {{t: string, e: number, d: string, w: string}} session the record the shell keeps
- * @property {(op: string, asked?: {query?: Record<string, string>, body?: unknown}) => Promise<unknown>} act an act through the world's door; a refusal throws
- * @property {(op: string, asked?: {query?: Record<string, string>}) => Promise<unknown>} read a read through the world's door; a refusal throws
+ * A signed-in member (R16): `{handle, member, token, password, session, act, read}`; `session` is the record the shell keeps
+ * (`{t, e, d, w}`), `act(op, {query, body})` and `read(op, {query})` send the op through the world's door and answer the
+ * answer, a refusal thrown. An open object, as a test may hand the door one of its own.
+ * @typedef {Object<string, *>} SignedIn
  */
 /**
- * What the shell's harness hands the door, or a `Request` (R17).
- * @typedef {{url?: string, op?: string, query?: Record<string, string>, headers?: Record<string, string>, body?: unknown, init?: Object, method?: string} | Request} DoorRequest
+ * What the shell's harness hands the door (`{url, op, query, headers, body, init, method}`), or a `Request` (R17).
+ * @typedef {Object<string, *> | Request} DoorRequest
  */
 /**
- * The door's answer, the shape the page receives (R17).
- * @typedef {{status: number, json?: unknown, bytes?: Uint8Array, type?: string}} DoorAnswer
+ * The door's answer, the shape the page receives (R17): `{status, json}` or `{status, bytes, type}`.
+ * @typedef {{status: number, json?: *, bytes?: Uint8Array, type?: string}} DoorAnswer
  */
 /** R17: the address a page's relative request is read against. */
 /** @type {string} */
@@ -636,9 +629,9 @@ export function worldAnswers(op) {
 
 /* ---- R16: real sign-ins ---- */
 
-/** The `result` of a door's answer, else its JSON. @type {(a: DoorAnswer | null | undefined) => unknown} */
+/** The `result` of a door's answer, else its JSON. @type {(a: DoorAnswer | null | undefined) => *} */
 export const resultOf = (a) => (a && a.json && a.json.result !== undefined ? a.json.result : a && a.json);
-/** The error a refused act throws, naming the op and carrying the answer. @type {(op: string, a: DoorAnswer | null | undefined) => Error & {answer: unknown}} */
+/** The error a refused act throws, naming the op and carrying the answer. @type {(op: string, a: DoorAnswer | null | undefined) => Error & {answer: *}} */
 export const refusedAct = (op, a) => Object.assign(new Error(`storeWorld: ${op} was refused: ${JSON.stringify(a && (a.json ?? a.type)).slice(0, 400)}`), { answer: a });
 const passwordOf = (handle) => `${handle}-world-passphrase`;
 
@@ -758,7 +751,7 @@ export const instant = (world) => new Date(world.now()).toISOString().replace(/\
  * @param {string | Uint8Array} content
  * @param {string} [project]
  * @param {{type?: string, read?: boolean}} [options]
- * @returns {Promise<{sha: string, bundle: string, parts?: Array<Object>, read?: unknown}>}
+ * @returns {Promise<{sha: string, bundle: string, parts?: Array<Object>, read?: *}>}
  * @throws {Error} a refused act, naming the op
  */
 export async function hold(world, as, name, content, project = "", { type = "text/plain", read = false } = {}) {
@@ -781,7 +774,7 @@ export async function hold(world, as, name, content, project = "", { type = "tex
  * @param {string} name
  * @param {{capture: {sha256: string, bytes: number, encoding?: string}, file: string, locator?: string, parts?: Array<Object>}} doc
  * @param {string} [project]
- * @param {{promoted?: unknown} | null} [answered] given, it receives the promotion's own answer as `promoted`
+ * @param {{promoted?: *} | null} [answered] given, it receives the promotion's own answer as `promoted`
  * @returns {Promise<{sha: string, bundle: string, parts?: Array<Object>}>}
  * @throws {Error} a refused act, naming the op
  */
@@ -848,7 +841,7 @@ export async function trail(world, as, projectId, label = "Stormwater trail") {
  * @param {World} world
  * @param {SignedIn} as
  * @param {string[]} ids
- * @returns {Promise<unknown>} the answer of `profilesset`
+ * @returns {Promise<*>} the answer of `profilesset`
  * @throws {Error} a refused act, naming the op
  */
 export async function profiles(world, as, ids) {
@@ -889,7 +882,7 @@ export async function queue(world, { obligations = 0, findings = 0, conditions =
  * @param {World} world
  * @param {string | null} token
  * @param {string} [op]
- * @returns {Promise<Object>} the admitted caller with `token`
+ * @returns {Promise<*>} the admitted caller with `token`
  * @throws {Error} a caller admission refuses
  */
 export async function admittedAs(world, token, op = "search") {

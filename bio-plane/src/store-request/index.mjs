@@ -158,7 +158,7 @@ const parsed = (text) => { try { return JSON.parse(text); } catch { return undef
  * @property {string} op the op's name after alias resolution
  * @property {URL | string} url the page's request address
  * @property {string} [method] absent is `GET`
- * @property {string | Uint8Array | ReadableStream} [body] the body as the door read it
+ * @property {*} [body] the body as the door read it: text, or the bytes or stream of an upload
  * @property {AdmittedCaller | null} [caller] none for a public op
  * @property {string | null} [source] the keyed digest of the connecting address
  * @property {string | null} [country]
@@ -177,13 +177,13 @@ const parsed = (text) => { try { return JSON.parse(text); } catch { return undef
  * The store's request (R1, R5), or the refusal of R11.
  * @typedef {Object} InnerRequestAnswer
  * @property {string} [url] the store route's in-process address `http://x/<route>`
- * @property {string | Uint8Array | ReadableStream} [body] absent when none was sent
+ * @property {*} [body] absent when none was sent
  * @property {Record<string, string>} [headers] the internal headers `x-bio-session` and `x-bio-grant`, each only when it has a value
  * @property {{status: number, body: Object}} [refusal] a project creation the capability gate refuses, answered as given
  */
 /** R1: the store's request `{url, body, headers}` made from a page's, or `{refusal}` for a project creation the capability
  *  gate refuses (R11). Synchronous; never throws; the same answer for the same arguments.
- * @param {InnerRequestArgs} [args]
+ * @param {Partial<InnerRequestArgs>} [args] absent fields read as none
  * @returns {InnerRequestAnswer}
  * @bound the answer holds either `url` and `headers` (and `body` when one passes) or `refusal`, never both
  */
@@ -192,6 +192,7 @@ export function innerRequest(args = {}) {
   catch (e) { return { refusal: { status: 500, body: { ok: false, reason: "STORE_REQUEST_FAILED", op: args && args.op } } }; }
 }
 
+/** @param {Partial<InnerRequestArgs>} args @returns {InnerRequestAnswer} */
 function make({ op, url, method = "GET", body, caller, source = null, country = null, userAgent = null, origin = null,
                 length = null, resolving = false, replay = null, deferred = false, secretSha = null, bySecret = false,
                 mint = null }) {
@@ -510,9 +511,11 @@ function make({ op, url, method = "GET", body, caller, source = null, country = 
   }
 
   /* R5: the credentials, in headers */
+  /** @type {Record<string, string>} builds the headers of an InnerRequestAnswer */
   const headers = {};
   if (sessionCarried) headers[SESSION_HEADER] = sessionCarried;
   if (aiCred && aiCred.grant) headers[GRANT_HEADER] = aiCred.grant;
+  /** @type {InnerRequestAnswer} builds an InnerRequestAnswer */
   const answer = { url: inner.toString(), headers };
   if (passBody !== undefined) answer.body = passBody;
   return answer;
