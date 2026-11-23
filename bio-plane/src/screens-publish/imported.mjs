@@ -89,26 +89,30 @@ export const IMPORTED = Object.freeze({
       // chosen for her), the findings that moved and the statement that moved each, and the limit sentence. Nothing is saved or sent.
       const lensKeys = [["as_published", "screen.imported.lens_as_published"], ["removed", "screen.imported.lens_removed"], ["own", "screen.imported.lens_own"]];
       const rg = ui.regrade && ui.regrade.import === c.import ? ui.regrade : null;
+      // U15: each lens's own shown-line and moved-line (a lens with no key, such as one not determined, draws none)
+      const shownKey = { as_published: "screen.imported.lens_shown.as_published", removed: "screen.imported.lens_shown", own: "screen.imported.lens_shown.own" };
+      const movedKey = { removed: "screen.imported.lens_moved", own: "screen.imported.lens_moved.own" };
       const titleOf = function (id) { const i = findings.findIndex(function (x) { return x.finding === id; }); return i >= 0 ? nameOf(findings[i], i) : cs.w("screen.imported.findings"); };
       const pairOf = function (x) { return x && typeof x === "object" ? [x.capture, x.connection].filter(Boolean).join("/") || JSON.stringify(x) : x ? String(x) : ""; };
       out.push(cs.sec("act.owed_importregrade.label.imported", '<p class="mk-small">' + cs.w("screen.imported.lens_what") + "</p>"
         + cs.checks("im-lens", { key: "act.owed_importregrade.label.imported" }, lensKeys.map(function (k) { return [k[0], k[1], false]; }), { radio: true })
         + '<div class="mk-acts">' + cs.act("importregrade") + "</div>" + P.said(view, "importregrade")
         + (rg ? '<div data-regrade="' + cs.esc(rg.lens) + '"><p class="mk-small">' + cs.w("screen.imported.lens_does") + "</p>"
-          // R58 (Screens page C5): the lens the rows are read under, above them; the design words only "with the source's bias removed" (`.lens_shown`)
-          + (rg.lens === "removed" ? '<p class="mk-note" data-lens-shown>' + cs.w("screen.imported.lens_shown") + "</p>" : "")
+          // R58 (Screens page C5; UX lane U15): the lens the rows are read under, above them, a whole sentence for each lens
+          + (shownKey[rg.lens] ? '<p class="mk-note" data-lens-shown="' + cs.esc(rg.lens) + '">' + cs.w(shownKey[rg.lens]) + "</p>" : "")
           + (rg.lens_note ? P.fold(cs, "screen.imported.lens_none_summary", "<p>" + cs.w("screen.imported.lens_none") + "</p>") : "")
           + (rg.lens === "undetermined" ? P.fold(cs, "screen.imported.lens_unreadable_summary", "<p>" + cs.w("screen.imported.lens_unreadable") + "</p>") : "")
           + cs.sheet((Array.isArray(rg.findings) ? rg.findings : []).map(function (f) {
             const why = Array.isArray(f.because) ? f.because : [];
             return cs.row("", '<span class="rec">' + titleOf(f.finding) + "</span>" + '<span class="meta" data-moved="' + (f.moved === true ? "yes" : "no") + '">'
-              + (f.moved === true ? cs.w("screen.imported.lens_moved", { published: pairOf(f.published && f.published.pair), regraded: pairOf(f.pair) })
+              // U15: a moved finding names the lens it moved under; read as published nothing moves, so no moved-line is drawn there
+              + (f.moved === true && movedKey[rg.lens] ? cs.w(movedKey[rg.lens], { published: pairOf(f.published && f.published.pair), regraded: pairOf(f.pair) })
                 + why.map(function (b) { return " " + cs.w("screen.imported.lens_because", { statement: b.text || b.statement || "", part: b.touched && b.touched.target ? b.touched.target : "" }); }).join("")
                 : f.moved === false ? cs.w("screen.imported.lens_unmoved") : "")
-              // R58 (Screens page C5): whether it meets the team's bar and met the source's, under this lens (`bar_met`, case-import R27); a standing
-              // that is not determined (null) is not drawn
-              + (f.bar_met && typeof f.bar_met.own === "boolean" ? ' <span data-bar="ours">' + cs.w("screen.imported.lens_bar_ours", { answer: { html: cs.w(f.bar_met.own ? "screen.calculation.standing.yes" : "screen.calculation.standing.no") } }) + "</span>" : "")
-              + (f.bar_met && typeof f.bar_met.source === "boolean" ? ' <span data-bar="theirs">' + cs.w("screen.imported.lens_bar_theirs", { answer: { html: cs.w(f.bar_met.source ? "screen.calculation.standing.yes" : "screen.calculation.standing.no") } }) + "</span>" : "")
+              // R58 (Screens page C5): whether it meets the team's bar and met the source's, under this lens (`bar_met`, case-import R27), its
+              // answer imported's own lower-case yes or no (U15); a standing that is not determined (null) is not drawn
+              + (f.bar_met && typeof f.bar_met.own === "boolean" ? ' <span data-bar="ours">' + cs.w("screen.imported.lens_bar_ours", { answer: { html: cs.w(f.bar_met.own ? "screen.imported.lens_bar.yes" : "screen.imported.lens_bar.no") } }) + "</span>" : "")
+              + (f.bar_met && typeof f.bar_met.source === "boolean" ? ' <span data-bar="theirs">' + cs.w("screen.imported.lens_bar_theirs", { answer: { html: cs.w(f.bar_met.source ? "screen.imported.lens_bar.yes" : "screen.imported.lens_bar.no") } }) + "</span>" : "")
               + "</span>", "");
           }).join("")) + (rg.limit ? '<p class="mk-note" data-limit>' + cs.esc(rg.limit) + "</p>" : "") + "</div>" : "")));
 
