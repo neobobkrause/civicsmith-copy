@@ -30,6 +30,8 @@
 import { remoteOf } from "./remote.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
+/** @import { RouteDeps } from './ops.mjs' */
+
 /** The steps, and the `agent-runner` route each is sent to (its R17, R18, R19, R20). */
 export const SIGNIN_ROUTES = Object.freeze({
   start: "/signin",
@@ -37,12 +39,16 @@ export const SIGNIN_ROUTES = Object.freeze({
   state: "/signin/state",
   signout: "/signout",
 });
-/** `agent-runner` R17's member: a non-empty string of at most 200 characters. */
+/** `agent-runner` R17's member: a non-empty string of at most 200 characters.
+ *  @type {number} */
 export const MEMBER_MAX = 200;
 /** R83: the two headers this member reads from the door and passes on to the runner, and no other. */
+/** @type {string} */
 export const TRACE_HEADER = "x-civicsmith-trace";
+/** @type {string} */
 export const MEMBER_REF_HEADER = "x-civicsmith-member-ref";
-/** R83: how much of a runner answer that is not JSON is told, after R29's scrub. */
+/** R83: how much of a runner answer that is not JSON is told, after R29's scrub.
+ *  @type {number} */
 export const TEXT_HEAD_MAX = 120;
 
 /** R84: this member's own refusals of `/signin`. */
@@ -54,7 +60,8 @@ const RUNNER_CODES = Object.freeze([
   "BAD_CODE", "SIGNIN_REFUSED", "SIGNOUT_FAILED", "RUNNER_NOT_STARTED", "ATTEMPT_SUPERSEDED",
   "SIGNIN_NOT_HELD", "SIGNIN_TOKEN_REFUSED",
 ]);
-/** R84 — every code `/signin` can answer, for the design stream's `refusal.<code>` words (checked against it at L11). */
+/** R84 — every code `/signin` can answer, for the design stream's `refusal.<code>` words (checked against it at L11).
+ *  @type {readonly string[]} */
 export const SIGNIN_CODES = Object.freeze([...new Set([...OWN_CODES, ...RUNNER_CODES])].sort());
 
 /* A binding ignores the host; this names the request, it does not route it (as `agent-model`'s `RUNNER_URL`). */
@@ -67,11 +74,22 @@ const MEMBER_REF_SHAPE = /^[\x21-\x7e]{1,200}$/;
    most this many characters; another shape is not passed, and the runner's own check answers. */
 const ATTEMPT_MAX = 200;
 
+/**
+ * R87: the door's two headers, each present only when sent in its shape.
+ * @typedef {Object} DoorTrace
+ * @property {string} [trace] the door's `x-civicsmith-trace`
+ * @property {string} [memberRef] the door's `x-civicsmith-member-ref`
+ * @bound trace: 1 to 128 of letters, digits and . _ : -
+ * @bound memberRef: 1 to 200 printable ASCII characters, no space
+ */
+
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 
 /** R87 (T48; N1015) — the door's two headers on `/ask`, `/run`, `/draft` and `/transcribe`, read in R83's shapes for
  *  `agent-model` (`converse({…, trace, memberRef})`, its R16): each present only when the door sent it in its shape,
- *  else absent. Unlike `/signin`, nothing is minted and nothing is refused for want of one. */
+ *  else absent. Unlike `/signin`, nothing is minted and nothing is refused for want of one.
+ *  @param {Request} req the request from the door
+ *  @returns {DoorTrace} */
 export function doorTrace(req) {
   const t = req.headers.get(TRACE_HEADER);
   const r = req.headers.get(MEMBER_REF_HEADER);
@@ -80,7 +98,10 @@ export function doorTrace(req) {
 }
 
 /** R83 (`agent-runner` R29's scrub): text with every copy of the code, every URL query and anything token-shaped
- *  (`sk-ant-…`, a JWT, any run of 32 or more `[A-Za-z0-9._-]`) removed. */
+ *  (`sk-ant-…`, a JWT, any run of 32 or more `[A-Za-z0-9._-]`) removed.
+ *  @param {any} text read as a string, null and undefined as empty
+ *  @param {any} [code] the sign-in code, removed wherever it stands when a non-empty string
+ *  @returns {string} */
 export function scrub(text, code) {
   let s = String(text ?? "");
   if (typeof code === "string" && code) s = s.split(code).join("[the code]");
@@ -102,7 +123,11 @@ const WORDS = {
   RUNNER_SILENT: localize("agent-worker.signin.your_teams_civicsmith_could_not_3", "Your team's Civicsmith could not reach the part that runs your Claude sign-in, so what happened to this step is not known. Wait a minute and try again; if it keeps happening, tell an administrator the reference."),
 };
 
-/** `POST /signin`. `deps` are the shell's own pieces (index.mjs): the refusal and answer helpers. */
+/** `POST /signin`. `deps` are the shell's own pieces (index.mjs): the refusal and answer helpers.
+ *  @param {Request} req the door's request: `{member, step, code?, attempt?, hold?}`
+ *  @param {any} env the Worker's bindings
+ *  @param {RouteDeps} deps
+ *  @returns {Promise<Response>} the runner's answer with `trace`, or this member's refusal */
 export async function handleSignin(req, env, deps) {
   const { refusal, json, now = () => Date.now(), log = (line) => console.log(line), mint = () => crypto.randomUUID() } = deps;
   /* R83: the door's two headers, read once; the trace minted when none usable arrived. */

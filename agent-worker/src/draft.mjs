@@ -43,17 +43,70 @@ import { remoteOf } from "./remote.mjs";
 import { askBoundReached, draftMayRead, TRANSLATION_DRAFT_MAX_WORDS } from "../../bio-plane/src/run-rules/index.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
+/** @import { RouteDeps } from './ops.mjs' */
+/** @import { ActionTask } from './action-drafts.mjs' */
+/**
+ * R68: one word of a translation draft. `to_language` sends `{key, en, note, means, protected}`; `to_english` sends
+ * `{key, en, text, protected}`.
+ * @typedef {Object} TranslationWord
+ * @property {string} key
+ * @property {string} en the English words
+ * @property {string|null} [note] `to_language`'s
+ * @property {string|null} [means] `to_language`'s
+ * @property {string} [text] `to_english`'s: the kept word in the team's language
+ * @property {boolean} protected
+ * @bound key: not blank, at most 200 characters, distinct within the task
+ * @bound en, text: not blank, at most 4000 characters; note, means: null or at most 4000 characters
+ */
+/**
+ * R68: a translation draft's task, admitted.
+ * @typedef {Object} TranslationTask
+ * @property {"translationdraft"} op
+ * @property {string} direction one of TRANSLATION_DIRECTIONS
+ * @property {string} language a language tag
+ * @property {TranslationWord[]} words
+ * @bound words: to_language 1 to `run-rules`' TRANSLATION_DRAFT_MAX_WORDS; to_english exactly one
+ * @bound language: a language tag's shape, at most 35 characters
+ */
+/**
+ * R86: a reading translation's task, admitted.
+ * @typedef {Object} ReadTask
+ * @property {"readtranslate"} op
+ * @property {string} language a language tag
+ * @property {string} text the passage
+ * @property {string} [from_language] a language tag; absent when not sent or sent as null
+ * @bound text: not blank, at most READ_TEXT_MAX characters
+ * @bound language, from_language: a language tag's shape, at most 35 characters
+ */
+/**
+ * A draft's task as the door sends it, admitted (R59, R68, R76, R86).
+ * @typedef {{op: "writinghelp", act: string, field: string} | {op: "groupdescriptiondraft"} | TranslationTask
+ *   | ActionTask | ReadTask} DraftTask
+ * @bound act, field: not blank, at most 100 characters
+ */
+/**
+ * `instance-setup` R65's answer, one of the administrator's.
+ * @typedef {Object} ToldAnswer
+ * @property {string} question
+ * @property {string} text
+ * @bound question: at most TOLD_MAX characters; text: at most ANSWER_TEXT_MAX characters
+ */
+
 /** The tasks a draft is asked for, and the field shapes of each (R59; R68, the translation draft; R76, the action
- *  drafts). */
+ *  drafts).
+ *  @type {readonly string[]} */
 export const DRAFT_OPS = Object.freeze(["writinghelp", "groupdescriptiondraft", "translationdraft", ...ACTION_DRAFT_OPS,
                                        "readtranslate"]);
 /** R68: a translation draft's two directions. Its word list's bound is `run-rules`' (R22; K2201, K2213), read, never held
  *  here. */
+/** @type {readonly string[]} */
 export const TRANSLATION_DIRECTIONS = Object.freeze(["to_language", "to_english"]);
 const TRANSLATION_WORDS_MAX = TRANSLATION_DRAFT_MAX_WORDS;
-/** `wizard-scripts` R27's `told`: 1 to 4,000 characters. */
+/** `wizard-scripts` R27's `told`: 1 to 4,000 characters.
+ *  @type {number} */
 export const TOLD_MAX = 4000;
-/** `instance-setup` R65's answers: each `text` at most 1,000 characters. */
+/** `instance-setup` R65's answers: each `text` at most 1,000 characters.
+ *  @type {number} */
 export const ANSWER_TEXT_MAX = 1000;
 const NAME_MAX = 100;
 const ANSWERS_MAX = 20;
@@ -62,6 +115,7 @@ const SUGGESTIONS_LAYER = "suggestions";
 const TRANSLATION_LAYER = "interface_translation";
 /** R86: the layer a reading translation is instructed by (`skills` R49), and the passage's bound. */
 const READING_LAYER = "reading_translation";
+/** @type {number} */
 export const READ_TEXT_MAX = 20000;
 /* A word's key, and a language tag's shape: the door holds the tag to `jurisdictions.isLocale` (instance-setup R64);
    this is only the shape a tag must have to be one. */
@@ -74,7 +128,9 @@ const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v)
 const sameKeys = (o, keys) => Object.keys(o).length === keys.length && keys.every((k) => k in o);
 const isName = (v) => typeof v === "string" && v.trim().length > 0 && v.length <= NAME_MAX;
 
-/** The task as the door sends it, or null: `{op: "writinghelp", act, field}` or `{op: "groupdescriptiondraft"}`. */
+/** The task as the door sends it, or null: `{op: "writinghelp", act, field}` or `{op: "groupdescriptiondraft"}`.
+ *  @param {any} t the request's `task`
+ *  @returns {DraftTask|null} */
 export function taskOf(t) {
   if (!isObject(t)) return null;
   if (t.op === "writinghelp" && sameKeys(t, ["op", "act", "field"]) && isName(t.act) && isName(t.field))
@@ -89,7 +145,9 @@ export function taskOf(t) {
 const isLanguage = (v) => typeof v === "string" && v.length <= LANGUAGE_MAX && LANGUAGE_TAG.test(v);
 
 /** R86: `{op: "readtranslate", language, text, from_language?}`, or null: `language` and `from_language` language tags,
- *  `text` 1 to `READ_TEXT_MAX` characters, not blank. A `from_language` sent as null is not sent. */
+ *  `text` 1 to `READ_TEXT_MAX` characters, not blank. A `from_language` sent as null is not sent.
+ *  @param {any} t the request's `task`
+ *  @returns {ReadTask|null} */
 export function readTaskOf(t) {
   if (!isObject(t)) return null;
   const from = t.from_language ?? null;
@@ -103,7 +161,9 @@ const isText = (v, max) => typeof v === "string" && v.trim().length > 0 && v.len
 const isNoteText = (v) => v === null || (typeof v === "string" && v.length <= WORD_TEXT_MAX);
 
 /** R68: `{op: "translationdraft", direction, language, words}`, or null. `to_language`: 1 to 100 words
- *  `{key, en, note, means, protected}`; `to_english`: exactly one `{key, en, text, protected}`. Keys are distinct. */
+ *  `{key, en, note, means, protected}`; `to_english`: exactly one `{key, en, text, protected}`. Keys are distinct.
+ *  @param {any} t the request's `task`
+ *  @returns {TranslationTask|null} */
 export function translationTaskOf(t) {
   if (!isObject(t) || !sameKeys(t, ["op", "direction", "language", "words"])) return null;
   if (!TRANSLATION_DIRECTIONS.includes(t.direction)) return null;
@@ -125,7 +185,11 @@ export function translationTaskOf(t) {
   return { op: "translationdraft", direction: t.direction, language: t.language, words };
 }
 
-/** What the member told, held to its task's shape, or null. */
+/** What the member told, held to its task's shape, or null: for `writinghelp` the member's words, 1 to TOLD_MAX
+ *  characters, not blank; else 1 to 20 of the administrator's answers, not all empty.
+ *  @param {string} op the task's op
+ *  @param {any} told the request's `told`
+ *  @returns {any} a string, a ToldAnswer list, or null */
 export function toldOf(op, told) {
   if (op === "writinghelp")
     return typeof told === "string" && told.trim().length > 0 && told.length <= TOLD_MAX ? told : null;
@@ -157,7 +221,11 @@ function draftOf(op, answer) {
 }
 
 /** `POST /draft`. `deps` are the shell's own pieces (index.mjs): one route to the plane, one refusal helper, one
- *  account judgement. */
+ *  account judgement.
+ *  @param {Request} req the door's request: `{task, told?, grant?, firsthand?, untested?, …}`
+ *  @param {any} env the Worker's bindings
+ *  @param {RouteDeps} deps
+ *  @returns {Promise<Response>} the draft, or a refusal */
 export async function handleDraft(req, env, deps) {
   const { refusal, json, accountOf, cascadeToken, converse, segmentMeter, DEFAULT_MAX_SEGMENT_BYTES } = deps;
   if (typeof env.PLANE?.fetch !== "function")
@@ -184,7 +252,7 @@ export async function handleDraft(req, env, deps) {
   if (task.op === "translationdraft") return translationDraft(body, task, env, deps, labelled, traced);
   if (task.op === "readtranslate") return readingDraft(body, task, env, deps, labelled, traced);
   if (ACTION_DRAFT_OPS.includes(task.op))
-    return actionDraft(body, task, env, deps,
+    return actionDraft(body, /** @type {ActionTask} one of the four, by its op */ (task), env, deps,
       { packFor, grantReader, readTool, draftEnding, ASK_DECLARED, labelled, traced });
   const told = toldOf(task.op, body.told);
   if (told == null)

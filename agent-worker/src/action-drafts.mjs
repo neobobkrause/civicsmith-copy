@@ -44,19 +44,61 @@ import { toolContent } from "../../agent-steps/src/index.mjs";
 import { remoteOf } from "./remote.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
-/** R76 — the four tasks, in `run-rules`' `DRAFT_KINDS` order. */
+/** @import { RouteDeps } from './ops.mjs' */
+/**
+ * R76, K2824: one of the four tasks as the door sends it, admitted. Ids are short names, at most 200 characters.
+ * @typedef {{op: "textcheck", text: string}
+ *   | {op: "infractiondraft", matter: string, audience: string, record: Object<string, any>}
+ *   | {op: "bearingdraft", action: string, reply: string, action_record: Object<string, any>, reply_record: Object<string, any>}
+ *   | {op: "statusreportdraft", plan: string, items: Object<string, any>[]}} ActionTask
+ * @bound text: not blank, at most TEXTCHECK_TEXT_MAX characters
+ * @bound audience: one of AUDIENCES
+ * @bound record: lists actions, correspondence and findings, an optional plan, nothing else; at most RECORD_MAX characters of JSON
+ * @bound action_record, reply_record: a non-empty object each, at most RECORD_MAX characters of JSON
+ * @bound items: one or more objects, at most RECORD_MAX characters of JSON whole
+ */
+/**
+ * R76: a `textcheck`'s pointed-out sentence.
+ * @typedef {Object} PointedSentence
+ * @property {number} index its place in the text, the first 0
+ * @property {string} quote the text's own words
+ * @property {string} reads_as one of READS_AS
+ * @property {string} why
+ */
+/**
+ * R76: a `bearingdraft`'s claim and how the reply bears on it.
+ * @typedef {Object} ClaimBearing
+ * @property {string} claim
+ * @property {string} bearing one of BEARINGS
+ * @property {string} quote the reply's own words; empty only when not addressed
+ */
+/**
+ * R76: the model's answer held to its task's shape: `textcheck`'s sentences, `infractiondraft`'s text and record ids,
+ * `statusreportdraft`'s text and item places, or `bearingdraft`'s claims.
+ * @typedef {{sentences: PointedSentence[]} | {text: string, sources: string[]} | {text: string, sources: number[]}
+ *   | {claims: ClaimBearing[]}} ActionDraft
+ * @bound sentences, claims: at most 200; sentences in index order, no index read the same way twice
+ * @bound sources: one to 200; item places distinct, in order, each among the items handed in
+ */
+
+/** R76 — the four tasks, in `run-rules`' `DRAFT_KINDS` order.
+ *  @type {readonly string[]} */
 export const ACTION_DRAFT_OPS = Object.freeze(["textcheck", "infractiondraft", "bearingdraft", "statusreportdraft"]);
 /** R76 — each task's kind in `run-rules`' `DRAFT_KINDS` (its R27): the task's own name, but for the status report's
  *  (`statusreport`, T46). */
 const KIND_OF = Object.freeze({ textcheck: "textcheck", infractiondraft: "infractiondraft", bearingdraft: "bearingdraft",
                                 statusreportdraft: "statusreport" });
-/** R76 — what a pointed-out sentence reads as. */
+/** R76 — what a pointed-out sentence reads as.
+ *  @type {readonly string[]} */
 export const READS_AS = Object.freeze(["assertion", "position", "own_benefit_ask", "staff_named"]);
-/** R76 — who an infraction's documentation is drafted for. */
+/** R76 — who an infraction's documentation is drafted for.
+ *  @type {readonly string[]} */
 export const AUDIENCES = Object.freeze(["violating_party", "members", "oversight", "public", "broad"]);
-/** R76 — how a reply bears on a claim. */
+/** R76 — how a reply bears on a claim.
+ *  @type {readonly string[]} */
 export const BEARINGS = Object.freeze(["new_evidence", "disputed_without_evidence", "not_addressed"]);
-/** R76 — a prepared outward text, at most this many characters (a letter is longer than a field's 4,000). */
+/** R76 — a prepared outward text, at most this many characters (a letter is longer than a field's 4,000).
+ *  @type {number} */
 export const TEXTCHECK_TEXT_MAX = 20000;
 /** A record id the task names (a matter, an action, a reply): a short name, never text. */
 const ID_MAX = 200;
@@ -64,7 +106,8 @@ const WHY_MAX = 1000;
 const LIST_MAX = 200;
 const ACTION_DRAFTING_LAYER = "action_drafting";
 /** K2824 — the records the door hands in, at most this many characters of JSON each (a matter's record is bounded, never
- *  cut: one past it is `BAD_TASK`). */
+ *  cut: one past it is `BAD_TASK`).
+ *  @type {number} */
 export const RECORD_MAX = 200000;
 const RECORD_KEYS = Object.freeze(["plan", "actions", "correspondence", "findings"]);
 
@@ -84,7 +127,9 @@ const isOneRecord = (r) => isObject(r) && Object.keys(r).length > 0 && sized(r);
 /** R76 (T46) — `statusreportdraft`'s `items`, `plan-work` R8's: a non-empty list of objects, within `RECORD_MAX` whole. */
 const isItems = (v) => Array.isArray(v) && v.length > 0 && v.every(isObject) && sized(v);
 
-/** R76 — the task as the door sends it, or null. */
+/** R76 — the task as the door sends it, or null.
+ *  @param {any} t the request's `task`
+ *  @returns {ActionTask|null} */
 export function actionTaskOf(t) {
   if (!isObject(t)) return null;
   if (t.op === "textcheck" && sameKeys(t, ["op", "text"]) && isWords(t.text, TEXTCHECK_TEXT_MAX))
@@ -140,7 +185,10 @@ function answerTool(op) {
 }
 
 /** R76 — the model's answer held to its task's shape, whole, or null: a part out of shape makes the whole unformed,
- *  never partly answered. A `textcheck` quote must be the text's own words (it never rewrites a sentence). */
+ *  never partly answered. A `textcheck` quote must be the text's own words (it never rewrites a sentence).
+ *  @param {ActionTask} task
+ *  @param {any} answer the model's `draft` tool input
+ *  @returns {ActionDraft|null} */
 export function actionDraftOf(task, answer) {
   if (!isObject(answer)) return null;
   if (task.op === "textcheck") {
@@ -193,7 +241,13 @@ const TASK_WORDS = {
 
 /** R76, R77 — `POST /draft` for one of the four tasks, after R59's checks of the binding, the body and the task.
  *  `deps` are the shell's pieces; `shared` is `draft.mjs`' own (the pack read, the read tool's door and the endings),
- *  so the four drafts and R59's are one mechanism. */
+ *  so the four drafts and R59's are one mechanism.
+ *  @param {any} body the door's request body
+ *  @param {ActionTask} task
+ *  @param {any} env the Worker's bindings
+ *  @param {RouteDeps} deps
+ *  @param {any} shared `draft.mjs`' own: `{packFor, grantReader, readTool, draftEnding, ASK_DECLARED, labelled?, traced?}`
+ *  @returns {Promise<Response>} the draft, or a refusal */
 export async function actionDraft(body, task, env, deps, shared) {
   const { refusal, json, accountOf, cascadeToken, converse, segmentMeter, DEFAULT_MAX_SEGMENT_BYTES } = deps;
   const { packFor, grantReader, readTool, draftEnding, ASK_DECLARED, labelled = {}, traced = {} } = shared;

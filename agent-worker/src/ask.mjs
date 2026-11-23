@@ -49,14 +49,42 @@ import { doorTrace } from "./signin.mjs";
 import { remoteOf } from "./remote.mjs";
 import { word, localize } from "../../bio-plane/src/setup-words/index.mjs";
 
-/** The ask's bounds: `ASK_BOUNDS`' defaults, the figure an ask declares when it starts (run-rules R17). */
+/** @import { RouteDeps, ModelTool } from './ops.mjs' */
+/**
+ * R55: a read the one door refused, handed to the model as the tool's result; no plane call was made.
+ * @typedef {Object} ReadRefused
+ * @property {string} code `ASK_OP_REFUSED` or `ASK_ARGS_REFUSED`
+ * @property {string} op the op as asked
+ * @property {string} detail why, in words
+ * @bound op: at most 60 characters when it is not a read of `ASK_OPS`
+ */
+/**
+ * R55: a read admitted (an op of `ASK_OPS` and its plain arguments), or its refusal; never both.
+ * @typedef {{op: string, query: Object<string, string|number|boolean>, refused?: undefined}
+ *   | {refused: ReadRefused, op?: undefined, query?: undefined}} ReadAdmitted
+ * @bound query: names of 1 to 41 letters, digits and _, never op, token or store; each value at most 500 characters
+ */
+/**
+ * The ask's model tools for each of its two conversations (R56).
+ * @typedef {Object} AskTools
+ * @property {ModelTool[]} reading `load_layer`, `read` and `done_reading`
+ * @property {ModelTool[]} composing `load_layer` and `answer`
+ */
+
+/** The ask's bounds: `ASK_BOUNDS`' defaults, the figure an ask declares when it starts (run-rules R17).
+ *  @type {Readonly<Object<string, number>>} */
 export const ASK_DECLARED = Object.freeze(Object.fromEntries(Object.entries(ASK_BOUNDS).map(([k, v]) => [k, v.default])));
+/** The longest question, in characters.
+ *  @type {number} */
 export const QUESTION_MAX = 4000;
+/** The most earlier turns an ask may carry.
+ *  @type {number} */
 export const CONVERSATION_MAX = 40;
 const ARG_MAX = 500;
 
 /** R55, R59 — the one read tool an ask or a draft is offered: an op of `ASK_OPS` (`answers`' `ASK_SCOPE`), its arguments
- *  as plain values, read under the member's grant. */
+ *  as plain values, read under the member's grant.
+ *  @returns {ModelTool} */
 export function readTool() {
   return {
     name: "read",
@@ -69,7 +97,10 @@ export function readTool() {
 }
 
 /** The ask's model tools: `read` (only `ASK_OPS`) and `done_reading` for the first conversation; `answer` (answers
- *  R3's shape) for the second; `load_layer` in both, gated by the switch that governs the ask (R56). */
+ *  R3's shape) for the second; `load_layer` in both, gated by the switch that governs the ask (R56).
+ *  @param {string[]} layers the names of the pack's layers that may be loaded
+ *  @param {{fields: readonly string[], label: string}} [contract] the answer's fields and label; `answers`' own by default
+ *  @returns {AskTools} */
 export function askTools(layers, contract = { fields: ANSWER_FIELDS, label: ANSWER_LABEL }) {
   const load = {
     name: "load_layer", description: localize("agent-worker.ask.load_one_of_the_skill", "load one of the skill pack's disclosed layers when the work needs it"),
@@ -100,7 +131,9 @@ export function askTools(layers, contract = { fields: ANSWER_FIELDS, label: ANSW
 }
 
 /** R55 — the one door a read comes through: an op in `ASK_OPS` with scalar arguments, or the refusal the model is
- *  handed as the tool's result. No plane call is made for a refused one. */
+ *  handed as the tool's result. No plane call is made for a refused one.
+ *  @param {any} input the model's tool input: `{op, args?}`
+ *  @returns {ReadAdmitted} */
 export function admitRead(input) {
   const op = String(input?.op ?? "");
   if (!ASK_OPS.includes(op))
@@ -109,6 +142,7 @@ export function admitRead(input) {
   const args = input?.args == null ? {} : input.args;
   if (typeof args !== "object" || Array.isArray(args))
     return { refused: { code: "ASK_ARGS_REFUSED", op, detail: localize("agent-worker.ask.a_reads_arguments_are_a", "a read's arguments are a map of plain values") } };
+  /** @type {Object<string, string|number|boolean>} builds the read's query */
   const query = {};
   for (const [k, v] of Object.entries(args)) {
     if (["op", "token", "store"].includes(k) || !/^[a-z_][a-z0-9_]{0,40}$/i.test(k)
@@ -134,6 +168,8 @@ function conversationOf(c) {
  *  or `address` argument, else the id in a `q` of the form `id:<record>`; null when it names none or the value is not
  *  shaped like an id (a name of at most 200 characters, never a sentence the model wrote). */
 const RECORD_SHAPE = /^[A-Za-z0-9][A-Za-z0-9._:/#¶-]{0,199}$/;
+/** @param {any} query a read's arguments
+ *  @returns {string|null} */
 export function recordOf(query) {
   const q = query && typeof query === "object" ? query : {};
   const named = ["id", "record", "bundle_id", "address"].map((k) => q[k]).find((v) => typeof v === "string" && v.trim());
@@ -145,6 +181,9 @@ export function recordOf(query) {
 /** R113 — the passages a read's answer found: the elements of its result lists (`hits`, `rows`, `passages`), each
  *  counted once by its own identity within the ask. `seen` is the ask's set. */
 const PASSAGE_LISTS = ["hits", "rows", "passages"];
+/** @param {any} answer a read's answer
+ *  @param {Set<string>} seen the ask's set, added to
+ *  @returns {number} how many passages were new */
 export function newPassages(answer, seen) {
   const a = answer && typeof answer === "object" ? answer : {};
   let added = 0;
@@ -162,7 +201,11 @@ const passageOf = (holding, i) => (typeof holding?.address === "string" && RECOR
   ? holding.address.trim() : `h${i + 1}`);
 
 /** `POST /ask`. `deps` are the shell's own pieces (index.mjs), so the plane is reached by one route and every refusal
- *  is made by one helper. */
+ *  is made by one helper.
+ *  @param {Request} req the door's request: `{question, conversation?, …}`
+ *  @param {any} env the Worker's bindings
+ *  @param {RouteDeps} deps
+ *  @returns {Promise<Response>} the ask's events as NDJSON lines, or a refusal */
 export async function handleAsk(req, env, deps) {
   const { refusal, json, askPlane, planeAnswer, publishedPack, accountOf, cascadeToken, modelHalf, loadableLayers,
           loadLayer, converse, segmentMeter, NAMESPACES, DEFAULT_MAX_SEGMENT_BYTES, assistantReady,
