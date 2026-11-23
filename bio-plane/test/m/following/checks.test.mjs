@@ -149,7 +149,7 @@ async function otherFamilies() {
   const out = [];
   /* plane R68: the start registration is the first import of the plane's graph, before any table is read (R81). The walk
      imports plane files that reach it, so it runs here first. */
-  await import(join(REPO, "bio-plane/src/plane/register.mjs"));
+  await import(join(REPO, "bio-plane/src/store-assembly/register.mjs"));
   const walk = async (p) => {
     const abs = join(REPO, p);
     if (!existsSync(abs)) return;
