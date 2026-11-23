@@ -199,7 +199,7 @@ test("R58 read with the source's bias removed, the rows say so (`.lens_shown`) a
   assert.ok(drewIn(shown, "screen.imported.lens_shown"));
   const found = (RG.answer.json ? RG.answer.json.result : RG.answer).findings.filter((f) => f.bar_met && typeof f.bar_met.own === "boolean");
   assert.ok(found.length, "the real answer states a standing against the bars");
-  const yesno = (b) => ({ answer: word(b ? "screen.calculation.standing.yes" : "screen.calculation.standing.no") });
+  const yesno = (b) => ({ answer: word(b ? "screen.imported.lens_bar.yes" : "screen.imported.lens_bar.no") });
   assert.ok(drewIn(shown, "screen.imported.lens_bar_ours", yesno(found[0].bar_met.own)));
   if (typeof found[0].bar_met.source === "boolean") assert.ok(drewIn(shown, "screen.imported.lens_bar_theirs", yesno(found[0].bar_met.source)));
   /* control: as the source published it, the removed-bias caption is not said */
@@ -207,6 +207,42 @@ test("R58 read with the source's bias removed, the rows say so (`.lens_shown`) a
   q.doc.getElementById("im-lens").querySelectorAll("input").forEach((i) => { i.checked = i.value === "as_published"; });
   await press(q, "importregrade");
   assert.ok(!drew(q, "screen.imported.lens_shown"));
+});
+
+/** The imported page read under `lens`, with one finding that the answer says moved (or not) and stands against both bars. */
+async function underLens(lens, moved = true, chosen = lens) {
+  const A = await importedCase({ accepted: true });
+  const answer = { ok: true, import: A.import, edition: A.edition, requested_lens: lens, lens, limit: null,
+    findings: [{ finding: "FND-W-1", published: { pair: { capture: "B", connection: "B" } }, pair: { capture: "B", connection: moved ? "C" : "B" }, moved, because: [], bar_met: { own: true, source: false } }] };
+  const p = await open(`/app/imported/${A.import}/${A.edition}`, { plane: { importedcase: A.answer, importregrade: ok(answer) } });
+  p.doc.getElementById("im-lens").querySelectorAll("input").forEach((i) => { i.checked = i.value === chosen; });
+  await press(p, "importregrade");
+  return main(p).querySelector("[data-regrade]");
+}
+
+test("R58 (U15) a shown-line is drawn under every lens, each its own sentence: as published `.lens_shown.as_published`, the source's bias removed `.lens_shown`, the team's lens `.lens_shown.own`", async () => {
+  const each = { as_published: "screen.imported.lens_shown.as_published", removed: "screen.imported.lens_shown", own: "screen.imported.lens_shown.own" };
+  for (const [lens, key] of Object.entries(each)) {
+    const r = await underLens(lens, lens !== "as_published");
+    assert.ok(drewIn(r, key), lens);
+    for (const other of Object.values(each).filter((k) => k !== key)) assert.ok(!drewIn(r, other), `${lens} draws no ${other}`);
+  }
+  /* control: the team's lens chosen, but the plane could not determine it: no shown-line is drawn */
+  const u = await underLens("undetermined", false, "own");
+  for (const k of Object.values(each)) assert.ok(!drewIn(u, k), k);
+});
+
+test("R58 (U15) under the team's lens a moved finding reads `.lens_moved.own`; with the source's bias removed `.lens_moved`; read as published no moved-line is drawn; the bars answer imported's lower-case yes and no", async () => {
+  const pair = { published: "B/B", regraded: "B/C" };
+  const own = await underLens("own");
+  assert.ok(drewIn(own, "screen.imported.lens_moved.own", pair) && !drewIn(own, "screen.imported.lens_moved", pair));
+  assert.ok(drewIn(own, "screen.imported.lens_bar_ours", { answer: word("screen.imported.lens_bar.yes") }));
+  assert.ok(drewIn(own, "screen.imported.lens_bar_theirs", { answer: word("screen.imported.lens_bar.no") }));
+  const removed = await underLens("removed");
+  assert.ok(drewIn(removed, "screen.imported.lens_moved", pair) && !drewIn(removed, "screen.imported.lens_moved.own", pair));
+  /* control: as published, even an answer marking a finding moved draws neither moved-line */
+  const asPub = await underLens("as_published");
+  assert.ok(!drewIn(asPub, "screen.imported.lens_moved", pair) && !drewIn(asPub, "screen.imported.lens_moved.own", pair));
 });
 
 test("R59 a citation of an imported finding the plane refuses because the assistant asked is said in \"When it is refused\" with the machine sentences", async () => {
