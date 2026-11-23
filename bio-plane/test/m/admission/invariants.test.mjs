@@ -50,7 +50,7 @@ test("R14: the admission share of the checks is this module's own — C-38.1–C
   assert.deepEqual(Object.keys(C).sort(), ["ADMISSION_CHECKS", "AI_SCOPE_CHECKS", "GROUP_IDENTITY_FENCE_CHECKS", "NAMESPACE_CHECKS", "OPERATOR_FENCE_CHECKS"]);
   const { out } = await sweep();
   const got = {};
-  for (const r of out) {
+  for (const r of /** @type {any[]} */ (out)) {
     const row = own[r.body.reason];
     assert.ok(row, r.body.reason);
     /* the sentence is the word of the code, read through setup-words; minutes is the one placeholder any of them holds */

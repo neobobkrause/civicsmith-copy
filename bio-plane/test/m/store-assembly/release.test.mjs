@@ -48,14 +48,14 @@ test("R23 (T51; K3807): the one registry is wizard-scripts' `SCREEN_REGISTRY`, e
   assert.deepEqual(screenFailures(), [], "the default is the registry itself");
 });
 
-test("R23 (T51): the assembly carries no registry of its own: `store-assembly/screens.mjs` is absent, `wizardRegistration().screens` is the registry itself, and answers' explain read is handed that same object", () => {
+test("R23 (T51): the assembly carries no registry of its own: `store-assembly/screens.mjs` is absent, `wizardRegistration().screens` is the registry itself, and answers is handed no registry", () => {
   const dir = fileURLToPath(new URL("../../../src/store-assembly/", import.meta.url));
   assert.equal(existsSync(`${dir}screens.mjs`), false);
   assert.equal(readdirSync(dir).some((f) => f.startsWith("screens")), false);
   assert.equal(wizardRegistration().screens, SCREEN_REGISTRY);
   const { ctx } = storage();
   assembleStore(ctx, {});
-  assert.equal(answersOf(ctx).deps.screens, SCREEN_REGISTRY, "the composition hands answers the registry, no copy");
+  assert.equal(Object.hasOwn(answersOf(ctx).deps, "screens"), false, "the composition hands answers no registry");
 });
 
 test("R23 negative control: an entry naming an op no spec holds, a repeated id, or a missing purpose or name fails the suite; an owed act with no op is no failure; none of the 21 old screens that the registry lacks is invented", () => {

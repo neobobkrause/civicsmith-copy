@@ -115,7 +115,7 @@ test("R10 (K1934 (5); credentials R42): an ai caller whose credential is answere
     refused(await gate(env, { op, token: both }), 403, "AI_CREDENTIAL_REVOKED", "C-29.7", [both]);
   }
   /* the gate itself, before scope: an op beyond member reach is still answered expired */
-  assert.equal(A.aiTaskScope(cred({ expired: true }), "purge", OPS.purge).refusal.body.reason, "AI_CREDENTIAL_EXPIRED");
+  assert.equal(A.aiTaskScope(cred({ expired: true }), "purge", OPS.purge).refusal?.body.reason, "AI_CREDENTIAL_EXPIRED");
   /* R16: an expired credential reads as no one */
   assert.deepEqual(await A.readerOf(urlOf({}), env, "bio", undefined, doAnswer, A.presentedCredential({ body: { token: lapsed } })), { viewer: "", cls: "ai" });
   /* negative controls: live (expired false, or the field absent as before credentials R42) is admitted */
@@ -172,6 +172,7 @@ test("R22 (T36: written through credentials' securitycount, its R50): securityTa
   const reqIn = (country) => { const r = new Request("https://plane.example/api"); Object.defineProperty(r, "cf", { value: { country } }); return r; };
   const req = reqIn("NZ");
   const stranger = { token: null };
+  /** @type {[any, string, string | null][]} each refusal, the kind and the country it is counted as */
   const counted = [
     [{ op: "index", answer: { status: 403, body: { ok: false, reason: "AI_CREDENTIAL_REVOKED", code: "AI_CREDENTIAL_REVOKED" } }, presented: { token: aik(), cred: cred({ principal: "class:ai" }) } }, "credential", "NZ"],
     [{ op: "promote", answer: { status: 401, body: { ok: false, code: "AI_CREDENTIAL_EXPIRED" } }, presented: { token: aik(), cred: cred({ principal: "class:ai" }) } }, "credential", "NZ"],
@@ -187,6 +188,7 @@ test("R22 (T36: written through credentials' securitycount, its R50): securityTa
     [{ op: "websiteinvite", answer: { ok: false, code: "WEBSITE_DAILY_CAP" }, presented: stranger }, "rate", "NZ"],
     [{ op: "joinlinkinvite", answer: { ok: false, code: "JOIN_LINK_DAILY_CAP" }, presented: stranger }, "rate", "NZ"],
   ];
+  /** @type {any[]} */
   const notCounted = [
     { op: "index", answer: { status: 401, body: { ok: false, code: "NOT_AUTHENTICATED" } }, presented: { token: hex64() } },
     { op: "index", answer: { status: 401, body: { ok: false, code: "NOT_AUTHENTICATED" } }, presented: { token: aik(), cred: cred() } },

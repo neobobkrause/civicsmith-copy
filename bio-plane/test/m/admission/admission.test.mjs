@@ -98,16 +98,16 @@ test("R9: a binding class not in the op's classes is refused 403 CLASS_FORBIDDEN
     }
   }
   /* a session is judged by classes, not machineClasses */
-  const mc = GATED.filter((k) => Array.isArray(OPS[k].machineClasses) && OPS[k].classes.includes("member")
+  const mc = GATED.filter((k) => Array.isArray(OPS[k].machineClasses) && (OPS[k].classes ?? []).includes("member")
                                && !OPS[k].machineClasses.includes("member") && SESSION_OPS.member.has(k));
   assert.ok(mc.includes("memberadd"));
   for (const op of mc) {
-    for (const [c, token] of Object.entries(bindings).filter(([c]) => !OPS[op].machineClasses.includes(c)))
+    for (const [c, token] of Object.entries(bindings).filter(([c]) => !(OPS[op].machineClasses ?? []).includes(c)))
       assert.equal((await gate(env, { op, token, params: c === "probe" ? { store: "scratch" } : {} })).refusal?.body.reason, "CLASS_FORBIDDEN", `${op}/${c}`);
     assert.notEqual((await gate(env, { op, token: S.ann })).refusal?.body.reason, "CLASS_FORBIDDEN", op);
   }
   /* a session whose kind the op's classes lack (a read, past R8) */
-  for (const op of GATED.filter((k) => !OPS[k].mutating && !OPS[k].classes.includes("member")))
+  for (const op of GATED.filter((k) => !OPS[k].mutating && !(OPS[k].classes ?? []).includes("member")))
     refused(await gate(env, { op, token: S.ann, method: "GET" }), 403, "CLASS_FORBIDDEN", "C-38.2");
   /* operator-attest, risk-tier, livefire: a bearer the row admits reaches the op as not a session, its class named */
   for (const op of ["ratify", "caseratify", "promote"]) for (const c of ["admin", "probe"]) {
@@ -125,7 +125,7 @@ test("R10: an ai caller is refused AI_CREDENTIAL_REVOKED (C-29.7) when its crede
   for (const op of GATED) {
     const reach = A.aiReachesAsMember(OPS[op], op);
     if (GOVERNANCE_ACTIONS.includes(op) || IDENTITY_ACTIONS.includes(op)) assert.equal(reach, false, `${op}: D-586`);
-    if (!OPS[op].classes.includes("member") || Array.isArray(OPS[op].machineClasses)) assert.equal(reach, false, op);
+    if (!(OPS[op].classes ?? []).includes("member") || Array.isArray(OPS[op].machineClasses)) assert.equal(reach, false, op);
     for (const [e, token, c] of [[env, K.ann, cred({ tokenId: "agent-ann", writes: [] })], [w2.env, wide, cred({ tokenId: "wide", taskScope: "everything", writes: GATED })]]) {
       e.calls.length = 0;
       const r = await gate(e, { op, token });
@@ -149,7 +149,7 @@ test("R10: an ai caller is refused AI_CREDENTIAL_REVOKED (C-29.7) when its crede
 test("R11: a session missing the op's capability is refused 403 NOT_CAPABLE (C-38.5) naming needs and held; a binding class holds no capabilities and is bounded by R9 alone; a session creating a project without create_projects is refused the same", async () => {
   const lack = hex64(), some = hex64();
   const { env, S } = world({ sessions: { [lack]: member("bea", []), [some]: member("cy", ["publish", "contribute"]) } });
-  const needing = GATED.filter((k) => NEEDS[k] && (SESSION_OPS.member.has(k) || !OPS[k].mutating) && OPS[k].classes.includes("member"));
+  const needing = GATED.filter((k) => NEEDS[k] && (SESSION_OPS.member.has(k) || !OPS[k].mutating) && (OPS[k].classes ?? []).includes("member"));
   assert.ok(needing.length > 5);
   for (const op of needing) {
     env.calls.length = 0;
@@ -188,7 +188,7 @@ test("R12: a bearer asking adminendorse, adminremove or membercaps is refused 40
       assert.deepEqual([body.op, body.tokenClass], [op, c]);
     }
     /* the class is asked of how the caller arrived, never of a list: a class added tomorrow is refused too */
-    assert.equal(A.bearerFence(op, { cls: "tomorrow", viaSession: false }).body.reason, code);
+    assert.equal(A.bearerFence(op, { cls: "tomorrow", viaSession: false })?.body.reason, code);
     /* negative control: the same act from a signed-in session passes the fence */
     for (const t of [S.founder, S.admin]) assert.ok((await gate(env, { op, token: t })).caller, op);
   }
@@ -214,12 +214,12 @@ test("R5–R12, R20: the admission runs in one order — R1, R20's address gate,
   /* the public ops before R5–R7: an unknown token does not stop one */
   assert.equal((await gate(env, { op: "knock", token: "garbage" })).public, true);
   /* R8 before R9: a member session asking a founder-only op whose classes also lack member */
-  const both = GATED.find((k) => OPS[k].mutating && k !== "export" && SESSION_OPS.admin.has(k) && !SESSION_OPS.member.has(k) && !OPS[k].classes.includes("member"));
+  const both = GATED.find((k) => OPS[k].mutating && k !== "export" && SESSION_OPS.admin.has(k) && !SESSION_OPS.member.has(k) && !(OPS[k].classes ?? []).includes("member"));
   assert.equal(await code({ op: both, token: S.ann }), "SESSION_ROLE_CANNOT_REACH_OP");
   /* export's refusal before R9 and R11 for a session lacking every capability */
   assert.equal(await code({ op: "export", token: S.bare }), "ROOT_OF_TRUST_REQUIRED");
   /* R9 before R4's scope refusal: probe asking an op it lacks, in bio */
-  const notProbe = GATED.find((k) => !OPS[k].classes.includes("probe") && OPS[k].classes.includes("member") && OPS[k].classes.includes("admin")
+  const notProbe = GATED.find((k) => !(OPS[k].classes ?? []).includes("probe") && (OPS[k].classes ?? []).includes("member") && (OPS[k].classes ?? []).includes("admin")
                                     && !Array.isArray(OPS[k].machineClasses));
   assert.equal(await code({ op: notProbe, token: env.PROBE_TOKEN, params: { store: "bio" } }), "CLASS_FORBIDDEN");
   /* R10 before R12: an agent declaring a governance act; R9 before R12: the daemon */
