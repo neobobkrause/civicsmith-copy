@@ -140,29 +140,29 @@ test("B2 (control-plane R53; F1, admission R20): the door's arm asks the bio obj
     body: JSON.stringify({ question: "q", conversation: [], ...extra }) });
   const bare = new URL("http://plane/ask");
   /* the header: the session and the grant each read from `Authorization: Bearer` */
-  await askOp({ req: req({ authorization: `Bearer ${SESSION}` }), url: bare, env, viaSession: true, sessMember: "ann" });
+  await askOp({ req: req({ authorization: `Bearer ${SESSION}` }), url: bare, env, viaSession: true, sessMember: "ann", grantMember: null });
   assert.deepEqual(seen[0], ["bio", { member: "member:ann", question: "q", conversation: [], store: null, session: SESSION, grant: null }]);
-  await askOp({ req: req({ authorization: `bearer ${SESSION}` }), url: bare, env, viaSession: false, grantMember: "member:bob" });
+  await askOp({ req: req({ authorization: `bearer ${SESSION}` }), url: bare, env, viaSession: false, grantMember: "member:bob", sessMember: null });
   assert.deepEqual(seen[1][1], { member: "member:bob", question: "q", conversation: [], store: null, session: null, grant: SESSION });
   /* the header wins over a query token beside it, which is not read */
   await askOp({ req: req({ authorization: `Bearer ${SESSION}` }), url: new URL(`http://plane/ask?token=${OTHER}`), env,
-                viaSession: true, sessMember: "ann" });
+                viaSession: true, sessMember: "ann", grantMember: null });
   assert.equal(seen[2][1].session, SESSION);
   /* the body's token, when no header presents one; it wins over the query */
-  await askOp({ req: req({}, { token: SESSION }), url: new URL(`http://plane/ask?token=${OTHER}`), env, viaSession: true, sessMember: "ann" });
+  await askOp({ req: req({}, { token: SESSION }), url: new URL(`http://plane/ask?token=${OTHER}`), env, viaSession: true, sessMember: "ann", grantMember: null });
   assert.equal(seen[3][1].session, SESSION);
   /* the query, for T35's release only (admission R20: admitted and named deprecated by the door) */
-  await askOp({ req: req(), url: new URL(`http://plane/ask?token=${SESSION}`), env, viaSession: true, sessMember: "ann" });
+  await askOp({ req: req(), url: new URL(`http://plane/ask?token=${SESSION}`), env, viaSession: true, sessMember: "ann", grantMember: null });
   assert.equal(seen[4][1].session, SESSION);
   /* an Authorization header in another form presents nothing */
-  await askOp({ req: req({ authorization: `Basic ${SESSION}` }), url: bare, env, viaSession: true, sessMember: "ann" });
+  await askOp({ req: req({ authorization: `Basic ${SESSION}` }), url: bare, env, viaSession: true, sessMember: "ann", grantMember: null });
   assert.equal(seen[5][1].session, null);
   /* a binding class or an ai credential is no member: refused before anything is read */
-  const r = await askOp({ req: req(), url: bare, env, viaSession: false });
+  const r = await askOp({ req: req(), url: bare, env, viaSession: false, sessMember: null, grantMember: null });
   assert.equal(r.status, 403);
   assert.equal((await r.json()).reason, "ASK_NOT_A_MEMBER");
   assert.equal(seen.length, 6);
-  const bad = await askOp({ req: new Request("http://plane/ask", { method: "POST", body: "{x" }), url: bare, env, viaSession: true, sessMember: "ann" });
+  const bad = await askOp({ req: new Request("http://plane/ask", { method: "POST", body: "{x" }), url: bare, env, viaSession: true, sessMember: "ann", grantMember: null });
   assert.equal(bad.status, 400);
 });
 
