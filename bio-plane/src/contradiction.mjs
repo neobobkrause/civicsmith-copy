@@ -26,8 +26,13 @@
  * propose a wrong label and nothing else. */
 
 /* §5's five words, in §5's order. The gate's own copy (test/m/contradiction/gate-measure.mjs LABELS) is asserted equal. */
+/**
+ * @type {ReadonlyArray<string>} the labels an answer may carry, frozen
+ * @bound exactly world, record, precision, unrelated, undetermined, in that order
+ */
 export const CONTRADICTION_LABELS = Object.freeze(["world", "record", "precision", "unrelated", "undetermined"]);
 
+/** @type {string} the words a run judges under, byte for byte as measured */
 export const JUDGEMENT_PROMPT = `You are judging CANDIDATE CONTRADICTIONS for a civic research record. For each pair below, a deterministic pairing
 put two assertions side by side for a stated reason (its KEY). You propose ONE label per pair. A member of the team
 will see your proposal and decide; you decide nothing.
@@ -63,11 +68,27 @@ Output the JSON only.
 `;
 
 /* sha256 of JUDGEMENT_PROMPT as M-162 measured it. Moved ONLY with a new measurement. */
+/**
+ * @type {string} the judgement prompt's pinned digest
+ * @bound the sha256 of JUDGEMENT_PROMPT's UTF-8 bytes, 64 lower-case hex characters
+ */
 export const JUDGEMENT_PROMPT_SHA256 = "aad3ac9e557fba904331c788a946d42e7b5c59b3d13e17972f4b45422716d08c";
 
 /* §5: the machine sees ONLY the two sides and their immediate context. A side's fields are the ones the pairing
    read carries for it: a claim's text, or a passage with the doctype, date and role its reader states. A field the
    record does not state is OMITTED, never filled (§4: an undetermined date is not invented). */
+/**
+ * @typedef {Object} JudgementSide one side as the judgement sees it; each field is copied unchanged from the side given
+ * @property {*} [text] the side's text; for a stance side with no text, the claim its project adopted
+ * @property {*} [doctype] the doctype its reader states
+ * @property {*} [date] the date its reader states
+ * @property {*} [role] its role in the inquiry
+ * @bound a field the side gives as null or not at all is absent; none is ever filled
+ */
+/**
+ * @param {*} side a side the pairing read formed; anything else gives an empty side
+ * @returns {JudgementSide}
+ */
 export function judgementSide(side) {
   const out = {};
   /* K5 (N345): a stance side is shown to the judgement as the claim its project adopted, the one text it has; a stance
@@ -80,6 +101,10 @@ export function judgementSide(side) {
 
 /* The run's whole input: the prompt, then each pair numbered from 1, its key, its context when there is one (K3's
    passage both claims rest on), and its two sides. The answer names each pair by that number. */
+/**
+ * @param {*} pairs the formed pairs, each `{key, context?, a, b}`; anything but an array renders no pairs
+ * @returns {string} the prompt, then `PAIRS:`, then each pair numbered from 1
+ */
 export function renderJudgementInput(pairs) {
   const body = (Array.isArray(pairs) ? pairs : []).map((p, i) => `PAIR ${i + 1} · key ${p.key}`
     + (p.context ? `\n  context (the source passage both claims rest on): ${JSON.stringify(p.context)}` : "")
@@ -96,6 +121,7 @@ export function renderJudgementInput(pairs) {
  * figures recorded in MEASUREMENTS.md, and RECOMMEND_PROMPT_SHA256 is set to its digest in the same change. Until that
  * run is made the digest is null, which says the prompt has passed no measurement: this module writes it and never
  * claims it measured. */
+/** @type {string} the words a run recommends under */
 export const RECOMMEND_PROMPT = `You are recommending, for CONTRADICTIONS a civic research record holds, the RESPECTS in which the two sides
 of each pair may differ, so that they need not conflict. A member of the team will see your recommendation and
 decide; you decide nothing.
@@ -120,4 +146,8 @@ Output the JSON only.
 `;
 
 /* sha256 of RECOMMEND_PROMPT as the blind fixture measured it: null until that measurement is made (R41). */
+/**
+ * @type {string|null} the recommender prompt's pinned digest, or null while it has passed no measurement
+ * @bound when not null, the sha256 of RECOMMEND_PROMPT's UTF-8 bytes, 64 lower-case hex characters
+ */
 export const RECOMMEND_PROMPT_SHA256 = null;
