@@ -645,7 +645,7 @@ section("agent-harness R1 · the rows, their declared edges, and nextStep held t
     nextStep({ step: "submit", mode: "check", pass: 0, maxPasses: 3, refusal: { code: "X" }, queue: [{ name: "a" }] }).step, "adjust");
   const unknown = nextStep({ step: "nowhere", pass: 0, maxPasses: 3 });
   t("agent-harness R1: an unknown step closes with `completed` and says so",
-    [unknown.step, unknown.bound, /not a row/.test(unknown.why)], ["close", "completed", true]);
+    [unknown.step, unknown.bound, /not a row/.test(unknown.why ?? "")], ["close", "completed", true]);
 }
 
 section("agent-harness R2 · gate-mode is first; an undeployed mode closes mode-not-deployed before anything is spent");
@@ -661,8 +661,9 @@ section("agent-harness R2 · gate-mode is first; an undeployed mode closes mode-
       /* R91 (R085): the last call is the segment's own `segment_end` tick, after the close. */
       [["gate-mode"], "mode-not-deployed", ["whoami", "airun", "airunlog", "airuntick", "airunclose", "airuntick"], 0, 0]);
     const why = r.out.trace?.[0]?.why ?? "";
-    t(`agent-harness R2: its why ${MODES[mode] ? "says the table holds it and has not deployed it" : "says the table does not hold the word"}, and names the deployed modes`,
-      [MODES[mode] ? /not deployed yet/.test(why) : /no mode this table knows/.test(why), /deployed now: check/.test(why)],
+    const held = mode ? MODES[mode] : undefined;   /* null and "" are words no table holds */
+    t(`agent-harness R2: its why ${held ? "says the table holds it and has not deployed it" : "says the table does not hold the word"}, and names the deployed modes`,
+      [held ? /not deployed yet/.test(why) : /no mode this table knows/.test(why), /deployed now: check/.test(why)],
       [true, true]);
     t(`agent-harness R2: …and the close was written (${mode})`, st.ended?.bound, "mode-not-deployed");
   }
@@ -745,7 +746,7 @@ section("R17 · fanout: one spawn per level, the contract built key by key, 4 su
   t("R17: a refused spawn -> 403 PLANE_REFUSED with the plane's body", [ref.status, ref.out.reason, ref.out.plane?.reason],
     [403, "PLANE_REFUSED", "AI_BEYOND_TASK_SCOPE"]);
   const { spawnContracts } = await import("../../agent-harness/src/subsession.mjs");
-  const cs = spawnContracts({ run: "r", context: { type: "inquiry", id: "I" } }).contracts;
+  const cs = spawnContracts({ run: "r", context: { type: "inquiry", id: "I" } }).contracts ?? [];
   t("R17: the contracts are frozen and share no object", [cs.every((c) => Object.isFrozen(c) && Object.isFrozen(c.context)),
     new Set(cs.map((c) => c.context)).size, new Set(cs.map((c) => c.returns)).size], [true, 4, 4]);
 }
@@ -987,7 +988,7 @@ section("R26 · after every step one tick: the spend, and an entry only when the
     [ended.out.ended?.bound, ended.out.ended?.by, (await planeState(mf)).log.filter((l) => l.op === "airunclose").length],
     ["runtime", "the plane's own exit", 0]);
   const stub = stepLog({ step: "plan", level: "meaning", observed: "LOOKED_ABSENT" }, { step: "fanout", why: "w".repeat(900) });
-  t("R26: detail is cut at 500 characters", stub.detail.length, 500);
+  t("R26: detail is cut at 500 characters", stub?.detail.length, 500);
 }
 
 section("R26 · an entry the plane refuses is in log_refused and refusals, and not counted");
@@ -1009,11 +1010,11 @@ section("R49 · the state a tick publishes stays within ai-runs' AI_RUN_STATE_MA
   const fits = publishableState(small, LIMIT);
   t("R49: a state within the ceiling is published whole, measured as the UTF-8 length of its JSON",
     [fits.state, fits.bytes, fits.restarted], [resumableState(small), new TextEncoder().encode(JSON.stringify(resumableState(small))).length, null]);
-  const over = { step: "submit", pass: 2, candidates: big(70), queue: big(70), reports: [{ level: "meaning" }],
+  const over = { step: "submit", pass: 2, candidates: big(70), queue: big(70), reports: [{ level: "meaning", state: "PRESENT" }],
                  submission: { name: "c0" }, adjusted: true };
   const cut = publishableState(over, LIMIT);
   t("R49: a state over the ceiling is published as its pass restarted at plan: the pass kept, every working field null",
-    [cut.state, cut.restarted?.at, cut.restarted?.limit, cut.restarted?.bytes > LIMIT, cut.bytes <= LIMIT],
+    [cut.state, cut.restarted?.at, cut.restarted?.limit, (cut.restarted?.bytes ?? 0) > LIMIT, cut.bytes <= LIMIT],
     [resumableState({ step: "plan", pass: 2, adjusted: false }), "plan", LIMIT, true, true]);
   t("R49: next-pass and close keep their own step when restarted",
     ["next-pass", "close", "fanout", "adjust"].map((step) => publishableState({ ...over, step }, LIMIT).state.step),
