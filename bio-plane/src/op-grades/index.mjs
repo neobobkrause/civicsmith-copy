@@ -1236,8 +1236,8 @@ const NON_ACTS_DATA = {
   memberpairingset: "a member's published cover-and-handle pairing — the subject is how a member is shown, not a bundle",
   /* REC-164: session-reachable through `IDENTITY_ACTIONS`, so in `NEEDS`, so named here: the subject is the group's
      public identity (Publication §7 points 2 and 3), never a bundle. */
-  groupnameset: "the group's public display name — the subject is the instance's identity, not a bundle",
-  groupdomainset: "the group's claimed domain — the subject is the instance's identity, not a bundle",
+  groupnameset: "the team's public display name — the subject is the instance's identity, not a bundle",
+  groupdomainset: "the team's claimed domain — the subject is the instance's identity, not a bundle",
   /* K407 (instance-setup, C-119): an administrator's session act, `groupnameset`'s reason; its refusals are
      PROFILES_NOT_ADMIN, NOT_A_LIST, UNKNOWN_PROFILE and PROFILE_IS_TEST. `op=profiles` is a read with no `NEEDS` row
      and is not named here (`affordances` R12). */
