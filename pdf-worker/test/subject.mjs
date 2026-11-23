@@ -10,5 +10,6 @@ import { discoverMembers, buildMember } from "../../bio-plane/scripts/fleet-bund
 const member = discoverMembers().find((m) => m.name === "pdf-worker");
 if (!member) throw new Error("pdf-worker declares no fleet-member.json");
 const built = await buildMember(member);
+/** @type {string} the path of the fresh build */
 export const BUNDLE = join(mkdtempSync(join(tmpdir(), "pdf-worker-subject-")), "pdf-worker.bundled.mjs");
 writeFileSync(BUNDLE, built.bytes);
