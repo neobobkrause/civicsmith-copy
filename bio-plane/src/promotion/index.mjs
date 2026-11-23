@@ -49,18 +49,21 @@ export { INFO2_GRAMMAR, checkInfo2Contract } from "./info2.mjs";
 export { listenerRefusal } from "../membership/index.mjs";
 
 /** The instance's inline bound (R6, R48): a file held as text is at most 1 MiB of UTF-8. A later module that bounds
- *  what it hands to a promotion reads this constant rather than its own. */
+ *  what it hands to a promotion reads this constant rather than its own.
+ *  @type {number} */
 export const INLINE_MAX = 1024 * 1024;
 /** R51 (N340, K275): the decisions a member may record about a question (D-79), frozen, and the one list of them:
- *  `progressions` re-exports it rather than spelling its own. */
+ *  `progressions` re-exports it rather than spelling its own.
+ *  @type {readonly string[]} */
 export const DISPOSITIONS = Object.freeze(["deferred", "dismissed"]);
-/** The dispositions an inquiry is reopened from (R24): the same frozen array as DISPOSITIONS (R51), never a copy. */
+/** The dispositions an inquiry is reopened from (R24): the same frozen array as DISPOSITIONS (R51), never a copy.
+ *  @type {readonly string[]} */
 export const REOPENABLE_FROM = DISPOSITIONS;
-/** R16: the words `retire` refuses a cited item with, so the two doors give one answer. */
+/** @type {string} R16: the words `retire` refuses a cited item with, so the two doors give one answer. */
 export const RETIRE_CITED_DETAIL = "these are still cited by live edges. Retiring them would leave those Projects "
   + "pointing at retired material, which C-6.2 treats as an error whose remedy is to "
   + "sever the edge with a reason. Sever first, then retire.";
-/** The edge-reason bound a reopening's reason is held to (R22). */
+/** @type {number} The edge-reason bound a reopening's reason is held to (R22). */
 export const EDGE_REASON_MAX = 160;
 /* R58: the most revisions, and the most state entries, `bundleHistory` answers (the newest kept). */
 const HISTORY_MAX = 200;
@@ -1267,7 +1270,11 @@ class Promotion {
 
 /** R54 (K757, K760): promotion's route arms, keyed by op name, each a function of no arguments answering what the named
  *  service answers, spread by the composition root as `membershipOps` is. `viewer`, `author` and `by` are the control
- *  plane's stamps, read from the query, never from the body; which credential reaches each op is decided elsewhere. */
+ *  plane's stamps, read from the query, never from the body; which credential reaches each op is decided elsewhere.
+ * @param {any} promotion the promotion instance (`promotionOf`)
+ * @param {URL} url the request's address, whose query the arms read
+ * @param {any} [body] the request's body, `promote`'s package
+ * @returns {{promote: () => any, reopen: () => any, projectfork: () => any, bundlehistory: () => any}} */
 export function promotionOps(promotion, url, body) {
   const q = (k) => url.searchParams.get(k);
   return {
@@ -1299,7 +1306,11 @@ export const DECLARED_OPS = Object.freeze({
 
 const instances = new WeakMap();
 
-/** The one promotion instance for `host` (the Durable Object's `ctx`); `deps` are read on the first call only. */
+/** The one promotion instance for `host` (the Durable Object's `ctx`); `deps` are read on the first call only.
+ * @param {any} host the Durable Object's state
+ * @param {any} [deps] the instance's dependencies, `record` and `membership` among them; each absent one is made
+ * @returns {any} the instance: `promote`, `reopen`, `forkProject`, `bundleHistory`, `runGate`, `runCaseGate` and the
+ *   registrations of R39, R40, R45, R46 and R47 */
 export function promotionOf(host, deps) {
   let p = instances.get(host);
   if (!p) {
@@ -1332,13 +1343,18 @@ function registerInfo2Grammar(record) {
 
 /** K64, record-core R59 (K130): record-core's audit pass (R18–R20), which runs the checks this module took from the
  *  catalogue (C-4.2, C-17.2, C-18.8, C-20.1) over the same image beside it, registered when this module is reached, so
- *  the audit loses none of them and judges each bundle once, whole. Takes and answers `auditPass`'s own shape. */
+ *  the audit loses none of them and judges each bundle once, whole. Takes and answers `auditPass`'s own shape.
+ * @param {any} host the Durable Object's state
+ * @param {any} [opts] `auditPass`'s options
+ * @returns {Promise<any>} `auditPass`'s answer */
 export async function recordAudit(host, opts = {}) {
   promotionOf(host);
   return recordOf(host).auditPass(opts);
 }
 
-/** What a registered step receives (R39): the promotion's context, as the promotion built it. */
+/** What a registered step receives (R39): the promotion's context, as the promotion built it.
+ * @param {any} c the context
+ * @returns {any} the same context */
 export function stepContext(c) {
   return c;
 }
