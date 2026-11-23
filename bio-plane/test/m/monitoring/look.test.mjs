@@ -48,8 +48,8 @@ test("R11 one observation row per look, authority sweep naming the bundle, level
                      { ok: false, written: false, why: word("monitoring.why.monitor_look_needs") });
   assert.equal(w.looks().length, n0 + 6);
   /* a rendered tick's detail says frame and that the content is undetermined */
-  assert.equal(monitorObservationFor({ outcome: "unchanged", baseline: b.cap, scope: "frame" }).detail, "frame unchanged; content undetermined");
-  assert.match(monitorObservationFor({ outcome: "changed", baseline: b.cap, seen: H("x"), scope: "frame" }).detail, /^frame changed; .*; content undetermined$/);
+  assert.equal(monitorObservationFor({ outcome: "unchanged", baseline: b.cap, scope: "frame" })?.detail, "frame unchanged; content undetermined");
+  assert.match(monitorObservationFor({ outcome: "changed", baseline: b.cap, seen: H("x"), scope: "frame" })?.detail ?? "", /^frame changed; .*; content undetermined$/);
   /* the route: the actor is the control plane's stamp from the query */
   const url = new URL(`http://do/monitorlook?actorClass=member&actor=member:alice`);
   const r = monitoringOps(w.m, url, { bundleId: id, address: ADDR, outcome: "removed", httpStatus: 410, actor: "forged" }).monitorlook();

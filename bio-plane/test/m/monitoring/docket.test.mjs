@@ -128,8 +128,8 @@ test("R67 otherwise the read is unreadable with its reason (http_<status>, not_j
     const { w, ci, IMP, D } = await watching([null]);
     w.net.routes[D(1)] = route;
     const t = await w.m.cadenceTick(NOW_MS);
-    assert.deepEqual(ci.reads, [{ import: IMP(1), docket: D(1), at: iso(NOW_MS), outcome: "unreadable", reason }], what);
-    assert.deepEqual([t.watched.read, t.watched.unreadable], [[], [{ import: IMP(1), docket: D(1), reason }]], what);
+    assert.deepEqual(ci.reads, [{ import: IMP(1), docket: D(1), at: iso(NOW_MS), outcome: "unreadable", reason }], String(what));
+    assert.deepEqual([t.watched.read, t.watched.unreadable], [[], [{ import: IMP(1), docket: D(1), reason }]], String(what));
   }
   /* the negative control at the bound: exactly 8 MiB is read */
   const { w, ci, D } = await watching([null]);
