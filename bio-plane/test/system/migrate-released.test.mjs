@@ -48,7 +48,7 @@
 import "../stdio.mjs";                 /* D-282: a suite's own exit must not discard the suite's own output */
 import "../sandbox.mjs";               /* D-186: owns $TMPDIR for this process and removes it on exit */
 import { mkdtempSync, readFileSync, existsSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { tmpdir, availableParallelism } from "node:os";
 import { join } from "node:path";
 import { RELEASES, WITHDRAWN, FIXTURES, slug, sha, INSTANCE, TOK, bootCurrent, client, errOf, groupOf, shapeOf, ROWS_Q, storeCopy } from "../m/plane/migrate-released-kit.mjs";
 
@@ -111,7 +111,8 @@ const seeded = ({ doc, served, group_before, rows }) => ({ DOC: doc, served, gro
 
 /* THE CURRENT PLANE on a store somebody else wrote: it answers, it has a fresh
    store's exact shape, the rows survive, and a second boot is clean. */
-const verifyCurrent = async (label, persist, { DOC, served, groupBefore, rows }) => {
+/* `t` is the store's own recorder (section 2 runs stores side by side and prints each store's checks together, in order) */
+const verifyCurrent = async (label, persist, { DOC, served, groupBefore, rows }, t) => {
   let mf = bootCurrent(persist);
   let c = client(mf, { current: true });
   const bs = await c.get("bootstrap", "", "");
@@ -174,13 +175,28 @@ const verifyCurrent = async (label, persist, { DOC, served, groupBefore, rows })
  *    bricked it, reproduced at the capture), ROLLED BACK to 0.58.0 (what DIST did to biosmoke7), then upgraded to
  *    the current plane.
  * ================================================================== */
+/* The stores are independent (each its own copy and its own miniflare), so they are booted side by side, at most one for each
+   processor, to keep the run inside the required run's bound (plane's tests "complete yet fast and efficient"). Each store's checks
+   are recorded and printed together, in the order of LABELS, exactly as a one-at-a-time run prints them; a store that throws is a
+   failure named with its label. */
+const SIDE_BY_SIDE = Math.max(1, Math.min(4, availableParallelism()));
+const runs = LABELS.filter((label) => FIX[label]);
+const results = new Array(runs.length);
+let next = 0;
+await Promise.all(Array.from({ length: Math.min(SIDE_BY_SIDE, runs.length) }, async () => {
+  for (let i = next++; i < runs.length; i = next++) {
+    const label = runs[i], checks = [];
+    try { await verifyCurrent(label, await copyOf(label), seeded(FIX[label].cap), (l, got, want) => checks.push([l, got, want])); }
+    catch (e) { checks.push([`${label}: the store's run ends without throwing`, String((e && e.stack) || e).slice(0, 600), null]); }
+    results[i] = checks;
+  }
+}));
 let n = 1;
-for (const label of LABELS) {
-  if (!FIX[label]) continue;
+runs.forEach((label, i) => {
   n++;
   console.log(`\n--- ${n}. a store ${label} boots on the current plane ---`);
-  await verifyCurrent(label, await copyOf(label), seeded(FIX[label].cap));
-}
+  for (const [l, got, want] of results[i]) t(l, got, want);
+});
 
 console.log(`\nmigrate-released: ${pass} pass, ${fail} fail`);
 process.exit(fail ? 1 : 0);
