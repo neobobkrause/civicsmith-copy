@@ -7,6 +7,8 @@
    administrators'. The key is sent in the request's body only and never drawn again (R10). Every function is self-contained
    (interface-shell R21). */
 
+/** @import { SettingsScreen } from './account.mjs' */
+/** @type {SettingsScreen} Settings › The team's assistant */
 export const teamai = {
   id: "teamai",
 
