@@ -72,6 +72,7 @@ function memberIdOf(x) {
 /** R18 (T47; N955; credentials R63, K3033): THE WRITES A SEGMENT'S CREDENTIAL HOLDS, by the run's mode: each mode's own,
  *  every one of them an entry of `credentials.AI_RUN_WRITES` (a mode deployed later adds its own here): `check`'s are
  *  agent-worker R37's, `plan`'s agent-worker R53's. Frozen. */
+/** @type {Readonly<{check: ReadonlyArray<string>, plan: ReadonlyArray<string>}>} each deployed mode's segment writes (R18) */
 export const AI_RUN_MODE_WRITES = Object.freeze({   /* passed whole: credentials R63 refuses one its list does not name */
   check: Object.freeze(["airuntick", "suggest", "capturerequest", "airunclose"]),
   plan: Object.freeze(["airuntick", "optionpropose", "airunclose"]),
@@ -107,6 +108,12 @@ function runSight(col, viewer) {
  *  legacy-store's `ai_run_bounds` count) it is the same predicate and args over that column naming a run id; the
  *  column must be a plain identifier, and anything else is refused by the tail that keeps nothing, never
  *  interpolated. Pure over its arguments; never throws (a failure is the fail-closed tail). */
+/**
+ * @param {*} viewer the viewer's stamp; absent or unrecognised hides every run (R42)
+ * @param {*} [column] a plain column naming a run id (anything else keeps nothing); without it the tail is over
+ *   `observation_log`
+ * @returns {{sql: string, args: Array<*>}} a WHERE tail, beginning ` AND ` or empty, and its arguments; never throws
+ */
 export function hiddenRuns(viewer, column = undefined) {
   const byColumn = column !== undefined;
   const closed = byColumn ? { sql: " AND 0=1", args: [] } : { sql: " AND COALESCE(authority_kind, '') <> 'run'", args: [] };
@@ -123,6 +130,9 @@ export function hiddenRuns(viewer, column = undefined) {
   }
 }
 
+/**
+ * The AI run (R9 to R89): one instance per Durable Object storage, made by `aiRunsOf`.
+ */
 export class AiRuns {
   #waitSource = null;
   #runListeners = [];     // R43: {module, fn, seq}, in the modules' total order
@@ -131,6 +141,13 @@ export class AiRuns {
   /** `deps` is for in-process wiring only (never the wire or `env`): `inquiry` (R27's `migratedSurfacing`), `steps`,
    *  `aiUse` and `aiAccounts` (each module's own instance, else its factory on this `ctx`), and, for a module test alone,
    *  `deployedModes` in place of `run-rules`' `DEPLOYED_MODES` and `testSet` in place of `CIVICSMITH_TEST_SET`. */
+  /**
+   * @param {*} ctx the Durable Object state (its `storage.sql`)
+   * @param {Object<string, *>} [env] the Worker environment: `AGENT_WORKER`, `STORE`, `AI_RUN_LEASE_MS`,
+   *   `AI_RUN_DISPATCH_WAIT_MS`, `CIVICSMITH_TEST_INSTANCE`, `INSTANCE_NAME` and the rest
+   * @param {Object<string, *>} [deps] in-process wiring only (never the wire): `inquiry`, `steps`, `aiUse`, `aiAccounts`,
+   *   and for a module test `deployedModes` and `testSet`
+   */
   constructor(ctx, env = {}, deps = {}) {
     this.ctx = ctx;
     this.env = env || {};
@@ -203,6 +220,11 @@ export class AiRuns {
    *  run records (`principal_claude`, R52; ai-use R6's label) and `principal` the viewer the run's opener acts as (steps
    *  judges the step's place in that sight); null for a blank, unknown or ended run, or one another principal holds.
    *  Writes nothing and never throws. */
+  /**
+   * @param {*} by a principal
+   * @param {*} run a run id
+   * @returns {{enabled_by: (string|null), principal: *} | null} for a running run `by` holds, else null; never throws
+   */
   runHolder(by, run) {
     try {
       const id = run == null ? "" : String(run).trim();
@@ -222,6 +244,10 @@ export class AiRuns {
    *  sight exactly when its context is a bundle not in `hid`, which is `runSight`'s gate, since `hid` is every bundle the
    *  gate does not pass (every one, for a viewer it refuses). Synchronous; writes nothing. */
   static COUNT_KEYS = Object.freeze(["aiRuns", "aiRunBounds", "inquiryRunSurfacings", "aiRunLog"]);
+  /**
+   * @param {{sql: string, args: Array<*>} | null} [hid] record-core R63's hidden bundles, or null to count whole (R38)
+   * @returns {{aiRuns: number, aiRunBounds: number, inquiryRunSurfacings: number, aiRunLog: number}}
+   */
   counts(hid = null) {
     const c = (q, ...a) => this.#one(q, ...a).c;
     if (!hid) return { aiRuns: c(`SELECT count(*) c FROM ai_runs`), aiRunBounds: c(`SELECT count(*) c FROM ai_run_bounds`),
@@ -246,6 +272,10 @@ export class AiRuns {
    *  `created`, the open's instant, which bias offers the scheduler's rank as the product's `waitingSince` (null
    *  when the stored instant cannot be read, never filled in); `visible(run, viewer)` R19's sight. Read as the
    *  administrator viewer, as bias reads every work product. */
+  /**
+   * @returns {{list: (after: *, limit: *) => Array<string>, read: (run: *) => Promise<*>, visible: (run: *, viewer: *) => *}}
+   *   the runs as bias's work products (R30)
+   */
   workProducts() {
     const MEMBER = /^member:([A-Za-z0-9._:-]{1,128}?)(?:\/.*)?$/;
     return {
@@ -301,6 +331,12 @@ export class AiRuns {
    * `{ tickMs(), holds(iso, limit), woken(limit), completions(run, limit), markWoken(requests, iso) }`, all
    * synchronous; `configured()` may be added, and answers whether anything drains at all (the hold is inert where
    * nothing will ever complete). With none registered the wake holds and wakes nothing (R17). */
+  /**
+   * @param {*} module the registering module's name
+   * @param {*} source `{tickMs, holds, woken, completions, markWoken}`, all synchronous; `configured` optional (R41)
+   * @returns {*} `{ok: true, module}`; or `{ok: false, reason, ...}`, refused `WAIT_SOURCE_MALFORMED` (with `detail`) or
+   *   `WAIT_SOURCE_DECLARED` (with `module` and `declaredBy`)
+   */
   registerWaitSource(module, source) {
     const fns = ["tickMs", "holds", "woken", "completions", "markWoken"];
     if (typeof module !== "string" || !module || !source || fns.some((f) => typeof source[f] !== "function"))
@@ -315,6 +351,11 @@ export class AiRuns {
    *  commits with `{run, contextType, contextId, expires}`, once per listener, in the modules' total order
    *  (membership's `MODULE_ORDER`, R83). A malformed registration, or a second by the same module, is refused by
    *  membership's `listenerRefusal` (its R81), the one site of LISTENER_MALFORMED and LISTENER_DECLARED. */
+  /**
+   * @param {*} module the registering module's name
+   * @param {*} fn called after each open commits with `{run, contextType, contextId, expires}` (R43)
+   * @returns {*} `{ok: true, module}`, or membership's listener refusal
+   */
   onRunOpened(module, fn) {
     const refused = listenerRefusal(this.#runListeners, module, fn);
     if (refused) return refused;
@@ -327,6 +368,12 @@ export class AiRuns {
    *  synchronous `fn({contextType, contextId, plan, actor, viewer}) → null | refusal` that `open` applies last and passes
    *  on unchanged. A malformed registration, or a second (by the same module, or for a mode already held), is refused by
    *  membership's `listenerRefusal` (LISTENER_MALFORMED, LISTENER_DECLARED). */
+  /**
+   * @param {*} module the registering module's name
+   * @param {*} mode the mode the check is for
+   * @param {*} fn `({contextType, contextId, plan, actor, viewer, origin, response}) => null | refusal`, synchronous (R47)
+   * @returns {*} `{ok: true, module, mode}`, or membership's listener refusal
+   */
   registerOpenCheck(module, mode, fn) {
     const m = typeof mode === "string" ? mode.trim() : "";
     const refused = listenerRefusal(this.#openChecks, module, m ? fn : null)
@@ -339,6 +386,7 @@ export class AiRuns {
   /** R78 (T46; K2816 (2)): WHETHER THIS IS A TEST INSTANCE, a fact of the deployment and of nothing else: true exactly
    *  when the Worker environment's `CIVICSMITH_TEST_INSTANCE` is a string equal to its `INSTANCE_NAME`, both non-empty;
    *  false otherwise, and when either cannot be read. Only `env` is read: no op, body, query or table reaches it. */
+  /** @returns {boolean} whether this is a test instance (R78); false when the environment cannot be read */
   testInstance() {
     try {
       const env = this.env || {};
@@ -351,6 +399,10 @@ export class AiRuns {
    *  own set through `deps.testSet`), with the test-instance exception (`testInstance`). `run-rules`' `partAdmittedOn`
    *  is the one computation: `{admitted, untested}`, the label set only for a part admitted on the exception. The one
    *  gate of this module (R40, R23's input), and what later modules ask (question-explorer, instance-setup, plane). */
+  /**
+   * @param {*} part an AI part (a mode)
+   * @returns {{admitted: boolean, untested: *}} the one gate (R78); never throws
+   */
   partAdmitted(part) {
     try {
       const set = this.#deps.testSet || CIVICSMITH_TEST_SET;
@@ -945,6 +997,36 @@ export class AiRuns {
    *  is a requirement and a condition that may be omitted is not recorded. It
    *  is still never derived: the plane refuses, it does not fill in. The
    *  refusal is C-22.7, built in `run-rules checkSkillVersion`. */
+  /**
+   * Opens a run (R9, R10, R40, R46, R47, R52, R73, R77, R78, R89).
+   * @param {Object} [args]
+   * @param {*} [args.run] the run id
+   * @param {*} [args.contextType] `inquiry` or `project`
+   * @param {*} [args.contextId] the context's id
+   * @param {*} [args.label] a label
+   * @param {*} [args.mode] the run's mode
+   * @param {*} [args.principalPlane] the control plane's stamp: the plane principal
+   * @param {*} [args.principalClaude] the Claude-account level
+   * @param {*} [args.principalClaudeRef] its reference
+   * @param {*} [args.skillVersion] the skill version
+   * @param {*} [args.biasManifest] the handed manifest, kept verbatim
+   * @param {*} [args.standardPair] the project's bar
+   * @param {*} [args.bounds] the declared bounds
+   * @param {*} [args.state] the run's scratch (R45)
+   * @param {*} [args.leaseMs] the lease
+   * @param {*} [args.at] the instant; the instance clock when absent
+   * @param {*} [args.rerunOf] the run this re-runs
+   * @param {*} [args.plan] a plan id, mode `plan` only (R46)
+   * @param {*} [args.step] a step (R73)
+   * @param {*} [args.origin] `explore` or `reexamination`
+   * @param {*} [args.place] an exploring run's place (R73)
+   * @param {*} [args.work] an exploring run's work (R73)
+   * @param {*} [args.response] a re-examination's response (R77)
+   * @param {*} [args.project] the project the run is opened in (R89)
+   * @param {*} [args.actor] the control plane's stamp
+   * @param {*} [args.viewer] the control plane's stamp
+   * @returns {Promise<*>} R10's answer, or a refusal naming `code`, `check` and `translation`
+   */
   async open({ run, contextType, contextId, label = null, mode = null,
               principalPlane = null, principalClaude = null, principalClaudeRef = null,
               skillVersion = null, biasManifest = null, standardPair = null,
@@ -1421,6 +1503,21 @@ export class AiRuns {
    *  (J5 (9)). A refusal of one is answered for it and the others open; each run's limits end it alone (R14), setting
    *  only its own step aside (R73). Answers `{ok, estimate, runs: [{step, run?, system_step?, refusal?}]}`. */
   static OPEN_MANY_MAX = 50;
+  /**
+   * Opens one run per step under one member's act (R74).
+   * @param {Object} [args]
+   * @param {*} [args.steps] the steps
+   * @param {*} [args.mode] the mode
+   * @param {*} [args.owner] the paying owner
+   * @param {*} [args.bounds] each run's bounds
+   * @param {*} [args.skillVersion] the skill version
+   * @param {*} [args.label] a label
+   * @param {*} [args.principalPlane] the control plane's stamp
+   * @param {*} [args.actor] the control plane's stamp
+   * @param {*} [args.viewer] the control plane's stamp
+   * @param {*} [args.at] the instant; the instance clock when absent
+   * @returns {Promise<*>} each step's answer, or a refusal
+   */
   async openMany({ steps = null, mode = null, owner = null, bounds = null, skillVersion = null, label = null,
                    principalPlane = null, actor = null, viewer = null, at = null } = {}) {
     const member = memberIdOf(actor);
@@ -1519,6 +1616,22 @@ export class AiRuns {
    *  refusal, following `saveCaptureSession`'s `{ saved: false }` precedent: it
    *  is a fact about the run's state, and a late tick from a straggling
    *  sub-session must not resurrect a run whose log is already closed. */
+  /**
+   * One heartbeat of a run (R11, R12, R45, R72, R84, R88).
+   * @param {Object} [args]
+   * @param {*} [args.run] the run id
+   * @param {*} [args.state] the run's new scratch
+   * @param {*} [args.consume] the figures consumed
+   * @param {*} [args.log] log entries to append
+   * @param {*} [args.leaseMs] the lease
+   * @param {*} [args.at] the instant; the instance clock when absent
+   * @param {*} [args.segment_end] `{by, done, refusals, error?}` (R84)
+   * @param {*} [args.usage] `{mode, model, effort, usage, calls}` entries (R72, R88)
+   * @param {*} [args.actor] the control plane's stamp
+   * @param {*} [args.viewer] the control plane's stamp
+   * @param {*} [args.caller] the control plane's stamp: the caller's principal
+   * @returns {*} `{found: false}`, `{ticked: false, status, bound}`, the tick's answer, or a refusal
+   */
   tick({ run, state = null, consume = null, log = null, leaseMs = null, at = null,
               /* R84 (R085-7; agent-worker R91): how a segment ended, `{by, done, refusals, error?}`. */
               segment_end = null,
@@ -1718,6 +1831,11 @@ export class AiRuns {
    *  a member's run on her own sign-in as `dispatchMemberRun` does it (a fresh segment credential), a run of the group's
    *  organisation credential as the wake does it. A continuation that is not dispatched appends one entry saying so, and
    *  the run waits for its principal. */
+  /**
+   * `tick`, then R84's continuation of a segment that stopped on its own bound.
+   * @param {Object<string, *>} [args] as `tick`'s
+   * @returns {Promise<*>} `tick`'s answer, with `continued` where a dispatch followed
+   */
   async tickAndContinue(args = {}) {
     const out = this.tick(args);
     if (!out || out.ticked !== true || !out.segment_end || out.segment_end.next !== "continue") return out;
@@ -1763,6 +1881,18 @@ export class AiRuns {
      ADDITIVE ON THE WIRE: the DO's dispatch already `await`s every op, `#aiRunTerminate` is untouched and
      still synchronous, and the REAPER still calls it directly — so a lapsed run is closed by the clock on
      exactly the path it was before, with no member and no discharge. */
+  /**
+   * Ends a run through the one exit (R13, R14, R76).
+   * @param {Object} [args]
+   * @param {*} [args.run] the run id
+   * @param {*} [args.bound] the bound or ending that stopped it
+   * @param {*} [args.condition] its condition
+   * @param {*} [args.at] the instant; the instance clock when absent
+   * @param {*} [args.actor] the control plane's stamp
+   * @param {*} [args.viewer] the control plane's stamp
+   * @param {*} [args.caller] the control plane's stamp: the caller's principal
+   * @returns {Promise<*>} the exit's answer, or `{found: false}`, or a refusal
+   */
   async close({ run, bound = null, condition = null, at = null, actor = null, viewer = null,
                /* REC-152: the caller's PRINCIPAL, stamped server-side — see `aiRunTick`. */
                caller = null } = {}) {
@@ -1835,11 +1965,19 @@ export class AiRuns {
      close uses. That is the structural half of "the real path and the mutated
      path go through ONE function". */
 
+  /**
+   * @param {*} now the instant, from `scheduler`
+   * @returns {number} running runs whose lease lapsed (R15)
+   */
   reapDue(now) {
     return this.#one(`SELECT count(*) c FROM ai_runs WHERE status = 'running' AND expires < ?`,
       AiRuns.#aiIso(now)).c;
   }
 
+  /**
+   * @param {*} now the instant, from `scheduler`
+   * @returns {*} the earliest lease expiry of a running run, never before now, or null (R15)
+   */
   reapWake(now) {
     const r = this.#one(`SELECT MIN(expires) e FROM ai_runs WHERE status = 'running'`);
     if (!r || !r.e) return null;                       // no run in flight: no alarm at all
@@ -1854,6 +1992,10 @@ export class AiRuns {
    *  budget was ALREADY exhausted, because a run that overspent and then died
    *  was stopped by the budget, and reporting the lease there would name the
    *  symptom and hide the cause. */
+  /**
+   * @param {*} now the instant, from `scheduler`
+   * @returns {*} `{at, lapsed, reaped}` (R15)
+   */
   reap(now) {
     const iso = AiRuns.#aiIso(now);
     const lapsed = this.#rows(
@@ -1964,11 +2106,19 @@ export class AiRuns {
       .filter(Boolean);
   }
 
+  /**
+   * @param {*} now the instant, from `scheduler`
+   * @returns {number} runs the wake would act on; 0 with no wait source (R16, R17)
+   */
   wakeDue(now) {
     const iso = AiRuns.#aiIso(now);
     return this.#aiRunWakeHolds(iso).length + this.#aiRunWakeRuns().length;
   }
 
+  /**
+   * @param {*} now the instant, from `scheduler`
+   * @returns {*} when the wake next has work, or null (R16)
+   */
   wakeWake(now) {
     /* NULL WHEN NOTHING IS SUSPENDED — the self-termination property REC-1
        prized, stated here rather than inherited: an instance with no run
@@ -1994,6 +2144,10 @@ export class AiRuns {
    *  one while the daemon owes it an answer. That is a widening and it is
    *  bounded twice over — by the request's own expiry, and by the fact that
    *  nothing renews it once the request is answered. */
+  /**
+   * @param {*} now the instant, from `scheduler`
+   * @returns {Promise<*>} what the wake held, woke and dispatched (R16, R18)
+   */
   async wake(now) {
     const iso = AiRuns.#aiIso(now);
     const until = AiRuns.#aiIso(now + this.#leaseMs());
@@ -2303,6 +2457,18 @@ export class AiRuns {
    *  never answered, logged or written; a later mint for the run revokes it, and the run's end (R14) ends them all.
    *  (T50; R87, R89) `trace` and `memberRef`, the door's strings, ride the call as `x-civicsmith-trace` and
    *  `x-civicsmith-member-ref` and nowhere else; the mint carries the run's `project` when it has one. */
+  /**
+   * A member's run dispatched at her act (R18, R79, R82, R87, R89).
+   * @param {Object} [args]
+   * @param {*} [args.run] the run id
+   * @param {*} [args.by] the control plane's stamp: the member
+   * @param {*} [args.viewer] the control plane's stamp
+   * @param {*} [args.at] the instant; the instance clock when absent
+   * @param {*} [args.trace] the door's trace string
+   * @param {*} [args.memberRef] the door's member reference
+   * @param {*} [args.credential] ignored, never read (R18)
+   * @returns {Promise<*>} `{found: false}`, `{dispatched: false, ...}`, the dispatch's answer, or a refusal
+   */
   async dispatchMemberRun({ run = null, by = null, viewer = null, at = null, trace = null, memberRef = null } = {}) {
     const iso = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
     const id = run == null ? "" : String(run).trim();
@@ -2436,6 +2602,12 @@ export class AiRuns {
    *
    *  ASYNC now, because the effective set is HASHED and `crypto.subtle` is. The
    *  dispatch already awaits every handler. */
+  /**
+   * @param {Object} [args]
+   * @param {*} [args.run] the run id
+   * @param {*} [args.viewer] the control plane's stamp
+   * @returns {Promise<*>} `{found: false, session: null}` or `{found: true, session}` (R19, R20, R21)
+   */
   async read({ run, viewer = null } = {}) {
     const seen = this.#bundleGate("r.context_id", viewer);
     let cost = null;
@@ -2669,6 +2841,14 @@ export class AiRuns {
    *  made the indicator carry the record's own status word instead of pulsing
    *  unconditionally. The record answers what is there; the surface decides
    *  what to draw. */
+  /**
+   * @param {Object} [args]
+   * @param {*} [args.contextType] `inquiry` or `project`
+   * @param {*} [args.contextId] the context's id
+   * @param {*} [args.viewer] the control plane's stamp
+   * @param {*} [args.limit] 1 to 1,000, 200 by default
+   * @returns {Promise<*>} the visible runs, newest first, with `truncated`, or a refusal (R22)
+   */
   async listInContext({ contextType = null, contextId = null,
                           viewer = null, limit = null } = {}) {
     /* The helper sits ABOVE the marker, on `#refusePairComposed`'s precedent
@@ -2893,6 +3073,13 @@ export class AiRuns {
    *  thinks they are being helpful.
    *
    *  GATED on the run's context, exactly as `aiRunRead` and `aiRunLog` are. */
+  /**
+   * @param {Object} [args]
+   * @param {*} [args.run] the run id
+   * @param {*} [args.half] `search` (the default) or `compose`
+   * @param {*} [args.viewer] the control plane's stamp
+   * @returns {Promise<*>} the half's payload, or `{found: false}` (R23, R85)
+   */
   async spawnPayload({ run, half = "search", viewer = null } = {}) {
     const seen = this.#bundleGate("r.context_id", viewer);
     const row = this.#one(
@@ -3016,6 +3203,13 @@ export class AiRuns {
    *  went with the suite. R24's test holds the published bound (the page,
    *  `limit` and `truncated` over 205 entries); the SQL `LIMIT` below is what
    *  keeps the read itself bounded, and no test reads it from the source. */
+  /**
+   * @param {Object} [args]
+   * @param {*} [args.run] the run id
+   * @param {*} [args.viewer] the control plane's stamp
+   * @param {*} [args.limit] 1 to 5,000, 200 by default
+   * @returns {*} the run's log entries, `stopped` and the vocabulary, or `{found: false}` (R24)
+   */
   log({ run, viewer = null, limit = null } = {}) {
     /* REC-70, IN THE BODY AND NOT ONLY IN THE HEADER ABOVE, because the
        instrument that read this file SEGMENTED FROM THE SIGNATURE DOWN — a
@@ -3145,6 +3339,11 @@ export class AiRuns {
    *  run and an invisible one alike. Never throws, writes nothing. Whether the caller holds it is R5 over
    *  `principal_plane`; `principal_claude` is the level that pays, which a production under the run records
    *  (capture-requests' request row). */
+  /**
+   * @param {*} run the run id
+   * @param {*} viewer the viewer's stamp
+   * @returns {*} the run's facts a producer gates on, or null for blank, absent and invisible alike (R28)
+   */
   runFor(run, viewer) {
     try {
       const id = run == null ? "" : String(run).trim();
@@ -3172,6 +3371,11 @@ export class AiRuns {
   }
 
   /** R29: one bound's `{allowed, consumed}`, or null when the run declared none. */
+  /**
+   * @param {*} run the run id
+   * @param {*} bound the bound
+   * @returns {*} `{allowed, consumed}`, two numbers; null when the run declared none (R29)
+   */
   boundOf(run, bound) {
     const r = this.#one(`SELECT allowed, consumed FROM ai_run_bounds WHERE run = ? AND bound = ?`,
       String(run ?? ""), String(bound ?? ""));
@@ -3181,6 +3385,12 @@ export class AiRuns {
   /** R29: add `n` to a bound's consumption, inside the caller's transaction (the row made at allowed 0 when none
    *  was declared). `n` 0 writes nothing; a figure that is not a non-negative safe integer is C-22.13 and nothing
    *  is written. It never ends a run: an exhausted bound ends it at the next tick (R12). */
+  /**
+   * @param {*} run the run id
+   * @param {*} bound the bound
+   * @param {*} n the figure to add, a non-negative safe integer
+   * @returns {*} null, or `run-rules`' refusal (C-22.13 and its kin) with nothing written (R29)
+   */
   consumeBound(run, bound, n) {
     const b = String(bound ?? "");
     /* The figure's rule is R3's, asked of this one pair (an unknown bound C-22.15; `lease`, which nothing spends,
@@ -3200,6 +3410,13 @@ export class AiRuns {
 
   /** R37: the run gate `contradiction` offers (its R21), from R28 and R5: `found` false for blank, absent and
    *  invisible alike; `refusal` null or R5's `AI_RUN_NOT_PRINCIPAL` naming `act`. */
+  /**
+   * @param {*} run the run id
+   * @param {*} viewer the viewer's stamp
+   * @param {*} caller the caller's principal
+   * @param {*} [act] the act a refusal names
+   * @returns {{found: boolean, running: boolean, refusal: *, run: *}} the run gate (R37)
+   */
   runGate(run, viewer, caller, act = null) {
     const r = this.runFor(run, viewer);
     if (!r) return { found: false, running: false, refusal: null, run: null };
@@ -3368,6 +3585,7 @@ export class AiRuns {
      are, and read back by the open's deployability (R40). ------------------------------------------------------------ */
 
   /** Every well-formed `verification_recorded` this record holds, oldest first, in run-rules' shape. */
+  /** @returns {Array<*>} every well-formed verification recorded, oldest first (run-rules R19) */
   verifications() {
     try {
       return this.#rows(`SELECT mode, run, verified_by, at, evidence FROM ai_mode_verifications ORDER BY at, mode, run`)
@@ -3379,6 +3597,15 @@ export class AiRuns {
    *  stamp), with `evidence`. Refused by `checkVerification` (C-22.20, a RELAY) as it judges it; a run this record
    *  does not hold in that mode, for this member's sight, is refused the same way, naming `run`. Append-only: a mode and
    *  run already recorded answer `existed: true`. The answer carries whether the next mode is now deployable. */
+  /**
+   * @param {Object} [args]
+   * @param {*} [args.mode] the mode
+   * @param {*} [args.run] its first live run
+   * @param {*} [args.evidence] the evidence
+   * @param {*} [args.by] the control plane's stamp
+   * @param {*} [args.at] the instant; the instance clock when absent
+   * @returns {*} the record's answer, or `run-rules`' refusal (C-22.20)
+   */
   verificationRecord({ mode = null, run = null, evidence = null, by = null, at = null } = {}) {
     const now = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
     const who = memberIdOf(by);
@@ -3408,6 +3635,17 @@ export class AiRuns {
    *  frozen set, or a group's own (`set: "group"`). Its shape is judged by `run-rules`' `checkTestBarRecord` (AI_TEST_BAR_UNFIT,
    *  C-22.22; B3, K2485), a RELAY; refused whole where that judge is not reachable (fail closed). Figures only: no transcript is
    *  taken or kept (D15). Append-only. */
+  /**
+   * @param {Object} [args]
+   * @param {*} [args.part] the AI part
+   * @param {*} [args.set] the set
+   * @param {*} [args.set_version] its version
+   * @param {*} [args.false_alarm_rate] the rate
+   * @param {*} [args.passed] whether it passed
+   * @param {*} [args.graded_by] who graded it
+   * @param {*} [args.at] the instant; the instance clock when absent
+   * @returns {*} the record's answer, or `AI_TEST_BAR_UNFIT` (R75)
+   */
   testBarRecord({ part = null, set = null, set_version = null, false_alarm_rate = null, passed = null, graded_by = null,
                   at = null } = {}) {
     const now = AiRuns.#aiIso(at ? Date.parse(at) : Date.now());
@@ -3423,6 +3661,7 @@ export class AiRuns {
 
   /** R75: every result recorded on Civicsmith's own test investigations (never a group's set, which opens or closes no
    *  gate), oldest first, in run-rules R19's shape, for its `deployable`. Writes nothing; never throws. */
+  /** @returns {Array<*>} every result on Civicsmith's own set, oldest first (R75) */
   testBarRecords() {
     try {
       return this.#rows(`SELECT part, set_name, set_version, false_alarm_rate, passed, graded_by, at FROM ai_test_bar
@@ -3437,6 +3676,11 @@ export class AiRuns {
    *  wrote. `by` is the control plane's stamp, an active member. A blank part, matter or answers, or a caller who is not an
    *  active member, is AI_GROUP_TEST_INVALID (a row of run-rules' table, B4), nothing written. A matter already held for the
    *  part is replaced by its newer answers. */
+  /**
+   * @param {*} [args] `{part, matter, answers, by, at}`, each optional: the AI part, the matter, the answers the
+   *   members wrote, `by` the control plane's stamp, and the instant (the instance clock when absent)
+   * @returns {*} the record's answer, or `AI_GROUP_TEST_INVALID` (R75)
+   */
   groupTestSet({ part = null, matter = null, answers = null, by = null, at = null } = {}) {
     const who = memberIdOf(by);
     const text = (v, max) => (typeof v === "string" && v.trim() !== "" && v.length <= max ? v.trim() : null);
@@ -3459,6 +3703,12 @@ export class AiRuns {
 
   /** R75: a part's results on the group's own test investigations, with each false-alarm rate, to the group's active
    *  members; anyone else is answered none (withheld, never counted). Never a deploy gate's input. Writes nothing. */
+  /**
+   * @param {Object} [args]
+   * @param {*} [args.part] the AI part
+   * @param {*} [args.viewer] the control plane's stamp
+   * @returns {*} the group's results for the part, with its false-alarm rate (R75)
+   */
   groupTestResults({ part = null, viewer = null } = {}) {
     const who = memberIdOf(viewer);
     const p = typeof part === "string" ? part.trim() : "";
@@ -3570,6 +3820,11 @@ export class AiRuns {
   /** R27: which run a question was opened inside, and under what lens. The run's facts are `read`'s answer, taken
    *  whole under the same viewer. The migration-replay arm is inquiry's (map §5.8): a question with no surfacing
    *  row answers `not recorded` here. */
+  /**
+   * @param {*} bundleId a question's id
+   * @param {*} viewer the viewer's stamp
+   * @returns {Promise<*>} the run a question was opened inside and its lens, or "not recorded" (R27)
+   */
   async surfacedIn(bundleId, viewer) {
     const link = this.#one(`SELECT run, principal, at FROM inquiry_run_surfacings WHERE bundle_id=?`, bundleId);
     if (!link) return this.#migratedSurfacing(bundleId) ?? { recorded: false, stated: "not recorded", run: null, lens: null };
@@ -3584,6 +3839,7 @@ export class AiRuns {
   /** The tables and their two additive columns (R38), and D-85's `ai_run_log` fold: the pre-fold run log's rows are
    *  copied into the observation log under `authority_kind = run` and the old table dropped, once. Idempotent;
    *  called by the store's migration after observation-log's. */
+  /** @returns {void} creates the tables and their added columns, and folds the old run log; idempotent (R38) */
   migrate() {
     const bare = AI_RUNS_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
     for (const st of bare.split(";")) if (st.trim()) this.sql.exec(st);
@@ -3607,6 +3863,12 @@ export class AiRuns {
 const INSTANCES = new WeakMap();
 /** The one instance per Durable Object storage (K61). A later caller's `env` fills one created without it; `deps` are
  *  read on the first call only. */
+/**
+ * @param {*} ctx the Durable Object state
+ * @param {Object<string, *> | null} [env] the Worker environment; fills an instance made without one
+ * @param {Object<string, *> | null} [deps] in-process wiring, read on the first call only
+ * @returns {AiRuns} the one instance for this storage (K61)
+ */
 export function aiRunsOf(ctx, env = null, deps = null) {
   const key = ctx.storage;
   let m = INSTANCES.get(key);
@@ -3623,6 +3885,13 @@ export function aiRunsOf(ctx, env = null, deps = null) {
  *  `actor` (PL-18, DEC-63: which member is asking; empty for a machine), `viewer` (D-15's fail-closed sight; on the
  *  open only the stated project count reads it, REC-139), `caller` (the caller's principal on the tick and the close,
  *  REC-152) and `by` (who records a verification). */
+/**
+ * @param {AiRuns} runs the module's instance
+ * @param {URL} url the request's address; its query carries the control plane's stamps
+ * @param {*} body the request's body
+ * @returns {Object<string, () => *>} the op handlers by op name: `airunopen`, `airuntick`, `airunclose`, `airun`,
+ *   `airunlog`, `airuns`, `airunspawn`, `airunverify`
+ */
 export function aiRunsOps(runs, url, body) {
   const q = (k) => url.searchParams.get(k);
   return {
@@ -3643,6 +3912,7 @@ export function aiRunsOps(runs, url, body) {
 
 /* R90 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
    the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
+/** @type {Readonly<Object<string, {classes: Array<string>, mutating: boolean, weight: string, description: string, fields: {accepts: Array<string>, requires: Array<string>}}>>} the ops this module serves that the screens send (R90) */
 export const DECLARED_OPS = Object.freeze({
   airunopen: { classes: ["admin","member","probe"], mutating: true, weight: "reversible", description: localize("ai-runs.declared.airunopen", "investigative run lifecycle, keyed by run id: starts a background session in the context of an inquiry or a project and changes NOTHING about that object (§14a)"),
     fields: { accepts: ["run","contextType","contextId","label","mode","principalClaude","principalClaudeRef","skillVersion","biasManifest","standardPair","bounds","state","leaseMs","at","rerunOf","plan","step","origin","place","work","response","project"], requires: ["run","contextType","contextId","principalClaude","skillVersion"] } },
