@@ -4,8 +4,9 @@
    every earlier one; to an administrator, the one-administrator step's note while it is not met (`adminrecoverystep`,
    instance-setup R66), a read that did not answer never drawn as not met. The codes are held only in the page's memory
    while shown, never stored, drawn again after leaving or sent anywhere (R10). T50 (R42): above the act, that the codes were
-   shown once, to the member alone (`screen.recovery.onlyyou`). Every function is self-contained
-   (interface-shell R21). */
+   shown once, to the member alone (`screen.recovery.onlyyou`). Last, in every state, "If you lose your codes too"
+   (`screen.recovery.lost.heading`, `.lost.what`): an administrator's one-time reset link, and why a second administrator is
+   worth having (Screens page `team-and-account`, recovery C4). Every function is self-contained (interface-shell R21). */
 
 /** @import { SettingsScreen } from './account.mjs' */
 /** @type {SettingsScreen} Settings › Recovery codes */
@@ -44,6 +45,9 @@ export const recovery = {
         ? `<div class="mk-msg" data-shown="codes"><p>${W(S + "shown")}</p><ol class="mk-list">${ui.codes.map((c) => `<li><code>${E(c)}</code></li>`).join("")}</ol></div>` : "";
       out.push(cs.sec(S + "issue.heading", `<p>${W(S + "onlyyou")}</p><p>${W(S + "spends")}</p>${shown}${issue}`));
     }
+
+    // if the codes are lost too: what is left (Screens page team-and-account, recovery C4)
+    out.push(cs.sec(S + "lost.heading", `<p data-note="lost">${W(S + "lost.what")}</p>`));
     return out.join("");
   },
 
