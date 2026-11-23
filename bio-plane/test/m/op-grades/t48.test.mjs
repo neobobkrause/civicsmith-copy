@@ -55,7 +55,7 @@ test("R38: proceedingdates is a read, `read: …`, ungraded; readtranslate takes
   assert.ok(isRead("proceedingdates"));
   assert.equal(gradeOf("proceedingdates"), null);
   assert.match(NON_ACTS.proceedingdates, /following R30/);
-  assert.match(NON_ACTS.readtranslate, /^draft: a machine translation of one passage of the team's own writing/);
+  assert.match(NON_ACTS.readtranslate, /^draft: a machine translation of one passage of the group's own writing/);
   assert.match(NON_ACTS.readtranslate, /labeled machine work, the original one tap away; held nowhere and writes nothing/);
   assert.equal(gradeOf("readtranslate"), null);
   assert.ok(!NON_ACTS.readtranslate.startsWith("read: "));
