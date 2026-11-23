@@ -142,6 +142,9 @@ export const FIRST_LAYER_11 = "wizard-scripts";
    `legacy-store`'s, so every step's checks and projections, and the order of refusals, are today's. Promotion ranks a name
    the order lacks last (its R39). `stepOrderFrom(order)` is the rule for any order a test hands it (R10); `STEP_ORDER` is
    its answer for `MODULE_ORDER`. */
+/** R2, R10: the step order for `order`.
+ * @param {any} order the modules' total order, a list of names
+ * @returns {readonly any[]} */
 export const stepOrderFrom = (order) => {
   const o = order.filter((m) => m !== STEP);
   const at = o.indexOf(FIRST_LAYER_11);
@@ -158,7 +161,10 @@ const MINT_LEDGER_LIVE = Object.freeze([["PROJ", "bundles", "bundle_id"]]);
  *  on the room's name only), and a Durable Object's id equals the one it was named by. It answers the LOGICAL name
  *  (`"bio"` inside `bio~g2`), so every `store=`, evidence prefix and published prefix is unchanged. Null for any other
  *  object (a suite's private instance), never a guess: a default here would let a resumed run touch the real record
- *  while the run lived in scratch. Pure. */
+ *  while the run lived in scratch. Pure.
+ * @param {any} ctx the Durable Object's state
+ * @param {any} env its bindings, `STORE` read
+ * @returns {string | null} `bio`, `scratch` or null */
 export function namespaceOf(ctx, env) {
   const ns = env && env.STORE;
   if (!ns || typeof ns.idFromName !== "function" || !ctx || !ctx.id || typeof ctx.id.equals !== "function") return null;
