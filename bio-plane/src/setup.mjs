@@ -3226,7 +3226,12 @@ export async function publicInstanceGroup(env, storeName, projection = "instance
 }
 
 /** R3 over the wire: a credentialed reader (`viewer` set by the control plane) is answered the whole row; anybody
- *  else the public projection. A silence is a silence (REC-52), never "no group is recorded". */
+ *  else the public projection. A silence is a silence (REC-52), never "no group is recorded".
+ *  @param {any} env
+ *  @param {any} storeName
+ *  @param {{viewer?: string | null, cls?: string | null}} [reader] who asks, as the control plane resolved it: a
+ *    non-empty `viewer` is a credentialed reader; `cls` is answered back as `tokenClass`
+ *  @param {any} io */
 export async function instanceGroupOp(env, storeName, { viewer = null, cls = null } = {}, io) {
   const { json, doAnswer } = io;
   if (viewer) {
@@ -3239,7 +3244,12 @@ export async function instanceGroupOp(env, storeName, { viewer = null, cls = nul
   return json({ ok: true, result: pub.result, store: storeName }, 200);
 }
 
-/** R10, R11 over the wire: the credentialed read (R11) or the public projection (R10). */
+/** R10, R11 over the wire: the credentialed read (R11) or the public projection (R10).
+ *  @param {any} env
+ *  @param {any} storeName
+ *  @param {{viewer?: string | null, cls?: string | null}} [reader] who asks, as the control plane resolved it: a
+ *    non-empty `viewer` is a credentialed reader; `cls` is answered back as `tokenClass`
+ *  @param {any} io */
 export async function groupIdentityOp(env, storeName, { viewer = null, cls = null } = {}, io) {
   const { json, doAnswer } = io;
   const out = await doAnswer(storeStub(env, storeName)
