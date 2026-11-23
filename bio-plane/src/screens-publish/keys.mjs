@@ -5,6 +5,8 @@
  * module in `docs/development/ux-substrate/screens/words-reads.json`, with R22's `published.check.*` and R23's
  * `review.statement.*` keys and `review-outside`'s `statementack` act. */
 
+/** Each screen's keys, by the screen's id.
+ * @type {Readonly<Object<string, readonly string[]>>} */
 export const SCREEN_KEYS = Object.freeze({
   "case-editor": Object.freeze([
     "screen.ceremony.published.edition", "screen.ceremony.publicpage", "screen.ceremony.prepared",
