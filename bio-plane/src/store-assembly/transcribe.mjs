@@ -19,14 +19,17 @@ import { boundOf } from "../read-bounds.mjs";
 import { pendingOf } from "./pending.mjs";
 
 /** R36: at most this many pages are rendered and sent for one act, `agent-worker`'s `TRANSCRIBE_PAGES_MAX` (its R72;
- *  K2611), held equal to it by this module's test (the plane does not bundle agent-worker). */
+ *  K2611), held equal to it by this module's test (the plane does not bundle agent-worker).
+ *  @type {number} */
 export const TRANSCRIBE_PAGES_MAX = 8;
 /** R36: a rendered page's PNG over this many bytes is not sent, `agent-worker`'s `TRANSCRIBE_IMAGE_MAX_BYTES` (its R72),
- *  held equal by this module's test. */
+ *  held equal by this module's test.
+ *  @type {number} */
 export const TRANSCRIBE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 /** R36 (T43; N853b; K2691, K2716): the long edge, in pixels, a picture file's page is reduced to at most before it is
  *  sent: the provider's standard vision tier's long edge, so no model downscales it, and under the 2,000 px a request
- *  of more than 20 images is held to (platform.claude.com, "Resolution and token cost", read 2026-10-11). */
+ *  of more than 20 images is held to (platform.claude.com, "Resolution and token cost", read 2026-10-11).
+ *  @type {number} */
 export const TRANSCRIBE_PICTURE_EDGE = 1568;
 /** The one picture kind `agent-worker` R63 admits: a PNG Civicsmith rendered itself, never the file's own stream. */
 const PNG = "image/png";
@@ -50,10 +53,14 @@ function base64(bytes) {
 
 /** R106 (fix round 9, G126e; K4835): the largest capture the transcriber loads into a request, the inline ceiling G126e names ("none loads a
  *  PDF over 2 MB in a request"), `READ_BOUNDS`' row `pdf.request_bytes` (RUNTIME-LIMITS #11, K4902), quoted; a capture over it is not loaded,
- *  and the pages asked are owed as a job row. */
+ *  and the pages asked are owed as a job row.
+ *  @type {number} */
 export const TRANSCRIBE_LOAD_MAX = boundOf("pdf", "request_bytes");
-/** R106: why an asked page was not sent beyond the renderer's own refusals. */
+/** R58: why an asked page was not sent beyond the renderer's own refusals.
+ *  @type {"TRANSCRIBE_PAGES_MAX"} */
 export const PAGES_MAX = "TRANSCRIBE_PAGES_MAX";
+/** R58: why an asked page of a capture over TRANSCRIBE_LOAD_MAX was not sent: it is owed as a job row.
+ *  @type {"OWED"} */
 export const OWED = "OWED";
 
 /* R36: the asked pages, whole numbers of zero or more, each once, in ascending order. */
@@ -73,7 +80,13 @@ function refusalOf(page, r) {
  *  edge at most TRANSCRIBE_PICTURE_EDGE (T43; N853b). A page either renderer refuses (or that throws), whose picture is
  *  not a PNG, or whose PNG is over TRANSCRIBE_IMAGE_MAX_BYTES is not sent and stays unread; (T44) each such page is
  *  answered in `refused` as `{page, reason, process?}`: the renderer's refusal, `DECODE_FAILED` for a renderer that
- *  throws or answers no PNG, `IMAGE_TOO_LARGE` for a PNG over the cap. One page is rendered at a time. */
+ *  throws or answers no PNG, `IMAGE_TOO_LARGE` for a PNG over the cap. One page is rendered at a time.
+ *  @param {any} bytes the capture's bytes, as the renderers take them
+ *  @param {any} pages the asked page numbers; only whole numbers of zero or more count, each once, ascending
+ *  @param {(bytes: any, page: number, opts: {decodeDct: boolean}) => any} [render] `pdf-pixels`' page renderer by default
+ *  @param {(bytes: any, page: number, opts: {maxEdge: number, grey: boolean}) => any} [picture] its picture renderer by default
+ *  @returns {Promise<{sent: RenderedPage[], refused: RefusedPage[]}>}
+ *  @bound sent and refused together: at most TRANSCRIBE_PAGES_MAX pages */
 export async function renderAsked(bytes, pages, render = renderPageToPixels, picture = renderPictureToPixels) {
   const sent = [], refused = [];
   for (const page of pagesAsked(pages)) {
@@ -91,7 +104,26 @@ export async function renderAsked(bytes, pages, render = renderPageToPixels, pic
   return { sent, refused };
 }
 
-/** R36: the pages `renderAsked` sends, alone. */
+/**
+ * A page rendered and sent, `agent-worker` R72's form.
+ * @typedef {Object} RenderedPage
+ * @property {number} page
+ * @property {string} media_type `image/png`
+ * @property {string} data the PNG, base64
+ */
+/**
+ * An asked page not sent.
+ * @typedef {Object} RefusedPage
+ * @property {number} page
+ * @property {string} reason the renderer's refusal, `DECODE_FAILED`, `IMAGE_TOO_LARGE`, PAGES_MAX or OWED
+ * @property {string} [process] the JPEG process, when the renderer's detail names one
+ */
+/** R36: the pages `renderAsked` sends, alone.
+ *  @param {any} bytes
+ *  @param {any} pages
+ *  @param {(bytes: any, page: number, opts: {decodeDct: boolean}) => any} [render]
+ *  @param {(bytes: any, page: number, opts: {maxEdge: number, grey: boolean}) => any} [picture]
+ *  @returns {Promise<RenderedPage[]>} */
 export async function renderPages(bytes, pages, render = renderPageToPixels, picture = renderPictureToPixels) {
   return (await renderAsked(bytes, pages, render, picture)).sent;
 }
@@ -214,7 +246,29 @@ class Transcriber {
 /* K61: one transcriber per storage. (T46; R40) A test's own set is ai-runs' (`assistantGateOf`'s, handed to ai-runs at
    its construction), never the transcriber's. */
 const OF = new WeakMap();
-/** R36: this object's transcriber. */
+/**
+ * What `transcription` answers for one act, for `extraction` to record (its R74).
+ * @typedef {Object} Transcription
+ * @property {any} member
+ * @property {any} project
+ * @property {string} at the act's instant: the one asked, else now
+ * @property {any} accounts `ai-accounts`' instance of this object
+ * @property {any} untested the test-instance label when the part runs on the exception, else null
+ * @property {(q: any) => any} useCheck `ai-use.useCheck`
+ * @property {(args?: {account?: any, capture_sha?: any, pages?: any}) => Promise<any>} transcribe the AI path (R57, R58)
+ * @property {string} [act] the act's id, `transcribe:<capture prefix>:<instant>`, read after the AI path is asked (a getter on the answer)
+ */
+/**
+ * The transcriber `extraction` is handed (R57).
+ * @typedef {Object} TranscriberHandle
+ * @property {() => boolean} deployable `ai-runs.partAdmitted("transcribe")`; anything that throws is false
+ * @property {(args?: {project?: any, use?: any}) => any} keptAway `ai-accounts.aiKeptAway`, as given
+ * @property {(args?: {member?: any, project?: any, at?: any, trace?: any, memberRef?: any}) => Transcription} transcription
+ */
+/** R57: this object's transcriber, one for each storage.
+ *  @param {any} ctx the object's state
+ *  @param {any} env the object's environment
+ *  @returns {TranscriberHandle} */
 export function transcriberOf(ctx, env) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let t = OF.get(storage);
