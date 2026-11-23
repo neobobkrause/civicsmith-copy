@@ -1,0 +1,269 @@
+{
+ "about": "The readings by hand of computed references, for tools/graph.mjs. A rule applies to the computed references its file pattern, lines, kind and expression pattern (or owner) match, first match wins. reach names the modules the place reaches as far as the reading shows; \"*code\" means every module that owns a JavaScript file under `files`, \"*tests\" under `tests`. tag is the evidence rule's tag for the reading: READ (lines quoted in how) or NOT CHECKED (how says what would settle it).",
+ "rules": [
+  {
+   "id": "hook-stand-in",
+   "kind": "^loader-hooks$",
+   "file": "^(bio-plane/test/m/(answer-envelope/load|control-plane/harness|plane/fixture|store-assembly/world|store-door/harness)\\.mjs|bio-plane/test/m/following/checks\\.test\\.mjs|agent-runner/test/stubs/runtime\\.mjs|file-scanner/test/stubs/runtime\\.mjs|stewards/test/fixture\\.mjs)$",
+   "reach": [],
+   "tag": "READ",
+   "how": "The hook answers the Workers runtime's own module names with a stand-in and hands every other name to Node unchanged. `cloudflare:workers` to a `data:` text: answer-envelope/load.mjs:9-11, control-plane/harness.mjs:14-16, following/checks.test.mjs:18-19, plane/fixture.mjs:11-13, store-assembly/world.mjs:23-25 (\"if (spec === \\\"cloudflare:workers\\\") return { url: \\\"data:text/javascript,export class DurableObject…\\\"\"), store-door/harness.mjs:9-11; `cloudflare:email` to a `data:` text: stewards/test/fixture.mjs:13-15; to a stub file beside the hook, which the graph has as a `path` reference: agent-runner/test/stubs/runtime.mjs:9-12 (\"const STUB = new URL('./cloudflare-workers.mjs', import.meta.url).href\"), file-scanner/test/stubs/runtime.mjs:7-11 (STUBS: ./cloudflare-workers.mjs, ./cloudflare-sockets.mjs). It reaches no module's file by itself."
+  },
+  {
+   "id": "hook-observe",
+   "kind": "^loader-hooks$",
+   "file": "^bio-plane/test/m/(admission/t43\\.test|calc-grammar/fixtures/locked|ooxml/ooxml\\.test)\\.mjs$",
+   "reach": [],
+   "tag": "READ",
+   "how": "The hook writes down what is asked for and hands every name to Node unchanged: admission/t43.test.mjs:66-69 (\"const r = next(specifier, context); resolved.push(…); return r;\"), calc-grammar/fixtures/locked.mjs:6 (\"if (sealed) late.push(spec); return next(spec, ctx);\"), ooxml/ooxml.test.mjs:893-895 (\"imported.push(specifier); return next(specifier, context);\"). It changes no load."
+  },
+  {
+   "id": "hook-trace-register",
+   "kind": "^loader-hooks$",
+   "file": "^bio-plane/test/m/case-checker/trace-register\\.mjs$",
+   "reach": [
+    "setup-words"
+   ],
+   "tag": "READ",
+   "how": "case-checker/trace-register.mjs:7-13: a load hook that takes the text of the file whose address ends \"/src/setup-words/index.mjs\" as Node loads it and rewrites it (\"if (!url.endsWith(\\\"/src/setup-words/index.mjs\\\")) return loaded;\"): it reads and changes setup-words' source text as loaded; every other file is loaded unchanged."
+  },
+  {
+   "id": "hook-g42",
+   "kind": "^loader-hooks$",
+   "file": "^bio-plane/test/m/plane/g42-storage-seam\\.test\\.mjs$",
+   "reach": [],
+   "tag": "READ",
+   "how": "plane/g42-storage-seam.test.mjs:15: \"if (/(^|\\\\/)register\\\\.mjs$/.test(spec) && String(ctx.parentURL || \\\"\\\").includes(\\\"/src/plane/\\\")) return { url: \\\"data:text/javascript,\\\", shortCircuit: true };\" — a file named register.mjs asked for by a file under src/plane/ is answered with an empty module; everything else is unchanged. It keeps a file from loading; it loads none."
+  },
+  {
+   "id": "hook-measure-start",
+   "kind": "^(loader-hooks|dynamic-import|fs-read)$",
+   "file": "^bio-plane/scripts/fleet-bundle\\.mjs$",
+   "lines": [
+    2019,
+    2033,
+    2042,
+    2062
+   ],
+   "reach": [],
+   "tag": "READ",
+   "how": "fleet-bundle.mjs:2015-2062, measureStart(member, {artifact}): :2017 \"const abs = join(member.abs, artifact);\" is read (:2019), the artifact's upload parts are read from \"join(member.abs, rel)\" (:2033), a hook (:2042-2050) answers the names the artifact asks for with `data:` stubs or with those parts, and the artifact is imported (:2062, \"await import(url)\"). It loads a fleet member's own built bundle, in that member's folder; which member is the caller's choice. Runs saw agent-worker's (seen)."
+  },
+  {
+   "id": "r8-timing-hook-text",
+   "file": "^bio-plane/test/m/plane/r8-timing-hook\\.test\\.mjs$",
+   "expr": "file\\(f\\)",
+   "reach": [
+    "ratification",
+    "extraction",
+    "attestation",
+    "monitoring",
+    "capture"
+   ],
+   "tag": "READ",
+   "how": "plane/r8-timing-hook.test.mjs:14 \"const SRC = join(dirname(fileURLToPath(import.meta.url)), \\\"../../../src\\\");\", :16 \"const file = (p) => \\\"file://\\\" + join(SRC, p);\", :21-22 the list \"[[\\\"ratification/ops.mjs\\\", …], [\\\"extraction/ops.mjs\\\", …], [\\\"extraction/ops.mjs\\\", …], [\\\"attestation/index.mjs\\\", …], [\\\"monitoring/index.mjs\\\", …], [\\\"capture/ops.mjs\\\", …]]\", and :24 the text of a child program that imports `file(f)` for each: the five files are imported by a one-line program the test starts. The traced runs saw those imports (crosscheck edges: \"bio-plane/[eval1]|bio-plane/src/ratification/ops.mjs\" and the others)."
+  },
+  {
+   "id": "declared-ops-walk",
+   "file": "^bio-plane/test/declared-ops\\.mjs$",
+   "lines": [
+    80,
+    83
+   ],
+   "reach": [],
+   "tag": "READ",
+   "how": "declared-ops.mjs:77-88 filesOf(root, path): \"try { st = statSync(full); } catch { return []; }\" then, for a folder, \"for (const name of readdirSync(full).sort()) { if (name === \\\"node_modules\\\") continue; out.push(...filesOf(root, join(path, name))); }\". :117 boundedModules calls it for every `files` path of every module up to `upTo` on the order file; :124 listedModules for every `paths` of build/modules.json. The walk is by folder, not by owner: a folder an early module lists (build/ of documents, agent-worker/) is walked whole, with the files that later modules claim inside it (build/plan/ and build/tools/ of journey-check; plane's and journey-check's files under agent-worker/test). The modules reached are in `seen`."
+  },
+  {
+   "id": "declared-ops-read",
+   "file": "^bio-plane/test/declared-ops\\.mjs$",
+   "lines": [
+    135,
+    136
+   ],
+   "reach": [],
+   "tag": "READ",
+   "how": "declared-ops.mjs:133-136 pairsOf: \"if (!EXPORT_LINE.test(readFileSync(file, \\\"utf8\\\"))) continue; const { DECLARED_OPS } = await import(pathToFileURL(file).href);\" for every .mjs/.js file filesOf found that belongs, by `files` paths alone (:109-118; `tests` lists are not read), to a module up to `upTo`: each is read as text, and imported when it has the line `export const DECLARED_OPS`. A file a later module claims through its `tests` inside an earlier module's folder is therefore read (the lane's case: plane's and journey-check's files under agent-worker/test). The modules reached are in `seen`."
+  },
+  {
+   "id": "declared-ops-config",
+   "file": "^bio-plane/test/declared-ops\\.mjs$",
+   "lines": [
+    100,
+    102,
+    106,
+    123
+   ],
+   "reach": [
+    "documents"
+   ],
+   "tag": "READ",
+   "how": "declared-ops.mjs:100 reads `<root>/process.json`, :102 `<root>/process/modules/order.txt`, :106 `<root>/process/modules/<name>.json` for each name on the order file (files no module owns), and :123 `<root>/build/modules.json` (documents' file, by its `build/` path) when no `upTo` is given."
+  },
+  {
+   "id": "walk-t35",
+   "file": "^agent-worker/test/t35\\.test\\.mjs$",
+   "lines": [
+    607,
+    608,
+    613,
+    623
+   ],
+   "reach": [],
+   "tag": "READ",
+   "how": "agent-worker/test/t35.test.mjs:605-609: \"const SKIP = new Set([\\\"node_modules\\\", \\\".git\\\", \\\"dist\\\", \\\"release\\\", \\\".wrangler\\\"]); … const walk = (d) => { for (const e of readdirSync(d)) { if (SKIP.has(e)) continue; const p = join(d, e); const s = statSync(p); if (s.isDirectory()) walk(p); else if (/\\\\.(mjs|js)$/.test(e)) files.push(p); } }; walk(REPO);\" and :613 \"const src = readFileSync(f, \\\"utf8\\\");\" for each: every .mjs and .js file of the repository outside those five folder names is read, whatever module owns it. :620-623 reads the import closure of agent-worker/src/index.mjs the same way."
+  },
+  {
+   "id": "walk-refusal-census",
+   "file": "^bio-plane/test/m/money/refusal-census\\.test\\.mjs$",
+   "lines": [
+    13,
+    15,
+    21,
+    23
+   ],
+   "reach": [],
+   "tag": "READ",
+   "how": "money/refusal-census.test.mjs:13-23: \"const walk = (dir) => readdirSync(dir).flatMap((f) => { const p = join(dir, f); return statSync(p).isDirectory() ? walk(p) : p.endsWith(\\\".mjs\\\") && !/dist|bundle/.test(p) ? [p] : []; });\" and \"for (const m of readdirSync(SRC).filter((d) => statSync(join(SRC, d)).isDirectory())) for (const f of walk(join(SRC, m))) for (const x of readFileSync(f, \\\"utf8\\\").matchAll(RX))\" with SRC = bio-plane/src/: every .mjs file in every folder under bio-plane/src/ is read, whatever the module's place in the order."
+  },
+  {
+   "id": "walk-catalogue-end",
+   "file": "^bio-plane/test/m/answer-envelope/catalogue-end\\.test\\.mjs$",
+   "lines": [
+    67,
+    68,
+    69
+   ],
+   "reach": [],
+   "tag": "READ",
+   "how": "answer-envelope/catalogue-end.test.mjs:63-70: \"const MODULES = JSON.parse(readFileSync(join(REPO, \\\"build/modules.json\\\"), \\\"utf8\\\")).modules.filter((m) => !m.legacy);\" … \"for (const m of MODULES) for (const p of [...(m.paths || []), ...(m.tests || [])]) walk(p);\" where walk lists a folder and reads each .mjs/.js file: the files of every module of build/modules.json. (The file is journey-check's, the last module: none of it is upward.)"
+  },
+  {
+   "id": "bundler-members",
+   "file": "^bio-plane/scripts/fleet-bundle\\.mjs$",
+   "lines": [
+    467,
+    470
+   ],
+   "reach": [],
+   "tag": "READ",
+   "how": "fleet-bundle.mjs:465-470 discoverMembers(repoRoot = REPO_ROOT): \"for (const dir of readdirSync(repoRoot).filter((d) => !d.startsWith(\\\".\\\"))) { const marker = join(repoRoot, dir, \\\"fleet-member.json\\\"); … text = readFileSync(marker, \\\"utf8\\\");\": the top folder is listed and a file fleet-member.json is tried in every folder in it. In this tree six exist (`git ls-files | grep fleet-member.json`: agent-runner, agent-worker, file-scanner, ocr-worker, pdf-worker, sheet-worker). Callers pass the repository's top or a made-up tree in a temporary folder (seen: <tmp>)."
+  },
+  {
+   "id": "bundler-member-files",
+   "file": "^bio-plane/scripts/fleet-bundle\\.mjs$",
+   "expr": "member\\.|\\bb\\.(entry|outfile)|args\\.path|^abs$",
+   "reach": [],
+   "tag": "READ",
+   "how": "fleet-bundle.mjs:1262-1274 optionsFor(member): \"absWorkingDir: member.abs, … entryPoints: [b.entry], outfile: b.outfile, bundle: true\": the bundler builds one fleet member (a folder discoverMembers found, or the plane's) from its entry file with esbuild, which reads the entry and every file it imports; the other places read and write files inside that member's folder by the paths its build names (`member.bundle.outfile`, `.manifest`, the build's inputs `inp.path`, package-lock.json). What is reached is the import closure of the member's entry: the modules are in `seen` for the members the traced tests built (agent-worker, agent-runner); for the others [NOT CHECKED] by a run, and the closure can be read from the graph's import edges from the member's entry."
+  },
+  {
+   "id": "setup-words-build",
+   "file": "^bio-plane/src/setup-words/build\\.mjs$",
+   "lines": [
+    120,
+    233
+   ],
+   "reach": [
+    "*code"
+   ],
+   "tag": "READ",
+   "how": "setup-words/build.mjs:119-135 ownedFiles(root): \"const modules = JSON.parse(readFileSync(join(root, \\\"build/modules.json\\\"), \\\"utf8\\\")).modules;\" then `git ls-files`, keeping each tracked .mjs/.js/.cjs file under a module's `paths` that is not generated, vendored or a test; :230-233 extract(root): \"for (const [file, module] of ownedFiles(root)) { for (const c of callsOf(readFileSync(join(root, file), \\\"utf8\\\"), file)) {\": the source text of every module's code files is read to collect its `localize` calls. setup-words is module 2 of 204: nearly all of that is later in the order. The reach is written here as every module that owns a JavaScript code file; build/modules.json (the earlier module list), not process/modules, decides the exact set [NOT CHECKED against it]."
+  },
+  {
+   "id": "setup-words-build-options",
+   "file": "^bio-plane/src/setup-words/build\\.mjs$",
+   "lines": [
+    358,
+    373,
+    378,
+    386,
+    387
+   ],
+   "reach": [],
+   "tag": "READ",
+   "how": "setup-words/build.mjs:366-387 main(argv): the words file, the output and the review file come from --words, --out, --unreviewed or default to paths under the root (\"const out = opt(\\\"--out\\\", … join(root, ROWS_FROM_ROOT));\"): setup-words' own generated rows.mjs and words-unreviewed.json unless the caller says otherwise."
+  },
+  {
+   "id": "module-tests-script",
+   "file": "^\\.github/scripts/module-tests\\.mjs$",
+   "reach": [
+    "*tests"
+   ],
+   "tag": "READ",
+   "how": ".github/scripts/module-tests.mjs:5-19: \"const m = JSON.parse(readFileSync(\\\"build/modules.json\\\", \\\"utf8\\\"));\" … files(p) stats and lists each path (\"readdirSync(p, { recursive: true })\") … \"for (const mod of mods) { const list = [...new Set((mod.tests || []).flatMap(files))].sort(); … spawnSync(process.execPath, [\\\"--import\\\", preload, \\\"--test\\\", ...list]\": every module's `tests` paths in build/modules.json are listed and their test files run. The reach is written here as every module that owns a test file."
+  },
+  {
+   "id": "sandbox-make-writable",
+   "file": "^bio-plane/test/sandbox\\.mjs$",
+   "lines": [
+    143,
+    145,
+    147
+   ],
+   "reach": [],
+   "tag": "READ",
+   "how": "sandbox.mjs:124-132: \"let target = SANDBOX; try { renameSync(SANDBOX, `${SANDBOX}-swept`); target = `${SANDBOX}-swept`; } … if (e?.code === \\\"EACCES\\\") makeWritable(target);\" and :141-149 makeWritable walks the folder it is given: the test process's own sandbox folder, a temporary folder, never a module's file."
+  },
+  {
+   "id": "release-scripts-read",
+   "file": "^bio-plane/scripts/(deploy-fleet|release-assemble)\\.mjs$",
+   "reach": [],
+   "tag": "READ",
+   "how": "deploy-fleet.mjs:102-120 \"const memberDir = join(ROOT, member); … readFileSync(join(memberDir, \\\"fleet-member.json\\\") … const cfgPath = join(memberDir, \\\"wrangler.jsonc\\\");\", :250 the member's built artifact, :321-337 a generated wrangler file written in and removed from the member's folder, with `member` a command-line word; release-assemble.mjs:271-273 and :342 \"join(m.abs, \\\"wrangler.jsonc\\\")\", :386 \"join(m.abs, rel)\", :592/:646/:705-715 the built bundles copied into the release folder (\"copyFileSync(e.from, join(RELEASE_DIR, e.asset))\"), :641-645 signature files named by flags. They reach a fleet member's folder (agent-runner, agent-worker, file-scanner, ocr-worker, pdf-worker, sheet-worker) and bio-plane's bundle. These files are release's (197 of 204); every module they reach by these lines is earlier. Which files exactly depends on the member named when the script is run [NOT CHECKED by a run: these scripts deploy and publish, and were not run]."
+  },
+  {
+   "id": "wrangler-rules",
+   "kind": "^worker-module$",
+   "file": "wrangler\\.jsonc$",
+   "reach": [],
+   "tag": "NOT CHECKED",
+   "how": "A wrangler `rules` entry (ocr-worker/wrangler.jsonc:46-47 \"**/*.wasm\", \"**/*.traineddata\"; sheet-worker/wrangler.jsonc:17) names a pattern of imported files and how they are loaded. Whether it adds files by itself or only types the files the Worker's code imports was not established here; wrangler's documentation of `rules` would settle it."
+  },
+  {
+   "id": "journey-check-last",
+   "owner": "journey-check",
+   "reach": [],
+   "tag": "NOT CHECKED",
+   "how": "Not read one by one. journey-check is line 204 of the 204 lines of process/modules/order.txt (`grep -n '^journey-check$' process/modules/order.txt` → 204): no module is later, so whatever these places reach is not an upward reference. What each reaches was not established; reading each file, or running it under tools/trace.mjs, would."
+  },
+  {
+   "id": "fixture-makers-python",
+   "file": "\\.py$",
+   "reach": [],
+   "tag": "NOT CHECKED",
+   "how": "Python programs (fixture makers under */test/**/fixtures/, page builders under docs/development/ux-substrate/, plan tools under build/plan/) not read one by one. The paths the Python reader could settle are in the graph; these are the calls it could not (a path held in a variable, a command line built at run time). No reference in the graph starts any of them from JavaScript except bio-plane/test/m/image-cover/fixtures/make-strip-fixtures.py:375, which itself starts node. Reading each, or running it, would settle them."
+  },
+  {
+   "id": "probes-and-controls",
+   "file": "(\\.probe\\.mjs|\\.control\\.mjs|-child\\.mjs|/stubs/[^/]+\\.mjs)$",
+   "reach": [],
+   "tag": "NOT CHECKED",
+   "how": "Probes (*.probe.mjs), negative-control drivers (*.control.mjs), child programs (*-child.mjs) and stand-in programs (test/stubs/): programs a person or a test starts with arguments. Not read one by one; where a traced test started one, what it touched is in `seen`. Reading each would settle the rest."
+  }
+ ],
+ "files": [
+  {
+   "file": ".github/workflows/regression.yml",
+   "owner": "test-support",
+   "how": "Not read (no parser here reads YAML).",
+   "tag": "NOT CHECKED"
+  },
+  {
+   "file": ".github/workflows/container-images.yml, deploy-test.yml, release-sign.yml",
+   "how": "Not read.",
+   "tag": "NOT CHECKED"
+  },
+  {
+   "file": ".claude/hooks/session-start.sh",
+   "owner": "test-support",
+   "how": "Not read (shell).",
+   "tag": "NOT CHECKED"
+  },
+  {
+   "file": "build/plan/**/*.sh (4), agent-runner/Dockerfile, file-scanner/Dockerfile.renderer, file-scanner/Dockerfile.scanner, sheet-worker/engine/src/lib.rs, sheet-worker/engine/Cargo.toml, *.graphql (5), *.css (4)",
+   "how": "Not read: no parser here reads shell, Dockerfile, Rust, TOML, GraphQL or CSS. graph/computed.json `notParsed` lists each file.",
+   "tag": "NOT CHECKED"
+  }
+ ]
+}

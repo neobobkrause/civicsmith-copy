@@ -1,5 +1,5 @@
 // Runs test files under the run-time recorder (trace.mjs), in a scratch checkout, a few at a time.
-//   node trace-run.mjs <checkout> <list.json> <trace folder> [--jobs 3] [--timeout 300]
+//   node trace-run.mjs <checkout> <list.json> <trace folder> [--jobs 3] [--timeout 300] [--net]
 // <list.json> is a JSON list of test files, as paths relative to the checkout. Each is run as the process's test
 // command runs it (process.json test_command), with a bare environment: no credential the session holds is passed on,
 // and HOME is an empty folder, so no test can reach an account. Results go to <trace folder>/runs.json.
@@ -20,6 +20,8 @@ fs.mkdirSync(outDir, { recursive: true });
 const home = path.join(outDir, 'home'); fs.mkdirSync(home, { recursive: true });
 const tmp = path.join(outDir, 'tmp'); fs.mkdirSync(tmp, { recursive: true });
 const env = { PATH: process.env.PATH, HOME: home, TMPDIR: tmp, LANG: 'C.UTF-8', NODE_OPTIONS: `--import=${TRACE}`, GRAPH_TRACE_OUT: path.join(outDir, 'raw'), GRAPH_TRACE_ROOT: root, CI: 'true' };
+// --net: also pass on the session's proxy address and its certificate file, so that a test that fetches a public file can
+if (process.argv.includes('--net')) for (const k of ['HTTPS_PROXY', 'https_proxy', 'NO_PROXY', 'no_proxy', 'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'NODE_USE_ENV_PROXY']) if (process.env[k]) env[k] = process.env[k];
 const runs = []; let next = 0; let running = 0;
 const started = Date.now();
 await new Promise((done) => {

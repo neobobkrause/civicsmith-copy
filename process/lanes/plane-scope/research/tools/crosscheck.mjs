@@ -7,6 +7,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+if (process.argv[2] === 'edges') { compareEdges(process.argv[3], process.argv[4], process.argv[5]); process.exit(0); }
 const [checkout, fullFile, outFile, ...wanted] = process.argv.slice(2);
 const root = path.resolve(checkout);
 const TRACE = fileURLToPath(new URL('./trace.mjs', import.meta.url));
@@ -52,3 +53,26 @@ for (const w of wanted) {
 }
 fs.rmSync(work, { recursive: true, force: true });
 fs.writeFileSync(outFile, `${JSON.stringify({ format: 'One row for each module whose main code file was loaded in Node under tools/trace.mjs. loaded = repository files Node loaded; predicted = the files the graph reaches from the main file by import and export-from. The four lists are the mismatches, each way, by file and by edge.', results }, null, 1)}\n`);
+
+/** node crosscheck.mjs edges <merged.json from trace.mjs merge> <full.json> <out.json>: every import Node resolved in the
+ *  traced runs, file to file, against the graph's import edges. */
+function compareEdges(mergedFile, fullFile, outFile) {
+  const { imports, loads, processes } = JSON.parse(fs.readFileSync(mergedFile, 'utf8'));
+  const { REFS, VIA } = JSON.parse(fs.readFileSync(fullFile, 'utf8'));
+  const known = new Set(); const computedIn = new Set();
+  for (const r of [...REFS, ...VIA]) {
+    if (!['import', 'export-from', 'dynamic-import', 'require', 'loader', 'resolve', 'require-resolve'].includes(r.k)) continue;
+    if (r.c) computedIn.add(r.f); else if (r.tk === 'file') known.add(`${r.f}|${r.to}`);
+  }
+  let matched = 0; let entry = 0; let outside = 0; const viaComputed = []; const missing = [];
+  for (const e of imports) {
+    const [from, to] = e.split('|');
+    if (from.startsWith('(') || from.startsWith('[') || from === '.') { entry++; continue; }
+    if (from.startsWith('<') || to.startsWith('<')) { outside++; continue; }
+    if (known.has(e)) matched++; else if (computedIn.has(from)) viaComputed.push(e); else missing.push(e);
+  }
+  const out = { format: 'Every import Node resolved in the traced test runs, as "file|file", against the graph. matched = the graph has the same edge as an import, export-from, a literal import() or require; fromAFileWithAComputedImport = the graph has no such edge and the importing file has a computed import() (listed in computed.json); missing = neither.',
+    processes, filesLoaded: loads.filter((l) => !l.startsWith('<')).length, edgesResolved: imports.length, entryOrPreload: entry, toOrFromOutsideTheCheckout: outside, matched, fromAFileWithAComputedImport: viaComputed, missing };
+  fs.writeFileSync(outFile, `${JSON.stringify(out, null, 1)}\n`);
+  console.log(`edges ${imports.length}: matched ${matched}, entry or preload ${entry}, outside ${outside}, from a file with a computed import ${viaComputed.length}, missing ${missing.length}`);
+}

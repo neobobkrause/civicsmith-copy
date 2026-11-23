@@ -19,7 +19,7 @@ const real = { writeFileSync: fs.writeFileSync, mkdirSync: fs.mkdirSync, readFil
 
 if (process.argv[1] && path.resolve(process.argv[1]) === SELF) {
   if (process.argv[2] === 'merge') merge(process.argv[3], process.argv[4]);
-  else { console.error('usage: node trace.mjs merge <folder> <out.json> [--root <checkout>] [--modules <repository>]'); process.exit(2); }
+  else { console.error('usage: node trace.mjs merge <folder>[,<folder>…] <out.json> [--modules <repository>] [--only <graph/computed.json>]'); process.exit(2); }
 } else if (process.env.GRAPH_TRACE_OUT) install();
 
 function install() {
@@ -150,26 +150,46 @@ function merge(folder, outFile) {
   const cache = new Map();
   const ownerOf = (rel) => { if (cache.has(rel)) return cache.get(rel); let best = null; for (const c of claims) if (under(rel, c.p) && (!best || c.p.length > best.p.length)) best = c; cache.set(rel, best ? best.m : null); return cache.get(rel); };
   const sites = {}; const imports = new Map(); const loads = new Set(); let processes = 0;
-  for (const name of real.readdirSync(folder)) {
+  // several folders may be given, with commas between them
+  for (const [dir, name] of folder.split(',').flatMap((dir) => real.readdirSync(dir).map((name) => [dir, name]))) {
     if (!name.endsWith('.json')) continue;
-    let d; try { d = JSON.parse(real.readFileSync(path.join(folder, name), 'utf8')); } catch { continue; }
+    let d; try { d = JSON.parse(real.readFileSync(path.join(dir, name), 'utf8')); } catch { continue; }
     processes++;
     for (const [kind, at, p, n] of d.records) {
       if (kind === 'load') { loads.add(p); continue; }
       if (kind === 'import') { const k = `${at}|${p}`; imports.set(k, (imports.get(k) ?? 0) + n); continue; }
-      const s = (sites[at] ??= { kinds: {}, owners: {}, other: {}, ex: [] });
-      s.kinds[kind] = (s.kinds[kind] ?? 0) + n;
-      if (kind === 'proc-run') { s.runs = [...new Set([...(s.runs ?? []), p])].slice(0, 6); continue; }
+      // by calling place, then by kind of call: how many calls, and which paths
+      const s = ((sites[at] ??= {})[kind] ??= { n: 0, owners: {}, other: {}, paths: new Map() });
+      s.n += n;
+      if (kind === 'proc-run') { s.other[p] = (s.other[p] ?? 0) + n; continue; }
       if (p.startsWith('<')) { s.other[p] = (s.other[p] ?? 0) + 1; continue; }
-      const isDir = fs.existsSync(path.join(repo, p)) && fs.statSync(path.join(repo, p)).isDirectory();
-      const o = ownerOf(isDir && p !== '.' ? `${p}/` : p) ?? (isDir ? '(a folder no module claims)' : '(no owner)');
-      (s.paths ??= new Map()).set(`${kind}|${p}`, o);
+      if (!s.paths.has(p)) {
+        const isDir = fs.existsSync(path.join(repo, p)) && fs.statSync(path.join(repo, p)).isDirectory();
+        s.paths.set(p, ownerOf(isDir && p !== '.' ? `${p}/` : p) ?? (isDir ? '(a folder no module claims)' : '(no owner)'));
+      }
     }
   }
-  for (const s of Object.values(sites)) {
-    for (const [k, o] of s.paths ?? []) { s.owners[o] = (s.owners[o] ?? 0) + 1; if (s.ex.length < 4) s.ex.push(k.split('|')[1]); }
-    s.distinct = (s.paths ?? new Map()).size; delete s.paths;
+  for (const byKind of Object.values(sites)) for (const s of Object.values(byKind)) {
+    for (const o of s.paths.values()) s.owners[o] = (s.owners[o] ?? 0) + 1;
+    s.distinct = s.paths.size; s.ex = [...s.paths.keys()].slice(0, 3); delete s.paths;
     if (!s.ex.length) delete s.ex;
+    if (!Object.keys(s.other).length) delete s.other;
+  }
+  // --only <json>: keep the calling places a list names (a JSON list of "file:line"), and leave the import edges and loads out
+  const only = arg('--only', null);
+  if (only) {
+    const list = JSON.parse(real.readFileSync(only, 'utf8'));
+    // graph/computed.json itself may be given: its places are file → rows with a line `l`
+    const keep = new Set(Array.isArray(list) ? list : [...Object.entries(list.computed ?? {}), ...Object.entries(list.via ?? {})].flatMap(([f, rows]) => rows.map((r) => `${f}:${Array.isArray(r) ? r[0] : r.l}`)));
+    // compact: the owners as places on the order file (0 first), without the count of paths for each
+    const place = new Map(order.map((n, i) => [n, i]));
+    const kept = Object.fromEntries(Object.entries(sites).filter(([k]) => keep.has(k)).sort().map(([k, byKind]) => [k, Object.fromEntries(Object.entries(byKind).map(([kind, v]) => [kind, {
+      n: v.n, distinct: v.distinct, mods: Object.keys(v.owners).filter((o) => place.has(o)).map((o) => place.get(o)).sort((a, b) => a - b),
+      ...(v.owners['(no owner)'] ? { unowned: v.owners['(no owner)'] } : {}), ...(v.owners['(a folder no module claims)'] ? { noClaim: v.owners['(a folder no module claims)'] } : {}),
+      ...(v.other ? { other: v.other } : {}), ...(v.ex ? { ex: v.ex.slice(0, 1) } : {}) }]))]));
+    real.writeFileSync(outFile, `${JSON.stringify({ made: 'by tools/trace.mjs merge, from traced runs of test files (tools/trace-run.mjs)', format: 'sites: "file:line" → kind of call → { n calls, distinct paths, mods: the modules that own those paths as places on process/modules/order.txt (0 first), unowned and noClaim: paths no module owns and folders no module claims, other: paths outside the checkout by where, ex: one of the paths }', processes, callingPlacesSeen: Object.keys(sites).length, sites: kept })}\n`);
+    console.log(`${processes} processes, ${Object.keys(sites).length} calling places, ${Object.keys(kept).length} kept → ${outFile}`);
+    return;
   }
   real.writeFileSync(outFile, JSON.stringify({ processes, sites, imports: [...imports.keys()].sort(), loads: [...loads].sort() }));
   console.log(`${processes} processes, ${Object.keys(sites).length} calling places, ${imports.size} import edges, ${loads.size} files loaded → ${outFile}`);

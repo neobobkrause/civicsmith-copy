@@ -267,14 +267,17 @@ function ev0(node, env, depth) {
         const l = ev(node.left, env, d);
         if (l) return l;
         const r = ev(node.right, env, d);
+        if (r && r.t === 's' && !r.v) return null; // an empty text after "||" is "nothing", not a path
         return r && ['s', 'p', 'u', 'x', 'm'].includes(r.t) ? { ...r, note: `the value after "${node.operatorToken.getText()}" is taken: ${node.left.getText().slice(0, 60)} is not known` } : r;
       }
       return null;
     }
     case ts.SyntaxKind.ConditionalExpression: {
       const a = ev(node.whenTrue, env, d); const b = ev(node.whenFalse, env, d);
-      if (!a || !b) return null;
-      return multi([a, b]);
+      if (a && b) return multi([a, b]);
+      // one side known (a default path beside a command-line option, say): that side, marked
+      const one = a || b;
+      return one && ['p', 'u', 'x'].includes(one.t) ? { ...one, note: `one side of a condition; the other side (${(a ? node.whenFalse : node.whenTrue).getText().replace(/\s+/g, ' ').slice(0, 50)}) is not known` } : null;
     }
     case ts.SyntaxKind.ParenthesizedExpression: case ts.SyntaxKind.AwaitExpression: case ts.SyntaxKind.NonNullExpression:
     case ts.SyntaxKind.AsExpression: case ts.SyntaxKind.SatisfiesExpression:
@@ -813,8 +816,19 @@ function runProc(desc, node, env, give, use) {
       });
     } else if (!(av && av.t === 'o')) tokens.push({ node: a[1], val: null, deps: avDeps, isArgs: true });
   }
+  let prev = null;
   for (const t of tokens) {
-    const v = t.val;
+    let v = t.val;
+    // the word after -e or -p is a program's text, not a path: the paths inside it are read where they are built
+    const afterEval = prev && prev.t === 's' && ['-e', '--eval', '-p', '--print', '-c'].includes(prev.v);
+    prev = v;
+    if (afterEval) continue;
+    // `--flag=${path}`: the value after the "="
+    const tn = t.node && skipOuter(t.node);
+    if (!v && tn && ts.isTemplateExpression(tn) && /^--?[\w.:-]+=$/.test(tn.head.text)) {
+      const parts = []; for (const span of tn.templateSpans) { parts.push(ev(span.expression, env)); parts.push(S(span.literal.text)); }
+      v = concat(parts);
+    }
     if (v && v.t === 's') {
       if (v.exec) continue;
       const words = v.v.includes('=') && v.v.startsWith('-') ? [v.v.slice(v.v.indexOf('=') + 1)] : [v.v];
@@ -874,7 +888,7 @@ function record(base, spec, val, out) {
   if (spec.byName) b.byName = 1;
   if (spec.note) b.note = spec.note;
   if (val && val.note) b.note = b.note ? `${b.note}; ${val.note}` : val.note;
-  if (!val || !['s', 'p', 'u', 'x', 'm'].includes(val.t)) { if (spec.onlyIfExists) return true; out.push({ ...b, c: 1 }); return false; }
+  if (!val || !['s', 'p', 'u', 'x', 'm'].includes(val.t) || (val.t === 's' && !val.v)) { if (spec.onlyIfExists) return true; out.push({ ...b, c: 1 }); return false; }
   if (val.t === 'm') { let ok = true; for (const alt of val.alts) ok = record({ ...base, multi: val.alts.length }, spec, alt, out) && ok; return ok; }
   if (val.t === 'x') { out.push({ ...b, c: 'x', px: val.v }); return false; }
   let abs = null;
@@ -1095,7 +1109,7 @@ const EXCLUDED = (() => {
 })();
 const OTHER = { python: 0, html: 0, htmlInlineScripts: 0, config: 0, text: 0, byHand: [] };
 const PY_CODE = String.raw`
-import ast, json, sys, html.parser
+import ast, json, os, sys, html.parser
 out = {}
 class H(html.parser.HTMLParser):
     def __init__(s):
@@ -1117,13 +1131,72 @@ def dotted(n):
         b = dotted(n.value); return (b + '.' + n.attr) if b else None
     if isinstance(n, ast.Call): return dotted(n.func)
     return None
+def make_eval(tree, f):
+    here = os.path.abspath(f)
+    assigns = {}
+    for n in tree.body:
+        if isinstance(n, ast.Assign) and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name): assigns.setdefault(n.targets[0].id, []).append(n.value)
+    def ev(n, d=0):
+        if d > 12 or n is None: return None
+        if isinstance(n, ast.Constant) and isinstance(n.value, str): return n.value
+        if isinstance(n, ast.Name):
+            if n.id == '__file__': return here
+            v = assigns.get(n.id)
+            return ev(v[0], d + 1) if v and len(v) == 1 else None
+        if isinstance(n, ast.BinOp) and isinstance(n.op, ast.Add):
+            a, b = ev(n.left, d + 1), ev(n.right, d + 1)
+            return a + b if a is not None and b is not None else None
+        if isinstance(n, ast.JoinedStr):
+            parts = []
+            for v in n.values:
+                if isinstance(v, ast.Constant): parts.append(str(v.value))
+                else:
+                    x = ev(getattr(v, 'value', None), d + 1)
+                    if x is None: return None
+                    parts.append(x)
+            return ''.join(parts)
+        if isinstance(n, ast.Call):
+            name = dotted(n.func)
+            args = [ev(a, d + 1) for a in n.args]
+            if not args or any(a is None for a in args): return None
+            if name == 'os.path.join': return os.path.normpath(os.path.join(*args))
+            if name == 'os.path.dirname': return os.path.dirname(args[0])
+            if name in ('os.path.abspath', 'os.path.realpath', 'os.path.normpath', 'str', 'Path', 'pathlib.Path'): return os.path.normpath(args[0])
+        return None
+    def start(n):
+        # the known start of a path whose end is not known: join(KNOWN, unknown), KNOWN + unknown, f"{KNOWN}/{unknown}"
+        if isinstance(n, ast.Call) and dotted(n.func) == 'os.path.join' and n.args:
+            known = []
+            for a in n.args:
+                v = ev(a)
+                if v is None: break
+                known.append(v)
+            if known and len(known) < len(n.args) and os.path.isabs(os.path.join(*known)): return os.path.normpath(os.path.join(*known)) + '/'
+        if isinstance(n, ast.BinOp) and isinstance(n.op, ast.Add):
+            v = ev(n.left)
+            if v is not None and os.path.isabs(v): return v
+            return start(n.left)
+        if isinstance(n, ast.JoinedStr) and n.values:
+            acc = ''
+            for v in n.values:
+                x = str(v.value) if isinstance(v, ast.Constant) else ev(getattr(v, 'value', None))
+                if x is None: break
+                acc += x
+            if acc and os.path.isabs(acc): return acc
+        return None
+    def both(n):
+        v = ev(n)
+        if v is not None: return v
+        st = start(n)
+        return {'x': st} if st else None
+    return both
 for f in json.load(sys.stdin):
     try: text = open(f, encoding='utf8', errors='replace').read()
     except Exception as e: out[f] = {'error': str(e)}; continue
     if f.endswith('.py'):
         try: tree = ast.parse(text)
         except Exception as e: out[f] = {'error': str(e)}; continue
-        imports = []; strings = []; calls = []
+        imports = []; strings = []; calls = []; ev = make_eval(tree, f)
         for n in ast.walk(tree):
             if isinstance(n, ast.Import):
                 for a in n.names: imports.append([n.lineno, a.name, 0])
@@ -1131,10 +1204,13 @@ for f in json.load(sys.stdin):
             elif isinstance(n, ast.Constant) and isinstance(n.value, str) and 2 < len(n.value) < 200: strings.append([n.lineno, n.value])
             elif isinstance(n, ast.Call):
                 name = dotted(n.func)
-                if name: 
+                if name:
                     a0 = n.args[0] if n.args else None
-                    lit = a0.value if isinstance(a0, ast.Constant) and isinstance(a0.value, str) else None
-                    calls.append([n.lineno, name, lit, ast.unparse(a0)[:120] if a0 is not None else None])
+                    if isinstance(a0, ast.Call) and (dotted(a0.func) or '').split('.')[-1] in ('BytesIO', 'StringIO'): continue  # bytes held in memory, not a file
+                    # the first argument's value where the code alone settles it; for a list (a command line), each item's
+                    vals = [ev(e) for e in a0.elts] if isinstance(a0, (ast.List, ast.Tuple)) else [ev(a0)] if a0 is not None else []
+                    plain = [isinstance(e, ast.Constant) or dotted(e) == 'sys.executable' for e in a0.elts] if isinstance(a0, (ast.List, ast.Tuple)) else []
+                    calls.append([n.lineno, name, vals, plain, ast.unparse(a0)[:120] if a0 is not None else None])
         out[f] = {'imports': imports, 'strings': strings, 'calls': calls}
     else:
         h = H()
@@ -1184,11 +1260,24 @@ const withOwner = (r) => { const o = r.to && (r.tk === 'file' || r.tk === 'dir' 
         else REFS.push({ f, l, k: 'import', s: mod, tk: 'package', to: mod.split('.')[0], lang: 'py' });
       }
       const seen = new Set();
-      for (const [l, name, lit, expr] of d.calls) {
+      for (const [l, name, vals, plain, expr] of d.calls) {
         if (!PY_FS.has(name) || !PY_FS.get(name)) continue;
         const k = PY_FS.get(name);
-        if (lit !== null) { const hit = existing(lit, f); if (hit) { REFS.push(withOwner({ f, l, k, s: lit, ...hit, fn: `py ${name}`, lang: 'py' })); seen.add(`${l}|${lit}`); } else if (k !== 'path' && k !== 'proc') REFS.push({ f, l, k, s: lit, tk: 'cwd-missing', to: lit, fn: `py ${name}`, lang: 'py' }); }
-        else if (expr !== null && k !== 'path') REFS.push({ f, l, k, s: expr, c: 1, fn: `py ${name}`, lang: 'py' });
+        vals.forEach((v, i) => {
+          if (v === null) {
+            // a command line's plain words (git, a flag) name no file; anything else not known is computed
+            if (k === 'path' || (k === 'proc' && (plain.length ? vals.some((x, j) => j !== i && x === null && !plain[j]) === false && plain[i] : false))) return;
+            if (k === 'proc' && plain[i]) return;
+            REFS.push({ f, l, k, s: expr, c: 1, fn: `py ${name}`, lang: 'py' });
+            return;
+          }
+          if (typeof v === 'object') { REFS.push({ f, l, k, s: expr, c: 'x', px: v.x, fn: `py ${name}`, lang: 'py' }); return; }
+          let hit = null;
+          if (v.startsWith('/')) { const c = classify(v); if (REAL.has(c.kind) || c.kind === 'missing') hit = { tk: c.kind, to: c.rel }; else if (c.kind === 'outside') { if (k !== 'proc' && k !== 'path') REFS.push({ f, l, k, s: expr, tk: 'outside', to: v, fn: `py ${name}`, lang: 'py' }); return; } }
+          else hit = existing(v, f);
+          if (hit) { REFS.push(withOwner({ f, l, k, s: expr, ...hit, fn: `py ${name}`, lang: 'py' })); seen.add(`${l}|${v}`); }
+          else if (k !== 'path' && k !== 'proc') REFS.push({ f, l, k, s: expr, tk: 'cwd-missing', to: v, fn: `py ${name}`, lang: 'py' });
+        });
       }
       for (const [l, text] of d.strings) {
         if (!PATH_TEXT.test(text) || (!text.includes('/') && !/\.[a-z0-9]{1,6}$/i.test(text)) || seen.has(`${l}|${text}`)) continue;
@@ -1247,7 +1336,7 @@ const withOwner = (r) => { const o = r.to && (r.tk === 'file' || r.tk === 'dir' 
       for (const w0 of String(cmd).split(/[\s"']+/)) {
         const w = w0.includes('=') && w0.startsWith('-') ? w0.slice(w0.indexOf('=') + 1) : w0;
         if (!w || w.startsWith('-') || (!w.includes('/') && !CODE_EXT.test(w))) continue;
-        if (w.includes('*')) { const pre = w.slice(0, w.indexOf('*')).replace(/[^/]*$/, ''); const hit = pre ? existing(pre, f, { relOnly: true }) : null; REFS.push({ f, l: lineIn(f, w), k: 'proc', s: w, c: 'x', px: absOf(pjoin(path.posix.dirname(f), pre)), fn: `package script ${name}`, note: 'a pattern of files the command runs', lang: 'config', ...(hit ? {} : {}) }); continue; }
+        if (w.includes('*')) { const pre = w.slice(0, w.indexOf('*')).replace(/[^/]*$/, ''); REFS.push({ f, l: lineIn(f, w), k: 'proc', s: w, c: 'x', px: absOf(pjoin(path.posix.dirname(f), pre)), fn: `package script ${name}`, note: 'a pattern of files the command runs', glob: { base: `${path.posix.dirname(f)}/`, glob: w }, lang: 'config' }); continue; }
         const hit = existing(w, f, { relOnly: true });
         if (hit) REFS.push(withOwner({ f, l: lineIn(f, w), k: 'proc', s: w, ...hit, fn: `package script ${name}`, lang: 'config' }));
       }
@@ -1279,8 +1368,12 @@ const readJson = (file, fallback) => { try { return JSON.parse(fs.readFileSync(f
 const HAND = readJson(path.join(HERE, 'hand-resolutions.json'), { rules: [], files: [] });
 const RUNTIME = readJson(path.join(HERE, 'runtime-sites.json'), { sites: {} });
 const HAND_RULES = (HAND.rules ?? []).map((r) => ({ ...r, fileRe: r.file ? new RegExp(r.file) : null, exprRe: r.expr ? new RegExp(r.expr) : null, kindRe: r.kind ? new RegExp(r.kind) : null, used: 0 }));
+const CODE_OWNERS = (side) => [...new Set(JS_FILES.filter((f) => ownerOf(f).t === side).map((f) => ownerOf(f).m))].sort((a, b) => MOD_INDEX.get(a) - MOD_INDEX.get(b));
+/** A rule's reach as module names: "*code" is every module that owns a JavaScript file under `files`, "*tests" under `tests`. */
+const reachOf = (h) => [...new Set((h.reach ?? []).flatMap((x) => (x === '*code' ? CODE_OWNERS(false) : x === '*tests' ? CODE_OWNERS(true) : [x])))];
 function handRule(r) {
   for (const h of HAND_RULES) {
+    if (h.owner && ownerOf(r.f)?.m !== h.owner) continue;
     if (h.fileRe && !h.fileRe.test(r.f)) continue;
     if (h.lines && !h.lines.includes(r.l)) continue;
     if (h.kindRe && !h.kindRe.test(r.k)) continue;
@@ -1301,9 +1394,20 @@ function ownersUnder(prefixRel) {
 }
 function resolveComputed(r) {
   const hand = handRule(r);
-  const seen = RUNTIME.sites?.[`${r.f}:${r.l}`] ?? null;
+  // what a traced run saw at this line, for this kind of call (a module loaded by import(), or the files Miniflare read
+  // to start a Worker, show as reads made from the line)
+  const seenAt = RUNTIME.sites?.[`${r.f}:${r.l}`] ?? null;
+  const seenKind = { 'dynamic-import': 'fs-read', require: 'fs-read', worker: 'fs-read', 'worker-module': 'fs-read', 'worker-root': 'fs-read', 'sqlite-open': 'fs-read' }[r.k] ?? r.k;
+  const seenRaw = seenAt?.[seenKind] ?? null;
+  const seen = seenRaw ? { ...seenRaw, owners: Object.fromEntries((seenRaw.mods ?? []).map((i) => [ORDER[i], 1])) } : null;
   const res = {};
-  if (r.c === 'x' && r.px.startsWith('<argv>')) { res.by = 'argv'; res.how = 'the path is given on the command line (process.argv): it reaches what the one who starts the program names'; res.startedBy = STARTS.get(r.f) ?? []; }
+  if (r.glob) {
+    const { base, glob } = r.glob; let re = '';
+    for (let i = 0; i < glob.length; i++) { const c = glob[i]; if (c === '*' && glob[i + 1] === '*') { i++; if (glob[i + 1] === '/') { i++; re += '(?:.*/)?'; } else re += '.*'; } else if (c === '*') re += '[^/]*'; else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&'); }
+    const rx = new RegExp(`^${re}$`); const owners = new Map();
+    for (const f of ALL_FILES) { if (!f.startsWith(base)) continue; if (!rx.test(f.slice(base.length))) continue; const o = ownerOf(f); if (o) owners.set(o.m, (owners.get(o.m) ?? 0) + 1); }
+    res.by = 'pattern'; res.reach = [...owners.keys()].sort((a, b) => MOD_INDEX.get(a) - MOD_INDEX.get(b)); res.how = `the files under ${base} whose names match ${glob}: ${[...owners.values()].reduce((a, b) => a + b, 0)} files of ${owners.size} modules`;
+  } else if (r.c === 'x' && r.px.startsWith('<argv>')) { res.by = 'argv'; res.how = 'the path is given on the command line (process.argv): it reaches what the one who starts the program names'; res.startedBy = STARTS.get(r.f) ?? []; }
   else if (r.c === 'x') {
     if (OUTSIDE_START.test(r.px)) { res.by = 'outside'; res.reach = []; res.how = 'its path starts in a folder outside the repository (a temporary folder made at run time, or a system path)'; }
     else {
@@ -1318,13 +1422,17 @@ function resolveComputed(r) {
       }
     }
   } else if (r.inst && r.inst.sites > 0 && r.inst.open === 0) { res.by = 'callers'; res.how = `its argument comes from a parameter; every one of the ${r.inst.sites} calls the parser ties to the function was read (the references are listed with "via")`; }
+  else if (/^proc/.test(r.k) && /^(String|Number|JSON\.stringify)\(/.test(r.s ?? '') && !/path|file|dir|url|src/i.test(r.s)) { res.by = 'word'; res.reach = []; res.how = 'an argument of a command made with String(), Number() or JSON.stringify(): a number or data, not a path'; }
   else if (/\bprocess\.env\b/.test(r.s ?? '')) { res.by = 'env'; res.how = 'the path is read from an environment variable: it reaches what the one who starts the program sets'; res.startedBy = STARTS.get(r.f) ?? []; }
   else res.by = 'open';
   if (r.inst) res.inst = r.inst;
-  if (hand) { res.hand = { rule: hand.id, reach: hand.reach ?? [], how: hand.how, tag: hand.tag, ...(hand.outside ? { outside: 1 } : {}) }; if (res.by === 'open') res.by = 'hand'; }
+  if (hand) { res.hand = { rule: hand.id, reach: reachOf(hand), tag: hand.tag }; if (res.by === 'open') res.by = hand.tag === 'NOT CHECKED' ? 'open' : 'hand'; }
   if (seen) { res.seen = seen; if (res.by === 'open') res.by = 'run'; }
   return res;
 }
+// A path the code builds and holds, of which only the start is known, where no point of use reads it directly (it is
+// handed on, or written into a program's text): kept with the computed references, as kind `path`.
+for (const p of PARTIALS) REFS.push({ f: p.f, l: p.l, k: 'path', s: p.s, c: 'x', px: p.px, held: 1 });
 /** The places that start a file as a program (a child process, a Worker, a package script): file → ["file:line", …]. */
 const STARTS = new Map();
 for (const r of [...REFS, ...VIA]) if (!r.c && r.tk === 'file' && /^(proc|worker)$/.test(r.k)) { if (!STARTS.has(r.to)) STARTS.set(r.to, []); const at = `${r.f}:${r.l}`; if (STARTS.get(r.to).length < 6 && !STARTS.get(r.to).includes(at)) STARTS.get(r.to).push(at); }
@@ -1387,8 +1495,9 @@ for (const v of VIA) {
 for (const r of [...COMPUTED, ...VIA.filter((v) => v.c)]) {
   const res = r.res;
   if (res.by === 'start') for (const m of res.reach) addEdge(r.f, m, `${r.k} (start of the path known)`, r.l);
+  if (res.by === 'pattern') for (const m of res.reach) addEdge(r.f, m, `${r.k} (a pattern of files)`, r.l);
   if (res.hand) for (const m of res.hand.reach) addEdge(r.f, m, `${r.k} (read by hand)`, r.l);
-  if (res.seen) for (const m of Object.keys(res.seen.owners ?? {})) addEdge(r.f, m, `${r.k} (seen in a run)`, r.l);
+  if (res.seen) for (const m of Object.keys(res.seen.owners ?? {})) if (MOD_INDEX.has(m)) addEdge(r.f, m, `${r.k} (seen in a run)`, r.l);
 }
 const realPairs = new Set(REFS.filter((r) => r.to).map((r) => `${r.f}|${r.to}`));
 const LEADS = TEXT_REFS.filter((r) => !realPairs.has(`${r.f}|${r.to}`) && r.to !== r.f && !isExcluded(r.f));
@@ -1412,10 +1521,13 @@ for (const r of REFS) if (!r.c && r.k === 'fs-list' && r.tk === 'dir') for (cons
 for (const v of VIA) if (!v.c && v.k === 'fs-list' && v.tk === 'dir') for (const m of childOwners(v.to)) if (m !== v.own) upExtra({ ...v, s: v.to }, m, 'fs-list (a file or folder inside the folder listed)');
 for (const r of [...COMPUTED, ...VIA.filter((v) => v.c)]) {
   if (r.res.by === 'start') for (const m of r.res.reach) upExtra(r, m, `${r.k} (start of the path known)`);
+  if (r.res.by === 'pattern') for (const m of r.res.reach) upExtra(r, m, `${r.k} (a pattern of files)`);
   if (r.res.hand) for (const m of r.res.hand.reach) upExtra(r, m, `${r.k} (read by hand)`);
-  if (r.res.seen) for (const m of Object.keys(r.res.seen.owners ?? {})) upExtra(r, m, `${r.k} (seen in a run)`);
+  if (r.res.seen) for (const m of Object.keys(r.res.seen.owners ?? {})) if (MOD_INDEX.has(m)) upExtra(r, m, `${r.k} (seen in a run)`);
 }
 
+const USES_KINDS = [];
+const usesKind = (k) => { let i = USES_KINDS.indexOf(k); if (i < 0) { i = USES_KINDS.length; USES_KINDS.push(k); } return i; };
 /** Declared uses against the graph, module by module. */
 const IMPORT_KINDS = new Set(['import', 'export-from', 'dynamic-import', 'jsdoc-import', 'require']);
 const USES = MODS.map((m) => {
@@ -1425,9 +1537,11 @@ const USES = MODS.map((m) => {
   const declaredNotFound = m.uses.filter((u) => !found.has(u));
   const declaredOnlyLead = m.uses.filter((u) => found.has(u) && [...found.get(u)].every((k) => k.startsWith('path-text')));
   const declaredNoImport = m.uses.filter((u) => found.has(u) && ![...found.get(u)].some((k) => IMPORT_KINDS.has(k)));
-  const foundNotDeclared = [...found.keys()].filter((t) => !declared.has(t)).map((t) => ({ to: t, kinds: [...found.get(t)], later: MOD_INDEX.get(t) > m.index }));
+  const foundNotDeclared = [...found.keys()].filter((t) => !declared.has(t)).map((t) => [MOD_INDEX.get(t), [...found.get(t)].map(usesKind).sort((a, b) => a - b)]);
   const declaredLater = m.uses.filter((u) => !MOD_INDEX.has(u) || MOD_INDEX.get(u) >= m.index);
-  return { module: m.name, index: m.index + 1, declared: m.uses.length, found: found.size, declaredNotFound, declaredNoImport, declaredOnlyLead, foundNotDeclared, declaredLater };
+  const foundNotDeclaredByImport = [...found.keys()].filter((t) => !declared.has(t) && [...found.get(t)].some((k) => IMPORT_KINDS.has(k)));
+  const foundNotDeclaredParser = [...found.keys()].filter((t) => !declared.has(t) && [...found.get(t)].some((k) => !/\((seen in a run|read by hand|a lead)\)$/.test(k) && !k.startsWith('path-text')));
+  return { module: m.name, index: m.index + 1, declared: m.uses.length, found: found.size, declaredNotFound, declaredNoImport, declaredOnlyLead, foundNotDeclared, foundNotDeclaredByImport, foundNotDeclaredParser: foundNotDeclaredParser.length, declaredLater };
 });
 
 /** Files no module owns; files two claims of the same length both match; files more than one module's claims match. */
@@ -1456,8 +1570,8 @@ const sizes = {};
     [...e.counts].sort((a, b) => a[0].localeCompare(b[0])).flatMap(([k, [c, t]]) => [ki(k), c, t]),
     e.ex.flatMap(([f, l, k]) => [fi(f), l, ki(k)])]);
   sizes['module-edges.json'] = write('module-edges.json', {
-    format: 'edges: [from, to, counts, examples]. from and to index `modules` (the order of process/modules/order.txt, 0 first). counts is a flat list of triples kind, n-from-code, n-from-tests (kind indexes `kinds`; code = the referring file is under the from-module\'s `files`, tests = under its `tests`). examples is a flat list of triples file, line, kind (file indexes `files`), at most 5 for a pair, one for each kind first. A pair is listed when at least one reference goes from a file the first module owns to a file or folder the second owns.',
-    modules: ORDER, kinds, files: exFiles, edges });
+    format: 'edges: [from, to, counts, examples]. from and to index `modules` (the order of process/modules/order.txt, 0 first). counts is a flat list of triples kind, n-from-code, n-from-tests (kind indexes `kinds`; code = the referring file is under the from-module\'s `files`, tests = under its `tests`). examples is a flat list of triples file, line, kind (file indexes `files`; a name there that begins S/ or T/ is short for what `abbreviations` says), at most 5 for a pair, one for each kind first. A pair is listed when at least one reference goes from a file the first module owns to a file or folder the second owns.',
+    abbreviations: { 'S/': 'bio-plane/src/', 'T/': 'bio-plane/test/m/' }, modules: ORDER, kinds, files: exFiles.map((f) => (f.startsWith('bio-plane/src/') ? `S/${f.slice(14)}` : f.startsWith('bio-plane/test/m/') ? `T/${f.slice(17)}` : f)), edges });
 }
 // files.json
 {
@@ -1482,49 +1596,77 @@ const sizes = {};
   const runs = new Map();
   for (const f of OWNED) { if (codeFiles.has(f)) continue; const o = ownerOf(f); const d = path.posix.dirname(f); const k = `${d}/|${o.m}|${o.t ? 1 : 0}`; runs.set(k, (runs.get(k) ?? 0) + 1); }
   const folders = [...runs].map(([k, n]) => { const [d, m, t] = k.split('|'); return [d, MOD_INDEX.get(m), Number(t), n]; });
+  const ABBR = { 'S/': 'bio-plane/src/', 'T/': 'bio-plane/test/m/' };
+  const short = (f) => { for (const [a, full] of Object.entries(ABBR)) if (f.startsWith(full)) return a + f.slice(full.length); return f; };
+  for (let i = 0; i < paths.length; i++) paths[i] = short(paths[i]);
   sizes['files.json'] = write('files.json', {
-    format: 'files: [path, owner, side, counts, out] for every owned file that holds code or has a reference. path indexes `paths`; owner indexes `modules`; side 0 = under the owner\'s `files` (code), 1 = under its `tests`. counts is a flat list of pairs kind, n for the references that stay inside the module or leave the product (kind indexes `kinds`; the name says where they go). out is a flat list of triples line, kind, target for every reference to a file or folder another module owns (target indexes `paths`). folders: [folder, owner, side, n] counts the other owned files (documents, pictures, fixtures), which hold no code this script reads. The references that stay inside a module are counted here and not listed: run the script with --full <file> for every reference.',
-    modules: ORDER, kinds, paths, files, folders });
+    format: 'files: [path, owner, side, counts, out] for every owned file that holds code or has a reference. path indexes `paths` (a path that begins S/ or T/ is short for what `abbreviations` says); owner indexes `modules`; side 0 = under the owner\'s `files` (code), 1 = under its `tests`. counts is a flat list of pairs kind, n for the references that stay inside the module or leave the product (kind indexes `kinds`; the name says where they go). out is a flat list of triples line, kind, target for every reference to a file or folder another module owns (target indexes `paths`). folders: [folder, owner, side, n] counts the other owned files (documents, pictures, fixtures), which hold no code this script reads. The references that stay inside a module are counted here and not listed: run the script with --full <file> for every reference.',
+    abbreviations: ABBR, modules: ORDER, kinds, paths, files, folders });
 }
 // computed.json
 {
-  const byFile = new Map();
+  const byFile = new Map(); const startedBy = {};
+  const laterThan = (f, names) => { const i = MOD_INDEX.get(ownerOf(f).m); return names.filter((n) => MOD_INDEX.has(n) && MOD_INDEX.get(n) > i); };
+  const seenShort = (f, s) => {
+    const names = Object.keys(s.owners ?? {}).filter((n) => MOD_INDEX.has(n)); const later = laterThan(f, names);
+    if (!names.length && !s.unowned && !s.noClaim) return { calls: s.n, ...(s.other ? { other: s.other } : {}) };
+    return { calls: s.n, paths: s.distinct, modules: names.length, ...(names.length && names.length <= 6 ? { names } : {}), ...(later.length ? { later: later.length > 10 ? `${later.length}: ${later.slice(0, 4).join(', ')} … ${later.slice(-2).join(', ')}` : later } : {}),
+      ...(s.unowned ? { unowned: s.unowned } : {}), ...(s.noClaim ? { foldersNoModuleClaims: s.noClaim } : {}), ...(Object.keys(s.other ?? {}).length ? { other: s.other } : {}), ...(s.ex ? { ex: s.ex.slice(0, 1) } : {}) };
+  };
   const row = (r) => {
-    const res = r.res; const out = { l: r.l, k: r.k, e: (r.s ?? '').slice(0, 110), by: res.by };
+    const res = r.res;
+    // a path that starts outside the repository: a short row [line, kind, expression]
+    // (a full row is kept if a traced run saw the place touch a module's file after all)
+    if (res.by === 'outside' && !(res.seen && (res.seen.mods ?? []).length)) return [r.l, r.k, (r.s ?? '').slice(0, 70)];
+    const out = { l: r.l, k: r.k, e: (r.s ?? '').slice(0, 110), by: res.by };
     if (r.in) out.in = r.in;
     if (r.params) out.params = r.params;
     if (r.via) out.via = r.via;
     if (r.note) out.note = r.note;
     if (r.byName) out.byName = 1;
     if (res.px !== undefined) out.px = res.px;
-    if (res.reach) out.reach = res.reach;
+    if (res.reach) out.reach = res.reach.length > 12 ? `${res.reach.length} modules: ${res.reach.slice(0, 4).join(', ')} … ${res.reach.slice(-2).join(', ')}` : res.reach;
     if (res.among) out.among = res.among.length > 12 ? `${res.among.length} modules: ${res.among.slice(0, 4).join(', ')} … ${res.among.slice(-2).join(', ')}` : res.among;
     if (res.inst) out.callers = res.inst;
-    if (res.startedBy) out.startedBy = res.startedBy;
-    if (res.hand) out.hand = res.hand;
-    if (res.seen) out.seen = res.seen;
+    if (res.startedBy && res.startedBy.length) startedBy[r.f] = res.startedBy;
+    if (res.hand) out.hand = res.hand.rule;
+    if (res.seen) out.seen = seenShort(r.f, res.seen);
     return out;
   };
-  for (const r of COMPUTED) { if (!byFile.has(r.f)) byFile.set(r.f, []); byFile.get(r.f).push(row(r)); }
+  let heldOutside = 0;
+  for (const r of COMPUTED) {
+    // a held path that starts outside the repository (a temporary folder) or comes from the command line is counted, not listed
+    if (r.held && (r.res.by === 'outside' || r.res.by === 'argv') && !(r.res.seen && (r.res.seen.mods ?? []).length)) { heldOutside++; continue; }
+    if (!byFile.has(r.f)) byFile.set(r.f, []); byFile.get(r.f).push(row(r));
+  }
   const viaByFile = new Map();
-  for (const v of VIA) { if (!viaByFile.has(v.f)) viaByFile.set(v.f, []); viaByFile.get(v.f).push(v.c ? { ...row(v), n: v.viaCount } : { l: v.l, k: v.k, to: v.to, tk: v.tk, own: v.own, via: v.via, n: v.viaCount }); }
+  for (const v of VIA) { if (!viaByFile.has(v.f)) viaByFile.set(v.f, []); const rr = v.c ? row(v) : null; viaByFile.get(v.f).push(v.c ? (Array.isArray(rr) ? [...rr, v.via[0], v.viaCount] : { ...rr, via: v.via.slice(0, 1), n: v.viaCount }) : [v.l, v.k, v.tk === 'file' || v.tk === 'dir' ? v.to : `${v.tk}: ${v.to ?? ''}`, v.own ?? '', v.via[0], v.viaCount]); }
   const classes = {};
   for (const r of COMPUTED) classes[r.res.by] = (classes[r.res.by] ?? 0) + 1;
   sizes['computed.json'] = write('computed.json', {
-    format: 'computed: file → every point of use in it whose argument the parser could not settle: l line, k kind, e the expression, in the function it is in, params the parameters it waits on, by how it was resolved (outside: starts outside the repository; start: the start of the path is known and one module owns everything under it; callers: read at every call the parser ties to its function, see via; hand: read by hand, see hand; run: seen in a traced run, see seen; open: not resolved), reach the modules it reaches, among the modules whose files lie under a known start when there are several, hand {rule, reach, how, tag}, seen what traced runs saw at the place. via: file → references made at a point of use with a path given by a caller, n the number of calls that gave it. rules: the readings by hand. unbound: calls by a name Node also uses (readFile, spawn, …) that the parser could not tie to Node, by what they are called on.',
-    classes, computed: Object.fromEntries([...byFile].sort()), via: Object.fromEntries([...viaByFile].sort()),
-    rules: HAND_RULES.map((h) => ({ id: h.id, file: h.file, lines: h.lines, kind: h.kind, expr: h.expr, reach: h.reach ?? [], how: h.how, tag: h.tag, used: h.used })),
+    format: 'A row that is a list [line, kind, expression] is a point of use whose path starts outside the repository (a temporary folder, a system path): it reaches no module. computed: file → every point of use in it whose argument the parser could not settle: l line, k kind, e the expression, in the function it is in, params the parameters it waits on, by how it was resolved (outside: starts outside the repository; start: the start of the path is known and one module owns everything under it; callers: read at every call the parser ties to its function, see via; pattern: a pattern of file names, matched against the file set; argv, env: given by whoever starts the program, see startedBy; word: an argument of a command that is not a path; hand: read by hand, see the rule named in hand; run: seen in a traced run, see seen; open: not resolved), reach the modules it reaches, among the modules whose files lie under a known start when there are several, hand the id of the rule in `rules` (each rule has reach, how and its tag), seen what traced runs saw at the place (calls, distinct paths, how many modules own them, which of those are later in the order than the owner of the file). via: file → references made at a point of use with a path given by a caller: [line, kind, target, owner of the target, one call that gave the path, the number of calls that gave it] (a row [line, kind, expression, call, n] is a path that starts outside the repository). startedBy: file → the places in the graph that start the file as a program. rules: the readings by hand. unbound: calls by a name Node also uses (readFile, spawn, …) that the parser could not tie to Node, by what they are called on. A row of kind `path` is a path the code builds and holds with only its start known, at no point of use; heldPaths counts them, and those that start outside the repository or come from the command line are counted there and not listed.',
+    classes, computed: Object.fromEntries([...byFile].sort()), via: Object.fromEntries([...viaByFile].sort()), startedBy,
+    rules: HAND_RULES.map((h) => ({ id: h.id, owner: h.owner, file: h.file, lines: h.lines, kind: h.kind, expr: h.expr, reach: h.reach ?? [], how: h.how, tag: h.tag, places: h.used })),
     byHandFiles: HAND.files ?? [], notParsed: OTHER.byHand,
     unbound: (() => { const g = new Map(); for (const u of UNBOUND) { const on = u.on.replace(/^[\w$]+(\.[\w$#]+)*\.(record|#record|core|world\.record)$/, '….$2'); const k = `${u.name} on ${on}`; if (!g.has(k)) g.set(k, { n: 0, ex: [] }); const x = g.get(k); x.n++; if (x.ex.length < 2) x.ex.push(`${u.f}:${u.l}`); } return Object.fromEntries([...g].sort((a, b) => b[1].n - a[1].n)); })(),
-    partialPaths: PARTIALS.length });
+    heldPaths: { all: PARTIALS.length, startOutsideOrCommandLineNotListed: heldOutside } });
 }
 // findings
+// one row for each place and kind, with every later module it reaches
+const UP_KINDS = [];
+const UP_ROWS = (() => {
+  const g = new Map();
+  for (const u of UP) { const k = `${u.at}|${u.kind}`; if (!g.has(k)) g.set(k, { u, to: new Set(), what: new Set() }); g.get(k).to.add(MOD_INDEX.get(u.to)); if (g.get(k).what.size < 2 && u.what) g.get(k).what.add(String(u.what).slice(0, 90)); }
+  const ki = (k) => { let i = UP_KINDS.indexOf(k); if (i < 0) { i = UP_KINDS.length; UP_KINDS.push(k); } return i; };
+  return [...g.values()].sort((a, b) => MOD_INDEX.get(a.u.from) - MOD_INDEX.get(b.u.from) || a.u.at.localeCompare(b.u.at))
+    .map(({ u, to, what }) => [MOD_INDEX.get(u.from), u.side === 'test' ? 1 : 0, u.at, ki(u.kind), [...to].sort((a, b) => a - b), to.size > 3 ? '' : [...what].join(' ; ')]);
+})();
 sizes['upward.json'] = write('upward.json', {
-  format: 'Every reference found from a file one module owns to a file or folder a LATER module (in process/modules/order.txt) owns. rows: [from, to, side, at, kind, what]; from and to index `modules`; side 0 = the referring file is code (under `files`), 1 = a test (under `tests`).',
-  modules: ORDER, rows: UP.sort((a, b) => MOD_INDEX.get(a.from) - MOD_INDEX.get(b.from) || a.at.localeCompare(b.at)).map((u) => [MOD_INDEX.get(u.from), MOD_INDEX.get(u.to), u.side === 'test' ? 1 : 0, u.at, u.kind, u.what]) });
+  format: 'Every reference found from a file one module owns to a file or folder a LATER module (in process/modules/order.txt) owns. rows: [from, side, at, kind, to, what]; from indexes `modules`; side 0 = the referring file is code (under `files`), 1 = a test (under `tests`); at is file:line; kind indexes `kinds`; to is the list of later modules reached from that place (indexes of `modules`); what is the target, given when there are at most 3.',
+  modules: ORDER, kinds: UP_KINDS, rows: UP_ROWS });
 sizes['uses-diff.json'] = write('uses-diff.json', {
-  format: 'For each module: declared = the number of `uses` its entry declares; found = the number of other modules its files refer to in this graph; declaredNotFound = declared with no reference of any kind; declaredNoImport = declared, referred to, but by no import; declaredOnlyLead = declared and found only as a text that names a path; foundNotDeclared = referred to and not declared, with the kinds and whether the module is later in the order; declaredLater = declared uses that are not earlier in the order.',
-  modules: USES });
+  format: 'For each module (index = its place in the order, 1 first): declared = the number of `uses` its entry declares; found = the number of other modules its files refer to in this graph; declaredNotFound = declared with no reference of any kind; declaredNoImport = declared, referred to, but by no import; declaredOnlyLead = declared and found only as a text that names a path; foundNotDeclared = referred to and not declared, as [module, kinds]: module indexes `order` (0 first; it is later in the order when greater than index - 1), kinds index `kinds`; foundNotDeclaredByImport = those among them reached by an import (names); declaredLater = declared uses that are not earlier in the order.',
+  order: ORDER, kinds: USES_KINDS, modules: USES });
 sizes['ownership.json'] = write('ownership.json', {
   format: 'unowned: files no module\'s `files` or `tests` matches. tied: files two claims of the same length match. nested: counts of files matched by more than one module\'s claims, where the longer path wins.',
   unowned: UNOWNED, tied: TIED, nested: Object.fromEntries([...overlapByPair].sort((a, b) => b[1] - a[1])), nestedFiles: OVERLAP.length });
@@ -1542,14 +1684,18 @@ const SUMMARY = {
   references: REFS.length, referencesByKind: Object.fromEntries([...TOTALS.byKind].sort()),
   targets: (() => { const m = {}; for (const r of REFS) if (!r.c) { const k = `${r.k} → ${r.tk}`; m[k] = (m[k] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort()); })(),
   viaCallers: VIA.length, leads: LEADS.length, anchors: STATS.anchors, partialPaths: PARTIALS.length, unbound: UNBOUND.length,
+  computedPointsOfUse: COMPUTED.filter((r) => !r.held).length, heldPathsWithOnlyTheStartKnown: COMPUTED.filter((r) => r.held).length,
   computed: COMPUTED.length, computedByClass: (() => { const m = {}; for (const r of COMPUTED) { const k = `${r.res.by}`; m[k] = (m[k] ?? 0) + 1; } return m; })(),
-  computedByKindAndClass: (() => { const m = {}; for (const r of COMPUTED) { const k = `${r.k} | ${r.res.by}`; m[k] = (m[k] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort()); })(),
+  computedByKindAndClass: (() => { const m = {}; for (const r of COMPUTED) { const k = `${r.held ? 'path held' : r.k} | ${r.res.by}`; m[k] = (m[k] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort()); })(),
+  computedByTag: (() => { const m = {}; for (const r of COMPUTED) { const k = r.res.hand ? `hand rule, ${r.res.hand.tag}${r.res.seen ? ', and seen in a run' : ''}` : r.res.seen ? 'seen in a run only' : `${r.res.by}`; m[k] = (m[k] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort()); })(),
   referencesInsideAModule: TOTALS.intra, referencesAcrossModules: TOTALS.cross, referencesToAnUnownedTarget: TOTALS.noOwner,
   modulePairs: edgeList.length, modulePairsDownward: sum((e) => !isUp(e)), modulePairsUpward: sum(isUp),
   upward: { references: UP.length, fromCode: UP.filter((u) => u.side === 'code').length, fromTests: UP.filter((u) => u.side === 'test').length, pairs: upPairs.size,
     byKind: (() => { const m = {}; for (const u of UP) { const k = `${u.side} | ${u.kind}`; m[k] = (m[k] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort()); })() },
   uses: { declared: USES.reduce((n, u) => n + u.declared, 0), declaredNotFound: USES.reduce((n, u) => n + u.declaredNotFound.length, 0), declaredNoImport: USES.reduce((n, u) => n + u.declaredNoImport.length, 0),
-    foundNotDeclared: USES.reduce((n, u) => n + u.foundNotDeclared.length, 0), modulesWithDeclaredNotFound: USES.filter((u) => u.declaredNotFound.length).length,
+    foundNotDeclared: USES.reduce((n, u) => n + u.foundNotDeclared.length, 0), foundNotDeclaredByImport: USES.reduce((n, u) => n + u.foundNotDeclaredByImport.length, 0),
+    foundNotDeclaredByTheParserAlone: USES.reduce((n, u) => n + u.foundNotDeclaredParser, 0), modulesWithFoundNotDeclaredByImport: USES.filter((u) => u.foundNotDeclaredByImport.length).length,
+    modulesWithDeclaredNotFound: USES.filter((u) => u.declaredNotFound.length).length,
     modulesWithFoundNotDeclared: USES.filter((u) => u.foundNotDeclared.length).length, declaredLater: USES.reduce((n, u) => n + u.declaredLater.length, 0) },
   stackErrors: STATS.stackErrors, sizes,
 };
