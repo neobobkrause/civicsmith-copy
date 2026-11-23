@@ -13,7 +13,6 @@
     "interface-shell",
     "setup-words",
     "op-declarations",
-    "instance-setup",
     "store-request",
     "file-safety"
   ]
