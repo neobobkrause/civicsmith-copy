@@ -53,7 +53,7 @@
   "wizard": 359,
   "elsewhere": 38,
   "places": 6,
-  "screen": 7869,
+  "screen": 7931,
   "signin": 1,
   "forgot": 1,
   "founder": 6,
@@ -63,7 +63,7 @@
   "proceeding": 11,
   "duty": 6,
   "published": 9,
-  "shell": 177,
+  "shell": 178,
   "settings": 4,
   "entity": 33,
   "find": 43,
@@ -237,7 +237,7 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19467,
+  "total": 19530,
   "protected": 1162
  },
  "words": [
@@ -9210,10 +9210,10 @@
   },
   {
    "key": "shell.menu.signout_does",
-   "en": "Ends your session on this device and goes to the sign-in page. Nothing you wrote is lost; drafts stay where they were.",
+   "en": "Ends your session on this device and goes to your team's page. Nothing you wrote is lost; drafts stay where they were.",
    "protected": false,
    "source": "DEC-251",
-   "note": "DEC-251"
+   "note": "DEC-251; ARCH 22 Nov 2026 (code differences): signing out goes to the team's page, as interface-shell R4 does"
   },
   {
    "key": "level.keep.ask",
@@ -9421,13 +9421,6 @@
   {
    "key": "shell.signout",
    "en": "Sign out",
-   "protected": false,
-   "source": "DEC-252",
-   "note": "adopted from interface-shell's own rows"
-  },
-  {
-   "key": "shell.signout.does",
-   "en": "Ends this session on this device and returns to your team's page.",
    "protected": false,
    "source": "DEC-252",
    "note": "adopted from interface-shell's own rows"
@@ -11482,6 +11475,13 @@
    "protected": false,
    "source": "DEC-252",
    "note": "adopted from screens-action's own rows"
+  },
+  {
+   "key": "screen.action.clock.metlate",
+   "en": "met late",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: deciding-and-acting / action C11 (mockup (journeys))"
   },
   {
    "key": "screen.action.noreplyby",
@@ -18393,6 +18393,20 @@
    "note": "adopted from screens-investigate's own rows"
   },
   {
+   "key": "screen.person.follow.registers",
+   "en": "Registers followed",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: the-record / person C8 (lane)"
+  },
+  {
+   "key": "screen.person.follow.registers.row",
+   "en": "{address} · followed {date}",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: the-record / person C8 (lane)"
+  },
+  {
    "key": "screen.person.same",
    "en": "Same person?",
    "protected": false,
@@ -19392,6 +19406,13 @@
    "protected": false,
    "source": "DEC-252",
    "note": "adopted from screens-investigate's own rows"
+  },
+  {
+   "key": "screen.timeline.rel.line",
+   "en": "Linked to {event}: {relation}",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: the-record / timeline C9 (lane)"
   },
   {
    "key": "screen.timeline.date",
@@ -29430,6 +29451,13 @@
    "source": "DEC-257"
   },
   {
+   "key": "screen.capture.file.project",
+   "en": "For which project",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: daily-work / capture C18 (mockup)"
+  },
+  {
    "key": "screen.capture.saw.photo",
    "en": "Add a photo or recording you made then",
    "protected": false,
@@ -32113,6 +32141,13 @@
    "note": "DEC-360 (B371 1): {precision} from screen.dash-project.precision.<code>; any number of events"
   },
   {
+   "key": "screen.dash-project.story.timeline",
+   "en": "Open the timeline",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: daily-work / dash-project A4 (mockup)"
+  },
+  {
    "key": "screen.dash-project.activity.events",
    "en": "{name} added {count} events on {day}",
    "protected": false,
@@ -32811,6 +32846,13 @@
    "en": "{name} gave a reason on {date}; a second member's releases it. The assistant never can.",
    "protected": false,
    "source": "DEC-259"
+  },
+  {
+   "key": "screen.open-file.release.why",
+   "en": "Why release it?",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: daily-work / open-file S3 (mockup)"
   },
   {
    "key": "screen.people.counts.three",
@@ -36128,6 +36170,20 @@
    "note": "DEC-276: the signature at the foot of a public case, its explanation"
   },
   {
+   "key": "shell.pubfoot.line",
+   "en": "{short name} · signed by an owner of the project · {fingerprint}",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: every-screen, section 2, the published frame's foot (mockup)"
+  },
+  {
+   "key": "shell.pubfoot.credit",
+   "en": "Made with Civicsmith",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: every-screen, section 2, the published frame's foot (mockup)"
+  },
+  {
    "key": "shell.credit.neither",
    "en": "Civicsmith is software; it neither wrote nor checked this case.",
    "protected": false,
@@ -37708,6 +37764,27 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-286: when no project is invited or findable; {admins}: the handles of the team's active administrators, joined with commas and “and”"
+  },
+  {
+   "key": "screen.home.join.why",
+   "en": "Why you'd like to join (optional)",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: daily-work / home C10 (lane)"
+  },
+  {
+   "key": "screen.home.join.declined",
+   "en": "Its owners declined your request on {date}.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: daily-work / home C10 (lane)"
+  },
+  {
+   "key": "screen.home.join.declined.word",
+   "en": "Its owners declined your request on {date}: “{word}”",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: daily-work / home C10 (lane)"
   },
   {
    "key": "projects.findable.head",
@@ -48740,6 +48817,13 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-330: B306 A51: People, state g: the preflight, before the record takes it"
+  },
+  {
+   "key": "screen.people.addother.submit",
+   "en": "Follow it",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: the-record / people S7 (and Differences) (mockup)"
   },
   {
    "key": "screen.person.cited",
@@ -60397,6 +60481,13 @@
    "note": "DEC-365 (B381 2): installer F2; the Workers Paid stop's button, beside screen.install.stopped.containers.done"
   },
   {
+   "key": "screen.install.stopped.again",
+   "en": "Start again",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: getting-started / install A11 (mockup)"
+  },
+  {
    "key": "installer.fleet.why.pullfailed",
    "en": "its software was placed in your account but couldn't be started from there",
    "protected": false,
@@ -65465,6 +65556,13 @@
    "note": "DEC-375: B398 C56 (monitoring monitoring): row on the address tab pointing to Watched addresses; before a link"
   },
   {
+   "key": "screen.capture.watching.link",
+   "en": "See watched addresses",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: daily-work / capture A9 (mockup)"
+  },
+  {
    "key": "screen.capture.lead.line",
    "en": "Something you were only told, and want to look into?",
    "protected": false,
@@ -65570,6 +65668,20 @@
    "note": "DEC-375: B398 C17 (sources): sits on screen doorbell"
   },
   {
+   "key": "screen.doorbell.consent.audience.team",
+   "en": "The whole team",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: outside-the-team / doorbell C8 (Differences) (mockup)"
+  },
+  {
+   "key": "screen.doorbell.consent.audience.public",
+   "en": "Anyone",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: outside-the-team / doorbell C8 (Differences) (mockup)"
+  },
+  {
    "key": "screen.doorbell.consent.yes",
    "en": "I agree to this being published",
    "protected": false,
@@ -65624,6 +65736,13 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-375: B398 C17 (sources): sits on screen doorbell"
+  },
+  {
+   "key": "screen.doorbell.consent.secret",
+   "en": "Your secret phrase",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: outside-the-team / doorbell C8 (Differences) (mockup)"
   },
   {
    "key": "screen.about-knocker.intro1",
@@ -71226,6 +71345,13 @@
    "note": "DEC-384: B411 I-32"
   },
   {
+   "key": "screen.person.claim.fold",
+   "en": "Say another record is this person…",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: the-record / person C6 (mockup)"
+  },
+  {
    "key": "screen.person.kind.help.org",
    "en": "For an organization a fact can be its name, address or contact. Born, died and where someone lives or works apply to people only.",
    "protected": false,
@@ -72388,6 +72514,13 @@
    "note": "DEC-387: B423 2: leads (R44); the four .state.* are the result of the latest look, shown beside the lead in the list"
   },
   {
+   "key": "screen.leads.share.already2",
+   "en": "Nothing changed.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: outside-the-team / leads V10 (mockup)"
+  },
+  {
    "key": "screen.leads.state.unclear",
    "en": "We looked and could not tell",
    "protected": false,
@@ -72456,6 +72589,13 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-387: B423 3: watching (R46); .counts is a label: count form, safe for any number; .sweep.pages the budget in screen.watching.sweepdef.scope, .one when the count is 1"
+  },
+  {
+   "key": "screen.watching.list.none",
+   "en": "Your team watches no address yet. Capture a document from its address under Add, then choose how often to look.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: outside-the-team / watching S4 (lane)"
   },
   {
    "key": "screen.watching.counts",
@@ -79108,6 +79248,13 @@
    "note": "DEC-420: B488 aiconnect: s4 freebox"
   },
   {
+   "key": "screen.aiconnect.s4.accepted",
+   "en": "Accepted by {handle} on {date}.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: ai / aiconnect C9 (lane)"
+  },
+  {
    "key": "screen.aiconnect.p.head",
    "en": "Your own subscription",
    "protected": false,
@@ -79227,6 +79374,13 @@
    "note": "DEC-420: B488 aimine: now note"
   },
   {
+   "key": "screen.aimine.now.none",
+   "en": "No AI serves your work yet. Your team's administrators decide which accounts are on; where the team allows it, you can add one of your own.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: ai / aimine S3 (C2 empty) (lane)"
+  },
+  {
    "key": "screen.aimine.choose.head",
    "en": "Choose among what the team allows",
    "protected": false,
@@ -79316,6 +79470,20 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-420: B488 aimine: own fails"
+  },
+  {
+   "key": "screen.aimine.own.plan",
+   "en": "Which plan",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: ai / aimine C8 (lane)"
+  },
+  {
+   "key": "screen.aimine.own.notallowed",
+   "en": "Your team does not let members add their own accounts. Its administrators decide this on the AI providers page.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: ai / aimine S4 (lane)"
   },
   {
    "key": "screen.aimine.chk.head",
@@ -79507,6 +79675,13 @@
    "note": "DEC-420: B488 aiproject: use save"
   },
   {
+   "key": "screen.aiproject.use.none",
+   "en": "Your team allows no AI yet, so this project has none to choose from. An administrator can connect one on AI providers.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: ai / aiproject S3 (C2 empty) (lane)"
+  },
+  {
    "key": "screen.aiproject.bud.head",
    "en": "This project's limit",
    "protected": false,
@@ -79589,6 +79764,13 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-420: B488 aiproject: order down"
+  },
+  {
+   "key": "screen.aiproject.order.none",
+   "en": "No AI is in this project's order yet: it lists the AIs this project uses, once there are any.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: ai / aiproject S3 (C4 empty) (lane)"
   },
   {
    "key": "screen.aimoments.mock",
@@ -121814,6 +121996,27 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
+   "key": "screen.members.removed.line",
+   "en": "Administrator's powers removed on {date}.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: team-and-account / members C12 (lane)"
+  },
+  {
+   "key": "screen.members.removed.agreed",
+   "en": "{member} agreed: “{reason}”",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: team-and-account / members C12 (lane)"
+  },
+  {
+   "key": "screen.members.ties.head",
+   "en": "Their ties",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: team-and-account / members C13 (lane)"
+  },
+  {
    "key": "screen.security.name",
    "en": "Security",
    "protected": false,
@@ -122078,6 +122281,20 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
+   "key": "screen.queue.lens.settle",
+   "en": "Settle it",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: daily-work / queue A2 (mockup)"
+  },
+  {
+   "key": "screen.queue.tension.open",
+   "en": "Open both",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: daily-work / queue A4 (mockup)"
+  },
+  {
    "key": "screen.finder.name",
    "en": "Find",
    "protected": false,
@@ -122150,6 +122367,13 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
+   "key": "screen.document.stands",
+   "en": "Where it stands",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: reading-a-document / document C2 (mockup)"
+  },
+  {
    "key": "screen.contradiction.name",
    "en": "Two documents in tension",
    "protected": false,
@@ -122186,6 +122410,34 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
+   "key": "screen.project.objective.open",
+   "en": "Open the objective",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / project C6 (mockup)"
+  },
+  {
+   "key": "screen.project.suggested.head",
+   "en": "Suggested questions",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / project C15 (mockup)"
+  },
+  {
+   "key": "screen.project.suggested.open",
+   "en": "Open this question",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / project C15 (mockup)"
+  },
+  {
+   "key": "screen.project.about.label",
+   "en": "Who is this question about?",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / project C16 (lane (U3))"
+  },
+  {
    "key": "screen.objective.name",
    "en": "Objective",
    "protected": false,
@@ -122210,6 +122462,62 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
+   "key": "screen.question.about.line",
+   "en": "About: {name}",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C15 (lane (U3))"
+  },
+  {
+   "key": "screen.question.about.change",
+   "en": "Change who it is about",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C15 (lane (U3))"
+  },
+  {
+   "key": "screen.question.about.why",
+   "en": "Why you change it",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C15 (lane (U3))"
+  },
+  {
+   "key": "screen.question.about.none",
+   "en": "This question does not name anyone it is about.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C15 (lane (U3))"
+  },
+  {
+   "key": "screen.question.about.name",
+   "en": "Name who it is about",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C15 (lane (U3))"
+  },
+  {
+   "key": "screen.question.expertise.sent",
+   "en": "The request reached {count} members who declared this expertise.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C17 (lane)"
+  },
+  {
+   "key": "screen.question.expertise.sent.one",
+   "en": "The request reached 1 member who declared this expertise.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C17 (lane)"
+  },
+  {
+   "key": "screen.question.expertise.none",
+   "en": "Nobody was asked: no member who can see this question has declared this expertise.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C17 (lane)"
+  },
+  {
    "key": "screen.answers.name",
    "en": "Ask",
    "protected": false,
@@ -122220,6 +122528,20 @@
    "en": "Ask in plain words, with the assistant, or find and count without it. Answers come only from what your team holds, and show where they looked.",
    "protected": false,
    "source": "mock-refs.js SCREEN_HELP"
+  },
+  {
+   "key": "screen.answers.often",
+   "en": "How often",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / answers C9 (lane)"
+  },
+  {
+   "key": "screen.answers.until",
+   "en": "Until when",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: projects-and-questions / answers C9 (lane)"
   },
   {
    "key": "screen.assistant.name",
@@ -122258,6 +122580,13 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
+   "key": "screen.person.offices.head",
+   "en": "Offices in it",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: the-record / person S2 (mockup)"
+  },
+  {
    "key": "screen.timeline.name",
    "en": "Timeline",
    "protected": false,
@@ -122282,6 +122611,13 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
+   "key": "screen.money.fiscal.unknown",
+   "en": "No fiscal-year view for {government}: the record does not hold its fiscal year yet. A member can state it, with how they checked.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: the-record / money C11 (lane (U4))"
+  },
+  {
    "key": "screen.calculation.name",
    "en": "Calculation",
    "protected": false,
@@ -122292,6 +122628,20 @@
    "en": "A calculation shown with its method and inputs, each tied to the record and recomputed when an input changes.",
    "protected": false,
    "source": "mock-refs.js SCREEN_HELP"
+  },
+  {
+   "key": "screen.calculation.expertise.confirmed",
+   "en": "confirmed: {label}",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: the-record / calculation C6 (lane (the words of `members`))"
+  },
+  {
+   "key": "screen.calculation.expertise.declared",
+   "en": "declared, not confirmed: {label}",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: the-record / calculation C6 (lane (the words of `members`))"
   },
   {
    "key": "screen.help-records.name",
@@ -122328,6 +122678,13 @@
    "en": "Chains of connections between people, votes, contracts and payments, each step cited and graded. A chain is a lead until a member cites its documents.",
    "protected": false,
    "source": "mock-refs.js SCREEN_HELP"
+  },
+  {
+   "key": "screen.explore.project",
+   "en": "For which project",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: the-record / explore C12 (lane (the words of `capture`))"
   },
   {
    "key": "screen.proceeding.name",
@@ -122558,6 +122915,34 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
+   "key": "screen.published.changed",
+   "en": "What changed in this edition: “{what}”",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / published C13 (lane)"
+  },
+  {
+   "key": "screen.published.order",
+   "en": "Court order of {date}: {order}",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / published C13 (lane)"
+  },
+  {
+   "key": "screen.published.lane.world",
+   "en": "What they did",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / published C14 (lane (the timeline's lane words))"
+  },
+  {
+   "key": "screen.published.lane.ours",
+   "en": "What we did",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / published C14 (lane (the timeline's lane words))"
+  },
+  {
    "key": "screen.imported.name",
    "en": "Another team's case",
    "protected": false,
@@ -122570,6 +122955,20 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
+   "key": "screen.imported.watching",
+   "en": "Watching {address} for changes to this case.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C9 (lane)"
+  },
+  {
+   "key": "screen.imported.sigfailed",
+   "en": "When this case was imported, its signature did not check against what {team} published.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C10 (lane)"
+  },
+  {
    "key": "screen.docket.name",
    "en": "Docket",
    "protected": false,
@@ -122580,6 +122979,41 @@
    "en": "The public record of every edition, correction and withdrawal of your team's cases.",
    "protected": false,
    "source": "mock-refs.js SCREEN_HELP"
+  },
+  {
+   "key": "screen.docket.order.label",
+   "en": "What the court orders",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / docket C8 (lane)"
+  },
+  {
+   "key": "screen.docket.order.remove",
+   "en": "Remove",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / docket C8 (mockup (journeys))"
+  },
+  {
+   "key": "screen.docket.order.redact",
+   "en": "Redact",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / docket C8 (mockup (journeys))"
+  },
+  {
+   "key": "screen.docket.order.seal",
+   "en": "Seal",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / docket C8 (mockup (journeys))"
+  },
+  {
+   "key": "screen.docket.order.unseal",
+   "en": "Unseal",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / docket C8 (mockup (journeys))"
   },
   {
    "key": "screen.docket-public.name",
@@ -122742,6 +123176,13 @@
    "en": "What other teams' tests found for each AI: the parts it passed, its limits, its speed and cost, and the grade.",
    "protected": false,
    "source": "mock-refs.js SCREEN_HELP"
+  },
+  {
+   "key": "screen.airesults.none",
+   "en": "No other team has sent results yet. A team's results appear here once it tests an AI and chooses to send them.",
+   "protected": false,
+   "source": "UX lane 22 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: ai / airesults, its one state (C3 empty) (lane)"
   },
   {
    "key": "act.bootstrap.label.install",
