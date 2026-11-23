@@ -118,9 +118,8 @@ export function renderJudgementInput(pairs) {
  * the key's vocabulary, so a model that ignored every word here could still recommend only a respect.
  *
  * THE PROMPT IS PINNED BY ITS DIGEST ONCE MEASURED (R41): the blind fixture of dissolved pairs is run under it and the
- * figures recorded in MEASUREMENTS.md, and RECOMMEND_PROMPT_SHA256 is set to its digest in the same change. Until that
- * run is made the digest is null, which says the prompt has passed no measurement: this module writes it and never
- * claims it measured. */
+ * figures recorded beside it in `test/m/contradiction-words/`, and RECOMMEND_PROMPT_SHA256 is set to its digest in the
+ * same change. A null digest would say the prompt had passed no measurement. */
 /** @type {string} the words a run recommends under */
 export const RECOMMEND_PROMPT = `You are recommending, for CONTRADICTIONS a civic research record holds, the RESPECTS in which the two sides
 of each pair may differ, so that they need not conflict. A member of the team will see your recommendation and
@@ -145,9 +144,10 @@ OUTPUT: a JSON array, one object per pair, in input order:
 Output the JSON only.
 `;
 
-/* sha256 of RECOMMEND_PROMPT as the blind fixture measured it: null until that measurement is made (R41). */
+/* sha256 of RECOMMEND_PROMPT as the blind fixture measured it (R41): 14 dissolved pairs, three runs, recorded in
+   `test/m/contradiction-words/MEASUREMENT.md`. Moved ONLY with a new measurement. */
 /**
  * @type {string|null} the recommender prompt's pinned digest, or null while it has passed no measurement
  * @bound when not null, the sha256 of RECOMMEND_PROMPT's UTF-8 bytes, 64 lower-case hex characters
  */
-export const RECOMMEND_PROMPT_SHA256 = null;
+export const RECOMMEND_PROMPT_SHA256 = "169cb4da6b90c22ab5e32abd90387bcd86b5391a9a8c9eb021eadae2568a57c3";
