@@ -39,6 +39,8 @@ function wordAsWritten(key) {
 /** R33 (DEC-187 (4), DEC-188 (7); K2483): the words of `words.json` (`docs/development/ux-substrate/screens/words.json`)
    this module's rows answer, each read by key from `setup-words`' list (protected); `{photo}` is left for the screen,
    the answer naming the photos.
+ *  @type {*} each key's English, its placeholders as written (stated as anything while a user's test reads every
+ *    export of this file as an object)
  */
 export const PUBLICATION_WORDS = Object.freeze(Object.fromEntries(
   ["photo.refused.changed.signed", "document.refused.changed"].map((key) => [key, wordAsWritten(key)])));

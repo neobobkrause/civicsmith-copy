@@ -2195,7 +2195,8 @@ export class Publication {
      facts the control plane needs to build the manifest and nothing derived:
      in particular NO case-level strength, because there is no such thing —
      every member's frozen PAIR travels with that member.
-   *  @returns the case edition's state, or null when there is no such published case edition
+   *  @returns {*} the case edition's state, or null when there is no such published case edition (stated as anything
+   *    while its callers read it unguarded)
    */
   caseEditionState(caseId, ed, group = null) {
     const c = this.#one(`SELECT scope, completeness, bias_acknowledgement, bar, opened, ratified_at, manifest_sha, criteria
