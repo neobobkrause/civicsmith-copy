@@ -22,14 +22,142 @@ import { readLines, headerLineMatches, findHeader, sheetRows } from "./lines.mjs
 import { assessTables, assessLines } from "./assess.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
+/**
+ * The context `docprofile`'s `readText` hands a content type: the flattened
+ * text, the locator over its pages, the reader view and the supplied text.
+ * @typedef {Object} BudgetCtx
+ * @property {string} [text] the flattened text of every page read
+ * @property {Function} [locate] `docprofile`'s locator: an offset in `text` to its source
+ * @property {any} [view] the jurisdiction reader view (`jurisdictions.combine`)
+ * @property {any} [supplied] the supplied text (I2): `pages`, `undetermined`, `images`, `ocr`, `sheets`
+ * @property {string} [content_type]
+ * @property {Record<string, string>} [headers]
+ * @property {string} [locator] the document's address
+ */
+/**
+ * What `detect` answers (R1, R14).
+ * @typedef {Object} Detection
+ * @property {boolean} match
+ * @property {string} confidence `CONFIDENCE.CERTAIN` on a match, `CONFIDENCE.NONE` otherwise
+ * @property {string[]} signals why it matched, in words people read
+ * @property {string} [why] which kind of no, and why
+ */
+/**
+ * One figure exactly as printed (R2, R11): a dash, parentheses and a leading
+ * minus kept; never parsed, scaled, signed or totalled.
+ * @typedef {Object} TableCell
+ * @property {string} as_read
+ */
+/**
+ * One row of a table (R2, R3).
+ * @typedef {Object} TableRow
+ * @property {string | null} label the row's label, a wrapped label merged into one
+ * @property {TableCell[]} cells
+ * @property {boolean} span a subtotal row whose figures span columns, its cells unplaced
+ * @property {any} [source] `ctx.locate`'s source of the row's line, or null
+ */
+/**
+ * One table of a PDF (R2, R3, R6).
+ * @typedef {Object} Table
+ * @property {string | null} title the heading or caption read with it
+ * @property {number | null} page 0-based
+ * @property {string | null} period_as_written
+ * @property {string | null} scale the scale its heading states ("in thousands"); never applied
+ * @property {string[]} columns the header labels as written
+ * @property {TableRow[]} rows
+ * @property {boolean} usable
+ * @property {number} modal_share
+ * @property {string | null} why why it is not usable
+ * @property {"text-layer" | "ocr"} method
+ * @property {string} [engine] the OCR transcription's engine, with `method: "ocr"`
+ * @property {string} [title_why]
+ * @property {string} [period_why]
+ * @bound usable only when modal_share is at least 0.85 and the headers are in the text read
+ */
+/**
+ * What `parse` gives for a PDF (R2 to R6).
+ * @typedef {Object} PdfReading
+ * @property {Table[]} tables
+ * @property {{page: number, rect: any, why: string}[]} unread image-only tables not read
+ * @property {{page: number | null, lines: string[], why: string}[]} skipped chart labels set aside (R5)
+ * @property {number[]} pages_read
+ * @property {{page: number, why: string}[]} pages_unread pages with no text layer
+ * @property {string} [why] why no table was read
+ */
+/**
+ * A code as written, with the classification form it matched (R7).
+ * @typedef {Object} BudgetCode
+ * @property {string} as_written
+ * @property {string | null} form the form's label, or null when no form matches
+ * @property {string | null} [scheme]
+ * @property {string} [why] why no form matched
+ */
+/**
+ * One budget line (R7). `amount` is `office-readers`' typed cell, as written.
+ * @typedef {Object} BudgetLine
+ * @property {BudgetCode} fund
+ * @property {BudgetCode} org
+ * @property {string | null} department
+ * @property {BudgetCode | null} department_code
+ * @property {BudgetCode | null} program
+ * @property {BudgetCode | null} project
+ * @property {BudgetCode | null} account
+ * @property {string | null} period_as_written
+ * @property {string | null} phase_as_written
+ * @property {{value: any, type: any, declared: any, source: any}} amount
+ * @property {any} source
+ * @property {string} [key] R7's key: fund, org, program, project, account, period and phase, as written
+ */
+/**
+ * One department as the table states it for one period (R8).
+ * @typedef {Object} Grouping
+ * @property {string} department
+ * @property {string | null} department_code
+ * @property {string | null} period_as_written
+ * @property {string[]} orgs the org codes its rows place under it
+ * @bound never carried across periods; two periods' groupings never merged by name
+ */
+/**
+ * What `parse` gives for a `budget_table` (R7, R8).
+ * @typedef {Object} LinesReading
+ * @property {BudgetLine[]} rows
+ * @property {BudgetCode[]} codes every distinct code read
+ * @property {Grouping[]} groupings
+ * @property {{sheet: string | null, row?: number, source?: any, why: string}[]} unread
+ */
+/**
+ * What `assess` gives (R9): events from `site-profiles`' catalogue only.
+ * @typedef {Object} Assessment
+ * @property {boolean | null} meaningful null on a failed read
+ * @property {any} significance
+ * @property {any[]} events `outcome_changed`, `item_added`, `delisted` or `item_changed`
+ * @property {{kind: string, count: number, why: string} | null} confirmed
+ * @property {string} why
+ */
+/**
+ * One content type, as `docprofile`'s registry takes it (R1).
+ * @typedef {Object} BudgetType
+ * @property {"financial_report" | "budget_book" | "budget_table"} key
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract `CONTRACT.SUBSTANCE`
+ * @property {(ctx: BudgetCtx) => Detection} detect
+ * @property {(ctx: BudgetCtx) => any} parse a PdfReading, or a LinesReading for `budget_table`
+ * @property {(before: any, after: any, ctx?: BudgetCtx) => Assessment} assess
+ */
+
 /** How much of a document's opening text is searched for the words it names
  *  itself by: a cover and a title page (measured: every fixture's own title is
- *  inside its first 2,000 characters). */
+ *  inside its first 2,000 characters).
+ *  @type {number}
+ *  @bound whole number of characters, 4000 */
 export const OPENING_CHARS = 4000;
 /** R1's structural floor: a financial document holds at least this many lines
  *  bearing a figure. Measured: the smallest measured table (a budget book's
  *  department page) bears 10; every ACFR statement page bears over 40, and a
- *  title page or a letter bears fewer than 5. */
+ *  title page or a letter bears fewer than 5.
+ *  @type {number}
+ *  @bound whole number of lines, 10 */
 export const FIGURE_LINE_FLOOR = 10;
 
 function isPdf(ctx) {
@@ -86,6 +214,8 @@ function readPdf(ctx, budget) {
   return r;
 }
 
+/** R1 to R6, R9: an annual financial report, read from its text layer only.
+ *  @type {BudgetType} */
 export const financialReport = {
   key: "financial_report", label: "an annual financial report", version: 1, contract: CONTRACT.SUBSTANCE,
   detect(ctx) { return detectPdf(ctx, KEYS.REPORT_TITLES, "financial report"); },
@@ -93,6 +223,8 @@ export const financialReport = {
   assess(before, after) { return assessTables(before, after); },
 };
 
+/** R1 to R6, R9: a budget book, chart labels set aside, image tables read by OCR or listed unread.
+ *  @type {BudgetType} */
 export const budgetBook = {
   key: "budget_book", label: "a budget book", version: 1, contract: CONTRACT.SUBSTANCE,
   detect(ctx) { return detectPdf(ctx, KEYS.BOOK_TITLES, "budget book"); },
@@ -100,6 +232,8 @@ export const budgetBook = {
   assess(before, after) { return assessTables(before, after); },
 };
 
+/** R1, R7 to R9: a budget line-item table, a CSV or workbook sheet.
+ *  @type {BudgetType} */
 export const budgetTable = {
   key: "budget_table", label: "a budget line-item table", version: 1, contract: CONTRACT.SUBSTANCE,
   detect(ctx) {
@@ -124,13 +258,17 @@ export const budgetTable = {
   assess(before, after) { return assessLines(before, after); },
 };
 
-/** The three types in their registration order. */
+/** The three types in their registration order.
+ *  @type {readonly BudgetType[]} */
 export const BUDGET_TYPES = Object.freeze([financialReport, budgetBook, budgetTable]);
 
 const REGISTERED = new WeakMap();
 
 /** Register the three types through `docprofile`'s registry seam, in order.
- *  Called twice with one `register`, the second call registers nothing. */
+ *  Called twice with one `register`, the second call registers nothing.
+ *  @param {(type: BudgetType) => any} register the registry's register function
+ *  @returns {string[]} the keys registered, in order; empty on a second call
+ *  @throws {TypeError} when `register` is not a function */
 export function registerBudgetTypes(register) {
   if (typeof register !== "function") throw new TypeError("registerBudgetTypes needs the registry's register function");
   if (REGISTERED.has(register)) return [];

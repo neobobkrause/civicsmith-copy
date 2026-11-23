@@ -4,7 +4,9 @@
     "bio-plane/src/contradiction.mjs",
     "bio-plane/src/contradiction/checks.mjs"
   ],
-  "tests": [],
+  "tests": [
+    "bio-plane/test/m/contradiction-words/"
+  ],
   "public": [
     "bio-plane/src/contradiction.mjs",
     "bio-plane/src/contradiction/checks.mjs"
