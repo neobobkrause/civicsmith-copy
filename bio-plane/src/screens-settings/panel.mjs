@@ -12,6 +12,7 @@ import { KEYS } from "./keys.mjs";
 
 /** The keys the AI account panel draws (R9, R26, R39): `screens-inquiry`'s `projectai` lists them too, for the words its page carries. */
 const USE_KINDS = ["ask", "draft", "run", "standing", "enquire", "read", "transcribe", "account", "explore", "suggestions"];
+/** @type {ReadonlyArray<string>} */
 export const PANEL_KEYS = Object.freeze([...KEYS.filter((k) => k.startsWith("screen.panel.")), ...USE_KINDS.map((u) => `ai.use.${u}.name`),
   "ai.explore.no", "ai.explore.ask", "ai.explore.yes", "ai.refused.limitinvalid", "ai.refused.unitunavailable", "ai.refused.switchvalue",
   ...["bars", "bars.means", "day", "today", "summary", "meter", "meter.means", "meter.near", "nolimit"].map((k) => `ai.usage.${k}`),
@@ -20,7 +21,11 @@ export const PANEL_KEYS = Object.freeze([...KEYS.filter((k) => k.startsWith("scr
 /** The panel's HTML. `o`: `{owner, explore, perMember, names}`: whether exploring and a per-member limit apply (group
  *  level), and `names(by)` turning a recorded `by` into the name drawn. A section that holds nothing is not drawn (R28).
  *  `o.only` (`uses`, `limits`, `usage` or `changes`) draws that one section; with `o.bare` its content alone, for a screen that
- *  holds it in a part of its own (R48, R49). `o.units` narrows the units a limit may be set in (a subscription's: tokens or calls, R49). */
+ *  holds it in a part of its own (R48, R49). `o.units` narrows the units a limit may be set in (a subscription's: tokens or calls, R49).
+ *  @param {*} cs the screen's kit (interface-shell)
+ *  @param {*} view the screen's view: its reads in `view.data`
+ *  @param {{owner: string, explore?: boolean, perMember?: boolean, names?: function(string): string, only?: string, bare?: boolean, units?: string[]}} o
+ *  @returns {string} the panel's HTML */
 export function aiPanel(cs, view, o) {
   const W = cs.w, E = cs.esc, S = "screen.panel.";
   // a word as plain text, for another word's fills (the kit escapes fills, interface-shell R5)
@@ -96,7 +101,12 @@ export function aiPanel(cs, view, o) {
 /** R26 (K3293): the thirty days of bars and a meter against each limit, over an `aiuseovertime` answer already read: `value` is
  *  that answer, or the screen's read of it (`view.data.<name>`, `{state, value, refusal}`). Summed over everyone the account
  *  serves, naming no member; a day with no use is a zero bar; an answer that is `unreadable`, refused or not read is drawn
- *  failed, never as zeros. The panel (`aiPanel`) and `screens-inquiry`'s `projectai` draw it as a part. */
+ *  failed, never as zeros. The panel (`aiPanel`) and `screens-inquiry`'s `projectai` draw it as a part.
+ *  @param {*} cs the screen's kit (interface-shell)
+ *  @param {*} view the screen's view
+ *  @param {{owner?: string, value?: *}} o `value`: the `aiuseovertime` answer, or the screen's read of it
+ *  @returns {string} the bars and meters' HTML; empty with no value
+ *  @bound value.days: one entry per day, oldest first; the last is today */
 export function aiUsageBars(cs, view, o) {
   const W = cs.w, E = cs.esc, S = "screen.panel.";
   const T = (k, f) => String(W(k, f)).replace(/&(amp|lt|gt|quot|#39);/g, (m, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'" }[e]));
@@ -137,7 +147,12 @@ export function aiUsageBars(cs, view, o) {
 }
 
 /** The request one of the panel's acts sends, from the pressed control's data and the form's fields; `{refuse}` (a word
- *  drawn beside the act, nothing sent) when the form cannot make a valid one. */
+ *  drawn beside the act, nothing sent) when the form cannot make a valid one.
+ *  @param {string} op the panel's act: `accountusesset` or `ailimitset`
+ *  @param {string} owner `group` or `member:<id>`
+ *  @param {*} el the pressed control
+ *  @param {*} cs the screen's kit
+ *  @returns {{body: *} | {refuse: string}} the request, or the word drawn beside the act when none can be made */
 export function aiPanelSend(op, owner, el, cs) {
   const p = owner === "group" ? "aig" : "aio";
   const ds = (el && el.dataset) || {};
@@ -154,7 +169,10 @@ export function aiPanelSend(op, owner, el, cs) {
   return { body };
 }
 
-/** R9's refusal of a limit: `ai.refused.limitinvalid` with its field's words (`ai.limitfield.*`). */
+/** R9's refusal of a limit: `ai.refused.limitinvalid` with its field's words (`ai.limitfield.*`).
+ *  @param {*} refusal the owner's refusal, its `field` naming the limit's field
+ *  @param {*} cs the screen's kit
+ *  @returns {string} the refusal's words */
 export function aiLimitRefused(refusal, cs) {
   const T = (k) => String(cs.w(k)).replace(/&(amp|lt|gt|quot|#39);/g, (m, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'" }[e]));
   const f = refusal && ["owner", "scope", "unit", "period", "amount", "inclusive", "use", "count"].includes(refusal.field) ? refusal.field : "amount";

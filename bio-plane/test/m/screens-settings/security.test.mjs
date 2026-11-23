@@ -3,7 +3,7 @@
    the real count of refused sign-ins, and every expectation is read back from the owners' answers. */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { acts, all, ancestor, day, has, lacks, open, panelOf, said, textOf, SCREENS } from "./kit.mjs";
+import { acts, all, ancestor, day, has, lacks, open, panelOf, said, textOf, screen, SCREENS } from "./kit.mjs";
 import { env } from "./fixtures.mjs";
 import { scannerTeam, burstTeam, handleOf } from "./seed-security.mjs";
 
@@ -29,7 +29,7 @@ test("R15 security: an administrator's screen; any other member is told only tha
   const m = await open("security", { world: w, as: dev });
   const admins = (await dev.read("memberlist")).members.filter((x) => x.role === "admin" && x.status === "active").map((x) => x.handle || said("member.founder.unnamed"));
   has(m, "screen.security.admins", { admins: admins.join(", ") });
-  const OWN = Object.values(SCREENS.find((s) => s.id === "security").reads({ me: await founder.read("whoami") })).map((r) => r.op);
+  const OWN = Object.values(screen("security").reads({ me: await founder.read("whoami") })).map((r) => r.op);
   assert.ok(OWN.length >= 6 && OWN.includes("securitymap"), "the reads the screen asks an administrator");
   assert.deepEqual(m.p.requests.filter((r) => OWN.includes(r.op)), [], "nothing of the screen's own is read");
   assert.deepEqual(m.p.requests.map((r) => r.op).filter((op) => !["assistantstate", "accountreference", "subscriptionsignin", "groupkeystate"].includes(op)), ["memberlist"], "only the roster, for who the administrators are");
@@ -113,7 +113,7 @@ test("R15 securitytooltest and securitytoolremove from the tool's row panel; a r
   const s = await scannerTeam({ signatures: HOUR });
   const { toolId } = await addSophos(s.founder);
   const a = await open("security", { world: s.w, as: s.founder });
-  for (const op of ["securitytooltest", "securitytoolremove"]) assert.ok(acts(panelOf(a.tree, toolId, toolId)).some((b) => b.attrs["data-act"] === op), op);
+  for (const op of ["securitytooltest", "securitytoolremove"]) assert.ok(acts(panelOf(a.tree, toolId)).some((b) => b.attrs["data-act"] === op), op);
   // the scanner is taken away (a platform binding): the owner refuses the test in its own words
   const gone = s.w.env.FILE_SCANNER;
   delete s.w.env.FILE_SCANNER;

@@ -3,6 +3,7 @@
    its requirements name besides (R34–R38: `refusal.UPDATE_SKIP_NO_REASON`, `member.founder.unnamed` and its help,
    `connect.ifnot`, `connect.notnow`, the password asked again, the install with no member behind it). Every sentence a
    screen draws is read through the shell's `w(key, fills)`, which reads `setup-words`' `word`. */
+/** @type {ReadonlyArray<string>} the keys of the words the module reads (R39) */
 export const KEYS = Object.freeze([
   "act.accountdrafts.does",
   "act.accountpropose.does",

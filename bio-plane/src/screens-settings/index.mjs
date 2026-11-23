@@ -103,4 +103,15 @@ const freeze = (s) => Object.freeze({
   parts: PARTS,
 });
 
-export const SCREENS = Object.freeze([settings, members, teamai, account, connect, notes, group, identity, places, recovery, security, translations, updates, glossary, grouprules, bias].map(freeze));
+/**
+ * @typedef {Object} Screen one screen of the member interface, in the form `interface-shell` R21 takes it
+ * @property {string} id the registry's screen id
+ * @property {function(*): Object<string, *>} reads the reads the screen asks for a view, by name (`{op, query, empty}`)
+ * @property {function(*, *): string} render the screen's HTML, over the kit `cs` and the view
+ * @property {ReadonlyArray<*>} acts the acts it may draw, each `{op, send, done, rereads, ...}`
+ * @property {ReadonlyArray<string>} words the keys it draws (R39)
+ * @property {Readonly<{aiPanel: Function, aiPanelSend: Function, aiUsageBars: Function}>} parts the AI account panel's functions (R9, R26)
+ */
+/** The module's screens, `screens-account`'s among them, each frozen with its words and parts.
+ *  @type {Array<Screen>} */
+export const SCREENS = /** @type {Array<Screen>} frozen */ (Object.freeze([settings, members, teamai, account, connect, notes, group, identity, places, recovery, security, translations, updates, glossary, grouprules, bias].map(freeze)));
