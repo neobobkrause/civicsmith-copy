@@ -38,3 +38,9 @@ Decided: 22 Nov 2026.
 Decision: inquiry's R31 (a leg naming an opinion case element is refused by name) waits, out of tranche t1. The opinion case element (MEMBER-KNOWLEDGE section 6, MK-5) has never been designed: no module defines its id or where it is held, and every case module comes after inquiry in the order. ARCH designs the element in a later tranche, deciding its id kind and where the by-name refusal lives; the candidate is an id kind in `record-grammar` and a by-name leg checker in `inquiry-grammar` beside the lead-leg check, which inquiry then uses. Until then inquiry's job for R31 stays recorded blocked.
 Why: a refusal by name needs a form to recognise, and that form is an interface across modules; building one only to refuse an element nothing can make would be design ahead of need.
 Decided: 23 Nov 2026.
+
+## The remote conversation (agent-runner R36 to R40, agent-worker-routes R111)
+Decision: agent-runner's R36, R37, R38 and R40, and agent-worker-routes' R111, wait, out of tranche t1. R38 is a proof run on a deployed copy by the sign-in that copy holds; a development deployment holds no secrets and a job never deploys, so neither a job nor a walk can run it now. R38's steps also run through R111's check while R111 waits on R38's proof, a loop that only a design can break. ARCH designs, in a later tranche, how the remote conversation is proven and in what order the two modules build it. Until then those requirements stay not yet met and their modules' other work goes on. Also: `agent-runner/test/fixtures.mjs`, which later modules' tests import (`runnerRefusal`), is listed under agent-runner's `files` as well as its `public`, so the tool reads it as an interface file and tells its users of a change.
+Why: a requirement that needs a secret-holding copy cannot be met inside the process's tests, and a public file the tool cannot list sends no notice.
+Decided: 23 Nov 2026.
+
