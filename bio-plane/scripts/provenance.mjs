@@ -88,8 +88,56 @@
 import { spawnSync } from "node:child_process";
 import { relative } from "node:path";
 
+/**
+ * What git answered about one checkout, asked once. A `null` set means git could not answer.
+ * @typedef {Object} GitProvenance
+ * @property {string} repoRoot
+ * @property {Set<string>|null} inHead paths in the commit at HEAD (`ls-tree`)
+ * @property {Set<string>|null} inIndex paths in the index (`ls-files`)
+ * @property {Set<string>|null} changed tracked paths whose working content differs from HEAD
+ * @property {string} headSha HEAD's short SHA; empty when git could not say
+ */
+/**
+ * @typedef {"UNVERIFIED"|"in the commit"|"index unreadable"|"staged, not yet committed"|"UNTRACKED"} ProvenanceState
+ */
+/**
+ * @typedef {"UNVERIFIED"|"changed"|"unchanged"|null} ContentState
+ */
+/**
+ * One item a walk counted.
+ * @typedef {Object} DiscoveredItem
+ * @property {string} path repo-relative, POSIX-shaped
+ * @property {string} what
+ * @property {string|number} counted
+ */
+/**
+ * @typedef {DiscoveredItem & {state: ProvenanceState, content: ContentState}} ProvenanceRow
+ */
+/**
+ * @typedef {Object} ProvenanceClassification
+ * @property {boolean} verified false when git could not answer `ls-tree HEAD`
+ * @property {string} headSha
+ * @property {number} accounted the size of the corpus handed in
+ * @property {ProvenanceRow[]} rows
+ * @property {ProvenanceRow[]} off the rows not in the commit (empty when not verified)
+ * @property {ProvenanceRow[]} changed the rows whose content changed since the commit (empty when not verified)
+ * @property {string[]} inCommit the paths in the commit (empty when not verified)
+ */
+/**
+ * One total the caller computed, printed beside the reproducible one.
+ * @typedef {Object} ProvenanceTotal
+ * @property {string} label
+ * @property {number} contaminated
+ * @property {number} reproducible
+ * @property {string} [source] what the items are called; absent is "items"
+ */
+
 /* The three questions, asked once. `null` from any of them means git could not
    answer, which is a THIRD state and never folded into "no". */
+/**
+ * @param {string} repoRoot
+ * @returns {GitProvenance}
+ */
 export function readGitProvenance(repoRoot) {
   const git = (args) => {
     const r = spawnSync("git", args, { cwd: repoRoot, encoding: "utf8", timeout: 30_000,
@@ -109,9 +157,15 @@ export function readGitProvenance(repoRoot) {
 }
 
 /* Repo-relative, POSIX-shaped, which is the spelling `ls-tree` answers in. */
+/** @type {(repoRoot: string, abs: string) => string} */
 export const repoPath = (repoRoot, abs) => relative(repoRoot, abs).split("\\").join("/");
 
 /* RULE 2 lives here: three states, not two. */
+/**
+ * @param {GitProvenance} prov
+ * @param {string} path repo-relative
+ * @returns {ProvenanceState}
+ */
 export function stateOf(prov, path) {
   if (prov.inHead === null) return "UNVERIFIED";
   if (prov.inHead.has(path)) return "in the commit";
@@ -122,6 +176,11 @@ export function stateOf(prov, path) {
 /* The modification question, for a path in the commit: is its content now the
    committed content? `null` for a path not in the commit; "UNVERIFIED" when git
    could not say (rule 4). */
+/**
+ * @param {GitProvenance} prov
+ * @param {string} path repo-relative
+ * @returns {ContentState}
+ */
 export function contentStateOf(prov, path) {
   if (prov.inHead === null || !prov.changed) return "UNVERIFIED";
   if (!prov.inHead.has(path)) return null;
@@ -132,6 +191,11 @@ export function contentStateOf(prov, path) {
    repo-relative. Returns the classification and, deliberately, the size of the
    corpus it was handed — a caller that prints `accounted` prints its own reach,
    and a walk that narrowed to nothing cannot hide behind a clean report. */
+/**
+ * @param {GitProvenance} prov
+ * @param {DiscoveredItem[]} items
+ * @returns {ProvenanceClassification}
+ */
 export function classifyDiscovered(prov, items) {
   const verified = prov.inHead !== null;
   const rows = items.map((it) => ({ ...it, state: stateOf(prov, it.path), content: contentStateOf(prov, it.path) }));
@@ -152,6 +216,11 @@ export function classifyDiscovered(prov, items) {
    suites for a corpus walk. Printing
    them here rather than at each site keeps the SENTENCE that explains them in
    one place, which is the same argument as the module itself. */
+/**
+ * @param {{prov: GitProvenance, items: DiscoveredItem[], instrument: string, corpus?: string,
+ *   totals?: ProvenanceTotal[], log?: (line: string) => void}} args
+ * @returns {ProvenanceClassification}
+ */
 export function reportProvenance({ prov, items, instrument, corpus = "", totals = [], log = console.log }) {
   const c = classifyDiscovered(prov, items);
   if (!c.verified) {
