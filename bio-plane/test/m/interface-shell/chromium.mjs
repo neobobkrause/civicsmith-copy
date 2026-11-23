@@ -1,6 +1,6 @@
 /* interface-shell's tests in a real browser (R84, R89, R108, R120): the page the shell serves, with the served stylesheets and script, is
    drawn in Chromium at a given width over stand-in screens, the plane scripted. Needs `playwright-core` (found beside the product: `site/node_modules`,
-   the journey check's, or the tools directory) and Chromium: CHROMIUM, or /opt/pw-browsers/chromium, or the build that `playwright-core` names,
+   the journey check's, or the tools directory) and Chromium: the first installed of the places `exeOf` names (Google Chrome on GitHub's machines), or the build that `playwright-core` names,
    fetched once by its own installer where no browser is installed (GitHub's machines have none). Without them a test fails, saying so. */
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -18,11 +18,14 @@ function engine() {
   }
   return null;
 }
-/* the browser: CHROMIUM, or /opt/pw-browsers/chromium, or the build `playwright-core` names, fetched by its own installer when absent (once: a
-   second call finds it); null when none can be had */
+/* the browser: the first installed of CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, /usr/bin/google-chrome, /usr/bin/chromium and
+   /usr/bin/chromium-browser; else the build `playwright-core` names, fetched by its own installer when absent (once: a second call finds it);
+   null when none can be had */
 function exeOf(found) {
-  if (process.env.CHROMIUM) return process.env.CHROMIUM;
-  if (existsSync("/opt/pw-browsers/chromium")) return "/opt/pw-browsers/chromium";
+  /* the first installed of these: GitHub's machines carry Google Chrome (as store-request #2 found on the required run) */
+  const at = [process.env.CHROMIUM, "/opt/pw-browsers/chromium", process.env.CHROME_BIN, "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"]
+    .find((p) => typeof p === "string" && p !== "" && existsSync(p));
+  if (at) return at;
   const named = () => { try { const p = found.pw.chromium.executablePath(); return p && existsSync(p) ? p : null; } catch { return null; } };
   if (named()) return named();
   try { execFileSync(process.execPath, [found.cli, "install", "chromium"], { stdio: "ignore", timeout: 5 * 60 * 1000 }); } catch { /* none to be had */ }
@@ -34,7 +37,7 @@ export function chromium() {
   const found = engine();
   assert.ok(found && found.pw && found.pw.chromium, "playwright-core is needed beside the product (`npm ci` in site/), with Chromium: this test cannot measure without them");
   const exe = exeOf(found);
-  assert.ok(exe && existsSync(exe), "Chromium is needed: at CHROMIUM, at /opt/pw-browsers/chromium, or fetched by playwright-core's installer");
+  assert.ok(exe && existsSync(exe), "Chromium is needed: at CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, /usr/bin/google-chrome, /usr/bin/chromium or /usr/bin/chromium-browser, or fetched by playwright-core's installer");
   return { pw: found.pw, exe };
 }
 
