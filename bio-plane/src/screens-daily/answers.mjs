@@ -7,6 +7,15 @@
 
 import { frontTitle } from "./front-title.mjs";
 
+/**
+ * @typedef {Object} ScreenDef
+ * @property {string} id the registry screen's id
+ * @property {Object<string, Function>} parts the screen parts handed to it as `view.parts`
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
+ * @property {(cs: *, view: *) => string} render the screen's markup
+ * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
+ */
+/** @type {Readonly<ScreenDef>} Find › Ask, and "Find and count" while the assistant is not reachable */
 export const answers = Object.freeze({
   id: "answers",
   parts: { frontTitle },
@@ -145,7 +154,8 @@ export const answers = Object.freeze({
       + '<div class="mk-search">' + cs.field("answers-q", "screen.finder.words", { value: ui.q || "" })
       + '<span class="mk-acts">' + cs.act("search", { label: "act.search.label.finder", tone: "primary" }) + "</span></div>"
       + results
-      + (ui.q && ruleOn ? '<div class="mk-acts">' + cs.act("ruleanswer", { label: "act.ruleanswer.label.answers" }) + "</div>" : "")
+      // R6: "Show how this was counted" is on the screen whenever the rule services are on, with or without a search before it.
+      + (ruleOn ? '<div class="mk-acts">' + cs.act("ruleanswer", { label: "act.ruleanswer.label.answers" }) + "</div>" : "")
       + rule + keep;
   },
 
@@ -243,8 +253,10 @@ export const answers = Object.freeze({
     // "Show how this was counted": the rule service's answer with its basis and label (answers R7).
     { op: "ruleanswer", label: "act.ruleanswer.label.answers", rereads: [],
       send: function (view, el, cs) {
-        const q = String((view.ui || {}).q || "").trim();
+        // R6: the words in the field, else the last words searched; with none it says words come first and sends nothing.
+        const q = String(cs.value("answers-q") || (view.ui || {}).q || "").trim();
         if (!q) return { refuse: "screen.finder.wordsfirst" };
+        cs.set("q", q);
         return { body: { service: "occurrences", args: { q: q } } };
       },
       done: function (view, answer, cs) {

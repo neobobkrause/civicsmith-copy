@@ -2,11 +2,15 @@
   "name": "screens-document",
   "files": [
     "bio-plane/src/screens-inquiry/document.mjs",
-    "bio-plane/src/screens-inquiry/admit.mjs"
+    "bio-plane/src/screens-inquiry/admit.mjs",
+    "bio-plane/src/screens-inquiry/common.mjs"
   ],
-  "tests": [],
+  "tests": [
+    "bio-plane/test/m/screens-document/"
+  ],
   "public": [
     "bio-plane/src/screens-inquiry/admit.mjs",
+    "bio-plane/src/screens-inquiry/common.mjs",
     "bio-plane/src/screens-inquiry/document.mjs"
   ],
   "uses": [
